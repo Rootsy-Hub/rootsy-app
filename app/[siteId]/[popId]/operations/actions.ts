@@ -39,6 +39,15 @@ export type OperationSaleRow = {
   payments: OperationSalePayment[]
 }
 
+export type OperationExpenseLedgerRow = {
+  entryId: string
+  sourceType: "expense_payment" | "expense_void"
+  entryDate: string
+  amount: number
+  description: string
+  methodName: string | null
+}
+
 function parseMoney(v: unknown): number {
   const n = Number(v)
   if (!Number.isFinite(n)) return 0
@@ -75,16 +84,23 @@ function parseLineItems(raw: unknown): OperationSaleLineItem[] {
 }
 
 export async function getOperationsSales(popId: string): Promise<
-  | { success: true; popName: string; sales: OperationSaleRow[] }
+  | {
+      success: true
+      popName: string
+      sales: OperationSaleRow[]
+      expenseLedger: OperationExpenseLedgerRow[]
+    }
   | {
       success: false
       error: string
       redirect?: string
       sales: OperationSaleRow[]
+      expenseLedger: OperationExpenseLedgerRow[]
       popName?: string
     }
 > {
   const emptySales: OperationSaleRow[] = []
+  const emptyExpenseLedger: OperationExpenseLedgerRow[] = []
   try {
     const access = await validatePopAccess(popId)
     if (!access.hasAccess || !access.isActive) {
@@ -93,6 +109,7 @@ export async function getOperationsSales(popId: string): Promise<
         error: access.error || "Sin acceso",
         redirect: "/home",
         sales: emptySales,
+        expenseLedger: emptyExpenseLedger,
         popName: "",
       }
     }
@@ -109,6 +126,7 @@ export async function getOperationsSales(popId: string): Promise<
         error: "No tenés permiso para ver operaciones en este punto.",
         redirect: popMenuHref(await getPopSiteId(popId), popId),
         sales: emptySales,
+        expenseLedger: emptyExpenseLedger,
         popName: "",
       }
     }
@@ -158,6 +176,7 @@ export async function getOperationsSales(popId: string): Promise<
         success: false,
         error: saleErr.message || "No se pudieron cargar las ventas.",
         sales: emptySales,
+        expenseLedger: emptyExpenseLedger,
         popName,
       }
     }
@@ -199,13 +218,75 @@ export async function getOperationsSales(popId: string): Promise<
       }
     })
 
-    return { success: true, popName, sales }
+    const { data: aeRows, error: aeErr } = await supabase
+      .from("accounting_entries")
+      .select("id, entry_date, description, source_type, source_id, status")
+      .eq("pop_id", popId)
+      .in("source_type", ["expense_payment", "expense_void"])
+      .eq("status", "posted")
+      .order("entry_date", { ascending: false })
+      .limit(400)
+
+    if (aeErr) {
+      return {
+        success: false,
+        error: aeErr.message || "No se pudieron cargar los asientos de gastos.",
+        sales,
+        expenseLedger: emptyExpenseLedger,
+        popName,
+      }
+    }
+
+    const aeList = aeRows || []
+    const payIds = aeList
+      .map((r) => (r.source_id != null ? String(r.source_id) : ""))
+      .filter((id) => id.length > 0)
+
+    const amountByPaymentId = new Map<string, number>()
+    const methodByPaymentId = new Map<string, string>()
+    if (payIds.length > 0) {
+      const { data: epRows } = await supabase
+        .from("expense_payments")
+        .select(
+          `
+          id,
+          amount,
+          payment_methods ( name )
+        `,
+        )
+        .eq("pop_id", popId)
+        .in("id", payIds)
+      for (const p of epRows || []) {
+        const pid = String(p.id)
+        amountByPaymentId.set(pid, parseMoney(p.amount))
+        const pm = p.payment_methods as unknown as { name?: string } | null
+        methodByPaymentId.set(pid, pm?.name ? String(pm.name) : "—")
+      }
+    }
+
+    const expenseLedger: OperationExpenseLedgerRow[] = aeList.map((row) => {
+      const sid = row.source_id != null ? String(row.source_id) : ""
+      const src = String(row.source_type ?? "")
+      const amt = amountByPaymentId.get(sid) ?? 0
+      return {
+        entryId: String(row.id),
+        sourceType:
+          src === "expense_void" ? "expense_void" : "expense_payment",
+        entryDate: String(row.entry_date ?? "").slice(0, 10),
+        amount: amt,
+        description: String(row.description ?? "").trim() || "—",
+        methodName: methodByPaymentId.get(sid) ?? null,
+      }
+    })
+
+    return { success: true, popName, sales, expenseLedger }
   } catch (e: unknown) {
     const message = e instanceof Error ? e.message : "Error desconocido"
     return {
       success: false,
       error: message,
       sales: emptySales,
+      expenseLedger: emptyExpenseLedger,
       popName: "",
     }
   }

@@ -4,6 +4,8 @@ import { useCallback, useState } from "react"
 import type { MouseEvent } from "react"
 import Image from "next/image"
 import {
+  Briefcase,
+  CalendarDays,
   ChevronDown,
   Store,
   UtensilsCrossed,
@@ -63,6 +65,36 @@ const RUBROS = [
       "Materiales, BOM y trazabilidad básica",
       "Stock de insumos y producto terminado",
       "Compras y proveedores alineados a la planta",
+    ],
+  },
+  {
+    id: "servicios",
+    title: "Servicios",
+    imageSrc:
+      "https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?w=1200&q=80",
+    icon: Briefcase,
+    description:
+      "Estudios, consultorías y agencias: presupuestos, clientes y cobros sin depósito.",
+    bullets: [
+      "Presupuestos y órdenes de trabajo",
+      "Clientes, cuentas corrientes y seguimiento",
+      "Facturación y gastos del estudio",
+      "Reportes para proyectar ingresos y margen",
+    ],
+  },
+  {
+    id: "reservas",
+    title: "Reservas y turnos",
+    imageSrc:
+      "https://images.unsplash.com/photo-1516574187841-687cf121456c?w=1200&q=80",
+    icon: CalendarDays,
+    description:
+      "Canchas, salud y belleza: agenda, cupos y cobro de cada turno en un solo lugar.",
+    bullets: [
+      "Agenda por profesional, cancha o consultorio",
+      "Recordatorios y control de asistencia",
+      "Clientes y historial de sesiones",
+      "Pagos, facturas y cierres de caja",
     ],
   },
 ] as const
@@ -288,7 +320,7 @@ export function RubrosSection() {
           varias empresas o puntos de venta en el mismo lugar.
         </p>
 
-        <div className="mt-10 grid auto-rows-fr gap-5 [perspective:1400px] sm:grid-cols-2 sm:gap-6 sm:mt-12 lg:grid-cols-3 lg:gap-7">
+        <div className="mt-10 grid auto-rows-fr gap-5 [perspective:1400px] sm:mt-12 sm:grid-cols-2 sm:gap-6 lg:grid-cols-3 lg:gap-7">
           {RUBROS.map((rubro) => (
             <RubroCard key={rubro.id} rubro={rubro} />
           ))}

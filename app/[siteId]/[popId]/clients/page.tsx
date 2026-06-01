@@ -8,75 +8,292 @@ import {
   type ClientTableRow,
   type UpsertPopClientInput,
 } from "@/app/[siteId]/[popId]/clients/actions"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { CLIENT_IVA_CONDITION_OPTIONS } from "@/app/[siteId]/[popId]/clients/clientIvaConstants"
+import { buildPaginationItems } from "@/app/[siteId]/[popId]/layout/layoutPreviewPagination"
+import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
+import { Checkbox } from "@/components/ui/checkbox"
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import {
-  Table,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
+import {
   TableBody,
   TableCell,
   TableHead,
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
+import { Switch } from "@/components/ui/switch"
 import { Textarea } from "@/components/ui/textarea"
-import { useAuth } from "@/context/AuthContextSupabase"
+import { DataWorkspaceListPaginationFooter } from "@/components/data-workspace/DataWorkspaceListPaginationFooter"
+import {
+  DataWorkspaceTableIconAction,
+  DataWorkspaceTableMoney,
+} from "@/components/data-workspace/DataWorkspaceListTablePrimitives"
+import { DataWorkspaceListTableShell } from "@/components/data-workspace/DataWorkspaceListTableShell"
+import {
+  DataWorkspaceListToolbar,
+  DataWorkspaceToolbarFilterCard,
+  DataWorkspaceToolbarSearchCard,
+} from "@/components/data-workspace/DataWorkspaceListToolbar"
+import {
+  dataWorkspaceShellCard,
+  selectColumnInnerClass,
+  tableRowSelectCheckboxClass,
+  thBase,
+  workspaceDataTableClassName,
+  workspaceTableBodyRowClassNames,
+} from "@/components/data-workspace/dataWorkspaceListStyles"
+import {
+  DataWorkspaceLayout,
+} from "@/components/layouts/DataWorkspaceLayout"
+import { DataWorkspaceSidebar } from "@/components/layouts/DataWorkspaceSidebar"
+import {
+  CLIENT_TABLE_PAGE_SIZES,
+  mergeClientsWorkspaceUrl,
+  parseClientsWorkspaceUrl,
+} from "@/app/[siteId]/[popId]/clients/workspaceUrl"
+import { getWorkspaceHeaderForPop } from "@/lib/workspaceHeaderServer"
+import { cn } from "@/lib/utils"
 import withAuth from "@/hoc/withAuth"
 import { usePadronAutofillRazonSocial } from "@/hooks/usePadronAutofillRazonSocial"
-import { popMenuHref } from "@/lib/popRoutes"
-import { cn } from "@/lib/utils"
 import {
-  ArrowLeft,
-  Leaf,
+  Copy,
+  Filter,
   Loader2,
-  Maximize2,
-  Minimize2,
+  MoreVertical,
+  Pencil,
   Plus,
-  Users,
-  Wifi,
-  WifiOff,
+  Search,
+  Table2,
+  Trash2,
+  X,
 } from "lucide-react"
-import Link from "next/link"
-import { useParams, useRouter } from "next/navigation"
+import {
+  useParams,
+  usePathname,
+  useRouter,
+  useSearchParams,
+} from "next/navigation"
 import {
   useCallback,
   useEffect,
   useMemo,
+  useId,
   useRef,
   useState,
   type FormEvent,
 } from "react"
 
-function emptyForm(): UpsertPopClientInput {
-  return { name: "", email: "", phone: "", taxId: "", notes: "" }
+const clientsSk = {
+  bar: "animate-pulse rounded-[3px] bg-muted-foreground/12 dark:bg-muted-foreground/[0.14]",
+  barSm: "animate-pulse rounded-[3px] bg-muted-foreground/8 dark:bg-muted-foreground/11",
+  pill: "animate-pulse rounded-full bg-muted-foreground/12 dark:bg-muted-foreground/[0.14]",
+  box: "animate-pulse rounded-sm bg-muted-foreground/10 dark:bg-muted-foreground/[0.12]",
+} as const
+
+function ClientsTableSkeletonRows({
+  rowCount,
+  hasActionsColumn,
+}: {
+  rowCount: number
+  hasActionsColumn: boolean
+}) {
+  return (
+    <>
+      {Array.from({ length: rowCount }).map((_, i) => (
+        <TableRow
+          key={`sk-${i}`}
+          className={cn(
+            "border-border/50",
+            i % 2 === 0
+              ? "bg-white/30"
+              : "bg-muted/25 dark:bg-muted/15",
+          )}
+          aria-hidden
+        >
+          <TableCell className="w-12 !px-0 py-2 align-middle">
+            <div className={selectColumnInnerClass}>
+              <div
+                className={cn("mx-auto size-4 shrink-0", clientsSk.box)}
+              />
+            </div>
+          </TableCell>
+          <TableCell className="min-w-0 px-3 py-2.5 align-middle">
+            <div className={cn("h-3.5 w-[72%] max-w-[11rem]", clientsSk.bar)} />
+            <div
+              className={cn("mt-1.5 h-2.5 w-[45%] max-w-[7rem]", clientsSk.barSm)}
+            />
+          </TableCell>
+          <TableCell className="min-w-0 max-w-[12rem] px-3 py-2.5 align-middle">
+            <div className={cn("h-3.5 w-full max-w-[10.5rem]", clientsSk.bar)} />
+          </TableCell>
+          <TableCell className="min-w-0 max-w-[9rem] px-3 py-2.5 align-middle">
+            <div className={cn("h-3.5 w-[5.5rem]", clientsSk.bar)} />
+          </TableCell>
+          <TableCell className="w-[7.5rem] px-3 py-2.5 align-middle">
+            <div className={cn("h-3.5 w-16", clientsSk.bar)} />
+          </TableCell>
+          <TableCell className="min-w-[8.5rem] px-3 py-2.5 align-middle">
+            <div className={cn("inline-block h-5 w-[6.5rem]", clientsSk.pill)} />
+          </TableCell>
+          <TableCell className="w-[7.25rem] whitespace-nowrap px-3 py-2.5 align-middle">
+            <div className={cn("h-3.5 w-[4.5rem]", clientsSk.bar)} />
+          </TableCell>
+          <TableCell className="min-w-[8.5rem] px-3 py-2.5 text-right align-middle tabular-nums">
+            <div className="flex flex-col items-end gap-1">
+              <div className={cn("h-3 w-24", clientsSk.bar)} />
+              <div className={cn("h-2.5 w-20", clientsSk.barSm)} />
+            </div>
+          </TableCell>
+          {hasActionsColumn ? (
+            <TableCell className="w-[7.25rem] px-1 py-1.5 align-middle">
+              <div className="flex items-center justify-end gap-0.5">
+                <div className={cn("size-8 shrink-0 rounded-md", clientsSk.box)} />
+                <div className={cn("size-8 shrink-0 rounded-md", clientsSk.box)} />
+                <div className={cn("size-8 shrink-0 rounded-md", clientsSk.box)} />
+              </div>
+            </TableCell>
+          ) : null}
+        </TableRow>
+      ))}
+    </>
+  )
 }
+
+function ClientsTableFooterSkeleton() {
+  return (
+    <div
+      className="flex min-w-0 flex-wrap items-center justify-between gap-3 px-3 py-3 sm:px-4"
+      aria-hidden
+    >
+      <div className="flex min-w-0 flex-wrap items-center gap-x-4 gap-y-2">
+        <div className={cn("h-3.5 w-52 max-w-[min(100%,20rem)]", clientsSk.bar)} />
+        <div className={cn("h-8 w-[4.25rem] rounded-md", clientsSk.box)} />
+      </div>
+      <div className="flex flex-wrap items-center justify-center gap-1 sm:justify-end">
+        <div className={cn("size-8 rounded-md", clientsSk.box)} />
+        <div className={cn("h-8 w-36 rounded-md", clientsSk.box)} />
+        <div className={cn("size-8 rounded-md", clientsSk.box)} />
+      </div>
+    </div>
+  )
+}
+
+function emptyForm(): UpsertPopClientInput {
+  return {
+    name: "",
+    email: "",
+    phone: "",
+    taxId: "",
+    notes: "",
+    ivaCondition: "",
+    addressLine: "",
+    isActive: true,
+  }
+}
+
+const IVA_LABEL_BY_VALUE = Object.fromEntries(
+  CLIENT_IVA_CONDITION_OPTIONS.map((o) => [o.value, o.label]),
+) as Record<string, string>
+
+function formatArs(amount: number) {
+  return amount.toLocaleString("es-AR", {
+    style: "currency",
+    currency: "ARS",
+    minimumFractionDigits: amount % 1 === 0 ? 0 : 2,
+    maximumFractionDigits: 2,
+  })
+}
+
+function formatShortSaleDate(iso: string | null) {
+  if (!iso) return "—"
+  const d = new Date(iso)
+  if (Number.isNaN(d.getTime())) return "—"
+  return d.toLocaleDateString("es-AR", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+  })
+}
+
+const VIEW_ITEMS = [
+  { id: "list", label: "Listado", icon: Table2 },
+] as const
+
+const CREATION_NEW_CLIENT = {
+  id: "new-client",
+  label: "Nuevo cliente",
+  icon: Plus,
+} as const
+
+type ClientsAppliedFilters = {
+  withEmail: boolean
+  withTaxId: boolean
+  soloActivos: boolean
+}
+
+const defaultClientsFilters = (): ClientsAppliedFilters => ({
+  withEmail: false,
+  withTaxId: false,
+  soloActivos: false,
+})
 
 function ClientsPage() {
   const router = useRouter()
   const routerRef = useRef(router)
   routerRef.current = router
+  const pathname = usePathname()
+  const searchParams = useSearchParams()
   const params = useParams()
-  const { user } = useAuth()
   const siteId = typeof params?.siteId === "string" ? params.siteId : ""
   const popId = typeof params?.popId === "string" ? params.popId : undefined
 
+  const workspaceParsed = useMemo(
+    () => parseClientsWorkspaceUrl(searchParams),
+    [searchParams],
+  )
+
+  const replaceWorkspaceQuery = useCallback(
+    (patch: Parameters<typeof mergeClientsWorkspaceUrl>[1]) => {
+      const qs = mergeClientsWorkspaceUrl(searchParams, patch)
+      const next = qs ? `${pathname}?${qs}` : pathname
+      router.replace(next, { scroll: false })
+    },
+    [pathname, router, searchParams],
+  )
+
   const [popName, setPopName] = useState("")
   const [rows, setRows] = useState<ClientTableRow[]>([])
+  const [totalCount, setTotalCount] = useState(0)
   const [canCreate, setCanCreate] = useState(false)
   const [canUpdate, setCanUpdate] = useState(false)
   const [canDelete, setCanDelete] = useState(false)
-  const [loading, setLoading] = useState(true)
+  const [listFetching, setListFetching] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const fetchGenRef = useRef(0)
 
-  const [createOpen, setCreateOpen] = useState(false)
+  const [searchInput, setSearchInput] = useState(workspaceParsed.q)
   const [createSaving, setCreateSaving] = useState(false)
   const [createBanner, setCreateBanner] = useState<string | null>(null)
   const [createForm, setCreateForm] = useState(emptyForm)
@@ -89,8 +306,28 @@ function ClientsPage() {
   const [deleteRow, setDeleteRow] = useState<ClientTableRow | null>(null)
   const [deleteBusy, setDeleteBusy] = useState(false)
 
-  const [isOnline, setIsOnline] = useState(true)
-  const [isFullscreen, setIsFullscreen] = useState(false)
+  const searchInputId = useId()
+  const [filtersModalOpen, setFiltersModalOpen] = useState(false)
+  const [draftFilters, setDraftFilters] = useState<ClientsAppliedFilters>(
+    defaultClientsFilters,
+  )
+
+  const pageSizeLabelId = useId()
+  const [selected, setSelected] = useState<Set<string>>(() => new Set())
+  const [workspaceHeader, setWorkspaceHeader] = useState<{
+    userFullName: string
+    userImageUrl: string | null
+    roleLabel: string
+  } | null>(null)
+
+  const sidebarActiveId =
+    workspaceParsed.view === "new-client"
+      ? CREATION_NEW_CLIENT.id
+      : workspaceParsed.view
+
+  const createOpen = Boolean(
+    canCreate && workspaceParsed.view === "new-client",
+  )
 
   const createPadron = usePadronAutofillRazonSocial(popId, createForm.taxId, {
     enabled: Boolean(popId) && createOpen && canCreate,
@@ -99,50 +336,110 @@ function ClientsPage() {
     enabled: Boolean(popId) && editRow !== null && canUpdate,
   })
 
-  const load = useCallback(async () => {
-    if (!popId || !siteId) return
-    const res = await getPopClientsTable(popId)
-    if (!res.success) {
-      setError(res.error || "Error")
-      setRows([])
-      setCanCreate(false)
-      setCanUpdate(false)
-      setCanDelete(false)
-      if (res.redirect) {
-        setTimeout(() => routerRef.current.push(res.redirect!), 1200)
-      }
-      return
+  const fetchWorkspaceHeader = useCallback(async () => {
+    if (!popId) return
+    const head = await getWorkspaceHeaderForPop(popId)
+    if (head.success) {
+      setWorkspaceHeader({
+        userFullName: head.userFullName,
+        userImageUrl: head.userImageUrl,
+        roleLabel: head.roleLabel,
+      })
+    } else {
+      setWorkspaceHeader(null)
     }
-    setRows(res.clients)
-    setPopName(res.popName)
-    setCanCreate(res.canCreate)
-    setCanUpdate(res.canUpdate)
-    setCanDelete(res.canDelete)
+  }, [popId])
+
+  const fetchClientList = useCallback(async () => {
+    if (!popId || !siteId) return
+    const gen = ++fetchGenRef.current
+    setListFetching(true)
     setError(null)
-  }, [popId, siteId])
+    try {
+      const tableInput = {
+        page: workspaceParsed.page,
+        pageSize: workspaceParsed.pageSize,
+        search: workspaceParsed.q,
+        soloActivos: workspaceParsed.soloActivos,
+        withEmail: workspaceParsed.withEmail,
+        withTaxId: workspaceParsed.withTaxId,
+      }
+      const res = await getPopClientsTable(popId, tableInput)
+      if (gen !== fetchGenRef.current) return
+      if (!res.success) {
+        setError(res.error || "Error")
+        setRows([])
+        setTotalCount(0)
+        setCanCreate(false)
+        setCanUpdate(false)
+        setCanDelete(false)
+        if (res.redirect) {
+          setTimeout(() => routerRef.current.push(res.redirect!), 1200)
+        }
+        return
+      }
+      setRows(res.clients)
+      setTotalCount(res.totalCount)
+      setPopName(res.popName)
+      setCanCreate(res.canCreate)
+      setCanUpdate(res.canUpdate)
+      setCanDelete(res.canDelete)
+      setError(null)
+      if (res.page !== workspaceParsed.page) {
+        replaceWorkspaceQuery({ page: res.page })
+      }
+    } catch {
+      if (gen === fetchGenRef.current) {
+        setError("Unexpected error")
+      }
+    } finally {
+      if (gen === fetchGenRef.current) {
+        setListFetching(false)
+      }
+    }
+  }, [popId, siteId, workspaceParsed, replaceWorkspaceQuery])
+
+  useEffect(() => {
+    setPopName("")
+    setRows([])
+    setTotalCount(0)
+  }, [popId])
+
+  useEffect(() => {
+    if (!popId || !siteId) return
+    void fetchWorkspaceHeader()
+  }, [popId, siteId, fetchWorkspaceHeader])
+
+  useEffect(() => {
+    setSearchInput(workspaceParsed.q)
+  }, [workspaceParsed.q])
+
+  useEffect(() => {
+    const t = window.setTimeout(() => {
+      const next = searchInput.trim()
+      if (next === workspaceParsed.q.trim()) return
+      replaceWorkspaceQuery({ q: next, page: 1 })
+    }, 400)
+    return () => window.clearTimeout(t)
+  }, [searchInput, workspaceParsed.q, replaceWorkspaceQuery])
+
+  useEffect(() => {
+    setSelected(new Set())
+  }, [searchParams])
+
+  useEffect(() => {
+    if (workspaceParsed.view !== "new-client" || canCreate) return
+    replaceWorkspaceQuery({ view: "list" })
+  }, [workspaceParsed.view, canCreate, replaceWorkspaceQuery])
 
   useEffect(() => {
     if (!popId || !siteId) {
-      setLoading(false)
+      setListFetching(false)
       setError("Store ID not found")
       return
     }
-    let cancelled = false
-    ;(async () => {
-      setLoading(true)
-      setError(null)
-      try {
-        await load()
-      } catch {
-        if (!cancelled) setError("Unexpected error")
-      } finally {
-        if (!cancelled) setLoading(false)
-      }
-    })()
-    return () => {
-      cancelled = true
-    }
-  }, [popId, siteId, load])
+    void fetchClientList()
+  }, [popId, siteId, fetchClientList])
 
   useEffect(() => {
     if (!createOpen || !canCreate) return
@@ -158,38 +455,22 @@ function ClientsPage() {
     setEditForm((f) => ({ ...f, name: editPadron.razonSocial }))
   }, [editPadron.razonSocial, editPadron.busy, editRow, canUpdate])
 
-  useEffect(() => {
-    setIsOnline(navigator.onLine)
-    const on = () => setIsOnline(true)
-    const off = () => setIsOnline(false)
-    window.addEventListener("online", on)
-    window.addEventListener("offline", off)
-    return () => {
-      window.removeEventListener("online", on)
-      window.removeEventListener("offline", off)
-    }
-  }, [])
-
-  useEffect(() => {
-    const sync = () => setIsFullscreen(Boolean(document.fullscreenElement))
-    sync()
-    document.addEventListener("fullscreenchange", sync)
-    return () => document.removeEventListener("fullscreenchange", sync)
-  }, [])
-
-  const toggleFullscreen = async () => {
-    if (document.fullscreenElement) {
-      await document.exitFullscreen()
-      return
-    }
-    await document.documentElement.requestFullscreen()
-  }
-
-  const openCreate = () => {
+  const openCreate = useCallback(() => {
     setCreateBanner(null)
     setCreateForm(emptyForm())
-    setCreateOpen(true)
-  }
+    replaceWorkspaceQuery({ view: "new-client" })
+  }, [replaceWorkspaceQuery])
+
+  const handleSidebarSelect = useCallback(
+    (id: string) => {
+      if (id === CREATION_NEW_CLIENT.id) {
+        openCreate()
+        return
+      }
+      replaceWorkspaceQuery({ view: id })
+    },
+    [openCreate, replaceWorkspaceQuery],
+  )
 
   const submitCreate = async (e: FormEvent) => {
     e.preventDefault()
@@ -202,8 +483,8 @@ function ClientsPage() {
       setCreateBanner(res.error)
       return
     }
-    setCreateOpen(false)
-    await load()
+    replaceWorkspaceQuery({ view: "list" })
+    await fetchClientList()
   }
 
   const openEdit = (row: ClientTableRow) => {
@@ -215,6 +496,9 @@ function ClientsPage() {
       phone: row.phone,
       taxId: row.taxId,
       notes: row.notes,
+      ivaCondition: row.ivaCondition ?? "",
+      addressLine: row.addressLine,
+      isActive: row.isActive,
     })
   }
 
@@ -230,7 +514,7 @@ function ClientsPage() {
       return
     }
     setEditRow(null)
-    await load()
+    await fetchClientList()
   }
 
   const submitDelete = async () => {
@@ -243,22 +527,54 @@ function ClientsPage() {
       return
     }
     setDeleteRow(null)
-    await load()
+    await fetchClientList()
   }
 
-  const headerUserName = useMemo(() => {
-    const meta = user?.user_metadata?.full_name
-    if (typeof meta === "string" && meta.trim()) return meta.trim()
-    return user?.email?.split("@")[0] || "User"
-  }, [user?.email, user?.user_metadata?.full_name])
+  const emptyCols = 1 + 7 + (canUpdate || canDelete ? 1 : 0)
+  const skeletonRowCount = Math.min(12, Math.max(5, workspaceParsed.pageSize))
 
-  const userAvatarSrc =
-    user?.user_metadata?.avatar_url ||
-    `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(user?.email || "u")}`
+  const hasFilterChips =
+    workspaceParsed.q.trim() !== "" ||
+    workspaceParsed.withEmail ||
+    workspaceParsed.withTaxId ||
+    workspaceParsed.soloActivos
 
-  const popLogoSrc = `https://api.dicebear.com/7.x/shapes/svg?seed=${encodeURIComponent(popId || "pop")}&backgroundColor=e8f5ef`
+  const totalPages = useMemo(
+    () =>
+      Math.max(
+        1,
+        Math.ceil(totalCount / Math.max(1, workspaceParsed.pageSize)),
+      ),
+    [totalCount, workspaceParsed.pageSize],
+  )
 
-  const emptyCols = canUpdate || canDelete ? 6 : 5
+  const currentPage = workspaceParsed.page
+
+  const pageRows = rows
+
+  const visibleIds = useMemo(() => pageRows.map((r) => r.id), [pageRows])
+
+  const allVisibleSelected =
+    visibleIds.length > 0 && visibleIds.every((id) => selected.has(id))
+  const someVisibleSelected = visibleIds.some((id) => selected.has(id))
+
+  const rangeLabel = useMemo(() => {
+    if (totalCount === 0) return { start: 0, end: 0 }
+    const ps = workspaceParsed.pageSize
+    const start = (currentPage - 1) * ps + 1
+    const end = Math.min(currentPage * ps, totalCount)
+    return { start, end }
+  }, [currentPage, workspaceParsed.pageSize, totalCount])
+
+  const paginationItems = useMemo(
+    () => buildPaginationItems(totalPages, currentPage),
+    [totalPages, currentPage],
+  )
+
+  const creationItems = useMemo(
+    () => (canCreate ? [CREATION_NEW_CLIENT] : []),
+    [canCreate],
+  )
 
   if (!popId || !siteId) {
     return (
@@ -269,230 +585,566 @@ function ClientsPage() {
   }
 
   return (
-    <div className="rootsy-app-light relative min-h-screen overflow-hidden bg-background text-foreground">
-      <div
-        className="pointer-events-none absolute inset-0 motion-reduce:opacity-50"
-        aria-hidden
-      >
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_50%_at_50%_-20%,oklch(0.75_0.12_155/0.35),transparent),radial-gradient(ellipse_60%_40%_at_100%_50%,oklch(0.85_0.08_140/0.2),transparent)]" />
-        <div className="absolute inset-0 bg-[linear-gradient(oklch(0.92_0.02_130/0.35)_1px,transparent_1px),linear-gradient(90deg,oklch(0.92_0.02_130/0.35)_1px,transparent_1px)] bg-size-[48px_48px] opacity-40" />
-      </div>
-
-      <div className="relative z-10 flex min-h-screen flex-col">
-        <header className="border-b border-rootsy-hairline bg-card/90 shadow-sm backdrop-blur-xl">
-          <div className="grid h-18 grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-4 px-4">
-            <div className="flex min-w-0 items-center gap-3">
-              <Link
-                href={popMenuHref(siteId, popId)}
-                className="group inline-flex size-10 items-center justify-center rounded-xl border border-foreground/10 bg-secondary text-foreground/70 transition-all hover:border-primary/25 hover:bg-muted hover:text-foreground"
-                aria-label="Back to menu"
-              >
-                <ArrowLeft className="size-5 transition-transform group-hover:-translate-x-0.5" />
-              </Link>
-              <div className="h-6 w-px bg-border" />
-              <div className="flex min-w-0 items-center gap-2.5">
-                <div className="size-8 overflow-hidden rounded-lg ring-1 ring-border">
-                  <img
-                    src={popLogoSrc}
-                    alt=""
-                    className="size-full object-cover"
-                  />
-                </div>
-                <span className="truncate text-sm font-semibold text-foreground/90">
-                  {popName || (loading ? "…" : "—")}
-                </span>
-              </div>
-            </div>
-
-            <div className="flex items-center gap-2">
-              <h1 className="flex items-center gap-2 text-[1.65rem] font-black tracking-tight text-foreground">
-                <span className="inline-flex size-9 items-center justify-center rounded-xl bg-primary/15 text-primary">
-                  <Users className="size-5" aria-hidden />
-                </span>
-                Clients
-              </h1>
-              <div
-                className={cn(
-                  "inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-widest",
-                  isOnline
-                    ? "border-primary/30 bg-primary/10 text-forest"
-                    : "border-destructive/30 bg-destructive/10 text-destructive",
-                )}
-              >
-                {isOnline ? (
-                  <Wifi className="size-3" aria-hidden />
-                ) : (
-                  <WifiOff className="size-3" aria-hidden />
-                )}
-                {isOnline ? "Online" : "Offline"}
-              </div>
-            </div>
-
-            <div className="flex shrink-0 items-center justify-end gap-2">
-              {canCreate ? (
-                <Button
-                  type="button"
-                  size="sm"
-                  className="h-9 gap-1.5 rounded-xl bg-primary text-primary-foreground shadow-sm hover:bg-primary/90"
-                  onClick={() => openCreate()}
-                >
-                  <Plus className="size-4" aria-hidden />
-                  <span className="hidden sm:inline">New client</span>
-                </Button>
-              ) : null}
-              <button
-                type="button"
-                onClick={() => void toggleFullscreen()}
-                className="group inline-flex size-9 items-center justify-center rounded-xl text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-                aria-label={isFullscreen ? "Exit fullscreen" : "Fullscreen"}
-              >
-                {isFullscreen ? (
-                  <Minimize2 className="size-4.5" />
-                ) : (
-                  <Maximize2 className="size-4.5" />
-                )}
-              </button>
-              <div className="h-6 w-px bg-border" />
-              <div className="flex items-center gap-3">
-                <Avatar className="size-10 ring-1 ring-border">
-                  <AvatarImage src={userAvatarSrc} alt="" />
-                  <AvatarFallback className="bg-primary/10 text-xs text-primary">
-                    {headerUserName.slice(0, 2).toUpperCase()}
-                  </AvatarFallback>
-                </Avatar>
-                <div className="hidden min-w-0 flex-col leading-tight sm:flex">
-                  <span className="truncate text-sm font-semibold text-foreground/90">
-                    {headerUserName}
-                  </span>
-                  <span className="flex items-center gap-1 text-[10px] font-semibold uppercase tracking-wider text-meadow">
-                    <Leaf className="size-3" aria-hidden />
-                    CRM
-                  </span>
-                </div>
-              </div>
-            </div>
+    <DataWorkspaceLayout
+      siteId={siteId}
+      popId={popId}
+      popName={popName}
+      title="Clientes"
+      headerVariant="dark"
+      loading={!popName && listFetching}
+      userName={workspaceHeader?.userFullName}
+      userAvatarSrc={workspaceHeader?.userImageUrl ?? undefined}
+      userRoleLabel={workspaceHeader?.roleLabel}
+      sidebar={
+        <DataWorkspaceSidebar
+          creationItems={creationItems}
+          viewItems={VIEW_ITEMS}
+          activeId={sidebarActiveId}
+          onSelect={handleSidebarSelect}
+          creationSectionLabel="Nuevo"
+          viewsSectionLabel="En esta sección"
+        />
+      }
+    >
+      <>
+        {error ? (
+          <div className="rounded-2xl border border-destructive/25 bg-destructive/5 px-4 py-3 text-sm text-destructive">
+            {error}
           </div>
-        </header>
-
-        <main className="relative z-10 mx-auto w-full max-w-6xl flex-1 px-4 py-8 sm:px-6">
-          {loading ? (
-            <p className="text-sm text-muted-foreground">Loading clients…</p>
-          ) : error ? (
-            <div className="rounded-2xl border border-destructive/25 bg-destructive/5 px-4 py-3 text-sm text-destructive">
-              {error}
-            </div>
-          ) : (
-            <div className="space-y-6">
-              <div>
-                <h2 className="text-lg font-semibold text-foreground">
-                  Customer directory
-                </h2>
-                <p className="max-w-xl text-sm text-muted-foreground">
-                  Manage contact and tax data for this store. Changes follow
-                  your role and RLS.
-                </p>
-              </div>
-
-              <div className="overflow-hidden rounded-2xl border border-border bg-card/95 shadow-md shadow-primary/5 backdrop-blur-sm">
-                <Table>
-                  <TableHeader>
-                    <TableRow className="border-border bg-muted/40 hover:bg-muted/40">
-                      <TableHead className="font-semibold text-foreground">
-                        Name
-                      </TableHead>
-                      <TableHead className="font-semibold text-foreground">
-                        Email
-                      </TableHead>
-                      <TableHead className="font-semibold text-foreground">
-                        Phone
-                      </TableHead>
-                      <TableHead className="font-semibold text-foreground">
-                        Tax ID
-                      </TableHead>
-                      <TableHead className="font-semibold text-foreground">
-                        Notes
-                      </TableHead>
-                      {canUpdate || canDelete ? (
-                        <TableHead className="text-right font-semibold text-foreground">
-                          Actions
-                        </TableHead>
-                      ) : null}
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {rows.length === 0 ? (
-                      <TableRow>
-                        <TableCell
-                          colSpan={emptyCols}
-                          className="py-12 text-center text-muted-foreground"
+        ) : null}
+        {workspaceParsed.view === "list" ||
+        workspaceParsed.view === "new-client" ? (
+          <div className="relative flex min-h-0 flex-1 flex-col gap-6">
+            <DataWorkspaceListToolbar
+              filters={
+                <DataWorkspaceToolbarFilterCard label="Filtros">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="mt-2 h-9 w-full gap-2 border-border/60 bg-muted/20 shadow-sm dark:bg-background/30"
+                    onClick={() => {
+                      setDraftFilters({
+                        withEmail: workspaceParsed.withEmail,
+                        withTaxId: workspaceParsed.withTaxId,
+                        soloActivos: workspaceParsed.soloActivos,
+                      })
+                      setFiltersModalOpen(true)
+                    }}
+                  >
+                    <Filter className="size-4" aria-hidden />
+                    Configurar
+                  </Button>
+                </DataWorkspaceToolbarFilterCard>
+              }
+              search={
+                <DataWorkspaceToolbarSearchCard label="Buscar">
+                  <div className="relative mt-2 min-w-0">
+                    <Search
+                      className="pointer-events-none absolute left-2.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground"
+                      aria-hidden
+                    />
+                    <Input
+                      id={searchInputId}
+                      type="search"
+                      value={searchInput}
+                      onChange={(e) => setSearchInput(e.target.value)}
+                      placeholder="Nombre, contacto, CUIT, dirección, IVA…"
+                      className="h-9 border-border/60 bg-muted/25 pl-9 shadow-none dark:bg-background/40"
+                      aria-label="Buscar clientes"
+                    />
+                  </div>
+                </DataWorkspaceToolbarSearchCard>
+              }
+              chips={
+                hasFilterChips ? (
+                  <div className={cn(dataWorkspaceShellCard, "px-4 py-3")}>
+                    <p className="mb-2 text-[11px] font-medium uppercase tracking-[0.12em] text-muted-foreground">
+                      Filtros aplicados
+                    </p>
+                    <div className="flex flex-wrap items-center gap-1.5">
+                      {workspaceParsed.q.trim() ? (
+                        <Badge
+                          variant="secondary"
+                          className="max-w-full gap-1 border-border/50 py-0 pr-0.5 font-normal"
                         >
-                          No clients yet or no read access from the server.
-                        </TableCell>
-                      </TableRow>
-                    ) : (
-                      rows.map((r) => (
-                        <TableRow
-                          key={r.id}
-                          className="border-border/80 hover:bg-muted/30"
-                        >
-                          <TableCell className="font-medium text-foreground">
-                            {r.name || "—"}
-                          </TableCell>
-                          <TableCell className="text-muted-foreground">
-                            {r.email || "—"}
-                          </TableCell>
-                          <TableCell className="text-muted-foreground">
-                            {r.phone || "—"}
-                          </TableCell>
-                          <TableCell className="text-muted-foreground">
-                            {r.taxId || "—"}
-                          </TableCell>
-                          <TableCell
-                            className="max-w-[180px] truncate text-muted-foreground"
-                            title={r.notes}
+                          <span className="truncate">
+                            Buscar: «{workspaceParsed.q.trim()}»
+                          </span>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            className="size-6 shrink-0"
+                            onClick={() =>
+                              replaceWorkspaceQuery({ q: "", page: 1 })
+                            }
+                            aria-label="Quitar búsqueda"
                           >
-                            {r.notes || "—"}
-                          </TableCell>
-                          {canUpdate || canDelete ? (
-                            <TableCell className="text-right">
-                              <div className="flex justify-end gap-2">
-                                {canUpdate ? (
-                                  <Button
-                                    type="button"
-                                    variant="ghost"
-                                    size="sm"
-                                    className="text-primary hover:bg-primary/10 hover:text-forest"
-                                    onClick={() => openEdit(r)}
-                                  >
-                                    Edit
-                                  </Button>
-                                ) : null}
-                                {canDelete ? (
-                                  <Button
-                                    type="button"
-                                    variant="ghost"
-                                    size="sm"
-                                    className="text-destructive hover:bg-destructive/10"
-                                    onClick={() => setDeleteRow(r)}
-                                  >
-                                    Delete
-                                  </Button>
-                                ) : null}
-                              </div>
-                            </TableCell>
-                          ) : null}
-                        </TableRow>
-                      ))
-                    )}
-                  </TableBody>
-                </Table>
-              </div>
-            </div>
-          )}
-        </main>
-      </div>
+                            <X className="size-3" />
+                          </Button>
+                        </Badge>
+                      ) : null}
+                      {workspaceParsed.withEmail ? (
+                        <Badge
+                          variant="secondary"
+                          className="gap-1 border-border/50 py-0 pr-0.5 font-normal"
+                        >
+                          Con e-mail
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            className="size-6 shrink-0"
+                            onClick={() =>
+                              replaceWorkspaceQuery({ withEmail: false, page: 1 })
+                            }
+                            aria-label="Quitar filtro con e-mail"
+                          >
+                            <X className="size-3" />
+                          </Button>
+                        </Badge>
+                      ) : null}
+                      {workspaceParsed.withTaxId ? (
+                        <Badge
+                          variant="secondary"
+                          className="gap-1 border-border/50 py-0 pr-0.5 font-normal"
+                        >
+                          Con CUIT / DNI
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            className="size-6 shrink-0"
+                            onClick={() =>
+                              replaceWorkspaceQuery({ withTaxId: false, page: 1 })
+                            }
+                            aria-label="Quitar filtro CUIT"
+                          >
+                            <X className="size-3" />
+                          </Button>
+                        </Badge>
+                      ) : null}
+                      {workspaceParsed.soloActivos ? (
+                        <Badge
+                          variant="secondary"
+                          className="gap-1 border-border/50 py-0 pr-0.5 font-normal"
+                        >
+                          Solo activos
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            className="size-6 shrink-0"
+                            onClick={() =>
+                              replaceWorkspaceQuery({ soloActivos: false, page: 1 })
+                            }
+                            aria-label="Quitar filtro solo activos"
+                          >
+                            <X className="size-3" />
+                          </Button>
+                        </Badge>
+                      ) : null}
+                    </div>
+                  </div>
+                ) : null
+              }
+            />
 
-      <Dialog open={createOpen} onOpenChange={(o) => !o && setCreateOpen(false)}>
+            <Dialog
+              open={filtersModalOpen}
+              onOpenChange={(open) => {
+                if (open) {
+                  setDraftFilters({
+                    withEmail: workspaceParsed.withEmail,
+                    withTaxId: workspaceParsed.withTaxId,
+                    soloActivos: workspaceParsed.soloActivos,
+                  })
+                }
+                setFiltersModalOpen(open)
+              }}
+            >
+              <DialogContent className="gap-0 sm:max-w-md" showCloseButton>
+                <DialogHeader>
+                  <DialogTitle>Filtros</DialogTitle>
+                  <DialogDescription>
+                    Refiná el listado por datos cargados. Se combinan con la
+                    búsqueda.
+                  </DialogDescription>
+                </DialogHeader>
+                <div className="grid gap-4 py-4">
+                  <label className="flex cursor-pointer items-center gap-2 rounded-md border border-transparent px-1 py-0.5 hover:bg-muted/50">
+                    <Checkbox
+                      checked={draftFilters.withEmail}
+                      onCheckedChange={(c) =>
+                        setDraftFilters((f) => ({
+                          ...f,
+                          withEmail: c === true,
+                        }))
+                      }
+                      aria-label="Solo con e-mail"
+                    />
+                    <span className="text-sm">Solo clientes con e-mail</span>
+                  </label>
+                  <label className="flex cursor-pointer items-center gap-2 rounded-md border border-transparent px-1 py-0.5 hover:bg-muted/50">
+                    <Checkbox
+                      checked={draftFilters.withTaxId}
+                      onCheckedChange={(c) =>
+                        setDraftFilters((f) => ({
+                          ...f,
+                          withTaxId: c === true,
+                        }))
+                      }
+                      aria-label="Solo con CUIT o DNI"
+                    />
+                    <span className="text-sm">Solo con CUIT / DNI</span>
+                  </label>
+                  <label className="flex cursor-pointer items-center gap-2 rounded-md border border-transparent px-1 py-0.5 hover:bg-muted/50">
+                    <Checkbox
+                      checked={draftFilters.soloActivos}
+                      onCheckedChange={(c) =>
+                        setDraftFilters((f) => ({
+                          ...f,
+                          soloActivos: c === true,
+                        }))
+                      }
+                      aria-label="Solo clientes activos"
+                    />
+                    <span className="text-sm">Solo clientes activos</span>
+                  </label>
+                </div>
+                <DialogFooter className="gap-2 sm:gap-0">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => setDraftFilters(defaultClientsFilters())}
+                  >
+                    Restablecer
+                  </Button>
+                  <Button
+                    type="button"
+                    onClick={() => {
+                      replaceWorkspaceQuery({
+                        ...draftFilters,
+                        page: 1,
+                      })
+                      setFiltersModalOpen(false)
+                    }}
+                  >
+                    Aplicar
+                  </Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
+
+            <DataWorkspaceListTableShell
+              bulkToolbar={
+                selected.size > 0 ? (
+                  <div
+                    className={cn(
+                      "flex flex-wrap items-center gap-2 border-b border-border/80 bg-muted/35 px-3 py-2.5 sm:px-4",
+                      listFetching && "pointer-events-none opacity-60",
+                    )}
+                    role="region"
+                    aria-label="Acciones sobre selección"
+                  >
+                    <span className="text-sm text-foreground">
+                      <span className="font-semibold">{selected.size}</span>{" "}
+                      <span className="text-muted-foreground">seleccionados</span>
+                    </span>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <Button type="button" size="sm" variant="outline" className="h-8">
+                        Eliminar selección
+                      </Button>
+                      <Button type="button" size="sm" variant="outline" className="h-8">
+                        Exportar CSV
+                      </Button>
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="ghost"
+                        className="h-8 text-muted-foreground"
+                        onClick={() => setSelected(new Set())}
+                      >
+                        Limpiar
+                      </Button>
+                    </div>
+                  </div>
+                ) : null
+              }
+              footer={
+                <DataWorkspaceListPaginationFooter
+                  listFetching={listFetching}
+                  totalCount={totalCount}
+                  rangeStart={rangeLabel.start}
+                  rangeEnd={rangeLabel.end}
+                  currentPage={currentPage}
+                  totalPages={totalPages}
+                  pageSize={workspaceParsed.pageSize}
+                  pageSizeOptions={CLIENT_TABLE_PAGE_SIZES}
+                  paginationItems={paginationItems}
+                  onPageChange={(p) => replaceWorkspaceQuery({ page: p })}
+                  onPageSizeChange={(ps) =>
+                    replaceWorkspaceQuery({ pageSize: ps, page: 1 })
+                  }
+                  pageSizeLabelId={pageSizeLabelId}
+                  loadingSlot={<ClientsTableFooterSkeleton />}
+                />
+              }
+            >
+              <table
+                className={workspaceDataTableClassName}
+                aria-busy={listFetching}
+              >
+                <TableHeader>
+                  <TableRow className="border-0 hover:bg-transparent">
+                    <TableHead className={cn(thBase, "w-12 !px-0 text-center")}>
+                      <div className={cn(selectColumnInnerClass, "min-h-10")}>
+                        <Checkbox
+                          className={tableRowSelectCheckboxClass}
+                          checked={
+                            allVisibleSelected
+                              ? true
+                              : someVisibleSelected
+                                ? "indeterminate"
+                                : false
+                          }
+                          onCheckedChange={(c) => {
+                            setSelected((prev) => {
+                              const next = new Set(prev)
+                              if (c === true) {
+                                visibleIds.forEach((id) => next.add(id))
+                              } else {
+                                visibleIds.forEach((id) => next.delete(id))
+                              }
+                              return next
+                            })
+                          }}
+                          disabled={
+                            listFetching ||
+                            totalCount === 0 ||
+                            pageRows.length === 0
+                          }
+                          aria-label="Seleccionar filas visibles"
+                        />
+                      </div>
+                    </TableHead>
+                    <TableHead className={cn(thBase, "min-w-[10rem] text-left")}>
+                      Nombre
+                    </TableHead>
+                    <TableHead
+                      className={cn(
+                        thBase,
+                        "w-[12rem] min-w-0 max-w-[12rem] text-left",
+                      )}
+                    >
+                      E-mail
+                    </TableHead>
+                    <TableHead
+                      className={cn(
+                        thBase,
+                        "w-[9rem] min-w-0 max-w-[9rem] text-left",
+                      )}
+                    >
+                      Teléfono
+                    </TableHead>
+                    <TableHead className={cn(thBase, "w-[7.5rem] text-left")}>
+                      CUIT / DNI
+                    </TableHead>
+                    <TableHead className={cn(thBase, "min-w-[8.5rem] text-left")}>
+                      IVA
+                    </TableHead>
+                    <TableHead className={cn(thBase, "w-[7.25rem] text-left")}>
+                      Última compra
+                    </TableHead>
+                    <TableHead
+                      className={cn(thBase, "min-w-[8.5rem] text-right")}
+                    >
+                      Ventas / Total
+                    </TableHead>
+                    {canUpdate || canDelete ? (
+                      <TableHead className={cn(thBase, "w-[7.25rem] text-right")}>
+                        <span className="sr-only">Acciones</span>
+                      </TableHead>
+                    ) : null}
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {listFetching ? (
+                    <ClientsTableSkeletonRows
+                      rowCount={skeletonRowCount}
+                      hasActionsColumn={Boolean(canUpdate || canDelete)}
+                    />
+                  ) : totalCount === 0 ? (
+                    <TableRow>
+                      <TableCell
+                        colSpan={emptyCols}
+                        className="py-12 text-center text-muted-foreground"
+                      >
+                        No hay clientes que coincidan con la búsqueda o los filtros,
+                        o no tenés permiso de lectura.
+                      </TableCell>
+                    </TableRow>
+                  ) : (
+                    pageRows.map((r, i) => (
+                      <TableRow
+                        key={r.id}
+                        className={cn(
+                          workspaceTableBodyRowClassNames(i),
+                          !r.isActive && "opacity-[0.88]",
+                        )}
+                      >
+                        <TableCell className="w-12 !px-0 py-2 align-middle">
+                          <div className={selectColumnInnerClass}>
+                            <Checkbox
+                              className={tableRowSelectCheckboxClass}
+                              checked={selected.has(r.id)}
+                              onCheckedChange={(c) => {
+                                setSelected((prev) => {
+                                  const next = new Set(prev)
+                                  if (c === true) next.add(r.id)
+                                  else next.delete(r.id)
+                                  return next
+                                })
+                              }}
+                              aria-label={`Seleccionar ${r.name || "cliente"}`}
+                            />
+                          </div>
+                        </TableCell>
+                        <TableCell className="min-w-0 px-3 py-2.5 align-middle">
+                          <p className="truncate font-medium text-foreground">
+                            {r.name || "—"}
+                          </p>
+                          {r.addressLine.trim() ? (
+                            <p
+                              className="truncate text-xs text-muted-foreground"
+                              title={r.addressLine}
+                            >
+                              {r.addressLine}
+                            </p>
+                          ) : null}
+                          {!r.isActive ? (
+                            <Badge
+                              variant="outline"
+                              className="mt-1 border-muted-foreground/30 text-[10px] font-normal text-muted-foreground"
+                            >
+                              Inactivo
+                            </Badge>
+                          ) : null}
+                        </TableCell>
+                        <TableCell
+                          className="min-w-0 max-w-[12rem] overflow-hidden px-3 py-2.5 align-middle text-muted-foreground"
+                          title={r.email.trim() ? r.email : undefined}
+                        >
+                          <p className="truncate">{r.email || "—"}</p>
+                        </TableCell>
+                        <TableCell
+                          className="min-w-0 max-w-[9rem] overflow-hidden px-3 py-2.5 align-middle text-muted-foreground"
+                          title={r.phone.trim() ? r.phone : undefined}
+                        >
+                          <p className="truncate">{r.phone || "—"}</p>
+                        </TableCell>
+                        <TableCell className="px-3 py-2.5 text-muted-foreground">
+                          {r.taxId || "—"}
+                        </TableCell>
+                        <TableCell className="min-w-0 px-3 py-2.5 align-middle">
+                          {r.ivaCondition ? (
+                            <Badge
+                              variant="secondary"
+                              className="max-w-full truncate font-normal"
+                              title={
+                                IVA_LABEL_BY_VALUE[r.ivaCondition] ??
+                                r.ivaCondition
+                              }
+                            >
+                              <span className="truncate">
+                                {IVA_LABEL_BY_VALUE[r.ivaCondition] ?? "—"}
+                              </span>
+                            </Badge>
+                          ) : (
+                            <span className="text-muted-foreground">—</span>
+                          )}
+                        </TableCell>
+                        <TableCell className="whitespace-nowrap px-3 py-2.5 text-muted-foreground">
+                          {formatShortSaleDate(r.lastSaleAt)}
+                        </TableCell>
+                        <TableCell className="px-3 py-2.5 text-right align-middle">
+                          {r.completedSalesCount > 0 ? (
+                            <div className="flex flex-col items-end gap-0.5">
+                              <span className="text-foreground">
+                                {r.completedSalesCount.toLocaleString("es-AR")}{" "}
+                                <span className="font-normal text-muted-foreground">
+                                  ventas
+                                </span>
+                              </span>
+                              <DataWorkspaceTableMoney muted>
+                                <span className="text-xs">
+                                  {formatArs(r.totalSpentArs)}
+                                </span>
+                              </DataWorkspaceTableMoney>
+                            </div>
+                          ) : (
+                            <span className="text-muted-foreground">—</span>
+                          )}
+                        </TableCell>
+                        {canUpdate || canDelete ? (
+                          <TableCell className="px-1 py-1.5 align-middle">
+                            <div className="flex items-center justify-end gap-0.5">
+                              {canUpdate ? (
+                                <DataWorkspaceTableIconAction
+                                  label={`Editar ${r.name || "cliente"}`}
+                                  icon={Pencil}
+                                  onClick={() => openEdit(r)}
+                                />
+                              ) : null}
+                              {canDelete ? (
+                                <DataWorkspaceTableIconAction
+                                  label={`Eliminar ${r.name || "cliente"}`}
+                                  icon={Trash2}
+                                  destructive
+                                  onClick={() => setDeleteRow(r)}
+                                />
+                              ) : null}
+                              <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                  <Button
+                                    type="button"
+                                    variant="ghost"
+                                    size="icon"
+                                    className="size-8 shrink-0 text-muted-foreground hover:text-foreground"
+                                    aria-label={`Más opciones: ${r.name || r.id}`}
+                                  >
+                                    <MoreVertical className="size-4" />
+                                  </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end" className="w-44">
+                                  <DropdownMenuItem
+                                    className="gap-2"
+                                    disabled
+                                  >
+                                    <Copy className="size-4" aria-hidden />
+                                    Duplicar
+                                  </DropdownMenuItem>
+                                </DropdownMenuContent>
+                              </DropdownMenu>
+                            </div>
+                          </TableCell>
+                        ) : null}
+                      </TableRow>
+                    ))
+                  )}
+                </TableBody>
+              </table>
+            </DataWorkspaceListTableShell>
+          </div>
+        ) : null}
+
+      <Dialog
+        open={createOpen}
+        onOpenChange={(o) => {
+          if (!o) replaceWorkspaceQuery({ view: "list" })
+        }}
+      >
         <DialogContent
           data-rootsy-light-shell="true"
           showCloseButton
@@ -563,6 +1215,59 @@ function ClientsPage() {
               ) : null}
             </div>
             <div className="space-y-2">
+              <Label htmlFor="cl-iva">Condición IVA</Label>
+              <Select
+                value={createForm.ivaCondition || "__none__"}
+                onValueChange={(v) =>
+                  setCreateForm((f) => ({
+                    ...f,
+                    ivaCondition: v === "__none__" ? "" : v,
+                  }))
+                }
+              >
+                <SelectTrigger id="cl-iva" className="bg-background">
+                  <SelectValue placeholder="Opcional" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="__none__">Sin definir</SelectItem>
+                  {CLIENT_IVA_CONDITION_OPTIONS.map((o) => (
+                    <SelectItem key={o.value} value={o.value}>
+                      {o.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="cl-address">Dirección</Label>
+              <Input
+                id="cl-address"
+                value={createForm.addressLine}
+                onChange={(e) =>
+                  setCreateForm((f) => ({ ...f, addressLine: e.target.value }))
+                }
+                className="bg-background"
+                placeholder="Calle, localidad (opcional)"
+              />
+            </div>
+            <div className="flex items-center justify-between gap-4 rounded-lg border border-border/60 px-3 py-3">
+              <div className="min-w-0 space-y-0.5">
+                <Label htmlFor="cl-active" className="text-foreground">
+                  Cliente activo
+                </Label>
+                <p className="text-xs text-muted-foreground">
+                  Para ocultarlos del listado usá el filtro «Solo clientes activos».
+                </p>
+              </div>
+              <Switch
+                id="cl-active"
+                checked={createForm.isActive}
+                onCheckedChange={(c) =>
+                  setCreateForm((f) => ({ ...f, isActive: c }))
+                }
+              />
+            </div>
+            <div className="space-y-2">
               <Label htmlFor="cl-notes">Notes</Label>
               <Textarea
                 id="cl-notes"
@@ -575,7 +1280,11 @@ function ClientsPage() {
               />
             </div>
             <DialogFooter className="gap-2 sm:gap-0">
-              <Button type="button" variant="outline" onClick={() => setCreateOpen(false)}>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => replaceWorkspaceQuery({ view: "list" })}
+              >
                 Cancel
               </Button>
               <Button type="submit" disabled={createSaving}>
@@ -657,6 +1366,59 @@ function ClientsPage() {
               ) : null}
             </div>
             <div className="space-y-2">
+              <Label htmlFor="e-cl-iva">Condición IVA</Label>
+              <Select
+                value={editForm.ivaCondition || "__none__"}
+                onValueChange={(v) =>
+                  setEditForm((f) => ({
+                    ...f,
+                    ivaCondition: v === "__none__" ? "" : v,
+                  }))
+                }
+              >
+                <SelectTrigger id="e-cl-iva" className="bg-background">
+                  <SelectValue placeholder="Opcional" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="__none__">Sin definir</SelectItem>
+                  {CLIENT_IVA_CONDITION_OPTIONS.map((o) => (
+                    <SelectItem key={o.value} value={o.value}>
+                      {o.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="e-cl-address">Dirección</Label>
+              <Input
+                id="e-cl-address"
+                value={editForm.addressLine}
+                onChange={(e) =>
+                  setEditForm((f) => ({ ...f, addressLine: e.target.value }))
+                }
+                className="bg-background"
+                placeholder="Calle, localidad (opcional)"
+              />
+            </div>
+            <div className="flex items-center justify-between gap-4 rounded-lg border border-border/60 px-3 py-3">
+              <div className="min-w-0 space-y-0.5">
+                <Label htmlFor="e-cl-active" className="text-foreground">
+                  Cliente activo
+                </Label>
+                <p className="text-xs text-muted-foreground">
+                  Para ocultarlos del listado usá el filtro «Solo clientes activos».
+                </p>
+              </div>
+              <Switch
+                id="e-cl-active"
+                checked={editForm.isActive}
+                onCheckedChange={(c) =>
+                  setEditForm((f) => ({ ...f, isActive: c }))
+                }
+              />
+            </div>
+            <div className="space-y-2">
               <Label htmlFor="e-cl-notes">Notes</Label>
               <Textarea
                 id="e-cl-notes"
@@ -711,7 +1473,8 @@ function ClientsPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </div>
+      </>
+    </DataWorkspaceLayout>
   )
 }
 

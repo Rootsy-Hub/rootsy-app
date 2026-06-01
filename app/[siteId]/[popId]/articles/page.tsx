@@ -13,24 +13,53 @@ import {
   type ArticleTableRow,
 } from "@/app/[siteId]/[popId]/articles/actions"
 import { ARTICLE_DELETE_CONFIRM_PHRASE } from "@/app/[siteId]/[popId]/articles/articleConstants"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import {
+  ARTICLE_TABLE_PAGE_SIZES,
+  mergeArticlesWorkspaceUrl,
+  parseArticlesWorkspaceUrl,
+} from "@/app/[siteId]/[popId]/articles/workspaceUrl"
+import { buildPaginationItems } from "@/app/[siteId]/[popId]/layout/layoutPreviewPagination"
+import { DataWorkspaceListPaginationFooter } from "@/components/data-workspace/DataWorkspaceListPaginationFooter"
+import { DataWorkspaceListTableShell } from "@/components/data-workspace/DataWorkspaceListTableShell"
+import {
+  DataWorkspaceListToolbar,
+  DataWorkspaceToolbarFilterCard,
+  DataWorkspaceToolbarSearchCard,
+} from "@/components/data-workspace/DataWorkspaceListToolbar"
+import {
+  DataWorkspaceTableIconAction,
+  DataWorkspaceTableMoney,
+  DataWorkspaceTableThumbnail,
+} from "@/components/data-workspace/DataWorkspaceListTablePrimitives"
+import {
+  dataWorkspaceShellCard,
+  thBase,
+  toolbarBlockLabelClass,
+  workspaceDataTableClassName,
+  workspaceTableBodyRowClassNames,
+} from "@/components/data-workspace/dataWorkspaceListStyles"
+import { DataWorkspaceLayout } from "@/components/layouts/DataWorkspaceLayout"
+import { DataWorkspaceSidebar } from "@/components/layouts/DataWorkspaceSidebar"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
+import { Checkbox } from "@/components/ui/checkbox"
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 import {
   Table,
   TableBody,
@@ -40,26 +69,30 @@ import {
   TableRow,
 } from "@/components/ui/table"
 import { Textarea } from "@/components/ui/textarea"
-import { useAuth } from "@/context/AuthContextSupabase"
 import withAuth from "@/hoc/withAuth"
-import { popMenuHref } from "@/lib/popRoutes"
+import { getWorkspaceHeaderForPop } from "@/lib/workspaceHeaderServer"
 import { cn } from "@/lib/utils"
 import {
-  ArrowLeft,
-  Leaf,
-  Maximize2,
-  Minimize2,
-  MoreVertical,
-  Package,
+  Filter,
+  FolderTree,
+  Pencil,
   Plus,
-  Wifi,
-  WifiOff,
+  Search,
+  Table2,
+  Tag,
+  Trash2,
+  X,
 } from "lucide-react"
-import Link from "next/link"
-import { useParams, useRouter } from "next/navigation"
+import {
+  useParams,
+  usePathname,
+  useRouter,
+  useSearchParams,
+} from "next/navigation"
 import {
   useCallback,
   useEffect,
+  useId,
   useMemo,
   useRef,
   useState,
@@ -74,23 +107,181 @@ function formatMoney(n: number): string {
   }).format(n)
 }
 
+const articlesSk = {
+  bar: "animate-pulse rounded-[3px] bg-muted-foreground/12 dark:bg-muted-foreground/[0.14]",
+  barSm:
+    "animate-pulse rounded-[3px] bg-muted-foreground/8 dark:bg-muted-foreground/11",
+  pill: "animate-pulse rounded-full bg-muted-foreground/12 dark:bg-muted-foreground/[0.14]",
+  box: "animate-pulse rounded-sm bg-muted-foreground/10 dark:bg-muted-foreground/[0.12]",
+} as const
+
+function ArticlesTableSkeletonRows({
+  rowCount,
+  hasActionsColumn,
+}: {
+  rowCount: number
+  hasActionsColumn: boolean
+}) {
+  return (
+    <>
+      {Array.from({ length: rowCount }).map((_, i) => (
+        <TableRow
+          key={`art-sk-${i}`}
+          className={cn(
+            "border-border/50",
+            i % 2 === 0 ? "bg-white/30" : "bg-muted/25 dark:bg-muted/15",
+          )}
+          aria-hidden
+        >
+          <TableCell className="w-14 px-2 py-2 align-middle">
+            <div className={cn("size-10 rounded-lg", articlesSk.box)} />
+          </TableCell>
+          <TableCell className="min-w-0 px-3 py-2.5 align-middle">
+            <div className={cn("h-3.5 w-[72%] max-w-[11rem]", articlesSk.bar)} />
+            <div
+              className={cn(
+                "mt-1.5 h-2.5 w-[45%] max-w-[7rem]",
+                articlesSk.barSm,
+              )}
+            />
+          </TableCell>
+          <TableCell className="min-w-0 max-w-[10rem] px-3 py-2.5 align-middle">
+            <div className={cn("h-3.5 w-[6rem]", articlesSk.bar)} />
+          </TableCell>
+          <TableCell className="w-[7.5rem] px-3 py-2.5 text-right align-middle tabular-nums">
+            <div className={cn("ml-auto h-3.5 w-20", articlesSk.bar)} />
+          </TableCell>
+          <TableCell className="w-[7.5rem] px-3 py-2.5 text-right align-middle tabular-nums">
+            <div className={cn("ml-auto h-3.5 w-20", articlesSk.bar)} />
+          </TableCell>
+          <TableCell className="w-[5rem] px-3 py-2.5 text-right align-middle tabular-nums">
+            <div className={cn("ml-auto h-3.5 w-10", articlesSk.bar)} />
+          </TableCell>
+          <TableCell className="min-w-[6rem] px-3 py-2.5 align-middle">
+            <div className={cn("inline-block h-5 w-16", articlesSk.pill)} />
+          </TableCell>
+          {hasActionsColumn ? (
+            <TableCell className="w-[7.25rem] px-1 py-1.5 align-middle">
+              <div className="flex items-center justify-end gap-0.5">
+                <div
+                  className={cn("size-8 shrink-0 rounded-md", articlesSk.box)}
+                />
+                <div
+                  className={cn("size-8 shrink-0 rounded-md", articlesSk.box)}
+                />
+              </div>
+            </TableCell>
+          ) : null}
+        </TableRow>
+      ))}
+    </>
+  )
+}
+
+function ArticlesTableFooterSkeleton() {
+  return (
+    <div
+      className="flex min-w-0 flex-wrap items-center justify-between gap-3 px-3 py-3 sm:px-4"
+      aria-hidden
+    >
+      <div className="flex min-w-0 flex-wrap items-center gap-x-4 gap-y-2">
+        <div
+          className={cn(
+            "h-3.5 w-52 max-w-[min(100%,20rem)]",
+            articlesSk.bar,
+          )}
+        />
+        <div className={cn("h-8 w-[4.25rem] rounded-md", articlesSk.box)} />
+      </div>
+      <div className="flex flex-wrap items-center justify-center gap-1 sm:justify-end">
+        <div className={cn("size-8 rounded-md", articlesSk.box)} />
+        <div className={cn("h-8 w-36 rounded-md", articlesSk.box)} />
+        <div className={cn("size-8 rounded-md", articlesSk.box)} />
+      </div>
+    </div>
+  )
+}
+
+type ArticlesAppliedFilters = {
+  soloActivos: boolean
+  categoryId: string
+}
+
+const defaultArticlesFilters = (): ArticlesAppliedFilters => ({
+  soloActivos: false,
+  categoryId: "",
+})
+
+const VIEW_ITEMS = [{ id: "list", label: "Listado", icon: Table2 }] as const
+
+const sidebarSecondaryBtnClass =
+  "relative flex w-full items-center gap-2.5 rounded-r-xl py-2.5 pl-3 pr-2 text-left text-sm transition-colors text-muted-foreground hover:bg-muted/60 hover:text-foreground"
+
+const CREATION_NEW_ARTICLE = {
+  id: "new-article",
+  label: "Nuevo artículo",
+  icon: Plus,
+} as const
+
 function ArticlesPage() {
   const router = useRouter()
   const routerRef = useRef(router)
   routerRef.current = router
+  const pathname = usePathname()
+  const searchParams = useSearchParams()
   const params = useParams()
-  const { user } = useAuth()
   const siteId = typeof params?.siteId === "string" ? params.siteId : ""
   const popId = typeof params?.popId === "string" ? params.popId : undefined
 
+  const workspaceParsed = useMemo(
+    () => parseArticlesWorkspaceUrl(searchParams),
+    [searchParams],
+  )
+
+  const replaceWorkspaceQuery = useCallback(
+    (patch: Parameters<typeof mergeArticlesWorkspaceUrl>[1]) => {
+      const qs = mergeArticlesWorkspaceUrl(searchParams, patch)
+      const next = qs ? `${pathname}?${qs}` : pathname
+      router.replace(next, { scroll: false })
+    },
+    [pathname, router, searchParams],
+  )
+
   const [popName, setPopName] = useState("")
   const [articles, setArticles] = useState<ArticleTableRow[]>([])
+  const [totalCount, setTotalCount] = useState(0)
   const [canCreate, setCanCreate] = useState(false)
   const [canPostInitialStock, setCanPostInitialStock] = useState(false)
   const [canUpdate, setCanUpdate] = useState(false)
   const [canDelete, setCanDelete] = useState(false)
-  const [loading, setLoading] = useState(true)
+  const [listFetching, setListFetching] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const fetchGenRef = useRef(0)
+
+  const [searchInput, setSearchInput] = useState(workspaceParsed.q)
+  const searchInputId = useId()
+  const pageSizeLabelId = useId()
+
+  const [filtersModalOpen, setFiltersModalOpen] = useState(false)
+  const [draftFilters, setDraftFilters] = useState<ArticlesAppliedFilters>(
+    defaultArticlesFilters,
+  )
+  const [filterCategoryList, setFilterCategoryList] = useState<
+    ArticleCategoryOption[]
+  >([])
+
+  const [quickNewCategoryOpen, setQuickNewCategoryOpen] = useState(false)
+  const [quickNewCategoryName, setQuickNewCategoryName] = useState("")
+  const [quickNewCategorySaving, setQuickNewCategorySaving] = useState(false)
+  const [quickNewCategoryBanner, setQuickNewCategoryBanner] = useState<
+    string | null
+  >(null)
+
+  const [workspaceHeader, setWorkspaceHeader] = useState<{
+    userFullName: string
+    userImageUrl: string | null
+    roleLabel: string
+  } | null>(null)
 
   const [editRow, setEditRow] = useState<ArticleTableRow | null>(null)
   const [editCategories, setEditCategories] = useState<ArticleCategoryOption[]>(
@@ -101,6 +292,7 @@ function ArticlesPage() {
   const [editForm, setEditForm] = useState({
     name: "",
     description: "",
+    imageUrl: "",
     salePrice: "",
     costPrice: "",
     iva: "",
@@ -114,7 +306,6 @@ function ArticlesPage() {
   const [deleteBusy, setDeleteBusy] = useState(false)
   const [deleteBanner, setDeleteBanner] = useState<string | null>(null)
 
-  const [createOpen, setCreateOpen] = useState(false)
   const [createCategories, setCreateCategories] = useState<
     ArticleCategoryOption[]
   >([])
@@ -124,6 +315,7 @@ function ArticlesPage() {
   const [createForm, setCreateForm] = useState({
     name: "",
     description: "",
+    imageUrl: "",
     salePrice: "0",
     costPrice: "0",
     iva: "21",
@@ -146,81 +338,168 @@ function ArticlesPage() {
   const [editingCategoryName, setEditingCategoryName] = useState("")
   const [categorySaveBusy, setCategorySaveBusy] = useState(false)
 
-  const [isOnline, setIsOnline] = useState(true)
-  const [isFullscreen, setIsFullscreen] = useState(false)
+  const sidebarActiveId =
+    workspaceParsed.view === "new-article"
+      ? CREATION_NEW_ARTICLE.id
+      : workspaceParsed.view
 
-  const loadArticles = useCallback(async () => {
-    if (!popId || !siteId) return
-    const res = await getPopArticlesTable(popId)
-    if (!res.success) {
-      setError(res.error || "Error al cargar")
-      setCanCreate(false)
-      setCanPostInitialStock(false)
-      setCanUpdate(false)
-      setCanDelete(false)
-      if (res.redirect) {
-        setTimeout(() => routerRef.current.push(res.redirect!), 1200)
-      }
-      return
+  const createOpen = Boolean(
+    canCreate && workspaceParsed.view === "new-article",
+  )
+
+  const fetchWorkspaceHeader = useCallback(async () => {
+    if (!popId) return
+    const head = await getWorkspaceHeaderForPop(popId)
+    if (head.success) {
+      setWorkspaceHeader({
+        userFullName: head.userFullName,
+        userImageUrl: head.userImageUrl,
+        roleLabel: head.roleLabel,
+      })
+    } else {
+      setWorkspaceHeader(null)
     }
-    setArticles(res.articles)
-    setPopName(res.popName)
-    setCanCreate(res.canCreate)
-    setCanPostInitialStock(res.canPostInitialStock)
-    setCanUpdate(res.canUpdate)
-    setCanDelete(res.canDelete)
+  }, [popId])
+
+  const fetchArticlesList = useCallback(async () => {
+    if (!popId || !siteId) return
+    const gen = ++fetchGenRef.current
+    setListFetching(true)
     setError(null)
-  }, [popId, siteId])
+    try {
+      const res = await getPopArticlesTable(popId, {
+        page: workspaceParsed.page,
+        pageSize: workspaceParsed.pageSize,
+        search: workspaceParsed.q,
+        soloActivos: workspaceParsed.soloActivos,
+        categoryId: workspaceParsed.categoryId,
+      })
+      if (gen !== fetchGenRef.current) return
+      if (!res.success) {
+        setError(res.error || "Error al cargar")
+        setArticles([])
+        setTotalCount(0)
+        setCanCreate(false)
+        setCanPostInitialStock(false)
+        setCanUpdate(false)
+        setCanDelete(false)
+        if (res.redirect) {
+          setTimeout(() => routerRef.current.push(res.redirect!), 1200)
+        }
+        return
+      }
+      setArticles(res.articles)
+      setTotalCount(res.totalCount)
+      setPopName(res.popName)
+      setCanCreate(res.canCreate)
+      setCanPostInitialStock(res.canPostInitialStock)
+      setCanUpdate(res.canUpdate)
+      setCanDelete(res.canDelete)
+      setError(null)
+      if (res.page !== workspaceParsed.page) {
+        replaceWorkspaceQuery({ page: res.page })
+      }
+    } catch {
+      if (gen === fetchGenRef.current) {
+        setError("Error inesperado")
+      }
+    } finally {
+      if (gen === fetchGenRef.current) {
+        setListFetching(false)
+      }
+    }
+  }, [popId, siteId, workspaceParsed, replaceWorkspaceQuery])
 
   useEffect(() => {
-    if (!popId || !siteId) {
-      setLoading(false)
-      setError("ID de POP no encontrado")
-      return
-    }
+    setPopName("")
+    setArticles([])
+    setTotalCount(0)
+  }, [popId])
+
+  useEffect(() => {
+    setSearchInput(workspaceParsed.q)
+  }, [workspaceParsed.q])
+
+  useEffect(() => {
+    const t = window.setTimeout(() => {
+      const next = searchInput.trim()
+      if (next === workspaceParsed.q.trim()) return
+      replaceWorkspaceQuery({ q: next, page: 1 })
+    }, 400)
+    return () => window.clearTimeout(t)
+  }, [searchInput, workspaceParsed.q, replaceWorkspaceQuery])
+
+  useEffect(() => {
+    if (!popId || !siteId) return
     let cancelled = false
     ;(async () => {
-      setLoading(true)
-      setError(null)
-      try {
-        await loadArticles()
-      } catch {
-        if (!cancelled) setError("Error inesperado")
-      } finally {
-        if (!cancelled) setLoading(false)
+      const res = await getPopArticleCategories(popId)
+      if (cancelled) return
+      if (res.success) {
+        setFilterCategoryList(res.categories)
+      } else {
+        setFilterCategoryList([])
       }
     })()
     return () => {
       cancelled = true
     }
-  }, [popId, siteId, loadArticles])
+  }, [popId, siteId])
 
   useEffect(() => {
-    setIsOnline(navigator.onLine)
-    const on = () => setIsOnline(true)
-    const off = () => setIsOnline(false)
-    window.addEventListener("online", on)
-    window.addEventListener("offline", off)
-    return () => {
-      window.removeEventListener("online", on)
-      window.removeEventListener("offline", off)
-    }
-  }, [])
+    if (!popId || !siteId) return
+    void fetchWorkspaceHeader()
+  }, [popId, siteId, fetchWorkspaceHeader])
 
   useEffect(() => {
-    const sync = () => setIsFullscreen(Boolean(document.fullscreenElement))
-    sync()
-    document.addEventListener("fullscreenchange", sync)
-    return () => document.removeEventListener("fullscreenchange", sync)
-  }, [])
-
-  const toggleFullscreen = async () => {
-    if (document.fullscreenElement) {
-      await document.exitFullscreen()
+    if (!popId || !siteId) {
+      setListFetching(false)
+      setError("ID de POP no encontrado")
       return
     }
-    await document.documentElement.requestFullscreen()
-  }
+    void fetchArticlesList()
+  }, [popId, siteId, fetchArticlesList])
+
+  useEffect(() => {
+    if (workspaceParsed.view !== "new-article" || canCreate) return
+    replaceWorkspaceQuery({ view: "list" })
+  }, [workspaceParsed.view, canCreate, replaceWorkspaceQuery])
+
+  useEffect(() => {
+    if (!createOpen || !popId) return
+    setCreateBanner(null)
+    setCreateForm({
+      name: "",
+      description: "",
+      imageUrl: "",
+      salePrice: "0",
+      costPrice: "0",
+      iva: "21",
+      categoryId: "",
+      isActive: true,
+      initialStock: "",
+    })
+  }, [createOpen, popId])
+
+  useEffect(() => {
+    if (!createOpen || !popId) return
+    let cancelled = false
+    ;(async () => {
+      setCreateCatLoading(true)
+      const catRes = await getPopArticleCategories(popId)
+      if (cancelled) return
+      setCreateCatLoading(false)
+      if (catRes.success) {
+        setCreateCategories(catRes.categories)
+      } else {
+        setCreateBanner(catRes.error)
+        setCreateCategories([])
+      }
+    })()
+    return () => {
+      cancelled = true
+    }
+  }, [createOpen, popId])
 
   const openEdit = async (row: ArticleTableRow) => {
     if (!popId || !siteId) return
@@ -229,6 +508,7 @@ function ArticlesPage() {
     setEditForm({
       name: row.name,
       description: row.description,
+      imageUrl: row.imageUrl ?? "",
       salePrice: String(row.salePrice),
       costPrice: String(row.costPrice),
       iva: String(row.iva),
@@ -265,35 +545,27 @@ function ArticlesPage() {
     }
   }, [popId, siteId])
 
-  const openCreate = async () => {
-    if (!popId || !siteId) return
+  const openCreate = useCallback(() => {
+    if (!canCreate) return
     setCreateBanner(null)
-    setCreateForm({
-      name: "",
-      description: "",
-      salePrice: "0",
-      costPrice: "0",
-      iva: "21",
-      categoryId: "",
-      isActive: true,
-      initialStock: "",
-    })
-    setCreateCatLoading(true)
-    const catRes = await getPopArticleCategories(popId)
-    setCreateCatLoading(false)
-    if (catRes.success) {
-      setCreateCategories(catRes.categories)
-    } else {
-      setCreateBanner(catRes.error)
-      setCreateCategories([])
-    }
-    setCreateOpen(true)
-  }
+    replaceWorkspaceQuery({ view: "new-article" })
+  }, [canCreate, replaceWorkspaceQuery])
 
-  const closeCreate = () => {
-    setCreateOpen(false)
+  const closeCreate = useCallback(() => {
+    replaceWorkspaceQuery({ view: "list" })
     setCreateBanner(null)
-  }
+  }, [replaceWorkspaceQuery])
+
+  const handleSidebarSelect = useCallback(
+    (id: string) => {
+      if (id === CREATION_NEW_ARTICLE.id) {
+        openCreate()
+        return
+      }
+      replaceWorkspaceQuery({ view: "list" })
+    },
+    [openCreate, replaceWorkspaceQuery],
+  )
 
   const submitCreate = async (e: FormEvent) => {
     e.preventDefault()
@@ -306,6 +578,7 @@ function ArticlesPage() {
     const res = await createPopArticle(popId, {
       name: createForm.name,
       description: createForm.description,
+      imageUrl: createForm.imageUrl,
       salePrice: Number(createForm.salePrice),
       costPrice: Number(createForm.costPrice),
       iva: Number(createForm.iva),
@@ -323,7 +596,7 @@ function ArticlesPage() {
       return
     }
     closeCreate()
-    await loadArticles()
+    await fetchArticlesList()
   }
 
   const submitNewCategory = async () => {
@@ -338,6 +611,30 @@ function ArticlesPage() {
     }
     setNewCategoryName("")
     await loadModalCategories()
+    const fresh = await getPopArticleCategories(popId)
+    if (fresh.success) {
+      setFilterCategoryList(fresh.categories)
+    }
+  }
+
+  const submitQuickNewCategory = async (e: FormEvent) => {
+    e.preventDefault()
+    if (!popId || !siteId || !quickNewCategoryName.trim()) return
+    setQuickNewCategorySaving(true)
+    setQuickNewCategoryBanner(null)
+    const res = await createPopCategory(popId, quickNewCategoryName)
+    setQuickNewCategorySaving(false)
+    if (!res.success) {
+      setQuickNewCategoryBanner(res.error)
+      return
+    }
+    setQuickNewCategoryOpen(false)
+    setQuickNewCategoryName("")
+    const fresh = await getPopArticleCategories(popId)
+    if (fresh.success) {
+      setFilterCategoryList(fresh.categories)
+    }
+    await fetchArticlesList()
   }
 
   const startEditCategory = (c: ArticleCategoryOption) => {
@@ -367,6 +664,10 @@ function ArticlesPage() {
     }
     cancelEditCategory()
     await loadModalCategories()
+    const fresh = await getPopArticleCategories(popId)
+    if (fresh.success) {
+      setFilterCategoryList(fresh.categories)
+    }
   }
 
   const removeCategory = async (id: string, label: string) => {
@@ -385,6 +686,10 @@ function ArticlesPage() {
       return
     }
     await loadModalCategories()
+    const fresh = await getPopArticleCategories(popId)
+    if (fresh.success) {
+      setFilterCategoryList(fresh.categories)
+    }
   }
 
   const submitEdit = async (e: FormEvent) => {
@@ -395,6 +700,7 @@ function ArticlesPage() {
     const res = await updatePopArticle(popId, editRow.id, {
       name: editForm.name,
       description: editForm.description,
+      imageUrl: editForm.imageUrl,
       salePrice: Number(editForm.salePrice),
       costPrice: Number(editForm.costPrice),
       iva: Number(editForm.iva),
@@ -407,7 +713,7 @@ function ArticlesPage() {
       return
     }
     closeEdit()
-    await loadArticles()
+    await fetchArticlesList()
   }
 
   const openDelete = (row: ArticleTableRow) => {
@@ -433,22 +739,56 @@ function ArticlesPage() {
       return
     }
     closeDelete()
-    await loadArticles()
+    await fetchArticlesList()
   }
 
-  const emptyCols = canUpdate || canDelete ? 8 : 7
+  const emptyCols = 7 + (canUpdate || canDelete ? 1 : 0)
 
-  const headerUserName = useMemo(() => {
-    const meta = user?.user_metadata?.full_name
-    if (typeof meta === "string" && meta.trim()) return meta.trim()
-    return user?.email?.split("@")[0] || "Usuario"
-  }, [user?.email, user?.user_metadata?.full_name])
+  const creationItems = useMemo(
+    () => (canCreate ? [CREATION_NEW_ARTICLE] : []),
+    [canCreate],
+  )
 
-  const userAvatarSrc =
-    user?.user_metadata?.avatar_url ||
-    `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(user?.email || "u")}`
+  const totalPages = useMemo(
+    () =>
+      Math.max(
+        1,
+        Math.ceil(totalCount / Math.max(1, workspaceParsed.pageSize)),
+      ),
+    [totalCount, workspaceParsed.pageSize],
+  )
 
-  const popLogoSrc = `https://api.dicebear.com/7.x/shapes/svg?seed=${encodeURIComponent(popId || "pop")}&backgroundColor=e8f5ef`
+  const currentPage = workspaceParsed.page
+  const pageRows = articles
+
+  const rangeLabel = useMemo(() => {
+    if (totalCount === 0) return { start: 0, end: 0 }
+    const ps = workspaceParsed.pageSize
+    const start = (currentPage - 1) * ps + 1
+    const end = Math.min(currentPage * ps, totalCount)
+    return { start, end }
+  }, [currentPage, workspaceParsed.pageSize, totalCount])
+
+  const paginationItems = useMemo(
+    () => buildPaginationItems(totalPages, currentPage),
+    [totalPages, currentPage],
+  )
+
+  const hasFilterChips =
+    workspaceParsed.q.trim() !== "" ||
+    workspaceParsed.soloActivos ||
+    workspaceParsed.categoryId.trim() !== ""
+
+  const skeletonRowCount = Math.min(
+    12,
+    Math.max(5, workspaceParsed.pageSize),
+  )
+
+  const categoryLabelForChip = useMemo(() => {
+    const id = workspaceParsed.categoryId.trim()
+    if (!id) return ""
+    return filterCategoryList.find((c) => c.id === id)?.name ?? ""
+  }, [filterCategoryList, workspaceParsed.categoryId])
 
   if (!popId || !siteId) {
     return (
@@ -459,291 +799,525 @@ function ArticlesPage() {
   }
 
   return (
-    <div className="rootsy-app-light relative min-h-screen overflow-hidden bg-background text-foreground">
-      <div
-        className="pointer-events-none absolute inset-0 motion-reduce:opacity-50"
-        aria-hidden
-      >
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_50%_at_50%_-20%,oklch(0.75_0.12_155/0.35),transparent),radial-gradient(ellipse_60%_40%_at_100%_50%,oklch(0.85_0.08_140/0.2),transparent)]" />
-        <div className="absolute inset-0 bg-[linear-gradient(oklch(0.92_0.02_130/0.35)_1px,transparent_1px),linear-gradient(90deg,oklch(0.92_0.02_130/0.35)_1px,transparent_1px)] bg-size-[48px_48px] opacity-40" />
-      </div>
-
-      <div className="relative z-10 flex min-h-screen flex-col">
-        <header className="border-b border-rootsy-hairline bg-card/90 shadow-sm backdrop-blur-xl">
-          <div className="grid h-18 grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-4 px-4">
-            <div className="flex min-w-0 items-center gap-3">
-              <Link
-                href={popMenuHref(siteId, popId)}
-                className="group inline-flex size-10 items-center justify-center rounded-xl border border-foreground/10 bg-secondary text-foreground/70 transition-all hover:border-primary/25 hover:bg-muted hover:text-foreground"
-                aria-label="Volver al menú"
+    <DataWorkspaceLayout
+      siteId={siteId}
+      popId={popId}
+      popName={popName}
+      title="Stock"
+      headerVariant="dark"
+      loading={!popName && listFetching}
+      userName={workspaceHeader?.userFullName}
+      userAvatarSrc={workspaceHeader?.userImageUrl ?? undefined}
+      userRoleLabel={workspaceHeader?.roleLabel}
+      pillLabel="Catálogo"
+      sidebar={
+        <DataWorkspaceSidebar
+          creationItems={creationItems}
+          viewItems={VIEW_ITEMS}
+          activeId={sidebarActiveId}
+          onSelect={handleSidebarSelect}
+          creationSectionLabel="Nuevo"
+          viewsSectionLabel="En esta sección"
+          footer={
+            <div className="space-y-1">
+              <p className="mb-2 px-1 text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground/90">
+                Categorías
+              </p>
+              <ul
+                className="relative space-y-0.5 border-l-2 border-border/70 pl-3"
+                role="list"
               >
-                <ArrowLeft className="size-5 transition-transform group-hover:-translate-x-0.5" />
-              </Link>
-              <div className="h-6 w-px bg-border" />
-              <div className="flex min-w-0 items-center gap-2.5">
-                <div className="size-8 overflow-hidden rounded-lg ring-1 ring-border">
-                  <img
-                    src={popLogoSrc}
-                    alt=""
-                    className="size-full object-cover"
-                  />
-                </div>
-                <span className="truncate text-sm font-semibold text-foreground/90">
-                  {popName || (loading ? "…" : "—")}
-                </span>
-              </div>
-            </div>
-
-            <div className="flex items-center gap-2">
-              <h1 className="flex items-center gap-2 text-[1.65rem] font-black tracking-tight text-foreground">
-                <span className="inline-flex size-9 items-center justify-center rounded-xl bg-primary/15 text-primary">
-                  <Package className="size-5" aria-hidden />
-                </span>
-                Artículos
-              </h1>
-              <div
-                className={cn(
-                  "inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-widest",
-                  isOnline
-                    ? "border-primary/30 bg-primary/10 text-forest"
-                    : "border-destructive/30 bg-destructive/10 text-destructive",
-                )}
-              >
-                {isOnline ? (
-                  <Wifi className="size-3" aria-hidden />
-                ) : (
-                  <WifiOff className="size-3" aria-hidden />
-                )}
-                {isOnline ? "Online" : "Offline"}
-              </div>
-            </div>
-
-            <div className="flex shrink-0 items-center justify-end gap-2">
-              {canCreate ? (
-                <Button
-                  type="button"
-                  size="sm"
-                  className="h-9 gap-1.5 rounded-xl bg-primary text-primary-foreground shadow-sm hover:bg-primary/90"
-                  onClick={() => void openCreate()}
-                >
-                  <Plus className="size-4" aria-hidden />
-                  <span className="hidden sm:inline">Nuevo artículo</span>
-                </Button>
-              ) : null}
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
+                <span
+                  className="pointer-events-none absolute bottom-0 left-[-2px] top-0 w-0.5 rounded-full bg-linear-to-b from-primary/0 via-primary/40 to-primary/0 opacity-40"
+                  aria-hidden
+                />
+                {canCreate ? (
+                  <li>
+                    <button
+                      type="button"
+                      className={cn(
+                        sidebarSecondaryBtnClass,
+                        "font-medium text-foreground",
+                      )}
+                      onClick={() => {
+                        setQuickNewCategoryBanner(null)
+                        setQuickNewCategoryName("")
+                        setQuickNewCategoryOpen(true)
+                      }}
+                    >
+                      <Tag className="size-4 shrink-0 opacity-70" aria-hidden />
+                      Nueva categoría
+                    </button>
+                  </li>
+                ) : null}
+                <li>
                   <button
                     type="button"
-                    className="group inline-flex size-9 items-center justify-center rounded-xl text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-                    aria-label="Más opciones"
-                  >
-                    <MoreVertical className="size-4.5" />
-                  </button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent
-                  align="end"
-                  className="border-border bg-card"
-                >
-                  <DropdownMenuItem
-                    className="cursor-pointer"
-                    onSelect={() => {
+                    className={cn(
+                      sidebarSecondaryBtnClass,
+                      "font-medium text-foreground",
+                    )}
+                    onClick={() => {
                       setCategoriesOpen(true)
                       void loadModalCategories()
                     }}
                   >
+                    <FolderTree
+                      className="size-4 shrink-0 opacity-70"
+                      aria-hidden
+                    />
                     Categorías
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-              <button
-                type="button"
-                onClick={() => void toggleFullscreen()}
-                className="group inline-flex size-9 items-center justify-center rounded-xl text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-                aria-label={
-                  isFullscreen
-                    ? "Salir de pantalla completa"
-                    : "Pantalla completa"
-                }
-              >
-                {isFullscreen ? (
-                  <Minimize2 className="size-4.5" />
-                ) : (
-                  <Maximize2 className="size-4.5" />
-                )}
-              </button>
-              <div className="h-6 w-px bg-border" />
-              <div className="flex items-center gap-3">
-                <div className="relative">
-                  <Avatar className="size-10 ring-1 ring-border">
-                    <AvatarImage src={userAvatarSrc} alt="" />
-                    <AvatarFallback className="bg-primary/10 text-xs text-primary">
-                      {headerUserName.slice(0, 2).toUpperCase()}
-                    </AvatarFallback>
-                  </Avatar>
-                  <div className="absolute -right-0.5 -bottom-0.5 size-2.5 rounded-full border-2 border-card bg-primary" />
-                </div>
-                <div className="hidden min-w-0 flex-col leading-tight sm:flex">
-                  <span className="truncate text-sm font-semibold text-foreground/90">
-                    {headerUserName}
-                  </span>
-                  <span className="flex items-center gap-1 text-[10px] font-semibold uppercase tracking-wider text-meadow">
-                    <Leaf className="size-3" aria-hidden />
-                    Catálogo
-                  </span>
-                </div>
-              </div>
+                  </button>
+                </li>
+              </ul>
             </div>
+          }
+        />
+      }
+    >
+      <>
+        {error ? (
+          <div className="rounded-2xl border border-destructive/25 bg-destructive/5 px-4 py-3 text-sm text-destructive">
+            {error}
           </div>
-        </header>
-
-        <main className="relative z-10 mx-auto w-full max-w-6xl flex-1 px-4 py-8 sm:px-6">
-          {loading ? (
-            <p className="text-sm text-muted-foreground">Cargando artículos…</p>
-          ) : error ? (
-            <div className="rounded-2xl border border-destructive/25 bg-destructive/5 px-4 py-3 text-sm text-destructive">
-              {error}
-            </div>
-          ) : (
-            <div className="space-y-6">
-              <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
-                <div>
-                  <h2 className="text-lg font-semibold text-foreground">
-                    Inventario del punto de venta
-                  </h2>
-                  <p className="max-w-xl text-sm text-muted-foreground">
-                    Listado de artículos con precio, IVA y categoría. Los cambios
-                    respetan tus permisos y las políticas RLS en Supabase.
-                  </p>
-                </div>
-                <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                  <span className="rounded-full bg-muted px-3 py-1 font-medium text-foreground/80">
-                    {articles.length}{" "}
-                    {articles.length === 1 ? "artículo" : "artículos"}
-                  </span>
-                </div>
-              </div>
-
-              <div className="overflow-hidden rounded-2xl border border-border bg-card/95 shadow-md shadow-primary/5 backdrop-blur-sm">
-                <Table>
-                  <TableHeader>
-                    <TableRow className="border-border bg-muted/40 hover:bg-muted/40">
-                      <TableHead className="font-semibold text-foreground">
-                        Nombre
-                      </TableHead>
-                      <TableHead className="font-semibold text-foreground">
-                        Categoría
-                      </TableHead>
-                      <TableHead className="text-right font-semibold text-foreground">
-                        Precio venta
-                      </TableHead>
-                      <TableHead className="text-right font-semibold text-foreground">
-                        Costo
-                      </TableHead>
-                      <TableHead className="text-right font-semibold text-foreground">
-                        IVA %
-                      </TableHead>
-                      <TableHead className="font-semibold text-foreground">
-                        Estado
-                      </TableHead>
-                      <TableHead className="font-semibold text-foreground">
-                        Descripción
-                      </TableHead>
-                      {canUpdate || canDelete ? (
-                        <TableHead className="text-right font-semibold text-foreground">
-                          Acciones
-                        </TableHead>
-                      ) : null}
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {articles.length === 0 ? (
-                      <TableRow>
-                        <TableCell
-                          colSpan={emptyCols}
-                          className="py-12 text-center text-muted-foreground"
+        ) : null}
+        {workspaceParsed.view === "list" ||
+        workspaceParsed.view === "new-article" ? (
+          <div className="relative flex min-h-0 flex-1 flex-col gap-6">
+            <DataWorkspaceListToolbar
+              filters={
+                <DataWorkspaceToolbarFilterCard label="Filtros">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="mt-2 h-9 w-full gap-2 border-border/60 bg-muted/20 shadow-sm dark:bg-background/30"
+                    onClick={() => {
+                      setDraftFilters({
+                        soloActivos: workspaceParsed.soloActivos,
+                        categoryId: workspaceParsed.categoryId,
+                      })
+                      setFiltersModalOpen(true)
+                    }}
+                  >
+                    <Filter className="size-4" aria-hidden />
+                    Configurar
+                  </Button>
+                </DataWorkspaceToolbarFilterCard>
+              }
+              search={
+                <DataWorkspaceToolbarSearchCard label="Búsqueda">
+                  <div className="relative mt-2 min-w-0">
+                    <Search
+                      className="pointer-events-none absolute left-2.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground"
+                      aria-hidden
+                    />
+                    <Input
+                      id={searchInputId}
+                      type="search"
+                      value={searchInput}
+                      onChange={(e) => setSearchInput(e.target.value)}
+                      placeholder="Nombre, descripción…"
+                      className="h-9 border-border/60 bg-muted/25 pl-9 shadow-none dark:bg-background/40"
+                      aria-label="Buscar artículos"
+                    />
+                  </div>
+                </DataWorkspaceToolbarSearchCard>
+              }
+              chips={
+                hasFilterChips ? (
+                  <div className={cn(dataWorkspaceShellCard, "px-4 py-3")}>
+                    <p className={cn(toolbarBlockLabelClass, "mb-2")}>
+                      Filtros aplicados
+                    </p>
+                    <div className="flex flex-wrap items-center gap-1.5">
+                      {workspaceParsed.q.trim() ? (
+                        <Badge
+                          variant="secondary"
+                          className="max-w-full gap-1 border-border/50 py-0 pr-0.5 font-normal"
                         >
-                          No hay artículos o no tenés permiso de lectura según
-                          las políticas del servidor.
-                        </TableCell>
-                      </TableRow>
-                    ) : (
-                      articles.map((a) => (
-                        <TableRow
-                          key={a.id}
-                          className="border-border/80 hover:bg-muted/30"
-                        >
-                          <TableCell className="font-medium text-foreground">
-                            {a.name || "—"}
-                          </TableCell>
-                          <TableCell className="text-muted-foreground">
-                            {a.categoryName}
-                          </TableCell>
-                          <TableCell className="text-right tabular-nums text-foreground">
-                            {formatMoney(a.salePrice)}
-                          </TableCell>
-                          <TableCell className="text-right tabular-nums text-muted-foreground">
-                            {formatMoney(a.costPrice)}
-                          </TableCell>
-                          <TableCell className="text-right tabular-nums text-muted-foreground">
-                            {a.iva}
-                          </TableCell>
-                          <TableCell>
-                            <Badge
-                              variant="secondary"
-                              className={cn(
-                                "font-normal",
-                                a.isActive
-                                  ? "border-primary/25 bg-primary/10 text-forest"
-                                  : "bg-muted text-muted-foreground",
-                              )}
-                            >
-                              {a.isActive ? "Activo" : "Inactivo"}
-                            </Badge>
-                          </TableCell>
-                          <TableCell
-                            className="max-w-[200px] truncate text-muted-foreground"
-                            title={a.description}
+                          <span className="truncate">
+                            Buscar: «{workspaceParsed.q.trim()}»
+                          </span>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            className="size-6 shrink-0"
+                            onClick={() =>
+                              replaceWorkspaceQuery({ q: "", page: 1 })
+                            }
+                            aria-label="Quitar búsqueda"
                           >
-                            {a.description || "—"}
-                          </TableCell>
-                          {canUpdate || canDelete ? (
-                            <TableCell className="text-right">
-                              <div className="flex justify-end gap-2">
-                                {canUpdate ? (
-                                  <Button
-                                    type="button"
-                                    variant="ghost"
-                                    size="sm"
-                                    className="text-primary hover:bg-primary/10 hover:text-forest"
-                                    onClick={() => void openEdit(a)}
-                                  >
-                                    Editar
-                                  </Button>
-                                ) : null}
-                                {canDelete ? (
-                                  <Button
-                                    type="button"
-                                    variant="ghost"
-                                    size="sm"
-                                    className="text-destructive hover:bg-destructive/10"
-                                    onClick={() => openDelete(a)}
-                                  >
-                                    Borrar
-                                  </Button>
-                                ) : null}
-                              </div>
-                            </TableCell>
+                            <X className="size-3" />
+                          </Button>
+                        </Badge>
+                      ) : null}
+                      {workspaceParsed.soloActivos ? (
+                        <Badge
+                          variant="secondary"
+                          className="gap-1 border-border/50 py-0 pr-0.5 font-normal"
+                        >
+                          Solo activos
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            className="size-6 shrink-0"
+                            onClick={() =>
+                              replaceWorkspaceQuery({
+                                soloActivos: false,
+                                page: 1,
+                              })
+                            }
+                            aria-label="Quitar filtro solo activos"
+                          >
+                            <X className="size-3" />
+                          </Button>
+                        </Badge>
+                      ) : null}
+                      {workspaceParsed.categoryId.trim() ? (
+                        <Badge
+                          variant="secondary"
+                          className="max-w-full gap-1 border-border/50 py-0 pr-0.5 font-normal"
+                        >
+                          <span className="truncate">
+                            Categoría:{" "}
+                            {categoryLabelForChip ||
+                              workspaceParsed.categoryId}
+                          </span>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            className="size-6 shrink-0"
+                            onClick={() =>
+                              replaceWorkspaceQuery({
+                                categoryId: "",
+                                page: 1,
+                              })
+                            }
+                            aria-label="Quitar filtro categoría"
+                          >
+                            <X className="size-3" />
+                          </Button>
+                        </Badge>
+                      ) : null}
+                    </div>
+                  </div>
+                ) : null
+              }
+            />
+
+            <Dialog
+              open={filtersModalOpen}
+              onOpenChange={(open) => {
+                if (open) {
+                  setDraftFilters({
+                    soloActivos: workspaceParsed.soloActivos,
+                    categoryId: workspaceParsed.categoryId,
+                  })
+                }
+                setFiltersModalOpen(open)
+              }}
+            >
+              <DialogContent className="gap-0 sm:max-w-md" showCloseButton>
+                <DialogHeader>
+                  <DialogTitle>Filtros</DialogTitle>
+                  <DialogDescription>
+                    Combinan con la búsqueda. El listado se pagina en el
+                    servidor.
+                  </DialogDescription>
+                </DialogHeader>
+                <div className="grid gap-4 py-4">
+                  <label className="flex cursor-pointer items-center gap-2 rounded-md border border-transparent px-1 py-0.5 hover:bg-muted/50">
+                    <Checkbox
+                      checked={draftFilters.soloActivos}
+                      onCheckedChange={(c) =>
+                        setDraftFilters((f) => ({
+                          ...f,
+                          soloActivos: c === true,
+                        }))
+                      }
+                      aria-label="Solo artículos activos"
+                    />
+                    <span className="text-sm">Solo artículos activos</span>
+                  </label>
+                  <div className="space-y-2">
+                    <Label htmlFor="articles-filter-category">Categoría</Label>
+                    <Select
+                      value={
+                        draftFilters.categoryId.trim() || "__all__"
+                      }
+                      onValueChange={(v) =>
+                        setDraftFilters((f) => ({
+                          ...f,
+                          categoryId: v === "__all__" ? "" : v,
+                        }))
+                      }
+                    >
+                      <SelectTrigger
+                        id="articles-filter-category"
+                        className="bg-background"
+                      >
+                        <SelectValue placeholder="Todas" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="__all__">Todas</SelectItem>
+                        {filterCategoryList.map((c) => (
+                          <SelectItem key={c.id} value={c.id}>
+                            {c.name || "—"}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+                <DialogFooter className="gap-2 sm:gap-0">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => setDraftFilters(defaultArticlesFilters())}
+                  >
+                    Restablecer
+                  </Button>
+                  <Button
+                    type="button"
+                    onClick={() => {
+                      replaceWorkspaceQuery({
+                        soloActivos: draftFilters.soloActivos,
+                        categoryId: draftFilters.categoryId,
+                        page: 1,
+                      })
+                      setFiltersModalOpen(false)
+                    }}
+                  >
+                    Aplicar
+                  </Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
+
+            <Dialog
+              open={quickNewCategoryOpen}
+              onOpenChange={(o) => {
+                setQuickNewCategoryOpen(o)
+                if (!o) {
+                  setQuickNewCategoryBanner(null)
+                  setQuickNewCategoryName("")
+                }
+              }}
+            >
+              <DialogContent
+                className="sm:max-w-md"
+                showCloseButton
+                data-rootsy-light-shell="true"
+              >
+                <DialogHeader>
+                  <DialogTitle>Nueva categoría</DialogTitle>
+                </DialogHeader>
+                {quickNewCategoryBanner ? (
+                  <p className="rounded-lg border border-destructive/25 bg-destructive/5 px-3 py-2 text-sm text-destructive">
+                    {quickNewCategoryBanner}
+                  </p>
+                ) : null}
+                <form
+                  className="space-y-4 py-2"
+                  onSubmit={(e) => void submitQuickNewCategory(e)}
+                >
+                  <div className="space-y-2">
+                    <Label htmlFor="quick-new-cat-name">Nombre</Label>
+                    <Input
+                      id="quick-new-cat-name"
+                      value={quickNewCategoryName}
+                      onChange={(e) => setQuickNewCategoryName(e.target.value)}
+                      placeholder="Nombre de la categoría"
+                      className="bg-background"
+                      autoFocus
+                    />
+                  </div>
+                  <DialogFooter className="gap-2 sm:gap-0">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => setQuickNewCategoryOpen(false)}
+                    >
+                      Cancelar
+                    </Button>
+                    <Button
+                      type="submit"
+                      disabled={
+                        quickNewCategorySaving || !quickNewCategoryName.trim()
+                      }
+                    >
+                      {quickNewCategorySaving ? "Creando…" : "Crear"}
+                    </Button>
+                  </DialogFooter>
+                </form>
+              </DialogContent>
+            </Dialog>
+
+            <DataWorkspaceListTableShell
+              footer={
+                <DataWorkspaceListPaginationFooter
+                  listFetching={listFetching}
+                  totalCount={totalCount}
+                  rangeStart={rangeLabel.start}
+                  rangeEnd={rangeLabel.end}
+                  currentPage={currentPage}
+                  totalPages={totalPages}
+                  pageSize={workspaceParsed.pageSize}
+                  pageSizeOptions={ARTICLE_TABLE_PAGE_SIZES}
+                  paginationItems={paginationItems}
+                  onPageChange={(p) => replaceWorkspaceQuery({ page: p })}
+                  onPageSizeChange={(ps) =>
+                    replaceWorkspaceQuery({ pageSize: ps, page: 1 })
+                  }
+                  pageSizeLabelId={pageSizeLabelId}
+                  loadingSlot={<ArticlesTableFooterSkeleton />}
+                />
+              }
+            >
+              <table
+                className={workspaceDataTableClassName}
+                aria-busy={listFetching}
+              >
+                <TableHeader>
+                  <TableRow className="border-0 hover:bg-transparent">
+                    <TableHead
+                      className={cn(thBase, "w-14 text-left")}
+                    >
+                      <span className="sr-only">Foto</span>
+                    </TableHead>
+                    <TableHead className={cn(thBase, "min-w-[11rem] text-left")}>
+                      Artículo
+                    </TableHead>
+                    <TableHead className={cn(thBase, "w-[11%] text-left")}>
+                      Categoría
+                    </TableHead>
+                    <TableHead className={cn(thBase, "w-[9%] text-right")}>
+                      Venta
+                    </TableHead>
+                    <TableHead className={cn(thBase, "w-[9%] text-right")}>
+                      Costo
+                    </TableHead>
+                    <TableHead className={cn(thBase, "w-[6%] text-right")}>
+                      IVA %
+                    </TableHead>
+                    <TableHead className={cn(thBase, "w-[8%] text-left")}>
+                      Estado
+                    </TableHead>
+                    {canUpdate || canDelete ? (
+                      <TableHead
+                        className={cn(thBase, "w-[6.5rem] text-right")}
+                      >
+                        <span className="sr-only">Acciones</span>
+                      </TableHead>
+                    ) : null}
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {listFetching ? (
+                    <ArticlesTableSkeletonRows
+                      rowCount={skeletonRowCount}
+                      hasActionsColumn={Boolean(canUpdate || canDelete)}
+                    />
+                  ) : totalCount === 0 ? (
+                    <TableRow>
+                      <TableCell
+                        colSpan={emptyCols}
+                        className="py-12 text-center text-muted-foreground"
+                      >
+                        No hay artículos que coincidan con la búsqueda o los
+                        filtros, o no tenés permiso de lectura.
+                      </TableCell>
+                    </TableRow>
+                  ) : (
+                    pageRows.map((a, i) => (
+                      <TableRow
+                        key={a.id}
+                        className={workspaceTableBodyRowClassNames(i)}
+                      >
+                        <TableCell className="w-14 px-2 py-2 align-middle">
+                          <DataWorkspaceTableThumbnail
+                            src={a.imageUrl}
+                            alt={a.name || "Artículo"}
+                            size="md"
+                          />
+                        </TableCell>
+                        <TableCell className="min-w-0 px-3 py-2.5 align-middle">
+                          <p className="truncate font-medium text-foreground">
+                            {a.name || "—"}
+                          </p>
+                          {a.description.trim() ? (
+                            <p
+                              className="mt-0.5 truncate text-xs text-muted-foreground"
+                              title={a.description}
+                            >
+                              {a.description}
+                            </p>
                           ) : null}
-                        </TableRow>
-                      ))
-                    )}
-                  </TableBody>
-                </Table>
-              </div>
-            </div>
-          )}
-        </main>
-      </div>
+                        </TableCell>
+                        <TableCell className="min-w-0 px-3 py-2.5 text-muted-foreground">
+                          {a.categoryName}
+                        </TableCell>
+                        <TableCell className="px-3 py-2.5 text-right align-middle">
+                          <DataWorkspaceTableMoney>
+                            {formatMoney(a.salePrice)}
+                          </DataWorkspaceTableMoney>
+                        </TableCell>
+                        <TableCell className="px-3 py-2.5 text-right align-middle">
+                          <DataWorkspaceTableMoney muted>
+                            {formatMoney(a.costPrice)}
+                          </DataWorkspaceTableMoney>
+                        </TableCell>
+                        <TableCell className="px-3 py-2.5 text-right align-middle">
+                          <DataWorkspaceTableMoney muted>
+                            {a.iva}
+                          </DataWorkspaceTableMoney>
+                        </TableCell>
+                        <TableCell className="px-3 py-2.5">
+                          <Badge
+                            variant="secondary"
+                            className={cn(
+                              "font-normal",
+                              a.isActive
+                                ? "border-primary/25 bg-primary/10 text-forest"
+                                : "bg-muted text-muted-foreground",
+                            )}
+                          >
+                            {a.isActive ? "Activo" : "Inactivo"}
+                          </Badge>
+                        </TableCell>
+                        {canUpdate || canDelete ? (
+                          <TableCell className="px-1 py-1.5 align-middle">
+                            <div className="flex items-center justify-end gap-0.5">
+                              {canUpdate ? (
+                                <DataWorkspaceTableIconAction
+                                  label={`Editar ${a.name || "artículo"}`}
+                                  icon={Pencil}
+                                  onClick={() => void openEdit(a)}
+                                />
+                              ) : null}
+                              {canDelete ? (
+                                <DataWorkspaceTableIconAction
+                                  label={`Eliminar ${a.name || "artículo"}`}
+                                  icon={Trash2}
+                                  destructive
+                                  onClick={() => openDelete(a)}
+                                />
+                              ) : null}
+                            </div>
+                          </TableCell>
+                        ) : null}
+                      </TableRow>
+                    ))
+                  )}
+                </TableBody>
+              </table>
+            </DataWorkspaceListTableShell>
+          </div>
+        ) : null}
 
       <Dialog open={editRow !== null} onOpenChange={(o) => !o && closeEdit()}>
         <DialogContent
@@ -785,6 +1359,20 @@ function ArticlesPage() {
                   value={editForm.description}
                   onChange={(e) =>
                     setEditForm((f) => ({ ...f, description: e.target.value }))
+                  }
+                  className="bg-background"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="art-image-url">URL de imagen (opcional)</Label>
+                <Input
+                  id="art-image-url"
+                  type="url"
+                  inputMode="url"
+                  placeholder="https://…"
+                  value={editForm.imageUrl}
+                  onChange={(e) =>
+                    setEditForm((f) => ({ ...f, imageUrl: e.target.value }))
                   }
                   className="bg-background"
                 />
@@ -975,6 +1563,20 @@ function ArticlesPage() {
                       ...f,
                       description: e.target.value,
                     }))
+                  }
+                  className="bg-background"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="create-art-image-url">URL de imagen (opcional)</Label>
+                <Input
+                  id="create-art-image-url"
+                  type="url"
+                  inputMode="url"
+                  placeholder="https://…"
+                  value={createForm.imageUrl}
+                  onChange={(e) =>
+                    setCreateForm((f) => ({ ...f, imageUrl: e.target.value }))
                   }
                   className="bg-background"
                 />
@@ -1270,7 +1872,8 @@ function ArticlesPage() {
           )}
         </DialogContent>
       </Dialog>
-    </div>
+      </>
+    </DataWorkspaceLayout>
   )
 }
 

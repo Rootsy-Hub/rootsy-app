@@ -42,6 +42,15 @@ export const POP_PAGES = {
       delete: "clients:delete",
     },
   },
+  expenses: {
+    path: "expenses",
+    permissions: {
+      read: "expenses:read",
+      create: "expenses:create",
+      update: "expenses:update",
+      delete: "expenses:delete",
+    },
+  },
   hr: {
     path: "hr",
     permissions: {

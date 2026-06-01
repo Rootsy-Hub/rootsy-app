@@ -60,6 +60,11 @@ export const POP_PERMS = {
   OPERATIONS_CREATE: { resource: "operations", action: "create" },
   OPERATIONS_UPDATE: { resource: "operations", action: "update" },
   OPERATIONS_DELETE: { resource: "operations", action: "delete" },
+
+  EXPENSES_READ: { resource: "expenses", action: "read" },
+  EXPENSES_CREATE: { resource: "expenses", action: "create" },
+  EXPENSES_UPDATE: { resource: "expenses", action: "update" },
+  EXPENSES_DELETE: { resource: "expenses", action: "delete" },
 } as const
 
 export function permissionKeysInclude(

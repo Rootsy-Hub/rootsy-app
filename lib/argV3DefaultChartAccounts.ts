@@ -162,6 +162,13 @@ export const ARG_V3_DEFAULT_CHART_ACCOUNTS: readonly ArgV3DefaultChartRow[] = [
     level: 4,
   },
   {
+    code: "6.2.1.99",
+    name: "Gastos generales",
+    accountType: "gastos",
+    nature: "deudora",
+    level: 4,
+  },
+  {
     code: "6.3.1.01",
     name: "Intereses y gastos financieros",
     accountType: "gastos",
@@ -217,3 +224,17 @@ export const CHART_ARQUEO_SOBRANTE_INGRESO_CODES: readonly string[] = [
 ]
 
 export const CHART_CAJA_EFECTIVO_CODES: readonly string[] = ["1.1.1.01"]
+
+/**
+ * Categorías creadas por el usuario (no sistema): todo imputa aquí.
+ * 6.2.1.99 nombre alineado al plan; si un POP viejo no la tiene, se prean alternativas.
+ */
+export const CHART_GASTOS_GENERALES_CODES: readonly string[] = [
+  "6.2.1.99",
+  "6.2.1.02",
+  "6.2.1.01",
+]
+
+/** @deprecated Preferir CHART_GASTOS_GENERALES_CODES o mapeo por categoría sistema. */
+export const CHART_EXPENSE_GENERIC_FALLBACK_CODES: readonly string[] =
+  CHART_GASTOS_GENERALES_CODES

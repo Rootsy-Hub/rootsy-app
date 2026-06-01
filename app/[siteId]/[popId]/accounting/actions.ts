@@ -191,8 +191,205 @@ export type FinancialSummaryRow = {
   accountTypes: AccountType[]
 }
 
+export type BalanceSheetSectionRow = {
+  accountCode: string
+  accountName: string
+  balance: number
+}
+
+export type BalanceSheetSection = {
+  key: "activo" | "pasivo" | "patrimonio"
+  title: string
+  rows: BalanceSheetSectionRow[]
+  sectionTotal: number
+}
+
+export type BalanceSheetResult = {
+  asOf: string
+  sections: BalanceSheetSection[]
+  resultadoAcumulado: number
+  totalActivo: number
+  totalPasivo: number
+  totalPatrimonioCuentas: number
+  totalPasivoPatrimonioYResultado: number
+  diferenciaCuadre: number
+}
+
+export type IncomeStatementLine = {
+  accountCode: string
+  accountName: string
+  accountType: AccountType
+  balance: number
+}
+
+export type IncomeStatementResult = {
+  from: string
+  to: string
+  ingresos: IncomeStatementLine[]
+  costos: IncomeStatementLine[]
+  gastos: IncomeStatementLine[]
+  totalIngresos: number
+  totalCostos: number
+  totalGastos: number
+  resultadoNeto: number
+}
+
+export type CashFlowRow = {
+  accountCode: string
+  accountName: string
+  entradas: number
+  salidas: number
+  neto: number
+}
+
+export type VatPositionRow = {
+  accountCode: string
+  accountName: string
+  accountType: AccountType
+  sumDebit: number
+  sumCredit: number
+  balance: number
+}
+
 function roundMoney(n: number): number {
   return Math.round(n * 100) / 100
+}
+
+async function fetchTrialBalanceForEntryIds(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  _popId: string,
+  entryIds: string[],
+): Promise<TrialBalanceRow[] | { error: string }> {
+  if (entryIds.length === 0) {
+    return []
+  }
+  const { data: lines, error: lErr } = await supabase
+    .from("accounting_entry_lines")
+    .select(
+      `
+      account_id,
+      debit_amount,
+      credit_amount,
+      accounting_chart_of_accounts ( code, name, account_type, nature )
+    `,
+    )
+    .in("entry_id", entryIds)
+  if (lErr) {
+    return { error: lErr.message || "No se pudieron cargar líneas." }
+  }
+  const accountTypes: AccountType[] = [
+    "activo_corriente",
+    "activo_no_corriente",
+    "pasivo_corriente",
+    "pasivo_no_corriente",
+    "patrimonio_neto",
+    "ingresos",
+    "costos",
+    "gastos",
+  ]
+  const agg = new Map<
+    string,
+    {
+      code: string
+      name: string
+      accountType: AccountType
+      nature: AccountNature
+      debit: number
+      credit: number
+    }
+  >()
+  for (const ln of lines || []) {
+    const acc = ln.accounting_chart_of_accounts as unknown as {
+      code?: string
+      name?: string
+      account_type?: string
+      nature?: string
+    } | null
+    const aid = String(ln.account_id)
+    const d = Number(ln.debit_amount ?? 0)
+    const c = Number(ln.credit_amount ?? 0)
+    const at = String(acc?.account_type ?? "gastos")
+    const nt = String(acc?.nature ?? "deudora")
+    const prev = agg.get(aid) ?? {
+      code: acc?.code ? String(acc.code) : "",
+      name: acc?.name ? String(acc.name) : "",
+      accountType: accountTypes.includes(at as AccountType)
+        ? (at as AccountType)
+        : "gastos",
+      nature: nt === "acreedora" ? "acreedora" : "deudora",
+      debit: 0,
+      credit: 0,
+    }
+    prev.debit += d
+    prev.credit += c
+    agg.set(aid, prev)
+  }
+  return [...agg.values()]
+    .map((v) => {
+      const balance =
+        v.nature === "deudora"
+          ? roundMoney(v.debit - v.credit)
+          : roundMoney(v.credit - v.debit)
+      return {
+        accountCode: v.code,
+        accountName: v.name,
+        accountType: v.accountType,
+        sumDebit: roundMoney(v.debit),
+        sumCredit: roundMoney(v.credit),
+        balance,
+      }
+    })
+    .sort((a, b) =>
+      a.accountCode.localeCompare(b.accountCode, undefined, { numeric: true }),
+    )
+}
+
+async function trialBalanceRowsForPopDateRange(
+  popId: string,
+  fromDate: string | null,
+  toDate: string | null,
+  throughDateOnly: string | null,
+): Promise<{ success: true; rows: TrialBalanceRow[] } | { success: false; error: string }> {
+  const access = await validatePopAccess(popId)
+  if (!access.hasAccess || !access.isActive) {
+    return { success: false, error: access.error || "Sin acceso" }
+  }
+  const snap = await loadPopPermissionsSnapshot(popId)
+  if (
+    !permissionKeysInclude(
+      snap.keys,
+      POP_PERMS.ACCOUNTING_READ.resource,
+      POP_PERMS.ACCOUNTING_READ.action,
+    )
+  ) {
+    return { success: false, error: "Sin permiso." }
+  }
+  const supabase = await createClient()
+  let entQ = supabase
+    .from("accounting_entries")
+    .select("id")
+    .eq("pop_id", popId)
+    .eq("status", "posted")
+  if (throughDateOnly && throughDateOnly.trim()) {
+    entQ = entQ.lte("entry_date", throughDateOnly.trim())
+  } else {
+    if (fromDate && fromDate.trim()) {
+      entQ = entQ.gte("entry_date", fromDate.trim())
+    }
+    if (toDate && toDate.trim()) {
+      entQ = entQ.lte("entry_date", toDate.trim())
+    }
+  }
+  const { data: postedEntries, error: eErr } = await entQ
+  if (eErr) {
+    return { success: false, error: eErr.message || "No se pudieron listar asientos." }
+  }
+  const entryIds = (postedEntries || []).map((e) => String(e.id))
+  const raw = await fetchTrialBalanceForEntryIds(supabase, popId, entryIds)
+  if (Array.isArray(raw)) {
+    return { success: true, rows: raw }
+  }
+  return { success: false, error: raw.error }
 }
 
 export async function getAccountingJournalEntries(
@@ -487,119 +684,221 @@ export async function getAccountingTrialBalance(
   | { success: false; error: string }
 > {
   try {
-    const access = await validatePopAccess(popId)
-    if (!access.hasAccess || !access.isActive) {
-      return { success: false, error: access.error || "Sin acceso" }
+    return await trialBalanceRowsForPopDateRange(popId, fromDate, toDate, null)
+  } catch (e: unknown) {
+    const message = e instanceof Error ? e.message : "Error desconocido"
+    return { success: false, error: message }
+  }
+}
+
+export async function getAccountingBalanceSheet(
+  popId: string,
+  asOfDate: string | null,
+): Promise<
+  | { success: true; data: BalanceSheetResult }
+  | { success: false; error: string }
+> {
+  try {
+    const d = asOfDate?.trim()
+    if (!d) {
+      return { success: false, error: "Indicá la fecha de corte del balance." }
     }
-    const snap = await loadPopPermissionsSnapshot(popId)
-    if (
-      !permissionKeysInclude(
-        snap.keys,
-        POP_PERMS.ACCOUNTING_READ.resource,
-        POP_PERMS.ACCOUNTING_READ.action,
-      )
-    ) {
-      return { success: false, error: "Sin permiso." }
+    const tb = await trialBalanceRowsForPopDateRange(popId, null, null, d)
+    if (!tb.success) {
+      return { success: false, error: tb.error }
     }
-    const supabase = await createClient()
-    let entQ = supabase
-      .from("accounting_entries")
-      .select("id")
-      .eq("pop_id", popId)
-      .eq("status", "posted")
-    if (fromDate && fromDate.trim()) {
-      entQ = entQ.gte("entry_date", fromDate.trim())
-    }
-    if (toDate && toDate.trim()) {
-      entQ = entQ.lte("entry_date", toDate.trim())
-    }
-    const { data: postedEntries, error: eErr } = await entQ
-    if (eErr) {
-      return { success: false, error: eErr.message || "No se pudieron listar asientos." }
-    }
-    const entryIds = (postedEntries || []).map((e) => String(e.id))
-    if (entryIds.length === 0) {
-      return { success: true, rows: [] }
-    }
-    const { data: lines, error: lErr } = await supabase
-      .from("accounting_entry_lines")
-      .select(
-        `
-        account_id,
-        debit_amount,
-        credit_amount,
-        accounting_chart_of_accounts ( code, name, account_type, nature )
-      `,
-      )
-      .in("entry_id", entryIds)
-    if (lErr) {
-      return { success: false, error: lErr.message || "No se pudieron cargar líneas." }
-    }
-    const accountTypes: AccountType[] = [
-      "activo_corriente",
-      "activo_no_corriente",
-      "pasivo_corriente",
-      "pasivo_no_corriente",
-      "patrimonio_neto",
-      "ingresos",
-      "costos",
-      "gastos",
-    ]
-    const agg = new Map<
-      string,
+    const rows = tb.rows
+    const isActivo = (t: AccountType) =>
+      t === "activo_corriente" || t === "activo_no_corriente"
+    const isPasivo = (t: AccountType) =>
+      t === "pasivo_corriente" || t === "pasivo_no_corriente"
+    const sumBal = (pred: (t: AccountType) => boolean) =>
+      roundMoney(rows.filter((r) => pred(r.accountType)).reduce((a, r) => a + r.balance, 0))
+    const linesFor = (pred: (t: AccountType) => boolean): BalanceSheetSectionRow[] =>
+      rows
+        .filter((r) => pred(r.accountType))
+        .map((r) => ({
+          accountCode: r.accountCode,
+          accountName: r.accountName,
+          balance: r.balance,
+        }))
+    const totalIngresos = sumBal((t) => t === "ingresos")
+    const totalCostos = sumBal((t) => t === "costos")
+    const totalGastos = sumBal((t) => t === "gastos")
+    const resultadoAcumulado = roundMoney(
+      totalIngresos - totalCostos - totalGastos,
+    )
+    const totalActivo = sumBal(isActivo)
+    const totalPasivo = sumBal(isPasivo)
+    const totalPatrimonioCuentas = sumBal((t) => t === "patrimonio_neto")
+    const totalPasivoPatrimonioYResultado = roundMoney(
+      totalPasivo + totalPatrimonioCuentas + resultadoAcumulado,
+    )
+    const diferenciaCuadre = roundMoney(
+      totalActivo - totalPasivoPatrimonioYResultado,
+    )
+    const sections: BalanceSheetSection[] = [
       {
-        code: string
-        name: string
-        accountType: AccountType
-        nature: AccountNature
-        debit: number
-        credit: number
-      }
-    >()
-    for (const ln of lines || []) {
-      const acc = ln.accounting_chart_of_accounts as unknown as {
-        code?: string
-        name?: string
-        account_type?: string
-        nature?: string
-      } | null
-      const aid = String(ln.account_id)
-      const d = Number(ln.debit_amount ?? 0)
-      const c = Number(ln.credit_amount ?? 0)
-      const at = String(acc?.account_type ?? "gastos")
-      const nt = String(acc?.nature ?? "deudora")
-      const prev = agg.get(aid) ?? {
-        code: acc?.code ? String(acc.code) : "",
-        name: acc?.name ? String(acc.name) : "",
-        accountType: accountTypes.includes(at as AccountType)
-          ? (at as AccountType)
-          : "gastos",
-        nature: nt === "acreedora" ? "acreedora" : "deudora",
-        debit: 0,
-        credit: 0,
-      }
-      prev.debit += d
-      prev.credit += c
-      agg.set(aid, prev)
+        key: "activo",
+        title: "Activo",
+        rows: linesFor(isActivo),
+        sectionTotal: totalActivo,
+      },
+      {
+        key: "pasivo",
+        title: "Pasivo",
+        rows: linesFor(isPasivo),
+        sectionTotal: totalPasivo,
+      },
+      {
+        key: "patrimonio",
+        title: "Patrimonio neto",
+        rows: [
+          ...linesFor((t) => t === "patrimonio_neto"),
+          {
+            accountCode: "—",
+            accountName: "Resultado acumulado (cuentas de resultado)",
+            balance: resultadoAcumulado,
+          },
+        ],
+        sectionTotal: roundMoney(totalPatrimonioCuentas + resultadoAcumulado),
+      },
+    ]
+    return {
+      success: true,
+      data: {
+        asOf: d,
+        sections,
+        resultadoAcumulado,
+        totalActivo,
+        totalPasivo,
+        totalPatrimonioCuentas,
+        totalPasivoPatrimonioYResultado,
+        diferenciaCuadre,
+      },
     }
-    const rows: TrialBalanceRow[] = [...agg.values()]
-      .map((v) => {
-        const balance =
-          v.nature === "deudora"
-            ? roundMoney(v.debit - v.credit)
-            : roundMoney(v.credit - v.debit)
-        return {
-          accountCode: v.code,
-          accountName: v.name,
-          accountType: v.accountType,
-          sumDebit: roundMoney(v.debit),
-          sumCredit: roundMoney(v.credit),
-          balance,
-        }
-      })
-      .sort((a, b) =>
-        a.accountCode.localeCompare(b.accountCode, undefined, { numeric: true }),
-      )
+  } catch (e: unknown) {
+    const message = e instanceof Error ? e.message : "Error desconocido"
+    return { success: false, error: message }
+  }
+}
+
+export async function getAccountingIncomeStatement(
+  popId: string,
+  fromDate: string | null,
+  toDate: string | null,
+): Promise<
+  | { success: true; data: IncomeStatementResult }
+  | { success: false; error: string }
+> {
+  try {
+    const tb = await trialBalanceRowsForPopDateRange(popId, fromDate, toDate, null)
+    if (!tb.success) {
+      return { success: false, error: tb.error }
+    }
+    const rows = tb.rows
+    const pick = (t: AccountType): IncomeStatementLine[] =>
+      rows
+        .filter((r) => r.accountType === t)
+        .map((r) => ({
+          accountCode: r.accountCode,
+          accountName: r.accountName,
+          accountType: r.accountType,
+          balance: r.balance,
+        }))
+    const ingresos = pick("ingresos")
+    const costos = pick("costos")
+    const gastos = pick("gastos")
+    const totalIngresos = roundMoney(
+      ingresos.reduce((a, r) => a + r.balance, 0),
+    )
+    const totalCostos = roundMoney(costos.reduce((a, r) => a + r.balance, 0))
+    const totalGastos = roundMoney(gastos.reduce((a, r) => a + r.balance, 0))
+    const resultadoNeto = roundMoney(
+      totalIngresos - totalCostos - totalGastos,
+    )
+    return {
+      success: true,
+      data: {
+        from: fromDate?.trim() ?? "",
+        to: toDate?.trim() ?? "",
+        ingresos,
+        costos,
+        gastos,
+        totalIngresos,
+        totalCostos,
+        totalGastos,
+        resultadoNeto,
+      },
+    }
+  } catch (e: unknown) {
+    const message = e instanceof Error ? e.message : "Error desconocido"
+    return { success: false, error: message }
+  }
+}
+
+function isCashEquivalentAccountCode(code: string): boolean {
+  const c = code.trim()
+  return c.startsWith("1.1.1.")
+}
+
+function isVatRelatedAccountCode(code: string): boolean {
+  const c = code.trim()
+  return c.startsWith("1.1.2.") || c.startsWith("2.1.2.")
+}
+
+export async function getAccountingCashFlow(
+  popId: string,
+  fromDate: string | null,
+  toDate: string | null,
+): Promise<
+  | { success: true; rows: CashFlowRow[] }
+  | { success: false; error: string }
+> {
+  try {
+    const tb = await trialBalanceRowsForPopDateRange(popId, fromDate, toDate, null)
+    if (!tb.success) {
+      return { success: false, error: tb.error }
+    }
+    const rows: CashFlowRow[] = tb.rows
+      .filter((r) => isCashEquivalentAccountCode(r.accountCode))
+      .map((r) => ({
+        accountCode: r.accountCode,
+        accountName: r.accountName,
+        entradas: r.sumDebit,
+        salidas: r.sumCredit,
+        neto: r.balance,
+      }))
+    return { success: true, rows }
+  } catch (e: unknown) {
+    const message = e instanceof Error ? e.message : "Error desconocido"
+    return { success: false, error: message }
+  }
+}
+
+export async function getAccountingVatPosition(
+  popId: string,
+  fromDate: string | null,
+  toDate: string | null,
+): Promise<
+  | { success: true; rows: VatPositionRow[] }
+  | { success: false; error: string }
+> {
+  try {
+    const tb = await trialBalanceRowsForPopDateRange(popId, fromDate, toDate, null)
+    if (!tb.success) {
+      return { success: false, error: tb.error }
+    }
+    const rows: VatPositionRow[] = tb.rows
+      .filter((r) => isVatRelatedAccountCode(r.accountCode))
+      .map((r) => ({
+        accountCode: r.accountCode,
+        accountName: r.accountName,
+        accountType: r.accountType,
+        sumDebit: r.sumDebit,
+        sumCredit: r.sumCredit,
+        balance: r.balance,
+      }))
     return { success: true, rows }
   } catch (e: unknown) {
     const message = e instanceof Error ? e.message : "Error desconocido"

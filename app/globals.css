@@ -253,6 +253,32 @@
     background-clip: padding-box;
   }
 
+  /** Scroll casi invisible; thumb fino, track transparente (tablas / paneles densos). */
+  .rootsy-scroll-minimal {
+    scrollbar-width: thin;
+    scrollbar-color: color-mix(in oklch, var(--foreground) 11%, transparent) transparent;
+  }
+
+  .rootsy-scroll-minimal::-webkit-scrollbar {
+    width: 5px;
+    height: 5px;
+  }
+
+  .rootsy-scroll-minimal::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .rootsy-scroll-minimal::-webkit-scrollbar-thumb {
+    border-radius: 9999px;
+    background: color-mix(in oklch, var(--foreground) 12%, transparent);
+    border: 2px solid transparent;
+    background-clip: padding-box;
+  }
+
+  .rootsy-scroll-minimal::-webkit-scrollbar-thumb:hover {
+    background: color-mix(in oklch, var(--foreground) 20%, transparent);
+  }
+
   /* Partículas / landing (alineado con /menu; la duración viene del style inline) */
   .animate-float {
     animation-name: rootsy-float;

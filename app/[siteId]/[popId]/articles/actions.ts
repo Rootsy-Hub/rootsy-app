@@ -14,11 +14,16 @@ import {
 import { popMenuHref } from "@/lib/popRoutes"
 import { loadPopPermissionsSnapshot } from "@/lib/popPermissionsServer"
 import { createClient } from "@/utils/supabase/server"
+import {
+  ARTICLE_TABLE_PAGE_SIZES,
+  DEFAULT_ARTICLE_TABLE_PAGE_SIZE,
+} from "@/app/[siteId]/[popId]/articles/workspaceUrl"
 
 export type ArticleTableRow = {
   id: string
   name: string
   description: string
+  imageUrl: string | null
   salePrice: number
   costPrice: number
   iva: number
@@ -35,6 +40,7 @@ export type ArticleCategoryOption = {
 export type UpdatePopArticleInput = {
   name: string
   description: string
+  imageUrl: string
   salePrice: number
   costPrice: number
   iva: number
@@ -131,11 +137,13 @@ export async function updatePopArticle(
     if (!Number.isFinite(costPrice) || costPrice < 0) {
       return { success: false, error: "Precio de costo inválido." }
     }
+    const imageUrl = input.imageUrl.trim()
     const { error } = await supabase
       .from("articles")
       .update({
         name,
         description: input.description.trim(),
+        image_url: imageUrl ? imageUrl : null,
         sale_price: salePrice,
         cost_price: costPrice,
         iva,
@@ -223,12 +231,14 @@ export async function createPopArticle(
       }
     }
 
+    const imageUrlInsert = input.imageUrl.trim()
     const { data: created, error } = await supabase
       .from("articles")
       .insert({
         pop_id: popId,
         name,
         description: input.description.trim(),
+        image_url: imageUrlInsert ? imageUrlInsert : null,
         sale_price: salePrice,
         cost_price: costPrice,
         iva,
@@ -416,10 +426,75 @@ export async function deletePopArticle(
   }
 }
 
-export async function getPopArticlesTable(popId: string): Promise<
+export type GetPopArticlesTableInput = {
+  page: number
+  pageSize: number
+  search: string
+  soloActivos: boolean
+  categoryId: string
+}
+
+function normalizeArticlesListPaging(page: number, pageSize: number) {
+  const sizes = new Set<number>(ARTICLE_TABLE_PAGE_SIZES as unknown as number[])
+  const ps = sizes.has(pageSize) ? pageSize : DEFAULT_ARTICLE_TABLE_PAGE_SIZE
+  const p = Number.isFinite(page) && page >= 1 ? Math.floor(page) : 1
+  return { page: p, pageSize: ps }
+}
+
+function escapeIlikeToken(raw: string): string {
+  return raw.replace(/\\/g, "\\\\").replace(/%/g, "\\%").replace(/_/g, "\\_")
+}
+
+function buildArticlesSearchOrClause(raw: string): string | null {
+  const t = raw.trim().replace(/,/g, " ").trim()
+  if (!t) return null
+  const pattern = `%${escapeIlikeToken(t)}%`
+  return `name.ilike.${pattern},description.ilike.${pattern}`
+}
+
+function appendArticleListFilters<
+  Q extends {
+    eq: (a: string, b: string | boolean) => Q
+    or: (s: string) => Q
+  },
+>(q: Q, input: GetPopArticlesTableInput): Q {
+  let x = q
+  if (input.soloActivos) {
+    x = x.eq("is_active", true)
+  }
+  const cid = input.categoryId.trim()
+  if (cid) {
+    x = x.eq("category_id", cid)
+  }
+  const orClause = buildArticlesSearchOrClause(input.search)
+  if (orClause) {
+    x = x.or(orClause)
+  }
+  return x
+}
+
+const ARTICLE_LIST_SELECT = `
+  id,
+  name,
+  description,
+  image_url,
+  sale_price,
+  cost_price,
+  iva,
+  category_id,
+  is_active,
+  categories ( id, name )
+`
+
+export async function getPopArticlesTable(
+  popId: string,
+  input: GetPopArticlesTableInput,
+): Promise<
   | {
       success: true
       articles: ArticleTableRow[]
+      totalCount: number
+      page: number
       popName: string
       canCreate: boolean
       canPostInitialStock: boolean
@@ -431,6 +506,8 @@ export async function getPopArticlesTable(popId: string): Promise<
       error: string
       redirect?: string
       articles: ArticleTableRow[]
+      totalCount: number
+      page: number
       popName?: string
       canCreate: boolean
       canPostInitialStock: boolean
@@ -440,6 +517,8 @@ export async function getPopArticlesTable(popId: string): Promise<
 > {
   const empty = {
     articles: [] as ArticleTableRow[],
+    totalCount: 0,
+    page: 1,
     canCreate: false,
     canPostInitialStock: false,
     canUpdate: false,
@@ -496,25 +575,43 @@ export async function getPopArticlesTable(popId: string): Promise<
     const popName =
       popRes.success && popRes.pop ? String(popRes.pop.name ?? "") : ""
 
-    const supabase = await createClient()
-    const { data, error } = await supabase
-      .from("articles")
-      .select(
-        `
-        id,
-        name,
-        description,
-        sale_price,
-        cost_price,
-        iva,
-        category_id,
-        is_active,
-        categories ( id, name )
-      `,
-      )
-      .eq("pop_id", popId)
-      .order("name", { ascending: true })
+    const { page: reqPage, pageSize } = normalizeArticlesListPaging(
+      input.page,
+      input.pageSize,
+    )
 
+    const supabase = await createClient()
+
+    let countQuery = supabase
+      .from("articles")
+      .select("id", { count: "exact", head: true })
+      .eq("pop_id", popId)
+    countQuery = appendArticleListFilters(countQuery, input)
+
+    const { count: countRaw, error: countErr } = await countQuery
+    if (countErr) {
+      return {
+        success: false,
+        error: countErr.message || "No se pudieron cargar los artículos.",
+        ...empty,
+        popName,
+      }
+    }
+
+    const totalCount = countRaw ?? 0
+    const totalPages = Math.max(1, Math.ceil(totalCount / pageSize))
+    const safePage = Math.min(Math.max(1, reqPage), totalPages)
+    const from = (safePage - 1) * pageSize
+    const to = from + pageSize - 1
+
+    let dataQuery = supabase
+      .from("articles")
+      .select(ARTICLE_LIST_SELECT)
+      .eq("pop_id", popId)
+    dataQuery = appendArticleListFilters(dataQuery, input)
+    dataQuery = dataQuery.order("name", { ascending: true }).range(from, to)
+
+    const { data, error } = await dataQuery
     if (error) {
       return {
         success: false,
@@ -527,10 +624,16 @@ export async function getPopArticlesTable(popId: string): Promise<
     const rows = (data || []) as Record<string, unknown>[]
     const articles: ArticleTableRow[] = rows.map((row) => {
       const cat = row.categories as unknown as { name?: string } | null
+      const rawImg = row.image_url
+      const imageUrl =
+        typeof rawImg === "string" && rawImg.trim() !== ""
+          ? rawImg.trim()
+          : null
       return {
         id: String(row.id),
         name: String(row.name ?? ""),
         description: String(row.description ?? ""),
+        imageUrl,
         salePrice: Number(row.sale_price ?? 0) || 0,
         costPrice: Number(row.cost_price ?? 0) || 0,
         iva: Number(row.iva ?? 0) || 0,
@@ -543,6 +646,8 @@ export async function getPopArticlesTable(popId: string): Promise<
     return {
       success: true,
       articles,
+      totalCount,
+      page: safePage,
       popName,
       canCreate,
       canPostInitialStock,

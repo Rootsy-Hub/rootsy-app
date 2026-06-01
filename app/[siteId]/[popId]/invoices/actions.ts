@@ -71,20 +71,13 @@ export type InvoiceFormCashSession = {
   hasCertificates: boolean
 }
 
-function canResolveCashRegisterForInvoiceUi(
+function canQueryOpenCashRegisterForInvoiceUi(
   snap: PopPermissionsSnapshotJSON,
 ): boolean {
-  return (
-    permissionKeysInclude(
-      snap.keys,
-      POP_PERMS.INVOICES_READ.resource,
-      POP_PERMS.INVOICES_READ.action,
-    ) &&
-    permissionKeysInclude(
-      snap.keys,
-      POP_PERMS.INVOICES_CREATE.resource,
-      POP_PERMS.INVOICES_CREATE.action,
-    )
+  return permissionKeysInclude(
+    snap.keys,
+    POP_PERMS.INVOICES_READ.resource,
+    POP_PERMS.INVOICES_READ.action,
   )
 }
 
@@ -95,7 +88,7 @@ async function resolveOpenCashRegisterForInvoice(
   | { success: true; ctx: InvoiceFormCashSession }
   | { success: false }
 > {
-  if (!canResolveCashRegisterForInvoiceUi(snap)) {
+  if (!canQueryOpenCashRegisterForInvoiceUi(snap)) {
     return { success: false }
   }
   const srv = createServiceRoleClient()
@@ -119,29 +112,43 @@ async function resolveOpenCashRegisterForInvoice(
   for (const s of sessions || []) {
     openByReg.set(String(s.cash_register_id), String(s.id))
   }
-  for (const r of regs) {
+
+  type RegRow = (typeof regs)[number]
+  const ctxFromRow = (r: RegRow, sessionId: string): InvoiceFormCashSession => {
     const rid = String(r.id)
-    const sid = openByReg.get(rid)
-    if (sid) {
-      const crt = r.arca_certificate_crt_uploaded_at != null
-      const key = r.arca_certificate_key_uploaded_at != null
-      const pto =
-        r.arca_pto_vta != null && Number.isFinite(Number(r.arca_pto_vta))
-          ? Number(r.arca_pto_vta)
-          : null
-      return {
-        success: true,
-        ctx: {
-          cashRegisterId: rid,
-          cashRegisterName: String(r.name ?? ""),
-          sessionId: sid,
-          ptoVta: pto,
-          hasCertificates: Boolean(crt && key),
-        },
-      }
+    const crt = r.arca_certificate_crt_uploaded_at != null
+    const key = r.arca_certificate_key_uploaded_at != null
+    const pto =
+      r.arca_pto_vta != null && Number.isFinite(Number(r.arca_pto_vta))
+        ? Number(r.arca_pto_vta)
+        : null
+    return {
+      cashRegisterId: rid,
+      cashRegisterName: String(r.name ?? ""),
+      sessionId: sessionId,
+      ptoVta: pto,
+      hasCertificates: Boolean(crt && key),
     }
   }
-  return { success: false }
+
+  const isEmitReadyRow = (r: RegRow): boolean => {
+    const crt = r.arca_certificate_crt_uploaded_at != null
+    const key = r.arca_certificate_key_uploaded_at != null
+    const ptoOk =
+      r.arca_pto_vta != null && Number.isFinite(Number(r.arca_pto_vta))
+    return Boolean(crt && key && ptoOk)
+  }
+
+  const candidates: { r: RegRow; sid: string }[] = []
+  for (const r of regs) {
+    const sid = openByReg.get(String(r.id))
+    if (sid) candidates.push({ r, sid })
+  }
+  if (candidates.length === 0) return { success: false }
+
+  const best =
+    candidates.find((c) => isEmitReadyRow(c.r)) ?? candidates[0]
+  return { success: true, ctx: ctxFromRow(best.r, best.sid) }
 }
 
 export async function getInvoiceFormContext(popId: string): Promise<
@@ -219,7 +226,7 @@ export async function testArcaInvoiceHomologacion(
       payloadRequest: Record<string, unknown>
       payloadResponse: Record<string, unknown>
     }
-  | { success: false; error: string }
+  | { success: false; error: string; debugFecaeSoap?: string }
 > {
   try {
     const access = await validatePopAccess(popId)
@@ -288,7 +295,13 @@ export async function testArcaInvoiceHomologacion(
     })
 
     if (!emit.ok) {
-      return { success: false, error: emit.error }
+      return {
+        success: false,
+        error: emit.error,
+        ...(emit.debugFecaeSoap !== undefined
+          ? { debugFecaeSoap: emit.debugFecaeSoap }
+          : {}),
+      }
     }
 
     return {
@@ -323,7 +336,7 @@ export async function createArcaInvoiceWithOpenCashRegister(
       ptoVta: number
       impTotal: number
     }
-  | { success: false; error: string }
+    | { success: false; error: string; debugFecaeSoap?: string }
 > {
   try {
     const access = await validatePopAccess(popId)
@@ -413,7 +426,13 @@ export async function createArcaInvoiceWithOpenCashRegister(
     })
 
     if (!emit.ok) {
-      return { success: false, error: emit.error }
+      return {
+        success: false,
+        error: emit.error,
+        ...(emit.debugFecaeSoap !== undefined
+          ? { debugFecaeSoap: emit.debugFecaeSoap }
+          : {}),
+      }
     }
 
     const cbteFchIso = cbteFchNumToIsoDate(emit.cbteFch)

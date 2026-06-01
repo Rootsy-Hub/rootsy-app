@@ -156,6 +156,9 @@ function InvoicesPage() {
   const [composeOpen, setComposeOpen] = useState(false)
   const [composeTab, setComposeTab] = useState<"caja" | "homologacion">("caja")
   const [composeBanner, setComposeBanner] = useState<string | null>(null)
+  const [composeDebugFecae, setComposeDebugFecae] = useState<string | null>(
+    null,
+  )
   const [cashBusy, setCashBusy] = useState(false)
   const [testBusy, setTestBusy] = useState(false)
   const [issuedHighlight, setIssuedHighlight] = useState<{
@@ -193,6 +196,18 @@ function InvoicesPage() {
       setFormCtx(null)
     }
   }, [popId, siteId])
+
+  useEffect(() => {
+    if (!composeOpen || !popId) return
+    let cancelled = false
+    void getInvoiceFormContext(popId).then((ctx) => {
+      if (cancelled || !ctx.success) return
+      setFormCtx(ctx)
+    })
+    return () => {
+      cancelled = true
+    }
+  }, [composeOpen, popId])
 
   useEffect(() => {
     if (!popId || !siteId) {
@@ -258,22 +273,29 @@ function InvoicesPage() {
   const canEmit =
     formCtx?.success === true && formCtx.canCreateInvoice === true
 
-  const cashReady =
-    formCtx?.success &&
-    formCtx.cashSession &&
-    formCtx.cashSession.hasCertificates &&
-    formCtx.cashSession.ptoVta != null
+  const hasOpenCashSession =
+    formCtx?.success === true &&
+    formCtx.cashSession != null
+
+  const cashEmitReady =
+    hasOpenCashSession &&
+    Boolean(formCtx?.cashSession?.hasCertificates) &&
+    formCtx?.cashSession?.ptoVta != null
 
   const submitHomolog = async (e: FormEvent) => {
     e.preventDefault()
     if (!popId) return
     setTestBusy(true)
     setComposeBanner(null)
+    setComposeDebugFecae(null)
     const fd = new FormData(e.target as HTMLFormElement)
     const res = await testArcaInvoiceHomologacion(popId, fd)
     setTestBusy(false)
     if (!res.success) {
       setComposeBanner(res.error)
+      setComposeDebugFecae(
+        "debugFecaeSoap" in res ? res.debugFecaeSoap ?? null : null,
+      )
       return
     }
     setComposeOpen(false)
@@ -293,11 +315,15 @@ function InvoicesPage() {
     if (!popId) return
     setCashBusy(true)
     setComposeBanner(null)
+    setComposeDebugFecae(null)
     const fd = new FormData(e.target as HTMLFormElement)
     const res = await createArcaInvoiceWithOpenCashRegister(popId, fd)
     setCashBusy(false)
     if (!res.success) {
       setComposeBanner(res.error)
+      setComposeDebugFecae(
+        "debugFecaeSoap" in res ? res.debugFecaeSoap ?? null : null,
+      )
       return
     }
     setComposeOpen(false)
@@ -390,6 +416,7 @@ function InvoicesPage() {
                   className="h-9 gap-1.5 rounded-xl bg-primary text-primary-foreground shadow-sm hover:bg-primary/90"
                   onClick={() => {
                     setComposeBanner(null)
+                    setComposeDebugFecae(null)
                     setComposeOpen(true)
                   }}
                 >
@@ -737,7 +764,10 @@ function InvoicesPage() {
         open={composeOpen}
         onOpenChange={(o) => {
           setComposeOpen(o)
-          if (!o) setComposeBanner(null)
+          if (!o) {
+            setComposeBanner(null)
+            setComposeDebugFecae(null)
+          }
         }}
       >
         <DialogContent className="max-h-[min(90vh,720px)] gap-0 overflow-hidden border-border bg-card p-0 sm:max-w-lg">
@@ -757,7 +787,17 @@ function InvoicesPage() {
                 role="alert"
                 className="mb-4 rounded-xl border border-destructive/30 bg-destructive/5 px-3 py-2 text-sm text-destructive"
               >
-                {composeBanner}
+                <p>{composeBanner}</p>
+                {composeDebugFecae ? (
+                  <details className="mt-3 border-t border-destructive/20 pt-2 text-foreground">
+                    <summary className="cursor-pointer text-xs font-medium text-destructive/90">
+                      Detalle técnico (copiar para soporte)
+                    </summary>
+                    <pre className="mt-2 max-h-52 overflow-auto whitespace-pre-wrap break-all rounded-lg border border-border bg-muted/60 p-2 font-mono text-[11px] leading-snug text-foreground">
+                      {composeDebugFecae}
+                    </pre>
+                  </details>
+                ) : null}
               </div>
             ) : null}
 
@@ -766,6 +806,7 @@ function InvoicesPage() {
               onValueChange={(v) => {
                 setComposeTab(v === "homologacion" ? "homologacion" : "caja")
                 setComposeBanner(null)
+                setComposeDebugFecae(null)
               }}
             >
               <TabsList className="grid w-full grid-cols-2 rounded-xl bg-muted/80 p-1">
@@ -798,16 +839,43 @@ function InvoicesPage() {
                   </div>
                 ) : null}
 
-                {!cashReady ? (
+                {formCtx?.success && !hasOpenCashSession ? (
                   <div
                     className="rounded-xl border border-amber-500/35 bg-amber-50/80 px-3 py-2.5 text-sm text-amber-950 dark:bg-amber-950/20 dark:text-amber-100"
                     role="status"
                   >
-                    <p className="font-medium">No podés emitir con la caja aún</p>
+                    <p className="font-medium">No hay sesión de caja abierta</p>
                     <p className="mt-1 text-xs opacity-90">
-                      Abrí una sesión de caja, cargá certificado y clave ARCA, y
-                      definí el punto de venta en la configuración de la caja.
+                      Abrí una sesión en Cajas para este punto de venta. Si acabás
+                      de abrirla, esperá un momento o cerrá y volvé a abrir este
+                      modal.
                     </p>
+                  </div>
+                ) : null}
+
+                {hasOpenCashSession && !cashEmitReady ? (
+                  <div
+                    className="rounded-xl border border-amber-500/35 bg-amber-50/80 px-3 py-2.5 text-sm text-amber-950 dark:bg-amber-950/20 dark:text-amber-100"
+                    role="status"
+                  >
+                    <p className="font-medium">Falta configuración ARCA en la caja</p>
+                    <p className="mt-1 text-xs opacity-90">
+                      {!formCtx?.cashSession?.hasCertificates
+                        ? "Cargá certificado y clave ARCA en el almacenamiento seguro (editar caja). "
+                        : null}
+                      {formCtx?.cashSession?.ptoVta == null
+                        ? "Definí el punto de venta AFIP en la configuración de la caja."
+                        : null}
+                    </p>
+                  </div>
+                ) : null}
+
+                {formCtx?.success && !canEmit ? (
+                  <div
+                    className="rounded-xl border border-border bg-muted/50 px-3 py-2.5 text-sm text-muted-foreground"
+                    role="status"
+                  >
+                    No tenés permiso para emitir facturas en este punto de venta.
                   </div>
                 ) : null}
 
@@ -868,7 +936,9 @@ function InvoicesPage() {
                     </Button>
                     <Button
                       type="submit"
-                      disabled={!cashReady || cashBusy}
+                      disabled={
+                        !cashEmitReady || cashBusy || !canEmit
+                      }
                       className="rounded-xl bg-primary"
                     >
                       {cashBusy ? "Emitiendo…" : "Emitir y guardar"}
@@ -879,8 +949,10 @@ function InvoicesPage() {
 
               <TabsContent value="homologacion" className="mt-4 space-y-4">
                 <p className="text-xs text-muted-foreground">
-                  Usá certificados de <strong className="font-medium">homologación</strong>{" "}
-                  AFIP. No se guarda ningún registro en Rootsy.
+                  Es un ambiente distinto al de producción: el WSAA solo acepta el
+                  certificado digital que generaste para{" "}
+                  <strong className="font-medium text-foreground">homologación</strong>{" "}
+                  (no el .crt de producción). No se guarda ningún registro en Rootsy.
                 </p>
                 <form
                   key={composeOpen ? "homolog-open" : "homolog-closed"}

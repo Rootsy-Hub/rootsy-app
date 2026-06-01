@@ -2,19 +2,27 @@
 
 import {
   createChartAccount,
+  getAccountingBalanceSheet,
+  getAccountingCashFlow,
   getAccountingEntryLines,
   getAccountingFinancialSummaries,
+  getAccountingIncomeStatement,
   getAccountingJournalEntries,
   getAccountingLedgerForAccount,
   getAccountingPageData,
   getAccountingTrialBalance,
+  getAccountingVatPosition,
   type AccountType,
+  type BalanceSheetResult,
   type ChartAccountRow,
   type CreateChartAccountInput,
+  type IncomeStatementResult,
+  type CashFlowRow,
   type JournalEntryLineRow,
   type JournalEntrySummaryRow,
   type LedgerMovementRow,
   type TrialBalanceRow,
+  type VatPositionRow,
 } from "@/app/[siteId]/[popId]/accounting/actions"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
@@ -47,13 +55,17 @@ import { cn } from "@/lib/utils"
 import {
   ArrowLeft,
   BookMarked,
+  FileBadge,
   FileSpreadsheet,
   Landmark,
   Leaf,
   Maximize2,
   Minimize2,
+  PieChart,
   Plus,
+  Scale,
   ScrollText,
+  Wallet,
   Wifi,
   WifiOff,
 } from "lucide-react"
@@ -90,6 +102,8 @@ const SOURCE_TYPE_LABELS: Record<string, string> = {
   cash_register_close: "Cierre de caja (arqueo)",
   inventory_adjustment: "Ajuste de inventario",
   inventory_initial: "Stock inicial",
+  expense_payment: "Pago de gasto",
+  expense_void: "Anulación de gasto",
 }
 
 function formatSourceType(s: string): string {
@@ -275,6 +289,26 @@ function AccountingPage() {
 
   const [reportFrom, setReportFrom] = useState("")
   const [reportTo, setReportTo] = useState("")
+  const [balanceAsOf, setBalanceAsOf] = useState("")
+
+  const [balanceSheet, setBalanceSheet] = useState<BalanceSheetResult | null>(
+    null,
+  )
+  const [balanceBusy, setBalanceBusy] = useState(false)
+  const [balanceError, setBalanceError] = useState<string | null>(null)
+
+  const [incomeStatement, setIncomeStatement] =
+    useState<IncomeStatementResult | null>(null)
+  const [incomeBusy, setIncomeBusy] = useState(false)
+  const [incomeError, setIncomeError] = useState<string | null>(null)
+
+  const [cashFlowRows, setCashFlowRows] = useState<CashFlowRow[]>([])
+  const [cashFlowBusy, setCashFlowBusy] = useState(false)
+  const [cashFlowError, setCashFlowError] = useState<string | null>(null)
+
+  const [vatRows, setVatRows] = useState<VatPositionRow[]>([])
+  const [vatBusy, setVatBusy] = useState(false)
+  const [vatError, setVatError] = useState<string | null>(null)
 
   const [journalEntries, setJournalEntries] = useState<JournalEntrySummaryRow[]>(
     [],
@@ -318,6 +352,7 @@ function AccountingPage() {
     setLedgerTo(to)
     setReportFrom(from)
     setReportTo(to)
+    setBalanceAsOf(to)
   }, [])
 
   const loadJournal = useCallback(async () => {
@@ -351,6 +386,74 @@ function AccountingPage() {
     }
     if (fs.success) {
       setFinancialSummaries(fs.summaries.map((s) => ({ label: s.label, total: s.total })))
+    }
+  }, [popId, reportFrom, reportTo])
+
+  const loadBalanceSheet = useCallback(async () => {
+    if (!popId) return
+    setBalanceBusy(true)
+    setBalanceError(null)
+    const res = await getAccountingBalanceSheet(popId, balanceAsOf || null)
+    setBalanceBusy(false)
+    if (res.success) {
+      setBalanceSheet(res.data)
+    } else {
+      setBalanceSheet(null)
+      setBalanceError(res.error)
+    }
+  }, [popId, balanceAsOf])
+
+  const loadIncomeStatement = useCallback(async () => {
+    if (!popId) return
+    setIncomeBusy(true)
+    setIncomeError(null)
+    const res = await getAccountingIncomeStatement(
+      popId,
+      reportFrom || null,
+      reportTo || null,
+    )
+    setIncomeBusy(false)
+    if (res.success) {
+      setIncomeStatement(res.data)
+    } else {
+      setIncomeStatement(null)
+      setIncomeError(res.error)
+    }
+  }, [popId, reportFrom, reportTo])
+
+  const loadCashFlow = useCallback(async () => {
+    if (!popId) return
+    setCashFlowBusy(true)
+    setCashFlowError(null)
+    const res = await getAccountingCashFlow(
+      popId,
+      reportFrom || null,
+      reportTo || null,
+    )
+    setCashFlowBusy(false)
+    if (res.success) {
+      setCashFlowRows(res.rows)
+    } else {
+      setCashFlowRows([])
+      setCashFlowError(res.error)
+    }
+  }, [popId, reportFrom, reportTo])
+
+  const loadVatPosition = useCallback(async () => {
+    if (!popId) return
+    setVatBusy(true)
+    setVatError(null)
+    const res = await getAccountingVatPosition(
+      popId,
+      reportFrom || null,
+      reportTo || null,
+    )
+    setVatBusy(false)
+    if (res.success) {
+      setVatRows(res.rows)
+    } else {
+      setVatRows([])
+      setVatError(res.error)
     }
   }, [popId, reportFrom, reportTo])
 
@@ -1087,6 +1190,432 @@ function AccountingPage() {
                     gastos por separado; el resultado del ejercicio se obtiene con
                     el criterio contable que defina tu equipo.
                   </p>
+                </div>
+
+                <div className="space-y-4">
+                  <div>
+                    <h3 className="text-base font-semibold text-foreground">
+                      Estados financieros y posición fiscal
+                    </h3>
+                    <p className="mt-1 max-w-2xl text-sm text-muted-foreground">
+                      Balance a una fecha (saldos acumulados hasta el corte). El
+                      estado de resultados, el flujo de caja y el IVA usan el mismo
+                      rango que arriba (desde / hasta). Caja y equivalentes: cuentas
+                      con código <span className="font-mono">1.1.1.*</span>; IVA:
+                      <span className="font-mono"> 1.1.2.*</span> y{" "}
+                      <span className="font-mono">2.1.2.*</span> según el plan
+                      semilla.
+                    </p>
+                  </div>
+
+                  <div className="rounded-2xl border border-border bg-card/95 p-5 shadow-sm">
+                    <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+                      <div className="flex items-center gap-2 text-foreground">
+                        <Scale className="size-5 text-primary" aria-hidden />
+                        <h3 className="font-semibold">Balance general</h3>
+                      </div>
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="secondary"
+                        className="rounded-lg"
+                        disabled={balanceBusy}
+                        onClick={() => void loadBalanceSheet()}
+                      >
+                        {balanceBusy ? "Cargando…" : "Actualizar"}
+                      </Button>
+                    </div>
+                    <p className="mb-4 text-sm text-muted-foreground">
+                      Activo, pasivo y patrimonio a la fecha de corte. Incluye una
+                      línea de resultado acumulado (ingresos − costos − gastos) para
+                      cuadrar con el plan sin asientos de cierre.
+                    </p>
+                    <div className="mb-4 max-w-xs space-y-1">
+                      <Label className="text-xs">Fecha de corte</Label>
+                      <Input
+                        type="date"
+                        value={balanceAsOf}
+                        onChange={(e) => setBalanceAsOf(e.target.value)}
+                        className="bg-background"
+                      />
+                    </div>
+                    {balanceError ? (
+                      <p className="mb-4 rounded-lg border border-destructive/25 bg-destructive/5 px-3 py-2 text-sm text-destructive">
+                        {balanceError}
+                      </p>
+                    ) : null}
+                    {balanceSheet ? (
+                      <div className="space-y-6">
+                        <div className="flex flex-wrap gap-4 text-sm">
+                          <span className="text-muted-foreground">
+                            Corte:{" "}
+                            <span className="font-medium text-foreground">
+                              {formatIsoDate(balanceSheet.asOf)}
+                            </span>
+                          </span>
+                          <span className="text-muted-foreground">
+                            Activo:{" "}
+                            <span className="font-mono font-medium text-foreground">
+                              {formatMoneyAr(balanceSheet.totalActivo)}
+                            </span>
+                          </span>
+                          <span className="text-muted-foreground">
+                            Pasivo + patrimonio + resultado:{" "}
+                            <span className="font-mono font-medium text-foreground">
+                              {formatMoneyAr(
+                                balanceSheet.totalPasivoPatrimonioYResultado,
+                              )}
+                            </span>
+                          </span>
+                          <span
+                            className={cn(
+                              Math.abs(balanceSheet.diferenciaCuadre) < 0.02
+                                ? "text-meadow"
+                                : "text-amber-700",
+                            )}
+                          >
+                            Diferencia:{" "}
+                            <span className="font-mono font-medium">
+                              {formatMoneyAr(balanceSheet.diferenciaCuadre)}
+                            </span>
+                          </span>
+                        </div>
+                        {balanceSheet.sections.map((sec) => (
+                          <div key={sec.key}>
+                            <h4 className="mb-2 text-sm font-semibold text-foreground">
+                              {sec.title}
+                            </h4>
+                            <div className="overflow-x-auto rounded-xl border border-border">
+                              <Table>
+                                <TableHeader>
+                                  <TableRow className="border-border bg-muted/40 hover:bg-muted/40">
+                                    <TableHead className="font-semibold">
+                                      Código
+                                    </TableHead>
+                                    <TableHead className="font-semibold">
+                                      Cuenta
+                                    </TableHead>
+                                    <TableHead className="text-right font-semibold">
+                                      Saldo
+                                    </TableHead>
+                                  </TableRow>
+                                </TableHeader>
+                                <TableBody>
+                                  {sec.rows.length === 0 ? (
+                                    <TableRow>
+                                      <TableCell
+                                        colSpan={3}
+                                        className="text-muted-foreground"
+                                      >
+                                        Sin saldos en esta sección.
+                                      </TableCell>
+                                    </TableRow>
+                                  ) : (
+                                    sec.rows.map((r, i) => (
+                                      <TableRow
+                                        key={`${sec.key}-${r.accountCode}-${i}`}
+                                        className="border-border"
+                                      >
+                                        <TableCell className="font-mono text-sm">
+                                          {r.accountCode}
+                                        </TableCell>
+                                        <TableCell className="text-sm">
+                                          {r.accountName}
+                                        </TableCell>
+                                        <TableCell className="text-right font-mono text-sm tabular-nums">
+                                          {formatMoneyAr(r.balance)}
+                                        </TableCell>
+                                      </TableRow>
+                                    ))
+                                  )}
+                                  <TableRow className="border-border bg-muted/25 font-semibold">
+                                    <TableCell colSpan={2} className="text-sm">
+                                      Total {sec.title.toLowerCase()}
+                                    </TableCell>
+                                    <TableCell className="text-right font-mono text-sm tabular-nums">
+                                      {formatMoneyAr(sec.sectionTotal)}
+                                    </TableCell>
+                                  </TableRow>
+                                </TableBody>
+                              </Table>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="text-sm text-muted-foreground">
+                        Elegí la fecha y pulsá «Actualizar».
+                      </p>
+                    )}
+                  </div>
+
+                  <div className="rounded-2xl border border-border bg-card/95 p-5 shadow-sm">
+                    <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+                      <div className="flex items-center gap-2 text-foreground">
+                        <PieChart className="size-5 text-primary" aria-hidden />
+                        <h3 className="font-semibold">Estado de resultados</h3>
+                      </div>
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="secondary"
+                        className="rounded-lg"
+                        disabled={incomeBusy}
+                        onClick={() => void loadIncomeStatement()}
+                      >
+                        {incomeBusy ? "Cargando…" : "Actualizar"}
+                      </Button>
+                    </div>
+                    <p className="mb-4 text-sm text-muted-foreground">
+                      Movimientos del período (mismo rango «Desde / Hasta» que
+                      sumas y saldos). Resultado neto = ingresos − costos − gastos.
+                    </p>
+                    {incomeError ? (
+                      <p className="mb-4 rounded-lg border border-destructive/25 bg-destructive/5 px-3 py-2 text-sm text-destructive">
+                        {incomeError}
+                      </p>
+                    ) : null}
+                    {incomeStatement ? (
+                      <div className="space-y-4">
+                        <p className="text-sm text-muted-foreground">
+                          {formatIsoDate(incomeStatement.from)} —{" "}
+                          {formatIsoDate(incomeStatement.to)}
+                        </p>
+                        {(
+                          [
+                            ["Ingresos", incomeStatement.ingresos],
+                            ["Costos", incomeStatement.costos],
+                            ["Gastos", incomeStatement.gastos],
+                          ] as const
+                        ).map(([label, lines]) => (
+                          <div key={label}>
+                            <h4 className="mb-2 text-sm font-semibold text-foreground">
+                              {label}
+                            </h4>
+                            <div className="overflow-x-auto rounded-xl border border-border">
+                              <Table>
+                                <TableHeader>
+                                  <TableRow className="border-border bg-muted/40 hover:bg-muted/40">
+                                    <TableHead className="font-semibold">
+                                      Código
+                                    </TableHead>
+                                    <TableHead className="font-semibold">
+                                      Cuenta
+                                    </TableHead>
+                                    <TableHead className="text-right font-semibold">
+                                      Saldo período
+                                    </TableHead>
+                                  </TableRow>
+                                </TableHeader>
+                                <TableBody>
+                                  {lines.length === 0 ? (
+                                    <TableRow>
+                                      <TableCell
+                                        colSpan={3}
+                                        className="text-muted-foreground"
+                                      >
+                                        Sin movimientos.
+                                      </TableCell>
+                                    </TableRow>
+                                  ) : (
+                                    lines.map((ln) => (
+                                      <TableRow
+                                        key={`${label}-${ln.accountCode}`}
+                                        className="border-border"
+                                      >
+                                        <TableCell className="font-mono text-sm">
+                                          {ln.accountCode}
+                                        </TableCell>
+                                        <TableCell className="text-sm">
+                                          {ln.accountName}
+                                        </TableCell>
+                                        <TableCell className="text-right font-mono text-sm tabular-nums">
+                                          {formatMoneyAr(ln.balance)}
+                                        </TableCell>
+                                      </TableRow>
+                                    ))
+                                  )}
+                                </TableBody>
+                              </Table>
+                            </div>
+                          </div>
+                        ))}
+                        <div className="rounded-xl border border-primary/25 bg-primary/5 px-4 py-3">
+                          <p className="text-sm font-semibold text-foreground">
+                            Resultado neto del período
+                          </p>
+                          <p className="font-mono text-lg font-bold tabular-nums text-primary">
+                            {formatMoneyAr(incomeStatement.resultadoNeto)}
+                          </p>
+                        </div>
+                      </div>
+                    ) : (
+                      <p className="text-sm text-muted-foreground">
+                        Pulsá «Actualizar» para generar el estado de resultados.
+                      </p>
+                    )}
+                  </div>
+
+                  <div className="rounded-2xl border border-border bg-card/95 p-5 shadow-sm">
+                    <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+                      <div className="flex items-center gap-2 text-foreground">
+                        <Wallet className="size-5 text-primary" aria-hidden />
+                        <h3 className="font-semibold">Flujo de caja (simplificado)</h3>
+                      </div>
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="secondary"
+                        className="rounded-lg"
+                        disabled={cashFlowBusy}
+                        onClick={() => void loadCashFlow()}
+                      >
+                        {cashFlowBusy ? "Cargando…" : "Actualizar"}
+                      </Button>
+                    </div>
+                    <p className="mb-4 text-sm text-muted-foreground">
+                      Movimiento del período en cuentas{" "}
+                      <span className="font-mono">1.1.1.*</span> (caja y
+                      equivalentes del plan semilla).
+                    </p>
+                    {cashFlowError ? (
+                      <p className="mb-4 rounded-lg border border-destructive/25 bg-destructive/5 px-3 py-2 text-sm text-destructive">
+                        {cashFlowError}
+                      </p>
+                    ) : null}
+                    <div className="overflow-x-auto rounded-xl border border-border">
+                      <Table>
+                        <TableHeader>
+                          <TableRow className="border-border bg-muted/40 hover:bg-muted/40">
+                            <TableHead className="font-semibold">Código</TableHead>
+                            <TableHead className="font-semibold">Cuenta</TableHead>
+                            <TableHead className="text-right font-semibold">
+                              Entradas (debe)
+                            </TableHead>
+                            <TableHead className="text-right font-semibold">
+                              Salidas (haber)
+                            </TableHead>
+                            <TableHead className="text-right font-semibold">
+                              Neto
+                            </TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {cashFlowRows.length === 0 ? (
+                            <TableRow>
+                              <TableCell
+                                colSpan={5}
+                                className="text-muted-foreground"
+                              >
+                                {cashFlowBusy
+                                  ? "…"
+                                  : "Sin datos o pulsá «Actualizar»."}
+                              </TableCell>
+                            </TableRow>
+                          ) : (
+                            cashFlowRows.map((r) => (
+                              <TableRow key={r.accountCode} className="border-border">
+                                <TableCell className="font-mono text-sm">
+                                  {r.accountCode}
+                                </TableCell>
+                                <TableCell className="text-sm">{r.accountName}</TableCell>
+                                <TableCell className="text-right font-mono text-sm tabular-nums">
+                                  {formatMoneyAr(r.entradas)}
+                                </TableCell>
+                                <TableCell className="text-right font-mono text-sm tabular-nums">
+                                  {formatMoneyAr(r.salidas)}
+                                </TableCell>
+                                <TableCell className="text-right font-mono text-sm tabular-nums">
+                                  {formatMoneyAr(r.neto)}
+                                </TableCell>
+                              </TableRow>
+                            ))
+                          )}
+                        </TableBody>
+                      </Table>
+                    </div>
+                  </div>
+
+                  <div className="rounded-2xl border border-border bg-card/95 p-5 shadow-sm">
+                    <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+                      <div className="flex items-center gap-2 text-foreground">
+                        <FileBadge className="size-5 text-primary" aria-hidden />
+                        <h3 className="font-semibold">Posición IVA (cuentas fiscales)</h3>
+                      </div>
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="secondary"
+                        className="rounded-lg"
+                        disabled={vatBusy}
+                        onClick={() => void loadVatPosition()}
+                      >
+                        {vatBusy ? "Cargando…" : "Actualizar"}
+                      </Button>
+                    </div>
+                    <p className="mb-4 text-sm text-muted-foreground">
+                      Movimientos del período en cuentas{" "}
+                      <span className="font-mono">1.1.2.*</span> y{" "}
+                      <span className="font-mono">2.1.2.*</span>. La liquidación
+                      definitiva debe validarse con tu asesor fiscal.
+                    </p>
+                    {vatError ? (
+                      <p className="mb-4 rounded-lg border border-destructive/25 bg-destructive/5 px-3 py-2 text-sm text-destructive">
+                        {vatError}
+                      </p>
+                    ) : null}
+                    <div className="overflow-x-auto rounded-xl border border-border">
+                      <Table>
+                        <TableHeader>
+                          <TableRow className="border-border bg-muted/40 hover:bg-muted/40">
+                            <TableHead className="font-semibold">Código</TableHead>
+                            <TableHead className="font-semibold">Cuenta</TableHead>
+                            <TableHead className="text-right font-semibold">
+                              Debe
+                            </TableHead>
+                            <TableHead className="text-right font-semibold">
+                              Haber
+                            </TableHead>
+                            <TableHead className="text-right font-semibold">
+                              Saldo
+                            </TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {vatRows.length === 0 ? (
+                            <TableRow>
+                              <TableCell
+                                colSpan={5}
+                                className="text-muted-foreground"
+                              >
+                                {vatBusy
+                                  ? "…"
+                                  : "Sin datos o pulsá «Actualizar»."}
+                              </TableCell>
+                            </TableRow>
+                          ) : (
+                            vatRows.map((r) => (
+                              <TableRow key={r.accountCode} className="border-border">
+                                <TableCell className="font-mono text-sm">
+                                  {r.accountCode}
+                                </TableCell>
+                                <TableCell className="text-sm">{r.accountName}</TableCell>
+                                <TableCell className="text-right font-mono text-sm tabular-nums">
+                                  {formatMoneyAr(r.sumDebit)}
+                                </TableCell>
+                                <TableCell className="text-right font-mono text-sm tabular-nums">
+                                  {formatMoneyAr(r.sumCredit)}
+                                </TableCell>
+                                <TableCell className="text-right font-mono text-sm tabular-nums">
+                                  {formatMoneyAr(r.balance)}
+                                </TableCell>
+                              </TableRow>
+                            ))
+                          )}
+                        </TableBody>
+                      </Table>
+                    </div>
+                  </div>
                 </div>
               </section>
             </>
