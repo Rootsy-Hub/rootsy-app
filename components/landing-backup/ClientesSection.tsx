@@ -1,4 +1,4 @@
-import { TestimoniosCarrusel } from "@/components/landing/TestimoniosCarrusel"
+import { TestimoniosCarrusel } from "@/components/landing-backup/TestimoniosCarrusel"
 
 const MARCAS_EJEMPLO = [
   "Distribuidora Lapacho",
@@ -55,54 +55,14 @@ export function ClientesSection({ variant = "light" }: ClientesSectionProps) {
   const dark = variant === "dark"
 
   return (
-    <section
-      id="clientes"
-      className={
-        dark
-          ? "relative scroll-mt-24 py-14 text-white sm:py-16 lg:py-20"
-          : "relative scroll-mt-24 border-t border-emerald-900/10 bg-gradient-to-b from-[#e8ede9] via-[#f0f3f1] to-[#e6ebe7] py-16 text-[#0f1714] sm:py-20 lg:py-24"
-      }
-    >
-      {!dark ? (
-        <div
-          className="pointer-events-none absolute inset-0 opacity-50"
-          aria-hidden
-          style={{
-            background:
-              "radial-gradient(ellipse 80% 50% at 50% 0%, rgba(16, 185, 129, 0.08), transparent 55%)",
-          }}
-        />
-      ) : null}
-      <div className="relative mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
-        <h2
-          className={
-            dark
-              ? "text-balance text-3xl font-extrabold tracking-tight text-white sm:text-4xl"
-              : "text-balance text-3xl font-extrabold tracking-tight text-[#060a08] sm:text-4xl"
-          }
-        >
-          Ya confían en nosotros
-        </h2>
-        <p
-          className={
-            dark
-              ? "mt-4 max-w-3xl text-pretty text-lg leading-relaxed text-white/70 sm:text-xl"
-              : "mt-4 max-w-3xl text-pretty text-lg leading-relaxed text-[#3d5248] sm:text-xl"
-          }
-        >
-          Estos son sólo algunos de los clientes que ya dieron el salto.
-        </p>
-        <p
-          className={
-            dark
-              ? "mt-3 max-w-3xl text-pretty text-lg font-medium leading-relaxed text-white/80 sm:text-xl"
-              : "mt-3 max-w-3xl text-pretty text-lg font-medium leading-relaxed text-[#2a3830] sm:text-xl"
-          }
-        >
-          Vos también podés vivir más tranquilo, como ellos.
+    <section id="clientes" className="relative text-foreground">
+      <div className="relative mx-auto max-w-6xl">
+        <p className="max-w-2xl text-pretty text-sm text-muted-foreground sm:text-base">
+          Estos son sólo algunos de los clientes que ya dieron el salto. Vos
+          también podés vivir más tranquilo, como ellos.
         </p>
 
-        <div className="relative mt-12 sm:mt-14">
+        <div className="relative mt-8 sm:mt-10">
           <p className="sr-only">
             Marcas de ejemplo en carrusel: {MARCAS_EJEMPLO.join(", ")}.
           </p>

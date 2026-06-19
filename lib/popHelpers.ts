@@ -1,8 +1,105 @@
 "use server"
 
 import { siteIdFromPopRow, siteIdFromPopSettings } from "@/lib/popRoutes"
+import { DEFAULT_SALE_SITE_ID } from "@/lib/saleInvoiceTypes"
 import { createClient } from "@/utils/supabase/server"
 import { requireAuthenticatedUser } from "@/lib/authHelpers"
+
+export async function createPop(data: {
+  name: string
+  businessTypeId?: string
+  imageUrl?: string
+  settings?: Record<string, unknown>
+}): Promise<
+  | {
+      success: true
+      pop: { id: string; name: string; siteId: string }
+    }
+  | { success: false; error: string; details?: string }
+> {
+  try {
+    const user = await requireAuthenticatedUser()
+    const supabase = await createClient()
+
+    const { data: canCreate, error: canCreateError } = await supabase.rpc(
+      "can_user_create_pop",
+      { user_id: user.uid },
+    )
+
+    if (canCreateError) {
+      return {
+        success: false,
+        error: "Error al verificar límite de POPs",
+        details: canCreateError.message,
+      }
+    }
+
+    if (!canCreate) {
+      const { data: existingPops } = await supabase
+        .from("pops")
+        .select("id")
+        .eq("owner_user_id", user.uid)
+
+      if (existingPops && existingPops.length >= 1) {
+        return {
+          success: false,
+          error: "Límite alcanzado",
+          details:
+            "Ya tenés un punto de venta activo. Solo podés tener uno por cuenta.",
+        }
+      }
+
+      return {
+        success: false,
+        error: "No podés crear más puntos de venta",
+        details: "Solo podés tener un punto de venta por cuenta.",
+      }
+    }
+
+    const settings = {
+      site_id: DEFAULT_SALE_SITE_ID,
+      ...(data.settings ?? {}),
+    }
+
+    const { data: newPop, error: createError } = await supabase
+      .from("pops")
+      .insert({
+        name: data.name.trim(),
+        owner_user_id: user.uid,
+        business_type_id: data.businessTypeId || null,
+        image_url: data.imageUrl || null,
+        settings,
+        is_active: true,
+      })
+      .select("id, name, site_id, settings")
+      .single()
+
+    if (createError || !newPop) {
+      return {
+        success: false,
+        error: "Error al crear el punto de venta",
+        details: createError?.message,
+      }
+    }
+
+    const siteId = siteIdFromPopRow({
+      site_id: newPop.site_id as string | null | undefined,
+      settings: newPop.settings,
+    })
+
+    return {
+      success: true,
+      pop: {
+        id: newPop.id as string,
+        name: newPop.name as string,
+        siteId,
+      },
+    }
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : "Error desconocido"
+    return { success: false, error: "Error inesperado", details: message }
+  }
+}
 
 export type GetPopByIdOptions = {
   includeOwnerUserId?: boolean

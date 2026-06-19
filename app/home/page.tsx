@@ -101,6 +101,13 @@ function HomePage() {
     void loadData()
   }, [authLoading, loadData])
 
+  useEffect(() => {
+    if (authLoading || pops === null) return
+    if (pops.length === 0 && canCreatePop) {
+      router.replace("/pops/create")
+    }
+  }, [authLoading, pops, canCreatePop, router])
+
   const handleLogOut = async () => {
     await logOut()
     router.push("/login")

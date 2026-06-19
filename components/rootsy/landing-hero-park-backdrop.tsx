@@ -20,6 +20,8 @@ type LandingHeroParkBackdropProps = {
   mouseY: number
   particles: Particle[]
   className?: string
+  /** Solo partículas y acentos locales; el fondo lo pinta LandingBackdrop. */
+  minimal?: boolean
 }
 
 export function LandingHeroParkBackdrop({
@@ -27,7 +29,34 @@ export function LandingHeroParkBackdrop({
   mouseY,
   particles,
   className,
+  minimal = false,
 }: LandingHeroParkBackdropProps) {
+  if (minimal) {
+    return (
+      <div
+        className={cn("pointer-events-none absolute inset-0 overflow-hidden", className)}
+        aria-hidden
+      >
+        {particles.map((particle, i) => (
+          <div
+            key={i}
+            className="animate-float absolute rounded-full motion-reduce:animate-none"
+            style={{
+              width: particle.width + "px",
+              height: particle.height + "px",
+              left: particle.left + "%",
+              top: particle.top + "%",
+              background: "var(--rootsy-particle)",
+              opacity: particle.opacity,
+              animationDuration: particle.duration + "s",
+              animationDelay: particle.delay + "s",
+            }}
+          />
+        ))}
+      </div>
+    )
+  }
+
   return (
     <div
       className={cn("pointer-events-none absolute inset-0 overflow-hidden", className)}

@@ -169,7 +169,7 @@ function RegisterPage() {
       }
 
       await new Promise((r) => setTimeout(r, 100))
-      router.push("/home")
+      router.push("/pops/create")
       router.refresh()
     } catch (err: unknown) {
       const errorMessage =
@@ -197,7 +197,7 @@ function RegisterPage() {
       const { error: oauthError } = await supabase.auth.signInWithOAuth({
         provider: "google",
         options: {
-          redirectTo: `${origin}/auth/callback?next=/home`,
+          redirectTo: `${origin}/auth/callback?next=/pops/create`,
         },
       })
       if (oauthError) throw oauthError
@@ -246,11 +246,14 @@ function RegisterPage() {
             <div className="pointer-events-none absolute -top-10 left-1/2 h-20 w-2/3 -translate-x-1/2 rounded-full bg-emerald-400/18 blur-2xl" />
 
             <div className="space-y-1.5">
+              <span className="inline-flex rounded-full border border-emerald-500/30 bg-emerald-500/10 px-2.5 py-0.5 text-[11px] font-bold uppercase tracking-wider text-emerald-700 dark:text-emerald-300">
+                7 días gratis · Sin tarjeta
+              </span>
               <h1 className="text-3xl font-extrabold tracking-tight sm:text-[2.1rem]">
-                Registrarse
+                Creá tu cuenta
               </h1>
               <p className="text-sm text-muted-foreground">
-                Ya tengo mi usuario, quiero{" "}
+                En el siguiente paso vas a nombrar tu punto de venta. ¿Ya tenés cuenta?{" "}
                 <Link
                   href="/login"
                   className="font-semibold text-meadow transition-colors hover:text-emerald-500"

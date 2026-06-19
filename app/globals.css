@@ -488,7 +488,31 @@
     );
   }
 
+  @keyframes rootsy-landing-scene-in {
+    from {
+      opacity: 0;
+      filter: blur(10px);
+      transform: translate3d(0, 12px, 0) scale(0.985);
+    }
+    to {
+      opacity: 1;
+      filter: blur(0);
+      transform: translate3d(0, 0, 0) scale(1);
+    }
+  }
+
+  .rootsy-landing-scene-in {
+    animation: rootsy-landing-scene-in 0.45s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  }
+
+  .rootsy-landing-title-glow {
+    text-shadow: 0 0 40px rgba(52, 211, 153, 0.12);
+  }
+
   @media (prefers-reduced-motion: reduce) {
+    .rootsy-landing-scene-in {
+      animation: none;
+    }
     .rootsy-ambient-pulse {
       animation: none;
     }
@@ -529,6 +553,11 @@
     }
     .rootsy-marquee-logos {
       animation: none;
+    }
+    .rootsy-landing-scene-in {
+      opacity: 1;
+      filter: none;
+      transform: none;
     }
   }
 }
