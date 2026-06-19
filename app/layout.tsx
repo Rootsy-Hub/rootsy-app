@@ -1,15 +1,22 @@
 import type { Metadata } from 'next'
-import { Nunito, Geist_Mono } from 'next/font/google'
+import { Nunito_Sans, Source_Sans_3, Geist_Mono } from 'next/font/google'
 import { Analytics } from '@vercel/analytics/next'
 import { AuthProvider } from '@/context/AuthContextSupabase'
 import './globals.css'
 
-const nunito = Nunito({ 
+// Fuente principal del proyecto
+const nunitoSans = Nunito_Sans({
   subsets: ["latin"],
-  variable: '--font-nunito',
-  weight: ['400', '500', '600', '700', '800']
+  variable: '--font-nunito-sans',
+  weight: ['400', '500', '600', '700', '800', '900']
 });
-const geistMono = Geist_Mono({ 
+// Fuente secundaria del proyecto
+const sourceSans = Source_Sans_3({
+  subsets: ["latin"],
+  variable: '--font-source-sans',
+  weight: ['400', '500', '600', '700']
+});
+const geistMono = Geist_Mono({
   subsets: ["latin"],
   variable: '--font-geist-mono'
 });
@@ -45,7 +52,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="es" className="dark scroll-smooth">
-      <body className={`${nunito.variable} ${geistMono.variable} font-sans antialiased`}>
+      <body className={`${nunitoSans.variable} ${sourceSans.variable} ${geistMono.variable} font-sans antialiased`}>
         <AuthProvider>
           {children}
         </AuthProvider>

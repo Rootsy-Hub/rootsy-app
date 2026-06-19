@@ -139,7 +139,8 @@
 }
 
 @theme inline {
-  --font-sans: var(--font-nunito), 'Nunito', sans-serif;
+  --font-sans: var(--font-nunito-sans), 'Nunito Sans', sans-serif;
+  --font-secondary: var(--font-source-sans), 'Source Sans 3', 'Source Sans Pro', sans-serif;
   --font-mono: var(--font-geist-mono), ui-monospace, monospace;
   --color-rootsy-hairline: var(--rootsy-hairline);
   --color-rootsy-particle: var(--rootsy-particle);

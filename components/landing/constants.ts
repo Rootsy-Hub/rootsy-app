@@ -1,4 +1,4 @@
-export const LANDING_BG = "#070a09"
+export const LANDING_BG = "#080c0b"
 
 export const LANDING_DESKTOP_MIN_WIDTH = 1024
 

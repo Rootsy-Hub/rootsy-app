@@ -1,14 +1,14 @@
 "use client"
 
 import Image from "next/image"
-import { buttonVariants } from "@/components/ui/button"
-import { landingPrimaryCtaClass } from "@/components/landing/chrome/landingCtaClasses"
+import { CalendarDays } from "lucide-react"
 import { useLandingNavigation } from "@/components/landing/context/LandingNavigationProvider"
 import { LANDING_VIEW_META } from "@/components/landing/landingViews"
 import type { LandingSectionProps } from "@/components/landing/types"
 import { cn } from "@/lib/utils"
 
-const TRIAL_BADGE = "7 días gratis · sin tarjeta"
+const HERO_SUBTITLE =
+  "Gestioná ventas, stock y caja desde la nube. Todo tu negocio en un solo lugar, en vivo y desde cualquier dispositivo."
 
 export function LandingInicioSection({ viewId }: LandingSectionProps) {
   const { layout, goRegister, goToChapter } = useLandingNavigation()
@@ -17,79 +17,74 @@ export function LandingInicioSection({ viewId }: LandingSectionProps) {
 
   return (
     <div
-      className={cn(
-        "grid w-full min-w-0 items-center",
-        isDesktop
-          ? "gap-10 lg:grid-cols-[minmax(0,1fr)_minmax(0,0.95fr)] lg:gap-14 xl:gap-20"
-          : "gap-6",
-      )}
+      className="flex w-full min-w-0 flex-col items-center text-center"
       aria-label={meta.label}
     >
-      <div className="flex min-w-0 flex-col gap-5 sm:gap-6">
-        <p className="rootsy-hero-rise rootsy-hero-rise-d1 inline-flex w-fit items-center rounded-full border border-meadow/20 bg-meadow/8 px-3.5 py-1.5 text-[10px] font-bold uppercase tracking-[0.2em] text-meadow sm:text-[11px]">
-          {TRIAL_BADGE}
-        </p>
-        <h1 className="rootsy-hero-rise rootsy-hero-rise-d2 text-balance text-[2rem] font-extrabold leading-[1.06] tracking-tight text-foreground sm:text-[2.75rem] lg:text-[3.5rem] lg:leading-[1.05]">
-          Gestioná{" "}
-          <span className="bg-gradient-to-r from-meadow via-teal-200 to-emerald-300 bg-clip-text text-transparent">
-            en minutos
-          </span>
-        </h1>
-        {meta.tagline ? (
-          <p className="rootsy-hero-rise rootsy-hero-rise-d3 max-w-lg text-pretty text-base leading-relaxed text-foreground/75 sm:text-lg">
-            {meta.tagline}
-          </p>
-        ) : null}
-        <div className="rootsy-hero-rise rootsy-hero-rise-d4 flex flex-col gap-3 pt-1 sm:flex-row sm:flex-wrap sm:items-center">
-          <button
-            type="button"
-            className={cn(buttonVariants({ size: "lg" }), landingPrimaryCtaClass)}
-            onClick={goRegister}
-          >
-            Comenzar gratis
-          </button>
-          <button
-            type="button"
-            className={cn(
-              buttonVariants({ size: "lg", variant: "ghost" }),
-              "h-12 rounded-2xl px-6 text-foreground/70 hover:bg-white/5 hover:text-foreground",
-            )}
-            onClick={() => goToChapter("empezar")}
-          >
-            Ver los 3 pasos
-          </button>
-        </div>
+      <h1
+        className={cn(
+          "rootsy-hero-rise rootsy-hero-rise-d1 text-balance font-extrabold tracking-tight text-foreground",
+          "text-[2rem] leading-[1.05] sm:text-[2.75rem] lg:text-[3.5rem] lg:leading-[1.04]",
+        )}
+      >
+        Potenciamos tu éxito.
+        <br />
+        Transformamos tu entorno.
+      </h1>
+
+      <p className="rootsy-hero-rise rootsy-hero-rise-d2 mt-4 max-w-xl text-pretty text-base leading-relaxed text-foreground/70 sm:mt-5 sm:text-lg">
+        {HERO_SUBTITLE}
+      </p>
+
+      <div className="rootsy-hero-rise rootsy-hero-rise-d3 mt-6 flex flex-col items-center gap-3 sm:mt-8 sm:flex-row">
+        <button
+          type="button"
+          onClick={goRegister}
+          className={cn(
+            "inline-flex h-12 items-center justify-center rounded-full bg-white px-7 text-base font-bold tracking-tight text-[#000347]",
+            "shadow-[0_18px_48px_-16px_rgba(255,255,255,0.45)] transition duration-200 ease-out",
+            "hover:bg-white/90 hover:shadow-[0_18px_56px_-14px_rgba(52,211,153,0.55)]",
+            "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-meadow/60 focus-visible:ring-offset-2 focus-visible:ring-offset-background",
+          )}
+        >
+          Contratar
+        </button>
+        <button
+          type="button"
+          onClick={() => goToChapter("empezar")}
+          className={cn(
+            "inline-flex h-12 items-center justify-center gap-2 rounded-full border border-white/15 bg-white/[0.04] px-6 text-base font-bold tracking-tight text-foreground",
+            "transition duration-200 ease-out hover:border-white/25 hover:bg-white/[0.08]",
+            "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-meadow/60 focus-visible:ring-offset-2 focus-visible:ring-offset-background",
+          )}
+        >
+          <CalendarDays className="h-4.5 w-4.5 text-meadow" aria-hidden />
+          Agendar una demo
+        </button>
       </div>
 
       <div
         className={cn(
-          "rootsy-hero-slide-in-right relative flex shrink-0 justify-center",
-          isDesktop ? "lg:justify-end" : "mt-2",
+          "rootsy-hero-slide-in-right relative mt-10 w-full sm:mt-14",
+          isDesktop ? "max-w-[min(100%,46rem)]" : "max-w-[min(100%,30rem)]",
         )}
       >
         <div
-          className={cn(
-            "relative aspect-square w-full",
-            isDesktop
-              ? "max-w-[min(100%,380px)] sm:max-w-[400px] lg:max-w-[min(100%,460px)]"
-              : "max-w-[min(100%,220px)] sm:max-w-[260px]",
-          )}
-        >
+          className="pointer-events-none absolute -inset-x-10 -top-16 bottom-0 -z-10 rounded-[40px] blur-3xl"
+          style={{
+            background:
+              "radial-gradient(ellipse 70% 60% at 50% 30%, rgba(52,211,153,0.28), transparent 70%)",
+          }}
+          aria-hidden
+        />
+        <div className="overflow-hidden rounded-xl border border-white/10 bg-white/[0.02] shadow-[0_40px_120px_-40px_rgba(0,0,0,0.85)] ring-1 ring-white/5">
           <Image
-            src="/rootsy-mascot.png"
-            alt="Rootsy, la guía de tu negocio"
-            fill
-            className="pointer-events-none -scale-x-100 object-contain object-bottom motion-safe:animate-[mascot-float_6.5s_ease-in-out_infinite]"
-            sizes={
-              isDesktop
-                ? "(max-width: 1024px) 85vw, 460px"
-                : "(max-width: 640px) 70vw, 260px"
-            }
+            src="/images/preview-rootsy.png"
+            alt="Panel de Rootsy: gestión de ventas y stock en vivo"
+            width={693}
+            height={359}
+            className="h-auto w-full"
+            sizes={isDesktop ? "(max-width: 1024px) 90vw, 736px" : "90vw"}
             priority
-            style={{
-              filter:
-                "drop-shadow(0 48px 64px rgba(0,0,0,0.55)) drop-shadow(0 0 56px rgba(52,211,153,0.2))",
-            }}
           />
         </div>
       </div>

@@ -30,15 +30,16 @@ export function LandingAtmosphere({
         className="absolute inset-0"
         style={{
           background: [
-            "radial-gradient(ellipse 85% 70% at 72% 48%, rgba(16, 185, 129, 0.07) 0%, transparent 55%)",
-            "radial-gradient(ellipse 100% 55% at 50% -5%, rgba(16, 185, 129, 0.08) 0%, transparent 50%)",
+            // Bright green aurora rising from the bottom-center (Figma hero glow)
+            "radial-gradient(ellipse 64% 52% at 50% 96%, rgba(37, 254, 2, 0.26) 0%, rgba(2, 254, 133, 0.20) 34%, transparent 66%)",
+            "radial-gradient(ellipse 100% 70% at 50% 108%, rgba(52, 211, 153, 0.30) 0%, transparent 62%)",
             richGlow
-              ? "radial-gradient(ellipse 80% 55% at 72% 38%, rgba(52, 211, 153, 0.14), transparent 58%), radial-gradient(ellipse 60% 45% at 18% 72%, rgba(20, 184, 166, 0.08), transparent 55%)"
-              : "radial-gradient(ellipse 70% 50% at 50% 40%, rgba(52, 211, 153, 0.08), transparent 60%)",
+              ? "radial-gradient(ellipse 50% 44% at 50% 82%, rgba(168, 243, 208, 0.16), transparent 60%), radial-gradient(ellipse 80% 50% at 78% 34%, rgba(20, 184, 166, 0.07), transparent 60%)"
+              : "radial-gradient(ellipse 70% 50% at 50% 92%, rgba(52, 211, 153, 0.14), transparent 60%)",
           ].join(", "),
         }}
       />
-      <div className="absolute inset-0 bg-[#070a09]/40" />
+      <div className="absolute inset-0 bg-[#080c0b]/35" />
 
       {interactive ? (
         <div
