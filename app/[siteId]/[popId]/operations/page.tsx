@@ -5,34 +5,63 @@ import {
   type OperationExpenseLedgerRow,
   type OperationSaleRow,
 } from "@/app/[siteId]/[popId]/operations/actions"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { Button } from "@/components/ui/button"
+import { buildPaginationItems } from "@/app/[siteId]/[popId]/layout/layoutPreviewPagination"
+import { DataWorkspaceListPaginationFooter } from "@/components/data-workspace/DataWorkspaceListPaginationFooter"
+import { DataWorkspaceListTableShell } from "@/components/data-workspace/DataWorkspaceListTableShell"
 import {
-  Table,
+  lightFilterChipClass,
+  lightTableThClass,
+  lightToolbarClearButtonClass,
+  lightToolbarInputClass,
+  lightToolbarPanelLastClass,
+  lightToolbarShellClass,
+  toolbarBlockLabelClass,
+  workspaceDataTableClassName,
+  workspaceTableBodyRowClassNames,
+} from "@/components/data-workspace/dataWorkspaceListStyles"
+import { DataWorkspaceLayout } from "@/components/layouts/DataWorkspaceLayout"
+import { DataWorkspaceSectionMenu } from "@/components/layouts/DataWorkspaceSectionMenu"
+import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import {
   TableBody,
   TableCell,
   TableHead,
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
-import { useAuth } from "@/context/AuthContextSupabase"
 import withAuth from "@/hoc/withAuth"
-import { popMenuHref } from "@/lib/popRoutes"
+import { getWorkspaceHeaderForPop } from "@/lib/workspaceHeaderServer"
 import { cn } from "@/lib/utils"
 import {
-  ArrowLeft,
   ChevronDown,
   ChevronRight,
-  ClipboardList,
-  Leaf,
-  Maximize2,
-  Minimize2,
-  Wifi,
-  WifiOff,
+  Receipt,
+  Search,
+  Wallet,
+  X,
 } from "lucide-react"
-import Link from "next/link"
-import { useParams, useRouter } from "next/navigation"
-import { Fragment, useCallback, useEffect, useRef, useState } from "react"
+import { useParams } from "next/navigation"
+import {
+  Fragment,
+  useCallback,
+  useEffect,
+  useId,
+  useMemo,
+  useRef,
+  useState,
+} from "react"
+
+const OPERATIONS_PAGE_SIZES = [10, 25, 50, 100] as const
+const DEFAULT_PAGE_SIZE = 25
+
+type OperationsViewId = "sales" | "expenses"
+
+const VIEW_ITEMS = [
+  { id: "sales", label: "Ventas", icon: Receipt },
+  { id: "expenses", label: "Gastos", icon: Wallet },
+] as const
 
 const fmt = new Intl.NumberFormat("es-AR", {
   style: "currency",
@@ -76,29 +105,54 @@ function formatLedgerDate(d: string) {
   const y = Number(d.slice(0, 4))
   const m = Number(d.slice(5, 7))
   const day = Number(d.slice(8, 10))
-  if (!Number.isFinite(y) || !Number.isFinite(m) || !Number.isFinite(day)) return "—"
+  if (!Number.isFinite(y) || !Number.isFinite(m) || !Number.isFinite(day)) {
+    return "—"
+  }
   return new Date(y, m - 1, day).toLocaleDateString("es-AR")
 }
 
+const operationsSk = {
+  box: "animate-pulse rounded-sm bg-muted-foreground/10 dark:bg-muted-foreground/[0.12]",
+} as const
+
+function OperationsTableFooterSkeleton() {
+  return (
+    <div
+      className="flex min-h-16 w-full items-center justify-center px-4"
+      aria-hidden
+    >
+      <div className={cn("h-11 w-full max-w-md rounded-lg", operationsSk.box)} />
+    </div>
+  )
+}
+
 function OperationsPage() {
-  const router = useRouter()
-  const routerRef = useRef(router)
-  routerRef.current = router
   const params = useParams()
-  const { user } = useAuth()
   const siteId = typeof params?.siteId === "string" ? params.siteId : ""
   const popId = typeof params?.popId === "string" ? params.popId : undefined
 
   const [popName, setPopName] = useState("")
   const [sales, setSales] = useState<OperationSaleRow[]>([])
-  const [expenseLedger, setExpenseLedger] = useState<OperationExpenseLedgerRow[]>(
-    [],
-  )
-  const [loading, setLoading] = useState(true)
+  const [expenseLedger, setExpenseLedger] = useState<
+    OperationExpenseLedgerRow[]
+  >([])
+  const [listFetching, setListFetching] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [expandedId, setExpandedId] = useState<string | null>(null)
-  const [isOnline, setIsOnline] = useState(true)
-  const [isFullscreen, setIsFullscreen] = useState(false)
+
+  const [activeView, setActiveView] = useState<OperationsViewId>("sales")
+  const [searchInput, setSearchInput] = useState("")
+  const searchInputId = useId()
+  const pageSizeLabelId = useId()
+  const searchInputRef = useRef<HTMLInputElement>(null)
+  const [page, setPage] = useState(1)
+  const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE)
+
+  const [workspaceHeader, setWorkspaceHeader] = useState<{
+    userFullName: string
+    userImageUrl: string | null
+    roleLabel: string
+  } | null>(null)
 
   const load = useCallback(async () => {
     if (!popId || !siteId) return
@@ -108,9 +162,6 @@ function OperationsPage() {
       setSales([])
       setExpenseLedger(res.expenseLedger ?? [])
       setPopName(res.popName ?? "")
-      if (res.redirect) {
-        setTimeout(() => routerRef.current.push(res.redirect!), 1200)
-      }
       return
     }
     setSales(res.sales)
@@ -119,587 +170,684 @@ function OperationsPage() {
     setError(null)
   }, [popId, siteId])
 
+  const fetchWorkspaceHeader = useCallback(async () => {
+    if (!popId) return
+    const head = await getWorkspaceHeaderForPop(popId)
+    if (head.success) {
+      setWorkspaceHeader({
+        userFullName: head.userFullName,
+        userImageUrl: head.userImageUrl,
+        roleLabel: head.roleLabel,
+      })
+    } else {
+      setWorkspaceHeader(null)
+    }
+  }, [popId])
+
   useEffect(() => {
     if (!popId || !siteId) {
-      setLoading(false)
+      setListFetching(false)
       setError("Punto de venta no encontrado")
       return
     }
     let cancelled = false
     ;(async () => {
-      setLoading(true)
-      await load()
-      if (!cancelled) setLoading(false)
+      setListFetching(true)
+      try {
+        await load()
+        if (!cancelled) await fetchWorkspaceHeader()
+      } catch {
+        if (!cancelled) setError("Error inesperado")
+      } finally {
+        if (!cancelled) setListFetching(false)
+      }
     })()
     return () => {
       cancelled = true
     }
-  }, [load, popId, siteId])
+  }, [load, popId, siteId, fetchWorkspaceHeader])
 
-  const toggleFullscreen = useCallback(async () => {
-    if (typeof document === "undefined") return
-    try {
-      if (!document.fullscreenElement) {
-        await document.documentElement.requestFullscreen()
-        setIsFullscreen(true)
-      } else {
-        await document.exitFullscreen()
-        setIsFullscreen(false)
+  useEffect(() => {
+    setPage(1)
+    setExpandedId(null)
+  }, [searchInput, activeView])
+
+  useEffect(() => {
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key !== "/" || e.metaKey || e.ctrlKey || e.altKey) return
+      const target = e.target
+      if (!(target instanceof HTMLElement)) return
+      if (
+        target.tagName === "INPUT" ||
+        target.tagName === "TEXTAREA" ||
+        target.tagName === "SELECT" ||
+        target.isContentEditable
+      ) {
+        return
       }
-    } catch {
-      setIsFullscreen(Boolean(document.fullscreenElement))
+      e.preventDefault()
+      searchInputRef.current?.focus()
     }
+    document.addEventListener("keydown", onKeyDown)
+    return () => document.removeEventListener("keydown", onKeyDown)
   }, [])
 
-  useEffect(() => {
-    const onFs = () =>
-      setIsFullscreen(Boolean(document.fullscreenElement))
-    document.addEventListener("fullscreenchange", onFs)
-    return () => document.removeEventListener("fullscreenchange", onFs)
+  const handleViewSelect = useCallback((id: string) => {
+    if (id !== "sales" && id !== "expenses") return
+    setActiveView(id)
+    setSearchInput("")
+    setPage(1)
+    setExpandedId(null)
   }, [])
 
-  useEffect(() => {
-    setIsOnline(navigator.onLine)
-    const up = () => setIsOnline(true)
-    const down = () => setIsOnline(false)
-    window.addEventListener("online", up)
-    window.addEventListener("offline", down)
-    return () => {
-      window.removeEventListener("online", up)
-      window.removeEventListener("offline", down)
+  const filteredSales = useMemo(() => {
+    const q = searchInput.trim().toLowerCase()
+    if (!q) return sales
+    return sales.filter((sale) => {
+      const haystack = [
+        sale.customerName ?? "",
+        statusLabel(sale.status),
+        sale.status,
+        formatDateTime(sale.soldAt),
+        fmt.format(sale.total),
+        sale.currency,
+      ]
+        .join(" ")
+        .toLowerCase()
+      return haystack.includes(q)
+    })
+  }, [sales, searchInput])
+
+  const filteredExpenses = useMemo(() => {
+    const q = searchInput.trim().toLowerCase()
+    if (!q) return expenseLedger
+    return expenseLedger.filter((row) => {
+      const haystack = [
+        expenseLedgerKindLabel(row),
+        row.methodName ?? "",
+        row.description,
+        formatLedgerDate(row.entryDate),
+        fmt.format(row.amount),
+      ]
+        .join(" ")
+        .toLowerCase()
+      return haystack.includes(q)
+    })
+  }, [expenseLedger, searchInput])
+
+  const activeRows = activeView === "sales" ? filteredSales : filteredExpenses
+  const sourceTotal =
+    activeView === "sales" ? sales.length : expenseLedger.length
+  const totalCount = activeRows.length
+
+  const totalPages = useMemo(
+    () => Math.max(1, Math.ceil(totalCount / Math.max(1, pageSize))),
+    [totalCount, pageSize],
+  )
+  const currentPage = Math.min(Math.max(1, page), totalPages)
+
+  const pageSales = useMemo(() => {
+    const start = (currentPage - 1) * pageSize
+    return filteredSales.slice(start, start + pageSize)
+  }, [filteredSales, currentPage, pageSize])
+
+  const pageExpenses = useMemo(() => {
+    const start = (currentPage - 1) * pageSize
+    return filteredExpenses.slice(start, start + pageSize)
+  }, [filteredExpenses, currentPage, pageSize])
+
+  const rangeLabel = useMemo(() => {
+    if (totalCount === 0) return { start: 0, end: 0 }
+    const start = (currentPage - 1) * pageSize + 1
+    const end = Math.min(currentPage * pageSize, totalCount)
+    return { start, end }
+  }, [currentPage, pageSize, totalCount])
+
+  const paginationItems = useMemo(
+    () => buildPaginationItems(totalPages, currentPage),
+    [totalPages, currentPage],
+  )
+
+  const resultsSummary = useMemo(() => {
+    if (listFetching && totalCount === 0) return "…"
+    if (totalCount === 0) return "Sin resultados"
+    const noun =
+      activeView === "sales"
+        ? totalCount === 1
+          ? "venta"
+          : "ventas"
+        : totalCount === 1
+          ? "movimiento"
+          : "movimientos"
+    if (searchInput.trim() && totalCount !== sourceTotal) {
+      return `${totalCount.toLocaleString("es-AR")} de ${sourceTotal.toLocaleString("es-AR")} ${noun}`
     }
+    return `${totalCount.toLocaleString("es-AR")} ${noun}`
+  }, [
+    listFetching,
+    totalCount,
+    sourceTotal,
+    searchInput,
+    activeView,
+  ])
+
+  const searchPlaceholder =
+    activeView === "sales"
+      ? "Cliente, estado, fecha, total… ( / )"
+      : "Tipo, medio, detalle, importe… ( / )"
+
+  const clearSearch = useCallback(() => {
+    setSearchInput("")
+    searchInputRef.current?.focus()
   }, [])
 
-  const headerUserName =
-    (typeof user?.user_metadata?.full_name === "string" &&
-      user.user_metadata.full_name.trim()) ||
-    user?.email?.split("@")[0] ||
-    "Usuario"
-  const userAvatarSrc =
-    user?.user_metadata?.avatar_url ||
-    `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(user?.email || "u")}`
-
-  const popLogoSrc = `https://api.dicebear.com/7.x/shapes/svg?seed=${encodeURIComponent(popId || "pop")}&backgroundColor=e8f5ef`
+  const hasSearchChip = searchInput.trim().length > 0
 
   if (!popId || !siteId) {
     return (
       <div className="rootsy-app-light min-h-screen bg-background p-10 text-foreground">
-        <p className="text-sm">Punto de venta no encontrado</p>
+        <p className="text-sm">Punto de venta no encontrado.</p>
       </div>
     )
   }
 
   return (
-    <div className="rootsy-app-light relative min-h-screen overflow-hidden bg-background text-foreground">
-      <div
-        className="pointer-events-none absolute inset-0 motion-reduce:opacity-50"
-        aria-hidden
-      >
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_50%_at_50%_-20%,oklch(0.75_0.12_155/0.35),transparent),radial-gradient(ellipse_60%_40%_at_100%_50%,oklch(0.85_0.08_140/0.2),transparent)]" />
-        <div className="absolute inset-0 bg-[linear-gradient(oklch(0.92_0.02_130/0.35)_1px,transparent_1px),linear-gradient(90deg,oklch(0.92_0.02_130/0.35)_1px,transparent_1px)] bg-size-[48px_48px] opacity-40" />
-      </div>
-
-      <div className="relative z-10 flex min-h-screen flex-col">
-        <header className="border-b border-rootsy-hairline bg-card/90 shadow-sm backdrop-blur-xl">
-          <div className="grid h-18 grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-4 px-4">
-            <div className="flex min-w-0 items-center gap-3">
-              <Link
-                href={popMenuHref(siteId, popId)}
-                className="group inline-flex size-10 items-center justify-center rounded-xl border border-foreground/10 bg-secondary text-foreground/70 transition-all hover:border-primary/25 hover:bg-muted hover:text-foreground"
-                aria-label="Volver al menú"
-              >
-                <ArrowLeft className="size-5 transition-transform group-hover:-translate-x-0.5" />
-              </Link>
-              <div className="h-6 w-px bg-border" />
-              <div className="flex min-w-0 items-center gap-2.5">
-                <div className="size-8 overflow-hidden rounded-lg ring-1 ring-border">
-                  <img
-                    src={popLogoSrc}
-                    alt=""
-                    className="size-full object-cover"
-                  />
-                </div>
-                <span className="truncate text-sm font-semibold text-foreground/90">
-                  {popName || (loading ? "…" : "—")}
-                </span>
-              </div>
-            </div>
-
-            <div className="flex items-center gap-2">
-              <h1 className="flex items-center gap-2 text-[1.65rem] font-black tracking-tight text-foreground">
-                <span className="inline-flex size-9 items-center justify-center rounded-xl bg-primary/15 text-primary">
-                  <ClipboardList className="size-5" aria-hidden />
-                </span>
-                Operaciones
-              </h1>
-              <div
-                className={cn(
-                  "inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-widest",
-                  isOnline
-                    ? "border-primary/30 bg-primary/10 text-forest"
-                    : "border-destructive/30 bg-destructive/10 text-destructive",
-                )}
-              >
-                {isOnline ? (
-                  <Wifi className="size-3" aria-hidden />
-                ) : (
-                  <WifiOff className="size-3" aria-hidden />
-                )}
-                {isOnline ? "Online" : "Offline"}
-              </div>
-            </div>
-
-            <div className="flex shrink-0 items-center justify-end gap-2">
-              <button
-                type="button"
-                onClick={() => void toggleFullscreen()}
-                className="group inline-flex size-9 items-center justify-center rounded-xl text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-                aria-label={
-                  isFullscreen
-                    ? "Salir de pantalla completa"
-                    : "Pantalla completa"
-                }
-              >
-                {isFullscreen ? (
-                  <Minimize2 className="size-4.5" />
-                ) : (
-                  <Maximize2 className="size-4.5" />
-                )}
-              </button>
-              <div className="h-6 w-px bg-border" />
-              <div className="flex items-center gap-3">
-                <div className="relative">
-                  <Avatar className="size-10 ring-1 ring-border">
-                    <AvatarImage src={userAvatarSrc} alt="" />
-                    <AvatarFallback className="bg-primary/10 text-xs text-primary">
-                      {headerUserName.slice(0, 2).toUpperCase()}
-                    </AvatarFallback>
-                  </Avatar>
-                  <div className="absolute -right-0.5 -bottom-0.5 size-2.5 rounded-full border-2 border-card bg-primary" />
-                </div>
-                <div className="hidden min-w-0 flex-col leading-tight sm:flex">
-                  <span className="truncate text-sm font-semibold text-foreground/90">
-                    {headerUserName}
-                  </span>
-                  <span className="flex items-center gap-1 text-[10px] font-semibold uppercase tracking-wider text-meadow">
-                    <Leaf className="size-3" aria-hidden />
-                    Ventas
-                  </span>
-                </div>
-              </div>
-            </div>
+    <DataWorkspaceLayout
+      siteId={siteId}
+      popId={popId}
+      popName={popName}
+      title="Operaciones"
+      headerVariant="dark"
+      contentFlush
+      sidebarCollapsible={false}
+      loading={!popName && listFetching}
+      userName={workspaceHeader?.userFullName}
+      userAvatarSrc={workspaceHeader?.userImageUrl ?? undefined}
+      userRoleLabel={workspaceHeader?.roleLabel ?? "Ventas"}
+      mainClassName="min-h-0 overflow-hidden"
+      sectionMenu={
+        <DataWorkspaceSectionMenu
+          headerVariant="dark"
+          viewItems={VIEW_ITEMS}
+          activeId={activeView}
+          onSelect={handleViewSelect}
+          viewsSectionLabel="Tipo de operación"
+        />
+      }
+    >
+      <div className="relative flex min-h-0 w-full flex-1 flex-col">
+        {error ? (
+          <div
+            role="alert"
+            className="relative shrink-0 border-b border-destructive/25 bg-destructive/10 px-4 py-3 text-sm text-destructive"
+          >
+            {error}
           </div>
-        </header>
+        ) : null}
 
-        <main className="relative z-10 mx-auto w-full max-w-6xl flex-1 px-4 py-8 sm:px-6">
-          {error ? (
-            <div
-              role="alert"
-              className="rounded-2xl border border-destructive/25 bg-destructive/5 px-4 py-3 text-sm text-destructive"
-            >
-              {error}
+        <div className="relative flex min-h-0 flex-1 flex-col">
+          <div
+            className={lightToolbarShellClass}
+            role="toolbar"
+            aria-label="Filtros del listado"
+          >
+            <div className={cn(lightToolbarPanelLastClass, "w-full")}>
+              <div className="mb-2 flex min-w-0 items-baseline justify-between gap-3">
+                <label htmlFor={searchInputId} className={toolbarBlockLabelClass}>
+                  Buscar
+                </label>
+                <span
+                  className="shrink-0 text-[11px] font-medium text-muted-foreground"
+                  aria-live="polite"
+                  aria-atomic="true"
+                >
+                  {resultsSummary}
+                </span>
+              </div>
+              <div className="relative min-w-0">
+                <Search
+                  className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground"
+                  aria-hidden
+                />
+                <Input
+                  ref={searchInputRef}
+                  id={searchInputId}
+                  type="search"
+                  value={searchInput}
+                  onChange={(e) => setSearchInput(e.target.value)}
+                  placeholder={searchPlaceholder}
+                  className={cn(
+                    lightToolbarInputClass,
+                    searchInput.trim().length > 0 && "pr-10",
+                  )}
+                  autoComplete="off"
+                  spellCheck={false}
+                  aria-label={
+                    activeView === "sales"
+                      ? "Buscar ventas"
+                      : "Buscar gastos"
+                  }
+                />
+                {searchInput.trim().length > 0 ? (
+                  <button
+                    type="button"
+                    aria-label="Limpiar búsqueda"
+                    className={lightToolbarClearButtonClass}
+                    onClick={clearSearch}
+                  >
+                    <X className="size-3.5" aria-hidden />
+                  </button>
+                ) : null}
+              </div>
             </div>
-          ) : (
-            <div className="space-y-6">
-              <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
-                <div>
-                  <h2 className="text-lg font-semibold text-foreground">
-                    Registro de ventas
-                  </h2>
-                  <p className="max-w-xl text-sm text-muted-foreground">
-                    Ventas y movimientos de gastos del punto de venta. En ventas,
-                    expandí una fila para ver ítems, cobros e importes.
-                  </p>
+
+            {hasSearchChip ? (
+              <div
+                className="border-t border-border/80 bg-card px-4 py-3"
+                role="region"
+                aria-label="Filtros activos"
+              >
+                <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+                  <p className={toolbarBlockLabelClass}>Filtros activos</p>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="h-8 px-2.5 text-xs font-medium text-muted-foreground hover:text-foreground"
+                    onClick={clearSearch}
+                  >
+                    Limpiar todo
+                  </Button>
                 </div>
-                <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                  <span className="rounded-full bg-muted px-3 py-1 font-medium text-foreground/80">
-                    {loading
-                      ? "…"
-                      : `${sales.length} ventas · ${expenseLedger.length} gastos`}
-                  </span>
+                <div className="flex flex-wrap items-center gap-1.5">
+                  <Badge variant="secondary" className={lightFilterChipClass}>
+                    <span className="truncate">
+                      Buscar: «{searchInput.trim()}»
+                    </span>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="size-6 shrink-0"
+                      onClick={clearSearch}
+                      aria-label="Quitar búsqueda"
+                    >
+                      <X className="size-3" />
+                    </Button>
+                  </Badge>
                 </div>
               </div>
+            ) : null}
+          </div>
 
-              <div className="overflow-hidden rounded-2xl border border-border bg-card/95 shadow-md shadow-primary/5 backdrop-blur-sm">
-                <div className="flex items-center gap-2 border-b border-border px-4 py-3">
-                  <ClipboardList className="size-4 text-primary" aria-hidden />
-                  <span className="text-sm font-semibold text-foreground">
-                    Listado
-                  </span>
-                  <span className="text-xs text-muted-foreground">
-                    {loading ? "Cargando…" : `${sales.length} ventas`}
-                  </span>
-                </div>
-
-                <div className="overflow-x-auto">
-                  <Table>
-                    <TableHeader>
-                      <TableRow className="border-border bg-muted/40 hover:bg-muted/40">
-                        <TableHead className="w-10" />
-                        <TableHead className="font-semibold text-foreground">
-                          Fecha
-                        </TableHead>
-                        <TableHead className="font-semibold text-foreground">
-                          Estado
-                        </TableHead>
-                        <TableHead className="font-semibold text-foreground">
-                          Cliente
-                        </TableHead>
-                        <TableHead className="text-right font-semibold text-foreground">
-                          Total
-                        </TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {loading ? (
-                        <TableRow className="border-border">
-                          <TableCell
-                            colSpan={5}
-                            className="py-10 text-center text-muted-foreground"
+          <DataWorkspaceListTableShell
+            variant="flush"
+            footer={
+              <DataWorkspaceListPaginationFooter
+                variant="dark"
+                listFetching={listFetching}
+                totalCount={totalCount}
+                rangeStart={rangeLabel.start}
+                rangeEnd={rangeLabel.end}
+                currentPage={currentPage}
+                totalPages={totalPages}
+                pageSize={pageSize}
+                pageSizeOptions={OPERATIONS_PAGE_SIZES}
+                paginationItems={paginationItems}
+                onPageChange={setPage}
+                onPageSizeChange={(ps) => {
+                  setPageSize(ps)
+                  setPage(1)
+                  setExpandedId(null)
+                }}
+                pageSizeLabelId={pageSizeLabelId}
+                loadingSlot={<OperationsTableFooterSkeleton />}
+              />
+            }
+          >
+            {activeView === "sales" ? (
+              <table
+                className={workspaceDataTableClassName}
+                aria-busy={listFetching}
+              >
+                <TableHeader>
+                  <TableRow className="border-0 hover:bg-transparent">
+                    <TableHead className={cn(lightTableThClass, "w-10")} />
+                    <TableHead className={cn(lightTableThClass, "text-left")}>
+                      Fecha
+                    </TableHead>
+                    <TableHead className={cn(lightTableThClass, "text-left")}>
+                      Estado
+                    </TableHead>
+                    <TableHead className={cn(lightTableThClass, "text-left")}>
+                      Cliente
+                    </TableHead>
+                    <TableHead className={cn(lightTableThClass, "text-right")}>
+                      Total
+                    </TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {listFetching ? (
+                    <TableRow>
+                      <TableCell
+                        colSpan={5}
+                        className="py-12 text-center text-muted-foreground"
+                      >
+                        Cargando ventas…
+                      </TableCell>
+                    </TableRow>
+                  ) : totalCount === 0 ? (
+                    <TableRow>
+                      <TableCell
+                        colSpan={5}
+                        className="py-12 text-center text-muted-foreground"
+                      >
+                        {searchInput.trim()
+                          ? "No hay ventas que coincidan con la búsqueda."
+                          : "No hay ventas registradas en este punto."}
+                      </TableCell>
+                    </TableRow>
+                  ) : (
+                    pageSales.map((sale, i) => {
+                      const open = expandedId === sale.id
+                      return (
+                        <Fragment key={sale.id}>
+                          <TableRow
+                            className={cn(
+                              workspaceTableBodyRowClassNames(i),
+                              open && "bg-primary/5",
+                            )}
                           >
-                            Cargando ventas…
-                          </TableCell>
-                        </TableRow>
-                      ) : sales.length === 0 ? (
-                        <TableRow className="border-border">
-                          <TableCell
-                            colSpan={5}
-                            className="py-10 text-center text-muted-foreground"
-                          >
-                            No hay ventas registradas en este punto.
-                          </TableCell>
-                        </TableRow>
-                      ) : (
-                        sales.map((sale) => {
-                          const open = expandedId === sale.id
-                          return (
-                            <Fragment key={sale.id}>
-                              <TableRow
-                                className={cn(
-                                  "border-border transition-[box-shadow,background-color]",
+                            <TableCell className="align-middle px-2 py-2">
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="icon"
+                                className="size-8 text-muted-foreground hover:text-foreground"
+                                aria-expanded={open}
+                                aria-label={
                                   open
-                                    ? "bg-muted/50"
-                                    : "hover:bg-muted/30",
-                                )}
+                                    ? "Ocultar detalle de la venta"
+                                    : "Ver detalle de la venta"
+                                }
+                                onClick={() =>
+                                  setExpandedId((id) =>
+                                    id === sale.id ? null : sale.id,
+                                  )
+                                }
                               >
-                                <TableCell className="align-middle">
-                                  <Button
-                                    type="button"
-                                    variant="ghost"
-                                    size="icon"
-                                    className="size-8 text-muted-foreground hover:text-foreground"
-                                    aria-expanded={open}
-                                    aria-label={
-                                      open
-                                        ? "Ocultar detalle de la venta"
-                                        : "Ver detalle de la venta"
-                                    }
-                                    onClick={() =>
-                                      setExpandedId((id) =>
-                                        id === sale.id ? null : sale.id,
-                                      )
-                                    }
-                                  >
-                                    {open ? (
-                                      <ChevronDown className="size-4" />
-                                    ) : (
-                                      <ChevronRight className="size-4" />
-                                    )}
-                                  </Button>
-                                </TableCell>
-                                <TableCell className="text-sm tabular-nums text-foreground">
-                                  {formatDateTime(sale.soldAt)}
-                                </TableCell>
-                                <TableCell>
-                                  <span
-                                    className={cn(
-                                      "inline-flex rounded-md border px-2 py-0.5 text-xs font-medium",
-                                      sale.status === "completed"
-                                        ? "border-emerald-500/35 bg-emerald-50 text-emerald-900"
-                                        : sale.status === "cancelled"
-                                          ? "border-border bg-muted text-muted-foreground"
-                                          : "border-amber-500/35 bg-amber-50 text-amber-950",
-                                    )}
-                                  >
-                                    {statusLabel(sale.status)}
-                                  </span>
-                                </TableCell>
-                                <TableCell className="max-w-[200px] truncate text-sm text-foreground">
-                                  {sale.customerName ?? "—"}
-                                </TableCell>
-                                <TableCell className="text-right text-sm font-semibold tabular-nums text-primary">
-                                  {fmt.format(sale.total)}
-                                </TableCell>
-                              </TableRow>
-                              {open ? (
-                                <TableRow className="border-border bg-muted/30 hover:bg-muted/30">
-                                  <TableCell colSpan={5} className="p-0">
-                                    <div className="space-y-4 px-4 py-4 sm:px-6">
-                                      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-                                        <div className="rounded-lg border border-border bg-card px-3 py-2">
-                                          <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-                                            Subtotal (neto)
-                                          </p>
-                                          <p className="text-sm font-medium tabular-nums text-foreground">
-                                            {fmt.format(sale.subtotal)}
-                                          </p>
-                                        </div>
-                                        <div className="rounded-lg border border-border bg-card px-3 py-2">
-                                          <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-                                            IVA
-                                          </p>
-                                          <p className="text-sm font-medium tabular-nums text-foreground">
-                                            {fmt.format(sale.taxTotal)}
-                                          </p>
-                                        </div>
-                                        <div className="rounded-lg border border-border bg-card px-3 py-2">
-                                          <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-                                            Descuentos
-                                          </p>
-                                          <p className="text-sm font-medium tabular-nums text-foreground">
-                                            {fmt.format(sale.discountTotal)}
-                                          </p>
-                                        </div>
-                                        <div className="rounded-lg border border-border bg-card px-3 py-2">
-                                          <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-                                            Moneda
-                                          </p>
-                                          <p className="text-sm font-medium text-foreground">
-                                            {sale.currency}
-                                          </p>
-                                        </div>
-                                      </div>
-
-                                      {sale.payments.length > 0 ? (
-                                        <div>
-                                          <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                                            Cobros
-                                          </p>
-                                          <ul className="space-y-1 rounded-lg border border-border bg-muted/50 px-3 py-2">
-                                            {sale.payments.map((p, i) => (
-                                              <li
-                                                key={`${sale.id}-p-${i}`}
-                                                className="flex justify-between text-sm text-foreground"
-                                              >
-                                                <span>{p.methodName}</span>
-                                                <span className="tabular-nums">
-                                                  {fmt.format(p.amount)}
-                                                </span>
-                                              </li>
-                                            ))}
-                                          </ul>
-                                        </div>
-                                      ) : null}
-
-                                      <div>
-                                        <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                                          Ítems
-                                        </p>
-                                        <div className="overflow-x-auto rounded-lg border border-border">
-                                          <Table>
-                                            <TableHeader>
-                                              <TableRow className="border-border bg-muted/40 hover:bg-muted/40">
-                                                <TableHead className="font-semibold text-foreground">
-                                                  Producto
-                                                </TableHead>
-                                                <TableHead className="text-right font-semibold text-foreground">
-                                                  Cant.
-                                                </TableHead>
-                                                <TableHead className="text-right font-semibold text-foreground">
-                                                  P. unit.
-                                                </TableHead>
-                                                <TableHead className="text-right font-semibold text-foreground">
-                                                  IVA %
-                                                </TableHead>
-                                                <TableHead className="text-right font-semibold text-foreground">
-                                                  Desc.
-                                                </TableHead>
-                                                <TableHead className="text-right font-semibold text-foreground">
-                                                  Línea
-                                                </TableHead>
-                                              </TableRow>
-                                            </TableHeader>
-                                            <TableBody>
-                                              {sale.lineItems.length === 0 ? (
-                                                <TableRow className="border-border">
-                                                  <TableCell
-                                                    colSpan={6}
-                                                    className="text-center text-muted-foreground"
-                                                  >
-                                                    Sin líneas en el comprobante.
-                                                  </TableCell>
-                                                </TableRow>
-                                              ) : (
-                                                sale.lineItems.map(
-                                                  (line, li) => (
-                                                    <TableRow
-                                                      key={`${sale.id}-line-${li}`}
-                                                      className="border-border"
-                                                    >
-                                                      <TableCell className="max-w-[220px]">
-                                                        <span className="font-medium text-foreground">
-                                                          {line.nameSnapshot}
-                                                        </span>
-                                                        {line.comment ? (
-                                                          <span className="mt-0.5 block text-xs text-muted-foreground">
-                                                            {line.comment}
-                                                          </span>
-                                                        ) : null}
-                                                      </TableCell>
-                                                      <TableCell className="text-right text-sm tabular-nums text-foreground">
-                                                        {formatQty(
-                                                          line.quantity,
-                                                        )}
-                                                      </TableCell>
-                                                      <TableCell className="text-right text-sm tabular-nums text-foreground">
-                                                        {fmt.format(
-                                                          line.unitPrice,
-                                                        )}
-                                                      </TableCell>
-                                                      <TableCell className="text-right text-sm tabular-nums text-foreground">
-                                                        {line.iva > 0
-                                                          ? `${line.iva}%`
-                                                          : "—"}
-                                                      </TableCell>
-                                                      <TableCell className="text-right text-sm tabular-nums text-foreground">
-                                                        {fmt.format(
-                                                          line.lineDiscount,
-                                                        )}
-                                                      </TableCell>
-                                                      <TableCell className="text-right text-sm font-medium tabular-nums text-primary">
-                                                        {fmt.format(
-                                                          line.lineTotal,
-                                                        )}
-                                                      </TableCell>
-                                                    </TableRow>
-                                                  ),
-                                                )
-                                              )}
-                                            </TableBody>
-                                          </Table>
-                                        </div>
-                                      </div>
-                                    </div>
-                                  </TableCell>
-                                </TableRow>
-                              ) : null}
-                            </Fragment>
-                          )
-                        })
-                      )}
-                    </TableBody>
-                  </Table>
-                </div>
-              </div>
-
-              <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
-                <div>
-                  <h2 className="text-lg font-semibold text-foreground">
-                    Gastos (contabilidad)
-                  </h2>
-                  <p className="max-w-xl text-sm text-muted-foreground">
-                    Pagos de gastos y anulaciones registrados como asientos
-                    contables.
-                  </p>
-                </div>
-              </div>
-
-              <div className="overflow-hidden rounded-2xl border border-border bg-card/95 shadow-md shadow-primary/5 backdrop-blur-sm">
-                <div className="flex items-center gap-2 border-b border-border px-4 py-3">
-                  <ClipboardList className="size-4 text-primary" aria-hidden />
-                  <span className="text-sm font-semibold text-foreground">
-                    Libro de gastos
-                  </span>
-                  <span className="text-xs text-muted-foreground">
-                    {loading ? "Cargando…" : `${expenseLedger.length} movimientos`}
-                  </span>
-                </div>
-                <div className="overflow-x-auto">
-                  <Table>
-                    <TableHeader>
-                      <TableRow className="border-border bg-muted/40 hover:bg-muted/40">
-                        <TableHead className="font-semibold text-foreground">
-                          Fecha asiento
-                        </TableHead>
-                        <TableHead className="font-semibold text-foreground">
-                          Tipo
-                        </TableHead>
-                        <TableHead className="font-semibold text-foreground">
-                          Medio
-                        </TableHead>
-                        <TableHead className="font-semibold text-foreground">
-                          Detalle
-                        </TableHead>
-                        <TableHead className="text-right font-semibold text-foreground">
-                          Importe
-                        </TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {loading ? (
-                        <TableRow className="border-border">
-                          <TableCell
-                            colSpan={5}
-                            className="py-10 text-center text-muted-foreground"
-                          >
-                            Cargando gastos…
-                          </TableCell>
-                        </TableRow>
-                      ) : expenseLedger.length === 0 ? (
-                        <TableRow className="border-border">
-                          <TableCell
-                            colSpan={5}
-                            className="py-10 text-center text-muted-foreground"
-                          >
-                            No hay pagos de gastos contabilizados en este punto.
-                          </TableCell>
-                        </TableRow>
-                      ) : (
-                        expenseLedger.map((row) => (
-                          <TableRow key={row.entryId} className="border-border">
-                            <TableCell className="text-sm text-foreground">
-                              {formatLedgerDate(row.entryDate)}
+                                {open ? (
+                                  <ChevronDown className="size-4" />
+                                ) : (
+                                  <ChevronRight className="size-4" />
+                                )}
+                              </Button>
                             </TableCell>
-                            <TableCell className="text-sm">
+                            <TableCell className="px-3 py-2.5 text-sm tabular-nums text-foreground">
+                              {formatDateTime(sale.soldAt)}
+                            </TableCell>
+                            <TableCell className="px-3 py-2.5">
                               <span
                                 className={cn(
-                                  "rounded-full border px-2 py-0.5 text-xs font-medium",
-                                  row.sourceType === "expense_void"
-                                    ? "border-border bg-muted text-muted-foreground"
-                                    : "border-primary/25 bg-primary/10 text-primary",
+                                  "inline-flex rounded-md border px-2 py-0.5 text-xs font-medium",
+                                  sale.status === "completed"
+                                    ? "border-emerald-500/35 bg-emerald-50 text-emerald-900"
+                                    : sale.status === "cancelled"
+                                      ? "border-border bg-muted text-muted-foreground"
+                                      : "border-amber-500/35 bg-amber-50 text-amber-950",
                                 )}
                               >
-                                {expenseLedgerKindLabel(row)}
+                                {statusLabel(sale.status)}
                               </span>
                             </TableCell>
-                            <TableCell className="max-w-[140px] truncate text-sm text-foreground">
-                              {row.methodName ?? "—"}
+                            <TableCell className="max-w-[200px] truncate px-3 py-2.5 text-sm text-foreground">
+                              {sale.customerName ?? "—"}
                             </TableCell>
-                            <TableCell className="max-w-[280px] text-sm text-foreground">
-                              <span className="line-clamp-2">{row.description}</span>
-                            </TableCell>
-                            <TableCell
-                              className={cn(
-                                "text-right text-sm font-semibold tabular-nums",
-                                row.sourceType === "expense_void"
-                                  ? "text-muted-foreground"
-                                  : "text-primary",
-                              )}
-                            >
-                              {fmt.format(row.amount)}
+                            <TableCell className="px-3 py-2.5 text-right text-sm font-semibold tabular-nums text-primary">
+                              {fmt.format(sale.total)}
                             </TableCell>
                           </TableRow>
-                        ))
-                      )}
-                    </TableBody>
-                  </Table>
-                </div>
-              </div>
-            </div>
-          )}
-        </main>
+                          {open ? (
+                            <TableRow className="border-border/50 bg-muted/20 hover:bg-muted/20">
+                              <TableCell colSpan={5} className="p-0">
+                                <div className="space-y-4 px-4 py-4 sm:px-6">
+                                  <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+                                    <div className="rounded-lg border border-border bg-card px-3 py-2">
+                                      <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+                                        Subtotal (neto)
+                                      </p>
+                                      <p className="text-sm font-medium tabular-nums text-foreground">
+                                        {fmt.format(sale.subtotal)}
+                                      </p>
+                                    </div>
+                                    <div className="rounded-lg border border-border bg-card px-3 py-2">
+                                      <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+                                        IVA
+                                      </p>
+                                      <p className="text-sm font-medium tabular-nums text-foreground">
+                                        {fmt.format(sale.taxTotal)}
+                                      </p>
+                                    </div>
+                                    <div className="rounded-lg border border-border bg-card px-3 py-2">
+                                      <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+                                        Descuentos
+                                      </p>
+                                      <p className="text-sm font-medium tabular-nums text-foreground">
+                                        {fmt.format(sale.discountTotal)}
+                                      </p>
+                                    </div>
+                                    <div className="rounded-lg border border-border bg-card px-3 py-2">
+                                      <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+                                        Moneda
+                                      </p>
+                                      <p className="text-sm font-medium text-foreground">
+                                        {sale.currency}
+                                      </p>
+                                    </div>
+                                  </div>
+
+                                  {sale.payments.length > 0 ? (
+                                    <div>
+                                      <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                                        Cobros
+                                      </p>
+                                      <ul className="space-y-1 rounded-lg border border-border bg-muted/50 px-3 py-2">
+                                        {sale.payments.map((p, pi) => (
+                                          <li
+                                            key={`${sale.id}-p-${pi}`}
+                                            className="flex justify-between text-sm text-foreground"
+                                          >
+                                            <span>{p.methodName}</span>
+                                            <span className="tabular-nums">
+                                              {fmt.format(p.amount)}
+                                            </span>
+                                          </li>
+                                        ))}
+                                      </ul>
+                                    </div>
+                                  ) : null}
+
+                                  <div>
+                                    <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                                      Ítems
+                                    </p>
+                                    <div className="overflow-x-auto rounded-lg border border-border">
+                                      <table className="w-full caption-bottom text-sm">
+                                        <TableHeader>
+                                          <TableRow className="border-border bg-muted/40 hover:bg-muted/40">
+                                            <TableHead className="font-semibold text-foreground">
+                                              Producto
+                                            </TableHead>
+                                            <TableHead className="text-right font-semibold text-foreground">
+                                              Cant.
+                                            </TableHead>
+                                            <TableHead className="text-right font-semibold text-foreground">
+                                              P. unit.
+                                            </TableHead>
+                                            <TableHead className="text-right font-semibold text-foreground">
+                                              IVA %
+                                            </TableHead>
+                                            <TableHead className="text-right font-semibold text-foreground">
+                                              Desc.
+                                            </TableHead>
+                                            <TableHead className="text-right font-semibold text-foreground">
+                                              Línea
+                                            </TableHead>
+                                          </TableRow>
+                                        </TableHeader>
+                                        <TableBody>
+                                          {sale.lineItems.length === 0 ? (
+                                            <TableRow className="border-border">
+                                              <TableCell
+                                                colSpan={6}
+                                                className="text-center text-muted-foreground"
+                                              >
+                                                Sin líneas en el comprobante.
+                                              </TableCell>
+                                            </TableRow>
+                                          ) : (
+                                            sale.lineItems.map((line, li) => (
+                                              <TableRow
+                                                key={`${sale.id}-line-${li}`}
+                                                className="border-border"
+                                              >
+                                                <TableCell className="max-w-[220px]">
+                                                  <span className="font-medium text-foreground">
+                                                    {line.nameSnapshot}
+                                                  </span>
+                                                  {line.comment ? (
+                                                    <span className="mt-0.5 block text-xs text-muted-foreground">
+                                                      {line.comment}
+                                                    </span>
+                                                  ) : null}
+                                                </TableCell>
+                                                <TableCell className="text-right text-sm tabular-nums text-foreground">
+                                                  {formatQty(line.quantity)}
+                                                </TableCell>
+                                                <TableCell className="text-right text-sm tabular-nums text-foreground">
+                                                  {fmt.format(line.unitPrice)}
+                                                </TableCell>
+                                                <TableCell className="text-right text-sm tabular-nums text-foreground">
+                                                  {line.iva > 0
+                                                    ? `${line.iva}%`
+                                                    : "—"}
+                                                </TableCell>
+                                                <TableCell className="text-right text-sm tabular-nums text-foreground">
+                                                  {fmt.format(line.lineDiscount)}
+                                                </TableCell>
+                                                <TableCell className="text-right text-sm font-medium tabular-nums text-primary">
+                                                  {fmt.format(line.lineTotal)}
+                                                </TableCell>
+                                              </TableRow>
+                                            ))
+                                          )}
+                                        </TableBody>
+                                      </table>
+                                    </div>
+                                  </div>
+                                </div>
+                              </TableCell>
+                            </TableRow>
+                          ) : null}
+                        </Fragment>
+                      )
+                    })
+                  )}
+                </TableBody>
+              </table>
+            ) : (
+              <table
+                className={workspaceDataTableClassName}
+                aria-busy={listFetching}
+              >
+                <TableHeader>
+                  <TableRow className="border-0 hover:bg-transparent">
+                    <TableHead className={cn(lightTableThClass, "text-left")}>
+                      Fecha asiento
+                    </TableHead>
+                    <TableHead className={cn(lightTableThClass, "text-left")}>
+                      Tipo
+                    </TableHead>
+                    <TableHead className={cn(lightTableThClass, "text-left")}>
+                      Medio
+                    </TableHead>
+                    <TableHead className={cn(lightTableThClass, "text-left")}>
+                      Detalle
+                    </TableHead>
+                    <TableHead className={cn(lightTableThClass, "text-right")}>
+                      Importe
+                    </TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {listFetching ? (
+                    <TableRow>
+                      <TableCell
+                        colSpan={5}
+                        className="py-12 text-center text-muted-foreground"
+                      >
+                        Cargando gastos…
+                      </TableCell>
+                    </TableRow>
+                  ) : totalCount === 0 ? (
+                    <TableRow>
+                      <TableCell
+                        colSpan={5}
+                        className="py-12 text-center text-muted-foreground"
+                      >
+                        {searchInput.trim()
+                          ? "No hay gastos que coincidan con la búsqueda."
+                          : "No hay pagos de gastos contabilizados en este punto."}
+                      </TableCell>
+                    </TableRow>
+                  ) : (
+                    pageExpenses.map((row, i) => (
+                      <TableRow
+                        key={row.entryId}
+                        className={workspaceTableBodyRowClassNames(i)}
+                      >
+                        <TableCell className="px-3 py-2.5 text-sm text-foreground">
+                          {formatLedgerDate(row.entryDate)}
+                        </TableCell>
+                        <TableCell className="px-3 py-2.5 text-sm">
+                          <span
+                            className={cn(
+                              "rounded-full border px-2 py-0.5 text-xs font-medium",
+                              row.sourceType === "expense_void"
+                                ? "border-border bg-muted text-muted-foreground"
+                                : "border-primary/25 bg-primary/10 text-primary",
+                            )}
+                          >
+                            {expenseLedgerKindLabel(row)}
+                          </span>
+                        </TableCell>
+                        <TableCell className="max-w-[140px] truncate px-3 py-2.5 text-sm text-foreground">
+                          {row.methodName ?? "—"}
+                        </TableCell>
+                        <TableCell className="max-w-[280px] px-3 py-2.5 text-sm text-foreground">
+                          <span className="line-clamp-2">{row.description}</span>
+                        </TableCell>
+                        <TableCell
+                          className={cn(
+                            "px-3 py-2.5 text-right text-sm font-semibold tabular-nums",
+                            row.sourceType === "expense_void"
+                              ? "text-muted-foreground"
+                              : "text-primary",
+                          )}
+                        >
+                          {fmt.format(row.amount)}
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  )}
+                </TableBody>
+              </table>
+            )}
+          </DataWorkspaceListTableShell>
+        </div>
       </div>
-    </div>
+    </DataWorkspaceLayout>
   )
 }
 
