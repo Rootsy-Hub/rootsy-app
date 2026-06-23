@@ -110,12 +110,14 @@ function LayoutPreviewPage() {
       popName={popName}
       title="Layout tablas"
       headerVariant="dark"
+      contentFlush
       loading={loading}
       userName={userFullName || undefined}
       userAvatarSrc={userImageUrl}
       userRoleLabel={roleLabel || undefined}
       sidebar={
         <DataWorkspaceSidebar
+          variant="dark"
           creationItems={CREATION_ITEMS}
           viewItems={VIEW_ITEMS}
           activeId={activeId}
@@ -123,20 +125,18 @@ function LayoutPreviewPage() {
         />
       }
     >
-      <div className="relative flex min-h-[500px] w-full flex-1 flex-col gap-6">
+      <div className="relative flex min-h-0 w-full flex-1 flex-col">
         {headerError ? (
           <div
             role="alert"
-            className="relative shrink-0 rounded-2xl border border-destructive/25 bg-destructive/10 px-4 py-3 text-sm text-destructive shadow-sm"
+            className="relative shrink-0 border-b border-destructive/25 bg-destructive/10 px-4 py-3 text-sm text-destructive"
           >
             Cabecera: {headerError}
           </div>
         ) : null}
 
         {activeId === "list" ? (
-          <div className="relative flex min-h-0 flex-1 flex-col">
-            <LayoutPreviewListTable siteId={siteId} popId={popId} />
-          </div>
+          <LayoutPreviewListTable siteId={siteId} popId={popId} />
         ) : (
           <>
             {panelCopy ? (

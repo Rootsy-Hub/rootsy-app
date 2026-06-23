@@ -7,6 +7,8 @@ import {
   ArrowLeft,
   Maximize2,
   Minimize2,
+  PanelLeftClose,
+  PanelLeftOpen,
   Wifi,
   WifiOff,
 } from "lucide-react"
@@ -38,9 +40,15 @@ export type DataWorkspaceLayoutProps = {
   toolbar?: ReactNode
   /** Barra lateral opcional (p. ej. `DataWorkspaceSidebar`) para varias vistas en la misma sección. */
   sidebar?: ReactNode
+  /** Permite colapsar la barra lateral (persiste por POP en `localStorage`). */
+  sidebarCollapsible?: boolean
   children: ReactNode
   /** Ancho máximo del área principal. */
   mainMaxWidthClass?: string
+  /** Contenido a borde del área principal (sin padding ni ancho máximo). */
+  contentFlush?: boolean
+  /** Clases extra en el `<main>`. */
+  mainClassName?: string
   /** Sesión actual (opcional: si no se pasa, se oculta el bloque usuario a la derecha). */
   userName?: string
   userAvatarSrc?: string | null
@@ -59,14 +67,68 @@ export function DataWorkspaceLayout({
   headerActions,
   toolbar,
   sidebar,
+  sidebarCollapsible = true,
   children,
   mainMaxWidthClass = "max-w-6xl",
+  contentFlush = false,
+  mainClassName,
   userName,
   userAvatarSrc,
 }: DataWorkspaceLayoutProps) {
   const [isOnline, setIsOnline] = useState(true)
   const [isFullscreen, setIsFullscreen] = useState(false)
+  const sidebarStorageKey = useMemo(
+    () => `rootsy:data-workspace-sidebar:${siteId}:${popId}`,
+    [siteId, popId],
+  )
+  const [sidebarOpen, setSidebarOpen] = useState(true)
   const isDarkHeader = headerVariant === "dark"
+  const canCollapseSidebar = Boolean(sidebar && sidebarCollapsible)
+
+  useEffect(() => {
+    if (!canCollapseSidebar) return
+    try {
+      const stored = localStorage.getItem(sidebarStorageKey)
+      if (stored === "0") setSidebarOpen(false)
+      else if (stored === "1") setSidebarOpen(true)
+    } catch {
+      /* storage no disponible */
+    }
+  }, [canCollapseSidebar, sidebarStorageKey])
+
+  useEffect(() => {
+    if (!canCollapseSidebar) return
+    try {
+      localStorage.setItem(sidebarStorageKey, sidebarOpen ? "1" : "0")
+    } catch {
+      /* storage no disponible */
+    }
+  }, [canCollapseSidebar, sidebarOpen, sidebarStorageKey])
+
+  const toggleSidebar = useCallback(() => {
+    setSidebarOpen((open) => !open)
+  }, [])
+
+  useEffect(() => {
+    if (!canCollapseSidebar) return
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key !== "[" || e.metaKey || e.ctrlKey || e.altKey) return
+      const target = e.target
+      if (!(target instanceof HTMLElement)) return
+      if (
+        target.tagName === "INPUT" ||
+        target.tagName === "TEXTAREA" ||
+        target.tagName === "SELECT" ||
+        target.isContentEditable
+      ) {
+        return
+      }
+      e.preventDefault()
+      toggleSidebar()
+    }
+    document.addEventListener("keydown", onKeyDown)
+    return () => document.removeEventListener("keydown", onKeyDown)
+  }, [canCollapseSidebar, toggleSidebar])
 
   useEffect(() => {
     const on = () => setIsOnline(true)
@@ -168,6 +230,36 @@ export function DataWorkspaceLayout({
               >
                 <ArrowLeft className="size-5 transition-transform group-hover:-translate-x-0.5" />
               </Link>
+              {canCollapseSidebar ? (
+                <button
+                  type="button"
+                  onClick={toggleSidebar}
+                  className={cn(
+                    "group inline-flex size-10 items-center justify-center rounded-xl border transition-all",
+                    isDarkHeader
+                      ? "border-white/10 bg-zinc-900 text-zinc-300 hover:border-white/15 hover:bg-zinc-800 hover:text-white"
+                      : "border-foreground/10 bg-secondary text-foreground/70 hover:border-primary/25 hover:bg-muted hover:text-foreground",
+                  )}
+                  aria-expanded={sidebarOpen}
+                  aria-controls="data-workspace-sidebar"
+                  aria-label={
+                    sidebarOpen
+                      ? "Ocultar panel de navegación"
+                      : "Mostrar panel de navegación"
+                  }
+                  title={
+                    sidebarOpen
+                      ? "Ocultar panel ([)"
+                      : "Mostrar panel ([)"
+                  }
+                >
+                  {sidebarOpen ? (
+                    <PanelLeftClose className="size-5" aria-hidden />
+                  ) : (
+                    <PanelLeftOpen className="size-5" aria-hidden />
+                  )}
+                </button>
+              ) : null}
               <div
                 className={cn(
                   "h-6 w-px",
@@ -315,12 +407,46 @@ export function DataWorkspaceLayout({
 
         {sidebar ? (
           <div className="relative z-10 flex min-h-0 flex-1 flex-row items-stretch">
-            {sidebar}
+            <aside
+              id="data-workspace-sidebar"
+              className={cn(
+                "relative shrink-0 overflow-hidden transition-[width] duration-300 ease-in-out motion-reduce:transition-none",
+                sidebarOpen ? "w-[min(100%,280px)]" : "w-0",
+              )}
+              aria-hidden={canCollapseSidebar ? !sidebarOpen : undefined}
+              {...(!sidebarOpen && canCollapseSidebar ? { inert: true } : {})}
+            >
+              {sidebar}
+            </aside>
+            {!sidebarOpen && canCollapseSidebar ? (
+              <button
+                type="button"
+                onClick={toggleSidebar}
+                className={cn(
+                  "absolute left-0 top-1/2 z-20 flex size-10 -translate-y-1/2 items-center justify-center rounded-r-xl border border-l-0 shadow-md transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/45",
+                  isDarkHeader
+                    ? "border-white/10 bg-[#1a2027] text-slate-300 hover:bg-[#242d38] hover:text-white"
+                    : "border-border bg-card text-muted-foreground hover:bg-muted hover:text-foreground",
+                )}
+                aria-expanded={false}
+                aria-controls="data-workspace-sidebar"
+                aria-label="Mostrar panel de navegación"
+                title="Mostrar panel ([)"
+              >
+                <PanelLeftOpen className="size-5" aria-hidden />
+              </button>
+            ) : null}
             <main
               className={cn(
-                "relative z-10 flex min-h-0 min-w-0 flex-1 flex-col overflow-y-auto px-4 py-8 sm:pl-5 sm:pr-8",
-                mainMaxWidthClass,
-                "mx-auto w-full max-w-none",
+                "relative z-10 flex min-h-0 min-w-0 flex-1 flex-col",
+                contentFlush
+                  ? "overflow-hidden p-0"
+                  : cn(
+                      "overflow-y-auto px-4 py-8 sm:pl-5 sm:pr-8",
+                      mainMaxWidthClass,
+                      "mx-auto w-full max-w-none",
+                    ),
+                mainClassName,
               )}
             >
               {children}
@@ -329,8 +455,14 @@ export function DataWorkspaceLayout({
         ) : (
           <main
             className={cn(
-              "relative z-10 mx-auto flex min-h-0 w-full flex-1 flex-col overflow-y-auto px-4 py-8 sm:px-6",
-              mainMaxWidthClass,
+              "relative z-10 flex min-h-0 w-full flex-1 flex-col",
+              contentFlush
+                ? "overflow-hidden p-0"
+                : cn(
+                    "mx-auto overflow-y-auto px-4 py-8 sm:px-6",
+                    mainMaxWidthClass,
+                  ),
+              mainClassName,
             )}
           >
             {children}

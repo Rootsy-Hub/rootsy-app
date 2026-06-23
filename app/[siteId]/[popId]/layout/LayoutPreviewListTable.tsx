@@ -41,15 +41,12 @@ import {
 } from "@/components/ui/table"
 import {
   selectColumnInnerClass,
-  tableChromeFooterClass,
   tableRowSelectCheckboxClass,
   thBase,
   toolbarBlockLabelClass,
 } from "@/components/data-workspace/dataWorkspaceListStyles"
 import { cn } from "@/lib/utils"
 import { popScopedHref } from "@/lib/popRoutes"
-import { layoutPreviewShellCard } from "./layoutPreviewDashboards"
-import { buildPaginationItems } from "./layoutPreviewPagination"
 import {
   LAYOUT_PREVIEW_PAGE_SIZE,
   LAYOUT_PREVIEW_PAGE_SIZE_OPTIONS,
@@ -64,6 +61,8 @@ import {
   ChevronDown,
   ChevronLeft,
   ChevronRight,
+  ChevronsLeft,
+  ChevronsRight,
   Copy,
   ExternalLink,
   Filter,
@@ -84,17 +83,51 @@ import {
 import { es as esLocale } from "date-fns/locale"
 import Link from "next/link"
 import type { DateRange } from "react-day-picker"
-import { useEffect, useId, useMemo, useState } from "react"
+import { useEffect, useId, useMemo, useRef, useState, type ReactNode } from "react"
 
-/** Superficie siempre clara (isla light) para el bloque de fecha. */
-const dateFilterCardClass =
-  "rounded-2xl border border-zinc-200 bg-white text-zinc-900 shadow-sm"
+/** Toolbar claro (período, filtros, búsqueda). */
+const lightToolbarShellClass =
+  "shrink-0 border-b border-border/80 bg-card"
 
-const dateFilterToolbarLabelClass =
-  "text-[11px] font-medium uppercase tracking-[0.12em] text-zinc-500"
+const lightToolbarPanelClass =
+  "border-b border-r border-border/80 bg-card px-4 py-3.5 xl:border-b-0"
 
-const dateFilterTriggerClass =
-  "mt-2 h-auto min-h-9 w-full max-w-full justify-between gap-2 border-zinc-200 bg-zinc-50 px-3 py-2 text-left text-sm font-normal text-zinc-900 shadow-sm hover:bg-zinc-100/90"
+const lightToolbarPanelLastClass =
+  "border-b border-border/80 bg-card px-4 py-3.5 xl:border-b-0 xl:border-r-0"
+
+const lightToolbarFocusClass =
+  "focus-visible:border-primary/40 focus-visible:ring-2 focus-visible:ring-primary/20"
+
+const lightToolbarControlClass =
+  "h-11 w-full max-w-full rounded-md border-border/60 bg-muted/25 text-sm text-foreground shadow-sm transition-[color,background-color,border-color,box-shadow] duration-150 hover:bg-muted/40"
+
+const lightToolbarControlActiveClass =
+  "border-primary/35 bg-primary/10 text-foreground ring-1 ring-primary/15"
+
+const lightToolbarTriggerClass = cn(
+  lightToolbarControlClass,
+  "justify-between gap-2 px-3 text-left font-normal shadow-xs",
+  lightToolbarFocusClass,
+)
+
+const lightToolbarButtonClass = cn(
+  lightToolbarControlClass,
+  "gap-2 px-3 font-medium",
+  lightToolbarFocusClass,
+)
+
+const lightToolbarInputClass = cn(
+  lightToolbarControlClass,
+  "pl-9 font-normal placeholder:text-muted-foreground shadow-none",
+  lightToolbarFocusClass,
+)
+
+const lightToolbarClearButtonClass =
+  "absolute right-1.5 top-1/2 flex size-8 -translate-y-1/2 items-center justify-center rounded-md text-muted-foreground transition-[color,background-color] duration-150 hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/25"
+
+const dateFilterPanelClass = lightToolbarPanelClass
+
+const dateFilterTriggerClass = lightToolbarTriggerClass
 
 const datePopoverContentClass =
   "border border-zinc-200/90 bg-white p-0 text-zinc-900 shadow-xl shadow-zinc-900/8"
@@ -127,6 +160,75 @@ const dateCalendarLightClass = cn(
 
 /** Tipografía tabular/mono solo para importes y, si hubiera, porcentajes en cifra. */
 const amountFigureClass = "font-mono tabular-nums"
+
+const toolbarPanelClass = lightToolbarPanelClass
+
+const toolbarPanelLastClass = lightToolbarPanelLastClass
+
+const lightFilterChipClass =
+  "max-w-full gap-1 rounded-md border-border/50 py-0 pr-0.5 font-normal"
+
+/** Header claro de tabla con columnas en negrita. */
+const lightTableThClass = cn(
+  thBase,
+  "font-bold text-foreground",
+)
+
+const darkTableFooterClass =
+  "border-t border-white/10 bg-[#12161c]"
+
+const darkTableFooterNavGroupClass =
+  "flex min-w-0 flex-1 items-stretch"
+
+const darkTableFooterNavButtonClass =
+  "inline-flex size-16 shrink-0 items-center justify-center rounded-none bg-[#2a313a] text-white transition-colors hover:bg-[#323b46] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-emerald-400/40 disabled:pointer-events-none disabled:opacity-35"
+
+const darkTableFooterSelectTriggerClass =
+  "h-16 min-w-[7.5rem] gap-2 rounded-lg border-0 bg-[#2a313a] px-3 text-sm font-normal text-white shadow-none hover:bg-[#323b46] focus-visible:border-0 focus-visible:ring-2 focus-visible:ring-emerald-400/40 [&_svg]:text-white/70"
+
+const darkTableFooterCountClass = "whitespace-nowrap text-sm text-white/90"
+
+function ToolbarClearSearchIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="currentColor"
+      className={cn("size-3.5 shrink-0", className)}
+      aria-hidden
+    >
+      <path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z" />
+    </svg>
+  )
+}
+
+function ToolbarFieldLabel({
+  htmlFor,
+  id,
+  label,
+  meta,
+}: {
+  htmlFor?: string
+  id?: string
+  label: string
+  meta?: ReactNode
+}) {
+  return (
+    <div className="mb-2 flex min-w-0 items-baseline justify-between gap-3">
+      <label
+        htmlFor={htmlFor}
+        id={id}
+        className={toolbarBlockLabelClass}
+      >
+        {label}
+      </label>
+      {meta ? (
+        <span className="shrink-0 text-[11px] font-medium text-muted-foreground">
+          {meta}
+        </span>
+      ) : null}
+    </div>
+  )
+}
 
 const ALL_STATUSES: LayoutPreviewListStatus[] = [
   "activo",
@@ -282,7 +384,12 @@ export function LayoutPreviewListTable({
   popId: string
 }) {
   const pageSizeLabelId = useId()
+  const pageSelectLabelId = useId()
   const searchInputId = useId()
+  const dateFilterLabelId = useId()
+  const dateFilterTriggerId = useId()
+  const filtersButtonId = useId()
+  const searchInputRef = useRef<HTMLInputElement>(null)
   const [pageSize, setPageSize] = useState(LAYOUT_PREVIEW_PAGE_SIZE)
   const [page, setPage] = useState(1)
   const [selected, setSelected] = useState<Set<string>>(() => new Set())
@@ -365,19 +472,12 @@ export function LayoutPreviewListTable({
     visibleIds.length > 0 && visibleIds.every((id) => selected.has(id))
   const someVisibleSelected = visibleIds.some((id) => selected.has(id))
 
-  const rangeLabel = useMemo(() => {
-    if (filteredTotal === 0) return { start: 0, end: 0 }
-    const start = (currentPage - 1) * pageSize + 1
-    const end = Math.min(currentPage * pageSize, filteredTotal)
-    return { start, end }
-  }, [currentPage, pageSize, filteredTotal])
-
-  const paginationItems = useMemo(
-    () => buildPaginationItems(totalPages, currentPage),
-    [totalPages, currentPage],
-  )
-
   const totalCountLabel = filteredTotal.toLocaleString("es-AR")
+
+  const pageOptions = useMemo(
+    () => Array.from({ length: totalPages }, (_, i) => i + 1),
+    [totalPages],
+  )
 
   const statusFilterNarrow =
     includedStatuses.size < ALL_STATUSES.length
@@ -389,6 +489,32 @@ export function LayoutPreviewListTable({
     statusFilterNarrow ||
     refFilterNarrow ||
     datePreset !== "all"
+
+  const dateFilterActive = datePreset !== "all"
+
+  const modalFiltersActiveCount = useMemo(() => {
+    let count = 0
+    if (statusFilterNarrow) count++
+    if (refFilterNarrow) count++
+    return count
+  }, [statusFilterNarrow, refFilterNarrow])
+
+  const activeFilterCount = useMemo(() => {
+    let count = 0
+    if (searchQuery.trim()) count++
+    if (dateFilterActive) count++
+    count += modalFiltersActiveCount
+    return count
+  }, [searchQuery, dateFilterActive, modalFiltersActiveCount])
+
+  const resultsSummary = useMemo(() => {
+    if (filteredTotal === 0) return "Sin resultados"
+    const noun = filteredTotal === 1 ? "resultado" : "resultados"
+    if (hasFilterChips && filteredTotal !== LAYOUT_PREVIEW_TOTAL_COUNT) {
+      return `${totalCountLabel} de ${LAYOUT_PREVIEW_TOTAL_COUNT.toLocaleString("es-AR")} ${noun}`
+    }
+    return `${totalCountLabel} ${noun}`
+  }, [filteredTotal, hasFilterChips, totalCountLabel])
 
   const dateFilterSummary = useMemo(() => {
     if (datePreset === "all") return "Todas las fechas"
@@ -466,40 +592,135 @@ export function LayoutPreviewListTable({
     setCustomDateRange(undefined)
   }
 
+  const clearAllFilters = () => {
+    setSearchQuery("")
+    clearDateFilter()
+    setIncludedStatuses(initStatusSet())
+    setIncludedRefTables(initRefTableSet())
+    searchInputRef.current?.focus()
+  }
+
+  useEffect(() => {
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key !== "/" || e.metaKey || e.ctrlKey || e.altKey) return
+      const target = e.target
+      if (!(target instanceof HTMLElement)) return
+      if (
+        target.tagName === "INPUT" ||
+        target.tagName === "TEXTAREA" ||
+        target.tagName === "SELECT" ||
+        target.isContentEditable
+      ) {
+        return
+      }
+      e.preventDefault()
+      searchInputRef.current?.focus()
+    }
+    document.addEventListener("keydown", onKeyDown)
+    return () => document.removeEventListener("keydown", onKeyDown)
+  }, [])
+
   return (
-    <div className="relative flex min-h-0 flex-1 flex-col gap-6">
-      <div className="flex shrink-0 flex-col gap-3">
-      <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-12">
+    <div className="relative flex min-h-0 flex-1 flex-col">
+      <div
+        className={lightToolbarShellClass}
+        role="toolbar"
+        aria-label="Filtros del listado"
+      >
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-12">
         <div
           className={cn(
-            dateFilterCardClass,
-            "w-full min-w-0 px-4 py-3 md:col-span-1 xl:col-span-3",
+            toolbarPanelLastClass,
+            "order-1 min-w-0 md:col-span-2 xl:order-3 xl:col-span-6",
           )}
         >
-          <p className={dateFilterToolbarLabelClass}>Fecha</p>
+          <ToolbarFieldLabel
+            htmlFor={searchInputId}
+            label="Buscar"
+            meta={
+              <span aria-live="polite" aria-atomic="true">
+                {resultsSummary}
+              </span>
+            }
+          />
+          <div className="relative min-w-0">
+            <Search
+              className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground"
+              aria-hidden
+            />
+            <Input
+              ref={searchInputRef}
+              id={searchInputId}
+              type="search"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Título o referencia… ( / )"
+              className={cn(
+                lightToolbarInputClass,
+                searchQuery.length > 0 && "pr-10",
+              )}
+              autoComplete="off"
+              spellCheck={false}
+              aria-label="Buscar en el listado"
+            />
+            {searchQuery.length > 0 ? (
+              <button
+                type="button"
+                aria-label="Limpiar búsqueda"
+                className={lightToolbarClearButtonClass}
+                onClick={() => {
+                  setSearchQuery("")
+                  searchInputRef.current?.focus()
+                }}
+              >
+                <ToolbarClearSearchIcon />
+              </button>
+            ) : null}
+          </div>
+        </div>
+
+        <div
+          className={cn(
+            dateFilterPanelClass,
+            "order-2 w-full min-w-0 md:col-span-1 xl:order-1 xl:col-span-3",
+          )}
+        >
+          <ToolbarFieldLabel
+            id={dateFilterLabelId}
+            label="Período"
+            meta={dateFilterActive ? "Activo" : undefined}
+          />
           <Popover open={datePopoverOpen} onOpenChange={setDatePopoverOpen}>
             <PopoverTrigger asChild>
               <Button
+                id={dateFilterTriggerId}
                 type="button"
                 variant="outline"
                 className={cn(
                   dateFilterTriggerClass,
-                  "min-w-0 max-w-full shadow-xs",
+                  "min-w-0 shadow-xs",
+                  dateFilterActive && lightToolbarControlActiveClass,
                 )}
                 aria-expanded={datePopoverOpen}
-                aria-label="Filtro por fecha"
+                aria-haspopup="dialog"
+                aria-labelledby={dateFilterLabelId}
                 title={dateFilterSummary}
               >
                 <span className="flex min-w-0 flex-1 items-center gap-2 overflow-hidden">
                   <CalendarRange
-                    className="size-4 shrink-0 text-zinc-500"
+                    className="size-4 shrink-0 text-muted-foreground"
                     aria-hidden
                   />
-                  <span className="min-w-0 flex-1 truncate text-left text-sm text-zinc-900">
+                  <span className="min-w-0 flex-1 truncate text-left text-sm text-foreground">
                     {dateFilterSummary}
                   </span>
                 </span>
-                <ChevronDown className="size-4 shrink-0 text-zinc-500" />
+                <ChevronDown
+                  className={cn(
+                    "size-4 shrink-0 text-muted-foreground transition-transform duration-200",
+                    datePopoverOpen && "rotate-180",
+                  )}
+                />
               </Button>
             </PopoverTrigger>
             <PopoverContent
@@ -587,56 +808,82 @@ export function LayoutPreviewListTable({
 
         <div
           className={cn(
-            layoutPreviewShellCard,
-            "flex flex-col px-4 py-3 md:col-span-1 xl:col-span-3",
+            toolbarPanelClass,
+            "order-3 flex flex-col md:col-span-1 xl:order-2 xl:col-span-3",
           )}
         >
-          <p className={toolbarBlockLabelClass}>Filtros</p>
+          <ToolbarFieldLabel
+            htmlFor={filtersButtonId}
+            label="Filtros"
+            meta={
+              modalFiltersActiveCount > 0
+                ? `${modalFiltersActiveCount} activo${modalFiltersActiveCount === 1 ? "" : "s"}`
+                : undefined
+            }
+          />
           <Button
+            id={filtersButtonId}
             type="button"
             variant="outline"
             size="sm"
-            className="mt-2 h-9 w-full gap-2 border-border/60 bg-muted/20 shadow-sm dark:bg-background/30"
+            className={cn(
+              lightToolbarButtonClass,
+              modalFiltersActiveCount > 0 && lightToolbarControlActiveClass,
+            )}
+            aria-haspopup="dialog"
+            aria-expanded={filtersModalOpen}
             onClick={() => setFiltersModalOpen(true)}
           >
-            <Filter className="size-4" aria-hidden />
-            Configurar
+            <Filter className="size-4 shrink-0 opacity-80" aria-hidden />
+            <span className="min-w-0 flex-1 truncate text-left">
+              {modalFiltersActiveCount > 0
+                ? "Refinar filtros"
+                : "Estado y tipo"}
+            </span>
+            {modalFiltersActiveCount > 0 ? (
+              <span
+                className="inline-flex size-5 shrink-0 items-center justify-center rounded-full bg-primary/15 text-[10px] font-semibold tabular-nums text-primary"
+                aria-hidden
+              >
+                {modalFiltersActiveCount}
+              </span>
+            ) : null}
           </Button>
-        </div>
-
-        <div
-          className={cn(
-            layoutPreviewShellCard,
-            "min-w-0 px-4 py-3 md:col-span-2 xl:col-span-6",
-          )}
-        >
-          <p className={toolbarBlockLabelClass}>Buscar</p>
-          <div className="relative mt-2 min-w-0">
-            <Search
-              className="pointer-events-none absolute left-2.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground"
-              aria-hidden
-            />
-            <Input
-              id={searchInputId}
-              type="search"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Título o referencia…"
-              className="h-9 border-border/60 bg-muted/25 pl-9 shadow-none dark:bg-background/40"
-              aria-label="Buscar en el listado"
-            />
-          </div>
         </div>
       </div>
 
       {hasFilterChips ? (
-        <div className={cn(layoutPreviewShellCard, "px-4 py-3")}>
-          <p className={toolbarBlockLabelClass}>Filtros aplicados</p>
-          <div className="mt-2 flex flex-wrap items-center gap-1.5">
+        <div
+          className="border-t border-border/80 bg-card px-4 py-3"
+          role="region"
+          aria-label="Filtros activos"
+        >
+          <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+            <p className={toolbarBlockLabelClass}>
+              Filtros activos
+              <span className="sr-only">: {activeFilterCount}</span>
+              <span
+                className="ml-1.5 inline-flex min-w-5 items-center justify-center rounded-full bg-muted px-1.5 py-0.5 text-[10px] font-semibold tabular-nums normal-case tracking-normal text-muted-foreground"
+                aria-hidden
+              >
+                {activeFilterCount}
+              </span>
+            </p>
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              className="h-8 px-2.5 text-xs font-medium text-muted-foreground hover:text-foreground"
+              onClick={clearAllFilters}
+            >
+              Limpiar todo
+            </Button>
+          </div>
+          <div className="flex flex-wrap items-center gap-1.5">
             {searchQuery.trim() ? (
               <Badge
                 variant="secondary"
-                className="max-w-full gap-1 border-border/50 py-0 pr-0.5 font-normal"
+                className={lightFilterChipClass}
               >
                 <span className="truncate">Buscar: «{searchQuery.trim()}»</span>
                 <Button
@@ -657,7 +904,7 @@ export function LayoutPreviewListTable({
                     <Badge
                       key={s}
                       variant="secondary"
-                      className="gap-1 border-border/50 py-0 pr-0.5 font-normal"
+                      className={lightFilterChipClass}
                     >
                       {STATUS_LABEL[s]}
                       <Button
@@ -681,7 +928,7 @@ export function LayoutPreviewListTable({
                   <Badge
                     key={t}
                     variant="secondary"
-                    className="max-w-[12rem] gap-1 border-border/50 py-0 pr-0.5 font-normal"
+                    className={cn(lightFilterChipClass, "max-w-48")}
                   >
                     <span className="truncate">{t}</span>
                     <Button
@@ -700,7 +947,7 @@ export function LayoutPreviewListTable({
             {datePreset !== "all" ? (
               <Badge
                 variant="secondary"
-                className="max-w-full gap-1 border-border/50 py-0 pr-0.5 font-normal"
+                className={lightFilterChipClass}
               >
                 <span className="truncate">Fecha: {dateFilterSummary}</span>
                 <Button
@@ -795,16 +1042,7 @@ export function LayoutPreviewListTable({
         </DialogContent>
       </Dialog>
 
-      <div
-        className={cn(
-          "relative flex min-h-0 flex-1 flex-col overflow-hidden",
-          layoutPreviewShellCard,
-        )}
-      >
-        <div
-          className="pointer-events-none absolute -right-10 -top-10 size-40 rounded-full bg-primary/10 blur-3xl"
-          aria-hidden
-        />
+      <div className="relative flex min-h-0 flex-1 flex-col overflow-hidden bg-card">
         <div className="relative flex min-h-0 flex-1 flex-col overflow-hidden">
       {selected.size > 0 ? (
         <div
@@ -838,7 +1076,7 @@ export function LayoutPreviewListTable({
         </div>
       ) : null}
 
-      <div className="rootsy-scroll-minimal min-h-0 flex-1 overflow-auto">
+      <div className="rootsy-scroll-minimal min-h-0 flex-1 overflow-auto bg-card">
         <table
           className={cn(
             "relative w-full min-w-[56rem] table-fixed caption-bottom text-sm",
@@ -847,7 +1085,7 @@ export function LayoutPreviewListTable({
           <TableHeader>
             <TableRow className="border-0 hover:bg-transparent">
               <TableHead
-                className={cn(thBase, "w-12 !px-0 text-center")}
+                className={cn(lightTableThClass, "w-12 !px-0 text-center")}
               >
                 <div
                   className={cn(selectColumnInnerClass, "min-h-10")}
@@ -876,25 +1114,25 @@ export function LayoutPreviewListTable({
                   />
                 </div>
               </TableHead>
-              <TableHead className={cn(thBase, "w-14")}>
+              <TableHead className={cn(lightTableThClass, "w-14")}>
                 <span className="sr-only">Imagen</span>
               </TableHead>
-              <TableHead className={cn(thBase, "min-w-48 text-left")}>
+              <TableHead className={cn(lightTableThClass, "min-w-48 text-left")}>
                 Artículo
               </TableHead>
-              <TableHead className={cn(thBase, "w-44 text-left")}>
+              <TableHead className={cn(lightTableThClass, "w-44 text-left")}>
                 Referencia
               </TableHead>
-              <TableHead className={cn(thBase, "w-34 text-right")}>
+              <TableHead className={cn(lightTableThClass, "w-34 text-right")}>
                 Monto
               </TableHead>
-              <TableHead className={cn(thBase, "w-20 text-center")}>
+              <TableHead className={cn(lightTableThClass, "w-20 text-center")}>
                 Adj.
               </TableHead>
-              <TableHead className={cn(thBase, "w-32 text-left")}>
+              <TableHead className={cn(lightTableThClass, "w-32 text-left")}>
                 Estado
               </TableHead>
-              <TableHead className={cn(thBase, "w-[7.25rem] text-right")}>
+              <TableHead className={cn(lightTableThClass, "w-[7.25rem] text-right")}>
                 <span className="sr-only">Acciones</span>
               </TableHead>
             </TableRow>
@@ -1021,32 +1259,58 @@ export function LayoutPreviewListTable({
       </div>
 
       <div
-        className={cn(
-          "flex shrink-0 flex-col gap-3 px-3 py-3 sm:flex-row sm:items-center sm:justify-between sm:px-4",
-          tableChromeFooterClass,
-        )}
+        className={darkTableFooterClass}
+        role="navigation"
+        aria-label="Paginación del listado"
       >
-        <div className="flex min-w-0 flex-wrap items-center gap-x-4 gap-y-2">
-          <p className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground dark:text-muted-foreground/90">
-            <span className="text-foreground/80 dark:text-foreground/85">
-              {rangeLabel.start.toLocaleString("es-AR")}
-            </span>
-            <span className="text-muted-foreground/60">–</span>
-            <span className="text-foreground/80">
-              {rangeLabel.end.toLocaleString("es-AR")}
-            </span>
-            <span className="normal-case"> de </span>
-            <span className="font-medium text-primary dark:text-primary/90">
-              {totalCountLabel}
-            </span>
-          </p>
-          <div className="flex items-center gap-2">
-            <span
-              id={pageSizeLabelId}
-              className="whitespace-nowrap text-[11px] font-medium uppercase tracking-wider text-muted-foreground dark:text-muted-foreground/90"
+        <div className="flex w-full items-stretch">
+          <div className={cn(darkTableFooterNavGroupClass, "justify-start")}>
+            <button
+              type="button"
+              className={cn(
+                darkTableFooterNavButtonClass,
+                "border-r border-white/10",
+              )}
+              disabled={currentPage <= 1}
+              aria-label="Ir a la primera página"
+              onClick={() => setPage(1)}
             >
-              Por página
-            </span>
+              <ChevronsLeft className="size-7" aria-hidden />
+            </button>
+            <button
+              type="button"
+              className={darkTableFooterNavButtonClass}
+              disabled={currentPage <= 1}
+              aria-label="Página anterior"
+              onClick={() => setPage((p) => Math.max(1, p - 1))}
+            >
+              <ChevronLeft className="size-7" aria-hidden />
+            </button>
+          </div>
+
+          <div className="flex shrink-0 flex-wrap items-center justify-center gap-2 px-3">
+            <Select
+              value={String(currentPage)}
+              onValueChange={(v) => setPage(Number(v))}
+            >
+              <SelectTrigger
+                className={darkTableFooterSelectTriggerClass}
+                aria-labelledby={pageSelectLabelId}
+              >
+                <span id={pageSelectLabelId} className="sr-only">
+                  Página
+                </span>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent align="center">
+                {pageOptions.map((p) => (
+                  <SelectItem key={p} value={String(p)}>
+                    {`Página ${p.toLocaleString("es-AR")}`}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+
             <Select
               value={String(pageSize)}
               onValueChange={(v) => {
@@ -1055,80 +1319,53 @@ export function LayoutPreviewListTable({
               }}
             >
               <SelectTrigger
-                size="sm"
-                className="h-8 w-[4.25rem] border-border/80 bg-background/80 text-xs shadow-sm dark:border-border/60 dark:bg-background/50 dark:text-foreground/90"
+                className={darkTableFooterSelectTriggerClass}
                 aria-labelledby={pageSizeLabelId}
               >
+                <span id={pageSizeLabelId} className="sr-only">
+                  Resultados por página
+                </span>
                 <SelectValue />
               </SelectTrigger>
-              <SelectContent align="start">
+              <SelectContent align="center">
                 {LAYOUT_PREVIEW_PAGE_SIZE_OPTIONS.map((n) => (
                   <SelectItem key={n} value={String(n)}>
-                    {n}
+                    {`Hasta ${n}`}
                   </SelectItem>
                 ))}
               </SelectContent>
             </Select>
+
+            <span className={darkTableFooterCountClass} aria-live="polite">
+              {filteredTotal === 0
+                ? "Sin resultados"
+                : `${totalCountLabel} encontrados`}
+            </span>
           </div>
-        </div>
-        <div className="flex flex-wrap items-center justify-center gap-1 sm:justify-end">
-          <Button
-            type="button"
-            variant="outline"
-            size="icon"
-            className="size-8 border-border/80 bg-background/80 shadow-sm dark:border-border/55 dark:bg-card/50 dark:hover:bg-accent/60"
-            disabled={currentPage <= 1}
-            aria-label="Página anterior"
-            onClick={() => setPage((p) => Math.max(1, p - 1))}
-          >
-            <ChevronLeft className="size-4" />
-          </Button>
-          <div
-            className="flex items-center gap-1"
-            role="navigation"
-            aria-label="Paginación por número"
-          >
-            {paginationItems.map((item, idx) =>
-              item === "ellipsis" ? (
-                <span
-                  key={`ellipsis-${idx}`}
-                  className="flex min-w-8 items-center justify-center px-1 text-xs text-muted-foreground dark:text-muted-foreground/80"
-                  aria-hidden
-                >
-                  …
-                </span>
-              ) : (
-                <Button
-                  key={item}
-                  type="button"
-                  variant={currentPage === item ? "default" : "outline"}
-                  size="sm"
-                  className={cn(
-                    "h-8 min-w-8 px-2 text-xs",
-                    currentPage === item
-                      ? "shadow-sm"
-                      : "dark:border-border/55 dark:bg-card/40 dark:hover:bg-accent/50",
-                  )}
-                  aria-label={`Ir a página ${item}`}
-                  aria-current={currentPage === item ? "page" : undefined}
-                  onClick={() => setPage(item)}
-                >
-                  {item.toLocaleString("es-AR")}
-                </Button>
-              ),
-            )}
+
+          <div className={cn(darkTableFooterNavGroupClass, "justify-end")}>
+            <button
+              type="button"
+              className={cn(
+                darkTableFooterNavButtonClass,
+                "border-l border-white/10",
+              )}
+              disabled={currentPage >= totalPages}
+              aria-label="Página siguiente"
+              onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+            >
+              <ChevronRight className="size-7" aria-hidden />
+            </button>
+            <button
+              type="button"
+              className={darkTableFooterNavButtonClass}
+              disabled={currentPage >= totalPages}
+              aria-label="Ir a la última página"
+              onClick={() => setPage(totalPages)}
+            >
+              <ChevronsRight className="size-7" aria-hidden />
+            </button>
           </div>
-          <Button
-            type="button"
-            variant="outline"
-            size="icon"
-            className="size-8 border-border/80 bg-background/80 shadow-sm dark:border-border/55 dark:bg-card/50 dark:hover:bg-accent/60"
-            disabled={currentPage >= totalPages}
-            aria-label="Página siguiente"
-            onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-          >
-            <ChevronRight className="size-4" />
-          </Button>
         </div>
       </div>
         </div>
