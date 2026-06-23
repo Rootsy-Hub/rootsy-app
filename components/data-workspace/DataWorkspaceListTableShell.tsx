@@ -10,6 +10,8 @@ export type DataWorkspaceListTableShellProps = {
   bulkToolbar?: ReactNode
   /** Pie fijo (paginación, totales), fuera del scroll. */
   footer?: ReactNode
+  /** `flush`: sin tarjeta ni decoración; ocupa todo el ancho del main. */
+  variant?: "default" | "flush"
   className?: string
 }
 
@@ -17,20 +19,25 @@ export function DataWorkspaceListTableShell({
   children,
   bulkToolbar,
   footer,
+  variant = "default",
   className,
 }: DataWorkspaceListTableShellProps) {
+  const isFlush = variant === "flush"
+
   return (
     <div
       className={cn(
         "relative flex min-h-0 flex-1 flex-col overflow-hidden",
-        dataWorkspaceShellCard,
+        isFlush ? "bg-card" : dataWorkspaceShellCard,
         className,
       )}
     >
-      <div
-        className="pointer-events-none absolute -right-10 -top-10 size-40 rounded-full bg-primary/10 blur-3xl"
-        aria-hidden
-      />
+      {!isFlush ? (
+        <div
+          className="pointer-events-none absolute -right-10 -top-10 size-40 rounded-full bg-primary/10 blur-3xl"
+          aria-hidden
+        />
+      ) : null}
       <div className="relative flex min-h-0 flex-1 flex-col overflow-hidden">
         {bulkToolbar ? bulkToolbar : null}
         <div className="rootsy-scroll-minimal min-h-0 flex-1 overflow-auto">

@@ -8,7 +8,25 @@ import {
   type SupplierTableRow,
   type UpsertPopSupplierInput,
 } from "@/app/[siteId]/[popId]/suppliers/actions"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { buildPaginationItems } from "@/app/[siteId]/[popId]/layout/layoutPreviewPagination"
+import { DataWorkspaceListPaginationFooter } from "@/components/data-workspace/DataWorkspaceListPaginationFooter"
+import {
+  DataWorkspaceTableIconAction,
+} from "@/components/data-workspace/DataWorkspaceListTablePrimitives"
+import { DataWorkspaceListTableShell } from "@/components/data-workspace/DataWorkspaceListTableShell"
+import {
+  lightFilterChipClass,
+  lightTableThClass,
+  lightToolbarClearButtonClass,
+  lightToolbarInputClass,
+  lightToolbarPanelLastClass,
+  lightToolbarShellClass,
+  toolbarBlockLabelClass,
+  workspaceDataTableClassName,
+  workspaceTableBodyRowClassNames,
+} from "@/components/data-workspace/dataWorkspaceListStyles"
+import { DataWorkspaceLayout } from "@/components/layouts/DataWorkspaceLayout"
+import { DataWorkspaceSectionMenu } from "@/components/layouts/DataWorkspaceSectionMenu"
 import { Button } from "@/components/ui/button"
 import {
   Dialog,
@@ -17,10 +35,10 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
+import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import {
-  Table,
   TableBody,
   TableCell,
   TableHead,
@@ -28,43 +46,63 @@ import {
   TableRow,
 } from "@/components/ui/table"
 import { Textarea } from "@/components/ui/textarea"
-import { useAuth } from "@/context/AuthContextSupabase"
 import withAuth from "@/hoc/withAuth"
 import { usePadronAutofillRazonSocial } from "@/hooks/usePadronAutofillRazonSocial"
-import { popMenuHref } from "@/lib/popRoutes"
+import { getWorkspaceHeaderForPop } from "@/lib/workspaceHeaderServer"
 import { cn } from "@/lib/utils"
 import {
-  ArrowLeft,
-  Leaf,
   Loader2,
-  Maximize2,
-  Minimize2,
+  Pencil,
   Plus,
-  Truck,
-  Wifi,
-  WifiOff,
+  Search,
+  Table2,
+  Trash2,
+  X,
 } from "lucide-react"
-import Link from "next/link"
-import { useParams, useRouter } from "next/navigation"
+import { useParams } from "next/navigation"
 import {
   useCallback,
   useEffect,
+  useId,
   useMemo,
   useRef,
   useState,
   type FormEvent,
 } from "react"
 
+const SUPPLIER_PAGE_SIZES = [10, 25, 50, 100] as const
+const DEFAULT_PAGE_SIZE = 25
+
+const VIEW_ITEMS = [{ id: "list", label: "Listado", icon: Table2 }] as const
+
+const CREATION_NEW_SUPPLIER = {
+  id: "new-supplier",
+  label: "Nuevo proveedor",
+  icon: Plus,
+} as const
+
+const suppliersSk = {
+  bar: "animate-pulse rounded-[3px] bg-muted-foreground/12 dark:bg-muted-foreground/[0.14]",
+  box: "animate-pulse rounded-sm bg-muted-foreground/10 dark:bg-muted-foreground/[0.12]",
+} as const
+
+function SuppliersTableFooterSkeleton() {
+  return (
+    <div
+      className="flex min-h-16 w-full items-center justify-center px-4"
+      aria-hidden
+    >
+      <div className={cn("h-11 w-full max-w-md rounded-lg", suppliersSk.box)} />
+    </div>
+  )
+}
+
 function emptyForm(): UpsertPopSupplierInput {
   return { name: "", email: "", phone: "", taxId: "", notes: "" }
 }
 
 function SuppliersPage() {
-  const router = useRouter()
-  const routerRef = useRef(router)
-  routerRef.current = router
   const params = useParams()
-  const { user } = useAuth()
   const siteId = typeof params?.siteId === "string" ? params.siteId : ""
   const popId = typeof params?.popId === "string" ? params.popId : undefined
 
@@ -73,8 +111,15 @@ function SuppliersPage() {
   const [canCreate, setCanCreate] = useState(false)
   const [canUpdate, setCanUpdate] = useState(false)
   const [canDelete, setCanDelete] = useState(false)
-  const [loading, setLoading] = useState(true)
+  const [listFetching, setListFetching] = useState(true)
   const [error, setError] = useState<string | null>(null)
+
+  const [searchInput, setSearchInput] = useState("")
+  const searchInputId = useId()
+  const pageSizeLabelId = useId()
+  const searchInputRef = useRef<HTMLInputElement>(null)
+  const [page, setPage] = useState(1)
+  const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE)
 
   const [createOpen, setCreateOpen] = useState(false)
   const [createSaving, setCreateSaving] = useState(false)
@@ -89,8 +134,11 @@ function SuppliersPage() {
   const [deleteRow, setDeleteRow] = useState<SupplierTableRow | null>(null)
   const [deleteBusy, setDeleteBusy] = useState(false)
 
-  const [isOnline, setIsOnline] = useState(true)
-  const [isFullscreen, setIsFullscreen] = useState(false)
+  const [workspaceHeader, setWorkspaceHeader] = useState<{
+    userFullName: string
+    userImageUrl: string | null
+    roleLabel: string
+  } | null>(null)
 
   const createPadron = usePadronAutofillRazonSocial(popId, createForm.taxId, {
     enabled: Boolean(popId) && createOpen && canCreate,
@@ -109,9 +157,6 @@ function SuppliersPage() {
       setCanUpdate(false)
       setCanDelete(false)
       setPopName(res.popName ?? "")
-      if (res.redirect) {
-        setTimeout(() => routerRef.current.push(res.redirect!), 1200)
-      }
       return
     }
     setRows(res.suppliers)
@@ -122,28 +167,43 @@ function SuppliersPage() {
     setError(null)
   }, [popId, siteId])
 
+  const fetchWorkspaceHeader = useCallback(async () => {
+    if (!popId) return
+    const head = await getWorkspaceHeaderForPop(popId)
+    if (head.success) {
+      setWorkspaceHeader({
+        userFullName: head.userFullName,
+        userImageUrl: head.userImageUrl,
+        roleLabel: head.roleLabel,
+      })
+    } else {
+      setWorkspaceHeader(null)
+    }
+  }, [popId])
+
   useEffect(() => {
     if (!popId || !siteId) {
-      setLoading(false)
+      setListFetching(false)
       setError("Punto de venta no encontrado")
       return
     }
     let cancelled = false
     ;(async () => {
-      setLoading(true)
+      setListFetching(true)
       setError(null)
       try {
         await load()
+        if (!cancelled) await fetchWorkspaceHeader()
       } catch {
         if (!cancelled) setError("Error inesperado")
       } finally {
-        if (!cancelled) setLoading(false)
+        if (!cancelled) setListFetching(false)
       }
     })()
     return () => {
       cancelled = true
     }
-  }, [popId, siteId, load])
+  }, [popId, siteId, load, fetchWorkspaceHeader])
 
   useEffect(() => {
     if (!createOpen || !canCreate) return
@@ -160,37 +220,46 @@ function SuppliersPage() {
   }, [editPadron.razonSocial, editPadron.busy, editRow, canUpdate])
 
   useEffect(() => {
-    setIsOnline(navigator.onLine)
-    const on = () => setIsOnline(true)
-    const off = () => setIsOnline(false)
-    window.addEventListener("online", on)
-    window.addEventListener("offline", off)
-    return () => {
-      window.removeEventListener("online", on)
-      window.removeEventListener("offline", off)
-    }
-  }, [])
+    setPage(1)
+  }, [searchInput])
 
   useEffect(() => {
-    const sync = () => setIsFullscreen(Boolean(document.fullscreenElement))
-    sync()
-    document.addEventListener("fullscreenchange", sync)
-    return () => document.removeEventListener("fullscreenchange", sync)
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key !== "/" || e.metaKey || e.ctrlKey || e.altKey) return
+      const target = e.target
+      if (!(target instanceof HTMLElement)) return
+      if (
+        target.tagName === "INPUT" ||
+        target.tagName === "TEXTAREA" ||
+        target.tagName === "SELECT" ||
+        target.isContentEditable
+      ) {
+        return
+      }
+      e.preventDefault()
+      searchInputRef.current?.focus()
+    }
+    document.addEventListener("keydown", onKeyDown)
+    return () => document.removeEventListener("keydown", onKeyDown)
   }, [])
 
-  const toggleFullscreen = async () => {
-    if (document.fullscreenElement) {
-      await document.exitFullscreen()
-      return
-    }
-    await document.documentElement.requestFullscreen()
-  }
-
-  const openCreate = () => {
+  const openCreate = useCallback(() => {
+    if (!canCreate) return
     setCreateBanner(null)
     setCreateForm(emptyForm())
     setCreateOpen(true)
-  }
+  }, [canCreate])
+
+  const handleSectionSelect = useCallback(
+    (id: string) => {
+      if (id === CREATION_NEW_SUPPLIER.id) {
+        openCreate()
+        return
+      }
+      setCreateOpen(false)
+    },
+    [openCreate],
+  )
 
   const submitCreate = async (e: FormEvent) => {
     e.preventDefault()
@@ -247,252 +316,330 @@ function SuppliersPage() {
     await load()
   }
 
-  const headerUserName = useMemo(() => {
-    const meta = user?.user_metadata?.full_name
-    if (typeof meta === "string" && meta.trim()) return meta.trim()
-    return user?.email?.split("@")[0] || "Usuario"
-  }, [user?.email, user?.user_metadata?.full_name])
+  const filteredRows = useMemo(() => {
+    const q = searchInput.trim().toLowerCase()
+    if (!q) return rows
+    return rows.filter(
+      (r) =>
+        r.name.toLowerCase().includes(q) ||
+        r.email.toLowerCase().includes(q) ||
+        r.phone.toLowerCase().includes(q) ||
+        r.taxId.toLowerCase().includes(q) ||
+        r.notes.toLowerCase().includes(q),
+    )
+  }, [rows, searchInput])
 
-  const userAvatarSrc =
-    user?.user_metadata?.avatar_url ||
-    `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(user?.email || "u")}`
+  const totalCount = filteredRows.length
+  const totalPages = useMemo(
+    () => Math.max(1, Math.ceil(totalCount / Math.max(1, pageSize))),
+    [totalCount, pageSize],
+  )
+  const currentPage = Math.min(Math.max(1, page), totalPages)
 
-  const popLogoSrc = `https://api.dicebear.com/7.x/shapes/svg?seed=${encodeURIComponent(popId || "pop")}&backgroundColor=e8f5ef`
+  const pageRows = useMemo(() => {
+    const start = (currentPage - 1) * pageSize
+    return filteredRows.slice(start, start + pageSize)
+  }, [filteredRows, currentPage, pageSize])
 
-  const emptyCols = canUpdate || canDelete ? 6 : 5
+  const rangeLabel = useMemo(() => {
+    if (totalCount === 0) return { start: 0, end: 0 }
+    const start = (currentPage - 1) * pageSize + 1
+    const end = Math.min(currentPage * pageSize, totalCount)
+    return { start, end }
+  }, [currentPage, pageSize, totalCount])
+
+  const paginationItems = useMemo(
+    () => buildPaginationItems(totalPages, currentPage),
+    [totalPages, currentPage],
+  )
+
+  const resultsSummary = useMemo(() => {
+    if (listFetching && totalCount === 0) return "…"
+    if (totalCount === 0) return "Sin resultados"
+    const noun = totalCount === 1 ? "proveedor" : "proveedores"
+    if (searchInput.trim() && totalCount !== rows.length) {
+      return `${totalCount.toLocaleString("es-AR")} de ${rows.length.toLocaleString("es-AR")} ${noun}`
+    }
+    return `${totalCount.toLocaleString("es-AR")} ${noun}`
+  }, [listFetching, totalCount, rows.length, searchInput])
+
+  const hasSearchChip = searchInput.trim().length > 0
+
+  const clearSearch = useCallback(() => {
+    setSearchInput("")
+    searchInputRef.current?.focus()
+  }, [])
+
+  const creationItems = useMemo(
+    () => (canCreate ? [CREATION_NEW_SUPPLIER] : []),
+    [canCreate],
+  )
+
+  const sectionActiveId = createOpen ? CREATION_NEW_SUPPLIER.id : "list"
+  const emptyCols = 5 + (canUpdate || canDelete ? 1 : 0)
 
   if (!popId || !siteId) {
     return (
       <div className="rootsy-app-light min-h-screen bg-background p-10 text-foreground">
-        <p className="text-sm">Punto de venta no encontrado</p>
+        <p className="text-sm">Punto de venta no encontrado.</p>
       </div>
     )
   }
 
   return (
-    <div className="rootsy-app-light relative min-h-screen overflow-hidden bg-background text-foreground">
-      <div
-        className="pointer-events-none absolute inset-0 motion-reduce:opacity-50"
-        aria-hidden
-      >
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_50%_at_50%_-20%,oklch(0.75_0.12_155/0.35),transparent),radial-gradient(ellipse_60%_40%_at_100%_50%,oklch(0.85_0.08_140/0.2),transparent)]" />
-        <div className="absolute inset-0 bg-[linear-gradient(oklch(0.92_0.02_130/0.35)_1px,transparent_1px),linear-gradient(90deg,oklch(0.92_0.02_130/0.35)_1px,transparent_1px)] bg-size-[48px_48px] opacity-40" />
-      </div>
-
-      <div className="relative z-10 flex min-h-screen flex-col">
-        <header className="border-b border-rootsy-hairline bg-card/90 shadow-sm backdrop-blur-xl">
-          <div className="grid h-18 grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-4 px-4">
-            <div className="flex min-w-0 items-center gap-3">
-              <Link
-                href={popMenuHref(siteId, popId)}
-                className="group inline-flex size-10 items-center justify-center rounded-xl border border-foreground/10 bg-secondary text-foreground/70 transition-all hover:border-primary/25 hover:bg-muted hover:text-foreground"
-                aria-label="Volver al menú"
-              >
-                <ArrowLeft className="size-5 transition-transform group-hover:-translate-x-0.5" />
-              </Link>
-              <div className="h-6 w-px bg-border" />
-              <div className="flex min-w-0 items-center gap-2.5">
-                <div className="size-8 overflow-hidden rounded-lg ring-1 ring-border">
-                  <img
-                    src={popLogoSrc}
-                    alt=""
-                    className="size-full object-cover"
-                  />
-                </div>
-                <span className="truncate text-sm font-semibold text-foreground/90">
-                  {popName || (loading ? "…" : "—")}
-                </span>
-              </div>
-            </div>
-
-            <div className="flex items-center gap-2">
-              <h1 className="flex items-center gap-2 text-[1.65rem] font-black tracking-tight text-foreground">
-                <span className="inline-flex size-9 items-center justify-center rounded-xl bg-primary/15 text-primary">
-                  <Truck className="size-5" aria-hidden />
-                </span>
-                Proveedores
-              </h1>
-              <div
-                className={cn(
-                  "inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-widest",
-                  isOnline
-                    ? "border-primary/30 bg-primary/10 text-forest"
-                    : "border-destructive/30 bg-destructive/10 text-destructive",
-                )}
-              >
-                {isOnline ? (
-                  <Wifi className="size-3" aria-hidden />
-                ) : (
-                  <WifiOff className="size-3" aria-hidden />
-                )}
-                {isOnline ? "Online" : "Offline"}
-              </div>
-            </div>
-
-            <div className="flex shrink-0 items-center justify-end gap-2">
-              {canCreate ? (
-                <Button
-                  type="button"
-                  size="sm"
-                  className="h-9 gap-1.5 rounded-xl bg-primary text-primary-foreground shadow-sm hover:bg-primary/90"
-                  onClick={() => openCreate()}
-                >
-                  <Plus className="size-4" aria-hidden />
-                  <span className="hidden sm:inline">Nuevo proveedor</span>
-                </Button>
-              ) : null}
-              <button
-                type="button"
-                onClick={() => void toggleFullscreen()}
-                className="group inline-flex size-9 items-center justify-center rounded-xl text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-                aria-label={
-                  isFullscreen ? "Salir de pantalla completa" : "Pantalla completa"
-                }
-              >
-                {isFullscreen ? (
-                  <Minimize2 className="size-4.5" />
-                ) : (
-                  <Maximize2 className="size-4.5" />
-                )}
-              </button>
-              <div className="h-6 w-px bg-border" />
-              <div className="flex items-center gap-3">
-                <Avatar className="size-10 ring-1 ring-border">
-                  <AvatarImage src={userAvatarSrc} alt="" />
-                  <AvatarFallback className="bg-primary/10 text-xs text-primary">
-                    {headerUserName.slice(0, 2).toUpperCase()}
-                  </AvatarFallback>
-                </Avatar>
-                <div className="hidden min-w-0 flex-col leading-tight sm:flex">
-                  <span className="truncate text-sm font-semibold text-foreground/90">
-                    {headerUserName}
-                  </span>
-                  <span className="flex items-center gap-1 text-[10px] font-semibold uppercase tracking-wider text-meadow">
-                    <Leaf className="size-3" aria-hidden />
-                    Compras
-                  </span>
-                </div>
-              </div>
-            </div>
+    <DataWorkspaceLayout
+      siteId={siteId}
+      popId={popId}
+      popName={popName}
+      title="Proveedores"
+      headerVariant="dark"
+      contentFlush
+      sidebarCollapsible={false}
+      loading={!popName && listFetching}
+      userName={workspaceHeader?.userFullName}
+      userAvatarSrc={workspaceHeader?.userImageUrl ?? undefined}
+      userRoleLabel={workspaceHeader?.roleLabel ?? "Compras"}
+      mainClassName="min-h-0 overflow-hidden"
+      sectionMenu={
+        <DataWorkspaceSectionMenu
+          headerVariant="dark"
+          creationItems={creationItems}
+          viewItems={VIEW_ITEMS}
+          activeId={sectionActiveId}
+          onSelect={handleSectionSelect}
+          creationSectionLabel="Nuevo"
+          viewsSectionLabel="En esta sección"
+        />
+      }
+    >
+      <div className="relative flex min-h-0 w-full flex-1 flex-col">
+        {error ? (
+          <div
+            role="alert"
+            className="relative shrink-0 border-b border-destructive/25 bg-destructive/10 px-4 py-3 text-sm text-destructive"
+          >
+            {error}
           </div>
-        </header>
+        ) : null}
 
-        <main className="relative z-10 mx-auto w-full max-w-6xl flex-1 px-4 py-8 sm:px-6">
-          {loading ? (
-            <p className="text-sm text-muted-foreground">Cargando proveedores…</p>
-          ) : error ? (
-            <div className="rounded-2xl border border-destructive/25 bg-destructive/5 px-4 py-3 text-sm text-destructive">
-              {error}
-            </div>
-          ) : (
-            <div className="space-y-6">
-              <div>
-                <h2 className="text-lg font-semibold text-foreground">
-                  Directorio de proveedores
-                </h2>
-                <p className="max-w-xl text-sm text-muted-foreground">
-                  Datos de contacto, CUIT y notas para este punto de venta. Los
-                  cambios respetan tu rol y las políticas RLS.
-                </p>
+        <div className="relative flex min-h-0 flex-1 flex-col">
+          <div
+            className={lightToolbarShellClass}
+            role="toolbar"
+            aria-label="Filtros del listado"
+          >
+            <div className={cn(lightToolbarPanelLastClass, "w-full")}>
+              <div className="mb-2 flex min-w-0 items-baseline justify-between gap-3">
+                <label htmlFor={searchInputId} className={toolbarBlockLabelClass}>
+                  Buscar
+                </label>
+                <span
+                  className="shrink-0 text-[11px] font-medium text-muted-foreground"
+                  aria-live="polite"
+                  aria-atomic="true"
+                >
+                  {resultsSummary}
+                </span>
               </div>
+              <div className="relative min-w-0">
+                <Search
+                  className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground"
+                  aria-hidden
+                />
+                <Input
+                  ref={searchInputRef}
+                  id={searchInputId}
+                  type="search"
+                  value={searchInput}
+                  onChange={(e) => setSearchInput(e.target.value)}
+                  placeholder="Nombre, email, teléfono, CUIT, notas… ( / )"
+                  className={cn(
+                    lightToolbarInputClass,
+                    searchInput.trim().length > 0 && "pr-10",
+                  )}
+                  autoComplete="off"
+                  spellCheck={false}
+                  aria-label="Buscar proveedores"
+                />
+                {searchInput.trim().length > 0 ? (
+                  <button
+                    type="button"
+                    aria-label="Limpiar búsqueda"
+                    className={lightToolbarClearButtonClass}
+                    onClick={clearSearch}
+                  >
+                    <X className="size-3.5" aria-hidden />
+                  </button>
+                ) : null}
+              </div>
+            </div>
 
-              <div className="overflow-hidden rounded-2xl border border-border bg-card/95 shadow-md shadow-primary/5 backdrop-blur-sm">
-                <Table>
-                  <TableHeader>
-                    <TableRow className="border-border bg-muted/40 hover:bg-muted/40">
-                      <TableHead className="font-semibold text-foreground">
-                        Nombre
-                      </TableHead>
-                      <TableHead className="font-semibold text-foreground">
-                        Email
-                      </TableHead>
-                      <TableHead className="font-semibold text-foreground">
-                        Teléfono
-                      </TableHead>
-                      <TableHead className="font-semibold text-foreground">
-                        CUIT / ID fiscal
-                      </TableHead>
-                      <TableHead className="font-semibold text-foreground">
-                        Notas
-                      </TableHead>
+            {hasSearchChip ? (
+              <div
+                className="border-t border-border/80 bg-card px-4 py-3"
+                role="region"
+                aria-label="Filtros activos"
+              >
+                <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+                  <p className={toolbarBlockLabelClass}>Filtros activos</p>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="h-8 px-2.5 text-xs font-medium text-muted-foreground hover:text-foreground"
+                    onClick={clearSearch}
+                  >
+                    Limpiar todo
+                  </Button>
+                </div>
+                <div className="flex flex-wrap items-center gap-1.5">
+                  <Badge variant="secondary" className={lightFilterChipClass}>
+                    <span className="truncate">
+                      Buscar: «{searchInput.trim()}»
+                    </span>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="size-6 shrink-0"
+                      onClick={clearSearch}
+                      aria-label="Quitar búsqueda"
+                    >
+                      <X className="size-3" />
+                    </Button>
+                  </Badge>
+                </div>
+              </div>
+            ) : null}
+          </div>
+
+          <DataWorkspaceListTableShell
+            variant="flush"
+            footer={
+              <DataWorkspaceListPaginationFooter
+                variant="dark"
+                listFetching={listFetching}
+                totalCount={totalCount}
+                rangeStart={rangeLabel.start}
+                rangeEnd={rangeLabel.end}
+                currentPage={currentPage}
+                totalPages={totalPages}
+                pageSize={pageSize}
+                pageSizeOptions={SUPPLIER_PAGE_SIZES}
+                paginationItems={paginationItems}
+                onPageChange={setPage}
+                onPageSizeChange={(ps) => {
+                  setPageSize(ps)
+                  setPage(1)
+                }}
+                pageSizeLabelId={pageSizeLabelId}
+                loadingSlot={<SuppliersTableFooterSkeleton />}
+              />
+            }
+          >
+            <table
+              className={workspaceDataTableClassName}
+              aria-busy={listFetching}
+            >
+              <TableHeader>
+                <TableRow className="border-0 hover:bg-transparent">
+                  <TableHead className={cn(lightTableThClass, "min-w-[10rem] text-left")}>
+                    Nombre
+                  </TableHead>
+                  <TableHead className={cn(lightTableThClass, "w-[12rem] text-left")}>
+                    Email
+                  </TableHead>
+                  <TableHead className={cn(lightTableThClass, "w-[9rem] text-left")}>
+                    Teléfono
+                  </TableHead>
+                  <TableHead className={cn(lightTableThClass, "w-[7.5rem] text-left")}>
+                    CUIT / ID fiscal
+                  </TableHead>
+                  <TableHead className={cn(lightTableThClass, "min-w-[8rem] text-left")}>
+                    Notas
+                  </TableHead>
+                  {canUpdate || canDelete ? (
+                    <TableHead className={cn(lightTableThClass, "w-[7.25rem] text-right")}>
+                      <span className="sr-only">Acciones</span>
+                    </TableHead>
+                  ) : null}
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {listFetching ? (
+                  <TableRow>
+                    <TableCell
+                      colSpan={emptyCols}
+                      className="py-12 text-center text-muted-foreground"
+                    >
+                      Cargando proveedores…
+                    </TableCell>
+                  </TableRow>
+                ) : totalCount === 0 ? (
+                  <TableRow>
+                    <TableCell
+                      colSpan={emptyCols}
+                      className="py-12 text-center text-muted-foreground"
+                    >
+                      {searchInput.trim()
+                        ? "No hay proveedores que coincidan con la búsqueda."
+                        : "No hay proveedores aún o no hay permiso de lectura."}
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  pageRows.map((r, i) => (
+                    <TableRow
+                      key={r.id}
+                      className={workspaceTableBodyRowClassNames(i)}
+                    >
+                      <TableCell className="min-w-0 px-3 py-2.5 align-middle">
+                        <p className="truncate font-medium text-foreground">
+                          {r.name || "—"}
+                        </p>
+                      </TableCell>
+                      <TableCell className="min-w-0 px-3 py-2.5 text-muted-foreground">
+                        {r.email || "—"}
+                      </TableCell>
+                      <TableCell className="px-3 py-2.5 text-muted-foreground">
+                        {r.phone || "—"}
+                      </TableCell>
+                      <TableCell className="px-3 py-2.5 text-muted-foreground">
+                        {r.taxId || "—"}
+                      </TableCell>
+                      <TableCell
+                        className="max-w-[180px] truncate px-3 py-2.5 text-muted-foreground"
+                        title={r.notes}
+                      >
+                        {r.notes || "—"}
+                      </TableCell>
                       {canUpdate || canDelete ? (
-                        <TableHead className="text-right font-semibold text-foreground">
-                          Acciones
-                        </TableHead>
+                        <TableCell className="px-1 py-1.5 align-middle">
+                          <div className="flex items-center justify-end gap-0.5">
+                            {canUpdate ? (
+                              <DataWorkspaceTableIconAction
+                                label={`Editar ${r.name || "proveedor"}`}
+                                icon={Pencil}
+                                onClick={() => openEdit(r)}
+                              />
+                            ) : null}
+                            {canDelete ? (
+                              <DataWorkspaceTableIconAction
+                                label={`Eliminar ${r.name || "proveedor"}`}
+                                icon={Trash2}
+                                destructive
+                                onClick={() => setDeleteRow(r)}
+                              />
+                            ) : null}
+                          </div>
+                        </TableCell>
                       ) : null}
                     </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {rows.length === 0 ? (
-                      <TableRow>
-                        <TableCell
-                          colSpan={emptyCols}
-                          className="py-12 text-center text-muted-foreground"
-                        >
-                          No hay proveedores aún o no hay permiso de lectura.
-                        </TableCell>
-                      </TableRow>
-                    ) : (
-                      rows.map((r) => (
-                        <TableRow
-                          key={r.id}
-                          className="border-border/80 hover:bg-muted/30"
-                        >
-                          <TableCell className="font-medium text-foreground">
-                            {r.name || "—"}
-                          </TableCell>
-                          <TableCell className="text-muted-foreground">
-                            {r.email || "—"}
-                          </TableCell>
-                          <TableCell className="text-muted-foreground">
-                            {r.phone || "—"}
-                          </TableCell>
-                          <TableCell className="text-muted-foreground">
-                            {r.taxId || "—"}
-                          </TableCell>
-                          <TableCell
-                            className="max-w-[180px] truncate text-muted-foreground"
-                            title={r.notes}
-                          >
-                            {r.notes || "—"}
-                          </TableCell>
-                          {canUpdate || canDelete ? (
-                            <TableCell className="text-right">
-                              <div className="flex justify-end gap-2">
-                                {canUpdate ? (
-                                  <Button
-                                    type="button"
-                                    variant="ghost"
-                                    size="sm"
-                                    className="text-primary hover:bg-primary/10 hover:text-forest"
-                                    onClick={() => openEdit(r)}
-                                  >
-                                    Editar
-                                  </Button>
-                                ) : null}
-                                {canDelete ? (
-                                  <Button
-                                    type="button"
-                                    variant="ghost"
-                                    size="sm"
-                                    className="text-destructive hover:bg-destructive/10"
-                                    onClick={() => setDeleteRow(r)}
-                                  >
-                                    Eliminar
-                                  </Button>
-                                ) : null}
-                              </div>
-                            </TableCell>
-                          ) : null}
-                        </TableRow>
-                      ))
-                    )}
-                  </TableBody>
-                </Table>
-              </div>
-            </div>
-          )}
-        </main>
+                  ))
+                )}
+              </TableBody>
+            </table>
+          </DataWorkspaceListTableShell>
+        </div>
       </div>
 
       <Dialog open={createOpen} onOpenChange={(o) => !o && setCreateOpen(false)}>
@@ -714,7 +861,7 @@ function SuppliersPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </div>
+    </DataWorkspaceLayout>
   )
 }
 

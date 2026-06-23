@@ -52,22 +52,23 @@ import {
 } from "@/components/data-workspace/DataWorkspaceListTablePrimitives"
 import { DataWorkspaceListTableShell } from "@/components/data-workspace/DataWorkspaceListTableShell"
 import {
-  DataWorkspaceListToolbar,
-  DataWorkspaceToolbarFilterCard,
-  DataWorkspaceToolbarSearchCard,
-} from "@/components/data-workspace/DataWorkspaceListToolbar"
-import {
-  dataWorkspaceShellCard,
+  lightFilterChipClass,
+  lightTableThClass,
+  lightToolbarButtonClass,
+  lightToolbarControlActiveClass,
+  lightToolbarInputClass,
+  lightToolbarClearButtonClass,
+  lightToolbarPanelClass,
+  lightToolbarPanelLastClass,
+  lightToolbarShellClass,
   selectColumnInnerClass,
   tableRowSelectCheckboxClass,
-  thBase,
+  toolbarBlockLabelClass,
   workspaceDataTableClassName,
   workspaceTableBodyRowClassNames,
 } from "@/components/data-workspace/dataWorkspaceListStyles"
-import {
-  DataWorkspaceLayout,
-} from "@/components/layouts/DataWorkspaceLayout"
-import { DataWorkspaceSidebar } from "@/components/layouts/DataWorkspaceSidebar"
+import { DataWorkspaceLayout } from "@/components/layouts/DataWorkspaceLayout"
+import { DataWorkspaceSectionMenu } from "@/components/layouts/DataWorkspaceSectionMenu"
 import {
   CLIENT_TABLE_PAGE_SIZES,
   mergeClientsWorkspaceUrl,
@@ -307,6 +308,7 @@ function ClientsPage() {
   const [deleteBusy, setDeleteBusy] = useState(false)
 
   const searchInputId = useId()
+  const searchInputRef = useRef<HTMLInputElement>(null)
   const [filtersModalOpen, setFiltersModalOpen] = useState(false)
   const [draftFilters, setDraftFilters] = useState<ClientsAppliedFilters>(
     defaultClientsFilters,
@@ -424,6 +426,26 @@ function ClientsPage() {
   }, [searchInput, workspaceParsed.q, replaceWorkspaceQuery])
 
   useEffect(() => {
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key !== "/" || e.metaKey || e.ctrlKey || e.altKey) return
+      const target = e.target
+      if (!(target instanceof HTMLElement)) return
+      if (
+        target.tagName === "INPUT" ||
+        target.tagName === "TEXTAREA" ||
+        target.tagName === "SELECT" ||
+        target.isContentEditable
+      ) {
+        return
+      }
+      e.preventDefault()
+      searchInputRef.current?.focus()
+    }
+    document.addEventListener("keydown", onKeyDown)
+    return () => document.removeEventListener("keydown", onKeyDown)
+  }, [])
+
+  useEffect(() => {
     setSelected(new Set())
   }, [searchParams])
 
@@ -539,6 +561,46 @@ function ClientsPage() {
     workspaceParsed.withTaxId ||
     workspaceParsed.soloActivos
 
+  const modalFiltersActiveCount = useMemo(() => {
+    let count = 0
+    if (workspaceParsed.withEmail) count++
+    if (workspaceParsed.withTaxId) count++
+    if (workspaceParsed.soloActivos) count++
+    return count
+  }, [
+    workspaceParsed.withEmail,
+    workspaceParsed.withTaxId,
+    workspaceParsed.soloActivos,
+  ])
+
+  const activeFilterCount = useMemo(() => {
+    let count = 0
+    if (workspaceParsed.q.trim()) count++
+    count += modalFiltersActiveCount
+    return count
+  }, [workspaceParsed.q, modalFiltersActiveCount])
+
+  const resultsSummary = useMemo(() => {
+    if (listFetching && totalCount === 0) return "…"
+    if (totalCount === 0) return "Sin resultados"
+    const noun = totalCount === 1 ? "cliente" : "clientes"
+    return `${totalCount.toLocaleString("es-AR")} ${noun}`
+  }, [listFetching, totalCount])
+
+  const clearAllFilters = useCallback(() => {
+    setSearchInput("")
+    replaceWorkspaceQuery({
+      q: "",
+      withEmail: false,
+      withTaxId: false,
+      soloActivos: false,
+      page: 1,
+    })
+    searchInputRef.current?.focus()
+  }, [replaceWorkspaceQuery])
+
+  const sectionActiveId = sidebarActiveId
+
   const totalPages = useMemo(
     () =>
       Math.max(
@@ -591,38 +653,68 @@ function ClientsPage() {
       popName={popName}
       title="Clientes"
       headerVariant="dark"
+      contentFlush
+      sidebarCollapsible={false}
       loading={!popName && listFetching}
       userName={workspaceHeader?.userFullName}
       userAvatarSrc={workspaceHeader?.userImageUrl ?? undefined}
       userRoleLabel={workspaceHeader?.roleLabel}
-      sidebar={
-        <DataWorkspaceSidebar
+      mainClassName="min-h-0 overflow-hidden"
+      sectionMenu={
+        <DataWorkspaceSectionMenu
+          headerVariant="dark"
           creationItems={creationItems}
           viewItems={VIEW_ITEMS}
-          activeId={sidebarActiveId}
+          activeId={sectionActiveId}
           onSelect={handleSidebarSelect}
           creationSectionLabel="Nuevo"
           viewsSectionLabel="En esta sección"
         />
       }
     >
-      <>
+      <div className="relative flex min-h-0 w-full flex-1 flex-col">
         {error ? (
-          <div className="rounded-2xl border border-destructive/25 bg-destructive/5 px-4 py-3 text-sm text-destructive">
+          <div
+            role="alert"
+            className="relative shrink-0 border-b border-destructive/25 bg-destructive/10 px-4 py-3 text-sm text-destructive"
+          >
             {error}
           </div>
         ) : null}
         {workspaceParsed.view === "list" ||
         workspaceParsed.view === "new-client" ? (
-          <div className="relative flex min-h-0 flex-1 flex-col gap-6">
-            <DataWorkspaceListToolbar
-              filters={
-                <DataWorkspaceToolbarFilterCard label="Filtros">
+          <div className="relative flex min-h-0 flex-1 flex-col">
+            <div
+              className={lightToolbarShellClass}
+              role="toolbar"
+              aria-label="Filtros del listado"
+            >
+              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-12">
+                <div
+                  className={cn(
+                    lightToolbarPanelClass,
+                    "order-2 w-full min-w-0 md:col-span-1 xl:order-1 xl:col-span-3",
+                  )}
+                >
+                  <div className="mb-2 flex min-w-0 items-baseline justify-between gap-3">
+                    <span className={toolbarBlockLabelClass}>Filtros</span>
+                    {modalFiltersActiveCount > 0 ? (
+                      <span className="shrink-0 text-[11px] font-medium text-primary">
+                        Activo
+                      </span>
+                    ) : null}
+                  </div>
                   <Button
                     type="button"
                     variant="outline"
                     size="sm"
-                    className="mt-2 h-9 w-full gap-2 border-border/60 bg-muted/20 shadow-sm dark:bg-background/30"
+                    className={cn(
+                      lightToolbarButtonClass,
+                      modalFiltersActiveCount > 0 &&
+                        lightToolbarControlActiveClass,
+                    )}
+                    aria-haspopup="dialog"
+                    aria-expanded={filtersModalOpen}
                     onClick={() => {
                       setDraftFilters({
                         withEmail: workspaceParsed.withEmail,
@@ -632,124 +724,180 @@ function ClientsPage() {
                       setFiltersModalOpen(true)
                     }}
                   >
-                    <Filter className="size-4" aria-hidden />
-                    Configurar
+                    <Filter className="size-4 shrink-0 opacity-80" aria-hidden />
+                    <span className="min-w-0 flex-1 truncate text-left">
+                      {modalFiltersActiveCount > 0
+                        ? "Refinar filtros"
+                        : "E-mail, CUIT y estado"}
+                    </span>
+                    {modalFiltersActiveCount > 0 ? (
+                      <span
+                        className="inline-flex size-5 shrink-0 items-center justify-center rounded-full bg-primary/15 text-[10px] font-semibold tabular-nums text-primary"
+                        aria-hidden
+                      >
+                        {modalFiltersActiveCount}
+                      </span>
+                    ) : null}
                   </Button>
-                </DataWorkspaceToolbarFilterCard>
-              }
-              search={
-                <DataWorkspaceToolbarSearchCard label="Buscar">
-                  <div className="relative mt-2 min-w-0">
+                </div>
+
+                <div
+                  className={cn(
+                    lightToolbarPanelLastClass,
+                    "order-1 min-w-0 md:col-span-2 xl:order-2 xl:col-span-9",
+                  )}
+                >
+                  <div className="mb-2 flex min-w-0 items-baseline justify-between gap-3">
+                    <label htmlFor={searchInputId} className={toolbarBlockLabelClass}>
+                      Buscar
+                    </label>
+                    <span
+                      className="shrink-0 text-[11px] font-medium text-muted-foreground"
+                      aria-live="polite"
+                      aria-atomic="true"
+                    >
+                      {resultsSummary}
+                    </span>
+                  </div>
+                  <div className="relative min-w-0">
                     <Search
-                      className="pointer-events-none absolute left-2.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground"
+                      className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground"
                       aria-hidden
                     />
                     <Input
+                      ref={searchInputRef}
                       id={searchInputId}
                       type="search"
                       value={searchInput}
                       onChange={(e) => setSearchInput(e.target.value)}
-                      placeholder="Nombre, contacto, CUIT, dirección, IVA…"
-                      className="h-9 border-border/60 bg-muted/25 pl-9 shadow-none dark:bg-background/40"
+                      placeholder="Nombre, contacto, CUIT, dirección, IVA… ( / )"
+                      className={cn(
+                        lightToolbarInputClass,
+                        searchInput.trim().length > 0 && "pr-10",
+                      )}
+                      autoComplete="off"
+                      spellCheck={false}
                       aria-label="Buscar clientes"
                     />
+                    {searchInput.trim().length > 0 ? (
+                      <button
+                        type="button"
+                        aria-label="Limpiar búsqueda"
+                        className={lightToolbarClearButtonClass}
+                        onClick={() => {
+                          setSearchInput("")
+                          searchInputRef.current?.focus()
+                        }}
+                      >
+                        <X className="size-3.5" aria-hidden />
+                      </button>
+                    ) : null}
                   </div>
-                </DataWorkspaceToolbarSearchCard>
-              }
-              chips={
-                hasFilterChips ? (
-                  <div className={cn(dataWorkspaceShellCard, "px-4 py-3")}>
-                    <p className="mb-2 text-[11px] font-medium uppercase tracking-[0.12em] text-muted-foreground">
-                      Filtros aplicados
+                </div>
+              </div>
+
+              {hasFilterChips ? (
+                <div
+                  className="border-t border-border/80 bg-card px-4 py-3"
+                  role="region"
+                  aria-label="Filtros activos"
+                >
+                  <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+                    <p className={toolbarBlockLabelClass}>
+                      Filtros activos
+                      <span className="sr-only">: {activeFilterCount}</span>
+                      <span
+                        className="ml-1.5 inline-flex min-w-5 items-center justify-center rounded-full bg-muted px-1.5 py-0.5 text-[10px] font-semibold tabular-nums normal-case tracking-normal text-muted-foreground"
+                        aria-hidden
+                      >
+                        {activeFilterCount}
+                      </span>
                     </p>
-                    <div className="flex flex-wrap items-center gap-1.5">
-                      {workspaceParsed.q.trim() ? (
-                        <Badge
-                          variant="secondary"
-                          className="max-w-full gap-1 border-border/50 py-0 pr-0.5 font-normal"
-                        >
-                          <span className="truncate">
-                            Buscar: «{workspaceParsed.q.trim()}»
-                          </span>
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="icon"
-                            className="size-6 shrink-0"
-                            onClick={() =>
-                              replaceWorkspaceQuery({ q: "", page: 1 })
-                            }
-                            aria-label="Quitar búsqueda"
-                          >
-                            <X className="size-3" />
-                          </Button>
-                        </Badge>
-                      ) : null}
-                      {workspaceParsed.withEmail ? (
-                        <Badge
-                          variant="secondary"
-                          className="gap-1 border-border/50 py-0 pr-0.5 font-normal"
-                        >
-                          Con e-mail
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="icon"
-                            className="size-6 shrink-0"
-                            onClick={() =>
-                              replaceWorkspaceQuery({ withEmail: false, page: 1 })
-                            }
-                            aria-label="Quitar filtro con e-mail"
-                          >
-                            <X className="size-3" />
-                          </Button>
-                        </Badge>
-                      ) : null}
-                      {workspaceParsed.withTaxId ? (
-                        <Badge
-                          variant="secondary"
-                          className="gap-1 border-border/50 py-0 pr-0.5 font-normal"
-                        >
-                          Con CUIT / DNI
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="icon"
-                            className="size-6 shrink-0"
-                            onClick={() =>
-                              replaceWorkspaceQuery({ withTaxId: false, page: 1 })
-                            }
-                            aria-label="Quitar filtro CUIT"
-                          >
-                            <X className="size-3" />
-                          </Button>
-                        </Badge>
-                      ) : null}
-                      {workspaceParsed.soloActivos ? (
-                        <Badge
-                          variant="secondary"
-                          className="gap-1 border-border/50 py-0 pr-0.5 font-normal"
-                        >
-                          Solo activos
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="icon"
-                            className="size-6 shrink-0"
-                            onClick={() =>
-                              replaceWorkspaceQuery({ soloActivos: false, page: 1 })
-                            }
-                            aria-label="Quitar filtro solo activos"
-                          >
-                            <X className="size-3" />
-                          </Button>
-                        </Badge>
-                      ) : null}
-                    </div>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      className="h-8 px-2.5 text-xs font-medium text-muted-foreground hover:text-foreground"
+                      onClick={clearAllFilters}
+                    >
+                      Limpiar todo
+                    </Button>
                   </div>
-                ) : null
-              }
-            />
+                  <div className="flex flex-wrap items-center gap-1.5">
+                    {workspaceParsed.q.trim() ? (
+                      <Badge variant="secondary" className={lightFilterChipClass}>
+                        <span className="truncate">
+                          Buscar: «{workspaceParsed.q.trim()}»
+                        </span>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          className="size-6 shrink-0"
+                          onClick={() =>
+                            replaceWorkspaceQuery({ q: "", page: 1 })
+                          }
+                          aria-label="Quitar búsqueda"
+                        >
+                          <X className="size-3" />
+                        </Button>
+                      </Badge>
+                    ) : null}
+                    {workspaceParsed.withEmail ? (
+                      <Badge variant="secondary" className={lightFilterChipClass}>
+                        Con e-mail
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          className="size-6 shrink-0"
+                          onClick={() =>
+                            replaceWorkspaceQuery({ withEmail: false, page: 1 })
+                          }
+                          aria-label="Quitar filtro con e-mail"
+                        >
+                          <X className="size-3" />
+                        </Button>
+                      </Badge>
+                    ) : null}
+                    {workspaceParsed.withTaxId ? (
+                      <Badge variant="secondary" className={lightFilterChipClass}>
+                        Con CUIT / DNI
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          className="size-6 shrink-0"
+                          onClick={() =>
+                            replaceWorkspaceQuery({ withTaxId: false, page: 1 })
+                          }
+                          aria-label="Quitar filtro CUIT"
+                        >
+                          <X className="size-3" />
+                        </Button>
+                      </Badge>
+                    ) : null}
+                    {workspaceParsed.soloActivos ? (
+                      <Badge variant="secondary" className={lightFilterChipClass}>
+                        Solo activos
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          className="size-6 shrink-0"
+                          onClick={() =>
+                            replaceWorkspaceQuery({ soloActivos: false, page: 1 })
+                          }
+                          aria-label="Quitar filtro solo activos"
+                        >
+                          <X className="size-3" />
+                        </Button>
+                      </Badge>
+                    ) : null}
+                  </div>
+                </div>
+              ) : null}
+            </div>
 
             <Dialog
               open={filtersModalOpen}
@@ -838,6 +986,7 @@ function ClientsPage() {
             </Dialog>
 
             <DataWorkspaceListTableShell
+              variant="flush"
               bulkToolbar={
                 selected.size > 0 ? (
                   <div
@@ -874,6 +1023,7 @@ function ClientsPage() {
               }
               footer={
                 <DataWorkspaceListPaginationFooter
+                  variant="dark"
                   listFetching={listFetching}
                   totalCount={totalCount}
                   rangeStart={rangeLabel.start}
@@ -898,7 +1048,7 @@ function ClientsPage() {
               >
                 <TableHeader>
                   <TableRow className="border-0 hover:bg-transparent">
-                    <TableHead className={cn(thBase, "w-12 !px-0 text-center")}>
+                    <TableHead className={cn(lightTableThClass, "w-12 !px-0 text-center")}>
                       <div className={cn(selectColumnInnerClass, "min-h-10")}>
                         <Checkbox
                           className={tableRowSelectCheckboxClass}
@@ -929,12 +1079,12 @@ function ClientsPage() {
                         />
                       </div>
                     </TableHead>
-                    <TableHead className={cn(thBase, "min-w-[10rem] text-left")}>
+                    <TableHead className={cn(lightTableThClass, "min-w-[10rem] text-left")}>
                       Nombre
                     </TableHead>
                     <TableHead
                       className={cn(
-                        thBase,
+                        lightTableThClass,
                         "w-[12rem] min-w-0 max-w-[12rem] text-left",
                       )}
                     >
@@ -942,28 +1092,28 @@ function ClientsPage() {
                     </TableHead>
                     <TableHead
                       className={cn(
-                        thBase,
+                        lightTableThClass,
                         "w-[9rem] min-w-0 max-w-[9rem] text-left",
                       )}
                     >
                       Teléfono
                     </TableHead>
-                    <TableHead className={cn(thBase, "w-[7.5rem] text-left")}>
+                    <TableHead className={cn(lightTableThClass, "w-[7.5rem] text-left")}>
                       CUIT / DNI
                     </TableHead>
-                    <TableHead className={cn(thBase, "min-w-[8.5rem] text-left")}>
+                    <TableHead className={cn(lightTableThClass, "min-w-[8.5rem] text-left")}>
                       IVA
                     </TableHead>
-                    <TableHead className={cn(thBase, "w-[7.25rem] text-left")}>
+                    <TableHead className={cn(lightTableThClass, "w-[7.25rem] text-left")}>
                       Última compra
                     </TableHead>
                     <TableHead
-                      className={cn(thBase, "min-w-[8.5rem] text-right")}
+                      className={cn(lightTableThClass, "min-w-[8.5rem] text-right")}
                     >
                       Ventas / Total
                     </TableHead>
                     {canUpdate || canDelete ? (
-                      <TableHead className={cn(thBase, "w-[7.25rem] text-right")}>
+                      <TableHead className={cn(lightTableThClass, "w-[7.25rem] text-right")}>
                         <span className="sr-only">Acciones</span>
                       </TableHead>
                     ) : null}
@@ -1473,7 +1623,7 @@ function ClientsPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-      </>
+      </div>
     </DataWorkspaceLayout>
   )
 }

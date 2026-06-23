@@ -22,24 +22,26 @@ import { buildPaginationItems } from "@/app/[siteId]/[popId]/layout/layoutPrevie
 import { DataWorkspaceListPaginationFooter } from "@/components/data-workspace/DataWorkspaceListPaginationFooter"
 import { DataWorkspaceListTableShell } from "@/components/data-workspace/DataWorkspaceListTableShell"
 import {
-  DataWorkspaceListToolbar,
-  DataWorkspaceToolbarFilterCard,
-  DataWorkspaceToolbarSearchCard,
-} from "@/components/data-workspace/DataWorkspaceListToolbar"
-import {
   DataWorkspaceTableIconAction,
   DataWorkspaceTableMoney,
   DataWorkspaceTableThumbnail,
 } from "@/components/data-workspace/DataWorkspaceListTablePrimitives"
 import {
-  dataWorkspaceShellCard,
-  thBase,
+  lightFilterChipClass,
+  lightTableThClass,
+  lightToolbarButtonClass,
+  lightToolbarControlActiveClass,
+  lightToolbarInputClass,
+  lightToolbarClearButtonClass,
+  lightToolbarPanelClass,
+  lightToolbarPanelLastClass,
+  lightToolbarShellClass,
   toolbarBlockLabelClass,
   workspaceDataTableClassName,
   workspaceTableBodyRowClassNames,
 } from "@/components/data-workspace/dataWorkspaceListStyles"
 import { DataWorkspaceLayout } from "@/components/layouts/DataWorkspaceLayout"
-import { DataWorkspaceSidebar } from "@/components/layouts/DataWorkspaceSidebar"
+import { DataWorkspaceSectionMenu } from "@/components/layouts/DataWorkspaceSectionMenu"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
@@ -214,9 +216,6 @@ const defaultArticlesFilters = (): ArticlesAppliedFilters => ({
 
 const VIEW_ITEMS = [{ id: "list", label: "Listado", icon: Table2 }] as const
 
-const sidebarSecondaryBtnClass =
-  "relative flex w-full items-center gap-2.5 rounded-r-xl py-2.5 pl-3 pr-2 text-left text-sm transition-colors text-muted-foreground hover:bg-muted/60 hover:text-foreground"
-
 const CREATION_NEW_ARTICLE = {
   id: "new-article",
   label: "Nuevo artículo",
@@ -261,6 +260,7 @@ function ArticlesPage() {
   const [searchInput, setSearchInput] = useState(workspaceParsed.q)
   const searchInputId = useId()
   const pageSizeLabelId = useId()
+  const searchInputRef = useRef<HTMLInputElement>(null)
 
   const [filtersModalOpen, setFiltersModalOpen] = useState(false)
   const [draftFilters, setDraftFilters] = useState<ArticlesAppliedFilters>(
@@ -428,6 +428,26 @@ function ArticlesPage() {
     }, 400)
     return () => window.clearTimeout(t)
   }, [searchInput, workspaceParsed.q, replaceWorkspaceQuery])
+
+  useEffect(() => {
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key !== "/" || e.metaKey || e.ctrlKey || e.altKey) return
+      const target = e.target
+      if (!(target instanceof HTMLElement)) return
+      if (
+        target.tagName === "INPUT" ||
+        target.tagName === "TEXTAREA" ||
+        target.tagName === "SELECT" ||
+        target.isContentEditable
+      ) {
+        return
+      }
+      e.preventDefault()
+      searchInputRef.current?.focus()
+    }
+    document.addEventListener("keydown", onKeyDown)
+    return () => document.removeEventListener("keydown", onKeyDown)
+  }, [])
 
   useEffect(() => {
     if (!popId || !siteId) return
@@ -790,6 +810,40 @@ function ArticlesPage() {
     return filterCategoryList.find((c) => c.id === id)?.name ?? ""
   }, [filterCategoryList, workspaceParsed.categoryId])
 
+  const modalFiltersActiveCount = useMemo(() => {
+    let count = 0
+    if (workspaceParsed.soloActivos) count++
+    if (workspaceParsed.categoryId.trim()) count++
+    return count
+  }, [workspaceParsed.soloActivos, workspaceParsed.categoryId])
+
+  const activeFilterCount = useMemo(() => {
+    let count = 0
+    if (workspaceParsed.q.trim()) count++
+    count += modalFiltersActiveCount
+    return count
+  }, [workspaceParsed.q, modalFiltersActiveCount])
+
+  const resultsSummary = useMemo(() => {
+    if (listFetching && totalCount === 0) return "…"
+    if (totalCount === 0) return "Sin resultados"
+    const noun = totalCount === 1 ? "artículo" : "artículos"
+    return `${totalCount.toLocaleString("es-AR")} ${noun}`
+  }, [listFetching, totalCount])
+
+  const clearAllFilters = useCallback(() => {
+    setSearchInput("")
+    replaceWorkspaceQuery({
+      q: "",
+      soloActivos: false,
+      categoryId: "",
+      page: 1,
+    })
+    searchInputRef.current?.focus()
+  }, [replaceWorkspaceQuery])
+
+  const sectionActiveId = sidebarActiveId
+
   if (!popId || !siteId) {
     return (
       <div className="rootsy-app-light min-h-screen bg-background p-10 text-foreground">
@@ -805,93 +859,100 @@ function ArticlesPage() {
       popName={popName}
       title="Stock"
       headerVariant="dark"
+      contentFlush
+      sidebarCollapsible={false}
       loading={!popName && listFetching}
       userName={workspaceHeader?.userFullName}
       userAvatarSrc={workspaceHeader?.userImageUrl ?? undefined}
       userRoleLabel={workspaceHeader?.roleLabel}
       pillLabel="Catálogo"
-      sidebar={
-        <DataWorkspaceSidebar
+      mainClassName="min-h-0 overflow-hidden"
+      headerActions={
+        <>
+          {canCreate ? (
+            <button
+              type="button"
+              onClick={() => {
+                setQuickNewCategoryBanner(null)
+                setQuickNewCategoryName("")
+                setQuickNewCategoryOpen(true)
+              }}
+              className="group inline-flex size-9 items-center justify-center rounded-xl text-zinc-400 transition-colors hover:bg-white/10 hover:text-white"
+              aria-label="Nueva categoría"
+              title="Nueva categoría"
+            >
+              <Tag className="size-4.5" aria-hidden />
+            </button>
+          ) : null}
+          <button
+            type="button"
+            onClick={() => {
+              setCategoriesOpen(true)
+              void loadModalCategories()
+            }}
+            className="group inline-flex size-9 items-center justify-center rounded-xl text-zinc-400 transition-colors hover:bg-white/10 hover:text-white"
+            aria-label="Gestionar categorías"
+            title="Categorías"
+          >
+            <FolderTree className="size-4.5" aria-hidden />
+          </button>
+        </>
+      }
+      sectionMenu={
+        <DataWorkspaceSectionMenu
+          headerVariant="dark"
           creationItems={creationItems}
           viewItems={VIEW_ITEMS}
-          activeId={sidebarActiveId}
+          activeId={sectionActiveId}
           onSelect={handleSidebarSelect}
           creationSectionLabel="Nuevo"
           viewsSectionLabel="En esta sección"
-          footer={
-            <div className="space-y-1">
-              <p className="mb-2 px-1 text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground/90">
-                Categorías
-              </p>
-              <ul
-                className="relative space-y-0.5 border-l-2 border-border/70 pl-3"
-                role="list"
-              >
-                <span
-                  className="pointer-events-none absolute bottom-0 left-[-2px] top-0 w-0.5 rounded-full bg-linear-to-b from-primary/0 via-primary/40 to-primary/0 opacity-40"
-                  aria-hidden
-                />
-                {canCreate ? (
-                  <li>
-                    <button
-                      type="button"
-                      className={cn(
-                        sidebarSecondaryBtnClass,
-                        "font-medium text-foreground",
-                      )}
-                      onClick={() => {
-                        setQuickNewCategoryBanner(null)
-                        setQuickNewCategoryName("")
-                        setQuickNewCategoryOpen(true)
-                      }}
-                    >
-                      <Tag className="size-4 shrink-0 opacity-70" aria-hidden />
-                      Nueva categoría
-                    </button>
-                  </li>
-                ) : null}
-                <li>
-                  <button
-                    type="button"
-                    className={cn(
-                      sidebarSecondaryBtnClass,
-                      "font-medium text-foreground",
-                    )}
-                    onClick={() => {
-                      setCategoriesOpen(true)
-                      void loadModalCategories()
-                    }}
-                  >
-                    <FolderTree
-                      className="size-4 shrink-0 opacity-70"
-                      aria-hidden
-                    />
-                    Categorías
-                  </button>
-                </li>
-              </ul>
-            </div>
-          }
         />
       }
     >
-      <>
+      <div className="relative flex min-h-0 w-full flex-1 flex-col">
         {error ? (
-          <div className="rounded-2xl border border-destructive/25 bg-destructive/5 px-4 py-3 text-sm text-destructive">
+          <div
+            role="alert"
+            className="relative shrink-0 border-b border-destructive/25 bg-destructive/10 px-4 py-3 text-sm text-destructive"
+          >
             {error}
           </div>
         ) : null}
         {workspaceParsed.view === "list" ||
         workspaceParsed.view === "new-article" ? (
-          <div className="relative flex min-h-0 flex-1 flex-col gap-6">
-            <DataWorkspaceListToolbar
-              filters={
-                <DataWorkspaceToolbarFilterCard label="Filtros">
+          <div className="relative flex min-h-0 flex-1 flex-col">
+            <div
+              className={lightToolbarShellClass}
+              role="toolbar"
+              aria-label="Filtros del listado"
+            >
+              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-12">
+                <div
+                  className={cn(
+                    lightToolbarPanelClass,
+                    "order-2 w-full min-w-0 md:col-span-1 xl:order-1 xl:col-span-3",
+                  )}
+                >
+                  <div className="mb-2 flex min-w-0 items-baseline justify-between gap-3">
+                    <span className={toolbarBlockLabelClass}>Filtros</span>
+                    {modalFiltersActiveCount > 0 ? (
+                      <span className="shrink-0 text-[11px] font-medium text-primary">
+                        Activo
+                      </span>
+                    ) : null}
+                  </div>
                   <Button
                     type="button"
                     variant="outline"
                     size="sm"
-                    className="mt-2 h-9 w-full gap-2 border-border/60 bg-muted/20 shadow-sm dark:bg-background/30"
+                    className={cn(
+                      lightToolbarButtonClass,
+                      modalFiltersActiveCount > 0 &&
+                        lightToolbarControlActiveClass,
+                    )}
+                    aria-haspopup="dialog"
+                    aria-expanded={filtersModalOpen}
                     onClick={() => {
                       setDraftFilters({
                         soloActivos: workspaceParsed.soloActivos,
@@ -900,114 +961,173 @@ function ArticlesPage() {
                       setFiltersModalOpen(true)
                     }}
                   >
-                    <Filter className="size-4" aria-hidden />
-                    Configurar
+                    <Filter className="size-4 shrink-0 opacity-80" aria-hidden />
+                    <span className="min-w-0 flex-1 truncate text-left">
+                      {modalFiltersActiveCount > 0
+                        ? "Refinar filtros"
+                        : "Estado y categoría"}
+                    </span>
+                    {modalFiltersActiveCount > 0 ? (
+                      <span
+                        className="inline-flex size-5 shrink-0 items-center justify-center rounded-full bg-primary/15 text-[10px] font-semibold tabular-nums text-primary"
+                        aria-hidden
+                      >
+                        {modalFiltersActiveCount}
+                      </span>
+                    ) : null}
                   </Button>
-                </DataWorkspaceToolbarFilterCard>
-              }
-              search={
-                <DataWorkspaceToolbarSearchCard label="Búsqueda">
-                  <div className="relative mt-2 min-w-0">
+                </div>
+
+                <div
+                  className={cn(
+                    lightToolbarPanelLastClass,
+                    "order-1 min-w-0 md:col-span-2 xl:order-2 xl:col-span-9",
+                  )}
+                >
+                  <div className="mb-2 flex min-w-0 items-baseline justify-between gap-3">
+                    <label htmlFor={searchInputId} className={toolbarBlockLabelClass}>
+                      Buscar
+                    </label>
+                    <span
+                      className="shrink-0 text-[11px] font-medium text-muted-foreground"
+                      aria-live="polite"
+                      aria-atomic="true"
+                    >
+                      {resultsSummary}
+                    </span>
+                  </div>
+                  <div className="relative min-w-0">
                     <Search
-                      className="pointer-events-none absolute left-2.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground"
+                      className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground"
                       aria-hidden
                     />
                     <Input
+                      ref={searchInputRef}
                       id={searchInputId}
                       type="search"
                       value={searchInput}
                       onChange={(e) => setSearchInput(e.target.value)}
-                      placeholder="Nombre, descripción…"
-                      className="h-9 border-border/60 bg-muted/25 pl-9 shadow-none dark:bg-background/40"
+                      placeholder="Nombre, descripción… ( / )"
+                      className={cn(
+                        lightToolbarInputClass,
+                        searchInput.trim().length > 0 && "pr-10",
+                      )}
+                      autoComplete="off"
+                      spellCheck={false}
                       aria-label="Buscar artículos"
                     />
+                    {searchInput.trim().length > 0 ? (
+                      <button
+                        type="button"
+                        aria-label="Limpiar búsqueda"
+                        className={lightToolbarClearButtonClass}
+                        onClick={() => {
+                          setSearchInput("")
+                          searchInputRef.current?.focus()
+                        }}
+                      >
+                        <X className="size-3.5" aria-hidden />
+                      </button>
+                    ) : null}
                   </div>
-                </DataWorkspaceToolbarSearchCard>
-              }
-              chips={
-                hasFilterChips ? (
-                  <div className={cn(dataWorkspaceShellCard, "px-4 py-3")}>
-                    <p className={cn(toolbarBlockLabelClass, "mb-2")}>
-                      Filtros aplicados
+                </div>
+              </div>
+
+              {hasFilterChips ? (
+                <div
+                  className="border-t border-border/80 bg-card px-4 py-3"
+                  role="region"
+                  aria-label="Filtros activos"
+                >
+                  <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+                    <p className={toolbarBlockLabelClass}>
+                      Filtros activos
+                      <span className="sr-only">: {activeFilterCount}</span>
+                      <span
+                        className="ml-1.5 inline-flex min-w-5 items-center justify-center rounded-full bg-muted px-1.5 py-0.5 text-[10px] font-semibold tabular-nums normal-case tracking-normal text-muted-foreground"
+                        aria-hidden
+                      >
+                        {activeFilterCount}
+                      </span>
                     </p>
-                    <div className="flex flex-wrap items-center gap-1.5">
-                      {workspaceParsed.q.trim() ? (
-                        <Badge
-                          variant="secondary"
-                          className="max-w-full gap-1 border-border/50 py-0 pr-0.5 font-normal"
-                        >
-                          <span className="truncate">
-                            Buscar: «{workspaceParsed.q.trim()}»
-                          </span>
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="icon"
-                            className="size-6 shrink-0"
-                            onClick={() =>
-                              replaceWorkspaceQuery({ q: "", page: 1 })
-                            }
-                            aria-label="Quitar búsqueda"
-                          >
-                            <X className="size-3" />
-                          </Button>
-                        </Badge>
-                      ) : null}
-                      {workspaceParsed.soloActivos ? (
-                        <Badge
-                          variant="secondary"
-                          className="gap-1 border-border/50 py-0 pr-0.5 font-normal"
-                        >
-                          Solo activos
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="icon"
-                            className="size-6 shrink-0"
-                            onClick={() =>
-                              replaceWorkspaceQuery({
-                                soloActivos: false,
-                                page: 1,
-                              })
-                            }
-                            aria-label="Quitar filtro solo activos"
-                          >
-                            <X className="size-3" />
-                          </Button>
-                        </Badge>
-                      ) : null}
-                      {workspaceParsed.categoryId.trim() ? (
-                        <Badge
-                          variant="secondary"
-                          className="max-w-full gap-1 border-border/50 py-0 pr-0.5 font-normal"
-                        >
-                          <span className="truncate">
-                            Categoría:{" "}
-                            {categoryLabelForChip ||
-                              workspaceParsed.categoryId}
-                          </span>
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="icon"
-                            className="size-6 shrink-0"
-                            onClick={() =>
-                              replaceWorkspaceQuery({
-                                categoryId: "",
-                                page: 1,
-                              })
-                            }
-                            aria-label="Quitar filtro categoría"
-                          >
-                            <X className="size-3" />
-                          </Button>
-                        </Badge>
-                      ) : null}
-                    </div>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      className="h-8 px-2.5 text-xs font-medium text-muted-foreground hover:text-foreground"
+                      onClick={clearAllFilters}
+                    >
+                      Limpiar todo
+                    </Button>
                   </div>
-                ) : null
-              }
-            />
+                  <div className="flex flex-wrap items-center gap-1.5">
+                    {workspaceParsed.q.trim() ? (
+                      <Badge variant="secondary" className={lightFilterChipClass}>
+                        <span className="truncate">
+                          Buscar: «{workspaceParsed.q.trim()}»
+                        </span>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          className="size-6 shrink-0"
+                          onClick={() =>
+                            replaceWorkspaceQuery({ q: "", page: 1 })
+                          }
+                          aria-label="Quitar búsqueda"
+                        >
+                          <X className="size-3" />
+                        </Button>
+                      </Badge>
+                    ) : null}
+                    {workspaceParsed.soloActivos ? (
+                      <Badge variant="secondary" className={lightFilterChipClass}>
+                        Solo activos
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          className="size-6 shrink-0"
+                          onClick={() =>
+                            replaceWorkspaceQuery({
+                              soloActivos: false,
+                              page: 1,
+                            })
+                          }
+                          aria-label="Quitar filtro solo activos"
+                        >
+                          <X className="size-3" />
+                        </Button>
+                      </Badge>
+                    ) : null}
+                    {workspaceParsed.categoryId.trim() ? (
+                      <Badge variant="secondary" className={lightFilterChipClass}>
+                        <span className="truncate">
+                          Categoría:{" "}
+                          {categoryLabelForChip ||
+                            workspaceParsed.categoryId}
+                        </span>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          className="size-6 shrink-0"
+                          onClick={() =>
+                            replaceWorkspaceQuery({
+                              categoryId: "",
+                              page: 1,
+                            })
+                          }
+                          aria-label="Quitar filtro categoría"
+                        >
+                          <X className="size-3" />
+                        </Button>
+                      </Badge>
+                    ) : null}
+                  </div>
+                </div>
+              ) : null}
+            </div>
 
             <Dialog
               open={filtersModalOpen}
@@ -1158,8 +1278,10 @@ function ArticlesPage() {
             </Dialog>
 
             <DataWorkspaceListTableShell
+              variant="flush"
               footer={
                 <DataWorkspaceListPaginationFooter
+                  variant="dark"
                   listFetching={listFetching}
                   totalCount={totalCount}
                   rangeStart={rangeLabel.start}
@@ -1184,32 +1306,30 @@ function ArticlesPage() {
               >
                 <TableHeader>
                   <TableRow className="border-0 hover:bg-transparent">
-                    <TableHead
-                      className={cn(thBase, "w-14 text-left")}
-                    >
+                    <TableHead className={cn(lightTableThClass, "w-14 text-left")}>
                       <span className="sr-only">Foto</span>
                     </TableHead>
-                    <TableHead className={cn(thBase, "min-w-[11rem] text-left")}>
+                    <TableHead className={cn(lightTableThClass, "min-w-[11rem] text-left")}>
                       Artículo
                     </TableHead>
-                    <TableHead className={cn(thBase, "w-[11%] text-left")}>
+                    <TableHead className={cn(lightTableThClass, "w-[11%] text-left")}>
                       Categoría
                     </TableHead>
-                    <TableHead className={cn(thBase, "w-[9%] text-right")}>
+                    <TableHead className={cn(lightTableThClass, "w-[9%] text-right")}>
                       Venta
                     </TableHead>
-                    <TableHead className={cn(thBase, "w-[9%] text-right")}>
+                    <TableHead className={cn(lightTableThClass, "w-[9%] text-right")}>
                       Costo
                     </TableHead>
-                    <TableHead className={cn(thBase, "w-[6%] text-right")}>
+                    <TableHead className={cn(lightTableThClass, "w-[6%] text-right")}>
                       IVA %
                     </TableHead>
-                    <TableHead className={cn(thBase, "w-[8%] text-left")}>
+                    <TableHead className={cn(lightTableThClass, "w-[8%] text-left")}>
                       Estado
                     </TableHead>
                     {canUpdate || canDelete ? (
                       <TableHead
-                        className={cn(thBase, "w-[6.5rem] text-right")}
+                        className={cn(lightTableThClass, "w-[6.5rem] text-right")}
                       >
                         <span className="sr-only">Acciones</span>
                       </TableHead>
@@ -1872,7 +1992,7 @@ function ArticlesPage() {
           )}
         </DialogContent>
       </Dialog>
-      </>
+      </div>
     </DataWorkspaceLayout>
   )
 }

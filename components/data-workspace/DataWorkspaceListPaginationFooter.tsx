@@ -8,10 +8,23 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import { tableChromeFooterClass } from "@/components/data-workspace/dataWorkspaceListStyles"
+import {
+  darkTableFooterCenterClass,
+  darkTableFooterCenterMutedClass,
+  darkTableFooterClass,
+  darkTableFooterNavButtonClass,
+  darkTableFooterNavGroupClass,
+  footerPaginationSelectTriggerClass,
+  tableChromeFooterClass,
+} from "@/components/data-workspace/dataWorkspaceListStyles"
 import { cn } from "@/lib/utils"
 import type { PaginationItem } from "@/app/[siteId]/[popId]/layout/layoutPreviewPagination"
-import { ChevronLeft, ChevronRight } from "lucide-react"
+import {
+  ChevronLeft,
+  ChevronRight,
+  ChevronsLeft,
+  ChevronsRight,
+} from "lucide-react"
 import type { ReactNode } from "react"
 
 export type DataWorkspaceListPaginationFooterProps = {
@@ -28,6 +41,7 @@ export type DataWorkspaceListPaginationFooterProps = {
   onPageSizeChange: (pageSize: number) => void
   pageSizeLabelId: string
   loadingSlot?: ReactNode
+  variant?: "default" | "dark"
 }
 
 export function DataWorkspaceListPaginationFooter({
@@ -44,10 +58,27 @@ export function DataWorkspaceListPaginationFooter({
   onPageSizeChange,
   pageSizeLabelId,
   loadingSlot,
+  variant = "default",
 }: DataWorkspaceListPaginationFooterProps) {
+  const isDark = variant === "dark"
+  const totalCountLabel = totalCount.toLocaleString("es-AR")
+
+  const footerPaginationAriaLabel =
+    totalCount === 0
+      ? "Sin resultados"
+      : (() => {
+          const pagePart =
+            totalPages > 1
+              ? `, página ${currentPage} de ${totalPages}`
+              : ""
+          return `Mostrando ${rangeStart.toLocaleString("es-AR")} a ${rangeEnd.toLocaleString("es-AR")} de ${totalCountLabel}${pagePart}`
+        })()
+
   if (listFetching) {
     return (
-      <div className={cn("shrink-0", tableChromeFooterClass)}>
+      <div
+        className={cn("shrink-0", isDark ? darkTableFooterClass : tableChromeFooterClass)}
+      >
         {loadingSlot}
       </div>
     )
@@ -55,7 +86,131 @@ export function DataWorkspaceListPaginationFooter({
   if (totalCount <= 0) {
     return null
   }
-  const totalCountLabel = totalCount.toLocaleString("es-AR")
+
+  if (isDark) {
+    const pageOptions = Array.from({ length: totalPages }, (_, i) => i + 1)
+
+    return (
+      <div
+        className={darkTableFooterClass}
+        role="navigation"
+        aria-label="Paginación del listado"
+      >
+        <div className="flex w-full items-stretch">
+          <div className={cn(darkTableFooterNavGroupClass, "justify-start")}>
+            <button
+              type="button"
+              className={cn(
+                darkTableFooterNavButtonClass,
+                "border-r border-white/10",
+              )}
+              disabled={currentPage <= 1}
+              aria-label="Ir a la primera página"
+              onClick={() => onPageChange(1)}
+            >
+              <ChevronsLeft className="size-7" aria-hidden />
+            </button>
+            <button
+              type="button"
+              className={darkTableFooterNavButtonClass}
+              disabled={currentPage <= 1}
+              aria-label="Página anterior"
+              onClick={() => onPageChange(Math.max(1, currentPage - 1))}
+            >
+              <ChevronLeft className="size-7" aria-hidden />
+            </button>
+          </div>
+
+          <div className={darkTableFooterCenterClass}>
+            <span className="sr-only" aria-live="polite" aria-atomic="true">
+              {footerPaginationAriaLabel}
+            </span>
+
+            <Select
+              value={String(currentPage)}
+              onValueChange={(v) => onPageChange(Number(v))}
+            >
+              <SelectTrigger
+                className={footerPaginationSelectTriggerClass}
+                aria-label="Página"
+              >
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent align="center">
+                {pageOptions.map((p) => (
+                  <SelectItem key={p} value={String(p)}>
+                    {p.toLocaleString("es-AR")}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+
+            <span className="text-white/20" aria-hidden>
+              ·
+            </span>
+
+            <Select
+              value={String(pageSize)}
+              onValueChange={(v) => onPageSizeChange(Number(v))}
+            >
+              <SelectTrigger
+                className={footerPaginationSelectTriggerClass}
+                aria-labelledby={pageSizeLabelId}
+                aria-label="Resultados por página"
+              >
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent align="center">
+                {pageSizeOptions.map((n) => (
+                  <SelectItem key={n} value={String(n)}>
+                    {n.toLocaleString("es-AR")}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+
+            <span className="text-white/20" aria-hidden>
+              ·
+            </span>
+            <span
+              id={pageSizeLabelId}
+              className={darkTableFooterCenterMutedClass}
+              aria-hidden
+            >
+              {totalCountLabel}
+            </span>
+          </div>
+
+          <div className={cn(darkTableFooterNavGroupClass, "justify-end")}>
+            <button
+              type="button"
+              className={cn(
+                darkTableFooterNavButtonClass,
+                "border-l border-white/10",
+              )}
+              disabled={currentPage >= totalPages}
+              aria-label="Página siguiente"
+              onClick={() =>
+                onPageChange(Math.min(totalPages, currentPage + 1))
+              }
+            >
+              <ChevronRight className="size-7" aria-hidden />
+            </button>
+            <button
+              type="button"
+              className={darkTableFooterNavButtonClass}
+              disabled={currentPage >= totalPages}
+              aria-label="Ir a la última página"
+              onClick={() => onPageChange(totalPages)}
+            >
+              <ChevronsRight className="size-7" aria-hidden />
+            </button>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div
       className={cn(
