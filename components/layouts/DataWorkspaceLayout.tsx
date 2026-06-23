@@ -42,6 +42,8 @@ export type DataWorkspaceLayoutProps = {
   sidebar?: ReactNode
   /** Permite colapsar la barra lateral (persiste por POP en `localStorage`). */
   sidebarCollapsible?: boolean
+  /** Botón/menú de sección en el header (p. ej. vistas sin sidebar). */
+  sectionMenu?: ReactNode
   children: ReactNode
   /** Ancho máximo del área principal. */
   mainMaxWidthClass?: string
@@ -68,6 +70,7 @@ export function DataWorkspaceLayout({
   toolbar,
   sidebar,
   sidebarCollapsible = true,
+  sectionMenu,
   children,
   mainMaxWidthClass = "max-w-6xl",
   contentFlush = false,
@@ -174,25 +177,27 @@ export function DataWorkspaceLayout({
 
   const defaultAdornment =
     titleAdornment === undefined ? (
-      <div
+      <span
         className={cn(
-          "inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-widest",
+          "inline-flex size-7 items-center justify-center rounded-full border",
           isDarkHeader
             ? isOnline
-              ? "border-emerald-500/35 bg-emerald-500/10 text-emerald-200"
-              : "border-red-500/35 bg-red-500/10 text-red-200"
+              ? "border-emerald-500/35 bg-emerald-500/10 text-emerald-300"
+              : "border-red-500/35 bg-red-500/10 text-red-300"
             : isOnline
-              ? "border-primary/30 bg-primary/10 text-forest"
+              ? "border-primary/30 bg-primary/10 text-primary"
               : "border-destructive/30 bg-destructive/10 text-destructive",
         )}
+        role="status"
+        aria-label={isOnline ? "En línea" : "Sin conexión"}
+        title={isOnline ? "En línea" : "Sin conexión"}
       >
         {isOnline ? (
-          <Wifi className="size-3" aria-hidden />
+          <Wifi className="size-3.5" aria-hidden />
         ) : (
-          <WifiOff className="size-3" aria-hidden />
+          <WifiOff className="size-3.5" aria-hidden />
         )}
-        {isOnline ? "En línea" : "Sin conexión"}
-      </div>
+      </span>
     ) : (
       titleAdornment
     )
@@ -325,6 +330,7 @@ export function DataWorkspaceLayout({
                   <Maximize2 className="size-4.5" />
                 )}
               </button>
+              {sectionMenu}
               {userName ? (
                 <>
                   <div

@@ -7,10 +7,8 @@ import {
   LayoutPreviewSummaryDashboard,
 } from "./layoutPreviewDashboards"
 import { DataWorkspaceLayout } from "@/components/layouts/DataWorkspaceLayout"
-import {
-  DataWorkspaceSidebar,
-  getDefaultWorkspaceViewId,
-} from "@/components/layouts/DataWorkspaceSidebar"
+import { DataWorkspaceSectionMenu } from "@/components/layouts/DataWorkspaceSectionMenu"
+import { getDefaultWorkspaceViewId } from "@/components/layouts/DataWorkspaceSidebar"
 import { cn } from "@/lib/utils"
 import withAuth from "@/hoc/withAuth"
 import {
@@ -84,7 +82,7 @@ function LayoutPreviewPage() {
       case "create-invoice":
         return {
           title: "Nueva factura",
-          body: "Otro flujo de creación con el mismo patrón de selección en la barra lateral.",
+          body: "Otro flujo de creación con el mismo patrón de selección en el menú del header.",
         }
       case "list":
       case "reports":
@@ -115,9 +113,9 @@ function LayoutPreviewPage() {
       userName={userFullName || undefined}
       userAvatarSrc={userImageUrl}
       userRoleLabel={roleLabel || undefined}
-      sidebar={
-        <DataWorkspaceSidebar
-          variant="dark"
+      sectionMenu={
+        <DataWorkspaceSectionMenu
+          headerVariant="dark"
           creationItems={CREATION_ITEMS}
           viewItems={VIEW_ITEMS}
           activeId={activeId}
@@ -146,7 +144,7 @@ function LayoutPreviewPage() {
                 </h2>
                 <p className="mt-1 max-w-2xl text-sm leading-relaxed text-muted-foreground">
                   {panelCopy.body} Vista previa estática para iterar shell +
-                  sidebar.
+                  menú de sección.
                 </p>
               </div>
             ) : null}

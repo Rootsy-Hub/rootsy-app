@@ -180,13 +180,28 @@ const darkTableFooterClass =
 const darkTableFooterNavGroupClass =
   "flex min-w-0 flex-1 items-stretch"
 
-const darkTableFooterNavButtonClass =
-  "inline-flex size-16 shrink-0 items-center justify-center rounded-none bg-[#2a313a] text-white transition-colors hover:bg-[#323b46] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-emerald-400/40 disabled:pointer-events-none disabled:opacity-35"
+const darkTableFooterControlSurfaceClass =
+  "bg-[#2a313a] text-white transition-colors hover:bg-[#323b46] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-emerald-400/40"
 
-const darkTableFooterSelectTriggerClass =
-  "h-16 min-w-[7.5rem] gap-2 rounded-lg border-0 bg-[#2a313a] px-3 text-sm font-normal text-white shadow-none hover:bg-[#323b46] focus-visible:border-0 focus-visible:ring-2 focus-visible:ring-emerald-400/40 [&_svg]:text-white/70"
+const darkTableFooterNavButtonClass = cn(
+  "inline-flex size-16 shrink-0 items-center justify-center rounded-none disabled:pointer-events-none disabled:opacity-35",
+  darkTableFooterControlSurfaceClass,
+)
 
-const darkTableFooterCountClass = "whitespace-nowrap text-sm text-white/90"
+const footerPaginationSelectTriggerClass = cn(
+  "h-11 min-h-11 min-w-[4.25rem] gap-1.5 rounded-lg border-0 px-3.5 text-sm font-medium text-white shadow-none",
+  "!bg-[#2a313a] hover:!bg-[#323b46] dark:!bg-[#2a313a] dark:hover:!bg-[#323b46]",
+  "data-[size=default]:!h-11 data-[size=sm]:!h-11",
+  "focus-visible:border-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-emerald-400/40 focus-visible:ring-offset-0",
+  "[&_svg:not([class*='text-'])]:!text-white/60",
+  "*:data-[slot=select-value]:text-white",
+)
+
+const darkTableFooterCenterClass =
+  "flex min-w-0 flex-1 items-center justify-center gap-3 self-center px-4"
+
+const darkTableFooterCenterMutedClass =
+  "text-sm font-medium tabular-nums text-slate-500"
 
 function ToolbarClearSearchIcon({ className }: { className?: string }) {
   return (
@@ -383,8 +398,6 @@ export function LayoutPreviewListTable({
   siteId: string
   popId: string
 }) {
-  const pageSizeLabelId = useId()
-  const pageSelectLabelId = useId()
   const searchInputId = useId()
   const dateFilterLabelId = useId()
   const dateFilterTriggerId = useId()
@@ -478,6 +491,17 @@ export function LayoutPreviewListTable({
     () => Array.from({ length: totalPages }, (_, i) => i + 1),
     [totalPages],
   )
+
+  const footerPaginationAriaLabel = useMemo(() => {
+    if (filteredTotal === 0) return "Sin resultados"
+    const start = (currentPage - 1) * pageSize + 1
+    const end = Math.min(currentPage * pageSize, filteredTotal)
+    const pagePart =
+      totalPages > 1
+        ? `, página ${currentPage} de ${totalPages}`
+        : ""
+    return `Mostrando ${start.toLocaleString("es-AR")} a ${end.toLocaleString("es-AR")} de ${totalCountLabel}${pagePart}`
+  }, [filteredTotal, currentPage, pageSize, totalPages, totalCountLabel])
 
   const statusFilterNarrow =
     includedStatuses.size < ALL_STATUSES.length
@@ -1288,28 +1312,37 @@ export function LayoutPreviewListTable({
             </button>
           </div>
 
-          <div className="flex shrink-0 flex-wrap items-center justify-center gap-2 px-3">
+          <div className={darkTableFooterCenterClass}>
+            <span
+              className="sr-only"
+              aria-live="polite"
+              aria-atomic="true"
+            >
+              {footerPaginationAriaLabel}
+            </span>
+
             <Select
               value={String(currentPage)}
               onValueChange={(v) => setPage(Number(v))}
             >
               <SelectTrigger
-                className={darkTableFooterSelectTriggerClass}
-                aria-labelledby={pageSelectLabelId}
+                className={footerPaginationSelectTriggerClass}
+                aria-label="Página"
               >
-                <span id={pageSelectLabelId} className="sr-only">
-                  Página
-                </span>
                 <SelectValue />
               </SelectTrigger>
               <SelectContent align="center">
                 {pageOptions.map((p) => (
                   <SelectItem key={p} value={String(p)}>
-                    {`Página ${p.toLocaleString("es-AR")}`}
+                    {p.toLocaleString("es-AR")}
                   </SelectItem>
                 ))}
               </SelectContent>
             </Select>
+
+            <span className="text-white/20" aria-hidden>
+              ·
+            </span>
 
             <Select
               value={String(pageSize)}
@@ -1319,28 +1352,33 @@ export function LayoutPreviewListTable({
               }}
             >
               <SelectTrigger
-                className={darkTableFooterSelectTriggerClass}
-                aria-labelledby={pageSizeLabelId}
+                className={footerPaginationSelectTriggerClass}
+                aria-label="Resultados por página"
               >
-                <span id={pageSizeLabelId} className="sr-only">
-                  Resultados por página
-                </span>
                 <SelectValue />
               </SelectTrigger>
               <SelectContent align="center">
                 {LAYOUT_PREVIEW_PAGE_SIZE_OPTIONS.map((n) => (
                   <SelectItem key={n} value={String(n)}>
-                    {`Hasta ${n}`}
+                    {n.toLocaleString("es-AR")}
                   </SelectItem>
                 ))}
               </SelectContent>
             </Select>
 
-            <span className={darkTableFooterCountClass} aria-live="polite">
-              {filteredTotal === 0
-                ? "Sin resultados"
-                : `${totalCountLabel} encontrados`}
-            </span>
+            {filteredTotal > 0 ? (
+              <>
+                <span className="text-white/20" aria-hidden>
+                  ·
+                </span>
+                <span
+                  className={darkTableFooterCenterMutedClass}
+                  aria-hidden
+                >
+                  {totalCountLabel}
+                </span>
+              </>
+            ) : null}
           </div>
 
           <div className={cn(darkTableFooterNavGroupClass, "justify-end")}>
