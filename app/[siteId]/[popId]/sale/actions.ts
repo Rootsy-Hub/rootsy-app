@@ -201,9 +201,10 @@ export async function getSaleCatalog(popId: string): Promise<
     if (canReadPaymentMethods) {
       const { data: pmRows, error: pmErr } = await supabase
         .from("payment_methods")
-        .select("id, name, kind, sort_order, accounting_account_id")
+        .select("id, name, kind, usage, sort_order, accounting_account_id")
         .eq("pop_id", popId)
         .eq("is_active", true)
+        .in("usage", ["receive", "both"])
         .order("sort_order", { ascending: true })
         .order("name", { ascending: true })
       if (pmErr) {

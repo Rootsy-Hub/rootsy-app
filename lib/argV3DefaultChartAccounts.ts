@@ -76,6 +76,13 @@ export const ARG_V3_DEFAULT_CHART_ACCOUNTS: readonly ArgV3DefaultChartRow[] = [
     nature: "acreedora",
     level: 4,
   },
+  {
+    code: "2.1.1.03",
+    name: "Tarjetas de crédito a pagar",
+    accountType: "pasivo_corriente",
+    nature: "acreedora",
+    level: 4,
+  },
   { code: "2.1.2.01", name: "IVA a Pagar", accountType: "pasivo_corriente", nature: "acreedora", level: 4 },
   {
     code: "2.1.2.02",
@@ -233,6 +240,30 @@ export const CHART_GASTOS_GENERALES_CODES: readonly string[] = [
   "6.2.1.99",
   "6.2.1.02",
   "6.2.1.01",
+]
+
+export const CHART_PROVEEDORES_CODES: readonly string[] = [
+  "2.1.1.01",
+  "2.1.1.02",
+]
+
+/** Pasivo: deuda con emisor de tarjeta corporativa (compras/gastos con crédito). */
+export const CHART_TARJETAS_CREDITO_A_PAGAR_CODES: readonly string[] = [
+  "2.1.1.03",
+  "2.1.1.02",
+]
+
+/** Activo: cobros con tarjeta / plataformas por liquidar (ventas POS). */
+export const CHART_TARJETAS_COBRAR_CODES: readonly string[] = [
+  "1.1.1.03",
+  "1.1.1.04",
+]
+
+export const CHART_IVA_CREDITO_CODES: readonly string[] = ["1.1.2.03"]
+
+export const CHART_MATERIAS_PRIMAS_CODES: readonly string[] = [
+  "1.1.3.03",
+  "1.1.3.02",
 ]
 
 /** @deprecated Preferir CHART_GASTOS_GENERALES_CODES o mapeo por categoría sistema. */

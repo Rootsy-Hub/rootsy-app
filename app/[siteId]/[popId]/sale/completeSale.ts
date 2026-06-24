@@ -17,6 +17,7 @@ import {
   timezoneForPopLedger,
 } from "@/lib/entryDateTimezone"
 import { createClient } from "@/utils/supabase/server"
+import { resolvePaymentMethodLedgerAccount } from "@/lib/paymentLedgerAccounts"
 
 const PAYMENT_KIND_ACCOUNT_FALLBACK: Record<string, readonly string[]> = {
   cash: ["1.1.1.01"],
@@ -285,9 +286,12 @@ export async function completeSale(
       return { success: false, error: "Medio de pago no válido en este punto." }
     }
     const pmKind = String(pmRow.kind ?? "other")
-    let paymentAccountId: string | null = pmRow.accounting_account_id
-      ? String(pmRow.accounting_account_id)
-      : null
+    let paymentAccountId = await resolvePaymentMethodLedgerAccount(
+      supabase,
+      popId,
+      pmId,
+      "receive",
+    )
     if (!paymentAccountId) {
       const codes = PAYMENT_KIND_ACCOUNT_FALLBACK[pmKind] ?? PAYMENT_KIND_ACCOUNT_FALLBACK.other
       paymentAccountId = await resolveAccountId(supabase, popId, codes)

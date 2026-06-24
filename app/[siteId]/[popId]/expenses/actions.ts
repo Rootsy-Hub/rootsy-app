@@ -142,6 +142,7 @@ export async function getExpensesPageData(popId: string): Promise<
       .select("id, name")
       .eq("pop_id", popId)
       .eq("is_active", true)
+      .in("usage", ["pay", "both"])
       .order("sort_order", { ascending: true })
     if (pmErr) {
       return { success: false, error: pmErr.message || "No se pudieron cargar medios de pago." }

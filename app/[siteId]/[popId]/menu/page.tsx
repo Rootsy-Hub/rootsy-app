@@ -50,6 +50,7 @@ import {
 export type MenuItemLink =
   | "sale"
   | "operations"
+  | "purchases"
   | "expenses"
   | "suppliers"
   | "invoices"
@@ -83,7 +84,7 @@ const menuSectionsRaw: Record<string, MenuSectionDef> = {
       { name: "Vender", icon: ShoppingCart, badge: "HOT", link: "sale" },
       { name: "Mostrador", icon: Monitor, link: "section" },
       { name: "Mesas", icon: UtensilsCrossed, badge: "12", link: "section" },
-      { name: "Comprar", icon: ShoppingBag, link: "section" },
+      { name: "Comprar", icon: ShoppingBag, link: "purchases" },
       { name: "Fabricación", icon: Factory, link: "section" },
       { name: "Stock", icon: Package, badge: "3", link: "articles" },
       { name: "Clientes", icon: Users, link: "clients" },

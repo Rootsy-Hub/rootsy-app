@@ -1,4 +1,5 @@
 import { CHART_GASTOS_GENERALES_CODES } from "@/lib/argV3DefaultChartAccounts"
+import { resolvePaymentMethodLedgerAccount } from "@/lib/paymentLedgerAccounts"
 import type { SupabaseClient } from "@supabase/supabase-js"
 
 const PAYMENT_KIND_ACCOUNT_FALLBACK: Record<string, readonly string[]> = {
@@ -106,17 +107,20 @@ export async function postExpensePaymentLedger(
   let paymentAccountId: string | null = null
   const pmId = payRow.payment_method_id != null ? String(payRow.payment_method_id) : ""
   if (pmId) {
-    const { data: pmRow } = await supabase
-      .from("payment_methods")
-      .select("id, kind, accounting_account_id")
-      .eq("id", pmId)
-      .eq("pop_id", popId)
-      .maybeSingle()
-    const pmKind = String(pmRow?.kind ?? "other")
-    paymentAccountId = pmRow?.accounting_account_id
-      ? String(pmRow.accounting_account_id)
-      : null
+    paymentAccountId = await resolvePaymentMethodLedgerAccount(
+      supabase,
+      popId,
+      pmId,
+      "pay",
+    )
     if (!paymentAccountId) {
+      const { data: pmRow } = await supabase
+        .from("payment_methods")
+        .select("kind")
+        .eq("id", pmId)
+        .eq("pop_id", popId)
+        .maybeSingle()
+      const pmKind = String(pmRow?.kind ?? "other")
       const codes = PAYMENT_KIND_ACCOUNT_FALLBACK[pmKind] ?? PAYMENT_KIND_ACCOUNT_FALLBACK.other
       paymentAccountId = await resolveAccountId(supabase, popId, codes)
     }

@@ -1,48 +1,70 @@
 "use client"
 
 import {
+  addManualBankStatementLine,
+  clearMovementReconciliation,
   createPopPaymentMethod,
+  deleteBankStatementLine,
   deletePopPaymentMethod,
-  getPopPaymentMethodsTable,
+  getPaymentMethodDetail,
+  getPopPaymentsHub,
+  importBankStatementCsv,
+  recordTreasurySettlement,
+  setMovementReconciliation,
   updatePopPaymentMethod,
+  type AccountingChartOption,
+  type BankStatementLineRow,
+  type FundingMethodOption,
+  type PaymentMethodDetailResult,
   type PaymentMethodKind,
+  type PaymentMethodMovementRow,
   type PaymentMethodTableRow,
+  type PaymentMethodUsage,
+  type PaymentsHubSummary,
+  type TreasurySettlementRow,
   type UpsertPopPaymentMethodInput,
 } from "@/app/[siteId]/[popId]/payment-methods/actions"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { Textarea } from "@/components/ui/textarea"
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table"
-import { useAuth } from "@/context/AuthContextSupabase"
+  dataWorkspaceShellCard,
+  lightToolbarButtonClass,
+  lightToolbarFocusClass,
+  lightToolbarShellClass,
+  toolbarBlockLabelClass,
+} from "@/components/data-workspace/dataWorkspaceListStyles"
+import { DataWorkspaceLayout } from "@/components/layouts/DataWorkspaceLayout"
+import { DataWorkspaceSectionMenu } from "@/components/layouts/DataWorkspaceSectionMenu"
 import withAuth from "@/hoc/withAuth"
-import { popMenuHref } from "@/lib/popRoutes"
+import {
+  PAYMENT_USAGE_OPTIONS,
+  paymentKindLabel,
+  paymentUsageLabel,
+} from "@/lib/paymentMethodLabels"
+import { getWorkspaceHeaderForPop } from "@/lib/workspaceHeaderServer"
 import { cn } from "@/lib/utils"
 import {
-  ArrowLeft,
-  CreditCard,
-  Leaf,
-  Maximize2,
-  Minimize2,
+  ArrowDownLeft,
+  ArrowUpRight,
+  CalendarDays,
+  CheckCircle2,
+  ChevronLeft,
+  ChevronRight,
+  History,
   Plus,
-  Wifi,
-  WifiOff,
+  Trash2,
+  Upload,
 } from "lucide-react"
-import Link from "next/link"
 import { useParams, useRouter } from "next/navigation"
 import {
   useCallback,
@@ -50,23 +72,546 @@ import {
   useMemo,
   useRef,
   useState,
+  type Dispatch,
   type FormEvent,
+  type ReactNode,
+  type SetStateAction,
 } from "react"
 
+const fmt = new Intl.NumberFormat("es-AR", {
+  style: "currency",
+  currency: "ARS",
+  minimumFractionDigits: 2,
+})
+
+function formatShortDate(iso: string) {
+  if (!iso || !/^\d{4}-\d{2}-\d{2}/.test(iso)) return iso || "—"
+  const d = new Date(`${iso.slice(0, 10)}T12:00:00`)
+  if (Number.isNaN(d.getTime())) return iso
+  return new Intl.DateTimeFormat("es-AR", { dateStyle: "short" }).format(d)
+}
+
+function movementKindLabel(kind: PaymentMethodMovementRow["kind"]): string {
+  switch (kind) {
+    case "sale":
+      return "Venta"
+    case "purchase":
+      return "Compra"
+    case "expense":
+      return "Gasto"
+    case "funding_out":
+      return "Resumen tarjeta"
+    default:
+      return "Movimiento"
+  }
+}
+
 const KIND_OPTIONS: { value: PaymentMethodKind; label: string }[] = [
-  { value: "cash", label: "Cash" },
-  { value: "card_debit", label: "Debit card" },
-  { value: "card_credit", label: "Credit card" },
-  { value: "transfer", label: "Transfer" },
-  { value: "other", label: "Other" },
+  { value: "cash", label: "Efectivo" },
+  { value: "card_debit", label: "Tarjeta débito" },
+  { value: "card_credit", label: "Tarjeta crédito" },
+  { value: "transfer", label: "Transferencia" },
+  { value: "other", label: "Otro" },
 ]
 
 function defaultForm(): UpsertPopPaymentMethodInput {
   return {
     name: "",
     kind: "other",
+    usage: "both",
     sortOrder: 0,
+    accountingAccountId: null,
   }
+}
+
+function shiftMonth(year: number, month1: number, delta: number) {
+  const d = new Date(year, month1 - 1 + delta, 1)
+  return { year: d.getFullYear(), month: d.getMonth() + 1 }
+}
+
+const TREASURY_VIEW_ITEMS = [
+  { id: "receive", label: "Formas de cobro", icon: ArrowDownLeft },
+  { id: "pay", label: "Formas de pago", icon: ArrowUpRight },
+] as const
+
+type TreasurySectionId = (typeof TREASURY_VIEW_ITEMS)[number]["id"]
+
+type TreasuryKpiTone = "inflow" | "outflow" | "neutral" | "net-positive" | "net-negative"
+
+function treasuryKpiStyles(tone: TreasuryKpiTone) {
+  switch (tone) {
+    case "inflow":
+      return {
+        accent: "bg-emerald-300/90",
+        iconWrap:
+          "border border-emerald-200/90 bg-emerald-50/90 text-emerald-600",
+        value: "text-foreground",
+      }
+    case "outflow":
+      return {
+        accent: "bg-rose-300/90",
+        iconWrap: "border border-rose-200/90 bg-rose-50/90 text-rose-600",
+        value: "text-foreground",
+      }
+    case "net-positive":
+      return {
+        accent: "bg-emerald-300/90",
+        iconWrap:
+          "border border-emerald-200/90 bg-emerald-50/90 text-emerald-600",
+        value: "text-foreground",
+      }
+    case "net-negative":
+      return {
+        accent: "bg-rose-300/90",
+        iconWrap: "border border-rose-200/90 bg-rose-50/90 text-rose-600",
+        value: "text-foreground",
+      }
+    default:
+      return {
+        accent: "bg-border",
+        iconWrap: "border border-border/80 bg-muted/35 text-muted-foreground",
+        value: "text-foreground",
+      }
+  }
+}
+
+function TreasuryKpiCard({
+  label,
+  value,
+  sub,
+  tone,
+  icon,
+}: {
+  label: string
+  value: string
+  sub: string
+  tone: TreasuryKpiTone
+  icon: ReactNode
+}) {
+  const styles = treasuryKpiStyles(tone)
+
+  return (
+    <div
+      className={cn(
+        dataWorkspaceShellCard,
+        "relative overflow-hidden px-5 py-4 pl-6",
+      )}
+    >
+      <div
+        className={cn("absolute inset-y-0 left-0 w-1", styles.accent)}
+        aria-hidden
+      />
+      <div className="flex items-start justify-between gap-4">
+        <div className="min-w-0 flex-1">
+          <p className="text-[11px] font-medium uppercase tracking-[0.14em] text-muted-foreground">
+            {label}
+          </p>
+          <p
+            className={cn(
+              "mt-2 font-mono text-3xl font-bold tabular-nums tracking-tight",
+              styles.value,
+            )}
+          >
+            {value}
+          </p>
+          <p className="mt-1 text-xs text-muted-foreground">{sub}</p>
+        </div>
+        <span
+          className={cn(
+            "inline-flex size-10 shrink-0 items-center justify-center rounded-xl shadow-none",
+            styles.iconWrap,
+          )}
+          aria-hidden
+        >
+          {icon}
+        </span>
+      </div>
+    </div>
+  )
+}
+
+function TreasurySummaryKpis({
+  summary,
+  receiveCount,
+  payCount,
+}: {
+  summary: PaymentsHubSummary | null
+  receiveCount: number
+  payCount: number
+}) {
+  const net = summary?.netMonthTotal ?? 0
+  const netTone: TreasuryKpiTone =
+    net > 0 ? "net-positive" : net < 0 ? "net-negative" : "neutral"
+
+  return (
+    <div className="grid w-full gap-4 md:grid-cols-3">
+      <TreasuryKpiCard
+        label="Entró"
+        value={fmt.format(summary?.receivedMonthTotal ?? 0)}
+        sub={`${receiveCount} ${receiveCount === 1 ? "medio" : "medios"} de cobro`}
+        tone="inflow"
+        icon={<ArrowDownLeft className="size-[1.125rem]" strokeWidth={2} />}
+      />
+      <TreasuryKpiCard
+        label="Salió"
+        value={fmt.format(summary?.paidOutMonthTotal ?? 0)}
+        sub={`${payCount} ${payCount === 1 ? "medio" : "medios"} de pago`}
+        tone="outflow"
+        icon={<ArrowUpRight className="size-[1.125rem]" strokeWidth={2} />}
+      />
+      <TreasuryKpiCard
+        label="Neto del mes"
+        value={fmt.format(net)}
+        sub={summary?.monthLabel ?? "—"}
+        tone={netTone}
+        icon={
+          net > 0 ? (
+            <ArrowDownLeft className="size-[1.125rem]" strokeWidth={2} />
+          ) : net < 0 ? (
+            <ArrowUpRight className="size-[1.125rem]" strokeWidth={2} />
+          ) : (
+            <span className="font-mono text-sm font-semibold text-muted-foreground">
+              =
+            </span>
+          )
+        }
+      />
+    </div>
+  )
+}
+
+function TreasuryPeriodToolbar({
+  monthLabel,
+  loading,
+  isCurrentMonth,
+  onPrev,
+  onNext,
+  onToday,
+}: {
+  monthLabel: string
+  loading: boolean
+  isCurrentMonth: boolean
+  onPrev: () => void
+  onNext: () => void
+  onToday: () => void
+}) {
+  const periodNavBtnClass = cn(
+    "inline-flex size-9 shrink-0 items-center justify-center rounded-md text-muted-foreground transition-colors",
+    "hover:bg-muted/60 hover:text-foreground disabled:pointer-events-none disabled:opacity-40",
+    lightToolbarFocusClass,
+  )
+
+  return (
+    <div
+      className={cn(lightToolbarShellClass, "w-full shrink-0")}
+      role="toolbar"
+      aria-label="Período de tesorería"
+    >
+      <div className="flex flex-col gap-4 px-4 py-3.5 lg:px-8 xl:flex-row xl:items-center xl:justify-between">
+        <div className="min-w-0">
+          <span className={toolbarBlockLabelClass}>Período</span>
+          <p className="mt-1 text-sm leading-snug text-foreground/75">
+            Movimientos del mes en ventas, compras y gastos
+          </p>
+        </div>
+
+        <div className="flex flex-wrap items-center gap-2 sm:justify-end">
+          {!isCurrentMonth ? (
+            <button
+              type="button"
+              onClick={onToday}
+              className={cn(lightToolbarButtonClass, "h-9 w-auto shrink-0 px-3")}
+            >
+              Mes actual
+            </button>
+          ) : null}
+          <div
+            className="inline-flex items-center rounded-lg border border-border/70 bg-background p-0.5 shadow-sm"
+            role="group"
+            aria-label="Navegación por mes"
+          >
+            <button
+              type="button"
+              className={periodNavBtnClass}
+              onClick={onPrev}
+              aria-label="Mes anterior"
+            >
+              <ChevronLeft className="size-4" aria-hidden />
+            </button>
+            <div className="flex min-w-38 items-center justify-center gap-2 px-2 sm:min-w-42">
+              <CalendarDays
+                className="size-4 shrink-0 text-muted-foreground"
+                aria-hidden
+              />
+              <span className="truncate text-sm font-semibold capitalize text-foreground">
+                {loading ? "…" : monthLabel || "—"}
+              </span>
+            </div>
+            <button
+              type="button"
+              className={periodNavBtnClass}
+              onClick={onNext}
+              aria-label="Mes siguiente"
+            >
+              <ChevronRight className="size-4" aria-hidden />
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function PaymentMethodFormFields({
+  form,
+  setForm,
+  chartAccounts,
+  idPrefix,
+}: {
+  form: UpsertPopPaymentMethodInput
+  setForm: Dispatch<SetStateAction<UpsertPopPaymentMethodInput>>
+  chartAccounts: AccountingChartOption[]
+  idPrefix: string
+}) {
+  return (
+    <>
+      <div className="space-y-2">
+        <Label htmlFor={`${idPrefix}-name`}>Nombre</Label>
+        <Input
+          id={`${idPrefix}-name`}
+          value={form.name}
+          onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
+          required
+          placeholder="Ej. Efectivo caja, Visa POS, Galicia CC"
+          className="bg-background"
+        />
+      </div>
+      <div className="space-y-2">
+        <Label htmlFor={`${idPrefix}-usage`}>Uso</Label>
+        <select
+          id={`${idPrefix}-usage`}
+          value={form.usage}
+          onChange={(e) =>
+            setForm((f) => ({
+              ...f,
+              usage: e.target.value as PaymentMethodUsage,
+            }))
+          }
+          className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+        >
+          {PAYMENT_USAGE_OPTIONS.map((o) => (
+            <option key={o.value} value={o.value}>
+              {o.label} — {o.description}
+            </option>
+          ))}
+        </select>
+      </div>
+      <div className="space-y-2">
+        <Label htmlFor={`${idPrefix}-kind`}>Tipo</Label>
+        <select
+          id={`${idPrefix}-kind`}
+          value={form.kind}
+          onChange={(e) =>
+            setForm((f) => ({
+              ...f,
+              kind: e.target.value as PaymentMethodKind,
+            }))
+          }
+          className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+        >
+          {KIND_OPTIONS.map((o) => (
+            <option key={o.value} value={o.value}>
+              {o.label}
+            </option>
+          ))}
+        </select>
+      </div>
+      <div className="space-y-2">
+        <Label htmlFor={`${idPrefix}-account`}>Cuenta contable</Label>
+        <select
+          id={`${idPrefix}-account`}
+          value={form.accountingAccountId ?? ""}
+          onChange={(e) =>
+            setForm((f) => ({
+              ...f,
+              accountingAccountId: e.target.value.trim() || null,
+            }))
+          }
+          className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+        >
+          <option value="">Predeterminada según tipo</option>
+          {chartAccounts.map((a) => (
+            <option key={a.id} value={a.id}>
+              {a.label}
+            </option>
+          ))}
+        </select>
+        <p className="text-xs text-muted-foreground">
+          Si no elegís una, se asigna la cuenta del plan según el tipo (caja,
+          bancos, tarjetas, etc.).
+        </p>
+      </div>
+      <div className="space-y-2">
+        <Label htmlFor={`${idPrefix}-sort`}>Orden en listas</Label>
+        <Input
+          id={`${idPrefix}-sort`}
+          type="number"
+          value={form.sortOrder}
+          onChange={(e) =>
+            setForm((f) => ({
+              ...f,
+              sortOrder: Number(e.target.value),
+            }))
+          }
+          className="bg-background"
+        />
+      </div>
+    </>
+  )
+}
+
+function findMatchingStatementLine(
+  movement: PaymentMethodMovementRow,
+  lines: BankStatementLineRow[],
+): BankStatementLineRow | null {
+  const candidates = lines.filter(
+    (l) =>
+      !l.reconciled &&
+      l.direction === movement.direction &&
+      Math.abs(l.amount - movement.amount) < 0.01,
+  )
+  if (candidates.length === 1) return candidates[0]
+  const sameDate = candidates.filter((l) => l.lineDate === movement.date)
+  if (sameDate.length === 1) return sameDate[0]
+  return null
+}
+
+function MethodCard({
+  row,
+  mode,
+  canUpdate,
+  canDelete,
+  canSettle,
+  onEdit,
+  onDelete,
+  onPayStatement,
+  onOpenDetail,
+}: {
+  row: PaymentMethodTableRow
+  mode: "receive" | "pay"
+  canUpdate: boolean
+  canDelete: boolean
+  canSettle: boolean
+  onEdit: () => void
+  onDelete: () => void
+  onPayStatement?: () => void
+  onOpenDetail: () => void
+}) {
+  const amount =
+    mode === "receive" ? row.receivedMonthTotal : row.paidOutMonthTotal
+  const amountLabel = mode === "receive" ? "Cobrado en el mes" : "Pagado en el mes"
+
+  return (
+    <article className={cn(dataWorkspaceShellCard, "flex flex-col p-4")}>
+      <button
+        type="button"
+        onClick={onOpenDetail}
+        className="-mx-1 mb-3 rounded-lg px-1 text-left transition-colors hover:bg-muted/40"
+      >
+        <div className="mb-3 flex items-start justify-between gap-2">
+          <div className="min-w-0">
+            <h3 className="truncate text-base font-semibold text-foreground">
+              {row.name || "—"}
+            </h3>
+            <p className="text-xs text-muted-foreground">
+              {paymentKindLabel(row.kind)} · {paymentUsageLabel(row.usage)}
+            </p>
+          </div>
+          {!row.isActive ? (
+            <span className="shrink-0 rounded-full bg-muted px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+              Inactivo
+            </span>
+          ) : null}
+        </div>
+        <p className="mb-1 text-[10px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
+          {amountLabel}
+        </p>
+        <p className="mb-1 text-2xl font-bold tabular-nums tracking-tight text-foreground">
+          {fmt.format(amount)}
+        </p>
+        <span className="inline-flex items-center gap-1 text-xs font-medium text-primary">
+          <History className="size-3.5" aria-hidden />
+          Ver historial y movimientos
+        </span>
+      </button>
+      {row.isCardPayable && mode === "pay" ? (
+        <div className="mb-3 space-y-1 rounded-lg border border-amber-200/70 bg-amber-50/80 px-3 py-2 dark:border-amber-900/40 dark:bg-amber-950/30">
+          <p className="text-[10px] font-semibold uppercase tracking-wide text-amber-900/80 dark:text-amber-200/90">
+            Deuda pendiente (resumen)
+          </p>
+          <p className="text-lg font-bold tabular-nums text-amber-950 dark:text-amber-100">
+            {fmt.format(row.outstandingBalance)}
+          </p>
+          {row.ledgerBalance != null ? (
+            <p className="text-xs text-amber-900/70 dark:text-amber-200/80">
+              Saldo contable: {fmt.format(row.ledgerBalance)}
+            </p>
+          ) : null}
+        </div>
+      ) : row.ledgerBalance != null && mode === "pay" ? (
+        <p className="mb-3 text-xs text-muted-foreground">
+          Saldo contable: {fmt.format(row.ledgerBalance)}
+        </p>
+      ) : null}
+      {row.usage === "both" ? (
+        <p className="mb-3 text-xs text-muted-foreground">
+          {mode === "receive"
+            ? `Pagado: ${fmt.format(row.paidOutMonthTotal)}`
+            : `Cobrado: ${fmt.format(row.receivedMonthTotal)}`}
+        </p>
+      ) : null}
+      <p className="mb-4 truncate text-xs text-muted-foreground">
+        {row.accountingAccountLabel ?? "Sin cuenta contable"}
+      </p>
+      {row.isCardPayable && mode === "pay" && canSettle && onPayStatement ? (
+        <Button
+          type="button"
+          size="sm"
+          className="mb-3 w-full"
+          disabled={row.outstandingBalance <= 0}
+          onClick={onPayStatement}
+        >
+          Pagar resumen
+        </Button>
+      ) : null}
+      {canUpdate || canDelete ? (
+        <div className="mt-auto flex gap-2 border-t border-border/60 pt-3">
+          {canUpdate ? (
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              className="flex-1 text-primary hover:bg-primary/10"
+              onClick={onEdit}
+            >
+              Editar
+            </Button>
+          ) : null}
+          {canDelete ? (
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              className="flex-1 text-destructive hover:bg-destructive/10"
+              onClick={onDelete}
+            >
+              Eliminar
+            </Button>
+          ) : null}
+        </div>
+      ) : null}
+    </article>
+  )
 }
 
 function PaymentMethodsPage() {
@@ -74,12 +619,30 @@ function PaymentMethodsPage() {
   const routerRef = useRef(router)
   routerRef.current = router
   const params = useParams()
-  const { user } = useAuth()
   const siteId = typeof params?.siteId === "string" ? params.siteId : ""
   const popId = typeof params?.popId === "string" ? params.popId : undefined
 
+  const now = new Date()
+  const [viewYear, setViewYear] = useState(now.getFullYear())
+  const [viewMonth, setViewMonth] = useState(now.getMonth() + 1)
+  const [activeSection, setActiveSection] = useState<TreasurySectionId>("receive")
+
   const [popName, setPopName] = useState("")
+  const [workspaceHeader, setWorkspaceHeader] = useState<{
+    userFullName: string
+    userImageUrl: string | null
+    roleLabel: string
+  } | null>(null)
+  const [headerError, setHeaderError] = useState<string | null>(null)
   const [rows, setRows] = useState<PaymentMethodTableRow[]>([])
+  const [summary, setSummary] = useState<PaymentsHubSummary | null>(null)
+  const [chartAccounts, setChartAccounts] = useState<AccountingChartOption[]>(
+    [],
+  )
+  const [fundingMethods, setFundingMethods] = useState<FundingMethodOption[]>(
+    [],
+  )
+  const [canSettle, setCanSettle] = useState(false)
   const [canCreate, setCanCreate] = useState(false)
   const [canUpdate, setCanUpdate] = useState(false)
   const [canDelete, setCanDelete] = useState(false)
@@ -96,15 +659,64 @@ function PaymentMethodsPage() {
   const [editBanner, setEditBanner] = useState<string | null>(null)
   const [editForm, setEditForm] = useState(defaultForm)
 
-  const [deleteRow, setDeleteRow] = useState<PaymentMethodTableRow | null>(null)
+  const [deleteRow, setDeleteRow] = useState<PaymentMethodTableRow | null>(
+    null,
+  )
   const [deleteBusy, setDeleteBusy] = useState(false)
 
-  const [isOnline, setIsOnline] = useState(true)
-  const [isFullscreen, setIsFullscreen] = useState(false)
+  const [settleRow, setSettleRow] = useState<PaymentMethodTableRow | null>(null)
+  const [settleAmount, setSettleAmount] = useState("")
+  const [settleDate, setSettleDate] = useState("")
+  const [settleFundingId, setSettleFundingId] = useState("")
+  const [settleNotes, setSettleNotes] = useState("")
+  const [settleSaving, setSettleSaving] = useState(false)
+  const [settleBanner, setSettleBanner] = useState<string | null>(null)
+
+  const [detailRow, setDetailRow] = useState<{
+    row: PaymentMethodTableRow
+    mode: "receive" | "pay"
+  } | null>(null)
+  const [detailLoading, setDetailLoading] = useState(false)
+  const [detailError, setDetailError] = useState<string | null>(null)
+  const [detailData, setDetailData] = useState<PaymentMethodDetailResult | null>(
+    null,
+  )
+  const [detailTab, setDetailTab] = useState<"movimientos" | "extracto">(
+    "movimientos",
+  )
+  const [csvText, setCsvText] = useState("")
+  const [csvImporting, setCsvImporting] = useState(false)
+  const [csvBanner, setCsvBanner] = useState<string | null>(null)
+  const [manualDate, setManualDate] = useState("")
+  const [manualDesc, setManualDesc] = useState("")
+  const [manualAmount, setManualAmount] = useState("")
+  const [manualDirection, setManualDirection] = useState<"in" | "out">("out")
+  const [manualSaving, setManualSaving] = useState(false)
+  const [reconcileBusyKey, setReconcileBusyKey] = useState<string | null>(null)
+
+  const loadHeader = useCallback(async () => {
+    if (!popId) return
+    const head = await getWorkspaceHeaderForPop(popId)
+    if (!head.success) {
+      setHeaderError(head.error)
+      return
+    }
+    setHeaderError(null)
+    setPopName((prev) => prev || head.popName)
+    setWorkspaceHeader({
+      userFullName: head.userFullName,
+      userImageUrl: head.userImageUrl,
+      roleLabel: head.roleLabel,
+    })
+  }, [popId])
 
   const load = useCallback(async () => {
     if (!popId || !siteId) return
-    const res = await getPopPaymentMethodsTable(popId)
+    const res = await getPopPaymentsHub(popId, viewYear, viewMonth)
+    setSummary(res.summary)
+    setChartAccounts(res.chartAccounts)
+    setFundingMethods(res.fundingMethods)
+    setCanSettle(res.canSettle)
     if (!res.success) {
       setError(res.error || "Error")
       setRows([])
@@ -122,12 +734,12 @@ function PaymentMethodsPage() {
     setCanUpdate(res.canUpdate)
     setCanDelete(res.canDelete)
     setError(null)
-  }, [popId, siteId])
+  }, [popId, siteId, viewYear, viewMonth])
 
   useEffect(() => {
     if (!popId || !siteId) {
       setLoading(false)
-      setError("Store ID not found")
+      setError("No se encontró el punto de venta.")
       return
     }
     let cancelled = false
@@ -135,9 +747,9 @@ function PaymentMethodsPage() {
       setLoading(true)
       setError(null)
       try {
-        await load()
+        await Promise.all([load(), loadHeader()])
       } catch {
-        if (!cancelled) setError("Unexpected error")
+        if (!cancelled) setError("Error inesperado")
       } finally {
         if (!cancelled) setLoading(false)
       }
@@ -145,44 +757,48 @@ function PaymentMethodsPage() {
     return () => {
       cancelled = true
     }
-  }, [popId, siteId, load])
+  }, [popId, siteId, load, loadHeader])
 
-  useEffect(() => {
-    setIsOnline(navigator.onLine)
-    const on = () => setIsOnline(true)
-    const off = () => setIsOnline(false)
-    window.addEventListener("online", on)
-    window.addEventListener("offline", off)
-    return () => {
-      window.removeEventListener("online", on)
-      window.removeEventListener("offline", off)
-    }
-  }, [])
+  const receiveRows = useMemo(
+    () =>
+      rows.filter((r) => r.usage === "receive" || r.usage === "both"),
+    [rows],
+  )
+  const payRows = useMemo(
+    () => rows.filter((r) => r.usage === "pay" || r.usage === "both"),
+    [rows],
+  )
 
-  useEffect(() => {
-    const sync = () => setIsFullscreen(Boolean(document.fullscreenElement))
-    sync()
-    document.addEventListener("fullscreenchange", sync)
-    return () => document.removeEventListener("fullscreenchange", sync)
-  }, [])
+  const creationItems = useMemo(
+    () =>
+      canCreate
+        ? [{ id: "new-account", label: "Nueva cuenta", icon: Plus }]
+        : [],
+    [canCreate],
+  )
 
-  const toggleFullscreen = async () => {
-    if (document.fullscreenElement) {
-      await document.exitFullscreen()
-      return
-    }
-    await document.documentElement.requestFullscreen()
-  }
-
-  const openCreate = () => {
+  const openCreate = (usage: PaymentMethodUsage = "both") => {
     setCreateBanner(null)
-    setCreateForm(defaultForm())
+    setCreateForm({ ...defaultForm(), usage })
     setCreateOpen(true)
   }
 
+  const handleSectionSelect = (id: string) => {
+    if (id === "new-account") {
+      openCreate(activeSection)
+      return
+    }
+    if (id === "receive" || id === "pay") {
+      setActiveSection(id)
+    }
+  }
+
+  const activeSectionRows =
+    activeSection === "receive" ? receiveRows : payRows
+
   const submitCreate = async (e: FormEvent) => {
     e.preventDefault()
-    if (!popId || !siteId) return
+    if (!popId) return
     setCreateSaving(true)
     setCreateBanner(null)
     const res = await createPopPaymentMethod(popId, createForm)
@@ -201,7 +817,9 @@ function PaymentMethodsPage() {
     setEditForm({
       name: row.name,
       kind: row.kind,
+      usage: row.usage,
       sortOrder: row.sortOrder,
+      accountingAccountId: row.accountingAccountId,
     })
   }
 
@@ -221,7 +839,7 @@ function PaymentMethodsPage() {
   }
 
   const submitDelete = async () => {
-    if (!popId || !siteId || !deleteRow) return
+    if (!popId || !deleteRow) return
     setDeleteBusy(true)
     const res = await deletePopPaymentMethod(popId, deleteRow.id)
     setDeleteBusy(false)
@@ -233,258 +851,371 @@ function PaymentMethodsPage() {
     await load()
   }
 
-  const kindLabel = (k: PaymentMethodKind) =>
-    KIND_OPTIONS.find((o) => o.value === k)?.label ?? k
+  const openDetail = useCallback(
+    async (row: PaymentMethodTableRow, mode: "receive" | "pay") => {
+      if (!popId) return
+      setDetailRow({ row, mode })
+      setDetailTab("movimientos")
+      setCsvText("")
+      setCsvBanner(null)
+      setDetailLoading(true)
+      setDetailError(null)
+      setDetailData(null)
+      const res = await getPaymentMethodDetail(popId, row.id, mode)
+      setDetailLoading(false)
+      if (!res.success) {
+        setDetailError(res.error)
+        return
+      }
+      setDetailData(res.data)
+      const today = new Date()
+      setManualDate(
+        `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`,
+      )
+    },
+    [popId],
+  )
 
-  const headerUserName = useMemo(() => {
-    const meta = user?.user_metadata?.full_name
-    if (typeof meta === "string" && meta.trim()) return meta.trim()
-    return user?.email?.split("@")[0] || "User"
-  }, [user?.email, user?.user_metadata?.full_name])
+  const reloadDetail = useCallback(async () => {
+    if (!popId || !detailRow) return
+    setDetailLoading(true)
+    setDetailError(null)
+    const res = await getPaymentMethodDetail(
+      popId,
+      detailRow.row.id,
+      detailRow.mode,
+    )
+    setDetailLoading(false)
+    if (!res.success) {
+      setDetailError(res.error)
+      return
+    }
+    setDetailData(res.data)
+    await load()
+  }, [popId, detailRow, load])
 
-  const userAvatarSrc =
-    user?.user_metadata?.avatar_url ||
-    `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(user?.email || "u")}`
+  const closeDetail = () => {
+    setDetailRow(null)
+    setDetailData(null)
+    setDetailError(null)
+    setDetailTab("movimientos")
+  }
 
-  const popLogoSrc = `https://api.dicebear.com/7.x/shapes/svg?seed=${encodeURIComponent(popId || "pop")}&backgroundColor=e8f5ef`
+  const handleImportCsv = async () => {
+    if (!popId || !detailRow || !csvText.trim()) return
+    setCsvImporting(true)
+    setCsvBanner(null)
+    const res = await importBankStatementCsv(popId, detailRow.row.id, csvText)
+    setCsvImporting(false)
+    if (!res.success) {
+      setCsvBanner(res.error)
+      return
+    }
+    const warn =
+      res.warnings.length > 0
+        ? ` Importadas ${res.imported} líneas con ${res.warnings.length} advertencias.`
+        : ` Se importaron ${res.imported} líneas.`
+    setCsvBanner(warn)
+    setCsvText("")
+    await reloadDetail()
+  }
 
-  const emptyCols = canUpdate || canDelete ? 5 : 4
+  const handleAddManualLine = async (e: FormEvent) => {
+    e.preventDefault()
+    if (!popId || !detailRow) return
+    setManualSaving(true)
+    setCsvBanner(null)
+    const res = await addManualBankStatementLine(popId, detailRow.row.id, {
+      lineDate: manualDate,
+      description: manualDesc,
+      amount: Number(String(manualAmount).replace(",", ".")),
+      direction: manualDirection,
+    })
+    setManualSaving(false)
+    if (!res.success) {
+      setCsvBanner(res.error)
+      return
+    }
+    setManualDesc("")
+    setManualAmount("")
+    await reloadDetail()
+  }
+
+  const handleDeleteStatementLine = async (lineId: string) => {
+    if (!popId) return
+    const res = await deleteBankStatementLine(popId, lineId)
+    if (!res.success) {
+      setCsvBanner(res.error)
+      return
+    }
+    await reloadDetail()
+  }
+
+  const handleReconcileMovement = async (m: PaymentMethodMovementRow) => {
+    if (!popId || !detailRow) return
+    const key = `${m.kind}:${m.movementRefId}`
+    setReconcileBusyKey(key)
+    const match =
+      detailData?.statementLines != null
+        ? findMatchingStatementLine(m, detailData.statementLines)
+        : null
+    const res = await setMovementReconciliation(
+      popId,
+      detailRow.row.id,
+      m.kind,
+      m.movementRefId,
+      match?.id ?? null,
+    )
+    setReconcileBusyKey(null)
+    if (!res.success) {
+      setDetailError(res.error)
+      return
+    }
+    await reloadDetail()
+  }
+
+  const handleUnreconcileMovement = async (m: PaymentMethodMovementRow) => {
+    if (!popId) return
+    const key = `${m.kind}:${m.movementRefId}`
+    setReconcileBusyKey(key)
+    const res = await clearMovementReconciliation(
+      popId,
+      m.kind,
+      m.movementRefId,
+    )
+    setReconcileBusyKey(null)
+    if (!res.success) {
+      setDetailError(res.error)
+      return
+    }
+    await reloadDetail()
+  }
+
+  const openSettle = (row: PaymentMethodTableRow) => {
+    setSettleBanner(null)
+    setSettleRow(row)
+    setSettleAmount(
+      row.outstandingBalance > 0 ? String(row.outstandingBalance) : "",
+    )
+    const today = new Date()
+    const iso = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`
+    setSettleDate(iso)
+    setSettleFundingId(fundingMethods[0]?.id ?? "")
+    setSettleNotes("")
+  }
+
+  const submitSettle = async (e: FormEvent) => {
+    e.preventDefault()
+    if (!popId || !settleRow) return
+    setSettleSaving(true)
+    setSettleBanner(null)
+    const amount = Number(String(settleAmount).replace(",", "."))
+    const res = await recordTreasurySettlement(popId, {
+      cardPaymentMethodId: settleRow.id,
+      fundingPaymentMethodId: settleFundingId,
+      amount,
+      settledAt: settleDate,
+      notes: settleNotes,
+    })
+    setSettleSaving(false)
+    if (!res.success) {
+      setSettleBanner(res.error)
+      return
+    }
+    setSettleRow(null)
+    await load()
+  }
+
+  const goPrevMonth = () => {
+    const next = shiftMonth(viewYear, viewMonth, -1)
+    setViewYear(next.year)
+    setViewMonth(next.month)
+  }
+
+  const goNextMonth = () => {
+    const next = shiftMonth(viewYear, viewMonth, 1)
+    setViewYear(next.year)
+    setViewMonth(next.month)
+  }
+
+  const goToday = () => {
+    const today = new Date()
+    setViewYear(today.getFullYear())
+    setViewMonth(today.getMonth() + 1)
+  }
+
+  const isCurrentMonth = useMemo(() => {
+    const today = new Date()
+    return (
+      viewYear === today.getFullYear() && viewMonth === today.getMonth() + 1
+    )
+  }, [viewYear, viewMonth])
 
   if (!popId || !siteId) {
     return (
       <div className="rootsy-app-light min-h-screen bg-background p-10 text-foreground">
-        <p className="text-sm">Store ID not found</p>
+        <p className="text-sm">No se encontró el punto de venta.</p>
       </div>
     )
   }
 
   return (
-    <div className="rootsy-app-light relative min-h-screen overflow-hidden bg-background text-foreground">
-      <div
-        className="pointer-events-none absolute inset-0 motion-reduce:opacity-50"
-        aria-hidden
-      >
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_50%_at_50%_-20%,oklch(0.75_0.12_155/0.35),transparent),radial-gradient(ellipse_60%_40%_at_100%_50%,oklch(0.85_0.08_140/0.2),transparent)]" />
-        <div className="absolute inset-0 bg-[linear-gradient(oklch(0.92_0.02_130/0.35)_1px,transparent_1px),linear-gradient(90deg,oklch(0.92_0.02_130/0.35)_1px,transparent_1px)] bg-size-[48px_48px] opacity-40" />
-      </div>
+    <>
+    <DataWorkspaceLayout
+      siteId={siteId}
+      popId={popId}
+      popName={popName}
+      title="Tesorería"
+      headerVariant="dark"
+      loading={loading}
+      userName={workspaceHeader?.userFullName}
+      userAvatarSrc={workspaceHeader?.userImageUrl ?? undefined}
+      userRoleLabel={workspaceHeader?.roleLabel}
+      contentFlush
+      mainMaxWidthClass="max-w-none"
+      mainClassName="min-h-0 overflow-y-auto"
+      headerActions={
+        canCreate ? (
+          <Button
+            type="button"
+            size="sm"
+            className="h-9 gap-1.5 rounded-xl bg-primary text-primary-foreground shadow-sm hover:bg-primary/90"
+            onClick={() => openCreate(activeSection)}
+          >
+            <Plus className="size-4" aria-hidden />
+            <span className="hidden sm:inline">Nueva cuenta</span>
+          </Button>
+        ) : null
+      }
+      sectionMenu={
+        <DataWorkspaceSectionMenu
+          headerVariant="dark"
+          creationItems={creationItems}
+          viewItems={TREASURY_VIEW_ITEMS}
+          activeId={activeSection}
+          onSelect={handleSectionSelect}
+          creationSectionLabel="Nuevo"
+          viewsSectionLabel="En tesorería"
+        />
+      }
+    >
+      <div className="relative flex w-full min-h-0 flex-1 flex-col">
+        <TreasuryPeriodToolbar
+          monthLabel={summary?.monthLabel ?? ""}
+          loading={loading}
+          isCurrentMonth={isCurrentMonth}
+          onPrev={goPrevMonth}
+          onNext={goNextMonth}
+          onToday={goToday}
+        />
 
-      <div className="relative z-10 flex min-h-screen flex-col">
-        <header className="border-b border-rootsy-hairline bg-card/90 shadow-sm backdrop-blur-xl">
-          <div className="grid h-18 grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-4 px-4">
-            <div className="flex min-w-0 items-center gap-3">
-              <Link
-                href={popMenuHref(siteId, popId)}
-                className="group inline-flex size-10 items-center justify-center rounded-xl border border-foreground/10 bg-secondary text-foreground/70 transition-all hover:border-primary/25 hover:bg-muted hover:text-foreground"
-                aria-label="Back to menu"
-              >
-                <ArrowLeft className="size-5 transition-transform group-hover:-translate-x-0.5" />
-              </Link>
-              <div className="h-6 w-px bg-border" />
-              <div className="flex min-w-0 items-center gap-2.5">
-                <div className="size-8 overflow-hidden rounded-lg ring-1 ring-border">
-                  <img
-                    src={popLogoSrc}
-                    alt=""
-                    className="size-full object-cover"
-                  />
-                </div>
-                <span className="truncate text-sm font-semibold text-foreground/90">
-                  {popName || (loading ? "…" : "—")}
-                </span>
-              </div>
+        <div className="relative flex w-full flex-col gap-6 px-4 py-6 sm:px-6 lg:px-8">
+          {headerError ? (
+            <div
+              role="alert"
+              className="rounded-lg border border-destructive/25 bg-destructive/10 px-4 py-3 text-sm text-destructive"
+            >
+              Cabecera: {headerError}
             </div>
+          ) : null}
 
-            <div className="flex items-center gap-2">
-              <h1 className="flex items-center gap-2 text-[1.65rem] font-black tracking-tight text-foreground">
-                <span className="inline-flex size-9 items-center justify-center rounded-xl bg-primary/15 text-primary">
-                  <CreditCard className="size-5" aria-hidden />
-                </span>
-                Payment methods
-              </h1>
-              <div
-                className={cn(
-                  "inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-widest",
-                  isOnline
-                    ? "border-primary/30 bg-primary/10 text-forest"
-                    : "border-destructive/30 bg-destructive/10 text-destructive",
-                )}
-              >
-                {isOnline ? (
-                  <Wifi className="size-3" aria-hidden />
-                ) : (
-                  <WifiOff className="size-3" aria-hidden />
-                )}
-                {isOnline ? "Online" : "Offline"}
-              </div>
-            </div>
-
-            <div className="flex shrink-0 items-center justify-end gap-2">
-              {canCreate ? (
-                <Button
-                  type="button"
-                  size="sm"
-                  className="h-9 gap-1.5 rounded-xl bg-primary text-primary-foreground shadow-sm hover:bg-primary/90"
-                  onClick={() => openCreate()}
-                >
-                  <Plus className="size-4" aria-hidden />
-                  <span className="hidden sm:inline">New method</span>
-                </Button>
-              ) : null}
-              <button
-                type="button"
-                onClick={() => void toggleFullscreen()}
-                className="group inline-flex size-9 items-center justify-center rounded-xl text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-                aria-label={isFullscreen ? "Exit fullscreen" : "Fullscreen"}
-              >
-                {isFullscreen ? (
-                  <Minimize2 className="size-4.5" />
-                ) : (
-                  <Maximize2 className="size-4.5" />
-                )}
-              </button>
-              <div className="h-6 w-px bg-border" />
-              <div className="flex items-center gap-3">
-                <Avatar className="size-10 ring-1 ring-border">
-                  <AvatarImage src={userAvatarSrc} alt="" />
-                  <AvatarFallback className="bg-primary/10 text-xs text-primary">
-                    {headerUserName.slice(0, 2).toUpperCase()}
-                  </AvatarFallback>
-                </Avatar>
-                <div className="hidden min-w-0 flex-col leading-tight sm:flex">
-                  <span className="truncate text-sm font-semibold text-foreground/90">
-                    {headerUserName}
-                  </span>
-                  <span className="flex items-center gap-1 text-[10px] font-semibold uppercase tracking-wider text-meadow">
-                    <Leaf className="size-3" aria-hidden />
-                    Payments
-                  </span>
-                </div>
-              </div>
-            </div>
-          </div>
-        </header>
-
-        <main className="relative z-10 mx-auto w-full max-w-6xl flex-1 px-4 py-8 sm:px-6">
           {loading ? (
-            <p className="text-sm text-muted-foreground">
-              Loading payment methods…
-            </p>
+            <p className="text-sm text-muted-foreground">Cargando tesorería…</p>
           ) : error ? (
             <div className="rounded-2xl border border-destructive/25 bg-destructive/5 px-4 py-3 text-sm text-destructive">
               {error}
             </div>
           ) : (
-            <div className="space-y-6">
-              <div>
-                <h2 className="text-lg font-semibold text-foreground">
-                  Checkout options
-                </h2>
-                <p className="max-w-xl text-sm text-muted-foreground">
-                  Configure how this store accepts payment. Order with{" "}
-                  <strong className="text-foreground/90">Sort</strong> (lower
-                  first).
+            <>
+              <TreasurySummaryKpis
+                summary={summary}
+                receiveCount={receiveRows.length}
+                payCount={payRows.length}
+              />
+
+              <div className={cn(dataWorkspaceShellCard, "p-5")}>
+              <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
+                <div>
+                  <h2 className="text-sm font-semibold text-foreground">
+                    {activeSection === "receive"
+                      ? "Formas de cobro"
+                      : "Formas de pago"}
+                  </h2>
+                  <p className="mt-1 max-w-2xl text-sm leading-relaxed text-muted-foreground">
+                    {activeSection === "receive"
+                      ? "Medios que usás al vender: caja, POS, tarjetas de cobro y cuentas de ingreso."
+                      : "Cuentas para compras, gastos, bancos y tarjetas corporativas."}
+                  </p>
+                </div>
+                {canCreate ? (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="shrink-0"
+                    onClick={() => openCreate(activeSection)}
+                  >
+                    <Plus className="size-4" />
+                    Agregar
+                  </Button>
+                ) : null}
+              </div>
+
+              {activeSectionRows.length === 0 ? (
+                <p className="rounded-xl border border-dashed border-border bg-muted/20 px-4 py-10 text-center text-sm text-muted-foreground">
+                  {activeSection === "receive"
+                    ? "No hay medios de cobro configurados."
+                    : "No hay medios de pago configurados."}
                 </p>
-              </div>
-
-              <div className="overflow-hidden rounded-2xl border border-border bg-card/95 shadow-md shadow-primary/5 backdrop-blur-sm">
-                <Table>
-                  <TableHeader>
-                    <TableRow className="border-border bg-muted/40 hover:bg-muted/40">
-                      <TableHead className="font-semibold text-foreground">
-                        Name
-                      </TableHead>
-                      <TableHead className="font-semibold text-foreground">
-                        Kind
-                      </TableHead>
-                      <TableHead className="font-semibold text-foreground">
-                        Ledger account
-                      </TableHead>
-                      <TableHead className="font-semibold text-foreground">
-                        Sort
-                      </TableHead>
-                      {canUpdate || canDelete ? (
-                        <TableHead className="text-right font-semibold text-foreground">
-                          Actions
-                        </TableHead>
-                      ) : null}
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {rows.length === 0 ? (
-                      <TableRow>
-                        <TableCell
-                          colSpan={emptyCols}
-                          className="py-12 text-center text-muted-foreground"
-                        >
-                          No payment methods yet or no read access from the
-                          server.
-                        </TableCell>
-                      </TableRow>
-                    ) : (
-                      rows.map((r) => (
-                        <TableRow
-                          key={r.id}
-                          className="border-border/80 hover:bg-muted/30"
-                        >
-                          <TableCell className="font-medium text-foreground">
-                            {r.name || "—"}
-                          </TableCell>
-                          <TableCell className="text-muted-foreground">
-                            {kindLabel(r.kind)}
-                          </TableCell>
-                          <TableCell className="max-w-[200px] truncate text-muted-foreground text-sm">
-                            {r.accountingAccountLabel ?? "—"}
-                          </TableCell>
-                          <TableCell className="tabular-nums text-muted-foreground">
-                            {r.sortOrder}
-                          </TableCell>
-                          {canUpdate || canDelete ? (
-                            <TableCell className="text-right">
-                              <div className="flex justify-end gap-2">
-                                {canUpdate ? (
-                                  <Button
-                                    type="button"
-                                    variant="ghost"
-                                    size="sm"
-                                    className="text-primary hover:bg-primary/10 hover:text-forest"
-                                    onClick={() => openEdit(r)}
-                                  >
-                                    Edit
-                                  </Button>
-                                ) : null}
-                                {canDelete ? (
-                                  <Button
-                                    type="button"
-                                    variant="ghost"
-                                    size="sm"
-                                    className="text-destructive hover:bg-destructive/10"
-                                    onClick={() => setDeleteRow(r)}
-                                  >
-                                    Delete
-                                  </Button>
-                                ) : null}
-                              </div>
-                            </TableCell>
-                          ) : null}
-                        </TableRow>
-                      ))
-                    )}
-                  </TableBody>
-                </Table>
-              </div>
+              ) : (
+                <div className="grid w-full gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                  {activeSectionRows.map((r) => (
+                    <MethodCard
+                      key={`${activeSection}-${r.id}`}
+                      row={r}
+                      mode={activeSection}
+                      canUpdate={canUpdate}
+                      canDelete={canDelete}
+                      canSettle={canSettle}
+                      onEdit={() => openEdit(r)}
+                      onDelete={() => setDeleteRow(r)}
+                      onPayStatement={
+                        r.isCardPayable ? () => openSettle(r) : undefined
+                      }
+                      onOpenDetail={() => void openDetail(r, activeSection)}
+                    />
+                  ))}
+                </div>
+              )}
             </div>
-          )}
-        </main>
-      </div>
 
-      <Dialog open={createOpen} onOpenChange={(o) => !o && setCreateOpen(false)}>
+            <div className={cn(dataWorkspaceShellCard, "px-5 py-4")}>
+              <p className="text-sm text-muted-foreground">
+                Tocá una cuenta para ver historial, conciliar con el extracto
+                bancario o, en tarjetas corporativas,{" "}
+                <strong className="font-semibold text-foreground/80">
+                  pagar resumen
+                </strong>{" "}
+                para cerrar la deuda con el banco.
+              </p>
+            </div>
+          </>
+          )}
+        </div>
+      </div>
+    </DataWorkspaceLayout>
+
+    <Dialog open={createOpen} onOpenChange={(o) => !o && setCreateOpen(false)}>
         <DialogContent
           data-rootsy-light-shell="true"
           showCloseButton
           className="border-border bg-card text-foreground sm:max-w-md"
         >
           <DialogHeader>
-            <DialogTitle>New payment method</DialogTitle>
+            <DialogTitle>Nueva cuenta o medio de pago</DialogTitle>
+            <DialogDescription className="sr-only">
+              Formulario para crear un medio de cobro o pago en este punto de venta.
+            </DialogDescription>
           </DialogHeader>
           {createBanner ? (
             <p className="rounded-lg border border-destructive/25 bg-destructive/5 px-3 py-2 text-sm text-destructive">
@@ -492,59 +1223,22 @@ function PaymentMethodsPage() {
             </p>
           ) : null}
           <form className="space-y-4" onSubmit={(e) => void submitCreate(e)}>
-            <div className="space-y-2">
-              <Label htmlFor="pm-name">Name</Label>
-              <Input
-                id="pm-name"
-                value={createForm.name}
-                onChange={(e) =>
-                  setCreateForm((f) => ({ ...f, name: e.target.value }))
-                }
-                required
-                className="bg-background"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="pm-kind">Kind</Label>
-              <select
-                id="pm-kind"
-                value={createForm.kind}
-                onChange={(e) =>
-                  setCreateForm((f) => ({
-                    ...f,
-                    kind: e.target.value as PaymentMethodKind,
-                  }))
-                }
-                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-              >
-                {KIND_OPTIONS.map((o) => (
-                  <option key={o.value} value={o.value}>
-                    {o.label}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="pm-sort">Sort order</Label>
-              <Input
-                id="pm-sort"
-                type="number"
-                value={createForm.sortOrder}
-                onChange={(e) =>
-                  setCreateForm((f) => ({
-                    ...f,
-                    sortOrder: Number(e.target.value),
-                  }))
-                }
-                className="bg-background"
-              />
-            </div>
+            <PaymentMethodFormFields
+              form={createForm}
+              setForm={setCreateForm}
+              chartAccounts={chartAccounts}
+              idPrefix="c"
+            />
             <DialogFooter className="gap-2 sm:gap-0">
-              <Button type="button" variant="outline" onClick={() => setCreateOpen(false)}>
-                Cancel
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setCreateOpen(false)}
+              >
+                Cancelar
               </Button>
               <Button type="submit" disabled={createSaving}>
-                {createSaving ? "Saving…" : "Create"}
+                {createSaving ? "Guardando…" : "Crear"}
               </Button>
             </DialogFooter>
           </form>
@@ -558,7 +1252,10 @@ function PaymentMethodsPage() {
           className="border-border bg-card text-foreground sm:max-w-md"
         >
           <DialogHeader>
-            <DialogTitle>Edit payment method</DialogTitle>
+            <DialogTitle>Editar medio de pago</DialogTitle>
+            <DialogDescription className="sr-only">
+              Modificá nombre, tipo, uso o cuenta contable del medio seleccionado.
+            </DialogDescription>
           </DialogHeader>
           {editBanner ? (
             <p className="rounded-lg border border-destructive/25 bg-destructive/5 px-3 py-2 text-sm text-destructive">
@@ -566,59 +1263,18 @@ function PaymentMethodsPage() {
             </p>
           ) : null}
           <form className="space-y-4" onSubmit={(e) => void submitEdit(e)}>
-            <div className="space-y-2">
-              <Label htmlFor="e-pm-name">Name</Label>
-              <Input
-                id="e-pm-name"
-                value={editForm.name}
-                onChange={(e) =>
-                  setEditForm((f) => ({ ...f, name: e.target.value }))
-                }
-                required
-                className="bg-background"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="e-pm-kind">Kind</Label>
-              <select
-                id="e-pm-kind"
-                value={editForm.kind}
-                onChange={(e) =>
-                  setEditForm((f) => ({
-                    ...f,
-                    kind: e.target.value as PaymentMethodKind,
-                  }))
-                }
-                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-              >
-                {KIND_OPTIONS.map((o) => (
-                  <option key={o.value} value={o.value}>
-                    {o.label}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="e-pm-sort">Sort order</Label>
-              <Input
-                id="e-pm-sort"
-                type="number"
-                value={editForm.sortOrder}
-                onChange={(e) =>
-                  setEditForm((f) => ({
-                    ...f,
-                    sortOrder: Number(e.target.value),
-                  }))
-                }
-                className="bg-background"
-              />
-            </div>
+            <PaymentMethodFormFields
+              form={editForm}
+              setForm={setEditForm}
+              chartAccounts={chartAccounts}
+              idPrefix="e"
+            />
             <DialogFooter className="gap-2 sm:gap-0">
               <Button type="button" variant="outline" onClick={() => setEditRow(null)}>
-                Cancel
+                Cancelar
               </Button>
               <Button type="submit" disabled={editSaving}>
-                {editSaving ? "Saving…" : "Save"}
+                {editSaving ? "Guardando…" : "Guardar"}
               </Button>
             </DialogFooter>
           </form>
@@ -632,18 +1288,18 @@ function PaymentMethodsPage() {
           className="border-border bg-card text-foreground sm:max-w-md"
         >
           <DialogHeader>
-            <DialogTitle>Delete payment method?</DialogTitle>
+            <DialogTitle>¿Eliminar este medio?</DialogTitle>
+            <DialogDescription>
+              Se quitará{" "}
+              <strong className="text-foreground">
+                {deleteRow?.name || "este medio"}
+              </strong>{" "}
+              de este punto de venta. No se borran ventas ni pagos ya registrados.
+            </DialogDescription>
           </DialogHeader>
-          <p className="text-sm text-muted-foreground">
-            This will remove{" "}
-            <strong className="text-foreground">
-              {deleteRow?.name || "this method"}
-            </strong>{" "}
-            from this store.
-          </p>
           <DialogFooter className="gap-2 sm:gap-0">
             <Button type="button" variant="outline" onClick={() => setDeleteRow(null)}>
-              Cancel
+              Cancelar
             </Button>
             <Button
               type="button"
@@ -651,12 +1307,637 @@ function PaymentMethodsPage() {
               disabled={deleteBusy}
               onClick={() => void submitDelete()}
             >
-              {deleteBusy ? "Deleting…" : "Delete"}
+              {deleteBusy ? "Eliminando…" : "Eliminar"}
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </div>
+
+      <Dialog open={settleRow !== null} onOpenChange={(o) => !o && setSettleRow(null)}>
+        <DialogContent
+          data-rootsy-light-shell="true"
+          showCloseButton
+          className="border-border bg-card text-foreground sm:max-w-md"
+        >
+          <DialogHeader>
+            <DialogTitle>Pagar resumen de tarjeta</DialogTitle>
+            <DialogDescription className="sr-only">
+              Registrá el pago del resumen de tarjeta corporativa desde una cuenta de
+              tesorería.
+            </DialogDescription>
+          </DialogHeader>
+          {settleBanner ? (
+            <p className="rounded-lg border border-destructive/25 bg-destructive/5 px-3 py-2 text-sm text-destructive">
+              {settleBanner}
+            </p>
+          ) : null}
+          <form className="space-y-4" onSubmit={(e) => void submitSettle(e)}>
+            <p className="text-sm text-muted-foreground">
+              Tarjeta:{" "}
+              <strong className="text-foreground">{settleRow?.name}</strong>
+              {settleRow ? (
+                <>
+                  {" "}
+                  · Pendiente: {fmt.format(settleRow.outstandingBalance)}
+                </>
+              ) : null}
+            </p>
+            <div className="space-y-2">
+              <Label htmlFor="settle-amount">Importe del resumen</Label>
+              <Input
+                id="settle-amount"
+                type="number"
+                min={0}
+                step="0.01"
+                required
+                value={settleAmount}
+                onChange={(e) => setSettleAmount(e.target.value)}
+                className="bg-background font-mono"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="settle-date">Fecha de pago</Label>
+              <Input
+                id="settle-date"
+                type="date"
+                required
+                value={settleDate}
+                onChange={(e) => setSettleDate(e.target.value)}
+                className="bg-background"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="settle-funding">Pagado desde</Label>
+              <select
+                id="settle-funding"
+                required
+                value={settleFundingId}
+                onChange={(e) => setSettleFundingId(e.target.value)}
+                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+              >
+                {fundingMethods.length === 0 ? (
+                  <option value="">Sin cuentas de pago configuradas</option>
+                ) : (
+                  fundingMethods.map((m) => (
+                    <option key={m.id} value={m.id}>
+                      {m.name}
+                    </option>
+                  ))
+                )}
+              </select>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="settle-notes">Notas (opcional)</Label>
+              <Input
+                id="settle-notes"
+                value={settleNotes}
+                onChange={(e) => setSettleNotes(e.target.value)}
+                placeholder="Ej. Resumen marzo, ref. banco"
+                className="bg-background"
+              />
+            </div>
+            <DialogFooter className="gap-2 sm:gap-0">
+              <Button type="button" variant="outline" onClick={() => setSettleRow(null)}>
+                Cancelar
+              </Button>
+              <Button
+                type="submit"
+                disabled={settleSaving || fundingMethods.length === 0}
+              >
+                {settleSaving ? "Registrando…" : "Registrar pago"}
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog
+        open={detailRow !== null}
+        onOpenChange={(o) => {
+          if (!o) closeDetail()
+        }}
+      >
+        <DialogContent
+          data-rootsy-light-shell="true"
+          showCloseButton
+          className="max-h-[90vh] overflow-y-auto border-border bg-card text-foreground sm:max-w-xl"
+        >
+          <DialogHeader>
+            <DialogTitle className="pr-6">
+              {detailRow?.row.name ?? "Detalle"}
+            </DialogTitle>
+            <DialogDescription className="sr-only">
+              Historial de movimientos, conciliación bancaria y liquidaciones de la
+              cuenta seleccionada.
+            </DialogDescription>
+          </DialogHeader>
+          {detailRow ? (
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-2 text-sm">
+                <div className="rounded-lg bg-muted/40 px-3 py-2">
+                  <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+                    {detailRow.mode === "receive" ? "Cobrado (mes)" : "Pagado (mes)"}
+                  </p>
+                  <p className="font-semibold tabular-nums">
+                    {fmt.format(
+                      detailRow.mode === "receive"
+                        ? detailRow.row.receivedMonthTotal
+                        : detailRow.row.paidOutMonthTotal,
+                    )}
+                  </p>
+                </div>
+                {detailRow.row.ledgerBalance != null ? (
+                  <div className="rounded-lg bg-muted/40 px-3 py-2">
+                    <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+                      Saldo contable
+                    </p>
+                    <p className="font-semibold tabular-nums">
+                      {fmt.format(detailRow.row.ledgerBalance)}
+                    </p>
+                  </div>
+                ) : null}
+                {detailRow.row.isCardPayable && detailRow.mode === "pay" ? (
+                  <div className="col-span-2 rounded-lg border border-amber-200/70 bg-amber-50/80 px-3 py-2 dark:border-amber-900/40 dark:bg-amber-950/30">
+                    <p className="text-[10px] font-semibold uppercase tracking-wide text-amber-900/80">
+                      Deuda pendiente del resumen
+                    </p>
+                    <p className="text-lg font-bold tabular-nums text-amber-950">
+                      {fmt.format(detailRow.row.outstandingBalance)}
+                    </p>
+                  </div>
+                ) : null}
+              </div>
+
+              {detailLoading ? (
+                <p className="text-sm text-muted-foreground">Cargando historial…</p>
+              ) : detailError ? (
+                <p className="rounded-lg border border-destructive/25 bg-destructive/5 px-3 py-2 text-sm text-destructive">
+                  {detailError}
+                </p>
+              ) : detailData ? (
+                <>
+                  {detailData.movements.length > 0 ? (
+                    <div className="flex flex-wrap gap-3 text-xs text-muted-foreground">
+                      <span>
+                        Entradas:{" "}
+                        <strong className="text-emerald-700 dark:text-emerald-400">
+                          {fmt.format(detailData.movementTotals.in)}
+                        </strong>
+                      </span>
+                      <span>
+                        Salidas:{" "}
+                        <strong className="text-rose-700 dark:text-rose-400">
+                          {fmt.format(detailData.movementTotals.out)}
+                        </strong>
+                      </span>
+                      <span>
+                        Neto:{" "}
+                        <strong className="text-foreground">
+                          {fmt.format(detailData.movementTotals.net)}
+                        </strong>
+                      </span>
+                    </div>
+                  ) : null}
+
+                  {detailData.supportsBankReconciliation ? (
+                    <div className="rounded-lg border border-border/60 bg-muted/20 px-3 py-2 text-xs">
+                      <p className="font-semibold text-foreground">
+                        Conciliación bancaria
+                      </p>
+                      <p className="mt-1 text-muted-foreground">
+                        Movimientos:{" "}
+                        <strong className="text-foreground">
+                          {detailData.reconciliationSummary.movementsReconciled}
+                        </strong>{" "}
+                        conciliados ·{" "}
+                        <strong className="text-foreground">
+                          {detailData.reconciliationSummary.movementsPending}
+                        </strong>{" "}
+                        pendientes · Extracto:{" "}
+                        <strong className="text-foreground">
+                          {detailData.reconciliationSummary.statementReconciled}
+                        </strong>
+                        /{detailData.statementLines.length} usadas
+                      </p>
+                    </div>
+                  ) : null}
+
+                  {detailData.supportsBankReconciliation ? (
+                    <div className="flex gap-1 rounded-lg border border-border/60 p-1">
+                      <button
+                        type="button"
+                        className={cn(
+                          "flex-1 rounded-md px-3 py-1.5 text-xs font-semibold transition-colors",
+                          detailTab === "movimientos"
+                            ? "bg-background text-foreground shadow-sm"
+                            : "text-muted-foreground hover:text-foreground",
+                        )}
+                        onClick={() => setDetailTab("movimientos")}
+                      >
+                        Movimientos
+                      </button>
+                      <button
+                        type="button"
+                        className={cn(
+                          "flex-1 rounded-md px-3 py-1.5 text-xs font-semibold transition-colors",
+                          detailTab === "extracto"
+                            ? "bg-background text-foreground shadow-sm"
+                            : "text-muted-foreground hover:text-foreground",
+                        )}
+                        onClick={() => setDetailTab("extracto")}
+                      >
+                        Extracto bancario
+                      </button>
+                    </div>
+                  ) : null}
+
+                  {csvBanner ? (
+                    <p
+                      className={cn(
+                        "rounded-lg border px-3 py-2 text-sm",
+                        csvBanner.startsWith("Se importaron") ||
+                          csvBanner.includes("Importadas")
+                          ? "border-emerald-200/70 bg-emerald-50/80 text-emerald-900 dark:border-emerald-900/40 dark:bg-emerald-950/30 dark:text-emerald-200"
+                          : "border-destructive/25 bg-destructive/5 text-destructive",
+                      )}
+                    >
+                      {csvBanner}
+                    </p>
+                  ) : null}
+
+                  {detailRow.row.isCardPayable &&
+                  detailRow.mode === "pay" &&
+                  detailData.settlements.length > 0 &&
+                  detailTab === "movimientos" ? (
+                    <div>
+                      <h4 className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                        Liquidaciones del resumen
+                      </h4>
+                      <ul className="max-h-36 space-y-2 overflow-y-auto rounded-lg border border-border/60 p-2">
+                        {detailData.settlements.map((s: TreasurySettlementRow) => (
+                          <li
+                            key={s.id}
+                            className="flex items-start justify-between gap-2 text-sm"
+                          >
+                            <div className="min-w-0">
+                              <p className="font-medium tabular-nums">
+                                {fmt.format(s.amount)}
+                              </p>
+                              <p className="truncate text-xs text-muted-foreground">
+                                {formatShortDate(s.settledAt)}
+                                {s.fundingMethodName
+                                  ? ` · desde ${s.fundingMethodName}`
+                                  : ""}
+                                {s.notes ? ` · ${s.notes}` : ""}
+                              </p>
+                            </div>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  ) : null}
+
+                  {detailTab === "extracto" &&
+                  detailData.supportsBankReconciliation ? (
+                    <div className="space-y-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="csv-import">
+                          Importar CSV (fecha, descripción, importe)
+                        </Label>
+                        <Textarea
+                          id="csv-import"
+                          value={csvText}
+                          onChange={(e) => setCsvText(e.target.value)}
+                          placeholder={`2026-06-01,Transferencia proveedor,-1500.00\n2026-06-03,Depósito ventas,3200.50`}
+                          rows={4}
+                          className="font-mono text-xs"
+                          disabled={!canUpdate || csvImporting}
+                        />
+                        <div className="flex flex-wrap gap-2">
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant="secondary"
+                            disabled={!canUpdate || csvImporting || !csvText.trim()}
+                            onClick={() => void handleImportCsv()}
+                          >
+                            <Upload className="mr-1.5 size-3.5" />
+                            {csvImporting ? "Importando…" : "Importar CSV"}
+                          </Button>
+                          <label
+                            className={cn(
+                              "inline-flex h-8 cursor-pointer items-center justify-center rounded-md border border-input bg-background px-3 text-xs font-medium transition-colors hover:bg-accent hover:text-accent-foreground",
+                              (!canUpdate || csvImporting) &&
+                                "pointer-events-none opacity-50",
+                            )}
+                          >
+                            <input
+                              type="file"
+                              accept=".csv,text/csv"
+                              className="sr-only"
+                              disabled={!canUpdate || csvImporting}
+                              onChange={(e) => {
+                                const file = e.target.files?.[0]
+                                if (!file) return
+                                const reader = new FileReader()
+                                reader.onload = () => {
+                                  setCsvText(String(reader.result ?? ""))
+                                }
+                                reader.readAsText(file)
+                                e.target.value = ""
+                              }}
+                            />
+                            Elegir archivo
+                          </label>
+                        </div>
+                        <p className="text-[11px] text-muted-foreground">
+                          Columnas: fecha (YYYY-MM-DD), descripción, importe
+                          (negativo = salida) o débito/crédito por separado.
+                        </p>
+                      </div>
+
+                      <form
+                        className="space-y-3 rounded-lg border border-border/60 p-3"
+                        onSubmit={(e) => void handleAddManualLine(e)}
+                      >
+                        <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                          Línea manual
+                        </p>
+                        <div className="grid grid-cols-2 gap-2">
+                          <div className="space-y-1">
+                            <Label htmlFor="manual-date" className="text-xs">
+                              Fecha
+                            </Label>
+                            <Input
+                              id="manual-date"
+                              type="date"
+                              required
+                              value={manualDate}
+                              onChange={(e) => setManualDate(e.target.value)}
+                              className="h-9 bg-background text-sm"
+                              disabled={!canUpdate || manualSaving}
+                            />
+                          </div>
+                          <div className="space-y-1">
+                            <Label htmlFor="manual-direction" className="text-xs">
+                              Sentido
+                            </Label>
+                            <select
+                              id="manual-direction"
+                              value={manualDirection}
+                              onChange={(e) =>
+                                setManualDirection(e.target.value as "in" | "out")
+                              }
+                              className="flex h-9 w-full rounded-md border border-input bg-background px-2 text-sm"
+                              disabled={!canUpdate || manualSaving}
+                            >
+                              <option value="out">Salida</option>
+                              <option value="in">Entrada</option>
+                            </select>
+                          </div>
+                        </div>
+                        <div className="space-y-1">
+                          <Label htmlFor="manual-desc" className="text-xs">
+                            Descripción
+                          </Label>
+                          <Input
+                            id="manual-desc"
+                            required
+                            value={manualDesc}
+                            onChange={(e) => setManualDesc(e.target.value)}
+                            className="h-9 bg-background text-sm"
+                            disabled={!canUpdate || manualSaving}
+                          />
+                        </div>
+                        <div className="space-y-1">
+                          <Label htmlFor="manual-amount" className="text-xs">
+                            Importe
+                          </Label>
+                          <Input
+                            id="manual-amount"
+                            type="number"
+                            min={0}
+                            step="0.01"
+                            required
+                            value={manualAmount}
+                            onChange={(e) => setManualAmount(e.target.value)}
+                            className="h-9 bg-background font-mono text-sm"
+                            disabled={!canUpdate || manualSaving}
+                          />
+                        </div>
+                        <Button
+                          type="submit"
+                          size="sm"
+                          disabled={!canUpdate || manualSaving}
+                        >
+                          {manualSaving ? "Agregando…" : "Agregar línea"}
+                        </Button>
+                      </form>
+
+                      <div>
+                        <div className="mb-2 flex items-center justify-between gap-2">
+                          <h4 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                            Líneas del extracto ({detailData.statementLines.length})
+                          </h4>
+                          {detailData.statementLines.length > 0 ? (
+                            <span className="text-[10px] text-muted-foreground">
+                              +{fmt.format(detailData.reconciliationSummary.statementTotalIn)}{" "}
+                              / −
+                              {fmt.format(detailData.reconciliationSummary.statementTotalOut)}
+                            </span>
+                          ) : null}
+                        </div>
+                        {detailData.statementLines.length === 0 ? (
+                          <p className="rounded-lg border border-dashed border-border px-3 py-6 text-center text-sm text-muted-foreground">
+                            Importá un CSV o cargá líneas manuales para comparar
+                            con los movimientos de Rootsy.
+                          </p>
+                        ) : (
+                          <ul className="max-h-48 space-y-1 overflow-y-auto rounded-lg border border-border/60">
+                            {detailData.statementLines.map((line) => (
+                              <li
+                                key={line.id}
+                                className="flex items-center justify-between gap-2 border-b border-border/40 px-3 py-2 last:border-0"
+                              >
+                                <div className="min-w-0 flex-1">
+                                  <p className="truncate text-sm">
+                                    {line.description || "Sin descripción"}
+                                  </p>
+                                  <p className="text-xs text-muted-foreground">
+                                    {formatShortDate(line.lineDate)} ·{" "}
+                                    {line.source === "csv" ? "CSV" : "Manual"}
+                                    {line.reconciled ? " · Conciliada" : ""}
+                                  </p>
+                                </div>
+                                <span
+                                  className={cn(
+                                    "shrink-0 text-sm font-semibold tabular-nums",
+                                    line.direction === "in"
+                                      ? "text-emerald-700 dark:text-emerald-400"
+                                      : "text-rose-700 dark:text-rose-400",
+                                  )}
+                                >
+                                  {line.direction === "in" ? "+" : "−"}
+                                  {fmt.format(line.amount)}
+                                </span>
+                                {canUpdate && !line.reconciled ? (
+                                  <Button
+                                    type="button"
+                                    size="icon"
+                                    variant="ghost"
+                                    className="size-8 shrink-0 text-muted-foreground hover:text-destructive"
+                                    onClick={() =>
+                                      void handleDeleteStatementLine(line.id)
+                                    }
+                                  >
+                                    <Trash2 className="size-3.5" />
+                                  </Button>
+                                ) : null}
+                              </li>
+                            ))}
+                          </ul>
+                        )}
+                      </div>
+                    </div>
+                  ) : (
+                  <div>
+                    <h4 className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                      {detailRow.mode === "receive"
+                        ? "Cobros registrados"
+                        : "Movimientos"}
+                    </h4>
+                    {detailData.movements.length === 0 ? (
+                      <p className="rounded-lg border border-dashed border-border px-3 py-6 text-center text-sm text-muted-foreground">
+                        No hay movimientos registrados todavía.
+                      </p>
+                    ) : (
+                      <ul className="max-h-56 space-y-1 overflow-y-auto rounded-lg border border-border/60">
+                        {detailData.movements.map((m) => {
+                          const busyKey = `${m.kind}:${m.movementRefId}`
+                          const isBusy = reconcileBusyKey === busyKey
+                          const match =
+                            detailData.supportsBankReconciliation &&
+                            !m.reconciled &&
+                            detailData.statementLines.length > 0
+                              ? findMatchingStatementLine(
+                                  m,
+                                  detailData.statementLines,
+                                )
+                              : null
+                          return (
+                          <li
+                            key={`${m.kind}-${m.id}`}
+                            className="flex items-center justify-between gap-2 border-b border-border/40 px-3 py-2 last:border-0"
+                          >
+                            <div className="min-w-0 flex-1">
+                              <p className="truncate text-sm font-medium">
+                                {m.label}
+                                {m.reconciled ? (
+                                  <CheckCircle2 className="ml-1 inline size-3.5 text-emerald-600" />
+                                ) : null}
+                              </p>
+                              <p className="text-xs text-muted-foreground">
+                                {movementKindLabel(m.kind)} ·{" "}
+                                {formatShortDate(m.date)}
+                                {match
+                                  ? " · Coincide con extracto"
+                                  : null}
+                              </p>
+                            </div>
+                            <div className="flex shrink-0 items-center gap-2">
+                              <span
+                                className={cn(
+                                  "text-sm font-semibold tabular-nums",
+                                  m.direction === "in"
+                                    ? "text-emerald-700 dark:text-emerald-400"
+                                    : "text-rose-700 dark:text-rose-400",
+                                )}
+                              >
+                                {m.direction === "in" ? "+" : "−"}
+                                {fmt.format(m.amount)}
+                              </span>
+                              {detailData.supportsBankReconciliation && canUpdate ? (
+                                m.reconciled ? (
+                                  <Button
+                                    type="button"
+                                    size="sm"
+                                    variant="ghost"
+                                    className="h-7 px-2 text-xs"
+                                    disabled={isBusy}
+                                    onClick={() =>
+                                      void handleUnreconcileMovement(m)
+                                    }
+                                  >
+                                    {isBusy ? "…" : "Deshacer"}
+                                  </Button>
+                                ) : (
+                                  <Button
+                                    type="button"
+                                    size="sm"
+                                    variant="outline"
+                                    className="h-7 px-2 text-xs"
+                                    disabled={isBusy}
+                                    onClick={() =>
+                                      void handleReconcileMovement(m)
+                                    }
+                                  >
+                                    {isBusy ? "…" : "Conciliar"}
+                                  </Button>
+                                )
+                              ) : null}
+                            </div>
+                          </li>
+                          )
+                        })}
+                      </ul>
+                    )}
+                  </div>
+                  )}
+
+                  {detailTab === "movimientos" &&
+                  detailRow.mode === "pay" &&
+                  !detailRow.row.isCardPayable &&
+                  detailRow.row.ledgerBalance != null &&
+                  detailData.supportsBankReconciliation ? (
+                    <p className="text-xs text-muted-foreground">
+                      Marcá cada movimiento como conciliado cuando aparezca en tu
+                      extracto. Si hay una línea con el mismo importe y sentido, se
+                      vincula automáticamente.
+                    </p>
+                  ) : detailTab === "movimientos" &&
+                    detailRow.mode === "pay" &&
+                    !detailRow.row.isCardPayable &&
+                    detailRow.row.ledgerBalance != null &&
+                    !detailData.supportsBankReconciliation ? (
+                    <p className="text-xs text-muted-foreground">
+                      Compará el saldo contable con tu extracto bancario. La
+                      diferencia puede deberse a movimientos aún no cargados en
+                      Rootsy.
+                    </p>
+                  ) : null}
+                </>
+              ) : null}
+
+              {detailRow.row.isCardPayable &&
+              detailRow.mode === "pay" &&
+              canSettle ? (
+                <Button
+                  type="button"
+                  className="w-full"
+                  disabled={detailRow.row.outstandingBalance <= 0}
+                  onClick={() => {
+                    closeDetail()
+                    openSettle(detailRow.row)
+                  }}
+                >
+                  Pagar resumen
+                </Button>
+              ) : null}
+            </div>
+          ) : null}
+        </DialogContent>
+      </Dialog>
+    </>
   )
 }
 
