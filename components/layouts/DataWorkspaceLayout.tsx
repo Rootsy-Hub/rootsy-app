@@ -1,7 +1,11 @@
 "use client"
 
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { dataWorkspaceHeaderChromeButtonClass } from "@/components/layouts/dataWorkspaceHeaderStyles"
+import {
+  dataWorkspaceDarkHeaderSurfaceClass,
+  dataWorkspaceHeaderChromeButtonClass,
+} from "@/components/layouts/dataWorkspaceHeaderStyles"
+import { DataWorkspaceHeaderTitle } from "@/components/layouts/DataWorkspaceHeaderTitle"
+import { DataWorkspaceHeaderUserMenu } from "@/components/layouts/DataWorkspaceHeaderUserMenu"
 import { cn } from "@/lib/utils"
 import { popMenuHref } from "@/lib/popRoutes"
 import {
@@ -10,8 +14,6 @@ import {
   Minimize2,
   PanelLeftClose,
   PanelLeftOpen,
-  Wifi,
-  WifiOff,
 } from "lucide-react"
 import Link from "next/link"
 import {
@@ -174,39 +176,12 @@ export function DataWorkspaceLayout({
 
   const subline = userRoleLabel?.trim() || pillLabel
 
-  const defaultAdornment =
-    titleAdornment === undefined ? (
-      <span
-        className={cn(
-          "inline-flex size-7 items-center justify-center rounded-full border",
-          isDarkHeader
-            ? isOnline
-              ? "border-emerald-500/35 bg-emerald-500/10 text-emerald-300"
-              : "border-red-500/35 bg-red-500/10 text-red-300"
-            : isOnline
-              ? "border-primary/30 bg-primary/10 text-primary"
-              : "border-destructive/30 bg-destructive/10 text-destructive",
-        )}
-        role="status"
-        aria-label={isOnline ? "En línea" : "Sin conexión"}
-        title={isOnline ? "En línea" : "Sin conexión"}
-      >
-        {isOnline ? (
-          <Wifi className="size-3.5" aria-hidden />
-        ) : (
-          <WifiOff className="size-3.5" aria-hidden />
-        )}
-      </span>
-    ) : (
-      titleAdornment
-    )
-
   const chromeButtonClass = dataWorkspaceHeaderChromeButtonClass(
     isDarkHeader ? "dark" : "default",
   )
 
   return (
-    <div className="rootsy-app-light relative min-h-screen overflow-hidden bg-background text-foreground">
+    <div className="rootsy-app-light relative min-h-screen overflow-hidden bg-background text-foreground select-none">
       <div
         className="pointer-events-none absolute inset-0 motion-reduce:opacity-50"
         aria-hidden
@@ -220,7 +195,7 @@ export function DataWorkspaceLayout({
           className={cn(
             "shrink-0 border-b shadow-sm backdrop-blur-xl",
             isDarkHeader
-              ? "border-zinc-800/90 bg-zinc-950/95 text-zinc-100"
+              ? cn(dataWorkspaceDarkHeaderSurfaceClass, "text-zinc-100")
               : "border-rootsy-hairline bg-card/90",
           )}
         >
@@ -319,15 +294,11 @@ export function DataWorkspaceLayout({
             </div>
 
             <div className="flex flex-wrap items-center justify-center gap-2">
-              <h1
-                className={cn(
-                  "text-[1.65rem] font-black tracking-tight",
-                  isDarkHeader ? "text-white" : "text-foreground",
-                )}
-              >
-                {title}
-              </h1>
-              {defaultAdornment}
+              <DataWorkspaceHeaderTitle
+                title={title}
+                headerVariant={headerVariant}
+              />
+              {titleAdornment}
             </div>
 
             <div className="flex shrink-0 items-center justify-end gap-2">
@@ -348,30 +319,6 @@ export function DataWorkspaceLayout({
                     />
                   ) : null}
                   <div className="flex min-w-0 items-center gap-3">
-                    <Avatar
-                      className={cn(
-                        "size-10 ring-1",
-                        isDarkHeader ? "ring-zinc-600" : "ring-border",
-                      )}
-                    >
-                      <AvatarImage
-                        src={
-                          userAvatarSrc ||
-                          `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(userName || "u")}`
-                        }
-                        alt=""
-                      />
-                      <AvatarFallback
-                        className={cn(
-                          "text-xs",
-                          isDarkHeader
-                            ? "bg-zinc-800 text-emerald-300"
-                            : "bg-primary/10 text-primary",
-                        )}
-                      >
-                        {userName.trim().slice(0, 2).toUpperCase() || "·"}
-                      </AvatarFallback>
-                    </Avatar>
                     <div className="hidden min-w-0 flex-col leading-tight sm:flex">
                       <span
                         className={cn(
@@ -398,6 +345,12 @@ export function DataWorkspaceLayout({
                         </span>
                       ) : null}
                     </div>
+                    <DataWorkspaceHeaderUserMenu
+                      userName={userName}
+                      userAvatarSrc={userAvatarSrc}
+                      isOnline={isOnline}
+                      headerVariant={isDarkHeader ? "dark" : "default"}
+                    />
                   </div>
                 </>
               ) : null}

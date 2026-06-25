@@ -40,10 +40,18 @@ import {
   TableRow,
 } from "@/components/ui/table"
 import {
+  darkTableFooterCenterClass,
+  darkTableFooterCenterMutedClass,
+  darkTableFooterClass,
+  darkTableFooterNavButtonClass,
+  darkTableFooterNavGroupClass,
+  footerPaginationSelectTriggerClass,
+  listBulkToolbarClearButtonClass,
   selectColumnInnerClass,
   tableRowSelectCheckboxClass,
   thBase,
   toolbarBlockLabelClass,
+  workspaceTableSelectableTextClass,
 } from "@/components/data-workspace/dataWorkspaceListStyles"
 import { cn } from "@/lib/utils"
 import { popScopedHref } from "@/lib/popRoutes"
@@ -173,35 +181,6 @@ const lightTableThClass = cn(
   thBase,
   "font-bold text-foreground",
 )
-
-const darkTableFooterClass =
-  "border-t border-white/10 bg-[#12161c]"
-
-const darkTableFooterNavGroupClass =
-  "flex min-w-0 flex-1 items-stretch"
-
-const darkTableFooterControlSurfaceClass =
-  "bg-[#2a313a] text-white transition-colors hover:bg-[#323b46] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-emerald-400/40"
-
-const darkTableFooterNavButtonClass = cn(
-  "inline-flex size-16 shrink-0 items-center justify-center rounded-none disabled:pointer-events-none disabled:opacity-35",
-  darkTableFooterControlSurfaceClass,
-)
-
-const footerPaginationSelectTriggerClass = cn(
-  "h-11 min-h-11 min-w-[4.25rem] gap-1.5 rounded-lg border-0 px-3.5 text-sm font-medium text-white shadow-none",
-  "!bg-[#2a313a] hover:!bg-[#323b46] dark:!bg-[#2a313a] dark:hover:!bg-[#323b46]",
-  "data-[size=default]:!h-11 data-[size=sm]:!h-11",
-  "focus-visible:border-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-emerald-400/40 focus-visible:ring-offset-0",
-  "[&_svg:not([class*='text-'])]:!text-white/60",
-  "*:data-[slot=select-value]:text-white",
-)
-
-const darkTableFooterCenterClass =
-  "flex min-w-0 flex-1 items-center justify-center gap-3 self-center px-4"
-
-const darkTableFooterCenterMutedClass =
-  "text-sm font-medium tabular-nums text-slate-500"
 
 function ToolbarClearSearchIcon({ className }: { className?: string }) {
   return (
@@ -1091,7 +1070,7 @@ export function LayoutPreviewListTable({
               type="button"
               size="sm"
               variant="ghost"
-              className="h-8 text-muted-foreground"
+              className={listBulkToolbarClearButtonClass}
               onClick={() => setSelected(new Set())}
             >
               Limpiar
@@ -1104,6 +1083,7 @@ export function LayoutPreviewListTable({
         <table
           className={cn(
             "relative w-full min-w-[56rem] table-fixed caption-bottom text-sm",
+            workspaceTableSelectableTextClass,
           )}
         >
           <TableHeader>
@@ -1293,7 +1273,7 @@ export function LayoutPreviewListTable({
               type="button"
               className={cn(
                 darkTableFooterNavButtonClass,
-                "border-r border-white/10",
+                "border-r border-zinc-800/90",
               )}
               disabled={currentPage <= 1}
               aria-label="Ir a la primera página"
@@ -1340,7 +1320,7 @@ export function LayoutPreviewListTable({
               </SelectContent>
             </Select>
 
-            <span className="text-white/20" aria-hidden>
+            <span className="text-zinc-600" aria-hidden>
               ·
             </span>
 
@@ -1368,14 +1348,17 @@ export function LayoutPreviewListTable({
 
             {filteredTotal > 0 ? (
               <>
-                <span className="text-white/20" aria-hidden>
+                <span className="text-zinc-600" aria-hidden>
                   ·
                 </span>
                 <span
                   className={darkTableFooterCenterMutedClass}
                   aria-hidden
                 >
-                  {totalCountLabel}
+                  <span className="md:hidden">{totalCountLabel}</span>
+                  <span className="hidden md:inline">
+                    {totalCountLabel} en total
+                  </span>
                 </span>
               </>
             ) : null}
@@ -1386,7 +1369,7 @@ export function LayoutPreviewListTable({
               type="button"
               className={cn(
                 darkTableFooterNavButtonClass,
-                "border-l border-white/10",
+                "border-l border-zinc-800/90",
               )}
               disabled={currentPage >= totalPages}
               aria-label="Página siguiente"

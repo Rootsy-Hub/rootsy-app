@@ -437,3 +437,81 @@ export async function loginWsaaAndGetPersonaV2(params: {
   const personaReturn = gpRes?.personaReturn
   return mapPersonaToPadron(personaReturn)
 }
+
+function isPadronPersonNotFoundMessage(message: string): boolean {
+  const t = message.toLowerCase()
+  return (
+    t.includes("no existe persona") ||
+    t.includes("no existe persona con ese") ||
+    t.includes("persona no encontrada")
+  )
+}
+
+export async function loginWsaaAndGetFirstMatchingPersonaV2(params: {
+  certPem: string
+  keyPem: string
+  cuitRepresentada: string
+  idPersonaCuits: string[]
+}): Promise<PadronLookupOk> {
+  const ids = params.idPersonaCuits
+    .map((c) => c.replace(/\D/g, ""))
+    .filter((c) => c.length === 11)
+  if (ids.length === 0) {
+    throw new Error("No hay CUIT válidos para consultar en AFIP.")
+  }
+
+  const homo = isArcaPadronHomologation()
+  const wsaaUrl = homo ? WSAA_WSDL.homologation : WSAA_WSDL.production
+  const padronUrl = homo ? PADRON_WSDL.homologation : PADRON_WSDL.production
+
+  const tra = buildLoginTicketRequestXml()
+  let cmsB64: string
+  try {
+    cmsB64 = signTraWithOpenssl(tra, params.certPem, params.keyPem)
+  } catch {
+    throw new Error(
+      "No se pudo firmar el ticket WSAA (OpenSSL). Verificá que .crt y .key sean PEM válidos y que OpenSSL esté en el PATH.",
+    )
+  }
+
+  const wsaaClient = await soap.createClientAsync(wsaaUrl, {
+    disableCache: true,
+  })
+  const [loginRes] = await wsaaClient.loginCmsAsync({ in0: cmsB64 })
+  const taXml = loginRes?.loginCmsReturn as string | undefined
+  if (!taXml || typeof taXml !== "string") {
+    throw new Error("WSAA: respuesta vacía.")
+  }
+  const { token, sign } = extractTaCredentials(taXml)
+
+  const padronClient = await soap.createClientAsync(padronUrl, {
+    disableCache: true,
+  })
+  const cuitRep = Number(params.cuitRepresentada.replace(/\D/g, ""))
+
+  let lastNotFound: string | null = null
+  for (const idPersonaCuit of ids) {
+    try {
+      const idP = Number(idPersonaCuit)
+      const [gpRes] = await padronClient.getPersona_v2Async({
+        token,
+        sign,
+        cuitRepresentada: cuitRep,
+        idPersona: idP,
+      })
+      return mapPersonaToPadron(gpRes?.personaReturn)
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e)
+      if (isPadronPersonNotFoundMessage(msg)) {
+        lastNotFound = msg
+        continue
+      }
+      throw e
+    }
+  }
+
+  throw new Error(
+    lastNotFound ??
+      "No se encontró en AFIP una persona inscripta con ese DNI.",
+  )
+}

@@ -1,7 +1,11 @@
 "use client"
 
 import { cn } from "@/lib/utils"
-import { dataWorkspaceShellCard } from "./dataWorkspaceListStyles"
+import {
+  dataWorkspaceShellCard,
+  workspaceTableSurfaceClass,
+  workspaceTableSurfaceGlowClass,
+} from "./dataWorkspaceListStyles"
 import type { ReactNode } from "react"
 
 export type DataWorkspaceListTableShellProps = {
@@ -10,6 +14,8 @@ export type DataWorkspaceListTableShellProps = {
   bulkToolbar?: ReactNode
   /** Pie fijo (paginación, totales), fuera del scroll. */
   footer?: ReactNode
+  /** Capa sobre el área de scroll (p. ej. mascota en estado vacío). */
+  overlay?: ReactNode
   /** `flush`: sin tarjeta ni decoración; ocupa todo el ancho del main. */
   variant?: "default" | "flush"
   className?: string
@@ -19,6 +25,7 @@ export function DataWorkspaceListTableShell({
   children,
   bulkToolbar,
   footer,
+  overlay,
   variant = "default",
   className,
 }: DataWorkspaceListTableShellProps) {
@@ -27,26 +34,37 @@ export function DataWorkspaceListTableShell({
   return (
     <div
       className={cn(
-        "relative flex min-h-0 flex-1 flex-col overflow-hidden",
-        isFlush ? "bg-card" : dataWorkspaceShellCard,
+        "relative flex min-h-0 flex-1 flex-col overflow-hidden [--dw-table-footer-height:4rem]",
+        isFlush ? workspaceTableSurfaceClass : dataWorkspaceShellCard,
         className,
       )}
     >
-      {!isFlush ? (
+      {isFlush ? (
+        <div className={workspaceTableSurfaceGlowClass} aria-hidden />
+      ) : (
         <div
           className="pointer-events-none absolute -right-10 -top-10 size-40 rounded-full bg-primary/10 blur-3xl"
           aria-hidden
         />
-      ) : null}
+      )}
       <div className="relative flex min-h-0 flex-1 flex-col overflow-hidden">
         {bulkToolbar ? bulkToolbar : null}
-        <div
-          className={cn(
-            "rootsy-scroll-minimal min-h-0 flex-1 overflow-auto",
-            isFlush && "pr-3",
-          )}
-        >
-          {children}
+        <div className="relative min-h-0 flex-1">
+          <div
+            className={cn(
+              "rootsy-scroll-minimal absolute inset-0 overflow-auto",
+              isFlush && "pr-3",
+            )}
+          >
+            <div className="flex min-h-full min-w-0 flex-1 flex-col">
+              {children}
+            </div>
+          </div>
+          {overlay ? (
+            <div className="pointer-events-none absolute inset-0 z-10 overflow-visible">
+              {overlay}
+            </div>
+          ) : null}
         </div>
         {footer ? footer : null}
       </div>

@@ -4,6 +4,7 @@ import {
   startOfMonth,
   startOfWeek,
   subDays,
+  subMonths,
 } from "date-fns"
 import type { DateRange } from "react-day-picker"
 
@@ -11,6 +12,7 @@ export type DataWorkspaceDatePreset =
   | "all"
   | "this_week"
   | "this_month"
+  | "last_month"
   | "last_7"
   | "last_30"
   | "custom"
@@ -21,6 +23,7 @@ export const DATA_WORKSPACE_DATE_QUICK_PRESETS: {
 }[] = [
   { id: "this_week", label: "Esta semana" },
   { id: "this_month", label: "Este mes" },
+  { id: "last_month", label: "Mes anterior" },
   { id: "last_7", label: "Últimos 7 días" },
   { id: "last_30", label: "Últimos 30 días" },
 ]
@@ -48,6 +51,12 @@ export function computeDataWorkspaceDateBounds(
     case "this_month": {
       const from = startOfMonth(today)
       const to = endOfMonth(today)
+      return { from: toISODateLocal(from), to: toISODateLocal(to) }
+    }
+    case "last_month": {
+      const prev = subMonths(today, 1)
+      const from = startOfMonth(prev)
+      const to = endOfMonth(prev)
       return { from: toISODateLocal(from), to: toISODateLocal(to) }
     }
     case "last_7": {
@@ -87,6 +96,7 @@ export function dataWorkspaceDateFilterSummary(
   if (preset === "all") return "Todas las fechas"
   if (preset === "this_week") return "Esta semana"
   if (preset === "this_month") return "Este mes"
+  if (preset === "last_month") return "Mes anterior"
   if (preset === "last_7") return "Últimos 7 días"
   if (preset === "last_30") return "Últimos 30 días"
   if (preset === "custom" && bounds.from && bounds.to) {

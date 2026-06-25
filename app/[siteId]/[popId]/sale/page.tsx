@@ -21,6 +21,14 @@ import {
   writeSavedSaleComprobante,
 } from "@/lib/saleComprobantePicker"
 import {
+  resolveSaleComprobanteForClient,
+  suggestSaleComprobanteForClientIva,
+} from "@/lib/saleComprobanteRules"
+import {
+  CLIENT_IVA_CONDITION_OPTIONS,
+  type ClientIvaConditionValue,
+} from "@/app/[siteId]/[popId]/clients/clientIvaConstants"
+import {
   readSavedSaleCatalogView,
   writeSavedSaleCatalogView,
   type SaleCatalogViewPersisted,
@@ -79,6 +87,13 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
 import { Input } from "@/components/ui/input"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 import { Separator } from "@/components/ui/separator"
 
 type Producto = {
@@ -95,6 +110,14 @@ type Producto = {
 type ItemCarrito = {
   productoId: string
   cantidad: number
+}
+
+type ClienteVentaSeleccionado = {
+  id: string
+  name: string
+  taxId: string | null
+  ivaCondition: string | null
+  defaultInvoiceTypeLabel: string | null
 }
 
 type VistaCatalogo = SaleCatalogViewPersisted
@@ -117,6 +140,42 @@ const fmt = new Intl.NumberFormat("es-AR", {
   currency: "ARS",
   minimumFractionDigits: 2,
 })
+
+/** Tipografía numérica alineada al workspace (tablas de importes). */
+const ventaImporteBaseClass = "font-mono tabular-nums tracking-tight"
+const ventaImporteCartClass = cn(
+  ventaImporteBaseClass,
+  "text-sm font-semibold text-slate-900",
+)
+const ventaImporteCartMutedClass = cn(
+  ventaImporteBaseClass,
+  "text-[11px] text-slate-400",
+)
+const ventaImporteTotalClass = cn(
+  ventaImporteBaseClass,
+  "whitespace-nowrap text-[clamp(1.05rem,1.75vw,1.4375rem)] font-semibold text-white/90",
+)
+const ventaImporteCardClass = cn(
+  ventaImporteBaseClass,
+  "block text-[clamp(1.05rem,1.65vw,1.3125rem)] leading-none font-semibold text-white/90",
+)
+const ventaImporteTotalMutedClass = cn(
+  ventaImporteBaseClass,
+  "text-[11px] line-through decoration-white/25 text-white/38",
+)
+const ventaImporteTotalDiscountClass = cn(
+  ventaImporteBaseClass,
+  "text-[11px] font-medium text-emerald-300/95",
+)
+
+const IVA_LABEL_BY_VALUE = Object.fromEntries(
+  CLIENT_IVA_CONDITION_OPTIONS.map((o) => [o.value, o.label]),
+) as Record<string, string>
+
+function labelCondicionIva(value: string | null | undefined) {
+  if (!value?.trim()) return null
+  return IVA_LABEL_BY_VALUE[value] ?? value
+}
 
 function normalizarBusqueda(s: string) {
   return s
@@ -379,14 +438,12 @@ function SalePage() {
   const [modoVista, setModoVista] = useState<"grid" | "lista">("grid")
   const [busqueda, setBusqueda] = useState("")
   const [carrito, setCarrito] = useState<ItemCarrito[]>([])
-  const [clienteSeleccionado, setClienteSeleccionado] = useState<{
-    id: string
-    name: string
-    taxId: string | null
-  } | null>(null)
+  const [clienteSeleccionado, setClienteSeleccionado] =
+    useState<ClienteVentaSeleccionado | null>(null)
+  const [ventaIvaCondition, setVentaIvaCondition] = useState("")
   const [fiscalDocVenta, setFiscalDocVenta] = useState("")
   const ventaPadron = usePadronAutofillRazonSocial(popId, fiscalDocVenta, {
-    enabled: Boolean(popId),
+    enabled: Boolean(popId) && clienteSeleccionado == null,
   })
   const [clienteModalAbierto, setClienteModalAbierto] = useState(false)
   const [busquedaClienteModal, setBusquedaClienteModal] = useState("")
@@ -594,6 +651,7 @@ function SalePage() {
     setCarrito([])
     setClienteSeleccionado(null)
     setFiscalDocVenta("")
+    setVentaIvaCondition("")
     if (popId) {
       const saved = readSavedSaleComprobante(popId)
       setComprobante(saved !== undefined ? saved : null)
@@ -657,6 +715,7 @@ function SalePage() {
         valorDescuentoPorcentaje,
         valorDescuentoFijo,
         invoiceTypeLabel: comprobante,
+        customerIvaCondition: ventaIvaCondition.trim() || null,
         fiscalCustomer,
       })
       if (!res.success) {
@@ -683,6 +742,7 @@ function SalePage() {
     valorDescuentoPorcentaje,
     valorDescuentoFijo,
     comprobante,
+    ventaIvaCondition,
     fiscalDocVenta,
     ventaPadron.razonSocial,
     limpiarVenta,
@@ -711,13 +771,86 @@ function SalePage() {
     [popId],
   )
 
+  const aplicarComprobanteDesdeCliente = useCallback(
+    (c: Pick<
+      SaleCatalogClient,
+      "ivaCondition" | "defaultInvoiceTypeLabel"
+    >) => {
+      const resolved = resolveSaleComprobanteForClient({
+        clientIvaCondition: c.ivaCondition as ClientIvaConditionValue | null,
+        defaultInvoiceTypeLabel: c.defaultInvoiceTypeLabel,
+      })
+      setComprobante(resolved)
+    },
+    [],
+  )
+
+  const aplicarComprobanteDesdeIva = useCallback(
+    (iva: ClientIvaConditionValue | null | undefined) => {
+      if (!iva) return
+      const suggested = suggestSaleComprobanteForClientIva(iva)
+      if (suggested) setComprobante(suggested)
+    },
+    [],
+  )
+
+  const quitarClienteVenta = useCallback(() => {
+    setClienteSeleccionado(null)
+    setFiscalDocVenta("")
+    setVentaIvaCondition("")
+    if (popId) {
+      const saved = readSavedSaleComprobante(popId)
+      setComprobante(
+        saved !== undefined && isAllowedSaleComprobanteLabel(invoiceTypeSiteId, saved)
+          ? saved
+          : null,
+      )
+    } else {
+      setComprobante(null)
+    }
+  }, [popId, invoiceTypeSiteId])
+
+  useEffect(() => {
+    if (clienteSeleccionado) return
+    if (!fiscalDocVenta.trim()) return
+    if (!ventaPadron.mappedIvaCondition) return
+    setVentaIvaCondition(ventaPadron.mappedIvaCondition)
+    aplicarComprobanteDesdeIva(ventaPadron.mappedIvaCondition)
+  }, [
+    fiscalDocVenta,
+    ventaPadron.mappedIvaCondition,
+    aplicarComprobanteDesdeIva,
+    clienteSeleccionado,
+  ])
+
+  const ventaIvaLabel = useMemo(
+    () => labelCondicionIva(ventaIvaCondition),
+    [ventaIvaCondition],
+  )
+
   const clientesFiltradosModal = useMemo(() => {
     const q = normalizarBusqueda(busquedaClienteModal.trim())
-    if (!q) return saleClients
-    return saleClients.filter((c) =>
-      normalizarBusqueda(c.name).includes(q),
-    )
-  }, [busquedaClienteModal, saleClients])
+
+    if (clienteSeleccionado && !q) {
+      const fromCatalog = saleClients.find((c) => c.id === clienteSeleccionado.id)
+      if (fromCatalog) return [fromCatalog]
+      return [
+        {
+          id: clienteSeleccionado.id,
+          name: clienteSeleccionado.name,
+          taxId: clienteSeleccionado.taxId,
+          ivaCondition: clienteSeleccionado.ivaCondition,
+          defaultInvoiceTypeLabel: clienteSeleccionado.defaultInvoiceTypeLabel,
+        },
+      ]
+    }
+
+    if (!q) return []
+
+    return saleClients.filter((c) => normalizarBusqueda(c.name).includes(q))
+  }, [busquedaClienteModal, saleClients, clienteSeleccionado])
+
+  const busquedaClienteModalTrim = busquedaClienteModal.trim()
 
   const comprobantePickerOptions = useMemo(
     () => getSaleComprobantePickerOptions(invoiceTypeSiteId),
@@ -833,8 +966,12 @@ function SalePage() {
       id: c.id,
       name: c.name,
       taxId: c.taxId,
+      ivaCondition: c.ivaCondition,
+      defaultInvoiceTypeLabel: c.defaultInvoiceTypeLabel,
     })
     setFiscalDocVenta(c.taxId ?? "")
+    setVentaIvaCondition(c.ivaCondition ?? "")
+    aplicarComprobanteDesdeCliente(c)
     setClienteModalAbierto(false)
   }
 
@@ -902,14 +1039,18 @@ function SalePage() {
   }
 
   const toolboxBarClass =
-    "border-t border-white/10 bg-[#0b100e]/92 p-2 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)] backdrop-blur-xl sm:p-2.5"
+    "box-border border-t border-white/10 bg-[#0b100e]/92 backdrop-blur-xl"
+  /** Altura mínima compartida en toolbox (izq.) y total (der.); el total crece si hay más líneas. */
+  const ventaFooterBandHeightClass =
+    "min-h-[calc(4.5rem+1rem)] sm:min-h-[calc(4.75rem+1.25rem)]"
+  const ventaFooterBarPaddingClass = "p-2 sm:p-2.5"
   const toolboxSlotClass = (configurado: boolean) =>
     cn(
-      "group flex h-full min-h-[4.5rem] w-full items-center gap-2.5 rounded-xl border px-2.5 py-2 text-left transition-[background-color,border-color,box-shadow] duration-150 sm:min-h-[4.75rem] sm:gap-3 sm:px-3",
+      "group flex h-full min-h-[4.5rem] w-full items-center gap-2.5 rounded-xl border-0 px-2.5 py-2 text-left transition-[background-color,box-shadow] duration-150 sm:min-h-[4.75rem] sm:gap-3 sm:px-3",
       "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/45 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0b100e]",
       configurado
-        ? "border-emerald-500/30 bg-emerald-500/[0.09] shadow-[inset_0_1px_0_rgba(167,243,208,0.08)] hover:border-emerald-400/35 hover:bg-emerald-500/12"
-        : "border-white/[0.06] bg-white/[0.02] hover:border-white/12 hover:bg-white/[0.05]",
+        ? "bg-emerald-500/[0.09] shadow-[inset_0_1px_0_rgba(167,243,208,0.08)] hover:bg-emerald-500/12"
+        : "bg-white/[0.02] hover:bg-white/[0.05]",
     )
   const toolboxIconWrap = (configurado: boolean) =>
     cn(
@@ -919,9 +1060,13 @@ function SalePage() {
         : "bg-white/[0.06] text-foreground/45 group-hover:bg-white/10 group-hover:text-foreground/75",
     )
 
-  const ventaDialogOptionClass = (seleccionado: boolean) =>
+  const ventaDialogOptionClass = (seleccionado: boolean, disabled = false) =>
     cn(
       "flex w-full items-center justify-between gap-3 rounded-lg border px-3 py-2.5 text-left transition-colors",
+      disabled &&
+        (seleccionado
+          ? "cursor-default"
+          : "pointer-events-none opacity-45"),
       seleccionado
         ? "border-primary/40 bg-primary/10 ring-1 ring-primary/15"
         : "border-border/70 bg-muted/20 hover:bg-muted/35",
@@ -1081,7 +1226,7 @@ function SalePage() {
             <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.03)_1px,transparent_1px)] bg-size-[38px_38px] opacity-20" />
           </div>
 
-          <main className="relative z-10 grid min-h-0 flex-1 grid-cols-[minmax(0,1fr)_380px] grid-rows-[minmax(0,1fr)_minmax(4.75rem,auto)]">
+          <main className="relative z-10 grid min-h-0 flex-1 grid-cols-[minmax(0,1fr)_380px] grid-rows-[minmax(0,1fr)_calc(4.5rem+1rem)] sm:grid-rows-[minmax(0,1fr)_calc(4.75rem+1.25rem)]">
             <div className="col-start-1 row-start-1 flex min-h-0 min-w-0 overflow-hidden">
               <aside
                 id="data-workspace-sidebar"
@@ -1296,7 +1441,7 @@ function SalePage() {
                               <h3 className="line-clamp-2 text-lg font-bold leading-tight text-foreground">
                                 {p.nombre}
                               </h3>
-                              <p className="mt-1 line-clamp-3 text-sm leading-relaxed text-muted-foreground">
+                              <p className="mt-1 line-clamp-2 text-sm leading-relaxed text-muted-foreground">
                                 {p.descripcion}
                               </p>
                             </div>
@@ -1309,17 +1454,27 @@ function SalePage() {
                               {p.precioOriginal != null &&
                               p.precioOriginal > p.precio ? (
                                 <div className="mb-1 flex flex-wrap items-center gap-x-2 gap-y-1">
-                                  <span className="text-sm font-semibold text-muted-foreground line-through">
+                                  <span
+                                    className={cn(
+                                      ventaImporteBaseClass,
+                                      "text-sm font-semibold text-muted-foreground line-through",
+                                    )}
+                                  >
                                     {fmt.format(p.precioOriginal)}
                                   </span>
                                   {descuentoPct != null ? (
-                                    <span className="inline-flex h-6 items-center justify-center rounded-md border border-emerald-500/30 bg-emerald-500/10 px-2 text-[10px] font-bold uppercase tracking-wider leading-none text-emerald-200">
+                                    <span
+                                      className={cn(
+                                        ventaImporteBaseClass,
+                                        "inline-flex h-6 items-center justify-center rounded-md border border-emerald-500/30 bg-emerald-500/10 px-2 text-[10px] font-bold uppercase tracking-wider leading-none text-emerald-200",
+                                      )}
+                                    >
                                       −{descuentoPct}%
                                     </span>
                                   ) : null}
                                 </div>
                               ) : null}
-                              <span className="block text-[clamp(1.16rem,1.9vw,1.5rem)] leading-none font-extrabold tracking-tight text-white">
+                              <span className={ventaImporteCardClass}>
                                 {fmt.format(p.precio)}
                               </span>
                             </div>
@@ -1339,6 +1494,8 @@ function SalePage() {
               className={cn(
                 "col-start-1 row-start-2 grid h-full min-h-0 grid-cols-2 gap-2 lg:grid-cols-4",
                 toolboxBarClass,
+                ventaFooterBarPaddingClass,
+                ventaFooterBandHeightClass,
               )}
             >
               <button
@@ -1376,6 +1533,11 @@ function SalePage() {
                       ? "Sin permiso"
                       : (clienteSeleccionado?.name ?? "Elegir cliente")}
                   </span>
+                  {ventaIvaLabel ? (
+                    <span className="mt-0.5 block truncate text-[11px] font-medium text-muted-foreground">
+                      {ventaIvaLabel}
+                    </span>
+                  ) : null}
                 </span>
               </button>
               <button
@@ -1456,7 +1618,9 @@ function SalePage() {
                   <span
                     className={cn(
                       "block truncate text-sm font-semibold leading-snug",
-                      hayDescuento ? "text-foreground" : "text-foreground/55",
+                      hayDescuento
+                        ? cn("text-foreground", ventaImporteBaseClass)
+                        : "text-foreground/55",
                     )}
                   >
                     {hayDescuento
@@ -1594,7 +1758,12 @@ function SalePage() {
                                 </span>
                               ) : null}
                               {tieneDescuento ? (
-                                <span className="inline-flex max-w-22 shrink-0 items-center justify-center truncate rounded-full border border-emerald-200 bg-emerald-50 px-1.5 py-0 text-[10px] font-semibold text-emerald-800 tabular-nums">
+                                <span
+                                  className={cn(
+                                    "inline-flex max-w-22 shrink-0 items-center justify-center truncate rounded-full border border-emerald-200 bg-emerald-50 px-1.5 py-0 text-[10px] font-semibold text-emerald-800",
+                                    ventaImporteBaseClass,
+                                  )}
+                                >
                                   {modoItemDescuento === "porcentaje"
                                     ? `${Math.min(100, Math.max(0, Number.isFinite(descuentoNumero) ? descuentoNumero : 0))}%`
                                     : fmt.format(descuento)}
@@ -1604,11 +1773,16 @@ function SalePage() {
                           </div>
                           <div className="text-right">
                             {tieneDescuento ? (
-                              <p className="text-[11px] tabular-nums text-slate-400 line-through">
+                              <p
+                                className={cn(
+                                  ventaImporteCartMutedClass,
+                                  "line-through",
+                                )}
+                              >
                                 {fmt.format(precioBaseItem)}
                               </p>
                             ) : null}
-                            <p className="text-sm font-bold tabular-nums text-slate-900">
+                            <p className={ventaImporteCartClass}>
                               {fmt.format(precioBaseItem - descuento)}
                             </p>
                           </div>
@@ -1720,7 +1894,7 @@ function SalePage() {
             </div>
 
             <div className="flex min-h-0 flex-col">
-              <div className="border-t border-[#d9dee4] bg-[#f8fafc] p-3 text-[#121417]">
+              <div className="bg-[#f8fafc] p-3 text-[#121417]">
                 <div className="grid grid-cols-2 gap-2 sm:gap-3">
                   <Button
                     type="button"
@@ -1765,7 +1939,11 @@ function SalePage() {
               <div
                 role="region"
                 aria-label="Total a cobrar de esta venta"
-                className="relative flex min-h-19 w-full shrink-0 flex-col justify-center overflow-hidden border-t border-emerald-500/35 px-4 py-3.5 backdrop-blur-xl sm:min-h-20 sm:px-5 sm:py-4"
+                className={cn(
+                  "relative box-border flex w-full shrink-0 flex-col justify-center border-t border-emerald-500/35 backdrop-blur-xl",
+                  ventaFooterBarPaddingClass,
+                  ventaFooterBandHeightClass,
+                )}
               >
                 <div
                   className="pointer-events-none absolute inset-0 bg-[linear-gradient(145deg,#07120e_0%,#0c1f17_42%,#061009_100%)]"
@@ -1783,10 +1961,6 @@ function SalePage() {
                   className="pointer-events-none absolute inset-x-0 bottom-0 h-px bg-linear-to-r from-transparent via-emerald-400/55 to-transparent"
                   aria-hidden
                 />
-                <div
-                  className="pointer-events-none absolute inset-x-0 top-0 h-px bg-linear-to-r from-transparent via-white/12 to-transparent"
-                  aria-hidden
-                />
 
                 <div className="relative z-10 flex w-full items-end justify-between gap-3">
                   <div className="min-w-0 flex-1">
@@ -1802,10 +1976,10 @@ function SalePage() {
                   <div className="flex min-w-0 shrink-0 flex-col items-end text-right">
                     {hayDescuento ? (
                       <>
-                        <p className="text-[11px] tabular-nums text-white/38 line-through decoration-white/25">
+                        <p className={ventaImporteTotalMutedClass}>
                           {fmt.format(subtotal)}
                         </p>
-                        <p className="mt-0.5 text-[11px] font-medium tabular-nums text-emerald-300/95">
+                        <p className={cn(ventaImporteTotalDiscountClass, "mt-0.5")}>
                           −{fmt.format(descuentoMonto)}
                         </p>
                         <div
@@ -1815,7 +1989,7 @@ function SalePage() {
                       </>
                     ) : null}
                     <p
-                      className="whitespace-nowrap text-[clamp(1.25rem,2.1vw,1.85rem)] font-black tabular-nums tracking-tight text-white drop-shadow-[0_0_20px_rgba(52,211,153,0.32)]"
+                      className={ventaImporteTotalClass}
                       aria-live="polite"
                       aria-atomic="true"
                     >
@@ -1846,7 +2020,9 @@ function SalePage() {
               Cliente para esta venta
             </DialogTitle>
             <DialogDescription className="text-sm leading-relaxed">
-              Buscá por nombre o elegí un cliente de la lista.
+              {clienteSeleccionado
+                ? "Cliente asignado a esta venta. Los datos fiscales vienen del cliente; quitá la selección para cargar CUIT/DNI manualmente."
+                : "Buscá por nombre, cargá CUIT/DNI o ajustá la condición IVA para esta venta. El comprobante se sugiere automáticamente."}
             </DialogDescription>
           </DialogHeader>
           <div className={ventaDialogBody}>
@@ -1857,13 +2033,14 @@ function SalePage() {
                 value={busquedaClienteModal}
                 onChange={(e) => setBusquedaClienteModal(e.target.value)}
                 placeholder="Nombre del cliente…"
+                disabled={clienteSeleccionado != null}
                 className={cn(
                   "h-11 rounded-lg pl-9",
                   busquedaClienteModal.length > 0 && "pr-9",
                 )}
                 autoComplete="off"
               />
-              {busquedaClienteModal.length > 0 ? (
+              {busquedaClienteModal.length > 0 && !clienteSeleccionado ? (
                 <button
                   type="button"
                   aria-label="Limpiar búsqueda"
@@ -1877,7 +2054,12 @@ function SalePage() {
                 </button>
               ) : null}
             </div>
-            <div className="mb-3 rounded-xl border border-border/50 bg-muted/15 p-3">
+            <div
+              className={cn(
+                "mb-3 rounded-xl border border-border/50 bg-muted/15 p-3",
+                clienteSeleccionado && "opacity-60",
+              )}
+            >
               <p className="mb-2 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
                 CUIT / DNI (padrón AFIP)
               </p>
@@ -1887,9 +2069,15 @@ function SalePage() {
                 placeholder="Ej. 20-12345678-9 o DNI"
                 className="h-10 rounded-lg"
                 autoComplete="off"
+                disabled={clienteSeleccionado != null}
+                readOnly={clienteSeleccionado != null}
               />
               <div className="mt-2 flex min-h-6 items-center gap-2 text-sm">
-                {ventaPadron.busy ? (
+                {clienteSeleccionado ? (
+                  <span className="font-medium text-foreground">
+                    {clienteSeleccionado.name}
+                  </span>
+                ) : ventaPadron.busy ? (
                   <>
                     <Loader2
                       className="size-4 shrink-0 animate-spin text-primary"
@@ -1909,27 +2097,88 @@ function SalePage() {
                   </span>
                 )}
               </div>
+              {clienteSeleccionado?.ivaCondition ? (
+                <p className="mt-1 text-xs text-muted-foreground">
+                  {labelCondicionIva(clienteSeleccionado.ivaCondition)}
+                </p>
+              ) : ventaPadron.condicionIvaNombre &&
+                !ventaPadron.busy &&
+                !ventaPadron.error ? (
+                <p className="mt-1 text-xs text-muted-foreground">
+                  AFIP: {ventaPadron.condicionIvaNombre}
+                </p>
+              ) : null}
+            </div>
+            <div
+              className={cn(
+                "mb-3 space-y-2",
+                clienteSeleccionado && "opacity-60",
+              )}
+            >
+              <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+                Condición IVA (esta venta)
+              </p>
+              <Select
+                value={ventaIvaCondition || "__none__"}
+                disabled={clienteSeleccionado != null}
+                onValueChange={(v) => {
+                  const next = v === "__none__" ? "" : v
+                  setVentaIvaCondition(next)
+                  if (next) {
+                    aplicarComprobanteDesdeIva(next as ClientIvaConditionValue)
+                  }
+                }}
+              >
+                <SelectTrigger className="h-10 rounded-lg bg-background">
+                  <SelectValue placeholder="Sin definir" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="__none__">Sin definir</SelectItem>
+                  {CLIENT_IVA_CONDITION_OPTIONS.map((o) => (
+                    <SelectItem key={o.value} value={o.value}>
+                      {o.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-muted-foreground">
+                Cambiar la condición IVA actualiza el comprobante sugerido. Podés
+                modificarlo después en Comprobante.
+              </p>
             </div>
             <ul
-              className="game-scroll max-h-[min(50vh,16rem)] space-y-2 overflow-y-auto rounded-xl border border-border/40 bg-muted/20 p-2 pr-1"
+              className={cn(
+                "game-scroll max-h-[min(50vh,16rem)] space-y-2 overflow-y-auto rounded-xl border border-border/40 bg-muted/20 p-2 pr-1",
+                clienteSeleccionado && "opacity-60",
+              )}
               role="listbox"
               aria-label="Clientes"
             >
               {clientesFiltradosModal.length === 0 ? (
                 <li className="rounded-lg border border-dashed border-border/60 bg-background/50 px-4 py-8 text-center text-sm text-muted-foreground">
-                  No hay resultados para esa búsqueda.
+                  {clienteSeleccionado && !busquedaClienteModalTrim
+                    ? "Cliente asignado a esta venta."
+                    : !busquedaClienteModalTrim
+                      ? "Escribí un nombre en el buscador para ver clientes."
+                      : "No hay resultados para esa búsqueda."}
                 </li>
               ) : (
                 clientesFiltradosModal.map((c) => {
                   const seleccionado = clienteSeleccionado?.id === c.id
+                  const opcionDeshabilitada = clienteSeleccionado != null
                   return (
                     <li key={c.id}>
                       <button
                         type="button"
                         role="option"
                         aria-selected={seleccionado}
+                        aria-disabled={opcionDeshabilitada}
+                        disabled={opcionDeshabilitada}
                         onClick={() => seleccionarCliente(c)}
-                        className={ventaDialogOptionClass(seleccionado)}
+                        className={ventaDialogOptionClass(
+                          seleccionado,
+                          opcionDeshabilitada,
+                        )}
                       >
                         <span className="min-w-0">
                           <span className="block text-sm font-semibold leading-snug text-foreground">
@@ -1938,6 +2187,11 @@ function SalePage() {
                           {c.taxId ? (
                             <span className="mt-0.5 block text-xs leading-snug text-muted-foreground">
                               {c.taxId}
+                            </span>
+                          ) : null}
+                          {c.ivaCondition ? (
+                            <span className="mt-0.5 block text-xs leading-snug text-muted-foreground">
+                              {labelCondicionIva(c.ivaCondition)}
                             </span>
                           ) : null}
                         </span>
@@ -1958,8 +2212,7 @@ function SalePage() {
                 variant="ghost"
                 className={ventaDialogGhostBtn}
                 onClick={() => {
-                  setClienteSeleccionado(null)
-                  setFiscalDocVenta("")
+                  quitarClienteVenta()
                   setClienteModalAbierto(false)
                 }}
               >
@@ -1980,8 +2233,8 @@ function SalePage() {
               Comprobante
             </DialogTitle>
             <DialogDescription className="text-sm leading-relaxed">
-              Elegí el tipo para esta venta. Por defecto no se emite comprobante
-              fiscal.
+              Elegí el tipo para esta venta. Facturas A/B/C registran IVA débito
+              fiscal en el asiento; sin comprobante y Recibo X no.
             </DialogDescription>
           </DialogHeader>
           <div
@@ -2230,8 +2483,11 @@ function SalePage() {
             </div>
             {descuentoDraftModo === "fijo" && subtotal > 0 ? (
               <p className="mt-3 rounded-lg border border-border/50 bg-muted/30 px-3 py-2 text-xs leading-relaxed text-muted-foreground">
-                Máximo aplicable: {fmt.format(subtotal)}. Si superás ese monto,
-                pasa a 100 %.
+                Máximo aplicable:{" "}
+                <span className={ventaImporteBaseClass}>
+                  {fmt.format(subtotal)}
+                </span>
+                . Si superás ese monto, pasa a 100 %.
               </p>
             ) : null}
             {descuentoDraftModo === "fijo" && subtotal === 0 ? (
@@ -2296,7 +2552,12 @@ function SalePage() {
               <div className="space-y-2 text-muted-foreground">
                 <p>
                   {payOnClientAccount ? "Total a cuenta:" : "Total a cobrar:"}{" "}
-                  <span className="font-semibold text-foreground tabular-nums">
+                  <span
+                    className={cn(
+                      ventaImporteBaseClass,
+                      "font-semibold text-foreground",
+                    )}
+                  >
                     {fmt.format(total)}
                   </span>
                   . Forma de pago:{" "}

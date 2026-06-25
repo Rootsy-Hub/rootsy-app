@@ -12,9 +12,10 @@ import {
 } from "@/app/[siteId]/[popId]/purchases/actions"
 import { completePurchase } from "@/app/[siteId]/[popId]/purchases/completePurchase"
 import { SUPPLIER_ACCOUNT_PAYMENT_LABEL } from "@/lib/operationPaymentLabels"
-import { popMenuHref } from "@/lib/popRoutes"
 import { getPurchaseDocumentTypeOptions } from "@/lib/purchaseDocumentTypes"
+import { DataWorkspaceLayout } from "@/components/layouts/DataWorkspaceLayout"
 import { DataWorkspaceSectionMenu } from "@/components/layouts/DataWorkspaceSectionMenu"
+import { useDataWorkspaceSidebar } from "@/components/layouts/useDataWorkspaceSidebar"
 import { useAuth } from "@/context/AuthContextSupabase"
 import { useParams } from "next/navigation"
 import {
@@ -27,14 +28,11 @@ import {
   type CSSProperties,
 } from "react"
 import {
-  ArrowLeft,
   Banknote,
   CircleCheck,
   CircleX,
   LayoutGrid,
   Loader2,
-  Maximize2,
-  Minimize2,
   Minus,
   Package,
   Layers,
@@ -47,11 +45,8 @@ import {
   Search,
   Trash2,
   Truck,
-  Wifi,
-  WifiOff,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
 import {
   Dialog,
@@ -73,6 +68,7 @@ import {
 } from "@/components/ui/alert-dialog"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { Checkbox } from "@/components/ui/checkbox"
 import { Separator } from "@/components/ui/separator"
 
 type Producto = {
@@ -129,6 +125,33 @@ const fmt = new Intl.NumberFormat("es-AR", {
   currency: "ARS",
   minimumFractionDigits: 2,
 })
+
+/** Tipografía numérica alineada al workspace (tablas de importes). */
+const compraImporteBaseClass = "font-mono tabular-nums tracking-tight"
+const compraImporteCartClass = cn(
+  compraImporteBaseClass,
+  "text-sm font-semibold text-slate-900",
+)
+const compraImporteCartMutedClass = cn(
+  compraImporteBaseClass,
+  "text-[11px] text-slate-400",
+)
+const compraImporteTotalClass = cn(
+  compraImporteBaseClass,
+  "whitespace-nowrap text-[clamp(1.05rem,1.75vw,1.4375rem)] font-semibold text-white/90",
+)
+const compraImporteCardClass = cn(
+  compraImporteBaseClass,
+  "block text-[clamp(1.05rem,1.65vw,1.3125rem)] leading-none font-semibold text-white/90",
+)
+const compraImporteTotalMutedClass = cn(
+  compraImporteBaseClass,
+  "text-[11px] line-through decoration-white/25 text-white/38",
+)
+const compraImporteTotalDiscountClass = cn(
+  compraImporteBaseClass,
+  "text-[11px] font-medium text-emerald-300/95",
+)
 
 function normalizarBusqueda(s: string) {
   return s
@@ -269,6 +292,10 @@ function PurchasesPage() {
   const params = useParams()
   const siteId = typeof params?.siteId === "string" ? params.siteId : ""
   const popId = typeof params?.popId === "string" ? params.popId : undefined
+  const {
+    open: catalogSidebarOpen,
+    setOpen: setCatalogSidebarOpen,
+  } = useDataWorkspaceSidebar(siteId, popId ?? "", Boolean(popId))
   const { user } = useAuth()
 
   const [catalogArticles, setCatalogArticles] = useState<PurchaseCatalogArticle[]>(
@@ -280,6 +307,7 @@ function PurchasesPage() {
   const [catalogLoading, setCatalogLoading] = useState(true)
   const [catalogError, setCatalogError] = useState<string | null>(null)
   const [canCreate, setCanCreate] = useState(false)
+  const [canUpdateArticles, setCanUpdateArticles] = useState(false)
   const [paymentMethods, setPaymentMethods] = useState<
     PurchaseCatalogPaymentMethod[]
   >([])
@@ -305,6 +333,7 @@ function PurchasesPage() {
       setCategoryNames([])
       setPopName("")
       setCanCreate(false)
+      setCanUpdateArticles(false)
       setPaymentMethods([])
       setCanReadPaymentMethods(false)
       setCatalogError(res.error)
@@ -318,6 +347,7 @@ function PurchasesPage() {
     )
     setPopName(res.popName)
     setCanCreate(res.canCreate)
+    setCanUpdateArticles(res.canUpdateArticles)
     setPaymentMethods(res.paymentMethods)
     setCanReadPaymentMethods(res.canReadPaymentMethods)
     setCatalogError(null)
@@ -352,6 +382,9 @@ function PurchasesPage() {
   const [busqueda, setBusqueda] = useState("")
   const [carrito, setCarrito] = useState<ItemCarrito[]>([])
   const [itemUnitCosts, setItemUnitCosts] = useState<Record<string, string>>({})
+  const [itemUpdateArticleCost, setItemUpdateArticleCost] = useState<
+    Record<string, boolean>
+  >({})
   const [purchaseKind, setPurchaseKind] = useState<PurchaseKind>("merchandise")
   const [proveedorSeleccionado, setProveedorSeleccionado] =
     useState<PurchaseCatalogSupplier | null>(null)
@@ -396,8 +429,6 @@ function PurchasesPage() {
   const [comprarConfirmOpen, setComprarConfirmOpen] = useState(false)
   const [compraSubmitting, setCompraSubmitting] = useState(false)
   const [compraError, setCompraError] = useState<string | null>(null)
-  const [isOnline, setIsOnline] = useState(true)
-  const [isFullscreen, setIsFullscreen] = useState(false)
 
   const busquedaProductosInputRef = useRef<HTMLInputElement>(null)
   const busquedaProveedorInputRef = useRef<HTMLInputElement>(null)
@@ -541,6 +572,7 @@ function PurchasesPage() {
   const limpiarCompra = useCallback(() => {
     setCarrito([])
     setItemUnitCosts({})
+    setItemUpdateArticleCost({})
     setProveedorSeleccionado(null)
     setPurchaseKind("merchandise")
     setDocumentNumber("")
@@ -601,6 +633,7 @@ function PurchasesPage() {
             articleId: i.productoId,
             quantity: i.cantidad,
             unitCost: parseUnitCost(itemUnitCosts[i.productoId] ?? "", fallback),
+            updateArticleCost: itemUpdateArticleCost[i.productoId] === true,
           }
         }),
       })
@@ -610,6 +643,7 @@ function PurchasesPage() {
       }
       setComprarConfirmOpen(false)
       limpiarCompra()
+      void loadCatalog()
     } finally {
       setCompraSubmitting(false)
     }
@@ -631,29 +665,10 @@ function PurchasesPage() {
     carrito,
     productosCatalogo,
     itemUnitCosts,
+    itemUpdateArticleCost,
     limpiarCompra,
+    loadCatalog,
   ])
-
-  useEffect(() => {
-    setIsOnline(navigator.onLine)
-    const handleOnline = () => setIsOnline(true)
-    const handleOffline = () => setIsOnline(false)
-    window.addEventListener("online", handleOnline)
-    window.addEventListener("offline", handleOffline)
-    return () => {
-      window.removeEventListener("online", handleOnline)
-      window.removeEventListener("offline", handleOffline)
-    }
-  }, [])
-
-  useEffect(() => {
-    const syncFullscreen = () => {
-      setIsFullscreen(Boolean(document.fullscreenElement))
-    }
-    syncFullscreen()
-    document.addEventListener("fullscreenchange", syncFullscreen)
-    return () => document.removeEventListener("fullscreenchange", syncFullscreen)
-  }, [])
 
   const proveedoresFiltradosModal = useMemo(() => {
     const q = normalizarBusqueda(busquedaProveedorModal.trim())
@@ -696,6 +711,17 @@ function PurchasesPage() {
         items: buckets[kind],
       }))
   }, [paymentMethods])
+
+  const paymentMethodListItems = useMemo(
+    () =>
+      paymentMethodGroups.flatMap((g) =>
+        g.items.map((method) => ({
+          method,
+          groupTitle: g.title,
+        })),
+      ),
+    [paymentMethodGroups],
+  )
 
   const abrirModalDescuento = () => {
     if (hayDescuento) {
@@ -801,6 +827,11 @@ function PurchasesPage() {
       delete next[productoId]
       return next
     })
+    setItemUpdateArticleCost((prev) => {
+      const next = { ...prev }
+      delete next[productoId]
+      return next
+    })
     if (itemDetalleAbiertoId === productoId) {
       setItemDetalleAbiertoId(null)
     }
@@ -810,23 +841,18 @@ function PurchasesPage() {
     setItemDetalleAbiertoId((prev) => (prev === itemId ? null : itemId))
   }
 
-  const toggleFullscreen = async () => {
-    if (document.fullscreenElement) {
-      await document.exitFullscreen()
-      return
-    }
-    await document.documentElement.requestFullscreen()
-  }
-
   const toolboxBarClass =
-    "border-t border-white/10 bg-[#0b100e]/92 p-2 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)] backdrop-blur-xl sm:p-2.5"
+    "box-border border-t border-white/10 bg-[#0b100e]/92 backdrop-blur-xl"
+  const compraFooterBandHeightClass =
+    "min-h-[calc(4.5rem+1rem)] sm:min-h-[calc(4.75rem+1.25rem)]"
+  const compraFooterBarPaddingClass = "p-2 sm:p-2.5"
   const toolboxSlotClass = (configurado: boolean) =>
     cn(
-      "group flex h-full min-h-[4.5rem] w-full items-center gap-2.5 rounded-xl border px-2.5 py-2 text-left transition-[background-color,border-color,box-shadow] duration-150 sm:min-h-[4.75rem] sm:gap-3 sm:px-3",
+      "group flex h-full min-h-[4.5rem] w-full items-center gap-2.5 rounded-xl border-0 px-2.5 py-2 text-left transition-[background-color,box-shadow] duration-150 sm:min-h-[4.75rem] sm:gap-3 sm:px-3",
       "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/45 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0b100e]",
       configurado
-        ? "border-emerald-500/30 bg-emerald-500/[0.09] shadow-[inset_0_1px_0_rgba(167,243,208,0.08)] hover:border-emerald-400/35 hover:bg-emerald-500/12"
-        : "border-white/[0.06] bg-white/[0.02] hover:border-white/12 hover:bg-white/[0.05]",
+        ? "bg-emerald-500/[0.09] shadow-[inset_0_1px_0_rgba(167,243,208,0.08)] hover:bg-emerald-500/12"
+        : "bg-white/[0.02] hover:bg-white/[0.05]",
     )
   const toolboxIconWrap = (configurado: boolean) =>
     cn(
@@ -836,27 +862,47 @@ function PurchasesPage() {
         : "bg-white/[0.06] text-foreground/45 group-hover:bg-white/10 group-hover:text-foreground/75",
     )
 
-  const modalOpcionBase =
-    "rounded-xl border px-4 py-3 text-sm font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
-  const modalOpcionSeleccionada =
-    "border-primary/55 bg-primary/12 shadow-[inset_0_0_0_1px_rgba(16,185,129,0.25)]"
-  const modalOpcionIdle =
-    "border-foreground/10 bg-secondary hover:bg-muted"
+  const compraDialogOptionClass = (seleccionado: boolean, disabled = false) =>
+    cn(
+      "flex w-full items-center justify-between gap-3 rounded-lg border px-3 py-2.5 text-left transition-colors",
+      disabled &&
+        (seleccionado
+          ? "cursor-default"
+          : "pointer-events-none opacity-45"),
+      seleccionado
+        ? "border-primary/40 bg-primary/10 ring-1 ring-primary/15"
+        : "border-border/70 bg-muted/20 hover:bg-muted/35",
+    )
 
-  const dialogSurface =
-    "gap-0 overflow-hidden rounded-2xl border border-border/60 bg-card p-0 shadow-2xl ring-1 ring-black/[0.04] dark:ring-white/[0.06]"
-  const dialogMaxViewport =
+  const compraDialogLight = "rootsy-app-light text-foreground"
+  const compraDialogSurface =
+    "gap-0 overflow-hidden rounded-2xl border border-border/60 bg-card p-0 shadow-2xl ring-1 ring-black/[0.04]"
+  const compraDialogMaxViewport =
     "max-h-[calc(100vh-100px)] flex flex-col overflow-hidden"
-  const dialogSurfaceMd = cn(dialogSurface, dialogMaxViewport, "sm:max-w-md")
-  const dialogSurfaceLg = cn(dialogSurface, dialogMaxViewport, "sm:max-w-2xl")
-  const dialogHeader =
+  const compraDialogSurfaceMd = cn(
+    compraDialogSurface,
+    compraDialogMaxViewport,
+    "sm:max-w-md",
+  )
+  const compraDialogSurfaceLg = cn(
+    compraDialogSurface,
+    compraDialogMaxViewport,
+    "sm:max-w-2xl",
+  )
+  const compraDialogContentMd = cn(compraDialogSurfaceMd, compraDialogLight)
+  const compraDialogContentLg = cn(compraDialogSurfaceLg, compraDialogLight)
+  const compraDialogHeader =
     "space-y-1.5 border-b border-border/50 bg-muted/25 px-6 pb-4 pt-5 text-left"
-  const dialogBody = "px-6 py-4"
-  const dialogFooter =
+  const compraDialogBody = "px-6 py-4"
+  const compraDialogFooter =
     "border-t border-border/50 bg-muted/15 px-6 py-3.5 sm:justify-between"
-  const dialogPrimaryBtn =
+  const compraDialogPrimaryBtn =
     "h-10 bg-emerald-600 font-semibold text-white shadow-sm hover:bg-emerald-500 active:bg-emerald-700"
-  const dialogGhostBtn = "h-10 text-muted-foreground hover:text-foreground"
+  const compraDialogGhostBtn = "h-10 text-muted-foreground hover:text-foreground"
+  const compraAlertDialogContent = cn(
+    compraDialogLight,
+    "rounded-2xl border border-border/60 bg-card shadow-2xl sm:max-w-md",
+  )
 
   const headerUserName = useMemo(() => {
     const meta = user?.user_metadata?.full_name
@@ -868,6 +914,49 @@ function PurchasesPage() {
     user?.user_metadata?.avatar_url ||
     `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(user?.email || "u")}`
 
+  const catalogSidebar = useMemo(
+    () => (
+      <nav
+        className="game-scroll flex min-h-0 flex-1 flex-col gap-6 overflow-y-auto px-3 py-4"
+        aria-label="Filtros del catálogo"
+      >
+        <div>
+          <p className="mb-2.5 px-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-500">
+            Categorías
+          </p>
+          <ul className="flex flex-col gap-0.5 p-0" role="list">
+            {categoriasNav.map((cat) => {
+              const seleccionado = vistaCatalogo.categoria === cat
+              return (
+                <li key={cat}>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setVistaCatalogo({
+                        modo: "categoria",
+                        categoria: cat,
+                      })
+                    }
+                    className={cn(
+                      "relative flex min-h-11 w-full items-center rounded-md px-3 py-2.5 text-left text-sm font-medium transition-colors duration-150",
+                      "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/45 focus-visible:ring-offset-2 focus-visible:ring-offset-[#1a2027]",
+                      seleccionado
+                        ? "bg-white/10 text-white before:absolute before:top-1/2 before:left-0 before:h-5 before:w-0.5 before:-translate-y-1/2 before:rounded-full before:bg-emerald-400 before:content-['']"
+                        : "text-slate-400 hover:bg-white/6 hover:text-slate-100",
+                    )}
+                  >
+                    {cat}
+                  </button>
+                </li>
+              )
+            })}
+          </ul>
+        </div>
+      </nav>
+    ),
+    [categoriasNav, vistaCatalogo.categoria],
+  )
+
   if (!popId || !siteId) {
     return (
       <div className="min-h-screen bg-[#070a09] p-10 text-sm text-slate-300">
@@ -877,157 +966,61 @@ function PurchasesPage() {
   }
 
   return (
-    <div className="relative h-screen overflow-hidden bg-[#070a09] text-white">
-      <div className="pointer-events-none absolute inset-0">
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_20%,rgba(52,211,153,0.14),transparent_40%),radial-gradient(circle_at_80%_10%,rgba(99,102,241,0.1),transparent_36%)]" />
-        <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.03)_1px,transparent_1px)] bg-size-[38px_38px] opacity-20" />
-      </div>
-
-      <div className="relative z-10 grid h-full grid-rows-[4.5rem_minmax(0,1fr)]">
-        <header className="shrink-0 border-b border-zinc-800/90 bg-zinc-950/95 text-zinc-100 shadow-sm backdrop-blur-xl">
-          <div className="grid h-18 grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-4 px-4">
-            <div className="flex min-w-0 items-center gap-3">
-              <Link
-                href={siteId && popId ? popMenuHref(siteId, popId) : "/home"}
-                className="group inline-flex size-10 items-center justify-center rounded-xl border border-white/10 bg-zinc-900 text-zinc-300 transition-all hover:border-white/15 hover:bg-zinc-800 hover:text-white"
-                aria-label="Volver"
-              >
-                <ArrowLeft className="size-5 transition-transform group-hover:-translate-x-0.5" />
-              </Link>
-              <div className="h-6 w-px bg-zinc-700" />
-              <div className="flex min-w-0 items-center gap-2.5">
-                <div className="size-8 overflow-hidden rounded-lg ring-1 ring-zinc-600">
-                  <img
-                    src={`https://api.dicebear.com/7.x/shapes/svg?seed=${encodeURIComponent(popId)}&backgroundColor=1a1f1d`}
-                    alt=""
-                    className="size-full object-cover"
-                  />
-                </div>
-                <span className="truncate text-sm font-semibold text-zinc-100">
-                  {popName || (catalogLoading ? "…" : "—")}
-                </span>
-              </div>
-            </div>
-
-            <div className="flex flex-wrap items-center justify-center gap-2">
-              <h1 className="text-[1.65rem] font-black tracking-tight text-white">
-                Comprar
-              </h1>
-              <span
-                className={cn(
-                  "inline-flex size-7 items-center justify-center rounded-full border",
-                  isOnline
-                    ? "border-emerald-500/35 bg-emerald-500/10 text-emerald-300"
-                    : "border-red-500/35 bg-red-500/10 text-red-300",
-                )}
-                role="status"
-                aria-label={isOnline ? "En línea" : "Sin conexión"}
-                title={isOnline ? "En línea" : "Sin conexión"}
-              >
-                {isOnline ? (
-                  <Wifi className="size-3.5" aria-hidden />
-                ) : (
-                  <WifiOff className="size-3.5" aria-hidden />
-                )}
-              </span>
-            </div>
-
-            <div className="flex shrink-0 items-center justify-end gap-2">
-              <button
-                type="button"
-                onClick={() => void toggleFullscreen()}
-                className="group inline-flex size-9 items-center justify-center rounded-xl text-zinc-400 transition-colors hover:bg-white/10 hover:text-white"
-                aria-label={
-                  isFullscreen
-                    ? "Salir de pantalla completa"
-                    : "Pantalla completa"
-                }
-              >
-                {isFullscreen ? (
-                  <Minimize2 className="size-4.5" />
-                ) : (
-                  <Maximize2 className="size-4.5" />
-                )}
-              </button>
-              <DataWorkspaceSectionMenu
-                headerVariant="dark"
-                viewItems={PURCHASE_KIND_MENU_ITEMS}
-                activeId={purchaseKind}
-                onSelect={(id) => {
-                  if (PURCHASE_KINDS.includes(id as PurchaseKind)) {
-                    setPurchaseKind(id as PurchaseKind)
-                  }
-                }}
-                viewsSectionLabel="Tipo de compra"
-              />
-              <div className="h-6 w-px bg-zinc-700" />
-              <div className="flex items-center gap-3">
-                <div className="relative">
-                  <Avatar className="size-10 ring-1 ring-zinc-600">
-                    <AvatarImage src={userAvatarSrc} alt="" />
-                    <AvatarFallback className="bg-zinc-800 text-xs text-emerald-300">
-                      {headerUserName.slice(0, 2).toUpperCase()}
-                    </AvatarFallback>
-                  </Avatar>
-                  <div className="absolute -right-0.5 -bottom-0.5 size-2.5 rounded-full border border-card bg-primary" />
-                </div>
-                <div className="hidden min-w-0 flex-col leading-tight sm:flex">
-                  <span className="truncate text-sm font-semibold text-zinc-100">
-                    {headerUserName}
-                  </span>
-                  <span className="text-[10px] font-semibold uppercase tracking-wider text-emerald-400/90">
-                    Compras
-                  </span>
-                </div>
-              </div>
-            </div>
+    <>
+      <DataWorkspaceLayout
+        siteId={siteId}
+        popId={popId}
+        popName={popName}
+        title="Comprar"
+        headerVariant="dark"
+        contentFlush
+        loading={catalogLoading}
+        userName={headerUserName}
+        userAvatarSrc={userAvatarSrc}
+        userRoleLabel="Compras"
+        sidebarCollapsible
+        sidebarEdgeToggle={false}
+        sidebarOpen={catalogSidebarOpen}
+        onSidebarOpenChange={setCatalogSidebarOpen}
+        mainClassName="bg-[#070a09] text-white"
+        sectionMenu={
+          <DataWorkspaceSectionMenu
+            headerVariant="dark"
+            viewItems={PURCHASE_KIND_MENU_ITEMS}
+            activeId={purchaseKind}
+            onSelect={(id) => {
+              if (PURCHASE_KINDS.includes(id as PurchaseKind)) {
+                setPurchaseKind(id as PurchaseKind)
+              }
+            }}
+            viewsSectionLabel="Tipo de compra"
+          />
+        }
+      >
+        <div className="dark relative flex h-full min-h-0 w-full flex-col overflow-hidden bg-[#070a09] text-white">
+          <div className="pointer-events-none absolute inset-0">
+            <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_20%,rgba(52,211,153,0.14),transparent_40%),radial-gradient(circle_at_80%_10%,rgba(99,102,241,0.1),transparent_36%)]" />
+            <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.03)_1px,transparent_1px)] bg-size-[38px_38px] opacity-20" />
           </div>
-        </header>
 
-        <main className="grid min-h-0 grid-cols-[minmax(0,1fr)_380px]">
-          <section className="grid min-h-0 grid-rows-[minmax(0,1fr)_minmax(4.75rem,auto)]">
-            <div className="grid min-h-0 grid-cols-[280px_minmax(0,1fr)]">
-              <aside className="flex min-h-0 min-w-0 flex-col border-r border-white/10 bg-[#1a2027]">
-                <nav
-                  className="game-scroll flex min-h-0 flex-1 flex-col gap-6 overflow-y-auto px-3 py-4"
-                  aria-label="Filtros del catálogo"
-                >
-                  <div>
-                    <p className="mb-2.5 px-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-500">
-                      Categorías
-                    </p>
-                    <ul className="flex flex-col gap-0.5 p-0" role="list">
-                      {categoriasNav.map((cat) => {
-                        const seleccionado = vistaCatalogo.categoria === cat
-                        return (
-                          <li key={cat}>
-                            <button
-                              type="button"
-                              onClick={() =>
-                                setVistaCatalogo({
-                                  modo: "categoria",
-                                  categoria: cat,
-                                })
-                              }
-                              className={cn(
-                                "relative flex min-h-11 w-full items-center rounded-md px-3 py-2.5 text-left text-sm font-medium transition-colors duration-150",
-                                "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/45 focus-visible:ring-offset-2 focus-visible:ring-offset-[#1a2027]",
-                                seleccionado
-                                  ? "bg-white/10 text-white before:absolute before:top-1/2 before:left-0 before:h-5 before:w-0.5 before:-translate-y-1/2 before:rounded-full before:bg-emerald-400 before:content-['']"
-                                  : "text-slate-400 hover:bg-white/6 hover:text-slate-100",
-                              )}
-                            >
-                              {cat}
-                            </button>
-                          </li>
-                        )
-                      })}
-                    </ul>
-                  </div>
-                </nav>
+          <main className="relative z-10 grid min-h-0 flex-1 grid-cols-[minmax(0,1fr)_380px] grid-rows-[minmax(0,1fr)_calc(4.5rem+1rem)] sm:grid-rows-[minmax(0,1fr)_calc(4.75rem+1.25rem)]">
+            <div className="col-start-1 row-start-1 flex min-h-0 min-w-0 overflow-hidden">
+              <aside
+                id="data-workspace-sidebar"
+                className={cn(
+                  "relative shrink-0 overflow-hidden border-r border-white/10 bg-[#1a2027] transition-[width,border-color] duration-300 ease-in-out motion-reduce:transition-none",
+                  catalogSidebarOpen ? "w-[280px]" : "w-0 border-r-0",
+                )}
+                aria-hidden={!catalogSidebarOpen}
+                {...(!catalogSidebarOpen ? { inert: true } : {})}
+                aria-label="Filtros del catálogo"
+              >
+                <div className="flex h-full w-[280px] min-w-[280px] flex-col">
+                  {catalogSidebar}
+                </div>
               </aside>
 
-              <section className="grid min-h-0 min-w-0 grid-rows-[auto_minmax(0,1fr)] bg-[#20262e]">
+              <section className="grid min-h-0 min-w-0 flex-1 grid-rows-[auto_minmax(0,1fr)] bg-[#20262e]">
                 <div className="flex min-w-0 items-center gap-3 border-b border-white/10 px-4 py-3">
                   <div className="relative flex h-10 shrink-0 items-center rounded-lg border border-white/12 bg-black/25 p-1 shadow-[inset_0_1px_0_rgba(255,255,255,0.08),0_0_0_1px_rgba(16,185,129,0.06)]">
                     <span
@@ -1190,15 +1183,16 @@ function PurchasesPage() {
                               <h3 className="line-clamp-2 text-lg font-bold leading-tight text-foreground">
                                 {p.nombre}
                               </h3>
-                              <p className="mt-1 line-clamp-3 text-sm leading-relaxed text-muted-foreground">
+                              <p className="mt-1 line-clamp-2 text-sm leading-relaxed text-muted-foreground">
                                 {p.descripcion}
                               </p>
                             </div>
-                            <div className={modoVista === "grid" ? "self-end" : "shrink-0"}>
-                              <span className="mb-0.5 block text-[10px] font-semibold uppercase tracking-wider text-slate-500">
-                                Costo unit.
-                              </span>
-                              <span className="block text-[clamp(1.16rem,1.9vw,1.5rem)] leading-none font-extrabold tracking-tight text-white">
+                            <div
+                              className={
+                                modoVista === "grid" ? "self-end" : "shrink-0"
+                              }
+                            >
+                              <span className={compraImporteCardClass}>
                                 {fmt.format(p.precio)}
                               </span>
                             </div>
@@ -1215,16 +1209,15 @@ function PurchasesPage() {
               role="toolbar"
               aria-label="Configuración de la compra"
               className={cn(
-                "grid h-full min-h-0 grid-cols-2 gap-2 lg:grid-cols-4",
+                "col-start-1 row-start-2 grid h-full min-h-0 grid-cols-2 gap-2 lg:grid-cols-4",
                 toolboxBarClass,
+                compraFooterBarPaddingClass,
+                compraFooterBandHeightClass,
               )}
             >
               <button
                 type="button"
-                onClick={() => {
-                  setBusquedaProveedorModal("")
-                  setProveedorModalAbierto(true)
-                }}
+                onClick={() => setProveedorModalAbierto(true)}
                 className={toolboxSlotClass(Boolean(proveedorSeleccionado))}
                 aria-label={
                   proveedorSeleccionado
@@ -1346,10 +1339,9 @@ function PurchasesPage() {
                 </span>
               </button>
             </div>
-          </section>
 
           <aside
-            className="grid min-h-0 grid-rows-[minmax(0,1fr)_auto] bg-[#eef1f5] text-[#121417]"
+            className="col-start-2 row-span-2 grid min-h-0 grid-rows-[minmax(0,1fr)_auto] bg-[#eef1f5] text-[#121417]"
             aria-label="Carrito de la compra"
           >
             <div className="flex min-h-0 flex-col">
@@ -1439,12 +1431,12 @@ function PurchasesPage() {
                               active={abierto}
                               className="text-sm font-semibold text-slate-900"
                             />
-                            <p className="mt-0.5 line-clamp-1 text-xs text-slate-500">
+                            <p className={cn("mt-0.5 line-clamp-1", compraImporteCartMutedClass)}>
                               {fmt.format(unitCost)} c/u
                             </p>
                           </div>
                           <div className="text-right">
-                            <p className="text-sm font-bold tabular-nums text-slate-900">
+                            <p className={compraImporteCartClass}>
                               {fmt.format(lineTotal)}
                             </p>
                           </div>
@@ -1467,34 +1459,55 @@ function PurchasesPage() {
                           id={`cart-item-${itemId}-opciones`}
                           role="region"
                           onClick={(e) => e.stopPropagation()}
-                          className="rounded-xl border border-slate-200/95 bg-white px-3 py-2.5 shadow-sm"
+                          className="rounded-xl border border-slate-200/95 bg-white px-3 py-2 shadow-sm"
                         >
-                          <Label
-                            htmlFor={`unit-cost-${itemId}`}
-                            className="text-xs text-slate-500"
-                          >
-                            Costo unitario
-                          </Label>
-                          <Input
-                            id={`unit-cost-${itemId}`}
-                            inputMode="decimal"
-                            value={itemUnitCosts[itemId] ?? ""}
-                            placeholder={fallback > 0 ? String(fallback) : "0"}
-                            onChange={(e) => {
-                              const raw = e.target.value
-                              if (!/^\d*[.,]?\d*$/.test(raw)) return
-                              setItemUnitCosts((prev) => ({
-                                ...prev,
-                                [itemId]: raw,
-                              }))
-                            }}
-                            className="mt-1 h-9"
-                          />
-                          {item.producto && item.producto.iva > 0 ? (
-                            <p className="mt-1.5 text-[11px] text-slate-400">
-                              IVA {item.producto.iva}% incluido en el costo
-                            </p>
-                          ) : null}
+                          <div className="flex items-center gap-2">
+                            <Label
+                              htmlFor={`unit-cost-${itemId}`}
+                              className="shrink-0 text-[11px] text-slate-500"
+                            >
+                              Costo
+                            </Label>
+                            <Input
+                              id={`unit-cost-${itemId}`}
+                              inputMode="decimal"
+                              value={itemUnitCosts[itemId] ?? ""}
+                              placeholder={fallback > 0 ? String(fallback) : "0"}
+                              title={
+                                item.producto && item.producto.iva > 0
+                                  ? `IVA ${item.producto.iva}% incluido en el costo`
+                                  : undefined
+                              }
+                              onChange={(e) => {
+                                const raw = e.target.value
+                                if (!/^\d*[.,]?\d*$/.test(raw)) return
+                                setItemUnitCosts((prev) => ({
+                                  ...prev,
+                                  [itemId]: raw,
+                                }))
+                              }}
+                              className="h-8 w-22 shrink-0 font-mono text-sm tabular-nums"
+                            />
+                            {canUpdateArticles ? (
+                              <label
+                                htmlFor={`update-cost-${itemId}`}
+                                className="ml-auto flex min-w-0 cursor-pointer items-center gap-1.5 text-[11px] leading-none text-slate-500"
+                              >
+                                <Checkbox
+                                  id={`update-cost-${itemId}`}
+                                  checked={itemUpdateArticleCost[itemId] === true}
+                                  onCheckedChange={(checked) => {
+                                    setItemUpdateArticleCost((prev) => ({
+                                      ...prev,
+                                      [itemId]: checked === true,
+                                    }))
+                                  }}
+                                  className="size-3.5 rounded-[3px]"
+                                />
+                                <span className="truncate">Actualizar costo</span>
+                              </label>
+                            ) : null}
+                          </div>
                         </div>
                       ) : null}
                     </div>
@@ -1504,16 +1517,16 @@ function PurchasesPage() {
             </div>
 
             <div className="flex min-h-0 flex-col">
-              <div className="border-t border-[#d9dee4] bg-[#f8fafc] p-3 text-[#121417]">
+              <div className="bg-[#f8fafc] p-3 text-[#121417]">
                 <div className="grid grid-cols-2 gap-2 sm:gap-3">
                   <Button
                     type="button"
                     variant="outline"
                     disabled={!hayContenidoCompra}
                     onClick={() => setDescartarConfirmOpen(true)}
-                    className="h-11 gap-2 border-rose-200/90 bg-white font-medium text-rose-700 hover:border-rose-300 hover:bg-rose-50 disabled:opacity-45"
+                    className="h-11 gap-2 border-rose-200/90 bg-white font-medium text-rose-700 shadow-none hover:border-rose-300 hover:bg-rose-50 hover:text-rose-800 focus-visible:ring-2 focus-visible:ring-rose-400/45 focus-visible:ring-offset-2 focus-visible:ring-offset-[#f8fafc] disabled:pointer-events-auto disabled:cursor-not-allowed disabled:opacity-45"
                   >
-                    <CircleX className="size-4 shrink-0" />
+                    <CircleX className="size-4 shrink-0" aria-hidden />
                     Descartar
                   </Button>
                   <Button
@@ -1534,9 +1547,9 @@ function PurchasesPage() {
                               ? "No tenés permiso para registrar compras."
                               : undefined
                     }
-                    className="h-11 gap-2 border-0 bg-emerald-600 font-semibold uppercase tracking-wide text-white hover:bg-emerald-500 disabled:opacity-45"
+                    className="h-11 gap-2 border-0 bg-emerald-600 font-semibold text-white shadow-[0_1px_2px_rgba(0,0,0,0.06)] hover:bg-emerald-500 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2 focus-visible:ring-offset-[#f8fafc] active:bg-emerald-700 disabled:pointer-events-auto disabled:cursor-not-allowed disabled:opacity-45"
                   >
-                    <CircleCheck className="size-4 shrink-0" />
+                    <CircleCheck className="size-4 shrink-0 opacity-95" aria-hidden />
                     Comprar
                   </Button>
                 </div>
@@ -1545,12 +1558,29 @@ function PurchasesPage() {
               <div
                 role="region"
                 aria-label="Total de esta compra"
-                className="relative flex min-h-19 w-full shrink-0 flex-col justify-center overflow-hidden border-t border-emerald-500/35 px-4 py-3.5 backdrop-blur-xl sm:min-h-20 sm:px-5 sm:py-4"
+                className={cn(
+                  "relative box-border flex w-full shrink-0 flex-col justify-center border-t border-emerald-500/35 backdrop-blur-xl",
+                  compraFooterBarPaddingClass,
+                  compraFooterBandHeightClass,
+                )}
               >
                 <div
                   className="pointer-events-none absolute inset-0 bg-[linear-gradient(145deg,#07120e_0%,#0c1f17_42%,#061009_100%)]"
                   aria-hidden
                 />
+                <div
+                  className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_120%_90%_at_50%_-20%,rgba(52,211,153,0.28),transparent_52%)]"
+                  aria-hidden
+                />
+                <div
+                  className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_100%_50%,rgba(16,185,129,0.12),transparent_45%)]"
+                  aria-hidden
+                />
+                <div
+                  className="pointer-events-none absolute inset-x-0 bottom-0 h-px bg-linear-to-r from-transparent via-emerald-400/55 to-transparent"
+                  aria-hidden
+                />
+
                 <div className="relative z-10 flex w-full items-end justify-between gap-3">
                   <div className="min-w-0 flex-1">
                     <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-emerald-200/80">
@@ -1572,15 +1602,23 @@ function PurchasesPage() {
                   <div className="flex min-w-0 shrink-0 flex-col items-end text-right">
                     {hayDescuento ? (
                       <>
-                        <p className="text-[11px] tabular-nums text-white/38 line-through">
+                        <p className={compraImporteTotalMutedClass}>
                           {fmt.format(subtotal)}
                         </p>
-                        <p className="mt-0.5 text-[11px] font-medium tabular-nums text-emerald-300/95">
+                        <p className={cn(compraImporteTotalDiscountClass, "mt-0.5")}>
                           −{fmt.format(descuentoMonto)}
                         </p>
+                        <div
+                          className="my-1.5 h-px w-12 max-w-full bg-linear-to-r from-emerald-400/50 to-transparent"
+                          aria-hidden
+                        />
                       </>
                     ) : null}
-                    <p className="whitespace-nowrap text-[clamp(1.25rem,2.1vw,1.85rem)] font-black tabular-nums tracking-tight text-white">
+                    <p
+                      className={compraImporteTotalClass}
+                      aria-live="polite"
+                      aria-atomic="true"
+                    >
                       {fmt.format(total)}
                     </p>
                     <span className="mt-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-white/32">
@@ -1592,17 +1630,26 @@ function PurchasesPage() {
             </div>
           </aside>
         </main>
-      </div>
+        </div>
+      </DataWorkspaceLayout>
 
-      <Dialog open={proveedorModalAbierto} onOpenChange={setProveedorModalAbierto}>
-        <DialogContent className={dialogSurfaceLg}>
-          <DialogHeader className={dialogHeader}>
-            <DialogTitle>Proveedor</DialogTitle>
-            <DialogDescription>
+      <Dialog
+        open={proveedorModalAbierto}
+        onOpenChange={(open) => {
+          setProveedorModalAbierto(open)
+          if (open) setBusquedaProveedorModal("")
+        }}
+      >
+        <DialogContent className={compraDialogContentMd}>
+          <DialogHeader className={compraDialogHeader}>
+            <DialogTitle className="text-base font-semibold tracking-tight">
+              Proveedor
+            </DialogTitle>
+            <DialogDescription className="text-sm leading-relaxed">
               Elegí el proveedor de esta compra (opcional).
             </DialogDescription>
           </DialogHeader>
-          <div className={dialogBody}>
+          <div className={compraDialogBody}>
             <div className="relative mb-3">
               <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
               <Input
@@ -1610,50 +1657,85 @@ function PurchasesPage() {
                 value={busquedaProveedorModal}
                 onChange={(e) => setBusquedaProveedorModal(e.target.value)}
                 placeholder="Buscar por nombre o CUIT…"
-                className="pl-9"
-              />
-            </div>
-            <div className="game-scroll max-h-[min(50vh,360px)] space-y-1.5 overflow-y-auto">
-              <button
-                type="button"
-                onClick={() => {
-                  setProveedorSeleccionado(null)
-                  setProveedorModalAbierto(false)
-                }}
                 className={cn(
-                  modalOpcionBase,
-                  "w-full text-left",
-                  !proveedorSeleccionado ? modalOpcionSeleccionada : modalOpcionIdle,
+                  "h-11 rounded-lg pl-9",
+                  busquedaProveedorModal.length > 0 && "pr-9",
                 )}
-              >
-                Sin proveedor
-              </button>
-              {proveedoresFiltradosModal.map((s) => (
+                autoComplete="off"
+              />
+              {busquedaProveedorModal.length > 0 ? (
                 <button
-                  key={s.id}
                   type="button"
+                  aria-label="Limpiar búsqueda"
+                  className="absolute right-1.5 top-1/2 flex size-7 -translate-y-1/2 items-center justify-center rounded-full text-muted-foreground transition-[color,background-color] duration-150 hover:bg-muted/70 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background active:bg-muted"
                   onClick={() => {
-                    setProveedorSeleccionado(s)
+                    setBusquedaProveedorModal("")
+                    busquedaProveedorInputRef.current?.focus()
+                  }}
+                >
+                  <CircleX className="size-4" aria-hidden />
+                </button>
+              ) : null}
+            </div>
+            <ul
+              className="game-scroll max-h-[min(50vh,16rem)] space-y-2 overflow-y-auto rounded-xl border border-border/40 bg-muted/20 p-2 pr-1"
+              role="listbox"
+              aria-label="Proveedores"
+            >
+              <li>
+                <button
+                  type="button"
+                  role="option"
+                  aria-selected={!proveedorSeleccionado}
+                  onClick={() => {
+                    setProveedorSeleccionado(null)
                     setProveedorModalAbierto(false)
                   }}
-                  className={cn(
-                    modalOpcionBase,
-                    "w-full text-left",
-                    proveedorSeleccionado?.id === s.id
-                      ? modalOpcionSeleccionada
-                      : modalOpcionIdle,
-                  )}
+                  className={compraDialogOptionClass(!proveedorSeleccionado)}
                 >
-                  <span className="block font-semibold">{s.name}</span>
-                  {s.taxId ? (
-                    <span className="mt-0.5 block text-xs font-normal text-muted-foreground">
-                      CUIT {s.taxId}
+                  <span className="min-w-0">
+                    <span className="block text-sm font-semibold leading-snug text-foreground">
+                      Sin proveedor
                     </span>
+                  </span>
+                  {!proveedorSeleccionado ? (
+                    <span className="size-2 shrink-0 rounded-full bg-primary" />
                   ) : null}
                 </button>
-              ))}
+              </li>
+              {proveedoresFiltradosModal.map((s) => {
+                const seleccionado = proveedorSeleccionado?.id === s.id
+                return (
+                  <li key={s.id}>
+                    <button
+                      type="button"
+                      role="option"
+                      aria-selected={seleccionado}
+                      onClick={() => {
+                        setProveedorSeleccionado(s)
+                        setProveedorModalAbierto(false)
+                      }}
+                      className={compraDialogOptionClass(seleccionado)}
+                    >
+                      <span className="min-w-0">
+                        <span className="block text-sm font-semibold leading-snug text-foreground">
+                          {s.name}
+                        </span>
+                        {s.taxId ? (
+                          <span className="mt-0.5 block text-xs leading-snug text-muted-foreground">
+                            CUIT {s.taxId}
+                          </span>
+                        ) : null}
+                      </span>
+                      {seleccionado ? (
+                        <span className="size-2 shrink-0 rounded-full bg-primary" />
+                      ) : null}
+                    </button>
+                  </li>
+                )
+              })}
               {suppliers.length === 0 ? (
-                <p className="py-4 text-center text-sm text-muted-foreground">
+                <li className="rounded-lg border border-dashed border-border/60 bg-background/50 px-4 py-8 text-center text-sm text-muted-foreground">
                   No hay proveedores cargados.{" "}
                   <Link
                     href={`/${siteId}/${popId}/suppliers`}
@@ -1661,15 +1743,20 @@ function PurchasesPage() {
                   >
                     Cargar proveedores
                   </Link>
-                </p>
+                </li>
+              ) : proveedoresFiltradosModal.length === 0 &&
+                busquedaProveedorModal.trim() ? (
+                <li className="rounded-lg border border-dashed border-border/60 bg-background/50 px-4 py-8 text-center text-sm text-muted-foreground">
+                  No hay resultados para esa búsqueda.
+                </li>
               ) : null}
-            </div>
+            </ul>
           </div>
-          <DialogFooter className={dialogFooter}>
+          <DialogFooter className={compraDialogFooter}>
             <Button
               type="button"
               variant="ghost"
-              className={dialogGhostBtn}
+              className={compraDialogGhostBtn}
               onClick={() => setProveedorModalAbierto(false)}
             >
               Cerrar
@@ -1679,8 +1766,8 @@ function PurchasesPage() {
       </Dialog>
 
       <Dialog open={comprobanteModalAbierto} onOpenChange={setComprobanteModalAbierto}>
-        <DialogContent className={cn(dialogSurfaceLg, "text-foreground")}>
-          <DialogHeader className={cn(dialogHeader, "shrink-0")}>
+        <DialogContent className={compraDialogContentLg}>
+          <DialogHeader className={cn(compraDialogHeader, "shrink-0")}>
             <DialogTitle className="text-base font-semibold tracking-tight">
               Tipo de comprobante
             </DialogTitle>
@@ -1691,12 +1778,12 @@ function PurchasesPage() {
           </DialogHeader>
           <div
             className={cn(
-              dialogBody,
+              compraDialogBody,
               "min-h-0 flex-1 space-y-4 overflow-y-auto overscroll-contain",
             )}
           >
             <ul
-              className="grid grid-cols-1 gap-2 sm:grid-cols-2"
+              className="flex flex-col gap-1.5"
               role="listbox"
               aria-label="Tipos de comprobante"
             >
@@ -1709,15 +1796,16 @@ function PurchasesPage() {
                       role="option"
                       aria-selected={seleccionado}
                       onClick={() => setComprobanteTipo(label)}
-                      className={cn(
-                        "flex min-h-14 w-full items-center text-left",
-                        modalOpcionBase,
-                        seleccionado ? modalOpcionSeleccionada : modalOpcionIdle,
-                      )}
+                      className={compraDialogOptionClass(seleccionado)}
                     >
-                      <span className="text-sm font-semibold leading-snug">
-                        {label}
+                      <span className="min-w-0">
+                        <span className="block text-sm font-semibold leading-snug text-foreground">
+                          {label}
+                        </span>
                       </span>
+                      {seleccionado ? (
+                        <span className="size-2 shrink-0 rounded-full bg-primary" />
+                      ) : null}
                     </button>
                   </li>
                 )
@@ -1731,6 +1819,7 @@ function PurchasesPage() {
                 value={documentNumber}
                 onChange={(e) => setDocumentNumber(e.target.value)}
                 placeholder="Número impreso en la factura"
+                className="h-10 rounded-lg"
               />
             </div>
             <div className="grid gap-4 sm:grid-cols-2">
@@ -1741,6 +1830,7 @@ function PurchasesPage() {
                   type="date"
                   value={documentDate}
                   onChange={(e) => setDocumentDate(e.target.value)}
+                  className="h-10 rounded-lg"
                 />
               </div>
               <div className="space-y-2">
@@ -1750,6 +1840,7 @@ function PurchasesPage() {
                   type="date"
                   value={dueDate}
                   onChange={(e) => setDueDate(e.target.value)}
+                  className="h-10 rounded-lg"
                 />
               </div>
             </div>
@@ -1771,7 +1862,7 @@ function PurchasesPage() {
                 <Button
                   type="button"
                   variant="outline"
-                  className="gap-2"
+                  className="gap-2 rounded-lg"
                   onClick={() => comprobanteAdjuntoInputRef.current?.click()}
                 >
                   <Paperclip className="size-4" aria-hidden />
@@ -1800,11 +1891,11 @@ function PurchasesPage() {
               </div>
             </div>
           </div>
-          <DialogFooter className={cn(dialogFooter, "shrink-0")}>
+          <DialogFooter className={cn(compraDialogFooter, "shrink-0")}>
             <Button
               type="button"
               variant="ghost"
-              className={dialogGhostBtn}
+              className={compraDialogGhostBtn}
               onClick={() => {
                 setComprobanteTipo(null)
                 setComprobanteAdjunto(null)
@@ -1818,7 +1909,7 @@ function PurchasesPage() {
             </Button>
             <Button
               type="button"
-              className={dialogPrimaryBtn}
+              className={compraDialogPrimaryBtn}
               onClick={() => setComprobanteModalAbierto(false)}
             >
               Listo
@@ -1828,18 +1919,19 @@ function PurchasesPage() {
       </Dialog>
 
       <Dialog open={pagoModalAbierto} onOpenChange={setPagoModalAbierto}>
-        <DialogContent className={cn(dialogSurfaceLg, "text-foreground")}>
-          <DialogHeader className={cn(dialogHeader, "shrink-0")}>
+        <DialogContent className={compraDialogContentMd}>
+          <DialogHeader className={cn(compraDialogHeader, "shrink-0")}>
             <DialogTitle className="text-base font-semibold tracking-tight">
-              Método de pago
+              Formas de pago
             </DialogTitle>
             <DialogDescription className="text-sm leading-relaxed">
-              Elegí cómo vas a pagar esta compra al proveedor.
+              Elegí cómo vas a pagar esta compra: al contado o a cuenta corriente
+              del proveedor.
             </DialogDescription>
           </DialogHeader>
           <div
             className={cn(
-              dialogBody,
+              compraDialogBody,
               "min-h-0 flex-1 space-y-4 overflow-y-auto overscroll-contain",
             )}
           >
@@ -1849,11 +1941,7 @@ function PurchasesPage() {
               </p>
               <button
                 type="button"
-                className={cn(
-                  modalOpcionBase,
-                  "w-full text-left",
-                  payOnSupplierAccount ? modalOpcionSeleccionada : modalOpcionIdle,
-                )}
+                className={compraDialogOptionClass(payOnSupplierAccount)}
                 onClick={() => {
                   setPayOnSupplierAccount(true)
                   setMetodoPagoSeleccionado(null)
@@ -1861,14 +1949,21 @@ function PurchasesPage() {
                   setPagoModalAbierto(false)
                 }}
               >
-                {SUPPLIER_ACCOUNT_PAYMENT_LABEL}
+                <span className="min-w-0">
+                  <span className="block text-sm font-semibold leading-snug text-foreground">
+                    {SUPPLIER_ACCOUNT_PAYMENT_LABEL}
+                  </span>
+                </span>
+                {payOnSupplierAccount ? (
+                  <span className="size-2 shrink-0 rounded-full bg-primary" />
+                ) : null}
               </button>
               <p className="mt-2 text-xs text-muted-foreground">
                 Recibís la mercadería ahora y registrás la deuda en Proveedores. Podés pagar después.
               </p>
             </div>
 
-            {paymentMethodGroups.length > 0 ? (
+            {paymentMethodListItems.length > 0 ? (
               <>
                 <Separator className="bg-border/60" />
                 <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
@@ -1877,52 +1972,55 @@ function PurchasesPage() {
               </>
             ) : null}
 
-            {paymentMethodGroups.length === 0 ? (
+            {paymentMethodListItems.length === 0 ? (
               <p className="rounded-lg border border-dashed border-border/60 bg-muted/20 px-4 py-6 text-center text-sm text-muted-foreground">
                 No hay medios de pago activos. Podés usar cuenta corriente del proveedor.
               </p>
             ) : (
-              paymentMethodGroups.map((g, gi) => (
-                <div key={g.kind}>
-                  {gi > 0 ? <Separator className="mb-4 bg-border/60" /> : null}
-                  <p className="mb-2 text-[10px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
-                    {g.title}
-                  </p>
-                  <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
-                    {g.items.map((m) => {
-                      const seleccionado =
-                        !payOnSupplierAccount && metodoPagoSeleccionado?.id === m.id
-                      return (
-                        <button
-                          key={m.id}
-                          type="button"
-                          className={cn(
-                            "flex min-h-12 min-w-0 items-center justify-center px-2 py-2 text-center text-sm font-medium leading-snug",
-                            modalOpcionBase,
-                            seleccionado
-                              ? modalOpcionSeleccionada
-                              : modalOpcionIdle,
-                          )}
-                          onClick={() => {
-                            setPayOnSupplierAccount(false)
-                            setMetodoPagoSeleccionado({
-                              id: m.id,
-                              label: m.name,
-                              kind: m.kind,
-                            })
-                            if (m.kind !== "card_credit") {
-                              setCardInstallments("1")
-                              setPagoModalAbierto(false)
-                            }
-                          }}
-                        >
-                          <span className="line-clamp-3 w-full">{m.name}</span>
-                        </button>
-                      )
-                    })}
-                  </div>
-                </div>
-              ))
+              <ul
+                className="flex flex-col gap-1.5"
+                role="listbox"
+                aria-label="Formas de pago"
+              >
+                {paymentMethodListItems.map(({ method, groupTitle }) => {
+                  const seleccionado =
+                    !payOnSupplierAccount && metodoPagoSeleccionado?.id === method.id
+                  return (
+                    <li key={method.id} className="min-w-0">
+                      <button
+                        type="button"
+                        role="option"
+                        aria-selected={seleccionado}
+                        onClick={() => {
+                          setPayOnSupplierAccount(false)
+                          setMetodoPagoSeleccionado({
+                            id: method.id,
+                            label: method.name,
+                            kind: method.kind,
+                          })
+                          if (method.kind !== "card_credit") {
+                            setCardInstallments("1")
+                            setPagoModalAbierto(false)
+                          }
+                        }}
+                        className={compraDialogOptionClass(seleccionado)}
+                      >
+                        <span className="min-w-0">
+                          <span className="block text-sm font-semibold leading-snug text-foreground">
+                            {method.name}
+                          </span>
+                          <span className="mt-0.5 block text-xs leading-snug text-muted-foreground">
+                            {groupTitle}
+                          </span>
+                        </span>
+                        {seleccionado ? (
+                          <span className="size-2 shrink-0 rounded-full bg-primary" />
+                        ) : null}
+                      </button>
+                    </li>
+                  )
+                })}
+              </ul>
             )}
 
             {metodoPagoSeleccionado?.kind === "card_credit" &&
@@ -1942,6 +2040,7 @@ function PurchasesPage() {
                     setCardInstallments(String(Math.min(24, Math.max(1, Number(raw)))))
                   }}
                   placeholder="1"
+                  className="h-10 rounded-lg"
                 />
                 <p className="text-xs text-muted-foreground">
                   El proveedor se paga por el total hoy; las cuotas son financiación con la tarjeta.
@@ -1949,10 +2048,10 @@ function PurchasesPage() {
               </div>
             ) : null}
           </div>
-          <DialogFooter className={cn(dialogFooter, "shrink-0")}>
+          <DialogFooter className={cn(compraDialogFooter, "shrink-0")}>
             <Button
               type="button"
-              className={cn(dialogPrimaryBtn, "w-full sm:w-auto")}
+              className={compraDialogPrimaryBtn}
               onClick={() => setPagoModalAbierto(false)}
             >
               Listo
@@ -1962,21 +2061,28 @@ function PurchasesPage() {
       </Dialog>
 
       <Dialog open={descuentoModalAbierto} onOpenChange={setDescuentoModalAbierto}>
-        <DialogContent className={cn(dialogSurfaceMd, "text-foreground")}>
-          <DialogHeader className={dialogHeader}>
+        <DialogContent className={compraDialogContentMd}>
+          <DialogHeader className={compraDialogHeader}>
             <DialogTitle className="text-base font-semibold tracking-tight">
               Descuento en la compra
             </DialogTitle>
             <DialogDescription className="text-sm leading-relaxed">
-              Alterná % o monto fijo e ingresá el valor. Se aplica sobre el
-              subtotal de ítems.
+              Alterná % o monto fijo con el botón e ingresá el valor. Se aplica
+              sobre el subtotal de ítems.
             </DialogDescription>
           </DialogHeader>
-          <div className={dialogBody}>
+          <div className={compraDialogBody}>
+            <p className="mb-2 text-[10px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
+              Valor
+            </p>
             <div className="flex items-center gap-2">
               <button
                 type="button"
-                className="inline-flex size-11 shrink-0 items-center justify-center rounded-xl border border-foreground/10 bg-muted/50 hover:bg-muted"
+                className={cn(
+                  "inline-flex size-11 shrink-0 items-center justify-center rounded-xl border text-foreground/80 transition",
+                  "border-foreground/10 bg-muted/50 hover:bg-muted hover:text-foreground",
+                  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
+                )}
                 aria-label="Cambiar tipo de descuento"
                 onClick={() =>
                   setDescuentoDraftModo((m) =>
@@ -1985,12 +2091,13 @@ function PurchasesPage() {
                 }
               >
                 {descuentoDraftModo === "porcentaje" ? (
-                  <Percent className="size-4 text-primary" />
+                  <Percent className="size-4 text-primary" aria-hidden />
                 ) : (
-                  <Banknote className="size-4 text-primary" />
+                  <Banknote className="size-4 text-primary" aria-hidden />
                 )}
               </button>
               <Input
+                id="purchase-desc-valor"
                 value={descuentoDraftTexto}
                 onChange={(e) => {
                   const raw = e.target.value
@@ -2016,22 +2123,38 @@ function PurchasesPage() {
                 }}
                 placeholder="descuento"
                 inputMode="numeric"
+                pattern="[0-9]*"
+                autoComplete="off"
                 className="h-11 min-w-0 flex-1 rounded-lg"
               />
             </div>
+            {descuentoDraftModo === "fijo" && subtotal > 0 ? (
+              <p className="mt-3 rounded-lg border border-border/50 bg-muted/30 px-3 py-2 text-xs leading-relaxed text-muted-foreground">
+                Máximo aplicable:{" "}
+                <span className={compraImporteBaseClass}>
+                  {fmt.format(subtotal)}
+                </span>
+                . Si superás ese monto, pasa a 100 %.
+              </p>
+            ) : null}
+            {descuentoDraftModo === "fijo" && subtotal === 0 ? (
+              <p className="mt-3 rounded-lg border border-dashed border-border/60 bg-muted/20 px-3 py-2 text-xs leading-relaxed text-muted-foreground">
+                No hay subtotal: agregá productos para aplicar un monto fijo.
+              </p>
+            ) : null}
           </div>
-          <DialogFooter className={dialogFooter}>
+          <DialogFooter className={compraDialogFooter}>
             <Button
               type="button"
               variant="ghost"
-              className={dialogGhostBtn}
+              className={compraDialogGhostBtn}
               onClick={quitarDescuento}
             >
               Quitar descuento
             </Button>
             <Button
               type="button"
-              className={dialogPrimaryBtn}
+              className={compraDialogPrimaryBtn}
               onClick={aplicarDescuentoModal}
             >
               Aplicar
@@ -2041,19 +2164,20 @@ function PurchasesPage() {
       </Dialog>
 
       <AlertDialog open={descartarConfirmOpen} onOpenChange={setDescartarConfirmOpen}>
-        <AlertDialogContent>
+        <AlertDialogContent className={compraAlertDialogContent}>
           <AlertDialogHeader>
             <AlertDialogTitle>¿Descartar esta compra?</AlertDialogTitle>
-            <AlertDialogDescription>
+            <AlertDialogDescription className="text-muted-foreground">
               Se perderán los ítems y datos ingresados. Esta acción no se puede
               deshacer.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Volver</AlertDialogCancel>
+            <AlertDialogCancel className="border-border">Cancelar</AlertDialogCancel>
             <AlertDialogAction
-              className="bg-rose-600 hover:bg-rose-500"
+              type="button"
               onClick={limpiarCompra}
+              className="border-0 bg-rose-600 text-white hover:bg-rose-500 focus-visible:ring-2 focus-visible:ring-rose-500 focus-visible:ring-offset-2"
             >
               Descartar
             </AlertDialogAction>
@@ -2068,40 +2192,54 @@ function PurchasesPage() {
           if (!open) setCompraError(null)
         }}
       >
-        <AlertDialogContent>
+        <AlertDialogContent className={compraAlertDialogContent}>
           <AlertDialogHeader>
-            <AlertDialogTitle>Confirmar compra</AlertDialogTitle>
-            <AlertDialogDescription>
-              Vas a registrar una compra de {KIND_LABEL[purchaseKind]} por{" "}
-              {fmt.format(total)} ({itemsDetallados.length}{" "}
-              {itemsDetallados.length === 1 ? "ítem" : "ítems"}): ingreso de stock
-              {payOnSupplierAccount
-                ? " y deuda en cuenta corriente del proveedor"
-                : metodoPagoSeleccionado
-                  ? ` y pago con ${metodoPagoSeleccionado.label}${
-                      metodoPagoSeleccionado.kind === "card_credit" &&
-                      Number(cardInstallments) > 1
-                        ? ` (${cardInstallments} cuotas)`
-                        : ""
-                    }`
-                  : ""}
-              .
+            <AlertDialogTitle>¿Confirmar compra?</AlertDialogTitle>
+            <AlertDialogDescription asChild>
+              <div className="space-y-2 text-muted-foreground">
+                <p>
+                  Vas a registrar una compra de {KIND_LABEL[purchaseKind]} por{" "}
+                  <span
+                    className={cn(
+                      compraImporteBaseClass,
+                      "font-semibold text-foreground",
+                    )}
+                  >
+                    {fmt.format(total)}
+                  </span>{" "}
+                  ({itemsDetallados.length}{" "}
+                  {itemsDetallados.length === 1 ? "ítem" : "ítems"}): ingreso de
+                  stock
+                  {payOnSupplierAccount
+                    ? " y deuda en cuenta corriente del proveedor"
+                    : metodoPagoSeleccionado
+                      ? ` y pago con ${metodoPagoSeleccionado.label}${
+                          metodoPagoSeleccionado.kind === "card_credit" &&
+                          Number(cardInstallments) > 1
+                            ? ` (${cardInstallments} cuotas)`
+                            : ""
+                        }`
+                      : ""}
+                  .
+                </p>
+                {compraError ? (
+                  <p className="text-sm text-rose-600">{compraError}</p>
+                ) : null}
+              </div>
             </AlertDialogDescription>
           </AlertDialogHeader>
-          {compraError ? (
-            <p role="alert" className="px-6 text-sm text-destructive">
-              {compraError}
-            </p>
-          ) : null}
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={compraSubmitting}>Volver</AlertDialogCancel>
+            <AlertDialogCancel className="border-border" disabled={compraSubmitting}>
+              Cancelar
+            </AlertDialogCancel>
             <AlertDialogAction
-              className="bg-emerald-600 uppercase tracking-wide hover:bg-emerald-500"
+              type="button"
               disabled={compraSubmitting}
               onClick={(e) => {
                 e.preventDefault()
                 void confirmarCompra()
               }}
+              className="border-0 bg-emerald-600 text-white hover:bg-emerald-500 focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2"
             >
               {compraSubmitting ? (
                 <>
@@ -2109,13 +2247,13 @@ function PurchasesPage() {
                   Procesando…
                 </>
               ) : (
-                "Comprar"
+                "Confirmar compra"
               )}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-    </div>
+    </>
   )
 }
 

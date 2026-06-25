@@ -59,6 +59,8 @@ export type CreatePurchaseLineInput = {
   articleId: string
   quantity: number
   unitCost: number
+  /** Si true, persiste el costo en la ficha del artículo. */
+  updateArticleCost?: boolean
 }
 
 export type PurchaseCatalogPaymentMethod = {
@@ -139,7 +141,12 @@ async function purchasesAccess(popId: string) {
     POP_PERMS.OPERATIONS_DELETE.resource,
     POP_PERMS.OPERATIONS_DELETE.action,
   )
-  return { ok: true as const, canCreate, canUpdate, canDelete }
+  const canUpdateArticles = permissionKeysInclude(
+    snap.keys,
+    POP_PERMS.ARTICLE_UPDATE.resource,
+    POP_PERMS.ARTICLE_UPDATE.action,
+  )
+  return { ok: true as const, canCreate, canUpdate, canDelete, canUpdateArticles }
 }
 
 export type PurchaseCatalogSupplier = {
@@ -172,6 +179,7 @@ export async function getPurchaseCatalog(popId: string): Promise<
       suppliers: PurchaseCatalogSupplier[]
       paymentMethods: PurchaseCatalogPaymentMethod[]
       canCreate: boolean
+      canUpdateArticles: boolean
       canReadPaymentMethods: boolean
     }
   | { success: false; error: string }
@@ -275,6 +283,7 @@ export async function getPurchaseCatalog(popId: string): Promise<
       suppliers,
       paymentMethods,
       canCreate: access.canCreate,
+      canUpdateArticles: access.canUpdateArticles,
       canReadPaymentMethods,
     }
   } catch (e: unknown) {

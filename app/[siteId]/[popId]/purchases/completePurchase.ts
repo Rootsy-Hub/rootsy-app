@@ -130,6 +130,18 @@ export async function completePurchase(
       }
     }
 
+    const canUpdateArticles = permissionKeysInclude(
+      snap.keys,
+      POP_PERMS.ARTICLE_UPDATE.resource,
+      POP_PERMS.ARTICLE_UPDATE.action,
+    )
+    if (lines.some((l) => l.updateArticleCost) && !canUpdateArticles) {
+      return {
+        success: false,
+        error: "Sin permiso para actualizar costos de artículos.",
+      }
+    }
+
     const user = await requireAuthenticatedUser()
     const supabase = await createClient()
     const popRes = await getPopById(popId)
@@ -413,6 +425,29 @@ export async function completePurchase(
       if (!payLedger.success) {
         await rollbackCompletePurchase(supabase, purchaseId, movementIds)
         return { success: false, error: payLedger.error }
+      }
+    }
+
+    const costUpdates = new Map<string, number>()
+    for (const l of lines) {
+      if (!l.updateArticleCost) continue
+      const articleId = l.articleId.trim()
+      const unitCost = parseMoney(l.unitCost)
+      if (unitCost < 0) continue
+      costUpdates.set(articleId, unitCost)
+    }
+    for (const [articleId, unitCost] of costUpdates) {
+      const { error: costErr } = await supabase
+        .from("articles")
+        .update({ cost_price: unitCost })
+        .eq("id", articleId)
+        .eq("pop_id", popId)
+      if (costErr) {
+        await rollbackCompletePurchase(supabase, purchaseId, movementIds)
+        return {
+          success: false,
+          error: costErr.message || "No se pudo actualizar el costo del artículo.",
+        }
       }
     }
 

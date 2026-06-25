@@ -1,7 +1,11 @@
 import "server-only"
 
-import { loginWsaaAndGetPersonaV2 } from "@/lib/arcaPadronWs"
+import {
+  loginWsaaAndGetPersonaV2,
+  loginWsaaAndGetFirstMatchingPersonaV2,
+} from "@/lib/arcaPadronWs"
 import type { PadronLookupOk } from "@/lib/argentinaPadronLookup"
+import { buildCuitCandidatesFromDni } from "@/lib/argentinaCuitFromDni"
 import { getGlobalAfipPadronContext } from "@/lib/rootsyGlobalAfipConfigServer"
 
 function extractSoapFaultText(e: unknown): string {
@@ -53,6 +57,34 @@ export async function lookupPadronArcaContribuyenteByCuit(
       cuitRepresentada: ctx.representadaCuit,
       idPersonaCuit: cuit11,
     })
+  } catch (e) {
+    return { error: soapErrMessage(e) }
+  }
+}
+
+/** Busca en AFIP probando los CUIT posibles derivados de un DNI (persona física). */
+export async function lookupPadronArcaContribuyenteByDni(
+  dni: string,
+): Promise<PadronLookupOk | { error: string } | null> {
+  const ctx = await getGlobalAfipPadronContext()
+  if (!ctx) return null
+
+  const candidates = buildCuitCandidatesFromDni(dni)
+  if (candidates.length === 0) {
+    return { error: "No se pudo calcular un CUIT válido para ese DNI." }
+  }
+
+  try {
+    const res = await loginWsaaAndGetFirstMatchingPersonaV2({
+      certPem: ctx.certPem,
+      keyPem: ctx.keyPem,
+      cuitRepresentada: ctx.representadaCuit,
+      idPersonaCuits: candidates,
+    })
+    return {
+      ...res,
+      docTipoAfip: 96,
+    }
   } catch (e) {
     return { error: soapErrMessage(e) }
   }

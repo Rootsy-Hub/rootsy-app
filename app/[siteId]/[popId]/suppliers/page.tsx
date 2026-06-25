@@ -11,6 +11,8 @@ import {
 import { buildPaginationItems } from "@/app/[siteId]/[popId]/layout/layoutPreviewPagination"
 import { DataWorkspaceListPaginationFooter } from "@/components/data-workspace/DataWorkspaceListPaginationFooter"
 import {
+  DataWorkspaceListTableFrame,
+  DataWorkspaceTableEmptyMascot,
   DataWorkspaceTableIconAction,
 } from "@/components/data-workspace/DataWorkspaceListTablePrimitives"
 import { DataWorkspaceListTableShell } from "@/components/data-workspace/DataWorkspaceListTableShell"
@@ -80,22 +82,6 @@ const CREATION_NEW_SUPPLIER = {
   label: "Nuevo proveedor",
   icon: Plus,
 } as const
-
-const suppliersSk = {
-  bar: "animate-pulse rounded-[3px] bg-muted-foreground/12 dark:bg-muted-foreground/[0.14]",
-  box: "animate-pulse rounded-sm bg-muted-foreground/10 dark:bg-muted-foreground/[0.12]",
-} as const
-
-function SuppliersTableFooterSkeleton() {
-  return (
-    <div
-      className="flex min-h-16 w-full items-center justify-center px-4"
-      aria-hidden
-    >
-      <div className={cn("h-11 w-full max-w-md rounded-lg", suppliersSk.box)} />
-    </div>
-  )
-}
 
 function emptyForm(): UpsertPopSupplierInput {
   return { name: "", email: "", phone: "", taxId: "", notes: "" }
@@ -515,6 +501,11 @@ function SuppliersPage() {
 
           <DataWorkspaceListTableShell
             variant="flush"
+            overlay={
+              !listFetching && totalCount === 0 ? (
+                <DataWorkspaceTableEmptyMascot />
+              ) : null
+            }
             footer={
               <DataWorkspaceListPaginationFooter
                 variant="dark"
@@ -533,10 +524,10 @@ function SuppliersPage() {
                   setPage(1)
                 }}
                 pageSizeLabelId={pageSizeLabelId}
-                loadingSlot={<SuppliersTableFooterSkeleton />}
               />
             }
           >
+            <DataWorkspaceListTableFrame>
             <table
               className={workspaceDataTableClassName}
               aria-busy={listFetching}
@@ -576,16 +567,7 @@ function SuppliersPage() {
                     </TableCell>
                   </TableRow>
                 ) : totalCount === 0 ? (
-                  <TableRow>
-                    <TableCell
-                      colSpan={emptyCols}
-                      className="py-12 text-center text-muted-foreground"
-                    >
-                      {searchInput.trim()
-                        ? "No hay proveedores que coincidan con la búsqueda."
-                        : "No hay proveedores aún o no hay permiso de lectura."}
-                    </TableCell>
-                  </TableRow>
+                  null
                 ) : (
                   pageRows.map((r, i) => (
                     <TableRow
@@ -638,6 +620,10 @@ function SuppliersPage() {
                 )}
               </TableBody>
             </table>
+            {!listFetching && totalCount === 0 ? (
+              <div className="min-h-[12rem] flex-1" aria-hidden />
+            ) : null}
+            </DataWorkspaceListTableFrame>
           </DataWorkspaceListTableShell>
         </div>
       </div>

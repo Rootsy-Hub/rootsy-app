@@ -1,4 +1,5 @@
 import { parseAfipDateToYmd, periodoAfipToYmdFirstDay } from "@/lib/afipDateParse"
+import { normalizeDniDigits } from "@/lib/argentinaCuitFromDni"
 
 export type PadronDocKind = "cuit" | "dni"
 
@@ -35,11 +36,7 @@ export function normalizeCuitDigits(raw: string): string | null {
   return d
 }
 
-export function normalizeDniDigits(raw: string): string | null {
-  const d = onlyDigits(raw.trim())
-  if (d.length < 6 || d.length > 9) return null
-  return d
-}
+export { normalizeDniDigits } from "@/lib/argentinaCuitFromDni"
 
 function mockPadron(kind: PadronDocKind, value: string): PadronLookupOk {
   if (kind === "cuit") {
@@ -196,6 +193,18 @@ export async function lookupPadronContribuyente(
   if (process.env.PADRON_USE_MOCK === "1") {
     return mockPadron("dni", dni)
   }
+
+  const { lookupPadronArcaContribuyenteByDni } = await import(
+    "@/lib/arcaPadronContribuyenteServer"
+  )
+  const arcaByDni = await lookupPadronArcaContribuyenteByDni(dni)
+  if (arcaByDni !== null) {
+    if ("error" in arcaByDni) {
+      return arcaByDni
+    }
+    return arcaByDni
+  }
+
   const bridge = await fetchBridge("dni", dni)
   if ("error" in bridge) {
     if (process.env.NODE_ENV === "development") {

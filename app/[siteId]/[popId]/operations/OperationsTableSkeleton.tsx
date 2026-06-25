@@ -1,6 +1,7 @@
 "use client"
 
 import {
+  selectColumnInnerClass,
   workspaceTableBodyRowClassNames,
 } from "@/components/data-workspace/dataWorkspaceListStyles"
 import { cn } from "@/lib/utils"
@@ -40,6 +41,11 @@ export function OperationsSalesSkeletonRows({
     <>
       {Array.from({ length: rowCount }).map((_, i) => (
         <SkeletonRow key={`sales-sk-${i}`} index={i}>
+          <TableCell className="w-12 !px-0 py-2.5">
+            <div className={selectColumnInnerClass}>
+              <div className={cn("mx-auto size-4 rounded-[4px]", sk.box)} />
+            </div>
+          </TableCell>
           <TableCell className="px-3 py-2.5">
             <div className={cn("h-3.5 w-14", sk.bar)} />
             <div className={cn("mt-1.5 h-2.5 w-10", sk.barSm)} />
@@ -86,6 +92,11 @@ export function OperationsPurchasesSkeletonRows({
     <>
       {Array.from({ length: rowCount }).map((_, i) => (
         <SkeletonRow key={`purch-sk-${i}`} index={i}>
+          <TableCell className="w-12 !px-0 py-2.5">
+            <div className={selectColumnInnerClass}>
+              <div className={cn("mx-auto size-4 rounded-[4px]", sk.box)} />
+            </div>
+          </TableCell>
           <TableCell className="px-3 py-2.5">
             <div className={cn("h-3.5 w-20", sk.bar)} />
             <div className={cn("mt-1.5 h-2.5 w-10", sk.barSm)} />
@@ -129,6 +140,11 @@ export function OperationsExpensesSkeletonRows({
     <>
       {Array.from({ length: rowCount }).map((_, i) => (
         <SkeletonRow key={`exp-sk-${i}`} index={i}>
+          <TableCell className="w-12 !px-0 py-2.5">
+            <div className={selectColumnInnerClass}>
+              <div className={cn("mx-auto size-4 rounded-[4px]", sk.box)} />
+            </div>
+          </TableCell>
           <TableCell className="px-3 py-2.5">
             <div className={cn("h-3.5 w-20", sk.bar)} />
             <div className={cn("mt-1.5 h-2.5 w-10", sk.barSm)} />

@@ -17,6 +17,7 @@ import {
   footerPaginationSelectTriggerClass,
   tableChromeFooterClass,
 } from "@/components/data-workspace/dataWorkspaceListStyles"
+import { DataWorkspaceListPaginationFooterSkeleton } from "@/components/data-workspace/DataWorkspaceListPaginationFooterSkeleton"
 import { cn } from "@/lib/utils"
 import type { PaginationItem } from "@/app/[siteId]/[popId]/layout/layoutPreviewPagination"
 import {
@@ -25,7 +26,6 @@ import {
   ChevronsLeft,
   ChevronsRight,
 } from "lucide-react"
-import type { ReactNode } from "react"
 
 export type DataWorkspaceListPaginationFooterProps = {
   listFetching: boolean
@@ -40,7 +40,6 @@ export type DataWorkspaceListPaginationFooterProps = {
   onPageChange: (page: number) => void
   onPageSizeChange: (pageSize: number) => void
   pageSizeLabelId: string
-  loadingSlot?: ReactNode
   variant?: "default" | "dark"
 }
 
@@ -57,7 +56,6 @@ export function DataWorkspaceListPaginationFooter({
   onPageChange,
   onPageSizeChange,
   pageSizeLabelId,
-  loadingSlot,
   variant = "default",
 }: DataWorkspaceListPaginationFooterProps) {
   const isDark = variant === "dark"
@@ -78,17 +76,28 @@ export function DataWorkspaceListPaginationFooter({
     return (
       <div
         className={cn("shrink-0", isDark ? darkTableFooterClass : tableChromeFooterClass)}
+        aria-busy="true"
+        aria-label="Cargando paginación"
       >
-        {loadingSlot}
+        <DataWorkspaceListPaginationFooterSkeleton
+          variant={isDark ? "dark" : "default"}
+        />
       </div>
     )
   }
-  if (totalCount <= 0) {
-    return null
-  }
+
+  const isEmpty = totalCount <= 0
+  const paginationDisabled = listFetching || isEmpty
+  const effectiveTotalPages = Math.max(1, totalPages)
 
   if (isDark) {
-    const pageOptions = Array.from({ length: totalPages }, (_, i) => i + 1)
+    const pageOptions = Array.from(
+      { length: effectiveTotalPages },
+      (_, i) => i + 1,
+    )
+    const safeCurrentPage = isEmpty
+      ? 1
+      : Math.min(Math.max(1, currentPage), effectiveTotalPages)
 
     return (
       <div
@@ -102,9 +111,9 @@ export function DataWorkspaceListPaginationFooter({
               type="button"
               className={cn(
                 darkTableFooterNavButtonClass,
-                "border-r border-white/10",
+                "border-r border-zinc-800/90",
               )}
-              disabled={currentPage <= 1}
+              disabled={paginationDisabled || safeCurrentPage <= 1}
               aria-label="Ir a la primera página"
               onClick={() => onPageChange(1)}
             >
@@ -113,9 +122,9 @@ export function DataWorkspaceListPaginationFooter({
             <button
               type="button"
               className={darkTableFooterNavButtonClass}
-              disabled={currentPage <= 1}
+              disabled={paginationDisabled || safeCurrentPage <= 1}
               aria-label="Página anterior"
-              onClick={() => onPageChange(Math.max(1, currentPage - 1))}
+              onClick={() => onPageChange(Math.max(1, safeCurrentPage - 1))}
             >
               <ChevronLeft className="size-7" aria-hidden />
             </button>
@@ -127,7 +136,8 @@ export function DataWorkspaceListPaginationFooter({
             </span>
 
             <Select
-              value={String(currentPage)}
+              value={String(safeCurrentPage)}
+              disabled={paginationDisabled}
               onValueChange={(v) => onPageChange(Number(v))}
             >
               <SelectTrigger
@@ -145,12 +155,13 @@ export function DataWorkspaceListPaginationFooter({
               </SelectContent>
             </Select>
 
-            <span className="text-white/20" aria-hidden>
+            <span className="text-zinc-600" aria-hidden>
               ·
             </span>
 
             <Select
               value={String(pageSize)}
+              disabled={paginationDisabled}
               onValueChange={(v) => onPageSizeChange(Number(v))}
             >
               <SelectTrigger
@@ -169,7 +180,7 @@ export function DataWorkspaceListPaginationFooter({
               </SelectContent>
             </Select>
 
-            <span className="text-white/20" aria-hidden>
+            <span className="text-zinc-600" aria-hidden>
               ·
             </span>
             <span
@@ -177,7 +188,8 @@ export function DataWorkspaceListPaginationFooter({
               className={darkTableFooterCenterMutedClass}
               aria-hidden
             >
-              {totalCountLabel}
+              <span className="md:hidden">{totalCountLabel}</span>
+              <span className="hidden md:inline">{totalCountLabel} en total</span>
             </span>
           </div>
 
@@ -186,12 +198,12 @@ export function DataWorkspaceListPaginationFooter({
               type="button"
               className={cn(
                 darkTableFooterNavButtonClass,
-                "border-l border-white/10",
+                "border-l border-zinc-800/90",
               )}
-              disabled={currentPage >= totalPages}
+              disabled={paginationDisabled || safeCurrentPage >= effectiveTotalPages}
               aria-label="Página siguiente"
               onClick={() =>
-                onPageChange(Math.min(totalPages, currentPage + 1))
+                onPageChange(Math.min(effectiveTotalPages, safeCurrentPage + 1))
               }
             >
               <ChevronRight className="size-7" aria-hidden />
@@ -199,9 +211,9 @@ export function DataWorkspaceListPaginationFooter({
             <button
               type="button"
               className={darkTableFooterNavButtonClass}
-              disabled={currentPage >= totalPages}
+              disabled={paginationDisabled || safeCurrentPage >= effectiveTotalPages}
               aria-label="Ir a la última página"
-              onClick={() => onPageChange(totalPages)}
+              onClick={() => onPageChange(effectiveTotalPages)}
             >
               <ChevronsRight className="size-7" aria-hidden />
             </button>
@@ -241,7 +253,7 @@ export function DataWorkspaceListPaginationFooter({
           </span>
           <Select
             value={String(pageSize)}
-            disabled={listFetching}
+            disabled={paginationDisabled}
             onValueChange={(v) => onPageSizeChange(Number(v))}
           >
             <SelectTrigger
@@ -267,7 +279,7 @@ export function DataWorkspaceListPaginationFooter({
           variant="outline"
           size="icon"
           className="size-8 border-border/80 bg-background/80 shadow-sm dark:border-border/55 dark:bg-card/50 dark:hover:bg-accent/60"
-          disabled={listFetching || currentPage <= 1}
+          disabled={paginationDisabled || currentPage <= 1}
           aria-label="Página anterior"
           onClick={() => onPageChange(Math.max(1, currentPage - 1))}
         >
@@ -293,7 +305,7 @@ export function DataWorkspaceListPaginationFooter({
                 type="button"
                 variant={currentPage === item ? "default" : "outline"}
                 size="sm"
-                disabled={listFetching}
+                disabled={paginationDisabled}
                 className={cn(
                   "h-8 min-w-8 px-2 text-xs",
                   currentPage === item
@@ -314,7 +326,7 @@ export function DataWorkspaceListPaginationFooter({
           variant="outline"
           size="icon"
           className="size-8 border-border/80 bg-background/80 shadow-sm dark:border-border/55 dark:bg-card/50 dark:hover:bg-accent/60"
-          disabled={listFetching || currentPage >= totalPages}
+          disabled={paginationDisabled || currentPage >= totalPages}
           aria-label="Página siguiente"
           onClick={() => onPageChange(Math.min(totalPages, currentPage + 1))}
         >

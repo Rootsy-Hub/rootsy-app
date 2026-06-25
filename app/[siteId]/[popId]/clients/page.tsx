@@ -9,6 +9,10 @@ import {
   type UpsertPopClientInput,
 } from "@/app/[siteId]/[popId]/clients/actions"
 import { CLIENT_IVA_CONDITION_OPTIONS } from "@/app/[siteId]/[popId]/clients/clientIvaConstants"
+import {
+  getSaleComprobantePickerOptions,
+} from "@/lib/saleComprobantePicker"
+import { suggestSaleComprobanteForClientIva } from "@/lib/saleComprobanteRules"
 import { buildPaginationItems } from "@/app/[siteId]/[popId]/layout/layoutPreviewPagination"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -21,21 +25,12 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
 import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip"
 import {
   TableBody,
   TableCell,
@@ -43,10 +38,10 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
-import { Switch } from "@/components/ui/switch"
-import { Textarea } from "@/components/ui/textarea"
 import { DataWorkspaceListPaginationFooter } from "@/components/data-workspace/DataWorkspaceListPaginationFooter"
 import {
+  DataWorkspaceListTableFrame,
+  DataWorkspaceTableEmptyMascot,
   DataWorkspaceTableIconAction,
   DataWorkspaceTableMoney,
 } from "@/components/data-workspace/DataWorkspaceListTablePrimitives"
@@ -61,6 +56,7 @@ import {
   lightToolbarPanelClass,
   lightToolbarPanelLastClass,
   lightToolbarShellClass,
+  listBulkToolbarClearButtonClass,
   selectColumnInnerClass,
   tableRowSelectCheckboxClass,
   toolbarBlockLabelClass,
@@ -69,25 +65,28 @@ import {
 } from "@/components/data-workspace/dataWorkspaceListStyles"
 import { DataWorkspaceLayout } from "@/components/layouts/DataWorkspaceLayout"
 import { DataWorkspaceHeaderIconButton } from "@/components/layouts/DataWorkspaceHeaderIconButton"
-import { DataWorkspaceSectionMenu } from "@/components/layouts/DataWorkspaceSectionMenu"
 import {
   CLIENT_TABLE_PAGE_SIZES,
   mergeClientsWorkspaceUrl,
   parseClientsWorkspaceUrl,
 } from "@/app/[siteId]/[popId]/clients/workspaceUrl"
+import {
+  ClientUpsertFormFields,
+  clientDialogBodyClass,
+  clientDialogFooterClass,
+  clientDialogHeaderClass,
+  clientDialogSurface,
+} from "@/app/[siteId]/[popId]/clients/ClientUpsertFormFields"
 import { getWorkspaceHeaderForPop } from "@/lib/workspaceHeaderServer"
 import { cn } from "@/lib/utils"
 import withAuth from "@/hoc/withAuth"
 import { usePadronAutofillRazonSocial } from "@/hooks/usePadronAutofillRazonSocial"
 import {
-  Copy,
   Filter,
   Loader2,
-  MoreVertical,
   Pencil,
   Plus,
   Search,
-  Table2,
   Trash2,
   X,
 } from "lucide-react"
@@ -173,32 +172,12 @@ function ClientsTableSkeletonRows({
               <div className="flex items-center justify-end gap-0.5">
                 <div className={cn("size-8 shrink-0 rounded-md", clientsSk.box)} />
                 <div className={cn("size-8 shrink-0 rounded-md", clientsSk.box)} />
-                <div className={cn("size-8 shrink-0 rounded-md", clientsSk.box)} />
               </div>
             </TableCell>
           ) : null}
         </TableRow>
       ))}
     </>
-  )
-}
-
-function ClientsTableFooterSkeleton() {
-  return (
-    <div
-      className="flex min-w-0 flex-wrap items-center justify-between gap-3 px-3 py-3 sm:px-4"
-      aria-hidden
-    >
-      <div className="flex min-w-0 flex-wrap items-center gap-x-4 gap-y-2">
-        <div className={cn("h-3.5 w-52 max-w-[min(100%,20rem)]", clientsSk.bar)} />
-        <div className={cn("h-8 w-[4.25rem] rounded-md", clientsSk.box)} />
-      </div>
-      <div className="flex flex-wrap items-center justify-center gap-1 sm:justify-end">
-        <div className={cn("size-8 rounded-md", clientsSk.box)} />
-        <div className={cn("h-8 w-36 rounded-md", clientsSk.box)} />
-        <div className={cn("size-8 rounded-md", clientsSk.box)} />
-      </div>
-    </div>
   )
 }
 
@@ -211,6 +190,7 @@ function emptyForm(): UpsertPopClientInput {
     notes: "",
     ivaCondition: "",
     addressLine: "",
+    defaultInvoiceTypeLabel: "",
     isActive: true,
   }
 }
@@ -238,16 +218,6 @@ function formatShortSaleDate(iso: string | null) {
     year: "numeric",
   })
 }
-
-const VIEW_ITEMS = [
-  { id: "list", label: "Listado", icon: Table2 },
-] as const
-
-const CREATION_NEW_CLIENT = {
-  id: "new-client",
-  label: "Nuevo cliente",
-  icon: Plus,
-} as const
 
 type ClientsAppliedFilters = {
   withEmail: boolean
@@ -294,8 +264,30 @@ function ClientsPage() {
   const [listFetching, setListFetching] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const fetchGenRef = useRef(0)
+  const createTaxInputRef = useRef<HTMLInputElement>(null)
+  const pendingCreateFromUrlRef = useRef(false)
+
+  const listQuery = useMemo(
+    () => ({
+      page: workspaceParsed.page,
+      pageSize: workspaceParsed.pageSize,
+      search: workspaceParsed.q,
+      soloActivos: workspaceParsed.soloActivos,
+      withEmail: workspaceParsed.withEmail,
+      withTaxId: workspaceParsed.withTaxId,
+    }),
+    [
+      workspaceParsed.page,
+      workspaceParsed.pageSize,
+      workspaceParsed.q,
+      workspaceParsed.soloActivos,
+      workspaceParsed.withEmail,
+      workspaceParsed.withTaxId,
+    ],
+  )
 
   const [searchInput, setSearchInput] = useState(workspaceParsed.q)
+  const [createOpen, setCreateOpen] = useState(false)
   const [createSaving, setCreateSaving] = useState(false)
   const [createBanner, setCreateBanner] = useState<string | null>(null)
   const [createForm, setCreateForm] = useState(emptyForm)
@@ -323,12 +315,29 @@ function ClientsPage() {
     roleLabel: string
   } | null>(null)
 
-  const createOpen = Boolean(
-    canCreate && workspaceParsed.view === "new-client",
+  const createOpenEffective = createOpen && canCreate
+
+  const comprobanteFormOptions = useMemo(
+    () => getSaleComprobantePickerOptions(siteId || "arg"),
+    [siteId],
   )
 
+  const suggestedComprobanteForCreate = useMemo(() => {
+    if (!createForm.ivaCondition) return null
+    return suggestSaleComprobanteForClientIva(
+      createForm.ivaCondition as (typeof CLIENT_IVA_CONDITION_OPTIONS)[number]["value"],
+    )
+  }, [createForm.ivaCondition])
+
+  const suggestedComprobanteForEdit = useMemo(() => {
+    if (!editForm.ivaCondition) return null
+    return suggestSaleComprobanteForClientIva(
+      editForm.ivaCondition as (typeof CLIENT_IVA_CONDITION_OPTIONS)[number]["value"],
+    )
+  }, [editForm.ivaCondition])
+
   const createPadron = usePadronAutofillRazonSocial(popId, createForm.taxId, {
-    enabled: Boolean(popId) && createOpen && canCreate,
+    enabled: Boolean(popId) && createOpenEffective && canCreate,
   })
   const editPadron = usePadronAutofillRazonSocial(popId, editForm.taxId, {
     enabled: Boolean(popId) && editRow !== null && canUpdate,
@@ -354,15 +363,7 @@ function ClientsPage() {
     setListFetching(true)
     setError(null)
     try {
-      const tableInput = {
-        page: workspaceParsed.page,
-        pageSize: workspaceParsed.pageSize,
-        search: workspaceParsed.q,
-        soloActivos: workspaceParsed.soloActivos,
-        withEmail: workspaceParsed.withEmail,
-        withTaxId: workspaceParsed.withTaxId,
-      }
-      const res = await getPopClientsTable(popId, tableInput)
+      const res = await getPopClientsTable(popId, listQuery)
       if (gen !== fetchGenRef.current) return
       if (!res.success) {
         setError(res.error || "Error")
@@ -395,7 +396,7 @@ function ClientsPage() {
         setListFetching(false)
       }
     }
-  }, [popId, siteId, workspaceParsed, replaceWorkspaceQuery])
+  }, [popId, siteId, listQuery, workspaceParsed.page, replaceWorkspaceQuery])
 
   useEffect(() => {
     setPopName("")
@@ -446,9 +447,27 @@ function ClientsPage() {
   }, [searchParams])
 
   useEffect(() => {
-    if (workspaceParsed.view !== "new-client" || canCreate) return
-    replaceWorkspaceQuery({ view: "list" })
-  }, [workspaceParsed.view, canCreate, replaceWorkspaceQuery])
+    if (workspaceParsed.view === "new-client") {
+      pendingCreateFromUrlRef.current = true
+      replaceWorkspaceQuery({ view: "list" })
+    }
+  }, [workspaceParsed.view, replaceWorkspaceQuery])
+
+  useEffect(() => {
+    if (!pendingCreateFromUrlRef.current || !canCreate) return
+    pendingCreateFromUrlRef.current = false
+    setCreateBanner(null)
+    setCreateForm(emptyForm())
+    setCreateOpen(true)
+  }, [canCreate])
+
+  useEffect(() => {
+    if (!createOpenEffective) return
+    const t = window.setTimeout(() => {
+      createTaxInputRef.current?.focus()
+    }, 0)
+    return () => window.clearTimeout(t)
+  }, [createOpenEffective])
 
   useEffect(() => {
     if (!popId || !siteId) {
@@ -460,49 +479,81 @@ function ClientsPage() {
   }, [popId, siteId, fetchClientList])
 
   useEffect(() => {
-    if (!createOpen || !canCreate) return
+    if (!createOpenEffective || !canCreate) return
     if (createPadron.busy) return
-    if (!createPadron.razonSocial.trim()) return
-    setCreateForm((f) => ({ ...f, name: createPadron.razonSocial }))
-  }, [createPadron.razonSocial, createPadron.busy, createOpen, canCreate])
+    if (
+      !createPadron.razonSocial.trim() &&
+      !createPadron.mappedIvaCondition &&
+      !createPadron.domicilioFiscal.trim()
+    ) {
+      return
+    }
+    setCreateForm((f) => ({
+      ...f,
+      name: createPadron.razonSocial.trim() || f.name,
+      ivaCondition:
+        f.ivaCondition || createPadron.mappedIvaCondition || f.ivaCondition,
+      addressLine:
+        f.addressLine.trim() || createPadron.domicilioFiscal.trim() || f.addressLine,
+    }))
+  }, [
+    createPadron.razonSocial,
+    createPadron.mappedIvaCondition,
+    createPadron.domicilioFiscal,
+    createPadron.busy,
+    createOpenEffective,
+    canCreate,
+  ])
 
   useEffect(() => {
     if (!editRow || !canUpdate) return
     if (editPadron.busy) return
-    if (!editPadron.razonSocial.trim()) return
-    setEditForm((f) => ({ ...f, name: editPadron.razonSocial }))
-  }, [editPadron.razonSocial, editPadron.busy, editRow, canUpdate])
+    if (!editPadron.mappedIvaCondition && !editPadron.domicilioFiscal.trim()) {
+      return
+    }
+    setEditForm((f) => ({
+      ...f,
+      ivaCondition:
+        f.ivaCondition || editPadron.mappedIvaCondition || f.ivaCondition,
+      addressLine:
+        f.addressLine.trim() || editPadron.domicilioFiscal.trim() || f.addressLine,
+    }))
+  }, [
+    editPadron.mappedIvaCondition,
+    editPadron.domicilioFiscal,
+    editPadron.busy,
+    editRow,
+    canUpdate,
+  ])
 
   const openCreate = useCallback(() => {
     setCreateBanner(null)
     setCreateForm(emptyForm())
-    replaceWorkspaceQuery({ view: "new-client" })
-  }, [replaceWorkspaceQuery])
+    setCreateOpen(true)
+  }, [])
 
-  const handleSidebarSelect = useCallback(
-    (id: string) => {
-      if (id === CREATION_NEW_CLIENT.id) {
-        openCreate()
-        return
-      }
-      replaceWorkspaceQuery({ view: id })
-    },
-    [openCreate, replaceWorkspaceQuery],
-  )
+  const closeCreate = useCallback(() => {
+    if (createSaving) return
+    setCreateOpen(false)
+  }, [createSaving])
 
   const submitCreate = async (e: FormEvent) => {
     e.preventDefault()
-    if (!popId || !siteId) return
+    if (!popId || !siteId || createSaving) return
     setCreateSaving(true)
     setCreateBanner(null)
-    const res = await createPopClient(popId, createForm)
-    setCreateSaving(false)
-    if (!res.success) {
-      setCreateBanner(res.error)
-      return
+    try {
+      const res = await createPopClient(popId, createForm)
+      if (!res.success) {
+        setCreateBanner(res.error)
+        return
+      }
+      setCreateOpen(false)
+      setCreateForm(emptyForm())
+      await fetchClientList()
+    } finally {
+      setCreateSaving(false)
     }
-    replaceWorkspaceQuery({ view: "list" })
-    await fetchClientList()
   }
 
   const openEdit = (row: ClientTableRow) => {
@@ -516,23 +567,27 @@ function ClientsPage() {
       notes: row.notes,
       ivaCondition: row.ivaCondition ?? "",
       addressLine: row.addressLine,
+      defaultInvoiceTypeLabel: row.defaultInvoiceTypeLabel ?? "",
       isActive: row.isActive,
     })
   }
 
   const submitEdit = async (e: FormEvent) => {
     e.preventDefault()
-    if (!popId || !siteId || !editRow) return
+    if (!popId || !siteId || !editRow || editSaving) return
     setEditSaving(true)
     setEditBanner(null)
-    const res = await updatePopClient(popId, editRow.id, editForm)
-    setEditSaving(false)
-    if (!res.success) {
-      setEditBanner(res.error)
-      return
+    try {
+      const res = await updatePopClient(popId, editRow.id, editForm)
+      if (!res.success) {
+        setEditBanner(res.error)
+        return
+      }
+      setEditRow(null)
+      await fetchClientList()
+    } finally {
+      setEditSaving(false)
     }
-    setEditRow(null)
-    await fetchClientList()
   }
 
   const submitDelete = async () => {
@@ -548,7 +603,6 @@ function ClientsPage() {
     await fetchClientList()
   }
 
-  const emptyCols = 1 + 7 + (canUpdate || canDelete ? 1 : 0)
   const skeletonRowCount = Math.min(12, Math.max(5, workspaceParsed.pageSize))
 
   const hasFilterChips =
@@ -651,26 +705,22 @@ function ClientsPage() {
       mainClassName="min-h-0 overflow-hidden"
       headerActions={
         canCreate ? (
-          <DataWorkspaceHeaderIconButton
-            label="Nuevo cliente"
-            headerVariant="dark"
-            primary
-            onClick={openCreate}
-          >
-            <Plus className="size-5" aria-hidden />
-          </DataWorkspaceHeaderIconButton>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <DataWorkspaceHeaderIconButton
+                label="Nuevo cliente"
+                headerVariant="dark"
+                primary
+                onClick={openCreate}
+              >
+                <Plus className="size-5" aria-hidden />
+              </DataWorkspaceHeaderIconButton>
+            </TooltipTrigger>
+            <TooltipContent variant="dark" side="bottom" sideOffset={6}>
+              Nuevo cliente
+            </TooltipContent>
+          </Tooltip>
         ) : null
-      }
-      sectionMenu={
-        <DataWorkspaceSectionMenu
-          headerVariant="dark"
-          viewItems={VIEW_ITEMS}
-          activeId={
-            workspaceParsed.view === "new-client" ? "list" : workspaceParsed.view
-          }
-          onSelect={handleSidebarSelect}
-          viewsSectionLabel="En esta sección"
-        />
       }
     >
       <div className="relative flex min-h-0 w-full flex-1 flex-col">
@@ -682,9 +732,7 @@ function ClientsPage() {
             {error}
           </div>
         ) : null}
-        {workspaceParsed.view === "list" ||
-        workspaceParsed.view === "new-client" ? (
-          <div className="relative flex min-h-0 flex-1 flex-col">
+        <div className="relative flex min-h-0 flex-1 flex-col">
             <div
               className={lightToolbarShellClass}
               role="toolbar"
@@ -988,6 +1036,11 @@ function ClientsPage() {
 
             <DataWorkspaceListTableShell
               variant="flush"
+              overlay={
+                !listFetching && totalCount === 0 ? (
+                  <DataWorkspaceTableEmptyMascot />
+                ) : null
+              }
               bulkToolbar={
                 selected.size > 0 ? (
                   <div
@@ -1013,7 +1066,7 @@ function ClientsPage() {
                         type="button"
                         size="sm"
                         variant="ghost"
-                        className="h-8 text-muted-foreground"
+                        className={listBulkToolbarClearButtonClass}
                         onClick={() => setSelected(new Set())}
                       >
                         Limpiar
@@ -1039,10 +1092,10 @@ function ClientsPage() {
                     replaceWorkspaceQuery({ pageSize: ps, page: 1 })
                   }
                   pageSizeLabelId={pageSizeLabelId}
-                  loadingSlot={<ClientsTableFooterSkeleton />}
                 />
               }
             >
+              <DataWorkspaceListTableFrame>
               <table
                 className={workspaceDataTableClassName}
                 aria-busy={listFetching}
@@ -1127,15 +1180,7 @@ function ClientsPage() {
                       hasActionsColumn={Boolean(canUpdate || canDelete)}
                     />
                   ) : totalCount === 0 ? (
-                    <TableRow>
-                      <TableCell
-                        colSpan={emptyCols}
-                        className="py-12 text-center text-muted-foreground"
-                      >
-                        No hay clientes que coincidan con la búsqueda o los filtros,
-                        o no tenés permiso de lectura.
-                      </TableCell>
-                    </TableRow>
+                    null
                   ) : (
                     pageRows.map((r, i) => (
                       <TableRow
@@ -1240,7 +1285,7 @@ function ClientsPage() {
                         </TableCell>
                         {canUpdate || canDelete ? (
                           <TableCell className="px-1 py-1.5 align-middle">
-                            <div className="flex items-center justify-end gap-0.5">
+                            <div className="flex items-center justify-end gap-1">
                               {canUpdate ? (
                                 <DataWorkspaceTableIconAction
                                   label={`Editar ${r.name || "cliente"}`}
@@ -1256,28 +1301,6 @@ function ClientsPage() {
                                   onClick={() => setDeleteRow(r)}
                                 />
                               ) : null}
-                              <DropdownMenu>
-                                <DropdownMenuTrigger asChild>
-                                  <Button
-                                    type="button"
-                                    variant="ghost"
-                                    size="icon"
-                                    className="size-8 shrink-0 text-muted-foreground hover:text-foreground"
-                                    aria-label={`Más opciones: ${r.name || r.id}`}
-                                  >
-                                    <MoreVertical className="size-4" />
-                                  </Button>
-                                </DropdownMenuTrigger>
-                                <DropdownMenuContent align="end" className="w-44">
-                                  <DropdownMenuItem
-                                    className="gap-2"
-                                    disabled
-                                  >
-                                    <Copy className="size-4" aria-hidden />
-                                    Duplicar
-                                  </DropdownMenuItem>
-                                </DropdownMenuContent>
-                              </DropdownMenu>
                             </div>
                           </TableCell>
                         ) : null}
@@ -1286,340 +1309,190 @@ function ClientsPage() {
                   )}
                 </TableBody>
               </table>
+              {!listFetching && totalCount === 0 ? (
+                <div className="min-h-[12rem] flex-1" aria-hidden />
+              ) : null}
+              </DataWorkspaceListTableFrame>
             </DataWorkspaceListTableShell>
           </div>
-        ) : null}
+
+      <Dialog open={createOpenEffective} onOpenChange={(o) => !o && closeCreate()}>
+        <DialogContent
+          data-rootsy-light-shell="true"
+          showCloseButton={!createSaving}
+          className={clientDialogSurface}
+        >
+          <DialogHeader className={clientDialogHeaderClass}>
+            <DialogTitle className="text-base font-semibold tracking-tight">
+              Nuevo cliente
+            </DialogTitle>
+            <DialogDescription className="text-sm leading-relaxed">
+              Datos fiscales y de contacto. Podés completar el CUIT con el padrón
+              AFIP.
+            </DialogDescription>
+          </DialogHeader>
+          <form
+            className="flex min-h-0 flex-1 flex-col overflow-hidden"
+            onSubmit={(e) => void submitCreate(e)}
+          >
+            <div className={clientDialogBodyClass}>
+              {createBanner ? (
+                <p
+                  role="alert"
+                  className="mb-4 rounded-lg border border-destructive/25 bg-destructive/5 px-3 py-2 text-sm text-destructive"
+                >
+                  {createBanner}
+                </p>
+              ) : null}
+              <ClientUpsertFormFields
+                idPrefix="cl"
+                form={createForm}
+                setForm={setCreateForm}
+                padron={createPadron}
+                comprobanteFormOptions={comprobanteFormOptions}
+                suggestedComprobante={suggestedComprobanteForCreate}
+                taxInputRef={createTaxInputRef}
+              />
+            </div>
+            <DialogFooter className={clientDialogFooterClass}>
+              <Button
+                type="button"
+                variant="outline"
+                disabled={createSaving}
+                onClick={closeCreate}
+              >
+                Cancelar
+              </Button>
+              <Button type="submit" disabled={createSaving} className="gap-2">
+                {createSaving ? (
+                  <>
+                    <Loader2 className="size-4 animate-spin" aria-hidden />
+                    Guardando…
+                  </>
+                ) : (
+                  "Crear cliente"
+                )}
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
 
       <Dialog
-        open={createOpen}
+        open={editRow !== null}
         onOpenChange={(o) => {
-          if (!o) replaceWorkspaceQuery({ view: "list" })
+          if (!o && !editSaving) setEditRow(null)
         }}
       >
         <DialogContent
           data-rootsy-light-shell="true"
-          showCloseButton
-          className="max-h-[min(90vh,640px)] overflow-y-auto border-border bg-card text-foreground sm:max-w-md"
+          showCloseButton={!editSaving}
+          className={clientDialogSurface}
         >
-          <DialogHeader>
-            <DialogTitle>New client</DialogTitle>
+          <DialogHeader className={clientDialogHeaderClass}>
+            <DialogTitle className="text-base font-semibold tracking-tight">
+              Editar cliente
+            </DialogTitle>
+            <DialogDescription className="text-sm leading-relaxed">
+              {editRow?.name
+                ? `Actualizá los datos de ${editRow.name}.`
+                : "Actualizá los datos del cliente."}
+            </DialogDescription>
           </DialogHeader>
-          {createBanner ? (
-            <p className="rounded-lg border border-destructive/25 bg-destructive/5 px-3 py-2 text-sm text-destructive">
-              {createBanner}
-            </p>
-          ) : null}
-          <form className="space-y-4" onSubmit={(e) => void submitCreate(e)}>
-            <div className="space-y-2">
-              <Label htmlFor="cl-name">Name</Label>
-              <Input
-                id="cl-name"
-                value={createForm.name}
-                onChange={(e) =>
-                  setCreateForm((f) => ({ ...f, name: e.target.value }))
-                }
-                required
-                className="bg-background"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="cl-email">Email</Label>
-              <Input
-                id="cl-email"
-                type="email"
-                value={createForm.email}
-                onChange={(e) =>
-                  setCreateForm((f) => ({ ...f, email: e.target.value }))
-                }
-                className="bg-background"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="cl-phone">Phone</Label>
-              <Input
-                id="cl-phone"
-                value={createForm.phone}
-                onChange={(e) =>
-                  setCreateForm((f) => ({ ...f, phone: e.target.value }))
-                }
-                className="bg-background"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="cl-tax">CUIT / DNI</Label>
-              <Input
-                id="cl-tax"
-                value={createForm.taxId}
-                onChange={(e) =>
-                  setCreateForm((f) => ({ ...f, taxId: e.target.value }))
-                }
-                className="bg-background"
-                placeholder="Opcional — completa la razón social automáticamente"
-              />
-              {createPadron.busy ? (
-                <p className="flex items-center gap-2 text-xs text-muted-foreground">
-                  <Loader2 className="size-3.5 animate-spin" aria-hidden />
-                  Consultando padrón…
+          <form
+            className="flex min-h-0 flex-1 flex-col overflow-hidden"
+            onSubmit={(e) => void submitEdit(e)}
+          >
+            <div className={clientDialogBodyClass}>
+              {editBanner ? (
+                <p
+                  role="alert"
+                  className="mb-4 rounded-lg border border-destructive/25 bg-destructive/5 px-3 py-2 text-sm text-destructive"
+                >
+                  {editBanner}
                 </p>
-              ) : createPadron.error ? (
-                <p className="text-xs text-destructive">{createPadron.error}</p>
               ) : null}
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="cl-iva">Condición IVA</Label>
-              <Select
-                value={createForm.ivaCondition || "__none__"}
-                onValueChange={(v) =>
-                  setCreateForm((f) => ({
-                    ...f,
-                    ivaCondition: v === "__none__" ? "" : v,
-                  }))
-                }
-              >
-                <SelectTrigger id="cl-iva" className="bg-background">
-                  <SelectValue placeholder="Opcional" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="__none__">Sin definir</SelectItem>
-                  {CLIENT_IVA_CONDITION_OPTIONS.map((o) => (
-                    <SelectItem key={o.value} value={o.value}>
-                      {o.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="cl-address">Dirección</Label>
-              <Input
-                id="cl-address"
-                value={createForm.addressLine}
-                onChange={(e) =>
-                  setCreateForm((f) => ({ ...f, addressLine: e.target.value }))
-                }
-                className="bg-background"
-                placeholder="Calle, localidad (opcional)"
+              <ClientUpsertFormFields
+                idPrefix="e-cl"
+                form={editForm}
+                setForm={setEditForm}
+                padron={editPadron}
+                comprobanteFormOptions={comprobanteFormOptions}
+                suggestedComprobante={suggestedComprobanteForEdit}
+                showPadronNameButton
               />
             </div>
-            <div className="flex items-center justify-between gap-4 rounded-lg border border-border/60 px-3 py-3">
-              <div className="min-w-0 space-y-0.5">
-                <Label htmlFor="cl-active" className="text-foreground">
-                  Cliente activo
-                </Label>
-                <p className="text-xs text-muted-foreground">
-                  Para ocultarlos del listado usá el filtro «Solo clientes activos».
-                </p>
-              </div>
-              <Switch
-                id="cl-active"
-                checked={createForm.isActive}
-                onCheckedChange={(c) =>
-                  setCreateForm((f) => ({ ...f, isActive: c }))
-                }
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="cl-notes">Notes</Label>
-              <Textarea
-                id="cl-notes"
-                rows={3}
-                value={createForm.notes}
-                onChange={(e) =>
-                  setCreateForm((f) => ({ ...f, notes: e.target.value }))
-                }
-                className="bg-background"
-              />
-            </div>
-            <DialogFooter className="gap-2 sm:gap-0">
+            <DialogFooter className={clientDialogFooterClass}>
               <Button
                 type="button"
                 variant="outline"
-                onClick={() => replaceWorkspaceQuery({ view: "list" })}
+                disabled={editSaving}
+                onClick={() => setEditRow(null)}
               >
-                Cancel
+                Cancelar
               </Button>
-              <Button type="submit" disabled={createSaving}>
-                {createSaving ? "Saving…" : "Create"}
+              <Button type="submit" disabled={editSaving} className="gap-2">
+                {editSaving ? (
+                  <>
+                    <Loader2 className="size-4 animate-spin" aria-hidden />
+                    Guardando…
+                  </>
+                ) : (
+                  "Guardar cambios"
+                )}
               </Button>
             </DialogFooter>
           </form>
         </DialogContent>
       </Dialog>
 
-      <Dialog open={editRow !== null} onOpenChange={(o) => !o && setEditRow(null)}>
+      <Dialog
+        open={deleteRow !== null}
+        onOpenChange={(o) => {
+          if (!o && !deleteBusy) setDeleteRow(null)
+        }}
+      >
         <DialogContent
           data-rootsy-light-shell="true"
-          showCloseButton
-          className="max-h-[min(90vh,640px)] overflow-y-auto border-border bg-card text-foreground sm:max-w-md"
+          showCloseButton={!deleteBusy}
+          className={cn(clientDialogSurface, "sm:max-w-md")}
         >
-          <DialogHeader>
-            <DialogTitle>Edit client</DialogTitle>
+          <DialogHeader className={clientDialogHeaderClass}>
+            <DialogTitle className="text-base font-semibold tracking-tight">
+              ¿Eliminar cliente?
+            </DialogTitle>
+            <DialogDescription className="text-sm leading-relaxed">
+              Se quitará{" "}
+              <span className="font-medium text-foreground">
+                {deleteRow?.name || "este cliente"}
+              </span>{" "}
+              de este punto de venta. Esta acción no se puede deshacer.
+            </DialogDescription>
           </DialogHeader>
-          {editBanner ? (
-            <p className="rounded-lg border border-destructive/25 bg-destructive/5 px-3 py-2 text-sm text-destructive">
-              {editBanner}
-            </p>
-          ) : null}
-          <form className="space-y-4" onSubmit={(e) => void submitEdit(e)}>
-            <div className="space-y-2">
-              <Label htmlFor="e-cl-name">Name</Label>
-              <Input
-                id="e-cl-name"
-                value={editForm.name}
-                onChange={(e) =>
-                  setEditForm((f) => ({ ...f, name: e.target.value }))
-                }
-                required
-                className="bg-background"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="e-cl-email">Email</Label>
-              <Input
-                id="e-cl-email"
-                type="email"
-                value={editForm.email}
-                onChange={(e) =>
-                  setEditForm((f) => ({ ...f, email: e.target.value }))
-                }
-                className="bg-background"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="e-cl-phone">Phone</Label>
-              <Input
-                id="e-cl-phone"
-                value={editForm.phone}
-                onChange={(e) =>
-                  setEditForm((f) => ({ ...f, phone: e.target.value }))
-                }
-                className="bg-background"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="e-cl-tax">CUIT / DNI</Label>
-              <Input
-                id="e-cl-tax"
-                value={editForm.taxId}
-                onChange={(e) =>
-                  setEditForm((f) => ({ ...f, taxId: e.target.value }))
-                }
-                className="bg-background"
-                placeholder="Opcional — completa la razón social automáticamente"
-              />
-              {editPadron.busy ? (
-                <p className="flex items-center gap-2 text-xs text-muted-foreground">
-                  <Loader2 className="size-3.5 animate-spin" aria-hidden />
-                  Consultando padrón…
-                </p>
-              ) : editPadron.error ? (
-                <p className="text-xs text-destructive">{editPadron.error}</p>
-              ) : null}
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="e-cl-iva">Condición IVA</Label>
-              <Select
-                value={editForm.ivaCondition || "__none__"}
-                onValueChange={(v) =>
-                  setEditForm((f) => ({
-                    ...f,
-                    ivaCondition: v === "__none__" ? "" : v,
-                  }))
-                }
-              >
-                <SelectTrigger id="e-cl-iva" className="bg-background">
-                  <SelectValue placeholder="Opcional" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="__none__">Sin definir</SelectItem>
-                  {CLIENT_IVA_CONDITION_OPTIONS.map((o) => (
-                    <SelectItem key={o.value} value={o.value}>
-                      {o.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="e-cl-address">Dirección</Label>
-              <Input
-                id="e-cl-address"
-                value={editForm.addressLine}
-                onChange={(e) =>
-                  setEditForm((f) => ({ ...f, addressLine: e.target.value }))
-                }
-                className="bg-background"
-                placeholder="Calle, localidad (opcional)"
-              />
-            </div>
-            <div className="flex items-center justify-between gap-4 rounded-lg border border-border/60 px-3 py-3">
-              <div className="min-w-0 space-y-0.5">
-                <Label htmlFor="e-cl-active" className="text-foreground">
-                  Cliente activo
-                </Label>
-                <p className="text-xs text-muted-foreground">
-                  Para ocultarlos del listado usá el filtro «Solo clientes activos».
-                </p>
-              </div>
-              <Switch
-                id="e-cl-active"
-                checked={editForm.isActive}
-                onCheckedChange={(c) =>
-                  setEditForm((f) => ({ ...f, isActive: c }))
-                }
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="e-cl-notes">Notes</Label>
-              <Textarea
-                id="e-cl-notes"
-                rows={3}
-                value={editForm.notes}
-                onChange={(e) =>
-                  setEditForm((f) => ({ ...f, notes: e.target.value }))
-                }
-                className="bg-background"
-              />
-            </div>
-            <DialogFooter className="gap-2 sm:gap-0">
-              <Button type="button" variant="outline" onClick={() => setEditRow(null)}>
-                Cancel
-              </Button>
-              <Button type="submit" disabled={editSaving}>
-                {editSaving ? "Saving…" : "Save"}
-              </Button>
-            </DialogFooter>
-          </form>
-        </DialogContent>
-      </Dialog>
-
-      <Dialog open={deleteRow !== null} onOpenChange={(o) => !o && setDeleteRow(null)}>
-        <DialogContent
-          data-rootsy-light-shell="true"
-          showCloseButton
-          className="border-border bg-card text-foreground sm:max-w-md"
-        >
-          <DialogHeader>
-            <DialogTitle>Delete client?</DialogTitle>
-          </DialogHeader>
-          <p className="text-sm text-muted-foreground">
-            This will remove{" "}
-            <strong className="text-foreground">
-              {deleteRow?.name || "this client"}
-            </strong>{" "}
-            from this store.
-          </p>
-          <DialogFooter className="gap-2 sm:gap-0">
-            <Button type="button" variant="outline" onClick={() => setDeleteRow(null)}>
-              Cancel
+          <DialogFooter className={clientDialogFooterClass}>
+            <Button
+              type="button"
+              variant="outline"
+              disabled={deleteBusy}
+              onClick={() => setDeleteRow(null)}
+            >
+              Cancelar
             </Button>
             <Button
               type="button"
               variant="destructive"
               disabled={deleteBusy}
+              className="gap-2"
               onClick={() => void submitDelete()}
             >
-              {deleteBusy ? "Deleting…" : "Delete"}
+              {deleteBusy ? (
+                <>
+                  <Loader2 className="size-4 animate-spin" aria-hidden />
+                  Eliminando…
+                </>
+              ) : (
+                "Eliminar"
+              )}
             </Button>
           </DialogFooter>
         </DialogContent>

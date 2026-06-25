@@ -5,6 +5,7 @@ import { OperationAccountingViewButton } from "@/app/[siteId]/[popId]/operations
 import { OperationsPurchasesSkeletonRows } from "@/app/[siteId]/[popId]/operations/OperationsTableSkeleton"
 import { formatOperationSaleDateTime } from "@/app/[siteId]/[popId]/operations/OperationsSalesTable"
 import { Button } from "@/components/ui/button"
+import { Checkbox } from "@/components/ui/checkbox"
 import {
   Dialog,
   DialogContent,
@@ -14,6 +15,8 @@ import {
 } from "@/components/ui/dialog"
 import {
   lightTableThClass,
+  selectColumnInnerClass,
+  tableRowSelectCheckboxClass,
   tdClientNamedClass,
   tdMoneyClass,
   tdMoneyMutedClass,
@@ -21,13 +24,13 @@ import {
   tdMoneyVatClass,
   workspaceTableBodyRowClassNames,
   workspaceTableHeaderRowClass,
-  workspaceTablePlaceholderRowClass,
 } from "@/components/data-workspace/dataWorkspaceListStyles"
+import { DataWorkspaceListTableFrame } from "@/components/data-workspace/DataWorkspaceListTablePrimitives"
 import { popScopedHref } from "@/lib/popRoutes"
 import { cn } from "@/lib/utils"
 import { Eye } from "lucide-react"
 import Link from "next/link"
-import { useMemo, useState } from "react"
+import { useMemo, useState, type Dispatch, type SetStateAction } from "react"
 import {
   TableBody,
   TableCell,
@@ -283,8 +286,9 @@ export function OperationsPurchasesTable({
   rows,
   listFetching,
   totalCount,
-  hasActiveFilters,
   skeletonRowCount,
+  selected,
+  onSelectedChange,
   onOpenAccounting,
 }: {
   siteId: string
@@ -292,23 +296,22 @@ export function OperationsPurchasesTable({
   rows: OperationPurchaseRow[]
   listFetching: boolean
   totalCount: number
-  hasActiveFilters: boolean
   skeletonRowCount: number
+  selected: Set<string>
+  onSelectedChange: Dispatch<SetStateAction<Set<string>>>
   onOpenAccounting: (purchase: OperationPurchaseRow) => void
 }) {
   const [detailPurchase, setDetailPurchase] =
     useState<OperationPurchaseRow | null>(null)
 
-  const emptyMessage = useMemo(
-    () =>
-      hasActiveFilters
-        ? "No hay compras que coincidan con los filtros."
-        : "No hay compras confirmadas en este punto.",
-    [hasActiveFilters],
-  )
+  const visibleIds = useMemo(() => rows.map((row) => row.id), [rows])
+  const allVisibleSelected =
+    visibleIds.length > 0 && visibleIds.every((id) => selected.has(id))
+  const someVisibleSelected = visibleIds.some((id) => selected.has(id))
 
   return (
     <>
+      <DataWorkspaceListTableFrame>
       <table
         className={cn(
           "relative w-max min-w-full caption-bottom text-sm",
@@ -318,6 +321,35 @@ export function OperationsPurchasesTable({
       >
         <TableHeader>
           <TableRow className={workspaceTableHeaderRowClass}>
+            <TableHead className={cn(lightTableThClass, "w-12 !px-0 text-center")}>
+              <div className={cn(selectColumnInnerClass, "min-h-10")}>
+                <Checkbox
+                  className={tableRowSelectCheckboxClass}
+                  checked={
+                    allVisibleSelected
+                      ? true
+                      : someVisibleSelected
+                        ? "indeterminate"
+                        : false
+                  }
+                  onCheckedChange={(checked) => {
+                    onSelectedChange((prev) => {
+                      const next = new Set(prev)
+                      if (checked === true) {
+                        visibleIds.forEach((id) => next.add(id))
+                      } else {
+                        visibleIds.forEach((id) => next.delete(id))
+                      }
+                      return next
+                    })
+                  }}
+                  disabled={
+                    listFetching || totalCount === 0 || rows.length === 0
+                  }
+                  aria-label="Seleccionar filas visibles"
+                />
+              </div>
+            </TableHead>
             <TableHead className={cn(lightTableThClass, "w-[7.5rem] text-left")}>
               Fecha
             </TableHead>
@@ -351,14 +383,7 @@ export function OperationsPurchasesTable({
           {listFetching ? (
             <OperationsPurchasesSkeletonRows rowCount={skeletonRowCount} />
           ) : totalCount === 0 ? (
-            <TableRow className={workspaceTablePlaceholderRowClass}>
-              <TableCell
-                colSpan={9}
-                className="py-12 text-center text-muted-foreground"
-              >
-                {emptyMessage}
-              </TableCell>
-            </TableRow>
+            null
           ) : (
             rows.map((purchase, i) => {
               const when = formatOperationSaleDateTime(purchase.operationAt)
@@ -368,6 +393,23 @@ export function OperationsPurchasesTable({
                 key={purchase.id}
                 className={workspaceTableBodyRowClassNames(i)}
               >
+                <TableCell className="w-12 !px-0 py-2.5 align-middle">
+                  <div className={selectColumnInnerClass}>
+                    <Checkbox
+                      className={tableRowSelectCheckboxClass}
+                      checked={selected.has(purchase.id)}
+                      onCheckedChange={(checked) => {
+                        onSelectedChange((prev) => {
+                          const next = new Set(prev)
+                          if (checked === true) next.add(purchase.id)
+                          else next.delete(purchase.id)
+                          return next
+                        })
+                      }}
+                      aria-label={`Seleccionar compra ${purchase.id}`}
+                    />
+                  </div>
+                </TableCell>
                 <TableCell className="px-3 py-2.5">
                   <span className="block text-sm font-medium text-foreground">
                     {when.primary}
@@ -460,6 +502,10 @@ export function OperationsPurchasesTable({
           )}
         </TableBody>
       </table>
+      {!listFetching && totalCount === 0 ? (
+        <div className="min-h-[12rem] flex-1" aria-hidden />
+      ) : null}
+      </DataWorkspaceListTableFrame>
 
       <PurchaseDetailDialog
         purchase={detailPurchase}

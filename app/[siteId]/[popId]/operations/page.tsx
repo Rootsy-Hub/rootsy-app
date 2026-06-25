@@ -11,10 +11,12 @@ import {
 } from "@/app/[siteId]/[popId]/operations/OperationsSalesTable"
 import { OperationsExpensesTable } from "@/app/[siteId]/[popId]/operations/OperationsExpensesTable"
 import { OperationsPurchasesTable } from "@/app/[siteId]/[popId]/operations/OperationsPurchasesTable"
+import { exportOperationsCsv } from "@/app/[siteId]/[popId]/operations/operationsCsvExport"
 import { OperationAccountingModal } from "@/app/[siteId]/[popId]/operations/OperationAccountingModal"
 import { buildPaginationItems } from "@/app/[siteId]/[popId]/layout/layoutPreviewPagination"
 import { DataWorkspaceListPaginationFooter } from "@/components/data-workspace/DataWorkspaceListPaginationFooter"
 import { DataWorkspaceListTableShell } from "@/components/data-workspace/DataWorkspaceListTableShell"
+import { DataWorkspaceTableEmptyMascot } from "@/components/data-workspace/DataWorkspaceListTablePrimitives"
 import { DataWorkspacePeriodFilter } from "@/components/data-workspace/DataWorkspacePeriodFilter"
 import { DataWorkspaceToolbarFieldLabel } from "@/components/data-workspace/DataWorkspaceToolbarFieldLabel"
 import {
@@ -23,6 +25,7 @@ import {
   lightToolbarInputClass,
   lightToolbarPanelLastClass,
   lightToolbarShellClass,
+  listBulkToolbarClearButtonClass,
   toolbarBlockLabelClass,
 } from "@/components/data-workspace/dataWorkspaceListStyles"
 import { DataWorkspaceLayout } from "@/components/layouts/DataWorkspaceLayout"
@@ -80,21 +83,6 @@ function formatLedgerDate(d: string) {
   return new Date(y, m - 1, day).toLocaleDateString("es-AR")
 }
 
-const operationsSk = {
-  box: "animate-pulse rounded-sm bg-muted-foreground/10 dark:bg-muted-foreground/[0.12]",
-} as const
-
-function OperationsTableFooterSkeleton() {
-  return (
-    <div
-      className="flex min-h-16 w-full items-center justify-center px-4"
-      aria-hidden
-    >
-      <div className={cn("h-11 w-full max-w-md rounded-lg", operationsSk.box)} />
-    </div>
-  )
-}
-
 function OperationsPage() {
   const params = useParams()
   const siteId = typeof params?.siteId === "string" ? params.siteId : ""
@@ -126,6 +114,7 @@ function OperationsPage() {
   const hydratedViewPopRef = useRef<string | null>(null)
   const [page, setPage] = useState(1)
   const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE)
+  const [selected, setSelected] = useState<Set<string>>(() => new Set())
   const [accountingTarget, setAccountingTarget] = useState<{
     view: OperationsViewId
     operationId: string
@@ -234,6 +223,10 @@ function OperationsPage() {
   useEffect(() => {
     setPage(1)
   }, [debouncedSearch, activeView, datePreset, customDateRange])
+
+  useEffect(() => {
+    setSelected(new Set())
+  }, [activeView, page, debouncedSearch, dateBounds.from, dateBounds.to])
 
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
@@ -358,6 +351,28 @@ function OperationsPage() {
     setSearchInput("")
     searchInputRef.current?.focus()
   }, [])
+
+  const handleExportCsv = useCallback(() => {
+    if (selected.size === 0) return
+    if (activeView === "sales") {
+      exportOperationsCsv(
+        "sales",
+        pageSales.filter((row) => selected.has(row.id)),
+      )
+      return
+    }
+    if (activeView === "purchases") {
+      exportOperationsCsv(
+        "purchases",
+        pagePurchases.filter((row) => selected.has(row.id)),
+      )
+      return
+    }
+    exportOperationsCsv(
+      "expenses",
+      pageExpenses.filter((row) => selected.has(row.entryId)),
+    )
+  }, [activeView, pageSales, pagePurchases, pageExpenses, selected])
 
   const hasSearchChip = searchInput.trim().length > 0
 
@@ -518,6 +533,48 @@ function OperationsPage() {
 
           <DataWorkspaceListTableShell
             variant="flush"
+            bulkToolbar={
+              selected.size > 0 ? (
+                <div
+                  className={cn(
+                    "flex flex-wrap items-center gap-2 border-b border-border/80 bg-muted/35 px-3 py-2.5 sm:px-4",
+                    listFetching && "pointer-events-none opacity-60",
+                  )}
+                  role="region"
+                  aria-label="Acciones sobre selección"
+                >
+                  <span className="text-sm text-foreground">
+                    <span className="font-semibold">{selected.size}</span>{" "}
+                    <span className="text-muted-foreground">seleccionados</span>
+                  </span>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="outline"
+                      className="h-8"
+                      onClick={handleExportCsv}
+                    >
+                      Exportar CSV
+                    </Button>
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="ghost"
+                      className={listBulkToolbarClearButtonClass}
+                      onClick={() => setSelected(new Set())}
+                    >
+                      Limpiar
+                    </Button>
+                  </div>
+                </div>
+              ) : null
+            }
+            overlay={
+              !listFetching && totalCount === 0 ? (
+                <DataWorkspaceTableEmptyMascot />
+              ) : null
+            }
             footer={
               <DataWorkspaceListPaginationFooter
                 variant="dark"
@@ -536,7 +593,6 @@ function OperationsPage() {
                   setPage(1)
                 }}
                 pageSizeLabelId={pageSizeLabelId}
-                loadingSlot={<OperationsTableFooterSkeleton />}
               />
             }
           >
@@ -547,8 +603,9 @@ function OperationsPage() {
                 rows={pageSales}
                 listFetching={listFetching}
                 totalCount={totalCount}
-                hasActiveFilters={Boolean(searchInput.trim())}
                 skeletonRowCount={skeletonRowCount}
+                selected={selected}
+                onSelectedChange={setSelected}
                 onOpenAccounting={openSaleAccounting}
               />
             ) : activeView === "purchases" ? (
@@ -558,8 +615,9 @@ function OperationsPage() {
                 rows={pagePurchases}
                 listFetching={listFetching}
                 totalCount={totalCount}
-                hasActiveFilters={Boolean(searchInput.trim())}
                 skeletonRowCount={skeletonRowCount}
+                selected={selected}
+                onSelectedChange={setSelected}
                 onOpenAccounting={openPurchaseAccounting}
               />
             ) : (
@@ -567,8 +625,9 @@ function OperationsPage() {
                 rows={pageExpenses}
                 listFetching={listFetching}
                 totalCount={totalCount}
-                hasActiveFilters={Boolean(searchInput.trim())}
                 skeletonRowCount={skeletonRowCount}
+                selected={selected}
+                onSelectedChange={setSelected}
                 onOpenAccounting={openExpenseAccounting}
               />
             )}

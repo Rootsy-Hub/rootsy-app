@@ -1,7 +1,9 @@
 "use client"
 
 import { lookupPadronForPop } from "@/app/[siteId]/[popId]/padronLookup/actions"
+import type { ClientIvaConditionValue } from "@/app/[siteId]/[popId]/clients/clientIvaConstants"
 import type { PadronActividadItem } from "@/lib/argentinaPadronLookup"
+import { mapPadronCondicionIvaToClientEnum } from "@/lib/padronIvaMapping"
 import { DEBOUNCE_MS_SAFE } from "@/lib/debounceMs"
 import { useEffect, useState } from "react"
 
@@ -25,6 +27,10 @@ export function usePadronAutofillRazonSocial(
   const suppressClear = options?.suppressClear ?? false
 
   const [razonSocial, setRazonSocial] = useState("")
+  const [domicilioFiscal, setDomicilioFiscal] = useState("")
+  const [condicionIvaNombre, setCondicionIvaNombre] = useState("")
+  const [mappedIvaCondition, setMappedIvaCondition] =
+    useState<ClientIvaConditionValue | null>(null)
   const [fiscalActividadesPadron, setFiscalActividadesPadron] = useState<
     PadronActividadItem[]
   >([])
@@ -37,6 +43,9 @@ export function usePadronAutofillRazonSocial(
     if (!raw) {
       if (!suppressClear) {
         setRazonSocial("")
+        setDomicilioFiscal("")
+        setCondicionIvaNombre("")
+        setMappedIvaCondition(null)
         setFiscalActividadesPadron([])
         setError(null)
       }
@@ -48,6 +57,9 @@ export function usePadronAutofillRazonSocial(
     if (!okLen) {
       if (!suppressClear) {
         setRazonSocial("")
+        setDomicilioFiscal("")
+        setCondicionIvaNombre("")
+        setMappedIvaCondition(null)
         setFiscalActividadesPadron([])
         setError(null)
       }
@@ -62,10 +74,18 @@ export function usePadronAutofillRazonSocial(
         if (!res.success) {
           setError(res.error)
           setRazonSocial("")
+          setDomicilioFiscal("")
+          setCondicionIvaNombre("")
+          setMappedIvaCondition(null)
           setFiscalActividadesPadron([])
           return
         }
         setRazonSocial(res.razonSocial)
+        setDomicilioFiscal(res.domicilioFiscal?.trim() ?? "")
+        setCondicionIvaNombre(res.condicionIvaNombre?.trim() ?? "")
+        setMappedIvaCondition(
+          mapPadronCondicionIvaToClientEnum(res.condicionIvaNombre),
+        )
         setFiscalActividadesPadron(res.fiscalActividadesPadron ?? [])
         setError(null)
       })()
@@ -75,6 +95,9 @@ export function usePadronAutofillRazonSocial(
 
   return {
     razonSocial,
+    domicilioFiscal,
+    condicionIvaNombre,
+    mappedIvaCondition,
     fiscalActividadesPadron,
     busy,
     error,

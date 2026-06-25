@@ -22,6 +22,8 @@ import { buildPaginationItems } from "@/app/[siteId]/[popId]/layout/layoutPrevie
 import { DataWorkspaceListPaginationFooter } from "@/components/data-workspace/DataWorkspaceListPaginationFooter"
 import { DataWorkspaceListTableShell } from "@/components/data-workspace/DataWorkspaceListTableShell"
 import {
+  DataWorkspaceListTableFrame,
+  DataWorkspaceTableEmptyMascot,
   DataWorkspaceTableIconAction,
   DataWorkspaceTableMoney,
   DataWorkspaceTableThumbnail,
@@ -178,30 +180,6 @@ function ArticlesTableSkeletonRows({
         </TableRow>
       ))}
     </>
-  )
-}
-
-function ArticlesTableFooterSkeleton() {
-  return (
-    <div
-      className="flex min-w-0 flex-wrap items-center justify-between gap-3 px-3 py-3 sm:px-4"
-      aria-hidden
-    >
-      <div className="flex min-w-0 flex-wrap items-center gap-x-4 gap-y-2">
-        <div
-          className={cn(
-            "h-3.5 w-52 max-w-[min(100%,20rem)]",
-            articlesSk.bar,
-          )}
-        />
-        <div className={cn("h-8 w-[4.25rem] rounded-md", articlesSk.box)} />
-      </div>
-      <div className="flex flex-wrap items-center justify-center gap-1 sm:justify-end">
-        <div className={cn("size-8 rounded-md", articlesSk.box)} />
-        <div className={cn("h-8 w-36 rounded-md", articlesSk.box)} />
-        <div className={cn("size-8 rounded-md", articlesSk.box)} />
-      </div>
-    </div>
   )
 }
 
@@ -758,8 +736,6 @@ function ArticlesPage() {
     await fetchArticlesList()
   }
 
-  const emptyCols = 7 + (canUpdate || canDelete ? 1 : 0)
-
   const totalPages = useMemo(
     () =>
       Math.max(
@@ -1274,6 +1250,11 @@ function ArticlesPage() {
 
             <DataWorkspaceListTableShell
               variant="flush"
+              overlay={
+                !listFetching && totalCount === 0 ? (
+                  <DataWorkspaceTableEmptyMascot />
+                ) : null
+              }
               footer={
                 <DataWorkspaceListPaginationFooter
                   variant="dark"
@@ -1291,10 +1272,10 @@ function ArticlesPage() {
                     replaceWorkspaceQuery({ pageSize: ps, page: 1 })
                   }
                   pageSizeLabelId={pageSizeLabelId}
-                  loadingSlot={<ArticlesTableFooterSkeleton />}
                 />
               }
             >
+              <DataWorkspaceListTableFrame>
               <table
                 className={workspaceDataTableClassName}
                 aria-busy={listFetching}
@@ -1338,15 +1319,7 @@ function ArticlesPage() {
                       hasActionsColumn={Boolean(canUpdate || canDelete)}
                     />
                   ) : totalCount === 0 ? (
-                    <TableRow>
-                      <TableCell
-                        colSpan={emptyCols}
-                        className="py-12 text-center text-muted-foreground"
-                      >
-                        No hay artículos que coincidan con la búsqueda o los
-                        filtros, o no tenés permiso de lectura.
-                      </TableCell>
-                    </TableRow>
+                    null
                   ) : (
                     pageRows.map((a, i) => (
                       <TableRow
@@ -1430,6 +1403,10 @@ function ArticlesPage() {
                   )}
                 </TableBody>
               </table>
+              {!listFetching && totalCount === 0 ? (
+                <div className="min-h-[12rem] flex-1" aria-hidden />
+              ) : null}
+              </DataWorkspaceListTableFrame>
             </DataWorkspaceListTableShell>
           </div>
         ) : null}

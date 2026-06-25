@@ -8,6 +8,11 @@ import {
   type PopPrinterTableRow,
   type UpsertPopPrinterInput,
 } from "@/app/[siteId]/[popId]/printers/actions"
+import { DataWorkspaceTableEmptyMascot } from "@/components/data-workspace/DataWorkspaceListTablePrimitives"
+import {
+  workspaceTableSurfaceClass,
+  workspaceTableSurfaceGlowClass,
+} from "@/components/data-workspace/dataWorkspaceListStyles"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
@@ -243,8 +248,6 @@ function PrintersPage() {
 
   const popLogoSrc = `https://api.dicebear.com/7.x/shapes/svg?seed=${encodeURIComponent(popId || "pop")}&backgroundColor=e8f5ef`
 
-  const emptyCols = canUpdate || canDelete ? 6 : 5
-
   if (!popId || !siteId) {
     return (
       <div className="rootsy-app-light min-h-screen bg-background p-10 text-foreground">
@@ -381,7 +384,13 @@ function PrintersPage() {
                 </p>
               </div>
 
-              <div className="overflow-hidden rounded-2xl border border-border bg-card/95 shadow-md shadow-primary/5 backdrop-blur-sm">
+              <div
+                className={cn(
+                  "relative flex min-h-[min(55vh,28rem)] flex-col overflow-hidden rounded-2xl border border-border/80 shadow-md shadow-primary/[0.04] [--dw-table-footer-height:1.5rem]",
+                  workspaceTableSurfaceClass,
+                )}
+              >
+                <div className={workspaceTableSurfaceGlowClass} aria-hidden />
                 <Table>
                   <TableHeader>
                     <TableRow className="border-border bg-muted/40 hover:bg-muted/40">
@@ -408,17 +417,7 @@ function PrintersPage() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {rows.length === 0 ? (
-                      <TableRow>
-                        <TableCell
-                          colSpan={emptyCols}
-                          className="py-12 text-center text-muted-foreground"
-                        >
-                          No hay impresoras cargadas o no tenés permiso de
-                          lectura desde el servidor.
-                        </TableCell>
-                      </TableRow>
-                    ) : (
+                    {rows.length === 0 ? null : (
                       rows.map((r) => (
                         <TableRow
                           key={r.id}
@@ -475,6 +474,10 @@ function PrintersPage() {
                     )}
                   </TableBody>
                 </Table>
+                {rows.length === 0 ? (
+                  <div className="min-h-[12rem] flex-1" aria-hidden />
+                ) : null}
+                {rows.length === 0 ? <DataWorkspaceTableEmptyMascot /> : null}
               </div>
             </div>
           )}

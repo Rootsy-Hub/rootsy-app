@@ -17,6 +17,7 @@ import {
   CLIENT_TABLE_PAGE_SIZES,
   DEFAULT_CLIENT_TABLE_PAGE_SIZE,
 } from "@/app/[siteId]/[popId]/clients/workspaceUrl"
+import { isAllowedSaleComprobanteLabel } from "@/lib/saleComprobantePicker"
 
 function normalizeIvaCondition(raw: string): string | null {
   const t = raw.trim()
@@ -24,6 +25,17 @@ function normalizeIvaCondition(raw: string): string | null {
   return (CLIENT_IVA_CONDITION_VALUES as readonly string[]).includes(t)
     ? t
     : null
+}
+
+async function normalizeDefaultInvoiceTypeLabel(
+  popId: string,
+  raw: string,
+): Promise<string | null> {
+  const t = raw.trim()
+  if (!t) return null
+  const siteId = await getPopSiteId(popId)
+  if (!isAllowedSaleComprobanteLabel(siteId, t)) return null
+  return t
 }
 
 function aggregateCompletedSalesByClient(
@@ -76,6 +88,7 @@ export type ClientTableRow = {
   notes: string
   ivaCondition: string | null
   addressLine: string
+  defaultInvoiceTypeLabel: string | null
   isActive: boolean
   lastSaleAt: string | null
   completedSalesCount: number
@@ -90,6 +103,7 @@ export type UpsertPopClientInput = {
   notes: string
   ivaCondition: string
   addressLine: string
+  defaultInvoiceTypeLabel: string
   isActive: boolean
 }
 
@@ -117,6 +131,10 @@ export async function createPopClient(
       return { success: false, error: "Name is required." }
     }
     const supabase = await createClient()
+    const defaultInvoiceTypeLabel = await normalizeDefaultInvoiceTypeLabel(
+      popId,
+      input.defaultInvoiceTypeLabel,
+    )
     const { error } = await supabase.from("clients").insert({
       pop_id: popId,
       name,
@@ -126,6 +144,7 @@ export async function createPopClient(
       notes: input.notes.trim() || null,
       iva_condition: normalizeIvaCondition(input.ivaCondition),
       address_line: input.addressLine.trim() || null,
+      default_invoice_type_label: defaultInvoiceTypeLabel,
       is_active: input.isActive,
     })
     if (error) {
@@ -163,6 +182,10 @@ export async function updatePopClient(
       return { success: false, error: "Name is required." }
     }
     const supabase = await createClient()
+    const defaultInvoiceTypeLabel = await normalizeDefaultInvoiceTypeLabel(
+      popId,
+      input.defaultInvoiceTypeLabel,
+    )
     const { error } = await supabase
       .from("clients")
       .update({
@@ -173,6 +196,7 @@ export async function updatePopClient(
         notes: input.notes.trim() || null,
         iva_condition: normalizeIvaCondition(input.ivaCondition),
         address_line: input.addressLine.trim() || null,
+        default_invoice_type_label: defaultInvoiceTypeLabel,
         is_active: input.isActive,
       })
       .eq("id", clientId)
@@ -259,7 +283,7 @@ function buildClientsSearchOrClause(raw: string): string | null {
 }
 
 const CLIENT_LIST_SELECT =
-  "id, name, email, phone, tax_id, notes, iva_condition, address_line, is_active"
+  "id, name, email, phone, tax_id, notes, iva_condition, address_line, default_invoice_type_label, is_active"
 
 function appendClientListFilters<
   Q extends {
@@ -452,6 +476,11 @@ export async function getPopClientsTable(
         notes: String(r.notes ?? ""),
         ivaCondition: ivaStr,
         addressLine: String(r.address_line ?? ""),
+        defaultInvoiceTypeLabel:
+          r.default_invoice_type_label != null &&
+          String(r.default_invoice_type_label).trim() !== ""
+            ? String(r.default_invoice_type_label).trim()
+            : null,
         isActive: Boolean(r.is_active ?? true),
         lastSaleAt: a?.lastSaleAt ?? null,
         completedSalesCount: a?.count ?? 0,

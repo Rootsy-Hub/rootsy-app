@@ -21,6 +21,7 @@ import { createClient } from "@/utils/supabase/server"
 import { resolvePaymentMethodLedgerAccount } from "@/lib/paymentLedgerAccounts"
 import { SALE_COMPROBANTE_RECIBO_X_LABEL, saleComprobanteAccruesOutputVat } from "@/lib/saleComprobantePicker"
 import { siteIdFromPopRow } from "@/lib/popRoutes"
+import { CLIENT_IVA_CONDITION_VALUES } from "@/app/[siteId]/[popId]/clients/clientIvaConstants"
 
 const PAYMENT_KIND_ACCOUNT_FALLBACK: Record<string, readonly string[]> = {
   cash: ["1.1.1.01"],
@@ -38,6 +39,16 @@ function parseQty(v: unknown): number {
 
 function roundMoney(n: number): number {
   return Math.round(n * 100) / 100
+}
+
+function normalizeCustomerIvaCondition(
+  raw: string | null | undefined,
+): string | null {
+  const t = raw?.trim()
+  if (!t) return null
+  return (CLIENT_IVA_CONDITION_VALUES as readonly string[]).includes(t)
+    ? t
+    : null
 }
 
 function siteIdsMatchClientRoute(
@@ -204,6 +215,8 @@ export type CompleteSaleInput = {
   valorDescuentoPorcentaje: number
   valorDescuentoFijo: number
   invoiceTypeLabel?: string | null
+  /** Condición IVA del receptor en esta venta (override o snapshot). */
+  customerIvaCondition?: string | null
   /** Datos fiscales manuales o padrón (nombre / CUIT-DNI) cuando aplica override. */
   fiscalCustomer?: { name: string; taxId: string | null } | null
 }
@@ -327,11 +340,12 @@ export async function completeSale(
 
     let clientName: string | null = null
     let clientTaxId: string | null = null
+    let clientIvaFromDb: string | null = null
     if (input.clientId?.trim()) {
       const cid = input.clientId.trim()
       const { data: cl, error: clErr } = await supabase
         .from("clients")
-        .select("id, name, tax_id")
+        .select("id, name, tax_id, iva_condition")
         .eq("id", cid)
         .eq("pop_id", popId)
         .maybeSingle()
@@ -340,6 +354,9 @@ export async function completeSale(
       }
       clientName = String(cl.name ?? "")
       clientTaxId = cl.tax_id ? String(cl.tax_id) : null
+      clientIvaFromDb = normalizeCustomerIvaCondition(
+        cl.iva_condition != null ? String(cl.iva_condition) : null,
+      )
     }
     const fc = input.fiscalCustomer
     if (input.clientId?.trim()) {
@@ -532,6 +549,13 @@ export async function completeSale(
       metadata.general_discount_value =
         input.generalDiscountMode === "porcentaje" ? genPct : genFijo
       metadata.subtotal_before_general_discount = subtotalAfterItems
+    }
+
+    const customerIvaCondition =
+      normalizeCustomerIvaCondition(input.customerIvaCondition) ??
+      clientIvaFromDb
+    if (customerIvaCondition) {
+      metadata.customer_iva_condition = customerIvaCondition
     }
 
     const persistedSubtotal = accrueOutputVat ? subtotalNet : total

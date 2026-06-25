@@ -1,6 +1,13 @@
 "use client"
 
-import { dataWorkspaceHeaderIconButtonClass } from "@/components/layouts/dataWorkspaceHeaderStyles"
+import {
+  dataWorkspaceSectionMenuDropdownItemClass,
+  dataWorkspaceSectionMenuTriggerClass,
+  dataWorkspaceHeaderDropdownContentClass,
+  dataWorkspaceHeaderDropdownItemClass,
+  dataWorkspaceHeaderDropdownLabelClass,
+  dataWorkspaceHeaderDropdownSeparatorClass,
+} from "@/components/layouts/dataWorkspaceHeaderStyles"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -46,9 +53,8 @@ export function DataWorkspaceSectionMenu({
   const displayLabel = displayItem?.label ?? "Vista"
   const DisplayIcon = displayItem?.icon ?? LayoutGrid
 
-  const triggerClass = cn(
-    dataWorkspaceHeaderIconButtonClass(isDarkHeader ? "dark" : "default"),
-    "h-10 w-auto max-w-[min(100%,11rem)] gap-2 px-2.5 text-sm font-medium",
+  const triggerClass = dataWorkspaceSectionMenuTriggerClass(
+    isDarkHeader ? "dark" : "default",
   )
 
   if (viewItems.length === 0 && creationItems.length === 0) {
@@ -62,16 +68,32 @@ export function DataWorkspaceSectionMenu({
           type="button"
           className={triggerClass}
           aria-label={`Vista actual: ${displayLabel}`}
+          aria-current="page"
         >
-          <DisplayIcon className="size-4 shrink-0 opacity-85" aria-hidden />
+          <DisplayIcon className="size-4 shrink-0" aria-hidden />
           <span className="min-w-0 truncate">{displayLabel}</span>
-          <ChevronDown className="size-4 shrink-0 opacity-60" aria-hidden />
+          <ChevronDown
+            className="size-4 shrink-0 opacity-70 transition-transform group-data-[state=open]:rotate-180"
+            aria-hidden
+          />
         </button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="w-56">
+      <DropdownMenuContent
+        align="end"
+        sideOffset={6}
+        className={
+          isDarkHeader ? dataWorkspaceHeaderDropdownContentClass : "w-56"
+        }
+      >
         {creationItems.length > 0 ? (
           <>
-            <DropdownMenuLabel className="text-[10px] uppercase tracking-wider text-muted-foreground">
+            <DropdownMenuLabel
+              className={
+                isDarkHeader
+                  ? dataWorkspaceHeaderDropdownLabelClass
+                  : "text-[10px] uppercase tracking-wider text-muted-foreground"
+              }
+            >
               {creationSectionLabel}
             </DropdownMenuLabel>
             {creationItems.map((item) => {
@@ -80,23 +102,44 @@ export function DataWorkspaceSectionMenu({
               return (
                 <DropdownMenuItem
                   key={item.id}
-                  className="gap-2"
+                  className={dataWorkspaceSectionMenuDropdownItemClass(
+                    isDarkHeader ? "dark" : "default",
+                    selected,
+                  )}
                   onClick={() => onSelect(item.id)}
                 >
                   <Icon className="size-4 shrink-0 opacity-70" aria-hidden />
                   <span className="min-w-0 flex-1 truncate">{item.label}</span>
                   {selected ? (
-                    <Check className="size-4 shrink-0 text-primary" aria-hidden />
+                    <Check
+                      className={cn(
+                        "size-4 shrink-0",
+                        isDarkHeader ? "text-emerald-400" : "text-primary",
+                      )}
+                      aria-hidden
+                    />
                   ) : null}
                 </DropdownMenuItem>
               )
             })}
-            {viewItems.length > 0 ? <DropdownMenuSeparator /> : null}
+            {viewItems.length > 0 ? (
+              <DropdownMenuSeparator
+                className={
+                  isDarkHeader ? dataWorkspaceHeaderDropdownSeparatorClass : undefined
+                }
+              />
+            ) : null}
           </>
         ) : null}
         {viewItems.length > 0 ? (
           <>
-            <DropdownMenuLabel className="text-[10px] uppercase tracking-wider text-muted-foreground">
+            <DropdownMenuLabel
+              className={
+                isDarkHeader
+                  ? dataWorkspaceHeaderDropdownLabelClass
+                  : "text-[10px] uppercase tracking-wider text-muted-foreground"
+              }
+            >
               {viewsSectionLabel}
             </DropdownMenuLabel>
             {viewItems.map((item) => {
@@ -105,7 +148,10 @@ export function DataWorkspaceSectionMenu({
               return (
                 <DropdownMenuItem
                   key={item.id}
-                  className="gap-2"
+                  className={dataWorkspaceSectionMenuDropdownItemClass(
+                    isDarkHeader ? "dark" : "default",
+                    selected,
+                  )}
                   onClick={() => onSelect(item.id)}
                 >
                   {Icon ? (
@@ -115,7 +161,13 @@ export function DataWorkspaceSectionMenu({
                   )}
                   <span className="min-w-0 flex-1 truncate">{item.label}</span>
                   {selected ? (
-                    <Check className="size-4 shrink-0 text-primary" aria-hidden />
+                    <Check
+                      className={cn(
+                        "size-4 shrink-0",
+                        isDarkHeader ? "text-emerald-400" : "text-primary",
+                      )}
+                      aria-hidden
+                    />
                   ) : null}
                 </DropdownMenuItem>
               )
