@@ -123,6 +123,15 @@ export const POP_PAGES = {
       delete: "payment_methods:delete",
     },
   },
+  accounts: {
+    path: "accounts",
+    permissions: {
+      read: "payment_methods:read",
+      create: "payment_methods:create",
+      update: "payment_methods:update",
+      delete: "payment_methods:delete",
+    },
+  },
   printers: {
     path: "printers",
     permissions: {

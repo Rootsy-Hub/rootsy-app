@@ -1,6 +1,7 @@
 "use client"
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { dataWorkspaceHeaderChromeButtonClass } from "@/components/layouts/dataWorkspaceHeaderStyles"
 import { cn } from "@/lib/utils"
 import { popMenuHref } from "@/lib/popRoutes"
 import {
@@ -20,6 +21,7 @@ import {
   useState,
   type ReactNode,
 } from "react"
+import { useDataWorkspaceSidebar } from "@/components/layouts/useDataWorkspaceSidebar"
 
 export type DataWorkspaceLayoutProps = {
   siteId: string
@@ -34,7 +36,7 @@ export type DataWorkspaceLayoutProps = {
   headerVariant?: "default" | "dark"
   /** Contenido a la derecha del título central (ej. badge online). */
   titleAdornment?: ReactNode
-  /** Botón principal u otras acciones antes de pantalla completa (ej. «Nuevo»). */
+  /** Acciones con ícono (Nuevo, categorías, etc.) — a la derecha, antes del selector de vista. */
   headerActions?: ReactNode
   /** Fila opcional bajo el header (filtros, período, búsqueda). */
   toolbar?: ReactNode
@@ -42,7 +44,12 @@ export type DataWorkspaceLayoutProps = {
   sidebar?: ReactNode
   /** Permite colapsar la barra lateral (persiste por POP en `localStorage`). */
   sidebarCollapsible?: boolean
-  /** Botón/menú de sección en el header (p. ej. vistas sin sidebar). */
+  /** Botón flotante en el borde cuando el panel está cerrado (por defecto sí). */
+  sidebarEdgeToggle?: boolean
+  /** Control externo del panel (p. ej. sidebar embebido en el contenido). */
+  sidebarOpen?: boolean
+  onSidebarOpenChange?: (open: boolean) => void
+  /** Selector de vista de la sección (cambio de pestaña sin salir del path). */
   sectionMenu?: ReactNode
   children: ReactNode
   /** Ancho máximo del área principal. */
@@ -70,6 +77,9 @@ export function DataWorkspaceLayout({
   toolbar,
   sidebar,
   sidebarCollapsible = true,
+  sidebarEdgeToggle = true,
+  sidebarOpen: sidebarOpenProp,
+  onSidebarOpenChange,
   sectionMenu,
   children,
   mainMaxWidthClass = "max-w-6xl",
@@ -80,37 +90,26 @@ export function DataWorkspaceLayout({
 }: DataWorkspaceLayoutProps) {
   const [isOnline, setIsOnline] = useState(true)
   const [isFullscreen, setIsFullscreen] = useState(false)
-  const sidebarStorageKey = useMemo(
-    () => `rootsy:data-workspace-sidebar:${siteId}:${popId}`,
-    [siteId, popId],
-  )
-  const [sidebarOpen, setSidebarOpen] = useState(true)
   const isDarkHeader = headerVariant === "dark"
-  const canCollapseSidebar = Boolean(sidebar && sidebarCollapsible)
-
-  useEffect(() => {
-    if (!canCollapseSidebar) return
-    try {
-      const stored = localStorage.getItem(sidebarStorageKey)
-      if (stored === "0") setSidebarOpen(false)
-      else if (stored === "1") setSidebarOpen(true)
-    } catch {
-      /* storage no disponible */
-    }
-  }, [canCollapseSidebar, sidebarStorageKey])
-
-  useEffect(() => {
-    if (!canCollapseSidebar) return
-    try {
-      localStorage.setItem(sidebarStorageKey, sidebarOpen ? "1" : "0")
-    } catch {
-      /* storage no disponible */
-    }
-  }, [canCollapseSidebar, sidebarOpen, sidebarStorageKey])
+  const isSidebarControlled = onSidebarOpenChange !== undefined
+  const internalSidebar = useDataWorkspaceSidebar(
+    siteId,
+    popId,
+    Boolean(sidebar && sidebarCollapsible && !isSidebarControlled),
+  )
+  const sidebarOpen = isSidebarControlled
+    ? (sidebarOpenProp ?? true)
+    : internalSidebar.open
+  const setSidebarOpen = isSidebarControlled
+    ? onSidebarOpenChange
+    : internalSidebar.setOpen
+  const canCollapseSidebar =
+    sidebarCollapsible && (Boolean(sidebar) || isSidebarControlled)
+  const renderLayoutSidebar = Boolean(sidebar) && !isSidebarControlled
 
   const toggleSidebar = useCallback(() => {
-    setSidebarOpen((open) => !open)
-  }, [])
+    setSidebarOpen(!sidebarOpen)
+  }, [setSidebarOpen, sidebarOpen])
 
   useEffect(() => {
     if (!canCollapseSidebar) return
@@ -202,6 +201,10 @@ export function DataWorkspaceLayout({
       titleAdornment
     )
 
+  const chromeButtonClass = dataWorkspaceHeaderChromeButtonClass(
+    isDarkHeader ? "dark" : "default",
+  )
+
   return (
     <div className="rootsy-app-light relative min-h-screen overflow-hidden bg-background text-foreground">
       <div
@@ -222,28 +225,48 @@ export function DataWorkspaceLayout({
           )}
         >
           <div className="grid h-18 grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-4 px-4">
-            <div className="flex min-w-0 items-center gap-3">
+            <div className="flex min-w-0 items-center gap-2">
               <Link
                 href={backHref}
                 className={cn(
-                  "group inline-flex size-10 items-center justify-center rounded-xl border text-foreground/70 transition-all",
+                  chromeButtonClass,
                   isDarkHeader
-                    ? "border-white/10 bg-zinc-900 text-zinc-300 hover:border-white/15 hover:bg-zinc-800 hover:text-white"
-                    : "border-foreground/10 bg-secondary hover:border-primary/25 hover:bg-muted hover:text-foreground",
+                    ? "text-zinc-300"
+                    : "text-foreground/70 hover:text-foreground",
                 )}
                 aria-label="Volver al menú"
               >
                 <ArrowLeft className="size-5 transition-transform group-hover:-translate-x-0.5" />
               </Link>
+              <button
+                type="button"
+                onClick={() => void toggleFullscreen()}
+                className={chromeButtonClass}
+                aria-label={
+                  isFullscreen
+                    ? "Salir de pantalla completa"
+                    : "Pantalla completa"
+                }
+                title={
+                  isFullscreen
+                    ? "Salir de pantalla completa"
+                    : "Pantalla completa"
+                }
+              >
+                {isFullscreen ? (
+                  <Minimize2 className="size-5" aria-hidden />
+                ) : (
+                  <Maximize2 className="size-5" aria-hidden />
+                )}
+              </button>
               {canCollapseSidebar ? (
                 <button
                   type="button"
                   onClick={toggleSidebar}
                   className={cn(
-                    "group inline-flex size-10 items-center justify-center rounded-xl border transition-all",
-                    isDarkHeader
-                      ? "border-white/10 bg-zinc-900 text-zinc-300 hover:border-white/15 hover:bg-zinc-800 hover:text-white"
-                      : "border-foreground/10 bg-secondary text-foreground/70 hover:border-primary/25 hover:bg-muted hover:text-foreground",
+                    chromeButtonClass,
+                    !sidebarOpen &&
+                      "border-red-500/45 bg-red-500/15 text-red-300 hover:border-red-400/55 hover:bg-red-500/25 hover:text-red-200",
                   )}
                   aria-expanded={sidebarOpen}
                   aria-controls="data-workspace-sidebar"
@@ -308,37 +331,22 @@ export function DataWorkspaceLayout({
             </div>
 
             <div className="flex shrink-0 items-center justify-end gap-2">
-              {headerActions}
-              <button
-                type="button"
-                onClick={() => void toggleFullscreen()}
-                className={cn(
-                  "group inline-flex size-9 items-center justify-center rounded-xl transition-colors",
-                  isDarkHeader
-                    ? "text-zinc-400 hover:bg-white/10 hover:text-white"
-                    : "text-muted-foreground hover:bg-muted hover:text-foreground",
-                )}
-                aria-label={
-                  isFullscreen
-                    ? "Salir de pantalla completa"
-                    : "Pantalla completa"
-                }
-              >
-                {isFullscreen ? (
-                  <Minimize2 className="size-4.5" />
-                ) : (
-                  <Maximize2 className="size-4.5" />
-                )}
-              </button>
-              {sectionMenu}
+              {headerActions || sectionMenu ? (
+                <div className="flex items-center gap-1.5">
+                  {headerActions}
+                  {sectionMenu}
+                </div>
+              ) : null}
               {userName ? (
                 <>
-                  <div
-                    className={cn(
-                      "h-6 w-px",
-                      isDarkHeader ? "bg-zinc-700" : "bg-border",
-                    )}
-                  />
+                  {headerActions || sectionMenu ? (
+                    <div
+                      className={cn(
+                        "h-6 w-px",
+                        isDarkHeader ? "bg-zinc-700" : "bg-border",
+                      )}
+                    />
+                  ) : null}
                   <div className="flex min-w-0 items-center gap-3">
                     <Avatar
                       className={cn(
@@ -411,7 +419,7 @@ export function DataWorkspaceLayout({
           ) : null}
         </header>
 
-        {sidebar ? (
+        {renderLayoutSidebar ? (
           <div className="relative z-10 flex min-h-0 flex-1 flex-row items-stretch">
             <aside
               id="data-workspace-sidebar"
@@ -424,7 +432,7 @@ export function DataWorkspaceLayout({
             >
               {sidebar}
             </aside>
-            {!sidebarOpen && canCollapseSidebar ? (
+            {!sidebarOpen && canCollapseSidebar && sidebarEdgeToggle ? (
               <button
                 type="button"
                 onClick={toggleSidebar}

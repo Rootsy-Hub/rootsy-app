@@ -68,6 +68,7 @@ import {
   workspaceTableBodyRowClassNames,
 } from "@/components/data-workspace/dataWorkspaceListStyles"
 import { DataWorkspaceLayout } from "@/components/layouts/DataWorkspaceLayout"
+import { DataWorkspaceHeaderIconButton } from "@/components/layouts/DataWorkspaceHeaderIconButton"
 import { DataWorkspaceSectionMenu } from "@/components/layouts/DataWorkspaceSectionMenu"
 import {
   CLIENT_TABLE_PAGE_SIZES,
@@ -321,11 +322,6 @@ function ClientsPage() {
     userImageUrl: string | null
     roleLabel: string
   } | null>(null)
-
-  const sidebarActiveId =
-    workspaceParsed.view === "new-client"
-      ? CREATION_NEW_CLIENT.id
-      : workspaceParsed.view
 
   const createOpen = Boolean(
     canCreate && workspaceParsed.view === "new-client",
@@ -599,8 +595,6 @@ function ClientsPage() {
     searchInputRef.current?.focus()
   }, [replaceWorkspaceQuery])
 
-  const sectionActiveId = sidebarActiveId
-
   const totalPages = useMemo(
     () =>
       Math.max(
@@ -633,11 +627,6 @@ function ClientsPage() {
     [totalPages, currentPage],
   )
 
-  const creationItems = useMemo(
-    () => (canCreate ? [CREATION_NEW_CLIENT] : []),
-    [canCreate],
-  )
-
   if (!popId || !siteId) {
     return (
       <div className="rootsy-app-light min-h-screen bg-background p-10 text-foreground">
@@ -660,14 +649,26 @@ function ClientsPage() {
       userAvatarSrc={workspaceHeader?.userImageUrl ?? undefined}
       userRoleLabel={workspaceHeader?.roleLabel}
       mainClassName="min-h-0 overflow-hidden"
+      headerActions={
+        canCreate ? (
+          <DataWorkspaceHeaderIconButton
+            label="Nuevo cliente"
+            headerVariant="dark"
+            primary
+            onClick={openCreate}
+          >
+            <Plus className="size-5" aria-hidden />
+          </DataWorkspaceHeaderIconButton>
+        ) : null
+      }
       sectionMenu={
         <DataWorkspaceSectionMenu
           headerVariant="dark"
-          creationItems={creationItems}
           viewItems={VIEW_ITEMS}
-          activeId={sectionActiveId}
+          activeId={
+            workspaceParsed.view === "new-client" ? "list" : workspaceParsed.view
+          }
           onSelect={handleSidebarSelect}
-          creationSectionLabel="Nuevo"
           viewsSectionLabel="En esta sección"
         />
       }

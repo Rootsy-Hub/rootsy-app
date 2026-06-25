@@ -1,0 +1,108 @@
+import {
+  endOfMonth,
+  endOfWeek,
+  startOfMonth,
+  startOfWeek,
+  subDays,
+} from "date-fns"
+import type { DateRange } from "react-day-picker"
+
+export type DataWorkspaceDatePreset =
+  | "all"
+  | "this_week"
+  | "this_month"
+  | "last_7"
+  | "last_30"
+  | "custom"
+
+export const DATA_WORKSPACE_DATE_QUICK_PRESETS: {
+  id: Exclude<DataWorkspaceDatePreset, "all" | "custom">
+  label: string
+}[] = [
+  { id: "this_week", label: "Esta semana" },
+  { id: "this_month", label: "Este mes" },
+  { id: "last_7", label: "Últimos 7 días" },
+  { id: "last_30", label: "Últimos 30 días" },
+]
+
+export function toISODateLocal(d: Date): string {
+  const y = d.getFullYear()
+  const m = String(d.getMonth() + 1).padStart(2, "0")
+  const day = String(d.getDate()).padStart(2, "0")
+  return `${y}-${m}-${day}`
+}
+
+export function computeDataWorkspaceDateBounds(
+  preset: DataWorkspaceDatePreset,
+  custom: DateRange | undefined,
+): { from: string | null; to: string | null } {
+  const today = new Date()
+  switch (preset) {
+    case "all":
+      return { from: null, to: null }
+    case "this_week": {
+      const from = startOfWeek(today, { weekStartsOn: 1 })
+      const to = endOfWeek(today, { weekStartsOn: 1 })
+      return { from: toISODateLocal(from), to: toISODateLocal(to) }
+    }
+    case "this_month": {
+      const from = startOfMonth(today)
+      const to = endOfMonth(today)
+      return { from: toISODateLocal(from), to: toISODateLocal(to) }
+    }
+    case "last_7": {
+      const from = subDays(today, 6)
+      return { from: toISODateLocal(from), to: toISODateLocal(today) }
+    }
+    case "last_30": {
+      const from = subDays(today, 29)
+      return { from: toISODateLocal(from), to: toISODateLocal(today) }
+    }
+    case "custom": {
+      if (!custom?.from || !custom?.to) return { from: null, to: null }
+      let a = custom.from
+      let b = custom.to
+      if (a > b) [a, b] = [b, a]
+      return { from: toISODateLocal(a), to: toISODateLocal(b) }
+    }
+  }
+}
+
+export function formatIsoDateShort(iso: string): string {
+  const y = Number(iso.slice(0, 4))
+  const m = Number(iso.slice(5, 7))
+  const d = Number(iso.slice(8, 10))
+  if (!y || !m || !d) return iso
+  return new Date(y, m - 1, d).toLocaleDateString("es-AR", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+  })
+}
+
+export function dataWorkspaceDateFilterSummary(
+  preset: DataWorkspaceDatePreset,
+  bounds: { from: string | null; to: string | null },
+): string {
+  if (preset === "all") return "Todas las fechas"
+  if (preset === "this_week") return "Esta semana"
+  if (preset === "this_month") return "Este mes"
+  if (preset === "last_7") return "Últimos 7 días"
+  if (preset === "last_30") return "Últimos 30 días"
+  if (preset === "custom" && bounds.from && bounds.to) {
+    return `${formatIsoDateShort(bounds.from)} – ${formatIsoDateShort(bounds.to)}`
+  }
+  return "Rango personalizado (elegí inicio y fin)"
+}
+
+export function isoDateInBounds(
+  isoOrDate: string,
+  from: string | null,
+  to: string | null,
+): boolean {
+  if (!from && !to) return true
+  const d = isoOrDate.slice(0, 10)
+  if (from && d < from) return false
+  if (to && d > to) return false
+  return true
+}

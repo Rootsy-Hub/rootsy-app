@@ -1,5 +1,6 @@
 "use client"
 
+import { dataWorkspaceHeaderIconButtonClass } from "@/components/layouts/dataWorkspaceHeaderStyles"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -9,13 +10,14 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { cn } from "@/lib/utils"
-import { Check, ChevronDown, Sparkles } from "lucide-react"
+import { Check, ChevronDown, LayoutGrid, Sparkles } from "lucide-react"
 import type {
   DataWorkspaceSidebarCreationItem,
   DataWorkspaceSidebarViewItem,
 } from "./DataWorkspaceSidebar"
 
 export type DataWorkspaceSectionMenuProps = {
+  /** Acciones de creación en el menú (preferí `headerActions` con íconos). */
   creationItems?: readonly DataWorkspaceSidebarCreationItem[]
   viewItems: readonly DataWorkspaceSidebarViewItem[]
   activeId: string
@@ -31,21 +33,27 @@ export function DataWorkspaceSectionMenu({
   activeId,
   onSelect,
   creationSectionLabel = "Nuevo",
-  viewsSectionLabel = "En esta sección",
+  viewsSectionLabel = "Vista",
   headerVariant = "default",
 }: DataWorkspaceSectionMenuProps) {
   const isDarkHeader = headerVariant === "dark"
-  const allItems = [...creationItems, ...viewItems]
-  const activeItem = allItems.find((item) => item.id === activeId)
-  const activeLabel = activeItem?.label ?? "Opciones"
-  const ActiveIcon = activeItem?.icon
+  const activeView =
+    viewItems.find((item) => item.id === activeId) ??
+    viewItems[0] ??
+    null
+  const activeCreation = creationItems.find((item) => item.id === activeId)
+  const displayItem = activeView ?? activeCreation
+  const displayLabel = displayItem?.label ?? "Vista"
+  const DisplayIcon = displayItem?.icon ?? LayoutGrid
 
   const triggerClass = cn(
-    "inline-flex h-9 max-w-[min(100%,12rem)] items-center gap-2 rounded-xl border px-2.5 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/45",
-    isDarkHeader
-      ? "border-white/10 bg-zinc-900 text-zinc-200 hover:border-white/15 hover:bg-zinc-800 hover:text-white"
-      : "border-foreground/10 bg-secondary text-foreground/80 hover:border-primary/25 hover:bg-muted hover:text-foreground",
+    dataWorkspaceHeaderIconButtonClass(isDarkHeader ? "dark" : "default"),
+    "h-10 w-auto max-w-[min(100%,11rem)] gap-2 px-2.5 text-sm font-medium",
   )
+
+  if (viewItems.length === 0 && creationItems.length === 0) {
+    return null
+  }
 
   return (
     <DropdownMenu>
@@ -53,14 +61,10 @@ export function DataWorkspaceSectionMenu({
         <button
           type="button"
           className={triggerClass}
-          aria-label={`Opciones de sección: ${activeLabel}`}
+          aria-label={`Vista actual: ${displayLabel}`}
         >
-          {ActiveIcon ? (
-            <ActiveIcon className="size-4 shrink-0 opacity-80" aria-hidden />
-          ) : (
-            <Sparkles className="size-4 shrink-0 opacity-70" aria-hidden />
-          )}
-          <span className="min-w-0 truncate">{activeLabel}</span>
+          <DisplayIcon className="size-4 shrink-0 opacity-85" aria-hidden />
+          <span className="min-w-0 truncate">{displayLabel}</span>
           <ChevronDown className="size-4 shrink-0 opacity-60" aria-hidden />
         </button>
       </DropdownMenuTrigger>

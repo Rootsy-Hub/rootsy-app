@@ -16,6 +16,14 @@ import { resolveDefaultLedgerAccountForMethod } from "@/lib/paymentLedgerAccount
 import { postTreasurySettlementLedger } from "@/lib/treasurySettlementPosting"
 import { requireAuthenticatedUser } from "@/lib/authHelpers"
 import { parseBankStatementCsv } from "@/lib/parseBankStatementCsv"
+import {
+  type TreasuryAccountKind,
+  treasuryKindLabel,
+} from "@/lib/treasuryAccountKinds"
+import {
+  getPrimaryPaymentMethodForTreasuryAccount,
+  listPaymentMethodIdsForTreasuryAccount,
+} from "@/lib/treasuryAccountResolve"
 import { createClient } from "@/utils/supabase/server"
 
 export type PaymentMethodKind =
@@ -119,7 +127,7 @@ export type UpsertPopPaymentMethodInput = {
   kind: PaymentMethodKind
   usage: PaymentMethodUsage
   sortOrder: number
-  accountingAccountId?: string | null
+  treasuryAccountId: string
 }
 
 const PAYMENT_KINDS: PaymentMethodKind[] = [
@@ -474,25 +482,33 @@ export async function createPopPaymentMethod(
       return { success: false, error: "Orden inválido." }
     }
     const usage = parseUsage(input.usage)
+    const treasuryAccountId = input.treasuryAccountId?.trim()
+    if (!treasuryAccountId) {
+      return {
+        success: false,
+        error: "Elegí la cuenta de tesorería donde se acredita el cobro.",
+      }
+    }
     const supabase = await createClient()
-    const ledger = await resolveLedgerAccountId(
-      supabase,
-      popId,
-      input.kind,
-      usage,
-      input.accountingAccountId,
-    )
-    if ("error" in ledger) {
-      return { success: false, error: ledger.error }
+    const { data: taRow, error: taErr } = await supabase
+      .from("treasury_accounts")
+      .select("id, accounting_chart_account_id")
+      .eq("pop_id", popId)
+      .eq("id", treasuryAccountId)
+      .eq("is_active", true)
+      .maybeSingle()
+    if (taErr || !taRow?.id) {
+      return { success: false, error: "Cuenta de tesorería inválida." }
     }
     const { error } = await supabase.from("payment_methods").insert({
       pop_id: popId,
       name,
       kind: input.kind,
-      usage,
+      usage: "receive",
       is_active: true,
       sort_order: Math.trunc(sortOrder),
-      accounting_account_id: ledger.id,
+      accounting_account_id: String(taRow.accounting_chart_account_id),
+      treasury_account_id: treasuryAccountId,
     })
     if (error) {
       return { success: false, error: error.message || "No se pudo crear." }
@@ -533,25 +549,33 @@ export async function updatePopPaymentMethod(
       return { success: false, error: "Orden inválido." }
     }
     const usage = parseUsage(input.usage)
+    const treasuryAccountId = input.treasuryAccountId?.trim()
+    if (!treasuryAccountId) {
+      return {
+        success: false,
+        error: "Elegí la cuenta de tesorería donde se acredita el cobro.",
+      }
+    }
     const supabase = await createClient()
-    const ledger = await resolveLedgerAccountId(
-      supabase,
-      popId,
-      input.kind,
-      usage,
-      input.accountingAccountId,
-    )
-    if ("error" in ledger) {
-      return { success: false, error: ledger.error }
+    const { data: taRow, error: taErr } = await supabase
+      .from("treasury_accounts")
+      .select("id, accounting_chart_account_id")
+      .eq("pop_id", popId)
+      .eq("id", treasuryAccountId)
+      .eq("is_active", true)
+      .maybeSingle()
+    if (taErr || !taRow?.id) {
+      return { success: false, error: "Cuenta de tesorería inválida." }
     }
     const { error } = await supabase
       .from("payment_methods")
       .update({
         name,
         kind: input.kind,
-        usage,
+        usage: "receive",
         sort_order: Math.trunc(sortOrder),
-        accounting_account_id: ledger.id,
+        accounting_account_id: String(taRow.accounting_chart_account_id),
+        treasury_account_id: treasuryAccountId,
       })
       .eq("id", rowId)
       .eq("pop_id", popId)
@@ -660,7 +684,7 @@ export async function recordTreasurySettlement(
 
     const { data: cardPm, error: cardErr } = await supabase
       .from("payment_methods")
-      .select("id, kind, usage")
+      .select("id, kind, usage, treasury_account_id")
       .eq("id", cardId)
       .eq("pop_id", popId)
       .eq("is_active", true)
@@ -679,7 +703,7 @@ export async function recordTreasurySettlement(
 
     const { data: fundPm, error: fundErr } = await supabase
       .from("payment_methods")
-      .select("id, kind, usage")
+      .select("id, kind, usage, treasury_account_id")
       .eq("id", fundingId)
       .eq("pop_id", popId)
       .eq("is_active", true)
@@ -706,12 +730,21 @@ export async function recordTreasurySettlement(
       }
     }
 
+    const cardTreasuryAccountId = cardPm.treasury_account_id
+      ? String(cardPm.treasury_account_id)
+      : null
+    const fundingTreasuryAccountId = fundPm.treasury_account_id
+      ? String(fundPm.treasury_account_id)
+      : null
+
     const { data: ins, error: insErr } = await supabase
       .from("treasury_settlements")
       .insert({
         pop_id: popId,
         card_payment_method_id: cardId,
         funding_payment_method_id: fundingId,
+        card_treasury_account_id: cardTreasuryAccountId,
+        funding_treasury_account_id: fundingTreasuryAccountId,
         amount: amt,
         settled_at: settledAt,
         notes: input.notes?.trim() || "",
@@ -1423,7 +1456,7 @@ async function requirePaymentMethodUpdate(
 
 export async function importBankStatementCsv(
   popId: string,
-  paymentMethodId: string,
+  treasuryAccountId: string,
   csvText: string,
 ): Promise<
   | { success: true; imported: number; warnings: string[] }
@@ -1433,7 +1466,7 @@ export async function importBankStatementCsv(
     const auth = await requirePaymentMethodUpdate(popId)
     if (!auth.ok) return { success: false, error: auth.error }
 
-    const pmId = paymentMethodId.trim()
+    const taId = treasuryAccountId.trim()
     const parsed = parseBankStatementCsv(csvText)
     if (parsed.lines.length === 0) {
       return {
@@ -1445,9 +1478,23 @@ export async function importBankStatementCsv(
     }
 
     const supabase = await createClient()
+    const pmId = await getPrimaryPaymentMethodForTreasuryAccount(
+      supabase,
+      popId,
+      taId,
+    )
+    if (!pmId) {
+      return {
+        success: false,
+        error:
+          "Esta cuenta no tiene un medio de pago vinculado para conciliar. Creá una forma de pago que apunte a esta cuenta.",
+      }
+    }
+
     const rows = parsed.lines.map((l) => ({
       pop_id: popId,
       payment_method_id: pmId,
+      treasury_account_id: taId,
       line_date: l.lineDate,
       description: l.description,
       amount: l.amount,
@@ -1474,7 +1521,7 @@ export async function importBankStatementCsv(
 
 export async function addManualBankStatementLine(
   popId: string,
-  paymentMethodId: string,
+  treasuryAccountId: string,
   input: {
     lineDate: string
     description: string
@@ -1496,11 +1543,25 @@ export async function addManualBankStatementLine(
     }
 
     const supabase = await createClient()
+    const taId = treasuryAccountId.trim()
+    const pmId = await getPrimaryPaymentMethodForTreasuryAccount(
+      supabase,
+      popId,
+      taId,
+    )
+    if (!pmId) {
+      return {
+        success: false,
+        error:
+          "Esta cuenta no tiene un medio de pago vinculado para conciliar.",
+      }
+    }
     const { data, error } = await supabase
       .from("bank_statement_lines")
       .insert({
         pop_id: popId,
-        payment_method_id: paymentMethodId.trim(),
+        payment_method_id: pmId,
+        treasury_account_id: taId,
         line_date: lineDate,
         description: input.description.trim() || "Movimiento extracto",
         amount: amt,
@@ -1631,6 +1692,480 @@ export async function clearMovementReconciliation(
   } catch (e: unknown) {
     const message = e instanceof Error ? e.message : "Error desconocido"
     return { success: false, error: message }
+  }
+}
+
+function parseTreasuryKind(v: unknown): TreasuryAccountKind {
+  const k = String(v ?? "other")
+  if (k === "cash" || k === "bank" || k === "wallet" || k === "card_payable") {
+    return k
+  }
+  return "other"
+}
+
+export type TreasuryAccountDetailResult = PaymentMethodDetailResult & {
+  reconciliationPaymentMethodId: string | null
+}
+
+export async function getTreasuryAccountDetail(
+  popId: string,
+  treasuryAccountId: string,
+): Promise<
+  | { success: true; data: TreasuryAccountDetailResult }
+  | { success: false; error: string }
+> {
+  try {
+    const access = await validatePopAccess(popId)
+    if (!access.hasAccess || !access.isActive) {
+      return { success: false, error: access.error || "Sin acceso" }
+    }
+    const snap = await loadPopPermissionsSnapshot(popId)
+    if (
+      !permissionKeysInclude(
+        snap.keys,
+        POP_PERMS.PAYMENT_METHOD_READ.resource,
+        POP_PERMS.PAYMENT_METHOD_READ.action,
+      )
+    ) {
+      return { success: false, error: "Sin permiso para ver esta cuenta." }
+    }
+
+    const taId = treasuryAccountId.trim()
+    const supabase = await createClient()
+    const { data: taRow, error: taErr } = await supabase
+      .from("treasury_accounts")
+      .select("id, kind")
+      .eq("id", taId)
+      .eq("pop_id", popId)
+      .maybeSingle()
+    if (taErr || !taRow?.id) {
+      return { success: false, error: "Cuenta no encontrada." }
+    }
+
+    const kind = parseTreasuryKind(taRow.kind)
+    const isCard = kind === "card_payable"
+    const pmIds = await listPaymentMethodIdsForTreasuryAccount(
+      supabase,
+      popId,
+      taId,
+    )
+    const primaryPm = pmIds[0] ?? null
+
+    if (isCard) {
+      if (!primaryPm) {
+        return {
+          success: false,
+          error:
+            "Esta tarjeta corporativa no tiene formas de pago vinculadas.",
+        }
+      }
+      const res = await getPaymentMethodDetail(popId, primaryPm, "pay")
+      if (!res.success) return res
+      return {
+        success: true,
+        data: {
+          ...res.data,
+          reconciliationPaymentMethodId: primaryPm,
+        },
+      }
+    }
+
+    if (primaryPm) {
+      const [recv, pay] = await Promise.all([
+        getPaymentMethodDetail(popId, primaryPm, "receive"),
+        getPaymentMethodDetail(popId, primaryPm, "pay"),
+      ])
+      if (!recv.success) return recv
+      if (!pay.success) return pay
+
+      const movements = [...recv.data.movements, ...pay.data.movements]
+      movements.sort((a, b) => {
+        const dc = b.date.localeCompare(a.date)
+        if (dc !== 0) return dc
+        return b.id.localeCompare(a.id)
+      })
+
+      const enrichedMovements = movements.slice(0, 60)
+      let totalIn = 0
+      let totalOut = 0
+      for (const m of enrichedMovements) {
+        if (m.direction === "in") totalIn = roundMoney(totalIn + m.amount)
+        else totalOut = roundMoney(totalOut + m.amount)
+      }
+
+      const stmtLines =
+        pay.data.statementLines.length > 0
+          ? pay.data.statementLines
+          : recv.data.statementLines
+
+      return {
+        success: true,
+        data: {
+          settlements: pay.data.settlements,
+          movements: enrichedMovements,
+          movementTotals: {
+            in: totalIn,
+            out: totalOut,
+            net: roundMoney(totalIn - totalOut),
+          },
+          statementLines: stmtLines,
+          supportsBankReconciliation: pay.data.supportsBankReconciliation,
+          reconciliationSummary: {
+            movementsReconciled:
+              recv.data.reconciliationSummary.movementsReconciled +
+              pay.data.reconciliationSummary.movementsReconciled,
+            movementsPending:
+              recv.data.reconciliationSummary.movementsPending +
+              pay.data.reconciliationSummary.movementsPending,
+            statementReconciled: pay.data.reconciliationSummary.statementReconciled,
+            statementPending: pay.data.reconciliationSummary.statementPending,
+            statementTotalIn: pay.data.reconciliationSummary.statementTotalIn,
+            statementTotalOut: pay.data.reconciliationSummary.statementTotalOut,
+          },
+          reconciliationPaymentMethodId: primaryPm,
+        },
+      }
+    }
+
+    const { data: stmtRows, error: stmtErr } = await supabase
+      .from("bank_statement_lines")
+      .select("id, line_date, description, amount, direction, source")
+      .eq("pop_id", popId)
+      .eq("treasury_account_id", taId)
+      .order("line_date", { ascending: false })
+      .order("created_at", { ascending: false })
+      .limit(100)
+
+    if (stmtErr) {
+      return {
+        success: false,
+        error: stmtErr.message || "No se pudo cargar el extracto bancario.",
+      }
+    }
+
+    const statementLines: BankStatementLineRow[] = (stmtRows || []).map((r) => ({
+      id: String(r.id),
+      lineDate: String(r.line_date ?? "").slice(0, 10),
+      description: String(r.description ?? ""),
+      amount: parseAmount(r.amount),
+      direction: String(r.direction) === "in" ? "in" : "out",
+      source: String(r.source) === "csv" ? "csv" : "manual",
+      reconciled: false,
+    }))
+
+    return {
+      success: true,
+      data: {
+        settlements: [],
+        movements: [],
+        movementTotals: { in: 0, out: 0, net: 0 },
+        statementLines,
+        supportsBankReconciliation: true,
+        reconciliationSummary: {
+          movementsReconciled: 0,
+          movementsPending: 0,
+          statementReconciled: 0,
+          statementPending: statementLines.length,
+          statementTotalIn: statementLines
+            .filter((l) => l.direction === "in")
+            .reduce((s, l) => roundMoney(s + l.amount), 0),
+          statementTotalOut: statementLines
+            .filter((l) => l.direction === "out")
+            .reduce((s, l) => roundMoney(s + l.amount), 0),
+        },
+        reconciliationPaymentMethodId: null,
+      },
+    }
+  } catch (e: unknown) {
+    const message = e instanceof Error ? e.message : "Error desconocido"
+    return { success: false, error: message }
+  }
+}
+
+export type RecordTreasurySettlementForAccountInput = {
+  cardTreasuryAccountId: string
+  fundingTreasuryAccountId: string
+  amount: number
+  settledAt: string
+  notes?: string
+}
+
+export async function recordTreasurySettlementForAccount(
+  popId: string,
+  input: RecordTreasurySettlementForAccountInput,
+): Promise<{ success: true; id: string } | { success: false; error: string }> {
+  try {
+    const cardTaId = input.cardTreasuryAccountId?.trim()
+    const fundTaId = input.fundingTreasuryAccountId?.trim()
+    if (!cardTaId) {
+      return { success: false, error: "Elegí la tarjeta a liquidar." }
+    }
+    if (!fundTaId) {
+      return { success: false, error: "Elegí desde qué cuenta vas a pagar." }
+    }
+    if (cardTaId === fundTaId) {
+      return {
+        success: false,
+        error: "La cuenta de pago debe ser distinta de la tarjeta.",
+      }
+    }
+
+    const supabase = await createClient()
+    const { data: cardTa, error: cardTaErr } = await supabase
+      .from("treasury_accounts")
+      .select("id, kind")
+      .eq("id", cardTaId)
+      .eq("pop_id", popId)
+      .eq("is_active", true)
+      .maybeSingle()
+    if (cardTaErr || !cardTa?.id) {
+      return { success: false, error: "Tarjeta corporativa inválida." }
+    }
+    if (parseTreasuryKind(cardTa.kind) !== "card_payable") {
+      return {
+        success: false,
+        error: "La cuenta seleccionada no es una tarjeta corporativa.",
+      }
+    }
+
+    const { data: fundTa, error: fundTaErr } = await supabase
+      .from("treasury_accounts")
+      .select("id, kind")
+      .eq("id", fundTaId)
+      .eq("pop_id", popId)
+      .eq("is_active", true)
+      .maybeSingle()
+    if (fundTaErr || !fundTa?.id) {
+      return { success: false, error: "Cuenta de fondeo inválida." }
+    }
+    if (parseTreasuryKind(fundTa.kind) === "card_payable") {
+      return {
+        success: false,
+        error: "Pagá el resumen desde banco, efectivo o billetera.",
+      }
+    }
+
+    const cardPm = await getPrimaryPaymentMethodForTreasuryAccount(
+      supabase,
+      popId,
+      cardTaId,
+    )
+    if (!cardPm) {
+      return {
+        success: false,
+        error:
+          "Vinculá al menos una forma de pago a esta tarjeta para registrar liquidaciones.",
+      }
+    }
+
+    const fundPm = await getPrimaryPaymentMethodForTreasuryAccount(
+      supabase,
+      popId,
+      fundTaId,
+    )
+    if (!fundPm) {
+      return {
+        success: false,
+        error:
+          "La cuenta de origen no tiene medios vinculados. Creá una forma de pago o usá otra cuenta.",
+      }
+    }
+
+    return recordTreasurySettlement(popId, {
+      cardPaymentMethodId: cardPm,
+      fundingPaymentMethodId: fundPm,
+      amount: input.amount,
+      settledAt: input.settledAt,
+      notes: input.notes,
+    })
+  } catch (e: unknown) {
+    const message = e instanceof Error ? e.message : "Error desconocido"
+    return { success: false, error: message }
+  }
+}
+
+export type TreasuryAccountOption = {
+  id: string
+  name: string
+  kind: TreasuryAccountKind
+  isSystemDefault: boolean
+}
+
+export type PaymentMethodPosRow = {
+  id: string
+  name: string
+  kind: PaymentMethodKind
+  isActive: boolean
+  sortOrder: number
+  treasuryAccountId: string
+  treasuryAccountName: string
+  treasuryAccountKind: TreasuryAccountKind
+}
+
+export async function getPaymentMethodsPosList(popId: string): Promise<
+  | {
+      success: true
+      rows: PaymentMethodPosRow[]
+      treasuryAccounts: TreasuryAccountOption[]
+      popName: string
+      canCreate: boolean
+      canUpdate: boolean
+      canDelete: boolean
+    }
+  | {
+      success: false
+      error: string
+      redirect?: string
+      rows: PaymentMethodPosRow[]
+      treasuryAccounts: TreasuryAccountOption[]
+      canCreate: boolean
+      canUpdate: boolean
+      canDelete: boolean
+      popName?: string
+    }
+> {
+  const empty = {
+    rows: [] as PaymentMethodPosRow[],
+    treasuryAccounts: [] as TreasuryAccountOption[],
+    canCreate: false,
+    canUpdate: false,
+    canDelete: false,
+  }
+
+  try {
+    const access = await validatePopAccess(popId)
+    if (!access.hasAccess || !access.isActive) {
+      return {
+        success: false,
+        error: access.error || "Sin acceso",
+        redirect: "/home",
+        ...empty,
+      }
+    }
+    const snap = await loadPopPermissionsSnapshot(popId)
+    if (
+      !permissionKeysInclude(
+        snap.keys,
+        POP_PERMS.PAYMENT_METHOD_READ.resource,
+        POP_PERMS.PAYMENT_METHOD_READ.action,
+      )
+    ) {
+      return {
+        success: false,
+        error: "No tenés permiso para ver formas de pago.",
+        redirect: popMenuHref(await getPopSiteId(popId), popId),
+        ...empty,
+      }
+    }
+
+    const canCreate = permissionKeysInclude(
+      snap.keys,
+      POP_PERMS.PAYMENT_METHOD_CREATE.resource,
+      POP_PERMS.PAYMENT_METHOD_CREATE.action,
+    )
+    const canUpdate = permissionKeysInclude(
+      snap.keys,
+      POP_PERMS.PAYMENT_METHOD_UPDATE.resource,
+      POP_PERMS.PAYMENT_METHOD_UPDATE.action,
+    )
+    const canDelete = permissionKeysInclude(
+      snap.keys,
+      POP_PERMS.PAYMENT_METHOD_DELETE.resource,
+      POP_PERMS.PAYMENT_METHOD_DELETE.action,
+    )
+
+    const popRes = await getPopById(popId)
+    const popName =
+      popRes.success && popRes.pop ? String(popRes.pop.name ?? "") : ""
+    const supabase = await createClient()
+
+    const { data: taRows, error: taErr } = await supabase
+      .from("treasury_accounts")
+      .select("id, name, kind, is_system_default")
+      .eq("pop_id", popId)
+      .eq("is_active", true)
+      .order("sort_order", { ascending: true })
+      .order("name", { ascending: true })
+
+    if (taErr) {
+      return {
+        success: false,
+        error: taErr.message || "No se pudieron cargar las cuentas.",
+        ...empty,
+        popName,
+        canCreate,
+        canUpdate,
+        canDelete,
+      }
+    }
+
+    const treasuryAccounts: TreasuryAccountOption[] = (taRows || []).map(
+      (r) => ({
+        id: String(r.id),
+        name: String(r.name ?? ""),
+        kind: parseTreasuryKind(r.kind),
+        isSystemDefault: Boolean(r.is_system_default),
+      }),
+    )
+
+    const taNameById = new Map(
+      treasuryAccounts.map((t) => [t.id, t.name] as const),
+    )
+    const taKindById = new Map(
+      treasuryAccounts.map((t) => [t.id, t.kind] as const),
+    )
+
+    const { data, error } = await supabase
+      .from("payment_methods")
+      .select(
+        "id, name, kind, usage, is_active, sort_order, treasury_account_id",
+      )
+      .eq("pop_id", popId)
+      .in("usage", ["receive", "both"])
+      .order("sort_order", { ascending: true })
+      .order("name", { ascending: true })
+
+    if (error) {
+      return {
+        success: false,
+        error: error.message || "No se pudieron cargar las formas de pago.",
+        ...empty,
+        treasuryAccounts,
+        popName,
+        canCreate,
+        canUpdate,
+        canDelete,
+      }
+    }
+
+    const rows: PaymentMethodPosRow[] = (data || [])
+      .filter((r) => r.treasury_account_id != null)
+      .map((r) => {
+        const taId = String(r.treasury_account_id)
+        return {
+          id: String(r.id),
+          name: String(r.name ?? ""),
+          kind: parseKind(r.kind),
+          isActive: Boolean(r.is_active),
+          sortOrder: Number(r.sort_order ?? 0),
+          treasuryAccountId: taId,
+          treasuryAccountName: taNameById.get(taId) ?? treasuryKindLabel(taKindById.get(taId) ?? "other"),
+          treasuryAccountKind: taKindById.get(taId) ?? "other",
+        }
+      })
+
+    return {
+      success: true,
+      rows,
+      treasuryAccounts,
+      popName,
+      canCreate,
+      canUpdate,
+      canDelete,
+    }
+  } catch (e: unknown) {
+    const message = e instanceof Error ? e.message : "Error desconocido"
+    return { success: false, error: message, ...empty, popName: "" }
   }
 }
 

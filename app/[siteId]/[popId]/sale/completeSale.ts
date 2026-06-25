@@ -18,6 +18,8 @@ import {
 } from "@/lib/entryDateTimezone"
 import { createClient } from "@/utils/supabase/server"
 import { resolvePaymentMethodLedgerAccount } from "@/lib/paymentLedgerAccounts"
+import { SALE_COMPROBANTE_RECIBO_X_LABEL, saleComprobanteAccruesOutputVat } from "@/lib/saleComprobantePicker"
+import { siteIdFromPopRow } from "@/lib/popRoutes"
 
 const PAYMENT_KIND_ACCOUNT_FALLBACK: Record<string, readonly string[]> = {
   cash: ["1.1.1.01"],
@@ -464,9 +466,30 @@ export async function completeSale(
 
     const metadata: Record<string, unknown> = {}
     const invLabel = input.invoiceTypeLabel?.trim()
+    const fiscalSiteId = siteIdFromPopRow(popRes.pop)
+    const accrueOutputVat = saleComprobanteAccruesOutputVat(
+      fiscalSiteId,
+      invLabel || null,
+    )
     if (invLabel) {
       metadata.invoice_type_label = invLabel
+      if (invLabel === SALE_COMPROBANTE_RECIBO_X_LABEL) {
+        metadata.invoice_internal_only = true
+      }
+      metadata.invoice_accrues_output_vat = accrueOutputVat
+    } else {
+      metadata.invoice_accrues_output_vat = false
     }
+
+    if (!accrueOutputVat && taxTotal > 0) {
+      metadata.vat_included_estimate = taxTotal
+    }
+
+    const persistedSubtotal = accrueOutputVat ? subtotalNet : total
+    const persistedTaxTotal = accrueOutputVat ? taxTotal : 0
+    const lineItemsToPersist = accrueOutputVat
+      ? lineItemsJson
+      : lineItemsJson.map((li) => ({ ...li, iva: 0 }))
 
     for (const l of built) {
       const oh = await sumInventoryOnHandForArticle(supabase, popId, l.articleId)
@@ -488,9 +511,9 @@ export async function completeSale(
         client_id: input.clientId?.trim() || null,
         customer_name: clientName,
         customer_tax_id: clientTaxId,
-        line_items: lineItemsJson,
-        subtotal: subtotalNet,
-        tax_total: taxTotal,
+        line_items: lineItemsToPersist,
+        subtotal: persistedSubtotal,
+        tax_total: persistedTaxTotal,
         discount_total: discountTotal,
         total,
         currency: "ARS",
@@ -668,6 +691,9 @@ export async function completeSale(
     const tz = timezoneForPopLedger(popRes.pop.country, popRes.pop.siteId)
     const entryDate = entryDateIsoInTimezone(tz)
 
+    const ledgerTaxTotal = accrueOutputVat ? taxTotal : 0
+    const revenueCredit = accrueOutputVat ? subtotalNet : total
+
     const ventasId = await resolveAccountId(supabase, popId, CHART_VENTAS_GRAVADAS_CODES)
     if (!ventasId) {
       await cancelSaleRollback(supabase, saleId, trackedMovements)
@@ -678,10 +704,10 @@ export async function completeSale(
     }
 
     const ivaId =
-      taxTotal > 0
+      ledgerTaxTotal > 0
         ? await resolveAccountId(supabase, popId, CHART_IVA_PAGAR_CODES)
         : null
-    if (taxTotal > 0 && !ivaId) {
+    if (ledgerTaxTotal > 0 && !ivaId) {
       await cancelSaleRollback(supabase, saleId, trackedMovements)
       return {
         success: false,
@@ -750,17 +776,17 @@ export async function completeSale(
       {
         account_id: ventasId,
         debit_amount: 0,
-        credit_amount: subtotalNet,
+        credit_amount: revenueCredit,
         description: entryDescription,
         line_order: 2,
       },
     ]
     let order = 3
-    if (taxTotal > 0 && ivaId) {
+    if (ledgerTaxTotal > 0 && ivaId) {
       linesPayload.push({
         account_id: ivaId,
         debit_amount: 0,
-        credit_amount: taxTotal,
+        credit_amount: ledgerTaxTotal,
         description: entryDescription,
         line_order: order,
       })

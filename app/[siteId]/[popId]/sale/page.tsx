@@ -2,7 +2,6 @@
 
 import withAuth from "@/hoc/withAuth"
 import Image from "next/image"
-import Link from "next/link"
 import { completeSale } from "@/app/[siteId]/[popId]/sale/completeSale"
 import {
   getSaleCatalog,
@@ -13,10 +12,21 @@ import {
 } from "@/app/[siteId]/[popId]/sale/actions"
 import {
   DEFAULT_SALE_SITE_ID,
-  getSaleInvoiceTypeOptionsForSite,
-  type SaleInvoiceTypeOption,
 } from "@/lib/saleInvoiceTypes"
-import { popMenuHref } from "@/lib/popRoutes"
+import {
+  getSaleComprobanteDisplayLabel,
+  getSaleComprobantePickerOptions,
+  isAllowedSaleComprobanteLabel,
+  readSavedSaleComprobante,
+  writeSavedSaleComprobante,
+} from "@/lib/saleComprobantePicker"
+import {
+  readSavedSaleCatalogView,
+  writeSavedSaleCatalogView,
+  type SaleCatalogViewPersisted,
+} from "@/lib/saleCatalogPreference"
+import { DataWorkspaceLayout } from "@/components/layouts/DataWorkspaceLayout"
+import { useDataWorkspaceSidebar } from "@/components/layouts/useDataWorkspaceSidebar"
 import { useAuth } from "@/context/AuthContextSupabase"
 import { useParams } from "next/navigation"
 import {
@@ -29,17 +39,13 @@ import {
   type CSSProperties,
 } from "react"
 import {
-  ArrowLeft,
   Banknote,
   CircleCheck,
   CircleX,
   LayoutGrid,
   Loader2,
-  Maximize2,
-  Minimize2,
   Minus,
   MessageSquare,
-  MoreVertical,
   Percent,
   Plus,
   Receipt,
@@ -48,12 +54,9 @@ import {
   Tag,
   Trash2,
   User,
-  Wifi,
-  WifiOff,
 } from "lucide-react"
 import { usePadronAutofillRazonSocial } from "@/hooks/usePadronAutofillRazonSocial"
 import { cn } from "@/lib/utils"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import {
@@ -93,10 +96,7 @@ type ItemCarrito = {
   cantidad: number
 }
 
-type VistaCatalogo =
-  | { modo: "categoria"; categoria: string }
-  | { modo: "promociones" }
-  | { modo: "con_descuento" }
+type VistaCatalogo = SaleCatalogViewPersisted
 
 const CATEGORIA_TODOS = "Todos"
 
@@ -275,6 +275,10 @@ function SalePage() {
   const params = useParams()
   const siteId = typeof params?.siteId === "string" ? params.siteId : ""
   const popId = typeof params?.popId === "string" ? params.popId : undefined
+  const {
+    open: catalogSidebarOpen,
+    setOpen: setCatalogSidebarOpen,
+  } = useDataWorkspaceSidebar(siteId, popId ?? "", Boolean(popId))
   const { user } = useAuth()
 
   const [catalogArticles, setCatalogArticles] = useState<SaleCatalogArticle[]>(
@@ -380,6 +384,8 @@ function SalePage() {
   const [busquedaClienteModal, setBusquedaClienteModal] = useState("")
   const [comprobante, setComprobante] = useState<string | null>(null)
   const [comprobanteModalAbierto, setComprobanteModalAbierto] = useState(false)
+  const comprobanteInitRef = useRef(false)
+  const catalogViewInitRef = useRef(false)
   const [metodoPagoSeleccionado, setMetodoPagoSeleccionado] = useState<{
     id: string
     label: string
@@ -413,8 +419,6 @@ function SalePage() {
   const [itemDescuentoDraft, setItemDescuentoDraft] = useState<
     Record<string, string>
   >({})
-  const [isOnline, setIsOnline] = useState(true)
-  const [isFullscreen, setIsFullscreen] = useState(false)
   const busquedaProductosInputRef = useRef<HTMLInputElement>(null)
   const busquedaClienteInputRef = useRef<HTMLInputElement>(null)
   const vistaAntesBusquedaRef = useRef<VistaCatalogo | null>(null)
@@ -565,7 +569,12 @@ function SalePage() {
     setCarrito([])
     setClienteSeleccionado(null)
     setFiscalDocVenta("")
-    setComprobante(null)
+    if (popId) {
+      const saved = readSavedSaleComprobante(popId)
+      setComprobante(saved !== undefined ? saved : null)
+    } else {
+      setComprobante(null)
+    }
     setModoDescuento("porcentaje")
     setValorDescuentoPorcentaje(0)
     setValorDescuentoFijo(0)
@@ -580,7 +589,7 @@ function SalePage() {
     setDescartarConfirmOpen(false)
     setVenderConfirmOpen(false)
     setVentaError(null)
-  }, [salePaymentMethods])
+  }, [salePaymentMethods, popId])
 
   const confirmarVenta = useCallback(async () => {
     if (!popId || !siteId || !metodoPagoSeleccionado) return
@@ -653,26 +662,21 @@ function SalePage() {
     }
   }, [modoDescuento, subtotal, valorDescuentoFijo])
 
-  useEffect(() => {
-    setIsOnline(navigator.onLine)
-    const handleOnline = () => setIsOnline(true)
-    const handleOffline = () => setIsOnline(false)
-    window.addEventListener("online", handleOnline)
-    window.addEventListener("offline", handleOffline)
-    return () => {
-      window.removeEventListener("online", handleOnline)
-      window.removeEventListener("offline", handleOffline)
-    }
-  }, [])
+  const persistVistaCatalogo = useCallback(
+    (view: VistaCatalogo) => {
+      setVistaCatalogo(view)
+      if (popId) writeSavedSaleCatalogView(popId, view)
+    },
+    [popId],
+  )
 
-  useEffect(() => {
-    const syncFullscreen = () => {
-      setIsFullscreen(Boolean(document.fullscreenElement))
-    }
-    syncFullscreen()
-    document.addEventListener("fullscreenchange", syncFullscreen)
-    return () => document.removeEventListener("fullscreenchange", syncFullscreen)
-  }, [])
+  const elegirComprobante = useCallback(
+    (value: string | null) => {
+      setComprobante(value)
+      if (popId) writeSavedSaleComprobante(popId, value)
+    },
+    [popId],
+  )
 
   const clientesFiltradosModal = useMemo(() => {
     const q = normalizarBusqueda(busquedaClienteModal.trim())
@@ -682,9 +686,37 @@ function SalePage() {
     )
   }, [busquedaClienteModal, saleClients])
 
-  const invoiceTypeOptions = useMemo((): readonly SaleInvoiceTypeOption[] => {
-    return getSaleInvoiceTypeOptionsForSite(invoiceTypeSiteId)
-  }, [invoiceTypeSiteId])
+  const comprobantePickerOptions = useMemo(
+    () => getSaleComprobantePickerOptions(invoiceTypeSiteId),
+    [invoiceTypeSiteId],
+  )
+
+  const comprobanteDisplayLabel = useMemo(
+    () => getSaleComprobanteDisplayLabel(comprobante),
+    [comprobante],
+  )
+
+  useEffect(() => {
+    if (!popId || comprobanteInitRef.current) return
+    comprobanteInitRef.current = true
+    const saved = readSavedSaleComprobante(popId)
+    if (saved !== undefined) {
+      setComprobante(
+        isAllowedSaleComprobanteLabel(invoiceTypeSiteId, saved) ? saved : null,
+      )
+    }
+  }, [popId, invoiceTypeSiteId])
+
+  useEffect(() => {
+    if (!popId || catalogViewInitRef.current || categoriasNav.length === 0) return
+    catalogViewInitRef.current = true
+    const saved = readSavedSaleCatalogView(popId)
+    if (!saved) return
+    if (saved.modo === "categoria" && !categoriasNav.includes(saved.categoria)) {
+      return
+    }
+    setVistaCatalogo(saved)
+  }, [popId, categoriasNav])
 
   const paymentMethodGroups = useMemo(() => {
     const order = [
@@ -825,14 +857,6 @@ function SalePage() {
     setItemDetalleAbiertoId((prev) => (prev === itemId ? null : itemId))
   }
 
-  const toggleFullscreen = async () => {
-    if (document.fullscreenElement) {
-      await document.exitFullscreen()
-      return
-    }
-    await document.documentElement.requestFullscreen()
-  }
-
   const toolboxBarClass =
     "border-t border-white/10 bg-[#0b100e]/92 p-2 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)] backdrop-blur-xl sm:p-2.5"
   const toolboxSlotClass = (configurado: boolean) =>
@@ -891,6 +915,93 @@ function SalePage() {
     user?.user_metadata?.avatar_url ||
     `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(user?.email || "u")}`
 
+  const catalogSidebar = useMemo(
+    () => (
+      <nav
+        className="game-scroll flex min-h-0 flex-1 flex-col gap-6 overflow-y-auto px-3 py-4"
+        aria-label="Filtros del catálogo"
+      >
+          <div>
+            <p className="mb-2.5 px-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-500">
+              Categorías
+            </p>
+            <ul className="flex flex-col gap-0.5 p-0" role="list">
+              {categoriasNav.map((cat) => {
+                const seleccionado =
+                  vistaCatalogo.modo === "categoria" &&
+                  vistaCatalogo.categoria === cat
+                return (
+                  <li key={cat}>
+                    <button
+                      type="button"
+                      onClick={() =>
+                        persistVistaCatalogo({
+                          modo: "categoria",
+                          categoria: cat,
+                        })
+                      }
+                      className={cn(
+                        "relative flex min-h-11 w-full items-center rounded-md px-3 py-2.5 text-left text-sm font-medium transition-colors duration-150",
+                        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/45 focus-visible:ring-offset-2 focus-visible:ring-offset-[#1a2027]",
+                        seleccionado
+                          ? "bg-white/10 text-white before:absolute before:top-1/2 before:left-0 before:h-5 before:w-0.5 before:-translate-y-1/2 before:rounded-full before:bg-emerald-400 before:content-['']"
+                          : "text-slate-400 hover:bg-white/6 hover:text-slate-100",
+                      )}
+                    >
+                      {cat}
+                    </button>
+                  </li>
+                )
+              })}
+            </ul>
+          </div>
+
+          <div>
+            <p className="mb-2.5 px-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-500">
+              Listados rápidos
+            </p>
+            <ul className="flex flex-col gap-0.5 p-0" role="list">
+              <li>
+                <button
+                  type="button"
+                  aria-pressed={vistaCatalogo.modo === "promociones"}
+                  onClick={() => persistVistaCatalogo({ modo: "promociones" })}
+                  className={cn(
+                    "relative flex min-h-11 w-full items-center gap-2.5 rounded-md px-3 py-2.5 text-left text-sm font-medium transition-colors duration-150",
+                    "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/45 focus-visible:ring-offset-2 focus-visible:ring-offset-[#1a2027]",
+                    vistaCatalogo.modo === "promociones"
+                      ? "bg-emerald-500/12 text-emerald-100 before:absolute before:top-1/2 before:left-0 before:h-5 before:w-0.5 before:-translate-y-1/2 before:rounded-full before:bg-emerald-400 before:content-['']"
+                      : "text-slate-400 hover:bg-white/6 hover:text-slate-100",
+                  )}
+                >
+                  <Tag className="size-4 shrink-0 opacity-80" aria-hidden />
+                  Promociones
+                </button>
+              </li>
+              <li>
+                <button
+                  type="button"
+                  aria-pressed={vistaCatalogo.modo === "con_descuento"}
+                  onClick={() => persistVistaCatalogo({ modo: "con_descuento" })}
+                  className={cn(
+                    "relative flex min-h-11 w-full items-center gap-2.5 rounded-md px-3 py-2.5 text-left text-sm font-medium transition-colors duration-150",
+                    "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400/45 focus-visible:ring-offset-2 focus-visible:ring-offset-[#1a2027]",
+                    vistaCatalogo.modo === "con_descuento"
+                      ? "bg-amber-500/12 text-amber-100 before:absolute before:top-1/2 before:left-0 before:h-5 before:w-0.5 before:-translate-y-1/2 before:rounded-full before:bg-amber-400 before:content-['']"
+                      : "text-slate-400 hover:bg-white/6 hover:text-slate-100",
+                  )}
+                >
+                  <Percent className="size-4 shrink-0 opacity-80" aria-hidden />
+                  Con descuento
+                </button>
+              </li>
+            </ul>
+          </div>
+      </nav>
+    ),
+    [categoriasNav, vistaCatalogo, persistVistaCatalogo],
+  )
+
   if (!popId || !siteId) {
     return (
       <div className="min-h-screen bg-[#070a09] p-10 text-sm text-slate-300">
@@ -900,199 +1011,48 @@ function SalePage() {
   }
 
   return (
-    <div className="relative h-screen overflow-hidden bg-[#070a09] text-white">
-      <div className="pointer-events-none absolute inset-0">
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_20%,rgba(52,211,153,0.14),transparent_40%),radial-gradient(circle_at_80%_10%,rgba(99,102,241,0.1),transparent_36%)]" />
-        <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.03)_1px,transparent_1px)] bg-size-[38px_38px] opacity-20" />
-      </div>
-
-      <div className="relative z-10 grid h-full grid-rows-[4.5rem_minmax(0,1fr)]">
-        <header className="border-b border-rootsy-hairline bg-card/98 backdrop-blur-2xl">
-          <div className="grid h-18 grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-4 px-4">
-            <div className="flex min-w-0 items-center gap-3">
-              <Link
-                href={
-                  siteId && popId ? popMenuHref(siteId, popId) : "/home"
-                }
-                className="group inline-flex size-10 items-center justify-center rounded-xl border border-foreground/6 bg-secondary text-foreground/70 transition-all hover:border-foreground/12 hover:bg-muted hover:text-foreground"
-                aria-label="Volver"
-              >
-                <ArrowLeft className="size-5 transition-transform group-hover:-translate-x-0.5" />
-              </Link>
-              <div className="h-6 w-px bg-border" />
-              <div className="flex min-w-0 items-center gap-2.5">
-                <div className="size-8 overflow-hidden rounded-lg ring-1 ring-border">
-                  <img
-                    src={`https://api.dicebear.com/7.x/shapes/svg?seed=${encodeURIComponent(popId)}&backgroundColor=1a1f1d`}
-                    alt=""
-                    className="size-full object-cover"
-                  />
-                </div>
-                <span className="truncate text-sm font-semibold text-foreground/85">
-                  {popName || (catalogLoading ? "…" : "—")}
-                </span>
-              </div>
-            </div>
-
-            <div className="flex items-center gap-2">
-              <h1 className="text-[1.85rem] font-black tracking-tight text-foreground">
-                Vender
-              </h1>
-              <div
-                className={cn(
-                  "inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-widest",
-                  isOnline
-                    ? "border-emerald-400/35 bg-emerald-500/12 text-emerald-200"
-                    : "border-rose-400/35 bg-rose-500/12 text-rose-200",
-                )}
-              >
-                {isOnline ? (
-                  <Wifi className="size-3" aria-hidden />
-                ) : (
-                  <WifiOff className="size-3" aria-hidden />
-                )}
-                {isOnline ? "Online" : "Offline"}
-              </div>
-            </div>
-
-            <div className="flex items-center justify-end gap-2">
-              <button
-                type="button"
-                className="group inline-flex size-9 items-center justify-center rounded-xl text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-                aria-label="Mas opciones"
-              >
-                <MoreVertical className="size-4.5" />
-              </button>
-              <button
-                type="button"
-                onClick={() => void toggleFullscreen()}
-                className="group inline-flex size-9 items-center justify-center rounded-xl text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-                aria-label={
-                  isFullscreen
-                    ? "Salir de pantalla completa"
-                    : "Pantalla completa"
-                }
-              >
-                {isFullscreen ? (
-                  <Minimize2 className="size-4.5" />
-                ) : (
-                  <Maximize2 className="size-4.5" />
-                )}
-              </button>
-              <div className="h-6 w-px bg-border" />
-              <div className="flex items-center gap-3">
-                <div className="relative">
-                  <Avatar className="size-10 ring-1 ring-border">
-                    <AvatarImage src={userAvatarSrc} alt="" />
-                    <AvatarFallback className="bg-primary/10 text-xs text-primary">
-                      {headerUserName.slice(0, 2).toUpperCase()}
-                    </AvatarFallback>
-                  </Avatar>
-                  <div className="absolute -right-0.5 -bottom-0.5 size-2.5 rounded-full border border-card bg-primary" />
-                </div>
-                <div className="hidden min-w-0 flex-col leading-tight sm:flex">
-                  <span className="truncate text-sm font-semibold text-foreground/85">
-                    {headerUserName}
-                  </span>
-                  <span className="text-[10px] font-semibold uppercase tracking-wider text-meadow">
-                    Ventas
-                  </span>
-                </div>
-              </div>
-            </div>
+    <>
+      <DataWorkspaceLayout
+        siteId={siteId}
+        popId={popId}
+        popName={popName}
+        title="Vender"
+        headerVariant="dark"
+        contentFlush
+        loading={catalogLoading}
+        userName={headerUserName}
+        userAvatarSrc={userAvatarSrc}
+        userRoleLabel="Ventas"
+        sidebarCollapsible
+        sidebarEdgeToggle={false}
+        sidebarOpen={catalogSidebarOpen}
+        onSidebarOpenChange={setCatalogSidebarOpen}
+        mainClassName="bg-[#070a09] text-white"
+      >
+        <div className="dark relative flex h-full min-h-0 w-full flex-col overflow-hidden bg-[#070a09] text-white">
+          <div className="pointer-events-none absolute inset-0">
+            <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_20%,rgba(52,211,153,0.14),transparent_40%),radial-gradient(circle_at_80%_10%,rgba(99,102,241,0.1),transparent_36%)]" />
+            <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.03)_1px,transparent_1px)] bg-size-[38px_38px] opacity-20" />
           </div>
-        </header>
 
-        <main className="grid min-h-0 grid-cols-[minmax(0,1fr)_380px]">
-          <section className="grid min-h-0 grid-rows-[minmax(0,1fr)_minmax(4.75rem,auto)]">
-            <div className="grid min-h-0 grid-cols-[280px_minmax(0,1fr)]">
-              <aside className="flex min-h-0 min-w-0 flex-col border-r border-white/10 bg-[#1a2027]">
-                <nav
-                  className="game-scroll flex min-h-0 flex-1 flex-col gap-6 overflow-y-auto px-3 py-4"
+          <main className="relative z-10 grid min-h-0 flex-1 grid-cols-[minmax(0,1fr)_380px] grid-rows-[minmax(0,1fr)_minmax(4.75rem,auto)]">
+            <div
+              className={cn(
+                "col-start-1 row-start-1 grid min-h-0 min-w-0 overflow-hidden",
+                catalogSidebarOpen
+                  ? "grid-cols-[280px_minmax(0,1fr)]"
+                  : "grid-cols-[minmax(0,1fr)]",
+              )}
+            >
+              {catalogSidebarOpen ? (
+                <aside
+                  id="data-workspace-sidebar"
+                  className="flex min-h-0 min-w-0 flex-col overflow-hidden border-r border-white/10 bg-[#1a2027]"
                   aria-label="Filtros del catálogo"
                 >
-                  <div>
-                    <p className="mb-2.5 px-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-500">
-                      Categorías
-                    </p>
-                    <ul className="flex flex-col gap-0.5 p-0" role="list">
-                      {categoriasNav.map((cat) => {
-                        const seleccionado =
-                          vistaCatalogo.modo === "categoria" &&
-                          vistaCatalogo.categoria === cat
-                        return (
-                          <li key={cat}>
-                            <button
-                              type="button"
-                              onClick={() =>
-                                setVistaCatalogo({
-                                  modo: "categoria",
-                                  categoria: cat,
-                                })
-                              }
-                              className={cn(
-                                "relative flex min-h-11 w-full items-center rounded-md px-3 py-2.5 text-left text-sm font-medium transition-colors duration-150",
-                                "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/45 focus-visible:ring-offset-2 focus-visible:ring-offset-[#1a2027]",
-                                seleccionado
-                                  ? "bg-white/10 text-white before:absolute before:top-1/2 before:left-0 before:h-5 before:w-0.5 before:-translate-y-1/2 before:rounded-full before:bg-emerald-400 before:content-['']"
-                                  : "text-slate-400 hover:bg-white/6 hover:text-slate-100",
-                              )}
-                            >
-                              {cat}
-                            </button>
-                          </li>
-                        )
-                      })}
-                    </ul>
-                  </div>
-
-                  <div>
-                    <p className="mb-2.5 px-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-500">
-                      Listados rápidos
-                    </p>
-                    <ul className="flex flex-col gap-0.5 p-0" role="list">
-                      <li>
-                        <button
-                          type="button"
-                          aria-pressed={vistaCatalogo.modo === "promociones"}
-                          onClick={() =>
-                            setVistaCatalogo({ modo: "promociones" })
-                          }
-                          className={cn(
-                            "relative flex min-h-11 w-full items-center gap-2.5 rounded-md px-3 py-2.5 text-left text-sm font-medium transition-colors duration-150",
-                            "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/45 focus-visible:ring-offset-2 focus-visible:ring-offset-[#1a2027]",
-                            vistaCatalogo.modo === "promociones"
-                              ? "bg-emerald-500/12 text-emerald-100 before:absolute before:top-1/2 before:left-0 before:h-5 before:w-0.5 before:-translate-y-1/2 before:rounded-full before:bg-emerald-400 before:content-['']"
-                              : "text-slate-400 hover:bg-white/6 hover:text-slate-100",
-                          )}
-                        >
-                          <Tag className="size-4 shrink-0 opacity-80" aria-hidden />
-                          Promociones
-                        </button>
-                      </li>
-                      <li>
-                        <button
-                          type="button"
-                          aria-pressed={vistaCatalogo.modo === "con_descuento"}
-                          onClick={() =>
-                            setVistaCatalogo({ modo: "con_descuento" })
-                          }
-                          className={cn(
-                            "relative flex min-h-11 w-full items-center gap-2.5 rounded-md px-3 py-2.5 text-left text-sm font-medium transition-colors duration-150",
-                            "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400/45 focus-visible:ring-offset-2 focus-visible:ring-offset-[#1a2027]",
-                            vistaCatalogo.modo === "con_descuento"
-                              ? "bg-amber-500/12 text-amber-100 before:absolute before:top-1/2 before:left-0 before:h-5 before:w-0.5 before:-translate-y-1/2 before:rounded-full before:bg-amber-400 before:content-['']"
-                              : "text-slate-400 hover:bg-white/6 hover:text-slate-100",
-                          )}
-                        >
-                          <Percent className="size-4 shrink-0 opacity-80" aria-hidden />
-                          Con descuento
-                        </button>
-                      </li>
-                    </ul>
-                  </div>
-                </nav>
-              </aside>
+                  {catalogSidebar}
+                </aside>
+              ) : null}
 
               <section className="grid min-h-0 min-w-0 grid-rows-[auto_minmax(0,1fr)] bg-[#20262e]">
                 <div className="flex min-w-0 items-center gap-3 border-b border-white/10 px-4 py-3">
@@ -1332,7 +1292,10 @@ function SalePage() {
             <div
               role="toolbar"
               aria-label="Configuración de la venta"
-              className={cn("grid h-full min-h-0 grid-cols-2 gap-2 lg:grid-cols-4", toolboxBarClass)}
+              className={cn(
+                "col-start-1 row-start-2 grid h-full min-h-0 grid-cols-2 gap-2 lg:grid-cols-4",
+                toolboxBarClass,
+              )}
             >
               <button
                 type="button"
@@ -1374,14 +1337,10 @@ function SalePage() {
               <button
                 type="button"
                 onClick={() => setComprobanteModalAbierto(true)}
-                className={toolboxSlotClass(Boolean(comprobante))}
-                aria-label={
-                  comprobante
-                    ? `Comprobante: ${comprobante}. Abrir para cambiar.`
-                    : "Comprobante sin elegir. Abrir para seleccionar."
-                }
+                className={toolboxSlotClass(comprobante !== null)}
+                aria-label={`Comprobante: ${comprobanteDisplayLabel}. Abrir para cambiar.`}
               >
-                <span className={toolboxIconWrap(Boolean(comprobante))}>
+                <span className={toolboxIconWrap(comprobante !== null)}>
                   <Receipt className="size-4.5 sm:size-5" aria-hidden />
                 </span>
                 <span className="min-w-0 flex-1">
@@ -1391,10 +1350,12 @@ function SalePage() {
                   <span
                     className={cn(
                       "block truncate text-sm font-semibold leading-snug",
-                      comprobante ? "text-foreground" : "text-foreground/55",
+                      comprobante !== null
+                        ? "text-foreground"
+                        : "text-foreground/70",
                     )}
                   >
-                    {comprobante ?? "Elegir tipo"}
+                    {comprobanteDisplayLabel}
                   </span>
                 </span>
               </button>
@@ -1476,10 +1437,9 @@ function SalePage() {
                 </span>
               </button>
             </div>
-          </section>
 
           <aside
-            className="grid min-h-0 grid-rows-[minmax(0,1fr)_auto] bg-[#eef1f5] text-[#121417]"
+            className="col-start-2 row-span-2 grid min-h-0 grid-rows-[minmax(0,1fr)_auto] bg-[#eef1f5] text-[#121417]"
             aria-label="Carrito de la venta"
           >
             <div className="flex min-h-0 flex-col">
@@ -1837,7 +1797,8 @@ function SalePage() {
             </div>
           </aside>
         </main>
-      </div>
+        </div>
+      </DataWorkspaceLayout>
 
       <Dialog
         open={clienteModalAbierto}
@@ -1985,10 +1946,11 @@ function SalePage() {
         <DialogContent className={cn(ventaDialogSurfaceMd, "text-foreground")}>
           <DialogHeader className={cn(ventaDialogHeader, "shrink-0")}>
             <DialogTitle className="text-base font-semibold tracking-tight">
-              Tipo de comprobante
+              Comprobante
             </DialogTitle>
             <DialogDescription className="text-sm leading-relaxed">
-              Seleccioná el comprobante que vas a emitir en esta venta.
+              Elegí el tipo para esta venta. Por defecto no se emite comprobante
+              fiscal.
             </DialogDescription>
           </DialogHeader>
           <div
@@ -1998,39 +1960,50 @@ function SalePage() {
             )}
           >
             <ul
-              className="grid grid-cols-1 gap-2 sm:grid-cols-2"
+              className="flex flex-col gap-1.5"
               role="listbox"
               aria-label="Tipos de comprobante"
             >
-              {invoiceTypeOptions.map((opt) => {
-                const label = opt.label
-                const seleccionado = comprobante === label
+              {comprobantePickerOptions.map((opt) => {
+                const seleccionado =
+                  opt.kind === "none"
+                    ? comprobante == null
+                    : comprobante === opt.label
+                const hint =
+                  opt.kind === "none"
+                    ? "No se registra tipo fiscal en la venta"
+                    : opt.kind === "internal"
+                      ? "Comprobante interno · no pasa por ARCA"
+                      : "Autorizable en ARCA / AFIP"
+
                 return (
-                  <li key={label} className="min-w-0">
+                  <li key={opt.label} className="min-w-0">
                     <button
                       type="button"
                       role="option"
                       aria-selected={seleccionado}
-                      onClick={() => setComprobante(label)}
+                      onClick={() =>
+                        elegirComprobante(
+                          opt.kind === "none" ? null : opt.label,
+                        )
+                      }
                       className={cn(
-                        "flex min-h-18 w-full flex-col items-stretch justify-center text-left",
-                        modalOpcionBase,
+                        "flex w-full items-center justify-between gap-3 rounded-lg border px-3 py-2.5 text-left transition-colors",
                         seleccionado
-                          ? modalOpcionSeleccionada
-                          : modalOpcionIdle,
+                          ? "border-primary/40 bg-primary/10 ring-1 ring-primary/15"
+                          : "border-border/70 bg-muted/20 hover:bg-muted/35",
                       )}
                     >
-                      <span className="block text-sm font-semibold leading-snug">
-                        {label}
-                      </span>
-                      <span className="mt-1 block font-mono text-[11px] leading-snug text-muted-foreground">
-                        ARCA · CbteTipo {opt.arcaCbteTipo}
-                        {opt.arcaRegimen === "fce_mipyme" ? " · FCE MiPyME" : ""}
-                      </span>
-                      {opt.note ? (
-                        <span className="mt-2 block border-t border-border/40 pt-2 text-xs leading-snug text-muted-foreground">
-                          {opt.note}
+                      <span className="min-w-0">
+                        <span className="block text-sm font-semibold leading-snug text-foreground">
+                          {opt.label}
                         </span>
+                        <span className="mt-0.5 block text-xs leading-snug text-muted-foreground">
+                          {hint}
+                        </span>
+                      </span>
+                      {seleccionado ? (
+                        <span className="size-2 shrink-0 rounded-full bg-primary" />
                       ) : null}
                     </button>
                   </li>
@@ -2039,17 +2012,6 @@ function SalePage() {
             </ul>
           </div>
           <DialogFooter className={cn(ventaDialogFooter, "shrink-0")}>
-            <Button
-              type="button"
-              variant="ghost"
-              className={ventaDialogGhostBtn}
-              onClick={() => {
-                setComprobante(null)
-                setComprobanteModalAbierto(false)
-              }}
-            >
-              Quitar selección
-            </Button>
             <Button
               type="button"
               className={ventaDialogPrimaryBtn}
@@ -2304,7 +2266,7 @@ function SalePage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-    </div>
+    </>
   )
 }
 

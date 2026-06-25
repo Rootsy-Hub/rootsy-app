@@ -19,6 +19,7 @@ const PENDING = [
   "20260623160000_payment_methods_usage.sql",
   "20260623170000_treasury_card_settlements.sql",
   "20260623180000_bank_reconciliation.sql",
+  "20260623190000_treasury_accounts.sql",
 ]
 
 function loadEnvLocal() {

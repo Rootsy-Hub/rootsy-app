@@ -3,11 +3,18 @@
 import {
   getOperationsSales,
   type OperationExpenseLedgerRow,
+  type OperationPurchaseRow,
   type OperationSaleRow,
 } from "@/app/[siteId]/[popId]/operations/actions"
+import {
+  OperationsSalesTable,
+  formatOperationShortId,
+} from "@/app/[siteId]/[popId]/operations/OperationsSalesTable"
 import { buildPaginationItems } from "@/app/[siteId]/[popId]/layout/layoutPreviewPagination"
 import { DataWorkspaceListPaginationFooter } from "@/components/data-workspace/DataWorkspaceListPaginationFooter"
 import { DataWorkspaceListTableShell } from "@/components/data-workspace/DataWorkspaceListTableShell"
+import { DataWorkspacePeriodFilter } from "@/components/data-workspace/DataWorkspacePeriodFilter"
+import { DataWorkspaceToolbarFieldLabel } from "@/components/data-workspace/DataWorkspaceToolbarFieldLabel"
 import {
   lightFilterChipClass,
   lightTableThClass,
@@ -32,6 +39,12 @@ import {
   TableRow,
 } from "@/components/ui/table"
 import withAuth from "@/hoc/withAuth"
+import {
+  computeDataWorkspaceDateBounds,
+  dataWorkspaceDateFilterSummary,
+  isoDateInBounds,
+  type DataWorkspaceDatePreset,
+} from "@/lib/dataWorkspaceDateFilter"
 import { getWorkspaceHeaderForPop } from "@/lib/workspaceHeaderServer"
 import { cn } from "@/lib/utils"
 import {
@@ -39,10 +52,12 @@ import {
   ChevronRight,
   Receipt,
   Search,
+  ShoppingCart,
   Wallet,
   X,
 } from "lucide-react"
 import { useParams } from "next/navigation"
+import type { DateRange } from "react-day-picker"
 import {
   Fragment,
   useCallback,
@@ -56,10 +71,11 @@ import {
 const OPERATIONS_PAGE_SIZES = [10, 25, 50, 100] as const
 const DEFAULT_PAGE_SIZE = 25
 
-type OperationsViewId = "sales" | "expenses"
+type OperationsViewId = "sales" | "purchases" | "expenses"
 
 const VIEW_ITEMS = [
   { id: "sales", label: "Ventas", icon: Receipt },
+  { id: "purchases", label: "Compras", icon: ShoppingCart },
   { id: "expenses", label: "Gastos", icon: Wallet },
 ] as const
 
@@ -91,8 +107,31 @@ const STATUS_LABEL: Record<string, string> = {
   cancelled: "Anulada",
 }
 
+const PURCHASE_STATUS_LABEL: Record<string, string> = {
+  draft: "Borrador",
+  pending: "Pendiente",
+  partial: "Pago parcial",
+  paid: "Pagada",
+  cancelled: "Cancelada",
+  voided: "Anulada",
+}
+
+const PURCHASE_KIND_LABEL: Record<string, string> = {
+  merchandise: "Mercadería",
+  raw_material: "Materia prima",
+  supply: "Insumo",
+}
+
 function statusLabel(s: string) {
   return STATUS_LABEL[s] ?? s
+}
+
+function purchaseStatusLabel(s: string) {
+  return PURCHASE_STATUS_LABEL[s] ?? s
+}
+
+function purchaseKindLabel(k: string) {
+  return PURCHASE_KIND_LABEL[k] ?? k
 }
 
 function expenseLedgerKindLabel(row: OperationExpenseLedgerRow) {
@@ -133,6 +172,7 @@ function OperationsPage() {
 
   const [popName, setPopName] = useState("")
   const [sales, setSales] = useState<OperationSaleRow[]>([])
+  const [purchases, setPurchases] = useState<OperationPurchaseRow[]>([])
   const [expenseLedger, setExpenseLedger] = useState<
     OperationExpenseLedgerRow[]
   >([])
@@ -142,7 +182,14 @@ function OperationsPage() {
 
   const [activeView, setActiveView] = useState<OperationsViewId>("sales")
   const [searchInput, setSearchInput] = useState("")
+  const [datePreset, setDatePreset] =
+    useState<DataWorkspaceDatePreset>("all")
+  const [customDateRange, setCustomDateRange] = useState<
+    DateRange | undefined
+  >(undefined)
   const searchInputId = useId()
+  const dateFilterLabelId = useId()
+  const dateFilterTriggerId = useId()
   const pageSizeLabelId = useId()
   const searchInputRef = useRef<HTMLInputElement>(null)
   const [page, setPage] = useState(1)
@@ -160,11 +207,13 @@ function OperationsPage() {
     if (!res.success) {
       setError(res.error || "Error")
       setSales([])
+      setPurchases(res.purchases ?? [])
       setExpenseLedger(res.expenseLedger ?? [])
       setPopName(res.popName ?? "")
       return
     }
     setSales(res.sales)
+    setPurchases(res.purchases)
     setExpenseLedger(res.expenseLedger)
     setPopName(res.popName)
     setError(null)
@@ -210,7 +259,23 @@ function OperationsPage() {
   useEffect(() => {
     setPage(1)
     setExpandedId(null)
-  }, [searchInput, activeView])
+  }, [searchInput, activeView, datePreset, customDateRange])
+
+  const dateBounds = useMemo(
+    () => computeDataWorkspaceDateBounds(datePreset, customDateRange),
+    [datePreset, customDateRange],
+  )
+
+  const dateFilterActive = datePreset !== "all"
+  const dateFilterSummary = useMemo(
+    () => dataWorkspaceDateFilterSummary(datePreset, dateBounds),
+    [datePreset, dateBounds],
+  )
+
+  const clearDateFilter = useCallback(() => {
+    setDatePreset("all")
+    setCustomDateRange(undefined)
+  }, [])
 
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
@@ -233,35 +298,79 @@ function OperationsPage() {
   }, [])
 
   const handleViewSelect = useCallback((id: string) => {
-    if (id !== "sales" && id !== "expenses") return
+    if (id !== "sales" && id !== "purchases" && id !== "expenses") return
     setActiveView(id)
     setSearchInput("")
     setPage(1)
     setExpandedId(null)
   }, [])
 
+  const dateFilteredSales = useMemo(() => {
+    const { from, to } = dateBounds
+    return sales.filter((sale) => isoDateInBounds(sale.soldAt, from, to))
+  }, [sales, dateBounds])
+
+  const dateFilteredPurchases = useMemo(() => {
+    const { from, to } = dateBounds
+    return purchases.filter((row) =>
+      isoDateInBounds(row.operationDate, from, to),
+    )
+  }, [purchases, dateBounds])
+
+  const dateFilteredExpenses = useMemo(() => {
+    const { from, to } = dateBounds
+    return expenseLedger.filter((row) =>
+      isoDateInBounds(row.entryDate, from, to),
+    )
+  }, [expenseLedger, dateBounds])
+
   const filteredSales = useMemo(() => {
     const q = searchInput.trim().toLowerCase()
-    if (!q) return sales
-    return sales.filter((sale) => {
+    if (!q) return dateFilteredSales
+    return dateFilteredSales.filter((sale) => {
       const haystack = [
+        sale.id,
+        formatOperationShortId(sale.id),
         sale.customerName ?? "",
+        sale.invoiceTypeLabel ?? "",
+        sale.arcaInvoice?.tipoLabel ?? "",
         statusLabel(sale.status),
         sale.status,
         formatDateTime(sale.soldAt),
         fmt.format(sale.total),
+        fmt.format(sale.discountTotal),
+        fmt.format(sale.taxTotal),
         sale.currency,
       ]
         .join(" ")
         .toLowerCase()
       return haystack.includes(q)
     })
-  }, [sales, searchInput])
+  }, [dateFilteredSales, searchInput])
+
+  const filteredPurchases = useMemo(() => {
+    const q = searchInput.trim().toLowerCase()
+    if (!q) return dateFilteredPurchases
+    return dateFilteredPurchases.filter((row) => {
+      const haystack = [
+        row.supplierName,
+        purchaseStatusLabel(row.status),
+        purchaseKindLabel(row.purchaseKind),
+        row.documentNumber ?? "",
+        formatLedgerDate(row.operationDate),
+        fmt.format(row.total),
+        fmt.format(row.paidTotal),
+      ]
+        .join(" ")
+        .toLowerCase()
+      return haystack.includes(q)
+    })
+  }, [dateFilteredPurchases, searchInput])
 
   const filteredExpenses = useMemo(() => {
     const q = searchInput.trim().toLowerCase()
-    if (!q) return expenseLedger
-    return expenseLedger.filter((row) => {
+    if (!q) return dateFilteredExpenses
+    return dateFilteredExpenses.filter((row) => {
       const haystack = [
         expenseLedgerKindLabel(row),
         row.methodName ?? "",
@@ -273,11 +382,26 @@ function OperationsPage() {
         .toLowerCase()
       return haystack.includes(q)
     })
-  }, [expenseLedger, searchInput])
+  }, [dateFilteredExpenses, searchInput])
 
-  const activeRows = activeView === "sales" ? filteredSales : filteredExpenses
+  const activeRows =
+    activeView === "sales"
+      ? filteredSales
+      : activeView === "purchases"
+        ? filteredPurchases
+        : filteredExpenses
   const sourceTotal =
-    activeView === "sales" ? sales.length : expenseLedger.length
+    activeView === "sales"
+      ? dateFilteredSales.length
+      : activeView === "purchases"
+        ? dateFilteredPurchases.length
+        : dateFilteredExpenses.length
+  const sourceTotalAll =
+    activeView === "sales"
+      ? sales.length
+      : activeView === "purchases"
+        ? purchases.length
+        : expenseLedger.length
   const totalCount = activeRows.length
 
   const totalPages = useMemo(
@@ -290,6 +414,11 @@ function OperationsPage() {
     const start = (currentPage - 1) * pageSize
     return filteredSales.slice(start, start + pageSize)
   }, [filteredSales, currentPage, pageSize])
+
+  const pagePurchases = useMemo(() => {
+    const start = (currentPage - 1) * pageSize
+    return filteredPurchases.slice(start, start + pageSize)
+  }, [filteredPurchases, currentPage, pageSize])
 
   const pageExpenses = useMemo(() => {
     const start = (currentPage - 1) * pageSize
@@ -316,9 +445,17 @@ function OperationsPage() {
         ? totalCount === 1
           ? "venta"
           : "ventas"
-        : totalCount === 1
-          ? "movimiento"
-          : "movimientos"
+        : activeView === "purchases"
+          ? totalCount === 1
+            ? "compra"
+            : "compras"
+          : totalCount === 1
+            ? "movimiento"
+            : "movimientos"
+    const hasFilters = searchInput.trim() || dateFilterActive
+    if (hasFilters && totalCount !== sourceTotalAll) {
+      return `${totalCount.toLocaleString("es-AR")} de ${sourceTotalAll.toLocaleString("es-AR")} ${noun}`
+    }
     if (searchInput.trim() && totalCount !== sourceTotal) {
       return `${totalCount.toLocaleString("es-AR")} de ${sourceTotal.toLocaleString("es-AR")} ${noun}`
     }
@@ -329,19 +466,30 @@ function OperationsPage() {
     sourceTotal,
     searchInput,
     activeView,
+    dateFilterActive,
+    sourceTotalAll,
   ])
 
   const searchPlaceholder =
     activeView === "sales"
       ? "Cliente, estado, fecha, total… ( / )"
-      : "Tipo, medio, detalle, importe… ( / )"
+      : activeView === "purchases"
+        ? "Proveedor, tipo, comprobante, total… ( / )"
+        : "Tipo, medio, detalle, importe… ( / )"
 
   const clearSearch = useCallback(() => {
     setSearchInput("")
     searchInputRef.current?.focus()
   }, [])
 
+  const clearAllFilters = useCallback(() => {
+    setSearchInput("")
+    clearDateFilter()
+    searchInputRef.current?.focus()
+  }, [clearDateFilter])
+
   const hasSearchChip = searchInput.trim().length > 0
+  const hasFilterChips = hasSearchChip || dateFilterActive
 
   if (!popId || !siteId) {
     return (
@@ -391,57 +539,74 @@ function OperationsPage() {
             role="toolbar"
             aria-label="Filtros del listado"
           >
-            <div className={cn(lightToolbarPanelLastClass, "w-full")}>
-              <div className="mb-2 flex min-w-0 items-baseline justify-between gap-3">
-                <label htmlFor={searchInputId} className={toolbarBlockLabelClass}>
-                  Buscar
-                </label>
-                <span
-                  className="shrink-0 text-[11px] font-medium text-muted-foreground"
-                  aria-live="polite"
-                  aria-atomic="true"
-                >
-                  {resultsSummary}
-                </span>
-              </div>
-              <div className="relative min-w-0">
-                <Search
-                  className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground"
-                  aria-hidden
-                />
-                <Input
-                  ref={searchInputRef}
-                  id={searchInputId}
-                  type="search"
-                  value={searchInput}
-                  onChange={(e) => setSearchInput(e.target.value)}
-                  placeholder={searchPlaceholder}
-                  className={cn(
-                    lightToolbarInputClass,
-                    searchInput.trim().length > 0 && "pr-10",
-                  )}
-                  autoComplete="off"
-                  spellCheck={false}
-                  aria-label={
-                    activeView === "sales"
-                      ? "Buscar ventas"
-                      : "Buscar gastos"
+            <div className="grid grid-cols-1 items-start md:grid-cols-2 xl:grid-cols-12">
+              <DataWorkspacePeriodFilter
+                className="order-2 w-full min-w-0 md:col-span-1 xl:order-1 xl:col-span-3"
+                preset={datePreset}
+                customRange={customDateRange}
+                onPresetChange={setDatePreset}
+                onCustomRangeChange={setCustomDateRange}
+                bounds={dateBounds}
+                labelId={dateFilterLabelId}
+                triggerId={dateFilterTriggerId}
+              />
+
+              <div
+                className={cn(
+                  lightToolbarPanelLastClass,
+                  "order-1 min-w-0 md:col-span-2 xl:order-2 xl:col-span-9",
+                )}
+              >
+                <DataWorkspaceToolbarFieldLabel
+                  htmlFor={searchInputId}
+                  label="Buscar"
+                  meta={
+                    <span aria-live="polite" aria-atomic="true">
+                      {resultsSummary}
+                    </span>
                   }
                 />
-                {searchInput.trim().length > 0 ? (
-                  <button
-                    type="button"
-                    aria-label="Limpiar búsqueda"
-                    className={lightToolbarClearButtonClass}
-                    onClick={clearSearch}
-                  >
-                    <X className="size-3.5" aria-hidden />
-                  </button>
-                ) : null}
+                <div className="relative min-w-0">
+                  <Search
+                    className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground"
+                    aria-hidden
+                  />
+                  <Input
+                    ref={searchInputRef}
+                    id={searchInputId}
+                    type="search"
+                    value={searchInput}
+                    onChange={(e) => setSearchInput(e.target.value)}
+                    placeholder={searchPlaceholder}
+                    className={cn(
+                      lightToolbarInputClass,
+                      searchInput.trim().length > 0 && "pr-10",
+                    )}
+                    autoComplete="off"
+                    spellCheck={false}
+                    aria-label={
+                      activeView === "sales"
+                        ? "Buscar ventas"
+                        : activeView === "purchases"
+                          ? "Buscar compras"
+                          : "Buscar gastos"
+                    }
+                  />
+                  {searchInput.trim().length > 0 ? (
+                    <button
+                      type="button"
+                      aria-label="Limpiar búsqueda"
+                      className={lightToolbarClearButtonClass}
+                      onClick={clearSearch}
+                    >
+                      <X className="size-3.5" aria-hidden />
+                    </button>
+                  ) : null}
+                </div>
               </div>
             </div>
 
-            {hasSearchChip ? (
+            {hasFilterChips ? (
               <div
                 className="border-t border-border/80 bg-card px-4 py-3"
                 role="region"
@@ -454,27 +619,46 @@ function OperationsPage() {
                     variant="ghost"
                     size="sm"
                     className="h-8 px-2.5 text-xs font-medium text-muted-foreground hover:text-foreground"
-                    onClick={clearSearch}
+                    onClick={clearAllFilters}
                   >
                     Limpiar todo
                   </Button>
                 </div>
                 <div className="flex flex-wrap items-center gap-1.5">
-                  <Badge variant="secondary" className={lightFilterChipClass}>
-                    <span className="truncate">
-                      Buscar: «{searchInput.trim()}»
-                    </span>
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="icon"
-                      className="size-6 shrink-0"
-                      onClick={clearSearch}
-                      aria-label="Quitar búsqueda"
-                    >
-                      <X className="size-3" />
-                    </Button>
-                  </Badge>
+                  {hasSearchChip ? (
+                    <Badge variant="secondary" className={lightFilterChipClass}>
+                      <span className="truncate">
+                        Buscar: «{searchInput.trim()}»
+                      </span>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        className="size-6 shrink-0"
+                        onClick={clearSearch}
+                        aria-label="Quitar búsqueda"
+                      >
+                        <X className="size-3" />
+                      </Button>
+                    </Badge>
+                  ) : null}
+                  {dateFilterActive ? (
+                    <Badge variant="secondary" className={lightFilterChipClass}>
+                      <span className="truncate">
+                        Fecha: {dateFilterSummary}
+                      </span>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        className="size-6 shrink-0"
+                        onClick={clearDateFilter}
+                        aria-label="Quitar filtro de fecha"
+                      >
+                        <X className="size-3" />
+                      </Button>
+                    </Badge>
+                  ) : null}
                 </div>
               </div>
             ) : null}
@@ -506,6 +690,15 @@ function OperationsPage() {
             }
           >
             {activeView === "sales" ? (
+              <OperationsSalesTable
+                siteId={siteId}
+                popId={popId}
+                rows={pageSales}
+                listFetching={listFetching}
+                totalCount={totalCount}
+                hasActiveFilters={Boolean(searchInput.trim() || dateFilterActive)}
+              />
+            ) : activeView === "purchases" ? (
               <table
                 className={workspaceDataTableClassName}
                 aria-busy={listFetching}
@@ -520,7 +713,10 @@ function OperationsPage() {
                       Estado
                     </TableHead>
                     <TableHead className={cn(lightTableThClass, "text-left")}>
-                      Cliente
+                      Tipo
+                    </TableHead>
+                    <TableHead className={cn(lightTableThClass, "text-left")}>
+                      Proveedor
                     </TableHead>
                     <TableHead className={cn(lightTableThClass, "text-right")}>
                       Total
@@ -531,28 +727,28 @@ function OperationsPage() {
                   {listFetching ? (
                     <TableRow>
                       <TableCell
-                        colSpan={5}
+                        colSpan={6}
                         className="py-12 text-center text-muted-foreground"
                       >
-                        Cargando ventas…
+                        Cargando compras…
                       </TableCell>
                     </TableRow>
                   ) : totalCount === 0 ? (
                     <TableRow>
                       <TableCell
-                        colSpan={5}
+                        colSpan={6}
                         className="py-12 text-center text-muted-foreground"
                       >
-                        {searchInput.trim()
-                          ? "No hay ventas que coincidan con la búsqueda."
-                          : "No hay ventas registradas en este punto."}
+                        {searchInput.trim() || dateFilterActive
+                          ? "No hay compras que coincidan con los filtros."
+                          : "No hay compras confirmadas en este punto."}
                       </TableCell>
                     </TableRow>
                   ) : (
-                    pageSales.map((sale, i) => {
-                      const open = expandedId === sale.id
+                    pagePurchases.map((purchase, i) => {
+                      const open = expandedId === purchase.id
                       return (
-                        <Fragment key={sale.id}>
+                        <Fragment key={purchase.id}>
                           <TableRow
                             className={cn(
                               workspaceTableBodyRowClassNames(i),
@@ -568,12 +764,12 @@ function OperationsPage() {
                                 aria-expanded={open}
                                 aria-label={
                                   open
-                                    ? "Ocultar detalle de la venta"
-                                    : "Ver detalle de la venta"
+                                    ? "Ocultar detalle de la compra"
+                                    : "Ver detalle de la compra"
                                 }
                                 onClick={() =>
                                   setExpandedId((id) =>
-                                    id === sale.id ? null : sale.id,
+                                    id === purchase.id ? null : purchase.id,
                                   )
                                 }
                               >
@@ -585,56 +781,69 @@ function OperationsPage() {
                               </Button>
                             </TableCell>
                             <TableCell className="px-3 py-2.5 text-sm tabular-nums text-foreground">
-                              {formatDateTime(sale.soldAt)}
+                              {formatLedgerDate(purchase.operationDate)}
                             </TableCell>
                             <TableCell className="px-3 py-2.5">
                               <span
                                 className={cn(
                                   "inline-flex rounded-md border px-2 py-0.5 text-xs font-medium",
-                                  sale.status === "completed"
+                                  purchase.status === "paid"
                                     ? "border-emerald-500/35 bg-emerald-50 text-emerald-900"
-                                    : sale.status === "cancelled"
-                                      ? "border-border bg-muted text-muted-foreground"
-                                      : "border-amber-500/35 bg-amber-50 text-amber-950",
+                                    : purchase.status === "partial"
+                                      ? "border-sky-500/35 bg-sky-50 text-sky-900"
+                                      : purchase.status === "pending"
+                                        ? "border-amber-500/35 bg-amber-50 text-amber-950"
+                                        : purchase.status === "cancelled" ||
+                                            purchase.status === "voided"
+                                          ? "border-border bg-muted text-muted-foreground"
+                                          : "border-border bg-muted text-muted-foreground",
                                 )}
                               >
-                                {statusLabel(sale.status)}
+                                {purchaseStatusLabel(purchase.status)}
                               </span>
                             </TableCell>
+                            <TableCell className="px-3 py-2.5 text-sm text-foreground">
+                              {purchaseKindLabel(purchase.purchaseKind)}
+                            </TableCell>
                             <TableCell className="max-w-[200px] truncate px-3 py-2.5 text-sm text-foreground">
-                              {sale.customerName ?? "—"}
+                              {purchase.supplierName}
                             </TableCell>
                             <TableCell className="px-3 py-2.5 text-right text-sm font-semibold tabular-nums text-primary">
-                              {fmt.format(sale.total)}
+                              {fmt.format(purchase.total)}
                             </TableCell>
                           </TableRow>
                           {open ? (
                             <TableRow className="border-border/50 bg-muted/20 hover:bg-muted/20">
-                              <TableCell colSpan={5} className="p-0">
+                              <TableCell colSpan={6} className="p-0">
                                 <div className="space-y-4 px-4 py-4 sm:px-6">
                                   <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
                                     <div className="rounded-lg border border-border bg-card px-3 py-2">
                                       <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-                                        Subtotal (neto)
+                                        Comprobante
                                       </p>
-                                      <p className="text-sm font-medium tabular-nums text-foreground">
-                                        {fmt.format(sale.subtotal)}
-                                      </p>
-                                    </div>
-                                    <div className="rounded-lg border border-border bg-card px-3 py-2">
-                                      <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-                                        IVA
-                                      </p>
-                                      <p className="text-sm font-medium tabular-nums text-foreground">
-                                        {fmt.format(sale.taxTotal)}
+                                      <p className="text-sm font-medium text-foreground">
+                                        {purchase.documentNumber ?? "—"}
                                       </p>
                                     </div>
                                     <div className="rounded-lg border border-border bg-card px-3 py-2">
                                       <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-                                        Descuentos
+                                        Pagado
                                       </p>
                                       <p className="text-sm font-medium tabular-nums text-foreground">
-                                        {fmt.format(sale.discountTotal)}
+                                        {fmt.format(purchase.paidTotal)}
+                                      </p>
+                                    </div>
+                                    <div className="rounded-lg border border-border bg-card px-3 py-2">
+                                      <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+                                        Saldo
+                                      </p>
+                                      <p className="text-sm font-medium tabular-nums text-foreground">
+                                        {fmt.format(
+                                          Math.max(
+                                            0,
+                                            purchase.total - purchase.paidTotal,
+                                          ),
+                                        )}
                                       </p>
                                     </div>
                                     <div className="rounded-lg border border-border bg-card px-3 py-2">
@@ -642,23 +851,30 @@ function OperationsPage() {
                                         Moneda
                                       </p>
                                       <p className="text-sm font-medium text-foreground">
-                                        {sale.currency}
+                                        {purchase.currency}
                                       </p>
                                     </div>
                                   </div>
 
-                                  {sale.payments.length > 0 ? (
+                                  {purchase.payments.length > 0 ? (
                                     <div>
                                       <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                                        Cobros
+                                        Pagos
                                       </p>
                                       <ul className="space-y-1 rounded-lg border border-border bg-muted/50 px-3 py-2">
-                                        {sale.payments.map((p, pi) => (
+                                        {purchase.payments.map((p, pi) => (
                                           <li
-                                            key={`${sale.id}-p-${pi}`}
-                                            className="flex justify-between text-sm text-foreground"
+                                            key={`${purchase.id}-p-${pi}`}
+                                            className="flex justify-between gap-3 text-sm text-foreground"
                                           >
-                                            <span>{p.methodName}</span>
+                                            <span>
+                                              {p.methodName}
+                                              {p.paidAt ? (
+                                                <span className="ml-2 text-xs text-muted-foreground">
+                                                  {formatLedgerDate(p.paidAt)}
+                                                </span>
+                                              ) : null}
+                                            </span>
                                             <span className="tabular-nums">
                                               {fmt.format(p.amount)}
                                             </span>
@@ -683,13 +899,10 @@ function OperationsPage() {
                                               Cant.
                                             </TableHead>
                                             <TableHead className="text-right font-semibold text-foreground">
-                                              P. unit.
+                                              Costo unit.
                                             </TableHead>
                                             <TableHead className="text-right font-semibold text-foreground">
                                               IVA %
-                                            </TableHead>
-                                            <TableHead className="text-right font-semibold text-foreground">
-                                              Desc.
                                             </TableHead>
                                             <TableHead className="text-right font-semibold text-foreground">
                                               Línea
@@ -697,50 +910,44 @@ function OperationsPage() {
                                           </TableRow>
                                         </TableHeader>
                                         <TableBody>
-                                          {sale.lineItems.length === 0 ? (
+                                          {purchase.lineItems.length === 0 ? (
                                             <TableRow className="border-border">
                                               <TableCell
-                                                colSpan={6}
+                                                colSpan={5}
                                                 className="text-center text-muted-foreground"
                                               >
                                                 Sin líneas en el comprobante.
                                               </TableCell>
                                             </TableRow>
                                           ) : (
-                                            sale.lineItems.map((line, li) => (
-                                              <TableRow
-                                                key={`${sale.id}-line-${li}`}
-                                                className="border-border"
-                                              >
-                                                <TableCell className="max-w-[220px]">
-                                                  <span className="font-medium text-foreground">
-                                                    {line.nameSnapshot}
-                                                  </span>
-                                                  {line.comment ? (
-                                                    <span className="mt-0.5 block text-xs text-muted-foreground">
-                                                      {line.comment}
+                                            purchase.lineItems.map(
+                                              (line, li) => (
+                                                <TableRow
+                                                  key={`${purchase.id}-line-${li}`}
+                                                  className="border-border"
+                                                >
+                                                  <TableCell className="max-w-[220px]">
+                                                    <span className="font-medium text-foreground">
+                                                      {line.nameSnapshot}
                                                     </span>
-                                                  ) : null}
-                                                </TableCell>
-                                                <TableCell className="text-right text-sm tabular-nums text-foreground">
-                                                  {formatQty(line.quantity)}
-                                                </TableCell>
-                                                <TableCell className="text-right text-sm tabular-nums text-foreground">
-                                                  {fmt.format(line.unitPrice)}
-                                                </TableCell>
-                                                <TableCell className="text-right text-sm tabular-nums text-foreground">
-                                                  {line.iva > 0
-                                                    ? `${line.iva}%`
-                                                    : "—"}
-                                                </TableCell>
-                                                <TableCell className="text-right text-sm tabular-nums text-foreground">
-                                                  {fmt.format(line.lineDiscount)}
-                                                </TableCell>
-                                                <TableCell className="text-right text-sm font-medium tabular-nums text-primary">
-                                                  {fmt.format(line.lineTotal)}
-                                                </TableCell>
-                                              </TableRow>
-                                            ))
+                                                  </TableCell>
+                                                  <TableCell className="text-right text-sm tabular-nums text-foreground">
+                                                    {formatQty(line.quantity)}
+                                                  </TableCell>
+                                                  <TableCell className="text-right text-sm tabular-nums text-foreground">
+                                                    {fmt.format(line.unitCost)}
+                                                  </TableCell>
+                                                  <TableCell className="text-right text-sm tabular-nums text-foreground">
+                                                    {line.iva > 0
+                                                      ? `${line.iva}%`
+                                                      : "—"}
+                                                  </TableCell>
+                                                  <TableCell className="text-right text-sm font-medium tabular-nums text-primary">
+                                                    {fmt.format(line.lineTotal)}
+                                                  </TableCell>
+                                                </TableRow>
+                                              ),
+                                            )
                                           )}
                                         </TableBody>
                                       </table>
@@ -796,8 +1003,8 @@ function OperationsPage() {
                         colSpan={5}
                         className="py-12 text-center text-muted-foreground"
                       >
-                        {searchInput.trim()
-                          ? "No hay gastos que coincidan con la búsqueda."
+                        {searchInput.trim() || dateFilterActive
+                          ? "No hay gastos que coincidan con los filtros."
                           : "No hay pagos de gastos contabilizados en este punto."}
                       </TableCell>
                     </TableRow>

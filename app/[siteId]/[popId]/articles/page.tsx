@@ -41,6 +41,7 @@ import {
   workspaceTableBodyRowClassNames,
 } from "@/components/data-workspace/dataWorkspaceListStyles"
 import { DataWorkspaceLayout } from "@/components/layouts/DataWorkspaceLayout"
+import { DataWorkspaceHeaderIconButton } from "@/components/layouts/DataWorkspaceHeaderIconButton"
 import { DataWorkspaceSectionMenu } from "@/components/layouts/DataWorkspaceSectionMenu"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -337,11 +338,6 @@ function ArticlesPage() {
   )
   const [editingCategoryName, setEditingCategoryName] = useState("")
   const [categorySaveBusy, setCategorySaveBusy] = useState(false)
-
-  const sidebarActiveId =
-    workspaceParsed.view === "new-article"
-      ? CREATION_NEW_ARTICLE.id
-      : workspaceParsed.view
 
   const createOpen = Boolean(
     canCreate && workspaceParsed.view === "new-article",
@@ -764,11 +760,6 @@ function ArticlesPage() {
 
   const emptyCols = 7 + (canUpdate || canDelete ? 1 : 0)
 
-  const creationItems = useMemo(
-    () => (canCreate ? [CREATION_NEW_ARTICLE] : []),
-    [canCreate],
-  )
-
   const totalPages = useMemo(
     () =>
       Math.max(
@@ -842,8 +833,6 @@ function ArticlesPage() {
     searchInputRef.current?.focus()
   }, [replaceWorkspaceQuery])
 
-  const sectionActiveId = sidebarActiveId
-
   if (!popId || !siteId) {
     return (
       <div className="rootsy-app-light min-h-screen bg-background p-10 text-foreground">
@@ -870,42 +859,48 @@ function ArticlesPage() {
       headerActions={
         <>
           {canCreate ? (
-            <button
-              type="button"
+            <DataWorkspaceHeaderIconButton
+              label="Nuevo artículo"
+              headerVariant="dark"
+              primary
+              onClick={openCreate}
+            >
+              <Plus className="size-5" aria-hidden />
+            </DataWorkspaceHeaderIconButton>
+          ) : null}
+          {canCreate ? (
+            <DataWorkspaceHeaderIconButton
+              label="Nueva categoría"
+              headerVariant="dark"
               onClick={() => {
                 setQuickNewCategoryBanner(null)
                 setQuickNewCategoryName("")
                 setQuickNewCategoryOpen(true)
               }}
-              className="group inline-flex size-9 items-center justify-center rounded-xl text-zinc-400 transition-colors hover:bg-white/10 hover:text-white"
-              aria-label="Nueva categoría"
-              title="Nueva categoría"
             >
-              <Tag className="size-4.5" aria-hidden />
-            </button>
+              <Tag className="size-5" aria-hidden />
+            </DataWorkspaceHeaderIconButton>
           ) : null}
-          <button
-            type="button"
+          <DataWorkspaceHeaderIconButton
+            label="Gestionar categorías"
+            headerVariant="dark"
             onClick={() => {
               setCategoriesOpen(true)
               void loadModalCategories()
             }}
-            className="group inline-flex size-9 items-center justify-center rounded-xl text-zinc-400 transition-colors hover:bg-white/10 hover:text-white"
-            aria-label="Gestionar categorías"
-            title="Categorías"
           >
-            <FolderTree className="size-4.5" aria-hidden />
-          </button>
+            <FolderTree className="size-5" aria-hidden />
+          </DataWorkspaceHeaderIconButton>
         </>
       }
       sectionMenu={
         <DataWorkspaceSectionMenu
           headerVariant="dark"
-          creationItems={creationItems}
           viewItems={VIEW_ITEMS}
-          activeId={sectionActiveId}
+          activeId={
+            workspaceParsed.view === "new-article" ? "list" : workspaceParsed.view
+          }
           onSelect={handleSidebarSelect}
-          creationSectionLabel="Nuevo"
           viewsSectionLabel="En esta sección"
         />
       }
