@@ -1,6 +1,11 @@
 "use client"
 
-import type { OperationSaleRow } from "@/app/[siteId]/[popId]/operations/actions"
+import type {
+  OperationSaleLineItem,
+  OperationSaleRow,
+} from "@/app/[siteId]/[popId]/operations/actions"
+import { OperationAccountingViewButton } from "@/app/[siteId]/[popId]/operations/OperationAccountingModal"
+import { OperationsSalesSkeletonRows } from "@/app/[siteId]/[popId]/operations/OperationsTableSkeleton"
 import { Button } from "@/components/ui/button"
 import {
   Dialog,
@@ -12,8 +17,16 @@ import {
 import {
   lightTableThClass,
   tdMoneyClass,
-  workspaceDataTableClassName,
+  tdMoneyDiscountClass,
+  tdMoneyMutedClass,
+  tdMoneyTotalClass,
+  tdMoneyVatClass,
+  tdClientAnonymousClass,
+  tdClientLinkedClass,
+  tdClientNamedClass,
   workspaceTableBodyRowClassNames,
+  workspaceTableHeaderRowClass,
+  workspaceTablePlaceholderRowClass,
 } from "@/components/data-workspace/dataWorkspaceListStyles"
 import { popScopedHref } from "@/lib/popRoutes"
 import { cn } from "@/lib/utils"
@@ -135,6 +148,129 @@ function saleHasComprobante(sale: OperationSaleRow): boolean {
   return Boolean(sale.arcaInvoice || sale.invoiceTypeLabel)
 }
 
+const opsDialogLight = "rootsy-app-light text-foreground"
+const opsDialogSurfaceMd = cn(
+  opsDialogLight,
+  "gap-0 overflow-hidden rounded-2xl border border-border/60 bg-card p-0 shadow-2xl ring-1 ring-black/[0.04] sm:max-w-2xl",
+  "max-h-[min(90vh,760px)] flex flex-col overflow-hidden",
+)
+const opsDialogSurfaceLg = cn(
+  opsDialogLight,
+  "gap-0 overflow-hidden rounded-2xl border border-border/60 bg-card p-0 shadow-2xl ring-1 ring-black/[0.04] sm:max-w-lg",
+  "max-h-[min(90vh,720px)] flex flex-col overflow-hidden",
+)
+const opsDialogHeader =
+  "shrink-0 space-y-1.5 border-b border-border/50 bg-muted/25 px-6 pb-4 pt-5 text-left"
+const opsDialogBody =
+  "min-h-0 flex-1 overflow-y-auto overscroll-contain px-6 py-4"
+
+function roundMoney(n: number): number {
+  if (!Number.isFinite(n)) return 0
+  return Math.round(n * 100) / 100
+}
+
+function resolveLineSubtotal(
+  line: OperationSaleLineItem,
+  sale: OperationSaleRow,
+): number {
+  if (line.lineSubtotal != null && line.lineSubtotal > 0) {
+    return line.lineSubtotal
+  }
+  const subBeforeGeneral = sale.discountInfo.subtotalBeforeGeneralDiscount
+  if (
+    subBeforeGeneral != null &&
+    subBeforeGeneral > 0 &&
+    sale.total > 0 &&
+    line.lineTotal > 0
+  ) {
+    return roundMoney((line.lineTotal * subBeforeGeneral) / sale.total)
+  }
+  return line.lineTotal
+}
+
+function resolveItemDiscountAmount(
+  line: OperationSaleLineItem,
+  sale: OperationSaleRow,
+): number {
+  if (line.itemDiscountAmount > 0) return line.itemDiscountAmount
+  const gross = roundMoney(line.quantity * line.unitPrice)
+  const lineSub = resolveLineSubtotal(line, sale)
+  const guess = roundMoney(gross - lineSub)
+  return guess > 0 ? guess : 0
+}
+
+function formatItemDiscountType(line: OperationSaleLineItem): string {
+  if (line.itemDiscountAmount <= 0 && line.itemDiscountValue == null) {
+    return "—"
+  }
+  if (line.itemDiscountMode === "porcentaje" && line.itemDiscountValue != null) {
+    const pct = Number.isInteger(line.itemDiscountValue)
+      ? String(line.itemDiscountValue)
+      : line.itemDiscountValue.toLocaleString("es-AR", {
+          maximumFractionDigits: 2,
+        })
+    return `${pct} %`
+  }
+  if (line.itemDiscountMode === "fijo") return "Monto fijo"
+  return "—"
+}
+
+function formatGeneralDiscountRowLabel(
+  info: OperationSaleRow["discountInfo"],
+): string {
+  if (info.generalDiscountAmount <= 0) return "Descuento general"
+  if (info.generalDiscountMode === "porcentaje" && info.generalDiscountValue != null) {
+    const pct = Number.isInteger(info.generalDiscountValue)
+      ? String(info.generalDiscountValue)
+      : info.generalDiscountValue.toLocaleString("es-AR", {
+          maximumFractionDigits: 2,
+        })
+    return `Descuento general (${pct} %)`
+  }
+  if (info.generalDiscountMode === "fijo" && info.generalDiscountValue != null) {
+    return `Descuento general (${fmt.format(info.generalDiscountValue)})`
+  }
+  return "Descuento general"
+}
+
+function SaleDetailTotalsRow({
+  label,
+  value,
+  emphasize = false,
+  negative = false,
+  valueClassName,
+}: {
+  label: string
+  value: string
+  emphasize?: boolean
+  negative?: boolean
+  valueClassName?: string
+}) {
+  return (
+    <div className="flex items-baseline justify-between gap-4 py-1.5">
+      <span
+        className={cn(
+          "text-sm text-muted-foreground",
+          emphasize && "font-semibold text-foreground",
+        )}
+      >
+        {label}
+      </span>
+      <span
+        className={cn(
+          "shrink-0 text-sm tabular-nums",
+          emphasize ? "text-base font-semibold text-primary" : "font-medium text-foreground",
+          negative && !emphasize && "text-amber-800",
+          tdMoneyClass,
+          valueClassName,
+        )}
+      >
+        {value}
+      </span>
+    </div>
+  )
+}
+
 function SaleDetailDialog({
   sale,
   open,
@@ -147,64 +283,160 @@ function SaleDetailDialog({
   if (!sale) return null
 
   const when = formatOperationSaleDateTime(sale.soldAt)
+  const subtotalBeforeGeneral =
+    sale.discountInfo.subtotalBeforeGeneralDiscount ??
+    roundMoney(
+      sale.lineItems.reduce(
+        (sum, line) => sum + resolveLineSubtotal(line, sale),
+        0,
+      ),
+    )
+  const generalDiscount = sale.discountInfo.generalDiscountAmount
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-h-[min(90vh,760px)] gap-0 overflow-hidden border-border bg-card p-0 sm:max-w-2xl">
-        <DialogHeader className="border-b border-border px-6 py-4 text-left">
-          <DialogTitle className="text-lg font-semibold tracking-tight">
+      <DialogContent className={opsDialogSurfaceMd}>
+        <DialogHeader className={opsDialogHeader}>
+          <DialogTitle className="text-base font-semibold tracking-tight">
             Detalle de venta
           </DialogTitle>
-          <DialogDescription className="text-sm text-muted-foreground">
+          <DialogDescription className="text-sm leading-relaxed">
             {when.primary}
-            {when.secondary ? ` · ${when.secondary}` : ""} —{" "}
-            <span className="font-mono">{formatOperationShortId(sale.id)}</span>
+            {when.secondary ? ` · ${when.secondary}` : ""} ·{" "}
+            {sale.customerName ?? "Consumidor final"} ·{" "}
+            {saleStatusLabel(sale.status)}
           </DialogDescription>
         </DialogHeader>
-        <div className="max-h-[min(calc(90vh-5rem),640px)] overflow-y-auto px-6 py-4">
-          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-            <div className="rounded-lg border border-border bg-muted/20 px-3 py-2">
-              <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-                Estado
-              </p>
-              <p className="text-sm font-medium text-foreground">
-                {saleStatusLabel(sale.status)}
-              </p>
-            </div>
-            <div className="rounded-lg border border-border bg-muted/20 px-3 py-2">
-              <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-                Cliente
-              </p>
-              <p className="text-sm font-medium text-foreground">
-                {sale.customerName ?? "Consumidor final"}
-              </p>
-            </div>
-            <div className="rounded-lg border border-border bg-muted/20 px-3 py-2">
-              <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-                {sale.accruesOutputVat ? "Subtotal (neto)" : "Importe"}
-              </p>
-              <p className={cn("text-sm font-medium", tdMoneyClass)}>
-                {fmt.format(sale.subtotal)}
-              </p>
-            </div>
-            {sale.accruesOutputVat ? (
-              <div className="rounded-lg border border-border bg-muted/20 px-3 py-2">
-                <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-                  IVA
-                </p>
-                <p className={cn("text-sm font-medium", tdMoneyClass)}>
-                  {fmt.format(sale.taxTotal)}
-                </p>
-              </div>
+        <div className={opsDialogBody}>
+          <p className="mb-4 break-all font-mono text-[11px] text-muted-foreground">
+            {sale.id}
+          </p>
+
+          <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+            Ítems
+          </p>
+          <div className="overflow-x-auto rounded-lg border border-border">
+            <table className="w-full caption-bottom text-sm">
+              <thead>
+                <tr className="border-b border-border bg-muted/40">
+                  <th className="px-3 py-2 text-left text-xs font-semibold text-foreground">
+                    Producto
+                  </th>
+                  <th className="px-3 py-2 text-right text-xs font-semibold text-foreground">
+                    Cant.
+                  </th>
+                  <th className="px-3 py-2 text-right text-xs font-semibold text-foreground">
+                    P. unit.
+                  </th>
+                  <th className="px-3 py-2 text-right text-xs font-semibold text-foreground">
+                    Desc. tipo
+                  </th>
+                  <th className="px-3 py-2 text-right text-xs font-semibold text-foreground">
+                    Desc. importe
+                  </th>
+                  <th className="px-3 py-2 text-right text-xs font-semibold text-foreground">
+                    Línea
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {sale.lineItems.length === 0 ? (
+                  <tr>
+                    <td
+                      colSpan={6}
+                      className="px-3 py-6 text-center text-muted-foreground"
+                    >
+                      Sin líneas registradas.
+                    </td>
+                  </tr>
+                ) : (
+                  sale.lineItems.map((line, li) => {
+                    const itemDiscount = resolveItemDiscountAmount(line, sale)
+                    const lineSubtotal = resolveLineSubtotal(line, sale)
+                    const discountType =
+                      itemDiscount > 0
+                        ? formatItemDiscountType({
+                            ...line,
+                            itemDiscountAmount: itemDiscount,
+                          })
+                        : "—"
+
+                    return (
+                      <tr
+                        key={`${sale.id}-line-${li}`}
+                        className="border-b border-border/60"
+                      >
+                        <td className="max-w-[200px] px-3 py-2">
+                          <span className="font-medium text-foreground">
+                            {line.nameSnapshot}
+                          </span>
+                          {line.comment ? (
+                            <span className="mt-0.5 block text-xs text-muted-foreground">
+                              {line.comment}
+                            </span>
+                          ) : null}
+                        </td>
+                        <td className={cn("px-3 py-2 text-right", tdMoneyClass)}>
+                          {formatQty(line.quantity)}
+                        </td>
+                        <td className={cn("px-3 py-2 text-right", tdMoneyClass)}>
+                          {fmt.format(line.unitPrice)}
+                        </td>
+                        <td className={cn("px-3 py-2 text-right", tdMoneyClass)}>
+                          {discountType}
+                        </td>
+                        <td className={cn("px-3 py-2 text-right", tdMoneyClass)}>
+                          {itemDiscount > 0 ? fmt.format(itemDiscount) : "—"}
+                        </td>
+                        <td
+                          className={cn(
+                            "px-3 py-2 text-right font-medium text-foreground",
+                            tdMoneyClass,
+                          )}
+                        >
+                          {fmt.format(lineSubtotal)}
+                        </td>
+                      </tr>
+                    )
+                  })
+                )}
+              </tbody>
+            </table>
+          </div>
+
+          <div className="mt-4 rounded-lg border border-border bg-muted/20 px-4 py-3">
+            <SaleDetailTotalsRow
+              label="Subtotal"
+              value={fmt.format(subtotalBeforeGeneral)}
+            />
+            {generalDiscount > 0 ? (
+              <SaleDetailTotalsRow
+                label={formatGeneralDiscountRowLabel(sale.discountInfo)}
+                value={`−${fmt.format(generalDiscount)}`}
+                negative
+              />
             ) : null}
-            <div className="rounded-lg border border-border bg-muted/20 px-3 py-2">
-              <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-                Total
-              </p>
-              <p className={cn("text-sm font-semibold text-primary", tdMoneyClass)}>
-                {fmt.format(sale.total)}
-              </p>
-            </div>
+            <div className="my-2 border-t border-border/60" />
+            <SaleDetailTotalsRow
+              label="Total"
+              value={fmt.format(sale.total)}
+              emphasize
+            />
+            {sale.accruesOutputVat ? (
+              <SaleDetailTotalsRow
+                label="IVA"
+                value={
+                  sale.taxTotal > 0 ? fmt.format(sale.taxTotal) : "—"
+                }
+                valueClassName={
+                  sale.taxTotal > 0 ? tdMoneyVatClass : undefined
+                }
+              />
+            ) : null}
+            <SaleDetailTotalsRow
+              label="Forma de pago"
+              value={sale.paymentMethodLabel}
+            />
           </div>
 
           {sale.payments.length > 0 ? (
@@ -225,89 +457,6 @@ function SaleDetailDialog({
               </ul>
             </div>
           ) : null}
-
-          <div className="mt-4">
-            <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-              Ítems ({sale.lineItems.length})
-            </p>
-            <div className="overflow-x-auto rounded-lg border border-border">
-              <table className="w-full caption-bottom text-sm">
-                <thead>
-                  <tr className="border-b border-border bg-muted/40">
-                    <th className="px-3 py-2 text-left text-xs font-semibold text-foreground">
-                      Producto
-                    </th>
-                    <th className="px-3 py-2 text-right text-xs font-semibold text-foreground">
-                      Cant.
-                    </th>
-                    <th className="px-3 py-2 text-right text-xs font-semibold text-foreground">
-                      P. unit.
-                    </th>
-                    {sale.accruesOutputVat ? (
-                      <th className="px-3 py-2 text-right text-xs font-semibold text-foreground">
-                        IVA %
-                      </th>
-                    ) : null}
-                    <th className="px-3 py-2 text-right text-xs font-semibold text-foreground">
-                      Desc.
-                    </th>
-                    <th className="px-3 py-2 text-right text-xs font-semibold text-foreground">
-                      Línea
-                    </th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {sale.lineItems.length === 0 ? (
-                    <tr>
-                      <td
-                        colSpan={sale.accruesOutputVat ? 6 : 5}
-                        className="px-3 py-6 text-center text-muted-foreground"
-                      >
-                        Sin líneas en el comprobante.
-                      </td>
-                    </tr>
-                  ) : (
-                    sale.lineItems.map((line, li) => (
-                      <tr key={`${sale.id}-line-${li}`} className="border-b border-border/60">
-                        <td className="max-w-[220px] px-3 py-2">
-                          <span className="font-medium text-foreground">
-                            {line.nameSnapshot}
-                          </span>
-                          {line.comment ? (
-                            <span className="mt-0.5 block text-xs text-muted-foreground">
-                              {line.comment}
-                            </span>
-                          ) : null}
-                        </td>
-                        <td className={cn("px-3 py-2 text-right", tdMoneyClass)}>
-                          {formatQty(line.quantity)}
-                        </td>
-                        <td className={cn("px-3 py-2 text-right", tdMoneyClass)}>
-                          {fmt.format(line.unitPrice)}
-                        </td>
-                        {sale.accruesOutputVat ? (
-                          <td className={cn("px-3 py-2 text-right", tdMoneyClass)}>
-                            {line.iva > 0 ? `${line.iva}%` : "—"}
-                          </td>
-                        ) : null}
-                        <td className={cn("px-3 py-2 text-right", tdMoneyClass)}>
-                          {fmt.format(line.lineDiscount)}
-                        </td>
-                        <td
-                          className={cn(
-                            "px-3 py-2 text-right font-medium text-primary",
-                            tdMoneyClass,
-                          )}
-                        >
-                          {fmt.format(line.lineTotal)}
-                        </td>
-                      </tr>
-                    ))
-                  )}
-                </tbody>
-              </table>
-            </div>
-          </div>
         </div>
       </DialogContent>
     </Dialog>
@@ -330,16 +479,16 @@ function SaleInvoiceDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-h-[min(90vh,720px)] gap-0 overflow-hidden border-border bg-card p-0 sm:max-w-lg">
-        <DialogHeader className="border-b border-border px-6 py-4 text-left">
-          <DialogTitle className="text-lg font-semibold tracking-tight">
+      <DialogContent className={opsDialogSurfaceLg}>
+        <DialogHeader className={opsDialogHeader}>
+          <DialogTitle className="text-base font-semibold tracking-tight">
             Comprobante
           </DialogTitle>
-          <DialogDescription className="text-sm text-muted-foreground">
+          <DialogDescription className="text-sm leading-relaxed">
             {tipo !== "—" ? tipo : "Sin tipo fiscal registrado"}
           </DialogDescription>
         </DialogHeader>
-        <div className="max-h-[min(calc(90vh-5rem),580px)] overflow-y-auto px-6 py-4">
+        <div className={opsDialogBody}>
           {!saleHasComprobante(sale) ? (
             <p className="text-sm text-muted-foreground">
               Esta venta no tiene comprobante fiscal asociado.
@@ -509,6 +658,8 @@ export function OperationsSalesTable({
   listFetching,
   totalCount,
   hasActiveFilters,
+  skeletonRowCount,
+  onOpenAccounting,
 }: {
   siteId: string
   popId: string
@@ -516,6 +667,8 @@ export function OperationsSalesTable({
   listFetching: boolean
   totalCount: number
   hasActiveFilters: boolean
+  skeletonRowCount: number
+  onOpenAccounting: (sale: OperationSaleRow) => void
 }) {
   const [detailSale, setDetailSale] = useState<OperationSaleRow | null>(null)
   const [invoiceSale, setInvoiceSale] = useState<OperationSaleRow | null>(null)
@@ -531,14 +684,14 @@ export function OperationsSalesTable({
   return (
     <>
       <table
-        className={cn(workspaceDataTableClassName, "min-w-[88rem]")}
+        className={cn(
+          "relative w-max min-w-full caption-bottom text-sm",
+          "[&_th:last-child]:pr-5 [&_td:last-child]:pr-5",
+        )}
         aria-busy={listFetching}
       >
         <TableHeader>
-          <TableRow className="border-0 hover:bg-transparent">
-            <TableHead className={cn(lightTableThClass, "w-[5.5rem] text-left")}>
-              ID
-            </TableHead>
+          <TableRow className={workspaceTableHeaderRowClass}>
             <TableHead className={cn(lightTableThClass, "w-[7.5rem] text-left")}>
               Fecha
             </TableHead>
@@ -560,22 +713,24 @@ export function OperationsSalesTable({
             <TableHead className={cn(lightTableThClass, "text-right")}>
               IVA
             </TableHead>
+            <TableHead className={cn(lightTableThClass, "min-w-[8rem] text-left")}>
+              Forma de pago
+            </TableHead>
+            <TableHead className={cn(lightTableThClass, "w-[6.5rem] text-center")}>
+              Asientos
+            </TableHead>
+            <TableHead className={cn(lightTableThClass, "min-w-[19rem] text-left")}>
+              ID
+            </TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
           {listFetching ? (
-            <TableRow>
-              <TableCell
-                colSpan={8}
-                className="py-12 text-center text-muted-foreground"
-              >
-                Cargando ventas…
-              </TableCell>
-            </TableRow>
+            <OperationsSalesSkeletonRows rowCount={skeletonRowCount} />
           ) : totalCount === 0 ? (
-            <TableRow>
+            <TableRow className={workspaceTablePlaceholderRowClass}>
               <TableCell
-                colSpan={8}
+                colSpan={10}
                 className="py-12 text-center text-muted-foreground"
               >
                 {emptyMessage}
@@ -593,14 +748,6 @@ export function OperationsSalesTable({
                   className={workspaceTableBodyRowClassNames(i)}
                 >
                   <TableCell className="px-3 py-2.5">
-                    <span
-                      className="font-mono text-xs text-muted-foreground"
-                      title={sale.id}
-                    >
-                      {formatOperationShortId(sale.id)}
-                    </span>
-                  </TableCell>
-                  <TableCell className="px-3 py-2.5">
                     <span className="block text-sm font-medium text-foreground">
                       {when.primary}
                     </span>
@@ -614,13 +761,17 @@ export function OperationsSalesTable({
                     {sale.clientId && sale.customerName ? (
                       <Link
                         href={clientsSearchHref(siteId, popId, sale.customerName)}
-                        className="truncate font-medium text-primary underline-offset-2 hover:underline"
+                        className={tdClientLinkedClass}
                         title={`Ver ${sale.customerName} en Clientes`}
                       >
                         {clientLabel}
                       </Link>
+                    ) : sale.customerName ? (
+                      <span className={tdClientNamedClass} title={clientLabel}>
+                        {clientLabel}
+                      </span>
                     ) : (
-                      <span className="truncate text-foreground">{clientLabel}</span>
+                      <span className={tdClientAnonymousClass}>{clientLabel}</span>
                     )}
                   </TableCell>
                   <TableCell className="px-2 py-2.5 text-center">
@@ -659,29 +810,52 @@ export function OperationsSalesTable({
                   </TableCell>
                   <TableCell
                     className={cn(
-                      "px-3 py-2.5 text-right text-sm font-semibold text-primary",
-                      tdMoneyClass,
+                      "px-3 py-2.5 text-right text-sm",
+                      tdMoneyTotalClass,
                     )}
                   >
                     {fmt.format(sale.total)}
                   </TableCell>
-                  <TableCell
-                    className={cn(
-                      "px-3 py-2.5 text-right text-sm text-foreground",
-                      tdMoneyClass,
+                  <TableCell className="px-3 py-2.5 text-right text-sm">
+                    {sale.discountTotal > 0 ? (
+                      <span className={tdMoneyDiscountClass}>
+                        {fmt.format(sale.discountTotal)}
+                      </span>
+                    ) : (
+                      <span className={tdMoneyMutedClass}>—</span>
                     )}
-                  >
-                    {sale.discountTotal > 0 ? fmt.format(sale.discountTotal) : "—"}
                   </TableCell>
-                  <TableCell
-                    className={cn(
-                      "px-3 py-2.5 text-right text-sm text-foreground",
-                      tdMoneyClass,
+                  <TableCell className="px-3 py-2.5 text-right text-sm">
+                    {sale.accruesOutputVat && sale.taxTotal > 0 ? (
+                      <span className={tdMoneyVatClass}>
+                        {fmt.format(sale.taxTotal)}
+                      </span>
+                    ) : (
+                      <span className={tdMoneyMutedClass}>—</span>
                     )}
-                  >
-                    {sale.accruesOutputVat && sale.taxTotal > 0
-                      ? fmt.format(sale.taxTotal)
-                      : "—"}
+                  </TableCell>
+                  <TableCell className="max-w-[12rem] px-3 py-2.5 text-sm text-foreground">
+                    {sale.paymentMethodLabel !== "—" ? (
+                      <span
+                        className="line-clamp-2"
+                        title={sale.paymentMethodLabel}
+                      >
+                        {sale.paymentMethodLabel}
+                      </span>
+                    ) : (
+                      <span className={tdMoneyMutedClass}>—</span>
+                    )}
+                  </TableCell>
+                  <TableCell className="px-2 py-2.5 text-center">
+                    <OperationAccountingViewButton
+                      onClick={() => onOpenAccounting(sale)}
+                      label={`Ver asientos contables de la venta ${sale.id}`}
+                    />
+                  </TableCell>
+                  <TableCell className="min-w-[19rem] whitespace-nowrap px-3 py-2.5 pr-5">
+                    <span className="font-mono text-[11px] leading-snug text-muted-foreground">
+                      {sale.id}
+                    </span>
                   </TableCell>
                 </TableRow>
               )

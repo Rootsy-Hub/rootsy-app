@@ -286,6 +286,7 @@ export async function completePurchase(
         currency: "ARS",
         status: "pending",
         notes: input.notes?.trim() || "",
+        metadata: payOnAccount ? { pay_on_supplier_account: true } : {},
         created_by: user.uid,
       })
       .select("id")

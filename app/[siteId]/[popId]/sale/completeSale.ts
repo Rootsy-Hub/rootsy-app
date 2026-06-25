@@ -2,6 +2,7 @@
 
 import {
   CHART_COSTO_VENTAS_CODES,
+  CHART_CUENTAS_POR_COBRAR_CODES,
   CHART_IVA_PAGAR_CODES,
   CHART_MERCADERIAS_CODES,
   CHART_VENTAS_GRAVADAS_CODES,
@@ -197,7 +198,8 @@ export type CompleteSaleInput = {
   siteId: string
   lines: CompleteSaleLineInput[]
   clientId: string | null
-  paymentMethodId: string
+  paymentMethodId?: string | null
+  payOnClientAccount?: boolean
   generalDiscountMode: "porcentaje" | "fijo"
   valorDescuentoPorcentaje: number
   valorDescuentoFijo: number
@@ -273,36 +275,53 @@ export async function completeSale(
     }
     const { sessionId: cashRegisterSessionId, cashRegisterId } = cashRes.ctx
 
-    const pmId = input.paymentMethodId.trim()
-    if (!pmId) {
-      return { success: false, error: "Elegí un medio de pago." }
-    }
-    const { data: pmRow, error: pmErr } = await supabase
-      .from("payment_methods")
-      .select("id, kind, accounting_account_id")
-      .eq("id", pmId)
-      .eq("pop_id", popId)
-      .eq("is_active", true)
-      .maybeSingle()
-    if (pmErr || !pmRow?.id) {
-      return { success: false, error: "Medio de pago no válido en este punto." }
-    }
-    const pmKind = String(pmRow.kind ?? "other")
-    let paymentAccountId = await resolvePaymentMethodLedgerAccount(
-      supabase,
-      popId,
-      pmId,
-      "receive",
-    )
-    if (!paymentAccountId) {
-      const codes = PAYMENT_KIND_ACCOUNT_FALLBACK[pmKind] ?? PAYMENT_KIND_ACCOUNT_FALLBACK.other
-      paymentAccountId = await resolveAccountId(supabase, popId, codes)
-    }
-    if (!paymentAccountId) {
+    const payOnClientAccount = Boolean(input.payOnClientAccount)
+    const pmId = input.paymentMethodId?.trim() || null
+
+    if (!payOnClientAccount && !pmId) {
       return {
         success: false,
-        error:
-          "Configurá una cuenta contable en el medio de pago o el plan de cuentas (caja/bancos) para registrar el cobro.",
+        error: "Elegí un medio de pago o registrá la venta a cuenta corriente del cliente.",
+      }
+    }
+
+    if (payOnClientAccount && !input.clientId?.trim()) {
+      return {
+        success: false,
+        error: "Para vender a cuenta corriente tenés que elegir un cliente.",
+      }
+    }
+
+    let paymentAccountId: string | null = null
+    if (!payOnClientAccount && pmId) {
+      const { data: pmRow, error: pmErr } = await supabase
+        .from("payment_methods")
+        .select("id, kind, accounting_account_id")
+        .eq("id", pmId)
+        .eq("pop_id", popId)
+        .eq("is_active", true)
+        .maybeSingle()
+      if (pmErr || !pmRow?.id) {
+        return { success: false, error: "Medio de pago no válido en este punto." }
+      }
+      const pmKind = String(pmRow.kind ?? "other")
+      paymentAccountId = await resolvePaymentMethodLedgerAccount(
+        supabase,
+        popId,
+        pmId,
+        "receive",
+      )
+      if (!paymentAccountId) {
+        const codes =
+          PAYMENT_KIND_ACCOUNT_FALLBACK[pmKind] ?? PAYMENT_KIND_ACCOUNT_FALLBACK.other
+        paymentAccountId = await resolveAccountId(supabase, popId, codes)
+      }
+      if (!paymentAccountId) {
+        return {
+          success: false,
+          error:
+            "Configurá una cuenta contable en el medio de pago o el plan de cuentas (caja/bancos) para registrar el cobro.",
+        }
       }
     }
 
@@ -339,6 +358,8 @@ export async function completeSale(
       qty: number
       unitPrice: number
       ivaPct: number
+      itemDiscountMode: "porcentaje" | "fijo" | null
+      itemDiscountValue: number | null
       itemDiscount: number
       lineBase: number
       comment: string | null
@@ -366,8 +387,12 @@ export async function completeSale(
       const draft = (raw.itemDiscountDraft ?? "").trim().replace(",", ".")
       const n = Number.parseFloat(draft)
       let itemDiscount = 0
+      let itemDiscountMode: "porcentaje" | "fijo" | null = null
+      let itemDiscountValue: number | null = null
       if (Number.isFinite(n) && n > 0) {
         const modo = raw.itemDiscountMode ?? "porcentaje"
+        itemDiscountMode = modo
+        itemDiscountValue = n
         itemDiscount =
           modo === "porcentaje"
             ? roundMoney(precioBase * (Math.min(100, Math.max(0, n)) / 100))
@@ -384,6 +409,8 @@ export async function completeSale(
         qty,
         unitPrice,
         ivaPct,
+        itemDiscountMode,
+        itemDiscountValue,
         itemDiscount,
         lineBase,
         comment: com ? com : null,
@@ -453,6 +480,10 @@ export async function completeSale(
       quantity: l.qty,
       unit_price: l.unitPrice,
       iva: l.ivaPct,
+      item_discount_mode: l.itemDiscountMode,
+      item_discount_value: l.itemDiscountValue,
+      item_discount_amount: l.itemDiscount,
+      line_subtotal: l.lineBase,
       line_discount: roundMoney(
         l.itemDiscount +
           (subtotalAfterItems > 0
@@ -483,6 +514,24 @@ export async function completeSale(
 
     if (!accrueOutputVat && taxTotal > 0) {
       metadata.vat_included_estimate = taxTotal
+    }
+
+    if (payOnClientAccount) {
+      metadata.pay_on_client_account = true
+    }
+
+    const itemDiscountTotal = roundMoney(
+      built.reduce((a, l) => a + l.itemDiscount, 0),
+    )
+    if (itemDiscountTotal > 0) {
+      metadata.item_discount_total = itemDiscountTotal
+    }
+    if (generalDiscount > 0) {
+      metadata.general_discount_amount = generalDiscount
+      metadata.general_discount_mode = input.generalDiscountMode
+      metadata.general_discount_value =
+        input.generalDiscountMode === "porcentaje" ? genPct : genFijo
+      metadata.subtotal_before_general_discount = subtotalAfterItems
     }
 
     const persistedSubtotal = accrueOutputVat ? subtotalNet : total
@@ -536,16 +585,18 @@ export async function completeSale(
     const saleId = String(saleIns.id)
     saleIdForRollback = saleId
 
-    const { error: payErr } = await supabase.from("sale_payments").insert({
-      pop_id: popId,
-      sale_id: saleId,
-      payment_method_id: pmId,
-      amount: total,
-      sort_order: 0,
-    })
-    if (payErr) {
-      await cancelSaleRollback(supabase, saleId, [])
-      return { success: false, error: payErr.message || "No se pudo registrar el cobro." }
+    if (!payOnClientAccount && pmId) {
+      const { error: payErr } = await supabase.from("sale_payments").insert({
+        pop_id: popId,
+        sale_id: saleId,
+        payment_method_id: pmId,
+        amount: total,
+        sort_order: 0,
+      })
+      if (payErr) {
+        await cancelSaleRollback(supabase, saleId, [])
+        return { success: false, error: payErr.message || "No se pudo registrar el cobro." }
+      }
     }
 
     let cogsTotal = 0
@@ -694,6 +745,23 @@ export async function completeSale(
     const ledgerTaxTotal = accrueOutputVat ? taxTotal : 0
     const revenueCredit = accrueOutputVat ? subtotalNet : total
 
+    let debitAccountId = paymentAccountId
+    if (payOnClientAccount) {
+      debitAccountId = await resolveAccountId(
+        supabase,
+        popId,
+        CHART_CUENTAS_POR_COBRAR_CODES,
+      )
+      if (!debitAccountId) {
+        await cancelSaleRollback(supabase, saleId, trackedMovements)
+        return {
+          success: false,
+          error:
+            "No hay cuenta Cuentas por Cobrar (p. ej. 1.1.2.01) en el plan de cuentas.",
+        }
+      }
+    }
+
     const ventasId = await resolveAccountId(supabase, popId, CHART_VENTAS_GRAVADAS_CODES)
     if (!ventasId) {
       await cancelSaleRollback(supabase, saleId, trackedMovements)
@@ -767,7 +835,7 @@ export async function completeSale(
       line_order: number
     }[] = [
       {
-        account_id: paymentAccountId,
+        account_id: debitAccountId!,
         debit_amount: total,
         credit_amount: 0,
         description: entryDescription,

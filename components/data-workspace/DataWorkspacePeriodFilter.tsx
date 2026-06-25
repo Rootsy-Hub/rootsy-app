@@ -47,6 +47,7 @@ export function DataWorkspacePeriodFilter({
   bounds,
   labelId: labelIdProp,
   triggerId: triggerIdProp,
+  showActiveState = true,
   className,
 }: {
   preset: DataWorkspaceDatePreset
@@ -56,6 +57,8 @@ export function DataWorkspacePeriodFilter({
   bounds: { from: string | null; to: string | null }
   labelId?: string
   triggerId?: string
+  /** Si es false, el período no se resalta como filtro activo (p. ej. siempre hay uno elegido). */
+  showActiveState?: boolean
   className?: string
 }) {
   const autoLabelId = useId()
@@ -64,7 +67,7 @@ export function DataWorkspacePeriodFilter({
   const triggerId = triggerIdProp ?? autoTriggerId
   const [popoverOpen, setPopoverOpen] = useState(false)
 
-  const active = preset !== "all"
+  const active = showActiveState && preset !== "all"
   const summary = useMemo(
     () => dataWorkspaceDateFilterSummary(preset, bounds),
     [preset, bounds],

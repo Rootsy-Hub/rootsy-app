@@ -11,6 +11,7 @@ import {
   type PurchaseKind,
 } from "@/app/[siteId]/[popId]/purchases/actions"
 import { completePurchase } from "@/app/[siteId]/[popId]/purchases/completePurchase"
+import { SUPPLIER_ACCOUNT_PAYMENT_LABEL } from "@/lib/operationPaymentLabels"
 import { popMenuHref } from "@/lib/popRoutes"
 import { getPurchaseDocumentTypeOptions } from "@/lib/purchaseDocumentTypes"
 import { DataWorkspaceSectionMenu } from "@/components/layouts/DataWorkspaceSectionMenu"
@@ -110,8 +111,6 @@ const PURCHASE_KIND_MENU_ITEMS = [
   { id: "raw_material", label: "Materia prima", icon: Layers },
   { id: "supply", label: "Insumo", icon: Box },
 ] as const
-
-const SUPPLIER_ACCOUNT_PAYMENT_LABEL = "Cuenta corriente del proveedor"
 
 function articleToProducto(a: PurchaseCatalogArticle): Producto {
   return {

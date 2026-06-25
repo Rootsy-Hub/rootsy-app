@@ -25,6 +25,7 @@ import {
   writeSavedSaleCatalogView,
   type SaleCatalogViewPersisted,
 } from "@/lib/saleCatalogPreference"
+import { CLIENT_ACCOUNT_PAYMENT_LABEL } from "@/lib/operationPaymentLabels"
 import { DataWorkspaceLayout } from "@/components/layouts/DataWorkspaceLayout"
 import { useDataWorkspaceSidebar } from "@/components/layouts/useDataWorkspaceSidebar"
 import { useAuth } from "@/context/AuthContextSupabase"
@@ -364,9 +365,16 @@ function SalePage() {
     [catalogArticles],
   )
 
-  const [vistaCatalogo, setVistaCatalogo] = useState<VistaCatalogo>({
-    modo: "categoria",
-    categoria: CATEGORIA_TODOS,
+  const [vistaCatalogo, setVistaCatalogo] = useState<VistaCatalogo>(() => {
+    if (!popId) {
+      return { modo: "categoria", categoria: CATEGORIA_TODOS }
+    }
+    return (
+      readSavedSaleCatalogView(popId) ?? {
+        modo: "categoria",
+        categoria: CATEGORIA_TODOS,
+      }
+    )
   })
   const [modoVista, setModoVista] = useState<"grid" | "lista">("grid")
   const [busqueda, setBusqueda] = useState("")
@@ -390,6 +398,7 @@ function SalePage() {
     id: string
     label: string
   } | null>(null)
+  const [payOnClientAccount, setPayOnClientAccount] = useState(false)
   const [pagoModalAbierto, setPagoModalAbierto] = useState(false)
   const [modoDescuento, setModoDescuento] = useState<"porcentaje" | "fijo">(
     "porcentaje",
@@ -539,6 +548,7 @@ function SalePage() {
     if (hayDescuento) return true
     if (descuentoItemsMonto > 0) return true
     if (Object.values(itemComentarios).some((c) => c?.trim())) return true
+    if (payOnClientAccount || metodoPagoSeleccionado != null) return true
     return false
   }, [
     carrito.length,
@@ -547,17 +557,32 @@ function SalePage() {
     hayDescuento,
     descuentoItemsMonto,
     itemComentarios,
+    payOnClientAccount,
+    metodoPagoSeleccionado,
   ])
+
+  const pagoConfigurado = payOnClientAccount || metodoPagoSeleccionado != null
+
+  const pagoResumenLabel = useMemo(() => {
+    if (payOnClientAccount) return CLIENT_ACCOUNT_PAYMENT_LABEL
+    return metodoPagoSeleccionado?.label ?? "Elegir forma de pago"
+  }, [payOnClientAccount, metodoPagoSeleccionado])
 
   const puedeRegistrarVenta = useMemo(
     () =>
       hayItemsEnPedido &&
-      metodoPagoSeleccionado != null &&
+      pagoConfigurado &&
+      (payOnClientAccount
+        ? clienteSeleccionado != null
+        : metodoPagoSeleccionado != null) &&
       canCreateSale &&
       canReadCashRegisters &&
       openCashSession != null,
     [
       hayItemsEnPedido,
+      pagoConfigurado,
+      payOnClientAccount,
+      clienteSeleccionado?.id,
       metodoPagoSeleccionado?.id,
       canCreateSale,
       canReadCashRegisters,
@@ -586,13 +611,16 @@ function SalePage() {
       const efectivo = salePaymentMethods.find((m) => m.kind === "cash")
       return efectivo ? { id: efectivo.id, label: efectivo.name } : null
     })
+    setPayOnClientAccount(false)
     setDescartarConfirmOpen(false)
     setVenderConfirmOpen(false)
     setVentaError(null)
   }, [salePaymentMethods, popId])
 
   const confirmarVenta = useCallback(async () => {
-    if (!popId || !siteId || !metodoPagoSeleccionado) return
+    if (!popId || !siteId || !pagoConfigurado) return
+    if (payOnClientAccount && !clienteSeleccionado) return
+    if (!payOnClientAccount && !metodoPagoSeleccionado) return
     setVentaError(null)
     setVentaSubmitting(true)
     try {
@@ -621,7 +649,10 @@ function SalePage() {
           comment: itemComentarios[i.productoId],
         })),
         clientId: clienteSeleccionado?.id ?? null,
-        paymentMethodId: metodoPagoSeleccionado.id,
+        payOnClientAccount,
+        paymentMethodId: payOnClientAccount
+          ? null
+          : metodoPagoSeleccionado?.id,
         generalDiscountMode: modoDescuento === "porcentaje" ? "porcentaje" : "fijo",
         valorDescuentoPorcentaje,
         valorDescuentoFijo,
@@ -645,6 +676,8 @@ function SalePage() {
     itemDescuentoDraft,
     itemComentarios,
     clienteSeleccionado,
+    payOnClientAccount,
+    pagoConfigurado,
     metodoPagoSeleccionado,
     modoDescuento,
     valorDescuentoPorcentaje,
@@ -708,7 +741,7 @@ function SalePage() {
   }, [popId, invoiceTypeSiteId])
 
   useEffect(() => {
-    if (!popId || catalogViewInitRef.current || categoriasNav.length === 0) return
+    if (!popId || catalogLoading || catalogViewInitRef.current) return
     catalogViewInitRef.current = true
     const saved = readSavedSaleCatalogView(popId)
     if (!saved) return
@@ -716,7 +749,7 @@ function SalePage() {
       return
     }
     setVistaCatalogo(saved)
-  }, [popId, categoriasNav])
+  }, [popId, catalogLoading, categoriasNav])
 
   const paymentMethodGroups = useMemo(() => {
     const order = [
@@ -749,6 +782,17 @@ function SalePage() {
         items: buckets[kind],
       }))
   }, [salePaymentMethods])
+
+  const paymentMethodListItems = useMemo(
+    () =>
+      paymentMethodGroups.flatMap((g) =>
+        g.items.map((method) => ({
+          method,
+          groupTitle: g.title,
+        })),
+      ),
+    [paymentMethodGroups],
+  )
 
   const agregarAlCarrito = (productoId: string) => {
     setCarrito((prev) => {
@@ -875,15 +919,17 @@ function SalePage() {
         : "bg-white/[0.06] text-foreground/45 group-hover:bg-white/10 group-hover:text-foreground/75",
     )
 
-  const modalOpcionBase =
-    "rounded-xl border px-4 py-3 text-sm font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
-  const modalOpcionSeleccionada =
-    "border-primary/55 bg-primary/12 shadow-[inset_0_0_0_1px_rgba(16,185,129,0.25)]"
-  const modalOpcionIdle =
-    "border-foreground/10 bg-secondary hover:bg-muted"
+  const ventaDialogOptionClass = (seleccionado: boolean) =>
+    cn(
+      "flex w-full items-center justify-between gap-3 rounded-lg border px-3 py-2.5 text-left transition-colors",
+      seleccionado
+        ? "border-primary/40 bg-primary/10 ring-1 ring-primary/15"
+        : "border-border/70 bg-muted/20 hover:bg-muted/35",
+    )
 
+  const ventaDialogLight = "rootsy-app-light text-foreground"
   const ventaDialogSurface =
-    "gap-0 overflow-hidden rounded-2xl border border-border/60 bg-card p-0 shadow-2xl ring-1 ring-black/[0.04] dark:ring-white/[0.06]"
+    "gap-0 overflow-hidden rounded-2xl border border-border/60 bg-card p-0 shadow-2xl ring-1 ring-black/[0.04]"
   const ventaDialogMaxViewport =
     "max-h-[calc(100vh-100px)] flex flex-col overflow-hidden"
   const ventaDialogSurfaceMd = cn(
@@ -891,11 +937,7 @@ function SalePage() {
     ventaDialogMaxViewport,
     "sm:max-w-md",
   )
-  const ventaDialogSurfaceLg = cn(
-    ventaDialogSurface,
-    ventaDialogMaxViewport,
-    "sm:max-w-2xl",
-  )
+  const ventaDialogContentMd = cn(ventaDialogSurfaceMd, ventaDialogLight)
   const ventaDialogHeader =
     "space-y-1.5 border-b border-border/50 bg-muted/25 px-6 pb-4 pt-5 text-left"
   const ventaDialogBody = "px-6 py-4"
@@ -904,6 +946,10 @@ function SalePage() {
   const ventaDialogPrimaryBtn =
     "h-10 bg-emerald-600 font-semibold text-white shadow-sm hover:bg-emerald-500 active:bg-emerald-700"
   const ventaDialogGhostBtn = "h-10 text-muted-foreground hover:text-foreground"
+  const ventaAlertDialogContent = cn(
+    ventaDialogLight,
+    "rounded-2xl border border-border/60 bg-card shadow-2xl sm:max-w-md",
+  )
 
   const headerUserName = useMemo(() => {
     const meta = user?.user_metadata?.full_name
@@ -1036,25 +1082,23 @@ function SalePage() {
           </div>
 
           <main className="relative z-10 grid min-h-0 flex-1 grid-cols-[minmax(0,1fr)_380px] grid-rows-[minmax(0,1fr)_minmax(4.75rem,auto)]">
-            <div
-              className={cn(
-                "col-start-1 row-start-1 grid min-h-0 min-w-0 overflow-hidden",
-                catalogSidebarOpen
-                  ? "grid-cols-[280px_minmax(0,1fr)]"
-                  : "grid-cols-[minmax(0,1fr)]",
-              )}
-            >
-              {catalogSidebarOpen ? (
-                <aside
-                  id="data-workspace-sidebar"
-                  className="flex min-h-0 min-w-0 flex-col overflow-hidden border-r border-white/10 bg-[#1a2027]"
-                  aria-label="Filtros del catálogo"
-                >
+            <div className="col-start-1 row-start-1 flex min-h-0 min-w-0 overflow-hidden">
+              <aside
+                id="data-workspace-sidebar"
+                className={cn(
+                  "relative shrink-0 overflow-hidden border-r border-white/10 bg-[#1a2027] transition-[width,border-color] duration-300 ease-in-out motion-reduce:transition-none",
+                  catalogSidebarOpen ? "w-[280px]" : "w-0 border-r-0",
+                )}
+                aria-hidden={!catalogSidebarOpen}
+                {...(!catalogSidebarOpen ? { inert: true } : {})}
+                aria-label="Filtros del catálogo"
+              >
+                <div className="flex h-full w-[280px] min-w-[280px] flex-col">
                   {catalogSidebar}
-                </aside>
-              ) : null}
+                </div>
+              </aside>
 
-              <section className="grid min-h-0 min-w-0 grid-rows-[auto_minmax(0,1fr)] bg-[#20262e]">
+              <section className="grid min-h-0 min-w-0 flex-1 grid-rows-[auto_minmax(0,1fr)] bg-[#20262e]">
                 <div className="flex min-w-0 items-center gap-3 border-b border-white/10 px-4 py-3">
                   <div className="relative flex h-10 shrink-0 items-center rounded-lg border border-white/12 bg-black/25 p-1 shadow-[inset_0_1px_0_rgba(255,255,255,0.08),0_0_0_1px_rgba(16,185,129,0.06)]">
                     <span
@@ -1361,26 +1405,15 @@ function SalePage() {
               </button>
               <button
                 type="button"
-                disabled={!canReadPaymentMethods}
-                onClick={() => {
-                  if (!canReadPaymentMethods) return
-                  setPagoModalAbierto(true)
-                }}
-                className={cn(
-                  toolboxSlotClass(Boolean(metodoPagoSeleccionado)),
-                  !canReadPaymentMethods && "opacity-45",
-                )}
+                onClick={() => setPagoModalAbierto(true)}
+                className={toolboxSlotClass(pagoConfigurado)}
                 aria-label={
-                  !canReadPaymentMethods
-                    ? "No tenés permiso para ver medios de pago. Pedí acceso de lectura en tu rol."
-                    : metodoPagoSeleccionado
-                      ? `Pago: ${metodoPagoSeleccionado.label}. Abrir para cambiar.`
-                      : "Medio de pago sin elegir. Abrir para seleccionar."
+                  pagoConfigurado
+                    ? `Pago: ${pagoResumenLabel}. Abrir para cambiar.`
+                    : "Forma de pago sin elegir. Abrir para seleccionar."
                 }
               >
-                <span
-                  className={toolboxIconWrap(Boolean(metodoPagoSeleccionado))}
-                >
+                <span className={toolboxIconWrap(pagoConfigurado)}>
                   <Banknote className="size-4.5 sm:size-5" aria-hidden />
                 </span>
                 <span className="min-w-0 flex-1">
@@ -1390,14 +1423,12 @@ function SalePage() {
                   <span
                     className={cn(
                       "block truncate text-sm font-semibold leading-snug",
-                      metodoPagoSeleccionado
+                      pagoConfigurado
                         ? "text-foreground"
                         : "text-foreground/55",
                     )}
                   >
-                    {!canReadPaymentMethods
-                      ? "Sin permiso"
-                      : (metodoPagoSeleccionado?.label ?? "Elegir medio")}
+                    {pagoResumenLabel}
                   </span>
                 </span>
               </button>
@@ -1711,15 +1742,17 @@ function SalePage() {
                     title={
                       !hayItemsEnPedido
                         ? "Agregá productos al pedido."
-                        : !metodoPagoSeleccionado
-                          ? "Elegí un medio de pago para continuar."
-                          : !canCreateSale
-                            ? "No tenés permiso para registrar ventas."
-                            : !canReadCashRegisters
-                              ? "Se requiere permiso para ver cajas y asociar la venta a una sesión."
-                              : !openCashSession
-                                ? "Abrí una sesión de caja en Cajas antes de cobrar."
-                                : undefined
+                        : !pagoConfigurado
+                          ? "Elegí una forma de pago o usá cuenta corriente del cliente."
+                          : payOnClientAccount && !clienteSeleccionado
+                            ? "Elegí un cliente para vender a cuenta corriente."
+                            : !canCreateSale
+                              ? "No tenés permiso para registrar ventas."
+                              : !canReadCashRegisters
+                                ? "Se requiere permiso para ver cajas y asociar la venta a una sesión."
+                                : !openCashSession
+                                  ? "Abrí una sesión de caja en Cajas antes de vender."
+                                  : undefined
                     }
                     className="h-11 gap-2 border-0 bg-emerald-600 font-semibold text-white shadow-[0_1px_2px_rgba(0,0,0,0.06)] hover:bg-emerald-500 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2 focus-visible:ring-offset-[#f8fafc] active:bg-emerald-700 disabled:pointer-events-auto disabled:cursor-not-allowed disabled:opacity-45"
                   >
@@ -1807,7 +1840,7 @@ function SalePage() {
           if (open) setBusquedaClienteModal("")
         }}
       >
-        <DialogContent className={cn(ventaDialogSurfaceMd, "text-foreground")}>
+        <DialogContent className={ventaDialogContentMd}>
           <DialogHeader className={ventaDialogHeader}>
             <DialogTitle className="text-base font-semibold tracking-tight">
               Cliente para esta venta
@@ -1896,23 +1929,21 @@ function SalePage() {
                         role="option"
                         aria-selected={seleccionado}
                         onClick={() => seleccionarCliente(c)}
-                        className={cn(
-                          "flex min-h-11 w-full items-center gap-3 text-left",
-                          modalOpcionBase,
-                          seleccionado
-                            ? modalOpcionSeleccionada
-                            : modalOpcionIdle,
-                        )}
+                        className={ventaDialogOptionClass(seleccionado)}
                       >
-                        <User className="size-5 shrink-0 text-primary" aria-hidden />
                         <span className="min-w-0">
-                          <span className="block font-medium">{c.name}</span>
+                          <span className="block text-sm font-semibold leading-snug text-foreground">
+                            {c.name}
+                          </span>
                           {c.taxId ? (
-                            <span className="mt-0.5 block text-xs text-muted-foreground">
+                            <span className="mt-0.5 block text-xs leading-snug text-muted-foreground">
                               {c.taxId}
                             </span>
                           ) : null}
                         </span>
+                        {seleccionado ? (
+                          <span className="size-2 shrink-0 rounded-full bg-primary" />
+                        ) : null}
                       </button>
                     </li>
                   )
@@ -1943,7 +1974,7 @@ function SalePage() {
         open={comprobanteModalAbierto}
         onOpenChange={setComprobanteModalAbierto}
       >
-        <DialogContent className={cn(ventaDialogSurfaceMd, "text-foreground")}>
+        <DialogContent className={ventaDialogContentMd}>
           <DialogHeader className={cn(ventaDialogHeader, "shrink-0")}>
             <DialogTitle className="text-base font-semibold tracking-tight">
               Comprobante
@@ -1987,12 +2018,7 @@ function SalePage() {
                           opt.kind === "none" ? null : opt.label,
                         )
                       }
-                      className={cn(
-                        "flex w-full items-center justify-between gap-3 rounded-lg border px-3 py-2.5 text-left transition-colors",
-                        seleccionado
-                          ? "border-primary/40 bg-primary/10 ring-1 ring-primary/15"
-                          : "border-border/70 bg-muted/20 hover:bg-muted/35",
-                      )}
+                      className={ventaDialogOptionClass(seleccionado)}
                     >
                       <span className="min-w-0">
                         <span className="block text-sm font-semibold leading-snug text-foreground">
@@ -2024,14 +2050,14 @@ function SalePage() {
       </Dialog>
 
       <Dialog open={pagoModalAbierto} onOpenChange={setPagoModalAbierto}>
-        <DialogContent className={cn(ventaDialogSurfaceLg, "text-foreground")}>
+        <DialogContent className={ventaDialogContentMd}>
           <DialogHeader className={cn(ventaDialogHeader, "shrink-0")}>
             <DialogTitle className="text-base font-semibold tracking-tight">
-              Método de pago
+              Formas de pago
             </DialogTitle>
             <DialogDescription className="text-sm leading-relaxed">
-              Elegí un medio configurado para este punto de venta (efectivo,
-              tarjetas, transferencia u otros).
+              Elegí cómo vas a cobrar esta venta: al contado o a cuenta corriente
+              del cliente.
             </DialogDescription>
           </DialogHeader>
           <div
@@ -2040,55 +2066,89 @@ function SalePage() {
               "min-h-0 flex-1 space-y-4 overflow-y-auto overscroll-contain",
             )}
           >
-            {paymentMethodGroups.length === 0 ? (
-              <p className="rounded-lg border border-dashed border-border/60 bg-muted/20 px-4 py-8 text-center text-sm text-muted-foreground">
-                No hay medios de pago activos configurados para este punto de
-                venta.
+            <div>
+              <p className="mb-2 text-[10px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
+                Cuenta del cliente
+              </p>
+              <button
+                type="button"
+                className={ventaDialogOptionClass(payOnClientAccount)}
+                onClick={() => {
+                  setPayOnClientAccount(true)
+                  setMetodoPagoSeleccionado(null)
+                  setPagoModalAbierto(false)
+                }}
+              >
+                {CLIENT_ACCOUNT_PAYMENT_LABEL}
+              </button>
+              <p className="mt-2 text-xs text-muted-foreground">
+                Entregás la mercadería ahora y registrás la deuda en Cuentas por
+                cobrar. Podés cobrar después.
+              </p>
+            </div>
+
+            {paymentMethodListItems.length > 0 ? (
+              <>
+                <Separator className="bg-border/60" />
+                <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
+                  Cobro inmediato
+                </p>
+              </>
+            ) : null}
+
+            {paymentMethodListItems.length === 0 ? (
+              <p className="rounded-lg border border-dashed border-border/60 bg-muted/20 px-4 py-6 text-center text-sm text-muted-foreground">
+                No hay medios de pago activos. Podés usar cuenta corriente del
+                cliente.
               </p>
             ) : (
-              paymentMethodGroups.map((g, gi) => (
-                <div key={g.kind}>
-                  {gi > 0 ? (
-                    <Separator className="mb-4 bg-border/60" />
-                  ) : null}
-                  <p className="mb-2 text-[10px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
-                    {g.title}
-                  </p>
-                  <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
-                    {g.items.map((m) => {
-                      const seleccionado = metodoPagoSeleccionado?.id === m.id
-                      return (
-                        <button
-                          key={m.id}
-                          type="button"
-                          className={cn(
-                            "flex min-h-12 min-w-0 items-center justify-center px-2 py-2 text-center text-sm font-medium leading-snug",
-                            modalOpcionBase,
-                            seleccionado
-                              ? modalOpcionSeleccionada
-                              : modalOpcionIdle,
-                          )}
-                          onClick={() => {
-                            setMetodoPagoSeleccionado({
-                              id: m.id,
-                              label: m.name,
-                            })
-                            setPagoModalAbierto(false)
-                          }}
-                        >
-                          <span className="line-clamp-3 w-full">{m.name}</span>
-                        </button>
-                      )
-                    })}
-                  </div>
-                </div>
-              ))
+              <ul
+                className="flex flex-col gap-1.5"
+                role="listbox"
+                aria-label="Formas de pago"
+              >
+                {paymentMethodListItems.map(({ method, groupTitle }) => {
+                  const seleccionado =
+                    !payOnClientAccount &&
+                    metodoPagoSeleccionado?.id === method.id
+                  return (
+                    <li key={method.id} className="min-w-0">
+                      <button
+                        type="button"
+                        role="option"
+                        aria-selected={seleccionado}
+                        onClick={() => {
+                          setPayOnClientAccount(false)
+                          setMetodoPagoSeleccionado({
+                            id: method.id,
+                            label: method.name,
+                          })
+                          setPagoModalAbierto(false)
+                        }}
+                        className={ventaDialogOptionClass(seleccionado)}
+                      >
+                        <span className="min-w-0">
+                          <span className="block text-sm font-semibold leading-snug text-foreground">
+                            {method.name}
+                          </span>
+                          <span className="mt-0.5 block text-xs leading-snug text-muted-foreground">
+                            {groupTitle}
+                          </span>
+                        </span>
+                        {seleccionado ? (
+                          <span className="size-2 shrink-0 rounded-full bg-primary" />
+                        ) : null}
+                      </button>
+                    </li>
+                  )
+                })}
+              </ul>
             )}
           </div>
           <DialogFooter className={cn(ventaDialogFooter, "shrink-0")}>
             <Button
               type="button"
-              className={cn(ventaDialogPrimaryBtn, "w-full sm:w-auto")}
+              className={ventaDialogPrimaryBtn}
               onClick={() => setPagoModalAbierto(false)}
             >
               Listo
@@ -2101,7 +2161,7 @@ function SalePage() {
         open={descuentoModalAbierto}
         onOpenChange={setDescuentoModalAbierto}
       >
-        <DialogContent className={cn(ventaDialogSurfaceMd, "text-foreground")}>
+        <DialogContent className={ventaDialogContentMd}>
           <DialogHeader className={ventaDialogHeader}>
             <DialogTitle className="text-base font-semibold tracking-tight">
               Descuento en la venta
@@ -2201,7 +2261,7 @@ function SalePage() {
       </Dialog>
 
       <AlertDialog open={descartarConfirmOpen} onOpenChange={setDescartarConfirmOpen}>
-        <AlertDialogContent className="border-border bg-card text-foreground sm:max-w-md">
+        <AlertDialogContent className={ventaAlertDialogContent}>
           <AlertDialogHeader>
             <AlertDialogTitle>¿Descartar la venta?</AlertDialogTitle>
             <AlertDialogDescription className="text-muted-foreground">
@@ -2229,18 +2289,25 @@ function SalePage() {
           if (!open) setVentaError(null)
         }}
       >
-        <AlertDialogContent className="border-border bg-card text-foreground sm:max-w-md">
+        <AlertDialogContent className={ventaAlertDialogContent}>
           <AlertDialogHeader>
             <AlertDialogTitle>¿Confirmar venta?</AlertDialogTitle>
             <AlertDialogDescription asChild>
               <div className="space-y-2 text-muted-foreground">
                 <p>
-                  Total a cobrar:{" "}
+                  {payOnClientAccount ? "Total a cuenta:" : "Total a cobrar:"}{" "}
                   <span className="font-semibold text-foreground tabular-nums">
                     {fmt.format(total)}
                   </span>
-                  . Se guardará la venta, el movimiento de stock (FIFO) y el asiento contable
-                  (cobro, ventas, IVA si aplica y costo de mercaderías).
+                  . Forma de pago:{" "}
+                  <span className="font-medium text-foreground">
+                    {pagoResumenLabel}
+                  </span>
+                  . Se guardará la venta, el movimiento de stock (FIFO) y el
+                  asiento contable
+                  {payOnClientAccount
+                    ? " (cuentas por cobrar, ventas, IVA si aplica y costo de mercaderías)."
+                    : " (cobro, ventas, IVA si aplica y costo de mercaderías)."}
                 </p>
                 {ventaError ? (
                   <p className="text-sm text-rose-600">{ventaError}</p>

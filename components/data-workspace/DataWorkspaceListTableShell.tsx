@@ -40,7 +40,12 @@ export function DataWorkspaceListTableShell({
       ) : null}
       <div className="relative flex min-h-0 flex-1 flex-col overflow-hidden">
         {bulkToolbar ? bulkToolbar : null}
-        <div className="rootsy-scroll-minimal min-h-0 flex-1 overflow-auto">
+        <div
+          className={cn(
+            "rootsy-scroll-minimal min-h-0 flex-1 overflow-auto",
+            isFlush && "pr-3",
+          )}
+        >
           {children}
         </div>
         {footer ? footer : null}

@@ -254,6 +254,8 @@ export const CHART_TARJETAS_CREDITO_A_PAGAR_CODES: readonly string[] = [
 ]
 
 /** Activo: cobros con tarjeta / plataformas por liquidar (ventas POS). */
+export const CHART_CUENTAS_POR_COBRAR_CODES: readonly string[] = ["1.1.2.01"]
+
 export const CHART_TARJETAS_COBRAR_CODES: readonly string[] = [
   "1.1.1.03",
   "1.1.1.04",

@@ -100,11 +100,54 @@ export const tdMoneyClass =
 export const tdMoneyMutedClass =
   "font-mono text-[13px] tabular-nums tracking-tight text-muted-foreground"
 
-export function workspaceTableBodyRowClassNames(index: number): string {
+/** Total cobrado / importe principal. */
+export const tdMoneyTotalClass =
+  "font-mono text-[13px] font-semibold tabular-nums tracking-tight text-emerald-700"
+
+/** Descuentos aplicados. */
+export const tdMoneyDiscountClass =
+  "font-mono text-[13px] font-medium tabular-nums tracking-tight text-amber-700"
+
+/** IVA u otros impuestos. */
+export const tdMoneyVatClass =
+  "font-mono text-[13px] font-medium tabular-nums tracking-tight text-sky-700"
+
+/** Cliente registrado (enlace a ficha). */
+export const tdClientLinkedClass =
+  "truncate font-medium text-violet-700 underline-offset-2 transition-colors hover:text-violet-900 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/35 rounded-sm"
+
+/** Cliente con nombre pero sin ficha vinculada. */
+export const tdClientNamedClass =
+  "truncate font-medium text-violet-700/90"
+
+/** Venta sin cliente identificado. */
+export const tdClientAnonymousClass =
+  "truncate text-sm text-muted-foreground"
+
+/** Fila de encabezado de tabla (sin hover). */
+export const workspaceTableHeaderRowClass = "border-0 hover:bg-transparent"
+
+/** Filas de carga / vacío / mensajes (sin hover). */
+export const workspaceTablePlaceholderRowClass = cn(
+  "border-b border-border/40 bg-muted/25",
+  "hover:bg-muted/25 pointer-events-none",
+)
+
+/** Filas de detalle expandido o contenido anidado (sin hover). */
+export const workspaceTableStaticRowClass = cn(
+  "border-b border-border/40 bg-muted/30",
+  "hover:bg-muted/30",
+)
+
+export function workspaceTableBodyRowClassNames(
+  index: number,
+  options?: { selected?: boolean },
+): string {
   return cn(
-    "border-border/50 transition-colors hover:bg-primary/10",
-    index % 2 === 0
-      ? "bg-white/30"
-      : "bg-muted/25 dark:bg-muted/15",
+    "border-b border-border/40 transition-colors duration-150",
+    "hover:bg-primary/[0.07]",
+    index % 2 === 0 ? "bg-card" : "bg-muted/35",
+    options?.selected &&
+      "bg-primary/[0.09] hover:bg-primary/[0.11] ring-1 ring-inset ring-primary/15",
   )
 }
