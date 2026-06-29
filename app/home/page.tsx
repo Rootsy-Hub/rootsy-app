@@ -1,27 +1,14 @@
 "use client"
 
 import Link from "next/link"
+import Image from "next/image"
 import { useRouter } from "next/navigation"
 import { useCallback, useEffect, useState } from "react"
-import {
-  Download,
-  HelpCircle,
-  Leaf,
-  LogOut,
-  MoreVertical,
-  Plus,
-  UserCog,
-} from "lucide-react"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { Download, Plus } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
 import { Spinner } from "@/components/ui/spinner"
+import { DataWorkspaceHeaderUserMenu } from "@/components/layouts/DataWorkspaceHeaderUserMenu"
 import { useAuth } from "@/context/AuthContextSupabase"
 import withAuth from "@/hoc/withAuth"
 import {
@@ -65,18 +52,10 @@ function initialsFromName(name: string): string {
   ).toUpperCase()
 }
 
-function avatarFallbackLetters(profile: UserProfileDTO | null, email?: string | null): string {
-  const fn = profile?.firstName?.trim()
-  const ln = profile?.lastName?.trim()
-  if (fn && ln) return (fn.charAt(0) + ln.charAt(0)).toUpperCase()
-  if (fn) return fn.slice(0, 2).toUpperCase()
-  const fromEmail = email?.split("@")[0]?.slice(0, 2)
-  return (fromEmail ?? "U").toUpperCase()
-}
-
 function HomePage() {
   const router = useRouter()
-  const { logOut, user, loading: authLoading } = useAuth()
+  const { user, loading: authLoading } = useAuth()
+  const [isOnline, setIsOnline] = useState(true)
 
   const [pops, setPops] = useState<UserPopListItem[] | null>(null)
   const [profile, setProfile] = useState<UserProfileDTO | null>(null)
@@ -108,11 +87,16 @@ function HomePage() {
     }
   }, [authLoading, pops, canCreatePop, router])
 
-  const handleLogOut = async () => {
-    await logOut()
-    router.push("/login")
-    router.refresh()
-  }
+  useEffect(() => {
+    const sync = () => setIsOnline(navigator.onLine)
+    sync()
+    window.addEventListener("online", sync)
+    window.addEventListener("offline", sync)
+    return () => {
+      window.removeEventListener("online", sync)
+      window.removeEventListener("offline", sync)
+    }
+  }, [])
 
   const displayName =
     profile?.fullName?.trim() ||
@@ -144,53 +128,32 @@ function HomePage() {
       <header className="relative z-20 border-b border-white/10 bg-black/20 backdrop-blur-xl">
         <div className="mx-auto flex h-18 max-w-7xl items-center justify-between px-5 sm:px-8 lg:px-10">
           <Link
-            href="/"
-            className="inline-flex items-center gap-2 rounded-xl px-1 py-1 text-white transition-opacity hover:opacity-90"
+            href="/home"
+            aria-label="Rootsy — inicio"
+            className="inline-flex shrink-0 items-center rounded-md transition-opacity hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/45 focus-visible:ring-offset-2 focus-visible:ring-offset-[#070a09]"
           >
-            <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-white/8 ring-1 ring-white/15">
-              <Leaf className="h-5 w-5 text-meadow" aria-hidden />
-            </span>
-            <span className="text-lg font-bold tracking-tight">Rootsy</span>
+            <Image
+              src="/rootsy-logo.svg"
+              alt="Rootsy"
+              width={90}
+              height={29}
+              priority
+              className="h-9 w-auto sm:h-10"
+            />
           </Link>
 
-          <div className="flex items-center gap-3">
-            <DropdownMenu modal={false}>
-              <DropdownMenuTrigger
-                className="inline-flex size-9 items-center justify-center rounded-full text-white/65 transition-colors hover:bg-white/10 hover:text-white"
-                aria-label="Mas opciones"
-              >
-                <MoreVertical className="size-4.5" />
-              </DropdownMenuTrigger>
-              <DropdownMenuContent
-                align="end"
-                className="min-w-48 border-white/14 bg-[#111716]/96 text-white shadow-[0_18px_40px_-24px_rgba(0,0,0,0.8)] backdrop-blur-xl"
-              >
-                <DropdownMenuItem className="cursor-pointer gap-2.5 text-white/90 focus:bg-white/10 focus:text-white">
-                  <UserCog className="size-4 text-white/70" />
-                  Editar perfil
-                </DropdownMenuItem>
-                <DropdownMenuItem className="cursor-pointer gap-2.5 text-white/90 focus:bg-white/10 focus:text-white">
-                  <HelpCircle className="size-4 text-white/70" />
-                  Ayuda
-                </DropdownMenuItem>
-                <DropdownMenuItem
-                  variant="destructive"
-                  className="cursor-pointer gap-2.5"
-                  onSelect={() => void handleLogOut()}
-                >
-                  <LogOut className="size-4" />
-                  Cerrar sesion
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-            <Avatar className="size-10 ring-2 ring-white/15">
-              {avatarUrl ? (
-                <AvatarImage src={avatarUrl} alt="" />
-              ) : null}
-              <AvatarFallback className="bg-emerald-900/40 text-sm font-semibold text-white">
-                {avatarFallbackLetters(profile, user?.email ?? null)}
-              </AvatarFallback>
-            </Avatar>
+          <div className="flex min-w-0 items-center gap-3">
+            <div className="hidden min-w-0 flex-col leading-tight sm:flex">
+              <span className="truncate text-sm font-semibold text-zinc-100">
+                {displayName}
+              </span>
+            </div>
+            <DataWorkspaceHeaderUserMenu
+              userName={displayName}
+              userAvatarSrc={avatarUrl}
+              isOnline={isOnline}
+              headerVariant="dark"
+            />
           </div>
         </div>
       </header>

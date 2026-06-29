@@ -60,6 +60,7 @@ export const ARG_V3_DEFAULT_CHART_ACCOUNTS: readonly ArgV3DefaultChartRow[] = [
     level: 4,
   },
   { code: "1.1.3.03", name: "Materias Primas", accountType: "activo_corriente", nature: "deudora", level: 4 },
+  { code: "1.1.3.04", name: "Insumos", accountType: "activo_corriente", nature: "deudora", level: 4 },
   { code: "1.2.1.01", name: "Bienes de uso", accountType: "activo_no_corriente", nature: "deudora", level: 4 },
   {
     code: "1.2.1.02",
@@ -266,6 +267,11 @@ export const CHART_IVA_CREDITO_CODES: readonly string[] = ["1.1.2.03"]
 export const CHART_MATERIAS_PRIMAS_CODES: readonly string[] = [
   "1.1.3.03",
   "1.1.3.02",
+]
+
+export const CHART_INSUMOS_CODES: readonly string[] = [
+  "1.1.3.04",
+  "1.1.3.03",
 ]
 
 /** @deprecated Preferir CHART_GASTOS_GENERALES_CODES o mapeo por categoría sistema. */

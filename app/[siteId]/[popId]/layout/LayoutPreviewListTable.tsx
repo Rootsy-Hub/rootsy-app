@@ -26,26 +26,15 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover"
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
-import {
   TableBody,
   TableCell,
   TableHead,
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
+import { DataWorkspaceListPaginationFooter } from "@/components/data-workspace/DataWorkspaceListPaginationFooter"
+import { DataWorkspaceListTableShell } from "@/components/data-workspace/DataWorkspaceListTableShell"
 import {
-  darkTableFooterCenterClass,
-  darkTableFooterCenterMutedClass,
-  darkTableFooterClass,
-  darkTableFooterNavButtonClass,
-  darkTableFooterNavGroupClass,
-  footerPaginationSelectTriggerClass,
   listBulkToolbarClearButtonClass,
   selectColumnInnerClass,
   tableRowSelectCheckboxClass,
@@ -53,6 +42,7 @@ import {
   toolbarBlockLabelClass,
   workspaceTableSelectableTextClass,
 } from "@/components/data-workspace/dataWorkspaceListStyles"
+import { buildPaginationItems } from "@/app/[siteId]/[popId]/layout/layoutPreviewPagination"
 import { cn } from "@/lib/utils"
 import { popScopedHref } from "@/lib/popRoutes"
 import {
@@ -67,10 +57,6 @@ import {
 import {
   CalendarRange,
   ChevronDown,
-  ChevronLeft,
-  ChevronRight,
-  ChevronsLeft,
-  ChevronsRight,
   Copy,
   ExternalLink,
   Filter,
@@ -381,6 +367,7 @@ export function LayoutPreviewListTable({
   const dateFilterLabelId = useId()
   const dateFilterTriggerId = useId()
   const filtersButtonId = useId()
+  const pageSizeLabelId = useId()
   const searchInputRef = useRef<HTMLInputElement>(null)
   const [pageSize, setPageSize] = useState(LAYOUT_PREVIEW_PAGE_SIZE)
   const [page, setPage] = useState(1)
@@ -466,21 +453,17 @@ export function LayoutPreviewListTable({
 
   const totalCountLabel = filteredTotal.toLocaleString("es-AR")
 
-  const pageOptions = useMemo(
-    () => Array.from({ length: totalPages }, (_, i) => i + 1),
-    [totalPages],
-  )
-
-  const footerPaginationAriaLabel = useMemo(() => {
-    if (filteredTotal === 0) return "Sin resultados"
+  const rangeLabel = useMemo(() => {
+    if (filteredTotal === 0) return { start: 0, end: 0 }
     const start = (currentPage - 1) * pageSize + 1
     const end = Math.min(currentPage * pageSize, filteredTotal)
-    const pagePart =
-      totalPages > 1
-        ? `, página ${currentPage} de ${totalPages}`
-        : ""
-    return `Mostrando ${start.toLocaleString("es-AR")} a ${end.toLocaleString("es-AR")} de ${totalCountLabel}${pagePart}`
-  }, [filteredTotal, currentPage, pageSize, totalPages, totalCountLabel])
+    return { start, end }
+  }, [filteredTotal, currentPage, pageSize])
+
+  const paginationItems = useMemo(
+    () => buildPaginationItems(totalPages, currentPage),
+    [totalPages, currentPage],
+  )
 
   const statusFilterNarrow =
     includedStatuses.size < ALL_STATUSES.length
@@ -1045,41 +1028,60 @@ export function LayoutPreviewListTable({
         </DialogContent>
       </Dialog>
 
-      <div className="relative flex min-h-0 flex-1 flex-col overflow-hidden bg-card">
-        <div className="relative flex min-h-0 flex-1 flex-col overflow-hidden">
-      {selected.size > 0 ? (
-        <div
-          className="flex flex-wrap items-center gap-2 border-b border-border/80 bg-muted/35 px-3 py-2.5 sm:px-4"
-          role="region"
-          aria-label="Acciones sobre selección"
-        >
-          <span className="text-sm text-foreground">
-            <span className="font-semibold">
-              {selected.size}
-            </span>{" "}
-            <span className="text-muted-foreground">seleccionados</span>
-          </span>
-          <div className="flex flex-wrap items-center gap-2">
-            <Button type="button" size="sm" variant="outline" className="h-8">
-              Eliminar selección
-            </Button>
-            <Button type="button" size="sm" variant="outline" className="h-8">
-              Exportar CSV
-            </Button>
-            <Button
-              type="button"
-              size="sm"
-              variant="ghost"
-              className={listBulkToolbarClearButtonClass}
-              onClick={() => setSelected(new Set())}
+      <DataWorkspaceListTableShell
+        variant="flush"
+        bulkToolbar={
+          selected.size > 0 ? (
+            <div
+              className="flex flex-wrap items-center gap-2 border-b border-border/80 bg-muted/35 px-3 py-2.5 sm:px-4"
+              role="region"
+              aria-label="Acciones sobre selección"
             >
-              Limpiar
-            </Button>
-          </div>
-        </div>
-      ) : null}
-
-      <div className="rootsy-scroll-minimal min-h-0 flex-1 overflow-auto bg-card">
+              <span className="text-sm text-foreground">
+                <span className="font-semibold">{selected.size}</span>{" "}
+                <span className="text-muted-foreground">seleccionados</span>
+              </span>
+              <div className="flex flex-wrap items-center gap-2">
+                <Button type="button" size="sm" variant="outline" className="h-8">
+                  Eliminar selección
+                </Button>
+                <Button type="button" size="sm" variant="outline" className="h-8">
+                  Exportar CSV
+                </Button>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="ghost"
+                  className={listBulkToolbarClearButtonClass}
+                  onClick={() => setSelected(new Set())}
+                >
+                  Limpiar
+                </Button>
+              </div>
+            </div>
+          ) : null
+        }
+        footer={
+          <DataWorkspaceListPaginationFooter
+            variant="dark"
+            listFetching={false}
+            totalCount={filteredTotal}
+            rangeStart={rangeLabel.start}
+            rangeEnd={rangeLabel.end}
+            currentPage={currentPage}
+            totalPages={totalPages}
+            pageSize={pageSize}
+            pageSizeOptions={LAYOUT_PREVIEW_PAGE_SIZE_OPTIONS}
+            paginationItems={paginationItems}
+            onPageChange={setPage}
+            onPageSizeChange={(ps) => {
+              setPageSize(ps)
+              setPage(1)
+            }}
+            pageSizeLabelId={pageSizeLabelId}
+          />
+        }
+      >
         <table
           className={cn(
             "relative w-full min-w-[56rem] table-fixed caption-bottom text-sm",
@@ -1260,137 +1262,7 @@ export function LayoutPreviewListTable({
             ))}
           </TableBody>
         </table>
-      </div>
-
-      <div
-        className={darkTableFooterClass}
-        role="navigation"
-        aria-label="Paginación del listado"
-      >
-        <div className="flex w-full items-stretch">
-          <div className={cn(darkTableFooterNavGroupClass, "justify-start")}>
-            <button
-              type="button"
-              className={cn(
-                darkTableFooterNavButtonClass,
-                "border-r border-zinc-800/90",
-              )}
-              disabled={currentPage <= 1}
-              aria-label="Ir a la primera página"
-              onClick={() => setPage(1)}
-            >
-              <ChevronsLeft className="size-7" aria-hidden />
-            </button>
-            <button
-              type="button"
-              className={darkTableFooterNavButtonClass}
-              disabled={currentPage <= 1}
-              aria-label="Página anterior"
-              onClick={() => setPage((p) => Math.max(1, p - 1))}
-            >
-              <ChevronLeft className="size-7" aria-hidden />
-            </button>
-          </div>
-
-          <div className={darkTableFooterCenterClass}>
-            <span
-              className="sr-only"
-              aria-live="polite"
-              aria-atomic="true"
-            >
-              {footerPaginationAriaLabel}
-            </span>
-
-            <Select
-              value={String(currentPage)}
-              onValueChange={(v) => setPage(Number(v))}
-            >
-              <SelectTrigger
-                className={footerPaginationSelectTriggerClass}
-                aria-label="Página"
-              >
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent align="center">
-                {pageOptions.map((p) => (
-                  <SelectItem key={p} value={String(p)}>
-                    {p.toLocaleString("es-AR")}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-
-            <span className="text-zinc-600" aria-hidden>
-              ·
-            </span>
-
-            <Select
-              value={String(pageSize)}
-              onValueChange={(v) => {
-                setPageSize(Number(v))
-                setPage(1)
-              }}
-            >
-              <SelectTrigger
-                className={footerPaginationSelectTriggerClass}
-                aria-label="Resultados por página"
-              >
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent align="center">
-                {LAYOUT_PREVIEW_PAGE_SIZE_OPTIONS.map((n) => (
-                  <SelectItem key={n} value={String(n)}>
-                    {n.toLocaleString("es-AR")}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-
-            {filteredTotal > 0 ? (
-              <>
-                <span className="text-zinc-600" aria-hidden>
-                  ·
-                </span>
-                <span
-                  className={darkTableFooterCenterMutedClass}
-                  aria-hidden
-                >
-                  <span className="md:hidden">{totalCountLabel}</span>
-                  <span className="hidden md:inline">
-                    {totalCountLabel} en total
-                  </span>
-                </span>
-              </>
-            ) : null}
-          </div>
-
-          <div className={cn(darkTableFooterNavGroupClass, "justify-end")}>
-            <button
-              type="button"
-              className={cn(
-                darkTableFooterNavButtonClass,
-                "border-l border-zinc-800/90",
-              )}
-              disabled={currentPage >= totalPages}
-              aria-label="Página siguiente"
-              onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-            >
-              <ChevronRight className="size-7" aria-hidden />
-            </button>
-            <button
-              type="button"
-              className={darkTableFooterNavButtonClass}
-              disabled={currentPage >= totalPages}
-              aria-label="Ir a la última página"
-              onClick={() => setPage(totalPages)}
-            >
-              <ChevronsRight className="size-7" aria-hidden />
-            </button>
-          </div>
-        </div>
-      </div>
-        </div>
-      </div>
+      </DataWorkspaceListTableShell>
     </div>
   )
 }

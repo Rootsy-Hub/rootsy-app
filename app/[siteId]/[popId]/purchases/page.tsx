@@ -6,15 +6,21 @@ import Link from "next/link"
 import {
   getPurchaseCatalog,
   type PurchaseCatalogArticle,
+  type PurchaseCatalogCategory,
   type PurchaseCatalogPaymentMethod,
   type PurchaseCatalogSupplier,
   type PurchaseKind,
 } from "@/app/[siteId]/[popId]/purchases/actions"
+import {
+  CLIENT_IVA_CONDITION_OPTIONS,
+} from "@/app/[siteId]/[popId]/clients/clientIvaConstants"
 import { completePurchase } from "@/app/[siteId]/[popId]/purchases/completePurchase"
 import { SUPPLIER_ACCOUNT_PAYMENT_LABEL } from "@/lib/operationPaymentLabels"
-import { getPurchaseDocumentTypeOptions } from "@/lib/purchaseDocumentTypes"
+import {
+  getPurchaseComprobanteDisplayLabel,
+  getPurchaseComprobantePickerOptions,
+} from "@/lib/purchaseComprobantePicker"
 import { DataWorkspaceLayout } from "@/components/layouts/DataWorkspaceLayout"
-import { DataWorkspaceSectionMenu } from "@/components/layouts/DataWorkspaceSectionMenu"
 import { useDataWorkspaceSidebar } from "@/components/layouts/useDataWorkspaceSidebar"
 import { useAuth } from "@/context/AuthContextSupabase"
 import { useParams } from "next/navigation"
@@ -34,9 +40,6 @@ import {
   LayoutGrid,
   Loader2,
   Minus,
-  Package,
-  Layers,
-  Box,
   Paperclip,
   Percent,
   Plus,
@@ -46,6 +49,7 @@ import {
   Trash2,
   Truck,
 } from "lucide-react"
+import { usePadronAutofillRazonSocial } from "@/hooks/usePadronAutofillRazonSocial"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import {
@@ -68,6 +72,13 @@ import {
 } from "@/components/ui/alert-dialog"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Separator } from "@/components/ui/separator"
 
@@ -86,27 +97,53 @@ type ItemCarrito = {
   cantidad: number
 }
 
+type ProveedorCompraSeleccionado = {
+  id: string | null
+  manual: boolean
+  name: string
+  taxId: string
+  ivaCondition: string | null
+}
+
+const MANUAL_PARTY_LIST_ID = "__manual__"
+
+const IVA_LABEL_BY_VALUE = Object.fromEntries(
+  CLIENT_IVA_CONDITION_OPTIONS.map((o) => [o.value, o.label]),
+) as Record<string, string>
+
+function labelCondicionIva(value: string | null | undefined) {
+  if (!value?.trim()) return null
+  return IVA_LABEL_BY_VALUE[value] ?? value
+}
+
 type VistaCatalogo = { modo: "categoria"; categoria: string }
 
 const CATEGORIA_TODOS = "Todos"
 
-const KIND_LABEL: Record<PurchaseKind, string> = {
-  merchandise: "Mercadería",
-  raw_material: "Materia prima",
-  supply: "Insumo",
+function derivePurchaseKindFromCart(
+  cart: ItemCarrito[],
+  articles: PurchaseCatalogArticle[],
+): PurchaseKind {
+  const counts = new Map<PurchaseKind, number>()
+  for (const item of cart) {
+    const article = articles.find((a) => a.id === item.productoId)
+    if (!article) continue
+    counts.set(
+      article.itemKind,
+      (counts.get(article.itemKind) ?? 0) + item.cantidad,
+    )
+  }
+  if (counts.size === 0) return "merchandise"
+  let best: PurchaseKind = "merchandise"
+  let bestQty = -1
+  for (const [kind, qty] of counts) {
+    if (qty > bestQty) {
+      best = kind
+      bestQty = qty
+    }
+  }
+  return best
 }
-
-const PURCHASE_KINDS: PurchaseKind[] = [
-  "merchandise",
-  "raw_material",
-  "supply",
-]
-
-const PURCHASE_KIND_MENU_ITEMS = [
-  { id: "merchandise", label: "Mercadería", icon: Package },
-  { id: "raw_material", label: "Materia prima", icon: Layers },
-  { id: "supply", label: "Insumo", icon: Box },
-] as const
 
 function articleToProducto(a: PurchaseCatalogArticle): Producto {
   return {
@@ -301,8 +338,10 @@ function PurchasesPage() {
   const [catalogArticles, setCatalogArticles] = useState<PurchaseCatalogArticle[]>(
     [],
   )
+  const [catalogCategories, setCatalogCategories] = useState<
+    PurchaseCatalogCategory[]
+  >([])
   const [suppliers, setSuppliers] = useState<PurchaseCatalogSupplier[]>([])
-  const [categoryNames, setCategoryNames] = useState<string[]>([])
   const [popName, setPopName] = useState("")
   const [catalogLoading, setCatalogLoading] = useState(true)
   const [catalogError, setCatalogError] = useState<string | null>(null)
@@ -313,9 +352,16 @@ function PurchasesPage() {
   >([])
   const [canReadPaymentMethods, setCanReadPaymentMethods] = useState(false)
 
-  const categoriasNav = useMemo(
-    () => [CATEGORIA_TODOS, ...categoryNames],
-    [categoryNames],
+  const categoriasNav = useMemo(() => {
+    const names = [
+      ...new Set(catalogCategories.map((c) => c.name).filter(Boolean)),
+    ]
+    return [CATEGORIA_TODOS, ...names]
+  }, [catalogCategories])
+
+  const productosCatalogo = useMemo(
+    () => catalogArticles.map(articleToProducto),
+    [catalogArticles],
   )
 
   const loadCatalog = useCallback(async () => {
@@ -329,8 +375,8 @@ function PurchasesPage() {
     const res = await getPurchaseCatalog(popId)
     if (!res.success) {
       setCatalogArticles([])
+      setCatalogCategories([])
       setSuppliers([])
-      setCategoryNames([])
       setPopName("")
       setCanCreate(false)
       setCanUpdateArticles(false)
@@ -341,10 +387,8 @@ function PurchasesPage() {
       return
     }
     setCatalogArticles(res.articles)
+    setCatalogCategories(res.categories)
     setSuppliers(res.suppliers)
-    setCategoryNames(
-      [...new Set(res.categories.map((c) => c.name).filter(Boolean))],
-    )
     setPopName(res.popName)
     setCanCreate(res.canCreate)
     setCanUpdateArticles(res.canUpdateArticles)
@@ -369,11 +413,6 @@ function PurchasesPage() {
     })
   }, [canReadPaymentMethods, paymentMethods])
 
-  const productosCatalogo = useMemo(
-    () => catalogArticles.map(articleToProducto),
-    [catalogArticles],
-  )
-
   const [vistaCatalogo, setVistaCatalogo] = useState<VistaCatalogo>({
     modo: "categoria",
     categoria: CATEGORIA_TODOS,
@@ -385,9 +424,16 @@ function PurchasesPage() {
   const [itemUpdateArticleCost, setItemUpdateArticleCost] = useState<
     Record<string, boolean>
   >({})
-  const [purchaseKind, setPurchaseKind] = useState<PurchaseKind>("merchandise")
   const [proveedorSeleccionado, setProveedorSeleccionado] =
-    useState<PurchaseCatalogSupplier | null>(null)
+    useState<ProveedorCompraSeleccionado | null>(null)
+  const [manualNombreProveedor, setManualNombreProveedor] = useState("")
+  const [proveedorTaxId, setProveedorTaxId] = useState("")
+  const [compraIvaCondition, setCompraIvaCondition] = useState("")
+  const compraPadron = usePadronAutofillRazonSocial(popId, proveedorTaxId, {
+    enabled:
+      Boolean(popId) &&
+      (proveedorSeleccionado == null || proveedorSeleccionado.manual),
+  })
   const [documentNumber, setDocumentNumber] = useState("")
   const [documentDate, setDocumentDate] = useState("")
   const [dueDate, setDueDate] = useState("")
@@ -417,9 +463,14 @@ function PurchasesPage() {
   >("porcentaje")
   const [descuentoDraftTexto, setDescuentoDraftTexto] = useState("")
 
-  const documentTypeOptions = useMemo(
-    () => getPurchaseDocumentTypeOptions(),
+  const comprobantePickerOptions = useMemo(
+    () => getPurchaseComprobantePickerOptions(),
     [],
+  )
+
+  const comprobanteDisplayLabel = useMemo(
+    () => getPurchaseComprobanteDisplayLabel(comprobanteTipo),
+    [comprobanteTipo],
   )
 
   const [itemDetalleAbiertoId, setItemDetalleAbiertoId] = useState<string | null>(
@@ -552,7 +603,7 @@ function PurchasesPage() {
       hayItemsEnPedido &&
       canCreate &&
       (payOnSupplierAccount
-        ? proveedorSeleccionado != null
+        ? Boolean(proveedorSeleccionado?.id)
         : canReadPaymentMethods && metodoPagoSeleccionado != null),
     [
       hayItemsEnPedido,
@@ -574,7 +625,9 @@ function PurchasesPage() {
     setItemUnitCosts({})
     setItemUpdateArticleCost({})
     setProveedorSeleccionado(null)
-    setPurchaseKind("merchandise")
+    setManualNombreProveedor("")
+    setProveedorTaxId("")
+    setCompraIvaCondition("")
     setDocumentNumber("")
     setDueDate("")
     setComprobanteTipo(null)
@@ -608,8 +661,18 @@ function PurchasesPage() {
     setCompraError(null)
     setCompraSubmitting(true)
     try {
+      const purchaseKind = derivePurchaseKindFromCart(carrito, catalogArticles)
       const res = await completePurchase(popId, {
-        supplierId: proveedorSeleccionado?.id ?? null,
+        supplierId:
+          proveedorSeleccionado && !proveedorSeleccionado.manual
+            ? proveedorSeleccionado.id
+            : null,
+        supplierManual: proveedorSeleccionado?.manual
+          ? {
+              name: proveedorSeleccionado.name,
+              taxId: proveedorSeleccionado.taxId || null,
+            }
+          : null,
         purchaseKind,
         documentNumber,
         documentDate,
@@ -653,7 +716,7 @@ function PurchasesPage() {
     cardInstallments,
     metodoPagoSeleccionado,
     proveedorSeleccionado,
-    purchaseKind,
+    catalogArticles,
     documentNumber,
     documentDate,
     dueDate,
@@ -672,13 +735,123 @@ function PurchasesPage() {
 
   const proveedoresFiltradosModal = useMemo(() => {
     const q = normalizarBusqueda(busquedaProveedorModal.trim())
-    if (!q) return suppliers
+
+    if (proveedorSeleccionado && !q) {
+      if (proveedorSeleccionado.manual) {
+        return [
+          {
+            id: MANUAL_PARTY_LIST_ID,
+            name: proveedorSeleccionado.name,
+            taxId: proveedorSeleccionado.taxId,
+          },
+        ]
+      }
+      const fromCatalog = suppliers.find((s) => s.id === proveedorSeleccionado.id)
+      if (fromCatalog) return [fromCatalog]
+      if (proveedorSeleccionado.id) {
+        return [
+          {
+            id: proveedorSeleccionado.id,
+            name: proveedorSeleccionado.name,
+            taxId: proveedorSeleccionado.taxId,
+          },
+        ]
+      }
+      return []
+    }
+
+    if (!q) return []
+
     return suppliers.filter(
       (s) =>
         normalizarBusqueda(s.name).includes(q) ||
         normalizarBusqueda(s.taxId).includes(q),
     )
-  }, [busquedaProveedorModal, suppliers])
+  }, [busquedaProveedorModal, suppliers, proveedorSeleccionado])
+
+  const proveedorCatalogoBloqueado =
+    proveedorSeleccionado != null && !proveedorSeleccionado.manual
+
+  const puedeUsarProveedorManual = useMemo(() => {
+    if (proveedorSeleccionado) return false
+    return Boolean(
+      manualNombreProveedor.trim() ||
+        proveedorTaxId.trim() ||
+        compraPadron.razonSocial.trim(),
+    )
+  }, [
+    proveedorSeleccionado,
+    manualNombreProveedor,
+    proveedorTaxId,
+    compraPadron.razonSocial,
+  ])
+
+  const quitarProveedorCompra = useCallback(() => {
+    setProveedorSeleccionado(null)
+    setManualNombreProveedor("")
+    setProveedorTaxId("")
+    setCompraIvaCondition("")
+  }, [])
+
+  const seleccionarProveedorCatalogo = (s: PurchaseCatalogSupplier) => {
+    setProveedorSeleccionado({
+      id: s.id,
+      manual: false,
+      name: s.name,
+      taxId: s.taxId,
+      ivaCondition: null,
+    })
+    setManualNombreProveedor(s.name)
+    setProveedorTaxId(s.taxId ?? "")
+    setProveedorModalAbierto(false)
+  }
+
+  const seleccionarProveedorManual = () => {
+    const name =
+      manualNombreProveedor.trim() || compraPadron.razonSocial.trim()
+    if (!name && !proveedorTaxId.trim()) return
+    setProveedorSeleccionado({
+      id: null,
+      manual: true,
+      name: name || "Proveedor sin nombre",
+      taxId: proveedorTaxId.trim(),
+      ivaCondition:
+        compraIvaCondition.trim() || compraPadron.mappedIvaCondition || null,
+    })
+    setProveedorModalAbierto(false)
+  }
+
+  useEffect(() => {
+    if (proveedorSeleccionado && !proveedorSeleccionado.manual) return
+    if (!proveedorTaxId.trim()) return
+    if (!compraPadron.mappedIvaCondition) return
+    setCompraIvaCondition(compraPadron.mappedIvaCondition)
+  }, [
+    proveedorTaxId,
+    compraPadron.mappedIvaCondition,
+    proveedorSeleccionado,
+  ])
+
+  useEffect(() => {
+    if (proveedorSeleccionado && !proveedorSeleccionado.manual) return
+    if (!compraPadron.razonSocial.trim()) return
+    if (manualNombreProveedor.trim()) return
+    setManualNombreProveedor(compraPadron.razonSocial.trim())
+  }, [
+    compraPadron.razonSocial,
+    manualNombreProveedor,
+    proveedorSeleccionado,
+  ])
+
+  const compraIvaLabel = useMemo(
+    () =>
+      labelCondicionIva(
+        proveedorSeleccionado?.ivaCondition ?? compraIvaCondition,
+      ),
+    [compraIvaCondition, proveedorSeleccionado?.ivaCondition],
+  )
+
+  const busquedaProveedorModalTrim = busquedaProveedorModal.trim()
 
   const paymentMethodGroups = useMemo(() => {
     const order = [
@@ -983,19 +1156,6 @@ function PurchasesPage() {
         sidebarOpen={catalogSidebarOpen}
         onSidebarOpenChange={setCatalogSidebarOpen}
         mainClassName="bg-[#070a09] text-white"
-        sectionMenu={
-          <DataWorkspaceSectionMenu
-            headerVariant="dark"
-            viewItems={PURCHASE_KIND_MENU_ITEMS}
-            activeId={purchaseKind}
-            onSelect={(id) => {
-              if (PURCHASE_KINDS.includes(id as PurchaseKind)) {
-                setPurchaseKind(id as PurchaseKind)
-              }
-            }}
-            viewsSectionLabel="Tipo de compra"
-          />
-        }
       >
         <div className="dark relative flex h-full min-h-0 w-full flex-col overflow-hidden bg-[#070a09] text-white">
           <div className="pointer-events-none absolute inset-0">
@@ -1242,6 +1402,11 @@ function PurchasesPage() {
                   >
                     {proveedorSeleccionado?.name ?? "Elegir proveedor"}
                   </span>
+                  {compraIvaLabel ? (
+                    <span className="mt-0.5 block truncate text-[11px] font-medium text-muted-foreground">
+                      {compraIvaLabel}
+                    </span>
+                  ) : null}
                 </span>
               </button>
 
@@ -1270,11 +1435,12 @@ function PurchasesPage() {
                         : "text-foreground/55",
                     )}
                   >
-                    {comprobanteTipo ??
-                      (documentNumber.trim() ||
+                    {comprobanteTipo != null
+                      ? comprobanteTipo
+                      : documentNumber.trim() ||
                         (comprobanteAdjunto
                           ? comprobanteAdjunto.name
-                          : "Tipo y adjunto"))}
+                          : comprobanteDisplayLabel)}
                   </span>
                 </span>
               </button>
@@ -1541,8 +1707,8 @@ function PurchasesPage() {
                         ? "Agregá artículos a la compra."
                         : !payOnSupplierAccount && !metodoPagoSeleccionado
                           ? "Elegí cómo vas a pagar o usá cuenta corriente."
-                          : payOnSupplierAccount && !proveedorSeleccionado
-                            ? "Elegí un proveedor para comprar a cuenta corriente."
+                          : payOnSupplierAccount && !proveedorSeleccionado?.id
+                            ? "Elegí un proveedor del catálogo para comprar a cuenta corriente."
                             : !canCreate
                               ? "No tenés permiso para registrar compras."
                               : undefined
@@ -1592,7 +1758,7 @@ function PurchasesPage() {
                       </p>
                     ) : (
                       <p className="mt-1 text-[10px] leading-snug text-white/40">
-                        {KIND_LABEL[purchaseKind]}
+                        Catálogo unificado
                         {proveedorSeleccionado
                           ? ` · ${proveedorSeleccionado.name}`
                           : ""}
@@ -1637,16 +1803,27 @@ function PurchasesPage() {
         open={proveedorModalAbierto}
         onOpenChange={(open) => {
           setProveedorModalAbierto(open)
-          if (open) setBusquedaProveedorModal("")
+          if (open) {
+            setBusquedaProveedorModal("")
+            if (proveedorSeleccionado?.manual) {
+              setManualNombreProveedor(proveedorSeleccionado.name)
+              setProveedorTaxId(proveedorSeleccionado.taxId)
+              setCompraIvaCondition(proveedorSeleccionado.ivaCondition ?? "")
+            }
+          }
         }}
       >
         <DialogContent className={compraDialogContentMd}>
           <DialogHeader className={compraDialogHeader}>
             <DialogTitle className="text-base font-semibold tracking-tight">
-              Proveedor
+              Proveedor para esta compra
             </DialogTitle>
             <DialogDescription className="text-sm leading-relaxed">
-              Elegí el proveedor de esta compra (opcional).
+              {proveedorSeleccionado
+                ? proveedorSeleccionado.manual
+                  ? "Proveedor cargado manualmente para esta compra (no se guarda en el catálogo). Quitá la selección para cambiar los datos."
+                  : "Proveedor asignado a esta compra. Quitá la selección para cargar datos manualmente."
+                : "Buscá en el catálogo o cargá los datos manualmente y usalos solo para esta compra."}
             </DialogDescription>
           </DialogHeader>
           <div className={compraDialogBody}>
@@ -1656,14 +1833,15 @@ function PurchasesPage() {
                 ref={busquedaProveedorInputRef}
                 value={busquedaProveedorModal}
                 onChange={(e) => setBusquedaProveedorModal(e.target.value)}
-                placeholder="Buscar por nombre o CUIT…"
+                placeholder="Nombre del proveedor…"
+                disabled={proveedorCatalogoBloqueado}
                 className={cn(
                   "h-11 rounded-lg pl-9",
                   busquedaProveedorModal.length > 0 && "pr-9",
                 )}
                 autoComplete="off"
               />
-              {busquedaProveedorModal.length > 0 ? (
+              {busquedaProveedorModal.length > 0 && !proveedorCatalogoBloqueado ? (
                 <button
                   type="button"
                   aria-label="Limpiar búsqueda"
@@ -1673,94 +1851,238 @@ function PurchasesPage() {
                     busquedaProveedorInputRef.current?.focus()
                   }}
                 >
-                  <CircleX className="size-4" aria-hidden />
+                  <IconoLimpiarBusqueda />
                 </button>
               ) : null}
             </div>
+            <div
+              className={cn(
+                "mb-3 rounded-xl border border-border/50 bg-muted/15 p-3",
+                proveedorCatalogoBloqueado && "opacity-60",
+              )}
+            >
+              <p className="mb-2 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+                Datos para esta compra
+              </p>
+              <Input
+                value={manualNombreProveedor}
+                onChange={(e) => setManualNombreProveedor(e.target.value)}
+                placeholder="Nombre o razón social"
+                className="mb-2 h-10 rounded-lg"
+                autoComplete="off"
+                disabled={proveedorSeleccionado != null}
+                readOnly={proveedorSeleccionado != null}
+              />
+              <p className="mb-1.5 text-[11px] font-medium text-muted-foreground">
+                CUIT (padrón AFIP)
+              </p>
+              <Input
+                value={proveedorTaxId}
+                onChange={(e) => setProveedorTaxId(e.target.value)}
+                placeholder="Ej. 30-12345678-9"
+                className="h-10 rounded-lg"
+                autoComplete="off"
+                disabled={proveedorSeleccionado != null}
+                readOnly={proveedorSeleccionado != null}
+              />
+              <div className="mt-2 flex min-h-6 items-center gap-2 text-sm">
+                {proveedorSeleccionado ? (
+                  <span className="font-medium text-foreground">
+                    {proveedorSeleccionado.name}
+                  </span>
+                ) : compraPadron.busy ? (
+                  <>
+                    <Loader2
+                      className="size-4 shrink-0 animate-spin text-primary"
+                      aria-hidden
+                    />
+                    <span className="text-muted-foreground">Consultando…</span>
+                  </>
+                ) : compraPadron.error ? (
+                  <span className="text-destructive">{compraPadron.error}</span>
+                ) : compraPadron.razonSocial && !manualNombreProveedor.trim() ? (
+                  <span className="text-muted-foreground">
+                    Padrón:{" "}
+                    <span className="font-medium text-foreground">
+                      {compraPadron.razonSocial}
+                    </span>
+                  </span>
+                ) : (
+                  <span className="text-muted-foreground">
+                    La razón social del padrón se completa al validar el CUIT.
+                  </span>
+                )}
+              </div>
+              {proveedorSeleccionado?.ivaCondition ? (
+                <p className="mt-1 text-xs text-muted-foreground">
+                  {labelCondicionIva(proveedorSeleccionado.ivaCondition)}
+                </p>
+              ) : compraPadron.condicionIvaNombre &&
+                !compraPadron.busy &&
+                !compraPadron.error ? (
+                <p className="mt-1 text-xs text-muted-foreground">
+                  AFIP: {compraPadron.condicionIvaNombre}
+                </p>
+              ) : null}
+            </div>
+            <div
+              className={cn(
+                "mb-3 space-y-2",
+                proveedorSeleccionado != null && "opacity-60",
+              )}
+            >
+              <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+                Condición IVA (esta compra)
+              </p>
+              <Select
+                value={compraIvaCondition || "__none__"}
+                disabled={proveedorSeleccionado != null}
+                onValueChange={(v) => {
+                  setCompraIvaCondition(v === "__none__" ? "" : v)
+                }}
+              >
+                <SelectTrigger className="h-10 rounded-lg bg-background">
+                  <SelectValue placeholder="Sin definir" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="__none__">Sin definir</SelectItem>
+                  {CLIENT_IVA_CONDITION_OPTIONS.map((o) => (
+                    <SelectItem key={o.value} value={o.value}>
+                      {o.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
             <ul
-              className="game-scroll max-h-[min(50vh,16rem)] space-y-2 overflow-y-auto rounded-xl border border-border/40 bg-muted/20 p-2 pr-1"
+              className={cn(
+                "game-scroll max-h-[min(50vh,16rem)] space-y-2 overflow-y-auto rounded-xl border border-border/40 bg-muted/20 p-2 pr-1",
+                proveedorCatalogoBloqueado && "opacity-60",
+              )}
               role="listbox"
               aria-label="Proveedores"
             >
-              <li>
-                <button
-                  type="button"
-                  role="option"
-                  aria-selected={!proveedorSeleccionado}
-                  onClick={() => {
-                    setProveedorSeleccionado(null)
-                    setProveedorModalAbierto(false)
-                  }}
-                  className={compraDialogOptionClass(!proveedorSeleccionado)}
-                >
-                  <span className="min-w-0">
-                    <span className="block text-sm font-semibold leading-snug text-foreground">
-                      Sin proveedor
-                    </span>
-                  </span>
-                  {!proveedorSeleccionado ? (
-                    <span className="size-2 shrink-0 rounded-full bg-primary" />
-                  ) : null}
-                </button>
-              </li>
-              {proveedoresFiltradosModal.map((s) => {
-                const seleccionado = proveedorSeleccionado?.id === s.id
-                return (
-                  <li key={s.id}>
-                    <button
-                      type="button"
-                      role="option"
-                      aria-selected={seleccionado}
-                      onClick={() => {
-                        setProveedorSeleccionado(s)
-                        setProveedorModalAbierto(false)
-                      }}
-                      className={compraDialogOptionClass(seleccionado)}
-                    >
-                      <span className="min-w-0">
-                        <span className="block text-sm font-semibold leading-snug text-foreground">
-                          {s.name}
-                        </span>
-                        {s.taxId ? (
-                          <span className="mt-0.5 block text-xs leading-snug text-muted-foreground">
-                            CUIT {s.taxId}
-                          </span>
-                        ) : null}
-                      </span>
-                      {seleccionado ? (
-                        <span className="size-2 shrink-0 rounded-full bg-primary" />
-                      ) : null}
-                    </button>
-                  </li>
-                )
-              })}
-              {suppliers.length === 0 ? (
-                <li className="rounded-lg border border-dashed border-border/60 bg-background/50 px-4 py-8 text-center text-sm text-muted-foreground">
-                  No hay proveedores cargados.{" "}
-                  <Link
-                    href={`/${siteId}/${popId}/suppliers`}
-                    className="underline underline-offset-2"
+              {!proveedorSeleccionado ? (
+                <li>
+                  <button
+                    type="button"
+                    role="option"
+                    aria-selected={!proveedorSeleccionado}
+                    onClick={() => {
+                      quitarProveedorCompra()
+                      setProveedorModalAbierto(false)
+                    }}
+                    className={compraDialogOptionClass(!proveedorSeleccionado)}
                   >
-                    Cargar proveedores
-                  </Link>
-                </li>
-              ) : proveedoresFiltradosModal.length === 0 &&
-                busquedaProveedorModal.trim() ? (
-                <li className="rounded-lg border border-dashed border-border/60 bg-background/50 px-4 py-8 text-center text-sm text-muted-foreground">
-                  No hay resultados para esa búsqueda.
+                    <span className="min-w-0">
+                      <span className="block text-sm font-semibold leading-snug text-foreground">
+                        Sin proveedor
+                      </span>
+                    </span>
+                    {!proveedorSeleccionado ? (
+                      <span className="size-2 shrink-0 rounded-full bg-primary" />
+                    ) : null}
+                  </button>
                 </li>
               ) : null}
+              {proveedoresFiltradosModal.length === 0 ? (
+                <li className="rounded-lg border border-dashed border-border/60 bg-background/50 px-4 py-8 text-center text-sm text-muted-foreground">
+                  {proveedorSeleccionado && !busquedaProveedorModalTrim
+                    ? proveedorSeleccionado.manual
+                      ? "Proveedor manual asignado a esta compra."
+                      : "Proveedor asignado a esta compra."
+                    : !busquedaProveedorModalTrim
+                      ? suppliers.length === 0
+                        ? (
+                            <>
+                              No hay proveedores cargados.{" "}
+                              <Link
+                                href={`/${siteId}/${popId}/suppliers`}
+                                className="underline underline-offset-2"
+                              >
+                                Cargar proveedores
+                              </Link>
+                            </>
+                          )
+                        : "Escribí un nombre o CUIT en el buscador para ver proveedores del catálogo."
+                      : "No hay resultados para esa búsqueda."}
+                </li>
+              ) : (
+                proveedoresFiltradosModal.map((s) => {
+                  const seleccionado = proveedorSeleccionado?.manual
+                    ? s.id === MANUAL_PARTY_LIST_ID
+                    : proveedorSeleccionado?.id === s.id
+                  const opcionDeshabilitada = proveedorSeleccionado != null
+                  return (
+                    <li key={s.id}>
+                      <button
+                        type="button"
+                        role="option"
+                        aria-selected={seleccionado}
+                        aria-disabled={opcionDeshabilitada}
+                        disabled={opcionDeshabilitada}
+                        onClick={() => {
+                          if (s.id === MANUAL_PARTY_LIST_ID) return
+                          seleccionarProveedorCatalogo(s)
+                        }}
+                        className={compraDialogOptionClass(seleccionado, opcionDeshabilitada)}
+                      >
+                        <span className="min-w-0">
+                          <span className="block text-sm font-semibold leading-snug text-foreground">
+                            {s.name}
+                            {s.id === MANUAL_PARTY_LIST_ID ? (
+                              <span className="ml-1.5 text-xs font-normal text-muted-foreground">
+                                (manual)
+                              </span>
+                            ) : null}
+                          </span>
+                          {s.taxId ? (
+                            <span className="mt-0.5 block text-xs leading-snug text-muted-foreground">
+                              {s.taxId}
+                            </span>
+                          ) : null}
+                        </span>
+                        {seleccionado ? (
+                          <span className="size-2 shrink-0 rounded-full bg-primary" />
+                        ) : null}
+                      </button>
+                    </li>
+                  )
+                })
+              )}
             </ul>
           </div>
           <DialogFooter className={compraDialogFooter}>
-            <Button
-              type="button"
-              variant="ghost"
-              className={compraDialogGhostBtn}
-              onClick={() => setProveedorModalAbierto(false)}
-            >
-              Cerrar
-            </Button>
+            {proveedorSeleccionado ? (
+              <Button
+                type="button"
+                variant="ghost"
+                className={compraDialogGhostBtn}
+                onClick={() => {
+                  quitarProveedorCompra()
+                  setProveedorModalAbierto(false)
+                }}
+              >
+                Quitar proveedor
+              </Button>
+            ) : puedeUsarProveedorManual ? (
+              <Button
+                type="button"
+                className={compraDialogPrimaryBtn}
+                onClick={seleccionarProveedorManual}
+              >
+                Usar para esta compra
+              </Button>
+            ) : (
+              <Button
+                type="button"
+                variant="ghost"
+                className={compraDialogGhostBtn}
+                onClick={() => setProveedorModalAbierto(false)}
+              >
+                Cerrar
+              </Button>
+            )}
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -1772,8 +2094,8 @@ function PurchasesPage() {
               Tipo de comprobante
             </DialogTitle>
             <DialogDescription className="text-sm leading-relaxed">
-              Seleccioná el comprobante del proveedor, completá los datos y adjuntá
-              el archivo si lo tenés.
+              Elegí el documento del proveedor o dejalo en sin comprobante para un
+              registro interno. Completá número, fechas y adjunto si los tenés.
             </DialogDescription>
           </DialogHeader>
           <div
@@ -1787,20 +2109,30 @@ function PurchasesPage() {
               role="listbox"
               aria-label="Tipos de comprobante"
             >
-              {documentTypeOptions.map((label) => {
-                const seleccionado = comprobanteTipo === label
+              {comprobantePickerOptions.map((opt) => {
+                const seleccionado =
+                  opt.kind === "none"
+                    ? comprobanteTipo == null
+                    : comprobanteTipo === opt.label
                 return (
-                  <li key={label} className="min-w-0">
+                  <li key={opt.label} className="min-w-0">
                     <button
                       type="button"
                       role="option"
                       aria-selected={seleccionado}
-                      onClick={() => setComprobanteTipo(label)}
+                      onClick={() =>
+                        setComprobanteTipo(
+                          opt.kind === "none" ? null : opt.label,
+                        )
+                      }
                       className={compraDialogOptionClass(seleccionado)}
                     >
                       <span className="min-w-0">
                         <span className="block text-sm font-semibold leading-snug text-foreground">
-                          {label}
+                          {opt.label}
+                        </span>
+                        <span className="mt-0.5 block text-xs leading-snug text-muted-foreground">
+                          {opt.hint}
                         </span>
                       </span>
                       {seleccionado ? (
@@ -2198,7 +2530,7 @@ function PurchasesPage() {
             <AlertDialogDescription asChild>
               <div className="space-y-2 text-muted-foreground">
                 <p>
-                  Vas a registrar una compra de {KIND_LABEL[purchaseKind]} por{" "}
+                  Vas a registrar una compra por{" "}
                   <span
                     className={cn(
                       compraImporteBaseClass,

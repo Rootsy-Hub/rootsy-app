@@ -1,3 +1,9 @@
+import {
+  ARTICLE_ITEM_KINDS,
+  parseItemKindsCsv,
+  type ArticleItemKind,
+} from "@/lib/articleItemKind"
+
 export const ARTICLE_TABLE_PAGE_SIZES = [10, 25, 50, 100] as const
 
 export const DEFAULT_ARTICLE_TABLE_PAGE_SIZE = 25
@@ -9,6 +15,7 @@ const K = {
   ps: "ps",
   solo: "solo",
   cat: "cat",
+  kinds: "kinds",
 } as const
 
 export type ArticlesWorkspaceUrlState = {
@@ -18,6 +25,8 @@ export type ArticlesWorkspaceUrlState = {
   pageSize: number
   soloActivos: boolean
   categoryId: string
+  /** Vacío = todos los tipos visibles. */
+  itemKinds: ArticleItemKind[]
 }
 
 const ALLOWED_VIEWS = new Set(["list", "new-article"])
@@ -52,6 +61,10 @@ export function parseArticlesWorkspaceUrl(
   const catRaw = searchParams.get(K.cat)?.trim() ?? ""
   const categoryId = /^[0-9a-f-]{36}$/i.test(catRaw) ? catRaw : ""
 
+  const itemKinds = parseItemKindsCsv(
+    searchParams.get(K.kinds) ?? searchParams.get("kind"),
+  )
+
   return {
     view,
     q,
@@ -59,6 +72,7 @@ export function parseArticlesWorkspaceUrl(
     pageSize,
     soloActivos: searchParams.get(K.solo) === "1",
     categoryId,
+    itemKinds,
   }
 }
 
@@ -73,6 +87,12 @@ export function buildArticlesWorkspaceQuery(state: ArticlesWorkspaceUrlState): s
   }
   if (state.soloActivos) n.set(K.solo, "1")
   if (state.categoryId.trim()) n.set(K.cat, state.categoryId.trim())
+  if (
+    state.itemKinds.length > 0 &&
+    state.itemKinds.length < ARTICLE_ITEM_KINDS.length
+  ) {
+    n.set(K.kinds, state.itemKinds.join(","))
+  }
   return n.toString()
 }
 
@@ -88,7 +108,8 @@ export function mergeArticlesWorkspaceUrl(
     patch.page === undefined &&
     (patch.q !== undefined ||
       patch.soloActivos !== undefined ||
-      patch.categoryId !== undefined)
+      patch.categoryId !== undefined ||
+      patch.itemKinds !== undefined)
   ) {
     merged.page = 1
   }

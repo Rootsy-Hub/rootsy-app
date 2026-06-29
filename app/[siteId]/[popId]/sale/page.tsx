@@ -6,6 +6,7 @@ import { completeSale } from "@/app/[siteId]/[popId]/sale/completeSale"
 import {
   getSaleCatalog,
   type SaleCatalogArticle,
+  type SaleCatalogCategory,
   type SaleCatalogClient,
   type SaleCatalogPaymentMethod,
   type SaleOpenCashSession,
@@ -113,12 +114,15 @@ type ItemCarrito = {
 }
 
 type ClienteVentaSeleccionado = {
-  id: string
+  id: string | null
+  manual: boolean
   name: string
   taxId: string | null
   ivaCondition: string | null
   defaultInvoiceTypeLabel: string | null
 }
+
+const MANUAL_PARTY_LIST_ID = "__manual__"
 
 type VistaCatalogo = SaleCatalogViewPersisted
 
@@ -130,6 +134,7 @@ function articleToProducto(a: SaleCatalogArticle): Producto {
     nombre: a.name,
     descripcion: a.description.trim() ? a.description : "—",
     precio: a.salePrice,
+    precioOriginal: a.originalSalePrice,
     categoria: a.categoryName.trim() ? a.categoryName : "—",
     imagen: `https://api.dicebear.com/7.x/shapes/svg?seed=${encodeURIComponent(a.id)}&backgroundColor=1a1f1d`,
   }
@@ -353,14 +358,16 @@ function SalePage() {
   const [invoiceTypeSiteId, setInvoiceTypeSiteId] = useState<string>(
     DEFAULT_SALE_SITE_ID,
   )
-  const [saleCategoryNames, setSaleCategoryNames] = useState<string[]>([])
+  const [saleCategories, setSaleCategories] = useState<SaleCatalogCategory[]>(
+    [],
+  )
   const [popName, setPopName] = useState("")
   const [catalogLoading, setCatalogLoading] = useState(true)
   const [catalogError, setCatalogError] = useState<string | null>(null)
 
   const categoriasNav = useMemo(
-    () => [CATEGORIA_TODOS, ...saleCategoryNames],
-    [saleCategoryNames],
+    () => [CATEGORIA_TODOS, ...saleCategories.map((c) => c.name)],
+    [saleCategories],
   )
 
   const loadCatalog = useCallback(async () => {
@@ -381,7 +388,7 @@ function SalePage() {
       setCanCreateSale(false)
       setCanReadCashRegisters(false)
       setOpenCashSession(null)
-      setSaleCategoryNames([])
+      setSaleCategories([])
       setPopName("")
       setCatalogError(res.error)
       setCatalogLoading(false)
@@ -396,9 +403,7 @@ function SalePage() {
     setCanReadCashRegisters(res.canReadCashRegisters)
     setOpenCashSession(res.openCashSession)
     setInvoiceTypeSiteId(res.invoiceTypeSiteId)
-    setSaleCategoryNames(
-      [...new Set(res.categories.map((c) => c.name).filter(Boolean))],
-    )
+    setSaleCategories(res.categories)
     setPopName(res.popName)
     setCatalogError(null)
     setCatalogLoading(false)
@@ -441,9 +446,12 @@ function SalePage() {
   const [clienteSeleccionado, setClienteSeleccionado] =
     useState<ClienteVentaSeleccionado | null>(null)
   const [ventaIvaCondition, setVentaIvaCondition] = useState("")
+  const [manualNombreCliente, setManualNombreCliente] = useState("")
   const [fiscalDocVenta, setFiscalDocVenta] = useState("")
   const ventaPadron = usePadronAutofillRazonSocial(popId, fiscalDocVenta, {
-    enabled: Boolean(popId) && clienteSeleccionado == null,
+    enabled:
+      Boolean(popId) &&
+      (clienteSeleccionado == null || clienteSeleccionado.manual),
   })
   const [clienteModalAbierto, setClienteModalAbierto] = useState(false)
   const [busquedaClienteModal, setBusquedaClienteModal] = useState("")
@@ -630,7 +638,7 @@ function SalePage() {
       hayItemsEnPedido &&
       pagoConfigurado &&
       (payOnClientAccount
-        ? clienteSeleccionado != null
+        ? Boolean(clienteSeleccionado?.id)
         : metodoPagoSeleccionado != null) &&
       canCreateSale &&
       canReadCashRegisters &&
@@ -650,6 +658,7 @@ function SalePage() {
   const limpiarVenta = useCallback(() => {
     setCarrito([])
     setClienteSeleccionado(null)
+    setManualNombreCliente("")
     setFiscalDocVenta("")
     setVentaIvaCondition("")
     if (popId) {
@@ -677,24 +686,31 @@ function SalePage() {
 
   const confirmarVenta = useCallback(async () => {
     if (!popId || !siteId || !pagoConfigurado) return
-    if (payOnClientAccount && !clienteSeleccionado) return
+    if (payOnClientAccount && !clienteSeleccionado?.id) return
     if (!payOnClientAccount && !metodoPagoSeleccionado) return
     setVentaError(null)
     setVentaSubmitting(true)
     try {
+      const catalogClientId =
+        clienteSeleccionado?.id && !clienteSeleccionado.manual
+          ? clienteSeleccionado.id
+          : null
+      const manualOrFiscalName =
+        manualNombreCliente.trim() ||
+        ventaPadron.razonSocial.trim() ||
+        clienteSeleccionado?.name ||
+        ""
+      const manualOrFiscalTaxId =
+        fiscalDocVenta.trim() || clienteSeleccionado?.taxId || null
       const hasFiscalOverride =
+        Boolean(clienteSeleccionado?.manual) ||
         Boolean(fiscalDocVenta.trim()) ||
-        Boolean(ventaPadron.razonSocial.trim())
+        Boolean(ventaPadron.razonSocial.trim()) ||
+        Boolean(manualNombreCliente.trim())
       const fiscalCustomer = hasFiscalOverride
         ? {
-            name:
-              ventaPadron.razonSocial.trim() ||
-              clienteSeleccionado?.name ||
-              "",
-            taxId:
-              fiscalDocVenta.trim() ||
-              clienteSeleccionado?.taxId ||
-              null,
+            name: manualOrFiscalName,
+            taxId: manualOrFiscalTaxId,
           }
         : null
       const res = await completeSale(popId, {
@@ -706,7 +722,7 @@ function SalePage() {
           itemDiscountDraft: itemDescuentoDraft[i.productoId] ?? "",
           comment: itemComentarios[i.productoId],
         })),
-        clientId: clienteSeleccionado?.id ?? null,
+        clientId: catalogClientId,
         payOnClientAccount,
         paymentMethodId: payOnClientAccount
           ? null
@@ -715,7 +731,10 @@ function SalePage() {
         valorDescuentoPorcentaje,
         valorDescuentoFijo,
         invoiceTypeLabel: comprobante,
-        customerIvaCondition: ventaIvaCondition.trim() || null,
+        customerIvaCondition:
+          ventaIvaCondition.trim() ||
+          clienteSeleccionado?.ivaCondition ||
+          null,
         fiscalCustomer,
       })
       if (!res.success) {
@@ -744,6 +763,7 @@ function SalePage() {
     comprobante,
     ventaIvaCondition,
     fiscalDocVenta,
+    manualNombreCliente,
     ventaPadron.razonSocial,
     limpiarVenta,
   ])
@@ -796,6 +816,7 @@ function SalePage() {
 
   const quitarClienteVenta = useCallback(() => {
     setClienteSeleccionado(null)
+    setManualNombreCliente("")
     setFiscalDocVenta("")
     setVentaIvaCondition("")
     if (popId) {
@@ -811,7 +832,7 @@ function SalePage() {
   }, [popId, invoiceTypeSiteId])
 
   useEffect(() => {
-    if (clienteSeleccionado) return
+    if (clienteSeleccionado && !clienteSeleccionado.manual) return
     if (!fiscalDocVenta.trim()) return
     if (!ventaPadron.mappedIvaCondition) return
     setVentaIvaCondition(ventaPadron.mappedIvaCondition)
@@ -823,32 +844,77 @@ function SalePage() {
     clienteSeleccionado,
   ])
 
+  useEffect(() => {
+    if (clienteSeleccionado && !clienteSeleccionado.manual) return
+    if (!ventaPadron.razonSocial.trim()) return
+    if (manualNombreCliente.trim()) return
+    setManualNombreCliente(ventaPadron.razonSocial.trim())
+  }, [
+    ventaPadron.razonSocial,
+    manualNombreCliente,
+    clienteSeleccionado,
+  ])
+
   const ventaIvaLabel = useMemo(
-    () => labelCondicionIva(ventaIvaCondition),
-    [ventaIvaCondition],
+    () =>
+      labelCondicionIva(
+        clienteSeleccionado?.ivaCondition ?? ventaIvaCondition,
+      ),
+    [ventaIvaCondition, clienteSeleccionado?.ivaCondition],
   )
 
   const clientesFiltradosModal = useMemo(() => {
     const q = normalizarBusqueda(busquedaClienteModal.trim())
 
     if (clienteSeleccionado && !q) {
+      if (clienteSeleccionado.manual) {
+        return [
+          {
+            id: MANUAL_PARTY_LIST_ID,
+            name: clienteSeleccionado.name,
+            taxId: clienteSeleccionado.taxId,
+            ivaCondition: clienteSeleccionado.ivaCondition,
+            defaultInvoiceTypeLabel: null,
+          },
+        ]
+      }
       const fromCatalog = saleClients.find((c) => c.id === clienteSeleccionado.id)
       if (fromCatalog) return [fromCatalog]
-      return [
-        {
-          id: clienteSeleccionado.id,
-          name: clienteSeleccionado.name,
-          taxId: clienteSeleccionado.taxId,
-          ivaCondition: clienteSeleccionado.ivaCondition,
-          defaultInvoiceTypeLabel: clienteSeleccionado.defaultInvoiceTypeLabel,
-        },
-      ]
+      if (clienteSeleccionado.id) {
+        return [
+          {
+            id: clienteSeleccionado.id,
+            name: clienteSeleccionado.name,
+            taxId: clienteSeleccionado.taxId,
+            ivaCondition: clienteSeleccionado.ivaCondition,
+            defaultInvoiceTypeLabel: clienteSeleccionado.defaultInvoiceTypeLabel,
+          },
+        ]
+      }
+      return []
     }
 
     if (!q) return []
 
     return saleClients.filter((c) => normalizarBusqueda(c.name).includes(q))
   }, [busquedaClienteModal, saleClients, clienteSeleccionado])
+
+  const clienteCatalogoBloqueado =
+    clienteSeleccionado != null && !clienteSeleccionado.manual
+
+  const puedeUsarClienteManual = useMemo(() => {
+    if (clienteSeleccionado) return false
+    return Boolean(
+      manualNombreCliente.trim() ||
+        fiscalDocVenta.trim() ||
+        ventaPadron.razonSocial.trim(),
+    )
+  }, [
+    clienteSeleccionado,
+    manualNombreCliente,
+    fiscalDocVenta,
+    ventaPadron.razonSocial,
+  ])
 
   const busquedaClienteModalTrim = busquedaClienteModal.trim()
 
@@ -964,14 +1030,36 @@ function SalePage() {
   const seleccionarCliente = (c: SaleCatalogClient) => {
     setClienteSeleccionado({
       id: c.id,
+      manual: false,
       name: c.name,
       taxId: c.taxId,
       ivaCondition: c.ivaCondition,
       defaultInvoiceTypeLabel: c.defaultInvoiceTypeLabel,
     })
+    setManualNombreCliente(c.name)
     setFiscalDocVenta(c.taxId ?? "")
     setVentaIvaCondition(c.ivaCondition ?? "")
     aplicarComprobanteDesdeCliente(c)
+    setClienteModalAbierto(false)
+  }
+
+  const seleccionarClienteManual = () => {
+    const name =
+      manualNombreCliente.trim() || ventaPadron.razonSocial.trim()
+    if (!name && !fiscalDocVenta.trim()) return
+    const iva =
+      ventaIvaCondition.trim() || ventaPadron.mappedIvaCondition || null
+    setClienteSeleccionado({
+      id: null,
+      manual: true,
+      name: name || "Cliente sin nombre",
+      taxId: fiscalDocVenta.trim() || null,
+      ivaCondition: iva,
+      defaultInvoiceTypeLabel: null,
+    })
+    if (iva) {
+      aplicarComprobanteDesdeIva(iva as ClientIvaConditionValue)
+    }
     setClienteModalAbierto(false)
   }
 
@@ -1117,18 +1205,39 @@ function SalePage() {
               Categorías
             </p>
             <ul className="flex flex-col gap-0.5 p-0" role="list">
-              {categoriasNav.map((cat) => {
+              <li>
+                <button
+                  type="button"
+                  onClick={() =>
+                    persistVistaCatalogo({
+                      modo: "categoria",
+                      categoria: CATEGORIA_TODOS,
+                    })
+                  }
+                  className={cn(
+                    "relative flex min-h-11 w-full items-center rounded-md px-3 py-2.5 text-left text-sm font-medium transition-colors duration-150",
+                    "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/45 focus-visible:ring-offset-2 focus-visible:ring-offset-[#1a2027]",
+                    vistaCatalogo.modo === "categoria" &&
+                      vistaCatalogo.categoria === CATEGORIA_TODOS
+                      ? "bg-white/10 text-white before:absolute before:top-1/2 before:left-0 before:h-5 before:w-0.5 before:-translate-y-1/2 before:rounded-full before:bg-emerald-400 before:content-['']"
+                      : "text-slate-400 hover:bg-white/6 hover:text-slate-100",
+                  )}
+                >
+                  {CATEGORIA_TODOS}
+                </button>
+              </li>
+              {saleCategories.map((cat) => {
                 const seleccionado =
                   vistaCatalogo.modo === "categoria" &&
-                  vistaCatalogo.categoria === cat
+                  vistaCatalogo.categoria === cat.name
                 return (
-                  <li key={cat}>
+                  <li key={cat.id}>
                     <button
                       type="button"
                       onClick={() =>
                         persistVistaCatalogo({
                           modo: "categoria",
-                          categoria: cat,
+                          categoria: cat.name,
                         })
                       }
                       className={cn(
@@ -1139,7 +1248,7 @@ function SalePage() {
                           : "text-slate-400 hover:bg-white/6 hover:text-slate-100",
                       )}
                     >
-                      {cat}
+                      {cat.name}
                     </button>
                   </li>
                 )
@@ -1190,7 +1299,7 @@ function SalePage() {
           </div>
       </nav>
     ),
-    [categoriasNav, vistaCatalogo, persistVistaCatalogo],
+    [saleCategories, vistaCatalogo, persistVistaCatalogo],
   )
 
   if (!popId || !siteId) {
@@ -1918,8 +2027,8 @@ function SalePage() {
                         ? "Agregá productos al pedido."
                         : !pagoConfigurado
                           ? "Elegí una forma de pago o usá cuenta corriente del cliente."
-                          : payOnClientAccount && !clienteSeleccionado
-                            ? "Elegí un cliente para vender a cuenta corriente."
+                          : payOnClientAccount && !clienteSeleccionado?.id
+                            ? "Elegí un cliente del catálogo para vender a cuenta corriente."
                             : !canCreateSale
                               ? "No tenés permiso para registrar ventas."
                               : !canReadCashRegisters
@@ -2011,7 +2120,14 @@ function SalePage() {
         open={clienteModalAbierto}
         onOpenChange={(open) => {
           setClienteModalAbierto(open)
-          if (open) setBusquedaClienteModal("")
+          if (open) {
+            setBusquedaClienteModal("")
+            if (clienteSeleccionado?.manual) {
+              setManualNombreCliente(clienteSeleccionado.name)
+              setFiscalDocVenta(clienteSeleccionado.taxId ?? "")
+              setVentaIvaCondition(clienteSeleccionado.ivaCondition ?? "")
+            }
+          }
         }}
       >
         <DialogContent className={ventaDialogContentMd}>
@@ -2021,8 +2137,10 @@ function SalePage() {
             </DialogTitle>
             <DialogDescription className="text-sm leading-relaxed">
               {clienteSeleccionado
-                ? "Cliente asignado a esta venta. Los datos fiscales vienen del cliente; quitá la selección para cargar CUIT/DNI manualmente."
-                : "Buscá por nombre, cargá CUIT/DNI o ajustá la condición IVA para esta venta. El comprobante se sugiere automáticamente."}
+                ? clienteSeleccionado.manual
+                  ? "Cliente cargado manualmente para esta venta (no se guarda en el catálogo). Quitá la selección para cambiar los datos."
+                  : "Cliente asignado a esta venta. Los datos fiscales vienen del cliente; quitá la selección para cargar CUIT/DNI manualmente."
+                : "Buscá en el catálogo o cargá los datos manualmente y usalos solo para esta venta."}
             </DialogDescription>
           </DialogHeader>
           <div className={ventaDialogBody}>
@@ -2033,14 +2151,14 @@ function SalePage() {
                 value={busquedaClienteModal}
                 onChange={(e) => setBusquedaClienteModal(e.target.value)}
                 placeholder="Nombre del cliente…"
-                disabled={clienteSeleccionado != null}
+                disabled={clienteCatalogoBloqueado}
                 className={cn(
                   "h-11 rounded-lg pl-9",
                   busquedaClienteModal.length > 0 && "pr-9",
                 )}
                 autoComplete="off"
               />
-              {busquedaClienteModal.length > 0 && !clienteSeleccionado ? (
+              {busquedaClienteModal.length > 0 && !clienteCatalogoBloqueado ? (
                 <button
                   type="button"
                   aria-label="Limpiar búsqueda"
@@ -2057,10 +2175,22 @@ function SalePage() {
             <div
               className={cn(
                 "mb-3 rounded-xl border border-border/50 bg-muted/15 p-3",
-                clienteSeleccionado && "opacity-60",
+                clienteCatalogoBloqueado && "opacity-60",
               )}
             >
               <p className="mb-2 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+                Datos para esta venta
+              </p>
+              <Input
+                value={manualNombreCliente}
+                onChange={(e) => setManualNombreCliente(e.target.value)}
+                placeholder="Nombre o razón social"
+                className="mb-2 h-10 rounded-lg"
+                autoComplete="off"
+                disabled={clienteSeleccionado != null}
+                readOnly={clienteSeleccionado != null}
+              />
+              <p className="mb-1.5 text-[11px] font-medium text-muted-foreground">
                 CUIT / DNI (padrón AFIP)
               </p>
               <Input
@@ -2087,13 +2217,16 @@ function SalePage() {
                   </>
                 ) : ventaPadron.error ? (
                   <span className="text-destructive">{ventaPadron.error}</span>
-                ) : ventaPadron.razonSocial ? (
-                  <span className="font-medium text-foreground">
-                    {ventaPadron.razonSocial}
+                ) : ventaPadron.razonSocial && !manualNombreCliente.trim() ? (
+                  <span className="text-muted-foreground">
+                    Padrón:{" "}
+                    <span className="font-medium text-foreground">
+                      {ventaPadron.razonSocial}
+                    </span>
                   </span>
                 ) : (
                   <span className="text-muted-foreground">
-                    La razón social aparece al validar el documento.
+                    La razón social del padrón se completa al validar el CUIT.
                   </span>
                 )}
               </div>
@@ -2112,7 +2245,7 @@ function SalePage() {
             <div
               className={cn(
                 "mb-3 space-y-2",
-                clienteSeleccionado && "opacity-60",
+                clienteSeleccionado != null && "opacity-60",
               )}
             >
               <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
@@ -2149,7 +2282,7 @@ function SalePage() {
             <ul
               className={cn(
                 "game-scroll max-h-[min(50vh,16rem)] space-y-2 overflow-y-auto rounded-xl border border-border/40 bg-muted/20 p-2 pr-1",
-                clienteSeleccionado && "opacity-60",
+                clienteCatalogoBloqueado && "opacity-60",
               )}
               role="listbox"
               aria-label="Clientes"
@@ -2157,14 +2290,18 @@ function SalePage() {
               {clientesFiltradosModal.length === 0 ? (
                 <li className="rounded-lg border border-dashed border-border/60 bg-background/50 px-4 py-8 text-center text-sm text-muted-foreground">
                   {clienteSeleccionado && !busquedaClienteModalTrim
-                    ? "Cliente asignado a esta venta."
+                    ? clienteSeleccionado.manual
+                      ? "Cliente manual asignado a esta venta."
+                      : "Cliente asignado a esta venta."
                     : !busquedaClienteModalTrim
-                      ? "Escribí un nombre en el buscador para ver clientes."
+                      ? "Escribí un nombre en el buscador para ver clientes del catálogo."
                       : "No hay resultados para esa búsqueda."}
                 </li>
               ) : (
                 clientesFiltradosModal.map((c) => {
-                  const seleccionado = clienteSeleccionado?.id === c.id
+                  const seleccionado = clienteSeleccionado?.manual
+                    ? c.id === MANUAL_PARTY_LIST_ID
+                    : clienteSeleccionado?.id === c.id
                   const opcionDeshabilitada = clienteSeleccionado != null
                   return (
                     <li key={c.id}>
@@ -2174,7 +2311,10 @@ function SalePage() {
                         aria-selected={seleccionado}
                         aria-disabled={opcionDeshabilitada}
                         disabled={opcionDeshabilitada}
-                        onClick={() => seleccionarCliente(c)}
+                        onClick={() => {
+                          if (c.id === MANUAL_PARTY_LIST_ID) return
+                          seleccionarCliente(c)
+                        }}
                         className={ventaDialogOptionClass(
                           seleccionado,
                           opcionDeshabilitada,
@@ -2183,6 +2323,11 @@ function SalePage() {
                         <span className="min-w-0">
                           <span className="block text-sm font-semibold leading-snug text-foreground">
                             {c.name}
+                            {c.id === MANUAL_PARTY_LIST_ID ? (
+                              <span className="ml-1.5 text-xs font-normal text-muted-foreground">
+                                (manual)
+                              </span>
+                            ) : null}
                           </span>
                           {c.taxId ? (
                             <span className="mt-0.5 block text-xs leading-snug text-muted-foreground">
@@ -2205,8 +2350,8 @@ function SalePage() {
               )}
             </ul>
           </div>
-          {clienteSeleccionado ? (
-            <DialogFooter className={ventaDialogFooter}>
+          <DialogFooter className={ventaDialogFooter}>
+            {clienteSeleccionado ? (
               <Button
                 type="button"
                 variant="ghost"
@@ -2218,8 +2363,16 @@ function SalePage() {
               >
                 Quitar cliente
               </Button>
-            </DialogFooter>
-          ) : null}
+            ) : puedeUsarClienteManual ? (
+              <Button
+                type="button"
+                className={ventaDialogPrimaryBtn}
+                onClick={seleccionarClienteManual}
+              >
+                Usar para esta venta
+              </Button>
+            ) : null}
+          </DialogFooter>
         </DialogContent>
       </Dialog>
 

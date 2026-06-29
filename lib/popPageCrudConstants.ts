@@ -150,6 +150,15 @@ export const POP_PAGES = {
       delete: "sale:delete",
     },
   },
+  mesas: {
+    path: "mesas",
+    permissions: {
+      read: "sale:read",
+      create: "sale:create",
+      update: "sale:update",
+      delete: "sale:delete",
+    },
+  },
   settings: {
     path: "settings",
     permissions: {

@@ -147,15 +147,23 @@ export const tdMoneyVatClass =
 
 /** Cliente registrado (enlace a ficha). */
 export const tdClientLinkedClass =
-  "truncate font-medium text-violet-700 underline-offset-2 transition-colors hover:text-violet-900 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/35 rounded-sm"
+  "block min-w-0 max-w-full truncate font-medium text-violet-700 underline-offset-2 transition-colors hover:text-violet-900 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/35 rounded-sm"
 
 /** Cliente con nombre pero sin ficha vinculada. */
 export const tdClientNamedClass =
-  "truncate font-medium text-violet-700/90"
+  "block min-w-0 max-w-full truncate font-medium text-violet-700/90"
 
 /** Venta sin cliente identificado. */
 export const tdClientAnonymousClass =
-  "truncate text-sm text-muted-foreground"
+  "block min-w-0 max-w-full truncate text-sm text-muted-foreground"
+
+/** Celda de tabla con nombre/etiqueta larga (cliente, proveedor, categoría). */
+export const tdTruncatedNameCellClass =
+  "w-[14rem] min-w-0 max-w-[14rem] overflow-hidden px-3 py-2.5 text-sm"
+
+/** Celda de tabla con texto secundario truncable (comprobante, medio de pago). */
+export const tdTruncatedTextCellClass =
+  "min-w-0 max-w-[12rem] overflow-hidden px-3 py-2.5 text-sm"
 
 /** Fila de encabezado de tabla (sin hover). */
 export const workspaceTableHeaderRowClass = "border-0 hover:bg-transparent"

@@ -17,11 +17,14 @@ import {
   lightTableThClass,
   selectColumnInnerClass,
   tableRowSelectCheckboxClass,
+  tdClientLinkedClass,
   tdClientNamedClass,
   tdMoneyClass,
   tdMoneyMutedClass,
   tdMoneyTotalClass,
   tdMoneyVatClass,
+  tdTruncatedNameCellClass,
+  tdTruncatedTextCellClass,
   workspaceTableBodyRowClassNames,
   workspaceTableHeaderRowClass,
 } from "@/components/data-workspace/dataWorkspaceListStyles"
@@ -206,8 +209,11 @@ function PurchaseDetailDialog({
                       key={`${purchase.id}-line-${li}`}
                       className="border-b border-border/60"
                     >
-                      <td className="max-w-[200px] px-3 py-2">
-                        <span className="font-medium text-foreground">
+                      <td className="max-w-[200px] overflow-hidden px-3 py-2">
+                        <span
+                          className="block truncate font-medium text-foreground"
+                          title={line.nameSnapshot}
+                        >
                           {line.nameSnapshot}
                         </span>
                       </td>
@@ -353,7 +359,7 @@ export function OperationsPurchasesTable({
             <TableHead className={cn(lightTableThClass, "w-[7.5rem] text-left")}>
               Fecha
             </TableHead>
-            <TableHead className={cn(lightTableThClass, "min-w-[10rem] text-left")}>
+            <TableHead className={cn(lightTableThClass, "w-[14rem] min-w-0 max-w-[14rem] text-left")}>
               Proveedor
             </TableHead>
             <TableHead className={cn(lightTableThClass, "w-[6.5rem] text-center")}>
@@ -420,7 +426,7 @@ export function OperationsPurchasesTable({
                     </span>
                   ) : null}
                 </TableCell>
-                <TableCell className="max-w-[14rem] px-3 py-2.5 text-sm">
+                <TableCell className={tdTruncatedNameCellClass}>
                   {purchase.supplierId && purchase.supplierName !== "—" ? (
                     <Link
                       href={suppliersSearchHref(
@@ -428,8 +434,8 @@ export function OperationsPurchasesTable({
                         popId,
                         purchase.supplierName,
                       )}
-                      className={tdClientNamedClass}
-                      title={`Ver ${purchase.supplierName} en Proveedores`}
+                      className={tdClientLinkedClass}
+                      title={purchase.supplierName}
                     >
                       {purchase.supplierName}
                     </Link>
@@ -456,8 +462,13 @@ export function OperationsPurchasesTable({
                     Ver
                   </Button>
                 </TableCell>
-                <TableCell className="max-w-[140px] truncate px-3 py-2.5 text-sm text-foreground">
-                  {purchase.documentNumber ?? "—"}
+                <TableCell
+                  className={cn(tdTruncatedTextCellClass, "text-foreground")}
+                  title={purchase.documentNumber ?? undefined}
+                >
+                  <span className="block truncate">
+                    {purchase.documentNumber ?? "—"}
+                  </span>
                 </TableCell>
                 <TableCell
                   className={cn("px-3 py-2.5 text-right text-sm", tdMoneyTotalClass)}
@@ -473,10 +484,10 @@ export function OperationsPurchasesTable({
                     <span className={tdMoneyMutedClass}>—</span>
                   )}
                 </TableCell>
-                <TableCell className="max-w-[12rem] px-3 py-2.5 text-sm text-foreground">
+                <TableCell className={cn(tdTruncatedTextCellClass, "text-foreground")}>
                   {purchase.paymentMethodLabel !== "—" ? (
                     <span
-                      className="line-clamp-2"
+                      className="block truncate"
                       title={purchase.paymentMethodLabel}
                     >
                       {purchase.paymentMethodLabel}

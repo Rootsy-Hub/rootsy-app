@@ -1,0 +1,239 @@
+"use client"
+
+import { MesasCatalogPanel } from "@/app/[siteId]/[popId]/mesas/components/MesasCatalogPanel"
+import { MesasCheckoutModals } from "@/app/[siteId]/[popId]/mesas/components/MesasCheckoutModals"
+import { MesaSessionPanel } from "@/app/[siteId]/[popId]/mesas/components/MesaSessionPanel"
+import { MesasFloorPlan } from "@/app/[siteId]/[popId]/mesas/components/MesasFloorPlan"
+import { MesasOrderPanel } from "@/app/[siteId]/[popId]/mesas/components/MesasOrderPanel"
+import { MesasSalonTabs } from "@/app/[siteId]/[popId]/mesas/components/MesasSalonTabs"
+import {
+  MOCK_MESA_SALONS,
+  MOCK_MESA_WAITERS,
+} from "@/app/[siteId]/[popId]/mesas/mesasMockData"
+import type { MesasRightPanelView } from "@/app/[siteId]/[popId]/mesas/mesasTypes"
+import { useMesasSaleCheckout } from "@/app/[siteId]/[popId]/mesas/useMesasSaleCheckout"
+import { useMesasState } from "@/app/[siteId]/[popId]/mesas/useMesasState"
+import { SaleOperationToolbox } from "@/components/sale-operation/SaleOperationToolbox"
+import { cn } from "@/lib/utils"
+import { ShoppingBag, UtensilsCrossed } from "lucide-react"
+import { useMemo, useState, useEffect } from "react"
+
+type Props = {
+  siteId: string
+  popId: string
+  catalogSidebarOpen: boolean
+}
+
+function sessionTitle(
+  tableLabel: string | null,
+  labels: string[],
+): string | null {
+  if (labels.length > 1) return labels.join(" + ")
+  return tableLabel
+}
+
+export function MesasWorkspace({ siteId, popId, catalogSidebarOpen }: Props) {
+  const {
+    tables,
+    sessions,
+    activeSalonId,
+    setActiveSalonId,
+    selectedTableId,
+    selectedTableIds,
+    selectTable,
+    selectedTable,
+    selectedSession,
+    salonTables,
+    salonDecors,
+    layoutEditMode,
+    setLayoutEditMode,
+    moveTable,
+    moveDecor,
+    openSession,
+    updateSession,
+    closeSession,
+    freeTablesInSalon,
+  } = useMesasState()
+
+  const checkout = useMesasSaleCheckout(popId, siteId, selectedSession?.id ?? null)
+
+  const [rightView, setRightView] = useState<MesasRightPanelView>("session")
+  const showCatalog = rightView === "cart"
+
+  useEffect(() => {
+    if (!selectedSession) {
+      setRightView("session")
+    }
+  }, [selectedSession])
+
+  const tableCounts = useMemo(() => {
+    const out: Record<string, { total: number; open: number }> = {}
+    for (const salon of MOCK_MESA_SALONS) {
+      const inSalon = tables.filter((t) => t.salonId === salon.id)
+      out[salon.id] = {
+        total: inSalon.length,
+        open: inSalon.filter((t) => t.status === "open" || t.status === "paying")
+          .length,
+      }
+    }
+    return out
+  }, [tables])
+
+  const tableOpenedAt = useMemo(() => {
+    const openedAtBySession = Object.fromEntries(
+      sessions.map((s) => [s.id, s.openedAt]),
+    )
+    const out: Record<string, string> = {}
+    for (const table of tables) {
+      if (
+        (table.status === "open" || table.status === "paying") &&
+        table.sessionId &&
+        openedAtBySession[table.sessionId]
+      ) {
+        out[table.id] = openedAtBySession[table.sessionId]
+      }
+    }
+    return out
+  }, [tables, sessions])
+
+  const sessionTables = useMemo(() => {
+    if (!selectedSession) return selectedTable ? [selectedTable] : []
+    return tables.filter((t) => selectedSession.tableIds.includes(t.id))
+  }, [tables, selectedSession, selectedTable])
+
+  const mergeCandidates = useMemo(() => {
+    if (!selectedTable) return []
+    const free = freeTablesInSalon(selectedTable.salonId, [selectedTable.id])
+    if (!selectedSession) return free
+    const sessionOthers = tables.filter(
+      (t) =>
+        selectedSession.tableIds.includes(t.id) && t.id !== selectedTable.id,
+    )
+    const seen = new Set(sessionOthers.map((t) => t.id))
+    return [...sessionOthers, ...free.filter((t) => !seen.has(t.id))]
+  }, [selectedTable, selectedSession, tables, freeTablesInSalon])
+
+  const mesaLabel = sessionTitle(
+    selectedTable?.label ?? null,
+    sessionTables.map((t) => t.label),
+  )
+
+  const handleSelectTable = (tableId: string) => {
+    if (!tableId) return
+    selectTable(tableId)
+    setRightView("session")
+  }
+
+  const handleTakeOrder = () => {
+    if (layoutEditMode) setLayoutEditMode(false)
+    setRightView("cart")
+  }
+
+  return (
+    <div className="dark relative flex h-full min-h-0 w-full flex-col overflow-hidden bg-[#070a09] text-white">
+      <div className="pointer-events-none absolute inset-0">
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_20%,rgba(52,211,153,0.14),transparent_40%),radial-gradient(circle_at_80%_10%,rgba(99,102,241,0.1),transparent_36%)]" />
+        <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.03)_1px,transparent_1px)] bg-size-[38px_38px] opacity-20" />
+      </div>
+
+      <main className="relative z-10 grid min-h-0 flex-1 grid-cols-[minmax(0,1fr)_380px] grid-rows-[minmax(0,1fr)_calc(4.5rem+1rem)] sm:grid-rows-[minmax(0,1fr)_calc(4.75rem+1.25rem)]">
+        {/* Panel izquierdo */}
+        <section className="col-start-1 row-start-1 flex min-h-0 min-w-0 flex-col overflow-hidden bg-[#20262e]">
+          {!showCatalog ? (
+            <>
+              <MesasSalonTabs
+                salons={MOCK_MESA_SALONS}
+                activeSalonId={activeSalonId}
+                onChange={setActiveSalonId}
+                tableCounts={tableCounts}
+              />
+              <MesasFloorPlan
+                tables={salonTables}
+                decors={salonDecors}
+                selectedTableIds={selectedTableIds}
+                layoutEditMode={layoutEditMode}
+                onToggleLayoutEdit={() => setLayoutEditMode((v) => !v)}
+                onSelectTable={handleSelectTable}
+                onMoveTable={moveTable}
+                onMoveDecor={moveDecor}
+                tableOpenedAt={tableOpenedAt}
+              />
+            </>
+          ) : (
+            <MesasCatalogPanel
+              siteId={siteId}
+              popId={popId}
+              checkout={checkout}
+              catalogSidebarOpen={catalogSidebarOpen}
+            />
+          )}
+        </section>
+
+        {/* Footer toolbox — siempre visible; deshabilitado si la mesa no está abierta */}
+        <div className="col-start-1 row-start-2 min-h-0">
+          <SaleOperationToolbox {...checkout.toolbox} />
+        </div>
+
+        {/* Panel derecho */}
+        <aside
+          className="col-start-2 row-span-2 grid min-h-0 grid-rows-[auto_minmax(0,1fr)] bg-[#eef1f5] text-[#121417]"
+          aria-label="Panel de mesa y pedido"
+        >
+          <div className="flex shrink-0 items-center gap-1 border-b border-slate-200/90 bg-white px-3 py-2">
+            <button
+              type="button"
+              onClick={() => setRightView("session")}
+              className={cn(
+                "flex h-8 flex-1 items-center justify-center gap-1.5 rounded-lg text-xs font-semibold transition-colors",
+                rightView === "session"
+                  ? "bg-slate-900 text-white"
+                  : "text-slate-500 hover:bg-slate-100",
+              )}
+            >
+              <UtensilsCrossed className="size-3.5" aria-hidden />
+              Mesa
+            </button>
+            <button
+              type="button"
+              disabled={!selectedSession}
+              onClick={() => selectedSession && setRightView("cart")}
+              className={cn(
+                "flex h-8 flex-1 items-center justify-center gap-1.5 rounded-lg text-xs font-semibold transition-colors",
+                !selectedSession && "cursor-not-allowed opacity-40",
+                rightView === "cart"
+                  ? "bg-slate-900 text-white"
+                  : "text-slate-500 hover:bg-slate-100",
+              )}
+            >
+              <ShoppingBag className="size-3.5" aria-hidden />
+              Pedido
+            </button>
+          </div>
+
+          {rightView === "session" ? (
+            <MesaSessionPanel
+              table={selectedTable}
+              session={selectedSession}
+              sessionTables={sessionTables}
+              waiters={MOCK_MESA_WAITERS}
+              mergeCandidates={mergeCandidates}
+              onOpenSession={openSession}
+              onUpdateSession={(sessionId, input) =>
+                updateSession(sessionId, input)
+              }
+              onCloseSession={(sessionId) => {
+                checkout.clearSessionSnapshot(sessionId)
+                closeSession(sessionId)
+              }}
+              onTakeOrder={handleTakeOrder}
+            />
+          ) : (
+            <MesasOrderPanel checkout={checkout} tableLabel={mesaLabel} />
+          )}
+        </aside>
+      </main>
+
+      <MesasCheckoutModals checkout={checkout} />
+    </div>
+  )
+}

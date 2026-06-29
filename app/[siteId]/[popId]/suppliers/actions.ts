@@ -12,6 +12,15 @@ import {
 import { popMenuHref } from "@/lib/popRoutes"
 import { loadPopPermissionsSnapshot } from "@/lib/popPermissionsServer"
 import { createClient } from "@/utils/supabase/server"
+import { CLIENT_IVA_CONDITION_VALUES } from "@/app/[siteId]/[popId]/clients/clientIvaConstants"
+
+function normalizeIvaCondition(raw: string): string | null {
+  const t = raw.trim()
+  if (!t) return null
+  return (CLIENT_IVA_CONDITION_VALUES as readonly string[]).includes(t)
+    ? t
+    : null
+}
 
 export type SupplierTableRow = {
   id: string
@@ -20,6 +29,9 @@ export type SupplierTableRow = {
   phone: string
   taxId: string
   notes: string
+  ivaCondition: string | null
+  addressLine: string
+  isActive: boolean
 }
 
 export type UpsertPopSupplierInput = {
@@ -28,7 +40,40 @@ export type UpsertPopSupplierInput = {
   phone: string
   taxId: string
   notes: string
+  ivaCondition: string
+  addressLine: string
+  isActive: boolean
 }
+
+function mapSupplierRow(r: {
+  id: unknown
+  name: unknown
+  email: unknown
+  phone: unknown
+  tax_id: unknown
+  notes: unknown
+  iva_condition: unknown
+  address_line: unknown
+  is_active: unknown
+}): SupplierTableRow {
+  return {
+    id: String(r.id),
+    name: String(r.name ?? ""),
+    email: String(r.email ?? ""),
+    phone: String(r.phone ?? ""),
+    taxId: String(r.tax_id ?? ""),
+    notes: String(r.notes ?? ""),
+    ivaCondition:
+      r.iva_condition != null && String(r.iva_condition).trim()
+        ? String(r.iva_condition)
+        : null,
+    addressLine: String(r.address_line ?? ""),
+    isActive: r.is_active !== false,
+  }
+}
+
+const SUPPLIER_SELECT =
+  "id, name, email, phone, tax_id, notes, iva_condition, address_line, is_active"
 
 export async function createPopSupplier(
   popId: string,
@@ -61,6 +106,9 @@ export async function createPopSupplier(
       phone: input.phone.trim() || null,
       tax_id: input.taxId.trim() || null,
       notes: input.notes.trim() || null,
+      iva_condition: normalizeIvaCondition(input.ivaCondition),
+      address_line: input.addressLine.trim() || null,
+      is_active: input.isActive,
     })
     if (error) {
       return { success: false, error: error.message || "No se pudo crear." }
@@ -105,6 +153,9 @@ export async function updatePopSupplier(
         phone: input.phone.trim() || null,
         tax_id: input.taxId.trim() || null,
         notes: input.notes.trim() || null,
+        iva_condition: normalizeIvaCondition(input.ivaCondition),
+        address_line: input.addressLine.trim() || null,
+        is_active: input.isActive,
       })
       .eq("id", supplierId)
       .eq("pop_id", popId)
@@ -227,7 +278,7 @@ export async function getPopSuppliersTable(popId: string): Promise<
     const supabase = await createClient()
     const { data, error } = await supabase
       .from("suppliers")
-      .select("id, name, email, phone, tax_id, notes")
+      .select(SUPPLIER_SELECT)
       .eq("pop_id", popId)
       .order("name", { ascending: true })
     if (error) {
@@ -238,14 +289,7 @@ export async function getPopSuppliersTable(popId: string): Promise<
         popName,
       }
     }
-    const suppliers: SupplierTableRow[] = (data || []).map((r) => ({
-      id: String(r.id),
-      name: String(r.name ?? ""),
-      email: String(r.email ?? ""),
-      phone: String(r.phone ?? ""),
-      taxId: String(r.tax_id ?? ""),
-      notes: String(r.notes ?? ""),
-    }))
+    const suppliers: SupplierTableRow[] = (data || []).map(mapSupplierRow)
     return {
       success: true,
       suppliers,

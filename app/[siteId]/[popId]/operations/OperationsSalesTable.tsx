@@ -27,6 +27,8 @@ import {
   tdClientAnonymousClass,
   tdClientLinkedClass,
   tdClientNamedClass,
+  tdTruncatedNameCellClass,
+  tdTruncatedTextCellClass,
   workspaceTableBodyRowClassNames,
   workspaceTableHeaderRowClass,
 } from "@/components/data-workspace/dataWorkspaceListStyles"
@@ -727,7 +729,7 @@ export function OperationsSalesTable({
             <TableHead className={cn(lightTableThClass, "w-[7.5rem] text-left")}>
               Fecha
             </TableHead>
-            <TableHead className={cn(lightTableThClass, "min-w-[10rem] text-left")}>
+            <TableHead className={cn(lightTableThClass, "w-[14rem] min-w-0 max-w-[14rem] text-left")}>
               Cliente
             </TableHead>
             <TableHead className={cn(lightTableThClass, "w-[6.5rem] text-center")}>
@@ -799,12 +801,12 @@ export function OperationsSalesTable({
                       </span>
                     ) : null}
                   </TableCell>
-                  <TableCell className="max-w-[14rem] px-3 py-2.5 text-sm">
+                  <TableCell className={tdTruncatedNameCellClass}>
                     {sale.clientId && sale.customerName ? (
                       <Link
                         href={clientsSearchHref(siteId, popId, sale.customerName)}
                         className={tdClientLinkedClass}
-                        title={`Ver ${sale.customerName} en Clientes`}
+                        title={clientLabel}
                       >
                         {clientLabel}
                       </Link>
@@ -872,10 +874,10 @@ export function OperationsSalesTable({
                       <span className={tdMoneyMutedClass}>—</span>
                     )}
                   </TableCell>
-                  <TableCell className="max-w-[12rem] px-3 py-2.5 text-sm text-foreground">
+                  <TableCell className={cn(tdTruncatedTextCellClass, "text-foreground")}>
                     {sale.paymentMethodLabel !== "—" ? (
                       <span
-                        className="line-clamp-2"
+                        className="block truncate"
                         title={sale.paymentMethodLabel}
                       >
                         {sale.paymentMethodLabel}

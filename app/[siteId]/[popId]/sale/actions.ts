@@ -8,10 +8,17 @@ import {
 import { getPopById, validatePopAccess } from "@/lib/popHelpers"
 import { loadPopPermissionsSnapshot } from "@/lib/popPermissionsServer"
 import { createClient } from "@/utils/supabase/server"
+import type { ArticleDiscountMode } from "@/lib/articleDiscount"
+import {
+  articleHasCatalogDiscount,
+  effectiveArticleSalePrice,
+  isArticleDiscountMode,
+} from "@/lib/articleDiscount"
 
 export type SaleCatalogCategory = {
   id: string
   name: string
+  sortOrder: number
 }
 
 export type SaleCatalogArticle = {
@@ -19,6 +26,7 @@ export type SaleCatalogArticle = {
   name: string
   description: string
   salePrice: number
+  originalSalePrice?: number
   iva: number
   categoryId: string
   categoryName: string
@@ -100,8 +108,10 @@ export async function getSaleCatalog(popId: string): Promise<
 
     const { data: catRows, error: catErr } = await supabase
       .from("categories")
-      .select("id, name")
+      .select("id, name, sort_order")
       .eq("pop_id", popId)
+      .eq("show_in_sale", true)
+      .order("sort_order", { ascending: true })
       .order("name", { ascending: true })
 
     if (catErr) {
@@ -111,7 +121,9 @@ export async function getSaleCatalog(popId: string): Promise<
     const categories: SaleCatalogCategory[] = (catRows || []).map((c) => ({
       id: String(c.id),
       name: String(c.name ?? ""),
+      sortOrder: Number(c.sort_order ?? 0) || 0,
     }))
+    const visibleCategoryIds = new Set(categories.map((c) => c.id))
 
     const { data: artRows, error: artErr } = await supabase
       .from("articles")
@@ -122,12 +134,17 @@ export async function getSaleCatalog(popId: string): Promise<
         description,
         sale_price,
         iva,
+        discount_mode,
+        discount_value,
         category_id,
+        unit_of_measure,
         categories ( id, name )
       `,
       )
       .eq("pop_id", popId)
       .eq("is_active", true)
+      .eq("is_sellable", true)
+      .eq("item_kind", "merchandise")
       .order("name", { ascending: true })
 
     if (artErr) {
@@ -135,13 +152,37 @@ export async function getSaleCatalog(popId: string): Promise<
     }
 
     const rows = (artRows || []) as Record<string, unknown>[]
-    const articles: SaleCatalogArticle[] = rows.map((row) => {
+    const articles: SaleCatalogArticle[] = rows
+      .filter((row) => {
+        const categoryId = String(row.category_id ?? "")
+        return categoryId !== "" && visibleCategoryIds.has(categoryId)
+      })
+      .map((row) => {
       const cat = row.categories as unknown as { name?: string } | null
+      const listPrice = Number(row.sale_price ?? 0) || 0
+      const rawDiscountMode = row.discount_mode
+      const discountMode: ArticleDiscountMode | null =
+        typeof rawDiscountMode === "string" &&
+        isArticleDiscountMode(rawDiscountMode)
+          ? rawDiscountMode
+          : null
+      const discountRaw = row.discount_value
+      const discountValue =
+        discountRaw != null && Number.isFinite(Number(discountRaw))
+          ? Number(discountRaw)
+          : null
+      const hasDiscount = articleHasCatalogDiscount(discountMode, discountValue)
+      const effectivePrice = effectiveArticleSalePrice(
+        listPrice,
+        discountMode,
+        discountValue,
+      )
       return {
         id: String(row.id),
         name: String(row.name ?? ""),
         description: String(row.description ?? ""),
-        salePrice: Number(row.sale_price ?? 0) || 0,
+        salePrice: effectivePrice,
+        originalSalePrice: hasDiscount ? listPrice : undefined,
         iva: Number(row.iva ?? 0) || 0,
         categoryId: String(row.category_id ?? ""),
         categoryName: cat?.name ? String(cat.name) : "—",

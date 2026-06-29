@@ -17,7 +17,7 @@ import {
   footerPaginationSelectTriggerClass,
   tableChromeFooterClass,
 } from "@/components/data-workspace/dataWorkspaceListStyles"
-import { DataWorkspaceListPaginationFooterSkeleton } from "@/components/data-workspace/DataWorkspaceListPaginationFooterSkeleton"
+import { FooterTotalCountSkeleton } from "@/components/data-workspace/DataWorkspaceListPaginationFooterSkeleton"
 import { cn } from "@/lib/utils"
 import type { PaginationItem } from "@/app/[siteId]/[popId]/layout/layoutPreviewPagination"
 import {
@@ -59,10 +59,13 @@ export function DataWorkspaceListPaginationFooter({
   variant = "default",
 }: DataWorkspaceListPaginationFooterProps) {
   const isDark = variant === "dark"
+  const isEmpty = !listFetching && totalCount <= 0
+  const paginationDisabled = listFetching || isEmpty
   const totalCountLabel = totalCount.toLocaleString("es-AR")
 
-  const footerPaginationAriaLabel =
-    totalCount === 0
+  const footerPaginationAriaLabel = listFetching
+    ? "Cargando cantidad de resultados"
+    : totalCount === 0
       ? "Sin resultados"
       : (() => {
           const pagePart =
@@ -72,22 +75,6 @@ export function DataWorkspaceListPaginationFooter({
           return `Mostrando ${rangeStart.toLocaleString("es-AR")} a ${rangeEnd.toLocaleString("es-AR")} de ${totalCountLabel}${pagePart}`
         })()
 
-  if (listFetching) {
-    return (
-      <div
-        className={cn("shrink-0", isDark ? darkTableFooterClass : tableChromeFooterClass)}
-        aria-busy="true"
-        aria-label="Cargando paginación"
-      >
-        <DataWorkspaceListPaginationFooterSkeleton
-          variant={isDark ? "dark" : "default"}
-        />
-      </div>
-    )
-  }
-
-  const isEmpty = totalCount <= 0
-  const paginationDisabled = listFetching || isEmpty
   const effectiveTotalPages = Math.max(1, totalPages)
 
   if (isDark) {
@@ -104,6 +91,7 @@ export function DataWorkspaceListPaginationFooter({
         className={darkTableFooterClass}
         role="navigation"
         aria-label="Paginación del listado"
+        aria-busy={listFetching}
       >
         <div className="flex w-full items-stretch">
           <div className={cn(darkTableFooterNavGroupClass, "justify-start")}>
@@ -188,8 +176,20 @@ export function DataWorkspaceListPaginationFooter({
               className={darkTableFooterCenterMutedClass}
               aria-hidden
             >
-              <span className="md:hidden">{totalCountLabel}</span>
-              <span className="hidden md:inline">{totalCountLabel} en total</span>
+              {listFetching ? (
+                <>
+                  <FooterTotalCountSkeleton variant="dark" className="md:hidden" />
+                  <span className="hidden items-center gap-1 md:inline-flex">
+                    <FooterTotalCountSkeleton variant="dark" />
+                    <span> en total</span>
+                  </span>
+                </>
+              ) : (
+                <>
+                  <span className="md:hidden">{totalCountLabel}</span>
+                  <span className="hidden md:inline">{totalCountLabel} en total</span>
+                </>
+              )}
             </span>
           </div>
 
@@ -229,6 +229,7 @@ export function DataWorkspaceListPaginationFooter({
         "flex shrink-0 flex-col gap-3 px-3 py-3 sm:flex-row sm:items-center sm:justify-between sm:px-4",
         tableChromeFooterClass,
       )}
+      aria-busy={listFetching}
     >
       <div className="flex min-w-0 flex-wrap items-center gap-x-4 gap-y-2">
         <p className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground dark:text-muted-foreground/90">
@@ -240,9 +241,13 @@ export function DataWorkspaceListPaginationFooter({
             {rangeEnd.toLocaleString("es-AR")}
           </span>
           <span className="normal-case"> de </span>
-          <span className="font-medium text-primary dark:text-primary/90">
-            {totalCountLabel}
-          </span>
+          {listFetching ? (
+            <FooterTotalCountSkeleton variant="default" />
+          ) : (
+            <span className="font-medium text-primary dark:text-primary/90">
+              {totalCountLabel}
+            </span>
+          )}
         </p>
         <div className="flex items-center gap-2">
           <span

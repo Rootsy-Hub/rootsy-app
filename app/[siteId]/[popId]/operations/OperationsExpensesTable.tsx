@@ -21,6 +21,8 @@ import {
   tdMoneyClass,
   tdMoneyMutedClass,
   tdMoneyTotalClass,
+  tdTruncatedNameCellClass,
+  tdTruncatedTextCellClass,
   workspaceTableBodyRowClassNames,
   workspaceTableHeaderRowClass,
 } from "@/components/data-workspace/dataWorkspaceListStyles"
@@ -232,7 +234,7 @@ export function OperationsExpensesTable({
             <TableHead className={cn(lightTableThClass, "w-[7.5rem] text-left")}>
               Fecha
             </TableHead>
-            <TableHead className={cn(lightTableThClass, "min-w-[10rem] text-left")}>
+            <TableHead className={cn(lightTableThClass, "w-[14rem] min-w-0 max-w-[14rem] text-left")}>
               Categoría
             </TableHead>
             <TableHead className={cn(lightTableThClass, "w-[6.5rem] text-center")}>
@@ -294,7 +296,7 @@ export function OperationsExpensesTable({
                       </span>
                     ) : null}
                   </TableCell>
-                  <TableCell className="max-w-[14rem] px-3 py-2.5 text-sm">
+                  <TableCell className={tdTruncatedNameCellClass}>
                     <span
                       className={cn(
                         tdClientNamedClass,
@@ -330,10 +332,10 @@ export function OperationsExpensesTable({
                   >
                     {fmt.format(row.amount)}
                   </TableCell>
-                  <TableCell className="max-w-[12rem] px-3 py-2.5 text-sm text-foreground">
+                  <TableCell className={cn(tdTruncatedTextCellClass, "text-foreground")}>
                     {row.paymentMethodLabel !== "—" ? (
                       <span
-                        className="line-clamp-2"
+                        className="block truncate"
                         title={row.paymentMethodLabel}
                       >
                         {row.paymentMethodLabel}

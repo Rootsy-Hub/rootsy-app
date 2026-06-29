@@ -13,6 +13,8 @@ import { popMenuHref } from "@/lib/popRoutes"
 import { loadPopPermissionsSnapshot } from "@/lib/popPermissionsServer"
 import { requireAuthenticatedUser } from "@/lib/authHelpers"
 import { createClient } from "@/utils/supabase/server"
+import { purchaseComprobanteAccruesInputVat } from "@/lib/purchaseComprobantePicker"
+import { isArticleItemKind } from "@/lib/articleItemKind"
 
 export type PurchaseKind = "merchandise" | "raw_material" | "supply"
 
@@ -70,8 +72,15 @@ export type PurchaseCatalogPaymentMethod = {
   sortOrder: number
 }
 
+export type PurchaseSupplierManualInput = {
+  name: string
+  taxId: string | null
+}
+
 export type CreatePurchaseInput = {
   supplierId: string | null
+  /** Datos de proveedor solo para esta compra (sin crear registro en catálogo). */
+  supplierManual?: PurchaseSupplierManualInput | null
   purchaseKind: PurchaseKind
   documentNumber?: string
   documentDate?: string
@@ -158,6 +167,7 @@ export type PurchaseCatalogSupplier = {
 export type PurchaseCatalogCategory = {
   id: string
   name: string
+  itemKind: import("@/lib/articleItemKind").ArticleItemKind
 }
 
 export type PurchaseCatalogArticle = {
@@ -168,6 +178,8 @@ export type PurchaseCatalogArticle = {
   iva: number
   categoryId: string
   categoryName: string
+  itemKind: import("@/lib/articleItemKind").ArticleItemKind
+  unitOfMeasure: string
 }
 
 export async function getPurchaseCatalog(popId: string): Promise<
@@ -196,16 +208,20 @@ export async function getPurchaseCatalog(popId: string): Promise<
 
     const { data: catRows, error: catErr } = await supabase
       .from("categories")
-      .select("id, name")
+      .select("id, name, item_kind")
       .eq("pop_id", popId)
       .order("name", { ascending: true })
     if (catErr) {
       return { success: false, error: catErr.message }
     }
-    const categories: PurchaseCatalogCategory[] = (catRows || []).map((c) => ({
-      id: String(c.id),
-      name: String(c.name ?? ""),
-    }))
+    const categories: PurchaseCatalogCategory[] = (catRows || []).map((c) => {
+      const rawKind = String(c.item_kind ?? "merchandise")
+      return {
+        id: String(c.id),
+        name: String(c.name ?? ""),
+        itemKind: isArticleItemKind(rawKind) ? rawKind : "merchandise",
+      }
+    })
 
     const { data: artRows, error: artErr } = await supabase
       .from("articles")
@@ -217,6 +233,8 @@ export async function getPurchaseCatalog(popId: string): Promise<
         cost_price,
         iva,
         category_id,
+        item_kind,
+        unit_of_measure,
         categories ( id, name )
       `,
       )
@@ -228,6 +246,7 @@ export async function getPurchaseCatalog(popId: string): Promise<
     }
     const articles: PurchaseCatalogArticle[] = (artRows || []).map((row) => {
       const cat = row.categories as unknown as { name?: string } | null
+      const rawKind = String(row.item_kind ?? "merchandise")
       return {
         id: String(row.id),
         name: String(row.name ?? ""),
@@ -236,6 +255,8 @@ export async function getPurchaseCatalog(popId: string): Promise<
         iva: parseMoney(row.iva),
         categoryId: String(row.category_id ?? ""),
         categoryName: cat?.name ? String(cat.name) : "—",
+        itemKind: isArticleItemKind(rawKind) ? rawKind : "merchandise",
+        unitOfMeasure: String(row.unit_of_measure ?? "unidad"),
       }
     })
 
@@ -518,6 +539,14 @@ export async function createPurchase(
       supplierName = String(supRow.name ?? "")
       supplierTaxId =
         supRow.tax_id != null ? String(supRow.tax_id) : null
+    } else {
+      const manual = input.supplierManual
+      const manualName = manual?.name?.trim() || ""
+      const manualTaxId = manual?.taxId?.trim() || ""
+      if (manualName || manualTaxId) {
+        supplierName = manualName || null
+        supplierTaxId = manualTaxId || null
+      }
     }
 
     type BuiltLine = {
@@ -601,6 +630,21 @@ export async function createPurchase(
       return { success: false, error: "El total de la compra debe ser mayor que cero." }
     }
 
+    let netAfter = subtotalNet
+    let taxAfter = taxTotal
+    if (discountTotal > 0 && totalBeforeDiscount > 0) {
+      netAfter = roundMoney(subtotalNet * (total / totalBeforeDiscount))
+      taxAfter = roundMoney(total - netAfter)
+    }
+
+    const docKind = input.documentKind?.trim() || null
+    const accrueInputVat = purchaseComprobanteAccruesInputVat(docKind)
+    const persistedSubtotal = accrueInputVat ? netAfter : total
+    const persistedTaxTotal = accrueInputVat ? taxAfter : 0
+    const lineItemsToPersist = accrueInputVat
+      ? lineItemsJson
+      : lineItemsJson.map((li) => ({ ...li, iva: 0 }))
+
     const confirmPurchase = input.confirmPurchase !== false
     const initialStatus = confirmPurchase ? "pending" : "draft"
 
@@ -629,9 +673,9 @@ export async function createPurchase(
         document_number: input.documentNumber?.trim() || null,
         document_date: input.documentDate?.trim() || null,
         due_date: input.dueDate?.trim() || null,
-        line_items: lineItemsJson,
-        subtotal: subtotalNet,
-        tax_total: taxTotal,
+        line_items: lineItemsToPersist,
+        subtotal: persistedSubtotal,
+        tax_total: persistedTaxTotal,
         discount_total: discountTotal,
         total,
         currency: "ARS",
@@ -650,7 +694,6 @@ export async function createPurchase(
     }
 
     const purchaseId = String(ins.id)
-    const docKind = input.documentKind?.trim() || null
     const attachmentName = input.attachmentFileName?.trim() || null
     if (docKind || attachmentName || input.documentNumber?.trim()) {
       const { error: docErr } = await supabase.from("purchase_documents").insert({

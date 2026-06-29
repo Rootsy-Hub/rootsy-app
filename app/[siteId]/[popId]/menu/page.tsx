@@ -1,5 +1,6 @@
 "use client"
 
+import { DataWorkspaceHeaderUserMenu } from "@/components/layouts/DataWorkspaceHeaderUserMenu"
 import withAuth from "@/hoc/withAuth"
 import { getPopMenuData } from "@/app/[siteId]/[popId]/menu/actions"
 import { canAccessMenuItem } from "@/lib/menuPermissions"
@@ -49,6 +50,7 @@ import {
 
 export type MenuItemLink =
   | "sale"
+  | "mesas"
   | "operations"
   | "purchases"
   | "expenses"
@@ -84,7 +86,7 @@ const menuSectionsRaw: Record<string, MenuSectionDef> = {
     items: [
       { name: "Vender", icon: ShoppingCart, badge: "HOT", link: "sale" },
       { name: "Mostrador", icon: Monitor, link: "section" },
-      { name: "Mesas", icon: UtensilsCrossed, badge: "12", link: "section" },
+      { name: "Mesas", icon: UtensilsCrossed, badge: "12", link: "mesas" },
       { name: "Comprar", icon: ShoppingBag, link: "purchases" },
       { name: "Fabricación", icon: Factory, link: "section" },
       { name: "Stock", icon: Package, badge: "3", link: "articles" },
@@ -135,7 +137,7 @@ const dockItemsRaw: Array<{
 }> = [
   { name: "Inicio", icon: Home, href: "home" },
   { name: "Vender", icon: ShoppingCart, link: "sale" },
-  { name: "Mesas", icon: UtensilsCrossed, link: "section" },
+  { name: "Mesas", icon: UtensilsCrossed, link: "mesas" },
   { name: "Stock", icon: Package, link: "articles" },
   { name: "Resumen", icon: BarChart3, link: "section" },
   { name: "Ajustes", icon: Cog, link: "settings" },
@@ -184,6 +186,7 @@ function MenuPage() {
   const [userFullName, setUserFullName] = useState("")
   const [userImageUrl, setUserImageUrl] = useState<string | null>(null)
   const [userRoleLabel, setUserRoleLabel] = useState("")
+  const [isOnline, setIsOnline] = useState(true)
 
   useEffect(() => {
     if (!popId || !siteId) {
@@ -332,6 +335,17 @@ function MenuPage() {
     return () => window.removeEventListener("mousemove", handleMouseMove)
   }, [])
 
+  useEffect(() => {
+    const sync = () => setIsOnline(navigator.onLine)
+    sync()
+    window.addEventListener("online", sync)
+    window.addEventListener("offline", sync)
+    return () => {
+      window.removeEventListener("online", sync)
+      window.removeEventListener("offline", sync)
+    }
+  }, [])
+
   const getFilteredItems = (sectionKey: string) => {
     const section = filteredMenuSections[sectionKey]
     if (!section) return []
@@ -345,10 +359,6 @@ function MenuPage() {
   const popLogoSrc =
     popImageUrl?.trim() ||
     `https://api.dicebear.com/7.x/shapes/svg?seed=${encodeURIComponent(popId || "pop")}&backgroundColor=1a1f1d`
-
-  const userAvatarSrc =
-    userImageUrl?.trim() ||
-    `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(userFullName || "user")}`
 
   if (loading) {
     return (
@@ -514,30 +524,7 @@ function MenuPage() {
 
             <div className="h-6 w-px bg-border" />
 
-            <div className="flex items-center gap-3 min-w-0 max-w-[200px]">
-              <div className="relative shrink-0">
-                <div className="h-11 w-11 overflow-hidden rounded-xl ring-1 ring-border">
-                  <img
-                    src={userAvatarSrc}
-                    alt=""
-                    className="size-full bg-secondary object-cover"
-                  />
-                </div>
-                <div className="absolute -bottom-0.5 -right-0.5 size-3 rounded-full border-2 border-card bg-primary" />
-              </div>
-              <div className="flex flex-col min-w-0">
-                <span className="text-sm font-semibold text-foreground truncate">
-                  {userFullName}
-                </span>
-                <span className="text-[10px] font-semibold uppercase tracking-wider text-meadow truncate">
-                  {userRoleLabel}
-                </span>
-              </div>
-            </div>
-
-            <div className="h-6 w-px bg-border" />
-
-            <div className="flex flex-col items-end shrink-0">
+            <div className="flex shrink-0 flex-col items-end">
               <span className="text-lg font-bold tabular-nums text-foreground">
                 {isMounted && time
                   ? time.toLocaleTimeString("es-AR", {
@@ -555,6 +542,27 @@ function MenuPage() {
                     })
                   : "---"}
               </span>
+            </div>
+
+            <div className="h-6 w-px bg-border" />
+
+            <div className="flex min-w-0 items-center gap-3">
+              <div className="hidden min-w-0 flex-col leading-tight sm:flex">
+                <span className="truncate text-sm font-semibold text-foreground/90">
+                  {userFullName || "Usuario"}
+                </span>
+                {userRoleLabel ? (
+                  <span className="truncate text-[10px] font-semibold uppercase tracking-wider text-emerald-700">
+                    {userRoleLabel}
+                  </span>
+                ) : null}
+              </div>
+              <DataWorkspaceHeaderUserMenu
+                userName={userFullName || "Usuario"}
+                userAvatarSrc={userImageUrl}
+                isOnline={isOnline}
+                headerVariant="default"
+              />
             </div>
           </div>
         </div>

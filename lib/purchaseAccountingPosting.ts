@@ -1,6 +1,6 @@
 import {
-  CHART_GASTOS_GENERALES_CODES,
   CHART_IVA_CREDITO_CODES,
+  CHART_INSUMOS_CODES,
   CHART_MATERIAS_PRIMAS_CODES,
   CHART_MERCADERIAS_CODES,
   CHART_PROVEEDORES_CODES,
@@ -59,7 +59,7 @@ function inventoryAccountCodes(kind: PurchaseKind): readonly string[] {
     case "raw_material":
       return CHART_MATERIAS_PRIMAS_CODES
     case "supply":
-      return CHART_GASTOS_GENERALES_CODES
+      return CHART_INSUMOS_CODES
     default:
       return CHART_MERCADERIAS_CODES
   }
@@ -98,8 +98,10 @@ export async function postPurchaseReceiptLedger(
       success: false,
       error:
         purchaseKind === "supply"
-          ? "No hay cuenta de gastos/insumos en el plan de cuentas."
-          : "No hay cuenta de inventario en el plan de cuentas.",
+          ? "No hay cuenta de Insumos en el plan de cuentas (p. ej. 1.1.3.04)."
+          : purchaseKind === "raw_material"
+            ? "No hay cuenta de Materias primas en el plan de cuentas."
+            : "No hay cuenta de inventario en el plan de cuentas.",
     }
   }
 

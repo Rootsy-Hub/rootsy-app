@@ -8,6 +8,14 @@ import {
   type SupplierTableRow,
   type UpsertPopSupplierInput,
 } from "@/app/[siteId]/[popId]/suppliers/actions"
+import { CLIENT_IVA_CONDITION_OPTIONS } from "@/app/[siteId]/[popId]/clients/clientIvaConstants"
+import {
+  SupplierUpsertFormFields,
+  supplierDialogBodyClass,
+  supplierDialogFooterClass,
+  supplierDialogHeaderClass,
+  supplierDialogSurface,
+} from "@/app/[siteId]/[popId]/suppliers/SupplierUpsertFormFields"
 import { buildPaginationItems } from "@/app/[siteId]/[popId]/layout/layoutPreviewPagination"
 import { DataWorkspaceListPaginationFooter } from "@/components/data-workspace/DataWorkspaceListPaginationFooter"
 import {
@@ -19,27 +27,39 @@ import { DataWorkspaceListTableShell } from "@/components/data-workspace/DataWor
 import {
   lightFilterChipClass,
   lightTableThClass,
-  lightToolbarClearButtonClass,
+  lightToolbarButtonClass,
+  lightToolbarControlActiveClass,
   lightToolbarInputClass,
+  lightToolbarClearButtonClass,
+  lightToolbarPanelClass,
   lightToolbarPanelLastClass,
   lightToolbarShellClass,
+  listBulkToolbarClearButtonClass,
+  selectColumnInnerClass,
+  tableRowSelectCheckboxClass,
   toolbarBlockLabelClass,
   workspaceDataTableClassName,
   workspaceTableBodyRowClassNames,
 } from "@/components/data-workspace/dataWorkspaceListStyles"
 import { DataWorkspaceLayout } from "@/components/layouts/DataWorkspaceLayout"
-import { DataWorkspaceSectionMenu } from "@/components/layouts/DataWorkspaceSectionMenu"
+import { DataWorkspaceHeaderIconButton } from "@/components/layouts/DataWorkspaceHeaderIconButton"
+import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
+import { Checkbox } from "@/components/ui/checkbox"
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
-import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip"
 import {
   TableBody,
   TableCell,
@@ -47,21 +67,20 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
-import { Textarea } from "@/components/ui/textarea"
 import withAuth from "@/hoc/withAuth"
 import { usePadronAutofillRazonSocial } from "@/hooks/usePadronAutofillRazonSocial"
 import { getWorkspaceHeaderForPop } from "@/lib/workspaceHeaderServer"
 import { cn } from "@/lib/utils"
 import {
+  Filter,
   Loader2,
   Pencil,
   Plus,
   Search,
-  Table2,
   Trash2,
   X,
 } from "lucide-react"
-import { useParams } from "next/navigation"
+import { useParams, useSearchParams } from "next/navigation"
 import {
   useCallback,
   useEffect,
@@ -75,20 +94,100 @@ import {
 const SUPPLIER_PAGE_SIZES = [10, 25, 50, 100] as const
 const DEFAULT_PAGE_SIZE = 25
 
-const VIEW_ITEMS = [{ id: "list", label: "Listado", icon: Table2 }] as const
-
-const CREATION_NEW_SUPPLIER = {
-  id: "new-supplier",
-  label: "Nuevo proveedor",
-  icon: Plus,
+const suppliersSk = {
+  bar: "animate-pulse rounded-[3px] bg-muted-foreground/12 dark:bg-muted-foreground/[0.14]",
+  barSm: "animate-pulse rounded-[3px] bg-muted-foreground/8 dark:bg-muted-foreground/11",
+  pill: "animate-pulse rounded-full bg-muted-foreground/12 dark:bg-muted-foreground/[0.14]",
+  box: "animate-pulse rounded-sm bg-muted-foreground/10 dark:bg-muted-foreground/[0.12]",
 } as const
 
-function emptyForm(): UpsertPopSupplierInput {
-  return { name: "", email: "", phone: "", taxId: "", notes: "" }
+function SuppliersTableSkeletonRows({
+  rowCount,
+  hasActionsColumn,
+}: {
+  rowCount: number
+  hasActionsColumn: boolean
+}) {
+  return (
+    <>
+      {Array.from({ length: rowCount }).map((_, i) => (
+        <TableRow
+          key={`sk-${i}`}
+          className={cn(
+            "border-border/50",
+            i % 2 === 0 ? "bg-white/30" : "bg-muted/25 dark:bg-muted/15",
+          )}
+          aria-hidden
+        >
+          <TableCell className="w-12 !px-0 py-2 align-middle">
+            <div className={selectColumnInnerClass}>
+              <div className={cn("mx-auto size-4 shrink-0", suppliersSk.box)} />
+            </div>
+          </TableCell>
+          <TableCell className="min-w-0 px-3 py-2.5 align-middle">
+            <div className={cn("h-3.5 w-[72%] max-w-[11rem]", suppliersSk.bar)} />
+            <div
+              className={cn("mt-1.5 h-2.5 w-[45%] max-w-[7rem]", suppliersSk.barSm)}
+            />
+          </TableCell>
+          <TableCell className="min-w-0 max-w-[12rem] px-3 py-2.5 align-middle">
+            <div className={cn("h-3.5 w-full max-w-[10.5rem]", suppliersSk.bar)} />
+          </TableCell>
+          <TableCell className="min-w-0 max-w-[9rem] px-3 py-2.5 align-middle">
+            <div className={cn("h-3.5 w-[5.5rem]", suppliersSk.bar)} />
+          </TableCell>
+          <TableCell className="w-[7.5rem] px-3 py-2.5 align-middle">
+            <div className={cn("h-3.5 w-16", suppliersSk.bar)} />
+          </TableCell>
+          <TableCell className="min-w-[8.5rem] px-3 py-2.5 align-middle">
+            <div className={cn("inline-block h-5 w-[6.5rem]", suppliersSk.pill)} />
+          </TableCell>
+          {hasActionsColumn ? (
+            <TableCell className="w-[7.25rem] px-1 py-1.5 align-middle">
+              <div className="flex items-center justify-end gap-0.5">
+                <div className={cn("size-8 shrink-0 rounded-md", suppliersSk.box)} />
+                <div className={cn("size-8 shrink-0 rounded-md", suppliersSk.box)} />
+              </div>
+            </TableCell>
+          ) : null}
+        </TableRow>
+      ))}
+    </>
+  )
 }
+
+function emptyForm(): UpsertPopSupplierInput {
+  return {
+    name: "",
+    email: "",
+    phone: "",
+    taxId: "",
+    notes: "",
+    ivaCondition: "",
+    addressLine: "",
+    isActive: true,
+  }
+}
+
+const IVA_LABEL_BY_VALUE = Object.fromEntries(
+  CLIENT_IVA_CONDITION_OPTIONS.map((o) => [o.value, o.label]),
+) as Record<string, string>
+
+type SuppliersAppliedFilters = {
+  withEmail: boolean
+  withTaxId: boolean
+  soloActivos: boolean
+}
+
+const defaultSupplierFilters = (): SuppliersAppliedFilters => ({
+  withEmail: false,
+  withTaxId: false,
+  soloActivos: false,
+})
 
 function SuppliersPage() {
   const params = useParams()
+  const searchParams = useSearchParams()
   const siteId = typeof params?.siteId === "string" ? params.siteId : ""
   const popId = typeof params?.popId === "string" ? params.popId : undefined
 
@@ -104,8 +203,19 @@ function SuppliersPage() {
   const searchInputId = useId()
   const pageSizeLabelId = useId()
   const searchInputRef = useRef<HTMLInputElement>(null)
+  const createTaxInputRef = useRef<HTMLInputElement>(null)
   const [page, setPage] = useState(1)
   const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE)
+
+  const [appliedFilters, setAppliedFilters] = useState<SuppliersAppliedFilters>(
+    defaultSupplierFilters,
+  )
+  const [filtersModalOpen, setFiltersModalOpen] = useState(false)
+  const [draftFilters, setDraftFilters] = useState<SuppliersAppliedFilters>(
+    defaultSupplierFilters,
+  )
+
+  const [selected, setSelected] = useState<Set<string>>(() => new Set())
 
   const [createOpen, setCreateOpen] = useState(false)
   const [createSaving, setCreateSaving] = useState(false)
@@ -126,8 +236,10 @@ function SuppliersPage() {
     roleLabel: string
   } | null>(null)
 
+  const createOpenEffective = createOpen && canCreate
+
   const createPadron = usePadronAutofillRazonSocial(popId, createForm.taxId, {
-    enabled: Boolean(popId) && createOpen && canCreate,
+    enabled: Boolean(popId) && createOpenEffective && canCreate,
   })
   const editPadron = usePadronAutofillRazonSocial(popId, editForm.taxId, {
     enabled: Boolean(popId) && editRow !== null && canUpdate,
@@ -168,6 +280,11 @@ function SuppliersPage() {
   }, [popId])
 
   useEffect(() => {
+    const q = searchParams.get("q")?.trim()
+    if (q) setSearchInput(q)
+  }, [searchParams])
+
+  useEffect(() => {
     if (!popId || !siteId) {
       setListFetching(false)
       setError("Punto de venta no encontrado")
@@ -192,22 +309,65 @@ function SuppliersPage() {
   }, [popId, siteId, load, fetchWorkspaceHeader])
 
   useEffect(() => {
-    if (!createOpen || !canCreate) return
+    setPage(1)
+    setSelected(new Set())
+  }, [searchInput, appliedFilters])
+
+  useEffect(() => {
+    if (!createOpenEffective) return
+    const t = window.setTimeout(() => {
+      createTaxInputRef.current?.focus()
+    }, 0)
+    return () => window.clearTimeout(t)
+  }, [createOpenEffective])
+
+  useEffect(() => {
+    if (!createOpenEffective || !canCreate) return
     if (createPadron.busy) return
-    if (!createPadron.razonSocial.trim()) return
-    setCreateForm((f) => ({ ...f, name: createPadron.razonSocial }))
-  }, [createPadron.razonSocial, createPadron.busy, createOpen, canCreate])
+    if (
+      !createPadron.razonSocial.trim() &&
+      !createPadron.mappedIvaCondition &&
+      !createPadron.domicilioFiscal.trim()
+    ) {
+      return
+    }
+    setCreateForm((f) => ({
+      ...f,
+      name: createPadron.razonSocial.trim() || f.name,
+      ivaCondition:
+        f.ivaCondition || createPadron.mappedIvaCondition || f.ivaCondition,
+      addressLine:
+        f.addressLine.trim() || createPadron.domicilioFiscal.trim() || f.addressLine,
+    }))
+  }, [
+    createPadron.razonSocial,
+    createPadron.mappedIvaCondition,
+    createPadron.domicilioFiscal,
+    createPadron.busy,
+    createOpenEffective,
+    canCreate,
+  ])
 
   useEffect(() => {
     if (!editRow || !canUpdate) return
     if (editPadron.busy) return
-    if (!editPadron.razonSocial.trim()) return
-    setEditForm((f) => ({ ...f, name: editPadron.razonSocial }))
-  }, [editPadron.razonSocial, editPadron.busy, editRow, canUpdate])
-
-  useEffect(() => {
-    setPage(1)
-  }, [searchInput])
+    if (!editPadron.mappedIvaCondition && !editPadron.domicilioFiscal.trim()) {
+      return
+    }
+    setEditForm((f) => ({
+      ...f,
+      ivaCondition:
+        f.ivaCondition || editPadron.mappedIvaCondition || f.ivaCondition,
+      addressLine:
+        f.addressLine.trim() || editPadron.domicilioFiscal.trim() || f.addressLine,
+    }))
+  }, [
+    editPadron.mappedIvaCondition,
+    editPadron.domicilioFiscal,
+    editPadron.busy,
+    editRow,
+    canUpdate,
+  ])
 
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
@@ -236,30 +396,27 @@ function SuppliersPage() {
     setCreateOpen(true)
   }, [canCreate])
 
-  const handleSectionSelect = useCallback(
-    (id: string) => {
-      if (id === CREATION_NEW_SUPPLIER.id) {
-        openCreate()
-        return
-      }
-      setCreateOpen(false)
-    },
-    [openCreate],
-  )
+  const closeCreate = useCallback(() => {
+    if (createSaving) return
+    setCreateOpen(false)
+  }, [createSaving])
 
   const submitCreate = async (e: FormEvent) => {
     e.preventDefault()
-    if (!popId || !siteId) return
+    if (!popId || !siteId || createSaving) return
     setCreateSaving(true)
     setCreateBanner(null)
-    const res = await createPopSupplier(popId, createForm)
-    setCreateSaving(false)
-    if (!res.success) {
-      setCreateBanner(res.error)
-      return
+    try {
+      const res = await createPopSupplier(popId, createForm)
+      if (!res.success) {
+        setCreateBanner(res.error)
+        return
+      }
+      setCreateOpen(false)
+      await load()
+    } finally {
+      setCreateSaving(false)
     }
-    setCreateOpen(false)
-    await load()
   }
 
   const openEdit = (row: SupplierTableRow) => {
@@ -271,22 +428,28 @@ function SuppliersPage() {
       phone: row.phone,
       taxId: row.taxId,
       notes: row.notes,
+      ivaCondition: row.ivaCondition ?? "",
+      addressLine: row.addressLine,
+      isActive: row.isActive,
     })
   }
 
   const submitEdit = async (e: FormEvent) => {
     e.preventDefault()
-    if (!popId || !siteId || !editRow) return
+    if (!popId || !siteId || !editRow || editSaving) return
     setEditSaving(true)
     setEditBanner(null)
-    const res = await updatePopSupplier(popId, editRow.id, editForm)
-    setEditSaving(false)
-    if (!res.success) {
-      setEditBanner(res.error)
-      return
+    try {
+      const res = await updatePopSupplier(popId, editRow.id, editForm)
+      if (!res.success) {
+        setEditBanner(res.error)
+        return
+      }
+      setEditRow(null)
+      await load()
+    } finally {
+      setEditSaving(false)
     }
-    setEditRow(null)
-    await load()
   }
 
   const submitDelete = async () => {
@@ -294,26 +457,38 @@ function SuppliersPage() {
     setDeleteBusy(true)
     const res = await deletePopSupplier(popId, deleteRow.id)
     setDeleteBusy(false)
-    if (!res.success) {
-      setDeleteRow(null)
-      return
-    }
+    if (!res.success) return
     setDeleteRow(null)
     await load()
   }
 
   const filteredRows = useMemo(() => {
+    let list = rows
+    if (appliedFilters.soloActivos) {
+      list = list.filter((r) => r.isActive)
+    }
+    if (appliedFilters.withEmail) {
+      list = list.filter((r) => r.email.trim().length > 0)
+    }
+    if (appliedFilters.withTaxId) {
+      list = list.filter((r) => r.taxId.trim().length > 0)
+    }
     const q = searchInput.trim().toLowerCase()
-    if (!q) return rows
-    return rows.filter(
+    if (!q) return list
+    return list.filter(
       (r) =>
         r.name.toLowerCase().includes(q) ||
         r.email.toLowerCase().includes(q) ||
         r.phone.toLowerCase().includes(q) ||
         r.taxId.toLowerCase().includes(q) ||
+        r.addressLine.toLowerCase().includes(q) ||
+        (r.ivaCondition &&
+          (IVA_LABEL_BY_VALUE[r.ivaCondition] ?? r.ivaCondition)
+            .toLowerCase()
+            .includes(q)) ||
         r.notes.toLowerCase().includes(q),
     )
-  }, [rows, searchInput])
+  }, [rows, searchInput, appliedFilters])
 
   const totalCount = filteredRows.length
   const totalPages = useMemo(
@@ -327,6 +502,11 @@ function SuppliersPage() {
     return filteredRows.slice(start, start + pageSize)
   }, [filteredRows, currentPage, pageSize])
 
+  const visibleIds = useMemo(() => pageRows.map((r) => r.id), [pageRows])
+  const allVisibleSelected =
+    visibleIds.length > 0 && visibleIds.every((id) => selected.has(id))
+  const someVisibleSelected = visibleIds.some((id) => selected.has(id))
+
   const rangeLabel = useMemo(() => {
     if (totalCount === 0) return { start: 0, end: 0 }
     const start = (currentPage - 1) * pageSize + 1
@@ -339,6 +519,27 @@ function SuppliersPage() {
     [totalPages, currentPage],
   )
 
+  const modalFiltersActiveCount = useMemo(() => {
+    let count = 0
+    if (appliedFilters.withEmail) count++
+    if (appliedFilters.withTaxId) count++
+    if (appliedFilters.soloActivos) count++
+    return count
+  }, [appliedFilters])
+
+  const hasFilterChips =
+    searchInput.trim() !== "" ||
+    appliedFilters.withEmail ||
+    appliedFilters.withTaxId ||
+    appliedFilters.soloActivos
+
+  const activeFilterCount = useMemo(() => {
+    let count = 0
+    if (searchInput.trim()) count++
+    count += modalFiltersActiveCount
+    return count
+  }, [searchInput, modalFiltersActiveCount])
+
   const resultsSummary = useMemo(() => {
     if (listFetching && totalCount === 0) return "…"
     if (totalCount === 0) return "Sin resultados"
@@ -349,20 +550,14 @@ function SuppliersPage() {
     return `${totalCount.toLocaleString("es-AR")} ${noun}`
   }, [listFetching, totalCount, rows.length, searchInput])
 
-  const hasSearchChip = searchInput.trim().length > 0
-
-  const clearSearch = useCallback(() => {
+  const clearAllFilters = useCallback(() => {
     setSearchInput("")
+    setAppliedFilters(defaultSupplierFilters())
     searchInputRef.current?.focus()
   }, [])
 
-  const creationItems = useMemo(
-    () => (canCreate ? [CREATION_NEW_SUPPLIER] : []),
-    [canCreate],
-  )
-
-  const sectionActiveId = createOpen ? CREATION_NEW_SUPPLIER.id : "list"
-  const emptyCols = 5 + (canUpdate || canDelete ? 1 : 0)
+  const skeletonRowCount = Math.min(12, Math.max(5, pageSize))
+  const emptyCols = 6 + (canUpdate || canDelete ? 1 : 0)
 
   if (!popId || !siteId) {
     return (
@@ -386,16 +581,24 @@ function SuppliersPage() {
       userAvatarSrc={workspaceHeader?.userImageUrl ?? undefined}
       userRoleLabel={workspaceHeader?.roleLabel ?? "Compras"}
       mainClassName="min-h-0 overflow-hidden"
-      sectionMenu={
-        <DataWorkspaceSectionMenu
-          headerVariant="dark"
-          creationItems={creationItems}
-          viewItems={VIEW_ITEMS}
-          activeId={sectionActiveId}
-          onSelect={handleSectionSelect}
-          creationSectionLabel="Nuevo"
-          viewsSectionLabel="En esta sección"
-        />
+      headerActions={
+        canCreate ? (
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <DataWorkspaceHeaderIconButton
+                label="Nuevo proveedor"
+                headerVariant="dark"
+                primary
+                onClick={openCreate}
+              >
+                <Plus className="size-5" aria-hidden />
+              </DataWorkspaceHeaderIconButton>
+            </TooltipTrigger>
+            <TooltipContent variant="dark" side="bottom" sideOffset={6}>
+              Nuevo proveedor
+            </TooltipContent>
+          </Tooltip>
+        ) : null
       }
     >
       <div className="relative flex min-h-0 w-full flex-1 flex-col">
@@ -414,96 +617,324 @@ function SuppliersPage() {
             role="toolbar"
             aria-label="Filtros del listado"
           >
-            <div className={cn(lightToolbarPanelLastClass, "w-full")}>
-              <div className="mb-2 flex min-w-0 items-baseline justify-between gap-3">
-                <label htmlFor={searchInputId} className={toolbarBlockLabelClass}>
-                  Buscar
-                </label>
-                <span
-                  className="shrink-0 text-[11px] font-medium text-muted-foreground"
-                  aria-live="polite"
-                  aria-atomic="true"
-                >
-                  {resultsSummary}
-                </span>
-              </div>
-              <div className="relative min-w-0">
-                <Search
-                  className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground"
-                  aria-hidden
-                />
-                <Input
-                  ref={searchInputRef}
-                  id={searchInputId}
-                  type="search"
-                  value={searchInput}
-                  onChange={(e) => setSearchInput(e.target.value)}
-                  placeholder="Nombre, email, teléfono, CUIT, notas… ( / )"
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-12">
+              <div
+                className={cn(
+                  lightToolbarPanelClass,
+                  "order-2 w-full min-w-0 md:col-span-1 xl:order-1 xl:col-span-3",
+                )}
+              >
+                <div className="mb-2 flex min-w-0 items-baseline justify-between gap-3">
+                  <span className={toolbarBlockLabelClass}>Filtros</span>
+                  {modalFiltersActiveCount > 0 ? (
+                    <span className="shrink-0 text-[11px] font-medium text-primary">
+                      Activo
+                    </span>
+                  ) : null}
+                </div>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
                   className={cn(
-                    lightToolbarInputClass,
-                    searchInput.trim().length > 0 && "pr-10",
+                    lightToolbarButtonClass,
+                    modalFiltersActiveCount > 0 && lightToolbarControlActiveClass,
                   )}
-                  autoComplete="off"
-                  spellCheck={false}
-                  aria-label="Buscar proveedores"
-                />
-                {searchInput.trim().length > 0 ? (
-                  <button
-                    type="button"
-                    aria-label="Limpiar búsqueda"
-                    className={lightToolbarClearButtonClass}
-                    onClick={clearSearch}
+                  aria-haspopup="dialog"
+                  aria-expanded={filtersModalOpen}
+                  onClick={() => {
+                    setDraftFilters({ ...appliedFilters })
+                    setFiltersModalOpen(true)
+                  }}
+                >
+                  <Filter className="size-4 shrink-0 opacity-80" aria-hidden />
+                  <span className="min-w-0 flex-1 truncate text-left">
+                    {modalFiltersActiveCount > 0
+                      ? "Refinar filtros"
+                      : "E-mail, CUIT y estado"}
+                  </span>
+                  {modalFiltersActiveCount > 0 ? (
+                    <span
+                      className="inline-flex size-5 shrink-0 items-center justify-center rounded-full bg-primary/15 text-[10px] font-semibold tabular-nums text-primary"
+                      aria-hidden
+                    >
+                      {modalFiltersActiveCount}
+                    </span>
+                  ) : null}
+                </Button>
+              </div>
+
+              <div
+                className={cn(
+                  lightToolbarPanelLastClass,
+                  "order-1 min-w-0 md:col-span-2 xl:order-2 xl:col-span-9",
+                )}
+              >
+                <div className="mb-2 flex min-w-0 items-baseline justify-between gap-3">
+                  <label htmlFor={searchInputId} className={toolbarBlockLabelClass}>
+                    Buscar
+                  </label>
+                  <span
+                    className="shrink-0 text-[11px] font-medium text-muted-foreground"
+                    aria-live="polite"
+                    aria-atomic="true"
                   >
-                    <X className="size-3.5" aria-hidden />
-                  </button>
-                ) : null}
+                    {resultsSummary}
+                  </span>
+                </div>
+                <div className="relative min-w-0">
+                  <Search
+                    className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground"
+                    aria-hidden
+                  />
+                  <Input
+                    ref={searchInputRef}
+                    id={searchInputId}
+                    type="search"
+                    value={searchInput}
+                    onChange={(e) => setSearchInput(e.target.value)}
+                    placeholder="Nombre, contacto, CUIT, dirección, IVA… ( / )"
+                    className={cn(
+                      lightToolbarInputClass,
+                      searchInput.trim().length > 0 && "pr-10",
+                    )}
+                    autoComplete="off"
+                    spellCheck={false}
+                    aria-label="Buscar proveedores"
+                  />
+                  {searchInput.trim().length > 0 ? (
+                    <button
+                      type="button"
+                      aria-label="Limpiar búsqueda"
+                      className={lightToolbarClearButtonClass}
+                      onClick={() => {
+                        setSearchInput("")
+                        searchInputRef.current?.focus()
+                      }}
+                    >
+                      <X className="size-3.5" aria-hidden />
+                    </button>
+                  ) : null}
+                </div>
               </div>
             </div>
 
-            {hasSearchChip ? (
+            {hasFilterChips ? (
               <div
                 className="border-t border-border/80 bg-card px-4 py-3"
                 role="region"
                 aria-label="Filtros activos"
               >
                 <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
-                  <p className={toolbarBlockLabelClass}>Filtros activos</p>
+                  <p className={toolbarBlockLabelClass}>
+                    Filtros activos
+                    <span className="sr-only">: {activeFilterCount}</span>
+                    <span
+                      className="ml-1.5 inline-flex min-w-5 items-center justify-center rounded-full bg-muted px-1.5 py-0.5 text-[10px] font-semibold tabular-nums normal-case tracking-normal text-muted-foreground"
+                      aria-hidden
+                    >
+                      {activeFilterCount}
+                    </span>
+                  </p>
                   <Button
                     type="button"
                     variant="ghost"
                     size="sm"
                     className="h-8 px-2.5 text-xs font-medium text-muted-foreground hover:text-foreground"
-                    onClick={clearSearch}
+                    onClick={clearAllFilters}
                   >
                     Limpiar todo
                   </Button>
                 </div>
                 <div className="flex flex-wrap items-center gap-1.5">
-                  <Badge variant="secondary" className={lightFilterChipClass}>
-                    <span className="truncate">
-                      Buscar: «{searchInput.trim()}»
-                    </span>
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="icon"
-                      className="size-6 shrink-0"
-                      onClick={clearSearch}
-                      aria-label="Quitar búsqueda"
-                    >
-                      <X className="size-3" />
-                    </Button>
-                  </Badge>
+                  {searchInput.trim() ? (
+                    <Badge variant="secondary" className={lightFilterChipClass}>
+                      <span className="truncate">
+                        Buscar: «{searchInput.trim()}»
+                      </span>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        className="size-6 shrink-0"
+                        onClick={() => {
+                          setSearchInput("")
+                          searchInputRef.current?.focus()
+                        }}
+                        aria-label="Quitar búsqueda"
+                      >
+                        <X className="size-3" />
+                      </Button>
+                    </Badge>
+                  ) : null}
+                  {appliedFilters.withEmail ? (
+                    <Badge variant="secondary" className={lightFilterChipClass}>
+                      Con e-mail
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        className="size-6 shrink-0"
+                        onClick={() =>
+                          setAppliedFilters((f) => ({ ...f, withEmail: false }))
+                        }
+                        aria-label="Quitar filtro e-mail"
+                      >
+                        <X className="size-3" />
+                      </Button>
+                    </Badge>
+                  ) : null}
+                  {appliedFilters.withTaxId ? (
+                    <Badge variant="secondary" className={lightFilterChipClass}>
+                      Con CUIT
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        className="size-6 shrink-0"
+                        onClick={() =>
+                          setAppliedFilters((f) => ({ ...f, withTaxId: false }))
+                        }
+                        aria-label="Quitar filtro CUIT"
+                      >
+                        <X className="size-3" />
+                      </Button>
+                    </Badge>
+                  ) : null}
+                  {appliedFilters.soloActivos ? (
+                    <Badge variant="secondary" className={lightFilterChipClass}>
+                      Solo activos
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        className="size-6 shrink-0"
+                        onClick={() =>
+                          setAppliedFilters((f) => ({ ...f, soloActivos: false }))
+                        }
+                        aria-label="Quitar filtro activos"
+                      >
+                        <X className="size-3" />
+                      </Button>
+                    </Badge>
+                  ) : null}
                 </div>
               </div>
             ) : null}
           </div>
+
+          <Dialog open={filtersModalOpen} onOpenChange={setFiltersModalOpen}>
+            <DialogContent
+              data-rootsy-light-shell="true"
+              className="border-border bg-card text-foreground sm:max-w-md"
+            >
+              <DialogHeader>
+                <DialogTitle>Filtros del listado</DialogTitle>
+                <DialogDescription>
+                  Refiná qué proveedores se muestran en la tabla.
+                </DialogDescription>
+              </DialogHeader>
+              <div className="space-y-3 py-1">
+                <label className="flex cursor-pointer items-center gap-2.5 rounded-lg border border-border/60 px-3 py-2.5">
+                  <Checkbox
+                    checked={draftFilters.withEmail}
+                    onCheckedChange={(c) =>
+                      setDraftFilters((f) => ({
+                        ...f,
+                        withEmail: c === true,
+                      }))
+                    }
+                    aria-label="Solo con e-mail"
+                  />
+                  <span className="text-sm">Solo con e-mail</span>
+                </label>
+                <label className="flex cursor-pointer items-center gap-2.5 rounded-lg border border-border/60 px-3 py-2.5">
+                  <Checkbox
+                    checked={draftFilters.withTaxId}
+                    onCheckedChange={(c) =>
+                      setDraftFilters((f) => ({
+                        ...f,
+                        withTaxId: c === true,
+                      }))
+                    }
+                    aria-label="Solo con CUIT"
+                  />
+                  <span className="text-sm">Solo con CUIT / ID fiscal</span>
+                </label>
+                <label className="flex cursor-pointer items-center gap-2.5 rounded-lg border border-border/60 px-3 py-2.5">
+                  <Checkbox
+                    checked={draftFilters.soloActivos}
+                    onCheckedChange={(c) =>
+                      setDraftFilters((f) => ({
+                        ...f,
+                        soloActivos: c === true,
+                      }))
+                    }
+                    aria-label="Solo proveedores activos"
+                  />
+                  <span className="text-sm">Solo proveedores activos</span>
+                </label>
+              </div>
+              <DialogFooter className="gap-2 sm:gap-0">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setDraftFilters(defaultSupplierFilters())}
+                >
+                  Restablecer
+                </Button>
+                <Button
+                  type="button"
+                  onClick={() => {
+                    setAppliedFilters({ ...draftFilters })
+                    setFiltersModalOpen(false)
+                  }}
+                >
+                  Aplicar
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
 
           <DataWorkspaceListTableShell
             variant="flush"
             overlay={
               !listFetching && totalCount === 0 ? (
                 <DataWorkspaceTableEmptyMascot />
+              ) : null
+            }
+            bulkToolbar={
+              selected.size > 0 ? (
+                <div
+                  className={cn(
+                    "flex flex-wrap items-center gap-2 border-b border-border/80 bg-muted/35 px-3 py-2.5 sm:px-4",
+                    listFetching && "pointer-events-none opacity-60",
+                  )}
+                  role="region"
+                  aria-label="Acciones sobre selección"
+                >
+                  <span className="text-sm text-foreground">
+                    <span className="font-semibold">{selected.size}</span>{" "}
+                    <span className="text-muted-foreground">seleccionados</span>
+                  </span>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <Button type="button" size="sm" variant="outline" className="h-8">
+                      Eliminar selección
+                    </Button>
+                    <Button type="button" size="sm" variant="outline" className="h-8">
+                      Exportar CSV
+                    </Button>
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="ghost"
+                      className={listBulkToolbarClearButtonClass}
+                      onClick={() => setSelected(new Set())}
+                    >
+                      Limpiar
+                    </Button>
+                  </div>
+                </div>
               ) : null
             }
             footer={
@@ -528,312 +959,353 @@ function SuppliersPage() {
             }
           >
             <DataWorkspaceListTableFrame>
-            <table
-              className={workspaceDataTableClassName}
-              aria-busy={listFetching}
-            >
-              <TableHeader>
-                <TableRow className="border-0 hover:bg-transparent">
-                  <TableHead className={cn(lightTableThClass, "min-w-[10rem] text-left")}>
-                    Nombre
-                  </TableHead>
-                  <TableHead className={cn(lightTableThClass, "w-[12rem] text-left")}>
-                    Email
-                  </TableHead>
-                  <TableHead className={cn(lightTableThClass, "w-[9rem] text-left")}>
-                    Teléfono
-                  </TableHead>
-                  <TableHead className={cn(lightTableThClass, "w-[7.5rem] text-left")}>
-                    CUIT / ID fiscal
-                  </TableHead>
-                  <TableHead className={cn(lightTableThClass, "min-w-[8rem] text-left")}>
-                    Notas
-                  </TableHead>
-                  {canUpdate || canDelete ? (
-                    <TableHead className={cn(lightTableThClass, "w-[7.25rem] text-right")}>
-                      <span className="sr-only">Acciones</span>
+              <table
+                className={workspaceDataTableClassName}
+                aria-busy={listFetching}
+              >
+                <TableHeader>
+                  <TableRow className="border-0 hover:bg-transparent">
+                    <TableHead className={cn(lightTableThClass, "w-12 !px-0 text-center")}>
+                      <div className={cn(selectColumnInnerClass, "min-h-10")}>
+                        <Checkbox
+                          className={tableRowSelectCheckboxClass}
+                          checked={
+                            allVisibleSelected
+                              ? true
+                              : someVisibleSelected
+                                ? "indeterminate"
+                                : false
+                          }
+                          onCheckedChange={(c) => {
+                            setSelected((prev) => {
+                              const next = new Set(prev)
+                              if (c === true) {
+                                visibleIds.forEach((id) => next.add(id))
+                              } else {
+                                visibleIds.forEach((id) => next.delete(id))
+                              }
+                              return next
+                            })
+                          }}
+                          disabled={
+                            listFetching ||
+                            totalCount === 0 ||
+                            pageRows.length === 0
+                          }
+                          aria-label="Seleccionar filas visibles"
+                        />
+                      </div>
                     </TableHead>
-                  ) : null}
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {listFetching ? (
-                  <TableRow>
-                    <TableCell
-                      colSpan={emptyCols}
-                      className="py-12 text-center text-muted-foreground"
+                    <TableHead className={cn(lightTableThClass, "min-w-[10rem] text-left")}>
+                      Nombre
+                    </TableHead>
+                    <TableHead
+                      className={cn(
+                        lightTableThClass,
+                        "w-[12rem] min-w-0 max-w-[12rem] text-left",
+                      )}
                     >
-                      Cargando proveedores…
-                    </TableCell>
+                      E-mail
+                    </TableHead>
+                    <TableHead
+                      className={cn(
+                        lightTableThClass,
+                        "w-[9rem] min-w-0 max-w-[9rem] text-left",
+                      )}
+                    >
+                      Teléfono
+                    </TableHead>
+                    <TableHead className={cn(lightTableThClass, "w-[7.5rem] text-left")}>
+                      CUIT / ID fiscal
+                    </TableHead>
+                    <TableHead className={cn(lightTableThClass, "min-w-[8.5rem] text-left")}>
+                      IVA
+                    </TableHead>
+                    {canUpdate || canDelete ? (
+                      <TableHead className={cn(lightTableThClass, "w-[7.25rem] text-right")}>
+                        <span className="sr-only">Acciones</span>
+                      </TableHead>
+                    ) : null}
                   </TableRow>
-                ) : totalCount === 0 ? (
-                  null
-                ) : (
-                  pageRows.map((r, i) => (
-                    <TableRow
-                      key={r.id}
-                      className={workspaceTableBodyRowClassNames(i)}
-                    >
-                      <TableCell className="min-w-0 px-3 py-2.5 align-middle">
-                        <p className="truncate font-medium text-foreground">
-                          {r.name || "—"}
-                        </p>
-                      </TableCell>
-                      <TableCell className="min-w-0 px-3 py-2.5 text-muted-foreground">
-                        {r.email || "—"}
-                      </TableCell>
-                      <TableCell className="px-3 py-2.5 text-muted-foreground">
-                        {r.phone || "—"}
-                      </TableCell>
-                      <TableCell className="px-3 py-2.5 text-muted-foreground">
-                        {r.taxId || "—"}
-                      </TableCell>
-                      <TableCell
-                        className="max-w-[180px] truncate px-3 py-2.5 text-muted-foreground"
-                        title={r.notes}
+                </TableHeader>
+                <TableBody>
+                  {listFetching ? (
+                    <SuppliersTableSkeletonRows
+                      rowCount={skeletonRowCount}
+                      hasActionsColumn={Boolean(canUpdate || canDelete)}
+                    />
+                  ) : totalCount === 0 ? (
+                    null
+                  ) : (
+                    pageRows.map((r, i) => (
+                      <TableRow
+                        key={r.id}
+                        className={cn(
+                          workspaceTableBodyRowClassNames(i),
+                          !r.isActive && "opacity-[0.88]",
+                        )}
                       >
-                        {r.notes || "—"}
-                      </TableCell>
-                      {canUpdate || canDelete ? (
-                        <TableCell className="px-1 py-1.5 align-middle">
-                          <div className="flex items-center justify-end gap-0.5">
-                            {canUpdate ? (
-                              <DataWorkspaceTableIconAction
-                                label={`Editar ${r.name || "proveedor"}`}
-                                icon={Pencil}
-                                onClick={() => openEdit(r)}
-                              />
-                            ) : null}
-                            {canDelete ? (
-                              <DataWorkspaceTableIconAction
-                                label={`Eliminar ${r.name || "proveedor"}`}
-                                icon={Trash2}
-                                destructive
-                                onClick={() => setDeleteRow(r)}
-                              />
-                            ) : null}
+                        <TableCell className="w-12 !px-0 py-2 align-middle">
+                          <div className={selectColumnInnerClass}>
+                            <Checkbox
+                              className={tableRowSelectCheckboxClass}
+                              checked={selected.has(r.id)}
+                              onCheckedChange={(c) => {
+                                setSelected((prev) => {
+                                  const next = new Set(prev)
+                                  if (c === true) next.add(r.id)
+                                  else next.delete(r.id)
+                                  return next
+                                })
+                              }}
+                              aria-label={`Seleccionar ${r.name || "proveedor"}`}
+                            />
                           </div>
                         </TableCell>
-                      ) : null}
-                    </TableRow>
-                  ))
-                )}
-              </TableBody>
-            </table>
-            {!listFetching && totalCount === 0 ? (
-              <div className="min-h-[12rem] flex-1" aria-hidden />
-            ) : null}
+                        <TableCell className="min-w-0 px-3 py-2.5 align-middle">
+                          <p className="truncate font-medium text-foreground">
+                            {r.name || "—"}
+                          </p>
+                          {r.addressLine.trim() ? (
+                            <p
+                              className="truncate text-xs text-muted-foreground"
+                              title={r.addressLine}
+                            >
+                              {r.addressLine}
+                            </p>
+                          ) : null}
+                          {!r.isActive ? (
+                            <Badge
+                              variant="outline"
+                              className="mt-1 border-muted-foreground/30 text-[10px] font-normal text-muted-foreground"
+                            >
+                              Inactivo
+                            </Badge>
+                          ) : null}
+                        </TableCell>
+                        <TableCell
+                          className="min-w-0 max-w-[12rem] overflow-hidden px-3 py-2.5 align-middle text-muted-foreground"
+                          title={r.email.trim() ? r.email : undefined}
+                        >
+                          <p className="truncate">{r.email || "—"}</p>
+                        </TableCell>
+                        <TableCell
+                          className="min-w-0 max-w-[9rem] overflow-hidden px-3 py-2.5 align-middle text-muted-foreground"
+                          title={r.phone.trim() ? r.phone : undefined}
+                        >
+                          <p className="truncate">{r.phone || "—"}</p>
+                        </TableCell>
+                        <TableCell className="px-3 py-2.5 text-muted-foreground">
+                          {r.taxId || "—"}
+                        </TableCell>
+                        <TableCell className="min-w-0 px-3 py-2.5 align-middle">
+                          {r.ivaCondition ? (
+                            <Badge
+                              variant="secondary"
+                              className="max-w-full truncate font-normal"
+                              title={
+                                IVA_LABEL_BY_VALUE[r.ivaCondition] ??
+                                r.ivaCondition
+                              }
+                            >
+                              <span className="truncate">
+                                {IVA_LABEL_BY_VALUE[r.ivaCondition] ?? "—"}
+                              </span>
+                            </Badge>
+                          ) : (
+                            <span className="text-muted-foreground">—</span>
+                          )}
+                        </TableCell>
+                        {canUpdate || canDelete ? (
+                          <TableCell className="px-1 py-1.5 align-middle">
+                            <div className="flex items-center justify-end gap-1">
+                              {canUpdate ? (
+                                <DataWorkspaceTableIconAction
+                                  label={`Editar ${r.name || "proveedor"}`}
+                                  icon={Pencil}
+                                  onClick={() => openEdit(r)}
+                                />
+                              ) : null}
+                              {canDelete ? (
+                                <DataWorkspaceTableIconAction
+                                  label={`Eliminar ${r.name || "proveedor"}`}
+                                  icon={Trash2}
+                                  destructive
+                                  onClick={() => setDeleteRow(r)}
+                                />
+                              ) : null}
+                            </div>
+                          </TableCell>
+                        ) : null}
+                      </TableRow>
+                    ))
+                  )}
+                </TableBody>
+              </table>
+              {!listFetching && totalCount === 0 ? (
+                <div className="min-h-[12rem] flex-1" aria-hidden />
+              ) : null}
             </DataWorkspaceListTableFrame>
           </DataWorkspaceListTableShell>
         </div>
       </div>
 
-      <Dialog open={createOpen} onOpenChange={(o) => !o && setCreateOpen(false)}>
+      <Dialog open={createOpenEffective} onOpenChange={(o) => !o && closeCreate()}>
         <DialogContent
           data-rootsy-light-shell="true"
-          showCloseButton
-          className="max-h-[min(90vh,640px)] overflow-y-auto border-border bg-card text-foreground sm:max-w-md"
+          showCloseButton={!createSaving}
+          className={supplierDialogSurface}
         >
-          <DialogHeader>
-            <DialogTitle>Nuevo proveedor</DialogTitle>
+          <DialogHeader className={supplierDialogHeaderClass}>
+            <DialogTitle className="text-base font-semibold tracking-tight">
+              Nuevo proveedor
+            </DialogTitle>
+            <DialogDescription className="text-sm leading-relaxed">
+              Datos fiscales y de contacto. Podés completar el CUIT con el padrón
+              AFIP.
+            </DialogDescription>
           </DialogHeader>
-          {createBanner ? (
-            <p className="rounded-lg border border-destructive/25 bg-destructive/5 px-3 py-2 text-sm text-destructive">
-              {createBanner}
-            </p>
-          ) : null}
-          <form className="space-y-4" onSubmit={(e) => void submitCreate(e)}>
-            <div className="space-y-2">
-              <Label htmlFor="sp-name">Nombre</Label>
-              <Input
-                id="sp-name"
-                value={createForm.name}
-                onChange={(e) =>
-                  setCreateForm((f) => ({ ...f, name: e.target.value }))
-                }
-                required
-                className="bg-background"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="sp-email">Email</Label>
-              <Input
-                id="sp-email"
-                type="email"
-                value={createForm.email}
-                onChange={(e) =>
-                  setCreateForm((f) => ({ ...f, email: e.target.value }))
-                }
-                className="bg-background"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="sp-phone">Teléfono</Label>
-              <Input
-                id="sp-phone"
-                value={createForm.phone}
-                onChange={(e) =>
-                  setCreateForm((f) => ({ ...f, phone: e.target.value }))
-                }
-                className="bg-background"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="sp-tax">CUIT / ID fiscal</Label>
-              <Input
-                id="sp-tax"
-                value={createForm.taxId}
-                onChange={(e) =>
-                  setCreateForm((f) => ({ ...f, taxId: e.target.value }))
-                }
-                className="bg-background"
-                placeholder="Opcional — completa la razón social automáticamente"
-              />
-              {createPadron.busy ? (
-                <p className="flex items-center gap-2 text-xs text-muted-foreground">
-                  <Loader2 className="size-3.5 animate-spin" aria-hidden />
-                  Consultando padrón…
+          <form
+            className="flex min-h-0 flex-1 flex-col overflow-hidden"
+            onSubmit={(e) => void submitCreate(e)}
+          >
+            <div className={supplierDialogBodyClass}>
+              {createBanner ? (
+                <p
+                  role="alert"
+                  className="mb-4 rounded-lg border border-destructive/25 bg-destructive/5 px-3 py-2 text-sm text-destructive"
+                >
+                  {createBanner}
                 </p>
-              ) : createPadron.error ? (
-                <p className="text-xs text-destructive">{createPadron.error}</p>
               ) : null}
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="sp-notes">Notas</Label>
-              <Textarea
-                id="sp-notes"
-                rows={3}
-                value={createForm.notes}
-                onChange={(e) =>
-                  setCreateForm((f) => ({ ...f, notes: e.target.value }))
-                }
-                className="bg-background"
+              <SupplierUpsertFormFields
+                idPrefix="sp"
+                form={createForm}
+                setForm={setCreateForm}
+                padron={createPadron}
+                taxInputRef={createTaxInputRef}
               />
             </div>
-            <DialogFooter className="gap-2 sm:gap-0">
-              <Button type="button" variant="outline" onClick={() => setCreateOpen(false)}>
+            <DialogFooter className={supplierDialogFooterClass}>
+              <Button
+                type="button"
+                variant="outline"
+                disabled={createSaving}
+                onClick={closeCreate}
+              >
                 Cancelar
               </Button>
-              <Button type="submit" disabled={createSaving}>
-                {createSaving ? "Guardando…" : "Crear"}
+              <Button type="submit" disabled={createSaving} className="gap-2">
+                {createSaving ? (
+                  <>
+                    <Loader2 className="size-4 animate-spin" aria-hidden />
+                    Guardando…
+                  </>
+                ) : (
+                  "Crear proveedor"
+                )}
               </Button>
             </DialogFooter>
           </form>
         </DialogContent>
       </Dialog>
 
-      <Dialog open={editRow !== null} onOpenChange={(o) => !o && setEditRow(null)}>
+      <Dialog
+        open={editRow !== null}
+        onOpenChange={(o) => {
+          if (!o && !editSaving) setEditRow(null)
+        }}
+      >
         <DialogContent
           data-rootsy-light-shell="true"
-          showCloseButton
-          className="max-h-[min(90vh,640px)] overflow-y-auto border-border bg-card text-foreground sm:max-w-md"
+          showCloseButton={!editSaving}
+          className={supplierDialogSurface}
         >
-          <DialogHeader>
-            <DialogTitle>Editar proveedor</DialogTitle>
+          <DialogHeader className={supplierDialogHeaderClass}>
+            <DialogTitle className="text-base font-semibold tracking-tight">
+              Editar proveedor
+            </DialogTitle>
+            <DialogDescription className="text-sm leading-relaxed">
+              {editRow?.name
+                ? `Actualizá los datos de ${editRow.name}.`
+                : "Actualizá los datos del proveedor."}
+            </DialogDescription>
           </DialogHeader>
-          {editBanner ? (
-            <p className="rounded-lg border border-destructive/25 bg-destructive/5 px-3 py-2 text-sm text-destructive">
-              {editBanner}
-            </p>
-          ) : null}
-          <form className="space-y-4" onSubmit={(e) => void submitEdit(e)}>
-            <div className="space-y-2">
-              <Label htmlFor="e-sp-name">Nombre</Label>
-              <Input
-                id="e-sp-name"
-                value={editForm.name}
-                onChange={(e) =>
-                  setEditForm((f) => ({ ...f, name: e.target.value }))
-                }
-                required
-                className="bg-background"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="e-sp-email">Email</Label>
-              <Input
-                id="e-sp-email"
-                type="email"
-                value={editForm.email}
-                onChange={(e) =>
-                  setEditForm((f) => ({ ...f, email: e.target.value }))
-                }
-                className="bg-background"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="e-sp-phone">Teléfono</Label>
-              <Input
-                id="e-sp-phone"
-                value={editForm.phone}
-                onChange={(e) =>
-                  setEditForm((f) => ({ ...f, phone: e.target.value }))
-                }
-                className="bg-background"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="e-sp-tax">CUIT / ID fiscal</Label>
-              <Input
-                id="e-sp-tax"
-                value={editForm.taxId}
-                onChange={(e) =>
-                  setEditForm((f) => ({ ...f, taxId: e.target.value }))
-                }
-                className="bg-background"
-                placeholder="Opcional — completa la razón social automáticamente"
-              />
-              {editPadron.busy ? (
-                <p className="flex items-center gap-2 text-xs text-muted-foreground">
-                  <Loader2 className="size-3.5 animate-spin" aria-hidden />
-                  Consultando padrón…
+          <form
+            className="flex min-h-0 flex-1 flex-col overflow-hidden"
+            onSubmit={(e) => void submitEdit(e)}
+          >
+            <div className={supplierDialogBodyClass}>
+              {editBanner ? (
+                <p
+                  role="alert"
+                  className="mb-4 rounded-lg border border-destructive/25 bg-destructive/5 px-3 py-2 text-sm text-destructive"
+                >
+                  {editBanner}
                 </p>
-              ) : editPadron.error ? (
-                <p className="text-xs text-destructive">{editPadron.error}</p>
               ) : null}
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="e-sp-notes">Notas</Label>
-              <Textarea
-                id="e-sp-notes"
-                rows={3}
-                value={editForm.notes}
-                onChange={(e) =>
-                  setEditForm((f) => ({ ...f, notes: e.target.value }))
-                }
-                className="bg-background"
+              <SupplierUpsertFormFields
+                idPrefix="e-sp"
+                form={editForm}
+                setForm={setEditForm}
+                padron={editPadron}
+                showPadronNameButton
               />
             </div>
-            <DialogFooter className="gap-2 sm:gap-0">
-              <Button type="button" variant="outline" onClick={() => setEditRow(null)}>
+            <DialogFooter className={supplierDialogFooterClass}>
+              <Button
+                type="button"
+                variant="outline"
+                disabled={editSaving}
+                onClick={() => setEditRow(null)}
+              >
                 Cancelar
               </Button>
-              <Button type="submit" disabled={editSaving}>
-                {editSaving ? "Guardando…" : "Guardar"}
+              <Button type="submit" disabled={editSaving} className="gap-2">
+                {editSaving ? (
+                  <>
+                    <Loader2 className="size-4 animate-spin" aria-hidden />
+                    Guardando…
+                  </>
+                ) : (
+                  "Guardar cambios"
+                )}
               </Button>
             </DialogFooter>
           </form>
         </DialogContent>
       </Dialog>
 
-      <Dialog open={deleteRow !== null} onOpenChange={(o) => !o && setDeleteRow(null)}>
+      <Dialog
+        open={deleteRow !== null}
+        onOpenChange={(o) => {
+          if (!o && !deleteBusy) setDeleteRow(null)
+        }}
+      >
         <DialogContent
           data-rootsy-light-shell="true"
-          showCloseButton
-          className="border-border bg-card text-foreground sm:max-w-md"
+          showCloseButton={!deleteBusy}
+          className={cn(supplierDialogSurface, "sm:max-w-md")}
         >
-          <DialogHeader>
-            <DialogTitle>¿Eliminar proveedor?</DialogTitle>
+          <DialogHeader className={supplierDialogHeaderClass}>
+            <DialogTitle className="text-base font-semibold tracking-tight">
+              ¿Eliminar proveedor?
+            </DialogTitle>
+            <DialogDescription className="text-sm leading-relaxed">
+              Se quitará{" "}
+              <span className="font-medium text-foreground">
+                {deleteRow?.name || "este proveedor"}
+              </span>{" "}
+              de este punto de venta. Esta acción no se puede deshacer.
+            </DialogDescription>
           </DialogHeader>
-          <p className="text-sm text-muted-foreground">
-            Se va a quitar{" "}
-            <strong className="text-foreground">
-              {deleteRow?.name || "este proveedor"}
-            </strong>{" "}
-            de este punto de venta.
-          </p>
-          <DialogFooter className="gap-2 sm:gap-0">
-            <Button type="button" variant="outline" onClick={() => setDeleteRow(null)}>
+          <DialogFooter className={supplierDialogFooterClass}>
+            <Button
+              type="button"
+              variant="outline"
+              disabled={deleteBusy}
+              onClick={() => setDeleteRow(null)}
+            >
               Cancelar
             </Button>
             <Button

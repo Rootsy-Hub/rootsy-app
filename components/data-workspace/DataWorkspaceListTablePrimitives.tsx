@@ -76,13 +76,15 @@ export function DataWorkspaceTableThumbnail({
 }: {
   src: string | null | undefined
   alt: string
-  size?: "sm" | "md"
+  size?: "sm" | "md" | "lg"
   className?: string
 }) {
   const box =
     size === "sm"
       ? "size-9"
-      : "size-10"
+      : size === "lg"
+        ? "size-20"
+        : "size-10"
   const trimmed = typeof src === "string" ? src.trim() : ""
   if (trimmed) {
     return (
@@ -111,7 +113,12 @@ export function DataWorkspaceTableThumbnail({
       )}
       aria-hidden
     >
-      <Package className="size-[1.125rem] opacity-45" />
+      <Package
+        className={cn(
+          "opacity-45",
+          size === "lg" ? "size-5" : "size-[1.125rem]",
+        )}
+      />
     </div>
   )
 }

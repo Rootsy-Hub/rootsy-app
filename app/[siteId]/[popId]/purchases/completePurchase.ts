@@ -23,6 +23,7 @@ import type {
   CreatePurchaseInput,
   PurchaseKind,
 } from "@/app/[siteId]/[popId]/purchases/actions"
+import { purchaseComprobanteAccruesInputVat } from "@/lib/purchaseComprobantePicker"
 
 export type CompletePurchaseInput = CreatePurchaseInput & {
   /** Sin pago inmediato: queda deuda en Proveedores. */
@@ -165,6 +166,14 @@ export async function completePurchase(
       supplierName = String(supRow.name ?? "")
       supplierTaxId =
         supRow.tax_id != null ? String(supRow.tax_id) : null
+    } else {
+      const manual = input.supplierManual
+      const manualName = manual?.name?.trim() || ""
+      const manualTaxId = manual?.taxId?.trim() || ""
+      if (manualName || manualTaxId) {
+        supplierName = manualName || null
+        supplierTaxId = manualTaxId || null
+      }
     }
 
     let pmKind: string | null = null
@@ -274,6 +283,25 @@ export async function completePurchase(
       taxAfter = roundMoney(total - netAfter)
     }
 
+    const docKind = input.documentKind?.trim() || null
+    const accrueInputVat = purchaseComprobanteAccruesInputVat(docKind)
+    const persistedSubtotal = accrueInputVat ? netAfter : total
+    const persistedTaxTotal = accrueInputVat ? taxAfter : 0
+    const lineItemsToPersist = accrueInputVat
+      ? lineItemsJson
+      : lineItemsJson.map((li) => ({ ...li, iva: 0 }))
+
+    const purchaseMetadata: Record<string, unknown> = {
+      ...(payOnAccount ? { pay_on_supplier_account: true } : {}),
+      purchase_accrues_input_vat: accrueInputVat,
+    }
+    if (docKind) {
+      purchaseMetadata.purchase_document_kind = docKind
+    }
+    if (!accrueInputVat && taxAfter > 0) {
+      purchaseMetadata.vat_included_estimate = taxAfter
+    }
+
     const receivedAt = new Date().toISOString()
     const paymentNotes =
       installments > 1 ? `Financiado en ${installments} cuotas` : null
@@ -290,15 +318,15 @@ export async function completePurchase(
         document_date: input.documentDate?.trim() || null,
         due_date: input.dueDate?.trim() || null,
         received_at: receivedAt,
-        line_items: lineItemsJson,
-        subtotal: netAfter,
-        tax_total: taxAfter,
+        line_items: lineItemsToPersist,
+        subtotal: persistedSubtotal,
+        tax_total: persistedTaxTotal,
         discount_total: discountTotal,
         total,
         currency: "ARS",
         status: "pending",
         notes: input.notes?.trim() || "",
-        metadata: payOnAccount ? { pay_on_supplier_account: true } : {},
+        metadata: purchaseMetadata,
         created_by: user.uid,
       })
       .select("id")
@@ -312,7 +340,6 @@ export async function completePurchase(
     }
     purchaseId = String(ins.id)
 
-    const docKind = input.documentKind?.trim() || null
     const attachmentName = input.attachmentFileName?.trim() || null
     if (docKind || attachmentName || input.documentNumber?.trim()) {
       const { error: docErr } = await supabase.from("purchase_documents").insert({
@@ -358,7 +385,11 @@ export async function completePurchase(
       const movementId = String(movIns.id)
       movementIds.push(movementId)
 
-      const layerUnitCost = l.netUnitCost > 0 ? l.netUnitCost : l.unitCost
+      const layerUnitCost = accrueInputVat
+        ? l.netUnitCost > 0
+          ? l.netUnitCost
+          : l.unitCost
+        : l.unitCost
       const { error: layerErr } = await supabase.from("inventory_cost_layers").insert({
         pop_id: popId,
         article_id: l.articleId,
@@ -385,8 +416,8 @@ export async function completePurchase(
       purchaseId,
       purchaseKind: kind as PurchaseKind,
       entryDate,
-      subtotalNet: netAfter,
-      taxTotal: taxAfter,
+      subtotalNet: persistedSubtotal,
+      taxTotal: persistedTaxTotal,
       total,
       supplierName,
     })
