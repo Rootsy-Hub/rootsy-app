@@ -5,6 +5,7 @@ import { MesasCheckoutModals } from "@/app/[siteId]/[popId]/mesas/components/Mes
 import { MesaSessionPanel } from "@/app/[siteId]/[popId]/mesas/components/MesaSessionPanel"
 import { MesasFloorPlan } from "@/app/[siteId]/[popId]/mesas/components/MesasFloorPlan"
 import { MesasOrderPanel } from "@/app/[siteId]/[popId]/mesas/components/MesasOrderPanel"
+import { MesasRightPanelTabs } from "@/app/[siteId]/[popId]/mesas/components/MesasRightPanelTabs"
 import { MesasSalonTabs } from "@/app/[siteId]/[popId]/mesas/components/MesasSalonTabs"
 import {
   MOCK_MESA_SALONS,
@@ -14,8 +15,6 @@ import type { MesasRightPanelView } from "@/app/[siteId]/[popId]/mesas/mesasType
 import { useMesasSaleCheckout } from "@/app/[siteId]/[popId]/mesas/useMesasSaleCheckout"
 import { useMesasState } from "@/app/[siteId]/[popId]/mesas/useMesasState"
 import { SaleOperationToolbox } from "@/components/sale-operation/SaleOperationToolbox"
-import { cn } from "@/lib/utils"
-import { ShoppingBag, UtensilsCrossed } from "lucide-react"
 import { useMemo, useState, useEffect } from "react"
 
 type Props = {
@@ -179,36 +178,11 @@ export function MesasWorkspace({ siteId, popId, catalogSidebarOpen }: Props) {
           className="col-start-2 row-span-2 grid min-h-0 grid-rows-[auto_minmax(0,1fr)] bg-[#eef1f5] text-[#121417]"
           aria-label="Panel de mesa y pedido"
         >
-          <div className="flex shrink-0 items-center gap-1 border-b border-slate-200/90 bg-white px-3 py-2">
-            <button
-              type="button"
-              onClick={() => setRightView("session")}
-              className={cn(
-                "flex h-8 flex-1 items-center justify-center gap-1.5 rounded-lg text-xs font-semibold transition-colors",
-                rightView === "session"
-                  ? "bg-slate-900 text-white"
-                  : "text-slate-500 hover:bg-slate-100",
-              )}
-            >
-              <UtensilsCrossed className="size-3.5" aria-hidden />
-              Mesa
-            </button>
-            <button
-              type="button"
-              disabled={!selectedSession}
-              onClick={() => selectedSession && setRightView("cart")}
-              className={cn(
-                "flex h-8 flex-1 items-center justify-center gap-1.5 rounded-lg text-xs font-semibold transition-colors",
-                !selectedSession && "cursor-not-allowed opacity-40",
-                rightView === "cart"
-                  ? "bg-slate-900 text-white"
-                  : "text-slate-500 hover:bg-slate-100",
-              )}
-            >
-              <ShoppingBag className="size-3.5" aria-hidden />
-              Pedido
-            </button>
-          </div>
+          <MesasRightPanelTabs
+            value={rightView}
+            onChange={setRightView}
+            pedidoDisabled={!selectedSession}
+          />
 
           {rightView === "session" ? (
             <MesaSessionPanel
@@ -226,6 +200,7 @@ export function MesasWorkspace({ siteId, popId, catalogSidebarOpen }: Props) {
                 closeSession(sessionId)
               }}
               onTakeOrder={handleTakeOrder}
+              clientLabel={checkout.sessionClientLabel}
             />
           ) : (
             <MesasOrderPanel checkout={checkout} tableLabel={mesaLabel} />

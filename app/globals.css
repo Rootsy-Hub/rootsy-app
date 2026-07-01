@@ -3,6 +3,31 @@
 
 @custom-variant dark (&:is(.dark *));
 
+@keyframes mesa-floor-edit-ring {
+  0% {
+    transform: scale(1);
+    opacity: 0.55;
+  }
+  75%,
+  100% {
+    transform: scale(2.15);
+    opacity: 0;
+  }
+}
+
+.mesa-floor-edit-ring {
+  pointer-events: none;
+  animation: mesa-floor-edit-ring 1.4s cubic-bezier(0, 0, 0.2, 1) infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mesa-floor-edit-ring {
+    animation: none;
+    opacity: 0.35;
+    transform: scale(1.15);
+  }
+}
+
 :root {
   /* Paradise Park Theme - Inspired by forest mascot */
   --background: oklch(0.98 0.005 110);

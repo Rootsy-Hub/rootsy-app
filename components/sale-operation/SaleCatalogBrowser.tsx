@@ -2,9 +2,12 @@
 
 import type { SaleCatalogCategory } from "@/app/[siteId]/[popId]/sale/actions"
 import type { SaleCatalogProduct } from "@/components/sale-operation/saleCatalogProduct"
+import {
+  SaleCatalogProductOfferOverlay,
+  saleCatalogDiscountPercent,
+} from "@/components/sale-operation/SaleCatalogProductOfferOverlay"
 import { saleOpFmt, saleOpImporteBaseClass } from "@/components/sale-operation/saleOperationStyles"
 import { useDataWorkspaceSidebar } from "@/components/layouts/useDataWorkspaceSidebar"
-import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
 import {
   readSavedSaleCatalogView,
@@ -381,13 +384,10 @@ export function SaleCatalogBrowser({
               }
             >
               {productosFiltrados.map((p) => {
-                const descuentoPct =
-                  p.precioOriginal != null && p.precioOriginal > p.precio
-                    ? Math.round(
-                        ((p.precioOriginal - p.precio) / p.precioOriginal) *
-                          100,
-                      )
-                    : null
+                const descuentoPct = saleCatalogDiscountPercent(
+                  p.precioOriginal,
+                  p.precio,
+                )
                 const promoTrim = p.promo?.trim() ?? ""
                 const mostrarBadgeOferta =
                   descuentoPct != null || promoTrim.length > 0
@@ -429,14 +429,11 @@ export function SaleCatalogBrowser({
                         }}
                       />
                       {mostrarBadgeOferta ? (
-                        <div
-                          className="pointer-events-none absolute inset-x-0 top-0 z-15 p-3"
-                          aria-hidden
-                        >
-                          <Badge className="w-fit border border-emerald-400/40 bg-emerald-950/85 px-2 py-0.5 text-[10px] font-bold tracking-wider text-emerald-100 shadow-sm backdrop-blur-sm">
-                            OFERTA
-                          </Badge>
-                        </div>
+                        <SaleCatalogProductOfferOverlay
+                          precioOriginal={p.precioOriginal}
+                          precio={p.precio}
+                          promo={p.promo}
+                        />
                       ) : null}
                       {!addDisabled ? (
                         <span
@@ -463,29 +460,6 @@ export function SaleCatalogBrowser({
                         </p>
                       </div>
                       <div className={modoVista === "grid" ? "self-end" : "shrink-0"}>
-                        {p.precioOriginal != null &&
-                        p.precioOriginal > p.precio ? (
-                          <div className="mb-1 flex flex-wrap items-center gap-x-2 gap-y-1">
-                            <span
-                              className={cn(
-                                saleOpImporteBaseClass,
-                                "text-sm font-semibold text-muted-foreground line-through",
-                              )}
-                            >
-                              {saleOpFmt.format(p.precioOriginal)}
-                            </span>
-                            {descuentoPct != null ? (
-                              <span
-                                className={cn(
-                                  saleOpImporteBaseClass,
-                                  "inline-flex h-6 items-center justify-center rounded-md border border-emerald-500/30 bg-emerald-500/10 px-2 text-[10px] leading-none font-bold tracking-wider text-emerald-200 uppercase",
-                                )}
-                              >
-                                −{descuentoPct}%
-                              </span>
-                            ) : null}
-                          </div>
-                        ) : null}
                         <span className={importeCardClass}>
                           {saleOpFmt.format(p.precio)}
                         </span>

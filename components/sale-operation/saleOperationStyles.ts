@@ -8,6 +8,16 @@ export const saleOpFmt = new Intl.NumberFormat("es-AR", {
 
 export const saleOpImporteBaseClass = "font-mono tabular-nums tracking-tight"
 
+export const saleOpImporteCartClass = cn(
+  saleOpImporteBaseClass,
+  "text-sm font-semibold text-slate-900",
+)
+
+export const saleOpImporteCartMutedClass = cn(
+  saleOpImporteBaseClass,
+  "text-[11px] text-slate-400",
+)
+
 export const saleOpImporteTotalClass = cn(
   saleOpImporteBaseClass,
   "whitespace-nowrap text-[clamp(1.05rem,1.75vw,1.4375rem)] font-semibold text-white/90",

@@ -2,7 +2,10 @@
 
 import { getSaleCatalog, type SaleCatalogClient, type SaleCatalogArticle, type SaleCatalogCategory, type SaleCatalogPaymentMethod, type SaleOpenCashSession } from "@/app/[siteId]/[popId]/sale/actions"
 import { completeSale } from "@/app/[siteId]/[popId]/sale/completeSale"
-import { saleCatalogArticleToProduct } from "@/components/sale-operation/saleCatalogProduct"
+import {
+  catalogCartOrderTotals,
+  saleCatalogArticleToProduct,
+} from "@/components/sale-operation/saleCatalogProduct"
 import { saleOpFmt } from "@/components/sale-operation/saleOperationStyles"
 import { CLIENT_IVA_CONDITION_OPTIONS, type ClientIvaConditionValue } from "@/app/[siteId]/[popId]/clients/clientIvaConstants"
 import { usePadronAutofillRazonSocial } from "@/hooks/usePadronAutofillRazonSocial"
@@ -290,6 +293,11 @@ export function useMesasSaleCheckout(
     [itemsDetallados],
   )
 
+  const catalogTotals = useMemo(
+    () => catalogCartOrderTotals(itemsDetallados),
+    [itemsDetallados],
+  )
+
   const descuentoMonto = useMemo(() => {
     if (modoDescuento === "porcentaje") {
       return subtotal * (valorDescuentoPorcentaje / 100)
@@ -423,6 +431,10 @@ export function useMesasSaleCheckout(
         )
         .filter((i) => i.cantidad > 0),
     )
+  }, [])
+
+  const quitarDelCarrito = useCallback((productoId: string) => {
+    setCarrito((prev) => prev.filter((i) => i.productoId !== productoId))
   }, [])
 
   const limpiarPedido = useCallback(() => {
@@ -575,6 +587,12 @@ export function useMesasSaleCheckout(
       ? "Sin mesa abierta"
       : (clienteSeleccionado?.name ?? "Elegir cliente")
 
+  const sessionClientLabel = useMemo(() => {
+    if (!canReadClients) return "Sin permiso"
+    const manual = manualNombreCliente.trim()
+    return clienteSeleccionado?.name ?? (manual || null)
+  }, [canReadClients, clienteSeleccionado?.name, manualNombreCliente])
+
   const clearSessionSnapshot = useCallback((sessionId: string) => {
     sessionSnapshotsRef.current.delete(sessionId)
   }, [])
@@ -590,7 +608,11 @@ export function useMesasSaleCheckout(
     itemsDetallados,
     agregarAlCarrito,
     cambiarCantidad,
+    quitarDelCarrito,
     subtotal,
+    subtotalOriginal: catalogTotals.subtotalOriginal,
+    descuentoCatalogoMonto: catalogTotals.descuentoCatalogoMonto,
+    hayDescuentoCatalogo: catalogTotals.hayDescuentoCatalogo,
     descuentoMonto,
     total,
     hayDescuento,
@@ -600,6 +622,7 @@ export function useMesasSaleCheckout(
     submitting,
     submitError,
     clearSessionSnapshot,
+    sessionClientLabel,
     // Toolbox
     toolbox: {
       clienteLabel: clienteToolbarLabel,

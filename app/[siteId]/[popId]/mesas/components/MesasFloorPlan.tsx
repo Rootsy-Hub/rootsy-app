@@ -30,10 +30,10 @@ const ZOOM_STEP = 0.15
 const ZOOM_DEFAULT = 1
 
 const floatingBtnClass =
-  "flex size-10 items-center justify-center rounded-full border shadow-lg transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/50 focus-visible:ring-offset-2 focus-visible:ring-offset-[#181c22]"
+  "relative z-10 flex size-10 items-center justify-center rounded-full border focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/50 focus-visible:ring-offset-2 focus-visible:ring-offset-[#181c22]"
 
 const floatingBtnIdleClass =
-  "border-white/15 bg-[#252b34]/95 text-white/80 backdrop-blur-sm hover:border-white/25 hover:bg-[#2a323c] hover:text-white disabled:cursor-not-allowed disabled:opacity-40"
+  "border-white/15 bg-[#252b34]/95 text-white/80 shadow-lg backdrop-blur-sm transition-colors hover:border-white/25 hover:bg-[#2a323c] hover:text-white disabled:cursor-not-allowed disabled:opacity-40"
 
 type Props = {
   tables: MesaTable[]
@@ -87,7 +87,7 @@ export function MesasFloorPlan({
 
   return (
     <div className="relative flex min-h-0 flex-1 flex-col">
-      <div className="absolute top-3 right-3 z-30 flex flex-col items-center gap-2">
+      <div className="absolute top-3 right-3 z-30 flex flex-col items-center gap-2 overflow-visible">
         <button
           type="button"
           onClick={zoomIn}
@@ -106,22 +106,36 @@ export function MesasFloorPlan({
         >
           <Minus className="size-4" strokeWidth={2.5} aria-hidden />
         </button>
-        <button
-          type="button"
-          onClick={onToggleLayoutEdit}
-          className={cn(
-            floatingBtnClass,
-            layoutEditMode
-              ? "border-emerald-400/50 bg-emerald-500 text-emerald-950 shadow-emerald-500/25"
-              : floatingBtnIdleClass,
-          )}
-          aria-label={
-            layoutEditMode ? "Listo — salir de edición del plano" : "Editar plano"
-          }
-          aria-pressed={layoutEditMode}
-        >
-          <Pencil className="size-4" strokeWidth={2} aria-hidden />
-        </button>
+        <div className="relative flex size-10 shrink-0 items-center justify-center overflow-visible">
+          {layoutEditMode ? (
+            <>
+              <span
+                className="mesa-floor-edit-ring absolute inset-0 rounded-full bg-emerald-400/55"
+                aria-hidden
+              />
+              <span
+                className="mesa-floor-edit-ring absolute inset-0 rounded-full bg-emerald-300/40 [animation-delay:700ms]"
+                aria-hidden
+              />
+            </>
+          ) : null}
+          <button
+            type="button"
+            onClick={onToggleLayoutEdit}
+            className={cn(
+              floatingBtnClass,
+              layoutEditMode
+                ? "border-emerald-400/60 bg-emerald-500 text-emerald-950"
+                : floatingBtnIdleClass,
+            )}
+            aria-label={
+              layoutEditMode ? "Listo — salir de edición del plano" : "Editar plano"
+            }
+            aria-pressed={layoutEditMode}
+          >
+            <Pencil className="size-4" strokeWidth={2} aria-hidden />
+          </button>
+        </div>
       </div>
 
       <DndContext sensors={sensors} onDragEnd={handleDragEnd}>

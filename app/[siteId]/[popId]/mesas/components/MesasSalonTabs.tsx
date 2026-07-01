@@ -48,11 +48,12 @@ export function MesasSalonTabs({
   const sorted = [...salons].sort((a, b) => a.sortOrder - b.sortOrder)
 
   return (
-    <div
-      className="flex shrink-0 overflow-x-auto border-b border-white/10"
-      role="tablist"
-      aria-label="Salones"
-    >
+    <div className="flex h-16 w-full shrink-0 border-b border-white/10">
+      <div
+        className="flex h-full min-w-0 flex-1 items-stretch overflow-x-auto"
+        role="tablist"
+        aria-label="Salones"
+      >
       {sorted.map((salon, index) => {
         const active = salon.id === activeSalonId
         const counts = tableCounts[salon.id] ?? { total: 0, open: 0 }
@@ -68,7 +69,7 @@ export function MesasSalonTabs({
             aria-label={`${salon.name}. ${counts.open > 0 ? `${openLabel}. ` : ""}${totalLabel}`}
             onClick={() => onChange(salon.id)}
             className={cn(
-              "flex min-h-[3.25rem] min-w-[8rem] flex-1 items-center gap-2.5 px-4 py-2.5 text-left transition-colors duration-150",
+              "flex h-full min-h-10 min-w-[7rem] flex-1 items-center gap-2.5 px-4 text-left transition-colors duration-150",
               "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-white/20",
               index > 0 && "border-l border-white/10",
               active
@@ -78,7 +79,7 @@ export function MesasSalonTabs({
           >
             <span
               className={cn(
-                "min-w-0 flex-1 text-base font-semibold leading-tight",
+                "min-w-0 flex-1 truncate text-sm font-semibold leading-none",
                 active ? "text-white" : "text-white/80",
               )}
             >
@@ -103,6 +104,7 @@ export function MesasSalonTabs({
           </button>
         )
       })}
+      </div>
     </div>
   )
 }

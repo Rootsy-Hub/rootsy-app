@@ -42,11 +42,9 @@ import { useParams } from "next/navigation"
 import {
   useCallback,
   useEffect,
-  useLayoutEffect,
   useMemo,
   useRef,
   useState,
-  type CSSProperties,
 } from "react"
 import {
   Banknote,
@@ -54,7 +52,6 @@ import {
   CircleX,
   LayoutGrid,
   Loader2,
-  Minus,
   MessageSquare,
   Percent,
   Plus,
@@ -62,12 +59,10 @@ import {
   Rows3,
   Search,
   Tag,
-  Trash2,
   User,
 } from "lucide-react"
 import { usePadronAutofillRazonSocial } from "@/hooks/usePadronAutofillRazonSocial"
 import { cn } from "@/lib/utils"
-import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import {
   Dialog,
@@ -96,6 +91,18 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { Separator } from "@/components/ui/separator"
+import { SaleOperationCartItem } from "@/components/sale-operation/SaleOperationCartItem"
+import { SaleOperationCartList } from "@/components/sale-operation/SaleOperationCartList"
+import { SaleOperationTotalBar } from "@/components/sale-operation/SaleOperationTotalBar"
+import {
+  SaleCatalogProductOfferOverlay,
+  saleCatalogDiscountPercent,
+} from "@/components/sale-operation/SaleCatalogProductOfferOverlay"
+import {
+  catalogCartOrderTotals,
+  catalogCartLinePricing,
+} from "@/components/sale-operation/saleCatalogProduct"
+import { saleOpImporteBaseClass } from "@/components/sale-operation/saleOperationStyles"
 
 type Producto = {
   id: string
@@ -147,15 +154,7 @@ const fmt = new Intl.NumberFormat("es-AR", {
 })
 
 /** Tipografía numérica alineada al workspace (tablas de importes). */
-const ventaImporteBaseClass = "font-mono tabular-nums tracking-tight"
-const ventaImporteCartClass = cn(
-  ventaImporteBaseClass,
-  "text-sm font-semibold text-slate-900",
-)
-const ventaImporteCartMutedClass = cn(
-  ventaImporteBaseClass,
-  "text-[11px] text-slate-400",
-)
+const ventaImporteBaseClass = saleOpImporteBaseClass
 const ventaImporteTotalClass = cn(
   ventaImporteBaseClass,
   "whitespace-nowrap text-[clamp(1.05rem,1.75vw,1.4375rem)] font-semibold text-white/90",
@@ -199,140 +198,6 @@ function IconoLimpiarBusqueda({ className }: { className?: string }) {
     >
       <path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z" />
     </svg>
-  )
-}
-
-function CartItemTitleMarquee({
-  text,
-  active,
-  className,
-}: {
-  text: string
-  active: boolean
-  className?: string
-}) {
-  const containerRef = useRef<HTMLDivElement>(null)
-  const ghostRef = useRef<HTMLSpanElement>(null)
-  const prevActiveRef = useRef(false)
-  const [truncated, setTruncated] = useState(false)
-  const [marqueeKey, setMarqueeKey] = useState(0)
-  const [reduceMotion, setReduceMotion] = useState(false)
-
-  useEffect(() => {
-    const mq = window.matchMedia("(prefers-reduced-motion: reduce)")
-    setReduceMotion(mq.matches)
-    const fn = () => setReduceMotion(mq.matches)
-    mq.addEventListener("change", fn)
-    return () => mq.removeEventListener("change", fn)
-  }, [])
-
-  const syncMeasure = useCallback(() => {
-    const c = containerRef.current
-    const g = ghostRef.current
-    if (!c || !g || !text) {
-      setTruncated(false)
-      return
-    }
-    setTruncated(g.scrollWidth > c.clientWidth + 1)
-  }, [text])
-
-  useLayoutEffect(() => {
-    if (!active || !text) {
-      setTruncated(false)
-      prevActiveRef.current = active
-      return
-    }
-    if (active && !prevActiveRef.current) {
-      setMarqueeKey((k) => k + 1)
-    }
-    prevActiveRef.current = active
-    syncMeasure()
-    const id = requestAnimationFrame(syncMeasure)
-    return () => cancelAnimationFrame(id)
-  }, [active, text, syncMeasure])
-
-  useEffect(() => {
-    if (!active || !text) return
-    const c = containerRef.current
-    if (!c || typeof ResizeObserver === "undefined") return
-    const ro = new ResizeObserver(syncMeasure)
-    ro.observe(c)
-    return () => ro.disconnect()
-  }, [active, text, syncMeasure])
-
-  if (!text) return null
-
-  const durationSec = Math.min(28, Math.max(12, text.length * 0.42))
-  const marqueeStyle = {
-    "--rootsy-cart-marquee-duration": `${durationSec}s`,
-  } as CSSProperties
-
-  const ghost = (
-    <span
-      ref={ghostRef}
-      className={cn(
-        "pointer-events-none absolute top-0 left-0 max-w-none whitespace-nowrap opacity-0",
-        className,
-      )}
-      aria-hidden
-    >
-      {text}
-    </span>
-  )
-
-  const segment = (duplicate: boolean) => (
-    <span
-      className="inline-flex shrink-0 items-center"
-      aria-hidden={duplicate ? true : undefined}
-    >
-      <span className={className}>{text}</span>
-      <span className="inline-flex h-5 min-w-10 shrink-0 items-center justify-center px-1 text-sm font-medium text-[#8a9aaf]">
-        ·
-      </span>
-    </span>
-  )
-
-  if (!active) {
-    return (
-      <div ref={containerRef} className="relative min-w-0 overflow-hidden">
-        {ghost}
-        <p className={cn("line-clamp-1", className)}>{text}</p>
-      </div>
-    )
-  }
-
-  if (reduceMotion && truncated) {
-    return (
-      <div ref={containerRef} className="relative min-w-0 overflow-hidden">
-        {ghost}
-        <p className={cn("wrap-break-word", className)}>{text}</p>
-      </div>
-    )
-  }
-
-  if (!truncated) {
-    return (
-      <div ref={containerRef} className="relative min-w-0 overflow-hidden">
-        {ghost}
-        <p className={cn("line-clamp-1", className)}>{text}</p>
-      </div>
-    )
-  }
-
-  return (
-    <div ref={containerRef} className="relative min-w-0 overflow-hidden">
-      {ghost}
-      <div className="rootsy-cart-item-marquee-fade overflow-hidden">
-        <div
-          key={marqueeKey}
-          className="rootsy-cart-title-marquee-track"
-          style={marqueeStyle}
-        >
-          {segment(false)}
-          {segment(true)}
-        </div>
-      </div>
-    </div>
   )
 }
 
@@ -566,6 +431,11 @@ function SalePage() {
     [itemsDetallados],
   )
 
+  const catalogTotals = useMemo(
+    () => catalogCartOrderTotals(itemsDetallados),
+    [itemsDetallados],
+  )
+
   const itemDescuentoMontos = useMemo(() => {
     const descuentos: Record<string, number> = {}
     itemsDetallados.forEach((item) => {
@@ -603,6 +473,7 @@ function SalePage() {
   const total = subtotal - descuentoMonto
 
   const hayDescuento = descuentoMonto > 0
+  const hayDescuentoCatalogo = catalogTotals.hayDescuentoCatalogo
 
   const hayItemsEnPedido = itemsDetallados.length > 0
 
@@ -1475,15 +1346,10 @@ function SalePage() {
                       }
                     >
                       {productosFiltrados.map((p) => {
-                        const descuentoPct =
-                          p.precioOriginal != null &&
-                          p.precioOriginal > p.precio
-                            ? Math.round(
-                                ((p.precioOriginal - p.precio) /
-                                  p.precioOriginal) *
-                                  100,
-                              )
-                            : null
+                        const descuentoPct = saleCatalogDiscountPercent(
+                          p.precioOriginal,
+                          p.precio,
+                        )
                         const promoTrim = p.promo?.trim() ?? ""
                         const mostrarBadgeOferta =
                           descuentoPct != null || promoTrim.length > 0
@@ -1523,14 +1389,11 @@ function SalePage() {
                               }}
                             />
                             {mostrarBadgeOferta ? (
-                              <div
-                                className="pointer-events-none absolute inset-x-0 top-0 z-15 p-3"
-                                aria-hidden
-                              >
-                                <Badge className="w-fit border border-emerald-400/40 bg-emerald-950/85 px-2 py-0.5 text-[10px] font-bold tracking-wider text-emerald-100 shadow-sm backdrop-blur-sm">
-                                  OFERTA
-                                </Badge>
-                              </div>
+                              <SaleCatalogProductOfferOverlay
+                                precioOriginal={p.precioOriginal}
+                                precio={p.precio}
+                                promo={p.promo}
+                              />
                             ) : null}
                             <span
                               className="pointer-events-none absolute right-2 bottom-2 z-20 flex size-9 items-center justify-center rounded-full border border-emerald-300/45 bg-emerald-500 text-emerald-950 opacity-0 shadow-[0_4px_20px_rgba(16,185,129,0.5)] transition-[opacity,transform] duration-200 translate-y-1 scale-95 group-hover:translate-y-0 group-hover:scale-100 group-hover:opacity-100"
@@ -1560,29 +1423,6 @@ function SalePage() {
                                 modoVista === "grid" ? "self-end" : "shrink-0"
                               }
                             >
-                              {p.precioOriginal != null &&
-                              p.precioOriginal > p.precio ? (
-                                <div className="mb-1 flex flex-wrap items-center gap-x-2 gap-y-1">
-                                  <span
-                                    className={cn(
-                                      ventaImporteBaseClass,
-                                      "text-sm font-semibold text-muted-foreground line-through",
-                                    )}
-                                  >
-                                    {fmt.format(p.precioOriginal)}
-                                  </span>
-                                  {descuentoPct != null ? (
-                                    <span
-                                      className={cn(
-                                        ventaImporteBaseClass,
-                                        "inline-flex h-6 items-center justify-center rounded-md border border-emerald-500/30 bg-emerald-500/10 px-2 text-[10px] font-bold uppercase tracking-wider leading-none text-emerald-200",
-                                      )}
-                                    >
-                                      −{descuentoPct}%
-                                    </span>
-                                  ) : null}
-                                </div>
-                              ) : null}
                               <span className={ventaImporteCardClass}>
                                 {fmt.format(p.precio)}
                               </span>
@@ -1747,20 +1587,10 @@ function SalePage() {
             aria-label="Carrito de la venta"
           >
             <div className="flex min-h-0 flex-col">
-              <div
-                className="game-scroll min-h-0 flex-1 space-y-2 overflow-y-auto p-3 sm:p-3.5"
-                role="region"
-                aria-label="Ítems agregados"
+              <SaleOperationCartList
+                title="Tu pedido"
+                lineCount={itemsDetallados.length}
               >
-                <div className="mb-1 flex items-baseline justify-between gap-2 px-0.5">
-                  <h2 className="text-[11px] font-bold uppercase tracking-[0.14em] text-slate-500">
-                    Tu pedido
-                  </h2>
-                  <span className="text-[11px] font-medium tabular-nums text-slate-400">
-                    {itemsDetallados.length}{" "}
-                    {itemsDetallados.length === 1 ? "línea" : "líneas"}
-                  </span>
-                </div>
                 {itemsDetallados.map((item) => {
                   const itemId = item.productoId
                   const abierto = itemDetalleAbiertoId === itemId
@@ -1771,235 +1601,130 @@ function SalePage() {
                   const descuentoNumero = Number.parseFloat(
                     descuentoRaw.trim().replace(",", "."),
                   )
-                  const precioBaseItem = (item.producto?.precio ?? 0) * item.cantidad
+                  const catalogPricing = catalogCartLinePricing(
+                    item.producto,
+                    item.cantidad,
+                  )
+                  const descuentoManual = descuento
+                  const precioVentaTotal = catalogPricing.precioFinal
+                  const tieneDescuentoManual = descuentoManual > 0
+                  const tieneDescuento =
+                    catalogPricing.tieneDescuentoCatalogo || tieneDescuentoManual
+                  const precioBaseItem = catalogPricing.tieneDescuentoCatalogo
+                    ? catalogPricing.precioBase
+                    : precioVentaTotal
+                  const precioFinalItem = precioVentaTotal - descuentoManual
                   const tieneComentario = comentario.trim().length > 0
-                  const tieneDescuento = descuento > 0
                   const nombreProducto = item.producto?.nombre ?? "Producto"
 
                   return (
-                    <div key={itemId} className="space-y-2">
-                      <div
-                        role="button"
-                        tabIndex={0}
-                        aria-expanded={abierto}
-                        aria-controls={
-                          abierto ? `cart-item-${itemId}-opciones` : undefined
-                        }
-                        aria-label={
-                          abierto
-                            ? `${nombreProducto}, ${item.cantidad} unidades. Opciones visibles. Clic para cerrar.`
-                            : `${nombreProducto}, ${item.cantidad} unidades. Clic para descuento y comentario.`
-                        }
-                        onClick={() => toggleItemDetalle(itemId)}
-                        onKeyDown={(e) => {
-                          if (e.key === "Enter" || e.key === " ") {
-                            e.preventDefault()
-                            toggleItemDetalle(itemId)
-                          }
-                        }}
-                        className={cn(
-                          "cursor-pointer rounded-xl border bg-white px-3 py-2.5 text-left shadow-[0_1px_0_rgba(255,255,255,0.95)_inset,0_4px_14px_rgba(15,23,42,0.05)] transition-[border-color,box-shadow] duration-150",
-                          "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-400/50 focus-visible:ring-offset-2 focus-visible:ring-offset-[#eef1f5]",
-                          abierto
-                            ? "border-slate-300 ring-1 ring-slate-300/60 shadow-[0_1px_0_rgba(255,255,255,0.95)_inset,0_6px_20px_rgba(15,23,42,0.07)]"
-                            : "border-slate-200/90 hover:border-slate-300 hover:shadow-[0_1px_0_rgba(255,255,255,0.95)_inset,0_6px_18px_rgba(15,23,42,0.06)]",
-                        )}
-                      >
-                        <div className="grid grid-cols-[56px_minmax(0,1fr)_minmax(4.5rem,auto)_2rem] items-center gap-2 sm:grid-cols-[56px_minmax(0,1fr)_5.5rem_2rem]">
-                          <div
-                            className="flex items-center gap-0.5 rounded-lg bg-slate-50 px-1 py-1 ring-1 ring-slate-200/90"
-                            onClick={(e) => e.stopPropagation()}
-                            onKeyDown={(e) => e.stopPropagation()}
-                            role="group"
-                            aria-label={`Cantidad de ${nombreProducto}`}
-                          >
-                            <button
-                              type="button"
-                              onClick={(e) => {
-                                e.stopPropagation()
-                                cambiarCantidad(itemId, -1)
-                              }}
-                              aria-label={`Quitar una unidad de ${nombreProducto}`}
-                              className="inline-flex size-6 items-center justify-center rounded-md bg-white text-slate-600 shadow-sm ring-1 ring-slate-200/80 transition-colors hover:bg-slate-50 hover:text-slate-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-400/60"
-                            >
-                              <Minus className="size-3" aria-hidden />
-                            </button>
-                            <span className="min-w-5 text-center text-sm font-bold tabular-nums text-slate-900">
-                              {item.cantidad}
-                            </span>
-                            <button
-                              type="button"
-                              onClick={(e) => {
-                                e.stopPropagation()
-                                cambiarCantidad(itemId, 1)
-                              }}
-                              aria-label={`Agregar una unidad de ${nombreProducto}`}
-                              className="inline-flex size-6 items-center justify-center rounded-md bg-white text-slate-600 shadow-sm ring-1 ring-slate-200/80 transition-colors hover:bg-slate-50 hover:text-slate-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-400/60"
-                            >
-                              <Plus className="size-3" aria-hidden />
-                            </button>
-                          </div>
-                          <div className="min-w-0">
-                            <CartItemTitleMarquee
-                              text={nombreProducto}
-                              active={abierto}
-                              className="text-sm font-semibold text-slate-900"
-                            />
-                            <div className="mt-0.5 flex min-w-0 items-center gap-1">
-                              <div className="min-w-0 flex-1">
-                                <p className="line-clamp-1 text-xs text-slate-500">
-                                  {item.producto?.descripcion}
-                                </p>
-                              </div>
-                              {tieneComentario ? (
-                                <span
-                                  className="inline-flex shrink-0 items-center rounded-full border border-sky-200 bg-sky-50 px-1.5 py-0 text-[10px] font-semibold text-sky-800"
-                                  title="Tiene comentario para cocina"
-                                >
-                                  <span className="sr-only">Comentario</span>
-                                  <MessageSquare
-                                    className="size-3 sm:hidden"
-                                    aria-hidden
-                                  />
-                                  <span aria-hidden className="hidden sm:inline">
-                                    Nota
-                                  </span>
-                                </span>
-                              ) : null}
-                              {tieneDescuento ? (
-                                <span
-                                  className={cn(
-                                    "inline-flex max-w-22 shrink-0 items-center justify-center truncate rounded-full border border-emerald-200 bg-emerald-50 px-1.5 py-0 text-[10px] font-semibold text-emerald-800",
-                                    ventaImporteBaseClass,
-                                  )}
-                                >
-                                  {modoItemDescuento === "porcentaje"
-                                    ? `${Math.min(100, Math.max(0, Number.isFinite(descuentoNumero) ? descuentoNumero : 0))}%`
-                                    : fmt.format(descuento)}
-                                </span>
-                              ) : null}
-                            </div>
-                          </div>
-                          <div className="text-right">
-                            {tieneDescuento ? (
-                              <p
-                                className={cn(
-                                  ventaImporteCartMutedClass,
-                                  "line-through",
-                                )}
-                              >
-                                {fmt.format(precioBaseItem)}
-                              </p>
-                            ) : null}
-                            <p className={ventaImporteCartClass}>
-                              {fmt.format(precioBaseItem - descuento)}
-                            </p>
-                          </div>
+                    <SaleOperationCartItem
+                      key={itemId}
+                      itemId={itemId}
+                      nombre={nombreProducto}
+                      descripcion={item.producto?.descripcion}
+                      cantidad={item.cantidad}
+                      precioUnitario={catalogPricing.precioUnitario}
+                      precioBase={precioBaseItem}
+                      precioFinal={precioFinalItem}
+                      expandable
+                      expanded={abierto}
+                      onToggleExpand={() => toggleItemDetalle(itemId)}
+                      onQuantityDecrease={() => cambiarCantidad(itemId, -1)}
+                      onQuantityIncrease={() => cambiarCantidad(itemId, 1)}
+                      onRemove={() => quitarDelCarrito(itemId)}
+                      tieneComentario={tieneComentario}
+                      tieneDescuento={tieneDescuento}
+                      descuentoLabel={
+                        tieneDescuentoManual
+                          ? modoItemDescuento === "porcentaje"
+                            ? `${Math.min(100, Math.max(0, Number.isFinite(descuentoNumero) ? descuentoNumero : 0))}%`
+                            : fmt.format(descuentoManual)
+                          : catalogPricing.descuentoCatalogoLabel
+                      }
+                      expandedContent={
+                        <div className="flex items-center gap-2">
                           <button
                             type="button"
+                            className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-md border border-slate-400/50 bg-slate-100 text-slate-800 transition-colors hover:border-slate-400 hover:bg-slate-50 hover:text-slate-950 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-400/50"
+                            aria-label="Cambiar tipo de descuento"
                             onClick={(e) => {
                               e.stopPropagation()
-                              quitarDelCarrito(itemId)
+                              setItemDescuentoModo((prev) => ({
+                                ...prev,
+                                [itemId]:
+                                  (prev[itemId] ?? "porcentaje") === "porcentaje"
+                                    ? "fijo"
+                                    : "porcentaje",
+                              }))
                             }}
-                            aria-label={`Quitar ${nombreProducto} del carrito`}
-                            className="inline-flex size-8 items-center justify-center rounded-lg text-slate-400 transition-colors hover:bg-rose-50 hover:text-rose-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-400/50"
                           >
-                            <Trash2 className="size-4" aria-hidden />
+                            {modoItemDescuento === "porcentaje" ? (
+                              <Percent className="size-3.5" aria-hidden />
+                            ) : (
+                              <Banknote className="size-3.5" aria-hidden />
+                            )}
                           </button>
-                        </div>
-                      </div>
-
-                      {abierto ? (
-                        <div
-                          id={`cart-item-${itemId}-opciones`}
-                          role="region"
-                          aria-label={`Opciones de ${nombreProducto}`}
-                          onClick={(e) => e.stopPropagation()}
-                          className="rounded-xl border border-slate-200/95 bg-white px-2.5 py-2 shadow-[0_1px_0_rgba(255,255,255,0.9)_inset,0_4px_16px_rgba(15,23,42,0.06)]"
-                        >
-                          <div className="flex items-center gap-2">
-                            <button
-                              type="button"
-                              className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-md border border-slate-400/50 bg-slate-100 text-slate-800 transition-colors hover:border-slate-400 hover:bg-slate-50 hover:text-slate-950 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-400/50"
-                              aria-label="Cambiar tipo de descuento"
-                              onClick={(e) => {
-                                e.stopPropagation()
-                                setItemDescuentoModo((prev) => ({
-                                  ...prev,
-                                  [itemId]:
-                                    (prev[itemId] ?? "porcentaje") === "porcentaje"
-                                      ? "fijo"
-                                      : "porcentaje",
-                                }))
-                              }}
-                            >
-                              {modoItemDescuento === "porcentaje" ? (
-                                <Percent className="size-3.5" aria-hidden />
-                              ) : (
-                                <Banknote className="size-3.5" aria-hidden />
-                              )}
-                            </button>
-                            <Input
-                              value={itemDescuentoDraft[itemId] ?? ""}
-                              onChange={(e) => {
-                                const raw = e.target.value
-                                if (!/^\d*$/.test(raw)) return
-                                if (raw === "") {
-                                  setItemDescuentoDraft((prev) => ({
-                                    ...prev,
-                                    [itemId]: "",
-                                  }))
-                                  return
-                                }
-                                if (
-                                  modoItemDescuento === "fijo" &&
-                                  Number(raw) > precioBaseItem
-                                ) {
-                                  setItemDescuentoModo((prev) => ({
-                                    ...prev,
-                                    [itemId]: "porcentaje",
-                                  }))
-                                  setItemDescuentoDraft((prev) => ({
-                                    ...prev,
-                                    [itemId]: "100",
-                                  }))
-                                  return
-                                }
-                                const nextValue =
-                                  modoItemDescuento === "porcentaje"
-                                    ? String(Math.min(100, Number(raw)))
-                                    : raw
+                          <Input
+                            value={itemDescuentoDraft[itemId] ?? ""}
+                            onChange={(e) => {
+                              const raw = e.target.value
+                              if (!/^\d*$/.test(raw)) return
+                              if (raw === "") {
                                 setItemDescuentoDraft((prev) => ({
                                   ...prev,
-                                  [itemId]: nextValue,
+                                  [itemId]: "",
                                 }))
-                              }}
-                              placeholder="descuento"
-                              inputMode="numeric"
-                              pattern="[0-9]*"
-                              className="h-8 w-26 border border-slate-300 bg-white! text-[#121417] shadow-none text-xs placeholder:text-slate-500"
+                                return
+                              }
+                              if (
+                                modoItemDescuento === "fijo" &&
+                                Number(raw) > precioBaseItem
+                              ) {
+                                setItemDescuentoModo((prev) => ({
+                                  ...prev,
+                                  [itemId]: "porcentaje",
+                                }))
+                                setItemDescuentoDraft((prev) => ({
+                                  ...prev,
+                                  [itemId]: "100",
+                                }))
+                                return
+                              }
+                              const nextValue =
+                                modoItemDescuento === "porcentaje"
+                                  ? String(Math.min(100, Number(raw)))
+                                  : raw
+                              setItemDescuentoDraft((prev) => ({
+                                ...prev,
+                                [itemId]: nextValue,
+                              }))
+                            }}
+                            placeholder="descuento"
+                            inputMode="numeric"
+                            pattern="[0-9]*"
+                            className="h-8 w-26 border border-slate-300 bg-white! text-[#121417] shadow-none text-xs placeholder:text-slate-500"
+                          />
+                          <div className="relative min-w-0 flex-1">
+                            <MessageSquare className="pointer-events-none absolute top-1/2 left-2.5 size-3.5 -translate-y-1/2 text-slate-500" />
+                            <Input
+                              value={comentario}
+                              onChange={(e) =>
+                                setItemComentarios((prev) => ({
+                                  ...prev,
+                                  [itemId]: e.target.value,
+                                }))
+                              }
+                              placeholder="agregá un comentario..."
+                              className="h-8 border border-slate-300 bg-white! pl-8 text-[#121417] text-xs shadow-none placeholder:text-slate-500"
                             />
-                            <div className="relative min-w-0 flex-1">
-                              <MessageSquare className="pointer-events-none absolute top-1/2 left-2.5 size-3.5 -translate-y-1/2 text-slate-500" />
-                              <Input
-                                value={comentario}
-                                onChange={(e) =>
-                                  setItemComentarios((prev) => ({
-                                    ...prev,
-                                    [itemId]: e.target.value,
-                                  }))
-                                }
-                                placeholder="agregá un comentario..."
-                                className="h-8 border border-slate-300 bg-white! pl-8 text-[#121417] text-xs shadow-none placeholder:text-slate-500"
-                              />
-                            </div>
                           </div>
                         </div>
-                      ) : null}
-                    </div>
+                      }
+                    />
                   )
                 })}
-              </div>
+              </SaleOperationCartList>
             </div>
 
             <div className="flex min-h-0 flex-col">
@@ -2045,71 +1770,15 @@ function SalePage() {
                 </div>
               </div>
 
-              <div
-                role="region"
-                aria-label="Total a cobrar de esta venta"
-                className={cn(
-                  "relative box-border flex w-full shrink-0 flex-col justify-center border-t border-emerald-500/35 backdrop-blur-xl",
-                  ventaFooterBarPaddingClass,
-                  ventaFooterBandHeightClass,
-                )}
-              >
-                <div
-                  className="pointer-events-none absolute inset-0 bg-[linear-gradient(145deg,#07120e_0%,#0c1f17_42%,#061009_100%)]"
-                  aria-hidden
-                />
-                <div
-                  className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_120%_90%_at_50%_-20%,rgba(52,211,153,0.28),transparent_52%)]"
-                  aria-hidden
-                />
-                <div
-                  className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_100%_50%,rgba(16,185,129,0.12),transparent_45%)]"
-                  aria-hidden
-                />
-                <div
-                  className="pointer-events-none absolute inset-x-0 bottom-0 h-px bg-linear-to-r from-transparent via-emerald-400/55 to-transparent"
-                  aria-hidden
-                />
-
-                <div className="relative z-10 flex w-full items-end justify-between gap-3">
-                  <div className="min-w-0 flex-1">
-                    <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-emerald-200/80">
-                      Total a cobrar
-                    </p>
-                    {hayDescuento ? (
-                      <p className="mt-1 max-w-44 text-[10px] leading-snug text-white/40">
-                        Incluye descuento general sobre el subtotal.
-                      </p>
-                    ) : null}
-                  </div>
-                  <div className="flex min-w-0 shrink-0 flex-col items-end text-right">
-                    {hayDescuento ? (
-                      <>
-                        <p className={ventaImporteTotalMutedClass}>
-                          {fmt.format(subtotal)}
-                        </p>
-                        <p className={cn(ventaImporteTotalDiscountClass, "mt-0.5")}>
-                          −{fmt.format(descuentoMonto)}
-                        </p>
-                        <div
-                          className="my-1.5 h-px w-12 max-w-full bg-linear-to-r from-emerald-400/50 to-transparent"
-                          aria-hidden
-                        />
-                      </>
-                    ) : null}
-                    <p
-                      className={ventaImporteTotalClass}
-                      aria-live="polite"
-                      aria-atomic="true"
-                    >
-                      {fmt.format(total)}
-                    </p>
-                    <span className="mt-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-white/32">
-                      Pesos argentinos
-                    </span>
-                  </div>
-                </div>
-              </div>
+              <SaleOperationTotalBar
+                total={total}
+                subtotal={subtotal}
+                descuentoMonto={descuentoMonto}
+                hayDescuento={hayDescuento}
+                subtotalOriginal={catalogTotals.subtotalOriginal}
+                descuentoCatalogoMonto={catalogTotals.descuentoCatalogoMonto}
+                hayDescuentoCatalogo={hayDescuentoCatalogo}
+              />
             </div>
           </aside>
         </main>

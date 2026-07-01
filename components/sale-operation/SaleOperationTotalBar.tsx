@@ -15,6 +15,9 @@ export type SaleOperationTotalBarProps = {
   subtotal: number
   descuentoMonto: number
   hayDescuento: boolean
+  subtotalOriginal?: number
+  descuentoCatalogoMonto?: number
+  hayDescuentoCatalogo?: boolean
   className?: string
 }
 
@@ -23,8 +26,21 @@ export function SaleOperationTotalBar({
   subtotal,
   descuentoMonto,
   hayDescuento,
+  subtotalOriginal = 0,
+  descuentoCatalogoMonto = 0,
+  hayDescuentoCatalogo = false,
   className,
 }: SaleOperationTotalBarProps) {
+  const hayAhorroVisible = hayDescuentoCatalogo || hayDescuento
+
+  const helperText = hayDescuentoCatalogo && hayDescuento
+    ? "Incluye descuentos en productos y descuento general."
+    : hayDescuentoCatalogo
+      ? "Incluye descuentos aplicados en productos."
+      : hayDescuento
+        ? "Incluye descuento general sobre el subtotal."
+        : null
+
   return (
     <div
       role="region"
@@ -54,21 +70,30 @@ export function SaleOperationTotalBar({
           <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-emerald-200/80">
             Total a cobrar
           </p>
-          {hayDescuento ? (
+          {helperText ? (
             <p className="mt-1 max-w-44 text-[10px] leading-snug text-white/40">
-              Incluye descuento general sobre el subtotal.
+              {helperText}
             </p>
           ) : null}
         </div>
         <div className="flex min-w-0 shrink-0 flex-col items-end text-right">
-          {hayDescuento ? (
+          {hayAhorroVisible ? (
             <>
               <p className={saleOpImporteTotalMutedClass}>
-                {saleOpFmt.format(subtotal)}
+                {saleOpFmt.format(
+                  hayDescuentoCatalogo ? subtotalOriginal : subtotal,
+                )}
               </p>
-              <p className={cn(saleOpImporteTotalDiscountClass, "mt-0.5")}>
-                −{saleOpFmt.format(descuentoMonto)}
-              </p>
+              {hayDescuentoCatalogo ? (
+                <p className={cn(saleOpImporteTotalDiscountClass, "mt-0.5")}>
+                  −{saleOpFmt.format(descuentoCatalogoMonto)}
+                </p>
+              ) : null}
+              {hayDescuento ? (
+                <p className={cn(saleOpImporteTotalDiscountClass, "mt-0.5")}>
+                  −{saleOpFmt.format(descuentoMonto)}
+                </p>
+              ) : null}
               <div
                 className="my-1.5 h-px w-12 max-w-full bg-linear-to-r from-emerald-400/50 to-transparent"
                 aria-hidden

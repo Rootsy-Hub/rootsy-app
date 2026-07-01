@@ -29,6 +29,7 @@ type Props = {
   onUpdateSession: (sessionId: string, input: MesaOpenSessionInput) => void
   onCloseSession: (sessionId: string) => void
   onTakeOrder: () => void
+  clientLabel?: string | null
 }
 
 function sessionTitle(table: MesaTable | null, sessionTables: MesaTable[]): string {
@@ -49,6 +50,7 @@ export function MesaSessionPanel({
   onUpdateSession,
   onCloseSession,
   onTakeOrder,
+  clientLabel,
 }: Props) {
   const [editing, setEditing] = useState(false)
 
@@ -152,6 +154,14 @@ export function MesaSessionPanel({
             </div>
             <div>
               <dt className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                Cliente
+              </dt>
+              <dd className="mt-0.5 font-medium text-slate-800">
+                {clientLabel?.trim() || "Sin asignar"}
+              </dd>
+            </div>
+            <div>
+              <dt className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
                 Comensales
               </dt>
               <dd className="mt-0.5 font-medium text-slate-800">
@@ -184,10 +194,6 @@ export function MesaSessionPanel({
               </div>
             ) : null}
           </dl>
-
-          <p className="text-center text-xs text-slate-400">
-            El pedido se cargará en el panel derecho al usar «Tomar pedido».
-          </p>
         </div>
       ) : null}
 
