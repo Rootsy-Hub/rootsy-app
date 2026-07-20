@@ -65,6 +65,26 @@ export const POP_PERMS = {
   EXPENSES_CREATE: { resource: "expenses", action: "create" },
   EXPENSES_UPDATE: { resource: "expenses", action: "update" },
   EXPENSES_DELETE: { resource: "expenses", action: "delete" },
+
+  MESAS_READ: { resource: "mesas", action: "read" },
+  MESAS_CREATE: { resource: "mesas", action: "create" },
+  MESAS_UPDATE: { resource: "mesas", action: "update" },
+  MESAS_DELETE: { resource: "mesas", action: "delete" },
+
+  MOSTRADOR_READ: { resource: "mostrador", action: "read" },
+  MOSTRADOR_CREATE: { resource: "mostrador", action: "create" },
+  MOSTRADOR_UPDATE: { resource: "mostrador", action: "update" },
+  MOSTRADOR_DELETE: { resource: "mostrador", action: "delete" },
+
+  RECIPE_READ: { resource: "recipes", action: "read" },
+  RECIPE_CREATE: { resource: "recipes", action: "create" },
+  RECIPE_UPDATE: { resource: "recipes", action: "update" },
+  RECIPE_DELETE: { resource: "recipes", action: "delete" },
+
+  PROMOTION_READ: { resource: "promotions", action: "read" },
+  PROMOTION_CREATE: { resource: "promotions", action: "create" },
+  PROMOTION_UPDATE: { resource: "promotions", action: "update" },
+  PROMOTION_DELETE: { resource: "promotions", action: "delete" },
 } as const
 
 export function permissionKeysInclude(

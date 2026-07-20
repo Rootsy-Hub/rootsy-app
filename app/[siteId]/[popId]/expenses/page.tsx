@@ -15,8 +15,13 @@ import {
   type ExpenseListRow,
   type PaymentMethodOption,
 } from "@/app/[siteId]/[popId]/expenses/actions"
+import { ExpenseKindCardsPanel } from "@/app/[siteId]/[popId]/expenses/ExpenseKindCards"
+import { ExpensePeriodToolbar } from "@/app/[siteId]/[popId]/expenses/ExpensePeriodToolbar"
+import { ExpenseSummaryDashboard } from "@/app/[siteId]/[popId]/expenses/ExpenseSummaryDashboard"
+import { DataWorkspaceLayout } from "@/components/layouts/DataWorkspaceLayout"
+import { DataWorkspaceHeaderIconButton } from "@/components/layouts/DataWorkspaceHeaderIconButton"
 import { monthBoundsISO } from "@/lib/expenseMonth"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { getWorkspaceHeaderForPop } from "@/lib/workspaceHeaderServer"
 import { Button } from "@/components/ui/button"
 import {
   Dialog,
@@ -27,34 +32,13 @@ import {
 } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Progress } from "@/components/ui/progress"
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table"
 import { Textarea } from "@/components/ui/textarea"
-import { useAuth } from "@/context/AuthContextSupabase"
 import withAuth from "@/hoc/withAuth"
-import { popMenuHref } from "@/lib/popRoutes"
-import { cn } from "@/lib/utils"
 import {
-  ArrowLeft,
-  Ban,
-  Leaf,
-  Maximize2,
-  Minimize2,
   Plus,
-  Receipt,
+  Tags,
   Trash2,
-  Wallet,
-  Wifi,
-  WifiOff,
 } from "lucide-react"
-import Link from "next/link"
 import { useParams, useRouter } from "next/navigation"
 import {
   useCallback,
@@ -76,13 +60,6 @@ function formatIsoDate(iso: string) {
   const d = new Date(`${iso}T12:00:00`)
   if (Number.isNaN(d.getTime())) return iso
   return new Intl.DateTimeFormat("es", { dateStyle: "short" }).format(d)
-}
-
-const STATUS_LABEL: Record<string, string> = {
-  pending: "Pendiente",
-  partial: "Parcial",
-  paid: "Pagado",
-  voided: "Anulado",
 }
 
 const MONTH_NAMES = [
@@ -112,12 +89,16 @@ function roundMoneyLocal(n: number): number {
   return Math.round(n * 100) / 100
 }
 
+function shiftMonth(year: number, month1: number, delta: number) {
+  const d = new Date(year, month1 - 1 + delta, 1)
+  return { year: d.getFullYear(), month: d.getMonth() + 1 }
+}
+
 function ExpensesPage() {
   const router = useRouter()
   const routerRef = useRef(router)
   routerRef.current = router
   const params = useParams()
-  const { user } = useAuth()
   const siteId = typeof params?.siteId === "string" ? params.siteId : ""
   const popId = typeof params?.popId === "string" ? params.popId : undefined
 
@@ -126,6 +107,12 @@ function ExpensesPage() {
   const [month1, setMonth1] = useState(now.getMonth() + 1)
 
   const [popName, setPopName] = useState("")
+  const [headerError, setHeaderError] = useState<string | null>(null)
+  const [workspaceHeader, setWorkspaceHeader] = useState<{
+    userFullName: string
+    userImageUrl: string | null
+    roleLabel: string
+  } | null>(null)
   const [categories, setCategories] = useState<ExpenseCategoryRow[]>([])
   const [paymentMethods, setPaymentMethods] = useState<PaymentMethodOption[]>(
     [],
@@ -168,9 +155,6 @@ function ExpensesPage() {
   const [newCatKind, setNewCatKind] = useState<ExpenseCategoryKind>("variable")
   const [catSaving, setCatSaving] = useState(false)
 
-  const [isOnline, setIsOnline] = useState(true)
-  const [isFullscreen, setIsFullscreen] = useState(false)
-
   const { start: monthStart, end: monthEnd } = useMemo(
     () => monthBoundsISO(year, month1),
     [year, month1],
@@ -181,18 +165,12 @@ function ExpensesPage() {
     [categories],
   )
 
-  const progressPct =
-    totalDue > 0 ? Math.min(100, Math.round((totalPaid / totalDue) * 1000) / 10) : 0
+  const monthLabel = `${MONTH_NAMES[month1 - 1]} ${year}`
 
-  const headerUserName =
-    user?.user_metadata?.full_name ||
-    user?.user_metadata?.name ||
-    user?.email ||
-    "Usuario"
-  const userAvatarSrc =
-    user?.user_metadata?.avatar_url ||
-    `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(user?.email || "u")}`
-  const popLogoSrc = `https://api.dicebear.com/7.x/shapes/svg?seed=${encodeURIComponent(popId || "pop")}&backgroundColor=e8f5ef`
+  const isCurrentMonth = useMemo(() => {
+    const today = new Date()
+    return year === today.getFullYear() && month1 === today.getMonth() + 1
+  }, [year, month1])
 
   const reloadList = useCallback(async () => {
     if (!popId) return
@@ -208,6 +186,22 @@ function ExpensesPage() {
       setTotalPaid(pr.progress.totalPaid)
     }
   }, [popId, year, month1])
+
+  const loadHeader = useCallback(async () => {
+    if (!popId) return
+    const head = await getWorkspaceHeaderForPop(popId)
+    if (!head.success) {
+      setHeaderError(head.error)
+      return
+    }
+    setHeaderError(null)
+    setPopName((prev) => prev || head.popName)
+    setWorkspaceHeader({
+      userFullName: head.userFullName,
+      userImageUrl: head.userImageUrl,
+      roleLabel: head.roleLabel,
+    })
+  }, [popId])
 
   const loadPage = useCallback(async () => {
     if (!popId) return
@@ -237,45 +231,44 @@ function ExpensesPage() {
       setError("No se encontró el punto de venta.")
       return
     }
-    void loadPage()
-  }, [loadPage, popId, siteId])
+    let cancelled = false
+    ;(async () => {
+      setLoading(true)
+      try {
+        await Promise.all([loadPage(), loadHeader()])
+      } catch {
+        if (!cancelled) setError("Error inesperado")
+      } finally {
+        if (!cancelled) setLoading(false)
+      }
+    })()
+    return () => {
+      cancelled = true
+    }
+  }, [loadPage, loadHeader, popId, siteId])
 
   useEffect(() => {
     if (!popId || loading || error) return
     void reloadList()
   }, [popId, year, month1, loading, error, reloadList])
 
-  const toggleFullscreen = useCallback(async () => {
-    if (typeof document === "undefined") return
-    try {
-      if (!document.fullscreenElement) {
-        await document.documentElement.requestFullscreen()
-        setIsFullscreen(true)
-      } else {
-        await document.exitFullscreen()
-        setIsFullscreen(false)
-      }
-    } catch {
-      setIsFullscreen(Boolean(document.fullscreenElement))
-    }
-  }, [])
+  const goPrevMonth = () => {
+    const next = shiftMonth(year, month1, -1)
+    setYear(next.year)
+    setMonth1(next.month)
+  }
 
-  useEffect(() => {
-    const onFs = () =>
-      setIsFullscreen(Boolean(document.fullscreenElement))
-    document.addEventListener("fullscreenchange", onFs)
-    return () => document.removeEventListener("fullscreenchange", onFs)
-  }, [])
+  const goNextMonth = () => {
+    const next = shiftMonth(year, month1, 1)
+    setYear(next.year)
+    setMonth1(next.month)
+  }
 
-  useEffect(() => {
-    const onLine = () => setIsOnline(navigator.onLine)
-    window.addEventListener("online", onLine)
-    window.addEventListener("offline", onLine)
-    return () => {
-      window.removeEventListener("online", onLine)
-      window.removeEventListener("offline", onLine)
-    }
-  }, [])
+  const goToday = () => {
+    const today = new Date()
+    setYear(today.getFullYear())
+    setMonth1(today.getMonth() + 1)
+  }
 
   const openCreate = useCallback(() => {
     setCreateBanner(null)
@@ -406,335 +399,100 @@ function ExpensesPage() {
   }
 
   return (
-    <div className="rootsy-app-light relative min-h-screen overflow-hidden bg-background text-foreground">
-      <div
-        className="pointer-events-none absolute inset-0 motion-reduce:opacity-50"
-        aria-hidden
+    <>
+      <DataWorkspaceLayout
+        siteId={siteId}
+        popId={popId}
+        popName={popName}
+        title="Gastos"
+        headerVariant="dark"
+        loading={loading}
+        userName={workspaceHeader?.userFullName}
+        userAvatarSrc={workspaceHeader?.userImageUrl ?? undefined}
+        userRoleLabel={workspaceHeader?.roleLabel}
+        contentFlush
+        mainMaxWidthClass="max-w-none"
+        mainClassName="min-h-0 overflow-y-auto"
+        headerActions={
+          <>
+            {canCreate ? (
+              <DataWorkspaceHeaderIconButton
+                label="Nuevo gasto"
+                headerVariant="dark"
+                primary
+                onClick={() => openCreate()}
+              >
+                <Plus className="size-5" aria-hidden />
+              </DataWorkspaceHeaderIconButton>
+            ) : null}
+            {canUpdate ? (
+              <DataWorkspaceHeaderIconButton
+                label="Categorías"
+                headerVariant="dark"
+                onClick={() => setCatOpen(true)}
+              >
+                <Tags className="size-5" aria-hidden />
+              </DataWorkspaceHeaderIconButton>
+            ) : null}
+          </>
+        }
       >
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_50%_at_50%_-20%,oklch(0.75_0.12_155/0.35),transparent),radial-gradient(ellipse_60%_40%_at_100%_50%,oklch(0.85_0.08_140/0.2),transparent)]" />
-        <div className="absolute inset-0 bg-[linear-gradient(oklch(0.92_0.02_130/0.35)_1px,transparent_1px),linear-gradient(90deg,oklch(0.92_0.02_130/0.35)_1px,transparent_1px)] bg-size-[48px_48px] opacity-40" />
-      </div>
+        <div className="relative flex w-full min-h-0 flex-1 flex-col">
+          <ExpensePeriodToolbar
+            monthLabel={monthLabel}
+            loading={loading || listBusy}
+            isCurrentMonth={isCurrentMonth}
+            onPrev={goPrevMonth}
+            onNext={goNextMonth}
+            onToday={goToday}
+          />
 
-      <div className="relative z-10 flex min-h-screen flex-col">
-        <header className="border-b border-rootsy-hairline bg-card/90 shadow-sm backdrop-blur-xl">
-          <div className="grid h-18 grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-4 px-4">
-            <div className="flex min-w-0 items-center gap-3">
-              <Link
-                href={popMenuHref(siteId, popId)}
-                className="group inline-flex size-10 items-center justify-center rounded-xl border border-foreground/10 bg-secondary text-foreground/70 transition-all hover:border-primary/25 hover:bg-muted hover:text-foreground"
-                aria-label="Volver al menú"
-              >
-                <ArrowLeft className="size-5 transition-transform group-hover:-translate-x-0.5" />
-              </Link>
-              <div className="h-6 w-px bg-border" />
-              <div className="flex min-w-0 items-center gap-2.5">
-                <div className="size-8 overflow-hidden rounded-lg ring-1 ring-border">
-                  <img
-                    src={popLogoSrc}
-                    alt=""
-                    className="size-full object-cover"
-                  />
-                </div>
-                <span className="truncate text-sm font-semibold text-foreground/90">
-                  {popName || (loading ? "…" : "—")}
-                </span>
-              </div>
-            </div>
-
-            <div className="flex items-center gap-2">
-              <h1 className="flex items-center gap-2 text-[1.65rem] font-black tracking-tight text-foreground">
-                <span className="inline-flex size-9 items-center justify-center rounded-xl bg-primary/15 text-primary">
-                  <Receipt className="size-5" aria-hidden />
-                </span>
-                Gastos
-              </h1>
+          <div className="relative flex w-full flex-col gap-6 px-4 py-6 sm:px-6 lg:px-8">
+            {headerError ? (
               <div
-                className={cn(
-                  "inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-widest",
-                  isOnline
-                    ? "border-primary/30 bg-primary/10 text-forest"
-                    : "border-destructive/30 bg-destructive/10 text-destructive",
-                )}
+                role="alert"
+                className="rounded-lg border border-destructive/25 bg-destructive/10 px-4 py-3 text-sm text-destructive"
               >
-                {isOnline ? (
-                  <Wifi className="size-3" aria-hidden />
-                ) : (
-                  <WifiOff className="size-3" aria-hidden />
-                )}
-                {isOnline ? "En línea" : "Sin conexión"}
+                Cabecera: {headerError}
               </div>
-            </div>
+            ) : null}
 
-            <div className="flex shrink-0 items-center justify-end gap-2">
-              {canCreate ? (
-                <Button
-                  type="button"
-                  size="sm"
-                  className="h-9 gap-1.5 rounded-xl bg-primary text-primary-foreground shadow-sm hover:bg-primary/90"
-                  onClick={() => openCreate()}
-                >
-                  <Plus className="size-4" aria-hidden />
-                  <span className="hidden sm:inline">Nuevo gasto</span>
-                </Button>
-              ) : null}
-              {canUpdate ? (
-                <Button
-                  type="button"
-                  size="sm"
-                  variant="secondary"
-                  className="h-9 rounded-xl"
-                  onClick={() => setCatOpen(true)}
-                >
-                  Categorías
-                </Button>
-              ) : null}
-              <button
-                type="button"
-                onClick={() => void toggleFullscreen()}
-                className="group inline-flex size-9 items-center justify-center rounded-xl text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-                aria-label={
-                  isFullscreen
-                    ? "Salir de pantalla completa"
-                    : "Pantalla completa"
-                }
-              >
-                {isFullscreen ? (
-                  <Minimize2 className="size-4.5" />
-                ) : (
-                  <Maximize2 className="size-4.5" />
-                )}
-              </button>
-              <div className="h-6 w-px bg-border" />
-              <div className="flex items-center gap-3">
-                <Avatar className="size-10 ring-1 ring-border">
-                  <AvatarImage src={userAvatarSrc} alt="" />
-                  <AvatarFallback className="bg-primary/10 text-xs text-primary">
-                    {headerUserName.slice(0, 2).toUpperCase()}
-                  </AvatarFallback>
-                </Avatar>
-                <div className="hidden min-w-0 flex-col leading-tight sm:flex">
-                  <span className="truncate text-sm font-semibold text-foreground/90">
-                    {headerUserName}
-                  </span>
-                  <span className="flex items-center gap-1 text-[10px] font-semibold uppercase tracking-wider text-meadow">
-                    <Leaf className="size-3" aria-hidden />
-                    Administración
-                  </span>
-                </div>
+            {loading ? (
+              <p className="text-sm text-muted-foreground">Cargando gastos…</p>
+            ) : error ? (
+              <div className="rounded-2xl border border-destructive/25 bg-destructive/5 px-4 py-3 text-sm text-destructive">
+                {error}
               </div>
-            </div>
+            ) : (
+              <>
+                <ExpenseSummaryDashboard
+                  rows={rows}
+                  totalDue={totalDue}
+                  totalPaid={totalPaid}
+                  monthLabel={monthLabel}
+                />
+
+                <ExpenseKindCardsPanel
+                  rows={rows}
+                  listBusy={listBusy}
+                  canCreate={canCreate}
+                  canUpdate={canUpdate}
+                  canDelete={canDelete}
+                  formatDate={formatIsoDate}
+                  onPay={openPay}
+                  onVoid={(row) => {
+                    setVoidTarget(row)
+                    setVoidReason("")
+                    setVoidOpen(true)
+                  }}
+                  onDelete={onDeleteExpense}
+                  onCreate={canCreate ? openCreate : undefined}
+                />
+              </>
+            )}
           </div>
-        </header>
-
-        <main className="relative z-10 mx-auto w-full max-w-6xl flex-1 px-4 py-8 sm:px-6">
-          {loading ? (
-            <p className="text-sm text-muted-foreground">Cargando…</p>
-          ) : error ? (
-            <div className="rounded-2xl border border-destructive/25 bg-destructive/5 px-4 py-3 text-sm text-destructive">
-              {error}
-            </div>
-          ) : (
-            <div className="space-y-8">
-              <div className="flex flex-col gap-4 sm:flex-row sm:flex-wrap sm:items-end sm:justify-between">
-                <div>
-                  <h2 className="text-lg font-semibold text-foreground">
-                    Período
-                  </h2>
-                  <p className="max-w-xl text-sm text-muted-foreground">
-                    Los gastos se filtran por fecha de imputación del gasto. Los
-                    pagos cuentan para el progreso aunque se registren en otro mes.
-                  </p>
-                </div>
-                <div className="flex flex-wrap items-center gap-2">
-                  <div className="space-y-1">
-                    <Label className="text-xs">Mes</Label>
-                    <select
-                      className="h-9 rounded-md border border-border bg-background px-2 text-sm"
-                      value={month1}
-                      onChange={(e) => setMonth1(Number(e.target.value))}
-                    >
-                      {MONTH_NAMES.map((name, i) => (
-                        <option key={name} value={i + 1}>
-                          {name}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                  <div className="space-y-1">
-                    <Label className="text-xs">Año</Label>
-                    <Input
-                      type="number"
-                      className="h-9 w-24 bg-background"
-                      min={2000}
-                      max={2100}
-                      value={year}
-                      onChange={(e) => setYear(Number(e.target.value))}
-                    />
-                  </div>
-                </div>
-              </div>
-
-              <div className="rounded-2xl border border-border bg-card/95 p-5 shadow-md shadow-primary/5">
-                <div className="mb-3 flex items-center gap-2">
-                  <Wallet className="size-5 text-primary" aria-hidden />
-                  <h3 className="font-semibold">Avance del mes</h3>
-                </div>
-                <p className="mb-4 text-sm text-muted-foreground">
-                  Total comprometido (gastos no anulados del mes) vs pagos
-                  registrados vinculados a esos gastos.
-                </p>
-                <div className="mb-2 flex flex-wrap justify-between gap-2 text-sm">
-                  <span className="text-muted-foreground">
-                    Pagado:{" "}
-                    <span className="font-mono font-semibold text-foreground">
-                      {fmt.format(totalPaid)}
-                    </span>
-                  </span>
-                  <span className="text-muted-foreground">
-                    A pagar:{" "}
-                    <span className="font-mono font-semibold text-foreground">
-                      {fmt.format(totalDue)}
-                    </span>
-                  </span>
-                  <span className="text-muted-foreground">
-                    {progressPct}% cubierto
-                  </span>
-                </div>
-                <Progress value={progressPct} className="h-3" />
-              </div>
-
-              <div className="overflow-hidden rounded-2xl border border-border bg-card/95 shadow-md shadow-primary/5">
-                <div className="flex items-center gap-2 border-b border-border px-4 py-3">
-                  <Receipt className="size-4 text-primary" aria-hidden />
-                  <span className="text-sm font-semibold text-foreground">
-                    Listado
-                  </span>
-                  <span className="text-xs text-muted-foreground">
-                    {MONTH_NAMES[month1 - 1]} {year}
-                    {listBusy ? " · Cargando…" : ` · ${rows.length} gastos`}
-                  </span>
-                </div>
-                <div className="overflow-x-auto">
-                  <Table>
-                    <TableHeader>
-                      <TableRow className="border-border bg-muted/40 hover:bg-muted/40">
-                        <TableHead className="font-semibold">Fecha</TableHead>
-                        <TableHead className="font-semibold">Categoría</TableHead>
-                        <TableHead className="font-semibold">Descripción</TableHead>
-                        <TableHead className="text-right font-semibold">
-                          Importe
-                        </TableHead>
-                        <TableHead className="text-right font-semibold">
-                          Pagado
-                        </TableHead>
-                        <TableHead className="font-semibold">Estado</TableHead>
-                        <TableHead className="w-[200px] font-semibold" />
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {rows.length === 0 ? (
-                        <TableRow>
-                          <TableCell
-                            colSpan={7}
-                            className="py-10 text-center text-muted-foreground"
-                          >
-                            No hay gastos en este mes.
-                          </TableCell>
-                        </TableRow>
-                      ) : (
-                        rows.map((row) => (
-                          <TableRow
-                            key={row.id}
-                            className={cn(
-                              "border-border",
-                              row.status === "voided"
-                                ? "opacity-60"
-                                : "hover:bg-muted/30",
-                            )}
-                          >
-                            <TableCell className="whitespace-nowrap text-sm">
-                              {formatIsoDate(row.expenseDate)}
-                            </TableCell>
-                            <TableCell className="text-sm">
-                              <span>{row.categoryName}</span>
-                              {row.categoryDeletedAt ? (
-                                <span className="ml-1 rounded bg-muted px-1.5 py-0.5 text-[10px] font-medium uppercase text-muted-foreground">
-                                  eliminada
-                                </span>
-                              ) : null}
-                              <span className="ml-1 text-xs text-muted-foreground">
-                                ({row.categoryKind === "fijo" ? "Fijo" : "Variable"}
-                                )
-                              </span>
-                            </TableCell>
-                            <TableCell className="max-w-[220px] truncate text-sm">
-                              {row.description || "—"}
-                            </TableCell>
-                            <TableCell className="text-right font-mono text-sm tabular-nums">
-                              {fmt.format(row.amount)}
-                            </TableCell>
-                            <TableCell className="text-right font-mono text-sm tabular-nums">
-                              {fmt.format(row.paidTotal)}
-                            </TableCell>
-                            <TableCell className="text-sm">
-                              {STATUS_LABEL[row.status] ?? row.status}
-                            </TableCell>
-                            <TableCell>
-                              <div className="flex flex-wrap gap-1">
-                                {row.status !== "voided" &&
-                                row.status !== "paid" &&
-                                canUpdate ? (
-                                  <Button
-                                    type="button"
-                                    variant="outline"
-                                    size="sm"
-                                    className="h-8 text-xs"
-                                    onClick={() => openPay(row)}
-                                  >
-                                    Pagar
-                                  </Button>
-                                ) : null}
-                                {row.status !== "voided" && canUpdate ? (
-                                  <Button
-                                    type="button"
-                                    variant="ghost"
-                                    size="sm"
-                                    className="h-8 text-xs text-destructive"
-                                    onClick={() => {
-                                      setVoidTarget(row)
-                                      setVoidReason("")
-                                      setVoidOpen(true)
-                                    }}
-                                  >
-                                    <Ban className="size-3.5" aria-hidden />
-                                  </Button>
-                                ) : null}
-                                {row.status !== "voided" &&
-                                row.paidTotal <= 0 &&
-                                canDelete ? (
-                                  <Button
-                                    type="button"
-                                    variant="ghost"
-                                    size="sm"
-                                    className="h-8 text-xs text-muted-foreground"
-                                    onClick={() => void onDeleteExpense(row)}
-                                  >
-                                    <Trash2 className="size-3.5" aria-hidden />
-                                  </Button>
-                                ) : null}
-                              </div>
-                            </TableCell>
-                          </TableRow>
-                        ))
-                      )}
-                    </TableBody>
-                  </Table>
-                </div>
-              </div>
-            </div>
-          )}
-        </main>
-      </div>
+        </div>
+      </DataWorkspaceLayout>
 
       <Dialog open={createOpen} onOpenChange={setCreateOpen}>
         <DialogContent
@@ -992,7 +750,7 @@ function ExpensesPage() {
           </ul>
         </DialogContent>
       </Dialog>
-    </div>
+    </>
   )
 }
 

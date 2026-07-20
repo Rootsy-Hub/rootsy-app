@@ -51,6 +51,7 @@ import {
 export type MenuItemLink =
   | "sale"
   | "mesas"
+  | "mostrador"
   | "operations"
   | "purchases"
   | "expenses"
@@ -66,6 +67,8 @@ export type MenuItemLink =
   | "accounting"
   | "cash-registers"
   | "inventory"
+  | "recipes"
+  | "promotions"
   | "section"
 
 type MenuItemDef = {
@@ -85,7 +88,7 @@ const menuSectionsRaw: Record<string, MenuSectionDef> = {
     title: "Operar",
     items: [
       { name: "Vender", icon: ShoppingCart, badge: "HOT", link: "sale" },
-      { name: "Mostrador", icon: Monitor, link: "section" },
+      { name: "Mostrador", icon: Monitor, link: "mostrador" },
       { name: "Mesas", icon: UtensilsCrossed, badge: "12", link: "mesas" },
       { name: "Comprar", icon: ShoppingBag, link: "purchases" },
       { name: "Fabricación", icon: Factory, link: "section" },
@@ -93,8 +96,8 @@ const menuSectionsRaw: Record<string, MenuSectionDef> = {
       { name: "Clientes", icon: Users, link: "clients" },
       { name: "Proveedores", icon: Truck, link: "suppliers" },
       { name: "Cuentas Ctes", icon: CreditCard, link: "section" },
-      { name: "Promociones", icon: Sparkles, badge: "5", link: "section" },
-      { name: "Recetas", icon: BookOpen, link: "section" },
+      { name: "Promociones", icon: Sparkles, link: "promotions" },
+      { name: "Recetas", icon: BookOpen, link: "recipes" },
     ],
   },
   administrar: {

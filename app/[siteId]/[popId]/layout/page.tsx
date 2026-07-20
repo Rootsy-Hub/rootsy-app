@@ -149,9 +149,13 @@ function LayoutPreviewPage() {
               </div>
             ) : null}
             {activeId === "reports" ? (
-              <LayoutPreviewReportsDashboard />
+              <div className="relative flex w-full flex-col gap-6 px-4 py-6 sm:px-6 lg:px-8">
+                <LayoutPreviewReportsDashboard />
+              </div>
             ) : activeId === "summary" ? (
-              <LayoutPreviewSummaryDashboard />
+              <div className="relative flex w-full flex-col gap-6 px-4 py-6 sm:px-6 lg:px-8">
+                <LayoutPreviewSummaryDashboard />
+              </div>
             ) : (
               <div
                 className={cn(

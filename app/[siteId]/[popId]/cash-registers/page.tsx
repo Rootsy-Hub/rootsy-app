@@ -14,7 +14,10 @@ import {
   type CashRegisterSummaryData,
   type ClosingSnapshot,
 } from "@/app/[siteId]/[popId]/cash-registers/actions"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { CashRegisterCard } from "@/app/[siteId]/[popId]/cash-registers/CashRegisterCard"
+import { dataWorkspaceShellCard } from "@/components/data-workspace/dataWorkspaceListStyles"
+import { DataWorkspaceLayout } from "@/components/layouts/DataWorkspaceLayout"
+import { DataWorkspaceHeaderIconButton } from "@/components/layouts/DataWorkspaceHeaderIconButton"
 import { Button } from "@/components/ui/button"
 import {
   Dialog,
@@ -27,44 +30,35 @@ import {
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
-import { useAuth } from "@/context/AuthContextSupabase"
 import withAuth from "@/hoc/withAuth"
-import { popMenuHref } from "@/lib/popRoutes"
+import { getWorkspaceHeaderForPop } from "@/lib/workspaceHeaderServer"
 import { cn } from "@/lib/utils"
 import {
-  ArrowLeft,
   DoorClosed,
   DoorOpen,
   FileDown,
   FileSpreadsheet,
   FileText,
-  Gamepad2,
-  Maximize2,
-  Minimize2,
   MinusCircle,
   Pencil,
   Plus,
   Printer,
   Trash2,
-  Wifi,
-  WifiOff,
-  Zap,
 } from "lucide-react"
-import Link from "next/link"
 import { useParams, useRouter } from "next/navigation"
 import {
   useCallback,
   useEffect,
-  useMemo,
   useRef,
   useState,
   type FormEvent,
 } from "react"
 
 function formatMoney(n: number) {
-  return new Intl.NumberFormat("en-US", {
+  return new Intl.NumberFormat("es-AR", {
+    style: "currency",
+    currency: "ARS",
     minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
   }).format(n)
 }
 
@@ -91,30 +85,21 @@ function sessionOpenedLabel(
   return s ? formatDateTime(s.openedAt) : shortUserId(sessionId)
 }
 
-const dialogConsoleClass =
-  "border border-cyan-500/25 bg-zinc-950/98 text-zinc-100 shadow-[0_0_80px_-12px_rgba(34,211,238,0.45),inset_0_1px_0_rgba(255,255,255,0.06)] backdrop-blur-2xl"
-
-const fieldClass =
-  "border-zinc-700/90 bg-zinc-950/90 text-cyan-50 placeholder:text-zinc-600 focus-visible:border-cyan-500/60 focus-visible:ring-cyan-500/25"
-
-const labelClass = "text-[11px] font-semibold uppercase tracking-[0.18em] text-zinc-500"
-
-const btnGhostConsole =
-  "border border-zinc-600/80 bg-zinc-900/80 text-zinc-200 hover:border-cyan-500/40 hover:bg-zinc-800 hover:text-cyan-100"
-
-const btnPrimaryConsole =
-  "border border-cyan-400/40 bg-gradient-to-b from-cyan-500/90 to-cyan-600/90 text-zinc-950 shadow-[0_0_24px_rgba(34,211,238,0.35)] hover:from-cyan-400 hover:to-cyan-500 hover:shadow-[0_0_32px_rgba(34,211,238,0.5)]"
-
 function CashRegistersPage() {
   const router = useRouter()
   const routerRef = useRef(router)
   routerRef.current = router
   const params = useParams()
-  const { user } = useAuth()
   const siteId = typeof params?.siteId === "string" ? params.siteId : ""
   const popId = typeof params?.popId === "string" ? params.popId : undefined
 
   const [popName, setPopName] = useState("")
+  const [headerError, setHeaderError] = useState<string | null>(null)
+  const [workspaceHeader, setWorkspaceHeader] = useState<{
+    userFullName: string
+    userImageUrl: string | null
+    roleLabel: string
+  } | null>(null)
   const [registers, setRegisters] = useState<CashRegisterRow[]>([])
   const [paymentMethods, setPaymentMethods] = useState<
     { id: string; name: string; sortOrder: number; kind: string }[]
@@ -173,8 +158,21 @@ function CashRegistersPage() {
   const [summaryLoading, setSummaryLoading] = useState(false)
   const [summaryError, setSummaryError] = useState<string | null>(null)
 
-  const [isOnline, setIsOnline] = useState(true)
-  const [isFullscreen, setIsFullscreen] = useState(false)
+  const loadHeader = useCallback(async () => {
+    if (!popId) return
+    const head = await getWorkspaceHeaderForPop(popId)
+    if (!head.success) {
+      setHeaderError(head.error)
+      return
+    }
+    setHeaderError(null)
+    setPopName((prev) => prev || head.popName)
+    setWorkspaceHeader({
+      userFullName: head.userFullName,
+      userImageUrl: head.userImageUrl,
+      roleLabel: head.roleLabel,
+    })
+  }, [popId])
 
   const load = useCallback(async () => {
     if (!popId || !siteId) return
@@ -211,9 +209,9 @@ function CashRegistersPage() {
       setLoading(true)
       setError(null)
       try {
-        await load()
+        await Promise.all([load(), loadHeader()])
       } catch {
-        if (!cancelled) setError("Unexpected error")
+        if (!cancelled) setError("Error inesperado")
       } finally {
         if (!cancelled) setLoading(false)
       }
@@ -221,34 +219,7 @@ function CashRegistersPage() {
     return () => {
       cancelled = true
     }
-  }, [popId, siteId, load])
-
-  useEffect(() => {
-    setIsOnline(navigator.onLine)
-    const on = () => setIsOnline(true)
-    const off = () => setIsOnline(false)
-    window.addEventListener("online", on)
-    window.addEventListener("offline", off)
-    return () => {
-      window.removeEventListener("online", on)
-      window.removeEventListener("offline", off)
-    }
-  }, [])
-
-  useEffect(() => {
-    const sync = () => setIsFullscreen(Boolean(document.fullscreenElement))
-    sync()
-    document.addEventListener("fullscreenchange", sync)
-    return () => document.removeEventListener("fullscreenchange", sync)
-  }, [])
-
-  const toggleFullscreen = async () => {
-    if (document.fullscreenElement) {
-      await document.exitFullscreen()
-      return
-    }
-    await document.documentElement.requestFullscreen()
-  }
+  }, [popId, siteId, load, loadHeader])
 
   const openCreate = () => {
     setCreateBanner(null)
@@ -470,18 +441,6 @@ function CashRegistersPage() {
     setSummaryData(res.data)
   }
 
-  const headerUserName = useMemo(() => {
-    const meta = user?.user_metadata?.full_name
-    if (typeof meta === "string" && meta.trim()) return meta.trim()
-    return user?.email?.split("@")[0] || "User"
-  }, [user?.email, user?.user_metadata?.full_name])
-
-  const userAvatarSrc =
-    user?.user_metadata?.avatar_url ||
-    `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(user?.email || "u")}`
-
-  const popLogoSrc = `https://api.dicebear.com/7.x/shapes/svg?seed=${encodeURIComponent(popId || "pop")}&backgroundColor=e8f5ef`
-
   useEffect(() => {
     if (!closeRow || paymentMethods.length === 0) return
     setClosePm((prev) => {
@@ -496,458 +455,123 @@ function CashRegistersPage() {
 
   if (!popId || !siteId) {
     return (
-      <div className="min-h-screen bg-[#030308] p-10 text-zinc-400">
-        <p className="text-sm font-mono">Store ID not found</p>
+      <div className="rootsy-app-light min-h-screen bg-background p-10 text-foreground">
+        <p className="text-sm">Punto de venta no encontrado.</p>
       </div>
     )
   }
 
   return (
-    <div className="relative min-h-screen overflow-hidden bg-[#030308] text-zinc-100 antialiased selection:bg-cyan-500/35">
-      <div className="pointer-events-none absolute inset-0" aria-hidden>
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_120%_80%_at_50%_-20%,rgba(56,189,248,0.14),transparent_55%),radial-gradient(ellipse_80%_50%_at_100%_100%,rgba(147,51,234,0.08),transparent_45%)]" />
-        <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.03)_1px,transparent_1px)] bg-size-[32px_32px] opacity-[0.35]" />
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_0%,rgba(0,0,0,0.55)_100%)]" />
-      </div>
-
-      <div className="relative z-10 flex min-h-screen flex-col">
-        <header className="border-b border-white/[0.08] bg-black/50 shadow-[0_8px_32px_rgba(0,0,0,0.45)] backdrop-blur-xl">
-          <div className="grid h-18 grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-4 px-4">
-            <div className="flex min-w-0 items-center gap-3">
-              <Link
-                href={popMenuHref(siteId, popId)}
-                className="group inline-flex size-10 items-center justify-center rounded-lg border border-zinc-700/80 bg-zinc-900/90 text-zinc-300 transition-all hover:border-cyan-500/50 hover:bg-zinc-800 hover:text-cyan-200 hover:shadow-[0_0_20px_rgba(34,211,238,0.2)]"
-                aria-label="Back to menu"
-              >
-                <ArrowLeft className="size-5 transition-transform group-hover:-translate-x-0.5" />
-              </Link>
-              <div className="h-6 w-px bg-gradient-to-b from-transparent via-zinc-600 to-transparent" />
-              <div className="flex min-w-0 items-center gap-2.5">
-                <div className="size-8 overflow-hidden rounded-md border border-zinc-600/80 ring-1 ring-white/5">
-                  <img
-                    src={popLogoSrc}
-                    alt=""
-                    className="size-full object-cover"
-                  />
-                </div>
-                <span className="truncate text-sm font-medium tracking-wide text-zinc-300">
-                  {popName || (loading ? "…" : "—")}
-                </span>
-              </div>
-            </div>
-
-            <div className="flex flex-col items-center gap-1 sm:flex-row sm:gap-3">
-              <h1 className="flex items-center gap-2.5 text-xl font-black tracking-tight sm:text-[1.65rem]">
-                <span className="relative inline-flex size-10 items-center justify-center rounded-lg border border-cyan-500/35 bg-gradient-to-b from-zinc-800/90 to-black text-cyan-300 shadow-[0_0_28px_rgba(34,211,238,0.25),inset_0_1px_0_rgba(255,255,255,0.08)]">
-                  <Gamepad2 className="size-5" aria-hidden />
-                  <span className="pointer-events-none absolute inset-0 rounded-lg ring-1 ring-inset ring-white/10" />
-                </span>
-                <span className="bg-gradient-to-r from-white via-zinc-100 to-cyan-300/90 bg-clip-text text-transparent">
-                  Cash registers
-                </span>
-              </h1>
+    <>
+      <DataWorkspaceLayout
+        siteId={siteId}
+        popId={popId}
+        popName={popName}
+        title="Cajas"
+        headerVariant="dark"
+        loading={loading}
+        userName={workspaceHeader?.userFullName}
+        userAvatarSrc={workspaceHeader?.userImageUrl ?? undefined}
+        userRoleLabel={workspaceHeader?.roleLabel}
+        contentFlush
+        mainMaxWidthClass="max-w-none"
+        mainClassName="min-h-0 overflow-y-auto"
+        headerActions={
+          canCreate ? (
+            <DataWorkspaceHeaderIconButton
+              label="Nueva caja"
+              headerVariant="dark"
+              primary
+              onClick={() => openCreate()}
+            >
+              <Plus className="size-5" aria-hidden />
+            </DataWorkspaceHeaderIconButton>
+          ) : null
+        }
+      >
+        <div className="relative flex w-full min-h-0 flex-1 flex-col">
+          <div className="relative flex w-full flex-col gap-6 px-4 py-6 sm:px-6 lg:px-8">
+            {headerError ? (
               <div
-                className={cn(
-                  "inline-flex items-center gap-1.5 rounded border px-2 py-0.5 font-mono text-[10px] font-bold uppercase tracking-[0.2em]",
-                  isOnline
-                    ? "border-emerald-500/40 bg-emerald-950/50 text-emerald-300 shadow-[0_0_12px_rgba(52,211,153,0.25)]"
-                    : "border-red-500/40 bg-red-950/40 text-red-300",
-                )}
+                role="alert"
+                className="rounded-lg border border-destructive/25 bg-destructive/10 px-4 py-3 text-sm text-destructive"
               >
-                <span
-                  className={cn(
-                    "size-1.5 rounded-full",
-                    isOnline
-                      ? "bg-emerald-400 shadow-[0_0_8px_#34d399]"
-                      : "bg-red-400",
-                  )}
-                  aria-hidden
-                />
-                {isOnline ? "Online" : "Offline"}
+                Cabecera: {headerError}
               </div>
-            </div>
+            ) : null}
 
-            <div className="flex shrink-0 items-center justify-end gap-2">
-              {canCreate ? (
-                <Button
-                  type="button"
-                  size="sm"
-                  className={cn(
-                    "h-9 gap-1.5 rounded-lg font-semibold",
-                    btnPrimaryConsole,
-                  )}
-                  onClick={() => openCreate()}
-                >
-                  <Plus className="size-4" aria-hidden />
-                  <span className="hidden sm:inline">Add register</span>
-                </Button>
-              ) : null}
-              <button
-                type="button"
-                onClick={() => void toggleFullscreen()}
-                className="inline-flex size-9 items-center justify-center rounded-lg border border-zinc-700/80 bg-zinc-900/80 text-zinc-400 transition-colors hover:border-cyan-500/40 hover:text-cyan-200"
-                aria-label={isFullscreen ? "Exit fullscreen" : "Fullscreen"}
-              >
-                {isFullscreen ? (
-                  <Minimize2 className="size-4.5" />
-                ) : (
-                  <Maximize2 className="size-4.5" />
-                )}
-              </button>
-              <div className="hidden h-6 w-px bg-zinc-700/80 sm:block" />
-              <div className="flex items-center gap-3">
-                <Avatar className="size-10 border border-zinc-600/80 ring-2 ring-black/50">
-                  <AvatarImage src={userAvatarSrc} alt="" />
-                  <AvatarFallback className="bg-zinc-800 text-xs font-bold text-cyan-300">
-                    {headerUserName.slice(0, 2).toUpperCase()}
-                  </AvatarFallback>
-                </Avatar>
-                <div className="hidden min-w-0 flex-col leading-tight sm:flex">
-                  <span className="truncate text-sm font-semibold text-zinc-200">
-                    {headerUserName}
-                  </span>
-                  <span className="flex items-center gap-1 text-[10px] font-bold uppercase tracking-[0.2em] text-cyan-500/90">
-                    <Zap className="size-3" aria-hidden />
-                    Terminal
-                  </span>
-                </div>
+            {loading ? (
+              <p className="text-sm text-muted-foreground">Cargando cajas…</p>
+            ) : error ? (
+              <div className="rounded-2xl border border-destructive/25 bg-destructive/5 px-4 py-3 text-sm text-destructive">
+                {error}
               </div>
-            </div>
-          </div>
-        </header>
+            ) : (
+              <>
+                <div className={cn(dataWorkspaceShellCard, "p-5")}>
+                  <div className="mb-4">
+                    <h2 className="text-sm font-semibold text-foreground">
+                      Cajas registradoras
+                    </h2>
+                    <p className="mt-1 max-w-2xl text-sm leading-relaxed text-muted-foreground">
+                      Abrí un turno para controlar el efectivo físico en el
+                      cajón. Al cerrar, cargá el efectivo contado y los totales
+                      por medio de pago. Las ventas y movimientos del turno se
+                      reflejan en el arqueo.
+                    </p>
+                  </div>
 
-        <main className="relative z-10 mx-auto w-full max-w-6xl flex-1 space-y-8 px-4 py-8 sm:px-6">
-          {loading ? (
-            <p className="animate-pulse font-mono text-sm text-cyan-500/70">
-              Loading terminal…
-            </p>
-          ) : error ? (
-            <div className="rounded-lg border border-red-500/30 bg-red-950/40 px-4 py-3 font-mono text-sm text-red-200">
-              {error}
-            </div>
-          ) : (
-            <>
-              <div className="relative overflow-hidden rounded-xl border border-white/[0.07] bg-zinc-950/40 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] backdrop-blur-sm sm:p-5">
-                <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-cyan-400/40 to-transparent" />
-                <p className="max-w-2xl text-sm leading-relaxed text-zinc-400">
-                  Open a cash session to track physical cash in the drawer. Close
-                  with counted cash and final totals per payment method. Sales
-                  and other flows will feed this later; balances today are opening
-                  cash plus deposits minus withdrawals.
-                </p>
-              </div>
-              <div className="grid gap-6 sm:grid-cols-1 lg:grid-cols-2">
-                {registers.length === 0 ? (
-                  <p className="font-mono text-sm text-zinc-500">
-                    No registers configured — add a terminal to begin.
-                  </p>
-                ) : (
-                  registers.map((r) => (
-                    <div
-                      key={r.id}
-                      className="group relative overflow-hidden rounded-xl border border-zinc-700/70 bg-gradient-to-b from-zinc-900/95 via-zinc-950 to-black p-[1px] shadow-[0_24px_64px_-20px_rgba(0,0,0,0.9),0_0_0_1px_rgba(255,255,255,0.05)]"
-                    >
-                      <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-cyan-400/35 to-transparent" />
-                      <div className="rounded-[11px] bg-gradient-to-b from-zinc-900/98 to-black p-5">
-                        <div className="mb-4 flex flex-row items-start justify-between gap-3">
-                          <div>
-                            <h3 className="text-lg font-bold tracking-tight text-white">
-                              {r.name}
-                            </h3>
-                            <p className="mt-0.5 font-mono text-[11px] uppercase tracking-[0.15em] text-zinc-500">
-                              Unit · sort {r.sortOrder}
-                              {!r.isActive ? " · offline" : ""}
-                            </p>
-                          </div>
-                          <div className="flex flex-wrap justify-end gap-1">
-                            <Button
-                              type="button"
-                              variant="ghost"
-                              size="icon"
-                              className="size-9 border border-transparent text-zinc-400 hover:border-violet-500/30 hover:bg-violet-500/10 hover:text-violet-200"
-                              onClick={() => void openSummary(r)}
-                              aria-label="Ver resumen de caja"
-                              title="Resumen"
-                            >
-                              <FileText className="size-4" />
-                            </Button>
-                            {canUpdate ? (
-                              <Button
-                                type="button"
-                                variant="ghost"
-                                size="icon"
-                                className="size-9 border border-transparent text-zinc-400 hover:border-cyan-500/30 hover:bg-cyan-500/10 hover:text-cyan-200"
-                                onClick={() => startEdit(r)}
-                                aria-label="Edit"
-                              >
-                                <Pencil className="size-4" />
-                              </Button>
-                            ) : null}
-                            {canDelete ? (
-                              <Button
-                                type="button"
-                                variant="ghost"
-                                size="icon"
-                                className="size-9 text-zinc-500 hover:border-red-500/30 hover:bg-red-500/10 hover:text-red-300"
-                                onClick={() => setDeleteRow(r)}
-                                aria-label="Delete"
-                              >
-                                <Trash2 className="size-4" />
-                              </Button>
-                            ) : null}
-                          </div>
-                        </div>
-
-                        <div className="mb-4 flex flex-wrap items-center justify-between gap-2 border-b border-white/[0.06] pb-4">
-                          <span className={labelClass}>Session</span>
-                          <span
-                            className={cn(
-                              "inline-flex items-center gap-2 rounded border px-2.5 py-1 font-mono text-[10px] font-bold uppercase tracking-[0.2em]",
-                              r.openSessionId
-                                ? "border-emerald-500/35 bg-emerald-950/40 text-emerald-300"
-                                : "border-zinc-600 bg-zinc-900/80 text-zinc-500",
-                            )}
-                          >
-                            <span
-                              className={cn(
-                                "size-1.5 rounded-full",
-                                r.openSessionId
-                                  ? "bg-emerald-400 shadow-[0_0_10px_#34d399]"
-                                  : "bg-zinc-600",
-                              )}
-                              aria-hidden
-                            />
-                            {r.openSessionId ? "Live" : "Standby"}
-                          </span>
-                        </div>
-
-                        {r.openSessionId ? (
-                          <div className="space-y-4">
-                            {r.openSessionTotals ? (
-                              <>
-                                <div className="relative overflow-hidden rounded-lg border border-cyan-500/25 bg-black/70 px-4 py-4 shadow-[inset_0_2px_32px_rgba(34,211,238,0.07)]">
-                                  <div className="mb-2 flex items-center justify-between">
-                                    <span className={labelClass}>
-                                      Efectivo teórico en cajón
-                                    </span>
-                                    <span className="font-mono text-[10px] text-cyan-600/80">
-                                      EN VIVO
-                                    </span>
-                                  </div>
-                                  <div className="font-mono text-3xl font-light tabular-nums tracking-wide text-cyan-300 [text-shadow:0_0_24px_rgba(34,211,238,0.35)]">
-                                    {formatMoney(
-                                      r.openSessionTotals.efectivoTeoricoEnCajon,
-                                    )}
-                                  </div>
-                                  <p className="mt-2 font-mono text-[10px] leading-relaxed text-zinc-500">
-                                    Apertura + ventas en efectivo + ingresos al
-                                    cajón − retiros
-                                  </p>
-                                  <div className="mt-3 grid gap-2 border-t border-white/[0.06] pt-3 font-mono text-[11px] text-zinc-400 sm:grid-cols-2">
-                                    <div>
-                                      <span className="text-zinc-600">
-                                        Apertura{" "}
-                                      </span>
-                                      <span className="tabular-nums text-zinc-300">
-                                        {formatMoney(
-                                          r.openSessionTotals.openingCash,
-                                        )}
-                                      </span>
-                                    </div>
-                                    <div>
-                                      <span className="text-zinc-600">
-                                        + Ventas efectivo{" "}
-                                      </span>
-                                      <span className="tabular-nums text-emerald-400/90">
-                                        {formatMoney(
-                                          r.openSessionTotals.ventasEfectivo,
-                                        )}
-                                      </span>
-                                    </div>
-                                    <div>
-                                      <span className="text-zinc-600">
-                                        + Ingresos cajón{" "}
-                                      </span>
-                                      <span className="tabular-nums text-emerald-400/90">
-                                        {formatMoney(
-                                          r.openSessionTotals.ingresosCajon,
-                                        )}
-                                      </span>
-                                    </div>
-                                    <div>
-                                      <span className="text-zinc-600">
-                                        − Retiros{" "}
-                                      </span>
-                                      <span className="tabular-nums text-rose-400/90">
-                                        {formatMoney(
-                                          r.openSessionTotals.egresosCajon,
-                                        )}
-                                      </span>
-                                    </div>
-                                  </div>
-                                </div>
-                                {r.openSessionTotals.totalCobradoTurno !=
-                                null ? (
-                                  <>
-                                    <div className="rounded-lg border border-violet-500/25 bg-violet-950/25 px-4 py-4 shadow-[inset_0_2px_24px_rgba(139,92,246,0.08)]">
-                                      <span className={labelClass}>
-                                        Total cobrado en el turno
-                                      </span>
-                                      <p className="mt-0.5 text-[11px] text-zinc-500">
-                                        Suma de ventas completadas (todas las
-                                        formas de pago en esta caja)
-                                      </p>
-                                      <div className="mt-2 font-mono text-3xl font-light tabular-nums tracking-wide text-violet-200">
-                                        {formatMoney(
-                                          r.openSessionTotals.totalCobradoTurno,
-                                        )}
-                                      </div>
-                                    </div>
-                                    {r.openSessionTotals.cobrosPorMedio &&
-                                    r.openSessionTotals.cobrosPorMedio.length >
-                                      0 ? (
-                                      <div className="rounded-lg border border-white/[0.08] bg-black/50 px-3 py-3">
-                                        <span className={labelClass}>
-                                          Cobros por medio de pago (turno)
-                                        </span>
-                                        <ul className="mt-2 max-h-40 space-y-1.5 overflow-y-auto font-mono text-xs">
-                                          {r.openSessionTotals.cobrosPorMedio.map(
-                                            (row, idx) => (
-                                              <li
-                                                key={`${row.name}-${idx}`}
-                                                className="flex items-baseline justify-between gap-2 border-b border-white/[0.04] pb-1.5 last:border-0 last:pb-0"
-                                              >
-                                                <span className="min-w-0 truncate text-zinc-400">
-                                                  {row.name}
-                                                  <span className="ml-1 text-zinc-600">
-                                                    ({row.kind})
-                                                  </span>
-                                                </span>
-                                                <span className="shrink-0 tabular-nums text-emerald-300/90">
-                                                  {formatMoney(row.total)}
-                                                </span>
-                                              </li>
-                                            ),
-                                          )}
-                                        </ul>
-                                      </div>
-                                    ) : null}
-                                  </>
-                                ) : (
-                                  <p className="rounded-lg border border-zinc-700/50 bg-zinc-950/50 px-3 py-2 text-xs text-zinc-500">
-                                    Sin permiso de lectura de ventas (
-                                    <code className="text-zinc-400">
-                                      sale:read
-                                    </code>
-                                    ): no se muestra el total cobrado ni el
-                                    desglose por medio. El efectivo teórico
-                                    arriba sigue el arqueo de caja.
-                                  </p>
-                                )}
-                              </>
-                            ) : (
-                              <div className="relative overflow-hidden rounded-lg border border-cyan-500/25 bg-black/70 px-4 py-4">
-                                <span className={labelClass}>
-                                  Saldo cajón (sin detalle completo)
-                                </span>
-                                <div className="mt-2 font-mono text-3xl font-light tabular-nums text-cyan-300">
-                                  {r.cashBalance != null
-                                    ? formatMoney(r.cashBalance)
-                                    : "—.--"}
-                                </div>
-                              </div>
-                            )}
-                            <div className="flex flex-wrap gap-2">
-                              {canCreate ? (
-                                <>
-                                  <Button
-                                    type="button"
-                                    size="sm"
-                                    className={cn(
-                                      "gap-1 rounded-lg font-semibold",
-                                      btnGhostConsole,
-                                    )}
-                                    onClick={() => startMove(r, "deposit")}
-                                  >
-                                    <Plus className="size-3.5" />
-                                    Deposit
-                                  </Button>
-                                  <Button
-                                    type="button"
-                                    size="sm"
-                                    className={cn(
-                                      "gap-1 rounded-lg font-semibold",
-                                      btnGhostConsole,
-                                    )}
-                                    onClick={() => startMove(r, "withdrawal")}
-                                  >
-                                    <MinusCircle className="size-3.5" />
-                                    Withdraw
-                                  </Button>
-                                </>
-                              ) : null}
-                              {canUpdate ? (
-                                <Button
-                                  type="button"
-                                  size="sm"
-                                  className={cn(
-                                    "gap-1 rounded-lg font-semibold",
-                                    btnPrimaryConsole,
-                                  )}
-                                  onClick={() => startClose(r)}
-                                >
-                                  <DoorClosed className="size-3.5" />
-                                  Cerrar caja
-                                </Button>
-                              ) : null}
-                            </div>
-                          </div>
-                        ) : (
-                          canCreate &&
-                          r.isActive && (
-                            <Button
-                              type="button"
-                              size="sm"
-                              className={cn(
-                                "w-full gap-2 rounded-lg py-6 font-bold",
-                                btnPrimaryConsole,
-                              )}
-                              onClick={() => startOpen(r)}
-                            >
-                              <DoorOpen className="size-4" />
-                              Initialize session
-                            </Button>
-                          )
-                        )}
-                      </div>
+                  {registers.length === 0 ? (
+                    <p className="rounded-xl border border-dashed border-border bg-muted/20 px-4 py-10 text-center text-sm text-muted-foreground">
+                      No hay cajas configuradas.
+                      {canCreate ? " Creá una desde el botón superior." : ""}
+                    </p>
+                  ) : (
+                    <div className="grid gap-4 lg:grid-cols-2">
+                      {registers.map((r) => (
+                        <CashRegisterCard
+                          key={r.id}
+                          row={r}
+                          canCreate={canCreate}
+                          canUpdate={canUpdate}
+                          canDelete={canDelete}
+                          onSummary={() => void openSummary(r)}
+                          onEdit={() => startEdit(r)}
+                          onDelete={() => setDeleteRow(r)}
+                          onOpen={() => startOpen(r)}
+                          onClose={() => startClose(r)}
+                          onDeposit={() => startMove(r, "deposit")}
+                          onWithdraw={() => startMove(r, "withdrawal")}
+                        />
+                      ))}
                     </div>
-                  ))
-                )}
-              </div>
-            </>
-          )}
-        </main>
-      </div>
+                  )}
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+      </DataWorkspaceLayout>
 
       <Dialog open={createOpen} onOpenChange={(o) => !o && setCreateOpen(false)}>
         <DialogContent
-          data-cash-console-dialog
+          data-rootsy-light-shell="true"
           showCloseButton
-          className={cn(dialogConsoleClass, "sm:max-w-md")}
+          className="border-border bg-card text-foreground sm:max-w-md"
         >
           <DialogHeader>
-            <DialogTitle className="bg-gradient-to-r from-white to-cyan-200/90 bg-clip-text text-lg font-bold tracking-tight text-transparent">
+            <DialogTitle className="text-lg font-semibold text-foreground">
               Add cash register
             </DialogTitle>
           </DialogHeader>
           {createBanner ? (
-            <p className="rounded-lg border border-red-500/30 bg-red-950/50 px-3 py-2 font-mono text-sm text-red-200">
+            <p className="rounded-lg border border-destructive/25 bg-destructive/5 px-3 py-2 text-sm text-destructive">
               {createBanner}
             </p>
           ) : null}
           <form className="space-y-4" onSubmit={(e) => void submitCreate(e)}>
             <div className="space-y-2">
-              <Label htmlFor="cr-name" className={labelClass}>
+              <Label htmlFor="cr-name">
                 Name
               </Label>
               <Input
@@ -955,11 +579,11 @@ function CashRegistersPage() {
                 value={createName}
                 onChange={(e) => setCreateName(e.target.value)}
                 required
-                className={fieldClass}
+                className="bg-background"
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="cr-sort" className={labelClass}>
+              <Label htmlFor="cr-sort">
                 Sort order
               </Label>
               <Input
@@ -967,14 +591,13 @@ function CashRegistersPage() {
                 type="number"
                 value={createSort}
                 onChange={(e) => setCreateSort(Number(e.target.value))}
-                className={fieldClass}
+                className="bg-background"
               />
             </div>
             <DialogFooter className="gap-2 sm:gap-0">
               <Button
                 type="button"
                 variant="outline"
-                className={btnGhostConsole}
                 onClick={() => setCreateOpen(false)}
               >
                 Cancel
@@ -982,7 +605,6 @@ function CashRegistersPage() {
               <Button
                 type="submit"
                 disabled={createSaving}
-                className={btnPrimaryConsole}
               >
                 {createSaving ? "Saving…" : "Create"}
               </Button>
@@ -993,23 +615,23 @@ function CashRegistersPage() {
 
       <Dialog open={editRow !== null} onOpenChange={(o) => !o && setEditRow(null)}>
         <DialogContent
-          data-cash-console-dialog
+          data-rootsy-light-shell="true"
           showCloseButton
-          className={cn(dialogConsoleClass, "sm:max-w-md")}
+          className="border-border bg-card text-foreground sm:max-w-md"
         >
           <DialogHeader>
-            <DialogTitle className="bg-gradient-to-r from-white to-cyan-200/90 bg-clip-text text-lg font-bold tracking-tight text-transparent">
+            <DialogTitle className="text-lg font-semibold text-foreground">
               Editar caja registradora
             </DialogTitle>
           </DialogHeader>
           {editBanner ? (
-            <p className="rounded-lg border border-red-500/30 bg-red-950/50 px-3 py-2 font-mono text-sm text-red-200">
+            <p className="rounded-lg border border-destructive/25 bg-destructive/5 px-3 py-2 text-sm text-destructive">
               {editBanner}
             </p>
           ) : null}
           <form className="space-y-4" onSubmit={(e) => void submitEdit(e)}>
             <div className="space-y-2">
-              <Label htmlFor="e-cr-name" className={labelClass}>
+              <Label htmlFor="e-cr-name">
                 Name
               </Label>
               <Input
@@ -1017,11 +639,11 @@ function CashRegistersPage() {
                 value={editName}
                 onChange={(e) => setEditName(e.target.value)}
                 required
-                className={fieldClass}
+                className="bg-background"
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="e-cr-sort" className={labelClass}>
+              <Label htmlFor="e-cr-sort">
                 Sort order
               </Label>
               <Input
@@ -1029,7 +651,7 @@ function CashRegistersPage() {
                 type="number"
                 value={editSort}
                 onChange={(e) => setEditSort(Number(e.target.value))}
-                className={fieldClass}
+                className="bg-background"
               />
             </div>
             <label className="flex items-center gap-2 text-sm text-zinc-300">
@@ -1042,14 +664,14 @@ function CashRegistersPage() {
               Active
             </label>
             <div className="space-y-4 border-t border-zinc-700/80 pt-4">
-              <p className={labelClass}>Facturación electrónica (ARCA)</p>
+              <p>Facturación electrónica (ARCA)</p>
               <p className="text-xs leading-relaxed text-zinc-500">
                 Punto de venta AFIP y el par certificado / clave privada. Los
                 archivos se suben al bucket privado y solo los usa el servidor
                 (service role).
               </p>
               <div className="space-y-2">
-                <Label htmlFor="e-arca-pto" className={labelClass}>
+                <Label htmlFor="e-arca-pto">
                   Punto de venta
                 </Label>
                 <Input
@@ -1060,11 +682,11 @@ function CashRegistersPage() {
                   value={editArcaPtoVta}
                   onChange={(e) => setEditArcaPtoVta(e.target.value)}
                   placeholder="Vacío o 0–99999"
-                  className={fieldClass}
+                  className="bg-background"
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="e-arca-exp" className={labelClass}>
+                <Label htmlFor="e-arca-exp">
                   Vencimiento del certificado (opcional)
                 </Label>
                 <Input
@@ -1072,11 +694,11 @@ function CashRegistersPage() {
                   type="date"
                   value={editArcaExpiresAt}
                   onChange={(e) => setEditArcaExpiresAt(e.target.value)}
-                  className={fieldClass}
+                  className="bg-background"
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="e-arca-crt" className={labelClass}>
+                <Label htmlFor="e-arca-crt">
                   Certificado (.crt)
                 </Label>
                 <Input
@@ -1084,11 +706,11 @@ function CashRegistersPage() {
                   ref={editCrtRef}
                   type="file"
                   accept=".crt,.pem,.key,text/plain,text/*"
-                  className={cn(fieldClass, "py-2")}
+                  className={cn("bg-background", "py-2")}
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="e-arca-key" className={labelClass}>
+                <Label htmlFor="e-arca-key">
                   Clave privada (.key)
                 </Label>
                 <Input
@@ -1096,7 +718,7 @@ function CashRegistersPage() {
                   ref={editKeyRef}
                   type="file"
                   accept=".crt,.pem,.key,text/plain,text/*"
-                  className={cn(fieldClass, "py-2")}
+                  className={cn("bg-background", "py-2")}
                 />
               </div>
               <p className="text-xs text-zinc-600">
@@ -1123,7 +745,6 @@ function CashRegistersPage() {
               <Button
                 type="button"
                 variant="outline"
-                className={btnGhostConsole}
                 onClick={() => setEditRow(null)}
               >
                 Cancelar
@@ -1131,7 +752,6 @@ function CashRegistersPage() {
               <Button
                 type="submit"
                 disabled={editSaving}
-                className={btnPrimaryConsole}
               >
                 {editSaving ? "Guardando…" : "Guardar"}
               </Button>
@@ -1150,17 +770,17 @@ function CashRegistersPage() {
         }}
       >
         <DialogContent
-          data-cash-console-dialog
+          data-rootsy-light-shell="true"
           showCloseButton
-          className={cn(dialogConsoleClass, "sm:max-w-md")}
+          className="border-border bg-card text-foreground sm:max-w-md"
         >
           <DialogHeader>
-            <DialogTitle className="bg-gradient-to-r from-white to-cyan-200/90 bg-clip-text text-lg font-bold tracking-tight text-transparent">
+            <DialogTitle className="text-lg font-semibold text-foreground">
               Delete cash register?
             </DialogTitle>
           </DialogHeader>
           {deleteBanner ? (
-            <p className="rounded-lg border border-red-500/30 bg-red-950/50 px-3 py-2 font-mono text-sm text-red-200">
+            <p className="rounded-lg border border-destructive/25 bg-destructive/5 px-3 py-2 text-sm text-destructive">
               {deleteBanner}
             </p>
           ) : null}
@@ -1175,7 +795,6 @@ function CashRegistersPage() {
             <Button
               type="button"
               variant="outline"
-              className={btnGhostConsole}
               onClick={() => setDeleteRow(null)}
             >
               Cancel
@@ -1195,23 +814,23 @@ function CashRegistersPage() {
 
       <Dialog open={openRow !== null} onOpenChange={(o) => !o && setOpenRow(null)}>
         <DialogContent
-          data-cash-console-dialog
+          data-rootsy-light-shell="true"
           showCloseButton
-          className={cn(dialogConsoleClass, "sm:max-w-md")}
+          className="border-border bg-card text-foreground sm:max-w-md"
         >
           <DialogHeader>
-            <DialogTitle className="bg-gradient-to-r from-white to-cyan-200/90 bg-clip-text text-lg font-bold tracking-tight text-transparent">
+            <DialogTitle className="text-lg font-semibold text-foreground">
               Open register
             </DialogTitle>
           </DialogHeader>
           {openBanner ? (
-            <p className="rounded-lg border border-red-500/30 bg-red-950/50 px-3 py-2 font-mono text-sm text-red-200">
+            <p className="rounded-lg border border-destructive/25 bg-destructive/5 px-3 py-2 text-sm text-destructive">
               {openBanner}
             </p>
           ) : null}
           <form className="space-y-4" onSubmit={(e) => void submitOpen(e)}>
             <div className="space-y-2">
-              <Label htmlFor="op-cash" className={labelClass}>
+              <Label htmlFor="op-cash">
                 Opening cash counted
               </Label>
               <Input
@@ -1221,7 +840,7 @@ function CashRegistersPage() {
                 onChange={(e) => setOpeningCash(e.target.value)}
                 min={0}
                 step="0.01"
-                className={cn(fieldClass, "font-mono text-lg")}
+                className={cn("bg-background", "font-mono text-lg")}
                 required
               />
               <p className="text-xs text-zinc-500">
@@ -1231,7 +850,7 @@ function CashRegistersPage() {
               </p>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="op-note" className={labelClass}>
+              <Label htmlFor="op-note">
                 Note (optional)
               </Label>
               <Textarea
@@ -1240,14 +859,13 @@ function CashRegistersPage() {
                 onChange={(e) => setOpeningNote(e.target.value)}
                 placeholder="e.g. vouchers left from previous shift, irregularities…"
                 rows={3}
-                className={cn(fieldClass, "resize-y")}
+                className={cn("bg-background", "resize-y")}
               />
             </div>
             <DialogFooter className="gap-2 sm:gap-0">
               <Button
                 type="button"
                 variant="outline"
-                className={btnGhostConsole}
                 onClick={() => setOpenRow(null)}
               >
                 Cancel
@@ -1255,7 +873,6 @@ function CashRegistersPage() {
               <Button
                 type="submit"
                 disabled={openSaving}
-                className={btnPrimaryConsole}
               >
                 {openSaving ? "Opening…" : "Open"}
               </Button>
@@ -1266,17 +883,17 @@ function CashRegistersPage() {
 
       <Dialog open={closeRow !== null} onOpenChange={(o) => !o && setCloseRow(null)}>
         <DialogContent
-          data-cash-console-dialog
+          data-rootsy-light-shell="true"
           showCloseButton
-          className={cn(dialogConsoleClass, "sm:max-w-lg")}
+          className="border-border bg-card text-foreground sm:max-w-lg"
         >
           <DialogHeader>
-            <DialogTitle className="bg-gradient-to-r from-white to-cyan-200/90 bg-clip-text text-lg font-bold tracking-tight text-transparent">
+            <DialogTitle className="text-lg font-semibold text-foreground">
               Cerrar caja (cierre de arqueo)
             </DialogTitle>
           </DialogHeader>
           {closeBanner ? (
-            <p className="rounded-lg border border-red-500/30 bg-red-950/50 px-3 py-2 font-mono text-sm text-red-200">
+            <p className="rounded-lg border border-destructive/25 bg-destructive/5 px-3 py-2 text-sm text-destructive">
               {closeBanner}
             </p>
           ) : null}
@@ -1291,7 +908,7 @@ function CashRegistersPage() {
               diferencias con el adquirente o el banco.
             </p>
             <div className="space-y-2">
-              <Label htmlFor="cl-cash" className={labelClass}>
+              <Label htmlFor="cl-cash">
                 Efectivo contado al cierre
               </Label>
               <Input
@@ -1302,12 +919,12 @@ function CashRegistersPage() {
                 min={0}
                 step="0.01"
                 required
-                className={cn(fieldClass, "font-mono")}
+                className={cn("bg-background", "font-mono")}
               />
             </div>
             {paymentMethods.filter((pm) => pm.kind !== "cash").length > 0 ? (
               <div className="space-y-3">
-                <Label className={labelClass}>
+                <Label>
                   Otros medios (conteo / liquidación del turno)
                 </Label>
                 <p className="text-xs text-zinc-500">
@@ -1333,7 +950,7 @@ function CashRegistersPage() {
                         }
                         min={0}
                         step="0.01"
-                        className={cn(fieldClass, "w-32 font-mono")}
+                        className={cn("bg-background", "w-32 font-mono")}
                       />
                     </div>
                   ))}
@@ -1346,7 +963,7 @@ function CashRegistersPage() {
               </p>
             )}
             <div className="space-y-2">
-              <Label htmlFor="cl-note" className={labelClass}>
+              <Label htmlFor="cl-note">
                 Nota de cierre (faltantes, sobrantes, referencias)
               </Label>
               <Textarea
@@ -1355,14 +972,13 @@ function CashRegistersPage() {
                 onChange={(e) => setCloseNote(e.target.value)}
                 placeholder="Ej. diferencia con liquidación, retiros justificados…"
                 rows={3}
-                className={cn(fieldClass, "resize-y")}
+                className={cn("bg-background", "resize-y")}
               />
             </div>
             <DialogFooter className="gap-2 sm:gap-0">
               <Button
                 type="button"
                 variant="outline"
-                className={btnGhostConsole}
                 onClick={() => setCloseRow(null)}
               >
                 Cancelar
@@ -1370,7 +986,6 @@ function CashRegistersPage() {
               <Button
                 type="submit"
                 disabled={closeSaving}
-                className={btnPrimaryConsole}
               >
                 {closeSaving ? "Cerrando…" : "Cerrar caja"}
               </Button>
@@ -1390,18 +1005,15 @@ function CashRegistersPage() {
         }}
       >
         <DialogContent
-          data-cash-console-dialog
+          data-rootsy-light-shell="true"
           showCloseButton
-          className={cn(
-            dialogConsoleClass,
-            "flex !h-[min(92vh,880px)] !max-h-[min(92vh,880px)] !w-[min(96vw,1100px)] !max-w-[min(96vw,1100px)] flex-col gap-0 overflow-hidden p-0 sm:!max-w-[min(96vw,1100px)]",
-          )}
+          className="flex !h-[min(92vh,880px)] !max-h-[min(92vh,880px)] !w-[min(96vw,1100px)] !max-w-[min(96vw,1100px)] flex-col gap-0 overflow-hidden border-border bg-card p-0 text-foreground sm:!max-w-[min(96vw,1100px)]"
         >
-          <div className="flex shrink-0 flex-col gap-1 border-b border-white/[0.08] px-5 py-4 pr-14">
-            <DialogTitle className="bg-gradient-to-r from-white to-violet-200/90 bg-clip-text text-left text-lg font-bold tracking-tight text-transparent">
+          <div className="flex shrink-0 flex-col gap-1 border-b border-border/80 px-5 py-4 pr-14">
+            <DialogTitle className="text-left text-lg font-semibold text-foreground">
               Arqueo de caja · {summaryRow?.name ?? "—"}
             </DialogTitle>
-            <DialogDescription className="text-left text-xs text-zinc-500">
+            <DialogDescription className="text-left text-xs text-muted-foreground">
               Totales por forma de pago según ventas registradas en esta caja,
               efectivo teórico del turno abierto, movimientos de cajón y cierres
               contados.
@@ -1412,7 +1024,7 @@ function CashRegistersPage() {
                 size="sm"
                 variant="outline"
                 disabled
-                className={cn(btnGhostConsole, "pointer-events-none opacity-50")}
+                className="pointer-events-none opacity-50"
                 title="Próximamente"
               >
                 <Printer className="size-3.5" aria-hidden />
@@ -1423,7 +1035,7 @@ function CashRegistersPage() {
                 size="sm"
                 variant="outline"
                 disabled
-                className={cn(btnGhostConsole, "pointer-events-none opacity-50")}
+                className="pointer-events-none opacity-50"
                 title="Próximamente"
               >
                 <FileSpreadsheet className="size-3.5" aria-hidden />
@@ -1434,7 +1046,7 @@ function CashRegistersPage() {
                 size="sm"
                 variant="outline"
                 disabled
-                className={cn(btnGhostConsole, "pointer-events-none opacity-50")}
+                className="pointer-events-none opacity-50"
                 title="Próximamente"
               >
                 <FileDown className="size-3.5" aria-hidden />
@@ -1448,13 +1060,13 @@ function CashRegistersPage() {
                 Cargando resumen…
               </p>
             ) : summaryError ? (
-              <p className="rounded-lg border border-red-500/30 bg-red-950/50 px-3 py-2 font-mono text-sm text-red-200">
+              <p className="rounded-lg border border-destructive/25 bg-destructive/5 px-3 py-2 text-sm text-destructive">
                 {summaryError}
               </p>
             ) : summaryData ? (
               <div className="space-y-8">
                 <section className="rounded-lg border border-cyan-500/25 bg-black/45 p-4">
-                  <h4 className={cn(labelClass, "mb-1 text-cyan-300/90")}>
+                  <h4 className={cn("text-[11px] font-medium uppercase tracking-[0.12em] text-muted-foreground", "mb-1 text-cyan-300/90")}>
                     Arqueo de caja
                   </h4>
                   <p className="mb-4 text-xs text-zinc-500">
@@ -1517,7 +1129,7 @@ function CashRegistersPage() {
                       </div>
                       {summaryData.arqueo.sesionAbierta ? (
                         <div className="rounded-lg border border-emerald-500/20 bg-emerald-950/15 p-3">
-                          <p className={cn(labelClass, "mb-2 text-emerald-400/90")}>
+                          <p className={cn("text-[11px] font-medium uppercase tracking-[0.12em] text-muted-foreground", "mb-2 text-emerald-400/90")}>
                             Turno abierto (efectivo físico)
                           </p>
                           <div className="grid gap-2 font-mono text-sm sm:grid-cols-2">
@@ -1582,7 +1194,7 @@ function CashRegistersPage() {
                         </p>
                       )}
                       <div className="mt-4 border-t border-white/10 pt-4">
-                        <p className={cn(labelClass, "mb-2 text-zinc-500")}>
+                        <p className={cn("text-[11px] font-medium uppercase tracking-[0.12em] text-muted-foreground", "mb-2 text-zinc-500")}>
                           Movimientos de cajón (todas las sesiones)
                         </p>
                         <div className="grid gap-3 font-mono text-sm sm:grid-cols-3">
@@ -1617,7 +1229,7 @@ function CashRegistersPage() {
                 </section>
 
                 <section className="rounded-lg border border-white/[0.07] bg-black/40 p-4">
-                  <h4 className={cn(labelClass, "mb-1 text-zinc-400")}>
+                  <h4 className={cn("text-[11px] font-medium uppercase tracking-[0.12em] text-muted-foreground", "mb-1 text-zinc-400")}>
                     Ventas recientes (detalle)
                   </h4>
                   <p className="mb-3 text-xs text-zinc-600">
@@ -1687,7 +1299,7 @@ function CashRegistersPage() {
 
                 {summaryData.aggregatedClosingLines.length > 0 ? (
                   <section className="rounded-lg border border-white/[0.07] bg-black/40 p-4">
-                    <h4 className={cn(labelClass, "mb-1 text-zinc-400")}>
+                    <h4 className={cn("text-[11px] font-medium uppercase tracking-[0.12em] text-muted-foreground", "mb-1 text-zinc-400")}>
                       Totales por medio de pago (suma de arqueos al cierre)
                     </h4>
                     <p className="mb-3 text-xs text-zinc-600">
@@ -1721,7 +1333,7 @@ function CashRegistersPage() {
                 ) : null}
 
                 <section>
-                  <h4 className={cn(labelClass, "mb-3 text-zinc-400")}>
+                  <h4 className={cn("text-[11px] font-medium uppercase tracking-[0.12em] text-muted-foreground", "mb-3 text-zinc-400")}>
                     Sesiones
                   </h4>
                   <div className="overflow-x-auto rounded border border-zinc-800/80">
@@ -1778,7 +1390,7 @@ function CashRegistersPage() {
                     key={block.sessionId}
                     className="rounded-lg border border-violet-500/20 bg-violet-950/20 p-4"
                   >
-                    <h4 className={cn(labelClass, "mb-3 text-violet-300/90")}>
+                    <h4 className={cn("text-[11px] font-medium uppercase tracking-[0.12em] text-muted-foreground", "mb-3 text-violet-300/90")}>
                       Arqueo al cierre · sesión{" "}
                       {formatDateTime(block.openedAt)}
                     </h4>
@@ -1809,7 +1421,7 @@ function CashRegistersPage() {
                 ))}
 
                 <section>
-                  <h4 className={cn(labelClass, "mb-3 text-zinc-400")}>
+                  <h4 className={cn("text-[11px] font-medium uppercase tracking-[0.12em] text-muted-foreground", "mb-3 text-zinc-400")}>
                     Movimientos (depósitos y retiros)
                   </h4>
                   {summaryData.movements.length === 0 ? (
@@ -1873,23 +1485,23 @@ function CashRegistersPage() {
 
       <Dialog open={moveRow !== null} onOpenChange={(o) => !o && setMoveRow(null)}>
         <DialogContent
-          data-cash-console-dialog
+          data-rootsy-light-shell="true"
           showCloseButton
-          className={cn(dialogConsoleClass, "sm:max-w-md")}
+          className="border-border bg-card text-foreground sm:max-w-md"
         >
           <DialogHeader>
-            <DialogTitle className="bg-gradient-to-r from-white to-cyan-200/90 bg-clip-text text-lg font-bold tracking-tight text-transparent">
+            <DialogTitle className="text-lg font-semibold text-foreground">
               {moveKind === "deposit" ? "Deposit cash" : "Withdraw cash"}
             </DialogTitle>
           </DialogHeader>
           {moveBanner ? (
-            <p className="rounded-lg border border-red-500/30 bg-red-950/50 px-3 py-2 font-mono text-sm text-red-200">
+            <p className="rounded-lg border border-destructive/25 bg-destructive/5 px-3 py-2 text-sm text-destructive">
               {moveBanner}
             </p>
           ) : null}
           <form className="space-y-4" onSubmit={(e) => void submitMove(e)}>
             <div className="space-y-2">
-              <Label htmlFor="mv-amt" className={labelClass}>
+              <Label htmlFor="mv-amt">
                 Amount
               </Label>
               <Input
@@ -1900,25 +1512,24 @@ function CashRegistersPage() {
                 min={0}
                 step="0.01"
                 required
-                className={cn(fieldClass, "font-mono text-lg")}
+                className={cn("bg-background", "font-mono text-lg")}
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="mv-note" className={labelClass}>
+              <Label htmlFor="mv-note">
                 Note (optional)
               </Label>
               <Input
                 id="mv-note"
                 value={moveNote}
                 onChange={(e) => setMoveNote(e.target.value)}
-                className={fieldClass}
+                className="bg-background"
               />
             </div>
             <DialogFooter className="gap-2 sm:gap-0">
               <Button
                 type="button"
                 variant="outline"
-                className={btnGhostConsole}
                 onClick={() => setMoveRow(null)}
               >
                 Cancel
@@ -1926,7 +1537,6 @@ function CashRegistersPage() {
               <Button
                 type="submit"
                 disabled={moveSaving}
-                className={btnPrimaryConsole}
               >
                 {moveSaving ? "Saving…" : "Confirm"}
               </Button>
@@ -1934,7 +1544,7 @@ function CashRegistersPage() {
           </form>
         </DialogContent>
       </Dialog>
-    </div>
+    </>
   )
 }
 

@@ -78,6 +78,8 @@ export const saleOpDialogFooter =
   "border-t border-border/50 bg-muted/15 px-6 py-3.5 sm:justify-between"
 export const saleOpDialogPrimaryBtn =
   "h-10 bg-emerald-600 font-semibold text-white shadow-sm hover:bg-emerald-500 active:bg-emerald-700"
+export const saleOpDialogDestructiveBtn =
+  "h-10 bg-rose-600 font-semibold text-white shadow-sm hover:bg-rose-500 active:bg-rose-700 focus-visible:ring-2 focus-visible:ring-rose-500 focus-visible:ring-offset-2"
 export const saleOpDialogGhostBtn = "h-10 text-muted-foreground hover:text-foreground"
 export const saleOpAlertDialogContent = cn(
   saleOpDialogLight,

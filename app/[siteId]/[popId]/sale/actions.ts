@@ -27,6 +27,8 @@ export type SaleCatalogArticle = {
   description: string
   salePrice: number
   originalSalePrice?: number
+  discountMode?: ArticleDiscountMode | null
+  discountValue?: number | null
   iva: number
   categoryId: string
   categoryName: string
@@ -183,6 +185,8 @@ export async function getSaleCatalog(popId: string): Promise<
         description: String(row.description ?? ""),
         salePrice: effectivePrice,
         originalSalePrice: hasDiscount ? listPrice : undefined,
+        discountMode: hasDiscount ? discountMode : null,
+        discountValue: hasDiscount ? discountValue : null,
         iva: Number(row.iva ?? 0) || 0,
         categoryId: String(row.category_id ?? ""),
         categoryName: cat?.name ? String(cat.name) : "—",

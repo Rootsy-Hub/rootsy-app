@@ -49,6 +49,8 @@ import {
   Receipt,
   Search,
   ShoppingCart,
+  Monitor,
+  UtensilsCrossed,
   Wallet,
   X,
 } from "lucide-react"
@@ -68,6 +70,8 @@ const DEFAULT_PAGE_SIZE = 25
 
 const VIEW_ITEMS = [
   { id: "sales", label: "Ventas", icon: Receipt },
+  { id: "tables", label: "Mesas", icon: UtensilsCrossed },
+  { id: "counter", label: "Mostrador", icon: Monitor },
   { id: "purchases", label: "Compras", icon: ShoppingCart },
   { id: "expenses", label: "Gastos", icon: Wallet },
 ] as const
@@ -250,7 +254,15 @@ function OperationsPage() {
 
   const handleViewSelect = useCallback(
     (id: string) => {
-      if (id !== "sales" && id !== "purchases" && id !== "expenses") return
+      if (
+        id !== "sales" &&
+        id !== "tables" &&
+        id !== "counter" &&
+        id !== "purchases" &&
+        id !== "expenses"
+      ) {
+        return
+      }
       setActiveView(id)
       if (popId) writeSavedOperationsView(popId, id)
       setSearchInput("")
@@ -287,19 +299,22 @@ function OperationsPage() {
     [pageSize],
   )
 
-  const openSaleAccounting = useCallback((sale: OperationSaleRow) => {
-    const when = sale.soldAt
-      ? new Date(sale.soldAt).toLocaleString("es-AR", {
-          dateStyle: "short",
-          timeStyle: "short",
-        })
-      : "—"
-    setAccountingTarget({
-      view: "sales",
-      operationId: sale.id,
-      subtitle: `${sale.customerName ?? "Consumidor final"} · ${when}`,
-    })
-  }, [])
+  const openSaleAccounting = useCallback(
+    (sale: OperationSaleRow, view: OperationsViewId = "sales") => {
+      const when = sale.soldAt
+        ? new Date(sale.soldAt).toLocaleString("es-AR", {
+            dateStyle: "short",
+            timeStyle: "short",
+          })
+        : "—"
+      setAccountingTarget({
+        view,
+        operationId: sale.id,
+        subtitle: `${sale.customerName ?? "Consumidor final"} · ${when}`,
+      })
+    },
+    [],
+  )
 
   const openPurchaseAccounting = useCallback((purchase: OperationPurchaseRow) => {
     setAccountingTarget({
@@ -330,22 +345,34 @@ function OperationsPage() {
         ? totalCount === 1
           ? "venta"
           : "ventas"
-        : activeView === "purchases"
+        : activeView === "tables"
           ? totalCount === 1
-            ? "compra"
-            : "compras"
-          : totalCount === 1
-            ? "gasto"
-            : "gastos"
+            ? "operación de mesa"
+            : "operaciones de mesa"
+          : activeView === "counter"
+            ? totalCount === 1
+              ? "operación de mostrador"
+              : "operaciones de mostrador"
+            : activeView === "purchases"
+            ? totalCount === 1
+              ? "compra"
+              : "compras"
+            : totalCount === 1
+              ? "gasto"
+              : "gastos"
     return `${totalCount.toLocaleString("es-AR")} ${noun}`
   }, [listFetching, totalCount, activeView])
 
   const searchPlaceholder =
     activeView === "sales"
       ? "Cliente, estado, fecha, total… ( / )"
-      : activeView === "purchases"
-        ? "Proveedor, tipo, comprobante, total… ( / )"
-        : "Categoría, detalle, importe… ( / )"
+      : activeView === "tables"
+        ? "Cliente, mesa, estado, total… ( / )"
+        : activeView === "counter"
+          ? "Cliente, estado, total… ( / )"
+          : activeView === "purchases"
+          ? "Proveedor, tipo, comprobante, total… ( / )"
+          : "Categoría, detalle, importe… ( / )"
 
   const clearSearch = useCallback(() => {
     setSearchInput("")
@@ -354,9 +381,9 @@ function OperationsPage() {
 
   const handleExportCsv = useCallback(() => {
     if (selected.size === 0) return
-    if (activeView === "sales") {
+    if (activeView === "sales" || activeView === "tables" || activeView === "counter") {
       exportOperationsCsv(
-        "sales",
+        activeView,
         pageSales.filter((row) => selected.has(row.id)),
       )
       return
@@ -473,9 +500,13 @@ function OperationsPage() {
                     aria-label={
                       activeView === "sales"
                         ? "Buscar ventas"
-                        : activeView === "purchases"
-                          ? "Buscar compras"
-                          : "Buscar gastos"
+                        : activeView === "tables"
+                          ? "Buscar operaciones de mesa"
+                          : activeView === "counter"
+                            ? "Buscar operaciones de mostrador"
+                            : activeView === "purchases"
+                            ? "Buscar compras"
+                            : "Buscar gastos"
                     }
                   />
                   {searchInput.trim().length > 0 ? (
@@ -596,7 +627,7 @@ function OperationsPage() {
               />
             }
           >
-            {activeView === "sales" ? (
+            {activeView === "sales" || activeView === "tables" || activeView === "counter" ? (
               <OperationsSalesTable
                 siteId={siteId}
                 popId={popId}
@@ -606,7 +637,17 @@ function OperationsPage() {
                 skeletonRowCount={skeletonRowCount}
                 selected={selected}
                 onSelectedChange={setSelected}
-                onOpenAccounting={openSaleAccounting}
+                showTableColumn={activeView === "tables"}
+                onOpenAccounting={(sale) =>
+                  openSaleAccounting(
+                    sale,
+                    activeView === "tables"
+                      ? "tables"
+                      : activeView === "counter"
+                        ? "counter"
+                        : "sales",
+                  )
+                }
               />
             ) : activeView === "purchases" ? (
               <OperationsPurchasesTable

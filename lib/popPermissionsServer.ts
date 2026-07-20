@@ -1,5 +1,9 @@
 import { cache } from "react"
 import { requireAuthenticatedUser } from "@/lib/authHelpers"
+import {
+  isPopOwnerUser,
+  mergeOwnerPermissionKeys,
+} from "@/lib/popOwnerPermissions"
 import { permissionRowsToKeys } from "@/lib/popPermissionConstants"
 import { createClient } from "@/utils/supabase/server"
 
@@ -25,5 +29,9 @@ export async function loadPopPermissionsSnapshot(
   popId: string,
 ): Promise<PopPermissionsSnapshotJSON> {
   const user = await requireAuthenticatedUser()
-  return fetchPopPermissionsForUser(popId, user.uid)
+  const snapshot = await fetchPopPermissionsForUser(popId, user.uid)
+  const owner = await isPopOwnerUser(popId, user.uid)
+  return {
+    keys: mergeOwnerPermissionKeys(snapshot.keys, owner),
+  }
 }

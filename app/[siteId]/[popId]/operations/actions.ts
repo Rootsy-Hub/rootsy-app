@@ -86,6 +86,7 @@ export type OperationSaleRow = {
   lineItems: OperationSaleLineItem[]
   payments: OperationSalePayment[]
   paymentMethodLabel: string
+  tableLabel: string | null
 }
 
 export type OperationExpenseLedgerRow = {
@@ -109,7 +110,14 @@ export type OperationPurchaseLineItem = {
   unitCost: number
   lineTotal: number
   iva: number
+  itemDiscountMode: "porcentaje" | "fijo" | null
+  itemDiscountValue: number | null
+  itemDiscountAmount: number
+  lineSubtotal: number | null
+  comment: string | null
 }
+
+export type OperationPurchaseDiscountInfo = OperationSaleDiscountInfo
 
 export type OperationPurchasePayment = {
   amount: number
@@ -130,6 +138,8 @@ export type OperationPurchaseRow = {
   supplierName: string
   documentNumber: string | null
   currency: string
+  discountTotal: number
+  discountInfo: OperationPurchaseDiscountInfo
   lineItems: OperationPurchaseLineItem[]
   payments: OperationPurchasePayment[]
   paymentMethodLabel: string
@@ -246,6 +256,12 @@ function parseSaleDiscountInfo(metadata: unknown): OperationSaleDiscountInfo {
   }
 }
 
+function parsePurchaseDiscountInfo(
+  metadata: unknown,
+): OperationPurchaseDiscountInfo {
+  return parseSaleDiscountInfo(metadata)
+}
+
 function parsePurchaseLineItems(raw: unknown): OperationPurchaseLineItem[] {
   if (!Array.isArray(raw)) return []
   const out: OperationPurchaseLineItem[] = []
@@ -259,12 +275,27 @@ function parsePurchaseLineItems(raw: unknown): OperationPurchaseLineItem[] {
       unitCost: parseMoney(o.unit_cost),
       lineTotal: parseMoney(o.line_total),
       iva: parseMoney(o.iva),
+      itemDiscountMode:
+        o.item_discount_mode === "porcentaje" || o.item_discount_mode === "fijo"
+          ? o.item_discount_mode
+          : null,
+      itemDiscountValue:
+        o.item_discount_value != null
+          ? parseMoney(o.item_discount_value)
+          : null,
+      itemDiscountAmount: parseMoney(o.item_discount_amount),
+      lineSubtotal:
+        o.line_subtotal != null ? parseMoney(o.line_subtotal) : null,
+      comment:
+        typeof o.comment === "string" && o.comment.trim()
+          ? o.comment.trim()
+          : null,
     })
   }
   return out
 }
 
-export type OperationsListView = "sales" | "purchases" | "expenses"
+export type OperationsListView = "sales" | "tables" | "counter" | "purchases" | "expenses"
 
 export type GetOperationsListInput = {
   view: OperationsListView
@@ -501,11 +532,86 @@ async function loadArcaBySaleIds(
   return arcaBySaleId
 }
 
+function parseTableLabelFromSaleRow(
+  row: Record<string, unknown>,
+  tableLabelBySaleId: Map<string, string>,
+): string | null {
+  const saleId = String(row.id ?? "")
+  if (!saleId) return null
+  return tableLabelBySaleId.get(saleId) ?? null
+}
+
+async function loadTableLabelsBySessionIds(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  popId: string,
+  sessionIds: string[],
+): Promise<Map<string, string>> {
+  const labelsBySessionId = new Map<string, string>()
+  if (sessionIds.length === 0) return labelsBySessionId
+
+  const { data } = await supabase
+    .from("table_sessions")
+    .select("id, dining_tables ( label )")
+    .eq("pop_id", popId)
+    .in("id", sessionIds)
+
+  for (const row of data || []) {
+    const sessionId = String(row.id)
+    const table = relOne(
+      row.dining_tables as
+        | { label?: string }
+        | Array<{ label?: string }>
+        | null,
+    )
+    const label = table?.label?.trim()
+    if (label) labelsBySessionId.set(sessionId, label)
+  }
+
+  return labelsBySessionId
+}
+
+async function loadTableLabelsBySaleIds(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  popId: string,
+  saleIds: string[],
+): Promise<Map<string, string>> {
+  const labelsBySaleId = new Map<string, string>()
+  if (saleIds.length === 0) return labelsBySaleId
+
+  const { data: saleLinks } = await supabase
+    .from("sales")
+    .select("id, table_session_id")
+    .eq("pop_id", popId)
+    .in("id", saleIds)
+
+  const sessionIds = (saleLinks || [])
+    .map((row) =>
+      row.table_session_id != null ? String(row.table_session_id) : "",
+    )
+    .filter(Boolean)
+  const labelsBySessionId = await loadTableLabelsBySessionIds(
+    supabase,
+    popId,
+    sessionIds,
+  )
+
+  for (const row of saleLinks || []) {
+    const saleId = String(row.id)
+    const sessionId =
+      row.table_session_id != null ? String(row.table_session_id) : ""
+    const label = sessionId ? labelsBySessionId.get(sessionId) : undefined
+    if (label) labelsBySaleId.set(saleId, label)
+  }
+
+  return labelsBySaleId
+}
+
 function mapSaleRows(
   saleRows: Array<Record<string, unknown>>,
   methodNameById: Map<string, string>,
   arcaBySaleId: Map<string, OperationSaleArcaInvoice>,
   fiscalSiteId: string,
+  tableLabelBySaleId: Map<string, string> = new Map(),
 ): OperationSaleRow[] {
   return saleRows.map((row) => {
     const saleId = String(row.id)
@@ -562,6 +668,7 @@ function mapSaleRows(
             row.client_id != null &&
             String(row.status ?? "") === "completed"),
       }),
+      tableLabel: parseTableLabelFromSaleRow(row, tableLabelBySaleId),
     }
   })
 }
@@ -630,6 +737,8 @@ function mapPurchaseRows(
       documentNumber:
         row.document_number != null ? String(row.document_number) : null,
       currency: String(row.currency ?? "ARS"),
+      discountTotal: parseMoney(row.discount_total),
+      discountInfo: parsePurchaseDiscountInfo(row.metadata),
       lineItems: parsePurchaseLineItems(row.line_items),
       payments,
       paymentMethodLabel: resolveOperationPaymentMethodLabel({
@@ -900,11 +1009,20 @@ export async function getOperationsList(
         searchTerm,
       )
 
-    if (view === "sales") {
+    if (view === "sales" || view === "tables" || view === "counter") {
       let countQuery = supabase
         .from("sales")
         .select("id", { count: "exact", head: true })
         .eq("pop_id", popId)
+      if (view === "tables") {
+        countQuery = countQuery.eq("sale_channel", "table")
+      } else if (view === "counter") {
+        countQuery = countQuery.eq("sale_channel", "counter")
+      } else {
+        countQuery = countQuery
+          .neq("sale_channel", "table")
+          .neq("sale_channel", "counter")
+      }
       countQuery = appendSalesDateFilter(
         countQuery,
         dateFrom,
@@ -942,6 +1060,15 @@ export async function getOperationsList(
         .from("sales")
         .select(SALE_LIST_SELECT)
         .eq("pop_id", popId)
+      if (view === "tables") {
+        dataQuery = dataQuery.eq("sale_channel", "table")
+      } else if (view === "counter") {
+        dataQuery = dataQuery.eq("sale_channel", "counter")
+      } else {
+        dataQuery = dataQuery
+          .neq("sale_channel", "table")
+          .neq("sale_channel", "counter")
+      }
       dataQuery = appendSalesDateFilter(
         dataQuery,
         dateFrom,
@@ -977,11 +1104,16 @@ export async function getOperationsList(
         fiscalSiteId,
         saleIds,
       )
+      const tableLabelBySaleId =
+        view === "tables"
+          ? await loadTableLabelsBySaleIds(supabase, popId, saleIds)
+          : new Map<string, string>()
       const sales = mapSaleRows(
         (saleRows || []) as Array<Record<string, unknown>>,
         methodNameById,
         arcaBySaleId,
         fiscalSiteId,
+        tableLabelBySaleId,
       )
 
       return {
@@ -1296,7 +1428,7 @@ export async function getOperationAccountingEntries(
     const { view, operationId } = input
     let entryRows: Array<Record<string, unknown>> = []
 
-    if (view === "sales") {
+    if (view === "sales" || view === "tables" || view === "counter") {
       const { data, error } = await supabase
         .from("accounting_entries")
         .select(

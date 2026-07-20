@@ -15,8 +15,13 @@ import {
   useSensors,
   type DragEndEvent,
 } from "@dnd-kit/core"
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip"
 import { cn } from "@/lib/utils"
-import { Minus, Pencil, Plus } from "lucide-react"
+import { Minus, Pencil, Plus, RotateCw } from "lucide-react"
 import { useCallback, useState } from "react"
 
 /** Fondo del canvas del plano (más oscuro que la barra superior y tabs). */
@@ -40,8 +45,12 @@ type Props = {
   decors: MesaFloorDecor[]
   selectedTableIds: Set<string>
   layoutEditMode: boolean
+  layoutSelection: { kind: "table" | "decor"; id: string } | null
+  canEditLayout?: boolean
   onToggleLayoutEdit: () => void
   onSelectTable: (tableId: string) => void
+  onSelectLayoutItem: (kind: "table" | "decor", id: string) => void
+  onRotateLayoutItem: () => void
   onMoveTable: (tableId: string, dx: number, dy: number) => void
   onMoveDecor: (decorId: string, dx: number, dy: number) => void
   tableOpenedAt: Record<string, string>
@@ -52,8 +61,12 @@ export function MesasFloorPlan({
   decors,
   selectedTableIds,
   layoutEditMode,
+  layoutSelection,
+  canEditLayout = false,
   onToggleLayoutEdit,
   onSelectTable,
+  onSelectLayoutItem,
+  onRotateLayoutItem,
   onMoveTable,
   onMoveDecor,
   tableOpenedAt,
@@ -106,7 +119,27 @@ export function MesasFloorPlan({
         >
           <Minus className="size-4" strokeWidth={2.5} aria-hidden />
         </button>
-        <div className="relative flex size-10 shrink-0 items-center justify-center overflow-visible">
+          {canEditLayout ? (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <button
+                  type="button"
+                  onClick={onRotateLayoutItem}
+                  disabled={!layoutEditMode || !layoutSelection}
+                  className={cn(floatingBtnClass, floatingBtnIdleClass)}
+                  aria-label="Rotar elemento seleccionado 45°"
+                >
+                  <RotateCw className="size-4" strokeWidth={2.25} aria-hidden />
+                </button>
+              </TooltipTrigger>
+              <TooltipContent variant="dark" side="left" sideOffset={8}>
+                {layoutSelection
+                  ? "Rotar 45°"
+                  : "Seleccioná una mesa o elemento"}
+              </TooltipContent>
+            </Tooltip>
+          ) : null}
+          <div className="relative flex size-10 shrink-0 items-center justify-center overflow-visible">
           {layoutEditMode ? (
             <>
               <span
@@ -119,22 +152,24 @@ export function MesasFloorPlan({
               />
             </>
           ) : null}
-          <button
-            type="button"
-            onClick={onToggleLayoutEdit}
-            className={cn(
-              floatingBtnClass,
-              layoutEditMode
-                ? "border-emerald-400/60 bg-emerald-500 text-emerald-950"
-                : floatingBtnIdleClass,
-            )}
-            aria-label={
-              layoutEditMode ? "Listo — salir de edición del plano" : "Editar plano"
-            }
-            aria-pressed={layoutEditMode}
-          >
-            <Pencil className="size-4" strokeWidth={2} aria-hidden />
-          </button>
+          {canEditLayout ? (
+            <button
+              type="button"
+              onClick={onToggleLayoutEdit}
+              className={cn(
+                floatingBtnClass,
+                layoutEditMode
+                  ? "border-emerald-400/60 bg-emerald-500 text-emerald-950"
+                  : floatingBtnIdleClass,
+              )}
+              aria-label={
+                layoutEditMode ? "Listo — salir de edición del plano" : "Editar plano"
+              }
+              aria-pressed={layoutEditMode}
+            >
+              <Pencil className="size-4" strokeWidth={2} aria-hidden />
+            </button>
+          ) : null}
         </div>
       </div>
 
@@ -168,6 +203,11 @@ export function MesasFloorPlan({
                 key={decor.id}
                 decor={decor}
                 layoutEditMode={layoutEditMode}
+                layoutSelected={
+                  layoutSelection?.kind === "decor" &&
+                  layoutSelection.id === decor.id
+                }
+                onSelectLayout={(id) => onSelectLayoutItem("decor", id)}
               />
             ))}
 
@@ -183,9 +223,14 @@ export function MesasFloorPlan({
                 key={table.id}
                 table={table}
                 selected={selectedTableIds.has(table.id)}
+                layoutSelected={
+                  layoutSelection?.kind === "table" &&
+                  layoutSelection.id === table.id
+                }
                 layoutEditMode={layoutEditMode}
                 openedAt={tableOpenedAt[table.id] ?? null}
                 onSelect={(id) => onSelectTable(id)}
+                onSelectLayout={(id) => onSelectLayoutItem("table", id)}
               />
             ))}
 

@@ -29,7 +29,6 @@ export function DataWorkspaceHeaderIconButton({
     <button
       type={type}
       aria-label={label}
-      title={label}
       className={cn(
         dataWorkspaceHeaderIconButtonClass(headerVariant, { primary }),
         className,

@@ -15,6 +15,10 @@ import { requireAuthenticatedUser } from "@/lib/authHelpers"
 import { createClient } from "@/utils/supabase/server"
 import { purchaseComprobanteAccruesInputVat } from "@/lib/purchaseComprobantePicker"
 import { isArticleItemKind } from "@/lib/articleItemKind"
+import {
+  buildPurchaseLineFromInput,
+  finalizePurchaseCheckout,
+} from "@/lib/purchaseCheckoutLines"
 
 export type PurchaseKind = "merchandise" | "raw_material" | "supply"
 
@@ -63,6 +67,9 @@ export type CreatePurchaseLineInput = {
   unitCost: number
   /** Si true, persiste el costo en la ficha del artículo. */
   updateArticleCost?: boolean
+  itemDiscountMode?: "porcentaje" | "fijo"
+  itemDiscountDraft?: string
+  comment?: string
 }
 
 export type PurchaseCatalogPaymentMethod = {
@@ -549,20 +556,11 @@ export async function createPurchase(
       }
     }
 
-    type BuiltLine = {
-      articleId: string
-      name: string
-      qty: number
-      unitCost: number
-      ivaPct: number
-      lineBase: number
-    }
-    const built: BuiltLine[] = []
+    const built = []
     for (const l of lines) {
       const articleId = l.articleId.trim()
-      const qty = parseQty(l.quantity)
       const unitCost = parseMoney(l.unitCost)
-      if (qty <= 0) continue
+      if (parseQty(l.quantity) <= 0) continue
       if (unitCost < 0) {
         return { success: false, error: "El costo unitario no puede ser negativo." }
       }
@@ -575,75 +573,59 @@ export async function createPurchase(
       if (artErr || !artRow) {
         return { success: false, error: "Artículo inválido o inactivo." }
       }
-      const ivaPct = parseMoney(artRow.iva)
-      built.push({
-        articleId,
-        name: String(artRow.name ?? "Artículo"),
-        qty,
-        unitCost,
-        ivaPct,
-        lineBase: roundMoney(qty * unitCost),
-      })
+      const builtLine = buildPurchaseLineFromInput(l, artRow)
+      if (builtLine) built.push(builtLine)
     }
     if (built.length === 0) {
       return { success: false, error: "No hay ítems válidos en la compra." }
     }
 
-    let subtotalNet = 0
-    let taxTotal = 0
-    const lineItemsJson: Record<string, unknown>[] = []
-
-    for (const l of built) {
-      let taxPart = 0
-      let netPart = l.lineBase
-      if (l.ivaPct > 0) {
-        taxPart = roundMoney((l.lineBase * l.ivaPct) / (100 + l.ivaPct))
-        netPart = roundMoney(l.lineBase - taxPart)
-      }
-      subtotalNet = roundMoney(subtotalNet + netPart)
-      taxTotal = roundMoney(taxTotal + taxPart)
-      lineItemsJson.push({
-        article_id: l.articleId,
-        quantity: l.qty,
-        unit_cost: l.unitCost,
-        iva: l.ivaPct,
-        line_total: l.lineBase,
-        name_snapshot: l.name,
-      })
-    }
-
-    const totalBeforeDiscount = roundMoney(subtotalNet + taxTotal)
-    let discountTotal = 0
-    const discountMode = input.generalDiscountMode ?? "porcentaje"
-    const discountVal = Number(input.generalDiscountValue ?? 0)
-    if (Number.isFinite(discountVal) && discountVal > 0) {
-      discountTotal =
-        discountMode === "porcentaje"
-          ? roundMoney(
-              totalBeforeDiscount *
-                (Math.min(100, Math.max(0, discountVal)) / 100),
-            )
-          : roundMoney(Math.min(Math.max(0, discountVal), totalBeforeDiscount))
-    }
-    const total = roundMoney(totalBeforeDiscount - discountTotal)
-    if (total <= 0) {
+    const checkout = finalizePurchaseCheckout(
+      built,
+      input.generalDiscountMode ?? "porcentaje",
+      Number(input.generalDiscountValue ?? 0),
+    )
+    if (checkout.total <= 0) {
       return { success: false, error: "El total de la compra debe ser mayor que cero." }
     }
 
-    let netAfter = subtotalNet
-    let taxAfter = taxTotal
-    if (discountTotal > 0 && totalBeforeDiscount > 0) {
-      netAfter = roundMoney(subtotalNet * (total / totalBeforeDiscount))
-      taxAfter = roundMoney(total - netAfter)
-    }
+    const {
+      generalDiscount,
+      itemDiscountTotal,
+      discountTotal,
+      total,
+      subtotalNet,
+      taxTotal,
+      lineItemsJson,
+      subtotalAfterItems,
+    } = checkout
 
     const docKind = input.documentKind?.trim() || null
     const accrueInputVat = purchaseComprobanteAccruesInputVat(docKind)
-    const persistedSubtotal = accrueInputVat ? netAfter : total
-    const persistedTaxTotal = accrueInputVat ? taxAfter : 0
+    const persistedSubtotal = accrueInputVat ? subtotalNet : total
+    const persistedTaxTotal = accrueInputVat ? taxTotal : 0
     const lineItemsToPersist = accrueInputVat
       ? lineItemsJson
       : lineItemsJson.map((li) => ({ ...li, iva: 0 }))
+
+    const purchaseMetadata: Record<string, unknown> = {
+      purchase_accrues_input_vat: accrueInputVat,
+    }
+    if (docKind) {
+      purchaseMetadata.purchase_document_kind = docKind
+    }
+    if (!accrueInputVat && taxTotal > 0) {
+      purchaseMetadata.vat_included_estimate = taxTotal
+    }
+    if (itemDiscountTotal > 0) {
+      purchaseMetadata.item_discount_total = itemDiscountTotal
+    }
+    if (generalDiscount > 0) {
+      purchaseMetadata.general_discount_amount = generalDiscount
+      purchaseMetadata.general_discount_mode = input.generalDiscountMode ?? "porcentaje"
+      purchaseMetadata.general_discount_value = Number(input.generalDiscountValue ?? 0)
+      purchaseMetadata.subtotal_before_general_discount = subtotalAfterItems
+    }
 
     const confirmPurchase = input.confirmPurchase !== false
     const initialStatus = confirmPurchase ? "pending" : "draft"
@@ -681,6 +663,7 @@ export async function createPurchase(
         currency: "ARS",
         status: initialStatus,
         notes: input.notes?.trim() || "",
+        metadata: purchaseMetadata,
         created_by: user.uid,
       })
       .select("id")

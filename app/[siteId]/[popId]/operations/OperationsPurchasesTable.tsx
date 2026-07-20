@@ -102,6 +102,77 @@ const detailTotalMoneyClass = cn(
   tdMoneyClass,
 )
 
+function roundMoney(n: number): number {
+  if (!Number.isFinite(n)) return 0
+  return Math.round(n * 100) / 100
+}
+
+function resolvePurchaseLineSubtotal(
+  line: OperationPurchaseRow["lineItems"][number],
+  purchase: OperationPurchaseRow,
+): number {
+  if (line.lineSubtotal != null && line.lineSubtotal > 0) {
+    return line.lineSubtotal
+  }
+  const subBeforeGeneral = purchase.discountInfo.subtotalBeforeGeneralDiscount
+  if (
+    subBeforeGeneral != null &&
+    subBeforeGeneral > 0 &&
+    purchase.total > 0 &&
+    line.lineTotal > 0
+  ) {
+    return roundMoney((line.lineTotal * subBeforeGeneral) / purchase.total)
+  }
+  return line.lineTotal
+}
+
+function resolvePurchaseItemDiscountAmount(
+  line: OperationPurchaseRow["lineItems"][number],
+  purchase: OperationPurchaseRow,
+): number {
+  if (line.itemDiscountAmount > 0) return line.itemDiscountAmount
+  const gross = roundMoney(line.quantity * line.unitCost)
+  const lineSub = resolvePurchaseLineSubtotal(line, purchase)
+  const guess = roundMoney(gross - lineSub)
+  return guess > 0 ? guess : 0
+}
+
+function formatPurchaseItemDiscountType(
+  line: OperationPurchaseRow["lineItems"][number],
+): string {
+  if (line.itemDiscountAmount <= 0 && line.itemDiscountValue == null) {
+    return "—"
+  }
+  if (line.itemDiscountMode === "porcentaje" && line.itemDiscountValue != null) {
+    const pct = Number.isInteger(line.itemDiscountValue)
+      ? String(line.itemDiscountValue)
+      : line.itemDiscountValue.toLocaleString("es-AR", {
+          maximumFractionDigits: 2,
+        })
+    return `${pct} %`
+  }
+  if (line.itemDiscountMode === "fijo") return "Monto fijo"
+  return "—"
+}
+
+function formatPurchaseGeneralDiscountRowLabel(
+  info: OperationPurchaseRow["discountInfo"],
+): string {
+  if (info.generalDiscountAmount <= 0) return "Descuento general"
+  if (info.generalDiscountMode === "porcentaje" && info.generalDiscountValue != null) {
+    const pct = Number.isInteger(info.generalDiscountValue)
+      ? String(info.generalDiscountValue)
+      : info.generalDiscountValue.toLocaleString("es-AR", {
+          maximumFractionDigits: 2,
+        })
+    return `Descuento general (${pct} %)`
+  }
+  if (info.generalDiscountMode === "fijo" && info.generalDiscountValue != null) {
+    return `Descuento general (${fmt.format(info.generalDiscountValue)})`
+  }
+  return "Descuento general"
+}
+
 function PurchaseDetailTotalsRow({
   label,
   value,
@@ -150,6 +221,14 @@ function PurchaseDetailDialog({
   if (!purchase) return null
 
   const when = formatOperationSaleDateTime(purchase.operationAt)
+  const subtotalBeforeGeneral =
+    purchase.discountInfo.subtotalBeforeGeneralDiscount ??
+    purchase.lineItems.reduce(
+      (acc, line) => acc + resolvePurchaseLineSubtotal(line, purchase),
+      0,
+    )
+  const generalDiscount = purchase.discountInfo.generalDiscountAmount
+  const itemDiscountTotal = purchase.discountInfo.itemDiscountTotal
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -186,6 +265,12 @@ function PurchaseDetailDialog({
                     Costo unit.
                   </th>
                   <th className="px-3 py-2 text-right text-xs font-semibold text-foreground">
+                    Desc. tipo
+                  </th>
+                  <th className="px-3 py-2 text-right text-xs font-semibold text-foreground">
+                    Desc. importe
+                  </th>
+                  <th className="px-3 py-2 text-right text-xs font-semibold text-foreground">
                     IVA %
                   </th>
                   <th className="px-3 py-2 text-right text-xs font-semibold text-foreground">
@@ -197,14 +282,28 @@ function PurchaseDetailDialog({
                 {purchase.lineItems.length === 0 ? (
                   <tr>
                     <td
-                      colSpan={5}
+                      colSpan={7}
                       className="px-3 py-6 text-center text-muted-foreground"
                     >
                       Sin líneas registradas.
                     </td>
                   </tr>
                 ) : (
-                  purchase.lineItems.map((line, li) => (
+                  purchase.lineItems.map((line, li) => {
+                    const itemDiscount = resolvePurchaseItemDiscountAmount(
+                      line,
+                      purchase,
+                    )
+                    const lineSubtotal = resolvePurchaseLineSubtotal(
+                      line,
+                      purchase,
+                    )
+                    const discountType =
+                      itemDiscount > 0
+                        ? formatPurchaseItemDiscountType(line)
+                        : "—"
+
+                    return (
                     <tr
                       key={`${purchase.id}-line-${li}`}
                       className="border-b border-border/60"
@@ -216,6 +315,11 @@ function PurchaseDetailDialog({
                         >
                           {line.nameSnapshot}
                         </span>
+                        {line.comment ? (
+                          <span className="mt-0.5 block text-xs text-muted-foreground">
+                            {line.comment}
+                          </span>
+                        ) : null}
                       </td>
                       <td className={cn("px-3 py-2 text-right", tdMoneyClass)}>
                         {formatQty(line.quantity)}
@@ -224,19 +328,45 @@ function PurchaseDetailDialog({
                         {fmt.format(line.unitCost)}
                       </td>
                       <td className={cn("px-3 py-2 text-right", tdMoneyClass)}>
+                        {discountType}
+                      </td>
+                      <td className={cn("px-3 py-2 text-right", tdMoneyClass)}>
+                        {itemDiscount > 0 ? fmt.format(itemDiscount) : "—"}
+                      </td>
+                      <td className={cn("px-3 py-2 text-right", tdMoneyClass)}>
                         {line.iva > 0 ? `${line.iva}%` : "—"}
                       </td>
                       <td className={cn("px-3 py-2 text-right", detailLineMoneyClass)}>
-                        {fmt.format(line.lineTotal)}
+                        {fmt.format(lineSubtotal)}
                       </td>
                     </tr>
-                  ))
+                    )
+                  })
                 )}
               </tbody>
             </table>
           </div>
 
           <div className="mt-4 rounded-lg border border-border bg-muted/20 px-4 py-3">
+            <PurchaseDetailTotalsRow
+              label="Subtotal"
+              value={fmt.format(subtotalBeforeGeneral)}
+            />
+            {itemDiscountTotal > 0 ? (
+              <PurchaseDetailTotalsRow
+                label="Descuento ítems"
+                value={`−${fmt.format(itemDiscountTotal)}`}
+                valueClassName="text-amber-800"
+              />
+            ) : null}
+            {generalDiscount > 0 ? (
+              <PurchaseDetailTotalsRow
+                label={formatPurchaseGeneralDiscountRowLabel(purchase.discountInfo)}
+                value={`−${fmt.format(generalDiscount)}`}
+                valueClassName="text-amber-800"
+              />
+            ) : null}
+            <div className="my-2 border-t border-border/60" />
             <PurchaseDetailTotalsRow
               label="Total"
               value={fmt.format(purchase.total)}

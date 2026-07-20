@@ -1,0 +1,212 @@
+import type { MenuCartItemKind } from "@/lib/menuCart"
+import type { PromotionCartSelection } from "@/lib/promotionPricing"
+
+export type MesasCartItem = {
+  productoId: string
+  cantidad: number
+  kind?: MenuCartItemKind
+  promotionSelections?: PromotionCartSelection[]
+}
+
+export type MesasClienteSeleccionado = {
+  id: string | null
+  manual: boolean
+  name: string
+  taxId: string | null
+  ivaCondition: string | null
+  defaultInvoiceTypeLabel: string | null
+}
+
+export type TableSessionCheckoutSnapshot = {
+  carrito: MesasCartItem[]
+  clienteSeleccionado: MesasClienteSeleccionado | null
+  manualNombreCliente: string
+  fiscalDocVenta: string
+  ventaIvaCondition: string
+  comprobante: string | null
+  metodoPagoSeleccionado: { id: string; label: string } | null
+  payOnClientAccount: boolean
+  modoDescuento: "porcentaje" | "fijo"
+  valorDescuentoPorcentaje: number
+  valorDescuentoFijo: number
+  itemDescuentoModo?: Record<string, "porcentaje" | "fijo">
+  itemDescuentoDraft?: Record<string, string>
+  itemDescuentoSuprimido?: Record<string, true>
+  itemComentarios?: Record<string, string>
+}
+
+export function emptyTableSessionCheckout(
+  defaultComprobante: string | null = null,
+): TableSessionCheckoutSnapshot {
+  return {
+    carrito: [],
+    clienteSeleccionado: null,
+    manualNombreCliente: "",
+    fiscalDocVenta: "",
+    ventaIvaCondition: "",
+    comprobante: defaultComprobante,
+    metodoPagoSeleccionado: null,
+    payOnClientAccount: false,
+    modoDescuento: "porcentaje",
+    valorDescuentoPorcentaje: 0,
+    valorDescuentoFijo: 0,
+  }
+}
+
+function isRecord(v: unknown): v is Record<string, unknown> {
+  return typeof v === "object" && v != null && !Array.isArray(v)
+}
+
+function parsePromotionSelections(v: unknown): PromotionCartSelection[] | undefined {
+  if (!Array.isArray(v)) return undefined
+  const out: PromotionCartSelection[] = []
+  for (const raw of v) {
+    if (typeof raw !== "object" || raw == null) continue
+    const row = raw as Record<string, unknown>
+    const slotId = typeof row.slotId === "string" ? row.slotId : ""
+    const slotLabel = typeof row.slotLabel === "string" ? row.slotLabel : ""
+    const kindRaw = row.kind
+    const kind =
+      kindRaw === "recipe" ? "recipe" : kindRaw === "article" ? "article" : null
+    const refId = typeof row.refId === "string" ? row.refId : ""
+    const name = typeof row.name === "string" ? row.name : ""
+    const listUnitPrice = Number(row.listUnitPrice)
+    const slotQuantity = Number(row.slotQuantity)
+    const iva = Number(row.iva)
+    if (!slotId || !kind || !refId) continue
+    out.push({
+      slotId,
+      slotLabel,
+      kind,
+      refId,
+      name,
+      listUnitPrice: Number.isFinite(listUnitPrice) ? listUnitPrice : 0,
+      slotQuantity:
+        Number.isFinite(slotQuantity) && slotQuantity > 0
+          ? Math.round(slotQuantity)
+          : 1,
+      iva: Number.isFinite(iva) ? iva : 0,
+    })
+  }
+  return out.length > 0 ? out : undefined
+}
+
+function parseCartItem(v: unknown): MesasCartItem | null {
+  if (!isRecord(v)) return null
+  const productoId = typeof v.productoId === "string" ? v.productoId : ""
+  const cantidad = Number(v.cantidad)
+  if (!productoId || !Number.isFinite(cantidad) || cantidad <= 0) return null
+  const kindRaw = v.kind
+  const kind: MenuCartItemKind | undefined =
+    kindRaw === "recipe"
+      ? "recipe"
+      : kindRaw === "article"
+        ? "article"
+        : kindRaw === "promotion"
+          ? "promotion"
+          : undefined
+  const promotionSelections = parsePromotionSelections(v.promotionSelections)
+  return {
+    productoId,
+    cantidad: Math.round(cantidad),
+    ...(kind ? { kind } : {}),
+    ...(promotionSelections ? { promotionSelections } : {}),
+  }
+}
+
+function parseCliente(v: unknown): MesasClienteSeleccionado | null {
+  if (!isRecord(v)) return null
+  return {
+    id: typeof v.id === "string" ? v.id : null,
+    manual: Boolean(v.manual),
+    name: typeof v.name === "string" ? v.name : "",
+    taxId: typeof v.taxId === "string" ? v.taxId : null,
+    ivaCondition: typeof v.ivaCondition === "string" ? v.ivaCondition : null,
+    defaultInvoiceTypeLabel:
+      typeof v.defaultInvoiceTypeLabel === "string"
+        ? v.defaultInvoiceTypeLabel
+        : null,
+  }
+}
+
+function parseStringRecord(v: unknown): Record<string, string> | undefined {
+  if (!isRecord(v)) return undefined
+  const out: Record<string, string> = {}
+  for (const [k, val] of Object.entries(v)) {
+    if (typeof val === "string") out[k] = val
+  }
+  return Object.keys(out).length > 0 ? out : undefined
+}
+
+function parseDescuentoModoRecord(
+  v: unknown,
+): Record<string, "porcentaje" | "fijo"> | undefined {
+  if (!isRecord(v)) return undefined
+  const out: Record<string, "porcentaje" | "fijo"> = {}
+  for (const [k, val] of Object.entries(v)) {
+    if (val === "porcentaje" || val === "fijo") out[k] = val
+  }
+  return Object.keys(out).length > 0 ? out : undefined
+}
+
+function parseSuprimidoRecord(v: unknown): Record<string, true> | undefined {
+  if (!isRecord(v)) return undefined
+  const out: Record<string, true> = {}
+  for (const k of Object.keys(v)) {
+    if (v[k] === true) out[k] = true
+  }
+  return Object.keys(out).length > 0 ? out : undefined
+}
+
+export function parseTableSessionCheckout(
+  raw: unknown,
+): TableSessionCheckoutSnapshot | null {
+  if (!isRecord(raw)) return null
+
+  const carrito = Array.isArray(raw.carrito)
+    ? raw.carrito.map(parseCartItem).filter((x): x is MesasCartItem => x != null)
+    : []
+
+  const modoDescuento =
+    raw.modoDescuento === "fijo" ? "fijo" : ("porcentaje" as const)
+
+  const metodoRaw = raw.metodoPagoSeleccionado
+  const metodoPagoSeleccionado =
+    isRecord(metodoRaw) &&
+    typeof metodoRaw.id === "string" &&
+    typeof metodoRaw.label === "string"
+      ? { id: metodoRaw.id, label: metodoRaw.label }
+      : null
+
+  return {
+    carrito,
+    clienteSeleccionado: parseCliente(raw.clienteSeleccionado),
+    manualNombreCliente:
+      typeof raw.manualNombreCliente === "string" ? raw.manualNombreCliente : "",
+    fiscalDocVenta:
+      typeof raw.fiscalDocVenta === "string" ? raw.fiscalDocVenta : "",
+    ventaIvaCondition:
+      typeof raw.ventaIvaCondition === "string" ? raw.ventaIvaCondition : "",
+    comprobante: typeof raw.comprobante === "string" ? raw.comprobante : null,
+    metodoPagoSeleccionado,
+    payOnClientAccount: Boolean(raw.payOnClientAccount),
+    modoDescuento,
+    valorDescuentoPorcentaje: Number.isFinite(Number(raw.valorDescuentoPorcentaje))
+      ? Math.max(0, Number(raw.valorDescuentoPorcentaje))
+      : 0,
+    valorDescuentoFijo: Number.isFinite(Number(raw.valorDescuentoFijo))
+      ? Math.max(0, Number(raw.valorDescuentoFijo))
+      : 0,
+    itemDescuentoModo: parseDescuentoModoRecord(raw.itemDescuentoModo),
+    itemDescuentoDraft: parseStringRecord(raw.itemDescuentoDraft),
+    itemDescuentoSuprimido: parseSuprimidoRecord(raw.itemDescuentoSuprimido),
+    itemComentarios: parseStringRecord(raw.itemComentarios),
+  }
+}
+
+export function readCheckoutFromSessionMetadata(
+  metadata: unknown,
+): TableSessionCheckoutSnapshot | null {
+  if (!isRecord(metadata)) return null
+  return parseTableSessionCheckout(metadata.checkout)
+}

@@ -1,6 +1,7 @@
 "use client"
 
 import {
+  createPopRole,
   deactivatePopMember,
   deletePopRole,
   getPopHrDashboard,
@@ -13,32 +14,35 @@ import {
   type PermissionCatalogRow,
   type PopRoleRow,
 } from "@/app/[siteId]/[popId]/hr/actions"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { Button } from "@/components/ui/button"
-import { Checkbox } from "@/components/ui/checkbox"
 import {
-  Dialog,
-  DialogContent,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog"
+  HrRolePermissionsDialog,
+  hrCreateRolePermissionCatalog,
+} from "@/app/[siteId]/[popId]/hr/HrRolePermissionsDialog"
+import { dataWorkspaceShellCard } from "@/components/data-workspace/dataWorkspaceListStyles"
+import { DataWorkspaceLayout } from "@/components/layouts/DataWorkspaceLayout"
+import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 import { Textarea } from "@/components/ui/textarea"
-import { useAuth } from "@/context/AuthContextSupabase"
 import withAuth from "@/hoc/withAuth"
-import { popMenuHref } from "@/lib/popRoutes"
+import { getWorkspaceHeaderForPop } from "@/lib/workspaceHeaderServer"
 import { cn } from "@/lib/utils"
 import {
-  ArrowLeft,
-  Maximize2,
-  Minimize2,
-  MoreVertical,
-  Wifi,
-  WifiOff,
+  Clock3,
+  Loader2,
+  Mail,
+  Plus,
+  Shield,
+  UserCog,
+  Users,
 } from "lucide-react"
-import Link from "next/link"
 import { useParams, useRouter } from "next/navigation"
 import {
   useCallback,
@@ -48,6 +52,11 @@ import {
   useState,
   type FormEvent,
 } from "react"
+
+const shellCard = dataWorkspaceShellCard
+
+const sectionTitleClass =
+  "text-[11px] font-medium uppercase tracking-[0.12em] text-muted-foreground"
 
 function groupMembersByRole(members: MemberRow[]): [string, MemberRow[]][] {
   const m = new Map<string, MemberRow[]>()
@@ -65,18 +74,26 @@ function groupMembersByRole(members: MemberRow[]): [string, MemberRow[]][] {
   return entries
 }
 
+function memberInitials(mem: MemberRow): string {
+  const a = (mem.firstName || mem.lastName || "?").slice(0, 1).toUpperCase()
+  const b = mem.lastName ? mem.lastName.slice(0, 1).toUpperCase() : ""
+  return `${a}${b}`.slice(0, 2)
+}
+
 function HrPage() {
   const router = useRouter()
   const routerRef = useRef(router)
   routerRef.current = router
   const params = useParams()
-  const { user } = useAuth()
   const siteId = typeof params?.siteId === "string" ? params.siteId : ""
   const popId = typeof params?.popId === "string" ? params.popId : undefined
 
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [popName, setPopName] = useState("")
+  const [headerUserName, setHeaderUserName] = useState("")
+  const [userAvatarSrc, setUserAvatarSrc] = useState<string | null>(null)
+  const [headerRoleLabel, setHeaderRoleLabel] = useState("")
   const [canManageInvites, setCanManageInvites] = useState(false)
   const [roles, setRoles] = useState<PopRoleRow[]>([])
   const [members, setMembers] = useState<MemberRow[]>([])
@@ -93,18 +110,18 @@ function HrPage() {
   const [lastInviteUrl, setLastInviteUrl] = useState<string | null>(null)
   const [actionKey, setActionKey] = useState<string | null>(null)
 
+  const [permModalOpen, setPermModalOpen] = useState(false)
+  const [permModalMode, setPermModalMode] = useState<"create" | "edit">("edit")
   const [permModalRole, setPermModalRole] = useState<{
     id: string
     displayName: string
     name: string
   } | null>(null)
+  const [permModalDisplayName, setPermModalDisplayName] = useState("")
   const [permModalList, setPermModalList] = useState<PermissionCatalogRow[]>([])
   const [permModalSelected, setPermModalSelected] = useState<string[]>([])
   const [permModalLoading, setPermModalLoading] = useState(false)
   const [permModalSaving, setPermModalSaving] = useState(false)
-
-  const [isOnline, setIsOnline] = useState(true)
-  const [isFullscreen, setIsFullscreen] = useState(false)
 
   const loadDashboard = useCallback(async () => {
     if (!popId || !siteId) return
@@ -116,6 +133,7 @@ function HrPage() {
       }
       return
     }
+    setError(null)
     setPopName(res.popName)
     setCanManageInvites(res.canManageInvites)
     setRoles(res.roles)
@@ -128,6 +146,17 @@ function HrPage() {
     })
   }, [popId, siteId])
 
+  const loadHeader = useCallback(async () => {
+    if (!popId) return
+    const res = await getWorkspaceHeaderForPop(popId)
+    if (res.success) {
+      setPopName((prev) => res.popName || prev)
+      setHeaderUserName(res.userFullName)
+      setUserAvatarSrc(res.userImageUrl)
+      setHeaderRoleLabel(res.roleLabel)
+    }
+  }, [popId])
+
   useEffect(() => {
     if (!popId || !siteId) {
       setLoading(false)
@@ -139,7 +168,7 @@ function HrPage() {
       setLoading(true)
       setError(null)
       try {
-        await loadDashboard()
+        await Promise.all([loadHeader(), loadDashboard()])
       } finally {
         if (!c) setLoading(false)
       }
@@ -147,36 +176,7 @@ function HrPage() {
     return () => {
       c = true
     }
-  }, [popId, siteId, loadDashboard])
-
-  useEffect(() => {
-    setIsOnline(navigator.onLine)
-    const handleOnline = () => setIsOnline(true)
-    const handleOffline = () => setIsOnline(false)
-    window.addEventListener("online", handleOnline)
-    window.addEventListener("offline", handleOffline)
-    return () => {
-      window.removeEventListener("online", handleOnline)
-      window.removeEventListener("offline", handleOffline)
-    }
-  }, [])
-
-  useEffect(() => {
-    const syncFullscreen = () => {
-      setIsFullscreen(Boolean(document.fullscreenElement))
-    }
-    syncFullscreen()
-    document.addEventListener("fullscreenchange", syncFullscreen)
-    return () => document.removeEventListener("fullscreenchange", syncFullscreen)
-  }, [])
-
-  const toggleFullscreen = async () => {
-    if (document.fullscreenElement) {
-      await document.exitFullscreen()
-      return
-    }
-    await document.documentElement.requestFullscreen()
-  }
+  }, [popId, siteId, loadHeader, loadDashboard])
 
   const groupedMembers = useMemo(() => groupMembersByRole(members), [members])
   const assignableRoles = useMemo(
@@ -184,31 +184,49 @@ function HrPage() {
     [roles],
   )
 
-  const permissionsByResource = useMemo(() => {
-    const m = new Map<string, PermissionCatalogRow[]>()
-    for (const p of permModalList) {
-      if (!m.has(p.resource)) m.set(p.resource, [])
-      m.get(p.resource)!.push(p)
+  const popRoles = useMemo(
+    () => roles.filter((r) => r.popId),
+    [roles],
+  )
+
+  const membersByRoleId = useMemo(() => {
+    const m = new Map<string, number>()
+    for (const mem of members) {
+      m.set(mem.roleId, (m.get(mem.roleId) ?? 0) + 1)
     }
-    return [...m.entries()].sort((a, b) =>
-      a[0].localeCompare(b[0], "es", { sensitivity: "base" }),
-    )
-  }, [permModalList])
+    return m
+  }, [members])
 
   const closePermModal = () => {
+    setPermModalOpen(false)
+    setPermModalMode("edit")
     setPermModalRole(null)
+    setPermModalDisplayName("")
     setPermModalList([])
     setPermModalSelected([])
     setPermModalLoading(false)
     setPermModalSaving(false)
   }
 
+  const handleOpenCreateRole = () => {
+    setPermModalMode("create")
+    setPermModalRole(null)
+    setPermModalDisplayName("")
+    setPermModalList(hrCreateRolePermissionCatalog())
+    setPermModalSelected([])
+    setPermModalLoading(false)
+    setPermModalOpen(true)
+  }
+
   const handleOpenEditRole = async (r: PopRoleRow) => {
     if (!popId || !siteId || !r.popId) return
+    setPermModalMode("edit")
     setPermModalLoading(true)
     setPermModalRole({ id: r.id, displayName: r.displayName, name: r.name })
+    setPermModalDisplayName(r.displayName)
     setPermModalList([])
     setPermModalSelected([])
+    setPermModalOpen(true)
     const res = await getRolePermissionsEditorData(popId, r.id)
     setPermModalLoading(false)
     if (!res.success) {
@@ -217,6 +235,7 @@ function HrPage() {
       return
     }
     setPermModalRole(res.role)
+    setPermModalDisplayName(res.role.displayName)
     setPermModalList(res.permissions)
     setPermModalSelected([...res.selectedGrantKeys])
   }
@@ -229,9 +248,43 @@ function HrPage() {
     )
   }
 
+  const togglePermSection = (keys: string[], enabled: boolean) => {
+    setPermModalSelected((prev) => {
+      const set = new Set(prev)
+      for (const k of keys) {
+        if (enabled) set.add(k)
+        else set.delete(k)
+      }
+      return [...set]
+    })
+  }
+
   const handleSaveRolePermissions = async () => {
-    if (!popId || !siteId || !permModalRole) return
+    if (!popId || !siteId) return
     setPermModalSaving(true)
+
+    if (permModalMode === "create") {
+      const res = await createPopRole(
+        popId,
+        permModalDisplayName,
+        permModalSelected,
+      )
+      setPermModalSaving(false)
+      if (!res.success) {
+        setBanner({ type: "err", text: res.error })
+        return
+      }
+      setBanner({ type: "ok", text: "Rol creado correctamente." })
+      closePermModal()
+      await loadDashboard()
+      return
+    }
+
+    if (!permModalRole) {
+      setPermModalSaving(false)
+      return
+    }
+
     const res = await savePopRolePermissions(
       popId,
       permModalRole.id,
@@ -289,12 +342,12 @@ function HrPage() {
       bannerText = "Invitación enviada por correo."
     } else if (!res.resendConfigured) {
       bannerText =
-        "Invitación creada. No hay RESEND_API_KEY en el servidor: no se envía correo automático. Compartí el enlace de abajo con la persona invitada."
+        "Invitación creada. No hay RESEND_API_KEY en el servidor: compartí el enlace de abajo."
     } else if (res.emailError) {
-      bannerText = `Invitación creada pero Resend rechazó o falló el envío: ${res.emailError}. Revisá dominio verificado y RESEND_FROM en el panel de Resend, carpeta de spam, y compartí el enlace manualmente.`
+      bannerText = `Invitación creada pero falló el correo: ${res.emailError}. Compartí el enlace manualmente.`
     } else {
       bannerText =
-        "Invitación creada pero no se pudo confirmar el envío del correo. Compartí el enlace de abajo."
+        "Invitación creada. Compartí el enlace si la persona no recibió el correo."
     }
     setBanner({ type: "ok", text: bannerText })
     await loadDashboard()
@@ -332,224 +385,188 @@ function HrPage() {
     setBanner({ type: "ok", text: "Enlace copiado al portapapeles." })
   }
 
-  const currentMember = useMemo(
-    () => (user?.id ? members.find((m) => m.userId === user.id) : undefined),
-    [members, user?.id],
-  )
-
-  const headerUserName = useMemo(() => {
-    if (currentMember) {
-      const n = `${currentMember.firstName} ${currentMember.lastName}`.trim()
-      if (n) return n
-    }
-    const meta = user?.user_metadata?.full_name
-    if (typeof meta === "string" && meta.trim()) return meta.trim()
-    return user?.email?.split("@")[0] || "Usuario"
-  }, [currentMember, user?.email, user?.user_metadata?.full_name])
-
-  const headerRoleLabel =
-    currentMember?.roleDisplayName ??
-    (canManageInvites ? "Dueño" : "Miembro")
-
-  const userAvatarSrc =
-    user?.user_metadata?.avatar_url ||
-    currentMember?.imageUrl ||
-    `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(user?.email || "u")}`
-
-  const popLogoSrc = `https://api.dicebear.com/7.x/shapes/svg?seed=${encodeURIComponent(popId || "pop")}&backgroundColor=1a1f1d`
-
   if (!popId || !siteId) {
     return (
-      <div className="min-h-screen bg-background p-10 text-foreground">
+      <div className="rootsy-app-light min-h-screen bg-background p-10 text-foreground">
         <p className="text-sm">ID de POP no encontrado</p>
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      <header className="sticky top-0 z-30 border-b border-rootsy-hairline bg-card/98 backdrop-blur-2xl">
-        <div className="grid h-18 grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-4 px-4">
-          <div className="flex min-w-0 items-center gap-3">
-            <Link
-              href={popMenuHref(siteId, popId)}
-              className="group inline-flex size-10 items-center justify-center rounded-xl border border-foreground/6 bg-secondary text-foreground/70 transition-all hover:border-foreground/12 hover:bg-muted hover:text-foreground"
-              aria-label="Volver"
-            >
-              <ArrowLeft className="size-5 transition-transform group-hover:-translate-x-0.5" />
-            </Link>
-            <div className="h-6 w-px bg-border" />
-            <div className="flex min-w-0 items-center gap-2.5">
-              <div className="size-8 overflow-hidden rounded-lg ring-1 ring-border">
-                <img
-                  src={popLogoSrc}
-                  alt=""
-                  className="size-full object-cover"
-                />
-              </div>
-              <span className="truncate text-sm font-semibold text-foreground/85">
-                {popName || (loading ? "…" : "—")}
-              </span>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-2">
-            <h1 className="text-[1.85rem] font-black tracking-tight text-foreground">
-              RRHH
-            </h1>
+    <>
+      <DataWorkspaceLayout
+        siteId={siteId}
+        popId={popId}
+        popName={popName}
+        title="RRHH"
+        headerVariant="dark"
+        contentFlush
+        loading={loading}
+        userName={headerUserName}
+        userAvatarSrc={userAvatarSrc}
+        userRoleLabel={headerRoleLabel || undefined}
+        mainMaxWidthClass="max-w-none"
+        mainClassName="min-h-0 overflow-y-auto"
+      >
+        <div className="rootsy-app-light relative flex w-full flex-col gap-6 px-4 py-6 sm:px-6 lg:px-8">
+          {error ? (
             <div
-              className={cn(
-                "inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-widest",
-                isOnline
-                  ? "border-emerald-400/35 bg-emerald-500/12 text-emerald-200"
-                  : "border-rose-400/35 bg-rose-500/12 text-rose-200",
-              )}
+              role="alert"
+              className="rounded-xl border border-destructive/25 bg-destructive/10 px-4 py-3 text-sm text-destructive"
             >
-              {isOnline ? (
-                <Wifi className="size-3" aria-hidden />
-              ) : (
-                <WifiOff className="size-3" aria-hidden />
-              )}
-              {isOnline ? "Online" : "Offline"}
+              {error}
             </div>
-          </div>
-
-          <div className="flex items-center justify-end gap-2">
-            <button
-              type="button"
-              className="group inline-flex size-9 items-center justify-center rounded-xl text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-              aria-label="Más opciones"
-            >
-              <MoreVertical className="size-4.5" />
-            </button>
-            <button
-              type="button"
-              onClick={() => void toggleFullscreen()}
-              className="group inline-flex size-9 items-center justify-center rounded-xl text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-              aria-label={
-                isFullscreen
-                  ? "Salir de pantalla completa"
-                  : "Pantalla completa"
-              }
-            >
-              {isFullscreen ? (
-                <Minimize2 className="size-4.5" />
-              ) : (
-                <Maximize2 className="size-4.5" />
-              )}
-            </button>
-            <div className="h-6 w-px bg-border" />
-            <div className="flex items-center gap-3">
-              <div className="relative">
-                <Avatar className="size-10 ring-1 ring-border">
-                  <AvatarImage src={userAvatarSrc} alt="" />
-                  <AvatarFallback className="text-xs">
-                    {headerUserName.slice(0, 2).toUpperCase()}
-                  </AvatarFallback>
-                </Avatar>
-                <div className="absolute -right-0.5 -bottom-0.5 size-2.5 rounded-full border border-card bg-primary" />
-              </div>
-              <div className="flex min-w-0 flex-col leading-tight">
-                <span className="truncate text-sm font-semibold text-foreground/85">
-                  {headerUserName}
-                </span>
-                <span className="text-[10px] font-semibold uppercase tracking-wider text-meadow">
-                  {headerRoleLabel}
-                </span>
-              </div>
-            </div>
-          </div>
-        </div>
-      </header>
-
-      <main className="mx-auto max-w-6xl px-4 pb-16 pt-8 sm:px-6">
-        {loading ? (
-          <p className="text-sm text-muted-foreground">Cargando…</p>
-        ) : error ? (
-          <p className="text-sm text-destructive">{error}</p>
-        ) : (
-          <div className="space-y-6">
-            <div>
-              <h2 className="text-lg font-semibold tracking-tight text-foreground">
-                Recursos humanos
-              </h2>
-              <p className="mt-2 max-w-2xl text-sm text-muted-foreground">
-                Roles del punto de venta y personas con acceso. Las invitaciones las
-                gestiona el dueño del POP.
-              </p>
-            </div>
-
-            {banner ? (
-              <div
-                role="status"
-                className={cn(
-                  "rounded-xl border px-4 py-3 text-sm",
-                  banner.type === "ok" &&
-                    "border-emerald-500/35 bg-emerald-500/10 text-foreground",
-                  banner.type === "err" &&
-                    "border-destructive/40 bg-destructive/10 text-destructive",
-                  banner.type === "info" &&
-                    "border-border bg-muted/80 text-foreground",
-                )}
-              >
-                {banner.text}
-              </div>
-            ) : null}
-
-            {lastInviteUrl ? (
-              <div className="rounded-xl border border-border bg-muted/80 px-4 py-3 text-sm">
-                <p className="text-muted-foreground">Enlace de invitación</p>
-                <p className="mt-2 break-all font-mono text-xs text-foreground">
-                  {lastInviteUrl}
+          ) : (
+            <>
+              <div className="space-y-1">
+                <h2 className="bg-linear-to-br from-foreground to-foreground/65 bg-clip-text text-lg font-semibold tracking-tight text-transparent">
+                  Equipo y permisos
+                </h2>
+                <p className="max-w-2xl text-sm leading-relaxed text-muted-foreground">
+                  Roles del punto de venta, invitaciones y acceso por sección.
+                  {canManageInvites
+                    ? " Como dueño podés editar permisos de cada rol e invitar usuarios registrados en Rootsy."
+                    : " Solo el dueño puede invitar personas y editar permisos de roles."}
                 </p>
-                <Button
-                  type="button"
-                  variant="secondary"
-                  size="sm"
-                  className="mt-3"
-                  onClick={copyInviteUrl}
-                >
-                  Copiar enlace
-                </Button>
               </div>
-            ) : null}
 
-            <div className="grid gap-6 lg:grid-cols-[minmax(0,360px)_1fr] lg:items-start">
-              <div className="space-y-4">
-                <section className="rounded-2xl border border-border bg-card/80 p-5 backdrop-blur-sm">
-                  <h2 className="mb-3 text-xs font-bold uppercase tracking-wider text-muted-foreground">
-                    Roles
-                  </h2>
-                  {roles.length === 0 ? (
-                    <p className="text-sm text-muted-foreground">
-                      No hay roles cargados.
+              {banner ? (
+                <div
+                  role="status"
+                  className={cn(
+                    "rounded-xl border px-4 py-3 text-sm",
+                    banner.type === "ok" &&
+                      "border-emerald-500/30 bg-emerald-500/8 text-foreground",
+                    banner.type === "err" &&
+                      "border-destructive/30 bg-destructive/8 text-destructive",
+                    banner.type === "info" &&
+                      "border-border/80 bg-muted/40 text-foreground",
+                  )}
+                >
+                  {banner.text}
+                </div>
+              ) : null}
+
+              {lastInviteUrl ? (
+                <div className={cn(shellCard, "px-4 py-3")}>
+                  <p className={sectionTitleClass}>Enlace de invitación</p>
+                  <p className="mt-2 break-all font-mono text-xs text-foreground">
+                    {lastInviteUrl}
+                  </p>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="mt-3"
+                    onClick={copyInviteUrl}
+                  >
+                    Copiar enlace
+                  </Button>
+                </div>
+              ) : null}
+
+              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+                {[
+                  {
+                    label: "Roles del POP",
+                    value: String(popRoles.length),
+                    hint: "editables por dueño",
+                    icon: Shield,
+                  },
+                  {
+                    label: "Miembros activos",
+                    value: String(members.length),
+                    hint: "con acceso al local",
+                    icon: Users,
+                  },
+                  {
+                    label: "Invitaciones",
+                    value: String(pending.length),
+                    hint: canManageInvites ? "pendientes" : "solo dueño",
+                    icon: Mail,
+                  },
+                  {
+                    label: "Roles asignables",
+                    value: String(assignableRoles.length),
+                    hint: "sin propietario",
+                    icon: UserCog,
+                  },
+                ].map((k) => (
+                  <div key={k.label} className={cn(shellCard, "px-4 py-3")}>
+                    <div className="flex items-start justify-between gap-2">
+                      <p className={sectionTitleClass}>{k.label}</p>
+                      <k.icon
+                        className="size-4 shrink-0 text-primary/70"
+                        aria-hidden
+                      />
+                    </div>
+                    <p className="mt-1 font-mono text-2xl font-semibold tabular-nums tracking-tight text-foreground">
+                      {k.value}
                     </p>
-                  ) : (
-                    <ul className="space-y-0 divide-y divide-border">
-                      {roles.map((r) => (
-                        <li
-                          key={r.id}
-                          className="flex flex-col gap-2 py-3 first:pt-0 sm:flex-row sm:items-center sm:justify-between"
+                    <p className="mt-2 text-xs text-muted-foreground">
+                      {k.hint}
+                    </p>
+                  </div>
+                ))}
+              </div>
+
+              <div className="grid gap-6 lg:grid-cols-12 lg:items-start">
+                <div className="space-y-6 lg:col-span-5">
+                  <section className={cn(shellCard, "p-5")}>
+                    <div className="flex flex-wrap items-start justify-between gap-3">
+                      <div>
+                        <h3 className="text-sm font-semibold text-foreground">
+                          Roles
+                        </h3>
+                        <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
+                          Plantillas de permisos para invitar al equipo (Mozos,
+                          Administración, etc.).
+                        </p>
+                      </div>
+                      {canManageInvites ? (
+                        <Button
+                          type="button"
+                          size="sm"
+                          className="gap-1.5 shrink-0"
+                          disabled={
+                            permModalLoading ||
+                            permModalSaving ||
+                            actionKey?.startsWith("del-role-")
+                          }
+                          onClick={handleOpenCreateRole}
                         >
-                          <div className="min-w-0">
-                            <p className="font-medium text-foreground">
-                              {r.displayName}
-                            </p>
-                            <p className="text-xs text-muted-foreground">
-                              {r.popId
-                                ? "Rol del punto de venta"
-                                : "Rol de sistema (plantilla)"}
-                            </p>
-                          </div>
-                          <div className="flex flex-wrap items-center gap-2 justify-end">
-                            <span className="text-xs text-muted-foreground">
-                              {r.popId ? "POP" : "Sistema"}
-                            </span>
+                          <Plus className="size-4" aria-hidden />
+                          Nuevo rol
+                        </Button>
+                      ) : null}
+                    </div>
+                    {roles.length === 0 ? (
+                      <p className="mt-4 text-sm text-muted-foreground">
+                        No hay roles cargados.
+                      </p>
+                    ) : (
+                      <ul className="mt-4 divide-y divide-border/60">
+                        {roles.map((r) => (
+                          <li
+                            key={r.id}
+                            className="flex flex-col gap-3 py-3 first:pt-0 last:pb-0 sm:flex-row sm:items-center sm:justify-between"
+                          >
+                            <div className="min-w-0">
+                              <p className="font-medium text-foreground">
+                                {r.displayName}
+                              </p>
+                              <p className="mt-0.5 text-xs text-muted-foreground">
+                                {r.popId
+                                  ? `${membersByRoleId.get(r.id) ?? 0} miembro(s) · Rol del POP`
+                                  : "Rol de sistema (plantilla)"}
+                              </p>
+                            </div>
                             {canManageInvites && r.popId ? (
-                              <div className="flex gap-2">
+                              <div className="flex shrink-0 flex-wrap gap-2">
                                 <Button
                                   type="button"
-                                  variant="secondary"
+                                  variant="outline"
                                   size="sm"
                                   disabled={
                                     actionKey?.startsWith("del-role-") ||
@@ -558,12 +575,13 @@ function HrPage() {
                                   }
                                   onClick={() => void handleOpenEditRole(r)}
                                 >
-                                  Editar
+                                  Permisos
                                 </Button>
                                 <Button
                                   type="button"
-                                  variant="destructive"
+                                  variant="ghost"
                                   size="sm"
+                                  className="text-destructive hover:bg-destructive/10 hover:text-destructive"
                                   disabled={
                                     actionKey?.startsWith("del-role-") ||
                                     permModalLoading ||
@@ -574,293 +592,260 @@ function HrPage() {
                                   Eliminar
                                 </Button>
                               </div>
-                            ) : null}
-                          </div>
-                        </li>
-                      ))}
-                    </ul>
-                  )}
-                </section>
-
-                {canManageInvites ? (
-                  <>
-                    <section className="rounded-2xl border border-border bg-card/80 p-5 backdrop-blur-sm">
-                      <h2 className="mb-3 text-xs font-bold uppercase tracking-wider text-muted-foreground">
-                        Nueva invitación
-                      </h2>
-                      <form onSubmit={(e) => void handleInvite(e)} className="space-y-4">
-                        {assignableRoles.length === 0 ? (
-                          <p className="text-sm text-muted-foreground">
-                            No hay roles asignables (además del propietario). Creá roles
-                            en la base o contactá soporte.
-                          </p>
-                        ) : (
-                          <>
-                            <div className="space-y-2">
-                              <Label htmlFor="invEmail">Correo electrónico</Label>
-                              <Input
-                                id="invEmail"
-                                type="email"
-                                value={inviteEmail}
-                                onChange={(e) => setInviteEmail(e.target.value)}
-                                placeholder="nombre@ejemplo.com"
-                                autoComplete="email"
-                                required
-                                className="bg-secondary"
-                              />
-                            </div>
-                            <div className="space-y-2">
-                              <Label htmlFor="invRole">Rol</Label>
-                              <select
-                                id="invRole"
-                                value={inviteRoleId}
-                                onChange={(e) => setInviteRoleId(e.target.value)}
-                                required
-                                className="flex h-10 w-full rounded-md border border-input bg-secondary px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                              >
-                                {assignableRoles.map((r) => (
-                                  <option key={r.id} value={r.id}>
-                                    {r.displayName}
-                                  </option>
-                                ))}
-                              </select>
-                            </div>
-                            <div className="space-y-2">
-                              <Label htmlFor="invMsg">Mensaje (opcional)</Label>
-                              <Textarea
-                                id="invMsg"
-                                value={inviteMessage}
-                                onChange={(e) => setInviteMessage(e.target.value)}
-                                placeholder="Si querés podés enviarle un mensaje"
-                                className="min-h-[72px] bg-secondary"
-                              />
-                            </div>
-                            <Button
-                              type="submit"
-                              disabled={inviting || assignableRoles.length === 0}
-                              className="bg-primary text-primary-foreground"
-                            >
-                              {inviting ? "Enviando…" : "Enviar invitación"}
-                            </Button>
-                          </>
-                        )}
-                      </form>
-                    </section>
-
-                    <section className="rounded-2xl border border-border bg-card/80 p-5 backdrop-blur-sm">
-                      <h2 className="mb-3 text-xs font-bold uppercase tracking-wider text-muted-foreground">
-                        Invitaciones pendientes
-                      </h2>
-                      {pending.length === 0 ? (
-                        <p className="text-sm text-muted-foreground">
-                          No hay invitaciones pendientes.
-                        </p>
-                      ) : (
-                        <ul className="space-y-3">
-                          {pending.map((p) => (
-                            <li
-                              key={p.id}
-                              className="flex flex-wrap items-center justify-between gap-2 border-b border-border pb-3 last:border-0 last:pb-0"
-                            >
-                              <div>
-                                <p className="text-sm font-medium text-foreground">
-                                  {p.email}
-                                </p>
-                                <p className="text-xs text-muted-foreground">
-                                  {p.roleDisplayName}
-                                </p>
-                              </div>
-                              <Button
-                                type="button"
-                                variant="secondary"
-                                size="sm"
-                                disabled={actionKey === `revoke-${p.id}`}
-                                onClick={() => void handleRevoke(p.id)}
-                              >
-                                Revocar
-                              </Button>
-                            </li>
-                          ))}
-                        </ul>
-                      )}
-                    </section>
-                  </>
-                ) : (
-                  <section className="rounded-2xl border border-border bg-card/80 p-5 backdrop-blur-sm">
-                    <p className="text-sm text-muted-foreground">
-                      Solo el dueño del punto de venta puede enviar invitaciones y ver las
-                      pendientes.
-                    </p>
-                  </section>
-                )}
-              </div>
-
-              <div className="space-y-4">
-                <section className="rounded-2xl border border-border bg-card/80 p-5 backdrop-blur-sm">
-                  <h2 className="mb-3 text-xs font-bold uppercase tracking-wider text-muted-foreground">
-                    Equipo por rol
-                  </h2>
-                  {groupedMembers.map(([roleLabel, list]) => (
-                    <div key={roleLabel}>
-                      <h3 className="mt-4 first:mt-0 text-sm font-semibold text-foreground">
-                        {roleLabel}
-                      </h3>
-                      <ul className="mt-2 space-y-0 divide-y divide-border">
-                        {list.map((mem) => (
-                          <li
-                            key={`${mem.userId}-${roleLabel}`}
-                            className="flex flex-wrap items-center justify-between gap-2 py-3"
-                          >
-                            <div className="flex min-w-0 items-center gap-3">
-                              {mem.imageUrl ? (
-                                <img
-                                  src={mem.imageUrl}
-                                  alt=""
-                                  className="size-10 shrink-0 rounded-full object-cover ring-1 ring-border"
-                                />
-                              ) : (
-                                <div className="flex size-10 shrink-0 items-center justify-center rounded-full bg-muted text-xs font-medium text-foreground">
-                                  {(mem.firstName || mem.lastName || "?")
-                                    .slice(0, 1)
-                                    .toUpperCase()}
-                                </div>
-                              )}
-                              <div className="min-w-0">
-                                <p className="text-sm font-medium text-foreground">
-                                  {`${mem.firstName} ${mem.lastName}`.trim() ||
-                                    "Sin nombre"}
-                                </p>
-                                {mem.invitedAt ? (
-                                  <p className="text-xs text-muted-foreground">
-                                    Desde{" "}
-                                    {new Date(mem.invitedAt).toLocaleDateString("es-AR")}
-                                  </p>
-                                ) : null}
-                              </div>
-                            </div>
-                            {canManageInvites && !mem.isOwner ? (
-                              <Button
-                                type="button"
-                                variant="secondary"
-                                size="sm"
-                                disabled={actionKey === `deact-${mem.userId}`}
-                                onClick={() => void handleDeactivate(mem.userId)}
-                              >
-                                Quitar
-                              </Button>
-                            ) : null}
+                            ) : (
+                              <span className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
+                                {r.popId ? "POP" : "Sistema"}
+                              </span>
+                            )}
                           </li>
                         ))}
                       </ul>
+                    )}
+                  </section>
+
+                  {canManageInvites ? (
+                    <>
+                      <section className={cn(shellCard, "p-5")}>
+                        <h3 className="text-sm font-semibold text-foreground">
+                          Nueva invitación
+                        </h3>
+                        <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
+                          La persona debe tener cuenta en Rootsy. Recibirá un
+                          correo o podés compartir el enlace.
+                        </p>
+                        <form
+                          onSubmit={(e) => void handleInvite(e)}
+                          className="mt-4 space-y-4"
+                        >
+                          {assignableRoles.length === 0 ? (
+                            <p className="text-sm text-muted-foreground">
+                              No hay roles asignables. Creá roles en la base o
+                              usá plantillas como Mozos.
+                            </p>
+                          ) : (
+                            <>
+                              <div className="space-y-2">
+                                <Label htmlFor="invEmail">Correo electrónico</Label>
+                                <Input
+                                  id="invEmail"
+                                  type="email"
+                                  value={inviteEmail}
+                                  onChange={(e) => setInviteEmail(e.target.value)}
+                                  placeholder="nombre@ejemplo.com"
+                                  autoComplete="email"
+                                  required
+                                  className="bg-background"
+                                />
+                              </div>
+                              <div className="space-y-2">
+                                <Label htmlFor="invRole">Rol</Label>
+                                <Select
+                                  value={inviteRoleId}
+                                  onValueChange={setInviteRoleId}
+                                  required
+                                >
+                                  <SelectTrigger id="invRole" className="bg-background">
+                                    <SelectValue placeholder="Elegir rol" />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    {assignableRoles.map((r) => (
+                                      <SelectItem key={r.id} value={r.id}>
+                                        {r.displayName}
+                                      </SelectItem>
+                                    ))}
+                                  </SelectContent>
+                                </Select>
+                              </div>
+                              <div className="space-y-2">
+                                <Label htmlFor="invMsg">Mensaje (opcional)</Label>
+                                <Textarea
+                                  id="invMsg"
+                                  value={inviteMessage}
+                                  onChange={(e) =>
+                                    setInviteMessage(e.target.value)
+                                  }
+                                  placeholder="Mensaje personal para la invitación"
+                                  className="min-h-[72px] bg-background"
+                                />
+                              </div>
+                              <Button
+                                type="submit"
+                                disabled={inviting || !inviteRoleId}
+                                className="gap-2"
+                              >
+                                {inviting ? (
+                                  <>
+                                    <Loader2
+                                      className="size-4 animate-spin"
+                                      aria-hidden
+                                    />
+                                    Enviando…
+                                  </>
+                                ) : (
+                                  "Enviar invitación"
+                                )}
+                              </Button>
+                            </>
+                          )}
+                        </form>
+                      </section>
+
+                      <section className={cn(shellCard, "p-5")}>
+                        <h3 className="text-sm font-semibold text-foreground">
+                          Invitaciones pendientes
+                        </h3>
+                        {pending.length === 0 ? (
+                          <p className="mt-3 text-sm text-muted-foreground">
+                            No hay invitaciones pendientes.
+                          </p>
+                        ) : (
+                          <ul className="mt-4 divide-y divide-border/60">
+                            {pending.map((p) => (
+                              <li
+                                key={p.id}
+                                className="flex flex-wrap items-center justify-between gap-3 py-3 first:pt-0 last:pb-0"
+                              >
+                                <div className="min-w-0">
+                                  <p className="text-sm font-medium text-foreground">
+                                    {p.email}
+                                  </p>
+                                  <p className="text-xs text-muted-foreground">
+                                    {p.roleDisplayName}
+                                  </p>
+                                </div>
+                                <Button
+                                  type="button"
+                                  variant="outline"
+                                  size="sm"
+                                  disabled={actionKey === `revoke-${p.id}`}
+                                  onClick={() => void handleRevoke(p.id)}
+                                >
+                                  Revocar
+                                </Button>
+                              </li>
+                            ))}
+                          </ul>
+                        )}
+                      </section>
+                    </>
+                  ) : (
+                    <section className={cn(shellCard, "p-5")}>
+                      <p className="text-sm leading-relaxed text-muted-foreground">
+                        Solo el dueño del punto de venta puede enviar
+                        invitaciones y editar permisos de roles.
+                      </p>
+                    </section>
+                  )}
+                </div>
+
+                <section className={cn(shellCard, "p-5 lg:col-span-7")}>
+                  <h3 className="text-sm font-semibold text-foreground">
+                    Equipo por rol
+                  </h3>
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    Personas con acceso activo a este local.
+                  </p>
+                  {groupedMembers.length === 0 ? (
+                    <p className="mt-4 text-sm text-muted-foreground">
+                      Todavía no hay miembros en el equipo.
+                    </p>
+                  ) : (
+                    <div className="mt-4 space-y-6">
+                      {groupedMembers.map(([roleLabel, list]) => (
+                        <div key={roleLabel}>
+                          <div className="mb-2 flex items-baseline justify-between gap-2">
+                            <h4 className="text-sm font-semibold text-foreground">
+                              {roleLabel}
+                            </h4>
+                            <span className="font-mono text-[11px] tabular-nums text-muted-foreground">
+                              {list.length}
+                            </span>
+                          </div>
+                          <ul className="divide-y divide-border/60 rounded-xl border border-border/50 bg-muted/10">
+                            {list.map((mem) => (
+                              <li
+                                key={`${mem.userId}-${roleLabel}`}
+                                className="flex flex-wrap items-center justify-between gap-3 px-4 py-3"
+                              >
+                                <div className="flex min-w-0 items-center gap-3">
+                                  {mem.imageUrl ? (
+                                    <img
+                                      src={mem.imageUrl}
+                                      alt=""
+                                      className="size-10 shrink-0 rounded-full object-cover ring-1 ring-border/80"
+                                    />
+                                  ) : (
+                                    <div className="flex size-10 shrink-0 items-center justify-center rounded-full bg-primary/10 text-xs font-semibold text-primary ring-1 ring-primary/15">
+                                      {memberInitials(mem)}
+                                    </div>
+                                  )}
+                                  <div className="min-w-0">
+                                    <p className="text-sm font-medium text-foreground">
+                                      {`${mem.firstName} ${mem.lastName}`.trim() ||
+                                        "Sin nombre"}
+                                    </p>
+                                    {mem.invitedAt ? (
+                                      <p className="mt-0.5 flex items-center gap-1 text-xs text-muted-foreground">
+                                        <Clock3
+                                          className="size-3 shrink-0"
+                                          aria-hidden
+                                        />
+                                        Desde{" "}
+                                        {new Date(
+                                          mem.invitedAt,
+                                        ).toLocaleDateString("es-AR")}
+                                      </p>
+                                    ) : null}
+                                  </div>
+                                </div>
+                                {canManageInvites && !mem.isOwner ? (
+                                  <Button
+                                    type="button"
+                                    variant="outline"
+                                    size="sm"
+                                    disabled={actionKey === `deact-${mem.userId}`}
+                                    onClick={() =>
+                                      void handleDeactivate(mem.userId)
+                                    }
+                                  >
+                                    Quitar
+                                  </Button>
+                                ) : mem.isOwner ? (
+                                  <span className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
+                                    Dueño
+                                  </span>
+                                ) : null}
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      ))}
                     </div>
-                  ))}
+                  )}
                 </section>
-
-                <Button
-                  type="button"
-                  variant="outline"
-                  className="border-border"
-                  onClick={() =>
-                    popId && siteId
-                      ? router.push(popMenuHref(siteId, popId))
-                      : undefined
-                  }
-                >
-                  Volver al menú
-                </Button>
               </div>
-            </div>
-          </div>
-        )}
-      </main>
+            </>
+          )}
+        </div>
+      </DataWorkspaceLayout>
 
-      <Dialog
-        open={permModalRole !== null}
+      <HrRolePermissionsDialog
+        open={permModalOpen}
+        mode={permModalMode}
+        displayName={permModalDisplayName}
+        permissions={permModalList}
+        selectedKeys={permModalSelected}
+        loading={permModalLoading}
+        saving={permModalSaving}
         onOpenChange={(open) => {
           if (!open && !permModalSaving) closePermModal()
         }}
-      >
-        <DialogContent
-          showCloseButton={!permModalSaving}
-          className="max-h-[min(88vh,640px)] max-w-lg overflow-hidden border-border bg-card p-0 gap-0 sm:max-w-lg"
-        >
-          <DialogHeader className="border-b border-border px-6 py-4">
-            <DialogTitle>Permisos del rol</DialogTitle>
-            <p className="text-sm text-muted-foreground">
-              {permModalLoading ? "Cargando…" : permModalRole?.displayName}
-            </p>
-          </DialogHeader>
-          <div className="max-h-[min(52vh,420px)] overflow-y-auto px-6 py-4">
-            {permModalLoading ? (
-              <p className="text-sm text-muted-foreground">
-                Obteniendo permisos disponibles…
-              </p>
-            ) : permissionsByResource.length === 0 ? (
-              <p className="text-sm text-muted-foreground">
-                No hay permisos en el catálogo de la app (POP_PAGES). Revisá{" "}
-                <code className="rounded bg-muted px-1 font-mono text-xs">
-                  lib/popPageCrudConstants.ts
-                </code>
-                .
-              </p>
-            ) : (
-              <div className="space-y-4">
-                {permissionsByResource.map(([resource, plist]) => (
-                  <div key={resource}>
-                    <p className="mb-2 text-sm font-semibold capitalize text-foreground">
-                      {resource}
-                    </p>
-                    <ul className="space-y-2">
-                      {plist.map((p) => (
-                        <li
-                          key={p.key}
-                          className="flex items-start gap-3 rounded-lg border border-border/60 bg-secondary/30 px-3 py-2"
-                        >
-                          <Checkbox
-                            id={`perm-${p.key.replace(/:/g, "-")}`}
-                            checked={permModalSelected.includes(p.key)}
-                            onCheckedChange={() => togglePermSelection(p.key)}
-                            className="mt-0.5"
-                          />
-                          <label
-                            htmlFor={`perm-${p.key.replace(/:/g, "-")}`}
-                            className="flex-1 cursor-pointer text-sm text-foreground"
-                          >
-                            <span className="font-medium">{p.action}</span>
-                            {p.description ? (
-                              <span className="mt-0.5 block text-xs text-muted-foreground">
-                                {p.description}
-                              </span>
-                            ) : null}
-                          </label>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-          <DialogFooter className="border-t border-border px-6 py-4">
-            <Button
-              type="button"
-              variant="outline"
-              disabled={permModalSaving || permModalLoading}
-              onClick={closePermModal}
-            >
-              Cancelar
-            </Button>
-            <Button
-              type="button"
-              disabled={permModalSaving || permModalLoading}
-              onClick={() => void handleSaveRolePermissions()}
-            >
-              {permModalSaving ? "Guardando…" : "Guardar"}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-    </div>
+        onDisplayNameChange={setPermModalDisplayName}
+        onToggleKey={togglePermSelection}
+        onToggleSection={togglePermSection}
+        onSave={() => void handleSaveRolePermissions()}
+      />
+    </>
   )
 }
 

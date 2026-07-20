@@ -30,6 +30,9 @@ type Props = {
   tieneDescuento?: boolean
   descuentoLabel?: string
   expandedContent?: ReactNode
+  hideQuantityStepper?: boolean
+  quantityStepperFallback?: ReactNode
+  priceFormatter?: (amount: number) => string
 }
 
 export function SaleOperationCartItem({
@@ -50,7 +53,11 @@ export function SaleOperationCartItem({
   tieneDescuento = false,
   descuentoLabel,
   expandedContent,
+  hideQuantityStepper = false,
+  quantityStepperFallback,
+  priceFormatter,
 }: Props) {
+  const formatPrice = priceFormatter ?? saleOpFmt.format.bind(saleOpFmt)
   const showRemove = Boolean(onRemove)
   const interactive = expandable && onToggleExpand
 
@@ -76,12 +83,16 @@ export function SaleOperationCartItem({
 
   const body = (
     <div className={gridClassName}>
-      <SaleOperationCartQuantityStepper
-        nombre={nombre}
-        cantidad={cantidad}
-        onDecrease={onQuantityDecrease}
-        onIncrease={onQuantityIncrease}
-      />
+      {hideQuantityStepper && quantityStepperFallback ? (
+        quantityStepperFallback
+      ) : (
+        <SaleOperationCartQuantityStepper
+          nombre={nombre}
+          cantidad={cantidad}
+          onDecrease={onQuantityDecrease}
+          onIncrease={onQuantityIncrease}
+        />
+      )}
       <div className="min-w-0">
         <CartItemTitleMarquee
           text={nombre}
@@ -123,12 +134,12 @@ export function SaleOperationCartItem({
         </div>
       </div>
       <div className="text-right">
-        {tieneDescuento && precioBase > precioFinal ? (
+        {tieneDescuento && precioBase > precioFinal && precioFinal >= 0 ? (
           <p className={cn(saleOpImporteCartMutedClass, "line-through")}>
-            {saleOpFmt.format(precioBase)}
+            {formatPrice(precioBase)}
           </p>
         ) : null}
-        <p className={saleOpImporteCartClass}>{saleOpFmt.format(precioFinal)}</p>
+        <p className={saleOpImporteCartClass}>{formatPrice(precioFinal)}</p>
       </div>
       {showRemove ? (
         <button

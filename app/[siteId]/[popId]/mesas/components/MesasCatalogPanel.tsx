@@ -1,6 +1,7 @@
 "use client"
 
 import type { MesasSaleCheckout } from "@/app/[siteId]/[popId]/mesas/useMesasSaleCheckout"
+import { PromotionComboWizard } from "@/components/sale-operation/PromotionComboWizard"
 import { SaleCatalogBrowser } from "@/components/sale-operation/SaleCatalogBrowser"
 
 type Props = {
@@ -19,21 +20,39 @@ export function MesasCatalogPanel({
   const {
     catalogLoading,
     catalogError,
-    saleCategories,
+    menuCategorySections,
     productosCatalogo,
     agregarAlCarrito,
+    promoWizardOpen,
+    setPromoWizardOpen,
+    promoWizardTarget,
+    confirmarPromoWizard,
   } = checkout
 
   return (
-    <SaleCatalogBrowser
-      siteId={siteId}
-      popId={popId}
-      categories={saleCategories}
-      products={productosCatalogo}
-      loading={catalogLoading}
-      error={catalogError}
-      onAddProduct={agregarAlCarrito}
-      catalogSidebarOpen={catalogSidebarOpen}
-    />
+    <>
+      <SaleCatalogBrowser
+        siteId={siteId}
+        popId={popId}
+        categories={[]}
+        categorySections={menuCategorySections}
+        products={productosCatalogo}
+        loading={catalogLoading}
+        error={catalogError}
+        onAddProduct={agregarAlCarrito}
+        catalogSidebarOpen={catalogSidebarOpen}
+      />
+      <PromotionComboWizard
+        open={promoWizardOpen}
+        promotion={promoWizardTarget}
+        onOpenChange={setPromoWizardOpen}
+        onConfirm={(selections) => {
+          if (promoWizardTarget) {
+            confirmarPromoWizard(promoWizardTarget.id, selections)
+          }
+          setPromoWizardOpen(false)
+        }}
+      />
+    </>
   )
 }

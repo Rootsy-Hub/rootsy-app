@@ -8,16 +8,35 @@ import type {
   MesaWaiter,
 } from "@/app/[siteId]/[popId]/mesas/mesasTypes"
 import { mesaStatusLabel } from "@/app/[siteId]/[popId]/mesas/mesasTableStyles"
+import {
+  clientDialogBodyClass,
+  clientDialogFooterClass,
+  clientDialogHeaderClass,
+  clientDialogSurface,
+} from "@/app/[siteId]/[popId]/clients/ClientUpsertFormFields"
+import { DataWorkspaceTableIconAction } from "@/components/data-workspace/DataWorkspaceListTablePrimitives"
+import { saleOpDialogDestructiveBtn } from "@/components/sale-operation/saleOperationStyles"
 import { Button } from "@/components/ui/button"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
+import { Input } from "@/components/ui/input"
 import { formatDistanceToNow } from "date-fns"
 import { es } from "date-fns/locale"
 import {
   Clock,
   Pencil,
-  ShoppingBag,
   UtensilsCrossed,
 } from "lucide-react"
 import { useMemo, useState } from "react"
+import { cn } from "@/lib/utils"
+
+const MESA_CLOSE_CONFIRM_PHRASE = "CERRAR MESA"
 
 type Props = {
   table: MesaTable | null
@@ -25,10 +44,13 @@ type Props = {
   sessionTables: MesaTable[]
   waiters: MesaWaiter[]
   mergeCandidates: MesaTable[]
-  onOpenSession: (input: MesaOpenSessionInput) => void
-  onUpdateSession: (sessionId: string, input: MesaOpenSessionInput) => void
-  onCloseSession: (sessionId: string) => void
-  onTakeOrder: () => void
+  sessionError?: string | null
+  onOpenSession: (input: MesaOpenSessionInput) => Promise<boolean> | boolean
+  onUpdateSession: (
+    sessionId: string,
+    input: MesaOpenSessionInput,
+  ) => Promise<boolean> | boolean
+  onCloseSession: (sessionId: string) => Promise<boolean> | boolean
   clientLabel?: string | null
 }
 
@@ -46,13 +68,40 @@ export function MesaSessionPanel({
   sessionTables,
   waiters,
   mergeCandidates,
+  sessionError,
   onOpenSession,
   onUpdateSession,
   onCloseSession,
-  onTakeOrder,
   clientLabel,
 }: Props) {
   const [editing, setEditing] = useState(false)
+  const [closeDialogOpen, setCloseDialogOpen] = useState(false)
+  const [closeTyped, setCloseTyped] = useState("")
+  const [closeBusy, setCloseBusy] = useState(false)
+
+  const closeDialogTitle = useMemo(() => {
+    if (sessionTables.length > 1) {
+      return `Mesas ${sessionTables.map((t) => t.label).join(" + ")}`
+    }
+    return table ? `Mesa ${table.label}` : "esta mesa"
+  }, [sessionTables, table])
+
+  const resetCloseDialog = () => {
+    setCloseDialogOpen(false)
+    setCloseTyped("")
+  }
+
+  const confirmCloseSession = async () => {
+    if (!session || closeBusy) return
+    if (closeTyped.trim() !== MESA_CLOSE_CONFIRM_PHRASE) return
+    setCloseBusy(true)
+    try {
+      const ok = await onCloseSession(session.id)
+      if (ok) resetCloseDialog()
+    } finally {
+      setCloseBusy(false)
+    }
+  }
 
   const waiter = useMemo(
     () => waiters.find((w) => w.id === session?.waiterId),
@@ -105,44 +154,26 @@ export function MesaSessionPanel({
               ) : null}
             </p>
           </div>
-        </div>
-
-        {isOpen && !editing ? (
-          <div className="mt-3 flex flex-wrap gap-2">
-            <Button
-              type="button"
-              size="sm"
-              className="h-9 gap-1.5 bg-emerald-600 hover:bg-emerald-700"
-              onClick={onTakeOrder}
-            >
-              <ShoppingBag className="size-3.5" aria-hidden />
-              Tomar pedido
-            </Button>
-            <Button
-              type="button"
-              size="sm"
-              variant="outline"
-              className="h-9 gap-1.5"
+          {isOpen && !editing ? (
+            <DataWorkspaceTableIconAction
+              label="Editar mesa"
+              icon={Pencil}
+              variant="edit"
               onClick={() => setEditing(true)}
-            >
-              <Pencil className="size-3.5" aria-hidden />
-              Editar
-            </Button>
-            <Button
-              type="button"
-              size="sm"
-              variant="ghost"
-              className="h-9 text-slate-500 hover:text-rose-600"
-              onClick={() => session && onCloseSession(session.id)}
-            >
-              Cerrar mesa
-            </Button>
-          </div>
-        ) : null}
+            />
+          ) : null}
+        </div>
       </header>
 
+      {sessionError ? (
+        <div className="shrink-0 border-b border-rose-200/80 bg-rose-50 px-4 py-2.5 text-xs text-rose-700 sm:px-5">
+          {sessionError}
+        </div>
+      ) : null}
+
       {isOpen && !editing ? (
-        <div className="game-scroll min-h-0 flex-1 space-y-4 overflow-y-auto p-4 sm:p-5">
+        <>
+          <div className="game-scroll min-h-0 flex-1 space-y-4 overflow-y-auto p-4 sm:p-5">
           <dl className="grid gap-3 rounded-xl border border-slate-200/90 bg-white p-4 text-sm shadow-sm">
             <div>
               <dt className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
@@ -194,15 +225,85 @@ export function MesaSessionPanel({
               </div>
             ) : null}
           </dl>
-        </div>
+          </div>
+          <div className="shrink-0 border-t border-slate-200/80 p-4 sm:p-5 pt-4">
+            <Button
+              type="button"
+              className={cn(saleOpDialogDestructiveBtn, "h-11 w-full")}
+              onClick={() => setCloseDialogOpen(true)}
+            >
+              Cerrar mesa
+            </Button>
+          </div>
+        </>
       ) : null}
+
+      <Dialog
+        open={closeDialogOpen}
+        onOpenChange={(open) => {
+          if (!open) resetCloseDialog()
+          else setCloseDialogOpen(true)
+        }}
+      >
+        <DialogContent
+          data-rootsy-light-shell="true"
+          showCloseButton
+          className={cn(clientDialogSurface, "sm:max-w-md")}
+        >
+          <DialogHeader className={clientDialogHeaderClass}>
+            <DialogTitle className="text-base font-semibold tracking-tight">
+              ¿Cerrar mesa?
+            </DialogTitle>
+            <DialogDescription className="text-sm leading-relaxed">
+              Se eliminarán todos los pedidos de la mesa. Esta acción no se
+              puede deshacer.
+            </DialogDescription>
+          </DialogHeader>
+          <div className={clientDialogBodyClass}>
+            <p className="text-sm text-muted-foreground">
+              Vas a cerrar{" "}
+              <strong className="text-foreground">{closeDialogTitle}</strong>.
+              ¿Estás seguro?
+            </p>
+            <p className="mt-3 text-sm text-muted-foreground">
+              Para confirmar, escribí{" "}
+              <strong className="text-foreground">
+                {MESA_CLOSE_CONFIRM_PHRASE}
+              </strong>{" "}
+              abajo.
+            </p>
+            <Input
+              autoComplete="off"
+              value={closeTyped}
+              onChange={(e) => setCloseTyped(e.target.value)}
+              placeholder={MESA_CLOSE_CONFIRM_PHRASE}
+              className="mt-4 bg-background"
+            />
+          </div>
+          <DialogFooter className={clientDialogFooterClass}>
+            <Button type="button" variant="outline" onClick={resetCloseDialog}>
+              Cancelar
+            </Button>
+            <Button
+              type="button"
+              className={saleOpDialogDestructiveBtn}
+              disabled={closeTyped.trim() !== MESA_CLOSE_CONFIRM_PHRASE || closeBusy}
+              onClick={() => void confirmCloseSession()}
+            >
+              {closeBusy ? "Cerrando…" : "Cerrar mesa"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {!isOpen && table.status === "free" ? (
         <MesaOpenForm
           primaryTable={table}
           mergeCandidates={mergeCandidates}
           waiters={waiters}
-          onSubmit={onOpenSession}
+          onSubmit={async (input) => {
+            await onOpenSession(input)
+          }}
         />
       ) : null}
 
@@ -218,9 +319,9 @@ export function MesaSessionPanel({
             note: session.note,
           }}
           submitLabel="Guardar cambios"
-          onSubmit={(input) => {
-            onUpdateSession(session.id, input)
-            setEditing(false)
+          onSubmit={async (input) => {
+            const ok = await onUpdateSession(session.id, input)
+            if (ok) setEditing(false)
           }}
           onCancel={() => setEditing(false)}
         />

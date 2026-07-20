@@ -666,6 +666,7 @@ export function OperationsSalesTable({
   selected,
   onSelectedChange,
   onOpenAccounting,
+  showTableColumn = false,
 }: {
   siteId: string
   popId: string
@@ -676,6 +677,7 @@ export function OperationsSalesTable({
   selected: Set<string>
   onSelectedChange: Dispatch<SetStateAction<Set<string>>>
   onOpenAccounting: (sale: OperationSaleRow) => void
+  showTableColumn?: boolean
 }) {
   const [detailSale, setDetailSale] = useState<OperationSaleRow | null>(null)
   const [invoiceSale, setInvoiceSale] = useState<OperationSaleRow | null>(null)
@@ -729,6 +731,11 @@ export function OperationsSalesTable({
             <TableHead className={cn(lightTableThClass, "w-[7.5rem] text-left")}>
               Fecha
             </TableHead>
+            {showTableColumn ? (
+              <TableHead className={cn(lightTableThClass, "w-[6rem] text-left")}>
+                Mesa
+              </TableHead>
+            ) : null}
             <TableHead className={cn(lightTableThClass, "w-[14rem] min-w-0 max-w-[14rem] text-left")}>
               Cliente
             </TableHead>
@@ -801,6 +808,16 @@ export function OperationsSalesTable({
                       </span>
                     ) : null}
                   </TableCell>
+                  {showTableColumn ? (
+                    <TableCell className="px-3 py-2.5">
+                      <span
+                        className="block truncate text-sm font-medium text-foreground"
+                        title={sale.tableLabel ?? undefined}
+                      >
+                        {sale.tableLabel ?? "—"}
+                      </span>
+                    </TableCell>
+                  ) : null}
                   <TableCell className={tdTruncatedNameCellClass}>
                     {sale.clientId && sale.customerName ? (
                       <Link

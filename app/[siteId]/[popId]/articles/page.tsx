@@ -109,10 +109,10 @@ import {
   ARTICLE_ITEM_KINDS,
   ARTICLE_ITEM_KIND_STOCK_LABEL,
   type ArticleItemKind,
-  defaultIsSellableForKind,
   defaultUnitForKind,
   isPartialItemKindsFilter,
   itemKindsFilterLabel,
+  unitOfMeasureToFormState,
 } from "@/lib/articleItemKind"
 import { ArticleCatalogDiscountBadge } from "@/app/[siteId]/[popId]/articles/ArticleCatalogDiscountBadge"
 import {
@@ -321,7 +321,7 @@ function appliedItemKindsFromWorkspace(
 function defaultItemFormFields(kind: ArticleItemKind): ArticleItemFormState {
   return {
     unitOfMeasure: defaultUnitForKind(kind),
-    isSellable: defaultIsSellableForKind(kind),
+    customUnitOfMeasure: "",
     defaultWastePct: "",
     minStockLevel: "",
   }
@@ -658,8 +658,7 @@ function ArticlesPage() {
       categoryId: row.categoryId,
       isActive: row.isActive,
       itemKind: row.itemKind,
-      unitOfMeasure: row.unitOfMeasure,
-      isSellable: row.isSellable,
+      ...unitOfMeasureToFormState(row.unitOfMeasure),
       defaultWastePct:
         row.defaultWastePct != null ? String(row.defaultWastePct) : "",
       minStockLevel:
@@ -721,7 +720,12 @@ function ArticlesPage() {
     const initialTrim = (createForm.initialStock ?? "").trim()
     const initialNum =
       initialTrim === "" ? null : parseInt(initialTrim, 10)
-    const itemFields = parseArticleItemFormState(createForm)
+    const itemFields = parseArticleItemFormState(createForm, createForm.itemKind)
+    if ("error" in itemFields) {
+      setCreateSaving(false)
+      setCreateBanner(itemFields.error)
+      return
+    }
     const catalogFields = parseCatalogFieldsForSubmit(createForm)
     if ("error" in catalogFields) {
       setCreateSaving(false)
@@ -862,7 +866,12 @@ function ArticlesPage() {
     if (!popId || !siteId || !editRow) return
     setEditSaving(true)
     setEditBanner(null)
-    const itemFields = parseArticleItemFormState(editForm)
+    const itemFields = parseArticleItemFormState(editForm, editForm.itemKind)
+    if ("error" in itemFields) {
+      setEditSaving(false)
+      setEditBanner(itemFields.error)
+      return
+    }
     const catalogFields = parseCatalogFieldsForSubmit(editForm)
     if ("error" in catalogFields) {
       setEditSaving(false)
@@ -1577,8 +1586,7 @@ function ArticlesPage() {
                     null
                   ) : (
                     pageRows.map((a, i) => {
-                      const sellable =
-                        a.itemKind === "merchandise" || a.isSellable
+                      const sellable = a.itemKind === "merchandise"
                       const hasDiscount = articleHasCatalogDiscount(
                         a.discountMode,
                         a.discountValue,
@@ -1867,7 +1875,7 @@ function ArticlesPage() {
                       setEditForm((f) => ({ ...f, ...patch }))
                     }
                   />
-                  {editForm.itemKind === "merchandise" || editForm.isSellable ? (
+                  {editForm.itemKind === "merchandise" ? (
                     <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
                       <div className="space-y-2">
                         <Label htmlFor="art-price">Precio venta</Label>
@@ -2139,7 +2147,7 @@ function ArticlesPage() {
                       setCreateForm((f) => ({ ...f, ...patch }))
                     }
                   />
-                  {createForm.itemKind === "merchandise" || createForm.isSellable ? (
+                  {createForm.itemKind === "merchandise" ? (
                     <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
                       <div className="space-y-2">
                         <Label htmlFor="create-art-price">Precio venta</Label>

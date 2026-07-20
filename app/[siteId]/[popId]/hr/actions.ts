@@ -49,7 +49,7 @@ export type PendingInviteRow = {
 
 export type PermissionCatalogRow = HrPermissionCatalogRow
 
-type RpcOkJson = { ok?: boolean; error?: string }
+type RpcOkJson = { ok?: boolean; error?: string; role_id?: string }
 
 function mapRoleRpcError(code: string | undefined): string {
   const m: Record<string, string> = {
@@ -62,6 +62,7 @@ function mapRoleRpcError(code: string | undefined): string {
     role_in_use:
       "No se puede eliminar: hay miembros activos con este rol en el POP. Reasignalos o desvinculalos primero.",
     invalid_permission: "Algún permiso enviado no es válido.",
+    invalid_display_name: "El nombre del rol es obligatorio.",
   }
   return m[code || ""] || "No se pudo completar la operación."
 }
@@ -684,6 +685,54 @@ export async function savePopRolePermissions(
   }
 
   return { success: true }
+}
+
+export async function createPopRole(
+  popId: string,
+  displayName: string,
+  grantKeys: string[],
+): Promise<
+  | { success: true; roleId: string }
+  | { success: false; error: string }
+> {
+  const access = await validatePopAccess(popId)
+  if (!access.hasAccess || !access.isActive) {
+    return { success: false, error: access.error || "Sin acceso al POP" }
+  }
+
+  const user = await requireAuthenticatedUser()
+  const supabase = await createClient()
+  const popRes = await getPopById(popId, { includeOwnerUserId: true })
+  if (!popRes.success || !popRes.pop) {
+    return { success: false, error: "POP no encontrado" }
+  }
+  const ownerUserId =
+    "ownerUserId" in popRes.pop ? popRes.pop.ownerUserId : null
+  if (!(await isPopOwner(popId, user.uid, ownerUserId ?? null))) {
+    return { success: false, error: "Sin permiso." }
+  }
+
+  const keys = [...new Set(grantKeys.map((x) => x.trim()).filter(Boolean))]
+
+  const { data, error } = await supabase.rpc("hr_pop_owner_create_pop_role", {
+    p_pop_id: popId,
+    p_display_name: displayName.trim(),
+    p_permission_grants: keys,
+  })
+
+  if (error) {
+    return { success: false, error: error.message }
+  }
+
+  const payload = data as RpcOkJson | null
+  if (!payload?.ok || !payload.role_id) {
+    return {
+      success: false,
+      error: mapRoleRpcError(payload?.error),
+    }
+  }
+
+  return { success: true, roleId: String(payload.role_id) }
 }
 
 export async function deletePopRole(

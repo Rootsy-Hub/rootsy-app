@@ -15,12 +15,14 @@ import {
   CLIENT_IVA_CONDITION_OPTIONS,
 } from "@/app/[siteId]/[popId]/clients/clientIvaConstants"
 import { completePurchase } from "@/app/[siteId]/[popId]/purchases/completePurchase"
+import { resolveSaleLineDiscount } from "@/lib/saleLineDiscount"
 import { SUPPLIER_ACCOUNT_PAYMENT_LABEL } from "@/lib/operationPaymentLabels"
 import {
   getPurchaseComprobanteDisplayLabel,
   getPurchaseComprobantePickerOptions,
 } from "@/lib/purchaseComprobantePicker"
 import { DataWorkspaceLayout } from "@/components/layouts/DataWorkspaceLayout"
+import { SaleOperationTotalBar } from "@/components/sale-operation/SaleOperationTotalBar"
 import { useDataWorkspaceSidebar } from "@/components/layouts/useDataWorkspaceSidebar"
 import { useAuth } from "@/context/AuthContextSupabase"
 import { useParams } from "next/navigation"
@@ -39,6 +41,7 @@ import {
   CircleX,
   LayoutGrid,
   Loader2,
+  MessageSquare,
   Minus,
   Paperclip,
   Percent,
@@ -166,6 +169,7 @@ const fmt = new Intl.NumberFormat("es-AR", {
 /** Tipografía numérica alineada al workspace (tablas de importes). */
 const compraImporteBaseClass = "font-mono tabular-nums tracking-tight"
 const compraImporteCartClass = cn(
+
   compraImporteBaseClass,
   "text-sm font-semibold text-slate-900",
 )
@@ -173,21 +177,9 @@ const compraImporteCartMutedClass = cn(
   compraImporteBaseClass,
   "text-[11px] text-slate-400",
 )
-const compraImporteTotalClass = cn(
-  compraImporteBaseClass,
-  "whitespace-nowrap text-[clamp(1.05rem,1.75vw,1.4375rem)] font-semibold text-white/90",
-)
 const compraImporteCardClass = cn(
   compraImporteBaseClass,
   "block text-[clamp(1.05rem,1.65vw,1.3125rem)] leading-none font-semibold text-white/90",
-)
-const compraImporteTotalMutedClass = cn(
-  compraImporteBaseClass,
-  "text-[11px] line-through decoration-white/25 text-white/38",
-)
-const compraImporteTotalDiscountClass = cn(
-  compraImporteBaseClass,
-  "text-[11px] font-medium text-emerald-300/95",
 )
 
 function normalizarBusqueda(s: string) {
@@ -476,6 +468,13 @@ function PurchasesPage() {
   const [itemDetalleAbiertoId, setItemDetalleAbiertoId] = useState<string | null>(
     null,
   )
+  const [itemDescuentoModo, setItemDescuentoModo] = useState<
+    Record<string, "porcentaje" | "fijo">
+  >({})
+  const [itemDescuentoDraft, setItemDescuentoDraft] = useState<
+    Record<string, string>
+  >({})
+  const [itemComentarios, setItemComentarios] = useState<Record<string, string>>({})
   const [descartarConfirmOpen, setDescartarConfirmOpen] = useState(false)
   const [comprarConfirmOpen, setComprarConfirmOpen] = useState(false)
   const [compraSubmitting, setCompraSubmitting] = useState(false)
@@ -545,7 +544,7 @@ function PurchasesPage() {
       .filter((i) => i.producto)
   }, [carrito, productosCatalogo])
 
-  const subtotal = useMemo(() => {
+  const subtotalOriginal = useMemo(() => {
     return itemsDetallados.reduce((acc, item) => {
       const fallback = item.producto?.precio ?? 0
       const unitCost = parseUnitCost(
@@ -555,6 +554,36 @@ function PurchasesPage() {
       return acc + unitCost * item.cantidad
     }, 0)
   }, [itemsDetallados, itemUnitCosts])
+
+  const subtotal = useMemo(() => {
+    return itemsDetallados.reduce((acc, item) => {
+      const itemId = item.productoId
+      const fallback = item.producto?.precio ?? 0
+      const unitCost = parseUnitCost(
+        itemUnitCosts[itemId] ?? "",
+        fallback,
+      )
+      const draft = itemDescuentoDraft[itemId] ?? ""
+      const pricing = resolveSaleLineDiscount({
+        listUnitPrice: unitCost,
+        quantity: item.cantidad,
+        manualDiscount:
+          draft.trim() !== ""
+            ? {
+                mode: itemDescuentoModo[itemId] ?? "porcentaje",
+                draft,
+              }
+            : null,
+      })
+      return acc + pricing.lineSubtotal
+    }, 0)
+  }, [itemsDetallados, itemUnitCosts, itemDescuentoModo, itemDescuentoDraft])
+
+  const descuentoItemsMonto = useMemo(
+    () => Math.max(0, subtotalOriginal - subtotal),
+    [subtotalOriginal, subtotal],
+  )
+  const hayDescuentoItems = descuentoItemsMonto > 0
 
   const descuentoMonto = useMemo(() => {
     if (modoDescuento === "porcentaje") {
@@ -583,6 +612,8 @@ function PurchasesPage() {
     if (proveedorSeleccionado != null) return true
     if (comprobanteConfigurado) return true
     if (hayDescuento) return true
+    if (hayDescuentoItems) return true
+    if (Object.values(itemComentarios).some((c) => c?.trim())) return true
     if (dueDate.trim()) return true
     if (payOnSupplierAccount || metodoPagoSeleccionado != null) return true
     return false
@@ -591,6 +622,8 @@ function PurchasesPage() {
     proveedorSeleccionado,
     comprobanteConfigurado,
     hayDescuento,
+    hayDescuentoItems,
+    itemComentarios,
     dueDate,
     payOnSupplierAccount,
     metodoPagoSeleccionado,
@@ -624,6 +657,9 @@ function PurchasesPage() {
     setCarrito([])
     setItemUnitCosts({})
     setItemUpdateArticleCost({})
+    setItemDescuentoModo({})
+    setItemDescuentoDraft({})
+    setItemComentarios({})
     setProveedorSeleccionado(null)
     setManualNombreProveedor("")
     setProveedorTaxId("")
@@ -697,6 +733,9 @@ function PurchasesPage() {
             quantity: i.cantidad,
             unitCost: parseUnitCost(itemUnitCosts[i.productoId] ?? "", fallback),
             updateArticleCost: itemUpdateArticleCost[i.productoId] === true,
+            itemDiscountMode: itemDescuentoModo[i.productoId] ?? "porcentaje",
+            itemDiscountDraft: itemDescuentoDraft[i.productoId] ?? "",
+            comment: itemComentarios[i.productoId] ?? "",
           }
         }),
       })
@@ -729,6 +768,9 @@ function PurchasesPage() {
     productosCatalogo,
     itemUnitCosts,
     itemUpdateArticleCost,
+    itemDescuentoModo,
+    itemDescuentoDraft,
+    itemComentarios,
     limpiarCompra,
     loadCatalog,
   ])
@@ -1001,6 +1043,21 @@ function PurchasesPage() {
       return next
     })
     setItemUpdateArticleCost((prev) => {
+      const next = { ...prev }
+      delete next[productoId]
+      return next
+    })
+    setItemDescuentoModo((prev) => {
+      const next = { ...prev }
+      delete next[productoId]
+      return next
+    })
+    setItemDescuentoDraft((prev) => {
+      const next = { ...prev }
+      delete next[productoId]
+      return next
+    })
+    setItemComentarios((prev) => {
       const next = { ...prev }
       delete next[productoId]
       return next
@@ -1533,8 +1590,39 @@ function PurchasesPage() {
                     itemUnitCosts[itemId] ?? "",
                     fallback,
                   )
-                  const lineTotal = unitCost * item.cantidad
+                  const descuentoRaw = itemDescuentoDraft[itemId] ?? ""
+                  const modoItemDescuento =
+                    itemDescuentoModo[itemId] ?? "porcentaje"
+                  const linePricing = resolveSaleLineDiscount({
+                    listUnitPrice: unitCost,
+                    quantity: item.cantidad,
+                    manualDiscount:
+                      descuentoRaw.trim() !== ""
+                        ? {
+                            mode: modoItemDescuento,
+                            draft: descuentoRaw,
+                          }
+                        : null,
+                  })
+                  const lineTotal = linePricing.lineSubtotal
+                  const listLineTotal = linePricing.listLineSubtotal
+                  const tieneDescuentoItem = linePricing.itemDiscountAmount > 0
+                  const descuentoNumero = Number.parseFloat(
+                    descuentoRaw.trim().replace(",", "."),
+                  )
+                  const comentario = itemComentarios[itemId] ?? ""
+                  const tieneComentario = comentario.trim().length > 0
+                  const descripcionProducto = item.producto?.descripcion?.trim() ?? ""
+                  const showDescripcion =
+                    descripcionProducto.length > 0 && descripcionProducto !== "—"
+                  const showSubtituloItem =
+                    showDescripcion || tieneComentario || tieneDescuentoItem
                   const nombreProducto = item.producto?.nombre ?? "Artículo"
+                  const descuentoLabel = tieneDescuentoItem
+                    ? modoItemDescuento === "porcentaje"
+                      ? `${Math.min(100, Math.max(0, Number.isFinite(descuentoNumero) ? descuentoNumero : 0))}%`
+                      : fmt.format(linePricing.itemDiscountAmount)
+                    : undefined
 
                   return (
                     <div key={itemId} className="space-y-2">
@@ -1597,11 +1685,48 @@ function PurchasesPage() {
                               active={abierto}
                               className="text-sm font-semibold text-slate-900"
                             />
-                            <p className={cn("mt-0.5 line-clamp-1", compraImporteCartMutedClass)}>
-                              {fmt.format(unitCost)} c/u
-                            </p>
+                            {showSubtituloItem ? (
+                              <div className="mt-0.5 flex min-w-0 items-center gap-1">
+                                {showDescripcion ? (
+                                  <div className="min-w-0 flex-1">
+                                    <p className="line-clamp-1 text-xs text-slate-500">
+                                      {descripcionProducto}
+                                    </p>
+                                  </div>
+                                ) : (
+                                  <div className="min-w-0 flex-1" />
+                                )}
+                                {tieneComentario ? (
+                                  <span
+                                    className="inline-flex shrink-0 items-center rounded-full border border-sky-200 bg-sky-50 px-1.5 py-0 text-[10px] font-semibold text-sky-800"
+                                    title="Tiene comentario"
+                                  >
+                                    <span className="sr-only">Comentario</span>
+                                    <MessageSquare className="size-3 sm:hidden" aria-hidden />
+                                    <span aria-hidden className="hidden sm:inline">
+                                      Nota
+                                    </span>
+                                  </span>
+                                ) : null}
+                                {tieneDescuentoItem && descuentoLabel ? (
+                                  <span
+                                    className={cn(
+                                      "inline-flex max-w-22 shrink-0 items-center justify-center truncate rounded-full border border-emerald-200 bg-emerald-50 px-1.5 py-0 text-[10px] font-semibold text-emerald-800",
+                                      compraImporteBaseClass,
+                                    )}
+                                  >
+                                    {descuentoLabel}
+                                  </span>
+                                ) : null}
+                              </div>
+                            ) : null}
                           </div>
                           <div className="text-right">
+                            {tieneDescuentoItem && listLineTotal > lineTotal ? (
+                              <p className={cn(compraImporteCartMutedClass, "line-through")}>
+                                {fmt.format(listLineTotal)}
+                              </p>
+                            ) : null}
                             <p className={compraImporteCartClass}>
                               {fmt.format(lineTotal)}
                             </p>
@@ -1624,55 +1749,136 @@ function PurchasesPage() {
                         <div
                           id={`cart-item-${itemId}-opciones`}
                           role="region"
+                          aria-label={`Opciones de ${nombreProducto}`}
                           onClick={(e) => e.stopPropagation()}
-                          className="rounded-xl border border-slate-200/95 bg-white px-3 py-2 shadow-sm"
+                          className="space-y-2"
                         >
-                          <div className="flex items-center gap-2">
-                            <Label
-                              htmlFor={`unit-cost-${itemId}`}
-                              className="shrink-0 text-[11px] text-slate-500"
-                            >
-                              Costo
-                            </Label>
-                            <Input
-                              id={`unit-cost-${itemId}`}
-                              inputMode="decimal"
-                              value={itemUnitCosts[itemId] ?? ""}
-                              placeholder={fallback > 0 ? String(fallback) : "0"}
-                              title={
-                                item.producto && item.producto.iva > 0
-                                  ? `IVA ${item.producto.iva}% incluido en el costo`
-                                  : undefined
-                              }
-                              onChange={(e) => {
-                                const raw = e.target.value
-                                if (!/^\d*[.,]?\d*$/.test(raw)) return
-                                setItemUnitCosts((prev) => ({
-                                  ...prev,
-                                  [itemId]: raw,
-                                }))
-                              }}
-                              className="h-8 w-22 shrink-0 font-mono text-sm tabular-nums"
-                            />
-                            {canUpdateArticles ? (
-                              <label
-                                htmlFor={`update-cost-${itemId}`}
-                                className="ml-auto flex min-w-0 cursor-pointer items-center gap-1.5 text-[11px] leading-none text-slate-500"
+                          <div className="rounded-xl border border-slate-200/95 bg-white px-2.5 py-2 shadow-[0_1px_0_rgba(255,255,255,0.9)_inset,0_4px_16px_rgba(15,23,42,0.06)]">
+                            <div className="flex items-center gap-2">
+                              <Label
+                                htmlFor={`unit-cost-${itemId}`}
+                                className="shrink-0 text-[11px] text-slate-500"
                               >
-                                <Checkbox
-                                  id={`update-cost-${itemId}`}
-                                  checked={itemUpdateArticleCost[itemId] === true}
-                                  onCheckedChange={(checked) => {
-                                    setItemUpdateArticleCost((prev) => ({
+                                Costo
+                              </Label>
+                              <Input
+                                id={`unit-cost-${itemId}`}
+                                inputMode="decimal"
+                                value={itemUnitCosts[itemId] ?? ""}
+                                placeholder={fallback > 0 ? String(fallback) : "0"}
+                                title={
+                                  item.producto && item.producto.iva > 0
+                                    ? `IVA ${item.producto.iva}% incluido en el costo`
+                                    : undefined
+                                }
+                                onChange={(e) => {
+                                  const raw = e.target.value
+                                  if (!/^\d*[.,]?\d*$/.test(raw)) return
+                                  setItemUnitCosts((prev) => ({
+                                    ...prev,
+                                    [itemId]: raw,
+                                  }))
+                                }}
+                                className="h-8 w-26 shrink-0 border border-slate-300 bg-white! font-mono text-[#121417] text-xs tabular-nums shadow-none placeholder:text-slate-500"
+                              />
+                              {canUpdateArticles ? (
+                                <label
+                                  htmlFor={`update-cost-${itemId}`}
+                                  className={cn(
+                                    "ml-auto flex min-w-0 shrink-0 cursor-pointer items-center gap-2 rounded-lg border px-2.5 py-1.5 transition-colors",
+                                    itemUpdateArticleCost[itemId] === true
+                                      ? "border-emerald-300 bg-emerald-50/80"
+                                      : "border-slate-200 bg-white hover:border-slate-300",
+                                  )}
+                                >
+                                  <Checkbox
+                                    id={`update-cost-${itemId}`}
+                                    checked={itemUpdateArticleCost[itemId] === true}
+                                    onCheckedChange={(checked) => {
+                                      setItemUpdateArticleCost((prev) => ({
+                                        ...prev,
+                                        [itemId]: checked === true,
+                                      }))
+                                    }}
+                                    className="border-slate-200 bg-white shadow-none data-[state=checked]:border-emerald-600 data-[state=checked]:bg-emerald-600"
+                                  />
+                                  <span className="truncate text-xs font-medium text-slate-700">
+                                    Actualizar costo
+                                  </span>
+                                </label>
+                              ) : null}
+                            </div>
+                          </div>
+                          <div className="rounded-xl border border-slate-200/95 bg-white px-2.5 py-2 shadow-[0_1px_0_rgba(255,255,255,0.9)_inset,0_4px_16px_rgba(15,23,42,0.06)]">
+                            <div className="flex items-center gap-2">
+                              <button
+                                type="button"
+                                className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-md border border-slate-400/50 bg-slate-100 text-slate-800 transition-colors hover:border-slate-400 hover:bg-slate-50 hover:text-slate-950 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-400/50"
+                                aria-label="Cambiar tipo de descuento"
+                                onClick={() => {
+                                  setItemDescuentoModo((prev) => ({
+                                    ...prev,
+                                    [itemId]:
+                                      modoItemDescuento === "porcentaje"
+                                        ? "fijo"
+                                        : "porcentaje",
+                                  }))
+                                }}
+                              >
+                                {modoItemDescuento === "porcentaje" ? (
+                                  <Percent className="size-3.5" aria-hidden />
+                                ) : (
+                                  <Banknote className="size-3.5" aria-hidden />
+                                )}
+                              </button>
+                              <Input
+                                value={descuentoRaw}
+                                onChange={(e) => {
+                                  const raw = e.target.value
+                                  if (!/^\d*$/.test(raw)) return
+                                  if (
+                                    modoItemDescuento === "fijo" &&
+                                    Number(raw) > listLineTotal
+                                  ) {
+                                    setItemDescuentoModo((prev) => ({
                                       ...prev,
-                                      [itemId]: checked === true,
+                                      [itemId]: "porcentaje",
+                                    }))
+                                    setItemDescuentoDraft((prev) => ({
+                                      ...prev,
+                                      [itemId]: "100",
+                                    }))
+                                    return
+                                  }
+                                  const nextValue =
+                                    modoItemDescuento === "porcentaje"
+                                      ? String(Math.min(100, Number(raw)))
+                                      : raw
+                                  setItemDescuentoDraft((prev) => ({
+                                    ...prev,
+                                    [itemId]: nextValue,
+                                  }))
+                                }}
+                                placeholder="descuento"
+                                inputMode="numeric"
+                                pattern="[0-9]*"
+                                className="h-8 w-26 border border-slate-300 bg-white! text-[#121417] text-xs shadow-none placeholder:text-slate-500"
+                              />
+                              <div className="relative min-w-0 flex-1">
+                                <MessageSquare className="pointer-events-none absolute top-1/2 left-2.5 size-3.5 -translate-y-1/2 text-slate-500" />
+                                <Input
+                                  value={comentario}
+                                  onChange={(e) => {
+                                    setItemComentarios((prev) => ({
+                                      ...prev,
+                                      [itemId]: e.target.value,
                                     }))
                                   }}
-                                  className="size-3.5 rounded-[3px]"
+                                  placeholder="agregá un comentario..."
+                                  className="h-8 border border-slate-300 bg-white! pl-8 text-[#121417] text-xs shadow-none placeholder:text-slate-500"
                                 />
-                                <span className="truncate">Actualizar costo</span>
-                              </label>
-                            ) : null}
+                              </div>
+                            </div>
                           </div>
                         </div>
                       ) : null}
@@ -1721,78 +1927,15 @@ function PurchasesPage() {
                 </div>
               </div>
 
-              <div
-                role="region"
-                aria-label="Total de esta compra"
-                className={cn(
-                  "relative box-border flex w-full shrink-0 flex-col justify-center border-t border-emerald-500/35 backdrop-blur-xl",
-                  compraFooterBarPaddingClass,
-                  compraFooterBandHeightClass,
-                )}
-              >
-                <div
-                  className="pointer-events-none absolute inset-0 bg-[linear-gradient(145deg,#07120e_0%,#0c1f17_42%,#061009_100%)]"
-                  aria-hidden
-                />
-                <div
-                  className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_120%_90%_at_50%_-20%,rgba(52,211,153,0.28),transparent_52%)]"
-                  aria-hidden
-                />
-                <div
-                  className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_100%_50%,rgba(16,185,129,0.12),transparent_45%)]"
-                  aria-hidden
-                />
-                <div
-                  className="pointer-events-none absolute inset-x-0 bottom-0 h-px bg-linear-to-r from-transparent via-emerald-400/55 to-transparent"
-                  aria-hidden
-                />
-
-                <div className="relative z-10 flex w-full items-end justify-between gap-3">
-                  <div className="min-w-0 flex-1">
-                    <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-emerald-200/80">
-                      Total compra
-                    </p>
-                    {hayDescuento ? (
-                      <p className="mt-1 max-w-44 text-[10px] leading-snug text-white/40">
-                        Incluye descuento sobre el subtotal.
-                      </p>
-                    ) : (
-                      <p className="mt-1 text-[10px] leading-snug text-white/40">
-                        Catálogo unificado
-                        {proveedorSeleccionado
-                          ? ` · ${proveedorSeleccionado.name}`
-                          : ""}
-                      </p>
-                    )}
-                  </div>
-                  <div className="flex min-w-0 shrink-0 flex-col items-end text-right">
-                    {hayDescuento ? (
-                      <>
-                        <p className={compraImporteTotalMutedClass}>
-                          {fmt.format(subtotal)}
-                        </p>
-                        <p className={cn(compraImporteTotalDiscountClass, "mt-0.5")}>
-                          −{fmt.format(descuentoMonto)}
-                        </p>
-                        <div
-                          className="my-1.5 h-px w-12 max-w-full bg-linear-to-r from-emerald-400/50 to-transparent"
-                          aria-hidden
-                        />
-                      </>
-                    ) : null}
-                    <p
-                      className={compraImporteTotalClass}
-                      aria-live="polite"
-                      aria-atomic="true"
-                    >
-                      {fmt.format(total)}
-                    </p>
-                    <span className="mt-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-white/32">
-                      Pesos argentinos
-                    </span>
-                  </div>
-                </div>
-              </div>
+              <SaleOperationTotalBar
+                total={total}
+                subtotal={subtotal}
+                descuentoMonto={descuentoMonto}
+                hayDescuento={hayDescuento}
+                subtotalOriginal={subtotalOriginal}
+                descuentoItemsMonto={descuentoItemsMonto}
+                hayDescuentoItems={hayDescuentoItems}
+              />
             </div>
           </aside>
         </main>

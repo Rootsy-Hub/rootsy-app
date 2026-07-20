@@ -100,20 +100,14 @@ import {
 } from "@/components/sale-operation/SaleCatalogProductOfferOverlay"
 import {
   catalogCartOrderTotals,
-  catalogCartLinePricing,
+  defaultItemDiscountFromProduct,
+  resolveCatalogCartLinePricing,
+  saleCatalogArticleToProduct,
+  type SaleCatalogProduct,
 } from "@/components/sale-operation/saleCatalogProduct"
 import { saleOpImporteBaseClass } from "@/components/sale-operation/saleOperationStyles"
 
-type Producto = {
-  id: string
-  nombre: string
-  descripcion: string
-  precio: number
-  precioOriginal?: number
-  categoria: string
-  imagen: string
-  promo?: string
-}
+type Producto = SaleCatalogProduct
 
 type ItemCarrito = {
   productoId: string
@@ -134,18 +128,6 @@ const MANUAL_PARTY_LIST_ID = "__manual__"
 type VistaCatalogo = SaleCatalogViewPersisted
 
 const CATEGORIA_TODOS = "Todos"
-
-function articleToProducto(a: SaleCatalogArticle): Producto {
-  return {
-    id: a.id,
-    nombre: a.name,
-    descripcion: a.description.trim() ? a.description : "—",
-    precio: a.salePrice,
-    precioOriginal: a.originalSalePrice,
-    categoria: a.categoryName.trim() ? a.categoryName : "—",
-    imagen: `https://api.dicebear.com/7.x/shapes/svg?seed=${encodeURIComponent(a.id)}&backgroundColor=1a1f1d`,
-  }
-}
 
 const fmt = new Intl.NumberFormat("es-AR", {
   style: "currency",
@@ -290,7 +272,7 @@ function SalePage() {
   }, [canReadPaymentMethods, salePaymentMethods])
 
   const productosCatalogo = useMemo(
-    () => catalogArticles.map(articleToProducto),
+    () => catalogArticles.map(saleCatalogArticleToProduct),
     [catalogArticles],
   )
 
@@ -358,6 +340,9 @@ function SalePage() {
   const [itemDescuentoDraft, setItemDescuentoDraft] = useState<
     Record<string, string>
   >({})
+  const [itemDescuentoSuprimido, setItemDescuentoSuprimido] = useState<
+    Record<string, true>
+  >({})
   const busquedaProductosInputRef = useRef<HTMLInputElement>(null)
   const busquedaClienteInputRef = useRef<HTMLInputElement>(null)
   const vistaAntesBusquedaRef = useRef<VistaCatalogo | null>(null)
@@ -422,46 +407,43 @@ function SalePage() {
       .filter((i) => i.producto)
   }, [carrito, productosCatalogo])
 
-  const subtotalBruto = useMemo(
+  const cartTotalsInput = useMemo(
     () =>
-      itemsDetallados.reduce(
-        (acc, i) => acc + (i.producto?.precio ?? 0) * i.cantidad,
-        0,
-      ),
-    [itemsDetallados],
+      itemsDetallados.map((item) => {
+        const suprimido = itemDescuentoSuprimido[item.productoId] === true
+        const draft = itemDescuentoDraft[item.productoId] ?? ""
+        return {
+          producto: item.producto,
+          cantidad: item.cantidad,
+          suppressCatalogDiscount: suprimido,
+          manualDiscount:
+            !suprimido && draft !== ""
+              ? {
+                  mode: (itemDescuentoModo[item.productoId] ?? "porcentaje") as
+                    | "porcentaje"
+                    | "fijo",
+                  draft,
+                }
+              : null,
+        }
+      }),
+    [
+      itemsDetallados,
+      itemDescuentoModo,
+      itemDescuentoDraft,
+      itemDescuentoSuprimido,
+    ],
   )
 
   const catalogTotals = useMemo(
-    () => catalogCartOrderTotals(itemsDetallados),
-    [itemsDetallados],
+    () => catalogCartOrderTotals(cartTotalsInput),
+    [cartTotalsInput],
   )
 
-  const itemDescuentoMontos = useMemo(() => {
-    const descuentos: Record<string, number> = {}
-    itemsDetallados.forEach((item) => {
-      const itemId = item.productoId
-      const precioBase = (item.producto?.precio ?? 0) * item.cantidad
-      const raw = (itemDescuentoDraft[itemId] ?? "").trim().replace(",", ".")
-      const n = Number.parseFloat(raw)
-      if (!Number.isFinite(n) || n <= 0) {
-        descuentos[itemId] = 0
-        return
-      }
-      const modo = itemDescuentoModo[itemId] ?? "porcentaje"
-      descuentos[itemId] =
-        modo === "porcentaje"
-          ? precioBase * (Math.min(100, Math.max(0, n)) / 100)
-          : Math.min(Math.max(0, n), precioBase)
-    })
-    return descuentos
-  }, [itemsDetallados, itemDescuentoDraft, itemDescuentoModo])
+  const descuentoItemsMonto = catalogTotals.descuentoItemsMonto
+  const hayDescuentoItems = catalogTotals.hayDescuentoItems
 
-  const descuentoItemsMonto = useMemo(
-    () => Object.values(itemDescuentoMontos).reduce((acc, n) => acc + n, 0),
-    [itemDescuentoMontos],
-  )
-
-  const subtotal = subtotalBruto - descuentoItemsMonto
+  const subtotal = catalogTotals.subtotal
 
   const descuentoMonto = useMemo(() => {
     if (modoDescuento === "porcentaje") {
@@ -473,7 +455,6 @@ function SalePage() {
   const total = subtotal - descuentoMonto
 
   const hayDescuento = descuentoMonto > 0
-  const hayDescuentoCatalogo = catalogTotals.hayDescuentoCatalogo
 
   const hayItemsEnPedido = itemsDetallados.length > 0
 
@@ -545,6 +526,7 @@ function SalePage() {
     setItemComentarios({})
     setItemDescuentoModo({})
     setItemDescuentoDraft({})
+    setItemDescuentoSuprimido({})
     setMetodoPagoSeleccionado(() => {
       const efectivo = salePaymentMethods.find((m) => m.kind === "cash")
       return efectivo ? { id: efectivo.id, label: efectivo.name } : null
@@ -590,7 +572,11 @@ function SalePage() {
           articleId: i.productoId,
           quantity: i.cantidad,
           itemDiscountMode: itemDescuentoModo[i.productoId] ?? "porcentaje",
-          itemDiscountDraft: itemDescuentoDraft[i.productoId] ?? "",
+          itemDiscountDraft: itemDescuentoSuprimido[i.productoId]
+            ? ""
+            : (itemDescuentoDraft[i.productoId] ?? ""),
+          suppressCatalogDiscount:
+            itemDescuentoSuprimido[i.productoId] === true,
           comment: itemComentarios[i.productoId],
         })),
         clientId: catalogClientId,
@@ -623,6 +609,7 @@ function SalePage() {
     carrito,
     itemDescuentoModo,
     itemDescuentoDraft,
+    itemDescuentoSuprimido,
     itemComentarios,
     clienteSeleccionado,
     payOnClientAccount,
@@ -865,6 +852,9 @@ function SalePage() {
   )
 
   const agregarAlCarrito = (productoId: string) => {
+    const product = productosCatalogo.find((p) => p.id === productoId)
+    const esNuevo = !carrito.some((i) => i.productoId === productoId)
+
     setCarrito((prev) => {
       const existe = prev.find((i) => i.productoId === productoId)
       if (existe) {
@@ -874,6 +864,26 @@ function SalePage() {
       }
       return [...prev, { productoId, cantidad: 1 }]
     })
+
+    if (esNuevo && product) {
+      const defaultDiscount = defaultItemDiscountFromProduct(product)
+      if (defaultDiscount) {
+        setItemDescuentoSuprimido((prev) => {
+          if (!(productoId in prev)) return prev
+          const next = { ...prev }
+          delete next[productoId]
+          return next
+        })
+        setItemDescuentoModo((prev) => ({
+          ...prev,
+          [productoId]: defaultDiscount.mode,
+        }))
+        setItemDescuentoDraft((prev) => ({
+          ...prev,
+          [productoId]: defaultDiscount.draft,
+        }))
+      }
+    }
   }
 
   const cambiarCantidad = (productoId: string, delta: number) => {
@@ -888,8 +898,37 @@ function SalePage() {
     )
   }
 
+  const clearCartItemOverrides = useCallback((productoId: string) => {
+    setItemDescuentoModo((prev) => {
+      if (!(productoId in prev)) return prev
+      const next = { ...prev }
+      delete next[productoId]
+      return next
+    })
+    setItemDescuentoDraft((prev) => {
+      if (!(productoId in prev)) return prev
+      const next = { ...prev }
+      delete next[productoId]
+      return next
+    })
+    setItemDescuentoSuprimido((prev) => {
+      if (!(productoId in prev)) return prev
+      const next = { ...prev }
+      delete next[productoId]
+      return next
+    })
+    setItemComentarios((prev) => {
+      if (!(productoId in prev)) return prev
+      const next = { ...prev }
+      delete next[productoId]
+      return next
+    })
+    setItemDetalleAbiertoId((prev) => (prev === productoId ? null : prev))
+  }, [])
+
   const quitarDelCarrito = (productoId: string) => {
     setCarrito((prev) => prev.filter((i) => i.productoId !== productoId))
+    clearCartItemOverrides(productoId)
   }
 
   const onClienteToolbarClick = () => {
@@ -1595,25 +1634,44 @@ function SalePage() {
                   const itemId = item.productoId
                   const abierto = itemDetalleAbiertoId === itemId
                   const comentario = itemComentarios[itemId] ?? ""
-                  const descuento = itemDescuentoMontos[itemId] ?? 0
-                  const modoItemDescuento = itemDescuentoModo[itemId] ?? "porcentaje"
+                  const descuentoSuprimido =
+                    itemDescuentoSuprimido[itemId] === true
+                  const modoItemDescuento =
+                    itemDescuentoModo[itemId] ??
+                    "porcentaje"
                   const descuentoRaw = itemDescuentoDraft[itemId] ?? ""
-                  const descuentoNumero = Number.parseFloat(
-                    descuentoRaw.trim().replace(",", "."),
-                  )
-                  const catalogPricing = catalogCartLinePricing(
+                  const catalogPricing = resolveCatalogCartLinePricing(
                     item.producto,
                     item.cantidad,
+                    !descuentoSuprimido && descuentoRaw !== ""
+                      ? {
+                          mode: modoItemDescuento,
+                          draft: descuentoRaw,
+                        }
+                      : null,
+                    { suppressCatalogDiscount: descuentoSuprimido },
                   )
-                  const descuentoManual = descuento
-                  const precioVentaTotal = catalogPricing.precioFinal
-                  const tieneDescuentoManual = descuentoManual > 0
+                  const modoFormulario =
+                    itemDescuentoModo[itemId] ??
+                    catalogPricing.itemDiscountMode ??
+                    "porcentaje"
+                  const descuentoFormValue = descuentoSuprimido
+                    ? ""
+                    : descuentoRaw !== ""
+                      ? descuentoRaw
+                      : catalogPricing.discountSource === "catalog" &&
+                          catalogPricing.itemDiscountValue != null
+                        ? String(catalogPricing.itemDiscountValue)
+                        : ""
+                  const descuentoNumero = Number.parseFloat(
+                    descuentoFormValue.trim().replace(",", "."),
+                  )
+                  const descuentoManual = catalogPricing.itemDiscountAmount
+                  const tieneDescuentoManual = catalogPricing.tieneDescuentoManual
                   const tieneDescuento =
                     catalogPricing.tieneDescuentoCatalogo || tieneDescuentoManual
-                  const precioBaseItem = catalogPricing.tieneDescuentoCatalogo
-                    ? catalogPricing.precioBase
-                    : precioVentaTotal
-                  const precioFinalItem = precioVentaTotal - descuentoManual
+                  const precioBaseItem = catalogPricing.precioBase
+                  const precioFinalItem = catalogPricing.precioFinal
                   const tieneComentario = comentario.trim().length > 0
                   const nombreProducto = item.producto?.nombre ?? "Producto"
 
@@ -1637,7 +1695,7 @@ function SalePage() {
                       tieneDescuento={tieneDescuento}
                       descuentoLabel={
                         tieneDescuentoManual
-                          ? modoItemDescuento === "porcentaje"
+                          ? modoFormulario === "porcentaje"
                             ? `${Math.min(100, Math.max(0, Number.isFinite(descuentoNumero) ? descuentoNumero : 0))}%`
                             : fmt.format(descuentoManual)
                           : catalogPricing.descuentoCatalogoLabel
@@ -1650,23 +1708,25 @@ function SalePage() {
                             aria-label="Cambiar tipo de descuento"
                             onClick={(e) => {
                               e.stopPropagation()
+                              const actual =
+                                itemDescuentoModo[itemId] ??
+                                catalogPricing.itemDiscountMode ??
+                                "porcentaje"
                               setItemDescuentoModo((prev) => ({
                                 ...prev,
                                 [itemId]:
-                                  (prev[itemId] ?? "porcentaje") === "porcentaje"
-                                    ? "fijo"
-                                    : "porcentaje",
+                                  actual === "porcentaje" ? "fijo" : "porcentaje",
                               }))
                             }}
                           >
-                            {modoItemDescuento === "porcentaje" ? (
+                            {modoFormulario === "porcentaje" ? (
                               <Percent className="size-3.5" aria-hidden />
                             ) : (
                               <Banknote className="size-3.5" aria-hidden />
                             )}
                           </button>
                           <Input
-                            value={itemDescuentoDraft[itemId] ?? ""}
+                            value={descuentoFormValue}
                             onChange={(e) => {
                               const raw = e.target.value
                               if (!/^\d*$/.test(raw)) return
@@ -1675,10 +1735,20 @@ function SalePage() {
                                   ...prev,
                                   [itemId]: "",
                                 }))
+                                setItemDescuentoSuprimido((prev) => ({
+                                  ...prev,
+                                  [itemId]: true,
+                                }))
                                 return
                               }
+                              setItemDescuentoSuprimido((prev) => {
+                                if (!(itemId in prev)) return prev
+                                const next = { ...prev }
+                                delete next[itemId]
+                                return next
+                              })
                               if (
-                                modoItemDescuento === "fijo" &&
+                                modoFormulario === "fijo" &&
                                 Number(raw) > precioBaseItem
                               ) {
                                 setItemDescuentoModo((prev) => ({
@@ -1692,7 +1762,7 @@ function SalePage() {
                                 return
                               }
                               const nextValue =
-                                modoItemDescuento === "porcentaje"
+                                modoFormulario === "porcentaje"
                                   ? String(Math.min(100, Number(raw)))
                                   : raw
                               setItemDescuentoDraft((prev) => ({
@@ -1776,8 +1846,8 @@ function SalePage() {
                 descuentoMonto={descuentoMonto}
                 hayDescuento={hayDescuento}
                 subtotalOriginal={catalogTotals.subtotalOriginal}
-                descuentoCatalogoMonto={catalogTotals.descuentoCatalogoMonto}
-                hayDescuentoCatalogo={hayDescuentoCatalogo}
+                descuentoItemsMonto={descuentoItemsMonto}
+                hayDescuentoItems={hayDescuentoItems}
               />
             </div>
           </aside>

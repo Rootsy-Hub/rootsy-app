@@ -61,6 +61,11 @@ export const UNIT_OF_MEASURE_VALUES = [
 
 export type UnitOfMeasureValue = (typeof UNIT_OF_MEASURE_VALUES)[number]
 
+/** Valor del select cuando el usuario elige unidad personalizada. */
+export const CUSTOM_UNIT_OF_MEASURE_SELECT = "__custom__" as const
+
+export const MAX_CUSTOM_UNIT_OF_MEASURE_LENGTH = 64
+
 export const UNIT_OF_MEASURE_OPTIONS: {
   value: UnitOfMeasureValue
   label: string
@@ -86,6 +91,66 @@ const UOM_SHORT = Object.fromEntries(
 
 export function isUnitOfMeasure(v: string): v is UnitOfMeasureValue {
   return (UNIT_OF_MEASURE_VALUES as readonly string[]).includes(v)
+}
+
+export function isValidStoredUnitOfMeasure(v: string): boolean {
+  const trimmed = v.trim()
+  if (!trimmed) return false
+  if (isUnitOfMeasure(trimmed)) return true
+  return trimmed.length <= MAX_CUSTOM_UNIT_OF_MEASURE_LENGTH
+}
+
+export function normalizeStoredUnitOfMeasure(
+  raw: string | null | undefined,
+  fallback = "unidad",
+): string {
+  const trimmed = String(raw ?? "").trim()
+  if (!trimmed) return fallback
+  if (isValidStoredUnitOfMeasure(trimmed)) return trimmed
+  return fallback
+}
+
+export function unitOfMeasureToFormState(stored: string): {
+  unitOfMeasure: string
+  customUnitOfMeasure: string
+} {
+  const normalized = String(stored ?? "").trim()
+  if (!normalized || isUnitOfMeasure(normalized)) {
+    return {
+      unitOfMeasure: normalized || "unidad",
+      customUnitOfMeasure: "",
+    }
+  }
+  return {
+    unitOfMeasure: CUSTOM_UNIT_OF_MEASURE_SELECT,
+    customUnitOfMeasure: normalized,
+  }
+}
+
+export function parseUnitOfMeasureFromForm(
+  unitSelect: string,
+  customText: string,
+): { ok: true; value: string } | { ok: false; error: string } {
+  if (unitSelect === CUSTOM_UNIT_OF_MEASURE_SELECT) {
+    const trimmed = customText.trim()
+    if (!trimmed) {
+      return {
+        ok: false,
+        error: "Indicá la unidad personalizada.",
+      }
+    }
+    if (trimmed.length > MAX_CUSTOM_UNIT_OF_MEASURE_LENGTH) {
+      return {
+        ok: false,
+        error: `La unidad personalizada no puede superar ${MAX_CUSTOM_UNIT_OF_MEASURE_LENGTH} caracteres.`,
+      }
+    }
+    return { ok: true, value: trimmed }
+  }
+  if (!isUnitOfMeasure(unitSelect)) {
+    return { ok: false, error: "Unidad de medida inválida." }
+  }
+  return { ok: true, value: unitSelect }
 }
 
 export function labelUnitOfMeasure(value: string | null | undefined): string {

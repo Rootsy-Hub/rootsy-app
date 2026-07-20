@@ -97,7 +97,7 @@ export function ArticlesTableDetailDialog({
 }) {
   if (!row) return null
 
-  const sellable = row.itemKind === "merchandise" || row.isSellable
+  const sellable = row.itemKind === "merchandise"
   const hasDiscount = articleHasCatalogDiscount(
     row.discountMode,
     row.discountValue,
@@ -144,7 +144,7 @@ export function ArticlesTableDetailDialog({
               >
                 {row.isActive ? "Activo" : "Inactivo"}
               </Badge>
-              {row.isSellable ? (
+              {sellable ? (
                 <Badge variant="outline" className="font-normal">
                   Vendible
                 </Badge>

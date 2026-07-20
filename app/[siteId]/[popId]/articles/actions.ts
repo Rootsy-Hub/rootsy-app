@@ -14,11 +14,13 @@ import {
 import { popMenuHref } from "@/lib/popRoutes"
 import { loadPopPermissionsSnapshot } from "@/lib/popPermissionsServer"
 import { createClient } from "@/utils/supabase/server"
-import type { ArticleItemKind, UnitOfMeasureValue } from "@/lib/articleItemKind"
+import type { ArticleItemKind } from "@/lib/articleItemKind"
 import {
   ARTICLE_ITEM_KINDS,
+  defaultIsSellableForKind,
   isArticleItemKind,
-  isUnitOfMeasure,
+  isValidStoredUnitOfMeasure,
+  normalizeStoredUnitOfMeasure,
 } from "@/lib/articleItemKind"
 import type { ArticleDiscountMode } from "@/lib/articleDiscount"
 import { isArticleDiscountMode } from "@/lib/articleDiscount"
@@ -39,7 +41,7 @@ export type ArticleTableRow = {
   imageUrl: string | null
   brand: string
   itemKind: ArticleItemKind
-  unitOfMeasure: UnitOfMeasureValue
+  unitOfMeasure: string
   isSellable: boolean
   defaultWastePct: number | null
   minStockLevel: number | null
@@ -75,7 +77,7 @@ export type CategoryLayoutUpdate = {
 
 export type ArticleItemFieldsInput = {
   itemKind: ArticleItemKind
-  unitOfMeasure: UnitOfMeasureValue
+  unitOfMeasure: string
   isSellable: boolean
   defaultWastePct: number | null
   minStockLevel: number | null
@@ -121,11 +123,8 @@ function validateArticleKindFields(
   if (!isArticleItemKind(input.itemKind)) {
     return { ok: false, error: "Tipo de ítem inválido." }
   }
-  if (!isUnitOfMeasure(input.unitOfMeasure)) {
+  if (!isValidStoredUnitOfMeasure(input.unitOfMeasure)) {
     return { ok: false, error: "Unidad de medida inválida." }
-  }
-  if (input.itemKind === "supply" && input.isSellable) {
-    return { ok: false, error: "Los insumos no pueden marcarse como vendibles." }
   }
   return { ok: true }
 }
@@ -156,7 +155,7 @@ function articleRowFromDb(row: Record<string, unknown>): ArticleTableRow {
   const rawKind = String(row.item_kind ?? "merchandise")
   const itemKind = isArticleItemKind(rawKind) ? rawKind : "merchandise"
   const rawUom = String(row.unit_of_measure ?? "unidad")
-  const unitOfMeasure = isUnitOfMeasure(rawUom) ? rawUom : "unidad"
+  const unitOfMeasure = normalizeStoredUnitOfMeasure(rawUom)
   const wasteRaw = row.default_waste_pct
   const minRaw = row.min_stock_level
   const rawDiscountMode = row.discount_mode
@@ -197,10 +196,11 @@ function articleRowFromDb(row: Record<string, unknown>): ArticleTableRow {
 }
 
 function articleDbPayloadFromInput(input: UpdatePopArticleInput) {
+  const isSellable = defaultIsSellableForKind(input.itemKind)
   return {
     item_kind: input.itemKind,
-    unit_of_measure: input.unitOfMeasure,
-    is_sellable: input.isSellable,
+    unit_of_measure: input.unitOfMeasure.trim(),
+    is_sellable: isSellable,
     default_waste_pct: input.defaultWastePct,
     min_stock_level: input.minStockLevel,
     track_stock: true,
@@ -439,10 +439,10 @@ export async function updatePopArticle(
     if (!Number.isFinite(iva) || iva < 0) {
       return { success: false, error: "IVA inválido." }
     }
-    if (input.isSellable && salePrice <= 0 && input.itemKind === "merchandise") {
+    if (input.itemKind === "merchandise" && salePrice <= 0) {
       return {
         success: false,
-        error: "Indicá un precio de venta mayor que cero para ítems vendibles.",
+        error: "Indicá un precio de venta mayor que cero para mercadería.",
       }
     }
     const categoryId = input.categoryId.trim()
@@ -477,9 +477,9 @@ export async function updatePopArticle(
         name,
         description: input.description.trim(),
         image_url: imageUrl ? imageUrl : null,
-        sale_price: input.isSellable ? salePrice : 0,
+        sale_price: input.itemKind === "merchandise" ? salePrice : 0,
         cost_price: costPrice,
-        iva: input.itemKind === "merchandise" || input.isSellable ? iva : 0,
+        iva: input.itemKind === "merchandise" ? iva : 0,
         category_id: categoryId,
         is_active: input.isActive,
         ...articleDbPayloadFromInput({
@@ -544,10 +544,10 @@ export async function createPopArticle(
     if (!Number.isFinite(iva) || iva < 0) {
       return { success: false, error: "IVA inválido." }
     }
-    if (input.isSellable && salePrice <= 0 && input.itemKind === "merchandise") {
+    if (input.itemKind === "merchandise" && salePrice <= 0) {
       return {
         success: false,
-        error: "Indicá un precio de venta mayor que cero para ítems vendibles.",
+        error: "Indicá un precio de venta mayor que cero para mercadería.",
       }
     }
     const categoryId = input.categoryId.trim()
@@ -610,9 +610,9 @@ export async function createPopArticle(
         name,
         description: input.description.trim(),
         image_url: imageUrlInsert ? imageUrlInsert : null,
-        sale_price: input.isSellable ? salePrice : 0,
+        sale_price: input.itemKind === "merchandise" ? salePrice : 0,
         cost_price: costPrice,
-        iva: input.itemKind === "merchandise" || input.isSellable ? iva : 0,
+        iva: input.itemKind === "merchandise" ? iva : 0,
         category_id: categoryId,
         is_active: input.isActive,
         ...articleDbPayloadFromInput({

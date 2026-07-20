@@ -1,7 +1,9 @@
 "use client"
 
 import type { SaleCatalogCategory } from "@/app/[siteId]/[popId]/sale/actions"
+import type { MenuCatalogCategorySection } from "@/app/[siteId]/[popId]/menu-catalog/actions"
 import type { SaleCatalogProduct } from "@/components/sale-operation/saleCatalogProduct"
+import type { MenuCartItemKind } from "@/lib/menuCart"
 import {
   SaleCatalogProductOfferOverlay,
   saleCatalogDiscountPercent,
@@ -50,10 +52,12 @@ type Props = {
   siteId: string
   popId: string
   categories: SaleCatalogCategory[]
+  /** Secciones separadas (Recetas / Productos) para Mesas y Mostrador. */
+  categorySections?: MenuCatalogCategorySection[]
   products: SaleCatalogProduct[]
   loading: boolean
   error: string | null
-  onAddProduct: (productId: string) => void
+  onAddProduct: (productId: string, kind?: MenuCartItemKind) => void
   addDisabled?: boolean
   /** Control externo del panel de categorías (p. ej. botón del header). */
   catalogSidebarOpen?: boolean
@@ -63,6 +67,7 @@ export function SaleCatalogBrowser({
   siteId,
   popId,
   categories,
+  categorySections,
   products,
   loading,
   error,
@@ -103,13 +108,21 @@ export function SaleCatalogBrowser({
     const q = busqueda.trim().toLowerCase()
     const hayBusqueda = q.length > 0
     return products.filter((p) => {
+      const categoriaFiltro =
+        "categoriaFiltro" in p && typeof p.categoriaFiltro === "string"
+          ? p.categoriaFiltro
+          : null
       const matchVista = hayBusqueda
         ? true
         : vistaCatalogo.modo === "categoria"
           ? vistaCatalogo.categoria === CATEGORIA_TODOS ||
-            p.categoria === vistaCatalogo.categoria
+            (categoriaFiltro
+              ? categoriaFiltro === vistaCatalogo.categoria
+              : p.categoria === vistaCatalogo.categoria)
           : vistaCatalogo.modo === "promociones"
-            ? Boolean(p.promo?.trim())
+            ? ("section" in p && p.section === "promotions") ||
+              Boolean(p.promo?.trim()) ||
+              (p.precioOriginal != null && p.precioOriginal > p.precio)
             : p.precioOriginal != null && p.precioOriginal > p.precio
       const matchQ =
         !q ||
@@ -180,34 +193,73 @@ export function SaleCatalogBrowser({
               {CATEGORIA_TODOS}
             </button>
           </li>
-          {categories.map((cat) => {
-            const seleccionado =
-              vistaCatalogo.modo === "categoria" &&
-              vistaCatalogo.categoria === cat.name
-            return (
-              <li key={cat.id}>
-                <button
-                  type="button"
-                  onClick={() =>
-                    persistVistaCatalogo({
-                      modo: "categoria",
-                      categoria: cat.name,
-                    })
-                  }
-                  className={cn(
-                    "relative flex min-h-11 w-full items-center rounded-md px-3 py-2.5 text-left text-sm font-medium transition-colors duration-150",
-                    "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/45 focus-visible:ring-offset-2 focus-visible:ring-offset-[#1a2027]",
-                    seleccionado
-                      ? "bg-white/10 text-white before:absolute before:top-1/2 before:left-0 before:h-5 before:w-0.5 before:-translate-y-1/2 before:rounded-full before:bg-emerald-400 before:content-['']"
-                      : "text-slate-400 hover:bg-white/6 hover:text-slate-100",
-                  )}
-                >
-                  {cat.name}
-                </button>
-              </li>
-            )
-          })}
+          {!categorySections?.length
+            ? categories.map((cat) => {
+                const seleccionado =
+                  vistaCatalogo.modo === "categoria" &&
+                  vistaCatalogo.categoria === cat.name
+                return (
+                  <li key={cat.id}>
+                    <button
+                      type="button"
+                      onClick={() =>
+                        persistVistaCatalogo({
+                          modo: "categoria",
+                          categoria: cat.name,
+                        })
+                      }
+                      className={cn(
+                        "relative flex min-h-11 w-full items-center rounded-md px-3 py-2.5 text-left text-sm font-medium transition-colors duration-150",
+                        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/45 focus-visible:ring-offset-2 focus-visible:ring-offset-[#1a2027]",
+                        seleccionado
+                          ? "bg-white/10 text-white before:absolute before:top-1/2 before:left-0 before:h-5 before:w-0.5 before:-translate-y-1/2 before:rounded-full before:bg-emerald-400 before:content-['']"
+                          : "text-slate-400 hover:bg-white/6 hover:text-slate-100",
+                      )}
+                    >
+                      {cat.name}
+                    </button>
+                  </li>
+                )
+              })
+            : null}
         </ul>
+        {categorySections?.map((section) => (
+          <div key={section.id} className="mt-4">
+            <p className="mb-2.5 px-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-500">
+              {section.label}
+            </p>
+            <ul className="flex flex-col gap-0.5 p-0" role="list">
+              {section.categories.map((cat) => {
+                const filtroKey = `${section.id}:${cat.id}`
+                const seleccionado =
+                  vistaCatalogo.modo === "categoria" &&
+                  vistaCatalogo.categoria === filtroKey
+                return (
+                  <li key={filtroKey}>
+                    <button
+                      type="button"
+                      onClick={() =>
+                        persistVistaCatalogo({
+                          modo: "categoria",
+                          categoria: filtroKey,
+                        })
+                      }
+                      className={cn(
+                        "relative flex min-h-11 w-full items-center rounded-md px-3 py-2.5 text-left text-sm font-medium transition-colors duration-150",
+                        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/45 focus-visible:ring-offset-2 focus-visible:ring-offset-[#1a2027]",
+                        seleccionado
+                          ? "bg-white/10 text-white before:absolute before:top-1/2 before:left-0 before:h-5 before:w-0.5 before:-translate-y-1/2 before:rounded-full before:bg-emerald-400 before:content-['']"
+                          : "text-slate-400 hover:bg-white/6 hover:text-slate-100",
+                      )}
+                    >
+                      {cat.name}
+                    </button>
+                  </li>
+                )
+              })}
+            </ul>
+          </div>
+        ))}
       </div>
 
       <div>
@@ -384,6 +436,10 @@ export function SaleCatalogBrowser({
               }
             >
               {productosFiltrados.map((p) => {
+                const productKind =
+                  "kind" in p && typeof p.kind === "string"
+                    ? (p.kind as MenuCartItemKind)
+                    : undefined
                 const descuentoPct = saleCatalogDiscountPercent(
                   p.precioOriginal,
                   p.precio,
@@ -394,10 +450,10 @@ export function SaleCatalogBrowser({
 
                 return (
                   <button
-                    key={p.id}
+                    key={`${productKind ?? "article"}:${p.id}`}
                     type="button"
                     disabled={addDisabled}
-                    onClick={() => onAddProduct(p.id)}
+                    onClick={() => onAddProduct(p.id, productKind)}
                     className={cn(
                       "group relative w-full overflow-hidden rounded-2xl border border-white/10 bg-[#252b34] text-left",
                       "shadow-[inset_0_1px_0_rgba(255,255,255,0.07),0_0_0_1px_rgba(0,0,0,0.45),0_1px_2px_rgba(0,0,0,0.22),0_6px_16px_rgba(0,0,0,0.28),0_16px_40px_rgba(0,0,0,0.38)]",

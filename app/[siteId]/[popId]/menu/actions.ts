@@ -2,6 +2,7 @@
 
 import { requireAuthenticatedUser } from "@/lib/authHelpers"
 import { getPopById, validatePopAccess } from "@/lib/popHelpers"
+import { mergeOwnerPermissionKeys, isPopOwnerUser } from "@/lib/popOwnerPermissions"
 import { permissionRowsToKeys } from "@/lib/popPermissionConstants"
 import { createClient } from "@/utils/supabase/server"
 
@@ -38,7 +39,7 @@ export async function getPopMenuData(popId: string) {
     const supabase = await createClient()
 
     const [popData, permRes, popsRes, profileRes] = await Promise.all([
-      getPopById(popId),
+      getPopById(popId, { includeOwnerUserId: true }),
       supabase.rpc("get_user_all_permissions", {
         p_pop_id: popId,
         p_user_id: user.uid,
@@ -67,11 +68,16 @@ export async function getPopMenuData(popId: string) {
       }
     }
 
-    const permissionKeys = permissionRowsToKeys(permRes.data)
-
     const accessible = (popsRes.data as AccessiblePopRow[] | null) ?? []
     const popRow = accessible.find((p) => p.pop_id === popId)
-    const roleLabel = popRow?.is_owner
+    const isOwner =
+      Boolean(popRow?.is_owner) || (await isPopOwnerUser(popId, user.uid))
+    const permissionKeys = mergeOwnerPermissionKeys(
+      permissionRowsToKeys(permRes.data),
+      isOwner,
+    )
+
+    const roleLabel = isOwner
       ? "Dueño"
       : (popRow?.role_name?.trim() || "Miembro")
 

@@ -48,9 +48,13 @@ import { Banknote, Loader2, Percent, Search } from "lucide-react"
 
 type Props = {
   checkout: MesasSaleCheckout
+  confirmLabel?: string
 }
 
-export function MesasCheckoutModals({ checkout }: Props) {
+export function MesasCheckoutModals({
+  checkout,
+  confirmLabel = "Cobrar mesa",
+}: Props) {
   const m = checkout.modals
 
   return (
@@ -377,7 +381,7 @@ export function MesasCheckoutModals({ checkout }: Props) {
                   Procesando…
                 </>
               ) : (
-                "Cobrar mesa"
+                confirmLabel
               )}
             </AlertDialogAction>
           </AlertDialogFooter>

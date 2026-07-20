@@ -1,7 +1,9 @@
-export type OperationsViewId = "sales" | "purchases" | "expenses"
+export type OperationsViewId = "sales" | "tables" | "counter" | "purchases" | "expenses"
 
 const VALID_VIEWS = new Set<OperationsViewId>([
   "sales",
+  "tables",
+  "counter",
   "purchases",
   "expenses",
 ])

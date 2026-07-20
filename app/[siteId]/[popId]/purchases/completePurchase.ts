@@ -24,6 +24,11 @@ import type {
   PurchaseKind,
 } from "@/app/[siteId]/[popId]/purchases/actions"
 import { purchaseComprobanteAccruesInputVat } from "@/lib/purchaseComprobantePicker"
+import {
+  buildPurchaseLineFromInput,
+  finalizePurchaseCheckout,
+  type PurchaseLineBuilt,
+} from "@/lib/purchaseCheckoutLines"
 
 export type CompletePurchaseInput = CreatePurchaseInput & {
   /** Sin pago inmediato: queda deuda en Proveedores. */
@@ -48,17 +53,7 @@ function parseQty(v: unknown): number {
   return Math.round(n * 1e6) / 1e6
 }
 
-type BuiltLine = {
-  articleId: string
-  name: string
-  qty: number
-  unitCost: number
-  ivaPct: number
-  lineBase: number
-  netPart: number
-  taxPart: number
-  netUnitCost: number
-}
+type BuiltLine = PurchaseLineBuilt
 
 async function rollbackCompletePurchase(
   supabase: Awaited<ReturnType<typeof createClient>>,
@@ -202,9 +197,8 @@ export async function completePurchase(
     const built: BuiltLine[] = []
     for (const l of lines) {
       const articleId = l.articleId.trim()
-      const qty = parseQty(l.quantity)
       const unitCost = parseMoney(l.unitCost)
-      if (qty <= 0) continue
+      if (parseQty(l.quantity) <= 0) continue
       if (unitCost < 0) {
         return { success: false, error: "El costo unitario no puede ser negativo." }
       }
@@ -217,76 +211,38 @@ export async function completePurchase(
       if (artErr || !artRow) {
         return { success: false, error: "Artículo inválido o inactivo." }
       }
-      const ivaPct = parseMoney(artRow.iva)
-      const lineBase = roundMoney(qty * unitCost)
-      let taxPart = 0
-      let netPart = lineBase
-      if (ivaPct > 0) {
-        taxPart = roundMoney((lineBase * ivaPct) / (100 + ivaPct))
-        netPart = roundMoney(lineBase - taxPart)
-      }
-      const netUnitCost = qty > 0 ? roundMoney(netPart / qty) : 0
-      built.push({
-        articleId,
-        name: String(artRow.name ?? "Artículo"),
-        qty,
-        unitCost,
-        ivaPct,
-        lineBase,
-        netPart,
-        taxPart,
-        netUnitCost,
-      })
+      const builtLine = buildPurchaseLineFromInput(l, artRow)
+      if (builtLine) built.push(builtLine)
     }
     if (built.length === 0) {
       return { success: false, error: "No hay ítems válidos en la compra." }
     }
 
-    let subtotalNet = 0
-    let taxTotal = 0
-    const lineItemsJson: Record<string, unknown>[] = []
-    for (const l of built) {
-      subtotalNet = roundMoney(subtotalNet + l.netPart)
-      taxTotal = roundMoney(taxTotal + l.taxPart)
-      lineItemsJson.push({
-        article_id: l.articleId,
-        quantity: l.qty,
-        unit_cost: l.unitCost,
-        iva: l.ivaPct,
-        line_total: l.lineBase,
-        name_snapshot: l.name,
-      })
-    }
-
-    const totalBeforeDiscount = roundMoney(subtotalNet + taxTotal)
-    let discountTotal = 0
-    const discountMode = input.generalDiscountMode ?? "porcentaje"
-    const discountVal = Number(input.generalDiscountValue ?? 0)
-    if (Number.isFinite(discountVal) && discountVal > 0) {
-      discountTotal =
-        discountMode === "porcentaje"
-          ? roundMoney(
-              totalBeforeDiscount *
-                (Math.min(100, Math.max(0, discountVal)) / 100),
-            )
-          : roundMoney(Math.min(Math.max(0, discountVal), totalBeforeDiscount))
-    }
-    const total = roundMoney(totalBeforeDiscount - discountTotal)
-    if (total <= 0) {
+    const checkout = finalizePurchaseCheckout(
+      built,
+      input.generalDiscountMode ?? "porcentaje",
+      Number(input.generalDiscountValue ?? 0),
+    )
+    if (checkout.total <= 0) {
       return { success: false, error: "El total de la compra debe ser mayor que cero." }
     }
 
-    let netAfter = subtotalNet
-    let taxAfter = taxTotal
-    if (discountTotal > 0 && totalBeforeDiscount > 0) {
-      netAfter = roundMoney(subtotalNet * (total / totalBeforeDiscount))
-      taxAfter = roundMoney(total - netAfter)
-    }
+    const {
+      generalDiscount,
+      itemDiscountTotal,
+      discountTotal,
+      total,
+      subtotalNet,
+      taxTotal,
+      fiscalLines,
+      lineItemsJson,
+      subtotalAfterItems,
+    } = checkout
 
     const docKind = input.documentKind?.trim() || null
     const accrueInputVat = purchaseComprobanteAccruesInputVat(docKind)
-    const persistedSubtotal = accrueInputVat ? netAfter : total
-    const persistedTaxTotal = accrueInputVat ? taxAfter : 0
+    const persistedSubtotal = accrueInputVat ? subtotalNet : total
+    const persistedTaxTotal = accrueInputVat ? taxTotal : 0
     const lineItemsToPersist = accrueInputVat
       ? lineItemsJson
       : lineItemsJson.map((li) => ({ ...li, iva: 0 }))
@@ -298,8 +254,17 @@ export async function completePurchase(
     if (docKind) {
       purchaseMetadata.purchase_document_kind = docKind
     }
-    if (!accrueInputVat && taxAfter > 0) {
-      purchaseMetadata.vat_included_estimate = taxAfter
+    if (!accrueInputVat && taxTotal > 0) {
+      purchaseMetadata.vat_included_estimate = taxTotal
+    }
+    if (itemDiscountTotal > 0) {
+      purchaseMetadata.item_discount_total = itemDiscountTotal
+    }
+    if (generalDiscount > 0) {
+      purchaseMetadata.general_discount_amount = generalDiscount
+      purchaseMetadata.general_discount_mode = input.generalDiscountMode ?? "porcentaje"
+      purchaseMetadata.general_discount_value = Number(input.generalDiscountValue ?? 0)
+      purchaseMetadata.subtotal_before_general_discount = subtotalAfterItems
     }
 
     const receivedAt = new Date().toISOString()
@@ -360,7 +325,7 @@ export async function completePurchase(
       }
     }
 
-    for (const l of built) {
+    for (const l of fiscalLines) {
       const note = `Compra — ${l.name}`
       const { data: movIns, error: movErr } = await supabase
         .from("inventory_movements")
@@ -385,11 +350,13 @@ export async function completePurchase(
       const movementId = String(movIns.id)
       movementIds.push(movementId)
 
+      const effectiveGrossUnit =
+        l.qty > 0 ? roundMoney(l.lineFinal / l.qty) : l.unitCost
       const layerUnitCost = accrueInputVat
         ? l.netUnitCost > 0
           ? l.netUnitCost
-          : l.unitCost
-        : l.unitCost
+          : effectiveGrossUnit
+        : effectiveGrossUnit
       const { error: layerErr } = await supabase.from("inventory_cost_layers").insert({
         pop_id: popId,
         article_id: l.articleId,
@@ -460,12 +427,18 @@ export async function completePurchase(
     }
 
     const costUpdates = new Map<string, number>()
-    for (const l of lines) {
+    for (const l of fiscalLines) {
       if (!l.updateArticleCost) continue
-      const articleId = l.articleId.trim()
-      const unitCost = parseMoney(l.unitCost)
-      if (unitCost < 0) continue
-      costUpdates.set(articleId, unitCost)
+      const effectiveUnit =
+        l.qty > 0
+          ? accrueInputVat
+            ? l.netUnitCost > 0
+              ? l.netUnitCost
+              : roundMoney(l.lineFinal / l.qty)
+            : roundMoney(l.lineFinal / l.qty)
+          : 0
+      if (effectiveUnit < 0) continue
+      costUpdates.set(l.articleId, effectiveUnit)
     }
     for (const [articleId, unitCost] of costUpdates) {
       const { error: costErr } = await supabase

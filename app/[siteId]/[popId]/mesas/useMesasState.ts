@@ -1,21 +1,24 @@
 "use client"
 
 import {
-  MOCK_MESA_FLOOR_DECORS,
-  MOCK_MESA_SESSIONS,
-  MOCK_MESA_TABLES,
-} from "@/app/[siteId]/[popId]/mesas/mesasMockData"
+  closeTableSession,
+  getMesasLayout,
+  getOpenTableSessions,
+  openTableSession,
+  saveMesasLayoutPositions,
+  updateTableSession,
+  type MesasLayoutData,
+  type MesaSessionRow,
+} from "@/app/[siteId]/[popId]/mesas/actions"
 import type {
   MesaFloorDecor,
   MesaOpenSessionInput,
+  MesaSalon,
   MesaSession,
   MesaTable,
 } from "@/app/[siteId]/[popId]/mesas/mesasTypes"
-import { useCallback, useMemo, useState } from "react"
-
-function newSessionId(): string {
-  return `sess-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`
-}
+import { createClient } from "@/utils/supabase/client"
+import { useCallback, useEffect, useMemo, useState } from "react"
 
 function firstTableIdInSalon(
   tables: MesaTable[],
@@ -24,21 +27,220 @@ function firstTableIdInSalon(
   return tables.find((t) => t.salonId === salonId)?.id ?? null
 }
 
-export function useMesasState() {
-  const [tables, setTables] = useState<MesaTable[]>(() =>
-    MOCK_MESA_TABLES.map((t) => ({ ...t })),
-  )
-  const [decors, setDecors] = useState<MesaFloorDecor[]>(() =>
-    MOCK_MESA_FLOOR_DECORS.map((d) => ({ ...d })),
-  )
-  const [sessions, setSessions] = useState<MesaSession[]>(() =>
-    MOCK_MESA_SESSIONS.map((s) => ({ ...s })),
-  )
-  const [activeSalonId, setActiveSalonId] = useState("salon-a")
-  const [selectedTableId, setSelectedTableId] = useState<string | null>(() =>
-    firstTableIdInSalon(MOCK_MESA_TABLES, "salon-a"),
-  )
+function firstActiveSalonId(salons: MesaSalon[]): string {
+  const active = salons.filter((s) => s.isActive !== false)
+  return active[0]?.id ?? salons[0]?.id ?? ""
+}
+
+function applySessionsToTables(
+  tables: MesaTable[],
+  sessions: MesaSession[],
+): MesaTable[] {
+  const sessionByTable = new Map<string, MesaSession>()
+  for (const session of sessions) {
+    for (const tableId of session.tableIds) {
+      sessionByTable.set(tableId, session)
+    }
+  }
+
+  return tables.map((table) => {
+    const session = sessionByTable.get(table.id)
+    if (session) {
+      return { ...table, status: "open" as const, sessionId: session.id }
+    }
+    return { ...table, status: "free" as const, sessionId: null }
+  })
+}
+
+function mapSessionRow(row: MesaSessionRow): MesaSession {
+  return {
+    id: row.id,
+    tableIds: row.tableIds,
+    waiterId: row.waiterId,
+    guestCount: row.guestCount,
+    note: row.note,
+    openedAt: row.openedAt,
+    updatedAt: row.updatedAt,
+    checkout: row.checkout,
+  }
+}
+
+function mapLayoutToState(data: MesasLayoutData): {
+  salons: MesaSalon[]
+  layoutTables: MesaTable[]
+  decors: MesaFloorDecor[]
+} {
+  const salons: MesaSalon[] = data.salons
+    .filter((s) => s.isActive)
+    .map((s) => ({
+      id: s.id,
+      name: s.name,
+      sortOrder: s.sortOrder,
+      isActive: s.isActive,
+    }))
+
+  const layoutTables: MesaTable[] = data.tables
+    .filter((t) => t.isActive)
+    .map((t) => ({
+      id: t.id,
+      salonId: t.salonId,
+      label: t.label,
+      shape: t.shape,
+      x: t.x,
+      y: t.y,
+      rotation: t.rotation ?? 0,
+      seats: t.seats,
+      status: "free" as const,
+      sessionId: null,
+    }))
+
+  const decors: MesaFloorDecor[] = data.decors
+    .filter((d) => d.isActive)
+    .map((d) => ({
+      id: d.id,
+      salonId: d.salonId,
+      kind: d.kind,
+      x: d.x,
+      y: d.y,
+      width: d.width,
+      height: d.height,
+      rotation: d.rotation ?? 0,
+      label: d.label || undefined,
+    }))
+
+  return { salons, layoutTables, decors }
+}
+
+function toSessionInput(input: MesaOpenSessionInput) {
+  return {
+    tableIds: input.tableIds,
+    waiterId: input.waiterId,
+    guestCount: input.guestCount,
+    note: input.note,
+  }
+}
+
+export function useMesasState(popId: string, siteId: string) {
+  const [salons, setSalons] = useState<MesaSalon[]>([])
+  const [layoutTables, setLayoutTables] = useState<MesaTable[]>([])
+  const [decors, setDecors] = useState<MesaFloorDecor[]>([])
+  const [sessions, setSessions] = useState<MesaSession[]>([])
+  const [activeSalonId, setActiveSalonId] = useState("")
+  const [selectedTableId, setSelectedTableId] = useState<string | null>(null)
   const [layoutEditMode, setLayoutEditMode] = useState(false)
+  const [layoutSelection, setLayoutSelection] = useState<{
+    kind: "table" | "decor"
+    id: string
+  } | null>(null)
+  const [layoutLoading, setLayoutLoading] = useState(true)
+  const [layoutError, setLayoutError] = useState<string | null>(null)
+  const [sessionError, setSessionError] = useState<string | null>(null)
+  const [layoutData, setLayoutData] = useState<MesasLayoutData | null>(null)
+
+  const tables = useMemo(
+    () => applySessionsToTables(layoutTables, sessions),
+    [layoutTables, sessions],
+  )
+
+  const reloadSessions = useCallback(async () => {
+    if (!popId || !siteId) return
+
+    const res = await getOpenTableSessions(popId, siteId)
+    if (!res.success) {
+      setSessionError(res.error)
+      return
+    }
+
+    setSessionError(null)
+    setSessions(res.sessions.map(mapSessionRow))
+  }, [popId, siteId])
+
+  const reloadLayout = useCallback(async () => {
+    if (!popId || !siteId) {
+      setLayoutLoading(false)
+      return
+    }
+
+    setLayoutLoading(true)
+    setLayoutError(null)
+
+    const res = await getMesasLayout(popId, siteId)
+    setLayoutLoading(false)
+
+    if (!res.success) {
+      setLayoutError(res.error)
+      setLayoutData(null)
+      return
+    }
+
+    setLayoutData(res.data)
+    const mapped = mapLayoutToState(res.data)
+    setSalons(mapped.salons)
+    setLayoutTables(mapped.layoutTables)
+    setDecors(mapped.decors)
+
+    setActiveSalonId((prev) => {
+      if (prev && mapped.salons.some((s) => s.id === prev)) return prev
+      return firstActiveSalonId(mapped.salons)
+    })
+  }, [popId, siteId])
+
+  useEffect(() => {
+    void reloadLayout()
+    void reloadSessions()
+  }, [reloadLayout, reloadSessions])
+
+  useEffect(() => {
+    if (!popId) return
+
+    const supabase = createClient()
+    const channel = supabase
+      .channel(`mesas-table-sessions:${popId}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "table_sessions",
+          filter: `pop_id=eq.${popId}`,
+        },
+        () => {
+          void reloadSessions()
+        },
+      )
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "table_session_tables",
+        },
+        () => {
+          void reloadSessions()
+        },
+      )
+      .subscribe()
+
+    return () => {
+      void supabase.removeChannel(channel)
+    }
+  }, [popId, reloadSessions])
+
+  useEffect(() => {
+    if (!activeSalonId) {
+      setSelectedTableId(null)
+      return
+    }
+    setSelectedTableId((prev) => {
+      if (prev && tables.some((t) => t.id === prev && t.salonId === activeSalonId)) {
+        return prev
+      }
+      return firstTableIdInSalon(
+        tables.filter((t) => t.salonId === activeSalonId),
+        activeSalonId,
+      )
+    })
+  }, [activeSalonId, tables])
 
   const salonTables = useMemo(
     () => tables.filter((t) => t.salonId === activeSalonId),
@@ -73,92 +275,168 @@ export function useMesasState() {
     return new Set(selectedSession.tableIds)
   }, [selectedTableId, selectedSession])
 
-  const moveTable = useCallback((tableId: string, dx: number, dy: number) => {
-    setTables((prev) =>
-      prev.map((t) =>
-        t.id === tableId
-          ? { ...t, x: Math.max(8, t.x + dx), y: Math.max(8, t.y + dy) }
-          : t,
-      ),
-    )
-  }, [])
-
-  const moveDecor = useCallback((decorId: string, dx: number, dy: number) => {
-    setDecors((prev) =>
-      prev.map((d) =>
-        d.id === decorId
-          ? { ...d, x: Math.max(8, d.x + dx), y: Math.max(8, d.y + dy) }
-          : d,
-      ),
-    )
-  }, [])
-
-  const openSession = useCallback((input: MesaOpenSessionInput) => {
-    const sessionId = newSessionId()
-    const session: MesaSession = {
-      id: sessionId,
-      tableIds: input.tableIds,
-      waiterId: input.waiterId,
-      guestCount: input.guestCount,
-      note: input.note.trim(),
-      openedAt: new Date().toISOString(),
+  useEffect(() => {
+    if (!layoutEditMode) {
+      setLayoutSelection(null)
     }
-    setSessions((prev) => [...prev, session])
-    setTables((prev) =>
-      prev.map((t) =>
-        input.tableIds.includes(t.id)
-          ? { ...t, status: "open" as const, sessionId }
-          : t,
-      ),
-    )
-    setSelectedTableId(input.tableIds[0] ?? null)
-  }, [])
+  }, [layoutEditMode])
 
-  const updateSession = useCallback(
-    (sessionId: string, input: MesaOpenSessionInput) => {
-      setSessions((prevSessions) => {
-        const old = prevSessions.find((s) => s.id === sessionId)
-        const oldIds = new Set(old?.tableIds ?? [])
-        const newIds = new Set(input.tableIds)
+  const persistLayoutItem = useCallback(
+    async (
+      kind: "table" | "decor",
+      id: string,
+      fields: { x: number; y: number; rotation: number },
+    ) => {
+      if (!popId || !siteId) return
+      const payload =
+        kind === "table"
+          ? { tables: [{ id, ...fields }] }
+          : { decors: [{ id, ...fields }] }
+      await saveMesasLayoutPositions(popId, siteId, payload)
+    },
+    [popId, siteId],
+  )
 
-        setTables((prevTables) =>
-          prevTables.map((t) => {
-            if (newIds.has(t.id)) {
-              return { ...t, status: "open" as const, sessionId }
-            }
-            if (oldIds.has(t.id) && !newIds.has(t.id)) {
-              return { ...t, status: "free" as const, sessionId: null }
-            }
-            return t
-          }),
-        )
-
-        return prevSessions.map((s) =>
-          s.id === sessionId
-            ? {
-                ...s,
-                tableIds: input.tableIds,
-                waiterId: input.waiterId,
-                guestCount: input.guestCount,
-                note: input.note.trim(),
-              }
-            : s,
-        )
-      })
+  const selectLayoutItem = useCallback(
+    (kind: "table" | "decor", id: string) => {
+      setLayoutSelection({ kind, id })
     },
     [],
   )
 
-  const closeSession = useCallback((sessionId: string) => {
-    setSessions((prev) => prev.filter((s) => s.id !== sessionId))
-    setTables((prev) =>
-      prev.map((t) =>
-        t.sessionId === sessionId
-          ? { ...t, status: "free" as const, sessionId: null }
-          : t,
-      ),
-    )
-  }, [])
+  const rotateLayoutItem = useCallback(() => {
+    if (!layoutSelection) return
+
+    if (layoutSelection.kind === "table") {
+      setLayoutTables((prev) => {
+        const current = prev.find((t) => t.id === layoutSelection.id)
+        if (!current) return prev
+        const rotation = (current.rotation + 45) % 360
+        void persistLayoutItem("table", current.id, {
+          x: current.x,
+          y: current.y,
+          rotation,
+        })
+        return prev.map((t) =>
+          t.id === layoutSelection.id ? { ...t, rotation } : t,
+        )
+      })
+      return
+    }
+
+    setDecors((prev) => {
+      const current = prev.find((d) => d.id === layoutSelection.id)
+      if (!current) return prev
+      const rotation = (current.rotation + 45) % 360
+      void persistLayoutItem("decor", current.id, {
+        x: current.x,
+        y: current.y,
+        rotation,
+      })
+      return prev.map((d) =>
+        d.id === layoutSelection.id ? { ...d, rotation } : d,
+      )
+    })
+  }, [layoutSelection, persistLayoutItem])
+
+  const moveTable = useCallback(
+    (tableId: string, dx: number, dy: number): { x: number; y: number; rotation: number } | null => {
+      let next: { x: number; y: number; rotation: number } | null = null
+      setLayoutTables((prev) =>
+        prev.map((t) => {
+          if (t.id !== tableId) return t
+          next = {
+            x: Math.max(8, t.x + dx),
+            y: Math.max(8, t.y + dy),
+            rotation: t.rotation,
+          }
+          return { ...t, x: next.x, y: next.y }
+        }),
+      )
+      return next
+    },
+    [],
+  )
+
+  const moveDecor = useCallback(
+    (decorId: string, dx: number, dy: number): { x: number; y: number; rotation: number } | null => {
+      let next: { x: number; y: number; rotation: number } | null = null
+      setDecors((prev) =>
+        prev.map((d) => {
+          if (d.id !== decorId) return d
+          next = {
+            x: Math.max(8, d.x + dx),
+            y: Math.max(8, d.y + dy),
+            rotation: d.rotation,
+          }
+          return { ...d, x: next.x, y: next.y }
+        }),
+      )
+      return next
+    },
+    [],
+  )
+
+  const openSession = useCallback(
+    async (input: MesaOpenSessionInput) => {
+      if (!popId || !siteId) return false
+
+      setSessionError(null)
+      const res = await openTableSession(popId, siteId, toSessionInput(input))
+      if (!res.success) {
+        setSessionError(res.error)
+        return false
+      }
+
+      setSessions((prev) => [...prev, mapSessionRow(res.session)])
+      setSelectedTableId(input.tableIds[0] ?? null)
+      return true
+    },
+    [popId, siteId],
+  )
+
+  const updateSession = useCallback(
+    async (sessionId: string, input: MesaOpenSessionInput) => {
+      if (!popId || !siteId) return false
+
+      setSessionError(null)
+      const res = await updateTableSession(
+        popId,
+        siteId,
+        sessionId,
+        toSessionInput(input),
+      )
+      if (!res.success) {
+        setSessionError(res.error)
+        return false
+      }
+
+      setSessions((prev) =>
+        prev.map((s) =>
+          s.id === sessionId ? mapSessionRow(res.session) : s,
+        ),
+      )
+      return true
+    },
+    [popId, siteId],
+  )
+
+  const closeSession = useCallback(
+    async (sessionId: string) => {
+      if (!popId || !siteId) return false
+
+      setSessionError(null)
+      const res = await closeTableSession(popId, siteId, sessionId, "cancelled")
+      if (!res.success) {
+        setSessionError(res.error)
+        return false
+      }
+
+      setSessions((prev) => prev.filter((s) => s.id !== sessionId))
+      return true
+    },
+    [popId, siteId],
+  )
 
   const freeTablesInSalon = useCallback(
     (salonId: string, excludeIds: string[] = []) => {
@@ -174,8 +452,10 @@ export function useMesasState() {
   )
 
   return {
+    salons,
     tables,
     sessions,
+    decors,
     activeSalonId,
     setActiveSalonId,
     selectedTableId,
@@ -187,8 +467,18 @@ export function useMesasState() {
     salonDecors,
     layoutEditMode,
     setLayoutEditMode,
+    layoutSelection,
+    selectLayoutItem,
+    rotateLayoutItem,
+    layoutLoading,
+    layoutError,
+    sessionError,
+    layoutData,
+    reloadLayout,
+    reloadSessions,
     moveTable,
     moveDecor,
+    persistLayoutItem,
     openSession,
     updateSession,
     closeSession,

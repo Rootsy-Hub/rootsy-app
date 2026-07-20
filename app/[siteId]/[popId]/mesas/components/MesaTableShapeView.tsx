@@ -4,6 +4,7 @@ import type { MesaTableShape } from "@/app/[siteId]/[popId]/mesas/mesasTypes"
 import { MesaOpenDurationLabel } from "@/app/[siteId]/[popId]/mesas/components/MesaOpenDurationLabel"
 import {
   mesaTableDimensions,
+  mesaTableHighlightClass,
   mesaStatusClass,
 } from "@/app/[siteId]/[popId]/mesas/mesasTableStyles"
 import { cn } from "@/lib/utils"
@@ -14,6 +15,9 @@ type Props = {
   status: import("@/app/[siteId]/[popId]/mesas/mesasTypes").MesaTableStatus
   seats: number
   selected: boolean
+  layoutSelected?: boolean
+  /** Grados de la mesa en el plano; el contenido se contra-rota para quedar legible. */
+  uprightRotation?: number
   compact?: boolean
   /** ISO de apertura de sesión — muestra duración en mesas abiertas/cobrando. */
   openedAt?: string | null
@@ -25,6 +29,8 @@ export function MesaTableShapeView({
   status,
   seats,
   selected,
+  layoutSelected = false,
+  uprightRotation = 0,
   compact = false,
   openedAt = null,
 }: Props) {
@@ -37,24 +43,34 @@ export function MesaTableShapeView({
     <div
       className={cn(
         "relative flex flex-col items-center justify-center",
-        mesaStatusClass(status, selected),
+        mesaStatusClass(status),
+        mesaTableHighlightClass({ selected, layoutSelected }),
         isRound ? "rounded-full" : "rounded-xl",
       )}
       style={{ width, height, minWidth: width, minHeight: height }}
     >
-      <span className="text-sm font-bold tabular-nums text-white">{label}</span>
-      {!compact ? (
-        showOpenDuration ? (
-          <MesaOpenDurationLabel
-            openedAt={openedAt}
-            className="mt-0.5 text-[10px] text-amber-200/90"
-          />
-        ) : (
-          <span className="mt-0.5 text-[10px] font-medium text-white/55">
-            {seats} pax
-          </span>
-        )
-      ) : null}
+      <div
+        className="flex flex-col items-center justify-center"
+        style={
+          uprightRotation
+            ? { transform: `rotate(${-uprightRotation}deg)` }
+            : undefined
+        }
+      >
+        <span className="text-sm font-bold tabular-nums text-white">{label}</span>
+        {!compact ? (
+          showOpenDuration ? (
+            <MesaOpenDurationLabel
+              openedAt={openedAt}
+              className="mt-0.5 text-[10px] text-amber-200/90"
+            />
+          ) : (
+            <span className="mt-0.5 text-[10px] font-medium text-white/55">
+              {seats} pax
+            </span>
+          )
+        ) : null}
+      </div>
     </div>
   )
 }

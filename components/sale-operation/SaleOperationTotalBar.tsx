@@ -1,7 +1,6 @@
 "use client"
 
 import {
-  saleOpFooterBandHeightClass,
   saleOpFooterBarPaddingClass,
   saleOpFmt,
   saleOpImporteTotalClass,
@@ -16,10 +15,20 @@ export type SaleOperationTotalBarProps = {
   descuentoMonto: number
   hayDescuento: boolean
   subtotalOriginal?: number
+  /** Suma de descuentos por ítem (catálogo + inline). */
+  descuentoItemsMonto?: number
+  hayDescuentoItems?: boolean
+  /** @deprecated Usar descuentoItemsMonto */
   descuentoCatalogoMonto?: number
+  /** @deprecated Usar hayDescuentoItems */
   hayDescuentoCatalogo?: boolean
   className?: string
 }
+
+const breakdownLabelClass =
+  "text-[10px] font-medium uppercase tracking-[0.12em] text-white/42"
+
+const amountColumnClass = "min-w-[6.5rem] text-right"
 
 export function SaleOperationTotalBar({
   total,
@@ -27,19 +36,22 @@ export function SaleOperationTotalBar({
   descuentoMonto,
   hayDescuento,
   subtotalOriginal = 0,
+  descuentoItemsMonto,
+  hayDescuentoItems,
   descuentoCatalogoMonto = 0,
   hayDescuentoCatalogo = false,
   className,
 }: SaleOperationTotalBarProps) {
-  const hayAhorroVisible = hayDescuentoCatalogo || hayDescuento
+  const itemsDiscountAmount =
+    descuentoItemsMonto ?? descuentoCatalogoMonto ?? 0
+  const showItemsDiscount =
+    hayDescuentoItems ?? hayDescuentoCatalogo ?? itemsDiscountAmount > 0
+  const showGeneralDiscount = hayDescuento && descuentoMonto > 0
+  const showSubtotalBreakdown =
+    showItemsDiscount || showGeneralDiscount || subtotalOriginal > subtotal
 
-  const helperText = hayDescuentoCatalogo && hayDescuento
-    ? "Incluye descuentos en productos y descuento general."
-    : hayDescuentoCatalogo
-      ? "Incluye descuentos aplicados en productos."
-      : hayDescuento
-        ? "Incluye descuento general sobre el subtotal."
-        : null
+  const subtotalDisplay =
+    subtotalOriginal > 0 ? subtotalOriginal : subtotal
 
   return (
     <div
@@ -48,7 +60,9 @@ export function SaleOperationTotalBar({
       className={cn(
         "relative box-border flex w-full shrink-0 flex-col justify-center border-t border-emerald-500/35 backdrop-blur-xl",
         saleOpFooterBarPaddingClass,
-        saleOpFooterBandHeightClass,
+        showSubtotalBreakdown
+          ? "min-h-[calc(5.75rem+1rem)] sm:min-h-[calc(6rem+1.25rem)]"
+          : "min-h-[calc(4.5rem+1rem)] sm:min-h-[calc(4.75rem+1.25rem)]",
         className,
       )}
     >
@@ -65,48 +79,60 @@ export function SaleOperationTotalBar({
         aria-hidden
       />
 
-      <div className="relative z-10 flex w-full items-end justify-between gap-3">
-        <div className="min-w-0 flex-1">
-          <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-emerald-200/80">
-            Total a cobrar
-          </p>
-          {helperText ? (
-            <p className="mt-1 max-w-44 text-[10px] leading-snug text-white/40">
-              {helperText}
+      <div className="relative z-10 grid w-full grid-cols-[minmax(0,1fr)_auto] gap-x-4 gap-y-0.5">
+        {showSubtotalBreakdown ? (
+          <>
+            <span className={cn(breakdownLabelClass, "self-center")}>
+              Subtotal
+            </span>
+            <p className={cn(saleOpImporteTotalMutedClass, amountColumnClass)}>
+              {saleOpFmt.format(subtotalDisplay)}
             </p>
-          ) : null}
-        </div>
-        <div className="flex min-w-0 shrink-0 flex-col items-end text-right">
-          {hayAhorroVisible ? (
-            <>
-              <p className={saleOpImporteTotalMutedClass}>
-                {saleOpFmt.format(
-                  hayDescuentoCatalogo ? subtotalOriginal : subtotal,
-                )}
-              </p>
-              {hayDescuentoCatalogo ? (
-                <p className={cn(saleOpImporteTotalDiscountClass, "mt-0.5")}>
-                  −{saleOpFmt.format(descuentoCatalogoMonto)}
+            {showItemsDiscount ? (
+              <>
+                <span className={cn(breakdownLabelClass, "self-center")}>
+                  Descuento ítems
+                </span>
+                <p className={cn(saleOpImporteTotalDiscountClass, amountColumnClass)}>
+                  −{saleOpFmt.format(itemsDiscountAmount)}
                 </p>
-              ) : null}
-              {hayDescuento ? (
-                <p className={cn(saleOpImporteTotalDiscountClass, "mt-0.5")}>
+              </>
+            ) : null}
+            {showGeneralDiscount ? (
+              <>
+                <span className={cn(breakdownLabelClass, "self-center")}>
+                  Descuento general
+                </span>
+                <p className={cn(saleOpImporteTotalDiscountClass, amountColumnClass)}>
                   −{saleOpFmt.format(descuentoMonto)}
                 </p>
-              ) : null}
-              <div
-                className="my-1.5 h-px w-12 max-w-full bg-linear-to-r from-emerald-400/50 to-transparent"
-                aria-hidden
-              />
-            </>
-          ) : null}
-          <p className={saleOpImporteTotalClass} aria-live="polite" aria-atomic="true">
-            {saleOpFmt.format(total)}
-          </p>
-          <span className="mt-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-white/32">
-            Pesos argentinos
-          </span>
-        </div>
+              </>
+            ) : null}
+          </>
+        ) : null}
+        <p
+          className={cn(
+            "self-center text-[10px] font-semibold uppercase tracking-[0.16em] text-emerald-200/80",
+          )}
+        >
+          Total a cobrar
+        </p>
+        <p
+          className={cn(saleOpImporteTotalClass, amountColumnClass, "self-center")}
+          aria-live="polite"
+          aria-atomic="true"
+        >
+          {saleOpFmt.format(total)}
+        </p>
+        <span aria-hidden className="min-h-0" />
+        <span
+          className={cn(
+            amountColumnClass,
+            "text-[10px] font-semibold uppercase tracking-[0.14em] text-white/32",
+          )}
+        >
+          Pesos argentinos
+        </span>
       </div>
     </div>
   )

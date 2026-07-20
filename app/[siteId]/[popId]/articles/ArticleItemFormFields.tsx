@@ -3,11 +3,11 @@
 import type { ArticleItemKind } from "@/lib/articleItemKind"
 import {
   ARTICLE_ITEM_KIND_HINT,
-  isUnitOfMeasure,
+  CUSTOM_UNIT_OF_MEASURE_SELECT,
   UNIT_OF_MEASURE_OPTIONS,
-  type UnitOfMeasureValue,
+  defaultIsSellableForKind,
+  parseUnitOfMeasureFromForm,
 } from "@/lib/articleItemKind"
-import { Checkbox } from "@/components/ui/checkbox"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import {
@@ -20,7 +20,7 @@ import {
 
 export type ArticleItemFormState = {
   unitOfMeasure: string
-  isSellable: boolean
+  customUnitOfMeasure: string
   defaultWastePct: string
   minStockLevel: string
 }
@@ -39,8 +39,8 @@ export function ArticleItemFormFields({
   idPrefix,
 }: Props) {
   const showWaste = itemKind === "raw_material"
-  const showSellable = itemKind !== "supply"
   const showMinStock = itemKind !== "merchandise"
+  const showCustomUnit = value.unitOfMeasure === CUSTOM_UNIT_OF_MEASURE_SELECT
 
   return (
     <div className="space-y-4 rounded-lg border border-border/50 bg-muted/15 p-3">
@@ -62,18 +62,25 @@ export function ArticleItemFormFields({
                 {o.label}
               </SelectItem>
             ))}
+            <SelectItem value={CUSTOM_UNIT_OF_MEASURE_SELECT}>
+              Personalizado
+            </SelectItem>
           </SelectContent>
         </Select>
       </div>
-      {showSellable ? (
-        <label className="flex cursor-pointer items-center gap-2">
-          <Checkbox
-            checked={value.isSellable}
-            onCheckedChange={(c) => onChange({ isSellable: c === true })}
-            aria-label="Vendible en mostrador"
+      {showCustomUnit ? (
+        <div className="space-y-2">
+          <Label htmlFor={`${idPrefix}-uom-custom`}>Unidad personalizada</Label>
+          <Input
+            id={`${idPrefix}-uom-custom`}
+            value={value.customUnitOfMeasure}
+            onChange={(e) =>
+              onChange({ customUnitOfMeasure: e.target.value })
+            }
+            placeholder="Ej. maple de 12"
+            className="bg-background"
           />
-          <span className="text-sm">Vendible en mostrador / ventas</span>
-        </label>
+        </div>
       ) : null}
       {showWaste ? (
         <div className="space-y-2">
@@ -112,21 +119,30 @@ export function ArticleItemFormFields({
 
 export function parseArticleItemFormState(
   value: ArticleItemFormState,
-): {
-  unitOfMeasure: UnitOfMeasureValue
-  isSellable: boolean
-  defaultWastePct: number | null
-  minStockLevel: number | null
-} {
+  itemKind: ArticleItemKind,
+):
+  | {
+      unitOfMeasure: string
+      isSellable: boolean
+      defaultWastePct: number | null
+      minStockLevel: number | null
+    }
+  | { error: string } {
+  const uom = parseUnitOfMeasureFromForm(
+    value.unitOfMeasure,
+    value.customUnitOfMeasure,
+  )
+  if (!uom.ok) {
+    return { error: uom.error }
+  }
+
   const wasteRaw = value.defaultWastePct.trim().replace(",", ".")
   const minRaw = value.minStockLevel.trim().replace(",", ".")
   const wasteN = Number.parseFloat(wasteRaw)
   const minN = Number.parseFloat(minRaw)
   return {
-    unitOfMeasure: isUnitOfMeasure(value.unitOfMeasure)
-      ? value.unitOfMeasure
-      : "unidad",
-    isSellable: value.isSellable,
+    unitOfMeasure: uom.value,
+    isSellable: defaultIsSellableForKind(itemKind),
     defaultWastePct:
       wasteRaw && Number.isFinite(wasteN) && wasteN >= 0 && wasteN <= 100
         ? wasteN

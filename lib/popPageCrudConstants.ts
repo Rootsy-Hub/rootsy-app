@@ -153,10 +153,37 @@ export const POP_PAGES = {
   mesas: {
     path: "mesas",
     permissions: {
-      read: "sale:read",
-      create: "sale:create",
-      update: "sale:update",
-      delete: "sale:delete",
+      read: "mesas:read",
+      create: "mesas:create",
+      update: "mesas:update",
+      delete: "mesas:delete",
+    },
+  },
+  mostrador: {
+    path: "mostrador",
+    permissions: {
+      read: "mostrador:read",
+      create: "mostrador:create",
+      update: "mostrador:update",
+      delete: "mostrador:delete",
+    },
+  },
+  recipes: {
+    path: "recipes",
+    permissions: {
+      read: "recipes:read",
+      create: "recipes:create",
+      update: "recipes:update",
+      delete: "recipes:delete",
+    },
+  },
+  promotions: {
+    path: "promotions",
+    permissions: {
+      read: "promotions:read",
+      create: "promotions:create",
+      update: "promotions:update",
+      delete: "promotions:delete",
     },
   },
   settings: {

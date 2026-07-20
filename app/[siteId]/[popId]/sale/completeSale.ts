@@ -22,6 +22,12 @@ import { resolvePaymentMethodLedgerAccount } from "@/lib/paymentLedgerAccounts"
 import { SALE_COMPROBANTE_RECIBO_X_LABEL, saleComprobanteAccruesOutputVat } from "@/lib/saleComprobantePicker"
 import { siteIdFromPopRow } from "@/lib/popRoutes"
 import { CLIENT_IVA_CONDITION_VALUES } from "@/app/[siteId]/[popId]/clients/clientIvaConstants"
+import { consumptionQuantity, effectiveWastePct } from "@/lib/recipeCost"
+import { priceComboPromotion, type PromotionCartSelection } from "@/lib/promotionPricing"
+import {
+  hasSaleLineManualDiscount,
+  resolveSaleLineDiscount,
+} from "@/lib/saleLineDiscount"
 
 const PAYMENT_KIND_ACCOUNT_FALLBACK: Record<string, readonly string[]> = {
   cash: ["1.1.1.01"],
@@ -197,11 +203,316 @@ async function cancelAccountingEntry(
     .eq("id", entryId)
 }
 
-export type CompleteSaleLineInput = {
+type StockDeductionNeed = {
   articleId: string
+  qty: number
+  label: string
+}
+
+async function collectStockDeductionNeeds(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  popId: string,
+  built: Array<{
+    lineKind: "article" | "recipe" | "promotion"
+    articleId: string | null
+    recipeId: string | null
+    name: string
+    qty: number
+    promotionComponents?: Array<{
+      kind: "article" | "recipe"
+      articleId: string | null
+      recipeId: string | null
+      quantity: number
+      name: string
+    }>
+  }>,
+): Promise<
+  | { success: true; needs: StockDeductionNeed[] }
+  | { success: false; error: string }
+> {
+  const byArticle = new Map<string, { qty: number; labels: Set<string> }>()
+
+  const addNeed = (articleId: string, qty: number, label: string) => {
+    if (qty <= 0) return
+    const prev = byArticle.get(articleId) ?? { qty: 0, labels: new Set<string>() }
+    prev.qty += qty
+    prev.labels.add(label)
+    byArticle.set(articleId, prev)
+  }
+
+  for (const line of built) {
+    if (line.lineKind === "promotion" && line.promotionComponents?.length) {
+      for (const comp of line.promotionComponents) {
+        const compQty = parseQty(comp.quantity)
+        if (comp.kind === "article" && comp.articleId) {
+          addNeed(comp.articleId, compQty, `${line.name} — ${comp.name}`)
+        } else if (comp.kind === "recipe" && comp.recipeId) {
+          const { data: ingRows, error: ingErr } = await supabase
+            .from("recipe_ingredients")
+            .select(
+              `
+              quantity,
+              waste_pct,
+              articles (
+                id,
+                name,
+                default_waste_pct
+              )
+            `,
+            )
+            .eq("recipe_id", comp.recipeId)
+            .eq("pop_id", popId)
+            .order("sort_order", { ascending: true })
+          if (ingErr) {
+            return {
+              success: false,
+              error:
+                ingErr.message ||
+                "No se pudieron leer los ingredientes de la receta.",
+            }
+          }
+          for (const row of ingRows ?? []) {
+            const art = row.articles as {
+              id?: string
+              name?: string
+              default_waste_pct?: number | null
+            } | null
+            if (!art?.id) continue
+            const consumo = consumptionQuantity(
+              Number(row.quantity ?? 0),
+              row.waste_pct != null ? Number(row.waste_pct) : null,
+              art.default_waste_pct != null ? Number(art.default_waste_pct) : null,
+              compQty,
+            )
+            addNeed(
+              String(art.id),
+              consumo,
+              `${line.name} — ${comp.name} — ${String(art.name ?? "Ingrediente")}`,
+            )
+          }
+        }
+      }
+      continue
+    }
+    if (line.lineKind === "article" && line.articleId) {
+      addNeed(line.articleId, line.qty, line.name)
+      continue
+    }
+    if (line.lineKind !== "recipe" || !line.recipeId) continue
+
+    const { data: ingRows, error: ingErr } = await supabase
+      .from("recipe_ingredients")
+      .select(
+        `
+        quantity,
+        waste_pct,
+        articles (
+          id,
+          name,
+          default_waste_pct
+        )
+      `,
+      )
+      .eq("recipe_id", line.recipeId)
+      .eq("pop_id", popId)
+      .order("sort_order", { ascending: true })
+
+    if (ingErr) {
+      return {
+        success: false,
+        error: ingErr.message || "No se pudieron leer los ingredientes de la receta.",
+      }
+    }
+
+    for (const row of ingRows ?? []) {
+      const art = row.articles as {
+        id?: string
+        name?: string
+        default_waste_pct?: number | null
+      } | null
+      if (!art?.id) continue
+      const consumo = consumptionQuantity(
+        Number(row.quantity ?? 0),
+        row.waste_pct != null ? Number(row.waste_pct) : null,
+        art.default_waste_pct != null ? Number(art.default_waste_pct) : null,
+        line.qty,
+      )
+      const ingLabel = String(art.name ?? "Ingrediente")
+      addNeed(String(art.id), consumo, `${line.name} — ${ingLabel}`)
+    }
+  }
+
+  const needs: StockDeductionNeed[] = []
+  for (const [articleId, entry] of byArticle.entries()) {
+    needs.push({
+      articleId,
+      qty: parseQty(entry.qty),
+      label: [...entry.labels].join(", "),
+    })
+  }
+  return { success: true, needs }
+}
+
+async function deductArticleStockForSale(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  popId: string,
+  saleId: string,
+  userId: string,
+  need: StockDeductionNeed,
+): Promise<
+  | { success: true; amount: number; movement: { id: string; fifo: FifoAllocationPlan[] } }
+  | { success: false; error: string }
+> {
+  const qtyAbs = need.qty
+  const delta = -qtyAbs
+  const { data: artRow } = await supabase
+    .from("articles")
+    .select("id, name, cost_price")
+    .eq("id", need.articleId)
+    .eq("pop_id", popId)
+    .maybeSingle()
+  const articleName = String(artRow?.name ?? need.label ?? "")
+  const articleCostRef = roundMoney(Number(artRow?.cost_price ?? 0))
+
+  const { data: layerRows, error: lrErr } = await supabase
+    .from("inventory_cost_layers")
+    .select("id, quantity_remaining, unit_cost, received_at")
+    .eq("pop_id", popId)
+    .eq("article_id", need.articleId)
+    .gt("quantity_remaining", 0)
+    .order("received_at", { ascending: true })
+  if (lrErr) {
+    return { success: false, error: lrErr.message || "No se pudieron leer capas de costo." }
+  }
+  const layers = layerRows || []
+  let amount = 0
+  let fifoAllocations: FifoAllocationPlan[] = []
+
+  if (layers.length === 0) {
+    const u = articleCostRef > 0 ? articleCostRef : null
+    if (u == null || u <= 0) {
+      return {
+        success: false,
+        error: `Configurá precio de costo en «${articleName}» para valorar la salida de stock.`,
+      }
+    }
+    amount = roundMoney(qtyAbs * u)
+  } else {
+    let needQty = qtyAbs
+    let totalCost = 0
+    const plans: FifoAllocationPlan[] = []
+    for (const row of layers) {
+      if (needQty <= 0) break
+      const rem = parseQty(row.quantity_remaining)
+      if (rem <= 0) continue
+      const take = Math.min(needQty, rem)
+      const uc = parseQty(row.unit_cost)
+      totalCost += roundMoney(take * uc)
+      plans.push({
+        layerId: String(row.id),
+        qty: take,
+        unitCost: uc,
+        remainingBefore: rem,
+      })
+      needQty = parseQty(needQty - take)
+    }
+    if (needQty > 0) {
+      const u = articleCostRef > 0 ? articleCostRef : null
+      if (u == null || u <= 0) {
+        return {
+          success: false,
+          error: `Configurá precio de costo en «${articleName}» para el remanente FIFO.`,
+        }
+      }
+      totalCost += roundMoney(needQty * u)
+    }
+    amount = roundMoney(totalCost)
+    fifoAllocations = plans
+  }
+
+  if (amount <= 0) {
+    return {
+      success: false,
+      error: `No se pudo valorar el costo de «${articleName}».`,
+    }
+  }
+
+  const note = `Venta — ${articleName}`
+  const { data: movIns, error: movErr } = await supabase
+    .from("inventory_movements")
+    .insert({
+      pop_id: popId,
+      article_id: need.articleId,
+      quantity_delta: delta,
+      movement_type: "sale",
+      sale_id: saleId,
+      note,
+      created_by: userId,
+    })
+    .select("id")
+    .single()
+  if (movErr || !movIns?.id) {
+    return { success: false, error: movErr?.message || "No se pudo registrar el movimiento de stock." }
+  }
+  const movementId = String(movIns.id)
+
+  if (fifoAllocations.length > 0) {
+    for (const a of fifoAllocations) {
+      const { error: allocInsErr } = await supabase
+        .from("inventory_layer_allocations")
+        .insert({
+          pop_id: popId,
+          layer_id: a.layerId,
+          article_id: need.articleId,
+          inventory_movement_id: movementId,
+          quantity: a.qty,
+          unit_cost: a.unitCost,
+        })
+      if (allocInsErr) {
+        return {
+          success: false,
+          error: allocInsErr.message || "No se pudo registrar la imputación FIFO.",
+        }
+      }
+    }
+    for (const a of fifoAllocations) {
+      const newRem = parseQty(a.remainingBefore - a.qty)
+      const { error: layUpdErr } = await supabase
+        .from("inventory_cost_layers")
+        .update({ quantity_remaining: newRem })
+        .eq("id", a.layerId)
+      if (layUpdErr) {
+        return {
+          success: false,
+          error: layUpdErr.message || "No se pudo actualizar la capa de costo.",
+        }
+      }
+    }
+  }
+
+  return {
+    success: true,
+    amount,
+    movement: { id: movementId, fifo: fifoAllocations },
+  }
+}
+
+export type CompleteSaleLineInput = {
+  articleId?: string
+  recipeId?: string
+  promotionId?: string
+  promotionSelections?: Array<{
+    slotId: string
+    kind: "article" | "recipe"
+    refId: string
+  }>
+  promotionDealDiscount?: number
+  promotionDealId?: string
   quantity: number
   itemDiscountMode: "porcentaje" | "fijo"
   itemDiscountDraft: string
+  /** Si true, no aplica el descuento de catálogo del artículo en esta venta. */
+  suppressCatalogDiscount?: boolean
   comment?: string
 }
 
@@ -219,6 +530,10 @@ export type CompleteSaleInput = {
   customerIvaCondition?: string | null
   /** Datos fiscales manuales o padrón (nombre / CUIT-DNI) cuando aplica override. */
   fiscalCustomer?: { name: string; taxId: string | null } | null
+  /** Venta asociada a una sesión de mesa (canal table). */
+  tableSessionId?: string | null
+  /** Venta asociada a un pedido de mostrador (canal counter). */
+  counterOrderId?: string | null
 }
 
 export async function completeSale(
@@ -289,6 +604,20 @@ export async function completeSale(
     const { sessionId: cashRegisterSessionId, cashRegisterId } = cashRes.ctx
 
     const payOnClientAccount = Boolean(input.payOnClientAccount)
+    const tableSessionId = input.tableSessionId?.trim() || null
+    if (tableSessionId && !/^[0-9a-f-]{36}$/i.test(tableSessionId)) {
+      return { success: false, error: "Sesión de mesa inválida." }
+    }
+    const counterOrderId = input.counterOrderId?.trim() || null
+    if (counterOrderId && !/^[0-9a-f-]{36}$/i.test(counterOrderId)) {
+      return { success: false, error: "Pedido de mostrador inválido." }
+    }
+    if (tableSessionId && counterOrderId) {
+      return {
+        success: false,
+        error: "No se puede vincular una venta a mesa y mostrador a la vez.",
+      }
+    }
     const pmId = input.paymentMethodId?.trim() || null
 
     if (!payOnClientAccount && !pmId) {
@@ -370,7 +699,10 @@ export async function completeSale(
     }
 
     type BuiltLine = {
-      articleId: string
+      lineKind: "article" | "recipe" | "promotion"
+      articleId: string | null
+      recipeId: string | null
+      promotionId: string | null
       name: string
       qty: number
       unitPrice: number
@@ -380,6 +712,14 @@ export async function completeSale(
       itemDiscount: number
       lineBase: number
       comment: string | null
+      promotionSnapshot?: Record<string, unknown>
+      promotionComponents?: Array<{
+        kind: "article" | "recipe"
+        articleId: string | null
+        recipeId: string | null
+        quantity: number
+        name: string
+      }>
     }
 
     const built: BuiltLine[] = []
@@ -388,41 +728,316 @@ export async function completeSale(
       if (qty <= 0 || qty > 100000) {
         return { success: false, error: "Hay cantidades inválidas en el pedido." }
       }
-      const { data: art, error: aErr } = await supabase
-        .from("articles")
-        .select("id, name, sale_price, iva")
-        .eq("id", raw.articleId)
-        .eq("pop_id", popId)
-        .eq("is_active", true)
-        .maybeSingle()
-      if (aErr || !art?.id) {
-        return { success: false, error: "Uno de los artículos ya no está disponible." }
+
+      const articleId = raw.articleId?.trim() || ""
+      const recipeId = raw.recipeId?.trim() || ""
+      const promotionId = raw.promotionId?.trim() || ""
+      const selectionCount = raw.promotionSelections?.length ?? 0
+      const kindCount =
+        (articleId ? 1 : 0) + (recipeId ? 1 : 0) + (promotionId ? 1 : 0)
+      if (kindCount !== 1) {
+        return { success: false, error: "Hay líneas de pedido inválidas." }
       }
-      const unitPrice = roundMoney(Number(art.sale_price ?? 0))
-      const ivaPct = Math.max(0, Number(art.iva ?? 0) || 0)
-      const precioBase = roundMoney(unitPrice * qty)
-      const draft = (raw.itemDiscountDraft ?? "").trim().replace(",", ".")
-      const n = Number.parseFloat(draft)
+      if (promotionId && selectionCount === 0) {
+        return { success: false, error: "Hay promociones sin selección de ítems." }
+      }
+
+      let name = ""
+      let unitPrice = 0
+      let ivaPct = 0
+      let lineKind: BuiltLine["lineKind"] = "article"
+      let resolvedArticleId: string | null = null
+      let resolvedRecipeId: string | null = null
+      let resolvedPromotionId: string | null = null
+      let promotionSnapshot: Record<string, unknown> | undefined
+      let promotionComponents: BuiltLine["promotionComponents"]
+
       let itemDiscount = 0
       let itemDiscountMode: "porcentaje" | "fijo" | null = null
       let itemDiscountValue: number | null = null
-      if (Number.isFinite(n) && n > 0) {
-        const modo = raw.itemDiscountMode ?? "porcentaje"
-        itemDiscountMode = modo
-        itemDiscountValue = n
-        itemDiscount =
-          modo === "porcentaje"
-            ? roundMoney(precioBase * (Math.min(100, Math.max(0, n)) / 100))
-            : roundMoney(Math.min(Math.max(0, n), precioBase))
+      let lineBase = 0
+
+      const dealDiscount = Math.max(0, Number(raw.promotionDealDiscount ?? 0) || 0)
+      const suppressForQuantityDeal = dealDiscount > 0
+      const manualDiscountInput = hasSaleLineManualDiscount({
+        mode: raw.itemDiscountMode ?? "porcentaje",
+        draft: raw.itemDiscountDraft ?? "",
+      })
+        ? {
+            mode: raw.itemDiscountMode ?? "porcentaje",
+            draft: raw.itemDiscountDraft ?? "",
+          }
+        : null
+
+      if (promotionId) {
+        const { data: promo, error: promoErr } = await supabase
+          .from("promotions")
+          .select(
+            "id, name, promotion_type, pricing_mode, fixed_price, discount_mode, discount_value, is_active",
+          )
+          .eq("id", promotionId)
+          .eq("pop_id", popId)
+          .eq("is_active", true)
+          .maybeSingle()
+        if (promoErr || !promo?.id) {
+          return {
+            success: false,
+            error: "Una de las promociones ya no está disponible.",
+          }
+        }
+        if (String(promo.promotion_type) !== "combo") {
+          return { success: false, error: "Promoción de combo inválida." }
+        }
+
+        const { data: slotRows } = await supabase
+          .from("promotion_slots")
+          .select("id, label, quantity")
+          .eq("promotion_id", promotionId)
+          .eq("pop_id", popId)
+          .order("sort_order", { ascending: true })
+
+        const slotIds = (slotRows ?? []).map((s) => String(s.id))
+        const { data: optRows } =
+          slotIds.length > 0
+            ? await supabase
+                .from("promotion_slot_options")
+                .select("promotion_slot_id, article_id, recipe_id")
+                .eq("pop_id", popId)
+                .in("promotion_slot_id", slotIds)
+            : { data: [] as Record<string, unknown>[] }
+
+        const allowed = new Map<string, Set<string>>()
+        for (const slot of slotRows ?? []) {
+          allowed.set(String(slot.id), new Set())
+        }
+        for (const opt of optRows ?? []) {
+          const slotId = String(opt.promotion_slot_id)
+          const set = allowed.get(slotId)
+          if (!set) continue
+          if (opt.article_id) set.add(`article:${String(opt.article_id)}`)
+          if (opt.recipe_id) set.add(`recipe:${String(opt.recipe_id)}`)
+        }
+
+        const selections: PromotionCartSelection[] = []
+        for (const sel of raw.promotionSelections ?? []) {
+          const slotId = sel.slotId?.trim()
+          const refId = sel.refId?.trim()
+          if (!slotId || !refId || (sel.kind !== "article" && sel.kind !== "recipe")) {
+            return { success: false, error: "Selección de promoción inválida." }
+          }
+          const slot = (slotRows ?? []).find((s) => String(s.id) === slotId)
+          if (!slot) {
+            return { success: false, error: "Ítem de promoción inválido." }
+          }
+          const pool = allowed.get(slotId)
+          if (!pool?.has(`${sel.kind}:${refId}`)) {
+            return {
+              success: false,
+              error: "Una opción de la promoción ya no está disponible.",
+            }
+          }
+
+          let selName = ""
+          let listUnitPrice = 0
+          let iva = 0
+          if (sel.kind === "article") {
+            const { data: art } = await supabase
+              .from("articles")
+              .select("id, name, sale_price, iva, discount_mode, discount_value")
+              .eq("id", refId)
+              .eq("pop_id", popId)
+              .eq("is_active", true)
+              .maybeSingle()
+            if (!art?.id) {
+              return {
+                success: false,
+                error: "Un producto de la promoción ya no está disponible.",
+              }
+            }
+            selName = String(art.name ?? "")
+            listUnitPrice = roundMoney(Number(art.sale_price ?? 0))
+            iva = Number(art.iva ?? 0) || 0
+          } else {
+            const { data: recipe } = await supabase
+              .from("recipes")
+              .select("id, name, sale_price, iva")
+              .eq("id", refId)
+              .eq("pop_id", popId)
+              .eq("is_active", true)
+              .maybeSingle()
+            if (!recipe?.id) {
+              return {
+                success: false,
+                error: "Una receta de la promoción ya no está disponible.",
+              }
+            }
+            selName = String(recipe.name ?? "")
+            listUnitPrice = roundMoney(Number(recipe.sale_price ?? 0))
+            iva = Number(recipe.iva ?? 0) || 0
+          }
+
+          selections.push({
+            slotId,
+            slotLabel: String(slot.label ?? ""),
+            kind: sel.kind,
+            refId,
+            name: selName,
+            listUnitPrice,
+            slotQuantity: Number(slot.quantity ?? 1) || 1,
+            iva,
+          })
+        }
+
+        if (selections.length !== (slotRows ?? []).length) {
+          return {
+            success: false,
+            error: "Faltan ítems por elegir en una promoción.",
+          }
+        }
+
+        const priced = priceComboPromotion(
+          {
+            pricingMode:
+              String(promo.pricing_mode) === "percent_off"
+                ? "percent_off"
+                : String(promo.pricing_mode) === "fixed_off"
+                  ? "fixed_off"
+                  : "fixed_total",
+            fixedPrice:
+              promo.fixed_price != null ? Number(promo.fixed_price) : null,
+            discountMode:
+              promo.discount_mode === "porcentaje" || promo.discount_mode === "fijo"
+                ? promo.discount_mode
+                : null,
+            discountValue:
+              promo.discount_value != null ? Number(promo.discount_value) : null,
+          },
+          selections,
+          qty,
+        )
+
+        lineKind = "promotion"
+        resolvedPromotionId = String(promo.id)
+        name = String(promo.name ?? "")
+        unitPrice = qty > 0 ? roundMoney(priced.promoTotal / qty) : 0
+        ivaPct = priced.weightedIvaPct
+        itemDiscount = priced.promoDiscount
+        lineBase = priced.promoTotal
+
+        promotionComponents = priced.components.map((c) => ({
+          kind: c.kind,
+          articleId: c.kind === "article" ? c.refId : null,
+          recipeId: c.kind === "recipe" ? c.refId : null,
+          quantity: roundMoney(c.slotQuantity * qty),
+          name: c.name,
+        }))
+
+        promotionSnapshot = {
+          promotion_id: resolvedPromotionId,
+          pricing_mode: String(promo.pricing_mode),
+          list_total: priced.listTotal,
+          promo_discount: priced.promoDiscount,
+          components: priced.components.map((c) => ({
+            slot_id: c.slotId,
+            slot_label: c.slotLabel,
+            article_id: c.kind === "article" ? c.refId : null,
+            recipe_id: c.kind === "recipe" ? c.refId : null,
+            name_snapshot: c.name,
+            list_unit_price: c.listUnitPrice,
+            allocated_unit_price: c.allocatedUnitPrice,
+            quantity: roundMoney(c.slotQuantity * qty),
+            iva: c.iva,
+            promo_discount: c.promoDiscount,
+          })),
+        }
+      } else if (recipeId) {
+        const { data: recipe, error: rErr } = await supabase
+          .from("recipes")
+          .select("id, name, sale_price, iva")
+          .eq("id", recipeId)
+          .eq("pop_id", popId)
+          .eq("is_active", true)
+          .maybeSingle()
+        if (rErr || !recipe?.id) {
+          return { success: false, error: "Una de las recetas ya no está disponible." }
+        }
+        lineKind = "recipe"
+        resolvedRecipeId = String(recipe.id)
+        name = String(recipe.name ?? "")
+        unitPrice = roundMoney(Number(recipe.sale_price ?? 0))
+        ivaPct = Math.max(0, Number(recipe.iva ?? 0) || 0)
+
+        const lineDiscount = resolveSaleLineDiscount({
+          listUnitPrice: unitPrice,
+          quantity: qty,
+          manualDiscount:
+            suppressForQuantityDeal ? null : manualDiscountInput,
+        })
+        itemDiscount = lineDiscount.itemDiscountAmount
+        itemDiscountMode = lineDiscount.itemDiscountMode
+        itemDiscountValue = lineDiscount.itemDiscountValue
+        lineBase = lineDiscount.lineSubtotal
+      } else {
+        const { data: art, error: aErr } = await supabase
+          .from("articles")
+          .select("id, name, sale_price, iva, discount_mode, discount_value")
+          .eq("id", articleId)
+          .eq("pop_id", popId)
+          .eq("is_active", true)
+          .maybeSingle()
+        if (aErr || !art?.id) {
+          return { success: false, error: "Uno de los artículos ya no está disponible." }
+        }
+        lineKind = "article"
+        resolvedArticleId = String(art.id)
+        name = String(art.name ?? "")
+        unitPrice = roundMoney(Number(art.sale_price ?? 0))
+        ivaPct = Math.max(0, Number(art.iva ?? 0) || 0)
+
+        const rawDiscountMode = art.discount_mode
+        const catalogDiscountMode =
+          typeof rawDiscountMode === "string" &&
+          (rawDiscountMode === "porcentaje" || rawDiscountMode === "fijo")
+            ? rawDiscountMode
+            : null
+        const catalogDiscountRaw = art.discount_value
+        const catalogDiscountValue =
+          catalogDiscountRaw != null &&
+          Number.isFinite(Number(catalogDiscountRaw))
+            ? Number(catalogDiscountRaw)
+            : null
+
+        const lineDiscount = resolveSaleLineDiscount({
+          listUnitPrice: unitPrice,
+          quantity: qty,
+          catalogDiscountMode,
+          catalogDiscountValue,
+          manualDiscount:
+            suppressForQuantityDeal ? null : manualDiscountInput,
+          suppressCatalogDiscount:
+            raw.suppressCatalogDiscount === true || suppressForQuantityDeal,
+        })
+        itemDiscount = lineDiscount.itemDiscountAmount
+        itemDiscountMode = lineDiscount.itemDiscountMode
+        itemDiscountValue = lineDiscount.itemDiscountValue
+        lineBase = lineDiscount.lineSubtotal
       }
-      const lineBase = roundMoney(precioBase - itemDiscount)
+
+      if (dealDiscount > 0) {
+        itemDiscount = roundMoney(dealDiscount)
+        lineBase = roundMoney(Math.max(0, lineBase - dealDiscount))
+      }
+
       if (lineBase < 0) {
         return { success: false, error: "Los importes de línea no son válidos." }
       }
       const com = raw.comment?.trim()
       built.push({
-        articleId: String(art.id),
-        name: String(art.name ?? ""),
+        lineKind,
+        articleId: resolvedArticleId,
+        recipeId: resolvedRecipeId,
+        promotionId: resolvedPromotionId,
+        name,
         qty,
         unitPrice,
         ivaPct,
@@ -431,6 +1046,8 @@ export async function completeSale(
         itemDiscount,
         lineBase,
         comment: com ? com : null,
+        promotionSnapshot,
+        promotionComponents,
       })
     }
 
@@ -494,6 +1111,9 @@ export async function completeSale(
 
     const lineItemsJson = fiscalLines.map((l) => ({
       article_id: l.articleId,
+      recipe_id: l.recipeId,
+      promotion_id: l.promotionId,
+      line_kind: l.lineKind,
       quantity: l.qty,
       unit_price: l.unitPrice,
       iva: l.ivaPct,
@@ -510,6 +1130,7 @@ export async function completeSale(
       line_total: l.lineFinal,
       name_snapshot: l.name,
       comment: l.comment,
+      ...(l.promotionSnapshot ? { promotion_snapshot: l.promotionSnapshot } : {}),
     }))
 
     const metadata: Record<string, unknown> = {}
@@ -564,15 +1185,20 @@ export async function completeSale(
       ? lineItemsJson
       : lineItemsJson.map((li) => ({ ...li, iva: 0 }))
 
-    for (const l of built) {
-      const oh = await sumInventoryOnHandForArticle(supabase, popId, l.articleId)
+    const stockNeedsRes = await collectStockDeductionNeeds(supabase, popId, built)
+    if (!stockNeedsRes.success) {
+      return { success: false, error: stockNeedsRes.error }
+    }
+
+    for (const need of stockNeedsRes.needs) {
+      const oh = await sumInventoryOnHandForArticle(supabase, popId, need.articleId)
       if (!oh.success) {
         return { success: false, error: oh.error }
       }
-      if (l.qty > oh.onHand + 1e-6) {
+      if (need.qty > oh.onHand + 1e-6) {
         return {
           success: false,
-          error: `Stock insuficiente para «${l.name || "Artículo"}».`,
+          error: `Stock insuficiente para «${need.label || "Insumo"}».`,
         }
       }
     }
@@ -596,6 +1222,13 @@ export async function completeSale(
         cash_register_session_id: cashRegisterSessionId,
         created_by: user.id,
         metadata,
+        sale_channel: counterOrderId
+          ? "counter"
+          : tableSessionId
+            ? "table"
+            : "pos",
+        table_session_id: tableSessionId,
+        counter_order_id: counterOrderId,
       })
       .select("id")
       .single()
@@ -624,143 +1257,20 @@ export async function completeSale(
     }
 
     let cogsTotal = 0
-    for (const l of built) {
-      const qtyAbs = l.qty
-      const delta = -qtyAbs
-      const { data: artRow } = await supabase
-        .from("articles")
-        .select("id, name, cost_price")
-        .eq("id", l.articleId)
-        .eq("pop_id", popId)
-        .maybeSingle()
-      const articleName = String(artRow?.name ?? l.name ?? "")
-      const articleCostRef = roundMoney(Number(artRow?.cost_price ?? 0))
-
-      const { data: layerRows, error: lrErr } = await supabase
-        .from("inventory_cost_layers")
-        .select("id, quantity_remaining, unit_cost, received_at")
-        .eq("pop_id", popId)
-        .eq("article_id", l.articleId)
-        .gt("quantity_remaining", 0)
-        .order("received_at", { ascending: true })
-      if (lrErr) {
+    for (const need of stockNeedsRes.needs) {
+      const deductRes = await deductArticleStockForSale(
+        supabase,
+        popId,
+        saleId,
+        user.id,
+        need,
+      )
+      if (!deductRes.success) {
         await cancelSaleRollback(supabase, saleId, trackedMovements)
-        return { success: false, error: lrErr.message || "No se pudieron leer capas de costo." }
+        return { success: false, error: deductRes.error }
       }
-      const layers = layerRows || []
-      let amount = 0
-      let fifoAllocations: FifoAllocationPlan[] = []
-
-      if (layers.length === 0) {
-        const u = articleCostRef > 0 ? articleCostRef : null
-        if (u == null || u <= 0) {
-          await cancelSaleRollback(supabase, saleId, trackedMovements)
-          return {
-            success: false,
-            error: `Configurá precio de costo en «${articleName}» para valorar la salida de stock.`,
-          }
-        }
-        amount = roundMoney(qtyAbs * u)
-      } else {
-        let need = qtyAbs
-        let totalCost = 0
-        const plans: FifoAllocationPlan[] = []
-        for (const row of layers) {
-          if (need <= 0) break
-          const rem = parseQty(row.quantity_remaining)
-          if (rem <= 0) continue
-          const take = Math.min(need, rem)
-          const uc = parseQty(row.unit_cost)
-          totalCost += roundMoney(take * uc)
-          plans.push({
-            layerId: String(row.id),
-            qty: take,
-            unitCost: uc,
-            remainingBefore: rem,
-          })
-          need = parseQty(need - take)
-        }
-        if (need > 0) {
-          const u = articleCostRef > 0 ? articleCostRef : null
-          if (u == null || u <= 0) {
-            await cancelSaleRollback(supabase, saleId, trackedMovements)
-            return {
-              success: false,
-              error: `Configurá precio de costo en «${articleName}» para el remanente FIFO.`,
-            }
-          }
-          totalCost += roundMoney(need * u)
-        }
-        amount = roundMoney(totalCost)
-        fifoAllocations = plans
-      }
-
-      if (amount <= 0) {
-        await cancelSaleRollback(supabase, saleId, trackedMovements)
-        return {
-          success: false,
-          error: `No se pudo valorar el costo de «${articleName}».`,
-        }
-      }
-
-      const note = `Venta — ${articleName}`
-      const { data: movIns, error: movErr } = await supabase
-        .from("inventory_movements")
-        .insert({
-          pop_id: popId,
-          article_id: l.articleId,
-          quantity_delta: delta,
-          movement_type: "sale",
-          sale_id: saleId,
-          note,
-          created_by: user.id,
-        })
-        .select("id")
-        .single()
-      if (movErr || !movIns?.id) {
-        await cancelSaleRollback(supabase, saleId, trackedMovements)
-        return { success: false, error: movErr?.message || "No se pudo registrar el movimiento de stock." }
-      }
-      const movementId = String(movIns.id)
-      trackedMovements.push({ id: movementId, fifo: fifoAllocations })
-
-      if (fifoAllocations.length > 0) {
-        for (const a of fifoAllocations) {
-          const { error: allocInsErr } = await supabase
-            .from("inventory_layer_allocations")
-            .insert({
-              pop_id: popId,
-              layer_id: a.layerId,
-              article_id: l.articleId,
-              inventory_movement_id: movementId,
-              quantity: a.qty,
-              unit_cost: a.unitCost,
-            })
-          if (allocInsErr) {
-            await cancelSaleRollback(supabase, saleId, trackedMovements)
-            return {
-              success: false,
-              error: allocInsErr.message || "No se pudo registrar la imputación FIFO.",
-            }
-          }
-        }
-        for (const a of fifoAllocations) {
-          const newRem = parseQty(a.remainingBefore - a.qty)
-          const { error: layUpdErr } = await supabase
-            .from("inventory_cost_layers")
-            .update({ quantity_remaining: newRem })
-            .eq("id", a.layerId)
-          if (layUpdErr) {
-            await cancelSaleRollback(supabase, saleId, trackedMovements)
-            return {
-              success: false,
-              error: layUpdErr.message || "No se pudo actualizar la capa de costo.",
-            }
-          }
-        }
-      }
-
-      cogsTotal = roundMoney(cogsTotal + amount)
+      trackedMovements.push(deductRes.movement)
+      cogsTotal = roundMoney(cogsTotal + deductRes.amount)
     }
 
     const tz = timezoneForPopLedger(popRes.pop.country, popRes.pop.siteId)
@@ -937,6 +1447,45 @@ export async function completeSale(
       revenueEntryId = null
       await cancelSaleRollback(supabase, saleId, trackedMovements)
       return { success: false, error: compErr.message || "No se pudo completar la venta." }
+    }
+
+    if (tableSessionId) {
+      const { error: closeSessionErr } = await supabase
+        .from("table_sessions")
+        .update({
+          status: "closed",
+          closed_at: new Date().toISOString(),
+          closed_by: user.id,
+        })
+        .eq("id", tableSessionId)
+        .eq("pop_id", popId)
+        .eq("status", "open")
+
+      if (closeSessionErr) {
+        return {
+          success: false,
+          error:
+            closeSessionErr.message ||
+            "La venta se registró pero no se pudo cerrar la mesa.",
+        }
+      }
+    }
+
+    if (counterOrderId) {
+      const { error: linkOrderErr } = await supabase
+        .from("counter_orders")
+        .update({ sale_id: saleId })
+        .eq("id", counterOrderId)
+        .eq("pop_id", popId)
+
+      if (linkOrderErr) {
+        return {
+          success: false,
+          error:
+            linkOrderErr.message ||
+            "La venta se registró pero no se pudo vincular al pedido.",
+        }
+      }
     }
 
     return { success: true, saleId }

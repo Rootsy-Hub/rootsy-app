@@ -34,6 +34,7 @@ import {
 } from "@/components/ui/table"
 import { DataWorkspaceListPaginationFooter } from "@/components/data-workspace/DataWorkspaceListPaginationFooter"
 import { DataWorkspaceListTableShell } from "@/components/data-workspace/DataWorkspaceListTableShell"
+import { DataWorkspaceTableThumbnail } from "@/components/data-workspace/DataWorkspaceListTablePrimitives"
 import {
   listBulkToolbarClearButtonClass,
   selectColumnInnerClass,
@@ -1120,10 +1121,10 @@ export function LayoutPreviewListTable({
                   />
                 </div>
               </TableHead>
-              <TableHead className={cn(lightTableThClass, "w-14")}>
+              <TableHead className={cn(lightTableThClass, "w-24 px-3 text-left")}>
                 <span className="sr-only">Imagen</span>
               </TableHead>
-              <TableHead className={cn(lightTableThClass, "min-w-48 text-left")}>
+              <TableHead className={cn(lightTableThClass, "min-w-48 px-3 text-left")}>
                 Artículo
               </TableHead>
               <TableHead className={cn(lightTableThClass, "w-44 text-left")}>
@@ -1172,16 +1173,12 @@ export function LayoutPreviewListTable({
                     />
                   </div>
                 </TableCell>
-                <TableCell className="w-14 px-2 py-2 align-middle">
-                  <div className="size-11 overflow-hidden rounded-lg ring-1 ring-border">
-                    <img
-                      src={productImageSrc(row.imageSeed)}
-                      alt=""
-                      className="size-full object-cover"
-                      width={44}
-                      height={44}
-                    />
-                  </div>
+                <TableCell className="w-24 px-3 py-2.5 align-middle">
+                  <DataWorkspaceTableThumbnail
+                    src={productImageSrc(row.imageSeed)}
+                    alt={row.title}
+                    size="lg"
+                  />
                 </TableCell>
                 <TableCell className="min-w-0 px-3 py-2.5 align-middle">
                   <p className="truncate font-medium text-foreground">

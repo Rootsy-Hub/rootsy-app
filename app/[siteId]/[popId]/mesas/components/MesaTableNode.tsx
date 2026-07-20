@@ -11,17 +11,21 @@ import { cn } from "@/lib/utils"
 type Props = {
   table: MesaTable
   selected: boolean
+  layoutSelected: boolean
   layoutEditMode: boolean
   openedAt?: string | null
   onSelect: (tableId: string) => void
+  onSelectLayout: (tableId: string) => void
 }
 
 export function MesaTableNode({
   table,
   selected,
+  layoutSelected,
   layoutEditMode,
   openedAt = null,
   onSelect,
+  onSelectLayout,
 }: Props) {
   const { attributes, listeners, setNodeRef, transform, isDragging } =
     useDraggable({
@@ -29,42 +33,56 @@ export function MesaTableNode({
       disabled: !layoutEditMode,
     })
 
-  const style = {
-    left: table.x,
-    top: table.y,
-    transform: CSS.Translate.toString(transform),
-    zIndex: isDragging ? 50 : selected ? 20 : 1,
-  }
+  const rotation = table.rotation ?? 0
 
   return (
-    <button
+    <div
       ref={setNodeRef}
-      type="button"
-      style={style}
-      className={cn(
-        "absolute touch-none",
-        layoutEditMode ? "cursor-grab active:cursor-grabbing" : "cursor-pointer",
-        isDragging && "opacity-90",
-      )}
-      aria-label={
-        openedAt
-          ? `Mesa ${table.label}, ${mesaStatusLabel(table.status)}, abierta ${formatMesaOpenDuration(openedAt)}`
-          : `Mesa ${table.label}, ${mesaStatusLabel(table.status)}`
-      }
-      onClick={(e) => {
-        e.stopPropagation()
-        if (!layoutEditMode) onSelect(table.id)
+      className="absolute touch-none"
+      style={{
+        left: table.x,
+        top: table.y,
+        transform: CSS.Translate.toString(transform),
+        zIndex: isDragging ? 50 : layoutSelected ? 45 : selected ? 20 : 1,
       }}
-      {...(layoutEditMode ? { ...listeners, ...attributes } : { "aria-pressed": selected })}
     >
-      <MesaTableShapeView
-        label={table.label}
-        shape={table.shape}
-        status={table.status}
-        seats={table.seats}
-        selected={selected}
-        openedAt={openedAt}
-      />
-    </button>
+      <button
+        type="button"
+        style={{
+          transform: rotation ? `rotate(${rotation}deg)` : undefined,
+          transformOrigin: "center center",
+        }}
+        className={cn(
+          "relative block outline-none focus:outline-none focus-visible:outline-none",
+          layoutEditMode ? "cursor-grab active:cursor-grabbing" : "cursor-pointer",
+          isDragging && "opacity-90",
+        )}
+        aria-label={
+          openedAt
+            ? `Mesa ${table.label}, ${mesaStatusLabel(table.status)}, abierta ${formatMesaOpenDuration(openedAt)}`
+            : `Mesa ${table.label}, ${mesaStatusLabel(table.status)}`
+        }
+        onClick={(e) => {
+          e.stopPropagation()
+          if (layoutEditMode) {
+            onSelectLayout(table.id)
+            return
+          }
+          onSelect(table.id)
+        }}
+        {...(layoutEditMode ? { ...listeners, ...attributes } : { "aria-pressed": selected })}
+      >
+        <MesaTableShapeView
+          label={table.label}
+          shape={table.shape}
+          status={table.status}
+          seats={table.seats}
+          selected={!layoutEditMode && selected}
+          layoutSelected={layoutEditMode && layoutSelected}
+          uprightRotation={rotation}
+          openedAt={openedAt}
+        />
+      </button>
+    </div>
   )
 }

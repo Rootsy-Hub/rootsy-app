@@ -1,11 +1,45 @@
 "use client"
 
-import { getSaleCatalog, type SaleCatalogClient, type SaleCatalogArticle, type SaleCatalogCategory, type SaleCatalogPaymentMethod, type SaleOpenCashSession } from "@/app/[siteId]/[popId]/sale/actions"
+import { saveTableSessionCheckout } from "@/app/[siteId]/[popId]/mesas/actions"
+import {
+  emptyTableSessionCheckout,
+  type MesasCartItem,
+  type MesasClienteSeleccionado,
+  type TableSessionCheckoutSnapshot,
+} from "@/app/[siteId]/[popId]/mesas/mesasCheckoutState"
+import { getMenuCatalog, type MenuCatalogArticle, type MenuCatalogCategorySection, type MenuCatalogPromotion, type MenuCatalogRecipe } from "@/app/[siteId]/[popId]/menu-catalog/actions"
+import type { SaleCatalogClient, SaleCatalogPaymentMethod, SaleOpenCashSession } from "@/app/[siteId]/[popId]/sale/actions"
 import { completeSale } from "@/app/[siteId]/[popId]/sale/completeSale"
 import {
-  catalogCartOrderTotals,
-  saleCatalogArticleToProduct,
-} from "@/components/sale-operation/saleCatalogProduct"
+  buildMenuProductMap,
+  buildMenuCartDisplayLines,
+  computeMenuQuantityDealApplications,
+  computeMenuQuantityDealDiscounts,
+  menuCartOrderTotals,
+  menuPromotionToProduct,
+  removeQuantityDealApplicationFromCart,
+  resolvePromotionCartPricing,
+  tryAutoComboSelections,
+  type MenuCartDisplayLine,
+} from "@/lib/menuCheckoutPromotions"
+import type { PromotionCartSelection } from "@/lib/promotionPricing"
+import {
+  clearCartLineOverrides,
+  seedCartLineDefaultDiscount,
+  type OperationCartLineOverrideActions,
+  type OperationCartLineOverrideState,
+} from "@/components/sale-operation/OperationCartLineRow"
+import {
+  menuArticleToProduct,
+  menuRecipeToProduct,
+  type MenuCatalogProduct,
+} from "@/lib/menuCatalogProduct"
+import {
+  cartItemKey,
+  cartItemsMatch,
+  normalizeCartItemKind,
+  type MenuCartItemKind,
+} from "@/lib/menuCart"
 import { saleOpFmt } from "@/components/sale-operation/saleOperationStyles"
 import { CLIENT_IVA_CONDITION_OPTIONS, type ClientIvaConditionValue } from "@/app/[siteId]/[popId]/clients/clientIvaConstants"
 import { usePadronAutofillRazonSocial } from "@/hooks/usePadronAutofillRazonSocial"
@@ -26,16 +60,14 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 
 const MANUAL_PARTY_LIST_ID = "__manual__"
 
-export type MesasCartItem = { productoId: string; cantidad: number }
+export type { MesasCartItem, MesasClienteSeleccionado }
 
-export type MesasClienteSeleccionado = {
-  id: string | null
-  manual: boolean
-  name: string
-  taxId: string | null
-  ivaCondition: string | null
-  defaultInvoiceTypeLabel: string | null
-}
+const CHECKOUT_PERSIST_MS = 450
+
+export type RemoteTableSessionCheckout = {
+  checkout: TableSessionCheckoutSnapshot | null
+  updatedAt: string
+} | null
 
 const IVA_LABEL_BY_VALUE = Object.fromEntries(
   CLIENT_IVA_CONDITION_OPTIONS.map((o) => [o.value, o.label]),
@@ -50,45 +82,34 @@ function normalizarBusqueda(s: string) {
   return s.normalize("NFD").replace(/\p{M}/gu, "").toLowerCase()
 }
 
-type SessionCheckoutSnapshot = {
-  carrito: MesasCartItem[]
-  clienteSeleccionado: MesasClienteSeleccionado | null
-  manualNombreCliente: string
-  fiscalDocVenta: string
-  ventaIvaCondition: string
-  comprobante: string | null
-  metodoPagoSeleccionado: { id: string; label: string } | null
-  payOnClientAccount: boolean
-  modoDescuento: "porcentaje" | "fijo"
-  valorDescuentoPorcentaje: number
-  valorDescuentoFijo: number
-}
-
-function emptySessionSnapshot(
-  defaultComprobante: string | null = null,
-): SessionCheckoutSnapshot {
-  return {
-    carrito: [],
-    clienteSeleccionado: null,
-    manualNombreCliente: "",
-    fiscalDocVenta: "",
-    ventaIvaCondition: "",
-    comprobante: defaultComprobante,
-    metodoPagoSeleccionado: null,
-    payOnClientAccount: false,
-    modoDescuento: "porcentaje",
-    valorDescuentoPorcentaje: 0,
-    valorDescuentoFijo: 0,
+function defaultComprobanteForPop(
+  popId: string | undefined,
+  invoiceTypeSiteId: string,
+): string | null {
+  if (!popId) return null
+  const persisted = readSavedSaleComprobante(popId)
+  if (
+    persisted !== undefined &&
+    isAllowedSaleComprobanteLabel(invoiceTypeSiteId, persisted)
+  ) {
+    return persisted
   }
+  return null
 }
 
 export function useMesasSaleCheckout(
   popId: string | undefined,
   siteId: string,
   tableSessionId: string | null,
+  remoteSession: RemoteTableSessionCheckout = null,
 ) {
-  const [catalogArticles, setCatalogArticles] = useState<SaleCatalogArticle[]>([])
-  const [saleCategories, setSaleCategories] = useState<SaleCatalogCategory[]>([])
+  const [menuCategorySections, setMenuCategorySections] = useState<
+    MenuCatalogCategorySection[]
+  >([])
+  const [menuRecipes, setMenuRecipes] = useState<MenuCatalogRecipe[]>([])
+  const [menuArticles, setMenuArticles] = useState<MenuCatalogArticle[]>([])
+  const [menuPromotions, setMenuPromotions] = useState<MenuCatalogPromotion[]>([])
+  const [menuQuantityDeals, setMenuQuantityDeals] = useState<MenuCatalogPromotion[]>([])
   const [saleClients, setSaleClients] = useState<SaleCatalogClient[]>([])
   const [salePaymentMethods, setSalePaymentMethods] = useState<SaleCatalogPaymentMethod[]>([])
   const [canReadClients, setCanReadClients] = useState(false)
@@ -128,10 +149,32 @@ export function useMesasSaleCheckout(
   const [descuentoDraftModo, setDescuentoDraftModo] = useState<"porcentaje" | "fijo">("porcentaje")
   const [descuentoDraftTexto, setDescuentoDraftTexto] = useState("")
 
+  const [itemDetalleAbiertoId, setItemDetalleAbiertoId] = useState<string | null>(null)
+  const [itemDescuentoModo, setItemDescuentoModo] = useState<
+    Record<string, "porcentaje" | "fijo">
+  >({})
+  const [itemDescuentoDraft, setItemDescuentoDraft] = useState<
+    Record<string, string>
+  >({})
+  const [itemDescuentoSuprimido, setItemDescuentoSuprimido] = useState<
+    Record<string, true>
+  >({})
+  const [itemComentarios, setItemComentarios] = useState<Record<string, string>>({})
+
+  const [promoWizardOpen, setPromoWizardOpen] = useState(false)
+  const [promoWizardTarget, setPromoWizardTarget] = useState<MenuCatalogPromotion | null>(
+    null,
+  )
+
   const comprobanteInitRef = useRef(false)
-  const sessionSnapshotsRef = useRef<Map<string, SessionCheckoutSnapshot>>(new Map())
   const loadedSessionIdRef = useRef<string | null>(null)
-  const checkoutStateRef = useRef<SessionCheckoutSnapshot>(emptySessionSnapshot())
+  const checkoutStateRef = useRef<TableSessionCheckoutSnapshot>(
+    emptyTableSessionCheckout(),
+  )
+  const skipNextPersistRef = useRef(false)
+  const lastSavedUpdatedAtRef = useRef<string | null>(null)
+  const lastAppliedRemoteUpdatedAtRef = useRef<string | null>(null)
+  const persistTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   checkoutStateRef.current = {
     carrito,
@@ -145,9 +188,17 @@ export function useMesasSaleCheckout(
     modoDescuento,
     valorDescuentoPorcentaje,
     valorDescuentoFijo,
+    itemDescuentoModo,
+    itemDescuentoDraft,
+    itemDescuentoSuprimido,
+    itemComentarios,
   }
 
-  const applySessionSnapshot = useCallback((snap: SessionCheckoutSnapshot) => {
+  const applySessionSnapshot = useCallback((snap: TableSessionCheckoutSnapshot) => {
+    skipNextPersistRef.current = true
+    if (snap.comprobante != null) {
+      comprobanteInitRef.current = true
+    }
     setCarrito(snap.carrito)
     setClienteSeleccionado(snap.clienteSeleccionado)
     setManualNombreCliente(snap.manualNombreCliente)
@@ -159,6 +210,11 @@ export function useMesasSaleCheckout(
     setModoDescuento(snap.modoDescuento)
     setValorDescuentoPorcentaje(snap.valorDescuentoPorcentaje)
     setValorDescuentoFijo(snap.valorDescuentoFijo)
+    setItemDetalleAbiertoId(null)
+    setItemDescuentoModo(snap.itemDescuentoModo ?? {})
+    setItemDescuentoDraft(snap.itemDescuentoDraft ?? {})
+    setItemDescuentoSuprimido(snap.itemDescuentoSuprimido ?? {})
+    setItemComentarios(snap.itemComentarios ?? {})
     setClienteModalAbierto(false)
     setComprobanteModalAbierto(false)
     setPagoModalAbierto(false)
@@ -168,47 +224,133 @@ export function useMesasSaleCheckout(
     setSubmitError(null)
   }, [])
 
+  const flushCheckoutPersist = useCallback(
+    async (sessionId: string, snap: TableSessionCheckoutSnapshot) => {
+      if (!popId) return
+      const res = await saveTableSessionCheckout(popId, siteId, sessionId, snap)
+      if (res.success) {
+        lastSavedUpdatedAtRef.current = res.updatedAt
+      }
+    },
+    [popId, siteId],
+  )
+
   useEffect(() => {
     const prevId = loadedSessionIdRef.current
-    if (prevId) {
-      sessionSnapshotsRef.current.set(prevId, checkoutStateRef.current)
+    if (prevId && prevId !== tableSessionId && popId) {
+      if (persistTimerRef.current) {
+        clearTimeout(persistTimerRef.current)
+        persistTimerRef.current = null
+      }
+      void flushCheckoutPersist(prevId, checkoutStateRef.current)
     }
 
     loadedSessionIdRef.current = tableSessionId
+    lastSavedUpdatedAtRef.current = null
+    lastAppliedRemoteUpdatedAtRef.current = null
+    comprobanteInitRef.current = false
 
-    if (tableSessionId) {
-      const saved = sessionSnapshotsRef.current.get(tableSessionId)
-      if (saved) {
-        applySessionSnapshot(saved)
-      } else {
-        let defaultComprobante: string | null = null
-        if (popId) {
-          const persisted = readSavedSaleComprobante(popId)
-          if (
-            persisted !== undefined &&
-            isAllowedSaleComprobanteLabel(invoiceTypeSiteId, persisted)
-          ) {
-            defaultComprobante = persisted
-          }
-        }
-        applySessionSnapshot(emptySessionSnapshot(defaultComprobante))
-      }
+    if (tableSessionId && remoteSession) {
+      const snap =
+        remoteSession.checkout ??
+        emptyTableSessionCheckout(
+          defaultComprobanteForPop(popId, invoiceTypeSiteId),
+        )
+      applySessionSnapshot(snap)
+      lastAppliedRemoteUpdatedAtRef.current = remoteSession.updatedAt
+    } else if (tableSessionId) {
+      applySessionSnapshot(
+        emptyTableSessionCheckout(
+          defaultComprobanteForPop(popId, invoiceTypeSiteId),
+        ),
+      )
     } else {
-      let defaultComprobante: string | null = null
-      if (popId) {
-        const persisted = readSavedSaleComprobante(popId)
-        if (
-          persisted !== undefined &&
-          isAllowedSaleComprobanteLabel(invoiceTypeSiteId, persisted)
-        ) {
-          defaultComprobante = persisted
-        }
-      }
-      applySessionSnapshot(emptySessionSnapshot(defaultComprobante))
+      applySessionSnapshot(
+        emptyTableSessionCheckout(
+          defaultComprobanteForPop(popId, invoiceTypeSiteId),
+        ),
+      )
     }
-    // Solo al cambiar de sesión de mesa; el snapshot se lee/escribe vía refs.
+    // Solo al cambiar de sesión de mesa; el snapshot remoto se sincroniza aparte.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tableSessionId, applySessionSnapshot])
+
+  useEffect(() => {
+    if (!tableSessionId || !remoteSession) return
+    const { updatedAt, checkout } = remoteSession
+    if (updatedAt === lastSavedUpdatedAtRef.current) return
+    if (updatedAt === lastAppliedRemoteUpdatedAtRef.current) return
+
+    const snap =
+      checkout ??
+      emptyTableSessionCheckout(defaultComprobanteForPop(popId, invoiceTypeSiteId))
+    applySessionSnapshot(snap)
+    lastAppliedRemoteUpdatedAtRef.current = updatedAt
+  }, [
+    tableSessionId,
+    remoteSession?.updatedAt,
+    remoteSession?.checkout,
+    applySessionSnapshot,
+    popId,
+    invoiceTypeSiteId,
+  ])
+
+  useEffect(() => {
+    if (!popId || !tableSessionId) return
+    if (skipNextPersistRef.current) {
+      skipNextPersistRef.current = false
+      return
+    }
+
+    if (persistTimerRef.current) {
+      clearTimeout(persistTimerRef.current)
+    }
+
+    persistTimerRef.current = setTimeout(() => {
+      persistTimerRef.current = null
+      void flushCheckoutPersist(tableSessionId, checkoutStateRef.current)
+    }, CHECKOUT_PERSIST_MS)
+
+    return () => {
+      if (persistTimerRef.current) {
+        clearTimeout(persistTimerRef.current)
+        persistTimerRef.current = null
+      }
+    }
+  }, [
+    popId,
+    siteId,
+    tableSessionId,
+    carrito,
+    clienteSeleccionado,
+    manualNombreCliente,
+    fiscalDocVenta,
+    ventaIvaCondition,
+    comprobante,
+    metodoPagoSeleccionado,
+    payOnClientAccount,
+    modoDescuento,
+    valorDescuentoPorcentaje,
+    valorDescuentoFijo,
+    itemDescuentoModo,
+    itemDescuentoDraft,
+    itemDescuentoSuprimido,
+    itemComentarios,
+    flushCheckoutPersist,
+  ])
+
+  useEffect(() => {
+    return () => {
+      const sessionId = loadedSessionIdRef.current
+      if (sessionId && popId) {
+        if (persistTimerRef.current) {
+          clearTimeout(persistTimerRef.current)
+          persistTimerRef.current = null
+        }
+        void flushCheckoutPersist(sessionId, checkoutStateRef.current)
+      }
+    }
+  }, [popId, flushCheckoutPersist])
 
   const ventaPadron = usePadronAutofillRazonSocial(popId, fiscalDocVenta, {
     enabled: Boolean(popId) && (clienteSeleccionado == null || clienteSeleccionado.manual),
@@ -221,18 +363,24 @@ export function useMesasSaleCheckout(
       return
     }
     setCatalogLoading(true)
-    const res = await getSaleCatalog(popId)
+    const res = await getMenuCatalog(popId)
     if (!res.success) {
-      setCatalogArticles([])
-      setSaleCategories([])
+      setMenuCategorySections([])
+    setMenuRecipes([])
+    setMenuArticles([])
+    setMenuPromotions([])
+    setMenuQuantityDeals([])
       setSaleClients([])
       setSalePaymentMethods([])
       setCatalogError(res.error)
       setCatalogLoading(false)
       return
     }
-    setCatalogArticles(res.articles)
-    setSaleCategories(res.categories)
+    setMenuCategorySections(res.categorySections)
+    setMenuRecipes(res.recipes)
+    setMenuArticles(res.articles)
+    setMenuPromotions(res.promotions)
+    setMenuQuantityDeals(res.quantityDeals)
     setSaleClients(res.clients)
     setSalePaymentMethods(res.paymentMethods)
     setCanReadClients(res.canReadClients)
@@ -249,16 +397,16 @@ export function useMesasSaleCheckout(
   }, [loadCatalog])
 
   useEffect(() => {
-    if (salePaymentMethods.length === 0) return
+    if (salePaymentMethods.length === 0 || tableSessionId == null) return
     setMetodoPagoSeleccionado((prev) => {
       if (prev && salePaymentMethods.some((m) => m.id === prev.id)) return prev
       const efectivo = salePaymentMethods.find((m) => m.kind === "cash")
       return efectivo ? { id: efectivo.id, label: efectivo.name } : null
     })
-  }, [salePaymentMethods])
+  }, [salePaymentMethods, tableSessionId])
 
   useEffect(() => {
-    if (!popId || comprobanteInitRef.current) return
+    if (!popId || comprobanteInitRef.current || tableSessionId == null) return
     comprobanteInitRef.current = true
     const saved = readSavedSaleComprobante(popId)
     if (saved !== undefined) {
@@ -266,37 +414,122 @@ export function useMesasSaleCheckout(
         isAllowedSaleComprobanteLabel(invoiceTypeSiteId, saved) ? saved : null,
       )
     }
-  }, [popId, invoiceTypeSiteId])
+  }, [popId, invoiceTypeSiteId, tableSessionId])
 
-  const productosCatalogo = useMemo(
-    () => catalogArticles.map(saleCatalogArticleToProduct),
-    [catalogArticles],
+  const productosCatalogo = useMemo((): MenuCatalogProduct[] => {
+    return [
+      ...menuPromotions.map(menuPromotionToProduct),
+      ...menuRecipes.map(menuRecipeToProduct),
+      ...menuArticles.map(menuArticleToProduct),
+    ]
+  }, [menuPromotions, menuRecipes, menuArticles])
+
+  const productosByKey = useMemo(
+    () => buildMenuProductMap(productosCatalogo),
+    [productosCatalogo],
+  )
+
+  const quantityDealApplications = useMemo(
+    () =>
+      computeMenuQuantityDealApplications({
+        carrito,
+        productosByKey,
+        quantityDeals: menuQuantityDeals,
+        itemDescuentoSuprimido,
+      }),
+    [carrito, productosByKey, menuQuantityDeals, itemDescuentoSuprimido],
+  )
+
+  const quantityDealDiscounts = useMemo(
+    () =>
+      computeMenuQuantityDealDiscounts({
+        carrito,
+        productosByKey,
+        quantityDeals: menuQuantityDeals,
+        itemDescuentoSuprimido,
+      }),
+    [carrito, productosByKey, menuQuantityDeals, itemDescuentoSuprimido],
   )
 
   const itemsDetallados = useMemo(
     () =>
       carrito
-        .map((i) => ({
-          ...i,
-          producto: productosCatalogo.find((p) => p.id === i.productoId),
-        }))
-        .filter((i) => i.producto),
-    [carrito, productosCatalogo],
+        .map((i) => {
+          const kind = normalizeCartItemKind(i.kind)
+          const producto =
+            productosByKey.get(`${kind}:${i.productoId}`) ?? null
+          if (kind === "promotion" && !i.promotionSelections?.length) {
+            return null
+          }
+          if (kind !== "promotion" && !producto) return null
+          return {
+            ...i,
+            kind,
+            cartLineKey: cartItemKey({ ...i, kind }),
+            producto,
+          }
+        })
+        .filter((i): i is NonNullable<typeof i> => i != null),
+    [carrito, productosByKey],
   )
 
-  const subtotal = useMemo(
-    () =>
-      itemsDetallados.reduce(
-        (acc, i) => acc + (i.producto?.precio ?? 0) * i.cantidad,
-        0,
+  const cartDisplayLines = useMemo(
+    (): MenuCartDisplayLine[] =>
+      buildMenuCartDisplayLines(
+        itemsDetallados.map((item) => ({
+          cartLineKey: item.cartLineKey,
+          productoId: item.productoId,
+          kind: item.kind,
+          cantidad: item.cantidad,
+          producto: item.producto,
+          promotionSelections: item.promotionSelections,
+        })),
+        quantityDealApplications,
       ),
-    [itemsDetallados],
+    [itemsDetallados, quantityDealApplications],
+  )
+
+  const cartTotalsInput = useMemo(
+    () =>
+      itemsDetallados.map((item) => {
+        const lineKey = item.cartLineKey
+        const suprimido = itemDescuentoSuprimido[lineKey] === true
+        const draft = itemDescuentoDraft[lineKey] ?? ""
+        const deal = quantityDealDiscounts.get(lineKey)
+        const quantityDealActive = Boolean(deal)
+        return {
+          producto: item.producto,
+          cantidad: item.cantidad,
+          suppressCatalogDiscount: suprimido || quantityDealActive,
+          manualDiscount:
+            !suprimido && !quantityDealActive && draft !== ""
+              ? {
+                  mode: itemDescuentoModo[lineKey] ?? "porcentaje",
+                  draft,
+                }
+              : null,
+          promotionMeta: item.producto?.promotionMeta,
+          promotionSelections: item.promotionSelections,
+          quantityDealDiscount: deal?.amount ?? 0,
+        }
+      }),
+    [
+      itemsDetallados,
+      itemDescuentoModo,
+      itemDescuentoDraft,
+      itemDescuentoSuprimido,
+      quantityDealDiscounts,
+    ],
   )
 
   const catalogTotals = useMemo(
-    () => catalogCartOrderTotals(itemsDetallados),
-    [itemsDetallados],
+    () => menuCartOrderTotals(cartTotalsInput),
+    [cartTotalsInput],
   )
+
+  const subtotal = catalogTotals.subtotal
+  const descuentoItemsMonto = catalogTotals.descuentoItemsMonto
+  const hayDescuentoItems = catalogTotals.hayDescuentoItems
 
   const descuentoMonto = useMemo(() => {
     if (modoDescuento === "porcentaje") {
@@ -354,6 +587,8 @@ export function useMesasSaleCheckout(
     if (clienteSeleccionado != null) return true
     if (comprobante != null) return true
     if (hayDescuento) return true
+    if (descuentoItemsMonto > 0) return true
+    if (Object.values(itemComentarios).some((c) => c?.trim())) return true
     if (payOnClientAccount || metodoPagoSeleccionado != null) return true
     return false
   }, [
@@ -361,6 +596,8 @@ export function useMesasSaleCheckout(
     clienteSeleccionado,
     comprobante,
     hayDescuento,
+    descuentoItemsMonto,
+    itemComentarios,
     payOnClientAccount,
     metodoPagoSeleccionado,
   ])
@@ -409,36 +646,194 @@ export function useMesasSaleCheckout(
     [popId],
   )
 
-  const agregarAlCarrito = useCallback((productoId: string) => {
-    setCarrito((prev) => {
-      const existe = prev.find((i) => i.productoId === productoId)
-      if (existe) {
-        return prev.map((i) =>
-          i.productoId === productoId ? { ...i, cantidad: i.cantidad + 1 } : i,
+  const cartLineOverrideActions: OperationCartLineOverrideActions & {
+    setItemDetalleAbiertoId: typeof setItemDetalleAbiertoId
+  } = useMemo(
+    () => ({
+      toggleItemDetalle: (lineKey: string) => {
+        setItemDetalleAbiertoId((prev) => (prev === lineKey ? null : lineKey))
+      },
+      setItemDescuentoModo,
+      setItemDescuentoDraft,
+      setItemDescuentoSuprimido,
+      setItemComentarios,
+      setItemDetalleAbiertoId,
+    }),
+    [],
+  )
+
+  const cartLineOverrides: OperationCartLineOverrideState = useMemo(
+    () => ({
+      itemDetalleAbiertoId,
+      itemDescuentoModo,
+      itemDescuentoDraft,
+      itemDescuentoSuprimido,
+      itemComentarios,
+    }),
+    [
+      itemDetalleAbiertoId,
+      itemDescuentoModo,
+      itemDescuentoDraft,
+      itemDescuentoSuprimido,
+      itemComentarios,
+    ],
+  )
+
+  const agregarPromoAlCarrito = useCallback(
+    (promotionId: string, selections: PromotionCartSelection[]) => {
+      const product = productosByKey.get(`promotion:${promotionId}`)
+      if (!product?.promotionMeta) return
+      const kind = "promotion" as const
+      const esNuevo = !carrito.some((i) =>
+        cartItemsMatch(i, promotionId, kind, selections),
+      )
+      const lineKey = cartItemKey({
+        productoId: promotionId,
+        cantidad: 1,
+        kind,
+        promotionSelections: selections,
+      })
+      setCarrito((prev) => {
+        const existe = prev.find((i) =>
+          cartItemsMatch(i, promotionId, kind, selections),
         )
+        if (existe) {
+          return prev.map((i) =>
+            cartItemsMatch(i, promotionId, kind, selections)
+              ? { ...i, cantidad: i.cantidad + 1 }
+              : i,
+          )
+        }
+        return [
+          ...prev,
+          {
+            productoId: promotionId,
+            cantidad: 1,
+            kind,
+            promotionSelections: selections,
+          },
+        ]
+      })
+      if (esNuevo) {
+        clearCartLineOverrides(lineKey, cartLineOverrideActions)
       }
-      return [...prev, { productoId, cantidad: 1 }]
-    })
-  }, [])
+    },
+    [productosByKey, carrito, cartLineOverrideActions],
+  )
 
-  const cambiarCantidad = useCallback((productoId: string, delta: number) => {
-    setCarrito((prev) =>
-      prev
-        .map((i) =>
-          i.productoId === productoId
-            ? { ...i, cantidad: Math.max(0, i.cantidad + delta) }
-            : i,
-        )
-        .filter((i) => i.cantidad > 0),
-    )
-  }, [])
+  const agregarAlCarrito = useCallback(
+    (productoId: string, kindHint?: MenuCartItemKind) => {
+      const product =
+        (kindHint
+          ? productosByKey.get(`${kindHint}:${productoId}`)
+          : null) ??
+        productosByKey.get(`promotion:${productoId}`) ??
+        productosByKey.get(`article:${productoId}`) ??
+        productosByKey.get(`recipe:${productoId}`)
+      const kind = product?.kind ?? kindHint ?? "article"
 
-  const quitarDelCarrito = useCallback((productoId: string) => {
-    setCarrito((prev) => prev.filter((i) => i.productoId !== productoId))
-  }, [])
+      if (kind === "promotion" && product?.promotionMeta) {
+        const auto = tryAutoComboSelections(product.promotionMeta)
+        if (auto) {
+          agregarPromoAlCarrito(productoId, auto)
+          return
+        }
+        setPromoWizardTarget(product.promotionMeta)
+        setPromoWizardOpen(true)
+        return
+      }
+
+      const lineKey = cartItemKey({ productoId, cantidad: 1, kind })
+      const esNuevo = !carrito.some((i) => cartItemsMatch(i, productoId, kind))
+      setCarrito((prev) => {
+        const existe = prev.find((i) => cartItemsMatch(i, productoId, kind))
+        if (existe) {
+          return prev.map((i) =>
+            cartItemsMatch(i, productoId, kind)
+              ? { ...i, cantidad: i.cantidad + 1 }
+              : i,
+          )
+        }
+        return [...prev, { productoId, cantidad: 1, kind }]
+      })
+      if (esNuevo && product?.kind === "article") {
+        seedCartLineDefaultDiscount(product, lineKey, cartLineOverrideActions)
+      }
+    },
+    [productosByKey, carrito, cartLineOverrideActions, agregarPromoAlCarrito],
+  )
+
+  const cambiarCantidad = useCallback(
+    (
+      productoId: string,
+      delta: number,
+      kind?: MenuCartItemKind,
+      promotionSelections?: PromotionCartSelection[],
+    ) => {
+      setCarrito((prev) =>
+        prev
+          .map((i) =>
+            cartItemsMatch(i, productoId, kind, promotionSelections)
+              ? { ...i, cantidad: Math.max(0, i.cantidad + delta) }
+              : i,
+          )
+          .filter((i) => i.cantidad > 0),
+      )
+    },
+    [],
+  )
+
+  const quitarDelCarrito = useCallback(
+    (
+      productoId: string,
+      kind?: MenuCartItemKind,
+      promotionSelections?: PromotionCartSelection[],
+    ) => {
+      const resolvedKind = kind ?? "article"
+      const lineKey = cartItemKey({
+        productoId,
+        cantidad: 1,
+        kind: resolvedKind,
+        promotionSelections,
+      })
+      setCarrito((prev) =>
+        prev.filter((i) => !cartItemsMatch(i, productoId, kind, promotionSelections)),
+      )
+      clearCartLineOverrides(lineKey, cartLineOverrideActions)
+    },
+    [cartLineOverrideActions],
+  )
+
+  const quitarQuantityDealApplication = useCallback(
+    (applicationId: string) => {
+      const application = quantityDealApplications.find(
+        (a) => a.id === applicationId,
+      )
+      if (!application) return
+      setCarrito((prev) =>
+        removeQuantityDealApplicationFromCart(prev, application),
+      )
+      for (const lineKey of Object.keys(application.unitsPerLineKey)) {
+        clearCartLineOverrides(lineKey, cartLineOverrideActions)
+      }
+      for (const lineKey of Object.keys(application.discountByLineKey)) {
+        clearCartLineOverrides(lineKey, cartLineOverrideActions)
+      }
+      clearCartLineOverrides(`qtydeal:${application.id}`, cartLineOverrideActions)
+      setItemDetalleAbiertoId((prev) =>
+        prev === `qtydeal:${application.id}` ? null : prev,
+      )
+    },
+    [quantityDealApplications, cartLineOverrideActions],
+  )
 
   const limpiarPedido = useCallback(() => {
     setCarrito([])
+    setItemDetalleAbiertoId(null)
+    setItemDescuentoModo({})
+    setItemDescuentoDraft({})
+    setItemDescuentoSuprimido({})
+    setItemComentarios({})
     setClienteSeleccionado(null)
     setManualNombreCliente("")
     setFiscalDocVenta("")
@@ -485,13 +880,38 @@ export function useMesasSaleCheckout(
         Boolean(manualNombreCliente.trim())
       const res = await completeSale(popId, {
         siteId,
-        lines: carrito.map((i) => ({
-          articleId: i.productoId,
-          quantity: i.cantidad,
-          itemDiscountMode: "porcentaje" as const,
-          itemDiscountDraft: "",
-          comment: "",
-        })),
+        lines: carrito.map((i) => {
+          const kind = normalizeCartItemKind(i.kind)
+          const lineKey = cartItemKey({ ...i, kind })
+          const suprimido = itemDescuentoSuprimido[lineKey] === true
+          const draft = itemDescuentoSuprimido[lineKey]
+            ? ""
+            : (itemDescuentoDraft[lineKey] ?? "")
+          const deal = quantityDealDiscounts.get(lineKey)
+          const base = {
+            quantity: i.cantidad,
+            itemDiscountMode: itemDescuentoModo[lineKey] ?? "porcentaje",
+            itemDiscountDraft: draft,
+            suppressCatalogDiscount: suprimido || Boolean(deal),
+            comment: itemComentarios[lineKey] ?? "",
+            promotionDealDiscount: deal?.amount ?? 0,
+            promotionDealId: deal?.promotionId,
+          }
+          if (kind === "promotion") {
+            return {
+              ...base,
+              promotionId: i.productoId,
+              promotionSelections: (i.promotionSelections ?? []).map((s) => ({
+                slotId: s.slotId,
+                kind: s.kind,
+                refId: s.refId,
+              })),
+            }
+          }
+          return kind === "recipe"
+            ? { ...base, recipeId: i.productoId }
+            : { ...base, articleId: i.productoId }
+        }),
         clientId: catalogClientId,
         payOnClientAccount,
         paymentMethodId: payOnClientAccount ? null : metodoPagoSeleccionado?.id,
@@ -504,6 +924,7 @@ export function useMesasSaleCheckout(
         fiscalCustomer: hasFiscalOverride
           ? { name: manualOrFiscalName, taxId: manualOrFiscalTaxId }
           : null,
+        tableSessionId,
       })
       if (!res.success) {
         setSubmitError(res.error)
@@ -532,6 +953,11 @@ export function useMesasSaleCheckout(
     fiscalDocVenta,
     manualNombreCliente,
     ventaPadron.razonSocial,
+    itemDescuentoModo,
+    itemDescuentoDraft,
+    itemDescuentoSuprimido,
+    itemComentarios,
+    quantityDealDiscounts,
     limpiarPedido,
   ])
 
@@ -593,24 +1019,24 @@ export function useMesasSaleCheckout(
     return clienteSeleccionado?.name ?? (manual || null)
   }, [canReadClients, clienteSeleccionado?.name, manualNombreCliente])
 
-  const clearSessionSnapshot = useCallback((sessionId: string) => {
-    sessionSnapshotsRef.current.delete(sessionId)
-  }, [])
-
   const mesaToolbarDisabled = tableSessionId == null
 
   return {
     catalogLoading,
     catalogError,
-    saleCategories,
+    menuCategorySections,
     productosCatalogo,
     carrito,
     itemsDetallados,
+    cartDisplayLines,
     agregarAlCarrito,
+    agregarPromoAlCarrito,
     cambiarCantidad,
     quitarDelCarrito,
     subtotal,
     subtotalOriginal: catalogTotals.subtotalOriginal,
+    descuentoItemsMonto,
+    hayDescuentoItems,
     descuentoCatalogoMonto: catalogTotals.descuentoCatalogoMonto,
     hayDescuentoCatalogo: catalogTotals.hayDescuentoCatalogo,
     descuentoMonto,
@@ -621,8 +1047,16 @@ export function useMesasSaleCheckout(
     puedeRegistrar,
     submitting,
     submitError,
-    clearSessionSnapshot,
     sessionClientLabel,
+    promoWizardOpen,
+    setPromoWizardOpen,
+    promoWizardTarget,
+    confirmarPromoWizard: agregarPromoAlCarrito,
+    quantityDealDiscounts,
+    quantityDealApplications,
+    quitarQuantityDealApplication,
+    cartLineOverrides,
+    cartLineOverrideActions,
     // Toolbox
     toolbox: {
       clienteLabel: clienteToolbarLabel,

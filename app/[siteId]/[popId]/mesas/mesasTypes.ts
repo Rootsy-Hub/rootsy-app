@@ -1,8 +1,10 @@
+import type { TableSessionCheckoutSnapshot } from "@/app/[siteId]/[popId]/mesas/mesasCheckoutState"
+
 export type MesaTableStatus = "free" | "open" | "paying" | "reserved"
 
 export type RoundTableSize = "s" | "m" | "l" | "xl"
 export type SquareTableSize = "s" | "m" | "l"
-export type RectTableSize = "sm" | "md" | "lg"
+export type RectTableSize = "s" | "m" | "l" | "xl"
 
 export type MesaTableShape =
   | { kind: "round"; size: RoundTableSize }
@@ -13,6 +15,7 @@ export type MesaSalon = {
   id: string
   name: string
   sortOrder: number
+  isActive?: boolean
 }
 
 export type MesaTable = {
@@ -22,6 +25,7 @@ export type MesaTable = {
   shape: MesaTableShape
   x: number
   y: number
+  rotation: number
   seats: number
   status: MesaTableStatus
   sessionId: string | null
@@ -40,6 +44,8 @@ export type MesaSession = {
   guestCount: number | null
   note: string
   openedAt: string
+  updatedAt: string
+  checkout: TableSessionCheckoutSnapshot | null
 }
 
 export type MesaOpenSessionInput = {
@@ -70,6 +76,7 @@ export type MesaFloorDecor = {
   y: number
   width: number
   height: number
+  rotation: number
   /** Etiqueta accesible / opcional en UI */
   label?: string
 }

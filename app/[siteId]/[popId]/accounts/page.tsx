@@ -9,6 +9,7 @@ import {
   type TreasuryFundingOption,
   type UpsertTreasuryAccountInput,
 } from "@/app/[siteId]/[popId]/accounts/actions"
+import { TreasurySummaryDashboard } from "@/app/[siteId]/[popId]/accounts/TreasurySummaryDashboard"
 import {
   addManualBankStatementLine,
   clearMovementReconciliation,
@@ -53,8 +54,6 @@ import {
 import { getWorkspaceHeaderForPop } from "@/lib/workspaceHeaderServer"
 import { cn } from "@/lib/utils"
 import {
-  ArrowDownLeft,
-  ArrowUpRight,
   CalendarDays,
   CheckCircle2,
   ChevronLeft,
@@ -73,7 +72,6 @@ import {
   useState,
   type Dispatch,
   type FormEvent,
-  type ReactNode,
   type SetStateAction,
 } from "react"
 
@@ -123,148 +121,6 @@ function shiftMonth(year: number, month1: number, delta: number) {
   return { year: d.getFullYear(), month: d.getMonth() + 1 }
 }
 
-type TreasuryKpiTone = "inflow" | "outflow" | "neutral" | "net-positive" | "net-negative"
-
-function treasuryKpiStyles(tone: TreasuryKpiTone) {
-  switch (tone) {
-    case "inflow":
-      return {
-        accent: "bg-emerald-300/90",
-        iconWrap:
-          "border border-emerald-200/90 bg-emerald-50/90 text-emerald-600",
-        value: "text-foreground",
-      }
-    case "outflow":
-      return {
-        accent: "bg-rose-300/90",
-        iconWrap: "border border-rose-200/90 bg-rose-50/90 text-rose-600",
-        value: "text-foreground",
-      }
-    case "net-positive":
-      return {
-        accent: "bg-emerald-300/90",
-        iconWrap:
-          "border border-emerald-200/90 bg-emerald-50/90 text-emerald-600",
-        value: "text-foreground",
-      }
-    case "net-negative":
-      return {
-        accent: "bg-rose-300/90",
-        iconWrap: "border border-rose-200/90 bg-rose-50/90 text-rose-600",
-        value: "text-foreground",
-      }
-    default:
-      return {
-        accent: "bg-border",
-        iconWrap: "border border-border/80 bg-muted/35 text-muted-foreground",
-        value: "text-foreground",
-      }
-  }
-}
-
-function TreasuryKpiCard({
-  label,
-  value,
-  sub,
-  tone,
-  icon,
-}: {
-  label: string
-  value: string
-  sub: string
-  tone: TreasuryKpiTone
-  icon: ReactNode
-}) {
-  const styles = treasuryKpiStyles(tone)
-
-  return (
-    <div
-      className={cn(
-        dataWorkspaceShellCard,
-        "relative overflow-hidden px-5 py-4 pl-6",
-      )}
-    >
-      <div
-        className={cn("absolute inset-y-0 left-0 w-1", styles.accent)}
-        aria-hidden
-      />
-      <div className="flex items-start justify-between gap-4">
-        <div className="min-w-0 flex-1">
-          <p className="text-[11px] font-medium uppercase tracking-[0.14em] text-muted-foreground">
-            {label}
-          </p>
-          <p
-            className={cn(
-              "mt-2 font-mono text-3xl font-bold tabular-nums tracking-tight",
-              styles.value,
-            )}
-          >
-            {value}
-          </p>
-          <p className="mt-1 text-xs text-muted-foreground">{sub}</p>
-        </div>
-        <span
-          className={cn(
-            "inline-flex size-10 shrink-0 items-center justify-center rounded-xl shadow-none",
-            styles.iconWrap,
-          )}
-          aria-hidden
-        >
-          {icon}
-        </span>
-      </div>
-    </div>
-  )
-}
-
-function TreasurySummaryKpis({
-  summary,
-  accountCount,
-}: {
-  summary: PaymentsHubSummary | null
-  accountCount: number
-}) {
-  const net = summary?.netMonthTotal ?? 0
-  const netTone: TreasuryKpiTone =
-    net > 0 ? "net-positive" : net < 0 ? "net-negative" : "neutral"
-
-  return (
-    <div className="grid w-full gap-4 md:grid-cols-3">
-      <TreasuryKpiCard
-        label="Entró"
-        value={fmt.format(summary?.receivedMonthTotal ?? 0)}
-        sub={`${accountCount} ${accountCount === 1 ? "cuenta" : "cuentas"}`}
-        tone="inflow"
-        icon={<ArrowDownLeft className="size-[1.125rem]" strokeWidth={2} />}
-      />
-      <TreasuryKpiCard
-        label="Salió"
-        value={fmt.format(summary?.paidOutMonthTotal ?? 0)}
-        sub={summary?.monthLabel ?? "—"}
-        tone="outflow"
-        icon={<ArrowUpRight className="size-[1.125rem]" strokeWidth={2} />}
-      />
-      <TreasuryKpiCard
-        label="Neto del mes"
-        value={fmt.format(net)}
-        sub={summary?.monthLabel ?? "—"}
-        tone={netTone}
-        icon={
-          net > 0 ? (
-            <ArrowDownLeft className="size-[1.125rem]" strokeWidth={2} />
-          ) : net < 0 ? (
-            <ArrowUpRight className="size-[1.125rem]" strokeWidth={2} />
-          ) : (
-            <span className="font-mono text-sm font-semibold text-muted-foreground">
-              =
-            </span>
-          )
-        }
-      />
-    </div>
-  )
-}
-
 function TreasuryPeriodToolbar({
   monthLabel,
   loading,
@@ -296,7 +152,8 @@ function TreasuryPeriodToolbar({
         <div className="min-w-0">
           <span className={toolbarBlockLabelClass}>Período</span>
           <p className="mt-1 text-sm leading-snug text-foreground/75">
-            Movimientos del mes en ventas, compras y gastos
+            Flujo de caja del mes: entradas, salidas y posición por cuenta de
+            tesorería.
           </p>
         </div>
 
@@ -1008,10 +865,7 @@ function AccountsPage() {
             </div>
           ) : (
             <>
-              <TreasurySummaryKpis
-                summary={summary}
-                accountCount={rows.length}
-              />
+              <TreasurySummaryDashboard summary={summary} rows={rows} />
 
               <div className={cn(dataWorkspaceShellCard, "p-5")}>
               <div className="mb-4 flex flex-wrap items-start justify-between gap-3">

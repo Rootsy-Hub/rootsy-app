@@ -32,7 +32,18 @@ function t(
   status: MesaTable["status"] = "free",
   sessionId: string | null = null,
 ): MesaTable {
-  return { id, salonId, label, shape, x, y, seats, status, sessionId }
+  return {
+    id,
+    salonId,
+    label,
+    shape,
+    x,
+    y,
+    rotation: 0,
+    seats,
+    status,
+    sessionId,
+  }
 }
 
 export const MOCK_MESA_TABLES: MesaTable[] = [
@@ -40,15 +51,15 @@ export const MOCK_MESA_TABLES: MesaTable[] = [
   t("a1", "salon-a", "1", { kind: "round", size: "m" }, 48, 56, 4),
   t("a2", "salon-a", "2", { kind: "round", size: "l" }, 160, 48, 6),
   t("a3", "salon-a", "3", { kind: "square", size: "m" }, 300, 64, 4),
-  t("a4", "salon-a", "4", { kind: "rect", size: "md" }, 420, 52, 8),
+  t("a4", "salon-a", "4", { kind: "rect", size: "m" }, 420, 52, 8),
   t("a5", "salon-a", "5", { kind: "round", size: "s" }, 72, 200, 2),
   t("a6", "salon-a", "6", { kind: "square", size: "l" }, 200, 180, 6, "open", "sess-1"),
   t("a7", "salon-a", "7", { kind: "round", size: "xl" }, 360, 200, 8, "reserved"),
-  t("a8", "salon-a", "8", { kind: "rect", size: "lg" }, 520, 180, 10),
+  t("a8", "salon-a", "8", { kind: "rect", size: "l" }, 520, 180, 10),
   // Interior B
   t("b1", "salon-b", "11", { kind: "round", size: "m" }, 64, 72, 4),
   t("b2", "salon-b", "12", { kind: "square", size: "m" }, 180, 56, 4, "paying", "sess-2"),
-  t("b3", "salon-b", "13", { kind: "rect", size: "sm" }, 320, 80, 4, "paying", "sess-2"),
+  t("b3", "salon-b", "13", { kind: "rect", size: "s" }, 320, 80, 4, "paying", "sess-2"),
   t("b4", "salon-b", "14", { kind: "round", size: "l" }, 460, 64, 6),
   t("b5", "salon-b", "15", { kind: "square", size: "s" }, 100, 220, 2),
   t("b6", "salon-b", "16", { kind: "round", size: "m" }, 260, 200, 4),
@@ -56,13 +67,13 @@ export const MOCK_MESA_TABLES: MesaTable[] = [
   t("p1", "patio", "P1", { kind: "round", size: "l" }, 80, 90, 6),
   t("p2", "patio", "P2", { kind: "round", size: "l" }, 220, 80, 6),
   t("p3", "patio", "P3", { kind: "square", size: "l" }, 380, 100, 6),
-  t("p4", "patio", "P4", { kind: "rect", size: "md" }, 540, 88, 8),
+  t("p4", "patio", "P4", { kind: "rect", size: "m" }, 540, 88, 8),
   t("p5", "patio", "P5", { kind: "round", size: "m" }, 140, 240, 4),
   // Frente
   t("f1", "frente", "F1", { kind: "square", size: "s" }, 56, 80, 2),
   t("f2", "frente", "F2", { kind: "square", size: "s" }, 140, 80, 2),
   t("f3", "frente", "F3", { kind: "round", size: "s" }, 224, 72, 2),
-  t("f4", "frente", "F4", { kind: "rect", size: "sm" }, 320, 64, 4),
+  t("f4", "frente", "F4", { kind: "rect", size: "s" }, 320, 64, 4),
 ]
 
 function d(
@@ -75,7 +86,7 @@ function d(
   height: number,
   label?: string,
 ): MesaFloorDecor {
-  return { id, salonId, kind, x, y, width, height, label }
+  return { id, salonId, kind, x, y, width, height, rotation: 0, label }
 }
 
 /** Elementos de ambientación del plano (paredes, plantas, barra…) por salón. */
@@ -121,6 +132,8 @@ export const MOCK_MESA_SESSIONS: MesaSession[] = [
     guestCount: 4,
     note: "Sin gluten en la mesa",
     openedAt: new Date(Date.now() - 45 * 60_000).toISOString(),
+    updatedAt: new Date(Date.now() - 45 * 60_000).toISOString(),
+    checkout: null,
   },
   {
     id: "sess-2",
@@ -129,5 +142,7 @@ export const MOCK_MESA_SESSIONS: MesaSession[] = [
     guestCount: 6,
     note: "",
     openedAt: new Date(Date.now() - 20 * 60_000).toISOString(),
+    updatedAt: new Date(Date.now() - 20 * 60_000).toISOString(),
+    checkout: null,
   },
 ]
