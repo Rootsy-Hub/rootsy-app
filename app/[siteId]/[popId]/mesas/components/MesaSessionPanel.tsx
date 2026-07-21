@@ -30,6 +30,7 @@ import { formatDistanceToNow } from "date-fns"
 import { es } from "date-fns/locale"
 import {
   Clock,
+  Package,
   Pencil,
   UtensilsCrossed,
 } from "lucide-react"
@@ -130,110 +131,121 @@ export function MesaSessionPanel({
   const title = sessionTitle(table, sessionTables)
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col">
-      <header className="shrink-0 border-b border-slate-200/90 bg-white px-4 py-3.5 sm:px-5">
-        <div className="flex items-start justify-between gap-3">
-          <div className="min-w-0">
-            <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-slate-400">
-              {sessionTables.length > 1 ? "Mesas unidas" : "Mesa"}
-            </p>
-            <h2 className="mt-0.5 truncate text-2xl font-bold tabular-nums text-slate-900">
-              {title}
-            </h2>
-            <p className="mt-1 text-xs text-slate-500">
-              {mesaStatusLabel(table.status)}
-              {session ? (
-                <>
-                  {" · "}
-                  <Clock className="mr-0.5 inline size-3 -translate-y-px" aria-hidden />
-                  {formatDistanceToNow(new Date(session.openedAt), {
-                    addSuffix: true,
-                    locale: es,
-                  })}
-                </>
-              ) : null}
-            </p>
-          </div>
-          {isOpen && !editing ? (
-            <DataWorkspaceTableIconAction
-              label="Editar mesa"
-              icon={Pencil}
-              variant="edit"
-              onClick={() => setEditing(true)}
-            />
-          ) : null}
-        </div>
-      </header>
-
+    <div className="flex min-h-0 flex-1 flex-col overflow-y-auto">
       {sessionError ? (
-        <div className="shrink-0 border-b border-rose-200/80 bg-rose-50 px-4 py-2.5 text-xs text-rose-700 sm:px-5">
+        <p className="border-b border-red-100 bg-red-50 px-3 py-2 text-sm text-red-700">
           {sessionError}
+        </p>
+      ) : null}
+
+      {!(isOpen && !editing) ? (
+        <div className="border-b border-slate-200/90 bg-white px-3 py-4">
+          <p className="text-lg font-bold text-slate-900">{title}</p>
+          <p className="text-xs text-slate-500">{mesaStatusLabel(table.status)}</p>
         </div>
       ) : null}
 
       {isOpen && !editing ? (
         <>
-          <div className="game-scroll min-h-0 flex-1 space-y-4 overflow-y-auto p-4 sm:p-5">
-          <dl className="grid gap-3 rounded-xl border border-slate-200/90 bg-white p-4 text-sm shadow-sm">
-            <div>
-              <dt className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
-                Mozo
-              </dt>
-              <dd className="mt-0.5 font-medium text-slate-800">
-                {waiter?.name ?? "—"}
-              </dd>
+          <div className="border-b border-slate-200/90 bg-white px-3 py-4">
+            <div className="flex items-start justify-between gap-3">
+              <div className="min-w-0">
+                <p className="text-lg font-bold text-slate-900">{title}</p>
+                <p className="text-xs text-slate-500">
+                  {mesaStatusLabel(table.status)}
+                  {session ? (
+                    <>
+                      {" · "}
+                      <Clock
+                        className="mr-0.5 inline size-3 -translate-y-px"
+                        aria-hidden
+                      />
+                      {formatDistanceToNow(new Date(session.openedAt), {
+                        addSuffix: true,
+                        locale: es,
+                      })}
+                    </>
+                  ) : null}
+                </p>
+              </div>
+              <div className="flex shrink-0 items-center gap-2">
+                <span className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-700">
+                  {sessionTables.length > 1 ? "Mesas unidas" : "Abierta"}
+                </span>
+                <DataWorkspaceTableIconAction
+                  label="Editar mesa"
+                  icon={Pencil}
+                  variant="edit"
+                  onClick={() => setEditing(true)}
+                />
+              </div>
             </div>
-            <div>
-              <dt className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
-                Cliente
-              </dt>
-              <dd className="mt-0.5 font-medium text-slate-800">
-                {clientLabel?.trim() || "Sin asignar"}
-              </dd>
-            </div>
-            <div>
-              <dt className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
-                Comensales
-              </dt>
-              <dd className="mt-0.5 font-medium text-slate-800">
-                {session?.guestCount ?? "Sin indicar"}
-              </dd>
-            </div>
-            {sessionTables.length > 1 ? (
+
+            <dl className="mt-4 grid gap-2 text-sm">
               <div>
-                <dt className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
-                  Mesas incluidas
+                <dt className="text-xs font-semibold uppercase text-slate-500">
+                  Mozo
                 </dt>
-                <dd className="mt-1 flex flex-wrap gap-1.5">
-                  {sessionTables.map((t) => (
-                    <span
-                      key={t.id}
-                      className="rounded-full bg-emerald-50 px-2 py-0.5 text-xs font-semibold text-emerald-800 ring-1 ring-emerald-200/80"
-                    >
-                      {t.label}
-                    </span>
-                  ))}
+                <dd className="text-slate-800">{waiter?.name ?? "—"}</dd>
+              </div>
+              <div>
+                <dt className="text-xs font-semibold uppercase text-slate-500">
+                  Cliente
+                </dt>
+                <dd className="text-slate-800">
+                  {clientLabel?.trim() || "Sin asignar"}
                 </dd>
               </div>
-            ) : null}
-            {session?.note ? (
               <div>
-                <dt className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
-                  Notas
+                <dt className="text-xs font-semibold uppercase text-slate-500">
+                  Comensales
                 </dt>
-                <dd className="mt-0.5 text-slate-600">{session.note}</dd>
+                <dd className="text-slate-800">
+                  {session?.guestCount ?? "Sin indicar"}
+                </dd>
               </div>
-            ) : null}
-          </dl>
+              {sessionTables.length > 1 ? (
+                <div>
+                  <dt className="text-xs font-semibold uppercase text-slate-500">
+                    Mesas incluidas
+                  </dt>
+                  <dd className="mt-1 flex flex-wrap gap-1.5">
+                    {sessionTables.map((t) => (
+                      <span
+                        key={t.id}
+                        className="rounded-full bg-emerald-50 px-2 py-0.5 text-xs font-semibold text-emerald-800 ring-1 ring-emerald-200/80"
+                      >
+                        {t.label}
+                      </span>
+                    ))}
+                  </dd>
+                </div>
+              ) : null}
+              {session?.note ? (
+                <div>
+                  <dt className="text-xs font-semibold uppercase text-slate-500">
+                    Notas
+                  </dt>
+                  <dd className="text-slate-800">{session.note}</dd>
+                </div>
+              ) : null}
+            </dl>
           </div>
-          <div className="shrink-0 border-t border-slate-200/80 p-4 sm:p-5 pt-4">
+
+          <div className="grid gap-0 border-b border-slate-200/90 bg-white">
             <Button
               type="button"
-              className={cn(saleOpDialogDestructiveBtn, "h-11 w-full")}
+              variant="ghost"
+              className="h-12 w-full rounded-none border-0 text-rose-700 hover:bg-rose-50 hover:text-rose-800"
               onClick={() => setCloseDialogOpen(true)}
             >
               Cerrar mesa
             </Button>
+          </div>
+
+          <div className="flex items-center gap-2 border-b border-slate-200/90 bg-slate-50/80 px-3 py-2.5 text-xs text-slate-500">
+            <Package className="size-4 shrink-0" aria-hidden />
+            Usá la pestaña Pedido para cargar productos y cobrar.
           </div>
         </>
       ) : null}

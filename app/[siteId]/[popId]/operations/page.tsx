@@ -9,7 +9,6 @@ import {
 import {
   OperationsSalesTable,
 } from "@/app/[siteId]/[popId]/operations/OperationsSalesTable"
-import { OperationsSalesStatsSummary } from "@/app/[siteId]/[popId]/operations/OperationsSalesStatsSummary"
 import { OperationsExpensesTable } from "@/app/[siteId]/[popId]/operations/OperationsExpensesTable"
 import { OperationsPurchasesTable } from "@/app/[siteId]/[popId]/operations/OperationsPurchasesTable"
 import { exportOperationsCsv } from "@/app/[siteId]/[popId]/operations/operationsCsvExport"
@@ -19,6 +18,7 @@ import { DataWorkspaceListPaginationFooter } from "@/components/data-workspace/D
 import { DataWorkspaceListTableShell } from "@/components/data-workspace/DataWorkspaceListTableShell"
 import { DataWorkspaceTableEmptyMascot } from "@/components/data-workspace/DataWorkspaceListTablePrimitives"
 import { DataWorkspacePeriodFilter } from "@/components/data-workspace/DataWorkspacePeriodFilter"
+import { DataWorkspaceViewFilter } from "@/components/data-workspace/DataWorkspaceViewFilter"
 import { DataWorkspaceToolbarFieldLabel } from "@/components/data-workspace/DataWorkspaceToolbarFieldLabel"
 import {
   lightFilterChipClass,
@@ -30,7 +30,6 @@ import {
   toolbarBlockLabelClass,
 } from "@/components/data-workspace/dataWorkspaceListStyles"
 import { DataWorkspaceLayout } from "@/components/layouts/DataWorkspaceLayout"
-import { DataWorkspaceSectionMenu } from "@/components/layouts/DataWorkspaceSectionMenu"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -112,6 +111,8 @@ function OperationsPage() {
     DateRange | undefined
   >(undefined)
   const searchInputId = useId()
+  const viewFilterLabelId = useId()
+  const viewFilterTriggerId = useId()
   const dateFilterLabelId = useId()
   const dateFilterTriggerId = useId()
   const pageSizeLabelId = useId()
@@ -426,15 +427,6 @@ function OperationsPage() {
       userAvatarSrc={workspaceHeader?.userImageUrl ?? undefined}
       userRoleLabel={workspaceHeader?.roleLabel ?? "Ventas"}
       mainClassName="min-h-0 overflow-hidden"
-      sectionMenu={
-        <DataWorkspaceSectionMenu
-          headerVariant="dark"
-          viewItems={VIEW_ITEMS}
-          activeId={activeView}
-          onSelect={handleViewSelect}
-          viewsSectionLabel="Tipo de operación"
-        />
-      }
     >
       <div className="relative flex min-h-0 w-full flex-1 flex-col">
         {error ? (
@@ -453,8 +445,17 @@ function OperationsPage() {
             aria-label="Filtros del listado"
           >
             <div className="grid grid-cols-1 items-start md:grid-cols-2 xl:grid-cols-12">
+              <DataWorkspaceViewFilter
+                className="order-1 w-full min-w-0 md:col-span-1 xl:col-span-3"
+                viewItems={VIEW_ITEMS}
+                activeId={activeView}
+                onSelect={handleViewSelect}
+                labelId={viewFilterLabelId}
+                triggerId={viewFilterTriggerId}
+              />
+
               <DataWorkspacePeriodFilter
-                className="order-2 w-full min-w-0 md:col-span-1 xl:order-1 xl:col-span-3"
+                className="order-2 w-full min-w-0 md:col-span-1 xl:order-2 xl:col-span-3"
                 preset={datePreset}
                 customRange={customDateRange}
                 onPresetChange={setDatePreset}
@@ -468,7 +469,7 @@ function OperationsPage() {
               <div
                 className={cn(
                   lightToolbarPanelLastClass,
-                  "order-1 min-w-0 md:col-span-2 xl:order-2 xl:col-span-9",
+                  "order-3 min-w-0 md:col-span-2 xl:order-3 xl:col-span-6",
                 )}
               >
                 <DataWorkspaceToolbarFieldLabel
@@ -562,19 +563,6 @@ function OperationsPage() {
               </div>
             ) : null}
           </div>
-
-          {activeView === "sales" ||
-          activeView === "tables" ||
-          activeView === "counter" ? (
-            <div className="px-4 pt-4">
-              <OperationsSalesStatsSummary
-                popId={popId ?? ""}
-                dateFrom={dateBounds.from}
-                dateTo={dateBounds.to}
-                enabled={Boolean(popId)}
-              />
-            </div>
-          ) : null}
 
           <DataWorkspaceListTableShell
             variant="flush"

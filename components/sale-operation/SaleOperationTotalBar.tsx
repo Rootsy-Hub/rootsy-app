@@ -54,8 +54,7 @@ export function SaleOperationTotalBar({
   const showItemsDiscount =
     hayDescuentoItems ?? hayDescuentoCatalogo ?? itemsDiscountAmount > 0
   const showGeneralDiscount = hayDescuento && descuentoMonto > 0
-  const showPromociones =
-    promocionesAplicadasCount > 0 && promocionesAplicadasMonto > 0
+  const showPromociones = promocionesAplicadasMonto > 0
   const showSubtotalBreakdown =
     showItemsDiscount || showGeneralDiscount || showPromociones || subtotalOriginal > subtotal
 

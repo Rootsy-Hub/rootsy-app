@@ -1,30 +1,47 @@
 "use client"
 
-import type {
-  OperationSaleLineItem,
-  OperationSaleRow,
-} from "@/app/[siteId]/[popId]/operations/actions"
-import { MostradorCartPromoBanner } from "@/components/sale-operation/MostradorCartPromoBanner"
-import {
-  saleOpFmt,
-  saleOpImporteCartClass,
-  saleOpImporteCartMutedClass,
-} from "@/components/sale-operation/saleOperationStyles"
+import type { OperationSaleRow } from "@/app/[siteId]/[popId]/operations/actions"
+import { MostradorCartLineDisplay } from "@/components/sale-operation/MostradorCartLineDisplay"
+import { MostradorCartTicketGroup } from "@/components/sale-operation/MostradorCartTicketGroup"
+import { saleOpFmt } from "@/components/sale-operation/saleOperationStyles"
 import { tdMoneyClass } from "@/components/data-workspace/dataWorkspaceListStyles"
+import { buildSaleDetailCartDisplayRows } from "@/lib/saleDetailCartDisplay"
 import {
-  groupSaleDetailLines,
-  type SaleDetailDisplayGroup,
-  type SaleDiscountSource,
+  groupMostradorCartDisplayRows,
+  pricingForMostradorRow,
+} from "@/lib/mostradorCartDisplay"
+import type { SaleDiscountSource } from "@/lib/saleSnapshot"
+import {
+  countSaleAppliedPromotions,
+  resolvePersistedListLineTotal,
 } from "@/lib/saleSnapshot"
 import { cn } from "@/lib/utils"
+import { useMemo } from "react"
+
+const EMPTY_CART_OVERRIDES = {
+  itemDescuentoModo: {},
+  itemDescuentoDraft: {},
+  itemDescuentoSuprimido: {},
+  itemComentarios: {},
+}
 
 function roundMoney(n: number): number {
   if (!Number.isFinite(n)) return 0
   return Math.round(n * 100) / 100
 }
 
+function resolveListLineTotal(line: OperationSaleRow["lineItems"][number]): number {
+  return resolvePersistedListLineTotal({
+    quantity: line.quantity,
+    unitPrice: line.unitPrice,
+    listLineTotal: line.listLineTotal,
+    discountSource: line.discountSource,
+    promotionListTotal: line.promotionSnapshot?.listTotal,
+  })
+}
+
 function resolveLineSubtotal(
-  line: OperationSaleLineItem,
+  line: OperationSaleRow["lineItems"][number],
   sale: OperationSaleRow,
 ): number {
   if (line.lineSubtotal != null && line.lineSubtotal > 0) {
@@ -43,7 +60,7 @@ function resolveLineSubtotal(
 }
 
 function resolveItemDiscountAmount(
-  line: OperationSaleLineItem,
+  line: OperationSaleRow["lineItems"][number],
   sale: OperationSaleRow,
 ): number {
   if (line.itemDiscountAmount > 0) return line.itemDiscountAmount
@@ -51,180 +68,6 @@ function resolveItemDiscountAmount(
   const lineSub = resolveLineSubtotal(line, sale)
   const guess = roundMoney(gross - lineSub)
   return guess > 0 ? guess : 0
-}
-
-function resolveListLineTotal(line: OperationSaleLineItem): number {
-  if (line.listLineTotal != null && line.listLineTotal > 0) {
-    return line.listLineTotal
-  }
-  return roundMoney(line.quantity * line.unitPrice)
-}
-
-function formatQty(n: number) {
-  const t = Math.round(n * 1e6) / 1e6
-  if (Number.isInteger(t)) return String(t)
-  return t.toLocaleString("es-AR", { maximumFractionDigits: 6 })
-}
-
-function SaleDetailTicketRow({
-  name,
-  quantity,
-  listTotal,
-  finalTotal,
-  comment,
-  components,
-}: {
-  name: string
-  quantity: number
-  listTotal: number
-  finalTotal: number
-  comment?: string | null
-  components?: Array<{ name: string; quantity: number }>
-}) {
-  const hasDiscount = listTotal > finalTotal + 0.004
-
-  return (
-    <div className="grid grid-cols-[2.25rem_minmax(0,1fr)_auto] items-start gap-x-3 px-3 py-2.5">
-      <span className="pt-0.5 text-sm font-bold tabular-nums text-slate-900">
-        {formatQty(quantity)}
-      </span>
-      <span className="min-w-0">
-        <span className="block text-sm font-semibold leading-snug text-slate-900">
-          {name}
-        </span>
-        {components?.length ? (
-          <ul className="mt-1 space-y-0.5">
-            {components.map((component, index) => (
-              <li
-                key={`${name}-component-${index}`}
-                className="text-xs leading-snug text-slate-500"
-              >
-                {component.quantity > 1 ? `${formatQty(component.quantity)}× ` : ""}
-                {component.name}
-              </li>
-            ))}
-          </ul>
-        ) : null}
-        {comment ? (
-          <span className="mt-1 block text-xs leading-snug text-slate-500">
-            {comment}
-          </span>
-        ) : null}
-      </span>
-      <span className="pt-0.5 text-right">
-        {hasDiscount ? (
-          <span
-            className={cn(
-              saleOpImporteCartMutedClass,
-              "block text-[10px] line-through",
-            )}
-          >
-            {saleOpFmt.format(listTotal)}
-          </span>
-        ) : null}
-        <span className={saleOpImporteCartClass}>
-          {saleOpFmt.format(finalTotal)}
-        </span>
-      </span>
-    </div>
-  )
-}
-
-function SaleDetailTicketGroup({
-  group,
-  sale,
-}: {
-  group: SaleDetailDisplayGroup
-  sale: OperationSaleRow
-}) {
-  const hasPromoHeader = Boolean(group.groupLabel?.trim())
-  const isDiscount = group.groupType === "discount"
-  const groupPricing =
-    group.listTotal > 0
-      ? { listTotal: group.listTotal, finalTotal: group.finalTotal }
-      : undefined
-
-  if (!hasPromoHeader) {
-    return (
-      <>
-        {group.rows.map((row) => {
-          const line = sale.lineItems[row.lineIndex]
-          if (!line) return null
-          return (
-            <div
-              key={`${group.key}-${row.lineIndex}`}
-              className="border-b border-slate-200/90"
-            >
-              <SaleDetailTicketRow
-                name={row.name}
-                quantity={row.quantity}
-                listTotal={resolveListLineTotal(line)}
-                finalTotal={resolveLineSubtotal(line, sale)}
-                comment={line.comment}
-              />
-            </div>
-          )
-        })}
-      </>
-    )
-  }
-
-  return (
-    <section
-      className={cn(
-        "border-b border-slate-200/90",
-        isDiscount
-          ? "border-l-[3px] border-l-emerald-400"
-          : "border-l-[3px] border-l-violet-400",
-      )}
-      aria-label={`Grupo: ${group.groupLabel}`}
-    >
-      <MostradorCartPromoBanner
-        label={group.groupLabel!}
-        variant={isDiscount ? "discount" : "promotion"}
-        discountMode={
-          group.rows[0]
-            ? sale.lineItems[group.rows[0].lineIndex]?.itemDiscountMode ?? "porcentaje"
-            : "porcentaje"
-        }
-        pricing={groupPricing}
-      />
-      <div
-        className={cn(
-          "bg-gradient-to-b to-white",
-          isDiscount ? "from-emerald-50/35" : "from-violet-50/35",
-        )}
-      >
-        {group.rows.map((row, index) => {
-          const line = sale.lineItems[row.lineIndex]
-          if (!line) return null
-          const isCombo =
-            line.lineKind === "promotion" && Boolean(row.components?.length)
-          return (
-            <div
-              key={`${group.key}-${row.lineIndex}`}
-              className={cn(
-                index > 0 &&
-                  cn(
-                    "border-t border-dashed",
-                    isDiscount ? "border-emerald-200/70" : "border-violet-200/70",
-                  ),
-              )}
-            >
-              <SaleDetailTicketRow
-                name={row.name}
-                quantity={row.quantity}
-                listTotal={resolveListLineTotal(line)}
-                finalTotal={resolveLineSubtotal(line, sale)}
-                comment={line.comment}
-                components={isCombo ? row.components : undefined}
-              />
-            </div>
-          )
-        })}
-      </div>
-    </section>
-  )
 }
 
 function SaleDetailTotalsRow({
@@ -281,10 +124,13 @@ function formatGeneralDiscountRowLabel(
 }
 
 function resolveTotalsFromSale(sale: OperationSaleRow) {
+  const listSubtotal = roundMoney(
+    sale.lineItems.reduce((sum, line) => sum + resolveListLineTotal(line), 0),
+  )
   const snapshot = sale.snapshotInfo.totals
   if (snapshot) {
     return {
-      listSubtotal: snapshot.listSubtotal,
+      listSubtotal,
       promoDiscount: snapshot.discountPromotionsAmount,
       catalogDiscount: snapshot.discountItemsCatalogAmount,
       manualDiscount: snapshot.discountItemsManualAmount,
@@ -294,9 +140,6 @@ function resolveTotalsFromSale(sale: OperationSaleRow) {
     }
   }
 
-  const listSubtotal = roundMoney(
-    sale.lineItems.reduce((sum, line) => sum + resolveListLineTotal(line), 0),
-  )
   const generalDiscount = sale.discountInfo.generalDiscountAmount
   let promoDiscount = 0
   let catalogDiscount = 0
@@ -332,22 +175,20 @@ function resolveTotalsFromSale(sale: OperationSaleRow) {
 }
 
 export function SaleDetailTicketView({ sale }: { sale: OperationSaleRow }) {
-  const detailLines = sale.lineItems.map((line) => ({
-    nameSnapshot: line.nameSnapshot,
-    quantity: line.quantity,
-    unitPrice: line.unitPrice,
-    lineSubtotal: resolveLineSubtotal(line, sale),
-    lineTotal: line.lineTotal,
-    listLineTotal: resolveListLineTotal(line),
-    itemDiscountAmount: resolveItemDiscountAmount(line, sale),
-    discountSource: line.discountSource,
-    lineKind: line.lineKind,
-    display: line.display,
-    promotionSnapshot: line.promotionSnapshot,
-  }))
-
-  const groups = groupSaleDetailLines(detailLines)
+  const cartDisplayRows = useMemo(
+    () => buildSaleDetailCartDisplayRows(sale.lineItems),
+    [sale.lineItems],
+  )
+  const cartDisplayGroups = useMemo(
+    () => groupMostradorCartDisplayRows(cartDisplayRows),
+    [cartDisplayRows],
+  )
   const totals = resolveTotalsFromSale(sale)
+  const promocionesAplicadasCount = countSaleAppliedPromotions({
+    quantityDealApplicationCount:
+      sale.discountInfo.quantityDealApplications.length,
+    lineItems: sale.lineItems,
+  })
   const itemDiscountTotal = roundMoney(
     totals.promoDiscount + totals.catalogDiscount + totals.manualDiscount,
   )
@@ -358,14 +199,32 @@ export function SaleDetailTicketView({ sale }: { sale: OperationSaleRow }) {
         Ticket
       </p>
       <div className="overflow-hidden rounded-lg border border-border bg-white">
-        {groups.length === 0 ? (
+        {cartDisplayGroups.length === 0 ? (
           <p className="px-3 py-6 text-center text-sm text-muted-foreground">
             Sin líneas registradas.
           </p>
         ) : (
-          groups.map((group) => (
-            <SaleDetailTicketGroup key={group.key} group={group} sale={sale} />
-          ))
+          <div className="border-b border-slate-200/90 bg-white">
+            {cartDisplayGroups.map((group) => (
+              <MostradorCartTicketGroup
+                key={group.key}
+                group={group}
+                renderRow={(row) => {
+                  const pricing = pricingForMostradorRow(row, EMPTY_CART_OVERRIDES)
+                  return (
+                    <MostradorCartLineDisplay
+                      key={row.rowKey}
+                      row={row}
+                      pricing={{
+                        precioBase: pricing.precioBase,
+                        precioFinal: pricing.precioFinal,
+                      }}
+                    />
+                  )
+                }}
+              />
+            ))}
+          </div>
         )}
       </div>
 
@@ -376,11 +235,7 @@ export function SaleDetailTicketView({ sale }: { sale: OperationSaleRow }) {
         />
         {totals.promoDiscount > 0 ? (
           <SaleDetailTotalsRow
-            label={`Promociones${
-              sale.discountInfo.quantityDealApplications.length > 0
-                ? ` (${sale.discountInfo.quantityDealApplications.length})`
-                : ""
-            }`}
+            label={`Promociones aplicadas (${promocionesAplicadasCount})`}
             value={`−${saleOpFmt.format(totals.promoDiscount)}`}
             negative
           />

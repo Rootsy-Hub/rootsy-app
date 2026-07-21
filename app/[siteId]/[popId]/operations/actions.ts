@@ -54,7 +54,13 @@ export type OperationSaleLineItem = {
   promotionSnapshot: {
     listTotal?: number
     promoDiscount?: number
-    components?: Array<{ name_snapshot?: string; quantity?: number }>
+    components?: Array<{
+      name_snapshot?: string
+      quantity?: number
+      article_id?: string | null
+      recipe_id?: string | null
+      slot_id?: string | null
+    }>
   } | null
 }
 
@@ -209,6 +215,14 @@ function parsePromotionSnapshot(raw: unknown): OperationSaleLineItem["promotionS
             typeof c.name_snapshot === "string" ? c.name_snapshot : undefined,
           quantity:
             c.quantity != null ? parseQty(c.quantity) : undefined,
+          article_id:
+            c.article_id != null ? String(c.article_id) : null,
+          recipe_id:
+            c.recipe_id != null ? String(c.recipe_id) : null,
+          slot_id:
+            typeof c.slot_id === "string" && c.slot_id.trim()
+              ? c.slot_id.trim()
+              : null,
         }))
     : undefined
   return {

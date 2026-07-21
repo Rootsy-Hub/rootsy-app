@@ -5,6 +5,7 @@ import type {
   CounterOrder,
   CounterOrderStatus,
 } from "@/app/[siteId]/[popId]/mostrador/mostradorTypes"
+import { MESAS_FLOOR_PLAN_BG } from "@/app/[siteId]/[popId]/mesas/components/MesaFloorDecorNode"
 import { cn } from "@/lib/utils"
 import {
   DndContext,
@@ -22,6 +23,8 @@ import { formatDistanceToNow } from "date-fns"
 import { es } from "date-fns/locale"
 import { Bike, CheckCircle2, ChefHat } from "lucide-react"
 import { useMemo, useState } from "react"
+
+const BOARD_SECTION_BG = "#20262e"
 
 const BOARD_COLUMNS: {
   id: CounterBoardTab
@@ -133,15 +136,16 @@ function KanbanOrderCard({
       data: { order, columnId },
     })
 
-  const style = transform
-    ? { transform: CSS.Translate.toString(transform) }
-    : undefined
+  const style =
+    transform && !isDragging
+      ? { transform: CSS.Translate.toString(transform) }
+      : undefined
 
   return (
     <li
       ref={setNodeRef}
       style={style}
-      className={cn(isDragging && "opacity-40")}
+      className={cn(isDragging && "opacity-30")}
     >
       <button
         type="button"
@@ -191,8 +195,11 @@ function KanbanColumn({
     draggingOrder == null || canMoveOrderTo(draggingOrder, column.id)
 
   return (
-    <div className="flex min-h-0 min-w-0 flex-1 flex-col">
-      <div className="flex shrink-0 items-center gap-2 border-b border-white/10 px-3 py-3">
+    <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
+      <div
+        className="flex shrink-0 items-center gap-2 border-b border-white/10 px-3 py-3"
+        style={{ backgroundColor: BOARD_SECTION_BG }}
+      >
         <Icon className="size-4 text-white/70" aria-hidden />
         <h2 className="text-sm font-semibold text-white">{column.label}</h2>
         <span className="ml-auto rounded-full bg-white/10 px-2 py-0.5 text-xs font-semibold text-white/70">
@@ -203,12 +210,13 @@ function KanbanColumn({
       <div
         ref={setNodeRef}
         className={cn(
-          "min-h-0 flex-1 overflow-y-auto p-2 transition-colors",
+          "min-h-0 flex-1 overflow-x-hidden overflow-y-auto p-2 transition-colors",
           isOver &&
             canDrop &&
             "bg-emerald-500/10 ring-1 ring-inset ring-emerald-400/30",
           draggingOrder && !canDrop && "opacity-60",
         )}
+        style={{ backgroundColor: MESAS_FLOOR_PLAN_BG }}
       >
         {orders.length === 0 ? (
           <p className="px-2 py-8 text-center text-xs text-white/45">
@@ -310,7 +318,7 @@ export function MostradorBoard({
             Cargando pedidos…
           </p>
         ) : (
-          <div className="grid min-h-0 flex-1 grid-cols-3 divide-x divide-white/10">
+          <div className="grid min-h-0 flex-1 grid-cols-3 divide-x divide-white/10 overflow-hidden">
             {BOARD_COLUMNS.map((column) => (
               <KanbanColumn
                 key={column.id}

@@ -37,6 +37,7 @@ export type SaleLineDiscountEntry = {
 type LineForSnapshot = {
   qty: number
   unitPrice: number
+  listLineTotal?: number | null
   itemDiscount: number
   discountSource: SaleDiscountSource
   promotionDealName: string | null
@@ -49,6 +50,34 @@ type LineForSnapshot = {
 
 function roundMoney(n: number): number {
   return Math.round(n * 100) / 100
+}
+
+/** Precio de lista de una línea persistida (combo usa list_total del snapshot). */
+export function resolvePersistedListLineTotal(input: {
+  quantity: number
+  unitPrice: number
+  listLineTotal?: number | null
+  discountSource?: SaleDiscountSource | null
+  promotionListTotal?: number | null
+}): number {
+  if (
+    input.discountSource === "combo" &&
+    input.promotionListTotal != null &&
+    input.promotionListTotal > 0
+  ) {
+    return roundMoney(input.promotionListTotal)
+  }
+  if (input.listLineTotal != null && input.listLineTotal > 0) {
+    return input.listLineTotal
+  }
+  return roundMoney(input.quantity * input.unitPrice)
+}
+
+function listLineTotalForSnapshot(line: LineForSnapshot): number {
+  if (line.listLineTotal != null && line.listLineTotal > 0) {
+    return roundMoney(line.listLineTotal)
+  }
+  return roundMoney(line.qty * line.unitPrice)
 }
 
 export function catalogDiscountLabel(
@@ -86,8 +115,12 @@ export function buildLineDisplay(
   }
   if (line.discountSource === "catalog") {
     const label = catalogDiscountLabel(line.itemDiscountMode, line.itemDiscountValue)
+    const groupId =
+      line.lineGroupId && !line.lineGroupId.startsWith("qtydeal:")
+        ? line.lineGroupId
+        : `discount:catalog:${sortOrder}`
     return {
-      groupId: line.lineGroupId ?? `discount:catalog:${sortOrder}`,
+      groupId,
       groupLabel: label ? `Catálogo ${label}` : "Descuento catálogo",
       groupType: "discount",
       sortOrder,
@@ -95,8 +128,12 @@ export function buildLineDisplay(
   }
   if (line.discountSource === "manual" && line.itemDiscount > 0) {
     const label = catalogDiscountLabel(line.itemDiscountMode, line.itemDiscountValue)
+    const groupId =
+      line.lineGroupId && !line.lineGroupId.startsWith("qtydeal:")
+        ? line.lineGroupId
+        : `discount:manual:${sortOrder}`
     return {
-      groupId: line.lineGroupId ?? `discount:manual:${sortOrder}`,
+      groupId,
       groupLabel: label ?? "Descuento manual",
       groupType: "discount",
       sortOrder,
@@ -168,7 +205,7 @@ export function computeSnapshotTotals(input: {
   let discountItemsManualAmount = 0
 
   for (const line of input.lines) {
-    listSubtotal += roundMoney(line.qty * line.unitPrice)
+    listSubtotal += listLineTotalForSnapshot(line)
     if (line.discountSource === "combo" || line.discountSource === "quantity_deal") {
       discountPromotionsAmount += line.itemDiscount
     } else if (line.discountSource === "catalog") {
@@ -353,4 +390,22 @@ export function parseSnapshotTotals(raw: unknown): SaleSnapshotTotals | null {
     taxTotal: roundMoney(Number(o.tax_total ?? 0) || 0),
     total: roundMoney(Number(o.total ?? 0) || 0),
   }
+}
+
+/** Promos aplicadas en una venta persistida (qty-deal + combos). */
+export function countSaleAppliedPromotions(input: {
+  quantityDealApplicationCount: number
+  lineItems: Array<{
+    quantity: number
+    lineKind: "article" | "recipe" | "promotion" | null
+    discountSource: SaleDiscountSource | null
+  }>
+}): number {
+  const comboLineCount = input.lineItems.reduce((sum, line) => {
+    if (line.discountSource === "combo" || line.lineKind === "promotion") {
+      return sum + line.quantity
+    }
+    return sum
+  }, 0)
+  return input.quantityDealApplicationCount + comboLineCount
 }

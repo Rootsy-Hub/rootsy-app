@@ -52,6 +52,8 @@ export type MostradorCartDisplayRow = {
   cartLineTotalCantidad?: number
   /** En combos: solo la primera línea muestra el precio total de la promo. */
   hidePrice?: boolean
+  /** Precios fijos para vistas read-only (detalle de venta). */
+  readOnlyPricing?: MostradorCartGroupPricing
 }
 
 export type MostradorCartGroupPricing = {
@@ -505,7 +507,12 @@ export function groupMostradorCartDisplayRows(
     const groupKey = row.promoGroupKey ?? row.rowKey
     const last = groups[groups.length - 1]
 
-    if (last && row.promoGroupKey && last.key === groupKey) {
+    if (
+      last &&
+      row.promoGroupKey &&
+      last.key === groupKey &&
+      last.promoVariant === row.promoGroupVariant
+    ) {
       last.rows.push(row)
       continue
     }
@@ -552,6 +559,16 @@ export function pricingForMostradorRow(
   row: MostradorCartDisplayRow,
   overrides: CartLineOverrideSnapshot,
 ) {
+  if (row.readOnlyPricing) {
+    const { listTotal, finalTotal } = row.readOnlyPricing
+    return {
+      precioUnitario:
+        row.cantidad > 0 ? roundSaleMoney(finalTotal / row.cantidad) : 0,
+      precioBase: listTotal,
+      precioFinal: finalTotal,
+    }
+  }
+
   if (
     row.variant === "product" &&
     row.discountEditingDisabled &&

@@ -82,7 +82,6 @@ export function buildCompleteSaleLinesFromCart(input: {
         itemDiscountDraft: draft,
         suppressCatalogDiscount: suprimido,
         promotionDealDiscount: 0,
-        lineGroupId,
         comment: comment || undefined,
       })
     }

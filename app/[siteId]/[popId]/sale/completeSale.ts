@@ -1142,6 +1142,11 @@ export async function completeSale(
       lines: built.map((l) => ({
         qty: l.qty,
         unitPrice: l.unitPrice,
+        listLineTotal:
+          l.discountSource === "combo" &&
+          l.promotionSnapshot?.list_total != null
+            ? roundMoney(Number(l.promotionSnapshot.list_total))
+            : roundMoney(l.qty * l.unitPrice),
         itemDiscount: l.itemDiscount,
         discountSource: l.discountSource,
         promotionDealName: l.promotionDealName,
@@ -1189,7 +1194,11 @@ export async function completeSale(
         item_discount_value: l.itemDiscountValue,
         item_discount_amount: l.itemDiscount,
         line_subtotal: l.lineBase,
-        list_line_total: roundMoney(l.qty * l.unitPrice),
+        list_line_total:
+          l.discountSource === "combo" &&
+          l.promotionSnapshot?.list_total != null
+            ? roundMoney(Number(l.promotionSnapshot.list_total))
+            : roundMoney(l.qty * l.unitPrice),
         tax_base: l.netPart,
         tax_amount: l.taxPart,
         general_discount_share: generalShare,
@@ -1294,6 +1303,8 @@ export async function completeSale(
       }
     }
 
+    const soldAtIso = new Date().toISOString()
+
     const { data: saleIns, error: saleErr } = await supabase
       .from("sales")
       .insert({
@@ -1308,7 +1319,7 @@ export async function completeSale(
         total,
         currency: "ARS",
         status: "draft",
-        sold_at: new Date().toISOString(),
+        sold_at: soldAtIso,
         cash_register_id: cashRegisterId,
         cash_register_session_id: cashRegisterSessionId,
         created_by: user.id,
