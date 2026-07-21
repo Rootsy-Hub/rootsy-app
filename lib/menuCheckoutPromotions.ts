@@ -2,7 +2,9 @@ import type { MenuCatalogPromotion } from "@/app/[siteId]/[popId]/menu-catalog/a
 import { resolveCatalogCartLinePricing } from "@/components/sale-operation/saleCatalogProduct"
 import type { SaleCatalogProduct } from "@/components/sale-operation/saleCatalogProduct"
 import type { MenuCartItem } from "@/lib/menuCart"
-import { cartItemKey, normalizeCartItemKind } from "@/lib/menuCart"
+import { cartItemKey, normalizeCartItemKind, resolveCartLineId } from "@/lib/menuCart"
+import type { CartLineOverrideSnapshot } from "@/lib/menuCartLineMerge"
+import { cartLineHasPersonalizedManualDiscount } from "@/lib/menuCartLineMerge"
 import type { MenuCatalogProduct } from "@/lib/menuCatalogProduct"
 import {
   computeQuantityDealApplications,
@@ -101,7 +103,7 @@ export function computeMenuQuantityDealDiscounts(input: {
   carrito: MenuCartItem[]
   productosByKey: Map<string, MenuCatalogProduct>
   quantityDeals: MenuCatalogPromotion[]
-  itemDescuentoSuprimido: Record<string, true>
+  overrides: CartLineOverrideSnapshot
 }) {
   const discounts = new Map<
     string,
@@ -125,26 +127,12 @@ export function computeMenuQuantityDealDiscounts(input: {
       }
     }
 
-    const units: QuantityDealUnit[] = []
-    for (const item of input.carrito) {
-      const kind = normalizeCartItemKind(item.kind)
-      if (kind === "promotion") continue
-      const poolKey = `${kind}:${item.productoId}`
-      if (!pool.has(poolKey)) continue
-      const producto = input.productosByKey.get(poolKey)
-      if (!producto) continue
-      const lineKey = cartItemKey({ ...item, kind })
-      if (input.itemDescuentoSuprimido[lineKey]) continue
-      const unitPrice = producto.precioOriginal ?? producto.precio
-      for (let i = 0; i < item.cantidad; i++) {
-        units.push({
-          lineKey,
-          kind,
-          refId: item.productoId,
-          unitPrice,
-        })
-      }
-    }
+    const units = collectQuantityDealUnits({
+      carrito: input.carrito,
+      productosByKey: input.productosByKey,
+      pool,
+      overrides: input.overrides,
+    })
 
     const lines = computeQuantityDealDiscounts({
       units,
@@ -169,11 +157,44 @@ export function computeMenuQuantityDealDiscounts(input: {
   return discounts
 }
 
+function collectQuantityDealUnits(input: {
+  carrito: MenuCartItem[]
+  productosByKey: Map<string, MenuCatalogProduct>
+  pool: Set<string>
+  overrides: CartLineOverrideSnapshot
+}): QuantityDealUnit[] {
+  const units: QuantityDealUnit[] = []
+  for (const item of input.carrito) {
+    const kind = normalizeCartItemKind(item.kind)
+    if (kind === "promotion") continue
+    const poolKey = `${kind}:${item.productoId}`
+    if (!input.pool.has(poolKey)) continue
+    const producto = input.productosByKey.get(poolKey)
+    if (!producto) continue
+    const lineKey = resolveCartLineId({ ...item, kind })
+    if (
+      cartLineHasPersonalizedManualDiscount(lineKey, producto, input.overrides)
+    ) {
+      continue
+    }
+    const unitPrice = producto.precioOriginal ?? producto.precio
+    for (let i = 0; i < item.cantidad; i++) {
+      units.push({
+        lineKey,
+        kind,
+        refId: item.productoId,
+        unitPrice,
+      })
+    }
+  }
+  return units
+}
+
 export function computeMenuQuantityDealApplications(input: {
   carrito: MenuCartItem[]
   productosByKey: Map<string, MenuCatalogProduct>
   quantityDeals: MenuCatalogPromotion[]
-  itemDescuentoSuprimido: Record<string, true>
+  overrides: CartLineOverrideSnapshot
 }): QuantityDealApplication[] {
   const applications: QuantityDealApplication[] = []
 
@@ -194,26 +215,12 @@ export function computeMenuQuantityDealApplications(input: {
       }
     }
 
-    const units: QuantityDealUnit[] = []
-    for (const item of input.carrito) {
-      const kind = normalizeCartItemKind(item.kind)
-      if (kind === "promotion") continue
-      const poolKey = `${kind}:${item.productoId}`
-      if (!pool.has(poolKey)) continue
-      const producto = input.productosByKey.get(poolKey)
-      if (!producto) continue
-      const lineKey = cartItemKey({ ...item, kind })
-      if (input.itemDescuentoSuprimido[lineKey]) continue
-      const unitPrice = producto.precioOriginal ?? producto.precio
-      for (let i = 0; i < item.cantidad; i++) {
-        units.push({
-          lineKey,
-          kind,
-          refId: item.productoId,
-          unitPrice,
-        })
-      }
-    }
+    const units = collectQuantityDealUnits({
+      carrito: input.carrito,
+      productosByKey: input.productosByKey,
+      pool,
+      overrides: input.overrides,
+    })
 
     applications.push(
       ...computeQuantityDealApplications({
@@ -315,7 +322,7 @@ export function removeQuantityDealApplicationFromCart(
   return carrito
     .map((item) => {
       const kind = normalizeCartItemKind(item.kind)
-      const lineKey = cartItemKey({ ...item, kind })
+      const lineKey = resolveCartLineId({ ...item, kind })
       const minus = toSubtract.get(lineKey) ?? 0
       if (minus <= 0) return item
       return { ...item, cantidad: item.cantidad - minus }
@@ -354,6 +361,94 @@ export type MenuCartTotalsLine = {
   promotionMeta?: MenuCatalogPromotion
   promotionSelections?: PromotionCartSelection[]
   quantityDealDiscount?: number
+}
+
+export function quantityDealUnitsOnLine(
+  lineKey: string,
+  applications: QuantityDealApplication[],
+): number {
+  let count = 0
+  for (const app of applications) {
+    count += app.unitsPerLineKey[lineKey] ?? 0
+  }
+  return count
+}
+
+type MenuCartTotalsItem = {
+  cartLineKey: string
+  cantidad: number
+  producto: MenuCatalogProduct | null
+  promotionSelections?: PromotionCartSelection[]
+}
+
+/** Separa unidades en promo por cantidad vs regulares para totales correctos. */
+export function buildMenuCartTotalsLines(input: {
+  items: MenuCartTotalsItem[]
+  quantityDealApplications: QuantityDealApplication[]
+  quantityDealDiscounts: Map<
+    string,
+    { promotionId: string; promotionName: string; amount: number }
+  >
+  itemDescuentoModo: Record<string, "porcentaje" | "fijo">
+  itemDescuentoDraft: Record<string, string>
+  itemDescuentoSuprimido: Record<string, true>
+}): MenuCartTotalsLine[] {
+  const lines: MenuCartTotalsLine[] = []
+
+  for (const item of input.items) {
+    const lineKey = item.cartLineKey
+    const suprimido = input.itemDescuentoSuprimido[lineKey] === true
+    const draft = input.itemDescuentoDraft[lineKey] ?? ""
+    const manualDiscount =
+      !suprimido && draft !== ""
+        ? {
+            mode: input.itemDescuentoModo[lineKey] ?? "porcentaje",
+            draft,
+          }
+        : null
+
+    if (item.producto?.promotionMeta && item.promotionSelections?.length) {
+      lines.push({
+        producto: item.producto,
+        cantidad: item.cantidad,
+        suppressCatalogDiscount: suprimido,
+        manualDiscount,
+        promotionMeta: item.producto.promotionMeta,
+        promotionSelections: item.promotionSelections,
+        quantityDealDiscount: 0,
+      })
+      continue
+    }
+
+    const deal = input.quantityDealDiscounts.get(lineKey)
+    const dealUnits = Math.min(
+      item.cantidad,
+      quantityDealUnitsOnLine(lineKey, input.quantityDealApplications),
+    )
+    const regularUnits = Math.max(0, item.cantidad - dealUnits)
+
+    if (dealUnits > 0) {
+      lines.push({
+        producto: item.producto,
+        cantidad: dealUnits,
+        suppressCatalogDiscount: true,
+        manualDiscount: null,
+        quantityDealDiscount: deal?.amount ?? 0,
+      })
+    }
+
+    if (regularUnits > 0) {
+      lines.push({
+        producto: item.producto,
+        cantidad: regularUnits,
+        suppressCatalogDiscount: suprimido,
+        manualDiscount,
+        quantityDealDiscount: 0,
+      })
+    }
+  }
+
+  return lines
 }
 
 export function menuCartOrderTotals(lines: MenuCartTotalsLine[]) {

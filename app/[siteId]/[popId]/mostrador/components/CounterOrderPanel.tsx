@@ -7,7 +7,7 @@ import type {
   UpdateCounterOrderInput,
 } from "@/app/[siteId]/[popId]/mostrador/mostradorTypes"
 import { Button } from "@/components/ui/button"
-import { saleOpDialogDestructiveBtn } from "@/components/sale-operation/saleOperationStyles"
+import { cn } from "@/lib/utils"
 import { formatDistanceToNow } from "date-fns"
 import { es } from "date-fns/locale"
 import { Monitor, Package } from "lucide-react"
@@ -17,7 +17,6 @@ type Props = {
   order: CounterOrder | null
   orderError?: string | null
   creating: boolean
-  onStartCreate: () => void
   onCancelCreate: () => void
   onCreateOrder: (input: CreateCounterOrderInput) => Promise<boolean> | boolean
   onUpdateOrder: (
@@ -36,7 +35,6 @@ export function CounterOrderPanel({
   order,
   orderError,
   creating,
-  onStartCreate,
   onCancelCreate,
   onCreateOrder,
   onMoveOrder,
@@ -57,7 +55,7 @@ export function CounterOrderPanel({
 
   if (!order) {
     return (
-      <div className="flex min-h-0 flex-1 flex-col items-center justify-center gap-4 p-8 text-center">
+      <div className="flex min-h-0 flex-1 flex-col items-center justify-center gap-4 px-6 text-center">
         <div className="flex size-16 items-center justify-center rounded-2xl bg-slate-200/80 text-slate-500">
           <Monitor className="size-8" aria-hidden />
         </div>
@@ -69,9 +67,6 @@ export function CounterOrderPanel({
             Los pedidos activos aparecen en el tablero de la izquierda.
           </p>
         </div>
-        <Button type="button" onClick={onStartCreate}>
-          Nuevo pedido
-        </Button>
       </div>
     )
   }
@@ -91,14 +86,14 @@ export function CounterOrderPanel({
   }
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col overflow-y-auto p-4">
+    <div className="flex min-h-0 flex-1 flex-col overflow-y-auto">
       {orderError ? (
-        <p className="mb-3 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">
+        <p className="border-b border-red-100 bg-red-50 px-3 py-2 text-sm text-red-700">
           {orderError}
         </p>
       ) : null}
 
-      <div className="rounded-xl border border-slate-200/90 bg-white p-4 shadow-sm">
+      <div className="border-b border-slate-200/90 bg-white px-3 py-4">
         <div className="flex items-start justify-between gap-3">
           <div>
             <p className="text-lg font-bold text-slate-900">#{order.orderNumber}</p>
@@ -169,12 +164,13 @@ export function CounterOrderPanel({
         </dl>
       </div>
 
-      <div className="mt-4 grid gap-2">
+      <div className="grid gap-0 border-b border-slate-200/90 bg-white">
         {order.status === "preparing" && order.fulfillmentType === "delivery" ? (
           <Button
             type="button"
             disabled={busy || order.isPaid}
             onClick={() => void run(() => onMoveOrder(order.id, "dispatched"))}
+            className="h-12 w-full rounded-none border-0 border-b border-slate-200/90 bg-emerald-600 text-white hover:bg-emerald-500"
           >
             Marcar enviado
           </Button>
@@ -182,9 +178,10 @@ export function CounterOrderPanel({
         {order.status === "preparing" || order.status === "dispatched" ? (
           <Button
             type="button"
-            variant="secondary"
+            variant="ghost"
             disabled={busy}
             onClick={() => void run(() => onMoveOrder(order.id, "delivered"))}
+            className="h-12 w-full rounded-none border-0 border-b border-slate-200/90 text-slate-800 hover:bg-slate-50 hover:text-slate-950"
           >
             Marcar entregado
           </Button>
@@ -192,17 +189,19 @@ export function CounterOrderPanel({
         {!order.isPaid && order.status !== "cancelled" ? (
           <Button
             type="button"
-            variant="outline"
-            className={saleOpDialogDestructiveBtn}
+            variant="ghost"
             disabled={busy}
             onClick={() => void run(() => onCancelOrder(order.id))}
+            className={cn(
+              "h-12 w-full rounded-none border-0 text-rose-700 hover:bg-rose-50 hover:text-rose-800",
+            )}
           >
             Cancelar pedido
           </Button>
         ) : null}
       </div>
 
-      <div className="mt-6 flex items-center gap-2 rounded-lg border border-dashed border-slate-200 px-3 py-2 text-xs text-slate-500">
+      <div className="flex items-center gap-2 border-b border-slate-200/90 bg-slate-50/80 px-3 py-2.5 text-xs text-slate-500">
         <Package className="size-4 shrink-0" aria-hidden />
         Usá la pestaña Carrito para cargar productos y cobrar.
       </div>

@@ -22,7 +22,11 @@ export type SaleOperationTotalBarProps = {
   descuentoCatalogoMonto?: number
   /** @deprecated Usar hayDescuentoItems */
   hayDescuentoCatalogo?: boolean
+  /** Total descontado por promociones (combo + cantidad). */
+  promocionesAplicadasMonto?: number
+  promocionesAplicadasCount?: number
   className?: string
+  flush?: boolean
 }
 
 const breakdownLabelClass =
@@ -40,15 +44,20 @@ export function SaleOperationTotalBar({
   hayDescuentoItems,
   descuentoCatalogoMonto = 0,
   hayDescuentoCatalogo = false,
+  promocionesAplicadasMonto = 0,
+  promocionesAplicadasCount = 0,
   className,
+  flush = false,
 }: SaleOperationTotalBarProps) {
   const itemsDiscountAmount =
     descuentoItemsMonto ?? descuentoCatalogoMonto ?? 0
   const showItemsDiscount =
     hayDescuentoItems ?? hayDescuentoCatalogo ?? itemsDiscountAmount > 0
   const showGeneralDiscount = hayDescuento && descuentoMonto > 0
+  const showPromociones =
+    promocionesAplicadasCount > 0 && promocionesAplicadasMonto > 0
   const showSubtotalBreakdown =
-    showItemsDiscount || showGeneralDiscount || subtotalOriginal > subtotal
+    showItemsDiscount || showGeneralDiscount || showPromociones || subtotalOriginal > subtotal
 
   const subtotalDisplay =
     subtotalOriginal > 0 ? subtotalOriginal : subtotal
@@ -59,7 +68,7 @@ export function SaleOperationTotalBar({
       aria-label="Total a cobrar"
       className={cn(
         "relative box-border flex w-full shrink-0 flex-col justify-center border-t border-emerald-500/35 backdrop-blur-xl",
-        saleOpFooterBarPaddingClass,
+        flush ? "px-3 py-2 sm:px-3 sm:py-2.5" : saleOpFooterBarPaddingClass,
         showSubtotalBreakdown
           ? "min-h-[calc(5.75rem+1rem)] sm:min-h-[calc(6rem+1.25rem)]"
           : "min-h-[calc(4.5rem+1rem)] sm:min-h-[calc(4.75rem+1.25rem)]",
@@ -88,6 +97,16 @@ export function SaleOperationTotalBar({
             <p className={cn(saleOpImporteTotalMutedClass, amountColumnClass)}>
               {saleOpFmt.format(subtotalDisplay)}
             </p>
+            {showPromociones ? (
+              <>
+                <span className={cn(breakdownLabelClass, "self-center")}>
+                  Promociones aplicadas ({promocionesAplicadasCount})
+                </span>
+                <p className={cn(saleOpImporteTotalDiscountClass, amountColumnClass)}>
+                  −{saleOpFmt.format(promocionesAplicadasMonto)}
+                </p>
+              </>
+            ) : null}
             {showItemsDiscount ? (
               <>
                 <span className={cn(breakdownLabelClass, "self-center")}>

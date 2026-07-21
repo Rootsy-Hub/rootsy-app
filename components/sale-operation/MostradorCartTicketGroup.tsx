@@ -1,0 +1,70 @@
+"use client"
+
+import { MostradorCartPromoBanner } from "@/components/sale-operation/MostradorCartPromoBanner"
+import type { MostradorCartDisplayGroup } from "@/lib/mostradorCartDisplay"
+import { cn } from "@/lib/utils"
+import type { ReactNode } from "react"
+
+type Props = {
+  group: MostradorCartDisplayGroup
+  renderRow: (row: MostradorCartDisplayGroup["rows"][number]) => ReactNode
+}
+
+export function MostradorCartTicketGroup({ group, renderRow }: Props) {
+  const hasPromoHeader = Boolean(group.promoLabel?.trim())
+  const variant = group.promoVariant ?? "promotion"
+  const isDiscount = variant === "discount"
+
+  if (!hasPromoHeader) {
+    return (
+      <>
+        {group.rows.map((row) => (
+          <div key={row.rowKey} className="border-b border-slate-200/90">
+            {renderRow(row)}
+          </div>
+        ))}
+      </>
+    )
+  }
+
+  return (
+    <section
+      className={cn(
+        "border-b border-slate-200/90",
+        isDiscount
+          ? "border-l-[3px] border-l-emerald-400"
+          : "border-l-[3px] border-l-violet-400",
+      )}
+      aria-label={`Grupo: ${group.promoLabel}`}
+    >
+      <MostradorCartPromoBanner
+        label={group.promoLabel!}
+        variant={variant}
+        discountMode={group.promoDiscountMode}
+        pricing={group.groupPricing}
+      />
+
+      <div
+        className={cn(
+          "bg-gradient-to-b to-white",
+          isDiscount ? "from-emerald-50/35" : "from-violet-50/35",
+        )}
+      >
+        {group.rows.map((row, index) => (
+          <div
+            key={row.rowKey}
+            className={cn(
+              index > 0 &&
+                cn(
+                  "border-t border-dashed",
+                  isDiscount ? "border-emerald-200/70" : "border-violet-200/70",
+                ),
+            )}
+          >
+            {renderRow(row)}
+          </div>
+        ))}
+      </div>
+    </section>
+  )
+}

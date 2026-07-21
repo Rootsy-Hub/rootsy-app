@@ -1,6 +1,7 @@
 "use client"
 
 import type { ReactNode } from "react"
+import { cn } from "@/lib/utils"
 
 type Props = {
   title: string
@@ -9,6 +10,7 @@ type Props = {
   emptyTitle?: string
   emptyDescription?: string
   children: ReactNode
+  flush?: boolean
 }
 
 export function SaleOperationCartList({
@@ -18,14 +20,25 @@ export function SaleOperationCartList({
   emptyTitle = "Pedido vacío",
   emptyDescription = "Agregá productos desde el catálogo.",
   children,
+  flush = false,
 }: Props) {
   return (
     <div
-      className="game-scroll min-h-0 flex-1 space-y-2 overflow-y-auto p-3 sm:p-3.5"
+      className={cn(
+        "game-scroll min-h-0 flex-1 overflow-y-auto",
+        flush ? "space-y-0" : "space-y-2 p-3 sm:p-3.5",
+      )}
       role="region"
       aria-label="Ítems agregados"
     >
-      <div className="mb-1 flex items-baseline justify-between gap-2 px-0.5">
+      <div
+        className={cn(
+          "flex items-baseline justify-between gap-2",
+          flush
+            ? "border-b border-slate-200/90 bg-white px-3 py-2"
+            : "mb-1 px-0.5",
+        )}
+      >
         <div className="min-w-0">
           <h2 className="text-[11px] font-bold uppercase tracking-[0.14em] text-slate-500">
             {title}
@@ -42,7 +55,12 @@ export function SaleOperationCartList({
       </div>
 
       {lineCount === 0 ? (
-        <div className="mt-8 rounded-xl border border-dashed border-slate-200 bg-white/60 px-4 py-10 text-center">
+        <div
+          className={cn(
+            "text-center",
+            flush ? "px-4 py-12" : "mt-8 rounded-xl border border-dashed border-slate-200 bg-white/60 px-4 py-10",
+          )}
+        >
           <p className="text-sm font-medium text-slate-600">{emptyTitle}</p>
           <p className="mt-1 text-xs text-slate-400">{emptyDescription}</p>
         </div>

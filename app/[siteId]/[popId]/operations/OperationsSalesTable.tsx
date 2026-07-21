@@ -1,7 +1,6 @@
 "use client"
 
 import type {
-  OperationSaleLineItem,
   OperationSaleRow,
 } from "@/app/[siteId]/[popId]/operations/actions"
 import { OperationAccountingViewButton } from "@/app/[siteId]/[popId]/operations/OperationAccountingModal"
@@ -45,6 +44,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
+import { SaleDetailTicketView } from "@/app/[siteId]/[popId]/operations/SaleDetailTicketView"
 
 const fmt = new Intl.NumberFormat("es-AR", {
   style: "currency",
@@ -126,12 +126,6 @@ function formatCbteFch(s: string) {
   return s
 }
 
-function formatQty(n: number) {
-  const t = Math.round(n * 1e6) / 1e6
-  if (Number.isInteger(t)) return String(t)
-  return t.toLocaleString("es-AR", { maximumFractionDigits: 6 })
-}
-
 function clientsSearchHref(
   siteId: string,
   popId: string,
@@ -169,113 +163,6 @@ const opsDialogHeader =
 const opsDialogBody =
   "min-h-0 flex-1 overflow-y-auto overscroll-contain px-6 py-4"
 
-function roundMoney(n: number): number {
-  if (!Number.isFinite(n)) return 0
-  return Math.round(n * 100) / 100
-}
-
-function resolveLineSubtotal(
-  line: OperationSaleLineItem,
-  sale: OperationSaleRow,
-): number {
-  if (line.lineSubtotal != null && line.lineSubtotal > 0) {
-    return line.lineSubtotal
-  }
-  const subBeforeGeneral = sale.discountInfo.subtotalBeforeGeneralDiscount
-  if (
-    subBeforeGeneral != null &&
-    subBeforeGeneral > 0 &&
-    sale.total > 0 &&
-    line.lineTotal > 0
-  ) {
-    return roundMoney((line.lineTotal * subBeforeGeneral) / sale.total)
-  }
-  return line.lineTotal
-}
-
-function resolveItemDiscountAmount(
-  line: OperationSaleLineItem,
-  sale: OperationSaleRow,
-): number {
-  if (line.itemDiscountAmount > 0) return line.itemDiscountAmount
-  const gross = roundMoney(line.quantity * line.unitPrice)
-  const lineSub = resolveLineSubtotal(line, sale)
-  const guess = roundMoney(gross - lineSub)
-  return guess > 0 ? guess : 0
-}
-
-function formatItemDiscountType(line: OperationSaleLineItem): string {
-  if (line.itemDiscountAmount <= 0 && line.itemDiscountValue == null) {
-    return "—"
-  }
-  if (line.itemDiscountMode === "porcentaje" && line.itemDiscountValue != null) {
-    const pct = Number.isInteger(line.itemDiscountValue)
-      ? String(line.itemDiscountValue)
-      : line.itemDiscountValue.toLocaleString("es-AR", {
-          maximumFractionDigits: 2,
-        })
-    return `${pct} %`
-  }
-  if (line.itemDiscountMode === "fijo") return "Monto fijo"
-  return "—"
-}
-
-function formatGeneralDiscountRowLabel(
-  info: OperationSaleRow["discountInfo"],
-): string {
-  if (info.generalDiscountAmount <= 0) return "Descuento general"
-  if (info.generalDiscountMode === "porcentaje" && info.generalDiscountValue != null) {
-    const pct = Number.isInteger(info.generalDiscountValue)
-      ? String(info.generalDiscountValue)
-      : info.generalDiscountValue.toLocaleString("es-AR", {
-          maximumFractionDigits: 2,
-        })
-    return `Descuento general (${pct} %)`
-  }
-  if (info.generalDiscountMode === "fijo" && info.generalDiscountValue != null) {
-    return `Descuento general (${fmt.format(info.generalDiscountValue)})`
-  }
-  return "Descuento general"
-}
-
-function SaleDetailTotalsRow({
-  label,
-  value,
-  emphasize = false,
-  negative = false,
-  valueClassName,
-}: {
-  label: string
-  value: string
-  emphasize?: boolean
-  negative?: boolean
-  valueClassName?: string
-}) {
-  return (
-    <div className="flex items-baseline justify-between gap-4 py-1.5">
-      <span
-        className={cn(
-          "text-sm text-muted-foreground",
-          emphasize && "font-semibold text-foreground",
-        )}
-      >
-        {label}
-      </span>
-      <span
-        className={cn(
-          "shrink-0 text-sm tabular-nums",
-          emphasize ? "text-base font-semibold text-primary" : "font-medium text-foreground",
-          negative && !emphasize && "text-amber-800",
-          tdMoneyClass,
-          valueClassName,
-        )}
-      >
-        {value}
-      </span>
-    </div>
-  )
-}
-
 function SaleDetailDialog({
   sale,
   open,
@@ -288,15 +175,6 @@ function SaleDetailDialog({
   if (!sale) return null
 
   const when = formatOperationSaleDateTime(sale.soldAt)
-  const subtotalBeforeGeneral =
-    sale.discountInfo.subtotalBeforeGeneralDiscount ??
-    roundMoney(
-      sale.lineItems.reduce(
-        (sum, line) => sum + resolveLineSubtotal(line, sale),
-        0,
-      ),
-    )
-  const generalDiscount = sale.discountInfo.generalDiscountAmount
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -317,132 +195,7 @@ function SaleDetailDialog({
             {sale.id}
           </p>
 
-          <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-            Ítems
-          </p>
-          <div className="overflow-x-auto rounded-lg border border-border">
-            <table className="w-full caption-bottom text-sm">
-              <thead>
-                <tr className="border-b border-border bg-muted/40">
-                  <th className="px-3 py-2 text-left text-xs font-semibold text-foreground">
-                    Producto
-                  </th>
-                  <th className="px-3 py-2 text-right text-xs font-semibold text-foreground">
-                    Cant.
-                  </th>
-                  <th className="px-3 py-2 text-right text-xs font-semibold text-foreground">
-                    P. unit.
-                  </th>
-                  <th className="px-3 py-2 text-right text-xs font-semibold text-foreground">
-                    Desc. tipo
-                  </th>
-                  <th className="px-3 py-2 text-right text-xs font-semibold text-foreground">
-                    Desc. importe
-                  </th>
-                  <th className="px-3 py-2 text-right text-xs font-semibold text-foreground">
-                    Línea
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {sale.lineItems.length === 0 ? (
-                  <tr>
-                    <td
-                      colSpan={6}
-                      className="px-3 py-6 text-center text-muted-foreground"
-                    >
-                      Sin líneas registradas.
-                    </td>
-                  </tr>
-                ) : (
-                  sale.lineItems.map((line, li) => {
-                    const itemDiscount = resolveItemDiscountAmount(line, sale)
-                    const lineSubtotal = resolveLineSubtotal(line, sale)
-                    const discountType =
-                      itemDiscount > 0
-                        ? formatItemDiscountType({
-                            ...line,
-                            itemDiscountAmount: itemDiscount,
-                          })
-                        : "—"
-
-                    return (
-                      <tr
-                        key={`${sale.id}-line-${li}`}
-                        className="border-b border-border/60"
-                      >
-                        <td className="max-w-[200px] px-3 py-2">
-                          <span className="font-medium text-foreground">
-                            {line.nameSnapshot}
-                          </span>
-                          {line.comment ? (
-                            <span className="mt-0.5 block text-xs text-muted-foreground">
-                              {line.comment}
-                            </span>
-                          ) : null}
-                        </td>
-                        <td className={cn("px-3 py-2 text-right", tdMoneyClass)}>
-                          {formatQty(line.quantity)}
-                        </td>
-                        <td className={cn("px-3 py-2 text-right", tdMoneyClass)}>
-                          {fmt.format(line.unitPrice)}
-                        </td>
-                        <td className={cn("px-3 py-2 text-right", tdMoneyClass)}>
-                          {discountType}
-                        </td>
-                        <td className={cn("px-3 py-2 text-right", tdMoneyClass)}>
-                          {itemDiscount > 0 ? fmt.format(itemDiscount) : "—"}
-                        </td>
-                        <td
-                          className={cn(
-                            "px-3 py-2 text-right font-medium text-foreground",
-                            tdMoneyClass,
-                          )}
-                        >
-                          {fmt.format(lineSubtotal)}
-                        </td>
-                      </tr>
-                    )
-                  })
-                )}
-              </tbody>
-            </table>
-          </div>
-
-          <div className="mt-4 rounded-lg border border-border bg-muted/20 px-4 py-3">
-            <SaleDetailTotalsRow
-              label="Subtotal"
-              value={fmt.format(subtotalBeforeGeneral)}
-            />
-            {generalDiscount > 0 ? (
-              <SaleDetailTotalsRow
-                label={formatGeneralDiscountRowLabel(sale.discountInfo)}
-                value={`−${fmt.format(generalDiscount)}`}
-                negative
-              />
-            ) : null}
-            <div className="my-2 border-t border-border/60" />
-            <SaleDetailTotalsRow
-              label="Total"
-              value={fmt.format(sale.total)}
-              emphasize
-            />
-            {sale.accruesOutputVat ? (
-              <SaleDetailTotalsRow
-                label="IVA"
-                value={
-                  sale.taxTotal > 0 ? fmt.format(sale.taxTotal) : "—"
-                }
-                valueClassName={
-                  sale.taxTotal > 0 ? tdMoneyVatClass : undefined
-                }
-              />
-            ) : null}
-            <SaleDetailTotalsRow
-              label="Forma de pago"
-              value={sale.paymentMethodLabel}
-            />
-          </div>
+          <SaleDetailTicketView sale={sale} />
 
           {sale.payments.length > 0 ? (
             <div className="mt-4">

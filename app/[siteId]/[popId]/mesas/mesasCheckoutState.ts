@@ -2,6 +2,7 @@ import type { MenuCartItemKind } from "@/lib/menuCart"
 import type { PromotionCartSelection } from "@/lib/promotionPricing"
 
 export type MesasCartItem = {
+  lineId?: string
   productoId: string
   cantidad: number
   kind?: MenuCartItemKind
@@ -106,7 +107,12 @@ function parseCartItem(v: unknown): MesasCartItem | null {
           ? "promotion"
           : undefined
   const promotionSelections = parsePromotionSelections(v.promotionSelections)
+  const lineId =
+    typeof v.lineId === "string" && v.lineId.trim()
+      ? v.lineId.trim()
+      : undefined
   return {
+    ...(lineId ? { lineId } : {}),
     productoId,
     cantidad: Math.round(cantidad),
     ...(kind ? { kind } : {}),

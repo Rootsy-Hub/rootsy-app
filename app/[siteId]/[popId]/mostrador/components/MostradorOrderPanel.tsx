@@ -1,11 +1,7 @@
 "use client"
 
 import type { MostradorSaleCheckout } from "@/app/[siteId]/[popId]/mostrador/useMostradorSaleCheckout"
-import { OperationCartLineRow } from "@/components/sale-operation/OperationCartLineRow"
-import { QuantityDealCartLineRow } from "@/components/sale-operation/QuantityDealCartLineRow"
-import { SaleOperationActionsBar } from "@/components/sale-operation/SaleOperationActionsBar"
-import { SaleOperationCartList } from "@/components/sale-operation/SaleOperationCartList"
-import { SaleOperationTotalBar } from "@/components/sale-operation/SaleOperationTotalBar"
+import { SaleOperationTicketOrderPanel } from "@/components/sale-operation/SaleOperationTicketOrderPanel"
 
 type Props = {
   checkout: MostradorSaleCheckout
@@ -14,9 +10,9 @@ type Props = {
 
 export function MostradorOrderPanel({ checkout, orderLabel }: Props) {
   const {
-    cartDisplayLines,
-    cambiarCantidad,
-    quitarDelCarrito,
+    cartDisplayRows,
+    cambiarCantidadPorLinea,
+    aplicarEdicionLineaTicket,
     quitarQuantityDealApplication,
     actions,
     subtotal,
@@ -26,101 +22,38 @@ export function MostradorOrderPanel({ checkout, orderLabel }: Props) {
     subtotalOriginal,
     descuentoItemsMonto,
     hayDescuentoItems,
+    promocionesAplicadasMonto,
+    promocionesAplicadasCount,
     cartLineOverrides,
-    cartLineOverrideActions,
   } = checkout
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col">
-      <SaleOperationCartList
-        title="Pedido"
-        subtitle={orderLabel ? `Pedido ${orderLabel}` : undefined}
-        lineCount={cartDisplayLines.length}
-        emptyTitle="Pedido vacío"
-        emptyDescription="Agregá productos desde el panel izquierdo."
-      >
-        {cartDisplayLines.map((line) => {
-          if (line.displayKind === "quantity_deal") {
-            const app = line.application
-            return (
-              <QuantityDealCartLineRow
-                key={line.cartLineKey}
-                lineKey={line.cartLineKey}
-                promotionName={app.promotionName}
-                discountAmount={app.discountAmount}
-                buyQuantity={app.buyQuantity}
-                overrides={cartLineOverrides}
-                overrideActions={cartLineOverrideActions}
-                onRemove={() => quitarQuantityDealApplication(app.id)}
-              />
-            )
-          }
-
-          const selectionSummary =
-            line.kind === "promotion" && line.promotionSelections?.length
-              ? line.promotionSelections.map((s) => s.name).join(" · ")
-              : undefined
-
-          return (
-            <OperationCartLineRow
-              key={line.cartLineKey}
-              lineKey={line.cartLineKey}
-              itemId={line.productoId}
-              nombre={line.producto?.nombre ?? "Producto"}
-              descripcion={selectionSummary ?? line.producto?.descripcion}
-              cantidad={line.cantidad}
-              producto={line.producto}
-              overrides={cartLineOverrides}
-              overrideActions={cartLineOverrideActions}
-              promotionMeta={line.producto?.promotionMeta}
-              promotionSelections={line.promotionSelections}
-              quantityDealUnitsOnLine={line.quantityDealUnitsOnLine}
-              onQuantityDecrease={() =>
-                cambiarCantidad(
-                  line.productoId,
-                  -1,
-                  line.kind,
-                  line.promotionSelections,
-                )
-              }
-              onQuantityIncrease={() =>
-                cambiarCantidad(
-                  line.productoId,
-                  1,
-                  line.kind,
-                  line.promotionSelections,
-                )
-              }
-              onRemove={() =>
-                quitarDelCarrito(
-                  line.productoId,
-                  line.kind,
-                  line.promotionSelections,
-                )
-              }
-            />
-          )
-        })}
-      </SaleOperationCartList>
-
-      <SaleOperationActionsBar
-        {...actions}
-        confirmLabel="Cobrar pedido"
-        confirmTitle={
-          !checkout.puedeRegistrar
-            ? "Completá el pedido, pago y pedido seleccionado."
-            : undefined
-        }
-      />
-      <SaleOperationTotalBar
-        total={total}
-        subtotal={subtotal}
-        descuentoMonto={descuentoMonto}
-        hayDescuento={hayDescuento}
-        subtotalOriginal={subtotalOriginal}
-        descuentoItemsMonto={descuentoItemsMonto}
-        hayDescuentoItems={hayDescuentoItems}
-      />
-    </div>
+    <SaleOperationTicketOrderPanel
+      cartDisplayRows={cartDisplayRows}
+      cartLineOverrides={cartLineOverrides}
+      aplicarEdicionLineaTicket={aplicarEdicionLineaTicket}
+      cambiarCantidadPorLinea={cambiarCantidadPorLinea}
+      quitarQuantityDealApplication={quitarQuantityDealApplication}
+      actions={{
+        ...actions,
+        confirmLabel: "Cobrar pedido",
+        confirmTitle: !checkout.puedeRegistrar
+          ? "Completá el pedido, pago y pedido seleccionado."
+          : undefined,
+      }}
+      totalBar={{
+        total,
+        subtotal,
+        descuentoMonto,
+        hayDescuento,
+        subtotalOriginal,
+        descuentoItemsMonto,
+        hayDescuentoItems,
+        promocionesAplicadasMonto,
+        promocionesAplicadasCount,
+      }}
+      listTitle="Pedido"
+      listSubtitle={orderLabel ? `Pedido ${orderLabel}` : undefined}
+    />
   )
 }

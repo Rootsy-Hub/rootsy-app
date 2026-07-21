@@ -14,6 +14,12 @@ import {
 import { saleComprobanteAccruesOutputVat } from "@/lib/saleComprobantePicker"
 import { resolveOperationPaymentMethodLabel } from "@/lib/operationPaymentLabels"
 import {
+  parseLineDisplay,
+  parseSnapshotTotals,
+  type SaleLineDisplay,
+  type SaleSnapshotTotals,
+} from "@/lib/saleSnapshot"
+import {
   localDateExclusiveEndTimestamp,
   localDateStartTimestamp,
   timezoneForPopLedger,
@@ -22,6 +28,9 @@ import { createClient } from "@/utils/supabase/server"
 
 export type OperationSaleLineItem = {
   articleId: string | null
+  recipeId: string | null
+  promotionId: string | null
+  lineKind: "article" | "recipe" | "promotion" | null
   nameSnapshot: string
   quantity: number
   unitPrice: number
@@ -33,6 +42,20 @@ export type OperationSaleLineItem = {
   itemDiscountAmount: number
   lineSubtotal: number | null
   comment: string | null
+  discountSource: "none" | "catalog" | "manual" | "quantity_deal" | "combo" | null
+  promotionDealId: string | null
+  promotionDealName: string | null
+  lineGroupId: string | null
+  listLineTotal: number | null
+  taxBase: number | null
+  taxAmount: number | null
+  generalDiscountShare: number | null
+  display: SaleLineDisplay | null
+  promotionSnapshot: {
+    listTotal?: number
+    promoDiscount?: number
+    components?: Array<{ name_snapshot?: string; quantity?: number }>
+  } | null
 }
 
 export type OperationSalePayment = {
@@ -59,12 +82,24 @@ export type OperationSaleArcaInvoice = {
   status: string
 }
 
+export type OperationSaleQuantityDealSummary = {
+  promotionId: string
+  promotionName: string
+  discountAmount: number
+}
+
 export type OperationSaleDiscountInfo = {
   itemDiscountTotal: number
   generalDiscountAmount: number
   generalDiscountMode: "porcentaje" | "fijo" | null
   generalDiscountValue: number | null
   subtotalBeforeGeneralDiscount: number | null
+  quantityDealApplications: OperationSaleQuantityDealSummary[]
+}
+
+export type OperationSaleSnapshotInfo = {
+  version: number | null
+  totals: SaleSnapshotTotals | null
 }
 
 export type OperationSaleRow = {
@@ -76,6 +111,7 @@ export type OperationSaleRow = {
   taxTotal: number
   discountTotal: number
   discountInfo: OperationSaleDiscountInfo
+  snapshotInfo: OperationSaleSnapshotInfo
   clientId: string | null
   customerName: string | null
   customerTaxId: string | null
@@ -162,14 +198,53 @@ function parseQty(v: unknown): number {
   return Math.round(n * 1e6) / 1e6
 }
 
+function parsePromotionSnapshot(raw: unknown): OperationSaleLineItem["promotionSnapshot"] {
+  if (raw == null || typeof raw !== "object") return null
+  const o = raw as Record<string, unknown>
+  const components = Array.isArray(o.components)
+    ? o.components
+        .filter((c): c is Record<string, unknown> => c != null && typeof c === "object")
+        .map((c) => ({
+          name_snapshot:
+            typeof c.name_snapshot === "string" ? c.name_snapshot : undefined,
+          quantity:
+            c.quantity != null ? parseQty(c.quantity) : undefined,
+        }))
+    : undefined
+  return {
+    listTotal: o.list_total != null ? parseMoney(o.list_total) : undefined,
+    promoDiscount: o.promo_discount != null ? parseMoney(o.promo_discount) : undefined,
+    components,
+  }
+}
+
 function parseLineItems(raw: unknown): OperationSaleLineItem[] {
   if (!Array.isArray(raw)) return []
   const out: OperationSaleLineItem[] = []
   for (const row of raw) {
     if (!row || typeof row !== "object") continue
     const o = row as Record<string, unknown>
+    const discountRaw = o.discount_source
+    const discountSource =
+      discountRaw === "catalog" ||
+      discountRaw === "manual" ||
+      discountRaw === "quantity_deal" ||
+      discountRaw === "combo" ||
+      discountRaw === "none"
+        ? discountRaw
+        : null
+    const lineKindRaw = o.line_kind
+    const lineKind =
+      lineKindRaw === "article" ||
+      lineKindRaw === "recipe" ||
+      lineKindRaw === "promotion"
+        ? lineKindRaw
+        : null
     out.push({
       articleId: o.article_id != null ? String(o.article_id) : null,
+      recipeId: o.recipe_id != null ? String(o.recipe_id) : null,
+      promotionId: o.promotion_id != null ? String(o.promotion_id) : null,
+      lineKind,
       nameSnapshot: String(o.name_snapshot ?? "—"),
       quantity: parseQty(o.quantity),
       unitPrice: parseMoney(o.unit_price),
@@ -191,6 +266,27 @@ function parseLineItems(raw: unknown): OperationSaleLineItem[] {
         typeof o.comment === "string" && o.comment.trim()
           ? o.comment.trim()
           : null,
+      discountSource,
+      promotionDealId:
+        o.promotion_deal_id != null ? String(o.promotion_deal_id) : null,
+      promotionDealName:
+        typeof o.promotion_deal_name === "string" && o.promotion_deal_name.trim()
+          ? o.promotion_deal_name.trim()
+          : null,
+      lineGroupId:
+        typeof o.line_group_id === "string" && o.line_group_id.trim()
+          ? o.line_group_id.trim()
+          : null,
+      listLineTotal:
+        o.list_line_total != null ? parseMoney(o.list_line_total) : null,
+      taxBase: o.tax_base != null ? parseMoney(o.tax_base) : null,
+      taxAmount: o.tax_amount != null ? parseMoney(o.tax_amount) : null,
+      generalDiscountShare:
+        o.general_discount_share != null
+          ? parseMoney(o.general_discount_share)
+          : null,
+      display: parseLineDisplay(o.display),
+      promotionSnapshot: parsePromotionSnapshot(o.promotion_snapshot),
     })
   }
   return out
@@ -236,10 +332,24 @@ function parseSaleDiscountInfo(metadata: unknown): OperationSaleDiscountInfo {
     generalDiscountMode: null,
     generalDiscountValue: null,
     subtotalBeforeGeneralDiscount: null,
+    quantityDealApplications: [],
   }
   if (metadata == null || typeof metadata !== "object") return empty
   const o = metadata as Record<string, unknown>
   const mode = o.general_discount_mode
+  const qtyDealsRaw = o.quantity_deal_applications
+  const quantityDealApplications: OperationSaleQuantityDealSummary[] = []
+  if (Array.isArray(qtyDealsRaw)) {
+    for (const row of qtyDealsRaw) {
+      if (!row || typeof row !== "object") continue
+      const d = row as Record<string, unknown>
+      quantityDealApplications.push({
+        promotionId: String(d.promotion_id ?? ""),
+        promotionName: String(d.promotion_name ?? "Promoción"),
+        discountAmount: parseMoney(d.discount_amount),
+      })
+    }
+  }
   return {
     itemDiscountTotal: parseMoney(o.item_discount_total),
     generalDiscountAmount: parseMoney(o.general_discount_amount),
@@ -253,6 +363,23 @@ function parseSaleDiscountInfo(metadata: unknown): OperationSaleDiscountInfo {
       o.subtotal_before_general_discount != null
         ? parseMoney(o.subtotal_before_general_discount)
         : null,
+    quantityDealApplications,
+  }
+}
+
+function parseSaleSnapshotInfo(metadata: unknown): OperationSaleSnapshotInfo {
+  if (metadata == null || typeof metadata !== "object") {
+    return { version: null, totals: null }
+  }
+  const o = metadata as Record<string, unknown>
+  const versionRaw = o.snapshot_version
+  const version =
+    versionRaw != null && Number.isFinite(Number(versionRaw))
+      ? Number(versionRaw)
+      : null
+  return {
+    version,
+    totals: parseSnapshotTotals(o.totals),
   }
 }
 
@@ -649,6 +776,7 @@ function mapSaleRows(
       taxTotal: accruesOutputVat ? parseMoney(row.tax_total) : 0,
       discountTotal: parseMoney(row.discount_total),
       discountInfo: parseSaleDiscountInfo(row.metadata),
+      snapshotInfo: parseSaleSnapshotInfo(row.metadata),
       clientId: row.client_id != null ? String(row.client_id) : null,
       customerName:
         row.customer_name != null ? String(row.customer_name) : null,

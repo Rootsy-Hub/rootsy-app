@@ -3,10 +3,17 @@ import type { PromotionCartSelection } from "@/lib/promotionPricing"
 export type MenuCartItemKind = "article" | "recipe" | "promotion"
 
 export type MenuCartItem = {
+  /** Identificador estable de la línea en el carrito (merge, overrides, UI). */
+  lineId?: string
   productoId: string
   cantidad: number
   kind?: MenuCartItemKind
   promotionSelections?: PromotionCartSelection[]
+}
+
+export function resolveCartLineId(item: MenuCartItem): string {
+  if (item.lineId?.trim()) return item.lineId.trim()
+  return cartItemKey(item)
 }
 
 export function normalizeCartItemKind(

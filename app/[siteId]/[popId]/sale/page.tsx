@@ -11,6 +11,7 @@ import {
   type SaleCatalogPaymentMethod,
   type SaleOpenCashSession,
 } from "@/app/[siteId]/[popId]/sale/actions"
+import type { MenuCatalogPromotion } from "@/app/[siteId]/[popId]/menu-catalog/actions"
 import {
   DEFAULT_SALE_SITE_ID,
 } from "@/lib/saleInvoiceTypes"
@@ -91,28 +92,18 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { Separator } from "@/components/ui/separator"
-import { SaleOperationCartItem } from "@/components/sale-operation/SaleOperationCartItem"
-import { SaleOperationCartList } from "@/components/sale-operation/SaleOperationCartList"
-import { SaleOperationTotalBar } from "@/components/sale-operation/SaleOperationTotalBar"
+import { SaleOperationTicketOrderPanel } from "@/components/sale-operation/SaleOperationTicketOrderPanel"
+import { PromotionComboWizard } from "@/components/sale-operation/PromotionComboWizard"
+import { useSaleTicketCart } from "@/hooks/useSaleTicketCart"
+import { buildCompleteSaleLinesFromCart } from "@/lib/saleCompleteLines"
+import type { MenuCatalogProduct } from "@/lib/menuCatalogProduct"
 import {
   SaleCatalogProductOfferOverlay,
   saleCatalogDiscountPercent,
 } from "@/components/sale-operation/SaleCatalogProductOfferOverlay"
-import {
-  catalogCartOrderTotals,
-  defaultItemDiscountFromProduct,
-  resolveCatalogCartLinePricing,
-  saleCatalogArticleToProduct,
-  type SaleCatalogProduct,
-} from "@/components/sale-operation/saleCatalogProduct"
 import { saleOpImporteBaseClass } from "@/components/sale-operation/saleOperationStyles"
 
-type Producto = SaleCatalogProduct
-
-type ItemCarrito = {
-  productoId: string
-  cantidad: number
-}
+type Producto = MenuCatalogProduct
 
 type ClienteVentaSeleccionado = {
   id: string | null
@@ -196,6 +187,12 @@ function SalePage() {
   const [catalogArticles, setCatalogArticles] = useState<SaleCatalogArticle[]>(
     [],
   )
+  const [catalogPromotions, setCatalogPromotions] = useState<
+    MenuCatalogPromotion[]
+  >([])
+  const [catalogQuantityDeals, setCatalogQuantityDeals] = useState<
+    MenuCatalogPromotion[]
+  >([])
   const [saleClients, setSaleClients] = useState<SaleCatalogClient[]>([])
   const [salePaymentMethods, setSalePaymentMethods] = useState<
     SaleCatalogPaymentMethod[]
@@ -228,6 +225,8 @@ function SalePage() {
     const res = await getSaleCatalog(popId)
     if (!res.success) {
       setCatalogArticles([])
+      setCatalogPromotions([])
+      setCatalogQuantityDeals([])
       setSaleClients([])
       setSalePaymentMethods([])
       setCanReadClients(false)
@@ -242,6 +241,8 @@ function SalePage() {
       return
     }
     setCatalogArticles(res.articles)
+    setCatalogPromotions(res.promotions)
+    setCatalogQuantityDeals(res.quantityDeals)
     setSaleClients(res.clients)
     setSalePaymentMethods(res.paymentMethods)
     setCanReadClients(res.canReadClients)
@@ -271,10 +272,32 @@ function SalePage() {
     })
   }, [canReadPaymentMethods, salePaymentMethods])
 
-  const productosCatalogo = useMemo(
-    () => catalogArticles.map(saleCatalogArticleToProduct),
-    [catalogArticles],
-  )
+  const {
+    carrito,
+    productosCatalogo,
+    cartDisplayRows,
+    itemsDetallados,
+    catalogTotals,
+    cartLineOverrides,
+    itemComentarios,
+    quantityDealDiscounts,
+    quantityDealApplications,
+    promocionesAplicadasMonto,
+    promocionesAplicadasCount,
+    agregarAlCarrito,
+    aplicarEdicionLineaTicket,
+    cambiarCantidadPorLinea,
+    quitarQuantityDealApplication,
+    limpiarCarrito,
+    promoWizardOpen,
+    setPromoWizardOpen,
+    promoWizardTarget,
+    confirmarPromoWizard,
+  } = useSaleTicketCart({
+    menuArticles: catalogArticles,
+    menuPromotions: catalogPromotions,
+    menuQuantityDeals: catalogQuantityDeals,
+  })
 
   const [vistaCatalogo, setVistaCatalogo] = useState<VistaCatalogo>(() => {
     if (!popId) {
@@ -289,7 +312,6 @@ function SalePage() {
   })
   const [modoVista, setModoVista] = useState<"grid" | "lista">("grid")
   const [busqueda, setBusqueda] = useState("")
-  const [carrito, setCarrito] = useState<ItemCarrito[]>([])
   const [clienteSeleccionado, setClienteSeleccionado] =
     useState<ClienteVentaSeleccionado | null>(null)
   const [ventaIvaCondition, setVentaIvaCondition] = useState("")
@@ -330,19 +352,6 @@ function SalePage() {
     "porcentaje" | "fijo"
   >("porcentaje")
   const [descuentoDraftTexto, setDescuentoDraftTexto] = useState("")
-  const [itemDetalleAbiertoId, setItemDetalleAbiertoId] = useState<string | null>(
-    null,
-  )
-  const [itemComentarios, setItemComentarios] = useState<Record<string, string>>({})
-  const [itemDescuentoModo, setItemDescuentoModo] = useState<
-    Record<string, "porcentaje" | "fijo">
-  >({})
-  const [itemDescuentoDraft, setItemDescuentoDraft] = useState<
-    Record<string, string>
-  >({})
-  const [itemDescuentoSuprimido, setItemDescuentoSuprimido] = useState<
-    Record<string, true>
-  >({})
   const busquedaProductosInputRef = useRef<HTMLInputElement>(null)
   const busquedaClienteInputRef = useRef<HTMLInputElement>(null)
   const vistaAntesBusquedaRef = useRef<VistaCatalogo | null>(null)
@@ -355,10 +364,11 @@ function SalePage() {
       const matchVista = hayBusqueda
         ? true
         : vistaCatalogo.modo === "categoria"
-          ? vistaCatalogo.categoria === CATEGORIA_TODOS ||
-            p.categoria === vistaCatalogo.categoria
+          ? p.kind === "article" &&
+            (vistaCatalogo.categoria === CATEGORIA_TODOS ||
+              p.categoria === vistaCatalogo.categoria)
           : vistaCatalogo.modo === "promociones"
-            ? Boolean(p.promo?.trim())
+            ? p.kind === "promotion" || Boolean(p.promo?.trim())
             : p.precioOriginal != null && p.precioOriginal > p.precio
       const matchQ =
         !q ||
@@ -398,50 +408,12 @@ function SalePage() {
     busquedaTrimPrevRef.current = trimmed
   }, [busqueda, vistaCatalogo])
 
-  const itemsDetallados = useMemo(() => {
-    return carrito
-      .map((i) => ({
-        ...i,
-        producto: productosCatalogo.find((p) => p.id === i.productoId),
-      }))
-      .filter((i) => i.producto)
-  }, [carrito, productosCatalogo])
-
-  const cartTotalsInput = useMemo(
+  const descuentoItemsMonto = useMemo(
     () =>
-      itemsDetallados.map((item) => {
-        const suprimido = itemDescuentoSuprimido[item.productoId] === true
-        const draft = itemDescuentoDraft[item.productoId] ?? ""
-        return {
-          producto: item.producto,
-          cantidad: item.cantidad,
-          suppressCatalogDiscount: suprimido,
-          manualDiscount:
-            !suprimido && draft !== ""
-              ? {
-                  mode: (itemDescuentoModo[item.productoId] ?? "porcentaje") as
-                    | "porcentaje"
-                    | "fijo",
-                  draft,
-                }
-              : null,
-        }
-      }),
-    [
-      itemsDetallados,
-      itemDescuentoModo,
-      itemDescuentoDraft,
-      itemDescuentoSuprimido,
-    ],
+      catalogTotals.descuentoCatalogoMonto + catalogTotals.descuentoManualMonto,
+    [catalogTotals.descuentoCatalogoMonto, catalogTotals.descuentoManualMonto],
   )
-
-  const catalogTotals = useMemo(
-    () => catalogCartOrderTotals(cartTotalsInput),
-    [cartTotalsInput],
-  )
-
-  const descuentoItemsMonto = catalogTotals.descuentoItemsMonto
-  const hayDescuentoItems = catalogTotals.hayDescuentoItems
+  const hayDescuentoItems = descuentoItemsMonto > 0
 
   const subtotal = catalogTotals.subtotal
 
@@ -508,7 +480,7 @@ function SalePage() {
   )
 
   const limpiarVenta = useCallback(() => {
-    setCarrito([])
+    limpiarCarrito()
     setClienteSeleccionado(null)
     setManualNombreCliente("")
     setFiscalDocVenta("")
@@ -522,11 +494,6 @@ function SalePage() {
     setModoDescuento("porcentaje")
     setValorDescuentoPorcentaje(0)
     setValorDescuentoFijo(0)
-    setItemDetalleAbiertoId(null)
-    setItemComentarios({})
-    setItemDescuentoModo({})
-    setItemDescuentoDraft({})
-    setItemDescuentoSuprimido({})
     setMetodoPagoSeleccionado(() => {
       const efectivo = salePaymentMethods.find((m) => m.kind === "cash")
       return efectivo ? { id: efectivo.id, label: efectivo.name } : null
@@ -535,7 +502,7 @@ function SalePage() {
     setDescartarConfirmOpen(false)
     setVenderConfirmOpen(false)
     setVentaError(null)
-  }, [salePaymentMethods, popId])
+  }, [salePaymentMethods, popId, limpiarCarrito])
 
   const confirmarVenta = useCallback(async () => {
     if (!popId || !siteId || !pagoConfigurado) return
@@ -568,17 +535,15 @@ function SalePage() {
         : null
       const res = await completeSale(popId, {
         siteId,
-        lines: carrito.map((i) => ({
-          articleId: i.productoId,
-          quantity: i.cantidad,
-          itemDiscountMode: itemDescuentoModo[i.productoId] ?? "porcentaje",
-          itemDiscountDraft: itemDescuentoSuprimido[i.productoId]
-            ? ""
-            : (itemDescuentoDraft[i.productoId] ?? ""),
-          suppressCatalogDiscount:
-            itemDescuentoSuprimido[i.productoId] === true,
-          comment: itemComentarios[i.productoId],
-        })),
+        lines: buildCompleteSaleLinesFromCart({
+          carrito,
+          quantityDealApplications,
+          quantityDealDiscounts,
+          itemDescuentoModo: cartLineOverrides.itemDescuentoModo,
+          itemDescuentoDraft: cartLineOverrides.itemDescuentoDraft,
+          itemDescuentoSuprimido: cartLineOverrides.itemDescuentoSuprimido,
+          itemComentarios: cartLineOverrides.itemComentarios,
+        }),
         clientId: catalogClientId,
         payOnClientAccount,
         paymentMethodId: payOnClientAccount
@@ -607,10 +572,9 @@ function SalePage() {
     popId,
     siteId,
     carrito,
-    itemDescuentoModo,
-    itemDescuentoDraft,
-    itemDescuentoSuprimido,
-    itemComentarios,
+    cartLineOverrides,
+    quantityDealDiscounts,
+    quantityDealApplications,
     clienteSeleccionado,
     payOnClientAccount,
     pagoConfigurado,
@@ -851,86 +815,6 @@ function SalePage() {
     [paymentMethodGroups],
   )
 
-  const agregarAlCarrito = (productoId: string) => {
-    const product = productosCatalogo.find((p) => p.id === productoId)
-    const esNuevo = !carrito.some((i) => i.productoId === productoId)
-
-    setCarrito((prev) => {
-      const existe = prev.find((i) => i.productoId === productoId)
-      if (existe) {
-        return prev.map((i) =>
-          i.productoId === productoId ? { ...i, cantidad: i.cantidad + 1 } : i,
-        )
-      }
-      return [...prev, { productoId, cantidad: 1 }]
-    })
-
-    if (esNuevo && product) {
-      const defaultDiscount = defaultItemDiscountFromProduct(product)
-      if (defaultDiscount) {
-        setItemDescuentoSuprimido((prev) => {
-          if (!(productoId in prev)) return prev
-          const next = { ...prev }
-          delete next[productoId]
-          return next
-        })
-        setItemDescuentoModo((prev) => ({
-          ...prev,
-          [productoId]: defaultDiscount.mode,
-        }))
-        setItemDescuentoDraft((prev) => ({
-          ...prev,
-          [productoId]: defaultDiscount.draft,
-        }))
-      }
-    }
-  }
-
-  const cambiarCantidad = (productoId: string, delta: number) => {
-    setCarrito((prev) =>
-      prev
-        .map((i) =>
-          i.productoId === productoId
-            ? { ...i, cantidad: Math.max(1, i.cantidad + delta) }
-            : i,
-        )
-        .filter((i) => i.cantidad > 0),
-    )
-  }
-
-  const clearCartItemOverrides = useCallback((productoId: string) => {
-    setItemDescuentoModo((prev) => {
-      if (!(productoId in prev)) return prev
-      const next = { ...prev }
-      delete next[productoId]
-      return next
-    })
-    setItemDescuentoDraft((prev) => {
-      if (!(productoId in prev)) return prev
-      const next = { ...prev }
-      delete next[productoId]
-      return next
-    })
-    setItemDescuentoSuprimido((prev) => {
-      if (!(productoId in prev)) return prev
-      const next = { ...prev }
-      delete next[productoId]
-      return next
-    })
-    setItemComentarios((prev) => {
-      if (!(productoId in prev)) return prev
-      const next = { ...prev }
-      delete next[productoId]
-      return next
-    })
-    setItemDetalleAbiertoId((prev) => (prev === productoId ? null : prev))
-  }, [])
-
-  const quitarDelCarrito = (productoId: string) => {
-    setCarrito((prev) => prev.filter((i) => i.productoId !== productoId))
-    clearCartItemOverrides(productoId)
-  }
-
   const onClienteToolbarClick = () => {
     if (!canReadClients) return
     setBusquedaClienteModal("")
@@ -1030,10 +914,6 @@ function SalePage() {
     setValorDescuentoPorcentaje(0)
     setValorDescuentoFijo(0)
     setDescuentoModalAbierto(false)
-  }
-
-  const toggleItemDetalle = (itemId: string) => {
-    setItemDetalleAbiertoId((prev) => (prev === itemId ? null : itemId))
   }
 
   const toolboxBarClass =
@@ -1395,9 +1275,9 @@ function SalePage() {
 
                         return (
                         <button
-                          key={p.id}
+                          key={`${p.kind}:${p.id}`}
                           type="button"
-                          onClick={() => agregarAlCarrito(p.id)}
+                          onClick={() => agregarAlCarrito(p.id, p.kind)}
                           className={cn(
                             "group relative w-full overflow-hidden rounded-2xl border border-white/10 bg-[#252b34] text-left",
                             "shadow-[inset_0_1px_0_rgba(255,255,255,0.07),0_0_0_1px_rgba(0,0,0,0.45),0_1px_2px_rgba(0,0,0,0.22),0_6px_16px_rgba(0,0,0,0.28),0_16px_40px_rgba(0,0,0,0.38)]",
@@ -1622,238 +1502,70 @@ function SalePage() {
             </div>
 
           <aside
-            className="col-start-2 row-span-2 grid min-h-0 grid-rows-[minmax(0,1fr)_auto] bg-[#eef1f5] text-[#121417]"
+            className="rootsy-app-light col-start-2 row-span-2 grid min-h-0 overflow-hidden grid-rows-[minmax(0,1fr)] bg-[#eef1f5] text-[#121417]"
             aria-label="Carrito de la venta"
           >
-            <div className="flex min-h-0 flex-col">
-              <SaleOperationCartList
-                title="Tu pedido"
-                lineCount={itemsDetallados.length}
-              >
-                {itemsDetallados.map((item) => {
-                  const itemId = item.productoId
-                  const abierto = itemDetalleAbiertoId === itemId
-                  const comentario = itemComentarios[itemId] ?? ""
-                  const descuentoSuprimido =
-                    itemDescuentoSuprimido[itemId] === true
-                  const modoItemDescuento =
-                    itemDescuentoModo[itemId] ??
-                    "porcentaje"
-                  const descuentoRaw = itemDescuentoDraft[itemId] ?? ""
-                  const catalogPricing = resolveCatalogCartLinePricing(
-                    item.producto,
-                    item.cantidad,
-                    !descuentoSuprimido && descuentoRaw !== ""
-                      ? {
-                          mode: modoItemDescuento,
-                          draft: descuentoRaw,
-                        }
-                      : null,
-                    { suppressCatalogDiscount: descuentoSuprimido },
-                  )
-                  const modoFormulario =
-                    itemDescuentoModo[itemId] ??
-                    catalogPricing.itemDiscountMode ??
-                    "porcentaje"
-                  const descuentoFormValue = descuentoSuprimido
-                    ? ""
-                    : descuentoRaw !== ""
-                      ? descuentoRaw
-                      : catalogPricing.discountSource === "catalog" &&
-                          catalogPricing.itemDiscountValue != null
-                        ? String(catalogPricing.itemDiscountValue)
-                        : ""
-                  const descuentoNumero = Number.parseFloat(
-                    descuentoFormValue.trim().replace(",", "."),
-                  )
-                  const descuentoManual = catalogPricing.itemDiscountAmount
-                  const tieneDescuentoManual = catalogPricing.tieneDescuentoManual
-                  const tieneDescuento =
-                    catalogPricing.tieneDescuentoCatalogo || tieneDescuentoManual
-                  const precioBaseItem = catalogPricing.precioBase
-                  const precioFinalItem = catalogPricing.precioFinal
-                  const tieneComentario = comentario.trim().length > 0
-                  const nombreProducto = item.producto?.nombre ?? "Producto"
-
-                  return (
-                    <SaleOperationCartItem
-                      key={itemId}
-                      itemId={itemId}
-                      nombre={nombreProducto}
-                      descripcion={item.producto?.descripcion}
-                      cantidad={item.cantidad}
-                      precioUnitario={catalogPricing.precioUnitario}
-                      precioBase={precioBaseItem}
-                      precioFinal={precioFinalItem}
-                      expandable
-                      expanded={abierto}
-                      onToggleExpand={() => toggleItemDetalle(itemId)}
-                      onQuantityDecrease={() => cambiarCantidad(itemId, -1)}
-                      onQuantityIncrease={() => cambiarCantidad(itemId, 1)}
-                      onRemove={() => quitarDelCarrito(itemId)}
-                      tieneComentario={tieneComentario}
-                      tieneDescuento={tieneDescuento}
-                      descuentoLabel={
-                        tieneDescuentoManual
-                          ? modoFormulario === "porcentaje"
-                            ? `${Math.min(100, Math.max(0, Number.isFinite(descuentoNumero) ? descuentoNumero : 0))}%`
-                            : fmt.format(descuentoManual)
-                          : catalogPricing.descuentoCatalogoLabel
-                      }
-                      expandedContent={
-                        <div className="flex items-center gap-2">
-                          <button
-                            type="button"
-                            className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-md border border-slate-400/50 bg-slate-100 text-slate-800 transition-colors hover:border-slate-400 hover:bg-slate-50 hover:text-slate-950 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-400/50"
-                            aria-label="Cambiar tipo de descuento"
-                            onClick={(e) => {
-                              e.stopPropagation()
-                              const actual =
-                                itemDescuentoModo[itemId] ??
-                                catalogPricing.itemDiscountMode ??
-                                "porcentaje"
-                              setItemDescuentoModo((prev) => ({
-                                ...prev,
-                                [itemId]:
-                                  actual === "porcentaje" ? "fijo" : "porcentaje",
-                              }))
-                            }}
-                          >
-                            {modoFormulario === "porcentaje" ? (
-                              <Percent className="size-3.5" aria-hidden />
-                            ) : (
-                              <Banknote className="size-3.5" aria-hidden />
-                            )}
-                          </button>
-                          <Input
-                            value={descuentoFormValue}
-                            onChange={(e) => {
-                              const raw = e.target.value
-                              if (!/^\d*$/.test(raw)) return
-                              if (raw === "") {
-                                setItemDescuentoDraft((prev) => ({
-                                  ...prev,
-                                  [itemId]: "",
-                                }))
-                                setItemDescuentoSuprimido((prev) => ({
-                                  ...prev,
-                                  [itemId]: true,
-                                }))
-                                return
-                              }
-                              setItemDescuentoSuprimido((prev) => {
-                                if (!(itemId in prev)) return prev
-                                const next = { ...prev }
-                                delete next[itemId]
-                                return next
-                              })
-                              if (
-                                modoFormulario === "fijo" &&
-                                Number(raw) > precioBaseItem
-                              ) {
-                                setItemDescuentoModo((prev) => ({
-                                  ...prev,
-                                  [itemId]: "porcentaje",
-                                }))
-                                setItemDescuentoDraft((prev) => ({
-                                  ...prev,
-                                  [itemId]: "100",
-                                }))
-                                return
-                              }
-                              const nextValue =
-                                modoFormulario === "porcentaje"
-                                  ? String(Math.min(100, Number(raw)))
-                                  : raw
-                              setItemDescuentoDraft((prev) => ({
-                                ...prev,
-                                [itemId]: nextValue,
-                              }))
-                            }}
-                            placeholder="descuento"
-                            inputMode="numeric"
-                            pattern="[0-9]*"
-                            className="h-8 w-26 border border-slate-300 bg-white! text-[#121417] shadow-none text-xs placeholder:text-slate-500"
-                          />
-                          <div className="relative min-w-0 flex-1">
-                            <MessageSquare className="pointer-events-none absolute top-1/2 left-2.5 size-3.5 -translate-y-1/2 text-slate-500" />
-                            <Input
-                              value={comentario}
-                              onChange={(e) =>
-                                setItemComentarios((prev) => ({
-                                  ...prev,
-                                  [itemId]: e.target.value,
-                                }))
-                              }
-                              placeholder="agregá un comentario..."
-                              className="h-8 border border-slate-300 bg-white! pl-8 text-[#121417] text-xs shadow-none placeholder:text-slate-500"
-                            />
-                          </div>
-                        </div>
-                      }
-                    />
-                  )
-                })}
-              </SaleOperationCartList>
-            </div>
-
-            <div className="flex min-h-0 flex-col">
-              <div className="bg-[#f8fafc] p-3 text-[#121417]">
-                <div className="grid grid-cols-2 gap-2 sm:gap-3">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    disabled={!hayContenidoVenta}
-                    onClick={() => setDescartarConfirmOpen(true)}
-                    className="h-11 gap-2 border-rose-200/90 bg-white font-medium text-rose-700 shadow-none hover:border-rose-300 hover:bg-rose-50 hover:text-rose-800 focus-visible:ring-2 focus-visible:ring-rose-400/45 focus-visible:ring-offset-2 focus-visible:ring-offset-[#f8fafc] disabled:pointer-events-auto disabled:cursor-not-allowed disabled:opacity-45"
-                  >
-                    <CircleX className="size-4 shrink-0" aria-hidden />
-                    Descartar
-                  </Button>
-                  <Button
-                    type="button"
-                    disabled={!puedeRegistrarVenta || ventaSubmitting}
-                    onClick={() => {
-                      setVentaError(null)
-                      setVenderConfirmOpen(true)
-                    }}
-                    title={
-                      !hayItemsEnPedido
-                        ? "Agregá productos al pedido."
-                        : !pagoConfigurado
-                          ? "Elegí una forma de pago o usá cuenta corriente del cliente."
-                          : payOnClientAccount && !clienteSeleccionado?.id
-                            ? "Elegí un cliente del catálogo para vender a cuenta corriente."
-                            : !canCreateSale
-                              ? "No tenés permiso para registrar ventas."
-                              : !canReadCashRegisters
-                                ? "Se requiere permiso para ver cajas y asociar la venta a una sesión."
-                                : !openCashSession
-                                  ? "Abrí una sesión de caja en Cajas antes de vender."
-                                  : undefined
-                    }
-                    className="h-11 gap-2 border-0 bg-emerald-600 font-semibold text-white shadow-[0_1px_2px_rgba(0,0,0,0.06)] hover:bg-emerald-500 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2 focus-visible:ring-offset-[#f8fafc] active:bg-emerald-700 disabled:pointer-events-auto disabled:cursor-not-allowed disabled:opacity-45"
-                  >
-                    <CircleCheck className="size-4 shrink-0 opacity-95" aria-hidden />
-                    Vender
-                  </Button>
-                </div>
-              </div>
-
-              <SaleOperationTotalBar
-                total={total}
-                subtotal={subtotal}
-                descuentoMonto={descuentoMonto}
-                hayDescuento={hayDescuento}
-                subtotalOriginal={catalogTotals.subtotalOriginal}
-                descuentoItemsMonto={descuentoItemsMonto}
-                hayDescuentoItems={hayDescuentoItems}
-              />
-            </div>
+            <SaleOperationTicketOrderPanel
+              cartDisplayRows={cartDisplayRows}
+              cartLineOverrides={cartLineOverrides}
+              aplicarEdicionLineaTicket={aplicarEdicionLineaTicket}
+              cambiarCantidadPorLinea={cambiarCantidadPorLinea}
+              quitarQuantityDealApplication={quitarQuantityDealApplication}
+              listTitle="Tu pedido"
+              emptyTitle="Pedido vacío"
+              emptyDescription="Agregá productos desde el catálogo."
+              actions={{
+                discardDisabled: !hayContenidoVenta,
+                confirmDisabled: !puedeRegistrarVenta || ventaSubmitting,
+                confirmLoading: ventaSubmitting,
+                onDiscard: () => setDescartarConfirmOpen(true),
+                onConfirm: () => {
+                  setVentaError(null)
+                  setVenderConfirmOpen(true)
+                },
+                confirmLabel: "Vender",
+                confirmTitle: !hayItemsEnPedido
+                  ? "Agregá productos al pedido."
+                  : !pagoConfigurado
+                    ? "Elegí una forma de pago o usá cuenta corriente del cliente."
+                    : payOnClientAccount && !clienteSeleccionado?.id
+                      ? "Elegí un cliente del catálogo para vender a cuenta corriente."
+                      : !canCreateSale
+                        ? "No tenés permiso para registrar ventas."
+                        : !canReadCashRegisters
+                          ? "Se requiere permiso para ver cajas y asociar la venta a una sesión."
+                          : !openCashSession
+                            ? "Abrí una sesión de caja en Cajas antes de vender."
+                            : undefined,
+              }}
+              totalBar={{
+                total,
+                subtotal,
+                descuentoMonto,
+                hayDescuento,
+                subtotalOriginal: catalogTotals.subtotalOriginal,
+                descuentoItemsMonto,
+                hayDescuentoItems,
+                promocionesAplicadasMonto,
+                promocionesAplicadasCount,
+              }}
+            />
           </aside>
         </main>
         </div>
       </DataWorkspaceLayout>
+
+      <PromotionComboWizard
+        open={promoWizardOpen}
+        promotion={promoWizardTarget}
+        onOpenChange={setPromoWizardOpen}
+        onConfirm={(selections) => {
+          if (promoWizardTarget) {
+            confirmarPromoWizard(promoWizardTarget.id, selections)
+          }
+          setPromoWizardOpen(false)
+        }}
+      />
 
       <Dialog
         open={clienteModalAbierto}

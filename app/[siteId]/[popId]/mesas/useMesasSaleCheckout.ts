@@ -12,20 +12,31 @@ import type { SaleCatalogClient, SaleCatalogPaymentMethod, SaleOpenCashSession }
 import { completeSale } from "@/app/[siteId]/[popId]/sale/completeSale"
 import {
   buildMenuProductMap,
-  buildMenuCartDisplayLines,
   computeMenuQuantityDealApplications,
   computeMenuQuantityDealDiscounts,
+  buildMenuCartTotalsLines,
   menuCartOrderTotals,
   menuPromotionToProduct,
   removeQuantityDealApplicationFromCart,
-  resolvePromotionCartPricing,
   tryAutoComboSelections,
-  type MenuCartDisplayLine,
 } from "@/lib/menuCheckoutPromotions"
 import type { PromotionCartSelection } from "@/lib/promotionPricing"
 import {
+  buildMostradorCartDisplayRows,
+  cartDetailItemsFromCarrito,
+  countAppliedPromotions,
+} from "@/lib/mostradorCartDisplay"
+import {
+  applyTicketLineEdit,
+  addProductToTicketCart,
+  addPromotionToTicketCart,
+} from "@/lib/menuSaleTicketCart"
+import {
+  ensureCartLineIds,
+  type MostradorCartLineEditInput,
+} from "@/lib/menuCartLineMerge"
+import {
   clearCartLineOverrides,
-  seedCartLineDefaultDiscount,
   type OperationCartLineOverrideActions,
   type OperationCartLineOverrideState,
 } from "@/components/sale-operation/OperationCartLineRow"
@@ -35,12 +46,13 @@ import {
   type MenuCatalogProduct,
 } from "@/lib/menuCatalogProduct"
 import {
-  cartItemKey,
   cartItemsMatch,
   normalizeCartItemKind,
+  resolveCartLineId,
   type MenuCartItemKind,
 } from "@/lib/menuCart"
 import { saleOpFmt } from "@/components/sale-operation/saleOperationStyles"
+import { buildCompleteSaleLinesFromCart } from "@/lib/saleCompleteLines"
 import { CLIENT_IVA_CONDITION_OPTIONS, type ClientIvaConditionValue } from "@/app/[siteId]/[popId]/clients/clientIvaConstants"
 import { usePadronAutofillRazonSocial } from "@/hooks/usePadronAutofillRazonSocial"
 import { CLIENT_ACCOUNT_PAYMENT_LABEL } from "@/lib/operationPaymentLabels"
@@ -199,7 +211,7 @@ export function useMesasSaleCheckout(
     if (snap.comprobante != null) {
       comprobanteInitRef.current = true
     }
-    setCarrito(snap.carrito)
+    setCarrito(ensureCartLineIds(snap.carrito))
     setClienteSeleccionado(snap.clienteSeleccionado)
     setManualNombreCliente(snap.manualNombreCliente)
     setFiscalDocVenta(snap.fiscalDocVenta)
@@ -397,6 +409,10 @@ export function useMesasSaleCheckout(
   }, [loadCatalog])
 
   useEffect(() => {
+    setCarrito((prev) => ensureCartLineIds(prev))
+  }, [])
+
+  useEffect(() => {
     if (salePaymentMethods.length === 0 || tableSessionId == null) return
     setMetodoPagoSeleccionado((prev) => {
       if (prev && salePaymentMethods.some((m) => m.id === prev.id)) return prev
@@ -429,15 +445,30 @@ export function useMesasSaleCheckout(
     [productosCatalogo],
   )
 
+  const overrideSnapshot = useMemo(
+    () => ({
+      itemDescuentoModo,
+      itemDescuentoDraft,
+      itemDescuentoSuprimido,
+      itemComentarios,
+    }),
+    [
+      itemDescuentoModo,
+      itemDescuentoDraft,
+      itemDescuentoSuprimido,
+      itemComentarios,
+    ],
+  )
+
   const quantityDealApplications = useMemo(
     () =>
       computeMenuQuantityDealApplications({
         carrito,
         productosByKey,
         quantityDeals: menuQuantityDeals,
-        itemDescuentoSuprimido,
+        overrides: overrideSnapshot,
       }),
-    [carrito, productosByKey, menuQuantityDeals, itemDescuentoSuprimido],
+    [carrito, productosByKey, menuQuantityDeals, overrideSnapshot],
   )
 
   const quantityDealDiscounts = useMemo(
@@ -446,9 +477,9 @@ export function useMesasSaleCheckout(
         carrito,
         productosByKey,
         quantityDeals: menuQuantityDeals,
-        itemDescuentoSuprimido,
+        overrides: overrideSnapshot,
       }),
-    [carrito, productosByKey, menuQuantityDeals, itemDescuentoSuprimido],
+    [carrito, productosByKey, menuQuantityDeals, overrideSnapshot],
   )
 
   const itemsDetallados = useMemo(
@@ -465,7 +496,8 @@ export function useMesasSaleCheckout(
           return {
             ...i,
             kind,
-            cartLineKey: cartItemKey({ ...i, kind }),
+            lineId: resolveCartLineId({ ...i, kind }),
+            cartLineKey: resolveCartLineId({ ...i, kind }),
             producto,
           }
         })
@@ -473,52 +505,55 @@ export function useMesasSaleCheckout(
     [carrito, productosByKey],
   )
 
-  const cartDisplayLines = useMemo(
-    (): MenuCartDisplayLine[] =>
-      buildMenuCartDisplayLines(
-        itemsDetallados.map((item) => ({
-          cartLineKey: item.cartLineKey,
-          productoId: item.productoId,
-          kind: item.kind,
-          cantidad: item.cantidad,
-          producto: item.producto,
-          promotionSelections: item.promotionSelections,
-        })),
-        quantityDealApplications,
+  const cartDisplayRows = useMemo(
+    () =>
+      buildMostradorCartDisplayRows({
+        items: cartDetailItemsFromCarrito(itemsDetallados),
+        applications: quantityDealApplications,
+        overrides: overrideSnapshot,
+        productosByKey,
+      }),
+    [itemsDetallados, quantityDealApplications, overrideSnapshot, productosByKey],
+  )
+
+  const comboPromoLineCount = useMemo(
+    () =>
+      carrito.reduce(
+        (sum, item) =>
+          normalizeCartItemKind(item.kind) === "promotion"
+            ? sum + item.cantidad
+            : sum,
+        0,
       ),
-    [itemsDetallados, quantityDealApplications],
+    [carrito],
+  )
+
+  const promocionesAplicadasCount = useMemo(
+    () =>
+      countAppliedPromotions({
+        applications: quantityDealApplications,
+        comboLineCount: comboPromoLineCount,
+      }),
+    [quantityDealApplications, comboPromoLineCount],
   )
 
   const cartTotalsInput = useMemo(
     () =>
-      itemsDetallados.map((item) => {
-        const lineKey = item.cartLineKey
-        const suprimido = itemDescuentoSuprimido[lineKey] === true
-        const draft = itemDescuentoDraft[lineKey] ?? ""
-        const deal = quantityDealDiscounts.get(lineKey)
-        const quantityDealActive = Boolean(deal)
-        return {
-          producto: item.producto,
-          cantidad: item.cantidad,
-          suppressCatalogDiscount: suprimido || quantityDealActive,
-          manualDiscount:
-            !suprimido && !quantityDealActive && draft !== ""
-              ? {
-                  mode: itemDescuentoModo[lineKey] ?? "porcentaje",
-                  draft,
-                }
-              : null,
-          promotionMeta: item.producto?.promotionMeta,
-          promotionSelections: item.promotionSelections,
-          quantityDealDiscount: deal?.amount ?? 0,
-        }
+      buildMenuCartTotalsLines({
+        items: itemsDetallados,
+        quantityDealApplications,
+        quantityDealDiscounts,
+        itemDescuentoModo,
+        itemDescuentoDraft,
+        itemDescuentoSuprimido,
       }),
     [
       itemsDetallados,
+      quantityDealApplications,
+      quantityDealDiscounts,
       itemDescuentoModo,
       itemDescuentoDraft,
       itemDescuentoSuprimido,
-      quantityDealDiscounts,
     ],
   )
 
@@ -528,8 +563,18 @@ export function useMesasSaleCheckout(
   )
 
   const subtotal = catalogTotals.subtotal
-  const descuentoItemsMonto = catalogTotals.descuentoItemsMonto
-  const hayDescuentoItems = catalogTotals.hayDescuentoItems
+  const descuentoItemsMonto = useMemo(
+    () =>
+      catalogTotals.descuentoCatalogoMonto + catalogTotals.descuentoManualMonto,
+    [catalogTotals.descuentoCatalogoMonto, catalogTotals.descuentoManualMonto],
+  )
+  const promocionesAplicadasMonto = useMemo(
+    () =>
+      catalogTotals.descuentoPromoMonto +
+      catalogTotals.descuentoQuantityDealMonto,
+    [catalogTotals.descuentoPromoMonto, catalogTotals.descuentoQuantityDealMonto],
+  )
+  const hayDescuentoItems = descuentoItemsMonto > 0
 
   const descuentoMonto = useMemo(() => {
     if (modoDescuento === "porcentaje") {
@@ -683,42 +728,11 @@ export function useMesasSaleCheckout(
     (promotionId: string, selections: PromotionCartSelection[]) => {
       const product = productosByKey.get(`promotion:${promotionId}`)
       if (!product?.promotionMeta) return
-      const kind = "promotion" as const
-      const esNuevo = !carrito.some((i) =>
-        cartItemsMatch(i, promotionId, kind, selections),
+      setCarrito((prev) =>
+        addPromotionToTicketCart({ carrito: prev, promotionId, selections }),
       )
-      const lineKey = cartItemKey({
-        productoId: promotionId,
-        cantidad: 1,
-        kind,
-        promotionSelections: selections,
-      })
-      setCarrito((prev) => {
-        const existe = prev.find((i) =>
-          cartItemsMatch(i, promotionId, kind, selections),
-        )
-        if (existe) {
-          return prev.map((i) =>
-            cartItemsMatch(i, promotionId, kind, selections)
-              ? { ...i, cantidad: i.cantidad + 1 }
-              : i,
-          )
-        }
-        return [
-          ...prev,
-          {
-            productoId: promotionId,
-            cantidad: 1,
-            kind,
-            promotionSelections: selections,
-          },
-        ]
-      })
-      if (esNuevo) {
-        clearCartLineOverrides(lineKey, cartLineOverrideActions)
-      }
     },
-    [productosByKey, carrito, cartLineOverrideActions],
+    [productosByKey],
   )
 
   const agregarAlCarrito = useCallback(
@@ -743,63 +757,83 @@ export function useMesasSaleCheckout(
         return
       }
 
-      const lineKey = cartItemKey({ productoId, cantidad: 1, kind })
-      const esNuevo = !carrito.some((i) => cartItemsMatch(i, productoId, kind))
-      setCarrito((prev) => {
-        const existe = prev.find((i) => cartItemsMatch(i, productoId, kind))
-        if (existe) {
-          return prev.map((i) =>
-            cartItemsMatch(i, productoId, kind)
-              ? { ...i, cantidad: i.cantidad + 1 }
-              : i,
-          )
-        }
-        return [...prev, { productoId, cantidad: 1, kind }]
-      })
-      if (esNuevo && product?.kind === "article") {
-        seedCartLineDefaultDiscount(product, lineKey, cartLineOverrideActions)
-      }
+      setCarrito((prev) =>
+        addProductToTicketCart({
+          carrito: prev,
+          productoId,
+          kindHint: kind,
+          productosByKey,
+          overrides: {
+            itemDescuentoModo,
+            itemDescuentoDraft,
+            itemDescuentoSuprimido,
+            itemComentarios,
+          },
+          overrideActions: cartLineOverrideActions,
+        }),
+      )
     },
-    [productosByKey, carrito, cartLineOverrideActions, agregarPromoAlCarrito],
+    [
+      productosByKey,
+      itemDescuentoModo,
+      itemDescuentoDraft,
+      itemDescuentoSuprimido,
+      itemComentarios,
+      cartLineOverrideActions,
+      agregarPromoAlCarrito,
+    ],
   )
 
-  const cambiarCantidad = useCallback(
-    (
-      productoId: string,
-      delta: number,
-      kind?: MenuCartItemKind,
-      promotionSelections?: PromotionCartSelection[],
-    ) => {
-      setCarrito((prev) =>
-        prev
+  const aplicarEdicionLineaTicket = useCallback(
+    (input: MostradorCartLineEditInput) => {
+      applyTicketLineEdit({
+        edit: input,
+        carrito,
+        setCarrito,
+        setters: {
+          setItemDescuentoModo,
+          setItemDescuentoDraft,
+          setItemDescuentoSuprimido,
+          setItemComentarios,
+        },
+      })
+    },
+    [carrito],
+  )
+
+  const cambiarCantidadPorLinea = useCallback(
+    (lineId: string, delta: number) => {
+      setCarrito((prev) => {
+        const next = prev
           .map((i) =>
-            cartItemsMatch(i, productoId, kind, promotionSelections)
+            resolveCartLineId(i) === lineId
               ? { ...i, cantidad: Math.max(0, i.cantidad + delta) }
               : i,
           )
-          .filter((i) => i.cantidad > 0),
-      )
+          .filter((i) => i.cantidad > 0)
+        if (delta < 0 && !next.some((i) => resolveCartLineId(i) === lineId)) {
+          clearCartLineOverrides(lineId, cartLineOverrideActions)
+          setItemComentarios((comments) => {
+            const prefix = `combo:${lineId}:`
+            const cleaned = { ...comments }
+            for (const key of Object.keys(cleaned)) {
+              if (key.startsWith(prefix)) delete cleaned[key]
+            }
+            return cleaned
+          })
+        }
+        return next
+      })
     },
-    [],
+    [cartLineOverrideActions],
   )
 
-  const quitarDelCarrito = useCallback(
-    (
-      productoId: string,
-      kind?: MenuCartItemKind,
-      promotionSelections?: PromotionCartSelection[],
-    ) => {
-      const resolvedKind = kind ?? "article"
-      const lineKey = cartItemKey({
-        productoId,
-        cantidad: 1,
-        kind: resolvedKind,
-        promotionSelections,
-      })
+  const quitarLineaPorId = useCallback(
+    (lineId: string) => {
       setCarrito((prev) =>
-        prev.filter((i) => !cartItemsMatch(i, productoId, kind, promotionSelections)),
+        prev.filter((i) => resolveCartLineId(i) !== lineId),
       )
-      clearCartLineOverrides(lineKey, cartLineOverrideActions)
+      clearCartLineOverrides(lineId, cartLineOverrideActions)
     },
     [cartLineOverrideActions],
   )
@@ -819,7 +853,6 @@ export function useMesasSaleCheckout(
       for (const lineKey of Object.keys(application.discountByLineKey)) {
         clearCartLineOverrides(lineKey, cartLineOverrideActions)
       }
-      clearCartLineOverrides(`qtydeal:${application.id}`, cartLineOverrideActions)
       setItemDetalleAbiertoId((prev) =>
         prev === `qtydeal:${application.id}` ? null : prev,
       )
@@ -880,37 +913,14 @@ export function useMesasSaleCheckout(
         Boolean(manualNombreCliente.trim())
       const res = await completeSale(popId, {
         siteId,
-        lines: carrito.map((i) => {
-          const kind = normalizeCartItemKind(i.kind)
-          const lineKey = cartItemKey({ ...i, kind })
-          const suprimido = itemDescuentoSuprimido[lineKey] === true
-          const draft = itemDescuentoSuprimido[lineKey]
-            ? ""
-            : (itemDescuentoDraft[lineKey] ?? "")
-          const deal = quantityDealDiscounts.get(lineKey)
-          const base = {
-            quantity: i.cantidad,
-            itemDiscountMode: itemDescuentoModo[lineKey] ?? "porcentaje",
-            itemDiscountDraft: draft,
-            suppressCatalogDiscount: suprimido || Boolean(deal),
-            comment: itemComentarios[lineKey] ?? "",
-            promotionDealDiscount: deal?.amount ?? 0,
-            promotionDealId: deal?.promotionId,
-          }
-          if (kind === "promotion") {
-            return {
-              ...base,
-              promotionId: i.productoId,
-              promotionSelections: (i.promotionSelections ?? []).map((s) => ({
-                slotId: s.slotId,
-                kind: s.kind,
-                refId: s.refId,
-              })),
-            }
-          }
-          return kind === "recipe"
-            ? { ...base, recipeId: i.productoId }
-            : { ...base, articleId: i.productoId }
+        lines: buildCompleteSaleLinesFromCart({
+          carrito,
+          quantityDealApplications,
+          quantityDealDiscounts,
+          itemDescuentoModo,
+          itemDescuentoDraft,
+          itemDescuentoSuprimido,
+          itemComentarios,
         }),
         clientId: catalogClientId,
         payOnClientAccount,
@@ -958,6 +968,7 @@ export function useMesasSaleCheckout(
     itemDescuentoSuprimido,
     itemComentarios,
     quantityDealDiscounts,
+    quantityDealApplications,
     limpiarPedido,
   ])
 
@@ -1028,15 +1039,18 @@ export function useMesasSaleCheckout(
     productosCatalogo,
     carrito,
     itemsDetallados,
-    cartDisplayLines,
+    cartDisplayRows,
     agregarAlCarrito,
     agregarPromoAlCarrito,
-    cambiarCantidad,
-    quitarDelCarrito,
+    cambiarCantidadPorLinea,
+    quitarLineaPorId,
+    aplicarEdicionLineaTicket,
     subtotal,
     subtotalOriginal: catalogTotals.subtotalOriginal,
     descuentoItemsMonto,
     hayDescuentoItems,
+    promocionesAplicadasMonto,
+    promocionesAplicadasCount,
     descuentoCatalogoMonto: catalogTotals.descuentoCatalogoMonto,
     hayDescuentoCatalogo: catalogTotals.hayDescuentoCatalogo,
     descuentoMonto,

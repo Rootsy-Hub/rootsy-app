@@ -286,7 +286,7 @@ export function MesasWorkspace({
         </div>
 
         <aside
-          className="col-start-2 row-span-2 grid min-h-0 grid-rows-[auto_minmax(0,1fr)] bg-[#eef1f5] text-[#121417]"
+          className="rootsy-app-light col-start-2 row-span-2 grid min-h-0 overflow-hidden grid-rows-[auto_minmax(0,1fr)] bg-[#eef1f5] text-[#121417]"
           aria-label="Panel de mesa y pedido"
         >
           <MesasRightPanelTabs
@@ -309,7 +309,9 @@ export function MesasWorkspace({
               clientLabel={checkout.sessionClientLabel}
             />
           ) : (
-            <MesasOrderPanel checkout={checkout} tableLabel={mesaLabel} />
+            <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
+              <MesasOrderPanel checkout={checkout} tableLabel={mesaLabel} />
+            </div>
           )}
         </aside>
       </main>

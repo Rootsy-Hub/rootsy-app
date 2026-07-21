@@ -10,18 +10,21 @@ import type { MostradorRightPanelView } from "@/app/[siteId]/[popId]/mostrador/m
 import { useMostradorSaleCheckout } from "@/app/[siteId]/[popId]/mostrador/useMostradorSaleCheckout"
 import { useMostradorState } from "@/app/[siteId]/[popId]/mostrador/useMostradorState"
 import { SaleOperationToolbox } from "@/components/sale-operation/SaleOperationToolbox"
+import { cn } from "@/lib/utils"
 import { useEffect, useState } from "react"
 
 type Props = {
   siteId: string
   popId: string
   catalogSidebarOpen: boolean
+  onRegisterStartCreateOrder?: (handler: (() => void) | null) => void
 }
 
 export function MostradorWorkspace({
   siteId,
   popId,
   catalogSidebarOpen,
+  onRegisterStartCreateOrder,
 }: Props) {
   const {
     orders,
@@ -60,7 +63,18 @@ export function MostradorWorkspace({
     }
   }, [selectedOrder])
 
+  useEffect(() => {
+    if (!onRegisterStartCreateOrder) return
+    onRegisterStartCreateOrder(() => {
+      selectOrder(null)
+      setCreating(true)
+      setRightView("detail")
+    })
+    return () => onRegisterStartCreateOrder(null)
+  }, [onRegisterStartCreateOrder, selectOrder])
+
   const orderLabel = selectedOrder ? `#${selectedOrder.orderNumber}` : null
+  const showRightPanelTabs = Boolean(selectedOrder)
 
   return (
     <div className="dark relative flex h-full min-h-0 w-full flex-col overflow-hidden bg-[#070a09] text-white">
@@ -99,38 +113,43 @@ export function MostradorWorkspace({
         </div>
 
         <aside
-          className="col-start-2 row-span-2 grid min-h-0 grid-rows-[auto_minmax(0,1fr)] bg-[#eef1f5] text-[#121417]"
+          className={cn(
+            "rootsy-app-light col-start-2 row-span-2 grid min-h-0 overflow-hidden bg-[#eef1f5] text-[#121417]",
+            showRightPanelTabs
+              ? "grid-rows-[auto_minmax(0,1fr)]"
+              : "grid-rows-[minmax(0,1fr)]",
+          )}
           aria-label="Panel de pedido"
         >
-          <MostradorRightPanelTabs
-            value={rightView}
-            onChange={setRightView}
-            cartDisabled={!selectedOrder}
-          />
-
-          {rightView === "detail" ? (
-            <CounterOrderPanel
-              order={selectedOrder}
-              orderError={orderError}
-              creating={creating}
-              onStartCreate={() => {
-                selectOrder(null)
-                setCreating(true)
-              }}
-              onCancelCreate={() => setCreating(false)}
-              onCreateOrder={async (input) => {
-                const ok = await createOrder(input)
-                if (ok) setCreating(false)
-                return ok
-              }}
-              onUpdateOrder={patchOrder}
-              onMoveOrder={moveOrderStatus}
-              onCancelOrder={cancelOrder}
-              clientLabel={checkout.sessionClientLabel}
+          {showRightPanelTabs ? (
+            <MostradorRightPanelTabs
+              value={rightView}
+              onChange={setRightView}
+              cartDisabled={!selectedOrder}
             />
-          ) : (
-            <MostradorOrderPanel checkout={checkout} orderLabel={orderLabel} />
-          )}
+          ) : null}
+
+          <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
+            {rightView === "detail" ? (
+              <CounterOrderPanel
+                order={selectedOrder}
+                orderError={orderError}
+                creating={creating}
+                onCancelCreate={() => setCreating(false)}
+                onCreateOrder={async (input) => {
+                  const ok = await createOrder(input)
+                  if (ok) setCreating(false)
+                  return ok
+                }}
+                onUpdateOrder={patchOrder}
+                onMoveOrder={moveOrderStatus}
+                onCancelOrder={cancelOrder}
+                clientLabel={checkout.sessionClientLabel}
+              />
+            ) : (
+              <MostradorOrderPanel checkout={checkout} orderLabel={orderLabel} />
+            )}
+          </div>
         </aside>
       </main>
 

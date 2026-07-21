@@ -28,6 +28,13 @@ import {
   hasSaleLineManualDiscount,
   resolveSaleLineDiscount,
 } from "@/lib/saleLineDiscount"
+import { summarizeQuantityDealsFromLines } from "@/lib/saleCompleteLines"
+import {
+  SALE_SNAPSHOT_VERSION,
+  buildLineDisplay,
+  computeSnapshotTotals,
+  snapshotTotalsToMetadata,
+} from "@/lib/saleSnapshot"
 
 const PAYMENT_KIND_ACCOUNT_FALLBACK: Record<string, readonly string[]> = {
   cash: ["1.1.1.01"],
@@ -508,6 +515,9 @@ export type CompleteSaleLineInput = {
   }>
   promotionDealDiscount?: number
   promotionDealId?: string
+  promotionDealName?: string
+  /** Agrupa líneas del mismo quantity deal en detalle / metadata. */
+  lineGroupId?: string
   quantity: number
   itemDiscountMode: "porcentaje" | "fijo"
   itemDiscountDraft: string
@@ -712,6 +722,10 @@ export async function completeSale(
       itemDiscount: number
       lineBase: number
       comment: string | null
+      discountSource: "none" | "catalog" | "manual" | "quantity_deal" | "combo"
+      promotionDealId: string | null
+      promotionDealName: string | null
+      lineGroupId: string | null
       promotionSnapshot?: Record<string, unknown>
       promotionComponents?: Array<{
         kind: "article" | "recipe"
@@ -756,6 +770,10 @@ export async function completeSale(
       let itemDiscountMode: "porcentaje" | "fijo" | null = null
       let itemDiscountValue: number | null = null
       let lineBase = 0
+      let discountSource: BuiltLine["discountSource"] = "none"
+      let promotionDealId: string | null = raw.promotionDealId?.trim() || null
+      let promotionDealName: string | null = raw.promotionDealName?.trim() || null
+      const lineGroupId = raw.lineGroupId?.trim() || null
 
       const dealDiscount = Math.max(0, Number(raw.promotionDealDiscount ?? 0) || 0)
       const suppressForQuantityDeal = dealDiscount > 0
@@ -923,6 +941,7 @@ export async function completeSale(
         ivaPct = priced.weightedIvaPct
         itemDiscount = priced.promoDiscount
         lineBase = priced.promoTotal
+        discountSource = "combo"
 
         promotionComponents = priced.components.map((c) => ({
           kind: c.kind,
@@ -977,6 +996,7 @@ export async function completeSale(
         itemDiscountMode = lineDiscount.itemDiscountMode
         itemDiscountValue = lineDiscount.itemDiscountValue
         lineBase = lineDiscount.lineSubtotal
+        discountSource = lineDiscount.discountSource
       } else {
         const { data: art, error: aErr } = await supabase
           .from("articles")
@@ -1021,11 +1041,15 @@ export async function completeSale(
         itemDiscountMode = lineDiscount.itemDiscountMode
         itemDiscountValue = lineDiscount.itemDiscountValue
         lineBase = lineDiscount.lineSubtotal
+        discountSource = lineDiscount.discountSource
       }
 
       if (dealDiscount > 0) {
         itemDiscount = roundMoney(dealDiscount)
         lineBase = roundMoney(Math.max(0, lineBase - dealDiscount))
+        itemDiscountMode = null
+        itemDiscountValue = null
+        discountSource = "quantity_deal"
       }
 
       if (lineBase < 0) {
@@ -1046,6 +1070,11 @@ export async function completeSale(
         itemDiscount,
         lineBase,
         comment: com ? com : null,
+        discountSource,
+        promotionDealId: discountSource === "quantity_deal" ? promotionDealId : null,
+        promotionDealName:
+          discountSource === "quantity_deal" ? promotionDealName : null,
+        lineGroupId,
         promotionSnapshot,
         promotionComponents,
       })
@@ -1109,29 +1138,78 @@ export async function completeSale(
       subtotalNet = roundMoney(total - taxTotal)
     }
 
-    const lineItemsJson = fiscalLines.map((l) => ({
-      article_id: l.articleId,
-      recipe_id: l.recipeId,
-      promotion_id: l.promotionId,
-      line_kind: l.lineKind,
-      quantity: l.qty,
-      unit_price: l.unitPrice,
-      iva: l.ivaPct,
-      item_discount_mode: l.itemDiscountMode,
-      item_discount_value: l.itemDiscountValue,
-      item_discount_amount: l.itemDiscount,
-      line_subtotal: l.lineBase,
-      line_discount: roundMoney(
-        l.itemDiscount +
-          (subtotalAfterItems > 0
-            ? generalDiscount * (l.lineBase / subtotalAfterItems)
-            : 0),
-      ),
-      line_total: l.lineFinal,
-      name_snapshot: l.name,
-      comment: l.comment,
-      ...(l.promotionSnapshot ? { promotion_snapshot: l.promotionSnapshot } : {}),
-    }))
+    const snapshotTotals = computeSnapshotTotals({
+      lines: built.map((l) => ({
+        qty: l.qty,
+        unitPrice: l.unitPrice,
+        itemDiscount: l.itemDiscount,
+        discountSource: l.discountSource,
+        promotionDealName: l.promotionDealName,
+        name: l.name,
+        lineGroupId: l.lineGroupId,
+        lineKind: l.lineKind,
+        itemDiscountMode: l.itemDiscountMode,
+        itemDiscountValue: l.itemDiscountValue,
+      })),
+      generalDiscount,
+      taxTotal,
+      total,
+      netSubtotalBeforeGeneral: subtotalAfterItems,
+    })
+
+    const lineItemsJson = fiscalLines.map((l, index) => {
+      const generalShare =
+        subtotalAfterItems > 0
+          ? roundMoney(generalDiscount * (l.lineBase / subtotalAfterItems))
+          : 0
+      const display = buildLineDisplay(
+        {
+          qty: l.qty,
+          unitPrice: l.unitPrice,
+          itemDiscount: l.itemDiscount,
+          discountSource: l.discountSource,
+          promotionDealName: l.promotionDealName,
+          name: l.name,
+          lineGroupId: l.lineGroupId,
+          lineKind: l.lineKind,
+          itemDiscountMode: l.itemDiscountMode,
+          itemDiscountValue: l.itemDiscountValue,
+        },
+        index,
+      )
+      return {
+        article_id: l.articleId,
+        recipe_id: l.recipeId,
+        promotion_id: l.promotionId,
+        line_kind: l.lineKind,
+        quantity: l.qty,
+        unit_price: l.unitPrice,
+        iva: l.ivaPct,
+        item_discount_mode: l.itemDiscountMode,
+        item_discount_value: l.itemDiscountValue,
+        item_discount_amount: l.itemDiscount,
+        line_subtotal: l.lineBase,
+        list_line_total: roundMoney(l.qty * l.unitPrice),
+        tax_base: l.netPart,
+        tax_amount: l.taxPart,
+        general_discount_share: generalShare,
+        line_discount: roundMoney(l.itemDiscount + generalShare),
+        line_total: l.lineFinal,
+        name_snapshot: l.name,
+        comment: l.comment,
+        discount_source: l.discountSource,
+        promotion_deal_id: l.promotionDealId,
+        promotion_deal_name: l.promotionDealName,
+        line_group_id: l.lineGroupId,
+        display: {
+          group_id: display.groupId,
+          group_label: display.groupLabel,
+          group_type: display.groupType,
+          sort_order: display.sortOrder,
+        },
+        ...(l.promotionSnapshot ? { promotion_snapshot: l.promotionSnapshot } : {}),
+      }
+    })
 
     const metadata: Record<string, unknown> = {}
     const invLabel = input.invoiceTypeLabel?.trim()
@@ -1178,6 +1256,19 @@ export async function completeSale(
     if (customerIvaCondition) {
       metadata.customer_iva_condition = customerIvaCondition
     }
+
+    const quantityDealSummaries = summarizeQuantityDealsFromLines(linesIn)
+    if (quantityDealSummaries.length > 0) {
+      metadata.quantity_deal_applications = quantityDealSummaries.map((d) => ({
+        promotion_id: d.promotionId,
+        promotion_name: d.promotionName,
+        discount_amount: roundMoney(d.discountAmount),
+        line_group_ids: d.lineGroupIds,
+      }))
+    }
+
+    metadata.snapshot_version = SALE_SNAPSHOT_VERSION
+    metadata.totals = snapshotTotalsToMetadata(snapshotTotals)
 
     const persistedSubtotal = accrueOutputVat ? subtotalNet : total
     const persistedTaxTotal = accrueOutputVat ? taxTotal : 0

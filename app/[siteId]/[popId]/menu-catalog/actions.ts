@@ -93,7 +93,7 @@ export type MenuCatalogPromotion = {
   pricingLabel: string
 }
 
-async function loadMenuPromotions(
+export async function loadMenuPromotions(
   supabase: Awaited<ReturnType<typeof createClient>>,
   popId: string,
 ): Promise<MenuCatalogPromotion[]> {

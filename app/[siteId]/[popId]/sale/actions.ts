@@ -14,6 +14,11 @@ import {
   effectiveArticleSalePrice,
   isArticleDiscountMode,
 } from "@/lib/articleDiscount"
+import {
+  loadMenuPromotions,
+  type MenuCatalogPromotion,
+} from "@/app/[siteId]/[popId]/menu-catalog/actions"
+import { filterComboPromotionsForSale } from "@/lib/saleMenuCatalog"
 
 export type SaleCatalogCategory = {
   id: string
@@ -62,6 +67,8 @@ export async function getSaleCatalog(popId: string): Promise<
       popName: string
       categories: SaleCatalogCategory[]
       articles: SaleCatalogArticle[]
+      promotions: MenuCatalogPromotion[]
+      quantityDeals: MenuCatalogPromotion[]
       clients: SaleCatalogClient[]
       paymentMethods: SaleCatalogPaymentMethod[]
       canReadClients: boolean
@@ -280,11 +287,23 @@ export async function getSaleCatalog(popId: string): Promise<
       }))
     }
 
+    const allPromotions = await loadMenuPromotions(supabase, popId)
+    const promotions = filterComboPromotionsForSale(
+      allPromotions.filter(
+        (p) => p.promotionType === "combo" && p.showInMenu,
+      ),
+    )
+    const quantityDeals = allPromotions.filter(
+      (p) => p.promotionType === "quantity_deal" && p.autoApply,
+    )
+
     return {
       success: true,
       popName,
       categories,
       articles,
+      promotions,
+      quantityDeals,
       clients,
       paymentMethods,
       canReadClients,

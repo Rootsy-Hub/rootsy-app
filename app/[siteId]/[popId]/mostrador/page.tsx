@@ -5,13 +5,15 @@ import {
   getMostradorAccessSnapshot,
   type MostradorAccessSnapshot,
 } from "@/app/[siteId]/[popId]/mostrador/actions"
+import { DataWorkspaceHeaderIconButton } from "@/components/layouts/DataWorkspaceHeaderIconButton"
 import { DataWorkspaceLayout } from "@/components/layouts/DataWorkspaceLayout"
 import { useDataWorkspaceSidebar } from "@/components/layouts/useDataWorkspaceSidebar"
 import { useAuth } from "@/context/AuthContextSupabase"
 import withAuth from "@/hoc/withAuth"
 import { getWorkspaceHeaderForPop } from "@/lib/workspaceHeaderServer"
+import { Plus } from "lucide-react"
 import { useParams, useRouter } from "next/navigation"
-import { useCallback, useEffect, useState } from "react"
+import { useCallback, useEffect, useRef, useState } from "react"
 
 function MostradorPage() {
   const params = useParams()
@@ -70,6 +72,12 @@ function MostradorPage() {
     void loadHeader()
   }, [loadHeader])
 
+  const startCreateOrderRef = useRef<(() => void) | null>(null)
+
+  const registerStartCreateOrder = useCallback((handler: (() => void) | null) => {
+    startCreateOrderRef.current = handler
+  }, [])
+
   if (!popId || !siteId) {
     return (
       <div className="rootsy-app-light min-h-screen bg-background p-10 text-foreground">
@@ -99,11 +107,24 @@ function MostradorPage() {
       sidebarOpen={catalogSidebarOpen}
       onSidebarOpenChange={setCatalogSidebarOpen}
       mainClassName="bg-[#070a09] text-white min-h-0 overflow-hidden"
+      headerActions={
+        access.canCreate ? (
+          <DataWorkspaceHeaderIconButton
+            label="Nuevo pedido"
+            headerVariant="dark"
+            primary
+            onClick={() => startCreateOrderRef.current?.()}
+          >
+            <Plus className="size-5" aria-hidden />
+          </DataWorkspaceHeaderIconButton>
+        ) : null
+      }
     >
       <MostradorWorkspace
         siteId={siteId}
         popId={popId}
         catalogSidebarOpen={catalogSidebarOpen}
+        onRegisterStartCreateOrder={registerStartCreateOrder}
       />
     </DataWorkspaceLayout>
   )

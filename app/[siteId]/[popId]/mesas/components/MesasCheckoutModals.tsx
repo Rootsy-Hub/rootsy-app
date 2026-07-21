@@ -47,7 +47,7 @@ import { cn } from "@/lib/utils"
 import { Banknote, Loader2, Percent, Search } from "lucide-react"
 
 type Props = {
-  checkout: MesasSaleCheckout
+  checkout: Pick<MesasSaleCheckout, "modals" | "submitting">
   confirmLabel?: string
 }
 

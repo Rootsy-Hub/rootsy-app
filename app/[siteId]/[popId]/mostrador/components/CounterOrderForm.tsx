@@ -8,6 +8,7 @@ import {
 import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
 import {
   Select,
   SelectContent,
@@ -68,8 +69,8 @@ export function CounterOrderForm({
   }
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto p-4">
-      <div className="grid gap-3 rounded-xl border border-slate-200/90 bg-white p-4 shadow-sm">
+    <div className="flex min-h-0 flex-1 flex-col overflow-y-auto">
+      <div className="grid gap-3 border-b border-slate-200/90 bg-white px-3 py-4">
         <div>
           <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-500">
             Tipo de entrega *
@@ -169,26 +170,36 @@ export function CounterOrderForm({
           />
         </div>
 
-        <label className="flex cursor-pointer items-start gap-2 rounded-lg border border-slate-200 px-3 py-2.5">
+        <div className="flex items-start gap-3 rounded-lg border border-slate-200 bg-slate-50/60 px-3 py-3">
           <Checkbox
+            id="counter-immediate-fulfillment"
             checked={immediateFulfillment}
             onCheckedChange={(v) => setImmediateFulfillment(v === true)}
+            className="mt-0.5 border-slate-300 bg-white shadow-sm data-[state=checked]:border-emerald-600 data-[state=checked]:bg-emerald-600 data-[state=checked]:text-white"
           />
-          <span className="text-sm text-slate-700">
+          <Label
+            htmlFor="counter-immediate-fulfillment"
+            className="cursor-pointer text-sm font-normal leading-snug text-slate-700"
+          >
             Entrega inmediata (pasa directo a entregados)
-          </span>
-        </label>
+          </Label>
+        </div>
       </div>
 
-      <div className="mt-auto flex gap-2">
+      <div className="mt-auto grid grid-cols-2 gap-0 border-t border-slate-200/90">
         {onCancel ? (
-          <Button type="button" variant="outline" className="flex-1" onClick={onCancel}>
+          <Button
+            type="button"
+            variant="ghost"
+            className="h-12 rounded-none border-0 border-r border-slate-200/90 text-slate-700 hover:bg-slate-100 hover:text-slate-900"
+            onClick={onCancel}
+          >
             Cancelar
           </Button>
         ) : null}
         <Button
           type="button"
-          className="flex-1"
+          className={cn("h-12 rounded-none", onCancel ? "" : "col-span-2")}
           disabled={!canSubmit || submitting}
           onClick={() => void handleSubmit()}
         >

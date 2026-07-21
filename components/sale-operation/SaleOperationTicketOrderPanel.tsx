@@ -1,0 +1,99 @@
+"use client"
+
+import { MostradorCartLineCard } from "@/components/sale-operation/MostradorCartLineCard"
+import { MostradorCartTicketGroup } from "@/components/sale-operation/MostradorCartTicketGroup"
+import type { OperationCartLineOverrideState } from "@/components/sale-operation/OperationCartLineRow"
+import { SaleOperationActionsBar } from "@/components/sale-operation/SaleOperationActionsBar"
+import { SaleOperationCartList } from "@/components/sale-operation/SaleOperationCartList"
+import { SaleOperationTotalBar } from "@/components/sale-operation/SaleOperationTotalBar"
+import { groupMostradorCartDisplayRows } from "@/lib/mostradorCartDisplay"
+import type { MostradorCartDisplayRow } from "@/lib/mostradorCartDisplay"
+import type { MostradorCartLineEditInput } from "@/lib/menuCartLineMerge"
+import { useMemo } from "react"
+
+type ActionsProps = React.ComponentProps<typeof SaleOperationActionsBar>
+type TotalProps = React.ComponentProps<typeof SaleOperationTotalBar>
+
+type Props = {
+  cartDisplayRows: MostradorCartDisplayRow[]
+  cartLineOverrides: OperationCartLineOverrideState
+  aplicarEdicionLineaTicket: (input: MostradorCartLineEditInput) => void
+  cambiarCantidadPorLinea: (lineId: string, delta: number) => void
+  quitarQuantityDealApplication: (applicationId: string) => void
+  actions: ActionsProps
+  totalBar: TotalProps
+  listTitle?: string
+  listSubtitle?: string
+  emptyTitle?: string
+  emptyDescription?: string
+  flush?: boolean
+}
+
+export function SaleOperationTicketOrderPanel({
+  cartDisplayRows,
+  cartLineOverrides,
+  aplicarEdicionLineaTicket,
+  cambiarCantidadPorLinea,
+  quitarQuantityDealApplication,
+  actions,
+  totalBar,
+  listTitle = "Pedido",
+  listSubtitle,
+  emptyTitle = "Pedido vacío",
+  emptyDescription = "Agregá productos desde el panel izquierdo.",
+  flush = true,
+}: Props) {
+  const cartDisplayGroups = useMemo(
+    () => groupMostradorCartDisplayRows(cartDisplayRows),
+    [cartDisplayRows],
+  )
+
+  const ticketLineCount = useMemo(
+    () => cartDisplayGroups.reduce((sum, group) => sum + group.rows.length, 0),
+    [cartDisplayGroups],
+  )
+
+  return (
+    <div className="flex min-h-0 flex-1 flex-col">
+      <SaleOperationCartList
+        title={listTitle}
+        subtitle={listSubtitle}
+        lineCount={ticketLineCount}
+        emptyTitle={emptyTitle}
+        emptyDescription={emptyDescription}
+        flush={flush}
+      >
+        <div className="border-b border-slate-200/90 bg-white">
+          {cartDisplayGroups.map((group) => (
+            <MostradorCartTicketGroup
+              key={group.key}
+              group={group}
+              renderRow={(row) => (
+                <MostradorCartLineCard
+                  key={row.rowKey}
+                  row={row}
+                  overrides={cartLineOverrides}
+                  onApplyEdits={aplicarEdicionLineaTicket}
+                  onRemove={() => {
+                    if (row.variant === "combo_component") {
+                      cambiarCantidadPorLinea(row.cartLineId, -1)
+                      return
+                    }
+                    if (row.quantityDealApplicationId) {
+                      quitarQuantityDealApplication(row.quantityDealApplicationId)
+                      return
+                    }
+                    cambiarCantidadPorLinea(row.cartLineId, -row.cantidad)
+                  }}
+                />
+              )}
+            />
+          ))}
+        </div>
+      </SaleOperationCartList>
+
+      <SaleOperationActionsBar {...actions} flush={flush} />
+      <SaleOperationTotalBar {...totalBar} flush={flush} />
+    </div>
+  )
+}

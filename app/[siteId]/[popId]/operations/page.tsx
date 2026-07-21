@@ -9,6 +9,7 @@ import {
 import {
   OperationsSalesTable,
 } from "@/app/[siteId]/[popId]/operations/OperationsSalesTable"
+import { OperationsSalesStatsSummary } from "@/app/[siteId]/[popId]/operations/OperationsSalesStatsSummary"
 import { OperationsExpensesTable } from "@/app/[siteId]/[popId]/operations/OperationsExpensesTable"
 import { OperationsPurchasesTable } from "@/app/[siteId]/[popId]/operations/OperationsPurchasesTable"
 import { exportOperationsCsv } from "@/app/[siteId]/[popId]/operations/operationsCsvExport"
@@ -561,6 +562,19 @@ function OperationsPage() {
               </div>
             ) : null}
           </div>
+
+          {activeView === "sales" ||
+          activeView === "tables" ||
+          activeView === "counter" ? (
+            <div className="px-4 pt-4">
+              <OperationsSalesStatsSummary
+                popId={popId ?? ""}
+                dateFrom={dateBounds.from}
+                dateTo={dateBounds.to}
+                enabled={Boolean(popId)}
+              />
+            </div>
+          ) : null}
 
           <DataWorkspaceListTableShell
             variant="flush"
