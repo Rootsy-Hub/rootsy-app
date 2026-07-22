@@ -51,9 +51,10 @@ function csvFilename(view: OperationsViewId): string {
 
 export function exportOperationsSalesCsv(
   rows: OperationSaleRow[],
-  options?: { includeTable?: boolean },
+  options?: { includeTable?: boolean; includeOrder?: boolean },
 ): void {
   const includeTable = options?.includeTable === true
+  const includeOrder = options?.includeOrder === true
   const headers = includeTable
     ? ([
         "Fecha",
@@ -69,19 +70,34 @@ export function exportOperationsSalesCsv(
         "Estado",
         "ID",
       ] as const)
-    : ([
-        "Fecha",
-        "Hora",
-        "Cliente",
-        "CUIT",
-        "Comprobante",
-        "Total",
-        "Descuento",
-        "IVA",
-        "Forma de pago",
-        "Estado",
-        "ID",
-      ] as const)
+    : includeOrder
+      ? ([
+          "Fecha",
+          "Hora",
+          "Pedido",
+          "Cliente",
+          "CUIT",
+          "Comprobante",
+          "Total",
+          "Descuento",
+          "IVA",
+          "Forma de pago",
+          "Estado",
+          "ID",
+        ] as const)
+      : ([
+          "Fecha",
+          "Hora",
+          "Cliente",
+          "CUIT",
+          "Comprobante",
+          "Total",
+          "Descuento",
+          "IVA",
+          "Forma de pago",
+          "Estado",
+          "ID",
+        ] as const)
 
   const body = rows.map((sale) => {
     const when = formatOperationSaleDateTime(sale.soldAt)
@@ -89,6 +105,7 @@ export function exportOperationsSalesCsv(
       when.primary,
       when.secondary ?? "",
       ...(includeTable ? [sale.tableLabel ?? ""] : []),
+      ...(includeOrder ? [sale.counterOrderLabel ?? ""] : []),
       sale.customerName ?? "Consumidor final",
       sale.customerTaxId ?? "",
       saleComprobanteLabel(sale),
@@ -105,7 +122,9 @@ export function exportOperationsSalesCsv(
   })
 
   downloadCsv(
-    csvFilename(includeTable ? "tables" : "sales"),
+    csvFilename(
+      includeTable ? "tables" : includeOrder ? "counter" : "sales",
+    ),
     buildCsv(headers, body),
   )
 }
@@ -185,7 +204,7 @@ export function exportOperationsCsv(
   } else if (view === "tables") {
     exportOperationsSalesCsv(rows as OperationSaleRow[], { includeTable: true })
   } else if (view === "counter") {
-    exportOperationsSalesCsv(rows as OperationSaleRow[])
+    exportOperationsSalesCsv(rows as OperationSaleRow[], { includeOrder: true })
   } else if (view === "purchases") {
     exportOperationsPurchasesCsv(rows as OperationPurchaseRow[])
   } else {

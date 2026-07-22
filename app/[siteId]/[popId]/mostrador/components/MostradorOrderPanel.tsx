@@ -24,22 +24,46 @@ export function MostradorOrderPanel({ checkout, orderLabel }: Props) {
     hayDescuentoItems,
     promocionesAplicadasMonto,
     promocionesAplicadasCount,
+    paidPartialUnits,
+    totalPagadoAcumulado,
     cartLineOverrides,
+    puedeCerrarPedido,
+    cerrarPedido,
+    cerrarPedidoMode,
+    puedeRegistrar,
   } = checkout
+
+  const confirmLabel =
+    puedeCerrarPedido && cerrarPedidoMode === "release"
+      ? "Liberar pedido"
+      : puedeCerrarPedido
+        ? "Cerrar pedido"
+        : "Cobrar pedido"
+  const confirmDisabled = puedeCerrarPedido ? !puedeCerrarPedido : !puedeRegistrar
+  const confirmTitle = puedeCerrarPedido
+    ? cerrarPedidoMode === "release"
+      ? "No hay ítems ni cobros pendientes. Podés liberar el pedido."
+      : "Todo el pedido está cobrado. Podés cerrarlo para marcarlo como pagado."
+    : !puedeRegistrar
+      ? "Completá el pedido, pago y pedido seleccionado."
+      : undefined
 
   return (
     <SaleOperationTicketOrderPanel
       cartDisplayRows={cartDisplayRows}
       cartLineOverrides={cartLineOverrides}
+      paidPartialUnits={paidPartialUnits}
       aplicarEdicionLineaTicket={aplicarEdicionLineaTicket}
       cambiarCantidadPorLinea={cambiarCantidadPorLinea}
       quitarQuantityDealApplication={quitarQuantityDealApplication}
       actions={{
         ...actions,
-        confirmLabel: "Cobrar pedido",
-        confirmTitle: !checkout.puedeRegistrar
-          ? "Completá el pedido, pago y pedido seleccionado."
-          : undefined,
+        confirmLabel,
+        confirmDisabled,
+        confirmTitle,
+        onConfirm: puedeCerrarPedido
+          ? () => void cerrarPedido()
+          : actions.onConfirm,
       }}
       totalBar={{
         total,
@@ -51,6 +75,7 @@ export function MostradorOrderPanel({ checkout, orderLabel }: Props) {
         hayDescuentoItems,
         promocionesAplicadasMonto,
         promocionesAplicadasCount,
+        totalPagado: totalPagadoAcumulado,
       }}
       listTitle="Pedido"
       listSubtitle={orderLabel ? `Pedido ${orderLabel}` : undefined}

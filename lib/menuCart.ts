@@ -9,6 +9,8 @@ export type MenuCartItem = {
   cantidad: number
   kind?: MenuCartItemKind
   promotionSelections?: PromotionCartSelection[]
+  /** Línea ya cobrada en un pago parcial; no se edita ni mergea con nuevos ítems. */
+  paidLocked?: boolean
 }
 
 export function resolveCartLineId(item: MenuCartItem): string {

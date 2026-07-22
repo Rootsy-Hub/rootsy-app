@@ -7,6 +7,9 @@ import {
   type MenuCartItem,
   type MenuCartItemKind,
 } from "@/lib/menuCart"
+import {
+  cartLineHasPaidUnits,
+} from "@/lib/partialCheckoutSelection"
 
 export type CartLineOverrideSnapshot = {
   itemDescuentoModo: Record<string, "porcentaje" | "fijo">
@@ -99,6 +102,7 @@ export function findMergeableCartLine(
   commentFingerprint: string,
   overrides: CartLineOverrideSnapshot,
   productosByKey: Map<string, { kind: MenuCartItemKind } & SaleCatalogProduct>,
+  paidPartialUnits?: Record<string, number>,
 ): MenuCartItem | undefined {
   if (kind === "promotion") {
     return undefined
@@ -108,6 +112,12 @@ export function findMergeableCartLine(
     const itemKind = normalizeCartItemKind(item.kind)
     if (itemKind !== kind || item.productoId !== productoId) return false
     const lineId = resolveCartLineId(item)
+    if (
+      cartLineHasPaidUnits(lineId, item, paidPartialUnits ?? {}) ||
+      item.paidLocked
+    ) {
+      return false
+    }
     const poolKey = `${itemKind}:${item.productoId}`
     const producto = productosByKey.get(poolKey)
     const itemDiscountFp = cartLineDiscountFingerprint(
@@ -161,7 +171,7 @@ export function peelCartLineUnits(
   const idx = carrito.findIndex((i) => resolveCartLineId(i) === sourceLineId)
   if (idx < 0) return null
   const item = carrito[idx]!
-  if (peelCount >= item.cantidad) return null
+  if (item.paidLocked || peelCount >= item.cantidad) return null
 
   const peeledLineId = createCartLineId()
   const peeled: MenuCartItem = {
@@ -186,11 +196,11 @@ export function applyCartLineQuantityDelta(
 ): MenuCartItem[] {
   if (delta === 0) return carrito
   return carrito
-    .map((i) =>
-      resolveCartLineId(i) === lineId
-        ? { ...i, cantidad: Math.max(0, i.cantidad + delta) }
-        : i,
-    )
+    .map((i) => {
+      if (resolveCartLineId(i) !== lineId) return i
+      if (i.paidLocked) return i
+      return { ...i, cantidad: Math.max(0, i.cantidad + delta) }
+    })
     .filter((i) => i.cantidad > 0)
 }
 

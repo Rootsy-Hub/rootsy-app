@@ -45,6 +45,11 @@ import {
   TableRow,
 } from "@/components/ui/table"
 import { SaleDetailTicketView } from "@/app/[siteId]/[popId]/operations/SaleDetailTicketView"
+import { ChannelOperationCheckoutTicket } from "@/app/[siteId]/[popId]/operations/ChannelOperationCheckoutTicket"
+import {
+  displayOperationSalePaid,
+  displayOperationSaleTotal,
+} from "@/lib/channelOperationSales"
 
 const fmt = new Intl.NumberFormat("es-AR", {
   style: "currency",
@@ -55,6 +60,7 @@ const fmt = new Intl.NumberFormat("es-AR", {
 const SALE_STATUS_LABEL: Record<string, string> = {
   draft: "Borrador",
   completed: "Completada",
+  partial: "Cobro parcial",
   cancelled: "Anulada",
 }
 
@@ -167,14 +173,23 @@ function SaleDetailDialog({
   sale,
   open,
   onOpenChange,
+  siteId,
+  popId,
 }: {
   sale: OperationSaleRow | null
   open: boolean
   onOpenChange: (open: boolean) => void
+  siteId: string
+  popId: string
 }) {
   if (!sale) return null
 
   const when = formatOperationSaleDateTime(sale.soldAt)
+  const isChannelOperation =
+    Boolean(sale.tableSessionId || sale.counterOrderId) &&
+    (sale.isChannelGrouped ||
+      sale.channelOrderTotal != null ||
+      sale.status === "partial")
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -191,13 +206,23 @@ function SaleDetailDialog({
           </DialogDescription>
         </DialogHeader>
         <div className={opsDialogBody}>
-          <p className="mb-4 break-all font-mono text-[11px] text-muted-foreground">
-            {sale.id}
-          </p>
+          {sale.groupedSaleIds && sale.groupedSaleIds.length > 1 ? (
+            <p className="mb-3 text-xs text-muted-foreground">
+              Operación agrupada · {sale.groupedSaleIds.length} cobros
+            </p>
+          ) : null}
 
-          <SaleDetailTicketView sale={sale} />
+          {isChannelOperation ? (
+            <ChannelOperationCheckoutTicket
+              popId={popId}
+              siteId={siteId}
+              sale={sale}
+            />
+          ) : (
+            <SaleDetailTicketView sale={sale} />
+          )}
 
-          {sale.payments.length > 0 ? (
+          {sale.payments.length > 0 && isChannelOperation ? (
             <div className="mt-4">
               <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                 Cobros
@@ -420,6 +445,7 @@ export function OperationsSalesTable({
   onSelectedChange,
   onOpenAccounting,
   showTableColumn = false,
+  showOrderColumn = false,
 }: {
   siteId: string
   popId: string
@@ -431,6 +457,7 @@ export function OperationsSalesTable({
   onSelectedChange: Dispatch<SetStateAction<Set<string>>>
   onOpenAccounting: (sale: OperationSaleRow) => void
   showTableColumn?: boolean
+  showOrderColumn?: boolean
 }) {
   const [detailSale, setDetailSale] = useState<OperationSaleRow | null>(null)
   const [invoiceSale, setInvoiceSale] = useState<OperationSaleRow | null>(null)
@@ -487,6 +514,11 @@ export function OperationsSalesTable({
             {showTableColumn ? (
               <TableHead className={cn(lightTableThClass, "w-[6rem] text-left")}>
                 Mesa
+              </TableHead>
+            ) : null}
+            {showOrderColumn ? (
+              <TableHead className={cn(lightTableThClass, "w-[6rem] text-left")}>
+                Pedido
               </TableHead>
             ) : null}
             <TableHead className={cn(lightTableThClass, "w-[14rem] min-w-0 max-w-[14rem] text-left")}>
@@ -571,6 +603,16 @@ export function OperationsSalesTable({
                       </span>
                     </TableCell>
                   ) : null}
+                  {showOrderColumn ? (
+                    <TableCell className="px-3 py-2.5">
+                      <span
+                        className="block truncate text-sm font-medium text-foreground"
+                        title={sale.counterOrderLabel ?? undefined}
+                      >
+                        {sale.counterOrderLabel ?? "—"}
+                      </span>
+                    </TableCell>
+                  ) : null}
                   <TableCell className={tdTruncatedNameCellClass}>
                     {sale.clientId && sale.customerName ? (
                       <Link
@@ -624,7 +666,12 @@ export function OperationsSalesTable({
                       tdMoneyTotalClass,
                     )}
                   >
-                    {fmt.format(sale.total)}
+                    <span className="block">{fmt.format(displayOperationSaleTotal(sale))}</span>
+                    {displayOperationSalePaid(sale) != null ? (
+                      <span className="block text-xs text-muted-foreground">
+                        Pagado {fmt.format(displayOperationSalePaid(sale)!)}
+                      </span>
+                    ) : null}
                   </TableCell>
                   <TableCell className="px-3 py-2.5 text-right text-sm">
                     {sale.discountTotal > 0 ? (
@@ -684,6 +731,8 @@ export function OperationsSalesTable({
         onOpenChange={(open) => {
           if (!open) setDetailSale(null)
         }}
+        siteId={siteId}
+        popId={popId}
       />
       <SaleInvoiceDialog
         sale={invoiceSale}

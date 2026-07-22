@@ -14,6 +14,13 @@ import {
 import { saleComprobanteAccruesOutputVat } from "@/lib/saleComprobantePicker"
 import { resolveOperationPaymentMethodLabel } from "@/lib/operationPaymentLabels"
 import {
+  groupChannelOperationSales,
+  parseChannelSaleMetadata,
+} from "@/lib/channelOperationSales"
+import { buildChannelCheckoutTicketDisplay } from "@/lib/buildChannelCheckoutTicketDisplay"
+import { getMenuCatalog } from "@/app/[siteId]/[popId]/menu-catalog/actions"
+import { readCheckoutFromSessionMetadata } from "@/app/[siteId]/[popId]/mesas/mesasCheckoutState"
+import {
   parseLineDisplay,
   parseSnapshotTotals,
   type SaleLineDisplay,
@@ -112,6 +119,8 @@ export type OperationSaleRow = {
   id: string
   soldAt: string
   status: string
+  /** Importe registrado en esta venta (cobro parcial o total). */
+  saleAmount: number
   total: number
   subtotal: number
   taxTotal: number
@@ -129,6 +138,17 @@ export type OperationSaleRow = {
   payments: OperationSalePayment[]
   paymentMethodLabel: string
   tableLabel: string | null
+  /** Número visible del pedido de mostrador (ej. #12). */
+  counterOrderLabel: string | null
+  tableSessionId?: string | null
+  counterOrderId?: string | null
+  /** Total del pedido/mesa (mesas/mostrador). */
+  channelOrderTotal?: number | null
+  /** Total cobrado acumulado en pagos parciales. */
+  channelPaidTotal?: number | null
+  /** Ventas individuales agrupadas en esta fila. */
+  groupedSaleIds?: string[]
+  isChannelGrouped?: boolean
 }
 
 export type OperationExpenseLedgerRow = {
@@ -576,6 +596,9 @@ const SALE_LIST_SELECT = `
         metadata,
         line_items,
         currency,
+        table_session_id,
+        counter_order_id,
+        sale_channel,
         sale_payments (
           amount,
           sort_order,
@@ -673,13 +696,14 @@ async function loadArcaBySaleIds(
   return arcaBySaleId
 }
 
-function parseTableLabelFromSaleRow(
+function parseTableLabelFromSession(
   row: Record<string, unknown>,
-  tableLabelBySaleId: Map<string, string>,
+  labelsBySessionId: Map<string, string>,
 ): string | null {
-  const saleId = String(row.id ?? "")
-  if (!saleId) return null
-  return tableLabelBySaleId.get(saleId) ?? null
+  const sessionId =
+    row.table_session_id != null ? String(row.table_session_id).trim() : ""
+  if (!sessionId) return null
+  return labelsBySessionId.get(sessionId) ?? null
 }
 
 async function loadTableLabelsBySessionIds(
@@ -690,22 +714,58 @@ async function loadTableLabelsBySessionIds(
   const labelsBySessionId = new Map<string, string>()
   if (sessionIds.length === 0) return labelsBySessionId
 
-  const { data } = await supabase
+  const { data: sessions, error } = await supabase
     .from("table_sessions")
-    .select("id, dining_tables ( label )")
+    .select("id, dining_table_id, table_session_tables ( dining_table_id )")
     .eq("pop_id", popId)
     .in("id", sessionIds)
 
-  for (const row of data || []) {
-    const sessionId = String(row.id)
-    const table = relOne(
-      row.dining_tables as
-        | { label?: string }
-        | Array<{ label?: string }>
-        | null,
-    )
-    const label = table?.label?.trim()
-    if (label) labelsBySessionId.set(sessionId, label)
+  if (error || !sessions?.length) return labelsBySessionId
+
+  const tableIds = new Set<string>()
+  for (const session of sessions) {
+    if (session.dining_table_id) {
+      tableIds.add(String(session.dining_table_id))
+    }
+    const extras = session.table_session_tables as
+      | Array<{ dining_table_id?: string }>
+      | null
+    for (const row of extras ?? []) {
+      if (row.dining_table_id) tableIds.add(String(row.dining_table_id))
+    }
+  }
+
+  if (tableIds.size === 0) return labelsBySessionId
+
+  const { data: tables } = await supabase
+    .from("dining_tables")
+    .select("id, label")
+    .eq("pop_id", popId)
+    .in("id", [...tableIds])
+
+  const labelByTableId = new Map<string, string>()
+  for (const table of tables ?? []) {
+    const label = typeof table.label === "string" ? table.label.trim() : ""
+    if (label) labelByTableId.set(String(table.id), label)
+  }
+
+  for (const session of sessions) {
+    const orderedTableIds = [String(session.dining_table_id)]
+    const extras = session.table_session_tables as
+      | Array<{ dining_table_id?: string }>
+      | null
+    for (const row of extras ?? []) {
+      const tableId = row.dining_table_id ? String(row.dining_table_id) : ""
+      if (tableId && !orderedTableIds.includes(tableId)) {
+        orderedTableIds.push(tableId)
+      }
+    }
+    const labels = orderedTableIds
+      .map((tableId) => labelByTableId.get(tableId))
+      .filter((label): label is string => Boolean(label))
+    if (labels.length > 0) {
+      labelsBySessionId.set(String(session.id), labels.join(" + "))
+    }
   }
 
   return labelsBySessionId
@@ -714,37 +774,70 @@ async function loadTableLabelsBySessionIds(
 async function loadTableLabelsBySaleIds(
   supabase: Awaited<ReturnType<typeof createClient>>,
   popId: string,
-  saleIds: string[],
+  saleRows: Array<Record<string, unknown>>,
 ): Promise<Map<string, string>> {
-  const labelsBySaleId = new Map<string, string>()
-  if (saleIds.length === 0) return labelsBySaleId
+  const sessionIds = [
+    ...new Set(
+      saleRows
+        .map((row) =>
+          row.table_session_id != null ? String(row.table_session_id) : "",
+        )
+        .filter(Boolean),
+    ),
+  ]
+  return loadTableLabelsBySessionIds(supabase, popId, sessionIds)
+}
 
-  const { data: saleLinks } = await supabase
-    .from("sales")
-    .select("id, table_session_id")
+function parseCounterOrderLabel(
+  row: Record<string, unknown>,
+  labelByOrderId: Map<string, string>,
+): string | null {
+  const orderId =
+    row.counter_order_id != null ? String(row.counter_order_id).trim() : ""
+  if (!orderId) return null
+  return labelByOrderId.get(orderId) ?? null
+}
+
+async function loadCounterOrderLabelsByOrderIds(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  popId: string,
+  orderIds: string[],
+): Promise<Map<string, string>> {
+  const labelByOrderId = new Map<string, string>()
+  if (orderIds.length === 0) return labelByOrderId
+
+  const { data, error } = await supabase
+    .from("counter_orders")
+    .select("id, order_number")
     .eq("pop_id", popId)
-    .in("id", saleIds)
+    .in("id", orderIds)
 
-  const sessionIds = (saleLinks || [])
-    .map((row) =>
-      row.table_session_id != null ? String(row.table_session_id) : "",
-    )
-    .filter(Boolean)
-  const labelsBySessionId = await loadTableLabelsBySessionIds(
-    supabase,
-    popId,
-    sessionIds,
-  )
+  if (error || !data?.length) return labelByOrderId
 
-  for (const row of saleLinks || []) {
-    const saleId = String(row.id)
-    const sessionId =
-      row.table_session_id != null ? String(row.table_session_id) : ""
-    const label = sessionId ? labelsBySessionId.get(sessionId) : undefined
-    if (label) labelsBySaleId.set(saleId, label)
+  for (const row of data) {
+    const orderNumber = Number(row.order_number)
+    if (!Number.isFinite(orderNumber)) continue
+    labelByOrderId.set(String(row.id), `#${orderNumber}`)
   }
 
-  return labelsBySaleId
+  return labelByOrderId
+}
+
+async function loadCounterOrderLabelsBySaleIds(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  popId: string,
+  saleRows: Array<Record<string, unknown>>,
+): Promise<Map<string, string>> {
+  const orderIds = [
+    ...new Set(
+      saleRows
+        .map((row) =>
+          row.counter_order_id != null ? String(row.counter_order_id) : "",
+        )
+        .filter(Boolean),
+    ),
+  ]
+  return loadCounterOrderLabelsByOrderIds(supabase, popId, orderIds)
 }
 
 function mapSaleRows(
@@ -752,7 +845,8 @@ function mapSaleRows(
   methodNameById: Map<string, string>,
   arcaBySaleId: Map<string, OperationSaleArcaInvoice>,
   fiscalSiteId: string,
-  tableLabelBySaleId: Map<string, string> = new Map(),
+  tableLabelBySessionId: Map<string, string> = new Map(),
+  counterOrderLabelByOrderId: Map<string, string> = new Map(),
 ): OperationSaleRow[] {
   return saleRows.map((row) => {
     const saleId = String(row.id)
@@ -778,6 +872,7 @@ function mapSaleRows(
     }
 
     const saleMeta = parseSaleMetadata(row.metadata, fiscalSiteId)
+    const channelMeta = parseChannelSaleMetadata(row.metadata)
     const rowTotal = parseMoney(row.total)
     const accruesOutputVat = saleMeta.accruesOutputVat
 
@@ -785,6 +880,7 @@ function mapSaleRows(
       id: saleId,
       soldAt: String(row.sold_at ?? ""),
       status: String(row.status ?? ""),
+      saleAmount: rowTotal,
       total: rowTotal,
       subtotal: accruesOutputVat ? parseMoney(row.subtotal) : rowTotal,
       taxTotal: accruesOutputVat ? parseMoney(row.tax_total) : 0,
@@ -810,7 +906,14 @@ function mapSaleRows(
             row.client_id != null &&
             String(row.status ?? "") === "completed"),
       }),
-      tableLabel: parseTableLabelFromSaleRow(row, tableLabelBySaleId),
+      tableLabel: parseTableLabelFromSession(row, tableLabelBySessionId),
+      counterOrderLabel: parseCounterOrderLabel(row, counterOrderLabelByOrderId),
+      tableSessionId:
+        row.table_session_id != null ? String(row.table_session_id) : null,
+      counterOrderId:
+        row.counter_order_id != null ? String(row.counter_order_id) : null,
+      channelOrderTotal: channelMeta.channelOrderTotal,
+      channelPaidTotal: channelMeta.channelPaidAccumulated,
     }
   })
 }
@@ -1152,51 +1255,53 @@ export async function getOperationsList(
       )
 
     if (view === "sales" || view === "tables" || view === "counter") {
-      let countQuery = supabase
-        .from("sales")
-        .select("id", { count: "exact", head: true })
-        .eq("pop_id", popId)
-      if (view === "tables") {
-        countQuery = countQuery.eq("sale_channel", "table")
-      } else if (view === "counter") {
-        countQuery = countQuery.eq("sale_channel", "counter")
-      } else {
-        countQuery = countQuery
+      const isChannelGroupedView = view === "tables" || view === "counter"
+
+      let totalCount = 0
+      let safePage = Math.max(1, reqPage)
+      let from = (safePage - 1) * pageSize
+      let to = from + pageSize - 1
+
+      if (!isChannelGroupedView) {
+        let countQuery = supabase
+          .from("sales")
+          .select("id", { count: "exact", head: true })
+          .eq("pop_id", popId)
           .neq("sale_channel", "table")
           .neq("sale_channel", "counter")
-      }
-      countQuery = appendSalesDateFilter(
-        countQuery,
-        dateFrom,
-        dateTo,
-        ledgerTimeZone,
-      )
-      if (uuidSearch) {
-        countQuery = countQuery.eq("id", searchTerm)
-      } else {
-        const orClause = buildSalesSearchOrClause(search)
-        if (orClause) countQuery = countQuery.or(orClause)
-      }
-
-      const { count: countRaw, error: countErr } = await countQuery
-      if (countErr) {
-        return {
-          success: false,
-          error: countErr.message || "No se pudieron cargar las ventas.",
-          popName,
-          totalCount: 0,
-          page: reqPage,
-          sales: emptySales,
-          expenseLedger: emptyExpenseLedger,
-          purchases: emptyPurchases,
+        countQuery = appendSalesDateFilter(
+          countQuery,
+          dateFrom,
+          dateTo,
+          ledgerTimeZone,
+        )
+        if (uuidSearch) {
+          countQuery = countQuery.eq("id", searchTerm)
+        } else {
+          const orClause = buildSalesSearchOrClause(search)
+          if (orClause) countQuery = countQuery.or(orClause)
         }
-      }
 
-      const totalCount = countRaw ?? 0
-      const totalPages = Math.max(1, Math.ceil(totalCount / pageSize))
-      const safePage = Math.min(Math.max(1, reqPage), totalPages)
-      const from = (safePage - 1) * pageSize
-      const to = from + pageSize - 1
+        const { count: countRaw, error: countErr } = await countQuery
+        if (countErr) {
+          return {
+            success: false,
+            error: countErr.message || "No se pudieron cargar las ventas.",
+            popName,
+            totalCount: 0,
+            page: reqPage,
+            sales: emptySales,
+            expenseLedger: emptyExpenseLedger,
+            purchases: emptyPurchases,
+          }
+        }
+
+        totalCount = countRaw ?? 0
+        const totalPages = Math.max(1, Math.ceil(totalCount / pageSize))
+        safePage = Math.min(Math.max(1, reqPage), totalPages)
+        from = (safePage - 1) * pageSize
+        to = from + pageSize - 1
+      }
 
       let dataQuery = supabase
         .from("sales")
@@ -1223,7 +1328,10 @@ export async function getOperationsList(
         const orClause = buildSalesSearchOrClause(search)
         if (orClause) dataQuery = dataQuery.or(orClause)
       }
-      dataQuery = dataQuery.order("sold_at", { ascending: false }).range(from, to)
+      dataQuery = dataQuery.order("sold_at", { ascending: false })
+      if (!isChannelGroupedView) {
+        dataQuery = dataQuery.range(from, to)
+      }
 
       const { data: saleRows, error: saleErr } = await dataQuery
       if (saleErr) {
@@ -1246,17 +1354,43 @@ export async function getOperationsList(
         fiscalSiteId,
         saleIds,
       )
-      const tableLabelBySaleId =
+      const tableLabelBySessionId =
         view === "tables"
-          ? await loadTableLabelsBySaleIds(supabase, popId, saleIds)
+          ? await loadTableLabelsBySaleIds(
+              supabase,
+              popId,
+              (saleRows || []) as Array<Record<string, unknown>>,
+            )
           : new Map<string, string>()
-      const sales = mapSaleRows(
+      const counterOrderLabelByOrderId =
+        view === "counter"
+          ? await loadCounterOrderLabelsBySaleIds(
+              supabase,
+              popId,
+              (saleRows || []) as Array<Record<string, unknown>>,
+            )
+          : new Map<string, string>()
+      let sales = mapSaleRows(
         (saleRows || []) as Array<Record<string, unknown>>,
         methodNameById,
         arcaBySaleId,
         fiscalSiteId,
-        tableLabelBySaleId,
+        tableLabelBySessionId,
+        counterOrderLabelByOrderId,
       )
+
+      if (isChannelGroupedView) {
+        sales = groupChannelOperationSales(
+          sales,
+          view === "tables" ? "table" : "counter",
+        )
+        totalCount = sales.length
+        const totalPages = Math.max(1, Math.ceil(totalCount / pageSize))
+        safePage = Math.min(Math.max(1, reqPage), totalPages)
+        from = (safePage - 1) * pageSize
+        to = from + pageSize - 1
+        sales = sales.slice(from, to + 1)
+      }
 
       return {
         success: true,
@@ -1542,7 +1676,11 @@ async function fetchAccountingEntryDetails(
 
 export async function getOperationAccountingEntries(
   popId: string,
-  input: { view: OperationsListView; operationId: string },
+  input: {
+    view: OperationsListView
+    operationId: string
+    groupedSaleIds?: string[]
+  },
 ): Promise<
   | { success: true; entries: OperationAccountingEntryDetail[] }
   | { success: false; error: string }
@@ -1571,6 +1709,10 @@ export async function getOperationAccountingEntries(
     let entryRows: Array<Record<string, unknown>> = []
 
     if (view === "sales" || view === "tables" || view === "counter") {
+      const saleIds =
+        input.groupedSaleIds && input.groupedSaleIds.length > 0
+          ? input.groupedSaleIds
+          : [operationId]
       const { data, error } = await supabase
         .from("accounting_entries")
         .select(
@@ -1578,7 +1720,7 @@ export async function getOperationAccountingEntries(
         )
         .eq("pop_id", popId)
         .eq("source_type", "sale")
-        .eq("source_id", operationId)
+        .in("source_id", saleIds)
         .neq("status", "cancelled")
         .order("entry_number", { ascending: true })
       if (error) {
@@ -1671,6 +1813,93 @@ export async function getOperationAccountingEntries(
       entryRows,
     )
     return { success: true, entries }
+  } catch (e: unknown) {
+    const message = e instanceof Error ? e.message : "Error desconocido"
+    return { success: false, error: message }
+  }
+}
+
+export async function getChannelOperationTicketDisplay(
+  popId: string,
+  input: {
+    siteId: string
+    tableSessionId?: string | null
+    counterOrderId?: string | null
+  },
+): Promise<
+  | {
+      success: true
+      ticket: ReturnType<typeof buildChannelCheckoutTicketDisplay>
+    }
+  | { success: false; error: string }
+> {
+  try {
+    const access = await validatePopAccess(popId)
+    if (!access.hasAccess || !access.isActive) {
+      return { success: false, error: access.error || "Sin acceso" }
+    }
+
+    const tableSessionId = input.tableSessionId?.trim() || null
+    const counterOrderId = input.counterOrderId?.trim() || null
+    if (!tableSessionId && !counterOrderId) {
+      return { success: false, error: "Operación de canal inválida." }
+    }
+
+    const supabase = await createClient()
+    let metadata: unknown = null
+
+    if (tableSessionId) {
+      const { data, error } = await supabase
+        .from("table_sessions")
+        .select("metadata")
+        .eq("id", tableSessionId)
+        .eq("pop_id", popId)
+        .maybeSingle()
+      if (error || !data) {
+        return {
+          success: false,
+          error: error?.message || "No se encontró la sesión de mesa.",
+        }
+      }
+      metadata = data.metadata
+    } else {
+      const { data, error } = await supabase
+        .from("counter_orders")
+        .select("metadata")
+        .eq("id", counterOrderId!)
+        .eq("pop_id", popId)
+        .maybeSingle()
+      if (error || !data) {
+        return {
+          success: false,
+          error: error?.message || "No se encontró el pedido de mostrador.",
+        }
+      }
+      metadata = data.metadata
+    }
+
+    const checkout = readCheckoutFromSessionMetadata(metadata)
+    if (!checkout?.carrito?.length) {
+      return {
+        success: false,
+        error: "No hay ticket guardado para esta operación.",
+      }
+    }
+
+    const catalog = await getMenuCatalog(popId)
+    if (!catalog.success) {
+      return { success: false, error: catalog.error || "No se pudo cargar el menú." }
+    }
+
+    const ticket = buildChannelCheckoutTicketDisplay({
+      checkout,
+      menuArticles: catalog.articles,
+      menuRecipes: catalog.recipes,
+      menuPromotions: catalog.promotions,
+      menuQuantityDeals: catalog.quantityDeals,
+    })
+
+    return { success: true, ticket }
   } catch (e: unknown) {
     const message = e instanceof Error ? e.message : "Error desconocido"
     return { success: false, error: message }

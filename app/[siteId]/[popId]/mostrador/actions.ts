@@ -226,13 +226,11 @@ function validateCreateInput(input: CreateCounterOrderInput): string | null {
 async function nextOrderNumber(
   supabase: Awaited<ReturnType<typeof createClient>>,
   popId: string,
-  orderDay: string,
 ): Promise<number> {
   const { data } = await supabase
     .from("counter_orders")
     .select("order_number")
     .eq("pop_id", popId)
-    .eq("order_day", orderDay)
     .order("order_number", { ascending: false })
     .limit(1)
     .maybeSingle()
@@ -253,7 +251,6 @@ export async function getCounterOrders(
   }
 
   const { supabase } = gate
-  const today = todayIsoDate()
 
   const { data, error } = await supabase
     .from("counter_orders")
@@ -261,22 +258,16 @@ export async function getCounterOrders(
     .eq("pop_id", popId)
     .neq("status", "cancelled")
     .in("status", ["preparing", "dispatched", "delivered"])
+    .is("sale_id", null)
     .order("opened_at", { ascending: false })
 
   if (error) {
     return { success: false, error: error.message }
   }
 
-  const rows = (data ?? [])
-    .map((row) =>
-      mapCounterOrderRow(row as Parameters<typeof mapCounterOrderRow>[0]),
-    )
-    .filter((o) => {
-      if (o.status !== "delivered") return true
-      if (!o.saleId) return true
-      const deliveredDay = o.deliveredAt?.slice(0, 10)
-      return deliveredDay === today
-    })
+  const rows = (data ?? []).map((row) =>
+    mapCounterOrderRow(row as Parameters<typeof mapCounterOrderRow>[0]),
+  )
 
   return { success: true, orders: rows }
 }
@@ -301,7 +292,7 @@ export async function createCounterOrder(
 
   const { supabase, userId } = gate
   const orderDay = todayIsoDate()
-  const orderNumber = await nextOrderNumber(supabase, popId, orderDay)
+  const orderNumber = await nextOrderNumber(supabase, popId)
   const immediate = Boolean(input.immediateFulfillment)
   const status: CounterOrderStatus = immediate ? "delivered" : "preparing"
   const now = new Date().toISOString()
@@ -555,6 +546,64 @@ export async function cancelCounterOrder(
   }
 
   const { supabase, userId } = gate
+
+  const { data: existing, error: existingErr } = await supabase
+    .from("counter_orders")
+    .select("id, metadata, sale_id, status")
+    .eq("id", orderId)
+    .eq("pop_id", popId)
+    .neq("status", "cancelled")
+    .maybeSingle()
+
+  if (existingErr) {
+    return { success: false, error: existingErr.message }
+  }
+  if (!existing) {
+    return {
+      success: false,
+      error: "No se puede cancelar este pedido (cobrado o inexistente).",
+    }
+  }
+  if (existing.sale_id) {
+    return {
+      success: false,
+      error: "No se puede cancelar un pedido ya cobrado.",
+    }
+  }
+
+  const checkout = readCheckoutFromSessionMetadata(existing.metadata)
+  const totalPagadoAcumulado = checkout?.totalPagadoAcumulado ?? 0
+  const paidPartialUnits = checkout?.paidPartialUnits ?? {}
+  const hasPayment =
+    totalPagadoAcumulado > 0 ||
+    Object.values(paidPartialUnits).some((value) => Number(value) > 0)
+
+  if (hasPayment) {
+    return {
+      success: false,
+      error:
+        "No se puede cancelar un pedido con cobros registrados. Terminá el cobro o cerrá el pedido.",
+    }
+  }
+
+  const { count: salesCount, error: salesCountErr } = await supabase
+    .from("sales")
+    .select("id", { count: "exact", head: true })
+    .eq("pop_id", popId)
+    .eq("counter_order_id", orderId)
+    .eq("status", "completed")
+
+  if (salesCountErr) {
+    return { success: false, error: salesCountErr.message }
+  }
+  if ((salesCount ?? 0) > 0) {
+    return {
+      success: false,
+      error:
+        "No se puede cancelar un pedido con ventas registradas. Cerrá el pedido desde el carrito.",
+    }
+  }
+
   const { data, error } = await supabase
     .from("counter_orders")
     .update({
@@ -648,6 +697,162 @@ export async function saveCounterOrderCheckout(
   }
 
   return { success: true, updatedAt: data.updated_at as string }
+}
+
+export async function closeCounterOrderCheckout(
+  popId: string,
+  routeSiteId: string,
+  orderId: string,
+  mode: "settle" | "release",
+): Promise<{ success: true } | { success: false; error: string; redirect?: string }> {
+  if (mode === "release") {
+    const gate = await requireMostradorAccess(popId, routeSiteId, "update")
+    if (!gate.ok) {
+      return { success: false, error: gate.error, redirect: gate.redirect }
+    }
+    if (!isUuid(orderId)) {
+      return { success: false, error: "Pedido inválido." }
+    }
+
+    const { supabase } = gate
+    const { data: existing, error: existingErr } = await supabase
+      .from("counter_orders")
+      .select("id, metadata, sale_id")
+      .eq("id", orderId)
+      .eq("pop_id", popId)
+      .neq("status", "cancelled")
+      .maybeSingle()
+
+    if (existingErr) {
+      return { success: false, error: existingErr.message }
+    }
+    if (!existing) {
+      return { success: false, error: "El pedido no existe o fue cancelado." }
+    }
+    if (existing.sale_id) {
+      return { success: true }
+    }
+
+    const checkout = readCheckoutFromSessionMetadata(existing.metadata)
+    const carrito = checkout?.carrito ?? []
+    const totalPagadoAcumulado = checkout?.totalPagadoAcumulado ?? 0
+    const paidPartialUnits = checkout?.paidPartialUnits ?? {}
+    const hasItems = carrito.length > 0
+    const hasPayment =
+      totalPagadoAcumulado > 0 ||
+      Object.values(paidPartialUnits).some((value) => Number(value) > 0)
+
+    if (hasItems) {
+      return {
+        success: false,
+        error: "Hay ítems sin cobrar. Cobrá el pedido antes de cerrar.",
+      }
+    }
+    if (hasPayment) {
+      return {
+        success: false,
+        error:
+          "Hay cobros registrados en el pedido. Terminá el cobro antes de cerrar.",
+      }
+    }
+
+    const { count: salesCount, error: salesCountErr } = await supabase
+      .from("sales")
+      .select("id", { count: "exact", head: true })
+      .eq("pop_id", popId)
+      .eq("counter_order_id", orderId)
+      .eq("status", "completed")
+
+    if (salesCountErr) {
+      return { success: false, error: salesCountErr.message }
+    }
+    if ((salesCount ?? 0) > 0) {
+      return {
+        success: false,
+        error:
+          "Hay ventas registradas para este pedido. No se puede liberar sin cerrar el cobro.",
+      }
+    }
+
+    return cancelCounterOrder(popId, routeSiteId, orderId)
+  }
+
+  return finalizeCounterOrder(popId, routeSiteId, orderId)
+}
+
+export async function finalizeCounterOrder(
+  popId: string,
+  routeSiteId: string,
+  orderId: string,
+): Promise<{ success: true } | { success: false; error: string; redirect?: string }> {
+  const gate = await requireMostradorAccess(popId, routeSiteId, "update")
+  if (!gate.ok) {
+    return { success: false, error: gate.error, redirect: gate.redirect }
+  }
+  if (!isUuid(orderId)) {
+    return { success: false, error: "Pedido inválido." }
+  }
+
+  const { supabase } = gate
+
+  const { data: existing, error: existingErr } = await supabase
+    .from("counter_orders")
+    .select("id, sale_id")
+    .eq("id", orderId)
+    .eq("pop_id", popId)
+    .neq("status", "cancelled")
+    .maybeSingle()
+
+  if (existingErr) {
+    return { success: false, error: existingErr.message }
+  }
+  if (!existing) {
+    return { success: false, error: "El pedido no existe o fue cancelado." }
+  }
+  if (existing.sale_id) {
+    return { success: true }
+  }
+
+  const { data: latestSale, error: saleErr } = await supabase
+    .from("sales")
+    .select("id, metadata")
+    .eq("pop_id", popId)
+    .eq("counter_order_id", orderId)
+    .eq("status", "completed")
+    .order("sold_at", { ascending: false })
+    .limit(1)
+    .maybeSingle()
+
+  if (saleErr) {
+    return { success: false, error: saleErr.message }
+  }
+  if (!latestSale?.id) {
+    return {
+      success: false,
+      error: "No hay cobros registrados para cerrar este pedido.",
+    }
+  }
+
+  const metadata =
+    latestSale.metadata &&
+    typeof latestSale.metadata === "object" &&
+    !Array.isArray(latestSale.metadata)
+      ? (latestSale.metadata as Record<string, unknown>)
+      : {}
+  const orderTotal = Number(metadata.channel_order_total)
+  const paidAccumulated = Number(metadata.channel_paid_accumulated)
+  if (
+    Number.isFinite(orderTotal) &&
+    Number.isFinite(paidAccumulated) &&
+    paidAccumulated + 0.009 < orderTotal
+  ) {
+    return {
+      success: false,
+      error: "El pedido aún tiene saldo pendiente de cobro.",
+    }
+  }
+
+  return linkCounterOrderSale(popId, orderId, String(latestSale.id))
 }
 
 export async function linkCounterOrderSale(

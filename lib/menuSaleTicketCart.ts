@@ -37,6 +37,11 @@ import {
   type MenuCartItemKind,
 } from "@/lib/menuCart"
 import type { PromotionCartSelection } from "@/lib/promotionPricing"
+import {
+  cartLineHasPaidUnits,
+  materializePaidCartLines,
+  type PartialPaymentSelection,
+} from "@/lib/partialCheckoutSelection"
 import type { Dispatch, SetStateAction } from "react"
 
 export function saleProductToMenuCatalogProduct(
@@ -148,6 +153,13 @@ export function applyTicketLineEdit(input: {
     setItemComentarios: Dispatch<SetStateAction<Record<string, string>>>
   }
 }) {
+  const sourceLine = input.carrito.find(
+    (item) => resolveCartLineId(item) === input.edit.cartLineId,
+  )
+  if (sourceLine?.paidLocked) {
+    return
+  }
+
   const needsPeel =
     input.edit.cartLineTotalCantidad != null &&
     input.edit.sliceUnits < input.edit.cartLineTotalCantidad &&
@@ -231,6 +243,31 @@ export function applyTicketLineEdit(input: {
   }
 }
 
+export function applyPartialPaymentCartMaterialization(input: {
+  carrito: MenuCartItem[]
+  paidPartialUnits: PartialPaymentSelection
+  setters: {
+    setItemDescuentoModo: Dispatch<
+      SetStateAction<Record<string, "porcentaje" | "fijo">>
+    >
+    setItemDescuentoDraft: Dispatch<SetStateAction<Record<string, string>>>
+    setItemDescuentoSuprimido: Dispatch<SetStateAction<Record<string, true>>>
+    setItemComentarios: Dispatch<SetStateAction<Record<string, string>>>
+  }
+}): { carrito: MenuCartItem[]; paidPartialUnits: PartialPaymentSelection } {
+  const materialized = materializePaidCartLines({
+    carrito: input.carrito,
+    paidPartialUnits: input.paidPartialUnits,
+  })
+  for (const { fromLineId, toLineId } of materialized.overrideCopies) {
+    copyTicketLineOverrides(fromLineId, toLineId, input.setters)
+  }
+  return {
+    carrito: materialized.carrito,
+    paidPartialUnits: materialized.paidPartialUnits,
+  }
+}
+
 export function addProductToTicketCart(input: {
   carrito: MenuCartItem[]
   productoId: string
@@ -241,6 +278,7 @@ export function addProductToTicketCart(input: {
     OperationCartLineOverrideActions,
     "setItemDescuentoModo" | "setItemDescuentoDraft" | "setItemDescuentoSuprimido"
   >
+  paidPartialUnits?: Record<string, number>
 }): MenuCartItem[] {
   const product =
     (input.kindHint
@@ -261,6 +299,7 @@ export function addProductToTicketCart(input: {
     commentFp,
     input.overrides,
     input.productosByKey,
+    input.paidPartialUnits,
   )
   if (mergeTarget) {
     return input.carrito.map((i) =>
@@ -280,10 +319,15 @@ export function addPromotionToTicketCart(input: {
   carrito: MenuCartItem[]
   promotionId: string
   selections: PromotionCartSelection[]
+  paidPartialUnits?: Record<string, number>
 }): MenuCartItem[] {
-  const existe = input.carrito.find((i) =>
-    cartLinesMatchPromotion(i, input.promotionId, input.selections),
-  )
+  const existe = input.carrito.find((i) => {
+    if (i.paidLocked) return false
+    if (cartLineHasPaidUnits(resolveCartLineId(i), i, input.paidPartialUnits ?? {})) {
+      return false
+    }
+    return cartLinesMatchPromotion(i, input.promotionId, input.selections)
+  })
   if (existe) {
     return input.carrito.map((i) =>
       cartLinesMatchPromotion(i, input.promotionId, input.selections)

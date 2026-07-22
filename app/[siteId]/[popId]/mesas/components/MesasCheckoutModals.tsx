@@ -1,6 +1,7 @@
 "use client"
 
 import type { MesasSaleCheckout } from "@/app/[siteId]/[popId]/mesas/useMesasSaleCheckout"
+import { SaleOperationCheckoutConfirmDialog } from "@/components/sale-operation/SaleOperationCheckoutConfirmDialog"
 import {
   AlertDialog,
   AlertDialogAction,
@@ -40,22 +41,36 @@ import {
   saleOpDialogPrimaryBtn,
   saleOpFmt,
   saleOpImporteBaseClass,
-  saleOpImporteTotalClass,
 } from "@/components/sale-operation/saleOperationStyles"
 import { CLIENT_IVA_CONDITION_OPTIONS, type ClientIvaConditionValue } from "@/app/[siteId]/[popId]/clients/clientIvaConstants"
+import { getSaleComprobanteDisplayLabel, hasConfiguredSaleComprobante } from "@/lib/saleComprobantePicker"
 import { cn } from "@/lib/utils"
-import { Banknote, Loader2, Percent, Search } from "lucide-react"
+import { Banknote, Percent, Search } from "lucide-react"
 
 type Props = {
   checkout: Pick<MesasSaleCheckout, "modals" | "submitting">
   confirmLabel?: string
+  contextLabel?: "mesa" | "pedido"
 }
 
 export function MesasCheckoutModals({
   checkout,
   confirmLabel = "Cobrar mesa",
+  contextLabel = "mesa",
 }: Props) {
   const m = checkout.modals
+
+  const confirmClientLabel =
+    m.clienteSeleccionado?.name?.trim() ||
+    m.manualNombreCliente.trim() ||
+    m.ventaPadron.razonSocial.trim() ||
+    "Sin cliente"
+
+  const confirmComprobanteLabel = getSaleComprobanteDisplayLabel(m.comprobante)
+  const confirmHasComprobante = hasConfiguredSaleComprobante(m.comprobante)
+  const confirmPaymentLabel = m.payOnClientAccount
+    ? m.payOnClientAccountLabel
+    : m.metodoPagoSeleccionado?.label ?? "Sin forma de pago"
 
   return (
     <>
@@ -339,54 +354,32 @@ export function MesasCheckoutModals({
         </AlertDialogContent>
       </AlertDialog>
 
-      <AlertDialog
+      <SaleOperationCheckoutConfirmDialog
         open={m.confirmOpen}
-        onOpenChange={(open) => {
-          m.setConfirmOpen(open)
-        }}
-      >
-        <AlertDialogContent className={saleOpAlertDialogContent}>
-          <AlertDialogHeader>
-            <AlertDialogTitle>¿Confirmar cobro de mesa?</AlertDialogTitle>
-            <AlertDialogDescription asChild>
-              <div className="space-y-2 text-muted-foreground">
-                <p>
-                  Total:{" "}
-                  <span className={saleOpImporteTotalClass}>
-                    {saleOpFmt.format(m.total)}
-                  </span>
-                </p>
-                <p className="text-xs">
-                  La operación se registrará como venta de mesa (canal mesa en BD próximamente).
-                </p>
-                {m.submitError ? (
-                  <p className="text-sm text-destructive">{m.submitError}</p>
-                ) : null}
-              </div>
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel disabled={checkout.submitting}>Cancelar</AlertDialogCancel>
-            <AlertDialogAction
-              disabled={checkout.submitting}
-              onClick={(e) => {
-                e.preventDefault()
-                void m.confirmarMesa()
-              }}
-              className={saleOpDialogPrimaryBtn}
-            >
-              {checkout.submitting ? (
-                <>
-                  <Loader2 className="mr-2 size-4 animate-spin" />
-                  Procesando…
-                </>
-              ) : (
-                confirmLabel
-              )}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+        onOpenChange={m.setConfirmOpen}
+        contextLabel={contextLabel}
+        confirmLabel={confirmLabel}
+        submitting={checkout.submitting}
+        submitError={m.submitError}
+        clientLabel={confirmClientLabel}
+        comprobanteLabel={confirmComprobanteLabel}
+        paymentLabel={confirmPaymentLabel}
+        hasComprobante={confirmHasComprobante}
+        imprimirComprobante={m.imprimirComprobante}
+        onImprimirComprobanteChange={m.setImprimirComprobante}
+        total={m.total}
+        subtotal={m.confirmSubtotal}
+        descuentoMonto={m.confirmDescuentoMonto}
+        hayDescuento={m.confirmHayDescuento}
+        partialPayment={m.partialPayment}
+        onPartialPaymentChange={m.setPartialPayment}
+        closeOnComplete={m.closeOnComplete}
+        onCloseOnCompleteChange={m.setCloseOnComplete}
+        partialUnits={m.partialPaymentUnits}
+        partialSelection={m.partialSelection}
+        onPartialSelectionChange={m.setPartialSelection}
+        onConfirm={m.confirmarMesa}
+      />
     </>
   )
 }

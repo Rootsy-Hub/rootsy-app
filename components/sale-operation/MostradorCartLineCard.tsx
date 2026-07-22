@@ -36,13 +36,15 @@ import {
   normalizeCartLineDiscountDraftForApply,
   type MostradorCartLineEditInput,
 } from "@/lib/menuCartLineMerge"
+import { getRowPaymentStatus } from "@/lib/partialCheckoutSelection"
 import { cn } from "@/lib/utils"
-import { Banknote, Hash, MessageSquare, Percent, Trash2 } from "lucide-react"
+import { Banknote, CheckCircle2, Hash, MessageSquare, Percent, Trash2 } from "lucide-react"
 import { useRef, useState, type ReactNode } from "react"
 
 type Props = {
   row: MostradorCartDisplayRow
   overrides: OperationCartLineOverrideState
+  paidPartialUnits?: Record<string, number>
   onApplyEdits: (input: MostradorCartLineEditInput) => void
   onRemove: () => void
   grouped?: boolean
@@ -98,9 +100,11 @@ function EditSection({
 export function MostradorCartLineCard({
   row,
   overrides,
+  paidPartialUnits = {},
   onApplyEdits,
   onRemove,
 }: Props) {
+  const paymentStatus = getRowPaymentStatus(row, paidPartialUnits)
   const {
     itemDescuentoModo,
     itemDescuentoDraft,
@@ -155,7 +159,13 @@ export function MostradorCartLineCard({
 
   const productoDescripcion = productDescriptionForMostradorRow(row)
 
+  const isCartLineLocked =
+    row.paidLocked === true ||
+    paymentStatus.isFullyPaid ||
+    paymentStatus.isPartiallyPaid
+
   const openModal = () => {
+    if (isCartLineLocked) return
     baselineCantidadRef.current = row.cantidad
     setQuantityDraft(row.cantidad)
     initialCommentRef.current = comentario
@@ -214,55 +224,96 @@ export function MostradorCartLineCard({
     closeModal()
   }
 
-  return (
-    <>
-      <div className="w-full">
-        <button
-          type="button"
-          onClick={openModal}
-          className={cn(
-            "grid w-full grid-cols-[2.25rem_minmax(0,1fr)_auto] items-start gap-x-3 px-3 py-2.5 text-left transition-colors",
-            "hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-slate-300/80",
-          )}
-          aria-label={`Editar ${row.nombre}`}
-        >
-          <span className="pt-0.5 text-sm font-bold tabular-nums text-slate-900">
-            {row.cantidad}
-          </span>
+  const rowGridClass =
+    "grid w-full grid-cols-[2.25rem_minmax(0,1fr)_auto] items-start gap-x-3 px-3 py-2.5 text-left"
 
-          <span className="min-w-0">
-            <span className="block text-sm font-semibold leading-snug text-slate-900">
-              {row.nombre}
+  const rowContent = (
+    <>
+      <span className="pt-0.5 text-sm font-bold tabular-nums text-slate-900">
+        {row.cantidad}
+      </span>
+
+      <span className="min-w-0">
+        <span className="flex items-center gap-1.5">
+          <span
+            className={cn(
+              "block text-sm font-semibold leading-snug text-slate-900",
+              paymentStatus.isFullyPaid && "line-through decoration-emerald-600/50",
+            )}
+          >
+            {row.nombre}
+          </span>
+          {paymentStatus.isFullyPaid ? (
+            <span className="inline-flex items-center gap-0.5 rounded-full bg-emerald-100 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-emerald-800">
+              <CheckCircle2 className="size-3" aria-hidden />
+              Pagado
             </span>
-            {productoDescripcion ? (
-              <span className="mt-0.5 block truncate text-xs leading-snug text-slate-500">
-                {productoDescripcion}
+          ) : paymentStatus.isPartiallyPaid ? (
+            <span className="inline-flex rounded-full bg-emerald-100 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-emerald-800">
+              {paymentStatus.paidQuantity} pagado
+            </span>
+          ) : null}
+        </span>
+        {productoDescripcion ? (
+          <span className="mt-0.5 block truncate text-xs leading-snug text-slate-500">
+            {productoDescripcion}
+          </span>
+        ) : null}
+      </span>
+
+      <span className="pt-0.5 text-right">
+        {showPrice ? (
+          <>
+            {tieneDescuentoVisual ? (
+              <span
+                className={cn(
+                  saleOpImporteCartMutedClass,
+                  "block text-[10px] line-through",
+                )}
+              >
+                {saleOpFmt.format(pricing.precioBase)}
               </span>
             ) : null}
-          </span>
+            <span className={saleOpImporteCartClass}>
+              {saleOpFmt.format(pricing.precioFinal)}
+            </span>
+          </>
+        ) : (
+          <span className="text-sm font-medium text-slate-400">—</span>
+        )}
+      </span>
+    </>
+  )
 
-          <span className="pt-0.5 text-right">
-            {showPrice ? (
-              <>
-                {tieneDescuentoVisual ? (
-                  <span
-                    className={cn(
-                      saleOpImporteCartMutedClass,
-                      "block text-[10px] line-through",
-                    )}
-                  >
-                    {saleOpFmt.format(pricing.precioBase)}
-                  </span>
-                ) : null}
-                <span className={saleOpImporteCartClass}>
-                  {saleOpFmt.format(pricing.precioFinal)}
-                </span>
-              </>
-            ) : (
-              <span className="text-sm font-medium text-slate-400">—</span>
+  return (
+    <>
+      <div
+        className={cn(
+          "w-full",
+          paymentStatus.isFullyPaid && "bg-emerald-50/70",
+          paymentStatus.isPartiallyPaid && "bg-emerald-50/35",
+        )}
+      >
+        {isCartLineLocked ? (
+          <div
+            className={cn(rowGridClass, paymentStatus.isFullyPaid && "opacity-70")}
+            aria-label={`${row.nombre} (pagado)`}
+          >
+            {rowContent}
+          </div>
+        ) : (
+          <button
+            type="button"
+            onClick={openModal}
+            className={cn(
+              rowGridClass,
+              "transition-colors hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-slate-300/80",
             )}
-          </span>
-        </button>
+            aria-label={`Editar ${row.nombre}`}
+          >
+            {rowContent}
+          </button>
+        )}
 
         {tieneComentario ? (
           <div className="border-t border-dashed border-slate-200/80 bg-slate-50/80 px-3 py-2">
@@ -278,7 +329,7 @@ export function MostradorCartLineCard({
       </div>
 
       <Dialog
-        open={open}
+        open={open && !isCartLineLocked}
         onOpenChange={(next) => {
           if (!next) closeModal()
         }}

@@ -392,6 +392,8 @@ export function buildMenuCartTotalsLines(input: {
   itemDescuentoModo: Record<string, "porcentaje" | "fijo">
   itemDescuentoDraft: Record<string, string>
   itemDescuentoSuprimido: Record<string, true>
+  /** Líneas cuyas unidades parciales deben cobrarse como regulares (sin qty-deal). */
+  regularOnlyLineKeys?: Set<string>
 }): MenuCartTotalsLine[] {
   const lines: MenuCartTotalsLine[] = []
 
@@ -421,10 +423,12 @@ export function buildMenuCartTotalsLines(input: {
     }
 
     const deal = input.quantityDealDiscounts.get(lineKey)
-    const dealUnits = Math.min(
-      item.cantidad,
-      quantityDealUnitsOnLine(lineKey, input.quantityDealApplications),
-    )
+    const dealUnits = input.regularOnlyLineKeys?.has(lineKey)
+      ? 0
+      : Math.min(
+          item.cantidad,
+          quantityDealUnitsOnLine(lineKey, input.quantityDealApplications),
+        )
     const regularUnits = Math.max(0, item.cantidad - dealUnits)
 
     if (dealUnits > 0) {

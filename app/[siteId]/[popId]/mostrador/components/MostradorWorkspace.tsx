@@ -10,7 +10,6 @@ import type { MostradorRightPanelView } from "@/app/[siteId]/[popId]/mostrador/m
 import { useMostradorSaleCheckout } from "@/app/[siteId]/[popId]/mostrador/useMostradorSaleCheckout"
 import { useMostradorState } from "@/app/[siteId]/[popId]/mostrador/useMostradorState"
 import { SaleOperationToolbox } from "@/components/sale-operation/SaleOperationToolbox"
-import { cn } from "@/lib/utils"
 import { useEffect, useState } from "react"
 
 type Props = {
@@ -74,7 +73,6 @@ export function MostradorWorkspace({
   }, [onRegisterStartCreateOrder, selectOrder])
 
   const orderLabel = selectedOrder ? `#${selectedOrder.orderNumber}` : null
-  const showRightPanelTabs = Boolean(selectedOrder)
 
   return (
     <div className="dark relative flex h-full min-h-0 w-full flex-col overflow-hidden bg-[#070a09] text-white">
@@ -113,21 +111,14 @@ export function MostradorWorkspace({
         </div>
 
         <aside
-          className={cn(
-            "rootsy-app-light col-start-2 row-span-2 grid min-h-0 overflow-hidden bg-[#eef1f5] text-[#121417]",
-            showRightPanelTabs
-              ? "grid-rows-[auto_minmax(0,1fr)]"
-              : "grid-rows-[minmax(0,1fr)]",
-          )}
+          className="rootsy-app-light col-start-2 row-span-2 grid min-h-0 grid-rows-[auto_minmax(0,1fr)] overflow-hidden bg-[#eef1f5] text-[#121417]"
           aria-label="Panel de pedido"
         >
-          {showRightPanelTabs ? (
-            <MostradorRightPanelTabs
-              value={rightView}
-              onChange={setRightView}
-              cartDisabled={!selectedOrder}
-            />
-          ) : null}
+          <MostradorRightPanelTabs
+            value={rightView}
+            onChange={setRightView}
+            cartDisabled={!selectedOrder}
+          />
 
           <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
             {rightView === "detail" ? (
@@ -144,6 +135,12 @@ export function MostradorWorkspace({
                 onUpdateOrder={patchOrder}
                 onMoveOrder={moveOrderStatus}
                 onCancelOrder={cancelOrder}
+                canCancelOrder={checkout.puedeCancelarPedido}
+                canCloseOrder={checkout.puedeCerrarPedido}
+                closeOrderBlockReason={checkout.cerrarPedidoBlockReason}
+                closeOrderMode={checkout.cerrarPedidoMode}
+                closeOrderLoading={checkout.submitting}
+                onCloseOrder={async () => checkout.cerrarPedido()}
                 clientLabel={checkout.sessionClientLabel}
               />
             ) : (
@@ -153,7 +150,7 @@ export function MostradorWorkspace({
         </aside>
       </main>
 
-      <MesasCheckoutModals checkout={checkout} confirmLabel="Cobrar pedido" />
+      <MesasCheckoutModals checkout={checkout} confirmLabel="Cobrar pedido" contextLabel="pedido" />
     </div>
   )
 }

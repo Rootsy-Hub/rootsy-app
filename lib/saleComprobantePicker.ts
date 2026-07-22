@@ -66,6 +66,12 @@ export function getSaleComprobanteDisplayLabel(value: string | null): string {
   return value ?? SALE_COMPROBANTE_SIN_LABEL
 }
 
+export function hasConfiguredSaleComprobante(
+  value: string | null | undefined,
+): boolean {
+  return value != null && value.trim() !== ""
+}
+
 export function getSaleComprobantePickerOptions(
   siteId: string,
 ): SaleComprobantePickerOption[] {

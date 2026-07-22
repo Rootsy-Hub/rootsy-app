@@ -124,6 +124,7 @@ function OperationsPage() {
   const [accountingTarget, setAccountingTarget] = useState<{
     view: OperationsViewId
     operationId: string
+    groupedSaleIds?: string[]
     subtitle: string
   } | null>(null)
 
@@ -312,6 +313,7 @@ function OperationsPage() {
       setAccountingTarget({
         view,
         operationId: sale.id,
+        groupedSaleIds: sale.groupedSaleIds,
         subtitle: `${sale.customerName ?? "Consumidor final"} · ${when}`,
       })
     },
@@ -640,6 +642,7 @@ function OperationsPage() {
                 selected={selected}
                 onSelectedChange={setSelected}
                 showTableColumn={activeView === "tables"}
+                showOrderColumn={activeView === "counter"}
                 onOpenAccounting={(sale) =>
                   openSaleAccounting(
                     sale,
@@ -682,6 +685,7 @@ function OperationsPage() {
         popId={popId}
         view={accountingTarget?.view ?? "sales"}
         operationId={accountingTarget?.operationId ?? null}
+        groupedSaleIds={accountingTarget?.groupedSaleIds}
         subtitle={accountingTarget?.subtitle}
         open={accountingTarget != null}
         onOpenChange={(open) => {

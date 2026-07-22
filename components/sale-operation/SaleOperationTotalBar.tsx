@@ -25,6 +25,8 @@ export type SaleOperationTotalBarProps = {
   /** Total descontado por promociones (combo + cantidad). */
   promocionesAplicadasMonto?: number
   promocionesAplicadasCount?: number
+  /** Suma acumulada de pagos parciales en la sesión/pedido. */
+  totalPagado?: number
   className?: string
   flush?: boolean
 }
@@ -46,6 +48,7 @@ export function SaleOperationTotalBar({
   hayDescuentoCatalogo = false,
   promocionesAplicadasMonto = 0,
   promocionesAplicadasCount = 0,
+  totalPagado = 0,
   className,
   flush = false,
 }: SaleOperationTotalBarProps) {
@@ -55,8 +58,13 @@ export function SaleOperationTotalBar({
     hayDescuentoItems ?? hayDescuentoCatalogo ?? itemsDiscountAmount > 0
   const showGeneralDiscount = hayDescuento && descuentoMonto > 0
   const showPromociones = promocionesAplicadasMonto > 0
+  const showPagado = totalPagado > 0
   const showSubtotalBreakdown =
-    showItemsDiscount || showGeneralDiscount || showPromociones || subtotalOriginal > subtotal
+    showItemsDiscount ||
+    showGeneralDiscount ||
+    showPromociones ||
+    showPagado ||
+    subtotalOriginal > subtotal
 
   const subtotalDisplay =
     subtotalOriginal > 0 ? subtotalOriginal : subtotal
@@ -123,6 +131,16 @@ export function SaleOperationTotalBar({
                 </span>
                 <p className={cn(saleOpImporteTotalDiscountClass, amountColumnClass)}>
                   −{saleOpFmt.format(descuentoMonto)}
+                </p>
+              </>
+            ) : null}
+            {showPagado ? (
+              <>
+                <span className={cn(breakdownLabelClass, "self-center")}>
+                  Pagado
+                </span>
+                <p className={cn(saleOpImporteTotalDiscountClass, amountColumnClass)}>
+                  {saleOpFmt.format(totalPagado)}
                 </p>
               </>
             ) : null}

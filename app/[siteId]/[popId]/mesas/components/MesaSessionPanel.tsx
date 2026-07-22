@@ -15,7 +15,8 @@ import {
   clientDialogSurface,
 } from "@/app/[siteId]/[popId]/clients/ClientUpsertFormFields"
 import { DataWorkspaceTableIconAction } from "@/components/data-workspace/DataWorkspaceListTablePrimitives"
-import { saleOpDialogDestructiveBtn } from "@/components/sale-operation/saleOperationStyles"
+import { saleOpDialogPrimaryBtn } from "@/components/sale-operation/saleOperationStyles"
+import type { ChannelCloseMode } from "@/lib/channelCheckoutClose"
 import { Button } from "@/components/ui/button"
 import {
   Dialog,
@@ -25,7 +26,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
-import { Input } from "@/components/ui/input"
 import { formatDistanceToNow } from "date-fns"
 import { es } from "date-fns/locale"
 import {
@@ -36,8 +36,6 @@ import {
 } from "lucide-react"
 import { useMemo, useState } from "react"
 import { cn } from "@/lib/utils"
-
-const MESA_CLOSE_CONFIRM_PHRASE = "CERRAR MESA"
 
 type Props = {
   table: MesaTable | null
@@ -51,7 +49,11 @@ type Props = {
     sessionId: string,
     input: MesaOpenSessionInput,
   ) => Promise<boolean> | boolean
-  onCloseSession: (sessionId: string) => Promise<boolean> | boolean
+  onCloseSession: () => Promise<boolean> | boolean
+  canCloseSession?: boolean
+  closeSessionBlockReason?: string | null
+  closeSessionMode?: ChannelCloseMode | null
+  closeSessionLoading?: boolean
   clientLabel?: string | null
 }
 
@@ -73,11 +75,14 @@ export function MesaSessionPanel({
   onOpenSession,
   onUpdateSession,
   onCloseSession,
+  canCloseSession = false,
+  closeSessionBlockReason = null,
+  closeSessionMode = null,
+  closeSessionLoading = false,
   clientLabel,
 }: Props) {
   const [editing, setEditing] = useState(false)
   const [closeDialogOpen, setCloseDialogOpen] = useState(false)
-  const [closeTyped, setCloseTyped] = useState("")
   const [closeBusy, setCloseBusy] = useState(false)
 
   const closeDialogTitle = useMemo(() => {
@@ -87,18 +92,12 @@ export function MesaSessionPanel({
     return table ? `Mesa ${table.label}` : "esta mesa"
   }, [sessionTables, table])
 
-  const resetCloseDialog = () => {
-    setCloseDialogOpen(false)
-    setCloseTyped("")
-  }
-
   const confirmCloseSession = async () => {
-    if (!session || closeBusy) return
-    if (closeTyped.trim() !== MESA_CLOSE_CONFIRM_PHRASE) return
+    if (closeBusy || !canCloseSession) return
     setCloseBusy(true)
     try {
-      const ok = await onCloseSession(session.id)
-      if (ok) resetCloseDialog()
+      const ok = await onCloseSession()
+      if (ok) setCloseDialogOpen(false)
     } finally {
       setCloseBusy(false)
     }
@@ -129,6 +128,8 @@ export function MesaSessionPanel({
 
   const isOpen = session != null && table.status !== "free"
   const title = sessionTitle(table, sessionTables)
+  const closeButtonLabel =
+    closeSessionMode === "release" ? "Liberar mesa" : "Cerrar mesa"
 
   return (
     <div className="flex min-h-0 flex-1 flex-col overflow-y-auto">
@@ -236,11 +237,23 @@ export function MesaSessionPanel({
             <Button
               type="button"
               variant="ghost"
-              className="h-12 w-full rounded-none border-0 text-rose-700 hover:bg-rose-50 hover:text-rose-800"
+              disabled={!canCloseSession || closeSessionLoading}
+              title={closeSessionBlockReason ?? undefined}
               onClick={() => setCloseDialogOpen(true)}
+              className={cn(
+                "h-12 w-full rounded-none border-0",
+                canCloseSession
+                  ? "text-emerald-700 hover:bg-emerald-50 hover:text-emerald-800"
+                  : "cursor-not-allowed text-slate-400 opacity-70",
+              )}
             >
-              Cerrar mesa
+              {closeSessionLoading ? "Cerrando…" : closeButtonLabel}
             </Button>
+            {!canCloseSession && closeSessionBlockReason ? (
+              <p className="border-t border-slate-200/90 px-3 py-2 text-xs leading-relaxed text-amber-800">
+                {closeSessionBlockReason}
+              </p>
+            ) : null}
           </div>
 
           <div className="flex items-center gap-2 border-b border-slate-200/90 bg-slate-50/80 px-3 py-2.5 text-xs text-slate-500">
@@ -250,13 +263,7 @@ export function MesaSessionPanel({
         </>
       ) : null}
 
-      <Dialog
-        open={closeDialogOpen}
-        onOpenChange={(open) => {
-          if (!open) resetCloseDialog()
-          else setCloseDialogOpen(true)
-        }}
-      >
+      <Dialog open={closeDialogOpen} onOpenChange={setCloseDialogOpen}>
         <DialogContent
           data-rootsy-light-shell="true"
           showCloseButton
@@ -264,45 +271,37 @@ export function MesaSessionPanel({
         >
           <DialogHeader className={clientDialogHeaderClass}>
             <DialogTitle className="text-base font-semibold tracking-tight">
-              ¿Cerrar mesa?
+              {closeSessionMode === "release"
+                ? "¿Liberar mesa?"
+                : "¿Cerrar mesa?"}
             </DialogTitle>
             <DialogDescription className="text-sm leading-relaxed">
-              Se eliminarán todos los pedidos de la mesa. Esta acción no se
-              puede deshacer.
+              {closeSessionMode === "release"
+                ? "No hay ítems ni cobros pendientes. La mesa quedará libre."
+                : "El pedido está completamente cobrado. La mesa quedará libre."}
             </DialogDescription>
           </DialogHeader>
           <div className={clientDialogBodyClass}>
             <p className="text-sm text-muted-foreground">
               Vas a cerrar{" "}
               <strong className="text-foreground">{closeDialogTitle}</strong>.
-              ¿Estás seguro?
             </p>
-            <p className="mt-3 text-sm text-muted-foreground">
-              Para confirmar, escribí{" "}
-              <strong className="text-foreground">
-                {MESA_CLOSE_CONFIRM_PHRASE}
-              </strong>{" "}
-              abajo.
-            </p>
-            <Input
-              autoComplete="off"
-              value={closeTyped}
-              onChange={(e) => setCloseTyped(e.target.value)}
-              placeholder={MESA_CLOSE_CONFIRM_PHRASE}
-              className="mt-4 bg-background"
-            />
           </div>
           <DialogFooter className={clientDialogFooterClass}>
-            <Button type="button" variant="outline" onClick={resetCloseDialog}>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setCloseDialogOpen(false)}
+            >
               Cancelar
             </Button>
             <Button
               type="button"
-              className={saleOpDialogDestructiveBtn}
-              disabled={closeTyped.trim() !== MESA_CLOSE_CONFIRM_PHRASE || closeBusy}
+              className={saleOpDialogPrimaryBtn}
+              disabled={closeBusy || closeSessionLoading}
               onClick={() => void confirmCloseSession()}
             >
-              {closeBusy ? "Cerrando…" : "Cerrar mesa"}
+              {closeBusy || closeSessionLoading ? "Cerrando…" : closeButtonLabel}
             </Button>
           </DialogFooter>
         </DialogContent>

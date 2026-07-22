@@ -18,6 +18,7 @@ export function buildCompleteSaleLinesFromCart(input: {
   itemDescuentoDraft: Record<string, string>
   itemDescuentoSuprimido: Record<string, true>
   itemComentarios: Record<string, string>
+  regularOnlyLineKeys?: Set<string>
 }): CompleteSaleLineInput[] {
   const lines: CompleteSaleLineInput[] = []
 
@@ -29,10 +30,12 @@ export function buildCompleteSaleLinesFromCart(input: {
     const itemDiscountMode = input.itemDescuentoModo[lineKey] ?? "porcentaje"
     const comment = input.itemComentarios[lineKey]?.trim() ?? ""
     const deal = input.quantityDealDiscounts.get(lineKey)
-    const dealUnits = Math.min(
-      item.cantidad,
-      quantityDealUnitsOnLine(lineKey, input.quantityDealApplications),
-    )
+    const dealUnits = input.regularOnlyLineKeys?.has(lineKey)
+      ? 0
+      : Math.min(
+          item.cantidad,
+          quantityDealUnitsOnLine(lineKey, input.quantityDealApplications),
+        )
     const regularUnits = Math.max(0, item.cantidad - dealUnits)
 
     if (kind === "promotion") {

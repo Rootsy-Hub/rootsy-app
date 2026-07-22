@@ -24,22 +24,44 @@ export function MesasOrderPanel({ checkout, tableLabel }: Props) {
     hayDescuentoItems,
     promocionesAplicadasMonto,
     promocionesAplicadasCount,
+    paidPartialUnits,
+    totalPagadoAcumulado,
     cartLineOverrides,
+    puedeCerrarMesa,
+    cerrarMesa,
+    cerrarMesaMode,
+    puedeRegistrar,
   } = checkout
+
+  const confirmLabel =
+    puedeCerrarMesa && cerrarMesaMode === "release"
+      ? "Liberar mesa"
+      : puedeCerrarMesa
+        ? "Cerrar mesa"
+        : "Cobrar mesa"
+  const confirmDisabled = puedeCerrarMesa ? !puedeCerrarMesa : !puedeRegistrar
+  const confirmTitle = puedeCerrarMesa
+    ? cerrarMesaMode === "release"
+      ? "No hay ítems ni cobros pendientes. Podés liberar la mesa."
+      : "Todo el pedido está cobrado. Podés cerrar la mesa."
+    : !puedeRegistrar
+      ? "Completá el pedido, pago y mesa abierta."
+      : undefined
 
   return (
     <SaleOperationTicketOrderPanel
       cartDisplayRows={cartDisplayRows}
       cartLineOverrides={cartLineOverrides}
+      paidPartialUnits={paidPartialUnits}
       aplicarEdicionLineaTicket={aplicarEdicionLineaTicket}
       cambiarCantidadPorLinea={cambiarCantidadPorLinea}
       quitarQuantityDealApplication={quitarQuantityDealApplication}
       actions={{
         ...actions,
-        confirmLabel: "Cobrar mesa",
-        confirmTitle: !checkout.puedeRegistrar
-          ? "Completá el pedido, pago y mesa abierta."
-          : undefined,
+        confirmLabel,
+        confirmDisabled,
+        confirmTitle,
+        onConfirm: puedeCerrarMesa ? () => void cerrarMesa() : actions.onConfirm,
       }}
       totalBar={{
         total,
@@ -51,6 +73,7 @@ export function MesasOrderPanel({ checkout, tableLabel }: Props) {
         hayDescuentoItems,
         promocionesAplicadasMonto,
         promocionesAplicadasCount,
+        totalPagado: totalPagadoAcumulado,
       }}
       listTitle="Pedido"
       listSubtitle={tableLabel ? `Mesa ${tableLabel}` : undefined}

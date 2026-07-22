@@ -1272,6 +1272,133 @@ export async function closeTableSession(
   return { success: true }
 }
 
+export async function closeTableSessionCheckout(
+  popId: string,
+  routeSiteId: string,
+  sessionId: string,
+  mode: "settle" | "release",
+): Promise<
+  | { success: true }
+  | { success: false; error: string; redirect?: string }
+> {
+  const gate = await requireMesasAccess(popId, routeSiteId, "update")
+  if (!gate.ok) {
+    return { success: false, error: gate.error, redirect: gate.redirect }
+  }
+  if (!isUuid(sessionId)) {
+    return { success: false, error: "Sesión inválida." }
+  }
+
+  const { supabase } = gate
+
+  const { data: session, error: sessionErr } = await supabase
+    .from("table_sessions")
+    .select("id, metadata, status")
+    .eq("id", sessionId)
+    .eq("pop_id", popId)
+    .eq("status", "open")
+    .maybeSingle()
+
+  if (sessionErr) {
+    return { success: false, error: sessionErr.message }
+  }
+  if (!session) {
+    return { success: false, error: "La sesión no está abierta o no existe." }
+  }
+
+  const checkout = readCheckoutFromSessionMetadata(session.metadata)
+  const carrito = checkout?.carrito ?? []
+  const totalPagadoAcumulado = checkout?.totalPagadoAcumulado ?? 0
+  const paidPartialUnits = checkout?.paidPartialUnits ?? {}
+  const hasItems = carrito.length > 0
+  const hasPayment =
+    totalPagadoAcumulado > 0 ||
+    Object.values(paidPartialUnits).some((value) => Number(value) > 0)
+
+  const { count: salesCount, error: salesCountErr } = await supabase
+    .from("sales")
+    .select("id", { count: "exact", head: true })
+    .eq("pop_id", popId)
+    .eq("table_session_id", sessionId)
+    .eq("status", "completed")
+
+  if (salesCountErr) {
+    return { success: false, error: salesCountErr.message }
+  }
+
+  if (mode === "release") {
+    if (hasItems) {
+      return {
+        success: false,
+        error: "Hay ítems sin cobrar. Cobrá el pedido antes de cerrar.",
+      }
+    }
+    if (hasPayment) {
+      return {
+        success: false,
+        error:
+          "Hay cobros registrados en la mesa. Terminá el cobro antes de cerrar.",
+      }
+    }
+    if ((salesCount ?? 0) > 0) {
+      return {
+        success: false,
+        error:
+          "Hay ventas registradas para esta mesa. No se puede liberar sin cerrar el cobro.",
+      }
+    }
+    return closeTableSession(popId, routeSiteId, sessionId, "closed")
+  }
+
+  if (!hasItems) {
+    return {
+      success: false,
+      error: "No hay ítems en el pedido para cerrar.",
+    }
+  }
+
+  const { data: latestSale, error: saleErr } = await supabase
+    .from("sales")
+    .select("id, metadata")
+    .eq("pop_id", popId)
+    .eq("table_session_id", sessionId)
+    .eq("status", "completed")
+    .order("sold_at", { ascending: false })
+    .limit(1)
+    .maybeSingle()
+
+  if (saleErr) {
+    return { success: false, error: saleErr.message }
+  }
+  if (!latestSale?.id) {
+    return {
+      success: false,
+      error: "No hay cobros registrados para cerrar esta mesa.",
+    }
+  }
+
+  const metadata =
+    latestSale.metadata &&
+    typeof latestSale.metadata === "object" &&
+    !Array.isArray(latestSale.metadata)
+      ? (latestSale.metadata as Record<string, unknown>)
+      : {}
+  const orderTotal = Number(metadata.channel_order_total)
+  const paidAccumulated = Number(metadata.channel_paid_accumulated)
+  if (
+    Number.isFinite(orderTotal) &&
+    Number.isFinite(paidAccumulated) &&
+    paidAccumulated + 0.009 < orderTotal
+  ) {
+    return {
+      success: false,
+      error: "La mesa aún tiene saldo pendiente de cobro.",
+    }
+  }
+
+  return closeTableSession(popId, routeSiteId, sessionId, "closed")
+}
+
 export async function saveTableSessionCheckout(
   popId: string,
   routeSiteId: string,

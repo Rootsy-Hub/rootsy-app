@@ -54,6 +54,8 @@ export type MostradorCartDisplayRow = {
   hidePrice?: boolean
   /** Precios fijos para vistas read-only (detalle de venta). */
   readOnlyPricing?: MostradorCartGroupPricing
+  /** Línea del carrito ya cobrada; solo lectura en el ticket. */
+  paidLocked?: boolean
 }
 
 export type MostradorCartGroupPricing = {
@@ -101,6 +103,7 @@ export type MostradorCartDetailItem = {
   cantidad: number
   producto: MenuCatalogProduct | null
   promotionSelections?: PromotionCartSelection[]
+  paidLocked?: boolean
 }
 
 function discountCloudLabel(
@@ -269,6 +272,7 @@ export function buildMostradorCartDisplayRows(input: {
   for (const item of input.items) {
     const lineId = item.lineId
     const comment = cartLineCommentFingerprint(lineId, input.overrides)
+    const itemPaidLocked = item.paidLocked === true
 
     if (item.kind === "promotion" && item.promotionSelections?.length) {
       const promoMeta = item.producto?.promotionMeta
@@ -309,6 +313,7 @@ export function buildMostradorCartDisplayRows(input: {
               discountEditingDisabled: true,
               commentEditingDisabled: false,
               showGreenBorder: true,
+              paidLocked: itemPaidLocked,
             })
           }
         }
@@ -375,6 +380,7 @@ export function buildMostradorCartDisplayRows(input: {
         discountEditingDisabled: false,
         commentEditingDisabled: false,
         showGreenBorder: cloud.variant === "discount",
+        paidLocked: itemPaidLocked,
       })
     }
   }
@@ -638,6 +644,7 @@ export function cartDetailItemsFromCarrito(
     cantidad: number
     producto: MenuCatalogProduct | null
     promotionSelections?: PromotionCartSelection[]
+    paidLocked?: boolean
   }>,
 ): MostradorCartDetailItem[] {
   return items.map((item) => ({
@@ -653,6 +660,7 @@ export function cartDetailItemsFromCarrito(
     cantidad: item.cantidad,
     producto: item.producto,
     promotionSelections: item.promotionSelections,
+    paidLocked: item.paidLocked,
   }))
 }
 

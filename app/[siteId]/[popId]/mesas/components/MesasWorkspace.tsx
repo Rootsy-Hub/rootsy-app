@@ -73,7 +73,7 @@ export function MesasWorkspace({
     persistLayoutItem,
     openSession,
     updateSession,
-    closeSession,
+    reloadSessions,
     freeTablesInSalon,
   } = useMesasState(popId, siteId)
 
@@ -87,6 +87,7 @@ export function MesasWorkspace({
           updatedAt: selectedSession.updatedAt,
         }
       : null,
+    { onSessionClose: () => void reloadSessions() },
   )
 
   const [rightView, setRightView] = useState<MesasRightPanelView>("session")
@@ -305,7 +306,11 @@ export function MesasWorkspace({
               sessionError={sessionError}
               onOpenSession={openSession}
               onUpdateSession={updateSession}
-              onCloseSession={closeSession}
+              onCloseSession={() => checkout.cerrarMesa()}
+              canCloseSession={checkout.puedeCerrarMesa}
+              closeSessionBlockReason={checkout.cerrarMesaBlockReason}
+              closeSessionMode={checkout.cerrarMesaMode}
+              closeSessionLoading={checkout.submitting}
               clientLabel={checkout.sessionClientLabel}
             />
           ) : (

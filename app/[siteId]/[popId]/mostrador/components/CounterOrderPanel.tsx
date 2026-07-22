@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 import { formatDistanceToNow } from "date-fns"
 import { es } from "date-fns/locale"
+import type { ChannelCloseMode } from "@/lib/channelCheckoutClose"
 import { Monitor, Package } from "lucide-react"
 import { useState } from "react"
 
@@ -28,6 +29,12 @@ type Props = {
     status: CounterOrder["status"],
   ) => Promise<boolean> | boolean
   onCancelOrder: (orderId: string) => Promise<boolean> | boolean
+  canCancelOrder?: boolean
+  onCloseOrder?: () => Promise<boolean> | boolean
+  canCloseOrder?: boolean
+  closeOrderBlockReason?: string | null
+  closeOrderMode?: ChannelCloseMode | null
+  closeOrderLoading?: boolean
   clientLabel?: string | null
 }
 
@@ -39,6 +46,12 @@ export function CounterOrderPanel({
   onCreateOrder,
   onMoveOrder,
   onCancelOrder,
+  canCancelOrder = true,
+  onCloseOrder,
+  canCloseOrder = false,
+  closeOrderBlockReason = null,
+  closeOrderMode = null,
+  closeOrderLoading = false,
   clientLabel,
 }: Props) {
   const [busy, setBusy] = useState(false)
@@ -84,6 +97,9 @@ export function CounterOrderPanel({
       setBusy(false)
     }
   }
+
+  const closeButtonLabel =
+    closeOrderMode === "release" ? "Liberar pedido" : "Cerrar pedido"
 
   return (
     <div className="flex min-h-0 flex-1 flex-col overflow-y-auto">
@@ -151,20 +167,41 @@ export function CounterOrderPanel({
               <dd className="text-slate-800">{order.notes}</dd>
             </div>
           ) : null}
-          {order.status === "delivered" ? (
-            <div>
-              <dt className="text-xs font-semibold uppercase text-slate-500">
-                Pago
-              </dt>
-              <dd className={order.isPaid ? "text-emerald-700" : "text-amber-700"}>
-                {order.isPaid ? "Pagado" : "Sin pagar"}
-              </dd>
-            </div>
-          ) : null}
+          <div>
+            <dt className="text-xs font-semibold uppercase text-slate-500">
+              Pago
+            </dt>
+            <dd className={order.isPaid ? "text-emerald-700" : "text-amber-700"}>
+              {order.isPaid ? "Pagado" : "Sin pagar"}
+            </dd>
+          </div>
         </dl>
       </div>
 
       <div className="grid gap-0 border-b border-slate-200/90 bg-white">
+        {onCloseOrder ? (
+          <>
+            <Button
+              type="button"
+              disabled={!canCloseOrder || busy || closeOrderLoading || order.isPaid}
+              title={closeOrderBlockReason ?? undefined}
+              onClick={() => void run(onCloseOrder)}
+              className={cn(
+                "h-12 w-full rounded-none border-0 border-b border-slate-200/90",
+                canCloseOrder && !order.isPaid
+                  ? "bg-emerald-600 text-white hover:bg-emerald-500"
+                  : "cursor-not-allowed bg-slate-100 text-slate-400",
+              )}
+            >
+              {closeOrderLoading ? "Cerrando…" : closeButtonLabel}
+            </Button>
+            {!canCloseOrder && closeOrderBlockReason && !order.isPaid ? (
+              <p className="border-b border-slate-200/90 px-3 py-2 text-xs leading-relaxed text-amber-800">
+                {closeOrderBlockReason}
+              </p>
+            ) : null}
+          </>
+        ) : null}
         {order.status === "preparing" && order.fulfillmentType === "delivery" ? (
           <Button
             type="button"
@@ -190,7 +227,12 @@ export function CounterOrderPanel({
           <Button
             type="button"
             variant="ghost"
-            disabled={busy}
+            disabled={busy || !canCancelOrder}
+            title={
+              !canCancelOrder
+                ? "No se puede cancelar un pedido con cobros registrados."
+                : undefined
+            }
             onClick={() => void run(() => onCancelOrder(order.id))}
             className={cn(
               "h-12 w-full rounded-none border-0 text-rose-700 hover:bg-rose-50 hover:text-rose-800",

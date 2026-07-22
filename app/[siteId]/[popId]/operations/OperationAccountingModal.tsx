@@ -221,6 +221,7 @@ export function OperationAccountingModal({
   popId,
   view,
   operationId,
+  groupedSaleIds,
   subtitle,
   open,
   onOpenChange,
@@ -228,6 +229,7 @@ export function OperationAccountingModal({
   popId: string
   view: OperationsListView
   operationId: string | null
+  groupedSaleIds?: string[]
   subtitle?: string
   open: boolean
   onOpenChange: (open: boolean) => void
@@ -241,14 +243,18 @@ export function OperationAccountingModal({
     setLoading(true)
     setError(null)
     setEntries([])
-    const res = await getOperationAccountingEntries(popId, { view, operationId })
+    const res = await getOperationAccountingEntries(popId, {
+      view,
+      operationId,
+      groupedSaleIds,
+    })
     setLoading(false)
     if (!res.success) {
       setError(res.error)
       return
     }
     setEntries(res.entries)
-  }, [popId, view, operationId])
+  }, [popId, view, operationId, groupedSaleIds])
 
   useEffect(() => {
     if (!open || !operationId) return

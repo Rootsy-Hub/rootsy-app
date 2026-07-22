@@ -544,6 +544,16 @@ export type CompleteSaleInput = {
   tableSessionId?: string | null
   /** Venta asociada a un pedido de mostrador (canal counter). */
   counterOrderId?: string | null
+  /** Si true, cierra la sesión de mesa al completar (default true). */
+  closeTableSession?: boolean
+  /** Si true, vincula la venta al pedido de mostrador (default true). */
+  linkCounterOrder?: boolean
+  /** Total del pedido/mesa al momento del cobro (incluye pendiente). */
+  channelOrderTotal?: number
+  /** Total acumulado cobrado en el pedido/mesa tras este cobro. */
+  channelPaidAccumulated?: number
+  /** Cobro parcial de mesa/mostrador (no cierra sesión/pedido). */
+  isPartialChannelPayment?: boolean
 }
 
 export async function completeSale(
@@ -1266,6 +1276,20 @@ export async function completeSale(
       metadata.customer_iva_condition = customerIvaCondition
     }
 
+    if (tableSessionId || counterOrderId) {
+      if (input.channelOrderTotal != null) {
+        metadata.channel_order_total = roundMoney(input.channelOrderTotal)
+      }
+      if (input.channelPaidAccumulated != null) {
+        metadata.channel_paid_accumulated = roundMoney(
+          input.channelPaidAccumulated,
+        )
+      }
+      if (input.isPartialChannelPayment === true) {
+        metadata.partial_channel_payment = true
+      }
+    }
+
     const quantityDealSummaries = summarizeQuantityDealsFromLines(linesIn)
     if (quantityDealSummaries.length > 0) {
       metadata.quantity_deal_applications = quantityDealSummaries.map((d) => ({
@@ -1551,7 +1575,22 @@ export async function completeSale(
       return { success: false, error: compErr.message || "No se pudo completar la venta." }
     }
 
-    if (tableSessionId) {
+    const channelFullyPaid =
+      input.channelOrderTotal != null &&
+      input.channelPaidAccumulated != null &&
+      input.channelPaidAccumulated + 0.009 >= input.channelOrderTotal
+
+    const shouldCloseTableSession =
+      tableSessionId &&
+      (input.closeTableSession === true ||
+        (input.isPartialChannelPayment === true && channelFullyPaid))
+
+    const shouldLinkCounterOrder =
+      counterOrderId &&
+      (input.linkCounterOrder === true ||
+        (input.isPartialChannelPayment === true && channelFullyPaid))
+
+    if (tableSessionId && shouldCloseTableSession) {
       const { error: closeSessionErr } = await supabase
         .from("table_sessions")
         .update({
@@ -1573,7 +1612,7 @@ export async function completeSale(
       }
     }
 
-    if (counterOrderId) {
+    if (counterOrderId && shouldLinkCounterOrder) {
       const { error: linkOrderErr } = await supabase
         .from("counter_orders")
         .update({ sale_id: saleId })

@@ -127,6 +127,27 @@ function resolveTotalsFromSale(sale: OperationSaleRow) {
   const listSubtotal = roundMoney(
     sale.lineItems.reduce((sum, line) => sum + resolveListLineTotal(line), 0),
   )
+
+  const channelTotal = sale.channelOrderTotal ?? null
+  const useChannelTotals =
+    channelTotal != null &&
+    (sale.isChannelGrouped || sale.status === "partial")
+
+  if (useChannelTotals) {
+    return {
+      listSubtotal,
+      promoDiscount: sale.discountInfo.quantityDealApplications.reduce(
+        (sum, d) => sum + d.discountAmount,
+        0,
+      ),
+      catalogDiscount: 0,
+      manualDiscount: sale.discountInfo.itemDiscountTotal,
+      generalDiscount: sale.discountInfo.generalDiscountAmount,
+      taxTotal: sale.taxTotal,
+      total: channelTotal,
+    }
+  }
+
   const snapshot = sale.snapshotInfo.totals
   if (snapshot) {
     return {
@@ -274,16 +295,40 @@ export function SaleDetailTicketView({ sale }: { sale: OperationSaleRow }) {
           value={saleOpFmt.format(totals.total)}
           emphasize
         />
+        {sale.channelPaidTotal != null &&
+        sale.channelOrderTotal != null &&
+        sale.channelPaidTotal + 0.009 < sale.channelOrderTotal ? (
+          <SaleDetailTotalsRow
+            label="Pagado"
+            value={saleOpFmt.format(sale.channelPaidTotal)}
+          />
+        ) : null}
         {sale.accruesOutputVat ? (
           <SaleDetailTotalsRow
             label="IVA"
             value={totals.taxTotal > 0 ? saleOpFmt.format(totals.taxTotal) : "—"}
           />
         ) : null}
-        <SaleDetailTotalsRow
-          label="Forma de pago"
-          value={sale.paymentMethodLabel}
-        />
+        {sale.payments.length > 1 ? (
+          <>
+            <div className="my-2 border-t border-border/60" />
+            <p className="mb-1 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+              Cobros
+            </p>
+            {sale.payments.map((payment, index) => (
+              <SaleDetailTotalsRow
+                key={`${payment.methodName}-${index}`}
+                label={payment.methodName}
+                value={saleOpFmt.format(payment.amount)}
+              />
+            ))}
+          </>
+        ) : (
+          <SaleDetailTotalsRow
+            label="Forma de pago"
+            value={sale.paymentMethodLabel}
+          />
+        )}
       </div>
     </>
   )

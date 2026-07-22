@@ -9,6 +9,7 @@ import { SaleOperationTotalBar } from "@/components/sale-operation/SaleOperation
 import { groupMostradorCartDisplayRows } from "@/lib/mostradorCartDisplay"
 import type { MostradorCartDisplayRow } from "@/lib/mostradorCartDisplay"
 import type { MostradorCartLineEditInput } from "@/lib/menuCartLineMerge"
+import { getRowPaymentStatus } from "@/lib/partialCheckoutSelection"
 import { useMemo } from "react"
 
 type ActionsProps = React.ComponentProps<typeof SaleOperationActionsBar>
@@ -17,6 +18,7 @@ type TotalProps = React.ComponentProps<typeof SaleOperationTotalBar>
 type Props = {
   cartDisplayRows: MostradorCartDisplayRow[]
   cartLineOverrides: OperationCartLineOverrideState
+  paidPartialUnits?: Record<string, number>
   aplicarEdicionLineaTicket: (input: MostradorCartLineEditInput) => void
   cambiarCantidadPorLinea: (lineId: string, delta: number) => void
   quitarQuantityDealApplication: (applicationId: string) => void
@@ -32,6 +34,7 @@ type Props = {
 export function SaleOperationTicketOrderPanel({
   cartDisplayRows,
   cartLineOverrides,
+  paidPartialUnits = {},
   aplicarEdicionLineaTicket,
   cambiarCantidadPorLinea,
   quitarQuantityDealApplication,
@@ -73,8 +76,20 @@ export function SaleOperationTicketOrderPanel({
                   key={row.rowKey}
                   row={row}
                   overrides={cartLineOverrides}
+                  paidPartialUnits={paidPartialUnits}
                   onApplyEdits={aplicarEdicionLineaTicket}
                   onRemove={() => {
+                    const paymentStatus = getRowPaymentStatus(
+                      row,
+                      paidPartialUnits,
+                    )
+                    if (
+                      row.paidLocked ||
+                      paymentStatus.isFullyPaid ||
+                      paymentStatus.isPartiallyPaid
+                    ) {
+                      return
+                    }
                     if (row.variant === "combo_component") {
                       cambiarCantidadPorLinea(row.cartLineId, -1)
                       return

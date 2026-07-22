@@ -162,7 +162,7 @@ function KanbanOrderCard({
         <OrderCardContent
           order={order}
           selected={selected}
-          showPayment={columnId === "delivered"}
+          showPayment
         />
       </button>
     </li>
@@ -338,7 +338,7 @@ export function MostradorBoard({
           <div className="w-[220px] rounded-xl border border-emerald-400/50 bg-[#2a323c] px-3 py-3 shadow-xl">
             <OrderCardContent
               order={draggingOrder}
-              showPayment={draggingOrder.status === "delivered"}
+              showPayment
             />
           </div>
         ) : null}

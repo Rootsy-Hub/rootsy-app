@@ -7,6 +7,7 @@ export type MesasCartItem = {
   cantidad: number
   kind?: MenuCartItemKind
   promotionSelections?: PromotionCartSelection[]
+  paidLocked?: boolean
 }
 
 export type MesasClienteSeleccionado = {
@@ -34,6 +35,10 @@ export type TableSessionCheckoutSnapshot = {
   itemDescuentoDraft?: Record<string, string>
   itemDescuentoSuprimido?: Record<string, true>
   itemComentarios?: Record<string, string>
+  /** Unidades ya cobradas en pagos parciales (clave → cantidad). */
+  paidPartialUnits?: Record<string, number>
+  /** Suma acumulada de pagos parciales en esta sesión/pedido. */
+  totalPagadoAcumulado?: number
 }
 
 export function emptyTableSessionCheckout(
@@ -117,6 +122,7 @@ function parseCartItem(v: unknown): MesasCartItem | null {
     cantidad: Math.round(cantidad),
     ...(kind ? { kind } : {}),
     ...(promotionSelections ? { promotionSelections } : {}),
+    ...(v.paidLocked === true ? { paidLocked: true } : {}),
   }
 }
 
@@ -207,7 +213,21 @@ export function parseTableSessionCheckout(
     itemDescuentoDraft: parseStringRecord(raw.itemDescuentoDraft),
     itemDescuentoSuprimido: parseSuprimidoRecord(raw.itemDescuentoSuprimido),
     itemComentarios: parseStringRecord(raw.itemComentarios),
+    paidPartialUnits: parseNumericRecord(raw.paidPartialUnits),
+    totalPagadoAcumulado: Number.isFinite(Number(raw.totalPagadoAcumulado))
+      ? Math.max(0, Number(raw.totalPagadoAcumulado))
+      : 0,
   }
+}
+
+function parseNumericRecord(v: unknown): Record<string, number> | undefined {
+  if (!isRecord(v)) return undefined
+  const out: Record<string, number> = {}
+  for (const [k, val] of Object.entries(v)) {
+    const n = Number(val)
+    if (Number.isFinite(n) && n > 0) out[k] = n
+  }
+  return Object.keys(out).length > 0 ? out : undefined
 }
 
 export function readCheckoutFromSessionMetadata(
