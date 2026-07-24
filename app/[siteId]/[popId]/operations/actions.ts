@@ -13,6 +13,7 @@ import {
 } from "@/lib/saleInvoiceTypes"
 import { saleComprobanteAccruesOutputVat } from "@/lib/saleComprobantePicker"
 import { resolveOperationPaymentMethodLabel } from "@/lib/operationPaymentLabels"
+import { operationPaymentKindLabel } from "@/lib/operationPaymentKinds"
 import {
   groupChannelOperationSales,
   parseChannelSaleMetadata,
@@ -602,7 +603,9 @@ const SALE_LIST_SELECT = `
         sale_payments (
           amount,
           sort_order,
-          payment_method_id
+          payment_kind,
+          treasury_account_id,
+          treasury_accounts ( name )
         )
       `
 
@@ -626,7 +629,9 @@ const PURCHASE_LIST_SELECT = `
         purchase_payments (
           amount,
           paid_at,
-          payment_method_id
+          payment_kind,
+          treasury_account_id,
+          treasury_accounts ( name )
         )
       `
 
@@ -840,9 +845,24 @@ async function loadCounterOrderLabelsBySaleIds(
   return loadCounterOrderLabelsByOrderIds(supabase, popId, orderIds)
 }
 
+function formatTreasuryPaymentLabel(p: {
+  payment_kind?: unknown
+  treasury_accounts?:
+    | { name?: string }
+    | Array<{ name?: string }>
+    | null
+}): string {
+  const kind =
+    p.payment_kind != null ? String(p.payment_kind).trim() : ""
+  const ta = relOne(p.treasury_accounts)
+  const taName = ta?.name?.trim() || ""
+  const kindLabel = kind ? operationPaymentKindLabel(kind) : ""
+  if (kindLabel && taName) return `${kindLabel} — ${taName}`
+  return kindLabel || taName || "—"
+}
+
 function mapSaleRows(
   saleRows: Array<Record<string, unknown>>,
-  methodNameById: Map<string, string>,
   arcaBySaleId: Map<string, OperationSaleArcaInvoice>,
   fiscalSiteId: string,
   tableLabelBySessionId: Map<string, string> = new Map(),
@@ -854,7 +874,11 @@ function mapSaleRows(
       | Array<{
           amount?: unknown
           sort_order?: unknown
-          payment_method_id?: unknown
+          payment_kind?: unknown
+          treasury_accounts?:
+            | { name?: string }
+            | Array<{ name?: string }>
+            | null
         }>
       | null
     const payments: OperationSalePayment[] = []
@@ -863,11 +887,9 @@ function mapSaleRows(
       (a, b) => Number(a.sort_order ?? 0) - Number(b.sort_order ?? 0),
     )
     for (const p of payList) {
-      const mid =
-        p.payment_method_id != null ? String(p.payment_method_id) : ""
       payments.push({
         amount: parseMoney(p.amount),
-        methodName: methodNameById.get(mid) || "—",
+        methodName: formatTreasuryPaymentLabel(p),
       })
     }
 
@@ -920,7 +942,6 @@ function mapSaleRows(
 
 function mapPurchaseRows(
   purchaseRows: Array<Record<string, unknown>>,
-  methodNameById: Map<string, string>,
 ): OperationPurchaseRow[] {
   return purchaseRows.map((row) => {
     const sup = row.suppliers as { name?: string } | null
@@ -947,7 +968,11 @@ function mapPurchaseRows(
       | Array<{
           amount?: unknown
           paid_at?: unknown
-          payment_method_id?: unknown
+          payment_kind?: unknown
+          treasury_accounts?:
+            | { name?: string }
+            | Array<{ name?: string }>
+            | null
         }>
       | null
     const payments: OperationPurchasePayment[] = []
@@ -959,11 +984,9 @@ function mapPurchaseRows(
     for (const p of payList) {
       const amt = parseMoney(p.amount)
       paidTotal = Math.round((paidTotal + amt) * 100) / 100
-      const mid =
-        p.payment_method_id != null ? String(p.payment_method_id) : ""
       payments.push({
         amount: amt,
-        methodName: methodNameById.get(mid) || "—",
+        methodName: formatTreasuryPaymentLabel(p),
         paidAt: String(p.paid_at ?? "").slice(0, 10),
       })
     }
@@ -1014,7 +1037,8 @@ async function mapExpenseLedgerRows(
     amount: unknown
     paid_at: unknown
     expense_id: unknown
-    payment_methods: { name?: string } | null
+    payment_kind?: unknown
+    treasury_accounts?: { name?: string } | null
     expenses: {
       id?: string
       amount?: unknown
@@ -1033,7 +1057,8 @@ async function mapExpenseLedgerRows(
           amount,
           paid_at,
           expense_id,
-          payment_methods ( name ),
+          payment_kind,
+          treasury_accounts ( name ),
           expenses (
             id,
             amount,
@@ -1072,19 +1097,19 @@ async function mapExpenseLedgerRows(
       const category = expenseRaw
         ? relOne(expenseRaw.expense_categories)
         : null
-      const method = relOne(
-        row.payment_methods as
-          | { name?: string }
-          | Array<{ name?: string }>
-          | null
-          | undefined,
-      )
       paymentById.set(String(row.id), {
         id: String(row.id),
         amount: row.amount,
         paid_at: row.paid_at,
         expense_id: row.expense_id,
-        payment_methods: method,
+        payment_kind: row.payment_kind,
+        treasury_accounts: relOne(
+          row.treasury_accounts as
+            | { name?: string }
+            | Array<{ name?: string }>
+            | null
+            | undefined,
+        ),
         expenses: expenseRaw
           ? {
               id: expenseRaw.id,
@@ -1130,10 +1155,12 @@ async function mapExpenseLedgerRows(
     const amount = parseMoney(payment?.amount)
     const expenseAmount =
       expense?.amount != null ? parseMoney(expense.amount) : null
-    const methodName = payment?.payment_methods?.name?.trim() || ""
     const paymentMethodLabel = isVoid
       ? "—"
-      : methodName || "—"
+      : formatTreasuryPaymentLabel({
+          payment_kind: payment?.payment_kind,
+          treasury_accounts: payment?.treasury_accounts,
+        })
 
     return {
       entryId: String(row.id),
@@ -1237,15 +1264,6 @@ export async function getOperationsList(
         : "America/Argentina/Buenos_Aires"
 
     const supabase = await createClient()
-
-    const { data: pmRows } = await supabase
-      .from("payment_methods")
-      .select("id, name")
-      .eq("pop_id", popId)
-    const methodNameById = new Map<string, string>()
-    for (const p of pmRows || []) {
-      methodNameById.set(String(p.id), String(p.name ?? ""))
-    }
 
     const { dateFrom, dateTo, search, view } = input
     const searchTerm = search.trim()
@@ -1372,7 +1390,6 @@ export async function getOperationsList(
           : new Map<string, string>()
       let sales = mapSaleRows(
         (saleRows || []) as Array<Record<string, unknown>>,
-        methodNameById,
         arcaBySaleId,
         fiscalSiteId,
         tableLabelBySessionId,
@@ -1470,7 +1487,6 @@ export async function getOperationsList(
 
       const purchases = mapPurchaseRows(
         (purchaseRows || []) as Array<Record<string, unknown>>,
-        methodNameById,
       )
 
       return {

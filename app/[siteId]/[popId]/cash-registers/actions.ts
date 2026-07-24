@@ -25,6 +25,11 @@ import {
   uploadCashRegisterArcaPemFiles,
 } from "@/lib/rootsyAfipStorage"
 import { createClient } from "@/utils/supabase/server"
+import {
+  OPERATION_PAYMENT_KINDS,
+  operationPaymentKindLabel,
+  type OperationPaymentKind,
+} from "@/lib/operationPaymentKinds"
 
 /** Totales del turno abierto en la tarjeta de caja (y coherente con el arqueo). */
 export type CashRegisterOpenSessionTotals = {
@@ -39,11 +44,17 @@ export type CashRegisterOpenSessionTotals = {
   cobrosPorMedio: { name: string; kind: string; total: number }[] | null
 }
 
+export type CashTreasuryAccountOption = {
+  id: string
+  name: string
+}
+
 export type CashRegisterRow = {
   id: string
   name: string
   sortOrder: number
   isActive: boolean
+  cashTreasuryAccountId: string | null
   openSessionId: string | null
   /** Efectivo teórico en cajón si hay turno abierto (apertura + ventas efectivo + cajón). */
   cashBalance: number | null
@@ -59,10 +70,8 @@ export type CashRegisterRow = {
 }
 
 export type PaymentMethodOption = {
-  id: string
-  name: string
-  sortOrder: number
-  kind: string
+  kind: OperationPaymentKind
+  label: string
 }
 
 export type ClosingSnapshot = {
@@ -113,7 +122,7 @@ export type CashRegisterSummarySale = {
 }
 
 export type CashRegisterArqueoVentaPorMedio = {
-  paymentMethodId: string
+  paymentKind: string
   name: string
   kind: string
   /** Suma de cobros en ventas completadas (esta caja, histórico). */
@@ -212,14 +221,6 @@ async function computeEfectivoTeoricoSession(
     return { success: false, error: "La sesión no está abierta." }
   }
   const openingCash = parseAmount(sess.opening_cash)
-  const { data: pmRows } = await supabase
-    .from("payment_methods")
-    .select("id, kind")
-    .eq("pop_id", popId)
-  const pmKinds = new Map<string, string>()
-  for (const p of pmRows || []) {
-    pmKinds.set(String(p.id), String(p.kind ?? "other"))
-  }
   const { data: saleRows } = await supabase
     .from("sales")
     .select("id")
@@ -231,12 +232,11 @@ async function computeEfectivoTeoricoSession(
   if (saleIds.length > 0) {
     const { data: osp } = await supabase
       .from("sale_payments")
-      .select("payment_method_id, amount")
+      .select("payment_kind, amount")
       .eq("pop_id", popId)
       .in("sale_id", saleIds)
     for (const row of osp || []) {
-      const kind = pmKinds.get(String(row.payment_method_id))
-      if (kind === "cash") {
+      if (String(row.payment_kind) === "cash") {
         ventasEfectivo += parseAmount(row.amount)
       }
     }
@@ -340,31 +340,20 @@ async function loadCobrosTurnoPorMedio(
   if (saleIds.length === 0) {
     return { totalCobrado: 0, porMedio: [] }
   }
-  const { data: pmMeta } = await supabase
-    .from("payment_methods")
-    .select("id, name, kind")
-    .eq("pop_id", popId)
-  const pmNames = new Map<string, string>()
-  const pmKinds = new Map<string, string>()
-  for (const p of pmMeta || []) {
-    const id = String(p.id)
-    pmNames.set(id, String(p.name ?? ""))
-    pmKinds.set(id, String(p.kind ?? "other"))
-  }
   const { data: spRows } = await supabase
     .from("sale_payments")
-    .select("payment_method_id, amount")
+    .select("payment_kind, amount")
     .eq("pop_id", popId)
     .in("sale_id", saleIds)
   const sums = new Map<string, number>()
   for (const row of spRows || []) {
-    const pid = String(row.payment_method_id)
-    sums.set(pid, (sums.get(pid) ?? 0) + parseAmount(row.amount))
+    const kind = String(row.payment_kind ?? "other")
+    sums.set(kind, (sums.get(kind) ?? 0) + parseAmount(row.amount))
   }
   const porMedio = [...sums.entries()]
-    .map(([paymentMethodId, total]) => ({
-      name: pmNames.get(paymentMethodId) ?? paymentMethodId,
-      kind: pmKinds.get(paymentMethodId) ?? "other",
+    .map(([kind, total]) => ({
+      name: operationPaymentKindLabel(kind),
+      kind,
       total: Math.round(total * 100) / 100,
     }))
     .sort((a, b) => a.name.localeCompare(b.name, "es"))
@@ -376,6 +365,7 @@ export async function getCashRegistersPageData(popId: string): Promise<
       success: true
       popName: string
       registers: CashRegisterRow[]
+      cashTreasuryAccounts: CashTreasuryAccountOption[]
       paymentMethods: PaymentMethodOption[]
       canRead: boolean
       canCreate: boolean
@@ -424,7 +414,7 @@ export async function getCashRegistersPageData(popId: string): Promise<
     const { data: regs, error: regErr } = await supabase
       .from("cash_registers")
       .select(
-        "id, name, sort_order, is_active, arca_pto_vta, arca_certificate_secret_name, arca_certificate_last_four, arca_certificate_expires_at, arca_certificate_crt_uploaded_at, arca_certificate_key_uploaded_at",
+        "id, name, sort_order, is_active, cash_treasury_account_id, arca_pto_vta, arca_certificate_secret_name, arca_certificate_last_four, arca_certificate_expires_at, arca_certificate_crt_uploaded_at, arca_certificate_key_uploaded_at",
       )
       .eq("pop_id", popId)
       .order("sort_order", { ascending: true })
@@ -500,6 +490,10 @@ export async function getCashRegistersPageData(popId: string): Promise<
         name: String(r.name ?? ""),
         sortOrder: Number(r.sort_order ?? 0) || 0,
         isActive: Boolean(r.is_active),
+        cashTreasuryAccountId:
+          r.cash_treasury_account_id != null
+            ? String(r.cash_treasury_account_id)
+            : null,
         openSessionId,
         cashBalance,
         openedAt,
@@ -530,25 +524,35 @@ export async function getCashRegistersPageData(popId: string): Promise<
             : null,
       })
     }
-    let paymentMethods: PaymentMethodOption[] = []
-    const { data: pmRows } = await supabase
-      .from("payment_methods")
-      .select("id, name, sort_order, kind")
+    const { data: cashTaRows, error: cashTaErr } = await supabase
+      .from("treasury_accounts")
+      .select("id, name, sort_order")
       .eq("pop_id", popId)
+      .eq("kind", "cash")
       .eq("is_active", true)
       .order("sort_order", { ascending: true })
-    if (pmRows) {
-      paymentMethods = pmRows.map((p) => ({
-        id: String(p.id),
-        name: String(p.name ?? ""),
-        sortOrder: Number(p.sort_order ?? 0) || 0,
-        kind: String(p.kind ?? "other"),
-      }))
+      .order("name", { ascending: true })
+    if (cashTaErr) {
+      return {
+        success: false,
+        error: cashTaErr.message || "Could not load cash treasury accounts.",
+      }
     }
+    const cashTreasuryAccounts: CashTreasuryAccountOption[] = (
+      cashTaRows || []
+    ).map((row) => ({
+      id: String(row.id),
+      name: String(row.name ?? ""),
+    }))
+
+    const paymentMethods: PaymentMethodOption[] = OPERATION_PAYMENT_KINDS.filter(
+      (k) => k.value !== "cash",
+    ).map((k) => ({ kind: k.value, label: k.label }))
     return {
       success: true,
       popName,
       registers,
+      cashTreasuryAccounts,
       paymentMethods,
       canRead,
       canCreate,
@@ -563,7 +567,7 @@ export async function getCashRegistersPageData(popId: string): Promise<
 
 export async function createCashRegister(
   popId: string,
-  input: { name: string; sortOrder: number },
+  input: { name: string; sortOrder: number; cashTreasuryAccountId: string },
 ): Promise<{ success: true } | { success: false; error: string }> {
   try {
     const access = await validatePopAccess(popId)
@@ -588,12 +592,17 @@ export async function createCashRegister(
     if (!Number.isFinite(sortOrder)) {
       return { success: false, error: "Invalid sort order." }
     }
+    const cashTreasuryAccountId = input.cashTreasuryAccountId.trim()
+    if (!/^[0-9a-f-]{36}$/i.test(cashTreasuryAccountId)) {
+      return { success: false, error: "Elegí una cuenta de efectivo destino." }
+    }
     const supabase = await createClient()
     const { error } = await supabase.from("cash_registers").insert({
       pop_id: popId,
       name,
       sort_order: sortOrder,
       is_active: true,
+      cash_treasury_account_id: cashTreasuryAccountId,
     })
     if (error) {
       return { success: false, error: error.message || "Could not create." }
@@ -612,6 +621,7 @@ export async function updateCashRegister(
     name: string
     sortOrder: number
     isActive: boolean
+    cashTreasuryAccountId: string
     arcaPtoVta: number | null
     arcaCertificateSecretName: string | null
     arcaCertificateLastFour: string | null
@@ -649,6 +659,10 @@ export async function updateCashRegister(
     ) {
       return { success: false, error: "Punto de venta inválido (0–99999)." }
     }
+    const cashTreasuryAccountId = input.cashTreasuryAccountId.trim()
+    if (!/^[0-9a-f-]{36}$/i.test(cashTreasuryAccountId)) {
+      return { success: false, error: "Elegí una cuenta de efectivo destino." }
+    }
     const supabase = await createClient()
     const secretTrim = input.arcaCertificateSecretName?.trim() ?? ""
     const lastFourTrim = input.arcaCertificateLastFour?.trim() ?? ""
@@ -661,6 +675,7 @@ export async function updateCashRegister(
         name,
         sort_order: sortOrder,
         is_active: input.isActive,
+        cash_treasury_account_id: cashTreasuryAccountId,
         arca_pto_vta: pto,
         arca_certificate_secret_name: secretTrim.length > 0 ? secretTrim : null,
         arca_certificate_last_four: lastFourTrim.length > 0 ? lastFourTrim : null,
@@ -850,6 +865,22 @@ export async function openCashSession(
     } = await supabase.auth.getUser()
     if (!user?.id) {
       return { success: false, error: "Not authenticated." }
+    }
+    const { data: regRow, error: regErr } = await supabase
+      .from("cash_registers")
+      .select("id, cash_treasury_account_id")
+      .eq("id", registerId)
+      .eq("pop_id", popId)
+      .maybeSingle()
+    if (regErr || !regRow?.id) {
+      return { success: false, error: "Caja no encontrada." }
+    }
+    if (!regRow.cash_treasury_account_id) {
+      return {
+        success: false,
+        error:
+          "Configurá la cuenta de efectivo destino en esta caja antes de abrir el turno.",
+      }
     }
     const noteTrim = openingNote?.trim() ?? ""
     const { error } = await supabase.from("cash_register_sessions").insert({
@@ -1187,12 +1218,9 @@ export async function addCashMovement(
   }
 }
 
-function paymentMethodLabel(
-  id: string,
-  methods: Map<string, string>,
-): string {
+function paymentMethodLabel(id: string): string {
   if (id === "__cash_counted") return "Efectivo (contado al cierre)"
-  return methods.get(id) ?? id
+  return operationPaymentKindLabel(id)
 }
 
 export async function getCashRegisterSummary(
@@ -1231,17 +1259,6 @@ export async function getCashRegisterSummary(
       return { success: false, error: "Register not found." }
     }
     const registerName = String(reg.name ?? "")
-    const { data: pmRows } = await supabase
-      .from("payment_methods")
-      .select("id, name, kind")
-      .eq("pop_id", popId)
-    const pmNames = new Map<string, string>()
-    const pmKinds = new Map<string, string>()
-    for (const p of pmRows || []) {
-      const id = String(p.id)
-      pmNames.set(id, String(p.name ?? ""))
-      pmKinds.set(id, String(p.kind ?? "other"))
-    }
     const { data: sessRows, error: sessErr } = await supabase
       .from("cash_register_sessions")
       .select(
@@ -1333,7 +1350,7 @@ export async function getCashRegisterSummary(
       const cs = sess.closingSnapshot
       const lines: { label: string; amount: number }[] = [
         {
-          label: paymentMethodLabel("__cash_counted", pmNames),
+          label: paymentMethodLabel("__cash_counted"),
           amount: cs.cash,
         },
       ]
@@ -1341,7 +1358,7 @@ export async function getCashRegisterSummary(
       agg.set(keyCash, (agg.get(keyCash) ?? 0) + cs.cash)
       for (const [pid, amt] of Object.entries(cs.payment_methods)) {
         lines.push({
-          label: paymentMethodLabel(pid, pmNames),
+          label: paymentMethodLabel(pid),
           amount: amt,
         })
         agg.set(pid, (agg.get(pid) ?? 0) + amt)
@@ -1356,14 +1373,14 @@ export async function getCashRegisterSummary(
     const aggregatedClosingLines: { label: string; amount: number }[] = []
     if (agg.has("__agg_cash")) {
       aggregatedClosingLines.push({
-        label: paymentMethodLabel("__cash_counted", pmNames),
+        label: paymentMethodLabel("__cash_counted"),
         amount: Math.round((agg.get("__agg_cash") ?? 0) * 100) / 100,
       })
     }
     for (const [pid, total] of agg) {
       if (pid === "__agg_cash") continue
       aggregatedClosingLines.push({
-        label: paymentMethodLabel(pid, pmNames),
+        label: paymentMethodLabel(pid),
         amount: Math.round(total * 100) / 100,
       })
     }
@@ -1385,19 +1402,19 @@ export async function getCashRegisterSummary(
       if (saleIdList.length > 0) {
         const { data: spRows } = await supabase
           .from("sale_payments")
-          .select("payment_method_id, amount")
+          .select("payment_kind, amount")
           .eq("pop_id", popId)
           .in("sale_id", saleIdList)
         const sums = new Map<string, number>()
         for (const row of spRows || []) {
-          const pid = String(row.payment_method_id)
-          sums.set(pid, (sums.get(pid) ?? 0) + parseAmount(row.amount))
+          const kind = String(row.payment_kind ?? "other")
+          sums.set(kind, (sums.get(kind) ?? 0) + parseAmount(row.amount))
         }
         ventasPorMedioPago = [...sums.entries()]
-          .map(([paymentMethodId, total]) => ({
-            paymentMethodId,
-            name: pmNames.get(paymentMethodId) ?? paymentMethodId,
-            kind: pmKinds.get(paymentMethodId) ?? "other",
+          .map(([paymentKind, total]) => ({
+            paymentKind,
+            name: operationPaymentKindLabel(paymentKind),
+            kind: paymentKind,
             totalVentas: Math.round(total * 100) / 100,
           }))
           .sort((a, b) => a.name.localeCompare(b.name, "es"))
@@ -1420,12 +1437,11 @@ export async function getCashRegisterSummary(
         if (osIdList.length > 0) {
           const { data: osp } = await supabase
             .from("sale_payments")
-            .select("payment_method_id, amount")
+            .select("payment_kind, amount")
             .eq("pop_id", popId)
             .in("sale_id", osIdList)
           for (const row of osp || []) {
-            const kind = pmKinds.get(String(row.payment_method_id))
-            if (kind === "cash") {
+            if (String(row.payment_kind) === "cash") {
               ventasEfectivo += parseAmount(row.amount)
             }
           }

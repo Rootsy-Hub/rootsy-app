@@ -1,0 +1,24 @@
+{
+  "savedAt": "2026-07-23",
+  "note": "Respaldo de isotipos en uso antes de probar íconos de Google Play.",
+  "brands": {
+    "galicia": "galicia.png",
+    "santander": "santander.jpg",
+    "bbva": "bbva.jpg",
+    "macro": "macro.png",
+    "nacion": "nacion.jpg",
+    "provincia": "provincia.png",
+    "ciudad": "ciudad.svg",
+    "supervielle": "supervielle.png",
+    "patagonia": "patagonia.jpg",
+    "icbc": "icbc.png",
+    "mercadopago": "mercadopago.jpg",
+    "personal_pay": "personal_pay.svg",
+    "modo": "modo.svg",
+    "astropay": "astropay.jpg",
+    "uala": "uala.svg",
+    "naranja_x": "naranja_x.jpg",
+    "lemon": "lemon.png"
+  },
+  "restoreExample": "cp public/treasury-brands/backup/current/galicia.png public/treasury-brands/isotypes/"
+}

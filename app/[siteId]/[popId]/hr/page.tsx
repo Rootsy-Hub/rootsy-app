@@ -37,11 +37,7 @@ import { cn } from "@/lib/utils"
 import {
   Clock3,
   Loader2,
-  Mail,
   Plus,
-  Shield,
-  UserCog,
-  Users,
 } from "lucide-react"
 import { useParams, useRouter } from "next/navigation"
 import {
@@ -181,11 +177,6 @@ function HrPage() {
   const groupedMembers = useMemo(() => groupMembersByRole(members), [members])
   const assignableRoles = useMemo(
     () => roles.filter((r) => r.name !== "owner"),
-    [roles],
-  )
-
-  const popRoles = useMemo(
-    () => roles.filter((r) => r.popId),
     [roles],
   )
 
@@ -419,18 +410,6 @@ function HrPage() {
             </div>
           ) : (
             <>
-              <div className="space-y-1">
-                <h2 className="bg-linear-to-br from-foreground to-foreground/65 bg-clip-text text-lg font-semibold tracking-tight text-transparent">
-                  Equipo y permisos
-                </h2>
-                <p className="max-w-2xl text-sm leading-relaxed text-muted-foreground">
-                  Roles del punto de venta, invitaciones y acceso por sección.
-                  {canManageInvites
-                    ? " Como dueño podés editar permisos de cada rol e invitar usuarios registrados en Rootsy."
-                    : " Solo el dueño puede invitar personas y editar permisos de roles."}
-                </p>
-              </div>
-
               {banner ? (
                 <div
                   role="status"
@@ -465,51 +444,6 @@ function HrPage() {
                   </Button>
                 </div>
               ) : null}
-
-              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-                {[
-                  {
-                    label: "Roles del POP",
-                    value: String(popRoles.length),
-                    hint: "editables por dueño",
-                    icon: Shield,
-                  },
-                  {
-                    label: "Miembros activos",
-                    value: String(members.length),
-                    hint: "con acceso al local",
-                    icon: Users,
-                  },
-                  {
-                    label: "Invitaciones",
-                    value: String(pending.length),
-                    hint: canManageInvites ? "pendientes" : "solo dueño",
-                    icon: Mail,
-                  },
-                  {
-                    label: "Roles asignables",
-                    value: String(assignableRoles.length),
-                    hint: "sin propietario",
-                    icon: UserCog,
-                  },
-                ].map((k) => (
-                  <div key={k.label} className={cn(shellCard, "px-4 py-3")}>
-                    <div className="flex items-start justify-between gap-2">
-                      <p className={sectionTitleClass}>{k.label}</p>
-                      <k.icon
-                        className="size-4 shrink-0 text-primary/70"
-                        aria-hidden
-                      />
-                    </div>
-                    <p className="mt-1 font-mono text-2xl font-semibold tabular-nums tracking-tight text-foreground">
-                      {k.value}
-                    </p>
-                    <p className="mt-2 text-xs text-muted-foreground">
-                      {k.hint}
-                    </p>
-                  </div>
-                ))}
-              </div>
 
               <div className="grid gap-6 lg:grid-cols-12 lg:items-start">
                 <div className="space-y-6 lg:col-span-5">

@@ -24,6 +24,79 @@ function nextChildCode(parentCode: string, siblings: string[]): string {
   return `${parentCode}.${String(next).padStart(2, "0")}`
 }
 
+/** Rubro contable donde cuelgan terminales POS (a liquidar). */
+export const TREASURY_POS_PARENT_CHART_CODE = "1.1.1.03"
+
+/** Rubro contable donde cuelgan tarjetas corporativas (a pagar). */
+export const TREASURY_CARD_PAYABLE_PARENT_CHART_CODE = "2.1.1.03"
+
+export async function createTreasuryChartSubaccountUnderParent(
+  supabase: SupabaseClient,
+  popId: string,
+  parentChartCode: string,
+  accountName: string,
+  options: {
+    treasuryKind: TreasuryAccountKind
+    accountType: string
+    nature: string
+  },
+): Promise<{ id: string; code: string } | { error: string }> {
+  const name = accountName.trim()
+  if (!name) return { error: "El nombre de la cuenta es obligatorio." }
+
+  const { data: parent, error: parentErr } = await supabase
+    .from("accounting_chart_of_accounts")
+    .select("id, code, level")
+    .eq("pop_id", popId)
+    .eq("code", parentChartCode)
+    .maybeSingle()
+
+  if (parentErr || !parent?.id) {
+    return {
+      error: `No se encontró la cuenta padre ${parentChartCode} en el plan de cuentas.`,
+    }
+  }
+
+  const parentRow = parent as Pick<ChartRow, "id" | "code" | "level">
+  const { data: siblings, error: sibErr } = await supabase
+    .from("accounting_chart_of_accounts")
+    .select("code")
+    .eq("pop_id", popId)
+    .like("code", `${parentRow.code}.%`)
+
+  if (sibErr) {
+    return { error: sibErr.message || "No se pudieron listar subcuentas." }
+  }
+
+  const codes = (siblings ?? []).map((r) => String(r.code ?? ""))
+  const newCode = nextChildCode(parentRow.code, codes)
+  const level = Math.max(1, (parentRow.level ?? 4) + 1)
+
+  const { data: inserted, error: insErr } = await supabase
+    .from("accounting_chart_of_accounts")
+    .insert({
+      pop_id: popId,
+      parent_id: parentRow.id,
+      code: newCode,
+      name,
+      account_type: options.accountType,
+      nature: options.nature,
+      level,
+      is_movement_account: true,
+      metadata: { user_created: true, treasury_kind: options.treasuryKind },
+    })
+    .select("id, code")
+    .single()
+
+  if (insErr || !inserted?.id) {
+    return {
+      error: insErr?.message || "No se pudo crear la subcuenta contable.",
+    }
+  }
+
+  return { id: String(inserted.id), code: String(inserted.code) }
+}
+
 export async function createTreasuryChartSubaccount(
   supabase: SupabaseClient,
   popId: string,

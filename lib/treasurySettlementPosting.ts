@@ -1,7 +1,7 @@
 import {
   CHART_TARJETAS_CREDITO_A_PAGAR_CODES,
 } from "@/lib/argV3DefaultChartAccounts"
-import { resolvePaymentMethodLedgerAccount } from "@/lib/paymentLedgerAccounts"
+import { resolveTreasuryAccountLedgerAccountId } from "@/lib/treasuryAccountResolve"
 import type { SupabaseClient } from "@supabase/supabase-js"
 
 function roundMoney(n: number): number {
@@ -54,7 +54,7 @@ export async function postTreasurySettlementLedger(
   const { data: row, error: rowErr } = await supabase
     .from("treasury_settlements")
     .select(
-      "id, amount, settled_at, notes, card_payment_method_id, funding_payment_method_id, accounting_entry_id",
+      "id, amount, settled_at, notes, card_treasury_account_id, funding_treasury_account_id, accounting_entry_id",
     )
     .eq("id", settlementId)
     .eq("pop_id", popId)
@@ -77,21 +77,30 @@ export async function postTreasurySettlementLedger(
     return { success: false, error: "Fecha de liquidación inválida." }
   }
 
-  const { data: cardPm } = await supabase
-    .from("payment_methods")
-    .select("name")
-    .eq("id", String(row.card_payment_method_id))
-    .eq("pop_id", popId)
-    .maybeSingle()
-  const cardLabel = String(cardPm?.name ?? "Tarjeta").trim()
+  const cardTaId =
+    row.card_treasury_account_id != null
+      ? String(row.card_treasury_account_id)
+      : null
+  const fundTaId =
+    row.funding_treasury_account_id != null
+      ? String(row.funding_treasury_account_id)
+      : null
+
+  let cardLabel = "Tarjeta"
+  if (cardTaId) {
+    const { data: cardTa } = await supabase
+      .from("treasury_accounts")
+      .select("name")
+      .eq("id", cardTaId)
+      .eq("pop_id", popId)
+      .maybeSingle()
+    cardLabel = String(cardTa?.name ?? "Tarjeta").trim()
+  }
   const entryDescription = `Pago resumen tarjeta — ${cardLabel}`
 
-  let liabilityAccountId = await resolvePaymentMethodLedgerAccount(
-    supabase,
-    popId,
-    String(row.card_payment_method_id),
-    "pay",
-  )
+  let liabilityAccountId = cardTaId
+    ? await resolveTreasuryAccountLedgerAccountId(supabase, popId, cardTaId)
+    : null
   if (!liabilityAccountId) {
     liabilityAccountId = await resolveAccountId(
       supabase,
@@ -106,21 +115,14 @@ export async function postTreasurySettlementLedger(
     }
   }
 
-  const fundingPmId =
-    row.funding_payment_method_id != null
-      ? String(row.funding_payment_method_id)
-      : null
-  const bankAccountId = await resolvePaymentMethodLedgerAccount(
-    supabase,
-    popId,
-    fundingPmId,
-    "pay",
-  )
+  const bankAccountId = fundTaId
+    ? await resolveTreasuryAccountLedgerAccountId(supabase, popId, fundTaId)
+    : null
   if (!bankAccountId) {
     return {
       success: false,
       error:
-        "Configurá una cuenta bancaria en el medio de pago usado para pagar el resumen.",
+        "Configurá una cuenta contable en la cuenta de tesorería usada para pagar el resumen.",
     }
   }
 

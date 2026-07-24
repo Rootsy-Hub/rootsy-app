@@ -72,12 +72,14 @@ export type CreatePurchaseLineInput = {
   comment?: string
 }
 
-export type PurchaseCatalogPaymentMethod = {
-  id: string
-  name: string
-  kind: string
-  sortOrder: number
-}
+import { getTreasuryPaymentContext } from "@/lib/treasuryPaymentContext"
+import {
+  buildPayPaymentOptions,
+  type TreasuryPaymentOption,
+} from "@/lib/treasuryPaymentOptions"
+import { isValidOperationPaymentKind } from "@/lib/operationPaymentKinds"
+
+export type PurchaseCatalogPaymentMethod = TreasuryPaymentOption
 
 export type PurchaseSupplierManualInput = {
   name: string
@@ -100,7 +102,8 @@ export type CreatePurchaseInput = {
   confirmPurchase?: boolean
   generalDiscountMode?: "porcentaje" | "fijo"
   generalDiscountValue?: number
-  paymentMethodId?: string | null
+  paymentKind?: string | null
+  treasuryAccountId?: string | null
 }
 
 function roundMoney(n: number): number {
@@ -284,23 +287,11 @@ export async function getPurchaseCatalog(popId: string): Promise<
     const canReadPaymentMethods = access.canCreate
     let paymentMethods: PurchaseCatalogPaymentMethod[] = []
     if (canReadPaymentMethods) {
-      const { data: pmRows, error: pmErr } = await supabase
-        .from("payment_methods")
-        .select("id, name, kind, usage, sort_order")
-        .eq("pop_id", popId)
-        .eq("is_active", true)
-        .in("usage", ["pay", "both"])
-        .order("sort_order", { ascending: true })
-        .order("name", { ascending: true })
-      if (pmErr) {
-        return { success: false, error: pmErr.message }
+      const treasuryRes = await getTreasuryPaymentContext(popId)
+      if (!treasuryRes.success) {
+        return { success: false, error: treasuryRes.error }
       }
-      paymentMethods = (pmRows || []).map((p) => ({
-        id: String(p.id),
-        name: String(p.name ?? ""),
-        kind: String(p.kind ?? "other"),
-        sortOrder: Number(p.sort_order ?? 0) || 0,
-      }))
+      paymentMethods = buildPayPaymentOptions(treasuryRes.context)
     }
 
     return {
@@ -630,17 +621,21 @@ export async function createPurchase(
     const confirmPurchase = input.confirmPurchase !== false
     const initialStatus = confirmPurchase ? "pending" : "draft"
 
-    const paymentMethodId = input.paymentMethodId?.trim() || null
-    if (confirmPurchase && paymentMethodId) {
-      const { data: pmRow, error: pmErr } = await supabase
-        .from("payment_methods")
+    const paymentKind = input.paymentKind?.trim() || null
+    const treasuryAccountId = input.treasuryAccountId?.trim() || null
+    if (confirmPurchase && paymentKind && treasuryAccountId) {
+      if (!isValidOperationPaymentKind(paymentKind)) {
+        return { success: false, error: "Tipo de pago inválido." }
+      }
+      const { data: taRow, error: taErr } = await supabase
+        .from("treasury_accounts")
         .select("id")
-        .eq("id", paymentMethodId)
+        .eq("id", treasuryAccountId)
         .eq("pop_id", popId)
         .eq("is_active", true)
         .maybeSingle()
-      if (pmErr || !pmRow) {
-        return { success: false, error: "Medio de pago inválido." }
+      if (taErr || !taRow) {
+        return { success: false, error: "Cuenta de tesorería inválida." }
       }
     }
 
@@ -700,11 +695,12 @@ export async function createPurchase(
       }
     }
 
-    if (confirmPurchase && paymentMethodId) {
+    if (confirmPurchase && paymentKind && treasuryAccountId) {
       const { error: payErr } = await supabase.from("purchase_payments").insert({
         pop_id: popId,
         purchase_id: purchaseId,
-        payment_method_id: paymentMethodId,
+        payment_kind: paymentKind,
+        treasury_account_id: treasuryAccountId,
         amount: total,
         paid_at: new Date().toISOString().slice(0, 10),
         created_by: user.uid,

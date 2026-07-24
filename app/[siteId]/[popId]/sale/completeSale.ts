@@ -17,8 +17,10 @@ import {
   entryDateIsoInTimezone,
   timezoneForPopLedger,
 } from "@/lib/entryDateTimezone"
+import { resolveOpenCashSession, assertCashSessionStillOpen } from "@/lib/cashRegisterSession"
 import { createClient } from "@/utils/supabase/server"
-import { resolvePaymentMethodLedgerAccount } from "@/lib/paymentLedgerAccounts"
+import { resolveLedgerAccountForTreasuryPayment } from "@/lib/treasuryPaymentLedger"
+import { isValidOperationPaymentKind } from "@/lib/operationPaymentKinds"
 import { SALE_COMPROBANTE_RECIBO_X_LABEL, saleComprobanteAccruesOutputVat } from "@/lib/saleComprobantePicker"
 import { siteIdFromPopRow } from "@/lib/popRoutes"
 import { CLIENT_IVA_CONDITION_VALUES } from "@/app/[siteId]/[popId]/clients/clientIvaConstants"
@@ -35,14 +37,6 @@ import {
   computeSnapshotTotals,
   snapshotTotalsToMetadata,
 } from "@/lib/saleSnapshot"
-
-const PAYMENT_KIND_ACCOUNT_FALLBACK: Record<string, readonly string[]> = {
-  cash: ["1.1.1.01"],
-  transfer: ["1.1.1.02"],
-  card_debit: ["1.1.1.03"],
-  card_credit: ["1.1.1.03"],
-  other: ["1.1.1.04", "1.1.1.01"],
-}
 
 function parseQty(v: unknown): number {
   const n = Number(v)
@@ -113,57 +107,6 @@ async function resolveAccountId(
     if (row?.id) return String(row.id)
   }
   return null
-}
-
-type OpenCashContext = {
-  sessionId: string
-  cashRegisterId: string
-}
-
-async function resolveOpenCashSession(
-  supabase: Awaited<ReturnType<typeof createClient>>,
-  popId: string,
-): Promise<
-  | { success: true; ctx: OpenCashContext }
-  | { success: false; error: string }
-> {
-  const { data: regs, error: regErr } = await supabase
-    .from("cash_registers")
-    .select("id")
-    .eq("pop_id", popId)
-    .eq("is_active", true)
-    .order("sort_order", { ascending: true })
-    .order("name", { ascending: true })
-  if (regErr) {
-    return { success: false, error: regErr.message || "No se pudieron leer las cajas." }
-  }
-  const { data: sessions, error: sessErr } = await supabase
-    .from("cash_register_sessions")
-    .select("id, cash_register_id")
-    .eq("pop_id", popId)
-    .eq("status", "open")
-  if (sessErr) {
-    return { success: false, error: sessErr.message || "No se pudieron leer sesiones de caja." }
-  }
-  const openByReg = new Map<string, string>()
-  for (const s of sessions || []) {
-    openByReg.set(String(s.cash_register_id), String(s.id))
-  }
-  for (const r of regs || []) {
-    const rid = String(r.id)
-    const sid = openByReg.get(rid)
-    if (sid) {
-      return {
-        success: true,
-        ctx: { sessionId: sid, cashRegisterId: rid },
-      }
-    }
-  }
-  return {
-    success: false,
-    error:
-      "No hay sesión de caja abierta. Abrí una caja desde el menú Cajas antes de vender.",
-  }
 }
 
 async function undoFifoSaleMovement(
@@ -530,7 +473,8 @@ export type CompleteSaleInput = {
   siteId: string
   lines: CompleteSaleLineInput[]
   clientId: string | null
-  paymentMethodId?: string | null
+  paymentKind?: string | null
+  treasuryAccountId?: string | null
   payOnClientAccount?: boolean
   generalDiscountMode: "porcentaje" | "fijo"
   valorDescuentoPorcentaje: number
@@ -617,11 +561,24 @@ export async function completeSale(
       return { success: false, error: "Sesión requerida." }
     }
 
-    const cashRes = await resolveOpenCashSession(supabase, popId)
+    const cashRes = await resolveOpenCashSession(supabase, popId, user.id)
     if (!cashRes.success) {
       return { success: false, error: cashRes.error }
     }
-    const { sessionId: cashRegisterSessionId, cashRegisterId } = cashRes.ctx
+    const {
+      sessionId: cashRegisterSessionId,
+      cashRegisterId,
+      cashTreasuryAccountId,
+    } = cashRes.ctx
+
+    const sessionStillOpen = await assertCashSessionStillOpen(
+      supabase,
+      popId,
+      cashRegisterSessionId,
+    )
+    if (!sessionStillOpen.success) {
+      return { success: false, error: sessionStillOpen.error }
+    }
 
     const payOnClientAccount = Boolean(input.payOnClientAccount)
     const tableSessionId = input.tableSessionId?.trim() || null
@@ -638,13 +595,26 @@ export async function completeSale(
         error: "No se puede vincular una venta a mesa y mostrador a la vez.",
       }
     }
-    const pmId = input.paymentMethodId?.trim() || null
+    const paymentKind = input.paymentKind?.trim() || null
+    let treasuryAccountId = input.treasuryAccountId?.trim() || null
 
-    if (!payOnClientAccount && !pmId) {
+    if (!payOnClientAccount && paymentKind === "cash") {
+      treasuryAccountId = cashTreasuryAccountId
+    }
+
+    if (!payOnClientAccount && (!paymentKind || !treasuryAccountId)) {
       return {
         success: false,
         error: "Elegí un medio de pago o registrá la venta a cuenta corriente del cliente.",
       }
+    }
+
+    if (
+      !payOnClientAccount &&
+      paymentKind &&
+      !isValidOperationPaymentKind(paymentKind)
+    ) {
+      return { success: false, error: "Tipo de pago inválido." }
     }
 
     if (payOnClientAccount && !input.clientId?.trim()) {
@@ -655,34 +625,18 @@ export async function completeSale(
     }
 
     let paymentAccountId: string | null = null
-    if (!payOnClientAccount && pmId) {
-      const { data: pmRow, error: pmErr } = await supabase
-        .from("payment_methods")
-        .select("id, kind, accounting_account_id")
-        .eq("id", pmId)
-        .eq("pop_id", popId)
-        .eq("is_active", true)
-        .maybeSingle()
-      if (pmErr || !pmRow?.id) {
-        return { success: false, error: "Medio de pago no válido en este punto." }
-      }
-      const pmKind = String(pmRow.kind ?? "other")
-      paymentAccountId = await resolvePaymentMethodLedgerAccount(
+    if (!payOnClientAccount && paymentKind && treasuryAccountId) {
+      paymentAccountId = await resolveLedgerAccountForTreasuryPayment(
         supabase,
         popId,
-        pmId,
-        "receive",
+        paymentKind,
+        treasuryAccountId,
       )
-      if (!paymentAccountId) {
-        const codes =
-          PAYMENT_KIND_ACCOUNT_FALLBACK[pmKind] ?? PAYMENT_KIND_ACCOUNT_FALLBACK.other
-        paymentAccountId = await resolveAccountId(supabase, popId, codes)
-      }
       if (!paymentAccountId) {
         return {
           success: false,
           error:
-            "Configurá una cuenta contable en el medio de pago o el plan de cuentas (caja/bancos) para registrar el cobro.",
+            "Configurá una cuenta contable en tesorería o el plan de cuentas (caja/bancos) para registrar el cobro.",
         }
       }
     }
@@ -1368,11 +1322,12 @@ export async function completeSale(
     const saleId = String(saleIns.id)
     saleIdForRollback = saleId
 
-    if (!payOnClientAccount && pmId) {
+    if (!payOnClientAccount && paymentKind && treasuryAccountId) {
       const { error: payErr } = await supabase.from("sale_payments").insert({
         pop_id: popId,
         sale_id: saleId,
-        payment_method_id: pmId,
+        payment_kind: paymentKind,
+        treasury_account_id: treasuryAccountId,
         amount: total,
         sort_order: 0,
       })

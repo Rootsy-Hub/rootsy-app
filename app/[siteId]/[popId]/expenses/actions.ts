@@ -52,10 +52,14 @@ export type ExpenseListRow = {
   paidTotal: number
 }
 
-export type PaymentMethodOption = {
-  id: string
-  name: string
-}
+import { getTreasuryPaymentContext } from "@/lib/treasuryPaymentContext"
+import {
+  buildPayPaymentOptions,
+  type TreasuryPaymentOption,
+} from "@/lib/treasuryPaymentOptions"
+import { isValidOperationPaymentKind } from "@/lib/operationPaymentKinds"
+
+export type PaymentMethodOption = TreasuryPaymentOption
 
 export type MonthProgress = {
   totalDue: number
@@ -137,20 +141,11 @@ export async function getExpensesPageData(popId: string): Promise<
       sortOrder: Number(r.sort_order ?? 0),
       deletedAt: r.deleted_at != null ? String(r.deleted_at) : null,
     }))
-    const { data: pmRows, error: pmErr } = await supabase
-      .from("payment_methods")
-      .select("id, name")
-      .eq("pop_id", popId)
-      .eq("is_active", true)
-      .in("usage", ["pay", "both"])
-      .order("sort_order", { ascending: true })
-    if (pmErr) {
-      return { success: false, error: pmErr.message || "No se pudieron cargar medios de pago." }
+    const treasuryRes = await getTreasuryPaymentContext(popId)
+    if (!treasuryRes.success) {
+      return { success: false, error: treasuryRes.error }
     }
-    const paymentMethods: PaymentMethodOption[] = (pmRows || []).map((r) => ({
-      id: String(r.id),
-      name: String(r.name ?? ""),
-    }))
+    const paymentMethods = buildPayPaymentOptions(treasuryRes.context)
     return {
       success: true,
       popName,
@@ -408,7 +403,8 @@ export async function recordExpensePayment(
   expenseId: string,
   amount: number,
   paidAt: string,
-  paymentMethodId: string | null,
+  paymentKind: string | null,
+  treasuryAccountId: string | null,
 ): Promise<{ success: true } | { success: false; error: string }> {
   try {
     const access = await validatePopAccess(popId)
@@ -431,6 +427,23 @@ export async function recordExpensePayment(
     }
     const user = await requireAuthenticatedUser()
     const supabase = await createClient()
+    const kind = paymentKind?.trim() || null
+    const taId = treasuryAccountId?.trim() || null
+    if (kind && !isValidOperationPaymentKind(kind)) {
+      return { success: false, error: "Tipo de pago inválido." }
+    }
+    if (kind && taId) {
+      const { data: taRow, error: taErr } = await supabase
+        .from("treasury_accounts")
+        .select("id")
+        .eq("id", taId)
+        .eq("pop_id", popId)
+        .eq("is_active", true)
+        .maybeSingle()
+      if (taErr || !taRow) {
+        return { success: false, error: "Cuenta de tesorería inválida." }
+      }
+    }
     const { data: payIns, error } = await supabase
       .from("expense_payments")
       .insert({
@@ -438,7 +451,8 @@ export async function recordExpensePayment(
         expense_id: expenseId.trim(),
         amount: amt,
         paid_at: paidAt.trim(),
-        payment_method_id: paymentMethodId?.trim() || null,
+        payment_kind: kind,
+        treasury_account_id: taId,
         created_by: user.uid,
       })
       .select("id")

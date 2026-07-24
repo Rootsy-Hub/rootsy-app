@@ -54,3 +54,29 @@ export function treasuryKindLabel(kind: TreasuryAccountKind | string): string {
     TREASURY_ACCOUNT_KINDS.find((k) => k.value === kind)?.label ?? "Cuenta"
   )
 }
+
+/** Prefijos de subcuentas con saldo real (cuentas madre en la UI). */
+export const TREASURY_MOTHER_CHART_PREFIXES = [
+  "1.1.1.01.",
+  "1.1.1.02.",
+  "1.1.1.04.",
+] as const
+
+/** Cuenta operativa con saldo real (caja, banco, billetera). Excluye a liquidar y tarjetas a pagar. */
+export function isMotherTreasuryAccount(chartAccountCode: string): boolean {
+  const code = chartAccountCode.trim()
+  if (!code) return false
+  return TREASURY_MOTHER_CHART_PREFIXES.some((prefix) => code.startsWith(prefix))
+}
+
+/** Subcuenta de cobros pendientes de liquidación (1.1.1.03.xx). */
+export function isSettlementReceivableChartCode(chartAccountCode: string): boolean {
+  const code = chartAccountCode.trim()
+  return code.startsWith("1.1.1.03.") && code !== "1.1.1.03"
+}
+
+/** Subcuenta de tarjeta / pasivo a pagar (2.1.1.03.xx). */
+export function isCardPayableChartCode(chartAccountCode: string): boolean {
+  const code = chartAccountCode.trim()
+  return code.startsWith("2.1.1.03.") && code !== "2.1.1.03"
+}

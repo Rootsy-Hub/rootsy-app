@@ -165,6 +165,12 @@ type AccountSection = {
   rows: ChartAccountRow[]
 }
 
+function parentSectionTitlePrefix(parent: ChartAccountRow): string {
+  const parts = parent.code.trim().split(".").filter(Boolean)
+  if (parts.length <= 1) return parent.code
+  return parts.slice(0, -1).join(".")
+}
+
 function buildAccountSections(accounts: ChartAccountRow[]): AccountSection[] {
   if (accounts.length === 0) return []
   const idByRow = new Map(accounts.map((a) => [a.id, a]))
@@ -194,12 +200,12 @@ function buildAccountSections(accounts: ChartAccountRow[]): AccountSection[] {
     sections.push({
       key: `db-parent-${pid}`,
       title: parent
-        ? breadcrumbForCodePrefix(parent.code)
+        ? breadcrumbForCodePrefix(parentSectionTitlePrefix(parent))
         : "Padre no encontrado en el plan",
       subtitle: parent
         ? undefined
         : "Hay subcuentas que referencian un padre que no está en este listado.",
-      rows: children,
+      rows: parent ? [parent, ...children] : children,
     })
   }
   const rootsWithDbChildren = new Set(childrenByParent.keys())
@@ -758,9 +764,10 @@ function AccountingPage() {
                     Plan de cuentas
                   </h2>
                   <p className="max-w-2xl text-sm text-muted-foreground">
-                    Las cuentas existentes son solo lectura. El encabezado de
-                    cada caja es la jerarquía en texto (Activo &gt; Activo
-                    corriente &gt; …); los códigos completos están en la tabla.
+                    Todas las cuentas del plan en este punto de venta: rubros
+                    (agrupadores) y subcuentas operativas. Las de movimiento
+                    &quot;No&quot; son rubros como Caja o Bancos; debajo van las
+                    subcuentas reales.
                   </p>
                 </div>
                 {accounts.length === 0 ? (
@@ -822,13 +829,26 @@ function AccountingPage() {
                             {section.rows.map((r) => (
                               <TableRow
                                 key={r.id}
-                                className="border-border/80 hover:bg-muted/30"
+                                className={cn(
+                                  "border-border/80 hover:bg-muted/30",
+                                  !r.isMovementAccount && "bg-muted/20",
+                                )}
                               >
                                 <TableCell className="font-mono text-sm tabular-nums">
                                   {r.code}
                                 </TableCell>
-                                <TableCell className="font-medium">
+                                <TableCell
+                                  className={cn(
+                                    "font-medium",
+                                    !r.isMovementAccount && "text-foreground",
+                                  )}
+                                >
                                   {r.name}
+                                  {!r.isMovementAccount ? (
+                                    <span className="ml-2 text-xs font-normal text-muted-foreground">
+                                      (rubro)
+                                    </span>
+                                  ) : null}
                                 </TableCell>
                                 <TableCell className="text-muted-foreground text-sm">
                                   {formatAccountType(r.accountType)}

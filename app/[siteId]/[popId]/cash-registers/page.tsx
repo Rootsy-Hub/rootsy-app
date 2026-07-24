@@ -12,7 +12,9 @@ import {
   uploadCashRegisterArcaCertificates,
   type CashRegisterRow,
   type CashRegisterSummaryData,
+  type CashTreasuryAccountOption,
   type ClosingSnapshot,
+  type PaymentMethodOption,
 } from "@/app/[siteId]/[popId]/cash-registers/actions"
 import { CashRegisterCard } from "@/app/[siteId]/[popId]/cash-registers/CashRegisterCard"
 import { dataWorkspaceShellCard } from "@/components/data-workspace/dataWorkspaceListStyles"
@@ -101,9 +103,12 @@ function CashRegistersPage() {
     roleLabel: string
   } | null>(null)
   const [registers, setRegisters] = useState<CashRegisterRow[]>([])
-  const [paymentMethods, setPaymentMethods] = useState<
-    { id: string; name: string; sortOrder: number; kind: string }[]
+  const [cashTreasuryAccounts, setCashTreasuryAccounts] = useState<
+    CashTreasuryAccountOption[]
   >([])
+  const [paymentMethods, setPaymentMethods] = useState<PaymentMethodOption[]>(
+    [],
+  )
   const [canCreate, setCanCreate] = useState(false)
   const [canUpdate, setCanUpdate] = useState(false)
   const [canDelete, setCanDelete] = useState(false)
@@ -115,6 +120,7 @@ function CashRegistersPage() {
   const [createBanner, setCreateBanner] = useState<string | null>(null)
   const [createName, setCreateName] = useState("")
   const [createSort, setCreateSort] = useState(0)
+  const [createCashTreasuryId, setCreateCashTreasuryId] = useState("")
 
   const [editRow, setEditRow] = useState<CashRegisterRow | null>(null)
   const [editSaving, setEditSaving] = useState(false)
@@ -122,6 +128,7 @@ function CashRegistersPage() {
   const [editName, setEditName] = useState("")
   const [editSort, setEditSort] = useState(0)
   const [editActive, setEditActive] = useState(true)
+  const [editCashTreasuryId, setEditCashTreasuryId] = useState("")
   const [editArcaPtoVta, setEditArcaPtoVta] = useState("")
   const [editArcaExpiresAt, setEditArcaExpiresAt] = useState("")
   const editCrtRef = useRef<HTMLInputElement>(null)
@@ -180,6 +187,7 @@ function CashRegistersPage() {
     if (!res.success) {
       setError(res.error || "Error")
       setRegisters([])
+      setCashTreasuryAccounts([])
       setPaymentMethods([])
       setCanCreate(false)
       setCanUpdate(false)
@@ -191,6 +199,7 @@ function CashRegistersPage() {
     }
     setPopName(res.popName)
     setRegisters(res.registers)
+    setCashTreasuryAccounts(res.cashTreasuryAccounts)
     setPaymentMethods(res.paymentMethods)
     setCanCreate(res.canCreate)
     setCanUpdate(res.canUpdate)
@@ -225,6 +234,7 @@ function CashRegistersPage() {
     setCreateBanner(null)
     setCreateName("")
     setCreateSort(0)
+    setCreateCashTreasuryId(cashTreasuryAccounts[0]?.id ?? "")
     setCreateOpen(true)
   }
 
@@ -236,6 +246,7 @@ function CashRegistersPage() {
     const res = await createCashRegister(popId, {
       name: createName,
       sortOrder: createSort,
+      cashTreasuryAccountId: createCashTreasuryId,
     })
     setCreateSaving(false)
     if (!res.success) {
@@ -252,6 +263,7 @@ function CashRegistersPage() {
     setEditName(r.name)
     setEditSort(r.sortOrder)
     setEditActive(r.isActive)
+    setEditCashTreasuryId(r.cashTreasuryAccountId ?? cashTreasuryAccounts[0]?.id ?? "")
     setEditArcaPtoVta(r.arcaPtoVta != null ? String(r.arcaPtoVta) : "")
     setEditArcaExpiresAt(r.arcaCertificateExpiresAt ?? "")
   }
@@ -299,6 +311,7 @@ function CashRegistersPage() {
       name: editName,
       sortOrder: editSort,
       isActive: editActive,
+      cashTreasuryAccountId: editCashTreasuryId,
       arcaPtoVta: ptoParsed,
       arcaCertificateSecretName: editRow.arcaCertificateSecretName ?? null,
       arcaCertificateLastFour: editRow.arcaCertificateLastFour ?? null,
@@ -363,7 +376,7 @@ function CashRegistersPage() {
     )
     const next: Record<string, string> = {}
     for (const pm of paymentMethods) {
-      if (pm.kind !== "cash") next[pm.id] = "0"
+      if (pm.kind !== "cash") next[pm.kind] = "0"
     }
     setClosePm(next)
     setCloseRow(r)
@@ -447,7 +460,7 @@ function CashRegistersPage() {
       const next = { ...prev }
       for (const pm of paymentMethods) {
         if (pm.kind === "cash") continue
-        if (next[pm.id] === undefined) next[pm.id] = "0"
+        if (next[pm.kind] === undefined) next[pm.kind] = "0"
       }
       return next
     })
@@ -594,6 +607,29 @@ function CashRegistersPage() {
                 className="bg-background"
               />
             </div>
+            <div className="space-y-2">
+              <Label htmlFor="cr-cash-ta">Cuenta de efectivo destino</Label>
+              <select
+                id="cr-cash-ta"
+                value={createCashTreasuryId}
+                onChange={(e) => setCreateCashTreasuryId(e.target.value)}
+                required
+                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+              >
+                {cashTreasuryAccounts.length === 0 ? (
+                  <option value="">Sin cuentas de efectivo</option>
+                ) : (
+                  cashTreasuryAccounts.map((ta) => (
+                    <option key={ta.id} value={ta.id}>
+                      {ta.name}
+                    </option>
+                  ))
+                )}
+              </select>
+              <p className="text-xs text-muted-foreground">
+                Los cobros en efectivo del turno se imputan a esta cuenta de tesorería.
+              </p>
+            </div>
             <DialogFooter className="gap-2 sm:gap-0">
               <Button
                 type="button"
@@ -663,6 +699,26 @@ function CashRegistersPage() {
               />
               Active
             </label>
+            <div className="space-y-2">
+              <Label htmlFor="e-cr-cash-ta">Cuenta de efectivo destino</Label>
+              <select
+                id="e-cr-cash-ta"
+                value={editCashTreasuryId}
+                onChange={(e) => setEditCashTreasuryId(e.target.value)}
+                required
+                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+              >
+                {cashTreasuryAccounts.length === 0 ? (
+                  <option value="">Sin cuentas de efectivo</option>
+                ) : (
+                  cashTreasuryAccounts.map((ta) => (
+                    <option key={ta.id} value={ta.id}>
+                      {ta.name}
+                    </option>
+                  ))
+                )}
+              </select>
+            </div>
             <div className="space-y-4 border-t border-zinc-700/80 pt-4">
               <p>Facturación electrónica (ARCA)</p>
               <p className="text-xs leading-relaxed text-zinc-500">
@@ -935,17 +991,17 @@ function CashRegistersPage() {
                   {paymentMethods
                     .filter((pm) => pm.kind !== "cash")
                     .map((pm) => (
-                    <div key={pm.id} className="flex items-center gap-2">
+                    <div key={pm.kind} className="flex items-center gap-2">
                       <span className="min-w-0 flex-1 truncate text-sm text-zinc-300">
-                        {pm.name}
+                        {pm.label}
                       </span>
                       <Input
                         type="number"
-                        value={closePm[pm.id] ?? "0"}
+                        value={closePm[pm.kind] ?? "0"}
                         onChange={(e) =>
                           setClosePm((m) => ({
                             ...m,
-                            [pm.id]: e.target.value,
+                            [pm.kind]: e.target.value,
                           }))
                         }
                         min={0}
@@ -1111,7 +1167,7 @@ function CashRegistersPage() {
                             ) : (
                               summaryData.arqueo.ventasPorMedioPago.map((row) => (
                                 <tr
-                                  key={row.paymentMethodId}
+                                  key={row.paymentKind}
                                   className="border-b border-zinc-800/50 text-zinc-200"
                                 >
                                   <td className="px-3 py-2">{row.name}</td>

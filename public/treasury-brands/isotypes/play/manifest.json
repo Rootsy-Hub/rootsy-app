@@ -1,0 +1,107 @@
+{
+  "source": "Google Play Store icons (512px)",
+  "brands": {
+    "galicia": {
+      "package": "com.mosync.app_Banco_Galicia",
+      "url": "https://play-lh.googleusercontent.com/u4OSItPm95q0hF0OXCjlxHtxZ6lB2BlDXZFZ6PoWuTFD4YXkV3G49o_zPmTSGByEbSi9p9ke-rzs8CKGC0-LxA=s512-rw",
+      "file": "galicia.png",
+      "bytes": 11776
+    },
+    "santander": {
+      "package": "ar.com.santander.rio.mbanking",
+      "url": "https://play-lh.googleusercontent.com/QQV2xrDdkVkLBUCdLLi_CN-YL1eAasepZewDNevnq2wzfHqsCxn1OchpqzWOAL7iNfeYlGgjaYn7gT8euj0lkA=s512-rw",
+      "file": "santander.png",
+      "bytes": 30756
+    },
+    "bbva": {
+      "package": "com.bbva.nxt_argentina",
+      "url": "https://play-lh.googleusercontent.com/16PXaMuVRfI4Sti_rN6eIIujZ3DUKtcr3CAWSalqZqre-93RZhY5eCub0qTy1qu0vgB2-EGmMDYnUsyURRnBHVw=s512-rw",
+      "file": "bbva.png",
+      "bytes": 47752
+    },
+    "macro": {
+      "package": "ar.macro",
+      "url": "https://play-lh.googleusercontent.com/-88WUaYpGSClWjRINmsRql_JbUrTO7CjLzqfAHukZ17ar8Mm8kGFdieaEM3nbi2Yx4QKUrIUN84pbg6Gm2uxY84=s512-rw",
+      "file": "macro.png",
+      "bytes": 21814
+    },
+    "nacion": {
+      "package": "com.banconacion.bnamas",
+      "url": "https://play-lh.googleusercontent.com/Xd0RaxVHvUkkpQZbp-dgArICL4pW4xWAemR2s48yOe8UyWahnjiuoXJ1mlmx8yNIoA6zTa1IexHI8RCFM-fXcQ=s512-rw",
+      "file": "nacion.png",
+      "bytes": 5534
+    },
+    "provincia": {
+      "package": "ar.com.bancoprovincia.CuentaDNI",
+      "url": "https://play-lh.googleusercontent.com/TeJWOODQ3iYadOkBJKcwFKFI-Le_9yoYiK5sGN526Xm3v_UCZbIHvsG6H1Rn9sYD_mst28HGPLPJZXrh76Vrbw=s512-rw",
+      "file": "provincia.png",
+      "bytes": 6492
+    },
+    "ciudad": {
+      "package": "com.buepp",
+      "url": "https://play-lh.googleusercontent.com/lB0-RwGsw6bgi5zRyrkb9SAKi4ew0cAcBrp4uKn3qlUwfdjY4EyZeK47O9YyLQ4_pVGyCSNAUTVmje5wmElqANc=s512-rw",
+      "file": "ciudad.png",
+      "bytes": 13026
+    },
+    "icbc": {
+      "package": "com.icbc.mobile.abroadARG",
+      "url": "https://play-lh.googleusercontent.com/rTAaLcf39xH69RVIIx3gnaerjPiHum7H6JsKl5_uAk00_LkIhwFI0PjVdOObmqpW6je58FVCzBvS9ompUVNptqo=s512-rw",
+      "file": "icbc.png",
+      "bytes": 22510
+    },
+    "supervielle": {
+      "package": "com.supervielle",
+      "url": "https://play-lh.googleusercontent.com/Swx78zN_IQ8V_ozdt8LUvnsA_nAmE2RqKJWpSboa_bv3LSvh1OIJR88gUV6z2FKNcpXXTcVNMf0Dlo9Ae6O_=s512-rw",
+      "file": "supervielle.png",
+      "bytes": 22668
+    },
+    "patagonia": {
+      "package": "ar.com.bcopatagonia.android",
+      "url": "https://play-lh.googleusercontent.com/4kCJeOqGW0Xm-uaJZLxkHE083xpewXUzDR7woO5fsi1LoiTQ2vpCtUhxf6nIph23MI4fhvxnY2K9ZBYwhpFK2aw=s512-rw",
+      "file": "patagonia.png",
+      "bytes": 10010
+    },
+    "mercadopago": {
+      "package": "com.mercadopago.wallet",
+      "url": "https://play-lh.googleusercontent.com/-WB4u-r62cAEy8kImGb4-pXGcr2T-nC71c54xJO4m1aIRtKb2eI2pW_rm7AZg6tEpOL1ZTdIiozUMHgA6eZFl9Y=s512-rw",
+      "file": "mercadopago.png",
+      "bytes": 22842
+    },
+    "modo": {
+      "package": "com.playdigital.modo",
+      "url": "https://play-lh.googleusercontent.com/4Rn6BMtgz1M-zVaVPS9tpG7TyQLeiubovHT-wyNQJ1KBmiwBZ8-0_DmuG3O3c27-4Nz4srNby6b3iyTwobl8=s512-rw",
+      "file": "modo.png",
+      "bytes": 8380
+    },
+    "uala": {
+      "package": "ar.com.bancar.uala",
+      "url": "https://play-lh.googleusercontent.com/Qdkf9ZzC7lChjw9QJdpMqtwXNt-Jj2AY8Fzl10-PDqRR5Nh4QBe0qqr0aM_AxasWOuk3CISwEeIY-hYjJALU=s512-rw",
+      "file": "uala.png",
+      "bytes": 24558
+    },
+    "personal_pay": {
+      "package": "ar.com.personalpay",
+      "url": "https://play-lh.googleusercontent.com/0K5Q4zy-C6LA-rOgFkgGpvkl_m6nv_P1Kf3o6yE7xdBiOumhRtvm_4i38b8Si_DuQVJ12bNtARu7-TMAM5G2LQ=s512-rw",
+      "file": "personal_pay.png",
+      "bytes": 8974
+    },
+    "naranja_x": {
+      "package": "com.tarjetanaranja.ncuenta",
+      "url": "https://play-lh.googleusercontent.com/lDssqct02HgtRGf7W4n3INAWjhNI2claILZrO6baFOUsxAAlWpVnTw8Ql8e1zVHaXsHn9YQ7zFrT5iZ3P9kk-g=s512-rw",
+      "file": "naranja_x.png",
+      "bytes": 19090
+    },
+    "lemon": {
+      "package": "com.applemoncash",
+      "url": "https://play-lh.googleusercontent.com/Wyrfg68_89zjJFajzuLeVwS1ULlISOzlQA-85Sfd2kJNkxOxVmppVgLdPF1Ov12cVF78CTRLHko8XTMEVbRf=s512-rw",
+      "file": "lemon.png",
+      "bytes": 112744
+    },
+    "astropay": {
+      "package": "com.astropaycard.android",
+      "url": "https://play-lh.googleusercontent.com/DRrLkaTWQBf3lVxtj0_yTtpWe-whunFYRWCYn7SBUtyo4Km3MC8e0VRNeIOgPwc5ek3oWhBEC8kIL7c3W2FeyD8=s512-rw",
+      "file": "astropay.png",
+      "bytes": 15540
+    }
+  }
+}

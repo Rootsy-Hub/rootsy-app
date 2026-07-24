@@ -100,9 +100,10 @@ export async function completePurchase(
     }
 
     const payOnAccount = Boolean(input.payOnSupplierAccount)
-    const paymentMethodId = input.paymentMethodId?.trim() || null
+    const paymentKind = input.paymentKind?.trim() || null
+    const treasuryAccountId = input.treasuryAccountId?.trim() || null
 
-    if (!payOnAccount && !paymentMethodId) {
+    if (!payOnAccount && (!paymentKind || !treasuryAccountId)) {
       return {
         success: false,
         error: "Elegí un medio de pago o registrá la compra a cuenta corriente del proveedor.",
@@ -171,19 +172,18 @@ export async function completePurchase(
       }
     }
 
-    let pmKind: string | null = null
-    if (!payOnAccount && paymentMethodId) {
-      const { data: pmRow, error: pmErr } = await supabase
-        .from("payment_methods")
-        .select("id, kind")
-        .eq("id", paymentMethodId)
+    let pmKind: string | null = paymentKind
+    if (!payOnAccount && paymentKind && treasuryAccountId) {
+      const { data: taRow, error: taErr } = await supabase
+        .from("treasury_accounts")
+        .select("id")
+        .eq("id", treasuryAccountId)
         .eq("pop_id", popId)
         .eq("is_active", true)
         .maybeSingle()
-      if (pmErr || !pmRow) {
-        return { success: false, error: "Medio de pago inválido." }
+      if (taErr || !taRow) {
+        return { success: false, error: "Cuenta de tesorería inválida." }
       }
-      pmKind = String(pmRow.kind ?? "other")
     }
 
     const installmentsRaw = Number(input.cardInstallments ?? 1)
@@ -393,14 +393,15 @@ export async function completePurchase(
       return { success: false, error: receiptLedger.error }
     }
 
-    if (!payOnAccount && paymentMethodId) {
+    if (!payOnAccount && paymentKind && treasuryAccountId) {
       const paidAt = entryDate
       const { data: payIns, error: payErr } = await supabase
         .from("purchase_payments")
         .insert({
           pop_id: popId,
           purchase_id: purchaseId,
-          payment_method_id: paymentMethodId,
+          payment_kind: paymentKind,
+          treasury_account_id: treasuryAccountId,
           amount: total,
           paid_at: paidAt,
           notes: paymentNotes,

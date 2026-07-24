@@ -1,5 +1,6 @@
 import type { MenuCartItemKind } from "@/lib/menuCart"
 import type { PromotionCartSelection } from "@/lib/promotionPricing"
+import type { SaleCatalogPaymentOption } from "@/app/[siteId]/[popId]/sale/actions"
 
 export type MesasCartItem = {
   lineId?: string
@@ -26,7 +27,7 @@ export type TableSessionCheckoutSnapshot = {
   fiscalDocVenta: string
   ventaIvaCondition: string
   comprobante: string | null
-  metodoPagoSeleccionado: { id: string; label: string } | null
+  metodoPagoSeleccionado: SaleCatalogPaymentOption | null
   payOnClientAccount: boolean
   modoDescuento: "porcentaje" | "fijo"
   valorDescuentoPorcentaje: number
@@ -185,9 +186,14 @@ export function parseTableSessionCheckout(
   const metodoRaw = raw.metodoPagoSeleccionado
   const metodoPagoSeleccionado =
     isRecord(metodoRaw) &&
-    typeof metodoRaw.id === "string" &&
+    typeof metodoRaw.kind === "string" &&
+    typeof metodoRaw.treasuryAccountId === "string" &&
     typeof metodoRaw.label === "string"
-      ? { id: metodoRaw.id, label: metodoRaw.label }
+      ? {
+          kind: metodoRaw.kind as SaleCatalogPaymentOption["kind"],
+          treasuryAccountId: metodoRaw.treasuryAccountId,
+          label: metodoRaw.label,
+        }
       : null
 
   return {

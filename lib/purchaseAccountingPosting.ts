@@ -5,7 +5,7 @@ import {
   CHART_MERCADERIAS_CODES,
   CHART_PROVEEDORES_CODES,
 } from "@/lib/argV3DefaultChartAccounts"
-import { resolvePaymentMethodLedgerAccount } from "@/lib/paymentLedgerAccounts"
+import { resolveLedgerAccountForTreasuryPayment } from "@/lib/treasuryPaymentLedger"
 import type { PurchaseKind } from "@/app/[siteId]/[popId]/purchases/actions"
 import type { SupabaseClient } from "@supabase/supabase-js"
 
@@ -226,7 +226,7 @@ export async function postPurchasePaymentLedger(
   const { data: payRow, error: payErr } = await supabase
     .from("purchase_payments")
     .select(
-      "id, amount, paid_at, payment_method_id, accounting_entry_id, purchase_id, notes",
+      "id, amount, paid_at, payment_kind, treasury_account_id, accounting_entry_id, purchase_id, notes",
     )
     .eq("id", purchasePaymentId)
     .eq("pop_id", popId)
@@ -265,33 +265,18 @@ export async function postPurchasePaymentLedger(
     }
   }
 
-  let paymentAccountId: string | null = null
-  const pmId = payRow.payment_method_id != null ? String(payRow.payment_method_id) : ""
-  if (pmId) {
-    paymentAccountId = await resolvePaymentMethodLedgerAccount(
-      supabase,
-      popId,
-      pmId,
-      "pay",
-    )
-    if (!paymentAccountId) {
-      const { data: pmRow } = await supabase
-        .from("payment_methods")
-        .select("kind")
-        .eq("id", pmId)
-        .eq("pop_id", popId)
-        .maybeSingle()
-      const pmKind = String(pmRow?.kind ?? "other")
-      const codes = PAYMENT_KIND_ACCOUNT_FALLBACK[pmKind] ?? PAYMENT_KIND_ACCOUNT_FALLBACK.other
-      paymentAccountId = await resolveAccountId(supabase, popId, codes)
-    }
-  } else {
-    paymentAccountId = await resolveAccountId(
-      supabase,
-      popId,
-      PAYMENT_KIND_ACCOUNT_FALLBACK.other,
-    )
-  }
+  const paymentKind =
+    payRow.payment_kind != null ? String(payRow.payment_kind) : "other"
+  const treasuryAccountId =
+    payRow.treasury_account_id != null
+      ? String(payRow.treasury_account_id)
+      : null
+  const paymentAccountId = await resolveLedgerAccountForTreasuryPayment(
+    supabase,
+    popId,
+    paymentKind,
+    treasuryAccountId,
+  )
   if (!paymentAccountId) {
     return {
       success: false,

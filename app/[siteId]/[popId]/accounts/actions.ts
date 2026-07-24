@@ -7,28 +7,34 @@ import {
 import { getPopById, getPopSiteId, validatePopAccess } from "@/lib/popHelpers"
 import { popMenuHref } from "@/lib/popRoutes"
 import { loadPopPermissionsSnapshot } from "@/lib/popPermissionsServer"
-import { monthBoundsISO } from "@/lib/expenseMonth"
-import { createTreasuryChartSubaccount } from "@/lib/treasuryChartSubaccount"
 import {
+  createTreasuryChartSubaccount,
+  createTreasuryChartSubaccountUnderParent,
+  TREASURY_CARD_PAYABLE_PARENT_CHART_CODE,
+  TREASURY_POS_PARENT_CHART_CODE,
+} from "@/lib/treasuryChartSubaccount"
+import {
+  isCardPayableChartCode,
+  isMotherTreasuryAccount,
+  isSettlementReceivableChartCode,
   type TreasuryAccountKind,
 } from "@/lib/treasuryAccountKinds"
-import { listPaymentMethodIdsForTreasuryAccount } from "@/lib/treasuryAccountResolve"
 import { requireAuthenticatedUser } from "@/lib/authHelpers"
 import { createClient } from "@/utils/supabase/server"
-import type { PaymentsHubSummary } from "@/app/[siteId]/[popId]/payment-methods/actions"
 
 export type TreasuryAccountTableRow = {
   id: string
   name: string
   kind: TreasuryAccountKind
+  brandKey: string | null
   isSystemDefault: boolean
   isActive: boolean
   sortOrder: number
   accountingAccountId: string
   accountingAccountLabel: string
   chartAccountCode: string
-  receivedMonthTotal: number
-  paidOutMonthTotal: number
+  toLiquidateBalance: number
+  toPayBalance: number
   outstandingBalance: number
   settledTotal: number
   ledgerBalance: number | null
@@ -39,7 +45,10 @@ export type UpsertTreasuryAccountInput = {
   name: string
   kind: TreasuryAccountKind
   sortOrder: number
+  brandKey?: string | null
 }
+
+export type TreasuryChildAccountKind = "pos" | "card_payable"
 
 export type TreasuryFundingOption = {
   id: string
@@ -56,14 +65,6 @@ function parseAmount(v: unknown): number {
   return Number.isFinite(n) ? roundMoney(n) : 0
 }
 
-function monthLabelEs(year: number, month1: number): string {
-  const d = new Date(year, month1 - 1, 1)
-  return new Intl.DateTimeFormat("es-AR", {
-    month: "long",
-    year: "numeric",
-  }).format(d)
-}
-
 function parseTreasuryKind(v: unknown): TreasuryAccountKind {
   const k = String(v ?? "other")
   if (k === "cash" || k === "bank" || k === "wallet" || k === "card_payable") {
@@ -72,81 +73,8 @@ function parseTreasuryKind(v: unknown): TreasuryAccountKind {
   return "other"
 }
 
-async function computeMonthTotalsByTreasuryAccount(
-  supabase: Awaited<ReturnType<typeof createClient>>,
-  popId: string,
-  year: number,
-  month1: number,
-): Promise<Map<string, { received: number; paidOut: number }>> {
-  const totals = new Map<string, { received: number; paidOut: number }>()
-  const { start, end } = monthBoundsISO(year, month1)
-  const soldAtEnd = `${end}T23:59:59.999`
-
-  const { data: pmRows } = await supabase
-    .from("payment_methods")
-    .select("id, treasury_account_id")
-    .eq("pop_id", popId)
-    .not("treasury_account_id", "is", null)
-
-  const pmToTa = new Map<string, string>()
-  for (const pm of pmRows || []) {
-    if (pm.treasury_account_id) {
-      pmToTa.set(String(pm.id), String(pm.treasury_account_id))
-    }
-  }
-
-  const bump = (taId: string, field: "received" | "paidOut", amount: number) => {
-    if (!taId || amount <= 0) return
-    const prev = totals.get(taId) ?? { received: 0, paidOut: 0 }
-    prev[field] = roundMoney(prev[field] + amount)
-    totals.set(taId, prev)
-  }
-
-  const { data: saleRows } = await supabase
-    .from("sales")
-    .select("id")
-    .eq("pop_id", popId)
-    .eq("status", "completed")
-    .gte("sold_at", start)
-    .lte("sold_at", soldAtEnd)
-  const saleIds = (saleRows || []).map((r) => String(r.id))
-  if (saleIds.length > 0) {
-    const { data: spRows } = await supabase
-      .from("sale_payments")
-      .select("payment_method_id, amount")
-      .eq("pop_id", popId)
-      .in("sale_id", saleIds)
-    for (const row of spRows || []) {
-      const taId = pmToTa.get(String(row.payment_method_id))
-      if (taId) bump(taId, "received", parseAmount(row.amount))
-    }
-  }
-
-  const { data: purchasePayRows } = await supabase
-    .from("purchase_payments")
-    .select("payment_method_id, amount")
-    .eq("pop_id", popId)
-    .gte("paid_at", start)
-    .lte("paid_at", end)
-  for (const row of purchasePayRows || []) {
-    if (row.payment_method_id == null) continue
-    const taId = pmToTa.get(String(row.payment_method_id))
-    if (taId) bump(taId, "paidOut", parseAmount(row.amount))
-  }
-
-  const { data: expensePayRows } = await supabase
-    .from("expense_payments")
-    .select("payment_method_id, amount")
-    .eq("pop_id", popId)
-    .gte("paid_at", start)
-    .lte("paid_at", end)
-  for (const row of expensePayRows || []) {
-    if (row.payment_method_id == null) continue
-    const taId = pmToTa.get(String(row.payment_method_id))
-    if (taId) bump(taId, "paidOut", parseAmount(row.amount))
-  }
-
-  return totals
+function compareChartAccountCodes(a: string, b: string): number {
+  return a.localeCompare(b, undefined, { numeric: true })
 }
 
 async function computeLifetimePaidOutByTreasuryAccount(
@@ -154,17 +82,6 @@ async function computeLifetimePaidOutByTreasuryAccount(
   popId: string,
 ): Promise<Map<string, number>> {
   const totals = new Map<string, number>()
-  const { data: pmRows } = await supabase
-    .from("payment_methods")
-    .select("id, treasury_account_id")
-    .eq("pop_id", popId)
-    .not("treasury_account_id", "is", null)
-  const pmToTa = new Map<string, string>()
-  for (const pm of pmRows || []) {
-    if (pm.treasury_account_id) {
-      pmToTa.set(String(pm.id), String(pm.treasury_account_id))
-    }
-  }
   const bump = (taId: string, amount: number) => {
     if (!taId || amount <= 0) return
     totals.set(taId, roundMoney((totals.get(taId) ?? 0) + amount))
@@ -172,12 +89,11 @@ async function computeLifetimePaidOutByTreasuryAccount(
   for (const table of ["purchase_payments", "expense_payments"] as const) {
     const { data } = await supabase
       .from(table)
-      .select("payment_method_id, amount")
+      .select("treasury_account_id, amount")
       .eq("pop_id", popId)
     for (const row of data || []) {
-      if (row.payment_method_id == null) continue
-      const taId = pmToTa.get(String(row.payment_method_id))
-      if (taId) bump(taId, parseAmount(row.amount))
+      if (row.treasury_account_id == null) continue
+      bump(String(row.treasury_account_id), parseAmount(row.amount))
     }
   }
   return totals
@@ -190,7 +106,7 @@ async function computeSettlementsByTreasuryAccount(
   const totals = new Map<string, number>()
   const { data } = await supabase
     .from("treasury_settlements")
-    .select("card_treasury_account_id, card_payment_method_id, amount")
+    .select("card_treasury_account_id, amount")
     .eq("pop_id", popId)
   for (const row of data || []) {
     const taId =
@@ -249,13 +165,10 @@ async function computeLedgerBalancesByAccount(
 
 export async function getTreasuryAccountsHub(
   popId: string,
-  year: number,
-  month1: number,
 ): Promise<
   | {
       success: true
       rows: TreasuryAccountTableRow[]
-      summary: PaymentsHubSummary
       fundingAccounts: TreasuryFundingOption[]
       popName: string
       canCreate: boolean
@@ -268,7 +181,6 @@ export async function getTreasuryAccountsHub(
       error: string
       redirect?: string
       rows: TreasuryAccountTableRow[]
-      summary: PaymentsHubSummary
       fundingAccounts: TreasuryFundingOption[]
       canCreate: boolean
       canUpdate: boolean
@@ -277,24 +189,8 @@ export async function getTreasuryAccountsHub(
       popName?: string
     }
 > {
-  const now = new Date()
-  const y = Number.isFinite(year) && year >= 2000 ? Math.trunc(year) : now.getFullYear()
-  const m =
-    Number.isFinite(month1) && month1 >= 1 && month1 <= 12
-      ? Math.trunc(month1)
-      : now.getMonth() + 1
-
-  const emptySummary: PaymentsHubSummary = {
-    year: y,
-    month: m,
-    monthLabel: monthLabelEs(y, m),
-    receivedMonthTotal: 0,
-    paidOutMonthTotal: 0,
-    netMonthTotal: 0,
-  }
   const empty = {
     rows: [] as TreasuryAccountTableRow[],
-    summary: emptySummary,
     fundingAccounts: [] as TreasuryFundingOption[],
     canCreate: false,
     canUpdate: false,
@@ -353,6 +249,8 @@ export async function getTreasuryAccountsHub(
         is_system_default,
         is_active,
         sort_order,
+        brand_key,
+        parent_treasury_account_id,
         accounting_chart_account_id,
         accounting_chart_of_accounts (
           code,
@@ -361,7 +259,6 @@ export async function getTreasuryAccountsHub(
       `,
       )
       .eq("pop_id", popId)
-      .order("sort_order", { ascending: true })
       .order("name", { ascending: true })
 
     if (error) {
@@ -377,23 +274,22 @@ export async function getTreasuryAccountsHub(
       }
     }
 
-    const monthTotals = await computeMonthTotalsByTreasuryAccount(supabase, popId, y, m)
-    const lifetimePaid = await computeLifetimePaidOutByTreasuryAccount(supabase, popId)
-    const settlementsByTa = await computeSettlementsByTreasuryAccount(supabase, popId)
-
     const accountIds = (data || []).map((r) =>
       String(r.accounting_chart_account_id),
     )
+
+    const lifetimePaid = await computeLifetimePaidOutByTreasuryAccount(supabase, popId)
+    const settlementsByTa = await computeSettlementsByTreasuryAccount(supabase, popId)
+
     const ledgerBalances = await computeLedgerBalancesByAccount(
       supabase,
       popId,
       accountIds,
     )
 
-    let receivedMonthTotal = 0
-    let paidOutMonthTotal = 0
-
-    const rows: TreasuryAccountTableRow[] = (data || []).map((r) => {
+    const allRows: (TreasuryAccountTableRow & {
+      parentTreasuryAccountId: string | null
+    })[] = (data || []).map((r) => {
       const id = String(r.id)
       const kind = parseTreasuryKind(r.kind)
       const chart = r.accounting_chart_of_accounts as unknown as {
@@ -401,9 +297,7 @@ export async function getTreasuryAccountsHub(
         name?: string
       } | null
       const chartId = String(r.accounting_chart_account_id)
-      const mt = monthTotals.get(id) ?? { received: 0, paidOut: 0 }
-      receivedMonthTotal += mt.received
-      paidOutMonthTotal += mt.paidOut
+      const chartAccountCode = String(chart?.code ?? "")
       const charged = lifetimePaid.get(id) ?? 0
       const settled = settlementsByTa.get(id) ?? 0
       const isCardPayable = kind === "card_payable"
@@ -411,6 +305,7 @@ export async function getTreasuryAccountsHub(
         id,
         name: String(r.name ?? ""),
         kind,
+        brandKey: r.brand_key != null ? String(r.brand_key) : null,
         isSystemDefault: Boolean(r.is_system_default),
         isActive: Boolean(r.is_active),
         sortOrder: Number(r.sort_order ?? 0),
@@ -418,33 +313,79 @@ export async function getTreasuryAccountsHub(
         accountingAccountLabel: chart
           ? `${chart.code ?? ""} ${chart.name ?? ""}`.trim()
           : "",
-        chartAccountCode: String(chart?.code ?? ""),
-        receivedMonthTotal: mt.received,
-        paidOutMonthTotal: mt.paidOut,
+        chartAccountCode,
+        toLiquidateBalance: 0,
+        toPayBalance: 0,
         outstandingBalance: isCardPayable
           ? roundMoney(charged - settled)
           : 0,
         settledTotal: settled,
         ledgerBalance: ledgerBalances.get(chartId) ?? null,
         isCardPayable,
+        parentTreasuryAccountId:
+          r.parent_treasury_account_id != null
+            ? String(r.parent_treasury_account_id)
+            : null,
       }
     })
 
-    const fundingAccounts: TreasuryFundingOption[] = rows
-      .filter((r) => r.isActive && !r.isCardPayable)
+    const toLiquidateByMother = new Map<string, number>()
+    const toPayByMother = new Map<string, number>()
+    for (const r of allRows) {
+      if (!isMotherTreasuryAccount(r.chartAccountCode)) continue
+      toLiquidateByMother.set(r.id, 0)
+      toPayByMother.set(r.id, 0)
+    }
+
+    for (const row of allRows) {
+      const parentId = row.parentTreasuryAccountId
+      if (!parentId) continue
+      if (
+        !toLiquidateByMother.has(parentId) &&
+        !toPayByMother.has(parentId)
+      ) {
+        continue
+      }
+      const balance = row.ledgerBalance ?? 0
+      if (balance === 0) continue
+
+      if (isSettlementReceivableChartCode(row.chartAccountCode)) {
+        toLiquidateByMother.set(
+          parentId,
+          roundMoney((toLiquidateByMother.get(parentId) ?? 0) + balance),
+        )
+      } else if (
+        isCardPayableChartCode(row.chartAccountCode) ||
+        row.isCardPayable
+      ) {
+        toPayByMother.set(
+          parentId,
+          roundMoney((toPayByMother.get(parentId) ?? 0) + balance),
+        )
+      }
+    }
+
+    const rows = allRows
+      .filter((r) => isMotherTreasuryAccount(r.chartAccountCode))
+      .map(({ parentTreasuryAccountId: _parent, ...r }) => ({
+        ...r,
+        toLiquidateBalance: toLiquidateByMother.get(r.id) ?? 0,
+        toPayBalance: toPayByMother.get(r.id) ?? 0,
+      }))
+      .sort((a, b) =>
+        compareChartAccountCodes(a.chartAccountCode, b.chartAccountCode),
+      )
+
+    const fundingAccounts: TreasuryFundingOption[] = allRows
+      .filter((r) => r.isActive && !r.isCardPayable && isMotherTreasuryAccount(r.chartAccountCode))
+      .sort((a, b) =>
+        compareChartAccountCodes(a.chartAccountCode, b.chartAccountCode),
+      )
       .map((r) => ({ id: r.id, name: r.name, kind: r.kind }))
 
     return {
       success: true,
       rows,
-      summary: {
-        year: y,
-        month: m,
-        monthLabel: monthLabelEs(y, m),
-        receivedMonthTotal: roundMoney(receivedMonthTotal),
-        paidOutMonthTotal: roundMoney(paidOutMonthTotal),
-        netMonthTotal: roundMoney(receivedMonthTotal - paidOutMonthTotal),
-      },
       fundingAccounts,
       popName,
       canCreate,
@@ -500,6 +441,7 @@ export async function createTreasuryAccount(
       pop_id: popId,
       name,
       kind,
+      brand_key: input.brandKey?.trim() || null,
       accounting_chart_account_id: chart.id,
       is_system_default: false,
       is_active: true,
@@ -508,6 +450,133 @@ export async function createTreasuryAccount(
     if (error) {
       return { success: false, error: error.message || "No se pudo crear." }
     }
+    return { success: true }
+  } catch (e: unknown) {
+    const message = e instanceof Error ? e.message : "Error desconocido"
+    return { success: false, error: message }
+  }
+}
+
+export async function createTreasuryChildAccount(
+  popId: string,
+  parentTreasuryAccountId: string,
+  childKind: TreasuryChildAccountKind,
+  name: string,
+): Promise<{ success: true } | { success: false; error: string }> {
+  try {
+    const access = await validatePopAccess(popId)
+    if (!access.hasAccess || !access.isActive) {
+      return { success: false, error: access.error || "Sin acceso" }
+    }
+    const snap = await loadPopPermissionsSnapshot(popId)
+    if (
+      !permissionKeysInclude(
+        snap.keys,
+        POP_PERMS.PAYMENT_METHOD_CREATE.resource,
+        POP_PERMS.PAYMENT_METHOD_CREATE.action,
+      )
+    ) {
+      return { success: false, error: "Sin permiso para agregar cuentas." }
+    }
+
+    const trimmed = name.trim()
+    if (!trimmed) {
+      return { success: false, error: "El nombre es obligatorio." }
+    }
+
+    const supabase = await createClient()
+    const { data: parent, error: parentErr } = await supabase
+      .from("treasury_accounts")
+      .select(
+        `
+        id,
+        kind,
+        sort_order,
+        accounting_chart_of_accounts ( code )
+      `,
+      )
+      .eq("id", parentTreasuryAccountId)
+      .eq("pop_id", popId)
+      .maybeSingle()
+
+    if (parentErr || !parent?.id) {
+      return { success: false, error: "Cuenta madre no encontrada." }
+    }
+
+    const parentKind = parseTreasuryKind(parent.kind)
+    const parentChart = parent.accounting_chart_of_accounts as unknown as {
+      code?: string
+    } | null
+    const parentChartCode = String(parentChart?.code ?? "")
+
+    if (!isMotherTreasuryAccount(parentChartCode)) {
+      return {
+        success: false,
+        error: "Solo se pueden agregar terminales o tarjetas a cuentas madre.",
+      }
+    }
+
+    if (childKind === "pos") {
+      if (parentKind !== "bank" && parentKind !== "wallet") {
+        return {
+          success: false,
+          error: "Los terminales POS se agregan a cuentas banco o billetera.",
+        }
+      }
+    } else if (parentKind !== "bank") {
+      return {
+        success: false,
+        error: "Las tarjetas corporativas se agregan a cuentas banco.",
+      }
+    }
+
+    const chartConfig =
+      childKind === "pos"
+        ? {
+            parentCode: TREASURY_POS_PARENT_CHART_CODE,
+            treasuryKind: "other" as TreasuryAccountKind,
+            accountType: "activo_corriente",
+            nature: "deudora",
+            kind: "other" as TreasuryAccountKind,
+          }
+        : {
+            parentCode: TREASURY_CARD_PAYABLE_PARENT_CHART_CODE,
+            treasuryKind: "card_payable" as TreasuryAccountKind,
+            accountType: "pasivo_corriente",
+            nature: "acreedora",
+            kind: "card_payable" as TreasuryAccountKind,
+          }
+
+    const chart = await createTreasuryChartSubaccountUnderParent(
+      supabase,
+      popId,
+      chartConfig.parentCode,
+      trimmed,
+      {
+        treasuryKind: chartConfig.treasuryKind,
+        accountType: chartConfig.accountType,
+        nature: chartConfig.nature,
+      },
+    )
+    if ("error" in chart) {
+      return { success: false, error: chart.error }
+    }
+
+    const parentSort = Number(parent.sort_order ?? 0)
+    const { error } = await supabase.from("treasury_accounts").insert({
+      pop_id: popId,
+      name: trimmed,
+      kind: chartConfig.kind,
+      accounting_chart_account_id: chart.id,
+      parent_treasury_account_id: parentTreasuryAccountId,
+      is_system_default: false,
+      is_active: true,
+      sort_order: Math.trunc(parentSort + (childKind === "pos" ? 1 : 2)),
+    })
+    if (error) {
+      return { success: false, error: error.message || "No se pudo crear." }
+    }
+
     return { success: true }
   } catch (e: unknown) {
     const message = e instanceof Error ? e.message : "Error desconocido"
@@ -601,28 +670,28 @@ export async function deleteTreasuryAccount(
     const supabase = await createClient()
     const { data: row } = await supabase
       .from("treasury_accounts")
-      .select("is_system_default")
+      .select("id")
       .eq("id", rowId)
       .eq("pop_id", popId)
       .maybeSingle()
     if (!row) return { success: false, error: "Cuenta no encontrada." }
-    if (row.is_system_default) {
+
+    const { count: childCount, error: childErr } = await supabase
+      .from("treasury_accounts")
+      .select("id", { count: "exact", head: true })
+      .eq("pop_id", popId)
+      .eq("parent_treasury_account_id", rowId)
+    if (childErr) {
       return {
         success: false,
-        error: "No podés eliminar una cuenta predeterminada del sistema.",
+        error: childErr.message || "No se pudo verificar cuentas vinculadas.",
       }
     }
-
-    const pmIds = await listPaymentMethodIdsForTreasuryAccount(
-      supabase,
-      popId,
-      rowId,
-    )
-    if (pmIds.length > 0) {
+    if ((childCount ?? 0) > 0) {
       return {
         success: false,
         error:
-          "Hay formas de pago vinculadas a esta cuenta. Reasignalas antes de eliminar.",
+          "Hay terminales POS o tarjetas vinculados a esta cuenta. Eliminalos o reasignalos antes.",
       }
     }
 
@@ -639,4 +708,233 @@ export async function deleteTreasuryAccount(
     const message = e instanceof Error ? e.message : "Error desconocido"
     return { success: false, error: message }
   }
+}
+
+export type TreasuryChildAccountRow = {
+  id: string
+  name: string
+  kind: TreasuryAccountKind
+  chartAccountCode: string
+  ledgerBalance: number | null
+  childRole: "pos" | "card_payable"
+  outstandingBalance: number
+  settledTotal: number
+}
+
+export async function getTreasuryAccountPageData(
+  popId: string,
+  treasuryAccountId: string,
+): Promise<
+  | {
+      success: true
+      account: TreasuryAccountTableRow
+      children: TreasuryChildAccountRow[]
+      isMother: boolean
+      parentAccount: { id: string; name: string } | null
+      fundingAccounts: TreasuryFundingOption[]
+      popName: string
+      canCreate: boolean
+      canUpdate: boolean
+      canDelete: boolean
+      canSettle: boolean
+    }
+  | {
+      success: false
+      error: string
+      redirect?: string
+    }
+> {
+  const hub = await getTreasuryAccountsHub(popId)
+  if (!hub.success) {
+    return {
+      success: false,
+      error: hub.error || "Error",
+      redirect: hub.redirect,
+    }
+  }
+
+  const taId = treasuryAccountId.trim()
+  const motherRow = hub.rows.find((r) => r.id === taId)
+  if (motherRow) {
+    const children = await loadTreasuryChildAccounts(popId, taId)
+    return {
+      success: true,
+      account: motherRow,
+      children,
+      isMother: true,
+      parentAccount: null,
+      fundingAccounts: hub.fundingAccounts,
+      popName: hub.popName,
+      canCreate: hub.canCreate,
+      canUpdate: hub.canUpdate,
+      canDelete: hub.canDelete,
+      canSettle: hub.canSettle,
+    }
+  }
+
+  const supabase = await createClient()
+  const { data: raw, error } = await supabase
+    .from("treasury_accounts")
+    .select(
+      `
+      id,
+      name,
+      kind,
+      is_system_default,
+      is_active,
+      sort_order,
+      brand_key,
+      parent_treasury_account_id,
+      accounting_chart_account_id,
+      accounting_chart_of_accounts (
+        code,
+        name
+      )
+    `,
+    )
+    .eq("id", taId)
+    .eq("pop_id", popId)
+    .maybeSingle()
+
+  if (error || !raw?.id) {
+    return { success: false, error: "Cuenta no encontrada." }
+  }
+
+  const chart = raw.accounting_chart_of_accounts as unknown as {
+    code?: string
+    name?: string
+  } | null
+  const chartId = String(raw.accounting_chart_account_id)
+  const chartAccountCode = String(chart?.code ?? "")
+  const kind = parseTreasuryKind(raw.kind)
+  const isCardPayable = kind === "card_payable"
+
+  const ledgerBalances = await computeLedgerBalancesByAccount(supabase, popId, [
+    chartId,
+  ])
+  const lifetimePaid = isCardPayable
+    ? await computeLifetimePaidOutByTreasuryAccount(supabase, popId).then(
+        (m) => m.get(taId) ?? 0,
+      )
+    : 0
+  const settledMap = isCardPayable
+    ? await computeSettlementsByTreasuryAccount(supabase, popId)
+    : new Map<string, number>()
+  const settled = settledMap.get(taId) ?? 0
+
+  let parentAccount: { id: string; name: string } | null = null
+  if (raw.parent_treasury_account_id != null) {
+    const parentId = String(raw.parent_treasury_account_id)
+    const { data: parentRow } = await supabase
+      .from("treasury_accounts")
+      .select("id, name")
+      .eq("id", parentId)
+      .eq("pop_id", popId)
+      .maybeSingle()
+    if (parentRow?.id) {
+      parentAccount = {
+        id: String(parentRow.id),
+        name: String(parentRow.name ?? ""),
+      }
+    }
+  }
+
+  const ledgerBalance = ledgerBalances.get(chartId) ?? null
+  const isPos = isSettlementReceivableChartCode(chartAccountCode)
+
+  const account: TreasuryAccountTableRow = {
+    id: taId,
+    name: String(raw.name ?? ""),
+    kind,
+    brandKey: raw.brand_key != null ? String(raw.brand_key) : null,
+    isSystemDefault: Boolean(raw.is_system_default),
+    isActive: Boolean(raw.is_active),
+    sortOrder: Number(raw.sort_order ?? 0),
+    accountingAccountId: chartId,
+    accountingAccountLabel: chart
+      ? `${chart.code ?? ""} ${chart.name ?? ""}`.trim()
+      : "",
+    chartAccountCode,
+    toLiquidateBalance: isPos ? (ledgerBalance ?? 0) : 0,
+    toPayBalance: isCardPayable ? (ledgerBalance ?? 0) : 0,
+    outstandingBalance: isCardPayable ? roundMoney(lifetimePaid - settled) : 0,
+    settledTotal: settled,
+    ledgerBalance,
+    isCardPayable,
+  }
+
+  return {
+    success: true,
+    account,
+    children: [],
+    isMother: false,
+    parentAccount,
+    fundingAccounts: hub.fundingAccounts,
+    popName: hub.popName,
+    canCreate: hub.canCreate,
+    canUpdate: hub.canUpdate,
+    canDelete: hub.canDelete,
+    canSettle: hub.canSettle,
+  }
+}
+
+async function loadTreasuryChildAccounts(
+  popId: string,
+  parentTreasuryAccountId: string,
+): Promise<TreasuryChildAccountRow[]> {
+  const supabase = await createClient()
+  const { data, error } = await supabase
+    .from("treasury_accounts")
+    .select(
+      `
+      id,
+      name,
+      kind,
+      accounting_chart_account_id,
+      accounting_chart_of_accounts ( code )
+    `,
+    )
+    .eq("pop_id", popId)
+    .eq("parent_treasury_account_id", parentTreasuryAccountId)
+    .order("name", { ascending: true })
+
+  if (error || !data?.length) return []
+
+  const chartIds = data.map((r) => String(r.accounting_chart_account_id))
+  const ledgerBalances = await computeLedgerBalancesByAccount(
+    supabase,
+    popId,
+    chartIds,
+  )
+  const lifetimePaid = await computeLifetimePaidOutByTreasuryAccount(
+    supabase,
+    popId,
+  )
+  const settlementsByTa = await computeSettlementsByTreasuryAccount(
+    supabase,
+    popId,
+  )
+
+  return data.map((r) => {
+    const id = String(r.id)
+    const kind = parseTreasuryKind(r.kind)
+    const chart = r.accounting_chart_of_accounts as unknown as {
+      code?: string
+    } | null
+    const chartAccountCode = String(chart?.code ?? "")
+    const chartId = String(r.accounting_chart_account_id)
+    const isCard = kind === "card_payable" || isCardPayableChartCode(chartAccountCode)
+    const charged = lifetimePaid.get(id) ?? 0
+    const settled = settlementsByTa.get(id) ?? 0
+    return {
+      id,
+      name: String(r.name ?? ""),
+      kind,
+      chartAccountCode,
+      ledgerBalance: ledgerBalances.get(chartId) ?? null,
+      childRole: isCard ? ("card_payable" as const) : ("pos" as const),
+      outstandingBalance: isCard ? roundMoney(charged - settled) : 0,
+      settledTotal: settled,
+    }
+  })
 }

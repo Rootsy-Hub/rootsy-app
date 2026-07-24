@@ -24,9 +24,11 @@ import { promotionPricingSummary } from "@/lib/promotionTypes"
 import type {
   SaleCatalogCategory,
   SaleCatalogClient,
-  SaleCatalogPaymentMethod,
   SaleOpenCashSession,
 } from "@/app/[siteId]/[popId]/sale/actions"
+import { resolveOpenCashSession } from "@/lib/cashRegisterSession"
+import { getTreasuryPaymentContext } from "@/lib/treasuryPaymentContext"
+import type { TreasuryPaymentContext } from "@/lib/treasuryPaymentOptions"
 
 export type MenuCatalogRecipe = {
   id: string
@@ -363,7 +365,7 @@ export async function getMenuCatalog(popId: string): Promise<
       promotions: MenuCatalogPromotion[]
       quantityDeals: MenuCatalogPromotion[]
       clients: SaleCatalogClient[]
-      paymentMethods: SaleCatalogPaymentMethod[]
+      treasuryPaymentContext: TreasuryPaymentContext | null
       canReadClients: boolean
       canReadPaymentMethods: boolean
       canCreateSale: boolean
@@ -428,6 +430,9 @@ export async function getMenuCatalog(popId: string): Promise<
       popRes.success && popRes.pop ? String(popRes.pop.name ?? "") : ""
 
     const supabase = await createClient()
+    const {
+      data: { user },
+    } = await supabase.auth.getUser()
 
     const { data: recipeCatRows, error: recipeCatErr } = await supabase
       .from("recipe_categories")
@@ -632,60 +637,24 @@ export async function getMenuCatalog(popId: string): Promise<
 
     let openCashSession: SaleOpenCashSession | null = null
     if (canReadCashRegisters) {
-      const { data: regs, error: regErr } = await supabase
-        .from("cash_registers")
-        .select("id, name, sort_order")
-        .eq("pop_id", popId)
-        .eq("is_active", true)
-        .order("sort_order", { ascending: true })
-        .order("name", { ascending: true })
-      const { data: openSessions, error: sessErr } = await supabase
-        .from("cash_register_sessions")
-        .select("id, cash_register_id")
-        .eq("pop_id", popId)
-        .eq("status", "open")
-      if (!regErr && !sessErr && regs && openSessions) {
-        const openByReg = new Map<string, string>()
-        for (const s of openSessions) {
-          openByReg.set(String(s.cash_register_id), String(s.id))
-        }
-        for (const r of regs) {
-          const rid = String(r.id)
-          const sid = openByReg.get(rid)
-          if (sid) {
-            openCashSession = {
-              sessionId: sid,
-              cashRegisterId: rid,
-              registerName: String(r.name ?? ""),
-            }
-            break
-          }
+      const cashRes = await resolveOpenCashSession(supabase, popId, user?.id)
+      if (cashRes.success) {
+        openCashSession = {
+          sessionId: cashRes.ctx.sessionId,
+          cashRegisterId: cashRes.ctx.cashRegisterId,
+          registerName: cashRes.ctx.registerName,
+          cashTreasuryAccountId: cashRes.ctx.cashTreasuryAccountId!,
         }
       }
     }
 
-    let paymentMethods: SaleCatalogPaymentMethod[] = []
+    let treasuryPaymentContext: TreasuryPaymentContext | null = null
     if (canReadPaymentMethods) {
-      const { data: pmRows, error: pmErr } = await supabase
-        .from("payment_methods")
-        .select("id, name, kind, usage, sort_order, accounting_account_id")
-        .eq("pop_id", popId)
-        .eq("is_active", true)
-        .in("usage", ["receive", "both"])
-        .order("sort_order", { ascending: true })
-        .order("name", { ascending: true })
-      if (pmErr) {
-        return { success: false, error: pmErr.message }
+      const treasuryRes = await getTreasuryPaymentContext(popId)
+      if (!treasuryRes.success) {
+        return { success: false, error: treasuryRes.error }
       }
-      paymentMethods = (pmRows ?? []).map((p) => ({
-        id: String(p.id),
-        name: String(p.name ?? ""),
-        kind: String(p.kind ?? "other"),
-        sortOrder: Number(p.sort_order ?? 0) || 0,
-        accountingAccountId: p.accounting_account_id
-          ? String(p.accounting_account_id)
-          : null,
-      }))
+      treasuryPaymentContext = treasuryRes.context
     }
 
     return {
@@ -697,7 +666,7 @@ export async function getMenuCatalog(popId: string): Promise<
       promotions,
       quantityDeals,
       clients,
-      paymentMethods,
+      treasuryPaymentContext,
       canReadClients,
       canReadPaymentMethods,
       canCreateSale,

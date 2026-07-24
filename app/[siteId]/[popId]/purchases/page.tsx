@@ -11,6 +11,7 @@ import {
   type PurchaseCatalogSupplier,
   type PurchaseKind,
 } from "@/app/[siteId]/[popId]/purchases/actions"
+import { treasuryPaymentOptionKey } from "@/lib/treasuryPaymentOptions"
 import {
   CLIENT_IVA_CONDITION_OPTIONS,
 } from "@/app/[siteId]/[popId]/clients/clientIvaConstants"
@@ -397,11 +398,16 @@ function PurchasesPage() {
   useEffect(() => {
     if (!canReadPaymentMethods || paymentMethods.length === 0) return
     setMetodoPagoSeleccionado((prev) => {
-      if (prev && paymentMethods.some((m) => m.id === prev.id)) return prev
+      if (
+        prev &&
+        paymentMethods.some(
+          (m) => treasuryPaymentOptionKey(m) === treasuryPaymentOptionKey(prev),
+        )
+      ) {
+        return prev
+      }
       const efectivo = paymentMethods.find((m) => m.kind === "cash")
-      return efectivo
-        ? { id: efectivo.id, label: efectivo.name, kind: efectivo.kind }
-        : null
+      return efectivo ?? null
     })
   }, [canReadPaymentMethods, paymentMethods])
 
@@ -438,11 +444,8 @@ function PurchasesPage() {
   const [comprobanteModalAbierto, setComprobanteModalAbierto] = useState(false)
   const [pagoModalAbierto, setPagoModalAbierto] = useState(false)
   const [descuentoModalAbierto, setDescuentoModalAbierto] = useState(false)
-  const [metodoPagoSeleccionado, setMetodoPagoSeleccionado] = useState<{
-    id: string
-    label: string
-    kind: string
-  } | null>(null)
+  const [metodoPagoSeleccionado, setMetodoPagoSeleccionado] =
+    useState<PurchaseCatalogPaymentMethod | null>(null)
   const [payOnSupplierAccount, setPayOnSupplierAccount] = useState(false)
   const [cardInstallments, setCardInstallments] = useState("1")
   const [modoDescuento, setModoDescuento] = useState<"porcentaje" | "fijo">(
@@ -644,7 +647,7 @@ function PurchasesPage() {
       payOnSupplierAccount,
       proveedorSeleccionado?.id,
       canReadPaymentMethods,
-      metodoPagoSeleccionado?.id,
+      metodoPagoSeleccionado?.treasuryAccountId,
     ],
   )
 
@@ -678,9 +681,7 @@ function PurchasesPage() {
     setCardInstallments("1")
     setMetodoPagoSeleccionado(() => {
       const efectivo = paymentMethods.find((m) => m.kind === "cash")
-      return efectivo
-        ? { id: efectivo.id, label: efectivo.name, kind: efectivo.kind }
-        : null
+      return efectivo ?? null
     })
     setItemDetalleAbiertoId(null)
     setDescartarConfirmOpen(false)
@@ -722,9 +723,10 @@ function PurchasesPage() {
           modoDescuento === "porcentaje"
             ? valorDescuentoPorcentaje
             : valorDescuentoFijo,
-        paymentMethodId: payOnSupplierAccount
+        paymentKind: payOnSupplierAccount ? null : metodoPagoSeleccionado?.kind,
+        treasuryAccountId: payOnSupplierAccount
           ? null
-          : metodoPagoSeleccionado?.id ?? null,
+          : metodoPagoSeleccionado?.treasuryAccountId ?? null,
         lines: carrito.map((i) => {
           const producto = productosCatalogo.find((p) => p.id === i.productoId)
           const fallback = producto?.precio ?? 0
@@ -2459,20 +2461,19 @@ function PurchasesPage() {
               >
                 {paymentMethodListItems.map(({ method, groupTitle }) => {
                   const seleccionado =
-                    !payOnSupplierAccount && metodoPagoSeleccionado?.id === method.id
+                    !payOnSupplierAccount &&
+                    metodoPagoSeleccionado != null &&
+                    treasuryPaymentOptionKey(metodoPagoSeleccionado) ===
+                      treasuryPaymentOptionKey(method)
                   return (
-                    <li key={method.id} className="min-w-0">
+                    <li key={treasuryPaymentOptionKey(method)} className="min-w-0">
                       <button
                         type="button"
                         role="option"
                         aria-selected={seleccionado}
                         onClick={() => {
                           setPayOnSupplierAccount(false)
-                          setMetodoPagoSeleccionado({
-                            id: method.id,
-                            label: method.name,
-                            kind: method.kind,
-                          })
+                          setMetodoPagoSeleccionado(method)
                           if (method.kind !== "card_credit") {
                             setCardInstallments("1")
                             setPagoModalAbierto(false)
@@ -2482,7 +2483,7 @@ function PurchasesPage() {
                       >
                         <span className="min-w-0">
                           <span className="block text-sm font-semibold leading-snug text-foreground">
-                            {method.name}
+                            {method.label}
                           </span>
                           <span className="mt-0.5 block text-xs leading-snug text-muted-foreground">
                             {groupTitle}

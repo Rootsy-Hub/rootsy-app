@@ -1,6 +1,7 @@
 "use client"
 
 import type { MesasSaleCheckout } from "@/app/[siteId]/[popId]/mesas/useMesasSaleCheckout"
+import { SalePaymentMethodDialog } from "@/components/sale-operation/SalePaymentMethodDialog"
 import { SaleOperationCheckoutConfirmDialog } from "@/components/sale-operation/SaleOperationCheckoutConfirmDialog"
 import {
   AlertDialog,
@@ -29,7 +30,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import { Separator } from "@/components/ui/separator"
 import {
   saleOpAlertDialogContent,
   saleOpDialogBody,
@@ -215,63 +215,31 @@ export function MesasCheckoutModals({
         </DialogContent>
       </Dialog>
 
-      <Dialog open={m.pagoModalAbierto} onOpenChange={m.setPagoModalAbierto}>
-        <DialogContent className={saleOpDialogContentMd}>
-          <DialogHeader className={saleOpDialogHeader}>
-            <DialogTitle className="text-base font-semibold tracking-tight">
-              Formas de pago
-            </DialogTitle>
-          </DialogHeader>
-          <div className={cn(saleOpDialogBody, "space-y-4 overflow-y-auto")}>
-            <button
-              type="button"
-              className={saleOpDialogOptionClass(m.payOnClientAccount)}
-              onClick={() => {
-                m.setPayOnClientAccount(true)
-                m.setMetodoPagoSeleccionado(null)
-                m.setPagoModalAbierto(false)
-              }}
-            >
-              {m.payOnClientAccountLabel}
-            </button>
-            {m.paymentMethodListItems.length > 0 ? (
-              <>
-                <Separator />
-                <ul className="flex flex-col gap-1.5">
-                  {m.paymentMethodListItems.map(({ method, groupTitle }) => (
-                    <li key={method.id}>
-                      <button
-                        type="button"
-                        className={saleOpDialogOptionClass(
-                          !m.payOnClientAccount &&
-                            m.metodoPagoSeleccionado?.id === method.id,
-                        )}
-                        onClick={() => {
-                          m.setPayOnClientAccount(false)
-                          m.setMetodoPagoSeleccionado({
-                            id: method.id,
-                            label: method.name,
-                          })
-                          m.setPagoModalAbierto(false)
-                        }}
-                      >
-                        <span>
-                          <span className="block text-sm font-semibold">
-                            {method.name}
-                          </span>
-                          <span className="text-xs text-muted-foreground">
-                            {groupTitle}
-                          </span>
-                        </span>
-                      </button>
-                    </li>
-                  ))}
-                </ul>
-              </>
-            ) : null}
-          </div>
-        </DialogContent>
-      </Dialog>
+      <SalePaymentMethodDialog
+        open={m.pagoModalAbierto}
+        onOpenChange={m.setPagoModalAbierto}
+        treasuryContext={m.treasuryPaymentContext}
+        cashTreasuryAccountId={m.openCashSession?.cashTreasuryAccountId ?? null}
+        selected={m.metodoPagoSeleccionado}
+        payOnClientAccount={m.payOnClientAccount}
+        onSelectImmediate={(option) => {
+          m.setPayOnClientAccount(false)
+          m.setMetodoPagoSeleccionado(option)
+        }}
+        onSelectClientAccount={() => {
+          m.setPayOnClientAccount(true)
+          m.setMetodoPagoSeleccionado(null)
+        }}
+        styles={{
+          content: saleOpDialogContentMd,
+          header: saleOpDialogHeader,
+          body: saleOpDialogBody,
+          footer: saleOpDialogFooter,
+          optionClass: saleOpDialogOptionClass,
+          primaryBtn: saleOpDialogPrimaryBtn,
+        }}
+        clientAccountDescription="Registrá la deuda en Cuentas por cobrar para esta operación."
+      />
 
       <Dialog open={m.descuentoModalAbierto} onOpenChange={m.setDescuentoModalAbierto}>
         <DialogContent className={saleOpDialogContentMd}>

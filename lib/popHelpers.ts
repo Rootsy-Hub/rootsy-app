@@ -82,6 +82,16 @@ export async function createPop(data: {
       }
     }
 
+    const { error: seedErr } = await supabase.rpc("seed_pop_treasury_defaults", {
+      p_pop_id: newPop.id,
+    })
+    if (seedErr) {
+      console.warn(
+        "[createPop] seed_pop_treasury_defaults:",
+        seedErr.message,
+      )
+    }
+
     const siteId = siteIdFromPopRow({
       site_id: newPop.site_id as string | null | undefined,
       settings: newPop.settings,

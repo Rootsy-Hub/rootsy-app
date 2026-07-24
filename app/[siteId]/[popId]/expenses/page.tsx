@@ -15,6 +15,7 @@ import {
   type ExpenseListRow,
   type PaymentMethodOption,
 } from "@/app/[siteId]/[popId]/expenses/actions"
+import { treasuryPaymentOptionKey } from "@/lib/treasuryPaymentOptions"
 import { ExpenseKindCardsPanel } from "@/app/[siteId]/[popId]/expenses/ExpenseKindCards"
 import { ExpensePeriodToolbar } from "@/app/[siteId]/[popId]/expenses/ExpensePeriodToolbar"
 import { ExpenseSummaryDashboard } from "@/app/[siteId]/[popId]/expenses/ExpenseSummaryDashboard"
@@ -141,7 +142,7 @@ function ExpensesPage() {
   const [payExpense, setPayExpense] = useState<ExpenseListRow | null>(null)
   const [payAmount, setPayAmount] = useState("")
   const [payDate, setPayDate] = useState("")
-  const [payMethodId, setPayMethodId] = useState("")
+  const [payMethodKey, setPayMethodKey] = useState("")
   const [paySaving, setPaySaving] = useState(false)
   const [payBanner, setPayBanner] = useState<string | null>(null)
 
@@ -309,7 +310,9 @@ function ExpensesPage() {
     const remaining = roundMoneyLocal(row.amount - row.paidTotal)
     setPayAmount(String(remaining > 0 ? remaining : ""))
     setPayDate(defaultDateInMonth(year, month1))
-    setPayMethodId(paymentMethods[0]?.id ?? "")
+    setPayMethodKey(
+      paymentMethods[0] ? treasuryPaymentOptionKey(paymentMethods[0]) : "",
+    )
     setPayOpen(true)
   }
 
@@ -319,12 +322,16 @@ function ExpensesPage() {
     setPaySaving(true)
     setPayBanner(null)
     const amount = Number(String(payAmount).replace(",", "."))
+    const selected = paymentMethods.find(
+      (pm) => treasuryPaymentOptionKey(pm) === payMethodKey.trim(),
+    )
     const res = await recordExpensePayment(
       popId,
       payExpense.id,
       amount,
       payDate,
-      payMethodId.trim() || null,
+      selected?.kind ?? null,
+      selected?.treasuryAccountId ?? null,
     )
     setPaySaving(false)
     if (!res.success) {
@@ -629,13 +636,13 @@ function ExpensesPage() {
                 <Label>Medio de pago (opcional)</Label>
                 <select
                   className="flex h-9 w-full rounded-md border border-border bg-background px-2 text-sm"
-                  value={payMethodId}
-                  onChange={(e) => setPayMethodId(e.target.value)}
+                  value={payMethodKey}
+                  onChange={(e) => setPayMethodKey(e.target.value)}
                 >
                   <option value="">—</option>
                   {paymentMethods.map((pm) => (
-                    <option key={pm.id} value={pm.id}>
-                      {pm.name}
+                    <option key={treasuryPaymentOptionKey(pm)} value={treasuryPaymentOptionKey(pm)}>
+                      {pm.label}
                     </option>
                   ))}
                 </select>

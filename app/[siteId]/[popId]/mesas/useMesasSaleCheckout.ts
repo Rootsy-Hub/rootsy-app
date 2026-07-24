@@ -8,7 +8,10 @@ import {
   type TableSessionCheckoutSnapshot,
 } from "@/app/[siteId]/[popId]/mesas/mesasCheckoutState"
 import { getMenuCatalog, type MenuCatalogArticle, type MenuCatalogCategorySection, type MenuCatalogPromotion, type MenuCatalogRecipe } from "@/app/[siteId]/[popId]/menu-catalog/actions"
-import type { SaleCatalogClient, SaleCatalogPaymentMethod, SaleOpenCashSession } from "@/app/[siteId]/[popId]/sale/actions"
+import type { SaleCatalogClient, SaleCatalogPaymentOption, SaleOpenCashSession } from "@/app/[siteId]/[popId]/sale/actions"
+import { defaultCheckoutPaymentSelection } from "@/lib/saleCheckoutPayment"
+import type { TreasuryPaymentContext } from "@/lib/treasuryPaymentOptions"
+import { treasuryPaymentOptionKey } from "@/lib/treasuryPaymentOptions"
 import { completeSale } from "@/app/[siteId]/[popId]/sale/completeSale"
 import {
   buildMenuProductMap,
@@ -142,7 +145,8 @@ export function useMesasSaleCheckout(
   const [menuPromotions, setMenuPromotions] = useState<MenuCatalogPromotion[]>([])
   const [menuQuantityDeals, setMenuQuantityDeals] = useState<MenuCatalogPromotion[]>([])
   const [saleClients, setSaleClients] = useState<SaleCatalogClient[]>([])
-  const [salePaymentMethods, setSalePaymentMethods] = useState<SaleCatalogPaymentMethod[]>([])
+  const [treasuryPaymentContext, setTreasuryPaymentContext] =
+    useState<TreasuryPaymentContext | null>(null)
   const [canReadClients, setCanReadClients] = useState(false)
   const [canCreateSale, setCanCreateSale] = useState(false)
   const [canReadCashRegisters, setCanReadCashRegisters] = useState(false)
@@ -158,10 +162,8 @@ export function useMesasSaleCheckout(
   const [fiscalDocVenta, setFiscalDocVenta] = useState("")
   const [ventaIvaCondition, setVentaIvaCondition] = useState("")
   const [comprobante, setComprobante] = useState<string | null>(null)
-  const [metodoPagoSeleccionado, setMetodoPagoSeleccionado] = useState<{
-    id: string
-    label: string
-  } | null>(null)
+  const [metodoPagoSeleccionado, setMetodoPagoSeleccionado] =
+    useState<SaleCatalogPaymentOption | null>(null)
   const [payOnClientAccount, setPayOnClientAccount] = useState(false)
   const [modoDescuento, setModoDescuento] = useState<"porcentaje" | "fijo">("porcentaje")
   const [valorDescuentoPorcentaje, setValorDescuentoPorcentaje] = useState(0)
@@ -428,7 +430,7 @@ export function useMesasSaleCheckout(
     setMenuPromotions([])
     setMenuQuantityDeals([])
       setSaleClients([])
-      setSalePaymentMethods([])
+      setTreasuryPaymentContext(null)
       setCatalogError(res.error)
       setCatalogLoading(false)
       return
@@ -439,7 +441,7 @@ export function useMesasSaleCheckout(
     setMenuPromotions(res.promotions)
     setMenuQuantityDeals(res.quantityDeals)
     setSaleClients(res.clients)
-    setSalePaymentMethods(res.paymentMethods)
+    setTreasuryPaymentContext(res.treasuryPaymentContext)
     setCanReadClients(res.canReadClients)
     setCanCreateSale(res.canCreateSale)
     setCanReadCashRegisters(res.canReadCashRegisters)
@@ -458,13 +460,18 @@ export function useMesasSaleCheckout(
   }, [])
 
   useEffect(() => {
-    if (salePaymentMethods.length === 0 || tableSessionId == null) return
+    if (!openCashSession?.cashTreasuryAccountId || tableSessionId == null) return
     setMetodoPagoSeleccionado((prev) => {
-      if (prev && salePaymentMethods.some((m) => m.id === prev.id)) return prev
-      const efectivo = salePaymentMethods.find((m) => m.kind === "cash")
-      return efectivo ? { id: efectivo.id, label: efectivo.name } : null
+      if (
+        prev &&
+        (prev.kind !== "cash" ||
+          prev.treasuryAccountId === openCashSession.cashTreasuryAccountId)
+      ) {
+        return prev
+      }
+      return defaultCheckoutPaymentSelection(openCashSession.cashTreasuryAccountId)
     })
-  }, [salePaymentMethods, tableSessionId])
+  }, [openCashSession, tableSessionId])
 
   useEffect(() => {
     if (!popId || comprobanteInitRef.current || tableSessionId == null) return
@@ -789,31 +796,6 @@ export function useMesasSaleCheckout(
     [invoiceTypeSiteId],
   )
 
-  const paymentMethodListItems = useMemo(() => {
-    const order = ["cash", "card_debit", "card_credit", "transfer", "other"] as const
-    const sectionLabel: Record<(typeof order)[number], string> = {
-      cash: "Efectivo",
-      card_debit: "Débito",
-      card_credit: "Crédito",
-      transfer: "Transferencia",
-      other: "Otros",
-    }
-    const buckets: Record<string, typeof salePaymentMethods> = {}
-    for (const k of order) buckets[k] = []
-    for (const m of salePaymentMethods) {
-      const k = order.includes(m.kind as (typeof order)[number])
-        ? (m.kind as (typeof order)[number])
-        : "other"
-      buckets[k].push(m)
-    }
-    return order.flatMap((kind) =>
-      buckets[kind].map((method) => ({
-        method,
-        groupTitle: sectionLabel[kind],
-      })),
-    )
-  }, [salePaymentMethods])
-
   const clientesFiltradosModal = useMemo(() => {
     const q = normalizarBusqueda(busquedaClienteModal.trim())
     if (!q) return []
@@ -1043,10 +1025,9 @@ export function useMesasSaleCheckout(
     setModoDescuento("porcentaje")
     setValorDescuentoPorcentaje(0)
     setValorDescuentoFijo(0)
-    setMetodoPagoSeleccionado(() => {
-      const efectivo = salePaymentMethods.find((m) => m.kind === "cash")
-      return efectivo ? { id: efectivo.id, label: efectivo.name } : null
-    })
+    setMetodoPagoSeleccionado(() =>
+      defaultCheckoutPaymentSelection(openCashSession?.cashTreasuryAccountId ?? null),
+    )
     setPayOnClientAccount(false)
     setPaidPartialUnits({})
     setTotalPagadoAcumulado(0)
@@ -1057,7 +1038,7 @@ export function useMesasSaleCheckout(
     setDescartarConfirmOpen(false)
     setConfirmOpen(false)
     setSubmitError(null)
-  }, [popId, salePaymentMethods])
+  }, [popId, openCashSession?.cashTreasuryAccountId])
 
   const cerrarMesa = useCallback(async () => {
     if (
@@ -1182,7 +1163,10 @@ export function useMesasSaleCheckout(
           }),
           clientId: catalogClientId,
           payOnClientAccount,
-          paymentMethodId: payOnClientAccount ? null : metodoPagoSeleccionado?.id,
+          paymentKind: payOnClientAccount ? null : metodoPagoSeleccionado?.kind,
+          treasuryAccountId: payOnClientAccount
+            ? null
+            : metodoPagoSeleccionado?.treasuryAccountId,
           generalDiscountMode:
             modoDescuento === "porcentaje" ? "porcentaje" : "fijo",
           valorDescuentoPorcentaje:
@@ -1361,6 +1345,8 @@ export function useMesasSaleCheckout(
   return {
     catalogLoading,
     catalogError,
+    openCashSession,
+    treasuryPaymentContext,
     menuCategorySections,
     productosCatalogo,
     carrito,
@@ -1414,8 +1400,12 @@ export function useMesasSaleCheckout(
       comprobanteLabel: mesaToolbarDisabled
         ? "Sin comprobante"
         : comprobanteDisplayLabel,
-      pagoLabel: mesaToolbarDisabled ? "Elegir forma de pago" : pagoResumenLabel,
-      pagoConfigurado: pagoConfigurado && !mesaToolbarDisabled,
+      pagoLabel: mesaToolbarDisabled
+        ? "Elegir forma de pago"
+        : !openCashSession
+          ? "Requiere caja abierta"
+          : pagoResumenLabel,
+      pagoConfigurado: pagoConfigurado && !mesaToolbarDisabled && openCashSession != null,
       descuentoLabel: mesaToolbarDisabled ? "Sin descuento" : descuentoToolbarLabel,
       hayDescuento: hayDescuento && !mesaToolbarDisabled,
       onClienteClick: () => {
@@ -1428,7 +1418,7 @@ export function useMesasSaleCheckout(
         setComprobanteModalAbierto(true)
       },
       onPagoClick: () => {
-        if (mesaToolbarDisabled) return
+        if (!openCashSession || mesaToolbarDisabled) return
         setPagoModalAbierto(true)
       },
       onDescuentoClick: () => {
@@ -1478,7 +1468,8 @@ export function useMesasSaleCheckout(
       comprobante,
       comprobantePickerOptions,
       elegirComprobante,
-      paymentMethodListItems,
+      treasuryPaymentContext,
+      openCashSession,
       payOnClientAccount,
       setPayOnClientAccount,
       metodoPagoSeleccionado,

@@ -8,9 +8,12 @@ import {
   type SaleCatalogArticle,
   type SaleCatalogCategory,
   type SaleCatalogClient,
-  type SaleCatalogPaymentMethod,
+  type SaleCatalogPaymentOption,
   type SaleOpenCashSession,
 } from "@/app/[siteId]/[popId]/sale/actions"
+import { defaultCheckoutPaymentSelection } from "@/lib/saleCheckoutPayment"
+import type { TreasuryPaymentContext } from "@/lib/treasuryPaymentOptions"
+import { treasuryPaymentOptionKey } from "@/lib/treasuryPaymentOptions"
 import type { MenuCatalogPromotion } from "@/app/[siteId]/[popId]/menu-catalog/actions"
 import {
   DEFAULT_SALE_SITE_ID,
@@ -36,6 +39,8 @@ import {
   type SaleCatalogViewPersisted,
 } from "@/lib/saleCatalogPreference"
 import { CLIENT_ACCOUNT_PAYMENT_LABEL } from "@/lib/operationPaymentLabels"
+import { OpenCashSessionBanner } from "@/components/sale-operation/OpenCashSessionBanner"
+import { SalePaymentMethodDialog } from "@/components/sale-operation/SalePaymentMethodDialog"
 import { DataWorkspaceLayout } from "@/components/layouts/DataWorkspaceLayout"
 import { useDataWorkspaceSidebar } from "@/components/layouts/useDataWorkspaceSidebar"
 import { useAuth } from "@/context/AuthContextSupabase"
@@ -194,9 +199,8 @@ function SalePage() {
     MenuCatalogPromotion[]
   >([])
   const [saleClients, setSaleClients] = useState<SaleCatalogClient[]>([])
-  const [salePaymentMethods, setSalePaymentMethods] = useState<
-    SaleCatalogPaymentMethod[]
-  >([])
+  const [treasuryPaymentContext, setTreasuryPaymentContext] =
+    useState<TreasuryPaymentContext | null>(null)
   const [canReadClients, setCanReadClients] = useState(false)
   const [canReadPaymentMethods, setCanReadPaymentMethods] = useState(false)
   const [invoiceTypeSiteId, setInvoiceTypeSiteId] = useState<string>(
@@ -228,7 +232,7 @@ function SalePage() {
       setCatalogPromotions([])
       setCatalogQuantityDeals([])
       setSaleClients([])
-      setSalePaymentMethods([])
+      setTreasuryPaymentContext(null)
       setCanReadClients(false)
       setCanReadPaymentMethods(false)
       setCanCreateSale(false)
@@ -244,7 +248,7 @@ function SalePage() {
     setCatalogPromotions(res.promotions)
     setCatalogQuantityDeals(res.quantityDeals)
     setSaleClients(res.clients)
-    setSalePaymentMethods(res.paymentMethods)
+    setTreasuryPaymentContext(res.treasuryPaymentContext)
     setCanReadClients(res.canReadClients)
     setCanReadPaymentMethods(res.canReadPaymentMethods)
     setCanCreateSale(res.canCreateSale)
@@ -260,17 +264,6 @@ function SalePage() {
   useEffect(() => {
     void loadCatalog()
   }, [loadCatalog])
-
-  useEffect(() => {
-    if (!canReadPaymentMethods || salePaymentMethods.length === 0) return
-    setMetodoPagoSeleccionado((prev) => {
-      if (prev && salePaymentMethods.some((m) => m.id === prev.id)) {
-        return prev
-      }
-      const efectivo = salePaymentMethods.find((m) => m.kind === "cash")
-      return efectivo ? { id: efectivo.id, label: efectivo.name } : null
-    })
-  }, [canReadPaymentMethods, salePaymentMethods])
 
   const {
     carrito,
@@ -328,10 +321,8 @@ function SalePage() {
   const [comprobanteModalAbierto, setComprobanteModalAbierto] = useState(false)
   const comprobanteInitRef = useRef(false)
   const catalogViewInitRef = useRef(false)
-  const [metodoPagoSeleccionado, setMetodoPagoSeleccionado] = useState<{
-    id: string
-    label: string
-  } | null>(null)
+  const [metodoPagoSeleccionado, setMetodoPagoSeleccionado] =
+    useState<SaleCatalogPaymentOption | null>(null)
   const [payOnClientAccount, setPayOnClientAccount] = useState(false)
   const [pagoModalAbierto, setPagoModalAbierto] = useState(false)
   const [modoDescuento, setModoDescuento] = useState<"porcentaje" | "fijo">(
@@ -351,6 +342,21 @@ function SalePage() {
   const [descuentoDraftModo, setDescuentoDraftModo] = useState<
     "porcentaje" | "fijo"
   >("porcentaje")
+
+  useEffect(() => {
+    if (!openCashSession?.cashTreasuryAccountId) return
+    setMetodoPagoSeleccionado((prev) => {
+      if (
+        prev &&
+        (prev.kind !== "cash" ||
+          prev.treasuryAccountId === openCashSession.cashTreasuryAccountId)
+      ) {
+        return prev
+      }
+      return defaultCheckoutPaymentSelection(openCashSession.cashTreasuryAccountId)
+    })
+  }, [openCashSession])
+
   const [descuentoDraftTexto, setDescuentoDraftTexto] = useState("")
   const busquedaProductosInputRef = useRef<HTMLInputElement>(null)
   const busquedaClienteInputRef = useRef<HTMLInputElement>(null)
@@ -472,7 +478,7 @@ function SalePage() {
       pagoConfigurado,
       payOnClientAccount,
       clienteSeleccionado?.id,
-      metodoPagoSeleccionado?.id,
+      metodoPagoSeleccionado?.treasuryAccountId,
       canCreateSale,
       canReadCashRegisters,
       openCashSession,
@@ -494,15 +500,14 @@ function SalePage() {
     setModoDescuento("porcentaje")
     setValorDescuentoPorcentaje(0)
     setValorDescuentoFijo(0)
-    setMetodoPagoSeleccionado(() => {
-      const efectivo = salePaymentMethods.find((m) => m.kind === "cash")
-      return efectivo ? { id: efectivo.id, label: efectivo.name } : null
-    })
+    setMetodoPagoSeleccionado(() =>
+      defaultCheckoutPaymentSelection(openCashSession?.cashTreasuryAccountId ?? null),
+    )
     setPayOnClientAccount(false)
     setDescartarConfirmOpen(false)
     setVenderConfirmOpen(false)
     setVentaError(null)
-  }, [salePaymentMethods, popId, limpiarCarrito])
+  }, [openCashSession?.cashTreasuryAccountId, popId, limpiarCarrito])
 
   const confirmarVenta = useCallback(async () => {
     if (!popId || !siteId || !pagoConfigurado) return
@@ -546,9 +551,10 @@ function SalePage() {
         }),
         clientId: catalogClientId,
         payOnClientAccount,
-        paymentMethodId: payOnClientAccount
+        paymentKind: payOnClientAccount ? null : metodoPagoSeleccionado?.kind,
+        treasuryAccountId: payOnClientAccount
           ? null
-          : metodoPagoSeleccionado?.id,
+          : metodoPagoSeleccionado?.treasuryAccountId,
         generalDiscountMode: modoDescuento === "porcentaje" ? "porcentaje" : "fijo",
         valorDescuentoPorcentaje,
         valorDescuentoFijo,
@@ -771,49 +777,6 @@ function SalePage() {
     }
     setVistaCatalogo(saved)
   }, [popId, catalogLoading, categoriasNav])
-
-  const paymentMethodGroups = useMemo(() => {
-    const order = [
-      "cash",
-      "card_debit",
-      "card_credit",
-      "transfer",
-      "other",
-    ] as const
-    const sectionLabel: Record<(typeof order)[number], string> = {
-      cash: "Efectivo",
-      card_debit: "Débito",
-      card_credit: "Crédito",
-      transfer: "Transferencia",
-      other: "Otros",
-    }
-    const buckets: Record<string, SaleCatalogPaymentMethod[]> = {}
-    for (const k of order) buckets[k] = []
-    for (const m of salePaymentMethods) {
-      const k = order.includes(m.kind as (typeof order)[number])
-        ? (m.kind as (typeof order)[number])
-        : "other"
-      buckets[k].push(m)
-    }
-    return order
-      .filter((k) => buckets[k].length > 0)
-      .map((kind) => ({
-        kind,
-        title: sectionLabel[kind],
-        items: buckets[kind],
-      }))
-  }, [salePaymentMethods])
-
-  const paymentMethodListItems = useMemo(
-    () =>
-      paymentMethodGroups.flatMap((g) =>
-        g.items.map((method) => ({
-          method,
-          groupTitle: g.title,
-        })),
-      ),
-    [paymentMethodGroups],
-  )
 
   const onClienteToolbarClick = () => {
     if (!canReadClients) return
@@ -1125,6 +1088,10 @@ function SalePage() {
             <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.03)_1px,transparent_1px)] bg-size-[38px_38px] opacity-20" />
           </div>
 
+          {!catalogLoading && !openCashSession ? (
+            <OpenCashSessionBanner siteId={siteId} popId={popId} variant="dark" />
+          ) : null}
+
           <main className="relative z-10 grid min-h-0 flex-1 grid-cols-[minmax(0,1fr)_380px] grid-rows-[minmax(0,1fr)_calc(4.5rem+1rem)] sm:grid-rows-[minmax(0,1fr)_calc(4.75rem+1.25rem)]">
             <div className="col-start-1 row-start-1 flex min-h-0 min-w-0 overflow-hidden">
               <aside
@@ -1435,7 +1402,11 @@ function SalePage() {
               </button>
               <button
                 type="button"
-                onClick={() => setPagoModalAbierto(true)}
+                onClick={() => {
+                  if (!openCashSession) return
+                  setPagoModalAbierto(true)
+                }}
+                disabled={!openCashSession}
                 className={toolboxSlotClass(pagoConfigurado)}
                 aria-label={
                   pagoConfigurado
@@ -1458,7 +1429,9 @@ function SalePage() {
                         : "text-foreground/55",
                     )}
                   >
-                    {pagoResumenLabel}
+                    {openCashSession
+                      ? pagoResumenLabel
+                      : "Requiere caja abierta"}
                   </span>
                 </span>
               </button>
@@ -1906,113 +1879,30 @@ function SalePage() {
         </DialogContent>
       </Dialog>
 
-      <Dialog open={pagoModalAbierto} onOpenChange={setPagoModalAbierto}>
-        <DialogContent className={ventaDialogContentMd}>
-          <DialogHeader className={cn(ventaDialogHeader, "shrink-0")}>
-            <DialogTitle className="text-base font-semibold tracking-tight">
-              Formas de pago
-            </DialogTitle>
-            <DialogDescription className="text-sm leading-relaxed">
-              Elegí cómo vas a cobrar esta venta: al contado o a cuenta corriente
-              del cliente.
-            </DialogDescription>
-          </DialogHeader>
-          <div
-            className={cn(
-              ventaDialogBody,
-              "min-h-0 flex-1 space-y-4 overflow-y-auto overscroll-contain",
-            )}
-          >
-            <div>
-              <p className="mb-2 text-[10px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
-                Cuenta del cliente
-              </p>
-              <button
-                type="button"
-                className={ventaDialogOptionClass(payOnClientAccount)}
-                onClick={() => {
-                  setPayOnClientAccount(true)
-                  setMetodoPagoSeleccionado(null)
-                  setPagoModalAbierto(false)
-                }}
-              >
-                {CLIENT_ACCOUNT_PAYMENT_LABEL}
-              </button>
-              <p className="mt-2 text-xs text-muted-foreground">
-                Entregás la mercadería ahora y registrás la deuda en Cuentas por
-                cobrar. Podés cobrar después.
-              </p>
-            </div>
-
-            {paymentMethodListItems.length > 0 ? (
-              <>
-                <Separator className="bg-border/60" />
-                <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
-                  Cobro inmediato
-                </p>
-              </>
-            ) : null}
-
-            {paymentMethodListItems.length === 0 ? (
-              <p className="rounded-lg border border-dashed border-border/60 bg-muted/20 px-4 py-6 text-center text-sm text-muted-foreground">
-                No hay medios de pago activos. Podés usar cuenta corriente del
-                cliente.
-              </p>
-            ) : (
-              <ul
-                className="flex flex-col gap-1.5"
-                role="listbox"
-                aria-label="Formas de pago"
-              >
-                {paymentMethodListItems.map(({ method, groupTitle }) => {
-                  const seleccionado =
-                    !payOnClientAccount &&
-                    metodoPagoSeleccionado?.id === method.id
-                  return (
-                    <li key={method.id} className="min-w-0">
-                      <button
-                        type="button"
-                        role="option"
-                        aria-selected={seleccionado}
-                        onClick={() => {
-                          setPayOnClientAccount(false)
-                          setMetodoPagoSeleccionado({
-                            id: method.id,
-                            label: method.name,
-                          })
-                          setPagoModalAbierto(false)
-                        }}
-                        className={ventaDialogOptionClass(seleccionado)}
-                      >
-                        <span className="min-w-0">
-                          <span className="block text-sm font-semibold leading-snug text-foreground">
-                            {method.name}
-                          </span>
-                          <span className="mt-0.5 block text-xs leading-snug text-muted-foreground">
-                            {groupTitle}
-                          </span>
-                        </span>
-                        {seleccionado ? (
-                          <span className="size-2 shrink-0 rounded-full bg-primary" />
-                        ) : null}
-                      </button>
-                    </li>
-                  )
-                })}
-              </ul>
-            )}
-          </div>
-          <DialogFooter className={cn(ventaDialogFooter, "shrink-0")}>
-            <Button
-              type="button"
-              className={ventaDialogPrimaryBtn}
-              onClick={() => setPagoModalAbierto(false)}
-            >
-              Listo
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <SalePaymentMethodDialog
+        open={pagoModalAbierto}
+        onOpenChange={setPagoModalAbierto}
+        treasuryContext={treasuryPaymentContext}
+        cashTreasuryAccountId={openCashSession?.cashTreasuryAccountId ?? null}
+        selected={metodoPagoSeleccionado}
+        payOnClientAccount={payOnClientAccount}
+        onSelectImmediate={(option) => {
+          setPayOnClientAccount(false)
+          setMetodoPagoSeleccionado(option)
+        }}
+        onSelectClientAccount={() => {
+          setPayOnClientAccount(true)
+          setMetodoPagoSeleccionado(null)
+        }}
+        styles={{
+          content: ventaDialogContentMd,
+          header: ventaDialogHeader,
+          body: ventaDialogBody,
+          footer: ventaDialogFooter,
+          optionClass: ventaDialogOptionClass,
+          primaryBtn: ventaDialogPrimaryBtn,
+        }}
+      />
 
       <Dialog
         open={descuentoModalAbierto}

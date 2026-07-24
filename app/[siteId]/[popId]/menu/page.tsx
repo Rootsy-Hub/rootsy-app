@@ -61,7 +61,6 @@ export type MenuItemLink =
   | "hr"
   | "articles"
   | "clients"
-  | "payment-methods"
   | "accounts"
   | "printers"
   | "accounting"
@@ -122,7 +121,6 @@ const menuSectionsRaw: Record<string, MenuSectionDef> = {
       { name: "Mensajes", icon: MessageSquare, link: "section" },
       { name: "Alertas", icon: Bell, badge: "8", link: "section" },
       { name: "Cuentas", icon: Landmark, link: "accounts" },
-      { name: "Formas de pago", icon: Banknote, link: "payment-methods" },
       { name: "Cajas", icon: Archive, link: "cash-registers" },
       { name: "Contabilidad", icon: Landmark, link: "accounting" },
       { name: "RRHH", icon: UserCog, link: "hr" },
