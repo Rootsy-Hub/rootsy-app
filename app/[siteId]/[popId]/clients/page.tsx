@@ -77,7 +77,7 @@ import {
   clientDialogHeaderClass,
   clientDialogSurface,
 } from "@/app/[siteId]/[popId]/clients/ClientUpsertFormFields"
-import { getWorkspaceHeaderForPop } from "@/lib/workspaceHeaderServer"
+import { usePopWorkspace } from "@/context/PopWorkspaceContext"
 import { cn } from "@/lib/utils"
 import withAuth from "@/hoc/withAuth"
 import { usePadronAutofillRazonSocial } from "@/hooks/usePadronAutofillRazonSocial"
@@ -241,6 +241,8 @@ function ClientsPage() {
   const siteId = typeof params?.siteId === "string" ? params.siteId : ""
   const popId = typeof params?.popId === "string" ? params.popId : undefined
 
+  const { bootstrap, loading: bootstrapLoading } = usePopWorkspace()
+
   const workspaceParsed = useMemo(
     () => parseClientsWorkspaceUrl(searchParams),
     [searchParams],
@@ -255,7 +257,6 @@ function ClientsPage() {
     [pathname, router, searchParams],
   )
 
-  const [popName, setPopName] = useState("")
   const [rows, setRows] = useState<ClientTableRow[]>([])
   const [totalCount, setTotalCount] = useState(0)
   const [canCreate, setCanCreate] = useState(false)
@@ -309,11 +310,6 @@ function ClientsPage() {
 
   const pageSizeLabelId = useId()
   const [selected, setSelected] = useState<Set<string>>(() => new Set())
-  const [workspaceHeader, setWorkspaceHeader] = useState<{
-    userFullName: string
-    userImageUrl: string | null
-    roleLabel: string
-  } | null>(null)
 
   const createOpenEffective = createOpen && canCreate
 
@@ -343,20 +339,6 @@ function ClientsPage() {
     enabled: Boolean(popId) && editRow !== null && canUpdate,
   })
 
-  const fetchWorkspaceHeader = useCallback(async () => {
-    if (!popId) return
-    const head = await getWorkspaceHeaderForPop(popId)
-    if (head.success) {
-      setWorkspaceHeader({
-        userFullName: head.userFullName,
-        userImageUrl: head.userImageUrl,
-        roleLabel: head.roleLabel,
-      })
-    } else {
-      setWorkspaceHeader(null)
-    }
-  }, [popId])
-
   const fetchClientList = useCallback(async () => {
     if (!popId || !siteId) return
     const gen = ++fetchGenRef.current
@@ -379,7 +361,6 @@ function ClientsPage() {
       }
       setRows(res.clients)
       setTotalCount(res.totalCount)
-      setPopName(res.popName)
       setCanCreate(res.canCreate)
       setCanUpdate(res.canUpdate)
       setCanDelete(res.canDelete)
@@ -399,15 +380,9 @@ function ClientsPage() {
   }, [popId, siteId, listQuery, workspaceParsed.page, replaceWorkspaceQuery])
 
   useEffect(() => {
-    setPopName("")
     setRows([])
     setTotalCount(0)
   }, [popId])
-
-  useEffect(() => {
-    if (!popId || !siteId) return
-    void fetchWorkspaceHeader()
-  }, [popId, siteId, fetchWorkspaceHeader])
 
   useEffect(() => {
     setSearchInput(workspaceParsed.q)
@@ -693,15 +668,15 @@ function ClientsPage() {
     <DataWorkspaceLayout
       siteId={siteId}
       popId={popId}
-      popName={popName}
+      popName={bootstrap?.popName ?? ""}
       title="Clientes"
       headerVariant="dark"
       contentFlush
       sidebarCollapsible={false}
-      loading={!popName && listFetching}
-      userName={workspaceHeader?.userFullName}
-      userAvatarSrc={workspaceHeader?.userImageUrl ?? undefined}
-      userRoleLabel={workspaceHeader?.roleLabel}
+      loading={bootstrapLoading || listFetching}
+      userName={bootstrap?.userFullName}
+      userAvatarSrc={bootstrap?.userImageUrl ?? undefined}
+      userRoleLabel={bootstrap?.roleLabel}
       mainClassName="min-h-0 overflow-hidden"
       headerActions={
         canCreate ? (

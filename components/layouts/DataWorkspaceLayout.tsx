@@ -6,6 +6,7 @@ import {
 } from "@/components/layouts/dataWorkspaceHeaderStyles"
 import { DataWorkspaceHeaderTitle } from "@/components/layouts/DataWorkspaceHeaderTitle"
 import { DataWorkspaceHeaderUserMenu } from "@/components/layouts/DataWorkspaceHeaderUserMenu"
+import { usePopWorkspaceOptional } from "@/context/PopWorkspaceContext"
 import { cn } from "@/lib/utils"
 import { popMenuHref } from "@/lib/popRoutes"
 import {
@@ -30,8 +31,9 @@ export type DataWorkspaceLayoutProps = {
   popId: string
   popName: string
   title: string
-  /** Segunda línea bajo el nombre (sin ícono). Si no hay `userRoleLabel`, se usa `pillLabel`. */
+  /** Segunda línea bajo el nombre del usuario. Por defecto usa el rol del POP (`usePopWorkspace`); si no hay rol, `pillLabel`. */
   pillLabel?: string
+  /** Respaldo opcional si el bootstrap del POP aún no tiene rol. */
   userRoleLabel?: string
   loading?: boolean
   /** Cabecera oscura (solo la franja superior; el main sigue claro). */
@@ -90,6 +92,7 @@ export function DataWorkspaceLayout({
   userName,
   userAvatarSrc,
 }: DataWorkspaceLayoutProps) {
+  const popWorkspace = usePopWorkspaceOptional()
   const [isOnline, setIsOnline] = useState(true)
   const [isFullscreen, setIsFullscreen] = useState(false)
   const isDarkHeader = headerVariant === "dark"
@@ -174,7 +177,9 @@ export function DataWorkspaceLayout({
 
   const backHref = popMenuHref(siteId, popId)
 
-  const subline = userRoleLabel?.trim() || pillLabel
+  const resolvedUserRoleLabel =
+    popWorkspace?.bootstrap?.roleLabel?.trim() || userRoleLabel?.trim() || ""
+  const subline = resolvedUserRoleLabel || pillLabel
 
   const chromeButtonClass = dataWorkspaceHeaderChromeButtonClass(
     isDarkHeader ? "dark" : "default",
@@ -332,7 +337,7 @@ export function DataWorkspaceLayout({
                         <span
                           className={cn(
                             "truncate text-[10px] font-semibold uppercase tracking-wider",
-                            userRoleLabel?.trim()
+                            resolvedUserRoleLabel
                               ? isDarkHeader
                                 ? "text-emerald-400"
                                 : "text-emerald-700"

@@ -103,7 +103,7 @@ import {
 } from "@/components/ui/table"
 import { Textarea } from "@/components/ui/textarea"
 import withAuth from "@/hoc/withAuth"
-import { getWorkspaceHeaderForPop } from "@/lib/workspaceHeaderServer"
+import { usePopWorkspace } from "@/context/PopWorkspaceContext"
 import { cn } from "@/lib/utils"
 import {
   ARTICLE_ITEM_KINDS,
@@ -337,6 +337,8 @@ function ArticlesPage() {
   const siteId = typeof params?.siteId === "string" ? params.siteId : ""
   const popId = typeof params?.popId === "string" ? params.popId : undefined
 
+  const { bootstrap, loading: bootstrapLoading } = usePopWorkspace()
+
   const workspaceParsed = useMemo(
     () => parseArticlesWorkspaceUrl(searchParams),
     [searchParams],
@@ -351,7 +353,6 @@ function ArticlesPage() {
     [pathname, router, searchParams],
   )
 
-  const [popName, setPopName] = useState("")
   const [articles, setArticles] = useState<ArticleTableRow[]>([])
   const [selected, setSelected] = useState<Set<string>>(new Set())
   const [totalCount, setTotalCount] = useState(0)
@@ -375,12 +376,6 @@ function ArticlesPage() {
   const [filterCategoryList, setFilterCategoryList] = useState<
     ArticleCategoryOption[]
   >([])
-
-  const [workspaceHeader, setWorkspaceHeader] = useState<{
-    userFullName: string
-    userImageUrl: string | null
-    roleLabel: string
-  } | null>(null)
 
   const [editRow, setEditRow] = useState<ArticleTableRow | null>(null)
   const [editCategories, setEditCategories] = useState<ArticleCategoryOption[]>(
@@ -460,20 +455,6 @@ function ArticlesPage() {
     ],
   )
 
-  const fetchWorkspaceHeader = useCallback(async () => {
-    if (!popId) return
-    const head = await getWorkspaceHeaderForPop(popId)
-    if (head.success) {
-      setWorkspaceHeader({
-        userFullName: head.userFullName,
-        userImageUrl: head.userImageUrl,
-        roleLabel: head.roleLabel,
-      })
-    } else {
-      setWorkspaceHeader(null)
-    }
-  }, [popId])
-
   const fetchArticlesList = useCallback(async () => {
     if (!popId || !siteId) return
     const gen = ++fetchGenRef.current
@@ -498,7 +479,6 @@ function ArticlesPage() {
       setArticles(res.articles)
       setSelected(new Set())
       setTotalCount(res.totalCount)
-      setPopName(res.popName)
       setCanCreate(res.canCreate)
       setCanPostInitialStock(res.canPostInitialStock)
       setCanUpdate(res.canUpdate)
@@ -519,7 +499,6 @@ function ArticlesPage() {
   }, [popId, siteId, articlesListParams, replaceWorkspaceQuery])
 
   useEffect(() => {
-    setPopName("")
     setArticles([])
     setTotalCount(0)
   }, [popId])
@@ -584,11 +563,6 @@ function ArticlesPage() {
     pendingLegacyCreateRef.current = false
     setCreateOpen(true)
   }, [canCreate])
-
-  useEffect(() => {
-    if (!popId || !siteId) return
-    void fetchWorkspaceHeader()
-  }, [popId, siteId, fetchWorkspaceHeader])
 
   useEffect(() => {
     if (!popId || !siteId) {
@@ -1046,15 +1020,15 @@ function ArticlesPage() {
     <DataWorkspaceLayout
       siteId={siteId}
       popId={popId}
-      popName={popName}
+      popName={bootstrap?.popName ?? ""}
       title="Stock"
       headerVariant="dark"
       contentFlush
       sidebarCollapsible={false}
-      loading={!popName && listFetching}
-      userName={workspaceHeader?.userFullName}
-      userAvatarSrc={workspaceHeader?.userImageUrl ?? undefined}
-      userRoleLabel={workspaceHeader?.roleLabel}
+      loading={bootstrapLoading || listFetching}
+      userName={bootstrap?.userFullName}
+      userAvatarSrc={bootstrap?.userImageUrl ?? undefined}
+      userRoleLabel={bootstrap?.roleLabel}
       pillLabel="Catálogo"
       mainClassName="min-h-0 overflow-hidden"
       headerActions={

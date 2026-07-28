@@ -22,7 +22,7 @@ import { ExpenseSummaryDashboard } from "@/app/[siteId]/[popId]/expenses/Expense
 import { DataWorkspaceLayout } from "@/components/layouts/DataWorkspaceLayout"
 import { DataWorkspaceHeaderIconButton } from "@/components/layouts/DataWorkspaceHeaderIconButton"
 import { monthBoundsISO } from "@/lib/expenseMonth"
-import { getWorkspaceHeaderForPop } from "@/lib/workspaceHeaderServer"
+import { usePopWorkspace } from "@/context/PopWorkspaceContext"
 import { Button } from "@/components/ui/button"
 import {
   Dialog,
@@ -107,13 +107,9 @@ function ExpensesPage() {
   const [year, setYear] = useState(now.getFullYear())
   const [month1, setMonth1] = useState(now.getMonth() + 1)
 
-  const [popName, setPopName] = useState("")
-  const [headerError, setHeaderError] = useState<string | null>(null)
-  const [workspaceHeader, setWorkspaceHeader] = useState<{
-    userFullName: string
-    userImageUrl: string | null
-    roleLabel: string
-  } | null>(null)
+  const { bootstrap, loading: bootstrapLoading, error: bootstrapError } =
+    usePopWorkspace()
+
   const [categories, setCategories] = useState<ExpenseCategoryRow[]>([])
   const [paymentMethods, setPaymentMethods] = useState<PaymentMethodOption[]>(
     [],
@@ -188,22 +184,6 @@ function ExpensesPage() {
     }
   }, [popId, year, month1])
 
-  const loadHeader = useCallback(async () => {
-    if (!popId) return
-    const head = await getWorkspaceHeaderForPop(popId)
-    if (!head.success) {
-      setHeaderError(head.error)
-      return
-    }
-    setHeaderError(null)
-    setPopName((prev) => prev || head.popName)
-    setWorkspaceHeader({
-      userFullName: head.userFullName,
-      userImageUrl: head.userImageUrl,
-      roleLabel: head.roleLabel,
-    })
-  }, [popId])
-
   const loadPage = useCallback(async () => {
     if (!popId) return
     setLoading(true)
@@ -216,7 +196,6 @@ function ExpensesPage() {
       setLoading(false)
       return
     }
-    setPopName(res.popName)
     setCategories(res.categories)
     setPaymentMethods(res.paymentMethods)
     setCanCreate(res.canCreate)
@@ -236,7 +215,7 @@ function ExpensesPage() {
     ;(async () => {
       setLoading(true)
       try {
-        await Promise.all([loadPage(), loadHeader()])
+        await loadPage()
       } catch {
         if (!cancelled) setError("Error inesperado")
       } finally {
@@ -246,7 +225,11 @@ function ExpensesPage() {
     return () => {
       cancelled = true
     }
-  }, [loadPage, loadHeader, popId, siteId])
+  }, [loadPage, popId, siteId])
+
+  const pageLoading = bootstrapLoading || loading
+  const popName = bootstrap?.popName ?? ""
+  const headerError = bootstrapError
 
   useEffect(() => {
     if (!popId || loading || error) return
@@ -413,10 +396,10 @@ function ExpensesPage() {
         popName={popName}
         title="Gastos"
         headerVariant="dark"
-        loading={loading}
-        userName={workspaceHeader?.userFullName}
-        userAvatarSrc={workspaceHeader?.userImageUrl ?? undefined}
-        userRoleLabel={workspaceHeader?.roleLabel}
+        loading={pageLoading}
+        userName={bootstrap?.userFullName}
+        userAvatarSrc={bootstrap?.userImageUrl ?? undefined}
+        userRoleLabel={bootstrap?.roleLabel}
         contentFlush
         mainMaxWidthClass="max-w-none"
         mainClassName="min-h-0 overflow-y-auto"
@@ -447,7 +430,7 @@ function ExpensesPage() {
         <div className="relative flex w-full min-h-0 flex-1 flex-col">
           <ExpensePeriodToolbar
             monthLabel={monthLabel}
-            loading={loading || listBusy}
+            loading={pageLoading || listBusy}
             isCurrentMonth={isCurrentMonth}
             onPrev={goPrevMonth}
             onNext={goNextMonth}

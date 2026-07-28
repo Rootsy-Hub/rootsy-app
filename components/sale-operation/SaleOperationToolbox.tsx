@@ -23,6 +23,7 @@ export type SaleOperationToolboxProps = {
   pagoConfigurado: boolean
   descuentoLabel: string
   hayDescuento: boolean
+  descuentoDisabled?: boolean
   onClienteClick: () => void
   onComprobanteClick: () => void
   onPagoClick: () => void
@@ -41,6 +42,7 @@ export function SaleOperationToolbox({
   pagoConfigurado,
   descuentoLabel,
   hayDescuento,
+  descuentoDisabled = false,
   onClienteClick,
   onComprobanteClick,
   onPagoClick,
@@ -135,13 +137,13 @@ export function SaleOperationToolbox({
 
       <button
         type="button"
-        disabled={toolbarDisabled}
+        disabled={toolbarDisabled || descuentoDisabled}
         onClick={onDescuentoClick}
         className={cn(
           saleOpToolboxSlotClass(hayDescuento),
-          toolbarDisabled && "opacity-45",
+          (toolbarDisabled || descuentoDisabled) && "opacity-45",
         )}
-        aria-label={`Descuento: ${descuentoLabel}`}
+        aria-label={`Descuento: ${descuentoLabel}${descuentoDisabled ? " (bloqueado)" : ""}`}
       >
         <span className={saleOpToolboxIconWrap(hayDescuento)}>
           <Percent className="size-4.5 sm:size-5" aria-hidden />

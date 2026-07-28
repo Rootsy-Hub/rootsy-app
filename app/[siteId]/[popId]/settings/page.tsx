@@ -19,10 +19,10 @@ import {
 } from "@/components/ui/select"
 import { Textarea } from "@/components/ui/textarea"
 import withAuth from "@/hoc/withAuth"
+import { usePopWorkspace } from "@/context/PopWorkspaceContext"
 import { usePadronAutofillRazonSocial } from "@/hooks/usePadronAutofillRazonSocial"
 import { periodoAfipToYmdFirstDay } from "@/lib/afipDateParse"
 import { parsePadronActividadesJson } from "@/lib/padronActividadesHelpers"
-import { getWorkspaceHeaderForPop } from "@/lib/workspaceHeaderServer"
 import { Building2, Loader2, RefreshCw } from "lucide-react"
 import { useParams, useRouter } from "next/navigation"
 import {
@@ -49,20 +49,21 @@ function SettingsPage() {
   const params = useParams()
   const siteId = typeof params?.siteId === "string" ? params.siteId : ""
   const popId = typeof params?.popId === "string" ? params.popId : undefined
+  const {
+    bootstrap,
+    loading: bootstrapLoading,
+    error: bootstrapError,
+    refresh: refreshBootstrap,
+  } = usePopWorkspace()
 
-  const [popName, setPopName] = useState("")
   const [isOwner, setIsOwner] = useState(false)
   const [canUpdate, setCanUpdate] = useState(false)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const pageLoading = bootstrapLoading || loading
   const [saving, setSaving] = useState(false)
   const [banner, setBanner] = useState<string | null>(null)
   const [padronBusy, setPadronBusy] = useState(false)
-  const [workspaceHeader, setWorkspaceHeader] = useState<{
-    userFullName: string
-    userImageUrl: string | null
-    roleLabel: string
-  } | null>(null)
 
   const [form, setForm] = useState<
     PopSettingsFormInput & { fiscalPadronSyncedAt: string | null }
@@ -84,20 +85,9 @@ function SettingsPage() {
   })
 
   const padron = usePadronAutofillRazonSocial(popId, form.fiscalCuit ?? "", {
-    enabled: Boolean(popId) && isOwner && canUpdate && !loading,
-    suppressClear: loading,
+    enabled: Boolean(popId) && isOwner && canUpdate && !pageLoading,
+    suppressClear: pageLoading,
   })
-
-  const loadHeader = useCallback(async () => {
-    if (!popId) return
-    const head = await getWorkspaceHeaderForPop(popId)
-    if (!head.success) return
-    setWorkspaceHeader({
-      userFullName: head.userFullName,
-      userImageUrl: head.userImageUrl,
-      roleLabel: head.roleLabel,
-    })
-  }, [popId])
 
   const load = useCallback(async () => {
     if (!popId || !siteId) return
@@ -109,7 +99,6 @@ function SettingsPage() {
       }
       return
     }
-    setPopName(res.popName)
     setIsOwner(res.isOwner)
     setCanUpdate(res.canUpdate)
     setForm({
@@ -133,13 +122,15 @@ function SettingsPage() {
     let cancelled = false
     ;(async () => {
       setLoading(true)
-      await Promise.all([load(), loadHeader()])
+      await load()
       if (!cancelled) setLoading(false)
     })()
     return () => {
       cancelled = true
     }
-  }, [load, loadHeader, popId, siteId])
+  }, [load, popId, siteId])
+
+  const popName = bootstrap?.popName ?? form.name
 
   const actividadesPadronList = useMemo(
     () => parsePadronActividadesJson(form.fiscalPadronActividadesJson),
@@ -218,7 +209,7 @@ function SettingsPage() {
       return
     }
     setBanner("Cambios guardados.")
-    await load()
+    await Promise.all([load(), refreshBootstrap()])
   }
 
   const onSyncPadron = async () => {
@@ -264,25 +255,25 @@ function SettingsPage() {
       title="Ajustes"
       pillLabel="Configuración"
       headerVariant="dark"
-      loading={loading}
-      userName={workspaceHeader?.userFullName}
-      userAvatarSrc={workspaceHeader?.userImageUrl ?? undefined}
-      userRoleLabel={workspaceHeader?.roleLabel}
+      loading={pageLoading}
+      userName={bootstrap?.userFullName}
+      userAvatarSrc={bootstrap?.userImageUrl ?? undefined}
+      userRoleLabel={bootstrap?.roleLabel}
       contentFlush
       mainMaxWidthClass="max-w-6xl"
       mainClassName="min-h-0 overflow-y-auto"
     >
       <div className="px-4 py-6 sm:px-6 lg:px-8">
-        {error ? (
+        {error || bootstrapError ? (
           <div
             role="alert"
             className="mb-4 rounded-lg border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive"
           >
-            {error}
+            {error ?? bootstrapError}
           </div>
         ) : null}
 
-        {!loading && !error ? (
+        {!pageLoading && !error && !bootstrapError ? (
           <form
             onSubmit={(e) => void submit(e)}
             className="space-y-8"

@@ -15,7 +15,27 @@ import {
   type QuantityDealApplication,
   type QuantityDealUnit,
 } from "@/lib/promotionPricing"
+import type { PartialPaymentSelection } from "@/lib/partialCheckoutSelection"
 import { roundSaleMoney } from "@/lib/saleLineDiscount"
+
+function regularPaidUnitCount(
+  lineKey: string,
+  paidPartialUnits?: PartialPaymentSelection,
+): number {
+  if (!paidPartialUnits) return 0
+  return Math.max(0, paidPartialUnits[`regular:${lineKey}`] ?? 0)
+}
+
+/** Unidades elegibles para promos por cantidad (excluye ítems ya cobrados). */
+function quantityDealEligibleUnitCount(
+  item: MenuCartItem,
+  lineKey: string,
+  paidPartialUnits?: PartialPaymentSelection,
+): number {
+  if (item.paidLocked) return 0
+  const paidQty = regularPaidUnitCount(lineKey, paidPartialUnits)
+  return Math.max(0, item.cantidad - paidQty)
+}
 
 export function menuPromotionToProduct(
   promo: MenuCatalogPromotion,
@@ -104,6 +124,7 @@ export function computeMenuQuantityDealDiscounts(input: {
   productosByKey: Map<string, MenuCatalogProduct>
   quantityDeals: MenuCatalogPromotion[]
   overrides: CartLineOverrideSnapshot
+  paidPartialUnits?: PartialPaymentSelection
 }) {
   const discounts = new Map<
     string,
@@ -132,6 +153,7 @@ export function computeMenuQuantityDealDiscounts(input: {
       productosByKey: input.productosByKey,
       pool,
       overrides: input.overrides,
+      paidPartialUnits: input.paidPartialUnits,
     })
 
     const lines = computeQuantityDealDiscounts({
@@ -162,6 +184,7 @@ function collectQuantityDealUnits(input: {
   productosByKey: Map<string, MenuCatalogProduct>
   pool: Set<string>
   overrides: CartLineOverrideSnapshot
+  paidPartialUnits?: PartialPaymentSelection
 }): QuantityDealUnit[] {
   const units: QuantityDealUnit[] = []
   for (const item of input.carrito) {
@@ -178,7 +201,12 @@ function collectQuantityDealUnits(input: {
       continue
     }
     const unitPrice = producto.precioOriginal ?? producto.precio
-    for (let i = 0; i < item.cantidad; i++) {
+    const eligibleUnits = quantityDealEligibleUnitCount(
+      item,
+      lineKey,
+      input.paidPartialUnits,
+    )
+    for (let i = 0; i < eligibleUnits; i++) {
       units.push({
         lineKey,
         kind,
@@ -195,6 +223,7 @@ export function computeMenuQuantityDealApplications(input: {
   productosByKey: Map<string, MenuCatalogProduct>
   quantityDeals: MenuCatalogPromotion[]
   overrides: CartLineOverrideSnapshot
+  paidPartialUnits?: PartialPaymentSelection
 }): QuantityDealApplication[] {
   const applications: QuantityDealApplication[] = []
 
@@ -220,6 +249,7 @@ export function computeMenuQuantityDealApplications(input: {
       productosByKey: input.productosByKey,
       pool,
       overrides: input.overrides,
+      paidPartialUnits: input.paidPartialUnits,
     })
 
     applications.push(

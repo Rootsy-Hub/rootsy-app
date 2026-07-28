@@ -105,7 +105,7 @@ import {
 } from "@/components/ui/table"
 import { Textarea } from "@/components/ui/textarea"
 import withAuth from "@/hoc/withAuth"
-import { getWorkspaceHeaderForPop } from "@/lib/workspaceHeaderServer"
+import { usePopWorkspace } from "@/context/PopWorkspaceContext"
 import { cn } from "@/lib/utils"
 import {
   Filter,
@@ -201,12 +201,6 @@ function RecipesTableSkeletonRows({
   )
 }
 
-type WorkspaceHeaderState = {
-  userFullName: string
-  userImageUrl: string | null
-  roleLabel: string
-} | null
-
 function formatMoney(n: number): string {
   return new Intl.NumberFormat("es-AR", {
     style: "currency",
@@ -268,13 +262,12 @@ function RecipesPage() {
     [searchParams],
   )
 
-  const [popName, setPopName] = useState("")
+  const { bootstrap, loading: bootstrapLoading } = usePopWorkspace()
+
   const [recipes, setRecipes] = useState<RecipeTableRow[]>([])
   const [totalCount, setTotalCount] = useState(0)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [workspaceHeader, setWorkspaceHeader] =
-    useState<WorkspaceHeaderState>(null)
   const pageSizeLabelId = useId()
   const [canCreate, setCanCreate] = useState(false)
   const [canUpdate, setCanUpdate] = useState(false)
@@ -343,27 +336,11 @@ function RecipesPage() {
     }
     setRecipes(res.recipes)
     setTotalCount(res.totalCount)
-    setPopName(res.popName)
     setCanCreate(res.canCreate)
     setCanUpdate(res.canUpdate)
     setCanDelete(res.canDelete)
     setLoading(false)
   }, [popId, router, ws])
-
-  const fetchWorkspaceHeader = useCallback(async () => {
-    if (!popId) return
-    const head = await getWorkspaceHeaderForPop(popId)
-    if (head.success) {
-      setWorkspaceHeader({
-        userFullName: head.userFullName,
-        userImageUrl: head.userImageUrl,
-        roleLabel: head.roleLabel,
-      })
-      if (!popName) setPopName(head.popName)
-    } else {
-      setWorkspaceHeader(null)
-    }
-  }, [popId, popName])
 
   const loadCategories = useCallback(async () => {
     if (!popId) return
@@ -382,10 +359,9 @@ function RecipesPage() {
   }, [loadTable])
 
   useEffect(() => {
-    void fetchWorkspaceHeader()
     void loadCategories()
     void loadIngredientOptions()
-  }, [fetchWorkspaceHeader, loadCategories, loadIngredientOptions])
+  }, [loadCategories, loadIngredientOptions])
 
   useEffect(() => {
     setSearchInput(ws.q)
@@ -600,15 +576,15 @@ function RecipesPage() {
     <DataWorkspaceLayout
       siteId={siteId}
       popId={popId}
-      popName={popName}
+      popName={bootstrap?.popName ?? ""}
       title="Recetas"
       headerVariant="dark"
       contentFlush
       sidebarCollapsible={false}
-      loading={!popName && loading}
-      userName={workspaceHeader?.userFullName}
-      userAvatarSrc={workspaceHeader?.userImageUrl ?? undefined}
-      userRoleLabel={workspaceHeader?.roleLabel}
+      loading={bootstrapLoading || loading}
+      userName={bootstrap?.userFullName}
+      userAvatarSrc={bootstrap?.userImageUrl ?? undefined}
+      userRoleLabel={bootstrap?.roleLabel}
       pillLabel="Menú"
       mainClassName="min-h-0 overflow-hidden"
       headerActions={

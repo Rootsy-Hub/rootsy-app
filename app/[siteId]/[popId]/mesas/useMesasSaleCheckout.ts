@@ -7,10 +7,16 @@ import {
   type MesasClienteSeleccionado,
   type TableSessionCheckoutSnapshot,
 } from "@/app/[siteId]/[popId]/mesas/mesasCheckoutState"
-import { getMenuCatalog, type MenuCatalogArticle, type MenuCatalogCategorySection, type MenuCatalogPromotion, type MenuCatalogRecipe } from "@/app/[siteId]/[popId]/menu-catalog/actions"
+import type { MenuCatalogPromotion } from "@/app/[siteId]/[popId]/menu-catalog/actions"
 import type { SaleCatalogClient, SaleCatalogPaymentOption, SaleOpenCashSession } from "@/app/[siteId]/[popId]/sale/actions"
+import { useMenuCatalogLoader } from "@/hooks/useMenuCatalogLoader"
+import {
+  computeGeneralDiscountMonto,
+  generalDiscountToolbarLabel,
+  healLegacyLockedGeneralDiscount,
+  isGeneralDiscountEditBlocked,
+} from "@/lib/generalDiscountLock"
 import { defaultCheckoutPaymentSelection } from "@/lib/saleCheckoutPayment"
-import type { TreasuryPaymentContext } from "@/lib/treasuryPaymentOptions"
 import { treasuryPaymentOptionKey } from "@/lib/treasuryPaymentOptions"
 import { completeSale } from "@/app/[siteId]/[popId]/sale/completeSale"
 import {
@@ -35,6 +41,7 @@ import {
   addProductToTicketCart,
   addPromotionToTicketCart,
   applyPartialPaymentCartMaterialization,
+  copyTicketLineOverrides,
 } from "@/lib/menuSaleTicketCart"
 import {
   ensureCartLineIds,
@@ -87,7 +94,6 @@ import {
   resolveSaleComprobanteForClient,
   suggestSaleComprobanteForClientIva,
 } from "@/lib/saleComprobanteRules"
-import { DEFAULT_SALE_SITE_ID } from "@/lib/saleInvoiceTypes"
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 
 const MANUAL_PARTY_LIST_ID = "__manual__"
@@ -134,26 +140,29 @@ export function useMesasSaleCheckout(
   siteId: string,
   tableSessionId: string | null,
   remoteSession: RemoteTableSessionCheckout = null,
-  options?: { onSessionClose?: () => void },
+  options?: { onSessionClose?: () => void; catalogSidebarOpen?: boolean },
 ) {
   const onSessionClose = options?.onSessionClose
-  const [menuCategorySections, setMenuCategorySections] = useState<
-    MenuCatalogCategorySection[]
-  >([])
-  const [menuRecipes, setMenuRecipes] = useState<MenuCatalogRecipe[]>([])
-  const [menuArticles, setMenuArticles] = useState<MenuCatalogArticle[]>([])
-  const [menuPromotions, setMenuPromotions] = useState<MenuCatalogPromotion[]>([])
-  const [menuQuantityDeals, setMenuQuantityDeals] = useState<MenuCatalogPromotion[]>([])
-  const [saleClients, setSaleClients] = useState<SaleCatalogClient[]>([])
-  const [treasuryPaymentContext, setTreasuryPaymentContext] =
-    useState<TreasuryPaymentContext | null>(null)
-  const [canReadClients, setCanReadClients] = useState(false)
-  const [canCreateSale, setCanCreateSale] = useState(false)
-  const [canReadCashRegisters, setCanReadCashRegisters] = useState(false)
-  const [openCashSession, setOpenCashSession] = useState<SaleOpenCashSession | null>(null)
-  const [invoiceTypeSiteId, setInvoiceTypeSiteId] = useState<string>(DEFAULT_SALE_SITE_ID)
-  const [catalogLoading, setCatalogLoading] = useState(true)
-  const [catalogError, setCatalogError] = useState<string | null>(null)
+  const catalogEnabled =
+    Boolean(tableSessionId) || Boolean(options?.catalogSidebarOpen)
+
+  const {
+    menuCategorySections,
+    menuRecipes,
+    menuArticles,
+    menuPromotions,
+    menuQuantityDeals,
+    saleClients,
+    treasuryPaymentContext,
+    canReadClients,
+    canCreateSale,
+    canReadCashRegisters,
+    openCashSession,
+    invoiceTypeSiteId,
+    catalogLoading,
+    catalogError,
+    catalogLoadAttempted,
+  } = useMenuCatalogLoader(popId, { enabled: catalogEnabled })
 
   const [carrito, setCarrito] = useState<MesasCartItem[]>([])
   const [clienteSeleccionado, setClienteSeleccionado] =
@@ -168,6 +177,7 @@ export function useMesasSaleCheckout(
   const [modoDescuento, setModoDescuento] = useState<"porcentaje" | "fijo">("porcentaje")
   const [valorDescuentoPorcentaje, setValorDescuentoPorcentaje] = useState(0)
   const [valorDescuentoFijo, setValorDescuentoFijo] = useState(0)
+  const [descuentoGeneralBloqueado, setDescuentoGeneralBloqueado] = useState(false)
 
   const [clienteModalAbierto, setClienteModalAbierto] = useState(false)
   const [comprobanteModalAbierto, setComprobanteModalAbierto] = useState(false)
@@ -233,11 +243,18 @@ export function useMesasSaleCheckout(
     itemComentarios,
     paidPartialUnits,
     totalPagadoAcumulado,
+    descuentoGeneralBloqueado,
   }
 
   const applySessionSnapshot = useCallback((snap: TableSessionCheckoutSnapshot) => {
-    skipNextPersistRef.current = true
-    if (snap.comprobante != null) {
+    const healed = healLegacyLockedGeneralDiscount(snap)
+    const shouldPersistHealedDiscount =
+      healed.descuentoGeneralBloqueado === true &&
+      (healed.modoDescuento !== snap.modoDescuento ||
+        healed.valorDescuentoPorcentaje !== snap.valorDescuentoPorcentaje ||
+        healed.valorDescuentoFijo !== snap.valorDescuentoFijo)
+    skipNextPersistRef.current = !shouldPersistHealedDiscount
+    if (healed.comprobante != null) {
       comprobanteInitRef.current = true
     }
     setItemDescuentoModo(snap.itemDescuentoModo ?? {})
@@ -264,9 +281,10 @@ export function useMesasSaleCheckout(
     setComprobante(snap.comprobante)
     setMetodoPagoSeleccionado(snap.metodoPagoSeleccionado)
     setPayOnClientAccount(snap.payOnClientAccount)
-    setModoDescuento(snap.modoDescuento)
-    setValorDescuentoPorcentaje(snap.valorDescuentoPorcentaje)
-    setValorDescuentoFijo(snap.valorDescuentoFijo)
+    setModoDescuento(healed.modoDescuento)
+    setValorDescuentoPorcentaje(healed.valorDescuentoPorcentaje)
+    setValorDescuentoFijo(healed.valorDescuentoFijo)
+    setDescuentoGeneralBloqueado(healed.descuentoGeneralBloqueado === true)
     setItemDetalleAbiertoId(null)
     setPartialPayment(false)
     setPartialSelection({})
@@ -287,6 +305,7 @@ export function useMesasSaleCheckout(
       const res = await saveTableSessionCheckout(popId, siteId, sessionId, snap)
       if (res.success) {
         lastSavedUpdatedAtRef.current = res.updatedAt
+        lastAppliedRemoteUpdatedAtRef.current = res.updatedAt
       }
     },
     [popId, siteId],
@@ -395,6 +414,7 @@ export function useMesasSaleCheckout(
     itemComentarios,
     paidPartialUnits,
     totalPagadoAcumulado,
+    descuentoGeneralBloqueado,
     flushCheckoutPersist,
   ])
 
@@ -414,46 +434,6 @@ export function useMesasSaleCheckout(
   const ventaPadron = usePadronAutofillRazonSocial(popId, fiscalDocVenta, {
     enabled: Boolean(popId) && (clienteSeleccionado == null || clienteSeleccionado.manual),
   })
-
-  const loadCatalog = useCallback(async () => {
-    if (!popId) {
-      setCatalogLoading(false)
-      setCatalogError(null)
-      return
-    }
-    setCatalogLoading(true)
-    const res = await getMenuCatalog(popId)
-    if (!res.success) {
-      setMenuCategorySections([])
-    setMenuRecipes([])
-    setMenuArticles([])
-    setMenuPromotions([])
-    setMenuQuantityDeals([])
-      setSaleClients([])
-      setTreasuryPaymentContext(null)
-      setCatalogError(res.error)
-      setCatalogLoading(false)
-      return
-    }
-    setMenuCategorySections(res.categorySections)
-    setMenuRecipes(res.recipes)
-    setMenuArticles(res.articles)
-    setMenuPromotions(res.promotions)
-    setMenuQuantityDeals(res.quantityDeals)
-    setSaleClients(res.clients)
-    setTreasuryPaymentContext(res.treasuryPaymentContext)
-    setCanReadClients(res.canReadClients)
-    setCanCreateSale(res.canCreateSale)
-    setCanReadCashRegisters(res.canReadCashRegisters)
-    setOpenCashSession(res.openCashSession)
-    setInvoiceTypeSiteId(res.invoiceTypeSiteId)
-    setCatalogError(null)
-    setCatalogLoading(false)
-  }, [popId])
-
-  useEffect(() => {
-    void loadCatalog()
-  }, [loadCatalog])
 
   useEffect(() => {
     setCarrito((prev) => ensureCartLineIds(prev))
@@ -519,8 +499,9 @@ export function useMesasSaleCheckout(
         productosByKey,
         quantityDeals: menuQuantityDeals,
         overrides: overrideSnapshot,
+        paidPartialUnits,
       }),
-    [carrito, productosByKey, menuQuantityDeals, overrideSnapshot],
+    [carrito, productosByKey, menuQuantityDeals, overrideSnapshot, paidPartialUnits],
   )
 
   const quantityDealDiscounts = useMemo(
@@ -530,8 +511,9 @@ export function useMesasSaleCheckout(
         productosByKey,
         quantityDeals: menuQuantityDeals,
         overrides: overrideSnapshot,
+        paidPartialUnits,
       }),
-    [carrito, productosByKey, menuQuantityDeals, overrideSnapshot],
+    [carrito, productosByKey, menuQuantityDeals, overrideSnapshot, paidPartialUnits],
   )
 
   const unpaidCarrito = useMemo(
@@ -648,12 +630,16 @@ export function useMesasSaleCheckout(
   )
   const hayDescuentoItems = descuentoItemsMonto > 0
 
-  const descuentoMonto = useMemo(() => {
-    if (modoDescuento === "porcentaje") {
-      return subtotal * (valorDescuentoPorcentaje / 100)
-    }
-    return Math.min(valorDescuentoFijo, subtotal)
-  }, [modoDescuento, subtotal, valorDescuentoPorcentaje, valorDescuentoFijo])
+  const descuentoMonto = useMemo(
+    () =>
+      computeGeneralDiscountMonto({
+        subtotal,
+        modoDescuento,
+        valorDescuentoPorcentaje,
+        valorDescuentoFijo,
+      }),
+    [subtotal, modoDescuento, valorDescuentoPorcentaje, valorDescuentoFijo],
+  )
 
   const total = subtotal - descuentoMonto
   const hayDescuento = descuentoMonto > 0
@@ -684,6 +670,11 @@ export function useMesasSaleCheckout(
   const puedeCerrarMesa = channelCloseEligibility.canClose
   const cerrarMesaBlockReason = channelCloseEligibility.blockReason
   const cerrarMesaMode = channelCloseEligibility.mode
+
+  const descuentoGeneralEditBlocked = useMemo(
+    () => isGeneralDiscountEditBlocked({ descuentoGeneralBloqueado }),
+    [descuentoGeneralBloqueado],
+  )
 
   const partialPaymentUnits = useMemo(
     () =>
@@ -843,20 +834,44 @@ export function useMesasSaleCheckout(
     ],
   )
 
+  const cartLineOverrideSetters = useMemo(
+    () => ({
+      setItemDescuentoModo,
+      setItemDescuentoDraft,
+      setItemDescuentoSuprimido,
+      setItemComentarios,
+    }),
+    [
+      setItemDescuentoModo,
+      setItemDescuentoDraft,
+      setItemDescuentoSuprimido,
+      setItemComentarios,
+    ],
+  )
+
   const agregarPromoAlCarrito = useCallback(
     (promotionId: string, selections: PromotionCartSelection[]) => {
       const product = productosByKey.get(`promotion:${promotionId}`)
       if (!product?.promotionMeta) return
-      setCarrito((prev) =>
-        addPromotionToTicketCart({
+      setCarrito((prev) => {
+        const result = addPromotionToTicketCart({
           carrito: prev,
           promotionId,
           selections,
-          paidPartialUnits,
-        }),
-      )
+          paidPartialUnits: checkoutStateRef.current.paidPartialUnits ?? {},
+        })
+        for (const copy of result.overrideCopies) {
+          copyTicketLineOverrides(
+            copy.fromLineId,
+            copy.toLineId,
+            cartLineOverrideSetters,
+          )
+        }
+        setPaidPartialUnits(result.paidPartialUnits)
+        return result.carrito
+      })
     },
-    [productosByKey, paidPartialUnits],
+    [productosByKey, cartLineOverrideSetters],
   )
 
   const agregarAlCarrito = useCallback(
@@ -881,8 +896,8 @@ export function useMesasSaleCheckout(
         return
       }
 
-      setCarrito((prev) =>
-        addProductToTicketCart({
+      setCarrito((prev) => {
+        const result = addProductToTicketCart({
           carrito: prev,
           productoId,
           kindHint: kind,
@@ -894,9 +909,18 @@ export function useMesasSaleCheckout(
             itemComentarios,
           },
           overrideActions: cartLineOverrideActions,
-          paidPartialUnits,
-        }),
-      )
+          paidPartialUnits: checkoutStateRef.current.paidPartialUnits ?? {},
+        })
+        for (const copy of result.overrideCopies) {
+          copyTicketLineOverrides(
+            copy.fromLineId,
+            copy.toLineId,
+            cartLineOverrideSetters,
+          )
+        }
+        setPaidPartialUnits(result.paidPartialUnits)
+        return result.carrito
+      })
     },
     [
       productosByKey,
@@ -906,7 +930,7 @@ export function useMesasSaleCheckout(
       itemComentarios,
       cartLineOverrideActions,
       agregarPromoAlCarrito,
-      paidPartialUnits,
+      cartLineOverrideSetters,
     ],
   )
 
@@ -1031,6 +1055,7 @@ export function useMesasSaleCheckout(
     setPayOnClientAccount(false)
     setPaidPartialUnits({})
     setTotalPagadoAcumulado(0)
+    setDescuentoGeneralBloqueado(false)
     setPartialPayment(false)
     setPartialSelection({})
     setCloseOnComplete(true)
@@ -1195,6 +1220,11 @@ export function useMesasSaleCheckout(
         setPartialSelection({})
 
         if (isPartial) {
+          const shouldLockGeneralDiscount =
+            totalPagadoAcumulado <= 0 &&
+            descuentoMonto > 0 &&
+            !descuentoGeneralBloqueado
+
           const nextPaid = applyPartialPaymentSuccess(
             { paidPartialUnits, totalPagadoAcumulado },
             partialPaymentUnits,
@@ -1214,6 +1244,26 @@ export function useMesasSaleCheckout(
           setCarrito(materialized.carrito)
           setPaidPartialUnits(materialized.paidPartialUnits)
           setTotalPagadoAcumulado(nextPaid.totalPagadoAcumulado)
+
+          if (shouldLockGeneralDiscount) {
+            setDescuentoGeneralBloqueado(true)
+          }
+
+          checkoutStateRef.current = {
+            ...checkoutStateRef.current,
+            carrito: materialized.carrito,
+            paidPartialUnits: materialized.paidPartialUnits,
+            totalPagadoAcumulado: nextPaid.totalPagadoAcumulado,
+            ...(shouldLockGeneralDiscount
+              ? { descuentoGeneralBloqueado: true }
+              : {}),
+          }
+          if (persistTimerRef.current) {
+            clearTimeout(persistTimerRef.current)
+            persistTimerRef.current = null
+          }
+          skipNextPersistRef.current = true
+          await flushCheckoutPersist(tableSessionId, checkoutStateRef.current)
 
           const fullyPaid = isCheckoutFullyPaid({
             carrito: materialized.carrito,
@@ -1240,6 +1290,7 @@ export function useMesasSaleCheckout(
           setModoDescuento("porcentaje")
           setValorDescuentoPorcentaje(0)
           setValorDescuentoFijo(0)
+          setDescuentoGeneralBloqueado(false)
         }
         return true
       } finally {
@@ -1279,10 +1330,14 @@ export function useMesasSaleCheckout(
       paidPartialUnits,
       totalPagadoAcumulado,
       limpiarPedido,
+      descuentoGeneralEditBlocked,
+      descuentoGeneralBloqueado,
+      flushCheckoutPersist,
     ],
   )
 
   const abrirModalDescuento = useCallback(() => {
+    if (descuentoGeneralEditBlocked) return
     if (hayDescuento) {
       if (modoDescuento === "porcentaje") {
         setDescuentoDraftModo("porcentaje")
@@ -1296,9 +1351,16 @@ export function useMesasSaleCheckout(
       setDescuentoDraftTexto("")
     }
     setDescuentoModalAbierto(true)
-  }, [hayDescuento, modoDescuento, valorDescuentoPorcentaje, valorDescuentoFijo])
+  }, [
+    descuentoGeneralEditBlocked,
+    hayDescuento,
+    modoDescuento,
+    valorDescuentoPorcentaje,
+    valorDescuentoFijo,
+  ])
 
   const aplicarDescuentoModal = useCallback(() => {
+    if (descuentoGeneralEditBlocked) return
     const raw = descuentoDraftTexto.trim()
     if (!raw) {
       setModoDescuento("porcentaje")
@@ -1320,13 +1382,19 @@ export function useMesasSaleCheckout(
       setValorDescuentoPorcentaje(0)
     }
     setDescuentoModalAbierto(false)
-  }, [descuentoDraftModo, descuentoDraftTexto, subtotal])
+  }, [descuentoDraftModo, descuentoDraftTexto, subtotal, descuentoGeneralEditBlocked])
 
-  const descuentoToolbarLabel = useMemo(() => {
-    if (!hayDescuento) return "Sin descuento"
-    if (modoDescuento === "porcentaje") return `${valorDescuentoPorcentaje}%`
-    return `Fijo ${saleOpFmt.format(valorDescuentoFijo)}`
-  }, [hayDescuento, modoDescuento, valorDescuentoPorcentaje, valorDescuentoFijo])
+  const descuentoToolbarLabel = useMemo(
+    () =>
+      generalDiscountToolbarLabel({
+        hayDescuento,
+        modoDescuento,
+        valorDescuentoPorcentaje,
+        valorDescuentoFijo,
+        formatFijo: (value) => saleOpFmt.format(value),
+      }),
+    [hayDescuento, modoDescuento, valorDescuentoPorcentaje, valorDescuentoFijo],
+  )
 
   const clienteToolbarLabel = !canReadClients
     ? "Sin permiso"
@@ -1345,6 +1413,7 @@ export function useMesasSaleCheckout(
   return {
     catalogLoading,
     catalogError,
+    catalogLoadAttempted,
     openCashSession,
     treasuryPaymentContext,
     menuCategorySections,
@@ -1408,6 +1477,7 @@ export function useMesasSaleCheckout(
       pagoConfigurado: pagoConfigurado && !mesaToolbarDisabled && openCashSession != null,
       descuentoLabel: mesaToolbarDisabled ? "Sin descuento" : descuentoToolbarLabel,
       hayDescuento: hayDescuento && !mesaToolbarDisabled,
+      descuentoDisabled: descuentoGeneralEditBlocked && !mesaToolbarDisabled,
       onClienteClick: () => {
         if (!canReadClients || mesaToolbarDisabled) return
         setBusquedaClienteModal("")
@@ -1422,7 +1492,7 @@ export function useMesasSaleCheckout(
         setPagoModalAbierto(true)
       },
       onDescuentoClick: () => {
-        if (mesaToolbarDisabled) return
+        if (mesaToolbarDisabled || descuentoGeneralEditBlocked) return
         abrirModalDescuento()
       },
     },
@@ -1481,6 +1551,7 @@ export function useMesasSaleCheckout(
       subtotal,
       aplicarDescuentoModal,
       quitarDescuento: () => {
+        if (descuentoGeneralEditBlocked) return
         setModoDescuento("porcentaje")
         setValorDescuentoPorcentaje(0)
         setValorDescuentoFijo(0)

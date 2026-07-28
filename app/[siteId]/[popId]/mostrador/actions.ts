@@ -272,6 +272,47 @@ export async function getCounterOrders(
   return { success: true, orders: rows }
 }
 
+export async function getCounterOrderById(
+  popId: string,
+  routeSiteId: string,
+  orderId: string,
+): Promise<
+  | { success: true; order: CounterOrderRow | null }
+  | { success: false; error: string; redirect?: string }
+> {
+  const gate = await requireMostradorAccess(popId, routeSiteId, "read")
+  if (!gate.ok) {
+    return { success: false, error: gate.error, redirect: gate.redirect }
+  }
+  if (!isUuid(orderId)) {
+    return { success: false, error: "Pedido inválido." }
+  }
+
+  const { supabase } = gate
+  const { data, error } = await supabase
+    .from("counter_orders")
+    .select(COUNTER_ORDER_SELECT)
+    .eq("id", orderId)
+    .eq("pop_id", popId)
+    .neq("status", "cancelled")
+    .in("status", ["preparing", "dispatched", "delivered"])
+    .is("sale_id", null)
+    .maybeSingle()
+
+  if (error) {
+    return { success: false, error: error.message }
+  }
+
+  if (!data) {
+    return { success: true, order: null }
+  }
+
+  return {
+    success: true,
+    order: mapCounterOrderRow(data as Parameters<typeof mapCounterOrderRow>[0]),
+  }
+}
+
 export async function createCounterOrder(
   popId: string,
   routeSiteId: string,

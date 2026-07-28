@@ -32,7 +32,7 @@ import {
   treasuryKindLabel,
   type TreasuryAccountKind,
 } from "@/lib/treasuryAccountKinds"
-import { getWorkspaceHeaderForPop } from "@/lib/workspaceHeaderServer"
+import { usePopWorkspace } from "@/context/PopWorkspaceContext"
 import {
   treasuryChildCreateDialogCopy,
   type TreasuryAccountMenuActionId,
@@ -145,13 +145,9 @@ function AccountsPage() {
   const siteId = typeof params?.siteId === "string" ? params.siteId : ""
   const popId = typeof params?.popId === "string" ? params.popId : undefined
 
-  const [popName, setPopName] = useState("")
-  const [workspaceHeader, setWorkspaceHeader] = useState<{
-    userFullName: string
-    userImageUrl: string | null
-    roleLabel: string
-  } | null>(null)
-  const [headerError, setHeaderError] = useState<string | null>(null)
+  const { bootstrap, loading: bootstrapLoading, error: bootstrapError } =
+    usePopWorkspace()
+
   const [rows, setRows] = useState<TreasuryAccountTableRow[]>([])
   const [canCreate, setCanCreate] = useState(false)
   const [canUpdate, setCanUpdate] = useState(false)
@@ -192,22 +188,6 @@ function AccountsPage() {
 
   const detailHeaderRow = detailAccountMeta ?? selectedHubRow
 
-  const loadHeader = useCallback(async () => {
-    if (!popId) return
-    const head = await getWorkspaceHeaderForPop(popId)
-    if (!head.success) {
-      setHeaderError(head.error)
-      return
-    }
-    setHeaderError(null)
-    setPopName((prev) => prev || head.popName)
-    setWorkspaceHeader({
-      userFullName: head.userFullName,
-      userImageUrl: head.userImageUrl,
-      roleLabel: head.roleLabel,
-    })
-  }, [popId])
-
   const load = useCallback(async () => {
     if (!popId || !siteId) return
     const res = await getTreasuryAccountsHub(popId)
@@ -223,7 +203,6 @@ function AccountsPage() {
       return
     }
     setRows(res.rows)
-    setPopName(res.popName)
     setCanCreate(res.canCreate)
     setCanUpdate(res.canUpdate)
     setCanDelete(res.canDelete)
@@ -241,7 +220,7 @@ function AccountsPage() {
       setLoading(true)
       setError(null)
       try {
-        await Promise.all([load(), loadHeader()])
+        await load()
       } catch {
         if (!cancelled) setError("Error inesperado")
       } finally {
@@ -251,7 +230,11 @@ function AccountsPage() {
     return () => {
       cancelled = true
     }
-  }, [popId, siteId, load, loadHeader])
+  }, [popId, siteId, load])
+
+  const pageLoading = bootstrapLoading || loading
+  const popName = bootstrap?.popName ?? ""
+  const headerError = bootstrapError
 
   const openCreate = () => {
     setCreateBanner(null)
@@ -380,10 +363,10 @@ function AccountsPage() {
           : undefined
       }
       headerVariant="dark"
-      loading={loading && !selectedAccountId}
-      userName={workspaceHeader?.userFullName}
-      userAvatarSrc={workspaceHeader?.userImageUrl ?? undefined}
-      userRoleLabel={workspaceHeader?.roleLabel}
+      loading={(pageLoading || loading) && !selectedAccountId}
+      userName={bootstrap?.userFullName}
+      userAvatarSrc={bootstrap?.userImageUrl ?? undefined}
+      userRoleLabel={bootstrap?.roleLabel}
       contentFlush
       mainMaxWidthClass="max-w-none"
       mainClassName="min-h-0 overflow-y-auto"

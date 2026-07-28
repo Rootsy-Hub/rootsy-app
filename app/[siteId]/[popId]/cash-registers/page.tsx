@@ -33,7 +33,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import withAuth from "@/hoc/withAuth"
-import { getWorkspaceHeaderForPop } from "@/lib/workspaceHeaderServer"
+import { usePopWorkspace } from "@/context/PopWorkspaceContext"
 import { cn } from "@/lib/utils"
 import {
   DoorClosed,
@@ -95,13 +95,9 @@ function CashRegistersPage() {
   const siteId = typeof params?.siteId === "string" ? params.siteId : ""
   const popId = typeof params?.popId === "string" ? params.popId : undefined
 
-  const [popName, setPopName] = useState("")
-  const [headerError, setHeaderError] = useState<string | null>(null)
-  const [workspaceHeader, setWorkspaceHeader] = useState<{
-    userFullName: string
-    userImageUrl: string | null
-    roleLabel: string
-  } | null>(null)
+  const { bootstrap, loading: bootstrapLoading, error: bootstrapError } =
+    usePopWorkspace()
+
   const [registers, setRegisters] = useState<CashRegisterRow[]>([])
   const [cashTreasuryAccounts, setCashTreasuryAccounts] = useState<
     CashTreasuryAccountOption[]
@@ -165,22 +161,6 @@ function CashRegistersPage() {
   const [summaryLoading, setSummaryLoading] = useState(false)
   const [summaryError, setSummaryError] = useState<string | null>(null)
 
-  const loadHeader = useCallback(async () => {
-    if (!popId) return
-    const head = await getWorkspaceHeaderForPop(popId)
-    if (!head.success) {
-      setHeaderError(head.error)
-      return
-    }
-    setHeaderError(null)
-    setPopName((prev) => prev || head.popName)
-    setWorkspaceHeader({
-      userFullName: head.userFullName,
-      userImageUrl: head.userImageUrl,
-      roleLabel: head.roleLabel,
-    })
-  }, [popId])
-
   const load = useCallback(async () => {
     if (!popId || !siteId) return
     const res = await getCashRegistersPageData(popId)
@@ -197,7 +177,6 @@ function CashRegistersPage() {
       }
       return
     }
-    setPopName(res.popName)
     setRegisters(res.registers)
     setCashTreasuryAccounts(res.cashTreasuryAccounts)
     setPaymentMethods(res.paymentMethods)
@@ -218,7 +197,7 @@ function CashRegistersPage() {
       setLoading(true)
       setError(null)
       try {
-        await Promise.all([load(), loadHeader()])
+        await load()
       } catch {
         if (!cancelled) setError("Error inesperado")
       } finally {
@@ -228,7 +207,11 @@ function CashRegistersPage() {
     return () => {
       cancelled = true
     }
-  }, [popId, siteId, load, loadHeader])
+  }, [popId, siteId, load])
+
+  const pageLoading = bootstrapLoading || loading
+  const popName = bootstrap?.popName ?? ""
+  const headerError = bootstrapError
 
   const openCreate = () => {
     setCreateBanner(null)
@@ -482,10 +465,10 @@ function CashRegistersPage() {
         popName={popName}
         title="Cajas"
         headerVariant="dark"
-        loading={loading}
-        userName={workspaceHeader?.userFullName}
-        userAvatarSrc={workspaceHeader?.userImageUrl ?? undefined}
-        userRoleLabel={workspaceHeader?.roleLabel}
+        loading={pageLoading}
+        userName={bootstrap?.userFullName}
+        userAvatarSrc={bootstrap?.userImageUrl ?? undefined}
+        userRoleLabel={bootstrap?.roleLabel}
         contentFlush
         mainMaxWidthClass="max-w-none"
         mainClassName="min-h-0 overflow-y-auto"

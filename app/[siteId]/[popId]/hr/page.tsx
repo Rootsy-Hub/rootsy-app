@@ -31,8 +31,8 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { Textarea } from "@/components/ui/textarea"
+import { usePopWorkspace } from "@/context/PopWorkspaceContext"
 import withAuth from "@/hoc/withAuth"
-import { getWorkspaceHeaderForPop } from "@/lib/workspaceHeaderServer"
 import { cn } from "@/lib/utils"
 import {
   Clock3,
@@ -84,12 +84,11 @@ function HrPage() {
   const siteId = typeof params?.siteId === "string" ? params.siteId : ""
   const popId = typeof params?.popId === "string" ? params.popId : undefined
 
+  const { bootstrap, loading: bootstrapLoading, error: bootstrapError, refresh } =
+    usePopWorkspace()
+
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [popName, setPopName] = useState("")
-  const [headerUserName, setHeaderUserName] = useState("")
-  const [userAvatarSrc, setUserAvatarSrc] = useState<string | null>(null)
-  const [headerRoleLabel, setHeaderRoleLabel] = useState("")
   const [canManageInvites, setCanManageInvites] = useState(false)
   const [roles, setRoles] = useState<PopRoleRow[]>([])
   const [members, setMembers] = useState<MemberRow[]>([])
@@ -130,7 +129,6 @@ function HrPage() {
       return
     }
     setError(null)
-    setPopName(res.popName)
     setCanManageInvites(res.canManageInvites)
     setRoles(res.roles)
     setMembers(res.members)
@@ -141,17 +139,6 @@ function HrPage() {
       return assignable?.id ?? ""
     })
   }, [popId, siteId])
-
-  const loadHeader = useCallback(async () => {
-    if (!popId) return
-    const res = await getWorkspaceHeaderForPop(popId)
-    if (res.success) {
-      setPopName((prev) => res.popName || prev)
-      setHeaderUserName(res.userFullName)
-      setUserAvatarSrc(res.userImageUrl)
-      setHeaderRoleLabel(res.roleLabel)
-    }
-  }, [popId])
 
   useEffect(() => {
     if (!popId || !siteId) {
@@ -164,7 +151,7 @@ function HrPage() {
       setLoading(true)
       setError(null)
       try {
-        await Promise.all([loadHeader(), loadDashboard()])
+        await loadDashboard()
       } finally {
         if (!c) setLoading(false)
       }
@@ -172,7 +159,10 @@ function HrPage() {
     return () => {
       c = true
     }
-  }, [popId, siteId, loadHeader, loadDashboard])
+  }, [popId, siteId, loadDashboard])
+
+  const pageLoading = bootstrapLoading || loading
+  const popName = bootstrap?.popName ?? ""
 
   const groupedMembers = useMemo(() => groupMembersByRole(members), [members])
   const assignableRoles = useMemo(
@@ -288,7 +278,7 @@ function HrPage() {
     }
     setBanner({ type: "ok", text: "Permisos del rol actualizados." })
     closePermModal()
-    await loadDashboard()
+    await Promise.all([loadDashboard(), refresh()])
   }
 
   const handleDeleteRole = async (r: PopRoleRow) => {
@@ -393,10 +383,10 @@ function HrPage() {
         title="RRHH"
         headerVariant="dark"
         contentFlush
-        loading={loading}
-        userName={headerUserName}
-        userAvatarSrc={userAvatarSrc}
-        userRoleLabel={headerRoleLabel || undefined}
+        loading={pageLoading}
+        userName={bootstrap?.userFullName}
+        userAvatarSrc={bootstrap?.userImageUrl ?? undefined}
+        userRoleLabel={bootstrap?.roleLabel || undefined}
         mainMaxWidthClass="max-w-none"
         mainClassName="min-h-0 overflow-y-auto"
       >

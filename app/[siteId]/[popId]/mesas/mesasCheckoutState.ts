@@ -1,6 +1,7 @@
 import type { MenuCartItemKind } from "@/lib/menuCart"
 import type { PromotionCartSelection } from "@/lib/promotionPricing"
 import type { SaleCatalogPaymentOption } from "@/app/[siteId]/[popId]/sale/actions"
+import { healLegacyLockedGeneralDiscount } from "@/lib/generalDiscountLock"
 
 export type MesasCartItem = {
   lineId?: string
@@ -40,6 +41,12 @@ export type TableSessionCheckoutSnapshot = {
   paidPartialUnits?: Record<string, number>
   /** Suma acumulada de pagos parciales en esta sesión/pedido. */
   totalPagadoAcumulado?: number
+  /** Tras el primer cobro parcial con descuento general, no se puede editar. */
+  descuentoGeneralBloqueado?: boolean
+  /** @deprecated Solo lectura legacy para restaurar % tras bloqueo antiguo. */
+  subtotalBaseDescuentoGeneral?: number
+  /** @deprecated Solo lectura legacy para restaurar % tras bloqueo antiguo. */
+  descuentoGeneralTotalFijo?: number
 }
 
 export function emptyTableSessionCheckout(
@@ -196,7 +203,7 @@ export function parseTableSessionCheckout(
         }
       : null
 
-  return {
+  return healLegacyLockedGeneralDiscount({
     carrito,
     clienteSeleccionado: parseCliente(raw.clienteSeleccionado),
     manualNombreCliente:
@@ -223,7 +230,18 @@ export function parseTableSessionCheckout(
     totalPagadoAcumulado: Number.isFinite(Number(raw.totalPagadoAcumulado))
       ? Math.max(0, Number(raw.totalPagadoAcumulado))
       : 0,
-  }
+    descuentoGeneralBloqueado: raw.descuentoGeneralBloqueado === true,
+    subtotalBaseDescuentoGeneral: Number.isFinite(
+      Number(raw.subtotalBaseDescuentoGeneral),
+    )
+      ? Math.max(0, Number(raw.subtotalBaseDescuentoGeneral))
+      : 0,
+    descuentoGeneralTotalFijo: Number.isFinite(
+      Number(raw.descuentoGeneralTotalFijo),
+    )
+      ? Math.max(0, Number(raw.descuentoGeneralTotalFijo))
+      : 0,
+  })
 }
 
 function parseNumericRecord(v: unknown): Record<string, number> | undefined {

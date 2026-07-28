@@ -1013,6 +1013,47 @@ export async function getOpenTableSessions(
   }
 }
 
+export async function getOpenTableSessionById(
+  popId: string,
+  routeSiteId: string,
+  sessionId: string,
+): Promise<
+  | { success: true; session: MesaSessionRow | null }
+  | { success: false; error: string; redirect?: string }
+> {
+  const gate = await requireMesasAccess(popId, routeSiteId, "read")
+  if (!gate.ok) {
+    return { success: false, error: gate.error, redirect: gate.redirect }
+  }
+  if (!isUuid(sessionId)) {
+    return { success: false, error: "Sesión inválida." }
+  }
+
+  const { supabase } = gate
+  const { data, error } = await supabase
+    .from("table_sessions")
+    .select(TABLE_SESSION_SELECT)
+    .eq("id", sessionId)
+    .eq("pop_id", popId)
+    .eq("status", "open")
+    .maybeSingle()
+
+  if (error) {
+    return { success: false, error: error.message }
+  }
+
+  if (!data) {
+    return { success: true, session: null }
+  }
+
+  return {
+    success: true,
+    session: mapTableSessionRow(
+      data as unknown as Parameters<typeof mapTableSessionRow>[0],
+    ),
+  }
+}
+
 export async function openTableSession(
   popId: string,
   routeSiteId: string,

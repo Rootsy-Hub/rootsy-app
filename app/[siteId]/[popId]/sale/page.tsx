@@ -1075,7 +1075,6 @@ function SalePage() {
         loading={catalogLoading}
         userName={headerUserName}
         userAvatarSrc={userAvatarSrc}
-        userRoleLabel="Ventas"
         sidebarCollapsible
         sidebarEdgeToggle={false}
         sidebarOpen={catalogSidebarOpen}

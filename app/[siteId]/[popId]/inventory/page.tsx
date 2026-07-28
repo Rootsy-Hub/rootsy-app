@@ -32,7 +32,7 @@ import {
 } from "@/components/ui/table"
 import { Textarea } from "@/components/ui/textarea"
 import withAuth from "@/hoc/withAuth"
-import { getWorkspaceHeaderForPop } from "@/lib/workspaceHeaderServer"
+import { usePopWorkspace } from "@/context/PopWorkspaceContext"
 import { cn } from "@/lib/utils"
 import {
   Boxes,
@@ -103,13 +103,9 @@ function InventoryPage() {
   const params = useParams()
   const siteId = typeof params?.siteId === "string" ? params.siteId : ""
   const popId = typeof params?.popId === "string" ? params.popId : undefined
+  const { bootstrap, loading: bootstrapLoading, error: bootstrapError } =
+    usePopWorkspace()
 
-  const [popName, setPopName] = useState("")
-  const [workspaceHeader, setWorkspaceHeader] = useState<{
-    userFullName: string
-    userImageUrl: string | null
-    roleLabel: string
-  } | null>(null)
   const [ledgerTimeZone, setLedgerTimeZone] = useState("")
   const [movements, setMovements] = useState<InventoryMovementRow[]>([])
   const [costLayers, setCostLayers] = useState<InventoryCostLayerRow[]>([])
@@ -142,17 +138,6 @@ function InventoryPage() {
   const [deleteBusy, setDeleteBusy] = useState(false)
   const [deleteBanner, setDeleteBanner] = useState<string | null>(null)
 
-  const loadHeader = useCallback(async () => {
-    if (!popId) return
-    const res = await getWorkspaceHeaderForPop(popId)
-    if (!res.success) return
-    setWorkspaceHeader({
-      userFullName: res.userFullName,
-      userImageUrl: res.userImageUrl,
-      roleLabel: res.roleLabel,
-    })
-  }, [popId])
-
   const load = useCallback(async () => {
     if (!popId || !siteId) return
     const res = await getPopInventoryPageData(popId)
@@ -172,7 +157,6 @@ function InventoryPage() {
       }
       return
     }
-    setPopName(res.popName)
     setLedgerTimeZone(res.ledgerTimeZone ?? "")
     setMovements(res.movements)
     setCostLayers(res.costLayers)
@@ -196,7 +180,7 @@ function InventoryPage() {
       setLoading(true)
       setError(null)
       try {
-        await Promise.all([load(), loadHeader()])
+        await load()
       } catch {
         if (!cancelled) setError("Unexpected error")
       } finally {
@@ -206,7 +190,10 @@ function InventoryPage() {
     return () => {
       cancelled = true
     }
-  }, [popId, siteId, load, loadHeader])
+  }, [popId, siteId, load])
+
+  const pageLoading = bootstrapLoading || loading
+  const popName = bootstrap?.popName ?? ""
 
   const openCreate = () => {
     setCreateBanner(null)
@@ -359,10 +346,10 @@ function InventoryPage() {
         popName={popName}
         title="Inventario"
         headerVariant="dark"
-        loading={loading}
-        userName={workspaceHeader?.userFullName}
-        userAvatarSrc={workspaceHeader?.userImageUrl ?? undefined}
-        userRoleLabel={workspaceHeader?.roleLabel}
+        loading={pageLoading}
+        userName={bootstrap?.userFullName}
+        userAvatarSrc={bootstrap?.userImageUrl ?? undefined}
+        userRoleLabel={bootstrap?.roleLabel}
         contentFlush
         mainMaxWidthClass="max-w-none"
         mainClassName="min-h-0 overflow-y-auto"

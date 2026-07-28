@@ -67,6 +67,7 @@ export function MesasWorkspace({
     layoutLoading,
     layoutError,
     sessionError,
+    realtimeStatus,
     layoutData,
     reloadLayout,
     moveTable,
@@ -78,6 +79,10 @@ export function MesasWorkspace({
     freeTablesInSalon,
   } = useMesasState(popId, siteId)
 
+  const [rightView, setRightView] = useState<MesasRightPanelView>("session")
+  const [waiters, setWaiters] = useState<MesaWaiter[]>([])
+  const showCatalog = rightView === "cart"
+
   const checkout = useMesasSaleCheckout(
     popId,
     siteId,
@@ -88,12 +93,11 @@ export function MesasWorkspace({
           updatedAt: selectedSession.updatedAt,
         }
       : null,
-    { onSessionClose: () => void reloadSessions() },
+    {
+      onSessionClose: () => void reloadSessions(),
+      catalogSidebarOpen: catalogSidebarOpen || showCatalog,
+    },
   )
-
-  const [rightView, setRightView] = useState<MesasRightPanelView>("session")
-  const [waiters, setWaiters] = useState<MesaWaiter[]>([])
-  const showCatalog = rightView === "cart"
 
   useEffect(() => {
     if (!popId || !siteId) return
@@ -226,8 +230,17 @@ export function MesasWorkspace({
         <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.03)_1px,transparent_1px)] bg-size-[38px_38px] opacity-20" />
       </div>
 
-      {!checkout.catalogLoading && !checkout.openCashSession ? (
+      {checkout.catalogLoadAttempted &&
+      !checkout.catalogLoading &&
+      !checkout.openCashSession ? (
         <OpenCashSessionBanner siteId={siteId} popId={popId} variant="dark" />
+      ) : null}
+
+      {realtimeStatus === "disconnected" ? (
+        <div className="relative z-20 border-b border-amber-500/35 bg-amber-950/50 px-4 py-2 text-sm text-amber-100">
+          Conexión en vivo interrumpida. Reconectando… los cambios pueden demorar
+          unos segundos.
+        </div>
       ) : null}
 
       <main className="relative z-10 grid min-h-0 flex-1 grid-cols-[minmax(0,1fr)_380px] grid-rows-[minmax(0,1fr)_calc(4.5rem+1rem)] sm:grid-rows-[minmax(0,1fr)_calc(4.75rem+1.25rem)]">

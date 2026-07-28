@@ -1209,7 +1209,6 @@ function PurchasesPage() {
         loading={catalogLoading}
         userName={headerUserName}
         userAvatarSrc={userAvatarSrc}
-        userRoleLabel="Compras"
         sidebarCollapsible
         sidebarEdgeToggle={false}
         sidebarOpen={catalogSidebarOpen}

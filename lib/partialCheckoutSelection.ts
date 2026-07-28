@@ -237,6 +237,7 @@ export function buildPartialPaymentUnits(input: {
     for (const row of group.rows) {
       if (row.quantityDealApplicationId) continue
       if (row.variant === "combo_component") continue
+      if (row.paidLocked) continue
       const key = regularSelectionKey(row.cartLineId)
       if (seenRegularKeys.has(key)) continue
       seenRegularKeys.add(key)

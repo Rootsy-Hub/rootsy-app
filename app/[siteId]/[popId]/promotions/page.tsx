@@ -86,7 +86,7 @@ import {
 } from "@/components/ui/table"
 import { Textarea } from "@/components/ui/textarea"
 import withAuth from "@/hoc/withAuth"
-import { getWorkspaceHeaderForPop } from "@/lib/workspaceHeaderServer"
+import { usePopWorkspace } from "@/context/PopWorkspaceContext"
 import {
   ALL_PROMOTION_WEEKDAYS,
   PROMOTION_BENEFIT_TARGET_LABEL,
@@ -257,12 +257,8 @@ function PromotionsPage() {
   const searchInputId = useId()
   const pageSizeLabelId = useId()
 
-  const [popName, setPopName] = useState("")
-  const [workspaceHeader, setWorkspaceHeader] = useState<{
-    userFullName: string
-    userImageUrl: string | null
-    roleLabel: string | null
-  } | null>(null)
+  const { bootstrap, loading: bootstrapLoading } = usePopWorkspace()
+
   const [promotions, setPromotions] = useState<PromotionTableRow[]>([])
   const [totalCount, setTotalCount] = useState(0)
   const [page, setPage] = useState(1)
@@ -325,7 +321,6 @@ function PromotionsPage() {
     setError(null)
     setPromotions(res.promotions)
     setTotalCount(res.totalCount)
-    setPopName(res.popName)
     setCanCreate(res.canCreate)
     setCanUpdate(res.canUpdate)
     setCanDelete(res.canDelete)
@@ -337,22 +332,10 @@ function PromotionsPage() {
 
   useEffect(() => {
     if (!popId) return
-    void getWorkspaceHeaderForPop(popId).then((head) => {
-      if (head.success) {
-        setWorkspaceHeader({
-          userFullName: head.userFullName,
-          userImageUrl: head.userImageUrl,
-          roleLabel: head.roleLabel,
-        })
-        if (!popName) setPopName(head.popName)
-      } else {
-        setWorkspaceHeader(null)
-      }
-    })
     void getPromotionCatalogOptions(popId).then((res) => {
       if (res.success) setCatalogOptions(res.options)
     })
-  }, [popId, popName])
+  }, [popId])
 
   useEffect(() => {
     const t = window.setTimeout(() => {
@@ -475,15 +458,15 @@ function PromotionsPage() {
     <DataWorkspaceLayout
       siteId={siteId}
       popId={popId}
-      popName={popName}
+      popName={bootstrap?.popName ?? ""}
       title="Promociones"
       headerVariant="dark"
       contentFlush
       sidebarCollapsible={false}
-      loading={!popName && loading}
-      userName={workspaceHeader?.userFullName}
-      userAvatarSrc={workspaceHeader?.userImageUrl ?? undefined}
-      userRoleLabel={workspaceHeader?.roleLabel ?? undefined}
+      loading={bootstrapLoading || loading}
+      userName={bootstrap?.userFullName}
+      userAvatarSrc={bootstrap?.userImageUrl ?? undefined}
+      userRoleLabel={bootstrap?.roleLabel ?? undefined}
       pillLabel="Menú"
       mainClassName="min-h-0 overflow-hidden"
       headerActions={

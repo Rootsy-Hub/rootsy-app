@@ -31,3 +31,10 @@ export function popScopedHref(
 export function popMenuHref(siteId: string, popId: string): string {
   return popScopedHref(siteId, popId, "menu")
 }
+
+export function siteIdsMatchClientRoute(
+  routeSiteId: string,
+  popSiteId: string,
+): boolean {
+  return routeSiteId.trim().toLowerCase() === popSiteId.trim().toLowerCase()
+}

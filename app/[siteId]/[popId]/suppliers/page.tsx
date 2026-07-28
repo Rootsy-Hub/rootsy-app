@@ -69,7 +69,7 @@ import {
 } from "@/components/ui/table"
 import withAuth from "@/hoc/withAuth"
 import { usePadronAutofillRazonSocial } from "@/hooks/usePadronAutofillRazonSocial"
-import { getWorkspaceHeaderForPop } from "@/lib/workspaceHeaderServer"
+import { usePopWorkspace } from "@/context/PopWorkspaceContext"
 import { cn } from "@/lib/utils"
 import {
   Filter,
@@ -191,7 +191,8 @@ function SuppliersPage() {
   const siteId = typeof params?.siteId === "string" ? params.siteId : ""
   const popId = typeof params?.popId === "string" ? params.popId : undefined
 
-  const [popName, setPopName] = useState("")
+  const { bootstrap, loading: bootstrapLoading } = usePopWorkspace()
+
   const [rows, setRows] = useState<SupplierTableRow[]>([])
   const [canCreate, setCanCreate] = useState(false)
   const [canUpdate, setCanUpdate] = useState(false)
@@ -230,12 +231,6 @@ function SuppliersPage() {
   const [deleteRow, setDeleteRow] = useState<SupplierTableRow | null>(null)
   const [deleteBusy, setDeleteBusy] = useState(false)
 
-  const [workspaceHeader, setWorkspaceHeader] = useState<{
-    userFullName: string
-    userImageUrl: string | null
-    roleLabel: string
-  } | null>(null)
-
   const createOpenEffective = createOpen && canCreate
 
   const createPadron = usePadronAutofillRazonSocial(popId, createForm.taxId, {
@@ -254,30 +249,14 @@ function SuppliersPage() {
       setCanCreate(false)
       setCanUpdate(false)
       setCanDelete(false)
-      setPopName(res.popName ?? "")
       return
     }
     setRows(res.suppliers)
-    setPopName(res.popName)
     setCanCreate(res.canCreate)
     setCanUpdate(res.canUpdate)
     setCanDelete(res.canDelete)
     setError(null)
   }, [popId, siteId])
-
-  const fetchWorkspaceHeader = useCallback(async () => {
-    if (!popId) return
-    const head = await getWorkspaceHeaderForPop(popId)
-    if (head.success) {
-      setWorkspaceHeader({
-        userFullName: head.userFullName,
-        userImageUrl: head.userImageUrl,
-        roleLabel: head.roleLabel,
-      })
-    } else {
-      setWorkspaceHeader(null)
-    }
-  }, [popId])
 
   useEffect(() => {
     const q = searchParams.get("q")?.trim()
@@ -296,7 +275,6 @@ function SuppliersPage() {
       setError(null)
       try {
         await load()
-        if (!cancelled) await fetchWorkspaceHeader()
       } catch {
         if (!cancelled) setError("Error inesperado")
       } finally {
@@ -306,7 +284,7 @@ function SuppliersPage() {
     return () => {
       cancelled = true
     }
-  }, [popId, siteId, load, fetchWorkspaceHeader])
+  }, [popId, siteId, load])
 
   useEffect(() => {
     setPage(1)
@@ -571,15 +549,14 @@ function SuppliersPage() {
     <DataWorkspaceLayout
       siteId={siteId}
       popId={popId}
-      popName={popName}
+      popName={bootstrap?.popName ?? ""}
       title="Proveedores"
       headerVariant="dark"
       contentFlush
       sidebarCollapsible={false}
-      loading={!popName && listFetching}
-      userName={workspaceHeader?.userFullName}
-      userAvatarSrc={workspaceHeader?.userImageUrl ?? undefined}
-      userRoleLabel={workspaceHeader?.roleLabel ?? "Compras"}
+      loading={bootstrapLoading || listFetching}
+      userName={bootstrap?.userFullName}
+      userAvatarSrc={bootstrap?.userImageUrl ?? undefined}
       mainClassName="min-h-0 overflow-hidden"
       headerActions={
         canCreate ? (

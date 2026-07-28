@@ -1,19 +1,16 @@
 "use client"
 
 import { MostradorWorkspace } from "@/app/[siteId]/[popId]/mostrador/components/MostradorWorkspace"
-import {
-  getMostradorAccessSnapshot,
-  type MostradorAccessSnapshot,
-} from "@/app/[siteId]/[popId]/mostrador/actions"
 import { DataWorkspaceHeaderIconButton } from "@/components/layouts/DataWorkspaceHeaderIconButton"
 import { DataWorkspaceLayout } from "@/components/layouts/DataWorkspaceLayout"
 import { useDataWorkspaceSidebar } from "@/components/layouts/useDataWorkspaceSidebar"
+import { usePopWorkspace } from "@/context/PopWorkspaceContext"
 import { useAuth } from "@/context/AuthContextSupabase"
 import withAuth from "@/hoc/withAuth"
-import { getWorkspaceHeaderForPop } from "@/lib/workspaceHeaderServer"
+import { mostradorAccessFromKeys } from "@/lib/popWorkspaceAccess"
 import { Plus } from "lucide-react"
 import { useParams, useRouter } from "next/navigation"
-import { useCallback, useEffect, useRef, useState } from "react"
+import { useCallback, useEffect, useMemo, useRef } from "react"
 
 function MostradorPage() {
   const params = useParams()
@@ -27,50 +24,20 @@ function MostradorPage() {
   } = useDataWorkspaceSidebar(siteId, popId ?? "", Boolean(popId))
 
   const { user } = useAuth()
+  const { bootstrap, loading: bootstrapLoading, error: bootstrapError } =
+    usePopWorkspace()
 
-  const [popName, setPopName] = useState("")
-  const [headerUserName, setHeaderUserName] = useState("")
-  const [userAvatarSrc, setUserAvatarSrc] = useState<string | null>(null)
-  const [loading, setLoading] = useState(true)
-  const [access, setAccess] = useState<MostradorAccessSnapshot>({
-    canRead: false,
-    canCreate: false,
-    canUpdate: false,
-    canDelete: false,
-  })
-
-  const loadHeader = useCallback(async () => {
-    if (!popId) {
-      setLoading(false)
-      return
-    }
-    setLoading(true)
-    const [headerRes, accessRes] = await Promise.all([
-      getWorkspaceHeaderForPop(popId),
-      getMostradorAccessSnapshot(popId),
-    ])
-    setLoading(false)
-
-    if (headerRes.success) {
-      setPopName(headerRes.popName)
-      setHeaderUserName(headerRes.userFullName)
-      setUserAvatarSrc(headerRes.userImageUrl)
-    } else {
-      setPopName("")
-      setHeaderUserName("")
-      setUserAvatarSrc(null)
-    }
-
-    setAccess(accessRes)
-
-    if (!accessRes.canRead) {
-      router.replace(`/${siteId}/${popId}/menu`)
-    }
-  }, [popId, siteId, router])
+  const access = useMemo(
+    () => mostradorAccessFromKeys(bootstrap?.permissionKeys ?? []),
+    [bootstrap?.permissionKeys],
+  )
 
   useEffect(() => {
-    void loadHeader()
-  }, [loadHeader])
+    if (bootstrapLoading || !bootstrap) return
+    if (!access.canRead) {
+      router.replace(`/${siteId}/${popId}/menu`)
+    }
+  }, [bootstrapLoading, bootstrap, access.canRead, router, siteId, popId])
 
   const startCreateOrderRef = useRef<(() => void) | null>(null)
 
@@ -86,7 +53,15 @@ function MostradorPage() {
     )
   }
 
-  if (!access.canRead && !loading) {
+  if (!bootstrapLoading && bootstrapError) {
+    return (
+      <div className="rootsy-app-light min-h-screen bg-background p-10 text-foreground">
+        <p className="text-sm">{bootstrapError}</p>
+      </div>
+    )
+  }
+
+  if (!access.canRead && !bootstrapLoading) {
     return null
   }
 
@@ -94,14 +69,13 @@ function MostradorPage() {
     <DataWorkspaceLayout
       siteId={siteId}
       popId={popId}
-      popName={popName}
+      popName={bootstrap?.popName ?? ""}
       title="Mostrador"
       headerVariant="dark"
       contentFlush
-      loading={loading}
-      userName={headerUserName || user?.email || ""}
-      userAvatarSrc={userAvatarSrc ?? undefined}
-      userRoleLabel="Mostrador"
+      loading={bootstrapLoading}
+      userName={bootstrap?.userFullName || user?.email || ""}
+      userAvatarSrc={bootstrap?.userImageUrl ?? undefined}
       sidebarCollapsible
       sidebarEdgeToggle={false}
       sidebarOpen={catalogSidebarOpen}

@@ -58,12 +58,14 @@ export function buildChannelCheckoutTicketDisplay(input: {
     productosByKey,
     quantityDeals: input.menuQuantityDeals,
     overrides,
+    paidPartialUnits,
   })
   const quantityDealDiscounts = computeMenuQuantityDealDiscounts({
     carrito,
     productosByKey,
     quantityDeals: input.menuQuantityDeals,
     overrides,
+    paidPartialUnits,
   })
 
   const itemsDetallados = carrito

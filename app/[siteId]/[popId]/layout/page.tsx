@@ -1,6 +1,5 @@
 "use client"
 
-import { getLayoutPreviewHeaderData } from "./actions"
 import { LayoutPreviewListTable } from "./LayoutPreviewListTable"
 import {
   LayoutPreviewReportsDashboard,
@@ -9,6 +8,7 @@ import {
 import { DataWorkspaceLayout } from "@/components/layouts/DataWorkspaceLayout"
 import { DataWorkspaceSectionMenu } from "@/components/layouts/DataWorkspaceSectionMenu"
 import { getDefaultWorkspaceViewId } from "@/components/layouts/DataWorkspaceSidebar"
+import { usePopWorkspace } from "@/context/PopWorkspaceContext"
 import { cn } from "@/lib/utils"
 import withAuth from "@/hoc/withAuth"
 import {
@@ -19,7 +19,7 @@ import {
   Table2,
 } from "lucide-react"
 import { useParams } from "next/navigation"
-import { useCallback, useEffect, useMemo, useState } from "react"
+import { useMemo, useState } from "react"
 
 const CREATION_ITEMS = [
   { id: "create-article", label: "Crear artículo", icon: Package },
@@ -37,40 +37,12 @@ function LayoutPreviewPage() {
   const siteId = typeof params?.siteId === "string" ? params.siteId : ""
   const popId = typeof params?.popId === "string" ? params.popId : undefined
 
-  const [loading, setLoading] = useState(true)
-  const [headerError, setHeaderError] = useState<string | null>(null)
-  const [popName, setPopName] = useState("")
-  const [userFullName, setUserFullName] = useState("")
-  const [userImageUrl, setUserImageUrl] = useState<string | null>(null)
-  const [roleLabel, setRoleLabel] = useState("")
+  const { bootstrap, loading: bootstrapLoading, error: bootstrapError } =
+    usePopWorkspace()
 
   const [activeId, setActiveId] = useState(() =>
     getDefaultWorkspaceViewId(CREATION_ITEMS, VIEW_ITEMS),
   )
-
-  const load = useCallback(async () => {
-    if (!popId) return
-    setLoading(true)
-    const res = await getLayoutPreviewHeaderData(popId)
-    setLoading(false)
-    if (!res.success) {
-      setHeaderError(res.error)
-      setPopName("")
-      setUserFullName("")
-      setUserImageUrl(null)
-      setRoleLabel("")
-      return
-    }
-    setHeaderError(null)
-    setPopName(res.popName)
-    setUserFullName(res.userFullName)
-    setUserImageUrl(res.userImageUrl)
-    setRoleLabel(res.roleLabel)
-  }, [popId])
-
-  useEffect(() => {
-    void load()
-  }, [load])
 
   const panelCopy = useMemo(() => {
     switch (activeId) {
@@ -105,14 +77,14 @@ function LayoutPreviewPage() {
     <DataWorkspaceLayout
       siteId={siteId}
       popId={popId}
-      popName={popName}
+      popName={bootstrap?.popName ?? ""}
       title="Layout tablas"
       headerVariant="dark"
       contentFlush
-      loading={loading}
-      userName={userFullName || undefined}
-      userAvatarSrc={userImageUrl}
-      userRoleLabel={roleLabel || undefined}
+      loading={bootstrapLoading}
+      userName={bootstrap?.userFullName || undefined}
+      userAvatarSrc={bootstrap?.userImageUrl ?? undefined}
+      userRoleLabel={bootstrap?.roleLabel || undefined}
       sectionMenu={
         <DataWorkspaceSectionMenu
           headerVariant="dark"
@@ -124,12 +96,12 @@ function LayoutPreviewPage() {
       }
     >
       <div className="relative flex min-h-0 w-full flex-1 flex-col">
-        {headerError ? (
+        {bootstrapError ? (
           <div
             role="alert"
             className="relative shrink-0 border-b border-destructive/25 bg-destructive/10 px-4 py-3 text-sm text-destructive"
           >
-            Cabecera: {headerError}
+            Cabecera: {bootstrapError}
           </div>
         ) : null}
 

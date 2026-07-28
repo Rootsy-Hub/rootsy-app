@@ -257,7 +257,7 @@ export function useSaleTicketCart(input: {
           carrito: prev,
           promotionId,
           selections,
-        }),
+        }).carrito,
       )
     },
     [],
@@ -312,9 +312,10 @@ export function useSaleTicketCart(input: {
           overrideSnap,
           productosByKey,
         )
-        if (mergeTarget) {
+        const mergeTargetId = mergeTarget ? resolveCartLineId(mergeTarget) : null
+        if (mergeTarget && mergeTargetId) {
           return prev.map((i) =>
-            i.lineId === mergeTarget.lineId
+            resolveCartLineId(i) === mergeTargetId
               ? { ...i, cantidad: i.cantidad + 1 }
               : i,
           )

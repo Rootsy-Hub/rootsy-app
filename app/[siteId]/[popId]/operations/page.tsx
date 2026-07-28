@@ -33,6 +33,7 @@ import { DataWorkspaceLayout } from "@/components/layouts/DataWorkspaceLayout"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import { usePopWorkspace } from "@/context/PopWorkspaceContext"
 import withAuth from "@/hoc/withAuth"
 import {
   computeDataWorkspaceDateBounds,
@@ -43,7 +44,6 @@ import {
   writeSavedOperationsView,
   type OperationsViewId,
 } from "@/lib/operationsViewPreference"
-import { getWorkspaceHeaderForPop } from "@/lib/workspaceHeaderServer"
 import { cn } from "@/lib/utils"
 import {
   Receipt,
@@ -92,7 +92,8 @@ function OperationsPage() {
   const siteId = typeof params?.siteId === "string" ? params.siteId : ""
   const popId = typeof params?.popId === "string" ? params.popId : undefined
 
-  const [popName, setPopName] = useState("")
+  const { bootstrap, loading: bootstrapLoading } = usePopWorkspace()
+
   const [sales, setSales] = useState<OperationSaleRow[]>([])
   const [purchases, setPurchases] = useState<OperationPurchaseRow[]>([])
   const [expenseLedger, setExpenseLedger] = useState<
@@ -128,12 +129,6 @@ function OperationsPage() {
     subtitle: string
   } | null>(null)
 
-  const [workspaceHeader, setWorkspaceHeader] = useState<{
-    userFullName: string
-    userImageUrl: string | null
-    roleLabel: string
-  } | null>(null)
-
   const dateBounds = useMemo(
     () => computeDataWorkspaceDateBounds(datePreset, customDateRange),
     [datePreset, customDateRange],
@@ -157,10 +152,8 @@ function OperationsPage() {
         setPurchases([])
         setExpenseLedger([])
         setTotalCount(0)
-        if (res.popName) setPopName(res.popName)
         return
       }
-      setPopName(res.popName)
       setSales(res.sales)
       setPurchases(res.purchases)
       setExpenseLedger(res.expenseLedger)
@@ -183,35 +176,14 @@ function OperationsPage() {
     pageSize,
   ])
 
-  const fetchWorkspaceHeader = useCallback(async () => {
-    if (!popId) return
-    const head = await getWorkspaceHeaderForPop(popId)
-    if (head.success) {
-      setWorkspaceHeader({
-        userFullName: head.userFullName,
-        userImageUrl: head.userImageUrl,
-        roleLabel: head.roleLabel,
-      })
-    } else {
-      setWorkspaceHeader(null)
-    }
-  }, [popId])
-
   useEffect(() => {
     if (!popId || !siteId) {
       setListFetching(false)
       setError("Punto de venta no encontrado")
       return
     }
-    let cancelled = false
-    ;(async () => {
-      await fetchList()
-      if (!cancelled) await fetchWorkspaceHeader()
-    })()
-    return () => {
-      cancelled = true
-    }
-  }, [fetchList, popId, siteId, fetchWorkspaceHeader])
+    void fetchList()
+  }, [fetchList, popId, siteId])
 
   useEffect(() => {
     const t = window.setTimeout(() => {
@@ -419,15 +391,14 @@ function OperationsPage() {
     <DataWorkspaceLayout
       siteId={siteId}
       popId={popId}
-      popName={popName}
+      popName={bootstrap?.popName ?? ""}
       title="Operaciones"
       headerVariant="dark"
       contentFlush
       sidebarCollapsible={false}
-      loading={!popName && listFetching}
-      userName={workspaceHeader?.userFullName}
-      userAvatarSrc={workspaceHeader?.userImageUrl ?? undefined}
-      userRoleLabel={workspaceHeader?.roleLabel ?? "Ventas"}
+      loading={bootstrapLoading || listFetching}
+      userName={bootstrap?.userFullName}
+      userAvatarSrc={bootstrap?.userImageUrl ?? undefined}
       mainClassName="min-h-0 overflow-hidden"
     >
       <div className="relative flex min-h-0 w-full flex-1 flex-col">
