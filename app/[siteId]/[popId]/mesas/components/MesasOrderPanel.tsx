@@ -33,17 +33,12 @@ export function MesasOrderPanel({ checkout, tableLabel }: Props) {
     puedeRegistrar,
   } = checkout
 
-  const confirmLabel =
-    puedeCerrarMesa && cerrarMesaMode === "release"
-      ? "Liberar mesa"
-      : puedeCerrarMesa
-        ? "Cerrar mesa"
-        : "Cobrar mesa"
+  const confirmLabel = puedeCerrarMesa ? "Liberar mesa" : "Cobrar mesa"
   const confirmDisabled = puedeCerrarMesa ? !puedeCerrarMesa : !puedeRegistrar
   const confirmTitle = puedeCerrarMesa
     ? cerrarMesaMode === "release"
       ? "No hay ítems ni cobros pendientes. Podés liberar la mesa."
-      : "Todo el pedido está cobrado. Podés cerrar la mesa."
+      : "Todo el pedido está cobrado. Podés liberar la mesa."
     : !puedeRegistrar
       ? "Completá el pedido, pago y mesa abierta."
       : undefined

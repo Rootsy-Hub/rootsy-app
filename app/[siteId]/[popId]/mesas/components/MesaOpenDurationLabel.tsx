@@ -1,7 +1,7 @@
 "use client"
 
 import { cn } from "@/lib/utils"
-import { useEffect, useState } from "react"
+import { useMesaOpenDurationTick } from "@/app/[siteId]/[popId]/mesas/components/useMesaOpenDurationTick"
 
 export function formatMesaOpenDuration(openedAt: string, now = Date.now()): string {
   const ms = Math.max(0, now - new Date(openedAt).getTime())
@@ -23,16 +23,9 @@ type Props = {
   className?: string
 }
 
-/** Tiempo abierta; se actualiza cada minuto. */
+/** Tiempo abierta; se actualiza cada minuto (timer compartido). */
 export function MesaOpenDurationLabel({ openedAt, className }: Props) {
-  const [, setTick] = useState(0)
-
-  useEffect(() => {
-    const id = window.setInterval(() => {
-      setTick((n) => n + 1)
-    }, 60_000)
-    return () => window.clearInterval(id)
-  }, [])
+  useMesaOpenDurationTick()
 
   return (
     <span className={cn("font-medium tabular-nums", className)}>

@@ -83,18 +83,32 @@ export function MesasWorkspace({
   const [waiters, setWaiters] = useState<MesaWaiter[]>([])
   const showCatalog = rightView === "cart"
 
+  const remoteSession = useMemo(
+    () =>
+      selectedSession
+        ? {
+            checkout: selectedSession.checkout,
+            updatedAt: selectedSession.updatedAt,
+          }
+        : null,
+    [
+      selectedSession?.checkout,
+      selectedSession?.id,
+      selectedSession?.updatedAt,
+    ],
+  )
+
+  const handleSessionClose = useCallback(async () => {
+    await reloadSessions()
+  }, [reloadSessions])
+
   const checkout = useMesasSaleCheckout(
     popId,
     siteId,
     selectedSession?.id ?? null,
-    selectedSession
-      ? {
-          checkout: selectedSession.checkout,
-          updatedAt: selectedSession.updatedAt,
-        }
-      : null,
+    remoteSession,
     {
-      onSessionClose: () => void reloadSessions(),
+      onSessionClose: handleSessionClose,
       catalogSidebarOpen: catalogSidebarOpen || showCatalog,
     },
   )
@@ -321,7 +335,7 @@ export function MesasWorkspace({
               sessionTables={sessionTables}
               waiters={waiters}
               mergeCandidates={mergeCandidates}
-              sessionError={sessionError}
+              sessionError={sessionError ?? checkout.submitError}
               onOpenSession={openSession}
               onUpdateSession={updateSession}
               onCloseSession={() => checkout.cerrarMesa()}
@@ -333,6 +347,13 @@ export function MesasWorkspace({
             />
           ) : (
             <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
+              {checkout.submitError ? (
+                <div className="shrink-0 px-3 pt-3 sm:px-3.5">
+                  <p className="rounded-xl border border-destructive/25 bg-destructive/10 px-3.5 py-2.5 text-sm text-destructive">
+                    {checkout.submitError}
+                  </p>
+                </div>
+              ) : null}
               <MesasOrderPanel checkout={checkout} tableLabel={mesaLabel} />
             </div>
           )}

@@ -108,3 +108,56 @@ export function saleOpDialogOptionClass(seleccionado: boolean, disabled = false)
       : "border-border/70 bg-muted/20 hover:bg-muted/35",
   )
 }
+
+export const saleOpChannelPanelScroll =
+  "flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto p-3 sm:p-3.5"
+
+export const saleOpChannelPanelSection =
+  "rounded-xl border border-slate-200/90 bg-white p-3.5 shadow-sm"
+
+export const saleOpChannelPanelHeaderTitle =
+  "text-base font-semibold tracking-tight text-foreground"
+
+export const saleOpChannelPanelHeaderMeta = "text-xs text-muted-foreground"
+
+export const saleOpChannelDataLabel =
+  "text-[10px] font-semibold uppercase tracking-[0.12em] text-muted-foreground"
+
+export const saleOpChannelDataValue = "text-sm text-foreground"
+
+export const saleOpChannelStatusBadge =
+  "rounded-full bg-muted px-2.5 py-1 text-xs font-semibold text-foreground"
+
+export const saleOpChannelFormField =
+  "rounded-xl border border-border/70 bg-muted/15 shadow-none ring-0 outline-none transition-colors hover:border-border focus-visible:border-primary/45 focus-visible:ring-2 focus-visible:ring-primary/20 placeholder:text-muted-foreground/70"
+
+export const saleOpChannelHint =
+  "flex items-center gap-2 rounded-xl border border-border/50 bg-muted/10 px-3.5 py-2.5 text-xs leading-relaxed text-muted-foreground"
+
+export const saleOpChannelErrorBanner =
+  "rounded-xl border border-destructive/25 bg-destructive/10 px-3.5 py-2.5 text-sm text-destructive"
+
+export const saleOpChannelWarningBanner =
+  "rounded-xl border border-amber-500/25 bg-amber-500/10 px-3.5 py-2.5 text-xs leading-relaxed text-amber-900"
+
+export const saleOpChannelSegmentGroup =
+  "grid grid-cols-2 gap-1 rounded-xl border border-border/70 bg-muted/15 p-1"
+
+export function saleOpChannelSegmentOption(selected: boolean) {
+  return cn(
+    "inline-flex flex-1 items-center justify-center rounded-lg px-3 py-2.5 text-sm font-semibold transition-all duration-150",
+    "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 focus-visible:ring-offset-2 focus-visible:ring-offset-background",
+    selected
+      ? "bg-primary/10 text-primary shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]"
+      : "text-muted-foreground hover:bg-muted/40 hover:text-foreground",
+  )
+}
+
+export function saleOpChannelSelectableRow(selected: boolean) {
+  return cn(
+    "flex cursor-pointer items-center gap-3 rounded-xl border px-3 py-2.5 transition-colors",
+    selected
+      ? "border-primary/40 bg-primary/10 ring-1 ring-primary/15"
+      : "border-border/70 bg-muted/15 hover:bg-muted/30",
+  )
+}

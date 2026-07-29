@@ -23,7 +23,6 @@ type Props = {
   totalBar: TotalProps
   listTitle?: string
   emptyTitle?: string
-  emptyDescription?: string
   flush?: boolean
 }
 
@@ -37,7 +36,6 @@ export function PurchaseOperationTicketOrderPanel({
   totalBar,
   listTitle = "Tu compra",
   emptyTitle = "Compra vacía",
-  emptyDescription = "Agregá artículos desde el catálogo.",
   flush = true,
 }: Props) {
   return (
@@ -46,7 +44,6 @@ export function PurchaseOperationTicketOrderPanel({
         title={listTitle}
         lineCount={lines.length}
         emptyTitle={emptyTitle}
-        emptyDescription={emptyDescription}
         flush={flush}
       >
         <div className="border-b border-slate-200/90 bg-white">

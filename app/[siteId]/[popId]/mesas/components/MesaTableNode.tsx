@@ -7,6 +7,7 @@ import { mesaStatusLabel } from "@/app/[siteId]/[popId]/mesas/mesasTableStyles"
 import { useDraggable } from "@dnd-kit/core"
 import { CSS } from "@dnd-kit/utilities"
 import { cn } from "@/lib/utils"
+import { memo } from "react"
 
 type Props = {
   table: MesaTable
@@ -18,7 +19,7 @@ type Props = {
   onSelectLayout: (tableId: string) => void
 }
 
-export function MesaTableNode({
+export const MesaTableNode = memo(function MesaTableNode({
   table,
   selected,
   layoutSelected,
@@ -85,4 +86,4 @@ export function MesaTableNode({
       </button>
     </div>
   )
-}
+})

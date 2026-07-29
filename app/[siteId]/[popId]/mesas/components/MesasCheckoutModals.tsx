@@ -135,7 +135,7 @@ export function MesasCheckoutModals({
           <AlertDialogFooter>
             <AlertDialogCancel>Cancelar</AlertDialogCancel>
             <AlertDialogAction
-              onClick={m.limpiarPedido}
+              onClick={m.descartarPedido}
               className="bg-rose-600 hover:bg-rose-500"
             >
               Descartar

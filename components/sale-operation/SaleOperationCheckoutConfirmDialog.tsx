@@ -301,7 +301,7 @@ export function SaleOperationCheckoutConfirmDialog({
   onConfirm,
 }: Props) {
   const closeLabel =
-    contextLabel === "mesa" ? "Cerrar mesa al cobrar" : "Cerrar pedido al cobrar"
+    contextLabel === "mesa" ? "Liberar mesa al cobrar" : "Cerrar pedido al cobrar"
 
   const selectedCount = partialUnits.filter(
     (u) => selectionQty(partialSelection, u) > 0,

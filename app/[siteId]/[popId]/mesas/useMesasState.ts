@@ -54,7 +54,13 @@ function applySessionsToTables(
   return tables.map((table) => {
     const session = sessionByTable.get(table.id)
     if (session) {
+      if (table.status === "open" && table.sessionId === session.id) {
+        return table
+      }
       return { ...table, status: "open" as const, sessionId: session.id }
+    }
+    if (table.status === "free" && table.sessionId == null) {
+      return table
     }
     return { ...table, status: "free" as const, sessionId: null }
   })

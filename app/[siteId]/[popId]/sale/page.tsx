@@ -1405,7 +1405,6 @@ function SalePage() {
               quitarQuantityDealApplication={quitarQuantityDealApplication}
               listTitle="Tu pedido"
               emptyTitle="Pedido vacío"
-              emptyDescription="Agregá productos desde el catálogo."
               actions={{
                 discardDisabled: !hayItemsEnPedido,
                 confirmDisabled: !puedeRegistrarVenta || ventaSubmitting,

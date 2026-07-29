@@ -68,6 +68,7 @@ import { buildCompleteSaleLinesFromCart } from "@/lib/saleCompleteLines"
 import {
   applyPartialPaymentSuccess,
   buildCarritoForPartialSelection,
+  buildFullUnpaidSelection,
   buildPartialPaymentUnits,
   buildUnpaidCarrito,
   cartLineHasPaidUnits,
@@ -648,6 +649,14 @@ export function useMostradorSaleCheckout(
   const hayDescuento = footerTotals.hayDescuento
   const hayItemsEnPedido = itemsDetalladosUnpaid.length > 0
 
+  const puedeDescartarPedido = useMemo(
+    () =>
+      hayItemsEnPedido &&
+      !isPaid &&
+      !hasAnyPartialPayment({ paidPartialUnits, totalPagadoAcumulado }),
+    [hayItemsEnPedido, isPaid, paidPartialUnits, totalPagadoAcumulado],
+  )
+
   const descuentoGeneralEditBlocked = useMemo(
     () => isGeneralDiscountEditBlocked({ descuentoGeneralBloqueado }),
     [descuentoGeneralBloqueado],
@@ -1105,6 +1114,11 @@ export function useMostradorSaleCheckout(
     setSubmitError(null)
   }, [popId, openCashSession?.cashTreasuryAccountId])
 
+  const descartarPedido = useCallback(() => {
+    if (!puedeDescartarPedido) return
+    limpiarPedido()
+  }, [puedeDescartarPedido, limpiarPedido])
+
   const cerrarPedido = useCallback(async () => {
     if (
       !popId ||
@@ -1312,7 +1326,7 @@ export function useMostradorSaleCheckout(
             paidPartialUnits: materialized.paidPartialUnits,
             quantityDealApplications,
           })
-          if (fullyPaid) {
+          if (fullyPaid && shouldClose) {
             limpiarPedido()
             onSaleComplete?.()
           }
@@ -1322,18 +1336,51 @@ export function useMostradorSaleCheckout(
         if (shouldClose) {
           limpiarPedido()
         } else {
-          setCarrito([])
-          setItemDetalleAbiertoId(null)
-          setItemDescuentoModo({})
-          setItemDescuentoDraft({})
-          setItemDescuentoSuprimido({})
-          setItemComentarios({})
-          setPaidPartialUnits({})
-          setTotalPagadoAcumulado(0)
-          setModoDescuento("porcentaje")
-          setValorDescuentoPorcentaje(0)
-          setValorDescuentoFijo(0)
-          setDescuentoGeneralBloqueado(false)
+          const shouldLockGeneralDiscount =
+            totalPagadoAcumulado <= 0 &&
+            descuentoMonto > 0 &&
+            !descuentoGeneralBloqueado
+
+          const fullSelection = buildFullUnpaidSelection(partialPaymentUnits)
+          const nextPaid = applyPartialPaymentSuccess(
+            { paidPartialUnits, totalPagadoAcumulado },
+            partialPaymentUnits,
+            fullSelection,
+            saleTotals.total,
+          )
+          const materialized = applyPartialPaymentCartMaterialization({
+            carrito,
+            paidPartialUnits: nextPaid.paidPartialUnits,
+            setters: {
+              setItemDescuentoModo,
+              setItemDescuentoDraft,
+              setItemDescuentoSuprimido,
+              setItemComentarios,
+            },
+          })
+          setCarrito(materialized.carrito)
+          setPaidPartialUnits(materialized.paidPartialUnits)
+          setTotalPagadoAcumulado(nextPaid.totalPagadoAcumulado)
+
+          if (shouldLockGeneralDiscount) {
+            setDescuentoGeneralBloqueado(true)
+          }
+
+          checkoutStateRef.current = {
+            ...checkoutStateRef.current,
+            carrito: materialized.carrito,
+            paidPartialUnits: materialized.paidPartialUnits,
+            totalPagadoAcumulado: nextPaid.totalPagadoAcumulado,
+            ...(shouldLockGeneralDiscount
+              ? { descuentoGeneralBloqueado: true }
+              : {}),
+          }
+          if (persistTimerRef.current) {
+            clearTimeout(persistTimerRef.current)
+            persistTimerRef.current = null
+          }
+          skipNextPersistRef.current = true
+          await flushCheckoutPersist(counterOrderId, checkoutStateRef.current)
         }
         onSaleComplete?.()
         return true
@@ -1540,10 +1587,13 @@ export function useMostradorSaleCheckout(
       },
     },
     actions: {
-      discardDisabled: !hayItemsEnPedido,
+      discardDisabled: !puedeDescartarPedido,
       confirmDisabled: !puedeRegistrar,
       confirmLoading: submitting,
-      onDiscard: () => setDescartarConfirmOpen(true),
+      onDiscard: () => {
+        if (!puedeDescartarPedido) return
+        setDescartarConfirmOpen(true)
+      },
       onConfirm: () => {
         setSubmitError(null)
         setPartialPayment(false)
@@ -1611,6 +1661,7 @@ export function useMostradorSaleCheckout(
         setDescuentoModalAbierto(false)
       },
       limpiarPedido,
+      descartarPedido,
       confirmarPedido,
       confirmarMesa: confirmarPedido,
       submitError,

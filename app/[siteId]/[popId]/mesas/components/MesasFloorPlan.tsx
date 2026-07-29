@@ -98,6 +98,16 @@ export function MesasFloorPlan({
     }
   }
 
+  const handleTableSelect = useCallback(
+    (id: string) => onSelectTable(id),
+    [onSelectTable],
+  )
+
+  const handleTableLayoutSelect = useCallback(
+    (id: string) => onSelectLayoutItem("table", id),
+    [onSelectLayoutItem],
+  )
+
   return (
     <div className="relative flex min-h-0 flex-1 flex-col">
       <div className="absolute top-3 right-3 z-30 flex flex-col items-center gap-2 overflow-visible">
@@ -229,8 +239,8 @@ export function MesasFloorPlan({
                 }
                 layoutEditMode={layoutEditMode}
                 openedAt={tableOpenedAt[table.id] ?? null}
-                onSelect={(id) => onSelectTable(id)}
-                onSelectLayout={(id) => onSelectLayoutItem("table", id)}
+                onSelect={handleTableSelect}
+                onSelectLayout={handleTableLayoutSelect}
               />
             ))}
 

@@ -54,19 +54,23 @@ export function evaluateChannelCloseEligibility(input: {
     return { canClose: true, mode: "release", blockReason: null }
   }
 
+  if (!hasItems && hasPartialPayment) {
+    return { canClose: true, mode: "settle", blockReason: null }
+  }
+
   if (hasItems && !checkoutFullyPaid) {
     if (hasPartialPayment) {
       return {
         canClose: false,
         mode: null,
         blockReason:
-          "Hay ítems cobrados y otros pendientes. Terminá el cobro antes de cerrar.",
+          "Hay ítems cobrados y otros pendientes. Terminá el cobro antes de liberar la mesa.",
       }
     }
     return {
       canClose: false,
       mode: null,
-      blockReason: "Hay ítems sin cobrar. Cobrá el pedido antes de cerrar.",
+      blockReason: "Hay ítems sin cobrar. Cobrá el pedido antes de liberar la mesa.",
     }
   }
 
@@ -81,18 +85,9 @@ export function evaluateChannelCloseEligibility(input: {
     return { canClose: true, mode: "settle", blockReason: null }
   }
 
-  if (!hasItems && hasPartialPayment) {
-    return {
-      canClose: false,
-      mode: null,
-      blockReason:
-        "Hay cobros registrados pero el pedido no tiene ítems. Revisá el estado antes de cerrar.",
-    }
-  }
-
   return {
     canClose: false,
     mode: null,
-    blockReason: "No se puede cerrar en este estado.",
+    blockReason: "No se puede liberar la mesa en este estado.",
   }
 }

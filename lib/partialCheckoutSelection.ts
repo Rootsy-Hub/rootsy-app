@@ -535,6 +535,18 @@ export function computeSelectionCheckoutTotals(input: {
   }
 }
 
+export function buildFullUnpaidSelection(
+  units: PartialPaymentUnit[],
+): PartialPaymentSelection {
+  const selection: PartialPaymentSelection = {}
+  for (const unit of units) {
+    if (unit.maxSelectable > 0) {
+      selection[unit.selectionKey] = unit.maxSelectable
+    }
+  }
+  return selection
+}
+
 export function applyPartialPaymentSuccess(
   state: PartialCheckoutPaidState,
   units: PartialPaymentUnit[],

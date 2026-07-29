@@ -14,6 +14,20 @@ import {
   clientDialogHeaderClass,
   clientDialogSurface,
 } from "@/app/[siteId]/[popId]/clients/ClientUpsertFormFields"
+import {
+  ChannelDataActions,
+  ChannelDataEmptyState,
+  ChannelDataErrorBanner,
+  ChannelDataField,
+  ChannelDataFields,
+  ChannelDataHeader,
+  ChannelDataHint,
+  ChannelDataPanel,
+  ChannelDataPrimaryAction,
+  ChannelDataSection,
+  ChannelDataStatusBadge,
+  ChannelDataWarningBanner,
+} from "@/components/sale-operation/ChannelOperationDataPanel"
 import { DataWorkspaceTableIconAction } from "@/components/data-workspace/DataWorkspaceListTablePrimitives"
 import { saleOpDialogPrimaryBtn } from "@/components/sale-operation/saleOperationStyles"
 import type { ChannelCloseMode } from "@/lib/channelCheckoutClose"
@@ -28,12 +42,7 @@ import {
 } from "@/components/ui/dialog"
 import { formatDistanceToNow } from "date-fns"
 import { es } from "date-fns/locale"
-import {
-  Clock,
-  Package,
-  Pencil,
-  UtensilsCrossed,
-} from "lucide-react"
+import { Clock, Package, Pencil, UtensilsCrossed } from "lucide-react"
 import { useMemo, useState } from "react"
 import { cn } from "@/lib/utils"
 
@@ -110,49 +119,31 @@ export function MesaSessionPanel({
 
   if (!table) {
     return (
-      <div className="flex min-h-0 flex-1 flex-col items-center justify-center gap-3 p-8 text-center">
-        <div className="flex size-16 items-center justify-center rounded-2xl bg-slate-200/80 text-slate-500">
-          <UtensilsCrossed className="size-8" aria-hidden />
-        </div>
-        <div>
-          <p className="text-sm font-semibold text-slate-700">
-            Seleccioná una mesa
-          </p>
-          <p className="mt-1 max-w-[240px] text-xs leading-relaxed text-slate-500">
-            Elegí una mesa del plano para abrirla, editarla o tomar el pedido.
-          </p>
-        </div>
-      </div>
+      <ChannelDataEmptyState
+        icon={UtensilsCrossed}
+        title="Seleccioná una mesa"
+        description="Elegí una mesa del plano para abrirla, editarla o tomar el pedido."
+      />
     )
   }
 
   const isOpen = session != null && table.status !== "free"
   const title = sessionTitle(table, sessionTables)
-  const closeButtonLabel =
-    closeSessionMode === "release" ? "Liberar mesa" : "Cerrar mesa"
+  const closeButtonLabel = "Liberar mesa"
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col overflow-y-auto">
-      {sessionError ? (
-        <p className="border-b border-red-100 bg-red-50 px-3 py-2 text-sm text-red-700">
-          {sessionError}
-        </p>
-      ) : null}
-
-      {!(isOpen && !editing) ? (
-        <div className="border-b border-slate-200/90 bg-white px-3 py-4">
-          <p className="text-lg font-bold text-slate-900">{title}</p>
-          <p className="text-xs text-slate-500">{mesaStatusLabel(table.status)}</p>
-        </div>
-      ) : null}
-
+    <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
       {isOpen && !editing ? (
-        <>
-          <div className="border-b border-slate-200/90 bg-white px-3 py-4">
-            <div className="flex items-start justify-between gap-3">
-              <div className="min-w-0">
-                <p className="text-lg font-bold text-slate-900">{title}</p>
-                <p className="text-xs text-slate-500">
+        <ChannelDataPanel>
+          {sessionError ? (
+            <ChannelDataErrorBanner>{sessionError}</ChannelDataErrorBanner>
+          ) : null}
+
+          <ChannelDataSection>
+            <ChannelDataHeader
+              title={title}
+              meta={
+                <>
                   {mesaStatusLabel(table.status)}
                   {session ? (
                     <>
@@ -167,101 +158,92 @@ export function MesaSessionPanel({
                       })}
                     </>
                   ) : null}
-                </p>
-              </div>
-              <div className="flex shrink-0 items-center gap-2">
-                <span className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-700">
+                </>
+              }
+              badge={
+                <ChannelDataStatusBadge>
                   {sessionTables.length > 1 ? "Mesas unidas" : "Abierta"}
-                </span>
+                </ChannelDataStatusBadge>
+              }
+              actions={
                 <DataWorkspaceTableIconAction
                   label="Editar mesa"
                   icon={Pencil}
                   variant="edit"
                   onClick={() => setEditing(true)}
                 />
-              </div>
-            </div>
+              }
+            />
 
-            <dl className="mt-4 grid gap-2 text-sm">
-              <div>
-                <dt className="text-xs font-semibold uppercase text-slate-500">
-                  Mozo
-                </dt>
-                <dd className="text-slate-800">{waiter?.name ?? "—"}</dd>
-              </div>
-              <div>
-                <dt className="text-xs font-semibold uppercase text-slate-500">
-                  Cliente
-                </dt>
-                <dd className="text-slate-800">
-                  {clientLabel?.trim() || "Sin asignar"}
-                </dd>
-              </div>
-              <div>
-                <dt className="text-xs font-semibold uppercase text-slate-500">
-                  Comensales
-                </dt>
-                <dd className="text-slate-800">
-                  {session?.guestCount ?? "Sin indicar"}
-                </dd>
-              </div>
+            <ChannelDataFields>
+              <ChannelDataField label="Mozo">{waiter?.name ?? "—"}</ChannelDataField>
+              <ChannelDataField label="Cliente">
+                {clientLabel?.trim() || "Sin asignar"}
+              </ChannelDataField>
+              <ChannelDataField label="Comensales">
+                {session?.guestCount ?? "Sin indicar"}
+              </ChannelDataField>
               {sessionTables.length > 1 ? (
-                <div>
-                  <dt className="text-xs font-semibold uppercase text-slate-500">
-                    Mesas incluidas
-                  </dt>
-                  <dd className="mt-1 flex flex-wrap gap-1.5">
+                <ChannelDataField label="Mesas incluidas">
+                  <span className="mt-1 flex flex-wrap gap-1.5">
                     {sessionTables.map((t) => (
                       <span
                         key={t.id}
-                        className="rounded-full bg-emerald-50 px-2 py-0.5 text-xs font-semibold text-emerald-800 ring-1 ring-emerald-200/80"
+                        className="rounded-full bg-primary/10 px-2 py-0.5 text-xs font-semibold text-primary ring-1 ring-primary/15"
                       >
                         {t.label}
                       </span>
                     ))}
-                  </dd>
-                </div>
+                  </span>
+                </ChannelDataField>
               ) : null}
               {session?.note ? (
-                <div>
-                  <dt className="text-xs font-semibold uppercase text-slate-500">
-                    Notas
-                  </dt>
-                  <dd className="text-slate-800">{session.note}</dd>
-                </div>
+                <ChannelDataField label="Notas">{session.note}</ChannelDataField>
               ) : null}
-            </dl>
-          </div>
+            </ChannelDataFields>
+          </ChannelDataSection>
 
-          <div className="grid gap-0 border-b border-slate-200/90 bg-white">
-            <Button
-              type="button"
-              variant="ghost"
+          <ChannelDataActions>
+            <ChannelDataPrimaryAction
               disabled={!canCloseSession || closeSessionLoading}
               title={closeSessionBlockReason ?? undefined}
               onClick={() => setCloseDialogOpen(true)}
               className={cn(
-                "h-12 w-full rounded-none border-0",
-                canCloseSession
-                  ? "text-emerald-700 hover:bg-emerald-50 hover:text-emerald-800"
-                  : "cursor-not-allowed text-slate-400 opacity-70",
+                !canCloseSession &&
+                  "cursor-not-allowed bg-muted text-muted-foreground opacity-70 hover:bg-muted",
               )}
             >
-              {closeSessionLoading ? "Cerrando…" : closeButtonLabel}
-            </Button>
+              {closeSessionLoading ? "Liberando…" : closeButtonLabel}
+            </ChannelDataPrimaryAction>
             {!canCloseSession && closeSessionBlockReason ? (
-              <p className="border-t border-slate-200/90 px-3 py-2 text-xs leading-relaxed text-amber-800">
-                {closeSessionBlockReason}
-              </p>
+              <ChannelDataWarningBanner>{closeSessionBlockReason}</ChannelDataWarningBanner>
             ) : null}
-          </div>
+          </ChannelDataActions>
 
-          <div className="flex items-center gap-2 border-b border-slate-200/90 bg-slate-50/80 px-3 py-2.5 text-xs text-slate-500">
-            <Package className="size-4 shrink-0" aria-hidden />
+          <ChannelDataHint icon={Package}>
             Usá la pestaña Pedido para cargar productos y cobrar.
-          </div>
+          </ChannelDataHint>
+        </ChannelDataPanel>
+      ) : (
+        <>
+          {sessionError ? (
+            <div className="shrink-0 px-3 pt-3 sm:px-3.5">
+              <ChannelDataErrorBanner>{sessionError}</ChannelDataErrorBanner>
+            </div>
+          ) : null}
+
+          {!(isOpen && !editing) ? (
+            <div className="shrink-0 px-3 pt-3 sm:px-3.5">
+              <ChannelDataSection>
+                <ChannelDataHeader
+                  title={title}
+                  meta={mesaStatusLabel(table.status)}
+                />
+              </ChannelDataSection>
+            </div>
+          ) : null}
         </>
-      ) : null}
+      )}
 
       <Dialog open={closeDialogOpen} onOpenChange={setCloseDialogOpen}>
         <DialogContent
@@ -271,9 +253,7 @@ export function MesaSessionPanel({
         >
           <DialogHeader className={clientDialogHeaderClass}>
             <DialogTitle className="text-base font-semibold tracking-tight">
-              {closeSessionMode === "release"
-                ? "¿Liberar mesa?"
-                : "¿Cerrar mesa?"}
+              ¿Liberar mesa?
             </DialogTitle>
             <DialogDescription className="text-sm leading-relaxed">
               {closeSessionMode === "release"
@@ -301,7 +281,7 @@ export function MesaSessionPanel({
               disabled={closeBusy || closeSessionLoading}
               onClick={() => void confirmCloseSession()}
             >
-              {closeBusy || closeSessionLoading ? "Cerrando…" : closeButtonLabel}
+              {closeBusy || closeSessionLoading ? "Liberando…" : closeButtonLabel}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -339,16 +319,15 @@ export function MesaSessionPanel({
       ) : null}
 
       {!isOpen && table.status !== "free" ? (
-        <div className="flex flex-1 flex-col items-center justify-center gap-2 p-8 text-center">
-          <p className="text-sm font-medium text-slate-700">
-            Mesa {table.label} — {mesaStatusLabel(table.status)}
-          </p>
-          <p className="text-xs text-slate-500">
-            {table.status === "reserved"
+        <ChannelDataEmptyState
+          icon={UtensilsCrossed}
+          title={`Mesa ${table.label} — ${mesaStatusLabel(table.status)}`}
+          description={
+            table.status === "reserved"
               ? "Esta mesa está reservada. Liberala desde administración."
-              : "Seleccioná otra mesa o revisá el estado en el plano."}
-          </p>
-        </div>
+              : "Seleccioná otra mesa o revisá el estado en el plano."
+          }
+        />
       ) : null}
     </div>
   )

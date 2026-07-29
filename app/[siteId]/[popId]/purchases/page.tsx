@@ -1349,7 +1349,6 @@ function PurchasesPage() {
               onRemoveLine={quitarDelCarrito}
               listTitle="Tu compra"
               emptyTitle="Compra vacía"
-              emptyDescription="Agregá artículos desde el catálogo."
               actions={{
                 discardDisabled: !hayItemsEnPedido,
                 confirmDisabled: !puedeComprar || compraSubmitting,

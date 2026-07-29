@@ -27,7 +27,6 @@ type Props = {
   listTitle?: string
   listSubtitle?: string
   emptyTitle?: string
-  emptyDescription?: string
   flush?: boolean
 }
 
@@ -43,7 +42,6 @@ export function SaleOperationTicketOrderPanel({
   listTitle = "Pedido",
   listSubtitle,
   emptyTitle = "Pedido vacío",
-  emptyDescription = "Agregá productos desde el panel izquierdo.",
   flush = true,
 }: Props) {
   const cartDisplayGroups = useMemo(
@@ -63,7 +61,6 @@ export function SaleOperationTicketOrderPanel({
         subtitle={listSubtitle}
         lineCount={ticketLineCount}
         emptyTitle={emptyTitle}
-        emptyDescription={emptyDescription}
         flush={flush}
       >
         <div className="border-b border-slate-200/90 bg-white">
