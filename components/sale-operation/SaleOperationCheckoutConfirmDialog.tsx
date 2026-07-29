@@ -2,25 +2,38 @@
 
 import type { PartialPaymentSelection, PartialPaymentUnit } from "@/lib/partialCheckoutSelection"
 import { CheckoutDialogFooter } from "@/components/checkout/CheckoutDialogFooter"
-import { Checkbox } from "@/components/ui/checkbox"
+import {
+  CheckoutFieldHint,
+  CheckoutSectionLabel,
+  CheckoutSectionPanel,
+  CheckoutToggleCard,
+} from "@/components/checkout/CheckoutFormFields"
 import {
   Dialog,
   DialogContent,
-  DialogDescription,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
 import {
   saleOpDialogBody,
   saleOpDialogContentMd,
   saleOpDialogHeader,
   saleOpFmt,
   saleOpImporteBaseClass,
+  saleOpImporteCartClass,
 } from "@/components/sale-operation/saleOperationStyles"
-import { Minus, Plus } from "lucide-react"
 import { cn } from "@/lib/utils"
+import {
+  CircleDollarSign,
+  CreditCard,
+  DoorOpen,
+  Minus,
+  Plus,
+  Printer,
+  Receipt,
+  Split,
+  User,
+} from "lucide-react"
 
 export type SaleOperationCheckoutConfirmOptions = {
   partialPayment: boolean
@@ -65,6 +78,202 @@ function selectionQty(
   return Math.min(unit.maxSelectable, Math.max(0, raw))
 }
 
+function CheckoutConfirmSummary({
+  total,
+  hint,
+  clientLabel,
+  comprobanteLabel,
+  paymentLabel,
+}: {
+  total: number
+  hint?: string | null
+  clientLabel: string
+  comprobanteLabel: string
+  paymentLabel: string
+}) {
+  const details = [
+    { key: "client", icon: User, label: "Cliente", value: clientLabel },
+    {
+      key: "comprobante",
+      icon: Receipt,
+      label: "Comprobante",
+      value: comprobanteLabel,
+    },
+    { key: "payment", icon: CreditCard, label: "Pago", value: paymentLabel },
+  ] as const
+
+  return (
+    <div className="space-y-2">
+      <div className="overflow-hidden rounded-xl border border-primary/25 bg-primary/5">
+        <div className="flex items-center justify-between gap-3 px-3.5 py-3">
+          <div className="flex min-w-0 items-center gap-2.5">
+            <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-primary/15 text-primary">
+              <CircleDollarSign className="size-[17px]" aria-hidden />
+            </span>
+            <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
+              Total a cobrar ahora
+            </p>
+          </div>
+          <p
+            className={cn(
+              saleOpImporteBaseClass,
+              "shrink-0 text-2xl font-semibold leading-none tracking-tight text-foreground",
+            )}
+          >
+            {saleOpFmt.format(total)}
+          </p>
+        </div>
+
+        <ul className="divide-y divide-primary/15 border-t border-primary/15 bg-primary/3">
+          {details.map(({ key, icon: Icon, label, value }) => (
+            <li
+              key={key}
+              className="flex min-w-0 items-center gap-2 px-3.5 py-2"
+            >
+              <Icon
+                className="size-3.5 shrink-0 text-muted-foreground"
+                aria-hidden
+              />
+              <span className="shrink-0 text-[10px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">
+                {label}
+              </span>
+              <span
+                className="min-w-0 flex-1 truncate text-right text-xs font-medium text-foreground"
+                title={value}
+              >
+                {value}
+              </span>
+            </li>
+          ))}
+        </ul>
+      </div>
+      {hint ? <CheckoutFieldHint>{hint}</CheckoutFieldHint> : null}
+    </div>
+  )
+}
+
+function PartialPaymentUnitRow({
+  unit,
+  qty,
+  onToggle,
+  onSetQty,
+}: {
+  unit: PartialPaymentUnit
+  qty: number
+  onToggle: (checked: boolean) => void
+  onSetQty: (qty: number) => void
+}) {
+  const selected = qty > 0
+  const rowTotal = unit.isAtomic
+    ? unit.lineFinalTotal
+    : roundLineTotal(unit, qty)
+  const itemTitle = unit.detail?.trim()
+    ? `${unit.label} · ${unit.detail.trim()}`
+    : unit.label
+  const showQuantityStepper = unit.maxSelectable > 1
+
+  return (
+    <li
+      role="checkbox"
+      aria-checked={selected}
+      aria-label={`Seleccionar ${unit.label}`}
+      tabIndex={0}
+      onClick={() => onToggle(!selected)}
+      onKeyDown={(event) => {
+        if (event.key === "Enter" || event.key === " ") {
+          event.preventDefault()
+          onToggle(!selected)
+        }
+      }}
+      className={cn(
+        "flex w-full cursor-pointer items-center gap-3 rounded-xl border px-3.5 py-3 transition-colors",
+        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 focus-visible:ring-offset-2 focus-visible:ring-offset-background",
+        selected
+          ? "border-primary/45 bg-primary/8"
+          : "border-border/70 bg-muted/15 hover:border-border hover:bg-muted/30",
+      )}
+    >
+      <span
+        className={cn(
+          saleOpImporteBaseClass,
+          "w-5 shrink-0 text-center text-sm font-semibold tabular-nums text-muted-foreground",
+        )}
+        aria-hidden
+      >
+        {unit.maxSelectable}
+      </span>
+
+      <span
+        className="min-w-0 flex-1 truncate text-sm font-semibold leading-snug text-foreground"
+        title={itemTitle}
+      >
+        {unit.label}
+      </span>
+
+      {showQuantityStepper ? (
+        <div
+          className="flex w-23 shrink-0 items-center justify-center gap-0.5"
+          onClick={(event) => event.stopPropagation()}
+          onKeyDown={(event) => event.stopPropagation()}
+        >
+          <button
+            type="button"
+            aria-label="Quitar uno"
+            disabled={qty <= 0}
+            onClick={(event) => {
+              event.stopPropagation()
+              onSetQty(qty - 1)
+            }}
+            className={cn(
+              "inline-flex size-7 items-center justify-center rounded-lg border border-border/70 bg-background text-muted-foreground shadow-sm transition-colors",
+              "hover:bg-muted/40 hover:text-foreground",
+              "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30",
+              "disabled:pointer-events-none disabled:opacity-40",
+            )}
+          >
+            <Minus className="size-3.5" aria-hidden />
+          </button>
+          <span
+            className={cn(
+              saleOpImporteBaseClass,
+              "min-w-5 text-center text-sm font-semibold tabular-nums",
+            )}
+          >
+            {qty}
+          </span>
+          <button
+            type="button"
+            aria-label="Agregar uno"
+            disabled={qty >= unit.maxSelectable}
+            onClick={(event) => {
+              event.stopPropagation()
+              onSetQty(qty + 1)
+            }}
+            className={cn(
+              "inline-flex size-7 items-center justify-center rounded-lg border border-border/70 bg-background text-muted-foreground shadow-sm transition-colors",
+              "hover:bg-muted/40 hover:text-foreground",
+              "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30",
+              "disabled:pointer-events-none disabled:opacity-40",
+            )}
+          >
+            <Plus className="size-3.5" aria-hidden />
+          </button>
+        </div>
+      ) : null}
+
+      <span
+        className={cn(
+          saleOpImporteCartClass,
+          "w-22 shrink-0 text-right text-sm",
+          showQuantityStepper ? null : "ml-auto",
+        )}
+      >
+        {saleOpFmt.format(rowTotal)}
+      </span>
+    </li>
+  )
+}
+
 export function SaleOperationCheckoutConfirmDialog({
   open,
   onOpenChange,
@@ -100,6 +309,15 @@ export function SaleOperationCheckoutConfirmDialog({
 
   const canConfirm = !partialPayment || selectedCount > 0
 
+  const totalHint =
+    partialPayment && (hayDescuento || descuentoMonto > 0)
+      ? `Subtotal ${saleOpFmt.format(subtotal)}${
+          descuentoMonto > 0
+            ? ` · Descuento general −${saleOpFmt.format(descuentoMonto)}`
+            : ""
+        }`
+      : null
+
   const setUnitQty = (unit: PartialPaymentUnit, nextQty: number) => {
     const clamped = unit.isAtomic
       ? nextQty >= 1
@@ -120,238 +338,123 @@ export function SaleOperationCheckoutConfirmDialog({
     setUnitQty(unit, checked ? unit.maxSelectable : 0)
   }
 
+  const partialItemsList =
+    partialUnits.length === 0 ? (
+      <p className="rounded-xl border border-dashed border-border/70 bg-muted/10 px-3.5 py-6 text-center text-sm text-muted-foreground">
+        No hay ítems pendientes de cobro.
+      </p>
+    ) : (
+      <ul className="space-y-2">
+        {partialUnits.map((unit) => (
+          <PartialPaymentUnitRow
+            key={unit.selectionKey}
+            unit={unit}
+            qty={selectionQty(partialSelection, unit)}
+            onToggle={(checked) => toggleUnit(unit, checked)}
+            onSetQty={(nextQty) => setUnitQty(unit, nextQty)}
+          />
+        ))}
+      </ul>
+    )
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
-        data-rootsy-light-shell="true"
         className={cn(
           saleOpDialogContentMd,
-          "flex max-h-[min(92vh,720px)] flex-col gap-0 overflow-hidden p-0 sm:max-w-lg",
+          "flex max-h-[min(92vh,720px)] flex-col gap-0 overflow-hidden p-0 transition-none duration-0",
+          partialPayment && "md:max-w-[min(92vw,56rem)]",
         )}
       >
-        <DialogHeader className={cn(saleOpDialogHeader, "shrink-0 border-b border-border/50")}>
+        <DialogHeader className={cn(saleOpDialogHeader, "shrink-0")}>
           <DialogTitle className="text-base font-semibold tracking-tight">
-            ¿Confirmar cobro de {contextLabel}?
+            Confirmar cobro de {contextLabel}
           </DialogTitle>
-          <DialogDescription className="text-sm leading-relaxed">
-            Revisá el total y las opciones antes de registrar la venta.
-          </DialogDescription>
         </DialogHeader>
 
-        <div className={cn(saleOpDialogBody, "min-h-0 flex-1 space-y-3 overflow-y-auto")}>
-          <div className="flex items-center justify-between gap-4 rounded-lg border border-emerald-200/80 bg-emerald-50/60 px-4 py-3">
-            <div>
-              <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-emerald-800/70">
-                Total a cobrar ahora
-              </p>
-              {(hayDescuento || descuentoMonto > 0) && partialPayment ? (
-                <p className="mt-0.5 text-xs text-emerald-900/60">
-                  Subtotal {saleOpFmt.format(subtotal)}
-                  {descuentoMonto > 0
-                    ? ` · Desc. −${saleOpFmt.format(descuentoMonto)}`
-                    : null}
-                </p>
-              ) : null}
-            </div>
-            <p
-              className={cn(
-                saleOpImporteBaseClass,
-                "text-2xl font-bold text-emerald-900",
-              )}
-            >
-              {saleOpFmt.format(total)}
-            </p>
-          </div>
-
-          <div className="grid grid-cols-1 gap-3 rounded-lg border border-border/70 bg-muted/25 px-3 py-2.5 sm:grid-cols-3">
-            <div className="min-w-0">
-              <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
-                Cliente
-              </p>
-              <p className="mt-0.5 truncate text-sm font-medium text-foreground">
-                {clientLabel}
-              </p>
-            </div>
-            <div className="min-w-0">
-              <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
-                Comprobante
-              </p>
-              <p className="mt-0.5 truncate text-sm font-medium text-foreground">
-                {comprobanteLabel}
-              </p>
-            </div>
-            <div className="min-w-0">
-              <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
-                Forma de pago
-              </p>
-              <p className="mt-0.5 truncate text-sm font-medium text-foreground">
-                {paymentLabel}
-              </p>
-            </div>
-          </div>
-
-          {hasComprobante ? (
-            <label className="flex cursor-pointer items-start gap-3 rounded-lg border border-border/70 bg-background px-3 py-2.5 transition-colors hover:bg-muted/30">
-              <Checkbox
-                checked={imprimirComprobante}
-                onCheckedChange={(v) => onImprimirComprobanteChange(v === true)}
-                className="mt-0.5"
-              />
-              <span className="min-w-0">
-                <span className="block text-sm font-medium">Imprimir comprobante</span>
-                <span className="mt-0.5 block text-xs leading-relaxed text-muted-foreground">
-                  Al confirmar, se enviará a imprimir el {comprobanteLabel.toLowerCase()}.
-                </span>
-              </span>
-            </label>
-          ) : null}
-
-          <label className="flex cursor-pointer items-start gap-3 rounded-lg border border-border/70 bg-background px-3 py-2.5 transition-colors hover:bg-muted/30">
-            <Checkbox
-              checked={partialPayment}
-              onCheckedChange={(v) => onPartialPaymentChange(v === true)}
-              className="mt-0.5"
-            />
-            <span className="min-w-0">
-              <span className="block text-sm font-medium">Cobro parcial</span>
-              <span className="mt-0.5 block text-xs leading-relaxed text-muted-foreground">
-                Elegí qué ítems cobrar ahora. Las promos se cobran completas.
-              </span>
-            </span>
-          </label>
-
-          {partialPayment ? (
-            <div className="overflow-hidden rounded-lg border border-border/70">
-              <div className="grid grid-cols-[minmax(0,1fr)_4.5rem_5.5rem] gap-2 border-b border-border/60 bg-muted/40 px-3 py-2 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
-                <span>Ítem</span>
-                <span className="text-center">Cant.</span>
-                <span className="text-right">Importe</span>
-              </div>
-              <ul className="divide-y divide-border/50">
-                {partialUnits.length === 0 ? (
-                  <li className="px-3 py-8 text-center text-sm text-muted-foreground">
-                    No hay ítems pendientes de cobro.
-                  </li>
-                ) : (
-                  partialUnits.map((unit) => {
-                    const qty = selectionQty(partialSelection, unit)
-                    const selected = qty > 0
-                    const rowTotal = unit.isAtomic
-                      ? unit.lineFinalTotal
-                      : roundLineTotal(unit, qty)
-                    return (
-                      <li
-                        key={unit.selectionKey}
-                        className={cn(
-                          "grid grid-cols-[minmax(0,1fr)_4.5rem_5.5rem] items-center gap-2 px-3 py-2.5",
-                          selected && "bg-emerald-50/50",
-                        )}
-                      >
-                        <label className="flex min-w-0 cursor-pointer items-start gap-2">
-                          <Checkbox
-                            checked={selected}
-                            onCheckedChange={(v) => toggleUnit(unit, v === true)}
-                            className="mt-0.5 shrink-0"
-                          />
-                          <span className="min-w-0">
-                            <span className="block text-sm font-medium leading-snug">
-                              {unit.label}
-                            </span>
-                            {unit.detail ? (
-                              <span className="mt-0.5 block truncate text-xs text-muted-foreground">
-                                {unit.detail}
-                              </span>
-                            ) : null}
-                            {unit.isAtomic ? (
-                              <span className="mt-0.5 block text-[10px] font-medium uppercase text-emerald-700">
-                                Promo · se cobra completa
-                              </span>
-                            ) : null}
-                          </span>
-                        </label>
-
-                        <div className="flex justify-center">
-                          {unit.isAtomic ? (
-                            <span className="text-sm tabular-nums text-muted-foreground">
-                              {unit.maxSelectable}
-                            </span>
-                          ) : (
-                            <div className="flex items-center gap-0.5">
-                              <button
-                                type="button"
-                                aria-label="Quitar uno"
-                                disabled={qty <= 0}
-                                onClick={() => setUnitQty(unit, qty - 1)}
-                                className="inline-flex size-6 items-center justify-center rounded border border-border/70 text-muted-foreground hover:bg-muted disabled:opacity-40"
-                              >
-                                <Minus className="size-3" />
-                              </button>
-                              <Input
-                                value={String(qty)}
-                                onChange={(e) => {
-                                  const n = Number.parseInt(e.target.value, 10)
-                                  setUnitQty(unit, Number.isFinite(n) ? n : 0)
-                                }}
-                                className="h-6 w-8 px-0 text-center text-xs tabular-nums"
-                                inputMode="numeric"
-                              />
-                              <button
-                                type="button"
-                                aria-label="Agregar uno"
-                                disabled={qty >= unit.maxSelectable}
-                                onClick={() => setUnitQty(unit, qty + 1)}
-                                className="inline-flex size-6 items-center justify-center rounded border border-border/70 text-muted-foreground hover:bg-muted disabled:opacity-40"
-                              >
-                                <Plus className="size-3" />
-                              </button>
-                            </div>
-                          )}
-                        </div>
-
-                        <span className="text-right text-sm font-medium tabular-nums text-slate-800">
-                          {saleOpFmt.format(rowTotal)}
-                        </span>
-                      </li>
-                    )
-                  })
-                )}
-              </ul>
-            </div>
-          ) : null}
-
-          <label
+        <div
+          className={cn(
+            saleOpDialogBody,
+            "min-h-0 flex-1 overflow-y-auto overscroll-contain",
+            partialPayment &&
+              "md:relative md:overflow-hidden md:p-0 md:overflow-y-visible",
+            partialPayment ? "space-y-4 md:space-y-0" : "space-y-4",
+          )}
+        >
+          <div
             className={cn(
-              "flex items-start gap-3 rounded-lg border border-border/70 bg-background px-3 py-2.5",
-              partialPayment
-                ? "cursor-not-allowed opacity-45"
-                : "cursor-pointer hover:bg-muted/30",
+              "space-y-4",
+              partialPayment &&
+                "md:w-1/2 md:max-w-[50%] md:shrink-0 md:px-6 md:py-4",
             )}
           >
-            <Checkbox
-              checked={closeOnComplete && !partialPayment}
-              disabled={partialPayment}
-              onCheckedChange={(v) => onCloseOnCompleteChange(v === true)}
-              className="mt-0.5"
-            />
-            <span className="min-w-0">
-              <span className="block text-sm font-medium">{closeLabel}</span>
-              <span className="mt-0.5 block text-xs leading-relaxed text-muted-foreground">
-                {partialPayment
-                  ? "No disponible mientras haya un cobro parcial pendiente."
-                  : `Al confirmar, se libera la ${contextLabel} automáticamente.`}
-              </span>
-            </span>
-          </label>
+            <CheckoutSectionPanel>
+              <CheckoutConfirmSummary
+                total={total}
+                hint={totalHint}
+                clientLabel={clientLabel}
+                comprobanteLabel={comprobanteLabel}
+                paymentLabel={paymentLabel}
+              />
+            </CheckoutSectionPanel>
 
-          {submitError ? (
-            <p className="rounded-lg border border-destructive/30 bg-destructive/5 px-3 py-2 text-sm text-destructive">
-              {submitError}
-            </p>
+            <CheckoutSectionPanel className="space-y-2.5">
+              <CheckoutSectionLabel>Opciones</CheckoutSectionLabel>
+              <CheckoutToggleCard
+                title="Cobro parcial"
+                selected={partialPayment}
+                onClick={() => onPartialPaymentChange(!partialPayment)}
+                icon={Split}
+              />
+              {hasComprobante ? (
+                <CheckoutToggleCard
+                  title="Imprimir comprobante"
+                  selected={imprimirComprobante}
+                  onClick={() =>
+                    onImprimirComprobanteChange(!imprimirComprobante)
+                  }
+                  icon={Printer}
+                />
+              ) : null}
+              <CheckoutToggleCard
+                title={closeLabel}
+                selected={closeOnComplete && !partialPayment}
+                disabled={partialPayment}
+                onClick={() => onCloseOnCompleteChange(!closeOnComplete)}
+                icon={DoorOpen}
+              />
+            </CheckoutSectionPanel>
+
+            {partialPayment ? (
+              <CheckoutSectionPanel className="space-y-2.5 md:hidden">
+                <CheckoutSectionLabel>Ítems a cobrar</CheckoutSectionLabel>
+                {partialItemsList}
+              </CheckoutSectionPanel>
+            ) : null}
+
+            {submitError ? (
+              <p
+                role="alert"
+                className="rounded-xl border border-destructive/30 bg-destructive/5 px-3.5 py-2.5 text-sm text-destructive"
+              >
+                {submitError}
+              </p>
+            ) : null}
+          </div>
+
+          {partialPayment ? (
+            <aside className="hidden md:absolute md:inset-y-0 md:right-0 md:flex md:w-1/2 md:flex-col md:border-l md:border-border/50 md:bg-muted/10">
+              <div className="min-h-0 flex-1 space-y-2.5 overflow-y-auto overscroll-contain px-5 py-4">
+                <CheckoutSectionLabel>Ítems a cobrar</CheckoutSectionLabel>
+                {partialItemsList}
+              </div>
+            </aside>
           ) : null}
         </div>
 
         <CheckoutDialogFooter
-          className="shrink-0 border-t border-border/50 bg-muted/20"
+          className="shrink-0"
+          onCancel={() => onOpenChange(false)}
           cancelDisabled={submitting}
           primary={{
             label: confirmLabel,

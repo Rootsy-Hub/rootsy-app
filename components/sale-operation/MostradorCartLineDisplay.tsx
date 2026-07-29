@@ -1,9 +1,12 @@
 "use client"
 
 import {
+  CartLineQuantityLabel,
+  cartLineRowGridClass,
+} from "@/components/sale-operation/CartLineQuantityLabel"
+import {
   saleOpFmt,
   saleOpImporteCartClass,
-  saleOpImporteCartMutedClass,
 } from "@/components/sale-operation/saleOperationStyles"
 import {
   productDescriptionForMostradorRow,
@@ -27,21 +30,11 @@ export function MostradorCartLineDisplay({ row, pricing }: Props) {
   const comentario = row.comment?.trim() ?? ""
   const tieneComentario = comentario.length > 0
   const showPrice = !row.hidePrice
-  const tieneDescuentoVisual =
-    showPrice &&
-    pricing.precioBase > pricing.precioFinal &&
-    pricing.precioFinal >= 0
 
   return (
     <div className="w-full">
-      <div
-        className={cn(
-          "grid w-full grid-cols-[2.25rem_minmax(0,1fr)_auto] items-start gap-x-3 px-3 py-2.5 text-left",
-        )}
-      >
-        <span className="pt-0.5 text-sm font-bold tabular-nums text-slate-900">
-          {row.cantidad}
-        </span>
+      <div className={cn(cartLineRowGridClass)}>
+        <CartLineQuantityLabel cantidad={row.cantidad} />
 
         <span className="min-w-0">
           <span className="block text-sm font-semibold leading-snug text-slate-900">
@@ -56,21 +49,9 @@ export function MostradorCartLineDisplay({ row, pricing }: Props) {
 
         <span className="pt-0.5 text-right">
           {showPrice ? (
-            <>
-              {tieneDescuentoVisual ? (
-                <span
-                  className={cn(
-                    saleOpImporteCartMutedClass,
-                    "block text-[10px] line-through",
-                  )}
-                >
-                  {saleOpFmt.format(pricing.precioBase)}
-                </span>
-              ) : null}
-              <span className={saleOpImporteCartClass}>
-                {saleOpFmt.format(pricing.precioFinal)}
-              </span>
-            </>
+            <span className={saleOpImporteCartClass}>
+              {saleOpFmt.format(pricing.precioFinal)}
+            </span>
           ) : (
             <span className="text-sm font-medium text-slate-400">—</span>
           )}

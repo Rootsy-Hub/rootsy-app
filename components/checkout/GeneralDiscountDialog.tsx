@@ -2,6 +2,13 @@
 
 import { CheckoutDialogFooter } from "@/components/checkout/CheckoutDialogFooter"
 import {
+  CheckoutDiscountModeSegment,
+  CheckoutNumericValueField,
+  CheckoutSectionLabel,
+  CheckoutSectionPanel,
+  type CheckoutDiscountMode,
+} from "@/components/checkout/CheckoutFormFields"
+import {
   Dialog,
   DialogContent,
   DialogHeader,
@@ -19,7 +26,7 @@ import {
 import { Banknote, Percent } from "lucide-react"
 import { useId } from "react"
 
-type DiscountMode = "porcentaje" | "fijo"
+type DiscountMode = CheckoutDiscountMode
 
 type Props = {
   open: boolean
@@ -34,115 +41,6 @@ type Props = {
   onClear: () => void
   disabled?: boolean
   disabledReason?: string
-}
-
-function DiscountModeSegment({
-  mode,
-  disabled,
-  fixedAmountDisabled,
-  onChange,
-}: {
-  mode: DiscountMode
-  disabled: boolean
-  fixedAmountDisabled: boolean
-  onChange: (mode: DiscountMode) => void
-}) {
-  const segmentClass = (selected: boolean, optionDisabled: boolean) =>
-    cn(
-      "inline-flex flex-1 items-center justify-center gap-2 rounded-lg px-3 py-2.5 text-sm font-semibold transition-all duration-150",
-      "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 focus-visible:ring-offset-2 focus-visible:ring-offset-background",
-      optionDisabled && "pointer-events-none opacity-45",
-      selected
-        ? "bg-primary/10 text-primary shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]"
-        : "text-muted-foreground hover:bg-muted/40 hover:text-foreground",
-    )
-
-  return (
-    <div
-      role="group"
-      aria-label="Tipo de descuento"
-      className="grid grid-cols-2 gap-1 rounded-xl border border-border/70 bg-muted/15 p-1"
-    >
-      <button
-        type="button"
-        disabled={disabled}
-        aria-pressed={mode === "porcentaje"}
-        className={segmentClass(mode === "porcentaje", disabled)}
-        onClick={() => onChange("porcentaje")}
-      >
-        <Percent className="size-4" aria-hidden />
-        Porcentaje
-      </button>
-      <button
-        type="button"
-        disabled={fixedAmountDisabled}
-        aria-pressed={mode === "fijo"}
-        className={segmentClass(mode === "fijo", fixedAmountDisabled)}
-        onClick={() => onChange("fijo")}
-      >
-        <Banknote className="size-4" aria-hidden />
-        Monto fijo
-      </button>
-    </div>
-  )
-}
-
-/** Campo de valor numérico (monto / porcentaje), no un text input de formulario. */
-function DiscountValueField({
-  id,
-  mode,
-  value,
-  disabled,
-  onChange,
-}: {
-  id: string
-  mode: DiscountMode
-  value: string
-  disabled: boolean
-  onChange: (raw: string) => void
-}) {
-  const suffix = mode === "porcentaje" ? "%" : "$"
-  const Icon = mode === "porcentaje" ? Percent : Banknote
-
-  return (
-    <div
-      className={cn(
-        "rounded-xl border border-border/70 bg-muted/15 transition-all duration-150",
-        "focus-within:border-primary/45 focus-within:ring-2 focus-within:ring-primary/20",
-        disabled && "opacity-50",
-      )}
-    >
-      <label htmlFor={id} className="sr-only">
-        {mode === "porcentaje" ? "Porcentaje de descuento" : "Monto fijo de descuento"}
-      </label>
-      <div className="flex items-center gap-3 px-3.5 py-3">
-        <span className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-muted/50 text-muted-foreground">
-          <Icon className="size-[18px]" aria-hidden />
-        </span>
-        <input
-          id={id}
-          type="text"
-          inputMode="numeric"
-          pattern="[0-9]*"
-          autoComplete="off"
-          disabled={disabled}
-          value={value}
-          onChange={(e) => onChange(e.target.value)}
-          placeholder={mode === "porcentaje" ? "0" : "0"}
-          className={cn(
-            "min-w-0 flex-1 bg-transparent text-2xl font-semibold leading-none tabular-nums tracking-tight text-foreground outline-none",
-            "placeholder:text-muted-foreground/40",
-          )}
-        />
-        <span
-          className="shrink-0 text-lg font-semibold tabular-nums text-muted-foreground"
-          aria-hidden
-        >
-          {suffix}
-        </span>
-      </div>
-    </div>
-  )
 }
 
 export function GeneralDiscountDialog({
@@ -204,12 +102,10 @@ export function GeneralDiscountDialog({
             </p>
           ) : null}
 
-          <div className="space-y-4 rounded-xl border border-border/50 bg-muted/10 p-3.5">
+          <CheckoutSectionPanel>
             <div className="space-y-2.5">
-              <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
-                Tipo
-              </p>
-              <DiscountModeSegment
+              <CheckoutSectionLabel>Tipo</CheckoutSectionLabel>
+              <CheckoutDiscountModeSegment
                 mode={draftMode}
                 disabled={disabled}
                 fixedAmountDisabled={fixedAmountDisabled}
@@ -218,15 +114,19 @@ export function GeneralDiscountDialog({
             </div>
 
             <div className="space-y-2.5">
-              <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
-                Valor
-              </p>
-              <DiscountValueField
+              <CheckoutSectionLabel>Valor</CheckoutSectionLabel>
+              <CheckoutNumericValueField
                 id={valueFieldId}
-                mode={draftMode}
+                icon={draftMode === "porcentaje" ? Percent : Banknote}
                 value={draftText}
                 disabled={valueDisabled}
                 onChange={handleDraftChange}
+                suffix={draftMode === "porcentaje" ? "%" : "$"}
+                ariaLabel={
+                  draftMode === "porcentaje"
+                    ? "Porcentaje de descuento"
+                    : "Monto fijo de descuento"
+                }
               />
               {draftMode === "fijo" && subtotal > 0 ? (
                 <p className="px-0.5 text-xs text-muted-foreground">
@@ -242,7 +142,7 @@ export function GeneralDiscountDialog({
                 </p>
               ) : null}
             </div>
-          </div>
+          </CheckoutSectionPanel>
         </div>
 
         <CheckoutDialogFooter

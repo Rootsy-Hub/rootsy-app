@@ -7,7 +7,7 @@ import {
 } from "@/lib/menuCartLineMerge"
 import { resolveCatalogCartLinePricing } from "@/components/sale-operation/saleCatalogProduct"
 import type { MenuCatalogPromotion } from "@/app/[siteId]/[popId]/menu-catalog/actions"
-import { formatArticleDiscountBadge } from "@/lib/articleDiscount"
+import { discountGroupBannerLabelFromPricing } from "@/lib/cartLineDiscountBadge"
 import type { PromotionCartSelection } from "@/lib/promotionPricing"
 import type { QuantityDealApplication } from "@/lib/promotionPricing"
 import { resolvePromotionCartPricing } from "@/lib/menuCheckoutPromotions"
@@ -136,35 +136,17 @@ function discountCloudLabel(
         ? pricing.itemDiscountMode
         : undefined
 
-    if (pricing.descuentoCatalogoLabel) {
+    const label = discountGroupBannerLabelFromPricing({
+      itemDiscountAmount: pricing.itemDiscountAmount,
+      itemDiscountMode: pricing.itemDiscountMode,
+      itemDiscountValue: pricing.itemDiscountValue,
+    })
+
+    if (label) {
       return {
-        label: pricing.descuentoCatalogoLabel,
+        label,
         variant: "discount",
         discountMode,
-      }
-    }
-    if (
-      pricing.itemDiscountMode === "porcentaje" &&
-      pricing.itemDiscountValue != null
-    ) {
-      return {
-        label: `${pricing.itemDiscountValue}%`,
-        variant: "discount",
-        discountMode: "porcentaje",
-      }
-    }
-    if (pricing.itemDiscountMode === "fijo" && pricing.itemDiscountValue != null) {
-      return {
-        label: formatArticleDiscountBadge("fijo", pricing.itemDiscountValue),
-        variant: "discount",
-        discountMode: "fijo",
-      }
-    }
-    if (pricing.itemDiscountAmount > 0) {
-      return {
-        label: formatArticleDiscountBadge("fijo", pricing.itemDiscountAmount),
-        variant: "discount",
-        discountMode: "fijo",
       }
     }
   }
@@ -459,6 +441,7 @@ function consolidatePromoGroupRows(
 
 function computeGroupPricing(
   rows: MostradorCartDisplayRow[],
+  overrides?: CartLineOverrideSnapshot,
 ): MostradorCartGroupPricing | undefined {
   if (rows.length === 0) return undefined
   const first = rows[0]!
@@ -501,11 +484,40 @@ function computeGroupPricing(
     }
   }
 
+  if (first.promoGroupVariant === "discount") {
+    let listTotal = 0
+    let finalTotal = 0
+    let hasPricing = false
+
+    for (const row of rows) {
+      if (overrides) {
+        const pricing = pricingForMostradorRow(row, overrides)
+        listTotal += pricing.precioBase
+        finalTotal += pricing.precioFinal
+        hasPricing = true
+        continue
+      }
+      if (row.readOnlyPricing) {
+        listTotal += row.readOnlyPricing.listTotal
+        finalTotal += row.readOnlyPricing.finalTotal
+        hasPricing = true
+      }
+    }
+
+    if (!hasPricing) return undefined
+
+    return {
+      listTotal: roundSaleMoney(listTotal),
+      finalTotal: roundSaleMoney(finalTotal),
+    }
+  }
+
   return undefined
 }
 
 export function groupMostradorCartDisplayRows(
   rows: MostradorCartDisplayRow[],
+  overrides?: CartLineOverrideSnapshot,
 ): MostradorCartDisplayGroup[] {
   const groups: MostradorCartDisplayGroup[] = []
 
@@ -538,7 +550,7 @@ export function groupMostradorCartDisplayRows(
     return {
       ...group,
       rows,
-      groupPricing: computeGroupPricing(rows),
+      groupPricing: computeGroupPricing(rows, overrides),
     }
   })
 }

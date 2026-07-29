@@ -47,8 +47,8 @@ export function SaleOperationTicketOrderPanel({
   flush = true,
 }: Props) {
   const cartDisplayGroups = useMemo(
-    () => groupMostradorCartDisplayRows(cartDisplayRows),
-    [cartDisplayRows],
+    () => groupMostradorCartDisplayRows(cartDisplayRows, cartLineOverrides),
+    [cartDisplayRows, cartLineOverrides],
   )
 
   const ticketLineCount = useMemo(

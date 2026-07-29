@@ -2,6 +2,7 @@
 
 import type { ReactNode } from "react"
 import { cn } from "@/lib/utils"
+import { cartListHeaderRowClass } from "@/components/sale-operation/saleOperationStyles"
 
 type Props = {
   title: string
@@ -33,9 +34,9 @@ export function SaleOperationCartList({
     >
       <div
         className={cn(
-          "flex items-baseline justify-between gap-2",
+          "flex items-center justify-between gap-2",
           flush
-            ? "border-b border-slate-200/90 bg-white px-3 py-2"
+            ? cn(cartListHeaderRowClass, "border-b border-slate-200/90 bg-white")
             : "mb-1 px-0.5",
         )}
       >

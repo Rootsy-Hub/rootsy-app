@@ -37,34 +37,49 @@ export function MostradorCartTicketGroup({ group, renderRow }: Props) {
       )}
       aria-label={`Grupo: ${group.promoLabel}`}
     >
-      <MostradorCartPromoBanner
-        label={group.promoLabel!}
-        variant={variant}
-        discountMode={group.promoDiscountMode}
-        pricing={group.groupPricing}
-      />
-
-      <div
-        className={cn(
-          "bg-gradient-to-b to-white",
-          isDiscount ? "from-emerald-50/35" : "from-violet-50/35",
-        )}
-      >
-        {group.rows.map((row, index) => (
-          <div
-            key={row.rowKey}
-            className={cn(
-              index > 0 &&
-                cn(
-                  "border-t border-dashed",
-                  isDiscount ? "border-emerald-200/70" : "border-violet-200/70",
-                ),
-            )}
-          >
-            {renderRow(row)}
+      {isDiscount ? (
+        <>
+          <MostradorCartPromoBanner
+            label={group.promoLabel!}
+            variant={variant}
+            discountMode={group.promoDiscountMode}
+            pricing={group.groupPricing}
+          />
+          <div className="bg-gradient-to-b from-emerald-50/35 to-white">
+            {group.rows.map((row, index) => (
+              <div
+                key={row.rowKey}
+                className={cn(
+                  index > 0 && "border-t border-dashed border-emerald-200/70",
+                )}
+              >
+                {renderRow(row)}
+              </div>
+            ))}
           </div>
-        ))}
-      </div>
+        </>
+      ) : (
+        <>
+          <MostradorCartPromoBanner
+            label={group.promoLabel!}
+            variant={variant}
+            discountMode={group.promoDiscountMode}
+            pricing={group.groupPricing}
+          />
+          <div className="bg-gradient-to-b from-violet-50/35 to-white">
+            {group.rows.map((row, index) => (
+              <div
+                key={row.rowKey}
+                className={cn(
+                  index > 0 && "border-t border-dashed border-violet-200/70",
+                )}
+              >
+                {renderRow(row)}
+              </div>
+            ))}
+          </div>
+        </>
+      )}
     </section>
   )
 }

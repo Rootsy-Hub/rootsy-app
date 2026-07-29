@@ -11,7 +11,6 @@ import type { MenuCatalogPromotion } from "@/app/[siteId]/[popId]/menu-catalog/a
 import type { SaleCatalogClient, SaleCatalogPaymentOption, SaleOpenCashSession } from "@/app/[siteId]/[popId]/sale/actions"
 import { useMenuCatalogLoader } from "@/hooks/useMenuCatalogLoader"
 import {
-  computeGeneralDiscountMonto,
   generalDiscountToolbarLabel,
   healLegacyLockedGeneralDiscount,
   isGeneralDiscountEditBlocked,
@@ -29,6 +28,7 @@ import {
   removeQuantityDealApplicationFromCart,
   tryAutoComboSelections,
 } from "@/lib/menuCheckoutPromotions"
+import { computeOrderTotalBreakdown } from "@/lib/orderTotalBreakdown"
 import type { PromotionCartSelection } from "@/lib/promotionPricing"
 import {
   buildMostradorCartDisplayRows,
@@ -595,10 +595,10 @@ export function useMostradorSaleCheckout(
     [quantityDealApplications, comboPromoLineCount],
   )
 
-  const cartTotalsInput = useMemo(
+  const fullCartTotalsInput = useMemo(
     () =>
       buildMenuCartTotalsLines({
-        items: itemsDetalladosUnpaid,
+        items: itemsDetallados,
         quantityDealApplications,
         quantityDealDiscounts,
         itemDescuentoModo,
@@ -606,7 +606,7 @@ export function useMostradorSaleCheckout(
         itemDescuentoSuprimido,
       }),
     [
-      itemsDetalladosUnpaid,
+      itemsDetallados,
       quantityDealApplications,
       quantityDealDiscounts,
       itemDescuentoModo,
@@ -615,38 +615,37 @@ export function useMostradorSaleCheckout(
     ],
   )
 
-  const catalogTotals = useMemo(
-    () => menuCartOrderTotals(cartTotalsInput),
-    [cartTotalsInput],
+  const fullCatalogTotals = useMemo(
+    () => menuCartOrderTotals(fullCartTotalsInput),
+    [fullCartTotalsInput],
   )
 
-  const subtotal = catalogTotals.subtotal
-  const descuentoItemsMonto = useMemo(
+  const footerTotals = useMemo(
     () =>
-      catalogTotals.descuentoCatalogoMonto + catalogTotals.descuentoManualMonto,
-    [catalogTotals.descuentoCatalogoMonto, catalogTotals.descuentoManualMonto],
-  )
-  const promocionesAplicadasMonto = useMemo(
-    () =>
-      catalogTotals.descuentoPromoMonto +
-      catalogTotals.descuentoQuantityDealMonto,
-    [catalogTotals.descuentoPromoMonto, catalogTotals.descuentoQuantityDealMonto],
-  )
-  const hayDescuentoItems = descuentoItemsMonto > 0
-
-  const descuentoMonto = useMemo(
-    () =>
-      computeGeneralDiscountMonto({
-        subtotal,
+      computeOrderTotalBreakdown({
+        catalogTotals: fullCatalogTotals,
         modoDescuento,
         valorDescuentoPorcentaje,
         valorDescuentoFijo,
+        totalPagado: totalPagadoAcumulado,
       }),
-    [subtotal, modoDescuento, valorDescuentoPorcentaje, valorDescuentoFijo],
+    [
+      fullCatalogTotals,
+      modoDescuento,
+      valorDescuentoPorcentaje,
+      valorDescuentoFijo,
+      totalPagadoAcumulado,
+    ],
   )
 
-  const total = subtotal - descuentoMonto
-  const hayDescuento = descuentoMonto > 0
+  const descuentoItemsMonto = footerTotals.descuentoItemsMonto
+  const promocionesAplicadasMonto = footerTotals.promocionesAplicadasMonto
+  const hayDescuentoItems = footerTotals.hayDescuentoItems
+
+  const subtotal = footerTotals.subtotalBeforeGeneral
+  const descuentoMonto = footerTotals.descuentoMonto
+  const total = footerTotals.total
+  const hayDescuento = footerTotals.hayDescuento
   const hayItemsEnPedido = itemsDetalladosUnpaid.length > 0
 
   const descuentoGeneralEditBlocked = useMemo(
@@ -697,7 +696,7 @@ export function useMostradorSaleCheckout(
   const partialPaymentUnits = useMemo(
     () =>
       buildPartialPaymentUnits({
-        groups: groupMostradorCartDisplayRows(cartDisplayRows),
+        groups: groupMostradorCartDisplayRows(cartDisplayRows, overrideSnapshot),
         carrito,
         paidPartialUnits,
         overrides: overrideSnapshot,
@@ -718,16 +717,16 @@ export function useMostradorSaleCheckout(
       overrides: overrideSnapshot,
       selection: partialSelection,
       units: partialPaymentUnits,
-      fullSubtotal: subtotal,
+      fullSubtotal: footerTotals.subtotalBeforeGeneral,
       modoDescuento,
       valorDescuentoPorcentaje,
       valorDescuentoFijo,
     })
   }, [
     partialPayment,
-    subtotal,
-    descuentoMonto,
-    total,
+    footerTotals.subtotalBeforeGeneral,
+    footerTotals.descuentoMonto,
+    footerTotals.total,
     carrito,
     itemsDetallados,
     quantityDealApplications,
@@ -1180,7 +1179,7 @@ export function useMostradorSaleCheckout(
               overrides: overrideSnapshot,
               selection,
               units: partialPaymentUnits,
-              fullSubtotal: subtotal,
+              fullSubtotal: footerTotals.subtotalBeforeGeneral,
               modoDescuento,
               valorDescuentoPorcentaje,
               valorDescuentoFijo,
@@ -1474,13 +1473,13 @@ export function useMostradorSaleCheckout(
     quitarLineaPorId,
     quitarQuantityDealApplication,
     subtotal,
-    subtotalOriginal: catalogTotals.subtotalOriginal,
+    subtotalOriginal: footerTotals.subtotalOriginal,
     descuentoItemsMonto,
     hayDescuentoItems,
     promocionesAplicadasMonto,
     promocionesAplicadasCount,
-    descuentoCatalogoMonto: catalogTotals.descuentoCatalogoMonto,
-    hayDescuentoCatalogo: catalogTotals.hayDescuentoCatalogo,
+    descuentoCatalogoMonto: fullCatalogTotals.descuentoCatalogoMonto,
+    hayDescuentoCatalogo: fullCatalogTotals.hayDescuentoCatalogo,
     descuentoMonto,
     total,
     totalPagadoAcumulado,

@@ -156,15 +156,6 @@ export function OperationCartLineRow({
       onQuantityDecrease={onQuantityDecrease}
       onQuantityIncrease={onQuantityIncrease}
       onRemove={onRemove}
-      tieneComentario={tieneComentario}
-      tieneDescuento={!quantityDealActive && tieneDescuento}
-      descuentoLabel={
-        tieneDescuentoManual
-          ? modoFormulario === "porcentaje"
-            ? `${Math.min(100, Math.max(0, Number.isFinite(descuentoNumero) ? descuentoNumero : 0))}%`
-            : fmt.format(descuentoManual)
-          : catalogPricing.descuentoCatalogoLabel
-      }
       expandedContent={
         editingDisabled ? (
           <div className="flex items-center gap-2 opacity-60">

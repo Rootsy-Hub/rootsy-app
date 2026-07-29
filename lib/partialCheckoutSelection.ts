@@ -626,7 +626,7 @@ export function buildPartialPaymentUnitGroups(
   productosByKey: Map<string, MenuCatalogProduct>,
 ): PartialPaymentUnit[] {
   return buildPartialPaymentUnits({
-    groups: groupMostradorCartDisplayRows(rows),
+    groups: groupMostradorCartDisplayRows(rows, overrides),
     carrito,
     paidPartialUnits,
     overrides,

@@ -11,6 +11,10 @@ import {
   type PurchaseKind,
 } from "@/app/[siteId]/[popId]/purchases/actions"
 import { PurchasePaymentMethodDialog } from "@/components/purchase-operation/PurchasePaymentMethodDialog"
+import {
+  PurchaseOperationTicketOrderPanel,
+} from "@/components/purchase-operation/PurchaseOperationTicketOrderPanel"
+import type { PurchaseLineEditInput } from "@/components/purchase-operation/PurchaseCartLineCard"
 import { OperationPartyPickerDialog } from "@/components/checkout/OperationPartyPickerDialog"
 import { PurchaseComprobantePickerDialog } from "@/components/checkout/PurchaseComprobantePickerDialog"
 import { GeneralDiscountDialog } from "@/components/checkout/GeneralDiscountDialog"
@@ -30,47 +34,30 @@ import {
   getPurchaseComprobantePickerOptions,
 } from "@/lib/purchaseComprobantePicker"
 import { DataWorkspaceLayout } from "@/components/layouts/DataWorkspaceLayout"
-import { SaleOperationTotalBar } from "@/components/sale-operation/SaleOperationTotalBar"
+import { saleOpImporteBaseClass } from "@/components/sale-operation/saleOperationStyles"
 import { useDataWorkspaceSidebar } from "@/components/layouts/useDataWorkspaceSidebar"
 import { useAuth } from "@/context/AuthContextSupabase"
 import { useParams } from "next/navigation"
 import {
   useCallback,
   useEffect,
-  useLayoutEffect,
   useMemo,
   useRef,
   useState,
-  type CSSProperties,
 } from "react"
 import {
   Banknote,
-  CircleCheck,
-  CircleX,
   LayoutGrid,
   Loader2,
-  MessageSquare,
-  Minus,
-  Paperclip,
   Percent,
   Plus,
   Receipt,
   Rows3,
   Search,
-  Trash2,
   Truck,
 } from "lucide-react"
 import { usePadronAutofillRazonSocial } from "@/hooks/usePadronAutofillRazonSocial"
 import { cn } from "@/lib/utils"
-import { Button } from "@/components/ui/button"
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog"
 import {
   AlertDialog,
   AlertDialogAction,
@@ -82,17 +69,6 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
 import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
-import { Checkbox } from "@/components/ui/checkbox"
-import { Separator } from "@/components/ui/separator"
-
 type Producto = {
   id: string
   nombre: string
@@ -101,6 +77,7 @@ type Producto = {
   iva: number
   categoria: string
   imagen: string
+  unitOfMeasure: string
 }
 
 type ItemCarrito = {
@@ -163,6 +140,7 @@ function articleToProducto(a: PurchaseCatalogArticle): Producto {
     iva: a.iva,
     categoria: a.categoryName.trim() ? a.categoryName : "—",
     imagen: `https://api.dicebear.com/7.x/shapes/svg?seed=${encodeURIComponent(a.id)}&backgroundColor=1a1f1d`,
+    unitOfMeasure: a.unitOfMeasure,
   }
 }
 
@@ -172,17 +150,7 @@ const fmt = new Intl.NumberFormat("es-AR", {
   minimumFractionDigits: 2,
 })
 
-/** Tipografía numérica alineada al workspace (tablas de importes). */
-const compraImporteBaseClass = "font-mono tabular-nums tracking-tight"
-const compraImporteCartClass = cn(
-
-  compraImporteBaseClass,
-  "text-sm font-semibold text-slate-900",
-)
-const compraImporteCartMutedClass = cn(
-  compraImporteBaseClass,
-  "text-[11px] text-slate-400",
-)
+const compraImporteBaseClass = saleOpImporteBaseClass
 const compraImporteCardClass = cn(
   compraImporteBaseClass,
   "block text-[clamp(1.05rem,1.65vw,1.3125rem)] leading-none font-semibold text-white/90",
@@ -205,115 +173,6 @@ function IconoLimpiarBusqueda({ className }: { className?: string }) {
     >
       <path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z" />
     </svg>
-  )
-}
-
-function CartItemTitleMarquee({
-  text,
-  active,
-  className,
-}: {
-  text: string
-  active: boolean
-  className?: string
-}) {
-  const containerRef = useRef<HTMLDivElement>(null)
-  const ghostRef = useRef<HTMLSpanElement>(null)
-  const prevActiveRef = useRef(false)
-  const [truncated, setTruncated] = useState(false)
-  const [marqueeKey, setMarqueeKey] = useState(0)
-  const [reduceMotion, setReduceMotion] = useState(false)
-
-  useEffect(() => {
-    const mq = window.matchMedia("(prefers-reduced-motion: reduce)")
-    setReduceMotion(mq.matches)
-    const fn = () => setReduceMotion(mq.matches)
-    mq.addEventListener("change", fn)
-    return () => mq.removeEventListener("change", fn)
-  }, [])
-
-  const syncMeasure = useCallback(() => {
-    const c = containerRef.current
-    const g = ghostRef.current
-    if (!c || !g || !text) {
-      setTruncated(false)
-      return
-    }
-    setTruncated(g.scrollWidth > c.clientWidth + 1)
-  }, [text])
-
-  useLayoutEffect(() => {
-    if (!active || !text) {
-      setTruncated(false)
-      prevActiveRef.current = active
-      return
-    }
-    if (active && !prevActiveRef.current) {
-      setMarqueeKey((k) => k + 1)
-    }
-    prevActiveRef.current = active
-    syncMeasure()
-    const id = requestAnimationFrame(syncMeasure)
-    return () => cancelAnimationFrame(id)
-  }, [active, text, syncMeasure])
-
-  useEffect(() => {
-    if (!active || !text) return
-    const c = containerRef.current
-    if (!c || typeof ResizeObserver === "undefined") return
-    const ro = new ResizeObserver(syncMeasure)
-    ro.observe(c)
-    return () => ro.disconnect()
-  }, [active, text, syncMeasure])
-
-  if (!text) return null
-
-  const durationSec = Math.min(28, Math.max(12, text.length * 0.42))
-  const marqueeStyle: CSSProperties | undefined =
-    active && truncated && !reduceMotion
-      ? ({ "--marquee-duration": `${durationSec}s` } as CSSProperties)
-      : undefined
-
-  const ghost = (
-    <span
-      ref={ghostRef}
-      aria-hidden
-      className={cn("pointer-events-none invisible absolute whitespace-nowrap", className)}
-    >
-      {text}
-    </span>
-  )
-
-  const segment = (dup: boolean) => (
-    <span className={cn("inline-block whitespace-nowrap px-6", className)}>
-      {text}
-      {dup ? ` · ${text}` : ""}
-    </span>
-  )
-
-  if (!active || !truncated || reduceMotion) {
-    return (
-      <div ref={containerRef} className="relative min-w-0 overflow-hidden">
-        {ghost}
-        <p className={cn("line-clamp-1", className)}>{text}</p>
-      </div>
-    )
-  }
-
-  return (
-    <div ref={containerRef} className="relative min-w-0 overflow-hidden">
-      {ghost}
-      <div className="rootsy-cart-item-marquee-fade overflow-hidden">
-        <div
-          key={marqueeKey}
-          className="rootsy-cart-title-marquee-track"
-          style={marqueeStyle}
-        >
-          {segment(false)}
-          {segment(true)}
-        </div>
-      </div>
-    </div>
   )
 }
 
@@ -462,9 +321,6 @@ function PurchasesPage() {
     [comprobanteTipo],
   )
 
-  const [itemDetalleAbiertoId, setItemDetalleAbiertoId] = useState<string | null>(
-    null,
-  )
   const [itemDescuentoModo, setItemDescuentoModo] = useState<
     Record<string, "porcentaje" | "fijo">
   >({})
@@ -678,7 +534,6 @@ function PurchasesPage() {
         ? defaultPurchaseCheckoutPaymentSelection(treasuryPaymentContext)
         : null,
     )
-    setItemDetalleAbiertoId(null)
     setDescartarConfirmOpen(false)
     setComprarConfirmOpen(false)
     setCompraError(null)
@@ -903,14 +758,24 @@ function PurchasesPage() {
     }
   }
 
-  const cambiarCantidad = (productoId: string, delta: number) => {
+  const establecerCantidad = (productoId: string, cantidad: number) => {
     setCarrito((prev) =>
       prev
         .map((i) =>
-          i.productoId === productoId
-            ? { ...i, cantidad: Math.max(1, i.cantidad + delta) }
-            : i,
+          i.productoId === productoId ? { ...i, cantidad } : i,
         )
+        .filter((i) => i.cantidad > 0),
+    )
+  }
+
+  const cambiarCantidad = (productoId: string, delta: number) => {
+    setCarrito((prev) =>
+      prev
+        .map((i) => {
+          if (i.productoId !== productoId) return i
+          const next = Math.round((i.cantidad + delta) * 1e6) / 1e6
+          return { ...i, cantidad: next }
+        })
         .filter((i) => i.cantidad > 0),
     )
   }
@@ -942,14 +807,81 @@ function PurchasesPage() {
       delete next[productoId]
       return next
     })
-    if (itemDetalleAbiertoId === productoId) {
-      setItemDetalleAbiertoId(null)
-    }
   }
 
-  const toggleItemDetalle = (itemId: string) => {
-    setItemDetalleAbiertoId((prev) => (prev === itemId ? null : itemId))
-  }
+  const aplicarEdicionLineaCompra = useCallback((input: PurchaseLineEditInput) => {
+    const {
+      productoId,
+      quantity,
+      unitCost,
+      updateArticleCost,
+      discountMode,
+      discountDraft,
+      comment,
+      hasQuantityEdit,
+      hasCostEdit,
+      hasUpdateCostEdit,
+      hasDiscountEdit,
+      hasCommentEdit,
+    } = input
+
+    if (hasQuantityEdit) {
+      establecerCantidad(productoId, quantity)
+    }
+    if (hasCostEdit) {
+      setItemUnitCosts((prev) => ({ ...prev, [productoId]: unitCost }))
+    }
+    if (hasUpdateCostEdit) {
+      setItemUpdateArticleCost((prev) => ({
+        ...prev,
+        [productoId]: updateArticleCost,
+      }))
+    }
+    if (hasDiscountEdit) {
+      setItemDescuentoModo((prev) => ({
+        ...prev,
+        [productoId]: discountMode,
+      }))
+      setItemDescuentoDraft((prev) => ({
+        ...prev,
+        [productoId]: discountDraft,
+      }))
+    }
+    if (hasCommentEdit) {
+      setItemComentarios((prev) => ({ ...prev, [productoId]: comment }))
+    }
+  }, [])
+
+  const purchaseCartLines = useMemo(
+    () =>
+      itemsDetallados.map((item) => ({
+        productoId: item.productoId,
+        cantidad: item.cantidad,
+        nombre: item.producto?.nombre ?? "Artículo",
+        descripcion: item.producto?.descripcion,
+        fallbackCost: item.producto?.precio ?? 0,
+        iva: item.producto?.iva,
+        unitOfMeasure: item.producto?.unitOfMeasure ?? "",
+      })),
+    [itemsDetallados],
+  )
+
+  const purchaseCartOverrides = useMemo(
+    () => ({
+      itemUnitCosts,
+      itemUpdateArticleCost,
+      itemDescuentoModo,
+      itemDescuentoDraft,
+      itemComentarios,
+    }),
+    [
+      itemUnitCosts,
+      itemUpdateArticleCost,
+      itemDescuentoModo,
+      itemDescuentoDraft,
+      itemComentarios,
+    ],
+  )
 
   const toolboxBarClass =
     "box-border border-t border-white/10 bg-[#0b100e]/92 backdrop-blur-xl"
@@ -972,45 +904,8 @@ function PurchasesPage() {
         : "bg-white/[0.06] text-foreground/45 group-hover:bg-white/10 group-hover:text-foreground/75",
     )
 
-  const compraDialogOptionClass = (seleccionado: boolean, disabled = false) =>
-    cn(
-      "flex w-full items-center justify-between gap-3 rounded-lg border px-3 py-2.5 text-left transition-colors",
-      disabled &&
-        (seleccionado
-          ? "cursor-default"
-          : "pointer-events-none opacity-45"),
-      seleccionado
-        ? "border-primary/40 bg-primary/10 ring-1 ring-primary/15"
-        : "border-border/70 bg-muted/20 hover:bg-muted/35",
-    )
-
-  const compraDialogLight = "rootsy-app-light text-foreground"
-  const compraDialogSurface =
-    "gap-0 overflow-hidden rounded-2xl border border-border/60 bg-card p-0 shadow-2xl ring-1 ring-black/[0.04]"
-  const compraDialogMaxViewport =
-    "max-h-[calc(100vh-100px)] flex flex-col overflow-hidden"
-  const compraDialogSurfaceMd = cn(
-    compraDialogSurface,
-    compraDialogMaxViewport,
-    "sm:max-w-md",
-  )
-  const compraDialogSurfaceLg = cn(
-    compraDialogSurface,
-    compraDialogMaxViewport,
-    "sm:max-w-2xl",
-  )
-  const compraDialogContentMd = cn(compraDialogSurfaceMd, compraDialogLight)
-  const compraDialogContentLg = cn(compraDialogSurfaceLg, compraDialogLight)
-  const compraDialogHeader =
-    "space-y-1.5 border-b border-border/50 bg-muted/25 px-6 pb-4 pt-5 text-left"
-  const compraDialogBody = "px-6 py-4"
-  const compraDialogFooter =
-    "border-t border-border/50 bg-muted/15 px-6 py-3.5 sm:justify-between"
-  const compraDialogPrimaryBtn =
-    "h-10 bg-emerald-600 font-semibold text-white shadow-sm hover:bg-emerald-500 active:bg-emerald-700"
-  const compraDialogGhostBtn = "h-10 text-muted-foreground hover:text-foreground"
   const compraAlertDialogContent = cn(
-    compraDialogLight,
+    "rootsy-app-light text-foreground",
     "rounded-2xl border border-border/60 bg-card shadow-2xl sm:max-w-md",
   )
 
@@ -1443,379 +1338,50 @@ function PurchasesPage() {
             </div>
 
           <aside
-            className="col-start-2 row-span-2 grid min-h-0 grid-rows-[minmax(0,1fr)_auto] bg-[#eef1f5] text-[#121417]"
+            className="rootsy-app-light col-start-2 row-span-2 grid min-h-0 overflow-hidden grid-rows-[minmax(0,1fr)] bg-[#eef1f5] text-[#121417]"
             aria-label="Carrito de la compra"
           >
-            <div className="flex min-h-0 flex-col">
-              <div
-                className="game-scroll min-h-0 flex-1 space-y-2 overflow-y-auto p-3 sm:p-3.5"
-                role="region"
-                aria-label="Ítems agregados"
-              >
-                <div className="mb-1 flex items-baseline justify-between gap-2 px-0.5">
-                  <h2 className="text-[11px] font-bold uppercase tracking-[0.14em] text-slate-500">
-                    Tu compra
-                  </h2>
-                  <span className="text-[11px] font-medium tabular-nums text-slate-400">
-                    {itemsDetallados.length}{" "}
-                    {itemsDetallados.length === 1 ? "línea" : "líneas"}
-                  </span>
-                </div>
-                {itemsDetallados.map((item) => {
-                  const itemId = item.productoId
-                  const abierto = itemDetalleAbiertoId === itemId
-                  const fallback = item.producto?.precio ?? 0
-                  const unitCost = parseUnitCost(
-                    itemUnitCosts[itemId] ?? "",
-                    fallback,
-                  )
-                  const descuentoRaw = itemDescuentoDraft[itemId] ?? ""
-                  const modoItemDescuento =
-                    itemDescuentoModo[itemId] ?? "porcentaje"
-                  const linePricing = resolveSaleLineDiscount({
-                    listUnitPrice: unitCost,
-                    quantity: item.cantidad,
-                    manualDiscount:
-                      descuentoRaw.trim() !== ""
-                        ? {
-                            mode: modoItemDescuento,
-                            draft: descuentoRaw,
-                          }
-                        : null,
-                  })
-                  const lineTotal = linePricing.lineSubtotal
-                  const listLineTotal = linePricing.listLineSubtotal
-                  const tieneDescuentoItem = linePricing.itemDiscountAmount > 0
-                  const descuentoNumero = Number.parseFloat(
-                    descuentoRaw.trim().replace(",", "."),
-                  )
-                  const comentario = itemComentarios[itemId] ?? ""
-                  const tieneComentario = comentario.trim().length > 0
-                  const descripcionProducto = item.producto?.descripcion?.trim() ?? ""
-                  const showDescripcion =
-                    descripcionProducto.length > 0 && descripcionProducto !== "—"
-                  const showSubtituloItem =
-                    showDescripcion || tieneComentario || tieneDescuentoItem
-                  const nombreProducto = item.producto?.nombre ?? "Artículo"
-                  const descuentoLabel = tieneDescuentoItem
-                    ? modoItemDescuento === "porcentaje"
-                      ? `${Math.min(100, Math.max(0, Number.isFinite(descuentoNumero) ? descuentoNumero : 0))}%`
-                      : fmt.format(linePricing.itemDiscountAmount)
-                    : undefined
-
-                  return (
-                    <div key={itemId} className="space-y-2">
-                      <div
-                        role="button"
-                        tabIndex={0}
-                        aria-expanded={abierto}
-                        aria-controls={
-                          abierto ? `cart-item-${itemId}-opciones` : undefined
-                        }
-                        onClick={() => toggleItemDetalle(itemId)}
-                        onKeyDown={(e) => {
-                          if (e.key === "Enter" || e.key === " ") {
-                            e.preventDefault()
-                            toggleItemDetalle(itemId)
-                          }
-                        }}
-                        className={cn(
-                          "cursor-pointer rounded-xl border bg-white px-3 py-2.5 text-left shadow-[0_1px_0_rgba(255,255,255,0.95)_inset,0_4px_14px_rgba(15,23,42,0.05)] transition-[border-color,box-shadow] duration-150",
-                          abierto
-                            ? "border-slate-300 ring-1 ring-slate-300/60"
-                            : "border-slate-200/90 hover:border-slate-300",
-                        )}
-                      >
-                        <div className="grid grid-cols-[56px_minmax(0,1fr)_minmax(4.5rem,auto)_2rem] items-center gap-2 sm:grid-cols-[56px_minmax(0,1fr)_5.5rem_2rem]">
-                          <div
-                            className="flex items-center gap-0.5 rounded-lg bg-slate-50 px-1 py-1 ring-1 ring-slate-200/90"
-                            onClick={(e) => e.stopPropagation()}
-                            onKeyDown={(e) => e.stopPropagation()}
-                            role="group"
-                            aria-label={`Cantidad de ${nombreProducto}`}
-                          >
-                            <button
-                              type="button"
-                              onClick={(e) => {
-                                e.stopPropagation()
-                                cambiarCantidad(itemId, -1)
-                              }}
-                              className="inline-flex size-6 items-center justify-center rounded-md bg-white text-slate-600 shadow-sm ring-1 ring-slate-200/80 hover:bg-slate-50"
-                            >
-                              <Minus className="size-3" />
-                            </button>
-                            <span className="min-w-5 text-center text-sm font-bold tabular-nums text-slate-900">
-                              {item.cantidad}
-                            </span>
-                            <button
-                              type="button"
-                              onClick={(e) => {
-                                e.stopPropagation()
-                                cambiarCantidad(itemId, 1)
-                              }}
-                              className="inline-flex size-6 items-center justify-center rounded-md bg-white text-slate-600 shadow-sm ring-1 ring-slate-200/80 hover:bg-slate-50"
-                            >
-                              <Plus className="size-3" />
-                            </button>
-                          </div>
-                          <div className="min-w-0">
-                            <CartItemTitleMarquee
-                              text={nombreProducto}
-                              active={abierto}
-                              className="text-sm font-semibold text-slate-900"
-                            />
-                            {showSubtituloItem ? (
-                              <div className="mt-0.5 flex min-w-0 items-center gap-1">
-                                {showDescripcion ? (
-                                  <div className="min-w-0 flex-1">
-                                    <p className="line-clamp-1 text-xs text-slate-500">
-                                      {descripcionProducto}
-                                    </p>
-                                  </div>
-                                ) : (
-                                  <div className="min-w-0 flex-1" />
-                                )}
-                                {tieneComentario ? (
-                                  <span
-                                    className="inline-flex shrink-0 items-center rounded-full border border-sky-200 bg-sky-50 px-1.5 py-0 text-[10px] font-semibold text-sky-800"
-                                    title="Tiene comentario"
-                                  >
-                                    <span className="sr-only">Comentario</span>
-                                    <MessageSquare className="size-3 sm:hidden" aria-hidden />
-                                    <span aria-hidden className="hidden sm:inline">
-                                      Nota
-                                    </span>
-                                  </span>
-                                ) : null}
-                                {tieneDescuentoItem && descuentoLabel ? (
-                                  <span
-                                    className={cn(
-                                      "inline-flex max-w-22 shrink-0 items-center justify-center truncate rounded-full border border-emerald-200 bg-emerald-50 px-1.5 py-0 text-[10px] font-semibold text-emerald-800",
-                                      compraImporteBaseClass,
-                                    )}
-                                  >
-                                    {descuentoLabel}
-                                  </span>
-                                ) : null}
-                              </div>
-                            ) : null}
-                          </div>
-                          <div className="text-right">
-                            {tieneDescuentoItem && listLineTotal > lineTotal ? (
-                              <p className={cn(compraImporteCartMutedClass, "line-through")}>
-                                {fmt.format(listLineTotal)}
-                              </p>
-                            ) : null}
-                            <p className={compraImporteCartClass}>
-                              {fmt.format(lineTotal)}
-                            </p>
-                          </div>
-                          <button
-                            type="button"
-                            onClick={(e) => {
-                              e.stopPropagation()
-                              quitarDelCarrito(itemId)
-                            }}
-                            aria-label={`Quitar ${nombreProducto}`}
-                            className="inline-flex size-8 items-center justify-center rounded-lg text-slate-400 hover:bg-rose-50 hover:text-rose-600"
-                          >
-                            <Trash2 className="size-4" />
-                          </button>
-                        </div>
-                      </div>
-
-                      {abierto ? (
-                        <div
-                          id={`cart-item-${itemId}-opciones`}
-                          role="region"
-                          aria-label={`Opciones de ${nombreProducto}`}
-                          onClick={(e) => e.stopPropagation()}
-                          className="space-y-2"
-                        >
-                          <div className="rounded-xl border border-slate-200/95 bg-white px-2.5 py-2 shadow-[0_1px_0_rgba(255,255,255,0.9)_inset,0_4px_16px_rgba(15,23,42,0.06)]">
-                            <div className="flex items-center gap-2">
-                              <Label
-                                htmlFor={`unit-cost-${itemId}`}
-                                className="shrink-0 text-[11px] text-slate-500"
-                              >
-                                Costo
-                              </Label>
-                              <Input
-                                id={`unit-cost-${itemId}`}
-                                inputMode="decimal"
-                                value={itemUnitCosts[itemId] ?? ""}
-                                placeholder={fallback > 0 ? String(fallback) : "0"}
-                                title={
-                                  item.producto && item.producto.iva > 0
-                                    ? `IVA ${item.producto.iva}% incluido en el costo`
-                                    : undefined
-                                }
-                                onChange={(e) => {
-                                  const raw = e.target.value
-                                  if (!/^\d*[.,]?\d*$/.test(raw)) return
-                                  setItemUnitCosts((prev) => ({
-                                    ...prev,
-                                    [itemId]: raw,
-                                  }))
-                                }}
-                                className="h-8 w-26 shrink-0 border border-slate-300 bg-white! font-mono text-[#121417] text-xs tabular-nums shadow-none placeholder:text-slate-500"
-                              />
-                              {canUpdateArticles ? (
-                                <label
-                                  htmlFor={`update-cost-${itemId}`}
-                                  className={cn(
-                                    "ml-auto flex min-w-0 shrink-0 cursor-pointer items-center gap-2 rounded-lg border px-2.5 py-1.5 transition-colors",
-                                    itemUpdateArticleCost[itemId] === true
-                                      ? "border-emerald-300 bg-emerald-50/80"
-                                      : "border-slate-200 bg-white hover:border-slate-300",
-                                  )}
-                                >
-                                  <Checkbox
-                                    id={`update-cost-${itemId}`}
-                                    checked={itemUpdateArticleCost[itemId] === true}
-                                    onCheckedChange={(checked) => {
-                                      setItemUpdateArticleCost((prev) => ({
-                                        ...prev,
-                                        [itemId]: checked === true,
-                                      }))
-                                    }}
-                                    className="border-slate-200 bg-white shadow-none data-[state=checked]:border-emerald-600 data-[state=checked]:bg-emerald-600"
-                                  />
-                                  <span className="truncate text-xs font-medium text-slate-700">
-                                    Actualizar costo
-                                  </span>
-                                </label>
-                              ) : null}
-                            </div>
-                          </div>
-                          <div className="rounded-xl border border-slate-200/95 bg-white px-2.5 py-2 shadow-[0_1px_0_rgba(255,255,255,0.9)_inset,0_4px_16px_rgba(15,23,42,0.06)]">
-                            <div className="flex items-center gap-2">
-                              <button
-                                type="button"
-                                className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-md border border-slate-400/50 bg-slate-100 text-slate-800 transition-colors hover:border-slate-400 hover:bg-slate-50 hover:text-slate-950 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-400/50"
-                                aria-label="Cambiar tipo de descuento"
-                                onClick={() => {
-                                  setItemDescuentoModo((prev) => ({
-                                    ...prev,
-                                    [itemId]:
-                                      modoItemDescuento === "porcentaje"
-                                        ? "fijo"
-                                        : "porcentaje",
-                                  }))
-                                }}
-                              >
-                                {modoItemDescuento === "porcentaje" ? (
-                                  <Percent className="size-3.5" aria-hidden />
-                                ) : (
-                                  <Banknote className="size-3.5" aria-hidden />
-                                )}
-                              </button>
-                              <Input
-                                value={descuentoRaw}
-                                onChange={(e) => {
-                                  const raw = e.target.value
-                                  if (!/^\d*$/.test(raw)) return
-                                  if (
-                                    modoItemDescuento === "fijo" &&
-                                    Number(raw) > listLineTotal
-                                  ) {
-                                    setItemDescuentoModo((prev) => ({
-                                      ...prev,
-                                      [itemId]: "porcentaje",
-                                    }))
-                                    setItemDescuentoDraft((prev) => ({
-                                      ...prev,
-                                      [itemId]: "100",
-                                    }))
-                                    return
-                                  }
-                                  const nextValue =
-                                    modoItemDescuento === "porcentaje"
-                                      ? String(Math.min(100, Number(raw)))
-                                      : raw
-                                  setItemDescuentoDraft((prev) => ({
-                                    ...prev,
-                                    [itemId]: nextValue,
-                                  }))
-                                }}
-                                placeholder="descuento"
-                                inputMode="numeric"
-                                pattern="[0-9]*"
-                                className="h-8 w-26 border border-slate-300 bg-white! text-[#121417] text-xs shadow-none placeholder:text-slate-500"
-                              />
-                              <div className="relative min-w-0 flex-1">
-                                <MessageSquare className="pointer-events-none absolute top-1/2 left-2.5 size-3.5 -translate-y-1/2 text-slate-500" />
-                                <Input
-                                  value={comentario}
-                                  onChange={(e) => {
-                                    setItemComentarios((prev) => ({
-                                      ...prev,
-                                      [itemId]: e.target.value,
-                                    }))
-                                  }}
-                                  placeholder="agregá un comentario..."
-                                  className="h-8 border border-slate-300 bg-white! pl-8 text-[#121417] text-xs shadow-none placeholder:text-slate-500"
-                                />
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                      ) : null}
-                    </div>
-                  )
-                })}
-              </div>
-            </div>
-
-            <div className="flex min-h-0 flex-col">
-              <div className="bg-[#f8fafc] p-3 text-[#121417]">
-                <div className="grid grid-cols-2 gap-2 sm:gap-3">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    disabled={!hayContenidoCompra}
-                    onClick={() => setDescartarConfirmOpen(true)}
-                    className="h-11 gap-2 border-rose-200/90 bg-white font-medium text-rose-700 shadow-none hover:border-rose-300 hover:bg-rose-50 hover:text-rose-800 focus-visible:ring-2 focus-visible:ring-rose-400/45 focus-visible:ring-offset-2 focus-visible:ring-offset-[#f8fafc] disabled:pointer-events-auto disabled:cursor-not-allowed disabled:opacity-45"
-                  >
-                    <CircleX className="size-4 shrink-0" aria-hidden />
-                    Descartar
-                  </Button>
-                  <Button
-                    type="button"
-                    disabled={!puedeComprar || compraSubmitting}
-                    onClick={() => {
-                      setCompraError(null)
-                      setComprarConfirmOpen(true)
-                    }}
-                    title={
-                      !hayItemsEnPedido
-                        ? "Agregá artículos a la compra."
-                        : !payOnSupplierAccount && !metodoPagoSeleccionado
-                          ? "Elegí cómo vas a pagar o usá cuenta corriente."
-                          : payOnSupplierAccount && !proveedorSeleccionado?.id
-                            ? "Elegí un proveedor del catálogo para comprar a cuenta corriente."
-                            : !canCreate
-                              ? "No tenés permiso para registrar compras."
-                              : undefined
-                    }
-                    className="h-11 gap-2 border-0 bg-emerald-600 font-semibold text-white shadow-[0_1px_2px_rgba(0,0,0,0.06)] hover:bg-emerald-500 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2 focus-visible:ring-offset-[#f8fafc] active:bg-emerald-700 disabled:pointer-events-auto disabled:cursor-not-allowed disabled:opacity-45"
-                  >
-                    <CircleCheck className="size-4 shrink-0 opacity-95" aria-hidden />
-                    Comprar
-                  </Button>
-                </div>
-              </div>
-
-              <SaleOperationTotalBar
-                total={total}
-                subtotal={subtotal}
-                descuentoMonto={descuentoMonto}
-                hayDescuento={hayDescuento}
-                subtotalOriginal={subtotalOriginal}
-                descuentoItemsMonto={descuentoItemsMonto}
-                hayDescuentoItems={hayDescuentoItems}
-              />
-            </div>
+            <PurchaseOperationTicketOrderPanel
+              lines={purchaseCartLines}
+              overrides={purchaseCartOverrides}
+              canUpdateArticles={canUpdateArticles}
+              onApplyLineEdits={aplicarEdicionLineaCompra}
+              onRemoveLine={quitarDelCarrito}
+              listTitle="Tu compra"
+              emptyTitle="Compra vacía"
+              emptyDescription="Agregá artículos desde el catálogo."
+              actions={{
+                discardDisabled: !hayContenidoCompra,
+                confirmDisabled: !puedeComprar || compraSubmitting,
+                confirmLoading: compraSubmitting,
+                onDiscard: () => setDescartarConfirmOpen(true),
+                onConfirm: () => {
+                  setCompraError(null)
+                  setComprarConfirmOpen(true)
+                },
+                confirmLabel: "Comprar",
+                confirmTitle: !hayItemsEnPedido
+                  ? "Agregá artículos a la compra."
+                  : !payOnSupplierAccount && !metodoPagoSeleccionado
+                    ? "Elegí cómo vas a pagar o usá cuenta corriente."
+                    : payOnSupplierAccount && !proveedorSeleccionado?.id
+                      ? "Elegí un proveedor del catálogo para comprar a cuenta corriente."
+                      : !canCreate
+                        ? "No tenés permiso para registrar compras."
+                        : undefined,
+              }}
+              totalBar={{
+                total,
+                subtotal,
+                descuentoMonto,
+                hayDescuento,
+                subtotalOriginal,
+                descuentoItemsMonto,
+                hayDescuentoItems,
+                totalLabel: "Total a pagar",
+                totalAriaLabel: "Total a pagar",
+              }}
+            />
           </aside>
         </main>
         </div>

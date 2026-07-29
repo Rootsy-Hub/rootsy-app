@@ -3,9 +3,9 @@
 import {
   saleOpFooterBarPaddingClass,
   saleOpFmt,
+  saleOpImporteBaseClass,
   saleOpImporteTotalClass,
   saleOpImporteTotalDiscountClass,
-  saleOpImporteTotalMutedClass,
 } from "@/components/sale-operation/saleOperationStyles"
 import { cn } from "@/lib/utils"
 
@@ -29,6 +29,8 @@ export type SaleOperationTotalBarProps = {
   totalPagado?: number
   className?: string
   flush?: boolean
+  totalLabel?: string
+  totalAriaLabel?: string
 }
 
 const breakdownLabelClass =
@@ -51,6 +53,8 @@ export function SaleOperationTotalBar({
   totalPagado = 0,
   className,
   flush = false,
+  totalLabel = "Total a cobrar",
+  totalAriaLabel,
 }: SaleOperationTotalBarProps) {
   const itemsDiscountAmount =
     descuentoItemsMonto ?? descuentoCatalogoMonto ?? 0
@@ -59,20 +63,25 @@ export function SaleOperationTotalBar({
   const showGeneralDiscount = hayDescuento && descuentoMonto > 0
   const showPromociones = promocionesAplicadasMonto > 0
   const showPagado = totalPagado > 0
-  const showSubtotalBreakdown =
-    showItemsDiscount ||
-    showGeneralDiscount ||
-    showPromociones ||
-    showPagado ||
-    subtotalOriginal > subtotal
-
   const subtotalDisplay =
     subtotalOriginal > 0 ? subtotalOriginal : subtotal
+  const showSubtotalBreakdown =
+    subtotalDisplay > 0 &&
+    (showItemsDiscount ||
+      showGeneralDiscount ||
+      showPromociones ||
+      showPagado)
+
+  const subtotalAmountClass = cn(
+    saleOpImporteBaseClass,
+    amountColumnClass,
+    "text-sm font-semibold text-white/78",
+  )
 
   return (
     <div
       role="region"
-      aria-label="Total a cobrar"
+      aria-label={totalAriaLabel ?? totalLabel}
       className={cn(
         "relative box-border flex w-full shrink-0 flex-col justify-center border-t border-emerald-500/35 backdrop-blur-xl",
         flush ? "px-3 py-2 sm:px-3 sm:py-2.5" : saleOpFooterBarPaddingClass,
@@ -101,19 +110,9 @@ export function SaleOperationTotalBar({
             <span className={cn(breakdownLabelClass, "self-center")}>
               Subtotal
             </span>
-            <p className={cn(saleOpImporteTotalMutedClass, amountColumnClass)}>
+            <p className={subtotalAmountClass}>
               {saleOpFmt.format(subtotalDisplay)}
             </p>
-            {showPromociones ? (
-              <>
-                <span className={cn(breakdownLabelClass, "self-center")}>
-                  Promociones aplicadas ({promocionesAplicadasCount})
-                </span>
-                <p className={cn(saleOpImporteTotalDiscountClass, amountColumnClass)}>
-                  −{saleOpFmt.format(promocionesAplicadasMonto)}
-                </p>
-              </>
-            ) : null}
             {showItemsDiscount ? (
               <>
                 <span className={cn(breakdownLabelClass, "self-center")}>
@@ -121,6 +120,16 @@ export function SaleOperationTotalBar({
                 </span>
                 <p className={cn(saleOpImporteTotalDiscountClass, amountColumnClass)}>
                   −{saleOpFmt.format(itemsDiscountAmount)}
+                </p>
+              </>
+            ) : null}
+            {showPromociones ? (
+              <>
+                <span className={cn(breakdownLabelClass, "self-center")}>
+                  Promociones aplicadas ({promocionesAplicadasCount})
+                </span>
+                <p className={cn(saleOpImporteTotalDiscountClass, amountColumnClass)}>
+                  −{saleOpFmt.format(promocionesAplicadasMonto)}
                 </p>
               </>
             ) : null}
@@ -140,7 +149,7 @@ export function SaleOperationTotalBar({
                   Pagado
                 </span>
                 <p className={cn(saleOpImporteTotalDiscountClass, amountColumnClass)}>
-                  {saleOpFmt.format(totalPagado)}
+                  −{saleOpFmt.format(totalPagado)}
                 </p>
               </>
             ) : null}
@@ -151,7 +160,7 @@ export function SaleOperationTotalBar({
             "self-center text-[10px] font-semibold uppercase tracking-[0.16em] text-emerald-200/80",
           )}
         >
-          Total a cobrar
+          {totalLabel}
         </p>
         <p
           className={cn(saleOpImporteTotalClass, amountColumnClass, "self-center")}

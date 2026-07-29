@@ -4,12 +4,11 @@ import { CartItemTitleMarquee } from "@/components/sale-operation/CartItemTitleM
 import { SaleOperationCartQuantityStepper } from "@/components/sale-operation/SaleOperationCartQuantityStepper"
 import {
   saleOpFmt,
-  saleOpImporteBaseClass,
   saleOpImporteCartClass,
   saleOpImporteCartMutedClass,
 } from "@/components/sale-operation/saleOperationStyles"
 import { cn } from "@/lib/utils"
-import { MessageSquare, Trash2 } from "lucide-react"
+import { Trash2 } from "lucide-react"
 import type { ReactNode } from "react"
 
 type Props = {
@@ -26,9 +25,6 @@ type Props = {
   onQuantityDecrease: () => void
   onQuantityIncrease: () => void
   onRemove?: () => void
-  tieneComentario?: boolean
-  tieneDescuento?: boolean
-  descuentoLabel?: string
   expandedContent?: ReactNode
   hideQuantityStepper?: boolean
   quantityStepperFallback?: ReactNode
@@ -49,9 +45,6 @@ export function SaleOperationCartItem({
   onQuantityDecrease,
   onQuantityIncrease,
   onRemove,
-  tieneComentario = false,
-  tieneDescuento = false,
-  descuentoLabel,
   expandedContent,
   hideQuantityStepper = false,
   quantityStepperFallback,
@@ -99,42 +92,18 @@ export function SaleOperationCartItem({
           active={expanded}
           className="text-sm font-semibold text-slate-900"
         />
-        <div className="mt-0.5 flex min-w-0 items-center gap-1">
-          <div className="min-w-0 flex-1">
-            {descripcion ? (
-              <p className="line-clamp-1 text-xs text-slate-500">{descripcion}</p>
-            ) : (
-              <p className="line-clamp-1 text-xs text-slate-500">
-                {saleOpFmt.format(precioUnitario)} c/u
-              </p>
-            )}
-          </div>
-          {tieneComentario ? (
-            <span
-              className="inline-flex shrink-0 items-center rounded-full border border-sky-200 bg-sky-50 px-1.5 py-0 text-[10px] font-semibold text-sky-800"
-              title="Tiene comentario para cocina"
-            >
-              <span className="sr-only">Comentario</span>
-              <MessageSquare className="size-3 sm:hidden" aria-hidden />
-              <span aria-hidden className="hidden sm:inline">
-                Nota
-              </span>
-            </span>
-          ) : null}
-          {tieneDescuento && descuentoLabel ? (
-            <span
-              className={cn(
-                "inline-flex max-w-22 shrink-0 items-center justify-center truncate rounded-full border border-emerald-200 bg-emerald-50 px-1.5 py-0 text-[10px] font-semibold text-emerald-800",
-                saleOpImporteBaseClass,
-              )}
-            >
-              {descuentoLabel}
-            </span>
-          ) : null}
+        <div className="mt-0.5 min-w-0">
+          {descripcion ? (
+            <p className="line-clamp-1 text-xs text-slate-500">{descripcion}</p>
+          ) : (
+            <p className="line-clamp-1 text-xs text-slate-500">
+              {saleOpFmt.format(precioUnitario)} c/u
+            </p>
+          )}
         </div>
       </div>
       <div className="text-right">
-        {tieneDescuento && precioBase > precioFinal && precioFinal >= 0 ? (
+        {precioBase > precioFinal && precioFinal >= 0 ? (
           <p className={cn(saleOpImporteCartMutedClass, "line-through")}>
             {formatPrice(precioBase)}
           </p>

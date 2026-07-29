@@ -18,6 +18,9 @@ export const saleOpImporteCartMutedClass = cn(
   "text-[11px] text-slate-400",
 )
 
+export const cartListHeaderRowClass =
+  "flex items-center justify-between gap-2 px-3 py-2"
+
 export const saleOpImporteTotalClass = cn(
   saleOpImporteBaseClass,
   "whitespace-nowrap text-[clamp(1.05rem,1.75vw,1.4375rem)] font-semibold text-white/90",

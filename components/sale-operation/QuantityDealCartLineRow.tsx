@@ -53,8 +53,6 @@ export function QuantityDealCartLineRow({
       onQuantityDecrease={() => {}}
       onQuantityIncrease={() => {}}
       onRemove={onRemove}
-      tieneDescuento
-      descuentoLabel={promotionName}
       expandedContent={
         <div className="flex items-center gap-2 opacity-60">
           <button

@@ -2,26 +2,37 @@
 
 import type { OperationCartLineOverrideState } from "@/components/sale-operation/OperationCartLineRow"
 import { CheckoutDialogFooter } from "@/components/checkout/CheckoutDialogFooter"
+import {
+  CheckoutDiscountModeSegment,
+  CheckoutFieldHint,
+  CheckoutNumericValueField,
+  CheckoutQuantityPanel,
+  CheckoutSectionLabel,
+  CheckoutSectionPanel,
+  type CheckoutDiscountMode,
+} from "@/components/checkout/CheckoutFormFields"
 import { SaleOperationCartQuantityStepper } from "@/components/sale-operation/SaleOperationCartQuantityStepper"
+import { CartLineSubtitleRow } from "@/components/sale-operation/CartLineSubtitleRow"
+import {
+  CartLineQuantityLabel,
+  cartLineRowGridClass,
+  cartLineRowGridNoPriceClass,
+} from "@/components/sale-operation/CartLineQuantityLabel"
 import {
   saleOpDialogBody,
   saleOpDialogContentMd,
-  saleOpDialogDestructiveBtn,
   saleOpDialogHeader,
   saleOpFmt,
   saleOpImporteBaseClass,
   saleOpImporteCartClass,
-  saleOpImporteCartMutedClass,
 } from "@/components/sale-operation/saleOperationStyles"
-import { Button } from "@/components/ui/button"
+import { Field, FieldGroup, FieldLabel } from "@/components/ui/field"
 import {
   Dialog,
   DialogContent,
-  DialogDescription,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
-import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import {
   comboComponentCommentKey,
@@ -35,8 +46,8 @@ import {
 } from "@/lib/menuCartLineMerge"
 import { getRowPaymentStatus } from "@/lib/partialCheckoutSelection"
 import { cn } from "@/lib/utils"
-import { Banknote, CheckCircle2, Hash, MessageSquare, Percent, Trash2 } from "lucide-react"
-import { useRef, useState, type ReactNode } from "react"
+import { Banknote, CheckCircle2, MessageSquare, Percent } from "lucide-react"
+import { useId, useRef, useState } from "react"
 
 type Props = {
   row: MostradorCartDisplayRow
@@ -62,38 +73,6 @@ function discountSnapshot(
   }
 }
 
-function EditSection({
-  title,
-  icon: Icon,
-  children,
-  disabled,
-  disabledHint,
-}: {
-  title: string
-  icon: typeof Percent
-  children: ReactNode
-  disabled?: boolean
-  disabledHint?: string
-}) {
-  return (
-    <section className="space-y-2">
-      <div className="flex items-center gap-1.5">
-        <Icon className="size-3.5 text-slate-400" aria-hidden />
-        <h3 className="text-[11px] font-bold uppercase tracking-[0.08em] text-slate-500">
-          {title}
-        </h3>
-      </div>
-      {disabled ? (
-        <p className="rounded-lg border border-dashed border-slate-200 bg-slate-50 px-3 py-2.5 text-xs text-slate-500">
-          {disabledHint}
-        </p>
-      ) : (
-        children
-      )}
-    </section>
-  )
-}
-
 export function MostradorCartLineCard({
   row,
   overrides,
@@ -113,13 +92,15 @@ export function MostradorCartLineCard({
   const [commentDraft, setCommentDraft] = useState("")
   const [quantityDraft, setQuantityDraft] = useState(row.cantidad)
   const [discountModeDraft, setDiscountModeDraft] = useState<
-    "porcentaje" | "fijo"
+    CheckoutDiscountMode
   >("porcentaje")
   const [discountDraft, setDiscountDraft] = useState("")
+  const commentFieldId = useId()
+  const discountFieldId = useId()
   const baselineCantidadRef = useRef(row.cantidad)
   const initialCommentRef = useRef("")
   const initialDiscountRef = useRef({
-    mode: "porcentaje" as "porcentaje" | "fijo",
+    mode: "porcentaje" as CheckoutDiscountMode,
     draft: "",
     suppressCatalog: true,
   })
@@ -139,10 +120,6 @@ export function MostradorCartLineCard({
   const descuentoSuprimido = itemDescuentoSuprimido[row.cartLineId] === true
   const descuentoRaw = itemDescuentoDraft[row.cartLineId] ?? ""
   const tieneComentario = comentario.trim().length > 0
-  const tieneDescuentoVisual =
-    !row.hidePrice &&
-    pricing.precioBase > pricing.precioFinal &&
-    pricing.precioFinal >= 0
   const showPrice = !row.hidePrice
 
   const canChangeQuantity =
@@ -155,6 +132,7 @@ export function MostradorCartLineCard({
       : "La cantidad está definida por la promoción. Eliminá la promo para quitar estos ítems."
 
   const productoDescripcion = productDescriptionForMostradorRow(row)
+  const showDescripcion = Boolean(productoDescripcion?.trim())
 
   const isCartLineLocked =
     row.paidLocked === true ||
@@ -221,14 +199,33 @@ export function MostradorCartLineCard({
     closeModal()
   }
 
-  const rowGridClass =
-    "grid w-full grid-cols-[2.25rem_minmax(0,1fr)_auto] items-start gap-x-3 px-3 py-2.5 text-left"
+  const maxDiscountLine = pricing.precioBase
+
+  const handleDiscountChange = (raw: string) => {
+    if (!/^\d*$/.test(raw)) return
+    if (raw === "") {
+      setDiscountDraft("")
+      return
+    }
+    if (discountModeDraft === "fijo" && Number(raw) > maxDiscountLine) {
+      setDiscountModeDraft("porcentaje")
+      setDiscountDraft("100")
+      return
+    }
+    const nextValue =
+      discountModeDraft === "porcentaje"
+        ? String(Math.min(100, Number(raw)))
+        : raw
+    setDiscountDraft(nextValue)
+  }
+
+  const showLinePrice = showPrice && row.promoGroupVariant !== "discount"
+  const rowGridLayoutClass =
+    showLinePrice || !showPrice ? cartLineRowGridClass : cartLineRowGridNoPriceClass
 
   const rowContent = (
     <>
-      <span className="pt-0.5 text-sm font-bold tabular-nums text-slate-900">
-        {row.cantidad}
-      </span>
+      <CartLineQuantityLabel cantidad={row.cantidad} />
 
       <span className="min-w-0">
         <span className="flex items-center gap-1.5">
@@ -251,34 +248,23 @@ export function MostradorCartLineCard({
             </span>
           ) : null}
         </span>
-        {productoDescripcion ? (
-          <span className="mt-0.5 block truncate text-xs leading-snug text-slate-500">
-            {productoDescripcion}
-          </span>
-        ) : null}
+        <CartLineSubtitleRow
+          descripcion={productoDescripcion}
+          showDescripcion={showDescripcion}
+        />
       </span>
 
-      <span className="pt-0.5 text-right">
-        {showPrice ? (
-          <>
-            {tieneDescuentoVisual ? (
-              <span
-                className={cn(
-                  saleOpImporteCartMutedClass,
-                  "block text-[10px] line-through",
-                )}
-              >
-                {saleOpFmt.format(pricing.precioBase)}
-              </span>
-            ) : null}
+      {showLinePrice || !showPrice ? (
+        <span className="pt-0.5 text-right">
+          {showLinePrice ? (
             <span className={saleOpImporteCartClass}>
               {saleOpFmt.format(pricing.precioFinal)}
             </span>
-          </>
-        ) : (
-          <span className="text-sm font-medium text-slate-400">—</span>
-        )}
-      </span>
+          ) : (
+            <span className="text-sm font-medium text-slate-400">—</span>
+          )}
+        </span>
+      ) : null}
     </>
   )
 
@@ -293,7 +279,10 @@ export function MostradorCartLineCard({
       >
         {isCartLineLocked ? (
           <div
-            className={cn(rowGridClass, paymentStatus.isFullyPaid && "opacity-70")}
+            className={cn(
+              rowGridLayoutClass,
+              paymentStatus.isFullyPaid && "opacity-70",
+            )}
             aria-label={`${row.nombre} (pagado)`}
           >
             {rowContent}
@@ -303,7 +292,7 @@ export function MostradorCartLineCard({
             type="button"
             onClick={openModal}
             className={cn(
-              rowGridClass,
+              rowGridLayoutClass,
               "transition-colors hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-slate-300/80",
             )}
             aria-label={`Editar ${row.nombre}`}
@@ -332,127 +321,119 @@ export function MostradorCartLineCard({
         }}
       >
         <DialogContent className={saleOpDialogContentMd}>
-          <DialogHeader className={saleOpDialogHeader}>
-            <DialogTitle>{row.nombre}</DialogTitle>
-            <DialogDescription>Editá cantidad, comentario o descuento.</DialogDescription>
+          <DialogHeader className={cn(saleOpDialogHeader, "shrink-0")}>
+            <DialogTitle className="text-base font-semibold tracking-tight">
+              {row.nombre}
+            </DialogTitle>
+            <p className="text-sm text-muted-foreground">
+              Cantidad, comentario o descuento de la línea.
+            </p>
           </DialogHeader>
 
-          <div className={cn(saleOpDialogBody, "space-y-5")}>
-            <EditSection
-              title="Cantidad"
-              icon={Hash}
-              disabled={!canChangeQuantity}
-              disabledHint={quantityDisabledHint}
-            >
-              <div className="flex justify-center py-1">
-                <SaleOperationCartQuantityStepper
-                  nombre={row.nombre}
-                  cantidad={quantityDraft}
-                  onDecrease={() =>
-                    setQuantityDraft((prev) => Math.max(1, prev - 1))
-                  }
-                  onIncrease={() => setQuantityDraft((prev) => prev + 1)}
-                />
-              </div>
-            </EditSection>
-
-            <EditSection
-              title="Comentario"
-              icon={MessageSquare}
-              disabled={!canComment}
-              disabledHint="Este ítem no admite comentario."
-            >
-              <Textarea
-                value={commentDraft}
-                onChange={(e) => setCommentDraft(e.target.value)}
-                placeholder="Ej: sin cebolla, bien cocido..."
-                rows={3}
-                className="resize-none"
-              />
-            </EditSection>
-
-            <EditSection
-              title="Descuento"
-              icon={Percent}
-              disabled={!canDiscount}
-              disabledHint="El descuento está incluido en la promoción aplicada."
-            >
-              <div className="space-y-2">
-                <div className="flex items-center gap-2">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    className={cn(
-                      "h-9 flex-1",
-                      discountModeDraft === "porcentaje" &&
-                        "border-primary/40 bg-primary/5",
-                    )}
-                    onClick={() => setDiscountModeDraft("porcentaje")}
-                  >
-                    <Percent className="size-3.5" aria-hidden />
-                    Porcentaje
-                  </Button>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    className={cn(
-                      "h-9 flex-1",
-                      discountModeDraft === "fijo" &&
-                        "border-primary/40 bg-primary/5",
-                    )}
-                    onClick={() => setDiscountModeDraft("fijo")}
-                  >
-                    <Banknote className="size-3.5" aria-hidden />
-                    Monto fijo
-                  </Button>
-                </div>
-                <div className="relative">
-                  <span className="pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 text-slate-400">
-                    {discountModeDraft === "porcentaje" ? (
-                      <Percent className="size-4" />
-                    ) : (
-                      <span className={cn(saleOpImporteBaseClass, "text-xs")}>
-                        $
-                      </span>
-                    )}
-                  </span>
-                  <Input
-                    value={discountDraft}
-                    onChange={(e) => {
-                      const raw = e.target.value
-                      if (!/^\d*$/.test(raw)) return
-                      setDiscountDraft(raw)
-                    }}
-                    placeholder={
-                      discountModeDraft === "porcentaje" ? "Ej: 10" : "Ej: 500"
-                    }
-                    inputMode="numeric"
-                    pattern="[0-9]*"
-                    className="h-10 pl-9"
-                  />
-                </div>
-              </div>
-            </EditSection>
-
-            <div className="border-t border-slate-200/80 pt-4">
-              <Button
-                type="button"
-                variant="ghost"
-                className={cn(
-                  saleOpDialogDestructiveBtn,
-                  "h-10 w-full justify-center gap-2",
+          <div
+            className={cn(
+              saleOpDialogBody,
+              "min-h-0 flex-1 space-y-4 overflow-y-auto overscroll-contain",
+            )}
+          >
+            <CheckoutSectionPanel>
+              <div className="space-y-2.5">
+                <CheckoutSectionLabel>Cantidad</CheckoutSectionLabel>
+                {!canChangeQuantity ? (
+                  <p className="rounded-xl border border-dashed border-border/70 bg-muted/10 px-3.5 py-2.5 text-xs leading-snug text-muted-foreground">
+                    {quantityDisabledHint}
+                  </p>
+                ) : (
+                  <CheckoutQuantityPanel>
+                    <SaleOperationCartQuantityStepper
+                      nombre={row.nombre}
+                      cantidad={quantityDraft}
+                      onDecrease={() =>
+                        setQuantityDraft((prev) => Math.max(1, prev - 1))
+                      }
+                      onIncrease={() => setQuantityDraft((prev) => prev + 1)}
+                    />
+                  </CheckoutQuantityPanel>
                 )}
-                onClick={handleRemove}
-              >
-                <Trash2 className="size-4" aria-hidden />
-                Eliminar del pedido
-              </Button>
-            </div>
+              </div>
+            </CheckoutSectionPanel>
+
+            <CheckoutSectionPanel>
+              {!canComment ? (
+                <p className="rounded-xl border border-dashed border-border/70 bg-muted/10 px-3.5 py-2.5 text-xs leading-snug text-muted-foreground">
+                  Este ítem no admite comentario.
+                </p>
+              ) : (
+                <FieldGroup className="gap-4">
+                  <Field>
+                    <FieldLabel htmlFor={commentFieldId}>Comentario</FieldLabel>
+                    <Textarea
+                      id={commentFieldId}
+                      value={commentDraft}
+                      onChange={(e) => setCommentDraft(e.target.value)}
+                      placeholder="Ej: sin cebolla, bien cocido..."
+                      rows={3}
+                      className="min-h-22 resize-none rounded-xl"
+                    />
+                  </Field>
+                </FieldGroup>
+              )}
+            </CheckoutSectionPanel>
+
+            <CheckoutSectionPanel>
+              {!canDiscount ? (
+                <p className="rounded-xl border border-dashed border-border/70 bg-muted/10 px-3.5 py-2.5 text-xs leading-snug text-muted-foreground">
+                  El descuento está incluido en la promoción aplicada.
+                </p>
+              ) : (
+                <>
+                  <div className="space-y-2.5">
+                    <CheckoutSectionLabel>Tipo de descuento</CheckoutSectionLabel>
+                    <CheckoutDiscountModeSegment
+                      mode={discountModeDraft}
+                      fixedAmountDisabled={maxDiscountLine <= 0}
+                      onChange={setDiscountModeDraft}
+                    />
+                  </div>
+
+                  <div className="space-y-2.5">
+                    <CheckoutSectionLabel>Valor</CheckoutSectionLabel>
+                    <CheckoutNumericValueField
+                      id={discountFieldId}
+                      icon={
+                        discountModeDraft === "porcentaje" ? Percent : Banknote
+                      }
+                      value={discountDraft}
+                      onChange={handleDiscountChange}
+                      suffix={discountModeDraft === "porcentaje" ? "%" : "$"}
+                      disabled={
+                        discountModeDraft === "fijo" && maxDiscountLine <= 0
+                      }
+                      ariaLabel={
+                        discountModeDraft === "porcentaje"
+                          ? "Porcentaje de descuento"
+                          : "Monto fijo de descuento"
+                      }
+                    />
+                    {discountModeDraft === "fijo" && maxDiscountLine > 0 ? (
+                      <CheckoutFieldHint>
+                        Máximo sobre esta línea:{" "}
+                        <span className={saleOpImporteBaseClass}>
+                          {saleOpFmt.format(maxDiscountLine)}
+                        </span>
+                      </CheckoutFieldHint>
+                    ) : null}
+                  </div>
+                </>
+              )}
+            </CheckoutSectionPanel>
           </div>
 
           <CheckoutDialogFooter
+            secondaryAction={{
+              label: "Eliminar del pedido",
+              onClick: handleRemove,
+            }}
             primary={{ label: "Listo", onClick: handleDone }}
           />
         </DialogContent>
