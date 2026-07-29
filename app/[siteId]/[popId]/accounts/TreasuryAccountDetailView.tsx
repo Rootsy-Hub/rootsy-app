@@ -1,5 +1,6 @@
 "use client"
 
+import { TreasuryAccountDetailContentSkeleton, TreasuryAccountDetailSkeleton } from "@/app/[siteId]/[popId]/accounts/TreasuryAccountDetailSkeleton"
 import {
   getTreasuryAccountPageData,
   type TreasuryAccountTableRow,
@@ -24,15 +25,24 @@ import {
   type TreasuryAccountDetailResult,
   type TreasurySettlementRow,
 } from "@/app/[siteId]/[popId]/accounts/treasuryDetailActions"
+import { TreasuryCashMovementsTable } from "@/app/[siteId]/[popId]/accounts/TreasuryCashMovementsTable"
+import {
+  ChildIntegrationChip,
+  TreasuryChildReconciliationPanel,
+} from "@/app/[siteId]/[popId]/accounts/TreasuryChildReconciliationPanel"
+import { TreasuryReconcileModal } from "@/app/[siteId]/[popId]/accounts/TreasuryReconcileModal"
 import {
   defaultTreasuryPeriodEnd,
-  defaultTreasuryPeriodStart,
+  exportTreasuryAccountPeriodCsv,
   findMatchingBankStatementLine,
   formatTreasuryShortDate,
   treasuryMoneyFmt as fmt,
   treasuryMovementKindLabel,
 } from "@/app/[siteId]/[popId]/accounts/treasuryAccountUiUtils"
+import { DataWorkspacePeriodFilter } from "@/components/data-workspace/DataWorkspacePeriodFilter"
+import { dataWorkspaceShellCard } from "@/components/data-workspace/dataWorkspaceListStyles"
 import { Button } from "@/components/ui/button"
+import { DatePicker } from "@/components/ui/date-picker"
 import {
   Dialog,
   DialogContent,
@@ -44,22 +54,34 @@ import {
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { resolveTreasuryAccountBrand } from "@/lib/treasuryAccountBrands"
+import { treasuryKindLabel } from "@/lib/treasuryAccountKinds"
+import type { TreasuryAccountKind } from "@/lib/treasuryAccountKinds"
+import {
+  computeDataWorkspaceDateBounds,
+  type DataWorkspaceDatePreset,
+} from "@/lib/dataWorkspaceDateFilter"
 import { cn } from "@/lib/utils"
 import {
+  ArrowLeft,
   CheckCircle2,
-  CreditCard,
-  Landmark,
+  ChevronDown,
+  Download,
   Trash2,
   Upload,
-  Wifi,
 } from "lucide-react"
 import {
   useCallback,
   useEffect,
+  useMemo,
   useState,
   type FormEvent,
+  type ReactNode,
 } from "react"
+import type { DateRange } from "react-day-picker"
+
+const shellCard = dataWorkspaceShellCard
 
 type DetailSection = "resumen" | "movimientos" | "conciliacion"
 
@@ -68,36 +90,94 @@ function moneyOrDash(amount: number | null | undefined): string {
   return fmt.format(amount)
 }
 
-function BalanceTile({
+function DashboardKpi({
   label,
   value,
-  highlight,
+  hint,
 }: {
   label: string
   value: string
-  highlight?: "amber"
+  hint?: string
 }) {
   return (
-    <div
-      className={cn(
-        "rounded-xl border px-4 py-3",
-        highlight
-          ? "border-amber-200/70 bg-amber-50/80 dark:border-amber-900/40 dark:bg-amber-950/30"
-          : "border-border/60 bg-muted/20",
-      )}
-    >
+    <div className="px-4 py-4 lg:px-5">
+      <p className="text-[11px] font-medium uppercase tracking-[0.12em] text-muted-foreground">
+        {label}
+      </p>
+      <p className="mt-1.5 font-mono text-2xl font-semibold tabular-nums tracking-tight text-foreground">
+        {value}
+      </p>
+      {hint ? (
+        <p className="mt-1 text-xs text-muted-foreground">{hint}</p>
+      ) : null}
+    </div>
+  )
+}
+
+function DashboardSectionHeader({
+  title,
+  description,
+  action,
+}: {
+  title: string
+  description?: string
+  action?: ReactNode
+}) {
+  return (
+    <div className="mb-3 flex items-start justify-between gap-3">
+      <div>
+        <h3 className="text-sm font-semibold text-foreground">{title}</h3>
+        {description ? (
+          <p className="mt-0.5 text-[11px] text-muted-foreground">{description}</p>
+        ) : null}
+      </div>
+      {action ? <div className="shrink-0">{action}</div> : null}
+    </div>
+  )
+}
+
+function DashboardEmptyState({ message }: { message: string }) {
+  return (
+    <div className="flex min-h-[12rem] items-center justify-center px-4 py-8 text-center text-sm text-muted-foreground">
+      {message}
+    </div>
+  )
+}
+
+const dashboardKpiStripClass =
+  "grid divide-y divide-border/60 border-b border-border/60 bg-muted/5 sm:grid-cols-3 sm:divide-x sm:divide-y-0"
+
+const dashboardBodyClass = "px-4 py-4 lg:px-5"
+
+const dashboardSectionClass =
+  "border-t border-border/60 px-4 py-4 lg:px-5"
+
+function TreasuryStat({
+  label,
+  value,
+  large,
+  inverted,
+}: {
+  label: string
+  value: string
+  large?: boolean
+  inverted?: boolean
+}) {
+  return (
+    <div className={inverted ? "text-right sm:text-left" : undefined}>
       <p
         className={cn(
-          "text-[10px] font-semibold uppercase tracking-wide",
-          highlight ? "text-amber-900/80" : "text-muted-foreground",
+          "text-[11px] font-medium uppercase tracking-[0.14em]",
+          inverted ? "text-white/75" : "text-muted-foreground",
         )}
       >
         {label}
       </p>
       <p
         className={cn(
-          "mt-1 font-mono text-xl font-bold tabular-nums",
-          highlight ? "text-amber-950 dark:text-amber-100" : "text-foreground",
+          "mt-1 font-mono font-bold tabular-nums tracking-tight",
+          inverted ? "text-white" : "text-foreground",
+          large ? "mt-1.5 text-2xl sm:text-3xl" : "text-base sm:text-lg",
         )}
       >
         {value}
@@ -106,89 +186,20 @@ function BalanceTile({
   )
 }
 
-function ChildIntegrationCard({
-  child,
-  canSettle,
-  canUpdate,
-  onPayCard,
-  onAcreditPos,
-  onOpenDetail,
-}: {
-  child: TreasuryChildAccountRow
-  canSettle: boolean
-  canUpdate: boolean
-  onPayCard: (child: TreasuryChildAccountRow) => void
-  onAcreditPos: (child: TreasuryChildAccountRow) => void
-  onOpenDetail: (childId: string) => void
-}) {
-  const isPos = child.childRole === "pos"
-  const balance = isPos
-    ? (child.ledgerBalance ?? 0)
-    : child.outstandingBalance
-
-  return (
-    <div className="rounded-xl border border-border/60 bg-card p-4 shadow-sm">
-      <div className="flex items-start justify-between gap-3">
-        <div className="min-w-0">
-          <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
-            {isPos ? "Terminal POS" : "Tarjeta corporativa"}
-          </p>
-          <button
-            type="button"
-            className="mt-1 truncate text-left text-base font-semibold text-foreground hover:underline"
-            onClick={() => onOpenDetail(child.id)}
-          >
-            {child.name}
-          </button>
-        </div>
-        {isPos ? (
-          <Wifi className="size-5 shrink-0 text-muted-foreground" aria-hidden />
-        ) : (
-          <CreditCard className="size-5 shrink-0 text-muted-foreground" aria-hidden />
-        )}
-      </div>
-      <p className="mt-3 font-mono text-2xl font-bold tabular-nums">
-        {fmt.format(balance)}
-      </p>
-      <p className="mt-1 text-xs text-muted-foreground">
-        {isPos ? "A liquidar en este terminal" : "Deuda pendiente del resumen"}
-      </p>
-      <div className="mt-4 flex flex-wrap gap-2">
-        {isPos && canUpdate && balance > 0 ? (
-          <Button type="button" size="sm" onClick={() => onAcreditPos(child)}>
-            Registrar acreditación
-          </Button>
-        ) : null}
-        {!isPos && canSettle && balance > 0 ? (
-          <Button type="button" size="sm" onClick={() => onPayCard(child)}>
-            Pagar resumen
-          </Button>
-        ) : null}
-        <Button
-          type="button"
-          size="sm"
-          variant="outline"
-          onClick={() => onOpenDetail(child.id)}
-        >
-          Ver detalle
-        </Button>
-      </div>
-    </div>
-  )
-}
-
 export function TreasuryAccountDetailView({
   popId,
   accountId,
+  accountKindHint,
+  onBack,
   onOpenAccount,
   onHubRefresh,
-  onAccountMetaChange,
 }: {
   popId: string
   accountId: string
+  accountKindHint?: TreasuryAccountKind
+  onBack: () => void
   onOpenAccount: (accountId: string) => void
   onHubRefresh?: () => void | Promise<void>
-  onAccountMetaChange?: (account: TreasuryAccountTableRow) => void
 }) {
   const [account, setAccount] = useState<TreasuryAccountTableRow | null>(null)
   const [children, setChildren] = useState<TreasuryChildAccountRow[]>([])
@@ -211,8 +222,16 @@ export function TreasuryAccountDetailView({
     null,
   )
   const [section, setSection] = useState<DetailSection>("resumen")
-  const [periodFrom, setPeriodFrom] = useState(defaultTreasuryPeriodStart)
-  const [periodTo, setPeriodTo] = useState(defaultTreasuryPeriodEnd)
+  const [datePreset, setDatePreset] =
+    useState<DataWorkspaceDatePreset>("this_month")
+  const [customDateRange, setCustomDateRange] = useState<
+    DateRange | undefined
+  >(undefined)
+
+  const dateBounds = useMemo(
+    () => computeDataWorkspaceDateBounds(datePreset, customDateRange),
+    [datePreset, customDateRange],
+  )
 
   const [csvText, setCsvText] = useState("")
   const [csvImporting, setCsvImporting] = useState(false)
@@ -223,6 +242,7 @@ export function TreasuryAccountDetailView({
   const [manualDirection, setManualDirection] = useState<"in" | "out">("out")
   const [manualSaving, setManualSaving] = useState(false)
   const [reconcileBusyKey, setReconcileBusyKey] = useState<string | null>(null)
+  const [manualLineOpen, setManualLineOpen] = useState(false)
 
   const [settleChild, setSettleChild] = useState<TreasuryChildAccountRow | null>(
     null,
@@ -240,6 +260,18 @@ export function TreasuryAccountDetailView({
   const [posNotes, setPosNotes] = useState("")
   const [posSaving, setPosSaving] = useState(false)
   const [posBanner, setPosBanner] = useState<string | null>(null)
+
+  const [reconcileOpen, setReconcileOpen] = useState(false)
+  const [selectedIntegrationChild, setSelectedIntegrationChild] =
+    useState<TreasuryChildAccountRow | null>(null)
+  const [childReconciliationRefreshKey, setChildReconciliationRefreshKey] =
+    useState(0)
+
+  useEffect(() => {
+    if (!selectedIntegrationChild) return
+    const updated = children.find((c) => c.id === selectedIntegrationChild.id)
+    if (updated) setSelectedIntegrationChild(updated)
+  }, [children, selectedIntegrationChild?.id])
 
   const loadPage = useCallback(async () => {
     if (!popId || !accountId) return null
@@ -259,10 +291,6 @@ export function TreasuryAccountDetailView({
     return res
   }, [popId, accountId])
 
-  useEffect(() => {
-    if (account) onAccountMetaChange?.(account)
-  }, [account, onAccountMetaChange])
-
   const loadDetail = useCallback(
     async (pageRes?: Awaited<ReturnType<typeof getTreasuryAccountPageData>>) => {
       if (!popId || !accountId) return
@@ -277,8 +305,8 @@ export function TreasuryAccountDetailView({
       }
 
       const res = await getTreasuryAccountDetail(popId, accountId, {
-        dateFrom: periodFrom,
-        dateTo: periodTo,
+        dateFrom: dateBounds.from ?? "",
+        dateTo: dateBounds.to ?? "",
         includeRelatedAccounts: childIds.length > 0,
         relatedTreasuryAccountIds: childIds,
       })
@@ -289,7 +317,7 @@ export function TreasuryAccountDetailView({
       }
       setDetailData(res.data)
     },
-    [popId, accountId, periodFrom, periodTo, isMother, children],
+    [popId, accountId, dateBounds.from, dateBounds.to, isMother, children],
   )
 
   useEffect(() => {
@@ -304,24 +332,9 @@ export function TreasuryAccountDetailView({
       setSection("resumen")
       setError(null)
       setDetailData(null)
+      setSelectedIntegrationChild(null)
       try {
-        const pageRes = await loadPage()
-        if (cancelled || !pageRes?.success) return
-
-        setDetailLoading(true)
-        setDetailError(null)
-        const childIds = pageRes.children.map((c) => c.id)
-        const res = await getTreasuryAccountDetail(popId, accountId, {
-          dateFrom: periodFrom,
-          dateTo: periodTo,
-          includeRelatedAccounts: pageRes.isMother && childIds.length > 0,
-          relatedTreasuryAccountIds: childIds,
-        })
-        if (!cancelled) {
-          setDetailLoading(false)
-          if (!res.success) setDetailError(res.error)
-          else setDetailData(res.data)
-        }
+        await loadPage()
       } finally {
         if (!cancelled) setLoading(false)
       }
@@ -329,18 +342,26 @@ export function TreasuryAccountDetailView({
     return () => {
       cancelled = true
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [popId, accountId])
+  }, [popId, accountId, loadPage])
+
+  useEffect(() => {
+    if (!popId || !accountId || loading || !account) return
+    void loadDetail()
+  }, [
+    popId,
+    accountId,
+    loading,
+    account,
+    dateBounds.from,
+    dateBounds.to,
+    loadDetail,
+  ])
 
   const reloadAll = useCallback(async () => {
     const pageRes = await loadPage()
     if (pageRes?.success) await loadDetail(pageRes)
     await onHubRefresh?.()
   }, [loadPage, loadDetail, onHubRefresh])
-
-  const applyPeriod = async () => {
-    await loadDetail()
-  }
 
   const handleImportCsv = async () => {
     if (!popId || !csvText.trim()) return
@@ -428,6 +449,12 @@ export function TreasuryAccountDetailView({
     await reloadAll()
   }
 
+  const toggleIntegrationChild = (child: TreasuryChildAccountRow) => {
+    setSelectedIntegrationChild((prev) =>
+      prev?.id === child.id ? null : child,
+    )
+  }
+
   const openPayCard = (child: TreasuryChildAccountRow) => {
     setSettleBanner(null)
     setSettleChild(child)
@@ -447,7 +474,7 @@ export function TreasuryAccountDetailView({
     const res = await recordTreasurySettlementForAccount(popId, {
       cardTreasuryAccountId: settleChild.id,
       fundingTreasuryAccountId: settleFundingId,
-      amount: Number(String(settleAmount).replace(",", ".")),
+      principalAmount: Number(String(settleAmount).replace(",", ".")),
       settledAt: settleDate,
       notes: settleNotes,
     })
@@ -484,7 +511,7 @@ export function TreasuryAccountDetailView({
     const res = await recordPosAcreditationForAccount(popId, {
       posTreasuryAccountId: posChild.id,
       motherTreasuryAccountId: motherId,
-      amount: Number(String(posAmount).replace(",", ".")),
+      principalAmount: Number(String(posAmount).replace(",", ".")),
       creditedAt: posDate,
       notes: posNotes,
     })
@@ -512,39 +539,184 @@ export function TreasuryAccountDetailView({
   const posChildren = children.filter((c) => c.childRole === "pos")
   const cardChildren = children.filter((c) => c.childRole === "card_payable")
   const recentMovements = detailData?.movements.slice(0, 12) ?? []
+  const isCashAccount = account?.kind === "cash"
+  const showTreasuryMovementDetails =
+    account?.kind === "bank" || account?.kind === "wallet"
+  const isMovementsOnlyView =
+    account?.kind === "cash" ||
+    account?.kind === "bank" ||
+    account?.kind === "wallet"
+  const isMotherBankWallet =
+    isMother &&
+    (account?.kind === "bank" || account?.kind === "wallet")
+  const skeletonVariant =
+    isMovementsOnlyView ||
+    accountKindHint === "cash" ||
+    accountKindHint === "bank" ||
+    accountKindHint === "wallet"
+      ? "cash"
+      : "default"
+
+  const integrationChildren = [...posChildren, ...cardChildren]
+  const tabItems: { id: DetailSection; label: string }[] = [
+    { id: "resumen", label: "Resumen" },
+    { id: "movimientos", label: "Movimientos" },
+    ...(detailData?.supportsBankReconciliation
+      ? [{ id: "conciliacion" as const, label: "Conciliación" }]
+      : []),
+  ]
+
+  const handleExportPeriod = () => {
+    if (!account || !detailData) return
+    exportTreasuryAccountPeriodCsv({
+      accountName: account.name,
+      dateFrom: dateBounds.from ?? "",
+      dateTo: dateBounds.to ?? "",
+      movements: detailData.movements,
+      totals: detailData.movementTotals,
+      includeTreasuryDetails: showTreasuryMovementDetails,
+    })
+  }
+
+  const periodFilter = (
+    <DataWorkspacePeriodFilter
+      variant="compact"
+      hideAllPreset
+      showActiveState={false}
+      preset={datePreset}
+      customRange={customDateRange}
+      onPresetChange={setDatePreset}
+      onCustomRangeChange={setCustomDateRange}
+      bounds={dateBounds}
+    />
+  )
+
+  const exportPeriodButton = (
+    <Button
+      type="button"
+      size="sm"
+      variant="outline"
+      disabled={!detailData || detailData.movements.length === 0}
+      onClick={handleExportPeriod}
+      className="gap-2 self-end border-border/80 bg-background font-medium shadow-sm lg:self-auto"
+    >
+      <Download className="size-4 shrink-0" aria-hidden />
+      Resumen Completo
+    </Button>
+  )
+
+  const movementsToolbar = (
+    <div className="flex flex-col gap-3 border-b border-border/60 bg-muted/15 px-4 py-3 lg:flex-row lg:items-center lg:justify-between lg:px-5">
+      <div className="min-w-0 flex-1">{periodFilter}</div>
+      {exportPeriodButton}
+    </div>
+  )
+
+  const resumenContent =
+    detailData ? (
+      <>
+        <div className={dashboardKpiStripClass}>
+          <DashboardKpi
+            label="Entradas del período"
+            value={fmt.format(detailData.movementTotals.in)}
+          />
+          <DashboardKpi
+            label="Salidas del período"
+            value={fmt.format(detailData.movementTotals.out)}
+          />
+          <DashboardKpi
+            label="Neto del período"
+            value={fmt.format(detailData.movementTotals.net)}
+            hint="Entradas menos salidas"
+          />
+        </div>
+        {isMovementsOnlyView ? (
+          <TreasuryCashMovementsTable
+            movements={detailData.movements}
+            fullWidth
+            showTreasuryDetails={showTreasuryMovementDetails}
+          />
+        ) : (
+          <div className={dashboardBodyClass}>
+            <DashboardSectionHeader
+              title="Últimos movimientos"
+              description="Vista rápida del período seleccionado"
+            />
+            {recentMovements.length > 0 ? (
+              <MovementList movements={recentMovements} compact embedded />
+            ) : (
+              <DashboardEmptyState message="No hay movimientos recientes en este período." />
+            )}
+          </div>
+        )}
+      </>
+    ) : detailLoading ? (
+      <TreasuryAccountDetailContentSkeleton variant={skeletonVariant} />
+    ) : null
+
+  const bottomPanelContent =
+    isMotherBankWallet && selectedIntegrationChild ? (
+      <TreasuryChildReconciliationPanel
+        popId={popId}
+        motherAccountId={accountId}
+        child={selectedIntegrationChild}
+        canConciliar={canUpdate}
+        datePreset={datePreset}
+        customDateRange={customDateRange}
+        dateBounds={dateBounds}
+        onPresetChange={setDatePreset}
+        onCustomRangeChange={setCustomDateRange}
+        onConciliar={() => setReconcileOpen(true)}
+        refreshKey={childReconciliationRefreshKey}
+      />
+    ) : (
+      <>
+        {movementsToolbar}
+        {detailError ? (
+          <div className="border-b border-destructive/20 bg-destructive/5 px-4 py-2.5 text-sm text-destructive lg:px-5">
+            {detailError}
+          </div>
+        ) : null}
+        {resumenContent}
+      </>
+    )
 
   return (
     <>
       <div className="relative flex w-full min-h-0 flex-1 flex-col">
         <div className="relative flex w-full flex-col gap-6 px-4 py-6 sm:px-6 lg:px-8">
           {loading ? (
-              <p className="text-sm text-muted-foreground">Cargando cuenta…</p>
-            ) : error ? (
-              <div className="rounded-2xl border border-destructive/25 bg-destructive/5 px-4 py-3 text-sm text-destructive">
-                {error}
-              </div>
-            ) : account ? (
-              <>
-                {parentAccount ? (
-                  <p className="text-sm text-muted-foreground">
-                    Vinculada a{" "}
-                    <button
-                      type="button"
-                      className="font-medium text-foreground underline-offset-2 hover:underline"
-                      onClick={() => onOpenAccount(parentAccount.id)}
-                    >
-                      {parentAccount.name}
-                    </button>
-                  </p>
-                ) : null}
-
-                <section
+            <TreasuryAccountDetailSkeleton variant={skeletonVariant} />
+          ) : error ? (
+            <div className="rounded-2xl border border-destructive/25 bg-destructive/5 px-4 py-3 text-sm text-destructive">
+              {error}
+            </div>
+          ) : account ? (
+            <>
+              <article className="overflow-hidden rounded-2xl border border-border/60 bg-card shadow-sm">
+                <div
                   className={cn(
-                    "overflow-hidden rounded-2xl border border-border/60 bg-card shadow-sm",
+                    "bg-linear-to-r px-4 py-5 sm:px-6 lg:px-8",
+                    headerGradient,
                   )}
                 >
-                  <div className={cn("bg-linear-to-br px-6 py-5", headerGradient)}>
-                    <div className="flex flex-wrap items-center gap-4">
+                  <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
+                    <div className="flex min-w-0 items-center gap-3 sm:gap-4">
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        className={cn(
+                          "size-9 shrink-0 backdrop-blur-sm",
+                          brand
+                            ? "text-white/90 hover:bg-white/15 hover:text-white"
+                            : "text-muted-foreground hover:bg-muted/60 hover:text-foreground",
+                        )}
+                        aria-label="Volver a cuentas"
+                        onClick={onBack}
+                      >
+                        <ArrowLeft className="size-5" aria-hidden />
+                      </Button>
                       <TreasuryBrandIsotype
                         brandKey={brand?.key}
                         monogram={
@@ -554,81 +726,102 @@ export function TreasuryAccountDetailView({
                         headerTextClass={headerText}
                         size="lg"
                       />
-                      <div>
+                      <div className="min-w-0">
+                        <p
+                          className={cn(
+                            "text-[10px] font-semibold uppercase tracking-[0.16em] opacity-85",
+                            headerText,
+                          )}
+                        >
+                          {treasuryKindLabel(account.kind)}
+                          {!account.isActive ? " · Inactiva" : ""}
+                        </p>
                         <TreasuryBrandName
                           preset={brand}
                           name={account.name}
                           textClass={headerText}
-                          className="text-2xl"
+                          className="mt-1.5 text-xl sm:text-2xl"
                         />
-                        <p className={cn("mt-1 text-sm opacity-85", headerText)}>
-                          {account.accountingAccountLabel}
-                        </p>
+                        {parentAccount ? (
+                          <p className={cn("mt-1 text-xs opacity-80", headerText)}>
+                            Vinculada a{" "}
+                            <button
+                              type="button"
+                              className="font-medium underline-offset-2 hover:underline"
+                              onClick={() => onOpenAccount(parentAccount.id)}
+                            >
+                              {parentAccount.name}
+                            </button>
+                          </p>
+                        ) : null}
                       </div>
                     </div>
-                  </div>
-                  <div className="grid gap-3 p-4 sm:grid-cols-2 lg:grid-cols-4">
-                    <BalanceTile
-                      label="Saldo real"
-                      value={moneyOrDash(account.ledgerBalance)}
-                    />
-                    <BalanceTile
-                      label="A liquidar"
-                      value={fmt.format(account.toLiquidateBalance)}
-                    />
-                    <BalanceTile
-                      label="A pagar"
-                      value={fmt.format(account.toPayBalance)}
-                    />
-                    {account.isCardPayable ? (
-                      <BalanceTile
-                        label="Deuda pendiente del resumen"
-                        value={fmt.format(account.outstandingBalance)}
-                        highlight="amber"
-                      />
-                    ) : null}
-                  </div>
-                </section>
 
-                {isMother && (posChildren.length > 0 || cardChildren.length > 0) ? (
-                  <section className="space-y-4">
-                    <div className="flex items-center gap-2">
-                      <Landmark className="size-4 text-muted-foreground" />
-                      <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
-                        Integraciones vinculadas
-                      </h2>
+                    <div
+                      className={cn(
+                        "flex shrink-0 flex-wrap items-end gap-x-6 gap-y-4 border-t pt-4 sm:gap-x-8 lg:border-t-0 lg:pt-0",
+                        brand ? "border-white/15" : "border-border/40",
+                      )}
+                    >
+                      <TreasuryStat
+                        label="Saldo real"
+                        value={moneyOrDash(account.ledgerBalance)}
+                        large
+                        inverted={Boolean(brand)}
+                      />
+                      {!isCashAccount ? (
+                        <>
+                          <TreasuryStat
+                            label="A liquidar"
+                            value={fmt.format(account.toLiquidateBalance)}
+                            inverted={Boolean(brand)}
+                          />
+                          <TreasuryStat
+                            label="A pagar"
+                            value={fmt.format(account.toPayBalance)}
+                            inverted={Boolean(brand)}
+                          />
+                        </>
+                      ) : null}
+                      {account.isCardPayable ? (
+                        <TreasuryStat
+                          label="Deuda del resumen"
+                          value={fmt.format(account.outstandingBalance)}
+                          inverted={Boolean(brand)}
+                        />
+                      ) : null}
                     </div>
-                    <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+                  </div>
+                </div>
+
+                {isMotherBankWallet && integrationChildren.length > 0 ? (
+                  <div className="border-t border-border/60 bg-background px-4 py-4 sm:px-6 lg:px-8">
+                    <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
                       {posChildren.map((child) => (
-                        <ChildIntegrationCard
+                        <ChildIntegrationChip
                           key={child.id}
                           child={child}
-                          canSettle={canSettle}
-                          canUpdate={canUpdate}
-                          onPayCard={openPayCard}
-                          onAcreditPos={openPosAcredit}
-                          onOpenDetail={onOpenAccount}
+                          selected={selectedIntegrationChild?.id === child.id}
+                          onToggle={toggleIntegrationChild}
                         />
                       ))}
                       {cardChildren.map((child) => (
-                        <ChildIntegrationCard
+                        <ChildIntegrationChip
                           key={child.id}
                           child={child}
-                          canSettle={canSettle}
-                          canUpdate={canUpdate}
-                          onPayCard={openPayCard}
-                          onAcreditPos={openPosAcredit}
-                          onOpenDetail={onOpenAccount}
+                          selected={selectedIntegrationChild?.id === child.id}
+                          onToggle={toggleIntegrationChild}
                         />
                       ))}
                     </div>
-                  </section>
+                  </div>
                 ) : null}
 
                 {!isMother && account.isCardPayable && canSettle ? (
-                  <div className="flex flex-wrap gap-2">
+                  <div className="border-t border-border/60 bg-background px-4 py-3 sm:px-6 lg:px-8">
                     <Button
                       type="button"
+                      size="sm"
                       disabled={account.outstandingBalance <= 0}
                       onClick={() =>
                         openPayCard({
@@ -653,9 +846,10 @@ export function TreasuryAccountDetailView({
                 (account.ledgerBalance ?? 0) > 0 &&
                 canUpdate &&
                 parentAccount ? (
-                  <div className="flex flex-wrap gap-2">
+                  <div className="border-t border-border/60 bg-background px-4 py-3 sm:px-6 lg:px-8">
                     <Button
                       type="button"
+                      size="sm"
                       onClick={() =>
                         openPosAcredit({
                           id: account.id,
@@ -673,192 +867,171 @@ export function TreasuryAccountDetailView({
                     </Button>
                   </div>
                 ) : null}
+              </article>
 
-                <section className="space-y-4">
-                  <div className="flex flex-wrap items-end justify-between gap-3">
-                    <div>
-                      <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
-                        Actividad y resumen
-                      </h2>
-                      <p className="mt-1 text-sm text-muted-foreground">
-                        Filtrá por período para ver entradas, salidas y movimientos
-                        recientes.
-                      </p>
-                    </div>
-                    <div className="flex gap-1 rounded-lg border border-border/60 p-1">
-                      {(
-                        [
-                          ["resumen", "Resumen"],
-                          ["movimientos", "Movimientos"],
-                          ...(detailData?.supportsBankReconciliation
-                            ? [["conciliacion", "Conciliación"] as const]
-                            : []),
-                        ] as const
-                      ).map(([id, label]) => (
-                        <button
-                          key={id}
-                          type="button"
-                          className={cn(
-                            "rounded-md px-3 py-1.5 text-xs font-semibold transition-colors",
-                            section === id
-                              ? "bg-background text-foreground shadow-sm"
-                              : "text-muted-foreground hover:text-foreground",
-                          )}
-                          onClick={() => setSection(id)}
-                        >
-                          {label}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-
-                  <div className="flex flex-wrap items-end gap-3 rounded-xl border border-border/60 bg-muted/15 p-4">
-                    <div className="space-y-1">
-                      <Label htmlFor="period-from" className="text-xs">
-                        Desde
-                      </Label>
-                      <Input
-                        id="period-from"
-                        type="date"
-                        value={periodFrom}
-                        onChange={(e) => setPeriodFrom(e.target.value)}
-                        className="h-9 w-40 bg-background"
-                      />
-                    </div>
-                    <div className="space-y-1">
-                      <Label htmlFor="period-to" className="text-xs">
-                        Hasta
-                      </Label>
-                      <Input
-                        id="period-to"
-                        type="date"
-                        value={periodTo}
-                        onChange={(e) => setPeriodTo(e.target.value)}
-                        className="h-9 w-40 bg-background"
-                      />
-                    </div>
-                    <Button
-                      type="button"
-                      size="sm"
-                      variant="secondary"
-                      disabled={detailLoading}
-                      onClick={() => void applyPeriod()}
+              {isMovementsOnlyView ? (
+                <div className={cn(shellCard, "overflow-hidden")}>
+                  {bottomPanelContent}
+                </div>
+              ) : (
+              <Tabs
+                value={section}
+                onValueChange={(v) => setSection(v as DetailSection)}
+                className="w-full"
+              >
+                <div className={cn(shellCard, "overflow-hidden")}>
+                  <div className="flex flex-col gap-3 border-b border-border/60 bg-muted/15 px-4 py-3 lg:flex-row lg:items-center lg:justify-between lg:px-5">
+                    <TabsList
+                      className={cn(
+                        "grid h-auto w-full gap-1 rounded-lg bg-background/70 p-1 shadow-sm",
+                        tabItems.length === 2 && "grid-cols-2",
+                        tabItems.length === 3 && "grid-cols-3",
+                        "lg:w-auto lg:min-w-[22rem]",
+                      )}
                     >
-                      {detailLoading ? "Actualizando…" : "Aplicar período"}
-                    </Button>
+                      {tabItems.map((tab) => (
+                        <TabsTrigger
+                          key={tab.id}
+                          value={tab.id}
+                          className="rounded-md py-2 text-xs font-semibold sm:text-sm"
+                        >
+                          {tab.label}
+                        </TabsTrigger>
+                      ))}
+                    </TabsList>
+
+                    {periodFilter}
                   </div>
 
                   {detailError ? (
-                    <p className="rounded-lg border border-destructive/25 bg-destructive/5 px-3 py-2 text-sm text-destructive">
+                    <div className="border-b border-destructive/20 bg-destructive/5 px-4 py-2.5 text-sm text-destructive lg:px-5">
                       {detailError}
-                    </p>
-                  ) : null}
-
-                  {section === "resumen" && detailData ? (
-                    <div className="grid gap-4 sm:grid-cols-3">
-                      <BalanceTile
-                        label="Entradas del período"
-                        value={fmt.format(detailData.movementTotals.in)}
-                      />
-                      <BalanceTile
-                        label="Salidas del período"
-                        value={fmt.format(detailData.movementTotals.out)}
-                      />
-                      <BalanceTile
-                        label="Neto del período"
-                        value={fmt.format(detailData.movementTotals.net)}
-                      />
                     </div>
                   ) : null}
 
-                  {section === "resumen" && recentMovements.length > 0 ? (
-                    <div>
-                      <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                        Últimos movimientos
-                      </h3>
-                      <MovementList movements={recentMovements} compact />
-                    </div>
-                  ) : null}
+                  <TabsContent value="resumen" className="mt-0">
+                    {resumenContent}
+                  </TabsContent>
 
-                  {section === "movimientos" && detailData ? (
-                    <div className="space-y-4">
-                      {detailData.settlements.length > 0 ? (
-                        <div>
-                          <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                            Liquidaciones del resumen
-                          </h3>
-                          <ul className="space-y-2 rounded-xl border border-border/60 p-3">
-                            {detailData.settlements.map((s: TreasurySettlementRow) => (
-                              <li
-                                key={s.id}
-                                className="flex items-start justify-between gap-2 text-sm"
-                              >
-                                <div>
-                                  <p className="font-medium tabular-nums">
-                                    {fmt.format(s.amount)}
-                                  </p>
-                                  <p className="text-xs text-muted-foreground">
-                                    {formatTreasuryShortDate(s.settledAt)}
-                                    {s.fundingMethodName
-                                      ? ` · desde ${s.fundingMethodName}`
-                                      : ""}
-                                    {s.notes ? ` · ${s.notes}` : ""}
-                                  </p>
-                                </div>
-                              </li>
-                            ))}
-                          </ul>
+                  <TabsContent value="movimientos" className="mt-0">
+                    {detailData ? (
+                      <>
+                        {detailData.settlements.length > 0 ? (
+                          <div className={dashboardBodyClass}>
+                            <DashboardSectionHeader title="Liquidaciones del resumen" />
+                            <ul className="divide-y divide-border/50 rounded-lg border border-border/60">
+                              {detailData.settlements.map((s: TreasurySettlementRow) => (
+                                <li
+                                  key={s.id}
+                                  className="flex items-start justify-between gap-2 px-3 py-2.5 text-sm"
+                                >
+                                  <div>
+                                    <p className="font-medium tabular-nums">
+                                      {fmt.format(s.amount)}
+                                    </p>
+                                    <p className="text-xs text-muted-foreground">
+                                      {formatTreasuryShortDate(s.settledAt)}
+                                      {s.fundingMethodName
+                                        ? ` · desde ${s.fundingMethodName}`
+                                        : ""}
+                                      {s.notes ? ` · ${s.notes}` : ""}
+                                    </p>
+                                  </div>
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+                        ) : null}
+
+                        <div
+                          className={cn(
+                            dashboardBodyClass,
+                            detailData.settlements.length > 0 && dashboardSectionClass,
+                          )}
+                        >
+                          <DashboardSectionHeader title="Movimientos del período" />
+                          {detailData.movements.length === 0 ? (
+                            <DashboardEmptyState message="No hay movimientos en el período seleccionado." />
+                          ) : (
+                            <MovementList
+                              movements={detailData.movements}
+                              embedded
+                              supportsReconciliation={
+                                detailData.supportsBankReconciliation
+                              }
+                              statementLines={detailData.statementLines}
+                              canUpdate={canUpdate}
+                              reconcileBusyKey={reconcileBusyKey}
+                              onReconcile={handleReconcileMovement}
+                              onUnreconcile={handleUnreconcileMovement}
+                            />
+                          )}
                         </div>
-                      ) : null}
+                      </>
+                    ) : detailLoading ? (
+                      <TreasuryAccountDetailContentSkeleton />
+                    ) : null}
+                  </TabsContent>
 
-                      {detailData.movements.length === 0 ? (
-                        <p className="rounded-xl border border-dashed border-border px-4 py-10 text-center text-sm text-muted-foreground">
-                          No hay movimientos en el período seleccionado.
-                        </p>
-                      ) : (
-                        <MovementList
-                          movements={detailData.movements}
-                          supportsReconciliation={
-                            detailData.supportsBankReconciliation
-                          }
-                          statementLines={detailData.statementLines}
+                  {detailData?.supportsBankReconciliation ? (
+                    <TabsContent value="conciliacion" className="mt-0">
+                      {detailData ? (
+                        <ReconciliationPanel
+                          detailData={detailData}
+                          csvText={csvText}
+                          setCsvText={setCsvText}
+                          csvImporting={csvImporting}
+                          csvBanner={csvBanner}
                           canUpdate={canUpdate}
+                          manualLineOpen={manualLineOpen}
+                          setManualLineOpen={setManualLineOpen}
+                          manualDate={manualDate}
+                          setManualDate={setManualDate}
+                          manualDesc={manualDesc}
+                          setManualDesc={setManualDesc}
+                          manualAmount={manualAmount}
+                          setManualAmount={setManualAmount}
+                          manualDirection={manualDirection}
+                          setManualDirection={setManualDirection}
+                          manualSaving={manualSaving}
                           reconcileBusyKey={reconcileBusyKey}
+                          onImportCsv={() => void handleImportCsv()}
+                          onAddManualLine={(e) => void handleAddManualLine(e)}
+                          onDeleteLine={(id) => void handleDeleteStatementLine(id)}
                           onReconcile={handleReconcileMovement}
                           onUnreconcile={handleUnreconcileMovement}
                         />
-                      )}
-                    </div>
+                      ) : null}
+                    </TabsContent>
                   ) : null}
-
-                  {section === "conciliacion" &&
-                  detailData?.supportsBankReconciliation ? (
-                    <ReconciliationPanel
-                      detailData={detailData}
-                      csvText={csvText}
-                      setCsvText={setCsvText}
-                      csvImporting={csvImporting}
-                      csvBanner={csvBanner}
-                      canUpdate={canUpdate}
-                      manualDate={manualDate}
-                      setManualDate={setManualDate}
-                      manualDesc={manualDesc}
-                      setManualDesc={setManualDesc}
-                      manualAmount={manualAmount}
-                      setManualAmount={setManualAmount}
-                      manualDirection={manualDirection}
-                      setManualDirection={setManualDirection}
-                      manualSaving={manualSaving}
-                      onImportCsv={() => void handleImportCsv()}
-                      onAddManualLine={(e) => void handleAddManualLine(e)}
-                      onDeleteLine={(id) => void handleDeleteStatementLine(id)}
-                    />
-                  ) : null}
-                </section>
-              </>
-            ) : null}
+                </div>
+              </Tabs>
+              )}
+            </>
+          ) : null}
         </div>
       </div>
+
+      {account && selectedIntegrationChild && isMotherBankWallet ? (
+        <TreasuryReconcileModal
+          open={reconcileOpen}
+          onOpenChange={setReconcileOpen}
+          popId={popId}
+          motherAccountId={accountId}
+          child={selectedIntegrationChild}
+          fundingAccounts={fundingAccounts}
+          canSubmit={canUpdate}
+          globalPendingBalance={
+            selectedIntegrationChild.childRole === "pos"
+              ? (selectedIntegrationChild.ledgerBalance ?? 0)
+              : selectedIntegrationChild.outstandingBalance
+          }
+          onCompleted={async () => {
+            setChildReconciliationRefreshKey((key) => key + 1)
+            await reloadAll()
+          }}
+        />
+      ) : null}
 
       <Dialog open={settleChild !== null} onOpenChange={(o) => !o && setSettleChild(null)}>
         <DialogContent className="sm:max-w-md">
@@ -888,12 +1061,11 @@ export function TreasuryAccountDetailView({
             </div>
             <div className="space-y-2">
               <Label htmlFor="settle-date">Fecha de pago</Label>
-              <Input
+              <DatePicker
                 id="settle-date"
-                type="date"
-                required
                 value={settleDate}
-                onChange={(e) => setSettleDate(e.target.value)}
+                onChange={setSettleDate}
+                className="w-full"
               />
             </div>
             <div className="space-y-2">
@@ -960,12 +1132,11 @@ export function TreasuryAccountDetailView({
             </div>
             <div className="space-y-2">
               <Label htmlFor="pos-date">Fecha de acreditación</Label>
-              <Input
+              <DatePicker
                 id="pos-date"
-                type="date"
-                required
                 value={posDate}
-                onChange={(e) => setPosDate(e.target.value)}
+                onChange={setPosDate}
+                className="w-full"
               />
             </div>
             <div className="space-y-2">
@@ -995,6 +1166,7 @@ export function TreasuryAccountDetailView({
 function MovementList({
   movements,
   compact,
+  embedded,
   supportsReconciliation,
   statementLines,
   canUpdate,
@@ -1004,6 +1176,7 @@ function MovementList({
 }: {
   movements: PaymentMethodMovementRow[]
   compact?: boolean
+  embedded?: boolean
   supportsReconciliation?: boolean
   statementLines?: BankStatementLineRow[]
   canUpdate?: boolean
@@ -1014,8 +1187,9 @@ function MovementList({
   return (
     <ul
       className={cn(
-        "space-y-1 overflow-y-auto rounded-xl border border-border/60",
-        compact ? "max-h-64" : "max-h-[32rem]",
+        "divide-y divide-border/50 overflow-y-auto",
+        embedded ? "rounded-lg border border-border/60" : "space-y-1 rounded-xl border border-border/60",
+        compact ? "max-h-64" : "max-h-128",
       )}
     >
       {movements.map((m) => {
@@ -1031,7 +1205,7 @@ function MovementList({
         return (
           <li
             key={`${m.kind}-${m.id}-${m.sourceAccountName ?? ""}`}
-            className="flex items-center justify-between gap-2 border-b border-border/40 px-3 py-2.5 last:border-0"
+            className="flex items-center justify-between gap-2 px-3 py-2.5"
           >
             <div className="min-w-0 flex-1">
               <p className="truncate text-sm font-medium">
@@ -1099,6 +1273,8 @@ function ReconciliationPanel({
   csvImporting,
   csvBanner,
   canUpdate,
+  manualLineOpen,
+  setManualLineOpen,
   manualDate,
   setManualDate,
   manualDesc,
@@ -1108,9 +1284,12 @@ function ReconciliationPanel({
   manualDirection,
   setManualDirection,
   manualSaving,
+  reconcileBusyKey,
   onImportCsv,
   onAddManualLine,
   onDeleteLine,
+  onReconcile,
+  onUnreconcile,
 }: {
   detailData: TreasuryAccountDetailResult
   csvText: string
@@ -1118,6 +1297,8 @@ function ReconciliationPanel({
   csvImporting: boolean
   csvBanner: string | null
   canUpdate: boolean
+  manualLineOpen: boolean
+  setManualLineOpen: (v: boolean) => void
   manualDate: string
   setManualDate: (v: string) => void
   manualDesc: string
@@ -1127,137 +1308,240 @@ function ReconciliationPanel({
   manualDirection: "in" | "out"
   setManualDirection: (v: "in" | "out") => void
   manualSaving: boolean
+  reconcileBusyKey: string | null
   onImportCsv: () => void
   onAddManualLine: (e: FormEvent) => void
   onDeleteLine: (lineId: string) => void
+  onReconcile: (m: PaymentMethodMovementRow) => void
+  onUnreconcile: (m: PaymentMethodMovementRow) => void
 }) {
+  const summary = detailData.reconciliationSummary
+  const totalMovements =
+    summary.movementsReconciled + summary.movementsPending
+  const progressPct =
+    totalMovements > 0
+      ? Math.round((summary.movementsReconciled / totalMovements) * 100)
+      : 0
+  const pendingMovements = detailData.movements.filter((m) => !m.reconciled)
+  const reconciledMovements = detailData.movements.filter((m) => m.reconciled)
+
   return (
-    <div className="space-y-4">
-      <div className="rounded-xl border border-border/60 bg-muted/15 px-4 py-3 text-sm">
-        <p className="font-semibold">Conciliación bancaria</p>
-        <p className="mt-1 text-muted-foreground">
-          Movimientos:{" "}
-          <strong className="text-foreground">
-            {detailData.reconciliationSummary.movementsReconciled}
-          </strong>{" "}
-          conciliados ·{" "}
-          <strong className="text-foreground">
-            {detailData.reconciliationSummary.movementsPending}
-          </strong>{" "}
-          pendientes · Extracto:{" "}
-          <strong className="text-foreground">
-            {detailData.reconciliationSummary.statementReconciled}
-          </strong>
-          /{detailData.statementLines.length} usadas
+    <>
+      <div className={dashboardKpiStripClass}>
+        <DashboardKpi
+          label="Conciliados"
+          value={String(summary.movementsReconciled)}
+          hint={`de ${totalMovements} movimientos`}
+        />
+        <DashboardKpi
+          label="Pendientes"
+          value={String(summary.movementsPending)}
+          hint="por cruzar con el extracto"
+        />
+        <DashboardKpi
+          label="Extracto cargado"
+          value={String(detailData.statementLines.length)}
+          hint={`${summary.statementReconciled} ya usadas`}
+        />
+      </div>
+
+      <div className={dashboardBodyClass}>
+        <div className="mb-2 flex items-center justify-between gap-2 text-sm">
+          <span className="font-medium text-foreground">Progreso de conciliación</span>
+          <span className="font-mono text-xs tabular-nums text-muted-foreground">
+            {progressPct}%
+          </span>
+        </div>
+        <div className="h-2 overflow-hidden rounded-full bg-muted/80">
+          <div
+            className="h-full rounded-full bg-primary transition-all"
+            style={{ width: `${progressPct}%` }}
+          />
+        </div>
+        <p className="mt-2 text-xs text-muted-foreground">
+          Importá el extracto del banco y marcá los movimientos que coincidan.
         </p>
       </div>
 
       {csvBanner ? (
-        <p
-          className={cn(
-            "rounded-lg border px-3 py-2 text-sm",
-            csvBanner.startsWith("Se importaron") || csvBanner.includes("Importadas")
-              ? "border-emerald-200/70 bg-emerald-50/80 text-emerald-900"
-              : "border-destructive/25 bg-destructive/5 text-destructive",
-          )}
-        >
-          {csvBanner}
-        </p>
+        <div className="border-t border-border/60 px-4 py-3 lg:px-5">
+          <p
+            className={cn(
+              "rounded-lg border px-3 py-2 text-sm",
+              csvBanner.startsWith("Se importaron") || csvBanner.includes("Importadas")
+                ? "border-emerald-200/70 bg-emerald-50/80 text-emerald-900"
+                : "border-destructive/25 bg-destructive/5 text-destructive",
+            )}
+          >
+            {csvBanner}
+          </p>
+        </div>
       ) : null}
 
-      <div className="space-y-2">
-        <Label htmlFor="csv-import">Importar CSV (fecha, descripción, importe)</Label>
+      <div className={dashboardSectionClass}>
+        <DashboardSectionHeader
+          title="Cargar extracto"
+          description="Pegá el CSV del banco (fecha, descripción, importe) y tocá importar."
+        />
         <Textarea
           id="csv-import"
           value={csvText}
           onChange={(e) => setCsvText(e.target.value)}
-          rows={4}
+          rows={3}
+          placeholder="2026-01-15,Transferencia recibida,-15000"
           className="font-mono text-xs"
           disabled={!canUpdate || csvImporting}
         />
-        <div className="flex flex-wrap gap-2">
+        <div className="mt-3 flex flex-wrap items-center gap-2">
           <Button
             type="button"
             size="sm"
-            variant="secondary"
             disabled={!canUpdate || csvImporting || !csvText.trim()}
             onClick={onImportCsv}
           >
             <Upload className="mr-1.5 size-3.5" />
-            {csvImporting ? "Importando…" : "Importar CSV"}
+            {csvImporting ? "Importando…" : "Importar extracto"}
+          </Button>
+          <Button
+            type="button"
+            size="sm"
+            variant="ghost"
+            className="gap-1.5"
+            onClick={() => setManualLineOpen(!manualLineOpen)}
+          >
+            <ChevronDown
+              className={cn(
+                "size-4 transition-transform",
+                manualLineOpen && "rotate-180",
+              )}
+            />
+            Agregar línea manual
           </Button>
         </div>
+
+        {manualLineOpen ? (
+          <form
+            className="mt-4 space-y-3 border-t border-border/60 pt-4"
+            onSubmit={onAddManualLine}
+          >
+            <div className="grid grid-cols-2 gap-2">
+              <DatePicker
+                value={manualDate}
+                onChange={setManualDate}
+                disabled={!canUpdate || manualSaving}
+                className="w-full"
+              />
+              <select
+                value={manualDirection}
+                onChange={(e) =>
+                  setManualDirection(e.target.value as "in" | "out")
+                }
+                className="flex h-10 rounded-md border border-input bg-background px-2 text-sm"
+                disabled={!canUpdate || manualSaving}
+              >
+                <option value="out">Salida</option>
+                <option value="in">Entrada</option>
+              </select>
+            </div>
+            <Input
+              required
+              placeholder="Descripción"
+              value={manualDesc}
+              onChange={(e) => setManualDesc(e.target.value)}
+              disabled={!canUpdate || manualSaving}
+            />
+            <Input
+              type="number"
+              min={0}
+              step="0.01"
+              required
+              placeholder="Importe"
+              value={manualAmount}
+              onChange={(e) => setManualAmount(e.target.value)}
+              className="font-mono"
+              disabled={!canUpdate || manualSaving}
+            />
+            <Button type="submit" size="sm" disabled={!canUpdate || manualSaving}>
+              {manualSaving ? "Agregando…" : "Agregar línea"}
+            </Button>
+          </form>
+        ) : null}
       </div>
 
-      <form
-        className="space-y-3 rounded-xl border border-border/60 p-4"
-        onSubmit={onAddManualLine}
-      >
-        <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-          Línea manual del extracto
-        </p>
-        <div className="grid grid-cols-2 gap-2">
-          <Input
-            type="date"
-            required
-            value={manualDate}
-            onChange={(e) => setManualDate(e.target.value)}
-            disabled={!canUpdate || manualSaving}
+      {pendingMovements.length > 0 ? (
+        <div className={dashboardSectionClass}>
+          <DashboardSectionHeader
+            title="Pendientes de conciliar"
+            description="Tocá conciliar cuando el movimiento coincida con una línea del extracto."
           />
-          <select
-            value={manualDirection}
-            onChange={(e) => setManualDirection(e.target.value as "in" | "out")}
-            className="flex h-10 rounded-md border border-input bg-background px-2 text-sm"
-            disabled={!canUpdate || manualSaving}
-          >
-            <option value="out">Salida</option>
-            <option value="in">Entrada</option>
-          </select>
+          <MovementList
+            movements={pendingMovements}
+            embedded
+            supportsReconciliation
+            statementLines={detailData.statementLines}
+            canUpdate={canUpdate}
+            reconcileBusyKey={reconcileBusyKey}
+            onReconcile={onReconcile}
+            onUnreconcile={onUnreconcile}
+          />
         </div>
-        <Input
-          required
-          placeholder="Descripción"
-          value={manualDesc}
-          onChange={(e) => setManualDesc(e.target.value)}
-          disabled={!canUpdate || manualSaving}
-        />
-        <Input
-          type="number"
-          min={0}
-          step="0.01"
-          required
-          placeholder="Importe"
-          value={manualAmount}
-          onChange={(e) => setManualAmount(e.target.value)}
-          className="font-mono"
-          disabled={!canUpdate || manualSaving}
-        />
-        <Button type="submit" size="sm" disabled={!canUpdate || manualSaving}>
-          {manualSaving ? "Agregando…" : "Agregar línea"}
-        </Button>
-      </form>
+      ) : (
+        <div className={dashboardSectionClass}>
+          <div className="flex min-h-[10rem] flex-col items-center justify-center text-center">
+            <CheckCircle2 className="size-8 text-emerald-600" aria-hidden />
+            <p className="mt-2 text-sm font-medium text-foreground">
+              No hay movimientos pendientes
+            </p>
+            <p className="mt-1 text-xs text-muted-foreground">
+              Todos los movimientos del período están conciliados.
+            </p>
+          </div>
+        </div>
+      )}
 
-      <div>
-        <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-          Líneas del extracto ({detailData.statementLines.length})
-        </h3>
+      {reconciledMovements.length > 0 ? (
+        <div className={dashboardSectionClass}>
+          <DashboardSectionHeader
+            title={`Ya conciliados (${reconciledMovements.length})`}
+          />
+          <MovementList
+            movements={reconciledMovements.slice(0, 8)}
+            compact
+            embedded
+            supportsReconciliation
+            canUpdate={canUpdate}
+            reconcileBusyKey={reconcileBusyKey}
+            onReconcile={onReconcile}
+            onUnreconcile={onUnreconcile}
+          />
+        </div>
+      ) : null}
+
+      <div className={dashboardSectionClass}>
+        <DashboardSectionHeader
+          title="Líneas del extracto"
+          description={
+            detailData.statementLines.length === 0
+              ? "Todavía no cargaste extracto para este período."
+              : `${detailData.statementLines.length} líneas · ${summary.statementReconciled} usadas en conciliaciones`
+          }
+        />
         {detailData.statementLines.length === 0 ? (
-          <p className="rounded-xl border border-dashed border-border px-4 py-8 text-center text-sm text-muted-foreground">
-            Importá un CSV o cargá líneas manuales.
-          </p>
+          <DashboardEmptyState message="Importá el CSV del banco arriba para empezar." />
         ) : (
-          <ul className="max-h-64 space-y-1 overflow-y-auto rounded-xl border border-border/60">
+          <ul className="max-h-56 divide-y divide-border/50 overflow-y-auto rounded-lg border border-border/60">
             {detailData.statementLines.map((line) => (
               <li
                 key={line.id}
-                className="flex items-center justify-between gap-2 border-b border-border/40 px-3 py-2 last:border-0"
+                className="flex items-center justify-between gap-2 px-3 py-2"
               >
                 <div className="min-w-0 flex-1">
-                  <p className="truncate text-sm">{line.description || "Sin descripción"}</p>
+                  <p className="truncate text-sm">
+                    {line.description || "Sin descripción"}
+                  </p>
                   <p className="text-xs text-muted-foreground">
-                    {formatTreasuryShortDate(line.lineDate)} ·{" "}
-                    {line.source === "csv" ? "CSV" : "Manual"}
-                    {line.reconciled ? " · Conciliada" : ""}
+                    {formatTreasuryShortDate(line.lineDate)}
+                    {line.reconciled ? " · Conciliada" : " · Disponible"}
                   </p>
                 </div>
                 <span
@@ -1277,6 +1561,7 @@ function ReconciliationPanel({
                     size="icon"
                     variant="ghost"
                     className="size-8 shrink-0"
+                    aria-label="Eliminar línea"
                     onClick={() => onDeleteLine(line.id)}
                   >
                     <Trash2 className="size-3.5" />
@@ -1287,6 +1572,6 @@ function ReconciliationPanel({
           </ul>
         )}
       </div>
-    </div>
+    </>
   )
 }

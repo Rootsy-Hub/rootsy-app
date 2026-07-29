@@ -20,7 +20,7 @@ import {
 import { resolveTreasuryAccountBrand } from "@/lib/treasuryAccountBrands"
 import { treasuryKindLabel } from "@/lib/treasuryAccountKinds"
 import { cn } from "@/lib/utils"
-import { MoreVertical } from "lucide-react"
+import { CreditCard, MoreVertical, Wifi } from "lucide-react"
 
 const fmt = new Intl.NumberFormat("es-AR", {
   style: "currency",
@@ -56,6 +56,39 @@ function TreasuryStat({
         {value}
       </p>
     </div>
+  )
+}
+
+function TreasuryIntegrationIcons({
+  hasPos,
+  hasCard,
+  className,
+}: {
+  hasPos: boolean
+  hasCard: boolean
+  className?: string
+}) {
+  if (!hasPos && !hasCard) return null
+
+  return (
+    <span
+      className={cn("inline-flex items-center gap-1.5", className)}
+      aria-label={
+        [
+          hasPos ? "Terminal POS" : null,
+          hasCard ? "Tarjeta corporativa" : null,
+        ]
+          .filter(Boolean)
+          .join(" y ")
+      }
+    >
+      {hasPos ? (
+        <Wifi className="size-3.5 shrink-0 opacity-90" aria-hidden />
+      ) : null}
+      {hasCard ? (
+        <CreditCard className="size-3.5 shrink-0 opacity-90" aria-hidden />
+      ) : null}
+    </span>
   )
 }
 
@@ -146,15 +179,24 @@ export function TreasuryAccountCard({
         >
           <div className="flex items-start justify-between gap-3 pr-8">
             <div className="min-w-0 flex-1">
-              <p
-                className={cn(
-                  "text-[10px] font-semibold uppercase tracking-[0.16em] opacity-85",
-                  headerText,
-                )}
-              >
-                {treasuryKindLabel(row.kind)}
-                {!row.isActive ? " · Inactiva" : ""}
-              </p>
+              <div className="flex items-center gap-2">
+                <p
+                  className={cn(
+                    "text-[10px] font-semibold uppercase tracking-[0.16em] opacity-85",
+                    headerText,
+                  )}
+                >
+                  {treasuryKindLabel(row.kind)}
+                  {!row.isActive ? " · Inactiva" : ""}
+                </p>
+                {row.kind !== "cash" ? (
+                  <TreasuryIntegrationIcons
+                    hasPos={row.hasPosIntegration}
+                    hasCard={row.hasCardIntegration}
+                    className={headerText}
+                  />
+                ) : null}
+              </div>
               <div className="mt-2.5 flex items-center gap-3">
                 <TreasuryBrandIsotype
                   brandKey={brand?.key}
@@ -182,16 +224,18 @@ export function TreasuryAccountCard({
               value={moneyOrDash(row.ledgerBalance)}
               large
             />
-            <div className="mt-4 grid grid-cols-2 gap-4 border-t border-border/60 pt-4">
-              <TreasuryStat
-                label="A liquidar"
-                value={moneyOrDash(row.toLiquidateBalance)}
-              />
-              <TreasuryStat
-                label="A pagar"
-                value={moneyOrDash(row.toPayBalance)}
-              />
-            </div>
+            {row.kind !== "cash" ? (
+              <div className="mt-4 grid grid-cols-2 gap-4 border-t border-border/60 pt-4">
+                <TreasuryStat
+                  label="A liquidar"
+                  value={moneyOrDash(row.toLiquidateBalance)}
+                />
+                <TreasuryStat
+                  label="A pagar"
+                  value={moneyOrDash(row.toPayBalance)}
+                />
+              </div>
+            ) : null}
           </div>
         </div>
       </button>

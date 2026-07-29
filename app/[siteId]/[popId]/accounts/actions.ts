@@ -39,6 +39,8 @@ export type TreasuryAccountTableRow = {
   settledTotal: number
   ledgerBalance: number | null
   isCardPayable: boolean
+  hasPosIntegration: boolean
+  hasCardIntegration: boolean
 }
 
 export type UpsertTreasuryAccountInput = {
@@ -322,6 +324,8 @@ export async function getTreasuryAccountsHub(
         settledTotal: settled,
         ledgerBalance: ledgerBalances.get(chartId) ?? null,
         isCardPayable,
+        hasPosIntegration: false,
+        hasCardIntegration: false,
         parentTreasuryAccountId:
           r.parent_treasury_account_id != null
             ? String(r.parent_treasury_account_id)
@@ -331,6 +335,8 @@ export async function getTreasuryAccountsHub(
 
     const toLiquidateByMother = new Map<string, number>()
     const toPayByMother = new Map<string, number>()
+    const hasPosByMother = new Map<string, boolean>()
+    const hasCardByMother = new Map<string, boolean>()
     for (const r of allRows) {
       if (!isMotherTreasuryAccount(r.chartAccountCode)) continue
       toLiquidateByMother.set(r.id, 0)
@@ -347,21 +353,26 @@ export async function getTreasuryAccountsHub(
         continue
       }
       const balance = row.ledgerBalance ?? 0
-      if (balance === 0) continue
 
       if (isSettlementReceivableChartCode(row.chartAccountCode)) {
-        toLiquidateByMother.set(
-          parentId,
-          roundMoney((toLiquidateByMother.get(parentId) ?? 0) + balance),
-        )
+        hasPosByMother.set(parentId, true)
+        if (balance !== 0) {
+          toLiquidateByMother.set(
+            parentId,
+            roundMoney((toLiquidateByMother.get(parentId) ?? 0) + balance),
+          )
+        }
       } else if (
         isCardPayableChartCode(row.chartAccountCode) ||
         row.isCardPayable
       ) {
-        toPayByMother.set(
-          parentId,
-          roundMoney((toPayByMother.get(parentId) ?? 0) + balance),
-        )
+        hasCardByMother.set(parentId, true)
+        if (balance !== 0) {
+          toPayByMother.set(
+            parentId,
+            roundMoney((toPayByMother.get(parentId) ?? 0) + balance),
+          )
+        }
       }
     }
 
@@ -371,6 +382,8 @@ export async function getTreasuryAccountsHub(
         ...r,
         toLiquidateBalance: toLiquidateByMother.get(r.id) ?? 0,
         toPayBalance: toPayByMother.get(r.id) ?? 0,
+        hasPosIntegration: hasPosByMother.get(r.id) ?? false,
+        hasCardIntegration: hasCardByMother.get(r.id) ?? false,
       }))
       .sort((a, b) =>
         compareChartAccountCodes(a.chartAccountCode, b.chartAccountCode),
@@ -861,6 +874,8 @@ export async function getTreasuryAccountPageData(
     settledTotal: settled,
     ledgerBalance,
     isCardPayable,
+    hasPosIntegration: false,
+    hasCardIntegration: false,
   }
 
   return {

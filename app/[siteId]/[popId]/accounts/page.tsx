@@ -11,6 +11,7 @@ import {
   type UpsertTreasuryAccountInput,
 } from "@/app/[siteId]/[popId]/accounts/actions"
 import { TreasuryAccountCard } from "@/app/[siteId]/[popId]/accounts/TreasuryAccountCard"
+import { TreasuryAccountsGridSkeleton } from "@/app/[siteId]/[popId]/accounts/TreasuryAccountsGridSkeleton"
 import { TreasuryAccountCreateDialog } from "@/app/[siteId]/[popId]/accounts/TreasuryAccountCreateDialog"
 import { TreasuryAccountDetailView } from "@/app/[siteId]/[popId]/accounts/TreasuryAccountDetailView"
 import { Button } from "@/components/ui/button"
@@ -29,7 +30,6 @@ import { DataWorkspaceHeaderIconButton } from "@/components/layouts/DataWorkspac
 import withAuth from "@/hoc/withAuth"
 import {
   TREASURY_ACCOUNT_KINDS,
-  treasuryKindLabel,
   type TreasuryAccountKind,
 } from "@/lib/treasuryAccountKinds"
 import { usePopWorkspace } from "@/context/PopWorkspaceContext"
@@ -38,7 +38,6 @@ import {
   type TreasuryAccountMenuActionId,
 } from "@/lib/treasuryAccountMenuActions"
 import {
-  ArrowLeft,
   Plus,
 } from "lucide-react"
 import { useParams, useRouter } from "next/navigation"
@@ -178,15 +177,6 @@ function AccountsPage() {
   const [childBanner, setChildBanner] = useState<string | null>(null)
 
   const [selectedAccountId, setSelectedAccountId] = useState<string | null>(null)
-  const [detailAccountMeta, setDetailAccountMeta] =
-    useState<TreasuryAccountTableRow | null>(null)
-
-  const selectedHubRow =
-    selectedAccountId != null
-      ? rows.find((r) => r.id === selectedAccountId)
-      : null
-
-  const detailHeaderRow = detailAccountMeta ?? selectedHubRow
 
   const load = useCallback(async () => {
     if (!popId || !siteId) return
@@ -356,12 +346,7 @@ function AccountsPage() {
       siteId={siteId}
       popId={popId}
       popName={popName}
-      title={detailHeaderRow?.name ?? "Cuentas"}
-      pillLabel={
-        detailHeaderRow
-          ? `${treasuryKindLabel(detailHeaderRow.kind)}${!detailHeaderRow.isActive ? " · Inactiva" : ""}`
-          : undefined
-      }
+      title="Cuentas"
       headerVariant="dark"
       loading={(pageLoading || loading) && !selectedAccountId}
       userName={bootstrap?.userFullName}
@@ -371,19 +356,7 @@ function AccountsPage() {
       mainMaxWidthClass="max-w-none"
       mainClassName="min-h-0 overflow-y-auto"
       headerActions={
-        selectedAccountId ? (
-          <DataWorkspaceHeaderIconButton
-            label="Volver a cuentas"
-            headerVariant="dark"
-            onClick={() => {
-              setSelectedAccountId(null)
-              setDetailAccountMeta(null)
-              void load()
-            }}
-          >
-            <ArrowLeft className="size-5" aria-hidden />
-          </DataWorkspaceHeaderIconButton>
-        ) : canCreate ? (
+        canCreate && !selectedAccountId ? (
           <DataWorkspaceHeaderIconButton
             label="Nueva cuenta"
             headerVariant="dark"
@@ -400,12 +373,15 @@ function AccountsPage() {
           <TreasuryAccountDetailView
             popId={popId}
             accountId={selectedAccountId}
+            accountKindHint={rows.find((r) => r.id === selectedAccountId)?.kind}
+            onBack={() => {
+              setSelectedAccountId(null)
+              void load()
+            }}
             onOpenAccount={(id) => {
               setSelectedAccountId(id)
-              setDetailAccountMeta(null)
             }}
             onHubRefresh={load}
-            onAccountMetaChange={setDetailAccountMeta}
           />
         ) : (
         <div className="relative flex w-full flex-col gap-6 px-4 py-6 sm:px-6 lg:px-8">
@@ -418,8 +394,8 @@ function AccountsPage() {
             </div>
           ) : null}
 
-          {loading ? (
-            <p className="text-sm text-muted-foreground">Cargando cuentas…</p>
+          {pageLoading ? (
+            <TreasuryAccountsGridSkeleton />
           ) : error ? (
             <div className="rounded-2xl border border-destructive/25 bg-destructive/5 px-4 py-3 text-sm text-destructive">
               {error}
@@ -439,7 +415,6 @@ function AccountsPage() {
                   canDelete={canDelete}
                   onMenuAction={(actionId) => handleAccountMenuAction(r, actionId)}
                   onOpenDetail={() => {
-                    setDetailAccountMeta(null)
                     setSelectedAccountId(r.id)
                   }}
                 />
