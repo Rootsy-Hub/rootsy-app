@@ -243,6 +243,19 @@ export const CHART_GASTOS_GENERALES_CODES: readonly string[] = [
   "6.2.1.01",
 ]
 
+/** Intereses, mantenimiento e impuestos del resumen de tarjeta. */
+export const CHART_GASTOS_FINANCIEROS_CODES: readonly string[] = [
+  "6.3.1.01",
+  ...CHART_GASTOS_GENERALES_CODES,
+]
+
+/** Comisiones e impuestos de liquidación POS. */
+export const CHART_GASTOS_COMERCIALES_CODES: readonly string[] = [
+  "6.2.1.02",
+  "6.3.1.01",
+  ...CHART_GASTOS_GENERALES_CODES,
+]
+
 export const CHART_PROVEEDORES_CODES: readonly string[] = [
   "2.1.1.01",
   "2.1.1.02",

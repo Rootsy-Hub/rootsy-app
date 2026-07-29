@@ -6,6 +6,7 @@ import {
   type TreasuryReconciliationEventRow,
 } from "@/app/[siteId]/[popId]/accounts/treasuryDetailActions"
 import {
+  TREASURY_CARD_STATEMENT_CHARGES_SHORT_LABEL,
   TREASURY_RECONCILE_COMMISSIONS_LABEL,
   formatTreasuryShortDate,
   treasuryMoneyFmt as fmt,
@@ -17,7 +18,7 @@ import {
   type DataWorkspaceDatePreset,
   computeDataWorkspaceDateBounds,
 } from "@/lib/dataWorkspaceDateFilter"
-import { CreditCard, Wifi } from "lucide-react"
+import { Banknote, CreditCard, Wifi } from "lucide-react"
 import { useCallback, useEffect, useState } from "react"
 import type { DateRange } from "react-day-picker"
 
@@ -93,6 +94,9 @@ export function TreasuryChildReconciliationPanel({
     0,
   )
   const principalLabel = isPos ? "Recibido" : "Pagado"
+  const adjustmentLabel = isPos
+    ? TREASURY_RECONCILE_COMMISSIONS_LABEL
+    : TREASURY_CARD_STATEMENT_CHARGES_SHORT_LABEL
   const principalAmountClass = isPos
     ? "text-emerald-700 dark:text-emerald-400"
     : "text-rose-700 dark:text-rose-400"
@@ -117,10 +121,20 @@ export function TreasuryChildReconciliationPanel({
           <Button
             type="button"
             size="sm"
-            className="self-end font-medium lg:self-auto"
+            className="self-end gap-1.5 font-medium lg:self-auto"
             onClick={onConciliar}
           >
-            Conciliar
+            {isPos ? (
+              <>
+                <Banknote className="size-4" aria-hidden />
+                Liquidar
+              </>
+            ) : (
+              <>
+                <CreditCard className="size-4" aria-hidden />
+                Pagar
+              </>
+            )}
           </Button>
         ) : null}
       </div>
@@ -153,7 +167,7 @@ export function TreasuryChildReconciliationPanel({
             </div>
             <div>
               <p className="text-xs text-muted-foreground">
-                {TREASURY_RECONCILE_COMMISSIONS_LABEL}
+                {adjustmentLabel}
               </p>
               <p
                 className={cn(

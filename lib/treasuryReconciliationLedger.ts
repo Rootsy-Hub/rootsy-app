@@ -1,5 +1,6 @@
 import {
-  CHART_GASTOS_GENERALES_CODES,
+  CHART_GASTOS_COMERCIALES_CODES,
+  CHART_GASTOS_FINANCIEROS_CODES,
   CHART_TARJETAS_CREDITO_A_PAGAR_CODES,
 } from "@/lib/argV3DefaultChartAccounts"
 import { resolveTreasuryAccountLedgerAccountId } from "@/lib/treasuryAccountResolve"
@@ -42,15 +43,18 @@ async function nextEntryNumber(
     : 1
 }
 
-async function resolveAdjustmentExpenseAccountId(
+async function resolvePosCommissionExpenseAccountId(
   supabase: SupabaseClient,
   popId: string,
 ): Promise<string | null> {
-  return resolveAccountId(supabase, popId, [
-    "6.2.1.02",
-    "6.3.1.01",
-    ...CHART_GASTOS_GENERALES_CODES,
-  ])
+  return resolveAccountId(supabase, popId, CHART_GASTOS_COMERCIALES_CODES)
+}
+
+async function resolveCardStatementChargeAccountId(
+  supabase: SupabaseClient,
+  popId: string,
+): Promise<string | null> {
+  return resolveAccountId(supabase, popId, CHART_GASTOS_FINANCIEROS_CODES)
 }
 
 type LedgerLine = {
@@ -240,18 +244,22 @@ export async function postTreasurySettlementLedger(
   ]
 
   if (adjustment > 0) {
-    const expenseAccountId = await resolveAdjustmentExpenseAccountId(supabase, popId)
+    const expenseAccountId = await resolveCardStatementChargeAccountId(
+      supabase,
+      popId,
+    )
     if (!expenseAccountId) {
       return {
         success: false,
-        error: "No hay cuenta de gastos para registrar comisiones e impuestos.",
+        error:
+          "No hay cuenta de gastos financieros para registrar cargos del resumen.",
       }
     }
     lines.push({
       account_id: expenseAccountId,
       debit_amount: adjustment,
       credit_amount: 0,
-      description: `${entryDescription} — comisiones e impuestos`,
+      description: `${entryDescription} — intereses y otros cargos del resumen`,
       line_order: 2,
     })
   }
@@ -372,7 +380,10 @@ export async function postPosAcreditationLedger(
   ]
 
   if (adjustment > 0) {
-    const expenseAccountId = await resolveAdjustmentExpenseAccountId(supabase, popId)
+    const expenseAccountId = await resolvePosCommissionExpenseAccountId(
+      supabase,
+      popId,
+    )
     if (!expenseAccountId) {
       return {
         success: false,

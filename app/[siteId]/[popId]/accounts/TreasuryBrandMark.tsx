@@ -17,6 +17,8 @@ type IsotypeProps = {
   /** Iniciales si no hay isotipo (2–4 caracteres). */
   monogram?: string
   headerTextClass?: string
+  /** Header con marca / color fuerte (p. ej. Mercado Pago). */
+  onColoredHeader?: boolean
   size?: IsotypeSize
   className?: string
 }
@@ -26,6 +28,7 @@ export function TreasuryBrandIsotype({
   brandKey,
   monogram = "—",
   headerTextClass = "text-white",
+  onColoredHeader = false,
   size = "md",
   className,
 }: IsotypeProps) {
@@ -70,9 +73,14 @@ export function TreasuryBrandIsotype({
   }
 
   const box = cn(
-    "flex shrink-0 items-center justify-center overflow-hidden bg-white/20 font-bold tracking-tight backdrop-blur-sm ring-1 ring-white/20",
+    "flex shrink-0 items-center justify-center overflow-hidden font-bold tracking-tight",
     boxClass[size],
-    headerTextClass,
+    onColoredHeader
+      ? cn(
+          "bg-white/20 backdrop-blur-sm ring-1 ring-white/25",
+          headerTextClass,
+        )
+      : "bg-white text-foreground/80 shadow-sm ring-1 ring-black/10",
     className,
   )
 

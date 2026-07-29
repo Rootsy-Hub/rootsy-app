@@ -102,7 +102,7 @@ export function DataWorkspacePeriodFilter({
   const triggerClass = cn(
     dateFilterTriggerClass,
     isCompact
-      ? "h-8 min-w-[12rem] max-w-[18rem] px-2.5 text-xs shadow-sm"
+      ? "h-8 min-w-[12rem] max-w-[18rem] px-3 text-sm font-medium shadow-sm"
       : "min-w-0 shadow-xs",
     active && lightToolbarControlActiveClass,
   )
@@ -126,6 +126,7 @@ export function DataWorkspacePeriodFilter({
           id={triggerId}
           type="button"
           variant="outline"
+          size={isCompact ? "sm" : "default"}
           className={triggerClass}
           aria-expanded={popoverOpen}
           aria-haspopup="dialog"

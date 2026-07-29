@@ -10,6 +10,9 @@ import {
   recordTreasurySettlementForAccount,
 } from "@/app/[siteId]/[popId]/accounts/treasuryDetailActions"
 import {
+  TREASURY_CARD_STATEMENT_CHARGES_ACCOUNT_HINT,
+  TREASURY_CARD_STATEMENT_CHARGES_LABEL,
+  TREASURY_CARD_STATEMENT_CHARGES_SHORT_LABEL,
   TREASURY_RECONCILE_COMMISSIONS_ACCOUNT_HINT,
   TREASURY_RECONCILE_COMMISSIONS_LABEL,
   defaultTreasuryPeriodEnd,
@@ -93,6 +96,12 @@ export function TreasuryReconcileModal({
 }) {
   const isPos = child.childRole === "pos"
   const balanceLabel = isPos ? "Saldo a liquidar" : "Saldo a pagar"
+  const adjustmentLabel = isPos
+    ? TREASURY_RECONCILE_COMMISSIONS_LABEL
+    : TREASURY_CARD_STATEMENT_CHARGES_LABEL
+  const adjustmentHint = isPos
+    ? TREASURY_RECONCILE_COMMISSIONS_ACCOUNT_HINT
+    : TREASURY_CARD_STATEMENT_CHARGES_ACCOUNT_HINT
 
   const [banner, setBanner] = useState<string | null>(null)
   const [saving, setSaving] = useState(false)
@@ -166,10 +175,14 @@ export function TreasuryReconcileModal({
   const validationError = useMemo(() => {
     if (!principal.trim()) return null
     if (!Number.isFinite(principalAmount) || principalAmount <= 0) {
-      return "Ingresá un monto recibido mayor a cero."
+      return isPos
+        ? "Ingresá un monto recibido mayor a cero."
+        : "Ingresá un monto de consumos a cancelar mayor a cero."
     }
     if (!Number.isFinite(adjustmentAmount) || adjustmentAmount < 0) {
-      return "Las comisiones no pueden ser negativas."
+      return isPos
+        ? "Las comisiones no pueden ser negativas."
+        : "Los cargos del resumen no pueden ser negativos."
     }
     if (isPos) {
       const total = roundMoney(principalAmount + adjustmentAmount)
@@ -177,7 +190,7 @@ export function TreasuryReconcileModal({
         return `El total (${fmt.format(total)}) supera el ${balanceLabel.toLowerCase()} al ${formatTreasuryShortDate(eventDate)} (${fmt.format(balanceAsOf)}).`
       }
     } else if (principalAmount > balanceAsOf + 0.001) {
-      return `El monto pagado supera la deuda pendiente al ${formatTreasuryShortDate(eventDate)} (${fmt.format(balanceAsOf)}).`
+      return `Los consumos a cancelar superan la deuda pendiente al ${formatTreasuryShortDate(eventDate)} (${fmt.format(balanceAsOf)}).`
     }
     return null
   }, [
@@ -310,7 +323,7 @@ export function TreasuryReconcileModal({
                   htmlFor="reconcile-principal"
                   className={lightLabel}
                 >
-                  {isPos ? "Monto recibido" : "Monto pagado"}
+                  {isPos ? "Monto recibido" : "Consumos a cancelar"}
                 </FieldLabel>
                 <InputGroup className={lightSurface}>
                   <InputGroupAddon>
@@ -334,7 +347,7 @@ export function TreasuryReconcileModal({
                   htmlFor="reconcile-adjustment"
                   className={lightLabel}
                 >
-                  {TREASURY_RECONCILE_COMMISSIONS_LABEL}
+                  {adjustmentLabel}
                 </FieldLabel>
                 <InputGroup className={lightSurface}>
                   <InputGroupAddon>
@@ -364,7 +377,7 @@ export function TreasuryReconcileModal({
                   </Button>
                 ) : null}
                 <FieldDescription className={cn("text-xs", lightMuted)}>
-                  {TREASURY_RECONCILE_COMMISSIONS_ACCOUNT_HINT}
+                  {adjustmentHint}
                 </FieldDescription>
               </Field>
             </div>

@@ -194,9 +194,19 @@ export function defaultTreasuryPeriodStart(): string {
 
 export const TREASURY_RECONCILE_COMMISSIONS_LABEL = "Comisiones e impuestos"
 
-/** Texto de ayuda al registrar comisiones en conciliación. */
+/** Texto de ayuda al registrar comisiones en liquidación POS. */
 export const TREASURY_RECONCILE_COMMISSIONS_ACCOUNT_HINT =
   "Se contabiliza en Comisiones y gastos comerciales."
+
+export const TREASURY_CARD_STATEMENT_CHARGES_LABEL =
+  "Intereses y otros cargos del resumen"
+
+/** Etiqueta corta para tablas e historial de tarjeta. */
+export const TREASURY_CARD_STATEMENT_CHARGES_SHORT_LABEL = "Otros cargos del resumen"
+
+/** Texto de ayuda al registrar cargos extra del resumen de tarjeta. */
+export const TREASURY_CARD_STATEMENT_CHARGES_ACCOUNT_HINT =
+  "Se contabiliza en Intereses y gastos financieros."
 
 export function parseTreasuryMoneyInput(value: string): number {
   let s = String(value).trim().replace(/\s/g, "")

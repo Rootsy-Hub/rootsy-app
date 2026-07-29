@@ -536,10 +536,49 @@ export async function createTreasuryChildAccount(
           error: "Los terminales POS se agregan a cuentas banco o billetera.",
         }
       }
-    } else if (parentKind !== "bank") {
+    } else if (parentKind !== "bank" && parentKind !== "wallet") {
       return {
         success: false,
-        error: "Las tarjetas corporativas se agregan a cuentas banco.",
+        error: "Las tarjetas corporativas se agregan a cuentas banco o billetera.",
+      }
+    }
+
+    const { data: siblingRows } = await supabase
+      .from("treasury_accounts")
+      .select(
+        `
+        kind,
+        accounting_chart_of_accounts ( code )
+      `,
+      )
+      .eq("pop_id", popId)
+      .eq("parent_treasury_account_id", parentTreasuryAccountId)
+
+    for (const sibling of siblingRows || []) {
+      const siblingChart = sibling.accounting_chart_of_accounts as unknown as {
+        code?: string
+      } | null
+      const siblingCode = String(siblingChart?.code ?? "")
+      const siblingKind = parseTreasuryKind(sibling.kind)
+
+      if (
+        childKind === "pos" &&
+        isSettlementReceivableChartCode(siblingCode)
+      ) {
+        return {
+          success: false,
+          error: "Esta cuenta ya tiene un terminal POS.",
+        }
+      }
+      if (
+        childKind === "card_payable" &&
+        (siblingKind === "card_payable" ||
+          isCardPayableChartCode(siblingCode))
+      ) {
+        return {
+          success: false,
+          error: "Esta cuenta ya tiene una tarjeta corporativa.",
+        }
       }
     }
 

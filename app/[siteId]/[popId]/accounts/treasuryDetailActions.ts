@@ -1278,7 +1278,10 @@ export async function recordTreasurySettlementForAccount(
       return { success: false, error: "El importe debe ser mayor a cero." }
     }
     if (adjustment < 0) {
-      return { success: false, error: "Las comisiones e impuestos no pueden ser negativos." }
+      return {
+        success: false,
+        error: "Los cargos del resumen no pueden ser negativos.",
+      }
     }
     if (!/^\d{4}-\d{2}-\d{2}$/.test(settledAt)) {
       return { success: false, error: "Fecha de pago inválida." }
@@ -1331,7 +1334,7 @@ export async function recordTreasurySettlementForAccount(
     if (principal > outstanding + 0.0001) {
       return {
         success: false,
-        error: `El importe supera la deuda pendiente al ${settledAt} (${outstanding.toFixed(2)}).`,
+        error: `Los consumos a cancelar superan la deuda pendiente al ${settledAt} (${outstanding.toFixed(2)}).`,
       }
     }
 

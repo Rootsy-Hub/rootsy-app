@@ -20,21 +20,27 @@ export function getTreasuryAccountMenuActions(
     canUpdate: boolean
     canDelete: boolean
   },
+  integrations?: {
+    hasPos?: boolean
+    hasCard?: boolean
+  },
 ): TreasuryAccountMenuAction[] {
   const actions: TreasuryAccountMenuAction[] = []
 
   if (permissions.canCreate) {
     if (kind === "bank" || kind === "wallet") {
-      actions.push({
-        id: "add_pos",
-        label: "Agregar terminal POS",
-      })
-    }
-    if (kind === "bank") {
-      actions.push({
-        id: "add_corporate_card",
-        label: "Agregar tarjeta corporativa",
-      })
+      if (!integrations?.hasPos) {
+        actions.push({
+          id: "add_pos",
+          label: "Agregar terminal POS",
+        })
+      }
+      if (!integrations?.hasCard) {
+        actions.push({
+          id: "add_corporate_card",
+          label: "Agregar tarjeta corporativa",
+        })
+      }
     }
   }
 
