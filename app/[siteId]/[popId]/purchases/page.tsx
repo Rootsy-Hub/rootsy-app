@@ -2,16 +2,23 @@
 
 import withAuth from "@/hoc/withAuth"
 import Image from "next/image"
-import Link from "next/link"
 import {
   getPurchaseCatalog,
   type PurchaseCatalogArticle,
   type PurchaseCatalogCategory,
-  type PurchaseCatalogPaymentMethod,
+  type PurchaseCatalogPaymentOption,
   type PurchaseCatalogSupplier,
   type PurchaseKind,
 } from "@/app/[siteId]/[popId]/purchases/actions"
-import { treasuryPaymentOptionKey } from "@/lib/treasuryPaymentOptions"
+import { PurchasePaymentMethodDialog } from "@/components/purchase-operation/PurchasePaymentMethodDialog"
+import { OperationPartyPickerDialog } from "@/components/checkout/OperationPartyPickerDialog"
+import { PurchaseComprobantePickerDialog } from "@/components/checkout/PurchaseComprobantePickerDialog"
+import { GeneralDiscountDialog } from "@/components/checkout/GeneralDiscountDialog"
+import {
+  defaultPurchaseCheckoutPaymentSelection,
+  isPurchasePaymentSelectionValid,
+} from "@/lib/purchaseCheckoutPayment"
+import type { TreasuryPaymentContext } from "@/lib/treasuryPaymentOptions"
 import {
   CLIENT_IVA_CONDITION_OPTIONS,
 } from "@/app/[siteId]/[popId]/clients/clientIvaConstants"
@@ -108,8 +115,6 @@ type ProveedorCompraSeleccionado = {
   taxId: string
   ivaCondition: string | null
 }
-
-const MANUAL_PARTY_LIST_ID = "__manual__"
 
 const IVA_LABEL_BY_VALUE = Object.fromEntries(
   CLIENT_IVA_CONDITION_OPTIONS.map((o) => [o.value, o.label]),
@@ -334,15 +339,13 @@ function PurchasesPage() {
   const [catalogCategories, setCatalogCategories] = useState<
     PurchaseCatalogCategory[]
   >([])
-  const [suppliers, setSuppliers] = useState<PurchaseCatalogSupplier[]>([])
   const [popName, setPopName] = useState("")
   const [catalogLoading, setCatalogLoading] = useState(true)
   const [catalogError, setCatalogError] = useState<string | null>(null)
   const [canCreate, setCanCreate] = useState(false)
   const [canUpdateArticles, setCanUpdateArticles] = useState(false)
-  const [paymentMethods, setPaymentMethods] = useState<
-    PurchaseCatalogPaymentMethod[]
-  >([])
+  const [treasuryPaymentContext, setTreasuryPaymentContext] =
+    useState<TreasuryPaymentContext | null>(null)
   const [canReadPaymentMethods, setCanReadPaymentMethods] = useState(false)
 
   const categoriasNav = useMemo(() => {
@@ -369,11 +372,10 @@ function PurchasesPage() {
     if (!res.success) {
       setCatalogArticles([])
       setCatalogCategories([])
-      setSuppliers([])
       setPopName("")
       setCanCreate(false)
       setCanUpdateArticles(false)
-      setPaymentMethods([])
+      setTreasuryPaymentContext(null)
       setCanReadPaymentMethods(false)
       setCatalogError(res.error)
       setCatalogLoading(false)
@@ -381,11 +383,10 @@ function PurchasesPage() {
     }
     setCatalogArticles(res.articles)
     setCatalogCategories(res.categories)
-    setSuppliers(res.suppliers)
     setPopName(res.popName)
     setCanCreate(res.canCreate)
     setCanUpdateArticles(res.canUpdateArticles)
-    setPaymentMethods(res.paymentMethods)
+    setTreasuryPaymentContext(res.treasuryPaymentContext)
     setCanReadPaymentMethods(res.canReadPaymentMethods)
     setCatalogError(null)
     setCatalogLoading(false)
@@ -396,20 +397,14 @@ function PurchasesPage() {
   }, [loadCatalog])
 
   useEffect(() => {
-    if (!canReadPaymentMethods || paymentMethods.length === 0) return
+    if (!canReadPaymentMethods || !treasuryPaymentContext) return
     setMetodoPagoSeleccionado((prev) => {
-      if (
-        prev &&
-        paymentMethods.some(
-          (m) => treasuryPaymentOptionKey(m) === treasuryPaymentOptionKey(prev),
-        )
-      ) {
+      if (prev && isPurchasePaymentSelectionValid(prev, treasuryPaymentContext)) {
         return prev
       }
-      const efectivo = paymentMethods.find((m) => m.kind === "cash")
-      return efectivo ?? null
+      return defaultPurchaseCheckoutPaymentSelection(treasuryPaymentContext)
     })
-  }, [canReadPaymentMethods, paymentMethods])
+  }, [canReadPaymentMethods, treasuryPaymentContext])
 
   const [vistaCatalogo, setVistaCatalogo] = useState<VistaCatalogo>({
     modo: "categoria",
@@ -440,12 +435,11 @@ function PurchasesPage() {
   const comprobanteAdjuntoInputRef = useRef<HTMLInputElement>(null)
 
   const [proveedorModalAbierto, setProveedorModalAbierto] = useState(false)
-  const [busquedaProveedorModal, setBusquedaProveedorModal] = useState("")
   const [comprobanteModalAbierto, setComprobanteModalAbierto] = useState(false)
   const [pagoModalAbierto, setPagoModalAbierto] = useState(false)
   const [descuentoModalAbierto, setDescuentoModalAbierto] = useState(false)
   const [metodoPagoSeleccionado, setMetodoPagoSeleccionado] =
-    useState<PurchaseCatalogPaymentMethod | null>(null)
+    useState<PurchaseCatalogPaymentOption | null>(null)
   const [payOnSupplierAccount, setPayOnSupplierAccount] = useState(false)
   const [cardInstallments, setCardInstallments] = useState("1")
   const [modoDescuento, setModoDescuento] = useState<"porcentaje" | "fijo">(
@@ -679,10 +673,11 @@ function PurchasesPage() {
     setValorDescuentoFijo(0)
     setPayOnSupplierAccount(false)
     setCardInstallments("1")
-    setMetodoPagoSeleccionado(() => {
-      const efectivo = paymentMethods.find((m) => m.kind === "cash")
-      return efectivo ?? null
-    })
+    setMetodoPagoSeleccionado(() =>
+      treasuryPaymentContext
+        ? defaultPurchaseCheckoutPaymentSelection(treasuryPaymentContext)
+        : null,
+    )
     setItemDetalleAbiertoId(null)
     setDescartarConfirmOpen(false)
     setComprarConfirmOpen(false)
@@ -690,7 +685,7 @@ function PurchasesPage() {
     const today = new Date()
     const iso = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`
     setDocumentDate(iso)
-  }, [paymentMethods])
+  }, [treasuryPaymentContext])
 
   const confirmarCompra = useCallback(async () => {
     if (!popId) return
@@ -777,58 +772,8 @@ function PurchasesPage() {
     loadCatalog,
   ])
 
-  const proveedoresFiltradosModal = useMemo(() => {
-    const q = normalizarBusqueda(busquedaProveedorModal.trim())
-
-    if (proveedorSeleccionado && !q) {
-      if (proveedorSeleccionado.manual) {
-        return [
-          {
-            id: MANUAL_PARTY_LIST_ID,
-            name: proveedorSeleccionado.name,
-            taxId: proveedorSeleccionado.taxId,
-          },
-        ]
-      }
-      const fromCatalog = suppliers.find((s) => s.id === proveedorSeleccionado.id)
-      if (fromCatalog) return [fromCatalog]
-      if (proveedorSeleccionado.id) {
-        return [
-          {
-            id: proveedorSeleccionado.id,
-            name: proveedorSeleccionado.name,
-            taxId: proveedorSeleccionado.taxId,
-          },
-        ]
-      }
-      return []
-    }
-
-    if (!q) return []
-
-    return suppliers.filter(
-      (s) =>
-        normalizarBusqueda(s.name).includes(q) ||
-        normalizarBusqueda(s.taxId).includes(q),
-    )
-  }, [busquedaProveedorModal, suppliers, proveedorSeleccionado])
-
   const proveedorCatalogoBloqueado =
     proveedorSeleccionado != null && !proveedorSeleccionado.manual
-
-  const puedeUsarProveedorManual = useMemo(() => {
-    if (proveedorSeleccionado) return false
-    return Boolean(
-      manualNombreProveedor.trim() ||
-        proveedorTaxId.trim() ||
-        compraPadron.razonSocial.trim(),
-    )
-  }, [
-    proveedorSeleccionado,
-    manualNombreProveedor,
-    proveedorTaxId,
-    compraPadron.razonSocial,
-  ])
 
   const quitarProveedorCompra = useCallback(() => {
     setProveedorSeleccionado(null)
@@ -865,79 +810,12 @@ function PurchasesPage() {
     setProveedorModalAbierto(false)
   }
 
-  useEffect(() => {
-    if (proveedorSeleccionado && !proveedorSeleccionado.manual) return
-    if (!proveedorTaxId.trim()) return
-    if (!compraPadron.mappedIvaCondition) return
-    setCompraIvaCondition(compraPadron.mappedIvaCondition)
-  }, [
-    proveedorTaxId,
-    compraPadron.mappedIvaCondition,
-    proveedorSeleccionado,
-  ])
-
-  useEffect(() => {
-    if (proveedorSeleccionado && !proveedorSeleccionado.manual) return
-    if (!compraPadron.razonSocial.trim()) return
-    if (manualNombreProveedor.trim()) return
-    setManualNombreProveedor(compraPadron.razonSocial.trim())
-  }, [
-    compraPadron.razonSocial,
-    manualNombreProveedor,
-    proveedorSeleccionado,
-  ])
-
   const compraIvaLabel = useMemo(
     () =>
       labelCondicionIva(
         proveedorSeleccionado?.ivaCondition ?? compraIvaCondition,
       ),
     [compraIvaCondition, proveedorSeleccionado?.ivaCondition],
-  )
-
-  const busquedaProveedorModalTrim = busquedaProveedorModal.trim()
-
-  const paymentMethodGroups = useMemo(() => {
-    const order = [
-      "cash",
-      "card_debit",
-      "card_credit",
-      "transfer",
-      "other",
-    ] as const
-    const sectionLabel: Record<(typeof order)[number], string> = {
-      cash: "Efectivo",
-      card_debit: "Débito",
-      card_credit: "Crédito",
-      transfer: "Transferencia",
-      other: "Otros",
-    }
-    const buckets: Record<string, PurchaseCatalogPaymentMethod[]> = {}
-    for (const k of order) buckets[k] = []
-    for (const m of paymentMethods) {
-      const k = order.includes(m.kind as (typeof order)[number])
-        ? (m.kind as (typeof order)[number])
-        : "other"
-      buckets[k].push(m)
-    }
-    return order
-      .filter((k) => buckets[k].length > 0)
-      .map((kind) => ({
-        kind,
-        title: sectionLabel[kind],
-        items: buckets[kind],
-      }))
-  }, [paymentMethods])
-
-  const paymentMethodListItems = useMemo(
-    () =>
-      paymentMethodGroups.flatMap((g) =>
-        g.items.map((method) => ({
-          method,
-          groupTitle: g.title,
-        })),
-      ),
-    [paymentMethodGroups],
   )
 
   const abrirModalDescuento = () => {
@@ -1943,700 +1821,91 @@ function PurchasesPage() {
         </div>
       </DataWorkspaceLayout>
 
-      <Dialog
+      <OperationPartyPickerDialog
+        popId={popId ?? ""}
+        flow="purchase"
+        context="compra"
         open={proveedorModalAbierto}
         onOpenChange={(open) => {
           setProveedorModalAbierto(open)
-          if (open) {
-            setBusquedaProveedorModal("")
-            if (proveedorSeleccionado?.manual) {
-              setManualNombreProveedor(proveedorSeleccionado.name)
-              setProveedorTaxId(proveedorSeleccionado.taxId)
-              setCompraIvaCondition(proveedorSeleccionado.ivaCondition ?? "")
-            }
+          if (open && proveedorSeleccionado?.manual) {
+            setManualNombreProveedor(proveedorSeleccionado.name)
+            setProveedorTaxId(proveedorSeleccionado.taxId)
+            setCompraIvaCondition(proveedorSeleccionado.ivaCondition ?? "")
           }
         }}
-      >
-        <DialogContent className={compraDialogContentMd}>
-          <DialogHeader className={compraDialogHeader}>
-            <DialogTitle className="text-base font-semibold tracking-tight">
-              Proveedor para esta compra
-            </DialogTitle>
-            <DialogDescription className="text-sm leading-relaxed">
-              {proveedorSeleccionado
-                ? proveedorSeleccionado.manual
-                  ? "Proveedor cargado manualmente para esta compra (no se guarda en el catálogo). Quitá la selección para cambiar los datos."
-                  : "Proveedor asignado a esta compra. Quitá la selección para cargar datos manualmente."
-                : "Buscá en el catálogo o cargá los datos manualmente y usalos solo para esta compra."}
-            </DialogDescription>
-          </DialogHeader>
-          <div className={compraDialogBody}>
-            <div className="relative mb-3">
-              <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-              <Input
-                ref={busquedaProveedorInputRef}
-                value={busquedaProveedorModal}
-                onChange={(e) => setBusquedaProveedorModal(e.target.value)}
-                placeholder="Nombre del proveedor…"
-                disabled={proveedorCatalogoBloqueado}
-                className={cn(
-                  "h-11 rounded-lg pl-9",
-                  busquedaProveedorModal.length > 0 && "pr-9",
-                )}
-                autoComplete="off"
-              />
-              {busquedaProveedorModal.length > 0 && !proveedorCatalogoBloqueado ? (
-                <button
-                  type="button"
-                  aria-label="Limpiar búsqueda"
-                  className="absolute right-1.5 top-1/2 flex size-7 -translate-y-1/2 items-center justify-center rounded-full text-muted-foreground transition-[color,background-color] duration-150 hover:bg-muted/70 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background active:bg-muted"
-                  onClick={() => {
-                    setBusquedaProveedorModal("")
-                    busquedaProveedorInputRef.current?.focus()
-                  }}
-                >
-                  <IconoLimpiarBusqueda />
-                </button>
-              ) : null}
-            </div>
-            <div
-              className={cn(
-                "mb-3 rounded-xl border border-border/50 bg-muted/15 p-3",
-                proveedorCatalogoBloqueado && "opacity-60",
-              )}
-            >
-              <p className="mb-2 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-                Datos para esta compra
-              </p>
-              <Input
-                value={manualNombreProveedor}
-                onChange={(e) => setManualNombreProveedor(e.target.value)}
-                placeholder="Nombre o razón social"
-                className="mb-2 h-10 rounded-lg"
-                autoComplete="off"
-                disabled={proveedorSeleccionado != null}
-                readOnly={proveedorSeleccionado != null}
-              />
-              <p className="mb-1.5 text-[11px] font-medium text-muted-foreground">
-                CUIT (padrón AFIP)
-              </p>
-              <Input
-                value={proveedorTaxId}
-                onChange={(e) => setProveedorTaxId(e.target.value)}
-                placeholder="Ej. 30-12345678-9"
-                className="h-10 rounded-lg"
-                autoComplete="off"
-                disabled={proveedorSeleccionado != null}
-                readOnly={proveedorSeleccionado != null}
-              />
-              <div className="mt-2 flex min-h-6 items-center gap-2 text-sm">
-                {proveedorSeleccionado ? (
-                  <span className="font-medium text-foreground">
-                    {proveedorSeleccionado.name}
-                  </span>
-                ) : compraPadron.busy ? (
-                  <>
-                    <Loader2
-                      className="size-4 shrink-0 animate-spin text-primary"
-                      aria-hidden
-                    />
-                    <span className="text-muted-foreground">Consultando…</span>
-                  </>
-                ) : compraPadron.error ? (
-                  <span className="text-destructive">{compraPadron.error}</span>
-                ) : compraPadron.razonSocial && !manualNombreProveedor.trim() ? (
-                  <span className="text-muted-foreground">
-                    Padrón:{" "}
-                    <span className="font-medium text-foreground">
-                      {compraPadron.razonSocial}
-                    </span>
-                  </span>
-                ) : (
-                  <span className="text-muted-foreground">
-                    La razón social del padrón se completa al validar el CUIT.
-                  </span>
-                )}
-              </div>
-              {proveedorSeleccionado?.ivaCondition ? (
-                <p className="mt-1 text-xs text-muted-foreground">
-                  {labelCondicionIva(proveedorSeleccionado.ivaCondition)}
-                </p>
-              ) : compraPadron.condicionIvaNombre &&
-                !compraPadron.busy &&
-                !compraPadron.error ? (
-                <p className="mt-1 text-xs text-muted-foreground">
-                  AFIP: {compraPadron.condicionIvaNombre}
-                </p>
-              ) : null}
-            </div>
-            <div
-              className={cn(
-                "mb-3 space-y-2",
-                proveedorSeleccionado != null && "opacity-60",
-              )}
-            >
-              <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-                Condición IVA (esta compra)
-              </p>
-              <Select
-                value={compraIvaCondition || "__none__"}
-                disabled={proveedorSeleccionado != null}
-                onValueChange={(v) => {
-                  setCompraIvaCondition(v === "__none__" ? "" : v)
-                }}
-              >
-                <SelectTrigger className="h-10 rounded-lg bg-background">
-                  <SelectValue placeholder="Sin definir" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="__none__">Sin definir</SelectItem>
-                  {CLIENT_IVA_CONDITION_OPTIONS.map((o) => (
-                    <SelectItem key={o.value} value={o.value}>
-                      {o.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <ul
-              className={cn(
-                "game-scroll max-h-[min(50vh,16rem)] space-y-2 overflow-y-auto rounded-xl border border-border/40 bg-muted/20 p-2 pr-1",
-                proveedorCatalogoBloqueado && "opacity-60",
-              )}
-              role="listbox"
-              aria-label="Proveedores"
-            >
-              {!proveedorSeleccionado ? (
-                <li>
-                  <button
-                    type="button"
-                    role="option"
-                    aria-selected={!proveedorSeleccionado}
-                    onClick={() => {
-                      quitarProveedorCompra()
-                      setProveedorModalAbierto(false)
-                    }}
-                    className={compraDialogOptionClass(!proveedorSeleccionado)}
-                  >
-                    <span className="min-w-0">
-                      <span className="block text-sm font-semibold leading-snug text-foreground">
-                        Sin proveedor
-                      </span>
-                    </span>
-                    {!proveedorSeleccionado ? (
-                      <span className="size-2 shrink-0 rounded-full bg-primary" />
-                    ) : null}
-                  </button>
-                </li>
-              ) : null}
-              {proveedoresFiltradosModal.length === 0 ? (
-                <li className="rounded-lg border border-dashed border-border/60 bg-background/50 px-4 py-8 text-center text-sm text-muted-foreground">
-                  {proveedorSeleccionado && !busquedaProveedorModalTrim
-                    ? proveedorSeleccionado.manual
-                      ? "Proveedor manual asignado a esta compra."
-                      : "Proveedor asignado a esta compra."
-                    : !busquedaProveedorModalTrim
-                      ? suppliers.length === 0
-                        ? (
-                            <>
-                              No hay proveedores cargados.{" "}
-                              <Link
-                                href={`/${siteId}/${popId}/suppliers`}
-                                className="underline underline-offset-2"
-                              >
-                                Cargar proveedores
-                              </Link>
-                            </>
-                          )
-                        : "Escribí un nombre o CUIT en el buscador para ver proveedores del catálogo."
-                      : "No hay resultados para esa búsqueda."}
-                </li>
-              ) : (
-                proveedoresFiltradosModal.map((s) => {
-                  const seleccionado = proveedorSeleccionado?.manual
-                    ? s.id === MANUAL_PARTY_LIST_ID
-                    : proveedorSeleccionado?.id === s.id
-                  const opcionDeshabilitada = proveedorSeleccionado != null
-                  return (
-                    <li key={s.id}>
-                      <button
-                        type="button"
-                        role="option"
-                        aria-selected={seleccionado}
-                        aria-disabled={opcionDeshabilitada}
-                        disabled={opcionDeshabilitada}
-                        onClick={() => {
-                          if (s.id === MANUAL_PARTY_LIST_ID) return
-                          seleccionarProveedorCatalogo(s)
-                        }}
-                        className={compraDialogOptionClass(seleccionado, opcionDeshabilitada)}
-                      >
-                        <span className="min-w-0">
-                          <span className="block text-sm font-semibold leading-snug text-foreground">
-                            {s.name}
-                            {s.id === MANUAL_PARTY_LIST_ID ? (
-                              <span className="ml-1.5 text-xs font-normal text-muted-foreground">
-                                (manual)
-                              </span>
-                            ) : null}
-                          </span>
-                          {s.taxId ? (
-                            <span className="mt-0.5 block text-xs leading-snug text-muted-foreground">
-                              {s.taxId}
-                            </span>
-                          ) : null}
-                        </span>
-                        {seleccionado ? (
-                          <span className="size-2 shrink-0 rounded-full bg-primary" />
-                        ) : null}
-                      </button>
-                    </li>
-                  )
-                })
-              )}
-            </ul>
-          </div>
-          <DialogFooter className={compraDialogFooter}>
-            {proveedorSeleccionado ? (
-              <Button
-                type="button"
-                variant="ghost"
-                className={compraDialogGhostBtn}
-                onClick={() => {
-                  quitarProveedorCompra()
-                  setProveedorModalAbierto(false)
-                }}
-              >
-                Quitar proveedor
-              </Button>
-            ) : puedeUsarProveedorManual ? (
-              <Button
-                type="button"
-                className={compraDialogPrimaryBtn}
-                onClick={seleccionarProveedorManual}
-              >
-                Usar para esta compra
-              </Button>
-            ) : (
-              <Button
-                type="button"
-                variant="ghost"
-                className={compraDialogGhostBtn}
-                onClick={() => setProveedorModalAbierto(false)}
-              >
-                Cerrar
-              </Button>
-            )}
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+        canSearchCatalog={Boolean(popId)}
+        manualName={manualNombreProveedor}
+        onManualNameChange={setManualNombreProveedor}
+        taxId={proveedorTaxId}
+        onTaxIdChange={setProveedorTaxId}
+        ivaCondition={compraIvaCondition}
+        onIvaConditionChange={setCompraIvaCondition}
+        selected={proveedorSeleccionado}
+        padron={compraPadron}
+        catalogBlocked={proveedorCatalogoBloqueado}
+        onSelectCatalogParty={(party) =>
+          seleccionarProveedorCatalogo({
+            id: party.id,
+            name: party.name,
+            taxId: party.taxId ?? "",
+          })
+        }
+        onSelectManual={seleccionarProveedorManual}
+        onClearSelection={quitarProveedorCompra}
+      />
 
-      <Dialog open={comprobanteModalAbierto} onOpenChange={setComprobanteModalAbierto}>
-        <DialogContent className={compraDialogContentLg}>
-          <DialogHeader className={cn(compraDialogHeader, "shrink-0")}>
-            <DialogTitle className="text-base font-semibold tracking-tight">
-              Tipo de comprobante
-            </DialogTitle>
-            <DialogDescription className="text-sm leading-relaxed">
-              Elegí el documento del proveedor o dejalo en sin comprobante para un
-              registro interno. Completá número, fechas y adjunto si los tenés.
-            </DialogDescription>
-          </DialogHeader>
-          <div
-            className={cn(
-              compraDialogBody,
-              "min-h-0 flex-1 space-y-4 overflow-y-auto overscroll-contain",
-            )}
-          >
-            <ul
-              className="flex flex-col gap-1.5"
-              role="listbox"
-              aria-label="Tipos de comprobante"
-            >
-              {comprobantePickerOptions.map((opt) => {
-                const seleccionado =
-                  opt.kind === "none"
-                    ? comprobanteTipo == null
-                    : comprobanteTipo === opt.label
-                return (
-                  <li key={opt.label} className="min-w-0">
-                    <button
-                      type="button"
-                      role="option"
-                      aria-selected={seleccionado}
-                      onClick={() =>
-                        setComprobanteTipo(
-                          opt.kind === "none" ? null : opt.label,
-                        )
-                      }
-                      className={compraDialogOptionClass(seleccionado)}
-                    >
-                      <span className="min-w-0">
-                        <span className="block text-sm font-semibold leading-snug text-foreground">
-                          {opt.label}
-                        </span>
-                        <span className="mt-0.5 block text-xs leading-snug text-muted-foreground">
-                          {opt.hint}
-                        </span>
-                      </span>
-                      {seleccionado ? (
-                        <span className="size-2 shrink-0 rounded-full bg-primary" />
-                      ) : null}
-                    </button>
-                  </li>
-                )
-              })}
-            </ul>
+      <PurchaseComprobantePickerDialog
+        open={comprobanteModalAbierto}
+        onOpenChange={setComprobanteModalAbierto}
+        options={comprobantePickerOptions}
+        comprobanteTipo={comprobanteTipo}
+        onComprobanteTipoChange={setComprobanteTipo}
+        documentNumber={documentNumber}
+        onDocumentNumberChange={setDocumentNumber}
+        documentDate={documentDate}
+        onDocumentDateChange={setDocumentDate}
+        dueDate={dueDate}
+        onDueDateChange={setDueDate}
+        attachment={comprobanteAdjunto}
+        onAttachmentChange={setComprobanteAdjunto}
+        attachmentInputRef={comprobanteAdjuntoInputRef}
+      />
 
-            <div className="space-y-2">
-              <Label htmlFor="purchase-doc-number">Nº comprobante</Label>
-              <Input
-                id="purchase-doc-number"
-                value={documentNumber}
-                onChange={(e) => setDocumentNumber(e.target.value)}
-                placeholder="Número impreso en la factura"
-                className="h-10 rounded-lg"
-              />
-            </div>
-            <div className="grid gap-4 sm:grid-cols-2">
-              <div className="space-y-2">
-                <Label htmlFor="purchase-doc-date">Fecha comprobante</Label>
-                <Input
-                  id="purchase-doc-date"
-                  type="date"
-                  value={documentDate}
-                  onChange={(e) => setDocumentDate(e.target.value)}
-                  className="h-10 rounded-lg"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="purchase-due-date">Vencimiento pago</Label>
-                <Input
-                  id="purchase-due-date"
-                  type="date"
-                  value={dueDate}
-                  onChange={(e) => setDueDate(e.target.value)}
-                  className="h-10 rounded-lg"
-                />
-              </div>
-            </div>
+      <PurchasePaymentMethodDialog
+        open={pagoModalAbierto}
+        onOpenChange={setPagoModalAbierto}
+        treasuryContext={treasuryPaymentContext}
+        selected={metodoPagoSeleccionado}
+        payOnSupplierAccount={payOnSupplierAccount}
+        cardInstallments={cardInstallments}
+        onCardInstallmentsChange={setCardInstallments}
+        onSelectImmediate={(option) => {
+          setPayOnSupplierAccount(false)
+          setMetodoPagoSeleccionado(option)
+          if (option?.kind !== "card_credit") {
+            setCardInstallments("1")
+          }
+        }}
+        onSelectSupplierAccount={() => {
+          setPayOnSupplierAccount(true)
+          setMetodoPagoSeleccionado(null)
+          setCardInstallments("1")
+        }}
+      />
 
-            <div className="space-y-2">
-              <Label htmlFor="purchase-doc-attachment">Adjunto</Label>
-              <input
-                ref={comprobanteAdjuntoInputRef}
-                id="purchase-doc-attachment"
-                type="file"
-                accept=".pdf,.png,.jpg,.jpeg,.webp,image/*,application/pdf"
-                className="sr-only"
-                onChange={(e) => {
-                  const file = e.target.files?.[0] ?? null
-                  setComprobanteAdjunto(file)
-                }}
-              />
-              <div className="flex flex-wrap items-center gap-2">
-                <Button
-                  type="button"
-                  variant="outline"
-                  className="gap-2 rounded-lg"
-                  onClick={() => comprobanteAdjuntoInputRef.current?.click()}
-                >
-                  <Paperclip className="size-4" aria-hidden />
-                  {comprobanteAdjunto ? "Cambiar archivo" : "Adjuntar archivo"}
-                </Button>
-                {comprobanteAdjunto ? (
-                  <>
-                    <span className="max-w-[220px] truncate text-sm text-muted-foreground">
-                      {comprobanteAdjunto.name}
-                    </span>
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => {
-                        setComprobanteAdjunto(null)
-                        if (comprobanteAdjuntoInputRef.current) {
-                          comprobanteAdjuntoInputRef.current.value = ""
-                        }
-                      }}
-                    >
-                      Quitar
-                    </Button>
-                  </>
-                ) : null}
-              </div>
-            </div>
-          </div>
-          <DialogFooter className={cn(compraDialogFooter, "shrink-0")}>
-            <Button
-              type="button"
-              variant="ghost"
-              className={compraDialogGhostBtn}
-              onClick={() => {
-                setComprobanteTipo(null)
-                setComprobanteAdjunto(null)
-                if (comprobanteAdjuntoInputRef.current) {
-                  comprobanteAdjuntoInputRef.current.value = ""
-                }
-                setComprobanteModalAbierto(false)
-              }}
-            >
-              Quitar selección
-            </Button>
-            <Button
-              type="button"
-              className={compraDialogPrimaryBtn}
-              onClick={() => setComprobanteModalAbierto(false)}
-            >
-              Listo
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      <Dialog open={pagoModalAbierto} onOpenChange={setPagoModalAbierto}>
-        <DialogContent className={compraDialogContentMd}>
-          <DialogHeader className={cn(compraDialogHeader, "shrink-0")}>
-            <DialogTitle className="text-base font-semibold tracking-tight">
-              Formas de pago
-            </DialogTitle>
-            <DialogDescription className="text-sm leading-relaxed">
-              Elegí cómo vas a pagar esta compra: al contado o a cuenta corriente
-              del proveedor.
-            </DialogDescription>
-          </DialogHeader>
-          <div
-            className={cn(
-              compraDialogBody,
-              "min-h-0 flex-1 space-y-4 overflow-y-auto overscroll-contain",
-            )}
-          >
-            <div>
-              <p className="mb-2 text-[10px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
-                Cuenta del proveedor
-              </p>
-              <button
-                type="button"
-                className={compraDialogOptionClass(payOnSupplierAccount)}
-                onClick={() => {
-                  setPayOnSupplierAccount(true)
-                  setMetodoPagoSeleccionado(null)
-                  setCardInstallments("1")
-                  setPagoModalAbierto(false)
-                }}
-              >
-                <span className="min-w-0">
-                  <span className="block text-sm font-semibold leading-snug text-foreground">
-                    {SUPPLIER_ACCOUNT_PAYMENT_LABEL}
-                  </span>
-                </span>
-                {payOnSupplierAccount ? (
-                  <span className="size-2 shrink-0 rounded-full bg-primary" />
-                ) : null}
-              </button>
-              <p className="mt-2 text-xs text-muted-foreground">
-                Recibís la mercadería ahora y registrás la deuda en Proveedores. Podés pagar después.
-              </p>
-            </div>
-
-            {paymentMethodListItems.length > 0 ? (
-              <>
-                <Separator className="bg-border/60" />
-                <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
-                  Pago inmediato
-                </p>
-              </>
-            ) : null}
-
-            {paymentMethodListItems.length === 0 ? (
-              <p className="rounded-lg border border-dashed border-border/60 bg-muted/20 px-4 py-6 text-center text-sm text-muted-foreground">
-                No hay medios de pago activos. Podés usar cuenta corriente del proveedor.
-              </p>
-            ) : (
-              <ul
-                className="flex flex-col gap-1.5"
-                role="listbox"
-                aria-label="Formas de pago"
-              >
-                {paymentMethodListItems.map(({ method, groupTitle }) => {
-                  const seleccionado =
-                    !payOnSupplierAccount &&
-                    metodoPagoSeleccionado != null &&
-                    treasuryPaymentOptionKey(metodoPagoSeleccionado) ===
-                      treasuryPaymentOptionKey(method)
-                  return (
-                    <li key={treasuryPaymentOptionKey(method)} className="min-w-0">
-                      <button
-                        type="button"
-                        role="option"
-                        aria-selected={seleccionado}
-                        onClick={() => {
-                          setPayOnSupplierAccount(false)
-                          setMetodoPagoSeleccionado(method)
-                          if (method.kind !== "card_credit") {
-                            setCardInstallments("1")
-                            setPagoModalAbierto(false)
-                          }
-                        }}
-                        className={compraDialogOptionClass(seleccionado)}
-                      >
-                        <span className="min-w-0">
-                          <span className="block text-sm font-semibold leading-snug text-foreground">
-                            {method.label}
-                          </span>
-                          <span className="mt-0.5 block text-xs leading-snug text-muted-foreground">
-                            {groupTitle}
-                          </span>
-                        </span>
-                        {seleccionado ? (
-                          <span className="size-2 shrink-0 rounded-full bg-primary" />
-                        ) : null}
-                      </button>
-                    </li>
-                  )
-                })}
-              </ul>
-            )}
-
-            {metodoPagoSeleccionado?.kind === "card_credit" &&
-            !payOnSupplierAccount ? (
-              <div className="space-y-2 border-t border-border/50 pt-4">
-                <Label htmlFor="purchase-card-installments">Cuotas</Label>
-                <Input
-                  id="purchase-card-installments"
-                  inputMode="numeric"
-                  value={cardInstallments}
-                  onChange={(e) => {
-                    const raw = e.target.value.replace(/\D/g, "")
-                    if (!raw) {
-                      setCardInstallments("")
-                      return
-                    }
-                    setCardInstallments(String(Math.min(24, Math.max(1, Number(raw)))))
-                  }}
-                  placeholder="1"
-                  className="h-10 rounded-lg"
-                />
-                <p className="text-xs text-muted-foreground">
-                  El proveedor se paga por el total hoy; las cuotas son financiación con la tarjeta.
-                </p>
-              </div>
-            ) : null}
-          </div>
-          <DialogFooter className={cn(compraDialogFooter, "shrink-0")}>
-            <Button
-              type="button"
-              className={compraDialogPrimaryBtn}
-              onClick={() => setPagoModalAbierto(false)}
-            >
-              Listo
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      <Dialog open={descuentoModalAbierto} onOpenChange={setDescuentoModalAbierto}>
-        <DialogContent className={compraDialogContentMd}>
-          <DialogHeader className={compraDialogHeader}>
-            <DialogTitle className="text-base font-semibold tracking-tight">
-              Descuento en la compra
-            </DialogTitle>
-            <DialogDescription className="text-sm leading-relaxed">
-              Alterná % o monto fijo con el botón e ingresá el valor. Se aplica
-              sobre el subtotal de ítems.
-            </DialogDescription>
-          </DialogHeader>
-          <div className={compraDialogBody}>
-            <p className="mb-2 text-[10px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
-              Valor
-            </p>
-            <div className="flex items-center gap-2">
-              <button
-                type="button"
-                className={cn(
-                  "inline-flex size-11 shrink-0 items-center justify-center rounded-xl border text-foreground/80 transition",
-                  "border-foreground/10 bg-muted/50 hover:bg-muted hover:text-foreground",
-                  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
-                )}
-                aria-label="Cambiar tipo de descuento"
-                onClick={() =>
-                  setDescuentoDraftModo((m) =>
-                    m === "porcentaje" ? "fijo" : "porcentaje",
-                  )
-                }
-              >
-                {descuentoDraftModo === "porcentaje" ? (
-                  <Percent className="size-4 text-primary" aria-hidden />
-                ) : (
-                  <Banknote className="size-4 text-primary" aria-hidden />
-                )}
-              </button>
-              <Input
-                id="purchase-desc-valor"
-                value={descuentoDraftTexto}
-                onChange={(e) => {
-                  const raw = e.target.value
-                  if (!/^\d*$/.test(raw)) return
-                  if (raw === "") {
-                    setDescuentoDraftTexto("")
-                    return
-                  }
-                  if (
-                    descuentoDraftModo === "fijo" &&
-                    subtotal > 0 &&
-                    Number(raw) > subtotal
-                  ) {
-                    setDescuentoDraftModo("porcentaje")
-                    setDescuentoDraftTexto("100")
-                    return
-                  }
-                  const nextValue =
-                    descuentoDraftModo === "porcentaje"
-                      ? String(Math.min(100, Number(raw)))
-                      : raw
-                  setDescuentoDraftTexto(nextValue)
-                }}
-                placeholder="descuento"
-                inputMode="numeric"
-                pattern="[0-9]*"
-                autoComplete="off"
-                className="h-11 min-w-0 flex-1 rounded-lg"
-              />
-            </div>
-            {descuentoDraftModo === "fijo" && subtotal > 0 ? (
-              <p className="mt-3 rounded-lg border border-border/50 bg-muted/30 px-3 py-2 text-xs leading-relaxed text-muted-foreground">
-                Máximo aplicable:{" "}
-                <span className={compraImporteBaseClass}>
-                  {fmt.format(subtotal)}
-                </span>
-                . Si superás ese monto, pasa a 100 %.
-              </p>
-            ) : null}
-            {descuentoDraftModo === "fijo" && subtotal === 0 ? (
-              <p className="mt-3 rounded-lg border border-dashed border-border/60 bg-muted/20 px-3 py-2 text-xs leading-relaxed text-muted-foreground">
-                No hay subtotal: agregá productos para aplicar un monto fijo.
-              </p>
-            ) : null}
-          </div>
-          <DialogFooter className={compraDialogFooter}>
-            <Button
-              type="button"
-              variant="ghost"
-              className={compraDialogGhostBtn}
-              onClick={quitarDescuento}
-            >
-              Quitar descuento
-            </Button>
-            <Button
-              type="button"
-              className={compraDialogPrimaryBtn}
-              onClick={aplicarDescuentoModal}
-            >
-              Aplicar
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <GeneralDiscountDialog
+        open={descuentoModalAbierto}
+        onOpenChange={setDescuentoModalAbierto}
+        context="compra"
+        subtotal={subtotal}
+        draftMode={descuentoDraftModo}
+        onDraftModeChange={setDescuentoDraftModo}
+        draftText={descuentoDraftTexto}
+        onDraftTextChange={setDescuentoDraftTexto}
+        onApply={aplicarDescuentoModal}
+        onClear={quitarDescuento}
+      />
 
       <AlertDialog open={descartarConfirmOpen} onOpenChange={setDescartarConfirmOpen}>
         <AlertDialogContent className={compraAlertDialogContent}>

@@ -21,7 +21,9 @@ export function mapPadronCondicionIvaToClientEnum(
 
   if (
     t.includes("RESPONSABLE INSCRIPTO") ||
-    t.includes("IVA RESPONSABLE INSCRIPTO")
+    t.includes("IVA RESPONSABLE INSCRIPTO") ||
+    t === "INSCRIPTO" ||
+    t.includes(" IVA INSCRIPTO")
   ) {
     return "responsable_inscripto"
   }

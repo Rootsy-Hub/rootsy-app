@@ -606,34 +606,7 @@ export async function getMenuCatalog(popId: string): Promise<
       })
     }
 
-    let clients: SaleCatalogClient[] = []
-    if (canReadClients) {
-      const { data: clRows, error: clErr } = await supabase
-        .from("clients")
-        .select(
-          "id, name, tax_id, iva_condition, default_invoice_type_label, is_active",
-        )
-        .eq("pop_id", popId)
-        .eq("is_active", true)
-        .order("name", { ascending: true })
-      if (clErr) {
-        return { success: false, error: clErr.message }
-      }
-      clients = (clRows ?? []).map((c) => ({
-        id: String(c.id),
-        name: String(c.name ?? ""),
-        taxId: c.tax_id != null ? String(c.tax_id) : null,
-        ivaCondition:
-          c.iva_condition != null && String(c.iva_condition).trim() !== ""
-            ? String(c.iva_condition).trim()
-            : null,
-        defaultInvoiceTypeLabel:
-          c.default_invoice_type_label != null &&
-          String(c.default_invoice_type_label).trim() !== ""
-            ? String(c.default_invoice_type_label).trim()
-            : null,
-      }))
-    }
+    const clients: SaleCatalogClient[] = []
 
     let openCashSession: SaleOpenCashSession | null = null
     if (canReadCashRegisters) {

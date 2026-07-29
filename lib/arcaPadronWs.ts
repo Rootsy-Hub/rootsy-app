@@ -341,6 +341,47 @@ function extractActividadesPadron(pr: Record<string, unknown>): PadronActividadI
   )
 }
 
+function extractCondicionIvaNombre(
+  pr: Record<string, unknown>,
+  dg: DatosGenerales,
+): string | undefined {
+  const cars = dg.caracterizacion
+    ? Array.isArray(dg.caracterizacion)
+      ? dg.caracterizacion
+      : [dg.caracterizacion]
+    : []
+  for (const car of cars) {
+    const desc = car?.descripcionCaracterizacion?.trim()
+    if (desc) return desc
+  }
+
+  if (pr.datosMonotributo && typeof pr.datosMonotributo === "object") {
+    return "Monotributo"
+  }
+
+  const dr = pr.datosRegimenGeneral
+  if (dr && typeof dr === "object") {
+    const imp = (dr as Record<string, unknown>).impuesto
+    const imps = Array.isArray(imp) ? imp : imp != null ? [imp] : []
+    for (const item of imps) {
+      if (!item || typeof item !== "object") continue
+      const rec = item as Record<string, unknown>
+      const id = String(rec.idImpuesto ?? rec.id_impuesto ?? "")
+      const desc =
+        typeof rec.descripcionImpuesto === "string"
+          ? rec.descripcionImpuesto.trim()
+          : typeof rec.descripcion_impuesto === "string"
+            ? rec.descripcion_impuesto.trim()
+            : ""
+      if (id === "30" || desc.toUpperCase().includes("IVA")) {
+        return desc || "IVA Responsable Inscripto"
+      }
+    }
+  }
+
+  return undefined
+}
+
 function mapPersonaToPadron(personaReturn: unknown): PadronLookupOk {
   const prLoose = unwrapPersonaReturnRoot(personaReturn)
   const pr = prLoose as {
@@ -371,8 +412,7 @@ function mapPersonaToPadron(personaReturn: unknown): PadronLookupOk {
         .filter(Boolean)
         .join(", ")
     : undefined
-  const car = first(dg.caracterizacion)
-  const condicionIvaNombre = car?.descripcionCaracterizacion?.trim()
+  const condicionIvaNombre = extractCondicionIvaNombre(prLoose, dg)
 
   const fiscalActividadesRaw = extractActividadesPadron(prLoose)
   const globalFecha = extractGlobalFechaInicio(prLoose)

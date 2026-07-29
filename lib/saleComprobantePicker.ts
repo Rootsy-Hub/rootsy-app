@@ -37,6 +37,14 @@ export function isInternalSaleComprobante(label: string | null | undefined): boo
   return label === SALE_COMPROBANTE_RECIBO_X_LABEL
 }
 
+export function getSaleComprobanteOptionHint(
+  kind: SaleComprobantePickerOption["kind"],
+): string {
+  if (kind === "none") return "No se registra tipo fiscal en la venta"
+  if (kind === "internal") return "Comprobante interno · no pasa por ARCA"
+  return "Autorizable en ARCA / AFIP"
+}
+
 /**
  * Indica si el tipo de comprobante implica registrar IVA débito fiscal
  * (crédito en cuenta IVA a pagar) en el asiento de la venta.
@@ -80,6 +88,7 @@ export function getSaleComprobantePickerOptions(
 
   const out: SaleComprobantePickerOption[] = [
     { kind: "none", label: SALE_COMPROBANTE_SIN_LABEL },
+    { kind: "internal", label: SALE_COMPROBANTE_RECIBO_X_LABEL },
   ]
 
   for (const label of SALE_PICKER_ARCA_LABELS) {
@@ -93,7 +102,6 @@ export function getSaleComprobantePickerOptions(
     })
   }
 
-  out.push({ kind: "internal", label: SALE_COMPROBANTE_RECIBO_X_LABEL })
   return out
 }
 

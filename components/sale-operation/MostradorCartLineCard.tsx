@@ -1,15 +1,13 @@
 "use client"
 
 import type { OperationCartLineOverrideState } from "@/components/sale-operation/OperationCartLineRow"
+import { CheckoutDialogFooter } from "@/components/checkout/CheckoutDialogFooter"
 import { SaleOperationCartQuantityStepper } from "@/components/sale-operation/SaleOperationCartQuantityStepper"
 import {
   saleOpDialogBody,
   saleOpDialogContentMd,
   saleOpDialogDestructiveBtn,
-  saleOpDialogFooter,
-  saleOpDialogGhostBtn,
   saleOpDialogHeader,
-  saleOpDialogPrimaryBtn,
   saleOpFmt,
   saleOpImporteBaseClass,
   saleOpImporteCartClass,
@@ -20,7 +18,6 @@ import {
   Dialog,
   DialogContent,
   DialogDescription,
-  DialogFooter,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
@@ -455,23 +452,9 @@ export function MostradorCartLineCard({
             </div>
           </div>
 
-          <DialogFooter className={saleOpDialogFooter}>
-            <Button
-              type="button"
-              variant="ghost"
-              className={saleOpDialogGhostBtn}
-              onClick={closeModal}
-            >
-              Cancelar
-            </Button>
-            <Button
-              type="button"
-              className={saleOpDialogPrimaryBtn}
-              onClick={handleDone}
-            >
-              Listo
-            </Button>
-          </DialogFooter>
+          <CheckoutDialogFooter
+            primary={{ label: "Listo", onClick: handleDone }}
+          />
         </DialogContent>
       </Dialog>
     </>

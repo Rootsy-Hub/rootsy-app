@@ -71,16 +71,25 @@ export const saleOpDialogContentMd = cn(
   "sm:max-w-md",
   saleOpDialogLight,
 )
+export const saleOpDialogContentLg = cn(
+  saleOpDialogSurface,
+  saleOpDialogMaxViewport,
+  "sm:max-w-2xl",
+  saleOpDialogLight,
+)
 export const saleOpDialogHeader =
   "space-y-1.5 border-b border-border/50 bg-muted/25 px-6 pb-4 pt-5 text-left"
 export const saleOpDialogBody = "px-6 py-4"
 export const saleOpDialogFooter =
-  "border-t border-border/50 bg-muted/15 px-6 py-3.5 sm:justify-between"
+  "flex flex-col-reverse gap-2 border-t border-border/50 bg-muted/15 px-6 py-3.5 sm:flex-row sm:justify-between"
 export const saleOpDialogPrimaryBtn =
   "h-10 bg-emerald-600 font-semibold text-white shadow-sm hover:bg-emerald-500 active:bg-emerald-700"
 export const saleOpDialogDestructiveBtn =
   "h-10 bg-rose-600 font-semibold text-white shadow-sm hover:bg-rose-500 active:bg-rose-700 focus-visible:ring-2 focus-visible:ring-rose-500 focus-visible:ring-offset-2"
-export const saleOpDialogGhostBtn = "h-10 text-muted-foreground hover:text-foreground"
+export const saleOpDialogSecondaryBtn = "h-10 rounded-lg"
+
+/** @deprecated Usar variant="ghost-neutral" + saleOpDialogSecondaryBtn */
+export const saleOpDialogGhostBtn = saleOpDialogSecondaryBtn
 export const saleOpAlertDialogContent = cn(
   saleOpDialogLight,
   "rounded-2xl border border-border/60 bg-card shadow-2xl sm:max-w-md",

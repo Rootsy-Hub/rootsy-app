@@ -97,8 +97,6 @@ import {
 } from "@/lib/saleComprobanteRules"
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 
-const MANUAL_PARTY_LIST_ID = "__manual__"
-
 export type { MesasCartItem, MesasClienteSeleccionado }
 
 const CHECKOUT_PERSIST_MS = 450
@@ -160,7 +158,6 @@ export function useMostradorSaleCheckout(
     menuArticles,
     menuPromotions,
     menuQuantityDeals,
-    saleClients,
     treasuryPaymentContext,
     canReadClients,
     canCreateSale,
@@ -202,7 +199,6 @@ export function useMostradorSaleCheckout(
   const [submitting, setSubmitting] = useState(false)
   const [submitError, setSubmitError] = useState<string | null>(null)
 
-  const [busquedaClienteModal, setBusquedaClienteModal] = useState("")
   const [descuentoDraftModo, setDescuentoDraftModo] = useState<"porcentaje" | "fijo">("porcentaje")
   const [descuentoDraftTexto, setDescuentoDraftTexto] = useState("")
 
@@ -811,11 +807,8 @@ export function useMostradorSaleCheckout(
     [invoiceTypeSiteId],
   )
 
-  const clientesFiltradosModal = useMemo(() => {
-    const q = normalizarBusqueda(busquedaClienteModal.trim())
-    if (!q) return []
-    return saleClients.filter((c) => normalizarBusqueda(c.name).includes(q))
-  }, [busquedaClienteModal, saleClients])
+  const clienteCatalogoBloqueado =
+    clienteSeleccionado != null && !clienteSeleccionado.manual
 
   const elegirComprobante = useCallback(
     (value: string | null) => {
@@ -824,6 +817,33 @@ export function useMostradorSaleCheckout(
     },
     [popId],
   )
+
+  const seleccionarClienteManual = useCallback(() => {
+    const name = manualNombreCliente.trim() || ventaPadron.razonSocial.trim()
+    if (!name && !fiscalDocVenta.trim()) return
+    const iva =
+      ventaIvaCondition.trim() || ventaPadron.mappedIvaCondition || null
+    setClienteSeleccionado({
+      id: null,
+      manual: true,
+      name: name || "Cliente sin nombre",
+      taxId: fiscalDocVenta.trim() || null,
+      ivaCondition: iva,
+      defaultInvoiceTypeLabel: null,
+    })
+    if (iva) {
+      const suggested = suggestSaleComprobanteForClientIva(iva as ClientIvaConditionValue)
+      if (suggested) elegirComprobante(suggested)
+    }
+    setClienteModalAbierto(false)
+  }, [
+    elegirComprobante,
+    fiscalDocVenta,
+    manualNombreCliente,
+    ventaIvaCondition,
+    ventaPadron.mappedIvaCondition,
+    ventaPadron.razonSocial,
+  ])
 
   const cartLineOverrideActions: OperationCartLineOverrideActions & {
     setItemDetalleAbiertoId: typeof setItemDetalleAbiertoId
@@ -1505,7 +1525,6 @@ export function useMostradorSaleCheckout(
       descuentoDisabled: descuentoGeneralEditBlocked && !pedidoToolbarDisabled,
       onClienteClick: () => {
         if (!canReadClients || pedidoToolbarDisabled) return
-        setBusquedaClienteModal("")
         setClienteModalAbierto(true)
       },
       onComprobanteClick: () => {
@@ -1536,8 +1555,17 @@ export function useMostradorSaleCheckout(
       },
     },
     modals: {
+      popId: popId ?? "",
+      canReadClients,
       clienteModalAbierto,
-      setClienteModalAbierto,
+      setClienteModalAbierto: (open: boolean) => {
+        setClienteModalAbierto(open)
+        if (open && clienteSeleccionado?.manual) {
+          setManualNombreCliente(clienteSeleccionado.name)
+          setFiscalDocVenta(clienteSeleccionado.taxId ?? "")
+          setVentaIvaCondition(clienteSeleccionado.ivaCondition ?? "")
+        }
+      },
       comprobanteModalAbierto,
       setComprobanteModalAbierto,
       pagoModalAbierto,
@@ -1548,8 +1576,6 @@ export function useMostradorSaleCheckout(
       setDescartarConfirmOpen,
       confirmOpen,
       setConfirmOpen,
-      busquedaClienteModal,
-      setBusquedaClienteModal,
       manualNombreCliente,
       setManualNombreCliente,
       fiscalDocVenta,
@@ -1559,7 +1585,10 @@ export function useMostradorSaleCheckout(
       clienteSeleccionado,
       setClienteSeleccionado,
       ventaPadron,
-      clientesFiltradosModal,
+      clienteCatalogoBloqueado,
+      seleccionarClienteManual,
+      descuentoGeneralEditBlocked,
+      labelCondicionIva,
       comprobante,
       comprobantePickerOptions,
       elegirComprobante,

@@ -7,7 +7,7 @@ import type {
   MenuCatalogPromotion,
   MenuCatalogRecipe,
 } from "@/app/[siteId]/[popId]/menu-catalog/actions"
-import type { SaleCatalogClient, SaleOpenCashSession } from "@/app/[siteId]/[popId]/sale/actions"
+import type { SaleOpenCashSession } from "@/app/[siteId]/[popId]/sale/actions"
 import { usePopWorkspaceOptional } from "@/context/PopWorkspaceContext"
 import {
   menuCatalogPayloadFromResponse,
@@ -39,7 +39,6 @@ export function useMenuCatalogLoader(
   const [menuArticles, setMenuArticles] = useState<MenuCatalogArticle[]>([])
   const [menuPromotions, setMenuPromotions] = useState<MenuCatalogPromotion[]>([])
   const [menuQuantityDeals, setMenuQuantityDeals] = useState<MenuCatalogPromotion[]>([])
-  const [saleClients, setSaleClients] = useState<SaleCatalogClient[]>([])
   const [treasuryPaymentContext, setTreasuryPaymentContext] =
     useState<TreasuryPaymentContext | null>(null)
   const [canReadClients, setCanReadClients] = useState(false)
@@ -64,7 +63,6 @@ export function useMenuCatalogLoader(
       setMenuArticles(payload.articles)
       setMenuPromotions(payload.promotions)
       setMenuQuantityDeals(payload.quantityDeals)
-      setSaleClients(payload.clients)
       setTreasuryPaymentContext(payload.treasuryPaymentContext)
       setCanReadClients(payload.canReadClients)
       setCanCreateSale(payload.canCreateSale)
@@ -81,7 +79,6 @@ export function useMenuCatalogLoader(
     setMenuArticles([])
     setMenuPromotions([])
     setMenuQuantityDeals([])
-    setSaleClients([])
     setTreasuryPaymentContext(null)
     setCanReadClients(false)
     setCanCreateSale(false)
@@ -149,7 +146,6 @@ export function useMenuCatalogLoader(
     menuArticles,
     menuPromotions,
     menuQuantityDeals,
-    saleClients,
     treasuryPaymentContext,
     canReadClients,
     canCreateSale,

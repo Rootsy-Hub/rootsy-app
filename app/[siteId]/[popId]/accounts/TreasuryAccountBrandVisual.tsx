@@ -27,6 +27,8 @@ export function TreasuryAccountBrandVisual({
   const gradient =
     preset?.headerGradient ?? "from-muted via-muted/80 to-muted/60"
   const headerText = preset?.headerTextClass ?? "text-foreground"
+  const pickerTileSelectedClass =
+    "z-[1] shadow-md ring-2 ring-zinc-900/20 ring-offset-2 ring-offset-white"
 
   if (compact) {
     return (
@@ -34,8 +36,8 @@ export function TreasuryAccountBrandVisual({
         className={cn(
           "overflow-hidden rounded-xl border text-left transition-all",
           selected
-            ? "border-white/90 ring-2 ring-white/40 shadow-md"
-            : "border-transparent hover:border-white/30 hover:shadow-sm",
+            ? pickerTileSelectedClass
+            : "border-transparent hover:shadow-sm",
           className,
         )}
       >

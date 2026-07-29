@@ -1,12 +1,12 @@
 "use client"
 
 import type { PartialPaymentSelection, PartialPaymentUnit } from "@/lib/partialCheckoutSelection"
+import { CheckoutDialogFooter } from "@/components/checkout/CheckoutDialogFooter"
 import { Checkbox } from "@/components/ui/checkbox"
 import {
   Dialog,
   DialogContent,
   DialogDescription,
-  DialogFooter,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
@@ -15,13 +15,11 @@ import { Input } from "@/components/ui/input"
 import {
   saleOpDialogBody,
   saleOpDialogContentMd,
-  saleOpDialogFooter,
   saleOpDialogHeader,
-  saleOpDialogPrimaryBtn,
   saleOpFmt,
   saleOpImporteBaseClass,
 } from "@/components/sale-operation/saleOperationStyles"
-import { Loader2, Minus, Plus } from "lucide-react"
+import { Minus, Plus } from "lucide-react"
 import { cn } from "@/lib/utils"
 
 export type SaleOperationCheckoutConfirmOptions = {
@@ -352,40 +350,23 @@ export function SaleOperationCheckoutConfirmDialog({
           ) : null}
         </div>
 
-        <DialogFooter
-          className={cn(saleOpDialogFooter, "shrink-0 border-t border-border/50 bg-muted/20")}
-        >
-          <Button
-            type="button"
-            variant="outline"
-            disabled={submitting}
-            onClick={() => onOpenChange(false)}
-          >
-            Cancelar
-          </Button>
-          <Button
-            type="button"
-            className={saleOpDialogPrimaryBtn}
-            disabled={submitting || !canConfirm}
-            onClick={() =>
+        <CheckoutDialogFooter
+          className="shrink-0 border-t border-border/50 bg-muted/20"
+          cancelDisabled={submitting}
+          primary={{
+            label: confirmLabel,
+            onClick: () =>
               void onConfirm({
                 partialPayment,
                 partialSelection,
                 closeOnComplete: partialPayment ? false : closeOnComplete,
                 imprimirComprobante: hasComprobante && imprimirComprobante,
-              })
-            }
-          >
-            {submitting ? (
-              <>
-                <Loader2 className="mr-2 size-4 animate-spin" />
-                Procesando…
-              </>
-            ) : (
-              confirmLabel
-            )}
-          </Button>
-        </DialogFooter>
+              }),
+            disabled: submitting || !canConfirm,
+            loading: submitting,
+            loadingLabel: "Procesando…",
+          }}
+        />
       </DialogContent>
     </Dialog>
   )

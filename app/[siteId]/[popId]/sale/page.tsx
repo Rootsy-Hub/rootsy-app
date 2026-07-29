@@ -41,6 +41,9 @@ import {
 import { CLIENT_ACCOUNT_PAYMENT_LABEL } from "@/lib/operationPaymentLabels"
 import { OpenCashSessionBanner } from "@/components/sale-operation/OpenCashSessionBanner"
 import { SalePaymentMethodDialog } from "@/components/sale-operation/SalePaymentMethodDialog"
+import { OperationPartyPickerDialog } from "@/components/checkout/OperationPartyPickerDialog"
+import { SaleComprobantePickerDialog } from "@/components/checkout/SaleComprobantePickerDialog"
+import { GeneralDiscountDialog } from "@/components/checkout/GeneralDiscountDialog"
 import { DataWorkspaceLayout } from "@/components/layouts/DataWorkspaceLayout"
 import { useDataWorkspaceSidebar } from "@/components/layouts/useDataWorkspaceSidebar"
 import { useAuth } from "@/context/AuthContextSupabase"
@@ -119,8 +122,6 @@ type ClienteVentaSeleccionado = {
   defaultInvoiceTypeLabel: string | null
 }
 
-const MANUAL_PARTY_LIST_ID = "__manual__"
-
 type VistaCatalogo = SaleCatalogViewPersisted
 
 const CATEGORIA_TODOS = "Todos"
@@ -198,7 +199,6 @@ function SalePage() {
   const [catalogQuantityDeals, setCatalogQuantityDeals] = useState<
     MenuCatalogPromotion[]
   >([])
-  const [saleClients, setSaleClients] = useState<SaleCatalogClient[]>([])
   const [treasuryPaymentContext, setTreasuryPaymentContext] =
     useState<TreasuryPaymentContext | null>(null)
   const [canReadClients, setCanReadClients] = useState(false)
@@ -231,7 +231,6 @@ function SalePage() {
       setCatalogArticles([])
       setCatalogPromotions([])
       setCatalogQuantityDeals([])
-      setSaleClients([])
       setTreasuryPaymentContext(null)
       setCanReadClients(false)
       setCanReadPaymentMethods(false)
@@ -247,7 +246,6 @@ function SalePage() {
     setCatalogArticles(res.articles)
     setCatalogPromotions(res.promotions)
     setCatalogQuantityDeals(res.quantityDeals)
-    setSaleClients(res.clients)
     setTreasuryPaymentContext(res.treasuryPaymentContext)
     setCanReadClients(res.canReadClients)
     setCanReadPaymentMethods(res.canReadPaymentMethods)
@@ -316,7 +314,6 @@ function SalePage() {
       (clienteSeleccionado == null || clienteSeleccionado.manual),
   })
   const [clienteModalAbierto, setClienteModalAbierto] = useState(false)
-  const [busquedaClienteModal, setBusquedaClienteModal] = useState("")
   const [comprobante, setComprobante] = useState<string | null>(null)
   const [comprobanteModalAbierto, setComprobanteModalAbierto] = useState(false)
   const comprobanteInitRef = useRef(false)
@@ -659,30 +656,6 @@ function SalePage() {
     }
   }, [popId, invoiceTypeSiteId])
 
-  useEffect(() => {
-    if (clienteSeleccionado && !clienteSeleccionado.manual) return
-    if (!fiscalDocVenta.trim()) return
-    if (!ventaPadron.mappedIvaCondition) return
-    setVentaIvaCondition(ventaPadron.mappedIvaCondition)
-    aplicarComprobanteDesdeIva(ventaPadron.mappedIvaCondition)
-  }, [
-    fiscalDocVenta,
-    ventaPadron.mappedIvaCondition,
-    aplicarComprobanteDesdeIva,
-    clienteSeleccionado,
-  ])
-
-  useEffect(() => {
-    if (clienteSeleccionado && !clienteSeleccionado.manual) return
-    if (!ventaPadron.razonSocial.trim()) return
-    if (manualNombreCliente.trim()) return
-    setManualNombreCliente(ventaPadron.razonSocial.trim())
-  }, [
-    ventaPadron.razonSocial,
-    manualNombreCliente,
-    clienteSeleccionado,
-  ])
-
   const ventaIvaLabel = useMemo(
     () =>
       labelCondicionIva(
@@ -691,60 +664,8 @@ function SalePage() {
     [ventaIvaCondition, clienteSeleccionado?.ivaCondition],
   )
 
-  const clientesFiltradosModal = useMemo(() => {
-    const q = normalizarBusqueda(busquedaClienteModal.trim())
-
-    if (clienteSeleccionado && !q) {
-      if (clienteSeleccionado.manual) {
-        return [
-          {
-            id: MANUAL_PARTY_LIST_ID,
-            name: clienteSeleccionado.name,
-            taxId: clienteSeleccionado.taxId,
-            ivaCondition: clienteSeleccionado.ivaCondition,
-            defaultInvoiceTypeLabel: null,
-          },
-        ]
-      }
-      const fromCatalog = saleClients.find((c) => c.id === clienteSeleccionado.id)
-      if (fromCatalog) return [fromCatalog]
-      if (clienteSeleccionado.id) {
-        return [
-          {
-            id: clienteSeleccionado.id,
-            name: clienteSeleccionado.name,
-            taxId: clienteSeleccionado.taxId,
-            ivaCondition: clienteSeleccionado.ivaCondition,
-            defaultInvoiceTypeLabel: clienteSeleccionado.defaultInvoiceTypeLabel,
-          },
-        ]
-      }
-      return []
-    }
-
-    if (!q) return []
-
-    return saleClients.filter((c) => normalizarBusqueda(c.name).includes(q))
-  }, [busquedaClienteModal, saleClients, clienteSeleccionado])
-
   const clienteCatalogoBloqueado =
     clienteSeleccionado != null && !clienteSeleccionado.manual
-
-  const puedeUsarClienteManual = useMemo(() => {
-    if (clienteSeleccionado) return false
-    return Boolean(
-      manualNombreCliente.trim() ||
-        fiscalDocVenta.trim() ||
-        ventaPadron.razonSocial.trim(),
-    )
-  }, [
-    clienteSeleccionado,
-    manualNombreCliente,
-    fiscalDocVenta,
-    ventaPadron.razonSocial,
-  ])
-
-  const busquedaClienteModalTrim = busquedaClienteModal.trim()
 
   const comprobantePickerOptions = useMemo(
     () => getSaleComprobantePickerOptions(invoiceTypeSiteId),
@@ -780,7 +701,6 @@ function SalePage() {
 
   const onClienteToolbarClick = () => {
     if (!canReadClients) return
-    setBusquedaClienteModal("")
     setClienteModalAbierto(true)
   }
 
@@ -1539,350 +1459,61 @@ function SalePage() {
         }}
       />
 
-      <Dialog
+      <OperationPartyPickerDialog
+        popId={popId ?? ""}
+        flow="sale"
+        context="venta"
         open={clienteModalAbierto}
         onOpenChange={(open) => {
           setClienteModalAbierto(open)
-          if (open) {
-            setBusquedaClienteModal("")
-            if (clienteSeleccionado?.manual) {
-              setManualNombreCliente(clienteSeleccionado.name)
-              setFiscalDocVenta(clienteSeleccionado.taxId ?? "")
-              setVentaIvaCondition(clienteSeleccionado.ivaCondition ?? "")
-            }
+          if (open && clienteSeleccionado?.manual) {
+            setManualNombreCliente(clienteSeleccionado.name)
+            setFiscalDocVenta(clienteSeleccionado.taxId ?? "")
+            setVentaIvaCondition(clienteSeleccionado.ivaCondition ?? "")
           }
         }}
-      >
-        <DialogContent className={ventaDialogContentMd}>
-          <DialogHeader className={ventaDialogHeader}>
-            <DialogTitle className="text-base font-semibold tracking-tight">
-              Cliente para esta venta
-            </DialogTitle>
-            <DialogDescription className="text-sm leading-relaxed">
-              {clienteSeleccionado
-                ? clienteSeleccionado.manual
-                  ? "Cliente cargado manualmente para esta venta (no se guarda en el catálogo). Quitá la selección para cambiar los datos."
-                  : "Cliente asignado a esta venta. Los datos fiscales vienen del cliente; quitá la selección para cargar CUIT/DNI manualmente."
-                : "Buscá en el catálogo o cargá los datos manualmente y usalos solo para esta venta."}
-            </DialogDescription>
-          </DialogHeader>
-          <div className={ventaDialogBody}>
-            <div className="relative mb-3">
-              <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-              <Input
-                ref={busquedaClienteInputRef}
-                value={busquedaClienteModal}
-                onChange={(e) => setBusquedaClienteModal(e.target.value)}
-                placeholder="Nombre del cliente…"
-                disabled={clienteCatalogoBloqueado}
-                className={cn(
-                  "h-11 rounded-lg pl-9",
-                  busquedaClienteModal.length > 0 && "pr-9",
-                )}
-                autoComplete="off"
-              />
-              {busquedaClienteModal.length > 0 && !clienteCatalogoBloqueado ? (
-                <button
-                  type="button"
-                  aria-label="Limpiar búsqueda"
-                  className="absolute right-1.5 top-1/2 flex size-7 -translate-y-1/2 items-center justify-center rounded-full text-muted-foreground transition-[color,background-color] duration-150 hover:bg-muted/70 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background active:bg-muted"
-                  onClick={() => {
-                    setBusquedaClienteModal("")
-                    busquedaClienteInputRef.current?.focus()
-                  }}
-                >
-                  <IconoLimpiarBusqueda />
-                </button>
-              ) : null}
-            </div>
-            <div
-              className={cn(
-                "mb-3 rounded-xl border border-border/50 bg-muted/15 p-3",
-                clienteCatalogoBloqueado && "opacity-60",
-              )}
-            >
-              <p className="mb-2 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-                Datos para esta venta
-              </p>
-              <Input
-                value={manualNombreCliente}
-                onChange={(e) => setManualNombreCliente(e.target.value)}
-                placeholder="Nombre o razón social"
-                className="mb-2 h-10 rounded-lg"
-                autoComplete="off"
-                disabled={clienteSeleccionado != null}
-                readOnly={clienteSeleccionado != null}
-              />
-              <p className="mb-1.5 text-[11px] font-medium text-muted-foreground">
-                CUIT / DNI (padrón AFIP)
-              </p>
-              <Input
-                value={fiscalDocVenta}
-                onChange={(e) => setFiscalDocVenta(e.target.value)}
-                placeholder="Ej. 20-12345678-9 o DNI"
-                className="h-10 rounded-lg"
-                autoComplete="off"
-                disabled={clienteSeleccionado != null}
-                readOnly={clienteSeleccionado != null}
-              />
-              <div className="mt-2 flex min-h-6 items-center gap-2 text-sm">
-                {clienteSeleccionado ? (
-                  <span className="font-medium text-foreground">
-                    {clienteSeleccionado.name}
-                  </span>
-                ) : ventaPadron.busy ? (
-                  <>
-                    <Loader2
-                      className="size-4 shrink-0 animate-spin text-primary"
-                      aria-hidden
-                    />
-                    <span className="text-muted-foreground">Consultando…</span>
-                  </>
-                ) : ventaPadron.error ? (
-                  <span className="text-destructive">{ventaPadron.error}</span>
-                ) : ventaPadron.razonSocial && !manualNombreCliente.trim() ? (
-                  <span className="text-muted-foreground">
-                    Padrón:{" "}
-                    <span className="font-medium text-foreground">
-                      {ventaPadron.razonSocial}
-                    </span>
-                  </span>
-                ) : (
-                  <span className="text-muted-foreground">
-                    La razón social del padrón se completa al validar el CUIT.
-                  </span>
-                )}
-              </div>
-              {clienteSeleccionado?.ivaCondition ? (
-                <p className="mt-1 text-xs text-muted-foreground">
-                  {labelCondicionIva(clienteSeleccionado.ivaCondition)}
-                </p>
-              ) : ventaPadron.condicionIvaNombre &&
-                !ventaPadron.busy &&
-                !ventaPadron.error ? (
-                <p className="mt-1 text-xs text-muted-foreground">
-                  AFIP: {ventaPadron.condicionIvaNombre}
-                </p>
-              ) : null}
-            </div>
-            <div
-              className={cn(
-                "mb-3 space-y-2",
-                clienteSeleccionado != null && "opacity-60",
-              )}
-            >
-              <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-                Condición IVA (esta venta)
-              </p>
-              <Select
-                value={ventaIvaCondition || "__none__"}
-                disabled={clienteSeleccionado != null}
-                onValueChange={(v) => {
-                  const next = v === "__none__" ? "" : v
-                  setVentaIvaCondition(next)
-                  if (next) {
-                    aplicarComprobanteDesdeIva(next as ClientIvaConditionValue)
-                  }
-                }}
-              >
-                <SelectTrigger className="h-10 rounded-lg bg-background">
-                  <SelectValue placeholder="Sin definir" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="__none__">Sin definir</SelectItem>
-                  {CLIENT_IVA_CONDITION_OPTIONS.map((o) => (
-                    <SelectItem key={o.value} value={o.value}>
-                      {o.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <p className="text-xs text-muted-foreground">
-                Cambiar la condición IVA actualiza el comprobante sugerido. Podés
-                modificarlo después en Comprobante.
-              </p>
-            </div>
-            <ul
-              className={cn(
-                "game-scroll max-h-[min(50vh,16rem)] space-y-2 overflow-y-auto rounded-xl border border-border/40 bg-muted/20 p-2 pr-1",
-                clienteCatalogoBloqueado && "opacity-60",
-              )}
-              role="listbox"
-              aria-label="Clientes"
-            >
-              {clientesFiltradosModal.length === 0 ? (
-                <li className="rounded-lg border border-dashed border-border/60 bg-background/50 px-4 py-8 text-center text-sm text-muted-foreground">
-                  {clienteSeleccionado && !busquedaClienteModalTrim
-                    ? clienteSeleccionado.manual
-                      ? "Cliente manual asignado a esta venta."
-                      : "Cliente asignado a esta venta."
-                    : !busquedaClienteModalTrim
-                      ? "Escribí un nombre en el buscador para ver clientes del catálogo."
-                      : "No hay resultados para esa búsqueda."}
-                </li>
-              ) : (
-                clientesFiltradosModal.map((c) => {
-                  const seleccionado = clienteSeleccionado?.manual
-                    ? c.id === MANUAL_PARTY_LIST_ID
-                    : clienteSeleccionado?.id === c.id
-                  const opcionDeshabilitada = clienteSeleccionado != null
-                  return (
-                    <li key={c.id}>
-                      <button
-                        type="button"
-                        role="option"
-                        aria-selected={seleccionado}
-                        aria-disabled={opcionDeshabilitada}
-                        disabled={opcionDeshabilitada}
-                        onClick={() => {
-                          if (c.id === MANUAL_PARTY_LIST_ID) return
-                          seleccionarCliente(c)
-                        }}
-                        className={ventaDialogOptionClass(
-                          seleccionado,
-                          opcionDeshabilitada,
-                        )}
-                      >
-                        <span className="min-w-0">
-                          <span className="block text-sm font-semibold leading-snug text-foreground">
-                            {c.name}
-                            {c.id === MANUAL_PARTY_LIST_ID ? (
-                              <span className="ml-1.5 text-xs font-normal text-muted-foreground">
-                                (manual)
-                              </span>
-                            ) : null}
-                          </span>
-                          {c.taxId ? (
-                            <span className="mt-0.5 block text-xs leading-snug text-muted-foreground">
-                              {c.taxId}
-                            </span>
-                          ) : null}
-                          {c.ivaCondition ? (
-                            <span className="mt-0.5 block text-xs leading-snug text-muted-foreground">
-                              {labelCondicionIva(c.ivaCondition)}
-                            </span>
-                          ) : null}
-                        </span>
-                        {seleccionado ? (
-                          <span className="size-2 shrink-0 rounded-full bg-primary" />
-                        ) : null}
-                      </button>
-                    </li>
-                  )
-                })
-              )}
-            </ul>
-          </div>
-          <DialogFooter className={ventaDialogFooter}>
-            {clienteSeleccionado ? (
-              <Button
-                type="button"
-                variant="ghost"
-                className={ventaDialogGhostBtn}
-                onClick={() => {
-                  quitarClienteVenta()
-                  setClienteModalAbierto(false)
-                }}
-              >
-                Quitar cliente
-              </Button>
-            ) : puedeUsarClienteManual ? (
-              <Button
-                type="button"
-                className={ventaDialogPrimaryBtn}
-                onClick={seleccionarClienteManual}
-              >
-                Usar para esta venta
-              </Button>
-            ) : null}
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+        canSearchCatalog={canReadClients}
+        manualName={manualNombreCliente}
+        onManualNameChange={setManualNombreCliente}
+        taxId={fiscalDocVenta}
+        onTaxIdChange={setFiscalDocVenta}
+        ivaCondition={ventaIvaCondition}
+        onIvaConditionChange={setVentaIvaCondition}
+        selected={clienteSeleccionado}
+        padron={ventaPadron}
+        catalogBlocked={clienteCatalogoBloqueado}
+        onSelectCatalogParty={(party) =>
+          seleccionarCliente({
+            id: party.id,
+            name: party.name,
+            taxId: party.taxId ?? null,
+            ivaCondition: party.ivaCondition ?? null,
+            defaultInvoiceTypeLabel: party.defaultInvoiceTypeLabel ?? null,
+          })
+        }
+        onSelectManual={seleccionarClienteManual}
+        onClearSelection={quitarClienteVenta}
+        onIvaConditionApplied={aplicarComprobanteDesdeIva}
+      />
 
-      <Dialog
+      <SaleComprobantePickerDialog
         open={comprobanteModalAbierto}
         onOpenChange={setComprobanteModalAbierto}
-      >
-        <DialogContent className={ventaDialogContentMd}>
-          <DialogHeader className={cn(ventaDialogHeader, "shrink-0")}>
-            <DialogTitle className="text-base font-semibold tracking-tight">
-              Comprobante
-            </DialogTitle>
-            <DialogDescription className="text-sm leading-relaxed">
-              Elegí el tipo para esta venta. Facturas A/B/C registran IVA débito
-              fiscal en el asiento; sin comprobante y Recibo X no.
-            </DialogDescription>
-          </DialogHeader>
-          <div
-            className={cn(
-              ventaDialogBody,
-              "min-h-0 flex-1 overflow-y-auto overscroll-contain",
-            )}
-          >
-            <ul
-              className="flex flex-col gap-1.5"
-              role="listbox"
-              aria-label="Tipos de comprobante"
-            >
-              {comprobantePickerOptions.map((opt) => {
-                const seleccionado =
-                  opt.kind === "none"
-                    ? comprobante == null
-                    : comprobante === opt.label
-                const hint =
-                  opt.kind === "none"
-                    ? "No se registra tipo fiscal en la venta"
-                    : opt.kind === "internal"
-                      ? "Comprobante interno · no pasa por ARCA"
-                      : "Autorizable en ARCA / AFIP"
-
-                return (
-                  <li key={opt.label} className="min-w-0">
-                    <button
-                      type="button"
-                      role="option"
-                      aria-selected={seleccionado}
-                      onClick={() =>
-                        elegirComprobante(
-                          opt.kind === "none" ? null : opt.label,
-                        )
-                      }
-                      className={ventaDialogOptionClass(seleccionado)}
-                    >
-                      <span className="min-w-0">
-                        <span className="block text-sm font-semibold leading-snug text-foreground">
-                          {opt.label}
-                        </span>
-                        <span className="mt-0.5 block text-xs leading-snug text-muted-foreground">
-                          {hint}
-                        </span>
-                      </span>
-                      {seleccionado ? (
-                        <span className="size-2 shrink-0 rounded-full bg-primary" />
-                      ) : null}
-                    </button>
-                  </li>
-                )
-              })}
-            </ul>
-          </div>
-          <DialogFooter className={cn(ventaDialogFooter, "shrink-0")}>
-            <Button
-              type="button"
-              className={ventaDialogPrimaryBtn}
-              onClick={() => setComprobanteModalAbierto(false)}
-            >
-              Listo
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+        context="venta"
+        options={comprobantePickerOptions}
+        value={comprobante}
+        onSelect={(value) => {
+          setComprobante(value)
+          if (popId) writeSavedSaleComprobante(popId, value)
+        }}
+      />
 
       <SalePaymentMethodDialog
         open={pagoModalAbierto}
         onOpenChange={setPagoModalAbierto}
         treasuryContext={treasuryPaymentContext}
         cashTreasuryAccountId={openCashSession?.cashTreasuryAccountId ?? null}
+        cashRegisterName={openCashSession?.registerName ?? null}
         selected={metodoPagoSeleccionado}
         payOnClientAccount={payOnClientAccount}
         onSelectImmediate={(option) => {
@@ -1893,121 +1524,20 @@ function SalePage() {
           setPayOnClientAccount(true)
           setMetodoPagoSeleccionado(null)
         }}
-        styles={{
-          content: ventaDialogContentMd,
-          header: ventaDialogHeader,
-          body: ventaDialogBody,
-          footer: ventaDialogFooter,
-          optionClass: ventaDialogOptionClass,
-          primaryBtn: ventaDialogPrimaryBtn,
-        }}
       />
 
-      <Dialog
+      <GeneralDiscountDialog
         open={descuentoModalAbierto}
         onOpenChange={setDescuentoModalAbierto}
-      >
-        <DialogContent className={ventaDialogContentMd}>
-          <DialogHeader className={ventaDialogHeader}>
-            <DialogTitle className="text-base font-semibold tracking-tight">
-              Descuento en la venta
-            </DialogTitle>
-            <DialogDescription className="text-sm leading-relaxed">
-              Alterná % o monto fijo con el botón e ingresá el valor. Se aplica
-              sobre el subtotal (después de descuentos por ítem).
-            </DialogDescription>
-          </DialogHeader>
-          <div className={ventaDialogBody}>
-            <p className="mb-2 text-[10px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
-              Valor
-            </p>
-            <div className="flex items-center gap-2">
-              <button
-                type="button"
-                className={cn(
-                  "inline-flex size-11 shrink-0 items-center justify-center rounded-xl border text-foreground/80 transition",
-                  "border-foreground/10 bg-muted/50 hover:bg-muted hover:text-foreground",
-                  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
-                )}
-                aria-label="Cambiar tipo de descuento"
-                onClick={() =>
-                  setDescuentoDraftModo((m) =>
-                    m === "porcentaje" ? "fijo" : "porcentaje",
-                  )
-                }
-              >
-                {descuentoDraftModo === "porcentaje" ? (
-                  <Percent className="size-4 text-primary" aria-hidden />
-                ) : (
-                  <Banknote className="size-4 text-primary" aria-hidden />
-                )}
-              </button>
-              <Input
-                id="desc-valor"
-                value={descuentoDraftTexto}
-                onChange={(e) => {
-                  const raw = e.target.value
-                  if (!/^\d*$/.test(raw)) return
-                  if (raw === "") {
-                    setDescuentoDraftTexto("")
-                    return
-                  }
-                  if (
-                    descuentoDraftModo === "fijo" &&
-                    subtotal > 0 &&
-                    Number(raw) > subtotal
-                  ) {
-                    setDescuentoDraftModo("porcentaje")
-                    setDescuentoDraftTexto("100")
-                    return
-                  }
-                  const nextValue =
-                    descuentoDraftModo === "porcentaje"
-                      ? String(Math.min(100, Number(raw)))
-                      : raw
-                  setDescuentoDraftTexto(nextValue)
-                }}
-                placeholder="descuento"
-                inputMode="numeric"
-                pattern="[0-9]*"
-                autoComplete="off"
-                className="h-11 min-w-0 flex-1 rounded-lg"
-              />
-            </div>
-            {descuentoDraftModo === "fijo" && subtotal > 0 ? (
-              <p className="mt-3 rounded-lg border border-border/50 bg-muted/30 px-3 py-2 text-xs leading-relaxed text-muted-foreground">
-                Máximo aplicable:{" "}
-                <span className={ventaImporteBaseClass}>
-                  {fmt.format(subtotal)}
-                </span>
-                . Si superás ese monto, pasa a 100 %.
-              </p>
-            ) : null}
-            {descuentoDraftModo === "fijo" && subtotal === 0 ? (
-              <p className="mt-3 rounded-lg border border-dashed border-border/60 bg-muted/20 px-3 py-2 text-xs leading-relaxed text-muted-foreground">
-                No hay subtotal: agregá productos para aplicar un monto fijo.
-              </p>
-            ) : null}
-          </div>
-          <DialogFooter className={ventaDialogFooter}>
-            <Button
-              type="button"
-              variant="ghost"
-              className={ventaDialogGhostBtn}
-              onClick={quitarDescuento}
-            >
-              Quitar descuento
-            </Button>
-            <Button
-              type="button"
-              className={ventaDialogPrimaryBtn}
-              onClick={aplicarDescuentoModal}
-            >
-              Aplicar
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+        context="venta"
+        subtotal={subtotal}
+        draftMode={descuentoDraftModo}
+        onDraftModeChange={setDescuentoDraftModo}
+        draftText={descuentoDraftTexto}
+        onDraftTextChange={setDescuentoDraftTexto}
+        onApply={aplicarDescuentoModal}
+        onClear={quitarDescuento}
+      />
 
       <AlertDialog open={descartarConfirmOpen} onOpenChange={setDescartarConfirmOpen}>
         <AlertDialogContent className={ventaAlertDialogContent}>

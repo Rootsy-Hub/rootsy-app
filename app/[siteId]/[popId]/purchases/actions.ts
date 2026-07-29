@@ -73,13 +73,18 @@ export type CreatePurchaseLineInput = {
 }
 
 import { getTreasuryPaymentContext } from "@/lib/treasuryPaymentContext"
-import {
-  buildPayPaymentOptions,
-  type TreasuryPaymentOption,
-} from "@/lib/treasuryPaymentOptions"
+import type { TreasuryPaymentContext } from "@/lib/treasuryPaymentOptions"
+import type { OperationPaymentKind } from "@/lib/operationPaymentKinds"
 import { isValidOperationPaymentKind } from "@/lib/operationPaymentKinds"
 
-export type PurchaseCatalogPaymentMethod = TreasuryPaymentOption
+export type PurchaseCatalogPaymentOption = {
+  kind: OperationPaymentKind
+  treasuryAccountId: string
+  label: string
+}
+
+/** @deprecated Usar PurchaseCatalogPaymentOption */
+export type PurchaseCatalogPaymentMethod = PurchaseCatalogPaymentOption
 
 export type PurchaseSupplierManualInput = {
   name: string
@@ -199,7 +204,7 @@ export async function getPurchaseCatalog(popId: string): Promise<
       categories: PurchaseCatalogCategory[]
       articles: PurchaseCatalogArticle[]
       suppliers: PurchaseCatalogSupplier[]
-      paymentMethods: PurchaseCatalogPaymentMethod[]
+      treasuryPaymentContext: TreasuryPaymentContext | null
       canCreate: boolean
       canUpdateArticles: boolean
       canReadPaymentMethods: boolean
@@ -285,13 +290,13 @@ export async function getPurchaseCatalog(popId: string): Promise<
     }))
 
     const canReadPaymentMethods = access.canCreate
-    let paymentMethods: PurchaseCatalogPaymentMethod[] = []
+    let treasuryPaymentContext: TreasuryPaymentContext | null = null
     if (canReadPaymentMethods) {
       const treasuryRes = await getTreasuryPaymentContext(popId)
       if (!treasuryRes.success) {
         return { success: false, error: treasuryRes.error }
       }
-      paymentMethods = buildPayPaymentOptions(treasuryRes.context)
+      treasuryPaymentContext = treasuryRes.context
     }
 
     return {
@@ -300,7 +305,7 @@ export async function getPurchaseCatalog(popId: string): Promise<
       categories,
       articles,
       suppliers,
-      paymentMethods,
+      treasuryPaymentContext,
       canCreate: access.canCreate,
       canUpdateArticles: access.canUpdateArticles,
       canReadPaymentMethods,
@@ -337,22 +342,7 @@ export async function getPurchasesPageData(popId: string): Promise<
     const popName =
       popRes.success && popRes.pop ? String(popRes.pop.name ?? "") : ""
 
-    const { data: supRows, error: supErr } = await supabase
-      .from("suppliers")
-      .select("id, name, tax_id")
-      .eq("pop_id", popId)
-      .order("name", { ascending: true })
-    if (supErr) {
-      return {
-        success: false,
-        error: supErr.message || "No se pudieron cargar proveedores.",
-      }
-    }
-    const suppliers: SupplierOption[] = (supRows || []).map((r) => ({
-      id: String(r.id),
-      name: String(r.name ?? ""),
-      taxId: r.tax_id != null ? String(r.tax_id) : "",
-    }))
+    const suppliers: SupplierOption[] = []
 
     const { data: artRows, error: artErr } = await supabase
       .from("articles")

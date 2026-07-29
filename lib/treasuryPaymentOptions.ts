@@ -10,6 +10,7 @@ export type TreasuryPaymentPickOption = {
 
 export type TreasuryPaymentContext = {
   defaultCashTreasuryAccountId: string | null
+  cashTreasuryAccounts: TreasuryPaymentPickOption[]
   bankTreasuryAccounts: TreasuryPaymentPickOption[]
   posTreasuryAccounts: TreasuryPaymentPickOption[]
   payTreasuryAccounts: TreasuryPaymentPickOption[]

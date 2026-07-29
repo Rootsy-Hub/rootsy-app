@@ -45,6 +45,8 @@ export async function getTreasuryPaymentContext(
     }
 
     let defaultCashTreasuryAccountId: string | null = null
+    const cashTreasuryAccounts: TreasuryPaymentContext["cashTreasuryAccounts"] =
+      []
     const bankTreasuryAccounts: TreasuryPaymentContext["bankTreasuryAccounts"] = []
     const posTreasuryAccounts: TreasuryPaymentContext["posTreasuryAccounts"] = []
     const payTreasuryAccounts: TreasuryPaymentContext["payTreasuryAccounts"] = []
@@ -71,6 +73,7 @@ export async function getTreasuryPaymentContext(
       if (!isMotherTreasuryAccount(code)) continue
 
       if (kind === "cash") {
+        cashTreasuryAccounts.push({ id, name })
         if (!defaultCashTreasuryAccountId) {
           defaultCashTreasuryAccountId = id
         }
@@ -83,6 +86,7 @@ export async function getTreasuryPaymentContext(
       success: true,
       context: {
         defaultCashTreasuryAccountId,
+        cashTreasuryAccounts,
         bankTreasuryAccounts,
         posTreasuryAccounts,
         payTreasuryAccounts,
