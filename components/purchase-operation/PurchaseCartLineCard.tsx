@@ -47,6 +47,7 @@ import {
   MessageSquare,
   Percent,
   RefreshCw,
+  Trash2,
 } from "lucide-react"
 import { useId, useRef, useState } from "react"
 
@@ -492,6 +493,8 @@ export function PurchaseCartLineCard({
           <CheckoutDialogFooter
             secondaryAction={{
               label: "Eliminar de la compra",
+              icon: Trash2,
+              tone: "destructive",
               onClick: handleRemove,
             }}
             primary={{ label: "Listo", onClick: handleDone }}

@@ -41,5 +41,6 @@ export function menuArticleToProduct(article: MenuCatalogArticle): MenuCatalogPr
     kind: "article",
     section: "products",
     categoriaFiltro: `products:${article.categoryId}`,
+    unitOfMeasure: article.unitOfMeasure,
   }
 }

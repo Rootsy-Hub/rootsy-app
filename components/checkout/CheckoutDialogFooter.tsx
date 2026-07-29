@@ -7,7 +7,7 @@ import {
   saleOpDialogPrimaryBtn,
   saleOpDialogSecondaryBtn,
 } from "@/components/sale-operation/saleOperationStyles"
-import { Loader2 } from "lucide-react"
+import { Loader2, type LucideIcon } from "lucide-react"
 import { cn } from "@/lib/utils"
 
 export type CheckoutDialogFooterAction = {
@@ -16,6 +16,8 @@ export type CheckoutDialogFooterAction = {
   disabled?: boolean
   loading?: boolean
   loadingLabel?: string
+  icon?: LucideIcon
+  tone?: "neutral" | "destructive"
 }
 
 type Props = {
@@ -48,10 +50,17 @@ export function CheckoutDialogFooter({
             <Button
               type="button"
               variant="ghost-neutral"
-              className={saleOpDialogSecondaryBtn}
+              className={cn(
+                saleOpDialogSecondaryBtn,
+                secondaryAction.tone === "destructive" &&
+                  "text-rose-600 hover:bg-rose-50 hover:text-rose-700",
+              )}
               disabled={secondaryAction.disabled}
               onClick={secondaryAction.onClick}
             >
+              {secondaryAction.icon ? (
+                <secondaryAction.icon className="size-4" aria-hidden />
+              ) : null}
               {secondaryAction.label}
             </Button>
           ) : null}

@@ -18,6 +18,7 @@ export type SaleCatalogProduct = {
   categoria: string
   imagen: string
   promo?: string
+  unitOfMeasure?: string
 }
 
 export function saleCatalogArticleToProduct(
@@ -33,6 +34,7 @@ export function saleCatalogArticleToProduct(
     discountValue: a.discountValue,
     categoria: a.categoryName.trim() ? a.categoryName : "—",
     imagen: `https://api.dicebear.com/7.x/shapes/svg?seed=${encodeURIComponent(a.id)}&backgroundColor=1a1f1d`,
+    unitOfMeasure: a.unitOfMeasure,
   }
 }
 

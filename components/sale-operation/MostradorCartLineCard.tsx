@@ -6,12 +6,10 @@ import {
   CheckoutDiscountModeSegment,
   CheckoutFieldHint,
   CheckoutNumericValueField,
-  CheckoutQuantityPanel,
   CheckoutSectionLabel,
   CheckoutSectionPanel,
   type CheckoutDiscountMode,
 } from "@/components/checkout/CheckoutFormFields"
-import { SaleOperationCartQuantityStepper } from "@/components/sale-operation/SaleOperationCartQuantityStepper"
 import { CartLineSubtitleRow } from "@/components/sale-operation/CartLineSubtitleRow"
 import {
   CartLineQuantityLabel,
@@ -45,8 +43,12 @@ import {
   type MostradorCartLineEditInput,
 } from "@/lib/menuCartLineMerge"
 import { getRowPaymentStatus } from "@/lib/partialCheckoutSelection"
+import {
+  labelUnitOfMeasure,
+  shortUnitOfMeasure,
+} from "@/lib/articleItemKind"
 import { cn } from "@/lib/utils"
-import { Banknote, CheckCircle2, MessageSquare, Percent } from "lucide-react"
+import { Banknote, CheckCircle2, Hash, MessageSquare, Percent, Trash2 } from "lucide-react"
 import { useId, useRef, useState } from "react"
 
 type Props = {
@@ -56,6 +58,35 @@ type Props = {
   onApplyEdits: (input: MostradorCartLineEditInput) => void
   onRemove: () => void
   grouped?: boolean
+}
+
+const QUANTITY_INPUT_MAX_LEN = 11
+
+function formatQuantityForInput(n: number): string {
+  if (!Number.isFinite(n) || n <= 0) return "1"
+  const rounded = Math.round(n * 1e6) / 1e6
+  if (Number.isInteger(rounded)) return String(rounded)
+  return String(rounded).replace(".", ",")
+}
+
+function parseQuantityDraft(raw: string, fallback: number): number {
+  const trimmed = raw.trim()
+  if (!trimmed) return fallback
+  const n = Number.parseFloat(trimmed.replace(",", "."))
+  if (!Number.isFinite(n) || n <= 0) return fallback
+  return Math.round(n * 1e6) / 1e6
+}
+
+function isValidQuantityInput(raw: string): boolean {
+  if (raw.length > QUANTITY_INPUT_MAX_LEN) return false
+  return /^\d*[.,]?\d*$/.test(raw)
+}
+
+function unitOfMeasureForRow(row: MostradorCartDisplayRow): string {
+  if (row.kind === "article") {
+    return row.producto?.unitOfMeasure?.trim() || "unidad"
+  }
+  return "unidad"
 }
 
 function discountSnapshot(
@@ -90,11 +121,14 @@ export function MostradorCartLineCard({
 
   const [open, setOpen] = useState(false)
   const [commentDraft, setCommentDraft] = useState("")
-  const [quantityDraft, setQuantityDraft] = useState(row.cantidad)
+  const [quantityDraft, setQuantityDraft] = useState(() =>
+    formatQuantityForInput(row.cantidad),
+  )
   const [discountModeDraft, setDiscountModeDraft] = useState<
     CheckoutDiscountMode
   >("porcentaje")
   const [discountDraft, setDiscountDraft] = useState("")
+  const quantityFieldId = useId()
   const commentFieldId = useId()
   const discountFieldId = useId()
   const baselineCantidadRef = useRef(row.cantidad)
@@ -133,6 +167,9 @@ export function MostradorCartLineCard({
 
   const productoDescripcion = productDescriptionForMostradorRow(row)
   const showDescripcion = Boolean(productoDescripcion?.trim())
+  const unitOfMeasure = unitOfMeasureForRow(row)
+  const unitOfMeasureSuffix = shortUnitOfMeasure(unitOfMeasure)
+  const unitOfMeasureLabel = labelUnitOfMeasure(unitOfMeasure)
 
   const isCartLineLocked =
     row.paidLocked === true ||
@@ -142,7 +179,7 @@ export function MostradorCartLineCard({
   const openModal = () => {
     if (isCartLineLocked) return
     baselineCantidadRef.current = row.cantidad
-    setQuantityDraft(row.cantidad)
+    setQuantityDraft(formatQuantityForInput(row.cantidad))
     initialCommentRef.current = comentario
     setCommentDraft(comentario)
     const mode = itemDescuentoModo[row.cartLineId] ?? "porcentaje"
@@ -160,8 +197,12 @@ export function MostradorCartLineCard({
   const closeModal = () => setOpen(false)
 
   const handleDone = () => {
+    const parsedQuantity = parseQuantityDraft(
+      quantityDraft,
+      baselineCantidadRef.current,
+    )
     const hasQuantityEdit =
-      canChangeQuantity && quantityDraft !== baselineCantidadRef.current
+      canChangeQuantity && parsedQuantity !== baselineCantidadRef.current
     const hasCommentEdit = canComment && commentDraft !== initialCommentRef.current
     const nextDiscount = discountSnapshot(
       discountModeDraft,
@@ -181,7 +222,7 @@ export function MostradorCartLineCard({
         cartLineTotalCantidad: row.cartLineTotalCantidad ?? null,
         sliceUnits: row.cantidad,
         commentStorageKey,
-        quantityDelta: quantityDraft - baselineCantidadRef.current,
+        quantityDelta: parsedQuantity - baselineCantidadRef.current,
         comment: commentDraft,
         hasQuantityEdit,
         hasCommentEdit,
@@ -200,6 +241,18 @@ export function MostradorCartLineCard({
   }
 
   const maxDiscountLine = pricing.precioBase
+
+  const adjustQuantityDraft = (delta: number) => {
+    setQuantityDraft((current) => {
+      const parsed = parseQuantityDraft(current, row.cantidad)
+      const next = Math.round((parsed + delta) * 1e6) / 1e6
+      if (next <= 0) return current
+      return formatQuantityForInput(next)
+    })
+  }
+
+  const canDecreaseQuantity =
+    parseQuantityDraft(quantityDraft, row.cantidad) - 1 > 0
 
   const handleDiscountChange = (raw: string) => {
     if (!/^\d*$/.test(raw)) return
@@ -325,9 +378,6 @@ export function MostradorCartLineCard({
             <DialogTitle className="text-base font-semibold tracking-tight">
               {row.nombre}
             </DialogTitle>
-            <p className="text-sm text-muted-foreground">
-              Cantidad, comentario o descuento de la línea.
-            </p>
           </DialogHeader>
 
           <div
@@ -344,16 +394,30 @@ export function MostradorCartLineCard({
                     {quantityDisabledHint}
                   </p>
                 ) : (
-                  <CheckoutQuantityPanel>
-                    <SaleOperationCartQuantityStepper
-                      nombre={row.nombre}
-                      cantidad={quantityDraft}
-                      onDecrease={() =>
-                        setQuantityDraft((prev) => Math.max(1, prev - 1))
-                      }
-                      onIncrease={() => setQuantityDraft((prev) => prev + 1)}
+                  <>
+                    <CheckoutNumericValueField
+                      id={quantityFieldId}
+                      icon={Hash}
+                      value={quantityDraft}
+                      onChange={(raw) => {
+                        if (!isValidQuantityInput(raw)) return
+                        setQuantityDraft(raw)
+                      }}
+                      onDecrease={() => adjustQuantityDraft(-1)}
+                      onIncrease={() => adjustQuantityDraft(1)}
+                      decreaseDisabled={!canDecreaseQuantity}
+                      placeholder={formatQuantityForInput(row.cantidad)}
+                      suffix={unitOfMeasureSuffix || undefined}
+                      inputMode="decimal"
+                      maxLength={QUANTITY_INPUT_MAX_LEN}
+                      ariaLabel={`Cantidad en ${unitOfMeasureLabel}`}
                     />
-                  </CheckoutQuantityPanel>
+                    {unitOfMeasureLabel !== "—" ? (
+                      <CheckoutFieldHint>
+                        Cantidad en {unitOfMeasureLabel}.
+                      </CheckoutFieldHint>
+                    ) : null}
+                  </>
                 )}
               </div>
             </CheckoutSectionPanel>
@@ -432,6 +496,8 @@ export function MostradorCartLineCard({
           <CheckoutDialogFooter
             secondaryAction={{
               label: "Eliminar del pedido",
+              icon: Trash2,
+              tone: "destructive",
               onClick: handleRemove,
             }}
             primary={{ label: "Listo", onClick: handleDone }}

@@ -47,6 +47,7 @@ export type SaleCatalogArticle = {
   iva: number
   categoryId: string
   categoryName: string
+  unitOfMeasure: string
 }
 
 export type SaleCatalogClient = {
@@ -205,6 +206,7 @@ export async function getSaleCatalog(popId: string): Promise<
         iva: Number(row.iva ?? 0) || 0,
         categoryId: String(row.category_id ?? ""),
         categoryName: cat?.name ? String(cat.name) : "—",
+        unitOfMeasure: String(row.unit_of_measure ?? "unidad"),
       }
     })
 

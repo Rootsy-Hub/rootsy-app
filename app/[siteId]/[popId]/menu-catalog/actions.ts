@@ -52,6 +52,7 @@ export type MenuCatalogArticle = {
   iva: number
   categoryId: string
   categoryName: string
+  unitOfMeasure: string
 }
 
 export type MenuCatalogCategorySection = {
@@ -534,6 +535,7 @@ export async function getMenuCatalog(popId: string): Promise<
         discount_mode,
         discount_value,
         category_id,
+        unit_of_measure,
         categories ( id, name )
       `,
       )
@@ -583,6 +585,7 @@ export async function getMenuCatalog(popId: string): Promise<
           iva: Number(row.iva ?? 0) || 0,
           categoryId: String(row.category_id ?? ""),
           categoryName: cat?.name ? String(cat.name) : "—",
+          unitOfMeasure: String(row.unit_of_measure ?? "unidad"),
         }
       })
 
