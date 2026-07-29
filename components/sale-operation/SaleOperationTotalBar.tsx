@@ -83,8 +83,8 @@ export function SaleOperationTotalBar({
       role="region"
       aria-label={totalAriaLabel ?? totalLabel}
       className={cn(
-        "relative box-border flex w-full shrink-0 flex-col justify-center border-t border-emerald-500/35 backdrop-blur-xl",
-        flush ? "px-3 py-2 sm:px-3 sm:py-2.5" : saleOpFooterBarPaddingClass,
+        "relative box-border flex w-full shrink-0 flex-col justify-center backdrop-blur-xl",
+        flush ? "border-t-0 px-3 py-2 sm:px-3 sm:py-2.5" : cn("border-t border-emerald-500/35", saleOpFooterBarPaddingClass),
         showSubtotalBreakdown
           ? "min-h-[calc(5.75rem+1rem)] sm:min-h-[calc(6rem+1.25rem)]"
           : "min-h-[calc(4.5rem+1rem)] sm:min-h-[calc(4.75rem+1.25rem)]",

@@ -2,7 +2,7 @@
 
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
-import { CircleCheck, CircleX } from "lucide-react"
+import { CircleDollarSign, Loader2, X } from "lucide-react"
 
 export type SaleOperationActionsBarProps = {
   discardDisabled?: boolean
@@ -14,6 +14,12 @@ export type SaleOperationActionsBarProps = {
   onConfirm: () => void
   flush?: boolean
 }
+
+const actionBtnBase = cn(
+  "h-14 w-full gap-2.5 border-0 px-4 text-[15px] font-semibold tracking-tight shadow-none transition-colors",
+  "focus-visible:ring-2 focus-visible:ring-offset-0",
+  "disabled:pointer-events-auto disabled:cursor-not-allowed disabled:opacity-40",
+)
 
 export function SaleOperationActionsBar({
   discardDisabled = false,
@@ -28,47 +34,47 @@ export function SaleOperationActionsBar({
   return (
     <div
       className={cn(
-        "bg-[#f8fafc] text-[#121417]",
-        flush ? "border-t border-slate-200/90" : "p-3",
+        "grid w-full shrink-0 grid-cols-2 bg-white",
+        flush
+          ? "border-t border-slate-200/90"
+          : "gap-2 rounded-2xl border border-slate-200/90 p-2 shadow-sm",
       )}
     >
-      <div
+      <button
+        type="button"
+        disabled={discardDisabled}
+        onClick={onDiscard}
         className={cn(
-          "grid grid-cols-2",
-          flush ? "gap-0" : "gap-2 sm:gap-3",
+          actionBtnBase,
+          "inline-flex items-center justify-center",
+          flush ? "rounded-none" : "rounded-xl",
+          "bg-white text-rose-700 hover:bg-rose-500/10 hover:text-rose-700 active:bg-rose-500/15",
+          "disabled:bg-white disabled:text-slate-400 disabled:hover:bg-white disabled:active:bg-white",
+          "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-400/40",
         )}
       >
-        <Button
-          type="button"
-          variant="outline"
-          disabled={discardDisabled}
-          onClick={onDiscard}
-          className={cn(
-            "gap-2 border-rose-200/90 bg-white font-medium text-rose-700 shadow-none hover:border-rose-300 hover:bg-rose-50 hover:text-rose-800 focus-visible:ring-2 focus-visible:ring-rose-400/45 disabled:pointer-events-auto disabled:cursor-not-allowed disabled:opacity-45",
-            flush
-              ? "h-12 rounded-none border-0 border-r border-r-slate-200/90 focus-visible:ring-offset-0"
-              : "h-11 focus-visible:ring-offset-2 focus-visible:ring-offset-[#f8fafc]",
-          )}
-        >
-          <CircleX className="size-4 shrink-0" aria-hidden />
-          Descartar
-        </Button>
-        <Button
-          type="button"
-          disabled={confirmDisabled || confirmLoading}
-          onClick={onConfirm}
-          title={confirmTitle}
-          className={cn(
-            "gap-2 border-0 bg-emerald-600 font-semibold text-white shadow-[0_1px_2px_rgba(0,0,0,0.06)] hover:bg-emerald-500 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 active:bg-emerald-700 disabled:pointer-events-auto disabled:cursor-not-allowed disabled:opacity-45",
-            flush
-              ? "h-12 rounded-none focus-visible:ring-offset-0"
-              : "h-11 focus-visible:ring-offset-2 focus-visible:ring-offset-[#f8fafc]",
-          )}
-        >
-          <CircleCheck className="size-4 shrink-0 opacity-95" aria-hidden />
-          {confirmLoading ? "Procesando…" : confirmLabel}
-        </Button>
-      </div>
+        <X className="size-[18px] shrink-0 stroke-[2.5]" aria-hidden />
+        Descartar
+      </button>
+      <Button
+        type="button"
+        disabled={confirmDisabled || confirmLoading}
+        onClick={onConfirm}
+        title={confirmTitle}
+        className={cn(
+          actionBtnBase,
+          flush ? "rounded-none" : "rounded-xl",
+          "bg-emerald-600 text-white hover:bg-emerald-500 active:bg-emerald-700",
+          "focus-visible:ring-emerald-400/50",
+        )}
+      >
+        {confirmLoading ? (
+          <Loader2 className="size-[18px] shrink-0 animate-spin" aria-hidden />
+        ) : (
+          <CircleDollarSign className="size-[18px] shrink-0" aria-hidden />
+        )}
+        {confirmLoading ? "Procesando…" : confirmLabel}
+      </Button>
     </div>
   )
 }

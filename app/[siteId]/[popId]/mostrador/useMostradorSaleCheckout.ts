@@ -1540,7 +1540,7 @@ export function useMostradorSaleCheckout(
       },
     },
     actions: {
-      discardDisabled: !hayContenidoVenta,
+      discardDisabled: !hayItemsEnPedido,
       confirmDisabled: !puedeRegistrar,
       confirmLoading: submitting,
       onDiscard: () => setDescartarConfirmOpen(true),

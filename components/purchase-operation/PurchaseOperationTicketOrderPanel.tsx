@@ -63,8 +63,10 @@ export function PurchaseOperationTicketOrderPanel({
         </div>
       </SaleOperationCartList>
 
-      <SaleOperationActionsBar {...actions} flush={flush} />
-      <SaleOperationTotalBar {...totalBar} flush={flush} />
+      <div className="mt-auto shrink-0 shadow-[0_-10px_28px_rgba(15,23,42,0.07)]">
+        <SaleOperationActionsBar {...actions} flush={flush} />
+        <SaleOperationTotalBar {...totalBar} flush={flush} />
+      </div>
     </div>
   )
 }

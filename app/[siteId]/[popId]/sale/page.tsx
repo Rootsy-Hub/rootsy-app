@@ -1407,7 +1407,7 @@ function SalePage() {
               emptyTitle="Pedido vacío"
               emptyDescription="Agregá productos desde el catálogo."
               actions={{
-                discardDisabled: !hayContenidoVenta,
+                discardDisabled: !hayItemsEnPedido,
                 confirmDisabled: !puedeRegistrarVenta || ventaSubmitting,
                 confirmLoading: ventaSubmitting,
                 onDiscard: () => setDescartarConfirmOpen(true),

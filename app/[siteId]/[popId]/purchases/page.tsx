@@ -1351,7 +1351,7 @@ function PurchasesPage() {
               emptyTitle="Compra vacía"
               emptyDescription="Agregá artículos desde el catálogo."
               actions={{
-                discardDisabled: !hayContenidoCompra,
+                discardDisabled: !hayItemsEnPedido,
                 confirmDisabled: !puedeComprar || compraSubmitting,
                 confirmLoading: compraSubmitting,
                 onDiscard: () => setDescartarConfirmOpen(true),
