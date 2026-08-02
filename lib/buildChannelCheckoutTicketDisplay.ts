@@ -16,9 +16,11 @@ import {
 import {
   buildMostradorCartDisplayRows,
   cartDetailItemsFromCarrito,
+  countAppliedPromotions,
   type MostradorCartDisplayRow,
 } from "@/lib/mostradorCartDisplay"
 import { normalizeCartItemKind, resolveCartLineId } from "@/lib/menuCart"
+import { computeOrderTotalBreakdown } from "@/lib/orderTotalBreakdown"
 
 export type ChannelCheckoutTicketDisplay = {
   rows: MostradorCartDisplayRow[]
@@ -26,6 +28,13 @@ export type ChannelCheckoutTicketDisplay = {
   orderTotal: number
   paidTotal: number
   pendingTotal: number
+  subtotalOriginal: number
+  descuentoItemsMonto: number
+  promocionesAplicadasMonto: number
+  promocionesAplicadasCount: number
+  descuentoGeneralMonto: number
+  hayDescuentoItems: boolean
+  hayDescuentoGeneral: boolean
 }
 
 export function buildChannelCheckoutTicketDisplay(input: {
@@ -94,13 +103,23 @@ export function buildChannelCheckoutTicketDisplay(input: {
   })
 
   const catalogTotals = menuCartOrderTotals(cartTotalsInput)
-  const subtotal = catalogTotals.subtotal
-  const descuentoMonto =
-    input.checkout.modoDescuento === "porcentaje"
-      ? subtotal * ((input.checkout.valorDescuentoPorcentaje ?? 0) / 100)
-      : Math.min(input.checkout.valorDescuentoFijo ?? 0, subtotal)
-  const orderTotal = Math.max(0, subtotal - descuentoMonto)
-  const pendingTotal = Math.max(0, orderTotal - paidTotal)
+  const breakdown = computeOrderTotalBreakdown({
+    catalogTotals,
+    modoDescuento: input.checkout.modoDescuento ?? "porcentaje",
+    valorDescuentoPorcentaje: input.checkout.valorDescuentoPorcentaje ?? 0,
+    valorDescuentoFijo: input.checkout.valorDescuentoFijo ?? 0,
+    totalPagado: paidTotal,
+  })
+
+  const comboPromoLineCount = carrito.reduce(
+    (sum, item) =>
+      normalizeCartItemKind(item.kind) === "promotion" ? sum + item.cantidad : sum,
+    0,
+  )
+  const promocionesAplicadasCount = countAppliedPromotions({
+    applications: quantityDealApplications,
+    comboLineCount: comboPromoLineCount,
+  })
 
   const rows = buildMostradorCartDisplayRows({
     items: cartDetailItemsFromCarrito(itemsDetallados),
@@ -112,8 +131,15 @@ export function buildChannelCheckoutTicketDisplay(input: {
   return {
     rows,
     paidPartialUnits,
-    orderTotal,
+    orderTotal: breakdown.orderTotalNet,
     paidTotal,
-    pendingTotal,
+    pendingTotal: breakdown.total,
+    subtotalOriginal: breakdown.subtotalOriginal,
+    descuentoItemsMonto: breakdown.descuentoItemsMonto,
+    promocionesAplicadasMonto: breakdown.promocionesAplicadasMonto,
+    promocionesAplicadasCount,
+    descuentoGeneralMonto: breakdown.descuentoMonto,
+    hayDescuentoItems: breakdown.hayDescuentoItems,
+    hayDescuentoGeneral: breakdown.hayDescuento,
   }
 }

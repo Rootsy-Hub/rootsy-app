@@ -2,7 +2,7 @@
 
 import type { OperationSaleRow } from "@/app/[siteId]/[popId]/operations/actions"
 import { MostradorCartLineDisplay } from "@/components/sale-operation/MostradorCartLineDisplay"
-import { MostradorCartTicketGroup } from "@/components/sale-operation/MostradorCartTicketGroup"
+import { SaleReadonlyTicketPanel } from "@/components/sale-operation/SaleReadonlyTicketPanel"
 import { saleOpFmt } from "@/components/sale-operation/saleOperationStyles"
 import { tdMoneyClass } from "@/components/data-workspace/dataWorkspaceListStyles"
 import { buildSaleDetailCartDisplayRows } from "@/lib/saleDetailCartDisplay"
@@ -74,13 +74,11 @@ function SaleDetailTotalsRow({
   label,
   value,
   emphasize = false,
-  negative = false,
   monetary = true,
 }: {
   label: string
   value: string
   emphasize?: boolean
-  negative?: boolean
   monetary?: boolean
 }) {
   return (
@@ -95,38 +93,19 @@ function SaleDetailTotalsRow({
       </span>
       <span
         className={cn(
-          "shrink-0 text-sm text-right",
+          "shrink-0 text-sm text-foreground",
           monetary && "tabular-nums",
           emphasize
-            ? "text-base font-semibold text-primary"
+            ? "text-base font-semibold"
             : monetary
-              ? cn("font-medium text-foreground", tdMoneyClass)
-              : "font-medium text-foreground",
-          negative && !emphasize && monetary && "text-amber-800",
+              ? cn("font-medium", tdMoneyClass)
+              : "font-medium",
         )}
       >
         {value}
       </span>
     </div>
   )
-}
-
-function formatGeneralDiscountRowLabel(
-  info: OperationSaleRow["discountInfo"],
-): string {
-  if (info.generalDiscountAmount <= 0) return "Descuento general"
-  if (info.generalDiscountMode === "porcentaje" && info.generalDiscountValue != null) {
-    const pct = Number.isInteger(info.generalDiscountValue)
-      ? String(info.generalDiscountValue)
-      : info.generalDiscountValue.toLocaleString("es-AR", {
-          maximumFractionDigits: 2,
-        })
-    return `Descuento general (${pct} %)`
-  }
-  if (info.generalDiscountMode === "fijo" && info.generalDiscountValue != null) {
-    return `Descuento general (${saleOpFmt.format(info.generalDiscountValue)})`
-  }
-  return "Descuento general"
 }
 
 function resolveTotalsFromSale(sale: OperationSaleRow) {
@@ -201,7 +180,15 @@ function resolveTotalsFromSale(sale: OperationSaleRow) {
   }
 }
 
-export function SaleDetailTicketView({ sale }: { sale: OperationSaleRow }) {
+export function SaleDetailTicketView({
+  sale,
+  showPaymentDetails = true,
+  showHeading = true,
+}: {
+  sale: OperationSaleRow
+  showPaymentDetails?: boolean
+  showHeading?: boolean
+}) {
   const cartDisplayRows = useMemo(
     () => buildSaleDetailCartDisplayRows(sale.lineItems),
     [sale.lineItems],
@@ -219,124 +206,97 @@ export function SaleDetailTicketView({ sale }: { sale: OperationSaleRow }) {
   const itemDiscountTotal = roundMoney(
     totals.promoDiscount + totals.catalogDiscount + totals.manualDiscount,
   )
+  const lineCount = cartDisplayGroups.reduce(
+    (sum, group) => sum + group.rows.length,
+    0,
+  )
+  const catalogManualDiscount = roundMoney(
+    totals.catalogDiscount + totals.manualDiscount,
+  )
+  const itemsDiscountAmount =
+    catalogManualDiscount > 0
+      ? catalogManualDiscount
+      : itemDiscountTotal <= 0
+        ? sale.discountInfo.itemDiscountTotal
+        : 0
+  const channelOrderTotal = sale.channelOrderTotal
+  const channelPaidTotal = sale.channelPaidTotal
+  const isPartialChannel =
+    channelOrderTotal != null &&
+    channelPaidTotal != null &&
+    channelPaidTotal + 0.009 < channelOrderTotal
+  const ticketTotal = isPartialChannel
+    ? roundMoney(channelOrderTotal - channelPaidTotal)
+    : totals.total
 
   return (
     <>
-      <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-        Ticket
-      </p>
-      <div className="overflow-hidden rounded-lg border border-border bg-white">
-        {cartDisplayGroups.length === 0 ? (
-          <p className="px-3 py-6 text-center text-sm text-muted-foreground">
-            Sin líneas registradas.
-          </p>
-        ) : (
-          <div className="border-b border-slate-200/90 bg-white">
-            {cartDisplayGroups.map((group) => (
-              <MostradorCartTicketGroup
-                key={group.key}
-                group={group}
-                renderRow={(row) => {
-                  const pricing = pricingForMostradorRow(row, EMPTY_CART_OVERRIDES)
-                  return (
-                    <MostradorCartLineDisplay
-                      key={row.rowKey}
-                      row={row}
-                      pricing={{
-                        precioBase: pricing.precioBase,
-                        precioFinal: pricing.precioFinal,
-                      }}
-                    />
-                  )
-                }}
-              />
-            ))}
-          </div>
-        )}
-      </div>
+      {showHeading ? (
+        <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+          Ticket
+        </p>
+      ) : null}
 
-      <div className="mt-4 rounded-lg border border-border bg-muted/20 px-4 py-3">
-        <SaleDetailTotalsRow
-          label="Subtotal lista"
-          value={saleOpFmt.format(totals.listSubtotal)}
-        />
-        {totals.promoDiscount > 0 ? (
-          <SaleDetailTotalsRow
-            label={`Promociones aplicadas (${promocionesAplicadasCount})`}
-            value={`−${saleOpFmt.format(totals.promoDiscount)}`}
-            negative
-          />
-        ) : null}
-        {totals.catalogDiscount > 0 ? (
-          <SaleDetailTotalsRow
-            label="Descuento catálogo"
-            value={`−${saleOpFmt.format(totals.catalogDiscount)}`}
-            negative
-          />
-        ) : null}
-        {totals.manualDiscount > 0 ? (
-          <SaleDetailTotalsRow
-            label="Descuento manual"
-            value={`−${saleOpFmt.format(totals.manualDiscount)}`}
-            negative
-          />
-        ) : null}
-        {itemDiscountTotal <= 0 && sale.discountInfo.itemDiscountTotal > 0 ? (
-          <SaleDetailTotalsRow
-            label="Descuento ítems"
-            value={`−${saleOpFmt.format(sale.discountInfo.itemDiscountTotal)}`}
-            negative
-          />
-        ) : null}
-        {totals.generalDiscount > 0 ? (
-          <SaleDetailTotalsRow
-            label={formatGeneralDiscountRowLabel(sale.discountInfo)}
-            value={`−${saleOpFmt.format(totals.generalDiscount)}`}
-            negative
-          />
-        ) : null}
-        <div className="my-2 border-t border-border/60" />
-        <SaleDetailTotalsRow
-          label="Total"
-          value={saleOpFmt.format(totals.total)}
-          emphasize
-        />
-        {sale.channelPaidTotal != null &&
-        sale.channelOrderTotal != null &&
-        sale.channelPaidTotal + 0.009 < sale.channelOrderTotal ? (
-          <SaleDetailTotalsRow
-            label="Pagado"
-            value={saleOpFmt.format(sale.channelPaidTotal)}
-          />
-        ) : null}
-        {sale.accruesOutputVat ? (
-          <SaleDetailTotalsRow
-            label="IVA"
-            value={totals.taxTotal > 0 ? saleOpFmt.format(totals.taxTotal) : "—"}
-          />
-        ) : null}
-        {sale.payments.length > 1 ? (
-          <>
-            <div className="my-2 border-t border-border/60" />
-            <p className="mb-1 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-              Cobros
-            </p>
-            {sale.payments.map((payment, index) => (
-              <SaleDetailTotalsRow
-                key={`${payment.methodName}-${index}`}
-                label={payment.methodName}
-                value={saleOpFmt.format(payment.amount)}
-              />
-            ))}
-          </>
-        ) : (
-          <SaleDetailTotalsRow
-            label="Forma de pago"
-            value={sale.paymentMethodLabel}
-            monetary={false}
-          />
-        )}
-      </div>
+      <SaleReadonlyTicketPanel
+        groups={cartDisplayGroups}
+        lineCount={lineCount}
+        emptyTitle="Sin líneas registradas."
+        totalBarTone="modal"
+        renderRow={(row) => {
+          const pricing = pricingForMostradorRow(row, EMPTY_CART_OVERRIDES)
+          return (
+            <MostradorCartLineDisplay
+              key={row.rowKey}
+              row={row}
+              pricing={{
+                precioBase: pricing.precioBase,
+                precioFinal: pricing.precioFinal,
+              }}
+              omitHiddenPricePlaceholder
+            />
+          )
+        }}
+        totalBar={{
+          total: ticketTotal,
+          subtotal: totals.listSubtotal,
+          subtotalOriginal: totals.listSubtotal,
+          promocionesAplicadasMonto: totals.promoDiscount,
+          promocionesAplicadasCount,
+          descuentoItemsMonto: itemsDiscountAmount,
+          hayDescuentoItems: itemsDiscountAmount > 0,
+          descuentoMonto: totals.generalDiscount,
+          hayDescuento: totals.generalDiscount > 0,
+          totalPagado:
+            showPaymentDetails && isPartialChannel ? channelPaidTotal : 0,
+          totalLabel: isPartialChannel ? "Total a cobrar" : "Total",
+          flush: true,
+        }}
+      />
+
+      {showPaymentDetails ? (
+        <div className="mt-4 rounded-lg border border-border bg-muted/20 px-4 py-3">
+          {sale.payments.length > 1 ? (
+            <>
+              <p className="mb-1 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                Cobros
+              </p>
+              {sale.payments.map((payment, index) => (
+                <SaleDetailTotalsRow
+                  key={`${payment.methodName}-${index}`}
+                  label={payment.methodName}
+                  value={saleOpFmt.format(payment.amount)}
+                />
+              ))}
+            </>
+          ) : (
+            <SaleDetailTotalsRow
+              label="Forma de pago"
+              value={sale.paymentMethodLabel}
+              monetary={false}
+            />
+          )}
+        </div>
+      ) : null}
     </>
   )
 }

@@ -8,9 +8,14 @@ import type { ReactNode } from "react"
 type Props = {
   group: MostradorCartDisplayGroup
   renderRow: (row: MostradorCartDisplayGroup["rows"][number]) => ReactNode
+  compactLayout?: boolean
 }
 
-export function MostradorCartTicketGroup({ group, renderRow }: Props) {
+export function MostradorCartTicketGroup({
+  group,
+  renderRow,
+  compactLayout = false,
+}: Props) {
   const hasPromoHeader = Boolean(group.promoLabel?.trim())
   const variant = group.promoVariant ?? "promotion"
   const isDiscount = variant === "discount"
@@ -44,6 +49,7 @@ export function MostradorCartTicketGroup({ group, renderRow }: Props) {
             variant={variant}
             discountMode={group.promoDiscountMode}
             pricing={group.groupPricing}
+            compactLayout={compactLayout}
           />
           <div className="bg-gradient-to-b from-emerald-50/35 to-white">
             {group.rows.map((row, index) => (
@@ -65,6 +71,7 @@ export function MostradorCartTicketGroup({ group, renderRow }: Props) {
             variant={variant}
             discountMode={group.promoDiscountMode}
             pricing={group.groupPricing}
+            compactLayout={compactLayout}
           />
           <div className="bg-gradient-to-b from-violet-50/35 to-white">
             {group.rows.map((row, index) => (

@@ -13,6 +13,8 @@ type Props = {
   emptyTitle?: string
   children: ReactNode
   flush?: boolean
+  /** false = altura natural (p. ej. ticket readonly en modal) */
+  fillHeight?: boolean
 }
 
 function CartListEmptyState({
@@ -52,6 +54,7 @@ export function SaleOperationCartList({
   emptyTitle = "Pedido vacío",
   children,
   flush = false,
+  fillHeight = true,
 }: Props) {
   const scrollContainerRef = useCartListScrollContainerRef()
 
@@ -59,7 +62,8 @@ export function SaleOperationCartList({
     <div
       ref={scrollContainerRef ?? undefined}
       className={cn(
-        "game-scroll flex min-h-0 flex-1 flex-col overflow-y-auto",
+        "game-scroll flex flex-col",
+        fillHeight && "min-h-0 flex-1 overflow-y-auto",
         flush ? "space-y-0" : "space-y-2 p-3 sm:p-3.5",
       )}
       role="region"

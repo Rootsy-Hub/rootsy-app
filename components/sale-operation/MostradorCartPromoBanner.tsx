@@ -1,10 +1,10 @@
 "use client"
 
 import {
-  cartListHeaderRowClass,
   saleOpFmt,
   saleOpImporteCartClass,
 } from "@/components/sale-operation/saleOperationStyles"
+import { cartLineRowGridClass, cartLineRowGridCompactClass } from "@/components/sale-operation/CartLineQuantityLabel"
 import type { MostradorCartGroupPricing } from "@/lib/mostradorCartDisplay"
 import { cn } from "@/lib/utils"
 import { Banknote, Percent, Tag } from "lucide-react"
@@ -16,6 +16,7 @@ type Props = {
   pricing?: MostradorCartGroupPricing
   discountAmount?: number
   finalTotal?: number
+  compactLayout?: boolean
 }
 
 function roundMoney(n: number): number {
@@ -52,6 +53,7 @@ export function MostradorCartPromoBanner({
   pricing,
   discountAmount,
   finalTotal,
+  compactLayout = false,
 }: Props) {
   const isDiscount = variant === "discount"
   const isFixedDiscount = isDiscount && discountMode === "fijo"
@@ -77,13 +79,19 @@ export function MostradorCartPromoBanner({
   return (
     <div
       className={cn(
-        cartListHeaderRowClass,
+        compactLayout ? cartLineRowGridCompactClass : cartLineRowGridClass,
+        "items-center py-2",
         isDiscount
           ? "bg-gradient-to-r from-emerald-200/80 via-emerald-100/45 to-transparent text-emerald-950"
           : "bg-gradient-to-r from-violet-200/80 via-violet-100/45 to-transparent text-violet-950",
       )}
     >
-      <div className="flex min-w-0 flex-1 items-center gap-1.5">
+      <div
+        className={cn(
+          "flex min-w-0 items-center gap-1.5",
+          !compactLayout && "col-span-2",
+        )}
+      >
         {isDiscount ? (
           isFixedDiscount ? (
             <Banknote className="size-3 shrink-0 opacity-80" aria-hidden />
@@ -102,10 +110,12 @@ export function MostradorCartPromoBanner({
       </div>
 
       {resolvedFinalTotal != null ? (
-        <span className={cn(saleOpImporteCartClass, "shrink-0")}>
+        <span className={cn(saleOpImporteCartClass, "pt-0.5 text-right")}>
           {saleOpFmt.format(resolvedFinalTotal)}
         </span>
-      ) : null}
+      ) : (
+        <span aria-hidden className="block" />
+      )}
     </div>
   )
 }

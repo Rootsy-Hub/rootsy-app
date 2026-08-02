@@ -79,7 +79,7 @@ export function DataWorkspacePeriodFilter({
   const triggerId = triggerIdProp ?? autoTriggerId
   const isCompact = variant === "compact"
   const [popoverOpen, setPopoverOpen] = useState(false)
-  const [compactView, setCompactView] = useState<"shortcuts" | "calendar">(
+  const [pickerView, setPickerView] = useState<"shortcuts" | "calendar">(
     "shortcuts",
   )
   /** Rango en curso mientras el usuario elige inicio y fin en el calendario. */
@@ -97,16 +97,16 @@ export function DataWorkspacePeriodFilter({
       resetDraftRange()
       return
     }
-    setCompactView("shortcuts")
+    setPickerView("shortcuts")
     setDraftRange(undefined)
   }
 
   useEffect(() => {
     if (!popoverOpen) return
-    if (isCompact && preset === "custom") {
-      setCompactView("calendar")
+    if (preset === "custom") {
+      setPickerView("calendar")
     }
-  }, [popoverOpen, isCompact, preset])
+  }, [popoverOpen, preset])
 
   const active = showActiveState && preset !== "all"
   const summary = useMemo(
@@ -190,7 +190,7 @@ export function DataWorkspacePeriodFilter({
           lightDatePopoverContentClass,
         )}
       >
-        {isCompact && compactView === "calendar" ? (
+        {pickerView === "calendar" ? (
           <div className="min-w-0 px-2.5 pb-3 pt-2">
             <div className={lightDateCalendarClass}>
               <Calendar
@@ -198,7 +198,10 @@ export function DataWorkspacePeriodFilter({
                 mode="range"
                 min={1}
                 numberOfMonths={1}
-                className="w-full min-w-0 bg-transparent p-0 [--cell-size:2rem]"
+                className={cn(
+                  "w-full min-w-0 bg-transparent p-0",
+                  isCompact ? "[--cell-size:2rem]" : "[--cell-size:2.125rem]",
+                )}
                 selected={calendarSelected}
                 onSelect={handleCustomRangeSelect}
                 defaultMonth={
@@ -263,47 +266,22 @@ export function DataWorkspacePeriodFilter({
               </div>
             </div>
 
-            {isCompact ? (
-              <div className="border-t border-zinc-100 px-2 py-2">
-                <button
-                  type="button"
-                  onClick={() => {
-                    resetDraftRange()
-                    setCompactView("calendar")
-                  }}
-                  className={cn(
-                    "w-full",
-                    dateShortcutButtonClass,
-                    preset === "custom" && dateShortcutButtonActiveClass,
-                  )}
-                >
-                  Rango personalizado…
-                </button>
-              </div>
-            ) : (
-              <div className="min-w-0 border-t border-zinc-100 px-2.5 pb-3 pt-2">
-                <p className="mb-2 text-[10px] font-semibold uppercase tracking-[0.14em] text-zinc-400">
-                  Rango personalizado
-                </p>
-                <div className={lightDateCalendarClass}>
-                  <Calendar
-                    locale={esLocale}
-                    mode="range"
-                    min={1}
-                    numberOfMonths={1}
-                    className="w-full min-w-0 bg-transparent p-0 [--cell-size:2.125rem]"
-                    selected={calendarSelected}
-                    onSelect={handleCustomRangeSelect}
-                    defaultMonth={
-                      draftRange?.from ??
-                      customRange?.from ??
-                      customRange?.to ??
-                      new Date()
-                    }
-                  />
-                </div>
-              </div>
-            )}
+            <div className="border-t border-zinc-100 px-2 py-2">
+              <button
+                type="button"
+                onClick={() => {
+                  resetDraftRange()
+                  setPickerView("calendar")
+                }}
+                className={cn(
+                  "w-full",
+                  dateShortcutButtonClass,
+                  preset === "custom" && dateShortcutButtonActiveClass,
+                )}
+              >
+                Rango personalizado…
+              </button>
+            </div>
           </div>
         )}
       </PopoverContent>

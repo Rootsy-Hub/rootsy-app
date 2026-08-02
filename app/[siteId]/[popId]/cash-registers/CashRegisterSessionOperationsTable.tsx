@@ -16,7 +16,10 @@ import {
 } from "@/app/[siteId]/[popId]/cash-registers/cashRegisterFormatters"
 import { OperationSaleDetailDialog } from "@/app/[siteId]/[popId]/operations/OperationSaleDetailDialog"
 import { getOperationSaleById } from "@/app/[siteId]/[popId]/operations/actions"
-import type { OperationSaleRow } from "@/app/[siteId]/[popId]/operations/actions"
+import type {
+  OperationSaleDetailContext,
+  OperationSaleRow,
+} from "@/app/[siteId]/[popId]/operations/actions"
 import { tdMoneyClass } from "@/components/data-workspace/dataWorkspaceListStyles"
 import { useDataWorkspaceMainScrollRoot } from "@/hooks/useDataWorkspaceMainScrollRoot"
 import { usePopTimeZone } from "@/hooks/usePopTimeZone"
@@ -77,6 +80,8 @@ export function CashRegisterSessionOperationsTable({
     useTreasuryInfiniteScroll(operations, scrollRoot)
   const [detailOpen, setDetailOpen] = useState(false)
   const [detailSale, setDetailSale] = useState<OperationSaleRow | null>(null)
+  const [detailContext, setDetailContext] =
+    useState<OperationSaleDetailContext | null>(null)
   const [detailLoading, setDetailLoading] = useState(false)
   const [detailError, setDetailError] = useState<string | null>(null)
 
@@ -94,6 +99,7 @@ export function CashRegisterSessionOperationsTable({
     async (saleId: string) => {
       setDetailOpen(true)
       setDetailSale(null)
+      setDetailContext(null)
       setDetailError(null)
       setDetailLoading(true)
 
@@ -104,6 +110,7 @@ export function CashRegisterSessionOperationsTable({
         return
       }
       setDetailSale(res.sale)
+      setDetailContext(res.context)
     },
     [popId],
   )
@@ -112,6 +119,7 @@ export function CashRegisterSessionOperationsTable({
     setDetailOpen(open)
     if (!open) {
       setDetailSale(null)
+      setDetailContext(null)
       setDetailError(null)
       setDetailLoading(false)
     }
@@ -130,6 +138,7 @@ export function CashRegisterSessionOperationsTable({
         </div>
         <OperationSaleDetailDialog
           sale={detailSale}
+          context={detailContext}
           open={detailOpen}
           onOpenChange={handleDetailOpenChange}
           siteId={siteId}
@@ -182,6 +191,7 @@ export function CashRegisterSessionOperationsTable({
 
       <OperationSaleDetailDialog
         sale={detailSale}
+        context={detailContext}
         open={detailOpen}
         onOpenChange={handleDetailOpenChange}
         siteId={siteId}

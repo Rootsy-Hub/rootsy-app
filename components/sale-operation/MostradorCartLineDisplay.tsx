@@ -3,6 +3,8 @@
 import {
   CartLineQuantityLabel,
   cartLineRowGridClass,
+  cartLineRowGridCompactClass,
+  formatCartLineQuantity,
 } from "@/components/sale-operation/CartLineQuantityLabel"
 import {
   saleOpFmt,
@@ -13,7 +15,8 @@ import {
   type MostradorCartDisplayRow,
 } from "@/lib/mostradorCartDisplay"
 import { cn } from "@/lib/utils"
-import { MessageSquare } from "lucide-react"
+import { CheckCircle2, MessageSquare } from "lucide-react"
+import type { ReactNode } from "react"
 
 type Pricing = {
   precioBase: number
@@ -23,22 +26,53 @@ type Pricing = {
 type Props = {
   row: MostradorCartDisplayRow
   pricing: Pricing
+  paymentBadge?: ReactNode
+  rowClassName?: string
+  /** Cantidad en la misma columna que el nombre (sin columna dedicada) */
+  inlineQuantity?: boolean
+  /** En readonly: no mostrar "—" cuando el precio va en el banner del grupo */
+  omitHiddenPricePlaceholder?: boolean
 }
 
-export function MostradorCartLineDisplay({ row, pricing }: Props) {
+export function MostradorCartLineDisplay({
+  row,
+  pricing,
+  paymentBadge,
+  rowClassName,
+  inlineQuantity = false,
+  omitHiddenPricePlaceholder = false,
+}: Props) {
   const productoDescripcion = productDescriptionForMostradorRow(row)
   const comentario = row.comment?.trim() ?? ""
   const tieneComentario = comentario.length > 0
   const showPrice = !row.hidePrice
+  const quantityLabel = formatCartLineQuantity(row.cantidad)
 
   return (
-    <div className="w-full">
-      <div className={cn(cartLineRowGridClass)}>
-        <CartLineQuantityLabel cantidad={row.cantidad} />
+    <div className={cn("w-full", rowClassName)}>
+      <div
+        className={cn(
+          inlineQuantity ? cartLineRowGridCompactClass : cartLineRowGridClass,
+        )}
+      >
+        {!inlineQuantity ? (
+          <CartLineQuantityLabel cantidad={row.cantidad} />
+        ) : null}
 
         <span className="min-w-0">
-          <span className="block text-sm font-semibold leading-snug text-slate-900">
-            {row.nombre}
+          <span className="flex items-center gap-1.5">
+            <span className="block text-sm font-semibold leading-snug text-slate-900">
+              {inlineQuantity ? (
+                <>
+                  <span className="font-bold tabular-nums">{quantityLabel}</span>
+                  {" "}
+                  {row.nombre}
+                </>
+              ) : (
+                row.nombre
+              )}
+            </span>
+            {paymentBadge}
           </span>
           {productoDescripcion ? (
             <span className="mt-0.5 block truncate text-xs leading-snug text-slate-500">
@@ -52,6 +86,8 @@ export function MostradorCartLineDisplay({ row, pricing }: Props) {
             <span className={saleOpImporteCartClass}>
               {saleOpFmt.format(pricing.precioFinal)}
             </span>
+          ) : omitHiddenPricePlaceholder ? (
+            <span aria-hidden className="block" />
           ) : (
             <span className="text-sm font-medium text-slate-400">—</span>
           )}

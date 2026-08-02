@@ -33,6 +33,10 @@ import {
   timezoneForPopLedger,
 } from "@/lib/entryDateTimezone"
 import { createClient } from "@/utils/supabase/server"
+import {
+  saleComprobanteLabel,
+  saleHasComprobante,
+} from "@/lib/operationSaleComprobante"
 
 export type OperationSaleLineItem = {
   articleId: string | null
@@ -116,10 +120,45 @@ export type OperationSaleSnapshotInfo = {
   totals: SaleSnapshotTotals | null
 }
 
+export type OperationSaleChannel = "pos" | "table" | "counter"
+
+export type OperationSaleDetailContext = {
+  channel: OperationSaleChannel
+  soldAt: string | null
+  soldByName: string | null
+  customerName: string | null
+  tableLabel: string | null
+  openedAt: string | null
+  closedAt: string | null
+  openedByName: string | null
+  closedByName: string | null
+  waiterName: string | null
+  guestCount: number | null
+  note: string | null
+  counterOrderLabel: string | null
+  fulfillmentType: "pickup" | "delivery" | null
+  deliveryAddress: string | null
+  phone: string | null
+  driverName: string | null
+  estimatedMinutes: number | null
+  deliveredAt: string | null
+}
+
+export type OperationSaleChargeRow = {
+  saleId: string
+  soldAt: string
+  amount: number
+  methodName: string
+  comprobanteLabel: string | null
+  hasComprobante: boolean
+  sale: OperationSaleRow
+}
+
 export type OperationSaleRow = {
   id: string
   soldAt: string
   status: string
+  saleChannel: OperationSaleChannel
   /** Importe registrado en esta venta (cobro parcial o total). */
   saleAmount: number
   total: number
@@ -600,6 +639,7 @@ const SALE_LIST_SELECT = `
         table_session_id,
         counter_order_id,
         sale_channel,
+        created_by,
         sale_payments (
           amount,
           sort_order,
@@ -861,6 +901,249 @@ function formatTreasuryPaymentLabel(p: {
   return kindLabel || taName || "—"
 }
 
+function resolveSaleChannelFromRow(
+  row: Record<string, unknown>,
+): OperationSaleChannel {
+  const channel = String(row.sale_channel ?? "").trim()
+  if (channel === "table" || channel === "counter" || channel === "pos") {
+    return channel
+  }
+  if (row.table_session_id != null && String(row.table_session_id).trim()) {
+    return "table"
+  }
+  if (row.counter_order_id != null && String(row.counter_order_id).trim()) {
+    return "counter"
+  }
+  return "pos"
+}
+
+async function loadUserDisplayNames(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  userIds: string[],
+): Promise<Map<string, string>> {
+  const unique = [...new Set(userIds.filter(Boolean))]
+  const map = new Map<string, string>()
+  if (unique.length === 0) return map
+
+  const { data } = await supabase
+    .from("users")
+    .select("id, first_name, last_name")
+    .in("id", unique)
+
+  for (const row of data || []) {
+    const name =
+      `${String(row.first_name ?? "").trim()} ${String(row.last_name ?? "").trim()}`.trim()
+    map.set(String(row.id), name || "Usuario")
+  }
+
+  return map
+}
+
+async function loadOperationSaleDetailContext(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  popId: string,
+  row: Record<string, unknown>,
+  tableLabelBySessionId: Map<string, string>,
+  counterOrderLabelByOrderId: Map<string, string>,
+): Promise<OperationSaleDetailContext> {
+  const channel = resolveSaleChannelFromRow(row)
+  const soldAt = row.sold_at != null ? String(row.sold_at) : null
+  const customerName =
+    row.customer_name != null ? String(row.customer_name).trim() || null : null
+  const createdBy =
+    row.created_by != null ? String(row.created_by).trim() || null : null
+
+  const base: OperationSaleDetailContext = {
+    channel,
+    soldAt,
+    soldByName: null,
+    customerName,
+    tableLabel: parseTableLabelFromSession(row, tableLabelBySessionId),
+    openedAt: null,
+    closedAt: null,
+    openedByName: null,
+    closedByName: null,
+    waiterName: null,
+    guestCount: null,
+    note: null,
+    counterOrderLabel: parseCounterOrderLabel(row, counterOrderLabelByOrderId),
+    fulfillmentType: null,
+    deliveryAddress: null,
+    phone: null,
+    driverName: null,
+    estimatedMinutes: null,
+    deliveredAt: null,
+  }
+
+  const userIds = new Set<string>()
+  if (createdBy) userIds.add(createdBy)
+
+  const tableSessionId =
+    row.table_session_id != null ? String(row.table_session_id).trim() : ""
+  const counterOrderId =
+    row.counter_order_id != null ? String(row.counter_order_id).trim() : ""
+
+  let tableOpenedBy: string | null = null
+  let tableClosedBy: string | null = null
+  let tableWaiterId: string | null = null
+  let counterOpenedBy: string | null = null
+  let counterClosedBy: string | null = null
+  let counterStatus: string | null = null
+  let counterCancelledAt: string | null = null
+
+  if (channel === "table" && tableSessionId) {
+    const { data: session } = await supabase
+      .from("table_sessions")
+      .select(
+        `
+        waiter_user_id,
+        guest_count,
+        notes,
+        opened_at,
+        closed_at,
+        opened_by,
+        closed_by
+      `,
+      )
+      .eq("id", tableSessionId)
+      .eq("pop_id", popId)
+      .maybeSingle()
+
+    if (session) {
+      base.openedAt =
+        session.opened_at != null ? String(session.opened_at) : null
+      base.closedAt =
+        session.closed_at != null ? String(session.closed_at) : null
+      base.guestCount =
+        session.guest_count != null ? Number(session.guest_count) : null
+      base.note =
+        session.notes != null ? String(session.notes).trim() || null : null
+      tableWaiterId =
+        session.waiter_user_id != null
+          ? String(session.waiter_user_id).trim() || null
+          : null
+      tableOpenedBy =
+        session.opened_by != null
+          ? String(session.opened_by).trim() || null
+          : null
+      tableClosedBy =
+        session.closed_by != null
+          ? String(session.closed_by).trim() || null
+          : null
+      if (tableWaiterId) userIds.add(tableWaiterId)
+      if (tableOpenedBy) userIds.add(tableOpenedBy)
+      if (tableClosedBy) userIds.add(tableClosedBy)
+    }
+  }
+
+  if (channel === "counter" && counterOrderId) {
+    const { data: order } = await supabase
+      .from("counter_orders")
+      .select(
+        `
+        order_number,
+        status,
+        fulfillment_type,
+        delivery_address,
+        phone,
+        driver_name,
+        estimated_minutes,
+        notes,
+        opened_at,
+        delivered_at,
+        cancelled_at,
+        opened_by,
+        cancelled_by
+      `,
+      )
+      .eq("id", counterOrderId)
+      .eq("pop_id", popId)
+      .maybeSingle()
+
+    if (order) {
+      const orderNumber = Number(order.order_number)
+      if (Number.isFinite(orderNumber) && !base.counterOrderLabel) {
+        base.counterOrderLabel = `#${orderNumber}`
+      }
+      counterStatus = order.status != null ? String(order.status) : null
+      base.openedAt = order.opened_at != null ? String(order.opened_at) : null
+      base.deliveredAt =
+        order.delivered_at != null ? String(order.delivered_at) : null
+      counterCancelledAt =
+        order.cancelled_at != null ? String(order.cancelled_at) : null
+      const fulfillment = String(order.fulfillment_type ?? "").trim()
+      base.fulfillmentType =
+        fulfillment === "delivery" || fulfillment === "pickup"
+          ? fulfillment
+          : null
+      base.deliveryAddress =
+        order.delivery_address != null
+          ? String(order.delivery_address).trim() || null
+          : null
+      base.phone =
+        order.phone != null ? String(order.phone).trim() || null : null
+      base.driverName =
+        order.driver_name != null
+          ? String(order.driver_name).trim() || null
+          : null
+      base.estimatedMinutes =
+        order.estimated_minutes != null
+          ? Number(order.estimated_minutes)
+          : null
+      base.note =
+        order.notes != null ? String(order.notes).trim() || null : null
+      counterOpenedBy =
+        order.opened_by != null
+          ? String(order.opened_by).trim() || null
+          : null
+      counterClosedBy =
+        order.cancelled_by != null
+          ? String(order.cancelled_by).trim() || null
+          : null
+      if (counterOpenedBy) userIds.add(counterOpenedBy)
+      if (counterClosedBy) userIds.add(counterClosedBy)
+      if (counterStatus === "cancelled" && counterCancelledAt) {
+        base.closedAt = counterCancelledAt
+      } else if (base.deliveredAt) {
+        base.closedAt = base.deliveredAt
+      } else if (soldAt) {
+        base.closedAt = soldAt
+      }
+    }
+  }
+
+  const userNames = await loadUserDisplayNames(supabase, [...userIds])
+
+  if (channel === "table") {
+    base.openedByName = tableOpenedBy
+      ? (userNames.get(tableOpenedBy) ?? null)
+      : null
+    base.closedByName = tableClosedBy
+      ? (userNames.get(tableClosedBy) ?? null)
+      : null
+    base.waiterName = tableWaiterId
+      ? (userNames.get(tableWaiterId) ?? null)
+      : null
+  }
+
+  if (channel === "counter") {
+    base.openedByName = counterOpenedBy
+      ? (userNames.get(counterOpenedBy) ?? null)
+      : null
+    if (counterStatus === "cancelled" && counterClosedBy) {
+      base.closedByName = userNames.get(counterClosedBy) ?? null
+    } else if (createdBy) {
+      base.closedByName = userNames.get(createdBy) ?? null
+    }
+  }
+
+  if (createdBy) {
+    base.soldByName = userNames.get(createdBy) ?? null
+  }
+
+  return base
+}
+
 function mapSaleRows(
   saleRows: Array<Record<string, unknown>>,
   arcaBySaleId: Map<string, OperationSaleArcaInvoice>,
@@ -930,6 +1213,7 @@ function mapSaleRows(
       }),
       tableLabel: parseTableLabelFromSession(row, tableLabelBySessionId),
       counterOrderLabel: parseCounterOrderLabel(row, counterOrderLabelByOrderId),
+      saleChannel: resolveSaleChannelFromRow(row),
       tableSessionId:
         row.table_session_id != null ? String(row.table_session_id) : null,
       counterOrderId:
@@ -1839,7 +2123,7 @@ export async function getOperationSaleById(
   popId: string,
   saleId: string,
 ): Promise<
-  | { success: true; sale: OperationSaleRow }
+  | { success: true; sale: OperationSaleRow; context: OperationSaleDetailContext }
   | { success: false; error: string }
 > {
   try {
@@ -1925,7 +2209,205 @@ export async function getOperationSaleById(
       return { success: false, error: "No se encontró la venta." }
     }
 
-    return { success: true, sale }
+    const context = await loadOperationSaleDetailContext(
+      supabase,
+      popId,
+      row as Record<string, unknown>,
+      tableLabelBySessionId,
+      counterOrderLabelByOrderId,
+    )
+
+    return { success: true, sale, context }
+  } catch (e: unknown) {
+    const message = e instanceof Error ? e.message : "Error desconocido"
+    return { success: false, error: message }
+  }
+}
+
+function mapSaleToChargeRow(sale: OperationSaleRow): OperationSaleChargeRow {
+  const label = saleComprobanteLabel(sale)
+  return {
+    saleId: sale.id,
+    soldAt: sale.soldAt,
+    amount: sale.saleAmount,
+    methodName: sale.paymentMethodLabel,
+    comprobanteLabel: label !== "—" ? label : null,
+    hasComprobante: saleHasComprobante(sale),
+    sale,
+  }
+}
+
+export async function getOperationSaleDetailCharges(
+  popId: string,
+  input: {
+    saleId: string
+    groupedSaleIds?: string[]
+  },
+): Promise<
+  | { success: true; charges: OperationSaleChargeRow[] }
+  | { success: false; error: string }
+> {
+  try {
+    const access = await validatePopAccess(popId)
+    if (!access.hasAccess || !access.isActive) {
+      return { success: false, error: access.error || "Sin acceso" }
+    }
+
+    const snap = await loadPopPermissionsSnapshot(popId)
+    const canRead =
+      permissionKeysInclude(
+        snap.keys,
+        POP_PERMS.OPERATIONS_READ.resource,
+        POP_PERMS.OPERATIONS_READ.action,
+      ) ||
+      permissionKeysInclude(
+        snap.keys,
+        POP_PERMS.SALE_READ.resource,
+        POP_PERMS.SALE_READ.action,
+      )
+    if (!canRead) {
+      return {
+        success: false,
+        error: "No tenés permiso para ver ventas.",
+      }
+    }
+
+    const primarySaleId = input.saleId.trim()
+    if (!primarySaleId) {
+      return { success: false, error: "Venta inválida." }
+    }
+
+    const saleIds = [
+      ...new Set(
+        (input.groupedSaleIds?.length
+          ? input.groupedSaleIds
+          : [primarySaleId]
+        ).map((id) => id.trim()).filter(Boolean),
+      ),
+    ]
+
+    const popRes = await getPopById(popId)
+    const fiscalSiteId =
+      popRes.success && popRes.pop
+        ? siteIdFromPopRow(popRes.pop)
+        : DEFAULT_SALE_SITE_ID
+
+    const supabase = await createClient()
+    const { data: rows, error } = await supabase
+      .from("sales")
+      .select(SALE_LIST_SELECT)
+      .eq("pop_id", popId)
+      .in("id", saleIds)
+
+    if (error) {
+      return { success: false, error: error.message }
+    }
+    if (!rows?.length) {
+      return { success: false, error: "No se encontraron cobros." }
+    }
+
+    const arcaBySaleId = await loadArcaBySaleIds(
+      supabase,
+      popId,
+      fiscalSiteId,
+      saleIds,
+    )
+    const tableLabelBySessionId = await loadTableLabelsBySaleIds(
+      supabase,
+      popId,
+      rows as Array<Record<string, unknown>>,
+    )
+    const counterOrderLabelByOrderId =
+      await loadCounterOrderLabelsBySaleIds(
+        supabase,
+        popId,
+        rows as Array<Record<string, unknown>>,
+      )
+
+    const sales = mapSaleRows(
+      rows as Array<Record<string, unknown>>,
+      arcaBySaleId,
+      fiscalSiteId,
+      tableLabelBySessionId,
+      counterOrderLabelByOrderId,
+    ).sort((a, b) => a.soldAt.localeCompare(b.soldAt))
+
+    return {
+      success: true,
+      charges: sales.map(mapSaleToChargeRow),
+    }
+  } catch (e: unknown) {
+    const message = e instanceof Error ? e.message : "Error desconocido"
+    return { success: false, error: message }
+  }
+}
+
+export async function getOperationSaleDetailContext(
+  popId: string,
+  saleId: string,
+): Promise<
+  | { success: true; context: OperationSaleDetailContext }
+  | { success: false; error: string }
+> {
+  try {
+    const access = await validatePopAccess(popId)
+    if (!access.hasAccess || !access.isActive) {
+      return { success: false, error: access.error || "Sin acceso" }
+    }
+
+    const trimmedSaleId = saleId.trim()
+    if (!trimmedSaleId) {
+      return { success: false, error: "Venta inválida." }
+    }
+
+    const supabase = await createClient()
+    const { data: row, error } = await supabase
+      .from("sales")
+      .select(
+        `
+        id,
+        sold_at,
+        customer_name,
+        created_by,
+        sale_channel,
+        table_session_id,
+        counter_order_id
+      `,
+      )
+      .eq("pop_id", popId)
+      .eq("id", trimmedSaleId)
+      .maybeSingle()
+
+    if (error || !row) {
+      return {
+        success: false,
+        error: error?.message || "No se encontró la venta.",
+      }
+    }
+
+    const saleChannel = String(row.sale_channel ?? "")
+    const tableLabelBySessionId =
+      saleChannel === "table"
+        ? await loadTableLabelsBySaleIds(supabase, popId, [
+            row as Record<string, unknown>,
+          ])
+        : new Map<string, string>()
+    const counterOrderLabelByOrderId =
+      saleChannel === "counter"
+        ? await loadCounterOrderLabelsBySaleIds(supabase, popId, [
+            row as Record<string, unknown>,
+          ])
+        : new Map<string, string>()
+
+    const context = await loadOperationSaleDetailContext(
+      supabase,
+      popId,
+      row as Record<string, unknown>,
+      tableLabelBySessionId,
+      counterOrderLabelByOrderId,
+    )
+
+    return { success: true, context }
   } catch (e: unknown) {
     const message = e instanceof Error ? e.message : "Error desconocido"
     return { success: false, error: message }
