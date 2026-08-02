@@ -1,5 +1,6 @@
 import type { SaleCatalogArticle } from "@/app/[siteId]/[popId]/sale/actions"
 import { formatArticleDiscountBadge } from "@/lib/articleDiscount"
+import { resolveCatalogProductImage } from "@/lib/menuCatalogProduct"
 import {
   hasSaleLineManualDiscount,
   resolveSaleLineDiscount,
@@ -33,7 +34,7 @@ export function saleCatalogArticleToProduct(
     discountMode: a.discountMode,
     discountValue: a.discountValue,
     categoria: a.categoryName.trim() ? a.categoryName : "—",
-    imagen: `https://api.dicebear.com/7.x/shapes/svg?seed=${encodeURIComponent(a.id)}&backgroundColor=1a1f1d`,
+    imagen: resolveCatalogProductImage(a.id, a.imageUrl),
     unitOfMeasure: a.unitOfMeasure,
   }
 }

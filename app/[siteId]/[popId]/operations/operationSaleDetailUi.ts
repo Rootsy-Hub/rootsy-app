@@ -56,3 +56,43 @@ export function counterFulfillmentTypeLabel(
   if (value === "pickup") return "Mostrador"
   return "—"
 }
+
+export function counterOrderStatusLabel(
+  status: string | null | undefined,
+): string {
+  switch (status) {
+    case "preparing":
+      return "Preparando"
+    case "dispatched":
+      return "Enviados"
+    case "delivered":
+      return "Entregados"
+    case "cancelled":
+      return "Cancelado"
+    default:
+      return status?.trim() || "—"
+  }
+}
+
+export function formatChannelPlaceLine(input: {
+  tableLabel?: string | null
+  counterOrderLabel?: string | null
+  waiterName?: string | null
+  channel: "table" | "counter"
+}): string {
+  let place: string
+  if (input.channel === "table") {
+    const raw = input.tableLabel?.trim()
+    if (!raw) place = "—"
+    else if (/^mesa\b/i.test(raw)) place = raw
+    else place = `Mesa ${raw}`
+  } else {
+    const raw = input.counterOrderLabel?.trim()
+    if (!raw) place = "—"
+    else place = `Pedido ${raw.startsWith("#") ? raw : `#${raw}`}`
+  }
+
+  const waiter = input.waiterName?.trim()
+  if (waiter && place !== "—") return `${place} · ${waiter}`
+  return place
+}

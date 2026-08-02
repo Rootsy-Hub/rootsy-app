@@ -30,6 +30,7 @@ type Props = {
   value: ArticleItemFormState
   onChange: (patch: Partial<ArticleItemFormState>) => void
   idPrefix: string
+  variant?: "panel" | "plain"
 }
 
 export function ArticleItemFormFields({
@@ -37,16 +38,25 @@ export function ArticleItemFormFields({
   value,
   onChange,
   idPrefix,
+  variant = "panel",
 }: Props) {
   const showWaste = itemKind === "raw_material"
   const showMinStock = itemKind !== "merchandise"
   const showCustomUnit = value.unitOfMeasure === CUSTOM_UNIT_OF_MEASURE_SELECT
 
   return (
-    <div className="space-y-4 rounded-lg border border-border/50 bg-muted/15 p-3">
-      <p className="text-xs leading-relaxed text-muted-foreground">
-        {ARTICLE_ITEM_KIND_HINT[itemKind]}
-      </p>
+    <div
+      className={
+        variant === "panel"
+          ? "space-y-4 rounded-lg border border-border/50 bg-muted/15 p-3"
+          : "space-y-3"
+      }
+    >
+      {variant === "panel" ? (
+        <p className="text-xs leading-relaxed text-muted-foreground">
+          {ARTICLE_ITEM_KIND_HINT[itemKind]}
+        </p>
+      ) : null}
       <div className="space-y-2">
         <Label htmlFor={`${idPrefix}-uom`}>Unidad de medida</Label>
         <Select

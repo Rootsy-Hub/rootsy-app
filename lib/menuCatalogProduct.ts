@@ -11,6 +11,18 @@ export type MenuCatalogProduct = SaleCatalogProduct & {
   promotionMeta?: MenuCatalogPromotion
 }
 
+export function catalogProductPlaceholderImage(id: string): string {
+  return `https://api.dicebear.com/7.x/shapes/svg?seed=${encodeURIComponent(id)}&backgroundColor=1a1f1d`
+}
+
+export function resolveCatalogProductImage(
+  id: string,
+  imageUrl: string | null | undefined,
+): string {
+  const trimmed = typeof imageUrl === "string" ? imageUrl.trim() : ""
+  return trimmed || catalogProductPlaceholderImage(id)
+}
+
 export function menuRecipeToProduct(recipe: MenuCatalogRecipe): MenuCatalogProduct {
   return {
     id: recipe.id,
@@ -18,9 +30,7 @@ export function menuRecipeToProduct(recipe: MenuCatalogRecipe): MenuCatalogProdu
     descripcion: recipe.description.trim() ? recipe.description : "—",
     precio: recipe.salePrice,
     categoria: recipe.categoryName.trim() ? recipe.categoryName : "—",
-    imagen: recipe.imageUrl?.trim()
-      ? recipe.imageUrl.trim()
-      : `https://api.dicebear.com/7.x/shapes/svg?seed=${encodeURIComponent(recipe.id)}&backgroundColor=1a1f1d`,
+    imagen: resolveCatalogProductImage(recipe.id, recipe.imageUrl),
     kind: "recipe",
     section: "recipes",
     categoriaFiltro: `recipes:${recipe.categoryId}`,
@@ -37,7 +47,7 @@ export function menuArticleToProduct(article: MenuCatalogArticle): MenuCatalogPr
     discountMode: article.discountMode,
     discountValue: article.discountValue,
     categoria: article.categoryName.trim() ? article.categoryName : "—",
-    imagen: `https://api.dicebear.com/7.x/shapes/svg?seed=${encodeURIComponent(article.id)}&backgroundColor=1a1f1d`,
+    imagen: resolveCatalogProductImage(article.id, article.imageUrl),
     kind: "article",
     section: "products",
     categoriaFiltro: `products:${article.categoryId}`,

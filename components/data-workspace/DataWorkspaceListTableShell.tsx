@@ -51,7 +51,6 @@ export function DataWorkspaceListTableShell({
           <div
             className={cn(
               "rootsy-scroll-minimal absolute inset-0 overflow-auto",
-              isFlush && "pr-3",
               workspaceTableListBodyScopeClass,
             )}
           >

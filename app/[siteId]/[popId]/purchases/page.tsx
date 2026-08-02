@@ -28,6 +28,7 @@ import {
   CLIENT_IVA_CONDITION_OPTIONS,
 } from "@/app/[siteId]/[popId]/clients/clientIvaConstants"
 import { completePurchase } from "@/app/[siteId]/[popId]/purchases/completePurchase"
+import { resolveCatalogProductImage } from "@/lib/menuCatalogProduct"
 import { resolveSaleLineDiscount } from "@/lib/saleLineDiscount"
 import { SUPPLIER_ACCOUNT_PAYMENT_LABEL } from "@/lib/operationPaymentLabels"
 import {
@@ -141,7 +142,7 @@ function articleToProducto(a: PurchaseCatalogArticle): Producto {
     precio: a.costPrice,
     iva: a.iva,
     categoria: a.categoryName.trim() ? a.categoryName : "—",
-    imagen: `https://api.dicebear.com/7.x/shapes/svg?seed=${encodeURIComponent(a.id)}&backgroundColor=1a1f1d`,
+    imagen: resolveCatalogProductImage(a.id, a.imageUrl),
     unitOfMeasure: a.unitOfMeasure,
   }
 }

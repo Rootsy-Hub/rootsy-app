@@ -1,11 +1,11 @@
 "use client"
 
 import {
-  ArticleCatalogExtraFields,
   defaultArticleCatalogExtraFormState,
   type ArticleCatalogExtraFormState,
 } from "@/app/[siteId]/[popId]/articles/ArticleCatalogExtraFields"
 import { ArticleCategoriesSaleBoard } from "@/app/[siteId]/[popId]/articles/ArticleCategoriesSaleBoard"
+import { ArticleItemKindToolbarFilter, articleItemKindFilterToQuery, resolveArticleItemKindFilterId } from "@/app/[siteId]/[popId]/articles/ArticleItemKindToolbarFilter"
 import {
   createPopArticle,
   createPopCategory,
@@ -22,18 +22,30 @@ import {
   type ArticleTableRow,
 } from "@/app/[siteId]/[popId]/articles/actions"
 import {
-  ArticleItemFormFields,
   parseArticleItemFormState,
   type ArticleItemFormState,
 } from "@/app/[siteId]/[popId]/articles/ArticleItemFormFields"
-import { ArticleItemKindSelector } from "@/app/[siteId]/[popId]/articles/ArticleItemKindSelector"
+import {
+  ArticleUpsertFormFields,
+  type ArticleUpsertFormState,
+} from "@/app/[siteId]/[popId]/articles/ArticleUpsertFormFields"
+import { ArticleImagePreviewDialog } from "@/app/[siteId]/[popId]/articles/ArticleImagePreviewDialog"
 import { ArticlesTableDetailDialog } from "@/app/[siteId]/[popId]/articles/ArticlesTableDetailDialog"
+import {
+  ArticleTableArticleCell,
+  ArticleTableCategoryCell,
+  ArticleTableDetailCell,
+  ArticleTableImageCell,
+  ArticleTableStockCell,
+  ArticleTableSuppliersCell,
+} from "@/app/[siteId]/[popId]/articles/articlesTableCells"
 import {
   ARTICLE_DELETE_CONFIRM_PHRASE,
   articleDialogBodyClass,
   articleDialogFooterClass,
   articleDialogHeaderClass,
   articleDialogSurfaceClass,
+  articleDialogSurfaceTwoColClass,
   articleDialogSurfaceWideClass,
 } from "@/app/[siteId]/[popId]/articles/articleConstants"
 import {
@@ -48,7 +60,6 @@ import {
   DataWorkspaceListTableFrame,
   DataWorkspaceTableEmptyMascot,
   DataWorkspaceTableIconAction,
-  DataWorkspaceTableThumbnail,
 } from "@/components/data-workspace/DataWorkspaceListTablePrimitives"
 import {
   lightFilterChipClass,
@@ -64,8 +75,6 @@ import {
   tableRowSelectCheckboxClass,
   tdMoneyMutedClass,
   tdMoneyTotalClass,
-  tdTruncatedNameCellClass,
-  tdTruncatedTextCellClass,
   toolbarBlockLabelClass,
   workspaceDataTableClassName,
   workspaceTableBodyRowClassNames,
@@ -103,20 +112,23 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
-import { Textarea } from "@/components/ui/textarea"
 import withAuth from "@/hoc/withAuth"
 import { usePopWorkspace } from "@/context/PopWorkspaceContext"
+import {
+  DEFAULT_ARTICLE_IVA_ALICUOTA_ID,
+  parseArticleIvaFromSelect,
+  resolveArticleIvaSelectValue,
+} from "@/lib/articleIva"
 import { cn } from "@/lib/utils"
 import {
-  ARTICLE_ITEM_KINDS,
-  ARTICLE_ITEM_KIND_STOCK_LABEL,
+  formatMoneyInputForField,
+  parseMoneyInput,
+} from "@/lib/moneyInput"
+import {
   type ArticleItemKind,
   defaultUnitForKind,
-  isPartialItemKindsFilter,
-  itemKindsFilterLabel,
   unitOfMeasureToFormState,
 } from "@/lib/articleItemKind"
-import { ArticleCatalogDiscountBadge } from "@/app/[siteId]/[popId]/articles/ArticleCatalogDiscountBadge"
 import {
   articleHasCatalogDiscount,
   effectiveArticleSalePrice,
@@ -125,7 +137,6 @@ import {
 import {
   Filter,
   FolderTree,
-  Eye,
   Pencil,
   Plus,
   Search,
@@ -156,19 +167,7 @@ function formatMoney(n: number): string {
   }).format(n)
 }
 
-type ArticleFormState = ArticleItemFormState &
-  ArticleCatalogExtraFormState & {
-    name: string
-    description: string
-    imageUrl: string
-    salePrice: string
-    costPrice: string
-    iva: string
-    categoryId: string
-    isActive: boolean
-    itemKind: ArticleItemKind
-    initialStock?: string
-  }
+type ArticleFormState = ArticleUpsertFormState
 
 function defaultCreateFormState(): ArticleFormState {
   return {
@@ -177,7 +176,7 @@ function defaultCreateFormState(): ArticleFormState {
     imageUrl: "",
     salePrice: "0",
     costPrice: "0",
-    iva: "21",
+    iva: String(DEFAULT_ARTICLE_IVA_ALICUOTA_ID),
     categoryId: "",
     isActive: true,
     initialStock: "",
@@ -224,21 +223,12 @@ function parseCatalogFieldsForSubmit(form: ArticleFormState):
 type ArticlesAppliedFilters = {
   soloActivos: boolean
   categoryId: string
-  itemKinds: ArticleItemKind[]
 }
 
 const defaultArticlesFilters = (): ArticlesAppliedFilters => ({
   soloActivos: false,
   categoryId: "",
-  itemKinds: [...ARTICLE_ITEM_KINDS],
 })
-
-function appliedItemKindsFromWorkspace(
-  kinds: ArticleItemKind[],
-): ArticleItemKind[] {
-  if (kinds.length === 0) return [...ARTICLE_ITEM_KINDS]
-  return kinds.filter((k) => ARTICLE_ITEM_KINDS.includes(k))
-}
 
 function defaultItemFormFields(kind: ArticleItemKind): ArticleItemFormState {
   return {
@@ -352,6 +342,10 @@ function ArticlesPage() {
   const [categorySaveBusy, setCategorySaveBusy] = useState(false)
   const [categoriesBoardKey, setCategoriesBoardKey] = useState(0)
   const [createOpen, setCreateOpen] = useState(false)
+  const [imagePreview, setImagePreview] = useState<{
+    url: string
+    title: string
+  } | null>(null)
   const [detailRow, setDetailRow] = useState<ArticleTableRow | null>(null)
 
   const pendingLegacyCreateRef = useRef(
@@ -548,9 +542,9 @@ function ArticlesPage() {
       name: row.name,
       description: row.description,
       imageUrl: row.imageUrl ?? "",
-      salePrice: String(row.salePrice),
-      costPrice: String(row.costPrice),
-      iva: String(row.iva),
+      salePrice: formatMoneyInputForField(row.salePrice),
+      costPrice: formatMoneyInputForField(row.costPrice),
+      iva: resolveArticleIvaSelectValue(siteId, row.iva),
       categoryId: row.categoryId,
       isActive: row.isActive,
       itemKind: row.itemKind,
@@ -628,13 +622,19 @@ function ArticlesPage() {
       setCreateBanner(catalogFields.error)
       return
     }
+    const ivaParsed = parseArticleIvaFromSelect(siteId, createForm.iva)
+    if ("error" in ivaParsed) {
+      setCreateSaving(false)
+      setCreateBanner(ivaParsed.error)
+      return
+    }
     const res = await createPopArticle(popId, {
       name: createForm.name,
       description: createForm.description,
       imageUrl: createForm.imageUrl,
-      salePrice: Number(createForm.salePrice),
-      costPrice: Number(createForm.costPrice),
-      iva: Number(createForm.iva),
+      salePrice: parseMoneyInput(createForm.salePrice),
+      costPrice: parseMoneyInput(createForm.costPrice),
+      iva: ivaParsed.ratePercent,
       categoryId: createForm.categoryId,
       isActive: createForm.isActive,
       itemKind: createForm.itemKind,
@@ -774,13 +774,19 @@ function ArticlesPage() {
       setEditBanner(catalogFields.error)
       return
     }
+    const ivaParsed = parseArticleIvaFromSelect(siteId, editForm.iva)
+    if ("error" in ivaParsed) {
+      setEditSaving(false)
+      setEditBanner(ivaParsed.error)
+      return
+    }
     const res = await updatePopArticle(popId, editRow.id, {
       name: editForm.name,
       description: editForm.description,
       imageUrl: editForm.imageUrl,
-      salePrice: Number(editForm.salePrice),
-      costPrice: Number(editForm.costPrice),
-      iva: Number(editForm.iva),
+      salePrice: parseMoneyInput(editForm.salePrice),
+      costPrice: parseMoneyInput(editForm.costPrice),
+      iva: ivaParsed.ratePercent,
       categoryId: editForm.categoryId,
       isActive: editForm.isActive,
       itemKind: editForm.itemKind,
@@ -837,8 +843,10 @@ function ArticlesPage() {
   const allVisibleSelected =
     visibleIds.length > 0 && visibleIds.every((id) => selected.has(id))
   const someVisibleSelected = visibleIds.some((id) => selected.has(id))
-  const activeItemKindFilter = workspaceParsed.itemKinds
-  const hasItemKindFilter = isPartialItemKindsFilter(activeItemKindFilter)
+  const activeItemKindFilterId = useMemo(
+    () => resolveArticleItemKindFilterId(workspaceParsed.itemKinds),
+    [workspaceParsed.itemKinds],
+  )
 
   const rangeLabel = useMemo(() => {
     if (totalCount === 0) return { start: 0, end: 0 }
@@ -856,8 +864,7 @@ function ArticlesPage() {
   const hasFilterChips =
     workspaceParsed.q.trim() !== "" ||
     workspaceParsed.soloActivos ||
-    workspaceParsed.categoryId.trim() !== "" ||
-    hasItemKindFilter
+    workspaceParsed.categoryId.trim() !== ""
 
   const skeletonRowCount = Math.min(
     12,
@@ -874,12 +881,10 @@ function ArticlesPage() {
     let count = 0
     if (workspaceParsed.soloActivos) count++
     if (workspaceParsed.categoryId.trim()) count++
-    if (hasItemKindFilter) count++
     return count
   }, [
     workspaceParsed.soloActivos,
     workspaceParsed.categoryId,
-    hasItemKindFilter,
   ])
 
   const activeFilterCount = useMemo(() => {
@@ -929,6 +934,16 @@ function ArticlesPage() {
         : {}),
     }))
   }, [])
+
+  const supplierPickerOptions = useMemo(() => {
+    const byId = new Map(supplierOptions.map((supplier) => [supplier.id, supplier]))
+    if (editRow) {
+      for (const supplier of editRow.suppliers) {
+        byId.set(supplier.id, { id: supplier.id, name: supplier.name })
+      }
+    }
+    return [...byId.values()]
+  }, [supplierOptions, editRow])
 
   if (!popId || !siteId) {
     return (
@@ -996,10 +1011,21 @@ function ArticlesPage() {
               aria-label="Filtros del listado"
             >
               <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-12">
+                <ArticleItemKindToolbarFilter
+                  className="order-1 w-full min-w-0 md:col-span-1 xl:col-span-3"
+                  value={activeItemKindFilterId}
+                  onChange={(id) =>
+                    replaceWorkspaceQuery({
+                      itemKinds: articleItemKindFilterToQuery(id),
+                      page: 1,
+                    })
+                  }
+                />
+
                 <div
                   className={cn(
                     lightToolbarPanelClass,
-                    "order-2 w-full min-w-0 md:col-span-1 xl:order-1 xl:col-span-3",
+                    "order-2 w-full min-w-0 md:col-span-1 xl:order-2 xl:col-span-3",
                   )}
                 >
                   <div className="mb-2 flex min-w-0 items-baseline justify-between gap-3">
@@ -1025,9 +1051,6 @@ function ArticlesPage() {
                       setDraftFilters({
                         soloActivos: workspaceParsed.soloActivos,
                         categoryId: workspaceParsed.categoryId,
-                        itemKinds: appliedItemKindsFromWorkspace(
-                          workspaceParsed.itemKinds,
-                        ),
                       })
                       setFiltersModalOpen(true)
                     }}
@@ -1036,7 +1059,7 @@ function ArticlesPage() {
                     <span className="min-w-0 flex-1 truncate text-left">
                       {modalFiltersActiveCount > 0
                         ? "Refinar filtros"
-                        : "Estado, tipo y categoría"}
+                        : "Estado y categoría"}
                     </span>
                     {modalFiltersActiveCount > 0 ? (
                       <span
@@ -1052,7 +1075,7 @@ function ArticlesPage() {
                 <div
                   className={cn(
                     lightToolbarPanelLastClass,
-                    "order-1 min-w-0 md:col-span-2 xl:order-2 xl:col-span-9",
+                    "order-3 min-w-0 md:col-span-2 xl:order-3 xl:col-span-6",
                   )}
                 >
                   <div className="mb-2 flex min-w-0 items-baseline justify-between gap-3">
@@ -1195,25 +1218,6 @@ function ArticlesPage() {
                         </Button>
                       </Badge>
                     ) : null}
-                    {hasItemKindFilter ? (
-                      <Badge variant="secondary" className={lightFilterChipClass}>
-                        <span className="truncate">
-                          Tipo: {itemKindsFilterLabel(activeItemKindFilter)}
-                        </span>
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="icon"
-                          className="size-6 shrink-0"
-                          onClick={() =>
-                            replaceWorkspaceQuery({ itemKinds: [], page: 1 })
-                          }
-                          aria-label="Quitar filtro de tipo"
-                        >
-                          <X className="size-3" />
-                        </Button>
-                      </Badge>
-                    ) : null}
                   </div>
                 </div>
               ) : null}
@@ -1226,9 +1230,6 @@ function ArticlesPage() {
                   setDraftFilters({
                     soloActivos: workspaceParsed.soloActivos,
                     categoryId: workspaceParsed.categoryId,
-                    itemKinds: appliedItemKindsFromWorkspace(
-                      workspaceParsed.itemKinds,
-                    ),
                   })
                 }
                 setFiltersModalOpen(open)
@@ -1250,46 +1251,6 @@ function ArticlesPage() {
                 </DialogHeader>
                 <div className={articleDialogBodyClass}>
                   <div className="grid gap-4">
-                    <div className="space-y-2">
-                      <Label>Tipo de artículo</Label>
-                      <div className="flex flex-col gap-2">
-                        {ARTICLE_ITEM_KINDS.map((kind) => {
-                          const checked = draftFilters.itemKinds.includes(kind)
-                          return (
-                            <label
-                              key={kind}
-                              className="flex cursor-pointer items-start gap-2 rounded-md border border-transparent px-1 py-0.5 hover:bg-muted/50"
-                            >
-                              <Checkbox
-                                checked={checked}
-                                onCheckedChange={(c) => {
-                                  setDraftFilters((f) => {
-                                    const next = new Set(f.itemKinds)
-                                    if (c === true) next.add(kind)
-                                    else next.delete(kind)
-                                    if (next.size === 0) return f
-                                    return {
-                                      ...f,
-                                      itemKinds: ARTICLE_ITEM_KINDS.filter((k) =>
-                                        next.has(k),
-                                      ),
-                                    }
-                                  })
-                                }}
-                                aria-label={ARTICLE_ITEM_KIND_STOCK_LABEL[kind]}
-                              />
-                              <span className="text-sm text-foreground">
-                                {ARTICLE_ITEM_KIND_STOCK_LABEL[kind]}
-                              </span>
-                            </label>
-                          )
-                        })}
-                      </div>
-                      <p className="text-xs text-muted-foreground">
-                        Marcá uno, dos o los tres. Debe quedar al menos un tipo
-                        seleccionado.
-                      </p>
-                    </div>
                     <label className="flex cursor-pointer items-center gap-2 rounded-md border border-transparent px-1 py-0.5 hover:bg-muted/50">
                       <Checkbox
                         checked={draftFilters.soloActivos}
@@ -1347,16 +1308,9 @@ function ArticlesPage() {
                   <Button
                     type="button"
                     onClick={() => {
-                      const allSelected =
-                        draftFilters.itemKinds.length ===
-                          ARTICLE_ITEM_KINDS.length &&
-                        ARTICLE_ITEM_KINDS.every((k) =>
-                          draftFilters.itemKinds.includes(k),
-                        )
                       replaceWorkspaceQuery({
                         soloActivos: draftFilters.soloActivos,
                         categoryId: draftFilters.categoryId,
-                        itemKinds: allSelected ? [] : draftFilters.itemKinds,
                         page: 1,
                       })
                       setFiltersModalOpen(false)
@@ -1432,7 +1386,7 @@ function ArticlesPage() {
                       </div>
                     </TableHead>
                     <TableHead className={cn(lightTableThClass, "w-24 px-3 text-left")}>
-                      <span className="sr-only">Foto</span>
+                      Imagen
                     </TableHead>
                     <TableHead
                       className={cn(
@@ -1442,11 +1396,8 @@ function ArticlesPage() {
                     >
                       Artículo
                     </TableHead>
-                    <TableHead className={cn(lightTableThClass, "w-[6.5rem] px-3 text-center")}>
+                    <TableHead className={cn(lightTableThClass, "min-w-[9rem] max-w-[11rem] px-3 text-left")}>
                       Detalle
-                    </TableHead>
-                    <TableHead className={cn(lightTableThClass, "w-[7rem] px-3 text-left")}>
-                      Tipo
                     </TableHead>
                     <TableHead className={cn(lightTableThClass, "w-[10rem] px-3 text-left")}>
                       Categoría
@@ -1460,8 +1411,8 @@ function ArticlesPage() {
                     <TableHead className={cn(lightTableThClass, "px-3 text-right")}>
                       Costo
                     </TableHead>
-                    <TableHead className={cn(lightTableThClass, "w-[6.5rem] px-3 text-left")}>
-                      Estado
+                    <TableHead className={cn(lightTableThClass, "w-[5.5rem] px-3 text-right")}>
+                      Stock
                     </TableHead>
                     {canUpdate || canDelete ? (
                       <TableHead
@@ -1495,10 +1446,6 @@ function ArticlesPage() {
                         a.discountMode,
                         a.discountValue,
                       )
-                      const supplierLabel =
-                        a.suppliers.length > 0
-                          ? a.suppliers.map((s) => s.name).join(", ")
-                          : "—"
 
                       return (
                       <TableRow
@@ -1522,71 +1469,26 @@ function ArticlesPage() {
                             />
                           </div>
                         </TableCell>
-                        <TableCell className="w-24 px-3 py-2.5 align-middle">
-                          <DataWorkspaceTableThumbnail
-                            src={a.imageUrl}
-                            alt={a.name || "Artículo"}
-                            size="lg"
-                          />
-                        </TableCell>
-                        <TableCell className={tdTruncatedNameCellClass}>
-                          <div className="flex min-w-0 flex-col gap-1">
-                            <span
-                              className="block min-w-0 truncate font-medium leading-snug text-foreground"
-                              title={a.name || undefined}
-                            >
-                              {a.name || "—"}
-                            </span>
-                            {a.brand.trim() ? (
-                              <span
-                                className="block min-w-0 truncate text-xs leading-tight text-muted-foreground"
-                                title={a.brand}
-                              >
-                                {a.brand}
-                              </span>
-                            ) : null}
-                            {hasDiscount && a.discountMode && a.discountValue != null ? (
-                              <ArticleCatalogDiscountBadge
-                                mode={a.discountMode}
-                                value={a.discountValue}
-                              />
-                            ) : null}
-                          </div>
-                        </TableCell>
-                        <TableCell className="px-2 py-2.5 text-center">
-                          <Button
-                            type="button"
-                            variant="outline"
-                            size="sm"
-                            className="h-8 gap-1.5 px-2.5 text-xs"
-                            onClick={() => setDetailRow(a)}
-                          >
-                            <Eye className="size-3.5" aria-hidden />
-                            Ver
-                          </Button>
-                        </TableCell>
-                        <TableCell className="w-[7rem] px-3 py-2.5 align-middle">
-                          <Badge
-                            variant="secondary"
-                            className="max-w-full truncate font-normal"
-                            title={ARTICLE_ITEM_KIND_STOCK_LABEL[a.itemKind]}
-                          >
-                            {ARTICLE_ITEM_KIND_STOCK_LABEL[a.itemKind]}
-                          </Badge>
-                        </TableCell>
-                        <TableCell className={cn(tdTruncatedTextCellClass, "text-muted-foreground")}>
-                          <span className="block truncate" title={a.categoryName}>
-                            {a.categoryName}
-                          </span>
-                        </TableCell>
-                        <TableCell className={cn(tdTruncatedTextCellClass, "text-muted-foreground")}>
-                          <span className="block truncate" title={supplierLabel}>
-                            {supplierLabel}
-                          </span>
-                        </TableCell>
+                        <ArticleTableImageCell
+                          row={a}
+                          onPreview={(url) =>
+                            setImagePreview({
+                              url,
+                              title: a.name || "Imagen del artículo",
+                            })
+                          }
+                        />
+                        <ArticleTableArticleCell row={a} />
+                        <ArticleTableDetailCell
+                          row={a}
+                          hasDiscount={hasDiscount}
+                          onVerMas={() => setDetailRow(a)}
+                        />
+                        <ArticleTableCategoryCell name={a.categoryName} />
+                        <ArticleTableSuppliersCell suppliers={a.suppliers} />
                         <TableCell
                           className={cn(
-                            "px-3 py-2.5 text-right text-sm",
+                            "px-3 py-2.5 text-right text-sm align-middle",
                             sellable ? tdMoneyTotalClass : tdMoneyMutedClass,
                           )}
                         >
@@ -1607,25 +1509,13 @@ function ArticlesPage() {
                         </TableCell>
                         <TableCell
                           className={cn(
-                            "px-3 py-2.5 text-right text-sm",
+                            "px-3 py-2.5 text-right text-sm align-middle",
                             tdMoneyMutedClass,
                           )}
                         >
                           {formatMoney(a.costPrice)}
                         </TableCell>
-                        <TableCell className="w-[6.5rem] px-3 py-2.5 align-middle">
-                          <Badge
-                            variant="secondary"
-                            className={cn(
-                              "font-normal",
-                              a.isActive
-                                ? "border-primary/25 bg-primary/10 text-forest"
-                                : "bg-muted text-muted-foreground",
-                            )}
-                          >
-                            {a.isActive ? "Activo" : "Inactivo"}
-                          </Badge>
-                        </TableCell>
+                        <ArticleTableStockCell stockOnHand={a.stockOnHand} />
                         {canUpdate || canDelete ? (
                           <TableCell className="px-3 py-1.5 align-middle">
                             <div className="flex items-center justify-end gap-0.5">
@@ -1663,17 +1553,15 @@ function ArticlesPage() {
         <DialogContent
           data-rootsy-light-shell="true"
           showCloseButton
-          className={articleDialogSurfaceClass}
+          className={articleDialogSurfaceTwoColClass}
         >
           <DialogHeader className={articleDialogHeaderClass}>
             <DialogTitle className="text-base font-semibold tracking-tight">
               Editar artículo
             </DialogTitle>
-            {editRow?.name ? (
-              <DialogDescription className="text-sm leading-relaxed">
-                {editRow.name}
-              </DialogDescription>
-            ) : null}
+            <DialogDescription className="sr-only">
+              Editar artículo
+            </DialogDescription>
           </DialogHeader>
           {editLoading ? (
             <p className={cn(articleDialogBodyClass, "text-sm text-muted-foreground")}>
@@ -1693,162 +1581,19 @@ function ArticlesPage() {
                     {editBanner}
                   </p>
                 ) : null}
-                <div className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="art-name">Nombre</Label>
-                    <Input
-                      id="art-name"
-                      value={editForm.name}
-                      onChange={(e) =>
-                        setEditForm((f) => ({ ...f, name: e.target.value }))
-                      }
-                      required
-                      className="bg-background"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="art-desc">Descripción</Label>
-                    <Textarea
-                      id="art-desc"
-                      rows={3}
-                      value={editForm.description}
-                      onChange={(e) =>
-                        setEditForm((f) => ({ ...f, description: e.target.value }))
-                      }
-                      className="bg-background"
-                    />
-                  </div>
-                  <ArticleItemKindSelector
-                    idPrefix="edit-art"
-                    value={editForm.itemKind}
-                    onChange={handleEditItemKindChange}
-                  />
-                  <div className="space-y-2">
-                    <Label htmlFor="art-image-url">URL de imagen (opcional)</Label>
-                    <Input
-                      id="art-image-url"
-                      type="url"
-                      inputMode="url"
-                      placeholder="https://…"
-                      value={editForm.imageUrl}
-                      onChange={(e) =>
-                        setEditForm((f) => ({ ...f, imageUrl: e.target.value }))
-                      }
-                      className="bg-background"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="art-cat">Categoría</Label>
-                    <select
-                      id="art-cat"
-                      value={editForm.categoryId}
-                      onChange={(e) =>
-                        setEditForm((f) => ({ ...f, categoryId: e.target.value }))
-                      }
-                      required
-                      className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                    >
-                      <option value="">Elegir…</option>
-                      {editCategories.map((c) => (
-                        <option key={c.id} value={c.id}>
-                          {c.name}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                  <ArticleItemFormFields
-                    itemKind={editForm.itemKind}
-                    idPrefix="edit-art"
-                    value={editForm}
-                    onChange={(patch) =>
-                      setEditForm((f) => ({ ...f, ...patch }))
-                    }
-                  />
-                  <ArticleCatalogExtraFields
-                    itemKind={editForm.itemKind}
-                    idPrefix="edit-art"
-                    suppliers={supplierOptions}
-                    suppliersLoading={suppliersLoading}
-                    value={editForm}
-                    onChange={(patch) =>
-                      setEditForm((f) => ({ ...f, ...patch }))
-                    }
-                  />
-                  {editForm.itemKind === "merchandise" ? (
-                    <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-                      <div className="space-y-2">
-                        <Label htmlFor="art-price">Precio venta</Label>
-                        <Input
-                          id="art-price"
-                          type="number"
-                          min={0}
-                          step="0.01"
-                          value={editForm.salePrice}
-                          onChange={(e) =>
-                            setEditForm((f) => ({ ...f, salePrice: e.target.value }))
-                          }
-                          required
-                          className="bg-background"
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="art-cost">Precio de costo</Label>
-                        <Input
-                          id="art-cost"
-                          type="number"
-                          min={0}
-                          step="0.01"
-                          value={editForm.costPrice}
-                          onChange={(e) =>
-                            setEditForm((f) => ({ ...f, costPrice: e.target.value }))
-                          }
-                          className="bg-background"
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="art-iva">IVA %</Label>
-                        <Input
-                          id="art-iva"
-                          type="number"
-                          min={0}
-                          step="1"
-                          value={editForm.iva}
-                          onChange={(e) =>
-                            setEditForm((f) => ({ ...f, iva: e.target.value }))
-                          }
-                          required
-                          className="bg-background"
-                        />
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="space-y-2">
-                      <Label htmlFor="art-cost-only">Precio de costo</Label>
-                      <Input
-                        id="art-cost-only"
-                        type="number"
-                        min={0}
-                        step="0.01"
-                        value={editForm.costPrice}
-                        onChange={(e) =>
-                          setEditForm((f) => ({ ...f, costPrice: e.target.value }))
-                        }
-                        className="bg-background"
-                      />
-                    </div>
-                  )}
-                  <label className="flex items-center gap-2 text-sm text-foreground">
-                    <input
-                      type="checkbox"
-                      checked={editForm.isActive}
-                      onChange={(e) =>
-                        setEditForm((f) => ({ ...f, isActive: e.target.checked }))
-                      }
-                      className="size-4 rounded border-input"
-                    />
-                    Activo
-                  </label>
-                </div>
+                <ArticleUpsertFormFields
+                  idPrefix="edit-art"
+                  siteId={siteId}
+                  popId={popId}
+                  form={editForm}
+                  onChange={(patch) => setEditForm((f) => ({ ...f, ...patch }))}
+                  onItemKindChange={handleEditItemKindChange}
+                  categories={editCategories}
+                  supplierOptions={supplierPickerOptions}
+                  suppliersLoading={suppliersLoading}
+                  mode="edit"
+                  disabled={editSaving}
+                />
               </div>
               <DialogFooter className={articleDialogFooterClass}>
                 <Button type="button" variant="outline" onClick={closeEdit}>
@@ -1931,14 +1676,14 @@ function ArticlesPage() {
         <DialogContent
           data-rootsy-light-shell="true"
           showCloseButton
-          className={articleDialogSurfaceClass}
+          className={articleDialogSurfaceTwoColClass}
         >
           <DialogHeader className={articleDialogHeaderClass}>
             <DialogTitle className="text-base font-semibold tracking-tight">
               Nuevo artículo
             </DialogTitle>
-            <DialogDescription className="text-sm leading-relaxed">
-              Elegí el tipo de artículo y completá los datos del catálogo.
+            <DialogDescription className="sr-only">
+              Nuevo artículo
             </DialogDescription>
           </DialogHeader>
           {createCatLoading ? (
@@ -1959,208 +1704,20 @@ function ArticlesPage() {
                     {createBanner}
                   </p>
                 ) : null}
-                <div className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="create-art-name">Nombre</Label>
-                    <Input
-                      id="create-art-name"
-                      value={createForm.name}
-                      onChange={(e) =>
-                        setCreateForm((f) => ({ ...f, name: e.target.value }))
-                      }
-                      required
-                      className="bg-background"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="create-art-desc">Descripción</Label>
-                    <Textarea
-                      id="create-art-desc"
-                      rows={3}
-                      value={createForm.description}
-                      onChange={(e) =>
-                        setCreateForm((f) => ({
-                          ...f,
-                          description: e.target.value,
-                        }))
-                      }
-                      className="bg-background"
-                    />
-                  </div>
-                  <ArticleItemKindSelector
-                    idPrefix="create-art"
-                    value={createForm.itemKind}
-                    onChange={handleCreateItemKindChange}
-                  />
-                  <div className="space-y-2">
-                    <Label htmlFor="create-art-image-url">URL de imagen (opcional)</Label>
-                    <Input
-                      id="create-art-image-url"
-                      type="url"
-                      inputMode="url"
-                      placeholder="https://…"
-                      value={createForm.imageUrl}
-                      onChange={(e) =>
-                        setCreateForm((f) => ({ ...f, imageUrl: e.target.value }))
-                      }
-                      className="bg-background"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="create-art-cat">Categoría</Label>
-                    <select
-                      id="create-art-cat"
-                      value={createForm.categoryId}
-                      onChange={(e) =>
-                        setCreateForm((f) => ({
-                          ...f,
-                          categoryId: e.target.value,
-                        }))
-                      }
-                      required
-                      className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                    >
-                      <option value="">Elegir…</option>
-                      {createCategories.map((c) => (
-                        <option key={c.id} value={c.id}>
-                          {c.name}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                  <ArticleItemFormFields
-                    itemKind={createForm.itemKind}
-                    idPrefix="create-art"
-                    value={createForm}
-                    onChange={(patch) =>
-                      setCreateForm((f) => ({ ...f, ...patch }))
-                    }
-                  />
-                  <ArticleCatalogExtraFields
-                    itemKind={createForm.itemKind}
-                    idPrefix="create-art"
-                    suppliers={supplierOptions}
-                    suppliersLoading={suppliersLoading}
-                    value={createForm}
-                    onChange={(patch) =>
-                      setCreateForm((f) => ({ ...f, ...patch }))
-                    }
-                  />
-                  {createForm.itemKind === "merchandise" ? (
-                    <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-                      <div className="space-y-2">
-                        <Label htmlFor="create-art-price">Precio venta</Label>
-                        <Input
-                          id="create-art-price"
-                          type="number"
-                          min={0}
-                          step="0.01"
-                          value={createForm.salePrice}
-                          onChange={(e) =>
-                            setCreateForm((f) => ({
-                              ...f,
-                              salePrice: e.target.value,
-                            }))
-                          }
-                          required
-                          className="bg-background"
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="create-art-cost">Precio de costo</Label>
-                        <Input
-                          id="create-art-cost"
-                          type="number"
-                          min={0}
-                          step="0.01"
-                          value={createForm.costPrice}
-                          onChange={(e) =>
-                            setCreateForm((f) => ({
-                              ...f,
-                              costPrice: e.target.value,
-                            }))
-                          }
-                          className="bg-background"
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="create-art-iva">IVA %</Label>
-                        <Input
-                          id="create-art-iva"
-                          type="number"
-                          min={0}
-                          step="1"
-                          value={createForm.iva}
-                          onChange={(e) =>
-                            setCreateForm((f) => ({ ...f, iva: e.target.value }))
-                          }
-                          required
-                          className="bg-background"
-                        />
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="space-y-2">
-                      <Label htmlFor="create-art-cost-only">Precio de costo</Label>
-                      <Input
-                        id="create-art-cost-only"
-                        type="number"
-                        min={0}
-                        step="0.01"
-                        value={createForm.costPrice}
-                        onChange={(e) =>
-                          setCreateForm((f) => ({
-                            ...f,
-                            costPrice: e.target.value,
-                          }))
-                        }
-                        className="bg-background"
-                      />
-                    </div>
-                  )}
-                  {canPostInitialStock ? (
-                    <div className="space-y-2">
-                      <Label htmlFor="create-art-initial-stock">
-                        Stock inicial (opcional)
-                      </Label>
-                      <Input
-                        id="create-art-initial-stock"
-                        type="number"
-                        min={0}
-                        max={10000}
-                        step={1}
-                        inputMode="numeric"
-                        placeholder="Vacío = sin movimiento de stock"
-                        value={createForm.initialStock}
-                        onChange={(e) =>
-                          setCreateForm((f) => ({
-                            ...f,
-                            initialStock: e.target.value,
-                          }))
-                        }
-                        className="bg-background"
-                      />
-                      <p className="text-xs text-muted-foreground">
-                        Si indicás una cantidad, se registra el movimiento tipo saldo inicial y el
-                        asiento contable (Mercaderías / otros ingresos) usando el precio de costo.
-                      </p>
-                    </div>
-                  ) : null}
-                  <label className="flex items-center gap-2 text-sm text-foreground">
-                    <input
-                      type="checkbox"
-                      checked={createForm.isActive}
-                      onChange={(e) =>
-                        setCreateForm((f) => ({
-                          ...f,
-                          isActive: e.target.checked,
-                        }))
-                      }
-                      className="size-4 rounded border-input"
-                    />
-                    Activo
-                  </label>
-                </div>
+                <ArticleUpsertFormFields
+                  idPrefix="create-art"
+                  siteId={siteId}
+                  popId={popId}
+                  form={createForm}
+                  onChange={(patch) => setCreateForm((f) => ({ ...f, ...patch }))}
+                  onItemKindChange={handleCreateItemKindChange}
+                  categories={createCategories}
+                  supplierOptions={supplierPickerOptions}
+                  suppliersLoading={suppliersLoading}
+                  canPostInitialStock={canPostInitialStock}
+                  mode="create"
+                  disabled={createSaving}
+                />
               </div>
               <DialogFooter className={articleDialogFooterClass}>
                 <Button type="button" variant="outline" onClick={closeCreate}>
@@ -2263,8 +1820,18 @@ function ArticlesPage() {
         </DialogContent>
       </Dialog>
 
+      <ArticleImagePreviewDialog
+        open={imagePreview !== null}
+        onOpenChange={(open) => {
+          if (!open) setImagePreview(null)
+        }}
+        imageUrl={imagePreview?.url ?? null}
+        title={imagePreview?.title}
+      />
+
       <ArticlesTableDetailDialog
         row={detailRow}
+        siteId={siteId}
         open={detailRow !== null}
         onOpenChange={(open) => {
           if (!open) setDetailRow(null)

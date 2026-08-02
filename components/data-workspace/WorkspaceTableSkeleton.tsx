@@ -6,16 +6,10 @@ import {
   workspaceTableBodyCellClass,
   workspaceTableBodyRowClassNames,
   workspaceTableSelectBodyCellClass,
+  workspaceTableSkeletonTone,
 } from "@/components/data-workspace/dataWorkspaceListStyles"
 import { cn } from "@/lib/utils"
 import { TableCell, TableRow } from "@/components/ui/table"
-
-export const workspaceTableSkeletonTone = {
-  bar: "animate-pulse rounded-sm bg-zinc-200/80 dark:bg-zinc-200/80",
-  barSm: "animate-pulse rounded-sm bg-zinc-100 dark:bg-zinc-100",
-  box: "animate-pulse rounded-sm bg-zinc-200/75 dark:bg-zinc-200/75",
-  pill: "animate-pulse rounded-md bg-zinc-200/80 dark:bg-zinc-200/80",
-} as const
 
 const sk = workspaceTableSkeletonTone
 
@@ -31,7 +25,7 @@ export type WorkspaceTableSkeletonColumn = {
     | "thumbnail"
     | "actions"
   className?: string
-  lines?: 1 | 2
+  lines?: 1 | 2 | 3
   actionCount?: number
 }
 
@@ -71,7 +65,10 @@ function SkeletonCell({
           className={cn(workspaceTableBodyCellClass, column.className)}
         >
           <div className={cn(sk.bar, "h-3.5 w-full")} />
-          {column.lines === 2 ? (
+          {column.lines === 2 || column.lines === 3 ? (
+            <div className={cn(sk.barSm, "mt-1.5 h-2.5 w-full")} />
+          ) : null}
+          {column.lines === 3 ? (
             <div className={cn(sk.barSm, "mt-1.5 h-2.5 w-full")} />
           ) : null}
         </TableCell>

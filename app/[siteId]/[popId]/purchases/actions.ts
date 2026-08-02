@@ -195,6 +195,7 @@ export type PurchaseCatalogArticle = {
   categoryName: string
   itemKind: import("@/lib/articleItemKind").ArticleItemKind
   unitOfMeasure: string
+  imageUrl: string | null
 }
 
 export async function getPurchaseCatalog(popId: string): Promise<
@@ -250,6 +251,7 @@ export async function getPurchaseCatalog(popId: string): Promise<
         category_id,
         item_kind,
         unit_of_measure,
+        image_url,
         categories ( id, name )
       `,
       )
@@ -272,6 +274,10 @@ export async function getPurchaseCatalog(popId: string): Promise<
         categoryName: cat?.name ? String(cat.name) : "—",
         itemKind: isArticleItemKind(rawKind) ? rawKind : "merchandise",
         unitOfMeasure: String(row.unit_of_measure ?? "unidad"),
+        imageUrl:
+          typeof row.image_url === "string" && row.image_url.trim()
+            ? row.image_url.trim()
+            : null,
       }
     })
 

@@ -23,11 +23,20 @@ export const workspaceTableSurfaceClass =
 export const workspaceTableSurfaceGlowClass =
   "pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_85%_60%_at_100%_100%,oklch(0.72_0.11_155/0.08),transparent_60%),radial-gradient(ellipse_50%_42%_at_0%_0%,oklch(0.88_0.06_140/0.07),transparent_55%)]"
 
-/** Encabezado sticky sobre superficie blanca. */
+export const thBase =
+  "sticky top-0 z-20 h-10 border-b border-border bg-muted/90 px-2 py-2 text-[11px] font-semibold uppercase tracking-[0.12em] text-foreground/70 shadow-[0_1px_0_0_hsl(var(--border))] backdrop-blur-sm supports-[backdrop-filter]:bg-muted/75 dark:border-border/55 dark:bg-background/90 dark:text-muted-foreground dark:shadow-[0_1px_0_0_rgba(255,255,255,0.06)] supports-[backdrop-filter]:dark:bg-background/82"
+
+/** Encabezado sticky compartido (layout preview + listados workspace). */
 export const workspaceTableHeaderCellClass = cn(
-  "sticky top-0 z-20 h-10 border-b border-zinc-200/70 px-2 py-2 text-[11px] font-bold uppercase tracking-[0.12em] text-foreground/75",
-  "bg-zinc-50/98 shadow-[0_1px_0_0_rgba(0,0,0,0.04)] backdrop-blur-md dark:bg-zinc-50/98",
+  thBase,
+  "font-bold text-foreground",
 )
+
+/** Alias histórico — preferir `WorkspaceTableHead`. */
+export const lightTableThClass = workspaceTableHeaderCellClass
+
+/** Columna checkbox en header. */
+export const workspaceTableSelectHeadClass = "w-12 !px-0 text-center"
 
 export const toolbarBlockLabelClass =
   "text-[11px] font-medium uppercase tracking-[0.12em] text-muted-foreground"
@@ -66,6 +75,18 @@ export const lightToolbarInputClass = cn(
 export const lightToolbarClearButtonClass =
   "absolute right-1.5 top-1/2 flex size-8 -translate-y-1/2 items-center justify-center rounded-md text-muted-foreground transition-[color,background-color] duration-150 hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/25"
 
+/** Menú desplegable de filtros en toolbars claras (tipo, vista, etc.). */
+export const lightToolbarDropdownContentClass = cn(
+  "rootsy-app-light z-50 w-56 overflow-hidden rounded-xl border border-border/80 bg-popover p-1.5 text-popover-foreground shadow-lg",
+  "origin-(--radix-dropdown-menu-content-transform-origin) outline-none ring-0 [&_[data-slot=dropdown-menu-item]]:rounded-md",
+)
+
+export const lightToolbarDropdownItemClass =
+  "gap-2 text-popover-foreground focus:bg-muted focus:text-foreground data-[highlighted]:bg-muted data-[highlighted]:text-foreground [&_svg:not([class*='text-'])]:text-muted-foreground [&_svg]:opacity-70"
+
+export const lightToolbarDropdownLabelClass =
+  "px-2 py-1.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground"
+
 /** Popover del calendario en paneles claros (modales light, filtros de período). */
 export const lightDatePopoverContentClass =
   "border border-zinc-200/90 bg-white p-0 text-zinc-900 shadow-xl shadow-zinc-900/8 dark:border-zinc-200 dark:bg-white dark:text-zinc-900"
@@ -103,12 +124,6 @@ export const lightFilterChipClass =
 /** Acción terciaria «Limpiar» en barra de selección múltiple (hover neutro, sin accent). */
 export const listBulkToolbarClearButtonClass =
   "h-8 bg-transparent px-2.5 font-medium text-muted-foreground transition-colors hover:bg-muted/80 hover:text-foreground focus-visible:ring-2 focus-visible:ring-primary/25 active:bg-muted/60"
-
-export const thBase =
-  "sticky top-0 z-20 h-10 border-b border-border bg-muted/90 px-2 py-2 text-[11px] font-semibold uppercase tracking-[0.12em] text-foreground/70 shadow-[0_1px_0_0_hsl(var(--border))] backdrop-blur-sm supports-[backdrop-filter]:bg-muted/75 dark:border-border/55 dark:bg-background/90 dark:text-muted-foreground dark:shadow-[0_1px_0_0_rgba(255,255,255,0.06)] supports-[backdrop-filter]:dark:bg-background/82"
-
-/** Header claro de tabla con columnas en negrita. */
-export const lightTableThClass = workspaceTableHeaderCellClass
 
 export const tableChromeFooterClass =
   "border-t border-border/80 bg-muted/35 dark:border-border/50 dark:bg-muted/20"
@@ -186,7 +201,6 @@ export const workspaceTableActionsBodyCellClass = "px-1 py-1.5 align-middle"
 export const workspaceTableLayoutClassName = cn(
   "relative w-full min-w-full table-fixed caption-bottom text-sm",
   workspaceTableSelectableTextClass,
-  "[&_th:last-child]:pr-5 [&_td:last-child]:pr-5",
 )
 
 export const workspaceDataTableClassName = cn(
@@ -240,16 +254,34 @@ export const tdTruncatedTextCellClass = cn(
 /** Fila de encabezado de tabla (sin hover). */
 export const workspaceTableHeaderRowClass = "border-0 hover:bg-transparent"
 
+/** Borde de filas — misma familia cromática que el header (`border-border`). */
+export const workspaceTableRowBorderClass = "border-b border-border/70"
+
+/** Hover de filas alineado al tono suave del header (`bg-muted/90`). */
+export const workspaceTableRowHoverClass = "hover:bg-muted/40"
+
+/** Franja alternada de filas (muted suave, no zinc). */
+export const workspaceTableRowStripeClass = "bg-muted/20"
+
+/** Skeleton de celdas — misma gama que filas/header. */
+export const workspaceTableSkeletonTone = {
+  bar: "animate-pulse rounded-sm bg-muted/55",
+  barSm: "animate-pulse rounded-sm bg-muted/30",
+  box: "animate-pulse rounded-sm bg-muted/50",
+  pill: "animate-pulse rounded-md bg-muted/55",
+} as const
+
 /** Filas de carga / vacío / mensajes (sin hover). */
 export const workspaceTablePlaceholderRowClass = cn(
-  "border-b border-zinc-200/55 bg-white",
-  "hover:bg-white pointer-events-none dark:bg-white",
+  workspaceTableRowBorderClass,
+  "bg-white hover:bg-white pointer-events-none dark:bg-white",
 )
 
 /** Filas de detalle expandido o contenido anidado (sin hover). */
 export const workspaceTableStaticRowClass = cn(
-  "border-b border-zinc-200/55 bg-zinc-50/95",
-  "hover:bg-zinc-50/95 dark:bg-zinc-50/95",
+  workspaceTableRowBorderClass,
+  workspaceTableRowStripeClass,
+  "hover:bg-muted/20",
 )
 
 export function workspaceTableBodyRowClassNames(
@@ -257,11 +289,10 @@ export function workspaceTableBodyRowClassNames(
   options?: { selected?: boolean },
 ): string {
   return cn(
-    "border-b border-zinc-200/55 transition-colors duration-150",
-    "hover:bg-zinc-100/75",
-    index % 2 === 0
-      ? "bg-white dark:bg-white"
-      : "bg-zinc-50/95 dark:bg-zinc-50/95",
+    workspaceTableRowBorderClass,
+    "transition-colors duration-150",
+    workspaceTableRowHoverClass,
+    index % 2 === 0 ? "bg-white dark:bg-white" : workspaceTableRowStripeClass,
     options?.selected &&
       "bg-emerald-50/90 hover:bg-emerald-50 ring-1 ring-inset ring-emerald-600/12",
   )

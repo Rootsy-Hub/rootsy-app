@@ -48,6 +48,7 @@ export type SaleCatalogArticle = {
   categoryId: string
   categoryName: string
   unitOfMeasure: string
+  imageUrl: string | null
 }
 
 export type SaleCatalogClient = {
@@ -156,6 +157,7 @@ export async function getSaleCatalog(popId: string): Promise<
         discount_value,
         category_id,
         unit_of_measure,
+        image_url,
         categories ( id, name )
       `,
       )
@@ -207,6 +209,10 @@ export async function getSaleCatalog(popId: string): Promise<
         categoryId: String(row.category_id ?? ""),
         categoryName: cat?.name ? String(cat.name) : "—",
         unitOfMeasure: String(row.unit_of_measure ?? "unidad"),
+        imageUrl:
+          typeof row.image_url === "string" && row.image_url.trim()
+            ? row.image_url.trim()
+            : null,
       }
     })
 

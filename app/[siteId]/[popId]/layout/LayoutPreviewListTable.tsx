@@ -28,18 +28,21 @@ import {
 import {
   TableBody,
   TableCell,
-  TableHead,
-  TableHeader,
   TableRow,
 } from "@/components/ui/table"
 import { DataWorkspaceListPaginationFooter } from "@/components/data-workspace/DataWorkspaceListPaginationFooter"
 import { DataWorkspaceListTableShell } from "@/components/data-workspace/DataWorkspaceListTableShell"
 import { DataWorkspaceTableThumbnail } from "@/components/data-workspace/DataWorkspaceListTablePrimitives"
 import {
+  WorkspaceTableHead,
+  WorkspaceTableHeader,
+  WorkspaceTableHeaderRow,
+  WorkspaceTableSelectHead,
+} from "@/components/data-workspace/WorkspaceTableHeader"
+import {
   listBulkToolbarClearButtonClass,
   selectColumnInnerClass,
   tableRowSelectCheckboxClass,
-  thBase,
   toolbarBlockLabelClass,
   workspaceTableActionsBodyCellClass,
   workspaceTableBodyCellClass,
@@ -168,12 +171,6 @@ const toolbarPanelLastClass = lightToolbarPanelLastClass
 
 const lightFilterChipClass =
   "max-w-full gap-1 rounded-md border-border/50 py-0 pr-0.5 font-normal"
-
-/** Header claro de tabla con columnas en negrita. */
-const lightTableThClass = cn(
-  thBase,
-  "font-bold text-foreground",
-)
 
 function ToolbarClearSearchIcon({ className }: { className?: string }) {
   return (
@@ -1097,61 +1094,46 @@ export function LayoutPreviewListTable({
           className={cn(workspaceTableLayoutClassName, "min-w-[56rem]")}
           aria-busy={listFetching}
         >
-          <TableHeader>
-            <TableRow className="border-0 hover:bg-transparent">
-              <TableHead
-                className={cn(lightTableThClass, "w-12 !px-0 text-center")}
-              >
-                <div
-                  className={cn(selectColumnInnerClass, "min-h-10")}
-                >
-                  <Checkbox
-                    className={tableRowSelectCheckboxClass}
-                    checked={
-                      allVisibleSelected
-                        ? true
-                        : someVisibleSelected
-                          ? "indeterminate"
-                          : false
+          <WorkspaceTableHeader>
+            <WorkspaceTableHeaderRow>
+              <WorkspaceTableSelectHead
+                checked={
+                  allVisibleSelected
+                    ? true
+                    : someVisibleSelected
+                      ? "indeterminate"
+                      : false
+                }
+                onCheckedChange={(c) => {
+                  setSelected((prev) => {
+                    const next = new Set(prev)
+                    if (c === true) {
+                      visibleIds.forEach((id) => next.add(id))
+                    } else {
+                      visibleIds.forEach((id) => next.delete(id))
                     }
-                    onCheckedChange={(c) => {
-                      setSelected((prev) => {
-                        const next = new Set(prev)
-                        if (c === true) {
-                          visibleIds.forEach((id) => next.add(id))
-                        } else {
-                          visibleIds.forEach((id) => next.delete(id))
-                        }
-                        return next
-                      })
-                    }}
-                    aria-label="Seleccionar todas las filas visibles"
-                  />
-                </div>
-              </TableHead>
-              <TableHead className={cn(lightTableThClass, "w-24 px-3 text-left")}>
-                <span className="sr-only">Imagen</span>
-              </TableHead>
-              <TableHead className={cn(lightTableThClass, "min-w-48 px-3 text-left")}>
-                Artículo
-              </TableHead>
-              <TableHead className={cn(lightTableThClass, "w-44 text-left")}>
-                Referencia
-              </TableHead>
-              <TableHead className={cn(lightTableThClass, "w-34 text-right")}>
+                    return next
+                  })
+                }}
+                ariaLabel="Seleccionar todas las filas visibles"
+              />
+              <WorkspaceTableHead className="w-24 px-3" srOnly>
+                Imagen
+              </WorkspaceTableHead>
+              <WorkspaceTableHead className="min-w-48 px-3">Artículo</WorkspaceTableHead>
+              <WorkspaceTableHead className="w-44">Referencia</WorkspaceTableHead>
+              <WorkspaceTableHead align="right" className="w-34">
                 Monto
-              </TableHead>
-              <TableHead className={cn(lightTableThClass, "w-20 text-center")}>
+              </WorkspaceTableHead>
+              <WorkspaceTableHead align="center" className="w-20">
                 Adj.
-              </TableHead>
-              <TableHead className={cn(lightTableThClass, "w-32 text-left")}>
-                Estado
-              </TableHead>
-              <TableHead className={cn(lightTableThClass, "w-[7.25rem] text-right")}>
-                <span className="sr-only">Acciones</span>
-              </TableHead>
-            </TableRow>
-          </TableHeader>
+              </WorkspaceTableHead>
+              <WorkspaceTableHead className="w-32">Estado</WorkspaceTableHead>
+              <WorkspaceTableHead align="right" className="w-[7.25rem]" srOnly>
+                Acciones
+              </WorkspaceTableHead>
+            </WorkspaceTableHeaderRow>
+          </WorkspaceTableHeader>
           <TableBody>
             {listFetching ? (
               <WorkspaceTableSkeletonRows

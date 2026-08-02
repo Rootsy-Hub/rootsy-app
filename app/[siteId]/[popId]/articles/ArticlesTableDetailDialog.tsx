@@ -16,6 +16,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog"
 import { ArticleCatalogDiscountBadge } from "@/app/[siteId]/[popId]/articles/ArticleCatalogDiscountBadge"
+import { formatArticleStockOnHand } from "@/app/[siteId]/[popId]/articles/articlesTableCells"
 import {
   articleHasCatalogDiscount,
   effectiveArticleSalePrice,
@@ -24,6 +25,7 @@ import {
   ARTICLE_ITEM_KIND_STOCK_LABEL,
   labelUnitOfMeasure,
 } from "@/lib/articleItemKind"
+import { labelArticleIvaRate } from "@/lib/articleIva"
 import { cn } from "@/lib/utils"
 import type { ReactNode } from "react"
 
@@ -88,10 +90,12 @@ function DetailMoney({
 
 export function ArticlesTableDetailDialog({
   row,
+  siteId,
   open,
   onOpenChange,
 }: {
   row: ArticleTableRow | null
+  siteId: string
   open: boolean
   onOpenChange: (open: boolean) => void
 }) {
@@ -180,11 +184,9 @@ export function ArticlesTableDetailDialog({
               {labelUnitOfMeasure(row.unitOfMeasure)}
             </DetailField>
             <DetailField label="IVA">
-              {sellable ? (
-                <span className={tdMoneyVatClass}>{row.iva} %</span>
-              ) : (
-                "—"
-              )}
+              <span className={tdMoneyVatClass}>
+                {labelArticleIvaRate(siteId, row.iva)}
+              </span>
             </DetailField>
             <DetailField label="Precio venta">
               {sellable ? (
@@ -202,6 +204,9 @@ export function ArticlesTableDetailDialog({
             </DetailField>
             <DetailField label="Precio costo">
               <DetailMoney value={row.costPrice} muted />
+            </DetailField>
+            <DetailField label="Stock actual">
+              {formatArticleStockOnHand(row.stockOnHand)}
             </DetailField>
             {row.itemKind === "raw_material" ? (
               <DetailField label="Merma esperada">

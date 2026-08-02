@@ -25,18 +25,12 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
-import { cn } from "@/lib/utils"
+import {
+  opsDialogHeader,
+  opsDialogSectionTitle,
+  opsDialogSurfaceMd,
+} from "@/app/[siteId]/[popId]/operations/operationDialogStyles"
 import { useEffect, useState } from "react"
-const opsDialogLight = "rootsy-app-light text-foreground"
-const opsDialogSurfaceMd = cn(
-  opsDialogLight,
-  "gap-0 overflow-hidden rounded-2xl border border-border/60 bg-card p-0 shadow-2xl ring-1 ring-black/[0.04] sm:max-w-[calc(21rem+380px+3rem)]",
-  "max-h-[min(90vh,820px)] flex flex-col overflow-hidden",
-)
-const opsDialogHeader =
-  "shrink-0 border-b border-border/50 bg-muted/25 px-6 pb-4 pt-5 text-left"
-const opsDialogSectionTitle =
-  "mb-3 text-[11px] font-bold uppercase tracking-[0.14em] text-slate-500"
 
 type Props = {
   sale: OperationSaleRow | null

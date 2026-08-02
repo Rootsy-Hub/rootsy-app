@@ -13,7 +13,12 @@ import {
 } from "@/lib/popHelpers"
 import { popMenuHref } from "@/lib/popRoutes"
 import { loadPopPermissionsSnapshot } from "@/lib/popPermissionsServer"
-import { createClient } from "@/utils/supabase/server"
+import { isAllowedArticleIvaRate } from "@/lib/articleIva"
+import {
+  ARTICLE_IMAGE_STORAGE_BUCKET,
+  buildArticleImageFileName,
+  buildArticleImageStoragePath,
+} from "@/lib/articleImageStorage"
 import type { ArticleItemKind } from "@/lib/articleItemKind"
 import {
   ARTICLE_ITEM_KINDS,
@@ -23,6 +28,7 @@ import {
   normalizeStoredUnitOfMeasure,
 } from "@/lib/articleItemKind"
 import type { ArticleDiscountMode } from "@/lib/articleDiscount"
+import { createClient } from "@/utils/supabase/server"
 import { isArticleDiscountMode } from "@/lib/articleDiscount"
 import {
   ARTICLE_TABLE_PAGE_SIZES,
@@ -54,6 +60,7 @@ export type ArticleTableRow = {
   categoryName: string
   suppliers: ArticleSupplierRef[]
   isActive: boolean
+  stockOnHand: number
 }
 
 export type ArticleSupplierOption = {
@@ -147,6 +154,40 @@ function parseArticleSuppliers(row: Record<string, unknown>): ArticleSupplierRef
   return out.sort((a, b) => a.name.localeCompare(b.name, "es"))
 }
 
+function parseStockQty(v: unknown): number {
+  const n = Number(v)
+  if (!Number.isFinite(n)) return 0
+  return Math.round(n * 1e6) / 1e6
+}
+
+async function stockOnHandByArticleIds(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  popId: string,
+  articleIds: string[],
+): Promise<Map<string, number>> {
+  const out = new Map<string, number>()
+  if (articleIds.length === 0) return out
+
+  const { data, error } = await supabase
+    .from("inventory_movements")
+    .select("article_id, quantity_delta")
+    .eq("pop_id", popId)
+    .in("article_id", articleIds)
+
+  if (error) return out
+
+  for (const row of data ?? []) {
+    const id = String(row.article_id)
+    out.set(id, (out.get(id) ?? 0) + parseStockQty(row.quantity_delta))
+  }
+
+  for (const [id, qty] of out) {
+    out.set(id, Math.round(qty * 1e6) / 1e6)
+  }
+
+  return out
+}
+
 function articleRowFromDb(row: Record<string, unknown>): ArticleTableRow {
   const cat = row.categories as unknown as { name?: string } | null
   const rawImg = row.image_url
@@ -192,6 +233,7 @@ function articleRowFromDb(row: Record<string, unknown>): ArticleTableRow {
     categoryName: cat?.name ? String(cat.name) : "—",
     suppliers: parseArticleSuppliers(row),
     isActive: Boolean(row.is_active),
+    stockOnHand: 0,
   }
 }
 
@@ -439,6 +481,10 @@ export async function updatePopArticle(
     if (!Number.isFinite(iva) || iva < 0) {
       return { success: false, error: "IVA inválido." }
     }
+    const siteIdForIva = (await getPopSiteId(popId)) ?? "arg"
+    if (!isAllowedArticleIvaRate(siteIdForIva, iva)) {
+      return { success: false, error: "Elegí un tipo de IVA válido." }
+    }
     if (input.itemKind === "merchandise" && salePrice <= 0) {
       return {
         success: false,
@@ -479,7 +525,7 @@ export async function updatePopArticle(
         image_url: imageUrl ? imageUrl : null,
         sale_price: input.itemKind === "merchandise" ? salePrice : 0,
         cost_price: costPrice,
-        iva: input.itemKind === "merchandise" ? iva : 0,
+        iva,
         category_id: categoryId,
         is_active: input.isActive,
         ...articleDbPayloadFromInput({
@@ -543,6 +589,13 @@ export async function createPopArticle(
     }
     if (!Number.isFinite(iva) || iva < 0) {
       return { success: false, error: "IVA inválido." }
+    }
+    const siteIdForIva =
+      typeof input.siteId === "string" && input.siteId.trim()
+        ? input.siteId.trim()
+        : (await getPopSiteId(popId)) ?? "arg"
+    if (!isAllowedArticleIvaRate(siteIdForIva, iva)) {
+      return { success: false, error: "Elegí un tipo de IVA válido." }
     }
     if (input.itemKind === "merchandise" && salePrice <= 0) {
       return {
@@ -612,7 +665,7 @@ export async function createPopArticle(
         image_url: imageUrlInsert ? imageUrlInsert : null,
         sale_price: input.itemKind === "merchandise" ? salePrice : 0,
         cost_price: costPrice,
-        iva: input.itemKind === "merchandise" ? iva : 0,
+        iva,
         category_id: categoryId,
         is_active: input.isActive,
         ...articleDbPayloadFromInput({
@@ -1098,7 +1151,16 @@ export async function getPopArticlesTable(
     }
 
     const rows = (data || []) as Record<string, unknown>[]
-    const articles: ArticleTableRow[] = rows.map((row) => articleRowFromDb(row))
+    const articlesBase: ArticleTableRow[] = rows.map((row) => articleRowFromDb(row))
+    const stockById = await stockOnHandByArticleIds(
+      supabase,
+      popId,
+      articlesBase.map((row) => row.id),
+    )
+    const articles = articlesBase.map((row) => ({
+      ...row,
+      stockOnHand: stockById.get(row.id) ?? 0,
+    }))
 
     return {
       success: true,
@@ -1119,5 +1181,83 @@ export async function getPopArticlesTable(
       ...empty,
       popName: "",
     }
+  }
+}
+
+export async function uploadArticleImage(
+  popId: string,
+  formData: FormData,
+): Promise<
+  { success: true; imageUrl: string } | { success: false; error: string }
+> {
+  try {
+    const access = await validatePopAccess(popId)
+    if (!access.hasAccess || !access.isActive) {
+      return { success: false, error: access.error || "Sin acceso" }
+    }
+
+    const snap = await loadPopPermissionsSnapshot(popId)
+    const canUpload =
+      permissionKeysInclude(
+        snap.keys,
+        POP_PERMS.ARTICLE_CREATE.resource,
+        POP_PERMS.ARTICLE_CREATE.action,
+      ) ||
+      permissionKeysInclude(
+        snap.keys,
+        POP_PERMS.ARTICLE_UPDATE.resource,
+        POP_PERMS.ARTICLE_UPDATE.action,
+      )
+    if (!canUpload) {
+      return { success: false, error: "Sin permiso para subir imágenes." }
+    }
+
+    const raw = formData.get("file")
+    if (!(raw instanceof File) || raw.size <= 0) {
+      return { success: false, error: "Elegí una imagen para subir." }
+    }
+    if (raw.type !== "image/webp") {
+      return { success: false, error: "La imagen debe estar en formato WebP." }
+    }
+    if (raw.size > 5 * 1024 * 1024) {
+      return {
+        success: false,
+        error: "La imagen comprimida supera el límite de 5 MB.",
+      }
+    }
+
+    const fileName = buildArticleImageFileName()
+    const storagePath = buildArticleImageStoragePath(popId, fileName)
+    const bytes = Buffer.from(await raw.arrayBuffer())
+
+    const supabase = await createClient()
+    const { error: uploadError } = await supabase.storage
+      .from(ARTICLE_IMAGE_STORAGE_BUCKET)
+      .upload(storagePath, bytes, {
+        contentType: "image/webp",
+        cacheControl: "31536000",
+        upsert: false,
+      })
+
+    if (uploadError) {
+      return {
+        success: false,
+        error: uploadError.message || "No se pudo subir la imagen.",
+      }
+    }
+
+    const { data: publicUrlData } = supabase.storage
+      .from(ARTICLE_IMAGE_STORAGE_BUCKET)
+      .getPublicUrl(storagePath)
+
+    const imageUrl = publicUrlData.publicUrl?.trim()
+    if (!imageUrl) {
+      return { success: false, error: "No se pudo obtener la URL pública." }
+    }
+
+    return { success: true, imageUrl }
+  } catch (e: unknown) {
+    const message = e instanceof Error ? e.message : "Error desconocido"
+    return { success: false, error: message }
   }
 }

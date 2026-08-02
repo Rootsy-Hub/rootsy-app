@@ -8,10 +8,14 @@ import { getPopById, getPopSiteId, validatePopAccess } from "@/lib/popHelpers"
 import { popMenuHref, siteIdFromPopRow } from "@/lib/popRoutes"
 import { loadPopPermissionsSnapshot } from "@/lib/popPermissionsServer"
 import {
+  CLIENT_IVA_CONDITION_OPTIONS,
+} from "@/app/[siteId]/[popId]/clients/clientIvaConstants"
+import {
   DEFAULT_SALE_SITE_ID,
   findSaleInvoiceTypeByArcaCbteTipo,
 } from "@/lib/saleInvoiceTypes"
 import { saleComprobanteAccruesOutputVat } from "@/lib/saleComprobantePicker"
+import { purchaseComprobanteAccruesInputVat } from "@/lib/purchaseComprobantePicker"
 import { resolveOperationPaymentMethodLabel } from "@/lib/operationPaymentLabels"
 import { operationPaymentKindLabel } from "@/lib/operationPaymentKinds"
 import {
@@ -189,6 +193,17 @@ export type OperationSaleRow = {
   /** Ventas individuales agrupadas en esta fila. */
   groupedSaleIds?: string[]
   isChannelGrouped?: boolean
+  soldByName: string | null
+  customerIvaConditionLabel: string
+  /** Mesas/mostrador: apertura de sesión o pedido. */
+  channelOpenedAt?: string | null
+  channelOpenedByName?: string | null
+  /** Mesas: cierre de sesión (null = abierta). Mostrador: entrega o cancelación. */
+  channelClosedAt?: string | null
+  channelClosedByName?: string | null
+  channelWaiterName?: string | null
+  channelCounterStatus?: string | null
+  channelFulfillmentType?: "pickup" | "delivery" | null
 }
 
 export type OperationExpenseLedgerRow = {
@@ -203,6 +218,7 @@ export type OperationExpenseLedgerRow = {
   categoryName: string
   description: string
   paymentMethodLabel: string
+  recordedByName: string | null
 }
 
 export type OperationPurchaseLineItem = {
@@ -233,6 +249,7 @@ export type OperationPurchaseRow = {
   operationAt: string
   status: string
   purchaseKind: string
+  subtotal: number
   total: number
   taxTotal: number
   paidTotal: number
@@ -245,6 +262,11 @@ export type OperationPurchaseRow = {
   lineItems: OperationPurchaseLineItem[]
   payments: OperationPurchasePayment[]
   paymentMethodLabel: string
+  purchasedByName: string | null
+  documentKindLabel: string | null
+  accruesInputVat: boolean
+  supplierIvaConditionLabel: string
+  vatIncludedEstimate: number | null
 }
 
 function parseMoney(v: unknown): number {
@@ -372,6 +394,72 @@ function parseBooleanMetadataFlag(
 ): boolean {
   if (metadata == null || typeof metadata !== "object") return false
   return (metadata as Record<string, unknown>)[key] === true
+}
+
+function parseCustomerIvaConditionLabel(
+  metadata: unknown,
+  customerName: string | null,
+): string {
+  if (metadata != null && typeof metadata === "object") {
+    const raw = (metadata as Record<string, unknown>).customer_iva_condition
+    if (typeof raw === "string" && raw.trim()) {
+      const label = CLIENT_IVA_CONDITION_OPTIONS.find((o) => o.value === raw)?.label
+      return label ?? raw
+    }
+  }
+  if (!customerName?.trim()) return "Consumidor final"
+  return "—"
+}
+
+function parseSupplierIvaConditionLabel(ivaCondition: unknown): string {
+  if (ivaCondition != null && String(ivaCondition).trim()) {
+    const raw = String(ivaCondition).trim()
+    const label = CLIENT_IVA_CONDITION_OPTIONS.find((o) => o.value === raw)?.label
+    return label ?? raw
+  }
+  return "—"
+}
+
+function parsePurchaseComprobanteInfo(
+  metadata: unknown,
+  documentKindFallback: string | null = null,
+): {
+  documentKindLabel: string | null
+  accruesInputVat: boolean
+  vatIncludedEstimate: number | null
+} {
+  let documentKind = documentKindFallback?.trim() || null
+  if (!documentKind && metadata != null && typeof metadata === "object") {
+    const raw = (metadata as Record<string, unknown>).purchase_document_kind
+    if (typeof raw === "string" && raw.trim()) {
+      documentKind = raw.trim()
+    }
+  }
+
+  const accruesFromKind = purchaseComprobanteAccruesInputVat(documentKind)
+  let accruesInputVat = accruesFromKind
+  if (!documentKind && metadata != null && typeof metadata === "object") {
+    const flag = (metadata as Record<string, unknown>).purchase_accrues_input_vat
+    if (typeof flag === "boolean") {
+      accruesInputVat = flag
+    }
+  }
+
+  let vatIncludedEstimate: number | null = null
+  if (metadata != null && typeof metadata === "object") {
+    const estimate = Number(
+      (metadata as Record<string, unknown>).vat_included_estimate,
+    )
+    if (Number.isFinite(estimate) && estimate > 0) {
+      vatIncludedEstimate = parseMoney(estimate)
+    }
+  }
+
+  return {
+    documentKindLabel: documentKind,
+    accruesInputVat,
+    vatIncludedEstimate,
+  }
 }
 
 function parseSaleMetadata(
@@ -657,6 +745,7 @@ const PURCHASE_LIST_SELECT = `
         document_date,
         supplier_id,
         supplier_name,
+        subtotal,
         total,
         tax_total,
         discount_total,
@@ -664,8 +753,9 @@ const PURCHASE_LIST_SELECT = `
         line_items,
         metadata,
         created_at,
+        created_by,
         received_at,
-        suppliers ( name ),
+        suppliers ( name, iva_condition ),
         purchase_payments (
           amount,
           paid_at,
@@ -883,6 +973,230 @@ async function loadCounterOrderLabelsBySaleIds(
     ),
   ]
   return loadCounterOrderLabelsByOrderIds(supabase, popId, orderIds)
+}
+
+type TableSessionListSummary = {
+  openedAt: string | null
+  closedAt: string | null
+  openedBy: string | null
+  closedBy: string | null
+  waiterUserId: string | null
+}
+
+type CounterOrderListSummary = {
+  openedAt: string | null
+  status: string | null
+  fulfillmentType: "pickup" | "delivery" | null
+  openedBy: string | null
+  deliveredAt: string | null
+  cancelledAt: string | null
+  cancelledBy: string | null
+}
+
+async function loadTableSessionSummariesBySessionIds(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  popId: string,
+  sessionIds: string[],
+): Promise<Map<string, TableSessionListSummary>> {
+  const summaryBySessionId = new Map<string, TableSessionListSummary>()
+  if (sessionIds.length === 0) return summaryBySessionId
+
+  const { data, error } = await supabase
+    .from("table_sessions")
+    .select(
+      "id, opened_at, closed_at, opened_by, closed_by, waiter_user_id",
+    )
+    .eq("pop_id", popId)
+    .in("id", sessionIds)
+
+  if (error || !data?.length) return summaryBySessionId
+
+  for (const row of data) {
+    summaryBySessionId.set(String(row.id), {
+      openedAt: row.opened_at != null ? String(row.opened_at) : null,
+      closedAt: row.closed_at != null ? String(row.closed_at) : null,
+      openedBy:
+        row.opened_by != null ? String(row.opened_by).trim() || null : null,
+      closedBy:
+        row.closed_by != null ? String(row.closed_by).trim() || null : null,
+      waiterUserId:
+        row.waiter_user_id != null
+          ? String(row.waiter_user_id).trim() || null
+          : null,
+    })
+  }
+
+  return summaryBySessionId
+}
+
+async function loadTableSessionSummariesBySaleIds(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  popId: string,
+  saleRows: Array<Record<string, unknown>>,
+): Promise<Map<string, TableSessionListSummary>> {
+  const sessionIds = [
+    ...new Set(
+      saleRows
+        .map((row) =>
+          row.table_session_id != null ? String(row.table_session_id) : "",
+        )
+        .filter(Boolean),
+    ),
+  ]
+  return loadTableSessionSummariesBySessionIds(supabase, popId, sessionIds)
+}
+
+async function loadCounterOrderSummariesByOrderIds(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  popId: string,
+  orderIds: string[],
+): Promise<Map<string, CounterOrderListSummary>> {
+  const summaryByOrderId = new Map<string, CounterOrderListSummary>()
+  if (orderIds.length === 0) return summaryByOrderId
+
+  const { data, error } = await supabase
+    .from("counter_orders")
+    .select(
+      "id, status, fulfillment_type, opened_at, delivered_at, cancelled_at, opened_by, cancelled_by",
+    )
+    .eq("pop_id", popId)
+    .in("id", orderIds)
+
+  if (error || !data?.length) return summaryByOrderId
+
+  for (const row of data) {
+    const fulfillment = String(row.fulfillment_type ?? "").trim()
+    summaryByOrderId.set(String(row.id), {
+      openedAt: row.opened_at != null ? String(row.opened_at) : null,
+      status: row.status != null ? String(row.status) : null,
+      fulfillmentType:
+        fulfillment === "delivery" || fulfillment === "pickup"
+          ? fulfillment
+          : null,
+      openedBy:
+        row.opened_by != null ? String(row.opened_by).trim() || null : null,
+      deliveredAt:
+        row.delivered_at != null ? String(row.delivered_at) : null,
+      cancelledAt:
+        row.cancelled_at != null ? String(row.cancelled_at) : null,
+      cancelledBy:
+        row.cancelled_by != null
+          ? String(row.cancelled_by).trim() || null
+          : null,
+    })
+  }
+
+  return summaryByOrderId
+}
+
+async function loadCounterOrderSummariesBySaleIds(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  popId: string,
+  saleRows: Array<Record<string, unknown>>,
+): Promise<Map<string, CounterOrderListSummary>> {
+  const orderIds = [
+    ...new Set(
+      saleRows
+        .map((row) =>
+          row.counter_order_id != null ? String(row.counter_order_id) : "",
+        )
+        .filter(Boolean),
+    ),
+  ]
+  return loadCounterOrderSummariesByOrderIds(supabase, popId, orderIds)
+}
+
+async function loadPurchaseDocumentKindsByPurchaseIds(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  popId: string,
+  purchaseIds: string[],
+): Promise<Map<string, string>> {
+  const kindByPurchaseId = new Map<string, string>()
+  if (purchaseIds.length === 0) return kindByPurchaseId
+
+  const { data, error } = await supabase
+    .from("purchase_documents")
+    .select("purchase_id, doc_kind")
+    .eq("pop_id", popId)
+    .in("purchase_id", purchaseIds)
+    .order("created_at", { ascending: false })
+
+  if (error || !data?.length) return kindByPurchaseId
+
+  for (const row of data) {
+    const purchaseId =
+      row.purchase_id != null ? String(row.purchase_id).trim() : ""
+    const docKind = row.doc_kind != null ? String(row.doc_kind).trim() : ""
+    if (!purchaseId || !docKind || kindByPurchaseId.has(purchaseId)) continue
+    kindByPurchaseId.set(purchaseId, docKind)
+  }
+
+  return kindByPurchaseId
+}
+
+function applyChannelListFieldsToSaleRows(
+  sales: OperationSaleRow[],
+  options: {
+    view: "table" | "counter"
+    tableSummaryBySessionId: Map<string, TableSessionListSummary>
+    counterSummaryByOrderId: Map<string, CounterOrderListSummary>
+    userNames: Map<string, string>
+  },
+): OperationSaleRow[] {
+  const { view, tableSummaryBySessionId, counterSummaryByOrderId, userNames } =
+    options
+
+  return sales.map((sale) => {
+    if (view === "table") {
+      const sessionId = sale.tableSessionId?.trim() || ""
+      if (!sessionId) return sale
+      const summary = tableSummaryBySessionId.get(sessionId)
+      if (!summary) return sale
+      return {
+        ...sale,
+        channelOpenedAt: summary.openedAt,
+        channelOpenedByName: summary.openedBy
+          ? (userNames.get(summary.openedBy) ?? null)
+          : null,
+        channelClosedAt: summary.closedAt,
+        channelClosedByName: summary.closedBy
+          ? (userNames.get(summary.closedBy) ?? null)
+          : null,
+        channelWaiterName: summary.waiterUserId
+          ? (userNames.get(summary.waiterUserId) ?? null)
+          : null,
+      }
+    }
+
+    const orderId = sale.counterOrderId?.trim() || ""
+    if (!orderId) return sale
+    const summary = counterSummaryByOrderId.get(orderId)
+    if (!summary) return sale
+
+    let channelClosedAt: string | null = null
+    let channelClosedByName: string | null = null
+    if (summary.status === "cancelled" && summary.cancelledAt) {
+      channelClosedAt = summary.cancelledAt
+      channelClosedByName = summary.cancelledBy
+        ? (userNames.get(summary.cancelledBy) ?? null)
+        : null
+    } else if (summary.deliveredAt) {
+      channelClosedAt = summary.deliveredAt
+      channelClosedByName = sale.soldByName
+    }
+
+    return {
+      ...sale,
+      channelOpenedAt: summary.openedAt,
+      channelOpenedByName: summary.openedBy
+        ? (userNames.get(summary.openedBy) ?? null)
+        : null,
+      channelClosedAt,
+      channelClosedByName,
+      channelCounterStatus: summary.status,
+      channelFulfillmentType: summary.fulfillmentType,
+    }
+  })
 }
 
 function formatTreasuryPaymentLabel(p: {
@@ -1150,6 +1464,7 @@ function mapSaleRows(
   fiscalSiteId: string,
   tableLabelBySessionId: Map<string, string> = new Map(),
   counterOrderLabelByOrderId: Map<string, string> = new Map(),
+  userNames: Map<string, string> = new Map(),
 ): OperationSaleRow[] {
   return saleRows.map((row) => {
     const saleId = String(row.id)
@@ -1180,6 +1495,10 @@ function mapSaleRows(
     const channelMeta = parseChannelSaleMetadata(row.metadata)
     const rowTotal = parseMoney(row.total)
     const accruesOutputVat = saleMeta.accruesOutputVat
+    const customerName =
+      row.customer_name != null ? String(row.customer_name) : null
+    const createdBy =
+      row.created_by != null ? String(row.created_by).trim() || null : null
 
     return {
       id: saleId,
@@ -1193,10 +1512,14 @@ function mapSaleRows(
       discountInfo: parseSaleDiscountInfo(row.metadata),
       snapshotInfo: parseSaleSnapshotInfo(row.metadata),
       clientId: row.client_id != null ? String(row.client_id) : null,
-      customerName:
-        row.customer_name != null ? String(row.customer_name) : null,
+      customerName,
       customerTaxId:
         row.customer_tax_id != null ? String(row.customer_tax_id) : null,
+      customerIvaConditionLabel: parseCustomerIvaConditionLabel(
+        row.metadata,
+        customerName,
+      ),
+      soldByName: createdBy ? userNames.get(createdBy) ?? null : null,
       invoiceTypeLabel: saleMeta.invoiceTypeLabel,
       accruesOutputVat,
       arcaInvoice: arcaBySaleId.get(saleId) ?? null,
@@ -1226,9 +1549,11 @@ function mapSaleRows(
 
 function mapPurchaseRows(
   purchaseRows: Array<Record<string, unknown>>,
+  userNames: Map<string, string> = new Map(),
+  documentKindByPurchaseId: Map<string, string> = new Map(),
 ): OperationPurchaseRow[] {
   return purchaseRows.map((row) => {
-    const sup = row.suppliers as { name?: string } | null
+    const sup = row.suppliers as { name?: string; iva_condition?: unknown } | null
     const supplierId =
       row.supplier_id != null ? String(row.supplier_id) : null
     const rawSupplierName =
@@ -1239,6 +1564,8 @@ function mapPurchaseRows(
     const documentDate =
       row.document_date != null ? String(row.document_date) : ""
     const createdAt = String(row.created_at ?? "")
+    const createdBy =
+      row.created_by != null ? String(row.created_by).trim() || null : null
     const operationDate =
       receivedAt.slice(0, 10) ||
       documentDate.slice(0, 10) ||
@@ -1275,12 +1602,19 @@ function mapPurchaseRows(
       })
     }
 
+    const purchaseId = String(row.id)
+    const comprobante = parsePurchaseComprobanteInfo(
+      row.metadata,
+      documentKindByPurchaseId.get(purchaseId) ?? null,
+    )
+
     return {
-      id: String(row.id),
+      id: purchaseId,
       operationDate,
       operationAt,
       status: String(row.status ?? ""),
       purchaseKind: String(row.purchase_kind ?? "merchandise"),
+      subtotal: parseMoney(row.subtotal),
       total: parseMoney(row.total),
       taxTotal: parseMoney(row.tax_total),
       paidTotal,
@@ -1303,6 +1637,11 @@ function mapPurchaseRows(
               String(row.status ?? ""),
             )),
       }),
+      purchasedByName: createdBy ? userNames.get(createdBy) ?? null : null,
+      documentKindLabel: comprobante.documentKindLabel,
+      accruesInputVat: comprobante.accruesInputVat,
+      supplierIvaConditionLabel: parseSupplierIvaConditionLabel(sup?.iva_condition),
+      vatIncludedEstimate: comprobante.vatIncludedEstimate,
     }
   })
 }
@@ -1311,6 +1650,7 @@ async function mapExpenseLedgerRows(
   supabase: Awaited<ReturnType<typeof createClient>>,
   popId: string,
   aeList: Array<Record<string, unknown>>,
+  userNames: Map<string, string> = new Map(),
 ): Promise<OperationExpenseLedgerRow[]> {
   const payIds = aeList
     .map((r) => (r.source_id != null ? String(r.source_id) : ""))
@@ -1446,6 +1786,9 @@ async function mapExpenseLedgerRows(
           treasury_accounts: payment?.treasury_accounts,
         })
 
+    const createdBy =
+      row.created_by != null ? String(row.created_by).trim() || null : null
+
     return {
       entryId: String(row.id),
       expenseId:
@@ -1463,6 +1806,7 @@ async function mapExpenseLedgerRows(
       categoryName,
       description,
       paymentMethodLabel,
+      recordedByName: createdBy ? userNames.get(createdBy) ?? null : null,
     }
   })
 }
@@ -1672,15 +2016,53 @@ export async function getOperationsList(
               (saleRows || []) as Array<Record<string, unknown>>,
             )
           : new Map<string, string>()
+      const tableSummaryBySessionId =
+        view === "tables"
+          ? await loadTableSessionSummariesBySaleIds(
+              supabase,
+              popId,
+              (saleRows || []) as Array<Record<string, unknown>>,
+            )
+          : new Map<string, TableSessionListSummary>()
+      const counterSummaryByOrderId =
+        view === "counter"
+          ? await loadCounterOrderSummariesBySaleIds(
+              supabase,
+              popId,
+              (saleRows || []) as Array<Record<string, unknown>>,
+            )
+          : new Map<string, CounterOrderListSummary>()
+      const channelUserIds = new Set<string>()
+      for (const summary of tableSummaryBySessionId.values()) {
+        if (summary.openedBy) channelUserIds.add(summary.openedBy)
+        if (summary.closedBy) channelUserIds.add(summary.closedBy)
+        if (summary.waiterUserId) channelUserIds.add(summary.waiterUserId)
+      }
+      for (const summary of counterSummaryByOrderId.values()) {
+        if (summary.openedBy) channelUserIds.add(summary.openedBy)
+        if (summary.cancelledBy) channelUserIds.add(summary.cancelledBy)
+      }
+      for (const row of saleRows || []) {
+        const createdBy =
+          row.created_by != null ? String(row.created_by).trim() : ""
+        if (createdBy) channelUserIds.add(createdBy)
+      }
+      const userNames = await loadUserDisplayNames(supabase, [...channelUserIds])
       let sales = mapSaleRows(
         (saleRows || []) as Array<Record<string, unknown>>,
         arcaBySaleId,
         fiscalSiteId,
         tableLabelBySessionId,
         counterOrderLabelByOrderId,
+        userNames,
       )
-
       if (isChannelGroupedView) {
+        sales = applyChannelListFieldsToSaleRows(sales, {
+          view: view === "tables" ? "table" : "counter",
+          tableSummaryBySessionId,
+          counterSummaryByOrderId,
+          userNames,
+        })
         sales = groupChannelOperationSales(
           sales,
           view === "tables" ? "table" : "counter",
@@ -1769,8 +2151,23 @@ export async function getOperationsList(
         }
       }
 
+      const purchaseUserNames = await loadUserDisplayNames(
+        supabase,
+        (purchaseRows || [])
+          .map((row) =>
+            row.created_by != null ? String(row.created_by).trim() : "",
+          )
+          .filter(Boolean),
+      )
+      const documentKindByPurchaseId = await loadPurchaseDocumentKindsByPurchaseIds(
+        supabase,
+        popId,
+        (purchaseRows || []).map((row) => String(row.id)),
+      )
       const purchases = mapPurchaseRows(
         (purchaseRows || []) as Array<Record<string, unknown>>,
+        purchaseUserNames,
+        documentKindByPurchaseId,
       )
 
       return {
@@ -1817,7 +2214,7 @@ export async function getOperationsList(
     let dataQuery = supabase
       .from("accounting_entries")
       .select(
-        "id, entry_date, description, source_type, source_id, status, created_at, posted_at",
+        "id, entry_date, description, source_type, source_id, status, created_at, posted_at, created_by",
       )
       .eq("pop_id", popId)
       .in("source_type", ["expense_payment", "expense_void"])
@@ -1842,10 +2239,20 @@ export async function getOperationsList(
       }
     }
 
+    const expenseUserNames = await loadUserDisplayNames(
+      supabase,
+      (aeRows || [])
+        .map((row) =>
+          row.created_by != null ? String(row.created_by).trim() : "",
+        )
+        .filter(Boolean),
+    )
+
     const expenseLedger = await mapExpenseLedgerRows(
       supabase,
       popId,
       (aeRows || []) as Array<Record<string, unknown>>,
+      expenseUserNames,
     )
 
     return {
@@ -2197,12 +2604,18 @@ export async function getOperationSaleById(
           ])
         : new Map<string, string>()
 
+    const userNames = await loadUserDisplayNames(
+      supabase,
+      row.created_by != null ? [String(row.created_by).trim()] : [],
+    )
+
     const sales = mapSaleRows(
       [row as Record<string, unknown>],
       arcaBySaleId,
       fiscalSiteId,
       tableLabelBySessionId,
       counterOrderLabelByOrderId,
+      userNames,
     )
     const sale = sales[0]
     if (!sale) {
@@ -2324,12 +2737,22 @@ export async function getOperationSaleDetailCharges(
         rows as Array<Record<string, unknown>>,
       )
 
+    const userNames = await loadUserDisplayNames(
+      supabase,
+      (rows || [])
+        .map((row) =>
+          row.created_by != null ? String(row.created_by).trim() : "",
+        )
+        .filter(Boolean),
+    )
+
     const sales = mapSaleRows(
       rows as Array<Record<string, unknown>>,
       arcaBySaleId,
       fiscalSiteId,
       tableLabelBySessionId,
       counterOrderLabelByOrderId,
+      userNames,
     ).sort((a, b) => a.soldAt.localeCompare(b.soldAt))
 
     return {

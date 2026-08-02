@@ -1,0 +1,269 @@
+"use client"
+
+import type { ArticleCategoryOption } from "@/app/[siteId]/[popId]/articles/actions"
+import { ArticleCatalogDiscountField } from "@/app/[siteId]/[popId]/articles/ArticleCatalogDiscountField"
+import type { ArticleCatalogExtraFormState } from "@/app/[siteId]/[popId]/articles/ArticleCatalogExtraFields"
+import { ArticleImageUploadField } from "@/app/[siteId]/[popId]/articles/ArticleImageUploadField"
+import { ArticleIvaSelect } from "@/app/[siteId]/[popId]/articles/ArticleIvaSelect"
+import type { ArticleItemFormState } from "@/app/[siteId]/[popId]/articles/ArticleItemFormFields"
+import { ArticleItemKindSelector } from "@/app/[siteId]/[popId]/articles/ArticleItemKindSelector"
+import { ArticleSupplierPickerField } from "@/app/[siteId]/[popId]/articles/ArticleSupplierPickerField"
+import { ArticleUnitOfMeasureField } from "@/app/[siteId]/[popId]/articles/ArticleUnitOfMeasureField"
+import { ArticleFormMoneyField } from "@/app/[siteId]/[popId]/articles/ArticleFormMoneyField"
+import { ArticleFormQuantityField } from "@/app/[siteId]/[popId]/articles/ArticleFormQuantityField"
+import {
+  articleFormColumnClass,
+  articleFormFieldStackClass,
+  articleFormGridClass,
+  articleFormSelectContentClass,
+  articleFormSelectItemClass,
+  articleFormSelectTriggerClass,
+  articleFormTextFieldClass,
+  articleFormTextareaClass,
+  articleFormTwoColRowClass,
+} from "@/app/[siteId]/[popId]/articles/articleConstants"
+import { CheckoutSectionLabel } from "@/components/checkout/CheckoutFormFields"
+import type { ArticleItemKind } from "@/lib/articleItemKind"
+import { parseMoneyInput } from "@/lib/moneyInput"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
+import { Switch } from "@/components/ui/switch"
+import { cn } from "@/lib/utils"
+
+export type ArticleUpsertFormState = ArticleItemFormState &
+  ArticleCatalogExtraFormState & {
+    name: string
+    description: string
+    imageUrl: string
+    salePrice: string
+    costPrice: string
+    iva: string
+    categoryId: string
+    isActive: boolean
+    itemKind: ArticleItemKind
+    initialStock?: string
+  }
+
+type Props = {
+  idPrefix: string
+  siteId: string
+  popId: string
+  form: ArticleUpsertFormState
+  onChange: (patch: Partial<ArticleUpsertFormState>) => void
+  onItemKindChange: (kind: ArticleItemKind) => void
+  categories: ArticleCategoryOption[]
+  supplierOptions: { id: string; name: string }[]
+  suppliersLoading?: boolean
+  canPostInitialStock?: boolean
+  mode: "create" | "edit"
+  disabled?: boolean
+}
+
+export function ArticleUpsertFormFields({
+  idPrefix,
+  siteId,
+  popId,
+  form,
+  onChange,
+  onItemKindChange,
+  categories,
+  supplierOptions,
+  canPostInitialStock = false,
+  mode,
+  disabled = false,
+}: Props) {
+  const isMerchandise = form.itemKind === "merchandise"
+  const parsedSalePrice = parseMoneyInput(form.salePrice, 0)
+
+  return (
+    <div className={articleFormGridClass}>
+      <div className={articleFormColumnClass}>
+        <div className={articleFormFieldStackClass}>
+          <CheckoutSectionLabel>Nombre</CheckoutSectionLabel>
+          <input
+            id={`${idPrefix}-name`}
+            value={form.name}
+            onChange={(e) => onChange({ name: e.target.value })}
+            required
+            disabled={disabled}
+            className={articleFormTextFieldClass}
+          />
+        </div>
+
+        <div className={articleFormFieldStackClass}>
+          <CheckoutSectionLabel>Descripción</CheckoutSectionLabel>
+          <textarea
+            id={`${idPrefix}-desc`}
+            rows={3}
+            value={form.description}
+            onChange={(e) => onChange({ description: e.target.value })}
+            disabled={disabled}
+            className={articleFormTextareaClass}
+          />
+        </div>
+
+        <div className={articleFormFieldStackClass}>
+          <CheckoutSectionLabel>Marca</CheckoutSectionLabel>
+          <input
+            id={`${idPrefix}-brand`}
+            value={form.brand}
+            onChange={(e) => onChange({ brand: e.target.value })}
+            placeholder="Opcional"
+            disabled={disabled}
+            className={articleFormTextFieldClass}
+          />
+        </div>
+
+        <ArticleItemKindSelector
+          idPrefix={idPrefix}
+          value={form.itemKind}
+          onChange={onItemKindChange}
+          readOnly={mode === "edit"}
+        />
+
+        <div className={articleFormFieldStackClass}>
+          <CheckoutSectionLabel>Categoría</CheckoutSectionLabel>
+          <div className="w-full min-w-0">
+            <Select
+              value={form.categoryId || undefined}
+              onValueChange={(value) => onChange({ categoryId: value })}
+              disabled={disabled}
+              required
+            >
+              <SelectTrigger
+                id={`${idPrefix}-cat`}
+                className={articleFormSelectTriggerClass}
+              >
+                <SelectValue placeholder="Elegir categoría…" />
+              </SelectTrigger>
+              <SelectContent
+                className={articleFormSelectContentClass}
+                position="popper"
+              >
+                {categories.map((category) => (
+                  <SelectItem
+                    key={category.id}
+                    value={category.id}
+                    className={articleFormSelectItemClass}
+                  >
+                    {category.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+
+        <ArticleImageUploadField
+          id={`${idPrefix}-image`}
+          popId={popId}
+          value={form.imageUrl}
+          onChange={(imageUrl) => onChange({ imageUrl })}
+          disabled={disabled}
+        />
+      </div>
+
+      <div className={articleFormColumnClass}>
+        <ArticleUnitOfMeasureField
+          itemKind={form.itemKind}
+          idPrefix={idPrefix}
+          value={form}
+          onChange={onChange}
+          disabled={disabled}
+        />
+
+        <div
+          className={cn(
+            articleFormTwoColRowClass,
+            !isMerchandise && "sm:grid-cols-1",
+          )}
+        >
+          {isMerchandise ? (
+            <div className={articleFormFieldStackClass}>
+              <CheckoutSectionLabel>Precio venta</CheckoutSectionLabel>
+              <ArticleFormMoneyField
+                id={`${idPrefix}-price`}
+                value={form.salePrice}
+                onChange={(value) => onChange({ salePrice: value })}
+                disabled={disabled}
+                aria-label="Precio de venta"
+              />
+            </div>
+          ) : null}
+          <div className={articleFormFieldStackClass}>
+            <CheckoutSectionLabel>Precio de compra</CheckoutSectionLabel>
+            <ArticleFormMoneyField
+              id={`${idPrefix}-cost`}
+              value={form.costPrice}
+              onChange={(value) => onChange({ costPrice: value })}
+              disabled={disabled}
+              aria-label="Precio de compra"
+            />
+          </div>
+        </div>
+
+        <ArticleIvaSelect
+          id={`${idPrefix}-iva`}
+          siteId={siteId}
+          value={form.iva}
+          onChange={(value) => onChange({ iva: value })}
+        />
+
+        {isMerchandise ? (
+          <ArticleCatalogDiscountField
+            idPrefix={idPrefix}
+            discountMode={form.discountMode}
+            discountValue={form.discountValue}
+            salePrice={parsedSalePrice}
+            onChange={onChange}
+            disabled={disabled}
+          />
+        ) : null}
+
+        <ArticleSupplierPickerField
+          popId={popId}
+          value={form.supplierIds}
+          onChange={(supplierIds) => onChange({ supplierIds })}
+          knownSuppliers={supplierOptions}
+          disabled={disabled}
+        />
+
+        {mode === "create" && canPostInitialStock ? (
+          <div className={cn(articleFormFieldStackClass, "border-t border-border/50 pt-1")}>
+            <CheckoutSectionLabel>Stock inicial (opcional)</CheckoutSectionLabel>
+            <ArticleFormQuantityField
+              id={`${idPrefix}-initial-stock`}
+              value={form.initialStock ?? ""}
+              onChange={(value) => onChange({ initialStock: value })}
+              disabled={disabled}
+              max={10000}
+              placeholder="Vacío = sin movimiento"
+              aria-label="Stock inicial"
+            />
+          </div>
+        ) : null}
+
+        <div className="flex items-center justify-between gap-3 rounded-xl border border-border/70 bg-muted/15 px-3.5 py-2.5">
+          <div className="min-w-0">
+            <CheckoutSectionLabel>Artículo activo</CheckoutSectionLabel>
+            <p className="mt-1 text-xs leading-snug text-muted-foreground">
+              Los inactivos no aparecen en ventas ni catálogo.
+            </p>
+          </div>
+          <Switch
+            id={`${idPrefix}-active`}
+            checked={form.isActive}
+            onCheckedChange={(checked) => onChange({ isActive: checked })}
+            disabled={disabled}
+            className="shrink-0"
+          />
+        </div>
+      </div>
+    </div>
+  )
+}

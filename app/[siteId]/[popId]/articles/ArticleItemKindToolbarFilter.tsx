@@ -9,7 +9,6 @@ import {
   lightToolbarPanelClass,
 } from "@/components/data-workspace/dataWorkspaceListStyles"
 import { DataWorkspaceToolbarFieldLabel } from "@/components/data-workspace/DataWorkspaceToolbarFieldLabel"
-import type { DataWorkspaceSidebarViewItem } from "@/components/layouts/DataWorkspaceSidebar"
 import { Button } from "@/components/ui/button"
 import {
   DropdownMenu,
@@ -18,60 +17,78 @@ import {
   DropdownMenuLabel,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+import {
+  ARTICLE_ITEM_KINDS,
+  ARTICLE_ITEM_KIND_STOCK_LABEL,
+  type ArticleItemKind,
+} from "@/lib/articleItemKind"
 import { cn } from "@/lib/utils"
 import { Check, ChevronDown, LayoutGrid } from "lucide-react"
-import { useId } from "react"
+import { useId, useMemo } from "react"
 
-const viewFilterTriggerClass = cn(
-  lightToolbarControlClass,
-  "justify-between gap-2 px-3 font-normal",
-  lightToolbarFocusClass,
-)
+export type ArticleItemKindFilterId = "all" | ArticleItemKind
 
-export function DataWorkspaceViewFilter({
-  viewItems,
-  activeId,
-  onSelect,
-  label = "Tipo",
-  sectionLabel = "Tipo de operación",
+const FILTER_ITEMS: { id: ArticleItemKindFilterId; label: string }[] = [
+  { id: "all", label: "Todos" },
+  ...ARTICLE_ITEM_KINDS.map((kind) => ({
+    id: kind,
+    label: ARTICLE_ITEM_KIND_STOCK_LABEL[kind],
+  })),
+]
+
+export function resolveArticleItemKindFilterId(
+  kinds: readonly ArticleItemKind[],
+): ArticleItemKindFilterId {
+  if (kinds.length === 0 || kinds.length >= ARTICLE_ITEM_KINDS.length) {
+    return "all"
+  }
+  if (kinds.length === 1) return kinds[0]
+  return "all"
+}
+
+export function articleItemKindFilterToQuery(
+  id: ArticleItemKindFilterId,
+): ArticleItemKind[] {
+  return id === "all" ? [] : [id]
+}
+
+export function ArticleItemKindToolbarFilter({
+  value,
+  onChange,
   className,
-  labelId: labelIdProp,
-  triggerId: triggerIdProp,
 }: {
-  viewItems: readonly DataWorkspaceSidebarViewItem[]
-  activeId: string
-  onSelect: (id: string) => void
-  label?: string
-  sectionLabel?: string
+  value: ArticleItemKindFilterId
+  onChange: (value: ArticleItemKindFilterId) => void
   className?: string
-  labelId?: string
-  triggerId?: string
 }) {
-  const autoLabelId = useId()
-  const autoTriggerId = useId()
-  const labelId = labelIdProp ?? autoLabelId
-  const triggerId = triggerIdProp ?? autoTriggerId
+  const labelId = useId()
+  const triggerId = useId()
 
-  const activeView =
-    viewItems.find((item) => item.id === activeId) ?? viewItems[0] ?? null
-  const displayLabel = activeView?.label ?? "Vista"
-  const DisplayIcon = activeView?.icon ?? LayoutGrid
+  const displayLabel = useMemo(
+    () => FILTER_ITEMS.find((item) => item.id === value)?.label ?? "Todos",
+    [value],
+  )
 
   return (
     <div className={cn(lightToolbarPanelClass, className)}>
-      <DataWorkspaceToolbarFieldLabel id={labelId} label={label} />
+      <DataWorkspaceToolbarFieldLabel id={labelId} label="Tipo" />
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <Button
             id={triggerId}
             type="button"
             variant="outline"
-            className={cn(viewFilterTriggerClass, "min-w-0 shadow-xs")}
+            className={cn(
+              lightToolbarControlClass,
+              "justify-between gap-2 px-3 font-normal shadow-xs",
+              lightToolbarFocusClass,
+              value !== "all" && "border-primary/35 bg-primary/10",
+            )}
             aria-haspopup="menu"
             aria-labelledby={labelId}
           >
             <span className="flex min-w-0 flex-1 items-center gap-2 overflow-hidden">
-              <DisplayIcon
+              <LayoutGrid
                 className="size-4 shrink-0 text-muted-foreground"
                 aria-hidden
               />
@@ -80,7 +97,7 @@ export function DataWorkspaceViewFilter({
               </span>
             </span>
             <ChevronDown
-              className="size-4 shrink-0 text-muted-foreground transition-transform duration-200 group-data-[state=open]:rotate-180"
+              className="size-4 shrink-0 text-muted-foreground"
               aria-hidden
             />
           </Button>
@@ -91,20 +108,16 @@ export function DataWorkspaceViewFilter({
           className={lightToolbarDropdownContentClass}
         >
           <DropdownMenuLabel className={lightToolbarDropdownLabelClass}>
-            {sectionLabel}
+            Tipo de artículo
           </DropdownMenuLabel>
-          {viewItems.map((item) => {
-            const Icon = item.icon
-            const selected = activeId === item.id
+          {FILTER_ITEMS.map((item) => {
+            const selected = value === item.id
             return (
               <DropdownMenuItem
                 key={item.id}
                 className={lightToolbarDropdownItemClass}
-                onClick={() => onSelect(item.id)}
+                onClick={() => onChange(item.id)}
               >
-                {Icon ? (
-                  <Icon className="size-4 shrink-0 opacity-70" aria-hidden />
-                ) : null}
                 <span className="min-w-0 flex-1 truncate">{item.label}</span>
                 {selected ? (
                   <Check className="size-4 shrink-0 text-primary" aria-hidden />

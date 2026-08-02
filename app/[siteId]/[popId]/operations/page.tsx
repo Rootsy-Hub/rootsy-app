@@ -12,9 +12,7 @@ import {
 import { OperationsExpensesTable } from "@/app/[siteId]/[popId]/operations/OperationsExpensesTable"
 import { OperationsPurchasesTable } from "@/app/[siteId]/[popId]/operations/OperationsPurchasesTable"
 import { exportOperationsCsv } from "@/app/[siteId]/[popId]/operations/operationsCsvExport"
-import { OperationAccountingModal } from "@/app/[siteId]/[popId]/operations/OperationAccountingModal"
 import { buildPaginationItems } from "@/app/[siteId]/[popId]/layout/layoutPreviewPagination"
-import { formatLocaleDateTime } from "@/lib/popTimezone"
 import { DataWorkspaceListPaginationFooter } from "@/components/data-workspace/DataWorkspaceListPaginationFooter"
 import { DataWorkspaceListTableShell } from "@/components/data-workspace/DataWorkspaceListTableShell"
 import { DataWorkspaceTableEmptyMascot } from "@/components/data-workspace/DataWorkspaceListTablePrimitives"
@@ -78,17 +76,6 @@ const VIEW_ITEMS = [
   { id: "expenses", label: "Gastos", icon: Wallet },
 ] as const
 
-function formatLedgerDate(d: string) {
-  if (!d || d.length < 10) return "—"
-  const y = Number(d.slice(0, 4))
-  const m = Number(d.slice(5, 7))
-  const day = Number(d.slice(8, 10))
-  if (!Number.isFinite(y) || !Number.isFinite(m) || !Number.isFinite(day)) {
-    return "—"
-  }
-  return new Date(y, m - 1, day).toLocaleDateString("es-AR")
-}
-
 function OperationsPage() {
   const params = useParams()
   const siteId = typeof params?.siteId === "string" ? params.siteId : ""
@@ -125,12 +112,6 @@ function OperationsPage() {
   const [page, setPage] = useState(1)
   const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE)
   const [selected, setSelected] = useState<Set<string>>(() => new Set())
-  const [accountingTarget, setAccountingTarget] = useState<{
-    view: OperationsViewId
-    operationId: string
-    groupedSaleIds?: string[]
-    subtitle: string
-  } | null>(null)
 
   const dateBounds = useMemo(
     () => computeDataWorkspaceDateBounds(datePreset, customDateRange),
@@ -277,40 +258,6 @@ function OperationsPage() {
     [pageSize],
   )
 
-  const openSaleAccounting = useCallback(
-    (sale: OperationSaleRow, view: OperationsViewId = "sales") => {
-      const when = sale.soldAt ? formatLocaleDateTime(sale.soldAt) : "—"
-      setAccountingTarget({
-        view,
-        operationId: sale.id,
-        groupedSaleIds: sale.groupedSaleIds,
-        subtitle: `${sale.customerName ?? "Consumidor final"} · ${when}`,
-      })
-    },
-    [],
-  )
-
-  const openPurchaseAccounting = useCallback((purchase: OperationPurchaseRow) => {
-    setAccountingTarget({
-      view: "purchases",
-      operationId: purchase.id,
-      subtitle: `${purchase.supplierName} · ${formatLedgerDate(purchase.operationDate)}`,
-    })
-  }, [])
-
-  const openExpenseAccounting = useCallback(
-    (row: OperationExpenseLedgerRow) => {
-      const voidSuffix =
-        row.sourceType === "expense_void" ? " · Anulación" : ""
-      setAccountingTarget({
-        view: "expenses",
-        operationId: row.entryId,
-        subtitle: `${row.categoryName}${voidSuffix} · ${formatLedgerDate(row.operationDate)}`,
-      })
-    },
-    [],
-  )
-
   const resultsSummary = useMemo(() => {
     if (listFetching && totalCount === 0) return "…"
     if (totalCount === 0) return "Sin resultados"
@@ -373,6 +320,7 @@ function OperationsPage() {
     exportOperationsCsv(
       "expenses",
       pageExpenses.filter((row) => selected.has(row.entryId)),
+      timeZone,
     )
   }, [activeView, pageSales, pagePurchases, pageExpenses, selected, timeZone])
 
@@ -613,16 +561,6 @@ function OperationsPage() {
                 onSelectedChange={setSelected}
                 showTableColumn={activeView === "tables"}
                 showOrderColumn={activeView === "counter"}
-                onOpenAccounting={(sale) =>
-                  openSaleAccounting(
-                    sale,
-                    activeView === "tables"
-                      ? "tables"
-                      : activeView === "counter"
-                        ? "counter"
-                        : "sales",
-                  )
-                }
               />
             ) : activeView === "purchases" ? (
               <OperationsPurchasesTable
@@ -634,7 +572,6 @@ function OperationsPage() {
                 skeletonRowCount={skeletonRowCount}
                 selected={selected}
                 onSelectedChange={setSelected}
-                onOpenAccounting={openPurchaseAccounting}
               />
             ) : (
               <OperationsExpensesTable
@@ -644,24 +581,11 @@ function OperationsPage() {
                 skeletonRowCount={skeletonRowCount}
                 selected={selected}
                 onSelectedChange={setSelected}
-                onOpenAccounting={openExpenseAccounting}
               />
             )}
           </DataWorkspaceListTableShell>
         </div>
       </div>
-
-      <OperationAccountingModal
-        popId={popId}
-        view={accountingTarget?.view ?? "sales"}
-        operationId={accountingTarget?.operationId ?? null}
-        groupedSaleIds={accountingTarget?.groupedSaleIds}
-        subtitle={accountingTarget?.subtitle}
-        open={accountingTarget != null}
-        onOpenChange={(open) => {
-          if (!open) setAccountingTarget(null)
-        }}
-      />
     </DataWorkspaceLayout>
   )
 }

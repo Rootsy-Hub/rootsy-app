@@ -11,10 +11,12 @@ export function OperationsSalesSkeletonRows({
   rowCount,
   showTableColumn = false,
   showOrderColumn = false,
+  ventasLayout = false,
 }: {
   rowCount: number
   showTableColumn?: boolean
   showOrderColumn?: boolean
+  ventasLayout?: boolean
 }) {
   return (
     <WorkspaceTableSkeletonRows
@@ -23,6 +25,7 @@ export function OperationsSalesSkeletonRows({
       columns={operationsSalesSkeletonColumns({
         showTableColumn,
         showOrderColumn,
+        ventasLayout,
       })}
     />
   )

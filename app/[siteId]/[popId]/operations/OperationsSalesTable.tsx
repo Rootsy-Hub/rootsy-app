@@ -1,71 +1,68 @@
 "use client"
 
 import type { OperationSaleRow } from "@/app/[siteId]/[popId]/operations/actions"
-import { usePopTimeZone } from "@/hooks/usePopTimeZone"
-import { OperationAccountingViewButton } from "@/app/[siteId]/[popId]/operations/OperationAccountingModal"
-import { OperationsSalesSkeletonRows } from "@/app/[siteId]/[popId]/operations/OperationsTableSkeleton"
-import { Button } from "@/components/ui/button"
-import { Checkbox } from "@/components/ui/checkbox"
-import {
-  lightTableThClass,
-  selectColumnInnerClass,
-  tableRowSelectCheckboxClass,
-  tdMoneyClass,
-  tdMoneyDiscountClass,
-  tdMoneyMutedClass,
-  tdMoneyTotalClass,
-  tdMoneyVatClass,
-  tdClientAnonymousClass,
-  tdClientLinkedClass,
-  tdClientNamedClass,
-  tdTruncatedNameCellClass,
-  tdTruncatedTextCellClass,
-  workspaceDataTableClassName,
-  workspaceTableBodyRowClassNames,
-  workspaceTableHeaderRowClass,
-} from "@/components/data-workspace/dataWorkspaceListStyles"
-import { DataWorkspaceListTableFrame, DataWorkspaceTableIconAction } from "@/components/data-workspace/DataWorkspaceListTablePrimitives"
-import { popScopedHref } from "@/lib/popRoutes"
-import { cn } from "@/lib/utils"
-import { Eye, FileText } from "lucide-react"
-import Link from "next/link"
-import { useMemo, useState, type Dispatch, type SetStateAction } from "react"
-import {
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table"
 import { OperationSaleDetailDialog } from "@/app/[siteId]/[popId]/operations/OperationSaleDetailDialog"
 import { OperationSaleInvoiceDialog } from "@/app/[siteId]/[popId]/operations/OperationSaleInvoiceDialog"
 import {
-  displayOperationSalePaid,
-  displayOperationSaleTotal,
-} from "@/lib/channelOperationSales"
+  counterOrderStatusLabel,
+  formatChannelPlaceLine,
+} from "@/app/[siteId]/[popId]/operations/operationSaleDetailUi"
+import { OperationsSalesSkeletonRows } from "@/app/[siteId]/[popId]/operations/OperationsTableSkeleton"
+import { usePopTimeZone } from "@/hooks/usePopTimeZone"
+import { Checkbox } from "@/components/ui/checkbox"
+import {
+  selectColumnInnerClass,
+  tableRowSelectCheckboxClass,
+  tdMoneyMutedClass,
+  tdClientAnonymousClass,
+  tdClientLinkedClass,
+  tdClientNamedClass,
+  workspaceDataTableClassName,
+  workspaceTableBodyCellClass,
+  workspaceTableBodyRowClassNames,
+  workspaceTableSelectBodyCellClass,
+} from "@/components/data-workspace/dataWorkspaceListStyles"
+import { DataWorkspaceListTableFrame } from "@/components/data-workspace/DataWorkspaceListTablePrimitives"
+import {
+  WorkspaceTableHead,
+  WorkspaceTableHeader,
+  WorkspaceTableHeaderRow,
+  WorkspaceTableSelectHead,
+} from "@/components/data-workspace/WorkspaceTableHeader"
+import { displayOperationSaleTotal } from "@/lib/channelOperationSales"
 import {
   saleComprobanteLabel,
   saleHasComprobante,
 } from "@/lib/operationSaleComprobante"
-
-const fmt = new Intl.NumberFormat("es-AR", {
-  style: "currency",
-  currency: "ARS",
-  minimumFractionDigits: 2,
-})
-
-export function formatOperationShortId(id: string | null | undefined) {
-  if (!id) return "—"
-  return id.length > 10 ? `${id.slice(0, 8)}…` : id
-}
-
+import { popScopedHref } from "@/lib/popRoutes"
+import { toISODateLocal } from "@/lib/dataWorkspaceDateFilter"
 import {
   addCalendarDays,
   popTimeIntlOptions,
   todayPopCalendarDate,
   toPopCalendarDate,
 } from "@/lib/popTimezone"
-import { toISODateLocal } from "@/lib/dataWorkspaceDateFilter"
+import { cn } from "@/lib/utils"
+import Link from "next/link"
+import { useMemo, useState, type Dispatch, type SetStateAction } from "react"
+import {
+  TableBody,
+  TableCell,
+  TableRow,
+} from "@/components/ui/table"
+
+import {
+  OperationTableMoneyCell,
+  OperationTableStackCell,
+  OperationTableVerMas,
+  operationTablePrimaryClass,
+  operationTableSecondaryClass,
+} from "@/app/[siteId]/[popId]/operations/operationsTableCells"
+
+export function formatOperationShortId(id: string | null | undefined) {
+  if (!id) return "—"
+  return id.length > 10 ? `${id.slice(0, 8)}…` : id
+}
 
 export function formatOperationSaleDateTime(iso: string, timeZone?: string) {
   if (!iso) return { primary: "—", secondary: null as string | null }
@@ -102,6 +99,13 @@ export function formatOperationSaleDateTime(iso: string, timeZone?: string) {
   return { primary, secondary: time }
 }
 
+export function formatOperationSaleDateInline(iso: string, timeZone?: string): string {
+  const when = formatOperationSaleDateTime(iso, timeZone)
+  if (when.primary === "—") return "—"
+  if (when.secondary) return `${when.primary} · ${when.secondary}`
+  return when.primary
+}
+
 function clientsSearchHref(
   siteId: string,
   popId: string,
@@ -113,6 +117,279 @@ function clientsSearchHref(
   return `${base}?${new URLSearchParams({ q }).toString()}`
 }
 
+function VentasSalesTableRow({
+  sale,
+  siteId,
+  popId,
+  timeZone,
+  selected,
+  onSelectedChange,
+  onOpenDetail,
+  onOpenComprobante,
+}: {
+  sale: OperationSaleRow
+  siteId: string
+  popId: string
+  timeZone?: string
+  selected: Set<string>
+  onSelectedChange: Dispatch<SetStateAction<Set<string>>>
+  onOpenDetail: (sale: OperationSaleRow) => void
+  onOpenComprobante: (sale: OperationSaleRow) => void
+}) {
+  const whenInline = formatOperationSaleDateInline(sale.soldAt, timeZone)
+  const comprobanteTipo = saleComprobanteLabel(sale)
+  const hasComprobante = saleHasComprobante(sale)
+  const clientLabel = sale.customerName?.trim() || "—"
+  const ivaAmount =
+    sale.accruesOutputVat && sale.taxTotal > 0 ? sale.taxTotal : null
+
+  return (
+    <>
+      <TableCell className={workspaceTableSelectBodyCellClass}>
+        <div className={selectColumnInnerClass}>
+          <Checkbox
+            className={tableRowSelectCheckboxClass}
+            checked={selected.has(sale.id)}
+            onCheckedChange={(checked) => {
+              onSelectedChange((prev) => {
+                const next = new Set(prev)
+                if (checked === true) next.add(sale.id)
+                else next.delete(sale.id)
+                return next
+              })
+            }}
+            aria-label={`Seleccionar venta ${sale.id}`}
+          />
+        </div>
+      </TableCell>
+      <OperationTableStackCell className="min-w-[10rem]">
+        <p className={cn(operationTablePrimaryClass, "tabular-nums")} title={whenInline}>
+          {whenInline}
+        </p>
+        <p
+          className={operationTableSecondaryClass}
+          title={sale.soldByName ?? undefined}
+        >
+          {sale.soldByName ?? "—"}
+        </p>
+      </OperationTableStackCell>
+      <OperationTableStackCell className="min-w-[14rem]">
+        <p className={cn(operationTableSecondaryClass, "font-mono")} title={sale.id}>
+          {sale.id}
+        </p>
+        {sale.clientId && sale.customerName ? (
+          <Link
+            href={clientsSearchHref(siteId, popId, sale.customerName)}
+            className={cn(tdClientLinkedClass, "text-xs leading-snug")}
+            title={clientLabel}
+          >
+            {clientLabel}
+          </Link>
+        ) : sale.customerName ? (
+          <p className={cn(tdClientNamedClass, "text-xs leading-snug")} title={clientLabel}>
+            {clientLabel}
+          </p>
+        ) : (
+          <p className={cn(tdClientAnonymousClass, "text-xs leading-snug")}>{clientLabel}</p>
+        )}
+        <OperationTableVerMas
+          label={` de la venta ${sale.id}`}
+          onClick={() => onOpenDetail(sale)}
+        />
+      </OperationTableStackCell>
+      {hasComprobante ? (
+        <OperationTableStackCell className="min-w-[11rem]">
+          <p className={operationTablePrimaryClass} title={comprobanteTipo}>
+            {comprobanteTipo}
+          </p>
+          <p
+            className={operationTableSecondaryClass}
+            title={sale.customerIvaConditionLabel}
+          >
+            {sale.customerIvaConditionLabel}
+          </p>
+          <OperationTableVerMas
+            label={` del comprobante ${comprobanteTipo}`}
+            onClick={() => onOpenComprobante(sale)}
+          />
+        </OperationTableStackCell>
+      ) : (
+        <TableCell className={cn(workspaceTableBodyCellClass, "min-w-[11rem] align-middle")}>
+          <span className={tdMoneyMutedClass}>—</span>
+        </TableCell>
+      )}
+      <OperationTableMoneyCell amount={sale.discountTotal} />
+      <OperationTableMoneyCell amount={ivaAmount ?? 0} />
+      <OperationTableMoneyCell
+        amount={displayOperationSaleTotal(sale)}
+        showDashWhenZero={false}
+      />
+    </>
+  )
+}
+
+function ChannelSalesTableRow({
+  sale,
+  siteId,
+  popId,
+  timeZone,
+  selected,
+  onSelectedChange,
+  onOpenDetail,
+  onOpenComprobante,
+  showTableColumn,
+}: {
+  sale: OperationSaleRow
+  siteId: string
+  popId: string
+  timeZone?: string
+  selected: Set<string>
+  onSelectedChange: Dispatch<SetStateAction<Set<string>>>
+  onOpenDetail: (sale: OperationSaleRow) => void
+  onOpenComprobante: (sale: OperationSaleRow) => void
+  showTableColumn: boolean
+}) {
+  const clientLabel = sale.customerName?.trim() || "—"
+  const comprobanteTipo = saleComprobanteLabel(sale)
+  const hasComprobante = saleHasComprobante(sale)
+  const ivaAmount =
+    sale.accruesOutputVat && sale.taxTotal > 0 ? sale.taxTotal : null
+  const openedInline = formatOperationSaleDateInline(
+    sale.channelOpenedAt ?? sale.soldAt,
+    timeZone,
+  )
+  const closedInline = sale.channelClosedAt
+    ? formatOperationSaleDateInline(sale.channelClosedAt, timeZone)
+    : null
+  const placeLine = formatChannelPlaceLine({
+    tableLabel: sale.tableLabel,
+    counterOrderLabel: sale.counterOrderLabel,
+    waiterName: sale.channelWaiterName,
+    channel: showTableColumn ? "table" : "counter",
+  })
+
+  return (
+    <>
+      <TableCell className={workspaceTableSelectBodyCellClass}>
+        <div className={selectColumnInnerClass}>
+          <Checkbox
+            className={tableRowSelectCheckboxClass}
+            checked={selected.has(sale.id)}
+            onCheckedChange={(checked) => {
+              onSelectedChange((prev) => {
+                const next = new Set(prev)
+                if (checked === true) next.add(sale.id)
+                else next.delete(sale.id)
+                return next
+              })
+            }}
+            aria-label={`Seleccionar venta ${sale.id}`}
+          />
+        </div>
+      </TableCell>
+      {showTableColumn ? (
+        <>
+          <OperationTableStackCell className="min-w-[10rem]">
+            <p className={cn(operationTablePrimaryClass, "tabular-nums")} title={openedInline}>
+              {openedInline}
+            </p>
+            <p
+              className={operationTableSecondaryClass}
+              title={sale.channelOpenedByName ?? undefined}
+            >
+              {sale.channelOpenedByName ?? "—"}
+            </p>
+          </OperationTableStackCell>
+          <OperationTableStackCell className="min-w-[10rem]">
+            <p
+              className={cn(
+                operationTablePrimaryClass,
+                "tabular-nums",
+                !closedInline && "text-muted-foreground",
+              )}
+              title={closedInline ?? "Cierre pendiente"}
+            >
+              {closedInline ?? "Cierre pendiente"}
+            </p>
+            <p
+              className={operationTableSecondaryClass}
+              title={sale.channelClosedByName ?? undefined}
+            >
+              {closedInline ? (sale.channelClosedByName ?? "—") : "—"}
+            </p>
+          </OperationTableStackCell>
+        </>
+      ) : (
+        <OperationTableStackCell className="min-w-[10rem]">
+          <p
+            className={operationTablePrimaryClass}
+            title={counterOrderStatusLabel(sale.channelCounterStatus)}
+          >
+            {counterOrderStatusLabel(sale.channelCounterStatus)}
+          </p>
+          <p
+            className={operationTableSecondaryClass}
+            title={sale.channelOpenedByName ?? undefined}
+          >
+            {sale.channelOpenedByName ?? "—"}
+          </p>
+        </OperationTableStackCell>
+      )}
+      <OperationTableStackCell className="min-w-[14rem]">
+        {sale.clientId && sale.customerName ? (
+          <Link
+            href={clientsSearchHref(siteId, popId, sale.customerName)}
+            className={cn(tdClientLinkedClass, "text-xs leading-snug")}
+            title={clientLabel}
+          >
+            {clientLabel}
+          </Link>
+        ) : sale.customerName ? (
+          <p className={cn(tdClientNamedClass, "text-xs leading-snug")} title={clientLabel}>
+            {clientLabel}
+          </p>
+        ) : (
+          <p className={cn(tdClientAnonymousClass, "text-xs leading-snug")}>{clientLabel}</p>
+        )}
+        <p className={operationTablePrimaryClass} title={placeLine}>
+          {placeLine}
+        </p>
+        <OperationTableVerMas
+          label={` de la venta ${sale.id}`}
+          onClick={() => onOpenDetail(sale)}
+        />
+      </OperationTableStackCell>
+      {hasComprobante ? (
+        <OperationTableStackCell className="min-w-[11rem]">
+          <p className={operationTablePrimaryClass} title={comprobanteTipo}>
+            {comprobanteTipo}
+          </p>
+          <p
+            className={operationTableSecondaryClass}
+            title={sale.customerIvaConditionLabel}
+          >
+            {sale.customerIvaConditionLabel}
+          </p>
+          <OperationTableVerMas
+            label={` del comprobante ${comprobanteTipo}`}
+            onClick={() => onOpenComprobante(sale)}
+          />
+        </OperationTableStackCell>
+      ) : (
+        <TableCell className={cn(workspaceTableBodyCellClass, "min-w-[11rem] align-middle")}>
+          <span className={tdMoneyMutedClass}>—</span>
+        </TableCell>
+      )}
+      <OperationTableMoneyCell amount={sale.discountTotal} />
+      <OperationTableMoneyCell amount={ivaAmount ?? 0} />
+      <OperationTableMoneyCell
+        amount={displayOperationSaleTotal(sale)}
+        showDashWhenZero={false}
+      />
+    </>
+  )
+}
+
 export function OperationsSalesTable({
   siteId,
   popId,
@@ -122,7 +399,6 @@ export function OperationsSalesTable({
   skeletonRowCount,
   selected,
   onSelectedChange,
-  onOpenAccounting,
   showTableColumn = false,
   showOrderColumn = false,
 }: {
@@ -134,13 +410,15 @@ export function OperationsSalesTable({
   skeletonRowCount: number
   selected: Set<string>
   onSelectedChange: Dispatch<SetStateAction<Set<string>>>
-  onOpenAccounting: (sale: OperationSaleRow) => void
   showTableColumn?: boolean
   showOrderColumn?: boolean
 }) {
   const timeZone = usePopTimeZone()
   const [detailSale, setDetailSale] = useState<OperationSaleRow | null>(null)
   const [invoiceSale, setInvoiceSale] = useState<OperationSaleRow | null>(null)
+  const isVentasLayout = !showTableColumn && !showOrderColumn
+  const isChannelLayout = showTableColumn || showOrderColumn
+  const useDetailColumnLayout = isVentasLayout || isChannelLayout
 
   const visibleIds = useMemo(() => rows.map((row) => row.id), [rows])
   const allVisibleSelected =
@@ -150,260 +428,104 @@ export function OperationsSalesTable({
   return (
     <>
       <DataWorkspaceListTableFrame>
-      <table
-        className={workspaceDataTableClassName}
-        aria-busy={listFetching}
-      >
-        <TableHeader>
-          <TableRow className={workspaceTableHeaderRowClass}>
-            <TableHead className={cn(lightTableThClass, "w-12 !px-0 text-center")}>
-              <div className={cn(selectColumnInnerClass, "min-h-10")}>
-                <Checkbox
-                  className={tableRowSelectCheckboxClass}
-                  checked={
-                    allVisibleSelected
-                      ? true
-                      : someVisibleSelected
-                        ? "indeterminate"
-                        : false
-                  }
-                  onCheckedChange={(checked) => {
-                    onSelectedChange((prev) => {
-                      const next = new Set(prev)
-                      if (checked === true) {
-                        visibleIds.forEach((id) => next.add(id))
-                      } else {
-                        visibleIds.forEach((id) => next.delete(id))
-                      }
-                      return next
-                    })
-                  }}
-                  disabled={
-                    listFetching || totalCount === 0 || rows.length === 0
-                  }
-                  aria-label="Seleccionar filas visibles"
-                />
-              </div>
-            </TableHead>
-            <TableHead className={cn(lightTableThClass, "w-[7.5rem] text-left")}>
-              Fecha
-            </TableHead>
-            {showTableColumn ? (
-              <TableHead className={cn(lightTableThClass, "w-[6rem] text-left")}>
-                Mesa
-              </TableHead>
-            ) : null}
-            {showOrderColumn ? (
-              <TableHead className={cn(lightTableThClass, "w-[6rem] text-left")}>
-                Pedido
-              </TableHead>
-            ) : null}
-            <TableHead className={cn(lightTableThClass, "w-[14rem] min-w-0 max-w-[14rem] text-left")}>
-              Cliente
-            </TableHead>
-            <TableHead className={cn(lightTableThClass, "w-[6.5rem] text-center")}>
-              Detalle
-            </TableHead>
-            <TableHead className={cn(lightTableThClass, "min-w-[11rem] text-left")}>
-              Comprobante
-            </TableHead>
-            <TableHead className={cn(lightTableThClass, "text-right")}>
-              Total
-            </TableHead>
-            <TableHead className={cn(lightTableThClass, "text-right")}>
-              Descuento
-            </TableHead>
-            <TableHead className={cn(lightTableThClass, "text-right")}>
-              IVA
-            </TableHead>
-            <TableHead className={cn(lightTableThClass, "min-w-[8rem] text-left")}>
-              Forma de pago
-            </TableHead>
-            <TableHead className={cn(lightTableThClass, "w-[6.5rem] text-center")}>
-              Asientos
-            </TableHead>
-            <TableHead className={cn(lightTableThClass, "min-w-[19rem] text-left")}>
-              ID
-            </TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {listFetching ? (
-            <OperationsSalesSkeletonRows
-              rowCount={skeletonRowCount}
-              showTableColumn={showTableColumn}
-              showOrderColumn={showOrderColumn}
-            />
-          ) : totalCount === 0 ? (
-            null
-          ) : (
-            rows.map((sale, i) => {
-              const when = formatOperationSaleDateTime(sale.soldAt, timeZone)
-              const clientLabel = sale.customerName ?? "Consumidor final"
-              const comprobante = saleComprobanteLabel(sale)
-
-              return (
+        <table
+          className={workspaceDataTableClassName}
+          aria-busy={listFetching}
+        >
+          <WorkspaceTableHeader>
+            <WorkspaceTableHeaderRow>
+              <WorkspaceTableSelectHead
+                checked={
+                  allVisibleSelected
+                    ? true
+                    : someVisibleSelected
+                      ? "indeterminate"
+                      : false
+                }
+                onCheckedChange={(checked) => {
+                  onSelectedChange((prev) => {
+                    const next = new Set(prev)
+                    if (checked === true) {
+                      visibleIds.forEach((id) => next.add(id))
+                    } else {
+                      visibleIds.forEach((id) => next.delete(id))
+                    }
+                    return next
+                  })
+                }}
+                disabled={
+                  listFetching || totalCount === 0 || rows.length === 0
+                }
+              />
+              {showTableColumn ? (
+                <>
+                  <WorkspaceTableHead className="min-w-[10rem]">Apertura</WorkspaceTableHead>
+                  <WorkspaceTableHead className="min-w-[10rem]">Cierre</WorkspaceTableHead>
+                </>
+              ) : (
+                <WorkspaceTableHead className="min-w-[10rem]">
+                  {showOrderColumn ? "Estado" : "Fecha"}
+                </WorkspaceTableHead>
+              )}
+              {useDetailColumnLayout ? (
+                <>
+                  <WorkspaceTableHead className="min-w-[14rem]">Detalle</WorkspaceTableHead>
+                  <WorkspaceTableHead className="min-w-[11rem]">Comprobante</WorkspaceTableHead>
+                  <WorkspaceTableHead align="right">Descuento</WorkspaceTableHead>
+                  <WorkspaceTableHead align="right">IVA</WorkspaceTableHead>
+                  <WorkspaceTableHead align="right">Total</WorkspaceTableHead>
+                </>
+              ) : null}
+            </WorkspaceTableHeaderRow>
+          </WorkspaceTableHeader>
+          <TableBody>
+            {listFetching ? (
+              <OperationsSalesSkeletonRows
+                rowCount={skeletonRowCount}
+                showTableColumn={showTableColumn}
+                showOrderColumn={showOrderColumn}
+                ventasLayout={useDetailColumnLayout}
+              />
+            ) : totalCount === 0 ? (
+              null
+            ) : (
+              rows.map((sale, i) => (
                 <TableRow
                   key={sale.id}
                   className={workspaceTableBodyRowClassNames(i)}
                 >
-                  <TableCell className="w-12 !px-0 py-2.5 align-middle">
-                    <div className={selectColumnInnerClass}>
-                      <Checkbox
-                        className={tableRowSelectCheckboxClass}
-                        checked={selected.has(sale.id)}
-                        onCheckedChange={(checked) => {
-                          onSelectedChange((prev) => {
-                            const next = new Set(prev)
-                            if (checked === true) next.add(sale.id)
-                            else next.delete(sale.id)
-                            return next
-                          })
-                        }}
-                        aria-label={`Seleccionar venta ${sale.id}`}
-                      />
-                    </div>
-                  </TableCell>
-                  <TableCell className="px-3 py-2.5">
-                    <span className="block text-sm font-medium text-foreground">
-                      {when.primary}
-                    </span>
-                    {when.secondary ? (
-                      <span className="block text-xs tabular-nums text-muted-foreground">
-                        {when.secondary}
-                      </span>
-                    ) : null}
-                  </TableCell>
-                  {showTableColumn ? (
-                    <TableCell className="px-3 py-2.5">
-                      <span
-                        className="block truncate text-sm font-medium text-foreground"
-                        title={sale.tableLabel ?? undefined}
-                      >
-                        {sale.tableLabel ?? "—"}
-                      </span>
-                    </TableCell>
-                  ) : null}
-                  {showOrderColumn ? (
-                    <TableCell className="px-3 py-2.5">
-                      <span
-                        className="block truncate text-sm font-medium text-foreground"
-                        title={sale.counterOrderLabel ?? undefined}
-                      >
-                        {sale.counterOrderLabel ?? "—"}
-                      </span>
-                    </TableCell>
-                  ) : null}
-                  <TableCell className={tdTruncatedNameCellClass}>
-                    {sale.clientId && sale.customerName ? (
-                      <Link
-                        href={clientsSearchHref(siteId, popId, sale.customerName)}
-                        className={tdClientLinkedClass}
-                        title={clientLabel}
-                      >
-                        {clientLabel}
-                      </Link>
-                    ) : sale.customerName ? (
-                      <span className={tdClientNamedClass} title={clientLabel}>
-                        {clientLabel}
-                      </span>
-                    ) : (
-                      <span className={tdClientAnonymousClass}>{clientLabel}</span>
-                    )}
-                  </TableCell>
-                  <TableCell className="px-2 py-2.5 text-center">
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      className="h-8 gap-1.5 px-2.5 text-xs"
-                      onClick={() => setDetailSale(sale)}
-                    >
-                      <Eye className="size-3.5" aria-hidden />
-                      Ver
-                    </Button>
-                  </TableCell>
-                  <TableCell className="px-3 py-2.5">
-                    <div className="flex min-w-0 items-center gap-2">
-                      <span
-                        className="min-w-0 flex-1 truncate text-sm text-foreground"
-                        title={comprobante !== "—" ? comprobante : undefined}
-                      >
-                        {comprobante}
-                      </span>
-                      {saleHasComprobante(sale) ? (
-                        <DataWorkspaceTableIconAction
-                          label={`Ver comprobante ${comprobante}`}
-                          icon={FileText}
-                          variant="neutral"
-                          onClick={() => setInvoiceSale(sale)}
-                        />
-                      ) : null}
-                    </div>
-                  </TableCell>
-                  <TableCell
-                    className={cn(
-                      "px-3 py-2.5 text-right text-sm",
-                      tdMoneyTotalClass,
-                    )}
-                  >
-                    <span className="block">{fmt.format(displayOperationSaleTotal(sale))}</span>
-                    {displayOperationSalePaid(sale) != null ? (
-                      <span className="block text-xs text-muted-foreground">
-                        Pagado {fmt.format(displayOperationSalePaid(sale)!)}
-                      </span>
-                    ) : null}
-                  </TableCell>
-                  <TableCell className="px-3 py-2.5 text-right text-sm">
-                    {sale.discountTotal > 0 ? (
-                      <span className={tdMoneyDiscountClass}>
-                        {fmt.format(sale.discountTotal)}
-                      </span>
-                    ) : (
-                      <span className={tdMoneyMutedClass}>—</span>
-                    )}
-                  </TableCell>
-                  <TableCell className="px-3 py-2.5 text-right text-sm">
-                    {sale.accruesOutputVat && sale.taxTotal > 0 ? (
-                      <span className={tdMoneyVatClass}>
-                        {fmt.format(sale.taxTotal)}
-                      </span>
-                    ) : (
-                      <span className={tdMoneyMutedClass}>—</span>
-                    )}
-                  </TableCell>
-                  <TableCell className={cn(tdTruncatedTextCellClass, "text-foreground")}>
-                    {sale.paymentMethodLabel !== "—" ? (
-                      <span
-                        className="block truncate"
-                        title={sale.paymentMethodLabel}
-                      >
-                        {sale.paymentMethodLabel}
-                      </span>
-                    ) : (
-                      <span className={tdMoneyMutedClass}>—</span>
-                    )}
-                  </TableCell>
-                  <TableCell className="px-2 py-2.5 text-center">
-                    <OperationAccountingViewButton
-                      onClick={() => onOpenAccounting(sale)}
-                      label={`Ver asientos contables de la venta ${sale.id}`}
+                  {isVentasLayout ? (
+                    <VentasSalesTableRow
+                      sale={sale}
+                      siteId={siteId}
+                      popId={popId}
+                      timeZone={timeZone}
+                      selected={selected}
+                      onSelectedChange={onSelectedChange}
+                      onOpenDetail={setDetailSale}
+                      onOpenComprobante={setInvoiceSale}
                     />
-                  </TableCell>
-                  <TableCell className="min-w-[19rem] whitespace-nowrap px-3 py-2.5 pr-5">
-                    <span className="text-[11px] leading-snug text-muted-foreground">
-                      {sale.id}
-                    </span>
-                  </TableCell>
+                  ) : (
+                    <ChannelSalesTableRow
+                      sale={sale}
+                      siteId={siteId}
+                      popId={popId}
+                      timeZone={timeZone}
+                      selected={selected}
+                      onSelectedChange={onSelectedChange}
+                      onOpenDetail={setDetailSale}
+                      onOpenComprobante={setInvoiceSale}
+                      showTableColumn={showTableColumn}
+                    />
+                  )}
                 </TableRow>
-              )
-            })
-          )}
-        </TableBody>
-      </table>
-      {!listFetching && totalCount === 0 ? (
-        <div className="min-h-[12rem] flex-1" aria-hidden />
-      ) : null}
+              ))
+            )}
+          </TableBody>
+        </table>
+        {!listFetching && totalCount === 0 ? (
+          <div className="min-h-[12rem] flex-1" aria-hidden />
+        ) : null}
       </DataWorkspaceListTableFrame>
 
       <OperationSaleDetailDialog

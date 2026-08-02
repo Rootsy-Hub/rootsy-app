@@ -165,10 +165,13 @@ export function exportOperationsPurchasesCsv(rows: OperationPurchaseRow[]): void
 
 export function exportOperationsExpensesCsv(
   rows: OperationExpenseLedgerRow[],
+  options?: { timeZone?: string },
 ): void {
+  const timeZone = options?.timeZone
   const headers = [
     "Fecha",
     "Hora",
+    "Usuario",
     "Categoría",
     "Tipo",
     "Descripción",
@@ -179,10 +182,11 @@ export function exportOperationsExpensesCsv(
   ] as const
 
   const body = rows.map((row) => {
-    const when = formatOperationSaleDateTime(row.operationAt)
+    const when = formatOperationSaleDateTime(row.operationAt, timeZone)
     return [
       when.primary,
       when.secondary ?? "",
+      row.recordedByName ?? "",
       row.categoryName,
       row.sourceType === "expense_void" ? "Anulación" : "Pago",
       row.description !== "—" ? row.description : "",
@@ -216,6 +220,6 @@ export function exportOperationsCsv(
   } else if (view === "purchases") {
     exportOperationsPurchasesCsv(rows as OperationPurchaseRow[])
   } else {
-    exportOperationsExpensesCsv(rows as OperationExpenseLedgerRow[])
+    exportOperationsExpensesCsv(rows as OperationExpenseLedgerRow[], { timeZone })
   }
 }
