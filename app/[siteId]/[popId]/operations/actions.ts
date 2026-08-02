@@ -1835,6 +1835,103 @@ export async function getOperationAccountingEntries(
   }
 }
 
+export async function getOperationSaleById(
+  popId: string,
+  saleId: string,
+): Promise<
+  | { success: true; sale: OperationSaleRow }
+  | { success: false; error: string }
+> {
+  try {
+    const access = await validatePopAccess(popId)
+    if (!access.hasAccess || !access.isActive) {
+      return { success: false, error: access.error || "Sin acceso" }
+    }
+
+    const snap = await loadPopPermissionsSnapshot(popId)
+    const canRead =
+      permissionKeysInclude(
+        snap.keys,
+        POP_PERMS.OPERATIONS_READ.resource,
+        POP_PERMS.OPERATIONS_READ.action,
+      ) ||
+      permissionKeysInclude(
+        snap.keys,
+        POP_PERMS.SALE_READ.resource,
+        POP_PERMS.SALE_READ.action,
+      )
+    if (!canRead) {
+      return {
+        success: false,
+        error: "No tenés permiso para ver ventas.",
+      }
+    }
+
+    const trimmedSaleId = saleId.trim()
+    if (!trimmedSaleId) {
+      return { success: false, error: "Venta inválida." }
+    }
+
+    const popRes = await getPopById(popId)
+    const fiscalSiteId =
+      popRes.success && popRes.pop
+        ? siteIdFromPopRow(popRes.pop)
+        : DEFAULT_SALE_SITE_ID
+
+    const supabase = await createClient()
+    const { data: row, error } = await supabase
+      .from("sales")
+      .select(SALE_LIST_SELECT)
+      .eq("pop_id", popId)
+      .eq("id", trimmedSaleId)
+      .maybeSingle()
+
+    if (error || !row) {
+      return {
+        success: false,
+        error: error?.message || "No se encontró la venta.",
+      }
+    }
+
+    const saleChannel = String(row.sale_channel ?? "")
+    const arcaBySaleId = await loadArcaBySaleIds(
+      supabase,
+      popId,
+      fiscalSiteId,
+      [trimmedSaleId],
+    )
+    const tableLabelBySessionId =
+      saleChannel === "table"
+        ? await loadTableLabelsBySaleIds(supabase, popId, [
+            row as Record<string, unknown>,
+          ])
+        : new Map<string, string>()
+    const counterOrderLabelByOrderId =
+      saleChannel === "counter"
+        ? await loadCounterOrderLabelsBySaleIds(supabase, popId, [
+            row as Record<string, unknown>,
+          ])
+        : new Map<string, string>()
+
+    const sales = mapSaleRows(
+      [row as Record<string, unknown>],
+      arcaBySaleId,
+      fiscalSiteId,
+      tableLabelBySessionId,
+      counterOrderLabelByOrderId,
+    )
+    const sale = sales[0]
+    if (!sale) {
+      return { success: false, error: "No se encontró la venta." }
+    }
+
+    return { success: true, sale }
+  } catch (e: unknown) {
+    const message = e instanceof Error ? e.message : "Error desconocido"
+    return { success: false, error: message }
+  }
+}
+
 export async function getChannelOperationTicketDisplay(
   popId: string,
   input: {

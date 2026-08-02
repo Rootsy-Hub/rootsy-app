@@ -1,5 +1,6 @@
 "use client"
 
+import { CartLineScrollTarget } from "@/components/sale-operation/CartLineScrollTarget"
 import { CheckoutDialogFooter } from "@/components/checkout/CheckoutDialogFooter"
 import {
   CheckoutDiscountModeSegment,
@@ -289,6 +290,7 @@ export function PurchaseCartLineCard({
 
   return (
     <>
+      <CartLineScrollTarget lineId={line.productoId}>
       <section
         className={cn(
           "w-full border-b border-slate-200/90",
@@ -353,6 +355,7 @@ export function PurchaseCartLineCard({
         ) : null}
         </div>
       </section>
+      </CartLineScrollTarget>
 
       <Dialog
         open={open}

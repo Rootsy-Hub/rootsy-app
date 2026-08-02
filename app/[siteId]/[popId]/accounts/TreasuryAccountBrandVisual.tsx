@@ -7,6 +7,16 @@ import {
 import type { TreasuryAccountBrandPreset } from "@/lib/treasuryAccountBrands"
 import { cn } from "@/lib/utils"
 
+export function treasuryPickerTileClass(selected: boolean) {
+  return cn(
+    "flex min-h-[3.625rem] w-full items-center gap-2.5 rounded-xl border px-2.5 py-2 text-left transition-all",
+    "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/30",
+    selected
+      ? "border-border bg-muted/25 shadow-sm ring-2 ring-ring/15 ring-offset-2 ring-offset-background"
+      : "border-border/60 bg-background hover:border-border hover:bg-muted/15",
+  )
+}
+
 type Props = {
   preset: TreasuryAccountBrandPreset | null
   name: string
@@ -24,52 +34,29 @@ export function TreasuryAccountBrandVisual({
   selected = false,
   className,
 }: Props) {
-  const gradient =
-    preset?.headerGradient ?? "from-muted via-muted/80 to-muted/60"
-  const headerText = preset?.headerTextClass ?? "text-foreground"
-  const pickerTileSelectedClass =
-    "z-[1] shadow-md ring-2 ring-zinc-900/20 ring-offset-2 ring-offset-white"
-
   if (compact) {
     return (
-      <div
-        className={cn(
-          "overflow-hidden rounded-xl border text-left transition-all",
-          selected
-            ? pickerTileSelectedClass
-            : "border-transparent hover:shadow-sm",
-          className,
+      <div className={cn(treasuryPickerTileClass(selected), className)}>
+        {preset ? (
+          <>
+            <TreasuryBrandIsotype
+              brandKey={preset.key}
+              monogram={preset.monogram}
+              size="sm"
+            />
+            <TreasuryBrandName
+              preset={preset}
+              name={name}
+              compact
+              textClass="text-foreground"
+              className="min-w-0 flex-1"
+            />
+          </>
+        ) : (
+          <span className="w-full text-center text-sm font-semibold text-foreground">
+            Otro
+          </span>
         )}
-      >
-        <div
-          className={cn(
-            "flex min-h-[58px] items-center gap-2.5 bg-linear-to-br px-2.5 py-2 transition-[filter] duration-150",
-            !selected && "hover:brightness-110",
-            gradient,
-          )}
-        >
-          {preset ? (
-            <>
-              <TreasuryBrandIsotype
-                brandKey={preset.key}
-                monogram={preset.monogram}
-                headerTextClass={headerText}
-                size="sm"
-              />
-              <TreasuryBrandName
-                preset={preset}
-                name={name}
-                compact
-                textClass={headerText}
-                className="flex-1"
-              />
-            </>
-          ) : (
-            <span className={cn("w-full text-center text-sm font-semibold", headerText)}>
-              Otro
-            </span>
-          )}
-        </div>
       </div>
     )
   }
@@ -77,51 +64,43 @@ export function TreasuryAccountBrandVisual({
   return (
     <div
       className={cn(
-        "overflow-hidden rounded-2xl border border-border/60 bg-card",
+        "overflow-hidden rounded-2xl border border-border/60 bg-card shadow-sm",
         className,
       )}
     >
-      <div className={cn("relative bg-linear-to-br px-4 pb-8 pt-4", gradient)}>
-        <p
-          className={cn(
-            "text-[10px] font-semibold uppercase tracking-[0.16em] opacity-80",
-            headerText,
-          )}
-        >
+      <div className="border-b border-border/60 px-4 py-4">
+        <p className="text-[11px] font-medium uppercase tracking-[0.12em] text-muted-foreground">
           {kindLabel}
         </p>
-        <div className="mt-3 flex items-center gap-3">
+        <div className="mt-0.5 flex min-w-0 items-center gap-3">
           {preset ? (
             <>
               <TreasuryBrandIsotype
                 brandKey={preset.key}
                 monogram={preset.monogram}
-                headerTextClass={headerText}
-                size="lg"
+                size="md"
               />
-              <TreasuryBrandName preset={preset} name={name} textClass={headerText} />
+              <TreasuryBrandName
+                preset={preset}
+                name={name}
+                textClass="text-foreground"
+                className="min-w-0 flex-1"
+              />
             </>
           ) : (
-            <p
-              className={cn(
-                "truncate text-lg font-semibold tracking-tight",
-                headerText,
-              )}
-            >
+            <p className="truncate text-base font-semibold text-foreground">
               {name}
             </p>
           )}
         </div>
       </div>
-      <div className="-mt-5 px-4 pb-4">
-        <div className="rounded-xl border border-border/60 bg-background px-3 py-2 shadow-sm">
-          <p className="text-[10px] font-medium uppercase tracking-[0.14em] text-muted-foreground">
-            Saldo real
-          </p>
-          <p className="mt-0.5 font-mono text-xl font-bold tabular-nums text-foreground">
-            —
-          </p>
-        </div>
+      <div className="bg-muted/20 px-4 py-4">
+        <p className="text-[11px] font-medium uppercase tracking-[0.14em] text-muted-foreground">
+          Saldo real
+        </p>
+        <p className="mt-1 font-mono text-xl font-semibold tabular-nums text-foreground">
+          —
+        </p>
       </div>
     </div>
   )

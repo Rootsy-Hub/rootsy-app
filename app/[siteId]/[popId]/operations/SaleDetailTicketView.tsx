@@ -75,11 +75,13 @@ function SaleDetailTotalsRow({
   value,
   emphasize = false,
   negative = false,
+  monetary = true,
 }: {
   label: string
   value: string
   emphasize?: boolean
   negative?: boolean
+  monetary?: boolean
 }) {
   return (
     <div className="flex items-baseline justify-between gap-4 py-1.5">
@@ -93,10 +95,14 @@ function SaleDetailTotalsRow({
       </span>
       <span
         className={cn(
-          "shrink-0 text-sm tabular-nums",
-          emphasize ? "text-base font-semibold text-primary" : "font-medium text-foreground",
-          negative && !emphasize && "text-amber-800",
-          tdMoneyClass,
+          "shrink-0 text-sm text-right",
+          monetary && "tabular-nums",
+          emphasize
+            ? "text-base font-semibold text-primary"
+            : monetary
+              ? cn("font-medium text-foreground", tdMoneyClass)
+              : "font-medium text-foreground",
+          negative && !emphasize && monetary && "text-amber-800",
         )}
       >
         {value}
@@ -327,6 +333,7 @@ export function SaleDetailTicketView({ sale }: { sale: OperationSaleRow }) {
           <SaleDetailTotalsRow
             label="Forma de pago"
             value={sale.paymentMethodLabel}
+            monetary={false}
           />
         )}
       </div>

@@ -5,6 +5,16 @@ import { cn } from "@/lib/utils"
 export const dataWorkspaceShellCard =
   "rounded-2xl border border-border/80 bg-card shadow-sm"
 
+/** Tarjeta workspace pegada al borde inferior del main (sin redondeo ni borde abajo). */
+export const dataWorkspaceFlushBottomShellCard = cn(
+  dataWorkspaceShellCard,
+  "rounded-b-none border-b-0",
+)
+
+/** Grid de tarjetas (cuentas, cajas): columnas automáticas con ancho mínimo legible. */
+export const dataWorkspaceEntityCardsGridClass =
+  "grid w-full gap-4 grid-cols-[repeat(auto-fill,minmax(min(100%,18rem),1fr))]"
+
 /** Superficie del listado (flush): tono suave con gradiente, no blanco plano. */
 export const workspaceTableSurfaceClass =
   "bg-[linear-gradient(180deg,oklch(0.988_0.005_115)_0%,oklch(0.972_0.013_132)_52%,oklch(0.984_0.008_118)_100%)]"
@@ -55,6 +65,37 @@ export const lightToolbarInputClass = cn(
 
 export const lightToolbarClearButtonClass =
   "absolute right-1.5 top-1/2 flex size-8 -translate-y-1/2 items-center justify-center rounded-md text-muted-foreground transition-[color,background-color] duration-150 hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/25"
+
+/** Popover del calendario en paneles claros (modales light, filtros de período). */
+export const lightDatePopoverContentClass =
+  "border border-zinc-200/90 bg-white p-0 text-zinc-900 shadow-xl shadow-zinc-900/8 dark:border-zinc-200 dark:bg-white dark:text-zinc-900"
+
+/** Calendario dentro del popover: isla clara; anula tokens dark del shell. */
+export const lightDateCalendarClass = cn(
+  "rounded-xl border border-zinc-100 bg-white p-1.5 shadow-inner shadow-zinc-900/5",
+  "dark:border-zinc-100 dark:bg-white",
+  "[&_[data-slot=calendar]]:w-full [&_[data-slot=calendar]]:max-w-none",
+  "[&_.rdp-root]:!w-full [&_.rdp-root]:max-w-none",
+  "[&_.rdp-month]:w-full min-w-0",
+  "[&_.rdp-month_grid]:w-full [&_.rdp-month_grid]:table-fixed",
+  "[&_button[data-day]]:!text-zinc-800 dark:[&_button[data-day]]:!text-zinc-800",
+  "[&_button[data-day]>span]:!opacity-100 [&_button[data-day]>span]:!text-inherit",
+  "[&_button[data-day]:not([data-range-start=true]):not([data-range-end=true]):not([data-selected-single=true]):not([data-range-middle=true]):hover]:!bg-zinc-100",
+  "[&_button[data-day]:not([data-range-start=true]):not([data-range-end=true]):not([data-selected-single=true]):not([data-range-middle=true]):hover]:!text-zinc-900",
+  "[&_button[data-day][data-range-start=true]:hover]:!bg-emerald-700 [&_button[data-day][data-range-start=true]:hover]:!text-white",
+  "[&_button[data-day][data-range-end=true]:hover]:!bg-emerald-700 [&_button[data-day][data-range-end=true]:hover]:!text-white",
+  "[&_button[data-day][data-selected-single=true]:hover]:!bg-emerald-700 [&_button[data-day][data-selected-single=true]:hover]:!text-white",
+  "[&_button[data-day][data-range-middle=true]:hover]:!bg-emerald-200 [&_button[data-day][data-range-middle=true]:hover]:!text-zinc-900",
+  "[&_button[data-day][data-selected-single=true]]:!bg-emerald-600 [&_button[data-day][data-selected-single=true]]:!text-white",
+  "[&_button[data-day][data-range-start=true]]:!bg-emerald-600 [&_button[data-day][data-range-start=true]]:!text-white",
+  "[&_button[data-day][data-range-end=true]]:!bg-emerald-600 [&_button[data-day][data-range-end=true]]:!text-white",
+  "[&_button[data-day][data-range-middle=true]]:!bg-emerald-100 [&_button[data-day][data-range-middle=true]]:!text-zinc-800",
+  "[&_.rdp-button_previous]:!text-zinc-700 [&_.rdp-button_next]:!text-zinc-700",
+  "[&_.rdp-weekday]:!text-zinc-500",
+  "[&_.rdp-caption_label]:!text-zinc-900",
+  "[&_td.rdp-outside_button[data-day]]:!text-zinc-400",
+  "[&_td.rdp-disabled_button[data-day]]:!text-zinc-300",
+)
 
 export const lightFilterChipClass =
   "max-w-full gap-1 rounded-md border-border/50 py-0 pr-0.5 font-normal"

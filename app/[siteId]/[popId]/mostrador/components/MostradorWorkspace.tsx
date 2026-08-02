@@ -11,7 +11,8 @@ import type { MostradorRightPanelView } from "@/app/[siteId]/[popId]/mostrador/m
 import { useMostradorSaleCheckout } from "@/app/[siteId]/[popId]/mostrador/useMostradorSaleCheckout"
 import { useMostradorState } from "@/app/[siteId]/[popId]/mostrador/useMostradorState"
 import { SaleOperationToolbox } from "@/components/sale-operation/SaleOperationToolbox"
-import { useEffect, useState } from "react"
+import { useCartListScrollHighlight } from "@/hooks/useCartListScrollHighlight"
+import { useEffect, useState, useCallback } from "react"
 
 type Props = {
   siteId: string
@@ -44,6 +45,15 @@ export function MostradorWorkspace({
   const [rightView, setRightView] = useState<MostradorRightPanelView>("detail")
   const [creating, setCreating] = useState(false)
   const showCatalog = rightView === "cart"
+  const cartScrollHighlight = useCartListScrollHighlight()
+
+  const handleCartLineAdded = useCallback(
+    (lineId: string) => {
+      cartScrollHighlight.notifyLineAdded(lineId)
+      setRightView("cart")
+    },
+    [cartScrollHighlight],
+  )
 
   const checkout = useMostradorSaleCheckout(
     popId,
@@ -64,6 +74,7 @@ export function MostradorWorkspace({
         selectedOrderId != null ||
         creating ||
         showCatalog,
+      onCartLineAdded: handleCartLineAdded,
     },
   )
 
@@ -168,7 +179,11 @@ export function MostradorWorkspace({
                 clientLabel={checkout.sessionClientLabel}
               />
             ) : (
-              <MostradorOrderPanel checkout={checkout} orderLabel={orderLabel} />
+              <MostradorOrderPanel
+                checkout={checkout}
+                orderLabel={orderLabel}
+                cartScrollHighlight={cartScrollHighlight}
+              />
             )}
           </div>
         </aside>

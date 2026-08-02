@@ -1,9 +1,9 @@
 "use client"
 
 import type { PartialPaymentSelection, PartialPaymentUnit } from "@/lib/partialCheckoutSelection"
+import { CheckoutConfirmSummary } from "@/components/checkout/CheckoutConfirmSummary"
 import { CheckoutDialogFooter } from "@/components/checkout/CheckoutDialogFooter"
 import {
-  CheckoutFieldHint,
   CheckoutSectionLabel,
   CheckoutSectionPanel,
   CheckoutToggleCard,
@@ -24,15 +24,11 @@ import {
 } from "@/components/sale-operation/saleOperationStyles"
 import { cn } from "@/lib/utils"
 import {
-  CircleDollarSign,
-  CreditCard,
   DoorOpen,
   Minus,
   Plus,
   Printer,
-  Receipt,
   Split,
-  User,
 } from "lucide-react"
 
 export type SaleOperationCheckoutConfirmOptions = {
@@ -78,80 +74,6 @@ function selectionQty(
   return Math.min(unit.maxSelectable, Math.max(0, raw))
 }
 
-function CheckoutConfirmSummary({
-  total,
-  hint,
-  clientLabel,
-  comprobanteLabel,
-  paymentLabel,
-}: {
-  total: number
-  hint?: string | null
-  clientLabel: string
-  comprobanteLabel: string
-  paymentLabel: string
-}) {
-  const details = [
-    { key: "client", icon: User, label: "Cliente", value: clientLabel },
-    {
-      key: "comprobante",
-      icon: Receipt,
-      label: "Comprobante",
-      value: comprobanteLabel,
-    },
-    { key: "payment", icon: CreditCard, label: "Pago", value: paymentLabel },
-  ] as const
-
-  return (
-    <div className="space-y-2">
-      <div className="overflow-hidden rounded-xl border border-primary/25 bg-primary/5">
-        <div className="flex items-center justify-between gap-3 px-3.5 py-3">
-          <div className="flex min-w-0 items-center gap-2.5">
-            <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-primary/15 text-primary">
-              <CircleDollarSign className="size-[17px]" aria-hidden />
-            </span>
-            <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
-              Total a cobrar ahora
-            </p>
-          </div>
-          <p
-            className={cn(
-              saleOpImporteBaseClass,
-              "shrink-0 text-2xl font-semibold leading-none tracking-tight text-foreground",
-            )}
-          >
-            {saleOpFmt.format(total)}
-          </p>
-        </div>
-
-        <ul className="divide-y divide-primary/15 border-t border-primary/15 bg-primary/3">
-          {details.map(({ key, icon: Icon, label, value }) => (
-            <li
-              key={key}
-              className="flex min-w-0 items-center gap-2 px-3.5 py-2"
-            >
-              <Icon
-                className="size-3.5 shrink-0 text-muted-foreground"
-                aria-hidden
-              />
-              <span className="shrink-0 text-[10px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">
-                {label}
-              </span>
-              <span
-                className="min-w-0 flex-1 truncate text-right text-xs font-medium text-foreground"
-                title={value}
-              >
-                {value}
-              </span>
-            </li>
-          ))}
-        </ul>
-      </div>
-      {hint ? <CheckoutFieldHint>{hint}</CheckoutFieldHint> : null}
-    </div>
-  )
-}
-
 function PartialPaymentUnitRow({
   unit,
   qty,
@@ -186,7 +108,7 @@ function PartialPaymentUnitRow({
         }
       }}
       className={cn(
-        "flex w-full cursor-pointer items-center gap-3 rounded-xl border px-3.5 py-3 transition-colors",
+        "flex w-full min-h-12 cursor-pointer items-center gap-3 rounded-xl border px-3.5 py-2.5 transition-colors",
         "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 focus-visible:ring-offset-2 focus-visible:ring-offset-background",
         selected
           ? "border-primary/45 bg-primary/8"
@@ -210,62 +132,73 @@ function PartialPaymentUnitRow({
         {unit.label}
       </span>
 
-      {showQuantityStepper ? (
-        <div
-          className="flex w-23 shrink-0 items-center justify-center gap-0.5"
-          onClick={(event) => event.stopPropagation()}
-          onKeyDown={(event) => event.stopPropagation()}
-        >
-          <button
-            type="button"
-            aria-label="Quitar uno"
-            disabled={qty <= 0}
-            onClick={(event) => {
-              event.stopPropagation()
-              onSetQty(qty - 1)
-            }}
-            className={cn(
-              "inline-flex size-7 items-center justify-center rounded-lg border border-border/70 bg-background text-muted-foreground shadow-sm transition-colors",
-              "hover:bg-muted/40 hover:text-foreground",
-              "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30",
-              "disabled:pointer-events-none disabled:opacity-40",
-            )}
-          >
-            <Minus className="size-3.5" aria-hidden />
-          </button>
+      <div
+        className="flex h-7 w-23 shrink-0 items-center justify-center gap-0.5"
+        onClick={(event) => event.stopPropagation()}
+        onKeyDown={(event) => event.stopPropagation()}
+      >
+        {showQuantityStepper ? (
+          <>
+            <button
+              type="button"
+              aria-label="Quitar uno"
+              disabled={qty <= 0}
+              onClick={(event) => {
+                event.stopPropagation()
+                onSetQty(qty - 1)
+              }}
+              className={cn(
+                "inline-flex size-7 items-center justify-center rounded-lg border border-border/70 bg-background text-muted-foreground shadow-sm transition-colors",
+                "hover:bg-muted/40 hover:text-foreground",
+                "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30",
+                "disabled:pointer-events-none disabled:opacity-40",
+              )}
+            >
+              <Minus className="size-3.5" aria-hidden />
+            </button>
+            <span
+              className={cn(
+                saleOpImporteBaseClass,
+                "min-w-5 text-center text-sm font-semibold tabular-nums",
+              )}
+            >
+              {qty}
+            </span>
+            <button
+              type="button"
+              aria-label="Agregar uno"
+              disabled={qty >= unit.maxSelectable}
+              onClick={(event) => {
+                event.stopPropagation()
+                onSetQty(qty + 1)
+              }}
+              className={cn(
+                "inline-flex size-7 items-center justify-center rounded-lg border border-border/70 bg-background text-muted-foreground shadow-sm transition-colors",
+                "hover:bg-muted/40 hover:text-foreground",
+                "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30",
+                "disabled:pointer-events-none disabled:opacity-40",
+              )}
+            >
+              <Plus className="size-3.5" aria-hidden />
+            </button>
+          </>
+        ) : (
           <span
             className={cn(
               saleOpImporteBaseClass,
-              "min-w-5 text-center text-sm font-semibold tabular-nums",
+              "min-w-5 text-center text-sm font-semibold tabular-nums text-muted-foreground",
             )}
+            aria-hidden
           >
             {qty}
           </span>
-          <button
-            type="button"
-            aria-label="Agregar uno"
-            disabled={qty >= unit.maxSelectable}
-            onClick={(event) => {
-              event.stopPropagation()
-              onSetQty(qty + 1)
-            }}
-            className={cn(
-              "inline-flex size-7 items-center justify-center rounded-lg border border-border/70 bg-background text-muted-foreground shadow-sm transition-colors",
-              "hover:bg-muted/40 hover:text-foreground",
-              "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30",
-              "disabled:pointer-events-none disabled:opacity-40",
-            )}
-          >
-            <Plus className="size-3.5" aria-hidden />
-          </button>
-        </div>
-      ) : null}
+        )}
+      </div>
 
       <span
         className={cn(
           saleOpImporteCartClass,
           "w-22 shrink-0 text-right text-sm",
-          showQuantityStepper ? null : "ml-auto",
         )}
       >
         {saleOpFmt.format(rowTotal)}
@@ -392,7 +325,7 @@ export function SaleOperationCheckoutConfirmDialog({
               <CheckoutConfirmSummary
                 total={total}
                 hint={totalHint}
-                clientLabel={clientLabel}
+                partyValue={clientLabel}
                 comprobanteLabel={comprobanteLabel}
                 paymentLabel={paymentLabel}
               />

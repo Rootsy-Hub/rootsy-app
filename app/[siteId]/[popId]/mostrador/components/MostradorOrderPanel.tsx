@@ -2,13 +2,19 @@
 
 import type { MostradorSaleCheckout } from "@/app/[siteId]/[popId]/mostrador/useMostradorSaleCheckout"
 import { SaleOperationTicketOrderPanel } from "@/components/sale-operation/SaleOperationTicketOrderPanel"
+import type { CartListScrollHighlightValue } from "@/hooks/useCartListScrollHighlight"
 
 type Props = {
   checkout: MostradorSaleCheckout
   orderLabel: string | null
+  cartScrollHighlight?: CartListScrollHighlightValue
 }
 
-export function MostradorOrderPanel({ checkout, orderLabel }: Props) {
+export function MostradorOrderPanel({
+  checkout,
+  orderLabel,
+  cartScrollHighlight,
+}: Props) {
   const {
     cartDisplayRows,
     cambiarCantidadPorLinea,
@@ -79,6 +85,7 @@ export function MostradorOrderPanel({ checkout, orderLabel }: Props) {
       }}
       listTitle="Pedido"
       listSubtitle={orderLabel ? `Pedido ${orderLabel}` : undefined}
+      cartScrollHighlight={cartScrollHighlight}
     />
   )
 }

@@ -1,19 +1,32 @@
 "use client"
 
 import type { CashRegisterRow } from "@/app/[siteId]/[popId]/cash-registers/actions"
-import { dataWorkspaceShellCard } from "@/components/data-workspace/dataWorkspaceListStyles"
-import { Badge } from "@/components/ui/badge"
+import {
+  dataWorkspaceLightDropdownContentClass,
+  dataWorkspaceLightDropdownItemClass,
+  dataWorkspaceLightDropdownLogoutItemClass,
+  dataWorkspaceLightDropdownSeparatorClass,
+} from "@/components/layouts/dataWorkspaceHeaderStyles"
 import { Button } from "@/components/ui/button"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
 import { cn } from "@/lib/utils"
 import {
+  Calculator,
   DoorClosed,
   DoorOpen,
-  FileText,
   MinusCircle,
+  MoreVertical,
   Pencil,
   Plus,
   Trash2,
 } from "lucide-react"
+import Link from "next/link"
 
 const fmt = new Intl.NumberFormat("es-AR", {
   style: "currency",
@@ -21,12 +34,126 @@ const fmt = new Intl.NumberFormat("es-AR", {
   minimumFractionDigits: 2,
 })
 
+function moneyOrDash(amount: number | null | undefined): string {
+  if (amount == null) return "—"
+  return fmt.format(amount)
+}
+
+function formatOpenedAt(iso: string | null): string | null {
+  if (!iso) return null
+  const d = new Date(iso)
+  if (Number.isNaN(d.getTime())) return null
+  return new Intl.DateTimeFormat("es-AR", {
+    dateStyle: "short",
+    timeStyle: "short",
+  }).format(d)
+}
+
+function CashRegisterPrimaryStat({
+  label,
+  value,
+}: {
+  label: string
+  value: string
+}) {
+  return (
+    <div>
+      <p className="text-[11px] font-medium uppercase tracking-[0.14em] text-muted-foreground">
+        {label}
+      </p>
+      <p className="mt-1.5 font-mono text-2xl font-bold tabular-nums tracking-tight text-foreground">
+        {value}
+      </p>
+    </div>
+  )
+}
+
+function CashRegisterSecondaryStat({
+  label,
+  value,
+}: {
+  label: string
+  value: string
+}) {
+  return (
+    <div className="min-w-0">
+      <p className="text-[11px] font-medium uppercase tracking-[0.14em] text-muted-foreground">
+        {label}
+      </p>
+      <p className="mt-1 truncate font-mono text-base font-bold tabular-nums tracking-tight text-foreground sm:text-lg">
+        {value}
+      </p>
+    </div>
+  )
+}
+
+function CashRegisterStatusPill({
+  isOpen,
+  isActive,
+}: {
+  isOpen: boolean
+  isActive: boolean
+}) {
+  if (!isActive) {
+    return (
+      <span className="inline-flex shrink-0 items-center rounded-full border border-border/70 bg-muted/30 px-2.5 py-1 text-[10px] font-medium uppercase tracking-[0.08em] text-muted-foreground">
+        Inactiva
+      </span>
+    )
+  }
+
+  return (
+    <span
+      className={cn(
+        "inline-flex shrink-0 items-center gap-1.5 rounded-full border px-2.5 py-1 text-[10px] font-medium uppercase tracking-[0.08em]",
+        isOpen
+          ? "border-emerald-200/90 bg-emerald-50/80 text-emerald-800"
+          : "border-border/70 bg-background text-muted-foreground",
+      )}
+    >
+      <span
+        className={cn(
+          "size-1.5 rounded-full",
+          isOpen ? "bg-emerald-500" : "bg-muted-foreground/35",
+        )}
+        aria-hidden
+      />
+      {isOpen ? "Abierta" : "Cerrada"}
+    </span>
+  )
+}
+
+function CashRegisterCardMenuTrigger({
+  label,
+  className,
+  ...props
+}: React.ComponentProps<"button"> & {
+  label: string
+}) {
+  return (
+    <button
+      type="button"
+      className={cn(
+        "inline-flex size-8 items-center justify-center rounded-lg text-muted-foreground transition-colors outline-none",
+        "hover:bg-muted/60 hover:text-foreground",
+        "data-[state=open]:bg-muted/60 data-[state=open]:text-foreground",
+        "focus-visible:ring-2 focus-visible:ring-ring/30",
+        className,
+      )}
+      aria-label={label}
+      {...props}
+    >
+      <MoreVertical className="size-4" aria-hidden />
+    </button>
+  )
+}
+
 type Props = {
   row: CashRegisterRow
   canCreate: boolean
   canUpdate: boolean
   canDelete: boolean
-  onSummary: () => void
+  detailHref: string
   onEdit: () => void
   onDelete: () => void
   onOpen: () => void
@@ -40,7 +167,7 @@ export function CashRegisterCard({
   canCreate,
   canUpdate,
   canDelete,
-  onSummary,
+  detailHref,
   onEdit,
   onDelete,
   onOpen,
@@ -50,218 +177,207 @@ export function CashRegisterCard({
 }: Props) {
   const isOpen = Boolean(row.openSessionId)
   const totals = row.openSessionTotals
+  const openedLabel = formatOpenedAt(row.openedAt)
+  const efectivoEnCajon =
+    totals?.efectivoTeoricoEnCajon ?? row.cashBalance ?? null
+  const totalTurno = totals?.totalCobradoTurno ?? null
+
+  type MenuItem = {
+    id: string
+    label: string
+    icon: typeof DoorClosed
+    onSelect: () => void
+    destructive?: boolean
+  }
+
+  const sessionActions: MenuItem[] = []
+  const adminActions: MenuItem[] = []
+
+  if (isOpen && row.canCloseOpenSession) {
+    sessionActions.push({
+      id: "close",
+      label: "Cerrar caja",
+      icon: DoorClosed,
+      onSelect: onClose,
+    })
+  }
+  if (isOpen && canCreate) {
+    sessionActions.push(
+      {
+        id: "deposit",
+        label: "Ingreso al cajón",
+        icon: Plus,
+        onSelect: onDeposit,
+      },
+      {
+        id: "withdraw",
+        label: "Retiro del cajón",
+        icon: MinusCircle,
+        onSelect: onWithdraw,
+      },
+    )
+  }
+
+  if (canUpdate) {
+    adminActions.push({
+      id: "edit",
+      label: "Editar caja",
+      icon: Pencil,
+      onSelect: onEdit,
+    })
+  }
+  if (canDelete) {
+    adminActions.push({
+      id: "delete",
+      label: "Eliminar caja",
+      icon: Trash2,
+      onSelect: onDelete,
+      destructive: true,
+    })
+  }
+
+  const menuSections = [
+    sessionActions.length > 0 ? sessionActions : null,
+    adminActions.length > 0 ? adminActions : null,
+  ].filter((section): section is MenuItem[] => section != null)
 
   return (
-    <article className={cn(dataWorkspaceShellCard, "flex flex-col p-5")}>
-      <div className="mb-4 flex items-start justify-between gap-3">
-        <div className="min-w-0">
-          <h3 className="truncate text-base font-semibold text-foreground">
-            {row.name}
-          </h3>
-          <p className="mt-0.5 text-xs text-muted-foreground">
-            Orden {row.sortOrder}
-            {!row.isActive ? " · Inactiva" : ""}
-          </p>
-        </div>
-        <div className="flex shrink-0 gap-1">
-          <Button
-            type="button"
-            variant="ghost"
-            size="icon"
-            className="size-9"
-            onClick={onSummary}
-            aria-label="Ver resumen de caja"
-            title="Resumen"
-          >
-            <FileText className="size-4" />
-          </Button>
-          {canUpdate ? (
-            <Button
-              type="button"
-              variant="ghost"
-              size="icon"
-              className="size-9"
-              onClick={onEdit}
-              aria-label="Editar caja"
-            >
-              <Pencil className="size-4" />
-            </Button>
-          ) : null}
-          {canDelete ? (
-            <Button
-              type="button"
-              variant="ghost"
-              size="icon"
-              className="size-9 text-destructive"
-              onClick={onDelete}
-              aria-label="Eliminar caja"
-            >
-              <Trash2 className="size-4" />
-            </Button>
-          ) : null}
-        </div>
-      </div>
-
-      <div className="mb-4 flex items-center justify-between gap-2 border-b border-border/60 pb-4">
-        <span className="text-[11px] font-medium uppercase tracking-[0.12em] text-muted-foreground">
-          Sesión
-        </span>
-        <Badge
-          variant="outline"
-          className={cn(
-            "font-normal",
-            isOpen
-              ? "border-emerald-200/90 bg-emerald-50/90 text-emerald-700"
-              : "text-muted-foreground",
-          )}
+    <article
+      className={cn(
+        "group relative flex h-full flex-col overflow-hidden rounded-2xl border border-border/60 bg-card shadow-sm transition-all",
+        "hover:border-border hover:shadow-md",
+      )}
+    >
+      {menuSections.length > 0 ? (
+        <div
+          className="absolute right-3 top-3 z-20"
+          onPointerDown={(event) => event.stopPropagation()}
+          onClick={(event) => event.stopPropagation()}
         >
-          {isOpen ? "Turno abierto" : "Sin turno"}
-        </Badge>
-      </div>
-
-      {isOpen ? (
-        <div className="space-y-4">
-          {totals ? (
-            <>
-              <div className="rounded-xl border border-border/70 bg-muted/15 px-4 py-4">
-                <p className="text-[11px] font-medium uppercase tracking-[0.12em] text-muted-foreground">
-                  Efectivo teórico en cajón
-                </p>
-                <p className="mt-2 font-mono text-3xl font-bold tabular-nums tracking-tight text-foreground">
-                  {fmt.format(totals.efectivoTeoricoEnCajon)}
-                </p>
-                <p className="mt-2 text-[11px] leading-relaxed text-muted-foreground">
-                  Apertura + ventas en efectivo + ingresos al cajón − retiros
-                </p>
-                <div className="mt-3 grid gap-2 border-t border-border/50 pt-3 font-mono text-[11px] text-muted-foreground sm:grid-cols-2">
-                  <div>
-                    Apertura{" "}
-                    <span className="text-foreground">
-                      {fmt.format(totals.openingCash)}
-                    </span>
-                  </div>
-                  <div>
-                    + Ventas efectivo{" "}
-                    <span className="text-emerald-700">
-                      {fmt.format(totals.ventasEfectivo)}
-                    </span>
-                  </div>
-                  <div>
-                    + Ingresos cajón{" "}
-                    <span className="text-emerald-700">
-                      {fmt.format(totals.ingresosCajon)}
-                    </span>
-                  </div>
-                  <div>
-                    − Retiros{" "}
-                    <span className="text-rose-700">
-                      {fmt.format(totals.egresosCajon)}
-                    </span>
-                  </div>
-                </div>
-              </div>
-
-              {totals.totalCobradoTurno != null ? (
-                <>
-                  <div className="rounded-xl border border-border/70 bg-muted/10 px-4 py-4">
-                    <p className="text-[11px] font-medium uppercase tracking-[0.12em] text-muted-foreground">
-                      Total cobrado en el turno
-                    </p>
-                    <p className="mt-2 font-mono text-2xl font-bold tabular-nums text-foreground">
-                      {fmt.format(totals.totalCobradoTurno)}
-                    </p>
-                  </div>
-                  {totals.cobrosPorMedio && totals.cobrosPorMedio.length > 0 ? (
-                    <div className="rounded-xl border border-border/60 px-3 py-3">
-                      <p className="text-[11px] font-medium uppercase tracking-[0.12em] text-muted-foreground">
-                        Cobros por medio de pago
-                      </p>
-                      <ul className="mt-2 max-h-40 space-y-1.5 overflow-y-auto text-xs">
-                        {totals.cobrosPorMedio.map((item, idx) => (
-                          <li
-                            key={`${item.name}-${idx}`}
-                            className="flex items-baseline justify-between gap-2 border-b border-border/40 pb-1.5 last:border-0"
-                          >
-                            <span className="min-w-0 truncate text-muted-foreground">
-                              {item.name}
-                            </span>
-                            <span className="shrink-0 font-mono tabular-nums text-foreground">
-                              {fmt.format(item.total)}
-                            </span>
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <CashRegisterCardMenuTrigger
+                label={`Opciones de ${row.name}`}
+              />
+            </DropdownMenuTrigger>
+            <DropdownMenuContent
+              align="end"
+              side="bottom"
+              sideOffset={8}
+              collisionPadding={{ right: 16 }}
+              className={cn(dataWorkspaceLightDropdownContentClass, "z-[120]")}
+            >
+              {menuSections.map((section, sectionIndex) => (
+                <div key={section[0]?.id ?? sectionIndex}>
+                  {sectionIndex > 0 ? (
+                    <DropdownMenuSeparator
+                      className={dataWorkspaceLightDropdownSeparatorClass}
+                    />
                   ) : null}
-                </>
-              ) : (
-                <p className="rounded-lg border border-dashed border-border bg-muted/15 px-3 py-2 text-xs text-muted-foreground">
-                  Sin permiso de lectura de ventas: el efectivo teórico sigue
-                  disponible para el arqueo.
-                </p>
-              )}
-            </>
-          ) : (
-            <div className="rounded-xl border border-border/70 bg-muted/15 px-4 py-4">
-              <p className="text-[11px] font-medium uppercase tracking-[0.12em] text-muted-foreground">
-                Saldo en cajón
-              </p>
-              <p className="mt-2 font-mono text-3xl font-bold tabular-nums text-foreground">
-                {row.cashBalance != null ? fmt.format(row.cashBalance) : "—"}
-              </p>
-            </div>
-          )}
+                  {section.map((action) => {
+                    const Icon = action.icon
+                    return (
+                      <DropdownMenuItem
+                        key={action.id}
+                        variant={action.destructive ? "destructive" : undefined}
+                        className={cn(
+                          "gap-2",
+                          action.destructive
+                            ? dataWorkspaceLightDropdownLogoutItemClass
+                            : dataWorkspaceLightDropdownItemClass,
+                        )}
+                        onSelect={action.onSelect}
+                      >
+                        <Icon className="size-4 shrink-0 opacity-70" aria-hidden />
+                        <span className="min-w-0 flex-1 truncate">
+                          {action.label}
+                        </span>
+                      </DropdownMenuItem>
+                    )
+                  })}
+                </div>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
+      ) : null}
 
-          <div className="flex flex-wrap gap-2">
-            {canCreate ? (
-              <>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  className="gap-1"
-                  onClick={onDeposit}
-                >
-                  <Plus className="size-3.5" />
-                  Ingreso
-                </Button>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  className="gap-1"
-                  onClick={onWithdraw}
-                >
-                  <MinusCircle className="size-3.5" />
-                  Retiro
-                </Button>
-              </>
+      <div className="flex h-full min-h-0 flex-1 flex-col">
+        <Link
+          href={detailHref}
+          className="flex min-h-0 flex-1 flex-col text-left"
+        >
+          <div className="border-b border-border/60 px-4 py-4 pr-11">
+            <div className="flex items-start gap-3">
+              <span
+                className="flex size-11 shrink-0 items-center justify-center rounded-xl border border-border/60 bg-background text-muted-foreground shadow-xs"
+                aria-hidden
+              >
+                <Calculator className="size-5" strokeWidth={1.75} />
+              </span>
+              <div className="min-w-0 flex-1">
+                <div className="flex items-start justify-between gap-2">
+                  <p className="text-[11px] font-medium uppercase tracking-[0.12em] text-muted-foreground">
+                    Caja registradora
+                  </p>
+                  <CashRegisterStatusPill
+                    isOpen={isOpen}
+                    isActive={row.isActive}
+                  />
+                </div>
+                <h3 className="mt-1 truncate text-base font-semibold text-foreground">
+                  {row.name}
+                </h3>
+                {isOpen && openedLabel ? (
+                  <p className="mt-0.5 truncate text-xs text-muted-foreground">
+                    Desde {openedLabel}
+                  </p>
+                ) : (
+                  <p className="mt-0.5 text-xs text-transparent" aria-hidden>
+                    &nbsp;
+                  </p>
+                )}
+              </div>
+            </div>
+          </div>
+
+          <div className="flex min-h-0 flex-1 flex-col bg-muted/20 px-4 py-4">
+            <CashRegisterPrimaryStat
+              label="Cobrado en el turno"
+              value={moneyOrDash(isOpen ? totalTurno : null)}
+            />
+
+            {isOpen ? (
+              <div className="mt-auto min-h-[4.75rem] border-t border-border/40 pt-4">
+                <CashRegisterSecondaryStat
+                  label="Efectivo en caja"
+                  value={moneyOrDash(efectivoEnCajon)}
+                />
+              </div>
             ) : null}
-            {canUpdate ? (
-              <Button type="button" size="sm" className="gap-1" onClick={onClose}>
-                <DoorClosed className="size-3.5" />
-                Cerrar caja
+          </div>
+        </Link>
+
+        {!isOpen ? (
+          <div className="flex min-h-[4.75rem] items-center justify-between gap-3 border-t border-border/40 bg-muted/20 px-4 py-4">
+            <p className="text-xs leading-snug text-muted-foreground">
+              {row.isActive ? "Sin turno abierto" : "Caja desactivada"}
+            </p>
+            {canCreate && row.isActive ? (
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="h-8 shrink-0 gap-1.5 px-3 text-xs shadow-xs"
+                onClick={onOpen}
+              >
+                <DoorOpen className="size-3.5" aria-hidden />
+                Abrir turno
               </Button>
             ) : null}
           </div>
-        </div>
-      ) : canCreate && row.isActive ? (
-        <Button
-          type="button"
-          size="sm"
-          className="w-full gap-2 py-6"
-          onClick={onOpen}
-        >
-          <DoorOpen className="size-4" />
-          Abrir turno
-        </Button>
-      ) : (
-        <p className="text-sm text-muted-foreground">
-          {row.isActive
-            ? "Sin turno abierto."
-            : "Caja inactiva. Activá la caja para operar."}
-        </p>
-      )}
+        ) : null}
+      </div>
     </article>
   )
 }

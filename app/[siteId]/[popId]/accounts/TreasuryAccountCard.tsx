@@ -6,10 +6,10 @@ import {
   TreasuryBrandName,
 } from "@/app/[siteId]/[popId]/accounts/TreasuryBrandMark"
 import {
-  dataWorkspaceHeaderDropdownItemClass,
-  dataWorkspaceHeaderDropdownLogoutItemClass,
-  dataWorkspaceHeaderDropdownSeparatorClass,
-  dataWorkspaceHeaderUserDropdownContentClass,
+  dataWorkspaceLightDropdownContentClass,
+  dataWorkspaceLightDropdownItemClass,
+  dataWorkspaceLightDropdownLogoutItemClass,
+  dataWorkspaceLightDropdownSeparatorClass,
 } from "@/components/layouts/dataWorkspaceHeaderStyles"
 import {
   DropdownMenu,
@@ -25,6 +25,7 @@ import {
 import { resolveTreasuryAccountBrand } from "@/lib/treasuryAccountBrands"
 import { treasuryKindLabel } from "@/lib/treasuryAccountKinds"
 import { cn } from "@/lib/utils"
+import Link from "next/link"
 import {
   CreditCard,
   MoreVertical,
@@ -61,7 +62,7 @@ function TreasuryStat({
       <p
         className={cn(
           "mt-1 font-mono font-bold tabular-nums tracking-tight text-foreground",
-          large ? "mt-2 text-3xl" : "text-lg",
+          large ? "mt-1.5 text-2xl" : "text-base sm:text-lg",
         )}
       >
         {value}
@@ -73,21 +74,18 @@ function TreasuryStat({
 function TreasuryIntegrationBadges({
   hasPos,
   hasCard,
-  branded,
 }: {
   hasPos: boolean
   hasCard: boolean
-  branded: boolean
 }) {
   if (!hasPos && !hasCard) return null
 
-  const badgeClass = branded
-    ? "border-white/20 bg-white/12 text-white/90 [&_svg]:text-white/80"
-    : "border-foreground/10 bg-background/70 text-foreground/75 shadow-sm [&_svg]:text-foreground/55"
+  const badgeClass =
+    "inline-flex items-center gap-1.5 rounded-lg border border-border/70 bg-background px-2.5 py-1.5 text-[10px] font-medium uppercase tracking-[0.08em] text-muted-foreground shadow-xs [&_svg]:size-3.5 [&_svg]:text-muted-foreground"
 
   return (
     <div
-      className="inline-flex flex-wrap items-center gap-1.5"
+      className="flex flex-wrap items-center gap-1.5"
       aria-label={
         [
           hasPos ? "Terminal POS" : null,
@@ -98,24 +96,14 @@ function TreasuryIntegrationBadges({
       }
     >
       {hasPos ? (
-        <span
-          className={cn(
-            "inline-flex items-center gap-1 rounded-md border px-1.5 py-0.5 text-[10px] font-semibold leading-none tracking-wide",
-            badgeClass,
-          )}
-        >
-          <ScanLine className="size-3 shrink-0" aria-hidden />
+        <span className={badgeClass}>
+          <ScanLine aria-hidden />
           POS
         </span>
       ) : null}
       {hasCard ? (
-        <span
-          className={cn(
-            "inline-flex items-center gap-1 rounded-md border px-1.5 py-0.5 text-[10px] font-semibold leading-none tracking-wide",
-            badgeClass,
-          )}
-        >
-          <CreditCard className="size-3 shrink-0" aria-hidden />
+        <span className={badgeClass}>
+          <CreditCard aria-hidden />
           Tarjeta
         </span>
       ) : null}
@@ -138,22 +126,18 @@ function treasuryAccountMenuActionIcon(actionId: TreasuryAccountMenuActionId) {
 
 function TreasuryAccountCardMenuTrigger({
   label,
-  branded,
   className,
   ...props
 }: React.ComponentProps<"button"> & {
   label: string
-  branded: boolean
 }) {
   return (
     <button
       type="button"
       className={cn(
-        "inline-flex size-7 items-center justify-center rounded-lg transition-colors",
+        "inline-flex size-8 items-center justify-center rounded-lg text-muted-foreground transition-colors",
+        "hover:bg-muted/50 hover:text-foreground",
         "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/35 focus-visible:ring-offset-1",
-        branded
-          ? "text-white/75 hover:bg-white/12 hover:text-white"
-          : "text-foreground/40 hover:bg-foreground/5 hover:text-foreground/70",
         className,
       )}
       aria-label={label}
@@ -169,15 +153,15 @@ export function TreasuryAccountCard({
   canCreate,
   canUpdate,
   canDelete,
+  detailHref,
   onMenuAction,
-  onOpenDetail,
 }: {
   row: TreasuryAccountTableRow
   canCreate: boolean
   canUpdate: boolean
   canDelete: boolean
+  detailHref: string
   onMenuAction: (actionId: TreasuryAccountMenuActionId) => void
-  onOpenDetail: () => void
 }) {
   const menuActions = getTreasuryAccountMenuActions(
     row.kind,
@@ -198,16 +182,16 @@ export function TreasuryAccountCard({
     name: row.name,
   })
 
-  const headerGradient =
-    brand?.headerGradient ?? "from-muted via-muted/80 to-muted/60"
-  const headerText = brand?.headerTextClass ?? "text-foreground"
-  const isBrandedHeader = Boolean(brand)
   const showSettlementStats = row.kind === "bank" || row.kind === "wallet"
+  const showIntegrationBadges =
+    row.kind !== "cash" &&
+    (row.hasPosIntegration || row.hasCardIntegration)
 
   return (
     <article
       className={cn(
-        "group relative overflow-hidden rounded-2xl border border-border/60 bg-card transition-colors hover:border-border",
+        "group relative flex h-full flex-col overflow-hidden rounded-2xl border border-border/60 bg-card shadow-sm transition-all",
+        "hover:border-border hover:shadow-md",
       )}
     >
       {menuActions.length > 0 ? (
@@ -220,7 +204,6 @@ export function TreasuryAccountCard({
             <DropdownMenuTrigger asChild>
               <TreasuryAccountCardMenuTrigger
                 label={`Opciones de ${row.name || "cuenta"}`}
-                branded={isBrandedHeader}
               />
             </DropdownMenuTrigger>
             <DropdownMenuContent
@@ -228,7 +211,7 @@ export function TreasuryAccountCard({
               side="bottom"
               sideOffset={8}
               collisionPadding={{ right: 16 }}
-              className={cn(dataWorkspaceHeaderUserDropdownContentClass, "z-[120]")}
+              className={cn(dataWorkspaceLightDropdownContentClass, "z-[120]")}
             >
               {menuActions.map((action) => {
                 const Icon = treasuryAccountMenuActionIcon(action.id)
@@ -238,16 +221,16 @@ export function TreasuryAccountCard({
                   <div key={action.id}>
                     {action.separatorBefore ? (
                       <DropdownMenuSeparator
-                        className={dataWorkspaceHeaderDropdownSeparatorClass}
+                        className={dataWorkspaceLightDropdownSeparatorClass}
                       />
                     ) : null}
                     <DropdownMenuItem
-                      variant={isDelete ? "default" : undefined}
+                      variant={isDelete ? "destructive" : undefined}
                       className={cn(
                         "gap-2",
                         isDelete
-                          ? dataWorkspaceHeaderDropdownLogoutItemClass
-                          : dataWorkspaceHeaderDropdownItemClass,
+                          ? dataWorkspaceLightDropdownLogoutItemClass
+                          : dataWorkspaceLightDropdownItemClass,
                       )}
                       onSelect={() => onMenuAction(action.id)}
                     >
@@ -264,89 +247,72 @@ export function TreasuryAccountCard({
         </div>
       ) : null}
 
-      <button
-        type="button"
-        onClick={onOpenDetail}
-        className="w-full text-left"
-      >
-        <div
-          className={cn(
-            "bg-linear-to-br px-4 pb-6 pt-4",
-            headerGradient,
-          )}
-        >
-          <div className="flex items-start justify-between gap-3 pr-7">
-            <div className="min-w-0 flex-1">
-              <div className="flex flex-wrap items-center gap-x-2 gap-y-1 pr-8">
-                <p
-                  className={cn(
-                    "text-[10px] font-semibold uppercase tracking-[0.16em] opacity-85",
-                    headerText,
-                  )}
-                >
+      <Link href={detailHref} className="flex h-full min-h-0 flex-1 flex-col text-left">
+        <div className="border-b border-border/60 px-4 py-4 pr-11">
+          <div className="flex flex-col gap-2.5">
+            <div className="flex min-w-0 items-center gap-3">
+              <TreasuryBrandIsotype
+                brandKey={brand?.key}
+                monogram={
+                  brand?.monogram ??
+                  (row.name.slice(0, 2).toUpperCase() || "—")
+                }
+                size="md"
+              />
+              <div className="min-w-0 flex-1">
+                <p className="text-[11px] font-medium uppercase tracking-[0.12em] text-muted-foreground">
                   {treasuryKindLabel(row.kind)}
                   {!row.isActive ? " · Inactiva" : ""}
                 </p>
-                {row.kind !== "cash" ? (
-                  <TreasuryIntegrationBadges
-                    hasPos={row.hasPosIntegration}
-                    hasCard={row.hasCardIntegration}
-                    branded={isBrandedHeader}
-                  />
-                ) : null}
-              </div>
-              <div className="mt-2.5 flex items-center gap-3">
-                <TreasuryBrandIsotype
-                  brandKey={brand?.key}
-                  monogram={
-                    brand?.monogram ??
-                    (row.name.slice(0, 2).toUpperCase() || "—")
-                  }
-                  headerTextClass={headerText}
-                  onColoredHeader={isBrandedHeader}
-                  size="md"
-                />
                 <TreasuryBrandName
                   preset={brand}
                   name={row.name}
-                  textClass={headerText}
+                  textClass="text-foreground"
+                  className="mt-0.5 text-base font-semibold"
                 />
               </div>
+            </div>
+
+            <div className="min-h-7">
+              {showIntegrationBadges ? (
+                <TreasuryIntegrationBadges
+                  hasPos={row.hasPosIntegration}
+                  hasCard={row.hasCardIntegration}
+                />
+              ) : null}
             </div>
           </div>
         </div>
 
-        <div className="-mt-4 px-4 pb-4">
-          <div className="flex min-h-[10.75rem] flex-col rounded-xl border border-border/60 bg-background px-4 py-3 shadow-sm">
-            <TreasuryStat
-              label="Saldo real"
-              value={moneyOrDash(row.ledgerBalance)}
-              large
-            />
-            <div className="mt-auto border-t border-border/60 pt-4">
-              {showSettlementStats ? (
-                <div className="grid grid-cols-2 gap-4">
-                  <TreasuryStat
-                    label="A liquidar"
-                    value={moneyOrDash(row.toLiquidateBalance)}
-                  />
-                  <TreasuryStat
-                    label="A pagar"
-                    value={moneyOrDash(row.toPayBalance)}
-                  />
-                </div>
-              ) : (
-                <p className="text-[11px] font-medium leading-snug text-muted-foreground">
-                  Efectivo directo
-                  <span className="mt-0.5 block text-[10px] font-normal normal-case tracking-normal opacity-80">
-                    Sin liquidaciones ni tarjetas vinculadas
-                  </span>
-                </p>
-              )}
-            </div>
+        <div className="flex min-h-0 flex-1 flex-col bg-muted/20 px-4 py-4">
+          <TreasuryStat
+            label="Saldo real"
+            value={moneyOrDash(row.ledgerBalance)}
+            large
+          />
+          <div className="mt-auto min-h-[4.75rem] border-t border-border/40 pt-4">
+            {showSettlementStats ? (
+              <div className="grid grid-cols-2 gap-4">
+                <TreasuryStat
+                  label="A liquidar"
+                  value={moneyOrDash(row.toLiquidateBalance)}
+                />
+                <TreasuryStat
+                  label="A pagar"
+                  value={moneyOrDash(row.toPayBalance)}
+                />
+              </div>
+            ) : row.kind === "cash" ? (
+              <p className="text-[11px] font-medium leading-snug text-muted-foreground">
+                Efectivo directo
+                <span className="mt-0.5 block text-[10px] font-normal normal-case tracking-normal opacity-80">
+                  Sin liquidaciones ni tarjetas vinculadas
+                </span>
+              </p>
+            ) : null}
           </div>
         </div>
-      </button>
+      </Link>
     </article>
   )
 }

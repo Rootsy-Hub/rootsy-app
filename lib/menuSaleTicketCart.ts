@@ -272,12 +272,13 @@ export type TicketCartMutationResult = {
   carrito: MenuCartItem[]
   paidPartialUnits: PartialPaymentSelection
   overrideCopies: Array<{ fromLineId: string; toLineId: string }>
+  affectedLineId: string
 }
 
 function materializeTicketCartAfterMutation(
   carrito: MenuCartItem[],
   paidPartialUnits?: PartialPaymentSelection,
-): TicketCartMutationResult {
+): Omit<TicketCartMutationResult, "affectedLineId"> {
   const paid = paidPartialUnits ?? {}
   const needsMaterialize =
     carrito.some((item) => item.paidLocked) ||
@@ -338,20 +339,26 @@ export function addProductToTicketCart(input: {
           ? { ...i, cantidad: i.cantidad + 1 }
           : i,
       )
-      return materializeTicketCartAfterMutation(merged, paidPartialUnits)
+      return {
+        ...materializeTicketCartAfterMutation(merged, paidPartialUnits),
+        affectedLineId: mergeTargetId,
+      }
     }
   }
   const lineId = createCartLineId()
   if (product?.kind === "article") {
     seedCartLineDefaultDiscount(product, lineId, input.overrideActions)
   }
-  return materializeTicketCartAfterMutation(
-    [
-      ...input.carrito,
-      { lineId, productoId: input.productoId, cantidad: 1, kind },
-    ],
-    paidPartialUnits,
-  )
+  return {
+    ...materializeTicketCartAfterMutation(
+      [
+        ...input.carrito,
+        { lineId, productoId: input.productoId, cantidad: 1, kind },
+      ],
+      paidPartialUnits,
+    ),
+    affectedLineId: lineId,
+  }
 }
 
 export function addPromotionToTicketCart(input: {
@@ -369,27 +376,34 @@ export function addPromotionToTicketCart(input: {
     return cartLinesMatchPromotion(i, input.promotionId, input.selections)
   })
   if (existe) {
+    const existenteId = resolveCartLineId(existe)
     const merged = input.carrito.map((i) =>
       cartLinesMatchPromotion(i, input.promotionId, input.selections)
         ? { ...i, cantidad: i.cantidad + 1 }
         : i,
     )
-    return materializeTicketCartAfterMutation(merged, paidPartialUnits)
+    return {
+      ...materializeTicketCartAfterMutation(merged, paidPartialUnits),
+      affectedLineId: existenteId,
+    }
   }
   const lineId = createCartLineId()
-  return materializeTicketCartAfterMutation(
-    [
-      ...input.carrito,
-      {
-        lineId,
-        productoId: input.promotionId,
-        cantidad: 1,
-        kind: "promotion" as const,
-        promotionSelections: input.selections,
-      },
-    ],
-    paidPartialUnits,
-  )
+  return {
+    ...materializeTicketCartAfterMutation(
+      [
+        ...input.carrito,
+        {
+          lineId,
+          productoId: input.promotionId,
+          cantidad: 1,
+          kind: "promotion" as const,
+          promotionSelections: input.selections,
+        },
+      ],
+      paidPartialUnits,
+    ),
+    affectedLineId: lineId,
+  }
 }
 
 export function buildProductMapFromSaleCatalog(

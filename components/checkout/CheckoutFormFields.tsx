@@ -1,5 +1,9 @@
 "use client"
 
+import {
+  isValidMoneyInput,
+  MONEY_INPUT_MAX_LEN,
+} from "@/lib/moneyInput"
 import { cn } from "@/lib/utils"
 import { Banknote, Minus, Percent, Plus, type LucideIcon } from "lucide-react"
 import type { ComponentType, ReactNode } from "react"
@@ -95,6 +99,10 @@ export function CheckoutNumericValueField({
   inputMode = "numeric",
   maxLength,
   ariaLabel,
+  autoFocus,
+  size = "default",
+  hideIcon = false,
+  className,
   onDecrease,
   onIncrease,
   decreaseDisabled,
@@ -110,12 +118,17 @@ export function CheckoutNumericValueField({
   inputMode?: "numeric" | "decimal" | "text"
   maxLength?: number
   ariaLabel: string
+  autoFocus?: boolean
+  size?: "default" | "compact"
+  hideIcon?: boolean
+  className?: string
   onDecrease?: () => void
   onIncrease?: () => void
   decreaseDisabled?: boolean
   increaseDisabled?: boolean
 }) {
   const showStepper = onDecrease != null || onIncrease != null
+  const isCompact = size === "compact"
 
   const selectAll = (target: HTMLInputElement) => {
     target.select()
@@ -127,15 +140,28 @@ export function CheckoutNumericValueField({
         "rounded-xl border border-border/70 bg-muted/15 transition-all duration-150",
         "focus-within:border-primary/45 focus-within:ring-2 focus-within:ring-primary/20",
         disabled && "opacity-50",
+        className,
       )}
     >
       <label htmlFor={id} className="sr-only">
         {ariaLabel}
       </label>
-      <div className="flex items-center gap-3 px-3.5 py-3">
-        <span className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-muted/50 text-muted-foreground">
-          <Icon className="size-[18px]" aria-hidden />
-        </span>
+      <div
+        className={cn(
+          "flex items-center gap-3",
+          isCompact ? "px-2.5 py-2" : "px-3.5 py-3",
+        )}
+      >
+        {!hideIcon ? (
+          <span
+            className={cn(
+              "flex shrink-0 items-center justify-center rounded-lg bg-muted/50 text-muted-foreground",
+              isCompact ? "size-8" : "size-10",
+            )}
+          >
+            <Icon className={cn(isCompact ? "size-4" : "size-[18px]")} aria-hidden />
+          </span>
+        ) : null}
         <div
           className={cn(
             "flex min-w-0 flex-1 items-center",
@@ -163,6 +189,7 @@ export function CheckoutNumericValueField({
             type="text"
             inputMode={inputMode}
             autoComplete="off"
+            autoFocus={autoFocus}
             disabled={disabled}
             value={value}
             maxLength={maxLength}
@@ -171,7 +198,8 @@ export function CheckoutNumericValueField({
             onChange={(e) => onChange(e.target.value)}
             placeholder={placeholder}
             className={cn(
-              "min-w-0 flex-1 bg-transparent text-2xl font-semibold leading-none tabular-nums tracking-tight text-foreground outline-none",
+              "min-w-0 flex-1 bg-transparent font-semibold leading-none tabular-nums tracking-tight text-foreground outline-none",
+              isCompact ? "text-lg" : "text-2xl",
               "placeholder:text-muted-foreground/40",
               showStepper && "text-center",
             )}
@@ -195,7 +223,10 @@ export function CheckoutNumericValueField({
         </div>
         {suffix ? (
           <span
-            className="shrink-0 text-lg font-semibold tabular-nums text-muted-foreground"
+            className={cn(
+              "shrink-0 font-semibold tabular-nums text-muted-foreground",
+              isCompact ? "text-base" : "text-lg",
+            )}
             aria-hidden
           >
             {suffix}
@@ -203,6 +234,52 @@ export function CheckoutNumericValueField({
         ) : null}
       </div>
     </div>
+  )
+}
+
+export function CheckoutMoneyValueField({
+  id,
+  value,
+  onChange,
+  placeholder = "0",
+  disabled,
+  ariaLabel,
+  autoFocus,
+  size = "default",
+  hideIcon = false,
+  className,
+}: {
+  id: string
+  value: string
+  onChange: (raw: string) => void
+  placeholder?: string
+  disabled?: boolean
+  ariaLabel: string
+  autoFocus?: boolean
+  size?: "default" | "compact"
+  hideIcon?: boolean
+  className?: string
+}) {
+  return (
+    <CheckoutNumericValueField
+      id={id}
+      icon={Banknote}
+      value={value}
+      onChange={(raw) => {
+        if (!isValidMoneyInput(raw)) return
+        onChange(raw)
+      }}
+      placeholder={placeholder}
+      suffix="$"
+      inputMode="decimal"
+      maxLength={MONEY_INPUT_MAX_LEN}
+      ariaLabel={ariaLabel}
+      autoFocus={autoFocus}
+      size={size}
+      hideIcon={hideIcon}
+      disabled={disabled}
+      className={className}
+    />
   )
 }
 

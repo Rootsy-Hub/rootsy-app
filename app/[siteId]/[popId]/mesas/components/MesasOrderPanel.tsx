@@ -2,13 +2,19 @@
 
 import type { MesasSaleCheckout } from "@/app/[siteId]/[popId]/mesas/useMesasSaleCheckout"
 import { SaleOperationTicketOrderPanel } from "@/components/sale-operation/SaleOperationTicketOrderPanel"
+import type { CartListScrollHighlightValue } from "@/hooks/useCartListScrollHighlight"
 
 type Props = {
   checkout: MesasSaleCheckout
   tableLabel: string | null
+  cartScrollHighlight?: CartListScrollHighlightValue
 }
 
-export function MesasOrderPanel({ checkout, tableLabel }: Props) {
+export function MesasOrderPanel({
+  checkout,
+  tableLabel,
+  cartScrollHighlight,
+}: Props) {
   const {
     cartDisplayRows,
     cambiarCantidadPorLinea,
@@ -72,6 +78,7 @@ export function MesasOrderPanel({ checkout, tableLabel }: Props) {
       }}
       listTitle="Pedido"
       listSubtitle={tableLabel ? `Mesa ${tableLabel}` : undefined}
+      cartScrollHighlight={cartScrollHighlight}
     />
   )
 }

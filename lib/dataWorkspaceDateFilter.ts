@@ -28,6 +28,12 @@ export const DATA_WORKSPACE_DATE_QUICK_PRESETS: {
   { id: "last_30", label: "Últimos 30 días" },
 ]
 
+export function isCompleteDateRange(
+  range: DateRange | undefined,
+): range is { from: Date; to: Date } {
+  return Boolean(range?.from && range?.to)
+}
+
 export function toISODateLocal(d: Date): string {
   const y = d.getFullYear()
   const m = String(d.getMonth() + 1).padStart(2, "0")
@@ -68,9 +74,9 @@ export function computeDataWorkspaceDateBounds(
       return { from: toISODateLocal(from), to: toISODateLocal(today) }
     }
     case "custom": {
-      if (!custom?.from) return { from: null, to: null }
+      if (!isCompleteDateRange(custom)) return { from: null, to: null }
       let a = custom.from
-      let b = custom.to ?? custom.from
+      let b = custom.to
       if (a > b) [a, b] = [b, a]
       return { from: toISODateLocal(a), to: toISODateLocal(b) }
     }
@@ -105,13 +111,19 @@ export function dataWorkspaceDateFilterSummary(
   return "Rango personalizado (elegí inicio y fin)"
 }
 
+import { toPopCalendarDate } from "@/lib/popTimezone"
+
 export function isoDateInBounds(
   isoOrDate: string,
   from: string | null,
   to: string | null,
+  timeZone?: string,
 ): boolean {
   if (!from && !to) return true
-  const d = isoOrDate.slice(0, 10)
+  const d =
+    timeZone != null && timeZone.length > 0
+      ? toPopCalendarDate(isoOrDate, timeZone)
+      : isoOrDate.slice(0, 10)
   if (from && d < from) return false
   if (to && d > to) return false
   return true

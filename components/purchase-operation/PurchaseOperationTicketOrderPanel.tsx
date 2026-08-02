@@ -9,6 +9,8 @@ import {
 import { SaleOperationActionsBar } from "@/components/sale-operation/SaleOperationActionsBar"
 import { SaleOperationCartList } from "@/components/sale-operation/SaleOperationCartList"
 import { SaleOperationTotalBar } from "@/components/sale-operation/SaleOperationTotalBar"
+import type { CartListScrollHighlightValue } from "@/hooks/useCartListScrollHighlight"
+import { CartListScrollHighlightProvider } from "@/hooks/useCartListScrollHighlight"
 
 type ActionsProps = React.ComponentProps<typeof SaleOperationActionsBar>
 type TotalProps = React.ComponentProps<typeof SaleOperationTotalBar>
@@ -24,6 +26,7 @@ type Props = {
   listTitle?: string
   emptyTitle?: string
   flush?: boolean
+  cartScrollHighlight?: CartListScrollHighlightValue
 }
 
 export function PurchaseOperationTicketOrderPanel({
@@ -37,8 +40,9 @@ export function PurchaseOperationTicketOrderPanel({
   listTitle = "Tu compra",
   emptyTitle = "Compra vacía",
   flush = true,
+  cartScrollHighlight,
 }: Props) {
-  return (
+  const panel = (
     <div className="flex min-h-0 flex-1 flex-col">
       <SaleOperationCartList
         title={listTitle}
@@ -66,4 +70,14 @@ export function PurchaseOperationTicketOrderPanel({
       </div>
     </div>
   )
+
+  if (cartScrollHighlight) {
+    return (
+      <CartListScrollHighlightProvider value={cartScrollHighlight}>
+        {panel}
+      </CartListScrollHighlightProvider>
+    )
+  }
+
+  return panel
 }

@@ -51,10 +51,11 @@ function csvFilename(view: OperationsViewId): string {
 
 export function exportOperationsSalesCsv(
   rows: OperationSaleRow[],
-  options?: { includeTable?: boolean; includeOrder?: boolean },
+  options?: { includeTable?: boolean; includeOrder?: boolean; timeZone?: string },
 ): void {
   const includeTable = options?.includeTable === true
   const includeOrder = options?.includeOrder === true
+  const timeZone = options?.timeZone
   const headers = includeTable
     ? ([
         "Fecha",
@@ -100,7 +101,7 @@ export function exportOperationsSalesCsv(
         ] as const)
 
   const body = rows.map((sale) => {
-    const when = formatOperationSaleDateTime(sale.soldAt)
+    const when = formatOperationSaleDateTime(sale.soldAt, timeZone)
     const base = [
       when.primary,
       when.secondary ?? "",
@@ -198,13 +199,20 @@ export function exportOperationsExpensesCsv(
 export function exportOperationsCsv(
   view: OperationsViewId,
   rows: OperationSaleRow[] | OperationPurchaseRow[] | OperationExpenseLedgerRow[],
+  timeZone?: string,
 ): void {
   if (view === "sales") {
-    exportOperationsSalesCsv(rows as OperationSaleRow[])
+    exportOperationsSalesCsv(rows as OperationSaleRow[], { timeZone })
   } else if (view === "tables") {
-    exportOperationsSalesCsv(rows as OperationSaleRow[], { includeTable: true })
+    exportOperationsSalesCsv(rows as OperationSaleRow[], {
+      includeTable: true,
+      timeZone,
+    })
   } else if (view === "counter") {
-    exportOperationsSalesCsv(rows as OperationSaleRow[], { includeOrder: true })
+    exportOperationsSalesCsv(rows as OperationSaleRow[], {
+      includeOrder: true,
+      timeZone,
+    })
   } else if (view === "purchases") {
     exportOperationsPurchasesCsv(rows as OperationPurchaseRow[])
   } else {

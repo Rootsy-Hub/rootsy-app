@@ -1,8 +1,7 @@
 "use client"
 
-import type {
-  OperationSaleRow,
-} from "@/app/[siteId]/[popId]/operations/actions"
+import type { OperationSaleRow } from "@/app/[siteId]/[popId]/operations/actions"
+import { usePopTimeZone } from "@/hooks/usePopTimeZone"
 import { OperationAccountingViewButton } from "@/app/[siteId]/[popId]/operations/OperationAccountingModal"
 import { OperationsSalesSkeletonRows } from "@/app/[siteId]/[popId]/operations/OperationsTableSkeleton"
 import { Button } from "@/components/ui/button"
@@ -44,8 +43,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
-import { SaleDetailTicketView } from "@/app/[siteId]/[popId]/operations/SaleDetailTicketView"
-import { ChannelOperationCheckoutTicket } from "@/app/[siteId]/[popId]/operations/ChannelOperationCheckoutTicket"
+import { OperationSaleDetailDialog } from "@/app/[siteId]/[popId]/operations/OperationSaleDetailDialog"
 import {
   displayOperationSalePaid,
   displayOperationSaleTotal,
@@ -57,23 +55,12 @@ const fmt = new Intl.NumberFormat("es-AR", {
   minimumFractionDigits: 2,
 })
 
-const SALE_STATUS_LABEL: Record<string, string> = {
-  draft: "Borrador",
-  completed: "Completada",
-  partial: "Cobro parcial",
-  cancelled: "Anulada",
-}
-
 const INVOICE_STATUS_LABEL: Record<string, string> = {
   draft: "Borrador",
   pending_afip: "Pendiente AFIP",
   authorized: "Autorizada",
   rejected: "Rechazada",
   cancelled: "Anulada",
-}
-
-function saleStatusLabel(s: string) {
-  return SALE_STATUS_LABEL[s] ?? s
 }
 
 function invoiceStatusLabel(s: string) {
@@ -85,31 +72,45 @@ export function formatOperationShortId(id: string | null | undefined) {
   return id.length > 10 ? `${id.slice(0, 8)}…` : id
 }
 
-export function formatOperationSaleDateTime(iso: string) {
+import {
+  addCalendarDays,
+  todayPopCalendarDate,
+  toPopCalendarDate,
+} from "@/lib/popTimezone"
+import { toISODateLocal } from "@/lib/dataWorkspaceDateFilter"
+
+export function formatOperationSaleDateTime(iso: string, timeZone?: string) {
   if (!iso) return { primary: "—", secondary: null as string | null }
   const d = new Date(iso)
   if (Number.isNaN(d.getTime())) {
     return { primary: iso, secondary: null }
   }
 
-  const now = new Date()
   const time = new Intl.DateTimeFormat("es-AR", {
     hour: "2-digit",
     minute: "2-digit",
+    ...(timeZone ? { timeZone } : {}),
   }).format(d)
 
-  const isToday = d.toDateString() === now.toDateString()
-  const yesterday = new Date(now)
-  yesterday.setDate(yesterday.getDate() - 1)
-  const isYesterday = d.toDateString() === yesterday.toDateString()
+  const now = new Date()
+  const saleDate = timeZone
+    ? toPopCalendarDate(iso, timeZone)
+    : iso.slice(0, 10)
+  const todayDate = timeZone
+    ? todayPopCalendarDate(timeZone)
+    : toISODateLocal(now)
+  const yesterdayDate = timeZone
+    ? addCalendarDays(todayDate, -1)
+    : toISODateLocal(new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1))
 
-  if (isToday) return { primary: "Hoy", secondary: time }
-  if (isYesterday) return { primary: "Ayer", secondary: time }
+  if (saleDate === todayDate) return { primary: "Hoy", secondary: time }
+  if (saleDate === yesterdayDate) return { primary: "Ayer", secondary: time }
 
   const primary = new Intl.DateTimeFormat("es-AR", {
     day: "numeric",
     month: "short",
     ...(d.getFullYear() !== now.getFullYear() ? { year: "numeric" as const } : {}),
+    ...(timeZone ? { timeZone } : {}),
   }).format(d)
 
   return { primary, secondary: time }
@@ -154,11 +155,6 @@ function saleHasComprobante(sale: OperationSaleRow): boolean {
 }
 
 const opsDialogLight = "rootsy-app-light text-foreground"
-const opsDialogSurfaceMd = cn(
-  opsDialogLight,
-  "gap-0 overflow-hidden rounded-2xl border border-border/60 bg-card p-0 shadow-2xl ring-1 ring-black/[0.04] sm:max-w-2xl",
-  "max-h-[min(90vh,760px)] flex flex-col overflow-hidden",
-)
 const opsDialogSurfaceLg = cn(
   opsDialogLight,
   "gap-0 overflow-hidden rounded-2xl border border-border/60 bg-card p-0 shadow-2xl ring-1 ring-black/[0.04] sm:max-w-lg",
@@ -168,83 +164,6 @@ const opsDialogHeader =
   "shrink-0 space-y-1.5 border-b border-border/50 bg-muted/25 px-6 pb-4 pt-5 text-left"
 const opsDialogBody =
   "min-h-0 flex-1 overflow-y-auto overscroll-contain px-6 py-4"
-
-function SaleDetailDialog({
-  sale,
-  open,
-  onOpenChange,
-  siteId,
-  popId,
-}: {
-  sale: OperationSaleRow | null
-  open: boolean
-  onOpenChange: (open: boolean) => void
-  siteId: string
-  popId: string
-}) {
-  if (!sale) return null
-
-  const when = formatOperationSaleDateTime(sale.soldAt)
-  const isChannelOperation =
-    Boolean(sale.tableSessionId || sale.counterOrderId) &&
-    (sale.isChannelGrouped ||
-      sale.channelOrderTotal != null ||
-      sale.status === "partial")
-
-  return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className={opsDialogSurfaceMd}>
-        <DialogHeader className={opsDialogHeader}>
-          <DialogTitle className="text-base font-semibold tracking-tight">
-            Detalle de venta
-          </DialogTitle>
-          <DialogDescription className="text-sm leading-relaxed">
-            {when.primary}
-            {when.secondary ? ` · ${when.secondary}` : ""} ·{" "}
-            {sale.customerName ?? "Consumidor final"} ·{" "}
-            {saleStatusLabel(sale.status)}
-          </DialogDescription>
-        </DialogHeader>
-        <div className={opsDialogBody}>
-          {sale.groupedSaleIds && sale.groupedSaleIds.length > 1 ? (
-            <p className="mb-3 text-xs text-muted-foreground">
-              Operación agrupada · {sale.groupedSaleIds.length} cobros
-            </p>
-          ) : null}
-
-          {isChannelOperation ? (
-            <ChannelOperationCheckoutTicket
-              popId={popId}
-              siteId={siteId}
-              sale={sale}
-            />
-          ) : (
-            <SaleDetailTicketView sale={sale} />
-          )}
-
-          {sale.payments.length > 0 && isChannelOperation ? (
-            <div className="mt-4">
-              <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                Cobros
-              </p>
-              <ul className="space-y-1 rounded-lg border border-border bg-muted/30 px-3 py-2">
-                {sale.payments.map((p, pi) => (
-                  <li
-                    key={`${sale.id}-pay-${pi}`}
-                    className="flex justify-between text-sm text-foreground"
-                  >
-                    <span>{p.methodName}</span>
-                    <span className={tdMoneyClass}>{fmt.format(p.amount)}</span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          ) : null}
-        </div>
-      </DialogContent>
-    </Dialog>
-  )
-}
 
 function SaleInvoiceDialog({
   sale,
@@ -459,6 +378,7 @@ export function OperationsSalesTable({
   showTableColumn?: boolean
   showOrderColumn?: boolean
 }) {
+  const timeZone = usePopTimeZone()
   const [detailSale, setDetailSale] = useState<OperationSaleRow | null>(null)
   const [invoiceSale, setInvoiceSale] = useState<OperationSaleRow | null>(null)
 
@@ -557,7 +477,7 @@ export function OperationsSalesTable({
             null
           ) : (
             rows.map((sale, i) => {
-              const when = formatOperationSaleDateTime(sale.soldAt)
+              const when = formatOperationSaleDateTime(sale.soldAt, timeZone)
               const clientLabel = sale.customerName ?? "Consumidor final"
               const comprobante = saleComprobanteLabel(sale)
 
@@ -725,7 +645,7 @@ export function OperationsSalesTable({
       ) : null}
       </DataWorkspaceListTableFrame>
 
-      <SaleDetailDialog
+      <OperationSaleDetailDialog
         sale={detailSale}
         open={detailSale != null}
         onOpenChange={(open) => {
@@ -733,6 +653,7 @@ export function OperationsSalesTable({
         }}
         siteId={siteId}
         popId={popId}
+        timeZone={timeZone}
       />
       <SaleInvoiceDialog
         sale={invoiceSale}

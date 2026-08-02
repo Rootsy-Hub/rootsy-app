@@ -26,6 +26,7 @@ import {
   type TreasurySettlementRow,
 } from "@/app/[siteId]/[popId]/accounts/treasuryDetailActions"
 import { TreasuryCashMovementsTable } from "@/app/[siteId]/[popId]/accounts/TreasuryCashMovementsTable"
+import { TreasuryGroupedMovementsList } from "@/app/[siteId]/[popId]/accounts/TreasuryGroupedMovementsList"
 import {
   ChildIntegrationChip,
   TreasuryChildReconciliationPanel,
@@ -36,11 +37,12 @@ import {
   exportTreasuryAccountPeriodCsv,
   findMatchingBankStatementLine,
   formatTreasuryShortDate,
+  formatTreasurySignedAmount,
   treasuryMoneyFmt as fmt,
   treasuryMovementKindLabel,
 } from "@/app/[siteId]/[popId]/accounts/treasuryAccountUiUtils"
 import { DataWorkspacePeriodFilter } from "@/components/data-workspace/DataWorkspacePeriodFilter"
-import { dataWorkspaceShellCard } from "@/components/data-workspace/dataWorkspaceListStyles"
+import { dataWorkspaceFlushBottomShellCard, dataWorkspaceShellCard } from "@/components/data-workspace/dataWorkspaceListStyles"
 import { Button } from "@/components/ui/button"
 import { DatePicker } from "@/components/ui/date-picker"
 import {
@@ -74,14 +76,17 @@ import {
 import {
   useCallback,
   useEffect,
+  useLayoutEffect,
   useMemo,
   useState,
   type FormEvent,
   type ReactNode,
 } from "react"
 import type { DateRange } from "react-day-picker"
+import Link from "next/link"
 
 const shellCard = dataWorkspaceShellCard
+const flushBottomShellCard = dataWorkspaceFlushBottomShellCard
 
 type DetailSection = "resumen" | "movimientos" | "conciliacion"
 
@@ -147,6 +152,9 @@ function DashboardEmptyState({ message }: { message: string }) {
 const dashboardKpiStripClass =
   "grid divide-y divide-border/60 border-b border-border/60 bg-muted/5 sm:grid-cols-3 sm:divide-x sm:divide-y-0"
 
+const dashboardBalanceStripClass =
+  "grid divide-y divide-border/60 border-b border-border/60 bg-muted/5 sm:grid-cols-2 sm:divide-x sm:divide-y-0"
+
 const dashboardBodyClass = "px-4 py-4 lg:px-5"
 
 const dashboardSectionClass =
@@ -157,14 +165,16 @@ function TreasuryStat({
   value,
   large,
   inverted,
+  className,
 }: {
   label: string
   value: string
   large?: boolean
   inverted?: boolean
+  className?: string
 }) {
   return (
-    <div className={inverted ? "text-right sm:text-left" : undefined}>
+    <div className={cn(inverted ? "text-right sm:text-left" : undefined, className)}>
       <p
         className={cn(
           "text-[11px] font-medium uppercase tracking-[0.14em]",
@@ -187,20 +197,17 @@ function TreasuryStat({
 }
 
 export function TreasuryAccountDetailView({
+  siteId,
   popId,
   accountId,
   accountKindHint,
-  onBack,
-  onOpenAccount,
-  onHubRefresh,
 }: {
+  siteId: string
   popId: string
   accountId: string
   accountKindHint?: TreasuryAccountKind
-  onBack: () => void
-  onOpenAccount: (accountId: string) => void
-  onHubRefresh?: () => void | Promise<void>
 }) {
+  const accountsBasePath = `/${siteId}/${popId}/accounts`
   const [account, setAccount] = useState<TreasuryAccountTableRow | null>(null)
   const [children, setChildren] = useState<TreasuryChildAccountRow[]>([])
   const [isMother, setIsMother] = useState(true)
@@ -344,6 +351,11 @@ export function TreasuryAccountDetailView({
     }
   }, [popId, accountId, loadPage])
 
+  useLayoutEffect(() => {
+    if (!popId || !accountId || loading || !account) return
+    setDetailLoading(true)
+  }, [popId, accountId, loading, account, dateBounds.from, dateBounds.to])
+
   useEffect(() => {
     if (!popId || !accountId || loading || !account) return
     void loadDetail()
@@ -358,10 +370,14 @@ export function TreasuryAccountDetailView({
   ])
 
   const reloadAll = useCallback(async () => {
-    const pageRes = await loadPage()
-    if (pageRes?.success) await loadDetail(pageRes)
-    await onHubRefresh?.()
-  }, [loadPage, loadDetail, onHubRefresh])
+    setLoading(true)
+    try {
+      const pageRes = await loadPage()
+      if (pageRes?.success) await loadDetail(pageRes)
+    } finally {
+      setLoading(false)
+    }
+  }, [loadPage, loadDetail])
 
   const handleImportCsv = async () => {
     if (!popId || !csvText.trim()) return
@@ -532,10 +548,6 @@ export function TreasuryAccountDetailView({
       })
     : null
 
-  const headerGradient =
-    brand?.headerGradient ?? "from-muted via-muted/80 to-muted/60"
-  const headerText = brand?.headerTextClass ?? "text-foreground"
-
   const posChildren = children.filter((c) => c.childRole === "pos")
   const cardChildren = children.filter((c) => c.childRole === "card_payable")
   const recentMovements = detailData?.movements.slice(0, 12) ?? []
@@ -574,6 +586,7 @@ export function TreasuryAccountDetailView({
       dateTo: dateBounds.to ?? "",
       movements: detailData.movements,
       totals: detailData.movementTotals,
+      periodSummary: detailData.periodSummary,
       includeTreasuryDetails: showTreasuryMovementDetails,
     })
   }
@@ -596,12 +609,14 @@ export function TreasuryAccountDetailView({
       type="button"
       size="sm"
       variant="outline"
-      disabled={!detailData || detailData.movements.length === 0}
+      disabled={
+        detailLoading || !detailData || detailData.movements.length === 0
+      }
       onClick={handleExportPeriod}
       className="gap-2 self-end border-border/80 bg-background font-medium shadow-sm lg:self-auto"
     >
       <Download className="size-4 shrink-0" aria-hidden />
-      Resumen Completo
+      Resumen del período
     </Button>
   )
 
@@ -612,47 +627,66 @@ export function TreasuryAccountDetailView({
     </div>
   )
 
-  const resumenContent =
-    detailData ? (
+  const periodSummary = detailData?.periodSummary ?? null
+
+  const periodBalanceStrip = periodSummary ? (
+    <div className={dashboardBalanceStripClass}>
+      {periodSummary.openingBalance != null ? (
+        <DashboardKpi
+          label="Saldo anterior al período"
+          value={fmt.format(periodSummary.openingBalance)}
+        />
+      ) : null}
+      <DashboardKpi
+        label="Saldo del período"
+        value={fmt.format(periodSummary.currentBalance)}
+      />
+    </div>
+  ) : detailData ? (
+    <div className={dashboardKpiStripClass}>
+      <DashboardKpi
+        label="Ingresos del período"
+        value={fmt.format(detailData.movementTotals.in)}
+      />
+      <DashboardKpi
+        label="Egresos del período"
+        value={fmt.format(detailData.movementTotals.out)}
+      />
+    </div>
+  ) : null
+
+  const periodContentSkeleton = (
+    <TreasuryAccountDetailContentSkeleton variant={skeletonVariant} />
+  )
+
+  const resumenContent = detailLoading ? (
+    periodContentSkeleton
+  ) : detailData ? (
+    isMovementsOnlyView ? (
       <>
-        <div className={dashboardKpiStripClass}>
-          <DashboardKpi
-            label="Entradas del período"
-            value={fmt.format(detailData.movementTotals.in)}
-          />
-          <DashboardKpi
-            label="Salidas del período"
-            value={fmt.format(detailData.movementTotals.out)}
-          />
-          <DashboardKpi
-            label="Neto del período"
-            value={fmt.format(detailData.movementTotals.net)}
-            hint="Entradas menos salidas"
-          />
-        </div>
-        {isMovementsOnlyView ? (
-          <TreasuryCashMovementsTable
-            movements={detailData.movements}
-            fullWidth
-            showTreasuryDetails={showTreasuryMovementDetails}
-          />
-        ) : (
-          <div className={dashboardBodyClass}>
-            <DashboardSectionHeader
-              title="Últimos movimientos"
-              description="Vista rápida del período seleccionado"
-            />
-            {recentMovements.length > 0 ? (
-              <MovementList movements={recentMovements} compact embedded />
-            ) : (
-              <DashboardEmptyState message="No hay movimientos recientes en este período." />
-            )}
-          </div>
-        )}
+        {periodBalanceStrip}
+        <TreasuryCashMovementsTable
+          movements={detailData.movements}
+          fullWidth
+        />
       </>
-    ) : detailLoading ? (
-      <TreasuryAccountDetailContentSkeleton variant={skeletonVariant} />
-    ) : null
+    ) : (
+      <>
+        {periodBalanceStrip}
+        <div className={dashboardBodyClass}>
+          <DashboardSectionHeader
+            title="Últimos movimientos"
+            description="Vista rápida del período seleccionado"
+          />
+          {recentMovements.length > 0 ? (
+            <MovementList movements={recentMovements} compact embedded />
+          ) : (
+            <DashboardEmptyState message="No hay movimientos recientes en este período." />
+          )}
+        </div>
+      </>
+    )
+  ) : null
 
   const bottomPanelContent =
     isMotherBankWallet && selectedIntegrationChild ? (
@@ -681,10 +715,21 @@ export function TreasuryAccountDetailView({
       </>
     )
 
+  const useFlushMovementsLayout =
+    skeletonVariant === "cash" ||
+    (!loading && account != null && isMovementsOnlyView)
+
   return (
     <>
-      <div className="relative flex w-full min-h-0 flex-1 flex-col">
-        <div className="relative flex w-full flex-col gap-6 px-4 py-6 sm:px-6 lg:px-8">
+      <div className="relative flex w-full min-h-full flex-1 flex-col">
+        <div
+          className={cn(
+            "relative flex w-full flex-1 flex-col",
+            useFlushMovementsLayout
+              ? "min-h-full gap-6 px-4 pt-6 pb-0 sm:px-6 lg:px-8"
+              : "gap-6 px-4 py-6 sm:px-6 lg:px-8",
+          )}
+        >
           {loading ? (
             <TreasuryAccountDetailSkeleton variant={skeletonVariant} />
           ) : error ? (
@@ -693,29 +738,19 @@ export function TreasuryAccountDetailView({
             </div>
           ) : account ? (
             <>
-              <article className="overflow-hidden rounded-2xl border border-border/60 bg-card shadow-sm">
-                <div
-                  className={cn(
-                    "bg-linear-to-r px-4 py-5 sm:px-6 lg:px-8",
-                    headerGradient,
-                  )}
-                >
-                  <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
+              <article className="shrink-0 overflow-hidden rounded-2xl border border-border/60 bg-card shadow-sm">
+                <div className="border-b border-border/60 px-4 py-4 sm:px-6 lg:px-8">
+                  <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
                     <div className="flex min-w-0 items-center gap-3 sm:gap-4">
                       <Button
-                        type="button"
-                        variant="ghost"
+                        asChild
+                        variant="ghost-neutral"
                         size="icon"
-                        className={cn(
-                          "size-9 shrink-0 backdrop-blur-sm",
-                          brand
-                            ? "text-white/90 hover:bg-white/15 hover:text-white"
-                            : "text-muted-foreground hover:bg-muted/60 hover:text-foreground",
-                        )}
-                        aria-label="Volver a cuentas"
-                        onClick={onBack}
+                        className="size-9 shrink-0"
                       >
-                        <ArrowLeft className="size-5" aria-hidden />
+                        <Link href={accountsBasePath} aria-label="Volver a cuentas">
+                          <ArrowLeft className="size-5" aria-hidden />
+                        </Link>
                       </Button>
                       <TreasuryBrandIsotype
                         brandKey={brand?.key}
@@ -723,99 +758,87 @@ export function TreasuryAccountDetailView({
                           brand?.monogram ??
                           (account.name.slice(0, 2).toUpperCase() || "—")
                         }
-                        headerTextClass={headerText}
                         size="lg"
                       />
-                      <div className="min-w-0">
-                        <p
-                          className={cn(
-                            "text-[10px] font-semibold uppercase tracking-[0.16em] opacity-85",
-                            headerText,
-                          )}
-                        >
+                      <div className="min-w-0 flex-1">
+                        <p className="text-[11px] font-medium uppercase tracking-[0.12em] text-muted-foreground">
                           {treasuryKindLabel(account.kind)}
                           {!account.isActive ? " · Inactiva" : ""}
                         </p>
                         <TreasuryBrandName
                           preset={brand}
                           name={account.name}
-                          textClass={headerText}
-                          className="mt-1.5 text-xl sm:text-2xl"
+                          textClass="text-foreground"
+                          className="mt-0.5 text-lg font-semibold sm:text-xl"
                         />
                         {parentAccount ? (
-                          <p className={cn("mt-1 text-xs opacity-80", headerText)}>
+                          <p className="mt-1 text-xs text-muted-foreground">
                             Vinculada a{" "}
-                            <button
-                              type="button"
-                              className="font-medium underline-offset-2 hover:underline"
-                              onClick={() => onOpenAccount(parentAccount.id)}
+                            <Link
+                              href={`${accountsBasePath}/${parentAccount.id}`}
+                              className="font-medium text-foreground underline-offset-2 hover:underline"
                             >
                               {parentAccount.name}
-                            </button>
+                            </Link>
                           </p>
                         ) : null}
                       </div>
                     </div>
 
-                    <div
-                      className={cn(
-                        "flex shrink-0 flex-wrap items-end gap-x-6 gap-y-4 border-t pt-4 sm:gap-x-8 lg:border-t-0 lg:pt-0",
-                        brand ? "border-white/15" : "border-border/40",
-                      )}
-                    >
-                      <TreasuryStat
-                        label="Saldo real"
-                        value={moneyOrDash(account.ledgerBalance)}
-                        large
-                        inverted={Boolean(brand)}
-                      />
-                      {!isCashAccount ? (
-                        <>
-                          <TreasuryStat
-                            label="A liquidar"
-                            value={fmt.format(account.toLiquidateBalance)}
-                            inverted={Boolean(brand)}
+                    {isMotherBankWallet && integrationChildren.length > 0 ? (
+                      <div className="flex flex-wrap items-center gap-2 lg:shrink-0 lg:justify-end">
+                        {posChildren.map((child) => (
+                          <ChildIntegrationChip
+                            key={child.id}
+                            child={child}
+                            compact
+                            selected={selectedIntegrationChild?.id === child.id}
+                            onToggle={toggleIntegrationChild}
                           />
-                          <TreasuryStat
-                            label="A pagar"
-                            value={fmt.format(account.toPayBalance)}
-                            inverted={Boolean(brand)}
+                        ))}
+                        {cardChildren.map((child) => (
+                          <ChildIntegrationChip
+                            key={child.id}
+                            child={child}
+                            compact
+                            selected={selectedIntegrationChild?.id === child.id}
+                            onToggle={toggleIntegrationChild}
                           />
-                        </>
-                      ) : null}
-                      {account.isCardPayable ? (
-                        <TreasuryStat
-                          label="Deuda del resumen"
-                          value={fmt.format(account.outstandingBalance)}
-                          inverted={Boolean(brand)}
-                        />
-                      ) : null}
-                    </div>
+                        ))}
+                      </div>
+                    ) : null}
                   </div>
                 </div>
 
-                {isMotherBankWallet && integrationChildren.length > 0 ? (
-                  <div className="border-t border-border/60 bg-background px-4 py-4 sm:px-6 lg:px-8">
-                    <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
-                      {posChildren.map((child) => (
-                        <ChildIntegrationChip
-                          key={child.id}
-                          child={child}
-                          selected={selectedIntegrationChild?.id === child.id}
-                          onToggle={toggleIntegrationChild}
-                        />
-                      ))}
-                      {cardChildren.map((child) => (
-                        <ChildIntegrationChip
-                          key={child.id}
-                          child={child}
-                          selected={selectedIntegrationChild?.id === child.id}
-                          onToggle={toggleIntegrationChild}
-                        />
-                      ))}
-                    </div>
-                  </div>
-                ) : null}
+                <div className="grid gap-4 bg-muted/20 px-4 py-4 sm:grid-cols-2 sm:px-6 lg:flex lg:flex-wrap lg:items-end lg:gap-x-10 lg:gap-y-3 lg:px-8">
+                  <TreasuryStat
+                    label="Saldo real"
+                    value={moneyOrDash(account.ledgerBalance)}
+                    large
+                    className="lg:min-w-36"
+                  />
+                  {!isCashAccount ? (
+                    <>
+                      <TreasuryStat
+                        label="A liquidar"
+                        value={fmt.format(account.toLiquidateBalance)}
+                        className="lg:min-w-28"
+                      />
+                      <TreasuryStat
+                        label="A pagar"
+                        value={fmt.format(account.toPayBalance)}
+                        className="lg:min-w-28"
+                      />
+                    </>
+                  ) : null}
+                  {account.isCardPayable ? (
+                    <TreasuryStat
+                      label="Deuda del resumen"
+                      value={fmt.format(account.outstandingBalance)}
+                      className="lg:min-w-36"
+                    />
+                  ) : null}
+                </div>
 
                 {!isMother && account.isCardPayable && canSettle ? (
                   <div className="border-t border-border/60 bg-background px-4 py-3 sm:px-6 lg:px-8">
@@ -870,7 +893,12 @@ export function TreasuryAccountDetailView({
               </article>
 
               {isMovementsOnlyView ? (
-                <div className={cn(shellCard, "overflow-hidden")}>
+                <div
+                  className={cn(
+                    flushBottomShellCard,
+                    "flex flex-1 flex-col",
+                  )}
+                >
                   {bottomPanelContent}
                 </div>
               ) : (
@@ -914,7 +942,9 @@ export function TreasuryAccountDetailView({
                   </TabsContent>
 
                   <TabsContent value="movimientos" className="mt-0">
-                    {detailData ? (
+                    {detailLoading ? (
+                      periodContentSkeleton
+                    ) : detailData ? (
                       <>
                         {detailData.settlements.length > 0 ? (
                           <div className={dashboardBodyClass}>
@@ -968,14 +998,14 @@ export function TreasuryAccountDetailView({
                           )}
                         </div>
                       </>
-                    ) : detailLoading ? (
-                      <TreasuryAccountDetailContentSkeleton />
                     ) : null}
                   </TabsContent>
 
                   {detailData?.supportsBankReconciliation ? (
                     <TabsContent value="conciliacion" className="mt-0">
-                      {detailData ? (
+                      {detailLoading ? (
+                        periodContentSkeleton
+                      ) : detailData ? (
                         <ReconciliationPanel
                           detailData={detailData}
                           csvText={csvText}
@@ -1185,84 +1215,55 @@ function MovementList({
   onUnreconcile?: (m: PaymentMethodMovementRow) => void
 }) {
   return (
-    <ul
+    <TreasuryGroupedMovementsList
+      movements={movements}
+      fullWidth={embedded}
       className={cn(
-        "divide-y divide-border/50 overflow-y-auto",
-        embedded ? "rounded-lg border border-border/60" : "space-y-1 rounded-xl border border-border/60",
+        "overflow-y-auto",
+        embedded ? undefined : "rounded-xl",
         compact ? "max-h-64" : "max-h-128",
       )}
-    >
-      {movements.map((m) => {
+      renderRowTrailing={(m) => {
         const busyKey = `${m.kind}:${m.movementRefId}`
         const isBusy = reconcileBusyKey === busyKey
-        const match =
-          supportsReconciliation &&
-          !m.reconciled &&
-          statementLines &&
-          statementLines.length > 0
-            ? findMatchingBankStatementLine(m, statementLines)
-            : null
+
         return (
-          <li
-            key={`${m.kind}-${m.id}-${m.sourceAccountName ?? ""}`}
-            className="flex items-center justify-between gap-2 px-3 py-2.5"
-          >
-            <div className="min-w-0 flex-1">
-              <p className="truncate text-sm font-medium">
-                {m.label}
-                {m.reconciled ? (
-                  <CheckCircle2 className="ml-1 inline size-3.5 text-emerald-600" />
-                ) : null}
-              </p>
-              <p className="text-xs text-muted-foreground">
-                {treasuryMovementKindLabel(m.kind)} ·{" "}
-                {formatTreasuryShortDate(m.date)}
-                {m.sourceAccountName ? ` · ${m.sourceAccountName}` : ""}
-                {match ? " · Coincide con extracto" : ""}
-              </p>
-            </div>
-            <div className="flex shrink-0 items-center gap-2">
-              <span
-                className={cn(
-                  "text-sm font-semibold tabular-nums",
-                  m.direction === "in"
-                    ? "text-emerald-700 dark:text-emerald-400"
-                    : "text-rose-700 dark:text-rose-400",
-                )}
-              >
-                {m.direction === "in" ? "+" : "−"}
-                {fmt.format(m.amount)}
-              </span>
-              {supportsReconciliation && canUpdate && onReconcile && onUnreconcile ? (
-                m.reconciled ? (
-                  <Button
-                    type="button"
-                    size="sm"
-                    variant="ghost"
-                    className="h-7 px-2 text-xs"
-                    disabled={isBusy}
-                    onClick={() => onUnreconcile(m)}
-                  >
-                    {isBusy ? "…" : "Deshacer"}
-                  </Button>
-                ) : (
-                  <Button
-                    type="button"
-                    size="sm"
-                    variant="outline"
-                    className="h-7 px-2 text-xs"
-                    disabled={isBusy}
-                    onClick={() => onReconcile(m)}
-                  >
-                    {isBusy ? "…" : "Conciliar"}
-                  </Button>
-                )
-              ) : null}
-            </div>
-          </li>
+          <>
+            {m.reconciled ? (
+              <CheckCircle2
+                className="size-3.5 shrink-0 text-emerald-600"
+                aria-label="Conciliado"
+              />
+            ) : null}
+            {supportsReconciliation && canUpdate && onReconcile && onUnreconcile ? (
+              m.reconciled ? (
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="ghost"
+                  className="h-7 px-2 text-xs"
+                  disabled={isBusy}
+                  onClick={() => onUnreconcile(m)}
+                >
+                  {isBusy ? "…" : "Deshacer"}
+                </Button>
+              ) : (
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  className="h-7 px-2 text-xs"
+                  disabled={isBusy}
+                  onClick={() => onReconcile(m)}
+                >
+                  {isBusy ? "…" : "Conciliar"}
+                </Button>
+              )
+            ) : null}
+          </>
         )
-      })}
-    </ul>
+      }}
+    />
   )
 }
 
@@ -1546,14 +1547,13 @@ function ReconciliationPanel({
                 </div>
                 <span
                   className={cn(
-                    "shrink-0 text-sm font-semibold tabular-nums",
+                    "shrink-0 whitespace-nowrap text-sm font-semibold tabular-nums",
                     line.direction === "in"
                       ? "text-emerald-700 dark:text-emerald-400"
                       : "text-rose-700 dark:text-rose-400",
                   )}
                 >
-                  {line.direction === "in" ? "+" : "−"}
-                  {fmt.format(line.amount)}
+                  {formatTreasurySignedAmount(line.direction, line.amount)}
                 </span>
                 {canUpdate && !line.reconciled ? (
                   <Button

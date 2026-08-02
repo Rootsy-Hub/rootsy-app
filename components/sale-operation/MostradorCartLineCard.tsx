@@ -1,5 +1,6 @@
 "use client"
 
+import { CartLineScrollTarget } from "@/components/sale-operation/CartLineScrollTarget"
 import type { OperationCartLineOverrideState } from "@/components/sale-operation/OperationCartLineRow"
 import { CheckoutDialogFooter } from "@/components/checkout/CheckoutDialogFooter"
 import {
@@ -323,6 +324,7 @@ export function MostradorCartLineCard({
 
   return (
     <>
+      <CartLineScrollTarget lineId={row.cartLineId}>
       <div
         className={cn(
           "w-full",
@@ -366,6 +368,7 @@ export function MostradorCartLineCard({
           </div>
         ) : null}
       </div>
+      </CartLineScrollTarget>
 
       <Dialog
         open={open && !isCartLineLocked}

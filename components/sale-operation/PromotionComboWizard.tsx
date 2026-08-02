@@ -1,16 +1,18 @@
 "use client"
 
 import type { MenuCatalogPromotion } from "@/app/[siteId]/[popId]/menu-catalog/actions"
-import { Button } from "@/components/ui/button"
+import { CheckoutDialogFooter } from "@/components/checkout/CheckoutDialogFooter"
+import {
+  CheckoutFieldHint,
+  CheckoutSectionLabel,
+  CheckoutSectionPanel,
+} from "@/components/checkout/CheckoutFormFields"
 import {
   Dialog,
   DialogContent,
-  DialogDescription,
-  DialogFooter,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
-import { Label } from "@/components/ui/label"
 import {
   Select,
   SelectContent,
@@ -21,7 +23,15 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import type { PromotionCartSelection } from "@/lib/promotionPricing"
-import { useMemo, useState } from "react"
+import { cn } from "@/lib/utils"
+import {
+  saleOpChannelFormField,
+  saleOpDialogBody,
+  saleOpDialogContentMd,
+  saleOpDialogHeader,
+  saleOpFmt,
+} from "@/components/sale-operation/saleOperationStyles"
+import { useEffect, useId, useMemo, useState } from "react"
 
 type Props = {
   open: boolean
@@ -30,23 +40,28 @@ type Props = {
   onConfirm: (selections: PromotionCartSelection[]) => void
 }
 
-const fmt = new Intl.NumberFormat("es-AR", {
-  style: "currency",
-  currency: "ARS",
-  maximumFractionDigits: 0,
-})
-
 export function PromotionComboWizard({
   open,
   promotion,
   onOpenChange,
   onConfirm,
 }: Props) {
+  const formId = useId()
   const [selectionBySlot, setSelectionBySlot] = useState<
     Record<string, string>
   >({})
 
   const slots = promotion?.slots ?? []
+
+  useEffect(() => {
+    if (!open) {
+      setSelectionBySlot({})
+    }
+  }, [open])
+
+  useEffect(() => {
+    setSelectionBySlot({})
+  }, [promotion?.id])
 
   const selections = useMemo((): PromotionCartSelection[] => {
     if (!promotion) return []
@@ -84,86 +99,106 @@ export function PromotionComboWizard({
     onOpenChange(next)
   }
 
+  const handleConfirm = () => {
+    if (!canConfirm) return
+    onConfirm(selections)
+    setSelectionBySlot({})
+    onOpenChange(false)
+  }
+
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent className="sm:max-w-md">
-        <DialogHeader>
-          <DialogTitle>{promotion?.name ?? "Promoción"}</DialogTitle>
-          <DialogDescription>
-            Elegí qué producto o receta va en cada ítem del combo.
-          </DialogDescription>
+      <DialogContent className={saleOpDialogContentMd}>
+        <DialogHeader className={cn(saleOpDialogHeader, "shrink-0")}>
+          <DialogTitle className="text-base font-semibold tracking-tight">
+            {promotion?.name ?? "Promoción"}
+          </DialogTitle>
         </DialogHeader>
 
-        <div className="space-y-4 py-2">
-          {slots.map((slot) => (
-            <div key={slot.id} className="space-y-1.5">
-              <Label>
-                {slot.label}
-                {slot.quantity > 1 ? ` × ${slot.quantity}` : ""}
-              </Label>
-              <Select
-                value={selectionBySlot[slot.id] ?? ""}
-                onValueChange={(v) =>
-                  setSelectionBySlot((prev) => ({ ...prev, [slot.id]: v }))
-                }
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Elegir opción" />
-                </SelectTrigger>
-                <SelectContent>
-                  {slot.options.some((o) => o.kind === "article") ? (
-                    <SelectGroup>
-                      <SelectLabel>Productos</SelectLabel>
-                      {slot.options
-                        .filter((o) => o.kind === "article")
-                        .map((o) => (
-                          <SelectItem
-                            key={`article:${o.refId}`}
-                            value={`article:${o.refId}`}
-                          >
-                            {o.name} · {fmt.format(o.salePrice)}
-                          </SelectItem>
-                        ))}
-                    </SelectGroup>
-                  ) : null}
-                  {slot.options.some((o) => o.kind === "recipe") ? (
-                    <SelectGroup>
-                      <SelectLabel>Recetas</SelectLabel>
-                      {slot.options
-                        .filter((o) => o.kind === "recipe")
-                        .map((o) => (
-                          <SelectItem
-                            key={`recipe:${o.refId}`}
-                            value={`recipe:${o.refId}`}
-                          >
-                            {o.name} · {fmt.format(o.salePrice)}
-                          </SelectItem>
-                        ))}
-                    </SelectGroup>
-                  ) : null}
-                </SelectContent>
-              </Select>
-            </div>
-          ))}
+        <div
+          className={cn(
+            saleOpDialogBody,
+            "min-h-0 flex-1 space-y-4 overflow-y-auto overscroll-contain",
+          )}
+        >
+          <CheckoutFieldHint>
+            Elegí qué producto o receta va en cada ítem del combo.
+          </CheckoutFieldHint>
+
+          <CheckoutSectionPanel>
+            {slots.map((slot, index) => {
+              const fieldId = `${formId}-slot-${slot.id}`
+              const slotLabel =
+                slot.quantity > 1 ? `${slot.label} × ${slot.quantity}` : slot.label
+
+              return (
+                <div
+                  key={slot.id}
+                  className={cn("space-y-2.5", index > 0 && "pt-1")}
+                >
+                  <CheckoutSectionLabel>{slotLabel}</CheckoutSectionLabel>
+                  <Select
+                    value={selectionBySlot[slot.id] ?? ""}
+                    onValueChange={(v) =>
+                      setSelectionBySlot((prev) => ({ ...prev, [slot.id]: v }))
+                    }
+                  >
+                    <SelectTrigger
+                      id={fieldId}
+                      className={cn(
+                        saleOpChannelFormField,
+                        "h-11 w-full font-normal data-placeholder:text-muted-foreground/70",
+                      )}
+                    >
+                      <SelectValue placeholder="Elegir opción" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {slot.options.some((o) => o.kind === "article") ? (
+                        <SelectGroup>
+                          <SelectLabel>Productos</SelectLabel>
+                          {slot.options
+                            .filter((o) => o.kind === "article")
+                            .map((o) => (
+                              <SelectItem
+                                key={`article:${o.refId}`}
+                                value={`article:${o.refId}`}
+                              >
+                                {o.name} · {saleOpFmt.format(o.salePrice)}
+                              </SelectItem>
+                            ))}
+                        </SelectGroup>
+                      ) : null}
+                      {slot.options.some((o) => o.kind === "recipe") ? (
+                        <SelectGroup>
+                          <SelectLabel>Recetas</SelectLabel>
+                          {slot.options
+                            .filter((o) => o.kind === "recipe")
+                            .map((o) => (
+                              <SelectItem
+                                key={`recipe:${o.refId}`}
+                                value={`recipe:${o.refId}`}
+                              >
+                                {o.name} · {saleOpFmt.format(o.salePrice)}
+                              </SelectItem>
+                            ))}
+                        </SelectGroup>
+                      ) : null}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )
+            })}
+          </CheckoutSectionPanel>
         </div>
 
-        <DialogFooter>
-          <Button type="button" variant="outline" onClick={() => handleOpenChange(false)}>
-            Cancelar
-          </Button>
-          <Button
-            type="button"
-            disabled={!canConfirm}
-            onClick={() => {
-              if (!canConfirm) return
-              onConfirm(selections)
-              setSelectionBySlot({})
-              onOpenChange(false)
-            }}
-          >
-            Agregar al pedido
-          </Button>
-        </DialogFooter>
+        <CheckoutDialogFooter
+          onCancel={() => handleOpenChange(false)}
+          primary={{
+            label: "Agregar al pedido",
+            onClick: handleConfirm,
+            disabled: !canConfirm,
+          }}
+        />
       </DialogContent>
     </Dialog>
   )

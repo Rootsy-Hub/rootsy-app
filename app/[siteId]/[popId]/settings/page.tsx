@@ -331,8 +331,13 @@ function SettingsPage() {
                         setForm((f) => ({ ...f, country: e.target.value }))
                       }
                       disabled={!canUpdate}
+                      placeholder="AR"
                       className="bg-background"
                     />
+                    <p className="text-xs text-muted-foreground">
+                      Código ISO (ej. AR). Define la zona horaria para fechas y
+                      horarios del local.
+                    </p>
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="pop-state">Provincia / estado</Label>

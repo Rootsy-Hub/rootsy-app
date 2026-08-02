@@ -1,6 +1,9 @@
 "use client"
 
-import { TreasuryAccountBrandVisual } from "@/app/[siteId]/[popId]/accounts/TreasuryAccountBrandVisual"
+import {
+  treasuryPickerTileClass,
+  TreasuryAccountBrandVisual,
+} from "@/app/[siteId]/[popId]/accounts/TreasuryAccountBrandVisual"
 import { FieldLabel } from "@/components/ui/field"
 import {
   getTreasuryBrandPresets,
@@ -9,12 +12,6 @@ import {
 } from "@/lib/treasuryAccountBrands"
 import { cn } from "@/lib/utils"
 import { Plus } from "lucide-react"
-
-const lightLabel = "text-zinc-700 dark:text-zinc-700"
-
-/** Selección visible sobre tiles neutros y sobre marcas con color de fondo. */
-const pickerTileSelectedClass =
-  "z-[1] shadow-md ring-2 ring-zinc-900/20 ring-offset-2 ring-offset-white"
 
 type Props = {
   category: TreasuryBrandCategory
@@ -34,7 +31,7 @@ export function TreasuryInstitutionPicker({
 
   return (
     <div className="space-y-2">
-      <FieldLabel className={lightLabel}>
+      <FieldLabel>
         {category === "bank" ? "Banco" : "Billetera"}
       </FieldLabel>
       <div
@@ -71,31 +68,19 @@ export function TreasuryInstitutionPicker({
           onClick={() => onChange(TREASURY_BRAND_OTHER_KEY)}
           className="min-w-0 text-left"
         >
-          <div
-            className={cn(
-              "flex min-h-[58px] items-center gap-2.5 rounded-xl border border-dashed px-2.5 py-2 text-sm font-semibold transition-all",
-              isOtherSelected
-                ? cn(
-                    "border-zinc-500 bg-zinc-50 text-zinc-900",
-                    pickerTileSelectedClass,
-                  )
-                : cn(
-                    "border-zinc-200 bg-white text-zinc-600 hover:border-zinc-300 hover:bg-zinc-50 hover:text-zinc-900",
-                  ),
-            )}
-          >
+          <div className={cn(treasuryPickerTileClass(isOtherSelected), "border-dashed")}>
             <span
               className={cn(
-                "flex size-9 shrink-0 items-center justify-center rounded-xl border border-dashed",
-                isOtherSelected
-                  ? "border-zinc-300 bg-white text-zinc-800"
-                  : "border-zinc-200 bg-zinc-50 text-zinc-400",
+                "flex size-9 shrink-0 items-center justify-center rounded-xl border border-dashed border-border/70 bg-muted/20 text-muted-foreground",
+                isOtherSelected && "border-border bg-background text-foreground",
               )}
               aria-hidden
             >
               <Plus className="size-4 shrink-0" />
             </span>
-            <span className="min-w-0 flex-1 truncate leading-tight">{otherLabel}</span>
+            <span className="min-w-0 flex-1 truncate text-sm font-semibold leading-tight text-foreground">
+              {otherLabel}
+            </span>
           </div>
         </button>
       </div>

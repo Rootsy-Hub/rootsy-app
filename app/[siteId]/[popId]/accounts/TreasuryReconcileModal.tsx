@@ -10,11 +10,12 @@ import {
   recordTreasurySettlementForAccount,
 } from "@/app/[siteId]/[popId]/accounts/treasuryDetailActions"
 import {
+  TREASURY_CARD_OTHER_CHARGES_LABEL,
   TREASURY_CARD_STATEMENT_CHARGES_ACCOUNT_HINT,
   TREASURY_CARD_STATEMENT_CHARGES_LABEL,
-  TREASURY_CARD_STATEMENT_CHARGES_SHORT_LABEL,
   TREASURY_RECONCILE_COMMISSIONS_ACCOUNT_HINT,
   TREASURY_RECONCILE_COMMISSIONS_LABEL,
+  formatTreasuryMovementAmount,
   defaultTreasuryPeriodEnd,
   formatTreasuryMoneyInputValue,
   formatTreasuryShortDate,
@@ -23,6 +24,7 @@ import {
 } from "@/app/[siteId]/[popId]/accounts/treasuryAccountUiUtils"
 import { Button } from "@/components/ui/button"
 import { DatePicker } from "@/components/ui/date-picker"
+import { FieldSelect } from "@/components/ui/field-select"
 import {
   Dialog,
   DialogContent,
@@ -37,23 +39,17 @@ import {
   FieldGroup,
   FieldLabel,
 } from "@/components/ui/field"
+import { MoneyInputField } from "@/components/ui/money-input-field"
 import {
-  InputGroup,
-  InputGroupAddon,
-  InputGroupInput,
-  InputGroupText,
-} from "@/components/ui/input-group"
-import {
-  Select,
-  SelectContent,
   SelectItem,
-  SelectTrigger,
-  SelectValue,
 } from "@/components/ui/select"
 import { Textarea } from "@/components/ui/textarea"
 import { cn } from "@/lib/utils"
 import { Calculator, Loader2 } from "lucide-react"
 import { useCallback, useEffect, useMemo, useState } from "react"
+
+const moneyFieldLabelClass =
+  "min-h-11 text-sm leading-snug text-zinc-700 dark:text-zinc-700"
 
 function roundMoney(n: number): number {
   return Math.round(n * 100) / 100
@@ -71,6 +67,10 @@ const lightOutlineButton =
   "border-zinc-200 !bg-white text-zinc-800 shadow-xs hover:!bg-zinc-100 hover:!text-zinc-900 dark:border-zinc-200 dark:!bg-white dark:text-zinc-800 dark:hover:!bg-zinc-100 dark:hover:!text-zinc-900"
 const lightLinkAction =
   "h-auto shrink-0 gap-1.5 px-0 py-0 text-xs font-medium !text-emerald-700 underline-offset-4 hover:!bg-transparent hover:!text-emerald-900 hover:underline disabled:pointer-events-none disabled:opacity-45 dark:!text-emerald-700 dark:hover:!bg-transparent dark:hover:!text-emerald-900"
+const lightSelectContent =
+  "border-zinc-200 bg-white text-zinc-900 dark:border-zinc-200 dark:bg-white dark:text-zinc-900"
+const lightSelectItem =
+  "focus:bg-zinc-100 focus:text-zinc-900 data-[highlighted]:bg-zinc-100 data-[highlighted]:text-zinc-900 dark:focus:bg-zinc-100 dark:focus:text-zinc-900 dark:data-[highlighted]:bg-zinc-100 dark:data-[highlighted]:text-zinc-900"
 
 export function TreasuryReconcileModal({
   open,
@@ -265,11 +265,16 @@ export function TreasuryReconcileModal({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
         className={cn(
-          "gap-0 overflow-hidden p-0 shadow-xl sm:max-w-lg",
+          "flex max-h-[calc(100dvh-2rem)] flex-col gap-0 overflow-hidden p-0 shadow-xl sm:max-w-lg",
           lightPanel,
         )}
       >
-        <DialogHeader className={cn("space-y-1 border-b px-6 py-5", lightSummary)}>
+        <DialogHeader
+          className={cn(
+            "shrink-0 space-y-1 border-b px-6 py-5",
+            lightSummary,
+          )}
+        >
           <DialogTitle className="text-lg font-semibold tracking-tight text-zinc-900">
             {isPos ? "Liquidar POS" : "Pagar tarjeta"}
           </DialogTitle>
@@ -278,7 +283,7 @@ export function TreasuryReconcileModal({
           </DialogDescription>
         </DialogHeader>
 
-        <div className="border-b border-zinc-100 bg-white px-6 py-4 dark:border-zinc-100 dark:bg-white">
+        <div className="shrink-0 border-b border-zinc-100 bg-white px-6 py-4 dark:border-zinc-100 dark:bg-white">
           <Field>
             <FieldLabel htmlFor="reconcile-date" className={lightLabel}>
               {isPos ? "Fecha de acreditación" : "Fecha de pago"}
@@ -287,12 +292,15 @@ export function TreasuryReconcileModal({
               id="reconcile-date"
               value={eventDate}
               onChange={setEventDate}
-              className={cn("w-full", lightSurface)}
+              light
+              variant="field"
+              className={lightSurface}
+              prefixClassName="border-zinc-200 bg-zinc-50"
             />
           </Field>
         </div>
 
-        <div className={cn("border-b px-6 py-4", lightSummary)}>
+        <div className={cn("shrink-0 border-b px-6 py-4", lightSummary)}>
           <p
             className={cn(
               "text-[11px] font-medium uppercase tracking-[0.12em]",
@@ -315,86 +323,109 @@ export function TreasuryReconcileModal({
           ) : null}
         </div>
 
-        <div className="bg-white px-6 py-5 dark:bg-white">
+        <div className="rootsy-scroll-minimal min-h-0 flex-1 overflow-y-auto bg-white dark:bg-white">
+          <div className="px-6 py-5">
           <FieldGroup className="gap-5">
-            <div className="grid gap-4 sm:grid-cols-2">
-              <Field data-invalid={Boolean(validationError && principal.trim())}>
-                <FieldLabel
-                  htmlFor="reconcile-principal"
-                  className={lightLabel}
-                >
-                  {isPos ? "Monto recibido" : "Consumos a cancelar"}
-                </FieldLabel>
-                <InputGroup className={lightSurface}>
-                  <InputGroupAddon>
-                    <InputGroupText className={lightMuted}>$</InputGroupText>
-                  </InputGroupAddon>
-                  <InputGroupInput
-                    id="reconcile-principal"
-                    inputMode="decimal"
-                    autoComplete="off"
-                    value={principal}
-                    onChange={(e) => setPrincipal(e.target.value)}
-                    placeholder="0,00"
-                    className="font-mono tabular-nums text-zinc-900"
-                    aria-invalid={Boolean(validationError && principal.trim())}
-                  />
-                </InputGroup>
-              </Field>
-
-              <Field>
-                <FieldLabel
-                  htmlFor="reconcile-adjustment"
-                  className={lightLabel}
-                >
-                  {adjustmentLabel}
-                </FieldLabel>
-                <InputGroup className={lightSurface}>
-                  <InputGroupAddon>
-                    <InputGroupText className={lightMuted}>$</InputGroupText>
-                  </InputGroupAddon>
-                  <InputGroupInput
-                    id="reconcile-adjustment"
-                    inputMode="decimal"
-                    autoComplete="off"
-                    value={adjustment}
-                    onChange={(e) => setAdjustment(e.target.value)}
-                    placeholder="0,00"
-                    className="font-mono tabular-nums text-zinc-900"
-                  />
-                </InputGroup>
-                {isPos ? (
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    disabled={!canAutofillCommissions}
-                    onClick={autofillCommissions}
-                    title="Completar con la diferencia entre el saldo y lo recibido"
-                    className={cn(lightLinkAction, "-ml-2 mt-1")}
+            <div className="space-y-3">
+              <div className="grid gap-4 sm:grid-cols-2 sm:items-end">
+                <Field data-invalid={Boolean(validationError && principal.trim())}>
+                  <FieldLabel
+                    htmlFor="reconcile-principal"
+                    className={moneyFieldLabelClass}
                   >
-                    <Calculator className="size-3.5" aria-hidden />
-                    Calcular diferencia
-                  </Button>
-                ) : null}
-                <FieldDescription className={cn("text-xs", lightMuted)}>
-                  {adjustmentHint}
-                </FieldDescription>
-              </Field>
+                    {isPos ? "Monto recibido" : "Consumos a cancelar"}
+                  </FieldLabel>
+                  <MoneyInputField
+                    id="reconcile-principal"
+                    value={principal}
+                    onChange={setPrincipal}
+                    invalid={Boolean(validationError && principal.trim())}
+                    formatValue={formatTreasuryMoneyInputValue}
+                    className={lightSurface}
+                    prefixClassName="border-zinc-200 bg-zinc-50"
+                    inputClassName="text-zinc-900 placeholder:text-zinc-400"
+                    aria-label={
+                      isPos ? "Monto recibido" : "Consumos a cancelar"
+                    }
+                  />
+                </Field>
+
+                <Field>
+                  <FieldLabel
+                    htmlFor="reconcile-adjustment"
+                    className={moneyFieldLabelClass}
+                  >
+                    {adjustmentLabel}
+                  </FieldLabel>
+                  <MoneyInputField
+                    id="reconcile-adjustment"
+                    value={adjustment}
+                    onChange={setAdjustment}
+                    formatValue={formatTreasuryMoneyInputValue}
+                    className={lightSurface}
+                    prefixClassName="border-zinc-200 bg-zinc-50"
+                    inputClassName="text-zinc-900 placeholder:text-zinc-400"
+                    aria-label={adjustmentLabel}
+                  />
+                </Field>
+              </div>
+
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div className="hidden sm:block" aria-hidden />
+                <div className="space-y-1">
+                  {isPos ? (
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      disabled={!canAutofillCommissions}
+                      onClick={autofillCommissions}
+                      title="Completar con la diferencia entre el saldo y lo recibido"
+                      className={cn(lightLinkAction, "-ml-2")}
+                    >
+                      <Calculator className="size-3.5" aria-hidden />
+                      Calcular diferencia
+                    </Button>
+                  ) : null}
+                  <FieldDescription className={cn("text-xs", lightMuted)}>
+                    {adjustmentHint}
+                  </FieldDescription>
+                </div>
+              </div>
             </div>
 
-            {settlementTotal != null && settlementTotal > 0 ? (
+            {principal.trim() &&
+            Number.isFinite(principalAmount) &&
+            principalAmount > 0 ? (
               <div
                 className={cn(
-                  "flex items-center justify-between rounded-lg border px-3 py-2.5 text-sm",
+                  "space-y-2 rounded-lg border px-3 py-2.5 text-sm",
                   lightSummary,
                 )}
               >
-                <span className={lightMuted}>
-                  {isPos ? "Total del POS a cerrar" : "Total a debitar del banco"}
-                </span>
-                <span className="font-mono font-semibold tabular-nums text-zinc-900">
-                  {fmt.format(settlementTotal)}
-                </span>
+                <div className="flex items-center justify-between gap-3">
+                  <span className={cn("min-w-0 leading-snug", lightMuted)}>
+                    {isPos ? "Liquidación" : "Pago de consumos"}
+                  </span>
+                  <span className="shrink-0 font-mono font-semibold tabular-nums text-zinc-900">
+                    {isPos
+                      ? fmt.format(
+                          roundMoney(principalAmount + adjustmentAmount),
+                        )
+                      : formatTreasuryMovementAmount("out", principalAmount)}
+                  </span>
+                </div>
+                {Number.isFinite(adjustmentAmount) && adjustmentAmount > 0 ? (
+                  <div className="flex items-center justify-between gap-3">
+                    <span className={cn("min-w-0 leading-snug", lightMuted)}>
+                      {isPos
+                        ? TREASURY_RECONCILE_COMMISSIONS_LABEL
+                        : TREASURY_CARD_OTHER_CHARGES_LABEL}
+                    </span>
+                    <span className="shrink-0 font-mono tabular-nums text-zinc-900">
+                      {formatTreasuryMovementAmount("out", adjustmentAmount)}
+                    </span>
+                  </div>
+                ) : null}
               </div>
             ) : null}
 
@@ -403,21 +434,25 @@ export function TreasuryReconcileModal({
                 <FieldLabel htmlFor="reconcile-funding" className={lightLabel}>
                   Pagado desde
                 </FieldLabel>
-                <Select value={fundingId} onValueChange={setFundingId}>
-                  <SelectTrigger
-                    id="reconcile-funding"
-                    className={cn("w-full", lightSurface)}
-                  >
-                    <SelectValue placeholder="Elegí la cuenta de origen" />
-                  </SelectTrigger>
-                  <SelectContent className="border-zinc-200 bg-white text-zinc-900 dark:border-zinc-200 dark:bg-white dark:text-zinc-900">
-                    {fundingAccounts.map((f) => (
-                      <SelectItem key={f.id} value={f.id}>
-                        {f.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <FieldSelect
+                  id="reconcile-funding"
+                  value={fundingId}
+                  onValueChange={setFundingId}
+                  placeholder="Elegí la cuenta de origen"
+                  className={lightSurface}
+                  prefixClassName="border-zinc-200 bg-zinc-50"
+                  contentClassName={lightSelectContent}
+                >
+                  {fundingAccounts.map((f) => (
+                    <SelectItem
+                      key={f.id}
+                      value={f.id}
+                      className={lightSelectItem}
+                    >
+                      {f.name}
+                    </SelectItem>
+                  ))}
+                </FieldSelect>
               </Field>
             ) : null}
 
@@ -456,11 +491,12 @@ export function TreasuryReconcileModal({
               {banner}
             </p>
           ) : null}
+          </div>
         </div>
 
         <DialogFooter
           className={cn(
-            "px-6 py-4 sm:justify-between",
+            "shrink-0 px-6 py-4 sm:justify-between",
             lightFooter,
           )}
         >

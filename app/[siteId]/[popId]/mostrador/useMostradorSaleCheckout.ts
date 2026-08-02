@@ -145,10 +145,12 @@ export function useMostradorSaleCheckout(
     onSaleComplete?: () => void
     catalogSidebarOpen?: boolean
     catalogLoadEnabled?: boolean
+    onCartLineAdded?: (lineId: string) => void
   },
 ) {
   const isPaid = options?.isPaid === true
   const onSaleComplete = options?.onSaleComplete
+  const onCartLineAdded = options?.onCartLineAdded
   const catalogEnabled =
     options?.catalogLoadEnabled ??
     (Boolean(counterOrderId) || Boolean(options?.catalogSidebarOpen))
@@ -905,6 +907,7 @@ export function useMostradorSaleCheckout(
     (promotionId: string, selections: PromotionCartSelection[]) => {
       const product = productosByKey.get(`promotion:${promotionId}`)
       if (!product?.promotionMeta) return
+      let affectedLineId: string | null = null
       setCarrito((prev) => {
         const result = addPromotionToTicketCart({
           carrito: prev,
@@ -912,6 +915,7 @@ export function useMostradorSaleCheckout(
           selections,
           paidPartialUnits: checkoutStateRef.current.paidPartialUnits ?? {},
         })
+        affectedLineId = result.affectedLineId
         for (const copy of result.overrideCopies) {
           copyTicketLineOverrides(
             copy.fromLineId,
@@ -922,8 +926,9 @@ export function useMostradorSaleCheckout(
         setPaidPartialUnits(result.paidPartialUnits)
         return result.carrito
       })
+      if (affectedLineId) onCartLineAdded?.(affectedLineId)
     },
-    [productosByKey, cartLineOverrideSetters],
+    [productosByKey, cartLineOverrideSetters, onCartLineAdded],
   )
 
   const agregarAlCarrito = useCallback(
@@ -971,6 +976,9 @@ export function useMostradorSaleCheckout(
           )
         }
         setPaidPartialUnits(result.paidPartialUnits)
+        if (result.affectedLineId) {
+          onCartLineAdded?.(result.affectedLineId)
+        }
         return result.carrito
       })
     },
@@ -983,6 +991,7 @@ export function useMostradorSaleCheckout(
       cartLineOverrideActions,
       agregarPromoAlCarrito,
       cartLineOverrideSetters,
+      onCartLineAdded,
     ],
   )
 

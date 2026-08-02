@@ -1,6 +1,15 @@
+import path from "path"
+import { fileURLToPath } from "url"
+
+const projectRoot = path.dirname(fileURLToPath(import.meta.url))
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: false,
+  turbopack: {
+    root: projectRoot,
+  },
+  outputFileTracingRoot: projectRoot,
   allowedDevOrigins: [
     '192.168.1.56',
     // IP del otro equipo que abre el dev (cambiá si no coincide):

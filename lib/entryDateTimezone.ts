@@ -1,5 +1,8 @@
 /**
  * Zona horaria para fecha de asiento según país del POP o sitio (p. ej. `arg` → Argentina).
+ *
+ * Configuración del POP: Ajustes → **País** (`pops.country`, código ISO ej. `AR`)
+ * y `site_id` / settings del POP. No hay campo timezone aparte.
  */
 const COUNTRY_TO_IANA: Record<string, string> = {
   AR: "America/Argentina/Buenos_Aires",
@@ -37,6 +40,18 @@ export function entryDateIsoInTimezone(timeZone: string): string {
   return new Intl.DateTimeFormat("sv-SE", {
     timeZone,
   }).format(new Date())
+}
+
+/** Fecha calendario YYYY-MM-DD de un timestamptz ISO en la zona del POP. */
+export function timestampToLocalDateIso(
+  isoTimestamp: string,
+  timeZone: string,
+): string {
+  const raw = isoTimestamp.trim()
+  if (!raw) return ""
+  const d = new Date(raw)
+  if (Number.isNaN(d.getTime())) return raw.slice(0, 10)
+  return new Intl.DateTimeFormat("sv-SE", { timeZone }).format(d)
 }
 
 /** Suma días a una fecha calendario YYYY-MM-DD (sin desfase por TZ del servidor). */

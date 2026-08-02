@@ -28,6 +28,32 @@
   }
 }
 
+@keyframes cart-line-added-pulse {
+  0% {
+    background-color: rgb(110 231 183 / 0.72);
+    box-shadow: inset 0 0 0 1px rgb(52 211 153 / 0.45);
+  }
+  55% {
+    background-color: rgb(167 243 208 / 0.42);
+    box-shadow: inset 0 0 0 1px rgb(52 211 153 / 0.2);
+  }
+  100% {
+    background-color: transparent;
+    box-shadow: none;
+  }
+}
+
+.cart-line-added-pulse {
+  animation: cart-line-added-pulse 1.15s ease-out forwards;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cart-line-added-pulse {
+    animation: none;
+    background-color: rgb(167 243 208 / 0.35);
+  }
+}
+
 :root {
   /* Paradise Park Theme - Inspired by forest mascot */
   --background: oklch(0.98 0.005 110);

@@ -13,7 +13,6 @@ import {
 import { TreasuryAccountCard } from "@/app/[siteId]/[popId]/accounts/TreasuryAccountCard"
 import { TreasuryAccountsGridSkeleton } from "@/app/[siteId]/[popId]/accounts/TreasuryAccountsGridSkeleton"
 import { TreasuryAccountCreateDialog } from "@/app/[siteId]/[popId]/accounts/TreasuryAccountCreateDialog"
-import { TreasuryAccountDetailView } from "@/app/[siteId]/[popId]/accounts/TreasuryAccountDetailView"
 import { Button } from "@/components/ui/button"
 import {
   Dialog,
@@ -27,6 +26,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { DataWorkspaceLayout } from "@/components/layouts/DataWorkspaceLayout"
 import { DataWorkspaceHeaderIconButton } from "@/components/layouts/DataWorkspaceHeaderIconButton"
+import { dataWorkspaceEntityCardsGridClass } from "@/components/data-workspace/dataWorkspaceListStyles"
 import withAuth from "@/hoc/withAuth"
 import {
   TREASURY_ACCOUNT_KINDS,
@@ -176,7 +176,7 @@ function AccountsPage() {
   const [childSaving, setChildSaving] = useState(false)
   const [childBanner, setChildBanner] = useState<string | null>(null)
 
-  const [selectedAccountId, setSelectedAccountId] = useState<string | null>(null)
+  const accountsBasePath = `/${siteId}/${popId}/accounts`
 
   const load = useCallback(async () => {
     if (!popId || !siteId) return
@@ -348,7 +348,7 @@ function AccountsPage() {
       popName={popName}
       title="Cuentas"
       headerVariant="dark"
-      loading={(pageLoading || loading) && !selectedAccountId}
+      loading={pageLoading}
       userName={bootstrap?.userFullName}
       userAvatarSrc={bootstrap?.userImageUrl ?? undefined}
       userRoleLabel={bootstrap?.roleLabel}
@@ -356,7 +356,7 @@ function AccountsPage() {
       mainMaxWidthClass="max-w-none"
       mainClassName="min-h-0 overflow-y-auto"
       headerActions={
-        canCreate && !selectedAccountId ? (
+        canCreate ? (
           <DataWorkspaceHeaderIconButton
             label="Nueva cuenta"
             headerVariant="dark"
@@ -369,21 +369,6 @@ function AccountsPage() {
       }
     >
       <div className="relative flex w-full min-h-0 flex-1 flex-col">
-        {selectedAccountId ? (
-          <TreasuryAccountDetailView
-            popId={popId}
-            accountId={selectedAccountId}
-            accountKindHint={rows.find((r) => r.id === selectedAccountId)?.kind}
-            onBack={() => {
-              setSelectedAccountId(null)
-              void load()
-            }}
-            onOpenAccount={(id) => {
-              setSelectedAccountId(id)
-            }}
-            onHubRefresh={load}
-          />
-        ) : (
         <div className="relative flex w-full flex-col gap-6 px-4 py-6 sm:px-6 lg:px-8">
           {headerError ? (
             <div
@@ -405,7 +390,7 @@ function AccountsPage() {
               No hay cuentas configuradas.
             </p>
           ) : (
-            <div className="grid w-full gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+            <div className={dataWorkspaceEntityCardsGridClass}>
               {rows.map((r) => (
                 <TreasuryAccountCard
                   key={r.id}
@@ -413,16 +398,13 @@ function AccountsPage() {
                   canCreate={canCreate}
                   canUpdate={canUpdate}
                   canDelete={canDelete}
+                  detailHref={`${accountsBasePath}/${r.id}`}
                   onMenuAction={(actionId) => handleAccountMenuAction(r, actionId)}
-                  onOpenDetail={() => {
-                    setSelectedAccountId(r.id)
-                  }}
                 />
               ))}
             </div>
           )}
         </div>
-        )}
       </div>
     </DataWorkspaceLayout>
 

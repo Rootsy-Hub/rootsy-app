@@ -100,9 +100,11 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { Separator } from "@/components/ui/separator"
+import { SimpleOperationCheckoutConfirmDialog } from "@/components/checkout/SimpleOperationCheckoutConfirmDialog"
 import { SaleOperationTicketOrderPanel } from "@/components/sale-operation/SaleOperationTicketOrderPanel"
 import { PromotionComboWizard } from "@/components/sale-operation/PromotionComboWizard"
 import { useSaleTicketCart } from "@/hooks/useSaleTicketCart"
+import { useCartListScrollHighlight } from "@/hooks/useCartListScrollHighlight"
 import { buildCompleteSaleLinesFromCart } from "@/lib/saleCompleteLines"
 import type { MenuCatalogProduct } from "@/lib/menuCatalogProduct"
 import {
@@ -263,6 +265,8 @@ function SalePage() {
     void loadCatalog()
   }, [loadCatalog])
 
+  const cartScrollHighlight = useCartListScrollHighlight()
+
   const {
     carrito,
     productosCatalogo,
@@ -288,6 +292,7 @@ function SalePage() {
     menuArticles: catalogArticles,
     menuPromotions: catalogPromotions,
     menuQuantityDeals: catalogQuantityDeals,
+    onCartLineAdded: cartScrollHighlight.notifyLineAdded,
   })
 
   const [vistaCatalogo, setVistaCatalogo] = useState<VistaCatalogo>(() => {
@@ -675,6 +680,19 @@ function SalePage() {
   const comprobanteDisplayLabel = useMemo(
     () => getSaleComprobanteDisplayLabel(comprobante),
     [comprobante],
+  )
+
+  const confirmClientLabel = useMemo(
+    () =>
+      clienteSeleccionado?.name?.trim() ||
+      manualNombreCliente.trim() ||
+      ventaPadron.razonSocial.trim() ||
+      "Sin cliente",
+    [
+      clienteSeleccionado?.name,
+      manualNombreCliente,
+      ventaPadron.razonSocial,
+    ],
   )
 
   useEffect(() => {
@@ -1405,6 +1423,7 @@ function SalePage() {
               quitarQuantityDealApplication={quitarQuantityDealApplication}
               listTitle="Tu pedido"
               emptyTitle="Pedido vacío"
+              cartScrollHighlight={cartScrollHighlight}
               actions={{
                 discardDisabled: !hayItemsEnPedido,
                 confirmDisabled: !puedeRegistrarVenta || ventaSubmitting,
@@ -1560,62 +1579,25 @@ function SalePage() {
         </AlertDialogContent>
       </AlertDialog>
 
-      <AlertDialog
+      <SimpleOperationCheckoutConfirmDialog
         open={venderConfirmOpen}
         onOpenChange={(open) => {
           setVenderConfirmOpen(open)
           if (!open) setVentaError(null)
         }}
-      >
-        <AlertDialogContent className={ventaAlertDialogContent}>
-          <AlertDialogHeader>
-            <AlertDialogTitle>¿Confirmar venta?</AlertDialogTitle>
-            <AlertDialogDescription asChild>
-              <div className="space-y-2 text-muted-foreground">
-                <p>
-                  {payOnClientAccount ? "Total a cuenta:" : "Total a cobrar:"}{" "}
-                  <span
-                    className={cn(
-                      ventaImporteBaseClass,
-                      "font-semibold text-foreground",
-                    )}
-                  >
-                    {fmt.format(total)}
-                  </span>
-                  . Forma de pago:{" "}
-                  <span className="font-medium text-foreground">
-                    {pagoResumenLabel}
-                  </span>
-                  . Se guardará la venta, el movimiento de stock (FIFO) y el
-                  asiento contable
-                  {payOnClientAccount
-                    ? " (cuentas por cobrar, ventas, IVA si aplica y costo de mercaderías)."
-                    : " (cobro, ventas, IVA si aplica y costo de mercaderías)."}
-                </p>
-                {ventaError ? (
-                  <p className="text-sm text-rose-600">{ventaError}</p>
-                ) : null}
-              </div>
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel className="border-border" disabled={ventaSubmitting}>
-              Cancelar
-            </AlertDialogCancel>
-            <AlertDialogAction
-              type="button"
-              disabled={ventaSubmitting}
-              onClick={(e) => {
-                e.preventDefault()
-                void confirmarVenta()
-              }}
-              className="border-0 bg-emerald-600 text-white hover:bg-emerald-500 focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2"
-            >
-              {ventaSubmitting ? "Guardando…" : "Confirmar venta"}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+        title="Confirmar venta"
+        confirmLabel="Confirmar venta"
+        submitting={ventaSubmitting}
+        submitError={ventaError}
+        total={total}
+        subtotal={subtotal}
+        descuentoMonto={descuentoMonto}
+        hayDescuento={hayDescuento}
+        partyValue={confirmClientLabel}
+        comprobanteLabel={comprobanteDisplayLabel}
+        paymentLabel={pagoResumenLabel}
+        onConfirm={confirmarVenta}
+      />
     </>
   )
 }

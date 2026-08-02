@@ -10,6 +10,8 @@ import { groupMostradorCartDisplayRows } from "@/lib/mostradorCartDisplay"
 import type { MostradorCartDisplayRow } from "@/lib/mostradorCartDisplay"
 import type { MostradorCartLineEditInput } from "@/lib/menuCartLineMerge"
 import { getRowPaymentStatus } from "@/lib/partialCheckoutSelection"
+import type { CartListScrollHighlightValue } from "@/hooks/useCartListScrollHighlight"
+import { CartListScrollHighlightProvider } from "@/hooks/useCartListScrollHighlight"
 import { useMemo } from "react"
 
 type ActionsProps = React.ComponentProps<typeof SaleOperationActionsBar>
@@ -28,6 +30,7 @@ type Props = {
   listSubtitle?: string
   emptyTitle?: string
   flush?: boolean
+  cartScrollHighlight?: CartListScrollHighlightValue
 }
 
 export function SaleOperationTicketOrderPanel({
@@ -43,6 +46,7 @@ export function SaleOperationTicketOrderPanel({
   listSubtitle,
   emptyTitle = "Pedido vacío",
   flush = true,
+  cartScrollHighlight,
 }: Props) {
   const cartDisplayGroups = useMemo(
     () => groupMostradorCartDisplayRows(cartDisplayRows, cartLineOverrides),
@@ -54,7 +58,7 @@ export function SaleOperationTicketOrderPanel({
     [cartDisplayGroups],
   )
 
-  return (
+  const panel = (
     <div className="flex min-h-0 flex-1 flex-col">
       <SaleOperationCartList
         title={listTitle}
@@ -110,4 +114,14 @@ export function SaleOperationTicketOrderPanel({
       </div>
     </div>
   )
+
+  if (cartScrollHighlight) {
+    return (
+      <CartListScrollHighlightProvider value={cartScrollHighlight}>
+        {panel}
+      </CartListScrollHighlightProvider>
+    )
+  }
+
+  return panel
 }

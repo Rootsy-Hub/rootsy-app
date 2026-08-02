@@ -140,9 +140,14 @@ export function useMesasSaleCheckout(
   siteId: string,
   tableSessionId: string | null,
   remoteSession: RemoteTableSessionCheckout = null,
-  options?: { onSessionClose?: () => void | Promise<void>; catalogSidebarOpen?: boolean },
+  options?: {
+    onSessionClose?: () => void | Promise<void>
+    catalogSidebarOpen?: boolean
+    onCartLineAdded?: (lineId: string) => void
+  },
 ) {
   const onSessionClose = options?.onSessionClose
+  const onCartLineAdded = options?.onCartLineAdded
   const catalogEnabled =
     Boolean(tableSessionId) && Boolean(options?.catalogSidebarOpen)
 
@@ -879,6 +884,7 @@ export function useMesasSaleCheckout(
     (promotionId: string, selections: PromotionCartSelection[]) => {
       const product = productosByKey.get(`promotion:${promotionId}`)
       if (!product?.promotionMeta) return
+      let affectedLineId: string | null = null
       setCarrito((prev) => {
         const result = addPromotionToTicketCart({
           carrito: prev,
@@ -886,6 +892,7 @@ export function useMesasSaleCheckout(
           selections,
           paidPartialUnits: checkoutStateRef.current.paidPartialUnits ?? {},
         })
+        affectedLineId = result.affectedLineId
         for (const copy of result.overrideCopies) {
           copyTicketLineOverrides(
             copy.fromLineId,
@@ -896,8 +903,9 @@ export function useMesasSaleCheckout(
         setPaidPartialUnits(result.paidPartialUnits)
         return result.carrito
       })
+      if (affectedLineId) onCartLineAdded?.(affectedLineId)
     },
-    [productosByKey, cartLineOverrideSetters],
+    [productosByKey, cartLineOverrideSetters, onCartLineAdded],
   )
 
   const agregarAlCarrito = useCallback(
@@ -945,6 +953,9 @@ export function useMesasSaleCheckout(
           )
         }
         setPaidPartialUnits(result.paidPartialUnits)
+        if (result.affectedLineId) {
+          onCartLineAdded?.(result.affectedLineId)
+        }
         return result.carrito
       })
     },
@@ -957,6 +968,7 @@ export function useMesasSaleCheckout(
       cartLineOverrideActions,
       agregarPromoAlCarrito,
       cartLineOverrideSetters,
+      onCartLineAdded,
     ],
   )
 

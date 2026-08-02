@@ -1,11 +1,6 @@
 "use server"
 
 import {
-  CHART_ARQUEO_SOBRANTE_INGRESO_CODES,
-  CHART_CAJA_EFECTIVO_CODES,
-  CHART_DIFERENCIA_ARQUEO_GASTO_CODES,
-} from "@/lib/argV3DefaultChartAccounts"
-import {
   entryDateIsoInTimezone,
   timezoneForPopLedger,
 } from "@/lib/entryDateTimezone"
@@ -30,6 +25,30 @@ import {
   operationPaymentKindLabel,
   type OperationPaymentKind,
 } from "@/lib/operationPaymentKinds"
+import { formatCashRegisterSaleDetail } from "@/lib/cashRegisterOperationDetail"
+import {
+  formatCashRegisterSaleOperationLabel,
+  loadCashRegisterSaleContextLabels,
+  parseCashRegisterSaleChannel,
+} from "@/lib/cashRegisterSaleContextLabels"
+import { canCloseCashRegisterSession } from "@/lib/cashRegisterSessionAccess"
+import {
+  buildCashCloseAdjustmentLines,
+  buildPaymentKindCloseAdjustmentLines,
+  buildTreasuryLineCloseAdjustmentLines,
+  loadSessionCobrosByTreasuryLine,
+  loadSessionCobrosForClose,
+  loadSessionNonCashCobrosByKind,
+  type SessionCloseCobro,
+  type SessionTreasuryLineCobro,
+} from "@/lib/cashRegisterCloseAccounting"
+import {
+  buildClosingComparisonLines,
+  buildClosingComparisonLinesByTreasury,
+  closingComparisonNetDifference,
+  formatTreasuryCloseLineLabel,
+  type CashRegisterClosingComparisonLine,
+} from "@/lib/cashRegisterCloseSettlement"
 
 /** Totales del turno abierto en la tarjeta de caja (y coherente con el arqueo). */
 export type CashRegisterOpenSessionTotals = {
@@ -42,6 +61,35 @@ export type CashRegisterOpenSessionTotals = {
   totalCobradoTurno: number | null
   /** Cobros del turno por medio de pago. Requiere `sale:read`. */
   cobrosPorMedio: { name: string; kind: string; total: number }[] | null
+  /** Cobros del turno por cuenta · medio (detalle). Requiere `sale:read`. */
+  cobrosPorCuenta: CashRegisterTreasuryLineCobro[] | null
+  /** Cobros agrupados para el cierre (POS/banco por cuenta). Requiere `sale:read`. */
+  cobrosParaCierre: CashRegisterCloseCobroLine[] | null
+}
+
+export type CashRegisterCloseCobroLine = {
+  key: string
+  treasuryAccountId: string | null
+  paymentKind: string
+  accountName: string | null
+  label: string
+  total: number
+}
+
+export type CashRegisterOpenSessionMeta = {
+  arqueoNumber: number
+  openedByUserId: string | null
+  openedByName: string | null
+  openingNote: string | null
+}
+
+export type CashRegisterTreasuryLineCobro = {
+  key: string
+  treasuryAccountId: string | null
+  paymentKind: string
+  accountName: string | null
+  label: string
+  total: number
 }
 
 export type CashTreasuryAccountOption = {
@@ -56,9 +104,12 @@ export type CashRegisterRow = {
   isActive: boolean
   cashTreasuryAccountId: string | null
   openSessionId: string | null
+  /** Si hay turno abierto: puede cerrarlo el usuario actual. */
+  canCloseOpenSession: boolean
   /** Efectivo teórico en cajón si hay turno abierto (apertura + ventas efectivo + cajón). */
   cashBalance: number | null
   openedAt: string | null
+  openSessionMeta: CashRegisterOpenSessionMeta | null
   openSessionTotals: CashRegisterOpenSessionTotals | null
   arcaPtoVta: number | null
   arcaCertificateSecretName: string | null
@@ -76,7 +127,10 @@ export type PaymentMethodOption = {
 
 export type ClosingSnapshot = {
   cash: number
-  payment_methods: Record<string, number>
+  /** Legacy: totales por forma de pago agregada. */
+  payment_methods?: Record<string, number>
+  /** Totales por cuenta · medio (`treasuryAccountId|paymentKind`). */
+  treasury_lines?: Record<string, number>
   note?: string | null
 }
 
@@ -101,6 +155,43 @@ export type CashRegisterSummarySession = {
   closingSnapshot: ClosingSnapshot | null
   movementDeposits: number
   movementWithdrawals: number
+  /** Ventas completadas del turno. Requiere `sale:read`. */
+  totalCobrado: number
+  /** Cobros del turno por medio de pago. Requiere `sale:read`. */
+  ventasPorMedio: { paymentKind: string; name: string; total: number }[]
+  /** Cobros del turno por cuenta · medio (detalle). Requiere `sale:read`. */
+  ventasPorCuenta: CashRegisterTreasuryLineCobro[]
+  /** Cobros agrupados para cierre / comparación por cuenta. Requiere `sale:read`. */
+  ventasParaCierre: CashRegisterCloseCobroLine[]
+  /** Número secuencial de arqueo en esta caja (por fecha de apertura). */
+  arqueoNumber: number
+  openedByUserId: string | null
+  openedByName: string | null
+  closedByUserId: string | null
+  closedByName: string | null
+  efectivoTeorico: number
+  /** Neto de diferencias del cierre (efectivo + medios informados vs cobrado). */
+  cashArqueoDifference: number | null
+}
+
+export type CashRegisterSessionOperationRow = {
+  id: string
+  kind: "sale" | "deposit" | "withdrawal"
+  saleId: string | null
+  occurredAt: string
+  operationLabel: string
+  customerLabel: string
+  detail: string
+  paymentMethodLabel: string
+  amount: number
+}
+
+export type CashRegisterSessionArqueoDetail = {
+  registerName: string
+  session: CashRegisterSummarySession
+  closingComparison: CashRegisterClosingComparisonLine[]
+  hasAccountingEntry: boolean
+  operations: CashRegisterSessionOperationRow[]
 }
 
 export type CashRegisterSummaryClosingBlock = {
@@ -158,6 +249,106 @@ export type CashRegisterSummaryData = {
   }
   closingBlocks: CashRegisterSummaryClosingBlock[]
   aggregatedClosingLines: { label: string; amount: number }[]
+}
+
+function computeSessionEfectivoTeorico(session: {
+  openingCash: number
+  movementDeposits: number
+  movementWithdrawals: number
+  ventasPorMedio: { paymentKind: string; total: number }[]
+}): number {
+  const ventasEfectivo =
+    session.ventasPorMedio.find((row) => row.paymentKind === "cash")?.total ?? 0
+  return (
+    Math.round(
+      (session.openingCash +
+        ventasEfectivo +
+        session.movementDeposits -
+        session.movementWithdrawals) *
+        100,
+    ) / 100
+  )
+}
+
+async function loadUserDisplayNames(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  userIds: string[],
+): Promise<Map<string, string>> {
+  const unique = [...new Set(userIds.filter(Boolean))]
+  const map = new Map<string, string>()
+  if (unique.length === 0) return map
+  const { data } = await supabase
+    .from("users")
+    .select("id, first_name, last_name")
+    .in("id", unique)
+  for (const row of data || []) {
+    const name =
+      `${String(row.first_name ?? "").trim()} ${String(row.last_name ?? "").trim()}`.trim()
+    map.set(String(row.id), name || "Usuario")
+  }
+  return map
+}
+
+function enrichCashRegisterSessions(
+  sessRows: {
+    id: unknown
+    opened_at: unknown
+    opened_by?: unknown
+    closed_by?: unknown
+  }[],
+  sessions: CashRegisterSummarySession[],
+  userNames: Map<string, string>,
+): void {
+  const ordered = [...sessRows].sort(
+    (a, b) =>
+      new Date(String(a.opened_at ?? "")).getTime() -
+      new Date(String(b.opened_at ?? "")).getTime(),
+  )
+  const arqueoNumberById = new Map<string, number>()
+  ordered.forEach((row, index) => {
+    arqueoNumberById.set(String(row.id), index + 1)
+  })
+
+  for (const session of sessions) {
+    const raw = sessRows.find((row) => String(row.id) === session.id)
+    const openedByUserId =
+      raw?.opened_by != null ? String(raw.opened_by) : null
+    const closedByUserId =
+      raw?.closed_by != null ? String(raw.closed_by) : null
+    session.arqueoNumber = arqueoNumberById.get(session.id) ?? 0
+    session.openedByUserId = openedByUserId
+    session.openedByName = openedByUserId
+      ? (userNames.get(openedByUserId) ?? "Usuario")
+      : null
+    session.closedByUserId = closedByUserId
+    session.closedByName = closedByUserId
+      ? (userNames.get(closedByUserId) ?? "Usuario")
+      : null
+    session.efectivoTeorico = computeSessionEfectivoTeorico(session)
+    session.cashArqueoDifference =
+      session.status === "closed" && session.closingSnapshot
+        ? closingComparisonNetDifference(
+            buildClosingComparisonForSession(session),
+          )
+        : null
+  }
+}
+
+function formatTreasuryPaymentLabelFromRow(p: {
+  payment_kind?: unknown
+  treasury_accounts?:
+    | { name?: string }
+    | Array<{ name?: string }>
+    | null
+}): string {
+  const kind = p.payment_kind != null ? String(p.payment_kind).trim() : ""
+  const taRaw = p.treasury_accounts
+  const taName = Array.isArray(taRaw)
+    ? taRaw[0]?.name?.trim()
+    : taRaw?.name?.trim()
+  const kindLabel = kind ? operationPaymentKindLabel(kind) : ""
+  if (kindLabel && taName) return `${kindLabel} — ${taName}`
+  return kindLabel || taName || "—"
 }
 
 function parseAmount(v: unknown): number {
@@ -268,6 +459,30 @@ async function computeEfectivoTeoricoSession(
   }
 }
 
+function mapCloseCobros(rows: SessionCloseCobro[]): CashRegisterCloseCobroLine[] {
+  return rows.map((row) => ({
+    key: row.key,
+    treasuryAccountId: row.treasuryAccountId,
+    paymentKind: row.paymentKind,
+    accountName: row.accountName,
+    label: row.label,
+    total: row.total,
+  }))
+}
+
+function mapTreasuryLineCobros(
+  rows: SessionTreasuryLineCobro[],
+): CashRegisterTreasuryLineCobro[] {
+  return rows.map((row) => ({
+    key: row.key,
+    treasuryAccountId: row.treasuryAccountId,
+    paymentKind: row.paymentKind,
+    accountName: row.accountName,
+    label: formatTreasuryCloseLineLabel(row.accountName, row.paymentKind),
+    total: row.total,
+  }))
+}
+
 function parseClosingSnapshot(raw: unknown): ClosingSnapshot | null {
   if (!raw || typeof raw !== "object") return null
   const o = raw as Record<string, unknown>
@@ -279,8 +494,118 @@ function parseClosingSnapshot(raw: unknown): ClosingSnapshot | null {
       pm[k] = parseAmount(v)
     }
   }
+  const treasuryLines: Record<string, number> = {}
+  const tls = o.treasury_lines
+  if (tls && typeof tls === "object" && !Array.isArray(tls)) {
+    for (const [k, v] of Object.entries(tls as Record<string, unknown>)) {
+      treasuryLines[k] = parseAmount(v)
+    }
+  }
   const note = typeof o.note === "string" ? o.note : null
-  return { cash, payment_methods: pm, note: note ?? undefined }
+  return {
+    cash,
+    payment_methods: Object.keys(pm).length > 0 ? pm : undefined,
+    treasury_lines:
+      Object.keys(treasuryLines).length > 0 ? treasuryLines : undefined,
+    note: note ?? undefined,
+  }
+}
+
+function closingSnapshotUsesAccountLines(snapshot: ClosingSnapshot): boolean {
+  const lines = snapshot.treasury_lines
+  if (!lines) return false
+  const keys = Object.keys(lines)
+  if (keys.length === 0) return false
+  return keys.some((key) => key.startsWith("ta:"))
+}
+
+function buildClosingComparisonForSession(
+  session: CashRegisterSummarySession,
+): CashRegisterClosingComparisonLine[] {
+  const cs = session.closingSnapshot
+  if (!cs) return []
+
+  if (cs.treasury_lines && Object.keys(cs.treasury_lines).length > 0) {
+    const useAccountLines = closingSnapshotUsesAccountLines(cs)
+    const cobradoRows = useAccountLines
+      ? session.ventasParaCierre
+      : session.ventasPorCuenta
+    return buildClosingComparisonLinesByTreasury({
+      efectivoTeorico: session.efectivoTeorico,
+      cashCounted: cs.cash,
+      treasuryLines: cs.treasury_lines,
+      cobradoPorLinea: cobradoRows.map((row) => ({
+        key: row.key,
+        paymentKind: row.paymentKind,
+        treasuryAccountId: row.treasuryAccountId,
+        accountName: row.accountName,
+        label: row.label,
+        total: row.total,
+      })),
+    })
+  }
+
+  return buildClosingComparisonLines({
+    efectivoTeorico: session.efectivoTeorico,
+    cashCounted: cs.cash,
+    paymentMethods: cs.payment_methods ?? {},
+    cobradoPorMedio: session.ventasPorMedio.map((row) => ({
+      paymentKind: row.paymentKind,
+      total: row.total,
+    })),
+  })
+}
+
+function buildClosingLinesForSession(
+  session: CashRegisterSummarySession,
+): { label: string; amount: number }[] {
+  return buildClosingComparisonForSession(session).map((line) => ({
+    label: line.label,
+    amount: line.informado,
+  }))
+}
+
+function buildClosingBlocksFromSessions(sessions: CashRegisterSummarySession[]): {
+  closingBlocks: CashRegisterSummaryClosingBlock[]
+  aggregatedClosingLines: { label: string; amount: number }[]
+} {
+  const closingBlocks: CashRegisterSummaryClosingBlock[] = []
+  const agg = new Map<string, number>()
+  for (const sess of sessions) {
+    if (sess.status !== "closed" || !sess.closingSnapshot) continue
+    const lines = buildClosingLinesForSession(sess)
+    for (const line of lines) {
+      const key =
+        line.label === paymentMethodLabel("__cash_counted")
+          ? "__agg_cash"
+          : line.label
+      agg.set(key, (agg.get(key) ?? 0) + line.amount)
+    }
+    closingBlocks.push({
+      sessionId: sess.id,
+      openedAt: sess.openedAt,
+      closedAt: sess.closedAt,
+      lines,
+    })
+  }
+  const aggregatedClosingLines: { label: string; amount: number }[] = []
+  if (agg.has("__agg_cash")) {
+    aggregatedClosingLines.push({
+      label: paymentMethodLabel("__cash_counted"),
+      amount: Math.round((agg.get("__agg_cash") ?? 0) * 100) / 100,
+    })
+  }
+  for (const [pid, total] of agg) {
+    if (pid === "__agg_cash") continue
+    aggregatedClosingLines.push({
+      label: pid,
+      amount: Math.round(total * 100) / 100,
+    })
+  }
+  aggregatedClosingLines.sort((a, b) =>
+    a.label.localeCompare(b.label, "es"),
+  )
+  return { closingBlocks, aggregatedClosingLines }
 }
 
 function looksLikePemCert(s: string): boolean {
@@ -364,6 +689,8 @@ export async function getCashRegistersPageData(popId: string): Promise<
   | {
       success: true
       popName: string
+      popFiscalCuit: string | null
+      popFiscalRazonSocial: string | null
       registers: CashRegisterRow[]
       cashTreasuryAccounts: CashTreasuryAccountOption[]
       paymentMethods: PaymentMethodOption[]
@@ -410,7 +737,19 @@ export async function getCashRegistersPageData(popId: string): Promise<
     const popRes = await getPopById(popId)
     const popName =
       popRes.success && popRes.pop ? String(popRes.pop.name ?? "") : ""
+    const popFiscalCuit =
+      popRes.success && popRes.pop?.fiscalCuit
+        ? String(popRes.pop.fiscalCuit).trim()
+        : null
+    const popFiscalRazonSocial =
+      popRes.success && popRes.pop?.fiscalRazonSocial
+        ? String(popRes.pop.fiscalRazonSocial).trim()
+        : null
     const supabase = await createClient()
+    const {
+      data: { user: currentUser },
+    } = await supabase.auth.getUser()
+    const currentUserId = currentUser?.id ?? null
     const { data: regs, error: regErr } = await supabase
       .from("cash_registers")
       .select(
@@ -424,7 +763,7 @@ export async function getCashRegistersPageData(popId: string): Promise<
     }
     const { data: openSessions, error: sessErr } = await supabase
       .from("cash_register_sessions")
-      .select("id, cash_register_id, opening_cash, opened_at")
+      .select("id, cash_register_id, opening_cash, opened_at, opened_by, note")
       .eq("pop_id", popId)
       .eq("status", "open")
     if (sessErr) {
@@ -432,7 +771,13 @@ export async function getCashRegistersPageData(popId: string): Promise<
     }
     const openByRegister = new Map<
       string,
-      { id: string; opening_cash: number; opened_at: string }
+      {
+        id: string
+        opening_cash: number
+        opened_at: string
+        opened_by: string | null
+        note: string | null
+      }
     >()
     for (const s of openSessions || []) {
       const rid = String(s.cash_register_id)
@@ -440,6 +785,25 @@ export async function getCashRegistersPageData(popId: string): Promise<
         id: String(s.id),
         opening_cash: parseAmount(s.opening_cash),
         opened_at: String(s.opened_at ?? ""),
+        opened_by: s.opened_by != null ? String(s.opened_by) : null,
+        note: s.note != null ? String(s.note) : null,
+      })
+    }
+    const openUserIds = [...openByRegister.values()]
+      .map((session) => session.opened_by)
+      .filter(Boolean) as string[]
+    const openUserNames = await loadUserDisplayNames(supabase, openUserIds)
+    const arqueoNumberBySessionId = new Map<string, number>()
+    for (const r of regs || []) {
+      const registerId = String(r.id)
+      const { data: registerSessions } = await supabase
+        .from("cash_register_sessions")
+        .select("id, opened_at")
+        .eq("pop_id", popId)
+        .eq("cash_register_id", registerId)
+        .order("opened_at", { ascending: true })
+      ;(registerSessions || []).forEach((sessionRow, index) => {
+        arqueoNumberBySessionId.set(String(sessionRow.id), index + 1)
       })
     }
     const registers: CashRegisterRow[] = []
@@ -448,16 +812,37 @@ export async function getCashRegistersPageData(popId: string): Promise<
       const open = openByRegister.get(id)
       let cashBalance: number | null = null
       let openSessionId: string | null = null
+      let canCloseOpenSession = false
       let openedAt: string | null = null
+      let openSessionMeta: CashRegisterOpenSessionMeta | null = null
       let openSessionTotals: CashRegisterOpenSessionTotals | null = null
       if (open) {
         openSessionId = open.id
         openedAt = open.opened_at
+        openSessionMeta = {
+          arqueoNumber: arqueoNumberBySessionId.get(open.id) ?? 0,
+          openedByUserId: open.opened_by,
+          openedByName: open.opened_by
+            ? (openUserNames.get(open.opened_by) ?? "Usuario")
+            : null,
+          openingNote: open.note?.trim() ? open.note.trim() : null,
+        }
+        if (currentUserId) {
+          canCloseOpenSession = canCloseCashRegisterSession({
+            currentUserId,
+            openedByUserId: open.opened_by,
+            permissionKeys: snap.keys,
+          })
+        }
         const ef = await computeEfectivoTeoricoSession(supabase, popId, open.id)
         if (ef.success) {
           cashBalance = ef.teorico
           let totalCobradoTurno: number | null = null
           let cobrosPorMedio: CashRegisterOpenSessionTotals["cobrosPorMedio"] =
+            null
+          let cobrosPorCuenta: CashRegisterOpenSessionTotals["cobrosPorCuenta"] =
+            null
+          let cobrosParaCierre: CashRegisterOpenSessionTotals["cobrosParaCierre"] =
             null
           if (canRead) {
             const cob = await loadCobrosTurnoPorMedio(
@@ -467,6 +852,18 @@ export async function getCashRegistersPageData(popId: string): Promise<
             )
             totalCobradoTurno = cob.totalCobrado
             cobrosPorMedio = cob.porMedio
+            const porCuenta = await loadSessionCobrosByTreasuryLine(
+              supabase,
+              popId,
+              open.id,
+            )
+            cobrosPorCuenta = mapTreasuryLineCobros(porCuenta)
+            const paraCierre = await loadSessionCobrosForClose(
+              supabase,
+              popId,
+              open.id,
+            )
+            cobrosParaCierre = mapCloseCobros(paraCierre)
           }
           openSessionTotals = {
             openingCash: ef.openingCash,
@@ -476,6 +873,8 @@ export async function getCashRegistersPageData(popId: string): Promise<
             efectivoTeoricoEnCajon: ef.teorico,
             totalCobradoTurno,
             cobrosPorMedio,
+            cobrosPorCuenta,
+            cobrosParaCierre,
           }
         } else {
           cashBalance = await computeCashBalance(
@@ -495,8 +894,10 @@ export async function getCashRegistersPageData(popId: string): Promise<
             ? String(r.cash_treasury_account_id)
             : null,
         openSessionId,
+        canCloseOpenSession,
         cashBalance,
         openedAt,
+        openSessionMeta,
         openSessionTotals,
         arcaPtoVta:
           r.arca_pto_vta != null && Number.isFinite(Number(r.arca_pto_vta))
@@ -551,6 +952,8 @@ export async function getCashRegistersPageData(popId: string): Promise<
     return {
       success: true,
       popName,
+      popFiscalCuit,
+      popFiscalRazonSocial,
       registers,
       cashTreasuryAccounts,
       paymentMethods,
@@ -568,7 +971,9 @@ export async function getCashRegistersPageData(popId: string): Promise<
 export async function createCashRegister(
   popId: string,
   input: { name: string; sortOrder: number; cashTreasuryAccountId: string },
-): Promise<{ success: true } | { success: false; error: string }> {
+): Promise<
+  { success: true; registerId: string } | { success: false; error: string }
+> {
   try {
     const access = await validatePopAccess(popId)
     if (!access.hasAccess || !access.isActive) {
@@ -597,17 +1002,24 @@ export async function createCashRegister(
       return { success: false, error: "Elegí una cuenta de efectivo destino." }
     }
     const supabase = await createClient()
-    const { error } = await supabase.from("cash_registers").insert({
-      pop_id: popId,
-      name,
-      sort_order: sortOrder,
-      is_active: true,
-      cash_treasury_account_id: cashTreasuryAccountId,
-    })
-    if (error) {
-      return { success: false, error: error.message || "Could not create." }
+    const { data: inserted, error } = await supabase
+      .from("cash_registers")
+      .insert({
+        pop_id: popId,
+        name,
+        sort_order: sortOrder,
+        is_active: true,
+        cash_treasury_account_id: cashTreasuryAccountId,
+      })
+      .select("id")
+      .single()
+    if (error || !inserted?.id) {
+      return {
+        success: false,
+        error: error?.message || "Could not create.",
+      }
     }
-    return { success: true }
+    return { success: true, registerId: String(inserted.id) }
   } catch (e: unknown) {
     const message = e instanceof Error ? e.message : "Unknown error"
     return { success: false, error: message }
@@ -723,6 +1135,20 @@ export async function uploadCashRegisterArcaCertificates(
     }
     if (crt.size === 0 || key.size === 0) {
       return { success: false, error: "Los archivos no pueden estar vacíos." }
+    }
+    const crtName = crt.name.toLowerCase()
+    const keyName = key.name.toLowerCase()
+    if (!crtName.endsWith(".crt")) {
+      return {
+        success: false,
+        error: "El certificado debe ser un archivo .crt.",
+      }
+    }
+    if (!keyName.endsWith(".key")) {
+      return {
+        success: false,
+        error: "La clave privada debe ser un archivo .key.",
+      }
     }
     const certText = Buffer.from(await crt.arrayBuffer()).toString("utf8")
     const keyText = Buffer.from(await key.arrayBuffer()).toString("utf8")
@@ -933,10 +1359,21 @@ export async function closeCashSession(
       }
       pm[k] = n
     }
+    const treasuryLines: Record<string, number> = {}
+    for (const [k, v] of Object.entries(snapshot.treasury_lines ?? {})) {
+      const n = parseAmount(v)
+      if (n < 0) {
+        return { success: false, error: "Amounts cannot be negative." }
+      }
+      treasuryLines[k] = n
+    }
+    const useTreasuryLines = Object.keys(treasuryLines).length > 0
     const closeNote = snapshot.note?.trim() ?? ""
     const closing_snapshot: Record<string, unknown> = {
       cash,
-      payment_methods: pm,
+      ...(useTreasuryLines
+        ? { treasury_lines: treasuryLines }
+        : { payment_methods: pm }),
     }
     if (closeNote.length > 0) {
       closing_snapshot.note = closeNote
@@ -949,6 +1386,42 @@ export async function closeCashSession(
       return { success: false, error: "Not authenticated." }
     }
 
+    const { data: openSessionRow, error: sessionLookupErr } = await supabase
+      .from("cash_register_sessions")
+      .select("id, opened_by, status")
+      .eq("id", sessionId)
+      .eq("pop_id", popId)
+      .maybeSingle()
+    if (sessionLookupErr) {
+      return {
+        success: false,
+        error: sessionLookupErr.message || "No se pudo validar el turno.",
+      }
+    }
+    if (!openSessionRow?.id || String(openSessionRow.status) !== "open") {
+      return {
+        success: false,
+        error: "Session not found or already closed.",
+      }
+    }
+    const openedByUserId =
+      openSessionRow.opened_by != null
+        ? String(openSessionRow.opened_by)
+        : null
+    if (
+      !canCloseCashRegisterSession({
+        currentUserId: user.id,
+        openedByUserId,
+        permissionKeys: snap.keys,
+      })
+    ) {
+      return {
+        success: false,
+        error:
+          "Solo quien abrió el turno o un supervisor con permisos completos de cajas puede cerrarlo.",
+      }
+    }
+
     const teorRes = await computeEfectivoTeoricoSession(
       supabase,
       popId,
@@ -959,11 +1432,69 @@ export async function closeCashSession(
     }
     const counted = cash
     const teorico = teorRes.teorico
-    const diff = Math.round((counted - teorico) * 100) / 100
-    const absDiff = Math.abs(diff)
+    const cashDiff = Math.round((counted - teorico) * 100) / 100
     let arqueoEntryId: string | null = null
 
-    if (absDiff >= 0.01) {
+    const cobrosByKind = await loadSessionNonCashCobrosByKind(
+      supabase,
+      popId,
+      sessionId,
+    )
+    const cobrosByLine = await loadSessionCobrosForClose(
+      supabase,
+      popId,
+      sessionId,
+    )
+
+    let entryLines: {
+      account_id: string
+      debit_amount: number
+      credit_amount: number
+      description: string | null
+      line_order: number
+    }[] = []
+    let nextLineOrder = 1
+
+    const cashLinesRes = await buildCashCloseAdjustmentLines(
+      supabase,
+      popId,
+      cashDiff,
+      nextLineOrder,
+    )
+    if (!cashLinesRes.success) {
+      return { success: false, error: cashLinesRes.error }
+    }
+    entryLines = entryLines.concat(cashLinesRes.lines)
+    nextLineOrder = cashLinesRes.nextLineOrder
+
+    if (useTreasuryLines) {
+      const tlLinesRes = await buildTreasuryLineCloseAdjustmentLines(
+        supabase,
+        popId,
+        treasuryLines,
+        cobrosByLine,
+        nextLineOrder,
+      )
+      if (!tlLinesRes.success) {
+        return { success: false, error: tlLinesRes.error }
+      }
+      entryLines = entryLines.concat(tlLinesRes.lines)
+      nextLineOrder = tlLinesRes.nextLineOrder
+    } else {
+      const pmLinesRes = await buildPaymentKindCloseAdjustmentLines(
+        supabase,
+        popId,
+        pm,
+        cobrosByKind,
+        nextLineOrder,
+      )
+      if (!pmLinesRes.success) {
+        return { success: false, error: pmLinesRes.error }
+      }
+      entryLines = entryLines.concat(pmLinesRes.lines)
+    }
+
+    if (entryLines.length > 0) {
       const popRes = await getPopById(popId)
       if (!popRes.success || !popRes.pop) {
         return {
@@ -971,89 +1502,9 @@ export async function closeCashSession(
           error: popRes.error || "No se pudo validar el punto de venta.",
         }
       }
-      const cajaId = await resolveAccountIdByCodes(
-        supabase,
-        popId,
-        CHART_CAJA_EFECTIVO_CODES,
-      )
-      if (!cajaId) {
-        return {
-          success: false,
-          error:
-            "No hay cuenta Caja (p. ej. 1.1.1.01) en el plan de cuentas para el arqueo.",
-        }
-      }
       const tz = timezoneForPopLedger(popRes.pop.country, popRes.pop.siteId)
       const entryDate = entryDateIsoInTimezone(tz)
-      const descBase =
-        diff < 0
-          ? `Faltante de arqueo de caja (${absDiff.toFixed(2)})`
-          : `Sobrante de arqueo de caja (${absDiff.toFixed(2)})`
-
-      let line1: {
-        account_id: string
-        debit_amount: number
-        credit_amount: number
-        description: string | null
-        line_order: number
-      }
-      let line2: typeof line1
-
-      if (diff < 0) {
-        const gastoId = await resolveAccountIdByCodes(
-          supabase,
-          popId,
-          CHART_DIFERENCIA_ARQUEO_GASTO_CODES,
-        )
-        if (!gastoId) {
-          return {
-            success: false,
-            error:
-              "No hay cuenta de gasto para diferencias de arqueo (p. ej. 6.1.1.05) en el plan de cuentas.",
-          }
-        }
-        line1 = {
-          account_id: gastoId,
-          debit_amount: absDiff,
-          credit_amount: 0,
-          description: descBase,
-          line_order: 1,
-        }
-        line2 = {
-          account_id: cajaId,
-          debit_amount: 0,
-          credit_amount: absDiff,
-          description: descBase,
-          line_order: 2,
-        }
-      } else {
-        const ingresoId = await resolveAccountIdByCodes(
-          supabase,
-          popId,
-          CHART_ARQUEO_SOBRANTE_INGRESO_CODES,
-        )
-        if (!ingresoId) {
-          return {
-            success: false,
-            error:
-              "No hay cuenta de otros ingresos (p. ej. 4.2.1.01) en el plan de cuentas.",
-          }
-        }
-        line1 = {
-          account_id: cajaId,
-          debit_amount: absDiff,
-          credit_amount: 0,
-          description: descBase,
-          line_order: 1,
-        }
-        line2 = {
-          account_id: ingresoId,
-          debit_amount: 0,
-          credit_amount: absDiff,
-          description: descBase,
-          line_order: 2,
-        }
-      }
+      const descBase = "Ajustes de cierre de caja (arqueo y liquidación)"
 
       const { data: maxRow } = await supabase
         .from("accounting_entries")
@@ -1089,10 +1540,9 @@ export async function closeCashSession(
       }
       arqueoEntryId = String(entIns.id)
 
-      const { error: linesErr } = await supabase.from("accounting_entry_lines").insert([
-        { ...line1, entry_id: arqueoEntryId },
-        { ...line2, entry_id: arqueoEntryId },
-      ])
+      const { error: linesErr } = await supabase.from("accounting_entry_lines").insert(
+        entryLines.map((line) => ({ ...line, entry_id: arqueoEntryId })),
+      )
       if (linesErr) {
         await cancelAccountingEntry(supabase, arqueoEntryId)
         return {
@@ -1262,7 +1712,7 @@ export async function getCashRegisterSummary(
     const { data: sessRows, error: sessErr } = await supabase
       .from("cash_register_sessions")
       .select(
-        "id, status, opened_at, closed_at, opening_cash, note, closing_snapshot",
+        "id, status, opened_at, closed_at, opening_cash, note, closing_snapshot, opened_by, closed_by",
       )
       .eq("pop_id", popId)
       .eq("cash_register_id", registerId)
@@ -1315,6 +1765,12 @@ export async function getCashRegisterSummary(
       }
     }
     const sessions: CashRegisterSummarySession[] = []
+    const sessionPaymentSums = new Map<
+      string,
+      Map<string, number>
+    >()
+    const sessionSaleTotals = new Map<string, number>()
+
     for (const s of sessRows || []) {
       const id = String(s.id)
       const st = String(s.status) === "closed" ? "closed" : "open"
@@ -1331,7 +1787,20 @@ export async function getCashRegisterSummary(
         closingSnapshot,
         movementDeposits: Math.round(dw.dep * 100) / 100,
         movementWithdrawals: Math.round(dw.wit * 100) / 100,
+        totalCobrado: 0,
+        ventasPorMedio: [],
+        ventasPorCuenta: [],
+        ventasParaCierre: [],
+        arqueoNumber: 0,
+        openedByUserId: null,
+        openedByName: null,
+        closedByUserId: null,
+        closedByName: null,
+        efectivoTeorico: 0,
+        cashArqueoDifference: null,
       })
+      sessionPaymentSums.set(id, new Map())
+      sessionSaleTotals.set(id, 0)
     }
     const movements: CashRegisterSummaryMovement[] = moveRows.map((m) => ({
       id: String(m.id),
@@ -1343,50 +1812,8 @@ export async function getCashRegisterSummary(
       note: m.note != null ? String(m.note) : null,
       createdBy: m.created_by != null ? String(m.created_by) : null,
     }))
-    const closingBlocks: CashRegisterSummaryClosingBlock[] = []
-    const agg = new Map<string, number>()
-    for (const sess of sessions) {
-      if (sess.status !== "closed" || !sess.closingSnapshot) continue
-      const cs = sess.closingSnapshot
-      const lines: { label: string; amount: number }[] = [
-        {
-          label: paymentMethodLabel("__cash_counted"),
-          amount: cs.cash,
-        },
-      ]
-      const keyCash = "__agg_cash"
-      agg.set(keyCash, (agg.get(keyCash) ?? 0) + cs.cash)
-      for (const [pid, amt] of Object.entries(cs.payment_methods)) {
-        lines.push({
-          label: paymentMethodLabel(pid),
-          amount: amt,
-        })
-        agg.set(pid, (agg.get(pid) ?? 0) + amt)
-      }
-      closingBlocks.push({
-        sessionId: sess.id,
-        openedAt: sess.openedAt,
-        closedAt: sess.closedAt,
-        lines,
-      })
-    }
-    const aggregatedClosingLines: { label: string; amount: number }[] = []
-    if (agg.has("__agg_cash")) {
-      aggregatedClosingLines.push({
-        label: paymentMethodLabel("__cash_counted"),
-        amount: Math.round((agg.get("__agg_cash") ?? 0) * 100) / 100,
-      })
-    }
-    for (const [pid, total] of agg) {
-      if (pid === "__agg_cash") continue
-      aggregatedClosingLines.push({
-        label: paymentMethodLabel(pid),
-        amount: Math.round(total * 100) / 100,
-      })
-    }
-    aggregatedClosingLines.sort((a, b) =>
-      a.label.localeCompare(b.label, "es"),
-    )
+    let closingBlocks: CashRegisterSummaryClosingBlock[] = []
+    let aggregatedClosingLines: { label: string; amount: number }[] = []
     let arqueo: CashRegisterSummaryData["arqueo"] = null
     let sales: CashRegisterSummarySale[] = []
     const salesIncluded = true
@@ -1490,6 +1917,77 @@ export async function getCashRegisterSummary(
         customerName: r.customer_name != null ? String(r.customer_name) : null,
         currency: String(r.currency ?? "ARS"),
       }))
+
+      const sessionCompletedSaleIds = sales
+        .filter((sale) => sale.status === "completed")
+        .map((sale) => sale.id)
+      if (sessionCompletedSaleIds.length > 0) {
+        const saleSessionById = new Map(
+          sales.map((sale) => [sale.id, sale.cashRegisterSessionId]),
+        )
+        const { data: spRows } = await supabase
+          .from("sale_payments")
+          .select("sale_id, payment_kind, amount")
+          .eq("pop_id", popId)
+          .in("sale_id", sessionCompletedSaleIds)
+        for (const row of spRows || []) {
+          const saleId = String(row.sale_id ?? "")
+          const sessionId = saleSessionById.get(saleId)
+          if (!sessionId) continue
+          const kind = String(row.payment_kind ?? "other")
+          const amt = parseAmount(row.amount)
+          const bucket = sessionPaymentSums.get(sessionId)
+          if (bucket) {
+            bucket.set(kind, (bucket.get(kind) ?? 0) + amt)
+          }
+        }
+        for (const sale of sales) {
+          if (sale.status !== "completed") continue
+          sessionSaleTotals.set(
+            sale.cashRegisterSessionId,
+            (sessionSaleTotals.get(sale.cashRegisterSessionId) ?? 0) +
+              sale.total,
+          )
+        }
+      }
+
+      for (const session of sessions) {
+        const payments = sessionPaymentSums.get(session.id)
+        session.totalCobrado = Math.round(
+          (sessionSaleTotals.get(session.id) ?? 0) * 100,
+        ) / 100
+        session.ventasPorMedio = payments
+          ? [...payments.entries()]
+              .map(([paymentKind, total]) => ({
+                paymentKind,
+                name: operationPaymentKindLabel(paymentKind),
+                total: Math.round(total * 100) / 100,
+              }))
+              .sort((a, b) => a.name.localeCompare(b.name, "es"))
+          : []
+        const porCuenta = await loadSessionCobrosByTreasuryLine(
+          supabase,
+          popId,
+          session.id,
+        )
+        session.ventasPorCuenta = mapTreasuryLineCobros(porCuenta)
+        const paraCierre = await loadSessionCobrosForClose(
+          supabase,
+          popId,
+          session.id,
+        )
+        session.ventasParaCierre = mapCloseCobros(paraCierre)
+      }
+
+      const userIds: string[] = []
+      for (const s of sessRows || []) {
+        if (s.opened_by) userIds.push(String(s.opened_by))
+        if (s.closed_by) userIds.push(String(s.closed_by))
+      }
+      const userNames = await loadUserDisplayNames(supabase, userIds)
+      enrichCashRegisterSessions(sessRows || [], sessions, userNames)
+      ;({ closingBlocks, aggregatedClosingLines } =
+        buildClosingBlocksFromSessions(sessions))
     }
     const data: CashRegisterSummaryData = {
       registerName,
@@ -1508,6 +2006,302 @@ export async function getCashRegisterSummary(
       aggregatedClosingLines,
     }
     return { success: true, data }
+  } catch (e: unknown) {
+    const message = e instanceof Error ? e.message : "Unknown error"
+    return { success: false, error: message }
+  }
+}
+
+const SESSION_ARQUEO_SALE_SELECT = `
+  id,
+  sold_at,
+  status,
+  total,
+  discount_total,
+  customer_name,
+  client_id,
+  sale_channel,
+  table_session_id,
+  counter_order_id,
+  line_items,
+  metadata,
+  sale_payments (
+    amount,
+    sort_order,
+    payment_kind,
+    treasury_account_id,
+    treasury_accounts ( name )
+  )
+`
+
+export async function getCashRegisterSessionArqueoDetail(
+  popId: string,
+  sessionId: string,
+): Promise<
+  | { success: true; data: CashRegisterSessionArqueoDetail }
+  | { success: false; error: string }
+> {
+  try {
+    const access = await validatePopAccess(popId)
+    if (!access.hasAccess || !access.isActive) {
+      return { success: false, error: access.error || "Sin acceso" }
+    }
+    const snap = await loadPopPermissionsSnapshot(popId)
+    if (
+      !permissionKeysInclude(
+        snap.keys,
+        POP_PERMS.CASH_REGISTER_READ.resource,
+        POP_PERMS.CASH_REGISTER_READ.action,
+      )
+    ) {
+      return { success: false, error: "No permission to view cash registers." }
+    }
+
+    const supabase = await createClient()
+    const { data: sessRow, error: sessErr } = await supabase
+      .from("cash_register_sessions")
+      .select(
+        "id, pop_id, cash_register_id, status, opened_at, closed_at, opening_cash, note, closing_snapshot, opened_by, closed_by",
+      )
+      .eq("id", sessionId)
+      .eq("pop_id", popId)
+      .maybeSingle()
+    if (sessErr || !sessRow?.id) {
+      return { success: false, error: sessErr?.message || "Turno no encontrado." }
+    }
+
+    const registerId = String(sessRow.cash_register_id)
+    const { data: regRow } = await supabase
+      .from("cash_registers")
+      .select("name")
+      .eq("id", registerId)
+      .eq("pop_id", popId)
+      .maybeSingle()
+    const registerName = String(regRow?.name ?? "")
+
+    const { data: allSessRows } = await supabase
+      .from("cash_register_sessions")
+      .select("id, opened_at, opened_by, closed_by")
+      .eq("pop_id", popId)
+      .eq("cash_register_id", registerId)
+      .order("opened_at", { ascending: true })
+
+    const st = String(sessRow.status) === "closed" ? "closed" : "open"
+    const closingSnapshot =
+      st === "closed" ? parseClosingSnapshot(sessRow.closing_snapshot) : null
+
+    const { data: moveRows } = await supabase
+      .from("cash_register_movements")
+      .select("id, kind, amount, note, created_at, created_by")
+      .eq("pop_id", popId)
+      .eq("session_id", sessionId)
+      .order("created_at", { ascending: false })
+
+    let dep = 0
+    let wit = 0
+    for (const m of moveRows || []) {
+      const amt = parseAmount(m.amount)
+      if (String(m.kind) === "deposit") dep += amt
+      else if (String(m.kind) === "withdrawal") wit += amt
+    }
+
+    const session: CashRegisterSummarySession = {
+      id: sessionId,
+      status: st,
+      openedAt: String(sessRow.opened_at ?? ""),
+      closedAt: sessRow.closed_at != null ? String(sessRow.closed_at) : null,
+      openingCash: parseAmount(sessRow.opening_cash),
+      openingNote: sessRow.note != null ? String(sessRow.note) : null,
+      closingSnapshot,
+      movementDeposits: Math.round(dep * 100) / 100,
+      movementWithdrawals: Math.round(wit * 100) / 100,
+      totalCobrado: 0,
+      ventasPorMedio: [],
+      ventasPorCuenta: [],
+      ventasParaCierre: [],
+      arqueoNumber: 0,
+      openedByUserId: sessRow.opened_by != null ? String(sessRow.opened_by) : null,
+      openedByName: null,
+      closedByUserId: sessRow.closed_by != null ? String(sessRow.closed_by) : null,
+      closedByName: null,
+      efectivoTeorico: 0,
+      cashArqueoDifference: null,
+    }
+
+    const operations: CashRegisterSessionOperationRow[] = []
+    const canReadSales = permissionKeysInclude(
+      snap.keys,
+      POP_PERMS.SALE_READ.resource,
+      POP_PERMS.SALE_READ.action,
+    )
+
+    if (canReadSales) {
+      const { data: saleRows } = await supabase
+        .from("sales")
+        .select(SESSION_ARQUEO_SALE_SELECT)
+        .eq("pop_id", popId)
+        .eq("cash_register_session_id", sessionId)
+        .eq("status", "completed")
+        .order("sold_at", { ascending: false })
+
+      const { tableLabelsBySessionId, counterOrderLabelsByOrderId } =
+        await loadCashRegisterSaleContextLabels(supabase, popId, saleRows || [])
+
+      const paymentSums = new Map<string, number>()
+      let totalCobrado = 0
+
+      for (const row of saleRows || []) {
+        const saleId = String(row.id)
+        const saleChannel = parseCashRegisterSaleChannel(row.sale_channel)
+        const sessionIdForTable =
+          row.table_session_id != null ? String(row.table_session_id).trim() : ""
+        const orderId =
+          row.counter_order_id != null ? String(row.counter_order_id).trim() : ""
+        const operationLabel = formatCashRegisterSaleOperationLabel({
+          saleChannel,
+          tableLabel: sessionIdForTable
+            ? tableLabelsBySessionId.get(sessionIdForTable)
+            : null,
+          counterOrderLabel: orderId
+            ? counterOrderLabelsByOrderId.get(orderId)
+            : null,
+        })
+        const customerLabel =
+          row.customer_name != null && String(row.customer_name).trim()
+            ? String(row.customer_name).trim()
+            : row.client_id
+              ? "Cliente registrado"
+              : "Consumidor final"
+        const detail = formatCashRegisterSaleDetail(
+          row.line_items,
+          parseAmount(row.discount_total),
+        )
+        const paymentsRaw = row.sale_payments as
+          | Array<{
+              amount?: unknown
+              sort_order?: unknown
+              payment_kind?: unknown
+              treasury_accounts?:
+                | { name?: string }
+                | Array<{ name?: string }>
+                | null
+            }>
+          | null
+        const payList = Array.isArray(paymentsRaw) ? [...paymentsRaw] : []
+        payList.sort(
+          (a, b) => Number(a.sort_order ?? 0) - Number(b.sort_order ?? 0),
+        )
+
+        totalCobrado += parseAmount(row.total)
+
+        if (payList.length === 0) {
+          operations.push({
+            id: saleId,
+            kind: "sale",
+            saleId,
+            occurredAt: String(row.sold_at ?? ""),
+            operationLabel,
+            customerLabel,
+            detail,
+            paymentMethodLabel: "—",
+            amount: parseAmount(row.total),
+          })
+        } else {
+          for (const [index, payment] of payList.entries()) {
+            const kind = String(payment.payment_kind ?? "other")
+            const amount = parseAmount(payment.amount)
+            paymentSums.set(kind, (paymentSums.get(kind) ?? 0) + amount)
+            operations.push({
+              id: `${saleId}-${index}`,
+              kind: "sale",
+              saleId,
+              occurredAt: String(row.sold_at ?? ""),
+              operationLabel,
+              customerLabel,
+              detail,
+              paymentMethodLabel: formatTreasuryPaymentLabelFromRow(payment),
+              amount,
+            })
+          }
+        }
+      }
+
+      session.totalCobrado = Math.round(totalCobrado * 100) / 100
+      session.ventasPorMedio = [...paymentSums.entries()]
+        .map(([paymentKind, total]) => ({
+          paymentKind,
+          name: operationPaymentKindLabel(paymentKind),
+          total: Math.round(total * 100) / 100,
+        }))
+        .sort((a, b) => a.name.localeCompare(b.name, "es"))
+      const porCuenta = await loadSessionCobrosByTreasuryLine(
+        supabase,
+        popId,
+        sessionId,
+      )
+      session.ventasPorCuenta = mapTreasuryLineCobros(porCuenta)
+      const paraCierre = await loadSessionCobrosForClose(
+        supabase,
+        popId,
+        sessionId,
+      )
+      session.ventasParaCierre = mapCloseCobros(paraCierre)
+    }
+
+    for (const m of moveRows || []) {
+      const kind = String(m.kind) === "withdrawal" ? "withdrawal" : "deposit"
+      operations.push({
+        id: String(m.id),
+        kind,
+        saleId: null,
+        occurredAt: String(m.created_at ?? ""),
+        operationLabel: kind === "deposit" ? "Ingreso" : "Retiro",
+        customerLabel: "—",
+        detail:
+          m.note != null && String(m.note).trim()
+            ? String(m.note).trim()
+            : kind === "deposit"
+              ? "Ingreso al cajón"
+              : "Retiro del cajón",
+        paymentMethodLabel: "Efectivo",
+        amount: parseAmount(m.amount),
+      })
+    }
+
+    operations.sort(
+      (a, b) =>
+        new Date(b.occurredAt).getTime() - new Date(a.occurredAt).getTime(),
+    )
+
+    const userNames = await loadUserDisplayNames(supabase, [
+      session.openedByUserId ?? "",
+      session.closedByUserId ?? "",
+    ])
+    enrichCashRegisterSessions(allSessRows || [], [session], userNames)
+
+    const closingComparison = closingSnapshot
+      ? buildClosingComparisonForSession(session)
+      : []
+
+    const { data: entryRow } = await supabase
+      .from("accounting_entries")
+      .select("id")
+      .eq("pop_id", popId)
+      .eq("source_type", "cash_register_close")
+      .eq("source_id", sessionId)
+      .eq("status", "posted")
+      .maybeSingle()
+
+    return {
+      success: true,
+      data: {
+        registerName,
+        session,
+        closingComparison,
+        hasAccountingEntry: Boolean(entryRow?.id),
+        operations,
+      },
+    }
   } catch (e: unknown) {
     const message = e instanceof Error ? e.message : "Unknown error"
     return { success: false, error: message }

@@ -11,6 +11,7 @@ import {
   type PurchaseKind,
 } from "@/app/[siteId]/[popId]/purchases/actions"
 import { PurchasePaymentMethodDialog } from "@/components/purchase-operation/PurchasePaymentMethodDialog"
+import { SimpleOperationCheckoutConfirmDialog } from "@/components/checkout/SimpleOperationCheckoutConfirmDialog"
 import {
   PurchaseOperationTicketOrderPanel,
 } from "@/components/purchase-operation/PurchaseOperationTicketOrderPanel"
@@ -57,6 +58,7 @@ import {
   Truck,
 } from "lucide-react"
 import { usePadronAutofillRazonSocial } from "@/hooks/usePadronAutofillRazonSocial"
+import { useCartListScrollHighlight } from "@/hooks/useCartListScrollHighlight"
 import { cn } from "@/lib/utils"
 import {
   AlertDialog,
@@ -272,6 +274,7 @@ function PurchasesPage() {
   const [modoVista, setModoVista] = useState<"grid" | "lista">("grid")
   const [busqueda, setBusqueda] = useState("")
   const [carrito, setCarrito] = useState<ItemCarrito[]>([])
+  const cartScrollHighlight = useCartListScrollHighlight()
   const [itemUnitCosts, setItemUnitCosts] = useState<Record<string, string>>({})
   const [itemUpdateArticleCost, setItemUpdateArticleCost] = useState<
     Record<string, boolean>
@@ -320,6 +323,25 @@ function PurchasesPage() {
     () => getPurchaseComprobanteDisplayLabel(comprobanteTipo),
     [comprobanteTipo],
   )
+
+  const confirmSupplierLabel = useMemo(
+    () =>
+      proveedorSeleccionado?.name?.trim() ||
+      manualNombreProveedor.trim() ||
+      compraPadron.razonSocial.trim() ||
+      "Sin proveedor",
+    [
+      proveedorSeleccionado?.name,
+      manualNombreProveedor,
+      compraPadron.razonSocial,
+    ],
+  )
+
+  const confirmComprobanteLabel = useMemo(() => {
+    if (comprobanteTipo != null) return comprobanteTipo
+    if (comprobanteAdjunto) return comprobanteAdjunto.name
+    return comprobanteDisplayLabel
+  }, [comprobanteTipo, comprobanteAdjunto, comprobanteDisplayLabel])
 
   const [itemDescuentoModo, setItemDescuentoModo] = useState<
     Record<string, "porcentaje" | "fijo">
@@ -749,6 +771,7 @@ function PurchasesPage() {
       }
       return [...prev, { productoId, cantidad: 1 }]
     })
+    cartScrollHighlight.notifyLineAdded(productoId)
     if (producto && !itemUnitCosts[productoId]?.trim()) {
       setItemUnitCosts((prev) => ({
         ...prev,
@@ -1349,6 +1372,7 @@ function PurchasesPage() {
               onRemoveLine={quitarDelCarrito}
               listTitle="Tu compra"
               emptyTitle="Compra vacía"
+              cartScrollHighlight={cartScrollHighlight}
               actions={{
                 discardDisabled: !hayItemsEnPedido,
                 confirmDisabled: !puedeComprar || compraSubmitting,
@@ -1494,74 +1518,27 @@ function PurchasesPage() {
         </AlertDialogContent>
       </AlertDialog>
 
-      <AlertDialog
+      <SimpleOperationCheckoutConfirmDialog
         open={comprarConfirmOpen}
         onOpenChange={(open) => {
           setComprarConfirmOpen(open)
           if (!open) setCompraError(null)
         }}
-      >
-        <AlertDialogContent className={compraAlertDialogContent}>
-          <AlertDialogHeader>
-            <AlertDialogTitle>¿Confirmar compra?</AlertDialogTitle>
-            <AlertDialogDescription asChild>
-              <div className="space-y-2 text-muted-foreground">
-                <p>
-                  Vas a registrar una compra por{" "}
-                  <span
-                    className={cn(
-                      compraImporteBaseClass,
-                      "font-semibold text-foreground",
-                    )}
-                  >
-                    {fmt.format(total)}
-                  </span>{" "}
-                  ({itemsDetallados.length}{" "}
-                  {itemsDetallados.length === 1 ? "ítem" : "ítems"}): ingreso de
-                  stock
-                  {payOnSupplierAccount
-                    ? " y deuda en cuenta corriente del proveedor"
-                    : metodoPagoSeleccionado
-                      ? ` y pago con ${metodoPagoSeleccionado.label}${
-                          metodoPagoSeleccionado.kind === "card_credit" &&
-                          Number(cardInstallments) > 1
-                            ? ` (${cardInstallments} cuotas)`
-                            : ""
-                        }`
-                      : ""}
-                  .
-                </p>
-                {compraError ? (
-                  <p className="text-sm text-rose-600">{compraError}</p>
-                ) : null}
-              </div>
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel className="border-border" disabled={compraSubmitting}>
-              Cancelar
-            </AlertDialogCancel>
-            <AlertDialogAction
-              type="button"
-              disabled={compraSubmitting}
-              onClick={(e) => {
-                e.preventDefault()
-                void confirmarCompra()
-              }}
-              className="border-0 bg-emerald-600 text-white hover:bg-emerald-500 focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2"
-            >
-              {compraSubmitting ? (
-                <>
-                  <Loader2 className="mr-2 size-4 animate-spin" />
-                  Procesando…
-                </>
-              ) : (
-                "Confirmar compra"
-              )}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+        title="Confirmar compra"
+        confirmLabel="Confirmar compra"
+        submitting={compraSubmitting}
+        submitError={compraError}
+        total={total}
+        subtotal={subtotal}
+        descuentoMonto={descuentoMonto}
+        hayDescuento={hayDescuento}
+        partyLabel="Proveedor"
+        partyValue={confirmSupplierLabel}
+        partyIcon={Truck}
+        comprobanteLabel={confirmComprobanteLabel}
+        paymentLabel={pagoResumenLabel}
+        onConfirm={confirmarCompra}
+      />
     </>
   )
 }

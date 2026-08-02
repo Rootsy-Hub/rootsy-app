@@ -2,6 +2,7 @@
 
 import type { ReactNode } from "react"
 import { cn } from "@/lib/utils"
+import { useCartListScrollContainerRef } from "@/hooks/useCartListScrollHighlight"
 import { cartListHeaderRowClass } from "@/components/sale-operation/saleOperationStyles"
 import { Receipt } from "lucide-react"
 
@@ -52,8 +53,11 @@ export function SaleOperationCartList({
   children,
   flush = false,
 }: Props) {
+  const scrollContainerRef = useCartListScrollContainerRef()
+
   return (
     <div
+      ref={scrollContainerRef ?? undefined}
       className={cn(
         "game-scroll flex min-h-0 flex-1 flex-col overflow-y-auto",
         flush ? "space-y-0" : "space-y-2 p-3 sm:p-3.5",

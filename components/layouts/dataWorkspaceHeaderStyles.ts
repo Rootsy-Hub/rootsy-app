@@ -144,6 +144,24 @@ export const dataWorkspaceHeaderUserDropdownContentClass = cn(
   "origin-top-right",
 )
 
+/** Panel desplegable sobre superficies claras (tarjetas, paneles light). */
+export const dataWorkspaceLightDropdownContentClass = cn(
+  "rootsy-app-light w-56 overflow-hidden rounded-xl border border-border/80 bg-popover p-1.5 text-popover-foreground shadow-lg",
+  "origin-top-right outline-none ring-0 [&_[data-slot=dropdown-menu-item]]:rounded-md",
+  "data-[side=bottom]:slide-in-from-top-0 data-[side=top]:slide-in-from-bottom-0",
+  "data-[side=left]:slide-in-from-right-0 data-[side=right]:slide-in-from-left-0",
+)
+
+export const dataWorkspaceLightDropdownItemClass =
+  "gap-2 text-popover-foreground focus:bg-muted focus:text-foreground data-[highlighted]:bg-muted data-[highlighted]:text-foreground [&_svg:not([class*='text-'])]:text-muted-foreground [&_svg]:opacity-70"
+
+export const dataWorkspaceLightDropdownSeparatorClass = "bg-border/60"
+
+export const dataWorkspaceLightDropdownLogoutItemClass = cn(
+  "gap-2 text-destructive focus:bg-destructive/10 focus:text-destructive data-[highlighted]:bg-destructive/10 data-[highlighted]:text-destructive",
+  "[&_svg]:!text-destructive",
+)
+
 export const dataWorkspaceHeaderDropdownLabelClass =
   "text-[10px] font-semibold uppercase tracking-[0.14em] text-zinc-500"
 

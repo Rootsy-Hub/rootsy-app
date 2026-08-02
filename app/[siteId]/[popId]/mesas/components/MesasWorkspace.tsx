@@ -19,6 +19,7 @@ import { useMesasSaleCheckout } from "@/app/[siteId]/[popId]/mesas/useMesasSaleC
 import { useMesasState } from "@/app/[siteId]/[popId]/mesas/useMesasState"
 import { OpenCashSessionBanner } from "@/components/sale-operation/OpenCashSessionBanner"
 import { SaleOperationToolbox } from "@/components/sale-operation/SaleOperationToolbox"
+import { useCartListScrollHighlight } from "@/hooks/useCartListScrollHighlight"
 import { useMemo, useState, useEffect, useCallback } from "react"
 
 type Props = {
@@ -82,6 +83,7 @@ export function MesasWorkspace({
   const [rightView, setRightView] = useState<MesasRightPanelView>("session")
   const [waiters, setWaiters] = useState<MesaWaiter[]>([])
   const showCatalog = rightView === "cart"
+  const cartScrollHighlight = useCartListScrollHighlight()
 
   const remoteSession = useMemo(
     () =>
@@ -102,6 +104,14 @@ export function MesasWorkspace({
     await reloadSessions()
   }, [reloadSessions])
 
+  const handleCartLineAdded = useCallback(
+    (lineId: string) => {
+      cartScrollHighlight.notifyLineAdded(lineId)
+      setRightView("cart")
+    },
+    [cartScrollHighlight],
+  )
+
   const checkout = useMesasSaleCheckout(
     popId,
     siteId,
@@ -110,6 +120,7 @@ export function MesasWorkspace({
     {
       onSessionClose: handleSessionClose,
       catalogSidebarOpen: catalogSidebarOpen || showCatalog,
+      onCartLineAdded: handleCartLineAdded,
     },
   )
 
@@ -354,7 +365,11 @@ export function MesasWorkspace({
                   </p>
                 </div>
               ) : null}
-              <MesasOrderPanel checkout={checkout} tableLabel={mesaLabel} />
+              <MesasOrderPanel
+                checkout={checkout}
+                tableLabel={mesaLabel}
+                cartScrollHighlight={cartScrollHighlight}
+              />
             </div>
           )}
         </aside>

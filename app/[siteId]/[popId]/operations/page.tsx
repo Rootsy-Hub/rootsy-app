@@ -34,6 +34,7 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { usePopWorkspace } from "@/context/PopWorkspaceContext"
+import { usePopTimeZone } from "@/hooks/usePopTimeZone"
 import withAuth from "@/hoc/withAuth"
 import {
   computeDataWorkspaceDateBounds,
@@ -93,6 +94,7 @@ function OperationsPage() {
   const popId = typeof params?.popId === "string" ? params.popId : undefined
 
   const { bootstrap, loading: bootstrapLoading } = usePopWorkspace()
+  const timeZone = usePopTimeZone()
 
   const [sales, setSales] = useState<OperationSaleRow[]>([])
   const [purchases, setPurchases] = useState<OperationPurchaseRow[]>([])
@@ -361,6 +363,7 @@ function OperationsPage() {
       exportOperationsCsv(
         activeView,
         pageSales.filter((row) => selected.has(row.id)),
+        timeZone,
       )
       return
     }
@@ -375,7 +378,7 @@ function OperationsPage() {
       "expenses",
       pageExpenses.filter((row) => selected.has(row.entryId)),
     )
-  }, [activeView, pageSales, pagePurchases, pageExpenses, selected])
+  }, [activeView, pageSales, pagePurchases, pageExpenses, selected, timeZone])
 
   const hasSearchChip = searchInput.trim().length > 0
 

@@ -20,9 +20,18 @@ import {
 import {
   type TreasuryAccountKind,
   isCardPayableChartCode,
+  isMotherTreasuryAccount,
   isSettlementReceivableChartCode,
   treasuryKindLabel,
 } from "@/lib/treasuryAccountKinds"
+import { loadPopLedgerTimeZone } from "@/lib/popTimezoneServer"
+import { toPopCalendarDate } from "@/lib/popTimezone"
+import {
+  formatTreasuryPosSaleLabel,
+  formatTreasuryPurchasePaymentLabel,
+  formatTreasuryExpensePaymentLabel,
+  parseTreasurySaleChannel,
+} from "@/app/[siteId]/[popId]/accounts/treasuryAccountUiUtils"
 import { createClient } from "@/utils/supabase/server"
 
 export type TreasurySettlementRow = {
@@ -33,20 +42,43 @@ export type TreasurySettlementRow = {
   fundingMethodName: string | null
 }
 
+export type TreasuryMovementBalanceImpact = "real" | "informative"
+
 export type PaymentMethodMovementRow = {
   id: string
   movementRefId: string
-  kind: "sale" | "purchase" | "expense" | "card_settlement" | "funding_out"
+  kind:
+    | "sale"
+    | "purchase"
+    | "expense"
+    | "card_settlement"
+    | "funding_out"
+    | "cash_register_close"
+    | "pos_liquidation"
+    | "pos_liquidation_fee"
   date: string
+  /** Instante del movimiento para ordenar y mostrar hora (ISO timestamptz o fecha). */
+  occurredAt?: string
   amount: number
   label: string
+  /** Comisiones POS u otros cargos de tarjeta asociados al movimiento. */
+  adjustmentAmount?: number
   direction: "in" | "out"
+  /** Si afecta el saldo real de la cuenta madre o solo el subledger pendiente. */
+  balanceImpact: TreasuryMovementBalanceImpact
   reconciled: boolean
   linkedStatementLineId: string | null
   sourceAccountName?: string | null
   treasuryAccountLabel?: string | null
   paymentKind?: OperationPaymentKind | null
   saleChannel?: "pos" | "table" | "counter" | null
+}
+
+export type TreasuryPeriodSummary = {
+  /** Saldo real al cierre del día anterior al inicio del período. */
+  openingBalance: number | null
+  /** Saldo real al cierre del período seleccionado (hoy si no hay hasta). */
+  currentBalance: number
 }
 
 export type TreasuryAccountDetailOptions = {
@@ -70,7 +102,9 @@ export type BankStatementLineRow = {
 export type TreasuryAccountDetailResult = {
   settlements: TreasurySettlementRow[]
   movements: PaymentMethodMovementRow[]
+  /** Totales de movimientos que afectan el saldo real en el período. */
   movementTotals: { in: number; out: number; net: number }
+  periodSummary: TreasuryPeriodSummary | null
   statementLines: BankStatementLineRow[]
   supportsBankReconciliation: boolean
   reconciliationSummary: {
@@ -96,8 +130,10 @@ export type RecordTreasurySettlementForAccountInput = {
 
 export type TreasuryReconciliationEventRow = {
   id: string
-  kind: "pos_acreditation" | "card_settlement"
+  kind: "pos_acreditation" | "card_settlement" | "cash_register_close_adjustment"
   eventDate: string
+  /** Instante del evento para ordenar y mostrar hora. */
+  eventOccurredAt?: string
   accountName: string
   principalAmount: number
   adjustmentAmount: number
@@ -106,6 +142,20 @@ export type TreasuryReconciliationEventRow = {
   accountingEntryId: string | null
   accountingEntryNumber: number | null
   accountingEntryStatus: string | null
+  createdByName?: string | null
+}
+
+export type TreasuryPosSummaryMovementRow = {
+  id: string
+  kind:
+    | "pos_sale"
+    | "cash_register_close"
+    | "purchase_payment"
+    | "expense_payment"
+  date: string
+  amount: number
+  direction: "in" | "out"
+  label: string
 }
 
 function roundMoney(n: number): number {
@@ -158,6 +208,99 @@ function movementRefId(
     return id.slice(5)
   }
   return id
+}
+
+function dayBeforeIso(isoDate: string): string {
+  const dt = new Date(`${isoDate.slice(0, 10)}T12:00:00`)
+  dt.setDate(dt.getDate() - 1)
+  return `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, "0")}-${String(dt.getDate()).padStart(2, "0")}`
+}
+
+async function resolvePopLedgerTimeZone(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  popId: string,
+): Promise<string> {
+  return loadPopLedgerTimeZone(supabase, popId)
+}
+
+function saleLocalDate(soldAt: unknown, timeZone: string): string {
+  return toPopCalendarDate(String(soldAt ?? ""), timeZone)
+}
+
+function resolveMovementBalanceImpact(
+  kind: PaymentMethodMovementRow["kind"],
+  sourceAccountName?: string | null,
+): TreasuryMovementBalanceImpact {
+  switch (kind) {
+    case "pos_liquidation":
+      return "real"
+    case "pos_liquidation_fee":
+    case "cash_register_close":
+      return "informative"
+    case "sale":
+      return sourceAccountName ? "informative" : "real"
+    default:
+      return "real"
+  }
+}
+
+async function computeMotherPendingTotalsAsOf(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  popId: string,
+  relatedIds: string[],
+  accountMeta: Map<string, TreasuryAccountMeta>,
+  asOfDate: string,
+): Promise<{ toLiquidate: number; toPay: number }> {
+  let toLiquidate = 0
+  let toPay = 0
+  for (const childId of relatedIds) {
+    const meta = accountMeta.get(childId)
+    if (!meta) continue
+    if (isSettlementReceivableChartCode(meta.chartCode)) {
+      const balance = await computeChildPendingBalanceAsOf(
+        supabase,
+        popId,
+        childId,
+        "pos",
+        asOfDate,
+      )
+      toLiquidate = roundMoney(toLiquidate + balance)
+    } else if (
+      isCardPayableChartCode(meta.chartCode) ||
+      meta.kind === "card_payable"
+    ) {
+      const balance = await computeChildPendingBalanceAsOf(
+        supabase,
+        popId,
+        childId,
+        "card_payable",
+        asOfDate,
+      )
+      toPay = roundMoney(toPay + balance)
+    }
+  }
+  return { toLiquidate, toPay }
+}
+
+function computePeriodMovementTotals(movements: PaymentMethodMovementRow[]): {
+  movementTotals: { in: number; out: number; net: number }
+} {
+  let realIn = 0
+  let realOut = 0
+
+  for (const m of movements) {
+    if (m.balanceImpact !== "real") continue
+    if (m.direction === "in") realIn = roundMoney(realIn + m.amount)
+    else realOut = roundMoney(realOut + m.amount)
+  }
+
+  return {
+    movementTotals: {
+      in: realIn,
+      out: realOut,
+      net: roundMoney(realIn - realOut),
+    },
+  }
 }
 
 function enrichMovement(
@@ -446,6 +589,7 @@ async function computePeriodGrossForChildAccount(
   childTreasuryAccountId: string,
   childRole: "pos" | "card_payable",
   inDateRange: (iso: string) => boolean,
+  ledgerTimeZone: string,
 ): Promise<number> {
   if (childRole === "pos") {
     const { data: spRows, error: spErr } = await supabase
@@ -470,7 +614,7 @@ async function computePeriodGrossForChildAccount(
     let total = 0
     for (const row of spRows || []) {
       const sale = row.sales as unknown as { sold_at?: string } | null
-      const date = String(sale?.sold_at ?? "").slice(0, 10)
+      const date = saleLocalDate(sale?.sold_at, ledgerTimeZone)
       if (!inDateRange(date)) continue
       total = roundMoney(total + parseAmount(row.amount))
     }
@@ -494,6 +638,476 @@ async function computePeriodGrossForChildAccount(
       if (!inDateRange(date)) continue
       total = roundMoney(total + parseAmount(row.amount))
     }
+  }
+  return total
+}
+
+async function loadPosCashRegisterCloseAdjustmentEvents(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  popId: string,
+  childTreasuryAccountId: string,
+  childName: string,
+  inDateRange: (iso: string) => boolean,
+): Promise<TreasuryReconciliationEventRow[]> {
+  const ledgerId = await resolveTreasuryAccountLedgerAccountId(
+    supabase,
+    popId,
+    childTreasuryAccountId,
+  )
+  if (!ledgerId) return []
+
+  const { data: entryRows } = await supabase
+    .from("accounting_entries")
+    .select("id, entry_date, entry_number, status, description")
+    .eq("pop_id", popId)
+    .eq("source_type", "cash_register_close")
+    .eq("status", "posted")
+
+  const entryIds = (entryRows || []).map((row) => String(row.id))
+  if (entryIds.length === 0) return []
+
+  const entryById = new Map(
+    (entryRows || []).map((row) => [String(row.id), row]),
+  )
+
+  const { data: lineRows } = await supabase
+    .from("accounting_entry_lines")
+    .select("id, entry_id, debit_amount, credit_amount, description")
+    .eq("account_id", ledgerId)
+    .in("entry_id", entryIds)
+
+  const events: TreasuryReconciliationEventRow[] = []
+  for (const line of lineRows || []) {
+    const entryId = String(line.entry_id ?? "")
+    const entry = entryById.get(entryId)
+    if (!entry) continue
+
+    const eventDate = String(entry.entry_date ?? "").slice(0, 10)
+    if (!inDateRange(eventDate)) continue
+
+    const debit = parseAmount(line.debit_amount)
+    const credit = parseAmount(line.credit_amount)
+    const net = roundMoney(debit - credit)
+    if (Math.abs(net) < 0.01) continue
+
+    const notes =
+      (typeof line.description === "string" && line.description.trim()) ||
+      (typeof entry.description === "string" && entry.description.trim()) ||
+      "Ajuste de cierre de caja"
+
+    events.push({
+      id: String(line.id),
+      kind: "cash_register_close_adjustment",
+      eventDate,
+      accountName: childName,
+      principalAmount: net,
+      adjustmentAmount: 0,
+      totalAmount: net,
+      notes,
+      accountingEntryId: entryId,
+      accountingEntryNumber:
+        entry.entry_number != null && Number.isFinite(Number(entry.entry_number))
+          ? Number(entry.entry_number)
+          : null,
+      accountingEntryStatus:
+        entry.status != null ? String(entry.status) : null,
+    })
+  }
+
+  return events
+}
+
+async function loadUserDisplayNames(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  userIds: string[],
+): Promise<Map<string, string>> {
+  const unique = [...new Set(userIds.filter(Boolean))]
+  const map = new Map<string, string>()
+  if (unique.length === 0) return map
+  const { data } = await supabase
+    .from("users")
+    .select("id, first_name, last_name")
+    .in("id", unique)
+  for (const row of data || []) {
+    const name =
+      `${String(row.first_name ?? "").trim()} ${String(row.last_name ?? "").trim()}`.trim()
+    map.set(String(row.id), name || "Usuario")
+  }
+  return map
+}
+
+type TreasurySaleLabelSourceRow = {
+  table_session_id?: string | null
+  counter_order_id?: string | null
+}
+
+async function loadTableLabelsBySessionIds(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  popId: string,
+  sessionIds: string[],
+): Promise<Map<string, string>> {
+  const labelsBySessionId = new Map<string, string>()
+  if (sessionIds.length === 0) return labelsBySessionId
+
+  const { data: sessions, error } = await supabase
+    .from("table_sessions")
+    .select("id, dining_table_id, table_session_tables ( dining_table_id )")
+    .eq("pop_id", popId)
+    .in("id", sessionIds)
+
+  if (error || !sessions?.length) return labelsBySessionId
+
+  const tableIds = new Set<string>()
+  for (const session of sessions) {
+    if (session.dining_table_id) {
+      tableIds.add(String(session.dining_table_id))
+    }
+    const extras = session.table_session_tables as
+      | Array<{ dining_table_id?: string }>
+      | null
+    for (const row of extras ?? []) {
+      if (row.dining_table_id) tableIds.add(String(row.dining_table_id))
+    }
+  }
+
+  if (tableIds.size === 0) return labelsBySessionId
+
+  const { data: tables } = await supabase
+    .from("dining_tables")
+    .select("id, label")
+    .eq("pop_id", popId)
+    .in("id", [...tableIds])
+
+  const labelByTableId = new Map<string, string>()
+  for (const table of tables ?? []) {
+    const label = typeof table.label === "string" ? table.label.trim() : ""
+    if (label) labelByTableId.set(String(table.id), label)
+  }
+
+  for (const session of sessions) {
+    const orderedTableIds = [String(session.dining_table_id)]
+    const extras = session.table_session_tables as
+      | Array<{ dining_table_id?: string }>
+      | null
+    for (const row of extras ?? []) {
+      const tableId = row.dining_table_id ? String(row.dining_table_id) : ""
+      if (tableId && !orderedTableIds.includes(tableId)) {
+        orderedTableIds.push(tableId)
+      }
+    }
+    const labels = orderedTableIds
+      .map((tableId) => labelByTableId.get(tableId))
+      .filter((label): label is string => Boolean(label))
+    if (labels.length > 0) {
+      labelsBySessionId.set(String(session.id), labels.join(" + "))
+    }
+  }
+
+  return labelsBySessionId
+}
+
+async function loadCounterOrderLabelsByOrderIds(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  popId: string,
+  orderIds: string[],
+): Promise<Map<string, string>> {
+  const labelByOrderId = new Map<string, string>()
+  if (orderIds.length === 0) return labelByOrderId
+
+  const { data, error } = await supabase
+    .from("counter_orders")
+    .select("id, order_number")
+    .eq("pop_id", popId)
+    .in("id", orderIds)
+
+  if (error || !data?.length) return labelByOrderId
+
+  for (const row of data) {
+    const orderNumber = Number(row.order_number)
+    if (!Number.isFinite(orderNumber)) continue
+    labelByOrderId.set(String(row.id), `#${orderNumber}`)
+  }
+
+  return labelByOrderId
+}
+
+async function loadTreasurySaleContextLabels(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  popId: string,
+  saleRows: TreasurySaleLabelSourceRow[],
+): Promise<{
+  tableLabelsBySessionId: Map<string, string>
+  counterOrderLabelsByOrderId: Map<string, string>
+}> {
+  const sessionIds = [
+    ...new Set(
+      saleRows
+        .map((row) =>
+          row.table_session_id != null ? String(row.table_session_id).trim() : "",
+        )
+        .filter(Boolean),
+    ),
+  ]
+  const orderIds = [
+    ...new Set(
+      saleRows
+        .map((row) =>
+          row.counter_order_id != null ? String(row.counter_order_id).trim() : "",
+        )
+        .filter(Boolean),
+    ),
+  ]
+
+  const [tableLabelsBySessionId, counterOrderLabelsByOrderId] = await Promise.all([
+    loadTableLabelsBySessionIds(supabase, popId, sessionIds),
+    loadCounterOrderLabelsByOrderIds(supabase, popId, orderIds),
+  ])
+
+  return { tableLabelsBySessionId, counterOrderLabelsByOrderId }
+}
+
+type TreasurySalePaymentSaleFields = TreasurySaleLabelSourceRow & {
+  sold_at?: string
+  customer_name?: string | null
+  sale_channel?: string | null
+}
+
+function parseTreasuryExpensePaymentFields(expense: unknown): {
+  description?: string | null
+  categoryName?: string | null
+} {
+  if (!expense || typeof expense !== "object") return {}
+  const row = expense as {
+    description?: string | null
+    expense_categories?:
+      | { name?: string | null }
+      | Array<{ name?: string | null }>
+      | null
+  }
+  const categoryRel = row.expense_categories
+  const category = Array.isArray(categoryRel) ? categoryRel[0] : categoryRel
+  return {
+    description: row.description,
+    categoryName: category?.name ?? null,
+  }
+}
+
+function formatTreasurySalePaymentLabel(
+  sale: TreasurySalePaymentSaleFields | null | undefined,
+  tableLabelsBySessionId: Map<string, string>,
+  counterOrderLabelsByOrderId: Map<string, string>,
+  options?: {
+    paymentKind?: string | null
+    usePaymentKindForPosChannel?: boolean
+  },
+): string {
+  const saleChannel = parseTreasurySaleChannel(sale?.sale_channel)
+  const sessionId =
+    sale?.table_session_id != null ? String(sale.table_session_id).trim() : ""
+  const orderId =
+    sale?.counter_order_id != null ? String(sale.counter_order_id).trim() : ""
+
+  return formatTreasuryPosSaleLabel({
+    saleChannel,
+    tableLabel: sessionId ? tableLabelsBySessionId.get(sessionId) : null,
+    counterOrderLabel: orderId ? counterOrderLabelsByOrderId.get(orderId) : null,
+    customerName: sale?.customer_name,
+    paymentKind: options?.paymentKind,
+    usePaymentKindForPosChannel: options?.usePaymentKindForPosChannel,
+  })
+}
+
+async function loadPosSummaryMovements(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  popId: string,
+  childTreasuryAccountId: string,
+  childName: string,
+  inDateRange: (iso: string) => boolean,
+  ledgerTimeZone: string,
+): Promise<TreasuryPosSummaryMovementRow[]> {
+  const movements: TreasuryPosSummaryMovementRow[] = []
+
+  const { data: spRows, error: spErr } = await supabase
+    .from("sale_payments")
+    .select(
+      `
+        id,
+        amount,
+        sales!inner (
+          sold_at,
+          status,
+          customer_name,
+          sale_channel,
+          table_session_id,
+          counter_order_id
+        )
+      `,
+    )
+    .eq("pop_id", popId)
+    .eq("treasury_account_id", childTreasuryAccountId)
+    .eq("sales.status", "completed")
+
+  if (spErr) {
+    throw new Error(spErr.message || "No se pudieron cargar cobros POS.")
+  }
+
+  const saleRowsForLabels = (spRows || []).map((row) => {
+    const sale = row.sales as unknown as TreasurySalePaymentSaleFields | null
+    return {
+      table_session_id: sale?.table_session_id,
+      counter_order_id: sale?.counter_order_id,
+    }
+  })
+  const { tableLabelsBySessionId, counterOrderLabelsByOrderId } =
+    await loadTreasurySaleContextLabels(supabase, popId, saleRowsForLabels)
+
+  for (const row of spRows || []) {
+    const sale = row.sales as unknown as TreasurySalePaymentSaleFields | null
+    const date = saleLocalDate(sale?.sold_at, ledgerTimeZone)
+    if (!inDateRange(date)) continue
+    movements.push({
+      id: String(row.id),
+      kind: "pos_sale",
+      date,
+      amount: parseAmount(row.amount),
+      direction: "in",
+      label: formatTreasurySalePaymentLabel(
+        sale,
+        tableLabelsBySessionId,
+        counterOrderLabelsByOrderId,
+      ),
+    })
+  }
+
+  const closeEvents = await loadPosCashRegisterCloseAdjustmentEvents(
+    supabase,
+    popId,
+    childTreasuryAccountId,
+    childName,
+    inDateRange,
+  )
+  for (const event of closeEvents) {
+    const signed = event.principalAmount
+    if (Math.abs(signed) < 0.01) continue
+    movements.push({
+      id: event.id,
+      kind: "cash_register_close",
+      date: event.eventDate,
+      amount: Math.abs(signed),
+      direction: signed < 0 ? "out" : "in",
+      label: event.notes.trim() || "Ajuste de cierre de caja",
+    })
+  }
+
+  movements.sort((a, b) => {
+    const dc = b.date.localeCompare(a.date)
+    if (dc !== 0) return dc
+    return b.id.localeCompare(a.id)
+  })
+  return movements
+}
+
+async function loadCardConsumptionMovements(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  popId: string,
+  childTreasuryAccountId: string,
+  inDateRange: (iso: string) => boolean,
+): Promise<TreasuryPosSummaryMovementRow[]> {
+  const movements: TreasuryPosSummaryMovementRow[] = []
+
+  const { data: ppRows, error: ppErr } = await supabase
+    .from("purchase_payments")
+    .select(
+      `
+        id,
+        amount,
+        paid_at,
+        purchases (
+          supplier_name,
+          document_number,
+          purchase_kind
+        )
+      `,
+    )
+    .eq("pop_id", popId)
+    .eq("treasury_account_id", childTreasuryAccountId)
+
+  if (ppErr) {
+    throw new Error(ppErr.message || "No se pudieron cargar consumos de compras.")
+  }
+
+  for (const row of ppRows || []) {
+    const pur = row.purchases as unknown as {
+      supplier_name?: string | null
+      document_number?: string | null
+      purchase_kind?: string | null
+    } | null
+    const date = String(row.paid_at ?? "").slice(0, 10)
+    if (!inDateRange(date)) continue
+    movements.push({
+      id: String(row.id),
+      kind: "purchase_payment",
+      date,
+      amount: parseAmount(row.amount),
+      direction: "out",
+      label: formatTreasuryPurchasePaymentLabel({
+        purchaseKind: pur?.purchase_kind,
+        supplierName: pur?.supplier_name,
+        documentNumber: pur?.document_number,
+      }),
+    })
+  }
+
+  const { data: epRows, error: epErr } = await supabase
+    .from("expense_payments")
+    .select(
+      `
+        id,
+        amount,
+        paid_at,
+        expenses (
+          description,
+          expense_categories ( name )
+        )
+      `,
+    )
+    .eq("pop_id", popId)
+    .eq("treasury_account_id", childTreasuryAccountId)
+
+  if (epErr) {
+    throw new Error(epErr.message || "No se pudieron cargar consumos de gastos.")
+  }
+
+  for (const row of epRows || []) {
+    const exp = parseTreasuryExpensePaymentFields(row.expenses)
+    const date = String(row.paid_at ?? "").slice(0, 10)
+    if (!inDateRange(date)) continue
+    movements.push({
+      id: String(row.id),
+      kind: "expense_payment",
+      date,
+      amount: parseAmount(row.amount),
+      direction: "out",
+      label: formatTreasuryExpensePaymentLabel({
+        categoryName: exp.categoryName,
+        description: exp.description,
+      }),
+    })
+  }
+
+  movements.sort((a, b) => {
+    const dc = b.date.localeCompare(a.date)
+    if (dc !== 0) return dc
+    return b.id.localeCompare(a.id)
+  })
+  return movements
+}
+
+function netPosSummaryMovements(movements: TreasuryPosSummaryMovementRow[]): number {
+  let total = 0
+  for (const m of movements) {
+    if (m.direction === "in") total = roundMoney(total + m.amount)
+    else total = roundMoney(total - m.amount)
   }
   return total
 }
@@ -555,6 +1169,7 @@ export async function getTreasuryAccountDetail(
     const relatedIds = options?.includeRelatedAccounts
       ? (options.relatedTreasuryAccountIds ?? []).filter((id) => id && id !== taId)
       : []
+    const isMotherAccount = isMotherTreasuryAccount(primaryChartCode)
     const movementFetchLimit = isMovementsHeavyAccount
       ? 500
       : relatedIds.length > 0
@@ -565,7 +1180,9 @@ export async function getTreasuryAccountDetail(
       : relatedIds.length > 0
         ? 120
         : 40
-    const movementAccountIds = [taId, ...relatedIds]
+    /** En cuenta madre solo cargamos cobros/pagos directos; lo pendiente (POS) no va al extracto. */
+    const movementAccountIds =
+      isMotherAccount && !isCardPayable ? [taId] : [taId, ...relatedIds]
 
     const accountNames = new Map<string, string>()
     const accountMeta = new Map<string, TreasuryAccountMeta>()
@@ -612,6 +1229,7 @@ export async function getTreasuryAccountDetail(
       if (dateTo && d > dateTo) return false
       return true
     }
+    const ledgerTimeZone = await resolvePopLedgerTimeZone(supabase, popId)
 
     const settlements: TreasurySettlementRow[] = []
     if (isCardPayable) {
@@ -671,7 +1289,10 @@ export async function getTreasuryAccountDetail(
 
     const movements: Omit<
       PaymentMethodMovementRow,
-      "movementRefId" | "reconciled" | "linkedStatementLineId"
+      | "movementRefId"
+      | "reconciled"
+      | "linkedStatementLineId"
+      | "balanceImpact"
     >[] = []
 
     const { data: spRows, error: spErr } = await supabase
@@ -687,7 +1308,9 @@ export async function getTreasuryAccountDetail(
             sold_at,
             status,
             customer_name,
-            sale_channel
+            sale_channel,
+            table_session_id,
+            counter_order_id
           )
         `,
       )
@@ -703,27 +1326,44 @@ export async function getTreasuryAccountDetail(
       }
     }
 
+    const movementSaleRowsForLabels = (spRows || []).map((row) => {
+      const sale = row.sales as unknown as TreasurySalePaymentSaleFields | null
+      return {
+        table_session_id: sale?.table_session_id,
+        counter_order_id: sale?.counter_order_id,
+      }
+    })
+    const {
+      tableLabelsBySessionId: movementTableLabelsBySessionId,
+      counterOrderLabelsByOrderId: movementCounterOrderLabelsByOrderId,
+    } = await loadTreasurySaleContextLabels(
+      supabase,
+      popId,
+      movementSaleRowsForLabels,
+    )
+
     for (const r of spRows || []) {
-      const sale = r.sales as unknown as {
-        sold_at?: string
-        customer_name?: string | null
-        sale_channel?: string | null
-      } | null
-      const rawChannel = String(sale?.sale_channel ?? "pos")
-      const saleChannel =
-        rawChannel === "table" || rawChannel === "counter" || rawChannel === "pos"
-          ? rawChannel
-          : "pos"
+      const sale = r.sales as unknown as TreasurySalePaymentSaleFields | null
+      const saleChannel = parseTreasurySaleChannel(sale?.sale_channel)
       const sourceTaId =
         r.treasury_account_id != null ? String(r.treasury_account_id) : taId
-      const date = String(sale?.sold_at ?? "").slice(0, 10)
+      const date = saleLocalDate(sale?.sold_at, ledgerTimeZone)
       if (!inDateRange(date)) continue
       movements.push({
         id: String(r.id),
         kind: "sale",
         date,
+        occurredAt: String(sale?.sold_at ?? "").trim() || date,
         amount: parseAmount(r.amount),
-        label: sale?.customer_name?.trim() || "Venta",
+        label: formatTreasurySalePaymentLabel(
+          sale,
+          movementTableLabelsBySessionId,
+          movementCounterOrderLabelsByOrderId,
+          {
+            paymentKind: parsePaymentKind(r.payment_kind),
+            usePaymentKindForPosChannel: true,
+          },
+        ),
         direction: "in",
         saleChannel,
         paymentKind: parsePaymentKind(r.payment_kind),
@@ -742,11 +1382,13 @@ export async function getTreasuryAccountDetail(
           id,
           amount,
           paid_at,
+          created_at,
           treasury_account_id,
           payment_kind,
           purchases (
             supplier_name,
-            document_number
+            document_number,
+            purchase_kind
           )
         `,
       )
@@ -766,6 +1408,7 @@ export async function getTreasuryAccountDetail(
       const pur = r.purchases as unknown as {
         supplier_name?: string | null
         document_number?: string | null
+        purchase_kind?: string | null
       } | null
       const sourceTaId =
         r.treasury_account_id != null ? String(r.treasury_account_id) : taId
@@ -775,11 +1418,13 @@ export async function getTreasuryAccountDetail(
         id: String(r.id),
         kind: "purchase",
         date,
+        occurredAt: String(r.created_at ?? r.paid_at ?? "").trim() || date,
         amount: parseAmount(r.amount),
-        label:
-          pur?.supplier_name?.trim() ||
-          pur?.document_number?.trim() ||
-          "Compra",
+        label: formatTreasuryPurchasePaymentLabel({
+          purchaseKind: pur?.purchase_kind,
+          supplierName: pur?.supplier_name,
+          documentNumber: pur?.document_number,
+        }),
         direction: "out",
         paymentKind: parsePaymentKind(r.payment_kind),
         treasuryAccountLabel: treasuryLabelFor(sourceTaId),
@@ -797,10 +1442,12 @@ export async function getTreasuryAccountDetail(
           id,
           amount,
           paid_at,
+          created_at,
           treasury_account_id,
           payment_kind,
           expenses (
-            description
+            description,
+            expense_categories ( name )
           )
         `,
       )
@@ -817,7 +1464,7 @@ export async function getTreasuryAccountDetail(
     }
 
     for (const r of epRows || []) {
-      const exp = r.expenses as unknown as { description?: string | null } | null
+      const exp = parseTreasuryExpensePaymentFields(r.expenses)
       const sourceTaId =
         r.treasury_account_id != null ? String(r.treasury_account_id) : taId
       const date = String(r.paid_at ?? "").slice(0, 10)
@@ -826,8 +1473,12 @@ export async function getTreasuryAccountDetail(
         id: String(r.id),
         kind: "expense",
         date,
+        occurredAt: String(r.created_at ?? r.paid_at ?? "").trim() || date,
         amount: parseAmount(r.amount),
-        label: exp?.description?.trim() || "Gasto",
+        label: formatTreasuryExpensePaymentLabel({
+          categoryName: exp.categoryName,
+          description: exp.description,
+        }),
         direction: "out",
         paymentKind: parsePaymentKind(r.payment_kind),
         treasuryAccountLabel: treasuryLabelFor(sourceTaId),
@@ -841,7 +1492,9 @@ export async function getTreasuryAccountDetail(
     if (!isCardPayable) {
       const { data: fundSettleRows } = await supabase
         .from("treasury_settlements")
-        .select("id, amount, settled_at, notes, card_treasury_account_id")
+        .select(
+          "id, amount, principal_amount, adjustment_amount, settled_at, created_at, notes, card_treasury_account_id",
+        )
         .eq("pop_id", popId)
         .eq("funding_treasury_account_id", taId)
         .order("settled_at", { ascending: false })
@@ -877,24 +1530,97 @@ export async function getTreasuryAccountDetail(
             : ""
         const date = String(r.settled_at ?? "").slice(0, 10)
         if (!inDateRange(date)) continue
+        const principal = parseAmount(r.principal_amount ?? r.amount)
+        const adjustment = parseAmount(r.adjustment_amount ?? 0)
         movements.push({
           id: `fund-${String(r.id)}`,
           kind: "funding_out",
           date,
-          amount: parseAmount(r.amount),
+          occurredAt: String(r.created_at ?? r.settled_at ?? "").trim() || date,
+          amount: principal,
           label: `Resumen tarjeta — ${cardNames.get(cid) ?? "Tarjeta"}`,
+          adjustmentAmount: adjustment,
           direction: "out",
           paymentKind: "transfer",
           treasuryAccountLabel: treasuryLabelFor(taId),
         })
       }
+
+      const { data: posAcredRows } = await supabase
+        .from("treasury_pos_acreditations")
+        .select(
+          "id, principal_amount, adjustment_amount, credited_at, created_at, notes, pos_treasury_account_id",
+        )
+        .eq("pop_id", popId)
+        .eq("mother_treasury_account_id", taId)
+        .order("credited_at", { ascending: false })
+        .order("created_at", { ascending: false })
+        .limit(120)
+
+      const acredPosIds = [
+        ...new Set(
+          (posAcredRows || [])
+            .map((row) =>
+              row.pos_treasury_account_id
+                ? String(row.pos_treasury_account_id)
+                : "",
+            )
+            .filter(Boolean),
+        ),
+      ]
+      const acredPosNames = new Map<string, string>()
+      if (acredPosIds.length > 0) {
+        const { data: acredNameRows } = await supabase
+          .from("treasury_accounts")
+          .select("id, name")
+          .eq("pop_id", popId)
+          .in("id", acredPosIds)
+        for (const row of acredNameRows || []) {
+          acredPosNames.set(String(row.id), String(row.name ?? ""))
+        }
+      }
+
+      for (const row of posAcredRows || []) {
+        const date = String(row.credited_at ?? "").slice(0, 10)
+        if (!inDateRange(date)) continue
+        const posId =
+          row.pos_treasury_account_id != null
+            ? String(row.pos_treasury_account_id)
+            : ""
+        const posName = acredPosNames.get(posId) ?? "POS"
+        const principal = parseAmount(row.principal_amount)
+        const adjustment = parseAmount(row.adjustment_amount ?? 0)
+        const notes = String(row.notes ?? "").trim()
+
+        if (principal > 0) {
+          movements.push({
+            id: String(row.id),
+            kind: "pos_liquidation",
+            date,
+            occurredAt: String(row.created_at ?? row.credited_at ?? "").trim() || date,
+            amount: principal,
+            label: notes || `Recibido — ${posName}`,
+            adjustmentAmount: adjustment,
+            direction: "in",
+            treasuryAccountLabel: posName,
+            sourceAccountName: posName,
+          })
+        }
+      }
     }
 
     movements.sort((a, b) => {
-      const dc = b.date.localeCompare(a.date)
+      const aKey = (a.occurredAt ?? a.date).trim()
+      const bKey = (b.occurredAt ?? b.date).trim()
+      const dc = bKey.localeCompare(aKey)
       if (dc !== 0) return dc
       return b.id.localeCompare(a.id)
     })
+
+    const movementsWithImpact = movements.map((m) => ({
+      ...m,
+      balanceImpact: resolveMovementBalanceImpact(m.kind, m.sourceAccountName),
+    }))
 
     const supportsBankReconciliation = !isCardPayable && !isCashAccount
     const markByKey = new Map<string, { statementLineId: string | null }>()
@@ -952,15 +1678,48 @@ export async function getTreasuryAccountDetail(
       : relatedIds.length > 0
         ? 100
         : 60
-    const enrichedMovements = movements
+    const allEnrichedMovements = movementsWithImpact
       .map((m) => enrichMovement(m, markByKey))
-      .slice(0, movementDisplayLimit)
+      .filter((m) => m.balanceImpact === "real")
+    const { movementTotals } = computePeriodMovementTotals(allEnrichedMovements)
+    const enrichedMovements = allEnrichedMovements.slice(0, movementDisplayLimit)
 
-    let totalIn = 0
-    let totalOut = 0
-    for (const m of enrichedMovements) {
-      if (m.direction === "in") totalIn = roundMoney(totalIn + m.amount)
-      else totalOut = roundMoney(totalOut + m.amount)
+    let periodSummary: TreasuryPeriodSummary | null = null
+    if (isMotherAccount && !isCardPayable) {
+      const today = new Date()
+      const closingAsOf =
+        dateTo ||
+        `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`
+
+      const motherLedgerId = await resolveTreasuryAccountLedgerAccountId(
+        supabase,
+        popId,
+        taId,
+      )
+      let currentBalance = 0
+      if (motherLedgerId) {
+        currentBalance = await computeChartAccountBalanceAsOf(
+          supabase,
+          popId,
+          motherLedgerId,
+          closingAsOf,
+        )
+      }
+
+      let openingBalance: number | null = null
+      if (dateFrom && motherLedgerId) {
+        openingBalance = await computeChartAccountBalanceAsOf(
+          supabase,
+          popId,
+          motherLedgerId,
+          dayBeforeIso(dateFrom),
+        )
+      }
+
+      periodSummary = {
+        openingBalance,
+        currentBalance,
+      }
     }
 
     let stmtIn = 0
@@ -979,11 +1738,8 @@ export async function getTreasuryAccountDetail(
       data: {
         settlements,
         movements: enrichedMovements,
-        movementTotals: {
-          in: totalIn,
-          out: totalOut,
-          net: roundMoney(totalIn - totalOut),
-        },
+        movementTotals,
+        periodSummary,
         statementLines,
         supportsBankReconciliation,
         reconciliationSummary: {
@@ -1537,6 +2293,9 @@ export async function getTreasuryReconciliationHistory(
       events: TreasuryReconciliationEventRow[]
       periodGrossAmount: number
       periodPendingBalance: number
+      openingPendingBalance: number | null
+      periodToLiquidate: number
+      summaryMovements: TreasuryPosSummaryMovementRow[]
     }
   | { success: false; error: string }
 > {
@@ -1568,6 +2327,7 @@ export async function getTreasuryReconciliationHistory(
       return true
     }
     const supabase = await createClient()
+    const ledgerTimeZone = await resolvePopLedgerTimeZone(supabase, popId)
 
     const { data: childRows } = await supabase
       .from("treasury_accounts")
@@ -1585,7 +2345,7 @@ export async function getTreasuryReconciliationHistory(
       let settleQuery = supabase
         .from("treasury_settlements")
         .select(
-          "id, principal_amount, amount, adjustment_amount, settled_at, notes, accounting_entry_id, card_treasury_account_id",
+          "id, principal_amount, amount, adjustment_amount, settled_at, created_at, notes, accounting_entry_id, card_treasury_account_id, created_by",
         )
         .eq("pop_id", popId)
         .order("settled_at", { ascending: false })
@@ -1643,6 +2403,7 @@ export async function getTreasuryReconciliationHistory(
           id: String(r.id),
           kind: "card_settlement",
           eventDate: String(r.settled_at ?? "").slice(0, 10),
+          eventOccurredAt: String(r.created_at ?? r.settled_at ?? "").trim(),
           accountName: cardNames.get(cid) ?? "Tarjeta",
           principalAmount: principal,
           adjustmentAmount: adjustment,
@@ -1652,6 +2413,8 @@ export async function getTreasuryReconciliationHistory(
             r.accounting_entry_id != null ? String(r.accounting_entry_id) : null,
           accountingEntryNumber: null,
           accountingEntryStatus: null,
+          createdByName:
+            r.created_by != null ? String(r.created_by) : null,
         })
       }
     }
@@ -1660,7 +2423,7 @@ export async function getTreasuryReconciliationHistory(
       let posQuery = supabase
         .from("treasury_pos_acreditations")
         .select(
-          "id, principal_amount, adjustment_amount, credited_at, notes, accounting_entry_id, pos_treasury_account_id",
+          "id, principal_amount, adjustment_amount, credited_at, created_at, notes, accounting_entry_id, pos_treasury_account_id, created_by",
         )
         .eq("pop_id", popId)
         .eq("mother_treasury_account_id", motherId)
@@ -1715,6 +2478,7 @@ export async function getTreasuryReconciliationHistory(
         id: String(r.id),
         kind: "pos_acreditation",
         eventDate: String(r.credited_at ?? "").slice(0, 10),
+        eventOccurredAt: String(r.created_at ?? r.credited_at ?? "").trim(),
         accountName: posNames.get(pid) ?? "POS",
         principalAmount: principal,
         adjustmentAmount: adjustment,
@@ -1724,8 +2488,22 @@ export async function getTreasuryReconciliationHistory(
           r.accounting_entry_id != null ? String(r.accounting_entry_id) : null,
         accountingEntryNumber: null,
         accountingEntryStatus: null,
+        createdByName: r.created_by != null ? String(r.created_by) : null,
       })
     }
+    }
+
+    const createdByIds = [
+      ...new Set(
+        events
+          .map((e) => e.createdByName)
+          .filter((id): id is string => Boolean(id)),
+      ),
+    ]
+    const userNames = await loadUserDisplayNames(supabase, createdByIds)
+    for (const event of events) {
+      if (!event.createdByName) continue
+      event.createdByName = userNames.get(event.createdByName) ?? "Usuario"
     }
 
     const entryIds = [
@@ -1765,7 +2543,9 @@ export async function getTreasuryReconciliationHistory(
     }
 
     events.sort((a, b) => {
-      const dc = b.eventDate.localeCompare(a.eventDate)
+      const aKey = (a.eventOccurredAt ?? a.eventDate).trim()
+      const bKey = (b.eventOccurredAt ?? b.eventDate).trim()
+      const dc = bKey.localeCompare(aKey)
       if (dc !== 0) return dc
       return b.id.localeCompare(a.id)
     })
@@ -1777,6 +2557,10 @@ export async function getTreasuryReconciliationHistory(
 
     let periodGrossAmount = 0
     let periodPendingBalance = 0
+    let openingPendingBalance: number | null = null
+    let periodToLiquidate = 0
+    let summaryMovements: TreasuryPosSummaryMovementRow[] = []
+
     if (childId && childRole) {
       periodGrossAmount = await computePeriodGrossForChildAccount(
         supabase,
@@ -1784,10 +2568,61 @@ export async function getTreasuryReconciliationHistory(
         childId,
         childRole,
         inDateRange,
+        ledgerTimeZone,
       )
-      periodPendingBalance = roundMoney(
-        Math.max(0, periodGrossAmount - periodReconciledPrincipal),
-      )
+      if (childRole === "pos") {
+        const asOf =
+          dateTo && /^\d{4}-\d{2}-\d{2}$/.test(dateTo)
+            ? dateTo
+            : new Date().toISOString().slice(0, 10)
+        periodPendingBalance = Math.max(
+          0,
+          await computeChildPendingBalanceAsOf(
+            supabase,
+            popId,
+            childId,
+            "pos",
+            asOf,
+          ),
+        )
+        if (dateFrom && /^\d{4}-\d{2}-\d{2}$/.test(dateFrom)) {
+          openingPendingBalance = Math.max(
+            0,
+            await computeChildPendingBalanceAsOf(
+              supabase,
+              popId,
+              childId,
+              "pos",
+              dayBeforeIso(dateFrom),
+            ),
+          )
+        }
+        const { data: childRow } = await supabase
+          .from("treasury_accounts")
+          .select("name")
+          .eq("id", childId)
+          .maybeSingle()
+        const childName = String(childRow?.name ?? "POS")
+        summaryMovements = await loadPosSummaryMovements(
+          supabase,
+          popId,
+          childId,
+          childName,
+          inDateRange,
+          ledgerTimeZone,
+        )
+        periodToLiquidate = netPosSummaryMovements(summaryMovements)
+      } else {
+        periodPendingBalance = roundMoney(
+          Math.max(0, periodGrossAmount - periodReconciledPrincipal),
+        )
+        summaryMovements = await loadCardConsumptionMovements(
+          supabase,
+          popId,
+          childId,
+          inDateRange,
+        )
+      }
     }
 
     return {
@@ -1795,6 +2630,9 @@ export async function getTreasuryReconciliationHistory(
       events,
       periodGrossAmount,
       periodPendingBalance,
+      openingPendingBalance,
+      periodToLiquidate,
+      summaryMovements,
     }
   } catch (e: unknown) {
     const message = e instanceof Error ? e.message : "Error desconocido"

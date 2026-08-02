@@ -1,6 +1,7 @@
 "use client"
 
 import { TreasuryInstitutionPicker } from "@/app/[siteId]/[popId]/accounts/TreasuryInstitutionPicker"
+import { treasuryPickerTileClass } from "@/app/[siteId]/[popId]/accounts/TreasuryAccountBrandVisual"
 import type { UpsertTreasuryAccountInput } from "@/app/[siteId]/[popId]/accounts/actions"
 import { Button } from "@/components/ui/button"
 import {
@@ -27,17 +28,6 @@ import type { TreasuryAccountKind } from "@/lib/treasuryAccountKinds"
 import { cn } from "@/lib/utils"
 import { Banknote, CircleEllipsis, Landmark, Loader2, Wallet } from "lucide-react"
 import { useEffect, useMemo, useState, type FormEvent } from "react"
-
-const lightPanel =
-  "border-zinc-200 bg-white text-zinc-900 dark:border-zinc-200 dark:bg-white dark:text-zinc-900"
-const lightSurface =
-  "border-zinc-200 bg-white text-zinc-900 shadow-xs dark:border-zinc-200 dark:bg-white dark:text-zinc-900"
-const lightMuted = "text-zinc-500 dark:text-zinc-500"
-const lightLabel = "text-zinc-700 dark:text-zinc-700"
-const lightSummary = "border-zinc-100 bg-zinc-50 dark:border-zinc-100 dark:bg-zinc-50"
-const lightFooter = "border-zinc-100 bg-zinc-50/90 dark:border-zinc-100 dark:bg-zinc-50/90"
-const lightOutlineButton =
-  "border-zinc-200 !bg-white text-zinc-800 shadow-xs hover:!bg-zinc-100 hover:!text-zinc-900 dark:border-zinc-200 dark:!bg-white dark:text-zinc-800 dark:hover:!bg-zinc-100 dark:hover:!text-zinc-900"
 
 const KIND_ICONS = {
   cash: Banknote,
@@ -122,26 +112,26 @@ export function TreasuryAccountCreateDialog({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
+        data-rootsy-light-shell="true"
         showCloseButton
         className={cn(
-          "gap-0 overflow-hidden p-0 shadow-xl sm:max-w-lg",
-          lightPanel,
+          "rootsy-app-light gap-0 overflow-hidden border-border bg-card p-0 text-foreground shadow-xl sm:max-w-lg",
         )}
       >
-        <DialogHeader className={cn("space-y-1 border-b px-6 py-5", lightSummary)}>
-          <DialogTitle className="text-lg font-semibold tracking-tight text-zinc-900">
+        <DialogHeader className="space-y-1 border-b border-border/60 bg-muted/20 px-6 py-5">
+          <DialogTitle className="text-lg font-semibold tracking-tight">
             Nueva cuenta
           </DialogTitle>
-          <DialogDescription className={cn("text-sm", lightMuted)}>
+          <DialogDescription className="text-sm text-muted-foreground">
             Elegí el tipo de cuenta y, si es banco o billetera, la institución.
           </DialogDescription>
         </DialogHeader>
 
         <form onSubmit={handleSubmit}>
-          <div className="bg-white px-6 py-5 dark:bg-white">
+          <div className="px-6 py-5">
             <FieldGroup className="gap-5">
               <Field>
-                <FieldLabel className={lightLabel}>Tipo de cuenta</FieldLabel>
+                <FieldLabel>Tipo de cuenta</FieldLabel>
                 <div
                   className="grid w-full grid-cols-2 gap-2"
                   role="radiogroup"
@@ -167,34 +157,28 @@ export function TreasuryAccountCreateDialog({
                           }))
                         }
                         className={cn(
-                          "flex min-h-14 w-full flex-col items-start gap-1 rounded-xl border px-3 py-2.5 text-left transition-all",
-                          "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-400/40 focus-visible:ring-offset-2",
-                          selected
-                            ? "z-[1] border-zinc-400 bg-zinc-50 shadow-md ring-2 ring-zinc-900/15 ring-offset-2 ring-offset-white"
-                            : cn(
-                                lightSurface,
-                                "border-zinc-200 hover:border-zinc-300 hover:bg-zinc-50/80",
-                              ),
+                          treasuryPickerTileClass(selected),
+                          "min-h-14 flex-col items-start gap-1 py-2.5",
                         )}
                       >
                         <span className="flex items-center gap-2">
                           <Icon
                             className={cn(
                               "size-4 shrink-0",
-                              selected ? "text-zinc-900" : "text-zinc-500",
+                              selected ? "text-foreground" : "text-muted-foreground",
                             )}
                             aria-hidden
                           />
                           <span
                             className={cn(
                               "text-sm font-semibold",
-                              selected ? "text-zinc-900" : "text-zinc-700",
+                              selected ? "text-foreground" : "text-foreground/80",
                             )}
                           >
                             {opt.label}
                           </span>
                         </span>
-                        <span className="text-[11px] font-normal leading-snug text-zinc-500">
+                        <span className="text-[11px] font-normal leading-snug text-muted-foreground">
                           {opt.description}
                         </span>
                       </button>
@@ -227,7 +211,7 @@ export function TreasuryAccountCreateDialog({
 
               {needsCustomName ? (
                 <Field>
-                  <FieldLabel htmlFor="create-custom-name" className={lightLabel}>
+                  <FieldLabel htmlFor="create-custom-name">
                     {form.kind === "cash"
                       ? "Nombre de la caja"
                       : form.kind === "other"
@@ -255,7 +239,7 @@ export function TreasuryAccountCreateDialog({
                             ? "Ej. Cuenta DNI"
                             : "Ej. Inversión, Fondo"
                     }
-                    className={cn(lightSurface, "text-zinc-900")}
+                    className="bg-background"
                   />
                 </Field>
               ) : null}
@@ -271,16 +255,10 @@ export function TreasuryAccountCreateDialog({
             ) : null}
           </div>
 
-          <DialogFooter
-            className={cn(
-              "border-t px-6 py-4 sm:justify-between",
-              lightFooter,
-            )}
-          >
+          <DialogFooter className="border-t border-border/60 bg-muted/20 px-6 py-4 sm:justify-between">
             <Button
               type="button"
               variant="outline"
-              className={lightOutlineButton}
               onClick={() => onOpenChange(false)}
               disabled={saving}
             >

@@ -11,16 +11,18 @@ import {
   lightToolbarControlActiveClass,
   lightToolbarFocusClass,
   lightToolbarPanelClass,
+  lightDateCalendarClass,
+  lightDatePopoverContentClass,
 } from "@/components/data-workspace/dataWorkspaceListStyles"
 import { DataWorkspaceToolbarFieldLabel } from "@/components/data-workspace/DataWorkspaceToolbarFieldLabel"
 import {
   DATA_WORKSPACE_DATE_QUICK_PRESETS,
   dataWorkspaceDateFilterSummary,
+  isCompleteDateRange,
   type DataWorkspaceDatePreset,
 } from "@/lib/dataWorkspaceDateFilter"
 import { cn } from "@/lib/utils"
 import { es as esLocale } from "date-fns/locale"
-import { isSameDay } from "date-fns"
 import { CalendarRange, ChevronDown } from "lucide-react"
 import type { DateRange } from "react-day-picker"
 import { useEffect, useId, useMemo, useState } from "react"
@@ -34,11 +36,14 @@ const dateFilterTriggerClass = cn(
   lightToolbarFocusClass,
 )
 
-const datePopoverContentClass =
-  "border border-zinc-200/90 bg-white text-zinc-950 shadow-lg dark:border-zinc-800 dark:bg-zinc-950 dark:text-zinc-50"
+const dateShortcutButtonClass = cn(
+  "rounded-lg px-2.5 py-2 text-left text-sm text-zinc-800 transition-colors",
+  "hover:bg-zinc-100 focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-emerald-600/40",
+  "dark:text-zinc-800 dark:hover:bg-zinc-100",
+)
 
-const dateCalendarLightClass =
-  "[&_.rdp-month]:w-full min-w-0 [&_.rdp-month_grid]:w-full [&_.rdp-month_grid]:table-fixed"
+const dateShortcutButtonActiveClass =
+  "bg-zinc-100 font-medium text-zinc-950 dark:bg-zinc-100 dark:text-zinc-950"
 
 export function DataWorkspacePeriodFilter({
   preset,
@@ -77,12 +82,27 @@ export function DataWorkspacePeriodFilter({
   const [compactView, setCompactView] = useState<"shortcuts" | "calendar">(
     "shortcuts",
   )
+  /** Rango en curso mientras el usuario elige inicio y fin en el calendario. */
+  const [draftRange, setDraftRange] = useState<DateRange | undefined>(
+    undefined,
+  )
 
-  useEffect(() => {
-    if (!popoverOpen) {
-      setCompactView("shortcuts")
+  const resetDraftRange = () => {
+    setDraftRange(preset === "custom" ? customRange : undefined)
+  }
+
+  const handlePopoverOpenChange = (open: boolean) => {
+    setPopoverOpen(open)
+    if (open) {
+      resetDraftRange()
       return
     }
+    setCompactView("shortcuts")
+    setDraftRange(undefined)
+  }
+
+  useEffect(() => {
+    if (!popoverOpen) return
     if (isCompact && preset === "custom") {
       setCompactView("calendar")
     }
@@ -108,19 +128,28 @@ export function DataWorkspacePeriodFilter({
   )
 
   const handleCustomRangeSelect = (range: DateRange | undefined) => {
+    if (!range?.from) {
+      setDraftRange(undefined)
+      return
+    }
+
+    setDraftRange(range)
+
+    if (!isCompleteDateRange(range)) return
+
     onPresetChange("custom")
     onCustomRangeChange(range)
-    if (
-      range?.from &&
-      range?.to &&
-      !isSameDay(range.from, range.to)
-    ) {
-      setPopoverOpen(false)
-    }
+    setPopoverOpen(false)
   }
 
+  const calendarSelected = popoverOpen
+    ? draftRange
+    : preset === "custom"
+      ? customRange
+      : undefined
+
   const filterControl = (
-    <Popover open={popoverOpen} onOpenChange={setPopoverOpen}>
+    <Popover open={popoverOpen} onOpenChange={handlePopoverOpenChange}>
       <PopoverTrigger asChild>
         <Button
           id={triggerId}
@@ -158,22 +187,25 @@ export function DataWorkspacePeriodFilter({
         className={cn(
           "z-[100] rounded-xl p-0",
           "w-[min(21.5rem,calc(100vw-1.5rem))] max-w-[calc(100vw-1.5rem)]",
-          datePopoverContentClass,
+          lightDatePopoverContentClass,
         )}
       >
         {isCompact && compactView === "calendar" ? (
           <div className="min-w-0 px-2.5 pb-3 pt-2">
-            <div className={dateCalendarLightClass}>
+            <div className={lightDateCalendarClass}>
               <Calendar
                 locale={esLocale}
                 mode="range"
                 min={1}
                 numberOfMonths={1}
                 className="w-full min-w-0 bg-transparent p-0 [--cell-size:2rem]"
-                selected={preset === "custom" ? customRange : undefined}
+                selected={calendarSelected}
                 onSelect={handleCustomRangeSelect}
                 defaultMonth={
-                  customRange?.from ?? customRange?.to ?? new Date()
+                  draftRange?.from ??
+                  customRange?.from ??
+                  customRange?.to ??
+                  new Date()
                 }
               />
             </div>
@@ -183,7 +215,7 @@ export function DataWorkspacePeriodFilter({
             <div
               className={cn(
                 "px-2 py-2",
-                !isCompact && "border-b border-zinc-100 dark:border-zinc-800",
+                !isCompact && "border-b border-zinc-100",
               )}
             >
               <p className="px-2 pb-1.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-zinc-400">
@@ -203,10 +235,8 @@ export function DataWorkspacePeriodFilter({
                       setPopoverOpen(false)
                     }}
                     className={cn(
-                      "rounded-lg px-2.5 py-2 text-left text-sm text-zinc-800 transition-colors dark:text-zinc-200",
-                      "hover:bg-zinc-100 focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-emerald-600/40 dark:hover:bg-zinc-800",
-                      preset === "all" &&
-                        "bg-zinc-100 font-medium text-zinc-950 dark:bg-zinc-800 dark:text-zinc-50",
+                      dateShortcutButtonClass,
+                      preset === "all" && dateShortcutButtonActiveClass,
                       isCompact && "col-span-2",
                     )}
                   >
@@ -223,10 +253,8 @@ export function DataWorkspacePeriodFilter({
                       setPopoverOpen(false)
                     }}
                     className={cn(
-                      "rounded-lg px-2.5 py-2 text-left text-sm text-zinc-800 transition-colors dark:text-zinc-200",
-                      "hover:bg-zinc-100 focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-emerald-600/40 dark:hover:bg-zinc-800",
-                      preset === p.id &&
-                        "bg-zinc-100 font-medium text-zinc-950 dark:bg-zinc-800 dark:text-zinc-50",
+                      dateShortcutButtonClass,
+                      preset === p.id && dateShortcutButtonActiveClass,
                     )}
                   >
                     {p.label}
@@ -236,36 +264,41 @@ export function DataWorkspacePeriodFilter({
             </div>
 
             {isCompact ? (
-              <div className="border-t border-zinc-100 px-2 py-2 dark:border-zinc-800">
+              <div className="border-t border-zinc-100 px-2 py-2">
                 <button
                   type="button"
-                  onClick={() => setCompactView("calendar")}
+                  onClick={() => {
+                    resetDraftRange()
+                    setCompactView("calendar")
+                  }}
                   className={cn(
-                    "w-full rounded-lg px-2.5 py-2 text-left text-sm text-zinc-800 transition-colors dark:text-zinc-200",
-                    "hover:bg-zinc-100 focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-emerald-600/40 dark:hover:bg-zinc-800",
-                    preset === "custom" &&
-                      "bg-zinc-100 font-medium text-zinc-950 dark:bg-zinc-800 dark:text-zinc-50",
+                    "w-full",
+                    dateShortcutButtonClass,
+                    preset === "custom" && dateShortcutButtonActiveClass,
                   )}
                 >
                   Rango personalizado…
                 </button>
               </div>
             ) : (
-              <div className="min-w-0 border-t border-zinc-100 px-2.5 pb-3 pt-2 dark:border-zinc-800">
+              <div className="min-w-0 border-t border-zinc-100 px-2.5 pb-3 pt-2">
                 <p className="mb-2 text-[10px] font-semibold uppercase tracking-[0.14em] text-zinc-400">
                   Rango personalizado
                 </p>
-                <div className={dateCalendarLightClass}>
+                <div className={lightDateCalendarClass}>
                   <Calendar
                     locale={esLocale}
                     mode="range"
                     min={1}
                     numberOfMonths={1}
                     className="w-full min-w-0 bg-transparent p-0 [--cell-size:2.125rem]"
-                    selected={preset === "custom" ? customRange : undefined}
+                    selected={calendarSelected}
                     onSelect={handleCustomRangeSelect}
                     defaultMonth={
-                      customRange?.from ?? customRange?.to ?? new Date()
+                      draftRange?.from ??
+                      customRange?.from ??
+                      customRange?.to ??
+                      new Date()
                     }
                   />
                 </div>

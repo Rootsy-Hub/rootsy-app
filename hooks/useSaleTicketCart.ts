@@ -6,7 +6,6 @@ import type {
 } from "@/app/[siteId]/[popId]/menu-catalog/actions"
 import {
   clearCartLineOverrides,
-  seedCartLineDefaultDiscount,
   type OperationCartLineOverrideActions,
   type OperationCartLineOverrideState,
 } from "@/components/sale-operation/OperationCartLineRow"
@@ -28,13 +27,11 @@ import {
 import {
   applyTicketLineEdit,
   addPromotionToTicketCart,
+  addProductToTicketCart,
 } from "@/lib/menuSaleTicketCart"
 import {
   cartLinesMatchPromotion,
-  createCartLineId,
-  defaultDiscountFingerprintForProduct,
   ensureCartLineIds,
-  findMergeableCartLine,
   type MostradorCartLineEditInput,
 } from "@/lib/menuCartLineMerge"
 import { menuArticleToProduct } from "@/lib/menuCatalogProduct"
@@ -51,8 +48,10 @@ export function useSaleTicketCart(input: {
   menuArticles: MenuCatalogArticle[]
   menuPromotions: MenuCatalogPromotion[]
   menuQuantityDeals: MenuCatalogPromotion[]
+  onCartLineAdded?: (lineId: string) => void
 }) {
-  const { menuArticles, menuPromotions, menuQuantityDeals } = input
+  const { menuArticles, menuPromotions, menuQuantityDeals, onCartLineAdded } =
+    input
 
   const [carrito, setCarrito] = useState<MenuCartItem[]>([])
   const [itemDetalleAbiertoId, setItemDetalleAbiertoId] = useState<string | null>(
@@ -252,15 +251,19 @@ export function useSaleTicketCart(input: {
 
   const agregarPromoAlCarrito = useCallback(
     (promotionId: string, selections: PromotionCartSelection[]) => {
-      setCarrito((prev) =>
-        addPromotionToTicketCart({
+      let affectedLineId: string | null = null
+      setCarrito((prev) => {
+        const result = addPromotionToTicketCart({
           carrito: prev,
           promotionId,
           selections,
-        }).carrito,
-      )
+        })
+        affectedLineId = result.affectedLineId
+        return result.carrito
+      })
+      if (affectedLineId) onCartLineAdded?.(affectedLineId)
     },
-    [],
+    [onCartLineAdded],
   )
 
   const confirmarPromoWizard = useCallback(
@@ -293,38 +296,24 @@ export function useSaleTicketCart(input: {
         return
       }
 
-      const overrideSnap = {
-        itemDescuentoModo,
-        itemDescuentoDraft,
-        itemDescuentoSuprimido,
-        itemComentarios,
-      }
-      const discountFp = defaultDiscountFingerprintForProduct(product)
-      const commentFp = ""
-
       setCarrito((prev) => {
-        const mergeTarget = findMergeableCartLine(
-          prev,
+        const result = addProductToTicketCart({
+          carrito: prev,
           productoId,
-          kind,
-          discountFp,
-          commentFp,
-          overrideSnap,
+          kindHint: kind,
           productosByKey,
-        )
-        const mergeTargetId = mergeTarget ? resolveCartLineId(mergeTarget) : null
-        if (mergeTarget && mergeTargetId) {
-          return prev.map((i) =>
-            resolveCartLineId(i) === mergeTargetId
-              ? { ...i, cantidad: i.cantidad + 1 }
-              : i,
-          )
+          overrides: {
+            itemDescuentoModo,
+            itemDescuentoDraft,
+            itemDescuentoSuprimido,
+            itemComentarios,
+          },
+          overrideActions: cartLineOverrideActions,
+        })
+        if (result.affectedLineId) {
+          onCartLineAdded?.(result.affectedLineId)
         }
-        const lineId = createCartLineId()
-        if (product?.kind === "article") {
-          seedCartLineDefaultDiscount(product, lineId, cartLineOverrideActions)
-        }
-        return [...prev, { lineId, productoId, cantidad: 1, kind }]
+        return result.carrito
       })
     },
     [
@@ -335,6 +324,7 @@ export function useSaleTicketCart(input: {
       itemComentarios,
       cartLineOverrideActions,
       agregarPromoAlCarrito,
+      onCartLineAdded,
     ],
   )
 

@@ -1,25 +1,59 @@
 "use client"
 
-import { useParams, useRouter } from "next/navigation"
-import { useEffect } from "react"
+import { TreasuryAccountDetailView } from "@/app/[siteId]/[popId]/accounts/TreasuryAccountDetailView"
+import { DataWorkspaceLayout } from "@/components/layouts/DataWorkspaceLayout"
+import { usePopWorkspace } from "@/context/PopWorkspaceContext"
+import withAuth from "@/hoc/withAuth"
+import { useParams } from "next/navigation"
 
-/** Redirige URLs antiguas al listado inline de cuentas. */
-export default function TreasuryAccountDetailRedirectPage() {
-  const router = useRouter()
+function TreasuryAccountDetailPage() {
   const params = useParams()
   const siteId = typeof params?.siteId === "string" ? params.siteId : ""
   const popId = typeof params?.popId === "string" ? params.popId : ""
   const accountId =
     typeof params?.accountId === "string" ? params.accountId : ""
 
-  useEffect(() => {
-    if (!siteId || !popId) return
-    router.replace(`/${siteId}/${popId}/accounts`)
-  }, [siteId, popId, accountId, router])
+  const { bootstrap, loading: bootstrapLoading, error: bootstrapError } =
+    usePopWorkspace()
+
+  if (!popId || !siteId || !accountId) {
+    return (
+      <div className="rootsy-app-light min-h-screen bg-background p-10 text-foreground">
+        <p className="text-sm">No se encontró la cuenta.</p>
+      </div>
+    )
+  }
 
   return (
-    <div className="rootsy-app-light min-h-screen bg-background p-10 text-foreground">
-      <p className="text-sm text-muted-foreground">Redirigiendo a cuentas…</p>
-    </div>
+    <DataWorkspaceLayout
+      siteId={siteId}
+      popId={popId}
+      popName={bootstrap?.popName ?? ""}
+      title="Cuentas"
+      headerVariant="dark"
+      loading={bootstrapLoading}
+      userName={bootstrap?.userFullName}
+      userAvatarSrc={bootstrap?.userImageUrl ?? undefined}
+      userRoleLabel={bootstrap?.roleLabel}
+      contentFlush
+      mainMaxWidthClass="max-w-none"
+      mainClassName="min-h-0 flex-1 overflow-y-auto"
+    >
+      {bootstrapError ? (
+        <div
+          role="alert"
+          className="mx-4 mt-4 rounded-lg border border-destructive/25 bg-destructive/10 px-4 py-3 text-sm text-destructive sm:mx-6 lg:mx-8"
+        >
+          Cabecera: {bootstrapError}
+        </div>
+      ) : null}
+      <TreasuryAccountDetailView
+        siteId={siteId}
+        popId={popId}
+        accountId={accountId}
+      />
+    </DataWorkspaceLayout>
   )
 }
+
+export default withAuth(TreasuryAccountDetailPage)
