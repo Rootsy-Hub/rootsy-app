@@ -14,6 +14,7 @@ import { OperationsPurchasesTable } from "@/app/[siteId]/[popId]/operations/Oper
 import { exportOperationsCsv } from "@/app/[siteId]/[popId]/operations/operationsCsvExport"
 import { OperationAccountingModal } from "@/app/[siteId]/[popId]/operations/OperationAccountingModal"
 import { buildPaginationItems } from "@/app/[siteId]/[popId]/layout/layoutPreviewPagination"
+import { formatLocaleDateTime } from "@/lib/popTimezone"
 import { DataWorkspaceListPaginationFooter } from "@/components/data-workspace/DataWorkspaceListPaginationFooter"
 import { DataWorkspaceListTableShell } from "@/components/data-workspace/DataWorkspaceListTableShell"
 import { DataWorkspaceTableEmptyMascot } from "@/components/data-workspace/DataWorkspaceListTablePrimitives"
@@ -278,12 +279,7 @@ function OperationsPage() {
 
   const openSaleAccounting = useCallback(
     (sale: OperationSaleRow, view: OperationsViewId = "sales") => {
-      const when = sale.soldAt
-        ? new Date(sale.soldAt).toLocaleString("es-AR", {
-            dateStyle: "short",
-            timeStyle: "short",
-          })
-        : "—"
+      const when = sale.soldAt ? formatLocaleDateTime(sale.soldAt) : "—"
       setAccountingTarget({
         view,
         operationId: sale.id,

@@ -26,6 +26,7 @@ import {
   Plus,
   Trash2,
 } from "lucide-react"
+import { formatLocaleDateTime } from "@/lib/popTimezone"
 import Link from "next/link"
 
 const fmt = new Intl.NumberFormat("es-AR", {
@@ -41,12 +42,8 @@ function moneyOrDash(amount: number | null | undefined): string {
 
 function formatOpenedAt(iso: string | null): string | null {
   if (!iso) return null
-  const d = new Date(iso)
-  if (Number.isNaN(d.getTime())) return null
-  return new Intl.DateTimeFormat("es-AR", {
-    dateStyle: "short",
-    timeStyle: "short",
-  }).format(d)
+  const formatted = formatLocaleDateTime(iso)
+  return formatted === "—" ? null : formatted
 }
 
 function CashRegisterPrimaryStat({

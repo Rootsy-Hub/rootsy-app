@@ -22,6 +22,7 @@ import withAuth from "@/hoc/withAuth"
 import { usePopWorkspace } from "@/context/PopWorkspaceContext"
 import { usePadronAutofillRazonSocial } from "@/hooks/usePadronAutofillRazonSocial"
 import { periodoAfipToYmdFirstDay } from "@/lib/afipDateParse"
+import { formatLocaleDateTime } from "@/lib/popTimezone"
 import { parsePadronActividadesJson } from "@/lib/padronActividadesHelpers"
 import { Building2, Loader2, RefreshCw } from "lucide-react"
 import { useParams, useRouter } from "next/navigation"
@@ -583,7 +584,7 @@ function SettingsPage() {
                   {form.fiscalPadronSyncedAt ? (
                     <p className="text-xs text-muted-foreground">
                       Última sync:{" "}
-                      {new Date(form.fiscalPadronSyncedAt).toLocaleString("es-AR")}
+                      {formatLocaleDateTime(form.fiscalPadronSyncedAt)}
                     </p>
                   ) : null}
                 </div>

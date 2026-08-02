@@ -70,36 +70,82 @@ export function formatPopDateShort(
   )
 }
 
+const DEFAULT_LOCALE = "es-AR"
+
+/** Opciones Intl para hora en 24 h (HH:mm). */
+export function popTimeIntlOptions(
+  timeZone?: string,
+): Intl.DateTimeFormatOptions {
+  return {
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+    ...(timeZone ? { timeZone } : {}),
+  }
+}
+
+/** Opciones Intl para fecha + hora en 24 h. */
+export function popDateTimeIntlOptions(
+  timeZone?: string,
+): Intl.DateTimeFormatOptions {
+  return {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+    ...(timeZone ? { timeZone } : {}),
+  }
+}
+
+function parseInstant(value: string): Date | null {
+  if (!value.trim()) return null
+  const d = new Date(value)
+  return Number.isNaN(d.getTime()) ? null : d
+}
+
+/** Fecha+hora en 24 h usando la zona del POP. */
 export function formatPopDateTime(
   value: string,
   timeZone: string,
-  locale = "es-AR",
+  locale = DEFAULT_LOCALE,
 ): string {
-  if (!value.trim()) return "—"
-  const d = new Date(value)
-  if (Number.isNaN(d.getTime())) return value
-  return new Intl.DateTimeFormat(locale, {
-    dateStyle: "short",
-    timeStyle: "short",
-    timeZone,
-  }).format(d)
+  const d = parseInstant(value)
+  if (!d) return value.trim() ? value : "—"
+  return new Intl.DateTimeFormat(locale, popDateTimeIntlOptions(timeZone)).format(
+    d,
+  )
+}
+
+/** Fecha+hora en 24 h en la zona local del navegador. */
+export function formatLocaleDateTime(
+  value: string,
+  locale = DEFAULT_LOCALE,
+): string {
+  const d = parseInstant(value)
+  if (!d) return value.trim() ? value : "—"
+  return new Intl.DateTimeFormat(locale, popDateTimeIntlOptions()).format(d)
+}
+
+/** Hora HH:mm en la zona local del navegador. */
+export function formatLocaleTime(
+  date: Date,
+  locale = DEFAULT_LOCALE,
+): string {
+  return new Intl.DateTimeFormat(locale, popTimeIntlOptions()).format(date)
 }
 
 /** Hora HH:mm en la zona del POP; vacío si el valor es solo fecha calendario. */
 export function formatPopTime(
   value: string,
   timeZone: string,
-  locale = "es-AR",
+  locale = DEFAULT_LOCALE,
 ): string {
   if (!value.trim() || isCalendarDateOnly(value)) return ""
-  const d = new Date(value)
-  if (Number.isNaN(d.getTime())) return ""
-  return new Intl.DateTimeFormat(locale, {
-    hour: "2-digit",
-    minute: "2-digit",
-    hour12: false,
-    timeZone,
-  }).format(d)
+  const d = parseInstant(value)
+  if (!d) return ""
+  return new Intl.DateTimeFormat(locale, popTimeIntlOptions(timeZone)).format(d)
 }
 
 /** ¿El instante cae en el rango calendario [from, to] del POP? */

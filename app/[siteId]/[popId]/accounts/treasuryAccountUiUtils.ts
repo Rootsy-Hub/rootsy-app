@@ -4,7 +4,7 @@ import type {
   TreasuryPeriodSummary,
   TreasuryReconciliationEventRow,
 } from "@/app/[siteId]/[popId]/accounts/treasuryDetailActions"
-import { formatPopDateShort, formatPopTime, toPopCalendarDate } from "@/lib/popTimezone"
+import { formatPopDateShort, formatPopTime, popTimeIntlOptions, toPopCalendarDate } from "@/lib/popTimezone"
 import { buildCsv, downloadCsv } from "@/lib/exportCsv"
 import { operationPaymentKindLabel } from "@/lib/operationPaymentKinds"
 
@@ -525,11 +525,7 @@ export function formatTreasuryMovementTime(
   if (!/T\d/.test(value.trim())) return ""
   const d = new Date(value)
   if (Number.isNaN(d.getTime())) return ""
-  return new Intl.DateTimeFormat("es-AR", {
-    hour: "2-digit",
-    minute: "2-digit",
-    hour12: false,
-  }).format(d)
+  return new Intl.DateTimeFormat("es-AR", popTimeIntlOptions()).format(d)
 }
 
 export function treasuryMovementSortKey(

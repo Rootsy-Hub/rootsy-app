@@ -60,6 +60,7 @@ export function formatOperationShortId(id: string | null | undefined) {
 
 import {
   addCalendarDays,
+  popTimeIntlOptions,
   todayPopCalendarDate,
   toPopCalendarDate,
 } from "@/lib/popTimezone"
@@ -72,11 +73,9 @@ export function formatOperationSaleDateTime(iso: string, timeZone?: string) {
     return { primary: iso, secondary: null }
   }
 
-  const time = new Intl.DateTimeFormat("es-AR", {
-    hour: "2-digit",
-    minute: "2-digit",
-    ...(timeZone ? { timeZone } : {}),
-  }).format(d)
+  const time = new Intl.DateTimeFormat("es-AR", popTimeIntlOptions(timeZone)).format(
+    d,
+  )
 
   const now = new Date()
   const saleDate = timeZone

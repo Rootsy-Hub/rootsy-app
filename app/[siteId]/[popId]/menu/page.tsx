@@ -4,6 +4,7 @@ import { DataWorkspaceHeaderUserMenu } from "@/components/layouts/DataWorkspaceH
 import withAuth from "@/hoc/withAuth"
 import { getPopMenuData } from "@/app/[siteId]/[popId]/menu/actions"
 import { canAccessMenuItem } from "@/lib/menuPermissions"
+import { formatLocaleTime } from "@/lib/popTimezone"
 import { popScopedHref } from "@/lib/popRoutes"
 import { useState, useEffect, useRef, useCallback, useMemo } from "react"
 import Link from "next/link"
@@ -528,10 +529,7 @@ function MenuPage() {
             <div className="flex shrink-0 flex-col items-end">
               <span className="text-lg font-bold tabular-nums text-foreground">
                 {isMounted && time
-                  ? time.toLocaleTimeString("es-AR", {
-                      hour: "2-digit",
-                      minute: "2-digit",
-                    })
+                  ? formatLocaleTime(time)
                   : "--:--"}
               </span>
               <span className="text-xs uppercase tracking-wide text-foreground/30">

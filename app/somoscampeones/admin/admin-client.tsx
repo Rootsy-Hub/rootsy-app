@@ -12,6 +12,7 @@ import {
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import withAuth from "@/hoc/withAuth"
+import { formatLocaleDateTime } from "@/lib/popTimezone"
 import { useActionState } from "react"
 
 const initialSaveState = { ok: false, message: "" }
@@ -45,10 +46,7 @@ function AdminRootsyFormInner({ initial }: { initial: RootsyAdminConfigView }) {
               {initial.updatedAt ? (
                 <p className="text-sm text-muted-foreground">
                   Última actualización:{" "}
-                  {new Date(initial.updatedAt).toLocaleString("es-AR", {
-                    dateStyle: "short",
-                    timeStyle: "short",
-                  })}
+                  {formatLocaleDateTime(initial.updatedAt)}
                 </p>
               ) : null}
               <div className="flex flex-col gap-2">

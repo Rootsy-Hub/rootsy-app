@@ -1,4 +1,5 @@
 import type { OperationSaleChannel } from "@/app/[siteId]/[popId]/operations/actions"
+import { popDateTimeIntlOptions } from "@/lib/popTimezone"
 
 export function operationSaleDetailTitle(channel: OperationSaleChannel): string {
   switch (channel) {
@@ -32,14 +33,9 @@ export function formatOperationDetailTimestamp(
   const date = new Date(iso)
   if (Number.isNaN(date.getTime())) return iso
 
-  return new Intl.DateTimeFormat("es-AR", {
-    day: "numeric",
-    month: "short",
-    year: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-    ...(timeZone ? { timeZone } : {}),
-  }).format(date)
+  return new Intl.DateTimeFormat("es-AR", popDateTimeIntlOptions(timeZone)).format(
+    date,
+  )
 }
 
 export function formatOperationDetailMoment(

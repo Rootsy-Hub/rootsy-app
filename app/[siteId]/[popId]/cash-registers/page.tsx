@@ -36,6 +36,7 @@ import {
   formatMoneyInputForField,
   parseMoneyInput,
 } from "@/lib/moneyInput"
+import { formatLocaleDateTime } from "@/lib/popTimezone"
 import { Button } from "@/components/ui/button"
 import {
   Dialog,
@@ -64,13 +65,7 @@ import {
 } from "react"
 
 function formatDateTime(iso: string) {
-  if (!iso) return "—"
-  const d = new Date(iso)
-  if (Number.isNaN(d.getTime())) return iso
-  return new Intl.DateTimeFormat("es", {
-    dateStyle: "short",
-    timeStyle: "short",
-  }).format(d)
+  return formatLocaleDateTime(iso)
 }
 
 function CashRegistersPage() {

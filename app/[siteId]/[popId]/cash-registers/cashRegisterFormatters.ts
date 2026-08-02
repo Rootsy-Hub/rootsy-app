@@ -1,5 +1,5 @@
 import type { CashRegisterSummaryData } from "@/app/[siteId]/[popId]/cash-registers/actions"
-import { formatPopDateTime } from "@/lib/popTimezone"
+import { formatLocaleDateTime, formatPopDateTime } from "@/lib/popTimezone"
 
 const moneyFmt = new Intl.NumberFormat("es-AR", {
   style: "currency",
@@ -32,12 +32,7 @@ export function formatArqueoDifferenceDisplay(diff: number | null): {
 export function formatCashRegisterDateTime(iso: string, timeZone?: string) {
   if (!iso) return "—"
   if (timeZone) return formatPopDateTime(iso, timeZone)
-  const d = new Date(iso)
-  if (Number.isNaN(d.getTime())) return iso
-  return new Intl.DateTimeFormat("es-AR", {
-    dateStyle: "short",
-    timeStyle: "short",
-  }).format(d)
+  return formatLocaleDateTime(iso)
 }
 
 export function shortCashRegisterUserId(id: string | null) {

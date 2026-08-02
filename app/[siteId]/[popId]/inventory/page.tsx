@@ -31,6 +31,7 @@ import {
   TableRow,
 } from "@/components/ui/table"
 import { Textarea } from "@/components/ui/textarea"
+import { formatLocaleDateTime } from "@/lib/popTimezone"
 import withAuth from "@/hoc/withAuth"
 import { usePopWorkspace } from "@/context/PopWorkspaceContext"
 import { cn } from "@/lib/utils"
@@ -67,13 +68,7 @@ function formatQty(n: number) {
 }
 
 function formatDateTime(iso: string) {
-  if (!iso) return "—"
-  const d = new Date(iso)
-  if (Number.isNaN(d.getTime())) return iso
-  return new Intl.DateTimeFormat("es", {
-    dateStyle: "short",
-    timeStyle: "short",
-  }).format(d)
+  return formatLocaleDateTime(iso)
 }
 
 function shortUserId(id: string | null) {
