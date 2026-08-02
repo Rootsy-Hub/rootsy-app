@@ -21,6 +21,8 @@ type Props = {
   listTitle?: string
   emptyTitle?: string
   totalBarTone?: "pos" | "modal"
+  importeClassName?: string
+  discountBadgeClassName?: string
   className?: string
 }
 
@@ -32,6 +34,8 @@ export function SaleReadonlyTicketPanel({
   listTitle = "Pedido",
   emptyTitle = "Pedido vacío",
   totalBarTone = "pos",
+  importeClassName,
+  discountBadgeClassName,
   className,
 }: Props) {
   const isModal = totalBarTone === "modal"
@@ -61,6 +65,8 @@ export function SaleReadonlyTicketPanel({
               key={group.key}
               group={group}
               renderRow={renderRow}
+              importeClassName={importeClassName}
+              discountBadgeClassName={discountBadgeClassName}
             />
           ))}
         </div>

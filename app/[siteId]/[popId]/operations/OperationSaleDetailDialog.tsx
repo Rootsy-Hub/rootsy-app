@@ -27,7 +27,6 @@ import {
 } from "@/components/ui/dialog"
 import { cn } from "@/lib/utils"
 import { useEffect, useState } from "react"
-
 const opsDialogLight = "rootsy-app-light text-foreground"
 const opsDialogSurfaceMd = cn(
   opsDialogLight,
@@ -190,6 +189,7 @@ export function OperationSaleDetailDialog({
                     </p>
                   ) : context ? (
                     <OperationSaleDetailMeta
+                      saleId={sale.id}
                       context={context}
                       timeZone={timeZone}
                     />

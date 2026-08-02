@@ -98,7 +98,7 @@ export function TreasuryAccountBrandVisual({
         <p className="text-[11px] font-medium uppercase tracking-[0.14em] text-muted-foreground">
           Saldo real
         </p>
-        <p className="mt-1 font-mono text-xl font-semibold tabular-nums text-foreground">
+        <p className="mt-1 font-numeric text-xl font-bold tabular-nums text-foreground">
           —
         </p>
       </div>

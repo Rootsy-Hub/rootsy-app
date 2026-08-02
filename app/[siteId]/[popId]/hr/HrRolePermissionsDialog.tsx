@@ -194,7 +194,7 @@ export function HrRolePermissionsDialog({
                           {section.label}
                         </label>
                       </div>
-                      <span className="shrink-0 font-mono text-[11px] tabular-nums text-muted-foreground">
+                      <span className="shrink-0 text-[11px] tabular-nums text-muted-foreground">
                         {keys.filter((k) => selectedKeys.includes(k)).length}/
                         {keys.length}
                       </span>

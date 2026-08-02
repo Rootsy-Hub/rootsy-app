@@ -132,7 +132,7 @@ function ExpenseStatusBadge({ row }: { row: ExpenseListRow }) {
         {statusLabel(row.status)}
       </Badge>
       {row.status === "partial" && remaining > 0 ? (
-        <span className="font-mono text-[11px] tabular-nums text-amber-800">
+        <span className="font-numeric text-[11px] tabular-nums text-amber-800">
           falta {fmt.format(remaining)}
         </span>
       ) : null}
@@ -226,10 +226,10 @@ function ExpenseKindCard({
         </div>
 
         <div className="mt-4 flex flex-wrap items-baseline justify-between gap-2">
-          <p className="font-mono text-xs tabular-nums text-muted-foreground">
+          <p className="font-numeric text-xs tabular-nums text-muted-foreground">
             {fmt.format(totalPaid)} de {fmt.format(totalDue)}
           </p>
-          <span className="font-mono text-sm font-semibold tabular-nums text-primary">
+          <span className="font-numeric text-sm font-semibold tabular-nums text-primary">
             {progressPct}%
           </span>
         </div>
@@ -294,12 +294,12 @@ function ExpenseKindCard({
                           </span>
                         ) : null}
                       </div>
-                      <p className="mt-0.5 font-mono text-[11px] tabular-nums text-muted-foreground">
+                      <p className="mt-0.5 font-numeric text-[11px] tabular-nums text-muted-foreground">
                         {category.items.length}{" "}
                         {category.items.length === 1 ? "ítem" : "ítems"}
                       </p>
                     </div>
-                    <span className="shrink-0 font-mono text-sm font-semibold tabular-nums text-foreground">
+                    <span className="shrink-0 font-numeric text-sm font-semibold tabular-nums text-foreground">
                       {fmt.format(category.totalDue)}
                     </span>
                   </CollapsibleTrigger>
@@ -325,11 +325,11 @@ function ExpenseKindCard({
 
                           <div className="flex shrink-0 items-center gap-3 sm:flex-col sm:items-end sm:gap-1.5">
                             <div className="text-right">
-                              <p className="font-mono text-sm font-semibold tabular-nums text-foreground">
+                              <p className="font-numeric text-sm font-semibold tabular-nums text-foreground">
                                 {fmt.format(row.amount)}
                               </p>
                               {row.paidTotal > 0 ? (
-                                <p className="font-mono text-[11px] tabular-nums text-muted-foreground">
+                                <p className="font-numeric text-[11px] tabular-nums text-muted-foreground">
                                   pagado {fmt.format(row.paidTotal)}
                                 </p>
                               ) : null}
@@ -415,7 +415,7 @@ function ExpenseKindCard({
                             {row.categoryName} · {formatDate(row.expenseDate)}
                           </p>
                         </div>
-                        <span className="shrink-0 font-mono text-sm tabular-nums text-muted-foreground">
+                        <span className="shrink-0 font-numeric text-sm tabular-nums text-muted-foreground">
                           {fmt.format(row.amount)}
                         </span>
                       </li>

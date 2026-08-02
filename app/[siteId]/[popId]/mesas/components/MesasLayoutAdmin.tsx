@@ -643,7 +643,7 @@ function MesasSalonsDialog({
                     rows.map((row) => (
                       <TableRow key={row.id}>
                         <TableCell className="font-medium">{row.name}</TableCell>
-                        <TableCell className="font-mono text-xs tabular-nums">
+                        <TableCell className="text-xs tabular-nums">
                           {row.sortOrder}
                         </TableCell>
                         <TableCell>
@@ -965,7 +965,7 @@ function MesasTablesDialog({
                             <TableCell className="text-muted-foreground">
                               {row.shape.kind} / {mesaSizeDisplayLabel(row.shape.size)}
                             </TableCell>
-                            <TableCell className="font-mono text-xs tabular-nums">
+                            <TableCell className="text-xs tabular-nums">
                               {row.seats}
                             </TableCell>
                             <TableCell className="px-1 py-1.5 text-right">

@@ -1,19 +1,16 @@
 "use client"
 
 import type { CashTreasuryAccountOption } from "@/app/[siteId]/[popId]/cash-registers/actions"
+import { FieldSelect } from "@/components/ui/field-select"
+import { SelectItem } from "@/components/ui/select"
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
-import { cn } from "@/lib/utils"
-import { saleOpChannelFormField } from "@/components/sale-operation/saleOperationStyles"
+  saleOpLightFormPrefix,
+  saleOpLightFormSurface,
+  saleOpLightSelectContent,
+  saleOpLightSelectItem,
+} from "@/components/sale-operation/saleOperationStyles"
+import { Banknote, Hash } from "lucide-react"
 import { useMemo } from "react"
-
-const selectTriggerClass = cn(saleOpChannelFormField, "h-11 w-full")
-const selectContentClass = "z-[120] max-h-60"
 
 export const ARCA_PTO_VTA_UNSET = "__unset__"
 
@@ -53,26 +50,34 @@ export function CashRegisterTreasuryAccountSelect({
   const selectValue = value || accounts[0]?.id || ""
 
   return (
-    <Select
-      value={hasAccounts ? selectValue : undefined}
+    <FieldSelect
+      id={id}
+      value={hasAccounts ? selectValue : ""}
       onValueChange={onValueChange}
       disabled={disabled || !hasAccounts}
-    >
-      <SelectTrigger id={id} className={selectTriggerClass}>
-        <SelectValue
-          placeholder={
-            hasAccounts ? "Elegí una cuenta de efectivo" : "Sin cuentas de efectivo"
-          }
+      placeholder={
+        hasAccounts ? "Elegí una cuenta de efectivo" : "Sin cuentas de efectivo"
+      }
+      className={saleOpLightFormSurface}
+      prefixClassName={saleOpLightFormPrefix}
+      prefixIcon={
+        <Banknote
+          className="size-4 shrink-0 text-zinc-600 dark:text-zinc-600"
+          aria-hidden
         />
-      </SelectTrigger>
-      <SelectContent className={selectContentClass} position="popper">
-        {accounts.map((account) => (
-          <SelectItem key={account.id} value={account.id}>
-            {account.name}
-          </SelectItem>
-        ))}
-      </SelectContent>
-    </Select>
+      }
+      contentClassName={saleOpLightSelectContent}
+    >
+      {accounts.map((account) => (
+        <SelectItem
+          key={account.id}
+          value={account.id}
+          className={saleOpLightSelectItem}
+        >
+          {account.name}
+        </SelectItem>
+      ))}
+    </FieldSelect>
   )
 }
 
@@ -93,24 +98,36 @@ export function CashRegisterArcaPtoVtaSelect({
   const selectValue = value.trim() === "" ? ARCA_PTO_VTA_UNSET : value
 
   return (
-    <Select
+    <FieldSelect
+      id={id}
       value={selectValue}
       onValueChange={(next) => {
         onValueChange(next === ARCA_PTO_VTA_UNSET ? "" : next)
       }}
       disabled={disabled}
+      placeholder="Elegí el punto de venta"
+      className={saleOpLightFormSurface}
+      prefixClassName={saleOpLightFormPrefix}
+      prefixIcon={
+        <Hash
+          className="size-4 shrink-0 text-zinc-600 dark:text-zinc-600"
+          aria-hidden
+        />
+      }
+      contentClassName={saleOpLightSelectContent}
     >
-      <SelectTrigger id={id} className={selectTriggerClass}>
-        <SelectValue placeholder="Elegí el punto de venta" />
-      </SelectTrigger>
-      <SelectContent className={selectContentClass} position="popper">
-        <SelectItem value={ARCA_PTO_VTA_UNSET}>Sin configurar</SelectItem>
-        {options.map((pto) => (
-          <SelectItem key={pto} value={String(pto)}>
-            {formatArcaPtoVtaLabel(pto)}
-          </SelectItem>
-        ))}
-      </SelectContent>
-    </Select>
+      <SelectItem value={ARCA_PTO_VTA_UNSET} className={saleOpLightSelectItem}>
+        Sin configurar
+      </SelectItem>
+      {options.map((pto) => (
+        <SelectItem
+          key={pto}
+          value={String(pto)}
+          className={saleOpLightSelectItem}
+        >
+          {formatArcaPtoVtaLabel(pto)}
+        </SelectItem>
+      ))}
+    </FieldSelect>
   )
 }

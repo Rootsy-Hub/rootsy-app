@@ -1,5 +1,5 @@
 import type { Metadata } from 'next'
-import { Nunito_Sans, Source_Sans_3, Geist_Mono } from 'next/font/google'
+import { Inter, Nunito_Sans, Source_Sans_3 } from 'next/font/google'
 import { Analytics } from '@vercel/analytics/next'
 import { AuthProvider } from '@/context/AuthContextSupabase'
 import './globals.css'
@@ -16,9 +16,11 @@ const sourceSans = Source_Sans_3({
   variable: '--font-source-sans',
   weight: ['400', '500', '600', '700']
 });
-const geistMono = Geist_Mono({
+/** Importes, totales y columnas numéricas */
+const inter = Inter({
   subsets: ["latin"],
-  variable: '--font-geist-mono'
+  variable: '--font-inter',
+  weight: ['400', '500', '600', '700'],
 });
 
 export const metadata: Metadata = {
@@ -52,7 +54,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="es" className="dark scroll-smooth">
-      <body className={`${nunitoSans.variable} ${sourceSans.variable} ${geistMono.variable} font-sans antialiased`}>
+      <body className={`${nunitoSans.variable} ${sourceSans.variable} ${inter.variable} font-sans antialiased`}>
         <AuthProvider>
           {children}
         </AuthProvider>

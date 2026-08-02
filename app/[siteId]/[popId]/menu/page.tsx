@@ -501,7 +501,7 @@ function MenuPage() {
                 <span className="flex-1 text-left text-sm text-foreground/30">
                   Buscar...
                 </span>
-                <kbd className="rounded-md bg-secondary px-2 py-0.5 font-mono text-[10px] text-foreground/25">
+                <kbd className="rounded-md bg-secondary px-2 py-0.5 text-[10px] text-foreground/25">
                   ⌘K
                 </kbd>
               </button>

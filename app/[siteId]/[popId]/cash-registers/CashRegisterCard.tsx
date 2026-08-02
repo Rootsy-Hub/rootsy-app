@@ -58,7 +58,7 @@ function CashRegisterPrimaryStat({
       <p className="text-[11px] font-medium uppercase tracking-[0.14em] text-muted-foreground">
         {label}
       </p>
-      <p className="mt-1.5 font-mono text-2xl font-bold tabular-nums tracking-tight text-foreground">
+      <p className="mt-1.5 font-numeric text-2xl font-bold tabular-nums tracking-tight text-foreground">
         {value}
       </p>
     </div>
@@ -77,7 +77,7 @@ function CashRegisterSecondaryStat({
       <p className="text-[11px] font-medium uppercase tracking-[0.14em] text-muted-foreground">
         {label}
       </p>
-      <p className="mt-1 truncate font-mono text-base font-bold tabular-nums tracking-tight text-foreground sm:text-lg">
+      <p className="mt-1 truncate font-numeric text-base font-bold tabular-nums tracking-tight text-foreground sm:text-lg">
         {value}
       </p>
     </div>

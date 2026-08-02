@@ -32,7 +32,6 @@ import {
   recipeDialogSurfaceClass,
   recipeDialogSurfaceWideClass,
   recipeFormFieldClass,
-  recipesStockTableClassName,
 } from "@/app/[siteId]/[popId]/recipes/recipeConstants"
 import {
   RECIPE_TABLE_PAGE_SIZES,
@@ -71,9 +70,12 @@ import {
   tdTruncatedNameCellClass,
   tdTruncatedTextCellClass,
   toolbarBlockLabelClass,
+  workspaceDataTableClassName,
   workspaceTableBodyRowClassNames,
   workspaceTableHeaderRowClass,
 } from "@/components/data-workspace/dataWorkspaceListStyles"
+import { WorkspaceTableSkeletonRows } from "@/components/data-workspace/WorkspaceTableSkeleton"
+import { recipesSkeletonColumns } from "@/components/data-workspace/workspaceTableSkeletonPresets"
 import { DataWorkspaceLayout } from "@/components/layouts/DataWorkspaceLayout"
 import { DataWorkspaceHeaderIconButton } from "@/components/layouts/DataWorkspaceHeaderIconButton"
 import { Badge } from "@/components/ui/badge"
@@ -142,64 +144,6 @@ const defaultRecipesFilters = (): RecipesAppliedFilters => ({
   soloActivos: false,
   categoryId: "",
 })
-
-const recipesSk = {
-  bar: "animate-pulse rounded-[3px] bg-muted-foreground/12 dark:bg-muted-foreground/[0.14]",
-  barSm:
-    "animate-pulse rounded-[3px] bg-muted-foreground/8 dark:bg-muted-foreground/11",
-  pill: "animate-pulse rounded-full bg-muted-foreground/12 dark:bg-muted-foreground/[0.14]",
-  box: "animate-pulse rounded-sm bg-muted-foreground/10 dark:bg-muted-foreground/[0.12]",
-} as const
-
-function RecipesTableSkeletonRows({
-  rowCount,
-  hasActionsColumn,
-}: {
-  rowCount: number
-  hasActionsColumn: boolean
-}) {
-  return (
-    <>
-      {Array.from({ length: rowCount }).map((_, i) => (
-        <TableRow
-          key={`recipe-sk-${i}`}
-          className={cn(
-            "border-border/50",
-            i % 2 === 0 ? "bg-white/30" : "bg-muted/25 dark:bg-muted/15",
-          )}
-          aria-hidden
-        >
-          <TableCell className="w-24 px-3 py-2 align-middle">
-            <div className={cn("size-20 rounded-lg", recipesSk.box)} />
-          </TableCell>
-          <TableCell className={tdTruncatedNameCellClass}>
-            <div className={cn("h-3.5 w-[72%] max-w-[11rem]", recipesSk.bar)} />
-          </TableCell>
-          <TableCell className={tdTruncatedTextCellClass}>
-            <div className={cn("h-3 w-24", recipesSk.barSm)} />
-          </TableCell>
-          <TableCell className="px-3 py-2.5 text-right">
-            <div className={cn("ml-auto h-3.5 w-16", recipesSk.bar)} />
-          </TableCell>
-          <TableCell className="px-3 py-2.5 text-right">
-            <div className={cn("ml-auto h-3.5 w-16", recipesSk.bar)} />
-          </TableCell>
-          <TableCell className="w-[5.5rem] px-3 py-2.5 text-center">
-            <div className={cn("mx-auto h-3.5 w-8", recipesSk.bar)} />
-          </TableCell>
-          <TableCell className="w-[6.5rem] px-3 py-2.5 align-middle">
-            <div className={cn("inline-block h-5 w-16", recipesSk.pill)} />
-          </TableCell>
-          {hasActionsColumn ? (
-            <TableCell className="w-[6.5rem] px-3 py-2.5 text-right">
-              <div className={cn("ml-auto h-8 w-16 rounded-md", recipesSk.box)} />
-            </TableCell>
-          ) : null}
-        </TableRow>
-      ))}
-    </>
-  )
-}
 
 function formatMoney(n: number): string {
   return new Intl.NumberFormat("es-AR", {
@@ -941,7 +885,7 @@ function RecipesPage() {
           >
             <DataWorkspaceListTableFrame>
               <table
-                className={recipesStockTableClassName}
+                className={workspaceDataTableClassName}
                 aria-busy={loading}
               >
                 <TableHeader>
@@ -983,9 +927,12 @@ function RecipesPage() {
                 </TableHeader>
                 <TableBody>
                   {loading ? (
-                    <RecipesTableSkeletonRows
+                    <WorkspaceTableSkeletonRows
                       rowCount={skeletonRowCount}
-                      hasActionsColumn={Boolean(canUpdate || canDelete)}
+                      rowKeyPrefix="recipes-sk"
+                      columns={recipesSkeletonColumns({
+                        hasActionsColumn: Boolean(canUpdate || canDelete),
+                      })}
                     />
                   ) : totalCount === 0 ? null : (
                     recipes.map((row, index) => (

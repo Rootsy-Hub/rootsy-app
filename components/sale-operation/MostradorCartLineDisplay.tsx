@@ -32,6 +32,7 @@ type Props = {
   inlineQuantity?: boolean
   /** En readonly: no mostrar "—" cuando el precio va en el banner del grupo */
   omitHiddenPricePlaceholder?: boolean
+  importeClassName?: string
 }
 
 export function MostradorCartLineDisplay({
@@ -41,6 +42,7 @@ export function MostradorCartLineDisplay({
   rowClassName,
   inlineQuantity = false,
   omitHiddenPricePlaceholder = false,
+  importeClassName = saleOpImporteCartClass,
 }: Props) {
   const productoDescripcion = productDescriptionForMostradorRow(row)
   const comentario = row.comment?.trim() ?? ""
@@ -83,7 +85,7 @@ export function MostradorCartLineDisplay({
 
         <span className="pt-0.5 text-right">
           {showPrice ? (
-            <span className={saleOpImporteCartClass}>
+            <span className={importeClassName}>
               {saleOpFmt.format(pricing.precioFinal)}
             </span>
           ) : omitHiddenPricePlaceholder ? (

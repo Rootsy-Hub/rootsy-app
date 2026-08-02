@@ -834,7 +834,7 @@ function AccountingPage() {
                                   !r.isMovementAccount && "bg-muted/20",
                                 )}
                               >
-                                <TableCell className="font-mono text-sm tabular-nums">
+                                <TableCell className="text-sm tabular-nums">
                                   {r.code}
                                 </TableCell>
                                 <TableCell
@@ -881,7 +881,7 @@ function AccountingPage() {
                     Solo se listan asientos con estado <strong className="text-foreground">publicado</strong>
                     . Los importes se expresan en la moneda del plan (ARS). Total
                     de asientos en el punto:{" "}
-                    <span className="font-mono text-foreground">{journalEntryCount}</span>.
+                    <span className="text-foreground">{journalEntryCount}</span>.
                   </p>
                 </div>
 
@@ -957,7 +957,7 @@ function AccountingPage() {
                               <TableCell className="whitespace-nowrap text-sm">
                                 {formatIsoDate(e.entryDate)}
                               </TableCell>
-                              <TableCell className="font-mono text-sm tabular-nums">
+                              <TableCell className="text-sm tabular-nums">
                                 {e.entryNumber}
                               </TableCell>
                               <TableCell className="max-w-[200px] truncate text-sm">
@@ -966,10 +966,10 @@ function AccountingPage() {
                               <TableCell className="text-sm text-muted-foreground">
                                 {formatSourceType(e.sourceType)}
                               </TableCell>
-                              <TableCell className="text-right font-mono text-sm tabular-nums">
+                              <TableCell className="text-right font-numeric text-sm tabular-nums">
                                 {formatMoneyAr(e.totalDebit)}
                               </TableCell>
-                              <TableCell className="text-right font-mono text-sm tabular-nums">
+                              <TableCell className="text-right font-numeric text-sm tabular-nums">
                                 {formatMoneyAr(e.totalCredit)}
                               </TableCell>
                               <TableCell>
@@ -1008,7 +1008,7 @@ function AccountingPage() {
                         placeholder="Ej. 1.1.1.01"
                         value={ledgerAccountCode}
                         onChange={(e) => setLedgerAccountCode(e.target.value)}
-                        className="bg-background font-mono"
+                        className="bg-background"
                       />
                     </div>
                     <div className="space-y-1">
@@ -1080,19 +1080,19 @@ function AccountingPage() {
                               <TableCell className="whitespace-nowrap text-sm">
                                 {formatIsoDate(r.entryDate)}
                               </TableCell>
-                              <TableCell className="font-mono text-sm tabular-nums">
+                              <TableCell className="text-sm tabular-nums">
                                 {r.entryNumber}
                               </TableCell>
                               <TableCell className="max-w-[180px] truncate text-sm text-muted-foreground">
                                 {r.entryDescription}
                               </TableCell>
-                              <TableCell className="text-right font-mono text-sm tabular-nums">
+                              <TableCell className="text-right font-numeric text-sm tabular-nums">
                                 {formatMoneyAr(r.debitAmount)}
                               </TableCell>
-                              <TableCell className="text-right font-mono text-sm tabular-nums">
+                              <TableCell className="text-right font-numeric text-sm tabular-nums">
                                 {formatMoneyAr(r.creditAmount)}
                               </TableCell>
-                              <TableCell className="text-right font-mono text-sm tabular-nums">
+                              <TableCell className="text-right font-numeric text-sm tabular-nums">
                                 {formatMoneyAr(r.runningBalance)}
                               </TableCell>
                             </TableRow>
@@ -1152,7 +1152,7 @@ function AccountingPage() {
                         className="flex flex-col rounded-xl border border-border/60 bg-muted/20 px-3 py-2"
                       >
                         <span className="text-xs text-muted-foreground">{s.label}</span>
-                        <span className="font-mono text-base font-semibold tabular-nums text-foreground">
+                        <span className="font-numeric text-base font-semibold tabular-nums text-foreground">
                           {formatMoneyAr(s.total)}
                         </span>
                       </div>
@@ -1184,18 +1184,18 @@ function AccountingPage() {
                         ) : (
                           trialRows.map((r, idx) => (
                             <TableRow key={`${r.accountCode}-${idx}`}>
-                              <TableCell className="font-mono text-sm">{r.accountCode}</TableCell>
+                              <TableCell className="text-sm">{r.accountCode}</TableCell>
                               <TableCell className="text-sm">{r.accountName}</TableCell>
                               <TableCell className="text-sm text-muted-foreground">
                                 {formatAccountType(r.accountType)}
                               </TableCell>
-                              <TableCell className="text-right font-mono text-sm tabular-nums">
+                              <TableCell className="text-right font-numeric text-sm tabular-nums">
                                 {formatMoneyAr(r.sumDebit)}
                               </TableCell>
-                              <TableCell className="text-right font-mono text-sm tabular-nums">
+                              <TableCell className="text-right font-numeric text-sm tabular-nums">
                                 {formatMoneyAr(r.sumCredit)}
                               </TableCell>
-                              <TableCell className="text-right font-mono text-sm tabular-nums">
+                              <TableCell className="text-right font-numeric text-sm tabular-nums">
                                 {formatMoneyAr(r.balance)}
                               </TableCell>
                             </TableRow>
@@ -1221,9 +1221,9 @@ function AccountingPage() {
                       Balance a una fecha (saldos acumulados hasta el corte). El
                       estado de resultados, el flujo de caja y el IVA usan el mismo
                       rango que arriba (desde / hasta). Caja y equivalentes: cuentas
-                      con código <span className="font-mono">1.1.1.*</span>; IVA:
-                      <span className="font-mono"> 1.1.2.*</span> y{" "}
-                      <span className="font-mono">2.1.2.*</span> según el plan
+                      con código <span>1.1.1.*</span>; IVA:
+                      <span> 1.1.2.*</span> y{" "}
+                      <span>2.1.2.*</span> según el plan
                       semilla.
                     </p>
                   </div>
@@ -1275,13 +1275,13 @@ function AccountingPage() {
                           </span>
                           <span className="text-muted-foreground">
                             Activo:{" "}
-                            <span className="font-mono font-medium text-foreground">
+                            <span className="font-numeric font-medium text-foreground">
                               {formatMoneyAr(balanceSheet.totalActivo)}
                             </span>
                           </span>
                           <span className="text-muted-foreground">
                             Pasivo + patrimonio + resultado:{" "}
-                            <span className="font-mono font-medium text-foreground">
+                            <span className="font-numeric font-medium text-foreground">
                               {formatMoneyAr(
                                 balanceSheet.totalPasivoPatrimonioYResultado,
                               )}
@@ -1295,7 +1295,7 @@ function AccountingPage() {
                             )}
                           >
                             Diferencia:{" "}
-                            <span className="font-mono font-medium">
+                            <span className="font-numeric font-medium">
                               {formatMoneyAr(balanceSheet.diferenciaCuadre)}
                             </span>
                           </span>
@@ -1336,13 +1336,13 @@ function AccountingPage() {
                                         key={`${sec.key}-${r.accountCode}-${i}`}
                                         className="border-border"
                                       >
-                                        <TableCell className="font-mono text-sm">
+                                        <TableCell className="text-sm">
                                           {r.accountCode}
                                         </TableCell>
                                         <TableCell className="text-sm">
                                           {r.accountName}
                                         </TableCell>
-                                        <TableCell className="text-right font-mono text-sm tabular-nums">
+                                        <TableCell className="text-right font-numeric text-sm tabular-nums">
                                           {formatMoneyAr(r.balance)}
                                         </TableCell>
                                       </TableRow>
@@ -1352,7 +1352,7 @@ function AccountingPage() {
                                     <TableCell colSpan={2} className="text-sm">
                                       Total {sec.title.toLowerCase()}
                                     </TableCell>
-                                    <TableCell className="text-right font-mono text-sm tabular-nums">
+                                    <TableCell className="text-right font-numeric text-sm tabular-nums">
                                       {formatMoneyAr(sec.sectionTotal)}
                                     </TableCell>
                                   </TableRow>
@@ -1443,13 +1443,13 @@ function AccountingPage() {
                                         key={`${label}-${ln.accountCode}`}
                                         className="border-border"
                                       >
-                                        <TableCell className="font-mono text-sm">
+                                        <TableCell className="text-sm">
                                           {ln.accountCode}
                                         </TableCell>
                                         <TableCell className="text-sm">
                                           {ln.accountName}
                                         </TableCell>
-                                        <TableCell className="text-right font-mono text-sm tabular-nums">
+                                        <TableCell className="text-right font-numeric text-sm tabular-nums">
                                           {formatMoneyAr(ln.balance)}
                                         </TableCell>
                                       </TableRow>
@@ -1464,7 +1464,7 @@ function AccountingPage() {
                           <p className="text-sm font-semibold text-foreground">
                             Resultado neto del período
                           </p>
-                          <p className="font-mono text-lg font-bold tabular-nums text-primary">
+                          <p className="font-numeric text-lg font-bold tabular-nums text-primary">
                             {formatMoneyAr(incomeStatement.resultadoNeto)}
                           </p>
                         </div>
@@ -1495,7 +1495,7 @@ function AccountingPage() {
                     </div>
                     <p className="mb-4 text-sm text-muted-foreground">
                       Movimiento del período en cuentas{" "}
-                      <span className="font-mono">1.1.1.*</span> (caja y
+                      <span>1.1.1.*</span> (caja y
                       equivalentes del plan semilla).
                     </p>
                     {cashFlowError ? (
@@ -1535,17 +1535,17 @@ function AccountingPage() {
                           ) : (
                             cashFlowRows.map((r) => (
                               <TableRow key={r.accountCode} className="border-border">
-                                <TableCell className="font-mono text-sm">
+                                <TableCell className="text-sm">
                                   {r.accountCode}
                                 </TableCell>
                                 <TableCell className="text-sm">{r.accountName}</TableCell>
-                                <TableCell className="text-right font-mono text-sm tabular-nums">
+                                <TableCell className="text-right font-numeric text-sm tabular-nums">
                                   {formatMoneyAr(r.entradas)}
                                 </TableCell>
-                                <TableCell className="text-right font-mono text-sm tabular-nums">
+                                <TableCell className="text-right font-numeric text-sm tabular-nums">
                                   {formatMoneyAr(r.salidas)}
                                 </TableCell>
-                                <TableCell className="text-right font-mono text-sm tabular-nums">
+                                <TableCell className="text-right font-numeric text-sm tabular-nums">
                                   {formatMoneyAr(r.neto)}
                                 </TableCell>
                               </TableRow>
@@ -1575,8 +1575,8 @@ function AccountingPage() {
                     </div>
                     <p className="mb-4 text-sm text-muted-foreground">
                       Movimientos del período en cuentas{" "}
-                      <span className="font-mono">1.1.2.*</span> y{" "}
-                      <span className="font-mono">2.1.2.*</span>. La liquidación
+                      <span>1.1.2.*</span> y{" "}
+                      <span>2.1.2.*</span>. La liquidación
                       definitiva debe validarse con tu asesor fiscal.
                     </p>
                     {vatError ? (
@@ -1616,17 +1616,17 @@ function AccountingPage() {
                           ) : (
                             vatRows.map((r) => (
                               <TableRow key={r.accountCode} className="border-border">
-                                <TableCell className="font-mono text-sm">
+                                <TableCell className="text-sm">
                                   {r.accountCode}
                                 </TableCell>
                                 <TableCell className="text-sm">{r.accountName}</TableCell>
-                                <TableCell className="text-right font-mono text-sm tabular-nums">
+                                <TableCell className="text-right font-numeric text-sm tabular-nums">
                                   {formatMoneyAr(r.sumDebit)}
                                 </TableCell>
-                                <TableCell className="text-right font-mono text-sm tabular-nums">
+                                <TableCell className="text-right font-numeric text-sm tabular-nums">
                                   {formatMoneyAr(r.sumCredit)}
                                 </TableCell>
-                                <TableCell className="text-right font-mono text-sm tabular-nums">
+                                <TableCell className="text-right font-numeric text-sm tabular-nums">
                                   {formatMoneyAr(r.balance)}
                                 </TableCell>
                               </TableRow>
@@ -1689,7 +1689,7 @@ function AccountingPage() {
                     journalDetailLines.map((ln) => (
                       <TableRow key={ln.id}>
                         <TableCell>
-                          <span className="font-mono text-xs">{ln.accountCode}</span>{" "}
+                          <span className="text-xs">{ln.accountCode}</span>{" "}
                           <span className="text-sm">{ln.accountName}</span>
                           {ln.lineDescription ? (
                             <span className="mt-0.5 block text-xs text-muted-foreground">
@@ -1697,10 +1697,10 @@ function AccountingPage() {
                             </span>
                           ) : null}
                         </TableCell>
-                        <TableCell className="text-right font-mono text-sm tabular-nums">
+                        <TableCell className="text-right font-numeric text-sm tabular-nums">
                           {ln.debitAmount > 0 ? formatMoneyAr(ln.debitAmount) : "—"}
                         </TableCell>
-                        <TableCell className="text-right font-mono text-sm tabular-nums">
+                        <TableCell className="text-right font-numeric text-sm tabular-nums">
                           {ln.creditAmount > 0 ? formatMoneyAr(ln.creditAmount) : "—"}
                         </TableCell>
                       </TableRow>
@@ -1737,7 +1737,7 @@ function AccountingPage() {
                   setCreateForm((f) => ({ ...f, code: e.target.value }))
                 }
                 required
-                className="bg-background font-mono"
+                className="bg-background"
               />
             </div>
             <div className="space-y-2">

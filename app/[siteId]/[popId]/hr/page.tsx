@@ -420,7 +420,7 @@ function HrPage() {
               {lastInviteUrl ? (
                 <div className={cn(shellCard, "px-4 py-3")}>
                   <p className={sectionTitleClass}>Enlace de invitación</p>
-                  <p className="mt-2 break-all font-mono text-xs text-foreground">
+                  <p className="mt-2 break-all text-xs text-foreground">
                     {lastInviteUrl}
                   </p>
                   <Button
@@ -681,7 +681,7 @@ function HrPage() {
                             <h4 className="text-sm font-semibold text-foreground">
                               {roleLabel}
                             </h4>
-                            <span className="font-mono text-[11px] tabular-nums text-muted-foreground">
+                            <span className="text-[11px] tabular-nums text-muted-foreground">
                               {list.length}
                             </span>
                           </div>

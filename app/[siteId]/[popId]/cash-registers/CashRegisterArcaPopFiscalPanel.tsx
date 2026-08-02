@@ -1,7 +1,11 @@
 "use client"
 
-import { CheckoutSectionLabel, CheckoutSectionPanel } from "@/components/checkout/CheckoutFormFields"
-import { saleOpChannelWarningBanner } from "@/components/sale-operation/saleOperationStyles"
+import { CheckoutSectionLabel } from "@/components/checkout/CheckoutFormFields"
+import {
+  saleOpChannelWarningBanner,
+  saleOpLightInsetPanel,
+} from "@/components/sale-operation/saleOperationStyles"
+import { cn } from "@/lib/utils"
 import { Building2, ExternalLink } from "lucide-react"
 import Link from "next/link"
 
@@ -26,19 +30,24 @@ export function CashRegisterArcaPopFiscalPanel({
   const razonSocial = fiscalRazonSocial?.trim() || null
 
   return (
-    <CheckoutSectionPanel>
+    <div className="space-y-3">
       <CheckoutSectionLabel>Facturación electrónica (ARCA)</CheckoutSectionLabel>
 
       {cuitFormatted ? (
-        <div className="flex items-start gap-3 rounded-xl border border-border/60 bg-background px-3.5 py-3">
-          <div className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
+        <div
+          className={cn(
+            saleOpLightInsetPanel,
+            "flex items-start gap-3 px-3.5 py-3",
+          )}
+        >
+          <div className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-white/80 text-zinc-500">
             <Building2 className="size-4" aria-hidden />
           </div>
           <div className="min-w-0 flex-1 space-y-1">
             <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
               CUIT del punto de venta
             </p>
-            <p className="font-mono text-base font-semibold tracking-tight text-foreground">
+            <p className="text-base font-semibold tracking-tight text-foreground">
               {cuitFormatted}
             </p>
             {razonSocial ? (
@@ -67,6 +76,6 @@ export function CashRegisterArcaPopFiscalPanel({
           ) : null}
         </div>
       )}
-    </CheckoutSectionPanel>
+    </div>
   )
 }

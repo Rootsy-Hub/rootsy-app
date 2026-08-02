@@ -215,7 +215,7 @@ export function ArticlesTableDetailDialog({
             ) : null}
           </div>
 
-          <p className="mt-4 break-all font-mono text-[11px] text-muted-foreground">
+          <p className="mt-4 break-all text-[11px] text-muted-foreground">
             {row.id}
           </p>
         </div>

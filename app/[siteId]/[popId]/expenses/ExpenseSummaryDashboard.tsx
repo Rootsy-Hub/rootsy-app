@@ -118,7 +118,7 @@ export function ExpenseSummaryDashboard({
             <p className="text-[11px] font-medium uppercase tracking-[0.14em] text-muted-foreground">
               {kpi.label}
             </p>
-            <p className="mt-2 font-mono text-3xl font-bold tabular-nums tracking-tight text-foreground">
+            <p className="mt-2 font-numeric text-3xl font-bold tabular-nums tracking-tight text-foreground">
               {kpi.value}
             </p>
             <p className="mt-1 text-xs text-muted-foreground">{kpi.sub}</p>
@@ -136,7 +136,7 @@ export function ExpenseSummaryDashboard({
               Pagos registrados vs total comprometido
             </p>
           </div>
-          <span className="font-mono text-lg font-semibold tabular-nums text-primary">
+          <span className="font-numeric text-lg font-semibold tabular-nums text-primary">
             {summary.progressPct}%
           </span>
         </div>
@@ -148,7 +148,7 @@ export function ExpenseSummaryDashboard({
           />
         </div>
 
-        <p className="mt-2 font-mono text-xs tabular-nums text-muted-foreground">
+        <p className="mt-2 font-numeric text-xs tabular-nums text-muted-foreground">
           {fmt.format(totalPaid)} de {fmt.format(totalDue)}
         </p>
 
@@ -183,7 +183,7 @@ export function ExpenseSummaryDashboard({
                       <span className="truncate text-foreground">
                         {category.name}
                       </span>
-                      <span className="shrink-0 font-mono font-medium tabular-nums text-primary">
+                      <span className="shrink-0 font-numeric font-medium tabular-nums text-primary">
                         {category.pct}%
                       </span>
                     </div>
@@ -193,7 +193,7 @@ export function ExpenseSummaryDashboard({
                         style={{ width: `${category.pct}%` }}
                       />
                     </div>
-                    <p className="mt-1 font-mono text-[11px] tabular-nums text-muted-foreground">
+                    <p className="mt-1 font-numeric text-[11px] tabular-nums text-muted-foreground">
                       {fmt.format(category.paid)} de {fmt.format(category.total)}
                     </p>
                   </li>

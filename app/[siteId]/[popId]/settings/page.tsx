@@ -414,7 +414,7 @@ function SettingsPage() {
                       }
                       disabled={!canUpdate}
                       placeholder="11 dígitos sin guiones"
-                      className="bg-background font-mono"
+                      className="bg-background"
                     />
                     {padron.busy ? (
                       <p className="flex items-center gap-2 text-xs text-muted-foreground">

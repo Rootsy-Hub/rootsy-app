@@ -25,6 +25,7 @@ import {
   tdMoneyVatClass,
   tdTruncatedNameCellClass,
   tdTruncatedTextCellClass,
+  workspaceDataTableClassName,
   workspaceTableBodyRowClassNames,
   workspaceTableHeaderRowClass,
 } from "@/components/data-workspace/dataWorkspaceListStyles"
@@ -244,7 +245,7 @@ function PurchaseDetailDialog({
           </DialogDescription>
         </DialogHeader>
         <div className={opsDialogBody}>
-          <p className="mb-4 break-all font-mono text-[11px] text-muted-foreground">
+          <p className="mb-4 break-all text-[11px] text-muted-foreground">
             {purchase.id}
           </p>
 
@@ -449,10 +450,7 @@ export function OperationsPurchasesTable({
     <>
       <DataWorkspaceListTableFrame>
       <table
-        className={cn(
-          "relative w-max min-w-full caption-bottom text-sm",
-          "[&_th:last-child]:pr-5 [&_td:last-child]:pr-5",
-        )}
+        className={workspaceDataTableClassName}
         aria-busy={listFetching}
       >
         <TableHeader>
@@ -633,7 +631,7 @@ export function OperationsPurchasesTable({
                   />
                 </TableCell>
                 <TableCell className="min-w-[19rem] whitespace-nowrap px-3 py-2.5 pr-5">
-                  <span className="font-mono text-[11px] leading-snug text-muted-foreground">
+                  <span className="text-[11px] leading-snug text-muted-foreground">
                     {purchase.id}
                   </span>
                 </TableCell>

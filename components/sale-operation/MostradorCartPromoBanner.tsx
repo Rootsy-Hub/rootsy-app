@@ -17,6 +17,8 @@ type Props = {
   discountAmount?: number
   finalTotal?: number
   compactLayout?: boolean
+  importeClassName?: string
+  discountBadgeClassName?: string
 }
 
 function roundMoney(n: number): number {
@@ -26,9 +28,11 @@ function roundMoney(n: number): number {
 function PromoDiscountBadge({
   amount,
   variant,
+  className,
 }: {
   amount: number
   variant: "promotion" | "discount"
+  className?: string
 }) {
   const formatted = saleOpFmt.format(Math.abs(amount))
 
@@ -36,6 +40,7 @@ function PromoDiscountBadge({
     <span
       className={cn(
         "shrink-0 rounded-md px-2 py-0.5 text-[11px] font-bold tabular-nums",
+        className,
         variant === "discount"
           ? "bg-emerald-700/15 text-emerald-900"
           : "bg-violet-700/15 text-violet-900",
@@ -54,6 +59,8 @@ export function MostradorCartPromoBanner({
   discountAmount,
   finalTotal,
   compactLayout = false,
+  importeClassName = saleOpImporteCartClass,
+  discountBadgeClassName,
 }: Props) {
   const isDiscount = variant === "discount"
   const isFixedDiscount = isDiscount && discountMode === "fijo"
@@ -105,12 +112,16 @@ export function MostradorCartPromoBanner({
           {label}
         </span>
         {savings > 0 ? (
-          <PromoDiscountBadge amount={savings} variant={variant} />
+          <PromoDiscountBadge
+            amount={savings}
+            variant={variant}
+            className={discountBadgeClassName}
+          />
         ) : null}
       </div>
 
       {resolvedFinalTotal != null ? (
-        <span className={cn(saleOpImporteCartClass, "pt-0.5 text-right")}>
+        <span className={cn(importeClassName, "pt-0.5 text-right")}>
           {saleOpFmt.format(resolvedFinalTotal)}
         </span>
       ) : (

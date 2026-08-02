@@ -1,4 +1,4 @@
-import { workspaceTableSelectableTextClass } from "@/components/data-workspace/dataWorkspaceListStyles"
+import { workspaceDataTableClassName } from "@/components/data-workspace/dataWorkspaceListStyles"
 import { cn } from "@/lib/utils"
 
 export const RECIPE_DELETE_CONFIRM_PHRASE = "ELIMINAR"
@@ -27,8 +27,5 @@ export const recipeDialogBodyClass =
 export const recipeDialogFooterClass =
   "shrink-0 gap-3 border-t border-border/50 bg-muted/10 px-6 py-4 sm:flex-row sm:justify-end"
 
-export const recipesStockTableClassName = cn(
-  "relative w-max min-w-full caption-bottom text-sm",
-  "[&_th:last-child]:pr-5 [&_td:last-child]:pr-5",
-  workspaceTableSelectableTextClass,
-)
+/** @deprecated Usar `workspaceDataTableClassName` desde dataWorkspaceListStyles */
+export const recipesStockTableClassName = workspaceDataTableClassName

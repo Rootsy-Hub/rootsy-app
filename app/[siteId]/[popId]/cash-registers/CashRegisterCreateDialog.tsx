@@ -12,10 +12,7 @@ import {
   type CashRegisterArcaFormPayload,
 } from "@/app/[siteId]/[popId]/cash-registers/CashRegisterArcaConfigFields"
 import { CheckoutDialogFooter } from "@/components/checkout/CheckoutDialogFooter"
-import {
-  CheckoutSectionLabel,
-  CheckoutSectionPanel,
-} from "@/components/checkout/CheckoutFormFields"
+import { CheckoutSectionLabel } from "@/components/checkout/CheckoutFormFields"
 import {
   Dialog,
   DialogContent,
@@ -25,9 +22,9 @@ import {
 import { Input } from "@/components/ui/input"
 import { cn } from "@/lib/utils"
 import {
-  saleOpChannelFormField,
   saleOpChannelHint,
   saleOpDialogHeader,
+  saleOpLightFormInput,
 } from "@/components/sale-operation/saleOperationStyles"
 import { useEffect, useRef, useState, type FormEvent } from "react"
 
@@ -120,7 +117,7 @@ export function CashRegisterCreateDialog({
             banner={banner}
             left={
               <>
-                <CheckoutSectionPanel>
+                <div className="space-y-5">
                   <div className="space-y-2.5">
                     <CheckoutSectionLabel>Nombre</CheckoutSectionLabel>
                     <Input
@@ -129,7 +126,7 @@ export function CashRegisterCreateDialog({
                       onChange={(e) => setName(e.target.value)}
                       required
                       placeholder="Ej. Caja mostrador, Caja 1"
-                      className={cn(saleOpChannelFormField, "h-11")}
+                      className={saleOpLightFormInput}
                     />
                   </div>
 
@@ -146,7 +143,7 @@ export function CashRegisterCreateDialog({
                       tesorería.
                     </p>
                   </div>
-                </CheckoutSectionPanel>
+                </div>
 
                 <CashRegisterArcaPopFiscalPanel
                   fiscalCuit={popFiscalCuit}

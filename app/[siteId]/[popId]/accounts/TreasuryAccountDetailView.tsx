@@ -109,7 +109,7 @@ function DashboardKpi({
       <p className="text-[11px] font-medium uppercase tracking-[0.12em] text-muted-foreground">
         {label}
       </p>
-      <p className="mt-1.5 font-mono text-2xl font-semibold tabular-nums tracking-tight text-foreground">
+      <p className="mt-1.5 font-numeric text-2xl font-bold tabular-nums tracking-tight text-foreground">
         {value}
       </p>
       {hint ? (
@@ -185,7 +185,7 @@ function TreasuryStat({
       </p>
       <p
         className={cn(
-          "mt-1 font-mono font-bold tabular-nums tracking-tight",
+          "mt-1 font-numeric font-bold tabular-nums tracking-tight",
           inverted ? "text-white" : "text-foreground",
           large ? "mt-1.5 text-2xl sm:text-3xl" : "text-base sm:text-lg",
         )}
@@ -956,7 +956,7 @@ export function TreasuryAccountDetailView({
                                   className="flex items-start justify-between gap-2 px-3 py-2.5 text-sm"
                                 >
                                   <div>
-                                    <p className="font-medium tabular-nums">
+                                    <p className="font-numeric tabular-nums text-foreground">
                                       {fmt.format(s.amount)}
                                     </p>
                                     <p className="text-xs text-muted-foreground">
@@ -1086,7 +1086,7 @@ export function TreasuryAccountDetailView({
                 required
                 value={settleAmount}
                 onChange={(e) => setSettleAmount(e.target.value)}
-                className="font-mono"
+                className="font-numeric"
               />
             </div>
             <div className="space-y-2">
@@ -1157,7 +1157,7 @@ export function TreasuryAccountDetailView({
                 required
                 value={posAmount}
                 onChange={(e) => setPosAmount(e.target.value)}
-                className="font-mono"
+                className="font-numeric"
               />
             </div>
             <div className="space-y-2">
@@ -1349,7 +1349,7 @@ function ReconciliationPanel({
       <div className={dashboardBodyClass}>
         <div className="mb-2 flex items-center justify-between gap-2 text-sm">
           <span className="font-medium text-foreground">Progreso de conciliación</span>
-          <span className="font-mono text-xs tabular-nums text-muted-foreground">
+          <span className="text-xs tabular-nums text-muted-foreground">
             {progressPct}%
           </span>
         </div>
@@ -1390,7 +1390,7 @@ function ReconciliationPanel({
           onChange={(e) => setCsvText(e.target.value)}
           rows={3}
           placeholder="2026-01-15,Transferencia recibida,-15000"
-          className="font-mono text-xs"
+          className="text-xs"
           disabled={!canUpdate || csvImporting}
         />
         <div className="mt-3 flex flex-wrap items-center gap-2">
@@ -1459,7 +1459,7 @@ function ReconciliationPanel({
               placeholder="Importe"
               value={manualAmount}
               onChange={(e) => setManualAmount(e.target.value)}
-              className="font-mono"
+              className="font-numeric"
               disabled={!canUpdate || manualSaving}
             />
             <Button type="submit" size="sm" disabled={!canUpdate || manualSaving}>
@@ -1547,7 +1547,7 @@ function ReconciliationPanel({
                 </div>
                 <span
                   className={cn(
-                    "shrink-0 whitespace-nowrap text-sm font-semibold tabular-nums",
+                    "shrink-0 whitespace-nowrap font-numeric text-sm tabular-nums",
                     line.direction === "in"
                       ? "text-emerald-700 dark:text-emerald-400"
                       : "text-rose-700 dark:text-rose-400",

@@ -3,8 +3,8 @@
 import { cn } from "@/lib/utils"
 import {
   dataWorkspaceShellCard,
+  workspaceTableListBodyScopeClass,
   workspaceTableSurfaceClass,
-  workspaceTableSurfaceGlowClass,
 } from "./dataWorkspaceListStyles"
 import type { ReactNode } from "react"
 
@@ -39,14 +39,12 @@ export function DataWorkspaceListTableShell({
         className,
       )}
     >
-      {isFlush ? (
-        <div className={workspaceTableSurfaceGlowClass} aria-hidden />
-      ) : (
+      {!isFlush ? (
         <div
           className="pointer-events-none absolute -right-10 -top-10 size-40 rounded-full bg-primary/10 blur-3xl"
           aria-hidden
         />
-      )}
+      ) : null}
       <div className="relative flex min-h-0 flex-1 flex-col overflow-hidden">
         {bulkToolbar ? bulkToolbar : null}
         <div className="relative min-h-0 flex-1">
@@ -54,6 +52,7 @@ export function DataWorkspaceListTableShell({
             className={cn(
               "rootsy-scroll-minimal absolute inset-0 overflow-auto",
               isFlush && "pr-3",
+              workspaceTableListBodyScopeClass,
             )}
           >
             <div className="flex min-h-full min-w-0 flex-1 flex-col">

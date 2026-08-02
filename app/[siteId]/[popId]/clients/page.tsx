@@ -45,6 +45,8 @@ import {
   DataWorkspaceTableIconAction,
   DataWorkspaceTableMoney,
 } from "@/components/data-workspace/DataWorkspaceListTablePrimitives"
+import { WorkspaceTableSkeletonRows } from "@/components/data-workspace/WorkspaceTableSkeleton"
+import { clientsSkeletonColumns } from "@/components/data-workspace/workspaceTableSkeletonPresets"
 import { DataWorkspaceListTableShell } from "@/components/data-workspace/DataWorkspaceListTableShell"
 import {
   lightFilterChipClass,
@@ -105,81 +107,6 @@ import {
   useState,
   type FormEvent,
 } from "react"
-
-const clientsSk = {
-  bar: "animate-pulse rounded-[3px] bg-muted-foreground/12 dark:bg-muted-foreground/[0.14]",
-  barSm: "animate-pulse rounded-[3px] bg-muted-foreground/8 dark:bg-muted-foreground/11",
-  pill: "animate-pulse rounded-full bg-muted-foreground/12 dark:bg-muted-foreground/[0.14]",
-  box: "animate-pulse rounded-sm bg-muted-foreground/10 dark:bg-muted-foreground/[0.12]",
-} as const
-
-function ClientsTableSkeletonRows({
-  rowCount,
-  hasActionsColumn,
-}: {
-  rowCount: number
-  hasActionsColumn: boolean
-}) {
-  return (
-    <>
-      {Array.from({ length: rowCount }).map((_, i) => (
-        <TableRow
-          key={`sk-${i}`}
-          className={cn(
-            "border-border/50",
-            i % 2 === 0
-              ? "bg-white/30"
-              : "bg-muted/25 dark:bg-muted/15",
-          )}
-          aria-hidden
-        >
-          <TableCell className="w-12 !px-0 py-2 align-middle">
-            <div className={selectColumnInnerClass}>
-              <div
-                className={cn("mx-auto size-4 shrink-0", clientsSk.box)}
-              />
-            </div>
-          </TableCell>
-          <TableCell className="min-w-0 px-3 py-2.5 align-middle">
-            <div className={cn("h-3.5 w-[72%] max-w-[11rem]", clientsSk.bar)} />
-            <div
-              className={cn("mt-1.5 h-2.5 w-[45%] max-w-[7rem]", clientsSk.barSm)}
-            />
-          </TableCell>
-          <TableCell className="min-w-0 max-w-[12rem] px-3 py-2.5 align-middle">
-            <div className={cn("h-3.5 w-full max-w-[10.5rem]", clientsSk.bar)} />
-          </TableCell>
-          <TableCell className="min-w-0 max-w-[9rem] px-3 py-2.5 align-middle">
-            <div className={cn("h-3.5 w-[5.5rem]", clientsSk.bar)} />
-          </TableCell>
-          <TableCell className="w-[7.5rem] px-3 py-2.5 align-middle">
-            <div className={cn("h-3.5 w-16", clientsSk.bar)} />
-          </TableCell>
-          <TableCell className="min-w-[8.5rem] px-3 py-2.5 align-middle">
-            <div className={cn("inline-block h-5 w-[6.5rem]", clientsSk.pill)} />
-          </TableCell>
-          <TableCell className="w-[7.25rem] whitespace-nowrap px-3 py-2.5 align-middle">
-            <div className={cn("h-3.5 w-[4.5rem]", clientsSk.bar)} />
-          </TableCell>
-          <TableCell className="min-w-[8.5rem] px-3 py-2.5 text-right align-middle tabular-nums">
-            <div className="flex flex-col items-end gap-1">
-              <div className={cn("h-3 w-24", clientsSk.bar)} />
-              <div className={cn("h-2.5 w-20", clientsSk.barSm)} />
-            </div>
-          </TableCell>
-          {hasActionsColumn ? (
-            <TableCell className="w-[7.25rem] px-1 py-1.5 align-middle">
-              <div className="flex items-center justify-end gap-0.5">
-                <div className={cn("size-8 shrink-0 rounded-md", clientsSk.box)} />
-                <div className={cn("size-8 shrink-0 rounded-md", clientsSk.box)} />
-              </div>
-            </TableCell>
-          ) : null}
-        </TableRow>
-      ))}
-    </>
-  )
-}
 
 function emptyForm(): UpsertPopClientInput {
   return {
@@ -1150,9 +1077,12 @@ function ClientsPage() {
                 </TableHeader>
                 <TableBody>
                   {listFetching ? (
-                    <ClientsTableSkeletonRows
+                    <WorkspaceTableSkeletonRows
                       rowCount={skeletonRowCount}
-                      hasActionsColumn={Boolean(canUpdate || canDelete)}
+                      rowKeyPrefix="clients-sk"
+                      columns={clientsSkeletonColumns({
+                        hasActionsColumn: Boolean(canUpdate || canDelete),
+                      })}
                     />
                   ) : totalCount === 0 ? (
                     null

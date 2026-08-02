@@ -124,7 +124,7 @@ export function TreasuryYearGroupedMovementsView<T>({
                       <div className="flex shrink-0 items-center gap-2">
                         <span
                           className={cn(
-                            "whitespace-nowrap font-mono text-sm tabular-nums tracking-tight text-foreground",
+                            "whitespace-nowrap font-numeric text-sm tabular-nums tracking-tight text-foreground",
                             row.amountClassName,
                           )}
                         >

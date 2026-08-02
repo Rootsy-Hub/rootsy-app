@@ -16,10 +16,7 @@ import {
   formatArcaExpiryLabel,
 } from "@/app/[siteId]/[popId]/cash-registers/CashRegisterArcaConfigFields"
 import { CheckoutDialogFooter } from "@/components/checkout/CheckoutDialogFooter"
-import {
-  CheckoutSectionLabel,
-  CheckoutSectionPanel,
-} from "@/components/checkout/CheckoutFormFields"
+import { CheckoutSectionLabel } from "@/components/checkout/CheckoutFormFields"
 import { Checkbox } from "@/components/ui/checkbox"
 import {
   Dialog,
@@ -32,8 +29,8 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { cn } from "@/lib/utils"
 import {
-  saleOpChannelFormField,
   saleOpDialogHeader,
+  saleOpLightFormInput,
 } from "@/components/sale-operation/saleOperationStyles"
 import { useEffect, useRef, useState, type FormEvent } from "react"
 
@@ -160,7 +157,7 @@ export function CashRegisterEditDialog({
             banner={banner}
             left={
               <>
-                <CheckoutSectionPanel>
+                <div className="space-y-5">
                   <div className="space-y-2.5">
                     <CheckoutSectionLabel>Nombre</CheckoutSectionLabel>
                     <Input
@@ -168,7 +165,7 @@ export function CashRegisterEditDialog({
                       value={name}
                       onChange={(e) => setName(e.target.value)}
                       required
-                      className={cn(saleOpChannelFormField, "h-11")}
+                      className={saleOpLightFormInput}
                     />
                   </div>
 
@@ -195,7 +192,7 @@ export function CashRegisterEditDialog({
                       accounts={cashTreasuryAccounts}
                     />
                   </div>
-                </CheckoutSectionPanel>
+                </div>
 
                 <CashRegisterArcaPopFiscalPanel
                   fiscalCuit={popFiscalCuit}

@@ -80,7 +80,7 @@ function HeaderKpiStat({
       <p className={eyebrowClass}>{label}</p>
       <p
         className={cn(
-          "mt-1.5 font-mono text-2xl font-bold tabular-nums tracking-tight",
+          "mt-1.5 font-numeric text-2xl font-bold tabular-nums tracking-tight",
           tone === "positive" && "text-emerald-700",
           tone === "negative" && "text-destructive",
           tone === "neutral" && "text-muted-foreground",

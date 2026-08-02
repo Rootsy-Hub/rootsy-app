@@ -208,7 +208,7 @@ export function TreasuryChildReconciliationPanel({
         <p className="text-[11px] font-medium uppercase tracking-[0.12em] text-muted-foreground">
           {isPos ? "Liquidado en el período" : "Pagado en el período"}
         </p>
-        <p className="mt-1.5 font-mono text-2xl font-semibold tabular-nums tracking-tight text-foreground">
+        <p className="mt-1.5 font-numeric text-2xl font-bold tabular-nums tracking-tight text-foreground">
           {loading
             ? "—"
             : isPos
@@ -221,7 +221,7 @@ export function TreasuryChildReconciliationPanel({
           <p className="text-[11px] font-medium uppercase tracking-[0.12em] text-muted-foreground">
             Consumos pagados
           </p>
-          <p className="mt-1.5 font-mono text-2xl font-semibold tabular-nums tracking-tight text-foreground">
+          <p className="mt-1.5 font-numeric text-2xl font-bold tabular-nums tracking-tight text-foreground">
             {loading
               ? "—"
               : formatTreasuryMovementAmount("out", periodPrincipalTotal)}
@@ -234,7 +234,7 @@ export function TreasuryChildReconciliationPanel({
             ? TREASURY_RECONCILE_COMMISSIONS_LABEL
             : TREASURY_CARD_OTHER_CHARGES_LABEL}
         </p>
-        <p className="mt-1.5 font-mono text-2xl font-semibold tabular-nums tracking-tight text-foreground">
+        <p className="mt-1.5 font-numeric text-2xl font-bold tabular-nums tracking-tight text-foreground">
           {loading
             ? "—"
             : isPos
@@ -249,7 +249,7 @@ export function TreasuryChildReconciliationPanel({
           <p className="text-[11px] font-medium uppercase tracking-[0.12em] text-muted-foreground">
             Recibido en cuenta
           </p>
-          <p className="mt-1.5 font-mono text-2xl font-semibold tabular-nums tracking-tight text-foreground">
+          <p className="mt-1.5 font-numeric text-2xl font-bold tabular-nums tracking-tight text-foreground">
             {loading ? "—" : fmt.format(periodReceivedInAccount)}
           </p>
         </div>
@@ -319,7 +319,7 @@ export function TreasuryChildReconciliationPanel({
         <p className="text-[11px] font-medium uppercase tracking-[0.12em] text-muted-foreground">
           A liquidar antes del período
         </p>
-        <p className="mt-1.5 font-mono text-2xl font-semibold tabular-nums tracking-tight text-foreground">
+        <p className="mt-1.5 font-numeric text-2xl font-bold tabular-nums tracking-tight text-foreground">
           {openingPendingBalance != null
             ? fmt.format(openingPendingBalance)
             : "—"}
@@ -329,11 +329,8 @@ export function TreasuryChildReconciliationPanel({
         <p className="text-[11px] font-medium uppercase tracking-[0.12em] text-muted-foreground">
           A liquidar en el período
         </p>
-        <p className="mt-1.5 font-mono text-2xl font-semibold tabular-nums tracking-tight text-foreground">
+        <p className="mt-1.5 font-numeric text-2xl font-bold tabular-nums tracking-tight text-foreground">
           {fmt.format(periodToLiquidate)}
-        </p>
-        <p className="mt-1 text-xs text-muted-foreground">
-          Cobros menos faltantes de caja
         </p>
       </div>
     </div>
@@ -344,10 +341,9 @@ export function TreasuryChildReconciliationPanel({
       <p className="text-[11px] font-medium uppercase tracking-[0.12em] text-muted-foreground">
         Consumos del período
       </p>
-      <p className="mt-1.5 font-mono text-2xl font-semibold tabular-nums tracking-tight text-foreground">
+      <p className="mt-1.5 font-numeric text-2xl font-bold tabular-nums tracking-tight text-foreground">
         {fmt.format(periodGrossAmount)}
       </p>
-      <p className="mt-1 truncate text-xs text-muted-foreground">{child.name}</p>
     </div>
   )
 

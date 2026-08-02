@@ -112,7 +112,7 @@ export default async function MenuDocsPage({
 
         <p className="max-w-4xl text-sm leading-relaxed text-slate-700 sm:text-base">
           Cada ítem enlazable apunta a rutas bajo el mismo{" "}
-          <code className="rounded bg-slate-100 px-1 font-mono text-xs">
+          <code className="rounded bg-slate-100 px-1 text-xs">
             /{siteId}/{popId}/…
           </code>
           . La visibilidad depende de los permisos ya cargados; el resto son
@@ -145,7 +145,7 @@ export default async function MenuDocsPage({
         </div>
 
         <p className="max-w-4xl text-sm leading-relaxed text-slate-700 sm:text-base">
-          Desde el dock, “Inicio” lleva a <code className="font-mono text-xs">/home</code>{" "}
+          Desde el dock, “Inicio” lleva a <code className="text-xs">/home</code>{" "}
           para cambiar de POP o de contexto sin cerrar sesión.
         </p>
 

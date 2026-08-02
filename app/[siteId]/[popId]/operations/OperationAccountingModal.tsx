@@ -138,7 +138,7 @@ function EntryBlock({ entry }: { entry: OperationAccountingEntryDetail }) {
               entry.lines.map((ln) => (
                 <TableRow key={ln.id} className="border-border">
                   <TableCell>
-                    <span className="font-mono text-xs text-muted-foreground">
+                    <span className="text-xs text-muted-foreground">
                       {ln.accountCode}
                     </span>{" "}
                     <span className="text-sm text-foreground">

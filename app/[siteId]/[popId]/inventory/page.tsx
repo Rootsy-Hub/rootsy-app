@@ -402,7 +402,7 @@ function InventoryPage() {
                 <p className="mb-3 max-w-2xl text-xs text-muted-foreground">
                   Cada ingreso con costo puede crear una capa: cantidad recibida, restante para
                   consumir y costo unitario. Orden de venta: primero la capa más antigua (
-                  <span className="font-mono">received_at</span>).
+                  <span>received_at</span>).
                 </p>
                 <div className="overflow-x-auto rounded-xl border border-border bg-card/80 shadow-sm">
                   <Table>
@@ -436,12 +436,12 @@ function InventoryPage() {
                             <TableCell className="font-medium text-foreground">
                               {row.articleName}
                             </TableCell>
-                            <TableCell className="text-right font-mono tabular-nums">
+                            <TableCell className="text-right font-numeric tabular-nums">
                               {formatQty(row.quantityReceived)}
                             </TableCell>
                             <TableCell
                               className={cn(
-                                "text-right font-mono tabular-nums",
+                                "text-right font-numeric tabular-nums",
                                 row.quantityRemaining <= 0
                                   ? "text-muted-foreground"
                                   : "text-foreground",
@@ -449,14 +449,14 @@ function InventoryPage() {
                             >
                               {formatQty(row.quantityRemaining)}
                             </TableCell>
-                            <TableCell className="text-right font-mono text-sm tabular-nums">
+                            <TableCell className="text-right font-numeric text-sm tabular-nums">
                               {formatMoneyAr(row.unitCost)}
                             </TableCell>
                             <TableCell className="whitespace-nowrap text-muted-foreground text-sm">
                               {formatDateTime(row.receivedAt)}
                             </TableCell>
                             <TableCell
-                              className="font-mono text-xs text-muted-foreground"
+                              className="text-xs text-muted-foreground"
                               title={row.sourceMovementId ?? undefined}
                             >
                               {row.sourceMovementId
@@ -517,23 +517,23 @@ function InventoryPage() {
                             <TableCell className="font-medium text-foreground">
                               {row.articleName}
                             </TableCell>
-                            <TableCell className="text-right font-mono tabular-nums">
+                            <TableCell className="text-right font-numeric tabular-nums">
                               {formatQty(row.quantity)}
                             </TableCell>
-                            <TableCell className="text-right font-mono text-sm tabular-nums">
+                            <TableCell className="text-right font-numeric text-sm tabular-nums">
                               {formatMoneyAr(row.unitCost)}
                             </TableCell>
-                            <TableCell className="text-right font-mono text-sm tabular-nums">
+                            <TableCell className="text-right font-numeric text-sm tabular-nums">
                               {formatMoneyAr(row.lineCost)}
                             </TableCell>
                             <TableCell
-                              className="font-mono text-xs text-muted-foreground"
+                              className="text-xs text-muted-foreground"
                               title={row.layerId}
                             >
                               {shortUuid(row.layerId)}
                             </TableCell>
                             <TableCell
-                              className="font-mono text-xs text-muted-foreground"
+                              className="text-xs text-muted-foreground"
                               title={row.inventoryMovementId}
                             >
                               {shortUuid(row.inventoryMovementId)}
@@ -586,7 +586,7 @@ function InventoryPage() {
                             </TableCell>
                             <TableCell
                               className={cn(
-                                "text-right font-mono tabular-nums",
+                                "text-right font-numeric tabular-nums",
                                 b.onHand < 0
                                   ? "text-destructive"
                                   : "text-foreground",
@@ -646,7 +646,7 @@ function InventoryPage() {
                             </TableCell>
                             <TableCell
                               className={cn(
-                                "text-right font-mono tabular-nums",
+                                "text-right font-numeric tabular-nums",
                                 m.quantityDelta < 0
                                   ? "text-destructive"
                                   : "text-forest",
@@ -804,7 +804,7 @@ function InventoryPage() {
                     )
                     setCreateQty(String(Math.min(cap, Math.max(0, n))))
                   }}
-                  className="min-w-0 flex-1 bg-background font-mono sm:max-w-44"
+                  className="min-w-0 flex-1 bg-background sm:max-w-44"
                 />
               </div>
               {createOnHand !== null && !createStockLoading ? (

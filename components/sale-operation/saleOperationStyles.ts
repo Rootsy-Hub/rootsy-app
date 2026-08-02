@@ -1,4 +1,5 @@
 import { cn } from "@/lib/utils"
+import { importeBaseClass } from "@/lib/typography"
 
 export const saleOpFmt = new Intl.NumberFormat("es-AR", {
   style: "currency",
@@ -6,7 +7,7 @@ export const saleOpFmt = new Intl.NumberFormat("es-AR", {
   minimumFractionDigits: 2,
 })
 
-export const saleOpImporteBaseClass = "font-mono tabular-nums tracking-tight"
+export const saleOpImporteBaseClass = importeBaseClass
 
 export const saleOpImporteCartClass = cn(
   saleOpImporteBaseClass,
@@ -130,6 +131,38 @@ export const saleOpChannelStatusBadge =
 
 export const saleOpChannelFormField =
   "rounded-xl border border-border/70 bg-muted/15 shadow-none ring-0 outline-none transition-colors hover:border-border focus-visible:border-primary/45 focus-visible:ring-2 focus-visible:ring-primary/20 placeholder:text-muted-foreground/70"
+
+/** Campos en modales `rootsy-app-light` (select con prefijo, date picker field, inputs). */
+export const saleOpLightFormSurface =
+  "border-zinc-200 bg-white text-zinc-900 shadow-xs dark:border-zinc-200 dark:bg-white dark:text-zinc-900"
+
+/** Bloque informativo en modales light — borde único, sin sombras ni rings apilados. */
+export const saleOpLightInsetPanel =
+  "rounded-xl border border-zinc-200/80 bg-zinc-50/55 text-zinc-900 dark:border-zinc-200/80 dark:bg-zinc-50/55 dark:text-zinc-900"
+
+/** Zona de subida en modales light — punteado suave, mismo lenguaje que los campos. */
+export const saleOpLightUploadZone = cn(
+  "rounded-xl border border-dashed border-zinc-200/90 bg-zinc-50/35 transition-colors",
+  "hover:border-zinc-300 hover:bg-zinc-50/65",
+  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-600/15",
+)
+
+export const saleOpLightFormPrefix = "border-zinc-200 bg-zinc-50"
+
+export const saleOpLightFormInput = cn(
+  saleOpLightFormSurface,
+  "h-11 w-full rounded-xl px-3 text-base shadow-none ring-0 outline-none transition-colors",
+  "placeholder:text-zinc-400 dark:placeholder:text-zinc-400",
+  "focus-visible:border-emerald-600/50 focus-visible:ring-2 focus-visible:ring-emerald-600/20",
+)
+
+export const saleOpLightSelectContent = cn(
+  "z-[120] max-h-60",
+  saleOpLightFormSurface,
+)
+
+export const saleOpLightSelectItem =
+  "focus:bg-zinc-100 focus:text-zinc-900 data-[highlighted]:bg-zinc-100 data-[highlighted]:text-zinc-900 dark:focus:bg-zinc-100 dark:focus:text-zinc-900 dark:data-[highlighted]:bg-zinc-100 dark:data-[highlighted]:text-zinc-900"
 
 export const saleOpChannelHint =
   "flex items-center gap-2 rounded-xl border border-border/50 bg-muted/10 px-3.5 py-2.5 text-xs leading-relaxed text-muted-foreground"

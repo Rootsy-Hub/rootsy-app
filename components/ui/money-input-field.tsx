@@ -104,7 +104,7 @@ export function MoneyInputField({
         onFocus={handleFocus}
         onBlur={handleBlur}
         className={cn(
-          "h-11 min-w-0 flex-1 basis-0 !w-auto px-3 font-mono text-base tabular-nums tracking-tight",
+          "h-11 min-w-0 flex-1 basis-0 !w-auto px-3 font-numeric text-base tabular-nums tracking-tight",
           inputClassName,
         )}
       />

@@ -10,8 +10,8 @@ import {
 } from "@/app/[siteId]/[popId]/printers/actions"
 import { DataWorkspaceTableEmptyMascot } from "@/components/data-workspace/DataWorkspaceListTablePrimitives"
 import {
+  workspaceTableListBodyScopeClass,
   workspaceTableSurfaceClass,
-  workspaceTableSurfaceGlowClass,
 } from "@/components/data-workspace/dataWorkspaceListStyles"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
@@ -388,9 +388,9 @@ function PrintersPage() {
                 className={cn(
                   "relative flex min-h-[min(55vh,28rem)] flex-col overflow-hidden rounded-2xl border border-border/80 shadow-md shadow-primary/[0.04] [--dw-table-footer-height:1.5rem]",
                   workspaceTableSurfaceClass,
+                  workspaceTableListBodyScopeClass,
                 )}
               >
-                <div className={workspaceTableSurfaceGlowClass} aria-hidden />
                 <Table>
                   <TableHeader>
                     <TableRow className="border-border bg-muted/40 hover:bg-muted/40">

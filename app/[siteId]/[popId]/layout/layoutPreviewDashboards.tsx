@@ -71,7 +71,7 @@ const pieColors = [
 ]
 
 const chartAxisMono =
-  "[&_.recharts-cartesian-axis-tick_text]:font-mono [&_.recharts-cartesian-axis-tick_text]:tabular-nums"
+  "[&_.recharts-cartesian-axis-tick_text]:font-numeric [&_.recharts-cartesian-axis-tick_text]:tabular-nums"
 
 export function LayoutPreviewReportsDashboard() {
   return (
@@ -114,14 +114,14 @@ export function LayoutPreviewReportsDashboard() {
             <p className="text-[11px] font-medium uppercase tracking-[0.12em] text-muted-foreground">
               {k.label}
             </p>
-            <p className="mt-1 font-mono text-2xl font-semibold tabular-nums tracking-tight text-foreground">
+            <p className="mt-1 font-numeric text-2xl font-semibold tabular-nums tracking-tight text-foreground">
               {k.value}
             </p>
             <div className="mt-2 flex items-center justify-between gap-2 text-xs">
               <span className="text-muted-foreground">{k.hint}</span>
               <span
                 className={cn(
-                  "font-mono font-medium tabular-nums",
+                  "font-numeric font-medium tabular-nums",
                   k.up ? "text-emerald-600" : "text-amber-700",
                 )}
               >
@@ -207,7 +207,7 @@ export function LayoutPreviewReportsDashboard() {
                   />
                   {c.rubro}
                 </span>
-                <span className="font-mono font-medium tabular-nums text-foreground">
+                <span className="font-numeric font-medium tabular-nums text-foreground">
                   {c.valor}%
                 </span>
               </li>
@@ -278,13 +278,13 @@ export function LayoutPreviewSummaryDashboard() {
             <p className="text-[11px] font-medium uppercase tracking-[0.14em] text-muted-foreground">
               {k.label}
             </p>
-            <p className="mt-2 font-mono text-3xl font-bold tabular-nums tracking-tight text-foreground">
+            <p className="mt-2 font-numeric text-3xl font-bold tabular-nums tracking-tight text-foreground">
               {k.value}
             </p>
             <p className="mt-1 text-xs text-muted-foreground">
               {k.label === "Cobranzas hoy" ? (
                 <>
-                  <span className="font-mono tabular-nums">3</span> comprobantes
+                  <span className="tabular-nums">3</span> comprobantes
                 </>
               ) : (
                 k.sub
@@ -338,7 +338,7 @@ export function LayoutPreviewSummaryDashboard() {
               <li key={g.name}>
                 <div className="mb-1.5 flex justify-between text-xs">
                   <span className="text-foreground">{g.name}</span>
-                  <span className="font-mono font-medium tabular-nums text-primary">
+                  <span className="font-numeric font-medium tabular-nums text-primary">
                     {g.pct}%
                   </span>
                 </div>

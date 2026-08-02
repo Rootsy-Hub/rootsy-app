@@ -2,9 +2,9 @@
 
 import type { OperationSaleRow } from "@/app/[siteId]/[popId]/operations/actions"
 import { getChannelOperationTicketDisplay } from "@/app/[siteId]/[popId]/operations/actions"
-import type { ChannelCheckoutTicketDisplay } from "@/lib/buildChannelCheckoutTicketDisplay"
 import { MostradorCartLineDisplay } from "@/components/sale-operation/MostradorCartLineDisplay"
 import { SaleReadonlyTicketPanel } from "@/components/sale-operation/SaleReadonlyTicketPanel"
+import type { ChannelCheckoutTicketDisplay } from "@/lib/buildChannelCheckoutTicketDisplay"
 import {
   groupMostradorCartDisplayRows,
   pricingForMostradorRow,

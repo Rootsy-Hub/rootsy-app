@@ -605,10 +605,10 @@ function InvoicesPage() {
                                 <TableCell className="max-w-[180px] truncate text-sm text-foreground/90">
                                   {inv.receptorRazonSocial || "—"}
                                 </TableCell>
-                                <TableCell className="text-right text-sm font-semibold tabular-nums text-primary">
+                                <TableCell className="text-right text-sm font-semibold font-numeric tabular-nums text-primary">
                                   {fmt.format(inv.impTotal)}
                                 </TableCell>
-                                <TableCell className="max-w-[100px] truncate font-mono text-xs text-muted-foreground">
+                                <TableCell className="max-w-[100px] truncate text-xs text-muted-foreground">
                                   {inv.cae ?? "—"}
                                 </TableCell>
                                 <TableCell>
@@ -640,7 +640,7 @@ function InvoicesPage() {
                                             Venta (id)
                                           </p>
                                           <p
-                                            className="font-mono text-sm font-medium text-foreground"
+                                            className="text-sm font-medium text-foreground"
                                             title={inv.saleId ?? undefined}
                                           >
                                             {shortId(inv.saleId)}
@@ -793,7 +793,7 @@ function InvoicesPage() {
                     <summary className="cursor-pointer text-xs font-medium text-destructive/90">
                       Detalle técnico (copiar para soporte)
                     </summary>
-                    <pre className="mt-2 max-h-52 overflow-auto whitespace-pre-wrap break-all rounded-lg border border-border bg-muted/60 p-2 font-mono text-[11px] leading-snug text-foreground">
+                    <pre className="mt-2 max-h-52 overflow-auto whitespace-pre-wrap break-all rounded-lg border border-border bg-muted/60 p-2 text-[11px] leading-snug text-foreground">
                       {composeDebugFecae}
                     </pre>
                   </details>
@@ -832,7 +832,7 @@ function InvoicesPage() {
                     </p>
                     <p className="mt-1 text-xs text-muted-foreground">
                       Punto de venta AFIP:{" "}
-                      <span className="font-mono tabular-nums text-foreground">
+                      <span className="tabular-nums text-foreground">
                         {formCtx.cashSession.ptoVta ?? "—"}
                       </span>
                     </p>
@@ -901,7 +901,7 @@ function InvoicesPage() {
                         type="number"
                         defaultValue={99}
                         min={0}
-                        className="rounded-xl font-mono tabular-nums"
+                        className="rounded-xl font-numeric tabular-nums"
                       />
                     </div>
                     <div className="space-y-1.5">
@@ -911,7 +911,7 @@ function InvoicesPage() {
                         name="docNro"
                         type="text"
                         defaultValue="0"
-                        className="rounded-xl font-mono tabular-nums"
+                        className="rounded-xl font-numeric tabular-nums"
                       />
                     </div>
                   </div>
@@ -992,7 +992,7 @@ function InvoicesPage() {
                       min={0}
                       max={99999}
                       required
-                      className="rounded-xl font-mono tabular-nums"
+                      className="rounded-xl font-numeric tabular-nums"
                     />
                   </div>
                   <div className="space-y-1.5">
@@ -1016,7 +1016,7 @@ function InvoicesPage() {
                         type="number"
                         defaultValue={99}
                         min={0}
-                        className="rounded-xl font-mono tabular-nums"
+                        className="rounded-xl font-numeric tabular-nums"
                       />
                     </div>
                     <div className="space-y-1.5">
@@ -1026,7 +1026,7 @@ function InvoicesPage() {
                         name="docNro"
                         type="text"
                         defaultValue="0"
-                        className="rounded-xl font-mono tabular-nums"
+                        className="rounded-xl font-numeric tabular-nums"
                       />
                     </div>
                   </div>
@@ -1110,7 +1110,7 @@ function InvoicesPage() {
                   <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
                     CAE
                   </p>
-                  <p className="mt-1 break-all font-mono text-lg font-semibold tracking-tight text-foreground">
+                  <p className="mt-1 break-all text-lg font-semibold tracking-tight text-foreground">
                     {issuedHighlight.cae}
                   </p>
                   <div className="mt-3 flex flex-wrap gap-2">
@@ -1133,7 +1133,7 @@ function InvoicesPage() {
                     <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
                       Punto / Número
                     </p>
-                    <p className="mt-0.5 font-mono text-sm font-semibold tabular-nums text-foreground">
+                    <p className="mt-0.5 font-numeric text-sm font-semibold tabular-nums text-foreground">
                       {issuedHighlight.ptoVta} — {issuedHighlight.cbteNro}
                     </p>
                   </div>

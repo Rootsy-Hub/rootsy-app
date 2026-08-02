@@ -245,7 +245,7 @@ function HomePage() {
                             {pop.name}
                           </span>
                           <span
-                            className="mt-1 text-center font-mono text-[10px] font-semibold uppercase tracking-wider text-white/42"
+                            className="mt-1 text-center text-[10px] font-semibold uppercase tracking-wider text-white/42"
                             title="Site ID"
                           >
                             {pop.siteId}

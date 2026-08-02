@@ -106,7 +106,11 @@ function LayoutPreviewPage() {
         ) : null}
 
         {activeId === "list" ? (
-          <LayoutPreviewListTable siteId={siteId} popId={popId} />
+          <LayoutPreviewListTable
+            siteId={siteId}
+            popId={popId}
+            listFetching={bootstrapLoading}
+          />
         ) : (
           <>
             {panelCopy ? (

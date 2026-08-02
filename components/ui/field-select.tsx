@@ -15,6 +15,7 @@ type FieldSelectProps = {
   onValueChange: (value: string) => void
   id?: string
   placeholder?: string
+  disabled?: boolean
   className?: string
   prefixClassName?: string
   prefixIcon?: ReactNode
@@ -27,6 +28,7 @@ export function FieldSelect({
   onValueChange,
   id,
   placeholder,
+  disabled,
   className,
   prefixClassName,
   prefixIcon,
@@ -34,7 +36,7 @@ export function FieldSelect({
   children,
 }: FieldSelectProps) {
   return (
-    <Select value={value} onValueChange={onValueChange}>
+    <Select value={value} onValueChange={onValueChange} disabled={disabled}>
       <SelectTrigger
         id={id}
         className={cn(

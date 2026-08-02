@@ -40,7 +40,7 @@ function MoneyRow({
       <span className="min-w-0 text-sm text-muted-foreground">{label}</span>
       <span
         className={cn(
-          "shrink-0 font-mono text-sm font-semibold tabular-nums",
+          "shrink-0 font-numeric text-sm font-semibold tabular-nums",
           tdMoneyClass,
           tone === "positive" && "text-emerald-700",
           tone === "negative" && "text-destructive",
@@ -117,7 +117,7 @@ function OperationsKpiStat({
   )
 
   const valueClassName = cn(
-    "mt-1.5 font-mono text-2xl font-bold tabular-nums tracking-tight",
+    "mt-1.5 font-numeric text-2xl font-bold tabular-nums tracking-tight",
     active ? "text-foreground" : "text-foreground/80",
   )
 

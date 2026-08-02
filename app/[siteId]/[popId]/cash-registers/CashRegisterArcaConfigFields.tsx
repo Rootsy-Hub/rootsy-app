@@ -1,11 +1,15 @@
 "use client"
 
 import { CashRegisterArcaPtoVtaSelect } from "@/app/[siteId]/[popId]/cash-registers/CashRegisterDialogSelects"
-import { CheckoutSectionLabel, CheckoutSectionPanel } from "@/components/checkout/CheckoutFormFields"
+import { CheckoutSectionLabel } from "@/components/checkout/CheckoutFormFields"
 import { Button } from "@/components/ui/button"
 import { DatePicker } from "@/components/ui/date-picker"
 import { cn } from "@/lib/utils"
-import { saleOpChannelFormField } from "@/components/sale-operation/saleOperationStyles"
+import {
+  saleOpLightFormPrefix,
+  saleOpLightFormSurface,
+  saleOpLightUploadZone,
+} from "@/components/sale-operation/saleOperationStyles"
 import { format, parseISO } from "date-fns"
 import { es as esLocale } from "date-fns/locale"
 import { FileKey, FileText, Upload, X, type LucideIcon } from "lucide-react"
@@ -79,8 +83,13 @@ export function ArcaPemFileField({
       />
 
       {displayName ? (
-        <div className="flex items-center gap-3 rounded-xl border border-border/60 bg-background px-3 py-2.5">
-          <div className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
+        <div
+          className={cn(
+            saleOpLightFormSurface,
+            "flex items-center gap-3 rounded-xl px-3.5 py-3",
+          )}
+        >
+          <div className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-zinc-50 text-zinc-500">
             <Icon className="size-4" aria-hidden />
           </div>
           <div className="min-w-0 flex-1">
@@ -122,13 +131,11 @@ export function ArcaPemFileField({
           type="button"
           onClick={() => inputRef.current?.click()}
           className={cn(
-            "flex w-full flex-col items-center gap-1.5 rounded-xl border border-dashed border-border/70",
-            "bg-background px-4 py-5 text-sm transition-colors",
-            "hover:border-primary/35 hover:bg-primary/3",
-            "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/25",
+            saleOpLightUploadZone,
+            "flex w-full flex-col items-center gap-1.5 px-4 py-5 text-sm",
           )}
         >
-          <Upload className="size-5 text-muted-foreground" aria-hidden />
+          <Upload className="size-5 text-zinc-400" aria-hidden />
           <span className="font-medium text-foreground">{emptyHint}</span>
           <span className="text-xs text-muted-foreground">{extensionsHint}</span>
         </button>
@@ -177,7 +184,7 @@ export function CashRegisterArcaConfigFields({
   filesHint = "Subí ambos archivos juntos para reemplazar el par guardado, o dejalos vacíos para conservarlo.",
 }: ArcaConfigFieldsProps) {
   return (
-    <CheckoutSectionPanel>
+    <div className="space-y-5">
       <CheckoutSectionLabel>Configuración ARCA de esta caja</CheckoutSectionLabel>
 
       <div className="space-y-2.5">
@@ -196,7 +203,13 @@ export function CashRegisterArcaConfigFields({
           value={arcaExpiresAt}
           onChange={onArcaExpiresAtChange}
           placeholder="Elegí el vencimiento"
-          className={cn(saleOpChannelFormField, "h-11 w-full rounded-xl")}
+          light
+          variant="field"
+          className={cn(
+            saleOpLightFormSurface,
+            "h-11 w-full overflow-hidden rounded-xl p-0 shadow-none",
+          )}
+          prefixClassName={saleOpLightFormPrefix}
         />
       </div>
 
@@ -229,7 +242,7 @@ export function CashRegisterArcaConfigFields({
         icon={FileKey}
       />
 
-      <p className="text-xs text-muted-foreground">{filesHint}</p>
-    </CheckoutSectionPanel>
+      <p className="text-xs leading-relaxed text-muted-foreground">{filesHint}</p>
+    </div>
   )
 }

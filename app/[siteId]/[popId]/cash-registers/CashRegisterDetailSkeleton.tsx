@@ -58,8 +58,8 @@ function CashRegisterDetailClosedPanelSkeleton() {
 
       <div className="overflow-hidden">
         <div className="border-b border-border/60 bg-muted/30 px-4 py-2.5 lg:px-5">
-          <div className="grid grid-cols-7 gap-3">
-            {Array.from({ length: 7 }).map((_, index) => (
+          <div className="grid grid-cols-5 gap-3">
+            {Array.from({ length: 5 }).map((_, index) => (
               <div key={index} className={cn("h-2.5 w-full max-w-16", sk.pill)} />
             ))}
           </div>
@@ -67,18 +67,19 @@ function CashRegisterDetailClosedPanelSkeleton() {
         {Array.from({ length: 4 }).map((_, index) => (
           <div
             key={index}
-            className="grid grid-cols-7 gap-3 border-b border-border/60 px-4 py-3 last:border-b-0 lg:px-5"
+            className="grid grid-cols-5 gap-3 border-b border-border/60 px-4 py-3 last:border-b-0 lg:px-5"
           >
-            {Array.from({ length: 7 }).map((__, cellIndex) => (
-              <div
-                key={cellIndex}
-                className={cn(
-                  "h-4",
-                  sk.barSm,
-                  cellIndex === 6 ? "w-20" : "w-full max-w-20",
-                )}
-              />
-            ))}
+            <div className={cn("h-4 w-8", sk.barSm)} />
+            <div className="space-y-1.5">
+              <div className={cn("h-4 w-full max-w-32", sk.barSm)} />
+              <div className={cn("h-3 w-full max-w-24", sk.barSm)} />
+            </div>
+            <div className="space-y-1.5">
+              <div className={cn("h-4 w-full max-w-28", sk.barSm)} />
+              <div className={cn("h-3 w-full max-w-20", sk.barSm)} />
+            </div>
+            <div className={cn("h-4 w-full max-w-20 justify-self-end", sk.barSm)} />
+            <div className={cn("h-4 w-full max-w-16 justify-self-end", sk.barSm)} />
           </div>
         ))}
       </div>

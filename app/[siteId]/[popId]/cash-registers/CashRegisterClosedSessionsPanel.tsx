@@ -8,12 +8,10 @@ import {
 } from "@/app/[siteId]/[popId]/cash-registers/cashRegisterFormatters"
 import { DataWorkspacePeriodFilter } from "@/components/data-workspace/DataWorkspacePeriodFilter"
 import { tdMoneyClass } from "@/components/data-workspace/dataWorkspaceListStyles"
-import { Button } from "@/components/ui/button"
 import type { DataWorkspaceDatePreset } from "@/lib/dataWorkspaceDateFilter"
 import { cn } from "@/lib/utils"
 import { usePopTimeZone } from "@/hooks/usePopTimeZone"
-import { Eye } from "lucide-react"
-import { useMemo } from "react"
+import { useMemo, type ReactNode } from "react"
 import type { DateRange } from "react-day-picker"
 
 type Props = {
@@ -40,6 +38,23 @@ function formatArqueoDifferenceDisplay(diff: number | null): {
     text: formatCashRegisterMoney(diff),
     tone: diff > 0 ? "positive" : "negative",
   }
+}
+
+function SessionMomentCell({
+  primary,
+  secondary,
+}: {
+  primary: ReactNode
+  secondary: ReactNode
+}) {
+  return (
+    <div className="min-w-0 py-0.5">
+      <div className="text-sm leading-snug text-foreground">{primary}</div>
+      <div className="mt-0.5 truncate text-xs text-muted-foreground">
+        {secondary}
+      </div>
+    </div>
+  )
 }
 
 export function CashRegisterClosedSessionsPanel({
@@ -88,16 +103,14 @@ export function CashRegisterClosedSessionsPanel({
         </div>
       ) : (
         <div className="overflow-x-auto">
-          <table className="w-full min-w-[920px] border-collapse text-sm">
+          <table className="w-full min-w-[720px] border-collapse text-sm">
             <thead>
               <tr className="border-b border-border/60 bg-muted/30 text-left text-[10px] uppercase tracking-widest text-muted-foreground">
+                <th className="w-16 px-4 py-2.5 lg:px-5">#</th>
                 <th className="px-4 py-2.5 lg:px-5">Apertura</th>
-                <th className="px-4 py-2.5 lg:px-5">Usuario apertura</th>
                 <th className="px-4 py-2.5 lg:px-5">Cierre</th>
-                <th className="px-4 py-2.5 lg:px-5">Usuario cierre</th>
                 <th className="px-4 py-2.5 text-right lg:px-5">Total cobrado</th>
                 <th className="px-4 py-2.5 text-right lg:px-5">Diferencia</th>
-                <th className="px-4 py-2.5 text-right lg:px-5">Acción</th>
               </tr>
             </thead>
             <tbody>
@@ -106,67 +119,85 @@ export function CashRegisterClosedSessionsPanel({
                 const difference = formatArqueoDifferenceDisplay(
                   session.cashArqueoDifference,
                 )
+                const arqueoLabel =
+                  session.arqueoNumber > 0
+                    ? `#${session.arqueoNumber}`
+                    : "—"
+
                 return (
-                <tr
-                  key={session.id}
-                  className={cn(
-                    "border-b border-border/60 text-foreground last:border-b-0",
-                    isOpenSession &&
-                      "sticky top-0 z-10 bg-emerald-50/90 shadow-[0_1px_0_0_var(--border)]",
-                  )}
-                >
-                  <td className="whitespace-nowrap px-4 py-2.5 text-xs text-foreground lg:px-5">
-                    {formatCashRegisterDateTime(session.openedAt, timeZone)}
-                  </td>
-                  <td className="max-w-[9rem] truncate px-4 py-2.5 text-xs text-foreground lg:max-w-[11rem] lg:px-5">
-                    {session.openedByName ?? "—"}
-                  </td>
-                  <td className="whitespace-nowrap px-4 py-2.5 text-xs lg:px-5">
-                    {isOpenSession ? (
-                      <span className="inline-flex items-center rounded-full border border-emerald-200/90 bg-emerald-50/80 px-2 py-0.5 text-[10px] font-medium uppercase tracking-[0.08em] text-emerald-800">
-                        En curso
-                      </span>
-                    ) : session.closedAt ? (
-                      <span className="text-muted-foreground">
-                        {formatCashRegisterDateTime(session.closedAt, timeZone)}
-                      </span>
-                    ) : (
-                      "—"
-                    )}
-                  </td>
-                  <td className="max-w-[9rem] truncate px-4 py-2.5 text-xs text-foreground lg:max-w-[11rem] lg:px-5">
-                    {isOpenSession ? "—" : (session.closedByName ?? "—")}
-                  </td>
-                  <td className={cn("px-4 py-2.5 text-right lg:px-5", tdMoneyClass)}>
-                    {formatCashRegisterMoney(session.totalCobrado)}
-                  </td>
-                  <td
+                  <tr
+                    key={session.id}
+                    role="button"
+                    tabIndex={0}
+                    aria-label={`Ver arqueo ${arqueoLabel}`}
+                    onClick={() => onViewArqueo(session.id)}
+                    onKeyDown={(event) => {
+                      if (event.key === "Enter" || event.key === " ") {
+                        event.preventDefault()
+                        onViewArqueo(session.id)
+                      }
+                    }}
                     className={cn(
-                      "px-4 py-2.5 text-right text-xs lg:px-5",
-                      tdMoneyClass,
-                      difference.tone === "positive" && "text-emerald-700",
-                      difference.tone === "negative" && "text-destructive",
-                      difference.tone === "neutral" && "text-muted-foreground",
-                      difference.tone === "muted" && "text-muted-foreground",
+                      "cursor-pointer border-b border-border/60 text-foreground transition-colors duration-150 last:border-b-0",
+                      isOpenSession
+                        ? "sticky top-0 z-10 bg-emerald-50/90 shadow-[0_1px_0_0_var(--border)] hover:bg-emerald-50"
+                        : "hover:bg-muted/30",
                     )}
                   >
-                    {difference.text}
-                  </td>
-                  <td className="px-4 py-2.5 text-right lg:px-5">
-                    <Button
-                      type="button"
-                      size="sm"
-                      variant="outline"
+                    <td className="whitespace-nowrap px-4 py-2.5 text-sm font-medium tabular-nums text-muted-foreground lg:px-5">
+                      {arqueoLabel}
+                    </td>
+                    <td className="px-4 py-2.5 lg:px-5">
+                      <SessionMomentCell
+                        primary={formatCashRegisterDateTime(
+                          session.openedAt,
+                          timeZone,
+                        )}
+                        secondary={session.openedByName ?? "—"}
+                      />
+                    </td>
+                    <td className="px-4 py-2.5 lg:px-5">
+                      <SessionMomentCell
+                        primary={
+                          isOpenSession ? (
+                            <span className="inline-flex items-center rounded-full border border-emerald-200/90 bg-emerald-50/80 px-2 py-0.5 text-[10px] font-medium uppercase tracking-[0.08em] text-emerald-800">
+                              En curso
+                            </span>
+                          ) : session.closedAt ? (
+                            formatCashRegisterDateTime(
+                              session.closedAt,
+                              timeZone,
+                            )
+                          ) : (
+                            "—"
+                          )
+                        }
+                        secondary={
+                          isOpenSession ? "—" : (session.closedByName ?? "—")
+                        }
+                      />
+                    </td>
+                    <td
                       className={cn(
-                        "gap-1.5 border-border/80 bg-background font-medium shadow-sm",
+                        "px-4 py-2.5 text-right font-bold lg:px-5",
+                        tdMoneyClass,
                       )}
-                      onClick={() => onViewArqueo(session.id)}
                     >
-                      <Eye className="size-3.5" aria-hidden />
-                      Ver arqueo
-                    </Button>
-                  </td>
-                </tr>
+                      {formatCashRegisterMoney(session.totalCobrado)}
+                    </td>
+                    <td
+                      className={cn(
+                        "px-4 py-2.5 text-right lg:px-5",
+                        tdMoneyClass,
+                        difference.tone === "positive" && "text-emerald-700",
+                        difference.tone === "negative" && "text-destructive",
+                        difference.tone === "neutral" && "text-muted-foreground",
+                        difference.tone === "muted" && "text-muted-foreground",
+                      )}
+                    >
+                      {difference.text}
+                    </td>
+                  </tr>
                 )
               })}
             </tbody>

@@ -15,18 +15,18 @@ export const dataWorkspaceFlushBottomShellCard = cn(
 export const dataWorkspaceEntityCardsGridClass =
   "grid w-full gap-4 grid-cols-[repeat(auto-fill,minmax(min(100%,18rem),1fr))]"
 
-/** Superficie del listado (flush): tono suave con gradiente, no blanco plano. */
+/** Superficie del listado flush (tablas layout workspace). */
 export const workspaceTableSurfaceClass =
-  "bg-[linear-gradient(180deg,oklch(0.988_0.005_115)_0%,oklch(0.972_0.013_132)_52%,oklch(0.984_0.008_118)_100%)]"
+  "bg-white dark:bg-white"
 
-/** Brillo ambiental sobre la superficie de tabla. */
+/** @deprecated Ya no se usa; el brillo radial quedó desactivado en tablas flush. */
 export const workspaceTableSurfaceGlowClass =
   "pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_85%_60%_at_100%_100%,oklch(0.72_0.11_155/0.08),transparent_60%),radial-gradient(ellipse_50%_42%_at_0%_0%,oklch(0.88_0.06_140/0.07),transparent_55%)]"
 
-/** Encabezado sticky sobre superficie con gradiente. */
+/** Encabezado sticky sobre superficie blanca. */
 export const workspaceTableHeaderCellClass = cn(
-  "sticky top-0 z-20 h-10 border-b border-border/45 px-2 py-2 text-[11px] font-bold uppercase tracking-[0.12em] text-foreground/75",
-  "bg-[oklch(0.978_0.01_125/0.9)] shadow-[0_1px_0_0_oklch(0.88_0.02_130/0.28)] backdrop-blur-md",
+  "sticky top-0 z-20 h-10 border-b border-zinc-200/70 px-2 py-2 text-[11px] font-bold uppercase tracking-[0.12em] text-foreground/75",
+  "bg-zinc-50/98 shadow-[0_1px_0_0_rgba(0,0,0,0.04)] backdrop-blur-md dark:bg-zinc-50/98",
 )
 
 export const toolbarBlockLabelClass =
@@ -158,33 +158,60 @@ export const workspaceTableSelectableTextClass =
   "select-text [&_th]:select-text [&_td]:select-text"
 
 /** Alcance en el frame de tabla para reactivar selección bajo un shell select-none. */
-export const workspaceTableFrameSelectableScopeClass =
-  "[&_table]:select-text [&_table_th]:select-text [&_table_td]:select-text"
-
-/** Tablas de datos dentro del shell workspace (scroll horizontal común). */
-export const workspaceDataTableClassName = cn(
-  "relative w-full min-w-[80rem] table-fixed caption-bottom text-sm",
-  workspaceTableSelectableTextClass,
+export const workspaceTableListBodyScopeClass = cn(
+  "[&_[data-slot=table-body]_[data-slot=table-cell]]:align-middle",
+  "[&_[data-slot=table-body]_[data-slot=table-cell]]:!py-2.5",
+  "[&_[data-slot=table-body]_[data-slot=table-cell]:not(:has([role=checkbox]))]:px-3",
+  "[&_[data-slot=table-body]_[data-slot=table-cell]:has([role=checkbox])]:!w-12",
+  "[&_[data-slot=table-body]_[data-slot=table-cell]:has([role=checkbox])]:!px-0",
+  "[&_[data-slot=table-body]_[data-slot=table-cell]:has([role=checkbox])]:!py-2",
 )
 
-/** Precios e importes: monoespacio + alineación numérica estable. */
+export const workspaceTableFrameSelectableScopeClass = cn(
+  "[&_table]:select-text [&_table_th]:select-text [&_table_td]:select-text",
+  workspaceTableListBodyScopeClass,
+)
+
+/** Celda estándar de fila (layout preview / listados workspace). */
+export const workspaceTableBodyCellClass = "px-3 py-2.5 align-middle text-sm"
+
+/** Columna de selección (checkbox). */
+export const workspaceTableSelectBodyCellClass =
+  "w-12 !px-0 py-2 align-middle"
+
+/** Columna de acciones con íconos. */
+export const workspaceTableActionsBodyCellClass = "px-1 py-1.5 align-middle"
+
+/** Tablas de datos dentro del shell workspace (scroll horizontal común). */
+export const workspaceTableLayoutClassName = cn(
+  "relative w-full min-w-full table-fixed caption-bottom text-sm",
+  workspaceTableSelectableTextClass,
+  "[&_th:last-child]:pr-5 [&_td:last-child]:pr-5",
+)
+
+export const workspaceDataTableClassName = cn(
+  workspaceTableLayoutClassName,
+  "min-w-[80rem]",
+)
+
+/** Precios e importes: Inter + alineación numérica estable. */
 export const tdMoneyClass =
-  "font-mono text-[13px] tabular-nums tracking-tight text-foreground"
+  "font-numeric text-[13px] tabular-nums tracking-tight text-foreground"
 
 export const tdMoneyMutedClass =
-  "font-mono text-[13px] tabular-nums tracking-tight text-muted-foreground"
+  "font-numeric text-[13px] tabular-nums tracking-tight text-muted-foreground"
 
 /** Total cobrado / importe principal. */
 export const tdMoneyTotalClass =
-  "font-mono text-[13px] font-semibold tabular-nums tracking-tight text-emerald-700"
+  "font-numeric text-[13px] font-semibold tabular-nums tracking-tight text-emerald-700"
 
 /** Descuentos aplicados. */
 export const tdMoneyDiscountClass =
-  "font-mono text-[13px] font-medium tabular-nums tracking-tight text-amber-700"
+  "font-numeric text-[13px] font-medium tabular-nums tracking-tight text-amber-700"
 
 /** IVA u otros impuestos. */
 export const tdMoneyVatClass =
-  "font-mono text-[13px] font-medium tabular-nums tracking-tight text-sky-700"
+  "font-numeric text-[13px] font-medium tabular-nums tracking-tight text-sky-700"
 
 /** Cliente registrado (enlace a ficha). */
 export const tdClientLinkedClass =
@@ -199,26 +226,30 @@ export const tdClientAnonymousClass =
   "block min-w-0 max-w-full truncate text-sm text-muted-foreground"
 
 /** Celda de tabla con nombre/etiqueta larga (cliente, proveedor, categoría). */
-export const tdTruncatedNameCellClass =
-  "w-[14rem] min-w-0 max-w-[14rem] overflow-hidden px-3 py-2.5 text-sm"
+export const tdTruncatedNameCellClass = cn(
+  workspaceTableBodyCellClass,
+  "w-[14rem] min-w-0 max-w-[14rem] overflow-hidden",
+)
 
 /** Celda de tabla con texto secundario truncable (comprobante, medio de pago). */
-export const tdTruncatedTextCellClass =
-  "min-w-0 max-w-[12rem] overflow-hidden px-3 py-2.5 text-sm"
+export const tdTruncatedTextCellClass = cn(
+  workspaceTableBodyCellClass,
+  "min-w-0 max-w-[12rem] overflow-hidden",
+)
 
 /** Fila de encabezado de tabla (sin hover). */
 export const workspaceTableHeaderRowClass = "border-0 hover:bg-transparent"
 
 /** Filas de carga / vacío / mensajes (sin hover). */
 export const workspaceTablePlaceholderRowClass = cn(
-  "border-b border-border/40 bg-muted/25",
-  "hover:bg-muted/25 pointer-events-none",
+  "border-b border-zinc-200/55 bg-white",
+  "hover:bg-white pointer-events-none dark:bg-white",
 )
 
 /** Filas de detalle expandido o contenido anidado (sin hover). */
 export const workspaceTableStaticRowClass = cn(
-  "border-b border-border/40 bg-muted/30",
-  "hover:bg-muted/30",
+  "border-b border-zinc-200/55 bg-zinc-50/95",
+  "hover:bg-zinc-50/95 dark:bg-zinc-50/95",
 )
 
 export function workspaceTableBodyRowClassNames(
@@ -226,10 +257,12 @@ export function workspaceTableBodyRowClassNames(
   options?: { selected?: boolean },
 ): string {
   return cn(
-    "border-b border-border/40 transition-colors duration-150",
-    "hover:bg-primary/[0.07]",
-    index % 2 === 0 ? "bg-transparent" : "bg-foreground/[0.022]",
+    "border-b border-zinc-200/55 transition-colors duration-150",
+    "hover:bg-zinc-100/75",
+    index % 2 === 0
+      ? "bg-white dark:bg-white"
+      : "bg-zinc-50/95 dark:bg-zinc-50/95",
     options?.selected &&
-      "bg-primary/[0.09] hover:bg-primary/[0.11] ring-1 ring-inset ring-primary/15",
+      "bg-emerald-50/90 hover:bg-emerald-50 ring-1 ring-inset ring-emerald-600/12",
   )
 }

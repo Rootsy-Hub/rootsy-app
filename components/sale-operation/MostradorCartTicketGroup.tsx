@@ -9,12 +9,16 @@ type Props = {
   group: MostradorCartDisplayGroup
   renderRow: (row: MostradorCartDisplayGroup["rows"][number]) => ReactNode
   compactLayout?: boolean
+  importeClassName?: string
+  discountBadgeClassName?: string
 }
 
 export function MostradorCartTicketGroup({
   group,
   renderRow,
   compactLayout = false,
+  importeClassName,
+  discountBadgeClassName,
 }: Props) {
   const hasPromoHeader = Boolean(group.promoLabel?.trim())
   const variant = group.promoVariant ?? "promotion"
@@ -50,6 +54,8 @@ export function MostradorCartTicketGroup({
             discountMode={group.promoDiscountMode}
             pricing={group.groupPricing}
             compactLayout={compactLayout}
+            importeClassName={importeClassName}
+            discountBadgeClassName={discountBadgeClassName}
           />
           <div className="bg-gradient-to-b from-emerald-50/35 to-white">
             {group.rows.map((row, index) => (
@@ -72,6 +78,8 @@ export function MostradorCartTicketGroup({
             discountMode={group.promoDiscountMode}
             pricing={group.groupPricing}
             compactLayout={compactLayout}
+            importeClassName={importeClassName}
+            discountBadgeClassName={discountBadgeClassName}
           />
           <div className="bg-gradient-to-b from-violet-50/35 to-white">
             {group.rows.map((row, index) => (

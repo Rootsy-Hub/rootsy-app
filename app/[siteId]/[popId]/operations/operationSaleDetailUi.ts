@@ -1,6 +1,5 @@
 import type { OperationSaleChannel } from "@/app/[siteId]/[popId]/operations/actions"
 import { popDateTimeIntlOptions } from "@/lib/popTimezone"
-
 export function operationSaleDetailTitle(channel: OperationSaleChannel): string {
   switch (channel) {
     case "table":

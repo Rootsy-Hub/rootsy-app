@@ -9,14 +9,26 @@ import {
 } from "@/app/[siteId]/[popId]/operations/operationSaleDetailUi"
 
 type Props = {
+  saleId: string
   context: OperationSaleDetailContext
   timeZone?: string
 }
 
-export function OperationSaleDetailMeta({ context, timeZone }: Props) {
+function SaleDetailIdField({ saleId }: { saleId: string }) {
+  return (
+    <OperationSaleDetailField label="ID">
+      <span className="break-all text-[11px] leading-snug text-muted-foreground">
+        {saleId}
+      </span>
+    </OperationSaleDetailField>
+  )
+}
+
+export function OperationSaleDetailMeta({ saleId, context, timeZone }: Props) {
   if (context.channel === "table") {
     return (
       <div className="divide-y divide-border/45">
+        <SaleDetailIdField saleId={saleId} />
         {context.tableLabel ? (
           <OperationSaleDetailField label="Mesa">
             {context.tableLabel}
@@ -65,6 +77,7 @@ export function OperationSaleDetailMeta({ context, timeZone }: Props) {
   if (context.channel === "counter") {
     return (
       <div className="divide-y divide-border/45">
+        <SaleDetailIdField saleId={saleId} />
         {context.counterOrderLabel ? (
           <OperationSaleDetailField label="Pedido">
             {context.counterOrderLabel}
@@ -131,6 +144,7 @@ export function OperationSaleDetailMeta({ context, timeZone }: Props) {
 
   return (
     <div className="divide-y divide-border/45">
+      <SaleDetailIdField saleId={saleId} />
       <OperationSaleDetailField label="Hora de la venta">
         {formatOperationDetailTimestamp(context.soldAt, timeZone)}
       </OperationSaleDetailField>

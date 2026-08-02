@@ -56,8 +56,9 @@ Objetivo: que la app recuerde a los **menús de juegos premium en PS5** (limpiez
 
 ### Tipografía
 
-- **Sans:** Nunito (`font-sans`, variable `--font-nunito`).
-- **Mono:** Geist Mono (`font-mono`, variable `--font-geist-mono`) para atajos, códigos, datos tabulares.
+- **Sans:** Nunito Sans (`font-sans`, variable `--font-nunito-sans`) para UI general.
+- **Numérica:** Inter (`font-numeric`, variable `--font-inter`) para importes, totales y columnas de montos (`tabular-nums`).
+- **Secundaria:** Source Sans 3 (`font-secondary`) en marketing / landing.
 
 ---
 

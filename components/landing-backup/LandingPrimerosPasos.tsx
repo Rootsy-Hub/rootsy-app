@@ -46,7 +46,7 @@ export function LandingPrimerosPasos({ onGoToView }: LandingPrimerosPasosProps) 
                 "hover:border-meadow/30 hover:bg-card/55 hover:shadow-[0_0_36px_-12px_rgba(16,185,129,0.35)]",
               )}
             >
-              <span className="font-mono text-[11px] font-bold tracking-[0.2em] text-meadow/80">
+              <span className="text-[11px] font-bold tracking-[0.2em] text-meadow/80">
                 {paso.n}
               </span>
               <p className="mt-2 text-base font-bold text-foreground sm:text-lg">

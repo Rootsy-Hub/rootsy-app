@@ -28,7 +28,6 @@ import {
   promotionDialogHeaderClass,
   promotionDialogSurfaceWideClass,
   promotionFormFieldClass,
-  promotionsStockTableClassName,
 } from "@/app/[siteId]/[popId]/promotions/promotionConstants"
 import { buildPaginationItems } from "@/app/[siteId]/[popId]/layout/layoutPreviewPagination"
 import { DataWorkspaceListPaginationFooter } from "@/components/data-workspace/DataWorkspaceListPaginationFooter"
@@ -52,9 +51,12 @@ import {
   tdTruncatedNameCellClass,
   tdTruncatedTextCellClass,
   toolbarBlockLabelClass,
+  workspaceDataTableClassName,
   workspaceTableBodyRowClassNames,
   workspaceTableHeaderRowClass,
 } from "@/components/data-workspace/dataWorkspaceListStyles"
+import { WorkspaceTableSkeletonRows } from "@/components/data-workspace/WorkspaceTableSkeleton"
+import { promotionsSkeletonColumns } from "@/components/data-workspace/workspaceTableSkeletonPresets"
 import { DataWorkspaceLayout } from "@/components/layouts/DataWorkspaceLayout"
 import { DataWorkspaceHeaderIconButton } from "@/components/layouts/DataWorkspaceHeaderIconButton"
 import { Badge } from "@/components/ui/badge"
@@ -349,6 +351,8 @@ function PromotionsPage() {
   const rangeStart =
     totalCount === 0 ? 0 : (page - 1) * pageSize + 1
   const rangeEnd = Math.min(page * pageSize, totalCount)
+
+  const skeletonRowCount = Math.min(12, Math.max(5, pageSize))
   const paginationItems = useMemo(
     () => buildPaginationItems(totalPages, page),
     [totalPages, page],
@@ -584,7 +588,7 @@ function PromotionsPage() {
           }
         >
           <DataWorkspaceListTableFrame>
-            <table className={promotionsStockTableClassName} aria-busy={loading}>
+            <table className={workspaceDataTableClassName} aria-busy={loading}>
             <TableHeader>
               <TableRow className={workspaceTableHeaderRowClass}>
                 <TableHead className={cn(lightTableThClass, "w-24 px-3 text-left")}>
@@ -622,14 +626,13 @@ function PromotionsPage() {
             </TableHeader>
             <TableBody>
               {loading ? (
-                <TableRow>
-                  <TableCell
-                    colSpan={canUpdate || canDelete ? 8 : 7}
-                    className="py-16 text-center text-sm text-muted-foreground"
-                  >
-                    Cargando promociones…
-                  </TableCell>
-                </TableRow>
+                <WorkspaceTableSkeletonRows
+                  rowCount={skeletonRowCount}
+                  rowKeyPrefix="promotions-sk"
+                  columns={promotionsSkeletonColumns({
+                    hasActionsColumn: Boolean(canUpdate || canDelete),
+                  })}
+                />
               ) : (
                 promotions.map((row, index) => (
                   <TableRow

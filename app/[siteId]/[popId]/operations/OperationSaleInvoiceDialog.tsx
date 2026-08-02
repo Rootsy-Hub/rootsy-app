@@ -156,7 +156,7 @@ export function OperationSaleInvoiceDialog({
                 <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
                   CAE
                 </p>
-                <p className="font-mono text-sm text-foreground">
+                <p className="text-sm text-foreground">
                   {inv.cae ?? "—"}
                 </p>
                 {inv.caeFchVto ? (

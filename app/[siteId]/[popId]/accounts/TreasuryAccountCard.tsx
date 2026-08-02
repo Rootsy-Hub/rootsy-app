@@ -61,7 +61,7 @@ function TreasuryStat({
       </p>
       <p
         className={cn(
-          "mt-1 font-mono font-bold tabular-nums tracking-tight text-foreground",
+          "mt-1 font-numeric font-bold tabular-nums tracking-tight text-foreground",
           large ? "mt-1.5 text-2xl" : "text-base sm:text-lg",
         )}
       >

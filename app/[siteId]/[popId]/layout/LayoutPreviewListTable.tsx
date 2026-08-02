@@ -41,8 +41,14 @@ import {
   tableRowSelectCheckboxClass,
   thBase,
   toolbarBlockLabelClass,
-  workspaceTableSelectableTextClass,
+  workspaceTableActionsBodyCellClass,
+  workspaceTableBodyCellClass,
+  workspaceTableBodyRowClassNames,
+  workspaceTableLayoutClassName,
+  workspaceTableSelectBodyCellClass,
 } from "@/components/data-workspace/dataWorkspaceListStyles"
+import { WorkspaceTableSkeletonRows } from "@/components/data-workspace/WorkspaceTableSkeleton"
+import { layoutPreviewSkeletonColumns } from "@/components/data-workspace/workspaceTableSkeletonPresets"
 import { buildPaginationItems } from "@/app/[siteId]/[popId]/layout/layoutPreviewPagination"
 import { cn } from "@/lib/utils"
 import { popScopedHref } from "@/lib/popRoutes"
@@ -154,7 +160,7 @@ const dateCalendarLightClass = cn(
 )
 
 /** Tipografía tabular/mono solo para importes y, si hubiera, porcentajes en cifra. */
-const amountFigureClass = "font-mono tabular-nums"
+const amountFigureClass = "font-numeric tabular-nums"
 
 const toolbarPanelClass = lightToolbarPanelClass
 
@@ -360,9 +366,11 @@ function RowMoreMenu({ rowId }: { rowId: string }) {
 export function LayoutPreviewListTable({
   siteId,
   popId,
+  listFetching = false,
 }: {
   siteId: string
   popId: string
+  listFetching?: boolean
 }) {
   const searchInputId = useId()
   const dateFilterLabelId = useId()
@@ -465,6 +473,8 @@ export function LayoutPreviewListTable({
     () => buildPaginationItems(totalPages, currentPage),
     [totalPages, currentPage],
   )
+
+  const skeletonRowCount = Math.min(12, Math.max(5, pageSize))
 
   const statusFilterNarrow =
     includedStatuses.size < ALL_STATUSES.length
@@ -1065,7 +1075,7 @@ export function LayoutPreviewListTable({
         footer={
           <DataWorkspaceListPaginationFooter
             variant="dark"
-            listFetching={false}
+            listFetching={listFetching}
             totalCount={filteredTotal}
             rangeStart={rangeLabel.start}
             rangeEnd={rangeLabel.end}
@@ -1084,10 +1094,8 @@ export function LayoutPreviewListTable({
         }
       >
         <table
-          className={cn(
-            "relative w-full min-w-[56rem] table-fixed caption-bottom text-sm",
-            workspaceTableSelectableTextClass,
-          )}
+          className={cn(workspaceTableLayoutClassName, "min-w-[56rem]")}
+          aria-busy={listFetching}
         >
           <TableHeader>
             <TableRow className="border-0 hover:bg-transparent">
@@ -1145,18 +1153,19 @@ export function LayoutPreviewListTable({
             </TableRow>
           </TableHeader>
           <TableBody>
-            {pageRows.map((row: LayoutPreviewListRow, i) => (
+            {listFetching ? (
+              <WorkspaceTableSkeletonRows
+                rowCount={skeletonRowCount}
+                rowKeyPrefix="layout-preview-sk"
+                columns={layoutPreviewSkeletonColumns()}
+              />
+            ) : (
+              pageRows.map((row: LayoutPreviewListRow, i) => (
               <TableRow
                 key={row.id}
-                className={cn(
-                  "border-border/50 transition-colors",
-                  i % 2 === 0
-                    ? "bg-white/30"
-                    : "bg-muted/25 dark:bg-muted/15",
-                  "hover:bg-primary/10",
-                )}
+                className={workspaceTableBodyRowClassNames(i)}
               >
-                <TableCell className="w-12 !px-0 py-2 align-middle">
+                <TableCell className={workspaceTableSelectBodyCellClass}>
                   <div className={selectColumnInnerClass}>
                     <Checkbox
                       className={tableRowSelectCheckboxClass}
@@ -1232,7 +1241,7 @@ export function LayoutPreviewListTable({
                 <TableCell className="px-3 py-2.5 align-middle">
                   <StatusBadge status={row.status} />
                 </TableCell>
-                <TableCell className="px-1 py-1.5 align-middle">
+                <TableCell className={cn(workspaceTableActionsBodyCellClass)}>
                   <div className="flex items-center justify-end gap-0.5">
                     <Button
                       type="button"
@@ -1256,7 +1265,8 @@ export function LayoutPreviewListTable({
                   </div>
                 </TableCell>
               </TableRow>
-            ))}
+            ))
+            )}
           </TableBody>
         </table>
       </DataWorkspaceListTableShell>

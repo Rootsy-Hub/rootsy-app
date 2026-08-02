@@ -309,7 +309,7 @@ export function TreasuryReconcileModal({
           >
             {balanceLabel} al {formatTreasuryShortDate(eventDate)}
           </p>
-          <p className="mt-1 font-mono text-3xl font-semibold tabular-nums tracking-tight text-zinc-900">
+          <p className="mt-1 font-numeric text-3xl font-bold tabular-nums tracking-tight text-zinc-900">
             {balanceLoading ? "—" : fmt.format(balanceAsOf)}
           </p>
           {!balanceLoading &&
@@ -406,7 +406,7 @@ export function TreasuryReconcileModal({
                   <span className={cn("min-w-0 leading-snug", lightMuted)}>
                     {isPos ? "Liquidación" : "Pago de consumos"}
                   </span>
-                  <span className="shrink-0 font-mono font-semibold tabular-nums text-zinc-900">
+                  <span className="shrink-0 font-numeric tabular-nums text-zinc-900">
                     {isPos
                       ? fmt.format(
                           roundMoney(principalAmount + adjustmentAmount),
@@ -421,7 +421,7 @@ export function TreasuryReconcileModal({
                         ? TREASURY_RECONCILE_COMMISSIONS_LABEL
                         : TREASURY_CARD_OTHER_CHARGES_LABEL}
                     </span>
-                    <span className="shrink-0 font-mono tabular-nums text-zinc-900">
+                    <span className="shrink-0 font-numeric tabular-nums text-zinc-900">
                       {formatTreasuryMovementAmount("out", adjustmentAmount)}
                     </span>
                   </div>

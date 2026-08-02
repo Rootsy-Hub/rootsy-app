@@ -50,10 +50,10 @@ export function LandingHudTop({ active, onHome }: Pick<LandingHudProps, "active"
 
         <div className="hidden min-w-0 flex-1 sm:block">
           <div className="flex items-center justify-between gap-3">
-            <span className="font-mono text-xs font-bold uppercase tracking-[0.22em] text-meadow">
+            <span className="text-xs font-bold uppercase tracking-[0.22em] text-meadow">
               {meta.label}
             </span>
-            <span className="font-mono text-[11px] tabular-nums tracking-widest text-foreground/40">
+            <span className="text-[11px] tabular-nums tracking-widest text-foreground/40">
               {String(index).padStart(2, "0")}/{String(total).padStart(2, "0")}
             </span>
           </div>
@@ -71,7 +71,7 @@ export function LandingHudTop({ active, onHome }: Pick<LandingHudProps, "active"
           </div>
         </div>
 
-        <span className="ml-auto font-mono text-[11px] font-bold tabular-nums tracking-widest text-foreground/40 sm:hidden">
+        <span className="ml-auto text-[11px] font-bold tabular-nums tracking-widest text-foreground/40 sm:hidden">
           {String(index).padStart(2, "0")}/{String(total).padStart(2, "0")}
         </span>
       </div>
@@ -119,7 +119,7 @@ export function LandingHudDock({
         </div>
 
         {isHome ? (
-          <p className="hidden shrink-0 font-mono text-[10px] uppercase tracking-[0.18em] text-foreground/35 lg:block">
+          <p className="hidden shrink-0 text-[10px] uppercase tracking-[0.18em] text-foreground/35 lg:block">
             ← → Explorar capítulos
           </p>
         ) : (

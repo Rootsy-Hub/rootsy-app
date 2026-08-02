@@ -67,10 +67,12 @@ import {
   tdTruncatedNameCellClass,
   tdTruncatedTextCellClass,
   toolbarBlockLabelClass,
+  workspaceDataTableClassName,
   workspaceTableBodyRowClassNames,
   workspaceTableHeaderRowClass,
-  workspaceTableSelectableTextClass,
 } from "@/components/data-workspace/dataWorkspaceListStyles"
+import { WorkspaceTableSkeletonRows } from "@/components/data-workspace/WorkspaceTableSkeleton"
+import { articlesSkeletonColumns } from "@/components/data-workspace/workspaceTableSkeletonPresets"
 import { DataWorkspaceLayout } from "@/components/layouts/DataWorkspaceLayout"
 import { DataWorkspaceHeaderIconButton } from "@/components/layouts/DataWorkspaceHeaderIconButton"
 import { Badge } from "@/components/ui/badge"
@@ -217,86 +219,6 @@ function parseCatalogFieldsForSubmit(form: ArticleFormState):
     discountValue: discount.discountValue,
     supplierIds: form.supplierIds,
   }
-}
-
-const articlesSk = {
-  bar: "animate-pulse rounded-[3px] bg-muted-foreground/12 dark:bg-muted-foreground/[0.14]",
-  barSm:
-    "animate-pulse rounded-[3px] bg-muted-foreground/8 dark:bg-muted-foreground/11",
-  pill: "animate-pulse rounded-full bg-muted-foreground/12 dark:bg-muted-foreground/[0.14]",
-  box: "animate-pulse rounded-sm bg-muted-foreground/10 dark:bg-muted-foreground/[0.12]",
-} as const
-
-const articlesStockTableClassName = cn(
-  "relative w-max min-w-full caption-bottom text-sm",
-  "[&_th:last-child]:pr-5 [&_td:last-child]:pr-5",
-  workspaceTableSelectableTextClass,
-)
-
-function ArticlesTableSkeletonRows({
-  rowCount,
-  hasActionsColumn,
-}: {
-  rowCount: number
-  hasActionsColumn: boolean
-}) {
-  return (
-    <>
-      {Array.from({ length: rowCount }).map((_, i) => (
-        <TableRow
-          key={`art-sk-${i}`}
-          className={cn(
-            "border-border/50",
-            i % 2 === 0 ? "bg-white/30" : "bg-muted/25 dark:bg-muted/15",
-          )}
-          aria-hidden
-        >
-          <TableCell className="w-12 px-2 py-2 align-middle">
-            <div className={cn("mx-auto size-4 rounded-sm", articlesSk.box)} />
-          </TableCell>
-          <TableCell className="w-24 px-3 py-2 align-middle">
-            <div className={cn("size-20 rounded-lg", articlesSk.box)} />
-          </TableCell>
-          <TableCell className={tdTruncatedNameCellClass}>
-            <div className={cn("h-3.5 w-[72%] max-w-[11rem]", articlesSk.bar)} />
-          </TableCell>
-          <TableCell className="w-[6.5rem] px-2 py-2 align-middle">
-            <div className={cn("mx-auto h-8 w-14 rounded-md", articlesSk.box)} />
-          </TableCell>
-          <TableCell className="w-[7rem] px-3 py-2.5 align-middle">
-            <div className={cn("inline-block h-5 w-16", articlesSk.pill)} />
-          </TableCell>
-          <TableCell className={tdTruncatedTextCellClass}>
-            <div className={cn("h-3.5 w-[6rem]", articlesSk.bar)} />
-          </TableCell>
-          <TableCell className={tdTruncatedTextCellClass}>
-            <div className={cn("h-3.5 w-[6rem]", articlesSk.bar)} />
-          </TableCell>
-          <TableCell className="px-3 py-2.5 text-right align-middle">
-            <div className={cn("ml-auto h-3.5 w-20", articlesSk.bar)} />
-          </TableCell>
-          <TableCell className="px-3 py-2.5 text-right align-middle">
-            <div className={cn("ml-auto h-3.5 w-20", articlesSk.bar)} />
-          </TableCell>
-          <TableCell className="w-[6.5rem] px-3 py-2.5 align-middle">
-            <div className={cn("inline-block h-5 w-16", articlesSk.pill)} />
-          </TableCell>
-          {hasActionsColumn ? (
-            <TableCell className="w-[7.25rem] px-1 py-1.5 align-middle">
-              <div className="flex items-center justify-end gap-0.5">
-                <div
-                  className={cn("size-8 shrink-0 rounded-md", articlesSk.box)}
-                />
-                <div
-                  className={cn("size-8 shrink-0 rounded-md", articlesSk.box)}
-                />
-              </div>
-            </TableCell>
-          ) : null}
-        </TableRow>
-      ))}
-    </>
-  )
 }
 
 type ArticlesAppliedFilters = {
@@ -1475,7 +1397,7 @@ function ArticlesPage() {
             >
               <DataWorkspaceListTableFrame>
               <table
-                className={articlesStockTableClassName}
+                className={workspaceDataTableClassName}
                 aria-busy={listFetching}
               >
                 <TableHeader>
@@ -1552,9 +1474,12 @@ function ArticlesPage() {
                 </TableHeader>
                 <TableBody>
                   {listFetching ? (
-                    <ArticlesTableSkeletonRows
+                    <WorkspaceTableSkeletonRows
                       rowCount={skeletonRowCount}
-                      hasActionsColumn={Boolean(canUpdate || canDelete)}
+                      rowKeyPrefix="articles-sk"
+                      columns={articlesSkeletonColumns({
+                        hasActionsColumn: Boolean(canUpdate || canDelete),
+                      })}
                     />
                   ) : totalCount === 0 ? (
                     null
