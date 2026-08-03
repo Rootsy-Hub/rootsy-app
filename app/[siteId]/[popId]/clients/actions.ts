@@ -18,6 +18,7 @@ import {
   DEFAULT_CLIENT_TABLE_PAGE_SIZE,
 } from "@/app/[siteId]/[popId]/clients/workspaceUrl"
 import { isAllowedSaleComprobanteLabel } from "@/lib/saleComprobantePicker"
+import { hasValidPopFiscalCuit } from "@/lib/popFiscalCuit"
 
 function normalizeIvaCondition(raw: string): string | null {
   const t = raw.trim()
@@ -34,7 +35,29 @@ async function normalizeDefaultInvoiceTypeLabel(
   const t = raw.trim()
   if (!t) return null
   const siteId = await getPopSiteId(popId)
-  if (!isAllowedSaleComprobanteLabel(siteId, t)) return null
+  const popRes = await getPopById(popId)
+  const hasValidFiscalCuit =
+    popRes.success && popRes.pop?.fiscalCuit
+      ? hasValidPopFiscalCuit(popRes.pop.fiscalCuit)
+      : false
+  const settings =
+    popRes.success && popRes.pop?.settings
+      ? (popRes.pop.settings as Record<string, unknown>)
+      : null
+  const emisorIva =
+    settings?.fiscal_iva_condition === "monotributo"
+      ? "monotributo"
+      : "responsable_inscripto"
+  if (
+    !isAllowedSaleComprobanteLabel(
+      siteId,
+      t,
+      emisorIva,
+      hasValidFiscalCuit,
+    )
+  ) {
+    return null
+  }
   return t
 }
 

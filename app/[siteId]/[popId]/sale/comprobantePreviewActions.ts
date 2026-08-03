@@ -4,6 +4,7 @@ import { lookupPadronContribuyente } from "@/lib/argentinaPadronLookup"
 import { mapPadronCondicionIvaToClientEnum } from "@/lib/padronIvaMapping"
 import type { SaleComprobanteEmitterContext } from "@/lib/saleComprobantePreview"
 import { getPopById } from "@/lib/popHelpers"
+import { hasValidPopFiscalCuit } from "@/lib/popFiscalCuit"
 import {
   clientIvaToPopEmisorIva,
   popEmisorIvaConditionLabel,
@@ -28,14 +29,6 @@ async function resolvePopEmisorIva(input: {
   ivaCondition: PopEmisorIvaCondition
   ivaConditionLabel: string
 }> {
-  const cached = resolveEmisorIvaFromSettings(input.settings)
-  if (cached) {
-    return {
-      ivaCondition: cached,
-      ivaConditionLabel: popEmisorIvaConditionLabel(cached),
-    }
-  }
-
   const cuit = String(input.fiscalCuit ?? "").trim()
   if (cuit) {
     const pad = await lookupPadronContribuyente(cuit)
@@ -48,6 +41,14 @@ async function resolvePopEmisorIva(input: {
         ivaConditionLabel:
           padronLabel || popEmisorIvaConditionLabel(ivaCondition),
       }
+    }
+  }
+
+  const cached = resolveEmisorIvaFromSettings(input.settings)
+  if (cached) {
+    return {
+      ivaCondition: cached,
+      ivaConditionLabel: popEmisorIvaConditionLabel(cached),
     }
   }
 
@@ -74,6 +75,7 @@ export async function getPopComprobanteEmitterPreview(
     }
 
     const pop = popRes.pop
+    const hasValidFiscalCuit = hasValidPopFiscalCuit(pop.fiscalCuit)
     let arcaPtoVta: number | null = null
 
     if (cashRegisterId?.trim()) {
@@ -90,10 +92,15 @@ export async function getPopComprobanteEmitterPreview(
       }
     }
 
-    const { ivaCondition, ivaConditionLabel } = await resolvePopEmisorIva({
-      fiscalCuit: pop.fiscalCuit,
-      settings: pop.settings as Record<string, unknown> | undefined,
-    })
+    const { ivaCondition, ivaConditionLabel } = hasValidFiscalCuit
+      ? await resolvePopEmisorIva({
+          fiscalCuit: pop.fiscalCuit,
+          settings: pop.settings as Record<string, unknown> | undefined,
+        })
+      : {
+          ivaCondition: "responsable_inscripto" as const,
+          ivaConditionLabel: "—",
+        }
 
     const emitter: SaleComprobanteEmitterContext = {
       tradeName: String(pop.name ?? "").trim() || "Comercio",
@@ -107,6 +114,7 @@ export async function getPopComprobanteEmitterPreview(
       arcaPtoVta,
       ivaCondition,
       ivaConditionLabel,
+      hasValidFiscalCuit,
     }
 
     return { success: true, emitter }

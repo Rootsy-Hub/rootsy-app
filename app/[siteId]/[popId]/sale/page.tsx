@@ -48,6 +48,7 @@ import { GeneralDiscountDialog } from "@/components/checkout/GeneralDiscountDial
 import { DataWorkspaceLayout } from "@/components/layouts/DataWorkspaceLayout"
 import { useDataWorkspaceSidebar } from "@/components/layouts/useDataWorkspaceSidebar"
 import { useAuth } from "@/context/AuthContextSupabase"
+import { usePopSaleComprobanteFiscalContext } from "@/hooks/usePopSaleComprobanteFiscalContext"
 import { useParams } from "next/navigation"
 import {
   useCallback,
@@ -187,6 +188,11 @@ function SalePage() {
   const params = useParams()
   const siteId = typeof params?.siteId === "string" ? params.siteId : ""
   const popId = typeof params?.popId === "string" ? params.popId : undefined
+  const {
+    hasValidPopFiscalCuit,
+    popEmisorIvaCondition,
+    bootstrapLoaded,
+  } = usePopSaleComprobanteFiscalContext()
   const {
     open: catalogSidebarOpen,
     setOpen: setCatalogSidebarOpen,
@@ -630,19 +636,47 @@ function SalePage() {
       const resolved = resolveSaleComprobanteForClient({
         clientIvaCondition: c.ivaCondition as ClientIvaConditionValue | null,
         defaultInvoiceTypeLabel: c.defaultInvoiceTypeLabel,
+        emisorIva: popEmisorIvaCondition,
       })
-      setComprobante(resolved)
+      if (
+        resolved &&
+        isAllowedSaleComprobanteLabel(
+          invoiceTypeSiteId,
+          resolved,
+          popEmisorIvaCondition,
+          hasValidPopFiscalCuit,
+        )
+      ) {
+        setComprobante(resolved)
+      }
     },
-    [],
+    [hasValidPopFiscalCuit, invoiceTypeSiteId, popEmisorIvaCondition],
   )
 
   const aplicarComprobanteDesdeIva = useCallback(
     (iva: ClientIvaConditionValue | null | undefined) => {
-      if (!iva) return
-      const suggested = suggestSaleComprobanteForClientIva(iva)
-      if (suggested) setComprobante(suggested)
+      if (!iva || !hasValidPopFiscalCuit) return
+      const suggested = suggestSaleComprobanteForClientIva(
+        iva,
+        popEmisorIvaCondition,
+      )
+      if (
+        suggested &&
+        isAllowedSaleComprobanteLabel(
+          invoiceTypeSiteId,
+          suggested,
+          popEmisorIvaCondition,
+          hasValidPopFiscalCuit,
+        )
+      ) {
+        setComprobante(suggested)
+      }
     },
-    [],
+    [
+      hasValidPopFiscalCuit,
+      invoiceTypeSiteId,
+      popEmisorIvaCondition,
+    ],
   )
 
   const quitarClienteVenta = useCallback(() => {
@@ -653,14 +687,25 @@ function SalePage() {
     if (popId) {
       const saved = readSavedSaleComprobante(popId)
       setComprobante(
-        saved !== undefined && isAllowedSaleComprobanteLabel(invoiceTypeSiteId, saved)
+        saved !== undefined &&
+          isAllowedSaleComprobanteLabel(
+            invoiceTypeSiteId,
+            saved,
+            popEmisorIvaCondition,
+            hasValidPopFiscalCuit,
+          )
           ? saved
           : null,
       )
     } else {
       setComprobante(null)
     }
-  }, [popId, invoiceTypeSiteId])
+  }, [
+    popId,
+    invoiceTypeSiteId,
+    popEmisorIvaCondition,
+    hasValidPopFiscalCuit,
+  ])
 
   const ventaIvaLabel = useMemo(
     () =>
@@ -674,8 +719,13 @@ function SalePage() {
     clienteSeleccionado != null && !clienteSeleccionado.manual
 
   const comprobantePickerOptions = useMemo(
-    () => getSaleComprobantePickerOptions(invoiceTypeSiteId),
-    [invoiceTypeSiteId],
+    () =>
+      getSaleComprobantePickerOptions(
+        invoiceTypeSiteId,
+        popEmisorIvaCondition,
+        hasValidPopFiscalCuit,
+      ),
+    [invoiceTypeSiteId, popEmisorIvaCondition, hasValidPopFiscalCuit],
   )
 
   const comprobanteDisplayLabel = useMemo(
@@ -737,15 +787,48 @@ function SalePage() {
   ])
 
   useEffect(() => {
-    if (!popId || comprobanteInitRef.current) return
+    if (!popId || !bootstrapLoaded || comprobanteInitRef.current) return
     comprobanteInitRef.current = true
     const saved = readSavedSaleComprobante(popId)
     if (saved !== undefined) {
       setComprobante(
-        isAllowedSaleComprobanteLabel(invoiceTypeSiteId, saved) ? saved : null,
+        isAllowedSaleComprobanteLabel(
+          invoiceTypeSiteId,
+          saved,
+          popEmisorIvaCondition,
+          hasValidPopFiscalCuit,
+        )
+          ? saved
+          : null,
       )
     }
-  }, [popId, invoiceTypeSiteId])
+  }, [
+    popId,
+    invoiceTypeSiteId,
+    bootstrapLoaded,
+    popEmisorIvaCondition,
+    hasValidPopFiscalCuit,
+  ])
+
+  useEffect(() => {
+    if (!bootstrapLoaded) return
+    setComprobante((current) => {
+      if (current == null) return current
+      return isAllowedSaleComprobanteLabel(
+        invoiceTypeSiteId,
+        current,
+        popEmisorIvaCondition,
+        hasValidPopFiscalCuit,
+      )
+        ? current
+        : null
+    })
+  }, [
+    bootstrapLoaded,
+    invoiceTypeSiteId,
+    popEmisorIvaCondition,
+    hasValidPopFiscalCuit,
+  ])
 
   useEffect(() => {
     if (!popId || catalogLoading || catalogViewInitRef.current) return

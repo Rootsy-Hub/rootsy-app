@@ -18,6 +18,12 @@ import {
 } from "@/lib/popPermissionConstants"
 import { popMenuHref } from "@/lib/popRoutes"
 import { getAuthenticatedUserOrNull } from "@/lib/authHelpers"
+import {
+  buildPopSettingsImageFileName,
+  buildPopSettingsImageStoragePath,
+  POP_IMAGE_STORAGE_BUCKET,
+  type PopSettingsImageKind,
+} from "@/lib/popImageStorage"
 import { createClient } from "@/utils/supabase/server"
 
 export type PopSettingsFormInput = {
@@ -28,6 +34,9 @@ export type PopSettingsFormInput = {
   city: string
   streetAddress: string
   postalCode: string
+  imageUrl?: string | null
+  invoiceLogoUrl?: string | null
+  backgroundImageUrl?: string | null
   fiscalCuit?: string | null
   fiscalRazonSocial?: string | null
   /** YYYY-MM-DD */
@@ -102,6 +111,9 @@ export async function getPopSettingsPageData(popId: string): Promise<
         city: p.city ?? "",
         streetAddress: p.streetAddress ?? "",
         postalCode: p.postalCode ?? "",
+        imageUrl: p.imageUrl ?? "",
+        invoiceLogoUrl: p.invoiceLogoUrl ?? "",
+        backgroundImageUrl: p.backgroundImageUrl ?? "",
         fiscalCuit: p.fiscalCuit ?? "",
         fiscalRazonSocial: p.fiscalRazonSocial ?? "",
         fiscalInicioActividadesDate: p.fiscalInicioActividadesDate ?? "",
@@ -158,6 +170,9 @@ export async function updatePopSettings(
       city: input.city.trim() || null,
       street_address: input.streetAddress.trim() || null,
       postal_code: input.postalCode.trim() || null,
+      image_url: input.imageUrl?.trim() || null,
+      invoice_logo_url: input.invoiceLogoUrl?.trim() || null,
+      background_image_url: input.backgroundImageUrl?.trim() || null,
       updated_at: new Date().toISOString(),
     }
 
@@ -197,6 +212,85 @@ export async function updatePopSettings(
       return { success: false, error: error.message || "No se pudo guardar." }
     }
     return { success: true }
+  } catch (e: unknown) {
+    const message = e instanceof Error ? e.message : "Error desconocido"
+    return { success: false, error: message }
+  }
+}
+
+export async function uploadPopSettingsImage(
+  popId: string,
+  kind: PopSettingsImageKind,
+  formData: FormData,
+): Promise<{ success: true; imageUrl: string } | { success: false; error: string }> {
+  try {
+    const access = await validatePopAccess(popId)
+    if (!access.hasAccess || !access.isActive) {
+      return { success: false, error: access.error || "Sin acceso" }
+    }
+    const snap = await loadPopPermissionsSnapshot(popId)
+    if (
+      !permissionKeysInclude(
+        snap.keys,
+        POP_PERMS.SETTINGS_UPDATE.resource,
+        POP_PERMS.SETTINGS_UPDATE.action,
+      )
+    ) {
+      return { success: false, error: "Sin permiso para subir imágenes." }
+    }
+
+    const raw = formData.get("file")
+    if (!(raw instanceof File) || raw.size <= 0) {
+      return { success: false, error: "Elegí una imagen para subir." }
+    }
+
+    const expectedType = kind === "ticket-logo" ? "image/png" : "image/webp"
+    if (raw.type !== expectedType) {
+      return {
+        success: false,
+        error:
+          kind === "ticket-logo"
+            ? "El logo de ticket debe estar en formato PNG."
+            : "La imagen debe estar en formato WebP.",
+      }
+    }
+    if (raw.size > 5 * 1024 * 1024) {
+      return {
+        success: false,
+        error: "La imagen comprimida supera el límite de 5 MB.",
+      }
+    }
+
+    const fileName = buildPopSettingsImageFileName(kind)
+    const storagePath = buildPopSettingsImageStoragePath(popId, kind, fileName)
+    const bytes = Buffer.from(await raw.arrayBuffer())
+
+    const supabase = await createClient()
+    const { error: uploadError } = await supabase.storage
+      .from(POP_IMAGE_STORAGE_BUCKET)
+      .upload(storagePath, bytes, {
+        contentType: expectedType,
+        cacheControl: "31536000",
+        upsert: false,
+      })
+
+    if (uploadError) {
+      return {
+        success: false,
+        error: uploadError.message || "No se pudo subir la imagen.",
+      }
+    }
+
+    const { data: publicUrlData } = supabase.storage
+      .from(POP_IMAGE_STORAGE_BUCKET)
+      .getPublicUrl(storagePath)
+
+    const imageUrl = publicUrlData.publicUrl?.trim()
+    if (!imageUrl) {
+      return { success: false, error: "No se pudo obtener la URL pública." }
+    }
+
+    return { success: true, imageUrl }
   } catch (e: unknown) {
     const message = e instanceof Error ? e.message : "Error desconocido"
     return { success: false, error: message }

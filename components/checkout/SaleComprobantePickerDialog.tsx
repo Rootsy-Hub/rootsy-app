@@ -15,9 +15,10 @@ import {
 } from "@/components/ui/dialog"
 import { useSaleComprobanteEmitterContext } from "@/hooks/useSaleComprobanteEmitterContext"
 import {
+  getSaleComprobantePickerOptions,
   type SaleComprobantePickerOption,
 } from "@/lib/saleComprobantePicker"
-import { isSaleComprobanteAllowedForEmisor } from "@/lib/saleComprobanteRules"
+import { isSaleComprobanteAllowed } from "@/lib/saleComprobanteRules"
 import { cn } from "@/lib/utils"
 import {
   saleOpDialogBody,
@@ -27,7 +28,7 @@ import {
   saleOpDialogPrimaryBtn,
   saleOpDialogSecondaryBtn,
 } from "@/components/sale-operation/saleOperationStyles"
-import { FileText, Receipt, ShieldCheck } from "lucide-react"
+import { FileText, Loader2, Receipt, ShieldCheck } from "lucide-react"
 import { useEffect, useMemo, useState } from "react"
 
 type Props = {
@@ -80,15 +81,39 @@ export function SaleComprobantePickerDialog({
     cashRegisterId,
   )
 
-  const visibleOptions = useMemo(() => {
-    if (!emitter?.ivaCondition) return options
-    return options.filter(
-      (opt) =>
-        opt.kind === "none" ||
-        opt.kind === "internal" ||
-        isSaleComprobanteAllowedForEmisor(opt.label, emitter.ivaCondition),
+  const isLoadingFiscal = open && previewInput != null && loading
+
+  const visibleOptions = useMemo((): SaleComprobantePickerOption[] => {
+    const siteId = previewInput?.siteId
+    const nonLegal = options.filter(
+      (opt) => opt.kind === "none" || opt.kind === "internal",
     )
-  }, [options, emitter?.ivaCondition])
+
+    if (!siteId) {
+      if (loading) return nonLegal
+      if (!emitter) return options
+      return options.filter((opt) => {
+        if (opt.kind === "none" || opt.kind === "internal") return true
+        return isSaleComprobanteAllowed(
+          opt.label,
+          emitter.ivaCondition,
+          emitter.hasValidFiscalCuit,
+        )
+      })
+    }
+
+    if (loading) return nonLegal
+
+    if (emitter) {
+      return getSaleComprobantePickerOptions(
+        siteId,
+        emitter.ivaCondition,
+        emitter.hasValidFiscalCuit,
+      )
+    }
+
+    return options
+  }, [options, emitter, loading, previewInput?.siteId])
 
   useEffect(() => {
     if (!open) return
@@ -96,14 +121,18 @@ export function SaleComprobantePickerDialog({
   }, [open, value])
 
   useEffect(() => {
-    if (!open || !emitter?.ivaCondition) return
+    if (!open || loading || !emitter) return
     if (
       draft != null &&
-      !isSaleComprobanteAllowedForEmisor(draft, emitter.ivaCondition)
+      !isSaleComprobanteAllowed(
+        draft,
+        emitter.ivaCondition,
+        emitter.hasValidFiscalCuit,
+      )
     ) {
       setDraft(null)
     }
-  }, [open, draft, emitter?.ivaCondition])
+  }, [open, draft, emitter, loading])
 
   const handleConfirm = () => {
     onSelect(draft)
@@ -125,27 +154,38 @@ export function SaleComprobantePickerDialog({
             "grid min-h-0 flex-1 gap-4 overflow-hidden lg:grid-cols-2",
           )}
         >
-          <div className="min-h-0 min-w-0 overflow-y-auto overscroll-contain">
-            <ul
-              className="flex flex-col gap-2"
-              role="listbox"
-              aria-label="Tipos de comprobante"
-            >
-              {visibleOptions.map((opt) => {
-                const selected = isOptionSelected(opt, draft)
-                return (
-                  <li key={opt.label}>
-                    <CheckoutOptionCard
-                      title={opt.label}
-                      selected={selected}
-                      onClick={() => setDraft(optionValue(opt))}
-                      icon={comprobanteIcon(opt.kind)}
-                      trailing={selected ? "check" : "none"}
-                    />
-                  </li>
-                )
-              })}
-            </ul>
+          <div className="relative min-h-0 min-w-0 overflow-y-auto overscroll-contain">
+            {isLoadingFiscal ? (
+              <div
+                className="flex min-h-[120px] flex-col items-center justify-center gap-2 py-6 text-sm text-muted-foreground"
+                aria-live="polite"
+                aria-busy="true"
+              >
+                <Loader2 className="h-5 w-5 animate-spin" aria-hidden />
+                <span>Cargando comprobantes…</span>
+              </div>
+            ) : (
+              <ul
+                className="flex flex-col gap-2"
+                role="listbox"
+                aria-label="Tipos de comprobante"
+              >
+                {visibleOptions.map((opt) => {
+                  const selected = isOptionSelected(opt, draft)
+                  return (
+                    <li key={opt.label}>
+                      <CheckoutOptionCard
+                        title={opt.label}
+                        selected={selected}
+                        onClick={() => setDraft(optionValue(opt))}
+                        icon={comprobanteIcon(opt.kind)}
+                        trailing={selected ? "check" : "none"}
+                      />
+                    </li>
+                  )
+                })}
+              </ul>
+            )}
           </div>
 
           <SaleComprobanteTicketPreview

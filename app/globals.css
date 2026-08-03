@@ -338,6 +338,23 @@
     animation-iteration-count: infinite;
   }
 
+  .animate-dock-wiggle {
+    animation-name: dock-wiggle;
+    animation-duration: 0.28s;
+    animation-timing-function: ease-in-out;
+    animation-iteration-count: infinite;
+  }
+
+  @keyframes dock-wiggle {
+    0%,
+    100% {
+      transform: rotate(-1.2deg);
+    }
+    50% {
+      transform: rotate(1.2deg);
+    }
+  }
+
   @keyframes rootsy-float {
     0%,
     100% {

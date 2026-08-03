@@ -5,6 +5,7 @@ import {
 } from "@/lib/saleInvoiceTypes"
 import {
   type PopEmisorIvaCondition,
+  isSaleComprobanteAllowed,
   isSaleComprobanteAllowedForEmisor,
 } from "@/lib/saleComprobanteRules"
 
@@ -87,6 +88,7 @@ export function hasConfiguredSaleComprobante(
 export function getSaleComprobantePickerOptions(
   siteId: string,
   emisorIva: PopEmisorIvaCondition = "responsable_inscripto",
+  hasValidFiscalCuit = false,
 ): SaleComprobantePickerOption[] {
   const all = getSaleInvoiceTypeOptionsForSite(siteId)
   const byLabel = new Map(all.map((o) => [o.label, o]))
@@ -95,6 +97,10 @@ export function getSaleComprobantePickerOptions(
     { kind: "none", label: SALE_COMPROBANTE_SIN_LABEL },
     { kind: "internal", label: SALE_COMPROBANTE_RECIBO_X_LABEL },
   ]
+
+  if (!hasValidFiscalCuit) {
+    return out
+  }
 
   for (const label of SALE_PICKER_ARCA_LABELS) {
     if (!isSaleComprobanteAllowedForEmisor(label, emisorIva)) continue
@@ -115,10 +121,13 @@ export function isAllowedSaleComprobanteLabel(
   siteId: string,
   label: string | null,
   emisorIva: PopEmisorIvaCondition = "responsable_inscripto",
+  hasValidFiscalCuit = false,
 ): boolean {
   if (label == null) return true
   if (label === SALE_COMPROBANTE_RECIBO_X_LABEL) return true
-  if (!isSaleComprobanteAllowedForEmisor(label, emisorIva)) return false
+  if (!isSaleComprobanteAllowed(label, emisorIva, hasValidFiscalCuit)) {
+    return false
+  }
   return Boolean(findSaleInvoiceTypeByLabel(siteId, label))
 }
 

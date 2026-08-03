@@ -37,6 +37,26 @@ export function isSaleComprobanteAllowedForEmisor(
   return true
 }
 
+/** Comprobante fiscal ARCA (facturas, NC, ND, etc.). */
+export function isLegalSaleComprobanteLabel(
+  label: string | null | undefined,
+): boolean {
+  if (label == null || label === SALE_COMPROBANTE_SIN_LABEL) return false
+  if (isInternalSaleComprobante(label)) return false
+  return true
+}
+
+export function isSaleComprobanteAllowed(
+  label: string | null,
+  emisorIva: PopEmisorIvaCondition,
+  hasValidFiscalCuit: boolean,
+): boolean {
+  if (label == null || label === SALE_COMPROBANTE_SIN_LABEL) return true
+  if (isInternalSaleComprobante(label)) return true
+  if (!hasValidFiscalCuit) return false
+  return isSaleComprobanteAllowedForEmisor(label, emisorIva)
+}
+
 /**
  * Reglas Argentina (simplificadas) emisor → receptor → comprobante.
  *

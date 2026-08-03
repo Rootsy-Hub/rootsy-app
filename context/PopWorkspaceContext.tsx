@@ -13,7 +13,10 @@ import {
   clearPopWorkspaceCache,
   readPopWorkspaceCache,
   writePopWorkspaceCache,
+  bootstrapNeedsFiscalRefresh,
 } from "@/lib/popWorkspaceClientCache"
+import { prefetchSaleComprobanteEmitter } from "@/lib/prefetchSaleComprobanteEmitter"
+import { clearSaleComprobanteEmitterCache } from "@/lib/saleComprobanteEmitterClientCache"
 import {
   getUserProfileRev,
   USER_PROFILE_UPDATED_EVENT,
@@ -111,6 +114,14 @@ export function PopWorkspaceProvider({
         getUserProfileRev(userId),
       )
     }
+
+    if (res.data.hasValidPopFiscalCuit) {
+      prefetchSaleComprobanteEmitter(
+        popId,
+        res.data.cacheRevisions.popSettingsRev,
+      )
+    }
+
     return true
   }, [popId, siteId, router, userId])
 
@@ -153,6 +164,7 @@ export function PopWorkspaceProvider({
       if (
         !force &&
         cached &&
+        !bootstrapNeedsFiscalRefresh(cached.bootstrap) &&
         liveRevisions &&
         revRes.success
       ) {
@@ -168,6 +180,12 @@ export function PopWorkspaceProvider({
           setError(null)
           setLoading(false)
           setRevalidating(false)
+          if (cached.bootstrap.hasValidPopFiscalCuit) {
+            prefetchSaleComprobanteEmitter(
+              popId,
+              cached.bootstrap.cacheRevisions.popSettingsRev,
+            )
+          }
           return
         }
 
@@ -221,6 +239,7 @@ export function PopWorkspaceProvider({
       const detail = (event as CustomEvent<{ userId?: string }>).detail
       if (detail?.userId && detail.userId !== userId) return
       clearPopWorkspaceCache(userId, siteId, popId)
+      clearSaleComprobanteEmitterCache(popId)
       void syncBootstrap({ force: true, showLoading: false })
     }
 

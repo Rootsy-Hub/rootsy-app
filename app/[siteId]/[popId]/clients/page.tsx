@@ -241,23 +241,30 @@ function ClientsPage() {
   const createOpenEffective = createOpen && canCreate
 
   const comprobanteFormOptions = useMemo(
-    () => getSaleComprobantePickerOptions(siteId || "arg"),
-    [siteId],
+    () =>
+      getSaleComprobantePickerOptions(
+        siteId || "arg",
+        bootstrap?.popEmisorIvaCondition ?? "responsable_inscripto",
+        bootstrap?.hasValidPopFiscalCuit ?? false,
+      ),
+    [siteId, bootstrap?.popEmisorIvaCondition, bootstrap?.hasValidPopFiscalCuit],
   )
 
   const suggestedComprobanteForCreate = useMemo(() => {
-    if (!createForm.ivaCondition) return null
+    if (!createForm.ivaCondition || !bootstrap?.hasValidPopFiscalCuit) return null
     return suggestSaleComprobanteForClientIva(
       createForm.ivaCondition as (typeof CLIENT_IVA_CONDITION_OPTIONS)[number]["value"],
+      bootstrap.popEmisorIvaCondition,
     )
-  }, [createForm.ivaCondition])
+  }, [createForm.ivaCondition, bootstrap?.hasValidPopFiscalCuit, bootstrap?.popEmisorIvaCondition])
 
   const suggestedComprobanteForEdit = useMemo(() => {
-    if (!editForm.ivaCondition) return null
+    if (!editForm.ivaCondition || !bootstrap?.hasValidPopFiscalCuit) return null
     return suggestSaleComprobanteForClientIva(
       editForm.ivaCondition as (typeof CLIENT_IVA_CONDITION_OPTIONS)[number]["value"],
+      bootstrap.popEmisorIvaCondition,
     )
-  }, [editForm.ivaCondition])
+  }, [editForm.ivaCondition, bootstrap?.hasValidPopFiscalCuit, bootstrap?.popEmisorIvaCondition])
 
   const createPadron = usePadronAutofillRazonSocial(popId, createForm.taxId, {
     enabled: Boolean(popId) && createOpenEffective && canCreate,

@@ -13,6 +13,7 @@ import {
 } from "@/lib/saleComprobantePreview"
 import { usePopTimeZone } from "@/hooks/usePopTimeZone"
 import { SALE_COMPROBANTE_SIN_LABEL } from "@/lib/saleComprobantePicker"
+import { isLegalSaleComprobanteLabel } from "@/lib/saleComprobanteRules"
 import { cn } from "@/lib/utils"
 import { saleComprobanteTicketPaperWidthClass } from "@/components/sale-operation/saleOperationStyles"
 import { Loader2, QrCode, Receipt } from "lucide-react"
@@ -110,6 +111,28 @@ function TicketAmountRow({
     >
       <span className="min-w-0 shrink uppercase">{label}</span>
       <span className={cn("shrink-0 tabular-nums", amountClassName)}>{amount}</span>
+    </div>
+  )
+}
+
+function TicketMissingFiscalCuitPlaceholder() {
+  return (
+    <div
+      className={cn(
+        "mx-auto flex w-full flex-col items-center justify-center gap-2 bg-white px-4 py-10 text-center shadow-inner ring-1 ring-zinc-200/80",
+        saleComprobanteTicketPaperWidthClass,
+      )}
+    >
+      <div className="flex h-12 w-12 items-center justify-center rounded-full bg-zinc-100 text-zinc-400">
+        <Receipt className="h-6 w-6" aria-hidden />
+      </div>
+      <p className="font-mono text-[11px] font-bold uppercase tracking-wide text-zinc-700">
+        CUIT no configurado
+      </p>
+      <p className="max-w-[220px] font-mono text-[9px] leading-snug text-zinc-500">
+        Configurá un CUIT válido del punto de venta en Ajustes para emitir
+        comprobantes fiscales.
+      </p>
     </div>
   )
 }
@@ -436,14 +459,20 @@ export function SaleComprobanteTicketPreview({
     (resolvedComprobanteLabel == null ||
       resolvedComprobanteLabel === SALE_COMPROBANTE_SIN_LABEL)
 
+  const needsValidFiscalCuit =
+    previewInput != null &&
+    !isSinComprobante &&
+    isLegalSaleComprobanteLabel(resolvedComprobanteLabel)
+
   const model = useMemo(() => {
     if (!previewInput || !emitter || isSinComprobante) return null
+    if (needsValidFiscalCuit && !emitter.hasValidFiscalCuit) return null
     return buildSaleComprobantePreview({
       ...previewInput,
       comprobanteLabel: resolvedComprobanteLabel,
       emitter,
     })
-  }, [previewInput, emitter, resolvedComprobanteLabel, isSinComprobante])
+  }, [previewInput, emitter, resolvedComprobanteLabel, isSinComprobante, needsValidFiscalCuit])
 
   return (
     <div
@@ -468,6 +497,8 @@ export function SaleComprobanteTicketPreview({
           </div>
         ) : isSinComprobante ? (
           <TicketNoComprobantePlaceholder />
+        ) : needsValidFiscalCuit && emitter && !emitter.hasValidFiscalCuit ? (
+          <TicketMissingFiscalCuitPlaceholder />
         ) : model ? (
           <TicketPreviewBody model={model} />
         ) : (

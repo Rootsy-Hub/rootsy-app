@@ -3,9 +3,19 @@
 import { fetchPopCacheRevisions, type PopCacheRevisions } from "@/lib/popCacheRevisions"
 import { requireAuthenticatedUser } from "@/lib/authHelpers"
 import { getPopSiteId, validatePopAccess } from "@/lib/popHelpers"
+import { hasValidPopFiscalCuit } from "@/lib/popFiscalCuit"
 import { loadPopPermissionsSnapshot } from "@/lib/popPermissionsServer"
 import { popMenuHref, siteIdsMatchClientRoute } from "@/lib/popRoutes"
+import type { PopEmisorIvaCondition } from "@/lib/saleComprobanteRules"
 import { createClient } from "@/utils/supabase/server"
+
+function resolvePopEmisorIvaFromSettings(
+  settings: Record<string, unknown> | null | undefined,
+): PopEmisorIvaCondition {
+  const raw = settings?.fiscal_iva_condition
+  if (raw === "monotributo") return "monotributo"
+  return "responsable_inscripto"
+}
 
 type AccessiblePopRow = {
   pop_id: string
@@ -26,6 +36,8 @@ export type PopWorkspaceBootstrapData = {
   roleLabel: string
   permissionKeys: string[]
   cacheRevisions: PopCacheRevisions
+  hasValidPopFiscalCuit: boolean
+  popEmisorIvaCondition: PopEmisorIvaCondition
 }
 
 export type PopWorkspaceBootstrapResult =
@@ -85,14 +97,39 @@ export async function getPopWorkspaceBootstrap(
     const popRow = accessible.find((row) => row.pop_id === popId)
 
     let popName = popRow?.pop_name?.trim() ?? ""
+    let fiscalCuit: string | null = null
+    let popSettings: Record<string, unknown> | null = null
     if (!popName) {
       const { data: popData } = await supabase
         .from("pops")
-        .select("name")
+        .select("name, fiscal_cuit, settings")
         .eq("id", popId)
         .maybeSingle()
       popName = String(popData?.name ?? "").trim()
+      fiscalCuit =
+        popData?.fiscal_cuit != null ? String(popData.fiscal_cuit) : null
+      popSettings =
+        popData?.settings && typeof popData.settings === "object"
+          ? (popData.settings as Record<string, unknown>)
+          : null
+    } else {
+      const { data: popData } = await supabase
+        .from("pops")
+        .select("fiscal_cuit, settings")
+        .eq("id", popId)
+        .maybeSingle()
+      fiscalCuit =
+        popData?.fiscal_cuit != null ? String(popData.fiscal_cuit) : null
+      popSettings =
+        popData?.settings && typeof popData.settings === "object"
+          ? (popData.settings as Record<string, unknown>)
+          : null
     }
+
+    const hasValidPopFiscalCuitFlag = hasValidPopFiscalCuit(fiscalCuit)
+    const popEmisorIvaCondition = hasValidPopFiscalCuitFlag
+      ? resolvePopEmisorIvaFromSettings(popSettings)
+      : "responsable_inscripto"
 
     const roleLabel = popRow?.is_owner
       ? "Dueño"
@@ -119,6 +156,8 @@ export async function getPopWorkspaceBootstrap(
         roleLabel,
         permissionKeys: permissions.keys,
         cacheRevisions,
+        hasValidPopFiscalCuit: hasValidPopFiscalCuitFlag,
+        popEmisorIvaCondition,
       },
     }
   } catch (e: unknown) {

@@ -1,6 +1,13 @@
 import type { PopWorkspaceBootstrapData } from "@/lib/popWorkspaceBootstrap"
 
-const STORAGE_PREFIX = "rootsy:pop-workspace:v1:"
+/** Bootstrap cacheado antes de incluir snapshot fiscal → forzar refetch completo. */
+export function bootstrapNeedsFiscalRefresh(
+  bootstrap: PopWorkspaceBootstrapData,
+): boolean {
+  return typeof bootstrap.hasValidPopFiscalCuit !== "boolean"
+}
+
+const STORAGE_PREFIX = "rootsy:pop-workspace:v2:"
 
 export type PopWorkspaceCacheEntry = {
   userProfileRev: number

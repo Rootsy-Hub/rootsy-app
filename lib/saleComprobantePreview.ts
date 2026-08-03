@@ -32,6 +32,7 @@ export type SaleComprobanteEmitterContext = {
   arcaPtoVta: number | null
   ivaCondition: PopEmisorIvaCondition
   ivaConditionLabel: string
+  hasValidFiscalCuit: boolean
 }
 
 export type SaleComprobantePreviewLineDiscount = {

@@ -10,6 +10,7 @@ import {
 import type { MenuCatalogPromotion } from "@/app/[siteId]/[popId]/menu-catalog/actions"
 import type { SaleCatalogClient, SaleCatalogPaymentOption, SaleOpenCashSession } from "@/app/[siteId]/[popId]/sale/actions"
 import { useMenuCatalogLoader } from "@/hooks/useMenuCatalogLoader"
+import { usePopSaleComprobanteFiscalContext } from "@/hooks/usePopSaleComprobanteFiscalContext"
 import {
   generalDiscountToolbarLabel,
   healLegacyLockedGeneralDiscount,
@@ -123,12 +124,21 @@ function normalizarBusqueda(s: string) {
 function defaultComprobanteForPop(
   popId: string | undefined,
   invoiceTypeSiteId: string,
+  popEmisorIvaCondition: ReturnType<
+    typeof usePopSaleComprobanteFiscalContext
+  >["popEmisorIvaCondition"],
+  hasValidPopFiscalCuit: boolean,
 ): string | null {
   if (!popId) return null
   const persisted = readSavedSaleComprobante(popId)
   if (
     persisted !== undefined &&
-    isAllowedSaleComprobanteLabel(invoiceTypeSiteId, persisted)
+    isAllowedSaleComprobanteLabel(
+      invoiceTypeSiteId,
+      persisted,
+      popEmisorIvaCondition,
+      hasValidPopFiscalCuit,
+    )
   ) {
     return persisted
   }
@@ -171,6 +181,12 @@ export function useMostradorSaleCheckout(
     catalogError,
     catalogLoadAttempted,
   } = useMenuCatalogLoader(popId, { enabled: catalogEnabled })
+
+  const {
+    hasValidPopFiscalCuit,
+    popEmisorIvaCondition,
+    bootstrapLoaded,
+  } = usePopSaleComprobanteFiscalContext()
 
   const [carrito, setCarrito] = useState<MesasCartItem[]>([])
   const [clienteSeleccionado, setClienteSeleccionado] =
@@ -337,20 +353,20 @@ export function useMostradorSaleCheckout(
       const snap =
         remoteOrder.checkout ??
         emptyTableSessionCheckout(
-          defaultComprobanteForPop(popId, invoiceTypeSiteId),
+          defaultComprobanteForPop(popId, invoiceTypeSiteId, popEmisorIvaCondition, hasValidPopFiscalCuit),
         )
       applySessionSnapshot(snap)
       lastAppliedRemoteUpdatedAtRef.current = remoteOrder.updatedAt
     } else if (counterOrderId) {
       applySessionSnapshot(
         emptyTableSessionCheckout(
-          defaultComprobanteForPop(popId, invoiceTypeSiteId),
+          defaultComprobanteForPop(popId, invoiceTypeSiteId, popEmisorIvaCondition, hasValidPopFiscalCuit),
         ),
       )
     } else {
       applySessionSnapshot(
         emptyTableSessionCheckout(
-          defaultComprobanteForPop(popId, invoiceTypeSiteId),
+          defaultComprobanteForPop(popId, invoiceTypeSiteId, popEmisorIvaCondition, hasValidPopFiscalCuit),
         ),
       )
     }
@@ -366,7 +382,7 @@ export function useMostradorSaleCheckout(
 
     const snap =
       checkout ??
-      emptyTableSessionCheckout(defaultComprobanteForPop(popId, invoiceTypeSiteId))
+      emptyTableSessionCheckout(defaultComprobanteForPop(popId, invoiceTypeSiteId, popEmisorIvaCondition, hasValidPopFiscalCuit))
     applySessionSnapshot(snap)
     lastAppliedRemoteUpdatedAtRef.current = updatedAt
   }, [
@@ -461,15 +477,49 @@ export function useMostradorSaleCheckout(
   }, [openCashSession, counterOrderId])
 
   useEffect(() => {
-    if (!popId || comprobanteInitRef.current || counterOrderId == null) return
+    if (!popId || !bootstrapLoaded || comprobanteInitRef.current || counterOrderId == null) return
     comprobanteInitRef.current = true
     const saved = readSavedSaleComprobante(popId)
     if (saved !== undefined) {
       setComprobante(
-        isAllowedSaleComprobanteLabel(invoiceTypeSiteId, saved) ? saved : null,
+        isAllowedSaleComprobanteLabel(
+          invoiceTypeSiteId,
+          saved,
+          popEmisorIvaCondition,
+          hasValidPopFiscalCuit,
+        )
+          ? saved
+          : null,
       )
     }
-  }, [popId, invoiceTypeSiteId, counterOrderId])
+  }, [
+    popId,
+    invoiceTypeSiteId,
+    counterOrderId,
+    bootstrapLoaded,
+    popEmisorIvaCondition,
+    hasValidPopFiscalCuit,
+  ])
+
+  useEffect(() => {
+    if (!bootstrapLoaded) return
+    setComprobante((current) => {
+      if (current == null) return current
+      return isAllowedSaleComprobanteLabel(
+        invoiceTypeSiteId,
+        current,
+        popEmisorIvaCondition,
+        hasValidPopFiscalCuit,
+      )
+        ? current
+        : null
+    })
+  }, [
+    bootstrapLoaded,
+    invoiceTypeSiteId,
+    popEmisorIvaCondition,
+    hasValidPopFiscalCuit,
+  ])
 
   const productosCatalogo = useMemo((): MenuCatalogProduct[] => {
     return [
@@ -813,8 +863,13 @@ export function useMostradorSaleCheckout(
   ])
 
   const comprobantePickerOptions = useMemo(
-    () => getSaleComprobantePickerOptions(invoiceTypeSiteId),
-    [invoiceTypeSiteId],
+    () =>
+      getSaleComprobantePickerOptions(
+        invoiceTypeSiteId,
+        popEmisorIvaCondition,
+        hasValidPopFiscalCuit,
+      ),
+    [invoiceTypeSiteId, popEmisorIvaCondition, hasValidPopFiscalCuit],
   )
 
   const clienteCatalogoBloqueado =
@@ -841,9 +896,22 @@ export function useMostradorSaleCheckout(
       ivaCondition: iva,
       defaultInvoiceTypeLabel: null,
     })
-    if (iva) {
-      const suggested = suggestSaleComprobanteForClientIva(iva as ClientIvaConditionValue)
-      if (suggested) elegirComprobante(suggested)
+    if (iva && hasValidPopFiscalCuit) {
+      const suggested = suggestSaleComprobanteForClientIva(
+        iva as ClientIvaConditionValue,
+        popEmisorIvaCondition,
+      )
+      if (
+        suggested &&
+        isAllowedSaleComprobanteLabel(
+          invoiceTypeSiteId,
+          suggested,
+          popEmisorIvaCondition,
+          hasValidPopFiscalCuit,
+        )
+      ) {
+        elegirComprobante(suggested)
+      }
     }
     setClienteModalAbierto(false)
   }, [
@@ -1708,13 +1776,38 @@ export function useMostradorSaleCheckout(
         const resolved = resolveSaleComprobanteForClient({
           clientIvaCondition: c.ivaCondition as ClientIvaConditionValue | null,
           defaultInvoiceTypeLabel: c.defaultInvoiceTypeLabel,
+          emisorIva: popEmisorIvaCondition,
         })
-        elegirComprobante(resolved)
+        if (
+          resolved == null ||
+          isAllowedSaleComprobanteLabel(
+            invoiceTypeSiteId,
+            resolved,
+            popEmisorIvaCondition,
+            hasValidPopFiscalCuit,
+          )
+        ) {
+          elegirComprobante(resolved)
+        }
         setClienteModalAbierto(false)
       },
       aplicarComprobanteDesdeIva: (iva: ClientIvaConditionValue) => {
-        const suggested = suggestSaleComprobanteForClientIva(iva)
-        if (suggested) elegirComprobante(suggested)
+        if (!hasValidPopFiscalCuit) return
+        const suggested = suggestSaleComprobanteForClientIva(
+          iva,
+          popEmisorIvaCondition,
+        )
+        if (
+          suggested &&
+          isAllowedSaleComprobanteLabel(
+            invoiceTypeSiteId,
+            suggested,
+            popEmisorIvaCondition,
+            hasValidPopFiscalCuit,
+          )
+        ) {
+          elegirComprobante(suggested)
+        }
       },
       quitarCliente: () => {
         setClienteSeleccionado(null)

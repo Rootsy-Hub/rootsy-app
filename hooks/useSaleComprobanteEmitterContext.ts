@@ -1,14 +1,22 @@
 "use client"
 
-import { useEffect, useState } from "react"
 import { getPopComprobanteEmitterPreview } from "@/app/[siteId]/[popId]/sale/comprobantePreviewActions"
+import { usePopWorkspaceOptional } from "@/context/PopWorkspaceContext"
 import type { SaleComprobanteEmitterContext } from "@/lib/saleComprobantePreview"
+import {
+  readSaleComprobanteEmitterCache,
+  writeSaleComprobanteEmitterCache,
+} from "@/lib/saleComprobanteEmitterClientCache"
+import { useEffect, useState } from "react"
 
 export function useSaleComprobanteEmitterContext(
   popId: string,
   open: boolean,
   cashRegisterId?: string | null,
 ) {
+  const workspace = usePopWorkspaceOptional()
+  const popSettingsRev = workspace?.bootstrap?.cacheRevisions.popSettingsRev
+
   const [emitter, setEmitter] = useState<SaleComprobanteEmitterContext | null>(
     null,
   )
@@ -19,6 +27,19 @@ export function useSaleComprobanteEmitterContext(
     if (!open || !popId) return
 
     let cancelled = false
+
+    const cached = readSaleComprobanteEmitterCache(
+      popId,
+      cashRegisterId,
+      popSettingsRev,
+    )
+    if (cached) {
+      setEmitter(cached)
+      setLoading(false)
+      setError(null)
+      return
+    }
+
     setLoading(true)
     setError(null)
 
@@ -27,6 +48,21 @@ export function useSaleComprobanteEmitterContext(
       setLoading(false)
       if (res.success) {
         setEmitter(res.emitter)
+        if (popSettingsRev != null) {
+          writeSaleComprobanteEmitterCache(
+            popId,
+            cashRegisterId,
+            popSettingsRev,
+            res.emitter,
+          )
+        } else {
+          writeSaleComprobanteEmitterCache(
+            popId,
+            cashRegisterId,
+            0,
+            res.emitter,
+          )
+        }
         return
       }
       setEmitter(null)
@@ -36,7 +72,7 @@ export function useSaleComprobanteEmitterContext(
     return () => {
       cancelled = true
     }
-  }, [open, popId, cashRegisterId])
+  }, [open, popId, cashRegisterId, popSettingsRev])
 
   return { emitter, loading, error }
 }
