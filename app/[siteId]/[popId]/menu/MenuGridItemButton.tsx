@@ -45,6 +45,8 @@ export function MenuGridItemButton({ item, disabled, onActivate }: Props) {
   return (
     <div
       ref={setNodeRef}
+      {...(draggable ? listeners : {})}
+      {...(draggable ? attributes : {})}
       style={{
         animationDelay:
           editing && draggable && !showInsertedStyle
@@ -55,12 +57,11 @@ export function MenuGridItemButton({ item, disabled, onActivate }: Props) {
         "justify-self-center touch-none transition-[opacity,transform] duration-200",
         editing && draggable && !showInsertedStyle && "animate-dock-wiggle",
         showInsertedStyle && "scale-[0.97] opacity-45",
+        draggable && "cursor-grab active:cursor-grabbing",
       )}
     >
       <button
         type="button"
-        {...(draggable ? listeners : {})}
-        {...(draggable ? attributes : {})}
         onClick={() => {
           if (!editing && !disabled) onActivate()
         }}
@@ -68,7 +69,6 @@ export function MenuGridItemButton({ item, disabled, onActivate }: Props) {
         className={cn(
           "group flex w-24 flex-col items-center gap-2.5 transition-all duration-200",
           !editing && !disabled && "hover:scale-105 active:scale-95",
-          draggable && "cursor-grab active:cursor-grabbing",
           disabled && "pointer-events-none opacity-40",
         )}
       >

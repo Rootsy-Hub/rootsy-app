@@ -21,7 +21,7 @@ import {
   DndContext,
   DragOverlay,
   PointerSensor,
-  closestCenter,
+  TouchSensor,
   pointerWithin,
   useSensor,
   useSensors,
@@ -30,6 +30,7 @@ import {
   type DragOverEvent,
   type DragStartEvent,
 } from "@dnd-kit/core"
+import { snapCenterToCursor } from "@/lib/dndModifiers"
 import {
   createContext,
   useCallback,
@@ -46,10 +47,57 @@ export type MenuDockDragItem = MenuCatalogItem | MenuItemDef
 
 export const DOCK_SLOT_SHIFT_PX = 54
 
+export function getDockEditSlotCount(
+  itemCount: number,
+  canAddMore: boolean,
+  dragging: boolean,
+  activeDragKind: DragKind | null,
+  dropPreviewIndex: number | null,
+): number {
+  if (itemCount === 0) {
+    return dragging && activeDragKind === "menu" && dropPreviewIndex !== null
+      ? 1
+      : 0
+  }
+
+  if (
+    dragging &&
+    dropPreviewIndex !== null &&
+    (activeDragKind === "dock" ||
+      (activeDragKind === "menu" && canAddMore))
+  ) {
+    return itemCount + 1
+  }
+
+  return itemCount
+}
+
 const dockCollisionDetection: CollisionDetection = (args) => {
-  const pointerHits = pointerWithin(args)
-  if (pointerHits.length > 0) return pointerHits
-  return closestCenter(args)
+  const collisions = pointerWithin(args)
+  if (collisions.length === 0) return collisions
+
+  const insertHits = collisions.filter((entry) =>
+    String(entry.id).startsWith("dock-insert-"),
+  )
+  if (insertHits.length === 0) return collisions
+
+  if (insertHits.length === 1) return insertHits
+
+  const pointer = args.pointerCoordinates
+  if (!pointer) return insertHits
+
+  const sorted = [...insertHits].sort((a, b) => {
+    const rectA = args.droppableRects.get(a.id)
+    const rectB = args.droppableRects.get(b.id)
+    if (!rectA || !rectB) return 0
+    const centerA = rectA.left + rectA.width / 2
+    const centerB = rectB.left + rectB.width / 2
+    return (
+      Math.abs(pointer.x - centerA) - Math.abs(pointer.x - centerB)
+    )
+  })
+
+  return [sorted[0]]
 }
 
 type MenuDockEditContextValue = {
@@ -95,6 +143,16 @@ export function dockInsertId(index: number) {
 }
 
 export const DOCK_BAR_DROP_ID = "dock-bar"
+
+export function isDockDropZone(overId: string | number | undefined): boolean {
+  if (overId == null) return false
+  const raw = String(overId)
+  return (
+    raw.startsWith("dock-insert-") ||
+    raw === DOCK_BAR_DROP_ID ||
+    raw.startsWith("dock:")
+  )
+}
 
 export function resolveDockInsertIndex(
   overId: string | number | undefined,
@@ -248,7 +306,10 @@ export function MenuDockDndProvider({
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
-      activationConstraint: { distance: 6 },
+      activationConstraint: { distance: 4 },
+    }),
+    useSensor(TouchSensor, {
+      activationConstraint: { delay: 120, tolerance: 6 },
     }),
   )
 
@@ -263,6 +324,13 @@ export function MenuDockDndProvider({
     }
     window.addEventListener("keydown", onKeyDown)
     return () => window.removeEventListener("keydown", onKeyDown)
+  }, [editing])
+
+  useEffect(() => {
+    if (editing) return
+    setDraggingItem(null)
+    setActiveDragKind(null)
+    setDropPreviewIndex(null)
   }, [editing])
 
   const dockItems = useMemo(
@@ -388,11 +456,19 @@ export function MenuDockDndProvider({
     (event: DragEndEvent) => {
       const { active, over } = event
       const dragMeta = parseDragMeta(active.id)
-      const insertIndex = resolveDockInsertIndex(over?.id, dockIds)
+      const previewIndex = dropPreviewIndex
+      const canDrop =
+        over != null &&
+        isDockDropZone(over.id) &&
+        previewIndex !== null &&
+        dragMeta != null
+      const insertIndex = canDrop
+        ? resolveDockInsertIndex(over.id, dockIds)
+        : null
 
       clearDragState()
 
-      if (!over || !dragMeta || insertIndex === null) return
+      if (!canDrop || insertIndex === null || !dragMeta) return
 
       if (dragMeta.kind === "menu") {
         if (!canAddMore || dockIdSet.has(dragMeta.itemId)) return
@@ -405,6 +481,7 @@ export function MenuDockDndProvider({
     },
     [
       dockIds,
+      dropPreviewIndex,
       canAddMore,
       dockIdSet,
       permissionKeys,
@@ -472,7 +549,11 @@ export function MenuDockDndProvider({
         onDragCancel={handleDragCancel}
       >
         {children}
-        <DragOverlay dropAnimation={null} zIndex={50}>
+        <DragOverlay
+          dropAnimation={null}
+          zIndex={50}
+          modifiers={[snapCenterToCursor]}
+        >
           {showMenuDragOverlay && draggingItem ? (
             <div className="cursor-grabbing scale-[1.18] drop-shadow-[0_18px_40px_rgba(0,0,0,0.35)]">
               <DockIconVisual

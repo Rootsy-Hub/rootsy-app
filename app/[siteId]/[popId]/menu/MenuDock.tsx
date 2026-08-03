@@ -6,21 +6,27 @@ import {
   dockDragId,
   dockInsertId,
   DockIconVisual,
+  getDockEditSlotCount,
   getDockItemShiftX,
   useMenuDockEdit,
 } from "@/app/[siteId]/[popId]/menu/MenuDockDndContext"
-import type { MenuCatalogItem } from "@/lib/menuCatalog"
+import type { MenuCatalogItem, MenuDockItemId } from "@/lib/menuCatalog"
 import { popScopedHref } from "@/lib/popRoutes"
 import { cn } from "@/lib/utils"
 import { useDraggable, useDroppable } from "@dnd-kit/core"
-import { Minus, Pencil, RotateCcw } from "lucide-react"
+import { Check, Minus, Pencil } from "lucide-react"
 import { useRouter } from "next/navigation"
-import type { ReactNode } from "react"
 
 type Props = {
   siteId: string
   popId: string
 }
+
+const DOCK_LAYOUT_TRANSITION =
+  "transform 320ms cubic-bezier(0.32, 0.72, 0, 1)"
+
+const DOCK_WIDTH_TRANSITION =
+  "width 320ms cubic-bezier(0.32, 0.72, 0, 1), min-width 320ms cubic-bezier(0.32, 0.72, 0, 1), max-width 320ms cubic-bezier(0.32, 0.72, 0, 1)"
 
 function routeForDockItem(
   siteId: string,
@@ -32,103 +38,127 @@ function routeForDockItem(
   return popScopedHref(siteId, popId, item.link)
 }
 
-function DockInsertTarget({
+function DockInsertZone({
   index,
-  layoutAnimating,
-  showEndGap,
+  left,
+  active,
 }: {
   index: number
-  layoutAnimating?: boolean
-  showEndGap?: boolean
+  left: number
+  active: boolean
 }) {
   const { setNodeRef } = useDroppable({
     id: dockInsertId(index),
     data: { index },
-  })
-
-  const width = showEndGap ? DOCK_SLOT_SHIFT_PX : 10
-
-  return (
-    <div
-      ref={setNodeRef}
-      style={{
-        width,
-        transition: layoutAnimating
-          ? "width 280ms cubic-bezier(0.2, 0.85, 0.25, 1)"
-          : undefined,
-      }}
-      className="mb-1.5 h-12 shrink-0 self-center"
-      aria-hidden
-    />
-  )
-}
-
-function DockEmptyInsertTarget({
-  layoutAnimating,
-}: {
-  layoutAnimating?: boolean
-}) {
-  const { setNodeRef } = useDroppable({
-    id: dockInsertId(0),
-    data: { index: 0 },
+    disabled: !active,
   })
 
   return (
     <div
       ref={setNodeRef}
-      style={{
-        width: DOCK_SLOT_SHIFT_PX,
-        transition: layoutAnimating
-          ? "width 280ms cubic-bezier(0.2, 0.85, 0.25, 1)"
-          : undefined,
-      }}
-      className="mb-1.5 h-12 shrink-0 self-center"
+      className={cn(
+        "absolute inset-y-0 z-10",
+        !active && "pointer-events-none",
+      )}
+      style={{ left, width: DOCK_SLOT_SHIFT_PX }}
       aria-hidden
     />
   )
 }
 
-function DockShortcutsDropRow({
+function DockEditSlotGrid({
   enabled,
-  children,
+  slotCount,
+  dockItems,
+  dockIds,
+  previewDockIds,
+  draggingItemId,
+  activeDragKind,
+  dropPreviewIndex,
+  dragAnimating,
+  canRemove,
+  onRemove,
 }: {
   enabled: boolean
-  children: ReactNode
+  slotCount: number
+  dockItems: MenuCatalogItem[]
+  dockIds: readonly MenuDockItemId[]
+  previewDockIds: readonly MenuDockItemId[]
+  draggingItemId: MenuDockItemId | null
+  activeDragKind: ReturnType<typeof useMenuDockEdit>["activeDragKind"]
+  dropPreviewIndex: number | null
+  dragAnimating: boolean
+  canRemove: boolean
+  onRemove: (id: MenuDockItemId) => void
 }) {
   const { setNodeRef } = useDroppable({
     id: DOCK_BAR_DROP_ID,
     disabled: !enabled,
   })
 
+  const rowWidth = slotCount * DOCK_SLOT_SHIFT_PX
+  const insertZoneCount = dockItems.length + 1
+
   return (
     <div
       ref={setNodeRef}
-      className="flex min-h-12 items-end gap-0.5 rounded-2xl px-0.5"
+      className="relative mb-1.5 min-h-12 shrink-0 overflow-visible pt-2.5"
+      style={{
+        width: rowWidth,
+        minWidth: rowWidth,
+        maxWidth: rowWidth,
+        transition: dragAnimating ? DOCK_WIDTH_TRANSITION : undefined,
+      }}
     >
-      {children}
+      {Array.from({ length: insertZoneCount }, (_, index) => (
+        <DockInsertZone
+          key={`insert-${index}`}
+          index={index}
+          left={index * DOCK_SLOT_SHIFT_PX}
+          active={enabled}
+        />
+      ))}
+
+      {dockItems.map((item, index) => {
+        const shiftX = getDockItemShiftX(
+          item.id,
+          index,
+          dockIds,
+          previewDockIds,
+          activeDragKind,
+          dropPreviewIndex,
+          draggingItemId,
+        )
+
+        return (
+          <DockEditSlotItem
+            key={item.id}
+            item={item}
+            index={index}
+            shiftX={shiftX}
+            dragAnimating={dragAnimating}
+            canRemove={canRemove}
+            onRemove={() => onRemove(item.id)}
+          />
+        )
+      })}
     </div>
   )
 }
 
-function mergeRefs<T>(...refs: Array<(node: T | null) => void>) {
-  return (node: T | null) => {
-    for (const ref of refs) ref(node)
-  }
-}
-
-function DraggableDockItem({
+function DockEditSlotItem({
   item,
   index,
-  canRemove,
   shiftX,
-  layoutAnimating,
+  dragAnimating,
+  canRemove,
   onRemove,
 }: {
   item: MenuCatalogItem
   index: number
-  canRemove: boolean
   shiftX: number
-  layoutAnimating: boolean
+  dragAnimating: boolean
+  canRemove: boolean
   onRemove: () => void
 }) {
   const {
@@ -148,45 +178,50 @@ function DraggableDockItem({
 
   return (
     <div
-      ref={mergeRefs(setDragRef, setDropRef)}
+      ref={setDropRef}
+      className="absolute bottom-0 z-20 flex justify-center"
       style={{
+        left: index * DOCK_SLOT_SHIFT_PX,
+        width: DOCK_SLOT_SHIFT_PX,
         transform: isDragging ? undefined : `translateX(${shiftX}px)`,
-        transition: layoutAnimating
-          ? "transform 280ms cubic-bezier(0.2, 0.85, 0.25, 1)"
-          : undefined,
-        animationDelay: `${(index % 5) * 45}ms`,
+        transition: dragAnimating ? DOCK_LAYOUT_TRANSITION : undefined,
       }}
-      className={cn(
-        "relative touch-none",
-        !isDragging && !layoutAnimating && "animate-dock-wiggle",
-        isDragging && "opacity-0",
-      )}
     >
-      <button
-        type="button"
-        {...listeners}
-        {...attributes}
-        className="relative cursor-grab active:cursor-grabbing"
-        aria-label={item.name}
-      >
-        <DockIconVisual
-          icon={item.icon}
-          className="from-emerald-500/85 to-teal-600/85"
-        />
-      </button>
-      <button
-        type="button"
-        disabled={!canRemove}
-        onPointerDown={(event) => event.stopPropagation()}
-        onClick={onRemove}
+      <div
+        ref={setDragRef}
+        style={{ animationDelay: `${(index % 5) * 45}ms` }}
         className={cn(
-          "absolute -left-1 -top-1 z-10 flex size-[18px] items-center justify-center rounded-full bg-white/90 text-[11px] font-bold text-neutral-700 shadow-sm",
-          !canRemove && "cursor-not-allowed opacity-35",
+          "relative touch-none",
+          !isDragging && !dragAnimating && "animate-dock-wiggle",
+          isDragging && "opacity-0",
         )}
-        aria-label={`Quitar ${item.name}`}
       >
-        <Minus className="size-2.5" strokeWidth={3} aria-hidden />
-      </button>
+        <button
+          type="button"
+          {...listeners}
+          {...attributes}
+          className="relative cursor-grab active:cursor-grabbing"
+          aria-label={item.name}
+        >
+          <DockIconVisual
+            icon={item.icon}
+            className="from-emerald-500/85 to-teal-600/85"
+          />
+        </button>
+        <button
+          type="button"
+          disabled={!canRemove}
+          onPointerDown={(event) => event.stopPropagation()}
+          onClick={onRemove}
+          className={cn(
+            "absolute -left-0.5 -top-0.5 z-30 flex size-[18px] items-center justify-center rounded-full bg-white text-[11px] font-bold text-neutral-700 shadow-md ring-1 ring-black/10",
+            !canRemove && "cursor-not-allowed opacity-35",
+          )}
+          aria-label={`Quitar ${item.name}`}
+        >
+          <Minus className="size-2.5" strokeWidth={3} aria-hidden />
+        </button>
+      </div>
     </div>
   )
 }
@@ -229,101 +264,81 @@ export function MenuDock({ siteId, popId }: Props) {
     canAddMore,
     canRemove,
     removeFromDock,
-    resetDock,
   } = useMenuDockEdit()
 
-  const layoutAnimating = dragging && dropPreviewIndex !== null
-  const insertAtEnd =
-    layoutAnimating &&
-    activeDragKind === "menu" &&
-    dropPreviewIndex === dockItems.length
+  const editSlotCount = getDockEditSlotCount(
+    dockItems.length,
+    canAddMore,
+    dragging,
+    activeDragKind,
+    dropPreviewIndex,
+  )
 
   return (
     <div className="pointer-events-none absolute bottom-4 left-1/2 z-30 -translate-x-1/2">
       <div
         className={cn(
-          "pointer-events-auto flex items-end gap-1 rounded-[1.35rem] border border-white/15 px-3 py-2 shadow-[0_8px_32px_rgba(0,0,0,0.28)] backdrop-blur-2xl transition-all duration-200 sm:gap-1.5 sm:px-4",
-          editing
-            ? "bg-black/45 ring-1 ring-white/10"
-            : "bg-black/35",
+          "pointer-events-auto flex items-end gap-1 overflow-visible rounded-[1.35rem] border border-white/15 px-3 shadow-[0_8px_32px_rgba(0,0,0,0.28)] backdrop-blur-2xl sm:gap-1.5 sm:px-4",
+          editing ? "bg-black/45 pb-2 pt-3 ring-1 ring-white/10" : "bg-black/35 py-2",
+          dragging && editing &&
+            "transition-[width,padding,gap] duration-300 ease-[cubic-bezier(0.32,0.72,0,1)]",
         )}
       >
         {editing ? (
-          <DockShortcutsDropRow enabled={dragging}>
-            <DockInsertTarget index={0} layoutAnimating={layoutAnimating} />
-            {dockItems.map((item, index) => (
-              <div key={item.id} className="flex items-end">
-                <DraggableDockItem
-                  item={item}
-                  index={index}
-                  canRemove={canRemove}
-                  shiftX={getDockItemShiftX(
-                    item.id,
-                    index,
-                    dockIds,
-                    previewDockIds,
-                    activeDragKind,
-                    dropPreviewIndex,
-                    draggingItemId,
-                  )}
-                  layoutAnimating={layoutAnimating}
-                  onRemove={() => removeFromDock(item.id)}
-                />
-                <DockInsertTarget
-                  index={index + 1}
-                  layoutAnimating={layoutAnimating}
-                  showEndGap={insertAtEnd && index === dockItems.length - 1}
-                />
-              </div>
-            ))}
-            {dockItems.length === 0 && canAddMore ? (
-              <DockEmptyInsertTarget layoutAnimating={layoutAnimating} />
-            ) : null}
-          </DockShortcutsDropRow>
-        ) : (
-          dockItems.map((item) => {
-            const target = routeForDockItem(siteId, popId, item)
-            return (
-              <StaticDockItem
-                key={item.id}
-                item={item}
-                onNavigate={() => {
-                  if (target) router.push(target)
-                }}
-              />
-            )
-          })
-        )}
-
-        <div className="mx-0.5 mb-1.5 h-8 w-px self-center bg-white/15" aria-hidden />
-
-        {editing ? (
           <>
-            <button
-              type="button"
-              onClick={resetDock}
-              className="mb-1.5 flex size-9 items-center justify-center rounded-xl bg-white/10 transition-colors hover:bg-white/15 active:scale-95"
-              aria-label="Restaurar accesos directos"
-            >
-              <RotateCcw className="size-4 text-white/70" />
-            </button>
-            <button
-              type="button"
-              onClick={() => setEditing(false)}
-              className="mb-1.5 rounded-xl bg-white/90 px-3 py-1.5 text-xs font-semibold text-neutral-900 transition-transform active:scale-95"
-            >
-              Listo
-            </button>
+            <DockEditSlotGrid
+              enabled={dragging}
+              slotCount={editSlotCount}
+              dockItems={dockItems}
+              dockIds={dockIds}
+              previewDockIds={previewDockIds}
+              draggingItemId={draggingItemId}
+              activeDragKind={activeDragKind}
+              dropPreviewIndex={dropPreviewIndex}
+              dragAnimating={dragging}
+              canRemove={canRemove}
+              onRemove={removeFromDock}
+            />
+
+            <div className="ml-1 flex shrink-0 items-end gap-1 self-end sm:ml-1.5">
+              <div className="mb-1.5 h-8 w-px bg-white/15" aria-hidden />
+              <button
+                type="button"
+                onClick={() => setEditing(false)}
+                className="mb-1.5 flex size-9 shrink-0 items-center justify-center rounded-xl bg-white/90 transition-colors hover:bg-white active:scale-95"
+                aria-label="Listo"
+              >
+                <Check className="size-4 text-neutral-900" strokeWidth={2.5} />
+              </button>
+            </div>
           </>
         ) : (
-          <button
-            type="button"
-            onClick={() => setEditing(true)}
-            className="mb-1.5 flex size-9 items-center justify-center rounded-xl bg-white/10 transition-colors hover:bg-white/15 active:scale-95"
-            aria-label="Editar accesos directos"
-          >
-            <Pencil className="size-4 text-white/70" />
-          </button>
+          <>
+            {dockItems.map((item) => {
+              const target = routeForDockItem(siteId, popId, item)
+              return (
+                <StaticDockItem
+                  key={item.id}
+                  item={item}
+                  onNavigate={() => {
+                    if (target) router.push(target)
+                  }}
+                />
+              )
+            })}
+
+            <div className="ml-1 flex shrink-0 items-end gap-1 self-end sm:ml-1.5">
+              <div className="mb-1.5 h-8 w-px bg-white/15" aria-hidden />
+              <button
+                type="button"
+                onClick={() => setEditing(true)}
+                className="mb-1.5 flex size-9 shrink-0 items-center justify-center rounded-xl bg-white/10 transition-colors hover:bg-white/15 active:scale-95"
+                aria-label="Editar accesos directos"
+              >
+                <Pencil className="size-4 text-white/70" />
+              </button>
+            </div>
+          </>
         )}
       </div>
     </div>
