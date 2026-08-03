@@ -131,23 +131,39 @@ function DockSlotItem({
           editing && isDragging && "opacity-0",
         )}
       >
-        <button
-          type="button"
-          {...(editing ? listeners : {})}
-          {...(editing ? attributes : {})}
-          onClick={() => {
-            if (!editing) onNavigate()
-          }}
-          className={cn(
-            "relative",
-            editing
-              ? "cursor-grab active:cursor-grabbing"
-              : "transition-transform duration-200 hover:scale-110 active:scale-95",
-          )}
-          aria-label={item.name}
-        >
-          <DockIconVisual icon={item.icon} className={DOCK_ICON_CLASS} />
-        </button>
+        {editing ? (
+          <button
+            type="button"
+            {...listeners}
+            {...attributes}
+            className="relative cursor-grab active:cursor-grabbing"
+            aria-label={item.name}
+          >
+            <DockIconVisual icon={item.icon} className={DOCK_ICON_CLASS} />
+          </button>
+        ) : (
+          <div className="group/dock-tip relative">
+            <button
+              type="button"
+              onClick={onNavigate}
+              className="relative transition-transform duration-200 hover:scale-110 active:scale-95"
+              aria-label={item.name}
+            >
+              <DockIconVisual icon={item.icon} className={DOCK_ICON_CLASS} />
+            </button>
+            <span
+              role="tooltip"
+              className={cn(
+                "pointer-events-none absolute bottom-full left-1/2 z-50 mb-2.5 -translate-x-1/2 whitespace-nowrap",
+                "rounded-lg bg-foreground/90 px-2.5 py-1 text-[11px] font-medium text-background",
+                "shadow-lg shadow-black/20 opacity-0",
+                "transition-opacity duration-150 group-hover/dock-tip:opacity-100",
+              )}
+            >
+              {item.name}
+            </span>
+          </div>
+        )}
 
         {editing ? (
           <button
@@ -296,7 +312,7 @@ export function MenuDock({ siteId, popId }: Props) {
     <div className="pointer-events-none absolute bottom-4 left-1/2 z-30 -translate-x-1/2">
       <div
         className={cn(
-          "pointer-events-auto flex items-end gap-1 overflow-visible px-3 py-2 sm:gap-1.5 sm:px-4",
+          "pointer-events-auto flex items-end gap-1 overflow-visible px-2.5 py-2 sm:gap-1.5 sm:px-3",
           menuFloatingPillShellClass,
           editing && dragging &&
             "transition-[width,padding,gap] duration-300 ease-[cubic-bezier(0.32,0.72,0,1)]",
@@ -321,7 +337,7 @@ export function MenuDock({ siteId, popId }: Props) {
         ) : null}
 
         <div className="ml-1 flex shrink-0 items-end gap-2.5 self-end sm:ml-1.5">
-          <div className="mb-1.5 h-8 w-px bg-white/15" aria-hidden />
+          <div className="mb-1.5 h-8 w-px bg-border" aria-hidden />
           <button
             type="button"
             onClick={() => setEditing(!editing)}
@@ -329,14 +345,14 @@ export function MenuDock({ siteId, popId }: Props) {
               "mb-1.5 flex size-9 shrink-0 items-center justify-center rounded-xl transition-colors active:scale-95",
               editing
                 ? "bg-white/90 hover:bg-white"
-                : "bg-white/10 hover:bg-white/15",
+                : "bg-secondary hover:bg-muted",
             )}
             aria-label={editing ? "Listo" : "Editar accesos directos"}
           >
             {editing ? (
               <Check className="size-4 text-neutral-900" strokeWidth={2.5} />
             ) : (
-              <Pencil className="size-4 text-white/70" />
+              <Pencil className="size-4 text-muted-foreground" />
             )}
           </button>
         </div>

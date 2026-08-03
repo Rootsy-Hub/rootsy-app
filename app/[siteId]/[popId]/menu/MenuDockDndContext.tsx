@@ -45,7 +45,7 @@ type DragKind = "menu" | "dock"
 
 export type MenuDockDragItem = MenuCatalogItem | MenuItemDef
 
-export const DOCK_SLOT_SHIFT_PX = 54
+export const DOCK_SLOT_SHIFT_PX = 62
 
 export function getDockEditSlotCount(
   itemCount: number,

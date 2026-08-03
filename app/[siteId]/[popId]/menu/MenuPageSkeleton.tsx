@@ -1,10 +1,14 @@
 "use client"
 
-import { Skeleton } from "@/components/ui/skeleton"
+import { DOCK_SLOT_SHIFT_PX } from "@/app/[siteId]/[popId]/menu/MenuDockDndContext"
 import { menuFloatingPillShellClass } from "@/app/[siteId]/[popId]/menu/menuFloatingPillStyles"
+import { Skeleton } from "@/components/ui/skeleton"
+import { DEFAULT_MENU_DOCK_IDS } from "@/lib/menuCatalog"
 import { cn } from "@/lib/utils"
 
 const LABEL_WIDTHS = ["w-14", "w-16", "w-12", "w-[3.25rem]", "w-14", "w-11"] as const
+const DOCK_ICON_SIZE_PX = 48
+const SECTION_DOT_COUNT = 3
 
 function MenuIconTileSkeleton({ index }: { index: number }) {
   const labelWidth = LABEL_WIDTHS[index % LABEL_WIDTHS.length]
@@ -24,6 +28,36 @@ function MenuIconTileSkeleton({ index }: { index: number }) {
         className={cn("h-3 rounded-full bg-muted-foreground/10", labelWidth)}
         style={{ animationDelay: delay }}
       />
+    </div>
+  )
+}
+
+function MenuSectionNavigatorSkeleton() {
+  return (
+    <div
+      aria-hidden
+      className={cn(
+        "mb-8 inline-flex max-w-full items-center justify-between gap-2.5 px-3.5 py-1 sm:min-w-48",
+        menuFloatingPillShellClass,
+      )}
+    >
+      <Skeleton className="h-3.5 w-14 rounded-sm bg-muted-foreground/12" />
+
+      <div className="flex shrink-0 items-center -space-x-1">
+        {Array.from({ length: SECTION_DOT_COUNT }, (_, index) => (
+          <div
+            key={index}
+            className="flex size-7 items-center justify-center"
+          >
+            <Skeleton
+              className={cn(
+                "rounded-full bg-muted-foreground/12",
+                index === 0 ? "size-2" : "size-1.5",
+              )}
+            />
+          </div>
+        ))}
+      </div>
     </div>
   )
 }
@@ -72,22 +106,39 @@ function MenuPageSkeletonHeader() {
 }
 
 function MenuPageSkeletonDock() {
+  const iconCount = DEFAULT_MENU_DOCK_IDS.length
+  const trackWidth = iconCount * DOCK_SLOT_SHIFT_PX
+  const iconInset = (DOCK_SLOT_SHIFT_PX - DOCK_ICON_SIZE_PX) / 2
+
   return (
     <div className="absolute bottom-4 left-1/2 z-20 -translate-x-1/2">
       <div
         className={cn(
-          "flex items-center gap-3 px-4 py-2",
+          "flex items-end gap-1 overflow-visible px-2.5 py-2 sm:gap-1.5 sm:px-3",
           menuFloatingPillShellClass,
         )}
       >
-        {Array.from({ length: 6 }, (_, i) => (
-          <div key={i} className="flex flex-col items-center gap-1">
+        <div
+          aria-hidden
+          className="relative min-h-12 shrink-0 pt-2.5"
+          style={{ width: trackWidth }}
+        >
+          {Array.from({ length: iconCount }, (_, index) => (
             <Skeleton
-              className="size-12 rounded-xl bg-muted-foreground/12"
-              style={{ animationDelay: `${i * 60}ms` }}
+              key={index}
+              className="absolute bottom-0 size-12 rounded-[22%] bg-muted-foreground/12"
+              style={{
+                left: index * DOCK_SLOT_SHIFT_PX + iconInset,
+                animationDelay: `${index * 60}ms`,
+              }}
             />
-          </div>
-        ))}
+          ))}
+        </div>
+
+        <div className="ml-1 flex shrink-0 items-end gap-2.5 self-end sm:ml-1.5">
+          <div className="mb-1.5 h-8 w-px bg-border" aria-hidden />
+          <Skeleton className="mb-1.5 size-9 rounded-xl bg-muted-foreground/10" />
+        </div>
       </div>
     </div>
   )
@@ -110,19 +161,7 @@ export function MenuPageSkeleton() {
 
       <div className="relative z-10 flex flex-1 flex-col items-center justify-center pb-28 pt-4">
         <div className="flex w-full flex-col items-center">
-          <div
-            className={cn(
-              "mb-8 flex w-48 items-center justify-between px-3.5 py-1",
-              menuFloatingPillShellClass,
-            )}
-          >
-            <Skeleton className="h-4 w-16 rounded-md bg-white/15" />
-            <div className="flex items-center gap-1.5">
-              <Skeleton className="size-2 rounded-full bg-emerald-400/60" />
-              <Skeleton className="size-1.5 rounded-full bg-white/20" />
-              <Skeleton className="size-1.5 rounded-full bg-white/20" />
-            </div>
-          </div>
+          <MenuSectionNavigatorSkeleton />
 
           <div className="w-full px-8">
             <div className="mx-auto grid min-h-[280px] max-w-4xl grid-cols-6 gap-x-0 gap-y-8 px-6 py-6">
