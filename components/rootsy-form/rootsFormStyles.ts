@@ -3,6 +3,37 @@ import { cn } from "@/lib/utils"
 export const rootsFormFieldStackClass =
   "flex w-full min-w-0 flex-col gap-2"
 
+/** Columna dentro de un formulario de modal (stack vertical con ritmo entre campos). */
+export const rootsFormColumnClass = "flex w-full min-w-0 flex-col gap-3.5"
+
+/** Grilla principal de upsert — dos columnas + separador central en desktop. */
+export const rootsFormGridClass =
+  "grid w-full min-w-0 gap-5 lg:grid-cols-[minmax(0,1fr)_1px_minmax(0,1fr)] lg:gap-x-6 lg:gap-y-5"
+
+/** Línea vertical entre columnas (solo visible en layout de dos columnas). */
+export const rootsFormGridDividerClass =
+  "hidden min-h-full w-px shrink-0 bg-zinc-200 lg:block dark:bg-zinc-200"
+
+/** Fila de dos campos dentro de una columna (p. ej. SKU + código de barras). */
+export const rootsFormTwoColRowClass =
+  "grid w-full min-w-0 grid-cols-1 gap-3 sm:grid-cols-2"
+
+/** Mensaje debajo del control — ayuda neutral. */
+export const rootsFormFieldHintClass =
+  "block text-xs leading-snug text-zinc-500 dark:text-zinc-500"
+
+/** Error de validación. */
+export const rootsFormFieldErrorClass =
+  "block text-xs leading-snug text-destructive"
+
+/** Aviso no bloqueante. */
+export const rootsFormFieldWarningClass =
+  "block text-xs leading-snug text-amber-700 dark:text-amber-700"
+
+/** Confirmación puntual. */
+export const rootsFormFieldSuccessClass =
+  "block text-xs leading-snug text-emerald-700 dark:text-emerald-700"
+
 /** Tipografía compartida — misma escala que Input shadcn (text-base, md:text-sm). */
 export const rootsFormControlTypographyClass =
   "font-sans text-base leading-normal font-normal text-zinc-900 md:text-sm"
@@ -147,4 +178,56 @@ export const rootsFormSwitchTrackClass = cn(
   "disabled:cursor-not-allowed disabled:opacity-50",
   "dark:data-[state=unchecked]:bg-zinc-200 dark:data-[state=checked]:bg-emerald-600",
 )
+
+/** Track del segment group — pill sobre fondo zinc, alineado al light form. */
+export const rootsFormSegmentGroupClass =
+  "grid w-full gap-1 rounded-lg border border-zinc-200 bg-zinc-50 p-1 shadow-xs dark:border-zinc-200 dark:bg-zinc-50"
+
+export function rootsFormSegmentOptionClass(selected: boolean, disabled?: boolean) {
+  return cn(
+    rootsFormControlTypographyClass,
+    "inline-flex h-9 min-w-0 flex-1 items-center justify-center gap-2 rounded-md px-3 font-medium transition-[color,background-color,box-shadow] duration-150",
+    "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-700/45 focus-visible:ring-offset-0",
+    disabled && "pointer-events-none opacity-50",
+    selected
+      ? "bg-white text-zinc-900 shadow-xs ring-1 ring-zinc-200"
+      : "text-zinc-500 hover:text-zinc-900",
+  )
+}
+
+/** Descuento — radio 0.55rem en shell, track y pill (valor validado a mano). */
+export const rootsFormDiscountFieldShellClass = cn(
+  "flex h-11 w-full min-w-0 items-center gap-2 rounded-[0.55rem] border border-zinc-200 bg-white p-1 shadow-xs transition-[color,box-shadow,border-color] hover:border-zinc-300 focus-within:!border-emerald-700 focus-within:!ring-2 focus-within:!ring-emerald-700/45 focus-within:ring-offset-0 dark:border-zinc-200 dark:bg-white",
+)
+
+export const rootsFormDiscountSegmentTrackClass =
+  "grid shrink-0 grid-cols-2 gap-1 rounded-[0.55rem] bg-zinc-100 p-1 dark:bg-zinc-100"
+
+export const rootsFormDiscountSegmentCellClass =
+  "relative flex items-center justify-center"
+
+export const rootsFormDiscountSegmentPillClass =
+  "pointer-events-none absolute inset-0 rounded-[0.55rem] bg-white shadow-xs"
+
+export function rootsFormDiscountSegmentButtonClass(
+  selected: boolean,
+  optionDisabled?: boolean,
+) {
+  return cn(
+    rootsFormControlTypographyClass,
+    "relative z-10 inline-flex h-7 min-w-[2.25rem] items-center justify-center bg-transparent px-2 text-xs font-semibold leading-none tabular-nums transition-colors duration-150",
+    "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-700/45 focus-visible:ring-offset-0",
+    optionDisabled && "pointer-events-none opacity-45",
+    selected ? "text-zinc-900" : "text-zinc-500 hover:text-zinc-800",
+  )
+}
+
+export const rootsFormDiscountInputClass = cn(
+  rootsFormControlTypographyClass,
+  "min-w-0 flex-1 bg-transparent px-0.5 text-right font-numeric tabular-nums outline-none placeholder:text-zinc-400 disabled:cursor-not-allowed dark:placeholder:text-zinc-400",
+)
+
+/** Unidad activa (% o $) — anclaje visual del valor. */
+export const rootsFormDiscountSuffixClass =
+  "w-5 shrink-0 pr-0.5 text-right text-sm font-semibold leading-none tabular-nums text-zinc-400 dark:text-zinc-400"
 

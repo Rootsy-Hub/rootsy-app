@@ -7,12 +7,8 @@ import {
   articleDialogSurfaceClass,
   articleDialogSurfaceTwoColClass,
   articleDialogSurfaceWideClass,
-  articleFormColumnClass,
-  articleFormFieldStackClass,
-  articleFormGridClass,
   articleFormTextFieldClass,
   articleFormTextareaClass,
-  articleFormTwoColRowClass,
 } from "@/app/[siteId]/[popId]/articles/articleConstants"
 import {
   clientDialogBodyClass,
@@ -29,13 +25,18 @@ import { LayoutFinalComponentsModal } from "@/app/[siteId]/[popId]/layout/librar
 import {
   RootsFormField,
   RootsFormDateField,
+  RootsFormDiscountField,
+  RootsFormGrid,
   RootsFormMoneyField,
   RootsFormQuantityField,
   RootsFormSelectField,
   RootsFormSelectItem,
+  RootsFormSegmentField,
   RootsFormSwitchField,
   RootsFormTextField,
   RootsFormTextareaField,
+  rootsFormColumnClass,
+  rootsFormTwoColRowClass,
   rootsFormTextFieldClass,
 } from "@/components/rootsy-form"
 import { Button } from "@/components/ui/button"
@@ -55,8 +56,6 @@ import {
   saleOpChannelErrorBanner,
   saleOpChannelFormField,
   saleOpChannelHint,
-  saleOpChannelSegmentGroup,
-  saleOpChannelSelectableRow,
   saleOpChannelWarningBanner,
   saleOpDialogBody,
   saleOpDialogContentComprobante,
@@ -65,7 +64,6 @@ import {
   saleOpDialogContentXl,
   saleOpDialogFooter,
   saleOpDialogHeader,
-  saleOpDialogOptionClass,
 } from "@/components/sale-operation/saleOperationStyles"
 import {
   AlertDialog,
@@ -78,7 +76,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
 import { cn } from "@/lib/utils"
-import { CalendarIcon, Landmark } from "lucide-react"
+import { CalendarIcon, Landmark, Receipt } from "lucide-react"
 import { useMemo, useState, type ReactNode } from "react"
 
 const LIBRARY_SECTIONS = [
@@ -89,6 +87,7 @@ const LIBRARY_SECTIONS = [
   { id: "select", label: "Select (final)" },
   { id: "date", label: "Fecha" },
   { id: "boolean", label: "Booleanos" },
+  { id: "field-help", label: "Ayuda de campo" },
   { id: "layout", label: "Layout de formulario" },
   { id: "composite", label: "Controles compuestos" },
   { id: "feedback", label: "Banners y ayuda" },
@@ -460,8 +459,22 @@ export function LayoutComponentLibrary() {
   const [dateValue, setDateValue] = useState("2026-08-03")
   const [switchOn, setSwitchOn] = useState(true)
   const [switchCatalogOn, setSwitchCatalogOn] = useState(false)
-  const [segment, setSegment] = useState<"a" | "b">("a")
-  const [selectedRow, setSelectedRow] = useState<"one" | "two">("one")
+  const [layoutName, setLayoutName] = useState("Cola 500 ml")
+  const [layoutDesc, setLayoutDesc] = useState(
+    "Bebida gaseosa en envase individual.",
+  )
+  const [layoutSku, setLayoutSku] = useState("BEB-001")
+  const [layoutBarcode, setLayoutBarcode] = useState("7790310987654")
+  const [layoutActive, setLayoutActive] = useState(true)
+  const [layoutDiscountMode, setLayoutDiscountMode] = useState<
+    "porcentaje" | "fijo"
+  >("porcentaje")
+  const [layoutDiscountValue, setLayoutDiscountValue] = useState("10")
+  const [fieldHelpSku, setFieldHelpSku] = useState("BE")
+  const [segment, setSegment] = useState<"porcentaje" | "fijo">("porcentaje")
+  const [discountValue, setDiscountValue] = useState("10")
+  const [fulfillmentSegment, setFulfillmentSegment] = useState<"pickup" | "delivery">("pickup")
+  const [comprobanteValue, setComprobanteValue] = useState("factura-b")
   const [liveModalId, setLiveModalId] = useState<string | null>(null)
   const [finalComponentsOpen, setFinalComponentsOpen] = useState(false)
 
@@ -749,98 +762,222 @@ export function LayoutComponentLibrary() {
           </LibrarySection>
 
           <LibrarySection
-            id="layout"
-            title="Layout de formulario"
-            description="Stacks, grillas y columnas usadas en upserts de artículo."
+            id="field-help"
+            title="Ayuda de campo (final)"
+            description="Texto debajo del control con props hint, warning, error o success. Solo se muestra uno a la vez (prioridad: error → warning → success → hint)."
           >
-            <div className={articleFormGridClass}>
-              <div className={articleFormColumnClass}>
-                <div className={articleFormFieldStackClass}>
-                  <Label>Nombre</Label>
-                  <Input className={articleFormTextFieldClass} defaultValue="Cola 500 ml" />
-                </div>
-                <div className={articleFormTwoColRowClass}>
-                  <div className={articleFormFieldStackClass}>
-                    <Label>SKU</Label>
-                    <Input className={articleFormTextFieldClass} defaultValue="BEB-001" />
-                  </div>
-                  <div className={articleFormFieldStackClass}>
-                    <Label>Código barras</Label>
-                    <Input className={articleFormTextFieldClass} defaultValue="7790310" />
-                  </div>
-                </div>
-              </div>
-              <div className={articleFormColumnClass}>
-                <div className={articleFormFieldStackClass}>
-                  <Label>Descripción</Label>
-                  <Textarea
-                    className={articleFormTextareaClass}
-                    rows={5}
-                    defaultValue="Ejemplo de columna derecha en modal de dos columnas."
-                  />
-                </div>
-              </div>
+            <div className="grid gap-4 lg:grid-cols-2">
+              <SpecCard
+                title="hint · ayuda neutral"
+                source="RootsFormTextField · hint"
+                tokens={["text-xs", "zinc-500"]}
+              >
+                <RootsFormTextField
+                  label="SKU"
+                  value={fieldHelpSku}
+                  onChange={(e) => setFieldHelpSku(e.target.value)}
+                  placeholder="Código interno"
+                  hint="Opcional. Visible solo en reportes internos."
+                />
+              </SpecCard>
+              <SpecCard
+                title="error · validación"
+                source="RootsFormTextField · error"
+                tokens={["destructive", "aria-invalid"]}
+              >
+                <RootsFormTextField
+                  label="SKU"
+                  value={fieldHelpSku}
+                  onChange={(e) => setFieldHelpSku(e.target.value)}
+                  error="Ingresá al menos 3 caracteres."
+                />
+              </SpecCard>
+              <SpecCard
+                title="warning · aviso"
+                source="RootsFormTextField · warning"
+                tokens={["amber-700"]}
+              >
+                <RootsFormTextField
+                  label="SKU"
+                  value={fieldHelpSku}
+                  onChange={(e) => setFieldHelpSku(e.target.value)}
+                  warning="Este SKU ya existe en otro artículo del catálogo."
+                />
+              </SpecCard>
+              <SpecCard
+                title="success · confirmación"
+                source="RootsFormTextField · success"
+                tokens={["emerald-700"]}
+              >
+                <RootsFormTextField
+                  label="Código de barras"
+                  defaultValue="7790310987654"
+                  success="Formato EAN válido."
+                />
+              </SpecCard>
             </div>
             <p className="mt-3 font-mono text-[11px] text-muted-foreground">
-              articleFormGridClass · articleFormColumnClass · articleFormFieldStackClass ·
-              articleFormTwoColRowClass
+              Props: hint · warning · error · success · invalid — en cualquier RootsForm*Field
+              o directo en RootsFormField.
+            </p>
+          </LibrarySection>
+
+          <LibrarySection
+            id="layout"
+            title="Layout de formulario (final)"
+            description="Grilla de dos columnas con separador, filas dobles, segment de descuento y ayuda de campo integrada."
+          >
+            <RootsFormGrid>
+              <div className={rootsFormColumnClass}>
+                <RootsFormTextField
+                  label="Nombre"
+                  value={layoutName}
+                  onChange={(e) => setLayoutName(e.target.value)}
+                  hint="Nombre comercial visible en ventas y catálogo."
+                />
+                <RootsFormTextareaField
+                  label="Descripción"
+                  value={layoutDesc}
+                  onChange={(e) => setLayoutDesc(e.target.value)}
+                  rows={3}
+                  hint="Opcional. Aparece en el menú digital si lo activás."
+                />
+                <div className={rootsFormTwoColRowClass}>
+                  <RootsFormTextField
+                    label="SKU"
+                    value={layoutSku}
+                    onChange={(e) => setLayoutSku(e.target.value)}
+                    error={
+                      layoutSku.length > 0 && layoutSku.length < 3
+                        ? "Ingresá al menos 3 caracteres."
+                        : undefined
+                    }
+                    hint={
+                      layoutSku.length === 0
+                        ? "Código interno para reportes."
+                        : undefined
+                    }
+                  />
+                  <RootsFormTextField
+                    label="Código de barras"
+                    value={layoutBarcode}
+                    onChange={(e) => setLayoutBarcode(e.target.value)}
+                    success={
+                      layoutBarcode.length >= 8
+                        ? "Formato EAN válido."
+                        : undefined
+                    }
+                  />
+                </div>
+                <RootsFormSwitchField
+                  label="Artículo activo en ventas"
+                  description="Los inactivos no aparecen en ventas ni catálogo."
+                  checked={layoutActive}
+                  onCheckedChange={setLayoutActive}
+                />
+              </div>
+              <div className={rootsFormColumnClass}>
+                <RootsFormMoneyField
+                  label="Precio venta"
+                  value={moneyValue}
+                  onChange={setMoneyValue}
+                  hint="Precio de lista antes de impuestos."
+                />
+                <RootsFormQuantityField
+                  label="Stock inicial"
+                  value={qtyValue}
+                  onChange={setQtyValue}
+                  warning="Solo aplica al crear el artículo."
+                />
+                <RootsFormSelectField
+                  label="Categoría"
+                  value={selectValue}
+                  onValueChange={setSelectValue}
+                  placeholder="Elegir categoría"
+                  hint="Organiza el artículo en listados y reportes."
+                >
+                  <RootsFormSelectItem value="bebidas">Bebidas</RootsFormSelectItem>
+                  <RootsFormSelectItem value="verduras">Verduras</RootsFormSelectItem>
+                </RootsFormSelectField>
+                <RootsFormDateField
+                  label="Vencimiento"
+                  value={dateValue}
+                  onChange={setDateValue}
+                  hint="Dejá vacío si el producto no vence."
+                />
+                <RootsFormDiscountField
+                  label="Descuento"
+                  mode={layoutDiscountMode}
+                  onModeChange={setLayoutDiscountMode}
+                  value={layoutDiscountValue}
+                  onChange={setLayoutDiscountValue}
+                  hint={
+                    layoutDiscountMode === "porcentaje"
+                      ? "Porcentaje sobre el subtotal (0–100)."
+                      : "Monto fijo en pesos sobre el subtotal."
+                  }
+                />
+              </div>
+            </RootsFormGrid>
+            <p className="mt-3 font-mono text-[11px] text-muted-foreground">
+              RootsFormGrid · rootsFormColumnClass · rootsFormTwoColRowClass ·
+              RootsFormDiscountField · hint · warning · error · success
             </p>
           </LibrarySection>
 
           <LibrarySection
             id="composite"
-            title="Controles compuestos"
-            description="Segmentos, filas seleccionables y opciones de diálogo de venta."
+            title="Controles compuestos (final)"
+            description="Descuento en una línea, segment group para opciones sin valor, y select para listas largas."
           >
             <div className="grid gap-4 lg:grid-cols-2">
-              <SpecCard title="Segment group" source="saleOpChannelSegmentGroup">
-                <div className={saleOpChannelSegmentGroup}>
-                  {(["a", "b"] as const).map((value) => (
-                    <button
-                      key={value}
-                      type="button"
-                      className={cn(
-                        "inline-flex flex-1 items-center justify-center rounded-lg px-3 py-2.5 text-sm font-semibold transition-all",
-                        segment === value
-                          ? "bg-primary/10 text-primary"
-                          : "text-muted-foreground hover:bg-muted/40",
-                      )}
-                      onClick={() => setSegment(value)}
-                    >
-                      {value === "a" ? "Porcentaje" : "Monto fijo"}
-                    </button>
-                  ))}
-                </div>
+              <SpecCard
+                title="RootsFormDiscountField"
+                source="components/rootsy-form/RootsFormDiscountField.tsx"
+                tokens={["segment inset", "valor + unidad", "emerald focus"]}
+              >
+                <RootsFormDiscountField
+                  label="Descuento"
+                  mode={segment}
+                  onModeChange={setSegment}
+                  value={discountValue}
+                  onChange={setDiscountValue}
+                  hint="Tipo y valor en el mismo control."
+                />
               </SpecCard>
-              <SpecCard title="Selectable row" source="saleOpChannelSelectableRow">
-                <div className="space-y-2">
-                  {(["one", "two"] as const).map((id) => (
-                    <button
-                      key={id}
-                      type="button"
-                      className={saleOpChannelSelectableRow(selectedRow === id)}
-                      onClick={() => setSelectedRow(id)}
-                    >
-                      <span className="text-sm font-medium">
-                        {id === "one" ? "Factura B" : "Ticket fiscal"}
-                      </span>
-                    </button>
-                  ))}
-                </div>
+              <SpecCard
+                title="RootsFormSegmentField · 2 opciones"
+                source="rootsFormSegmentGroupClass"
+              >
+                <RootsFormSegmentField
+                  label="Tipo de entrega"
+                  value={fulfillmentSegment}
+                  onValueChange={(value) =>
+                    setFulfillmentSegment(value as "pickup" | "delivery")
+                  }
+                  options={[
+                    { value: "pickup", label: "Mostrador" },
+                    { value: "delivery", label: "Delivery" },
+                  ]}
+                />
               </SpecCard>
-              <SpecCard title="Dialog option" source="saleOpDialogOptionClass">
-                <button
-                  type="button"
-                  className={saleOpDialogOptionClass(true)}
+              <SpecCard
+                title="RootsFormSelectField · alternativa a filas"
+                source="Reemplaza selectable row / dialog option"
+                tokens={["check", "lista larga"]}
+              >
+                <RootsFormSelectField
+                  label="Comprobante"
+                  value={comprobanteValue}
+                  onValueChange={setComprobanteValue}
+                  prefix={<Receipt className="size-4" aria-hidden />}
+                  hint="Usá select cuando hay más de 4 opciones o textos largos."
                 >
-                  <span className="text-sm font-medium">Opción seleccionada</span>
-                </button>
-                <button
-                  type="button"
-                  className={cn(saleOpDialogOptionClass(false), "mt-2")}
-                >
-                  <span className="text-sm font-medium">Opción alternativa</span>
-                </button>
+                  <RootsFormSelectItem value="sin">Sin comprobante</RootsFormSelectItem>
+                  <RootsFormSelectItem value="recibo-x">Recibo X</RootsFormSelectItem>
+                  <RootsFormSelectItem value="factura-b">Factura B</RootsFormSelectItem>
+                  <RootsFormSelectItem value="factura-c">Factura C</RootsFormSelectItem>
+                </RootsFormSelectField>
               </SpecCard>
             </div>
           </LibrarySection>

@@ -1,6 +1,8 @@
 "use client"
 
 import { RootsFormField } from "@/components/rootsy-form/RootsFormField"
+import type { RootsFormFieldAssistProps } from "@/components/rootsy-form/rootsFormFieldAssist"
+import { useRootsFormFieldControlProps } from "@/components/rootsy-form/rootsFormFieldContext"
 import { RootsFormPrefixedInput } from "@/components/rootsy-form/RootsFormPrefixedInput"
 import { usePatternInputHandlers } from "@/components/rootsy-form/usePatternInputHandlers"
 import {
@@ -24,7 +26,7 @@ type Props = {
   max?: number
   className?: string
   inputClassName?: string
-}
+} & RootsFormFieldAssistProps
 
 export function RootsFormQuantityField({
   label,
@@ -35,12 +37,17 @@ export function RootsFormQuantityField({
   placeholder = "0",
   disabled,
   invalid,
+  hint,
+  error,
+  warning,
+  success,
   max = 10000,
   className,
   inputClassName,
 }: Props) {
   const autoId = useId()
   const fieldId = id ?? autoId
+  const controlProps = useRootsFormFieldControlProps({ invalid })
 
   const { handleChange, handleFocus, handleBlur } = usePatternInputHandlers({
     value,
@@ -55,7 +62,16 @@ export function RootsFormQuantityField({
   })
 
   return (
-    <RootsFormField label={label} htmlFor={fieldId} className={className}>
+    <RootsFormField
+      label={label}
+      htmlFor={fieldId}
+      className={className}
+      hint={hint}
+      error={error}
+      warning={warning}
+      success={success}
+      invalid={invalid}
+    >
       <RootsFormPrefixedInput
         id={fieldId}
         prefix={prefix}
@@ -64,8 +80,9 @@ export function RootsFormQuantityField({
         value={value}
         maxLength={INTEGER_INPUT_MAX_LEN}
         disabled={disabled}
-        invalid={invalid}
+        invalid={controlProps.isInvalid}
         placeholder={placeholder}
+        aria-describedby={controlProps.describedBy}
         onChange={(e) => handleChange(e.target.value)}
         onFocus={handleFocus}
         onBlur={handleBlur}

@@ -9,11 +9,10 @@ import type { ArticleItemFormState } from "@/app/[siteId]/[popId]/articles/Artic
 import { ArticleItemKindSelector } from "@/app/[siteId]/[popId]/articles/ArticleItemKindSelector"
 import { ArticleSupplierPickerField } from "@/app/[siteId]/[popId]/articles/ArticleSupplierPickerField"
 import { ArticleUnitOfMeasureField } from "@/app/[siteId]/[popId]/articles/ArticleUnitOfMeasureField"
-import { RootsFormTextField, RootsFormTextareaField, RootsFormMoneyField, RootsFormQuantityField, RootsFormSelectField, RootsFormSelectItem } from "@/components/rootsy-form"
+import { RootsFormTextField, RootsFormTextareaField, RootsFormMoneyField, RootsFormQuantityField, RootsFormSelectField, RootsFormSelectItem, RootsFormGrid } from "@/components/rootsy-form"
 import {
   articleFormColumnClass,
   articleFormFieldStackClass,
-  articleFormGridClass,
   articleFormTextFieldClass,
   articleFormTwoColRowClass,
 } from "@/app/[siteId]/[popId]/articles/articleConstants"
@@ -71,7 +70,7 @@ export function ArticleUpsertFormFields({
   const parsedSalePrice = parseMoneyInput(form.salePrice, 0)
 
   return (
-    <div className={articleFormGridClass}>
+    <RootsFormGrid>
       <div className={articleFormColumnClass}>
         <RootsFormTextField
           label="Nombre"
@@ -260,6 +259,6 @@ export function ArticleUpsertFormFields({
           />
         </div>
       </div>
-    </div>
+    </RootsFormGrid>
   )
 }

@@ -1,6 +1,8 @@
 "use client"
 
 import { RootsFormField } from "@/components/rootsy-form/RootsFormField"
+import type { RootsFormFieldAssistProps } from "@/components/rootsy-form/rootsFormFieldAssist"
+import { useRootsFormFieldControlProps } from "@/components/rootsy-form/rootsFormFieldContext"
 import { RootsFormPrefixedInput } from "@/components/rootsy-form/RootsFormPrefixedInput"
 import { useMoneyInputField } from "@/components/rootsy-form/useMoneyInputField"
 import {
@@ -23,7 +25,8 @@ type Props = {
   inputClassName?: string
   formatOnBlur?: boolean
   formatValue?: (amount: number) => string
-} & Pick<ComponentProps<"input">, "autoFocus">
+} & RootsFormFieldAssistProps &
+  Pick<ComponentProps<"input">, "autoFocus">
 
 export function RootsFormMoneyField({
   label,
@@ -34,6 +37,10 @@ export function RootsFormMoneyField({
   placeholder = "0,00",
   disabled,
   invalid,
+  hint,
+  error,
+  warning,
+  success,
   className,
   inputClassName,
   formatOnBlur = true,
@@ -42,6 +49,7 @@ export function RootsFormMoneyField({
 }: Props) {
   const autoId = useId()
   const fieldId = id ?? autoId
+  const controlProps = useRootsFormFieldControlProps({ invalid })
 
   const {
     inputRef,
@@ -59,7 +67,16 @@ export function RootsFormMoneyField({
   })
 
   return (
-    <RootsFormField label={label} htmlFor={fieldId} className={className}>
+    <RootsFormField
+      label={label}
+      htmlFor={fieldId}
+      className={className}
+      hint={hint}
+      error={error}
+      warning={warning}
+      success={success}
+      invalid={invalid}
+    >
       <RootsFormPrefixedInput
         ref={inputRef}
         id={fieldId}
@@ -70,8 +87,9 @@ export function RootsFormMoneyField({
         value={value}
         maxLength={MONEY_INPUT_DISPLAY_MAX_LEN}
         disabled={disabled}
-        invalid={invalid}
+        invalid={controlProps.isInvalid}
         placeholder={placeholder}
+        aria-describedby={controlProps.describedBy}
         onMouseDown={handleMouseDown}
         onChange={handleChange}
         onKeyDown={handleKeyDown}

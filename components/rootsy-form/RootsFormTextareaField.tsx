@@ -1,6 +1,8 @@
 "use client"
 
 import { RootsFormField } from "@/components/rootsy-form/RootsFormField"
+import type { RootsFormFieldAssistProps } from "@/components/rootsy-form/rootsFormFieldAssist"
+import { useRootsFormFieldControlProps } from "@/components/rootsy-form/rootsFormFieldContext"
 import { rootsFormTextareaFieldClass } from "@/components/rootsy-form/rootsFormStyles"
 import { Textarea } from "@/components/ui/textarea"
 import { cn } from "@/lib/utils"
@@ -11,25 +13,42 @@ type Props = {
   id?: string
   className?: string
   textareaClassName?: string
-} & Omit<ComponentProps<"textarea">, "id" | "className">
+} & RootsFormFieldAssistProps &
+  Omit<ComponentProps<"textarea">, "id" | "className">
 
 export function RootsFormTextareaField({
   label,
   id,
   className,
   textareaClassName,
+  hint,
+  error,
+  warning,
+  success,
+  invalid,
   rows = 3,
   ...textareaProps
 }: Props) {
   const autoId = useId()
   const fieldId = id ?? autoId
+  const controlProps = useRootsFormFieldControlProps({ invalid })
 
   return (
-    <RootsFormField label={label} htmlFor={fieldId} className={className}>
+    <RootsFormField
+      label={label}
+      htmlFor={fieldId}
+      className={className}
+      hint={hint}
+      error={error}
+      warning={warning}
+      success={success}
+      invalid={invalid}
+    >
       <Textarea
         id={fieldId}
         rows={rows}
         className={cn(rootsFormTextareaFieldClass, textareaClassName)}
+        {...controlProps}
         {...textareaProps}
       />
     </RootsFormField>

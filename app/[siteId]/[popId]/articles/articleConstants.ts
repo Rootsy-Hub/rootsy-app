@@ -2,6 +2,12 @@ import {
   lightToolbarFocusClass,
 } from "@/components/data-workspace/dataWorkspaceListStyles"
 import {
+  rootsFormColumnClass,
+  rootsFormFieldStackClass,
+  rootsFormGridClass,
+  rootsFormTwoColRowClass,
+} from "@/components/rootsy-form/rootsFormStyles"
+import {
   saleOpChannelFormField,
   saleOpLightSelectContent,
   saleOpLightSelectItem,
@@ -23,16 +29,13 @@ export const articleFormControlShellClass = cn(
   lightToolbarFocusClass,
 )
 
-export const articleFormFieldStackClass =
-  "flex w-full min-w-0 flex-col gap-2"
+export const articleFormFieldStackClass = rootsFormFieldStackClass
 
-export const articleFormColumnClass = "flex w-full min-w-0 flex-col gap-3.5"
+export const articleFormColumnClass = rootsFormColumnClass
 
-export const articleFormGridClass =
-  "grid w-full min-w-0 gap-5 lg:grid-cols-2 lg:gap-6"
+export const articleFormGridClass = rootsFormGridClass
 
-export const articleFormTwoColRowClass =
-  "grid w-full min-w-0 grid-cols-1 gap-3 sm:grid-cols-2"
+export const articleFormTwoColRowClass = rootsFormTwoColRowClass
 
 export const articleFormSelectTriggerClass = cn(
   articleFormControlShellClass,

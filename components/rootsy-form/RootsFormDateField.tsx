@@ -1,6 +1,8 @@
 "use client"
 
 import { RootsFormField } from "@/components/rootsy-form/RootsFormField"
+import type { RootsFormFieldAssistProps } from "@/components/rootsy-form/rootsFormFieldAssist"
+import { useRootsFormFieldControlProps } from "@/components/rootsy-form/rootsFormFieldContext"
 import {
   rootsFormAffixPrefixClass,
   rootsFormControlTypographyClass,
@@ -38,7 +40,7 @@ type Props = {
   className?: string
   triggerClassName?: string
   popoverClassName?: string
-}
+} & RootsFormFieldAssistProps
 
 export function RootsFormDateField({
   label,
@@ -48,6 +50,10 @@ export function RootsFormDateField({
   placeholder = "Elegí una fecha",
   disabled,
   invalid,
+  hint,
+  error,
+  warning,
+  success,
   prefix,
   className,
   triggerClassName,
@@ -57,12 +63,22 @@ export function RootsFormDateField({
   const fieldId = id ?? autoId
   const hasPrefix = prefix != null
   const triggerRef = useRef<HTMLButtonElement>(null)
+  const controlProps = useRootsFormFieldControlProps({ invalid })
   const [open, setOpen] = useState(false)
   const selected = useMemo(() => parseRootsFormIsoDate(value), [value])
   const displayValue = selected ? formatRootsFormDisplayDate(selected) : null
 
   return (
-    <RootsFormField label={label} htmlFor={fieldId} className={className}>
+    <RootsFormField
+      label={label}
+      htmlFor={fieldId}
+      className={className}
+      hint={hint}
+      error={error}
+      warning={warning}
+      success={success}
+      invalid={invalid}
+    >
       <Popover
         open={open}
         onOpenChange={(next) => {
@@ -78,7 +94,8 @@ export function RootsFormDateField({
             id={fieldId}
             type="button"
             disabled={disabled}
-            aria-invalid={invalid}
+            aria-invalid={controlProps.isInvalid}
+            aria-describedby={controlProps.describedBy}
             aria-haspopup="dialog"
             aria-expanded={open}
             data-state={open ? "open" : "closed"}
