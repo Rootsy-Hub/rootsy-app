@@ -116,15 +116,17 @@ export function SaleOperationTicketOrderPanel({
         </div>
       </SaleOperationCartList>
 
-      <div
-        className={cn(
-          "relative z-10 mt-auto shrink-0 bg-white",
-          saleOpCartLineDividerTopClass,
-        )}
-      >
-        <SaleOperationActionsBar {...actions} flush={flush} />
-        <SaleOperationTotalBar {...totalBar} flush={flush} />
-      </div>
+      {ticketLineCount > 0 ? (
+        <div
+          className={cn(
+            "relative z-10 mt-auto shrink-0 bg-white",
+            saleOpCartLineDividerTopClass,
+          )}
+        >
+          <SaleOperationActionsBar {...actions} flush={flush} />
+          <SaleOperationTotalBar {...totalBar} flush={flush} />
+        </div>
+      ) : null}
     </div>
   )
 

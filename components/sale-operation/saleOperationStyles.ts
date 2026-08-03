@@ -49,6 +49,35 @@ export const saleOpEmptyStateIconWrapClass =
 export const saleOpEmptyStateTitleClass =
   "text-sm font-semibold text-slate-700"
 
+/** Barra de acciones del ticket (Descartar / Vender). */
+export const saleOpActionsBarShellClass = cn(
+  "grid w-full shrink-0 grid-cols-2 divide-x divide-[#dfe4ea] bg-white",
+)
+export const saleOpActionBtnBaseClass = cn(
+  "inline-flex h-[3.25rem] w-full items-center justify-center gap-2 border-0 px-3 text-[14px] font-semibold tracking-tight shadow-none transition-[background-color,color,box-shadow] duration-150",
+  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-offset-0",
+  "disabled:cursor-not-allowed",
+)
+export const saleOpActionDiscardClass = cn(
+  saleOpActionBtnBaseClass,
+  "bg-[#f4f6f9] text-rose-700 hover:bg-rose-50 hover:text-rose-800 active:bg-rose-100/80",
+  "disabled:bg-[#f4f6f9] disabled:text-slate-500 disabled:hover:bg-[#f4f6f9] disabled:active:bg-[#f4f6f9]",
+  "focus-visible:ring-rose-400/35",
+)
+export const saleOpActionConfirmClass = cn(
+  saleOpActionBtnBaseClass,
+  "bg-emerald-600 text-white hover:bg-emerald-500 active:bg-emerald-700",
+  "shadow-[inset_0_1px_0_rgba(255,255,255,0.14)]",
+  "disabled:bg-emerald-600/28 disabled:text-white/65 disabled:shadow-none disabled:hover:bg-emerald-600/28 disabled:active:bg-emerald-600/28",
+  "focus-visible:ring-emerald-400/45",
+)
+export const saleOpActionIconWrapDiscardClass =
+  "inline-flex size-7 shrink-0 items-center justify-center rounded-lg bg-rose-500/10 text-rose-600"
+export const saleOpActionIconWrapConfirmClass =
+  "inline-flex size-7 shrink-0 items-center justify-center rounded-lg bg-white/15 text-white"
+export const saleOpActionIconWrapConfirmDisabledClass =
+  "inline-flex size-7 shrink-0 items-center justify-center rounded-lg bg-white/10 text-white/55"
+
 export const saleOpImporteTotalClass = cn(
   saleOpImporteBaseClass,
   "whitespace-nowrap text-[clamp(1.05rem,1.75vw,1.4375rem)] font-semibold text-white/90",

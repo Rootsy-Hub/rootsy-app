@@ -1,5 +1,13 @@
 "use client"
 
+import {
+  saleOpActionConfirmClass,
+  saleOpActionDiscardClass,
+  saleOpActionIconWrapConfirmClass,
+  saleOpActionIconWrapConfirmDisabledClass,
+  saleOpActionIconWrapDiscardClass,
+  saleOpActionsBarShellClass,
+} from "@/components/sale-operation/saleOperationStyles"
 import { cn } from "@/lib/utils"
 import { CircleDollarSign, Loader2, X } from "lucide-react"
 
@@ -13,12 +21,6 @@ export type SaleOperationActionsBarProps = {
   onConfirm: () => void
   flush?: boolean
 }
-
-const actionBtnBase = cn(
-  "inline-flex h-14 w-full items-center justify-center gap-2.5 border-0 px-4 text-[15px] font-semibold tracking-tight shadow-none transition-colors",
-  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-0",
-  "disabled:pointer-events-none disabled:cursor-not-allowed",
-)
 
 export function SaleOperationActionsBar({
   discardDisabled = false,
@@ -34,26 +36,30 @@ export function SaleOperationActionsBar({
 
   return (
     <div
-      className={cn(
-        "grid w-full shrink-0 grid-cols-2 bg-white",
+      className={
         flush
-          ? ""
-          : "gap-2 rounded-2xl border border-slate-200/90 p-2 shadow-sm",
-      )}
+          ? saleOpActionsBarShellClass
+          : "grid w-full shrink-0 grid-cols-2 gap-2 rounded-2xl border border-[#dfe4ea] bg-white p-2 shadow-sm"
+      }
     >
       <button
         type="button"
         disabled={discardDisabled}
         onClick={onDiscard}
         className={cn(
-          actionBtnBase,
-          flush ? "rounded-none" : "rounded-xl",
-          "bg-white text-rose-700 hover:bg-rose-50 active:bg-rose-100/80",
-          "disabled:bg-white disabled:text-slate-300 disabled:hover:bg-white disabled:active:bg-white",
-          "focus-visible:ring-rose-400/40",
+          saleOpActionDiscardClass,
+          !flush && "rounded-xl",
         )}
       >
-        <X className="size-[18px] shrink-0 stroke-[2.5]" aria-hidden />
+        <span
+          className={cn(
+            saleOpActionIconWrapDiscardClass,
+            discardDisabled && "bg-slate-200/60 text-slate-500",
+          )}
+          aria-hidden
+        >
+          <X className="size-4 stroke-[2.5]" />
+        </span>
         Descartar
       </button>
       <button
@@ -62,18 +68,24 @@ export function SaleOperationActionsBar({
         onClick={onConfirm}
         title={confirmTitle}
         className={cn(
-          actionBtnBase,
-          flush ? "rounded-none" : "rounded-xl",
-          "bg-emerald-600 text-white hover:bg-emerald-500 active:bg-emerald-700",
-          "disabled:bg-[#8faaa0] disabled:text-white/90 disabled:hover:bg-[#8faaa0] disabled:active:bg-[#8faaa0]",
-          "focus-visible:ring-emerald-400/50",
+          saleOpActionConfirmClass,
+          !flush && "rounded-xl",
         )}
       >
-        {confirmLoading ? (
-          <Loader2 className="size-[18px] shrink-0 animate-spin" aria-hidden />
-        ) : (
-          <CircleDollarSign className="size-[18px] shrink-0" aria-hidden />
-        )}
+        <span
+          className={cn(
+            confirmInactive
+              ? saleOpActionIconWrapConfirmDisabledClass
+              : saleOpActionIconWrapConfirmClass,
+          )}
+          aria-hidden
+        >
+          {confirmLoading ? (
+            <Loader2 className="size-4 animate-spin" />
+          ) : (
+            <CircleDollarSign className="size-4" />
+          )}
+        </span>
         {confirmLoading ? "Procesando…" : confirmLabel}
       </button>
     </div>
