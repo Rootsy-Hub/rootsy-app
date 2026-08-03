@@ -7,15 +7,32 @@ import type {
 import { DataWorkspaceTableIconAction } from "@/components/data-workspace/DataWorkspaceListTablePrimitives"
 import { Input } from "@/components/ui/input"
 import { cn } from "@/lib/utils"
-import { Check, GripVertical, Pencil, Trash2, X } from "lucide-react"
-import { useCallback, useEffect, useRef, useState } from "react"
+import {
+  DndContext,
+  DragOverlay,
+  PointerSensor,
+  pointerWithin,
+  useDraggable,
+  useDroppable,
+  useSensor,
+  useSensors,
+  type CollisionDetection,
+  type DragEndEvent,
+  type DragOverEvent,
+  type DragStartEvent,
+} from "@dnd-kit/core"
+import type { DraggableAttributes } from "@dnd-kit/core"
+import type { SyntheticListenerMap } from "@dnd-kit/core/dist/hooks/utilities"
+import { snapGrabPointToCursor } from "@/lib/dndModifiers"
+import { Check, Eye, EyeOff, GripVertical, Pencil, Trash2, X } from "lucide-react"
+import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 
-type ColumnId = "visible" | "hidden"
+const CATEGORY_ROW_HEIGHT_PX = 44
+const CATEGORY_ROW_GAP_PX = 6
+const CATEGORY_SLOT_SHIFT_PX = CATEGORY_ROW_HEIGHT_PX + CATEGORY_ROW_GAP_PX
 
-type DragState = {
-  id: string
-  source: ColumnId
-}
+const LAYOUT_TRANSITION =
+  "transform 320ms cubic-bezier(0.32, 0.72, 0, 1)"
 
 type Props = {
   categories: ArticleCategoryOption[]
@@ -36,258 +53,394 @@ function sortByOrder(a: ArticleCategoryOption, b: ArticleCategoryOption) {
   return a.sortOrder - b.sortOrder || a.name.localeCompare(b.name, "es")
 }
 
-function layoutFromCategories(categories: ArticleCategoryOption[]) {
-  const visible = categories.filter((c) => c.showInSale).sort(sortByOrder)
-  const hidden = categories.filter((c) => !c.showInSale).sort(sortByOrder)
-  return { visible, hidden }
-}
-
 function layoutSignature(categories: ArticleCategoryOption[]): string {
   return categories
     .map((c) => `${c.id}:${c.sortOrder}:${c.showInSale ? 1 : 0}`)
     .join("|")
 }
 
-function signatureFromColumns(
-  visible: ArticleCategoryOption[],
-  hidden: ArticleCategoryOption[],
-): string {
-  return layoutSignature([
-    ...visible.map((c, i) => ({ ...c, sortOrder: i, showInSale: true })),
-    ...hidden.map((c, i) => ({ ...c, sortOrder: i, showInSale: false })),
-  ])
+function updatesFromItems(items: ArticleCategoryOption[]): CategoryLayoutUpdate[] {
+  return items.map((c, index) => ({
+    id: c.id,
+    sortOrder: index,
+    showInSale: c.showInSale,
+  }))
 }
 
-function moveCategory(
-  visible: ArticleCategoryOption[],
-  hidden: ArticleCategoryOption[],
-  drag: DragState,
-  target: ColumnId,
-  targetIndex: number,
-): { visible: ArticleCategoryOption[]; hidden: ArticleCategoryOption[] } {
-  let nextVisible = [...visible]
-  let nextHidden = [...hidden]
-  const sourceList = drag.source === "visible" ? nextVisible : nextHidden
-  const fromIndex = sourceList.findIndex((c) => c.id === drag.id)
-  if (fromIndex < 0) {
-    return { visible: nextVisible, hidden: nextHidden }
-  }
+function categoryInsertId(index: number) {
+  return `cat-insert-${index}`
+}
 
-  const [moved] = sourceList.splice(fromIndex, 1)
-  if (drag.source === "visible") nextVisible = sourceList
-  else nextHidden = sourceList
+function categoryDragId(id: string) {
+  return `cat-drag-${id}`
+}
 
-  const destList = target === "visible" ? [...nextVisible] : [...nextHidden]
-  let insertIndex = targetIndex
-  if (drag.source === target && fromIndex < targetIndex) {
-    insertIndex -= 1
+function parseInsertIndex(overId: string | number | undefined): number | null {
+  if (overId == null) return null
+  const raw = String(overId)
+  if (!raw.startsWith("cat-insert-")) return null
+  const index = Number.parseInt(raw.slice("cat-insert-".length), 10)
+  return Number.isFinite(index) ? index : null
+}
+
+function moveCategoryInList(
+  items: ArticleCategoryOption[],
+  itemId: string,
+  index: number,
+): ArticleCategoryOption[] {
+  const from = items.findIndex((item) => item.id === itemId)
+  if (from < 0) return items
+  const next = items.filter((item) => item.id !== itemId)
+  const target = Math.max(0, Math.min(index, next.length))
+  next.splice(target, 0, items[from]!)
+  return next.map((item, sortOrder) => ({ ...item, sortOrder }))
+}
+
+function getCategoryShiftY(
+  itemId: string,
+  items: ArticleCategoryOption[],
+  previewItems: ArticleCategoryOption[],
+  dropPreviewIndex: number | null,
+  draggingItemId: string | null,
+): number {
+  if (dropPreviewIndex === null || !draggingItemId || itemId === draggingItemId) {
+    return 0
   }
-  insertIndex = Math.max(0, Math.min(insertIndex, destList.length))
-  destList.splice(insertIndex, 0, {
-    ...moved,
-    showInSale: target === "visible",
+  const origIdx = items.findIndex((item) => item.id === itemId)
+  const previewIdx = previewItems.findIndex((item) => item.id === itemId)
+  if (origIdx < 0 || previewIdx < 0) return 0
+  return (previewIdx - origIdx) * CATEGORY_SLOT_SHIFT_PX
+}
+
+function listTrackHeight(itemCount: number) {
+  if (itemCount <= 0) return 0
+  return (itemCount - 1) * CATEGORY_SLOT_SHIFT_PX + CATEGORY_ROW_HEIGHT_PX
+}
+
+function categoryInsertZoneTop(index: number, itemCount: number) {
+  if (index >= itemCount) {
+    return (itemCount - 1) * CATEGORY_SLOT_SHIFT_PX + CATEGORY_ROW_HEIGHT_PX
+  }
+  return index * CATEGORY_SLOT_SHIFT_PX
+}
+
+const categoryCollisionDetection: CollisionDetection = (args) => {
+  const collisions = pointerWithin(args)
+  if (collisions.length === 0) return collisions
+
+  const insertHits = collisions.filter((entry) =>
+    String(entry.id).startsWith("cat-insert-"),
+  )
+  if (insertHits.length === 0) return collisions
+  if (insertHits.length === 1) return insertHits
+
+  const pointer = args.pointerCoordinates
+  if (!pointer) return insertHits
+
+  const sorted = [...insertHits].sort((a, b) => {
+    const rectA = args.droppableRects.get(a.id)
+    const rectB = args.droppableRects.get(b.id)
+    if (!rectA || !rectB) return 0
+    const centerA = rectA.top + rectA.height / 2
+    const centerB = rectB.top + rectB.height / 2
+    return Math.abs(pointer.y - centerA) - Math.abs(pointer.y - centerB)
   })
 
-  if (target === "visible") nextVisible = destList
-  else nextHidden = destList
-
-  return { visible: nextVisible, hidden: nextHidden }
+  return [sorted[0]!]
 }
 
-function updatesFromColumns(
-  visible: ArticleCategoryOption[],
-  hidden: ArticleCategoryOption[],
-): CategoryLayoutUpdate[] {
-  return [
-    ...visible.map((c, i) => ({ id: c.id, sortOrder: i, showInSale: true })),
-    ...hidden.map((c, i) => ({ id: c.id, sortOrder: i, showInSale: false })),
-  ]
+function CategoryInsertZone({
+  index,
+  itemCount,
+  active,
+}: {
+  index: number
+  itemCount: number
+  active: boolean
+}) {
+  const { setNodeRef } = useDroppable({
+    id: categoryInsertId(index),
+    data: { index },
+    disabled: !active,
+  })
+
+  return (
+    <div
+      ref={setNodeRef}
+      className={cn(
+        "absolute left-0 right-0 z-10",
+        !active && "pointer-events-none",
+      )}
+      style={{
+        top: categoryInsertZoneTop(index, itemCount),
+        height: CATEGORY_SLOT_SHIFT_PX,
+      }}
+      aria-hidden
+    />
+  )
 }
 
-function columnsWithOrder(
-  visible: ArticleCategoryOption[],
-  hidden: ArticleCategoryOption[],
-) {
-  return {
-    visible: visible.map((c, i) => ({ ...c, sortOrder: i, showInSale: true })),
-    hidden: hidden.map((c, i) => ({ ...c, sortOrder: i, showInSale: false })),
+function CategoryRowCard({
+  category,
+  isEditing,
+  editingCategoryName,
+  categorySaveBusy,
+  canUpdate,
+  canDelete,
+  dragHandleProps,
+  onStartEdit,
+  onCancelEdit,
+  onEditingNameChange,
+  onSaveEdit,
+  onDelete,
+  onToggleVisibility,
+}: {
+  category: ArticleCategoryOption
+  isEditing: boolean
+  editingCategoryName: string
+  categorySaveBusy: boolean
+  canUpdate: boolean
+  canDelete: boolean
+  dragHandleProps?: {
+    attributes: DraggableAttributes
+    listeners: SyntheticListenerMap | undefined
   }
+  onStartEdit: () => void
+  onCancelEdit: () => void
+  onEditingNameChange: (name: string) => void
+  onSaveEdit: () => void
+  onDelete: () => void
+  onToggleVisibility: () => void
+}) {
+  return (
+    <div
+      className={cn(
+        "flex h-11 items-center gap-2 rounded-lg border border-border/70 bg-background px-2 shadow-sm",
+        !category.showInSale && "opacity-60",
+      )}
+    >
+      {canUpdate && dragHandleProps ? (
+        <button
+          type="button"
+          className="inline-flex size-8 shrink-0 cursor-grab items-center justify-center rounded-lg text-muted-foreground/70 active:cursor-grabbing"
+          aria-label={`Reordenar ${category.name || "categoría"}`}
+          {...dragHandleProps.attributes}
+          {...dragHandleProps.listeners}
+        >
+          <GripVertical className="size-4" aria-hidden />
+        </button>
+      ) : canUpdate ? (
+        <GripVertical
+          className="size-4 shrink-0 text-muted-foreground/70"
+          aria-hidden
+        />
+      ) : null}
+      <div className="min-w-0 flex-1">
+        {isEditing ? (
+          <Input
+            value={editingCategoryName}
+            onChange={(event) => onEditingNameChange(event.target.value)}
+            className="h-8 bg-background"
+            autoFocus
+            onKeyDown={(event) => {
+              if (event.key === "Enter") {
+                event.preventDefault()
+                onSaveEdit()
+              }
+              if (event.key === "Escape") {
+                event.preventDefault()
+                onCancelEdit()
+              }
+            }}
+          />
+        ) : (
+          <p className="truncate text-sm font-medium text-foreground">
+            {category.name || "—"}
+          </p>
+        )}
+      </div>
+      {canUpdate || canDelete ? (
+        <div className="flex shrink-0 items-center justify-end gap-0.5">
+          {isEditing ? (
+            <>
+              <DataWorkspaceTableIconAction
+                label="Cancelar edición"
+                icon={X}
+                variant="neutral"
+                onClick={onCancelEdit}
+              />
+              <DataWorkspaceTableIconAction
+                label={`Guardar ${category.name || "categoría"}`}
+                icon={Check}
+                variant="edit"
+                disabled={categorySaveBusy || !editingCategoryName.trim()}
+                onClick={onSaveEdit}
+              />
+            </>
+          ) : (
+            <>
+              {canUpdate ? (
+                <DataWorkspaceTableIconAction
+                  label={
+                    category.showInSale
+                      ? `Ocultar ${category.name || "categoría"} en ventas`
+                      : `Mostrar ${category.name || "categoría"} en ventas`
+                  }
+                  icon={category.showInSale ? Eye : EyeOff}
+                  variant="neutral"
+                  onClick={onToggleVisibility}
+                />
+              ) : null}
+              {canUpdate ? (
+                <DataWorkspaceTableIconAction
+                  label={`Editar ${category.name || "categoría"}`}
+                  icon={Pencil}
+                  onClick={onStartEdit}
+                />
+              ) : null}
+              {canDelete ? (
+                <DataWorkspaceTableIconAction
+                  label={`Eliminar ${category.name || "categoría"}`}
+                  icon={Trash2}
+                  variant="destructive"
+                  onClick={onDelete}
+                />
+              ) : null}
+            </>
+          )}
+        </div>
+      ) : null}
+    </div>
+  )
 }
 
-function CategoryColumn({
-  title,
-  description,
-  columnId,
+function CategorySortableSlot({
+  category,
+  index,
+  shiftY,
+  dragAnimating,
+  canUpdate,
+  canDelete,
+  editingCategoryId,
+  editingCategoryName,
+  categorySaveBusy,
+  onStartEdit,
+  onCancelEdit,
+  onEditingNameChange,
+  onSaveEdit,
+  onDelete,
+  onToggleVisibility,
+}: {
+  category: ArticleCategoryOption
+  index: number
+  shiftY: number
+  dragAnimating: boolean
+  canUpdate: boolean
+  canDelete: boolean
+  editingCategoryId: string | null
+  editingCategoryName: string
+  categorySaveBusy: boolean
+  onStartEdit: (category: ArticleCategoryOption) => void
+  onCancelEdit: () => void
+  onEditingNameChange: (name: string) => void
+  onSaveEdit: () => void
+  onDelete: (id: string, name: string) => void
+  onToggleVisibility: (id: string) => void
+}) {
+  const isEditing = editingCategoryId === category.id
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    isDragging,
+  } = useDraggable({
+    id: categoryDragId(category.id),
+    data: { itemId: category.id },
+    disabled: !canUpdate || isEditing,
+  })
+
+  return (
+    <div
+      ref={setNodeRef}
+      className="absolute left-0 right-0 z-20"
+      style={{
+        top: index * CATEGORY_SLOT_SHIFT_PX,
+        height: CATEGORY_ROW_HEIGHT_PX,
+        transform: !isDragging ? `translateY(${shiftY}px)` : undefined,
+        transition: dragAnimating ? LAYOUT_TRANSITION : undefined,
+      }}
+    >
+      <div className={cn(isDragging && "opacity-0")}>
+        <CategoryRowCard
+          category={category}
+          isEditing={isEditing}
+          editingCategoryName={editingCategoryName}
+          categorySaveBusy={categorySaveBusy}
+          canUpdate={canUpdate}
+          canDelete={canDelete}
+          dragHandleProps={
+            canUpdate && !isEditing
+              ? { attributes, listeners }
+              : undefined
+          }
+          onStartEdit={() => onStartEdit(category)}
+          onCancelEdit={onCancelEdit}
+          onEditingNameChange={onEditingNameChange}
+          onSaveEdit={onSaveEdit}
+          onDelete={() => onDelete(category.id, category.name)}
+          onToggleVisibility={() => onToggleVisibility(category.id)}
+        />
+      </div>
+    </div>
+  )
+}
+
+function StaticCategoryList({
   items,
   canUpdate,
   canDelete,
   editingCategoryId,
   editingCategoryName,
   categorySaveBusy,
-  dragOverIndex,
   onStartEdit,
   onCancelEdit,
   onEditingNameChange,
   onSaveEdit,
   onDelete,
-  onDragStart,
-  onDragOverIndex,
-  onDropAt,
-  onDragEnd,
+  onToggleVisibility,
 }: {
-  title: string
-  description: string
-  columnId: ColumnId
   items: ArticleCategoryOption[]
   canUpdate: boolean
   canDelete: boolean
   editingCategoryId: string | null
   editingCategoryName: string
   categorySaveBusy: boolean
-  dragOverIndex: number | null
   onStartEdit: (category: ArticleCategoryOption) => void
   onCancelEdit: () => void
   onEditingNameChange: (name: string) => void
   onSaveEdit: () => void
   onDelete: (id: string, name: string) => void
-  onDragStart: (id: string, source: ColumnId) => void
-  onDragOverIndex: (index: number | null) => void
-  onDropAt: (target: ColumnId, index: number) => void
-  onDragEnd: () => void
+  onToggleVisibility: (id: string) => void
 }) {
   return (
-    <div className="flex min-h-[16rem] min-w-0 flex-1 flex-col rounded-xl border border-border bg-muted/10">
-      <div className="border-b border-border/70 px-3 py-2.5">
-        <p className="text-sm font-semibold text-foreground">{title}</p>
-        <p className="mt-0.5 text-xs text-muted-foreground">{description}</p>
-      </div>
-      <div
-        className="min-h-0 flex-1 space-y-1.5 overflow-y-auto p-2"
-        onDragOver={(e) => {
-          if (!canUpdate) return
-          e.preventDefault()
-          onDragOverIndex(items.length)
-        }}
-        onDrop={(e) => {
-          if (!canUpdate) return
-          e.preventDefault()
-          onDropAt(columnId, items.length)
-        }}
-      >
-        {items.length === 0 ? (
-          <p className="rounded-lg border border-dashed border-border/80 px-3 py-6 text-center text-xs text-muted-foreground">
-            Arrastrá categorías acá
-          </p>
-        ) : (
-          items.map((c, index) => {
-            const isEditing = editingCategoryId === c.id
-            const showDropBefore =
-              dragOverIndex === index && canUpdate
-            return (
-              <div key={c.id}>
-                {showDropBefore ? (
-                  <div className="mb-1.5 h-0.5 rounded-full bg-primary/70" aria-hidden />
-                ) : null}
-                <div
-                  draggable={canUpdate && !isEditing}
-                  onDragStart={() => onDragStart(c.id, columnId)}
-                  onDragEnd={onDragEnd}
-                  onDragOver={(e) => {
-                    if (!canUpdate) return
-                    e.preventDefault()
-                    e.stopPropagation()
-                    onDragOverIndex(index)
-                  }}
-                  onDrop={(e) => {
-                    if (!canUpdate) return
-                    e.preventDefault()
-                    e.stopPropagation()
-                    onDropAt(columnId, index)
-                  }}
-                  className={cn(
-                    "flex items-center gap-2 rounded-lg border border-border/70 bg-background px-2 py-2 shadow-sm",
-                    canUpdate &&
-                      !isEditing &&
-                      "cursor-grab active:cursor-grabbing",
-                  )}
-                >
-                  {canUpdate ? (
-                    <GripVertical
-                      className="size-4 shrink-0 text-muted-foreground/70"
-                      aria-hidden
-                    />
-                  ) : null}
-                  <div className="min-w-0 flex-1">
-                    {isEditing ? (
-                      <Input
-                        value={editingCategoryName}
-                        onChange={(e) => onEditingNameChange(e.target.value)}
-                        className="h-8 bg-background"
-                        autoFocus
-                        onKeyDown={(e) => {
-                          if (e.key === "Enter") {
-                            e.preventDefault()
-                            onSaveEdit()
-                          }
-                          if (e.key === "Escape") {
-                            e.preventDefault()
-                            onCancelEdit()
-                          }
-                        }}
-                      />
-                    ) : (
-                      <p className="truncate text-sm font-medium text-foreground">
-                        {c.name || "—"}
-                      </p>
-                    )}
-                  </div>
-                  {canUpdate || canDelete ? (
-                    <div className="flex shrink-0 items-center justify-end gap-0.5">
-                      {isEditing ? (
-                        <>
-                          <DataWorkspaceTableIconAction
-                            label="Cancelar edición"
-                            icon={X}
-                            variant="neutral"
-                            onClick={onCancelEdit}
-                          />
-                          <DataWorkspaceTableIconAction
-                            label={`Guardar ${c.name || "categoría"}`}
-                            icon={Check}
-                            variant="edit"
-                            disabled={
-                              categorySaveBusy || !editingCategoryName.trim()
-                            }
-                            onClick={onSaveEdit}
-                          />
-                        </>
-                      ) : (
-                        <>
-                          {canUpdate ? (
-                            <DataWorkspaceTableIconAction
-                              label={`Editar ${c.name || "categoría"}`}
-                              icon={Pencil}
-                              onClick={() => onStartEdit(c)}
-                            />
-                          ) : null}
-                          {canDelete ? (
-                            <DataWorkspaceTableIconAction
-                              label={`Eliminar ${c.name || "categoría"}`}
-                              icon={Trash2}
-                              variant="destructive"
-                              onClick={() => onDelete(c.id, c.name)}
-                            />
-                          ) : null}
-                        </>
-                      )}
-                    </div>
-                  ) : null}
-                </div>
-              </div>
-            )
-          })
-        )}
-      </div>
+    <div className="space-y-1.5">
+      {items.map((category) => (
+        <CategoryRowCard
+          key={category.id}
+          category={category}
+          isEditing={editingCategoryId === category.id}
+          editingCategoryName={editingCategoryName}
+          categorySaveBusy={categorySaveBusy}
+          canUpdate={canUpdate}
+          canDelete={canDelete}
+          onStartEdit={() => onStartEdit(category)}
+          onCancelEdit={onCancelEdit}
+          onEditingNameChange={onEditingNameChange}
+          onSaveEdit={onSaveEdit}
+          onDelete={() => onDelete(category.id, category.name)}
+          onToggleVisibility={() => onToggleVisibility(category.id)}
+        />
+      ))}
     </div>
   )
 }
@@ -306,19 +459,19 @@ export function ArticleCategoriesSaleBoard({
   onDelete,
   onLayoutChange,
 }: Props) {
-  const [visible, setVisible] = useState(() =>
-    layoutFromCategories(categories).visible,
-  )
-  const [hidden, setHidden] = useState(() =>
-    layoutFromCategories(categories).hidden,
-  )
-  const [drag, setDrag] = useState<DragState | null>(null)
-  const [dragOverIndex, setDragOverIndex] = useState<number | null>(null)
-  const [dragOverColumn, setDragOverColumn] = useState<ColumnId | null>(null)
+  const [items, setItems] = useState(() => [...categories].sort(sortByOrder))
+  const [draggingItemId, setDraggingItemId] = useState<string | null>(null)
+  const [dropPreviewIndex, setDropPreviewIndex] = useState<number | null>(null)
   const pendingLayoutSigRef = useRef<string | null>(null)
 
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: { distance: 4 },
+    }),
+  )
+
   useEffect(() => {
-    if (drag) return
+    if (draggingItemId) return
     const incomingSig = layoutSignature(categories)
     const pending = pendingLayoutSigRef.current
     if (pending) {
@@ -328,86 +481,189 @@ export function ArticleCategoriesSaleBoard({
         return
       }
     }
-    const next = layoutFromCategories(categories)
-    setVisible(next.visible)
-    setHidden(next.hidden)
-  }, [categories, drag])
+    setItems([...categories].sort(sortByOrder))
+  }, [categories, draggingItemId])
+
+  const persistLayout = useCallback(
+    (nextItems: ArticleCategoryOption[]) => {
+      pendingLayoutSigRef.current = layoutSignature(nextItems)
+      onLayoutChange(updatesFromItems(nextItems))
+    },
+    [onLayoutChange],
+  )
+
+  const previewItems = useMemo(() => {
+    if (dropPreviewIndex === null || !draggingItemId) return items
+    return moveCategoryInList(items, draggingItemId, dropPreviewIndex)
+  }, [items, dropPreviewIndex, draggingItemId])
+
+  const draggingItem = useMemo(
+    () => items.find((item) => item.id === draggingItemId) ?? null,
+    [items, draggingItemId],
+  )
 
   const clearDrag = useCallback(() => {
-    setDrag(null)
-    setDragOverIndex(null)
-    setDragOverColumn(null)
+    setDraggingItemId(null)
+    setDropPreviewIndex(null)
   }, [])
 
-  const handleDropAt = (target: ColumnId, targetIndex: number) => {
-    if (!drag || !canUpdate) return
-    const moved = moveCategory(visible, hidden, drag, target, targetIndex)
-    const ordered = columnsWithOrder(moved.visible, moved.hidden)
-    setVisible(ordered.visible)
-    setHidden(ordered.hidden)
-    pendingLayoutSigRef.current = signatureFromColumns(
-      ordered.visible,
-      ordered.hidden,
+  const handleDragStart = useCallback((event: DragStartEvent) => {
+    const raw = String(event.active.id)
+    if (!raw.startsWith("cat-drag-")) return
+    setDraggingItemId(raw.slice("cat-drag-".length))
+  }, [])
+
+  const handleDragOver = useCallback(
+    (event: DragOverEvent) => {
+      const insertIndex = parseInsertIndex(event.over?.id)
+      if (insertIndex === null) {
+        setDropPreviewIndex((prev) => (prev === null ? prev : null))
+        return
+      }
+      const clamped = Math.max(0, Math.min(insertIndex, items.length))
+      setDropPreviewIndex((prev) => (prev === clamped ? prev : clamped))
+    },
+    [items.length],
+  )
+
+  const handleDragEnd = useCallback(
+    (event: DragEndEvent) => {
+      const insertIndex = parseInsertIndex(event.over?.id)
+      const activeId = draggingItemId
+      clearDrag()
+
+      if (insertIndex === null || !activeId || !canUpdate) return
+
+      const clamped = Math.max(0, Math.min(insertIndex, items.length))
+      const nextItems = moveCategoryInList(items, activeId, clamped)
+      setItems(nextItems)
+      persistLayout(nextItems)
+    },
+    [canUpdate, clearDrag, draggingItemId, items, persistLayout],
+  )
+
+  const toggleVisibility = (id: string) => {
+    if (!canUpdate) return
+    const nextItems = items.map((item) =>
+      item.id === id ? { ...item, showInSale: !item.showInSale } : item,
     )
-    onLayoutChange(updatesFromColumns(ordered.visible, ordered.hidden))
-    clearDrag()
+    setItems(nextItems)
+    persistLayout(nextItems)
   }
+
+  const listBody = (
+    <div className="p-2">
+      {items.length === 0 ? (
+        <p className="rounded-lg border border-dashed border-border/80 px-3 py-6 text-center text-xs text-muted-foreground">
+          Todavía no hay categorías.
+        </p>
+      ) : canUpdate ? (
+        <div
+          className="relative overflow-visible"
+          style={{ height: listTrackHeight(items.length) }}
+        >
+          {Array.from({ length: items.length + 1 }, (_, index) => (
+            <CategoryInsertZone
+              key={`insert-${index}`}
+              index={index}
+              itemCount={items.length}
+              active={draggingItemId != null}
+            />
+          ))}
+
+          {items.map((category, index) => (
+            <CategorySortableSlot
+              key={category.id}
+              category={category}
+              index={index}
+              shiftY={getCategoryShiftY(
+                category.id,
+                items,
+                previewItems,
+                dropPreviewIndex,
+                draggingItemId,
+              )}
+              dragAnimating={draggingItemId != null}
+              canUpdate={canUpdate}
+              canDelete={canDelete}
+              editingCategoryId={editingCategoryId}
+              editingCategoryName={editingCategoryName}
+              categorySaveBusy={categorySaveBusy}
+              onStartEdit={onStartEdit}
+              onCancelEdit={onCancelEdit}
+              onEditingNameChange={onEditingNameChange}
+              onSaveEdit={onSaveEdit}
+              onDelete={onDelete}
+              onToggleVisibility={toggleVisibility}
+            />
+          ))}
+        </div>
+      ) : (
+        <StaticCategoryList
+          items={items}
+          canUpdate={canUpdate}
+          canDelete={canDelete}
+          editingCategoryId={editingCategoryId}
+          editingCategoryName={editingCategoryName}
+          categorySaveBusy={categorySaveBusy}
+          onStartEdit={onStartEdit}
+          onCancelEdit={onCancelEdit}
+          onEditingNameChange={onEditingNameChange}
+          onSaveEdit={onSaveEdit}
+          onDelete={onDelete}
+          onToggleVisibility={toggleVisibility}
+        />
+      )}
+    </div>
+  )
 
   return (
     <div className="space-y-3">
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-        <CategoryColumn
-          title="Visibles en venta"
-          description="Aparecen en el catálogo de ventas, en este orden."
-          columnId="visible"
-          items={visible}
-          canUpdate={canUpdate}
-          canDelete={canDelete}
-          editingCategoryId={editingCategoryId}
-          editingCategoryName={editingCategoryName}
-          categorySaveBusy={categorySaveBusy}
-          dragOverIndex={dragOverColumn === "visible" ? dragOverIndex : null}
-          onStartEdit={onStartEdit}
-          onCancelEdit={onCancelEdit}
-          onEditingNameChange={onEditingNameChange}
-          onSaveEdit={onSaveEdit}
-          onDelete={onDelete}
-          onDragStart={(id, source) => setDrag({ id, source })}
-          onDragOverIndex={(index) => {
-            setDragOverColumn("visible")
-            setDragOverIndex(index)
-          }}
-          onDropAt={handleDropAt}
-          onDragEnd={clearDrag}
-        />
-        <CategoryColumn
-          title="Ocultas en venta"
-          description="No se muestran en ventas; podés reordenarlas o volver a hacerlas visibles."
-          columnId="hidden"
-          items={hidden}
-          canUpdate={canUpdate}
-          canDelete={canDelete}
-          editingCategoryId={editingCategoryId}
-          editingCategoryName={editingCategoryName}
-          categorySaveBusy={categorySaveBusy}
-          dragOverIndex={dragOverColumn === "hidden" ? dragOverIndex : null}
-          onStartEdit={onStartEdit}
-          onCancelEdit={onCancelEdit}
-          onEditingNameChange={onEditingNameChange}
-          onSaveEdit={onSaveEdit}
-          onDelete={onDelete}
-          onDragStart={(id, source) => setDrag({ id, source })}
-          onDragOverIndex={(index) => {
-            setDragOverColumn("hidden")
-            setDragOverIndex(index)
-          }}
-          onDropAt={handleDropAt}
-          onDragEnd={clearDrag}
-        />
+      <div className="rounded-xl border border-border bg-muted/10">
+        <div className="border-b border-border/70 px-3 py-2.5">
+          <p className="text-sm font-semibold text-foreground">Categorías</p>
+          <p className="mt-0.5 text-xs text-muted-foreground">
+            Arrastrá para ordenar. Usá el ojo para mostrar u ocultar en ventas.
+          </p>
+        </div>
+        {canUpdate ? (
+          <DndContext
+            sensors={sensors}
+            collisionDetection={categoryCollisionDetection}
+            onDragStart={handleDragStart}
+            onDragOver={handleDragOver}
+            onDragEnd={handleDragEnd}
+            onDragCancel={clearDrag}
+          >
+            {listBody}
+            <DragOverlay dropAnimation={null} modifiers={[snapGrabPointToCursor]}>
+              {draggingItem ? (
+                <div className="cursor-grabbing shadow-lg">
+                  <CategoryRowCard
+                    category={draggingItem}
+                    isEditing={false}
+                    editingCategoryName=""
+                    categorySaveBusy={false}
+                    canUpdate={canUpdate}
+                    canDelete={false}
+                    onStartEdit={() => {}}
+                    onCancelEdit={() => {}}
+                    onEditingNameChange={() => {}}
+                    onSaveEdit={() => {}}
+                    onDelete={() => {}}
+                    onToggleVisibility={() => {}}
+                  />
+                </div>
+              ) : null}
+            </DragOverlay>
+          </DndContext>
+        ) : (
+          listBody
+        )}
       </div>
       {canUpdate ? (
         <p className="text-xs text-muted-foreground">
-          Arrastrá para cambiar el orden o mover entre columnas. Los cambios se guardan al soltar.
+          Los cambios de orden y visibilidad se guardan al soltar o al tocar el ojo.
         </p>
       ) : null}
     </div>

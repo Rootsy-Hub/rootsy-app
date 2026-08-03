@@ -208,6 +208,7 @@ function HomePage() {
                   const palette = ACCENTS[index % ACCENTS.length]!
                   const sigla = initialsFromName(pop.name)
                   const sub = pop.subscription
+                  const popLogoSrc = pop.imageUrl?.trim() || null
 
                   return (
                     <li
@@ -231,13 +232,23 @@ function HomePage() {
                             />
                             <div
                               className={cn(
-                                "relative flex size-28 items-center justify-center rounded-full bg-linear-to-br shadow-xl ring-2 ring-white/14 transition-all duration-300 group-hover:-translate-y-1 group-hover:scale-[1.04]",
-                                palette.accent,
+                                "relative flex size-28 items-center justify-center overflow-hidden rounded-full shadow-xl ring-2 ring-white/14 transition-all duration-300 group-hover:-translate-y-1 group-hover:scale-[1.04]",
+                                !popLogoSrc &&
+                                  cn("bg-linear-to-br", palette.accent),
                               )}
                             >
-                              <span className="text-[1.72rem] font-black tracking-tight text-white drop-shadow">
-                                {sigla}
-                              </span>
+                              {popLogoSrc ? (
+                                // eslint-disable-next-line @next/next/no-img-element
+                                <img
+                                  src={popLogoSrc}
+                                  alt=""
+                                  className="size-full object-cover"
+                                />
+                              ) : (
+                                <span className="text-[1.72rem] font-black tracking-tight text-white drop-shadow">
+                                  {sigla}
+                                </span>
+                              )}
                             </div>
                             <PopStatusBadge pop={pop} />
                           </div>

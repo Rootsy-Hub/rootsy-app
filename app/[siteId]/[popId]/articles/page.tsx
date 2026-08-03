@@ -12,6 +12,7 @@ import {
   deletePopArticle,
   deletePopCategory,
   getPopArticleCategories,
+  getPopCategoryArticleCount,
   getPopArticleSupplierOptions,
   getPopArticlesTable,
   syncPopCategorySaleLayout,
@@ -345,6 +346,15 @@ function ArticlesPage() {
   const [editingCategoryName, setEditingCategoryName] = useState("")
   const [categorySaveBusy, setCategorySaveBusy] = useState(false)
   const [categoriesBoardKey, setCategoriesBoardKey] = useState(0)
+  const [deleteCategoryTarget, setDeleteCategoryTarget] = useState<{
+    id: string
+    name: string
+    articleCount: number | null
+  } | null>(null)
+  const [deleteCategoryBusy, setDeleteCategoryBusy] = useState(false)
+  const [deleteCategoryBanner, setDeleteCategoryBanner] = useState<string | null>(
+    null,
+  )
   const [createOpen, setCreateOpen] = useState(false)
   const [imagePreview, setImagePreview] = useState<{
     url: string
@@ -743,27 +753,57 @@ function ArticlesPage() {
     })
   }
 
-  const removeCategory = async (id: string, label: string) => {
-    if (!popId || !siteId) return
-    if (
-      !window.confirm(
-        `¿Eliminar la categoría "${label}"? Los artículos que la usen pueden fallar si la base no lo permite.`,
+  const removeCategory = (id: string, label: string) => {
+    if (!popId) return
+    setDeleteCategoryBanner(null)
+    setDeleteCategoryTarget({ id, name: label, articleCount: null })
+    void getPopCategoryArticleCount(popId, id).then((res) => {
+      if (!res.success) {
+        setDeleteCategoryTarget(null)
+        setCategoriesBanner(res.error)
+        return
+      }
+      setDeleteCategoryTarget((current) =>
+        current?.id === id
+          ? { ...current, articleCount: res.count }
+          : current,
       )
-    ) {
-      return
-    }
-    setCategoriesBanner(null)
-    const res = await deletePopCategory(popId, id)
+    })
+  }
+
+  const closeDeleteCategory = () => {
+    setDeleteCategoryTarget(null)
+    setDeleteCategoryBanner(null)
+  }
+
+  const submitDeleteCategory = async () => {
+    if (!popId || !siteId || !deleteCategoryTarget) return
+    if (deleteCategoryTarget.articleCount !== 0) return
+    setDeleteCategoryBusy(true)
+    setDeleteCategoryBanner(null)
+    const res = await deletePopCategory(popId, deleteCategoryTarget.id)
+    setDeleteCategoryBusy(false)
     if (!res.success) {
-      setCategoriesBanner(res.error)
+      setDeleteCategoryBanner(res.error)
       return
     }
+    closeDeleteCategory()
+    setCategoriesBanner(null)
     await loadModalCategories({ silent: true })
     const fresh = await getPopArticleCategories(popId)
     if (fresh.success) {
       setFilterCategoryList(fresh.categories)
     }
   }
+
+  const deleteCategoryBlocked =
+    deleteCategoryTarget != null &&
+    deleteCategoryTarget.articleCount != null &&
+    deleteCategoryTarget.articleCount > 0
+  const deleteCategoryReady =
+    deleteCategoryTarget != null && deleteCategoryTarget.articleCount === 0
+  const deleteCategoryChecking =
+    deleteCategoryTarget != null && deleteCategoryTarget.articleCount === null
 
   const submitEdit = async (e: FormEvent) => {
     e.preventDefault()
@@ -1750,6 +1790,7 @@ function ArticlesPage() {
             setCategoriesBanner(null)
             cancelEditCategory()
             setNewCategoryName("")
+            closeDeleteCategory()
           }
         }}
       >
@@ -1763,7 +1804,7 @@ function ArticlesPage() {
               Categorías
             </DialogTitle>
             <DialogDescription className="text-sm leading-relaxed">
-              Organizá qué categorías se ven en ventas y en qué orden.
+              Ordená las categorías y elegí cuáles se muestran en ventas.
             </DialogDescription>
           </DialogHeader>
           <div className={articleDialogBodyClass}>
@@ -1822,11 +1863,101 @@ function ArticlesPage() {
                 onCancelEdit={cancelEditCategory}
                 onEditingNameChange={setEditingCategoryName}
                 onSaveEdit={() => void saveEditCategory()}
-                onDelete={(id, name) => void removeCategory(id, name)}
+                onDelete={removeCategory}
                 onLayoutChange={(updates) => void saveCategoryLayout(updates)}
               />
             )}
           </div>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog
+        open={deleteCategoryTarget !== null}
+        onOpenChange={(o) => !o && closeDeleteCategory()}
+      >
+        <DialogContent
+          data-rootsy-light-shell="true"
+          showCloseButton
+          className={articleDialogSurfaceClass}
+        >
+          <DialogHeader className={articleDialogHeaderClass}>
+            <DialogTitle className="text-base font-semibold tracking-tight">
+              {deleteCategoryBlocked
+                ? "No se puede eliminar"
+                : "Eliminar categoría"}
+            </DialogTitle>
+            <DialogDescription className="text-sm leading-relaxed">
+              {deleteCategoryChecking
+                ? "Verificando artículos relacionados…"
+                : deleteCategoryBlocked
+                  ? "La categoría todavía está en uso en el stock."
+                  : "Esta acción no se puede deshacer."}
+            </DialogDescription>
+          </DialogHeader>
+          <div className={articleDialogBodyClass}>
+            {deleteCategoryChecking ? (
+              <p className="text-sm text-muted-foreground">
+                Un momento…
+              </p>
+            ) : deleteCategoryBlocked ? (
+              <p className="text-sm leading-relaxed text-muted-foreground">
+                La categoría{" "}
+                <strong className="text-foreground">
+                  {deleteCategoryTarget?.name || "seleccionada"}
+                </strong>{" "}
+                tiene{" "}
+                <strong className="text-foreground">
+                  {deleteCategoryTarget?.articleCount === 1
+                    ? "1 artículo relacionado"
+                    : `${deleteCategoryTarget?.articleCount ?? 0} artículos relacionados`}
+                </strong>
+                . Para eliminar, cambiá la categoría de los artículos que la
+                utilizan actualmente.
+              </p>
+            ) : (
+              <p className="text-sm text-muted-foreground">
+                ¿Eliminar la categoría{" "}
+                <strong className="text-foreground">
+                  {deleteCategoryTarget?.name || "seleccionada"}
+                </strong>
+                ?
+              </p>
+            )}
+            {deleteCategoryBanner ? (
+              <p
+                role="alert"
+                className="mt-4 rounded-lg border border-destructive/25 bg-destructive/5 px-3 py-2 text-sm text-destructive"
+              >
+                {deleteCategoryBanner}
+              </p>
+            ) : null}
+          </div>
+          <DialogFooter className={articleDialogFooterClass}>
+            {deleteCategoryBlocked ? (
+              <Button type="button" onClick={closeDeleteCategory}>
+                Entendido
+              </Button>
+            ) : (
+              <>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={closeDeleteCategory}
+                  disabled={deleteCategoryBusy || deleteCategoryChecking}
+                >
+                  Cancelar
+                </Button>
+                <Button
+                  type="button"
+                  variant="destructive"
+                  disabled={!deleteCategoryReady || deleteCategoryBusy}
+                  onClick={() => void submitDeleteCategory()}
+                >
+                  {deleteCategoryBusy ? "Eliminando…" : "Eliminar"}
+                </Button>
+              </>
+            )}
+          </DialogFooter>
         </DialogContent>
       </Dialog>
 

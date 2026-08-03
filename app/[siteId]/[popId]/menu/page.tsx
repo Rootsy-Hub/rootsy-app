@@ -19,6 +19,7 @@ import {
 } from "@/lib/menuCatalog"
 import { formatLocaleTime } from "@/lib/popTimezone"
 import { popScopedHref } from "@/lib/popRoutes"
+import { cn } from "@/lib/utils"
 import { useState, useEffect, useRef, useCallback, useMemo } from "react"
 import Link from "next/link"
 import { useParams, useRouter } from "next/navigation"
@@ -35,6 +36,22 @@ import {
 type MenuSectionDef = {
   title: string
   items: MenuItemDef[]
+}
+
+function detectSearchShortcutLabel(): string {
+  if (typeof navigator === "undefined") return "Ctrl+K"
+  const isMac =
+    /Mac|iPhone|iPad|iPod/i.test(navigator.userAgent) ||
+    /Mac/i.test(navigator.platform)
+  return isMac ? "⌘K" : "Ctrl+K"
+}
+
+function closeSearch(
+  setShowSearch: (value: boolean) => void,
+  setSearchQuery: (value: string) => void,
+) {
+  setShowSearch(false)
+  setSearchQuery("")
 }
 
 function routeForMenuLink(
@@ -70,6 +87,10 @@ function MenuPage() {
   const [selectedIndex, setSelectedIndex] = useState(0)
   const [searchQuery, setSearchQuery] = useState("")
   const [showSearch, setShowSearch] = useState(false)
+  const [searchShortcutLabel, setSearchShortcutLabel] = useState("Ctrl+K")
+  const searchInputRef = useRef<HTMLInputElement>(null)
+  const searchQueryRef = useRef(searchQuery)
+  searchQueryRef.current = searchQuery
   const [time, setTime] = useState<Date | null>(null)
   const [isMounted, setIsMounted] = useState(false)
   const [mousePos, setMousePos] = useState({ x: 50, y: 50 })
@@ -216,6 +237,7 @@ function MenuPage() {
 
   useEffect(() => {
     setIsMounted(true)
+    setSearchShortcutLabel(detectSearchShortcutLabel())
     setTime(new Date())
     const timer = setInterval(() => setTime(new Date()), 1000)
 
@@ -247,6 +269,32 @@ function MenuPage() {
     window.addEventListener("mousemove", handleMouseMove)
     return () => window.removeEventListener("mousemove", handleMouseMove)
   }, [])
+
+  const handleSearchBlur = useCallback(() => {
+    window.setTimeout(() => {
+      if (!searchQueryRef.current.trim()) {
+        setShowSearch(false)
+      }
+    }, 0)
+  }, [])
+
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "k") {
+        event.preventDefault()
+        setShowSearch(true)
+        window.setTimeout(() => searchInputRef.current?.focus(), 0)
+        return
+      }
+
+      if (event.key === "Escape" && showSearch) {
+        closeSearch(setShowSearch, setSearchQuery)
+      }
+    }
+
+    window.addEventListener("keydown", handleKeyDown)
+    return () => window.removeEventListener("keydown", handleKeyDown)
+  }, [showSearch])
 
   useEffect(() => {
     const sync = () => setIsOnline(navigator.onLine)
@@ -395,43 +443,39 @@ function MenuPage() {
           </div>
 
           <div className="w-full justify-self-center">
-            {showSearch ? (
-              <div className="relative w-full animate-in zoom-in-95 duration-200">
-                <Search className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-foreground/30" />
-                <input
-                  type="text"
-                  placeholder="Buscar..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  autoFocus
-                  className="h-10 w-full rounded-xl border border-border bg-secondary py-0 pl-11 pr-10 text-sm text-foreground transition-all placeholder:text-foreground/30 focus:border-foreground/20 focus:bg-muted focus:outline-none"
-                />
+            <div className="relative w-full">
+              <Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-foreground/30" />
+              <input
+                ref={searchInputRef}
+                type="text"
+                placeholder="Buscar..."
+                value={searchQuery}
+                readOnly={!showSearch}
+                onChange={(event) => setSearchQuery(event.target.value)}
+                onFocus={() => setShowSearch(true)}
+                onBlur={handleSearchBlur}
+                className={cn(
+                  "h-10 w-full rounded-xl border bg-secondary py-0 pl-11 pr-14 text-sm leading-10 text-foreground placeholder:text-foreground/30 focus:outline-none",
+                  showSearch
+                    ? "border-foreground/20 bg-muted"
+                    : "cursor-pointer border-foreground/[0.06] hover:border-foreground/10 hover:bg-muted",
+                )}
+              />
+              {showSearch ? (
                 <button
                   type="button"
-                  onClick={() => {
-                    setShowSearch(false)
-                    setSearchQuery("")
-                  }}
+                  onMouseDown={(event) => event.preventDefault()}
+                  onClick={() => closeSearch(setShowSearch, setSearchQuery)}
                   className="absolute right-3 top-1/2 -translate-y-1/2 text-foreground/30 transition-colors hover:text-foreground/60"
                 >
                   <X className="h-4 w-4" />
                 </button>
-              </div>
-            ) : (
-              <button
-                type="button"
-                onClick={() => setShowSearch(true)}
-                className="group flex h-10 w-full items-center gap-3 rounded-xl border border-foreground/[0.06] bg-secondary px-4 transition-all hover:border-foreground/10 hover:bg-muted"
-              >
-                <Search className="h-4 w-4 text-foreground/30 group-hover:text-foreground/50" />
-                <span className="flex-1 text-left text-sm text-foreground/30">
-                  Buscar...
-                </span>
-                <kbd className="rounded-md bg-secondary px-2 py-0.5 text-[10px] text-foreground/25">
-                  ⌘K
+              ) : (
+                <kbd className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 rounded-md bg-secondary px-2 py-0.5 text-[10px] leading-none text-foreground/25">
+                  {searchShortcutLabel}
                 </kbd>
-              </button>
-            )}
+              )}
+            </div>
           </div>
 
           <div className="flex min-w-0 items-center justify-end gap-6">

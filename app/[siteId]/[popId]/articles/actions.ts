@@ -902,6 +902,54 @@ export async function syncPopCategorySaleLayout(
   }
 }
 
+export async function getPopCategoryArticleCount(
+  popId: string,
+  categoryId: string,
+): Promise<{ success: true; count: number } | { success: false; error: string }> {
+  try {
+    const access = await validatePopAccess(popId)
+    if (!access.hasAccess || !access.isActive) {
+      return { success: false, error: access.error || "Sin acceso" }
+    }
+    const snap = await loadPopPermissionsSnapshot(popId)
+    if (
+      !permissionKeysInclude(
+        snap.keys,
+        POP_PERMS.ARTICLE_READ.resource,
+        POP_PERMS.ARTICLE_READ.action,
+      )
+    ) {
+      return {
+        success: false,
+        error: "Sin permiso para consultar artículos en este punto de venta.",
+      }
+    }
+    const supabase = await createClient()
+    const { count, error } = await supabase
+      .from("articles")
+      .select("id", { count: "exact", head: true })
+      .eq("pop_id", popId)
+      .eq("category_id", categoryId)
+    if (error) {
+      return { success: false, error: error.message }
+    }
+    return { success: true, count: count ?? 0 }
+  } catch (e: unknown) {
+    const message = e instanceof Error ? e.message : "Error desconocido"
+    return { success: false, error: message }
+  }
+}
+
+function categoryDeleteBlockedMessage(
+  categoryName: string,
+  articleCount: number,
+): string {
+  const label = categoryName.trim() || "Esta categoría"
+  const articlesLabel =
+    articleCount === 1 ? "1 artículo relacionado" : `${articleCount} artículos relacionados`
+  return `${label} tiene ${articlesLabel}. Para eliminar, cambiá la categoría de los artículos que la utilizan actualmente.`
+}
+
 export async function deletePopCategory(
   popId: string,
   categoryId: string,
@@ -922,6 +970,31 @@ export async function deletePopCategory(
       return { success: false, error: "Sin permiso para eliminar categorías." }
     }
     const supabase = await createClient()
+    const { data: categoryRow, error: categoryError } = await supabase
+      .from("categories")
+      .select("name")
+      .eq("id", categoryId)
+      .eq("pop_id", popId)
+      .maybeSingle()
+    if (categoryError) {
+      return { success: false, error: categoryError.message || "No se pudo eliminar." }
+    }
+    if (!categoryRow) {
+      return { success: false, error: "La categoría ya no existe." }
+    }
+    const relatedCount = await getPopCategoryArticleCount(popId, categoryId)
+    if (!relatedCount.success) {
+      return { success: false, error: relatedCount.error }
+    }
+    if (relatedCount.count > 0) {
+      return {
+        success: false,
+        error: categoryDeleteBlockedMessage(
+          String(categoryRow.name ?? ""),
+          relatedCount.count,
+        ),
+      }
+    }
     const { error } = await supabase
       .from("categories")
       .delete()

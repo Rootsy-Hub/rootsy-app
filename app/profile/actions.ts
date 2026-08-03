@@ -206,21 +206,31 @@ export async function getUserPops(): Promise<UserPopListItem[]> {
     const popIds = accRows.map((p) => p.pop_id)
     const { data: popSettingsRows } = await supabase
       .from("pops")
-      .select("id, site_id, settings")
+      .select("id, site_id, settings, image_url")
       .in("id", popIds)
-    const siteByPopId = new Map<string, string>()
+    const popMetaById = new Map<
+      string,
+      { siteId: string; imageUrl: string | null }
+    >()
     for (const row of popSettingsRows || []) {
-      siteByPopId.set(
-        String(row.id),
-        siteIdFromPopRow({
+      popMetaById.set(String(row.id), {
+        siteId: siteIdFromPopRow({
           site_id: row.site_id as string | null | undefined,
           settings: row.settings,
         }),
-      )
+        imageUrl: (row.image_url as string | null) ?? null,
+      })
     }
+
+    const defaultPopMeta = (popId: string) =>
+      popMetaById.get(popId) ?? {
+        siteId: siteIdFromPopRow({ site_id: null, settings: undefined }),
+        imageUrl: null,
+      }
 
     const popsWithSubscription = await Promise.all(
       accRows.map(async (pop) => {
+        const meta = defaultPopMeta(pop.pop_id)
         try {
           const { data: subscriptionInfo, error: subscriptionError } =
             await supabase.rpc("get_pop_subscription_info", {
@@ -234,11 +244,9 @@ export async function getUserPops(): Promise<UserPopListItem[]> {
           ) {
             return {
               id: pop.pop_id,
-              siteId:
-                siteByPopId.get(pop.pop_id) ??
-                siteIdFromPopRow({ site_id: null, settings: undefined }),
+              siteId: meta.siteId,
               name: pop.pop_name,
-              imageUrl: null,
+              imageUrl: meta.imageUrl,
               roleId: pop.role_id,
               roleName: pop.role_name,
               isOwner: pop.is_owner,
@@ -250,11 +258,9 @@ export async function getUserPops(): Promise<UserPopListItem[]> {
 
           return {
             id: pop.pop_id,
-            siteId:
-                siteByPopId.get(pop.pop_id) ??
-                siteIdFromPopRow({ site_id: null, settings: undefined }),
+            siteId: meta.siteId,
             name: pop.pop_name,
-            imageUrl: null,
+            imageUrl: meta.imageUrl,
             roleId: pop.role_id,
             roleName: pop.role_name,
             isOwner: pop.is_owner,
@@ -281,11 +287,9 @@ export async function getUserPops(): Promise<UserPopListItem[]> {
         } catch {
           return {
             id: pop.pop_id,
-            siteId:
-                siteByPopId.get(pop.pop_id) ??
-                siteIdFromPopRow({ site_id: null, settings: undefined }),
+            siteId: meta.siteId,
             name: pop.pop_name,
-            imageUrl: null,
+            imageUrl: meta.imageUrl,
             roleId: pop.role_id,
             roleName: pop.role_name,
             isOwner: pop.is_owner,

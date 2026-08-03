@@ -32,3 +32,28 @@ export const snapCenterToCursor: Modifier = ({
     y: transform.y + coords.y - rect.top - rect.height / 2,
   }
 }
+
+/** Mantiene bajo el cursor el punto exacto donde se agarró (p. ej. el handle). */
+export const snapGrabPointToCursor: Modifier = ({
+  activatorEvent,
+  activeNodeRect,
+  draggingNodeRect,
+  overlayNodeRect,
+  transform,
+}) => {
+  const layoutRect = activeNodeRect ?? draggingNodeRect
+  const rect = overlayNodeRect ?? layoutRect
+  if (!layoutRect || !rect || !activatorEvent) return transform
+
+  const coords = getEventCoordinates(activatorEvent)
+  if (!coords) return transform
+
+  const grabOffsetX = coords.x - layoutRect.left
+  const grabOffsetY = coords.y - layoutRect.top
+
+  return {
+    ...transform,
+    x: transform.x + coords.x - rect.left - grabOffsetX,
+    y: transform.y + coords.y - rect.top - grabOffsetY,
+  }
+}
