@@ -10,9 +10,6 @@ import {
   articleFormColumnClass,
   articleFormFieldStackClass,
   articleFormGridClass,
-  articleFormSelectContentClass,
-  articleFormSelectItemClass,
-  articleFormSelectTriggerClass,
   articleFormTextFieldClass,
   articleFormTextareaClass,
   articleFormTwoColRowClass,
@@ -33,6 +30,8 @@ import {
   RootsFormField,
   RootsFormMoneyField,
   RootsFormQuantityField,
+  RootsFormSelectField,
+  RootsFormSelectItem,
   RootsFormTextField,
   RootsFormTextareaField,
   rootsFormTextFieldClass,
@@ -48,16 +47,8 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
-import { FieldSelect } from "@/components/ui/field-select"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
 import { Switch } from "@/components/ui/switch"
 import { Textarea } from "@/components/ui/textarea"
 import {
@@ -77,8 +68,6 @@ import {
   saleOpDialogHeader,
   saleOpDialogOptionClass,
   saleOpLightFormInput,
-  saleOpLightSelectContent,
-  saleOpLightSelectItem,
 } from "@/components/sale-operation/saleOperationStyles"
 import {
   AlertDialog,
@@ -99,7 +88,7 @@ const LIBRARY_SECTIONS = [
   { id: "text", label: "Texto (final)" },
   { id: "multiline", label: "Multilínea (final)" },
   { id: "numeric", label: "Montos y cantidades (final)" },
-  { id: "select", label: "Select y listas" },
+  { id: "select", label: "Select (final)" },
   { id: "date", label: "Fecha" },
   { id: "boolean", label: "Booleanos" },
   { id: "layout", label: "Layout de formulario" },
@@ -623,13 +612,13 @@ export function LayoutComponentLibrary() {
           <LibrarySection
             id="numeric"
             title="Montos y cantidades (final)"
-            description="Un solo estilo con prefijo a la izquierda ($, uds., ícono). Misma familia visual que texto una línea."
+            description="Un solo estilo con prefijo a la izquierda ($, uds., ícono). Slot fijo w-11 (2.75rem) para alinear variantes."
           >
             <div className="grid gap-4 lg:grid-cols-2">
               <SpecCard
                 title="RootsFormMoneyField"
                 source="components/rootsy-form/RootsFormMoneyField.tsx"
-                tokens={["prefix: $", "focus-within"]}
+                tokens={["prefix: $", "w-11", "focus-within"]}
               >
                 <RootsFormMoneyField
                   label="Precio de venta"
@@ -640,7 +629,7 @@ export function LayoutComponentLibrary() {
               <SpecCard
                 title="RootsFormQuantityField"
                 source="components/rootsy-form/RootsFormQuantityField.tsx"
-                tokens={["prefix: uds.", "izquierda"]}
+                tokens={["prefix: uds.", "w-11", "centrado"]}
               >
                 <RootsFormQuantityField
                   label="Stock inicial"
@@ -653,45 +642,44 @@ export function LayoutComponentLibrary() {
 
           <LibrarySection
             id="select"
-            title="Select y listas"
-            description="Desplegables con y sin prefijo iconográfico."
+            title="Select (final)"
+            description="Desplegable alineado al light form. Con o sin prefijo (w-11). La opción activa muestra check verde."
           >
             <div className="grid gap-4 lg:grid-cols-2">
               <SpecCard
-                title="Select artículos"
-                source="articleFormSelectTriggerClass"
+                title="RootsFormSelectField"
+                source="components/rootsy-form/RootsFormSelectField.tsx"
+                tokens={["rounded-lg", "emerald-700", "check"]}
               >
-                <Select value={selectValue} onValueChange={setSelectValue}>
-                  <SelectTrigger className={articleFormSelectTriggerClass}>
-                    <SelectValue placeholder="Categoría" />
-                  </SelectTrigger>
-                  <SelectContent className={articleFormSelectContentClass}>
-                    <SelectItem className={articleFormSelectItemClass} value="bebidas">
-                      Bebidas
-                    </SelectItem>
-                    <SelectItem className={articleFormSelectItemClass} value="verduras">
-                      Verduras
-                    </SelectItem>
-                  </SelectContent>
-                </Select>
+                <RootsFormSelectField
+                  label="Categoría"
+                  value={selectValue}
+                  onValueChange={setSelectValue}
+                  placeholder="Elegir categoría"
+                >
+                  <RootsFormSelectItem value="bebidas">Bebidas</RootsFormSelectItem>
+                  <RootsFormSelectItem value="verduras">Verduras</RootsFormSelectItem>
+                  <RootsFormSelectItem value="panaderia">Panadería</RootsFormSelectItem>
+                </RootsFormSelectField>
               </SpecCard>
-              <SpecCard title="FieldSelect con prefijo" source="FieldSelect">
-                <FieldSelect
+              <SpecCard
+                title="RootsFormSelectField · prefijo"
+                source="rootsFormPrefixedSelectTriggerClass"
+                tokens={["prefix w-11", "check verde"]}
+              >
+                <RootsFormSelectField
+                  label="Medio de pago"
                   value={fieldSelectValue}
                   onValueChange={setFieldSelectValue}
-                  placeholder="Medio de pago"
-                  className={saleOpLightFormInput}
-                  prefixClassName="border-zinc-200 bg-zinc-50"
-                  prefixIcon={<Landmark className="size-4" aria-hidden />}
-                  contentClassName={saleOpLightSelectContent}
+                  placeholder="Elegir medio"
+                  prefix={<Landmark className="size-4" aria-hidden />}
                 >
-                  <SelectItem className={saleOpLightSelectItem} value="efectivo">
-                    Efectivo
-                  </SelectItem>
-                  <SelectItem className={saleOpLightSelectItem} value="tarjeta">
-                    Tarjeta
-                  </SelectItem>
-                </FieldSelect>
+                  <RootsFormSelectItem value="efectivo">Efectivo</RootsFormSelectItem>
+                  <RootsFormSelectItem value="tarjeta">Tarjeta</RootsFormSelectItem>
+                  <RootsFormSelectItem value="transferencia">
+                    Transferencia
+                  </RootsFormSelectItem>
+                </RootsFormSelectField>
               </SpecCard>
             </div>
           </LibrarySection>

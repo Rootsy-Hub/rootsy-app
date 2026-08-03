@@ -9,27 +9,17 @@ import type { ArticleItemFormState } from "@/app/[siteId]/[popId]/articles/Artic
 import { ArticleItemKindSelector } from "@/app/[siteId]/[popId]/articles/ArticleItemKindSelector"
 import { ArticleSupplierPickerField } from "@/app/[siteId]/[popId]/articles/ArticleSupplierPickerField"
 import { ArticleUnitOfMeasureField } from "@/app/[siteId]/[popId]/articles/ArticleUnitOfMeasureField"
-import { RootsFormTextField, RootsFormTextareaField, RootsFormMoneyField, RootsFormQuantityField } from "@/components/rootsy-form"
+import { RootsFormTextField, RootsFormTextareaField, RootsFormMoneyField, RootsFormQuantityField, RootsFormSelectField, RootsFormSelectItem } from "@/components/rootsy-form"
 import {
   articleFormColumnClass,
   articleFormFieldStackClass,
   articleFormGridClass,
-  articleFormSelectContentClass,
-  articleFormSelectItemClass,
-  articleFormSelectTriggerClass,
   articleFormTextFieldClass,
   articleFormTwoColRowClass,
 } from "@/app/[siteId]/[popId]/articles/articleConstants"
 import { CheckoutSectionLabel } from "@/components/checkout/CheckoutFormFields"
 import type { ArticleItemKind } from "@/lib/articleItemKind"
 import { parseMoneyInput } from "@/lib/moneyInput"
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
 import { Switch } from "@/components/ui/switch"
 import { cn } from "@/lib/utils"
 
@@ -157,38 +147,20 @@ export function ArticleUpsertFormFields({
           readOnly={mode === "edit"}
         />
 
-        <div className={articleFormFieldStackClass}>
-          <CheckoutSectionLabel>Categoría</CheckoutSectionLabel>
-          <div className="w-full min-w-0">
-            <Select
-              value={form.categoryId || undefined}
-              onValueChange={(value) => onChange({ categoryId: value })}
-              disabled={disabled}
-              required
-            >
-              <SelectTrigger
-                id={`${idPrefix}-cat`}
-                className={articleFormSelectTriggerClass}
-              >
-                <SelectValue placeholder="Elegir categoría…" />
-              </SelectTrigger>
-              <SelectContent
-                className={articleFormSelectContentClass}
-                position="popper"
-              >
-                {categories.map((category) => (
-                  <SelectItem
-                    key={category.id}
-                    value={category.id}
-                    className={articleFormSelectItemClass}
-                  >
-                    {category.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-        </div>
+        <RootsFormSelectField
+          label="Categoría"
+          id={`${idPrefix}-cat`}
+          value={form.categoryId}
+          onValueChange={(value) => onChange({ categoryId: value })}
+          disabled={disabled}
+          placeholder="Elegir categoría…"
+        >
+          {categories.map((category) => (
+            <RootsFormSelectItem key={category.id} value={category.id}>
+              {category.name}
+            </RootsFormSelectItem>
+          ))}
+        </RootsFormSelectField>
 
         <ArticleImageUploadField
           id={`${idPrefix}-image`}
