@@ -45,6 +45,8 @@ export type SaleComprobantePreviewLine = {
 export type SaleComprobantePreviewLineGroup = {
   category: string
   lines: SaleComprobantePreviewLine[]
+  /** Descuento de promoción aplicado debajo de las líneas del grupo. */
+  promotionDiscount?: SaleComprobantePreviewLineDiscount | null
 }
 
 export type SaleComprobantePreviewVatRow = {
@@ -70,11 +72,21 @@ export type SaleComprobantePreviewModel = {
   customerIvaLabel: string | null
   paymentMethodLabel: string | null
   lineGroups: SaleComprobantePreviewLineGroup[]
+  /** Suma de precios de lista antes de cualquier descuento. */
+  subtotalSinDescuentos: number
+  /** Detalle de descuentos para el bloque DESCUENTOS del ticket. */
+  discountLines: SaleComprobantePreviewLineDiscount[]
+  /** Total ahorrado (suma de descuentos). */
+  savings: number
+  /** @deprecated Usar subtotalSinDescuentos / discountLines */
   subtotal: number
+  /** @deprecated Usar discountLines */
   discountAmount: number
   netTaxable: number
   vatRows: SaleComprobantePreviewVatRow[]
   vatTotal: number
+  /** IVA incluido en el total (ley 27.743). */
+  ivaContenido: number
   total: number
   showsFiscalFooter: boolean
   showsVatBreakdown: boolean
@@ -193,11 +205,45 @@ function resolveDiscountLabel(
   row: MostradorCartDisplayRow,
   pricing: ReturnType<typeof resolveCatalogCartLinePricing>,
 ): string {
-  if (row.promoGroupLabel?.trim()) return row.promoGroupLabel.trim()
-  if (row.topCloudLabel?.trim()) return row.topCloudLabel.trim()
-  if (pricing.descuentoCatalogoLabel?.trim()) {
-    return pricing.descuentoCatalogoLabel.trim()
+  if (
+    pricing.itemDiscountMode === "porcentaje" &&
+    pricing.itemDiscountValue != null &&
+    pricing.itemDiscountValue > 0
+  ) {
+    const value = pricing.itemDiscountValue
+    const formatted = Number.isInteger(value)
+      ? String(value)
+      : value.toLocaleString("es-AR", { maximumFractionDigits: 2 })
+    return `${formatted}%`
   }
+
+  if (
+    pricing.itemDiscountMode === "fijo" &&
+    pricing.itemDiscountValue != null &&
+    pricing.itemDiscountValue > 0
+  ) {
+    return formatSaleComprobanteMoney(pricing.itemDiscountValue)
+  }
+
+  if (row.promoGroupLabel?.trim() && row.promoGroupVariant === "promotion") {
+    return row.promoGroupLabel.trim()
+  }
+
+  if (pricing.descuentoCatalogoLabel?.trim()) {
+    return pricing.descuentoCatalogoLabel.trim().replace(/^−\s*/, "")
+  }
+
+  const cloud = row.topCloudLabel?.trim()
+  if (cloud) {
+    if (
+      row.promoGroupDiscountMode === "porcentaje" &&
+      /^\d+([.,]\d+)?$/.test(cloud)
+    ) {
+      return `${cloud}%`
+    }
+    return cloud
+  }
+
   if (pricing.discountSource === "manual") return "Descuento"
   return "Promoción"
 }
@@ -322,36 +368,202 @@ function resolveComprobanteRowPricing(
   }
 }
 
+function isPromotionGroupRow(row: MostradorCartDisplayRow): boolean {
+  return Boolean(row.promoGroupKey?.trim() && row.promoGroupVariant === "promotion")
+}
+
+function shouldOmitFromRegularPreview(row: MostradorCartDisplayRow): boolean {
+  return row.variant === "combo_component" && row.hidePrice
+}
+
+function resolvePromoItemListPricing(row: MostradorCartDisplayRow): {
+  unitListPrice: number
+  listLineTotal: number
+  lineTotal: number
+} {
+  if (row.quantityDealListTotal != null) {
+    const listLineTotal = row.quantityDealListTotal
+    return {
+      unitListPrice:
+        row.cantidad > 0
+          ? roundSaleMoney(listLineTotal / row.cantidad)
+          : 0,
+      listLineTotal,
+      lineTotal: listLineTotal,
+    }
+  }
+
+  const unitListPrice = roundSaleMoney(
+    row.producto?.precioOriginal ?? row.producto?.precio ?? 0,
+  )
+  const listLineTotal = roundSaleMoney(unitListPrice * row.cantidad)
+  return {
+    unitListPrice,
+    listLineTotal,
+    lineTotal: listLineTotal,
+  }
+}
+
+function resolvePromotionGroupDiscountAmount(
+  batch: MostradorCartDisplayRow[],
+): number {
+  const first = batch[0]
+  if (!first) return 0
+
+  if (first.quantityDealGroupPricing) {
+    const { listTotal, finalTotal } = first.quantityDealGroupPricing
+    return roundSaleMoney(Math.max(0, listTotal - finalTotal))
+  }
+
+  if (
+    first.variant === "combo_component" &&
+    first.promotionMeta &&
+    first.promotionSelections?.length
+  ) {
+    const priced = resolvePromotionCartPricing(
+      first.promotionMeta,
+      first.promotionSelections,
+      1,
+    )
+    return roundSaleMoney(Math.max(0, priced.precioBase - priced.precioFinal))
+  }
+
+  const discountFromLines = roundSaleMoney(
+    batch.reduce((sum, row) => sum + (row.quantityDealDiscountTotal ?? 0), 0),
+  )
+  if (discountFromLines > 0) return discountFromLines
+
+  const listTotal = roundSaleMoney(
+    batch.reduce((sum, row) => sum + resolvePromoItemListPricing(row).listLineTotal, 0),
+  )
+  const finalFromLines = roundSaleMoney(
+    batch.reduce((sum, row) => {
+      const pricing = resolvePromoItemListPricing(row)
+      const lineDiscount = row.quantityDealDiscountTotal ?? 0
+      return sum + pricing.listLineTotal - lineDiscount
+    }, 0),
+  )
+  return roundSaleMoney(Math.max(0, listTotal - finalFromLines))
+}
+
+function buildPromoGroupPreviewSection(
+  batch: MostradorCartDisplayRow[],
+): SaleComprobantePreviewLineGroup {
+  const label = batch[0]?.promoGroupLabel?.trim() || "Promoción"
+  const lines = batch.map((row) => {
+    const pricing = resolvePromoItemListPricing(row)
+    const category =
+      row.producto?.categoria?.trim() && row.producto.categoria !== "—"
+        ? row.producto.categoria.trim()
+        : row.kind === "recipe"
+          ? "Recetas"
+          : "General"
+
+    return {
+      description: (row.nombre.trim() || "Ítem").toUpperCase(),
+      category,
+      quantity: row.cantidad,
+      unitListPrice: pricing.unitListPrice,
+      vatRate: resolveRowVatRate(row),
+      listLineTotal: pricing.listLineTotal,
+      lineTotal: pricing.lineTotal,
+      barcode: resolveLineBarcode(row),
+      discounts: [],
+    }
+  })
+
+  const discountAmount = resolvePromotionGroupDiscountAmount(batch)
+
+  return {
+    category: label,
+    lines,
+    promotionDiscount:
+      discountAmount > 0 ? { label, amount: discountAmount } : null,
+  }
+}
+
+function buildRegularPreviewLine(
+  row: MostradorCartDisplayRow,
+  overrides: SaleComprobantePreviewCartInput["cartLineOverrides"],
+): SaleComprobantePreviewLine | null {
+  if (shouldOmitFromRegularPreview(row)) return null
+
+  const pricing = resolveComprobanteRowPricing(row, overrides)
+  const category =
+    row.producto?.categoria?.trim() && row.producto.categoria !== "—"
+      ? row.producto.categoria.trim()
+      : row.kind === "promotion"
+        ? "Promociones"
+        : row.kind === "recipe"
+          ? "Recetas"
+          : "General"
+
+  const line: SaleComprobantePreviewLine = {
+    description: (row.nombre.trim() || "Ítem").toUpperCase(),
+    category,
+    quantity: row.cantidad,
+    unitListPrice: pricing.unitListPrice,
+    vatRate: resolveRowVatRate(row),
+    listLineTotal: pricing.listLineTotal,
+    lineTotal: pricing.lineTotal,
+    barcode: resolveLineBarcode(row),
+    discounts: pricing.discounts,
+  }
+
+  if (line.lineTotal <= 0 && line.quantity <= 0) return null
+  return line
+}
+
+export function buildSaleComprobantePreviewLineGroups(
+  rows: MostradorCartDisplayRow[],
+  overrides: SaleComprobantePreviewCartInput["cartLineOverrides"],
+): SaleComprobantePreviewLineGroup[] {
+  const groups: SaleComprobantePreviewLineGroup[] = []
+  let index = 0
+
+  while (index < rows.length) {
+    const row = rows[index]
+
+    if (isPromotionGroupRow(row)) {
+      const promoKey = row.promoGroupKey!
+      const batch: MostradorCartDisplayRow[] = []
+      while (
+        index < rows.length &&
+        rows[index].promoGroupKey === promoKey &&
+        rows[index].promoGroupVariant === "promotion"
+      ) {
+        batch.push(rows[index]!)
+        index += 1
+      }
+      if (batch.length > 0) {
+        groups.push(buildPromoGroupPreviewSection(batch))
+      }
+      continue
+    }
+
+    const regularBatch: MostradorCartDisplayRow[] = []
+    while (index < rows.length && !isPromotionGroupRow(rows[index]!)) {
+      regularBatch.push(rows[index]!)
+      index += 1
+    }
+
+    const regularLines = regularBatch
+      .map((regularRow) => buildRegularPreviewLine(regularRow, overrides))
+      .filter((line): line is SaleComprobantePreviewLine => line != null)
+
+    groups.push(...groupSaleComprobantePreviewLines(regularLines))
+  }
+
+  return groups
+}
+
 export function buildSaleComprobantePreviewLines(
   rows: MostradorCartDisplayRow[],
   overrides: SaleComprobantePreviewCartInput["cartLineOverrides"],
 ): SaleComprobantePreviewLine[] {
-  return rows
-    .filter((row) => !(row.variant === "combo_component" && row.hidePrice))
-    .map((row) => {
-      const pricing = resolveComprobanteRowPricing(row, overrides)
-      const category =
-        row.producto?.categoria?.trim() && row.producto.categoria !== "—"
-          ? row.producto.categoria.trim()
-          : row.kind === "promotion"
-            ? "Promociones"
-            : row.kind === "recipe"
-              ? "Recetas"
-              : "General"
-
-      return {
-        description: (row.nombre.trim() || "Ítem").toUpperCase(),
-        category,
-        quantity: row.cantidad,
-        unitListPrice: pricing.unitListPrice,
-        vatRate: resolveRowVatRate(row),
-        listLineTotal: pricing.listLineTotal,
-        lineTotal: pricing.lineTotal,
-        barcode: resolveLineBarcode(row),
-        discounts: pricing.discounts,
-      }
-    })
-    .filter((line) => line.lineTotal > 0 || line.quantity > 0)
+  return buildSaleComprobantePreviewLineGroups(rows, overrides).flatMap(
+    (group) => group.lines,
+  )
 }
 
 export function groupSaleComprobantePreviewLines(
@@ -372,6 +584,54 @@ export function groupSaleComprobantePreviewLines(
   }
 
   return groups
+}
+
+function computeSubtotalSinDescuentos(
+  lineGroups: SaleComprobantePreviewLineGroup[],
+): number {
+  return roundSaleMoney(
+    lineGroups.reduce(
+      (sum, group) =>
+        sum +
+        group.lines.reduce((lineSum, line) => lineSum + line.listLineTotal, 0),
+      0,
+    ),
+  )
+}
+
+function collectPreviewDiscountLines(
+  lineGroups: SaleComprobantePreviewLineGroup[],
+  generalDiscountAmount: number,
+): SaleComprobantePreviewLineDiscount[] {
+  const discounts: SaleComprobantePreviewLineDiscount[] = []
+
+  for (const group of lineGroups) {
+    for (const line of group.lines) {
+      for (const discount of line.discounts) {
+        if (discount.amount > 0) discounts.push(discount)
+      }
+    }
+    if (group.promotionDiscount && group.promotionDiscount.amount > 0) {
+      discounts.push(group.promotionDiscount)
+    }
+  }
+
+  if (generalDiscountAmount > 0) {
+    discounts.push({
+      label: "Descuento general",
+      amount: generalDiscountAmount,
+    })
+  }
+
+  return discounts
+}
+
+function computePreviewSavings(
+  discountLines: SaleComprobantePreviewLineDiscount[],
+): number {
+  return roundSaleMoney(
+    discountLines.reduce((sum, discount) => sum + discount.amount, 0),
+  )
 }
 
 function resolvePreviewKind(
@@ -444,19 +704,24 @@ export function buildSaleComprobantePreview(
       ? findSaleInvoiceTypeByLabel(input.siteId, input.comprobanteLabel)
       : undefined
 
-  const lines = buildSaleComprobantePreviewLines(
+  const lineGroups = buildSaleComprobantePreviewLineGroups(
     input.cartDisplayRows,
     input.cartLineOverrides,
   )
-  const lineGroups = groupSaleComprobantePreviewLines(lines)
 
   const subtotal = roundSaleMoney(Math.max(0, input.subtotal))
   const discountAmount = roundSaleMoney(Math.max(0, input.discountAmount))
   const total = roundSaleMoney(Math.max(0, input.total))
+  const subtotalSinDescuentos = computeSubtotalSinDescuentos(lineGroups)
+  const discountLines = collectPreviewDiscountLines(lineGroups, discountAmount)
+  const savings = computePreviewSavings(discountLines)
   const showsVatBreakdown = showsVatBreakdownForLabel(input.comprobanteLabel)
   const vat = showsVatBreakdown
     ? computeVatBreakdown(total)
     : { netTaxable: total, vatRows: [] as SaleComprobantePreviewVatRow[], vatTotal: 0 }
+  const ivaContenido = showsVatBreakdown
+    ? vat.vatTotal
+    : roundSaleMoney(Math.max(0, total - total / 1.21))
 
   const cbteCodigo =
     invoiceType != null
@@ -496,11 +761,15 @@ export function buildSaleComprobantePreview(
     customerIvaLabel,
     paymentMethodLabel: input.paymentMethodLabel?.trim() || null,
     lineGroups,
+    subtotalSinDescuentos,
+    discountLines,
+    savings,
     subtotal,
     discountAmount,
     netTaxable: vat.netTaxable,
     vatRows: vat.vatRows,
     vatTotal: vat.vatTotal,
+    ivaContenido,
     total,
     showsFiscalFooter: resolved.kind === "arca",
     showsVatBreakdown,

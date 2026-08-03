@@ -53,9 +53,7 @@ function TicketLineItem({ line }: { line: SaleComprobantePreviewLine }) {
 
   return (
     <div className="space-y-0.5">
-      <p className="text-[9px] font-semibold uppercase leading-snug">
-        {line.description}
-      </p>
+      <p className="text-[9px] uppercase leading-snug">{line.description}</p>
       <div className="flex items-start justify-between gap-2 text-[9px] leading-tight">
         <span className="min-w-0 shrink">
           {line.quantity} x {formatSaleComprobanteTicketAmount(line.unitListPrice)}{" "}
@@ -79,6 +77,33 @@ function TicketLineItem({ line }: { line: SaleComprobantePreviewLine }) {
       {line.barcode ? (
         <p className="text-[8px] tabular-nums text-zinc-600">{line.barcode}</p>
       ) : null}
+    </div>
+  )
+}
+
+function TicketAmountRow({
+  label,
+  amount,
+  className,
+  amountClassName,
+  bold = false,
+}: {
+  label: string
+  amount: string
+  className?: string
+  amountClassName?: string
+  bold?: boolean
+}) {
+  return (
+    <div
+      className={cn(
+        "flex items-baseline justify-between gap-2 text-[9px] leading-tight",
+        bold && "font-bold",
+        className,
+      )}
+    >
+      <span className="min-w-0 shrink uppercase">{label}</span>
+      <span className={cn("shrink-0 tabular-nums", amountClassName)}>{amount}</span>
     </div>
   )
 }
@@ -189,6 +214,19 @@ function TicketPreviewBody({ model }: { model: SaleComprobantePreviewModel }) {
                   line={line}
                 />
               ))}
+              {group.promotionDiscount ? (
+                <div className="flex items-start justify-between gap-2 pl-1 text-[9px] leading-tight">
+                  <span className="min-w-0 shrink uppercase">
+                    {group.promotionDiscount.label}
+                  </span>
+                  <span className="shrink-0 tabular-nums">
+                    -
+                    {formatSaleComprobanteTicketAmount(
+                      group.promotionDiscount.amount,
+                    )}
+                  </span>
+                </div>
+              ) : null}
             </div>
           ))
         )}
@@ -196,49 +234,92 @@ function TicketPreviewBody({ model }: { model: SaleComprobantePreviewModel }) {
 
       <TicketSeparator />
 
-      <div className="space-y-0.5 text-[9px] leading-tight">
-        <div className="flex justify-between gap-2">
-          <span>Subtotal</span>
-          <span className="tabular-nums">
-            {formatSaleComprobanteTicketAmount(model.subtotal)}
-          </span>
-        </div>
-        {model.discountAmount > 0 ? (
-          <div className="flex justify-between gap-2">
-            <span className="uppercase">Descuento general</span>
-            <span className="tabular-nums">
-              -{formatSaleComprobanteTicketAmount(model.discountAmount)}
-            </span>
-          </div>
-        ) : null}
-        {model.showsVatBreakdown ? (
+      <div className="space-y-1 text-[9px] leading-tight">
+        <TicketAmountRow
+          label="Subtotal sin descuentos"
+          amount={formatSaleComprobanteMoney(model.subtotalSinDescuentos)}
+          bold
+        />
+
+        {model.discountLines.length > 0 ? (
           <>
-            <div className="flex justify-between gap-2">
-              <span>Neto gravado 21%</span>
-              <span className="tabular-nums">
-                {formatSaleComprobanteTicketAmount(model.netTaxable)}
-              </span>
+            <TicketSeparator />
+            <p className="font-semibold uppercase">Descuentos</p>
+            <div className="space-y-0.5">
+              {model.discountLines.map((discount, index) => (
+                <div
+                  key={`${discount.label}-${index}`}
+                  className="flex items-start justify-between gap-2"
+                >
+                  <span className="min-w-0 shrink uppercase">{discount.label}</span>
+                  <span className="shrink-0 tabular-nums">
+                    -{formatSaleComprobanteTicketAmount(discount.amount)}
+                  </span>
+                </div>
+              ))}
             </div>
-            <div className="flex justify-between gap-2">
-              <span>IVA 21%</span>
-              <span className="tabular-nums">
-                {formatSaleComprobanteTicketAmount(model.vatTotal)}
-              </span>
-            </div>
+            <TicketSeparator />
+            <TicketAmountRow
+              label="Ahorro"
+              amount={formatSaleComprobanteMoney(model.savings)}
+              bold
+            />
           </>
         ) : null}
-        <div className="flex justify-between gap-2 pt-0.5 text-[10px] font-bold">
-          <span>TOTAL</span>
-          <span className="tabular-nums">
+
+        <TicketSeparator />
+
+        <div className="flex items-baseline justify-between gap-2 pt-0.5">
+          <span className="text-[13px] font-bold uppercase leading-none">Total</span>
+          <span className="text-[13px] font-bold tabular-nums leading-none">
             {formatSaleComprobanteMoney(model.total)}
           </span>
         </div>
-        {model.paymentMethodLabel ? (
-          <p className="pt-0.5 text-[8px] uppercase text-zinc-600">
-            Forma de pago: {model.paymentMethodLabel}
-          </p>
-        ) : null}
       </div>
+
+      {model.total > 0 && model.kind !== "none" ? (
+        <>
+          <TicketSeparator />
+          <div className="space-y-0.5 text-[8px] leading-snug">
+            <p className="uppercase">
+              Reg. transparencia fiscal al consumidor ley 27743
+            </p>
+            <TicketAmountRow
+              label="IVA contenido"
+              amount={formatSaleComprobanteTicketAmount(model.ivaContenido)}
+            />
+            <TicketAmountRow
+              label="Otros impuestos nacionales indirectos"
+              amount={formatSaleComprobanteTicketAmount(0)}
+            />
+            <p className="uppercase">
+              Los impuestos informados son a nivel nacional
+            </p>
+          </div>
+        </>
+      ) : null}
+
+      {model.paymentMethodLabel ? (
+        <>
+          <TicketSeparator />
+          <div className="space-y-0.5 text-[9px] leading-tight">
+            <div className="flex items-baseline justify-between gap-2">
+              <span className="min-w-0 shrink font-bold uppercase">
+                Pago {model.paymentMethodLabel}
+              </span>
+              <span className="shrink-0 tabular-nums">
+                {formatSaleComprobanteMoney(model.total)}
+              </span>
+            </div>
+            <div className="flex items-baseline justify-between gap-2">
+              <span className="min-w-0 shrink">Suma de sus pagos</span>
+              <span className="shrink-0 tabular-nums">
+                {formatSaleComprobanteTicketAmount(model.total)}
+              </span>
+            </div>
+          </div>
+        </>
+      ) : null}
 
       {model.showsFiscalFooter ? (
         <>
