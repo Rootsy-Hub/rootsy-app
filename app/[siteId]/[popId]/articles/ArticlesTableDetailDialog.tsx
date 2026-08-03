@@ -179,6 +179,12 @@ export function ArticlesTableDetailDialog({
             </DetailField>
             <DetailField label="Categoría">{row.categoryName || "—"}</DetailField>
             <DetailField label="Marca">{row.brand.trim() || "—"}</DetailField>
+            <DetailField label="SKU">{row.sku?.trim() || "—"}</DetailField>
+            {sellable ? (
+              <DetailField label="Código de barras">
+                {row.barcode?.trim() || "—"}
+              </DetailField>
+            ) : null}
             <DetailField label="Proveedores">{supplierLabel}</DetailField>
             <DetailField label="Unidad de medida">
               {labelUnitOfMeasure(row.unitOfMeasure)}

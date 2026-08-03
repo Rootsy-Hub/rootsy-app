@@ -40,6 +40,8 @@ export type ArticleUpsertFormState = ArticleItemFormState &
     name: string
     description: string
     imageUrl: string
+    sku: string
+    barcode: string
     salePrice: string
     costPrice: string
     iva: string
@@ -118,6 +120,43 @@ export function ArticleUpsertFormFields({
             className={articleFormTextFieldClass}
           />
         </div>
+
+        <div className={articleFormFieldStackClass}>
+          <CheckoutSectionLabel>SKU</CheckoutSectionLabel>
+          <input
+            id={`${idPrefix}-sku`}
+            value={form.sku}
+            onChange={(e) => onChange({ sku: e.target.value })}
+            placeholder="Código interno (opcional)"
+            disabled={disabled}
+            className={articleFormTextFieldClass}
+            autoComplete="off"
+          />
+          <p className="text-xs leading-snug text-muted-foreground">
+            Código propio para identificar el artículo en stock e inventario.
+          </p>
+        </div>
+
+        {isMerchandise ? (
+          <div className={articleFormFieldStackClass}>
+            <CheckoutSectionLabel>Código de barras</CheckoutSectionLabel>
+            <input
+              id={`${idPrefix}-barcode`}
+              value={form.barcode}
+              onChange={(e) =>
+                onChange({ barcode: e.target.value.replace(/\D/g, "") })
+              }
+              placeholder="EAN / UPC (8 a 14 dígitos)"
+              disabled={disabled}
+              className={cn(articleFormTextFieldClass, "tabular-nums")}
+              inputMode="numeric"
+              autoComplete="off"
+            />
+            <p className="text-xs leading-snug text-muted-foreground">
+              Se imprime en el ticket de venta. Solo para productos de venta.
+            </p>
+          </div>
+        ) : null}
 
         <ArticleItemKindSelector
           idPrefix={idPrefix}

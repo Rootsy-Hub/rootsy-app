@@ -22,6 +22,33 @@ export const saleOpImporteCartMutedClass = cn(
 export const cartListHeaderRowClass =
   "flex items-center justify-between gap-2 px-3 py-2"
 
+/** Fondo del listado de ítems del ticket (más suave que blanco puro, distinto del aside #eef1f5). */
+export const saleOpCartListSurfaceClass = "bg-[#f4f6f9]"
+
+/** Separador horizontal sutil (1px) entre líneas del ticket — gris neutro, sin tinte. */
+export const saleOpCartLineDividerColorClass = "border-[#dfe4ea]"
+export const saleOpCartLineDividerBottomClass = cn(
+  "border-b",
+  saleOpCartLineDividerColorClass,
+)
+export const saleOpCartLineDividerTopClass = cn(
+  "border-t",
+  saleOpCartLineDividerColorClass,
+)
+export const saleOpCartLineDivideYClass = cn(
+  "divide-y divide-[#dfe4ea]",
+)
+
+/** Empty state del ticket / paneles laterales (icono + título). */
+export const saleOpEmptyStateContainerClass =
+  "flex flex-1 flex-col items-center justify-center px-6 py-12 text-center"
+export const saleOpEmptyStateContentClass =
+  "flex max-w-[260px] flex-col items-center gap-3"
+export const saleOpEmptyStateIconWrapClass =
+  "flex size-14 items-center justify-center rounded-2xl bg-white text-slate-600 ring-1 ring-slate-300/90 shadow-[0_1px_2px_rgba(15,23,42,0.05)]"
+export const saleOpEmptyStateTitleClass =
+  "text-sm font-semibold text-slate-700"
+
 export const saleOpImporteTotalClass = cn(
   saleOpImporteBaseClass,
   "whitespace-nowrap text-[clamp(1.05rem,1.75vw,1.4375rem)] font-semibold text-white/90",
@@ -76,6 +103,22 @@ export const saleOpDialogContentMd = cn(
   saleOpDialogLight,
 )
 export const saleOpDialogContentLg = cn(
+  saleOpDialogSurface,
+  saleOpDialogMaxViewport,
+  "sm:max-w-2xl",
+  saleOpDialogLight,
+)
+export const saleOpDialogContentXl = cn(
+  saleOpDialogSurface,
+  saleOpDialogMaxViewport,
+  "sm:max-w-4xl",
+  saleOpDialogLight,
+)
+/** Ancho visual papel térmico 80 mm (~302 px a 96 dpi). */
+export const saleComprobanteTicketPaperWidthClass = "max-w-[302px]"
+
+/** Selector de comprobante + vista previa ticket (2 columnas iguales). */
+export const saleOpDialogContentComprobante = cn(
   saleOpDialogSurface,
   saleOpDialogMaxViewport,
   "sm:max-w-2xl",

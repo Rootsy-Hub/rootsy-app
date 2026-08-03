@@ -25,6 +25,16 @@ import {
   type RecipeIngredientFormLine,
 } from "@/app/[siteId]/[popId]/recipes/components/RecipeIngredientEditor"
 import {
+  RecipeTableCategoryCell,
+  RecipeTableCostPriceCell,
+  RecipeTableImageCell,
+  RecipeTableIngredientsCell,
+  RecipeTableNameCell,
+  RecipeTableSalePriceCell,
+  RecipeTableSelectCell,
+  RecipeTableStatusCell,
+} from "@/app/[siteId]/[popId]/recipes/recipesTableCells"
+import {
   RECIPE_DELETE_CONFIRM_PHRASE,
   recipeDialogBodyClass,
   recipeDialogFooterClass,
@@ -32,6 +42,10 @@ import {
   recipeDialogSurfaceClass,
   recipeDialogSurfaceWideClass,
   recipeFormFieldClass,
+  recipeFormSelectContentClass,
+  recipeFormSelectItemClass,
+  recipeFormSelectTriggerClass,
+  recipeFormTextareaClass,
 } from "@/app/[siteId]/[popId]/recipes/recipeConstants"
 import {
   RECIPE_TABLE_PAGE_SIZES,
@@ -51,7 +65,6 @@ import {
   DataWorkspaceListTableFrame,
   DataWorkspaceTableEmptyMascot,
   DataWorkspaceTableIconAction,
-  DataWorkspaceTableThumbnail,
 } from "@/components/data-workspace/DataWorkspaceListTablePrimitives"
 import {
   lightFilterChipClass,
@@ -65,10 +78,6 @@ import {
   lightToolbarShellClass,
   selectColumnInnerClass,
   tableRowSelectCheckboxClass,
-  tdMoneyMutedClass,
-  tdMoneyTotalClass,
-  tdTruncatedNameCellClass,
-  tdTruncatedTextCellClass,
   toolbarBlockLabelClass,
   workspaceDataTableClassName,
   workspaceTableBodyRowClassNames,
@@ -145,14 +154,6 @@ const defaultRecipesFilters = (): RecipesAppliedFilters => ({
   categoryId: "",
 })
 
-function formatMoney(n: number): string {
-  return new Intl.NumberFormat("es-AR", {
-    style: "currency",
-    currency: "ARS",
-    maximumFractionDigits: 2,
-  }).format(n)
-}
-
 type RecipeFormState = {
   name: string
   description: string
@@ -209,6 +210,7 @@ function RecipesPage() {
   const { bootstrap, loading: bootstrapLoading } = usePopWorkspace()
 
   const [recipes, setRecipes] = useState<RecipeTableRow[]>([])
+  const [selected, setSelected] = useState<Set<string>>(new Set())
   const [totalCount, setTotalCount] = useState(0)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -279,6 +281,7 @@ function RecipesPage() {
       return
     }
     setRecipes(res.recipes)
+    setSelected(new Set())
     setTotalCount(res.totalCount)
     setCanCreate(res.canCreate)
     setCanUpdate(res.canUpdate)
@@ -380,6 +383,11 @@ function RecipesPage() {
   }, [loading, totalCount])
 
   const skeletonRowCount = Math.min(12, Math.max(5, ws.pageSize))
+
+  const visibleIds = useMemo(() => recipes.map((row) => row.id), [recipes])
+  const allVisibleSelected =
+    visibleIds.length > 0 && visibleIds.every((id) => selected.has(id))
+  const someVisibleSelected = visibleIds.some((id) => selected.has(id))
 
   const clearAllFilters = useCallback(() => {
     setSearchInput("")
@@ -625,7 +633,7 @@ function RecipesPage() {
               <div
                 className={cn(
                   lightToolbarPanelLastClass,
-                  "order-1 min-w-0 md:col-span-2 xl:order-2 xl:col-span-9",
+                  "order-3 min-w-0 md:col-span-2 xl:order-2 xl:col-span-6",
                 )}
               >
                 <div className="mb-2 flex min-w-0 items-baseline justify-between gap-3">
@@ -890,6 +898,35 @@ function RecipesPage() {
               >
                 <TableHeader>
                   <TableRow className={workspaceTableHeaderRowClass}>
+                    <TableHead className={cn(lightTableThClass, "w-12 !px-0 text-center")}>
+                      <div className={cn(selectColumnInnerClass, "min-h-10")}>
+                        <Checkbox
+                          className={tableRowSelectCheckboxClass}
+                          checked={
+                            allVisibleSelected
+                              ? true
+                              : someVisibleSelected
+                                ? "indeterminate"
+                                : false
+                          }
+                          onCheckedChange={(checked) => {
+                            setSelected((prev) => {
+                              const next = new Set(prev)
+                              if (checked === true) {
+                                visibleIds.forEach((id) => next.add(id))
+                              } else {
+                                visibleIds.forEach((id) => next.delete(id))
+                              }
+                              return next
+                            })
+                          }}
+                          disabled={
+                            loading || totalCount === 0 || recipes.length === 0
+                          }
+                          aria-label="Seleccionar filas visibles"
+                        />
+                      </div>
+                    </TableHead>
                     <TableHead className={cn(lightTableThClass, "w-24 px-3 text-left")}>
                       <span className="sr-only">Foto</span>
                     </TableHead>
@@ -940,81 +977,32 @@ function RecipesPage() {
                         key={row.id}
                         className={workspaceTableBodyRowClassNames(index)}
                       >
-                        <TableCell className="w-24 px-3 py-2.5 align-middle">
-                          <DataWorkspaceTableThumbnail
-                            src={row.imageUrl}
-                            alt={row.name}
-                            size="lg"
-                          />
-                        </TableCell>
-                        <TableCell className={tdTruncatedNameCellClass}>
-                          <div className="flex min-w-0 flex-col gap-1">
-                            <span
-                              className="block min-w-0 truncate font-medium leading-snug text-foreground"
-                              title={row.name}
-                            >
-                              {row.name}
-                            </span>
-                            {row.description ? (
-                              <span
-                                className="block min-w-0 truncate text-xs leading-tight text-muted-foreground"
-                                title={row.description}
-                              >
-                                {row.description}
-                              </span>
-                            ) : null}
-                          </div>
-                        </TableCell>
-                        <TableCell
-                          className={cn(
-                            tdTruncatedTextCellClass,
-                            "text-muted-foreground",
-                          )}
-                        >
-                          <span className="block truncate" title={row.categoryName}>
-                            {row.categoryName}
-                          </span>
-                        </TableCell>
-                        <TableCell
-                          className={cn(
-                            "px-3 py-2.5 text-right text-sm",
-                            tdMoneyTotalClass,
-                          )}
-                        >
-                          {formatMoney(row.salePrice)}
-                        </TableCell>
-                        <TableCell
-                          className={cn(
-                            "px-3 py-2.5 text-right text-sm",
-                            tdMoneyMutedClass,
-                          )}
-                        >
-                          {formatMoney(row.costPrice)}
-                        </TableCell>
-                        <TableCell className="w-[5.5rem] px-3 py-2.5 text-center text-sm tabular-nums text-muted-foreground">
-                          {row.ingredientCount}
-                        </TableCell>
-                        <TableCell className="w-[6.5rem] px-3 py-2.5 align-middle">
-                          <Badge
-                            variant="secondary"
-                            className={cn(
-                              "font-normal",
-                              row.isActive
-                                ? "border-emerald-200/80 bg-emerald-50 text-emerald-800"
-                                : "text-muted-foreground",
-                            )}
-                          >
-                            {row.isActive ? "Activa" : "Inactiva"}
-                          </Badge>
-                        </TableCell>
+                        <RecipeTableSelectCell
+                          checked={selected.has(row.id)}
+                          onCheckedChange={(checked) => {
+                            setSelected((prev) => {
+                              const next = new Set(prev)
+                              if (checked) next.add(row.id)
+                              else next.delete(row.id)
+                              return next
+                            })
+                          }}
+                          label={`Seleccionar ${row.name || "receta"}`}
+                        />
+                        <RecipeTableImageCell row={row} />
+                        <RecipeTableNameCell row={row} />
+                        <RecipeTableCategoryCell row={row} />
+                        <RecipeTableSalePriceCell row={row} />
+                        <RecipeTableCostPriceCell row={row} />
+                        <RecipeTableIngredientsCell row={row} />
+                        <RecipeTableStatusCell row={row} />
                         {canUpdate || canDelete ? (
                           <TableCell className="w-[6.5rem] px-3 py-2.5 text-right align-middle">
-                            <div className="flex items-center justify-end gap-1">
+                            <div className="flex items-center justify-end gap-0.5">
                               {canUpdate ? (
                                 <DataWorkspaceTableIconAction
                                   label={`Editar ${row.name}`}
                                   icon={Pencil}
-                                  variant="edit"
                                   onClick={() => void openEdit(row)}
                                 />
                               ) : null}
@@ -1038,6 +1026,9 @@ function RecipesPage() {
                   )}
                 </TableBody>
               </table>
+              {!loading && totalCount === 0 ? (
+                <div className="min-h-[12rem]" aria-hidden />
+              ) : null}
             </DataWorkspaceListTableFrame>
           </DataWorkspaceListTableShell>
         </div>
@@ -1064,7 +1055,7 @@ function RecipesPage() {
           >
             <div className={recipeDialogBodyClass}>
               {formError ? (
-                <p className="mb-3 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">
+                <p className="mb-3 rounded-xl border border-destructive/25 bg-destructive/5 px-3 py-2 text-sm text-destructive">
                   {formError}
                 </p>
               ) : null}
@@ -1090,7 +1081,7 @@ function RecipesPage() {
                       setForm((f) => ({ ...f, description: e.target.value }))
                     }
                     rows={2}
-                    className={recipeFormFieldClass}
+                    className={recipeFormTextareaClass}
                   />
                 </div>
                 <div className="space-y-2">

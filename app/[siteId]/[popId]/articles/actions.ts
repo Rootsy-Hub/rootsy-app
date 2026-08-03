@@ -28,12 +28,17 @@ import {
   normalizeStoredUnitOfMeasure,
 } from "@/lib/articleItemKind"
 import type { ArticleDiscountMode } from "@/lib/articleDiscount"
-import { createClient } from "@/utils/supabase/server"
-import { isArticleDiscountMode } from "@/lib/articleDiscount"
+import {
+  normalizeArticleBarcode,
+  normalizeArticleSku,
+  validateArticleBarcodeInput,
+} from "@/lib/articleIdentifiers"
 import {
   ARTICLE_TABLE_PAGE_SIZES,
   DEFAULT_ARTICLE_TABLE_PAGE_SIZE,
 } from "@/app/[siteId]/[popId]/articles/workspaceUrl"
+import { isArticleDiscountMode } from "@/lib/articleDiscount"
+import { createClient } from "@/utils/supabase/server"
 
 export type ArticleSupplierRef = {
   id: string
@@ -46,6 +51,8 @@ export type ArticleTableRow = {
   description: string
   imageUrl: string | null
   brand: string
+  sku: string | null
+  barcode: string | null
   itemKind: ArticleItemKind
   unitOfMeasure: string
   isSellable: boolean
@@ -95,6 +102,8 @@ export type UpdatePopArticleInput = {
   description: string
   imageUrl: string
   brand: string
+  sku: string
+  barcode: string
   salePrice: number
   costPrice: number
   iva: number
@@ -215,6 +224,11 @@ function articleRowFromDb(row: Record<string, unknown>): ArticleTableRow {
     description: String(row.description ?? ""),
     imageUrl,
     brand: String(row.brand ?? ""),
+    sku: row.sku != null && String(row.sku).trim() ? String(row.sku).trim() : null,
+    barcode:
+      row.barcode != null && String(row.barcode).trim()
+        ? String(row.barcode).trim()
+        : null,
     itemKind,
     unitOfMeasure,
     isSellable: Boolean(row.is_sellable),
@@ -247,9 +261,26 @@ function articleDbPayloadFromInput(input: UpdatePopArticleInput) {
     min_stock_level: input.minStockLevel,
     track_stock: true,
     brand: input.brand.trim(),
+    sku: normalizeArticleSku(input.sku),
+    barcode:
+      input.itemKind === "merchandise"
+        ? normalizeArticleBarcode(input.barcode)
+        : null,
     discount_mode: input.discountMode,
     discount_value: input.discountValue,
   }
+}
+
+function normalizeIdentifierFields(
+  input: UpdatePopArticleInput,
+): { ok: true; sku: string | null; barcode: string | null } | { ok: false; error: string } {
+  const sku = normalizeArticleSku(input.sku)
+  if (input.itemKind !== "merchandise") {
+    return { ok: true, sku, barcode: null }
+  }
+  const barcodeRes = validateArticleBarcodeInput(input.barcode)
+  if (!barcodeRes.ok) return barcodeRes
+  return { ok: true, sku, barcode: barcodeRes.value }
 }
 
 async function syncArticleSuppliers(
@@ -515,6 +546,10 @@ export async function updatePopArticle(
     if (!catalogNorm.ok) {
       return { success: false, error: catalogNorm.error }
     }
+    const idFields = normalizeIdentifierFields(input)
+    if (!idFields.ok) {
+      return { success: false, error: idFields.error }
+    }
     const { brand, discountMode, discountValue, supplierIds } = catalogNorm.fields
 
     const { error } = await supabase
@@ -531,6 +566,8 @@ export async function updatePopArticle(
         ...articleDbPayloadFromInput({
           ...input,
           brand,
+          sku: idFields.sku ?? "",
+          barcode: idFields.barcode ?? "",
           discountMode,
           discountValue,
           supplierIds,
@@ -654,6 +691,10 @@ export async function createPopArticle(
     if (!catalogNorm.ok) {
       return { success: false, error: catalogNorm.error }
     }
+    const idFields = normalizeIdentifierFields(input)
+    if (!idFields.ok) {
+      return { success: false, error: idFields.error }
+    }
     const { brand, discountMode, discountValue, supplierIds } = catalogNorm.fields
 
     const { data: created, error } = await supabase
@@ -671,6 +712,8 @@ export async function createPopArticle(
         ...articleDbPayloadFromInput({
           ...input,
           brand,
+          sku: idFields.sku ?? "",
+          barcode: idFields.barcode ?? "",
           discountMode,
           discountValue,
           supplierIds,
@@ -961,7 +1004,7 @@ function buildArticlesSearchOrClause(raw: string): string | null {
   const t = raw.trim().replace(/,/g, " ").trim()
   if (!t) return null
   const pattern = `%${escapeIlikeToken(t)}%`
-  return `name.ilike.${pattern},description.ilike.${pattern}`
+  return `name.ilike.${pattern},description.ilike.${pattern},sku.ilike.${pattern},barcode.ilike.${pattern}`
 }
 
 function appendArticleListFilters<
@@ -996,6 +1039,8 @@ const ARTICLE_LIST_SELECT = `
   description,
   image_url,
   brand,
+  sku,
+  barcode,
   item_kind,
   unit_of_measure,
   is_sellable,

@@ -1,6 +1,5 @@
 "use client"
 
-import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 import { CircleDollarSign, Loader2, X } from "lucide-react"
 
@@ -16,9 +15,9 @@ export type SaleOperationActionsBarProps = {
 }
 
 const actionBtnBase = cn(
-  "h-14 w-full gap-2.5 border-0 px-4 text-[15px] font-semibold tracking-tight shadow-none transition-colors",
-  "focus-visible:ring-2 focus-visible:ring-offset-0",
-  "disabled:pointer-events-auto disabled:cursor-not-allowed disabled:opacity-40",
+  "inline-flex h-14 w-full items-center justify-center gap-2.5 border-0 px-4 text-[15px] font-semibold tracking-tight shadow-none transition-colors",
+  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-0",
+  "disabled:pointer-events-none disabled:cursor-not-allowed",
 )
 
 export function SaleOperationActionsBar({
@@ -31,12 +30,14 @@ export function SaleOperationActionsBar({
   onConfirm,
   flush = false,
 }: SaleOperationActionsBarProps) {
+  const confirmInactive = confirmDisabled || confirmLoading
+
   return (
     <div
       className={cn(
         "grid w-full shrink-0 grid-cols-2 bg-white",
         flush
-          ? "border-t border-slate-200/90"
+          ? ""
           : "gap-2 rounded-2xl border border-slate-200/90 p-2 shadow-sm",
       )}
     >
@@ -46,25 +47,25 @@ export function SaleOperationActionsBar({
         onClick={onDiscard}
         className={cn(
           actionBtnBase,
-          "inline-flex items-center justify-center",
           flush ? "rounded-none" : "rounded-xl",
-          "bg-white text-rose-700 hover:bg-rose-500/10 hover:text-rose-700 active:bg-rose-500/15",
-          "disabled:bg-white disabled:text-slate-400 disabled:hover:bg-white disabled:active:bg-white",
-          "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-400/40",
+          "bg-white text-rose-700 hover:bg-rose-50 active:bg-rose-100/80",
+          "disabled:bg-white disabled:text-slate-300 disabled:hover:bg-white disabled:active:bg-white",
+          "focus-visible:ring-rose-400/40",
         )}
       >
         <X className="size-[18px] shrink-0 stroke-[2.5]" aria-hidden />
         Descartar
       </button>
-      <Button
+      <button
         type="button"
-        disabled={confirmDisabled || confirmLoading}
+        disabled={confirmInactive}
         onClick={onConfirm}
         title={confirmTitle}
         className={cn(
           actionBtnBase,
           flush ? "rounded-none" : "rounded-xl",
           "bg-emerald-600 text-white hover:bg-emerald-500 active:bg-emerald-700",
+          "disabled:bg-[#8faaa0] disabled:text-white/90 disabled:hover:bg-[#8faaa0] disabled:active:bg-[#8faaa0]",
           "focus-visible:ring-emerald-400/50",
         )}
       >
@@ -74,7 +75,7 @@ export function SaleOperationActionsBar({
           <CircleDollarSign className="size-[18px] shrink-0" aria-hidden />
         )}
         {confirmLoading ? "Procesando…" : confirmLabel}
-      </Button>
+      </button>
     </div>
   )
 }

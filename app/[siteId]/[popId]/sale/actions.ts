@@ -49,6 +49,7 @@ export type SaleCatalogArticle = {
   categoryName: string
   unitOfMeasure: string
   imageUrl: string | null
+  barcode?: string | null
 }
 
 export type SaleCatalogClient = {
@@ -158,6 +159,7 @@ export async function getSaleCatalog(popId: string): Promise<
         category_id,
         unit_of_measure,
         image_url,
+        barcode,
         categories ( id, name )
       `,
       )
@@ -212,6 +214,10 @@ export async function getSaleCatalog(popId: string): Promise<
         imageUrl:
           typeof row.image_url === "string" && row.image_url.trim()
             ? row.image_url.trim()
+            : null,
+        barcode:
+          row.barcode != null && String(row.barcode).trim()
+            ? String(row.barcode).trim()
             : null,
       }
     })

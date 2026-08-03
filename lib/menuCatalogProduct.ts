@@ -34,6 +34,7 @@ export function menuRecipeToProduct(recipe: MenuCatalogRecipe): MenuCatalogProdu
     kind: "recipe",
     section: "recipes",
     categoriaFiltro: `recipes:${recipe.categoryId}`,
+    iva: recipe.iva,
   }
 }
 
@@ -52,5 +53,7 @@ export function menuArticleToProduct(article: MenuCatalogArticle): MenuCatalogPr
     section: "products",
     categoriaFiltro: `products:${article.categoryId}`,
     unitOfMeasure: article.unitOfMeasure,
+    iva: article.iva,
+    barcode: article.barcode ?? null,
   }
 }

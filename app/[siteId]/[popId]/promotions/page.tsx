@@ -22,13 +22,36 @@ import {
   PROMOTION_DELETE_CONFIRM_PHRASE,
   PROMOTION_TABLE_PAGE_SIZES,
   QUANTITY_DEAL_SLOT_LABEL,
-  DEFAULT_PROMOTION_TABLE_PAGE_SIZE,
   promotionDialogBodyClass,
   promotionDialogFooterClass,
   promotionDialogHeaderClass,
+  promotionDialogSurfaceClass,
   promotionDialogSurfaceWideClass,
   promotionFormFieldClass,
+  promotionFormSelectContentClass,
+  promotionFormSelectItemClass,
+  promotionFormSelectTriggerClass,
+  promotionFormTextareaClass,
 } from "@/app/[siteId]/[popId]/promotions/promotionConstants"
+import {
+  PromotionTypeToolbarFilter,
+  promotionTypeFilterToQuery,
+  resolvePromotionTypeFilterId,
+} from "@/app/[siteId]/[popId]/promotions/PromotionTypeToolbarFilter"
+import {
+  PromotionTableImageCell,
+  PromotionTableItemsCell,
+  PromotionTableNameCell,
+  PromotionTablePricingCell,
+  PromotionTableScheduleCell,
+  PromotionTableSelectCell,
+  PromotionTableStatusCell,
+  PromotionTableTypeCell,
+} from "@/app/[siteId]/[popId]/promotions/promotionsTableCells"
+import {
+  mergePromotionsWorkspaceUrl,
+  parsePromotionsWorkspaceUrl,
+} from "@/app/[siteId]/[popId]/promotions/workspaceUrl"
 import { buildPaginationItems } from "@/app/[siteId]/[popId]/layout/layoutPreviewPagination"
 import { DataWorkspaceListPaginationFooter } from "@/components/data-workspace/DataWorkspaceListPaginationFooter"
 import { DataWorkspaceListTableShell } from "@/components/data-workspace/DataWorkspaceListTableShell"
@@ -36,7 +59,6 @@ import {
   DataWorkspaceListTableFrame,
   DataWorkspaceTableEmptyMascot,
   DataWorkspaceTableIconAction,
-  DataWorkspaceTableThumbnail,
 } from "@/components/data-workspace/DataWorkspaceListTablePrimitives"
 import {
   lightFilterChipClass,
@@ -48,8 +70,8 @@ import {
   lightToolbarPanelClass,
   lightToolbarPanelLastClass,
   lightToolbarShellClass,
-  tdTruncatedNameCellClass,
-  tdTruncatedTextCellClass,
+  selectColumnInnerClass,
+  tableRowSelectCheckboxClass,
   toolbarBlockLabelClass,
   workspaceDataTableClassName,
   workspaceTableBodyRowClassNames,
@@ -101,7 +123,12 @@ import {
 } from "@/lib/promotionTypes"
 import { cn } from "@/lib/utils"
 import { Filter, Loader2, Pencil, Plus, Search, Trash2, X } from "lucide-react"
-import { useParams, useRouter } from "next/navigation"
+import {
+  useParams,
+  usePathname,
+  useRouter,
+  useSearchParams,
+} from "next/navigation"
 import {
   useCallback,
   useEffect,
@@ -254,33 +281,45 @@ function formToPayload(form: PromotionFormState) {
 function PromotionsPage() {
   const params = useParams()
   const router = useRouter()
+  const pathname = usePathname()
+  const searchParams = useSearchParams()
   const siteId = String(params.siteId ?? "")
   const popId = String(params.popId ?? "")
+  const ws = useMemo(
+    () => parsePromotionsWorkspaceUrl(searchParams),
+    [searchParams],
+  )
   const searchInputId = useId()
   const pageSizeLabelId = useId()
 
   const { bootstrap, loading: bootstrapLoading } = usePopWorkspace()
 
   const [promotions, setPromotions] = useState<PromotionTableRow[]>([])
+  const [selected, setSelected] = useState<Set<string>>(new Set())
   const [totalCount, setTotalCount] = useState(0)
-  const [page, setPage] = useState(1)
-  const [pageSize, setPageSize] = useState(DEFAULT_PROMOTION_TABLE_PAGE_SIZE)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [canCreate, setCanCreate] = useState(false)
   const [canUpdate, setCanUpdate] = useState(false)
   const [canDelete, setCanDelete] = useState(false)
 
-  const [searchInput, setSearchInput] = useState("")
-  const [q, setQ] = useState("")
-  const [soloActivos, setSoloActivos] = useState(false)
-  const [promotionTypeFilter, setPromotionTypeFilter] = useState<
-    PromotionType | ""
-  >("")
+  const [searchInput, setSearchInput] = useState(ws.q)
   const [filtersModalOpen, setFiltersModalOpen] = useState(false)
   const [draftSoloActivos, setDraftSoloActivos] = useState(false)
-  const [draftTypeFilter, setDraftTypeFilter] = useState<PromotionType | "">("")
   const searchInputRef = useRef<HTMLInputElement>(null)
+
+  const pushWs = useCallback(
+    (patch: Parameters<typeof mergePromotionsWorkspaceUrl>[1]) => {
+      const next = mergePromotionsWorkspaceUrl(searchParams, patch)
+      router.replace(`${pathname}?${next.toString()}`)
+    },
+    [pathname, router, searchParams],
+  )
+
+  const activePromotionTypeFilterId = useMemo(
+    () => resolvePromotionTypeFilterId(ws.promotionType),
+    [ws.promotionType],
+  )
 
   const [catalogOptions, setCatalogOptions] = useState<PromotionCatalogOption[]>(
     [],
@@ -303,11 +342,11 @@ function PromotionsPage() {
     if (!popId) return
     setLoading(true)
     const res = await getPopPromotionsTable(popId, {
-      q,
-      page,
-      pageSize,
-      soloActivos,
-      promotionType: promotionTypeFilter,
+      q: ws.q,
+      page: ws.page,
+      pageSize: ws.pageSize,
+      soloActivos: ws.soloActivos,
+      promotionType: ws.promotionType,
     })
     setLoading(false)
     if (!res.success) {
@@ -322,11 +361,12 @@ function PromotionsPage() {
     }
     setError(null)
     setPromotions(res.promotions)
+    setSelected(new Set())
     setTotalCount(res.totalCount)
     setCanCreate(res.canCreate)
     setCanUpdate(res.canUpdate)
     setCanDelete(res.canDelete)
-  }, [popId, q, page, pageSize, soloActivos, promotionTypeFilter, router])
+  }, [popId, ws, router])
 
   useEffect(() => {
     void loadTable()
@@ -340,26 +380,84 @@ function PromotionsPage() {
   }, [popId])
 
   useEffect(() => {
+    setSearchInput(ws.q)
+  }, [ws.q])
+
+  useEffect(() => {
     const t = window.setTimeout(() => {
-      setQ(searchInput.trim())
-      setPage(1)
-    }, 300)
+      const next = searchInput.trim()
+      if (next === ws.q.trim()) return
+      pushWs({ q: next, page: 1 })
+    }, 400)
     return () => window.clearTimeout(t)
-  }, [searchInput])
+  }, [searchInput, ws.q, pushWs])
 
-  const totalPages = Math.max(1, Math.ceil(totalCount / pageSize))
+  useEffect(() => {
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key !== "/" || e.metaKey || e.ctrlKey || e.altKey) return
+      const target = e.target
+      if (!(target instanceof HTMLElement)) return
+      if (
+        target.tagName === "INPUT" ||
+        target.tagName === "TEXTAREA" ||
+        target.tagName === "SELECT" ||
+        target.isContentEditable
+      ) {
+        return
+      }
+      e.preventDefault()
+      searchInputRef.current?.focus()
+    }
+    document.addEventListener("keydown", onKeyDown)
+    return () => document.removeEventListener("keydown", onKeyDown)
+  }, [])
+
+  const totalPages = Math.max(1, Math.ceil(totalCount / ws.pageSize))
   const rangeStart =
-    totalCount === 0 ? 0 : (page - 1) * pageSize + 1
-  const rangeEnd = Math.min(page * pageSize, totalCount)
+    totalCount === 0 ? 0 : (ws.page - 1) * ws.pageSize + 1
+  const rangeEnd = Math.min(ws.page * ws.pageSize, totalCount)
 
-  const skeletonRowCount = Math.min(12, Math.max(5, pageSize))
+  const skeletonRowCount = Math.min(12, Math.max(5, ws.pageSize))
   const paginationItems = useMemo(
-    () => buildPaginationItems(totalPages, page),
-    [totalPages, page],
+    () => buildPaginationItems(totalPages, ws.page),
+    [totalPages, ws.page],
   )
 
-  const modalFiltersActiveCount =
-    (soloActivos ? 1 : 0) + (promotionTypeFilter ? 1 : 0)
+  const visibleIds = useMemo(() => promotions.map((row) => row.id), [promotions])
+  const allVisibleSelected =
+    visibleIds.length > 0 && visibleIds.every((id) => selected.has(id))
+  const someVisibleSelected = visibleIds.some((id) => selected.has(id))
+
+  const modalFiltersActiveCount = ws.soloActivos ? 1 : 0
+
+  const hasFilterChips =
+    ws.q.trim() !== "" || ws.soloActivos || ws.promotionType !== ""
+
+  const activeFilterCount = useMemo(() => {
+    let count = 0
+    if (ws.q.trim()) count++
+    if (ws.soloActivos) count++
+    if (ws.promotionType) count++
+    return count
+  }, [ws.q, ws.soloActivos, ws.promotionType])
+
+  const resultsSummary = useMemo(() => {
+    if (loading && totalCount === 0) return "…"
+    if (totalCount === 0) return "Sin resultados"
+    const noun = totalCount === 1 ? "promoción" : "promociones"
+    return `${totalCount.toLocaleString("es-AR")} ${noun}`
+  }, [loading, totalCount])
+
+  const clearAllFilters = useCallback(() => {
+    setSearchInput("")
+    pushWs({
+      q: "",
+      soloActivos: false,
+      promotionType: "",
+      page: 1,
+    })
+    searchInputRef.current?.focus()
+  }, [pushWs])
 
   const openCreate = () => {
     setEditingId(null)
@@ -496,16 +594,36 @@ function PromotionsPage() {
           </div>
         ) : null}
 
-        <div className={lightToolbarShellClass} role="toolbar">
+        <div
+          className={lightToolbarShellClass}
+          role="toolbar"
+          aria-label="Filtros del listado"
+        >
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-12">
+            <PromotionTypeToolbarFilter
+              className="order-1 w-full min-w-0 md:col-span-1 xl:col-span-3"
+              value={activePromotionTypeFilterId}
+              onChange={(id) =>
+                pushWs({
+                  promotionType: promotionTypeFilterToQuery(id),
+                  page: 1,
+                })
+              }
+            />
+
             <div
               className={cn(
                 lightToolbarPanelClass,
-                "order-2 md:col-span-1 xl:order-1 xl:col-span-3",
+                "order-2 w-full min-w-0 md:col-span-1 xl:order-2 xl:col-span-3",
               )}
             >
-              <div className="mb-2 flex items-baseline justify-between">
+              <div className="mb-2 flex min-w-0 items-baseline justify-between gap-3">
                 <span className={toolbarBlockLabelClass}>Filtros</span>
+                {modalFiltersActiveCount > 0 ? (
+                  <span className="shrink-0 text-[11px] font-medium text-primary">
+                    Activo
+                  </span>
+                ) : null}
               </div>
               <Button
                 type="button"
@@ -515,48 +633,161 @@ function PromotionsPage() {
                   lightToolbarButtonClass,
                   modalFiltersActiveCount > 0 && lightToolbarControlActiveClass,
                 )}
+                aria-haspopup="dialog"
+                aria-expanded={filtersModalOpen}
                 onClick={() => {
-                  setDraftSoloActivos(soloActivos)
-                  setDraftTypeFilter(promotionTypeFilter)
+                  setDraftSoloActivos(ws.soloActivos)
                   setFiltersModalOpen(true)
                 }}
               >
-                <Filter className="size-4 shrink-0 opacity-80" />
-                <span className="truncate">Tipo y estado</span>
+                <Filter className="size-4 shrink-0 opacity-80" aria-hidden />
+                <span className="min-w-0 flex-1 truncate text-left">
+                  {modalFiltersActiveCount > 0 ? "Refinar filtros" : "Estado"}
+                </span>
+                {modalFiltersActiveCount > 0 ? (
+                  <span
+                    className="inline-flex size-5 shrink-0 items-center justify-center rounded-full bg-primary/15 text-[10px] font-semibold tabular-nums text-primary"
+                    aria-hidden
+                  >
+                    {modalFiltersActiveCount}
+                  </span>
+                ) : null}
               </Button>
             </div>
+
             <div
               className={cn(
                 lightToolbarPanelLastClass,
-                "order-1 md:col-span-2 xl:order-2 xl:col-span-9",
+                "order-3 min-w-0 md:col-span-2 xl:order-3 xl:col-span-6",
               )}
             >
-              <label htmlFor={searchInputId} className={toolbarBlockLabelClass}>
-                Buscar
-              </label>
-              <div className="relative mt-2">
-                <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+              <div className="mb-2 flex min-w-0 items-baseline justify-between gap-3">
+                <label htmlFor={searchInputId} className={toolbarBlockLabelClass}>
+                  Buscar
+                </label>
+                <span
+                  className="shrink-0 text-[11px] font-medium text-muted-foreground"
+                  aria-live="polite"
+                  aria-atomic="true"
+                >
+                  {resultsSummary}
+                </span>
+              </div>
+              <div className="relative min-w-0">
+                <Search
+                  className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground"
+                  aria-hidden
+                />
                 <Input
                   ref={searchInputRef}
                   id={searchInputId}
                   type="search"
                   value={searchInput}
                   onChange={(e) => setSearchInput(e.target.value)}
-                  placeholder="Nombre, descripción…"
-                  className={cn(lightToolbarInputClass, searchInput && "pr-10")}
+                  placeholder="Nombre, descripción… ( / )"
+                  className={cn(
+                    lightToolbarInputClass,
+                    searchInput.trim().length > 0 && "pr-10",
+                  )}
+                  autoComplete="off"
+                  spellCheck={false}
+                  aria-label="Buscar promociones"
                 />
-                {searchInput ? (
+                {searchInput.trim().length > 0 ? (
                   <button
                     type="button"
+                    aria-label="Limpiar búsqueda"
                     className={lightToolbarClearButtonClass}
-                    onClick={() => setSearchInput("")}
+                    onClick={() => {
+                      setSearchInput("")
+                      searchInputRef.current?.focus()
+                    }}
                   >
-                    <X className="size-3.5" />
+                    <X className="size-3.5" aria-hidden />
                   </button>
                 ) : null}
               </div>
             </div>
           </div>
+
+          {hasFilterChips ? (
+            <div
+              className="border-t border-border/80 bg-card px-4 py-3"
+              role="region"
+              aria-label="Filtros activos"
+            >
+              <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+                <p className={toolbarBlockLabelClass}>
+                  Filtros activos
+                  <span className="sr-only">: {activeFilterCount}</span>
+                  <span
+                    className="ml-1.5 inline-flex min-w-5 items-center justify-center rounded-full bg-muted px-1.5 py-0.5 text-[10px] font-semibold tabular-nums normal-case tracking-normal text-muted-foreground"
+                    aria-hidden
+                  >
+                    {activeFilterCount}
+                  </span>
+                </p>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="h-8 px-2.5 text-xs font-medium text-muted-foreground hover:text-foreground"
+                  onClick={clearAllFilters}
+                >
+                  Limpiar todo
+                </Button>
+              </div>
+              <div className="flex flex-wrap items-center gap-1.5">
+                {ws.q.trim() ? (
+                  <Badge variant="secondary" className={lightFilterChipClass}>
+                    <span className="truncate">Buscar: «{ws.q.trim()}»</span>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="size-6 shrink-0"
+                      onClick={() => pushWs({ q: "", page: 1 })}
+                      aria-label="Quitar búsqueda"
+                    >
+                      <X className="size-3" />
+                    </Button>
+                  </Badge>
+                ) : null}
+                {ws.soloActivos ? (
+                  <Badge variant="secondary" className={lightFilterChipClass}>
+                    Solo activas
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="size-6 shrink-0"
+                      onClick={() => pushWs({ soloActivos: false, page: 1 })}
+                      aria-label="Quitar filtro solo activas"
+                    >
+                      <X className="size-3" />
+                    </Button>
+                  </Badge>
+                ) : null}
+                {ws.promotionType ? (
+                  <Badge variant="secondary" className={lightFilterChipClass}>
+                    <span className="truncate">
+                      Tipo: {PROMOTION_TYPE_LABEL[ws.promotionType]}
+                    </span>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="size-6 shrink-0"
+                      onClick={() => pushWs({ promotionType: "", page: 1 })}
+                      aria-label="Quitar filtro de tipo"
+                    >
+                      <X className="size-3" />
+                    </Button>
+                  </Badge>
+                ) : null}
+              </div>
+            </div>
+          ) : null}
         </div>
 
         <DataWorkspaceListTableShell
@@ -573,16 +804,18 @@ function PromotionsPage() {
               totalCount={totalCount}
               rangeStart={rangeStart}
               rangeEnd={rangeEnd}
-              currentPage={page}
+              currentPage={ws.page}
               totalPages={totalPages}
-              pageSize={pageSize}
+              pageSize={ws.pageSize}
               pageSizeOptions={PROMOTION_TABLE_PAGE_SIZES}
               paginationItems={paginationItems}
-              onPageChange={setPage}
-              onPageSizeChange={(ps) => {
-                setPageSize(ps)
-                setPage(1)
-              }}
+              onPageChange={(p) => pushWs({ page: p })}
+              onPageSizeChange={(ps) =>
+                pushWs({
+                  pageSize: ps as typeof ws.pageSize,
+                  page: 1,
+                })
+              }
               pageSizeLabelId={pageSizeLabelId}
             />
           }
@@ -591,6 +824,35 @@ function PromotionsPage() {
             <table className={workspaceDataTableClassName} aria-busy={loading}>
             <TableHeader>
               <TableRow className={workspaceTableHeaderRowClass}>
+                <TableHead className={cn(lightTableThClass, "w-12 !px-0 text-center")}>
+                  <div className={cn(selectColumnInnerClass, "min-h-10")}>
+                    <Checkbox
+                      className={tableRowSelectCheckboxClass}
+                      checked={
+                        allVisibleSelected
+                          ? true
+                          : someVisibleSelected
+                            ? "indeterminate"
+                            : false
+                      }
+                      onCheckedChange={(checked) => {
+                        setSelected((prev) => {
+                          const next = new Set(prev)
+                          if (checked === true) {
+                            visibleIds.forEach((id) => next.add(id))
+                          } else {
+                            visibleIds.forEach((id) => next.delete(id))
+                          }
+                          return next
+                        })
+                      }}
+                      disabled={
+                        loading || totalCount === 0 || promotions.length === 0
+                      }
+                      aria-label="Seleccionar filas visibles"
+                    />
+                  </div>
+                </TableHead>
                 <TableHead className={cn(lightTableThClass, "w-24 px-3 text-left")}>
                   <span className="sr-only">Imagen</span>
                 </TableHead>
@@ -633,91 +895,38 @@ function PromotionsPage() {
                     hasActionsColumn: Boolean(canUpdate || canDelete),
                   })}
                 />
-              ) : (
+              ) : totalCount === 0 ? null : (
                 promotions.map((row, index) => (
                   <TableRow
                     key={row.id}
                     className={workspaceTableBodyRowClassNames(index)}
                   >
-                    <TableCell className="w-24 px-3 py-2.5 align-middle">
-                      <DataWorkspaceTableThumbnail
-                        src={
-                          row.imageUrl ??
-                          `https://api.dicebear.com/7.x/shapes/svg?seed=${encodeURIComponent(row.id)}`
-                        }
-                        alt={row.name}
-                        size="lg"
-                      />
-                    </TableCell>
-                    <TableCell className={tdTruncatedNameCellClass}>
-                      <div className="flex min-w-0 flex-col gap-1">
-                        <span
-                          className="block min-w-0 truncate font-medium leading-snug text-foreground"
-                          title={row.name}
-                        >
-                          {row.name}
-                        </span>
-                        {row.description ? (
-                          <span
-                            className="block min-w-0 truncate text-xs leading-tight text-muted-foreground"
-                            title={row.description}
-                          >
-                            {row.description}
-                          </span>
-                        ) : null}
-                      </div>
-                    </TableCell>
-                    <TableCell className={tdTruncatedTextCellClass}>
-                      {PROMOTION_TYPE_LABEL[row.promotionType]}
-                    </TableCell>
-                    <TableCell className={tdTruncatedTextCellClass}>
-                      <span className="block truncate" title={row.pricingSummary}>
-                        {row.pricingSummary}
-                      </span>
-                    </TableCell>
-                    <TableCell className={tdTruncatedTextCellClass}>
-                      <span className="block truncate text-xs" title={row.scheduleSummary}>
-                        {row.scheduleSummary}
-                      </span>
-                    </TableCell>
-                    <TableCell className={tdTruncatedTextCellClass}>
-                      {row.promotionType === "combo"
-                        ? `${row.slotCount} ítems · ${row.optionCount} opc.`
-                        : `${row.optionCount} elegibles`}
-                    </TableCell>
-                    <TableCell className="w-[7.5rem] px-3 py-2.5 align-middle">
-                      <div className="flex flex-wrap gap-1">
-                        <Badge
-                          variant="outline"
-                          className={cn(
-                            "font-normal",
-                            row.isActive
-                              ? "border-emerald-200/90 bg-emerald-50/90 text-emerald-700"
-                              : "text-muted-foreground",
-                          )}
-                        >
-                          {row.isActive ? "Activa" : "Inactiva"}
-                        </Badge>
-                        {row.showInMenu ? (
-                          <Badge variant="secondary" className="font-normal">
-                            Menú
-                          </Badge>
-                        ) : null}
-                        {row.autoApply ? (
-                          <Badge variant="secondary" className="font-normal">
-                            Auto
-                          </Badge>
-                        ) : null}
-                      </div>
-                    </TableCell>
+                    <PromotionTableSelectCell
+                      checked={selected.has(row.id)}
+                      onCheckedChange={(checked) => {
+                        setSelected((prev) => {
+                          const next = new Set(prev)
+                          if (checked) next.add(row.id)
+                          else next.delete(row.id)
+                          return next
+                        })
+                      }}
+                      label={`Seleccionar ${row.name || "promoción"}`}
+                    />
+                    <PromotionTableImageCell row={row} />
+                    <PromotionTableNameCell row={row} />
+                    <PromotionTableTypeCell row={row} />
+                    <PromotionTablePricingCell row={row} />
+                    <PromotionTableScheduleCell row={row} />
+                    <PromotionTableItemsCell row={row} />
+                    <PromotionTableStatusCell row={row} />
                     {canUpdate || canDelete ? (
                       <TableCell className="w-[6.5rem] px-3 py-2.5 text-right align-middle">
-                        <div className="flex items-center justify-end gap-1">
+                        <div className="flex items-center justify-end gap-0.5">
                           {canUpdate ? (
                             <DataWorkspaceTableIconAction
                               label={`Editar ${row.name}`}
                               icon={Pencil}
-                              variant="edit"
                               onClick={() => void openEdit(row)}
                             />
                           ) : null}
@@ -741,52 +950,57 @@ function PromotionsPage() {
               )}
             </TableBody>
             </table>
+            {!loading && totalCount === 0 ? (
+              <div className="min-h-[12rem]" aria-hidden />
+            ) : null}
           </DataWorkspaceListTableFrame>
         </DataWorkspaceListTableShell>
       </div>
 
-      <Dialog open={filtersModalOpen} onOpenChange={setFiltersModalOpen}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>Filtros</DialogTitle>
+      <Dialog
+        open={filtersModalOpen}
+        onOpenChange={(open) => {
+          if (open) setDraftSoloActivos(ws.soloActivos)
+          setFiltersModalOpen(open)
+        }}
+      >
+        <DialogContent
+          className={promotionDialogSurfaceClass}
+          showCloseButton
+          data-rootsy-light-shell="true"
+        >
+          <DialogHeader className={promotionDialogHeaderClass}>
+            <DialogTitle className="text-base font-semibold tracking-tight">
+              Filtros
+            </DialogTitle>
+            <DialogDescription className="text-sm leading-relaxed">
+              Combinan con la búsqueda y el tipo. El listado se pagina en el
+              servidor.
+            </DialogDescription>
           </DialogHeader>
-          <div className="space-y-4 py-2">
-            <div className="flex items-center gap-2">
+          <div className={promotionDialogBodyClass}>
+            <label className="flex cursor-pointer items-center gap-2 rounded-md border border-transparent px-1 py-0.5 hover:bg-muted/50">
               <Checkbox
                 id="filter-solo-activos"
                 checked={draftSoloActivos}
                 onCheckedChange={(v) => setDraftSoloActivos(Boolean(v))}
+                aria-label="Solo promociones activas"
               />
-              <Label htmlFor="filter-solo-activos">Solo activas</Label>
-            </div>
-            <div className="space-y-2">
-              <Label>Tipo</Label>
-              <Select
-                value={draftTypeFilter || "all"}
-                onValueChange={(v) =>
-                  setDraftTypeFilter(
-                    v === "all" ? "" : (v as PromotionType),
-                  )
-                }
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Todos</SelectItem>
-                  <SelectItem value="combo">Combo</SelectItem>
-                  <SelectItem value="quantity_deal">Por cantidad</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+              <span className="text-sm text-foreground">Solo promociones activas</span>
+            </label>
           </div>
-          <DialogFooter>
+          <DialogFooter className={promotionDialogFooterClass}>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setDraftSoloActivos(false)}
+            >
+              Restablecer
+            </Button>
             <Button
               type="button"
               onClick={() => {
-                setSoloActivos(draftSoloActivos)
-                setPromotionTypeFilter(draftTypeFilter)
-                setPage(1)
+                pushWs({ soloActivos: draftSoloActivos, page: 1 })
                 setFiltersModalOpen(false)
               }}
             >
@@ -800,6 +1014,7 @@ function PromotionsPage() {
         <DialogContent
           showCloseButton
           className={promotionDialogSurfaceWideClass}
+          data-rootsy-light-shell="true"
         >
           <DialogHeader className={promotionDialogHeaderClass}>
             <DialogTitle>
@@ -847,7 +1062,7 @@ function PromotionsPage() {
                         id="promo-desc"
                         value={form.description}
                         disabled={formBusy}
-                        className={promotionFormFieldClass}
+                        className={promotionFormTextareaClass}
                         rows={2}
                         onChange={(e) =>
                           setForm((p) => ({ ...p, description: e.target.value }))
@@ -873,12 +1088,19 @@ function PromotionsPage() {
                         disabled={formBusy}
                         onValueChange={(v) => setPromotionType(v as PromotionType)}
                       >
-                        <SelectTrigger className={promotionFormFieldClass}>
+                        <SelectTrigger className={promotionFormSelectTriggerClass}>
                           <SelectValue />
                         </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="combo">Combo</SelectItem>
-                          <SelectItem value="quantity_deal">Por cantidad</SelectItem>
+                        <SelectContent className={promotionFormSelectContentClass}>
+                          <SelectItem value="combo" className={promotionFormSelectItemClass}>
+                            Combo
+                          </SelectItem>
+                          <SelectItem
+                            value="quantity_deal"
+                            className={promotionFormSelectItemClass}
+                          >
+                            Por cantidad
+                          </SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
@@ -1202,20 +1424,29 @@ function PromotionsPage() {
       </Dialog>
 
       <Dialog open={deleteOpen} onOpenChange={setDeleteOpen}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>Eliminar promoción</DialogTitle>
-            <DialogDescription>
+        <DialogContent
+          className={promotionDialogSurfaceClass}
+          showCloseButton
+          data-rootsy-light-shell="true"
+        >
+          <DialogHeader className={promotionDialogHeaderClass}>
+            <DialogTitle className="text-base font-semibold tracking-tight">
+              Eliminar promoción
+            </DialogTitle>
+            <DialogDescription className="text-sm leading-relaxed">
               Esta acción no se puede deshacer. Escribí{" "}
               <strong>{PROMOTION_DELETE_CONFIRM_PHRASE}</strong> para confirmar.
             </DialogDescription>
           </DialogHeader>
-          <Input
-            value={deleteConfirm}
-            onChange={(e) => setDeleteConfirm(e.target.value)}
-            placeholder={PROMOTION_DELETE_CONFIRM_PHRASE}
-          />
-          <DialogFooter>
+          <div className={promotionDialogBodyClass}>
+            <Input
+              value={deleteConfirm}
+              onChange={(e) => setDeleteConfirm(e.target.value)}
+              placeholder={PROMOTION_DELETE_CONFIRM_PHRASE}
+              className={promotionFormFieldClass}
+            />
+          </div>
+          <DialogFooter className={promotionDialogFooterClass}>
             <Button type="button" variant="outline" onClick={() => setDeleteOpen(false)}>
               Cancelar
             </Button>

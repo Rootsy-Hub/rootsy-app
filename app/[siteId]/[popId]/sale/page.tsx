@@ -43,6 +43,7 @@ import { OpenCashSessionBanner } from "@/components/sale-operation/OpenCashSessi
 import { SalePaymentMethodDialog } from "@/components/sale-operation/SalePaymentMethodDialog"
 import { OperationPartyPickerDialog } from "@/components/checkout/OperationPartyPickerDialog"
 import { SaleComprobantePickerDialog } from "@/components/checkout/SaleComprobantePickerDialog"
+import type { SaleComprobantePreviewInput } from "@/components/checkout/SaleComprobanteTicketPreview"
 import { GeneralDiscountDialog } from "@/components/checkout/GeneralDiscountDialog"
 import { DataWorkspaceLayout } from "@/components/layouts/DataWorkspaceLayout"
 import { useDataWorkspaceSidebar } from "@/components/layouts/useDataWorkspaceSidebar"
@@ -694,6 +695,46 @@ function SalePage() {
       ventaPadron.razonSocial,
     ],
   )
+
+  const comprobantePreviewInput = useMemo((): SaleComprobantePreviewInput | null => {
+    if (!popId) return null
+    return {
+      popId,
+      siteId: invoiceTypeSiteId,
+      comprobanteLabel: comprobante,
+      cartDisplayRows,
+      cartLineOverrides: {
+        itemDescuentoModo: cartLineOverrides.itemDescuentoModo,
+        itemDescuentoDraft: cartLineOverrides.itemDescuentoDraft,
+        itemDescuentoSuprimido: cartLineOverrides.itemDescuentoSuprimido,
+        itemComentarios: cartLineOverrides.itemComentarios,
+      },
+      subtotal,
+      discountAmount: descuentoMonto,
+      total,
+      customerName: confirmClientLabel,
+      customerTaxId:
+        clienteSeleccionado?.taxId?.trim() ||
+        fiscalDocVenta.trim() ||
+        null,
+      customerIvaLabel: ventaIvaLabel || null,
+      paymentMethodLabel: pagoResumenLabel,
+    }
+  }, [
+    popId,
+    invoiceTypeSiteId,
+    comprobante,
+    cartDisplayRows,
+    cartLineOverrides,
+    subtotal,
+    descuentoMonto,
+    total,
+    confirmClientLabel,
+    clienteSeleccionado?.taxId,
+    fiscalDocVenta,
+    ventaIvaLabel,
+    pagoResumenLabel,
+  ])
 
   useEffect(() => {
     if (!popId || comprobanteInitRef.current) return
@@ -1524,6 +1565,8 @@ function SalePage() {
           setComprobante(value)
           if (popId) writeSavedSaleComprobante(popId, value)
         }}
+        previewInput={comprobantePreviewInput}
+        cashRegisterId={openCashSession?.cashRegisterId ?? null}
       />
 
       <SalePaymentMethodDialog

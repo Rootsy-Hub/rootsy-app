@@ -6,6 +6,11 @@ import {
   SaleOperationTotalBar,
   type SaleOperationTotalBarProps,
 } from "@/components/sale-operation/SaleOperationTotalBar"
+import {
+  saleOpCartLineDivideYClass,
+  saleOpCartLineDividerTopClass,
+  saleOpCartListSurfaceClass,
+} from "@/components/sale-operation/saleOperationStyles"
 import type { MostradorCartDisplayGroup } from "@/lib/mostradorCartDisplay"
 import { cn } from "@/lib/utils"
 import type { ReactNode } from "react"
@@ -59,7 +64,7 @@ export function SaleReadonlyTicketPanel({
         flush
         fillHeight={!isModal}
       >
-        <div className="bg-white">
+        <div className={cn(saleOpCartListSurfaceClass, saleOpCartLineDivideYClass)}>
           {groups.map((group) => (
             <MostradorCartTicketGroup
               key={group.key}
@@ -77,7 +82,7 @@ export function SaleReadonlyTicketPanel({
           "shrink-0",
           !isModal && "mt-auto",
           isModal
-            ? "border-t border-slate-200/90"
+            ? saleOpCartLineDividerTopClass
             : "shadow-[0_-10px_28px_rgba(15,23,42,0.07)]",
         )}
       >

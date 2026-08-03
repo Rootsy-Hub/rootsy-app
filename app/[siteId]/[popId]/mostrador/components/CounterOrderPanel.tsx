@@ -85,7 +85,6 @@ export function CounterOrderPanel({
       <ChannelDataEmptyState
         icon={Monitor}
         title="Seleccioná un pedido o creá uno nuevo"
-        description="Los pedidos activos aparecen en el tablero de la izquierda."
       />
     )
   }

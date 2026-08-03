@@ -131,8 +131,9 @@ export function recipesSkeletonColumns(options?: {
   hasActionsColumn?: boolean
 }): WorkspaceTableSkeletonColumn[] {
   const columns: WorkspaceTableSkeletonColumn[] = [
+    { kind: "select" },
     { kind: "thumbnail", className: "w-24" },
-    { kind: "text", className: "w-[14rem] min-w-0 max-w-[14rem]" },
+    { kind: "text", className: "w-[14rem] min-w-0 max-w-[14rem]", lines: 3 },
     { kind: "text", className: "min-w-0 max-w-[12rem]" },
     { kind: "money" },
     { kind: "money" },
@@ -149,8 +150,9 @@ export function promotionsSkeletonColumns(options?: {
   hasActionsColumn?: boolean
 }): WorkspaceTableSkeletonColumn[] {
   const columns: WorkspaceTableSkeletonColumn[] = [
+    { kind: "select" },
     { kind: "thumbnail", className: "w-24" },
-    { kind: "text", className: "w-[14rem] min-w-0 max-w-[14rem]", lines: 2 },
+    { kind: "text", className: "w-[14rem] min-w-0 max-w-[14rem]", lines: 3 },
     { kind: "pill", className: "w-[7rem]" },
     { kind: "text", className: "min-w-[9rem]" },
     { kind: "text", className: "min-w-[10rem]" },

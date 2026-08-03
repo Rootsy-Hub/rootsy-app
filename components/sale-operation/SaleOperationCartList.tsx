@@ -3,7 +3,15 @@
 import type { ReactNode } from "react"
 import { cn } from "@/lib/utils"
 import { useCartListScrollContainerRef } from "@/hooks/useCartListScrollHighlight"
-import { cartListHeaderRowClass } from "@/components/sale-operation/saleOperationStyles"
+import {
+  cartListHeaderRowClass,
+  saleOpCartLineDividerBottomClass,
+  saleOpCartListSurfaceClass,
+  saleOpEmptyStateContainerClass,
+  saleOpEmptyStateContentClass,
+  saleOpEmptyStateIconWrapClass,
+  saleOpEmptyStateTitleClass,
+} from "@/components/sale-operation/saleOperationStyles"
 import { Receipt } from "lucide-react"
 
 type Props = {
@@ -27,21 +35,18 @@ function CartListEmptyState({
   return (
     <div
       className={cn(
-        "flex flex-1 flex-col items-center justify-center text-center",
+        saleOpEmptyStateContainerClass,
         flush
-          ? "min-h-[min(420px,50vh)] border-b border-slate-200/90 bg-white px-6 py-12"
-          : "mt-6 px-4 py-12",
+          ? cn("min-h-[min(420px,50vh)]", saleOpCartListSurfaceClass)
+          : "mt-6 px-4",
       )}
     >
-      <div className="flex max-w-[260px] flex-col items-center gap-3">
-        <div
-          className="flex size-14 items-center justify-center rounded-2xl bg-slate-100 text-slate-500 ring-1 ring-slate-200/90"
-          aria-hidden
-        >
+      <div className={saleOpEmptyStateContentClass}>
+        <div className={saleOpEmptyStateIconWrapClass} aria-hidden>
           <Receipt className="size-7 stroke-[1.75]" />
         </div>
 
-        <p className="text-sm font-semibold text-slate-700">{emptyTitle}</p>
+        <p className={saleOpEmptyStateTitleClass}>{emptyTitle}</p>
       </div>
     </div>
   )
@@ -64,7 +69,7 @@ export function SaleOperationCartList({
       className={cn(
         "game-scroll flex flex-col",
         fillHeight && "min-h-0 flex-1 overflow-y-auto",
-        flush ? "space-y-0" : "space-y-2 p-3 sm:p-3.5",
+        flush ? cn("space-y-0", saleOpCartListSurfaceClass) : "space-y-2 p-3 sm:p-3.5",
       )}
       role="region"
       aria-label="Ítems agregados"
@@ -73,7 +78,11 @@ export function SaleOperationCartList({
         className={cn(
           "flex shrink-0 items-center justify-between gap-2",
           flush
-            ? cn(cartListHeaderRowClass, "border-b border-slate-200/90 bg-white")
+            ? cn(
+                cartListHeaderRowClass,
+                saleOpCartLineDividerBottomClass,
+                saleOpCartListSurfaceClass,
+              )
             : "mb-1 px-0.5",
         )}
       >

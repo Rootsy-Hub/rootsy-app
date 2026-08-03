@@ -6,12 +6,20 @@ import type { OperationCartLineOverrideState } from "@/components/sale-operation
 import { SaleOperationActionsBar } from "@/components/sale-operation/SaleOperationActionsBar"
 import { SaleOperationCartList } from "@/components/sale-operation/SaleOperationCartList"
 import { SaleOperationTotalBar } from "@/components/sale-operation/SaleOperationTotalBar"
-import { groupMostradorCartDisplayRows } from "@/lib/mostradorCartDisplay"
-import type { MostradorCartDisplayRow } from "@/lib/mostradorCartDisplay"
+import {
+  saleOpCartLineDivideYClass,
+  saleOpCartLineDividerTopClass,
+  saleOpCartListSurfaceClass,
+} from "@/components/sale-operation/saleOperationStyles"
+import {
+  groupMostradorCartDisplayRows,
+  type MostradorCartDisplayRow,
+} from "@/lib/mostradorCartDisplay"
 import type { MostradorCartLineEditInput } from "@/lib/menuCartLineMerge"
 import { getRowPaymentStatus } from "@/lib/partialCheckoutSelection"
 import type { CartListScrollHighlightValue } from "@/hooks/useCartListScrollHighlight"
 import { CartListScrollHighlightProvider } from "@/hooks/useCartListScrollHighlight"
+import { cn } from "@/lib/utils"
 import { useMemo } from "react"
 
 type ActionsProps = React.ComponentProps<typeof SaleOperationActionsBar>
@@ -67,7 +75,7 @@ export function SaleOperationTicketOrderPanel({
         emptyTitle={emptyTitle}
         flush={flush}
       >
-        <div className="border-b border-slate-200/90 bg-white">
+        <div className={cn(saleOpCartListSurfaceClass, saleOpCartLineDivideYClass)}>
           {cartDisplayGroups.map((group) => (
             <MostradorCartTicketGroup
               key={group.key}
@@ -108,7 +116,12 @@ export function SaleOperationTicketOrderPanel({
         </div>
       </SaleOperationCartList>
 
-      <div className="mt-auto shrink-0 shadow-[0_-10px_28px_rgba(15,23,42,0.07)]">
+      <div
+        className={cn(
+          "relative z-10 mt-auto shrink-0 bg-white",
+          saleOpCartLineDividerTopClass,
+        )}
+      >
         <SaleOperationActionsBar {...actions} flush={flush} />
         <SaleOperationTotalBar {...totalBar} flush={flush} />
       </div>

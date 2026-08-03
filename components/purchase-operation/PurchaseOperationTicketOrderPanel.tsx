@@ -9,6 +9,8 @@ import {
 import { SaleOperationActionsBar } from "@/components/sale-operation/SaleOperationActionsBar"
 import { SaleOperationCartList } from "@/components/sale-operation/SaleOperationCartList"
 import { SaleOperationTotalBar } from "@/components/sale-operation/SaleOperationTotalBar"
+import { saleOpCartListSurfaceClass } from "@/components/sale-operation/saleOperationStyles"
+import { cn } from "@/lib/utils"
 import type { CartListScrollHighlightValue } from "@/hooks/useCartListScrollHighlight"
 import { CartListScrollHighlightProvider } from "@/hooks/useCartListScrollHighlight"
 
@@ -50,7 +52,7 @@ export function PurchaseOperationTicketOrderPanel({
         emptyTitle={emptyTitle}
         flush={flush}
       >
-        <div className="border-b border-slate-200/90 bg-white">
+        <div className={cn("border-b border-slate-200/90", saleOpCartListSurfaceClass)}>
           {lines.map((line) => (
             <PurchaseCartLineCard
               key={line.productoId}
@@ -64,7 +66,7 @@ export function PurchaseOperationTicketOrderPanel({
         </div>
       </SaleOperationCartList>
 
-      <div className="mt-auto shrink-0 shadow-[0_-10px_28px_rgba(15,23,42,0.07)]">
+      <div className="relative z-10 mt-auto shrink-0 bg-white">
         <SaleOperationActionsBar {...actions} flush={flush} />
         <SaleOperationTotalBar {...totalBar} flush={flush} />
       </div>

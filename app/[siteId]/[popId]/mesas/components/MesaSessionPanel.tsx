@@ -122,7 +122,6 @@ export function MesaSessionPanel({
       <ChannelDataEmptyState
         icon={UtensilsCrossed}
         title="Seleccioná una mesa"
-        description="Elegí una mesa del plano para abrirla, editarla o tomar el pedido."
       />
     )
   }
@@ -322,11 +321,6 @@ export function MesaSessionPanel({
         <ChannelDataEmptyState
           icon={UtensilsCrossed}
           title={`Mesa ${table.label} — ${mesaStatusLabel(table.status)}`}
-          description={
-            table.status === "reserved"
-              ? "Esta mesa está reservada. Liberala desde administración."
-              : "Seleccioná otra mesa o revisá el estado en el plano."
-          }
         />
       ) : null}
     </div>

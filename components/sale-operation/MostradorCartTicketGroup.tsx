@@ -28,9 +28,7 @@ export function MostradorCartTicketGroup({
     return (
       <>
         {group.rows.map((row) => (
-          <div key={row.rowKey} className="border-b border-slate-200/90">
-            {renderRow(row)}
-          </div>
+          <div key={row.rowKey}>{renderRow(row)}</div>
         ))}
       </>
     )
@@ -39,62 +37,24 @@ export function MostradorCartTicketGroup({
   return (
     <section
       className={cn(
-        "border-b border-slate-200/90",
         isDiscount
           ? "border-l-[3px] border-l-emerald-400"
           : "border-l-[3px] border-l-violet-400",
       )}
       aria-label={`Grupo: ${group.promoLabel}`}
     >
-      {isDiscount ? (
-        <>
-          <MostradorCartPromoBanner
-            label={group.promoLabel!}
-            variant={variant}
-            discountMode={group.promoDiscountMode}
-            pricing={group.groupPricing}
-            compactLayout={compactLayout}
-            importeClassName={importeClassName}
-            discountBadgeClassName={discountBadgeClassName}
-          />
-          <div className="bg-gradient-to-b from-emerald-50/35 to-white">
-            {group.rows.map((row, index) => (
-              <div
-                key={row.rowKey}
-                className={cn(
-                  index > 0 && "border-t border-dashed border-emerald-200/70",
-                )}
-              >
-                {renderRow(row)}
-              </div>
-            ))}
-          </div>
-        </>
-      ) : (
-        <>
-          <MostradorCartPromoBanner
-            label={group.promoLabel!}
-            variant={variant}
-            discountMode={group.promoDiscountMode}
-            pricing={group.groupPricing}
-            compactLayout={compactLayout}
-            importeClassName={importeClassName}
-            discountBadgeClassName={discountBadgeClassName}
-          />
-          <div className="bg-gradient-to-b from-violet-50/35 to-white">
-            {group.rows.map((row, index) => (
-              <div
-                key={row.rowKey}
-                className={cn(
-                  index > 0 && "border-t border-dashed border-violet-200/70",
-                )}
-              >
-                {renderRow(row)}
-              </div>
-            ))}
-          </div>
-        </>
-      )}
+      <MostradorCartPromoBanner
+        label={group.promoLabel!}
+        variant={variant}
+        discountMode={group.promoDiscountMode}
+        pricing={group.groupPricing}
+        compactLayout={compactLayout}
+        importeClassName={importeClassName}
+        discountBadgeClassName={discountBadgeClassName}
+      />
+      {group.rows.map((row) => (
+        <div key={row.rowKey}>{renderRow(row)}</div>
+      ))}
     </section>
   )
 }

@@ -4,6 +4,7 @@ import type { MesasSaleCheckout } from "@/app/[siteId]/[popId]/mesas/useMesasSal
 import { GeneralDiscountDialog } from "@/components/checkout/GeneralDiscountDialog"
 import { OperationPartyPickerDialog } from "@/components/checkout/OperationPartyPickerDialog"
 import { SaleComprobantePickerDialog } from "@/components/checkout/SaleComprobantePickerDialog"
+import type { SaleComprobantePreviewInput } from "@/components/checkout/SaleComprobanteTicketPreview"
 import { SalePaymentMethodDialog } from "@/components/sale-operation/SalePaymentMethodDialog"
 import { SaleOperationCheckoutConfirmDialog } from "@/components/sale-operation/SaleOperationCheckoutConfirmDialog"
 import {
@@ -19,6 +20,7 @@ import {
 import { getSaleComprobanteDisplayLabel, hasConfiguredSaleComprobante } from "@/lib/saleComprobantePicker"
 import { saleOpAlertDialogContent } from "@/components/sale-operation/saleOperationStyles"
 import { CLIENT_ACCOUNT_PAYMENT_LABEL } from "@/lib/operationPaymentLabels"
+import { useMemo } from "react"
 
 type Props = {
   checkout: Pick<MesasSaleCheckout, "modals" | "submitting">
@@ -44,6 +46,50 @@ export function MesasCheckoutModals({
   const confirmPaymentLabel = m.payOnClientAccount
     ? m.payOnClientAccountLabel
     : m.metodoPagoSeleccionado?.label ?? "Sin forma de pago"
+
+  const comprobantePreviewInput = useMemo((): SaleComprobantePreviewInput | null => {
+    if (!m.popId) return null
+    return {
+      popId: m.popId,
+      siteId: m.invoiceTypeSiteId,
+      comprobanteLabel: m.comprobante,
+      cartDisplayRows: m.cartDisplayRows,
+      cartLineOverrides: {
+        itemDescuentoModo: m.cartLineOverrides.itemDescuentoModo,
+        itemDescuentoDraft: m.cartLineOverrides.itemDescuentoDraft,
+        itemDescuentoSuprimido: m.cartLineOverrides.itemDescuentoSuprimido,
+        itemComentarios: m.cartLineOverrides.itemComentarios,
+      },
+      subtotal: m.subtotal,
+      discountAmount: m.descuentoMonto,
+      total: m.checkoutTotal,
+      customerName: confirmClientLabel,
+      customerTaxId:
+        m.clienteSeleccionado?.taxId?.trim() ||
+        m.fiscalDocVenta.trim() ||
+        null,
+      customerIvaLabel: m.labelCondicionIva(
+        m.clienteSeleccionado?.ivaCondition ?? m.ventaIvaCondition,
+      ),
+      paymentMethodLabel: confirmPaymentLabel,
+    }
+  }, [
+    m.popId,
+    m.invoiceTypeSiteId,
+    m.comprobante,
+    m.cartDisplayRows,
+    m.cartLineOverrides,
+    m.subtotal,
+    m.descuentoMonto,
+    m.checkoutTotal,
+    confirmClientLabel,
+    m.clienteSeleccionado?.taxId,
+    m.clienteSeleccionado?.ivaCondition,
+    m.fiscalDocVenta,
+    m.ventaIvaCondition,
+    m.labelCondicionIva,
+    confirmPaymentLabel,
+  ])
 
   return (
     <>
@@ -84,6 +130,8 @@ export function MesasCheckoutModals({
         options={m.comprobantePickerOptions}
         value={m.comprobante}
         onSelect={m.elegirComprobante}
+        previewInput={comprobantePreviewInput}
+        cashRegisterId={m.openCashSession?.cashRegisterId ?? null}
       />
 
       <SalePaymentMethodDialog

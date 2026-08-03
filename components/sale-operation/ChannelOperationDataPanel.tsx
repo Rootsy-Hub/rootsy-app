@@ -14,6 +14,10 @@ import {
   saleOpChannelWarningBanner,
   saleOpDialogPrimaryBtn,
   saleOpDialogSecondaryBtn,
+  saleOpEmptyStateContainerClass,
+  saleOpEmptyStateContentClass,
+  saleOpEmptyStateIconWrapClass,
+  saleOpEmptyStateTitleClass,
 } from "@/components/sale-operation/saleOperationStyles"
 import { cn } from "@/lib/utils"
 import { Loader2, type LucideIcon } from "lucide-react"
@@ -145,18 +149,18 @@ export function ChannelDataEmptyState({
 }: {
   icon: LucideIcon
   title: string
-  description: string
+  description?: string
 }) {
   return (
-    <div className="flex min-h-0 flex-1 flex-col items-center justify-center gap-3 px-6 py-10 text-center">
-      <div className="flex size-14 items-center justify-center rounded-2xl bg-muted text-muted-foreground ring-1 ring-border/50">
-        <Icon className="size-7 stroke-[1.75]" aria-hidden />
-      </div>
-      <div className="max-w-[260px]">
-        <p className="text-sm font-semibold text-foreground">{title}</p>
-        <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
-          {description}
-        </p>
+    <div className={cn(saleOpEmptyStateContainerClass, "min-h-0")}>
+      <div className={saleOpEmptyStateContentClass}>
+        <div className={saleOpEmptyStateIconWrapClass} aria-hidden>
+          <Icon className="size-7 stroke-[1.75]" />
+        </div>
+        <p className={saleOpEmptyStateTitleClass}>{title}</p>
+        {description ? (
+          <p className="text-xs leading-relaxed text-slate-500">{description}</p>
+        ) : null}
       </div>
     </div>
   )

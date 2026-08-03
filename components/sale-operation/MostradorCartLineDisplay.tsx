@@ -7,6 +7,7 @@ import {
   formatCartLineQuantity,
 } from "@/components/sale-operation/CartLineQuantityLabel"
 import {
+  saleOpCartLineDividerTopClass,
   saleOpFmt,
   saleOpImporteCartClass,
 } from "@/components/sale-operation/saleOperationStyles"
@@ -97,7 +98,7 @@ export function MostradorCartLineDisplay({
       </div>
 
       {tieneComentario ? (
-        <div className="border-t border-dashed border-slate-200/80 bg-slate-50/80 px-3 py-2">
+        <div className={cn(saleOpCartLineDividerTopClass, "bg-slate-50/80 px-3 py-2")}>
           <p className="text-[11px] leading-snug text-slate-600">
             <MessageSquare
               className="mr-1 inline size-3 -translate-y-px text-slate-400"

@@ -20,6 +20,10 @@ export type SaleCatalogProduct = {
   imagen: string
   promo?: string
   unitOfMeasure?: string
+  /** Alícuota IVA (%). Por defecto 21 en comprobantes si falta. */
+  iva?: number
+  /** Código de barras EAN/UPC (solo artículos de venta). */
+  barcode?: string | null
 }
 
 export function saleCatalogArticleToProduct(
@@ -36,6 +40,8 @@ export function saleCatalogArticleToProduct(
     categoria: a.categoryName.trim() ? a.categoryName : "—",
     imagen: resolveCatalogProductImage(a.id, a.imageUrl),
     unitOfMeasure: a.unitOfMeasure,
+    iva: a.iva,
+    barcode: a.barcode ?? null,
   }
 }
 

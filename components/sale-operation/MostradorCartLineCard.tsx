@@ -20,6 +20,7 @@ import {
 import {
   saleOpDialogBody,
   saleOpDialogContentMd,
+  saleOpCartLineDividerTopClass,
   saleOpDialogHeader,
   saleOpFmt,
   saleOpImporteBaseClass,
@@ -348,7 +349,7 @@ export function MostradorCartLineCard({
             onClick={openModal}
             className={cn(
               rowGridLayoutClass,
-              "transition-colors hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-slate-300/80",
+              "bg-transparent transition-colors hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-slate-300/80",
             )}
             aria-label={`Editar ${row.nombre}`}
           >
@@ -357,7 +358,7 @@ export function MostradorCartLineCard({
         )}
 
         {tieneComentario ? (
-          <div className="border-t border-dashed border-slate-200/80 bg-slate-50/80 px-3 py-2">
+          <div className={cn(saleOpCartLineDividerTopClass, "bg-slate-50/80 px-3 py-2")}>
             <p className="text-[11px] leading-snug text-slate-600">
               <MessageSquare
                 className="mr-1 inline size-3 -translate-y-px text-slate-400"

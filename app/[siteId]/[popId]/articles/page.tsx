@@ -174,6 +174,8 @@ function defaultCreateFormState(): ArticleFormState {
     name: "",
     description: "",
     imageUrl: "",
+    sku: "",
+    barcode: "",
     salePrice: "0",
     costPrice: "0",
     iva: String(DEFAULT_ARTICLE_IVA_ALICUOTA_ID),
@@ -299,6 +301,8 @@ function ArticlesPage() {
     name: "",
     description: "",
     imageUrl: "",
+    sku: "",
+    barcode: "",
     salePrice: "",
     costPrice: "",
     iva: "",
@@ -542,6 +546,8 @@ function ArticlesPage() {
       name: row.name,
       description: row.description,
       imageUrl: row.imageUrl ?? "",
+      sku: row.sku ?? "",
+      barcode: row.barcode ?? "",
       salePrice: formatMoneyInputForField(row.salePrice),
       costPrice: formatMoneyInputForField(row.costPrice),
       iva: resolveArticleIvaSelectValue(siteId, row.iva),
@@ -632,6 +638,8 @@ function ArticlesPage() {
       name: createForm.name,
       description: createForm.description,
       imageUrl: createForm.imageUrl,
+      sku: createForm.sku,
+      barcode: createForm.barcode,
       salePrice: parseMoneyInput(createForm.salePrice),
       costPrice: parseMoneyInput(createForm.costPrice),
       iva: ivaParsed.ratePercent,
@@ -784,6 +792,8 @@ function ArticlesPage() {
       name: editForm.name,
       description: editForm.description,
       imageUrl: editForm.imageUrl,
+      sku: editForm.sku,
+      barcode: editForm.barcode,
       salePrice: parseMoneyInput(editForm.salePrice),
       costPrice: parseMoneyInput(editForm.costPrice),
       iva: ivaParsed.ratePercent,
@@ -919,7 +929,7 @@ function ArticlesPage() {
       itemKind: kind,
       ...defaultItemFormFields(kind),
       ...(kind !== "merchandise"
-        ? { discountMode: "" as const, discountValue: "" }
+        ? { discountMode: "" as const, discountValue: "", barcode: "" }
         : {}),
     }))
   }, [])
@@ -930,7 +940,7 @@ function ArticlesPage() {
       itemKind: kind,
       ...defaultItemFormFields(kind),
       ...(kind !== "merchandise"
-        ? { discountMode: "" as const, discountValue: "" }
+        ? { discountMode: "" as const, discountValue: "", barcode: "" }
         : {}),
     }))
   }, [])

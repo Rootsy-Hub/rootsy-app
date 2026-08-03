@@ -2,7 +2,7 @@
 
 import { cn } from "@/lib/utils"
 import { Check, ChevronRight } from "lucide-react"
-import type { ComponentType } from "react"
+import type { ComponentType, FocusEvent, MouseEvent } from "react"
 
 type Props = {
   title: string
@@ -10,6 +10,10 @@ type Props = {
   selected: boolean
   disabled?: boolean
   onClick: () => void
+  onMouseEnter?: (event: MouseEvent<HTMLButtonElement>) => void
+  onMouseLeave?: (event: MouseEvent<HTMLButtonElement>) => void
+  onFocus?: (event: FocusEvent<HTMLButtonElement>) => void
+  onBlur?: (event: FocusEvent<HTMLButtonElement>) => void
   icon?: ComponentType<{ className?: string }>
   trailing?: "chevron" | "check" | "none"
 }
@@ -20,6 +24,10 @@ export function CheckoutOptionCard({
   selected,
   disabled = false,
   onClick,
+  onMouseEnter,
+  onMouseLeave,
+  onFocus,
+  onBlur,
   icon: Icon,
   trailing = "none",
 }: Props) {
@@ -31,6 +39,10 @@ export function CheckoutOptionCard({
       aria-disabled={disabled}
       disabled={disabled}
       onClick={onClick}
+      onMouseEnter={onMouseEnter}
+      onMouseLeave={onMouseLeave}
+      onFocus={onFocus}
+      onBlur={onBlur}
       className={cn(
         "group flex w-full items-center gap-3 rounded-xl border px-3.5 py-3 text-left transition-all duration-150",
         "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 focus-visible:ring-offset-2 focus-visible:ring-offset-background",
