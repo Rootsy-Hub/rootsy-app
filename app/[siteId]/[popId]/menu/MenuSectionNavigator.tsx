@@ -24,9 +24,9 @@ export function MenuSectionNavigator({
     <div
       role="tablist"
       aria-label="Secciones del menú"
-      className="mb-8 inline-flex max-w-full items-center justify-between gap-3 rounded-xl border border-border bg-muted/80 px-4 py-2.5 backdrop-blur-xl sm:min-w-[12rem]"
+      className="mb-8 inline-flex max-w-full items-center justify-between gap-2.5 rounded-xl border border-border bg-muted/80 px-3.5 py-1 backdrop-blur-xl sm:min-w-[12rem]"
     >
-      <span className="truncate text-sm font-bold tracking-wide text-foreground">
+      <span className="truncate text-sm font-bold leading-none tracking-wide text-foreground">
         {currentTitle}
       </span>
 
@@ -42,7 +42,7 @@ export function MenuSectionNavigator({
               aria-label={section.title}
               onClick={() => onSelect(index)}
               className={cn(
-                "flex size-10 items-center justify-center rounded-full transition-colors",
+                "flex size-7 items-center justify-center rounded-full transition-colors",
                 "hover:bg-foreground/6 active:scale-95",
                 "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/35",
               )}
