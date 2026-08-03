@@ -204,19 +204,24 @@ export function DockIconVisual({
 }: {
   icon: LucideIcon
   className?: string
-  size?: "md" | "sm"
+  size?: "md" | "sm" | "lg"
 }) {
-  const dim = size === "sm" ? "size-10" : "size-12"
-  const iconDim = size === "sm" ? "size-5" : "size-6"
+  const dim =
+    size === "sm" ? "size-10" : size === "lg" ? "size-[72px]" : "size-12"
+  const iconDim =
+    size === "sm" ? "size-5" : size === "lg" ? "size-8" : "size-6"
+  const radius = size === "lg" ? "rounded-[20px]" : "rounded-[22%]"
+  const innerRadius = size === "lg" ? "rounded-[19px]" : "rounded-[20%]"
   return (
     <div
       className={cn(
-        "relative flex items-center justify-center overflow-hidden rounded-[22%] bg-gradient-to-br from-emerald-500/80 to-teal-600/80 shadow-md",
+        "relative flex items-center justify-center overflow-hidden bg-gradient-to-br from-emerald-500/80 to-teal-600/80 shadow-md",
         dim,
+        radius,
         className,
       )}
     >
-      <div className="absolute inset-px rounded-[20%] border border-white/20" />
+      <div className={cn("absolute inset-px border border-white/20", innerRadius)} />
       <Icon className={cn("relative text-white drop-shadow-sm", iconDim)} />
     </div>
   )
@@ -412,6 +417,12 @@ export function MenuDockDndProvider({
     clearDragState()
   }, [clearDragState])
 
+  const showMenuDragOverlay =
+    draggingItem != null && activeDragKind === "menu"
+
+  const showDockDragOverlay =
+    draggingItem != null && activeDragKind === "dock"
+
   const contextValue = useMemo<MenuDockEditContextValue>(
     () => ({
       editing,
@@ -461,14 +472,15 @@ export function MenuDockDndProvider({
         onDragCancel={handleDragCancel}
       >
         {children}
-        <DragOverlay
-          dropAnimation={{
-            duration: 260,
-            easing: "cubic-bezier(0.18, 0.67, 0.6, 1.15)",
-          }}
-          zIndex={50}
-        >
-          {draggingItem ? (
+        <DragOverlay dropAnimation={null} zIndex={50}>
+          {showMenuDragOverlay && draggingItem ? (
+            <div className="cursor-grabbing scale-[1.18] drop-shadow-[0_18px_40px_rgba(0,0,0,0.35)]">
+              <DockIconVisual
+                icon={draggingItem.icon}
+                className="from-emerald-500 to-teal-600 ring-2 ring-white/40"
+              />
+            </div>
+          ) : showDockDragOverlay && draggingItem ? (
             <div className="cursor-grabbing scale-[1.18] drop-shadow-[0_18px_40px_rgba(0,0,0,0.35)]">
               <DockIconVisual
                 icon={draggingItem.icon}

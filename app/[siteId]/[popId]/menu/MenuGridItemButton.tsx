@@ -16,7 +16,13 @@ type Props = {
 }
 
 export function MenuGridItemButton({ item, disabled, onActivate }: Props) {
-  const { editing, canDragMenuItem, isInDock } = useMenuDockEdit()
+  const {
+    editing,
+    canDragMenuItem,
+    isInDock,
+    activeDragKind,
+    draggingItemId,
+  } = useMenuDockEdit()
   const dockId = menuLinkToDockId(item.link)
   const draggable = dockId != null && canDragMenuItem(item.link)
   const alreadyInDock = dockId != null && isInDock(dockId)
@@ -30,6 +36,10 @@ export function MenuGridItemButton({ item, disabled, onActivate }: Props) {
     disabled: !draggable,
   })
 
+  const isThisMenuDrag =
+    isDragging && activeDragKind === "menu" && dockId === draggingItemId
+  const showInsertedStyle = alreadyInDock || isThisMenuDrag
+
   const Icon = item.icon
 
   return (
@@ -37,15 +47,14 @@ export function MenuGridItemButton({ item, disabled, onActivate }: Props) {
       ref={setNodeRef}
       style={{
         animationDelay:
-          editing && draggable && !isDragging
+          editing && draggable && !showInsertedStyle
             ? `${(item.name.length % 5) * 45}ms`
             : undefined,
       }}
       className={cn(
-        "justify-self-center touch-none",
-        isDragging && "opacity-0",
-        editing && draggable && !isDragging && "animate-dock-wiggle",
-        editing && alreadyInDock && !isDragging && "opacity-40",
+        "justify-self-center touch-none transition-[opacity,transform] duration-200",
+        editing && draggable && !showInsertedStyle && "animate-dock-wiggle",
+        showInsertedStyle && "scale-[0.97] opacity-45",
       )}
     >
       <button
@@ -70,11 +79,12 @@ export function MenuGridItemButton({ item, disabled, onActivate }: Props) {
 
           <div
             className={cn(
-              "relative flex size-[72px] items-center justify-center overflow-hidden rounded-[20px] bg-gradient-to-br from-emerald-500/90 to-teal-600/90 shadow-md shadow-emerald-900/10 transition-all",
+              "relative flex size-[72px] items-center justify-center overflow-hidden rounded-[20px] bg-gradient-to-br from-emerald-500/90 to-teal-600/90 shadow-md shadow-emerald-900/10 transition-all duration-200",
               !editing && "group-hover:shadow-emerald-500/20",
-              editing &&
-                draggable &&
+              editing && draggable && !showInsertedStyle &&
                 "ring-2 ring-primary/25 ring-offset-2 ring-offset-background/80",
+              showInsertedStyle &&
+                "from-emerald-500/45 to-teal-600/45 shadow-none ring-1 ring-foreground/10",
             )}
           >
             {!editing ? (
@@ -107,10 +117,12 @@ export function MenuGridItemButton({ item, disabled, onActivate }: Props) {
 
         <span
           className={cn(
-            "text-center text-xs font-medium leading-tight drop-shadow-sm transition-colors",
-            editing
-              ? "text-foreground/55"
-              : "text-foreground/70 group-hover:text-foreground",
+            "text-center text-xs font-medium leading-tight drop-shadow-sm transition-colors duration-200",
+            showInsertedStyle
+              ? "text-foreground/35"
+              : editing
+                ? "text-foreground/55"
+                : "text-foreground/70 group-hover:text-foreground",
           )}
         >
           {item.name}
