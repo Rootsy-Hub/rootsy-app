@@ -1,17 +1,21 @@
 "use client"
 
 import {
+  DOCK_BAR_DROP_ID,
+  DOCK_SLOT_SHIFT_PX,
   dockDragId,
   dockInsertId,
+  DockIconVisual,
+  getDockItemShiftX,
   useMenuDockEdit,
 } from "@/app/[siteId]/[popId]/menu/MenuDockDndContext"
 import type { MenuCatalogItem } from "@/lib/menuCatalog"
 import { popScopedHref } from "@/lib/popRoutes"
 import { cn } from "@/lib/utils"
 import { useDraggable, useDroppable } from "@dnd-kit/core"
-import { CSS } from "@dnd-kit/utilities"
-import { Check, Minus, Pencil, RotateCcw } from "lucide-react"
+import { Minus, Pencil, RotateCcw } from "lucide-react"
 import { useRouter } from "next/navigation"
+import type { ReactNode } from "react"
 
 type Props = {
   siteId: string
@@ -28,109 +32,146 @@ function routeForDockItem(
   return popScopedHref(siteId, popId, item.link)
 }
 
-function DockIconVisual({
-  item,
-  className,
-}: {
-  item: MenuCatalogItem
-  className?: string
-}) {
-  const Icon = item.icon
-  return (
-    <div
-      className={cn(
-        "relative flex size-12 items-center justify-center overflow-hidden rounded-xl bg-gradient-to-br from-emerald-500/80 to-teal-600/80 shadow-md",
-        className,
-      )}
-    >
-      <div className="absolute inset-px rounded-[10px] border border-white/20" />
-      <Icon className="relative size-6 text-white drop-shadow-sm" />
-    </div>
-  )
-}
-
-function DockInsertSlot({
+function DockInsertTarget({
   index,
-  active,
-  variant = "gap",
+  layoutAnimating,
+  showEndGap,
 }: {
   index: number
-  active: boolean
-  variant?: "gap" | "empty"
+  layoutAnimating?: boolean
+  showEndGap?: boolean
 }) {
-  const { setNodeRef, isOver } = useDroppable({
+  const { setNodeRef } = useDroppable({
     id: dockInsertId(index),
     data: { index },
   })
 
-  if (variant === "empty") {
-    return (
-      <div
-        ref={setNodeRef}
-        className={cn(
-          "mb-1.5 size-12 shrink-0 rounded-xl border-2 border-dashed transition-colors duration-150",
-          isOver
-            ? "border-primary/55 bg-primary/10 shadow-[0_0_16px_hsl(var(--primary)/0.2)]"
-            : "border-primary/20",
-        )}
-        aria-hidden
-      />
-    )
-  }
-
-  if (!active) return null
-
-  return (
-    <div
-      ref={setNodeRef}
-      className={cn(
-        "mb-1.5 w-2 shrink-0 self-center rounded-full transition-all duration-150",
-        isOver
-          ? "h-12 w-3 bg-primary/55 shadow-[0_0_12px_hsl(var(--primary)/0.35)]"
-          : "h-8 bg-transparent",
-      )}
-      aria-hidden
-    />
-  )
-}
-
-function DraggableDockItem({
-  item,
-  canRemove,
-  onRemove,
-}: {
-  item: MenuCatalogItem
-  canRemove: boolean
-  onRemove: () => void
-}) {
-  const { attributes, listeners, setNodeRef, transform, isDragging } =
-    useDraggable({
-      id: dockDragId(item.id),
-      data: { kind: "dock" as const, itemId: item.id },
-    })
+  const width = showEndGap ? DOCK_SLOT_SHIFT_PX : 10
 
   return (
     <div
       ref={setNodeRef}
       style={{
-        ...(transform ? { transform: CSS.Translate.toString(transform) } : undefined),
-        animationDelay: `${(item.id.length % 5) * 40}ms`,
+        width,
+        transition: layoutAnimating
+          ? "width 280ms cubic-bezier(0.2, 0.85, 0.25, 1)"
+          : undefined,
+      }}
+      className="mb-1.5 h-12 shrink-0 self-center"
+      aria-hidden
+    />
+  )
+}
+
+function DockEmptyInsertTarget({
+  layoutAnimating,
+}: {
+  layoutAnimating?: boolean
+}) {
+  const { setNodeRef } = useDroppable({
+    id: dockInsertId(0),
+    data: { index: 0 },
+  })
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={{
+        width: DOCK_SLOT_SHIFT_PX,
+        transition: layoutAnimating
+          ? "width 280ms cubic-bezier(0.2, 0.85, 0.25, 1)"
+          : undefined,
+      }}
+      className="mb-1.5 h-12 shrink-0 self-center"
+      aria-hidden
+    />
+  )
+}
+
+function DockShortcutsDropRow({
+  enabled,
+  children,
+}: {
+  enabled: boolean
+  children: ReactNode
+}) {
+  const { setNodeRef } = useDroppable({
+    id: DOCK_BAR_DROP_ID,
+    disabled: !enabled,
+  })
+
+  return (
+    <div
+      ref={setNodeRef}
+      className="flex min-h-12 items-end gap-0.5 rounded-2xl px-0.5"
+    >
+      {children}
+    </div>
+  )
+}
+
+function mergeRefs<T>(...refs: Array<(node: T | null) => void>) {
+  return (node: T | null) => {
+    for (const ref of refs) ref(node)
+  }
+}
+
+function DraggableDockItem({
+  item,
+  index,
+  canRemove,
+  shiftX,
+  layoutAnimating,
+  onRemove,
+}: {
+  item: MenuCatalogItem
+  index: number
+  canRemove: boolean
+  shiftX: number
+  layoutAnimating: boolean
+  onRemove: () => void
+}) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef: setDragRef,
+    isDragging,
+  } = useDraggable({
+    id: dockDragId(item.id),
+    data: { kind: "dock" as const, itemId: item.id },
+  })
+
+  const { setNodeRef: setDropRef } = useDroppable({
+    id: dockDragId(item.id),
+    data: { kind: "dock-drop" as const, itemId: item.id },
+  })
+
+  return (
+    <div
+      ref={mergeRefs(setDragRef, setDropRef)}
+      style={{
+        transform: isDragging ? undefined : `translateX(${shiftX}px)`,
+        transition: layoutAnimating
+          ? "transform 280ms cubic-bezier(0.2, 0.85, 0.25, 1)"
+          : undefined,
+        animationDelay: `${(index % 5) * 45}ms`,
       }}
       className={cn(
-        "relative animate-dock-wiggle touch-none",
-        isDragging && "z-10 opacity-35",
+        "relative touch-none",
+        !isDragging && !layoutAnimating && "animate-dock-wiggle",
+        isDragging && "opacity-0",
       )}
     >
       <button
         type="button"
         {...listeners}
         {...attributes}
-        className="relative cursor-grab scale-[0.96] transition-transform active:cursor-grabbing"
+        className="relative cursor-grab active:cursor-grabbing"
         aria-label={item.name}
       >
         <DockIconVisual
-          item={item}
-          className="from-emerald-500/70 to-teal-600/70 ring-2 ring-background"
+          icon={item.icon}
+          className="from-emerald-500/85 to-teal-600/85"
         />
       </button>
       <button
@@ -139,13 +180,12 @@ function DraggableDockItem({
         onPointerDown={(event) => event.stopPropagation()}
         onClick={onRemove}
         className={cn(
-          "absolute -right-1.5 -top-1.5 z-10 flex size-5 items-center justify-center rounded-full border-2 border-background bg-destructive text-white shadow-md transition-transform",
-          "hover:scale-110 active:scale-95",
-          !canRemove && "cursor-not-allowed opacity-40",
+          "absolute -left-1 -top-1 z-10 flex size-[18px] items-center justify-center rounded-full bg-white/90 text-[11px] font-bold text-neutral-700 shadow-sm",
+          !canRemove && "cursor-not-allowed opacity-35",
         )}
         aria-label={`Quitar ${item.name}`}
       >
-        <Minus className="size-3" strokeWidth={2.5} aria-hidden />
+        <Minus className="size-2.5" strokeWidth={3} aria-hidden />
       </button>
     </div>
   )
@@ -163,17 +203,12 @@ function StaticDockItem({
     <button
       type="button"
       onClick={onNavigate}
-      className="group relative flex flex-col items-center gap-1 transition-all duration-200 hover:scale-110 hover:-translate-y-1 active:scale-95"
+      className="group relative flex flex-col items-center gap-1 transition-transform duration-200 hover:scale-110 active:scale-95"
       aria-label={item.name}
     >
-      <div className="absolute -bottom-2 left-1/2 h-2 w-8 -translate-x-1/2 rounded-full bg-primary/30 opacity-0 blur-md transition-opacity group-hover:opacity-100" />
-      <div className="relative flex size-12 items-center justify-center overflow-hidden rounded-xl bg-gradient-to-br from-emerald-500/80 to-teal-600/80 shadow-md transition-all group-hover:from-emerald-500 group-hover:to-teal-600 group-hover:shadow-emerald-500/30">
-        <div className="absolute inset-0 translate-x-[-100%] bg-gradient-to-tr from-transparent via-white/25 to-transparent opacity-0 transition-all duration-500 group-hover:translate-x-[100%] group-hover:opacity-100" />
-        <div className="absolute inset-px rounded-[10px] border border-white/20" />
+      <div className="relative flex size-12 items-center justify-center overflow-hidden rounded-[22%] bg-gradient-to-br from-emerald-500/80 to-teal-600/80 shadow-md transition-all group-hover:from-emerald-500 group-hover:to-teal-600">
+        <div className="absolute inset-px rounded-[20%] border border-white/20" />
         <Icon className="relative size-6 text-white drop-shadow-sm" />
-      </div>
-      <div className="pointer-events-none absolute -top-8 left-1/2 z-10 -translate-x-1/2 scale-90 whitespace-nowrap rounded-md bg-black/80 px-2 py-1 text-[10px] font-medium text-white opacity-0 backdrop-blur-sm transition-all group-hover:scale-100 group-hover:opacity-100">
-        {item.name}
       </div>
     </button>
   )
@@ -185,38 +220,66 @@ export function MenuDock({ siteId, popId }: Props) {
     editing,
     setEditing,
     dockItems,
+    dockIds,
+    previewDockIds,
     dragging,
+    draggingItemId,
+    activeDragKind,
+    dropPreviewIndex,
     canAddMore,
     canRemove,
     removeFromDock,
     resetDock,
   } = useMenuDockEdit()
 
+  const layoutAnimating = dragging && dropPreviewIndex !== null
+  const insertAtEnd =
+    layoutAnimating &&
+    activeDragKind === "menu" &&
+    dropPreviewIndex === dockItems.length
+
   return (
-    <div className="absolute bottom-4 left-1/2 z-20 -translate-x-1/2">
+    <div className="pointer-events-none absolute bottom-4 left-1/2 z-30 -translate-x-1/2">
       <div
         className={cn(
-          "flex items-end gap-1 rounded-2xl border bg-muted px-3 py-2.5 backdrop-blur-2xl transition-all sm:gap-2 sm:px-4",
-          editing ? "border-primary/35 ring-2 ring-primary/15" : "border-border",
+          "pointer-events-auto flex items-end gap-1 rounded-[1.35rem] border border-white/15 px-3 py-2 shadow-[0_8px_32px_rgba(0,0,0,0.28)] backdrop-blur-2xl transition-all duration-200 sm:gap-1.5 sm:px-4",
+          editing
+            ? "bg-black/45 ring-1 ring-white/10"
+            : "bg-black/35",
         )}
       >
         {editing ? (
-          <>
-            <DockInsertSlot index={0} active={dragging} />
+          <DockShortcutsDropRow enabled={dragging}>
+            <DockInsertTarget index={0} layoutAnimating={layoutAnimating} />
             {dockItems.map((item, index) => (
-              <div key={item.id} className="flex items-end gap-1">
+              <div key={item.id} className="flex items-end">
                 <DraggableDockItem
                   item={item}
+                  index={index}
                   canRemove={canRemove}
+                  shiftX={getDockItemShiftX(
+                    item.id,
+                    index,
+                    dockIds,
+                    previewDockIds,
+                    activeDragKind,
+                    dropPreviewIndex,
+                    draggingItemId,
+                  )}
+                  layoutAnimating={layoutAnimating}
                   onRemove={() => removeFromDock(item.id)}
                 />
-                <DockInsertSlot index={index + 1} active={dragging} />
+                <DockInsertTarget
+                  index={index + 1}
+                  layoutAnimating={layoutAnimating}
+                  showEndGap={insertAtEnd && index === dockItems.length - 1}
+                />
               </div>
             ))}
             {dockItems.length === 0 && canAddMore ? (
-              <DockInsertSlot index={0} active={dragging} variant="empty" />
+              <DockEmptyInsertTarget layoutAnimating={layoutAnimating} />
             ) : null}
-          </>
+          </DockShortcutsDropRow>
         ) : (
           dockItems.map((item) => {
             const target = routeForDockItem(siteId, popId, item)
@@ -232,38 +295,34 @@ export function MenuDock({ siteId, popId }: Props) {
           })
         )}
 
-        <div className="mx-0.5 mb-1.5 h-8 w-px self-center bg-border/80" aria-hidden />
+        <div className="mx-0.5 mb-1.5 h-8 w-px self-center bg-white/15" aria-hidden />
 
         {editing ? (
           <>
             <button
               type="button"
               onClick={resetDock}
-              className="mb-1.5 flex size-10 items-center justify-center rounded-xl border border-border/70 bg-background/60 transition-all hover:border-border hover:bg-muted active:scale-95"
+              className="mb-1.5 flex size-9 items-center justify-center rounded-xl bg-white/10 transition-colors hover:bg-white/15 active:scale-95"
               aria-label="Restaurar accesos directos"
             >
-              <RotateCcw className="size-4 text-muted-foreground" />
+              <RotateCcw className="size-4 text-white/70" />
             </button>
             <button
               type="button"
               onClick={() => setEditing(false)}
-              className="mb-1.5 flex size-10 items-center justify-center rounded-xl border border-primary/35 bg-primary/10 transition-all hover:bg-primary/15 active:scale-95"
-              aria-label="Listo"
+              className="mb-1.5 rounded-xl bg-white/90 px-3 py-1.5 text-xs font-semibold text-neutral-900 transition-transform active:scale-95"
             >
-              <Check className="size-4 text-primary" />
+              Listo
             </button>
           </>
         ) : (
           <button
             type="button"
             onClick={() => setEditing(true)}
-            className={cn(
-              "mb-1.5 flex size-10 items-center justify-center rounded-xl border border-border/70 bg-background/60 transition-all",
-              "hover:border-primary/35 hover:bg-primary/8 active:scale-95",
-            )}
+            className="mb-1.5 flex size-9 items-center justify-center rounded-xl bg-white/10 transition-colors hover:bg-white/15 active:scale-95"
             aria-label="Editar accesos directos"
           >
-            <Pencil className="size-4 text-muted-foreground transition-colors hover:text-primary" />
+            <Pencil className="size-4 text-white/70" />
           </button>
         )}
       </div>

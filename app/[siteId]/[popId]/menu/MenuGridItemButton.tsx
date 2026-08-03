@@ -8,7 +8,6 @@ import {
 import type { MenuItemDef } from "@/lib/menuCatalog"
 import { cn } from "@/lib/utils"
 import { useDraggable } from "@dnd-kit/core"
-import { CSS } from "@dnd-kit/utilities"
 
 type Props = {
   item: MenuItemDef
@@ -22,15 +21,14 @@ export function MenuGridItemButton({ item, disabled, onActivate }: Props) {
   const draggable = dockId != null && canDragMenuItem(item.link)
   const alreadyInDock = dockId != null && isInDock(dockId)
 
-  const { attributes, listeners, setNodeRef, transform, isDragging } =
-    useDraggable({
-      id:
-        dockId != null
-          ? menuDragId(dockId)
-          : `menu-disabled-${item.link}-${item.name}`,
-      data: { kind: "menu" as const, itemId: dockId, menuItem: item },
-      disabled: !draggable,
-    })
+  const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
+    id:
+      dockId != null
+        ? menuDragId(dockId)
+        : `menu-disabled-${item.link}-${item.name}`,
+    data: { kind: "menu" as const, itemId: dockId, menuItem: item },
+    disabled: !draggable,
+  })
 
   const Icon = item.icon
 
@@ -38,14 +36,16 @@ export function MenuGridItemButton({ item, disabled, onActivate }: Props) {
     <div
       ref={setNodeRef}
       style={{
-        ...(transform ? { transform: CSS.Translate.toString(transform) } : undefined),
-        animationDelay: editing && draggable ? `${(item.name.length % 5) * 40}ms` : undefined,
+        animationDelay:
+          editing && draggable && !isDragging
+            ? `${(item.name.length % 5) * 45}ms`
+            : undefined,
       }}
       className={cn(
         "justify-self-center touch-none",
-        isDragging && "z-20 opacity-40",
-        editing && draggable && "animate-dock-wiggle",
-        editing && alreadyInDock && "opacity-45",
+        isDragging && "opacity-0",
+        editing && draggable && !isDragging && "animate-dock-wiggle",
+        editing && alreadyInDock && !isDragging && "opacity-40",
       )}
     >
       <button

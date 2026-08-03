@@ -340,7 +340,7 @@
 
   .animate-dock-wiggle {
     animation-name: dock-wiggle;
-    animation-duration: 0.28s;
+    animation-duration: 0.32s;
     animation-timing-function: ease-in-out;
     animation-iteration-count: infinite;
   }
@@ -348,10 +348,10 @@
   @keyframes dock-wiggle {
     0%,
     100% {
-      transform: rotate(-1.2deg);
+      transform: rotate(-1deg);
     }
     50% {
-      transform: rotate(1.2deg);
+      transform: rotate(1deg);
     }
   }
 
