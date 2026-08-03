@@ -28,17 +28,17 @@ import {
 import { LayoutFinalComponentsModal } from "@/app/[siteId]/[popId]/layout/library/LayoutFinalComponentsModal"
 import {
   RootsFormField,
+  RootsFormDateField,
   RootsFormMoneyField,
   RootsFormQuantityField,
   RootsFormSelectField,
   RootsFormSelectItem,
+  RootsFormSwitchField,
   RootsFormTextField,
   RootsFormTextareaField,
   rootsFormTextFieldClass,
 } from "@/components/rootsy-form"
 import { Button } from "@/components/ui/button"
-import { Checkbox } from "@/components/ui/checkbox"
-import { DatePicker } from "@/components/ui/date-picker"
 import {
   Dialog,
   DialogContent,
@@ -49,7 +49,6 @@ import {
 } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Switch } from "@/components/ui/switch"
 import { Textarea } from "@/components/ui/textarea"
 import {
   saleOpAlertDialogContent,
@@ -67,7 +66,6 @@ import {
   saleOpDialogFooter,
   saleOpDialogHeader,
   saleOpDialogOptionClass,
-  saleOpLightFormInput,
 } from "@/components/sale-operation/saleOperationStyles"
 import {
   AlertDialog,
@@ -80,7 +78,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
 import { cn } from "@/lib/utils"
-import { Landmark } from "lucide-react"
+import { CalendarIcon, Landmark } from "lucide-react"
 import { useMemo, useState, type ReactNode } from "react"
 
 const LIBRARY_SECTIONS = [
@@ -461,7 +459,7 @@ export function LayoutComponentLibrary() {
   const [fieldSelectValue, setFieldSelectValue] = useState("efectivo")
   const [dateValue, setDateValue] = useState("2026-08-03")
   const [switchOn, setSwitchOn] = useState(true)
-  const [checkboxOn, setCheckboxOn] = useState(false)
+  const [switchCatalogOn, setSwitchCatalogOn] = useState(false)
   const [segment, setSegment] = useState<"a" | "b">("a")
   const [selectedRow, setSelectedRow] = useState<"one" | "two">("one")
   const [liveModalId, setLiveModalId] = useState<string | null>(null)
@@ -686,50 +684,66 @@ export function LayoutComponentLibrary() {
 
           <LibrarySection
             id="date"
-            title="Fecha"
-            description="DatePicker en variantes button y field (modales light)."
+            title="Fecha (final)"
+            description="Date picker alineado al light form. Formato largo en español. Con o sin prefijo (w-11)."
           >
             <div className="grid gap-4 lg:grid-cols-2">
-              <SpecCard title="Variante field · light" source="DatePicker · field">
-                <DatePicker
+              <SpecCard
+                title="RootsFormDateField"
+                source="components/rootsy-form/RootsFormDateField.tsx"
+                tokens={["rounded-lg", "emerald-700", "3 de agosto de 2026"]}
+              >
+                <RootsFormDateField
+                  label="Fecha de alta"
                   value={dateValue}
                   onChange={setDateValue}
-                  light
-                  variant="field"
-                  className={saleOpLightFormInput}
+                  placeholder="Elegí una fecha"
                 />
               </SpecCard>
-              <SpecCard title="Variante button" source="DatePicker · button">
-                <DatePicker value={dateValue} onChange={setDateValue} light />
+              <SpecCard
+                title="RootsFormDateField · prefijo"
+                source="rootsFormPrefixedDateTriggerClass"
+                tokens={["prefix w-11", "calendario"]}
+              >
+                <RootsFormDateField
+                  label="Vencimiento"
+                  value={dateValue}
+                  onChange={setDateValue}
+                  placeholder="Elegí una fecha"
+                  prefix={<CalendarIcon className="size-4" aria-hidden />}
+                />
               </SpecCard>
             </div>
           </LibrarySection>
 
           <LibrarySection
             id="boolean"
-            title="Booleanos"
-            description="Switch y checkbox en formularios de modal."
+            title="Booleanos (final)"
+            description="Switch en caja clickable alineada al light form. Texto a la izquierda y toggle a la derecha."
           >
-            <div className="grid gap-4 md:grid-cols-2">
-              <SpecCard title="Switch" source="Switch">
-                <div className="flex items-center gap-3">
-                  <Switch
-                    id="demo-switch"
-                    checked={switchOn}
-                    onCheckedChange={setSwitchOn}
-                  />
-                  <Label htmlFor="demo-switch">Artículo activo en ventas</Label>
-                </div>
+            <div className="grid gap-4 lg:grid-cols-2">
+              <SpecCard
+                title="RootsFormSwitchField"
+                source="components/rootsy-form/RootsFormSwitchField.tsx"
+                tokens={["rounded-lg", "emerald-600", "click en caja"]}
+              >
+                <RootsFormSwitchField
+                  label="Artículo activo en ventas"
+                  checked={switchOn}
+                  onCheckedChange={setSwitchOn}
+                />
               </SpecCard>
-              <SpecCard title="Checkbox" source="Checkbox">
-                <div className="flex items-center gap-3">
-                  <Checkbox
-                    id="demo-checkbox"
-                    checked={checkboxOn}
-                    onCheckedChange={(v) => setCheckboxOn(v === true)}
-                  />
-                  <Label htmlFor="demo-checkbox">Incluir en catálogo digital</Label>
-                </div>
+              <SpecCard
+                title="RootsFormSwitchField · descripción"
+                source="rootsFormSwitchDescriptionClass"
+                tokens={["text-xs", "zinc-500"]}
+              >
+                <RootsFormSwitchField
+                  label="Incluir en catálogo digital"
+                  description="Visible en el menú QR y en la web del local."
+                  checked={switchCatalogOn}
+                  onCheckedChange={setSwitchCatalogOn}
+                />
               </SpecCard>
             </div>
           </LibrarySection>

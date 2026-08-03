@@ -7,6 +7,9 @@ export { RootsFormQuantityField } from "@/components/rootsy-form/RootsFormQuanti
 export { RootsFormSelectContent } from "@/components/rootsy-form/RootsFormSelectContent"
 export { RootsFormSelectField } from "@/components/rootsy-form/RootsFormSelectField"
 export { RootsFormSelectItem } from "@/components/rootsy-form/RootsFormSelectItem"
+export { RootsFormDateField } from "@/components/rootsy-form/RootsFormDateField"
+export { RootsFormSwitchField } from "@/components/rootsy-form/RootsFormSwitchField"
+export { RootsFormSwitch } from "@/components/rootsy-form/RootsFormSwitch"
 export { RootsFormSelectTrigger } from "@/components/rootsy-form/RootsFormSelectTrigger"
 export {
   rootsFormFieldStackClass,
@@ -21,4 +24,13 @@ export {
   rootsFormPrefixedSelectTriggerClass,
   rootsFormSelectContentClass,
   rootsFormSelectItemClass,
+  rootsFormDateTriggerClass,
+  rootsFormPrefixedDateTriggerClass,
+  rootsFormDatePopoverContentClass,
+  rootsFormDateCalendarShellClass,
+  rootsFormDateCalendarClassNames,
+  rootsFormSwitchBoxClass,
+  rootsFormSwitchLabelClass,
+  rootsFormSwitchDescriptionClass,
+  rootsFormSwitchTrackClass,
 } from "@/components/rootsy-form/rootsFormStyles"
