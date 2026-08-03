@@ -16,7 +16,5 @@ export function useRootsFormFieldControlProps(overrides?: { invalid?: boolean })
   return {
     isInvalid,
     describedBy: context.describedBy,
-    "aria-describedby": context.describedBy,
-    "aria-invalid": isInvalid || undefined,
   }
 }

@@ -48,7 +48,8 @@ export function RootsFormTextareaField({
         id={fieldId}
         rows={rows}
         className={cn(rootsFormTextareaFieldClass, textareaClassName)}
-        {...controlProps}
+        aria-describedby={controlProps.describedBy}
+        aria-invalid={controlProps.isInvalid || undefined}
         {...textareaProps}
       />
     </RootsFormField>

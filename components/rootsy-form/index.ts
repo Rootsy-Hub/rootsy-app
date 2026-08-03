@@ -54,6 +54,7 @@ export {
   rootsFormFieldWarningClass,
   rootsFormFieldSuccessClass,
   rootsFormSegmentGroupClass,
+  rootsFormSegmentIndicatorClass,
   rootsFormSegmentOptionClass,
   rootsFormDiscountModePrefixClass,
   rootsFormDiscountModeButtonClass,

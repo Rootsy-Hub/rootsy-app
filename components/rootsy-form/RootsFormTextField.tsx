@@ -46,7 +46,8 @@ export function RootsFormTextField({
       <Input
         id={fieldId}
         className={cn(rootsFormTextFieldClass, inputClassName)}
-        {...controlProps}
+        aria-describedby={controlProps.describedBy}
+        aria-invalid={controlProps.isInvalid || undefined}
         {...inputProps}
       />
     </RootsFormField>

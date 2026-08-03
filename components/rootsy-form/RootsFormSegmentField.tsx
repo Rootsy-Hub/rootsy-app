@@ -4,6 +4,7 @@ import { RootsFormField } from "@/components/rootsy-form/RootsFormField"
 import type { RootsFormFieldAssistProps } from "@/components/rootsy-form/rootsFormFieldAssist"
 import {
   rootsFormSegmentGroupClass,
+  rootsFormSegmentIndicatorClass,
   rootsFormSegmentOptionClass,
 } from "@/components/rootsy-form/rootsFormStyles"
 import { cn } from "@/lib/utils"
@@ -32,6 +33,20 @@ function segmentGridClass(count: number) {
   return "grid-cols-2"
 }
 
+function segmentIndicatorStyle(optionCount: number, selectedIndex: number) {
+  const inset = 0.25 // p-1
+  const gap = 0.25 // gap-1
+  const gapsTotal = (optionCount - 1) * gap
+
+  return {
+    top: `${inset}rem`,
+    bottom: `${inset}rem`,
+    left: `${inset}rem`,
+    width: `calc((100% - ${inset * 2}rem - ${gapsTotal}rem) / ${optionCount})`,
+    transform: `translateX(calc(${selectedIndex} * (100% + ${gap}rem)))`,
+  }
+}
+
 export function RootsFormSegmentField({
   label,
   value,
@@ -47,6 +62,11 @@ export function RootsFormSegmentField({
   success,
   invalid,
 }: Props) {
+  const selectedIndex = Math.max(
+    0,
+    options.findIndex((option) => option.value === value),
+  )
+
   return (
     <RootsFormField
       label={label}
@@ -66,6 +86,11 @@ export function RootsFormSegmentField({
           groupClassName,
         )}
       >
+        <span
+          aria-hidden
+          className={rootsFormSegmentIndicatorClass}
+          style={segmentIndicatorStyle(options.length, selectedIndex)}
+        />
         {options.map((option) => {
           const isSelected = value === option.value
           const isDisabled = disabled || option.disabled

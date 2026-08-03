@@ -179,19 +179,20 @@ export const rootsFormSwitchTrackClass = cn(
   "dark:data-[state=unchecked]:bg-zinc-200 dark:data-[state=checked]:bg-emerald-600",
 )
 
-/** Track del segment group — pill sobre fondo zinc, alineado al light form. */
+/** Track del segment group — pill inset con gap, h-11 como inputs. */
 export const rootsFormSegmentGroupClass =
-  "grid w-full gap-1 rounded-lg border border-zinc-200 bg-zinc-50 p-1 shadow-xs dark:border-zinc-200 dark:bg-zinc-50"
+  "relative grid h-11 w-full gap-1 rounded-lg border border-zinc-200 bg-zinc-50 p-1 shadow-xs dark:border-zinc-200 dark:bg-zinc-50"
+
+export const rootsFormSegmentIndicatorClass =
+  "pointer-events-none absolute rounded-md bg-white transition-transform duration-200 ease-out"
 
 export function rootsFormSegmentOptionClass(selected: boolean, disabled?: boolean) {
   return cn(
     rootsFormControlTypographyClass,
-    "inline-flex h-9 min-w-0 flex-1 items-center justify-center gap-2 rounded-md px-3 font-medium transition-[color,background-color,box-shadow] duration-150",
+    "relative z-[1] inline-flex h-full min-w-0 items-center justify-center gap-2 rounded-md px-3 font-medium transition-colors duration-150",
     "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-700/45 focus-visible:ring-offset-0",
     disabled && "pointer-events-none opacity-50",
-    selected
-      ? "bg-white text-zinc-900 shadow-xs ring-1 ring-zinc-200"
-      : "text-zinc-500 hover:text-zinc-900",
+    selected ? "text-zinc-900" : "text-zinc-400 hover:text-zinc-600",
   )
 }
 

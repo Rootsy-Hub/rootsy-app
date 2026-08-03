@@ -5,22 +5,7 @@ import {
   articleDialogFooterClass,
   articleDialogHeaderClass,
   articleDialogSurfaceClass,
-  articleDialogSurfaceTwoColClass,
-  articleDialogSurfaceWideClass,
-  articleFormTextFieldClass,
-  articleFormTextareaClass,
 } from "@/app/[siteId]/[popId]/articles/articleConstants"
-import {
-  clientDialogBodyClass,
-  clientDialogFooterClass,
-  clientDialogHeaderClass,
-  clientDialogSurface,
-} from "@/app/[siteId]/[popId]/clients/ClientUpsertFormFields"
-import {
-  opsDialogHeader,
-  opsDialogSurfaceMd,
-  opsDialogSurfacePurchase,
-} from "@/app/[siteId]/[popId]/operations/operationDialogStyles"
 import { LayoutFinalComponentsModal } from "@/app/[siteId]/[popId]/layout/library/LayoutFinalComponentsModal"
 import {
   RootsFormField,
@@ -50,20 +35,12 @@ import {
 } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Textarea } from "@/components/ui/textarea"
 import {
   saleOpAlertDialogContent,
   saleOpChannelErrorBanner,
   saleOpChannelFormField,
   saleOpChannelHint,
   saleOpChannelWarningBanner,
-  saleOpDialogBody,
-  saleOpDialogContentComprobante,
-  saleOpDialogContentLg,
-  saleOpDialogContentMd,
-  saleOpDialogContentXl,
-  saleOpDialogFooter,
-  saleOpDialogHeader,
 } from "@/components/sale-operation/saleOperationStyles"
 import {
   AlertDialog,
@@ -77,7 +54,10 @@ import {
 } from "@/components/ui/alert-dialog"
 import { cn } from "@/lib/utils"
 import { CalendarIcon, Landmark, Receipt } from "lucide-react"
-import { useMemo, useState, type ReactNode } from "react"
+import { useState, type ReactNode } from "react"
+
+const MODAL_SAMPLE_TITLE = "Título del modal"
+const MODAL_SAMPLE_DESCRIPTION = "Descripción breve del contenido."
 
 const LIBRARY_SECTIONS = [
   { id: "labels", label: "Label (final)" },
@@ -91,210 +71,37 @@ const LIBRARY_SECTIONS = [
   { id: "layout", label: "Layout de formulario" },
   { id: "composite", label: "Controles compuestos" },
   { id: "feedback", label: "Banners y ayuda" },
-  { id: "modals-articles", label: "Modales · Artículos" },
-  { id: "modals-clients", label: "Modales · Clientes" },
-  { id: "modals-sale", label: "Modales · Venta" },
-  { id: "modals-ops", label: "Modales · Operaciones" },
+  { id: "modals", label: "Modales" },
+  { id: "modals-alert", label: "Alert dialog" },
 ] as const
 
-const articleDetailDialogSurface = cn(
-  "rootsy-app-light gap-0 overflow-hidden rounded-2xl border border-border/60 bg-card p-0 text-foreground shadow-2xl ring-1 ring-black/[0.04] sm:max-w-2xl",
-  "max-h-[min(90vh,760px)] flex flex-col overflow-hidden",
-)
+type ModalFooterVariant = "none" | "single" | "dual"
 
-const articleImageDialogSurface = cn(
-  "rootsy-app-light gap-0 overflow-hidden rounded-2xl border border-border/60 bg-card p-0 text-foreground shadow-2xl ring-1 ring-black/[0.04] sm:max-w-lg",
-  "max-h-[min(90vh,720px)] flex flex-col overflow-hidden",
-)
-
-const opsDialogSurfaceLg = cn(
-  "rootsy-app-light gap-0 overflow-hidden rounded-2xl border border-border/60 bg-card p-0 text-foreground shadow-2xl ring-1 ring-black/[0.04] sm:max-w-3xl",
-  "max-h-[min(90vh,820px)] flex flex-col overflow-hidden",
-)
-
-type ModalPreviewSpec = {
+type ModalVariantSpec = {
   id: string
-  family: string
   title: string
-  width: string
-  surfaceClass: string
-  headerClass: string
-  bodyClass: string
-  footerClass: string
-  source: string
-  sampleTitle: string
-  sampleDescription: string
+  description: string
+  footerVariant: ModalFooterVariant
 }
 
-const MODAL_SPECS: ModalPreviewSpec[] = [
+const MODAL_VARIANTS: ModalVariantSpec[] = [
   {
-    id: "article-md",
-    family: "Artículos / Stock",
-    title: "Estándar (md)",
-    width: "sm:max-w-md",
-    surfaceClass: articleDialogSurfaceClass,
-    headerClass: articleDialogHeaderClass,
-    bodyClass: articleDialogBodyClass,
-    footerClass: articleDialogFooterClass,
-    source: "articleDialogSurfaceClass",
-    sampleTitle: "Eliminar categoría",
-    sampleDescription: "Esta acción no se puede deshacer.",
+    id: "modal-no-footer",
+    title: "Sin footer",
+    description: "Header + body. Cierre con × o acción fuera del modal.",
+    footerVariant: "none",
   },
   {
-    id: "article-wide",
-    family: "Artículos / Stock",
-    title: "Ancho (lg)",
-    width: "sm:max-w-lg",
-    surfaceClass: articleDialogSurfaceWideClass,
-    headerClass: articleDialogHeaderClass,
-    bodyClass: articleDialogBodyClass,
-    footerClass: articleDialogFooterClass,
-    source: "articleDialogSurfaceWideClass",
-    sampleTitle: "Categorías",
-    sampleDescription: "Ordená las categorías y elegí cuáles se muestran en ventas.",
+    id: "modal-single-action",
+    title: "Un botón",
+    description: "Acción principal alineada a la derecha.",
+    footerVariant: "single",
   },
   {
-    id: "article-two-col",
-    family: "Artículos / Stock",
-    title: "Dos columnas (4xl)",
-    width: "sm:max-w-4xl",
-    surfaceClass: articleDialogSurfaceTwoColClass,
-    headerClass: articleDialogHeaderClass,
-    bodyClass: articleDialogBodyClass,
-    footerClass: articleDialogFooterClass,
-    source: "articleDialogSurfaceTwoColClass",
-    sampleTitle: "Nuevo artículo",
-    sampleDescription: "Alta de artículo en el stock del POP.",
-  },
-  {
-    id: "article-detail",
-    family: "Artículos / Stock",
-    title: "Detalle tabla (2xl)",
-    width: "sm:max-w-2xl",
-    surfaceClass: articleDetailDialogSurface,
-    headerClass: articleDialogHeaderClass,
-    bodyClass: articleDialogBodyClass,
-    footerClass: "",
-    source: "ArticlesTableDetailDialog",
-    sampleTitle: "Detalle del artículo",
-    sampleDescription: "Vista de solo lectura desde el listado.",
-  },
-  {
-    id: "article-image",
-    family: "Artículos / Stock",
-    title: "Preview imagen (lg)",
-    width: "sm:max-w-lg",
-    surfaceClass: articleImageDialogSurface,
-    headerClass: articleDialogHeaderClass,
-    bodyClass: articleDialogBodyClass,
-    footerClass: "",
-    source: "ArticleImagePreviewDialog",
-    sampleTitle: "Imagen del artículo",
-    sampleDescription: "Ampliación de la foto de stock.",
-  },
-  {
-    id: "client-lg",
-    family: "Clientes",
-    title: "Cliente (lg)",
-    width: "sm:max-w-lg",
-    surfaceClass: clientDialogSurface,
-    headerClass: clientDialogHeaderClass,
-    bodyClass: clientDialogBodyClass,
-    footerClass: clientDialogFooterClass,
-    source: "clientDialogSurface",
-    sampleTitle: "Nuevo cliente",
-    sampleDescription: "Datos fiscales y de contacto.",
-  },
-  {
-    id: "sale-md",
-    family: "Venta / Checkout",
-    title: "Venta md",
-    width: "sm:max-w-md",
-    surfaceClass: saleOpDialogContentMd,
-    headerClass: saleOpDialogHeader,
-    bodyClass: saleOpDialogBody,
-    footerClass: saleOpDialogFooter,
-    source: "saleOpDialogContentMd",
-    sampleTitle: "Descuento",
-    sampleDescription: "Aplicar descuento al ticket.",
-  },
-  {
-    id: "sale-lg",
-    family: "Venta / Checkout",
-    title: "Venta lg",
-    width: "sm:max-w-2xl",
-    surfaceClass: saleOpDialogContentLg,
-    headerClass: saleOpDialogHeader,
-    bodyClass: saleOpDialogBody,
-    footerClass: saleOpDialogFooter,
-    source: "saleOpDialogContentLg",
-    sampleTitle: "Cliente del ticket",
-    sampleDescription: "Buscar o crear cliente para la venta.",
-  },
-  {
-    id: "sale-xl",
-    family: "Venta / Checkout",
-    title: "Venta xl",
-    width: "sm:max-w-4xl",
-    surfaceClass: saleOpDialogContentXl,
-    headerClass: saleOpDialogHeader,
-    bodyClass: saleOpDialogBody,
-    footerClass: saleOpDialogFooter,
-    source: "saleOpDialogContentXl",
-    sampleTitle: "Promoción combo",
-    sampleDescription: "Asistente de armado de promoción.",
-  },
-  {
-    id: "sale-comprobante",
-    family: "Venta / Checkout",
-    title: "Comprobante",
-    width: "sm:max-w-2xl",
-    surfaceClass: saleOpDialogContentComprobante,
-    headerClass: saleOpDialogHeader,
-    bodyClass: saleOpDialogBody,
-    footerClass: saleOpDialogFooter,
-    source: "saleOpDialogContentComprobante",
-    sampleTitle: "Comprobante de venta",
-    sampleDescription: "Selector + preview del ticket.",
-  },
-  {
-    id: "ops-md",
-    family: "Operaciones",
-    title: "Detalle operación",
-    width: "calc ancho dual",
-    surfaceClass: opsDialogSurfaceMd,
-    headerClass: opsDialogHeader,
-    bodyClass: articleDialogBodyClass,
-    footerClass: "",
-    source: "opsDialogSurfaceMd",
-    sampleTitle: "Detalle de venta",
-    sampleDescription: "Panel lateral + líneas de la operación.",
-  },
-  {
-    id: "ops-purchase",
-    family: "Operaciones",
-    title: "Compra",
-    width: "calc ancho triple",
-    surfaceClass: opsDialogSurfacePurchase,
-    headerClass: opsDialogHeader,
-    bodyClass: articleDialogBodyClass,
-    footerClass: "",
-    source: "opsDialogSurfacePurchase",
-    sampleTitle: "Detalle de compra",
-    sampleDescription: "Layout amplio para ítems de compra.",
-  },
-  {
-    id: "ops-lg",
-    family: "Operaciones",
-    title: "Factura venta (lg)",
-    width: "sm:max-w-3xl",
-    surfaceClass: opsDialogSurfaceLg,
-    headerClass: opsDialogHeader,
-    bodyClass: articleDialogBodyClass,
-    footerClass: articleDialogFooterClass,
-    source: "OperationSaleInvoiceDialog",
-    sampleTitle: "Facturar venta",
-    sampleDescription: "Emisión de comprobante fiscal.",
+    id: "modal-dual-action",
+    title: "Cancelar + confirmar",
+    description: "Secundaria a la izquierda, primaria a la derecha.",
+    footerVariant: "dual",
   },
 ]
 
@@ -364,38 +171,131 @@ function SpecCard({
   )
 }
 
-function ModalChromePreview({ spec }: { spec: ModalPreviewSpec }) {
+function ModalDemoFormFields({
+  name,
+  onNameChange,
+  description,
+  onDescriptionChange,
+  price,
+  onPriceChange,
+  className,
+}: {
+  name: string
+  onNameChange: (value: string) => void
+  description: string
+  onDescriptionChange: (value: string) => void
+  price: string
+  onPriceChange: (value: string) => void
+  className?: string
+}) {
+  return (
+    <div className={cn("space-y-3.5", className)}>
+      <RootsFormTextField
+        label="Nombre"
+        value={name}
+        onChange={(e) => onNameChange(e.target.value)}
+      />
+      <RootsFormTextareaField
+        label="Descripción"
+        value={description}
+        onChange={(e) => onDescriptionChange(e.target.value)}
+        rows={3}
+      />
+      <RootsFormMoneyField
+        label="Precio venta"
+        value={price}
+        onChange={onPriceChange}
+      />
+    </div>
+  )
+}
+
+function ModalFooterPreview({ variant }: { variant: ModalFooterVariant }) {
+  if (variant === "none") return null
+
+  if (variant === "single") {
+    return (
+      <div className={cn(articleDialogFooterClass, "flex justify-end gap-2")}>
+        <div className="h-9 w-28 rounded-md bg-primary/90" />
+      </div>
+    )
+  }
+
+  return (
+    <div className={cn(articleDialogFooterClass, "flex justify-between gap-2")}>
+      <div className="h-9 w-24 rounded-md border border-zinc-200 bg-white" />
+      <div className="h-9 w-28 rounded-md bg-primary/90" />
+    </div>
+  )
+}
+
+function ModalChromePreview({ spec }: { spec: ModalVariantSpec }) {
   return (
     <div className="overflow-hidden rounded-2xl border border-dashed border-border/80 bg-muted/15 p-3">
       <div
         className={cn(
           "pointer-events-none mx-auto w-full overflow-hidden",
-          spec.surfaceClass,
+          articleDialogSurfaceClass,
           "max-h-none shadow-md",
         )}
       >
-        <div className={spec.headerClass}>
-          <p className="text-base font-semibold tracking-tight">{spec.sampleTitle}</p>
-          <p className="mt-1 text-sm text-muted-foreground">{spec.sampleDescription}</p>
+        <div className={articleDialogHeaderClass}>
+          <p className="text-base font-semibold tracking-tight">
+            {MODAL_SAMPLE_TITLE}
+          </p>
+          <p className="text-sm text-muted-foreground">
+            {MODAL_SAMPLE_DESCRIPTION}
+          </p>
         </div>
-        <div className={spec.bodyClass}>
-          <div className="space-y-3">
-            <div className="h-9 rounded-lg bg-muted/50" />
-            <div className="h-9 rounded-lg bg-muted/35" />
-            <div className="h-20 rounded-lg bg-muted/25" />
+        <div className={articleDialogBodyClass}>
+          <div className="pointer-events-none">
+            <ModalDemoFormFields
+              name="Cola 500 ml"
+              onNameChange={() => {}}
+              description="Bebida gaseosa en envase individual."
+              onDescriptionChange={() => {}}
+              price="1.250,00"
+              onPriceChange={() => {}}
+            />
           </div>
         </div>
-        {spec.footerClass ? (
-          <div className={cn(spec.footerClass, "flex justify-end gap-2")}>
-            <div className="h-9 w-24 rounded-lg bg-muted/50" />
-            <div className="h-9 w-28 rounded-lg bg-primary/20" />
-          </div>
-        ) : null}
+        <ModalFooterPreview variant={spec.footerVariant} />
       </div>
       <p className="mt-2 text-center text-[11px] text-muted-foreground">
-        {spec.width} · {spec.title}
+        {spec.title}
       </p>
     </div>
+  )
+}
+
+function ModalFooterLive({
+  variant,
+  onClose,
+}: {
+  variant: ModalFooterVariant
+  onClose: () => void
+}) {
+  if (variant === "none") return null
+
+  if (variant === "single") {
+    return (
+      <DialogFooter className={cn(articleDialogFooterClass, "sm:justify-end")}>
+        <Button type="button" onClick={onClose}>
+          Confirmar
+        </Button>
+      </DialogFooter>
+    )
+  }
+
+  return (
+    <DialogFooter className={articleDialogFooterClass}>
+      <Button type="button" variant="outline" onClick={onClose}>
+        Cancelar
+      </Button>
+      <Button type="button" onClick={onClose}>
+        Confirmar
+      </Button>
+    </DialogFooter>
   )
 }
 
@@ -404,47 +304,43 @@ function LiveModalDemo({
   open,
   onOpenChange,
 }: {
-  spec: ModalPreviewSpec
+  spec: ModalVariantSpec
   open: boolean
   onOpenChange: (open: boolean) => void
 }) {
+  const [name, setName] = useState("Cola 500 ml")
+  const [description, setDescription] = useState(
+    "Bebida gaseosa en envase individual.",
+  )
+  const [price, setPrice] = useState("1.250,00")
+  const handleClose = () => onOpenChange(false)
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
-        className={spec.surfaceClass}
+        className={articleDialogSurfaceClass}
         data-rootsy-light-shell="true"
         showCloseButton
       >
-        <DialogHeader className={spec.headerClass}>
+        <DialogHeader className={articleDialogHeaderClass}>
           <DialogTitle className="text-base font-semibold tracking-tight">
-            {spec.sampleTitle}
+            {MODAL_SAMPLE_TITLE}
           </DialogTitle>
-          <DialogDescription className="text-sm leading-relaxed">
-            {spec.sampleDescription}
+          <DialogDescription className="text-sm leading-snug">
+            {MODAL_SAMPLE_DESCRIPTION}
           </DialogDescription>
         </DialogHeader>
-        <div className={spec.bodyClass}>
-          <p className="text-sm text-muted-foreground">
-            Vista interactiva de <span className="font-mono">{spec.source}</span>.
-            Compará header, body, footer y ancho con el resto de la familia.
-          </p>
-          <div className="mt-4 space-y-3">
-            <Input className={articleFormTextFieldClass} placeholder="Campo de ejemplo" />
-            <Textarea
-              className={articleFormTextareaClass}
-              placeholder="Notas..."
-              rows={3}
-            />
-          </div>
+        <div className={articleDialogBodyClass}>
+          <ModalDemoFormFields
+            name={name}
+            onNameChange={setName}
+            description={description}
+            onDescriptionChange={setDescription}
+            price={price}
+            onPriceChange={setPrice}
+          />
         </div>
-        {spec.footerClass ? (
-          <DialogFooter className={spec.footerClass}>
-            <Button type="button" variant="outline">
-              Cancelar
-            </Button>
-            <Button type="button">Guardar</Button>
-          </DialogFooter>
-        ) : null}
+        <ModalFooterLive variant={spec.footerVariant} onClose={handleClose} />
       </DialogContent>
     </Dialog>
   )
@@ -478,17 +374,7 @@ export function LayoutComponentLibrary() {
   const [liveModalId, setLiveModalId] = useState<string | null>(null)
   const [finalComponentsOpen, setFinalComponentsOpen] = useState(false)
 
-  const modalFamilies = useMemo(() => {
-    const groups = new Map<string, ModalPreviewSpec[]>()
-    for (const spec of MODAL_SPECS) {
-      const list = groups.get(spec.family) ?? []
-      list.push(spec)
-      groups.set(spec.family, list)
-    }
-    return [...groups.entries()]
-  }, [])
-
-  const liveModal = MODAL_SPECS.find((spec) => spec.id === liveModalId) ?? null
+  const liveModal = MODAL_VARIANTS.find((spec) => spec.id === liveModalId) ?? null
 
   return (
     <div className="flex min-h-0 flex-1">
@@ -1000,18 +886,21 @@ export function LayoutComponentLibrary() {
             </div>
           </LibrarySection>
 
-          {modalFamilies.map(([family, specs]) => (
-            <LibrarySection
-              key={family}
-              id={`modals-${family.toLowerCase().replace(/[^a-z0-9]+/g, "-")}`}
-              title={`Modales · ${family}`}
-              description="Chrome estático + botón para abrir la variante en vivo. Compará header, body, footer y ancho."
-            >
-              <div className="grid gap-5 xl:grid-cols-2">
-                {specs.map((spec) => (
-                  <div key={spec.id} className="space-y-3">
-                    <ModalChromePreview spec={spec} />
-                    <div className="flex flex-wrap items-center gap-2">
+          <LibrarySection
+            id="modals"
+            title="Modales"
+            description="Variantes de chrome con el mismo contenido placeholder. Por ahora un solo shell; solo cambia el footer."
+          >
+            <div className="grid gap-5 lg:grid-cols-3">
+              {MODAL_VARIANTS.map((spec) => (
+                <div key={spec.id} className="space-y-3">
+                  <ModalChromePreview spec={spec} />
+                  <div className="space-y-2 px-1">
+                    <p className="text-sm font-medium text-foreground">{spec.title}</p>
+                    <p className="text-xs leading-relaxed text-muted-foreground">
+                      {spec.description}
+                    </p>
+                    <div className="flex flex-wrap items-center gap-2 pt-1">
                       <Button
                         type="button"
                         size="sm"
@@ -1021,19 +910,19 @@ export function LayoutComponentLibrary() {
                         Abrir en vivo
                       </Button>
                       <span className="font-mono text-[11px] text-muted-foreground">
-                        {spec.source}
+                        articleDialogSurfaceClass
                       </span>
                     </div>
                   </div>
-                ))}
-              </div>
-            </LibrarySection>
-          ))}
+                </div>
+              ))}
+            </div>
+          </LibrarySection>
 
           <LibrarySection
             id="modals-alert"
-            title="Modales · Alert dialog"
-            description="Confirmaciones destructivas en flujos de venta."
+            title="Alert dialog"
+            description="Confirmaciones destructivas — variante aparte del modal estándar."
           >
             <SpecCard title="Alert venta" source="saleOpAlertDialogContent">
               <AlertDialog open={false}>
