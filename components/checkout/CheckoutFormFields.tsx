@@ -29,12 +29,25 @@ export function CheckoutSectionPanel({
   )
 }
 
-export function CheckoutSectionLabel({ children }: { children: ReactNode }) {
-  return (
-    <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
-      {children}
-    </p>
-  )
+export function CheckoutSectionLabel({
+  children,
+  htmlFor,
+}: {
+  children: ReactNode
+  htmlFor?: string
+}) {
+  const className =
+    "text-[10px] font-semibold uppercase tracking-[0.12em] text-muted-foreground"
+
+  if (htmlFor) {
+    return (
+      <label htmlFor={htmlFor} className={className}>
+        {children}
+      </label>
+    )
+  }
+
+  return <p className={className}>{children}</p>
 }
 
 export function CheckoutDiscountModeSegment({

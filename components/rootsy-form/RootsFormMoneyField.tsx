@@ -1,49 +1,48 @@
 "use client"
 
+import { RootsFormField } from "@/components/rootsy-form/RootsFormField"
+import { RootsFormPrefixedInput } from "@/components/rootsy-form/RootsFormPrefixedInput"
 import { useMoneyInputField } from "@/components/rootsy-form/useMoneyInputField"
-import {
-  InputGroup,
-  InputGroupAddon,
-  InputGroupInput,
-  InputGroupText,
-} from "@/components/ui/input-group"
 import {
   formatMoneyInputForField,
   MONEY_INPUT_DISPLAY_MAX_LEN,
 } from "@/lib/moneyInput"
 import { cn } from "@/lib/utils"
-import type { ComponentProps } from "react"
+import { useId, type ComponentProps, type ReactNode } from "react"
 
-type MoneyInputFieldProps = {
+type Props = {
+  label: string
   id?: string
   value: string
   onChange: (value: string) => void
+  prefix?: ReactNode
   placeholder?: string
   disabled?: boolean
   invalid?: boolean
   className?: string
   inputClassName?: string
-  prefixClassName?: string
   formatOnBlur?: boolean
   formatValue?: (amount: number) => string
-  "aria-label"?: string
 } & Pick<ComponentProps<"input">, "autoFocus">
 
-export function MoneyInputField({
+export function RootsFormMoneyField({
+  label,
   id,
   value,
   onChange,
+  prefix = "$",
   placeholder = "0,00",
   disabled,
   invalid,
   className,
   inputClassName,
-  prefixClassName,
   formatOnBlur = true,
   formatValue = formatMoneyInputForField,
-  "aria-label": ariaLabel,
   autoFocus,
-}: MoneyInputFieldProps) {
+}: Props) {
+  const autoId = useId()
+  const fieldId = id ?? autoId
+
   const {
     inputRef,
     handleMouseDown,
@@ -60,34 +59,18 @@ export function MoneyInputField({
   })
 
   return (
-    <InputGroup
-      className={cn(
-        "h-11 overflow-hidden shadow-xs transition-[color,box-shadow]",
-        className,
-      )}
-    >
-      <InputGroupAddon
-        align="inline-start"
-        className={cn(
-          "h-11 shrink-0 self-stretch border-r border-border/70 bg-muted/35 px-3.5 py-0",
-          prefixClassName,
-        )}
-      >
-        <InputGroupText className="text-sm font-semibold tabular-nums text-zinc-600 dark:text-zinc-600">
-          $
-        </InputGroupText>
-      </InputGroupAddon>
-      <InputGroupInput
+    <RootsFormField label={label} htmlFor={fieldId} className={className}>
+      <RootsFormPrefixedInput
         ref={inputRef}
-        id={id}
+        id={fieldId}
+        prefix={prefix}
         inputMode="decimal"
         autoComplete="off"
         autoFocus={autoFocus}
         value={value}
         maxLength={MONEY_INPUT_DISPLAY_MAX_LEN}
         disabled={disabled}
-        aria-invalid={invalid}
-        aria-label={ariaLabel}
+        invalid={invalid}
         placeholder={placeholder}
         onMouseDown={handleMouseDown}
         onChange={handleChange}
@@ -95,11 +78,8 @@ export function MoneyInputField({
         onPaste={handlePaste}
         onFocus={handleFocus}
         onBlur={handleBlur}
-        className={cn(
-          "h-11 min-w-0 flex-1 basis-0 !w-auto px-3 font-numeric text-base tabular-nums tracking-tight",
-          inputClassName,
-        )}
+        inputClassName={cn(inputClassName)}
       />
-    </InputGroup>
+    </RootsFormField>
   )
 }

@@ -4,15 +4,9 @@ import {
   articleFormControlShellClass,
   articleFormInlineAddonClass,
 } from "@/app/[siteId]/[popId]/articles/articleConstants"
-import {
-  formatMoneyInputForField,
-  isValidMoneyInput,
-  moneyInputToEditable,
-  MONEY_INPUT_MAX_LEN,
-  parseMoneyInput,
-} from "@/lib/moneyInput"
+import { useMoneyInputField } from "@/components/rootsy-form/useMoneyInputField"
+import { MONEY_INPUT_DISPLAY_MAX_LEN } from "@/lib/moneyInput"
 import { cn } from "@/lib/utils"
-import type { FocusEvent } from "react"
 
 type Props = {
   id: string
@@ -29,29 +23,15 @@ export function ArticleFormMoneyField({
   disabled,
   "aria-label": ariaLabel,
 }: Props) {
-  const handleChange = (raw: string) => {
-    if (!isValidMoneyInput(raw)) return
-    onChange(raw)
-  }
-
-  const handleFocus = (e: FocusEvent<HTMLInputElement>) => {
-    const input = e.currentTarget
-    const editable = moneyInputToEditable(value)
-    if (editable !== value) {
-      onChange(editable)
-    }
-    requestAnimationFrame(() => {
-      input.select()
-    })
-  }
-
-  const handleBlur = () => {
-    if (!value.trim()) return
-    const parsed = parseMoneyInput(value, Number.NaN)
-    if (Number.isFinite(parsed)) {
-      onChange(formatMoneyInputForField(parsed))
-    }
-  }
+  const {
+    inputRef,
+    handleMouseDown,
+    handleFocus,
+    handleChange,
+    handleKeyDown,
+    handlePaste,
+    handleBlur,
+  } = useMoneyInputField({ value, onChange })
 
   return (
     <div
@@ -71,15 +51,19 @@ export function ArticleFormMoneyField({
         {ariaLabel}
       </label>
       <input
+        ref={inputRef}
         id={id}
         inputMode="decimal"
         autoComplete="off"
         disabled={disabled}
         value={value}
-        maxLength={MONEY_INPUT_MAX_LEN}
+        maxLength={MONEY_INPUT_DISPLAY_MAX_LEN}
         placeholder="0,00"
         aria-label={ariaLabel}
-        onChange={(e) => handleChange(e.target.value)}
+        onMouseDown={handleMouseDown}
+        onChange={handleChange}
+        onKeyDown={handleKeyDown}
+        onPaste={handlePaste}
         onFocus={handleFocus}
         onBlur={handleBlur}
         className="min-w-0 flex-1 bg-transparent px-3.5 text-sm font-numeric tabular-nums text-foreground outline-none placeholder:text-muted-foreground/70"

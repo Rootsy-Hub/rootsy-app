@@ -7,6 +7,11 @@ export function isValidNonNegativeIntegerInput(raw: string): boolean {
   return /^\d+$/.test(raw)
 }
 
+/** Solo dígitos, respetando el largo máximo del regex. */
+export function sanitizeNonNegativeIntegerInput(raw: string): string {
+  return raw.replace(/\D/g, "").slice(0, INTEGER_INPUT_MAX_LEN)
+}
+
 export function parseNonNegativeIntegerInput(
   raw: string,
   fallback = Number.NaN,

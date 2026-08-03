@@ -9,8 +9,7 @@ import type { ArticleItemFormState } from "@/app/[siteId]/[popId]/articles/Artic
 import { ArticleItemKindSelector } from "@/app/[siteId]/[popId]/articles/ArticleItemKindSelector"
 import { ArticleSupplierPickerField } from "@/app/[siteId]/[popId]/articles/ArticleSupplierPickerField"
 import { ArticleUnitOfMeasureField } from "@/app/[siteId]/[popId]/articles/ArticleUnitOfMeasureField"
-import { ArticleFormMoneyField } from "@/app/[siteId]/[popId]/articles/ArticleFormMoneyField"
-import { ArticleFormQuantityField } from "@/app/[siteId]/[popId]/articles/ArticleFormQuantityField"
+import { RootsFormTextField, RootsFormTextareaField, RootsFormMoneyField, RootsFormQuantityField } from "@/components/rootsy-form"
 import {
   articleFormColumnClass,
   articleFormFieldStackClass,
@@ -19,7 +18,6 @@ import {
   articleFormSelectItemClass,
   articleFormSelectTriggerClass,
   articleFormTextFieldClass,
-  articleFormTextareaClass,
   articleFormTwoColRowClass,
 } from "@/app/[siteId]/[popId]/articles/articleConstants"
 import { CheckoutSectionLabel } from "@/components/checkout/CheckoutFormFields"
@@ -85,29 +83,23 @@ export function ArticleUpsertFormFields({
   return (
     <div className={articleFormGridClass}>
       <div className={articleFormColumnClass}>
-        <div className={articleFormFieldStackClass}>
-          <CheckoutSectionLabel>Nombre</CheckoutSectionLabel>
-          <input
-            id={`${idPrefix}-name`}
-            value={form.name}
-            onChange={(e) => onChange({ name: e.target.value })}
-            required
-            disabled={disabled}
-            className={articleFormTextFieldClass}
-          />
-        </div>
+        <RootsFormTextField
+          label="Nombre"
+          id={`${idPrefix}-name`}
+          value={form.name}
+          onChange={(e) => onChange({ name: e.target.value })}
+          required
+          disabled={disabled}
+        />
 
-        <div className={articleFormFieldStackClass}>
-          <CheckoutSectionLabel>Descripción</CheckoutSectionLabel>
-          <textarea
-            id={`${idPrefix}-desc`}
-            rows={3}
-            value={form.description}
-            onChange={(e) => onChange({ description: e.target.value })}
-            disabled={disabled}
-            className={articleFormTextareaClass}
-          />
-        </div>
+        <RootsFormTextareaField
+          label="Descripción"
+          id={`${idPrefix}-desc`}
+          rows={3}
+          value={form.description}
+          onChange={(e) => onChange({ description: e.target.value })}
+          disabled={disabled}
+        />
 
         <div className={articleFormFieldStackClass}>
           <CheckoutSectionLabel>Marca</CheckoutSectionLabel>
@@ -223,27 +215,21 @@ export function ArticleUpsertFormFields({
           )}
         >
           {isMerchandise ? (
-            <div className={articleFormFieldStackClass}>
-              <CheckoutSectionLabel>Precio venta</CheckoutSectionLabel>
-              <ArticleFormMoneyField
-                id={`${idPrefix}-price`}
-                value={form.salePrice}
-                onChange={(value) => onChange({ salePrice: value })}
-                disabled={disabled}
-                aria-label="Precio de venta"
-              />
-            </div>
-          ) : null}
-          <div className={articleFormFieldStackClass}>
-            <CheckoutSectionLabel>Precio de compra</CheckoutSectionLabel>
-            <ArticleFormMoneyField
-              id={`${idPrefix}-cost`}
-              value={form.costPrice}
-              onChange={(value) => onChange({ costPrice: value })}
+            <RootsFormMoneyField
+              label="Precio venta"
+              id={`${idPrefix}-price`}
+              value={form.salePrice}
+              onChange={(value) => onChange({ salePrice: value })}
               disabled={disabled}
-              aria-label="Precio de compra"
             />
-          </div>
+          ) : null}
+          <RootsFormMoneyField
+            label="Precio de compra"
+            id={`${idPrefix}-cost`}
+            value={form.costPrice}
+            onChange={(value) => onChange({ costPrice: value })}
+            disabled={disabled}
+          />
         </div>
 
         <ArticleIvaSelect
@@ -273,16 +259,15 @@ export function ArticleUpsertFormFields({
         />
 
         {mode === "create" && canPostInitialStock ? (
-          <div className={cn(articleFormFieldStackClass, "border-t border-border/50 pt-1")}>
-            <CheckoutSectionLabel>Stock inicial (opcional)</CheckoutSectionLabel>
-            <ArticleFormQuantityField
+          <div className={cn("border-t border-border/50 pt-1")}>
+            <RootsFormQuantityField
+              label="Stock inicial (opcional)"
               id={`${idPrefix}-initial-stock`}
               value={form.initialStock ?? ""}
               onChange={(value) => onChange({ initialStock: value })}
               disabled={disabled}
               max={10000}
               placeholder="Vacío = sin movimiento"
-              aria-label="Stock inicial"
             />
           </div>
         ) : null}
