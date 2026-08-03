@@ -1,6 +1,7 @@
 "use client"
 
 import { Skeleton } from "@/components/ui/skeleton"
+import { menuFloatingPillShellClass } from "@/app/[siteId]/[popId]/menu/menuFloatingPillStyles"
 import { cn } from "@/lib/utils"
 
 const LABEL_WIDTHS = ["w-14", "w-16", "w-12", "w-[3.25rem]", "w-14", "w-11"] as const
@@ -73,7 +74,12 @@ function MenuPageSkeletonHeader() {
 function MenuPageSkeletonDock() {
   return (
     <div className="absolute bottom-4 left-1/2 z-20 -translate-x-1/2">
-      <div className="flex items-center gap-3 rounded-2xl border border-border bg-muted/80 px-4 py-2.5 backdrop-blur-2xl">
+      <div
+        className={cn(
+          "flex items-center gap-3 px-4 py-2",
+          menuFloatingPillShellClass,
+        )}
+      >
         {Array.from({ length: 6 }, (_, i) => (
           <div key={i} className="flex flex-col items-center gap-1">
             <Skeleton
@@ -104,12 +110,17 @@ export function MenuPageSkeleton() {
 
       <div className="relative z-10 flex flex-1 flex-col items-center justify-center pb-28 pt-4">
         <div className="flex w-full flex-col items-center">
-          <div className="mb-8 flex w-48 items-center justify-between rounded-xl border border-border/70 bg-muted/60 px-4 py-2.5 backdrop-blur-xl">
-            <Skeleton className="h-4 w-16 rounded-md bg-muted-foreground/12" />
+          <div
+            className={cn(
+              "mb-8 flex w-48 items-center justify-between px-3.5 py-1",
+              menuFloatingPillShellClass,
+            )}
+          >
+            <Skeleton className="h-4 w-16 rounded-md bg-white/15" />
             <div className="flex items-center gap-1.5">
-              <Skeleton className="size-2 rounded-full bg-muted-foreground/20" />
-              <Skeleton className="size-1.5 rounded-full bg-muted-foreground/10" />
-              <Skeleton className="size-1.5 rounded-full bg-muted-foreground/10" />
+              <Skeleton className="size-2 rounded-full bg-emerald-400/60" />
+              <Skeleton className="size-1.5 rounded-full bg-white/20" />
+              <Skeleton className="size-1.5 rounded-full bg-white/20" />
             </div>
           </div>
 

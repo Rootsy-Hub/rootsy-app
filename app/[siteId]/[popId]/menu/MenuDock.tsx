@@ -13,6 +13,7 @@ import {
 import type { MenuCatalogItem, MenuDockItemId } from "@/lib/menuCatalog"
 import { popScopedHref } from "@/lib/popRoutes"
 import { cn } from "@/lib/utils"
+import { menuFloatingPillShellClass } from "@/app/[siteId]/[popId]/menu/menuFloatingPillStyles"
 import { useDraggable, useDroppable } from "@dnd-kit/core"
 import { Check, Minus, Pencil } from "lucide-react"
 import { useRouter } from "next/navigation"
@@ -295,7 +296,8 @@ export function MenuDock({ siteId, popId }: Props) {
     <div className="pointer-events-none absolute bottom-4 left-1/2 z-30 -translate-x-1/2">
       <div
         className={cn(
-          "pointer-events-auto flex items-end gap-1 overflow-visible rounded-[1.35rem] border border-white/15 bg-black/35 px-3 py-2 shadow-[0_8px_32px_rgba(0,0,0,0.28)] backdrop-blur-2xl sm:gap-1.5 sm:px-4",
+          "pointer-events-auto flex items-end gap-1 overflow-visible px-3 py-2 sm:gap-1.5 sm:px-4",
+          menuFloatingPillShellClass,
           editing && dragging &&
             "transition-[width,padding,gap] duration-300 ease-[cubic-bezier(0.32,0.72,0,1)]",
         )}
@@ -318,7 +320,7 @@ export function MenuDock({ siteId, popId }: Props) {
           />
         ) : null}
 
-        <div className="ml-1 flex shrink-0 items-end gap-1 self-end sm:ml-1.5">
+        <div className="ml-1 flex shrink-0 items-end gap-2.5 self-end sm:ml-1.5">
           <div className="mb-1.5 h-8 w-px bg-white/15" aria-hidden />
           <button
             type="button"
