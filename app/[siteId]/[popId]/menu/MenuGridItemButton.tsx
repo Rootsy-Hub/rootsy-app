@@ -38,7 +38,8 @@ export function MenuGridItemButton({ item, disabled, onActivate }: Props) {
 
   const isThisMenuDrag =
     isDragging && activeDragKind === "menu" && dockId === draggingItemId
-  const showInsertedStyle = alreadyInDock || isThisMenuDrag
+  const showInsertedStyle =
+    editing && (alreadyInDock || isThisMenuDrag)
 
   const Icon = item.icon
 
@@ -54,10 +55,11 @@ export function MenuGridItemButton({ item, disabled, onActivate }: Props) {
             : undefined,
       }}
       className={cn(
-        "justify-self-center touch-none transition-[opacity,transform] duration-200",
+        "justify-self-center transition-[opacity,transform] duration-200",
+        editing && draggable && "touch-none",
         editing && draggable && !showInsertedStyle && "animate-dock-wiggle",
         showInsertedStyle && "scale-[0.97] opacity-45",
-        draggable && "cursor-grab active:cursor-grabbing",
+        editing && draggable && "cursor-grab active:cursor-grabbing",
       )}
     >
       <button
