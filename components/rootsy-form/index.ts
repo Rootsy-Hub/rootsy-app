@@ -55,11 +55,6 @@ export {
   rootsFormFieldSuccessClass,
   rootsFormSegmentGroupClass,
   rootsFormSegmentOptionClass,
-  rootsFormDiscountFieldShellClass,
-  rootsFormDiscountSegmentTrackClass,
-  rootsFormDiscountSegmentCellClass,
-  rootsFormDiscountSegmentPillClass,
-  rootsFormDiscountSegmentButtonClass,
-  rootsFormDiscountInputClass,
-  rootsFormDiscountSuffixClass,
+  rootsFormDiscountModePrefixClass,
+  rootsFormDiscountModeButtonClass,
 } from "@/components/rootsy-form/rootsFormStyles"

@@ -4,27 +4,54 @@ import { RootsFormField } from "@/components/rootsy-form/RootsFormField"
 import type { RootsFormFieldAssistProps } from "@/components/rootsy-form/rootsFormFieldAssist"
 import { useRootsFormFieldControlProps } from "@/components/rootsy-form/rootsFormFieldContext"
 import {
-  rootsFormDiscountFieldShellClass,
-  rootsFormDiscountInputClass,
-  rootsFormDiscountSegmentButtonClass,
-  rootsFormDiscountSegmentCellClass,
-  rootsFormDiscountSegmentPillClass,
-  rootsFormDiscountSegmentTrackClass,
-  rootsFormDiscountSuffixClass,
+  rootsFormAffixFieldShellClass,
+  rootsFormAffixInputClass,
+  rootsFormDiscountModeButtonClass,
+  rootsFormDiscountModePrefixClass,
 } from "@/components/rootsy-form/rootsFormStyles"
 import { useMoneyInputField } from "@/components/rootsy-form/useMoneyInputField"
 import { usePatternInputHandlers } from "@/components/rootsy-form/usePatternInputHandlers"
 import {
   formatNonNegativeIntegerInput,
-  INTEGER_INPUT_MAX_LEN,
   parseNonNegativeIntegerInput,
-  sanitizeNonNegativeIntegerInput,
 } from "@/lib/integerInput"
-import { MONEY_INPUT_DISPLAY_MAX_LEN } from "@/lib/moneyInput"
+import { formatMoneyInputForField, MONEY_INPUT_DISPLAY_MAX_LEN } from "@/lib/moneyInput"
 import { cn } from "@/lib/utils"
-import { useId } from "react"
+import { useId, type ClipboardEvent } from "react"
 
 export type RootsFormDiscountMode = "porcentaje" | "fijo"
+
+const PERCENT_INPUT_MAX_LEN = 3
+
+function sanitizePercentInput(raw: string): string {
+  return raw.replace(/\D/g, "").slice(0, PERCENT_INPUT_MAX_LEN)
+}
+
+function normalizePercentInput(raw: string, maxPercent: number): string {
+  const sanitized = sanitizePercentInput(raw)
+  if (sanitized === "") return ""
+  const parsed = parseNonNegativeIntegerInput(sanitized, Number.NaN)
+  if (!Number.isFinite(parsed)) return ""
+  return formatNonNegativeIntegerInput(Math.min(maxPercent, parsed))
+}
+
+function percentValueFromModeSwitch(
+  currentValue: string,
+  maxPercent: number,
+): string {
+  const whole = currentValue.includes(",")
+    ? (currentValue.split(",")[0] ?? "")
+    : currentValue
+  return normalizePercentInput(whole, maxPercent)
+}
+
+function fixedAmountValueFromModeSwitch(currentValue: string): string {
+  const trimmed = currentValue.trim()
+  if (!trimmed) return ""
+  const parsed = parseNonNegativeIntegerInput(trimmed, Number.NaN)
+  if (!Number.isFinite(parsed)) return ""
+  return formatMoneyInputForField(parsed)
+}
 
 type Props = {
   label: string
@@ -74,27 +101,31 @@ export function RootsFormDiscountField({
   const percentHandlers = usePatternInputHandlers({
     value,
     onChange,
-    sanitize: sanitizeNonNegativeIntegerInput,
-    formatOnBlur: (current) => {
-      if (!current.trim()) return ""
-      const parsed = parseNonNegativeIntegerInput(current, Number.NaN)
-      if (!Number.isFinite(parsed)) return ""
-      return formatNonNegativeIntegerInput(Math.min(maxPercent, parsed))
-    },
+    sanitize: sanitizePercentInput,
+    formatOnBlur: (current) => normalizePercentInput(current, maxPercent),
   })
 
   const handlePercentChange = (raw: string) => {
-    const sanitized = sanitizeNonNegativeIntegerInput(raw)
-    if (sanitized === "") {
-      onChange("")
-      return
+    onChange(normalizePercentInput(raw, maxPercent))
+  }
+
+  const handlePercentPaste = (e: ClipboardEvent<HTMLInputElement>) => {
+    e.preventDefault()
+    handlePercentChange(e.clipboardData.getData("text"))
+  }
+
+  const handlePercentModeSelect = () => {
+    if (!isPercent) {
+      onChange(percentValueFromModeSwitch(value, maxPercent))
     }
-    const parsed = parseNonNegativeIntegerInput(sanitized, Number.NaN)
-    if (!Number.isFinite(parsed)) {
-      onChange("")
-      return
+    onModeChange("porcentaje")
+  }
+
+  const handleFixedModeSelect = () => {
+    if (isPercent) {
+      onChange(fixedAmountValueFromModeSwitch(value))
     }
-    onChange(formatNonNegativeIntegerInput(Math.min(maxPercent, parsed)))
+    onModeChange("fijo")
   }
 
   return (
@@ -110,48 +141,38 @@ export function RootsFormDiscountField({
     >
       <div
         className={cn(
-          rootsFormDiscountFieldShellClass,
+          rootsFormAffixFieldShellClass,
           disabled && "pointer-events-none opacity-50",
         )}
       >
         <div
           role="group"
           aria-label="Tipo de descuento"
-          className={rootsFormDiscountSegmentTrackClass}
+          className={rootsFormDiscountModePrefixClass}
         >
-          <div className={rootsFormDiscountSegmentCellClass}>
-            {isPercent ? (
-              <span aria-hidden className={rootsFormDiscountSegmentPillClass} />
-            ) : null}
-            <button
-              type="button"
-              disabled={disabled}
-              aria-pressed={isPercent}
-              aria-label="Porcentaje"
-              className={rootsFormDiscountSegmentButtonClass(isPercent, disabled)}
-              onClick={() => onModeChange("porcentaje")}
-            >
-              %
-            </button>
-          </div>
-          <div className={rootsFormDiscountSegmentCellClass}>
-            {!isPercent ? (
-              <span aria-hidden className={rootsFormDiscountSegmentPillClass} />
-            ) : null}
-            <button
-              type="button"
-              disabled={disabled || fixedAmountDisabled}
-              aria-pressed={!isPercent}
-              aria-label="Monto fijo"
-              className={rootsFormDiscountSegmentButtonClass(
-                !isPercent,
-                disabled || fixedAmountDisabled,
-              )}
-              onClick={() => onModeChange("fijo")}
-            >
-              $
-            </button>
-          </div>
+          <button
+            type="button"
+            disabled={disabled}
+            aria-pressed={isPercent}
+            aria-label="Porcentaje"
+            className={rootsFormDiscountModeButtonClass(isPercent, disabled)}
+            onClick={handlePercentModeSelect}
+          >
+            %
+          </button>
+          <button
+            type="button"
+            disabled={disabled || fixedAmountDisabled}
+            aria-pressed={!isPercent}
+            aria-label="Monto fijo"
+            className={rootsFormDiscountModeButtonClass(
+              !isPercent,
+              disabled || fixedAmountDisabled,
+            )}
+            onClick={handleFixedModeSelect}
+          >
+            $
+          </button>
         </div>
         <input
           ref={isPercent ? undefined : moneyHandlers.inputRef}
@@ -160,9 +181,7 @@ export function RootsFormDiscountField({
           inputMode={isPercent ? "numeric" : "decimal"}
           autoComplete="off"
           value={value}
-          maxLength={
-            isPercent ? INTEGER_INPUT_MAX_LEN : MONEY_INPUT_DISPLAY_MAX_LEN
-          }
+          maxLength={isPercent ? PERCENT_INPUT_MAX_LEN : MONEY_INPUT_DISPLAY_MAX_LEN}
           disabled={valueDisabled}
           aria-invalid={controlProps.isInvalid}
           aria-describedby={controlProps.describedBy}
@@ -170,7 +189,7 @@ export function RootsFormDiscountField({
             isPercent ? "Porcentaje de descuento" : "Monto fijo de descuento"
           }
           placeholder={isPercent ? "0" : "0,00"}
-          className={cn(rootsFormDiscountInputClass, inputClassName)}
+          className={cn(rootsFormAffixInputClass, inputClassName)}
           onMouseDown={isPercent ? undefined : moneyHandlers.handleMouseDown}
           onChange={
             isPercent
@@ -184,11 +203,8 @@ export function RootsFormDiscountField({
             isPercent ? percentHandlers.handleBlur : moneyHandlers.handleBlur
           }
           onKeyDown={isPercent ? undefined : moneyHandlers.handleKeyDown}
-          onPaste={isPercent ? undefined : moneyHandlers.handlePaste}
+          onPaste={isPercent ? handlePercentPaste : moneyHandlers.handlePaste}
         />
-        <span className={rootsFormDiscountSuffixClass} aria-hidden>
-          {isPercent ? "%" : "$"}
-        </span>
       </div>
     </RootsFormField>
   )

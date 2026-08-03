@@ -928,13 +928,13 @@ export function LayoutComponentLibrary() {
           <LibrarySection
             id="composite"
             title="Controles compuestos (final)"
-            description="Descuento en una línea, segment group para opciones sin valor, y select para listas largas."
+            description="Descuento con prefijo dual %/$, segment group para opciones sin valor, y select para listas largas."
           >
             <div className="grid gap-4 lg:grid-cols-2">
               <SpecCard
                 title="RootsFormDiscountField"
                 source="components/rootsy-form/RootsFormDiscountField.tsx"
-                tokens={["segment inset", "valor + unidad", "emerald focus"]}
+                tokens={["prefijo affix %/$", "sin sufijo redundante", "emerald focus"]}
               >
                 <RootsFormDiscountField
                   label="Descuento"

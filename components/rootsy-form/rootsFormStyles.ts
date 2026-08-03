@@ -195,39 +195,21 @@ export function rootsFormSegmentOptionClass(selected: boolean, disabled?: boolea
   )
 }
 
-/** Descuento — radio 0.55rem en shell, track y pill (valor validado a mano). */
-export const rootsFormDiscountFieldShellClass = cn(
-  "flex h-11 w-full min-w-0 items-center gap-2 rounded-[0.55rem] border border-zinc-200 bg-white p-1 shadow-xs transition-[color,box-shadow,border-color] hover:border-zinc-300 focus-within:!border-emerald-700 focus-within:!ring-2 focus-within:!ring-emerald-700/45 focus-within:ring-offset-0 dark:border-zinc-200 dark:bg-white",
-)
+/** Prefijo dual %/$ — mismo slot affix que $ y uds.; la unidad activa vive acá. */
+export const rootsFormDiscountModePrefixClass =
+  "flex w-[4.75rem] shrink-0 self-stretch overflow-hidden border-r border-zinc-200 bg-zinc-50 [&>button:first-child]:border-r [&>button:first-child]:border-zinc-200 dark:border-zinc-200 dark:bg-zinc-50 dark:[&>button:first-child]:border-zinc-200"
 
-export const rootsFormDiscountSegmentTrackClass =
-  "grid shrink-0 grid-cols-2 gap-1 rounded-[0.55rem] bg-zinc-100 p-1 dark:bg-zinc-100"
-
-export const rootsFormDiscountSegmentCellClass =
-  "relative flex items-center justify-center"
-
-export const rootsFormDiscountSegmentPillClass =
-  "pointer-events-none absolute inset-0 rounded-[0.55rem] bg-white shadow-xs"
-
-export function rootsFormDiscountSegmentButtonClass(
+export function rootsFormDiscountModeButtonClass(
   selected: boolean,
   optionDisabled?: boolean,
 ) {
   return cn(
-    rootsFormControlTypographyClass,
-    "relative z-10 inline-flex h-7 min-w-[2.25rem] items-center justify-center bg-transparent px-2 text-xs font-semibold leading-none tabular-nums transition-colors duration-150",
-    "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-700/45 focus-visible:ring-offset-0",
+    "relative inline-flex flex-1 items-center justify-center self-stretch text-sm font-semibold leading-none tabular-nums transition-[color,background-color] duration-150",
+    "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-emerald-700/45",
     optionDisabled && "pointer-events-none opacity-45",
-    selected ? "text-zinc-900" : "text-zinc-500 hover:text-zinc-800",
+    selected
+      ? "bg-white font-semibold text-zinc-900"
+      : "bg-transparent text-zinc-400 hover:text-zinc-600",
   )
 }
-
-export const rootsFormDiscountInputClass = cn(
-  rootsFormControlTypographyClass,
-  "min-w-0 flex-1 bg-transparent px-0.5 text-right font-numeric tabular-nums outline-none placeholder:text-zinc-400 disabled:cursor-not-allowed dark:placeholder:text-zinc-400",
-)
-
-/** Unidad activa (% o $) — anclaje visual del valor. */
-export const rootsFormDiscountSuffixClass =
-  "w-5 shrink-0 pr-0.5 text-right text-sm font-semibold leading-none tabular-nums text-zinc-400 dark:text-zinc-400"
 
