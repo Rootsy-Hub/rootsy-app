@@ -6,6 +6,10 @@ import { getPopMenuData } from "@/app/[siteId]/[popId]/menu/actions"
 import { MenuDock } from "@/app/[siteId]/[popId]/menu/MenuDock"
 import { MenuDockDndProvider, useMenuDockEdit } from "@/app/[siteId]/[popId]/menu/MenuDockDndContext"
 import { MenuGridItemButton } from "@/app/[siteId]/[popId]/menu/MenuGridItemButton"
+import {
+  MenuSectionNavigator,
+  type MenuSectionNavItem,
+} from "@/app/[siteId]/[popId]/menu/MenuSectionNavigator"
 import { MenuPageSkeleton } from "@/app/[siteId]/[popId]/menu/MenuPageSkeleton"
 import { canAccessMenuItem } from "@/lib/menuPermissions"
 import {
@@ -51,7 +55,7 @@ function EmblaDockEditSync({
 
   useEffect(() => {
     if (!emblaApi) return
-    emblaApi.reInit({ watchDrag: !editing })
+    emblaApi.reInit({ watchDrag: !editing, loop: true })
   }, [emblaApi, editing])
 
   return null
@@ -163,12 +167,6 @@ function MenuPage() {
     [filteredMenuSections],
   )
 
-  const activeSectionKey = sections[selectedIndex] ?? sections[0]
-  const currentSection =
-    activeSectionKey && filteredMenuSections[activeSectionKey]
-      ? filteredMenuSections[activeSectionKey]
-      : { title: "", items: [] as MenuItemDef[] }
-
   useEffect(() => {
     if (selectedIndex >= sections.length) {
       setSelectedIndex(0)
@@ -176,7 +174,7 @@ function MenuPage() {
   }, [sections.length, selectedIndex])
 
   const [emblaRef, emblaApi] = useEmblaCarousel({
-    loop: false,
+    loop: true,
     align: "center",
     skipSnaps: false,
     dragFree: false,
@@ -198,7 +196,7 @@ function MenuPage() {
 
   useEffect(() => {
     if (emblaApi && sections.length > 0) {
-      emblaApi.reInit()
+      emblaApi.reInit({ loop: true })
     }
   }, [emblaApi, sections.length, filteredMenuSections])
 
@@ -208,6 +206,13 @@ function MenuPage() {
     },
     [emblaApi],
   )
+
+  const sectionNavItems = useMemo((): MenuSectionNavItem[] => {
+    return sections.map((sectionKey) => ({
+      key: sectionKey,
+      title: filteredMenuSections[sectionKey]?.title ?? sectionKey,
+    }))
+  }, [sections, filteredMenuSections])
 
   useEffect(() => {
     setIsMounted(true)
@@ -490,26 +495,11 @@ function MenuPage() {
 
       <div className="relative z-10 flex-1 flex flex-col items-center justify-center pb-28 pt-4">
         <div className="flex flex-col items-center w-full">
-          <div className="mb-[32px] flex w-48 items-center justify-between rounded-xl border border-border bg-muted px-4 py-2.5 backdrop-blur-xl">
-            <span className="text-sm font-bold tracking-wide text-foreground">
-              {currentSection.title}
-            </span>
-            <div className="flex items-center gap-1.5">
-              {sections.map((sectionKey, index) => (
-                <button
-                  key={sectionKey}
-                  type="button"
-                  onClick={() => scrollTo(index)}
-                  className={`rounded-full transition-all duration-300 ${
-                    selectedIndex === index
-                      ? "size-2 bg-primary"
-                      : "size-1.5 bg-foreground/25 hover:bg-foreground/50"
-                  }`}
-                  aria-label={filteredMenuSections[sectionKey]?.title ?? sectionKey}
-                />
-              ))}
-            </div>
-          </div>
+          <MenuSectionNavigator
+            sections={sectionNavItems}
+            selectedIndex={selectedIndex}
+            onSelect={scrollTo}
+          />
 
           <div className="w-full overflow-hidden" ref={emblaRef}>
             <EmblaDockEditSync emblaApi={emblaApi} />
