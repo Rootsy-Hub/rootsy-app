@@ -1,8 +1,61 @@
 "use server"
 
+import { lookupPadronContribuyente } from "@/lib/argentinaPadronLookup"
+import { mapPadronCondicionIvaToClientEnum } from "@/lib/padronIvaMapping"
 import type { SaleComprobanteEmitterContext } from "@/lib/saleComprobantePreview"
 import { getPopById } from "@/lib/popHelpers"
+import {
+  clientIvaToPopEmisorIva,
+  popEmisorIvaConditionLabel,
+  type PopEmisorIvaCondition,
+} from "@/lib/saleComprobanteRules"
 import { createClient } from "@/utils/supabase/server"
+
+function resolveEmisorIvaFromSettings(
+  settings: Record<string, unknown> | undefined,
+): PopEmisorIvaCondition | null {
+  const raw = settings?.fiscal_iva_condition
+  if (raw === "monotributo" || raw === "responsable_inscripto") {
+    return raw
+  }
+  return null
+}
+
+async function resolvePopEmisorIva(input: {
+  fiscalCuit: string | null | undefined
+  settings?: Record<string, unknown>
+}): Promise<{
+  ivaCondition: PopEmisorIvaCondition
+  ivaConditionLabel: string
+}> {
+  const cached = resolveEmisorIvaFromSettings(input.settings)
+  if (cached) {
+    return {
+      ivaCondition: cached,
+      ivaConditionLabel: popEmisorIvaConditionLabel(cached),
+    }
+  }
+
+  const cuit = String(input.fiscalCuit ?? "").trim()
+  if (cuit) {
+    const pad = await lookupPadronContribuyente(cuit)
+    if (!("error" in pad)) {
+      const mapped = mapPadronCondicionIvaToClientEnum(pad.condicionIvaNombre)
+      const ivaCondition = clientIvaToPopEmisorIva(mapped)
+      const padronLabel = pad.condicionIvaNombre?.trim()
+      return {
+        ivaCondition,
+        ivaConditionLabel:
+          padronLabel || popEmisorIvaConditionLabel(ivaCondition),
+      }
+    }
+  }
+
+  return {
+    ivaCondition: "responsable_inscripto",
+    ivaConditionLabel: popEmisorIvaConditionLabel("responsable_inscripto"),
+  }
+}
 
 export async function getPopComprobanteEmitterPreview(
   popId: string,
@@ -37,6 +90,11 @@ export async function getPopComprobanteEmitterPreview(
       }
     }
 
+    const { ivaCondition, ivaConditionLabel } = await resolvePopEmisorIva({
+      fiscalCuit: pop.fiscalCuit,
+      settings: pop.settings as Record<string, unknown> | undefined,
+    })
+
     const emitter: SaleComprobanteEmitterContext = {
       tradeName: String(pop.name ?? "").trim() || "Comercio",
       razonSocial:
@@ -47,6 +105,8 @@ export async function getPopComprobanteEmitterPreview(
       inicioActividades: pop.fiscalInicioActividadesDate?.trim() || null,
       phone: pop.phone?.trim() || null,
       arcaPtoVta,
+      ivaCondition,
+      ivaConditionLabel,
     }
 
     return { success: true, emitter }

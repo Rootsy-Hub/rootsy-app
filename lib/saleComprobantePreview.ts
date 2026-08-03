@@ -13,6 +13,13 @@ import {
   SALE_COMPROBANTE_SIN_LABEL,
 } from "@/lib/saleComprobantePicker"
 import { roundSaleMoney } from "@/lib/saleLineDiscount"
+import type { PopEmisorIvaCondition } from "@/lib/saleComprobanteRules"
+
+/** Leyenda en Recibo X: no es comprobante fiscal válido. */
+export const SALE_COMPROBANTE_RECIBO_X_DISCLAIMER =
+  "Documento interno sin validez fiscal. No reemplaza factura ni comprobante autorizado por ARCA."
+
+export type SaleComprobanteInvoiceVariant = "A" | "B" | "C"
 
 export type SaleComprobanteEmitterContext = {
   tradeName: string
@@ -23,6 +30,8 @@ export type SaleComprobanteEmitterContext = {
   inicioActividades: string | null
   phone: string | null
   arcaPtoVta: number | null
+  ivaCondition: PopEmisorIvaCondition
+  ivaConditionLabel: string
 }
 
 export type SaleComprobantePreviewLineDiscount = {
@@ -88,8 +97,18 @@ export type SaleComprobantePreviewModel = {
   /** IVA incluido en el total (ley 27.743). */
   ivaContenido: number
   total: number
+  invoiceVariant: SaleComprobanteInvoiceVariant | null
   showsFiscalFooter: boolean
+  /** IVA discriminado (neto + alícuotas) — Factura A. */
+  showsVatDiscrimination: boolean
+  /** Ley 27.743 — Factura B a consumidor final. */
+  showsLey27743: boolean
+  /** Alícuota IVA en líneas de ítems. */
+  showsLineVatRate: boolean
+  /** @deprecated Usar showsVatDiscrimination / showsLey27743 */
   showsVatBreakdown: boolean
+  /** Aviso en Recibo X: documento sin validez fiscal. */
+  internalDisclaimer: string | null
   footerNote: string | null
 }
 
@@ -118,11 +137,6 @@ export type BuildSaleComprobantePreviewInput = SaleComprobantePreviewCartInput &
   issuedAt?: Date
 }
 
-const moneyFmt = new Intl.NumberFormat("es-AR", {
-  minimumFractionDigits: 2,
-  maximumFractionDigits: 2,
-})
-
 const ticketAmountFmt = new Intl.NumberFormat("es-AR", {
   minimumFractionDigits: 2,
   maximumFractionDigits: 2,
@@ -130,12 +144,12 @@ const ticketAmountFmt = new Intl.NumberFormat("es-AR", {
 })
 
 export function formatSaleComprobanteMoney(value: number): string {
-  return moneyFmt.format(roundSaleMoney(value))
+  return ticketAmountFmt.format(roundSaleMoney(value))
 }
 
 /** Importe estilo ticket térmico (sin símbolo, coma decimal). */
 export function formatSaleComprobanteTicketAmount(value: number): string {
-  return ticketAmountFmt.format(roundSaleMoney(value))
+  return formatSaleComprobanteMoney(value)
 }
 
 export function formatSaleComprobanteCuit(value: string | null | undefined): string {
@@ -649,6 +663,50 @@ function resolvePreviewKind(
   return { kind: "arca", title: invoiceType }
 }
 
+function resolveInvoiceVariant(
+  label: string | null,
+): SaleComprobanteInvoiceVariant | null {
+  if (label === "Factura A") return "A"
+  if (label === "Factura B") return "B"
+  if (label === "Factura C") return "C"
+  return null
+}
+
+function resolvePreviewFiscalDisplay(
+  variant: SaleComprobanteInvoiceVariant | null,
+): {
+  showsVatDiscrimination: boolean
+  showsLey27743: boolean
+  showsLineVatRate: boolean
+} {
+  if (variant === "A") {
+    return {
+      showsVatDiscrimination: true,
+      showsLey27743: false,
+      showsLineVatRate: true,
+    }
+  }
+  if (variant === "B") {
+    return {
+      showsVatDiscrimination: false,
+      showsLey27743: true,
+      showsLineVatRate: true,
+    }
+  }
+  if (variant === "C") {
+    return {
+      showsVatDiscrimination: false,
+      showsLey27743: false,
+      showsLineVatRate: false,
+    }
+  }
+  return {
+    showsVatDiscrimination: false,
+    showsLey27743: false,
+    showsLineVatRate: false,
+  }
+}
+
 function resolveReceptorSubtitle(
   comprobanteLabel: string | null,
   customerIvaLabel: string | null,
@@ -663,13 +721,6 @@ function resolveReceptorSubtitle(
     return `A ${customerIvaLabel.toUpperCase()}`
   }
   return null
-}
-
-function showsVatBreakdownForLabel(label: string | null): boolean {
-  if (label == null || isInternalSaleComprobante(label)) return false
-  if (label === SALE_COMPROBANTE_SIN_LABEL) return false
-  if (label === "Factura C") return false
-  return label.startsWith("Factura")
 }
 
 function computeVatBreakdown(total: number): {
@@ -715,13 +766,19 @@ export function buildSaleComprobantePreview(
   const subtotalSinDescuentos = computeSubtotalSinDescuentos(lineGroups)
   const discountLines = collectPreviewDiscountLines(lineGroups, discountAmount)
   const savings = computePreviewSavings(discountLines)
-  const showsVatBreakdown = showsVatBreakdownForLabel(input.comprobanteLabel)
-  const vat = showsVatBreakdown
-    ? computeVatBreakdown(total)
-    : { netTaxable: total, vatRows: [] as SaleComprobantePreviewVatRow[], vatTotal: 0 }
-  const ivaContenido = showsVatBreakdown
-    ? vat.vatTotal
-    : roundSaleMoney(Math.max(0, total - total / 1.21))
+  const invoiceVariant = resolveInvoiceVariant(input.comprobanteLabel)
+  const fiscalDisplay = resolvePreviewFiscalDisplay(invoiceVariant)
+  const vat =
+    invoiceVariant === "A" || invoiceVariant === "B"
+      ? computeVatBreakdown(total)
+      : {
+          netTaxable: total,
+          vatRows: [] as SaleComprobantePreviewVatRow[],
+          vatTotal: 0,
+        }
+  const ivaContenido =
+    invoiceVariant === "B" ? vat.vatTotal : 0
+  const showsVatBreakdown = fiscalDisplay.showsVatDiscrimination
 
   const cbteCodigo =
     invoiceType != null
@@ -731,11 +788,11 @@ export function buildSaleComprobantePreview(
   const customerIvaLabel = input.customerIvaLabel?.trim() || null
 
   let footerNote: string | null = null
+  let internalDisclaimer: string | null = null
   if (resolved.kind === "none") {
     footerNote = "No se emitirá comprobante fiscal para esta operación."
   } else if (resolved.kind === "internal") {
-    footerNote =
-      "Documento interno no válido como factura. No tiene validez fiscal ni CAE."
+    internalDisclaimer = SALE_COMPROBANTE_RECIBO_X_DISCLAIMER
   }
 
   const title =
@@ -771,8 +828,13 @@ export function buildSaleComprobantePreview(
     vatTotal: vat.vatTotal,
     ivaContenido,
     total,
+    invoiceVariant,
     showsFiscalFooter: resolved.kind === "arca",
+    showsVatDiscrimination: fiscalDisplay.showsVatDiscrimination,
+    showsLey27743: fiscalDisplay.showsLey27743,
+    showsLineVatRate: fiscalDisplay.showsLineVatRate,
     showsVatBreakdown,
+    internalDisclaimer,
     footerNote,
   }
 }

@@ -4,7 +4,6 @@ import {
   buildSaleComprobantePreview,
   formatSaleComprobanteActivityDate,
   formatSaleComprobanteCuit,
-  formatSaleComprobanteMoney,
   formatSaleComprobanteTicketAmount,
   formatSaleComprobanteTicketDate,
   formatSaleComprobanteTicketTime,
@@ -13,9 +12,10 @@ import {
   type SaleComprobantePreviewModel,
 } from "@/lib/saleComprobantePreview"
 import { usePopTimeZone } from "@/hooks/usePopTimeZone"
+import { SALE_COMPROBANTE_SIN_LABEL } from "@/lib/saleComprobantePicker"
 import { cn } from "@/lib/utils"
 import { saleComprobanteTicketPaperWidthClass } from "@/components/sale-operation/saleOperationStyles"
-import { Loader2, QrCode } from "lucide-react"
+import { Loader2, QrCode, Receipt } from "lucide-react"
 import { useMemo } from "react"
 
 type Props = {
@@ -48,7 +48,13 @@ function TicketMetaRow({
   )
 }
 
-function TicketLineItem({ line }: { line: SaleComprobantePreviewLine }) {
+function TicketLineItem({
+  line,
+  showVatRate = true,
+}: {
+  line: SaleComprobantePreviewLine
+  showVatRate?: boolean
+}) {
   const vatLabel = `${line.vatRate.toFixed(2)}%`
 
   return (
@@ -56,8 +62,8 @@ function TicketLineItem({ line }: { line: SaleComprobantePreviewLine }) {
       <p className="text-[9px] uppercase leading-snug">{line.description}</p>
       <div className="flex items-start justify-between gap-2 text-[9px] leading-tight">
         <span className="min-w-0 shrink">
-          {line.quantity} x {formatSaleComprobanteTicketAmount(line.unitListPrice)}{" "}
-          ({vatLabel})
+          {line.quantity} x {formatSaleComprobanteTicketAmount(line.unitListPrice)}
+          {showVatRate ? <> ({vatLabel})</> : null}
         </span>
         <span className="shrink-0 tabular-nums">
           {formatSaleComprobanteTicketAmount(line.listLineTotal)}
@@ -108,6 +114,27 @@ function TicketAmountRow({
   )
 }
 
+function TicketNoComprobantePlaceholder() {
+  return (
+    <div
+      className={cn(
+        "mx-auto flex w-full flex-col items-center justify-center gap-2 bg-white px-4 py-10 text-center shadow-inner ring-1 ring-zinc-200/80",
+        saleComprobanteTicketPaperWidthClass,
+      )}
+    >
+      <div className="flex h-12 w-12 items-center justify-center rounded-full bg-zinc-100 text-zinc-400">
+        <Receipt className="h-6 w-6" aria-hidden />
+      </div>
+      <p className="font-mono text-[11px] font-bold uppercase tracking-wide text-zinc-700">
+        {SALE_COMPROBANTE_SIN_LABEL}
+      </p>
+      <p className="max-w-[220px] font-mono text-[9px] leading-snug text-zinc-500">
+        No se emitirá comprobante fiscal para esta operación.
+      </p>
+    </div>
+  )
+}
+
 function TicketPreviewBody({ model }: { model: SaleComprobantePreviewModel }) {
   const timeZone = usePopTimeZone()
 
@@ -118,37 +145,38 @@ function TicketPreviewBody({ model }: { model: SaleComprobantePreviewModel }) {
         saleComprobanteTicketPaperWidthClass,
       )}
     >
-      <div className="space-y-0.5 text-center text-[9px] leading-tight">
-        <p className="text-[10px] font-bold uppercase">{model.emitter.tradeName}</p>
-        {model.emitter.address ? (
-          <p className="uppercase">{model.emitter.address}</p>
-        ) : null}
-      </div>
+      {model.kind === "arca" ? (
+        <>
+          <div className="space-y-0.5 text-center text-[9px] leading-tight">
+            <p className="text-[10px] font-bold uppercase">{model.emitter.tradeName}</p>
+            {model.emitter.address ? (
+              <p className="uppercase">{model.emitter.address}</p>
+            ) : null}
+          </div>
 
-      <TicketSeparator />
+          <TicketSeparator />
+        </>
+      ) : null}
 
-      <div className="space-y-0.5 text-[9px] leading-tight">
-        <p>
-          {model.emitter.razonSocial} - CUIT Nro:{" "}
-          {formatSaleComprobanteCuit(model.emitter.cuit)}
-        </p>
-        <p>
-          IIBB: {model.emitter.ingresosBrutos?.trim() || "—"}
-        </p>
-        <p>
-          Inicio actividad comercial:{" "}
-          {formatSaleComprobanteActivityDate(model.emitter.inicioActividades)}
-        </p>
-        {model.emitter.phone ? <p>{model.emitter.phone}</p> : null}
-        {model.kind === "arca" ? (
-          <p className="font-semibold uppercase">IVA Responsable Inscripto</p>
-        ) : null}
-      </div>
-
-      <TicketSeparator />
+      {model.kind === "arca" ? (
+        <div className="space-y-0.5 text-[9px] leading-tight">
+          <p>
+            {model.emitter.razonSocial} - CUIT Nro:{" "}
+            {formatSaleComprobanteCuit(model.emitter.cuit)}
+          </p>
+          <p>IIBB: {model.emitter.ingresosBrutos?.trim() || "—"}</p>
+          <p>
+            Inicio actividad comercial:{" "}
+            {formatSaleComprobanteActivityDate(model.emitter.inicioActividades)}
+          </p>
+          {model.emitter.phone ? <p>{model.emitter.phone}</p> : null}
+          <p className="font-semibold uppercase">{model.emitter.ivaConditionLabel}</p>
+        </div>
+      ) : null}
 
       {model.kind === "arca" ? (
         <>
+          <TicketSeparator />
           <div className="text-center">
             <p className="text-[11px] font-bold uppercase leading-tight">
               {model.title}
@@ -181,6 +209,11 @@ function TicketPreviewBody({ model }: { model: SaleComprobantePreviewModel }) {
               {formatSaleComprobanteTicketDate(model.issuedAt, timeZone)}{" "}
               {formatSaleComprobanteTicketTime(model.issuedAt, timeZone)}
             </p>
+            {model.internalDisclaimer ? (
+              <p className="mt-1.5 text-[8px] leading-snug uppercase">
+                {model.internalDisclaimer}
+              </p>
+            ) : null}
           </div>
           <TicketSeparator />
         </>
@@ -191,7 +224,7 @@ function TicketPreviewBody({ model }: { model: SaleComprobantePreviewModel }) {
           <div className="space-y-0.5 text-[9px] leading-tight">
             <p>Cliente: {model.customerName}</p>
             {model.customerTaxId ? <p>Doc.: {model.customerTaxId}</p> : null}
-            {model.customerIvaLabel ? (
+            {model.kind !== "internal" && model.customerIvaLabel ? (
               <p>Cond. IVA: {model.customerIvaLabel}</p>
             ) : null}
           </div>
@@ -212,6 +245,7 @@ function TicketPreviewBody({ model }: { model: SaleComprobantePreviewModel }) {
                 <TicketLineItem
                   key={`${group.category}-${line.description}-${index}`}
                   line={line}
+                  showVatRate={model.showsLineVatRate}
                 />
               ))}
               {group.promotionDiscount ? (
@@ -237,7 +271,7 @@ function TicketPreviewBody({ model }: { model: SaleComprobantePreviewModel }) {
       <div className="space-y-1 text-[9px] leading-tight">
         <TicketAmountRow
           label="Subtotal sin descuentos"
-          amount={formatSaleComprobanteMoney(model.subtotalSinDescuentos)}
+          amount={formatSaleComprobanteTicketAmount(model.subtotalSinDescuentos)}
           bold
         />
 
@@ -261,7 +295,7 @@ function TicketPreviewBody({ model }: { model: SaleComprobantePreviewModel }) {
             <TicketSeparator />
             <TicketAmountRow
               label="Ahorro"
-              amount={formatSaleComprobanteMoney(model.savings)}
+              amount={formatSaleComprobanteTicketAmount(model.savings)}
               bold
             />
           </>
@@ -269,15 +303,32 @@ function TicketPreviewBody({ model }: { model: SaleComprobantePreviewModel }) {
 
         <TicketSeparator />
 
+        {model.showsVatDiscrimination && model.vatRows.length > 0 ? (
+          <div className="space-y-0.5">
+            {model.vatRows.map((row, index) => (
+              <div key={`${row.label}-${index}`} className="space-y-0.5">
+                <TicketAmountRow
+                  label="Neto gravado"
+                  amount={formatSaleComprobanteTicketAmount(row.net)}
+                />
+                <TicketAmountRow
+                  label={row.label}
+                  amount={formatSaleComprobanteTicketAmount(row.vat)}
+                />
+              </div>
+            ))}
+          </div>
+        ) : null}
+
         <div className="flex items-baseline justify-between gap-2 pt-0.5">
           <span className="text-[13px] font-bold uppercase leading-none">Total</span>
           <span className="text-[13px] font-bold tabular-nums leading-none">
-            {formatSaleComprobanteMoney(model.total)}
+            {formatSaleComprobanteTicketAmount(model.total)}
           </span>
         </div>
       </div>
 
-      {model.total > 0 && model.kind !== "none" ? (
+      {model.total > 0 && model.showsLey27743 ? (
         <>
           <TicketSeparator />
           <div className="space-y-0.5 text-[8px] leading-snug">
@@ -308,7 +359,7 @@ function TicketPreviewBody({ model }: { model: SaleComprobantePreviewModel }) {
                 Pago {model.paymentMethodLabel}
               </span>
               <span className="shrink-0 tabular-nums">
-                {formatSaleComprobanteMoney(model.total)}
+                {formatSaleComprobanteTicketAmount(model.total)}
               </span>
             </div>
             <div className="flex items-baseline justify-between gap-2">
@@ -375,17 +426,24 @@ export function SaleComprobanteTicketPreview({
   error = null,
   className,
 }: Props) {
+  const resolvedComprobanteLabel =
+    previewComprobanteLabel !== undefined
+      ? previewComprobanteLabel
+      : previewInput?.comprobanteLabel ?? null
+
+  const isSinComprobante =
+    previewInput != null &&
+    (resolvedComprobanteLabel == null ||
+      resolvedComprobanteLabel === SALE_COMPROBANTE_SIN_LABEL)
+
   const model = useMemo(() => {
-    if (!previewInput || !emitter) return null
+    if (!previewInput || !emitter || isSinComprobante) return null
     return buildSaleComprobantePreview({
       ...previewInput,
-      comprobanteLabel:
-        previewComprobanteLabel !== undefined
-          ? previewComprobanteLabel
-          : previewInput.comprobanteLabel,
+      comprobanteLabel: resolvedComprobanteLabel,
       emitter,
     })
-  }, [previewInput, emitter, previewComprobanteLabel])
+  }, [previewInput, emitter, resolvedComprobanteLabel, isSinComprobante])
 
   return (
     <div
@@ -399,15 +457,17 @@ export function SaleComprobanteTicketPreview({
       </p>
 
       <div className="flex min-h-0 flex-1 items-start justify-center overflow-y-auto overscroll-contain">
-        {loading ? (
+        {loading && !isSinComprobante ? (
           <div className="flex h-full min-h-[320px] items-center justify-center gap-2 text-sm text-muted-foreground">
             <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
             Cargando datos fiscales…
           </div>
-        ) : error ? (
+        ) : error && !isSinComprobante ? (
           <div className="flex h-full min-h-[320px] items-center justify-center px-4 text-center text-sm text-muted-foreground">
             {error}
           </div>
+        ) : isSinComprobante ? (
+          <TicketNoComprobantePlaceholder />
         ) : model ? (
           <TicketPreviewBody model={model} />
         ) : (

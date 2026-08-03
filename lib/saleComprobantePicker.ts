@@ -3,6 +3,10 @@ import {
   getSaleInvoiceTypeOptionsForSite,
   type SaleInvoiceTypeOption,
 } from "@/lib/saleInvoiceTypes"
+import {
+  type PopEmisorIvaCondition,
+  isSaleComprobanteAllowedForEmisor,
+} from "@/lib/saleComprobanteRules"
 
 /** Etiqueta visible para ventas sin comprobante fiscal. */
 export const SALE_COMPROBANTE_SIN_LABEL = "Sin comprobante"
@@ -82,6 +86,7 @@ export function hasConfiguredSaleComprobante(
 
 export function getSaleComprobantePickerOptions(
   siteId: string,
+  emisorIva: PopEmisorIvaCondition = "responsable_inscripto",
 ): SaleComprobantePickerOption[] {
   const all = getSaleInvoiceTypeOptionsForSite(siteId)
   const byLabel = new Map(all.map((o) => [o.label, o]))
@@ -92,6 +97,7 @@ export function getSaleComprobantePickerOptions(
   ]
 
   for (const label of SALE_PICKER_ARCA_LABELS) {
+    if (!isSaleComprobanteAllowedForEmisor(label, emisorIva)) continue
     const opt = byLabel.get(label)
     if (!opt) continue
     out.push({
@@ -108,9 +114,11 @@ export function getSaleComprobantePickerOptions(
 export function isAllowedSaleComprobanteLabel(
   siteId: string,
   label: string | null,
+  emisorIva: PopEmisorIvaCondition = "responsable_inscripto",
 ): boolean {
   if (label == null) return true
   if (label === SALE_COMPROBANTE_RECIBO_X_LABEL) return true
+  if (!isSaleComprobanteAllowedForEmisor(label, emisorIva)) return false
   return Boolean(findSaleInvoiceTypeByLabel(siteId, label))
 }
 

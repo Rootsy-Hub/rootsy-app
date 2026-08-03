@@ -1,8 +1,41 @@
 import type { ClientIvaConditionValue } from "@/app/[siteId]/[popId]/clients/clientIvaConstants"
-import { SALE_COMPROBANTE_SIN_LABEL } from "@/lib/saleComprobantePicker"
+import {
+  isInternalSaleComprobante,
+  SALE_COMPROBANTE_SIN_LABEL,
+} from "@/lib/saleComprobantePicker"
 
 /** Condición IVA del emisor (POP). Por ahora asumimos RI hasta persistirla en ajustes. */
 export type PopEmisorIvaCondition = "responsable_inscripto" | "monotributo"
+
+export function clientIvaToPopEmisorIva(
+  iva: ClientIvaConditionValue | null | undefined,
+): PopEmisorIvaCondition {
+  if (iva === "monotributo" || iva === "monotributo_social") {
+    return "monotributo"
+  }
+  return "responsable_inscripto"
+}
+
+export function popEmisorIvaConditionLabel(
+  emisorIva: PopEmisorIvaCondition,
+): string {
+  return emisorIva === "monotributo"
+    ? "Monotributo"
+    : "IVA Responsable Inscripto"
+}
+
+export function isSaleComprobanteAllowedForEmisor(
+  label: string | null,
+  emisorIva: PopEmisorIvaCondition,
+): boolean {
+  if (label == null || label === SALE_COMPROBANTE_SIN_LABEL) return true
+  if (isInternalSaleComprobante(label)) return true
+  if (label === "Factura C") return emisorIva === "monotributo"
+  if (label === "Factura A" || label === "Factura B") {
+    return emisorIva === "responsable_inscripto"
+  }
+  return true
+}
 
 /**
  * Reglas Argentina (simplificadas) emisor → receptor → comprobante.

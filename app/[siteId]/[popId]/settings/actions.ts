@@ -9,6 +9,8 @@ import {
   lookupPadronContribuyente,
   type PadronActividadItem,
 } from "@/lib/argentinaPadronLookup"
+import { mapPadronCondicionIvaToClientEnum } from "@/lib/padronIvaMapping"
+import { clientIvaToPopEmisorIva } from "@/lib/saleComprobanteRules"
 import { loadPopPermissionsSnapshot } from "@/lib/popPermissionsServer"
 import {
   POP_PERMS,
@@ -249,6 +251,14 @@ export async function syncPadronForPopFiscal(
     if ("error" in pad) {
       return { success: false, error: pad.error }
     }
+    const mappedIva = mapPadronCondicionIvaToClientEnum(pad.condicionIvaNombre)
+    const emisorIva = clientIvaToPopEmisorIva(mappedIva)
+    const currentSettings =
+      popRes.pop.settings && typeof popRes.pop.settings === "object"
+        ? { ...(popRes.pop.settings as Record<string, unknown>) }
+        : {}
+    currentSettings.fiscal_iva_condition = emisorIva
+
     const supabase = await createClient()
     const { error } = await supabase
       .from("pops")
@@ -258,6 +268,7 @@ export async function syncPadronForPopFiscal(
           ? pad.fiscalActividadesPadron
           : null,
         fiscal_padron_synced_at: new Date().toISOString(),
+        settings: currentSettings,
         updated_at: new Date().toISOString(),
       })
       .eq("id", popId)

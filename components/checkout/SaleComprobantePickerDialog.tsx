@@ -17,6 +17,7 @@ import { useSaleComprobanteEmitterContext } from "@/hooks/useSaleComprobanteEmit
 import {
   type SaleComprobantePickerOption,
 } from "@/lib/saleComprobantePicker"
+import { isSaleComprobanteAllowedForEmisor } from "@/lib/saleComprobanteRules"
 import { cn } from "@/lib/utils"
 import {
   saleOpDialogBody,
@@ -27,7 +28,7 @@ import {
   saleOpDialogSecondaryBtn,
 } from "@/components/sale-operation/saleOperationStyles"
 import { FileText, Receipt, ShieldCheck } from "lucide-react"
-import { useEffect, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 
 type Props = {
   open: boolean
@@ -79,10 +80,30 @@ export function SaleComprobantePickerDialog({
     cashRegisterId,
   )
 
+  const visibleOptions = useMemo(() => {
+    if (!emitter?.ivaCondition) return options
+    return options.filter(
+      (opt) =>
+        opt.kind === "none" ||
+        opt.kind === "internal" ||
+        isSaleComprobanteAllowedForEmisor(opt.label, emitter.ivaCondition),
+    )
+  }, [options, emitter?.ivaCondition])
+
   useEffect(() => {
     if (!open) return
     setDraft(value)
   }, [open, value])
+
+  useEffect(() => {
+    if (!open || !emitter?.ivaCondition) return
+    if (
+      draft != null &&
+      !isSaleComprobanteAllowedForEmisor(draft, emitter.ivaCondition)
+    ) {
+      setDraft(null)
+    }
+  }, [open, draft, emitter?.ivaCondition])
 
   const handleConfirm = () => {
     onSelect(draft)
@@ -110,7 +131,7 @@ export function SaleComprobantePickerDialog({
               role="listbox"
               aria-label="Tipos de comprobante"
             >
-              {options.map((opt) => {
+              {visibleOptions.map((opt) => {
                 const selected = isOptionSelected(opt, draft)
                 return (
                   <li key={opt.label}>
