@@ -3,7 +3,7 @@
 import Link from "next/link"
 import Image from "next/image"
 import { useRouter } from "next/navigation"
-import { useCallback, useEffect, useState } from "react"
+import { useEffect, useState } from "react"
 import { Download, Plus } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -11,11 +11,8 @@ import { Spinner } from "@/components/ui/spinner"
 import { DataWorkspaceHeaderUserMenu } from "@/components/layouts/DataWorkspaceHeaderUserMenu"
 import { useAuth } from "@/context/AuthContextSupabase"
 import withAuth from "@/hoc/withAuth"
-import {
-  getHomePageData,
-  type UserPopListItem,
-  type UserProfileDTO,
-} from "@/app/profile/actions"
+import { useHomePageData } from "@/hooks/useHomePageData"
+import type { UserPopListItem } from "@/app/profile/actions"
 import { cn } from "@/lib/utils"
 
 const ACCENTS = [
@@ -57,35 +54,21 @@ function HomePage() {
   const { user, loading: authLoading } = useAuth()
   const [isOnline, setIsOnline] = useState(true)
 
-  const [pops, setPops] = useState<UserPopListItem[] | null>(null)
-  const [profile, setProfile] = useState<UserProfileDTO | null>(null)
-  const [loadError, setLoadError] = useState(false)
-  const [canCreatePop, setCanCreatePop] = useState(false)
-
-  const loadData = useCallback(async () => {
-    setLoadError(false)
-    try {
-      const data = await getHomePageData()
-      setPops(data.pops)
-      setProfile(data.profile)
-      setCanCreatePop(data.canCreatePop)
-    } catch {
-      setPops([])
-      setLoadError(true)
-    }
-  }, [])
+  const {
+    pops,
+    profile,
+    canCreatePop,
+    isLoading: homeLoading,
+    loadError,
+    refetchAll,
+  } = useHomePageData(user?.id)
 
   useEffect(() => {
-    if (authLoading) return
-    void loadData()
-  }, [authLoading, loadData])
-
-  useEffect(() => {
-    if (authLoading || pops === null) return
+    if (authLoading || homeLoading) return
     if (pops.length === 0 && canCreatePop) {
       router.replace("/pops/create")
     }
-  }, [authLoading, pops, canCreatePop, router])
+  }, [authLoading, homeLoading, pops, canCreatePop, router])
 
   useEffect(() => {
     const sync = () => setIsOnline(navigator.onLine)
@@ -111,7 +94,7 @@ function HomePage() {
     (user?.user_metadata?.avatar_url as string | undefined) ||
     null
 
-  const isLoading = authLoading || pops === null
+  const isLoading = authLoading || homeLoading
 
   return (
     <div className="relative h-screen overflow-hidden bg-[#070a09] text-white">
@@ -176,7 +159,7 @@ function HomePage() {
               <button
                 type="button"
                 className="font-semibold underline underline-offset-2 hover:text-white"
-                onClick={() => void loadData()}
+                onClick={() => void refetchAll()}
               >
                 Reintentar
               </button>
@@ -195,7 +178,7 @@ function HomePage() {
             </div>
           ) : (
             <ul className="mt-12 mx-auto flex max-w-3xl list-none flex-wrap justify-center gap-x-2 gap-y-7 sm:gap-x-3">
-              {pops!.length === 0 ? (
+              {pops.length === 0 ? (
                 <li className="w-full max-w-md rounded-2xl border border-white/12 bg-white/5 px-6 py-10 text-center text-white/75">
                   <p className="text-base leading-relaxed">
                     No tenés puntos de venta asociados con acceso activo. Si
@@ -204,7 +187,7 @@ function HomePage() {
                   </p>
                 </li>
               ) : (
-                pops!.map((pop, index) => {
+                pops.map((pop, index) => {
                   const palette = ACCENTS[index % ACCENTS.length]!
                   const sigla = initialsFromName(pop.name)
                   const sub = pop.subscription

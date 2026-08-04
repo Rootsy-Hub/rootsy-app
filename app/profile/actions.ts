@@ -28,6 +28,18 @@ export type UserProfileDTO = {
   metadata: Record<string, unknown>
 }
 
+export type UserPopSubscription = {
+  status: string
+  planName: string
+  planDisplayName: string
+  businessTypeName: string
+  businessTypeDisplayName: string
+  daysRemaining: number | null
+  isActive: boolean
+  trialEndsAt: string | null
+  currentPeriodEnd: string | null
+}
+
 export type UserPopListItem = {
   id: string
   siteId: string
@@ -36,18 +48,11 @@ export type UserPopListItem = {
   roleId: string
   roleName: string
   isOwner: boolean
-  subscription: {
-    status: string
-    planName: string
-    planDisplayName: string
-    businessTypeName: string
-    businessTypeDisplayName: string
-    daysRemaining: number | null
-    isActive: boolean
-    trialEndsAt: string | null
-    currentPeriodEnd: string | null
-  } | null
+  subscription: UserPopSubscription | null
 }
+
+/** Lista de POPs sin suscripción (se resuelve con `getPopSubscriptionInfo` / React Query). */
+export type UserPopListItemBase = Omit<UserPopListItem, "subscription">
 
 function mapRowToDto(
   user: { email?: string | null },
@@ -184,7 +189,57 @@ type AccessiblePopRow = {
   is_owner: boolean
 }
 
-export async function getUserPops(): Promise<UserPopListItem[]> {
+function mapPopSubscriptionRow(
+  subscription: Record<string, unknown>,
+): UserPopSubscription {
+  return {
+    status: String(subscription.status ?? ""),
+    planName: String(subscription.plan_display_name ?? ""),
+    planDisplayName: String(subscription.plan_display_name ?? ""),
+    businessTypeName: String(subscription.business_type_display_name ?? ""),
+    businessTypeDisplayName: String(
+      subscription.business_type_display_name ?? "",
+    ),
+    daysRemaining:
+      subscription.days_remaining != null
+        ? Number(subscription.days_remaining)
+        : null,
+    isActive: Boolean(subscription.is_active),
+    trialEndsAt: (subscription.trial_ends_at as string | null) ?? null,
+    currentPeriodEnd:
+      (subscription.current_period_end as string | null) ?? null,
+  }
+}
+
+export async function getPopSubscriptionInfo(
+  popId: string,
+): Promise<UserPopSubscription | null> {
+  await requireAuthenticatedUser()
+  const supabase = await createClient()
+
+  try {
+    const { data: subscriptionInfo, error: subscriptionError } =
+      await supabase.rpc("get_pop_subscription_info", {
+        pop_id: popId,
+      })
+
+    if (
+      subscriptionError ||
+      !subscriptionInfo ||
+      subscriptionInfo.length === 0
+    ) {
+      return null
+    }
+
+    return mapPopSubscriptionRow(
+      subscriptionInfo[0] as Record<string, unknown>,
+    )
+  } catch {
+    return null
+  }
+}
+
+export async function getUserPopsList(): Promise<UserPopListItemBase[]> {
   const user = await requireAuthenticatedUser()
   const supabase = await createClient()
 
@@ -194,11 +249,7 @@ export async function getUserPops(): Promise<UserPopListItem[]> {
       { user_id: user.uid },
     )
 
-    if (popsError) {
-      return []
-    }
-
-    if (!accessiblePops || accessiblePops.length === 0) {
+    if (popsError || !accessiblePops || accessiblePops.length === 0) {
       return []
     }
 
@@ -208,6 +259,7 @@ export async function getUserPops(): Promise<UserPopListItem[]> {
       .from("pops")
       .select("id, site_id, settings, image_url")
       .in("id", popIds)
+
     const popMetaById = new Map<
       string,
       { siteId: string; imageUrl: string | null }
@@ -228,81 +280,31 @@ export async function getUserPops(): Promise<UserPopListItem[]> {
         imageUrl: null,
       }
 
-    const popsWithSubscription = await Promise.all(
-      accRows.map(async (pop) => {
-        const meta = defaultPopMeta(pop.pop_id)
-        try {
-          const { data: subscriptionInfo, error: subscriptionError } =
-            await supabase.rpc("get_pop_subscription_info", {
-              pop_id: pop.pop_id,
-            })
-
-          if (
-            subscriptionError ||
-            !subscriptionInfo ||
-            subscriptionInfo.length === 0
-          ) {
-            return {
-              id: pop.pop_id,
-              siteId: meta.siteId,
-              name: pop.pop_name,
-              imageUrl: meta.imageUrl,
-              roleId: pop.role_id,
-              roleName: pop.role_name,
-              isOwner: pop.is_owner,
-              subscription: null,
-            }
-          }
-
-          const subscription = subscriptionInfo[0] as Record<string, unknown>
-
-          return {
-            id: pop.pop_id,
-            siteId: meta.siteId,
-            name: pop.pop_name,
-            imageUrl: meta.imageUrl,
-            roleId: pop.role_id,
-            roleName: pop.role_name,
-            isOwner: pop.is_owner,
-            subscription: {
-              status: String(subscription.status ?? ""),
-              planName: String(subscription.plan_display_name ?? ""),
-              planDisplayName: String(subscription.plan_display_name ?? ""),
-              businessTypeName: String(
-                subscription.business_type_display_name ?? "",
-              ),
-              businessTypeDisplayName: String(
-                subscription.business_type_display_name ?? "",
-              ),
-              daysRemaining:
-                subscription.days_remaining != null
-                  ? Number(subscription.days_remaining)
-                  : null,
-              isActive: Boolean(subscription.is_active),
-              trialEndsAt: (subscription.trial_ends_at as string | null) ?? null,
-              currentPeriodEnd:
-                (subscription.current_period_end as string | null) ?? null,
-            },
-          }
-        } catch {
-          return {
-            id: pop.pop_id,
-            siteId: meta.siteId,
-            name: pop.pop_name,
-            imageUrl: meta.imageUrl,
-            roleId: pop.role_id,
-            roleName: pop.role_name,
-            isOwner: pop.is_owner,
-            subscription: null,
-          }
-        }
-      }),
-    )
-
-    return popsWithSubscription
+    return accRows.map((pop) => {
+      const meta = defaultPopMeta(pop.pop_id)
+      return {
+        id: pop.pop_id,
+        siteId: meta.siteId,
+        name: pop.pop_name,
+        imageUrl: meta.imageUrl,
+        roleId: pop.role_id,
+        roleName: pop.role_name,
+        isOwner: pop.is_owner,
+      }
+    })
   } catch {
     return []
   }
+}
+
+export async function getUserPops(): Promise<UserPopListItem[]> {
+  const pops = await getUserPopsList()
+  return Promise.all(
+    pops.map(async (pop) => ({
+      ...pop,
+      subscription: await getPopSubscriptionInfo(pop.id),
+    })),
+  )
 }
 
 export async function canUserCreatePop(): Promise<{

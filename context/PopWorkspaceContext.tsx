@@ -8,21 +8,11 @@ import {
   getPopCacheRevisions,
   type PopCacheRevisions,
 } from "@/lib/popCacheRevisions"
-import { resolvePopBootstrapRefreshKind } from "@/lib/popCacheRevisionCompare"
-import {
-  clearPopWorkspaceCache,
-  readPopWorkspaceCache,
-  writePopWorkspaceCache,
-  bootstrapNeedsFiscalRefresh,
-} from "@/lib/popWorkspaceClientCache"
-import { prefetchSaleComprobanteEmitter } from "@/lib/prefetchSaleComprobanteEmitter"
-import { clearSaleComprobanteEmitterCache } from "@/lib/saleComprobanteEmitterClientCache"
-import {
-  getUserProfileRev,
-  USER_PROFILE_UPDATED_EVENT,
-} from "@/lib/userProfileClientCache"
+import { popWorkspaceBootstrapQueryKey } from "@/lib/queryKeys"
+import { USER_PROFILE_UPDATED_EVENT } from "@/lib/userProfileEvents"
 import { permissionKeysInclude } from "@/lib/popPermissionConstants"
 import { useAuth } from "@/context/AuthContextSupabase"
+import { useQuery, useQueryClient } from "@tanstack/react-query"
 import { useRouter } from "next/navigation"
 import {
   createContext,
@@ -30,8 +20,6 @@ import {
   useContext,
   useEffect,
   useMemo,
-  useRef,
-  useState,
   type ReactNode,
 } from "react"
 
@@ -41,7 +29,7 @@ export type PopWorkspaceContextValue = {
   bootstrap: PopWorkspaceBootstrapData | null
   cacheRevisions: PopCacheRevisions | null
   loading: boolean
-  /** true cuando se muestra cache de sessionStorage mientras se valida en background */
+  /** Refetch en background (React Query). */
   revalidating: boolean
   error: string | null
   refresh: () => Promise<void>
@@ -59,183 +47,47 @@ type ProviderProps = {
   children: ReactNode
 }
 
-function persistCache(
-  userId: string,
-  siteId: string,
-  popId: string,
-  bootstrap: PopWorkspaceBootstrapData,
-  userProfileRev: number,
-) {
-  writePopWorkspaceCache(userId, siteId, popId, {
-    userProfileRev,
-    bootstrap,
-    cachedAt: Date.now(),
-  })
-}
-
 export function PopWorkspaceProvider({
   siteId,
   popId,
   children,
 }: ProviderProps) {
   const router = useRouter()
+  const queryClient = useQueryClient()
   const { user, loading: authLoading } = useAuth()
   const userId = user?.id ?? null
+  const enabled = !authLoading && Boolean(popId && siteId && userId)
 
-  const [bootstrap, setBootstrap] = useState<PopWorkspaceBootstrapData | null>(
-    null,
-  )
-  const [loading, setLoading] = useState(true)
-  const [revalidating, setRevalidating] = useState(false)
-  const [error, setError] = useState<string | null>(null)
-
-  const loadSeqRef = useRef(0)
-
-  const fetchFullBootstrap = useCallback(async (): Promise<boolean> => {
-    const res = await getPopWorkspaceBootstrap(popId, siteId)
-    if (!res.success) {
-      setBootstrap(null)
-      setError(res.error)
-      if (res.redirect) {
-        router.replace(res.redirect)
-      }
-      return false
-    }
-
-    setBootstrap(res.data)
-    setError(null)
-
-    if (userId) {
-      persistCache(
-        userId,
-        siteId,
-        popId,
-        res.data,
-        getUserProfileRev(userId),
-      )
-    }
-
-    if (res.data.hasValidPopFiscalCuit) {
-      prefetchSaleComprobanteEmitter(
-        popId,
-        res.data.cacheRevisions.popSettingsRev,
-      )
-    }
-
-    return true
-  }, [popId, siteId, router, userId])
-
-  const syncBootstrap = useCallback(
-    async (options?: { force?: boolean; showLoading?: boolean }) => {
-      if (!popId || !siteId) {
-        setBootstrap(null)
-        setError(null)
-        setLoading(false)
-        setRevalidating(false)
-        return
-      }
-
-      const seq = ++loadSeqRef.current
-      const force = options?.force === true
-      const cached =
-        !force && userId
-          ? readPopWorkspaceCache(userId, siteId, popId)
-          : null
-
-      if (cached) {
-        setBootstrap(cached.bootstrap)
-        setError(null)
-        setLoading(false)
-        setRevalidating(true)
-      } else if (options?.showLoading !== false) {
-        setLoading(true)
-        setRevalidating(false)
-      }
-
-      const revRes = await getPopCacheRevisions(popId)
-      if (seq !== loadSeqRef.current) return
-
-      const liveRevisions = revRes.success
-        ? revRes.revisions
-        : cached?.bootstrap.cacheRevisions
-
-      const liveUserProfileRev = userId ? getUserProfileRev(userId) : 1
-
-      const cachedBootstrapMissingBackground =
-        cached?.bootstrap != null &&
-        !("backgroundImageUrl" in cached.bootstrap)
-
-      if (
-        !force &&
-        cached &&
-        !cachedBootstrapMissingBackground &&
-        !bootstrapNeedsFiscalRefresh(cached.bootstrap) &&
-        liveRevisions &&
-        revRes.success
-      ) {
-        const refreshKind = resolvePopBootstrapRefreshKind(
-          cached.bootstrap.cacheRevisions,
-          liveRevisions,
-          cached.userProfileRev,
-          liveUserProfileRev,
-        )
-
-        if (refreshKind === "none") {
-          setBootstrap(cached.bootstrap)
-          setError(null)
-          setLoading(false)
-          setRevalidating(false)
-          if (cached.bootstrap.hasValidPopFiscalCuit) {
-            prefetchSaleComprobanteEmitter(
-              popId,
-              cached.bootstrap.cacheRevisions.popSettingsRev,
-            )
-          }
-          return
+  const bootstrapQuery = useQuery({
+    queryKey: popWorkspaceBootstrapQueryKey(siteId, popId, userId ?? ""),
+    queryFn: async (): Promise<PopWorkspaceBootstrapData> => {
+      const res = await getPopWorkspaceBootstrap(popId, siteId)
+      if (!res.success) {
+        if (res.redirect) {
+          router.replace(res.redirect)
         }
-
-        if (refreshKind === "catalog_only") {
-          const updated: PopWorkspaceBootstrapData = {
-            ...cached.bootstrap,
-            cacheRevisions: liveRevisions,
-          }
-          setBootstrap(updated)
-          setError(null)
-          setLoading(false)
-          setRevalidating(false)
-          if (userId) {
-            persistCache(userId, siteId, popId, updated, liveUserProfileRev)
-          }
-          return
-        }
+        throw new Error(res.error)
       }
-
-      if (!cached) {
-        setLoading(true)
-      } else {
-        setRevalidating(true)
-      }
-
-      const ok = await fetchFullBootstrap()
-      if (seq !== loadSeqRef.current) return
-
-      setLoading(false)
-      setRevalidating(false)
-      if (!ok && !cached) {
-        setBootstrap(null)
-      }
+      return res.data
     },
-    [popId, siteId, userId, fetchFullBootstrap],
-  )
+    enabled,
+  })
 
-  const load = useCallback(async () => {
-    await syncBootstrap({ force: true, showLoading: true })
-  }, [syncBootstrap])
+  const refresh = useCallback(async () => {
+    await bootstrapQuery.refetch()
+  }, [bootstrapQuery])
 
-  useEffect(() => {
-    if (authLoading) return
-    void syncBootstrap()
-  }, [syncBootstrap, authLoading])
+  const refreshRevisions = useCallback(async (): Promise<PopCacheRevisions | null> => {
+    if (!popId || !userId) return null
+    const res = await getPopCacheRevisions(popId)
+    if (!res.success) return null
+
+    queryClient.setQueryData<PopWorkspaceBootstrapData>(
+      popWorkspaceBootstrapQueryKey(siteId, popId, userId),
+      (prev) => (prev ? { ...prev, cacheRevisions: res.revisions } : prev),
+    )
+    return res.revisions
+  }, [popId, siteId, userId, queryClient])
 
   useEffect(() => {
     if (!userId) return
@@ -243,38 +95,27 @@ export function PopWorkspaceProvider({
     const onProfileUpdated = (event: Event) => {
       const detail = (event as CustomEvent<{ userId?: string }>).detail
       if (detail?.userId && detail.userId !== userId) return
-      clearPopWorkspaceCache(userId, siteId, popId)
-      clearSaleComprobanteEmitterCache(popId)
-      void syncBootstrap({ force: true, showLoading: false })
-    }
-
-    const onFocus = () => {
-      void syncBootstrap({ showLoading: false })
+      void queryClient.invalidateQueries({
+        queryKey: popWorkspaceBootstrapQueryKey(siteId, popId, userId),
+      })
+      void queryClient.invalidateQueries({
+        queryKey: ["sale-comprobante-emitter", popId],
+      })
     }
 
     window.addEventListener(USER_PROFILE_UPDATED_EVENT, onProfileUpdated)
-    window.addEventListener("focus", onFocus)
     return () => {
       window.removeEventListener(USER_PROFILE_UPDATED_EVENT, onProfileUpdated)
-      window.removeEventListener("focus", onFocus)
     }
-  }, [userId, siteId, popId, syncBootstrap])
+  }, [userId, siteId, popId, queryClient])
 
-  const refreshRevisions = useCallback(async (): Promise<PopCacheRevisions | null> => {
-    if (!popId) return null
-    const res = await getPopCacheRevisions(popId)
-    if (!res.success) return null
-
-    setBootstrap((prev) => {
-      if (!prev) return prev
-      const next = { ...prev, cacheRevisions: res.revisions }
-      if (userId) {
-        persistCache(userId, siteId, popId, next, getUserProfileRev(userId))
-      }
-      return next
-    })
-    return res.revisions
-  }, [popId, siteId, userId])
+  const bootstrap = bootstrapQuery.data ?? null
+  const error =
+    bootstrapQuery.error instanceof Error
+      ? bootstrapQuery.error.message
+      : bootstrapQuery.error
+        ? String(bootstrapQuery.error)
+        : null
 
   const hasPermission = useCallback(
     (resource: string, action: string) => {
@@ -290,10 +131,10 @@ export function PopWorkspaceProvider({
       popId,
       bootstrap,
       cacheRevisions: bootstrap?.cacheRevisions ?? null,
-      loading: loading || authLoading,
-      revalidating,
+      loading: authLoading || (enabled && bootstrapQuery.isLoading),
+      revalidating: bootstrapQuery.isFetching && !bootstrapQuery.isLoading,
       error,
-      refresh: load,
+      refresh,
       refreshRevisions,
       hasPermission,
     }),
@@ -301,13 +142,14 @@ export function PopWorkspaceProvider({
       siteId,
       popId,
       bootstrap,
-      loading,
-      revalidating,
+      authLoading,
+      enabled,
+      bootstrapQuery.isLoading,
+      bootstrapQuery.isFetching,
       error,
-      load,
+      refresh,
       refreshRevisions,
       hasPermission,
-      authLoading,
     ],
   )
 

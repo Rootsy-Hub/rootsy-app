@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import { Inter, Nunito_Sans, Source_Sans_3 } from 'next/font/google'
 import { Analytics } from '@vercel/analytics/next'
 import { AuthProvider } from '@/context/AuthContextSupabase'
+import { QueryProvider } from '@/components/providers/QueryProvider'
 import './globals.css'
 
 // Fuente principal del proyecto
@@ -56,7 +57,9 @@ export default function RootLayout({
     <html lang="es" className="dark scroll-smooth">
       <body className={`${nunitoSans.variable} ${sourceSans.variable} ${inter.variable} font-sans antialiased`}>
         <AuthProvider>
-          {children}
+          <QueryProvider>
+            {children}
+          </QueryProvider>
         </AuthProvider>
         <Analytics />
       </body>
