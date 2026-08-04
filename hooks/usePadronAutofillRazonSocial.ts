@@ -39,6 +39,8 @@ export function usePadronAutofillRazonSocial(
 
   useEffect(() => {
     if (!popId || !enabled) return
+
+    let cancelled = false
     const raw = rawDocument.trim()
     if (!raw) {
       if (!suppressClear) {
@@ -70,6 +72,7 @@ export function usePadronAutofillRazonSocial(
         setBusy(true)
         setError(null)
         const res = await lookupPadronForPop(popId, raw)
+        if (cancelled) return
         setBusy(false)
         if (!res.success) {
           setError(res.error)
@@ -90,7 +93,10 @@ export function usePadronAutofillRazonSocial(
         setError(null)
       })()
     }, debounceMs)
-    return () => clearTimeout(t)
+    return () => {
+      cancelled = true
+      clearTimeout(t)
+    }
   }, [popId, rawDocument, enabled, debounceMs, suppressClear])
 
   return {

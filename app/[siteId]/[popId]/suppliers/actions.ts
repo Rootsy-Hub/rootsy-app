@@ -12,6 +12,7 @@ import {
 import { popMenuHref } from "@/lib/popRoutes"
 import { loadPopPermissionsSnapshot } from "@/lib/popPermissionsServer"
 import { createClient } from "@/utils/supabase/server"
+import { supplierDeleteConfirmPhrase } from "@/app/[siteId]/[popId]/suppliers/supplierConstants"
 import { CLIENT_IVA_CONDITION_VALUES } from "@/app/[siteId]/[popId]/clients/clientIvaConstants"
 
 function normalizeIvaCondition(raw: string): string | null {
@@ -172,6 +173,7 @@ export async function updatePopSupplier(
 export async function deletePopSupplier(
   popId: string,
   supplierId: string,
+  confirmationTyped: string,
 ): Promise<{ success: true } | { success: false; error: string }> {
   try {
     const access = await validatePopAccess(popId)
@@ -189,6 +191,28 @@ export async function deletePopSupplier(
       return { success: false, error: "Sin permiso para eliminar proveedores." }
     }
     const supabase = await createClient()
+    const { data: supplier, error: fetchError } = await supabase
+      .from("suppliers")
+      .select("name")
+      .eq("id", supplierId)
+      .eq("pop_id", popId)
+      .maybeSingle()
+    if (fetchError) {
+      return {
+        success: false,
+        error: fetchError.message || "No se encontró el proveedor.",
+      }
+    }
+    if (!supplier) {
+      return { success: false, error: "No se encontró el proveedor." }
+    }
+    const expectedPhrase = supplierDeleteConfirmPhrase(String(supplier.name ?? ""))
+    if (confirmationTyped.trim() !== expectedPhrase) {
+      return {
+        success: false,
+        error: `Escribí (${expectedPhrase}) para confirmar el borrado.`,
+      }
+    }
     const { error } = await supabase
       .from("suppliers")
       .delete()

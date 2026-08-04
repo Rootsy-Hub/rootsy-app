@@ -13,84 +13,83 @@ import {
   getSaleComprobantePickerOptions,
 } from "@/lib/saleComprobantePicker"
 import { suggestSaleComprobanteForClientIva } from "@/lib/saleComprobanteRules"
+import { ClientDeleteDialog } from "@/app/[siteId]/[popId]/clients/ClientDeleteDialog"
+import { ClientUpsertDialog } from "@/app/[siteId]/[popId]/clients/ClientUpsertDialog"
+import {
+  ClientsFiltersDialog,
+  defaultClientsModalFilters,
+  type ClientsModalFilters,
+} from "@/app/[siteId]/[popId]/clients/ClientsFiltersDialog"
 import { buildPaginationItems } from "@/app/[siteId]/[popId]/layout/layoutPreviewPagination"
 import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
+import { DataWorkspaceListActiveFiltersBar } from "@/components/data-workspace/DataWorkspaceListActiveFiltersBar"
+import { DataWorkspaceListBulkToolbar } from "@/components/data-workspace/DataWorkspaceListBulkToolbar"
+import { DataWorkspaceListFilterChip } from "@/components/data-workspace/DataWorkspaceListFilterChip"
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog"
-import { Input } from "@/components/ui/input"
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "@/components/ui/tooltip"
-import {
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table"
+  DataWorkspaceListFiltersDialogTrigger,
+  DataWorkspaceListSearchField,
+} from "@/components/data-workspace/DataWorkspaceListFilterFields"
 import { DataWorkspaceListPaginationFooter } from "@/components/data-workspace/DataWorkspaceListPaginationFooter"
 import {
   DataWorkspaceListTableFrame,
   DataWorkspaceTableEmptyMascot,
   DataWorkspaceTableIconAction,
-  DataWorkspaceTableMoney,
 } from "@/components/data-workspace/DataWorkspaceListTablePrimitives"
 import { WorkspaceTableSkeletonRows } from "@/components/data-workspace/WorkspaceTableSkeleton"
 import { clientsSkeletonColumns } from "@/components/data-workspace/workspaceTableSkeletonPresets"
 import { DataWorkspaceListTableShell } from "@/components/data-workspace/DataWorkspaceListTableShell"
 import {
-  lightFilterChipClass,
-  lightTableThClass,
-  lightToolbarButtonClass,
-  lightToolbarControlActiveClass,
-  lightToolbarInputClass,
-  lightToolbarClearButtonClass,
-  lightToolbarPanelClass,
-  lightToolbarPanelLastClass,
-  lightToolbarShellClass,
-  listBulkToolbarClearButtonClass,
   selectColumnInnerClass,
-  tableRowSelectCheckboxClass,
-  toolbarBlockLabelClass,
-  workspaceDataTableClassName,
-  workspaceTableBodyRowClassNames,
+  workspaceTableLayoutClassName,
+  workspaceTableNatureBodyRowClassNames,
+  workspaceTableNatureCheckboxClass,
+  workspaceTableNatureMoneyClass,
+  workspaceTableNatureTextSecondaryClass,
 } from "@/components/data-workspace/dataWorkspaceListStyles"
+import {
+  dataWorkspaceListFiltersBarClass,
+  dataWorkspaceListFiltersBarInnerClass,
+  dataWorkspaceListFiltersBarRowClass,
+  dataWorkspaceListFiltersGridClass,
+  dataWorkspaceListFiltersPanelClass,
+  dataWorkspaceListFiltersPanelLastClass,
+  workspaceTableLayoutActionsBodyCellClass,
+  workspaceTableLayoutBodyCellClass,
+  workspaceTableLayoutBodyRowClass,
+  workspaceTableLayoutCellStackClass,
+  workspaceTableLayoutHeaderHeadClass,
+  workspaceTableLayoutListBodyScopeClass,
+  workspaceTableLayoutListSurfaceClass,
+  workspaceTableLayoutSelectBodyCellClass,
+  workspaceTableNatureEarthOrganicScopeClass,
+} from "@/components/data-workspace/dataWorkspaceTablesLayout"
+import {
+  WorkspaceTableHead,
+  WorkspaceTableHeader,
+  WorkspaceTableHeaderRow,
+  WorkspaceTableSelectHead,
+} from "@/components/data-workspace/WorkspaceTableHeader"
 import { DataWorkspaceLayout } from "@/components/layouts/DataWorkspaceLayout"
 import { DataWorkspaceHeaderIconButton } from "@/components/layouts/DataWorkspaceHeaderIconButton"
+import {
+  TableBody,
+  TableCell,
+  TableRow,
+} from "@/components/ui/table"
 import {
   CLIENT_TABLE_PAGE_SIZES,
   mergeClientsWorkspaceUrl,
   parseClientsWorkspaceUrl,
 } from "@/app/[siteId]/[popId]/clients/workspaceUrl"
-import {
-  ClientUpsertFormFields,
-  clientDialogBodyClass,
-  clientDialogFooterClass,
-  clientDialogHeaderClass,
-  clientDialogSurface,
-} from "@/app/[siteId]/[popId]/clients/ClientUpsertFormFields"
 import { usePopWorkspace } from "@/context/PopWorkspaceContext"
 import { cn } from "@/lib/utils"
 import withAuth from "@/hoc/withAuth"
 import { usePadronAutofillRazonSocial } from "@/hooks/usePadronAutofillRazonSocial"
 import {
-  Filter,
-  Loader2,
   Pencil,
   Plus,
-  Search,
   Trash2,
-  X,
 } from "lucide-react"
 import {
   useParams,
@@ -146,17 +145,9 @@ function formatShortSaleDate(iso: string | null) {
   })
 }
 
-type ClientsAppliedFilters = {
-  withEmail: boolean
-  withTaxId: boolean
-  soloActivos: boolean
-}
+type ClientsAppliedFilters = ClientsModalFilters
 
-const defaultClientsFilters = (): ClientsAppliedFilters => ({
-  withEmail: false,
-  withTaxId: false,
-  soloActivos: false,
-})
+const defaultClientsFilters = defaultClientsModalFilters
 
 function ClientsPage() {
   const router = useRouter()
@@ -225,10 +216,14 @@ function ClientsPage() {
   const [editBanner, setEditBanner] = useState<string | null>(null)
   const [editForm, setEditForm] = useState(emptyForm)
 
-  const [deleteRow, setDeleteRow] = useState<ClientTableRow | null>(null)
+  const [deleteTarget, setDeleteTarget] = useState<ClientTableRow | null>(null)
+  const [deleteOpen, setDeleteOpen] = useState(false)
+  const [deleteTyped, setDeleteTyped] = useState("")
   const [deleteBusy, setDeleteBusy] = useState(false)
+  const [deleteBanner, setDeleteBanner] = useState<string | null>(null)
 
   const searchInputId = useId()
+  const filtersButtonId = useId()
   const searchInputRef = useRef<HTMLInputElement>(null)
   const [filtersModalOpen, setFiltersModalOpen] = useState(false)
   const [draftFilters, setDraftFilters] = useState<ClientsAppliedFilters>(
@@ -442,9 +437,18 @@ function ClientsPage() {
   }, [])
 
   const closeCreate = useCallback(() => {
-    if (createSaving) return
     setCreateOpen(false)
-  }, [createSaving])
+    setCreateBanner(null)
+  }, [])
+
+  const finalizeCreateClose = useCallback(() => {
+    setCreateForm(emptyForm())
+  }, [])
+
+  const closeEdit = useCallback(() => {
+    setEditRow(null)
+    setEditBanner(null)
+  }, [])
 
   const submitCreate = async (e: FormEvent) => {
     e.preventDefault()
@@ -457,8 +461,7 @@ function ClientsPage() {
         setCreateBanner(res.error)
         return
       }
-      setCreateOpen(false)
-      setCreateForm(emptyForm())
+      closeCreate()
       await fetchClientList()
     } finally {
       setCreateSaving(false)
@@ -492,7 +495,7 @@ function ClientsPage() {
         setEditBanner(res.error)
         return
       }
-      setEditRow(null)
+      closeEdit()
       await fetchClientList()
     } finally {
       setEditSaving(false)
@@ -500,16 +503,34 @@ function ClientsPage() {
   }
 
   const submitDelete = async () => {
-    if (!popId || !siteId || !deleteRow) return
+    if (!popId || !siteId || !deleteTarget) return
     setDeleteBusy(true)
-    const res = await deletePopClient(popId, deleteRow.id)
+    setDeleteBanner(null)
+    const res = await deletePopClient(popId, deleteTarget.id, deleteTyped)
     setDeleteBusy(false)
     if (!res.success) {
-      setDeleteRow(null)
+      setDeleteBanner(res.error)
       return
     }
-    setDeleteRow(null)
+    requestCloseDelete()
     await fetchClientList()
+  }
+
+  const requestCloseDelete = () => {
+    setDeleteOpen(false)
+  }
+
+  const finalizeDeleteClose = () => {
+    setDeleteTarget(null)
+    setDeleteTyped("")
+    setDeleteBanner(null)
+  }
+
+  const openDelete = (row: ClientTableRow) => {
+    setDeleteTarget(row)
+    setDeleteTyped("")
+    setDeleteBanner(null)
+    setDeleteOpen(true)
   }
 
   const skeletonRowCount = Math.min(12, Math.max(5, workspaceParsed.pageSize))
@@ -611,24 +632,18 @@ function ClientsPage() {
       userName={bootstrap?.userFullName}
       userAvatarSrc={bootstrap?.userImageUrl ?? undefined}
       userRoleLabel={bootstrap?.roleLabel}
-      mainClassName="min-h-0 overflow-hidden"
+      mainClassName="rootsy-nature-palette min-h-0 overflow-hidden"
+      pillLabel="CRM"
       headerActions={
         canCreate ? (
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <DataWorkspaceHeaderIconButton
-                label="Nuevo cliente"
-                headerVariant="dark"
-                primary
-                onClick={openCreate}
-              >
-                <Plus className="size-5" aria-hidden />
-              </DataWorkspaceHeaderIconButton>
-            </TooltipTrigger>
-            <TooltipContent variant="dark" side="bottom" sideOffset={6}>
-              Nuevo cliente
-            </TooltipContent>
-          </Tooltip>
+          <DataWorkspaceHeaderIconButton
+            label="Nuevo cliente"
+            headerVariant="dark"
+            primary
+            onClick={openCreate}
+          >
+            <Plus className="size-5" aria-hidden />
+          </DataWorkspaceHeaderIconButton>
         ) : null
       }
     >
@@ -642,37 +657,24 @@ function ClientsPage() {
           </div>
         ) : null}
         <div className="relative flex min-h-0 flex-1 flex-col">
+          <div
+            className={dataWorkspaceListFiltersBarClass}
+            role="toolbar"
+            aria-label="Filtros del listado"
+          >
             <div
-              className={lightToolbarShellClass}
-              role="toolbar"
-              aria-label="Filtros del listado"
+              className={cn(
+                dataWorkspaceListFiltersBarInnerClass,
+                dataWorkspaceListFiltersBarRowClass,
+              )}
             >
-              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-12">
-                <div
-                  className={cn(
-                    lightToolbarPanelClass,
-                    "order-2 w-full min-w-0 md:col-span-1 xl:order-1 xl:col-span-3",
-                  )}
-                >
-                  <div className="mb-2 flex min-w-0 items-baseline justify-between gap-3">
-                    <span className={toolbarBlockLabelClass}>Filtros</span>
-                    {modalFiltersActiveCount > 0 ? (
-                      <span className="shrink-0 text-[11px] font-medium text-primary">
-                        Activo
-                      </span>
-                    ) : null}
-                  </div>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    className={cn(
-                      lightToolbarButtonClass,
-                      modalFiltersActiveCount > 0 &&
-                        lightToolbarControlActiveClass,
-                    )}
-                    aria-haspopup="dialog"
-                    aria-expanded={filtersModalOpen}
+              <div className={dataWorkspaceListFiltersGridClass}>
+                <div className={dataWorkspaceListFiltersPanelClass}>
+                  <DataWorkspaceListFiltersDialogTrigger
+                    id={filtersButtonId}
+                    placeholder="E-mail, CUIT y estado"
+                    activeCount={modalFiltersActiveCount}
+                    expanded={filtersModalOpen}
                     onClick={() => {
                       setDraftFilters({
                         withEmail: workspaceParsed.withEmail,
@@ -681,309 +683,127 @@ function ClientsPage() {
                       })
                       setFiltersModalOpen(true)
                     }}
-                  >
-                    <Filter className="size-4 shrink-0 opacity-80" aria-hidden />
-                    <span className="min-w-0 flex-1 truncate text-left">
-                      {modalFiltersActiveCount > 0
-                        ? "Refinar filtros"
-                        : "E-mail, CUIT y estado"}
-                    </span>
-                    {modalFiltersActiveCount > 0 ? (
-                      <span
-                        className="inline-flex size-5 shrink-0 items-center justify-center rounded-full bg-primary/15 text-[10px] font-semibold tabular-nums text-primary"
-                        aria-hidden
-                      >
-                        {modalFiltersActiveCount}
-                      </span>
-                    ) : null}
-                  </Button>
+                  />
                 </div>
 
-                <div
-                  className={cn(
-                    lightToolbarPanelLastClass,
-                    "order-1 min-w-0 md:col-span-2 xl:order-2 xl:col-span-9",
-                  )}
-                >
-                  <div className="mb-2 flex min-w-0 items-baseline justify-between gap-3">
-                    <label htmlFor={searchInputId} className={toolbarBlockLabelClass}>
-                      Buscar
-                    </label>
-                    <span
-                      className="shrink-0 text-[11px] font-medium text-muted-foreground"
-                      aria-live="polite"
-                      aria-atomic="true"
-                    >
-                      {resultsSummary}
-                    </span>
-                  </div>
-                  <div className="relative min-w-0">
-                    <Search
-                      className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground"
-                      aria-hidden
-                    />
-                    <Input
-                      ref={searchInputRef}
-                      id={searchInputId}
-                      type="search"
-                      value={searchInput}
-                      onChange={(e) => setSearchInput(e.target.value)}
-                      placeholder="Nombre, contacto, CUIT, dirección, IVA… ( / )"
-                      className={cn(
-                        lightToolbarInputClass,
-                        searchInput.trim().length > 0 && "pr-10",
-                      )}
-                      autoComplete="off"
-                      spellCheck={false}
-                      aria-label="Buscar clientes"
-                    />
-                    {searchInput.trim().length > 0 ? (
-                      <button
-                        type="button"
-                        aria-label="Limpiar búsqueda"
-                        className={lightToolbarClearButtonClass}
-                        onClick={() => {
-                          setSearchInput("")
-                          searchInputRef.current?.focus()
-                        }}
-                      >
-                        <X className="size-3.5" aria-hidden />
-                      </button>
-                    ) : null}
-                  </div>
+                <div className={dataWorkspaceListFiltersPanelLastClass}>
+                  <DataWorkspaceListSearchField
+                    id={searchInputId}
+                    inputRef={searchInputRef}
+                    value={searchInput}
+                    onChange={(e) => setSearchInput(e.target.value)}
+                    onClear={() => {
+                      setSearchInput("")
+                      searchInputRef.current?.focus()
+                    }}
+                    placeholder="Nombre, contacto, CUIT, dirección, IVA… ( / )"
+                    resultsSummary={resultsSummary}
+                  />
                 </div>
               </div>
-
-              {hasFilterChips ? (
-                <div
-                  className="border-t border-border/80 bg-card px-4 py-3"
-                  role="region"
-                  aria-label="Filtros activos"
-                >
-                  <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
-                    <p className={toolbarBlockLabelClass}>
-                      Filtros activos
-                      <span className="sr-only">: {activeFilterCount}</span>
-                      <span
-                        className="ml-1.5 inline-flex min-w-5 items-center justify-center rounded-full bg-muted px-1.5 py-0.5 text-[10px] font-semibold tabular-nums normal-case tracking-normal text-muted-foreground"
-                        aria-hidden
-                      >
-                        {activeFilterCount}
-                      </span>
-                    </p>
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      className="h-8 px-2.5 text-xs font-medium text-muted-foreground hover:text-foreground"
-                      onClick={clearAllFilters}
-                    >
-                      Limpiar todo
-                    </Button>
-                  </div>
-                  <div className="flex flex-wrap items-center gap-1.5">
-                    {workspaceParsed.q.trim() ? (
-                      <Badge variant="secondary" className={lightFilterChipClass}>
-                        <span className="truncate">
-                          Buscar: «{workspaceParsed.q.trim()}»
-                        </span>
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="icon"
-                          className="size-6 shrink-0"
-                          onClick={() =>
-                            replaceWorkspaceQuery({ q: "", page: 1 })
-                          }
-                          aria-label="Quitar búsqueda"
-                        >
-                          <X className="size-3" />
-                        </Button>
-                      </Badge>
-                    ) : null}
-                    {workspaceParsed.withEmail ? (
-                      <Badge variant="secondary" className={lightFilterChipClass}>
-                        Con e-mail
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="icon"
-                          className="size-6 shrink-0"
-                          onClick={() =>
-                            replaceWorkspaceQuery({ withEmail: false, page: 1 })
-                          }
-                          aria-label="Quitar filtro con e-mail"
-                        >
-                          <X className="size-3" />
-                        </Button>
-                      </Badge>
-                    ) : null}
-                    {workspaceParsed.withTaxId ? (
-                      <Badge variant="secondary" className={lightFilterChipClass}>
-                        Con CUIT / DNI
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="icon"
-                          className="size-6 shrink-0"
-                          onClick={() =>
-                            replaceWorkspaceQuery({ withTaxId: false, page: 1 })
-                          }
-                          aria-label="Quitar filtro CUIT"
-                        >
-                          <X className="size-3" />
-                        </Button>
-                      </Badge>
-                    ) : null}
-                    {workspaceParsed.soloActivos ? (
-                      <Badge variant="secondary" className={lightFilterChipClass}>
-                        Solo activos
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="icon"
-                          className="size-6 shrink-0"
-                          onClick={() =>
-                            replaceWorkspaceQuery({ soloActivos: false, page: 1 })
-                          }
-                          aria-label="Quitar filtro solo activos"
-                        >
-                          <X className="size-3" />
-                        </Button>
-                      </Badge>
-                    ) : null}
-                  </div>
-                </div>
-              ) : null}
             </div>
+          </div>
 
-            <Dialog
-              open={filtersModalOpen}
-              onOpenChange={(open) => {
-                if (open) {
-                  setDraftFilters({
-                    withEmail: workspaceParsed.withEmail,
-                    withTaxId: workspaceParsed.withTaxId,
-                    soloActivos: workspaceParsed.soloActivos,
-                  })
-                }
-                setFiltersModalOpen(open)
-              }}
-            >
-              <DialogContent className="gap-0 sm:max-w-md" showCloseButton>
-                <DialogHeader>
-                  <DialogTitle>Filtros</DialogTitle>
-                  <DialogDescription>
-                    Refiná el listado por datos cargados. Se combinan con la
-                    búsqueda.
-                  </DialogDescription>
-                </DialogHeader>
-                <div className="grid gap-4 py-4">
-                  <label className="flex cursor-pointer items-center gap-2 rounded-md border border-transparent px-1 py-0.5 hover:bg-muted/50">
-                    <Checkbox
-                      checked={draftFilters.withEmail}
-                      onCheckedChange={(c) =>
-                        setDraftFilters((f) => ({
-                          ...f,
-                          withEmail: c === true,
-                        }))
-                      }
-                      aria-label="Solo con e-mail"
-                    />
-                    <span className="text-sm">Solo clientes con e-mail</span>
-                  </label>
-                  <label className="flex cursor-pointer items-center gap-2 rounded-md border border-transparent px-1 py-0.5 hover:bg-muted/50">
-                    <Checkbox
-                      checked={draftFilters.withTaxId}
-                      onCheckedChange={(c) =>
-                        setDraftFilters((f) => ({
-                          ...f,
-                          withTaxId: c === true,
-                        }))
-                      }
-                      aria-label="Solo con CUIT o DNI"
-                    />
-                    <span className="text-sm">Solo con CUIT / DNI</span>
-                  </label>
-                  <label className="flex cursor-pointer items-center gap-2 rounded-md border border-transparent px-1 py-0.5 hover:bg-muted/50">
-                    <Checkbox
-                      checked={draftFilters.soloActivos}
-                      onCheckedChange={(c) =>
-                        setDraftFilters((f) => ({
-                          ...f,
-                          soloActivos: c === true,
-                        }))
-                      }
-                      aria-label="Solo clientes activos"
-                    />
-                    <span className="text-sm">Solo clientes activos</span>
-                  </label>
-                </div>
-                <DialogFooter className="gap-2 sm:gap-0">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() => setDraftFilters(defaultClientsFilters())}
-                  >
-                    Restablecer
-                  </Button>
-                  <Button
-                    type="button"
-                    onClick={() => {
-                      replaceWorkspaceQuery({
-                        ...draftFilters,
-                        page: 1,
-                      })
-                      setFiltersModalOpen(false)
-                    }}
-                  >
-                    Aplicar
-                  </Button>
-                </DialogFooter>
-              </DialogContent>
-            </Dialog>
+          <ClientsFiltersDialog
+            open={filtersModalOpen}
+            onOpenChange={(open) => {
+              if (open) {
+                setDraftFilters({
+                  withEmail: workspaceParsed.withEmail,
+                  withTaxId: workspaceParsed.withTaxId,
+                  soloActivos: workspaceParsed.soloActivos,
+                })
+              }
+              setFiltersModalOpen(open)
+            }}
+            draft={draftFilters}
+            onDraftChange={setDraftFilters}
+            onApply={() => {
+              replaceWorkspaceQuery({
+                ...draftFilters,
+                page: 1,
+              })
+              setFiltersModalOpen(false)
+            }}
+          />
 
-            <DataWorkspaceListTableShell
-              variant="flush"
-              overlay={
-                !listFetching && totalCount === 0 ? (
-                  <DataWorkspaceTableEmptyMascot />
-                ) : null
-              }
-              bulkToolbar={
-                selected.size > 0 ? (
-                  <div
-                    className={cn(
-                      "flex flex-wrap items-center gap-2 border-b border-border/80 bg-muted/35 px-3 py-2.5 sm:px-4",
-                      listFetching && "pointer-events-none opacity-60",
-                    )}
-                    role="region"
-                    aria-label="Acciones sobre selección"
-                  >
-                    <span className="text-sm text-foreground">
-                      <span className="font-semibold">{selected.size}</span>{" "}
-                      <span className="text-muted-foreground">seleccionados</span>
-                    </span>
-                    <div className="flex flex-wrap items-center gap-2">
-                      <Button type="button" size="sm" variant="outline" className="h-8">
-                        Eliminar selección
-                      </Button>
-                      <Button type="button" size="sm" variant="outline" className="h-8">
-                        Exportar CSV
-                      </Button>
-                      <Button
-                        type="button"
-                        size="sm"
-                        variant="ghost"
-                        className={listBulkToolbarClearButtonClass}
-                        onClick={() => setSelected(new Set())}
-                      >
-                        Limpiar
-                      </Button>
-                    </div>
-                  </div>
-                ) : null
-              }
+          <DataWorkspaceListTableShell
+            variant="flush"
+            className={cn(
+              workspaceTableNatureEarthOrganicScopeClass,
+              workspaceTableLayoutListBodyScopeClass,
+              workspaceTableLayoutListSurfaceClass,
+            )}
+            activeFiltersBar={
+              hasFilterChips ? (
+                <DataWorkspaceListActiveFiltersBar
+                  activeCount={activeFilterCount}
+                  onClearAll={clearAllFilters}
+                >
+                  {workspaceParsed.q.trim() ? (
+                    <DataWorkspaceListFilterChip
+                      label={`Buscar: «${workspaceParsed.q.trim()}»`}
+                      onRemove={() => replaceWorkspaceQuery({ q: "", page: 1 })}
+                      removeAriaLabel="Quitar búsqueda"
+                    />
+                  ) : null}
+                  {workspaceParsed.withEmail ? (
+                    <DataWorkspaceListFilterChip
+                      label="Con e-mail"
+                      onRemove={() =>
+                        replaceWorkspaceQuery({ withEmail: false, page: 1 })
+                      }
+                      removeAriaLabel="Quitar filtro con e-mail"
+                    />
+                  ) : null}
+                  {workspaceParsed.withTaxId ? (
+                    <DataWorkspaceListFilterChip
+                      label="Con CUIT / DNI"
+                      onRemove={() =>
+                        replaceWorkspaceQuery({ withTaxId: false, page: 1 })
+                      }
+                      removeAriaLabel="Quitar filtro CUIT"
+                    />
+                  ) : null}
+                  {workspaceParsed.soloActivos ? (
+                    <DataWorkspaceListFilterChip
+                      label="Solo activos"
+                      onRemove={() =>
+                        replaceWorkspaceQuery({ soloActivos: false, page: 1 })
+                      }
+                      removeAriaLabel="Quitar filtro solo activos"
+                    />
+                  ) : null}
+                </DataWorkspaceListActiveFiltersBar>
+              ) : null
+            }
+            bulkToolbar={
+              selected.size > 0 ? (
+                <DataWorkspaceListBulkToolbar
+                  selectedCount={selected.size}
+                  onClear={() => setSelected(new Set())}
+                  placement={hasFilterChips ? "stacked" : "standalone"}
+                  disabled={listFetching}
+                  actions={[
+                    ...(canDelete
+                      ? [
+                          {
+                            label: "Eliminar selección",
+                            onClick: () => {},
+                            semantic: "destructive" as const,
+                          },
+                        ]
+                      : []),
+                    { label: "Exportar CSV", onClick: () => {} },
+                  ]}
+                />
+              ) : null
+            }
+            overlay={
+              !listFetching && totalCount === 0 ? (
+                <DataWorkspaceTableEmptyMascot />
+              ) : null
+            }
               footer={
                 <DataWorkspaceListPaginationFooter
                   variant="dark"
@@ -1004,84 +824,118 @@ function ClientsPage() {
                 />
               }
             >
-              <DataWorkspaceListTableFrame>
+              <DataWorkspaceListTableFrame className={workspaceTableLayoutListSurfaceClass}>
               <table
-                className={workspaceDataTableClassName}
+                className={cn(workspaceTableLayoutClassName, "min-w-[72rem]")}
                 aria-busy={listFetching}
               >
-                <TableHeader>
-                  <TableRow className="border-0 hover:bg-transparent">
-                    <TableHead className={cn(lightTableThClass, "w-12 !px-0 text-center")}>
-                      <div className={cn(selectColumnInnerClass, "min-h-10")}>
-                        <Checkbox
-                          className={tableRowSelectCheckboxClass}
-                          checked={
-                            allVisibleSelected
-                              ? true
-                              : someVisibleSelected
-                                ? "indeterminate"
-                                : false
+                <WorkspaceTableHeader>
+                  <WorkspaceTableHeaderRow>
+                    <WorkspaceTableSelectHead
+                      tone="nature"
+                      className={workspaceTableLayoutHeaderHeadClass}
+                      checked={
+                        allVisibleSelected
+                          ? true
+                          : someVisibleSelected
+                            ? "indeterminate"
+                            : false
+                      }
+                      onCheckedChange={(checked) => {
+                        setSelected((prev) => {
+                          const next = new Set(prev)
+                          if (checked === true) {
+                            visibleIds.forEach((id) => next.add(id))
+                          } else {
+                            visibleIds.forEach((id) => next.delete(id))
                           }
-                          onCheckedChange={(c) => {
-                            setSelected((prev) => {
-                              const next = new Set(prev)
-                              if (c === true) {
-                                visibleIds.forEach((id) => next.add(id))
-                              } else {
-                                visibleIds.forEach((id) => next.delete(id))
-                              }
-                              return next
-                            })
-                          }}
-                          disabled={
-                            listFetching ||
-                            totalCount === 0 ||
-                            pageRows.length === 0
-                          }
-                          aria-label="Seleccionar filas visibles"
-                        />
-                      </div>
-                    </TableHead>
-                    <TableHead className={cn(lightTableThClass, "min-w-[10rem] text-left")}>
-                      Nombre
-                    </TableHead>
-                    <TableHead
+                          return next
+                        })
+                      }}
+                      disabled={
+                        listFetching || totalCount === 0 || pageRows.length === 0
+                      }
+                      ariaLabel="Seleccionar filas visibles"
+                    />
+                    <WorkspaceTableHead
+                      tone="nature"
                       className={cn(
-                        lightTableThClass,
-                        "w-[12rem] min-w-0 max-w-[12rem] text-left",
+                        "min-w-[10rem] px-3",
+                        workspaceTableLayoutHeaderHeadClass,
+                      )}
+                    >
+                      Nombre
+                    </WorkspaceTableHead>
+                    <WorkspaceTableHead
+                      tone="nature"
+                      className={cn(
+                        "w-[12rem] min-w-0 max-w-[12rem] px-3",
+                        workspaceTableLayoutHeaderHeadClass,
                       )}
                     >
                       E-mail
-                    </TableHead>
-                    <TableHead
+                    </WorkspaceTableHead>
+                    <WorkspaceTableHead
+                      tone="nature"
                       className={cn(
-                        lightTableThClass,
-                        "w-[9rem] min-w-0 max-w-[9rem] text-left",
+                        "w-[9rem] min-w-0 max-w-[9rem] px-3",
+                        workspaceTableLayoutHeaderHeadClass,
                       )}
                     >
                       Teléfono
-                    </TableHead>
-                    <TableHead className={cn(lightTableThClass, "w-[7.5rem] text-left")}>
+                    </WorkspaceTableHead>
+                    <WorkspaceTableHead
+                      tone="nature"
+                      className={cn(
+                        "w-[7.5rem] px-3",
+                        workspaceTableLayoutHeaderHeadClass,
+                      )}
+                    >
                       CUIT / DNI
-                    </TableHead>
-                    <TableHead className={cn(lightTableThClass, "min-w-[8.5rem] text-left")}>
+                    </WorkspaceTableHead>
+                    <WorkspaceTableHead
+                      tone="nature"
+                      className={cn(
+                        "min-w-[8.5rem] px-3",
+                        workspaceTableLayoutHeaderHeadClass,
+                      )}
+                    >
                       IVA
-                    </TableHead>
-                    <TableHead className={cn(lightTableThClass, "w-[7.25rem] text-left")}>
+                    </WorkspaceTableHead>
+                    <WorkspaceTableHead
+                      tone="nature"
+                      className={cn(
+                        "w-[7.25rem] px-3",
+                        workspaceTableLayoutHeaderHeadClass,
+                      )}
+                    >
                       Última compra
-                    </TableHead>
-                    <TableHead
-                      className={cn(lightTableThClass, "min-w-[8.5rem] text-right")}
+                    </WorkspaceTableHead>
+                    <WorkspaceTableHead
+                      tone="nature"
+                      align="right"
+                      className={cn(
+                        "min-w-[8.5rem] px-3",
+                        workspaceTableLayoutHeaderHeadClass,
+                      )}
                     >
                       Ventas / Total
-                    </TableHead>
+                    </WorkspaceTableHead>
                     {canUpdate || canDelete ? (
-                      <TableHead className={cn(lightTableThClass, "w-[7.25rem] text-right")}>
-                        <span className="sr-only">Acciones</span>
-                      </TableHead>
+                      <WorkspaceTableHead
+                        tone="nature"
+                        align="right"
+                        className={cn(
+                          "w-[7.25rem] px-3",
+                          workspaceTableLayoutHeaderHeadClass,
+                        )}
+                        srOnly
+                      >
+                        Acciones
+                      </WorkspaceTableHead>
                     ) : null}
-                  </TableRow>
-                </TableHeader>
+                  </WorkspaceTableHeaderRow>
+                </WorkspaceTableHeader>
                 <TableBody>
                   {listFetching ? (
                     <WorkspaceTableSkeletonRows
@@ -1090,6 +944,7 @@ function ClientsPage() {
                       columns={clientsSkeletonColumns({
                         hasActionsColumn: Boolean(canUpdate || canDelete),
                       })}
+                      tone="nature"
                     />
                   ) : totalCount === 0 ? (
                     null
@@ -1098,14 +953,18 @@ function ClientsPage() {
                       <TableRow
                         key={r.id}
                         className={cn(
-                          workspaceTableBodyRowClassNames(i),
-                          !r.isActive && "opacity-[0.88]",
+                          workspaceTableLayoutBodyRowClass,
+                          workspaceTableNatureBodyRowClassNames(i, {
+                            selected: selected.has(r.id),
+                            noHover: true,
+                            inactive: !r.isActive,
+                          }),
                         )}
                       >
-                        <TableCell className="w-12 !px-0 py-2 align-middle">
+                        <TableCell className={workspaceTableLayoutSelectBodyCellClass}>
                           <div className={selectColumnInnerClass}>
                             <Checkbox
-                              className={tableRowSelectCheckboxClass}
+                              className={workspaceTableNatureCheckboxClass}
                               checked={selected.has(r.id)}
                               onCheckedChange={(c) => {
                                 setSelected((prev) => {
@@ -1119,13 +978,16 @@ function ClientsPage() {
                             />
                           </div>
                         </TableCell>
-                        <TableCell className="min-w-0 px-3 py-2.5 align-middle">
+                        <TableCell className={cn(workspaceTableLayoutBodyCellClass, "min-w-[10rem]")}>
                           <p className="truncate font-medium text-foreground">
                             {r.name || "—"}
                           </p>
                           {r.addressLine.trim() ? (
                             <p
-                              className="truncate text-xs text-muted-foreground"
+                              className={cn(
+                                "truncate text-xs leading-4",
+                                workspaceTableNatureTextSecondaryClass,
+                              )}
                               title={r.addressLine}
                             >
                               {r.addressLine}
@@ -1141,21 +1003,34 @@ function ClientsPage() {
                           ) : null}
                         </TableCell>
                         <TableCell
-                          className="min-w-0 max-w-[12rem] overflow-hidden px-3 py-2.5 align-middle text-muted-foreground"
+                          className={cn(
+                            workspaceTableLayoutBodyCellClass,
+                            "min-w-0 max-w-[12rem] overflow-hidden",
+                            workspaceTableNatureTextSecondaryClass,
+                          )}
                           title={r.email.trim() ? r.email : undefined}
                         >
                           <p className="truncate">{r.email || "—"}</p>
                         </TableCell>
                         <TableCell
-                          className="min-w-0 max-w-[9rem] overflow-hidden px-3 py-2.5 align-middle text-muted-foreground"
+                          className={cn(
+                            workspaceTableLayoutBodyCellClass,
+                            "min-w-0 max-w-[9rem] overflow-hidden",
+                            workspaceTableNatureTextSecondaryClass,
+                          )}
                           title={r.phone.trim() ? r.phone : undefined}
                         >
                           <p className="truncate">{r.phone || "—"}</p>
                         </TableCell>
-                        <TableCell className="px-3 py-2.5 text-muted-foreground">
+                        <TableCell
+                          className={cn(
+                            workspaceTableLayoutBodyCellClass,
+                            workspaceTableNatureTextSecondaryClass,
+                          )}
+                        >
                           {r.taxId || "—"}
                         </TableCell>
-                        <TableCell className="min-w-0 px-3 py-2.5 align-middle">
+                        <TableCell className={workspaceTableLayoutBodyCellClass}>
                           {r.ivaCondition ? (
                             <Badge
                               variant="secondary"
@@ -1170,33 +1045,51 @@ function ClientsPage() {
                               </span>
                             </Badge>
                           ) : (
-                            <span className="text-muted-foreground">—</span>
+                            <span className={workspaceTableNatureTextSecondaryClass}>
+                              —
+                            </span>
                           )}
                         </TableCell>
-                        <TableCell className="whitespace-nowrap px-3 py-2.5 text-muted-foreground">
+                        <TableCell
+                          className={cn(
+                            workspaceTableLayoutBodyCellClass,
+                            "whitespace-nowrap",
+                            workspaceTableNatureTextSecondaryClass,
+                          )}
+                        >
                           {formatShortSaleDate(r.lastSaleAt)}
                         </TableCell>
-                        <TableCell className="px-3 py-2.5 text-right align-middle">
+                        <TableCell
+                          className={cn(
+                            workspaceTableLayoutBodyCellClass,
+                            "text-right align-middle",
+                          )}
+                        >
                           {r.completedSalesCount > 0 ? (
-                            <div className="flex flex-col items-end gap-0.5">
+                            <div className={cn(workspaceTableLayoutCellStackClass, "items-end")}>
                               <span className="text-foreground">
                                 {r.completedSalesCount.toLocaleString("es-AR")}{" "}
-                                <span className="font-normal text-muted-foreground">
+                                <span className={cn("font-normal", workspaceTableNatureTextSecondaryClass)}>
                                   ventas
                                 </span>
                               </span>
-                              <DataWorkspaceTableMoney muted>
-                                <span className="text-xs">
-                                  {formatArs(r.totalSpentArs)}
-                                </span>
-                              </DataWorkspaceTableMoney>
+                              <span
+                                className={cn(
+                                  "text-xs tabular-nums",
+                                  workspaceTableNatureMoneyClass,
+                                )}
+                              >
+                                {formatArs(r.totalSpentArs)}
+                              </span>
                             </div>
                           ) : (
-                            <span className="text-muted-foreground">—</span>
+                            <span className={workspaceTableNatureTextSecondaryClass}>
+                              —
+                            </span>
                           )}
                         </TableCell>
                         {canUpdate || canDelete ? (
-                          <TableCell className="px-1 py-1.5 align-middle">
+                          <TableCell className={workspaceTableLayoutActionsBodyCellClass}>
                             <div className="flex items-center justify-end gap-1">
                               {canUpdate ? (
                                 <DataWorkspaceTableIconAction
@@ -1210,7 +1103,7 @@ function ClientsPage() {
                                   label={`Eliminar ${r.name || "cliente"}`}
                                   icon={Trash2}
                                   destructive
-                                  onClick={() => setDeleteRow(r)}
+                                  onClick={() => openDelete(r)}
                                 />
                               ) : null}
                             </div>
@@ -1221,194 +1114,71 @@ function ClientsPage() {
                   )}
                 </TableBody>
               </table>
-              {!listFetching && totalCount === 0 ? (
-                <div className="min-h-[12rem] flex-1" aria-hidden />
-              ) : null}
               </DataWorkspaceListTableFrame>
             </DataWorkspaceListTableShell>
           </div>
 
-      <Dialog open={createOpenEffective} onOpenChange={(o) => !o && closeCreate()}>
-        <DialogContent
-          data-rootsy-light-shell="true"
-          showCloseButton={!createSaving}
-          className={clientDialogSurface}
-        >
-          <DialogHeader className={clientDialogHeaderClass}>
-            <DialogTitle className="text-base font-semibold tracking-tight">
-              Nuevo cliente
-            </DialogTitle>
-            <DialogDescription className="text-sm leading-relaxed">
-              Datos fiscales y de contacto. Podés completar el CUIT con el padrón
-              AFIP.
-            </DialogDescription>
-          </DialogHeader>
-          <form
-            className="flex min-h-0 flex-1 flex-col overflow-hidden"
-            onSubmit={(e) => void submitCreate(e)}
-          >
-            <div className={clientDialogBodyClass}>
-              {createBanner ? (
-                <p
-                  role="alert"
-                  className="mb-4 rounded-lg border border-destructive/25 bg-destructive/5 px-3 py-2 text-sm text-destructive"
-                >
-                  {createBanner}
-                </p>
-              ) : null}
-              <ClientUpsertFormFields
-                idPrefix="cl"
-                form={createForm}
-                setForm={setCreateForm}
-                padron={createPadron}
-                comprobanteFormOptions={comprobanteFormOptions}
-                suggestedComprobante={suggestedComprobanteForCreate}
-                taxInputRef={createTaxInputRef}
-              />
-            </div>
-            <DialogFooter className={clientDialogFooterClass}>
-              <Button
-                type="button"
-                variant="outline"
-                disabled={createSaving}
-                onClick={closeCreate}
-              >
-                Cancelar
-              </Button>
-              <Button type="submit" disabled={createSaving} className="gap-2">
-                {createSaving ? (
-                  <>
-                    <Loader2 className="size-4 animate-spin" aria-hidden />
-                    Guardando…
-                  </>
-                ) : (
-                  "Crear cliente"
-                )}
-              </Button>
-            </DialogFooter>
-          </form>
-        </DialogContent>
-      </Dialog>
+      <ClientUpsertDialog
+        open={createOpenEffective}
+        onOpenChange={(open) => !open && closeCreate()}
+        mode="create"
+        title="Nuevo cliente"
+        description="Datos fiscales y de contacto. Podés completar el CUIT con el padrón AFIP."
+        saving={createSaving}
+        banner={createBanner}
+        onSubmit={(e) => void submitCreate(e)}
+        onCancel={closeCreate}
+        onAfterClose={finalizeCreateClose}
+        idPrefix="cl"
+        form={createForm}
+        setForm={setCreateForm}
+        padron={createPadron}
+        comprobanteFormOptions={comprobanteFormOptions}
+        suggestedComprobante={suggestedComprobanteForCreate}
+        taxInputRef={createTaxInputRef}
+      />
 
-      <Dialog
+      <ClientUpsertDialog
         open={editRow !== null}
-        onOpenChange={(o) => {
-          if (!o && !editSaving) setEditRow(null)
+        onOpenChange={(open) => {
+          if (!open && !editSaving) closeEdit()
         }}
-      >
-        <DialogContent
-          data-rootsy-light-shell="true"
-          showCloseButton={!editSaving}
-          className={clientDialogSurface}
-        >
-          <DialogHeader className={clientDialogHeaderClass}>
-            <DialogTitle className="text-base font-semibold tracking-tight">
-              Editar cliente
-            </DialogTitle>
-            <DialogDescription className="text-sm leading-relaxed">
-              {editRow?.name
-                ? `Actualizá los datos de ${editRow.name}.`
-                : "Actualizá los datos del cliente."}
-            </DialogDescription>
-          </DialogHeader>
-          <form
-            className="flex min-h-0 flex-1 flex-col overflow-hidden"
-            onSubmit={(e) => void submitEdit(e)}
-          >
-            <div className={clientDialogBodyClass}>
-              {editBanner ? (
-                <p
-                  role="alert"
-                  className="mb-4 rounded-lg border border-destructive/25 bg-destructive/5 px-3 py-2 text-sm text-destructive"
-                >
-                  {editBanner}
-                </p>
-              ) : null}
-              <ClientUpsertFormFields
-                idPrefix="e-cl"
-                form={editForm}
-                setForm={setEditForm}
-                padron={editPadron}
-                comprobanteFormOptions={comprobanteFormOptions}
-                suggestedComprobante={suggestedComprobanteForEdit}
-                showPadronNameButton
-              />
-            </div>
-            <DialogFooter className={clientDialogFooterClass}>
-              <Button
-                type="button"
-                variant="outline"
-                disabled={editSaving}
-                onClick={() => setEditRow(null)}
-              >
-                Cancelar
-              </Button>
-              <Button type="submit" disabled={editSaving} className="gap-2">
-                {editSaving ? (
-                  <>
-                    <Loader2 className="size-4 animate-spin" aria-hidden />
-                    Guardando…
-                  </>
-                ) : (
-                  "Guardar cambios"
-                )}
-              </Button>
-            </DialogFooter>
-          </form>
-        </DialogContent>
-      </Dialog>
+        mode="edit"
+        title="Editar cliente"
+        description={
+          editRow?.name
+            ? `Actualizá los datos de ${editRow.name}.`
+            : "Actualizá los datos del cliente."
+        }
+        saving={editSaving}
+        banner={editBanner}
+        onSubmit={(e) => void submitEdit(e)}
+        onCancel={closeEdit}
+        idPrefix="e-cl"
+        form={editForm}
+        setForm={setEditForm}
+        padron={editPadron}
+        comprobanteFormOptions={comprobanteFormOptions}
+        suggestedComprobante={suggestedComprobanteForEdit}
+        showPadronNameButton
+      />
 
-      <Dialog
-        open={deleteRow !== null}
-        onOpenChange={(o) => {
-          if (!o && !deleteBusy) setDeleteRow(null)
-        }}
-      >
-        <DialogContent
-          data-rootsy-light-shell="true"
-          showCloseButton={!deleteBusy}
-          className={cn(clientDialogSurface, "sm:max-w-md")}
-        >
-          <DialogHeader className={clientDialogHeaderClass}>
-            <DialogTitle className="text-base font-semibold tracking-tight">
-              ¿Eliminar cliente?
-            </DialogTitle>
-            <DialogDescription className="text-sm leading-relaxed">
-              Se quitará{" "}
-              <span className="font-medium text-foreground">
-                {deleteRow?.name || "este cliente"}
-              </span>{" "}
-              de este punto de venta. Esta acción no se puede deshacer.
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter className={clientDialogFooterClass}>
-            <Button
-              type="button"
-              variant="outline"
-              disabled={deleteBusy}
-              onClick={() => setDeleteRow(null)}
-            >
-              Cancelar
-            </Button>
-            <Button
-              type="button"
-              variant="destructive"
-              disabled={deleteBusy}
-              className="gap-2"
-              onClick={() => void submitDelete()}
-            >
-              {deleteBusy ? (
-                <>
-                  <Loader2 className="size-4 animate-spin" aria-hidden />
-                  Eliminando…
-                </>
-              ) : (
-                "Eliminar"
-              )}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      {deleteTarget ? (
+        <ClientDeleteDialog
+          open={deleteOpen}
+          clientName={deleteTarget.name}
+          confirmValue={deleteTyped}
+          banner={deleteBanner}
+          busy={deleteBusy}
+          onOpenChange={(open) => {
+            if (!open && !deleteBusy) requestCloseDelete()
+          }}
+          onClose={requestCloseDelete}
+          onAfterClose={finalizeDeleteClose}
+          onConfirmValueChange={setDeleteTyped}
+          onConfirmDelete={() => void submitDelete()}
+        />
+      ) : null}
       </div>
     </DataWorkspaceLayout>
   )

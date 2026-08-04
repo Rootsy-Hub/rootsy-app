@@ -6,7 +6,7 @@ import { useRootsFormFieldControlProps } from "@/components/rootsy-form/rootsFor
 import { rootsFormTextFieldClass } from "@/components/rootsy-form/rootsFormStyles"
 import { Input } from "@/components/ui/input"
 import { cn } from "@/lib/utils"
-import { useId, type ComponentProps } from "react"
+import { forwardRef, useId, type ComponentProps } from "react"
 
 type Props = {
   label: string
@@ -16,40 +16,46 @@ type Props = {
 } & RootsFormFieldAssistProps &
   Omit<ComponentProps<"input">, "id" | "className">
 
-export function RootsFormTextField({
-  label,
-  id,
-  className,
-  inputClassName,
-  hint,
-  error,
-  warning,
-  success,
-  invalid,
-  ...inputProps
-}: Props) {
-  const autoId = useId()
-  const fieldId = id ?? autoId
-  const controlProps = useRootsFormFieldControlProps({ invalid })
+export const RootsFormTextField = forwardRef<HTMLInputElement, Props>(
+  function RootsFormTextField(
+    {
+      label,
+      id,
+      className,
+      inputClassName,
+      hint,
+      error,
+      warning,
+      success,
+      invalid,
+      ...inputProps
+    },
+    ref,
+  ) {
+    const autoId = useId()
+    const fieldId = id ?? autoId
+    const controlProps = useRootsFormFieldControlProps({ invalid })
 
-  return (
-    <RootsFormField
-      label={label}
-      htmlFor={fieldId}
-      className={className}
-      hint={hint}
-      error={error}
-      warning={warning}
-      success={success}
-      invalid={invalid}
-    >
-      <Input
-        id={fieldId}
-        className={cn(rootsFormTextFieldClass, inputClassName)}
-        aria-describedby={controlProps.describedBy}
-        aria-invalid={controlProps.isInvalid || undefined}
-        {...inputProps}
-      />
-    </RootsFormField>
-  )
-}
+    return (
+      <RootsFormField
+        label={label}
+        htmlFor={fieldId}
+        className={className}
+        hint={hint}
+        error={error}
+        warning={warning}
+        success={success}
+        invalid={invalid}
+      >
+        <Input
+          ref={ref}
+          id={fieldId}
+          className={cn(rootsFormTextFieldClass, inputClassName)}
+          aria-describedby={controlProps.describedBy}
+          aria-invalid={controlProps.isInvalid || undefined}
+          {...inputProps}
+        />
+      </RootsFormField>
+    )
+  },
+)

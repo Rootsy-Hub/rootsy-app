@@ -1,6 +1,5 @@
 "use client"
 
-import { ArticlesPageSkeleton } from "@/app/[siteId]/[popId]/articles/ArticlesPageSkeleton"
 import {
   defaultArticleCatalogExtraFormState,
   type ArticleCatalogExtraFormState,
@@ -145,7 +144,6 @@ import {
   useSearchParams,
 } from "next/navigation"
 import {
-  Suspense,
   useCallback,
   useEffect,
   useId,
@@ -1747,10 +1745,4 @@ function ArticlesPage() {
   )
 }
 
-export default withAuth(function ArticlesPageRoute() {
-  return (
-    <Suspense fallback={<ArticlesPageSkeleton />}>
-      <ArticlesPage />
-    </Suspense>
-  )
-})
+export default withAuth(ArticlesPage)

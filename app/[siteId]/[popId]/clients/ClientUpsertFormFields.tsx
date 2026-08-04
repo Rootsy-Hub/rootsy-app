@@ -4,20 +4,19 @@ import type { UpsertPopClientInput } from "@/app/[siteId]/[popId]/clients/action
 import { CLIENT_IVA_CONDITION_OPTIONS } from "@/app/[siteId]/[popId]/clients/clientIvaConstants"
 import type { usePadronAutofillRazonSocial } from "@/hooks/usePadronAutofillRazonSocial"
 import type { SaleComprobantePickerOption } from "@/lib/saleComprobantePicker"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
-import { Switch } from "@/components/ui/switch"
-import { Textarea } from "@/components/ui/textarea"
+  RootsFormSelectField,
+  RootsFormSelectItem,
+  RootsFormSwitchField,
+  RootsFormTextField,
+  RootsFormTextareaField,
+  rootsFormColumnClass,
+  rootsFormEarthTextSecondaryClass,
+  rootsFormFieldLabelClass,
+} from "@/components/rootsy-form"
+import { rootsFormEarthDividerClass } from "@/components/rootsy-form/rootsFormEarthTokens"
+import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
-import { Loader2 } from "lucide-react"
 import type { Dispatch, ReactNode, SetStateAction } from "react"
 
 export const clientDialogSurface = cn(
@@ -34,6 +33,8 @@ export const clientDialogBodyClass =
 export const clientDialogFooterClass =
   "shrink-0 gap-2 border-t border-border/50 bg-muted/10 px-6 py-4 sm:flex-row sm:justify-end"
 
+const sectionDividerClass = cn("h-px w-full shrink-0", rootsFormEarthDividerClass)
+
 function FormSection({
   title,
   description,
@@ -44,18 +45,21 @@ function FormSection({
   children: ReactNode
 }) {
   return (
-    <section className="space-y-3">
+    <section className="flex flex-col gap-4">
       <div>
-        <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-          {title}
-        </h3>
+        <h3 className={rootsFormFieldLabelClass}>{title}</h3>
         {description ? (
-          <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
+          <p
+            className={cn(
+              "mt-1 text-xs leading-relaxed",
+              rootsFormEarthTextSecondaryClass,
+            )}
+          >
             {description}
           </p>
         ) : null}
       </div>
-      <div className="space-y-3">{children}</div>
+      <div className="flex flex-col gap-4">{children}</div>
     </section>
   )
 }
@@ -67,42 +71,20 @@ function PadronFiscalHint({
 }) {
   if (padron.busy || padron.error) return null
   if (!padron.condicionIvaNombre && !padron.domicilioFiscal) return null
-  return (
-    <div className="rounded-lg border border-border/60 bg-muted/20 px-3 py-2 text-xs text-muted-foreground">
-      {padron.condicionIvaNombre ? (
-        <p>
-          Padrón AFIP:{" "}
-          <span className="font-medium text-foreground">
-            {padron.condicionIvaNombre}
-          </span>
-        </p>
-      ) : null}
-      {padron.domicilioFiscal ? (
-        <p className={padron.condicionIvaNombre ? "mt-1" : undefined}>
-          Domicilio fiscal: {padron.domicilioFiscal}
-        </p>
-      ) : null}
-    </div>
-  )
-}
 
-function PadronStatus({
-  padron,
-}: {
-  padron: ReturnType<typeof usePadronAutofillRazonSocial>
-}) {
-  if (padron.busy) {
-    return (
-      <p className="flex items-center gap-2 text-xs text-muted-foreground">
-        <Loader2 className="size-3.5 animate-spin" aria-hidden />
-        Consultando padrón AFIP…
-      </p>
-    )
+  const lines: string[] = []
+  if (padron.condicionIvaNombre) {
+    lines.push(`Padrón AFIP: ${padron.condicionIvaNombre}`)
   }
-  if (padron.error) {
-    return <p className="text-xs text-destructive">{padron.error}</p>
+  if (padron.domicilioFiscal) {
+    lines.push(`Domicilio fiscal: ${padron.domicilioFiscal}`)
   }
-  return null
+
+  return (
+    <p className={cn("text-xs leading-relaxed", rootsFormEarthTextSecondaryClass)}>
+      {lines.join(" · ")}
+    </p>
+  )
 }
 
 export function ClientUpsertFormFields({
@@ -126,51 +108,44 @@ export function ClientUpsertFormFields({
   taxInputRef?: React.RefObject<HTMLInputElement | null>
   nameInputRef?: React.RefObject<HTMLInputElement | null>
 }) {
+  const taxHint = padron.busy
+    ? "Consultando padrón AFIP…"
+    : !padron.error
+      ? "Con DNI buscamos en AFIP probando los CUIT posibles de persona física. Si no aparece, puede ser consumidor final sin inscripción: cargá el nombre manualmente."
+      : undefined
+
+  const ivaHint =
+    padron.mappedIvaCondition && !form.ivaCondition && padron.condicionIvaNombre
+      ? `AFIP informa «${padron.condicionIvaNombre}». Se completará al guardar si no elegís otra condición.`
+      : undefined
+
   return (
-    <div className="space-y-6">
+    <div className={cn(rootsFormColumnClass, "gap-6")}>
       <FormSection
         title="Identificación fiscal"
         description="Cargá el CUIT o DNI para traer datos de AFIP."
       >
-        <div className="space-y-2">
-          <Label htmlFor={`${idPrefix}-tax`}>CUIT / DNI</Label>
-          <Input
-            ref={taxInputRef}
-            id={`${idPrefix}-tax`}
-            value={form.taxId}
-            onChange={(e) =>
-              setForm((f) => ({ ...f, taxId: e.target.value }))
-            }
-            className="bg-background"
-            placeholder="Ej. 20-12345678-9"
-            autoComplete="off"
-          />
-          <PadronStatus padron={padron} />
-          {!padron.busy && !padron.error ? (
-            <p className="text-xs text-muted-foreground">
-              Con DNI buscamos en AFIP probando los CUIT posibles de persona física.
-              Si no aparece, puede ser consumidor final sin inscripción: cargá el nombre
-              manualmente.
-            </p>
-          ) : null}
-          <PadronFiscalHint padron={padron} />
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor={`${idPrefix}-name`}>
-            Razón social / nombre{" "}
-            <span className="text-destructive" aria-hidden>
-              *
-            </span>
-          </Label>
-          <Input
+        <RootsFormTextField
+          ref={taxInputRef}
+          label="CUIT / DNI"
+          id={`${idPrefix}-tax`}
+          value={form.taxId}
+          onChange={(e) => setForm((f) => ({ ...f, taxId: e.target.value }))}
+          placeholder="Ej. 20-12345678-9"
+          autoComplete="off"
+          hint={taxHint}
+          error={padron.error ?? undefined}
+        />
+        <PadronFiscalHint padron={padron} />
+
+        <div className="flex flex-col gap-2">
+          <RootsFormTextField
             ref={nameInputRef}
+            label="Razón social / nombre"
             id={`${idPrefix}-name`}
             value={form.name}
-            onChange={(e) =>
-              setForm((f) => ({ ...f, name: e.target.value }))
-            }
+            onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
             required
-            className="bg-background"
             placeholder="Nombre visible en ventas y facturas"
             autoComplete="organization"
           />
@@ -181,7 +156,7 @@ export function ClientUpsertFormFields({
               type="button"
               variant="outline"
               size="sm"
-              className="h-8 text-xs"
+              className="h-8 self-start text-xs"
               onClick={() =>
                 setForm((f) => ({
                   ...f,
@@ -193,154 +168,116 @@ export function ClientUpsertFormFields({
             </Button>
           ) : null}
         </div>
-        <div className="space-y-2">
-          <Label htmlFor={`${idPrefix}-iva`}>Condición IVA</Label>
-          <Select
-            value={form.ivaCondition || "__none__"}
-            onValueChange={(v) =>
-              setForm((f) => ({
-                ...f,
-                ivaCondition: v === "__none__" ? "" : v,
-              }))
-            }
-          >
-            <SelectTrigger id={`${idPrefix}-iva`} className="bg-background">
-              <SelectValue placeholder="Sin definir" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="__none__">Sin definir</SelectItem>
-              {CLIENT_IVA_CONDITION_OPTIONS.map((o) => (
-                <SelectItem key={o.value} value={o.value}>
-                  {o.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          {padron.mappedIvaCondition &&
-          !form.ivaCondition &&
-          padron.condicionIvaNombre ? (
-            <p className="text-xs text-muted-foreground">
-              AFIP informa «{padron.condicionIvaNombre}». Se completará al
-              guardar si no elegís otra condición.
-            </p>
-          ) : null}
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor={`${idPrefix}-address`}>Domicilio</Label>
-          <Input
-            id={`${idPrefix}-address`}
-            value={form.addressLine}
-            onChange={(e) =>
-              setForm((f) => ({ ...f, addressLine: e.target.value }))
-            }
-            className="bg-background"
-            placeholder="Calle, localidad (opcional)"
-            autoComplete="street-address"
-          />
-        </div>
+
+        <RootsFormSelectField
+          label="Condición IVA"
+          id={`${idPrefix}-iva`}
+          value={form.ivaCondition || "__none__"}
+          onValueChange={(v) =>
+            setForm((f) => ({
+              ...f,
+              ivaCondition: v === "__none__" ? "" : v,
+            }))
+          }
+          placeholder="Sin definir"
+          hint={ivaHint}
+        >
+          <RootsFormSelectItem value="__none__">Sin definir</RootsFormSelectItem>
+          {CLIENT_IVA_CONDITION_OPTIONS.map((o) => (
+            <RootsFormSelectItem key={o.value} value={o.value}>
+              {o.label}
+            </RootsFormSelectItem>
+          ))}
+        </RootsFormSelectField>
+
+        <RootsFormTextField
+          label="Domicilio"
+          id={`${idPrefix}-address`}
+          value={form.addressLine}
+          onChange={(e) =>
+            setForm((f) => ({ ...f, addressLine: e.target.value }))
+          }
+          placeholder="Calle, localidad (opcional)"
+          autoComplete="street-address"
+        />
       </FormSection>
+
+      <div className={sectionDividerClass} aria-hidden />
 
       <FormSection
         title="Facturación"
         description="Comprobante sugerido al elegir este cliente en una venta."
       >
-        <div className="space-y-2">
-          <Label htmlFor={`${idPrefix}-default-invoice`}>
-            Comprobante por defecto
-          </Label>
-          <Select
-            value={form.defaultInvoiceTypeLabel || "__auto__"}
-            onValueChange={(v) =>
-              setForm((f) => ({
-                ...f,
-                defaultInvoiceTypeLabel: v === "__auto__" ? "" : v,
-              }))
-            }
-          >
-            <SelectTrigger
-              id={`${idPrefix}-default-invoice`}
-              className="bg-background"
-            >
-              <SelectValue placeholder="Según condición IVA" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="__auto__">
-                {suggestedComprobante
-                  ? `Según condición IVA (${suggestedComprobante})`
-                  : "Según condición IVA"}
-              </SelectItem>
-              {comprobanteFormOptions.map((opt) => (
-                <SelectItem key={opt.label} value={opt.label}>
-                  {opt.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
+        <RootsFormSelectField
+          label="Comprobante por defecto"
+          id={`${idPrefix}-default-invoice`}
+          value={form.defaultInvoiceTypeLabel || "__auto__"}
+          onValueChange={(v) =>
+            setForm((f) => ({
+              ...f,
+              defaultInvoiceTypeLabel: v === "__auto__" ? "" : v,
+            }))
+          }
+          placeholder="Según condición IVA"
+        >
+          <RootsFormSelectItem value="__auto__">
+            {suggestedComprobante
+              ? `Según condición IVA (${suggestedComprobante})`
+              : "Según condición IVA"}
+          </RootsFormSelectItem>
+          {comprobanteFormOptions.map((opt) => (
+            <RootsFormSelectItem key={opt.label} value={opt.label}>
+              {opt.label}
+            </RootsFormSelectItem>
+          ))}
+        </RootsFormSelectField>
       </FormSection>
+
+      <div className={sectionDividerClass} aria-hidden />
 
       <FormSection title="Contacto">
-        <div className="space-y-2">
-          <Label htmlFor={`${idPrefix}-email`}>Email</Label>
-          <Input
-            id={`${idPrefix}-email`}
-            type="email"
-            value={form.email}
-            onChange={(e) =>
-              setForm((f) => ({ ...f, email: e.target.value }))
-            }
-            className="bg-background"
-            placeholder="opcional@ejemplo.com"
-            autoComplete="email"
-          />
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor={`${idPrefix}-phone`}>Teléfono</Label>
-          <Input
-            id={`${idPrefix}-phone`}
-            type="tel"
-            value={form.phone}
-            onChange={(e) =>
-              setForm((f) => ({ ...f, phone: e.target.value }))
-            }
-            className="bg-background"
-            placeholder="Opcional"
-            autoComplete="tel"
-          />
-        </div>
+        <RootsFormTextField
+          label="Email"
+          id={`${idPrefix}-email`}
+          type="email"
+          value={form.email}
+          onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))}
+          placeholder="opcional@ejemplo.com"
+          autoComplete="email"
+        />
+
+        <RootsFormTextField
+          label="Teléfono"
+          id={`${idPrefix}-phone`}
+          type="tel"
+          value={form.phone}
+          onChange={(e) => setForm((f) => ({ ...f, phone: e.target.value }))}
+          placeholder="Opcional"
+          autoComplete="tel"
+        />
       </FormSection>
 
+      <div className={sectionDividerClass} aria-hidden />
+
       <FormSection title="Estado y notas">
-        <div className="flex items-center justify-between gap-4 rounded-lg border border-border/60 px-3 py-3">
-          <div className="min-w-0 space-y-0.5">
-            <Label htmlFor={`${idPrefix}-active`} className="text-foreground">
-              Cliente activo
-            </Label>
-            <p className="text-xs text-muted-foreground">
-              Los inactivos se ocultan con el filtro «Solo clientes activos».
-            </p>
-          </div>
-          <Switch
-            id={`${idPrefix}-active`}
-            checked={form.isActive}
-            onCheckedChange={(c) =>
-              setForm((f) => ({ ...f, isActive: c }))
-            }
-          />
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor={`${idPrefix}-notes`}>Notas internas</Label>
-          <Textarea
-            id={`${idPrefix}-notes`}
-            rows={3}
-            value={form.notes}
-            onChange={(e) =>
-              setForm((f) => ({ ...f, notes: e.target.value }))
-            }
-            className="bg-background"
-            placeholder="Observaciones para tu equipo (opcional)"
-          />
-        </div>
+        <RootsFormSwitchField
+          label="Cliente activo"
+          description='Los inactivos se ocultan con el filtro «Solo clientes activos».'
+          id={`${idPrefix}-active`}
+          checked={form.isActive}
+          onCheckedChange={(checked) =>
+            setForm((f) => ({ ...f, isActive: checked }))
+          }
+        />
+
+        <RootsFormTextareaField
+          label="Notas internas"
+          id={`${idPrefix}-notes`}
+          rows={3}
+          value={form.notes}
+          onChange={(e) => setForm((f) => ({ ...f, notes: e.target.value }))}
+          placeholder="Observaciones para tu equipo (opcional)"
+        />
       </FormSection>
     </div>
   )

@@ -12,6 +12,7 @@ import {
 import { popMenuHref } from "@/lib/popRoutes"
 import { loadPopPermissionsSnapshot } from "@/lib/popPermissionsServer"
 import { createClient } from "@/utils/supabase/server"
+import { clientDeleteConfirmPhrase } from "@/app/[siteId]/[popId]/clients/clientConstants"
 import { CLIENT_IVA_CONDITION_VALUES } from "@/app/[siteId]/[popId]/clients/clientIvaConstants"
 import {
   CLIENT_TABLE_PAGE_SIZES,
@@ -237,6 +238,7 @@ export async function updatePopClient(
 export async function deletePopClient(
   popId: string,
   clientId: string,
+  confirmationTyped: string,
 ): Promise<{ success: true } | { success: false; error: string }> {
   try {
     const access = await validatePopAccess(popId)
@@ -254,6 +256,28 @@ export async function deletePopClient(
       return { success: false, error: "Sin permiso para eliminar clientes." }
     }
     const supabase = await createClient()
+    const { data: client, error: fetchError } = await supabase
+      .from("clients")
+      .select("name")
+      .eq("id", clientId)
+      .eq("pop_id", popId)
+      .maybeSingle()
+    if (fetchError) {
+      return {
+        success: false,
+        error: fetchError.message || "No se encontró el cliente.",
+      }
+    }
+    if (!client) {
+      return { success: false, error: "No se encontró el cliente." }
+    }
+    const expectedPhrase = clientDeleteConfirmPhrase(String(client.name ?? ""))
+    if (confirmationTyped.trim() !== expectedPhrase) {
+      return {
+        success: false,
+        error: `Escribí (${expectedPhrase}) para confirmar el borrado.`,
+      }
+    }
     const { error } = await supabase
       .from("clients")
       .delete()

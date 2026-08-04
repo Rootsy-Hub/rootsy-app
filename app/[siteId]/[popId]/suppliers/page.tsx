@@ -9,14 +9,20 @@ import {
   type UpsertPopSupplierInput,
 } from "@/app/[siteId]/[popId]/suppliers/actions"
 import { CLIENT_IVA_CONDITION_OPTIONS } from "@/app/[siteId]/[popId]/clients/clientIvaConstants"
+import { SupplierDeleteDialog } from "@/app/[siteId]/[popId]/suppliers/SupplierDeleteDialog"
+import { SupplierUpsertDialog } from "@/app/[siteId]/[popId]/suppliers/SupplierUpsertDialog"
 import {
-  SupplierUpsertFormFields,
-  supplierDialogBodyClass,
-  supplierDialogFooterClass,
-  supplierDialogHeaderClass,
-  supplierDialogSurface,
-} from "@/app/[siteId]/[popId]/suppliers/SupplierUpsertFormFields"
+  SuppliersFiltersDialog,
+  defaultSuppliersModalFilters,
+  type SuppliersModalFilters,
+} from "@/app/[siteId]/[popId]/suppliers/SuppliersFiltersDialog"
 import { buildPaginationItems } from "@/app/[siteId]/[popId]/layout/layoutPreviewPagination"
+import { DataWorkspaceListActiveFiltersBar } from "@/components/data-workspace/DataWorkspaceListActiveFiltersBar"
+import { DataWorkspaceListFilterChip } from "@/components/data-workspace/DataWorkspaceListFilterChip"
+import {
+  DataWorkspaceListFiltersDialogTrigger,
+  DataWorkspaceListSearchField,
+} from "@/components/data-workspace/DataWorkspaceListFilterFields"
 import { DataWorkspaceListPaginationFooter } from "@/components/data-workspace/DataWorkspaceListPaginationFooter"
 import {
   DataWorkspaceListTableFrame,
@@ -27,36 +33,26 @@ import { WorkspaceTableSkeletonRows } from "@/components/data-workspace/Workspac
 import { suppliersSkeletonColumns } from "@/components/data-workspace/workspaceTableSkeletonPresets"
 import { DataWorkspaceListTableShell } from "@/components/data-workspace/DataWorkspaceListTableShell"
 import {
-  lightFilterChipClass,
   lightTableThClass,
-  lightToolbarButtonClass,
-  lightToolbarControlActiveClass,
-  lightToolbarInputClass,
-  lightToolbarClearButtonClass,
-  lightToolbarPanelClass,
-  lightToolbarPanelLastClass,
-  lightToolbarShellClass,
   listBulkToolbarClearButtonClass,
   selectColumnInnerClass,
   tableRowSelectCheckboxClass,
-  toolbarBlockLabelClass,
   workspaceDataTableClassName,
   workspaceTableBodyRowClassNames,
 } from "@/components/data-workspace/dataWorkspaceListStyles"
+import {
+  dataWorkspaceListFiltersBarClass,
+  dataWorkspaceListFiltersBarInnerClass,
+  dataWorkspaceListFiltersBarRowClass,
+  dataWorkspaceListFiltersGridClass,
+  dataWorkspaceListFiltersPanelClass,
+  dataWorkspaceListFiltersPanelLastClass,
+} from "@/components/data-workspace/dataWorkspaceTablesLayout"
 import { DataWorkspaceLayout } from "@/components/layouts/DataWorkspaceLayout"
 import { DataWorkspaceHeaderIconButton } from "@/components/layouts/DataWorkspaceHeaderIconButton"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog"
-import { Input } from "@/components/ui/input"
 import {
   Tooltip,
   TooltipContent,
@@ -74,13 +70,9 @@ import { usePadronAutofillRazonSocial } from "@/hooks/usePadronAutofillRazonSoci
 import { usePopWorkspace } from "@/context/PopWorkspaceContext"
 import { cn } from "@/lib/utils"
 import {
-  Filter,
-  Loader2,
   Pencil,
   Plus,
-  Search,
   Trash2,
-  X,
 } from "lucide-react"
 import { useParams, useSearchParams } from "next/navigation"
 import {
@@ -113,17 +105,9 @@ const IVA_LABEL_BY_VALUE = Object.fromEntries(
   CLIENT_IVA_CONDITION_OPTIONS.map((o) => [o.value, o.label]),
 ) as Record<string, string>
 
-type SuppliersAppliedFilters = {
-  withEmail: boolean
-  withTaxId: boolean
-  soloActivos: boolean
-}
+type SuppliersAppliedFilters = SuppliersModalFilters
 
-const defaultSupplierFilters = (): SuppliersAppliedFilters => ({
-  withEmail: false,
-  withTaxId: false,
-  soloActivos: false,
-})
+const defaultSupplierFilters = defaultSuppliersModalFilters
 
 function SuppliersPage() {
   const params = useParams()
@@ -142,6 +126,7 @@ function SuppliersPage() {
 
   const [searchInput, setSearchInput] = useState("")
   const searchInputId = useId()
+  const filtersButtonId = useId()
   const pageSizeLabelId = useId()
   const searchInputRef = useRef<HTMLInputElement>(null)
   const createTaxInputRef = useRef<HTMLInputElement>(null)
@@ -168,8 +153,11 @@ function SuppliersPage() {
   const [editBanner, setEditBanner] = useState<string | null>(null)
   const [editForm, setEditForm] = useState(emptyForm)
 
-  const [deleteRow, setDeleteRow] = useState<SupplierTableRow | null>(null)
+  const [deleteTarget, setDeleteTarget] = useState<SupplierTableRow | null>(null)
+  const [deleteOpen, setDeleteOpen] = useState(false)
+  const [deleteTyped, setDeleteTyped] = useState("")
   const [deleteBusy, setDeleteBusy] = useState(false)
+  const [deleteBanner, setDeleteBanner] = useState<string | null>(null)
 
   const createOpenEffective = createOpen && canCreate
 
@@ -315,9 +303,18 @@ function SuppliersPage() {
   }, [canCreate])
 
   const closeCreate = useCallback(() => {
-    if (createSaving) return
     setCreateOpen(false)
-  }, [createSaving])
+    setCreateBanner(null)
+  }, [])
+
+  const finalizeCreateClose = useCallback(() => {
+    setCreateForm(emptyForm())
+  }, [])
+
+  const closeEdit = useCallback(() => {
+    setEditRow(null)
+    setEditBanner(null)
+  }, [])
 
   const submitCreate = async (e: FormEvent) => {
     e.preventDefault()
@@ -330,7 +327,7 @@ function SuppliersPage() {
         setCreateBanner(res.error)
         return
       }
-      setCreateOpen(false)
+      closeCreate()
       await load()
     } finally {
       setCreateSaving(false)
@@ -363,7 +360,7 @@ function SuppliersPage() {
         setEditBanner(res.error)
         return
       }
-      setEditRow(null)
+      closeEdit()
       await load()
     } finally {
       setEditSaving(false)
@@ -371,13 +368,34 @@ function SuppliersPage() {
   }
 
   const submitDelete = async () => {
-    if (!popId || !siteId || !deleteRow) return
+    if (!popId || !siteId || !deleteTarget) return
     setDeleteBusy(true)
-    const res = await deletePopSupplier(popId, deleteRow.id)
+    setDeleteBanner(null)
+    const res = await deletePopSupplier(popId, deleteTarget.id, deleteTyped)
     setDeleteBusy(false)
-    if (!res.success) return
-    setDeleteRow(null)
+    if (!res.success) {
+      setDeleteBanner(res.error)
+      return
+    }
+    requestCloseDelete()
     await load()
+  }
+
+  const requestCloseDelete = () => {
+    setDeleteOpen(false)
+  }
+
+  const finalizeDeleteClose = () => {
+    setDeleteTarget(null)
+    setDeleteTyped("")
+    setDeleteBanner(null)
+  }
+
+  const openDelete = (row: SupplierTableRow) => {
+    setDeleteTarget(row)
+    setDeleteTyped("")
+    setDeleteBanner(null)
+    setDeleteOpen(true)
   }
 
   const filteredRows = useMemo(() => {
@@ -471,6 +489,7 @@ function SuppliersPage() {
   const clearAllFilters = useCallback(() => {
     setSearchInput("")
     setAppliedFilters(defaultSupplierFilters())
+    setPage(1)
     searchInputRef.current?.focus()
   }, [])
 
@@ -497,7 +516,7 @@ function SuppliersPage() {
       loading={bootstrapLoading || listFetching}
       userName={bootstrap?.userFullName}
       userAvatarSrc={bootstrap?.userImageUrl ?? undefined}
-      mainClassName="min-h-0 overflow-hidden"
+      mainClassName="rootsy-nature-palette min-h-0 overflow-hidden"
       headerActions={
         canCreate ? (
           <Tooltip>
@@ -530,291 +549,113 @@ function SuppliersPage() {
 
         <div className="relative flex min-h-0 flex-1 flex-col">
           <div
-            className={lightToolbarShellClass}
+            className={dataWorkspaceListFiltersBarClass}
             role="toolbar"
             aria-label="Filtros del listado"
           >
-            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-12">
-              <div
-                className={cn(
-                  lightToolbarPanelClass,
-                  "order-2 w-full min-w-0 md:col-span-1 xl:order-1 xl:col-span-3",
-                )}
-              >
-                <div className="mb-2 flex min-w-0 items-baseline justify-between gap-3">
-                  <span className={toolbarBlockLabelClass}>Filtros</span>
-                  {modalFiltersActiveCount > 0 ? (
-                    <span className="shrink-0 text-[11px] font-medium text-primary">
-                      Activo
-                    </span>
-                  ) : null}
-                </div>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  className={cn(
-                    lightToolbarButtonClass,
-                    modalFiltersActiveCount > 0 && lightToolbarControlActiveClass,
-                  )}
-                  aria-haspopup="dialog"
-                  aria-expanded={filtersModalOpen}
-                  onClick={() => {
-                    setDraftFilters({ ...appliedFilters })
-                    setFiltersModalOpen(true)
-                  }}
-                >
-                  <Filter className="size-4 shrink-0 opacity-80" aria-hidden />
-                  <span className="min-w-0 flex-1 truncate text-left">
-                    {modalFiltersActiveCount > 0
-                      ? "Refinar filtros"
-                      : "E-mail, CUIT y estado"}
-                  </span>
-                  {modalFiltersActiveCount > 0 ? (
-                    <span
-                      className="inline-flex size-5 shrink-0 items-center justify-center rounded-full bg-primary/15 text-[10px] font-semibold tabular-nums text-primary"
-                      aria-hidden
-                    >
-                      {modalFiltersActiveCount}
-                    </span>
-                  ) : null}
-                </Button>
-              </div>
-
-              <div
-                className={cn(
-                  lightToolbarPanelLastClass,
-                  "order-1 min-w-0 md:col-span-2 xl:order-2 xl:col-span-9",
-                )}
-              >
-                <div className="mb-2 flex min-w-0 items-baseline justify-between gap-3">
-                  <label htmlFor={searchInputId} className={toolbarBlockLabelClass}>
-                    Buscar
-                  </label>
-                  <span
-                    className="shrink-0 text-[11px] font-medium text-muted-foreground"
-                    aria-live="polite"
-                    aria-atomic="true"
-                  >
-                    {resultsSummary}
-                  </span>
-                </div>
-                <div className="relative min-w-0">
-                  <Search
-                    className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground"
-                    aria-hidden
+            <div
+              className={cn(
+                dataWorkspaceListFiltersBarInnerClass,
+                dataWorkspaceListFiltersBarRowClass,
+              )}
+            >
+              <div className={dataWorkspaceListFiltersGridClass}>
+                <div className={dataWorkspaceListFiltersPanelClass}>
+                  <DataWorkspaceListFiltersDialogTrigger
+                    id={filtersButtonId}
+                    placeholder="E-mail, CUIT y estado"
+                    activeCount={modalFiltersActiveCount}
+                    expanded={filtersModalOpen}
+                    onClick={() => {
+                      setDraftFilters({ ...appliedFilters })
+                      setFiltersModalOpen(true)
+                    }}
                   />
-                  <Input
-                    ref={searchInputRef}
+                </div>
+
+                <div className={dataWorkspaceListFiltersPanelLastClass}>
+                  <DataWorkspaceListSearchField
                     id={searchInputId}
-                    type="search"
+                    inputRef={searchInputRef}
                     value={searchInput}
                     onChange={(e) => setSearchInput(e.target.value)}
+                    onClear={() => {
+                      setSearchInput("")
+                      searchInputRef.current?.focus()
+                    }}
                     placeholder="Nombre, contacto, CUIT, dirección, IVA… ( / )"
-                    className={cn(
-                      lightToolbarInputClass,
-                      searchInput.trim().length > 0 && "pr-10",
-                    )}
-                    autoComplete="off"
-                    spellCheck={false}
-                    aria-label="Buscar proveedores"
+                    resultsSummary={resultsSummary}
                   />
-                  {searchInput.trim().length > 0 ? (
-                    <button
-                      type="button"
-                      aria-label="Limpiar búsqueda"
-                      className={lightToolbarClearButtonClass}
-                      onClick={() => {
-                        setSearchInput("")
-                        searchInputRef.current?.focus()
-                      }}
-                    >
-                      <X className="size-3.5" aria-hidden />
-                    </button>
-                  ) : null}
                 </div>
               </div>
             </div>
-
-            {hasFilterChips ? (
-              <div
-                className="border-t border-border/80 bg-card px-4 py-3"
-                role="region"
-                aria-label="Filtros activos"
-              >
-                <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
-                  <p className={toolbarBlockLabelClass}>
-                    Filtros activos
-                    <span className="sr-only">: {activeFilterCount}</span>
-                    <span
-                      className="ml-1.5 inline-flex min-w-5 items-center justify-center rounded-full bg-muted px-1.5 py-0.5 text-[10px] font-semibold tabular-nums normal-case tracking-normal text-muted-foreground"
-                      aria-hidden
-                    >
-                      {activeFilterCount}
-                    </span>
-                  </p>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    className="h-8 px-2.5 text-xs font-medium text-muted-foreground hover:text-foreground"
-                    onClick={clearAllFilters}
-                  >
-                    Limpiar todo
-                  </Button>
-                </div>
-                <div className="flex flex-wrap items-center gap-1.5">
-                  {searchInput.trim() ? (
-                    <Badge variant="secondary" className={lightFilterChipClass}>
-                      <span className="truncate">
-                        Buscar: «{searchInput.trim()}»
-                      </span>
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="icon"
-                        className="size-6 shrink-0"
-                        onClick={() => {
-                          setSearchInput("")
-                          searchInputRef.current?.focus()
-                        }}
-                        aria-label="Quitar búsqueda"
-                      >
-                        <X className="size-3" />
-                      </Button>
-                    </Badge>
-                  ) : null}
-                  {appliedFilters.withEmail ? (
-                    <Badge variant="secondary" className={lightFilterChipClass}>
-                      Con e-mail
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="icon"
-                        className="size-6 shrink-0"
-                        onClick={() =>
-                          setAppliedFilters((f) => ({ ...f, withEmail: false }))
-                        }
-                        aria-label="Quitar filtro e-mail"
-                      >
-                        <X className="size-3" />
-                      </Button>
-                    </Badge>
-                  ) : null}
-                  {appliedFilters.withTaxId ? (
-                    <Badge variant="secondary" className={lightFilterChipClass}>
-                      Con CUIT
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="icon"
-                        className="size-6 shrink-0"
-                        onClick={() =>
-                          setAppliedFilters((f) => ({ ...f, withTaxId: false }))
-                        }
-                        aria-label="Quitar filtro CUIT"
-                      >
-                        <X className="size-3" />
-                      </Button>
-                    </Badge>
-                  ) : null}
-                  {appliedFilters.soloActivos ? (
-                    <Badge variant="secondary" className={lightFilterChipClass}>
-                      Solo activos
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="icon"
-                        className="size-6 shrink-0"
-                        onClick={() =>
-                          setAppliedFilters((f) => ({ ...f, soloActivos: false }))
-                        }
-                        aria-label="Quitar filtro activos"
-                      >
-                        <X className="size-3" />
-                      </Button>
-                    </Badge>
-                  ) : null}
-                </div>
-              </div>
-            ) : null}
           </div>
 
-          <Dialog open={filtersModalOpen} onOpenChange={setFiltersModalOpen}>
-            <DialogContent
-              data-rootsy-light-shell="true"
-              className="border-border bg-card text-foreground sm:max-w-md"
-            >
-              <DialogHeader>
-                <DialogTitle>Filtros del listado</DialogTitle>
-                <DialogDescription>
-                  Refiná qué proveedores se muestran en la tabla.
-                </DialogDescription>
-              </DialogHeader>
-              <div className="space-y-3 py-1">
-                <label className="flex cursor-pointer items-center gap-2.5 rounded-lg border border-border/60 px-3 py-2.5">
-                  <Checkbox
-                    checked={draftFilters.withEmail}
-                    onCheckedChange={(c) =>
-                      setDraftFilters((f) => ({
-                        ...f,
-                        withEmail: c === true,
-                      }))
-                    }
-                    aria-label="Solo con e-mail"
-                  />
-                  <span className="text-sm">Solo con e-mail</span>
-                </label>
-                <label className="flex cursor-pointer items-center gap-2.5 rounded-lg border border-border/60 px-3 py-2.5">
-                  <Checkbox
-                    checked={draftFilters.withTaxId}
-                    onCheckedChange={(c) =>
-                      setDraftFilters((f) => ({
-                        ...f,
-                        withTaxId: c === true,
-                      }))
-                    }
-                    aria-label="Solo con CUIT"
-                  />
-                  <span className="text-sm">Solo con CUIT / ID fiscal</span>
-                </label>
-                <label className="flex cursor-pointer items-center gap-2.5 rounded-lg border border-border/60 px-3 py-2.5">
-                  <Checkbox
-                    checked={draftFilters.soloActivos}
-                    onCheckedChange={(c) =>
-                      setDraftFilters((f) => ({
-                        ...f,
-                        soloActivos: c === true,
-                      }))
-                    }
-                    aria-label="Solo proveedores activos"
-                  />
-                  <span className="text-sm">Solo proveedores activos</span>
-                </label>
-              </div>
-              <DialogFooter className="gap-2 sm:gap-0">
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => setDraftFilters(defaultSupplierFilters())}
-                >
-                  Restablecer
-                </Button>
-                <Button
-                  type="button"
-                  onClick={() => {
-                    setAppliedFilters({ ...draftFilters })
-                    setFiltersModalOpen(false)
-                  }}
-                >
-                  Aplicar
-                </Button>
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
+          <SuppliersFiltersDialog
+            open={filtersModalOpen}
+            onOpenChange={(open) => {
+              if (open) {
+                setDraftFilters({ ...appliedFilters })
+              }
+              setFiltersModalOpen(open)
+            }}
+            draft={draftFilters}
+            onDraftChange={setDraftFilters}
+            onApply={() => {
+              setAppliedFilters({ ...draftFilters })
+              setPage(1)
+              setFiltersModalOpen(false)
+            }}
+          />
 
           <DataWorkspaceListTableShell
             variant="flush"
+            activeFiltersBar={
+              hasFilterChips ? (
+                <DataWorkspaceListActiveFiltersBar
+                  activeCount={activeFilterCount}
+                  onClearAll={clearAllFilters}
+                >
+                  {searchInput.trim() ? (
+                    <DataWorkspaceListFilterChip
+                      label={`Buscar: «${searchInput.trim()}»`}
+                      onRemove={() => {
+                        setSearchInput("")
+                        searchInputRef.current?.focus()
+                      }}
+                      removeAriaLabel="Quitar búsqueda"
+                    />
+                  ) : null}
+                  {appliedFilters.withEmail ? (
+                    <DataWorkspaceListFilterChip
+                      label="Con e-mail"
+                      onRemove={() =>
+                        setAppliedFilters((f) => ({ ...f, withEmail: false }))
+                      }
+                      removeAriaLabel="Quitar filtro con e-mail"
+                    />
+                  ) : null}
+                  {appliedFilters.withTaxId ? (
+                    <DataWorkspaceListFilterChip
+                      label="Con CUIT / ID fiscal"
+                      onRemove={() =>
+                        setAppliedFilters((f) => ({ ...f, withTaxId: false }))
+                      }
+                      removeAriaLabel="Quitar filtro CUIT"
+                    />
+                  ) : null}
+                  {appliedFilters.soloActivos ? (
+                    <DataWorkspaceListFilterChip
+                      label="Solo activos"
+                      onRemove={() =>
+                        setAppliedFilters((f) => ({ ...f, soloActivos: false }))
+                      }
+                      removeAriaLabel="Quitar filtro solo activos"
+                    />
+                  ) : null}
+                </DataWorkspaceListActiveFiltersBar>
+              ) : null
+            }
             overlay={
               !listFetching && totalCount === 0 ? (
                 <DataWorkspaceTableEmptyMascot />
@@ -1051,7 +892,7 @@ function SuppliersPage() {
                                   label={`Eliminar ${r.name || "proveedor"}`}
                                   icon={Trash2}
                                   destructive
-                                  onClick={() => setDeleteRow(r)}
+                                  onClick={() => openDelete(r)}
                                 />
                               ) : null}
                             </div>
@@ -1070,175 +911,63 @@ function SuppliersPage() {
         </div>
       </div>
 
-      <Dialog open={createOpenEffective} onOpenChange={(o) => !o && closeCreate()}>
-        <DialogContent
-          data-rootsy-light-shell="true"
-          showCloseButton={!createSaving}
-          className={supplierDialogSurface}
-        >
-          <DialogHeader className={supplierDialogHeaderClass}>
-            <DialogTitle className="text-base font-semibold tracking-tight">
-              Nuevo proveedor
-            </DialogTitle>
-            <DialogDescription className="text-sm leading-relaxed">
-              Datos fiscales y de contacto. Podés completar el CUIT con el padrón
-              AFIP.
-            </DialogDescription>
-          </DialogHeader>
-          <form
-            className="flex min-h-0 flex-1 flex-col overflow-hidden"
-            onSubmit={(e) => void submitCreate(e)}
-          >
-            <div className={supplierDialogBodyClass}>
-              {createBanner ? (
-                <p
-                  role="alert"
-                  className="mb-4 rounded-lg border border-destructive/25 bg-destructive/5 px-3 py-2 text-sm text-destructive"
-                >
-                  {createBanner}
-                </p>
-              ) : null}
-              <SupplierUpsertFormFields
-                idPrefix="sp"
-                form={createForm}
-                setForm={setCreateForm}
-                padron={createPadron}
-                taxInputRef={createTaxInputRef}
-              />
-            </div>
-            <DialogFooter className={supplierDialogFooterClass}>
-              <Button
-                type="button"
-                variant="outline"
-                disabled={createSaving}
-                onClick={closeCreate}
-              >
-                Cancelar
-              </Button>
-              <Button type="submit" disabled={createSaving} className="gap-2">
-                {createSaving ? (
-                  <>
-                    <Loader2 className="size-4 animate-spin" aria-hidden />
-                    Guardando…
-                  </>
-                ) : (
-                  "Crear proveedor"
-                )}
-              </Button>
-            </DialogFooter>
-          </form>
-        </DialogContent>
-      </Dialog>
+      <SupplierUpsertDialog
+        open={createOpenEffective}
+        onOpenChange={(open) => !open && closeCreate()}
+        mode="create"
+        title="Nuevo proveedor"
+        description="Datos fiscales y de contacto. Podés completar el CUIT con el padrón AFIP."
+        saving={createSaving}
+        banner={createBanner}
+        onSubmit={(e) => void submitCreate(e)}
+        onCancel={closeCreate}
+        onAfterClose={finalizeCreateClose}
+        idPrefix="sp"
+        form={createForm}
+        setForm={setCreateForm}
+        padron={createPadron}
+        taxInputRef={createTaxInputRef}
+      />
 
-      <Dialog
+      <SupplierUpsertDialog
         open={editRow !== null}
-        onOpenChange={(o) => {
-          if (!o && !editSaving) setEditRow(null)
+        onOpenChange={(open) => {
+          if (!open && !editSaving) closeEdit()
         }}
-      >
-        <DialogContent
-          data-rootsy-light-shell="true"
-          showCloseButton={!editSaving}
-          className={supplierDialogSurface}
-        >
-          <DialogHeader className={supplierDialogHeaderClass}>
-            <DialogTitle className="text-base font-semibold tracking-tight">
-              Editar proveedor
-            </DialogTitle>
-            <DialogDescription className="text-sm leading-relaxed">
-              {editRow?.name
-                ? `Actualizá los datos de ${editRow.name}.`
-                : "Actualizá los datos del proveedor."}
-            </DialogDescription>
-          </DialogHeader>
-          <form
-            className="flex min-h-0 flex-1 flex-col overflow-hidden"
-            onSubmit={(e) => void submitEdit(e)}
-          >
-            <div className={supplierDialogBodyClass}>
-              {editBanner ? (
-                <p
-                  role="alert"
-                  className="mb-4 rounded-lg border border-destructive/25 bg-destructive/5 px-3 py-2 text-sm text-destructive"
-                >
-                  {editBanner}
-                </p>
-              ) : null}
-              <SupplierUpsertFormFields
-                idPrefix="e-sp"
-                form={editForm}
-                setForm={setEditForm}
-                padron={editPadron}
-                showPadronNameButton
-              />
-            </div>
-            <DialogFooter className={supplierDialogFooterClass}>
-              <Button
-                type="button"
-                variant="outline"
-                disabled={editSaving}
-                onClick={() => setEditRow(null)}
-              >
-                Cancelar
-              </Button>
-              <Button type="submit" disabled={editSaving} className="gap-2">
-                {editSaving ? (
-                  <>
-                    <Loader2 className="size-4 animate-spin" aria-hidden />
-                    Guardando…
-                  </>
-                ) : (
-                  "Guardar cambios"
-                )}
-              </Button>
-            </DialogFooter>
-          </form>
-        </DialogContent>
-      </Dialog>
+        mode="edit"
+        title="Editar proveedor"
+        description={
+          editRow?.name
+            ? `Actualizá los datos de ${editRow.name}.`
+            : "Actualizá los datos del proveedor."
+        }
+        saving={editSaving}
+        banner={editBanner}
+        onSubmit={(e) => void submitEdit(e)}
+        onCancel={closeEdit}
+        idPrefix="e-sp"
+        form={editForm}
+        setForm={setEditForm}
+        padron={editPadron}
+        showPadronNameButton
+      />
 
-      <Dialog
-        open={deleteRow !== null}
-        onOpenChange={(o) => {
-          if (!o && !deleteBusy) setDeleteRow(null)
-        }}
-      >
-        <DialogContent
-          data-rootsy-light-shell="true"
-          showCloseButton={!deleteBusy}
-          className={cn(supplierDialogSurface, "sm:max-w-md")}
-        >
-          <DialogHeader className={supplierDialogHeaderClass}>
-            <DialogTitle className="text-base font-semibold tracking-tight">
-              ¿Eliminar proveedor?
-            </DialogTitle>
-            <DialogDescription className="text-sm leading-relaxed">
-              Se quitará{" "}
-              <span className="font-medium text-foreground">
-                {deleteRow?.name || "este proveedor"}
-              </span>{" "}
-              de este punto de venta. Esta acción no se puede deshacer.
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter className={supplierDialogFooterClass}>
-            <Button
-              type="button"
-              variant="outline"
-              disabled={deleteBusy}
-              onClick={() => setDeleteRow(null)}
-            >
-              Cancelar
-            </Button>
-            <Button
-              type="button"
-              variant="destructive"
-              disabled={deleteBusy}
-              onClick={() => void submitDelete()}
-            >
-              {deleteBusy ? "Eliminando…" : "Eliminar"}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      {deleteTarget ? (
+        <SupplierDeleteDialog
+          open={deleteOpen}
+          supplierName={deleteTarget.name}
+          confirmValue={deleteTyped}
+          banner={deleteBanner}
+          busy={deleteBusy}
+          onOpenChange={(open) => {
+            if (!open && !deleteBusy) requestCloseDelete()
+          }}
+          onClose={requestCloseDelete}
+          onAfterClose={finalizeDeleteClose}
+          onConfirmValueChange={setDeleteTyped}
+          onConfirmDelete={() => void submitDelete()}
+        />
+      ) : null}
     </DataWorkspaceLayout>
   )
 }
