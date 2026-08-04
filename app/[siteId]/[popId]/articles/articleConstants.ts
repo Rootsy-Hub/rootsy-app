@@ -1,17 +1,15 @@
 import {
-  lightToolbarFocusClass,
-} from "@/components/data-workspace/dataWorkspaceListStyles"
-import {
+  rootsFormAffixPrefixClass,
   rootsFormColumnClass,
   rootsFormFieldStackClass,
   rootsFormGridClass,
+  rootsFormSelectContentClass,
+  rootsFormSelectItemClass,
+  rootsFormSelectTriggerClass,
+  rootsFormTextFieldClass,
+  rootsFormTextareaFieldClass,
   rootsFormTwoColRowClass,
 } from "@/components/rootsy-form/rootsFormStyles"
-import {
-  saleOpChannelFormField,
-  saleOpLightSelectContent,
-  saleOpLightSelectItem,
-} from "@/components/sale-operation/saleOperationStyles"
 import { cn } from "@/lib/utils"
 
 export const ARTICLE_DELETE_CONFIRM_PHRASE = "ELIMINAR"
@@ -20,14 +18,10 @@ export const ARTICLE_DELETE_CONFIRM_PHRASE = "ELIMINAR"
 export const articleFormControlHeightClass = "h-11"
 
 /**
- * Shell visual compartido: mismo borde, radio, fondo y altura fija para todos los controles de 1 línea.
+ * Shell visual compartido — alias de RootsForm light form (rounded-lg, borde zinc, foco emerald).
+ * @see components/rootsy-form/rootsFormStyles.ts
  */
-export const articleFormControlShellClass = cn(
-  saleOpChannelFormField,
-  articleFormControlHeightClass,
-  "box-border !min-h-11 !max-h-11 w-full min-w-0 shrink-0 shadow-none",
-  lightToolbarFocusClass,
-)
+export const articleFormControlShellClass = rootsFormTextFieldClass
 
 export const articleFormFieldStackClass = rootsFormFieldStackClass
 
@@ -37,37 +31,27 @@ export const articleFormGridClass = rootsFormGridClass
 
 export const articleFormTwoColRowClass = rootsFormTwoColRowClass
 
-export const articleFormSelectTriggerClass = cn(
-  articleFormControlShellClass,
-  "!w-full justify-between px-3.5 !py-0",
-  "data-[size=default]:!h-11 data-[size=sm]:!h-11",
-  "bg-muted/15 hover:bg-muted/20",
+export const articleFormSelectTriggerClass = rootsFormSelectTriggerClass
+
+export const articleFormTextFieldClass = rootsFormTextFieldClass
+
+export const articleFormInlineAddonClass = cn(
+  rootsFormAffixPrefixClass,
+  "border-border/70",
 )
 
-export const articleFormTextFieldClass = cn(
-  articleFormControlShellClass,
-  "px-3.5 text-sm",
-)
+export const articleFormTextareaClass = rootsFormTextareaFieldClass
 
-export const articleFormInlineAddonClass =
-  "inline-flex shrink-0 self-stretch items-center border-border/70 bg-muted/35 px-3.5 text-sm font-semibold tabular-nums text-muted-foreground"
+export const articleFormSelectContentClass = rootsFormSelectContentClass
 
-export const articleFormTextareaClass = cn(
-  saleOpChannelFormField,
-  "min-h-[5.25rem] w-full min-w-0 resize-y bg-muted/15 px-3.5 py-2.5 text-sm leading-relaxed shadow-none",
-  lightToolbarFocusClass,
-)
-
-export const articleFormSelectContentClass = saleOpLightSelectContent
-
-export const articleFormSelectItemClass = saleOpLightSelectItem
+export const articleFormSelectItemClass = rootsFormSelectItemClass
 
 /** iOS — dim suave + blur ligero detrás del sheet. */
 export const articleDialogOverlayClass =
   "bg-black/25 backdrop-blur-[3px]"
 
 const articleDialogIOSShellClass = cn(
-  "rootsy-app-light flex flex-col gap-0 overflow-hidden rounded-[1.375rem] border border-black/[0.04] bg-white p-0 text-foreground",
+  "rootsy-app-light rootsy-nature-palette flex flex-col gap-0 overflow-hidden rounded-[1.375rem] border border-black/[0.04] bg-white p-0 text-foreground",
   "shadow-[0_22px_70px_-18px_rgba(0,0,0,0.28)]",
   "[&_[data-slot=dialog-close]]:top-4 [&_[data-slot=dialog-close]]:right-4 [&_[data-slot=dialog-close]]:rounded-full [&_[data-slot=dialog-close]]:opacity-60",
 )

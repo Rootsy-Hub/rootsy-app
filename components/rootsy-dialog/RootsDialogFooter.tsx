@@ -1,6 +1,12 @@
 "use client"
 
 import { articleDialogFooterClass } from "@/app/[siteId]/[popId]/articles/articleConstants"
+import {
+  RootsProgressButton,
+  rootsButtonClassForVariant,
+  rootsButtonVariant,
+} from "@/components/rootsy-button"
+import { saleOpDialogPrimaryBtn } from "@/components/sale-operation/saleOperationStyles"
 import { Button } from "@/components/ui/button"
 import { DialogFooter } from "@/components/ui/dialog"
 import { cn } from "@/lib/utils"
@@ -37,7 +43,13 @@ export function RootsDialogSingleActionFooter({
     <RootsDialogFooter
       className={cn(align === "end" && "sm:justify-end", className)}
     >
-      <Button type={actionType} onClick={onAction} disabled={disabled}>
+      <Button
+        type={actionType}
+        variant={rootsButtonVariant.primary}
+        className={cn(saleOpDialogPrimaryBtn, rootsButtonClassForVariant("primary"))}
+        onClick={onAction}
+        disabled={disabled}
+      >
         {label}
       </Button>
     </RootsDialogFooter>
@@ -69,18 +81,27 @@ export function RootsDialogDualActionFooter({
 }: RootsDialogDualActionFooterProps) {
   return (
     <RootsDialogFooter className={className}>
-      <Button type="button" variant="outline" onClick={onCancel}>
-        {cancelLabel}
-      </Button>
-      <Button
-        type={confirmType}
-        disabled={confirmDisabled || confirmLoading}
-        onClick={confirmType === "button" ? onConfirm : undefined}
-      >
-        {confirmLoading && confirmLoadingLabel
-          ? confirmLoadingLabel
-          : confirmLabel}
-      </Button>
+      <div className="flex w-full items-center justify-between gap-3">
+        <Button
+          type="button"
+          variant={rootsButtonVariant.tertiary}
+          className={rootsButtonClassForVariant("tertiary")}
+          onClick={onCancel}
+        >
+          {cancelLabel}
+        </Button>
+        <RootsProgressButton
+          type={confirmType}
+          variant={rootsButtonVariant.primary}
+          className={cn(saleOpDialogPrimaryBtn, rootsButtonClassForVariant("primary"), "shrink-0")}
+          disabled={confirmDisabled}
+          loading={confirmLoading}
+          loadingLabel={confirmLoadingLabel}
+          onClick={confirmType === "button" ? onConfirm : undefined}
+        >
+          {confirmLabel}
+        </RootsProgressButton>
+      </div>
     </RootsDialogFooter>
   )
 }

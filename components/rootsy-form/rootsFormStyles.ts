@@ -4,7 +4,7 @@ export const rootsFormFieldStackClass =
   "flex w-full min-w-0 flex-col gap-2"
 
 /** Columna dentro de un formulario de modal (stack vertical con ritmo entre campos). */
-export const rootsFormColumnClass = "flex w-full min-w-0 flex-col gap-3.5"
+export const rootsFormColumnClass = "flex w-full min-w-0 flex-col gap-4"
 
 /** Grilla principal de upsert — dos columnas + separador central en desktop. */
 export const rootsFormGridClass =
@@ -32,7 +32,7 @@ export const rootsFormFieldWarningClass =
 
 /** Confirmación puntual. */
 export const rootsFormFieldSuccessClass =
-  "block text-xs leading-snug text-emerald-700 dark:text-emerald-700"
+  "block text-xs leading-snug text-[#16704a] dark:text-[#16704a]"
 
 /** Tipografía compartida — misma escala que Input shadcn (text-base, md:text-sm). */
 export const rootsFormControlTypographyClass =
@@ -40,7 +40,7 @@ export const rootsFormControlTypographyClass =
 
 const rootsFormControlBaseClass =
   cn(
-    "w-full min-w-0 rounded-lg border border-zinc-200 bg-white shadow-xs outline-none transition-[color,box-shadow,border-color] placeholder:text-zinc-400 hover:border-zinc-300 disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-2 aria-invalid:ring-destructive/25 dark:border-zinc-200 dark:bg-white dark:text-zinc-900 dark:placeholder:text-zinc-400 focus-visible:!border-emerald-700 focus-visible:!ring-2 focus-visible:!ring-emerald-700/45 focus-visible:ring-offset-0",
+    "w-full min-w-0 rounded-lg border border-zinc-200 bg-white shadow-xs outline-none transition-[color,box-shadow,border-color] placeholder:text-zinc-400 hover:border-zinc-300 disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-2 aria-invalid:ring-destructive/25 dark:border-zinc-200 dark:bg-white dark:text-zinc-900 dark:placeholder:text-zinc-400 focus-visible:!border-[#16704a] focus-visible:!ring-2 focus-visible:!ring-[#16704a]/45 focus-visible:ring-offset-0",
     rootsFormControlTypographyClass,
   )
 
@@ -52,7 +52,7 @@ export const rootsFormTextareaFieldClass = `${rootsFormControlBaseClass} min-h-[
 
 /** Shell para montos, cantidades y números con prefijo a la izquierda. */
 export const rootsFormAffixFieldShellClass =
-  "flex h-11 w-full min-w-0 items-stretch overflow-hidden rounded-lg border border-zinc-200 bg-white shadow-xs transition-[color,box-shadow,border-color] hover:border-zinc-300 focus-within:!border-emerald-700 focus-within:!ring-2 focus-within:!ring-emerald-700/45 focus-within:ring-offset-0 dark:border-zinc-200 dark:bg-white"
+  "flex h-11 w-full min-w-0 items-stretch overflow-hidden rounded-lg border border-zinc-200 bg-white shadow-xs transition-[color,box-shadow,border-color] hover:border-zinc-300 focus-within:!border-[#16704a] focus-within:!ring-2 focus-within:!ring-[#16704a]/45 focus-within:ring-offset-0 dark:border-zinc-200 dark:bg-white"
 
 /** Ancho fijo del slot de prefijo ($, uds., ícono). Mismo tamaño en todos los campos affix. */
 export const rootsFormAffixPrefixWidthClass = "w-11"
@@ -129,8 +129,8 @@ export const rootsFormDateCalendarShellClass = cn(
   "w-fit bg-transparent px-2.5 py-2 [--cell-size:2rem]",
   "[&_button[data-day]]:!text-zinc-800",
   "[&_button[data-day]:not([data-selected-single=true]):hover]:!bg-zinc-100 [&_button[data-day]:not([data-selected-single=true]):hover]:!text-zinc-900",
-  "[&_button[data-day][data-selected-single=true]]:!bg-emerald-600 [&_button[data-day][data-selected-single=true]]:!text-white",
-  "[&_button[data-day][data-selected-single=true]:hover]:!bg-emerald-700",
+  "[&_button[data-day][data-selected-single=true]]:!bg-[#1e8f5a] [&_button[data-day][data-selected-single=true]]:!text-white",
+  "[&_button[data-day][data-selected-single=true]:hover]:!bg-[#16704a]",
   "[&_button[data-day][data-selected-single=true]:hover]:!text-white",
   "[&_.rdp-outside_button[data-day]]:!text-zinc-400",
   "[&_.rdp-outside_button[data-day]:not([data-selected-single=true]):hover]:!bg-transparent [&_.rdp-outside_button[data-day]:not([data-selected-single=true]):hover]:!text-zinc-400",
@@ -173,10 +173,10 @@ export const rootsFormSwitchDescriptionClass =
 /** Track del toggle — proporción 44×24, thumb 20px, deslizamiento preciso. */
 export const rootsFormSwitchTrackClass = cn(
   "inline-flex h-6 w-11 shrink-0 items-center rounded-full p-0.5 outline-none transition-colors duration-200 ease-out",
-  "data-[state=unchecked]:bg-zinc-200 data-[state=checked]:bg-emerald-600",
-  "focus-visible:ring-2 focus-visible:ring-emerald-700/40 focus-visible:ring-offset-2 focus-visible:ring-offset-white",
+  "data-[state=unchecked]:bg-zinc-200 data-[state=checked]:bg-[#1e8f5a]",
+  "focus-visible:ring-2 focus-visible:ring-[#16704a]/40 focus-visible:ring-offset-2 focus-visible:ring-offset-white",
   "disabled:cursor-not-allowed disabled:opacity-50",
-  "dark:data-[state=unchecked]:bg-zinc-200 dark:data-[state=checked]:bg-emerald-600",
+  "dark:data-[state=unchecked]:bg-zinc-200 dark:data-[state=checked]:bg-[#1e8f5a]",
 )
 
 /** Track del segment group — pill inset con gap, h-11 como inputs. */
@@ -190,7 +190,7 @@ export function rootsFormSegmentOptionClass(selected: boolean, disabled?: boolea
   return cn(
     rootsFormControlTypographyClass,
     "relative z-[1] inline-flex h-full min-w-0 items-center justify-center gap-2 rounded-md px-3 font-medium transition-colors duration-150",
-    "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-700/45 focus-visible:ring-offset-0",
+    "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#16704a]/45 focus-visible:ring-offset-0",
     disabled && "pointer-events-none opacity-50",
     selected ? "text-zinc-900" : "text-zinc-400 hover:text-zinc-600",
   )
@@ -206,7 +206,7 @@ export function rootsFormDiscountModeButtonClass(
 ) {
   return cn(
     "relative inline-flex flex-1 items-center justify-center self-stretch text-sm font-semibold leading-none tabular-nums transition-[color,background-color] duration-150",
-    "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-emerald-700/45",
+    "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#16704a]/45",
     optionDisabled && "pointer-events-none opacity-45",
     selected
       ? "bg-white font-semibold text-zinc-900"

@@ -26,6 +26,7 @@ import { getBorderFoundationHeading } from "@/app/[siteId]/[popId]/library/borde
 import { isBorderLibrarySection } from "@/app/[siteId]/[popId]/library/border/borderLibraryNav"
 import { getRadiusFoundationHeading } from "@/app/[siteId]/[popId]/library/radius/RadiusFoundationView"
 import { isRadiusLibrarySection } from "@/app/[siteId]/[popId]/library/radius/radiusLibraryNav"
+import { RootsPrimaryButton } from "@/components/rootsy-button"
 import {
   getLibraryNavGroup,
   LIBRARY_NAV_GROUPS,
@@ -33,7 +34,6 @@ import {
   LibraryNav,
   LibraryPageHeader,
 } from "@/app/[siteId]/[popId]/library/layoutLibraryShared"
-import { Button } from "@/components/ui/button"
 import {
   Select,
   SelectContent,
@@ -149,12 +149,12 @@ export function LibraryWorkspace({ siteId, popId, sectionId }: Props) {
               title="Librería UI"
               description="Referencia del design system Rootsy — naturaleza viva, formularios, componentes y overlays."
               actions={
-                <Button
+                <RootsPrimaryButton
                   type="button"
                   onClick={() => setFinalComponentsOpen(true)}
                 >
                   Componentes finales
-                </Button>
+                </RootsPrimaryButton>
               }
             />
 

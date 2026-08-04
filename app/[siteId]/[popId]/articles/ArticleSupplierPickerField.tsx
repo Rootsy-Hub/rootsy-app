@@ -1,12 +1,12 @@
 "use client"
 
 import { searchCheckoutSuppliers } from "@/app/[siteId]/[popId]/checkout/partySearchActions"
-import { articleFormFieldStackClass, articleFormTextFieldClass } from "@/app/[siteId]/[popId]/articles/articleConstants"
+import { RootsFormField } from "@/components/rootsy-form/RootsFormField"
+import { rootsFormTextFieldClass } from "@/components/rootsy-form/rootsFormStyles"
 import { CheckoutOptionCard } from "@/components/checkout/CheckoutOptionCard"
-import { CheckoutSectionLabel } from "@/components/checkout/CheckoutFormFields"
 import { cn } from "@/lib/utils"
 import { Building2, Loader2, Search, X } from "lucide-react"
-import { useEffect, useMemo, useRef, useState } from "react"
+import { useEffect, useId, useMemo, useRef, useState } from "react"
 
 type SupplierOption = {
   id: string
@@ -45,6 +45,7 @@ export function ArticleSupplierPickerField({
   const [results, setResults] = useState<SupplierOption[]>([])
   const [searchLoading, setSearchLoading] = useState(false)
   const searchGenRef = useRef(0)
+  const searchInputId = useId()
 
   const nameById = useMemo(() => {
     const map = new Map<string, string>()
@@ -109,8 +110,15 @@ export function ArticleSupplierPickerField({
   }
 
   return (
-    <div className={articleFormFieldStackClass}>
-      <CheckoutSectionLabel>Proveedores</CheckoutSectionLabel>
+    <RootsFormField
+      label="Proveedores"
+      htmlFor={searchInputId}
+      hint={
+        searchTrim
+          ? undefined
+          : "Buscá y seleccioná uno o más proveedores habituales para este ítem."
+      }
+    >
 
       {selectedSuppliers.length > 0 ? (
         <ul className="flex flex-wrap gap-2">
@@ -139,6 +147,7 @@ export function ArticleSupplierPickerField({
           aria-hidden
         />
         <input
+          id={searchInputId}
           type="text"
           inputMode="search"
           enterKeyHint="search"
@@ -148,7 +157,7 @@ export function ArticleSupplierPickerField({
           disabled={disabled}
           autoComplete="off"
           className={cn(
-            articleFormTextFieldClass,
+            rootsFormTextFieldClass,
             "pl-10",
             searchQuery.length > 0 && !disabled && "pr-10",
           )}
@@ -187,11 +196,7 @@ export function ArticleSupplierPickerField({
             ))
           )}
         </ul>
-      ) : (
-        <p className="text-xs text-muted-foreground">
-          Buscá y seleccioná uno o más proveedores habituales para este ítem.
-        </p>
-      )}
-    </div>
+      ) : null}
+    </RootsFormField>
   )
 }

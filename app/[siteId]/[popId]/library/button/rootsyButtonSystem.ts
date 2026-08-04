@@ -156,9 +156,9 @@ export const ROOTSY_BUTTON_STATES = [
 export const ROOTSY_BUTTON_SEMANTIC: ButtonSemanticMapping[] = [
   {
     appearance: "primary",
-    context: "Modal footer · submit",
+    context: "Modal footer · submit async",
     component: "RootsProgressButton + saleOpDialogPrimaryBtn",
-    source: "components/rootsy-button · saleOperationStyles",
+    source: "rootsy-dialog · CheckoutDialogFooter",
   },
   {
     appearance: "subtle",

@@ -1,5 +1,6 @@
 "use client"
 
+import { saleOpChannelErrorBanner } from "@/components/sale-operation/saleOperationStyles"
 import { cn } from "@/lib/utils"
 import type { ComponentProps, FormEventHandler, ReactNode } from "react"
 
@@ -29,10 +30,7 @@ export function RootsDialogErrorBanner({ className, ...props }: BannerProps) {
   return (
     <p
       role="alert"
-      className={cn(
-        "mb-4 rounded-lg border border-destructive/25 bg-destructive/5 px-3 py-2 text-sm text-destructive",
-        className,
-      )}
+      className={cn(saleOpChannelErrorBanner, "mb-4", className)}
       {...props}
     />
   )

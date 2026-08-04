@@ -1,5 +1,6 @@
 "use client"
 
+import "@/app/[siteId]/[popId]/library/color/rootsyNaturePalette.css"
 import { DataWorkspaceLayout } from "@/components/layouts/DataWorkspaceLayout"
 import { usePopWorkspace } from "@/context/PopWorkspaceContext"
 import type { ReactNode } from "react"
@@ -26,7 +27,7 @@ export function LibraryShell({ siteId, popId, children }: Props) {
       userName={bootstrap?.userFullName || undefined}
       userAvatarSrc={bootstrap?.userImageUrl ?? undefined}
       userRoleLabel={bootstrap?.roleLabel || undefined}
-      mainClassName="rootsy-app-light bg-background"
+      mainClassName="rootsy-app-light rootsy-nature-palette bg-background"
     >
       <div className="relative flex min-h-0 w-full flex-1 flex-col">
         {bootstrapError ? (

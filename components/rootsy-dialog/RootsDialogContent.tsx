@@ -6,6 +6,7 @@ import {
   articleDialogSurfaceTwoColClass,
   articleDialogSurfaceWideClass,
 } from "@/app/[siteId]/[popId]/articles/articleConstants"
+import "@/app/[siteId]/[popId]/library/color/rootsyNaturePalette.css"
 import { DialogContent } from "@/components/ui/dialog"
 import { cn } from "@/lib/utils"
 import type { ComponentProps } from "react"

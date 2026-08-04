@@ -1,5 +1,6 @@
 "use client"
 
+import { RootsProgressButton } from "@/components/rootsy-button"
 import { Button } from "@/components/ui/button"
 import { DialogFooter } from "@/components/ui/dialog"
 import {
@@ -7,7 +8,7 @@ import {
   saleOpDialogPrimaryBtn,
   saleOpDialogSecondaryBtn,
 } from "@/components/sale-operation/saleOperationStyles"
-import { Loader2, type LucideIcon } from "lucide-react"
+import { type LucideIcon } from "lucide-react"
 import { cn } from "@/lib/utils"
 
 export type CheckoutDialogFooterAction = {
@@ -77,21 +78,17 @@ export function CheckoutDialogFooter({
           ) : null}
         </div>
         {primary ? (
-          <Button
+          <RootsProgressButton
             type="button"
             className={cn(saleOpDialogPrimaryBtn, "shrink-0")}
-            disabled={primary.disabled || primary.loading}
+            disabled={primary.disabled}
+            loading={primary.loading}
+            loadingLabel={primary.loadingLabel ?? primary.label}
+            icon={primary.icon}
             onClick={primary.onClick}
           >
-            {primary.loading ? (
-              <>
-                <Loader2 className="mr-2 size-4 animate-spin" />
-                {primary.loadingLabel ?? primary.label}
-              </>
-            ) : (
-              primary.label
-            )}
-          </Button>
+            {primary.label}
+          </RootsProgressButton>
         ) : null}
       </div>
     </DialogFooter>

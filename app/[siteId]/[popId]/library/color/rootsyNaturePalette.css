@@ -95,3 +95,25 @@
   --nature-warning: var(--nature-autumn-600);
   --nature-success: var(--nature-canopy-600);
 }
+
+/**
+ * Puente shadcn → Nature en toda la shell de librería.
+ * Nav activo, badges, text-primary y rings usan canopy real (#1e8f5a).
+ */
+.rootsy-app-light.rootsy-nature-palette {
+  --primary: var(--nature-canopy-600);
+  --primary-foreground: #ffffff;
+  --ring: var(--nature-canopy-700);
+  --destructive: var(--nature-ember-600);
+  --destructive-foreground: #ffffff;
+  --accent: var(--nature-autumn-200);
+  --accent-foreground: var(--nature-autumn-800);
+  --forest: var(--nature-canopy-600);
+  --meadow: var(--nature-canopy-400);
+  --rootsy-particle: var(--nature-canopy-600);
+  --chart-1: var(--nature-canopy-600);
+  --chart-2: var(--nature-autumn-500);
+  --chart-3: var(--nature-sea-500);
+  --chart-4: var(--nature-earth-600);
+  --chart-5: var(--nature-canopy-400);
+}

@@ -65,9 +65,14 @@ import {
   RootsDialogHeader,
   type RootsDialogFooterVariant,
 } from "@/components/rootsy-dialog"
-import { Button } from "@/components/ui/button"
 import { Dialog } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
+import {
+  RootsDangerButton,
+  RootsDefaultButton,
+  RootsPrimaryButton,
+  RootsSubtleButton,
+} from "@/components/rootsy-button"
 import {
   saleOpAlertDialogContent,
   saleOpChannelErrorBanner,
@@ -166,16 +171,16 @@ function ModalFooterPreview({ variant }: { variant: ModalFooterVariant }) {
 
   if (variant === "single") {
     return (
-      <div className={cn(articleDialogFooterClass, "flex justify-end gap-2")}>
-        <div className="h-9 w-28 rounded-md bg-primary/90" />
+      <div className={cn(articleDialogFooterClass, "flex justify-end")}>
+        <RootsPrimaryButton type="button">Confirmar</RootsPrimaryButton>
       </div>
     )
   }
 
   return (
-    <div className={cn(articleDialogFooterClass, "flex justify-between gap-2")}>
-      <div className="h-9 w-24 rounded-md border border-zinc-200 bg-white" />
-      <div className="h-9 w-28 rounded-md bg-primary/90 shadow-sm" />
+    <div className={cn(articleDialogFooterClass, "flex items-center justify-between gap-3")}>
+      <RootsSubtleButton type="button">Cancelar</RootsSubtleButton>
+      <RootsPrimaryButton type="button">Guardar</RootsPrimaryButton>
     </div>
   )
 }
@@ -997,7 +1002,7 @@ export function LibrarySectionView({
           <LibrarySection
             id="modals"
             title="Modales"
-            description="Variantes de chrome con el mismo contenido placeholder. Por ahora un solo shell; solo cambia el footer."
+            description="Shell iOS (rounded-[1.375rem]) · footer subtle izq + primary der · RootsProgressButton en submit."
           >
             <div className="grid gap-5 lg:grid-cols-3">
               {MODAL_VARIANTS.map((spec) => (
@@ -1009,14 +1014,13 @@ export function LibrarySectionView({
                       {spec.description}
                     </p>
                     <div className="flex flex-wrap items-center gap-2 pt-1">
-                      <Button
+                      <RootsDefaultButton
                         type="button"
                         size="sm"
-                        variant="outline"
                         onClick={() => onLiveModalIdChange(spec.id)}
                       >
                         Abrir en vivo
-                      </Button>
+                      </RootsDefaultButton>
                       <span className="font-mono text-[11px] text-muted-foreground">
                         articleDialogSurfaceClass
                       </span>
@@ -1054,8 +1058,12 @@ export function LibrarySectionView({
                     </AlertDialogDescription>
                   </AlertDialogHeader>
                   <AlertDialogFooter>
-                    <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                    <AlertDialogAction>Descartar</AlertDialogAction>
+                    <AlertDialogCancel asChild>
+                      <RootsSubtleButton type="button">Cancelar</RootsSubtleButton>
+                    </AlertDialogCancel>
+                    <AlertDialogAction asChild>
+                      <RootsDangerButton type="button">Descartar</RootsDangerButton>
+                    </AlertDialogAction>
                   </AlertDialogFooter>
                 </AlertDialogContent>
               </AlertDialog>
@@ -1071,8 +1079,8 @@ export function LibrarySectionView({
                     Preview estática del alert dialog de venta.
                   </p>
                   <div className="flex justify-end gap-2 pt-2">
-                    <div className="h-9 w-24 rounded-lg bg-muted/50" />
-                    <div className="h-9 w-24 rounded-lg bg-destructive/20" />
+                    <RootsSubtleButton type="button">Cancelar</RootsSubtleButton>
+                    <RootsDangerButton type="button">Descartar</RootsDangerButton>
                   </div>
                 </div>
               </div>
