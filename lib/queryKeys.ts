@@ -25,6 +25,14 @@ export function userProfileQueryKey(userId: string) {
   return ["user-profile", userId] as const
 }
 
+export function userPopsOwnerQueryKey(userId: string) {
+  return ["user-pops-owner", userId] as const
+}
+
+export function userPopsHomeQueryKey(userId: string) {
+  return ["user-pops-home", userId] as const
+}
+
 export function userPopsQueryKey(userId: string) {
   return ["user-pops", userId] as const
 }

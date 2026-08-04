@@ -1,16 +1,19 @@
 "use client"
 
 import {
-  canUserCreatePop,
-  getPopSubscriptionInfo,
-  getUserPopsList,
-  getUserProfile,
-  type UserPopListItem,
-  type UserProfileDTO,
-} from "@/app/profile/actions"
+  getUserMemberPopsCache,
+  getUserOwnedPopsCache,
+  getUserProfileCache,
+} from "@/app/home/homeUserDataActions"
 import {
-  canUserCreatePopQueryKey,
+  buildHomePopList,
+  buildUserProfileFullName,
+} from "@/app/home/homeUserDataResolve"
+import { getPopSubscriptionInfo } from "@/app/profile/actions"
+import type { UserPopListItem } from "@/app/profile/actions"
+import {
   popSubscriptionQueryKey,
+  userPopsOwnerQueryKey,
   userPopsQueryKey,
   userProfileQueryKey,
 } from "@/lib/queryKeys"
@@ -23,32 +26,40 @@ export function useHomePageData(userId: string | undefined) {
 
   const profileQuery = useQuery({
     queryKey: userProfileQueryKey(userId ?? ""),
-    queryFn: getUserProfile,
+    queryFn: getUserProfileCache,
     enabled,
     ...oneDayQueryOptions,
   })
 
-  const popsQuery = useQuery({
+  const ownedPopsQuery = useQuery({
+    queryKey: userPopsOwnerQueryKey(userId ?? ""),
+    queryFn: getUserOwnedPopsCache,
+    enabled,
+    ...oneDayQueryOptions,
+  })
+
+  const memberPopsQuery = useQuery({
     queryKey: userPopsQueryKey(userId ?? ""),
-    queryFn: getUserPopsList,
+    queryFn: getUserMemberPopsCache,
     enabled,
     ...oneDayQueryOptions,
   })
 
-  const canCreatePopQuery = useQuery({
-    queryKey: canUserCreatePopQueryKey(userId ?? ""),
-    queryFn: canUserCreatePop,
-    enabled,
-    ...oneDayQueryOptions,
-  })
-
-  const popsBase = popsQuery.data ?? []
+  const popsBase = useMemo(() => {
+    return buildHomePopList(
+      ownedPopsQuery.data ?? [],
+      memberPopsQuery.data ?? [],
+    )
+  }, [ownedPopsQuery.data, memberPopsQuery.data])
 
   const subscriptionQueries = useQueries({
     queries: popsBase.map((pop) => ({
       queryKey: popSubscriptionQueryKey(pop.id),
       queryFn: () => getPopSubscriptionInfo(pop.id),
-      enabled: enabled && popsQuery.isSuccess,
+      enabled:
+        enabled &&
+        ownedPopsQuery.isSuccess &&
+        memberPopsQuery.isSuccess,
       ...oneDayQueryOptions,
     })),
   })
@@ -66,26 +77,30 @@ export function useHomePageData(userId: string | undefined) {
 
   const isLoading =
     profileQuery.isLoading ||
-    popsQuery.isLoading ||
-    canCreatePopQuery.isLoading ||
+    ownedPopsQuery.isLoading ||
+    memberPopsQuery.isLoading ||
     subscriptionsPending
 
   const loadError =
-    profileQuery.isError || popsQuery.isError || canCreatePopQuery.isError
+    profileQuery.isError ||
+    ownedPopsQuery.isError ||
+    memberPopsQuery.isError
 
   const refetchAll = async () => {
     await Promise.all([
       profileQuery.refetch(),
-      popsQuery.refetch(),
-      canCreatePopQuery.refetch(),
+      ownedPopsQuery.refetch(),
+      memberPopsQuery.refetch(),
       ...subscriptionQueries.map((query) => query.refetch()),
     ])
   }
 
+  const profile = profileQuery.data ?? null
+
   return {
-    profile: (profileQuery.data ?? null) as UserProfileDTO | null,
+    profile,
+    profileFullName: profile ? buildUserProfileFullName(profile) : "",
     pops,
-    canCreatePop: canCreatePopQuery.data?.canCreate === true,
     isLoading,
     loadError,
     refetchAll,

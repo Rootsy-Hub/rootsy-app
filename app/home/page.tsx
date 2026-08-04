@@ -4,7 +4,7 @@ import Link from "next/link"
 import Image from "next/image"
 import { useRouter } from "next/navigation"
 import { useEffect, useState } from "react"
-import { Download, Plus } from "lucide-react"
+import { Download } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Spinner } from "@/components/ui/spinner"
@@ -56,19 +56,12 @@ function HomePage() {
 
   const {
     pops,
+    profileFullName,
     profile,
-    canCreatePop,
     isLoading: homeLoading,
     loadError,
     refetchAll,
   } = useHomePageData(user?.id)
-
-  useEffect(() => {
-    if (authLoading || homeLoading) return
-    if (pops.length === 0 && canCreatePop) {
-      router.replace("/pops/create")
-    }
-  }, [authLoading, homeLoading, pops, canCreatePop, router])
 
   useEffect(() => {
     const sync = () => setIsOnline(navigator.onLine)
@@ -82,7 +75,7 @@ function HomePage() {
   }, [])
 
   const displayName =
-    profile?.fullName?.trim() ||
+    profileFullName.trim() ||
     (user?.user_metadata?.full_name as string | undefined) ||
     (user?.user_metadata?.name as string | undefined) ||
     user?.user_metadata?.first_name ||
@@ -292,22 +285,6 @@ function HomePage() {
                 })
               )}
 
-              {canCreatePop ? (
-                <li className="group basis-[9.1rem] sm:basis-[9.4rem]">
-                  <button
-                    type="button"
-                    onClick={() => router.push("/pops/create")}
-                    className="mx-auto flex w-full max-w-40 flex-col items-center"
-                  >
-                    <div className="relative flex size-28 items-center justify-center rounded-full border-2 border-dashed border-white/22 bg-white/3 transition-all duration-300 group-hover:-translate-y-1 group-hover:border-emerald-300/45 group-hover:bg-emerald-400/7">
-                      <Plus className="size-8 text-white/45 transition-colors group-hover:text-emerald-200" />
-                    </div>
-                    <span className="mt-4 text-[0.92rem] font-semibold text-white/45 transition-colors group-hover:text-white/70">
-                      Agregar nuevo
-                    </span>
-                  </button>
-                </li>
-              ) : null}
             </ul>
           )}
         </section>
