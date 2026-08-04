@@ -9,12 +9,16 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import {
+  RootsFormSelectContent,
+  RootsFormSelectItem,
+  RootsFormSelectTrigger,
+} from "@/components/rootsy-form"
+import {
   darkTableFooterCenterClass,
-  darkTableFooterCenterMutedClass,
+  darkTableFooterTotalLabelClass,
   darkTableFooterClass,
-  darkTableFooterNavButtonClass,
-  darkTableFooterNavGroupClass,
-  footerPaginationSelectTriggerClass,
+  darkTableFooterNavIconButtonClass,
+  darkTableFooterNavSideClass,
   tableChromeFooterClass,
 } from "@/components/data-workspace/dataWorkspaceListStyles"
 import { FooterTotalCountSkeleton } from "@/components/data-workspace/DataWorkspaceListPaginationFooterSkeleton"
@@ -88,33 +92,30 @@ export function DataWorkspaceListPaginationFooter({
 
     return (
       <div
-        className={darkTableFooterClass}
+        className={cn(darkTableFooterClass, "h-17 shrink-0")}
         role="navigation"
         aria-label="Paginación del listado"
         aria-busy={listFetching}
       >
-        <div className="flex w-full items-stretch">
-          <div className={cn(darkTableFooterNavGroupClass, "justify-start")}>
+        <div className="flex h-full w-full items-center">
+          <div className={cn(darkTableFooterNavSideClass, "justify-start")}>
             <button
               type="button"
-              className={cn(
-                darkTableFooterNavButtonClass,
-                "border-r border-zinc-800/90",
-              )}
+              className={darkTableFooterNavIconButtonClass}
               disabled={paginationDisabled || safeCurrentPage <= 1}
-              aria-label="Ir a la primera página"
+              aria-label="Ir al inicio"
               onClick={() => onPageChange(1)}
             >
-              <ChevronsLeft className="size-7" aria-hidden />
+              <ChevronsLeft className="size-5" aria-hidden />
             </button>
             <button
               type="button"
-              className={darkTableFooterNavButtonClass}
+              className={darkTableFooterNavIconButtonClass}
               disabled={paginationDisabled || safeCurrentPage <= 1}
-              aria-label="Página anterior"
+              aria-label="Retroceder una página"
               onClick={() => onPageChange(Math.max(1, safeCurrentPage - 1))}
             >
-              <ChevronLeft className="size-7" aria-hidden />
+              <ChevronLeft className="size-5" aria-hidden />
             </button>
           </div>
 
@@ -128,22 +129,19 @@ export function DataWorkspaceListPaginationFooter({
               disabled={paginationDisabled}
               onValueChange={(v) => onPageChange(Number(v))}
             >
-              <SelectTrigger
-                className={footerPaginationSelectTriggerClass}
-                aria-label="Página"
-              >
+              <RootsFormSelectTrigger tone="dark" aria-label="Página">
                 <SelectValue />
-              </SelectTrigger>
-              <SelectContent align="center">
+              </RootsFormSelectTrigger>
+              <RootsFormSelectContent tone="dark" align="center">
                 {pageOptions.map((p) => (
-                  <SelectItem key={p} value={String(p)}>
+                  <RootsFormSelectItem key={p} tone="dark" value={String(p)}>
                     {p.toLocaleString("es-AR")}
-                  </SelectItem>
+                  </RootsFormSelectItem>
                 ))}
-              </SelectContent>
+              </RootsFormSelectContent>
             </Select>
 
-            <span className="text-zinc-600" aria-hidden>
+            <span className="text-[#33443d]" aria-hidden>
               ·
             </span>
 
@@ -152,28 +150,28 @@ export function DataWorkspaceListPaginationFooter({
               disabled={paginationDisabled}
               onValueChange={(v) => onPageSizeChange(Number(v))}
             >
-              <SelectTrigger
-                className={footerPaginationSelectTriggerClass}
+              <RootsFormSelectTrigger
+                tone="dark"
                 aria-labelledby={pageSizeLabelId}
                 aria-label="Resultados por página"
               >
                 <SelectValue />
-              </SelectTrigger>
-              <SelectContent align="center">
+              </RootsFormSelectTrigger>
+              <RootsFormSelectContent tone="dark" align="center">
                 {pageSizeOptions.map((n) => (
-                  <SelectItem key={n} value={String(n)}>
+                  <RootsFormSelectItem key={n} tone="dark" value={String(n)}>
                     {n.toLocaleString("es-AR")}
-                  </SelectItem>
+                  </RootsFormSelectItem>
                 ))}
-              </SelectContent>
+              </RootsFormSelectContent>
             </Select>
 
-            <span className="text-zinc-600" aria-hidden>
+            <span className="text-[#33443d]" aria-hidden>
               ·
             </span>
             <span
               id={pageSizeLabelId}
-              className={darkTableFooterCenterMutedClass}
+              className={darkTableFooterTotalLabelClass}
               aria-hidden
             >
               {listFetching ? (
@@ -193,29 +191,26 @@ export function DataWorkspaceListPaginationFooter({
             </span>
           </div>
 
-          <div className={cn(darkTableFooterNavGroupClass, "justify-end")}>
+          <div className={cn(darkTableFooterNavSideClass, "justify-end")}>
             <button
               type="button"
-              className={cn(
-                darkTableFooterNavButtonClass,
-                "border-l border-zinc-800/90",
-              )}
+              className={darkTableFooterNavIconButtonClass}
               disabled={paginationDisabled || safeCurrentPage >= effectiveTotalPages}
-              aria-label="Página siguiente"
+              aria-label="Avanzar una página"
               onClick={() =>
                 onPageChange(Math.min(effectiveTotalPages, safeCurrentPage + 1))
               }
             >
-              <ChevronRight className="size-7" aria-hidden />
+              <ChevronRight className="size-5" aria-hidden />
             </button>
             <button
               type="button"
-              className={darkTableFooterNavButtonClass}
+              className={darkTableFooterNavIconButtonClass}
               disabled={paginationDisabled || safeCurrentPage >= effectiveTotalPages}
-              aria-label="Ir a la última página"
+              aria-label="Ir al final"
               onClick={() => onPageChange(effectiveTotalPages)}
             >
-              <ChevronsRight className="size-7" aria-hidden />
+              <ChevronsRight className="size-5" aria-hidden />
             </button>
           </div>
         </div>

@@ -1,5 +1,6 @@
 "use client"
 
+import { rootsIconButtonActionClass } from "@/components/rootsy-button/rootsButtonStyles"
 import { cn } from "@/lib/utils"
 import { tdMoneyClass, tdMoneyMutedClass, workspaceTableFrameSelectableScopeClass } from "@/components/data-workspace/dataWorkspaceListStyles"
 import { Package } from "lucide-react"
@@ -144,34 +145,14 @@ export function DataWorkspaceTableIconAction({
     ? "destructive"
     : (variant ?? "edit")
 
-  const toneClass =
-    resolvedVariant === "destructive"
-      ? cn(
-          "hover:bg-rose-50 hover:text-rose-600",
-          "focus-visible:bg-rose-50 focus-visible:text-rose-600 focus-visible:ring-2 focus-visible:ring-rose-400/30 focus-visible:ring-offset-0",
-          "active:bg-rose-100 active:text-rose-700",
-        )
-      : resolvedVariant === "neutral"
-        ? cn(
-            "hover:bg-zinc-100 hover:text-zinc-800",
-            "focus-visible:bg-zinc-100 focus-visible:text-zinc-800 focus-visible:ring-2 focus-visible:ring-zinc-400/25 focus-visible:ring-offset-0",
-            "active:bg-zinc-200/80 active:text-zinc-900",
-          )
-        : cn(
-            "hover:bg-primary/10 hover:text-primary",
-            "focus-visible:bg-primary/10 focus-visible:text-primary focus-visible:ring-2 focus-visible:ring-primary/20 focus-visible:ring-offset-0",
-            "active:bg-primary/15 active:text-primary",
-          )
-
   return (
     <button
       type="button"
       disabled={disabled}
-      className={cn(
-        "inline-flex size-8 shrink-0 items-center justify-center rounded-lg bg-transparent p-0 text-zinc-500 transition-colors duration-150",
-        "outline-none disabled:pointer-events-none disabled:opacity-50",
-        toneClass,
-      )}
+      className={rootsIconButtonActionClass({
+        intent: resolvedVariant,
+        size: "compact",
+      })}
       aria-label={label}
       onClick={onClick}
     >

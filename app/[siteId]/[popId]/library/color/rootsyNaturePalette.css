@@ -101,6 +101,18 @@
  * Nav activo, badges, text-primary y rings usan canopy real (#1e8f5a).
  */
 .rootsy-app-light.rootsy-nature-palette {
+  --background: var(--nature-earth-50);
+  --foreground: var(--nature-earth-900);
+  --card: var(--nature-surface-card);
+  --card-foreground: var(--nature-earth-900);
+  --popover: var(--nature-surface-card);
+  --popover-foreground: var(--nature-earth-900);
+  --secondary: var(--nature-earth-100);
+  --secondary-foreground: var(--nature-earth-800);
+  --muted: var(--nature-earth-100);
+  --muted-foreground: var(--nature-earth-600);
+  --border: color-mix(in srgb, var(--nature-earth-400) 72%, transparent);
+  --input: var(--nature-earth-200);
   --primary: var(--nature-canopy-600);
   --primary-foreground: #ffffff;
   --ring: var(--nature-canopy-700);
@@ -116,4 +128,145 @@
   --chart-3: var(--nature-sea-500);
   --chart-4: var(--nature-earth-600);
   --chart-5: var(--nature-canopy-400);
+}
+
+/**
+ * Tabla workspace — composición Nature (colorista).
+ * Tierra estructura · canopy interacción · otoño/ember semántica.
+ */
+.rootsy-nature-palette .workspace-table-nature {
+  --wt-surface: var(--nature-earth-50);
+  --wt-surface-stripe: color-mix(
+    in srgb,
+    var(--nature-earth-100) 92%,
+    var(--nature-canopy-50)
+  );
+  --wt-surface-hover: color-mix(
+    in srgb,
+    var(--nature-earth-200) 38%,
+    var(--nature-earth-50)
+  );
+  --wt-surface-selected: var(--nature-canopy-50);
+  --wt-surface-selected-ring: color-mix(
+    in srgb,
+    var(--nature-canopy-600) 16%,
+    transparent
+  );
+  --wt-header-bg: color-mix(
+    in srgb,
+    var(--nature-earth-100) 84%,
+    var(--nature-canopy-50)
+  );
+  --wt-header-text: var(--nature-earth-700);
+  --wt-border: color-mix(in srgb, var(--nature-earth-400) 55%, transparent);
+  --wt-border-strong: var(--nature-earth-400);
+  --wt-text-primary: var(--nature-earth-900);
+  --wt-text-secondary: var(--nature-earth-600);
+  --wt-text-tertiary: var(--nature-earth-500);
+  --wt-link: var(--nature-canopy-700);
+  --wt-link-hover: var(--nature-canopy-800);
+  --wt-money: var(--nature-earth-900);
+  --wt-money-negative: var(--nature-autumn-800);
+  --wt-bulk-bg: color-mix(
+    in srgb,
+    var(--nature-canopy-50) 65%,
+    var(--nature-earth-100)
+  );
+  --wt-skeleton: color-mix(in srgb, var(--nature-earth-400) 26%, transparent);
+  --wt-skeleton-soft: color-mix(in srgb, var(--nature-earth-400) 16%, transparent);
+}
+
+/** Variante bosque — canopy como superficie de la tabla (claro del bosque). */
+.rootsy-nature-palette .workspace-table-nature.workspace-table-nature--forest {
+  --wt-surface: var(--nature-canopy-50);
+  --wt-surface-stripe: color-mix(
+    in srgb,
+    var(--nature-canopy-100) 74%,
+    var(--nature-canopy-200)
+  );
+  --wt-surface-hover: color-mix(
+    in srgb,
+    var(--nature-canopy-100) 58%,
+    var(--nature-canopy-50)
+  );
+  --wt-surface-selected: color-mix(
+    in srgb,
+    var(--nature-canopy-100) 82%,
+    var(--nature-canopy-300)
+  );
+  --wt-header-bg: color-mix(
+    in srgb,
+    var(--nature-canopy-100) 62%,
+    var(--nature-canopy-200)
+  );
+  --wt-header-text: var(--nature-canopy-800);
+  --wt-border: color-mix(in srgb, var(--nature-canopy-300) 48%, transparent);
+  --wt-border-strong: color-mix(
+    in srgb,
+    var(--nature-canopy-400) 58%,
+    var(--nature-canopy-300)
+  );
+  --wt-text-primary: var(--nature-canopy-950);
+  --wt-text-secondary: var(--nature-canopy-800);
+  --wt-text-tertiary: var(--nature-canopy-700);
+  --wt-link: var(--nature-canopy-700);
+  --wt-link-hover: var(--nature-canopy-900);
+  --wt-money: var(--nature-canopy-950);
+  --wt-bulk-bg: color-mix(
+    in srgb,
+    var(--nature-canopy-100) 70%,
+    var(--nature-canopy-50)
+  );
+  --wt-skeleton: color-mix(in srgb, var(--nature-canopy-300) 32%, transparent);
+  --wt-skeleton-soft: color-mix(in srgb, var(--nature-canopy-300) 20%, transparent);
+}
+
+/** Anclaje orgánico — tierra pura para tablas de layout (50/100/200/400/600). */
+.rootsy-nature-palette .workspace-table-nature.workspace-table-nature--earth-organic {
+  --wt-surface: var(--nature-earth-50);
+  --wt-surface-stripe: var(--nature-earth-100);
+  --wt-surface-hover: var(--nature-earth-200);
+  --wt-surface-selected: var(--nature-earth-200);
+  --wt-surface-selected-ring: color-mix(
+    in srgb,
+    var(--nature-earth-500) 22%,
+    transparent
+  );
+  --wt-header-bg: #ffffff;
+  --wt-header-text: var(--nature-earth-700);
+  --wt-border: color-mix(in srgb, var(--nature-earth-400) 48%, transparent);
+  --wt-border-strong: var(--nature-earth-400);
+  --wt-text-primary: var(--nature-earth-900);
+  --wt-text-secondary: var(--nature-earth-600);
+  --wt-text-tertiary: var(--nature-earth-500);
+  --wt-link: var(--nature-earth-800);
+  --wt-link-hover: var(--nature-earth-900);
+  --wt-money: var(--nature-earth-900);
+  --wt-money-negative: var(--nature-autumn-800);
+  --wt-bulk-bg: var(--nature-earth-100);
+  --wt-skeleton: color-mix(in srgb, var(--nature-earth-400) 26%, transparent);
+  --wt-skeleton-soft: color-mix(in srgb, var(--nature-earth-400) 16%, transparent);
+}
+
+/** Variante más marcada — documentación layout y previews donde la tierra debe leerse claro. */
+.rootsy-nature-palette .workspace-table-nature.workspace-table-nature--earth-marked {
+  --wt-surface: var(--nature-earth-100);
+  --wt-surface-stripe: color-mix(
+    in srgb,
+    var(--nature-earth-200) 82%,
+    var(--nature-autumn-100)
+  );
+  --wt-surface-hover: color-mix(
+    in srgb,
+    var(--nature-earth-200) 55%,
+    var(--nature-earth-100)
+  );
+  --wt-header-bg: color-mix(
+    in srgb,
+    var(--nature-earth-200) 68%,
+    var(--nature-autumn-100)
+  );
+  --wt-header-text: var(--nature-earth-800);
+  --wt-border: color-mix(in srgb, var(--nature-earth-500) 42%, transparent);
+  --wt-border-strong: var(--nature-earth-500);
 }

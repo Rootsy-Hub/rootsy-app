@@ -10,11 +10,12 @@ import {
 } from "@/components/ui/dropdown-menu"
 import {
   dataWorkspaceHeaderChromeButtonClass,
-  dataWorkspaceHeaderDropdownContentClass,
-  dataWorkspaceHeaderDropdownItemClass,
+  dataWorkspaceHeaderDropdownItemClassForVariant,
   dataWorkspaceHeaderDropdownLogoutItemClass,
-  dataWorkspaceHeaderDropdownSeparatorClass,
-  dataWorkspaceHeaderUserDropdownContentClass,
+  dataWorkspaceHeaderDropdownSeparatorClassForVariant,
+  dataWorkspaceHeaderUserDropdownContentClassForVariant,
+  isDataWorkspaceTintedHeader,
+  isNightForestHeader,
   type DataWorkspaceHeaderVariant,
 } from "@/components/layouts/dataWorkspaceHeaderStyles"
 import { useAuth } from "@/context/AuthContextSupabase"
@@ -36,7 +37,8 @@ export function DataWorkspaceHeaderUserMenu({
   isOnline,
   headerVariant = "default",
 }: DataWorkspaceHeaderUserMenuProps) {
-  const isDark = headerVariant === "dark"
+  const isTinted = isDataWorkspaceTintedHeader(headerVariant)
+  const isNightForest = isNightForestHeader(headerVariant)
   const { logOut } = useAuth()
   const router = useRouter()
 
@@ -50,6 +52,10 @@ export function DataWorkspaceHeaderUserMenu({
     await logOut()
     router.push("/login")
   }
+
+  const dropdownItemClass = dataWorkspaceHeaderDropdownItemClassForVariant(headerVariant)
+  const dropdownSeparatorClass =
+    dataWorkspaceHeaderDropdownSeparatorClassForVariant(headerVariant)
 
   return (
     <DropdownMenu>
@@ -68,9 +74,11 @@ export function DataWorkspaceHeaderUserMenu({
             <AvatarFallback
               className={cn(
                 "rounded-[inherit] text-[11px] font-semibold",
-                isDark
-                  ? "bg-zinc-800 text-emerald-300"
-                  : "bg-primary/10 text-primary",
+                isNightForest
+                  ? "bg-[#1c2824] text-emerald-200"
+                  : isTinted
+                    ? "bg-zinc-800 text-emerald-300"
+                    : "bg-primary/10 text-primary",
               )}
             >
               {initials}
@@ -82,7 +90,11 @@ export function DataWorkspaceHeaderUserMenu({
             title={isOnline ? "En línea" : "Sin conexión"}
             className={cn(
               "absolute bottom-1 right-1 size-2.5 rounded-full ring-2",
-              isDark ? "ring-zinc-900" : "ring-secondary",
+              isNightForest
+                ? "ring-[#0c1210]"
+                : isTinted
+                  ? "ring-zinc-900"
+                  : "ring-secondary",
               isOnline ? "bg-emerald-500" : "bg-red-500",
             )}
           />
@@ -94,34 +106,31 @@ export function DataWorkspaceHeaderUserMenu({
         sideOffset={8}
         collisionPadding={{ right: 16 }}
         className={
-          isDark
-            ? dataWorkspaceHeaderUserDropdownContentClass
-            : "w-56 origin-top-right"
+          dataWorkspaceHeaderUserDropdownContentClassForVariant(headerVariant) ??
+          "w-56 origin-top-right"
         }
       >
         <DropdownMenuItem
           asChild
-          className={cn("gap-2", isDark && dataWorkspaceHeaderDropdownItemClass)}
+          className={cn("gap-2", dropdownItemClass)}
         >
           <Link href="/home">
             <UserCog className="size-4 shrink-0 opacity-70" aria-hidden />
             <span className="min-w-0 flex-1 truncate">Editar perfil</span>
           </Link>
         </DropdownMenuItem>
-        <DropdownMenuSeparator
-          className={isDark ? dataWorkspaceHeaderDropdownSeparatorClass : undefined}
-        />
+        <DropdownMenuSeparator className={dropdownSeparatorClass} />
         <DropdownMenuItem
-          variant={isDark ? "default" : "destructive"}
+          variant={isTinted ? "default" : "destructive"}
           className={cn(
-            isDark
+            isTinted
               ? dataWorkspaceHeaderDropdownLogoutItemClass
               : "gap-2",
           )}
           onSelect={() => void handleLogOut()}
         >
           <LogOut
-            className={cn("size-4 shrink-0", !isDark && "opacity-70")}
+            className={cn("size-4 shrink-0", !isTinted && "opacity-70")}
             aria-hidden
           />
           <span className="min-w-0 flex-1 truncate">Cerrar sesión</span>

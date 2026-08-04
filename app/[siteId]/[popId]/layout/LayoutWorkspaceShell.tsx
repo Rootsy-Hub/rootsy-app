@@ -1,10 +1,10 @@
 "use client"
 
 import {
-  LAYOUT_CREATION_ITEMS,
   LAYOUT_VIEW_ITEMS,
   type LayoutViewId,
 } from "@/app/[siteId]/[popId]/layout/layoutWorkspaceNav"
+import "@/app/[siteId]/[popId]/library/color/rootsyNaturePalette.css"
 import { DataWorkspaceLayout } from "@/components/layouts/DataWorkspaceLayout"
 import { DataWorkspaceSectionMenu } from "@/components/layouts/DataWorkspaceSectionMenu"
 import { usePopWorkspace } from "@/context/PopWorkspaceContext"
@@ -42,10 +42,10 @@ export function LayoutWorkspaceShell({
       userName={bootstrap?.userFullName || undefined}
       userAvatarSrc={bootstrap?.userImageUrl ?? undefined}
       userRoleLabel={bootstrap?.roleLabel || undefined}
+      mainClassName="rootsy-app-light rootsy-nature-palette min-h-0 overflow-hidden bg-background"
       sectionMenu={
         <DataWorkspaceSectionMenu
           headerVariant="dark"
-          creationItems={LAYOUT_CREATION_ITEMS}
           viewItems={LAYOUT_VIEW_ITEMS}
           activeId={activeViewId}
           onSelect={(id) => onViewSelect(id as LayoutViewId)}

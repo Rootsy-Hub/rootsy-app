@@ -229,10 +229,17 @@ export const ROOTSY_ELEVATION_SEMANTIC: ElevationSemanticMapping[] = [
   },
   {
     token: "elevation.popover.select",
-    component: "SelectContent · Dropdown",
+    component: "DropdownMenuContent",
     levelId: "overlay",
-    source: "components/ui/select.tsx",
-    notes: "shadow-md · z-50.",
+    source: "components/elevation/rootsyElevationStyles.ts",
+    notes: "rootsyElevationOverlay* · rounded-[1.375rem] · border-black/[0.04] · z-50.",
+  },
+  {
+    token: "elevation.popover.form-select",
+    component: "RootsFormSelectContent",
+    levelId: "raised",
+    source: "components/rootsy-form/rootsFormStyles.ts",
+    notes: "rounded-lg · border-zinc-200 · shadow-md — distinto del dropdown.",
   },
   {
     token: "elevation.header.workspace",

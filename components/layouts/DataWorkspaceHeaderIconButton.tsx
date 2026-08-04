@@ -1,7 +1,9 @@
 "use client"
 
 import {
+  dataWorkspaceHeaderChromeButtonClass,
   dataWorkspaceHeaderIconButtonClass,
+  isNightForestHeader,
   type DataWorkspaceHeaderVariant,
 } from "@/components/layouts/dataWorkspaceHeaderStyles"
 import { cn } from "@/lib/utils"
@@ -25,12 +27,19 @@ export function DataWorkspaceHeaderIconButton({
   children,
   ...rest
 }: DataWorkspaceHeaderIconButtonProps) {
+  const useDarkIconButton = isNightForestHeader(headerVariant)
+
   return (
     <button
       type={type}
       aria-label={label}
       className={cn(
-        dataWorkspaceHeaderIconButtonClass(headerVariant, { primary }),
+        useDarkIconButton
+          ? cn(
+              dataWorkspaceHeaderChromeButtonClass(headerVariant),
+              "[&_svg:not([class*='size-'])]:size-5",
+            )
+          : dataWorkspaceHeaderIconButtonClass(headerVariant, { primary }),
         className,
       )}
       {...rest}

@@ -10,6 +10,8 @@ import {
   lightTableThClass,
   selectColumnInnerClass,
   tableRowSelectCheckboxClass,
+  workspaceTableNatureCheckboxClass,
+  workspaceTableNatureHeaderCellClass,
   workspaceTableHeaderRowClass,
   workspaceTableSelectHeadClass,
 } from "@/components/data-workspace/dataWorkspaceListStyles"
@@ -22,6 +24,22 @@ const headAlignClass = {
   center: "text-center",
   right: "text-right",
 } as const
+
+export type WorkspaceTableTone = "default" | "nature" | "earth"
+
+function workspaceTableHeadCellClass(tone: WorkspaceTableTone = "default") {
+  if (tone === "nature" || tone === "earth") {
+    return workspaceTableNatureHeaderCellClass
+  }
+  return lightTableThClass
+}
+
+function workspaceTableCheckboxClass(tone: WorkspaceTableTone = "default") {
+  if (tone === "nature" || tone === "earth") {
+    return workspaceTableNatureCheckboxClass
+  }
+  return tableRowSelectCheckboxClass
+}
 
 export function WorkspaceTableHeader({
   children,
@@ -52,15 +70,17 @@ export function WorkspaceTableHead({
   className,
   align = "left",
   srOnly = false,
+  tone = "default",
 }: {
   children?: ReactNode
   className?: string
   align?: keyof typeof headAlignClass
   srOnly?: boolean
+  tone?: WorkspaceTableTone
 }) {
   return (
     <TableHead
-      className={cn(lightTableThClass, headAlignClass[align], className)}
+      className={cn(workspaceTableHeadCellClass(tone), headAlignClass[align], className)}
     >
       {srOnly ? <span className="sr-only">{children}</span> : children}
     </TableHead>
@@ -73,24 +93,26 @@ export function WorkspaceTableSelectHead({
   disabled,
   ariaLabel = "Seleccionar filas visibles",
   className,
+  tone = "default",
 }: {
   checked: CheckedState
   onCheckedChange: (checked: CheckedState) => void
   disabled?: boolean
   ariaLabel?: string
   className?: string
+  tone?: WorkspaceTableTone
 }) {
   return (
     <TableHead
       className={cn(
-        lightTableThClass,
+        workspaceTableHeadCellClass(tone),
         workspaceTableSelectHeadClass,
         className,
       )}
     >
       <div className={cn(selectColumnInnerClass, "min-h-10")}>
         <Checkbox
-          className={tableRowSelectCheckboxClass}
+          className={workspaceTableCheckboxClass(tone)}
           checked={checked}
           onCheckedChange={onCheckedChange}
           disabled={disabled}

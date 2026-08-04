@@ -21,6 +21,7 @@ type Props = {
   className?: string
   triggerClassName?: string
   contentClassName?: string
+  tone?: "light" | "dark"
   children: ReactNode
 } & RootsFormFieldAssistProps
 
@@ -40,6 +41,7 @@ export function RootsFormSelectField({
   className,
   triggerClassName,
   contentClassName,
+  tone = "light",
   children,
 }: Props) {
   const autoId = useId()
@@ -72,6 +74,7 @@ export function RootsFormSelectField({
         <RootsFormSelectTrigger
           ref={triggerRef}
           id={fieldId}
+          tone={tone}
           aria-invalid={controlProps.isInvalid}
           aria-describedby={controlProps.describedBy}
           prefixed={hasPrefix}
@@ -84,7 +87,7 @@ export function RootsFormSelectField({
           ) : null}
           <SelectValue placeholder={placeholder} />
         </RootsFormSelectTrigger>
-        <RootsFormSelectContent className={contentClassName}>
+        <RootsFormSelectContent tone={tone} className={contentClassName}>
           {children}
         </RootsFormSelectContent>
       </Select>

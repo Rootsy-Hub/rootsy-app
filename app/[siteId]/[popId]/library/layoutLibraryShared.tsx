@@ -25,6 +25,11 @@ import { BORDER_LIBRARY_ROOT } from "@/app/[siteId]/[popId]/library/border/borde
 import { isBorderLibrarySection } from "@/app/[siteId]/[popId]/library/border/borderLibraryNav"
 import { RADIUS_LIBRARY_ROOT } from "@/app/[siteId]/[popId]/library/radius/radiusLibraryNav"
 import { isRadiusLibrarySection } from "@/app/[siteId]/[popId]/library/radius/radiusLibraryNav"
+import {
+  LAYOUTS_LIBRARY_ROOT,
+  LAYOUTS_LIBRARY_SUBITEMS,
+} from "@/app/[siteId]/[popId]/library/layouts/layoutsLibraryNav"
+import { isLayoutsLibrarySection } from "@/app/[siteId]/[popId]/library/layouts/layoutsLibraryNav"
 import { popScopedHref } from "@/lib/popRoutes"
 import { cn } from "@/lib/utils"
 import { ChevronRight } from "lucide-react"
@@ -110,8 +115,19 @@ export const LIBRARY_NAV_GROUPS: LibraryNavGroup[] = [
     id: "overlays",
     label: "Overlays",
     items: [
+      { id: "dropdown", label: "Dropdown" },
       { id: "modals", label: "Modales" },
       { id: "modals-alert", label: "Alert dialog" },
+    ],
+  },
+  {
+    id: "layouts",
+    label: "Layouts",
+    items: [
+      {
+        ...LAYOUTS_LIBRARY_ROOT,
+        children: [...LAYOUTS_LIBRARY_SUBITEMS],
+      },
     ],
   },
 ]
@@ -154,8 +170,12 @@ export function getLibraryNavGroup(sectionId: string): LibraryNavGroup | undefin
     isLogosLibrarySection(sectionId) ||
     isElevationLibrarySection(sectionId) ||
     isBorderLibrarySection(sectionId) ||
-    isRadiusLibrarySection(sectionId)
+    isRadiusLibrarySection(sectionId) ||
+    isLayoutsLibrarySection(sectionId)
   ) {
+    if (isLayoutsLibrarySection(sectionId)) {
+      return LIBRARY_NAV_GROUPS.find((group) => group.id === "layouts")
+    }
     return LIBRARY_NAV_GROUPS.find((group) => group.id === "foundation")
   }
   return LIBRARY_NAV_GROUPS.find((group) =>

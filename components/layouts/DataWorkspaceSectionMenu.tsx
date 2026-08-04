@@ -3,10 +3,11 @@
 import {
   dataWorkspaceSectionMenuDropdownItemClass,
   dataWorkspaceSectionMenuTriggerClass,
-  dataWorkspaceHeaderDropdownContentClass,
-  dataWorkspaceHeaderDropdownItemClass,
-  dataWorkspaceHeaderDropdownLabelClass,
-  dataWorkspaceHeaderDropdownSeparatorClass,
+  dataWorkspaceHeaderDropdownContentClassForVariant,
+  dataWorkspaceHeaderDropdownLabelClassForVariant,
+  dataWorkspaceHeaderDropdownSeparatorClassForVariant,
+  isNightForestHeader,
+  type DataWorkspaceHeaderVariant,
 } from "@/components/layouts/dataWorkspaceHeaderStyles"
 import {
   DropdownMenu,
@@ -31,7 +32,7 @@ export type DataWorkspaceSectionMenuProps = {
   onSelect: (id: string) => void
   creationSectionLabel?: string
   viewsSectionLabel?: string
-  headerVariant?: "default" | "dark"
+  headerVariant?: DataWorkspaceHeaderVariant
 }
 
 export function DataWorkspaceSectionMenu({
@@ -43,7 +44,7 @@ export function DataWorkspaceSectionMenu({
   viewsSectionLabel = "Vista",
   headerVariant = "default",
 }: DataWorkspaceSectionMenuProps) {
-  const isDarkHeader = headerVariant === "dark"
+  const isNightForest = isNightForestHeader(headerVariant)
   const activeView =
     viewItems.find((item) => item.id === activeId) ??
     viewItems[0] ??
@@ -53,9 +54,15 @@ export function DataWorkspaceSectionMenu({
   const displayLabel = displayItem?.label ?? "Vista"
   const DisplayIcon = displayItem?.icon ?? LayoutGrid
 
-  const triggerClass = dataWorkspaceSectionMenuTriggerClass(
-    isDarkHeader ? "dark" : "default",
+  const triggerClass = dataWorkspaceSectionMenuTriggerClass(headerVariant)
+  const dropdownContentClass = dataWorkspaceHeaderDropdownContentClassForVariant(
+    headerVariant,
   )
+  const dropdownLabelClass = dataWorkspaceHeaderDropdownLabelClassForVariant(
+    headerVariant,
+  )
+  const dropdownSeparatorClass =
+    dataWorkspaceHeaderDropdownSeparatorClassForVariant(headerVariant)
 
   if (viewItems.length === 0 && creationItems.length === 0) {
     return null
@@ -81,17 +88,14 @@ export function DataWorkspaceSectionMenu({
       <DropdownMenuContent
         align="end"
         sideOffset={6}
-        className={
-          isDarkHeader ? dataWorkspaceHeaderDropdownContentClass : "w-56"
-        }
+        className={dropdownContentClass ?? "w-56"}
       >
         {creationItems.length > 0 ? (
           <>
             <DropdownMenuLabel
               className={
-                isDarkHeader
-                  ? dataWorkspaceHeaderDropdownLabelClass
-                  : "text-[10px] uppercase tracking-wider text-muted-foreground"
+                dropdownLabelClass ??
+                "text-[10px] uppercase tracking-wider text-muted-foreground"
               }
             >
               {creationSectionLabel}
@@ -103,7 +107,7 @@ export function DataWorkspaceSectionMenu({
                 <DropdownMenuItem
                   key={item.id}
                   className={dataWorkspaceSectionMenuDropdownItemClass(
-                    isDarkHeader ? "dark" : "default",
+                    headerVariant,
                     selected,
                   )}
                   onClick={() => onSelect(item.id)}
@@ -114,7 +118,9 @@ export function DataWorkspaceSectionMenu({
                     <Check
                       className={cn(
                         "size-4 shrink-0",
-                        isDarkHeader ? "text-emerald-400" : "text-primary",
+                        isNightForest
+                          ? "text-emerald-300"
+                          : "text-primary",
                       )}
                       aria-hidden
                     />
@@ -123,11 +129,7 @@ export function DataWorkspaceSectionMenu({
               )
             })}
             {viewItems.length > 0 ? (
-              <DropdownMenuSeparator
-                className={
-                  isDarkHeader ? dataWorkspaceHeaderDropdownSeparatorClass : undefined
-                }
-              />
+              <DropdownMenuSeparator className={dropdownSeparatorClass} />
             ) : null}
           </>
         ) : null}
@@ -135,9 +137,8 @@ export function DataWorkspaceSectionMenu({
           <>
             <DropdownMenuLabel
               className={
-                isDarkHeader
-                  ? dataWorkspaceHeaderDropdownLabelClass
-                  : "text-[10px] uppercase tracking-wider text-muted-foreground"
+                dropdownLabelClass ??
+                "text-[10px] uppercase tracking-wider text-muted-foreground"
               }
             >
               {viewsSectionLabel}
@@ -149,7 +150,7 @@ export function DataWorkspaceSectionMenu({
                 <DropdownMenuItem
                   key={item.id}
                   className={dataWorkspaceSectionMenuDropdownItemClass(
-                    isDarkHeader ? "dark" : "default",
+                    headerVariant,
                     selected,
                   )}
                   onClick={() => onSelect(item.id)}
@@ -164,7 +165,9 @@ export function DataWorkspaceSectionMenu({
                     <Check
                       className={cn(
                         "size-4 shrink-0",
-                        isDarkHeader ? "text-emerald-400" : "text-primary",
+                        isNightForest
+                          ? "text-emerald-300"
+                          : "text-primary",
                       )}
                       aria-hidden
                     />

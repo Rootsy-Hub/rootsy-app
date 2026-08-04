@@ -2,16 +2,9 @@ import { popScopedHref } from "@/lib/popRoutes"
 import {
   BarChart3,
   Component,
-  FileText,
   LayoutGrid,
-  Package,
   Table2,
 } from "lucide-react"
-
-export const LAYOUT_CREATION_ITEMS = [
-  { id: "create-article", label: "Crear artículo", icon: Package },
-  { id: "create-invoice", label: "Crear factura", icon: FileText },
-] as const
 
 export const LAYOUT_VIEW_ITEMS = [
   { id: "list", label: "Listado", icon: Table2 },

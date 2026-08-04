@@ -64,7 +64,7 @@ export function DataWorkspaceListTableShell({
             </div>
           ) : null}
         </div>
-        {footer ? footer : null}
+        {footer ? <div className="shrink-0">{footer}</div> : null}
       </div>
     </div>
   )

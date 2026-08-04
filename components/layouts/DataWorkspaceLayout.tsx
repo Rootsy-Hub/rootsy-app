@@ -1,8 +1,15 @@
 "use client"
 
 import {
-  dataWorkspaceDarkHeaderSurfaceClass,
   dataWorkspaceHeaderChromeButtonClass,
+  dataWorkspaceHeaderDividerClass,
+  dataWorkspaceHeaderEdgeToggleClass,
+  dataWorkspaceHeaderPopRingClass,
+  dataWorkspaceHeaderRoleLabelClass,
+  dataWorkspaceHeaderSurfaceClass,
+  dataWorkspaceHeaderToolbarClass,
+  isDataWorkspaceTintedHeader,
+  type DataWorkspaceHeaderVariant,
 } from "@/components/layouts/dataWorkspaceHeaderStyles"
 import { DataWorkspaceHeaderTitle } from "@/components/layouts/DataWorkspaceHeaderTitle"
 import { DataWorkspaceHeaderUserMenu } from "@/components/layouts/DataWorkspaceHeaderUserMenu"
@@ -36,8 +43,8 @@ export type DataWorkspaceLayoutProps = {
   /** Respaldo opcional si el bootstrap del POP aún no tiene rol. */
   userRoleLabel?: string
   loading?: boolean
-  /** Cabecera oscura (solo la franja superior; el main sigue claro). */
-  headerVariant?: "default" | "dark"
+  /** Cabecera clara o bosque nocturno (`dark` / `night`, equivalentes). */
+  headerVariant?: DataWorkspaceHeaderVariant
   /** Contenido a la derecha del título central (ej. badge online). */
   titleAdornment?: ReactNode
   /** Acciones con ícono (Nuevo, categorías, etc.) — a la derecha, antes del selector de vista. */
@@ -95,7 +102,7 @@ export function DataWorkspaceLayout({
   const popWorkspace = usePopWorkspaceOptional()
   const [isOnline, setIsOnline] = useState(true)
   const [isFullscreen, setIsFullscreen] = useState(false)
-  const isDarkHeader = headerVariant === "dark"
+  const isTintedHeader = isDataWorkspaceTintedHeader(headerVariant)
   const isSidebarControlled = onSidebarOpenChange !== undefined
   const internalSidebar = useDataWorkspaceSidebar(
     siteId,
@@ -181,9 +188,7 @@ export function DataWorkspaceLayout({
     popWorkspace?.bootstrap?.roleLabel?.trim() || userRoleLabel?.trim() || ""
   const subline = resolvedUserRoleLabel || pillLabel
 
-  const chromeButtonClass = dataWorkspaceHeaderChromeButtonClass(
-    isDarkHeader ? "dark" : "default",
-  )
+  const chromeButtonClass = dataWorkspaceHeaderChromeButtonClass(headerVariant)
 
   return (
     <div className="rootsy-app-light relative min-h-screen overflow-hidden bg-background text-foreground select-none">
@@ -199,9 +204,7 @@ export function DataWorkspaceLayout({
         <header
           className={cn(
             "shrink-0 border-b shadow-sm backdrop-blur-xl",
-            isDarkHeader
-              ? cn(dataWorkspaceDarkHeaderSurfaceClass, "text-zinc-100")
-              : "border-rootsy-hairline bg-card/90",
+            dataWorkspaceHeaderSurfaceClass(headerVariant),
           )}
         >
           <div className="grid h-18 grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-4 px-4">
@@ -210,7 +213,7 @@ export function DataWorkspaceLayout({
                 href={backHref}
                 className={cn(
                   chromeButtonClass,
-                  isDarkHeader
+                  isTintedHeader
                     ? "text-zinc-300"
                     : "text-foreground/70 hover:text-foreground",
                 )}
@@ -271,14 +274,14 @@ export function DataWorkspaceLayout({
               <div
                 className={cn(
                   "h-6 w-px",
-                  isDarkHeader ? "bg-zinc-700" : "bg-border",
+                  dataWorkspaceHeaderDividerClass(headerVariant),
                 )}
               />
               <div className="flex min-w-0 items-center gap-2.5">
                 <div
                   className={cn(
                     "size-8 overflow-hidden rounded-lg ring-1",
-                    isDarkHeader ? "ring-zinc-600" : "ring-border",
+                    dataWorkspaceHeaderPopRingClass(headerVariant),
                   )}
                 >
                   <img
@@ -290,7 +293,7 @@ export function DataWorkspaceLayout({
                 <span
                   className={cn(
                     "truncate text-sm font-semibold",
-                    isDarkHeader ? "text-zinc-100" : "text-foreground/90",
+                    isTintedHeader ? "text-zinc-100" : "text-foreground/90",
                   )}
                 >
                   {popName || (loading ? "…" : "—")}
@@ -319,7 +322,7 @@ export function DataWorkspaceLayout({
                     <div
                       className={cn(
                         "h-6 w-px",
-                        isDarkHeader ? "bg-zinc-700" : "bg-border",
+                        dataWorkspaceHeaderDividerClass(headerVariant),
                       )}
                     />
                   ) : null}
@@ -328,7 +331,7 @@ export function DataWorkspaceLayout({
                       <span
                         className={cn(
                           "truncate text-sm font-semibold",
-                          isDarkHeader ? "text-zinc-100" : "text-foreground/90",
+                          isTintedHeader ? "text-zinc-100" : "text-foreground/90",
                         )}
                       >
                         {userName}
@@ -337,13 +340,10 @@ export function DataWorkspaceLayout({
                         <span
                           className={cn(
                             "truncate text-[10px] font-semibold uppercase tracking-wider",
-                            resolvedUserRoleLabel
-                              ? isDarkHeader
-                                ? "text-emerald-400"
-                                : "text-emerald-700"
-                              : isDarkHeader
-                                ? "text-zinc-400"
-                                : "text-muted-foreground",
+                            dataWorkspaceHeaderRoleLabelClass(
+                              headerVariant,
+                              Boolean(resolvedUserRoleLabel),
+                            ),
                           )}
                         >
                           {subline}
@@ -354,7 +354,7 @@ export function DataWorkspaceLayout({
                       userName={userName}
                       userAvatarSrc={userAvatarSrc}
                       isOnline={isOnline}
-                      headerVariant={isDarkHeader ? "dark" : "default"}
+                      headerVariant={headerVariant}
                     />
                   </div>
                 </>
@@ -365,9 +365,7 @@ export function DataWorkspaceLayout({
             <div
               className={cn(
                 "border-t px-4 py-2 sm:px-6",
-                isDarkHeader
-                  ? "border-zinc-800 bg-zinc-950/80"
-                  : "border-border/60 bg-muted/20",
+                dataWorkspaceHeaderToolbarClass(headerVariant),
               )}
             >
               <div className={cn("mx-auto w-full", mainMaxWidthClass)}>
@@ -396,9 +394,7 @@ export function DataWorkspaceLayout({
                 onClick={toggleSidebar}
                 className={cn(
                   "absolute left-0 top-1/2 z-20 flex size-10 -translate-y-1/2 items-center justify-center rounded-r-xl border border-l-0 shadow-md transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/45",
-                  isDarkHeader
-                    ? "border-white/10 bg-[#1a2027] text-slate-300 hover:bg-[#242d38] hover:text-white"
-                    : "border-border bg-card text-muted-foreground hover:bg-muted hover:text-foreground",
+                  dataWorkspaceHeaderEdgeToggleClass(headerVariant),
                 )}
                 aria-expanded={false}
                 aria-controls="data-workspace-sidebar"

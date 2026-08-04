@@ -1,4 +1,19 @@
+import {
+  nightForestBorderClass,
+  nightForestFocusRingClass,
+  nightForestPanelHoverClass,
+  nightForestSurfaceClass,
+} from "@/components/layouts/dataWorkspaceHeaderStyles"
 import { cn } from "@/lib/utils"
+
+/** Tipografía de label — CheckoutSectionLabel, headers de tabla y total footer. */
+export const rootsFormFieldLabelTypographyClass =
+  "text-[10px] font-semibold uppercase tracking-[0.12em]"
+
+export const rootsFormFieldLabelClass = cn(
+  rootsFormFieldLabelTypographyClass,
+  "text-muted-foreground",
+)
 
 export const rootsFormFieldStackClass =
   "flex w-full min-w-0 flex-col gap-2"
@@ -104,6 +119,59 @@ export const rootsFormSelectItemClass = cn(
   "data-[highlighted]:bg-zinc-100 data-[highlighted]:text-zinc-900",
   "data-[disabled]:pointer-events-none data-[disabled]:opacity-50",
 )
+
+export type RootsFormSelectTone = "light" | "dark"
+
+/** Select compacto — bosque nocturno (footer paginación, toolbar oscuro). */
+export const rootsFormSelectDarkTriggerClass = cn(
+  "flex h-11 min-h-11 w-auto min-w-[4.25rem] items-center justify-between gap-2 rounded-lg border px-3 shadow-none outline-none transition-[color,box-shadow,border-color]",
+  "font-sans text-sm font-medium leading-normal text-zinc-300",
+  nightForestBorderClass,
+  "bg-[#141c19]",
+  nightForestPanelHoverClass,
+  "hover:text-[#fffbeb]",
+  "data-[state=open]:border-[#33443d]",
+  "data-[state=closed]:focus:!border-[#263530] data-[state=closed]:focus:!ring-0",
+  "focus-visible:border-[#33443d] focus-visible:outline-none",
+  nightForestFocusRingClass,
+  "focus-visible:ring-offset-0",
+  "disabled:pointer-events-none disabled:opacity-40",
+  "[&_[data-slot=select-value]]:min-w-0 [&_[data-slot=select-value]]:flex-1 [&_[data-slot=select-value]]:truncate [&_[data-slot=select-value]]:text-left",
+  "[&_[data-slot=select-value][data-placeholder]]:text-[#78716c]",
+)
+
+export const rootsFormSelectDarkContentClass = cn(
+  "z-[120] max-h-60 overflow-hidden rounded-lg border p-0",
+  nightForestBorderClass,
+  "bg-[#0c1210]",
+  nightForestSurfaceClass,
+  "shadow-[0_18px_40px_-18px_rgba(0,0,0,0.78)]",
+  "w-(--radix-select-trigger-width) min-w-(--radix-select-trigger-width) max-w-(--radix-select-trigger-width)",
+)
+
+export const rootsFormSelectDarkItemClass = cn(
+  "relative flex w-full cursor-default select-none items-center py-2.5 pl-3 pr-10 text-sm text-[#d6d3d1] outline-none",
+  "data-[highlighted]:bg-emerald-500/12 data-[highlighted]:text-emerald-100",
+  "data-[disabled]:pointer-events-none data-[disabled]:opacity-50",
+)
+
+export function rootsFormSelectTriggerClassForTone(
+  tone: RootsFormSelectTone = "light",
+  prefixed = false,
+) {
+  if (prefixed) {
+    return rootsFormPrefixedSelectTriggerClass
+  }
+  return tone === "dark" ? rootsFormSelectDarkTriggerClass : rootsFormSelectTriggerClass
+}
+
+export function rootsFormSelectContentClassForTone(tone: RootsFormSelectTone = "light") {
+  return tone === "dark" ? rootsFormSelectDarkContentClass : rootsFormSelectContentClass
+}
+
+export function rootsFormSelectItemClassForTone(tone: RootsFormSelectTone = "light") {
+  return tone === "dark" ? rootsFormSelectDarkItemClass : rootsFormSelectItemClass
+}
 
 /** Date picker sin prefijo — misma shell que rootsFormTextFieldClass. */
 export const rootsFormDateTriggerClass = cn(

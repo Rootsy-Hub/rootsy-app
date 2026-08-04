@@ -39,7 +39,7 @@ function LibrarySectionPage() {
   }
 
   return (
-    <LibraryShell siteId={siteId} popId={popId}>
+    <LibraryShell siteId={siteId} popId={popId} sectionId={sectionId}>
       <LibraryWorkspace siteId={siteId} popId={popId} sectionId={sectionId} />
     </LibraryShell>
   )

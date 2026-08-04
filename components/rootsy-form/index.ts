@@ -24,6 +24,8 @@ export type {
 export { resolveRootsFormFieldMessage } from "@/components/rootsy-form/rootsFormFieldAssist"
 export { useRootsFormFieldControlProps } from "@/components/rootsy-form/rootsFormFieldContext"
 export {
+  rootsFormFieldLabelClass,
+  rootsFormFieldLabelTypographyClass,
   rootsFormFieldStackClass,
   rootsFormColumnClass,
   rootsFormGridClass,
@@ -40,6 +42,10 @@ export {
   rootsFormPrefixedSelectTriggerClass,
   rootsFormSelectContentClass,
   rootsFormSelectItemClass,
+  rootsFormSelectDarkTriggerClass,
+  rootsFormSelectDarkContentClass,
+  rootsFormSelectDarkItemClass,
+  type RootsFormSelectTone,
   rootsFormDateTriggerClass,
   rootsFormPrefixedDateTriggerClass,
   rootsFormDatePopoverContentClass,

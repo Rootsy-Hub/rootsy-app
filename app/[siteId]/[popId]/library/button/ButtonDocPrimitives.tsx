@@ -13,18 +13,22 @@ import {
   LibraryRelatedLinks,
 } from "@/app/[siteId]/[popId]/library/libraryDocPrimitives"
 import {
+  RootsIconButton,
   RootsProgressButton,
   rootsButtonClassForVariant,
   rootsButtonVariant,
 } from "@/components/rootsy-button"
-import { saleOpDialogDestructiveBtn } from "@/components/sale-operation/saleOperationStyles"
+import { nightForestSurfaceClass } from "@/components/layouts/dataWorkspaceHeaderStyles"
 import { Button } from "@/components/ui/button"
 import { ButtonGroup } from "@/components/ui/button-group"
 import { cn } from "@/lib/utils"
 import {
+  ArrowLeft,
   ArrowRight,
   Bold,
+  Eye,
   Italic,
+  Pencil,
   Plus,
   Save,
   Trash2,
@@ -72,7 +76,9 @@ function appearanceClass(appearance: string, extra?: string) {
     case "default":
       return rootsButtonClassForVariant("secondary", extra)
     case "danger":
-      return cn(saleOpDialogDestructiveBtn, extra)
+      return rootsButtonClassForVariant("destructive", extra)
+    case "link":
+      return rootsButtonClassForVariant("link", extra)
     default:
       return extra
   }
@@ -179,7 +185,7 @@ export function ButtonSizesDemo() {
             type="button"
             size="lg"
             variant={rootsButtonVariant.primary}
-            className={rootsButtonClassForVariant("primary")}
+            className={rootsButtonClassForVariant("primary", undefined, "large")}
           >
             Large
           </Button>
@@ -191,15 +197,61 @@ export function ButtonSizesDemo() {
           IconButton · compact / default / large
         </p>
         <div className="flex flex-wrap items-center gap-2">
-          <Button type="button" size="icon-sm" variant="outline" aria-label="Agregar">
-            <Plus className="size-4" aria-hidden />
-          </Button>
-          <Button type="button" size="icon" variant="outline" aria-label="Agregar">
-            <Plus className="size-4" aria-hidden />
-          </Button>
-          <Button type="button" size="icon-lg" variant="outline" aria-label="Agregar">
-            <Plus className="size-4" aria-hidden />
-          </Button>
+          <RootsIconButton tone="light" size="compact" label="Agregar">
+            <Plus aria-hidden />
+          </RootsIconButton>
+          <RootsIconButton tone="light" size="default" label="Agregar">
+            <Plus aria-hidden />
+          </RootsIconButton>
+          <RootsIconButton tone="light" size="large" label="Agregar">
+            <Plus aria-hidden />
+          </RootsIconButton>
+        </div>
+      </div>
+
+      <div className="overflow-hidden rounded-xl border border-border/70">
+        <div className={cn(nightForestSurfaceClass, "p-4")}>
+          <p className="mb-3 text-[11px] font-medium uppercase tracking-[0.12em] text-[#78716c]">
+            IconButton · dark · compact / default / large
+          </p>
+          <div className="flex flex-wrap items-center gap-3">
+            <RootsIconButton tone="dark" size="compact" label="Volver">
+              <ArrowLeft aria-hidden />
+            </RootsIconButton>
+            <RootsIconButton tone="dark" size="default" label="Volver">
+              <ArrowLeft aria-hidden />
+            </RootsIconButton>
+            <RootsIconButton tone="dark" size="large" label="Volver">
+              <ArrowLeft aria-hidden />
+            </RootsIconButton>
+          </div>
+        </div>
+      </div>
+
+      <div className="rounded-xl border border-border/70 bg-card p-4 shadow-sm">
+        <p className="mb-3 text-[11px] font-medium uppercase tracking-[0.12em] text-muted-foreground">
+          IconButton · acciones de tabla · neutral / edit / destructive
+        </p>
+        <div className="flex flex-wrap items-center gap-0.5 rounded-lg border border-border/60 bg-white px-3 py-2">
+          <RootsIconButton
+            tone="action"
+            intent="neutral"
+            size="compact"
+            label="Ver detalle"
+          >
+            <Eye aria-hidden />
+          </RootsIconButton>
+          <RootsIconButton tone="action" intent="edit" size="compact" label="Editar">
+            <Pencil aria-hidden />
+          </RootsIconButton>
+          <RootsIconButton
+            tone="action"
+            intent="destructive"
+            size="compact"
+            label="Eliminar"
+          >
+            <Trash2 aria-hidden />
+          </RootsIconButton>
         </div>
       </div>
 
@@ -264,7 +316,11 @@ export function ButtonIconsDemo() {
             Continuar
             <ArrowRight className="size-4" aria-hidden />
           </Button>
-          <Button type="button" variant="destructive" className={saleOpDialogDestructiveBtn}>
+          <Button
+            type="button"
+            variant="destructive"
+            className={rootsButtonClassForVariant("destructive")}
+          >
             <Trash2 className="size-4" aria-hidden />
             Eliminar definitivamente
           </Button>

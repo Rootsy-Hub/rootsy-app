@@ -14,6 +14,14 @@ import {
   lightDateCalendarClass,
   lightDatePopoverContentClass,
 } from "@/components/data-workspace/dataWorkspaceListStyles"
+import {
+  rootsFormAffixPrefixClass,
+  rootsFormControlTypographyClass,
+  rootsFormPrefixedDateTriggerClass,
+  rootsFormPrefixedSelectTriggerClass,
+} from "@/components/rootsy-form/rootsFormStyles"
+import { RootsFormField } from "@/components/rootsy-form/RootsFormField"
+import { dataWorkspaceListFiltersFieldClass } from "@/components/data-workspace/dataWorkspaceTablesLayout"
 import { DataWorkspaceToolbarFieldLabel } from "@/components/data-workspace/DataWorkspaceToolbarFieldLabel"
 import {
   DATA_WORKSPACE_DATE_QUICK_PRESETS,
@@ -45,6 +53,9 @@ const dateShortcutButtonClass = cn(
 const dateShortcutButtonActiveClass =
   "bg-zinc-100 font-medium text-zinc-950 dark:bg-zinc-100 dark:text-zinc-950"
 
+const rootsFormFilterTriggerActiveClass =
+  "!border-[#16704a] ring-2 ring-[#16704a]/20"
+
 export function DataWorkspacePeriodFilter({
   preset,
   customRange,
@@ -69,8 +80,8 @@ export function DataWorkspacePeriodFilter({
   showActiveState?: boolean
   /** Oculta la opción «Todas las fechas». */
   hideAllPreset?: boolean
-  /** `compact` para toolbar inline sin panel ni etiqueta. */
-  variant?: "panel" | "compact"
+  /** `compact` toolbar inline; `layout` barra flush h-23 con RootsForm. */
+  variant?: "panel" | "compact" | "layout"
   className?: string
 }) {
   const autoLabelId = useId()
@@ -78,6 +89,7 @@ export function DataWorkspacePeriodFilter({
   const labelId = labelIdProp ?? autoLabelId
   const triggerId = triggerIdProp ?? autoTriggerId
   const isCompact = variant === "compact"
+  const isLayout = variant === "layout"
   const [popoverOpen, setPopoverOpen] = useState(false)
   const [pickerView, setPickerView] = useState<"shortcuts" | "calendar">(
     "shortcuts",
@@ -120,11 +132,74 @@ export function DataWorkspacePeriodFilter({
   }
 
   const triggerClass = cn(
-    dateFilterTriggerClass,
+    isLayout
+      ? cn(
+          rootsFormPrefixedDateTriggerClass,
+          "cursor-pointer",
+          active && rootsFormFilterTriggerActiveClass,
+        )
+      : dateFilterTriggerClass,
     isCompact
       ? "h-8 min-w-[12rem] max-w-[18rem] px-3 text-sm font-medium shadow-sm"
-      : "min-w-0 shadow-xs",
-    active && lightToolbarControlActiveClass,
+      : !isLayout && "min-w-0 shadow-xs",
+    !isLayout && active && lightToolbarControlActiveClass,
+  )
+
+  const periodTrigger = isLayout ? (
+    <button
+      id={triggerId}
+      type="button"
+      className={triggerClass}
+      data-state={popoverOpen ? "open" : "closed"}
+      aria-expanded={popoverOpen}
+      aria-haspopup="dialog"
+      title={summary}
+    >
+      <span className={rootsFormAffixPrefixClass} aria-hidden>
+        <CalendarRange className="size-4" />
+      </span>
+      <span
+        data-slot="date-value"
+        className={cn(rootsFormControlTypographyClass, "truncate")}
+      >
+        {summary}
+      </span>
+      <ChevronDown
+        className={cn(
+          "my-auto mr-3 size-4 shrink-0 text-zinc-500 transition-transform duration-200",
+          popoverOpen && "rotate-180",
+        )}
+        aria-hidden
+      />
+    </button>
+  ) : (
+    <Button
+      id={triggerId}
+      type="button"
+      variant="outline"
+      size={isCompact ? "sm" : "default"}
+      className={triggerClass}
+      aria-expanded={popoverOpen}
+      aria-haspopup="dialog"
+      aria-labelledby={isCompact ? undefined : labelId}
+      title={summary}
+    >
+      <span className="flex min-w-0 flex-1 items-center gap-2 overflow-hidden">
+        <CalendarRange
+          className="size-4 shrink-0 text-muted-foreground"
+          aria-hidden
+        />
+        <span className="min-w-0 flex-1 truncate text-left text-foreground">
+          {summary}
+        </span>
+      </span>
+      <ChevronDown
+        className={cn(
+          "size-4 shrink-0 text-muted-foreground transition-transform duration-200",
+          popoverOpen && "rotate-180",
+        )}
+      />
+    </Button>
   )
 
   const handleCustomRangeSelect = (range: DateRange | undefined) => {
@@ -150,42 +225,15 @@ export function DataWorkspacePeriodFilter({
 
   const filterControl = (
     <Popover open={popoverOpen} onOpenChange={handlePopoverOpenChange}>
-      <PopoverTrigger asChild>
-        <Button
-          id={triggerId}
-          type="button"
-          variant="outline"
-          size={isCompact ? "sm" : "default"}
-          className={triggerClass}
-          aria-expanded={popoverOpen}
-          aria-haspopup="dialog"
-          aria-labelledby={isCompact ? undefined : labelId}
-          title={summary}
-        >
-          <span className="flex min-w-0 flex-1 items-center gap-2 overflow-hidden">
-            <CalendarRange
-              className="size-4 shrink-0 text-muted-foreground"
-              aria-hidden
-            />
-            <span className="min-w-0 flex-1 truncate text-left text-foreground">
-              {summary}
-            </span>
-          </span>
-          <ChevronDown
-            className={cn(
-              "size-4 shrink-0 text-muted-foreground transition-transform duration-200",
-              popoverOpen && "rotate-180",
-            )}
-          />
-        </Button>
-      </PopoverTrigger>
+      <PopoverTrigger asChild>{periodTrigger}</PopoverTrigger>
       <PopoverContent
         align={isCompact ? "end" : "start"}
         side="bottom"
-        sideOffset={8}
+        sideOffset={isLayout ? 6 : 8}
         collisionPadding={20}
         className={cn(
-          "z-[100] rounded-xl p-0",
+          isLayout ? "z-50" : "z-[100]",
+          "rounded-xl p-0",
           "w-[min(21.5rem,calc(100vw-1.5rem))] max-w-[calc(100vw-1.5rem)]",
           lightDatePopoverContentClass,
         )}
@@ -290,6 +338,18 @@ export function DataWorkspacePeriodFilter({
 
   if (isCompact) {
     return <div className={className}>{filterControl}</div>
+  }
+
+  if (isLayout) {
+    return (
+      <RootsFormField
+        label="Período"
+        htmlFor={triggerId}
+        className={cn(dataWorkspaceListFiltersFieldClass(), className)}
+      >
+        {filterControl}
+      </RootsFormField>
+    )
   }
 
   return (

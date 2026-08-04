@@ -4,6 +4,9 @@ import {
   isValidMoneyInput,
   MONEY_INPUT_MAX_LEN,
 } from "@/lib/moneyInput"
+import {
+  rootsFormFieldLabelClass,
+} from "@/components/rootsy-form/rootsFormStyles"
 import { cn } from "@/lib/utils"
 import { Banknote, Minus, Percent, Plus, type LucideIcon } from "lucide-react"
 import type { ComponentType, ReactNode } from "react"
@@ -36,18 +39,15 @@ export function CheckoutSectionLabel({
   children: ReactNode
   htmlFor?: string
 }) {
-  const className =
-    "text-[10px] font-semibold uppercase tracking-[0.12em] text-muted-foreground"
-
   if (htmlFor) {
     return (
-      <label htmlFor={htmlFor} className={className}>
+      <label htmlFor={htmlFor} className={rootsFormFieldLabelClass}>
         {children}
       </label>
     )
   }
 
-  return <p className={className}>{children}</p>
+  return <p className={rootsFormFieldLabelClass}>{children}</p>
 }
 
 export function CheckoutDiscountModeSegment({

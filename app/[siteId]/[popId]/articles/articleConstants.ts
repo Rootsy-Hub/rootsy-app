@@ -10,6 +10,7 @@ import {
   rootsFormTextareaFieldClass,
   rootsFormTwoColRowClass,
 } from "@/components/rootsy-form/rootsFormStyles"
+import { rootsyElevationOverlayLightClass } from "@/components/elevation/rootsyElevationStyles"
 import { cn } from "@/lib/utils"
 
 export const ARTICLE_DELETE_CONFIRM_PHRASE = "ELIMINAR"
@@ -51,8 +52,8 @@ export const articleDialogOverlayClass =
   "bg-black/25 backdrop-blur-[3px]"
 
 const articleDialogIOSShellClass = cn(
-  "rootsy-app-light rootsy-nature-palette flex flex-col gap-0 overflow-hidden rounded-[1.375rem] border border-black/[0.04] bg-white p-0 text-foreground",
-  "shadow-[0_22px_70px_-18px_rgba(0,0,0,0.28)]",
+  "rootsy-app-light rootsy-nature-palette flex flex-col gap-0 overflow-hidden p-0 text-foreground",
+  rootsyElevationOverlayLightClass,
   "[&_[data-slot=dialog-close]]:top-4 [&_[data-slot=dialog-close]]:right-4 [&_[data-slot=dialog-close]]:rounded-full [&_[data-slot=dialog-close]]:opacity-60",
 )
 

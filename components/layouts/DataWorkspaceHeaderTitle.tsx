@@ -1,4 +1,5 @@
 import type { DataWorkspaceHeaderVariant } from "@/components/layouts/dataWorkspaceHeaderStyles"
+import { isNightForestHeader } from "@/components/layouts/dataWorkspaceHeaderStyles"
 import { cn } from "@/lib/utils"
 
 export type DataWorkspaceHeaderTitleProps = {
@@ -10,19 +11,24 @@ export function DataWorkspaceHeaderTitle({
   title,
   headerVariant = "default",
 }: DataWorkspaceHeaderTitleProps) {
-  const isDark = headerVariant === "dark"
+  const isNightForest = isNightForestHeader(headerVariant)
+
+  if (isNightForest) {
+    return (
+      <h1 className="inline-flex flex-col items-center">
+        <span className="text-[1.65rem] font-black tracking-tight text-zinc-50">
+          {title}
+        </span>
+      </h1>
+    )
+  }
 
   return (
     <h1 className="relative inline-flex flex-col items-center">
       <span className="relative inline-block text-[1.65rem] font-black tracking-tight">
         <span
           aria-hidden
-          className={cn(
-            "pointer-events-none absolute inset-0 select-none",
-            isDark
-              ? "translate-y-px text-zinc-600/35 blur-[0.35px]"
-              : "translate-y-px text-foreground/20 blur-[0.35px]",
-          )}
+          className="pointer-events-none absolute inset-0 translate-y-px select-none text-foreground/20 blur-[0.35px]"
         >
           {title}
         </span>
@@ -30,17 +36,9 @@ export function DataWorkspaceHeaderTitle({
         <span
           className={cn(
             "relative block bg-clip-text text-transparent",
-            isDark
-              ? cn(
-                  "bg-gradient-to-br from-zinc-50 via-white to-emerald-200/55",
-                  "drop-shadow-[0_1px_0_rgba(255,255,255,0.11)]",
-                  "drop-shadow-[0_1px_2px_rgba(0,0,0,0.28)]",
-                )
-              : cn(
-                  "bg-gradient-to-br from-foreground via-foreground/95 to-primary/55",
-                  "drop-shadow-[0_1px_0_rgba(255,255,255,0.45)]",
-                  "drop-shadow-[0_1px_1.5px_rgba(0,0,0,0.1)]",
-                ),
+            "bg-gradient-to-br from-foreground via-foreground/95 to-primary/55",
+            "drop-shadow-[0_1px_0_rgba(255,255,255,0.45)]",
+            "drop-shadow-[0_1px_1.5px_rgba(0,0,0,0.1)]",
           )}
         >
           {title}

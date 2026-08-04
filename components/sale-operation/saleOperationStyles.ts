@@ -1,3 +1,7 @@
+import {
+  rootsButtonDestructiveClass,
+  rootsButtonPrimaryClass,
+} from "@/components/rootsy-button/rootsButtonStyles"
 import { cn } from "@/lib/utils"
 import { importeBaseClass } from "@/lib/typography"
 
@@ -158,10 +162,8 @@ export const saleOpDialogHeader =
 export const saleOpDialogBody = "px-6 py-4"
 export const saleOpDialogFooter =
   "flex flex-col-reverse gap-2 border-t border-border/50 bg-muted/15 px-6 py-3.5 sm:flex-row sm:justify-between"
-export const saleOpDialogPrimaryBtn =
-  "h-10 bg-[#1e8f5a] font-semibold text-white shadow-sm hover:bg-[#24ad6a] active:bg-[#16704a] focus-visible:ring-2 focus-visible:ring-[#16704a]/45 focus-visible:ring-offset-2"
-export const saleOpDialogDestructiveBtn =
-  "h-10 bg-[#dc2626] font-semibold text-white shadow-sm hover:bg-[#ef4444] active:bg-[#b91c1c] focus-visible:ring-2 focus-visible:ring-[#dc2626]/45 focus-visible:ring-offset-2"
+export const saleOpDialogPrimaryBtn = rootsButtonPrimaryClass
+export const saleOpDialogDestructiveBtn = rootsButtonDestructiveClass
 export const saleOpDialogSecondaryBtn = "h-10 rounded-lg"
 
 /** @deprecated Usar variant="ghost-neutral" + saleOpDialogSecondaryBtn */

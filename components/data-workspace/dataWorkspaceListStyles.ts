@@ -1,5 +1,25 @@
 /** Tokens compartidos entre listados tipo “workspace” (layout preview, clientes, etc.). */
 
+import {
+  rootsyElevationPopoverContentLightClass,
+  rootsyElevationPopoverMenuItemRadiusClass,
+} from "@/components/elevation/rootsyElevationStyles"
+import {
+  nightForestBorderClass,
+  nightForestFocusRingClass,
+  nightForestMutedTextClass,
+  nightForestPanelClass,
+  nightForestPanelHoverClass,
+  nightForestSurfaceClass,
+} from "@/components/layouts/dataWorkspaceHeaderStyles"
+import {
+  rootsFormFieldLabelClass,
+  rootsFormFieldLabelTypographyClass,
+  rootsFormSelectDarkContentClass,
+  rootsFormSelectDarkItemClass,
+  rootsFormSelectDarkTriggerClass,
+} from "@/components/rootsy-form/rootsFormStyles"
+import { rootsIconButtonClass } from "@/components/rootsy-button/rootsButtonStyles"
 import { cn } from "@/lib/utils"
 
 export const dataWorkspaceShellCard =
@@ -19,12 +39,129 @@ export const dataWorkspaceEntityCardsGridClass =
 export const workspaceTableSurfaceClass =
   "bg-white dark:bg-white"
 
+/** Scope raíz — tokens --wt-* (ver rootsyNaturePalette.css). */
+export const workspaceTableNatureScopeClass = "workspace-table-nature"
+
+export type WorkspaceTableTone = "default" | "nature" | "earth"
+
+export const workspaceTableNatureSurfaceClass = "bg-[var(--wt-surface)]"
+
+/** Labels meta — header de tabla layout, toolbar y total del footer oscuro. */
+export const workspaceTableLayoutMetaLabelClass = rootsFormFieldLabelTypographyClass
+
+/** Encabezado — tierra con bruma canopy. */
+export const workspaceTableNatureHeaderCellClass = cn(
+  "sticky top-0 z-20 h-10 border-b px-2 py-2",
+  workspaceTableLayoutMetaLabelClass,
+  "border-[var(--wt-border-strong)] bg-[var(--wt-header-bg)] text-[var(--wt-header-text)]",
+  "shadow-[0_1px_0_0_var(--wt-border-strong)] backdrop-blur-sm",
+  "supports-[backdrop-filter]:bg-[color-mix(in_srgb,var(--wt-header-bg)_86%,transparent)]",
+)
+
+export function workspaceTableNatureBodyRowClassNames(
+  index: number,
+  options?: { selected?: boolean; noHover?: boolean },
+): string {
+  const isEven = index % 2 === 0
+  const rowSurface = isEven ? "bg-[var(--wt-surface)]" : "bg-[var(--wt-surface-stripe)]"
+  const rowSurfaceHover = isEven
+    ? "hover:!bg-[var(--wt-surface)]"
+    : "hover:!bg-[var(--wt-surface-stripe)]"
+
+  return cn(
+    "border-b border-[var(--wt-border)] transition-colors duration-150",
+    rowSurface,
+    options?.noHover
+      ? rowSurfaceHover
+      : "hover:bg-[var(--wt-surface-hover)]",
+    options?.selected &&
+      "bg-[var(--wt-surface-selected)] hover:bg-[var(--wt-surface-selected)] ring-1 ring-inset ring-[var(--wt-surface-selected-ring)]",
+  )
+}
+
+export const workspaceTableNatureTextPrimaryClass =
+  "text-[var(--wt-text-primary)]"
+
+export const workspaceTableNatureTextSecondaryClass =
+  "text-[var(--wt-text-secondary)]"
+
+export const workspaceTableNatureTextTertiaryClass =
+  "text-[var(--wt-text-tertiary)]"
+
+export const workspaceTableNatureLinkClass =
+  "font-medium text-[var(--wt-link)] underline-offset-2 hover:text-[var(--wt-link-hover)] hover:underline"
+
+export const workspaceTableNatureMoneyClass = cn(
+  "font-numeric text-[13px] tabular-nums tracking-tight text-[var(--wt-money)]",
+)
+
+export const workspaceTableNatureMoneyNegativeClass = cn(
+  "font-numeric text-[13px] tabular-nums tracking-tight text-[var(--wt-money-negative)]",
+)
+
+export const workspaceTableNatureBulkBarClass =
+  "border-b border-[var(--wt-border-strong)] bg-[var(--wt-bulk-bg)]"
+
+export const workspaceTableNatureIconButtonClass = cn(
+  "text-[var(--wt-text-tertiary)] hover:text-[var(--wt-text-primary)]",
+)
+
+export const workspaceTableNatureStatusBadgeClass: Record<
+  "activo" | "pendiente" | "vencido",
+  string
+> = {
+  activo:
+    "border-[color:var(--nature-canopy-400)]/45 bg-[color:var(--nature-canopy-100)] text-[color:var(--nature-canopy-800)]",
+  pendiente:
+    "border-[color:var(--nature-autumn-400)]/50 bg-[color:var(--nature-autumn-100)] text-[color:var(--nature-autumn-800)]",
+  vencido:
+    "border-[color:var(--nature-ember-500)]/40 bg-[color:var(--nature-ember-600)]/10 text-[color:var(--nature-ember-700)]",
+}
+
+export const workspaceTableNatureSkeletonTone = {
+  bar: "animate-pulse rounded-sm bg-[var(--wt-skeleton)]",
+  barSm: "animate-pulse rounded-sm bg-[var(--wt-skeleton-soft)]",
+  box: "animate-pulse rounded-sm bg-[var(--wt-skeleton)]",
+  pill: "animate-pulse rounded-md bg-[var(--wt-skeleton)]",
+} as const
+
+/** Checkbox — borde corteza, marca canopy al marcar. */
+export const workspaceTableNatureCheckboxClass = cn(
+  "size-4 border shadow-none [&_[data-slot=checkbox-indicator]_svg]:size-3.5",
+  "border-[var(--wt-border-strong)] bg-[var(--wt-surface)]",
+  "data-[state=checked]:border-[color:var(--nature-canopy-600)] data-[state=checked]:bg-[color:var(--nature-canopy-600)] data-[state=checked]:text-white",
+  "data-[state=indeterminate]:border-[color:var(--nature-canopy-600)]/50 data-[state=indeterminate]:bg-[color:var(--nature-canopy-100)] data-[state=indeterminate]:text-[color:var(--nature-canopy-700)]",
+)
+
+/** @deprecated Usar workspaceTableNatureCheckboxClass */
+export const workspaceTableEarthCheckboxClass = workspaceTableNatureCheckboxClass
+
+/** @deprecated Alias — usar workspaceTableNature* */
+export const workspaceTableEarthSurfaceClass = cn(
+  workspaceTableNatureScopeClass,
+  workspaceTableNatureSurfaceClass,
+)
+/** @deprecated Alias */
+export const workspaceTableEarthHeaderCellClass =
+  workspaceTableNatureHeaderCellClass
+/** @deprecated Alias */
+export const workspaceTableEarthBodyRowClassNames =
+  workspaceTableNatureBodyRowClassNames
+/** @deprecated Alias */
+export const workspaceTableEarthMutedTextClass =
+  workspaceTableNatureTextSecondaryClass
+/** @deprecated Alias */
+export const tdMoneyEarthClass = workspaceTableNatureMoneyClass
+
 /** @deprecated Ya no se usa; el brillo radial quedó desactivado en tablas flush. */
 export const workspaceTableSurfaceGlowClass =
   "pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_85%_60%_at_100%_100%,oklch(0.72_0.11_155/0.08),transparent_60%),radial-gradient(ellipse_50%_42%_at_0%_0%,oklch(0.88_0.06_140/0.07),transparent_55%)]"
 
-export const thBase =
-  "sticky top-0 z-20 h-10 border-b border-border bg-muted/90 px-2 py-2 text-[11px] font-semibold uppercase tracking-[0.12em] text-foreground/70 shadow-[0_1px_0_0_hsl(var(--border))] backdrop-blur-sm supports-[backdrop-filter]:bg-muted/75 dark:border-border/55 dark:bg-background/90 dark:text-muted-foreground dark:shadow-[0_1px_0_0_rgba(255,255,255,0.06)] supports-[backdrop-filter]:dark:bg-background/82"
+export const thBase = cn(
+  "sticky top-0 z-20 h-10 border-b border-border bg-muted/90 px-2 py-2",
+  workspaceTableLayoutMetaLabelClass,
+  "text-foreground/70 shadow-[0_1px_0_0_hsl(var(--border))] backdrop-blur-sm supports-[backdrop-filter]:bg-muted/75 dark:border-border/55 dark:bg-background/90 dark:text-muted-foreground dark:shadow-[0_1px_0_0_rgba(255,255,255,0.06)] supports-[backdrop-filter]:dark:bg-background/82",
+)
 
 /** Encabezado sticky compartido (layout preview + listados workspace). */
 export const workspaceTableHeaderCellClass = cn(
@@ -38,8 +175,7 @@ export const lightTableThClass = workspaceTableHeaderCellClass
 /** Columna checkbox en header. */
 export const workspaceTableSelectHeadClass = "w-12 !px-0 text-center"
 
-export const toolbarBlockLabelClass =
-  "text-[11px] font-medium uppercase tracking-[0.12em] text-muted-foreground"
+export const toolbarBlockLabelClass = rootsFormFieldLabelClass
 
 /** Toolbar flush (período, filtros, búsqueda). */
 export const lightToolbarShellClass =
@@ -75,10 +211,12 @@ export const lightToolbarInputClass = cn(
 export const lightToolbarClearButtonClass =
   "absolute right-1.5 top-1/2 flex size-8 -translate-y-1/2 items-center justify-center rounded-md text-muted-foreground transition-[color,background-color] duration-150 hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/25"
 
-/** Menú desplegable de filtros en toolbars claras (tipo, vista, etc.). */
+/** Menú desplegable de acciones en toolbars / filas claras. */
 export const lightToolbarDropdownContentClass = cn(
-  "rootsy-app-light z-50 w-56 overflow-hidden rounded-xl border border-border/80 bg-popover p-1.5 text-popover-foreground shadow-lg",
-  "origin-(--radix-dropdown-menu-content-transform-origin) outline-none ring-0 [&_[data-slot=dropdown-menu-item]]:rounded-md",
+  "rootsy-app-light w-56 p-1.5 text-popover-foreground",
+  rootsyElevationPopoverContentLightClass,
+  rootsyElevationPopoverMenuItemRadiusClass,
+  "origin-(--radix-dropdown-menu-content-transform-origin)",
 )
 
 export const lightToolbarDropdownItemClass =
@@ -129,38 +267,51 @@ export const tableChromeFooterClass =
   "border-t border-border/80 bg-muted/35 dark:border-border/50 dark:bg-muted/20"
 
 export const darkTableFooterClass = cn(
-  "border-t border-zinc-800/90 backdrop-blur-xl",
-  "bg-[linear-gradient(165deg,#09090b_0%,#09090b_56%,#18181b_100%)]",
+  "border-t border-[#263530]/80 backdrop-blur-xl",
+  nightForestSurfaceClass,
 )
 
-export const darkTableFooterNavGroupClass =
-  "flex min-w-0 flex-1 items-stretch"
+/** Lateral fijo — 2 IconButton size-12 + gap + padding. */
+export const darkTableFooterNavSideClass =
+  "flex w-[7.875rem] shrink-0 items-center gap-1.5 px-3 sm:w-[8.375rem] sm:px-4"
+
+/** @deprecated Usar darkTableFooterNavSideClass */
+export const darkTableFooterNavGroupClass = darkTableFooterNavSideClass
 
 export const darkTableFooterControlSurfaceClass = cn(
-  "border-zinc-800/90 bg-zinc-900 text-zinc-100 transition-colors",
-  "hover:bg-zinc-800 hover:text-white",
-  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-zinc-500/40",
+  nightForestBorderClass,
+  nightForestPanelClass,
+  "text-[#78716c] transition-colors",
+  nightForestPanelHoverClass,
+  "hover:text-[#d6d3d1]",
+  nightForestFocusRingClass,
 )
 
-export const darkTableFooterNavButtonClass = cn(
-  "inline-flex size-16 shrink-0 items-center justify-center rounded-none disabled:pointer-events-none disabled:opacity-35",
-  darkTableFooterControlSurfaceClass,
-)
+/** IconButton dark del header — navegación de paginación en footer (large). */
+export const darkTableFooterNavIconButtonClass = rootsIconButtonClass({
+  tone: "dark",
+  size: "large",
+})
 
-export const footerPaginationSelectTriggerClass = cn(
-  "h-11 min-h-11 min-w-[4.25rem] gap-1.5 rounded-lg border border-zinc-800/90 px-3.5 text-sm font-medium text-zinc-100 shadow-none",
-  "!bg-zinc-900 hover:!bg-zinc-800",
-  "data-[size=default]:!h-11 data-[size=sm]:!h-11",
-  "focus-visible:border-zinc-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-zinc-500/40 focus-visible:ring-offset-0",
-  "[&_svg:not([class*='text-'])]:!text-zinc-400",
-  "*:data-[slot=select-value]:text-zinc-100",
-)
+/** @deprecated Usar darkTableFooterNavIconButtonClass */
+export const darkTableFooterNavButtonClass = darkTableFooterNavIconButtonClass
+
+export const footerPaginationSelectTriggerClass = rootsFormSelectDarkTriggerClass
+
+export const footerPaginationSelectContentClass = rootsFormSelectDarkContentClass
+
+export const footerPaginationSelectItemClass = rootsFormSelectDarkItemClass
 
 export const darkTableFooterCenterClass =
-  "flex min-w-0 flex-1 items-center justify-center gap-3 self-center px-4"
+  "flex min-w-0 flex-1 items-center justify-center gap-3 px-4"
 
-export const darkTableFooterCenterMutedClass =
-  "text-sm font-medium tabular-nums text-zinc-500"
+export const darkTableFooterTotalLabelClass = cn(
+  workspaceTableLayoutMetaLabelClass,
+  nightForestMutedTextClass,
+)
+
+/** @deprecated Usar darkTableFooterTotalLabelClass */
+export const darkTableFooterCenterMutedClass = darkTableFooterTotalLabelClass
 
 export const tableRowSelectCheckboxClass =
   "size-4 border border-foreground/22 bg-background/85 shadow-sm dark:border-foreground/28 dark:bg-card/90 [&_[data-slot=checkbox-indicator]_svg]:size-3.5 data-[state=checked]:border-primary data-[state=checked]:bg-primary data-[state=checked]:text-primary-foreground data-[state=indeterminate]:border-primary/55 data-[state=indeterminate]:bg-primary/10 data-[state=indeterminate]:text-primary"

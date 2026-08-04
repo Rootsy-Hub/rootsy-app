@@ -117,16 +117,30 @@ export const ROOTSY_BUTTON_SIZES: ButtonSizeToken[] = [
   {
     id: "large",
     token: "large",
-    tailwind: "size=lg · h-10 px-6",
-    height: "40px",
+    tailwind: "size=lg · h-12 px-6 text-base",
+    height: "48px",
     usage: "CTAs hero o empty states — uso puntual, no reemplaza default.",
+  },
+  {
+    id: "icon-compact",
+    token: "icon-compact",
+    tailwind: "RootsIconButton · size-8 · icon size-4",
+    height: "32px",
+    usage: "Tablas, toolbars densos — light y dark.",
   },
   {
     id: "icon",
     token: "icon",
-    tailwind: "size=icon · size-9",
-    height: "36px",
-    usage: "IconButton — siempre con aria-label accesible.",
+    tailwind: "RootsIconButton · size-10 · icon size-4",
+    height: "40px",
+    usage: "Header workspace, acciones de fila — default en bosque nocturno.",
+  },
+  {
+    id: "icon-large",
+    token: "icon-large",
+    tailwind: "RootsIconButton · size-12 · icon size-5",
+    height: "48px",
+    usage: "CTAs icon-only puntuales — light y dark.",
   },
 ]
 
@@ -180,9 +194,9 @@ export const ROOTSY_BUTTON_SEMANTIC: ButtonSemanticMapping[] = [
   },
   {
     appearance: "icon",
-    context: "Fila de tabla · grip · ojo",
-    component: "Button size=icon variant=outline",
-    source: "RootsSortableActionList",
+    context: "Toolbar / header · light y dark",
+    component: "RootsIconButton tone=light|dark",
+    source: "components/rootsy-button/RootsIconButton.tsx",
   },
 ]
 

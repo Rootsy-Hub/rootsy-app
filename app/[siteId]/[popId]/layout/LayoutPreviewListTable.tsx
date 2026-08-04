@@ -17,22 +17,39 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { Calendar } from "@/components/ui/calendar"
-import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover"
 import {
   TableBody,
   TableCell,
   TableRow,
 } from "@/components/ui/table"
+import {
+  DataWorkspaceListFiltersDialogTrigger,
+  DataWorkspaceListSearchField,
+} from "@/components/data-workspace/DataWorkspaceListFilterFields"
+import { DataWorkspacePeriodFilter } from "@/components/data-workspace/DataWorkspacePeriodFilter"
 import { DataWorkspaceListPaginationFooter } from "@/components/data-workspace/DataWorkspaceListPaginationFooter"
 import { DataWorkspaceListTableShell } from "@/components/data-workspace/DataWorkspaceListTableShell"
-import { DataWorkspaceTableThumbnail } from "@/components/data-workspace/DataWorkspaceListTablePrimitives"
+import {
+  DataWorkspaceTableIconAction,
+  DataWorkspaceTableThumbnail,
+} from "@/components/data-workspace/DataWorkspaceListTablePrimitives"
+import {
+  dataWorkspaceListFiltersBarClass,
+  dataWorkspaceListFiltersBarInnerClass,
+  dataWorkspaceListFiltersGridClass,
+  dataWorkspaceListFiltersPanelClass,
+  dataWorkspaceListFiltersPanelLastClass,
+  workspaceTableLayoutBodyCellClass,
+  workspaceTableLayoutBodyRowClass,
+  workspaceTableLayoutCellPrimaryTextClass,
+  workspaceTableLayoutCellSecondaryTextClass,
+  workspaceTableLayoutCellStackClass,
+  workspaceTableLayoutHeaderHeadClass,
+  workspaceTableLayoutImageColumnClass,
+  workspaceTableLayoutListBodyScopeClass,
+  workspaceTableNatureEarthOrganicScopeClass,
+} from "@/components/data-workspace/dataWorkspaceTablesLayout"
 import {
   WorkspaceTableHead,
   WorkspaceTableHeader,
@@ -41,18 +58,34 @@ import {
 } from "@/components/data-workspace/WorkspaceTableHeader"
 import {
   listBulkToolbarClearButtonClass,
+  lightFilterChipClass,
+  lightToolbarDropdownContentClass,
+  lightToolbarDropdownItemClass,
   selectColumnInnerClass,
-  tableRowSelectCheckboxClass,
+  workspaceTableNatureBodyRowClassNames,
+  workspaceTableNatureBulkBarClass,
+  workspaceTableNatureCheckboxClass,
+  workspaceTableNatureLinkClass,
+  workspaceTableNatureMoneyClass,
+  workspaceTableNatureMoneyNegativeClass,
+  workspaceTableNatureStatusBadgeClass,
+  workspaceTableNatureTextPrimaryClass,
+  workspaceTableNatureTextSecondaryClass,
+  workspaceTableNatureTextTertiaryClass,
   toolbarBlockLabelClass,
   workspaceTableActionsBodyCellClass,
-  workspaceTableBodyCellClass,
-  workspaceTableBodyRowClassNames,
   workspaceTableLayoutClassName,
   workspaceTableSelectBodyCellClass,
 } from "@/components/data-workspace/dataWorkspaceListStyles"
 import { WorkspaceTableSkeletonRows } from "@/components/data-workspace/WorkspaceTableSkeleton"
 import { layoutPreviewSkeletonColumns } from "@/components/data-workspace/workspaceTableSkeletonPresets"
 import { buildPaginationItems } from "@/app/[siteId]/[popId]/layout/layoutPreviewPagination"
+import {
+  computeDataWorkspaceDateBounds,
+  dataWorkspaceDateFilterSummary,
+  type DataWorkspaceDatePreset,
+} from "@/lib/dataWorkspaceDateFilter"
+import { RootsIconButton } from "@/components/rootsy-button"
 import { cn } from "@/lib/utils"
 import { popScopedHref } from "@/lib/popRoutes"
 import {
@@ -65,154 +98,17 @@ import {
   type LayoutPreviewListStatus,
 } from "./layoutPreviewListMock"
 import {
-  CalendarRange,
-  ChevronDown,
   Copy,
   ExternalLink,
-  Filter,
   MoreVertical,
   Paperclip,
   Pencil,
-  Search,
   Trash2,
   X,
 } from "lucide-react"
-import {
-  endOfMonth,
-  endOfWeek,
-  startOfMonth,
-  startOfWeek,
-  subDays,
-} from "date-fns"
-import { es as esLocale } from "date-fns/locale"
 import Link from "next/link"
 import type { DateRange } from "react-day-picker"
-import { useEffect, useId, useMemo, useRef, useState, type ReactNode } from "react"
-
-/** Toolbar claro (período, filtros, búsqueda). */
-const lightToolbarShellClass =
-  "shrink-0 border-b border-border/80 bg-card"
-
-const lightToolbarPanelClass =
-  "border-b border-r border-border/80 bg-card px-4 py-3.5 xl:border-b-0"
-
-const lightToolbarPanelLastClass =
-  "border-b border-border/80 bg-card px-4 py-3.5 xl:border-b-0 xl:border-r-0"
-
-const lightToolbarFocusClass =
-  "focus-visible:border-primary/40 focus-visible:ring-2 focus-visible:ring-primary/20"
-
-const lightToolbarControlClass =
-  "h-11 w-full max-w-full rounded-md border-border/60 bg-muted/25 text-sm text-foreground shadow-sm transition-[color,background-color,border-color,box-shadow] duration-150 hover:bg-muted/40"
-
-const lightToolbarControlActiveClass =
-  "border-primary/35 bg-primary/10 text-foreground ring-1 ring-primary/15"
-
-const lightToolbarTriggerClass = cn(
-  lightToolbarControlClass,
-  "justify-between gap-2 px-3 text-left font-normal shadow-xs",
-  lightToolbarFocusClass,
-)
-
-const lightToolbarButtonClass = cn(
-  lightToolbarControlClass,
-  "gap-2 px-3 font-medium",
-  lightToolbarFocusClass,
-)
-
-const lightToolbarInputClass = cn(
-  lightToolbarControlClass,
-  "pl-9 font-normal placeholder:text-muted-foreground shadow-none",
-  lightToolbarFocusClass,
-)
-
-const lightToolbarClearButtonClass =
-  "absolute right-1.5 top-1/2 flex size-8 -translate-y-1/2 items-center justify-center rounded-md text-muted-foreground transition-[color,background-color] duration-150 hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/25"
-
-const dateFilterPanelClass = lightToolbarPanelClass
-
-const dateFilterTriggerClass = lightToolbarTriggerClass
-
-const datePopoverContentClass =
-  "border border-zinc-200/90 bg-white p-0 text-zinc-900 shadow-xl shadow-zinc-900/8"
-
-/** Calendario dentro del popover: isla clara; anula tokens dark del `Button` interno. */
-const dateCalendarLightClass = cn(
-  "rounded-xl border border-zinc-100 bg-white p-1.5 shadow-inner shadow-zinc-900/5",
-  "[&_[data-slot=calendar]]:w-full [&_[data-slot=calendar]]:max-w-none",
-  "[&_.rdp-root]:!w-full [&_.rdp-root]:max-w-none",
-  "[&_.rdp-month]:w-full min-w-0",
-  "[&_.rdp-month_grid]:w-full [&_.rdp-month_grid]:table-fixed",
-  "[&_button[data-day]]:!text-zinc-800 dark:[&_button[data-day]]:!text-zinc-800",
-  "[&_button[data-day]>span]:!opacity-100 [&_button[data-day]>span]:!text-inherit",
-  "[&_button[data-day]:not([data-range-start=true]):not([data-range-end=true]):not([data-selected-single=true]):not([data-range-middle=true]):hover]:!bg-zinc-100",
-  "[&_button[data-day]:not([data-range-start=true]):not([data-range-end=true]):not([data-selected-single=true]):not([data-range-middle=true]):hover]:!text-zinc-900",
-  "[&_button[data-day][data-range-start=true]:hover]:!bg-emerald-700 [&_button[data-day][data-range-start=true]:hover]:!text-white",
-  "[&_button[data-day][data-range-end=true]:hover]:!bg-emerald-700 [&_button[data-day][data-range-end=true]:hover]:!text-white",
-  "[&_button[data-day][data-selected-single=true]:hover]:!bg-emerald-700 [&_button[data-day][data-selected-single=true]:hover]:!text-white",
-  "[&_button[data-day][data-range-middle=true]:hover]:!bg-emerald-200 [&_button[data-day][data-range-middle=true]:hover]:!text-zinc-900",
-  "[&_button[data-day][data-selected-single=true]]:!bg-emerald-600 [&_button[data-day][data-selected-single=true]]:!text-white",
-  "[&_button[data-day][data-range-start=true]]:!bg-emerald-600 [&_button[data-day][data-range-start=true]]:!text-white",
-  "[&_button[data-day][data-range-end=true]]:!bg-emerald-600 [&_button[data-day][data-range-end=true]]:!text-white",
-  "[&_button[data-day][data-range-middle=true]]:!bg-emerald-100 [&_button[data-day][data-range-middle=true]]:!text-zinc-800",
-  "[&_.rdp-button_previous]:!text-zinc-700 [&_.rdp-button_next]:!text-zinc-700",
-  "[&_.rdp-weekday]:!text-zinc-500",
-  "[&_.rdp-caption_label]:!text-zinc-900",
-  "[&_td.rdp-outside_button[data-day]]:!text-zinc-400",
-  "[&_td.rdp-disabled_button[data-day]]:!text-zinc-300",
-)
-
-/** Tipografía tabular/mono solo para importes y, si hubiera, porcentajes en cifra. */
-const amountFigureClass = "font-numeric tabular-nums"
-
-const toolbarPanelClass = lightToolbarPanelClass
-
-const toolbarPanelLastClass = lightToolbarPanelLastClass
-
-const lightFilterChipClass =
-  "max-w-full gap-1 rounded-md border-border/50 py-0 pr-0.5 font-normal"
-
-function ToolbarClearSearchIcon({ className }: { className?: string }) {
-  return (
-    <svg
-      viewBox="0 0 24 24"
-      fill="currentColor"
-      className={cn("size-3.5 shrink-0", className)}
-      aria-hidden
-    >
-      <path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z" />
-    </svg>
-  )
-}
-
-function ToolbarFieldLabel({
-  htmlFor,
-  id,
-  label,
-  meta,
-}: {
-  htmlFor?: string
-  id?: string
-  label: string
-  meta?: ReactNode
-}) {
-  return (
-    <div className="mb-2 flex min-w-0 items-baseline justify-between gap-3">
-      <label
-        htmlFor={htmlFor}
-        id={id}
-        className={toolbarBlockLabelClass}
-      >
-        {label}
-      </label>
-      {meta ? (
-        <span className="shrink-0 text-[11px] font-medium text-muted-foreground">
-          {meta}
-        </span>
-      ) : null}
-    </div>
-  )
-}
+import { useEffect, useId, useMemo, useRef, useState } from "react"
 
 const ALL_STATUSES: LayoutPreviewListStatus[] = [
   "activo",
@@ -234,79 +130,8 @@ function initRefTableSet() {
   return new Set<string>(LAYOUT_PREVIEW_REF_TABLE_OPTIONS)
 }
 
-function formatIsoDateShort(iso: string) {
-  const [y, m, d] = iso.split("-").map(Number)
-  if (!y || !m || !d) return iso
-  return new Date(y, m - 1, d).toLocaleDateString("es-AR", {
-    day: "2-digit",
-    month: "short",
-    year: "numeric",
-  })
-}
-
-export type LayoutPreviewDatePreset =
-  | "all"
-  | "this_week"
-  | "this_month"
-  | "last_7"
-  | "last_30"
-  | "custom"
-
-function toISODateLocal(d: Date): string {
-  const y = d.getFullYear()
-  const m = String(d.getMonth() + 1).padStart(2, "0")
-  const day = String(d.getDate()).padStart(2, "0")
-  return `${y}-${m}-${day}`
-}
-
-function computeDateBounds(
-  preset: LayoutPreviewDatePreset,
-  custom: DateRange | undefined,
-): { from: string | null; to: string | null } {
-  const today = new Date()
-  switch (preset) {
-    case "all":
-      return { from: null, to: null }
-    case "this_week": {
-      const from = startOfWeek(today, { weekStartsOn: 1 })
-      const to = endOfWeek(today, { weekStartsOn: 1 })
-      return { from: toISODateLocal(from), to: toISODateLocal(to) }
-    }
-    case "this_month": {
-      const from = startOfMonth(today)
-      const to = endOfMonth(today)
-      return { from: toISODateLocal(from), to: toISODateLocal(to) }
-    }
-    case "last_7": {
-      const from = subDays(today, 6)
-      return { from: toISODateLocal(from), to: toISODateLocal(today) }
-    }
-    case "last_30": {
-      const from = subDays(today, 29)
-      return { from: toISODateLocal(from), to: toISODateLocal(today) }
-    }
-    case "custom": {
-      if (!custom?.from || !custom?.to) return { from: null, to: null }
-      let a = custom.from
-      let b = custom.to
-      if (a > b) [a, b] = [b, a]
-      return { from: toISODateLocal(a), to: toISODateLocal(b) }
-    }
-  }
-}
-
-const DATE_QUICK_PRESETS: {
-  id: Exclude<LayoutPreviewDatePreset, "all" | "custom">
-  label: string
-}[] = [
-  { id: "this_week", label: "Esta semana" },
-  { id: "this_month", label: "Este mes" },
-  { id: "last_7", label: "Últimos 7 días" },
-  { id: "last_30", label: "Últimos 30 días" },
-]
-
 function productImageSrc(seed: string) {
-  return `https://api.dicebear.com/7.x/shapes/svg?seed=${encodeURIComponent(seed)}&backgroundColor=e8f5ef`
+  return `https://api.dicebear.com/7.x/shapes/svg?seed=${encodeURIComponent(seed)}&backgroundColor=f0fbf4`
 }
 
 function formatArs(n: number) {
@@ -319,18 +144,19 @@ function formatArs(n: number) {
 }
 
 function StatusBadge({ status }: { status: LayoutPreviewListStatus }) {
-  const map: Record<LayoutPreviewListStatus, string> = {
-    activo: "border-emerald-500/35 bg-emerald-500/10 text-emerald-900",
-    pendiente: "border-amber-500/35 bg-amber-500/10 text-amber-900",
-    vencido: "border-red-500/35 bg-red-500/10 text-red-900",
-  }
   const label: Record<LayoutPreviewListStatus, string> = {
     activo: "Activo",
     pendiente: "Pendiente",
     vencido: "Vencido",
   }
   return (
-    <Badge variant="outline" className={cn("font-medium", map[status])}>
+    <Badge
+      variant="outline"
+      className={cn(
+        "font-medium",
+        workspaceTableNatureStatusBadgeClass[status],
+      )}
+    >
       {label[status]}
     </Badge>
   )
@@ -340,18 +166,20 @@ function RowMoreMenu({ rowId }: { rowId: string }) {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button
-          type="button"
-          variant="ghost"
-          size="icon"
-          className="size-8 shrink-0 text-muted-foreground hover:text-foreground"
-          aria-label={`Más opciones fila ${rowId}`}
+        <RootsIconButton
+          label={`Más opciones fila ${rowId}`}
+          tone="action"
+          intent="neutral"
+          size="compact"
         >
           <MoreVertical className="size-4" />
-        </Button>
+        </RootsIconButton>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="w-44">
-        <DropdownMenuItem className="gap-2">
+      <DropdownMenuContent
+        align="end"
+        className={cn(lightToolbarDropdownContentClass, "w-44")}
+      >
+        <DropdownMenuItem className={lightToolbarDropdownItemClass}>
           <Copy className="size-4" aria-hidden />
           Duplicar
         </DropdownMenuItem>
@@ -370,8 +198,6 @@ export function LayoutPreviewListTable({
   listFetching?: boolean
 }) {
   const searchInputId = useId()
-  const dateFilterLabelId = useId()
-  const dateFilterTriggerId = useId()
   const filtersButtonId = useId()
   const pageSizeLabelId = useId()
   const searchInputRef = useRef<HTMLInputElement>(null)
@@ -380,12 +206,10 @@ export function LayoutPreviewListTable({
   const [selected, setSelected] = useState<Set<string>>(() => new Set())
 
   const [searchQuery, setSearchQuery] = useState("")
-  const [datePreset, setDatePreset] =
-    useState<LayoutPreviewDatePreset>("all")
+  const [datePreset, setDatePreset] = useState<DataWorkspaceDatePreset>("all")
   const [customDateRange, setCustomDateRange] = useState<
     DateRange | undefined
   >(undefined)
-  const [datePopoverOpen, setDatePopoverOpen] = useState(false)
   const [includedStatuses, setIncludedStatuses] = useState(initStatusSet)
   const [includedRefTables, setIncludedRefTables] = useState(initRefTableSet)
 
@@ -394,7 +218,7 @@ export function LayoutPreviewListTable({
   const [draftRefTables, setDraftRefTables] = useState(initRefTableSet)
 
   const dateBounds = useMemo(
-    () => computeDateBounds(datePreset, customDateRange),
+    () => computeDataWorkspaceDateBounds(datePreset, customDateRange),
     [datePreset, customDateRange],
   )
 
@@ -510,21 +334,10 @@ export function LayoutPreviewListTable({
     return `${totalCountLabel} ${noun}`
   }, [filteredTotal, hasFilterChips, totalCountLabel])
 
-  const dateFilterSummary = useMemo(() => {
-    if (datePreset === "all") return "Todas las fechas"
-    if (datePreset === "this_week") return "Esta semana"
-    if (datePreset === "this_month") return "Este mes"
-    if (datePreset === "last_7") return "Últimos 7 días"
-    if (datePreset === "last_30") return "Últimos 30 días"
-    if (
-      datePreset === "custom" &&
-      dateBounds.from &&
-      dateBounds.to
-    ) {
-      return `${formatIsoDateShort(dateBounds.from)} – ${formatIsoDateShort(dateBounds.to)}`
-    }
-    return "Rango personalizado (elegí inicio y fin)"
-  }, [datePreset, dateBounds.from, dateBounds.to])
+  const dateFilterSummary = useMemo(
+    () => dataWorkspaceDateFilterSummary(datePreset, dateBounds),
+    [datePreset, dateBounds],
+  )
 
   const applyFiltersFromModal = () => {
     setIncludedStatuses(new Set(draftStatuses))
@@ -617,234 +430,48 @@ export function LayoutPreviewListTable({
   return (
     <div className="relative flex min-h-0 flex-1 flex-col">
       <div
-        className={lightToolbarShellClass}
+        className={dataWorkspaceListFiltersBarClass}
         role="toolbar"
         aria-label="Filtros del listado"
       >
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-12">
-        <div
-          className={cn(
-            toolbarPanelLastClass,
-            "order-1 min-w-0 md:col-span-2 xl:order-3 xl:col-span-6",
-          )}
-        >
-          <ToolbarFieldLabel
-            htmlFor={searchInputId}
-            label="Buscar"
-            meta={
-              <span aria-live="polite" aria-atomic="true">
-                {resultsSummary}
-              </span>
-            }
-          />
-          <div className="relative min-w-0">
-            <Search
-              className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground"
-              aria-hidden
-            />
-            <Input
-              ref={searchInputRef}
-              id={searchInputId}
-              type="search"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Título o referencia… ( / )"
-              className={cn(
-                lightToolbarInputClass,
-                searchQuery.length > 0 && "pr-10",
-              )}
-              autoComplete="off"
-              spellCheck={false}
-              aria-label="Buscar en el listado"
-            />
-            {searchQuery.length > 0 ? (
-              <button
-                type="button"
-                aria-label="Limpiar búsqueda"
-                className={lightToolbarClearButtonClass}
-                onClick={() => {
+        <div className={dataWorkspaceListFiltersBarInnerClass}>
+          <div className={dataWorkspaceListFiltersGridClass}>
+            <div className={dataWorkspaceListFiltersPanelClass}>
+              <DataWorkspacePeriodFilter
+                variant="layout"
+                preset={datePreset}
+                customRange={customDateRange}
+                onPresetChange={setDatePreset}
+                onCustomRangeChange={setCustomDateRange}
+                bounds={dateBounds}
+              />
+            </div>
+
+            <div className={dataWorkspaceListFiltersPanelClass}>
+              <DataWorkspaceListFiltersDialogTrigger
+                id={filtersButtonId}
+                activeCount={modalFiltersActiveCount}
+                expanded={filtersModalOpen}
+                onClick={() => setFiltersModalOpen(true)}
+              />
+            </div>
+
+            <div className={dataWorkspaceListFiltersPanelLastClass}>
+              <DataWorkspaceListSearchField
+                id={searchInputId}
+                inputRef={searchInputRef}
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                onClear={() => {
                   setSearchQuery("")
                   searchInputRef.current?.focus()
                 }}
-              >
-                <ToolbarClearSearchIcon />
-              </button>
-            ) : null}
+                placeholder="Título o referencia… ( / )"
+                resultsSummary={resultsSummary}
+              />
+            </div>
           </div>
         </div>
-
-        <div
-          className={cn(
-            dateFilterPanelClass,
-            "order-2 w-full min-w-0 md:col-span-1 xl:order-1 xl:col-span-3",
-          )}
-        >
-          <ToolbarFieldLabel
-            id={dateFilterLabelId}
-            label="Período"
-            meta={dateFilterActive ? "Activo" : undefined}
-          />
-          <Popover open={datePopoverOpen} onOpenChange={setDatePopoverOpen}>
-            <PopoverTrigger asChild>
-              <Button
-                id={dateFilterTriggerId}
-                type="button"
-                variant="outline"
-                className={cn(
-                  dateFilterTriggerClass,
-                  "min-w-0 shadow-xs",
-                  dateFilterActive && lightToolbarControlActiveClass,
-                )}
-                aria-expanded={datePopoverOpen}
-                aria-haspopup="dialog"
-                aria-labelledby={dateFilterLabelId}
-                title={dateFilterSummary}
-              >
-                <span className="flex min-w-0 flex-1 items-center gap-2 overflow-hidden">
-                  <CalendarRange
-                    className="size-4 shrink-0 text-muted-foreground"
-                    aria-hidden
-                  />
-                  <span className="min-w-0 flex-1 truncate text-left text-sm text-foreground">
-                    {dateFilterSummary}
-                  </span>
-                </span>
-                <ChevronDown
-                  className={cn(
-                    "size-4 shrink-0 text-muted-foreground transition-transform duration-200",
-                    datePopoverOpen && "rotate-180",
-                  )}
-                />
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent
-              align="start"
-              sideOffset={6}
-              className={cn(
-                "z-50 overflow-hidden rounded-xl p-0",
-                "w-[min(21.5rem,calc(100vw-1.5rem))] max-w-[calc(100vw-1.5rem)]",
-                datePopoverContentClass,
-              )}
-            >
-              <div className="overflow-x-hidden">
-                <div className="border-b border-zinc-100 px-2 py-2">
-                  <p className="px-2 pb-1.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-zinc-400">
-                    Atajos
-                  </p>
-                  <div className="flex flex-col gap-0.5">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        clearDateFilter()
-                        setDatePopoverOpen(false)
-                      }}
-                      className={cn(
-                        "w-full rounded-lg px-2.5 py-2 text-left text-sm text-zinc-800 transition-colors",
-                        "hover:bg-zinc-100 focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-emerald-600/40",
-                        datePreset === "all" &&
-                          "bg-zinc-100 font-medium text-zinc-950",
-                      )}
-                    >
-                      Todas las fechas
-                    </button>
-                    {DATE_QUICK_PRESETS.map((p) => (
-                      <button
-                        key={p.id}
-                        type="button"
-                        onClick={() => {
-                          setDatePreset(p.id)
-                          setCustomDateRange(undefined)
-                          setDatePopoverOpen(false)
-                        }}
-                        className={cn(
-                          "w-full rounded-lg px-2.5 py-2 text-left text-sm text-zinc-800 transition-colors",
-                          "hover:bg-zinc-100 focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-emerald-600/40",
-                          datePreset === p.id &&
-                            "bg-zinc-100 font-medium text-zinc-950",
-                        )}
-                      >
-                        {p.label}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-                <div className="min-w-0 px-2.5 pb-3 pt-2">
-                  <p className="mb-2 text-[10px] font-semibold uppercase tracking-[0.14em] text-zinc-400">
-                    Rango personalizado
-                  </p>
-                  <div className={dateCalendarLightClass}>
-                    <Calendar
-                      locale={esLocale}
-                      mode="range"
-                      numberOfMonths={1}
-                      className="w-full min-w-0 bg-transparent p-0 [--cell-size:2.125rem]"
-                      selected={
-                        datePreset === "custom"
-                          ? customDateRange
-                          : undefined
-                      }
-                      onSelect={(range) => {
-                        setDatePreset("custom")
-                        setCustomDateRange(range)
-                      }}
-                      defaultMonth={
-                        customDateRange?.from ??
-                        customDateRange?.to ??
-                        new Date()
-                      }
-                    />
-                  </div>
-                </div>
-              </div>
-            </PopoverContent>
-          </Popover>
-        </div>
-
-        <div
-          className={cn(
-            toolbarPanelClass,
-            "order-3 flex flex-col md:col-span-1 xl:order-2 xl:col-span-3",
-          )}
-        >
-          <ToolbarFieldLabel
-            htmlFor={filtersButtonId}
-            label="Filtros"
-            meta={
-              modalFiltersActiveCount > 0
-                ? `${modalFiltersActiveCount} activo${modalFiltersActiveCount === 1 ? "" : "s"}`
-                : undefined
-            }
-          />
-          <Button
-            id={filtersButtonId}
-            type="button"
-            variant="outline"
-            size="sm"
-            className={cn(
-              lightToolbarButtonClass,
-              modalFiltersActiveCount > 0 && lightToolbarControlActiveClass,
-            )}
-            aria-haspopup="dialog"
-            aria-expanded={filtersModalOpen}
-            onClick={() => setFiltersModalOpen(true)}
-          >
-            <Filter className="size-4 shrink-0 opacity-80" aria-hidden />
-            <span className="min-w-0 flex-1 truncate text-left">
-              {modalFiltersActiveCount > 0
-                ? "Refinar filtros"
-                : "Estado y tipo"}
-            </span>
-            {modalFiltersActiveCount > 0 ? (
-              <span
-                className="inline-flex size-5 shrink-0 items-center justify-center rounded-full bg-primary/15 text-[10px] font-semibold tabular-nums text-primary"
-                aria-hidden
-              >
-                {modalFiltersActiveCount}
-              </span>
-            ) : null}
-          </Button>
-        </div>
-      </div>
 
       {hasFilterChips ? (
         <div
@@ -1036,18 +663,28 @@ export function LayoutPreviewListTable({
         </DialogContent>
       </Dialog>
 
+      <div className="rootsy-nature-palette flex min-h-0 flex-1 flex-col">
       <DataWorkspaceListTableShell
         variant="flush"
+        className={cn(
+          workspaceTableNatureEarthOrganicScopeClass,
+          workspaceTableLayoutListBodyScopeClass,
+        )}
         bulkToolbar={
           selected.size > 0 ? (
             <div
-              className="flex flex-wrap items-center gap-2 border-b border-border/80 bg-muted/35 px-3 py-2.5 sm:px-4"
+              className={cn(
+                "flex flex-wrap items-center gap-2 px-3 py-2.5 sm:px-4",
+                workspaceTableNatureBulkBarClass,
+              )}
               role="region"
               aria-label="Acciones sobre selección"
             >
-              <span className="text-sm text-foreground">
+              <span className={cn("text-sm", workspaceTableNatureTextPrimaryClass)}>
                 <span className="font-semibold">{selected.size}</span>{" "}
-                <span className="text-muted-foreground">seleccionados</span>
+                <span className={workspaceTableNatureTextSecondaryClass}>
+                  seleccionados
+                </span>
               </span>
               <div className="flex flex-wrap items-center gap-2">
                 <Button type="button" size="sm" variant="outline" className="h-8">
@@ -1097,6 +734,8 @@ export function LayoutPreviewListTable({
           <WorkspaceTableHeader>
             <WorkspaceTableHeaderRow>
               <WorkspaceTableSelectHead
+                tone="nature"
+                className={cn(workspaceTableLayoutHeaderHeadClass)}
                 checked={
                   allVisibleSelected
                     ? true
@@ -1117,19 +756,55 @@ export function LayoutPreviewListTable({
                 }}
                 ariaLabel="Seleccionar todas las filas visibles"
               />
-              <WorkspaceTableHead className="w-24 px-3" srOnly>
+              <WorkspaceTableHead
+                tone="nature"
+                className={cn(
+                  workspaceTableLayoutImageColumnClass,
+                  "px-3",
+                  workspaceTableLayoutHeaderHeadClass,
+                )}
+                srOnly
+              >
                 Imagen
               </WorkspaceTableHead>
-              <WorkspaceTableHead className="min-w-48 px-3">Artículo</WorkspaceTableHead>
-              <WorkspaceTableHead className="w-44">Referencia</WorkspaceTableHead>
-              <WorkspaceTableHead align="right" className="w-34">
+              <WorkspaceTableHead
+                tone="nature"
+                className={cn("min-w-48 px-3", workspaceTableLayoutHeaderHeadClass)}
+              >
+                Artículo
+              </WorkspaceTableHead>
+              <WorkspaceTableHead
+                tone="nature"
+                className={cn("w-44", workspaceTableLayoutHeaderHeadClass)}
+              >
+                Referencia
+              </WorkspaceTableHead>
+              <WorkspaceTableHead
+                tone="nature"
+                align="right"
+                className={cn("w-34", workspaceTableLayoutHeaderHeadClass)}
+              >
                 Monto
               </WorkspaceTableHead>
-              <WorkspaceTableHead align="center" className="w-20">
+              <WorkspaceTableHead
+                tone="nature"
+                align="center"
+                className={cn("w-20", workspaceTableLayoutHeaderHeadClass)}
+              >
                 Adj.
               </WorkspaceTableHead>
-              <WorkspaceTableHead className="w-32">Estado</WorkspaceTableHead>
-              <WorkspaceTableHead align="right" className="w-[7.25rem]" srOnly>
+              <WorkspaceTableHead
+                tone="nature"
+                className={cn("w-32", workspaceTableLayoutHeaderHeadClass)}
+              >
+                Estado
+              </WorkspaceTableHead>
+              <WorkspaceTableHead
+                tone="nature"
+                align="right"
+                className={cn("w-[7.25rem]", workspaceTableLayoutHeaderHeadClass)}
+                srOnly
+              >
                 Acciones
               </WorkspaceTableHead>
             </WorkspaceTableHeaderRow>
@@ -1140,17 +815,24 @@ export function LayoutPreviewListTable({
                 rowCount={skeletonRowCount}
                 rowKeyPrefix="layout-preview-sk"
                 columns={layoutPreviewSkeletonColumns()}
+                tone="nature"
               />
             ) : (
               pageRows.map((row: LayoutPreviewListRow, i) => (
               <TableRow
                 key={row.id}
-                className={workspaceTableBodyRowClassNames(i)}
+                className={cn(
+                  workspaceTableLayoutBodyRowClass,
+                  workspaceTableNatureBodyRowClassNames(i, {
+                    selected: selected.has(row.id),
+                    noHover: true,
+                  }),
+                )}
               >
-                <TableCell className={workspaceTableSelectBodyCellClass}>
+                <TableCell className={cn(workspaceTableSelectBodyCellClass, "!py-0")}>
                   <div className={selectColumnInnerClass}>
                     <Checkbox
-                      className={tableRowSelectCheckboxClass}
+                      className={workspaceTableNatureCheckboxClass}
                       checked={selected.has(row.id)}
                       onCheckedChange={(c) => {
                         setSelected((prev) => {
@@ -1164,31 +846,57 @@ export function LayoutPreviewListTable({
                     />
                   </div>
                 </TableCell>
-                <TableCell className="w-24 px-3 py-2.5 align-middle">
+                <TableCell
+                  className={cn(
+                    workspaceTableLayoutImageColumnClass,
+                    workspaceTableLayoutBodyCellClass,
+                  )}
+                >
                   <DataWorkspaceTableThumbnail
                     src={productImageSrc(row.imageSeed)}
                     alt={row.title}
-                    size="lg"
+                    size="sm"
                   />
                 </TableCell>
-                <TableCell className="min-w-0 px-3 py-2.5 align-middle">
-                  <p className="truncate font-medium text-foreground">
-                    {row.title}
-                  </p>
-                  {row.subtitle ? (
-                    <p className="truncate text-xs text-muted-foreground">
-                      {row.subtitle}
+                <TableCell className={cn("min-w-0", workspaceTableLayoutBodyCellClass)}>
+                  <div className={workspaceTableLayoutCellStackClass}>
+                    <p
+                      className={cn(
+                        workspaceTableLayoutCellPrimaryTextClass,
+                        workspaceTableNatureTextPrimaryClass,
+                      )}
+                    >
+                      {row.title}
                     </p>
-                  ) : null}
+                    <p
+                      className={cn(
+                        workspaceTableLayoutCellSecondaryTextClass,
+                        row.subtitle
+                          ? workspaceTableNatureTextSecondaryClass
+                          : "invisible",
+                      )}
+                      aria-hidden={!row.subtitle}
+                    >
+                      {row.subtitle ?? "\u00A0"}
+                    </p>
+                  </div>
                 </TableCell>
-                <TableCell className="px-3 py-2.5 align-middle">
-                  <div className="flex min-w-0 flex-col gap-0.5">
-                    <span className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
+                <TableCell className={workspaceTableLayoutBodyCellClass}>
+                  <div className={workspaceTableLayoutCellStackClass}>
+                    <span
+                      className={cn(
+                        "truncate text-[10px] font-medium uppercase leading-4 tracking-wide",
+                        workspaceTableNatureTextTertiaryClass,
+                      )}
+                    >
                       {row.refTable}
                     </span>
                     <Link
                       href={popScopedHref(siteId, popId, row.refHref)}
-                      className="group inline-flex min-w-0 items-center gap-1 text-xs font-medium text-primary underline-offset-2 hover:underline"
+                      className={cn(
+                        "group inline-flex min-w-0 items-center gap-1 truncate text-xs leading-4 underline-offset-2",
+                        workspaceTableNatureLinkClass,
+                      )}
                     >
                       <span className="truncate">{row.refCode}</span>
                       <ExternalLink
@@ -1200,49 +908,67 @@ export function LayoutPreviewListTable({
                 </TableCell>
                 <TableCell
                   className={cn(
-                    "px-3 py-2.5 text-right align-middle text-sm font-medium",
-                    amountFigureClass,
-                    row.amountArs < 0 ? "text-amber-800" : "text-foreground",
+                    workspaceTableLayoutBodyCellClass,
+                    "text-right text-sm leading-4",
+                    row.amountArs < 0
+                      ? workspaceTableNatureMoneyNegativeClass
+                      : workspaceTableNatureMoneyClass,
                   )}
                 >
                   {formatArs(row.amountArs)}
                 </TableCell>
-                <TableCell className="px-2 py-2.5 text-center align-middle">
+                <TableCell
+                  className={cn(
+                    workspaceTableLayoutBodyCellClass,
+                    "px-2 text-center",
+                  )}
+                >
                   {row.attachments > 0 ? (
-                    <span className="inline-flex items-center justify-center gap-1 text-xs text-muted-foreground">
+                    <span
+                      className={cn(
+                        "inline-flex items-center justify-center gap-1 text-xs",
+                        workspaceTableNatureTextSecondaryClass,
+                      )}
+                    >
                       <Paperclip
-                        className="size-3.5 shrink-0 text-muted-foreground/80"
+                        className={cn(
+                          "size-3.5 shrink-0 opacity-80",
+                          workspaceTableNatureTextTertiaryClass,
+                        )}
                         aria-hidden
                       />
                       {row.attachments}
                     </span>
                   ) : (
-                    <span className="text-muted-foreground/50">—</span>
+                    <span
+                      className={cn(
+                        workspaceTableNatureTextTertiaryClass,
+                        "opacity-50",
+                      )}
+                    >
+                      —
+                    </span>
                   )}
                 </TableCell>
-                <TableCell className="px-3 py-2.5 align-middle">
+                <TableCell className={workspaceTableLayoutBodyCellClass}>
                   <StatusBadge status={row.status} />
                 </TableCell>
-                <TableCell className={cn(workspaceTableActionsBodyCellClass)}>
+                <TableCell
+                  className={cn(workspaceTableActionsBodyCellClass, "!py-0")}
+                >
                   <div className="flex items-center justify-end gap-0.5">
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="icon"
-                      className="size-8 text-muted-foreground hover:text-foreground"
-                      aria-label={`Editar ${row.title}`}
-                    >
-                      <Pencil className="size-4" />
-                    </Button>
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="icon"
-                      className="size-8 text-muted-foreground hover:text-destructive"
-                      aria-label={`Eliminar ${row.title}`}
-                    >
-                      <Trash2 className="size-4" />
-                    </Button>
+                    <DataWorkspaceTableIconAction
+                      label={`Editar ${row.title}`}
+                      icon={Pencil}
+                      variant="edit"
+                      onClick={() => {}}
+                    />
+                    <DataWorkspaceTableIconAction
+                      label={`Eliminar ${row.title}`}
+                      icon={Trash2}
+                      variant="destructive"
+                      onClick={() => {}}
+                    />
                     <RowMoreMenu rowId={row.id} />
                   </div>
                 </TableCell>
@@ -1252,6 +978,7 @@ export function LayoutPreviewListTable({
           </TableBody>
         </table>
       </DataWorkspaceListTableShell>
+      </div>
     </div>
   )
 }

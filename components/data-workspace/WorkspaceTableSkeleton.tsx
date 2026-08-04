@@ -5,13 +5,20 @@ import {
   workspaceTableActionsBodyCellClass,
   workspaceTableBodyCellClass,
   workspaceTableBodyRowClassNames,
+  workspaceTableNatureBodyRowClassNames,
+  workspaceTableNatureSkeletonTone,
   workspaceTableSelectBodyCellClass,
   workspaceTableSkeletonTone,
+  type WorkspaceTableTone,
 } from "@/components/data-workspace/dataWorkspaceListStyles"
 import { cn } from "@/lib/utils"
 import { TableCell, TableRow } from "@/components/ui/table"
 
-const sk = workspaceTableSkeletonTone
+function skeletonToneFor(tone: WorkspaceTableTone = "default") {
+  return tone === "nature" || tone === "earth"
+    ? workspaceTableNatureSkeletonTone
+    : workspaceTableSkeletonTone
+}
 
 export type WorkspaceTableSkeletonColumn = {
   kind:
@@ -32,10 +39,14 @@ export type WorkspaceTableSkeletonColumn = {
 function SkeletonCell({
   column,
   cellKey,
+  tone = "default",
 }: {
   column: WorkspaceTableSkeletonColumn
   cellKey: string
+  tone?: WorkspaceTableTone
 }) {
+  const sk = skeletonToneFor(tone)
+
   switch (column.kind) {
     case "select":
       return (
@@ -126,7 +137,14 @@ function SkeletonCell({
           key={cellKey}
           className={cn(workspaceTableBodyCellClass, "w-24", column.className)}
         >
-          <div className={cn(sk.box, "aspect-square w-full max-w-20 rounded-lg")} />
+          <div
+            className={cn(
+              sk.box,
+              column.className?.includes("w-14")
+                ? "size-9 shrink-0 rounded-lg"
+                : "aspect-square w-full max-w-20 rounded-lg",
+            )}
+          />
         </TableCell>
       )
     case "actions":
@@ -154,17 +172,24 @@ export function WorkspaceTableSkeletonRows({
   rowCount,
   columns,
   rowKeyPrefix = "ws-table-sk",
+  tone = "default",
 }: {
   rowCount: number
   columns: WorkspaceTableSkeletonColumn[]
   rowKeyPrefix?: string
+  tone?: WorkspaceTableTone
 }) {
+  const rowClassNames =
+    tone === "nature" || tone === "earth"
+      ? workspaceTableNatureBodyRowClassNames
+      : workspaceTableBodyRowClassNames
+
   return (
     <>
       {Array.from({ length: rowCount }).map((_, rowIndex) => (
         <TableRow
           key={`${rowKeyPrefix}-${rowIndex}`}
-          className={workspaceTableBodyRowClassNames(rowIndex)}
+          className={rowClassNames(rowIndex)}
           aria-hidden
         >
           {columns.map((column, columnIndex) => (
@@ -172,6 +197,7 @@ export function WorkspaceTableSkeletonRows({
               key={`${rowKeyPrefix}-${rowIndex}-${columnIndex}`}
               cellKey={`${rowKeyPrefix}-${rowIndex}-${columnIndex}`}
               column={column}
+              tone={tone}
             />
           ))}
         </TableRow>

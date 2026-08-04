@@ -5,7 +5,6 @@ import {
   rootsButtonVariant,
   type RootsButtonSemanticVariant,
 } from "@/components/rootsy-button/rootsButtonStyles"
-import { saleOpDialogDestructiveBtn, saleOpDialogPrimaryBtn } from "@/components/sale-operation/saleOperationStyles"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 import type { ComponentProps } from "react"
@@ -16,16 +15,10 @@ type Props = Omit<ComponentProps<typeof Button>, "variant"> & {
 
 function classForSemantic(semantic: RootsButtonSemanticVariant, className?: string) {
   switch (semantic) {
-    case "primary":
-      return cn(saleOpDialogPrimaryBtn, rootsButtonClassForVariant("primary"), className)
     case "destructive":
-      return cn(saleOpDialogDestructiveBtn, className)
-    case "secondary":
-      return rootsButtonClassForVariant("secondary", className)
-    case "tertiary":
-      return rootsButtonClassForVariant("tertiary", className)
+      return rootsButtonClassForVariant("destructive", className)
     default:
-      return className
+      return rootsButtonClassForVariant(semantic, className)
   }
 }
 

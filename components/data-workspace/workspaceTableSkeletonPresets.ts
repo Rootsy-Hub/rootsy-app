@@ -168,7 +168,7 @@ export function promotionsSkeletonColumns(options?: {
 export function layoutPreviewSkeletonColumns(): WorkspaceTableSkeletonColumn[] {
   return [
     { kind: "select" },
-    { kind: "thumbnail", className: "w-24" },
+    { kind: "thumbnail", className: "w-14" },
     { kind: "text", className: "min-w-[12rem]", lines: 2 },
     { kind: "text", className: "min-w-[11rem]", lines: 2 },
     { kind: "money" },

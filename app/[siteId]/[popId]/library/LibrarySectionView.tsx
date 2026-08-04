@@ -9,6 +9,7 @@ import {
   articleDialogTitleClass,
 } from "@/app/[siteId]/[popId]/articles/articleConstants"
 import { LayoutButtonLibrarySection } from "@/app/[siteId]/[popId]/library/LayoutButtonLibrarySection"
+import { LayoutDropdownLibrarySection } from "@/app/[siteId]/[popId]/library/LayoutDropdownLibrarySection"
 import { ColorFoundationView } from "@/app/[siteId]/[popId]/library/color/ColorFoundationView"
 import { isColorLibrarySection } from "@/app/[siteId]/[popId]/library/color/colorLibraryNav"
 import { SpacingFoundationView } from "@/app/[siteId]/[popId]/library/spacing/SpacingFoundationView"
@@ -31,6 +32,8 @@ import { BorderFoundationView } from "@/app/[siteId]/[popId]/library/border/Bord
 import { isBorderLibrarySection } from "@/app/[siteId]/[popId]/library/border/borderLibraryNav"
 import { RadiusFoundationView } from "@/app/[siteId]/[popId]/library/radius/RadiusFoundationView"
 import { isRadiusLibrarySection } from "@/app/[siteId]/[popId]/library/radius/radiusLibraryNav"
+import { LayoutsTablesFoundationView } from "@/app/[siteId]/[popId]/library/layouts/LayoutsTablesFoundationView"
+import { isLayoutsLibrarySection } from "@/app/[siteId]/[popId]/library/layouts/layoutsLibraryNav"
 import {
   LibrarySection,
   SpecCard,
@@ -284,6 +287,8 @@ export function LibrarySectionView({
   const [qtyValue, setQtyValue] = useState("12")
   const [selectValue, setSelectValue] = useState("bebidas")
   const [fieldSelectValue, setFieldSelectValue] = useState("efectivo")
+  const [darkSelectPage, setDarkSelectPage] = useState("1")
+  const [darkSelectPageSize, setDarkSelectPageSize] = useState("20")
   const [dateValue, setDateValue] = useState("2026-08-03")
   const [switchOn, setSwitchOn] = useState(true)
   const [switchCatalogOn, setSwitchCatalogOn] = useState(false)
@@ -411,6 +416,16 @@ export function LibrarySectionView({
   if (isRadiusLibrarySection(sectionId)) {
     return (
       <RadiusFoundationView sectionId={sectionId} siteId={siteId} popId={popId} />
+    )
+  }
+
+  if (isLayoutsLibrarySection(sectionId)) {
+    return (
+      <LayoutsTablesFoundationView
+        sectionId={sectionId}
+        siteId={siteId}
+        popId={popId}
+      />
     )
   }
 
@@ -550,7 +565,7 @@ export function LibrarySectionView({
           <LibrarySection
             id="select"
             title="Select"
-            description="Desplegable alineado al light form. Con o sin prefijo (w-11). La opción activa muestra check verde."
+            description="Desplegable alineado al light form. Con o sin prefijo (w-11). La opción activa muestra check verde. Modo dark para footer y toolbar nocturno."
           >
             <div className="grid gap-4 lg:grid-cols-2">
               <SpecCard
@@ -589,6 +604,53 @@ export function LibrarySectionView({
                 </RootsFormSelectField>
               </SpecCard>
             </div>
+            <SpecCard
+              title="RootsFormSelectField · dark"
+              source="rootsFormSelectDarkTriggerClass"
+              tokens={["bosque nocturno", "footer paginación", "check emerald"]}
+              className="mt-4"
+            >
+              <div className="overflow-hidden rounded-xl border border-[#263530]/80">
+                <div className="border-[#263530]/80 bg-[linear-gradient(165deg,#060908_0%,#0c1210_52%,#141c19_100%)] p-4">
+                  <div className="flex max-w-md flex-wrap items-center gap-3">
+                    <RootsFormSelectField
+                      label="Página"
+                      tone="dark"
+                      value={darkSelectPage}
+                      onValueChange={setDarkSelectPage}
+                      className="w-auto min-w-[6rem]"
+                    >
+                      <RootsFormSelectItem tone="dark" value="1">
+                        1
+                      </RootsFormSelectItem>
+                      <RootsFormSelectItem tone="dark" value="2">
+                        2
+                      </RootsFormSelectItem>
+                      <RootsFormSelectItem tone="dark" value="3">
+                        3
+                      </RootsFormSelectItem>
+                    </RootsFormSelectField>
+                    <RootsFormSelectField
+                      label="Por página"
+                      tone="dark"
+                      value={darkSelectPageSize}
+                      onValueChange={setDarkSelectPageSize}
+                      className="w-auto min-w-[6rem]"
+                    >
+                      <RootsFormSelectItem tone="dark" value="10">
+                        10
+                      </RootsFormSelectItem>
+                      <RootsFormSelectItem tone="dark" value="20">
+                        20
+                      </RootsFormSelectItem>
+                      <RootsFormSelectItem tone="dark" value="50">
+                        50
+                      </RootsFormSelectItem>
+                    </RootsFormSelectField>
+                  </div>
+                </div>
+              </div>
+            </SpecCard>
           </LibrarySection>
       )
     case "date":
@@ -905,6 +967,8 @@ export function LibrarySectionView({
       )
     case "buttons":
       return <LayoutButtonLibrarySection siteId={siteId} popId={popId} />
+    case "dropdown":
+      return <LayoutDropdownLibrarySection siteId={siteId} popId={popId} />
     case "sortable-list":
       return (
           <LibrarySection
