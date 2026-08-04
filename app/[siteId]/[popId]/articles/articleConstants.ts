@@ -62,8 +62,19 @@ export const articleFormSelectContentClass = saleOpLightSelectContent
 
 export const articleFormSelectItemClass = saleOpLightSelectItem
 
+/** iOS — dim suave + blur ligero detrás del sheet. */
+export const articleDialogOverlayClass =
+  "bg-black/25 backdrop-blur-[3px]"
+
+const articleDialogIOSShellClass = cn(
+  "rootsy-app-light flex flex-col gap-0 overflow-hidden rounded-[1.375rem] border border-black/[0.04] bg-white p-0 text-foreground",
+  "shadow-[0_22px_70px_-18px_rgba(0,0,0,0.28)]",
+  "[&_[data-slot=dialog-close]]:top-4 [&_[data-slot=dialog-close]]:right-4 [&_[data-slot=dialog-close]]:rounded-full [&_[data-slot=dialog-close]]:opacity-60",
+)
+
 export const articleDialogSurfaceClass = cn(
-  "rootsy-app-light flex max-h-[min(90vh,640px)] flex-col gap-0 overflow-hidden rounded-xl border border-zinc-200 bg-white p-0 text-foreground shadow-[0_18px_45px_-14px_rgba(15,23,42,0.16)] sm:max-w-md",
+  articleDialogIOSShellClass,
+  "max-h-[min(90vh,640px)] sm:max-w-md",
 )
 
 export const articleDialogSurfaceWideClass = cn(
@@ -72,15 +83,21 @@ export const articleDialogSurfaceWideClass = cn(
 )
 
 export const articleDialogSurfaceTwoColClass = cn(
-  "rootsy-app-light flex max-h-[min(90vh,860px)] flex-col gap-0 overflow-hidden rounded-xl border border-zinc-200 bg-white p-0 text-foreground shadow-[0_18px_45px_-14px_rgba(15,23,42,0.16)] sm:max-w-4xl",
+  articleDialogIOSShellClass,
+  "max-h-[min(90vh,860px)] sm:max-w-4xl",
 )
 
-/** Monolito blanco — header tipográfico, sin acentos decorativos. */
+export const articleDialogTitleClass =
+  "text-[17px] font-semibold leading-snug tracking-[-0.01em] text-foreground"
+
+export const articleDialogDescriptionClass =
+  "text-[13px] leading-snug text-muted-foreground"
+
 export const articleDialogHeaderClass =
-  "flex shrink-0 flex-col gap-0.5 border-b border-zinc-200/80 bg-white px-6 pb-4 pt-6 text-left"
+  "flex shrink-0 flex-col gap-0.5 border-b border-black/[0.06] bg-white px-5 pb-3.5 pt-5 text-left"
 
 export const articleDialogBodyClass =
-  "min-h-0 flex-1 overflow-y-auto overscroll-contain bg-white px-6 py-5"
+  "min-h-0 flex-1 overflow-y-auto overscroll-contain bg-white px-5 py-4"
 
 export const articleDialogFooterClass =
-  "shrink-0 gap-3 border-t border-zinc-200 bg-white px-6 py-4 sm:flex-row sm:items-center sm:justify-between"
+  "shrink-0 gap-2.5 border-t border-black/[0.06] bg-white px-5 py-3 sm:flex-row sm:items-center sm:justify-between"

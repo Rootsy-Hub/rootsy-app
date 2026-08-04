@@ -5,8 +5,7 @@ import withAuth from "@/hoc/withAuth"
 import { useParams, useRouter } from "next/navigation"
 import { useEffect } from "react"
 
-/** Redirección desde la ruta legacy. */
-function LegacyLayoutLibraryRedirect() {
+function LibraryIndexPage() {
   const params = useParams()
   const router = useRouter()
   const siteId = typeof params?.siteId === "string" ? params.siteId : ""
@@ -17,7 +16,15 @@ function LegacyLayoutLibraryRedirect() {
     router.replace(libraryHomeHref(siteId, popId))
   }, [popId, router, siteId])
 
+  if (!popId || !siteId) {
+    return (
+      <div className="rootsy-app-light min-h-screen bg-background p-10 text-foreground">
+        <p className="text-sm">Punto de venta no encontrado.</p>
+      </div>
+    )
+  }
+
   return null
 }
 
-export default withAuth(LegacyLayoutLibraryRedirect)
+export default withAuth(LibraryIndexPage)

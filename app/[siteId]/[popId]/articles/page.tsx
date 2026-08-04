@@ -26,10 +26,8 @@ import {
   parseArticleItemFormState,
   type ArticleItemFormState,
 } from "@/app/[siteId]/[popId]/articles/ArticleItemFormFields"
-import {
-  ArticleUpsertFormFields,
-  type ArticleUpsertFormState,
-} from "@/app/[siteId]/[popId]/articles/ArticleUpsertFormFields"
+import { ArticleUpsertDialog } from "@/app/[siteId]/[popId]/articles/ArticleUpsertDialog"
+import type { ArticleUpsertFormState } from "@/app/[siteId]/[popId]/articles/ArticleUpsertFormFields"
 import { ArticleImagePreviewDialog } from "@/app/[siteId]/[popId]/articles/ArticleImagePreviewDialog"
 import { ArticlesTableDetailDialog } from "@/app/[siteId]/[popId]/articles/ArticlesTableDetailDialog"
 import {
@@ -43,11 +41,13 @@ import {
 import {
   ARTICLE_DELETE_CONFIRM_PHRASE,
   articleDialogBodyClass,
+  articleDialogDescriptionClass,
   articleDialogFooterClass,
   articleDialogHeaderClass,
+  articleDialogOverlayClass,
   articleDialogSurfaceClass,
-  articleDialogSurfaceTwoColClass,
   articleDialogSurfaceWideClass,
+  articleDialogTitleClass,
 } from "@/app/[siteId]/[popId]/articles/articleConstants"
 import {
   ARTICLE_TABLE_PAGE_SIZES,
@@ -177,8 +177,8 @@ function defaultCreateFormState(): ArticleFormState {
     imageUrl: "",
     sku: "",
     barcode: "",
-    salePrice: "0",
-    costPrice: "0",
+    salePrice: formatMoneyInputForField(0),
+    costPrice: formatMoneyInputForField(0),
     iva: String(DEFAULT_ARTICLE_IVA_ALICUOTA_ID),
     categoryId: "",
     isActive: true,
@@ -1287,14 +1287,15 @@ function ArticlesPage() {
             >
               <DialogContent
                 className={articleDialogSurfaceClass}
+                overlayClassName={articleDialogOverlayClass}
                 showCloseButton
                 data-rootsy-light-shell="true"
               >
                 <DialogHeader className={articleDialogHeaderClass}>
-                  <DialogTitle className="text-base font-semibold tracking-tight">
+                  <DialogTitle className={articleDialogTitleClass}>
                     Filtros
                   </DialogTitle>
-                  <DialogDescription className="text-sm leading-relaxed">
+                  <DialogDescription className={articleDialogDescriptionClass}>
                     Combinan con la búsqueda. El listado se pagina en el
                     servidor.
                   </DialogDescription>
@@ -1599,76 +1600,40 @@ function ArticlesPage() {
             </DataWorkspaceListTableShell>
           </div>
 
-      <Dialog open={editRow !== null} onOpenChange={(o) => !o && closeEdit()}>
-        <DialogContent
-          data-rootsy-light-shell="true"
-          showCloseButton
-          className={articleDialogSurfaceTwoColClass}
-        >
-          <DialogHeader className={articleDialogHeaderClass}>
-            <DialogTitle className="text-base font-semibold tracking-tight">
-              Editar artículo
-            </DialogTitle>
-            <DialogDescription className="sr-only">
-              Editar artículo
-            </DialogDescription>
-          </DialogHeader>
-          {editLoading ? (
-            <p className={cn(articleDialogBodyClass, "text-sm text-muted-foreground")}>
-              Cargando categorías…
-            </p>
-          ) : (
-            <form
-              className="flex min-h-0 flex-1 flex-col overflow-hidden"
-              onSubmit={(e) => void submitEdit(e)}
-            >
-              <div className={articleDialogBodyClass}>
-                {editBanner ? (
-                  <p
-                    role="alert"
-                    className="mb-4 rounded-lg border border-destructive/25 bg-destructive/5 px-3 py-2 text-sm text-destructive"
-                  >
-                    {editBanner}
-                  </p>
-                ) : null}
-                <ArticleUpsertFormFields
-                  idPrefix="edit-art"
-                  siteId={siteId}
-                  popId={popId}
-                  form={editForm}
-                  onChange={(patch) => setEditForm((f) => ({ ...f, ...patch }))}
-                  onItemKindChange={handleEditItemKindChange}
-                  categories={editCategories}
-                  supplierOptions={supplierPickerOptions}
-                  suppliersLoading={suppliersLoading}
-                  mode="edit"
-                  disabled={editSaving}
-                />
-              </div>
-              <DialogFooter className={articleDialogFooterClass}>
-                <Button type="button" variant="outline" onClick={closeEdit}>
-                  Cancelar
-                </Button>
-                <Button type="submit" disabled={editSaving}>
-                  {editSaving ? "Guardando…" : "Guardar"}
-                </Button>
-              </DialogFooter>
-            </form>
-          )}
-        </DialogContent>
-      </Dialog>
+      <ArticleUpsertDialog
+        open={editRow !== null}
+        onOpenChange={(open) => !open && closeEdit()}
+        mode="edit"
+        title="Editar artículo"
+        loading={editLoading}
+        saving={editSaving}
+        banner={editBanner}
+        onSubmit={(e) => void submitEdit(e)}
+        onCancel={closeEdit}
+        idPrefix="edit-art"
+        siteId={siteId}
+        popId={popId!}
+        form={editForm}
+        onChange={(patch) => setEditForm((f) => ({ ...f, ...patch }))}
+        onItemKindChange={handleEditItemKindChange}
+        categories={editCategories}
+        supplierOptions={supplierPickerOptions}
+        suppliersLoading={suppliersLoading}
+        disabled={editSaving}
+      />
 
       <Dialog open={deleteRow !== null} onOpenChange={(o) => !o && closeDelete()}>
         <DialogContent
           data-rootsy-light-shell="true"
           showCloseButton
           className={articleDialogSurfaceClass}
+          overlayClassName={articleDialogOverlayClass}
         >
           <DialogHeader className={articleDialogHeaderClass}>
-            <DialogTitle className="text-base font-semibold tracking-tight">
+            <DialogTitle className={articleDialogTitleClass}>
               Eliminar artículo
             </DialogTitle>
-            <DialogDescription className="text-sm leading-relaxed">
+            <DialogDescription className={articleDialogDescriptionClass}>
               Esta acción no se puede deshacer desde acá.
             </DialogDescription>
           </DialogHeader>
@@ -1722,65 +1687,28 @@ function ArticlesPage() {
         </DialogContent>
       </Dialog>
 
-      <Dialog open={createOpen} onOpenChange={(o) => !o && closeCreate()}>
-        <DialogContent
-          data-rootsy-light-shell="true"
-          showCloseButton
-          className={articleDialogSurfaceTwoColClass}
-        >
-          <DialogHeader className={articleDialogHeaderClass}>
-            <DialogTitle className="text-base font-semibold tracking-tight">
-              Nuevo artículo
-            </DialogTitle>
-            <DialogDescription className="sr-only">
-              Nuevo artículo
-            </DialogDescription>
-          </DialogHeader>
-          {createCatLoading ? (
-            <p className={cn(articleDialogBodyClass, "text-sm text-muted-foreground")}>
-              Cargando categorías…
-            </p>
-          ) : (
-            <form
-              className="flex min-h-0 flex-1 flex-col overflow-hidden"
-              onSubmit={(e) => void submitCreate(e)}
-            >
-              <div className={articleDialogBodyClass}>
-                {createBanner ? (
-                  <p
-                    role="alert"
-                    className="mb-4 rounded-lg border border-destructive/25 bg-destructive/5 px-3 py-2 text-sm text-destructive"
-                  >
-                    {createBanner}
-                  </p>
-                ) : null}
-                <ArticleUpsertFormFields
-                  idPrefix="create-art"
-                  siteId={siteId}
-                  popId={popId}
-                  form={createForm}
-                  onChange={(patch) => setCreateForm((f) => ({ ...f, ...patch }))}
-                  onItemKindChange={handleCreateItemKindChange}
-                  categories={createCategories}
-                  supplierOptions={supplierPickerOptions}
-                  suppliersLoading={suppliersLoading}
-                  canPostInitialStock={canPostInitialStock}
-                  mode="create"
-                  disabled={createSaving}
-                />
-              </div>
-              <DialogFooter className={articleDialogFooterClass}>
-                <Button type="button" variant="outline" onClick={closeCreate}>
-                  Cancelar
-                </Button>
-                <Button type="submit" disabled={createSaving}>
-                  {createSaving ? "Creando…" : "Crear"}
-                </Button>
-              </DialogFooter>
-            </form>
-          )}
-        </DialogContent>
-      </Dialog>
+      <ArticleUpsertDialog
+        open={createOpen}
+        onOpenChange={(open) => !open && closeCreate()}
+        mode="create"
+        title="Nuevo artículo"
+        loading={createCatLoading}
+        saving={createSaving}
+        banner={createBanner}
+        onSubmit={(e) => void submitCreate(e)}
+        onCancel={closeCreate}
+        idPrefix="create-art"
+        siteId={siteId}
+        popId={popId!}
+        form={createForm}
+        onChange={(patch) => setCreateForm((f) => ({ ...f, ...patch }))}
+        onItemKindChange={handleCreateItemKindChange}
+        categories={createCategories}
+        supplierOptions={supplierPickerOptions}
+        suppliersLoading={suppliersLoading}
+        canPostInitialStock={canPostInitialStock}
+        disabled={createSaving}
+      />
 
       <Dialog
         open={categoriesOpen}
@@ -1798,12 +1726,13 @@ function ArticlesPage() {
           data-rootsy-light-shell="true"
           showCloseButton
           className={articleDialogSurfaceWideClass}
+          overlayClassName={articleDialogOverlayClass}
         >
           <DialogHeader className={articleDialogHeaderClass}>
-            <DialogTitle className="text-base font-semibold tracking-tight">
+            <DialogTitle className={articleDialogTitleClass}>
               Categorías
             </DialogTitle>
-            <DialogDescription className="text-sm leading-relaxed">
+            <DialogDescription className={articleDialogDescriptionClass}>
               Ordená las categorías y elegí cuáles se muestran en ventas.
             </DialogDescription>
           </DialogHeader>
@@ -1879,14 +1808,15 @@ function ArticlesPage() {
           data-rootsy-light-shell="true"
           showCloseButton
           className={articleDialogSurfaceClass}
+          overlayClassName={articleDialogOverlayClass}
         >
           <DialogHeader className={articleDialogHeaderClass}>
-            <DialogTitle className="text-base font-semibold tracking-tight">
+            <DialogTitle className={articleDialogTitleClass}>
               {deleteCategoryBlocked
                 ? "No se puede eliminar"
                 : "Eliminar categoría"}
             </DialogTitle>
-            <DialogDescription className="text-sm leading-relaxed">
+            <DialogDescription className={articleDialogDescriptionClass}>
               {deleteCategoryChecking
                 ? "Verificando artículos relacionados…"
                 : deleteCategoryBlocked

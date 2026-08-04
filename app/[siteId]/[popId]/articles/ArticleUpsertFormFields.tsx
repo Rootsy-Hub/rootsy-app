@@ -9,17 +9,20 @@ import type { ArticleItemFormState } from "@/app/[siteId]/[popId]/articles/Artic
 import { ArticleItemKindSelector } from "@/app/[siteId]/[popId]/articles/ArticleItemKindSelector"
 import { ArticleSupplierPickerField } from "@/app/[siteId]/[popId]/articles/ArticleSupplierPickerField"
 import { ArticleUnitOfMeasureField } from "@/app/[siteId]/[popId]/articles/ArticleUnitOfMeasureField"
-import { RootsFormTextField, RootsFormTextareaField, RootsFormMoneyField, RootsFormQuantityField, RootsFormSelectField, RootsFormSelectItem, RootsFormGrid } from "@/components/rootsy-form"
 import {
-  articleFormColumnClass,
-  articleFormFieldStackClass,
-  articleFormTextFieldClass,
-  articleFormTwoColRowClass,
-} from "@/app/[siteId]/[popId]/articles/articleConstants"
-import { CheckoutSectionLabel } from "@/components/checkout/CheckoutFormFields"
+  RootsFormGrid,
+  RootsFormMoneyField,
+  RootsFormQuantityField,
+  RootsFormSelectField,
+  RootsFormSelectItem,
+  RootsFormSwitchField,
+  RootsFormTextField,
+  RootsFormTextareaField,
+  rootsFormColumnClass,
+  rootsFormTwoColRowClass,
+} from "@/components/rootsy-form"
 import type { ArticleItemKind } from "@/lib/articleItemKind"
 import { parseMoneyInput } from "@/lib/moneyInput"
-import { Switch } from "@/components/ui/switch"
 import { cn } from "@/lib/utils"
 
 export type ArticleUpsertFormState = ArticleItemFormState &
@@ -71,7 +74,14 @@ export function ArticleUpsertFormFields({
 
   return (
     <RootsFormGrid>
-      <div className={articleFormColumnClass}>
+      <div className={rootsFormColumnClass}>
+        <ArticleItemKindSelector
+          value={form.itemKind}
+          onChange={onItemKindChange}
+          readOnly={mode === "edit"}
+          disabled={disabled}
+        />
+
         <RootsFormTextField
           label="Nombre"
           id={`${idPrefix}-name`}
@@ -90,61 +100,42 @@ export function ArticleUpsertFormFields({
           disabled={disabled}
         />
 
-        <div className={articleFormFieldStackClass}>
-          <CheckoutSectionLabel>Marca</CheckoutSectionLabel>
-          <input
-            id={`${idPrefix}-brand`}
-            value={form.brand}
-            onChange={(e) => onChange({ brand: e.target.value })}
-            placeholder="Opcional"
-            disabled={disabled}
-            className={articleFormTextFieldClass}
-          />
-        </div>
+        <RootsFormTextField
+          label="Marca"
+          id={`${idPrefix}-brand`}
+          value={form.brand}
+          onChange={(e) => onChange({ brand: e.target.value })}
+          placeholder="Opcional"
+          disabled={disabled}
+        />
 
-        <div className={articleFormFieldStackClass}>
-          <CheckoutSectionLabel>SKU</CheckoutSectionLabel>
-          <input
-            id={`${idPrefix}-sku`}
-            value={form.sku}
-            onChange={(e) => onChange({ sku: e.target.value })}
-            placeholder="Código interno (opcional)"
-            disabled={disabled}
-            className={articleFormTextFieldClass}
-            autoComplete="off"
-          />
-          <p className="text-xs leading-snug text-muted-foreground">
-            Código propio para identificar el artículo en stock e inventario.
-          </p>
-        </div>
+        <RootsFormTextField
+          label="SKU"
+          id={`${idPrefix}-sku`}
+          value={form.sku}
+          onChange={(e) => onChange({ sku: e.target.value })}
+          placeholder="Código interno (opcional)"
+          disabled={disabled}
+          autoComplete="off"
+          hint="Código propio para identificar el artículo en stock e inventario."
+        />
 
         {isMerchandise ? (
-          <div className={articleFormFieldStackClass}>
-            <CheckoutSectionLabel>Código de barras</CheckoutSectionLabel>
-            <input
-              id={`${idPrefix}-barcode`}
-              value={form.barcode}
-              onChange={(e) =>
-                onChange({ barcode: e.target.value.replace(/\D/g, "") })
-              }
-              placeholder="EAN / UPC (8 a 14 dígitos)"
-              disabled={disabled}
-              className={cn(articleFormTextFieldClass, "tabular-nums")}
-              inputMode="numeric"
-              autoComplete="off"
-            />
-            <p className="text-xs leading-snug text-muted-foreground">
-              Se imprime en el ticket de venta. Solo para productos de venta.
-            </p>
-          </div>
+          <RootsFormTextField
+            label="Código de barras"
+            id={`${idPrefix}-barcode`}
+            value={form.barcode}
+            onChange={(e) =>
+              onChange({ barcode: e.target.value.replace(/\D/g, "") })
+            }
+            placeholder="EAN / UPC (8 a 14 dígitos)"
+            disabled={disabled}
+            inputClassName="tabular-nums"
+            inputMode="numeric"
+            autoComplete="off"
+            hint="Se imprime en el ticket de venta. Solo para productos de venta."
+          />
         ) : null}
-
-        <ArticleItemKindSelector
-          idPrefix={idPrefix}
-          value={form.itemKind}
-          onChange={onItemKindChange}
-          readOnly={mode === "edit"}
-        />
 
         <RootsFormSelectField
           label="Categoría"
@@ -170,7 +161,7 @@ export function ArticleUpsertFormFields({
         />
       </div>
 
-      <div className={articleFormColumnClass}>
+      <div className={rootsFormColumnClass}>
         <ArticleUnitOfMeasureField
           itemKind={form.itemKind}
           idPrefix={idPrefix}
@@ -181,7 +172,7 @@ export function ArticleUpsertFormFields({
 
         <div
           className={cn(
-            articleFormTwoColRowClass,
+            rootsFormTwoColRowClass,
             !isMerchandise && "sm:grid-cols-1",
           )}
         >
@@ -208,6 +199,7 @@ export function ArticleUpsertFormFields({
           siteId={siteId}
           value={form.iva}
           onChange={(value) => onChange({ iva: value })}
+          disabled={disabled}
         />
 
         {isMerchandise ? (
@@ -243,21 +235,14 @@ export function ArticleUpsertFormFields({
           </div>
         ) : null}
 
-        <div className="flex items-center justify-between gap-3 rounded-xl border border-border/70 bg-muted/15 px-3.5 py-2.5">
-          <div className="min-w-0">
-            <CheckoutSectionLabel>Artículo activo</CheckoutSectionLabel>
-            <p className="mt-1 text-xs leading-snug text-muted-foreground">
-              Los inactivos no aparecen en ventas ni catálogo.
-            </p>
-          </div>
-          <Switch
-            id={`${idPrefix}-active`}
-            checked={form.isActive}
-            onCheckedChange={(checked) => onChange({ isActive: checked })}
-            disabled={disabled}
-            className="shrink-0"
-          />
-        </div>
+        <RootsFormSwitchField
+          label="Artículo activo"
+          description="Los inactivos no aparecen en ventas ni catálogo."
+          id={`${idPrefix}-active`}
+          checked={form.isActive}
+          onCheckedChange={(checked) => onChange({ isActive: checked })}
+          disabled={disabled}
+        />
       </div>
     </RootsFormGrid>
   )

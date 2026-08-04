@@ -1,27 +1,18 @@
 "use client"
 
 import {
-  articleDialogBodyClass,
-  articleDialogFooterClass,
-  articleDialogHeaderClass,
-  articleDialogSurfaceClass,
-} from "@/app/[siteId]/[popId]/articles/articleConstants"
+  RootsDialogBody,
+  RootsDialogContent,
+  RootsDialogHeader,
+  RootsDialogSingleActionFooter,
+} from "@/components/rootsy-dialog"
 import {
   RootsFormMoneyField,
   RootsFormQuantityField,
   RootsFormTextField,
   RootsFormTextareaField,
 } from "@/components/rootsy-form"
-import { Button } from "@/components/ui/button"
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog"
-import { cn } from "@/lib/utils"
+import { Dialog } from "@/components/ui/dialog"
 import { useState } from "react"
 
 type Props = {
@@ -35,22 +26,13 @@ export function LayoutFinalComponentsModal({ open, onOpenChange }: Props) {
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent
-        className={articleDialogSurfaceClass}
-        data-rootsy-light-shell="true"
-        showCloseButton
-      >
-        <DialogHeader className={articleDialogHeaderClass}>
-          <DialogTitle className="text-base font-semibold tracking-tight">
-            Componentes finales
-          </DialogTitle>
-          <DialogDescription className="text-sm leading-relaxed">
-            Piezas aprobadas para reutilizar en modales. Solo lo que aparece acá
-            define la familia unificada.
-          </DialogDescription>
-        </DialogHeader>
+      <RootsDialogContent>
+        <RootsDialogHeader
+          title="Componentes finales"
+          description="Piezas aprobadas para reutilizar en modales. Solo lo que aparece acá define la familia unificada."
+        />
 
-        <div className={cn(articleDialogBodyClass, "space-y-8")}>
+        <RootsDialogBody className="space-y-8">
           <section className="space-y-4">
             <div>
               <h3 className="text-sm font-semibold text-foreground">Label</h3>
@@ -75,7 +57,7 @@ export function LayoutFinalComponentsModal({ open, onOpenChange }: Props) {
               </h3>
               <p className="mt-1 text-sm text-muted-foreground">
                 Light form con <span className="font-mono">rounded-lg</span> y
-                foco verde Roots más marcado.
+                foco verde Rootsy más marcado.
               </p>
             </div>
 
@@ -157,14 +139,13 @@ export function LayoutFinalComponentsModal({ open, onOpenChange }: Props) {
               </span>
             </p>
           </section>
-        </div>
+        </RootsDialogBody>
 
-        <DialogFooter className={articleDialogFooterClass}>
-          <Button type="button" onClick={() => onOpenChange(false)}>
-            Cerrar
-          </Button>
-        </DialogFooter>
-      </DialogContent>
+        <RootsDialogSingleActionFooter
+          label="Cerrar"
+          onAction={() => onOpenChange(false)}
+        />
+      </RootsDialogContent>
     </Dialog>
   )
 }

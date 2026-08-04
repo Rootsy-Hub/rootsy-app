@@ -2,11 +2,20 @@
 
 import {
   articleDialogBodyClass,
+  articleDialogDescriptionClass,
   articleDialogFooterClass,
   articleDialogHeaderClass,
   articleDialogSurfaceClass,
+  articleDialogTitleClass,
 } from "@/app/[siteId]/[popId]/articles/articleConstants"
-import { LayoutFinalComponentsModal } from "@/app/[siteId]/[popId]/layout/library/LayoutFinalComponentsModal"
+import { LayoutButtonLibrarySection } from "@/app/[siteId]/[popId]/library/LayoutButtonLibrarySection"
+import { ColorFoundationView } from "@/app/[siteId]/[popId]/library/color/ColorFoundationView"
+import { isColorLibrarySection } from "@/app/[siteId]/[popId]/library/color/colorLibraryNav"
+import {
+  LibrarySection,
+  SpecCard,
+} from "@/app/[siteId]/[popId]/library/layoutLibraryShared"
+import { ArticleItemKindSelector } from "@/app/[siteId]/[popId]/articles/ArticleItemKindSelector"
 import {
   RootsFormField,
   RootsFormDateField,
@@ -24,21 +33,24 @@ import {
   rootsFormTwoColRowClass,
   rootsFormTextFieldClass,
 } from "@/components/rootsy-form"
-import { Button } from "@/components/ui/button"
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog"
+  RootsSortableActionList,
+  RootsSortableActionListPanel,
+  type RootsSortableActionListItem,
+} from "@/components/rootsy-list"
+import {
+  RootsDialogBody,
+  RootsDialogContent,
+  RootsDialogFooterByVariant,
+  RootsDialogHeader,
+  type RootsDialogFooterVariant,
+} from "@/components/rootsy-dialog"
+import { Button } from "@/components/ui/button"
+import { Dialog } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
 import {
   saleOpAlertDialogContent,
   saleOpChannelErrorBanner,
-  saleOpChannelFormField,
   saleOpChannelHint,
   saleOpChannelWarningBanner,
 } from "@/components/sale-operation/saleOperationStyles"
@@ -53,29 +65,14 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
 import { cn } from "@/lib/utils"
+import type { ArticleItemKind } from "@/lib/articleItemKind"
 import { CalendarIcon, Landmark, Receipt } from "lucide-react"
-import { useState, type ReactNode } from "react"
+import { useState } from "react"
 
 const MODAL_SAMPLE_TITLE = "Título del modal"
 const MODAL_SAMPLE_DESCRIPTION = "Descripción breve del contenido."
 
-const LIBRARY_SECTIONS = [
-  { id: "labels", label: "Label (final)" },
-  { id: "text", label: "Texto (final)" },
-  { id: "multiline", label: "Multilínea (final)" },
-  { id: "numeric", label: "Montos y cantidades (final)" },
-  { id: "select", label: "Select (final)" },
-  { id: "date", label: "Fecha" },
-  { id: "boolean", label: "Booleanos" },
-  { id: "field-help", label: "Ayuda de campo" },
-  { id: "layout", label: "Layout de formulario" },
-  { id: "composite", label: "Controles compuestos" },
-  { id: "feedback", label: "Banners y ayuda" },
-  { id: "modals", label: "Modales" },
-  { id: "modals-alert", label: "Alert dialog" },
-] as const
-
-type ModalFooterVariant = "none" | "single" | "dual"
+type ModalFooterVariant = RootsDialogFooterVariant
 
 type ModalVariantSpec = {
   id: string
@@ -104,72 +101,6 @@ const MODAL_VARIANTS: ModalVariantSpec[] = [
     footerVariant: "dual",
   },
 ]
-
-function LibrarySection({
-  id,
-  title,
-  description,
-  children,
-}: {
-  id: string
-  title: string
-  description?: string
-  children: ReactNode
-}) {
-  return (
-    <section id={id} className="scroll-mt-24 border-b border-border/50 pb-10 last:border-b-0">
-      <div className="mb-5">
-        <h2 className="text-lg font-semibold tracking-tight text-foreground">
-          {title}
-        </h2>
-        {description ? (
-          <p className="mt-1 max-w-3xl text-sm leading-relaxed text-muted-foreground">
-            {description}
-          </p>
-        ) : null}
-      </div>
-      {children}
-    </section>
-  )
-}
-
-function SpecCard({
-  title,
-  source,
-  tokens,
-  children,
-}: {
-  title: string
-  source: string
-  tokens?: string[]
-  children: ReactNode
-}) {
-  return (
-    <div className="rounded-2xl border border-border/70 bg-card/80 p-4 shadow-sm">
-      <div className="mb-3 flex flex-wrap items-start justify-between gap-2">
-        <div>
-          <h3 className="text-sm font-semibold text-foreground">{title}</h3>
-          <p className="mt-0.5 font-mono text-[11px] text-muted-foreground">
-            {source}
-          </p>
-        </div>
-        {tokens?.length ? (
-          <div className="flex flex-wrap gap-1">
-            {tokens.map((token) => (
-              <span
-                key={token}
-                className="rounded-md bg-muted px-2 py-0.5 font-mono text-[10px] text-muted-foreground"
-              >
-                {token}
-              </span>
-            ))}
-          </div>
-        ) : null}
-      </div>
-      {children}
-    </div>
-  )
-}
 
 function ModalDemoFormFields({
   name,
@@ -224,7 +155,7 @@ function ModalFooterPreview({ variant }: { variant: ModalFooterVariant }) {
   return (
     <div className={cn(articleDialogFooterClass, "flex justify-between gap-2")}>
       <div className="h-9 w-24 rounded-md border border-zinc-200 bg-white" />
-      <div className="h-9 w-28 rounded-md bg-primary/90" />
+      <div className="h-9 w-28 rounded-md bg-primary/90 shadow-sm" />
     </div>
   )
 }
@@ -240,10 +171,8 @@ function ModalChromePreview({ spec }: { spec: ModalVariantSpec }) {
         )}
       >
         <div className={articleDialogHeaderClass}>
-          <p className="text-base font-semibold tracking-tight">
-            {MODAL_SAMPLE_TITLE}
-          </p>
-          <p className="text-sm text-muted-foreground">
+          <p className={articleDialogTitleClass}>{MODAL_SAMPLE_TITLE}</p>
+          <p className={articleDialogDescriptionClass}>
             {MODAL_SAMPLE_DESCRIPTION}
           </p>
         </div>
@@ -268,37 +197,6 @@ function ModalChromePreview({ spec }: { spec: ModalVariantSpec }) {
   )
 }
 
-function ModalFooterLive({
-  variant,
-  onClose,
-}: {
-  variant: ModalFooterVariant
-  onClose: () => void
-}) {
-  if (variant === "none") return null
-
-  if (variant === "single") {
-    return (
-      <DialogFooter className={cn(articleDialogFooterClass, "sm:justify-end")}>
-        <Button type="button" onClick={onClose}>
-          Confirmar
-        </Button>
-      </DialogFooter>
-    )
-  }
-
-  return (
-    <DialogFooter className={articleDialogFooterClass}>
-      <Button type="button" variant="outline" onClick={onClose}>
-        Cancelar
-      </Button>
-      <Button type="button" onClick={onClose}>
-        Confirmar
-      </Button>
-    </DialogFooter>
-  )
-}
-
 function LiveModalDemo({
   spec,
   open,
@@ -317,20 +215,12 @@ function LiveModalDemo({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent
-        className={articleDialogSurfaceClass}
-        data-rootsy-light-shell="true"
-        showCloseButton
-      >
-        <DialogHeader className={articleDialogHeaderClass}>
-          <DialogTitle className="text-base font-semibold tracking-tight">
-            {MODAL_SAMPLE_TITLE}
-          </DialogTitle>
-          <DialogDescription className="text-sm leading-snug">
-            {MODAL_SAMPLE_DESCRIPTION}
-          </DialogDescription>
-        </DialogHeader>
-        <div className={articleDialogBodyClass}>
+      <RootsDialogContent>
+        <RootsDialogHeader
+          title={MODAL_SAMPLE_TITLE}
+          description={MODAL_SAMPLE_DESCRIPTION}
+        />
+        <RootsDialogBody>
           <ModalDemoFormFields
             name={name}
             onNameChange={setName}
@@ -339,14 +229,31 @@ function LiveModalDemo({
             price={price}
             onPriceChange={setPrice}
           />
-        </div>
-        <ModalFooterLive variant={spec.footerVariant} onClose={handleClose} />
-      </DialogContent>
+        </RootsDialogBody>
+        <RootsDialogFooterByVariant
+          variant={spec.footerVariant}
+          onClose={handleClose}
+        />
+      </RootsDialogContent>
     </Dialog>
   )
 }
 
-export function LayoutComponentLibrary() {
+type LibrarySectionViewProps = {
+  sectionId: string
+  siteId: string
+  popId: string
+  liveModalId: string | null
+  onLiveModalIdChange: (id: string | null) => void
+}
+
+export function LibrarySectionView({
+  sectionId,
+  siteId,
+  popId,
+  liveModalId,
+  onLiveModalIdChange,
+}: LibrarySectionViewProps) {
   const [textValue, setTextValue] = useState("Ejemplo de texto")
   const [moneyValue, setMoneyValue] = useState("1.250,00")
   const [qtyValue, setQtyValue] = useState("12")
@@ -370,54 +277,38 @@ export function LayoutComponentLibrary() {
   const [segment, setSegment] = useState<"porcentaje" | "fijo">("porcentaje")
   const [discountValue, setDiscountValue] = useState("10")
   const [fulfillmentSegment, setFulfillmentSegment] = useState<"pickup" | "delivery">("pickup")
+  const [layoutItemKind, setLayoutItemKind] = useState<ArticleItemKind>("merchandise")
+  const [sortableDemoItems, setSortableDemoItems] = useState<
+    RootsSortableActionListItem[]
+  >([
+    { id: "bebidas", label: "Bebidas", visible: true },
+    { id: "verduras", label: "Verduras", visible: true },
+    { id: "solo-interno", label: "Solo interno", visible: false },
+    { id: "general", label: "[Ejemplo] General", visible: true },
+  ])
+  const [sortableEditingId, setSortableEditingId] = useState<string | null>(
+    null,
+  )
+  const [sortableEditingName, setSortableEditingName] = useState("")
   const [comprobanteValue, setComprobanteValue] = useState("factura-b")
-  const [liveModalId, setLiveModalId] = useState<string | null>(null)
-  const [finalComponentsOpen, setFinalComponentsOpen] = useState(false)
-
   const liveModal = MODAL_VARIANTS.find((spec) => spec.id === liveModalId) ?? null
 
-  return (
-    <div className="flex min-h-0 flex-1">
-      <aside className="hidden w-56 shrink-0 border-r border-border/50 bg-muted/10 px-3 py-5 lg:block">
-        <p className="px-2 text-[10px] font-bold uppercase tracking-[0.14em] text-muted-foreground">
-          Secciones
-        </p>
-        <nav className="mt-3 space-y-1">
-          {LIBRARY_SECTIONS.map((section) => (
-            <a
-              key={section.id}
-              href={`#${section.id}`}
-              className="block rounded-lg px-2 py-1.5 text-sm text-muted-foreground transition-colors hover:bg-muted/50 hover:text-foreground"
-            >
-              {section.label}
-            </a>
-          ))}
-        </nav>
-      </aside>
+  if (isColorLibrarySection(sectionId)) {
+    return (
+      <ColorFoundationView
+        sectionId={sectionId}
+        siteId={siteId}
+        popId={popId}
+      />
+    )
+  }
 
-      <div className="min-h-0 flex-1 overflow-y-auto px-4 py-6 sm:px-6 lg:px-8">
-        <div className="mx-auto max-w-6xl space-y-10">
-          <header className="rounded-2xl border border-primary/15 bg-primary/5 px-5 py-4">
-            <div className="flex flex-wrap items-start justify-between gap-4">
-              <div>
-                <h1 className="text-xl font-semibold tracking-tight text-foreground">
-                  Librería de formularios y modales
-                </h1>
-                <p className="mt-1 max-w-3xl text-sm leading-relaxed text-muted-foreground">
-                  Referencia visual de candidatos y piezas ya aprobadas. Lo legacy
-                  sigue en pantalla para comparar; lo final vive en el modal de
-                  componentes finales.
-                </p>
-              </div>
-              <Button type="button" onClick={() => setFinalComponentsOpen(true)}>
-                Componentes finales
-              </Button>
-            </div>
-          </header>
-
+  switch (sectionId) {
+    case "labels":
+      return (
           <LibrarySection
             id="labels"
-            title="Label de campo (final)"
+            title="Labels"
             description="Único label aprobado: prop label en RootsFormField, renderizado con CheckoutSectionLabel."
           >
             <div className="grid gap-4 lg:grid-cols-2">
@@ -446,11 +337,13 @@ export function LayoutComponentLibrary() {
               </SpecCard>
             </div>
           </LibrarySection>
-
+      )
+    case "text":
+      return (
           <LibrarySection
             id="text"
-            title="Texto · una línea (final)"
-            description="Light form con rounded-lg y foco verde Roots más marcado. Siempre RootsFormTextField con prop label."
+            title="Texto · una línea"
+            description="Light form con rounded-lg y foco verde Rootsy más marcado. Siempre RootsFormTextField con prop label."
           >
             <div className="grid gap-4 lg:grid-cols-2">
               <SpecCard
@@ -477,10 +370,12 @@ export function LayoutComponentLibrary() {
               </SpecCard>
             </div>
           </LibrarySection>
-
+      )
+    case "multiline":
+      return (
           <LibrarySection
             id="multiline"
-            title="Multilínea (final)"
+            title="Multilínea"
             description="Misma familia visual que texto una línea. Siempre RootsFormTextareaField con prop label."
           >
             <div className="grid gap-4 lg:grid-cols-2">
@@ -505,10 +400,12 @@ export function LayoutComponentLibrary() {
               </SpecCard>
             </div>
           </LibrarySection>
-
+      )
+    case "numeric":
+      return (
           <LibrarySection
             id="numeric"
-            title="Montos y cantidades (final)"
+            title="Montos y cantidades"
             description="Un solo estilo con prefijo a la izquierda ($, uds., ícono). Slot fijo w-11 (2.75rem) para alinear variantes."
           >
             <div className="grid gap-4 lg:grid-cols-2">
@@ -536,10 +433,12 @@ export function LayoutComponentLibrary() {
               </SpecCard>
             </div>
           </LibrarySection>
-
+      )
+    case "select":
+      return (
           <LibrarySection
             id="select"
-            title="Select (final)"
+            title="Select"
             description="Desplegable alineado al light form. Con o sin prefijo (w-11). La opción activa muestra check verde."
           >
             <div className="grid gap-4 lg:grid-cols-2">
@@ -580,10 +479,12 @@ export function LayoutComponentLibrary() {
               </SpecCard>
             </div>
           </LibrarySection>
-
+      )
+    case "date":
+      return (
           <LibrarySection
             id="date"
-            title="Fecha (final)"
+            title="Fecha"
             description="Date picker alineado al light form. Formato largo en español. Con o sin prefijo (w-11)."
           >
             <div className="grid gap-4 lg:grid-cols-2">
@@ -614,10 +515,12 @@ export function LayoutComponentLibrary() {
               </SpecCard>
             </div>
           </LibrarySection>
-
+      )
+    case "boolean":
+      return (
           <LibrarySection
             id="boolean"
-            title="Booleanos (final)"
+            title="Booleanos"
             description="Switch en caja clickable alineada al light form. Texto a la izquierda y toggle a la derecha."
           >
             <div className="grid gap-4 lg:grid-cols-2">
@@ -646,10 +549,12 @@ export function LayoutComponentLibrary() {
               </SpecCard>
             </div>
           </LibrarySection>
-
+      )
+    case "field-help":
+      return (
           <LibrarySection
             id="field-help"
-            title="Ayuda de campo (final)"
+            title="Ayuda de campo"
             description="Texto debajo del control con props hint, warning, error o success. Solo se muestra uno a la vez (prioridad: error → warning → success → hint)."
           >
             <div className="grid gap-4 lg:grid-cols-2">
@@ -707,14 +612,20 @@ export function LayoutComponentLibrary() {
               o directo en RootsFormField.
             </p>
           </LibrarySection>
-
+      )
+    case "layout":
+      return (
           <LibrarySection
             id="layout"
-            title="Layout de formulario (final)"
-            description="Grilla de dos columnas con separador, filas dobles, segment de descuento y ayuda de campo integrada."
+            title="Layout de formulario"
+            description="Tipo de artículo al inicio de la columna izquierda; grilla de dos columnas debajo."
           >
             <RootsFormGrid>
               <div className={rootsFormColumnClass}>
+                <ArticleItemKindSelector
+                  value={layoutItemKind}
+                  onChange={setLayoutItemKind}
+                />
                 <RootsFormTextField
                   label="Nombre"
                   value={layoutName}
@@ -806,14 +717,17 @@ export function LayoutComponentLibrary() {
               </div>
             </RootsFormGrid>
             <p className="mt-3 font-mono text-[11px] text-muted-foreground">
+              ArticleItemKindSelector (col. izq.) · RootsFormSegmentField ·
               RootsFormGrid · rootsFormColumnClass · rootsFormTwoColRowClass ·
               RootsFormDiscountField · hint · warning · error · success
             </p>
           </LibrarySection>
-
+      )
+    case "composite":
+      return (
           <LibrarySection
             id="composite"
-            title="Controles compuestos (final)"
+            title="Controles compuestos"
             description="Descuento con prefijo dual %/$, segment group para opciones sin valor, y select para listas largas."
           >
             <div className="grid gap-4 lg:grid-cols-2">
@@ -829,6 +743,16 @@ export function LayoutComponentLibrary() {
                   value={discountValue}
                   onChange={setDiscountValue}
                   hint="Tipo y valor en el mismo control."
+                />
+              </SpecCard>
+              <SpecCard
+                title="RootsFormSegmentField · 3 opciones"
+                source="ArticleItemKindSelector · stock upsert"
+                tokens={["hint dinámico", "decisión estructural"]}
+              >
+                <ArticleItemKindSelector
+                  value={layoutItemKind}
+                  onChange={setLayoutItemKind}
                 />
               </SpecCard>
               <SpecCard
@@ -867,10 +791,85 @@ export function LayoutComponentLibrary() {
               </SpecCard>
             </div>
           </LibrarySection>
-
+      )
+    case "buttons":
+      return <LayoutButtonLibrarySection />
+    case "sortable-list":
+      return (
+          <LibrarySection
+            id="sortable-list"
+            title="Lista ordenable"
+            description="Drag and drop para reordenar, más visibilidad, edición inline y eliminar."
+          >
+            <SpecCard
+              title="RootsSortableActionList"
+              source="components/rootsy-list · ArticleCategoriesSaleBoard"
+              tokens={["grip", "eye", "pencil", "trash"]}
+            >
+              <RootsSortableActionListPanel
+                title="Categorías"
+                description="Arrastrá para ordenar. Usá el ojo para mostrar u ocultar en ventas."
+                footerHint="Los cambios de orden y visibilidad se guardan al soltar o al tocar el ojo."
+              >
+                <RootsSortableActionList
+                  listId="library-sortable-demo"
+                  items={sortableDemoItems}
+                  onReorder={setSortableDemoItems}
+                  canReorder
+                  canToggleVisibility
+                  canEdit
+                  canDelete
+                  editingId={sortableEditingId}
+                  editingValue={sortableEditingName}
+                  editSaveBusy={false}
+                  onStartEdit={(item) => {
+                    setSortableEditingId(item.id)
+                    setSortableEditingName(item.label)
+                  }}
+                  onCancelEdit={() => {
+                    setSortableEditingId(null)
+                    setSortableEditingName("")
+                  }}
+                  onEditingValueChange={setSortableEditingName}
+                  onSaveEdit={() => {
+                    if (!sortableEditingId || !sortableEditingName.trim()) return
+                    setSortableDemoItems((items) =>
+                      items.map((item) =>
+                        item.id === sortableEditingId
+                          ? { ...item, label: sortableEditingName.trim() }
+                          : item,
+                      ),
+                    )
+                    setSortableEditingId(null)
+                    setSortableEditingName("")
+                  }}
+                  onDelete={(item) =>
+                    setSortableDemoItems((items) =>
+                      items.filter((row) => row.id !== item.id),
+                    )
+                  }
+                  onToggleVisibility={(id) =>
+                    setSortableDemoItems((items) =>
+                      items.map((item) =>
+                        item.id === id
+                          ? {
+                              ...item,
+                              visible: item.visible === false,
+                            }
+                          : item,
+                      ),
+                    )
+                  }
+                />
+              </RootsSortableActionListPanel>
+            </SpecCard>
+          </LibrarySection>
+      )
+    case "feedback":
+      return (
           <LibrarySection
             id="feedback"
-            title="Banners y ayuda"
+            title="Banners"
             description="Mensajes inline dentro de modales y paneles."
           >
             <div className="grid gap-4">
@@ -885,7 +884,10 @@ export function LayoutComponentLibrary() {
               </div>
             </div>
           </LibrarySection>
-
+      )
+    case "modals":
+      return (
+        <>
           <LibrarySection
             id="modals"
             title="Modales"
@@ -905,7 +907,7 @@ export function LayoutComponentLibrary() {
                         type="button"
                         size="sm"
                         variant="outline"
-                        onClick={() => setLiveModalId(spec.id)}
+                        onClick={() => onLiveModalIdChange(spec.id)}
                       >
                         Abrir en vivo
                       </Button>
@@ -918,7 +920,19 @@ export function LayoutComponentLibrary() {
               ))}
             </div>
           </LibrarySection>
-
+          {liveModal ? (
+            <LiveModalDemo
+              spec={liveModal}
+              open
+              onOpenChange={(open) => {
+                if (!open) onLiveModalIdChange(null)
+              }}
+            />
+          ) : null}
+        </>
+      )
+    case "modals-alert":
+      return (
           <LibrarySection
             id="modals-alert"
             title="Alert dialog"
@@ -958,23 +972,8 @@ export function LayoutComponentLibrary() {
               </div>
             </SpecCard>
           </LibrarySection>
-        </div>
-      </div>
-
-      {liveModal ? (
-        <LiveModalDemo
-          spec={liveModal}
-          open
-          onOpenChange={(open) => {
-            if (!open) setLiveModalId(null)
-          }}
-        />
-      ) : null}
-
-      <LayoutFinalComponentsModal
-        open={finalComponentsOpen}
-        onOpenChange={setFinalComponentsOpen}
-      />
-    </div>
-  )
+      )
+    default:
+      return null
+  }
 }

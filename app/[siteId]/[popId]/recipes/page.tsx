@@ -55,9 +55,12 @@ import {
 import { buildPaginationItems } from "@/app/[siteId]/[popId]/layout/layoutPreviewPagination"
 import {
   articleDialogBodyClass,
+  articleDialogDescriptionClass,
   articleDialogFooterClass,
   articleDialogHeaderClass,
+  articleDialogOverlayClass,
   articleDialogSurfaceClass,
+  articleDialogTitleClass,
 } from "@/app/[siteId]/[popId]/articles/articleConstants"
 import { DataWorkspaceListPaginationFooter } from "@/components/data-workspace/DataWorkspaceListPaginationFooter"
 import { DataWorkspaceListTableShell } from "@/components/data-workspace/DataWorkspaceListTableShell"
@@ -782,14 +785,15 @@ function RecipesPage() {
           >
             <DialogContent
               className={articleDialogSurfaceClass}
+              overlayClassName={articleDialogOverlayClass}
               showCloseButton
               data-rootsy-light-shell="true"
             >
               <DialogHeader className={articleDialogHeaderClass}>
-                <DialogTitle className="text-base font-semibold tracking-tight">
+                <DialogTitle className={articleDialogTitleClass}>
                   Filtros
                 </DialogTitle>
-                <DialogDescription className="text-sm leading-relaxed">
+                <DialogDescription className={articleDialogDescriptionClass}>
                   Combinan con la búsqueda. El listado se pagina en el servidor.
                 </DialogDescription>
               </DialogHeader>
@@ -1037,14 +1041,15 @@ function RecipesPage() {
       <Dialog open={formOpen} onOpenChange={(o) => !o && closeForm()}>
         <DialogContent
           className={recipeDialogSurfaceWideClass}
+          overlayClassName={articleDialogOverlayClass}
           data-rootsy-light-shell="true"
           showCloseButton
         >
           <DialogHeader className={recipeDialogHeaderClass}>
-            <DialogTitle className="text-base font-semibold tracking-tight">
+            <DialogTitle className={articleDialogTitleClass}>
               {editingId ? "Editar receta" : "Nueva receta"}
             </DialogTitle>
-            <DialogDescription className="text-sm leading-relaxed">
+            <DialogDescription className={articleDialogDescriptionClass}>
               Platos o tragos vendibles por unidad. El costo se calcula desde los
               ingredientes.
             </DialogDescription>
@@ -1187,14 +1192,15 @@ function RecipesPage() {
       <Dialog open={deleteOpen} onOpenChange={setDeleteOpen}>
         <DialogContent
           className={recipeDialogSurfaceClass}
+          overlayClassName={articleDialogOverlayClass}
           data-rootsy-light-shell="true"
           showCloseButton
         >
           <DialogHeader className={recipeDialogHeaderClass}>
-            <DialogTitle className="text-base font-semibold tracking-tight">
+            <DialogTitle className={articleDialogTitleClass}>
               Eliminar receta
             </DialogTitle>
-            <DialogDescription className="text-sm leading-relaxed">
+            <DialogDescription className={articleDialogDescriptionClass}>
               Esta acción no se puede deshacer. Escribí{" "}
               <strong>{RECIPE_DELETE_CONFIRM_PHRASE}</strong> para confirmar.
             </DialogDescription>
@@ -1235,14 +1241,15 @@ function RecipesPage() {
       <Dialog open={categoriesOpen} onOpenChange={setCategoriesOpen}>
         <DialogContent
           className={recipeDialogSurfaceWideClass}
+          overlayClassName={articleDialogOverlayClass}
           data-rootsy-light-shell="true"
           showCloseButton
         >
           <DialogHeader className={recipeDialogHeaderClass}>
-            <DialogTitle className="text-base font-semibold tracking-tight">
+            <DialogTitle className={articleDialogTitleClass}>
               Categorías de recetas
             </DialogTitle>
-            <DialogDescription className="text-sm leading-relaxed">
+            <DialogDescription className={articleDialogDescriptionClass}>
               Organizá el menú de Mesas y Mostrador.
             </DialogDescription>
           </DialogHeader>

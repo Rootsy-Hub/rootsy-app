@@ -28,7 +28,7 @@ export function layoutViewHref(
   viewId: LayoutViewId,
 ): string {
   if (viewId === "library") {
-    return popScopedHref(siteId, popId, "layout/library")
+    return popScopedHref(siteId, popId, "library")
   }
   return popScopedHref(siteId, popId, "layout")
 }
