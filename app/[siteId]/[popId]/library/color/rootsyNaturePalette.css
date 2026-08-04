@@ -277,3 +277,45 @@
   --wt-border: color-mix(in srgb, var(--nature-earth-500) 42%, transparent);
   --wt-border-strong: var(--nature-earth-500);
 }
+
+/**
+ * Layout operaciones — composición colorista dark / light.
+ * Izquierda: bosque nocturno (catálogo + configuración).
+ * Derecha: papel tierra (resumen legible).
+ */
+.rootsy-nature-palette .layouts-operations-body {
+  /* Dark · catálogo y configuración — noche profunda, sin tinte canopy */
+  --op-dark-shell: var(--nature-night-950);
+  --op-dark-rail: var(--nature-night-950);
+  --op-dark-canvas: var(--nature-night-900);
+  --op-dark-footer: var(--nature-night-950);
+  --op-dark-divider: color-mix(in srgb, var(--nature-night-700) 22%, transparent);
+
+  --op-light-panel: var(--nature-earth-50);
+  --op-light-tabs: #ffffff;
+  --op-light-content: #ffffff;
+  --op-light-totals: color-mix(
+    in srgb,
+    var(--nature-earth-100) 72%,
+    var(--nature-earth-200)
+  );
+  --op-light-border: color-mix(in srgb, var(--nature-earth-400) 48%, transparent);
+  --op-light-border-panel: color-mix(in srgb, var(--nature-earth-500) 28%, transparent);
+  --op-light-text-muted: var(--nature-earth-600);
+  --op-light-text-strong: var(--nature-earth-900);
+  --op-light-text-totals-label: var(--nature-earth-700);
+  --op-light-edge-glow: color-mix(in srgb, var(--nature-earth-500) 38%, transparent);
+}
+
+/** Header operaciones — misma noche que el cuerpo (sin cristal POP de producción). */
+.rootsy-nature-palette .layouts-operations-header {
+  --op-header-border: color-mix(in srgb, var(--nature-night-700) 28%, transparent);
+  background: linear-gradient(
+    165deg,
+    var(--nature-night-950) 0%,
+    var(--nature-night-900) 52%,
+    var(--nature-night-800) 100%
+  );
+  border-bottom: 1px solid var(--op-header-border);
+  color: #f4f4f5;
+}

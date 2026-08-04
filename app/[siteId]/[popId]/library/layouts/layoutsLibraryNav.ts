@@ -4,6 +4,7 @@ export const LAYOUTS_LIBRARY_ROOT = { id: "layouts", label: "Layouts" } as const
 export const LAYOUTS_LIBRARY_SUBITEMS = [
   { id: "layouts-tables", label: "Tablas" },
   { id: "layouts-blocks", label: "Bloques" },
+  { id: "layouts-operations", label: "Operaciones" },
 ] as const
 
 export const LAYOUTS_LIBRARY_ITEMS = [
@@ -41,6 +42,12 @@ export const LAYOUTS_PAGE_META: Record<string, LayoutsPageMeta> = {
     title: "Bloques",
     description:
       "Grid de tarjetas para entidades como cuentas de tesorería y cajas registradoras — header nocturno y cuerpo con cards responsivas.",
+  },
+  "layouts-operations": {
+    id: "layouts-operations",
+    title: "Operaciones",
+    description:
+      "Header nocturno y dos columnas — fluida + resumen 380px fijo. Mesas, Mostrador y Compras.",
   },
 }
 
