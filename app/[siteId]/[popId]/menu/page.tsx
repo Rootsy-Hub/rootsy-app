@@ -379,9 +379,9 @@ function MenuPage() {
             <img
               src={popBackgroundImageUrl.trim()}
               alt=""
-              className="absolute inset-0 size-full object-cover opacity-[0.22]"
+              className="absolute inset-0 size-full object-cover opacity-[0.32]"
             />
-            <div className="absolute inset-0 bg-background/55" />
+            <div className="absolute inset-0 bg-background/42" />
           </>
         ) : null}
         <div
