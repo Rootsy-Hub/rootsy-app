@@ -1,6 +1,12 @@
 export { RootsIconButton, type RootsIconButtonProps } from "@/components/rootsy-button/RootsIconButton"
 export { RootsProgressButton } from "@/components/rootsy-button/RootsProgressButton"
 export {
+  rootsIconButtonNightChromeClass,
+  rootsIconButtonNightDemoSurfaceClass,
+  rootsIconButtonNightFocusRingClass,
+  rootsIconButtonNightGhostClass,
+} from "@/components/rootsy-button/rootsIconButtonNightStyles"
+export {
   RootsDangerButton,
   RootsDefaultButton,
   RootsPrimaryButton,

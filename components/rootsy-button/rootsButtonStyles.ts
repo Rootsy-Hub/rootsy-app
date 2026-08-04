@@ -1,7 +1,8 @@
 import {
-  nightForestFocusRingClass,
-  nightForestIconButtonStarSkinClass,
-} from "@/components/layouts/dataWorkspaceHeaderStyles"
+  rootsIconButtonNightChromeClass,
+  rootsIconButtonNightFocusRingClass,
+  rootsIconButtonNightGhostClass,
+} from "@/components/rootsy-button/rootsIconButtonNightStyles"
 import {
   rootsFormEarthHighlightHoverClass,
   rootsFormEarthTextSecondaryClass,
@@ -164,14 +165,18 @@ export const rootsIconButtonGhostSkinClass = cn(
   "focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary/15",
 )
 
-/** Ghost · dark — utilidades sobre bosque nocturno / menú Nature. */
+/** Ghost · dark — utilidades sobre gama noche / menú Nature. */
 export const rootsIconButtonGhostDarkSkinClass = cn(
-  "border-0 bg-transparent shadow-none text-zinc-400",
-  "hover:bg-[#1c2824]/90 hover:text-zinc-200",
-  "active:bg-[#0c1210] active:text-white",
-  nightForestFocusRingClass,
-  "[&_svg:not([class*='text-'])]:text-zinc-400 hover:[&_svg:not([class*='text-'])]:text-zinc-200",
+  rootsIconButtonNightGhostClass,
+  rootsIconButtonNightFocusRingClass,
 )
+
+/** Secondary · dark — mismo chrome que tone=dark. */
+export const rootsIconButtonSecondaryDarkSkinClass =
+  rootsIconButtonNightChromeClass
+
+/** @deprecated Usar rootsIconButtonNightChromeClass */
+export const rootsIconButtonNightChromeSkinClass = rootsIconButtonNightChromeClass
 
 /** Secondary · light — chrome con borde; menú Home, header workspace claro. */
 export const rootsIconButtonSecondarySkinClass = cn(
@@ -181,10 +186,6 @@ export const rootsIconButtonSecondarySkinClass = cn(
   "focus-visible:border-foreground/20 focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary/15",
   "[&_svg:not([class*='text-'])]:text-foreground/50 hover:[&_svg:not([class*='text-'])]:text-foreground/80",
 )
-
-/** Secondary · dark — mismo chrome que tone=dark (header workspace nocturno). */
-export const rootsIconButtonSecondaryDarkSkinClass =
-  nightForestIconButtonStarSkinClass
 
 /** IconButton unificado — light, dark, secondary, ghost (header / navegación). */
 export function rootsIconButtonClass({
@@ -208,8 +209,8 @@ export function rootsIconButtonClass({
     return cn(
       rootsIconButtonBaseClass,
       rootsIconButtonRadiusClass,
-      nightForestIconButtonStarSkinClass,
-      nightForestFocusRingClass,
+      rootsIconButtonNightChromeClass,
+      rootsIconButtonNightFocusRingClass,
       sizeClass,
       svgClass,
     )
@@ -234,10 +235,9 @@ export function rootsIconButtonClass({
         "group",
         rootsIconButtonRadiusClass,
         rootsIconButtonSecondaryDarkSkinClass,
-        nightForestFocusRingClass,
+        rootsIconButtonNightFocusRingClass,
         sizeClass,
         svgClass,
-        "[&_svg:not([class*='text-'])]:text-zinc-300 group-hover:[&_svg:not([class*='text-'])]:text-[#fffbeb]",
       )
     }
 

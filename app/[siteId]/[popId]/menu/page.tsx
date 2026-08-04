@@ -1,6 +1,7 @@
 "use client"
 
 import { DataWorkspaceHeaderUserMenu } from "@/components/layouts/DataWorkspaceHeaderUserMenu"
+import { RootsIconButton, rootsIconButtonClass } from "@/components/rootsy-button"
 import withAuth from "@/hoc/withAuth"
 import { getPopMenuData } from "@/app/[siteId]/[popId]/menu/actions"
 import { MenuDock } from "@/app/[siteId]/[popId]/menu/MenuDock"
@@ -429,9 +430,14 @@ function MenuPage() {
           <div className="flex min-w-0 items-center gap-6">
             <Link
               href="/home"
-              className="group flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border border-foreground/[0.06] bg-secondary transition-all hover:border-foreground/[0.12] hover:bg-muted active:scale-95"
+              aria-label="Ir al inicio"
+              className={rootsIconButtonClass({
+                tone: "secondary",
+                surface: "dark",
+                size: "large",
+              })}
             >
-              <Home className="h-5 w-5 text-foreground/50 transition-colors group-hover:text-foreground/80" />
+              <Home className="size-5" aria-hidden />
             </Link>
 
             <div className="hidden h-6 w-px shrink-0 bg-border sm:block" />
@@ -498,18 +504,22 @@ function MenuPage() {
 
           <div className="flex min-w-0 items-center justify-end gap-6">
             <div className="flex items-center gap-1">
-              <button
-                type="button"
-                className="group flex h-10 w-10 items-center justify-center rounded-xl transition-all hover:bg-muted"
+              <RootsIconButton
+                tone="ghost"
+                surface="dark"
+                size="default"
+                label="Notificaciones"
               >
-                <Bell className="h-5 w-5 text-muted-foreground transition-colors group-hover:text-foreground/70" />
-              </button>
-              <button
-                type="button"
-                className="group flex h-10 w-10 items-center justify-center rounded-xl transition-all hover:bg-muted"
+                <Bell aria-hidden />
+              </RootsIconButton>
+              <RootsIconButton
+                tone="ghost"
+                surface="dark"
+                size="default"
+                label="Ajustes"
               >
-                <Settings className="h-5 w-5 text-muted-foreground transition-colors group-hover:text-foreground/70" />
-              </button>
+                <Settings aria-hidden />
+              </RootsIconButton>
             </div>
 
             <div className="h-6 w-px bg-border" />
@@ -598,12 +608,16 @@ function MenuPage() {
 
       <MenuDock siteId={siteId} popId={popId} />
 
-      <button
+      <RootsIconButton
         type="button"
-        className="group absolute bottom-4 right-4 z-20 flex size-12 items-center justify-center rounded-full border border-border bg-muted backdrop-blur-xl transition-all hover:bg-muted/80 active:scale-95"
+        tone="ghost"
+        surface="dark"
+        size="large"
+        label="Ayuda"
+        className="absolute bottom-4 right-4 z-20 rounded-full"
       >
-        <HelpCircle className="size-5 text-muted-foreground transition-colors group-hover:text-foreground/70" />
-      </button>
+        <HelpCircle aria-hidden />
+      </RootsIconButton>
     </div>
     </MenuDockDndProvider>
   )

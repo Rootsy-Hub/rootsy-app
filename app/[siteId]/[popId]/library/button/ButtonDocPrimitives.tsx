@@ -21,7 +21,7 @@ import {
   type RootsIconButtonSurface,
   type RootsIconButtonTone,
 } from "@/components/rootsy-button"
-import { nightForestSurfaceClass } from "@/components/layouts/dataWorkspaceHeaderStyles"
+import { rootsIconButtonNightDemoSurfaceClass } from "@/components/rootsy-button/rootsIconButtonNightStyles"
 import { Button } from "@/components/ui/button"
 import { ButtonGroup } from "@/components/ui/button-group"
 import { cn } from "@/lib/utils"
@@ -206,7 +206,7 @@ function IconButtonDocSizeRow({
           <span
             className={cn(
               "font-mono text-[10px] uppercase tracking-[0.14em]",
-              darkPanel ? "text-[#57534e]" : "text-muted-foreground",
+              darkPanel ? "text-[#8b929e]" : "text-muted-foreground",
             )}
           >
             {size} · {ICON_BUTTON_SIZE_LABELS[size]}
@@ -248,7 +248,7 @@ function IconButtonDocToneSection({
           <p
             className={cn(
               "mt-1 text-xs leading-relaxed",
-              darkPanel ? "text-[#57534e]" : "text-muted-foreground",
+              darkPanel ? "text-[#8b929e]" : "text-muted-foreground",
             )}
           >
             {hint}
@@ -276,7 +276,7 @@ function IconButtonDocSurfacePanel({
   if (isDark) {
     return (
       <div className="overflow-hidden rounded-xl border border-border/70">
-        <div className={cn(nightForestSurfaceClass, "space-y-5 p-5")}>
+        <div className={cn(rootsIconButtonNightDemoSurfaceClass, "space-y-5 p-5")}>
           <div>
             <p className="text-sm font-semibold text-zinc-100">{title}</p>
             <p className="mt-1 text-xs leading-relaxed text-[#78716c]">
@@ -375,7 +375,7 @@ export function ButtonSizesDemo() {
       <IconButtonDocSurfacePanel
         surface="dark"
         title="IconButton · dark"
-        description="Bosque nocturno — header workspace, menú Nature y cristal POP."
+        description="Gama noche — cristal sobre night-900, hairline frío e iconos neutros."
       >
         <IconButtonDocToneSection
           darkPanel

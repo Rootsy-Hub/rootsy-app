@@ -82,6 +82,13 @@
   --nature-night-600: #263530;
   --nature-night-500: #33443d;
 
+  /* IconButton · gama noche */
+  --nature-icon-night-fill: color-mix(in srgb, var(--nature-night-900) 52%, transparent);
+  --nature-icon-night-fill-hover: color-mix(in srgb, var(--nature-night-800) 66%, transparent);
+  --nature-icon-night-border: color-mix(in srgb, #ffffff 8%, var(--nature-night-600) 26%);
+  --nature-icon-night-border-hover: color-mix(in srgb, #ffffff 12%, var(--nature-night-500) 20%);
+  --nature-icon-night-ghost-hover: color-mix(in srgb, var(--nature-night-700) 48%, transparent);
+
   /* Semánticos derivados */
   --nature-brand: var(--nature-canopy-600);
   --nature-brand-bold: var(--nature-canopy-700);

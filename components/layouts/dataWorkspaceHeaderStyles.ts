@@ -1,4 +1,8 @@
 import {
+  rootsIconButtonNightChromeClass,
+  rootsIconButtonNightFocusRingClass,
+} from "@/components/rootsy-button/rootsIconButtonNightStyles"
+import {
   rootsyElevationPopoverContentDarkClass,
   rootsyElevationPopoverContentLightClass,
   rootsyElevationPopoverMenuItemRadiusClass,
@@ -13,12 +17,12 @@ export const nightForestSurfaceClass =
 export const nightForestPanelClass = "border-[#263530]/90 bg-[#141c19]"
 export const nightForestPanelHoverClass = "hover:border-[#33443d]/70 hover:bg-[#1c2824]"
 
-/** IconButton oscuro — chrome del header, borde único + acento starlight en hover. */
-export const nightForestIconButtonStarSkinClass = cn(
-  "border-[#263530] bg-[#141c19] text-zinc-300",
-  "hover:border-[#33443d] hover:bg-[#1c2824] hover:text-[#fffbeb]",
-  "active:border-[#263530] active:bg-[#0c1210] active:text-white",
-)
+/** IconButton oscuro — gama noche (cristal + hairline). */
+export const nightForestIconButtonStarSkinClass = rootsIconButtonNightChromeClass
+
+/** Focus en iconos nocturnos — halo lunar, no emerald duro. */
+export const nightForestIconButtonFocusRingClass =
+  rootsIconButtonNightFocusRingClass
 export const nightForestBorderClass = "border-[#263530]/90"
 export const nightForestDividerClass = "bg-[#263530]/80"
 export const nightForestMutedTextClass = "text-[#78716c]"

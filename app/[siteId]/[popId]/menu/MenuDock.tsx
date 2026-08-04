@@ -340,7 +340,8 @@ export function MenuDock({ siteId, popId }: Props) {
         <div className="ml-1 flex h-12 shrink-0 items-center gap-2.5 sm:ml-1.5">
           <div className="h-8 w-px bg-border" aria-hidden />
           <RootsIconButton
-            tone="dark"
+            tone="ghost"
+            surface="dark"
             size="compact"
             label={editing ? "Listo" : "Editar accesos directos"}
             onClick={() => setEditing(!editing)}
