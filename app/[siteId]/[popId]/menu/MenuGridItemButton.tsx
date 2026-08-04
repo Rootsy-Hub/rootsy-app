@@ -47,7 +47,7 @@ export function MenuGridItemButton({ item, sectionKey, disabled, onActivate }: P
 
   const isThisMenuDrag =
     isDragging && activeDragKind === "menu" && dockId === draggingItemId
-  const showInsertedStyle =
+  const showDockInsertedStyle =
     editing && (alreadyInDock || isThisMenuDrag)
 
   const Icon = item.icon
@@ -59,15 +59,15 @@ export function MenuGridItemButton({ item, sectionKey, disabled, onActivate }: P
       {...(draggable ? attributes : {})}
       style={{
         animationDelay:
-          editing && draggable && !showInsertedStyle
+          editing && draggable && !showDockInsertedStyle
             ? `${(item.name.length % 5) * 45}ms`
             : undefined,
       }}
       className={cn(
         "justify-self-center transition-[opacity,transform] duration-200",
         editing && draggable && "touch-none",
-        editing && draggable && !showInsertedStyle && "animate-dock-wiggle",
-        showInsertedStyle && "scale-[0.97] opacity-45",
+        editing && draggable && !showDockInsertedStyle && "animate-dock-wiggle",
+        showDockInsertedStyle && "scale-[0.97] opacity-45",
         editing && draggable && "cursor-grab active:cursor-grabbing",
       )}
     >
@@ -87,15 +87,18 @@ export function MenuGridItemButton({ item, sectionKey, disabled, onActivate }: P
           <div
             className={cn(
               "relative flex size-[72px] items-center justify-center overflow-hidden rounded-[20px] transition-all duration-200",
-              showInsertedStyle
-                ? cn(menuIconGradientForSection(sectionKey, "muted"), "ring-1 ring-foreground/10")
-                : menuIconGradientForSection(sectionKey),
-              !editing && !showInsertedStyle && menuIconHoverShadowForSection(sectionKey),
-              editing && draggable && !showInsertedStyle &&
-                "ring-2 ring-primary/25 ring-offset-2 ring-offset-background/80",
+              showDockInsertedStyle
+                ? cn(
+                    menuIconGradientForSection(sectionKey, "muted"),
+                    "ring-1 ring-foreground/10",
+                  )
+                : cn(
+                    menuIconGradientForSection(sectionKey),
+                    menuIconHoverShadowForSection(sectionKey),
+                  ),
             )}
           >
-            {!editing ? <MenuIconChrome /> : null}
+            {!showDockInsertedStyle ? <MenuIconChrome /> : null}
             <Icon
               className={cn(
                 "relative size-8 transition-transform duration-200",
@@ -105,7 +108,7 @@ export function MenuGridItemButton({ item, sectionKey, disabled, onActivate }: P
             />
           </div>
 
-          {item.badge && !editing ? (
+          {item.badge && !showDockInsertedStyle ? (
             <div
               className={cn(
                 "absolute -right-1 -top-1 flex h-[18px] min-w-[18px] items-center justify-center rounded-full px-1 text-[9px] font-semibold shadow-sm",
@@ -122,11 +125,9 @@ export function MenuGridItemButton({ item, sectionKey, disabled, onActivate }: P
         <span
           className={cn(
             "text-center text-xs font-normal leading-tight transition-colors duration-200",
-            showInsertedStyle
+            showDockInsertedStyle
               ? "text-foreground/35"
-              : editing
-                ? "text-foreground/55"
-                : "text-foreground/80 group-hover:text-foreground/95",
+              : "text-foreground/80 group-hover:text-foreground/95",
           )}
         >
           {item.name}

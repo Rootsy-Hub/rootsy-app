@@ -14,10 +14,8 @@ import type { MenuCatalogItem, MenuDockItemId } from "@/lib/menuCatalog"
 import { popScopedHref } from "@/lib/popRoutes"
 import { cn } from "@/lib/utils"
 import { menuFloatingPillShellClass } from "@/app/[siteId]/[popId]/menu/menuFloatingPillStyles"
-import {
-  menuDockEditBadgeClass,
-  menuDockEditDoneIconClass,
-} from "@/app/[siteId]/[popId]/menu/menuNatureStyles"
+import { menuDockEditBadgeClass } from "@/app/[siteId]/[popId]/menu/menuNatureStyles"
+import { RootsIconButton } from "@/components/rootsy-button"
 import { useDraggable, useDroppable } from "@dnd-kit/core"
 import { Check, Minus, Pencil } from "lucide-react"
 import { useRouter } from "next/navigation"
@@ -341,23 +339,19 @@ export function MenuDock({ siteId, popId }: Props) {
 
         <div className="ml-1 flex shrink-0 items-end gap-2.5 self-end sm:ml-1.5">
           <div className="mb-1.5 h-8 w-px bg-border" aria-hidden />
-          <button
-            type="button"
+          <RootsIconButton
+            tone="dark"
+            size="compact"
+            label={editing ? "Listo" : "Editar accesos directos"}
             onClick={() => setEditing(!editing)}
-            className={cn(
-              "mb-1.5 flex size-9 shrink-0 items-center justify-center rounded-xl transition-colors active:scale-95",
-              editing
-                ? "bg-white/90 hover:bg-white"
-                : "bg-secondary hover:bg-muted",
-            )}
-            aria-label={editing ? "Listo" : "Editar accesos directos"}
+            className="mb-1.5"
           >
             {editing ? (
-              <Check className={cn("size-4", menuDockEditDoneIconClass)} strokeWidth={2.5} />
+              <Check aria-hidden strokeWidth={2.5} />
             ) : (
-              <Pencil className="size-4 text-foreground/65" />
+              <Pencil aria-hidden />
             )}
-          </button>
+          </RootsIconButton>
         </div>
       </div>
     </div>

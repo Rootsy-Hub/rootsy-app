@@ -19,6 +19,7 @@ import {
   menuIconGlyphClass,
   menuIconGradientForSection,
   menuIconMacShadowClass,
+  menuNatureShellClass,
 } from "@/app/[siteId]/[popId]/menu/menuNatureStyles"
 import { MenuIconChrome } from "@/app/[siteId]/[popId]/menu/MenuIconChrome"
 import type { MenuSectionKey } from "@/lib/menuCatalog"
@@ -269,6 +270,27 @@ function getSectionKeyFromDragItem(
   if ("sectionKey" in item && item.sectionKey) return item.sectionKey
   const id = getDragItemId(item)
   return id ? (getMenuCatalogItem(id)?.sectionKey ?? "operar") : "operar"
+}
+
+function MenuDockDragPreview({
+  item,
+  sectionKey,
+}: {
+  item: MenuDockDragItem
+  sectionKey: MenuSectionKey
+}) {
+  return (
+    <div
+      className={cn(
+        "dark",
+        menuNatureShellClass,
+        "cursor-grabbing pointer-events-none scale-[1.14]",
+        "drop-shadow-[0_10px_28px_rgba(0,0,0,0.32)]",
+      )}
+    >
+      <DockIconVisual icon={item.icon} sectionKey={sectionKey} variant="default" />
+    </div>
+  )
 }
 
 export function DockIconVisual({
@@ -578,21 +600,15 @@ export function MenuDockDndProvider({
           modifiers={[snapCenterToCursor]}
         >
           {showMenuDragOverlay && draggingItem ? (
-            <div className="cursor-grabbing scale-[1.18] drop-shadow-[0_18px_40px_rgba(0,0,0,0.35)]">
-              <DockIconVisual
-                icon={draggingItem.icon}
-                sectionKey={draggingSectionKey}
-                variant="overlay"
-              />
-            </div>
+            <MenuDockDragPreview
+              item={draggingItem}
+              sectionKey={draggingSectionKey}
+            />
           ) : showDockDragOverlay && draggingItem ? (
-            <div className="cursor-grabbing scale-[1.18] drop-shadow-[0_18px_40px_rgba(0,0,0,0.35)]">
-              <DockIconVisual
-                icon={draggingItem.icon}
-                sectionKey={draggingSectionKey}
-                variant="overlay"
-              />
-            </div>
+            <MenuDockDragPreview
+              item={draggingItem}
+              sectionKey={draggingSectionKey}
+            />
           ) : null}
         </DragOverlay>
       </DndContext>
