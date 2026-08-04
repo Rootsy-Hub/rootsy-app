@@ -29,6 +29,7 @@ export type PopWorkspaceBootstrapData = {
   popId: string
   siteId: string
   popName: string
+  backgroundImageUrl: string | null
   hasAccess: boolean
   isPopActive: boolean
   userFullName: string
@@ -99,10 +100,11 @@ export async function getPopWorkspaceBootstrap(
     let popName = popRow?.pop_name?.trim() ?? ""
     let fiscalCuit: string | null = null
     let popSettings: Record<string, unknown> | null = null
+    let backgroundImageUrl: string | null = null
     if (!popName) {
       const { data: popData } = await supabase
         .from("pops")
-        .select("name, fiscal_cuit, settings")
+        .select("name, fiscal_cuit, settings, background_image_url")
         .eq("id", popId)
         .maybeSingle()
       popName = String(popData?.name ?? "").trim()
@@ -112,10 +114,14 @@ export async function getPopWorkspaceBootstrap(
         popData?.settings && typeof popData.settings === "object"
           ? (popData.settings as Record<string, unknown>)
           : null
+      backgroundImageUrl =
+        popData?.background_image_url != null
+          ? String(popData.background_image_url).trim() || null
+          : null
     } else {
       const { data: popData } = await supabase
         .from("pops")
-        .select("fiscal_cuit, settings")
+        .select("fiscal_cuit, settings, background_image_url")
         .eq("id", popId)
         .maybeSingle()
       fiscalCuit =
@@ -123,6 +129,10 @@ export async function getPopWorkspaceBootstrap(
       popSettings =
         popData?.settings && typeof popData.settings === "object"
           ? (popData.settings as Record<string, unknown>)
+          : null
+      backgroundImageUrl =
+        popData?.background_image_url != null
+          ? String(popData.background_image_url).trim() || null
           : null
     }
 
@@ -149,6 +159,7 @@ export async function getPopWorkspaceBootstrap(
         popId,
         siteId: popSiteId,
         popName,
+        backgroundImageUrl,
         hasAccess: true,
         isPopActive: true,
         userFullName,

@@ -1,5 +1,12 @@
 "use client"
 
+import { menuHeaderBorderClass } from "@/app/[siteId]/[popId]/menu/menuFloatingPillStyles"
+import {
+  menuNatureShellClass,
+  menuPopChromeClass,
+} from "@/app/[siteId]/[popId]/menu/menuNatureStyles"
+import "@/app/[siteId]/[popId]/menu/menuNaturePalette.css"
+import { PopWorkspaceBackdrop } from "@/components/layouts/PopWorkspaceBackdrop"
 import {
   dataWorkspaceHeaderChromeButtonClass,
   dataWorkspaceHeaderDividerClass,
@@ -100,6 +107,7 @@ export function DataWorkspaceLayout({
   userAvatarSrc,
 }: DataWorkspaceLayoutProps) {
   const popWorkspace = usePopWorkspaceOptional()
+  const backgroundImageUrl = popWorkspace?.bootstrap?.backgroundImageUrl ?? null
   const [isOnline, setIsOnline] = useState(true)
   const [isFullscreen, setIsFullscreen] = useState(false)
   const isTintedHeader = isDataWorkspaceTintedHeader(headerVariant)
@@ -189,11 +197,24 @@ export function DataWorkspaceLayout({
   const subline = resolvedUserRoleLabel || pillLabel
 
   const chromeButtonClass = dataWorkspaceHeaderChromeButtonClass(headerVariant)
+  const popBackdropUrl = backgroundImageUrl?.trim() || null
+  const usePopGlassHeader = isTintedHeader && Boolean(popBackdropUrl)
 
   return (
-    <div className="rootsy-app-light relative min-h-screen overflow-hidden bg-background text-foreground select-none">
+    <div
+      className={cn(
+        "rootsy-app-light relative min-h-screen overflow-hidden text-foreground select-none",
+        usePopGlassHeader ? "bg-transparent" : "bg-background",
+      )}
+    >
+      {usePopGlassHeader ? (
+        <PopWorkspaceBackdrop backgroundImageUrl={popBackdropUrl} />
+      ) : null}
       <div
-        className="pointer-events-none absolute inset-0 motion-reduce:opacity-50"
+        className={cn(
+          "pointer-events-none absolute inset-0 motion-reduce:opacity-50",
+          usePopGlassHeader && "opacity-0",
+        )}
         aria-hidden
       >
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_50%_at_50%_-20%,oklch(0.75_0.12_155/0.35),transparent),radial-gradient(ellipse_60%_40%_at_100%_50%,oklch(0.85_0.08_140/0.2),transparent)]" />
@@ -203,11 +224,23 @@ export function DataWorkspaceLayout({
       <div className="relative z-10 flex h-svh min-h-0 flex-col overflow-hidden">
         <header
           className={cn(
-            "shrink-0 border-b shadow-sm backdrop-blur-xl",
-            dataWorkspaceHeaderSurfaceClass(headerVariant),
+            "relative z-20 shrink-0 border-b",
+            usePopGlassHeader
+              ? cn(
+                  "text-zinc-100",
+                  menuNatureShellClass,
+                  menuPopChromeClass,
+                  menuHeaderBorderClass,
+                )
+              : isTintedHeader
+                ? cn("text-zinc-100", dataWorkspaceHeaderSurfaceClass(headerVariant))
+                : cn(
+                    "shadow-sm backdrop-blur-xl",
+                    dataWorkspaceHeaderSurfaceClass(headerVariant),
+                  ),
           )}
         >
-          <div className="grid h-18 grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-4 px-4">
+          <div className="relative z-10 grid h-18 grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-4 px-4">
             <div className="flex min-w-0 items-center gap-2">
               <Link
                 href={backHref}
@@ -364,8 +397,10 @@ export function DataWorkspaceLayout({
           {toolbar ? (
             <div
               className={cn(
-                "border-t px-4 py-2 sm:px-6",
-                dataWorkspaceHeaderToolbarClass(headerVariant),
+                "relative z-10 border-t px-4 py-2 sm:px-6",
+                usePopGlassHeader
+                  ? menuHeaderBorderClass
+                  : dataWorkspaceHeaderToolbarClass(headerVariant),
               )}
             >
               <div className={cn("mx-auto w-full", mainMaxWidthClass)}>
@@ -407,14 +442,17 @@ export function DataWorkspaceLayout({
             <main
               className={cn(
                 "relative z-10 flex min-h-0 min-w-0 flex-1 flex-col",
+                mainClassName,
                 contentFlush
-                  ? "overflow-hidden p-0"
+                  ? cn(
+                      "p-0",
+                      usePopGlassHeader ? "overflow-visible" : "overflow-hidden",
+                    )
                   : cn(
                       "overflow-y-auto px-4 py-8 sm:pl-5 sm:pr-8",
                       mainMaxWidthClass,
                       "mx-auto w-full max-w-none",
                     ),
-                mainClassName,
               )}
             >
               {children}
@@ -424,13 +462,16 @@ export function DataWorkspaceLayout({
           <main
             className={cn(
               "relative z-10 flex min-h-0 w-full flex-1 flex-col",
+              mainClassName,
               contentFlush
-                ? "overflow-hidden p-0"
+                ? cn(
+                    "p-0",
+                    usePopGlassHeader ? "overflow-visible" : "overflow-hidden",
+                  )
                 : cn(
                     "mx-auto overflow-y-auto px-4 py-8 sm:px-6",
                     mainMaxWidthClass,
                   ),
-              mainClassName,
             )}
           >
             {children}

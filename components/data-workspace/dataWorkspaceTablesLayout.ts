@@ -12,9 +12,14 @@ import { cn } from "@/lib/utils"
 export const workspaceTableNatureEarthOrganicClass =
   "workspace-table-nature--earth-organic"
 
-export const workspaceTableNatureEarthOrganicScopeClass = cn(
+/** Scope + tokens Nature sin fondo opaco (p. ej. pie cristal POP). */
+export const workspaceTableNatureEarthOrganicTokensClass = cn(
   workspaceTableNatureScopeClass,
   workspaceTableNatureEarthOrganicClass,
+)
+
+export const workspaceTableNatureEarthOrganicScopeClass = cn(
+  workspaceTableNatureEarthOrganicTokensClass,
   workspaceTableNatureSurfaceClass,
 )
 

@@ -22,6 +22,12 @@ import {
   tableChromeFooterClass,
 } from "@/components/data-workspace/dataWorkspaceListStyles"
 import { FooterTotalCountSkeleton } from "@/components/data-workspace/DataWorkspaceListPaginationFooterSkeleton"
+import { PopGlassChrome } from "@/components/layouts/PopGlassChrome"
+import {
+  popGlassFooterDotClass,
+  popGlassFooterMutedTextClass,
+} from "@/components/layouts/popHeaderBackdropStyles"
+import { usePopWorkspaceOptional } from "@/context/PopWorkspaceContext"
 import { cn } from "@/lib/utils"
 import type { PaginationItem } from "@/app/[siteId]/[popId]/layout/layoutPreviewPagination"
 import {
@@ -62,6 +68,8 @@ export function DataWorkspaceListPaginationFooter({
   pageSizeLabelId,
   variant = "default",
 }: DataWorkspaceListPaginationFooterProps) {
+  const popWorkspace = usePopWorkspaceOptional()
+  const backgroundImageUrl = popWorkspace?.bootstrap?.backgroundImageUrl ?? null
   const isDark = variant === "dark"
   const isEmpty = !listFetching && totalCount <= 0
   const paginationDisabled = listFetching || isEmpty
@@ -90,14 +98,10 @@ export function DataWorkspaceListPaginationFooter({
       ? 1
       : Math.min(Math.max(1, currentPage), effectiveTotalPages)
 
-    return (
-      <div
-        className={cn(darkTableFooterClass, "h-17 shrink-0")}
-        role="navigation"
-        aria-label="Paginación del listado"
-        aria-busy={listFetching}
-      >
-        <div className="flex h-full w-full items-center">
+    const usePopGlassFooter = Boolean(backgroundImageUrl?.trim())
+
+    const footerBody = (
+      <div className="flex h-full w-full items-center">
           <div className={cn(darkTableFooterNavSideClass, "justify-start")}>
             <button
               type="button"
@@ -141,7 +145,10 @@ export function DataWorkspaceListPaginationFooter({
               </RootsFormSelectContent>
             </Select>
 
-            <span className="text-[#33443d]" aria-hidden>
+            <span
+              className={usePopGlassFooter ? popGlassFooterDotClass : "text-[#33443d]"}
+              aria-hidden
+            >
               ·
             </span>
 
@@ -166,12 +173,18 @@ export function DataWorkspaceListPaginationFooter({
               </RootsFormSelectContent>
             </Select>
 
-            <span className="text-[#33443d]" aria-hidden>
+            <span
+              className={usePopGlassFooter ? popGlassFooterDotClass : "text-[#33443d]"}
+              aria-hidden
+            >
               ·
             </span>
             <span
               id={pageSizeLabelId}
-              className={darkTableFooterTotalLabelClass}
+              className={cn(
+                darkTableFooterTotalLabelClass,
+                usePopGlassFooter && popGlassFooterMutedTextClass,
+              )}
               aria-hidden
             >
               {listFetching ? (
@@ -214,6 +227,31 @@ export function DataWorkspaceListPaginationFooter({
             </button>
           </div>
         </div>
+    )
+
+    if (usePopGlassFooter) {
+      return (
+        <PopGlassChrome borderTop className="h-17 shrink-0">
+          <div
+            role="navigation"
+            aria-label="Paginación del listado"
+            aria-busy={listFetching}
+            className="h-full"
+          >
+            {footerBody}
+          </div>
+        </PopGlassChrome>
+      )
+    }
+
+    return (
+      <div
+        className={cn(darkTableFooterClass, "h-17 shrink-0")}
+        role="navigation"
+        aria-label="Paginación del listado"
+        aria-busy={listFetching}
+      >
+        {footerBody}
       </div>
     )
   }

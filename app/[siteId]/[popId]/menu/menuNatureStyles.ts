@@ -4,6 +4,9 @@ import { cn } from "@/lib/utils"
 /** Scope Nature en menú — usar con menuNaturePalette.css (no afecta Stock ni otros workspaces). */
 export const menuNatureShellClass = "menu-nature-shell rootsy-nature-palette"
 
+/** Cristal POP — misma regla CSS que header/dock del menú (menuNaturePalette.css). */
+export const menuPopChromeClass = "menu-pop-chrome"
+
 type MenuIconGradientVariant = "default" | "dock" | "muted" | "overlay"
 
 /** Sombra suave macOS — una sola capa, sin dramatismo. */

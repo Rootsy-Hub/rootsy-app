@@ -71,6 +71,7 @@ import {
   workspaceTableNatureBodyRowClassNames,
   workspaceTableNatureCheckboxClass,
   workspaceTableNatureMoneyClass,
+  workspaceTableNatureSurfaceClass,
   workspaceTableNatureTextSecondaryClass,
 } from "@/components/data-workspace/dataWorkspaceListStyles"
 import {
@@ -90,6 +91,7 @@ import {
   workspaceTableLayoutListSurfaceClass,
   workspaceTableLayoutSelectBodyCellClass,
   workspaceTableNatureEarthOrganicScopeClass,
+  workspaceTableNatureEarthOrganicTokensClass,
 } from "@/components/data-workspace/dataWorkspaceTablesLayout"
 import {
   WorkspaceTableHead,
@@ -1023,6 +1025,8 @@ function ArticlesPage() {
     )
   }
 
+  const hasPopBackdrop = Boolean(bootstrap?.backgroundImageUrl?.trim())
+
   return (
     <DataWorkspaceLayout
       siteId={siteId}
@@ -1037,7 +1041,7 @@ function ArticlesPage() {
       userAvatarSrc={bootstrap?.userImageUrl ?? undefined}
       userRoleLabel={bootstrap?.roleLabel}
       pillLabel="Catálogo"
-      mainClassName="rootsy-nature-palette min-h-0 overflow-hidden"
+      mainClassName="rootsy-nature-palette min-h-0"
       headerActions={
         <>
           {canCreate ? (
@@ -1155,10 +1159,17 @@ function ArticlesPage() {
 
             <DataWorkspaceListTableShell
               variant="flush"
-              className={cn(
-                workspaceTableNatureEarthOrganicScopeClass,
-                workspaceTableLayoutListBodyScopeClass,
+              glassFooter={hasPopBackdrop}
+              contentSurfaceClass={cn(
                 workspaceTableLayoutListSurfaceClass,
+                workspaceTableNatureSurfaceClass,
+              )}
+              className={cn(
+                hasPopBackdrop
+                  ? workspaceTableNatureEarthOrganicTokensClass
+                  : workspaceTableNatureEarthOrganicScopeClass,
+                workspaceTableLayoutListBodyScopeClass,
+                !hasPopBackdrop && workspaceTableLayoutListSurfaceClass,
               )}
               activeFiltersBar={
                 hasFilterChips ? (

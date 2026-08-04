@@ -161,9 +161,14 @@ export function PopWorkspaceProvider({
 
       const liveUserProfileRev = userId ? getUserProfileRev(userId) : 1
 
+      const cachedBootstrapMissingBackground =
+        cached?.bootstrap != null &&
+        !("backgroundImageUrl" in cached.bootstrap)
+
       if (
         !force &&
         cached &&
+        !cachedBootstrapMissingBackground &&
         !bootstrapNeedsFiscalRefresh(cached.bootstrap) &&
         liveRevisions &&
         revRes.success

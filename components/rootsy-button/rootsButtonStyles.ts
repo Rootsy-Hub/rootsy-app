@@ -70,7 +70,9 @@ export const rootsButtonDestructiveClass = cn(
   rootsButtonFocusRingDestructive,
 )
 
-export type RootsIconButtonTone = "light" | "dark" | "action"
+export type RootsIconButtonSurface = "light" | "dark"
+
+export type RootsIconButtonTone = "light" | "dark" | "secondary" | "ghost" | "action"
 
 export type RootsIconButtonActionIntent = "neutral" | "edit" | "destructive"
 
@@ -154,16 +156,53 @@ export function rootsIconButtonActionClass({
   )
 }
 
-/** IconButton unificado — light (outline neutro) y dark (header bosque nocturno). */
+/** Ghost · light — sin borde; menú (campana/ajustes), volver en detalle cuentas/cajas. */
+export const rootsIconButtonGhostSkinClass = cn(
+  "border-0 bg-transparent shadow-none text-muted-foreground",
+  rootsButtonNeutralHoverClass,
+  rootsButtonNeutralPressedClass,
+  "focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary/15",
+)
+
+/** Ghost · dark — utilidades sobre bosque nocturno / menú Nature. */
+export const rootsIconButtonGhostDarkSkinClass = cn(
+  "border-0 bg-transparent shadow-none text-zinc-400",
+  "hover:bg-[#1c2824]/90 hover:text-zinc-200",
+  "active:bg-[#0c1210] active:text-white",
+  nightForestFocusRingClass,
+  "[&_svg:not([class*='text-'])]:text-zinc-400 hover:[&_svg:not([class*='text-'])]:text-zinc-200",
+)
+
+/** Secondary · light — chrome con borde; menú Home, header workspace claro. */
+export const rootsIconButtonSecondarySkinClass = cn(
+  "border-foreground/10 bg-secondary text-foreground/70",
+  "hover:border-primary/25 hover:bg-muted hover:text-foreground",
+  "active:border-border active:bg-muted active:text-foreground active:scale-95",
+  "focus-visible:border-foreground/20 focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary/15",
+  "[&_svg:not([class*='text-'])]:text-foreground/50 hover:[&_svg:not([class*='text-'])]:text-foreground/80",
+)
+
+/** Secondary · dark — mismo chrome que tone=dark (header workspace nocturno). */
+export const rootsIconButtonSecondaryDarkSkinClass =
+  nightForestIconButtonStarSkinClass
+
+/** IconButton unificado — light, dark, secondary, ghost (header / navegación). */
 export function rootsIconButtonClass({
   tone = "light",
   size = "default",
+  surface = "light",
 }: {
-  tone?: RootsIconButtonTone
+  tone?: Exclude<RootsIconButtonTone, "action">
   size?: RootsIconButtonSize
+  /** Superficie para ghost y secondary — light (default) o dark (bosque nocturno). */
+  surface?: RootsIconButtonSurface
 } = {}) {
   const sizeClass = rootsIconButtonSizeClass[size]
   const svgClass = rootsIconButtonSvgClass(size)
+  const radiusClass =
+    tone === "ghost" && size === "compact"
+      ? "rounded-lg"
+      : rootsIconButtonRadiusClass
 
   if (tone === "dark") {
     return cn(
@@ -171,6 +210,42 @@ export function rootsIconButtonClass({
       rootsIconButtonRadiusClass,
       nightForestIconButtonStarSkinClass,
       nightForestFocusRingClass,
+      sizeClass,
+      svgClass,
+    )
+  }
+
+  if (tone === "ghost") {
+    return cn(
+      rootsIconButtonBaseClass,
+      radiusClass,
+      surface === "dark"
+        ? rootsIconButtonGhostDarkSkinClass
+        : rootsIconButtonGhostSkinClass,
+      sizeClass,
+      svgClass,
+    )
+  }
+
+  if (tone === "secondary") {
+    if (surface === "dark") {
+      return cn(
+        rootsIconButtonBaseClass,
+        "group",
+        rootsIconButtonRadiusClass,
+        rootsIconButtonSecondaryDarkSkinClass,
+        nightForestFocusRingClass,
+        sizeClass,
+        svgClass,
+        "[&_svg:not([class*='text-'])]:text-zinc-300 group-hover:[&_svg:not([class*='text-'])]:text-[#fffbeb]",
+      )
+    }
+
+    return cn(
+      rootsIconButtonBaseClass,
+      "group",
+      rootsIconButtonRadiusClass,
+      rootsIconButtonSecondarySkinClass,
       sizeClass,
       svgClass,
     )

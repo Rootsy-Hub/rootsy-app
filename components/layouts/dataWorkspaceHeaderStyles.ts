@@ -4,6 +4,7 @@ import {
   rootsyElevationPopoverMenuItemRadiusClass,
 } from "@/components/elevation/rootsyElevationStyles"
 import { cn } from "@/lib/utils"
+import { popHeaderGlassBorderClass } from "@/components/layouts/popHeaderBackdropStyles"
 
 export type DataWorkspaceHeaderVariant = "default" | "dark" | "night"
 export const nightForestSurfaceClass =
@@ -306,7 +307,12 @@ export function dataWorkspaceHeaderSurfaceClass(
 export function dataWorkspaceHeaderToolbarClass(
   headerVariant: DataWorkspaceHeaderVariant = "default",
 ): string {
-  if (isNightForestHeader(headerVariant)) return "border-[#263530] bg-[#0c1210]/85"
+  if (isNightForestHeader(headerVariant)) {
+    return cn(
+      popHeaderGlassBorderClass,
+      "border-t bg-[color-mix(in_srgb,#0c1210_42%,transparent)] backdrop-blur-xl",
+    )
+  }
   return "border-border/60 bg-muted/20"
 }
 

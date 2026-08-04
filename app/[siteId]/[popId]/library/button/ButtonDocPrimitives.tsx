@@ -17,6 +17,9 @@ import {
   RootsProgressButton,
   rootsButtonClassForVariant,
   rootsButtonVariant,
+  type RootsIconButtonSize,
+  type RootsIconButtonSurface,
+  type RootsIconButtonTone,
 } from "@/components/rootsy-button"
 import { nightForestSurfaceClass } from "@/components/layouts/dataWorkspaceHeaderStyles"
 import { Button } from "@/components/ui/button"
@@ -25,8 +28,10 @@ import { cn } from "@/lib/utils"
 import {
   ArrowLeft,
   ArrowRight,
+  Bell,
   Bold,
   Eye,
+  Home,
   Italic,
   Pencil,
   Plus,
@@ -34,7 +39,7 @@ import {
   Trash2,
   Underline,
 } from "lucide-react"
-import { useState } from "react"
+import { useState, type ReactNode } from "react"
 
 export {
   LibraryDocLead as ButtonDocLead,
@@ -163,6 +168,140 @@ export function ButtonAppearancesGallery() {
   )
 }
 
+const ICON_BUTTON_DOC_SIZES: RootsIconButtonSize[] = ["compact", "default", "large"]
+
+const ICON_BUTTON_SIZE_LABELS: Record<RootsIconButtonSize, string> = {
+  compact: "32px",
+  default: "40px",
+  large: "48px",
+}
+
+type IconButtonDocTone = Exclude<RootsIconButtonTone, "action">
+
+function IconButtonDocSizeRow({
+  tone,
+  surface = "light",
+  icon,
+  label,
+  darkPanel = false,
+}: {
+  tone: IconButtonDocTone
+  surface?: RootsIconButtonSurface
+  icon: ReactNode
+  label: string
+  darkPanel?: boolean
+}) {
+  return (
+    <div className="flex flex-wrap items-end gap-5">
+      {ICON_BUTTON_DOC_SIZES.map((size) => (
+        <div key={size} className="flex flex-col items-center gap-2">
+          <RootsIconButton
+            tone={tone}
+            surface={surface}
+            size={size}
+            label={label}
+          >
+            {icon}
+          </RootsIconButton>
+          <span
+            className={cn(
+              "font-mono text-[10px] uppercase tracking-[0.14em]",
+              darkPanel ? "text-[#57534e]" : "text-muted-foreground",
+            )}
+          >
+            {size} · {ICON_BUTTON_SIZE_LABELS[size]}
+          </span>
+        </div>
+      ))}
+    </div>
+  )
+}
+
+function IconButtonDocToneSection({
+  title,
+  hint,
+  darkPanel = false,
+  children,
+}: {
+  title: string
+  hint?: string
+  darkPanel?: boolean
+  children: ReactNode
+}) {
+  return (
+    <div
+      className={cn(
+        "space-y-3 border-t pt-5 first:border-t-0 first:pt-0",
+        darkPanel ? "border-[#263530]/80" : "border-border/60",
+      )}
+    >
+      <div>
+        <p
+          className={cn(
+            "font-mono text-[11px] font-medium uppercase tracking-[0.12em]",
+            darkPanel ? "text-[#78716c]" : "text-muted-foreground",
+          )}
+        >
+          {title}
+        </p>
+        {hint ? (
+          <p
+            className={cn(
+              "mt-1 text-xs leading-relaxed",
+              darkPanel ? "text-[#57534e]" : "text-muted-foreground",
+            )}
+          >
+            {hint}
+          </p>
+        ) : null}
+      </div>
+      {children}
+    </div>
+  )
+}
+
+function IconButtonDocSurfacePanel({
+  surface,
+  title,
+  description,
+  children,
+}: {
+  surface: "light" | "dark"
+  title: string
+  description: string
+  children: ReactNode
+}) {
+  const isDark = surface === "dark"
+
+  if (isDark) {
+    return (
+      <div className="overflow-hidden rounded-xl border border-border/70">
+        <div className={cn(nightForestSurfaceClass, "space-y-5 p-5")}>
+          <div>
+            <p className="text-sm font-semibold text-zinc-100">{title}</p>
+            <p className="mt-1 text-xs leading-relaxed text-[#78716c]">
+              {description}
+            </p>
+          </div>
+          <div className="space-y-5">{children}</div>
+        </div>
+      </div>
+    )
+  }
+
+  return (
+    <div className="space-y-5 rounded-xl border border-border/70 bg-card p-5 shadow-sm">
+      <div>
+        <p className="text-sm font-semibold text-foreground">{title}</p>
+        <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
+          {description}
+        </p>
+      </div>
+      <div className="space-y-5">{children}</div>
+    </div>
+  )
+}
+
 export function ButtonSizesDemo() {
   return (
     <div className="space-y-6">
@@ -192,47 +331,107 @@ export function ButtonSizesDemo() {
         </div>
       </div>
 
-      <div className="rounded-xl border border-border/70 bg-card p-4 shadow-sm">
-        <p className="mb-3 text-[11px] font-medium uppercase tracking-[0.12em] text-muted-foreground">
-          IconButton · compact / default / large
-        </p>
-        <div className="flex flex-wrap items-center gap-2">
-          <RootsIconButton tone="light" size="compact" label="Agregar">
-            <Plus aria-hidden />
-          </RootsIconButton>
-          <RootsIconButton tone="light" size="default" label="Agregar">
-            <Plus aria-hidden />
-          </RootsIconButton>
-          <RootsIconButton tone="light" size="large" label="Agregar">
-            <Plus aria-hidden />
-          </RootsIconButton>
-        </div>
-      </div>
+      <IconButtonDocSurfacePanel
+        surface="light"
+        title="IconButton · light"
+        description="Superficies claras — workspace, detalle de cuentas/cajas y menú sobre fondo claro."
+      >
+        <IconButtonDocToneSection
+          title="tone=light"
+          hint="Outline neutro — toolbar y acciones secundarias."
+        >
+          <IconButtonDocSizeRow
+            tone="light"
+            icon={<Plus aria-hidden />}
+            label="Agregar"
+          />
+        </IconButtonDocToneSection>
 
-      <div className="overflow-hidden rounded-xl border border-border/70">
-        <div className={cn(nightForestSurfaceClass, "p-4")}>
-          <p className="mb-3 text-[11px] font-medium uppercase tracking-[0.12em] text-[#78716c]">
-            IconButton · dark · compact / default / large
+        <IconButtonDocToneSection
+          title="tone=secondary · surface=light"
+          hint="Chrome con borde — menú Home, header workspace claro."
+        >
+          <IconButtonDocSizeRow
+            tone="secondary"
+            surface="light"
+            icon={<Home aria-hidden />}
+            label="Inicio"
+          />
+        </IconButtonDocToneSection>
+
+        <IconButtonDocToneSection
+          title="tone=ghost · surface=light"
+          hint="Sin borde — volver en detalle (cuentas/cajas), campana y ajustes del menú."
+        >
+          <IconButtonDocSizeRow
+            tone="ghost"
+            surface="light"
+            icon={<ArrowLeft aria-hidden />}
+            label="Volver"
+          />
+        </IconButtonDocToneSection>
+      </IconButtonDocSurfacePanel>
+
+      <IconButtonDocSurfacePanel
+        surface="dark"
+        title="IconButton · dark"
+        description="Bosque nocturno — header workspace, menú Nature y cristal POP."
+      >
+        <IconButtonDocToneSection
+          darkPanel
+          title="tone=dark"
+          hint="Chrome con borde — volver al menú y acciones del header nocturno."
+        >
+          <IconButtonDocSizeRow
+            darkPanel
+            tone="dark"
+            icon={<ArrowLeft aria-hidden />}
+            label="Volver"
+          />
+        </IconButtonDocToneSection>
+
+        <IconButtonDocToneSection
+          darkPanel
+          title="tone=secondary · surface=dark"
+          hint="Mismo chrome que tone=dark — navegación principal sobre fondo oscuro."
+        >
+          <IconButtonDocSizeRow
+            darkPanel
+            tone="secondary"
+            surface="dark"
+            icon={<Home aria-hidden />}
+            label="Inicio"
+          />
+        </IconButtonDocToneSection>
+
+        <IconButtonDocToneSection
+          darkPanel
+          title="tone=ghost · surface=dark"
+          hint="Sin borde — campana, ajustes y utilidades sobre fondo oscuro."
+        >
+          <IconButtonDocSizeRow
+            darkPanel
+            tone="ghost"
+            surface="dark"
+            icon={<Bell aria-hidden />}
+            label="Notificaciones"
+          />
+        </IconButtonDocToneSection>
+      </IconButtonDocSurfacePanel>
+
+      <div className="rounded-xl border border-border/70 bg-card p-5 shadow-sm">
+        <div className="mb-4">
+          <p className="text-sm font-semibold text-foreground">
+            IconButton · action · light
           </p>
-          <div className="flex flex-wrap items-center gap-3">
-            <RootsIconButton tone="dark" size="compact" label="Volver">
-              <ArrowLeft aria-hidden />
-            </RootsIconButton>
-            <RootsIconButton tone="dark" size="default" label="Volver">
-              <ArrowLeft aria-hidden />
-            </RootsIconButton>
-            <RootsIconButton tone="dark" size="large" label="Volver">
-              <ArrowLeft aria-hidden />
-            </RootsIconButton>
-          </div>
+          <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
+            Acciones de fila en tablas — solo tamaño compact en producción.
+          </p>
         </div>
-      </div>
-
-      <div className="rounded-xl border border-border/70 bg-card p-4 shadow-sm">
-        <p className="mb-3 text-[11px] font-medium uppercase tracking-[0.12em] text-muted-foreground">
-          IconButton · acciones de tabla · neutral / edit / destructive
+        <p className="mb-3 font-mono text-[11px] font-medium uppercase tracking-[0.12em] text-muted-foreground">
+          tone=action · intent neutral / edit / destructive
         </p>
-        <div className="flex flex-wrap items-center gap-0.5 rounded-lg border border-border/60 bg-white px-3 py-2">
+        <div className="inline-flex flex-wrap items-center gap-0.5 rounded-lg border border-border/60 bg-white px-3 py-2">
           <RootsIconButton
             tone="action"
             intent="neutral"

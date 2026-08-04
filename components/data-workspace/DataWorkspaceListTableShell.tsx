@@ -12,16 +12,15 @@ import type { ReactNode } from "react"
 
 export type DataWorkspaceListTableShellProps = {
   children: ReactNode
-  /** Barra opcional sobre la tabla (chips de filtros activos). */
   activeFiltersBar?: ReactNode
-  /** Barra opcional sobre la tabla (selección múltiple, acciones en lote). */
   bulkToolbar?: ReactNode
-  /** Pie fijo (paginación, totales), fuera del scroll. */
   footer?: ReactNode
-  /** Capa sobre el área de scroll (p. ej. mascota en estado vacío). */
   overlay?: ReactNode
-  /** `flush`: sin tarjeta ni decoración; ocupa todo el ancho del main. */
   variant?: "default" | "flush"
+  /** Pie con cristal POP — el shell no tapa el fondo de página detrás del footer. */
+  glassFooter?: boolean
+  /** Fondo del área de scroll cuando `glassFooter` separa el pie del cuerpo. */
+  contentSurfaceClass?: string
   className?: string
 }
 
@@ -32,17 +31,29 @@ export function DataWorkspaceListTableShell({
   footer,
   overlay,
   variant = "default",
+  glassFooter = false,
+  contentSurfaceClass,
   className,
 }: DataWorkspaceListTableShellProps) {
   const isFlush = variant === "flush"
   const useChromeStack = activeFiltersBar != null
+  const splitFooterFromSurface = isFlush && glassFooter && footer != null
+  const scrollSurfaceClass =
+    contentSurfaceClass ??
+    (splitFooterFromSurface ? workspaceTableSurfaceClass : undefined)
 
   return (
     <div
       className={cn(
-        "relative flex min-h-0 flex-1 flex-col overflow-hidden [--dw-table-footer-height:4rem]",
-        isFlush ? workspaceTableSurfaceClass : dataWorkspaceShellCard,
+        "relative flex min-h-0 flex-1 flex-col [--dw-table-footer-height:4rem]",
+        !splitFooterFromSurface && "overflow-hidden",
+        splitFooterFromSurface
+          ? "bg-transparent"
+          : isFlush
+            ? workspaceTableSurfaceClass
+            : dataWorkspaceShellCard,
         className,
+        splitFooterFromSurface && "!bg-transparent",
       )}
     >
       {!isFlush ? (
@@ -64,7 +75,12 @@ export function DataWorkspaceListTableShell({
         ) : (
           bulkToolbar ?? null
         )}
-        <div className="relative min-h-0 flex-1">
+        <div
+          className={cn(
+            "relative min-h-0 flex-1",
+            splitFooterFromSurface && scrollSurfaceClass,
+          )}
+        >
           <div
             className={cn(
               "rootsy-scroll-minimal absolute inset-0 overflow-auto",
@@ -81,8 +97,17 @@ export function DataWorkspaceListTableShell({
             </div>
           ) : null}
         </div>
-        {footer ? <div className="shrink-0">{footer}</div> : null}
       </div>
+      {footer ? (
+        <div
+          className={cn(
+            "relative z-20 shrink-0",
+            glassFooter && "bg-transparent",
+          )}
+        >
+          {footer}
+        </div>
+      ) : null}
     </div>
   )
 }
