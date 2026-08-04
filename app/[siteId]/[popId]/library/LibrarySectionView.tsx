@@ -21,6 +21,16 @@ import { MotionFoundationView } from "@/app/[siteId]/[popId]/library/motion/Moti
 import { isMotionLibrarySection } from "@/app/[siteId]/[popId]/library/motion/motionLibraryNav"
 import { IconographyFoundationView } from "@/app/[siteId]/[popId]/library/iconography/IconographyFoundationView"
 import { isIconographyLibrarySection } from "@/app/[siteId]/[popId]/library/iconography/iconographyLibraryNav"
+import { IllustrationsFoundationView } from "@/app/[siteId]/[popId]/library/illustrations/IllustrationsFoundationView"
+import { isIllustrationsLibrarySection } from "@/app/[siteId]/[popId]/library/illustrations/illustrationsLibraryNav"
+import { LogosFoundationView } from "@/app/[siteId]/[popId]/library/logos/LogosFoundationView"
+import { isLogosLibrarySection } from "@/app/[siteId]/[popId]/library/logos/logosLibraryNav"
+import { ElevationFoundationView } from "@/app/[siteId]/[popId]/library/elevation/ElevationFoundationView"
+import { isElevationLibrarySection } from "@/app/[siteId]/[popId]/library/elevation/elevationLibraryNav"
+import { BorderFoundationView } from "@/app/[siteId]/[popId]/library/border/BorderFoundationView"
+import { isBorderLibrarySection } from "@/app/[siteId]/[popId]/library/border/borderLibraryNav"
+import { RadiusFoundationView } from "@/app/[siteId]/[popId]/library/radius/RadiusFoundationView"
+import { isRadiusLibrarySection } from "@/app/[siteId]/[popId]/library/radius/radiusLibraryNav"
 import {
   LibrarySection,
   SpecCard,
@@ -360,6 +370,42 @@ export function LibrarySectionView({
         siteId={siteId}
         popId={popId}
       />
+    )
+  }
+
+  if (isIllustrationsLibrarySection(sectionId)) {
+    return <IllustrationsFoundationView sectionId={sectionId} />
+  }
+
+  if (isLogosLibrarySection(sectionId)) {
+    return (
+      <LogosFoundationView
+        sectionId={sectionId}
+        siteId={siteId}
+        popId={popId}
+      />
+    )
+  }
+
+  if (isElevationLibrarySection(sectionId)) {
+    return (
+      <ElevationFoundationView
+        sectionId={sectionId}
+        siteId={siteId}
+        popId={popId}
+      />
+    )
+  }
+
+  if (isBorderLibrarySection(sectionId)) {
+    return (
+      <BorderFoundationView sectionId={sectionId} siteId={siteId} popId={popId} />
+    )
+  }
+
+  if (isRadiusLibrarySection(sectionId)) {
+    return (
+      <RadiusFoundationView sectionId={sectionId} siteId={siteId} popId={popId} />
     )
   }
 
@@ -853,7 +899,7 @@ export function LibrarySectionView({
           </LibrarySection>
       )
     case "buttons":
-      return <LayoutButtonLibrarySection />
+      return <LayoutButtonLibrarySection siteId={siteId} popId={popId} />
     case "sortable-list":
       return (
           <LibrarySection

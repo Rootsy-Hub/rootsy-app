@@ -18,7 +18,7 @@ export const ICONOGRAPHY_PAGE_META: Record<string, IconographyPageMeta> = {
     id: "iconography",
     title: "Iconografía",
     description:
-      "Phosphor Icons como estándar de producto — geométrico, pesos tipográficos, sin metáforas orgánicas en UI.",
+      "Iconsax — tier gratuito, variant Linear/Bold, tokens de color y tamaño para producto B2B.",
   },
 }
 

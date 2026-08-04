@@ -1,0 +1,112 @@
+.rootsy-elevation-system {
+  --elevation-surface-sunken: oklch(0.95 0.015 110);
+  --elevation-surface: oklch(0.98 0.005 110);
+  --elevation-surface-raised: oklch(0.995 0.002 110);
+  --elevation-surface-overlay: oklch(1 0 0);
+  --elevation-surface-hovered: oklch(0.96 0.012 110);
+  --elevation-surface-pressed: oklch(0.94 0.018 110);
+  --elevation-shadow-raised:
+    0 1px 2px oklch(0.55 0.14 155 / 0.07),
+    0 4px 14px oklch(0.25 0.03 150 / 0.08);
+  --elevation-shadow-overlay: 0 22px 70px -18px oklch(0.25 0.03 150 / 0.28);
+  --elevation-shadow-overflow: linear-gradient(
+    to right,
+    oklch(0.55 0.14 155 / 0.14),
+    transparent 72%
+  );
+  --elevation-border: oklch(0.88 0.025 130 / 0.7);
+}
+
+.rootsy-elevation-sunken {
+  background: var(--elevation-surface-sunken);
+  border-radius: 0.75rem;
+}
+
+.rootsy-elevation-default {
+  background: var(--elevation-surface);
+  border-radius: 0.75rem;
+}
+
+.rootsy-elevation-default-bordered {
+  background: var(--elevation-surface-raised);
+  border: 1px solid var(--elevation-border);
+  border-radius: 0.75rem;
+}
+
+.rootsy-elevation-raised {
+  background: var(--elevation-surface-raised);
+  border-radius: 0.75rem;
+  box-shadow: var(--elevation-shadow-raised);
+}
+
+.rootsy-elevation-overlay {
+  background: var(--elevation-surface-overlay);
+  border: 1px solid oklch(0 0 0 / 0.04);
+  border-radius: 1.375rem;
+  box-shadow: var(--elevation-shadow-overlay);
+}
+
+.rootsy-elevation-overflow-demo {
+  position: relative;
+  overflow: hidden;
+}
+
+.rootsy-elevation-overflow-demo::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 2.5rem;
+  background: var(--elevation-shadow-overflow);
+  pointer-events: none;
+}
+
+.rootsy-elevation-stack-demo {
+  position: relative;
+  min-height: 12rem;
+  padding: 1.5rem;
+  border-radius: 1rem;
+  background: var(--elevation-surface);
+  border: 1px dashed oklch(0.75 0.08 155 / 0.35);
+}
+
+.rootsy-elevation-stack-demo__sunken {
+  padding: 1rem;
+  border-radius: 0.75rem;
+  background: var(--elevation-surface-sunken);
+}
+
+.rootsy-elevation-dark-preview {
+  --elevation-surface-sunken: #0a0d0c;
+  --elevation-surface: #070a09;
+  --elevation-surface-raised: #0c0f0e;
+  --elevation-surface-overlay: #121816;
+  --elevation-shadow-raised:
+    0 1px 2px oklch(0 0 0 / 0.35),
+    0 8px 24px oklch(0 0 0 / 0.45);
+  --elevation-shadow-overlay: 0 24px 80px -16px oklch(0 0 0 / 0.65);
+  background: var(--elevation-surface);
+  border-radius: 1rem;
+  padding: 1.25rem;
+}
+
+.rootsy-elevation-interactive-demo {
+  transition:
+    background-color 150ms ease,
+    box-shadow 200ms ease;
+}
+
+.rootsy-elevation-interactive-demo:hover {
+  background: var(--elevation-surface-hovered);
+}
+
+.rootsy-elevation-interactive-demo:active {
+  background: var(--elevation-surface-pressed);
+}
+
+.rootsy-elevation-raised.rootsy-elevation-interactive-demo:hover {
+  box-shadow:
+    0 2px 4px oklch(0.55 0.14 155 / 0.1),
+    0 8px 20px oklch(0.25 0.03 150 / 0.12);
+}

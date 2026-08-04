@@ -16,6 +16,16 @@ import { getMotionFoundationHeading } from "@/app/[siteId]/[popId]/library/motio
 import { isMotionLibrarySection } from "@/app/[siteId]/[popId]/library/motion/motionLibraryNav"
 import { getIconographyFoundationHeading } from "@/app/[siteId]/[popId]/library/iconography/IconographyFoundationView"
 import { isIconographyLibrarySection } from "@/app/[siteId]/[popId]/library/iconography/iconographyLibraryNav"
+import { getIllustrationsFoundationHeading } from "@/app/[siteId]/[popId]/library/illustrations/IllustrationsFoundationView"
+import { isIllustrationsLibrarySection } from "@/app/[siteId]/[popId]/library/illustrations/illustrationsLibraryNav"
+import { getLogosFoundationHeading } from "@/app/[siteId]/[popId]/library/logos/LogosFoundationView"
+import { isLogosLibrarySection } from "@/app/[siteId]/[popId]/library/logos/logosLibraryNav"
+import { getElevationFoundationHeading } from "@/app/[siteId]/[popId]/library/elevation/ElevationFoundationView"
+import { isElevationLibrarySection } from "@/app/[siteId]/[popId]/library/elevation/elevationLibraryNav"
+import { getBorderFoundationHeading } from "@/app/[siteId]/[popId]/library/border/BorderFoundationView"
+import { isBorderLibrarySection } from "@/app/[siteId]/[popId]/library/border/borderLibraryNav"
+import { getRadiusFoundationHeading } from "@/app/[siteId]/[popId]/library/radius/RadiusFoundationView"
+import { isRadiusLibrarySection } from "@/app/[siteId]/[popId]/library/radius/radiusLibraryNav"
 import {
   getLibraryNavGroup,
   LIBRARY_NAV_GROUPS,
@@ -84,7 +94,17 @@ export function LibraryWorkspace({ siteId, popId, sectionId }: Props) {
             ? `Fundamentos · Movimiento · ${getMotionFoundationHeading(sectionId)}`
             : isIconographyLibrarySection(sectionId)
               ? `Fundamentos · Iconografía · ${getIconographyFoundationHeading(sectionId)}`
-              : activeGroup?.label
+              : isIllustrationsLibrarySection(sectionId)
+                ? `Fundamentos · Ilustraciones · ${getIllustrationsFoundationHeading(sectionId)}`
+                : isLogosLibrarySection(sectionId)
+                  ? `Fundamentos · Logotipos · ${getLogosFoundationHeading(sectionId)}`
+                  : isElevationLibrarySection(sectionId)
+                    ? `Fundamentos · Elevación · ${getElevationFoundationHeading(sectionId)}`
+                    : isBorderLibrarySection(sectionId)
+                      ? `Fundamentos · Borde · ${getBorderFoundationHeading(sectionId)}`
+                      : isRadiusLibrarySection(sectionId)
+                        ? `Fundamentos · Radio · ${getRadiusFoundationHeading(sectionId)}`
+                        : activeGroup?.label
 
   return (
     <>

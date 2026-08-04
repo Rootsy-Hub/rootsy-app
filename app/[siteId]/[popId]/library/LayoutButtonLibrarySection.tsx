@@ -1,232 +1,106 @@
 "use client"
 
 import {
-  LibraryDemoRow,
-  LibraryFootnote,
-  LibrarySection,
-  SpecCard,
-} from "@/app/[siteId]/[popId]/library/layoutLibraryShared"
+  ButtonAppearancesGallery,
+  ButtonAppearancesTable,
+  ButtonDocLead,
+  ButtonDocSection,
+  ButtonGroupDemo,
+  ButtonGuidelinesGrid,
+  ButtonIconsDemo,
+  ButtonManifestoHero,
+  ButtonModalFooterDemo,
+  ButtonPrinciplesGrid,
+  ButtonRelatedLinks,
+  ButtonSemanticTable,
+  ButtonSizesDemo,
+  ButtonStatesDemo,
+} from "@/app/[siteId]/[popId]/library/button/ButtonDocPrimitives"
 import {
-  RootsProgressButton,
-  rootsButtonClassForVariant,
-  rootsButtonVariant,
-} from "@/components/rootsy-button"
-import { Button } from "@/components/ui/button"
-import { cn } from "@/lib/utils"
-import { ArrowRight, Plus, Save, Trash2 } from "lucide-react"
-import { useState } from "react"
+  ROOTSY_BUTTON_MANIFESTO,
+  ROOTSY_BUTTON_PRINCIPLES,
+} from "@/app/[siteId]/[popId]/library/button/rootsyButtonSystem"
+import { LibrarySection } from "@/app/[siteId]/[popId]/library/layoutLibraryShared"
 
-export function LayoutButtonLibrarySection() {
-  const [progressBusy, setProgressBusy] = useState(false)
+type Props = {
+  siteId?: string
+  popId?: string
+}
 
-  const simulateProgress = () => {
-    setProgressBusy(true)
-    window.setTimeout(() => setProgressBusy(false), 1800)
-  }
-
+export function LayoutButtonLibrarySection({ siteId = "", popId = "" }: Props) {
   return (
     <LibrarySection
       id="buttons"
       title="Botones"
-      description="Una acción primaria por vista o footer. Secundaria para cancelar. Terciaria para bajo peso. Progress: disabled + spinner + label alternativo."
+      description="Dispara una acción — appearance, tamaño, iconos y estados alineados a Atlassian Button."
     >
-      <div className="grid gap-4 lg:grid-cols-2">
-        <SpecCard
-          title="Jerarquía · primary / secondary / tertiary"
-          source="components/ui/button · rootsButtonStyles"
-          tokens={["default", "outline", "ghost-neutral"]}
-        >
-          <div className="space-y-4">
-            <LibraryDemoRow title="Primary — confirmar, crear, guardar">
-              <Button
-                type="button"
-                variant={rootsButtonVariant.primary}
-                className={rootsButtonClassForVariant("primary")}
-              >
-                Guardar
-              </Button>
-              <Button
-                type="button"
-                variant={rootsButtonVariant.primary}
-                className={rootsButtonClassForVariant("primary")}
-                disabled
-              >
-                Deshabilitado
-              </Button>
-            </LibraryDemoRow>
-            <LibraryDemoRow title="Secondary — cancelar, volver">
-              <Button
-                type="button"
-                variant={rootsButtonVariant.secondary}
-                className={rootsButtonClassForVariant("secondary")}
-              >
-                Cancelar
-              </Button>
-            </LibraryDemoRow>
-            <LibraryDemoRow title="Tertiary — acciones suaves">
-              <Button
-                type="button"
-                variant={rootsButtonVariant.tertiary}
-                className={rootsButtonClassForVariant("tertiary")}
-              >
-                Quitar descuento
-              </Button>
-              <Button type="button" variant={rootsButtonVariant.link}>
-                Ver detalle
-              </Button>
-            </LibraryDemoRow>
-            <LibraryDemoRow title="Destructive">
-              <Button type="button" variant={rootsButtonVariant.destructive}>
-                Eliminar
-              </Button>
-            </LibraryDemoRow>
-          </div>
-        </SpecCard>
+      <div className="space-y-10">
+        <ButtonManifestoHero />
+        <ButtonDocLead>{ROOTSY_BUTTON_MANIFESTO}</ButtonDocLead>
+        <ButtonPrinciplesGrid principles={ROOTSY_BUTTON_PRINCIPLES} />
 
-        <SpecCard
+        <ButtonDocSection
+          id="appearances"
+          title="Appearances"
+          description="default · primary · subtle · danger · link — mapeados a components/ui/button y rootsButtonStyles."
+        >
+          <ButtonAppearancesGallery />
+          <ButtonAppearancesTable />
+        </ButtonDocSection>
+
+        <ButtonDocSection
+          id="sizes"
           title="Tamaños"
-          source="Button size: sm · default · lg · icon"
-          tokens={["h-8", "h-9", "h-10", "icon"]}
+          description="default en formularios · compact solo en superficies densas · icon con aria-label."
         >
-          <div className="space-y-4">
-            <LibraryDemoRow title="Con texto">
-              <Button type="button" size="sm" variant="outline">
-                Pequeño
-              </Button>
-              <Button
-                type="button"
-                variant={rootsButtonVariant.primary}
-                className={rootsButtonClassForVariant("primary", "h-9")}
-              >
-                Default
-              </Button>
-              <Button
-                type="button"
-                size="lg"
-                variant={rootsButtonVariant.primary}
-                className={rootsButtonClassForVariant("primary")}
-              >
-                Grande
-              </Button>
-            </LibraryDemoRow>
-            <LibraryDemoRow title="Solo icono">
-              <Button
-                type="button"
-                size="icon-sm"
-                variant="outline"
-                aria-label="Agregar"
-              >
-                <Plus className="size-4" aria-hidden />
-              </Button>
-              <Button
-                type="button"
-                size="icon"
-                variant="outline"
-                aria-label="Agregar"
-              >
-                <Plus className="size-4" aria-hidden />
-              </Button>
-              <Button
-                type="button"
-                size="icon-lg"
-                variant="outline"
-                aria-label="Agregar"
-              >
-                <Plus className="size-4" aria-hidden />
-              </Button>
-            </LibraryDemoRow>
-          </div>
-        </SpecCard>
+          <ButtonSizesDemo />
+        </ButtonDocSection>
 
-        <SpecCard
-          title="Icono + texto"
-          source="gap-2 · lucide size-4"
-          tokens={["leading", "trailing"]}
+        <ButtonDocSection
+          id="icons"
+          title="Iconos"
+          description="iconBefore / iconAfter — currentColor, size-4, gap-2."
         >
-          <div className="space-y-4">
-            <LibraryDemoRow title="Icono a la izquierda">
-              <Button
-                type="button"
-                variant={rootsButtonVariant.primary}
-                className={rootsButtonClassForVariant("primary")}
-              >
-                <Save className="size-4" aria-hidden />
-                Guardar cambios
-              </Button>
-              <Button type="button" variant="outline">
-                <Plus className="size-4" aria-hidden />
-                Nuevo artículo
-              </Button>
-            </LibraryDemoRow>
-            <LibraryDemoRow title="Icono a la derecha">
-              <Button
-                type="button"
-                variant={rootsButtonVariant.primary}
-                className={rootsButtonClassForVariant("primary")}
-              >
-                Continuar
-                <ArrowRight className="size-4" aria-hidden />
-              </Button>
-            </LibraryDemoRow>
-            <LibraryDemoRow title="Destructive con icono">
-              <Button type="button" variant="destructive">
-                <Trash2 className="size-4" aria-hidden />
-                Eliminar definitivamente
-              </Button>
-            </LibraryDemoRow>
-          </div>
-        </SpecCard>
+          <ButtonIconsDemo />
+        </ButtonDocSection>
 
-        <SpecCard
-          title="RootsProgressButton"
-          source="components/rootsy-button/RootsProgressButton.tsx"
-          tokens={["loading", "loadingLabel"]}
+        <ButtonDocSection
+          id="states"
+          title="Estados"
+          description="disabled · loading · selected — sin layout shift en progreso."
         >
-          <div className="space-y-4">
-            <LibraryDemoRow title="Estado en progreso">
-              <RootsProgressButton
-                type="button"
-                variant={rootsButtonVariant.primary}
-                className={rootsButtonClassForVariant("primary")}
-                loading
-                loadingLabel="Guardando…"
-              >
-                Guardar
-              </RootsProgressButton>
-              <RootsProgressButton
-                type="button"
-                variant="outline"
-                className={rootsButtonClassForVariant("secondary")}
-                loading
-                loadingLabel="Creando…"
-              >
-                Crear
-              </RootsProgressButton>
-            </LibraryDemoRow>
-            <LibraryDemoRow title="Interactivo">
-              <RootsProgressButton
-                type="button"
-                variant={rootsButtonVariant.primary}
-                className={cn(
-                  rootsButtonClassForVariant("primary"),
-                  "min-w-[9.5rem]",
-                )}
-                loading={progressBusy}
-                loadingLabel="Guardando…"
-                icon={Save}
-                onClick={simulateProgress}
-              >
-                Guardar
-              </RootsProgressButton>
-            </LibraryDemoRow>
+          <ButtonStatesDemo />
+        </ButtonDocSection>
+
+        <ButtonDocSection
+          id="patterns"
+          title="Patrones compuestos"
+          description="Button group, footer de modal y jerarquía izquierda/derecha."
+        >
+          <div className="grid gap-4 lg:grid-cols-2">
+            <ButtonGroupDemo />
+            <ButtonModalFooterDemo />
           </div>
-        </SpecCard>
+        </ButtonDocSection>
+
+        <ButtonDocSection
+          id="semantic"
+          title="Mapeo en producto"
+          description="Dónde vive cada appearance hoy en Rootsy."
+        >
+          <ButtonSemanticTable />
+        </ButtonDocSection>
+
+        <ButtonDocSection id="guidelines" title="Guías Do / Don't">
+          <ButtonGuidelinesGrid />
+        </ButtonDocSection>
+
+        {siteId && popId ? (
+          <ButtonDocSection id="related" title="Fundamentos relacionados">
+            <ButtonRelatedLinks siteId={siteId} popId={popId} />
+          </ButtonDocSection>
+        ) : null}
       </div>
-
-      <LibraryFootnote>
-        Modal footer: primary derecha · secondary/tertiary izquierda ·
-        RootsProgressButton en submit async
-      </LibraryFootnote>
     </LibrarySection>
   )
 }

@@ -1,6 +1,6 @@
 /**
  * Sistema de iconografía Rootsy — fuente de verdad del design system.
- * Phosphor Icons como set de producto · Lucide legacy hasta migración fase 2.
+ * Iconsax (tier gratuito) como set de producto.
  */
 
 export type IconSize = {
@@ -28,23 +28,15 @@ export type IconCategory = {
   usage: string
 }
 
-export type IconLibraryOption = {
-  id: string
-  name: string
-  package: string
-  status: "recommended" | "legacy" | "alternative"
-  pros: string[]
-  cons: string[]
-  bestFor: string
-}
+export type IconsaxVariant = "Linear" | "Outline" | "Bold" | "Bulk" | "Broken" | "TwoTone"
 
 export const ROOTSY_ICONOGRAPHY_MANIFESTO =
-  "Los íconos de Rootsy son señales de producto — neutros, legibles, sin decoración orgánica. La naturaleza vive en color, tipografía e ilustración; no en íconos de hoja o árbol dentro de la app. Usamos Phosphor Icons: trazo geométrico, pesos tipográficos (Regular / Bold / Fill) y aspecto enterprise alineado a Atlassian. Cada ícono acompaña una acción o estado, con label de texto siempre que sea posible."
+  "Los íconos de Rootsy son señales de producto — neutras, legibles, sin decoración. Usamos Iconsax en su tier gratuito: ~1.000 íconos base sobre grid de 24px, seis variantes por ícono y estética SaaS moderna. La identidad nature vive en color, tipografía e ilustración — no en íconos orgánicos dentro de la app. Cada ícono acompaña una acción o estado, con label de texto siempre que sea posible."
 
 export const ROOTSY_ICONOGRAPHY_PRINCIPLES = [
   {
     title: "Comprensión universal",
-    detail: "Metáforas establecidas — carrito, recibo, engranaje. Sin símbolos decorativos de marca en UI.",
+    detail: "Metáforas establecidas — carrito, recibo, engranaje. Sin símbolos decorativos en UI.",
   },
   {
     title: "Simplicidad legible",
@@ -52,7 +44,7 @@ export const ROOTSY_ICONOGRAPHY_PRINCIPLES = [
   },
   {
     title: "Armonía visual",
-    detail: "Un solo set, un peso base (Regular), Bold/Fill solo para jerarquía o estado activo.",
+    detail: "Un solo set Iconsax · variant Linear en UI · Bold en nav activo.",
   },
   {
     title: "Uso intencional",
@@ -60,80 +52,42 @@ export const ROOTSY_ICONOGRAPHY_PRINCIPLES = [
   },
 ] as const
 
-export const ROOTSY_ICON_LIBRARY_OPTIONS: IconLibraryOption[] = [
-  {
-    id: "phosphor",
-    name: "Phosphor Icons",
-    package: "@phosphor-icons/react",
-    status: "recommended",
-    pros: [
-      "6 pesos (Thin → Duotone) — jerarquía sin mezclar librerías",
-      "Aspecto geométrico y enterprise, usado en SaaS y dashboards",
-      "Fill para nav activo / toggle — coherente con design systems",
-      "MIT · tree-shakable · SSR-safe",
-    ],
-    cons: [
-      "Migración desde Lucide (~100 archivos) en fase 2",
-      "Nombres de ícono distintos a Lucide — requiere mapa de equivalencias",
-    ],
-    bestFor: "Rootsy como producto B2B profesional con tokens de peso y estado.",
-  },
-  {
-    id: "lucide",
-    name: "Lucide React",
-    package: "lucide-react",
-    status: "legacy",
-    pros: [
-      "Ya instalado en todo el codebase",
-      "Set amplio, comunidad grande (shadcn/ui default)",
-      "strokeWidth ajustable",
-    ],
-    cons: [
-      "Un solo estilo outline — menos control de jerarquía",
-      "Trazo redondeado puede sentirse casual junto a UI densa",
-      "Tendencia a íconos “decorativos” (hoja) fuera de lugar",
-    ],
-    bestFor: "Implementación actual — reemplazar gradualmente por Phosphor.",
-  },
-  {
-    id: "heroicons",
-    name: "Heroicons",
-    package: "@heroicons/react",
-    status: "alternative",
-    pros: [
-      "Curado por Tailwind — minimal, muy limpio",
-      "Outline + Solid — dos variantes claras",
-      "Bundle pequeño por ícono",
-    ],
-    cons: [
-      "Solo ~300 íconos — cobertura limitada para comercio argentino",
-      "Sin pesos intermedios (Bold, Light)",
-    ],
-    bestFor: "Proyectos Tailwind-first con UI muy reducida.",
-  },
-]
-
 export const ROOTSY_ICON_LIBRARY = {
-  name: "Phosphor Icons",
-  package: "@phosphor-icons/react",
+  name: "Iconsax",
+  package: "iconsax-reactjs",
+  site: "https://iconsax.io",
   role: "Capa de íconos de producto Rootsy",
-  legacyPackage: "lucide-react",
-  defaultWeight: "regular" as const,
-  activeWeight: "fill" as const,
-  secondaryWeight: "bold" as const,
+  tier: "Gratuito — ~1.000 íconos · 6 variantes · licencia MIT",
+  variantDefault: "Linear" as IconsaxVariant,
+  variantActive: "Bold" as IconsaxVariant,
+  variantEmphasis: "Outline" as IconsaxVariant,
+  grid: "24×24",
   rationale:
-    "Pesos tipográficos, geometría más sobria que Lucide, Fill para estados activos — profesional sin perder calidez vía color canopy.",
+    "Set curado para interfaces SaaS — variantes coherentes, aspecto moderno y profesional sin costo de licencia en el tier free.",
   sizeDefault: 16,
-  note: "En código: import nombrado · size={16} · weight=\"regular\" · className para color token.",
+  note: 'En código: import nombrado · size={16} · variant="Linear" · className para color token.',
 } as const
 
+export const ROOTSY_ICON_VARIANTS: {
+  id: IconsaxVariant
+  label: string
+  usage: string
+}[] = [
+  { id: "Linear", label: "Linear", usage: "Default — UI, tablas, formularios, nav en reposo." },
+  { id: "Bold", label: "Bold", usage: "Nav activo, CTA con ícono, énfasis puntual." },
+  { id: "Outline", label: "Outline", usage: "Alternativa outline — solo si todo el módulo la adopta." },
+  { id: "Bulk", label: "Bulk", usage: "Empty states o tiles — no mezclar con Linear en la misma barra." },
+  { id: "TwoTone", label: "TwoTone", usage: "Marketing / onboarding — no UI operativa densa." },
+  { id: "Broken", label: "Broken", usage: "Decorativo — evitar en producto." },
+]
+
 export const ROOTSY_ICON_VISUAL_STYLE = {
-  weightDefault: "regular — UI general, tablas, formularios",
-  weightActive: "fill — nav activo, toggle on, selección",
-  weightEmphasis: "bold — CTA secundario, headers compactos",
-  perspective: "Frontal / 90° — sin perspectiva 3D diagonal (Atlassian)",
-  grid: "16×16 lógico en UI · Phosphor escala con prop size",
-  brandIcons: "Prohibidos en producto — Leaf, Tree, Sprout solo en logo/marketing",
+  variantDefault: "Linear — trazo limpio, peso uniforme en toda la UI",
+  variantActive: "Bold — nav seleccionado, toggle on, item activo",
+  perspective: "Frontal / 90° — sin perspectiva 3D diagonal",
+  grid: "24×24 canvas · render nativo a 24px en previews y tiles",
+  color: "currentColor + tokens icon.color.* — nunca hex suelto",
+  productIcons: "Solo metáforas de producto — sin íconos orgánicos en pantallas operativas",
 } as const
 
 export const ROOTSY_ICON_SIZES: IconSize[] = [
@@ -235,31 +189,31 @@ export const ROOTSY_ICON_CATEGORIES: IconCategory[] = [
   {
     id: "product",
     label: "Producto · workspace",
-    examples: ["SquaresFour", "Gear", "Storefront"],
-    usage: "Nav, settings, módulos — nunca metáforas orgánicas.",
+    examples: ["Element4", "Setting2", "Shop"],
+    usage: "Nav, settings, módulos.",
   },
   {
     id: "commerce",
     label: "Comercio",
-    examples: ["ShoppingCart", "Receipt", "CurrencyDollar", "Package"],
+    examples: ["ShoppingCart", "Receipt", "DollarCircle", "Box"],
     usage: "Ventas, tesorería, inventario.",
   },
   {
     id: "navigation",
     label: "Navegación",
-    examples: ["CaretRight", "CaretDown", "ArrowLeft", "List"],
-    usage: "CaretDown siempre 12px en triggers.",
+    examples: ["ArrowRight2", "ArrowDown2", "ArrowLeft2", "Menu"],
+    usage: "ArrowDown2 siempre 12px en triggers.",
   },
   {
     id: "actions",
     label: "Acciones",
-    examples: ["Plus", "PencilSimple", "Trash", "Check", "X"],
+    examples: ["Add", "Edit", "Trash", "TickCircle", "CloseCircle"],
     usage: "CRUD, confirmar, cerrar — con label o aria-label.",
   },
   {
     id: "status",
     label: "Estado",
-    examples: ["CheckCircle", "WarningCircle", "Info", "CircleNotch"],
+    examples: ["TickCircle", "Warning2", "InfoCircle", "Refresh"],
     usage: "Validación 12px · loaders con reduced-motion.",
   },
 ]
@@ -268,8 +222,8 @@ export const ICONOGRAPHY_GUIDELINES = [
   {
     id: "reuse",
     title: "Reutilizar antes de inventar",
-    doText: "Buscar en Phosphor un metafora existente — consistencia cross-app.",
-    dontText: "SVG custom o íconos de naturaleza (hoja, árbol) en UI de producto.",
+    doText: "Buscar en Iconsax un metafora existente — consistencia cross-app.",
+    dontText: "SVG custom o íconos decorativos fuera del set aprobado.",
   },
   {
     id: "label",
@@ -279,15 +233,15 @@ export const ICONOGRAPHY_GUIDELINES = [
   },
   {
     id: "chevron",
-    title: "Carets 12px",
-    doText: "CaretDown/CaretRight en size 12 dentro de selects y botones.",
-    dontText: "Caret 16px compitiendo con texto en triggers compactos.",
+    title: "Chevrons 12px",
+    doText: "ArrowDown2/ArrowRight2 en size 12 dentro de selects y botones.",
+    dontText: "Chevron 16px compitiendo con texto en triggers compactos.",
   },
   {
-    id: "weight",
-    title: "Peso tipográfico del ícono",
-    doText: "Regular en UI · Fill en activo · Bold puntual en énfasis.",
-    dontText: "Mezclar Lucide outline con Phosphor Fill en la misma barra.",
+    id: "variant",
+    title: "Variante consistente",
+    doText: "Linear en UI · Bold en activo · misma variante en todo el módulo.",
+    dontText: "Mezclar Linear, Bulk y TwoTone en la misma toolbar.",
   },
   {
     id: "spacing",
@@ -299,26 +253,19 @@ export const ICONOGRAPHY_GUIDELINES = [
     id: "color",
     title: "Color con token",
     doText: "icon.color.brand en CTA · icon.color.subtle en secundario.",
-    dontText: "Hex suelto o verde canopy en íconos decorativos.",
+    dontText: "Hex suelto o color de ícono distinto al rol semántico.",
   },
 ] as const
 
 export const ICON_SMALL_USE_CASES = [
-  "Carets en buttons, icon buttons y dropdowns",
+  "Chevrons en buttons, icon buttons y dropdowns",
   "Íconos de validación (info, warning, error) en campos",
   "Dentro de tags, badges y statuses compactos",
   "Acciones secundarias que no compiten con nav principal",
   "Metadata y affiliations de soporte",
 ] as const
 
-export const LUCIDE_TO_PHOSPHOR_MAP = [
-  { lucide: "ChevronDown", phosphor: "CaretDown" },
-  { lucide: "ChevronRight", phosphor: "CaretRight" },
-  { lucide: "Settings / Cog", phosphor: "Gear" },
-  { lucide: "Loader2", phosphor: "CircleNotch" },
-  { lucide: "Pencil", phosphor: "PencilSimple" },
-  { lucide: "Trash2", phosphor: "Trash" },
-  { lucide: "CheckCircle2", phosphor: "CheckCircle" },
-  { lucide: "AlertCircle", phosphor: "WarningCircle" },
-  { lucide: "Banknote", phosphor: "CurrencyDollar" },
-] as const
+export const ICONSAX_IMPORT_EXAMPLE = `import { ShoppingCart, Receipt } from "iconsax-reactjs"
+
+<ShoppingCart size={16} variant="Linear" className="text-foreground" />
+<ShoppingCart size={16} variant="Bold" className="text-primary" />`

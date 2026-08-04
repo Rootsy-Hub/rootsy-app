@@ -3,39 +3,39 @@
 import {
   ICONOGRAPHY_GUIDELINES,
   ICON_SMALL_USE_CASES,
-  LUCIDE_TO_PHOSPHOR_MAP,
   ROOTSY_ICON_CATEGORIES,
   ROOTSY_ICON_COLOR_ROLES,
   ROOTSY_ICON_LIBRARY,
-  ROOTSY_ICON_LIBRARY_OPTIONS,
   ROOTSY_ICON_SIZES,
+  ROOTSY_ICON_VARIANTS,
   ROOTSY_ICON_VISUAL_STYLE,
+  ICONSAX_IMPORT_EXAMPLE,
+  type IconsaxVariant,
 } from "@/app/[siteId]/[popId]/library/iconography/rootsyIconographySystem"
 import { librarySectionHref } from "@/app/[siteId]/[popId]/library/layoutLibraryShared"
 import { cn } from "@/lib/utils"
 import {
-  ArrowLeft,
-  CaretDown,
-  CaretRight,
-  Check,
-  CheckCircle,
-  CircleNotch,
-  CurrencyDollar,
-  Gear,
-  Info,
-  List,
-  Package,
-  PencilSimple,
-  Plus,
+  Add,
+  ArrowDown2,
+  ArrowLeft2,
+  ArrowRight2,
+  Box,
+  CloseCircle,
+  DollarCircle,
+  Edit,
+  Element4,
+  InfoCircle,
+  Menu,
   Receipt,
+  Refresh,
+  Setting2,
+  Shop,
   ShoppingCart,
-  SquaresFour,
-  Storefront,
+  TickCircle,
   Trash,
-  WarningCircle,
-  X,
-  type Icon as PhosphorIcon,
-} from "@phosphor-icons/react"
+  Warning2,
+  type Icon,
+} from "iconsax-reactjs"
 import Link from "next/link"
 import type { ReactNode } from "react"
 
@@ -43,28 +43,29 @@ const CANOPY = "#1E8F5A"
 const CANOPY_LIGHT = "#A8EBC4"
 const CANOPY_DARK = "#16704A"
 const CANOPY_MIST = "#F0FBF4"
+const VARIANT_UI: IconsaxVariant = "Linear"
+const VARIANT_ACTIVE: IconsaxVariant = "Bold"
 
-const CATEGORY_ICON_MAP: Record<string, PhosphorIcon> = {
-  SquaresFour,
-  Gear,
-  Storefront,
+const CATEGORY_ICON_MAP: Record<string, Icon> = {
+  Element4,
+  Setting2,
+  Shop,
   ShoppingCart,
   Receipt,
-  CurrencyDollar,
-  Package,
-  CaretRight,
-  CaretDown,
-  ArrowLeft,
-  List,
-  Plus,
-  PencilSimple,
+  DollarCircle,
+  Box,
+  ArrowRight2,
+  ArrowDown2,
+  ArrowLeft2,
+  Menu,
+  Add,
+  Edit,
   Trash,
-  Check,
-  X,
-  CheckCircle,
-  WarningCircle,
-  Info,
-  CircleNotch,
+  TickCircle,
+  CloseCircle,
+  Warning2,
+  InfoCircle,
+  Refresh,
 }
 
 export function IconographyDocLead({ children }: { children: ReactNode }) {
@@ -115,16 +116,16 @@ export function IconographyManifestoHero() {
               Rootsy · Icon System
             </p>
             <p className="text-2xl font-semibold tracking-tight text-white sm:text-3xl">
-              Señales de producto
+              Señales SaaS
             </p>
             <p className="text-sm leading-relaxed text-white/85">
-              Phosphor · Regular 16px · Fill en activo · sin metáforas orgánicas en UI.
+              Iconsax · Linear 16px · Bold en activo · tier gratuito.
             </p>
           </div>
           <div className="flex items-center gap-3 rounded-xl bg-white/10 px-4 py-3 backdrop-blur-sm">
-            <SquaresFour className="text-white" size={24} weight="fill" />
-            <ShoppingCart className="text-white/85" size={20} weight="regular" />
-            <Gear className="text-white/70" size={16} weight="regular" />
+            <Element4 size={24} variant={VARIANT_ACTIVE} color="#fff" />
+            <Receipt size={20} variant={VARIANT_UI} color="rgba(255,255,255,0.85)" />
+            <Setting2 size={16} variant={VARIANT_UI} color="rgba(255,255,255,0.7)" />
           </div>
         </div>
       </div>
@@ -152,55 +153,10 @@ export function IconographyPrinciplesGrid({
   )
 }
 
-export function IconLibraryComparison() {
-  return (
-    <div className="grid gap-4 lg:grid-cols-3">
-      {ROOTSY_ICON_LIBRARY_OPTIONS.map((lib) => (
-        <div
-          key={lib.id}
-          className={cn(
-            "rounded-2xl border bg-card p-5 shadow-sm",
-            lib.status === "recommended"
-              ? "border-primary/40 ring-1 ring-primary/20"
-              : "border-border/70",
-          )}
-        >
-          <div className="flex flex-wrap items-center gap-2">
-            <p className="text-sm font-semibold text-foreground">{lib.name}</p>
-            <span
-              className={cn(
-                "rounded-md px-2 py-0.5 text-[10px] font-bold uppercase tracking-[0.12em]",
-                lib.status === "recommended" && "bg-primary/10 text-primary",
-                lib.status === "legacy" && "bg-muted text-muted-foreground",
-                lib.status === "alternative" && "bg-sky-500/10 text-sky-700",
-              )}
-            >
-              {lib.status === "recommended"
-                ? "Recomendado"
-                : lib.status === "legacy"
-                  ? "Legacy actual"
-                  : "Alternativa"}
-            </span>
-          </div>
-          <p className="mt-1 font-mono text-[10px] text-muted-foreground">{lib.package}</p>
-          <p className="mt-3 text-xs text-muted-foreground">{lib.bestFor}</p>
-          <ul className="mt-3 space-y-1">
-            {lib.pros.slice(0, 3).map((pro) => (
-              <li key={pro} className="text-xs text-foreground">
-                + {pro}
-              </li>
-            ))}
-          </ul>
-        </div>
-      ))}
-    </div>
-  )
-}
-
 export function IconLibraryCard() {
   const lib = ROOTSY_ICON_LIBRARY
   return (
-    <div className="rounded-2xl border border-primary/30 bg-card p-5 shadow-sm ring-1 ring-primary/10">
+    <div className="rounded-2xl border border-border/70 bg-card p-5 shadow-sm">
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div className="space-y-1">
           <p className="text-sm font-semibold text-foreground">{lib.name}</p>
@@ -213,36 +169,36 @@ export function IconLibraryCard() {
       </div>
       <div className="mt-4 flex flex-wrap gap-2">
         <span className="rounded-md bg-muted px-2 py-0.5 font-mono text-[10px] text-muted-foreground">
-          weight=&quot;{lib.defaultWeight}&quot;
+          {lib.tier}
         </span>
         <span className="rounded-md bg-muted px-2 py-0.5 font-mono text-[10px] text-muted-foreground">
-          activo: {lib.activeWeight}
+          variant=&quot;{lib.variantDefault}&quot;
         </span>
-        <span className="rounded-md bg-amber-500/10 px-2 py-0.5 font-mono text-[10px] text-amber-800">
-          legacy: {lib.legacyPackage}
+        <span className="rounded-md bg-muted px-2 py-0.5 font-mono text-[10px] text-muted-foreground">
+          grid {lib.grid}
         </span>
       </div>
+      <pre className="mt-4 overflow-x-auto rounded-xl bg-muted/40 p-4 font-mono text-[11px] leading-relaxed text-foreground">
+        {ICONSAX_IMPORT_EXAMPLE}
+      </pre>
     </div>
   )
 }
 
-export function IconWeightDemo() {
-  const icons = [
-    { weight: "regular" as const, label: "Regular — UI general" },
-    { weight: "bold" as const, label: "Bold — énfasis puntual" },
-    { weight: "fill" as const, label: "Fill — nav activo / selección" },
-  ]
+export function IconVariantDemo() {
   return (
-    <div className="grid gap-3 sm:grid-cols-3">
-      {icons.map((item) => (
+    <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+      {ROOTSY_ICON_VARIANTS.filter((v) =>
+        ["Linear", "Bold", "Outline", "Bulk"].includes(v.id),
+      ).map((item) => (
         <div
-          key={item.weight}
+          key={item.id}
           className="flex items-center gap-3 rounded-xl border border-border/70 bg-card p-4 shadow-sm"
         >
-          <SquaresFour size={20} weight={item.weight} style={{ color: CANOPY }} />
+          <Box size={20} variant={item.id} color={CANOPY} />
           <div>
-            <p className="font-mono text-xs text-primary">weight=&quot;{item.weight}&quot;</p>
-            <p className="text-xs text-muted-foreground">{item.label}</p>
+            <p className="font-mono text-xs text-primary">variant=&quot;{item.id}&quot;</p>
+            <p className="text-xs text-muted-foreground">{item.usage}</p>
           </div>
         </div>
       ))}
@@ -295,7 +251,7 @@ export function IconSizeTable() {
                 </td>
                 <td className="px-4 py-2.5 text-right font-mono font-medium">{size.px}</td>
                 <td className="px-4 py-2.5">
-                  <Package size={size.px} weight="regular" style={{ color: CANOPY }} />
+                  <Box size={size.px} variant={VARIANT_UI} color={CANOPY} />
                 </td>
                 <td className="px-4 py-2.5 text-xs text-muted-foreground">{size.usage}</td>
               </tr>
@@ -312,16 +268,16 @@ function IconSizeCompareDemo() {
   return (
     <div className="rounded-2xl border border-border/70 bg-card p-5 shadow-sm">
       <p className="text-[11px] font-medium uppercase tracking-[0.12em] text-muted-foreground">
-        Carets · 12px vs 16px
+        Chevrons · 12px vs 16px
       </p>
       <div className="mt-4 flex flex-wrap items-center gap-6">
         <div className="inline-flex items-center gap-2 rounded-lg border border-border/70 px-3 py-2 text-sm font-medium">
           <span>Trigger correcto</span>
-          <CaretDown size={12} weight="bold" className="text-muted-foreground" />
+          <ArrowDown2 size={12} variant={VARIANT_UI} className="text-muted-foreground" />
         </div>
         <div className="inline-flex items-center gap-2 rounded-lg border border-dashed border-amber-500/50 px-3 py-2 text-sm font-medium opacity-70">
           <span>Demasiado grande</span>
-          <CaretDown size={16} weight="bold" className="text-muted-foreground" />
+          <ArrowDown2 size={16} variant={VARIANT_UI} className="text-muted-foreground" />
         </div>
       </div>
     </div>
@@ -341,7 +297,7 @@ export function IconColorRolesGrid() {
               className="flex size-10 items-center justify-center rounded-lg"
               style={{ backgroundColor: `${role.hex}18` }}
             >
-              <Receipt size={20} weight="regular" style={{ color: role.hex }} />
+              <Receipt size={20} variant={VARIANT_UI} color={role.hex} />
             </div>
             <div className="min-w-0">
               <p className="truncate text-sm font-semibold text-foreground">{role.label}</p>
@@ -367,14 +323,14 @@ export function IconCategoriesGallery() {
           <p className="mt-1 text-xs text-muted-foreground">{cat.usage}</p>
           <div className="mt-4 flex flex-wrap gap-2">
             {cat.examples.map((name) => {
-              const Icon = CATEGORY_ICON_MAP[name]
-              if (!Icon) return null
+              const IconComponent = CATEGORY_ICON_MAP[name]
+              if (!IconComponent) return null
               return (
                 <div
                   key={name}
                   className="flex flex-col items-center gap-1 rounded-lg border border-border/60 bg-muted/20 px-3 py-2"
                 >
-                  <Icon size={16} weight="regular" className="text-foreground" />
+                  <IconComponent size={24} variant={VARIANT_UI} className="text-foreground" />
                   <span className="font-mono text-[9px] text-muted-foreground">{name}</span>
                 </div>
               )
@@ -382,29 +338,6 @@ export function IconCategoriesGallery() {
           </div>
         </div>
       ))}
-    </div>
-  )
-}
-
-export function LucidePhosphorMapTable() {
-  return (
-    <div className="overflow-x-auto rounded-2xl border border-border/70">
-      <table className="w-full min-w-[480px] text-left text-sm">
-        <thead>
-          <tr className="border-b border-border/60 bg-muted/30 text-[10px] font-bold uppercase tracking-[0.12em] text-muted-foreground">
-            <th className="px-4 py-2">Lucide (legacy)</th>
-            <th className="px-4 py-2">Phosphor (target)</th>
-          </tr>
-        </thead>
-        <tbody className="divide-y divide-border/50">
-          {LUCIDE_TO_PHOSPHOR_MAP.map((row) => (
-            <tr key={row.lucide} className="hover:bg-muted/20">
-              <td className="px-4 py-2.5 font-mono text-xs text-muted-foreground">{row.lucide}</td>
-              <td className="px-4 py-2.5 font-mono text-xs text-primary">{row.phosphor}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
     </div>
   )
 }
@@ -443,7 +376,7 @@ export function IconSmallUseCasesList() {
     <ul className="space-y-2 rounded-xl border border-border/70 bg-muted/20 p-4">
       {ICON_SMALL_USE_CASES.map((item) => (
         <li key={item} className="flex items-start gap-2 text-sm text-muted-foreground">
-          <CheckCircle size={12} weight="fill" className="mt-0.5 shrink-0 text-primary" />
+          <TickCircle size={12} variant={VARIANT_ACTIVE} className="mt-0.5 shrink-0 text-primary" />
           {item}
         </li>
       ))}
@@ -458,21 +391,21 @@ export function IconLabelDemo() {
         type="button"
         className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground"
       >
-        <Plus size={16} weight="bold" />
+        <Add size={16} variant={VARIANT_ACTIVE} color="currentColor" />
         Nuevo artículo
       </button>
       <button
         type="button"
         className="inline-flex items-center gap-2 rounded-lg border border-border/70 bg-card px-4 py-2 text-sm font-medium text-foreground"
       >
-        <PencilSimple size={16} weight="regular" className="text-muted-foreground" />
+        <Edit size={16} variant={VARIANT_UI} className="text-muted-foreground" />
         Editar
       </button>
       <button
         type="button"
         className="inline-flex items-center gap-2 rounded-lg border border-red-200 bg-red-50 px-4 py-2 text-sm font-medium text-red-700"
       >
-        <Trash size={16} weight="regular" />
+        <Trash size={16} variant={VARIANT_UI} color="currentColor" />
         Eliminar
       </button>
     </div>
@@ -483,15 +416,15 @@ export function IconNavActiveDemo() {
   return (
     <div className="flex flex-wrap gap-2 rounded-2xl border border-border/70 bg-card p-4 shadow-sm">
       <div className="inline-flex items-center gap-2 rounded-lg bg-primary/10 px-3 py-2 text-sm font-medium text-primary">
-        <ShoppingCart size={16} weight="fill" />
+        <ShoppingCart size={16} variant={VARIANT_ACTIVE} color="currentColor" />
         Ventas
       </div>
       <div className="inline-flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-muted-foreground">
-        <Receipt size={16} weight="regular" />
+        <Receipt size={16} variant={VARIANT_UI} />
         Operaciones
       </div>
       <div className="inline-flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-muted-foreground">
-        <CurrencyDollar size={16} weight="regular" />
+        <DollarCircle size={16} variant={VARIANT_UI} />
         Tesorería
       </div>
     </div>
@@ -502,15 +435,15 @@ export function IconValidationDemo() {
   return (
     <div className="space-y-3 rounded-2xl border border-border/70 bg-card p-5 shadow-sm">
       <div className="flex items-center gap-2 text-sm text-muted-foreground">
-        <Info size={12} weight="fill" className="text-sky-600" />
+        <InfoCircle size={12} variant={VARIANT_ACTIVE} className="text-sky-600" />
         El precio incluye IVA.
       </div>
       <div className="flex items-center gap-2 text-sm text-amber-800">
-        <WarningCircle size={12} weight="fill" className="text-amber-600" />
+        <Warning2 size={12} variant={VARIANT_ACTIVE} className="text-amber-600" />
         Stock bajo — revisá inventario.
       </div>
       <div className="flex items-center gap-2 text-sm text-red-700">
-        <WarningCircle size={12} weight="fill" className="text-red-600" />
+        <Warning2 size={12} variant={VARIANT_ACTIVE} className="text-red-600" />
         El nombre es obligatorio.
       </div>
     </div>
@@ -532,7 +465,7 @@ export function IconTileDemo() {
             )}
             style={{ backgroundColor: CANOPY_MIST, color: CANOPY }}
           >
-            <Package size={spec.size} weight="regular" />
+            <Box size={spec.size} variant={VARIANT_UI} color={CANOPY} />
           </div>
           <p className="mt-2 font-mono text-[10px] text-muted-foreground">{spec.label}</p>
         </div>

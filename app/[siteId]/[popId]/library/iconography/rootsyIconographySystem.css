@@ -16,3 +16,8 @@
   --icon-color-danger: #dc2626;
   --icon-color-success: #16704a;
 }
+
+.rootsy-iconography-system svg {
+  display: block;
+  flex-shrink: 0;
+}

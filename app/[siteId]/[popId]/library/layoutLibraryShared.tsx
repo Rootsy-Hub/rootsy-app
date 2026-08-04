@@ -12,6 +12,19 @@ import { MOTION_LIBRARY_ROOT, MOTION_LIBRARY_SUBITEMS } from "@/app/[siteId]/[po
 import { isMotionLibrarySection } from "@/app/[siteId]/[popId]/library/motion/motionLibraryNav"
 import { ICONOGRAPHY_LIBRARY_ROOT } from "@/app/[siteId]/[popId]/library/iconography/iconographyLibraryNav"
 import { isIconographyLibrarySection } from "@/app/[siteId]/[popId]/library/iconography/iconographyLibraryNav"
+import { ILLUSTRATIONS_LIBRARY_ROOT } from "@/app/[siteId]/[popId]/library/illustrations/illustrationsLibraryNav"
+import { isIllustrationsLibrarySection } from "@/app/[siteId]/[popId]/library/illustrations/illustrationsLibraryNav"
+import { LOGOS_LIBRARY_ROOT } from "@/app/[siteId]/[popId]/library/logos/logosLibraryNav"
+import { isLogosLibrarySection } from "@/app/[siteId]/[popId]/library/logos/logosLibraryNav"
+import {
+  ELEVATION_LIBRARY_ROOT,
+  ELEVATION_LIBRARY_SUBITEMS,
+} from "@/app/[siteId]/[popId]/library/elevation/elevationLibraryNav"
+import { isElevationLibrarySection } from "@/app/[siteId]/[popId]/library/elevation/elevationLibraryNav"
+import { BORDER_LIBRARY_ROOT } from "@/app/[siteId]/[popId]/library/border/borderLibraryNav"
+import { isBorderLibrarySection } from "@/app/[siteId]/[popId]/library/border/borderLibraryNav"
+import { RADIUS_LIBRARY_ROOT } from "@/app/[siteId]/[popId]/library/radius/radiusLibraryNav"
+import { isRadiusLibrarySection } from "@/app/[siteId]/[popId]/library/radius/radiusLibraryNav"
 import { popScopedHref } from "@/lib/popRoutes"
 import { cn } from "@/lib/utils"
 import { ChevronRight } from "lucide-react"
@@ -58,6 +71,14 @@ export const LIBRARY_NAV_GROUPS: LibraryNavGroup[] = [
         children: [...MOTION_LIBRARY_SUBITEMS],
       },
       { ...ICONOGRAPHY_LIBRARY_ROOT },
+      { ...ILLUSTRATIONS_LIBRARY_ROOT },
+      { ...LOGOS_LIBRARY_ROOT },
+      {
+        ...ELEVATION_LIBRARY_ROOT,
+        children: [...ELEVATION_LIBRARY_SUBITEMS],
+      },
+      { ...BORDER_LIBRARY_ROOT },
+      { ...RADIUS_LIBRARY_ROOT },
     ],
   },
   {
@@ -128,7 +149,12 @@ export function getLibraryNavGroup(sectionId: string): LibraryNavGroup | undefin
     isGridLibrarySection(sectionId) ||
     isTypographyLibrarySection(sectionId) ||
     isMotionLibrarySection(sectionId) ||
-    isIconographyLibrarySection(sectionId)
+    isIconographyLibrarySection(sectionId) ||
+    isIllustrationsLibrarySection(sectionId) ||
+    isLogosLibrarySection(sectionId) ||
+    isElevationLibrarySection(sectionId) ||
+    isBorderLibrarySection(sectionId) ||
+    isRadiusLibrarySection(sectionId)
   ) {
     return LIBRARY_NAV_GROUPS.find((group) => group.id === "foundation")
   }

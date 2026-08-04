@@ -7,7 +7,6 @@ import {
   IconGuidelinesGrid,
   IconLabelDemo,
   IconLibraryCard,
-  IconLibraryComparison,
   IconNavActiveDemo,
   IconographyDocLead,
   IconographyDocSection,
@@ -17,9 +16,8 @@ import {
   IconSmallUseCasesList,
   IconTileDemo,
   IconValidationDemo,
+  IconVariantDemo,
   IconVisualStyleGrid,
-  IconWeightDemo,
-  LucidePhosphorMapTable,
 } from "@/app/[siteId]/[popId]/library/iconography/IconographyDocPrimitives"
 import {
   ROOTSY_ICONOGRAPHY_MANIFESTO,
@@ -38,26 +36,18 @@ export function IconographyOverviewSection() {
         <IconographyPrinciplesGrid principles={ROOTSY_ICONOGRAPHY_PRINCIPLES} />
 
         <IconographyDocSection
-          id="library-choice"
-          title="Elección de librería"
-          description="Phosphor como estándar Rootsy — Lucide permanece en código hasta migración fase 2."
-        >
-          <IconLibraryComparison />
-        </IconographyDocSection>
-
-        <IconographyDocSection
           id="library"
-          title="Phosphor como capa de producto"
-          description="Import nombrado, pesos Regular / Bold / Fill, sin SVG ad hoc."
+          title="Iconsax"
+          description="Tier gratuito — import nombrado, variant Linear, sin SVG ad hoc."
         >
           <IconLibraryCard />
-          <IconWeightDemo />
+          <IconVariantDemo />
         </IconographyDocSection>
 
         <IconographyDocSection
           id="visual-style"
           title="Estilo visual"
-          description="Regular por defecto · Fill en activo · sin íconos orgánicos en producto."
+          description="Linear en UI · Bold en activo · grid 24×24."
         >
           <IconVisualStyleGrid />
         </IconographyDocSection>
@@ -90,7 +80,7 @@ export function IconographyOverviewSection() {
         <IconographyDocSection
           id="usage"
           title="Aplicación"
-          description="Ícono + label · Regular vs Fill · gap con token de espaciado."
+          description="Ícono + label · Linear vs Bold · gap con token de espaciado."
         >
           <IconLabelDemo />
           <IconNavActiveDemo />
@@ -107,14 +97,6 @@ export function IconographyOverviewSection() {
 
         <IconographyDocSection id="guidelines" title="Guías Do / Don't">
           <IconGuidelinesGrid />
-        </IconographyDocSection>
-
-        <IconographyDocSection
-          id="migration"
-          title="Migración Lucide → Phosphor"
-          description="Mapa de equivalencias para fase 2 — no mezclar ambos sets en la misma barra de nav."
-        >
-          <LucidePhosphorMapTable />
         </IconographyDocSection>
       </div>
     </LibrarySection>
