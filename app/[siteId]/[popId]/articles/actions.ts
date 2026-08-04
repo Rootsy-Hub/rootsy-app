@@ -67,6 +67,7 @@ export type ArticleTableRow = {
   categoryName: string
   suppliers: ArticleSupplierRef[]
   isActive: boolean
+  allowNegativeStock: boolean
   stockOnHand: number
 }
 
@@ -112,6 +113,7 @@ export type UpdatePopArticleInput = {
   discountMode: ArticleDiscountMode | null
   discountValue: number | null
   supplierIds: string[]
+  allowNegativeStock: boolean
 } & ArticleItemFieldsInput
 
 export type CreatePopArticleInput = UpdatePopArticleInput & {
@@ -247,6 +249,7 @@ function articleRowFromDb(row: Record<string, unknown>): ArticleTableRow {
     categoryName: cat?.name ? String(cat.name) : "—",
     suppliers: parseArticleSuppliers(row),
     isActive: Boolean(row.is_active),
+    allowNegativeStock: Boolean(row.allow_negative_stock),
     stockOnHand: 0,
   }
 }
@@ -268,6 +271,8 @@ function articleDbPayloadFromInput(input: UpdatePopArticleInput) {
         : null,
     discount_mode: input.discountMode,
     discount_value: input.discountValue,
+    allow_negative_stock:
+      input.itemKind === "merchandise" ? input.allowNegativeStock : false,
   }
 }
 
@@ -1126,6 +1131,7 @@ const ARTICLE_LIST_SELECT = `
   discount_value,
   category_id,
   is_active,
+  allow_negative_stock,
   categories ( id, name ),
   article_suppliers (
     supplier_id,

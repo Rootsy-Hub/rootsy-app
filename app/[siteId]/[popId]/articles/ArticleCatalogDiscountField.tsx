@@ -4,10 +4,8 @@ import type { ArticleDiscountMode } from "@/lib/articleDiscount"
 import {
   RootsFormDiscountField,
   type RootsFormDiscountMode,
-  rootsFormFieldStackClass,
 } from "@/components/rootsy-form"
 import { parseMoneyInput } from "@/lib/moneyInput"
-import { cn } from "@/lib/utils"
 
 type Props = {
   idPrefix: string
@@ -32,8 +30,6 @@ export function ArticleCatalogDiscountField({
   const uiMode: RootsFormDiscountMode =
     discountMode === "fijo" ? "fijo" : "porcentaje"
   const fixedAmountDisabled = disabled || salePrice <= 0
-  const hasDiscount =
-    discountValue.trim().length > 0 || discountMode !== ""
 
   const handleModeChange = (mode: RootsFormDiscountMode) => {
     onChange({ discountMode: mode })
@@ -59,35 +55,23 @@ export function ArticleCatalogDiscountField({
   }
 
   return (
-    <div className={cn(rootsFormFieldStackClass, "gap-2")}>
-      {hasDiscount ? (
-        <div className="flex justify-end">
-          <button
-            type="button"
-            className="text-xs font-medium text-primary hover:underline"
-            onClick={handleClear}
-            disabled={disabled}
-          >
-            Quitar descuento
-          </button>
-        </div>
-      ) : null}
-
-      <RootsFormDiscountField
-        label="Descuento de catálogo"
-        id={`${idPrefix}-discount`}
-        mode={uiMode}
-        onModeChange={handleModeChange}
-        value={discountValue}
-        onChange={handleValueChange}
-        disabled={disabled}
-        fixedAmountDisabled={fixedAmountDisabled}
-        hint={
-          uiMode === "fijo" && salePrice > 0
+    <RootsFormDiscountField
+      label="Descuento de catálogo"
+      id={`${idPrefix}-discount`}
+      mode={uiMode}
+      onModeChange={handleModeChange}
+      value={discountValue}
+      onChange={handleValueChange}
+      onClear={handleClear}
+      disabled={disabled}
+      fixedAmountDisabled={fixedAmountDisabled}
+      hint={
+        uiMode === "fijo" && salePrice <= 0
+          ? "Ingresá precio de venta para usar monto fijo."
+          : uiMode === "fijo" && salePrice > 0
             ? "Máximo sobre el precio de venta."
             : undefined
-        }
-      />
-    </div>
+      }
+    />
   )
 }

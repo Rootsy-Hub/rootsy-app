@@ -12,6 +12,7 @@ export { RootsFormSegmentField } from "@/components/rootsy-form/RootsFormSegment
 export type { RootsFormSegmentOption } from "@/components/rootsy-form/RootsFormSegmentField"
 export { RootsFormDiscountField } from "@/components/rootsy-form/RootsFormDiscountField"
 export type { RootsFormDiscountMode } from "@/components/rootsy-form/RootsFormDiscountField"
+export { RootsFormImageUploadField } from "@/components/rootsy-form/RootsFormImageUploadField"
 export { RootsFormGrid, RootsFormGridDivider } from "@/components/rootsy-form/RootsFormGrid"
 export { RootsFormSwitchField } from "@/components/rootsy-form/RootsFormSwitchField"
 export { RootsFormSwitch } from "@/components/rootsy-form/RootsFormSwitch"
@@ -64,10 +65,15 @@ export {
   rootsFormSegmentOptionClass,
   rootsFormDiscountModePrefixClass,
   rootsFormDiscountModeButtonClass,
+  rootsFormImageUploadShellClass,
+  rootsFormImageUploadThumbClass,
 } from "@/components/rootsy-form/rootsFormStyles"
 export {
   ROOTSY_FORM_EARTH,
   rootsFormEarthBorderClass,
+  rootsFormEarthPrefixBgClass,
+  rootsFormEarthPrefixBorderClass,
+  rootsFormEarthPrefixTextClass,
   rootsFormEarthTextClass,
   rootsFormEarthTextSecondaryClass,
   rootsFormTextInputSurfaceClass,

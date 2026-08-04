@@ -199,6 +199,7 @@ function defaultCreateFormState(): ArticleFormState {
     iva: String(DEFAULT_ARTICLE_IVA_ALICUOTA_ID),
     categoryId: "",
     isActive: true,
+    allowNegativeStock: false,
     initialStock: "",
     itemKind: "merchandise",
     ...defaultItemFormFields("merchandise"),
@@ -327,6 +328,7 @@ function ArticlesPage() {
     iva: "",
     categoryId: "",
     isActive: true,
+    allowNegativeStock: false,
     itemKind: "merchandise",
     ...defaultItemFormFields("merchandise"),
     ...defaultArticleCatalogExtraFormState(),
@@ -581,6 +583,7 @@ function ArticlesPage() {
       iva: resolveArticleIvaSelectValue(siteId, row.iva),
       categoryId: row.categoryId,
       isActive: row.isActive,
+      allowNegativeStock: row.allowNegativeStock,
       itemKind: row.itemKind,
       ...unitOfMeasureToFormState(row.unitOfMeasure),
       defaultWastePct:
@@ -673,6 +676,7 @@ function ArticlesPage() {
       iva: ivaParsed.ratePercent,
       categoryId: createForm.categoryId,
       isActive: createForm.isActive,
+      allowNegativeStock: createForm.allowNegativeStock,
       itemKind: createForm.itemKind,
       ...itemFields,
       ...catalogFields,
@@ -857,6 +861,7 @@ function ArticlesPage() {
       iva: ivaParsed.ratePercent,
       categoryId: editForm.categoryId,
       isActive: editForm.isActive,
+      allowNegativeStock: editForm.allowNegativeStock,
       itemKind: editForm.itemKind,
       ...itemFields,
       ...catalogFields,
@@ -989,7 +994,12 @@ function ArticlesPage() {
       itemKind: kind,
       ...defaultItemFormFields(kind),
       ...(kind !== "merchandise"
-        ? { discountMode: "" as const, discountValue: "", barcode: "" }
+        ? {
+            discountMode: "" as const,
+            discountValue: "",
+            barcode: "",
+            allowNegativeStock: false,
+          }
         : {}),
     }))
   }, [])
@@ -1000,7 +1010,12 @@ function ArticlesPage() {
       itemKind: kind,
       ...defaultItemFormFields(kind),
       ...(kind !== "merchandise"
-        ? { discountMode: "" as const, discountValue: "", barcode: "" }
+        ? {
+            discountMode: "" as const,
+            discountValue: "",
+            barcode: "",
+            allowNegativeStock: false,
+          }
         : {}),
     }))
   }, [])

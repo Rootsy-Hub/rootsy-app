@@ -5,6 +5,7 @@ import type { RootsFormFieldAssistProps } from "@/components/rootsy-form/rootsFo
 import { useRootsFormFieldControlProps } from "@/components/rootsy-form/rootsFormFieldContext"
 import {
   rootsFormAffixFieldShellClass,
+  rootsFormAffixClearButtonClass,
   rootsFormAffixInputClass,
   rootsFormDiscountModeButtonClass,
   rootsFormDiscountModePrefixClass,
@@ -15,8 +16,13 @@ import {
   formatNonNegativeIntegerInput,
   parseNonNegativeIntegerInput,
 } from "@/lib/integerInput"
-import { formatMoneyInputForField, MONEY_INPUT_DISPLAY_MAX_LEN } from "@/lib/moneyInput"
+import {
+  formatMoneyInputForField,
+  MONEY_INPUT_DISPLAY_MAX_LEN,
+  parseMoneyInput,
+} from "@/lib/moneyInput"
 import { cn } from "@/lib/utils"
+import { XIcon } from "lucide-react"
 import { useId, type ClipboardEvent } from "react"
 
 export type RootsFormDiscountMode = "porcentaje" | "fijo"
@@ -53,6 +59,18 @@ function fixedAmountValueFromModeSwitch(currentValue: string): string {
   return formatMoneyInputForField(parsed)
 }
 
+function hasClearableDiscountValue(
+  value: string,
+  mode: RootsFormDiscountMode,
+): boolean {
+  const trimmed = value.trim()
+  if (!trimmed) return false
+  if (mode === "porcentaje") {
+    return parseNonNegativeIntegerInput(trimmed, 0) > 0
+  }
+  return parseMoneyInput(trimmed, 0) > 0
+}
+
 type Props = {
   label: string
   id?: string
@@ -60,6 +78,7 @@ type Props = {
   onModeChange: (mode: RootsFormDiscountMode) => void
   value: string
   onChange: (value: string) => void
+  onClear?: () => void
   disabled?: boolean
   fixedAmountDisabled?: boolean
   invalid?: boolean
@@ -75,6 +94,7 @@ export function RootsFormDiscountField({
   onModeChange,
   value,
   onChange,
+  onClear,
   disabled,
   fixedAmountDisabled,
   invalid,
@@ -92,6 +112,8 @@ export function RootsFormDiscountField({
   const isPercent = mode === "porcentaje"
   const valueDisabled =
     disabled || (!isPercent && Boolean(fixedAmountDisabled))
+  const showClear =
+    Boolean(onClear) && hasClearableDiscountValue(value, mode) && !disabled
 
   const moneyHandlers = useMoneyInputField({
     value,
@@ -148,7 +170,7 @@ export function RootsFormDiscountField({
         <div
           role="group"
           aria-label="Tipo de descuento"
-          className={rootsFormDiscountModePrefixClass}
+          className={cn(rootsFormDiscountModePrefixClass, "relative z-1")}
         >
           <button
             type="button"
@@ -162,49 +184,62 @@ export function RootsFormDiscountField({
           </button>
           <button
             type="button"
-            disabled={disabled || fixedAmountDisabled}
+            disabled={disabled}
             aria-pressed={!isPercent}
             aria-label="Monto fijo"
-            className={rootsFormDiscountModeButtonClass(
-              !isPercent,
-              disabled || fixedAmountDisabled,
-            )}
+            className={rootsFormDiscountModeButtonClass(!isPercent, disabled)}
             onClick={handleFixedModeSelect}
           >
             $
           </button>
         </div>
-        <input
-          ref={isPercent ? undefined : moneyHandlers.inputRef}
-          id={fieldId}
-          type="text"
-          inputMode={isPercent ? "numeric" : "decimal"}
-          autoComplete="off"
-          value={value}
-          maxLength={isPercent ? PERCENT_INPUT_MAX_LEN : MONEY_INPUT_DISPLAY_MAX_LEN}
-          disabled={valueDisabled}
-          aria-invalid={controlProps.isInvalid}
-          aria-describedby={controlProps.describedBy}
-          aria-label={
-            isPercent ? "Porcentaje de descuento" : "Monto fijo de descuento"
-          }
-          placeholder={isPercent ? "0" : "0,00"}
-          className={cn(rootsFormAffixInputClass, inputClassName)}
-          onMouseDown={isPercent ? undefined : moneyHandlers.handleMouseDown}
-          onChange={
-            isPercent
-              ? (e) => handlePercentChange(e.target.value)
-              : moneyHandlers.handleChange
-          }
-          onFocus={
-            isPercent ? percentHandlers.handleFocus : moneyHandlers.handleFocus
-          }
-          onBlur={
-            isPercent ? percentHandlers.handleBlur : moneyHandlers.handleBlur
-          }
-          onKeyDown={isPercent ? undefined : moneyHandlers.handleKeyDown}
-          onPaste={isPercent ? handlePercentPaste : moneyHandlers.handlePaste}
-        />
+        <div className="relative flex min-w-0 flex-1 items-stretch">
+          <input
+            ref={isPercent ? undefined : moneyHandlers.inputRef}
+            id={fieldId}
+            type="text"
+            inputMode={isPercent ? "numeric" : "decimal"}
+            autoComplete="off"
+            value={value}
+            maxLength={isPercent ? PERCENT_INPUT_MAX_LEN : MONEY_INPUT_DISPLAY_MAX_LEN}
+            disabled={valueDisabled}
+            aria-invalid={controlProps.isInvalid}
+            aria-describedby={controlProps.describedBy}
+            aria-label={
+              isPercent ? "Porcentaje de descuento" : "Monto fijo de descuento"
+            }
+            placeholder={isPercent ? "0" : "0,00"}
+            className={cn(
+              rootsFormAffixInputClass,
+              showClear && "pr-10",
+              inputClassName,
+            )}
+            onMouseDown={isPercent ? undefined : moneyHandlers.handleMouseDown}
+            onChange={
+              isPercent
+                ? (e) => handlePercentChange(e.target.value)
+                : moneyHandlers.handleChange
+            }
+            onFocus={
+              isPercent ? percentHandlers.handleFocus : moneyHandlers.handleFocus
+            }
+            onBlur={
+              isPercent ? percentHandlers.handleBlur : moneyHandlers.handleBlur
+            }
+            onKeyDown={isPercent ? undefined : moneyHandlers.handleKeyDown}
+            onPaste={isPercent ? handlePercentPaste : moneyHandlers.handlePaste}
+          />
+          {showClear ? (
+            <button
+              type="button"
+              aria-label="Borrar descuento"
+              className={rootsFormAffixClearButtonClass}
+              onClick={onClear}
+            >
+              <XIcon className="size-4" aria-hidden />
+            </button>
+          ) : null}
+        </div>
       </div>
     </RootsFormField>
   )

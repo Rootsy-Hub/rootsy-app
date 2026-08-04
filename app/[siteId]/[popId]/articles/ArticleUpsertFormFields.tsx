@@ -17,7 +17,6 @@ import {
   RootsFormSelectItem,
   RootsFormSwitchField,
   RootsFormTextField,
-  RootsFormTextareaField,
   rootsFormColumnClass,
   rootsFormTwoColRowClass,
 } from "@/components/rootsy-form"
@@ -37,6 +36,7 @@ export type ArticleUpsertFormState = ArticleItemFormState &
     iva: string
     categoryId: string
     isActive: boolean
+    allowNegativeStock: boolean
     itemKind: ArticleItemKind
     initialStock?: string
   }
@@ -91,12 +91,12 @@ export function ArticleUpsertFormFields({
           disabled={disabled}
         />
 
-        <RootsFormTextareaField
+        <RootsFormTextField
           label="Descripción"
           id={`${idPrefix}-desc`}
-          rows={3}
           value={form.description}
           onChange={(e) => onChange({ description: e.target.value })}
+          placeholder="Opcional"
           disabled={disabled}
         />
 
@@ -233,6 +233,19 @@ export function ArticleUpsertFormFields({
               placeholder="Vacío = sin movimiento"
             />
           </div>
+        ) : null}
+
+        {isMerchandise ? (
+          <RootsFormSwitchField
+            label="Vender con stock negativo"
+            description="Permite vender aunque el stock quede por debajo de cero."
+            id={`${idPrefix}-allow-negative-stock`}
+            checked={form.allowNegativeStock}
+            onCheckedChange={(checked) =>
+              onChange({ allowNegativeStock: checked })
+            }
+            disabled={disabled}
+          />
         ) : null}
 
         <RootsFormSwitchField

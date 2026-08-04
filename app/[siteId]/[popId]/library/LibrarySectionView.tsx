@@ -44,6 +44,7 @@ import {
   RootsFormDateField,
   RootsFormDiscountField,
   RootsFormGrid,
+  RootsFormImageUploadField,
   RootsFormMoneyField,
   RootsFormQuantityField,
   RootsFormSelectField,
@@ -344,6 +345,9 @@ export function LibrarySectionView({
   )
   const [sortableEditingName, setSortableEditingName] = useState("")
   const [comprobanteValue, setComprobanteValue] = useState("factura-b")
+  const [layoutImagePreview, setLayoutImagePreview] = useState<string | null>(
+    null,
+  )
   const liveModal = MODAL_VARIANTS.find((spec) => spec.id === liveModalId) ?? null
 
   if (isColorLibrarySection(sectionId)) {
@@ -924,9 +928,34 @@ export function LibrarySectionView({
           <LibrarySection
             id="composite"
             title="Controles compuestos"
-            description="Descuento con prefijo dual %/$, segment group para opciones sin valor, y select para listas largas."
+            description="Descuento con prefijo dual %/$, imagen compacta, segment group para opciones sin valor, y select para listas largas."
           >
             <div className="grid gap-4 lg:grid-cols-2">
+              <SpecCard
+                title="RootsFormImageUploadField"
+                source="components/rootsy-form/RootsFormImageUploadField.tsx"
+                tokens={["miniatura 56px", "drag & drop", "tierra + emerald focus"]}
+              >
+                <RootsFormImageUploadField
+                  label="Imagen"
+                  previewSrc={layoutImagePreview}
+                  emptyTitle="Agregar foto"
+                  emptySubtitle="Arrastrá o hacé clic · JPG, PNG o WebP"
+                  onFileSelect={(file) => {
+                    if (layoutImagePreview) {
+                      URL.revokeObjectURL(layoutImagePreview)
+                    }
+                    setLayoutImagePreview(URL.createObjectURL(file))
+                  }}
+                  onRemove={() => {
+                    if (layoutImagePreview) {
+                      URL.revokeObjectURL(layoutImagePreview)
+                    }
+                    setLayoutImagePreview(null)
+                  }}
+                  hint="Versión compacta para modales — la lógica de subida vive en el consumidor."
+                />
+              </SpecCard>
               <SpecCard
                 title="RootsFormDiscountField"
                 source="components/rootsy-form/RootsFormDiscountField.tsx"

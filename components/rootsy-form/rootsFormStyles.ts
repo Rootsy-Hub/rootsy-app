@@ -14,6 +14,13 @@ import {
   rootsFormEarthHighlightHoverClass,
   rootsFormEarthLabelMutedClass,
   rootsFormEarthPlaceholderClass,
+  rootsFormEarthPrefixBgClass,
+  rootsFormEarthPrefixBgMutedClass,
+  rootsFormEarthPrefixBorderClass,
+  rootsFormEarthPrefixBorderHoverClass,
+  rootsFormEarthPrefixIconSvgClass,
+  rootsFormEarthPrefixTextClass,
+  rootsFormEarthPrefixTextMutedClass,
   rootsFormEarthSelectionClass,
   rootsFormEarthTextClass,
   rootsFormEarthTextSecondaryClass,
@@ -111,7 +118,7 @@ export const rootsFormTextareaFieldClass = cn(
 
 /** Shell para montos, cantidades y números con prefijo a la izquierda. */
 export const rootsFormAffixFieldShellClass = cn(
-  "flex h-11 w-full min-w-0 items-stretch overflow-hidden rounded-lg border bg-white shadow-xs transition-[color,box-shadow,border-color]",
+  "group flex h-11 w-full min-w-0 items-stretch overflow-hidden rounded-lg border bg-white shadow-xs transition-[color,box-shadow,border-color]",
   rootsFormEarthBorderClass,
   rootsFormEarthBorderHoverClass,
   "focus-within:!border-[#16704a] focus-within:!ring-2 focus-within:!ring-[#16704a]/45 focus-within:ring-offset-0",
@@ -122,10 +129,13 @@ export const rootsFormAffixPrefixWidthClass = "w-11"
 
 export const rootsFormAffixPrefixClass = cn(
   rootsFormAffixPrefixWidthClass,
-  "inline-flex shrink-0 items-center justify-center self-stretch overflow-hidden border-r text-sm font-semibold leading-none tabular-nums [&_svg]:size-4",
-  rootsFormEarthBorderClass,
-  rootsFormEarthBgSubtleClass,
-  rootsFormEarthTextSecondaryClass,
+  "inline-flex shrink-0 items-center justify-center self-stretch overflow-hidden border-r text-sm font-semibold leading-none tabular-nums transition-[border-color]",
+  rootsFormEarthPrefixBorderClass,
+  rootsFormEarthPrefixBorderHoverClass,
+  rootsFormEarthPrefixBgClass,
+  rootsFormEarthPrefixTextClass,
+  "[&_svg]:size-4 [&_svg]:shrink-0",
+  rootsFormEarthPrefixIconSvgClass,
 )
 
 export const rootsFormAffixInputClass = cn(
@@ -343,12 +353,12 @@ export function rootsFormSegmentOptionClass(selected: boolean, disabled?: boolea
   )
 }
 
-/** Prefijo dual %/$ — mismo slot affix que $ y uds.; la unidad activa vive acá. */
+/** Prefijo dual %/$ — seleccionado = slot affix tierra; no seleccionado = un tono más claro. */
 export const rootsFormDiscountModePrefixClass = cn(
-  "flex w-[4.75rem] shrink-0 self-stretch overflow-hidden border-r",
-  rootsFormEarthBorderClass,
-  rootsFormEarthBgSubtleClass,
-  "[&>button:first-child]:border-r [&>button:first-child]:border-[#e7e5e4]",
+  "flex w-[4.75rem] shrink-0 self-stretch overflow-hidden border-r bg-white transition-[border-color]",
+  rootsFormEarthPrefixBorderClass,
+  rootsFormEarthPrefixBorderHoverClass,
+  "[&>button:first-child]:border-r [&>button:first-child]:border-[#e7e5e4] [&>button:first-child]:transition-[border-color] group-hover:[&>button:first-child]:border-[#d6d3d1]",
 )
 
 export function rootsFormDiscountModeButtonClass(
@@ -356,11 +366,76 @@ export function rootsFormDiscountModeButtonClass(
   optionDisabled?: boolean,
 ) {
   return cn(
-    "relative inline-flex flex-1 items-center justify-center self-stretch text-sm font-semibold leading-none tabular-nums transition-[color,background-color] duration-150",
-    "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#16704a]/45",
-    optionDisabled && "pointer-events-none opacity-45",
+    "relative inline-flex flex-1 items-center justify-center self-stretch text-sm font-semibold leading-none tabular-nums transition-[color,background-color,border-color] duration-150",
+    "focus-visible:outline-none focus-visible:ring-0",
+    optionDisabled && "opacity-45",
     selected
-      ? cn("bg-white font-semibold", rootsFormEarthTextClass)
-      : "bg-transparent text-[#a8a29e] hover:text-[#78716c]",
+      ? cn("font-semibold", rootsFormEarthPrefixBgClass, rootsFormEarthPrefixTextClass)
+      : cn(
+          rootsFormEarthPrefixBgMutedClass,
+          rootsFormEarthPrefixTextMutedClass,
+          "hover:text-[#78716c]",
+        ),
   )
 }
+
+/** Botón borrar dentro de shells affix (descuento, búsqueda en form). */
+export const rootsFormAffixClearButtonClass = cn(
+  "absolute right-1 top-1/2 flex size-8 -translate-y-1/2 items-center justify-center rounded-md transition-[color,background-color] duration-150",
+  rootsFormEarthTextSecondaryClass,
+  rootsFormEarthHighlightHoverClass,
+  "hover:text-[#292524] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#16704a]/45",
+)
+
+/** Imagen en formularios — fila compacta con miniatura (≈ altura de input h-11). */
+export const rootsFormImageUploadShellClass = cn(
+  "flex w-full min-w-0 items-center gap-3 rounded-lg border bg-white px-2 py-2 shadow-xs transition-[border-color,box-shadow,background-color] duration-150",
+  rootsFormEarthBorderClass,
+)
+
+export const rootsFormImageUploadShellInteractiveClass = cn(
+  rootsFormImageUploadShellClass,
+  rootsFormEarthBorderHoverClass,
+  "cursor-pointer text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#16704a]/45 focus-visible:ring-offset-0",
+)
+
+export const rootsFormImageUploadShellEmptyClass = cn(
+  rootsFormImageUploadShellInteractiveClass,
+  "border-dashed hover:bg-[#fafaf7]",
+)
+
+export const rootsFormImageUploadShellDragClass =
+  "!border-[#16704a] bg-[#16704a]/[0.04] ring-2 ring-[#16704a]/20"
+
+export const rootsFormImageUploadThumbClass = cn(
+  "relative flex size-14 shrink-0 items-center justify-center overflow-hidden rounded-md border",
+  rootsFormEarthPrefixBorderClass,
+  rootsFormEarthPrefixBgClass,
+)
+
+export const rootsFormImageUploadThumbEmptyClass = cn(
+  rootsFormImageUploadThumbClass,
+  "border-dashed",
+)
+
+export const rootsFormImageUploadTitleClass = cn(
+  "truncate text-sm font-medium leading-tight",
+  rootsFormEarthTextClass,
+)
+
+export const rootsFormImageUploadMetaClass = cn(
+  "mt-0.5 truncate text-xs leading-snug",
+  rootsFormEarthTextSecondaryClass,
+)
+
+export const rootsFormImageUploadActionClass = cn(
+  "inline-flex size-8 shrink-0 items-center justify-center rounded-md transition-[color,background-color] duration-150",
+  rootsFormEarthTextSecondaryClass,
+  rootsFormEarthHighlightHoverClass,
+  "hover:text-[#292524] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#16704a]/45",
+)
+
+export const rootsFormImageUploadActionDestructiveClass = cn(
+  rootsFormImageUploadActionClass,
+  "hover:text-destructive",
+)
