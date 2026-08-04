@@ -14,6 +14,10 @@ import type { MenuCatalogItem, MenuDockItemId } from "@/lib/menuCatalog"
 import { popScopedHref } from "@/lib/popRoutes"
 import { cn } from "@/lib/utils"
 import { menuFloatingPillShellClass } from "@/app/[siteId]/[popId]/menu/menuFloatingPillStyles"
+import {
+  menuDockEditBadgeClass,
+  menuDockEditDoneIconClass,
+} from "@/app/[siteId]/[popId]/menu/menuNatureStyles"
 import { useDraggable, useDroppable } from "@dnd-kit/core"
 import { Check, Minus, Pencil } from "lucide-react"
 import { useRouter } from "next/navigation"
@@ -22,8 +26,6 @@ type Props = {
   siteId: string
   popId: string
 }
-
-const DOCK_ICON_CLASS = "from-emerald-500/80 to-teal-600/80"
 
 const DOCK_LAYOUT_TRANSITION =
   "transform 320ms cubic-bezier(0.32, 0.72, 0, 1)"
@@ -139,7 +141,7 @@ function DockSlotItem({
             className="relative cursor-grab active:cursor-grabbing"
             aria-label={item.name}
           >
-            <DockIconVisual icon={item.icon} className={DOCK_ICON_CLASS} />
+            <DockIconVisual icon={item.icon} sectionKey={item.sectionKey} />
           </button>
         ) : (
           <div className="group/dock-tip relative">
@@ -149,7 +151,7 @@ function DockSlotItem({
               className="relative transition-transform duration-200 hover:scale-110 active:scale-95"
               aria-label={item.name}
             >
-              <DockIconVisual icon={item.icon} className={DOCK_ICON_CLASS} />
+              <DockIconVisual icon={item.icon} sectionKey={item.sectionKey} />
             </button>
             <span
               role="tooltip"
@@ -172,7 +174,8 @@ function DockSlotItem({
             onPointerDown={(event) => event.stopPropagation()}
             onClick={onRemove}
             className={cn(
-              "absolute -left-0.5 -top-0.5 z-30 flex size-[18px] items-center justify-center rounded-full bg-white text-[11px] font-bold text-neutral-700 shadow-md ring-1 ring-black/10",
+              "absolute -left-0.5 -top-0.5 z-30 flex size-[18px] items-center justify-center rounded-full text-[11px] font-bold shadow-md ring-1",
+              menuDockEditBadgeClass,
               !canRemove && "cursor-not-allowed opacity-35",
             )}
             aria-label={`Quitar ${item.name}`}
@@ -350,7 +353,7 @@ export function MenuDock({ siteId, popId }: Props) {
             aria-label={editing ? "Listo" : "Editar accesos directos"}
           >
             {editing ? (
-              <Check className="size-4 text-neutral-900" strokeWidth={2.5} />
+              <Check className={cn("size-4", menuDockEditDoneIconClass)} strokeWidth={2.5} />
             ) : (
               <Pencil className="size-4 text-muted-foreground" />
             )}

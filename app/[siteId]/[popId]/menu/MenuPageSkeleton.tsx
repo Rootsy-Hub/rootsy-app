@@ -2,6 +2,13 @@
 
 import { DOCK_SLOT_SHIFT_PX } from "@/app/[siteId]/[popId]/menu/MenuDockDndContext"
 import { menuFloatingPillShellClass } from "@/app/[siteId]/[popId]/menu/menuFloatingPillStyles"
+import {
+  menuAmbientTopGlowClass,
+  menuNatureShellClass,
+  menuVignetteSoftClass,
+} from "@/app/[siteId]/[popId]/menu/menuNatureStyles"
+import "@/app/[siteId]/[popId]/library/color/rootsyNaturePalette.css"
+import "@/app/[siteId]/[popId]/menu/menuNaturePalette.css"
 import { Skeleton } from "@/components/ui/skeleton"
 import { DEFAULT_MENU_DOCK_IDS } from "@/lib/menuCatalog"
 import { cn } from "@/lib/utils"
@@ -150,11 +157,11 @@ export function MenuPageSkeleton() {
       role="status"
       aria-busy="true"
       aria-label="Cargando menú"
-      className="fixed inset-0 flex flex-col overflow-hidden bg-background"
+      className={cn(menuNatureShellClass, "fixed inset-0 flex flex-col overflow-hidden bg-background")}
     >
       <div className="pointer-events-none absolute inset-0 overflow-hidden">
-        <div className="absolute top-0 left-1/2 h-[400px] w-[1000px] -translate-x-1/2 rounded-full bg-emerald-600/5 blur-[120px]" />
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_0%,rgba(7,10,9,0.55)_100%)]" />
+        <div className={cn("absolute top-0 left-1/2 h-[400px] w-[1000px] -translate-x-1/2 rounded-full blur-[120px]", menuAmbientTopGlowClass)} />
+        <div className={cn("absolute inset-0", menuVignetteSoftClass)} />
       </div>
 
       <MenuPageSkeletonHeader />

@@ -15,6 +15,13 @@ import {
   persistMenuDockIds,
   resolveMenuDockIds,
 } from "@/lib/menuDockPreference"
+import {
+  menuIconGlyphClass,
+  menuIconGradientForSection,
+  menuIconMacShadowClass,
+} from "@/app/[siteId]/[popId]/menu/menuNatureStyles"
+import { MenuIconChrome } from "@/app/[siteId]/[popId]/menu/MenuIconChrome"
+import type { MenuSectionKey } from "@/lib/menuCatalog"
 import { cn } from "@/lib/utils"
 import type { LucideIcon } from "lucide-react"
 import {
@@ -255,12 +262,25 @@ function getDragItemId(item: MenuDockDragItem | null): MenuDockItemId | null {
   return null
 }
 
+function getSectionKeyFromDragItem(
+  item: MenuDockDragItem | null,
+): MenuSectionKey {
+  if (!item) return "operar"
+  if ("sectionKey" in item && item.sectionKey) return item.sectionKey
+  const id = getDragItemId(item)
+  return id ? (getMenuCatalogItem(id)?.sectionKey ?? "operar") : "operar"
+}
+
 export function DockIconVisual({
   icon: Icon,
+  sectionKey = "operar",
+  variant = "dock",
   className,
   size = "md",
 }: {
   icon: LucideIcon
+  sectionKey?: MenuSectionKey
+  variant?: "default" | "dock" | "muted" | "overlay"
   className?: string
   size?: "md" | "sm" | "lg"
 }) {
@@ -269,18 +289,19 @@ export function DockIconVisual({
   const iconDim =
     size === "sm" ? "size-5" : size === "lg" ? "size-8" : "size-6"
   const radius = size === "lg" ? "rounded-[20px]" : "rounded-[22%]"
-  const innerRadius = size === "lg" ? "rounded-[19px]" : "rounded-[20%]"
   return (
     <div
       className={cn(
-        "relative flex items-center justify-center overflow-hidden bg-gradient-to-br from-emerald-500/80 to-teal-600/80 shadow-md",
+        "relative flex items-center justify-center overflow-hidden",
+        variant !== "muted" ? menuIconMacShadowClass : undefined,
+        menuIconGradientForSection(sectionKey, variant),
         dim,
         radius,
         className,
       )}
     >
-      <div className={cn("absolute inset-px border border-white/20", innerRadius)} />
-      <Icon className={cn("relative text-white drop-shadow-sm", iconDim)} />
+      <MenuIconChrome />
+      <Icon className={cn("relative", menuIconGlyphClass, iconDim)} />
     </div>
   )
 }
@@ -500,6 +521,8 @@ export function MenuDockDndProvider({
   const showDockDragOverlay =
     draggingItem != null && activeDragKind === "dock"
 
+  const draggingSectionKey = getSectionKeyFromDragItem(draggingItem)
+
   const contextValue = useMemo<MenuDockEditContextValue>(
     () => ({
       editing,
@@ -558,14 +581,16 @@ export function MenuDockDndProvider({
             <div className="cursor-grabbing scale-[1.18] drop-shadow-[0_18px_40px_rgba(0,0,0,0.35)]">
               <DockIconVisual
                 icon={draggingItem.icon}
-                className="from-emerald-500 to-teal-600 ring-2 ring-white/40"
+                sectionKey={draggingSectionKey}
+                variant="overlay"
               />
             </div>
           ) : showDockDragOverlay && draggingItem ? (
             <div className="cursor-grabbing scale-[1.18] drop-shadow-[0_18px_40px_rgba(0,0,0,0.35)]">
               <DockIconVisual
                 icon={draggingItem.icon}
-                className="from-emerald-500 to-teal-600 ring-2 ring-white/40"
+                sectionKey={draggingSectionKey}
+                variant="overlay"
               />
             </div>
           ) : null}

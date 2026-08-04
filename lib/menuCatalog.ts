@@ -70,11 +70,14 @@ export type MenuSectionDef = {
   items: MenuItemDef[]
 }
 
+export type MenuSectionKey = keyof typeof menuSectionsRaw
+
 export type MenuCatalogItem = {
   id: MenuDockItemId
   name: string
   icon: LucideIcon
   badge?: string
+  sectionKey: MenuSectionKey
   sectionTitle: string
   link?: MenuItemLink
   href?: "home"
@@ -140,6 +143,7 @@ const HOME_CATALOG_ITEM: MenuCatalogItem = {
   id: "home",
   name: "Inicio",
   icon: Home,
+  sectionKey: "operar",
   sectionTitle: "General",
   href: "home",
 }
@@ -148,7 +152,9 @@ const catalogById = new Map<MenuDockItemId, MenuCatalogItem>()
 
 catalogById.set("home", HOME_CATALOG_ITEM)
 
-for (const section of Object.values(menuSectionsRaw)) {
+for (const [sectionKey, section] of Object.entries(menuSectionsRaw) as Array<
+  [MenuSectionKey, MenuSectionDef]
+>) {
   for (const item of section.items) {
     if (item.link === "section") continue
     const id = item.link as MenuDockItemId
@@ -158,6 +164,7 @@ for (const section of Object.values(menuSectionsRaw)) {
         name: item.name,
         icon: item.icon,
         badge: item.badge,
+        sectionKey,
         sectionTitle: section.title,
         link: item.link,
       })

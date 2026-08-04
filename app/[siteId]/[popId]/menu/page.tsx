@@ -11,6 +11,14 @@ import {
   type MenuSectionNavItem,
 } from "@/app/[siteId]/[popId]/menu/MenuSectionNavigator"
 import { MenuPageSkeleton } from "@/app/[siteId]/[popId]/menu/MenuPageSkeleton"
+import {
+  menuAmbientTopGlowClass,
+  menuNatureShellClass,
+  menuRoleLabelClass,
+  menuVignetteClass,
+} from "@/app/[siteId]/[popId]/menu/menuNatureStyles"
+import "@/app/[siteId]/[popId]/library/color/rootsyNaturePalette.css"
+import "@/app/[siteId]/[popId]/menu/menuNaturePalette.css"
 import { canAccessMenuItem } from "@/lib/menuPermissions"
 import {
   menuSectionsRaw,
@@ -362,7 +370,7 @@ function MenuPage() {
     <MenuDockDndProvider popId={popId} permissionKeys={permissionKeys}>
     <div
       ref={containerRef}
-      className="fixed inset-0 flex flex-col overflow-hidden bg-background"
+      className={cn(menuNatureShellClass, "fixed inset-0 flex flex-col overflow-hidden bg-background")}
     >
       <div className="absolute inset-0 pointer-events-none overflow-hidden">
         {popBackgroundImageUrl?.trim() ? (
@@ -386,7 +394,7 @@ function MenuPage() {
             transform: "translate(-50%, -50%)",
           }}
         />
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[1000px] h-[400px] rounded-full bg-emerald-600/5 blur-[120px]" />
+        <div className={cn("absolute top-0 left-1/2 -translate-x-1/2 w-[1000px] h-[400px] rounded-full blur-[120px]", menuAmbientTopGlowClass)} />
         {particles.map((particle, i) => (
           <div
             key={i}
@@ -403,7 +411,7 @@ function MenuPage() {
             }}
           />
         ))}
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_0%,rgba(7,10,9,0.7)_100%)]" />
+        <div className={cn("absolute inset-0", menuVignetteClass)} />
       </div>
 
       <header className="relative z-20 border-b border-rootsy-hairline/80 bg-card/55 backdrop-blur-2xl backdrop-saturate-150 supports-[backdrop-filter]:bg-card/45">
@@ -521,7 +529,7 @@ function MenuPage() {
                   {userFullName || "Usuario"}
                 </span>
                 {userRoleLabel ? (
-                  <span className="truncate text-[10px] font-semibold uppercase tracking-wider text-emerald-700">
+                  <span className={cn("truncate text-[10px] font-semibold uppercase tracking-wider", menuRoleLabelClass)}>
                     {userRoleLabel}
                   </span>
                 ) : null}
@@ -561,6 +569,7 @@ function MenuPage() {
                           <MenuGridItemButton
                             key={item.name}
                             item={item}
+                            sectionKey={sectionKey}
                             disabled={!target}
                             onActivate={() => {
                               if (target) router.push(target)
