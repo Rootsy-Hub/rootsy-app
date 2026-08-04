@@ -1,31 +1,23 @@
 "use client"
 
 import type { ArticleTableRow } from "@/app/[siteId]/[popId]/articles/actions"
-import { OperationTableVerMas } from "@/app/[siteId]/[popId]/operations/operationsTableCells"
-import {
-  formatArticleDiscountBadge,
-} from "@/lib/articleDiscount"
-import {
-  ARTICLE_ITEM_KIND_STOCK_LABEL,
-} from "@/lib/articleItemKind"
-import {
-  tdTruncatedNameCellClass,
-  tdTruncatedTextCellClass,
-  workspaceTableBodyCellClass,
-} from "@/components/data-workspace/dataWorkspaceListStyles"
 import { ArticleCatalogImagePlaceholder } from "@/app/[siteId]/[popId]/articles/ArticleCatalogImagePlaceholder"
 import { DataWorkspaceTableThumbnail } from "@/components/data-workspace/DataWorkspaceListTablePrimitives"
+import {
+  workspaceTableLayoutBodyCellClass,
+  workspaceTableLayoutCellPrimaryTextClass,
+  workspaceTableLayoutCellSecondaryTextClass,
+  workspaceTableLayoutCellStackClass,
+  workspaceTableLayoutImageColumnClass,
+} from "@/components/data-workspace/dataWorkspaceTablesLayout"
+import {
+  workspaceTableNatureLinkClass,
+  workspaceTableNatureMoneyClass,
+  workspaceTableNatureTextPrimaryClass,
+  workspaceTableNatureTextSecondaryClass,
+} from "@/components/data-workspace/dataWorkspaceListStyles"
 import { cn } from "@/lib/utils"
 import { TableCell } from "@/components/ui/table"
-
-const articleTablePrimaryClass =
-  "block min-w-0 truncate text-sm font-medium leading-snug text-foreground"
-
-const articleTableSecondaryClass =
-  "block min-w-0 truncate text-xs leading-snug text-muted-foreground"
-
-const articleTableDetailLineClass =
-  "block min-w-0 truncate text-xs leading-snug text-muted-foreground"
 
 export function formatArticleStockOnHand(value: number): string {
   if (Number.isInteger(value) || Math.abs(value - Math.round(value)) < 1e-6) {
@@ -44,7 +36,12 @@ export function ArticleTableImageCell({
   const src = row.imageUrl?.trim()
 
   return (
-    <TableCell className="w-24 px-3 py-2.5 align-middle">
+    <TableCell
+      className={cn(
+        workspaceTableLayoutImageColumnClass,
+        workspaceTableLayoutBodyCellClass,
+      )}
+    >
       {src ? (
         <button
           type="button"
@@ -55,39 +52,44 @@ export function ArticleTableImageCell({
           <DataWorkspaceTableThumbnail
             src={src}
             alt={row.name || "Artículo"}
-            size="lg"
+            size="sm"
           />
         </button>
       ) : (
-        <ArticleCatalogImagePlaceholder size="lg" />
+        <ArticleCatalogImagePlaceholder size="sm" />
       )}
     </TableCell>
   )
 }
 
 export function ArticleTableArticleCell({ row }: { row: ArticleTableRow }) {
+  const secondary =
+    row.description.trim() || row.brand.trim() || null
+
   return (
-    <TableCell className={tdTruncatedNameCellClass}>
-      <div className="flex min-w-0 flex-col gap-0.5">
-        <span className={articleTablePrimaryClass} title={row.name || undefined}>
+    <TableCell className={cn("min-w-0", workspaceTableLayoutBodyCellClass)}>
+      <div className={workspaceTableLayoutCellStackClass}>
+        <p
+          className={cn(
+            workspaceTableLayoutCellPrimaryTextClass,
+            workspaceTableNatureTextPrimaryClass,
+          )}
+          title={row.name || undefined}
+        >
           {row.name || "—"}
-        </span>
-        {row.description.trim() ? (
-          <span
-            className={articleTableSecondaryClass}
-            title={row.description}
-          >
-            {row.description}
-          </span>
-        ) : null}
-        {row.brand.trim() ? (
-          <span
-            className="block min-w-0 truncate text-xs leading-snug text-foreground/75"
-            title={row.brand}
-          >
-            {row.brand}
-          </span>
-        ) : null}
+        </p>
+        <p
+          className={cn(
+            workspaceTableLayoutCellSecondaryTextClass,
+            secondary
+              ? workspaceTableNatureTextSecondaryClass
+              : "invisible",
+          )}
+          title={secondary ?? undefined}
+          aria-hidden={!secondary}
+        >
+          {secondary ?? "\u00A0"}
+        </p>
       </div>
     </TableCell>
   )
@@ -95,42 +97,51 @@ export function ArticleTableArticleCell({ row }: { row: ArticleTableRow }) {
 
 export function ArticleTableDetailCell({
   row,
-  hasDiscount,
-  onVerMas,
+  onVerDetalle,
 }: {
   row: ArticleTableRow
-  hasDiscount: boolean
-  onVerMas: () => void
+  onVerDetalle: () => void
 }) {
   return (
-    <TableCell className={cn(workspaceTableBodyCellClass, "min-w-[9rem] max-w-[11rem]")}>
-      <div className="flex min-w-0 flex-col gap-0.5">
-        <span className="text-sm leading-snug text-foreground">
-          {ARTICLE_ITEM_KIND_STOCK_LABEL[row.itemKind]}
-        </span>
-        {hasDiscount && row.discountMode && row.discountValue != null ? (
-          <span className={articleTableDetailLineClass}>
-            {formatArticleDiscountBadge(row.discountMode, row.discountValue)}
-          </span>
-        ) : null}
-        <span className={articleTableDetailLineClass}>
-          {row.isActive ? "Activo" : "Inactivo"}
-        </span>
-        <OperationTableVerMas
-          label={row.name || "artículo"}
-          onClick={onVerMas}
-        />
+    <TableCell
+      className={cn(
+        workspaceTableLayoutBodyCellClass,
+        "min-w-[9rem] max-w-[11rem]",
+      )}
+    >
+      <div className={workspaceTableLayoutCellStackClass}>
+        <button
+          type="button"
+          className={cn(
+            "w-fit text-left text-xs font-medium leading-4 underline-offset-2 hover:underline",
+            workspaceTableNatureLinkClass,
+          )}
+          onClick={onVerDetalle}
+        >
+          Ver detalles
+          <span className="sr-only">{row.name || "artículo"}</span>
+        </button>
       </div>
     </TableCell>
   )
 }
 
 export function ArticleTableCategoryCell({ name }: { name: string }) {
+  const label = name || "—"
+
   return (
-    <TableCell className={cn(tdTruncatedTextCellClass, "text-foreground/90")}>
-      <span className="block truncate" title={name}>
-        {name || "—"}
-      </span>
+    <TableCell className={workspaceTableLayoutBodyCellClass}>
+      <div className={workspaceTableLayoutCellStackClass}>
+        <p
+          className={cn(
+            workspaceTableLayoutCellPrimaryTextClass,
+            workspaceTableNatureTextPrimaryClass,
+          )}
+          title={name || undefined}
+        >
+          {label}
+        </p>
+      </div>
     </TableCell>
   )
 }
@@ -144,18 +155,36 @@ export function ArticleTableSuppliersCell({
     suppliers.length > 0 ? suppliers.map((s) => s.name).join(", ") : "—"
 
   return (
-    <TableCell className={cn(tdTruncatedTextCellClass, "text-muted-foreground")}>
-      <span className="block truncate" title={label === "—" ? undefined : label}>
-        {label}
-      </span>
+    <TableCell className={workspaceTableLayoutBodyCellClass}>
+      <div className={workspaceTableLayoutCellStackClass}>
+        <p
+          className={cn(
+            workspaceTableLayoutCellPrimaryTextClass,
+            workspaceTableNatureTextSecondaryClass,
+          )}
+          title={label === "—" ? undefined : label}
+        >
+          {label}
+        </p>
+      </div>
     </TableCell>
   )
 }
 
 export function ArticleTableStockCell({ stockOnHand }: { stockOnHand: number }) {
   return (
-    <TableCell className="w-[5.5rem] px-3 py-2.5 text-right align-middle">
-      <span className="block font-numeric text-xl font-semibold tabular-nums tracking-tight text-foreground">
+    <TableCell
+      className={cn(
+        workspaceTableLayoutBodyCellClass,
+        "w-[5.5rem] text-right",
+      )}
+    >
+      <span
+        className={cn(
+          "block text-sm font-semibold tabular-nums leading-4",
+          workspaceTableNatureMoneyClass,
+        )}
+      >
         {formatArticleStockOnHand(stockOnHand)}
       </span>
     </TableCell>

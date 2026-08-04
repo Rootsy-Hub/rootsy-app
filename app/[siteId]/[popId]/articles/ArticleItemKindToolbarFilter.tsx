@@ -1,6 +1,6 @@
 "use client"
 
-import { lightToolbarPanelClass } from "@/components/data-workspace/dataWorkspaceListStyles"
+import { dataWorkspaceListFiltersFieldClass } from "@/components/data-workspace/dataWorkspaceTablesLayout"
 import {
   RootsFormSelectField,
   RootsFormSelectItem,
@@ -56,7 +56,7 @@ export function ArticleItemKindToolbarFilter({
       value={value}
       onValueChange={(next) => onChange(next as ArticleItemKindFilterId)}
       prefix={<LayoutGrid className="size-4" aria-hidden />}
-      className={cn(lightToolbarPanelClass, className)}
+      className={cn(dataWorkspaceListFiltersFieldClass(), className)}
       triggerClassName={value !== "all" ? filterTriggerActiveClass : undefined}
     >
       {FILTER_ITEMS.map((item) => (

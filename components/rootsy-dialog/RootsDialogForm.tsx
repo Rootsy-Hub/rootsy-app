@@ -1,6 +1,8 @@
 "use client"
 
+import { rootsDialogLoadingBodyClass } from "@/components/rootsy-dialog/rootsDialogStyles"
 import { saleOpChannelErrorBanner } from "@/components/sale-operation/saleOperationStyles"
+import { Spinner } from "@/components/ui/spinner"
 import { cn } from "@/lib/utils"
 import type { ComponentProps, FormEventHandler, ReactNode } from "react"
 
@@ -37,15 +39,22 @@ export function RootsDialogErrorBanner({ className, ...props }: BannerProps) {
 }
 
 export function RootsDialogLoadingState({
-  message = "Cargando…",
+  message,
   className,
 }: {
+  /** Solo lectores de pantalla; no se muestra texto visible. */
   message?: string
   className?: string
 }) {
   return (
-    <p className={cn("text-sm text-muted-foreground", className)}>
-      {message}
-    </p>
+    <div
+      className={cn(rootsDialogLoadingBodyClass, className)}
+      role="status"
+      aria-busy="true"
+      aria-live="polite"
+    >
+      <Spinner className="size-10 text-[#78716c]" />
+      <span className="sr-only">{message ?? "Cargando"}</span>
+    </div>
   )
 }

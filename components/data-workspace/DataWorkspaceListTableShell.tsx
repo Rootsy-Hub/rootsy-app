@@ -3,6 +3,8 @@
 import { cn } from "@/lib/utils"
 import {
   dataWorkspaceShellCard,
+  listTableChromeStackClass,
+  listTableChromeStackFollowRowClass,
   workspaceTableListBodyScopeClass,
   workspaceTableSurfaceClass,
 } from "./dataWorkspaceListStyles"
@@ -10,6 +12,8 @@ import type { ReactNode } from "react"
 
 export type DataWorkspaceListTableShellProps = {
   children: ReactNode
+  /** Barra opcional sobre la tabla (chips de filtros activos). */
+  activeFiltersBar?: ReactNode
   /** Barra opcional sobre la tabla (selección múltiple, acciones en lote). */
   bulkToolbar?: ReactNode
   /** Pie fijo (paginación, totales), fuera del scroll. */
@@ -23,6 +27,7 @@ export type DataWorkspaceListTableShellProps = {
 
 export function DataWorkspaceListTableShell({
   children,
+  activeFiltersBar,
   bulkToolbar,
   footer,
   overlay,
@@ -30,6 +35,7 @@ export function DataWorkspaceListTableShell({
   className,
 }: DataWorkspaceListTableShellProps) {
   const isFlush = variant === "flush"
+  const useChromeStack = activeFiltersBar != null
 
   return (
     <div
@@ -46,7 +52,18 @@ export function DataWorkspaceListTableShell({
         />
       ) : null}
       <div className="relative flex min-h-0 flex-1 flex-col overflow-hidden">
-        {bulkToolbar ? bulkToolbar : null}
+        {useChromeStack ? (
+          <div className={listTableChromeStackClass}>
+            {activeFiltersBar}
+            {bulkToolbar ? (
+              <div className={listTableChromeStackFollowRowClass}>
+                {bulkToolbar}
+              </div>
+            ) : null}
+          </div>
+        ) : (
+          bulkToolbar ?? null
+        )}
         <div className="relative min-h-0 flex-1">
           <div
             className={cn(

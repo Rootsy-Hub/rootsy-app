@@ -110,7 +110,7 @@ export function WorkspaceTableSelectHead({
         className,
       )}
     >
-      <div className={cn(selectColumnInnerClass, "min-h-10")}>
+      <div className={cn(selectColumnInnerClass, "h-full min-h-0")}>
         <Checkbox
           className={workspaceTableCheckboxClass(tone)}
           checked={checked}

@@ -9,6 +9,7 @@ export {
 } from "@/components/rootsy-button/RootsSemanticButton"
 export {
   rootsButtonClassForVariant,
+  rootsButtonCompactSizeClass,
   rootsButtonDarkIconButtonClass,
   rootsButtonDestructiveClass,
   rootsButtonLinkClass,

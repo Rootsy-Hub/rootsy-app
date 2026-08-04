@@ -16,6 +16,10 @@ import type { ComponentProps, ReactNode, RefObject } from "react"
 const rootsFormFilterTriggerActiveClass =
   "!border-[#16704a] ring-2 ring-[#16704a]/20"
 
+/** Oculta la cruz nativa de `type="search"` — usamos botón custom de limpiar. */
+const searchInputWithoutNativeClearClass =
+  "[&::-webkit-search-cancel-button]:hidden [&::-webkit-search-decoration]:hidden [&::-webkit-search-results-button]:hidden [&::-moz-search-clear-button]:hidden"
+
 function ToolbarClearSearchIcon({ className }: { className?: string }) {
   return (
     <svg
@@ -146,7 +150,10 @@ export function DataWorkspaceListSearchField({
           autoComplete="off"
           spellCheck={false}
           aria-label="Buscar en el listado"
-          inputClassName={cn(hasValue && onClear && "pr-10")}
+          inputClassName={cn(
+            searchInputWithoutNativeClearClass,
+            hasValue && onClear && "pr-10",
+          )}
           {...inputProps}
         />
         {hasValue && onClear ? (

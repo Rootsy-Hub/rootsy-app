@@ -30,6 +30,7 @@ import {
 import {
   dataWorkspaceListFiltersBarClass,
   dataWorkspaceListFiltersBarInnerClass,
+  dataWorkspaceListFiltersBarRowClass,
   dataWorkspaceListFiltersDemoShellClass,
   dataWorkspaceListFiltersFieldClass,
   dataWorkspaceListFiltersGridClass,
@@ -296,7 +297,7 @@ export function LayoutsTablesLayoutGridDemo() {
 
       <div className="relative shrink-0">
         <LayoutHeightBadge label="h-23" />
-        <div className="h-23 border-b border-neutral-200 bg-white">
+        <div className="h-23 border-b border-neutral-200 bg-background">
           <div className="grid h-full grid-cols-3 divide-x divide-neutral-200">
             <div className="min-w-0" />
             <div className="min-w-0" />
@@ -316,11 +317,11 @@ export function LayoutsTablesLayoutGridDemo() {
         >
           <div className="relative shrink-0">
             <LayoutHeightBadge label="h-11" />
-            <div className="h-11 border-b border-[var(--wt-border-strong)] bg-[var(--wt-header-bg)]" />
+            <div className="h-11 bg-[var(--wt-header-bg)]" />
           </div>
 
           <div className="relative min-h-0 flex-1 overflow-auto">
-            <LayoutHeightBadge label="h-11 · flex-1 · scroll" />
+            <LayoutHeightBadge label="h-14 · flex-1 · scroll" />
             <div>
               {Array.from({ length: 12 }, (_, index) => (
                 <div
@@ -526,7 +527,12 @@ export function LayoutsTablesFiltersDemo({
     >
       <div
         className={cn(
-          composed ? dataWorkspaceListFiltersBarInnerClass : "h-full",
+          composed
+            ? cn(
+                dataWorkspaceListFiltersBarInnerClass,
+                dataWorkspaceListFiltersBarRowClass,
+              )
+            : "h-full",
         )}
       >
         <div

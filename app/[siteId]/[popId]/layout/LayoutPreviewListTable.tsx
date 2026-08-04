@@ -27,6 +27,9 @@ import {
   DataWorkspaceListFiltersDialogTrigger,
   DataWorkspaceListSearchField,
 } from "@/components/data-workspace/DataWorkspaceListFilterFields"
+import { DataWorkspaceListActiveFiltersBar } from "@/components/data-workspace/DataWorkspaceListActiveFiltersBar"
+import { DataWorkspaceListBulkToolbar } from "@/components/data-workspace/DataWorkspaceListBulkToolbar"
+import { DataWorkspaceListFilterChip } from "@/components/data-workspace/DataWorkspaceListFilterChip"
 import { DataWorkspacePeriodFilter } from "@/components/data-workspace/DataWorkspacePeriodFilter"
 import { DataWorkspaceListPaginationFooter } from "@/components/data-workspace/DataWorkspaceListPaginationFooter"
 import { DataWorkspaceListTableShell } from "@/components/data-workspace/DataWorkspaceListTableShell"
@@ -37,6 +40,7 @@ import {
 import {
   dataWorkspaceListFiltersBarClass,
   dataWorkspaceListFiltersBarInnerClass,
+  dataWorkspaceListFiltersBarRowClass,
   dataWorkspaceListFiltersGridClass,
   dataWorkspaceListFiltersPanelClass,
   dataWorkspaceListFiltersPanelLastClass,
@@ -48,6 +52,9 @@ import {
   workspaceTableLayoutHeaderHeadClass,
   workspaceTableLayoutImageColumnClass,
   workspaceTableLayoutListBodyScopeClass,
+  workspaceTableLayoutListSurfaceClass,
+  workspaceTableLayoutSelectBodyCellClass,
+  workspaceTableLayoutActionsBodyCellClass,
   workspaceTableNatureEarthOrganicScopeClass,
 } from "@/components/data-workspace/dataWorkspaceTablesLayout"
 import {
@@ -57,13 +64,10 @@ import {
   WorkspaceTableSelectHead,
 } from "@/components/data-workspace/WorkspaceTableHeader"
 import {
-  listBulkToolbarClearButtonClass,
-  lightFilterChipClass,
   lightToolbarDropdownContentClass,
   lightToolbarDropdownItemClass,
   selectColumnInnerClass,
   workspaceTableNatureBodyRowClassNames,
-  workspaceTableNatureBulkBarClass,
   workspaceTableNatureCheckboxClass,
   workspaceTableNatureLinkClass,
   workspaceTableNatureMoneyClass,
@@ -73,9 +77,7 @@ import {
   workspaceTableNatureTextSecondaryClass,
   workspaceTableNatureTextTertiaryClass,
   toolbarBlockLabelClass,
-  workspaceTableActionsBodyCellClass,
   workspaceTableLayoutClassName,
-  workspaceTableSelectBodyCellClass,
 } from "@/components/data-workspace/dataWorkspaceListStyles"
 import { WorkspaceTableSkeletonRows } from "@/components/data-workspace/WorkspaceTableSkeleton"
 import { layoutPreviewSkeletonColumns } from "@/components/data-workspace/workspaceTableSkeletonPresets"
@@ -104,7 +106,6 @@ import {
   Paperclip,
   Pencil,
   Trash2,
-  X,
 } from "lucide-react"
 import Link from "next/link"
 import type { DateRange } from "react-day-picker"
@@ -434,7 +435,12 @@ export function LayoutPreviewListTable({
         role="toolbar"
         aria-label="Filtros del listado"
       >
-        <div className={dataWorkspaceListFiltersBarInnerClass}>
+        <div
+          className={cn(
+            dataWorkspaceListFiltersBarInnerClass,
+            dataWorkspaceListFiltersBarRowClass,
+          )}
+        >
           <div className={dataWorkspaceListFiltersGridClass}>
             <div className={dataWorkspaceListFiltersPanelClass}>
               <DataWorkspacePeriodFilter
@@ -472,120 +478,6 @@ export function LayoutPreviewListTable({
             </div>
           </div>
         </div>
-
-      {hasFilterChips ? (
-        <div
-          className="border-t border-border/80 bg-card px-4 py-3"
-          role="region"
-          aria-label="Filtros activos"
-        >
-          <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
-            <p className={toolbarBlockLabelClass}>
-              Filtros activos
-              <span className="sr-only">: {activeFilterCount}</span>
-              <span
-                className="ml-1.5 inline-flex min-w-5 items-center justify-center rounded-full bg-muted px-1.5 py-0.5 text-[10px] font-semibold tabular-nums normal-case tracking-normal text-muted-foreground"
-                aria-hidden
-              >
-                {activeFilterCount}
-              </span>
-            </p>
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              className="h-8 px-2.5 text-xs font-medium text-muted-foreground hover:text-foreground"
-              onClick={clearAllFilters}
-            >
-              Limpiar todo
-            </Button>
-          </div>
-          <div className="flex flex-wrap items-center gap-1.5">
-            {searchQuery.trim() ? (
-              <Badge
-                variant="secondary"
-                className={lightFilterChipClass}
-              >
-                <span className="truncate">Buscar: «{searchQuery.trim()}»</span>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon"
-                  className="size-6 shrink-0"
-                  onClick={() => setSearchQuery("")}
-                  aria-label="Quitar búsqueda"
-                >
-                  <X className="size-3" />
-                </Button>
-              </Badge>
-            ) : null}
-            {statusFilterNarrow
-              ? ALL_STATUSES.filter((s) => includedStatuses.has(s)).map(
-                  (s) => (
-                    <Badge
-                      key={s}
-                      variant="secondary"
-                      className={lightFilterChipClass}
-                    >
-                      {STATUS_LABEL[s]}
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="icon"
-                        className="size-6 shrink-0"
-                        onClick={() => removeStatusChip(s)}
-                        aria-label={`Quitar estado ${STATUS_LABEL[s]}`}
-                      >
-                        <X className="size-3" />
-                      </Button>
-                    </Badge>
-                  ),
-                )
-              : null}
-            {refFilterNarrow
-              ? LAYOUT_PREVIEW_REF_TABLE_OPTIONS.filter((t) =>
-                  includedRefTables.has(t),
-                ).map((t) => (
-                  <Badge
-                    key={t}
-                    variant="secondary"
-                    className={cn(lightFilterChipClass, "max-w-48")}
-                  >
-                    <span className="truncate">{t}</span>
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="icon"
-                      className="size-6 shrink-0"
-                      onClick={() => removeRefChip(t)}
-                      aria-label={`Quitar filtro ${t}`}
-                    >
-                      <X className="size-3" />
-                    </Button>
-                  </Badge>
-                ))
-              : null}
-            {datePreset !== "all" ? (
-              <Badge
-                variant="secondary"
-                className={lightFilterChipClass}
-              >
-                <span className="truncate">Fecha: {dateFilterSummary}</span>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon"
-                  className="size-6 shrink-0"
-                  onClick={clearDateFilter}
-                  aria-label="Quitar filtro de fecha"
-                >
-                  <X className="size-3" />
-                </Button>
-              </Badge>
-            ) : null}
-          </div>
-        </div>
-      ) : null}
       </div>
 
       <Dialog
@@ -669,41 +561,67 @@ export function LayoutPreviewListTable({
         className={cn(
           workspaceTableNatureEarthOrganicScopeClass,
           workspaceTableLayoutListBodyScopeClass,
+          workspaceTableLayoutListSurfaceClass,
         )}
+        activeFiltersBar={
+          hasFilterChips ? (
+            <DataWorkspaceListActiveFiltersBar
+              activeCount={activeFilterCount}
+              onClearAll={clearAllFilters}
+            >
+              {searchQuery.trim() ? (
+                <DataWorkspaceListFilterChip
+                  label={`Buscar: «${searchQuery.trim()}»`}
+                  onRemove={() => setSearchQuery("")}
+                  removeAriaLabel="Quitar búsqueda"
+                />
+              ) : null}
+              {statusFilterNarrow
+                ? ALL_STATUSES.filter((s) => includedStatuses.has(s)).map(
+                    (s) => (
+                      <DataWorkspaceListFilterChip
+                        key={s}
+                        label={STATUS_LABEL[s]}
+                        onRemove={() => removeStatusChip(s)}
+                        removeAriaLabel={`Quitar estado ${STATUS_LABEL[s]}`}
+                      />
+                    ),
+                  )
+                : null}
+              {refFilterNarrow
+                ? LAYOUT_PREVIEW_REF_TABLE_OPTIONS.filter((t) =>
+                    includedRefTables.has(t),
+                  ).map((t) => (
+                    <DataWorkspaceListFilterChip
+                      key={t}
+                      label={t}
+                      onRemove={() => removeRefChip(t)}
+                      removeAriaLabel={`Quitar filtro ${t}`}
+                      className="max-w-48"
+                    />
+                  ))
+                : null}
+              {datePreset !== "all" ? (
+                <DataWorkspaceListFilterChip
+                  label={`Fecha: ${dateFilterSummary}`}
+                  onRemove={clearDateFilter}
+                  removeAriaLabel="Quitar filtro de fecha"
+                />
+              ) : null}
+            </DataWorkspaceListActiveFiltersBar>
+          ) : null
+        }
         bulkToolbar={
           selected.size > 0 ? (
-            <div
-              className={cn(
-                "flex flex-wrap items-center gap-2 px-3 py-2.5 sm:px-4",
-                workspaceTableNatureBulkBarClass,
-              )}
-              role="region"
-              aria-label="Acciones sobre selección"
-            >
-              <span className={cn("text-sm", workspaceTableNatureTextPrimaryClass)}>
-                <span className="font-semibold">{selected.size}</span>{" "}
-                <span className={workspaceTableNatureTextSecondaryClass}>
-                  seleccionados
-                </span>
-              </span>
-              <div className="flex flex-wrap items-center gap-2">
-                <Button type="button" size="sm" variant="outline" className="h-8">
-                  Eliminar selección
-                </Button>
-                <Button type="button" size="sm" variant="outline" className="h-8">
-                  Exportar CSV
-                </Button>
-                <Button
-                  type="button"
-                  size="sm"
-                  variant="ghost"
-                  className={listBulkToolbarClearButtonClass}
-                  onClick={() => setSelected(new Set())}
-                >
-                  Limpiar
-                </Button>
-              </div>
-            </div>
+            <DataWorkspaceListBulkToolbar
+              selectedCount={selected.size}
+              onClear={() => setSelected(new Set())}
+              placement={hasFilterChips ? "stacked" : "standalone"}
+              actions={[
+                { label: "Eliminar selección", onClick: () => {} },
+                { label: "Exportar CSV", onClick: () => {} },
+              ]}
+            />
           ) : null
         }
         footer={
@@ -829,7 +747,7 @@ export function LayoutPreviewListTable({
                   }),
                 )}
               >
-                <TableCell className={cn(workspaceTableSelectBodyCellClass, "!py-0")}>
+                <TableCell className={workspaceTableLayoutSelectBodyCellClass}>
                   <div className={selectColumnInnerClass}>
                     <Checkbox
                       className={workspaceTableNatureCheckboxClass}
@@ -953,9 +871,7 @@ export function LayoutPreviewListTable({
                 <TableCell className={workspaceTableLayoutBodyCellClass}>
                   <StatusBadge status={row.status} />
                 </TableCell>
-                <TableCell
-                  className={cn(workspaceTableActionsBodyCellClass, "!py-0")}
-                >
+                <TableCell className={workspaceTableLayoutActionsBodyCellClass}>
                   <div className="flex items-center justify-end gap-0.5">
                     <DataWorkspaceTableIconAction
                       label={`Editar ${row.title}`}

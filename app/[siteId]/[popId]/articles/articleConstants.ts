@@ -11,6 +11,7 @@ import {
   rootsFormTwoColRowClass,
 } from "@/components/rootsy-form/rootsFormStyles"
 import { rootsyElevationOverlayLightClass } from "@/components/elevation/rootsyElevationStyles"
+import { rootsDialogBodyClass } from "@/components/rootsy-dialog/rootsDialogStyles"
 import { cn } from "@/lib/utils"
 
 export const ARTICLE_DELETE_CONFIRM_PHRASE = "ELIMINAR"
@@ -81,8 +82,7 @@ export const articleDialogDescriptionClass =
 export const articleDialogHeaderClass =
   "flex shrink-0 flex-col gap-0.5 border-b border-black/[0.06] bg-white px-5 pb-3.5 pt-5 text-left"
 
-export const articleDialogBodyClass =
-  "min-h-0 flex-1 overflow-y-auto overscroll-contain bg-white px-5 py-4"
+export const articleDialogBodyClass = rootsDialogBodyClass
 
 export const articleDialogFooterClass =
   "shrink-0 gap-2.5 border-t border-black/[0.06] bg-white px-5 py-3 sm:flex-row sm:items-center sm:justify-between"

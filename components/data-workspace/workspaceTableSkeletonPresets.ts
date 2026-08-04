@@ -112,14 +112,14 @@ export function articlesSkeletonColumns(options?: {
 }): WorkspaceTableSkeletonColumn[] {
   const columns: WorkspaceTableSkeletonColumn[] = [
     { kind: "select" },
-    { kind: "thumbnail", className: "w-24" },
-    { kind: "text", className: "w-[14rem] min-w-0 max-w-[14rem]", lines: 3 },
-    { kind: "text", className: "min-w-[9rem] max-w-[11rem]", lines: 3 },
-    { kind: "text", className: "min-w-0 max-w-[12rem]" },
-    { kind: "text", className: "min-w-0 max-w-[12rem]" },
+    { kind: "thumbnail", className: "w-14" },
+    { kind: "text", className: "min-w-48", lines: 2 },
+    { kind: "text", className: "w-44", lines: 1 },
+    { kind: "text", className: "w-40", lines: 1 },
+    { kind: "text", className: "w-40", lines: 1 },
     { kind: "money" },
     { kind: "money" },
-    { kind: "text", className: "w-[5.5rem] text-right" },
+    { kind: "text", className: "w-[5.5rem] text-right", lines: 1 },
   ]
   if (options?.hasActionsColumn) {
     columns.push({ kind: "actions", className: "w-[7.25rem]" })

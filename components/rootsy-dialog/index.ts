@@ -1,6 +1,7 @@
 export { RootsDialogContent, type RootsDialogSize } from "./RootsDialogContent"
 export { RootsDialogHeader } from "./RootsDialogHeader"
 export { RootsDialogBody } from "./RootsDialogBody"
+export { rootsDialogBodyClass, rootsDialogLoadingBodyClass } from "./rootsDialogStyles"
 export {
   RootsDialogFooter,
   RootsDialogSingleActionFooter,

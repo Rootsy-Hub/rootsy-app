@@ -1,5 +1,6 @@
 "use client"
 
+import { ArticlesPageSkeleton } from "@/app/[siteId]/[popId]/articles/ArticlesPageSkeleton"
 import {
   defaultArticleCatalogExtraFormState,
   type ArticleCatalogExtraFormState,
@@ -55,6 +56,13 @@ import {
   parseArticlesWorkspaceUrl,
 } from "@/app/[siteId]/[popId]/articles/workspaceUrl"
 import { buildPaginationItems } from "@/app/[siteId]/[popId]/layout/layoutPreviewPagination"
+import { DataWorkspaceListActiveFiltersBar } from "@/components/data-workspace/DataWorkspaceListActiveFiltersBar"
+import { DataWorkspaceListBulkToolbar } from "@/components/data-workspace/DataWorkspaceListBulkToolbar"
+import { DataWorkspaceListFilterChip } from "@/components/data-workspace/DataWorkspaceListFilterChip"
+import {
+  DataWorkspaceListFiltersDialogTrigger,
+  DataWorkspaceListSearchField,
+} from "@/components/data-workspace/DataWorkspaceListFilterFields"
 import { DataWorkspaceListPaginationFooter } from "@/components/data-workspace/DataWorkspaceListPaginationFooter"
 import { DataWorkspaceListTableShell } from "@/components/data-workspace/DataWorkspaceListTableShell"
 import {
@@ -63,29 +71,41 @@ import {
   DataWorkspaceTableIconAction,
 } from "@/components/data-workspace/DataWorkspaceListTablePrimitives"
 import {
-  lightFilterChipClass,
-  lightTableThClass,
-  lightToolbarButtonClass,
-  lightToolbarControlActiveClass,
-  lightToolbarInputClass,
-  lightToolbarClearButtonClass,
-  lightToolbarPanelClass,
-  lightToolbarPanelLastClass,
-  lightToolbarShellClass,
   selectColumnInnerClass,
-  tableRowSelectCheckboxClass,
-  tdMoneyMutedClass,
-  tdMoneyTotalClass,
-  toolbarBlockLabelClass,
-  workspaceDataTableClassName,
-  workspaceTableBodyRowClassNames,
-  workspaceTableHeaderRowClass,
+  workspaceTableLayoutClassName,
+  workspaceTableNatureBodyRowClassNames,
+  workspaceTableNatureCheckboxClass,
+  workspaceTableNatureMoneyClass,
+  workspaceTableNatureTextSecondaryClass,
 } from "@/components/data-workspace/dataWorkspaceListStyles"
+import {
+  dataWorkspaceListFiltersBarClass,
+  dataWorkspaceListFiltersBarInnerClass,
+  dataWorkspaceListFiltersBarRowClass,
+  dataWorkspaceListFiltersGridClass,
+  dataWorkspaceListFiltersPanelClass,
+  dataWorkspaceListFiltersPanelLastClass,
+  workspaceTableLayoutActionsBodyCellClass,
+  workspaceTableLayoutBodyCellClass,
+  workspaceTableLayoutBodyRowClass,
+  workspaceTableLayoutCellStackClass,
+  workspaceTableLayoutHeaderHeadClass,
+  workspaceTableLayoutImageColumnClass,
+  workspaceTableLayoutListBodyScopeClass,
+  workspaceTableLayoutListSurfaceClass,
+  workspaceTableLayoutSelectBodyCellClass,
+  workspaceTableNatureEarthOrganicScopeClass,
+} from "@/components/data-workspace/dataWorkspaceTablesLayout"
+import {
+  WorkspaceTableHead,
+  WorkspaceTableHeader,
+  WorkspaceTableHeaderRow,
+  WorkspaceTableSelectHead,
+} from "@/components/data-workspace/WorkspaceTableHeader"
 import { WorkspaceTableSkeletonRows } from "@/components/data-workspace/WorkspaceTableSkeleton"
 import { articlesSkeletonColumns } from "@/components/data-workspace/workspaceTableSkeletonPresets"
 import { DataWorkspaceLayout } from "@/components/layouts/DataWorkspaceLayout"
 import { DataWorkspaceHeaderIconButton } from "@/components/layouts/DataWorkspaceHeaderIconButton"
-import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
 import {
@@ -106,11 +126,8 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import {
-  Table,
   TableBody,
   TableCell,
-  TableHead,
-  TableHeader,
   TableRow,
 } from "@/components/ui/table"
 import withAuth from "@/hoc/withAuth"
@@ -126,6 +143,7 @@ import {
   parseMoneyInput,
 } from "@/lib/moneyInput"
 import {
+  ARTICLE_ITEM_KIND_STOCK_LABEL,
   type ArticleItemKind,
   defaultUnitForKind,
   unitOfMeasureToFormState,
@@ -136,11 +154,9 @@ import {
   parseArticleDiscountInput,
 } from "@/lib/articleDiscount"
 import {
-  Filter,
   FolderTree,
   Pencil,
   Plus,
-  Search,
   Trash2,
   X,
 } from "lucide-react"
@@ -151,6 +167,7 @@ import {
   useSearchParams,
 } from "next/navigation"
 import {
+  Suspense,
   useCallback,
   useEffect,
   useId,
@@ -281,6 +298,7 @@ function ArticlesPage() {
 
   const [searchInput, setSearchInput] = useState(workspaceParsed.q)
   const searchInputId = useId()
+  const filtersButtonId = useId()
   const pageSizeLabelId = useId()
   const searchInputRef = useRef<HTMLInputElement>(null)
 
@@ -914,7 +932,8 @@ function ArticlesPage() {
   const hasFilterChips =
     workspaceParsed.q.trim() !== "" ||
     workspaceParsed.soloActivos ||
-    workspaceParsed.categoryId.trim() !== ""
+    workspaceParsed.categoryId.trim() !== "" ||
+    activeItemKindFilterId !== "all"
 
   const skeletonRowCount = Math.min(
     12,
@@ -941,8 +960,9 @@ function ArticlesPage() {
     let count = 0
     if (workspaceParsed.q.trim()) count++
     count += modalFiltersActiveCount
+    if (activeItemKindFilterId !== "all") count++
     return count
-  }, [workspaceParsed.q, modalFiltersActiveCount])
+  }, [workspaceParsed.q, modalFiltersActiveCount, activeItemKindFilterId])
 
   const resultsSummary = useMemo(() => {
     if (listFetching && totalCount === 0) return "…"
@@ -1017,7 +1037,7 @@ function ArticlesPage() {
       userAvatarSrc={bootstrap?.userImageUrl ?? undefined}
       userRoleLabel={bootstrap?.roleLabel}
       pillLabel="Catálogo"
-      mainClassName="min-h-0 overflow-hidden"
+      mainClassName="rootsy-nature-palette min-h-0 overflow-hidden"
       headerActions={
         <>
           {canCreate ? (
@@ -1055,48 +1075,36 @@ function ArticlesPage() {
           </div>
         ) : null}
         <div className="relative flex min-h-0 flex-1 flex-col">
+          <div
+            className={dataWorkspaceListFiltersBarClass}
+            role="toolbar"
+            aria-label="Filtros del listado"
+          >
             <div
-              className={lightToolbarShellClass}
-              role="toolbar"
-              aria-label="Filtros del listado"
+              className={cn(
+                dataWorkspaceListFiltersBarInnerClass,
+                dataWorkspaceListFiltersBarRowClass,
+              )}
             >
-              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-12">
-                <ArticleItemKindToolbarFilter
-                  className="order-1 w-full min-w-0 md:col-span-1 xl:col-span-3"
-                  value={activeItemKindFilterId}
-                  onChange={(id) =>
-                    replaceWorkspaceQuery({
-                      itemKinds: articleItemKindFilterToQuery(id),
-                      page: 1,
-                    })
-                  }
-                />
+              <div className={dataWorkspaceListFiltersGridClass}>
+                <div className={dataWorkspaceListFiltersPanelClass}>
+                  <ArticleItemKindToolbarFilter
+                    value={activeItemKindFilterId}
+                    onChange={(id) =>
+                      replaceWorkspaceQuery({
+                        itemKinds: articleItemKindFilterToQuery(id),
+                        page: 1,
+                      })
+                    }
+                  />
+                </div>
 
-                <div
-                  className={cn(
-                    lightToolbarPanelClass,
-                    "order-2 w-full min-w-0 md:col-span-1 xl:order-2 xl:col-span-3",
-                  )}
-                >
-                  <div className="mb-2 flex min-w-0 items-baseline justify-between gap-3">
-                    <span className={toolbarBlockLabelClass}>Filtros</span>
-                    {modalFiltersActiveCount > 0 ? (
-                      <span className="shrink-0 text-[11px] font-medium text-primary">
-                        Activo
-                      </span>
-                    ) : null}
-                  </div>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    className={cn(
-                      lightToolbarButtonClass,
-                      modalFiltersActiveCount > 0 &&
-                        lightToolbarControlActiveClass,
-                    )}
-                    aria-haspopup="dialog"
-                    aria-expanded={filtersModalOpen}
+                <div className={dataWorkspaceListFiltersPanelClass}>
+                  <DataWorkspaceListFiltersDialogTrigger
+                    id={filtersButtonId}
+                    placeholder="Estado y categoría"
+                    activeCount={modalFiltersActiveCount}
+                    expanded={filtersModalOpen}
                     onClick={() => {
                       setDraftFilters({
                         soloActivos: workspaceParsed.soloActivos,
@@ -1104,174 +1112,26 @@ function ArticlesPage() {
                       })
                       setFiltersModalOpen(true)
                     }}
-                  >
-                    <Filter className="size-4 shrink-0 opacity-80" aria-hidden />
-                    <span className="min-w-0 flex-1 truncate text-left">
-                      {modalFiltersActiveCount > 0
-                        ? "Refinar filtros"
-                        : "Estado y categoría"}
-                    </span>
-                    {modalFiltersActiveCount > 0 ? (
-                      <span
-                        className="inline-flex size-5 shrink-0 items-center justify-center rounded-full bg-primary/15 text-[10px] font-semibold tabular-nums text-primary"
-                        aria-hidden
-                      >
-                        {modalFiltersActiveCount}
-                      </span>
-                    ) : null}
-                  </Button>
+                  />
                 </div>
 
-                <div
-                  className={cn(
-                    lightToolbarPanelLastClass,
-                    "order-3 min-w-0 md:col-span-2 xl:order-3 xl:col-span-6",
-                  )}
-                >
-                  <div className="mb-2 flex min-w-0 items-baseline justify-between gap-3">
-                    <label htmlFor={searchInputId} className={toolbarBlockLabelClass}>
-                      Buscar
-                    </label>
-                    <span
-                      className="shrink-0 text-[11px] font-medium text-muted-foreground"
-                      aria-live="polite"
-                      aria-atomic="true"
-                    >
-                      {resultsSummary}
-                    </span>
-                  </div>
-                  <div className="relative min-w-0">
-                    <Search
-                      className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground"
-                      aria-hidden
-                    />
-                    <Input
-                      ref={searchInputRef}
-                      id={searchInputId}
-                      type="search"
-                      value={searchInput}
-                      onChange={(e) => setSearchInput(e.target.value)}
-                      placeholder="Nombre, descripción… ( / )"
-                      className={cn(
-                        lightToolbarInputClass,
-                        searchInput.trim().length > 0 && "pr-10",
-                      )}
-                      autoComplete="off"
-                      spellCheck={false}
-                      aria-label="Buscar artículos"
-                    />
-                    {searchInput.trim().length > 0 ? (
-                      <button
-                        type="button"
-                        aria-label="Limpiar búsqueda"
-                        className={lightToolbarClearButtonClass}
-                        onClick={() => {
-                          setSearchInput("")
-                          searchInputRef.current?.focus()
-                        }}
-                      >
-                        <X className="size-3.5" aria-hidden />
-                      </button>
-                    ) : null}
-                  </div>
+                <div className={dataWorkspaceListFiltersPanelLastClass}>
+                  <DataWorkspaceListSearchField
+                    id={searchInputId}
+                    inputRef={searchInputRef}
+                    value={searchInput}
+                    onChange={(e) => setSearchInput(e.target.value)}
+                    onClear={() => {
+                      setSearchInput("")
+                      searchInputRef.current?.focus()
+                    }}
+                    placeholder="Nombre, descripción… ( / )"
+                    resultsSummary={resultsSummary}
+                  />
                 </div>
               </div>
-
-              {hasFilterChips ? (
-                <div
-                  className="border-t border-border/80 bg-card px-4 py-3"
-                  role="region"
-                  aria-label="Filtros activos"
-                >
-                  <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
-                    <p className={toolbarBlockLabelClass}>
-                      Filtros activos
-                      <span className="sr-only">: {activeFilterCount}</span>
-                      <span
-                        className="ml-1.5 inline-flex min-w-5 items-center justify-center rounded-full bg-muted px-1.5 py-0.5 text-[10px] font-semibold tabular-nums normal-case tracking-normal text-muted-foreground"
-                        aria-hidden
-                      >
-                        {activeFilterCount}
-                      </span>
-                    </p>
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      className="h-8 px-2.5 text-xs font-medium text-muted-foreground hover:text-foreground"
-                      onClick={clearAllFilters}
-                    >
-                      Limpiar todo
-                    </Button>
-                  </div>
-                  <div className="flex flex-wrap items-center gap-1.5">
-                    {workspaceParsed.q.trim() ? (
-                      <Badge variant="secondary" className={lightFilterChipClass}>
-                        <span className="truncate">
-                          Buscar: «{workspaceParsed.q.trim()}»
-                        </span>
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="icon"
-                          className="size-6 shrink-0"
-                          onClick={() =>
-                            replaceWorkspaceQuery({ q: "", page: 1 })
-                          }
-                          aria-label="Quitar búsqueda"
-                        >
-                          <X className="size-3" />
-                        </Button>
-                      </Badge>
-                    ) : null}
-                    {workspaceParsed.soloActivos ? (
-                      <Badge variant="secondary" className={lightFilterChipClass}>
-                        Solo activos
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="icon"
-                          className="size-6 shrink-0"
-                          onClick={() =>
-                            replaceWorkspaceQuery({
-                              soloActivos: false,
-                              page: 1,
-                            })
-                          }
-                          aria-label="Quitar filtro solo activos"
-                        >
-                          <X className="size-3" />
-                        </Button>
-                      </Badge>
-                    ) : null}
-                    {workspaceParsed.categoryId.trim() ? (
-                      <Badge variant="secondary" className={lightFilterChipClass}>
-                        <span className="truncate">
-                          Categoría:{" "}
-                          {categoryLabelForChip ||
-                            workspaceParsed.categoryId}
-                        </span>
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="icon"
-                          className="size-6 shrink-0"
-                          onClick={() =>
-                            replaceWorkspaceQuery({
-                              categoryId: "",
-                              page: 1,
-                            })
-                          }
-                          aria-label="Quitar filtro categoría"
-                        >
-                          <X className="size-3" />
-                        </Button>
-                      </Badge>
-                    ) : null}
-                  </div>
-                </div>
-              ) : null}
             </div>
+          </div>
 
             <Dialog
               open={filtersModalOpen}
@@ -1375,6 +1235,85 @@ function ArticlesPage() {
 
             <DataWorkspaceListTableShell
               variant="flush"
+              className={cn(
+                workspaceTableNatureEarthOrganicScopeClass,
+                workspaceTableLayoutListBodyScopeClass,
+                workspaceTableLayoutListSurfaceClass,
+              )}
+              activeFiltersBar={
+                hasFilterChips ? (
+                  <DataWorkspaceListActiveFiltersBar
+                    activeCount={activeFilterCount}
+                    onClearAll={clearAllFilters}
+                  >
+                    {workspaceParsed.q.trim() ? (
+                      <DataWorkspaceListFilterChip
+                        label={`Buscar: «${workspaceParsed.q.trim()}»`}
+                        onRemove={() =>
+                          replaceWorkspaceQuery({ q: "", page: 1 })
+                        }
+                        removeAriaLabel="Quitar búsqueda"
+                      />
+                    ) : null}
+                    {activeItemKindFilterId !== "all" ? (
+                      <DataWorkspaceListFilterChip
+                        label={`Tipo: ${ARTICLE_ITEM_KIND_STOCK_LABEL[activeItemKindFilterId]}`}
+                        onRemove={() =>
+                          replaceWorkspaceQuery({ itemKinds: [], page: 1 })
+                        }
+                        removeAriaLabel="Quitar filtro de tipo"
+                      />
+                    ) : null}
+                    {workspaceParsed.soloActivos ? (
+                      <DataWorkspaceListFilterChip
+                        label="Solo activos"
+                        onRemove={() =>
+                          replaceWorkspaceQuery({
+                            soloActivos: false,
+                            page: 1,
+                          })
+                        }
+                        removeAriaLabel="Quitar filtro solo activos"
+                      />
+                    ) : null}
+                    {workspaceParsed.categoryId.trim() ? (
+                      <DataWorkspaceListFilterChip
+                        label={`Categoría: ${categoryLabelForChip || workspaceParsed.categoryId}`}
+                        onRemove={() =>
+                          replaceWorkspaceQuery({
+                            categoryId: "",
+                            page: 1,
+                          })
+                        }
+                        removeAriaLabel="Quitar filtro categoría"
+                        className="max-w-48"
+                      />
+                    ) : null}
+                  </DataWorkspaceListActiveFiltersBar>
+                ) : null
+              }
+              bulkToolbar={
+                selected.size > 0 ? (
+                  <DataWorkspaceListBulkToolbar
+                    selectedCount={selected.size}
+                    onClear={() => setSelected(new Set())}
+                    placement={hasFilterChips ? "stacked" : "standalone"}
+                    disabled={listFetching}
+                    actions={[
+                      ...(canDelete
+                        ? [
+                            {
+                              label: "Eliminar selección",
+                              onClick: () => {},
+                              semantic: "destructive" as const,
+                            },
+                          ]
+                        : []),
+                      { label: "Exportar CSV", onClick: () => {} },
+                    ]}
+                  />
+                ) : null
+              }
               overlay={
                 !listFetching && totalCount === 0 ? (
                   <DataWorkspaceTableEmptyMascot />
@@ -1400,80 +1339,125 @@ function ArticlesPage() {
                 />
               }
             >
-              <DataWorkspaceListTableFrame>
+              <DataWorkspaceListTableFrame className={workspaceTableLayoutListSurfaceClass}>
               <table
-                className={workspaceDataTableClassName}
+                className={cn(workspaceTableLayoutClassName, "min-w-[80rem]")}
                 aria-busy={listFetching}
               >
-                <TableHeader>
-                  <TableRow className={workspaceTableHeaderRowClass}>
-                    <TableHead className={cn(lightTableThClass, "w-12 !px-0 text-center")}>
-                      <div className={cn(selectColumnInnerClass, "min-h-10")}>
-                        <Checkbox
-                          className={tableRowSelectCheckboxClass}
-                          checked={
-                            allVisibleSelected
-                              ? true
-                              : someVisibleSelected
-                                ? "indeterminate"
-                                : false
+                <WorkspaceTableHeader>
+                  <WorkspaceTableHeaderRow>
+                    <WorkspaceTableSelectHead
+                      tone="nature"
+                      className={workspaceTableLayoutHeaderHeadClass}
+                      checked={
+                        allVisibleSelected
+                          ? true
+                          : someVisibleSelected
+                            ? "indeterminate"
+                            : false
+                      }
+                      onCheckedChange={(checked) => {
+                        setSelected((prev) => {
+                          const next = new Set(prev)
+                          if (checked === true) {
+                            visibleIds.forEach((id) => next.add(id))
+                          } else {
+                            visibleIds.forEach((id) => next.delete(id))
                           }
-                          onCheckedChange={(checked) => {
-                            setSelected((prev) => {
-                              const next = new Set(prev)
-                              if (checked === true) {
-                                visibleIds.forEach((id) => next.add(id))
-                              } else {
-                                visibleIds.forEach((id) => next.delete(id))
-                              }
-                              return next
-                            })
-                          }}
-                          disabled={
-                            listFetching || totalCount === 0 || pageRows.length === 0
-                          }
-                          aria-label="Seleccionar filas visibles"
-                        />
-                      </div>
-                    </TableHead>
-                    <TableHead className={cn(lightTableThClass, "w-24 px-3 text-left")}>
-                      Imagen
-                    </TableHead>
-                    <TableHead
+                          return next
+                        })
+                      }}
+                      disabled={
+                        listFetching || totalCount === 0 || pageRows.length === 0
+                      }
+                      ariaLabel="Seleccionar filas visibles"
+                    />
+                    <WorkspaceTableHead
+                      tone="nature"
                       className={cn(
-                        lightTableThClass,
-                        "w-[14rem] min-w-0 max-w-[14rem] px-3 text-left",
+                        workspaceTableLayoutImageColumnClass,
+                        "px-3",
+                        workspaceTableLayoutHeaderHeadClass,
+                      )}
+                      srOnly
+                    >
+                      Imagen
+                    </WorkspaceTableHead>
+                    <WorkspaceTableHead
+                      tone="nature"
+                      className={cn(
+                        "min-w-48 px-3",
+                        workspaceTableLayoutHeaderHeadClass,
                       )}
                     >
                       Artículo
-                    </TableHead>
-                    <TableHead className={cn(lightTableThClass, "min-w-[9rem] max-w-[11rem] px-3 text-left")}>
+                    </WorkspaceTableHead>
+                    <WorkspaceTableHead
+                      tone="nature"
+                      className={cn(
+                        "w-44 px-3",
+                        workspaceTableLayoutHeaderHeadClass,
+                      )}
+                    >
                       Detalle
-                    </TableHead>
-                    <TableHead className={cn(lightTableThClass, "w-[10rem] px-3 text-left")}>
+                    </WorkspaceTableHead>
+                    <WorkspaceTableHead
+                      tone="nature"
+                      className={cn(
+                        "w-40 px-3",
+                        workspaceTableLayoutHeaderHeadClass,
+                      )}
+                    >
                       Categoría
-                    </TableHead>
-                    <TableHead className={cn(lightTableThClass, "w-[10rem] px-3 text-left")}>
+                    </WorkspaceTableHead>
+                    <WorkspaceTableHead
+                      tone="nature"
+                      className={cn(
+                        "w-40 px-3",
+                        workspaceTableLayoutHeaderHeadClass,
+                      )}
+                    >
                       Proveedores
-                    </TableHead>
-                    <TableHead className={cn(lightTableThClass, "px-3 text-right")}>
+                    </WorkspaceTableHead>
+                    <WorkspaceTableHead
+                      tone="nature"
+                      align="right"
+                      className={cn("w-28 px-3", workspaceTableLayoutHeaderHeadClass)}
+                    >
                       Venta
-                    </TableHead>
-                    <TableHead className={cn(lightTableThClass, "px-3 text-right")}>
+                    </WorkspaceTableHead>
+                    <WorkspaceTableHead
+                      tone="nature"
+                      align="right"
+                      className={cn("w-28 px-3", workspaceTableLayoutHeaderHeadClass)}
+                    >
                       Costo
-                    </TableHead>
-                    <TableHead className={cn(lightTableThClass, "w-[5.5rem] px-3 text-right")}>
+                    </WorkspaceTableHead>
+                    <WorkspaceTableHead
+                      tone="nature"
+                      align="right"
+                      className={cn(
+                        "w-[5.5rem] px-3",
+                        workspaceTableLayoutHeaderHeadClass,
+                      )}
+                    >
                       Stock
-                    </TableHead>
+                    </WorkspaceTableHead>
                     {canUpdate || canDelete ? (
-                      <TableHead
-                        className={cn(lightTableThClass, "w-[6.5rem] px-3 text-right")}
+                      <WorkspaceTableHead
+                        tone="nature"
+                        align="right"
+                        className={cn(
+                          "w-[7.25rem] px-3",
+                          workspaceTableLayoutHeaderHeadClass,
+                        )}
+                        srOnly
                       >
-                        <span className="sr-only">Acciones</span>
-                      </TableHead>
+                        Acciones
+                      </WorkspaceTableHead>
                     ) : null}
-                  </TableRow>
-                </TableHeader>
+                  </WorkspaceTableHeaderRow>
+                </WorkspaceTableHeader>
                 <TableBody>
                   {listFetching ? (
                     <WorkspaceTableSkeletonRows
@@ -1482,6 +1466,7 @@ function ArticlesPage() {
                       columns={articlesSkeletonColumns({
                         hasActionsColumn: Boolean(canUpdate || canDelete),
                       })}
+                      tone="nature"
                     />
                   ) : totalCount === 0 ? (
                     null
@@ -1501,12 +1486,18 @@ function ArticlesPage() {
                       return (
                       <TableRow
                         key={a.id}
-                        className={workspaceTableBodyRowClassNames(i)}
+                        className={cn(
+                          workspaceTableLayoutBodyRowClass,
+                          workspaceTableNatureBodyRowClassNames(i, {
+                            selected: selected.has(a.id),
+                            noHover: true,
+                          }),
+                        )}
                       >
-                        <TableCell className="w-12 !px-0 py-2.5 align-middle">
+                        <TableCell className={workspaceTableLayoutSelectBodyCellClass}>
                           <div className={selectColumnInnerClass}>
                             <Checkbox
-                              className={tableRowSelectCheckboxClass}
+                              className={workspaceTableNatureCheckboxClass}
                               checked={selected.has(a.id)}
                               onCheckedChange={(c) => {
                                 setSelected((prev) => {
@@ -1532,43 +1523,75 @@ function ArticlesPage() {
                         <ArticleTableArticleCell row={a} />
                         <ArticleTableDetailCell
                           row={a}
-                          hasDiscount={hasDiscount}
-                          onVerMas={() => setDetailRow(a)}
+                          onVerDetalle={() => setDetailRow(a)}
                         />
                         <ArticleTableCategoryCell name={a.categoryName} />
                         <ArticleTableSuppliersCell suppliers={a.suppliers} />
                         <TableCell
                           className={cn(
-                            "px-3 py-2.5 text-right text-sm align-middle",
-                            sellable ? tdMoneyTotalClass : tdMoneyMutedClass,
+                            workspaceTableLayoutBodyCellClass,
+                            "text-right text-sm leading-4",
                           )}
                         >
                           {sellable ? (
                             hasDiscount ? (
-                              <div className="flex flex-col items-end gap-0.5">
-                                <span className="text-xs font-medium text-muted-foreground line-through">
+                              <div className={workspaceTableLayoutCellStackClass}>
+                                <span
+                                  className={cn(
+                                    "truncate text-xs leading-4 line-through",
+                                    workspaceTableNatureTextSecondaryClass,
+                                  )}
+                                >
                                   {formatMoney(a.salePrice)}
                                 </span>
-                                <span>{formatMoney(effectiveSalePrice)}</span>
+                                <span
+                                  className={cn(
+                                    "truncate text-sm font-medium leading-4 tabular-nums",
+                                    workspaceTableNatureMoneyClass,
+                                  )}
+                                >
+                                  {formatMoney(effectiveSalePrice)}
+                                </span>
                               </div>
                             ) : (
-                              formatMoney(a.salePrice)
+                              <span
+                                className={cn(
+                                  "block truncate tabular-nums",
+                                  workspaceTableNatureMoneyClass,
+                                )}
+                              >
+                                {formatMoney(a.salePrice)}
+                              </span>
                             )
                           ) : (
-                            "—"
+                            <span
+                              className={cn(
+                                "block",
+                                workspaceTableNatureTextSecondaryClass,
+                              )}
+                            >
+                              —
+                            </span>
                           )}
                         </TableCell>
                         <TableCell
                           className={cn(
-                            "px-3 py-2.5 text-right text-sm align-middle",
-                            tdMoneyMutedClass,
+                            workspaceTableLayoutBodyCellClass,
+                            "text-right text-sm leading-4",
                           )}
                         >
-                          {formatMoney(a.costPrice)}
+                          <span
+                            className={cn(
+                              "block truncate tabular-nums",
+                              workspaceTableNatureMoneyClass,
+                            )}
+                          >
+                            {formatMoney(a.costPrice)}
+                          </span>
                         </TableCell>
                         <ArticleTableStockCell stockOnHand={a.stockOnHand} />
                         {canUpdate || canDelete ? (
-                          <TableCell className="px-3 py-1.5 align-middle">
+                          <TableCell className={workspaceTableLayoutActionsBodyCellClass}>
                             <div className="flex items-center justify-end gap-0.5">
                               {canUpdate ? (
                                 <DataWorkspaceTableIconAction
@@ -1913,4 +1936,10 @@ function ArticlesPage() {
   )
 }
 
-export default withAuth(ArticlesPage)
+export default withAuth(function ArticlesPageRoute() {
+  return (
+    <Suspense fallback={<ArticlesPageSkeleton />}>
+      <ArticlesPage />
+    </Suspense>
+  )
+})

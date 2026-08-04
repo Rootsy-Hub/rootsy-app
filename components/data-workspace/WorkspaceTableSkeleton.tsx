@@ -189,7 +189,11 @@ export function WorkspaceTableSkeletonRows({
       {Array.from({ length: rowCount }).map((_, rowIndex) => (
         <TableRow
           key={`${rowKeyPrefix}-${rowIndex}`}
-          className={rowClassNames(rowIndex)}
+          className={
+            tone === "nature" || tone === "earth"
+              ? rowClassNames(rowIndex, { noHover: true })
+              : rowClassNames(rowIndex)
+          }
           aria-hidden
         >
           {columns.map((column, columnIndex) => (

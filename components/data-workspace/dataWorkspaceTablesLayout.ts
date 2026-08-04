@@ -18,29 +18,61 @@ export const workspaceTableNatureEarthOrganicScopeClass = cn(
   workspaceTableNatureSurfaceClass,
 )
 
-/** Alturas alineadas al wireframe layout tablas (h-11 filas y header · fondo blanco). */
+/** Altura fija filas body (h-14 total, padding horizontal px-3). */
+export const workspaceTableLayoutRowHeightClass =
+  "!h-14 !max-h-14 box-border"
+
+/** Altura header layout — h-11, más compacto que filas. */
+export const workspaceTableLayoutHeaderHeightClass =
+  "!h-11 !max-h-11 box-border"
+
+/** Encabezado layout — blanco translúcido + blur al scroll; sin borde inferior. */
 export const workspaceTableLayoutHeaderHeadClass = cn(
   workspaceTableLayoutMetaLabelClass,
-  "!h-11 py-0 !bg-white supports-[backdrop-filter]:!bg-white",
+  workspaceTableLayoutHeaderHeightClass,
+  "sticky top-0 z-20 !py-0 px-3 align-middle",
+  "!border-b-0 !shadow-none",
+  "bg-white/75 backdrop-blur-md",
+  "supports-[backdrop-filter]:bg-white/62",
 )
 
-export const workspaceTableLayoutBodyRowClass =
-  "!h-11 !max-h-11 overflow-hidden"
+export const workspaceTableLayoutBodyRowClass = cn(
+  workspaceTableLayoutRowHeightClass,
+  "overflow-hidden",
+)
 
-export const workspaceTableLayoutBodyCellClass =
-  "px-3 py-0 align-middle overflow-hidden"
+export const workspaceTableLayoutBodyCellClass = cn(
+  workspaceTableLayoutRowHeightClass,
+  "px-3 !py-0 align-middle overflow-hidden",
+)
 
-/** Scope layout — anula py-2.5 del listado y fuerza filas h-11. */
+/** Columna checkbox — misma altura que el resto de celdas layout. */
+export const workspaceTableLayoutSelectBodyCellClass = cn(
+  workspaceTableLayoutRowHeightClass,
+  "w-12 !px-0 !py-0 align-middle",
+)
+
+/** Columna acciones — misma altura, padding mínimo horizontal. */
+export const workspaceTableLayoutActionsBodyCellClass = cn(
+  workspaceTableLayoutRowHeightClass,
+  "px-1 !py-0 align-middle",
+)
+
+/** Scope layout — h-11 header · h-14 filas · sin borde inferior en th. */
 export const workspaceTableLayoutListBodyScopeClass = cn(
-  "[&_[data-slot=table-body]_[data-slot=table-row]]:!h-11 [&_[data-slot=table-body]_[data-slot=table-row]]:!max-h-11",
-  "[&_[data-slot=table-body]_[data-slot=table-cell]]:!py-0",
+  "[&_[data-slot=table-header]_[data-slot=table-row]]:!border-b-0",
+  "[&_[data-slot=table-head]]:!h-11 [&_[data-slot=table-head]]:!max-h-11 [&_[data-slot=table-head]]:box-border [&_[data-slot=table-head]]:!py-0",
+  "[&_[data-slot=table-head]]:!border-b-0 [&_[data-slot=table-head]]:!shadow-none",
+  "[&_[data-slot=table-head]>div]:!h-full [&_[data-slot=table-head]>div]:!min-h-0",
+  "[&_[data-slot=table-body]_[data-slot=table-row]]:!h-14 [&_[data-slot=table-body]_[data-slot=table-row]]:!max-h-14",
+  "[&_[data-slot=table-body]_[data-slot=table-cell]]:!h-14 [&_[data-slot=table-body]_[data-slot=table-cell]]:!max-h-14 [&_[data-slot=table-body]_[data-slot=table-cell]]:box-border [&_[data-slot=table-body]_[data-slot=table-cell]]:!py-0",
   "[&_[data-slot=table-body]_[data-slot=table-cell]:has([role=checkbox])]:!py-0",
 )
 
 export const workspaceTableLayoutImageColumnClass = "w-14"
 
 export const workspaceTableLayoutCellStackClass =
-  "flex min-h-0 min-w-0 flex-col justify-center gap-0 overflow-hidden"
+  "flex h-full min-h-0 min-w-0 flex-col justify-center gap-0 overflow-hidden"
 
 /** Máximo 2 líneas visibles — título + subtítulo. */
 export const workspaceTableLayoutCellPrimaryTextClass =
@@ -49,9 +81,15 @@ export const workspaceTableLayoutCellPrimaryTextClass =
 export const workspaceTableLayoutCellSecondaryTextClass =
   "truncate text-xs leading-4"
 
+/** Superficie listado layout — mismo tono que barra de filtros (`bg-background`). */
+export const workspaceTableLayoutListSurfaceClass = "bg-background"
+
 /** Barra de filtros — h-23 · tres columnas iguales · labels visibles. */
-export const dataWorkspaceListFiltersBarClass =
-  "shrink-0 border-b border-border/80 bg-white"
+export const dataWorkspaceListFiltersBarClass = "shrink-0 bg-background"
+
+/** Fila principal de filtros (PERÍODO / FILTROS / BUSCAR). */
+export const dataWorkspaceListFiltersBarRowClass =
+  "border-b border-border/80"
 
 export const dataWorkspaceListFiltersBarInnerClass = "h-23"
 

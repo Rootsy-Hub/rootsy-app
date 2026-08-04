@@ -66,6 +66,7 @@ import {
   RootsDialogContent,
   RootsDialogFooterByVariant,
   RootsDialogHeader,
+  RootsDialogLoadingState,
   type RootsDialogFooterVariant,
 } from "@/components/rootsy-dialog"
 import { Dialog } from "@/components/ui/dialog"
@@ -107,6 +108,7 @@ type ModalVariantSpec = {
   title: string
   description: string
   footerVariant: ModalFooterVariant
+  loading?: boolean
 }
 
 const MODAL_VARIANTS: ModalVariantSpec[] = [
@@ -127,6 +129,13 @@ const MODAL_VARIANTS: ModalVariantSpec[] = [
     title: "Cancelar + confirmar",
     description: "Secundaria a la izquierda, primaria a la derecha.",
     footerVariant: "dual",
+  },
+  {
+    id: "modal-loading",
+    title: "Cargando",
+    description: "Header + spinner centrado en body tierra. Sin footer ni texto visible.",
+    footerVariant: "none",
+    loading: true,
   },
 ]
 
@@ -205,18 +214,24 @@ function ModalChromePreview({ spec }: { spec: ModalVariantSpec }) {
           </p>
         </div>
         <div className={articleDialogBodyClass}>
-          <div className="pointer-events-none">
-            <ModalDemoFormFields
-              name="Cola 500 ml"
-              onNameChange={() => {}}
-              description="Bebida gaseosa en envase individual."
-              onDescriptionChange={() => {}}
-              price="1.250,00"
-              onPriceChange={() => {}}
-            />
-          </div>
+          {spec.loading ? (
+            <RootsDialogLoadingState />
+          ) : (
+            <div className="pointer-events-none">
+              <ModalDemoFormFields
+                name="Cola 500 ml"
+                onNameChange={() => {}}
+                description="Bebida gaseosa en envase individual."
+                onDescriptionChange={() => {}}
+                price="1.250,00"
+                onPriceChange={() => {}}
+              />
+            </div>
+          )}
         </div>
-        <ModalFooterPreview variant={spec.footerVariant} />
+        {!spec.loading ? (
+          <ModalFooterPreview variant={spec.footerVariant} />
+        ) : null}
       </div>
       <p className="mt-2 text-center text-[11px] text-muted-foreground">
         {spec.title}
@@ -248,20 +263,28 @@ function LiveModalDemo({
           title={MODAL_SAMPLE_TITLE}
           description={MODAL_SAMPLE_DESCRIPTION}
         />
-        <RootsDialogBody>
-          <ModalDemoFormFields
-            name={name}
-            onNameChange={setName}
-            description={description}
-            onDescriptionChange={setDescription}
-            price={price}
-            onPriceChange={setPrice}
-          />
-        </RootsDialogBody>
-        <RootsDialogFooterByVariant
-          variant={spec.footerVariant}
-          onClose={handleClose}
-        />
+        {spec.loading ? (
+          <RootsDialogBody>
+            <RootsDialogLoadingState />
+          </RootsDialogBody>
+        ) : (
+          <>
+            <RootsDialogBody>
+              <ModalDemoFormFields
+                name={name}
+                onNameChange={setName}
+                description={description}
+                onDescriptionChange={setDescription}
+                price={price}
+                onPriceChange={setPrice}
+              />
+            </RootsDialogBody>
+            <RootsDialogFooterByVariant
+              variant={spec.footerVariant}
+              onClose={handleClose}
+            />
+          </>
+        )}
       </RootsDialogContent>
     </Dialog>
   )
@@ -1068,7 +1091,7 @@ export function LibrarySectionView({
             title="Modales"
             description="Shell iOS (rounded-[1.375rem]) · footer subtle izq + primary der · RootsProgressButton en submit."
           >
-            <div className="grid gap-5 lg:grid-cols-3">
+            <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-4">
               {MODAL_VARIANTS.map((spec) => (
                 <div key={spec.id} className="space-y-3">
                   <ModalChromePreview spec={spec} />

@@ -2,6 +2,10 @@ import {
   nightForestFocusRingClass,
   nightForestIconButtonStarSkinClass,
 } from "@/components/layouts/dataWorkspaceHeaderStyles"
+import {
+  rootsFormEarthHighlightHoverClass,
+  rootsFormEarthTextSecondaryClass,
+} from "@/components/rootsy-form/rootsFormEarthTokens"
 import { cn } from "@/lib/utils"
 
 const rootsButtonFocusRingPrimary =
@@ -21,6 +25,10 @@ const rootsButtonPrimarySkin = cn(
 export const rootsButtonDefaultSizeClass = "h-10 rounded-lg px-4 text-sm"
 
 export const rootsButtonLargeSizeClass = "h-12 rounded-lg px-6 text-base"
+
+/** Tamaño compact — tablas, bulk toolbar, toolbars densos (h-8). */
+export const rootsButtonCompactSizeClass =
+  "!h-8 rounded-md px-3 text-sm gap-1.5 has-[>svg]:px-2.5"
 
 /**
  * Primary estándar — modales, footers, CTAs default.
@@ -103,27 +111,30 @@ function rootsIconButtonSvgClass(size: RootsIconButtonSize) {
   }
 }
 
-const rootsIconButtonActionBaseClass =
-  "inline-flex shrink-0 items-center justify-center rounded-lg border-0 bg-transparent p-0 text-zinc-500 shadow-none transition-colors duration-150 outline-none focus-visible:outline-none disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg]:text-current"
+const rootsIconButtonActionBaseClass = cn(
+  "inline-flex shrink-0 items-center justify-center rounded-lg border-0 bg-transparent p-0 shadow-none transition-colors duration-150 outline-none focus-visible:outline-none disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg]:text-current",
+  rootsFormEarthTextSecondaryClass,
+)
 
 const rootsIconButtonActionIntentClass: Record<
   RootsIconButtonActionIntent,
   string
 > = {
   neutral: cn(
-    "hover:bg-zinc-100 hover:text-zinc-800",
-    "focus-visible:bg-zinc-100 focus-visible:text-zinc-800 focus-visible:ring-2 focus-visible:ring-zinc-400/25 focus-visible:ring-offset-0",
-    "active:bg-zinc-200/80 active:text-zinc-900",
+    rootsFormEarthHighlightHoverClass,
+    "hover:text-[#292524]",
+    "focus-visible:bg-[#f5f5f0] focus-visible:text-[#292524] focus-visible:ring-2 focus-visible:ring-[#d6d3d1]/50 focus-visible:ring-offset-0",
+    "active:bg-[#e7e5e4]/80 active:text-[#292524]",
   ),
   edit: cn(
-    "hover:bg-emerald-50 hover:text-emerald-700",
-    "focus-visible:bg-emerald-50 focus-visible:text-emerald-700 focus-visible:ring-2 focus-visible:ring-emerald-500/25 focus-visible:ring-offset-0",
-    "active:bg-emerald-100 active:text-emerald-800",
+    "hover:bg-[#f0fbf4] hover:text-[#16704a]",
+    "focus-visible:bg-[#f0fbf4] focus-visible:text-[#16704a] focus-visible:ring-2 focus-visible:ring-[#16704a]/25 focus-visible:ring-offset-0",
+    "active:bg-[#ddf5e8] active:text-[#0f5739]",
   ),
   destructive: cn(
-    "hover:bg-rose-50 hover:text-rose-600",
-    "focus-visible:bg-rose-50 focus-visible:text-rose-600 focus-visible:ring-2 focus-visible:ring-rose-400/30 focus-visible:ring-offset-0",
-    "active:bg-rose-100 active:text-rose-700",
+    "hover:bg-[#dc2626]/10 hover:text-[#dc2626]",
+    "focus-visible:bg-[#dc2626]/10 focus-visible:text-[#dc2626] focus-visible:ring-2 focus-visible:ring-[#dc2626]/25 focus-visible:ring-offset-0",
+    "active:bg-[#dc2626]/15 active:text-[#b91c1c]",
   ),
 }
 

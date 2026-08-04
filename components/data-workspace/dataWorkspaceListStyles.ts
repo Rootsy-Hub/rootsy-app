@@ -19,7 +19,10 @@ import {
   rootsFormSelectDarkItemClass,
   rootsFormSelectDarkTriggerClass,
 } from "@/components/rootsy-form/rootsFormStyles"
-import { rootsIconButtonClass } from "@/components/rootsy-button/rootsButtonStyles"
+import {
+  rootsButtonCompactSizeClass,
+  rootsIconButtonClass,
+} from "@/components/rootsy-button/rootsButtonStyles"
 import { cn } from "@/lib/utils"
 
 export const dataWorkspaceShellCard =
@@ -47,7 +50,10 @@ export type WorkspaceTableTone = "default" | "nature" | "earth"
 export const workspaceTableNatureSurfaceClass = "bg-[var(--wt-surface)]"
 
 /** Labels meta — header de tabla layout, toolbar y total del footer oscuro. */
-export const workspaceTableLayoutMetaLabelClass = rootsFormFieldLabelTypographyClass
+export const workspaceTableLayoutMetaLabelClass = cn(
+  rootsFormFieldLabelTypographyClass,
+  "font-bold",
+)
 
 /** Encabezado — tierra con bruma canopy. */
 export const workspaceTableNatureHeaderCellClass = cn(
@@ -63,10 +69,12 @@ export function workspaceTableNatureBodyRowClassNames(
   options?: { selected?: boolean; noHover?: boolean },
 ): string {
   const isEven = index % 2 === 0
-  const rowSurface = isEven ? "bg-[var(--wt-surface)]" : "bg-[var(--wt-surface-stripe)]"
+  const rowSurface = isEven
+    ? "bg-[var(--wt-surface-stripe)]"
+    : "bg-[var(--wt-surface)]"
   const rowSurfaceHover = isEven
-    ? "hover:!bg-[var(--wt-surface)]"
-    : "hover:!bg-[var(--wt-surface-stripe)]"
+    ? "hover:!bg-[var(--wt-surface-stripe)]"
+    : "hover:!bg-[var(--wt-surface)]"
 
   return cn(
     "border-b border-[var(--wt-border)] transition-colors duration-150",
@@ -99,8 +107,49 @@ export const workspaceTableNatureMoneyNegativeClass = cn(
   "font-numeric text-[13px] tabular-nums tracking-tight text-[var(--wt-money-negative)]",
 )
 
-export const workspaceTableNatureBulkBarClass =
-  "border-b border-[var(--wt-border-strong)] bg-[var(--wt-bulk-bg)]"
+/** Barra de acciones bulk — altura fija h-11 alineada al header layout. */
+export const listBulkToolbarBarClass =
+  "flex h-11 shrink-0 flex-wrap items-center gap-2 px-3 sm:px-4"
+
+/** Contenedor único — filtros activos + selección antes de la tabla. */
+export const listTableChromeStackClass =
+  "shrink-0 overflow-hidden bg-white border-b border-[var(--wt-border)]"
+
+/** Separador interno suave entre filas del stack (no `--wt-border-strong`). */
+export const listTableChromeStackFollowRowClass =
+  "border-t border-[var(--wt-border)]"
+
+/** Superficie compartida — barras contexto h-11 (filtros activos · selección). */
+export const listTableChromeBarSurfaceClass = cn(
+  listBulkToolbarBarClass,
+  "bg-white",
+)
+
+/** Fila dentro del stack — sin fondo propio ni borde inferior. */
+export const listTableChromeBarStackedSurfaceClass = cn(
+  listBulkToolbarBarClass,
+  "bg-transparent",
+)
+
+/** Separador inferior solo en la última barra antes de la tabla. */
+export const listTableChromeBarDividerClass =
+  "border-b border-[var(--wt-border-strong)]"
+
+export const workspaceTableNatureBulkBarClass = cn(
+  listTableChromeBarSurfaceClass,
+  listTableChromeBarDividerClass,
+)
+
+export const listBulkToolbarCountClass = cn(
+  "text-sm",
+  workspaceTableNatureTextPrimaryClass,
+)
+
+export const listBulkToolbarCountMutedClass =
+  workspaceTableNatureTextSecondaryClass
+
+/** Botones secundarios / danger en bulk toolbar — appearance librería + compact h-8. */
+export const listBulkToolbarActionButtonClass = rootsButtonCompactSizeClass
 
 export const workspaceTableNatureIconButtonClass = cn(
   "text-[var(--wt-text-tertiary)] hover:text-[var(--wt-text-primary)]",
@@ -179,13 +228,13 @@ export const toolbarBlockLabelClass = rootsFormFieldLabelClass
 
 /** Toolbar flush (período, filtros, búsqueda). */
 export const lightToolbarShellClass =
-  "shrink-0 border-b border-border/80 bg-card"
+  "shrink-0 border-b border-border/80 bg-background"
 
 export const lightToolbarPanelClass =
-  "border-b border-r border-border/80 bg-card px-4 py-3.5 xl:border-b-0"
+  "border-b border-r border-border/80 bg-background px-4 py-3.5 xl:border-b-0"
 
 export const lightToolbarPanelLastClass =
-  "border-b border-border/80 bg-card px-4 py-3.5 xl:border-b-0 xl:border-r-0"
+  "border-b border-border/80 bg-background px-4 py-3.5 xl:border-b-0 xl:border-r-0"
 
 export const lightToolbarFocusClass =
   "focus-visible:border-primary/40 focus-visible:ring-2 focus-visible:ring-primary/20"
@@ -258,9 +307,30 @@ export const lightDateCalendarClass = cn(
 export const lightFilterChipClass =
   "max-w-full gap-1 rounded-md border-border/50 py-0 pr-0.5 font-normal"
 
+/** Barra filtros activos — h-11 · una fila con chips (fondo lo aporta el stack). */
+export const listActiveFiltersBarClass = cn(
+  listTableChromeBarStackedSurfaceClass,
+  "gap-x-3 gap-y-1",
+)
+
+export const listActiveFiltersCountBadgeClass =
+  "inline-flex min-w-5 shrink-0 items-center justify-center rounded-full bg-[#f5f5f0] px-1.5 py-0.5 text-[10px] font-semibold tabular-nums normal-case tracking-normal text-[#78716c]"
+
+/** Chip de filtro activo — escala tierra, altura compacta para h-11. */
+export const listActiveFilterChipClass =
+  "inline-flex h-7 max-w-full shrink-0 items-center gap-0.5 rounded-md border border-[#e7e5e4] bg-[#fafaf7] pl-2 pr-0.5 text-xs text-[#292524]"
+
+export const listActiveFilterChipDismissClass = cn(
+  "inline-flex size-6 shrink-0 items-center justify-center rounded-md text-[#78716c] transition-colors",
+  "hover:bg-[#f5f5f0] hover:text-[#292524]",
+  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#16704a]/25",
+)
+
 /** Acción terciaria «Limpiar» en barra de selección múltiple (hover neutro, sin accent). */
-export const listBulkToolbarClearButtonClass =
-  "h-8 bg-transparent px-2.5 font-medium text-muted-foreground transition-colors hover:bg-muted/80 hover:text-foreground focus-visible:ring-2 focus-visible:ring-primary/25 active:bg-muted/60"
+export const listBulkToolbarClearButtonClass = cn(
+  rootsButtonCompactSizeClass,
+  "bg-transparent font-medium text-muted-foreground transition-colors hover:bg-muted/80 hover:text-foreground focus-visible:ring-2 focus-visible:ring-primary/25 active:bg-muted/60",
+)
 
 export const tableChromeFooterClass =
   "border-t border-border/80 bg-muted/35 dark:border-border/50 dark:bg-muted/20"
