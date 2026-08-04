@@ -1,7 +1,8 @@
 "use client"
 
-import { lightToolbarPanelClass } from "@/components/data-workspace/dataWorkspaceListStyles"
 import type { DataWorkspaceSidebarViewItem } from "@/components/layouts/DataWorkspaceSidebar"
+import { lightToolbarPanelClass } from "@/components/data-workspace/dataWorkspaceListStyles"
+import { dataWorkspaceListFiltersFieldClass } from "@/components/data-workspace/dataWorkspaceTablesLayout"
 import {
   RootsFormSelectField,
   RootsFormSelectItem,
@@ -16,6 +17,7 @@ export function DataWorkspaceViewFilter({
   label = "Tipo",
   className,
   triggerId,
+  variant = "panel",
 }: {
   viewItems: readonly DataWorkspaceSidebarViewItem[]
   activeId: string
@@ -27,6 +29,7 @@ export function DataWorkspaceViewFilter({
   /** @deprecated Usar triggerId como `id` del campo. */
   labelId?: string
   triggerId?: string
+  variant?: "panel" | "layout"
 }) {
   if (viewItems.length === 0) {
     return null
@@ -39,7 +42,12 @@ export function DataWorkspaceViewFilter({
       value={activeId}
       onValueChange={onSelect}
       prefix={<LayoutGrid className="size-4" aria-hidden />}
-      className={cn(lightToolbarPanelClass, className)}
+      className={cn(
+        variant === "layout"
+          ? dataWorkspaceListFiltersFieldClass()
+          : lightToolbarPanelClass,
+        className,
+      )}
     >
       {viewItems.map((item) => (
         <RootsFormSelectItem key={item.id} value={item.id}>

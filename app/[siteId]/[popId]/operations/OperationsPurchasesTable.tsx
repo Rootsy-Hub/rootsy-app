@@ -8,26 +8,35 @@ import {
   resolvePurchaseDisplayTaxTotal,
 } from "@/app/[siteId]/[popId]/operations/operationPurchaseUi"
 import {
+  OperationTableClientLine,
+  OperationTableEmptyComprobanteCell,
   OperationTableMoneyCell,
   OperationTableStackCell,
   OperationTableVerMas,
   operationTablePrimaryClass,
   operationTableSecondaryClass,
 } from "@/app/[siteId]/[popId]/operations/operationsTableCells"
+import {
+  operationsTableComprobanteColumnClass,
+  operationsTableDateColumnClass,
+  operationsTableDetailColumnClass,
+  operationsTableHeaderClass,
+  operationsTableMoneyColumnClass,
+} from "@/app/[siteId]/[popId]/operations/operationsTableLayout"
 import { formatOperationSaleDateInline } from "@/app/[siteId]/[popId]/operations/OperationsSalesTable"
 import { OperationsPurchasesSkeletonRows } from "@/app/[siteId]/[popId]/operations/OperationsTableSkeleton"
 import { usePopTimeZone } from "@/hooks/usePopTimeZone"
 import {
-  workspaceTableBodyCellClass,
   selectColumnInnerClass,
-  tableRowSelectCheckboxClass,
-  tdClientLinkedClass,
-  tdClientNamedClass,
-  tdMoneyMutedClass,
-  workspaceDataTableClassName,
-  workspaceTableBodyRowClassNames,
-  workspaceTableSelectBodyCellClass,
+  workspaceTableLayoutClassName,
+  workspaceTableNatureBodyRowClassNames,
+  workspaceTableNatureCheckboxClass,
 } from "@/components/data-workspace/dataWorkspaceListStyles"
+import {
+  workspaceTableLayoutBodyRowClass,
+  workspaceTableLayoutListSurfaceClass,
+  workspaceTableLayoutSelectBodyCellClass,
+} from "@/components/data-workspace/dataWorkspaceTablesLayout"
 import { DataWorkspaceListTableFrame } from "@/components/data-workspace/DataWorkspaceListTablePrimitives"
 import {
   WorkspaceTableHead,
@@ -37,7 +46,6 @@ import {
 } from "@/components/data-workspace/WorkspaceTableHeader"
 import { popScopedHref } from "@/lib/popRoutes"
 import { cn } from "@/lib/utils"
-import Link from "next/link"
 import { useMemo, useState, type Dispatch, type SetStateAction } from "react"
 import { Checkbox } from "@/components/ui/checkbox"
 import { TableBody, TableCell, TableRow } from "@/components/ui/table"
@@ -71,7 +79,10 @@ function PurchasesTableRow({
   onOpenDetail: (purchase: OperationPurchaseRow) => void
 }) {
   const whenInline = formatOperationSaleDateInline(purchase.operationAt, timeZone)
-  const supplierLabel = purchase.supplierName.trim() || "—"
+  const supplierName =
+    purchase.supplierName.trim() && purchase.supplierName !== "—"
+      ? purchase.supplierName.trim()
+      : null
   const documentNumber = purchase.documentNumber?.trim() || null
   const hasComprobante = purchaseHasComprobante(purchase)
   const comprobanteTipo = purchase.documentKindLabel?.trim() || null
@@ -79,10 +90,10 @@ function PurchasesTableRow({
 
   return (
     <>
-      <TableCell className={workspaceTableSelectBodyCellClass}>
+      <TableCell className={workspaceTableLayoutSelectBodyCellClass}>
         <div className={selectColumnInnerClass}>
           <Checkbox
-            className={tableRowSelectCheckboxClass}
+            className={workspaceTableNatureCheckboxClass}
             checked={selected.has(purchase.id)}
             onCheckedChange={(checked) => {
               onSelectedChange((prev) => {
@@ -96,7 +107,7 @@ function PurchasesTableRow({
           />
         </div>
       </TableCell>
-      <OperationTableStackCell className="min-w-[10rem]">
+      <OperationTableStackCell className={operationsTableDateColumnClass}>
         <p className={cn(operationTablePrimaryClass, "tabular-nums")} title={whenInline}>
           {whenInline}
         </p>
@@ -107,37 +118,32 @@ function PurchasesTableRow({
           {purchase.purchasedByName ?? "—"}
         </p>
       </OperationTableStackCell>
-      <OperationTableStackCell className="min-w-[14rem]">
-        {purchase.supplierId && purchase.supplierName !== "—" ? (
-          <Link
-            href={suppliersSearchHref(siteId, popId, purchase.supplierName)}
-            className={cn(tdClientLinkedClass, "text-xs leading-snug")}
-            title={supplierLabel}
-          >
-            {supplierLabel}
-          </Link>
-        ) : purchase.supplierName !== "—" ? (
-          <p className={cn(tdClientNamedClass, "text-xs leading-snug")} title={supplierLabel}>
-            {supplierLabel}
-          </p>
+      <OperationTableStackCell className={operationsTableDetailColumnClass}>
+        {supplierName ? (
+          <OperationTableClientLine
+            name={supplierName}
+            asPrimary
+            href={
+              purchase.supplierId && supplierName
+                ? suppliersSearchHref(siteId, popId, supplierName)
+                : null
+            }
+          />
         ) : (
-          <p className={cn(operationTableSecondaryClass, "text-xs leading-snug")}>
-            {supplierLabel}
+          <p
+            className={operationTablePrimaryClass}
+            title={purchaseKindLabel(purchase.purchaseKind)}
+          >
+            {purchaseKindLabel(purchase.purchaseKind)}
           </p>
         )}
-        <p
-          className={operationTablePrimaryClass}
-          title={purchaseKindLabel(purchase.purchaseKind)}
-        >
-          {purchaseKindLabel(purchase.purchaseKind)}
-        </p>
         <OperationTableVerMas
           label={` de la compra ${purchase.id}`}
           onClick={() => onOpenDetail(purchase)}
         />
       </OperationTableStackCell>
       {hasComprobante ? (
-        <OperationTableStackCell className="min-w-[11rem]">
+        <OperationTableStackCell className={operationsTableComprobanteColumnClass}>
           <p
             className={operationTablePrimaryClass}
             title={comprobanteTipo ?? documentNumber ?? undefined}
@@ -158,9 +164,7 @@ function PurchasesTableRow({
           </p>
         </OperationTableStackCell>
       ) : (
-        <TableCell className={cn(workspaceTableBodyCellClass, "min-w-[11rem] align-middle")}>
-          <span className={tdMoneyMutedClass}>—</span>
-        </TableCell>
+        <OperationTableEmptyComprobanteCell />
       )}
       <OperationTableMoneyCell amount={purchase.discountTotal} />
       <OperationTableMoneyCell amount={ivaAmount ?? 0} />
@@ -199,14 +203,16 @@ export function OperationsPurchasesTable({
 
   return (
     <>
-      <DataWorkspaceListTableFrame>
+      <DataWorkspaceListTableFrame className={workspaceTableLayoutListSurfaceClass}>
         <table
-          className={workspaceDataTableClassName}
+          className={cn(workspaceTableLayoutClassName, "min-w-[80rem]")}
           aria-busy={listFetching}
         >
           <WorkspaceTableHeader>
             <WorkspaceTableHeaderRow>
               <WorkspaceTableSelectHead
+                tone="nature"
+                className={operationsTableHeaderClass()}
                 checked={
                   allVisibleSelected
                     ? true
@@ -228,13 +234,47 @@ export function OperationsPurchasesTable({
                 disabled={
                   listFetching || totalCount === 0 || rows.length === 0
                 }
+                ariaLabel="Seleccionar filas visibles"
               />
-              <WorkspaceTableHead className="min-w-[10rem]">Fecha</WorkspaceTableHead>
-              <WorkspaceTableHead className="min-w-[14rem]">Detalle</WorkspaceTableHead>
-              <WorkspaceTableHead className="min-w-[11rem]">Comprobante</WorkspaceTableHead>
-              <WorkspaceTableHead align="right">Descuento</WorkspaceTableHead>
-              <WorkspaceTableHead align="right">IVA</WorkspaceTableHead>
-              <WorkspaceTableHead align="right">Total</WorkspaceTableHead>
+              <WorkspaceTableHead
+                tone="nature"
+                className={operationsTableHeaderClass(operationsTableDateColumnClass)}
+              >
+                Fecha
+              </WorkspaceTableHead>
+              <WorkspaceTableHead
+                tone="nature"
+                className={operationsTableHeaderClass(operationsTableDetailColumnClass)}
+              >
+                Detalle
+              </WorkspaceTableHead>
+              <WorkspaceTableHead
+                tone="nature"
+                className={operationsTableHeaderClass(operationsTableComprobanteColumnClass)}
+              >
+                Comprobante
+              </WorkspaceTableHead>
+              <WorkspaceTableHead
+                tone="nature"
+                align="right"
+                className={operationsTableHeaderClass(operationsTableMoneyColumnClass)}
+              >
+                Descuento
+              </WorkspaceTableHead>
+              <WorkspaceTableHead
+                tone="nature"
+                align="right"
+                className={operationsTableHeaderClass(operationsTableMoneyColumnClass)}
+              >
+                IVA
+              </WorkspaceTableHead>
+              <WorkspaceTableHead
+                tone="nature"
+                align="right"
+                className={operationsTableHeaderClass(operationsTableMoneyColumnClass)}
+              >
+                Total
+              </WorkspaceTableHead>
             </WorkspaceTableHeaderRow>
           </WorkspaceTableHeader>
           <TableBody>
@@ -246,7 +286,13 @@ export function OperationsPurchasesTable({
               rows.map((purchase, i) => (
                 <TableRow
                   key={purchase.id}
-                  className={workspaceTableBodyRowClassNames(i)}
+                  className={cn(
+                    workspaceTableLayoutBodyRowClass,
+                    workspaceTableNatureBodyRowClassNames(i, {
+                      selected: selected.has(purchase.id),
+                      noHover: true,
+                    }),
+                  )}
                 >
                   <PurchasesTableRow
                     purchase={purchase}
@@ -262,9 +308,6 @@ export function OperationsPurchasesTable({
             )}
           </TableBody>
         </table>
-        {!listFetching && totalCount === 0 ? (
-          <div className="min-h-[12rem] flex-1" aria-hidden />
-        ) : null}
       </DataWorkspaceListTableFrame>
 
       <OperationPurchaseDetailDialog

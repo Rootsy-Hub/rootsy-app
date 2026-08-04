@@ -13,25 +13,27 @@ import { OperationsExpensesTable } from "@/app/[siteId]/[popId]/operations/Opera
 import { OperationsPurchasesTable } from "@/app/[siteId]/[popId]/operations/OperationsPurchasesTable"
 import { exportOperationsCsv } from "@/app/[siteId]/[popId]/operations/operationsCsvExport"
 import { buildPaginationItems } from "@/app/[siteId]/[popId]/layout/layoutPreviewPagination"
+import { DataWorkspaceListActiveFiltersBar } from "@/components/data-workspace/DataWorkspaceListActiveFiltersBar"
+import { DataWorkspaceListBulkToolbar } from "@/components/data-workspace/DataWorkspaceListBulkToolbar"
+import { DataWorkspaceListFilterChip } from "@/components/data-workspace/DataWorkspaceListFilterChip"
+import { DataWorkspaceListSearchField } from "@/components/data-workspace/DataWorkspaceListFilterFields"
 import { DataWorkspaceListPaginationFooter } from "@/components/data-workspace/DataWorkspaceListPaginationFooter"
 import { DataWorkspaceListTableShell } from "@/components/data-workspace/DataWorkspaceListTableShell"
 import { DataWorkspaceTableEmptyMascot } from "@/components/data-workspace/DataWorkspaceListTablePrimitives"
 import { DataWorkspacePeriodFilter } from "@/components/data-workspace/DataWorkspacePeriodFilter"
 import { DataWorkspaceViewFilter } from "@/components/data-workspace/DataWorkspaceViewFilter"
-import { DataWorkspaceToolbarFieldLabel } from "@/components/data-workspace/DataWorkspaceToolbarFieldLabel"
 import {
-  lightFilterChipClass,
-  lightToolbarClearButtonClass,
-  lightToolbarInputClass,
-  lightToolbarPanelLastClass,
-  lightToolbarShellClass,
-  listBulkToolbarClearButtonClass,
-  toolbarBlockLabelClass,
-} from "@/components/data-workspace/dataWorkspaceListStyles"
+  dataWorkspaceListFiltersBarClass,
+  dataWorkspaceListFiltersBarInnerClass,
+  dataWorkspaceListFiltersBarRowClass,
+  dataWorkspaceListFiltersGridClass,
+  dataWorkspaceListFiltersPanelClass,
+  dataWorkspaceListFiltersPanelLastClass,
+  workspaceTableLayoutListBodyScopeClass,
+  workspaceTableLayoutListSurfaceClass,
+  workspaceTableNatureEarthOrganicScopeClass,
+} from "@/components/data-workspace/dataWorkspaceTablesLayout"
 import { DataWorkspaceLayout } from "@/components/layouts/DataWorkspaceLayout"
-import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
 import { usePopWorkspace } from "@/context/PopWorkspaceContext"
 import { usePopTimeZone } from "@/hooks/usePopTimeZone"
 import withAuth from "@/hoc/withAuth"
@@ -47,12 +49,10 @@ import {
 import { cn } from "@/lib/utils"
 import {
   Receipt,
-  Search,
   ShoppingCart,
   Monitor,
   UtensilsCrossed,
   Wallet,
-  X,
 } from "lucide-react"
 import { useParams } from "next/navigation"
 import type { DateRange } from "react-day-picker"
@@ -346,7 +346,7 @@ function OperationsPage() {
       loading={bootstrapLoading || listFetching}
       userName={bootstrap?.userFullName}
       userAvatarSrc={bootstrap?.userImageUrl ?? undefined}
-      mainClassName="min-h-0 overflow-hidden"
+      mainClassName="rootsy-nature-palette min-h-0 overflow-hidden"
     >
       <div className="relative flex min-h-0 w-full flex-1 flex-col">
         {error ? (
@@ -360,167 +360,101 @@ function OperationsPage() {
 
         <div className="relative flex min-h-0 flex-1 flex-col">
           <div
-            className={lightToolbarShellClass}
+            className={dataWorkspaceListFiltersBarClass}
             role="toolbar"
             aria-label="Filtros del listado"
           >
-            <div className="grid grid-cols-1 items-start md:grid-cols-2 xl:grid-cols-12">
-              <DataWorkspaceViewFilter
-                className="order-1 w-full min-w-0 md:col-span-1 xl:col-span-3"
-                viewItems={VIEW_ITEMS}
-                activeId={activeView}
-                onSelect={handleViewSelect}
-                labelId={viewFilterLabelId}
-                triggerId={viewFilterTriggerId}
-              />
-
-              <DataWorkspacePeriodFilter
-                className="order-2 w-full min-w-0 md:col-span-1 xl:order-2 xl:col-span-3"
-                preset={datePreset}
-                customRange={customDateRange}
-                onPresetChange={setDatePreset}
-                onCustomRangeChange={setCustomDateRange}
-                bounds={dateBounds}
-                showActiveState={false}
-                labelId={dateFilterLabelId}
-                triggerId={dateFilterTriggerId}
-              />
-
-              <div
-                className={cn(
-                  lightToolbarPanelLastClass,
-                  "order-3 min-w-0 md:col-span-2 xl:order-3 xl:col-span-6",
-                )}
-              >
-                <DataWorkspaceToolbarFieldLabel
-                  htmlFor={searchInputId}
-                  label="Buscar"
-                  meta={
-                    <span aria-live="polite" aria-atomic="true">
-                      {resultsSummary}
-                    </span>
-                  }
-                />
-                <div className="relative min-w-0">
-                  <Search
-                    className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground"
-                    aria-hidden
+            <div
+              className={cn(
+                dataWorkspaceListFiltersBarInnerClass,
+                dataWorkspaceListFiltersBarRowClass,
+              )}
+            >
+              <div className={dataWorkspaceListFiltersGridClass}>
+                <div className={dataWorkspaceListFiltersPanelClass}>
+                  <DataWorkspaceViewFilter
+                    variant="layout"
+                    viewItems={VIEW_ITEMS}
+                    activeId={activeView}
+                    onSelect={handleViewSelect}
+                    labelId={viewFilterLabelId}
+                    triggerId={viewFilterTriggerId}
                   />
-                  <Input
-                    ref={searchInputRef}
+                </div>
+
+                <div className={dataWorkspaceListFiltersPanelClass}>
+                  <DataWorkspacePeriodFilter
+                    variant="layout"
+                    preset={datePreset}
+                    customRange={customDateRange}
+                    onPresetChange={setDatePreset}
+                    onCustomRangeChange={setCustomDateRange}
+                    bounds={dateBounds}
+                    showActiveState={false}
+                    labelId={dateFilterLabelId}
+                    triggerId={dateFilterTriggerId}
+                  />
+                </div>
+
+                <div className={dataWorkspaceListFiltersPanelLastClass}>
+                  <DataWorkspaceListSearchField
                     id={searchInputId}
-                    type="search"
+                    inputRef={searchInputRef}
                     value={searchInput}
                     onChange={(e) => setSearchInput(e.target.value)}
+                    onClear={clearSearch}
                     placeholder={searchPlaceholder}
-                    className={cn(
-                      lightToolbarInputClass,
-                      searchInput.trim().length > 0 && "pr-10",
-                    )}
-                    autoComplete="off"
-                    spellCheck={false}
-                    aria-label={
-                      activeView === "sales"
-                        ? "Buscar ventas"
-                        : activeView === "tables"
-                          ? "Buscar operaciones de mesa"
-                          : activeView === "counter"
-                            ? "Buscar operaciones de mostrador"
-                            : activeView === "purchases"
-                            ? "Buscar compras"
-                            : "Buscar gastos"
-                    }
+                    resultsSummary={resultsSummary}
+                    inputProps={{
+                      "aria-label":
+                        activeView === "sales"
+                          ? "Buscar ventas"
+                          : activeView === "tables"
+                            ? "Buscar operaciones de mesa"
+                            : activeView === "counter"
+                              ? "Buscar operaciones de mostrador"
+                              : activeView === "purchases"
+                                ? "Buscar compras"
+                                : "Buscar gastos",
+                    }}
                   />
-                  {searchInput.trim().length > 0 ? (
-                    <button
-                      type="button"
-                      aria-label="Limpiar búsqueda"
-                      className={lightToolbarClearButtonClass}
-                      onClick={clearSearch}
-                    >
-                      <X className="size-3.5" aria-hidden />
-                    </button>
-                  ) : null}
                 </div>
               </div>
             </div>
-
-            {hasSearchChip ? (
-              <div
-                className="border-t border-border/80 bg-card px-4 py-3"
-                role="region"
-                aria-label="Filtros activos"
-              >
-                <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
-                  <p className={toolbarBlockLabelClass}>Filtros activos</p>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    className="h-8 px-2.5 text-xs font-medium text-muted-foreground hover:text-foreground"
-                    onClick={clearSearch}
-                  >
-                    Limpiar todo
-                  </Button>
-                </div>
-                <div className="flex flex-wrap items-center gap-1.5">
-                  <Badge variant="secondary" className={lightFilterChipClass}>
-                    <span className="truncate">
-                      Buscar: «{searchInput.trim()}»
-                    </span>
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="icon"
-                      className="size-6 shrink-0"
-                      onClick={clearSearch}
-                      aria-label="Quitar búsqueda"
-                    >
-                      <X className="size-3" />
-                    </Button>
-                  </Badge>
-                </div>
-              </div>
-            ) : null}
           </div>
 
           <DataWorkspaceListTableShell
             variant="flush"
+            className={cn(
+              workspaceTableNatureEarthOrganicScopeClass,
+              workspaceTableLayoutListBodyScopeClass,
+              workspaceTableLayoutListSurfaceClass,
+            )}
+            activeFiltersBar={
+              hasSearchChip ? (
+                <DataWorkspaceListActiveFiltersBar
+                  activeCount={1}
+                  onClearAll={clearSearch}
+                >
+                  <DataWorkspaceListFilterChip
+                    label={`Buscar: «${searchInput.trim()}»`}
+                    onRemove={clearSearch}
+                    removeAriaLabel="Quitar búsqueda"
+                  />
+                </DataWorkspaceListActiveFiltersBar>
+              ) : null
+            }
             bulkToolbar={
               selected.size > 0 ? (
-                <div
-                  className={cn(
-                    "flex flex-wrap items-center gap-2 border-b border-border/80 bg-muted/35 px-3 py-2.5 sm:px-4",
-                    listFetching && "pointer-events-none opacity-60",
-                  )}
-                  role="region"
-                  aria-label="Acciones sobre selección"
-                >
-                  <span className="text-sm text-foreground">
-                    <span className="font-semibold">{selected.size}</span>{" "}
-                    <span className="text-muted-foreground">seleccionados</span>
-                  </span>
-                  <div className="flex flex-wrap items-center gap-2">
-                    <Button
-                      type="button"
-                      size="sm"
-                      variant="outline"
-                      className="h-8"
-                      onClick={handleExportCsv}
-                    >
-                      Exportar CSV
-                    </Button>
-                    <Button
-                      type="button"
-                      size="sm"
-                      variant="ghost"
-                      className={listBulkToolbarClearButtonClass}
-                      onClick={() => setSelected(new Set())}
-                    >
-                      Limpiar
-                    </Button>
-                  </div>
-                </div>
+                <DataWorkspaceListBulkToolbar
+                  selectedCount={selected.size}
+                  onClear={() => setSelected(new Set())}
+                  placement={hasSearchChip ? "stacked" : "standalone"}
+                  disabled={listFetching}
+                  actions={[
+                    { label: "Exportar CSV", onClick: handleExportCsv },
+                  ]}
+                />
               ) : null
             }
             overlay={

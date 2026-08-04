@@ -22,6 +22,7 @@ export function OperationsSalesSkeletonRows({
     <WorkspaceTableSkeletonRows
       rowCount={rowCount}
       rowKeyPrefix="ops-sales-sk"
+      tone="nature"
       columns={operationsSalesSkeletonColumns({
         showTableColumn,
         showOrderColumn,
@@ -40,6 +41,7 @@ export function OperationsPurchasesSkeletonRows({
     <WorkspaceTableSkeletonRows
       rowCount={rowCount}
       rowKeyPrefix="ops-purch-sk"
+      tone="nature"
       columns={operationsPurchasesSkeletonColumns()}
     />
   )
@@ -54,6 +56,7 @@ export function OperationsExpensesSkeletonRows({
     <WorkspaceTableSkeletonRows
       rowCount={rowCount}
       rowKeyPrefix="ops-exp-sk"
+      tone="nature"
       columns={operationsExpensesSkeletonColumns()}
     />
   )

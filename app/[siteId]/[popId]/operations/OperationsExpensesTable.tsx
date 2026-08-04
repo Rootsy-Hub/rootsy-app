@@ -7,23 +7,30 @@ import {
   OperationTableMoneyCell,
   OperationTableStackCell,
   OperationTableVerMas,
-  operationTableFmt,
   operationTablePrimaryClass,
   operationTableSecondaryClass,
 } from "@/app/[siteId]/[popId]/operations/operationsTableCells"
+import {
+  operationsTableComprobanteColumnClass,
+  operationsTableDateColumnClass,
+  operationsTableDetailColumnClass,
+  operationsTableHeaderClass,
+  operationsTableMoneyColumnClass,
+} from "@/app/[siteId]/[popId]/operations/operationsTableLayout"
 import { formatOperationSaleDateInline } from "@/app/[siteId]/[popId]/operations/OperationsSalesTable"
 import { OperationsExpensesSkeletonRows } from "@/app/[siteId]/[popId]/operations/OperationsTableSkeleton"
 import { usePopTimeZone } from "@/hooks/usePopTimeZone"
 import {
   selectColumnInnerClass,
-  tableRowSelectCheckboxClass,
-  tdClientNamedClass,
-  tdMoneyMutedClass,
-  workspaceDataTableClassName,
-  workspaceTableBodyCellClass,
-  workspaceTableBodyRowClassNames,
-  workspaceTableSelectBodyCellClass,
+  workspaceTableLayoutClassName,
+  workspaceTableNatureBodyRowClassNames,
+  workspaceTableNatureCheckboxClass,
 } from "@/components/data-workspace/dataWorkspaceListStyles"
+import {
+  workspaceTableLayoutBodyRowClass,
+  workspaceTableLayoutListSurfaceClass,
+  workspaceTableLayoutSelectBodyCellClass,
+} from "@/components/data-workspace/dataWorkspaceTablesLayout"
 import { DataWorkspaceListTableFrame } from "@/components/data-workspace/DataWorkspaceListTablePrimitives"
 import {
   WorkspaceTableHead,
@@ -35,8 +42,6 @@ import { cn } from "@/lib/utils"
 import { useMemo, useState, type Dispatch, type SetStateAction } from "react"
 import { Checkbox } from "@/components/ui/checkbox"
 import { TableBody, TableCell, TableRow } from "@/components/ui/table"
-
-const fmt = operationTableFmt
 
 function ExpensesTableRow({
   expense,
@@ -60,10 +65,10 @@ function ExpensesTableRow({
 
   return (
     <>
-      <TableCell className={workspaceTableSelectBodyCellClass}>
+      <TableCell className={workspaceTableLayoutSelectBodyCellClass}>
         <div className={selectColumnInnerClass}>
           <Checkbox
-            className={tableRowSelectCheckboxClass}
+            className={workspaceTableNatureCheckboxClass}
             checked={selected.has(expense.entryId)}
             onCheckedChange={(checked) => {
               onSelectedChange((prev) => {
@@ -77,7 +82,7 @@ function ExpensesTableRow({
           />
         </div>
       </TableCell>
-      <OperationTableStackCell className="min-w-[10rem]">
+      <OperationTableStackCell className={operationsTableDateColumnClass}>
         <p className={cn(operationTablePrimaryClass, "tabular-nums")} title={whenInline}>
           {whenInline}
         </p>
@@ -88,26 +93,23 @@ function ExpensesTableRow({
           {expense.recordedByName ?? "—"}
         </p>
       </OperationTableStackCell>
-      <OperationTableStackCell className="min-w-[14rem]">
+      <OperationTableStackCell className={operationsTableDetailColumnClass}>
         <p
-          className={cn(
-            tdClientNamedClass,
-            "text-xs leading-snug",
-            isVoid && "text-muted-foreground",
-          )}
-          title={expense.categoryName}
+          className={operationTablePrimaryClass}
+          title={
+            description
+              ? `${expense.categoryName} · ${description}`
+              : `${expense.categoryName} · ${expenseKindLabel(expense.sourceType)}`
+          }
         >
-          {expense.categoryName}
-        </p>
-        <p className={operationTablePrimaryClass} title={expenseKindLabel(expense.sourceType)}>
-          {description ?? expenseKindLabel(expense.sourceType)}
+          {description ?? expense.categoryName}
         </p>
         <OperationTableVerMas
           label={` del gasto ${expense.entryId}`}
           onClick={() => onOpenDetail(expense)}
         />
       </OperationTableStackCell>
-      <OperationTableStackCell className="min-w-[11rem]">
+      <OperationTableStackCell className={operationsTableComprobanteColumnClass}>
         <p
           className={operationTablePrimaryClass}
           title={expense.paymentMethodLabel}
@@ -120,16 +122,10 @@ function ExpensesTableRow({
       </OperationTableStackCell>
       <OperationTableMoneyCell amount={0} />
       <OperationTableMoneyCell amount={0} />
-      <TableCell className={cn(workspaceTableBodyCellClass, "text-right align-middle")}>
-        <span
-          className={cn(
-            "block tabular-nums text-sm",
-            isVoid ? tdMoneyMutedClass : "font-medium text-foreground",
-          )}
-        >
-          {fmt.format(expense.amount)}
-        </span>
-      </TableCell>
+      <OperationTableMoneyCell
+        amount={expense.amount}
+        showDashWhenZero={false}
+      />
     </>
   )
 }
@@ -160,14 +156,16 @@ export function OperationsExpensesTable({
 
   return (
     <>
-      <DataWorkspaceListTableFrame>
+      <DataWorkspaceListTableFrame className={workspaceTableLayoutListSurfaceClass}>
         <table
-          className={workspaceDataTableClassName}
+          className={cn(workspaceTableLayoutClassName, "min-w-[80rem]")}
           aria-busy={listFetching}
         >
           <WorkspaceTableHeader>
             <WorkspaceTableHeaderRow>
               <WorkspaceTableSelectHead
+                tone="nature"
+                className={operationsTableHeaderClass()}
                 checked={
                   allVisibleSelected
                     ? true
@@ -189,13 +187,47 @@ export function OperationsExpensesTable({
                 disabled={
                   listFetching || totalCount === 0 || rows.length === 0
                 }
+                ariaLabel="Seleccionar filas visibles"
               />
-              <WorkspaceTableHead className="min-w-[10rem]">Fecha</WorkspaceTableHead>
-              <WorkspaceTableHead className="min-w-[14rem]">Detalle</WorkspaceTableHead>
-              <WorkspaceTableHead className="min-w-[11rem]">Forma de pago</WorkspaceTableHead>
-              <WorkspaceTableHead align="right">Descuento</WorkspaceTableHead>
-              <WorkspaceTableHead align="right">IVA</WorkspaceTableHead>
-              <WorkspaceTableHead align="right">Total</WorkspaceTableHead>
+              <WorkspaceTableHead
+                tone="nature"
+                className={operationsTableHeaderClass(operationsTableDateColumnClass)}
+              >
+                Fecha
+              </WorkspaceTableHead>
+              <WorkspaceTableHead
+                tone="nature"
+                className={operationsTableHeaderClass(operationsTableDetailColumnClass)}
+              >
+                Detalle
+              </WorkspaceTableHead>
+              <WorkspaceTableHead
+                tone="nature"
+                className={operationsTableHeaderClass(operationsTableComprobanteColumnClass)}
+              >
+                Forma de pago
+              </WorkspaceTableHead>
+              <WorkspaceTableHead
+                tone="nature"
+                align="right"
+                className={operationsTableHeaderClass(operationsTableMoneyColumnClass)}
+              >
+                Descuento
+              </WorkspaceTableHead>
+              <WorkspaceTableHead
+                tone="nature"
+                align="right"
+                className={operationsTableHeaderClass(operationsTableMoneyColumnClass)}
+              >
+                IVA
+              </WorkspaceTableHead>
+              <WorkspaceTableHead
+                tone="nature"
+                align="right"
+                className={operationsTableHeaderClass(operationsTableMoneyColumnClass)}
+              >
+                Total
+              </WorkspaceTableHead>
             </WorkspaceTableHeaderRow>
           </WorkspaceTableHeader>
           <TableBody>
@@ -207,7 +239,14 @@ export function OperationsExpensesTable({
               rows.map((expense, i) => (
                 <TableRow
                   key={expense.entryId}
-                  className={workspaceTableBodyRowClassNames(i)}
+                  className={cn(
+                    workspaceTableLayoutBodyRowClass,
+                    workspaceTableNatureBodyRowClassNames(i, {
+                      selected: selected.has(expense.entryId),
+                      noHover: true,
+                      inactive: expense.sourceType === "expense_void",
+                    }),
+                  )}
                 >
                   <ExpensesTableRow
                     expense={expense}
@@ -221,9 +260,6 @@ export function OperationsExpensesTable({
             )}
           </TableBody>
         </table>
-        {!listFetching && totalCount === 0 ? (
-          <div className="min-h-[12rem] flex-1" aria-hidden />
-        ) : null}
       </DataWorkspaceListTableFrame>
 
       <OperationExpenseDetailDialog

@@ -69,6 +69,14 @@ export const workspaceTableLayoutListBodyScopeClass = cn(
   "[&_[data-slot=table-body]_[data-slot=table-cell]:has([role=checkbox])]:!py-0",
 )
 
+/** Operaciones — header compacto layout; filas flexibles (celdas multilínea). */
+export const workspaceTableOperationsListHeaderScopeClass = cn(
+  "[&_[data-slot=table-header]_[data-slot=table-row]]:!border-b-0",
+  "[&_[data-slot=table-head]]:!h-11 [&_[data-slot=table-head]]:!max-h-11 [&_[data-slot=table-head]]:box-border [&_[data-slot=table-head]]:!py-0",
+  "[&_[data-slot=table-head]]:!border-b-0 [&_[data-slot=table-head]]:!shadow-none",
+  "[&_[data-slot=table-head]>div]:!h-full [&_[data-slot=table-head]>div]:!min-h-0",
+)
+
 export const workspaceTableLayoutImageColumnClass = "w-14"
 
 export const workspaceTableLayoutCellStackClass =
