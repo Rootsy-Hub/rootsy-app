@@ -337,14 +337,13 @@ export function MenuDock({ siteId, popId }: Props) {
           />
         ) : null}
 
-        <div className="ml-1 flex shrink-0 items-end gap-2.5 self-end sm:ml-1.5">
-          <div className="mb-1.5 h-8 w-px bg-border" aria-hidden />
+        <div className="ml-1 flex h-12 shrink-0 items-center gap-2.5 sm:ml-1.5">
+          <div className="h-8 w-px bg-border" aria-hidden />
           <RootsIconButton
             tone="dark"
             size="compact"
             label={editing ? "Listo" : "Editar accesos directos"}
             onClick={() => setEditing(!editing)}
-            className="mb-1.5"
           >
             {editing ? (
               <Check aria-hidden strokeWidth={2.5} />

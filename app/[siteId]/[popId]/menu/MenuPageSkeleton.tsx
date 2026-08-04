@@ -152,9 +152,9 @@ function MenuPageSkeletonDock() {
           ))}
         </div>
 
-        <div className="ml-1 flex shrink-0 items-end gap-2.5 self-end sm:ml-1.5">
-          <div className="mb-1.5 h-8 w-px bg-border" aria-hidden />
-          <Skeleton className="mb-1.5 size-8 rounded-xl bg-muted-foreground/10" />
+        <div className="ml-1 flex h-12 shrink-0 items-center gap-2.5 sm:ml-1.5">
+          <div className="h-8 w-px bg-border" aria-hidden />
+          <Skeleton className="size-8 rounded-xl bg-muted-foreground/10" />
         </div>
       </div>
     </div>
