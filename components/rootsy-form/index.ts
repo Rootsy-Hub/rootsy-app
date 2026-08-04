@@ -2,6 +2,7 @@ export { RootsFormField } from "@/components/rootsy-form/RootsFormField"
 export { RootsFormTextField } from "@/components/rootsy-form/RootsFormTextField"
 export { RootsFormTextareaField } from "@/components/rootsy-form/RootsFormTextareaField"
 export { RootsFormPrefixedInput } from "@/components/rootsy-form/RootsFormPrefixedInput"
+export { RootsFormPhoneField } from "@/components/rootsy-form/RootsFormPhoneField"
 export { RootsFormMoneyField } from "@/components/rootsy-form/RootsFormMoneyField"
 export { RootsFormQuantityField } from "@/components/rootsy-form/RootsFormQuantityField"
 export {

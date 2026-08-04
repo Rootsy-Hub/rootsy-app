@@ -2,7 +2,13 @@
 
 import {
   DOCK_BAR_DROP_ID,
+  DOCK_EDIT_DIVIDER_HEIGHT_PX,
+  DOCK_ICON_SIZE_PX,
+  DOCK_SHELL_PADDING_X_PX,
+  DOCK_SHELL_PADDING_Y_PX,
   DOCK_SLOT_SHIFT_PX,
+  DOCK_TRACK_HEIGHT_PX,
+  DOCK_TRACK_INSET_Y_PX,
   dockDragId,
   dockInsertId,
   DockIconVisual,
@@ -59,11 +65,13 @@ function DockInsertZone({
   return (
     <div
       ref={setNodeRef}
-      className={cn(
-        "absolute inset-y-0 z-10",
-        !active && "pointer-events-none",
-      )}
-      style={{ left, width: DOCK_SLOT_SHIFT_PX }}
+      className={cn("absolute z-10", !active && "pointer-events-none")}
+      style={{
+        top: DOCK_TRACK_INSET_Y_PX,
+        bottom: DOCK_TRACK_INSET_Y_PX,
+        left,
+        width: DOCK_SLOT_SHIFT_PX,
+      }}
       aria-hidden
     />
   )
@@ -113,8 +121,9 @@ function DockSlotItem({
   return (
     <div
       ref={setRefs}
-      className="absolute bottom-0 z-20 flex justify-center"
+      className="absolute z-20 flex justify-center"
       style={{
+        bottom: DOCK_TRACK_INSET_Y_PX,
         left: index * DOCK_SLOT_SHIFT_PX,
         width: DOCK_SLOT_SHIFT_PX,
         transform:
@@ -232,8 +241,10 @@ function DockIconsTrack({
   return (
     <div
       ref={setNodeRef}
-      className="relative min-h-12 shrink-0 overflow-visible pt-2.5"
+      className="relative shrink-0 overflow-visible"
       style={{
+        height: DOCK_TRACK_HEIGHT_PX,
+        minHeight: DOCK_TRACK_HEIGHT_PX,
         width: rowWidth,
         minWidth: rowWidth,
         maxWidth: rowWidth,
@@ -310,14 +321,21 @@ export function MenuDock({ siteId, popId }: Props) {
   )
 
   return (
-    <div className="pointer-events-none absolute bottom-4 left-1/2 z-30 -translate-x-1/2">
+    <div className="pointer-events-none absolute bottom-2 left-1/2 z-30 -translate-x-1/2">
       <div
         className={cn(
-          "pointer-events-auto flex items-end gap-1 overflow-visible px-2.5 py-2 sm:gap-1.5 sm:px-3",
+          "pointer-events-auto flex items-end overflow-visible",
           menuFloatingPillShellClass,
           editing && dragging &&
             "transition-[width,padding,gap] duration-300 ease-[cubic-bezier(0.32,0.72,0,1)]",
         )}
+        style={{
+          paddingTop: DOCK_SHELL_PADDING_Y_PX,
+          paddingBottom: DOCK_SHELL_PADDING_Y_PX,
+          paddingLeft: DOCK_SHELL_PADDING_X_PX,
+          paddingRight: DOCK_SHELL_PADDING_X_PX,
+          gap: DOCK_SHELL_PADDING_X_PX,
+        }}
       >
         {dockItems.length > 0 ? (
           <DockIconsTrack
@@ -337,8 +355,19 @@ export function MenuDock({ siteId, popId }: Props) {
           />
         ) : null}
 
-        <div className="ml-1 flex h-12 shrink-0 items-center gap-2.5 sm:ml-1.5">
-          <div className="h-8 w-px bg-border" aria-hidden />
+        <div
+          className="flex shrink-0 items-center self-end"
+          style={{
+            height: DOCK_ICON_SIZE_PX,
+            marginBottom: DOCK_TRACK_INSET_Y_PX,
+            gap: DOCK_SHELL_PADDING_X_PX,
+          }}
+        >
+          <div
+            className="w-px shrink-0 bg-border"
+            style={{ height: DOCK_EDIT_DIVIDER_HEIGHT_PX }}
+            aria-hidden
+          />
           <RootsIconButton
             tone="ghost"
             surface="dark"

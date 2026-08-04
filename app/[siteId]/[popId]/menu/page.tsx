@@ -1,6 +1,7 @@
 "use client"
 
 import { DataWorkspaceHeaderUserMenu } from "@/components/layouts/DataWorkspaceHeaderUserMenu"
+import { dataWorkspaceHeaderRoleLabelClass } from "@/components/layouts/dataWorkspaceHeaderStyles"
 import { RootsIconButton, rootsIconButtonClass } from "@/components/rootsy-button"
 import withAuth from "@/hoc/withAuth"
 import { getPopMenuData } from "@/app/[siteId]/[popId]/menu/actions"
@@ -15,13 +16,21 @@ import { MenuPageSkeleton } from "@/app/[siteId]/[popId]/menu/MenuPageSkeleton"
 import {
   menuAmbientTopGlowClass,
   menuNatureShellClass,
-  menuRoleLabelClass,
   menuVignetteClass,
 } from "@/app/[siteId]/[popId]/menu/menuNatureStyles"
 import {
   menuHeaderBorderClass,
   menuHeaderChromeClass,
 } from "@/app/[siteId]/[popId]/menu/menuFloatingPillStyles"
+import {
+  menuSearchClearButtonClass,
+  menuSearchFieldActiveClass,
+  menuSearchFieldIconClass,
+  menuSearchFieldIdleClass,
+  menuSearchInputClass,
+  menuSearchShellClass,
+  menuSearchShortcutClass,
+} from "@/app/[siteId]/[popId]/menu/menuSearchFieldStyles"
 import "@/app/[siteId]/[popId]/library/color/rootsyNaturePalette.css"
 import "@/app/[siteId]/[popId]/menu/menuNaturePalette.css"
 import { canAccessMenuItem } from "@/lib/menuPermissions"
@@ -33,13 +42,12 @@ import {
 import { formatLocaleTime } from "@/lib/popTimezone"
 import { popScopedHref } from "@/lib/popRoutes"
 import { cn } from "@/lib/utils"
-import { useState, useEffect, useRef, useCallback, useMemo } from "react"
+import { useState, useEffect, useRef, useCallback, useMemo, type RefObject } from "react"
 import Link from "next/link"
 import { useParams, useRouter } from "next/navigation"
 import useEmblaCarousel from "embla-carousel-react"
 import {
   Search,
-  Settings,
   HelpCircle,
   Bell,
   X,
@@ -62,9 +70,11 @@ function detectSearchShortcutLabel(): string {
 function closeSearch(
   setShowSearch: (value: boolean) => void,
   setSearchQuery: (value: string) => void,
+  inputRef?: RefObject<HTMLInputElement | null>,
 ) {
   setShowSearch(false)
   setSearchQuery("")
+  inputRef?.current?.blur()
 }
 
 function routeForMenuLink(
@@ -283,12 +293,29 @@ function MenuPage() {
     return () => window.removeEventListener("mousemove", handleMouseMove)
   }, [])
 
-  const handleSearchBlur = useCallback(() => {
-    window.setTimeout(() => {
-      if (!searchQueryRef.current.trim()) {
-        setShowSearch(false)
+  const handleSearchBlur = useCallback(
+    (event: React.FocusEvent<HTMLInputElement>) => {
+      const related = event.relatedTarget
+      if (
+        related instanceof HTMLElement &&
+        related.closest("[data-menu-search-close]")
+      ) {
+        return
       }
-    }, 0)
+
+      window.setTimeout(() => {
+        if (document.activeElement === searchInputRef.current) return
+        if (!searchQueryRef.current.trim()) {
+          setShowSearch(false)
+        }
+      }, 0)
+    },
+    [],
+  )
+
+  const openSearch = useCallback(() => {
+    setShowSearch(true)
+    window.setTimeout(() => searchInputRef.current?.focus(), 0)
   }, [])
 
   useEffect(() => {
@@ -301,7 +328,7 @@ function MenuPage() {
       }
 
       if (event.key === "Escape" && showSearch) {
-        closeSearch(setShowSearch, setSearchQuery)
+        closeSearch(setShowSearch, setSearchQuery, searchInputRef)
       }
     }
 
@@ -467,35 +494,65 @@ function MenuPage() {
           </div>
 
           <div className="w-full justify-self-center">
-            <div className="relative w-full">
-              <Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-foreground/30" />
+            <div
+              className={cn(
+                menuSearchShellClass,
+                !showSearch && "cursor-text",
+              )}
+              onClick={(event) => {
+                if (showSearch) return
+                if (event.target instanceof HTMLInputElement) return
+                openSearch()
+              }}
+            >
+              <Search
+                className={cn(
+                  "pointer-events-none absolute left-4 top-1/2 size-4 -translate-y-1/2",
+                  menuSearchFieldIconClass,
+                )}
+                aria-hidden
+              />
               <input
                 ref={searchInputRef}
-                type="text"
+                type="search"
                 placeholder="Buscar..."
                 value={searchQuery}
-                readOnly={!showSearch}
                 onChange={(event) => setSearchQuery(event.target.value)}
                 onFocus={() => setShowSearch(true)}
                 onBlur={handleSearchBlur}
+                aria-label="Buscar en el menú"
+                aria-expanded={showSearch}
                 className={cn(
-                  "h-10 w-full rounded-xl border bg-secondary py-0 pl-11 pr-14 text-sm leading-10 text-foreground placeholder:text-foreground/30 focus:outline-none",
+                  menuSearchInputClass,
                   showSearch
-                    ? "border-foreground/20 bg-muted"
-                    : "cursor-pointer border-foreground/[0.06] hover:border-foreground/10 hover:bg-muted",
+                    ? menuSearchFieldActiveClass
+                    : menuSearchFieldIdleClass,
                 )}
               />
               {showSearch ? (
                 <button
                   type="button"
+                  data-menu-search-close
                   onMouseDown={(event) => event.preventDefault()}
-                  onClick={() => closeSearch(setShowSearch, setSearchQuery)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-foreground/30 transition-colors hover:text-foreground/60"
+                  onClick={(event) => {
+                    event.stopPropagation()
+                    closeSearch(setShowSearch, setSearchQuery, searchInputRef)
+                  }}
+                  className={cn(
+                    "absolute right-2 top-1/2 -translate-y-1/2",
+                    menuSearchClearButtonClass,
+                  )}
+                  aria-label="Cerrar búsqueda"
                 >
-                  <X className="h-4 w-4" />
+                  <X className="size-4" aria-hidden />
                 </button>
               ) : (
-                <kbd className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 rounded-md bg-secondary px-2 py-0.5 text-[10px] leading-none text-foreground/25">
+                <kbd
+                  className={cn(
+                    "pointer-events-none absolute right-4 top-1/2 -translate-y-1/2",
+                    menuSearchShortcutClass,
+                  )}
+                >
                   {searchShortcutLabel}
                 </kbd>
               )}
@@ -511,14 +568,6 @@ function MenuPage() {
                 label="Notificaciones"
               >
                 <Bell aria-hidden />
-              </RootsIconButton>
-              <RootsIconButton
-                tone="ghost"
-                surface="dark"
-                size="default"
-                label="Ajustes"
-              >
-                <Settings aria-hidden />
               </RootsIconButton>
             </div>
 
@@ -549,7 +598,15 @@ function MenuPage() {
                   {userFullName || "Usuario"}
                 </span>
                 {userRoleLabel ? (
-                  <span className={cn("truncate text-[10px] font-semibold uppercase tracking-wider", menuRoleLabelClass)}>
+                  <span
+                    className={cn(
+                      "truncate text-[10px] font-semibold uppercase tracking-wider",
+                      dataWorkspaceHeaderRoleLabelClass(
+                        "dark",
+                        Boolean(userRoleLabel),
+                      ),
+                    )}
+                  >
                     {userRoleLabel}
                   </span>
                 ) : null}
@@ -558,7 +615,7 @@ function MenuPage() {
                 userName={userFullName || "Usuario"}
                 userAvatarSrc={userImageUrl}
                 isOnline={isOnline}
-                headerVariant="default"
+                headerVariant="dark"
               />
             </div>
           </div>

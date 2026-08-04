@@ -3,43 +3,41 @@
 import type { PopSettingsFormInput } from "@/app/[siteId]/[popId]/settings/actions"
 import { PopSettingsImageUploadField } from "@/app/[siteId]/[popId]/settings/PopSettingsImageUploadField"
 import {
-  popSettingsFormColumnClass,
-  popSettingsFormDateFieldClass,
-  popSettingsFormFieldStackClass,
-  popSettingsFormSelectContentClass,
-  popSettingsFormSelectItemClass,
-  popSettingsFormSelectTriggerClass,
-  popSettingsFormTextFieldClass,
-  popSettingsFormTextareaClass,
-  popSettingsFormTwoColRowClass,
-} from "@/app/[siteId]/[popId]/settings/popSettingsConstants"
+  dataWorkspaceDetailCardClass,
+} from "@/components/data-workspace/dataWorkspaceListStyles"
+import { RootsIconButton, RootsSubtleButton } from "@/components/rootsy-button"
 import {
-  CheckoutFieldHint,
-  CheckoutSectionLabel,
-  CheckoutSectionPanel,
-} from "@/components/checkout/CheckoutFormFields"
-import { Button } from "@/components/ui/button"
+  RootsFormDateField,
+  RootsFormField,
+  RootsFormPhoneField,
+  RootsFormSelectField,
+  RootsFormSelectItem,
+  RootsFormTextField,
+} from "@/components/rootsy-form"
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
+  rootsFormColumnClass,
+  rootsFormFieldHintClass,
+  rootsFormTextFieldClass,
+  rootsFormTwoColRowClass,
+} from "@/components/rootsy-form/rootsFormStyles"
+import { Input } from "@/components/ui/input"
 import type { usePadronAutofillRazonSocial } from "@/hooks/usePadronAutofillRazonSocial"
+import {
+  ARGENTINA_COUNTRY_CODE,
+  ARGENTINA_COUNTRY_LABEL,
+  ARGENTINA_PROVINCES,
+  findArgentinaLocality,
+  listArgentinaLocalities,
+} from "@/lib/argentinaLocalities"
 import { periodoAfipToYmdFirstDay } from "@/lib/afipDateParse"
-import { formatLocaleDateTime } from "@/lib/popTimezone"
 import type { PadronActividadItem } from "@/lib/argentinaPadronLookup"
-import { Building2, ImageIcon, Loader2, RefreshCw } from "lucide-react"
-import type { Dispatch, SetStateAction } from "react"
+import { cn } from "@/lib/utils"
+import { Loader2, RefreshCw } from "lucide-react"
+import { useMemo, type Dispatch, type ReactNode, type SetStateAction } from "react"
 
 const ACTIVIDAD_SELECT_NONE = "__none__"
-
-function formatCuitHyphenated(raw: string): string {
-  const d = raw.replace(/\D/g, "")
-  if (d.length !== 11) return raw.trim()
-  return `${d.slice(0, 2)}-${d.slice(2, 10)}-${d.slice(10)}`
-}
+const PROVINCE_SELECT_NONE = "__province_none__"
+const CITY_SELECT_NONE = "__city_none__"
 
 type FormState = PopSettingsFormInput & { fiscalPadronSyncedAt: string | null }
 
@@ -55,6 +53,37 @@ type Props = {
   actividadesPadronList: PadronActividadItem[]
 }
 
+function SettingsSectionCard({
+  title,
+  description,
+  children,
+  className,
+  showHeaderDivider = true,
+}: {
+  title: string
+  description?: ReactNode
+  children: ReactNode
+  className?: string
+  showHeaderDivider?: boolean
+}) {
+  return (
+    <article className={cn(dataWorkspaceDetailCardClass, className)}>
+      <div
+        className={cn(
+          "flex flex-col gap-1 px-5 pt-4 pb-2 sm:px-6",
+          showHeaderDivider && "border-b border-border/60 pb-3",
+        )}
+      >
+        <h2 className="text-base font-semibold text-foreground">{title}</h2>
+        {description ? (
+          <div className={rootsFormFieldHintClass}>{description}</div>
+        ) : null}
+      </div>
+      <div className="px-5 pb-5 pt-2 sm:px-6">{children}</div>
+    </article>
+  )
+}
+
 export function PopSettingsFormFields({
   popId,
   form,
@@ -66,291 +95,326 @@ export function PopSettingsFormFields({
   onSyncPadron,
   actividadesPadronList,
 }: Props) {
+  const localityOptions = useMemo(
+    () =>
+      listArgentinaLocalities(form.state, form.city, form.postalCode).sort(
+        (a, b) => a.name.localeCompare(b.name, "es"),
+      ),
+    [form.state, form.city, form.postalCode],
+  )
+
+  const matchedLocality = useMemo(
+    () => findArgentinaLocality(form.state, form.city),
+    [form.state, form.city],
+  )
+
+  const postalCodeLocked =
+    Boolean(matchedLocality?.postalCode) &&
+    form.postalCode === matchedLocality?.postalCode
+
+  const provinceValue = form.state?.trim() || PROVINCE_SELECT_NONE
+  const cityValue = form.city?.trim() || CITY_SELECT_NONE
+
+  const imageFields = (
+    <div className={rootsFormColumnClass}>
+      <PopSettingsImageUploadField
+        id="pop-logo"
+        popId={popId}
+        kind="logo"
+        label="Logo del negocio"
+        hint="Se muestra en el menú del POP y en la app."
+        emptyTitle="Agregar logo del negocio"
+        emptySubtitle="Cuadrado o circular · se optimiza a WebP"
+        value={form.imageUrl ?? ""}
+        onChange={(imageUrl) => setForm((f) => ({ ...f, imageUrl }))}
+        disabled={!canUpdate}
+        previewCaption="Logo del negocio"
+      />
+      <PopSettingsImageUploadField
+        id="pop-ticket-logo"
+        popId={popId}
+        kind="ticket-logo"
+        label="Logo para tickets"
+        hint="Blanco y negro, fondo blanco o transparente. Ideal para impresoras térmicas."
+        emptyTitle="Agregar logo para tickets"
+        emptySubtitle="Se convierte automáticamente a PNG B/N"
+        value={form.invoiceLogoUrl ?? ""}
+        onChange={(invoiceLogoUrl) =>
+          setForm((f) => ({ ...f, invoiceLogoUrl }))
+        }
+        disabled={!canUpdate}
+        previewCaption="Logo para tickets"
+      />
+      <PopSettingsImageUploadField
+        id="pop-menu-bg"
+        popId={popId}
+        kind="menu-background"
+        label="Fondo del menú"
+        hint="Imagen de fondo de la pantalla principal del menú del POP."
+        emptyTitle="Agregar fondo del menú"
+        emptySubtitle="Horizontal · se optimiza a WebP"
+        value={form.backgroundImageUrl ?? ""}
+        onChange={(backgroundImageUrl) =>
+          setForm((f) => ({ ...f, backgroundImageUrl }))
+        }
+        disabled={!canUpdate}
+        previewCaption="Fondo del menú"
+      />
+    </div>
+  )
+
   return (
-    <div className="space-y-6">
-      <div
-        className={`grid gap-6 lg:items-start ${isOwner ? "lg:grid-cols-2" : "grid-cols-1"}`}
-      >
-        <CheckoutSectionPanel className="bg-card p-5 shadow-sm">
-          <h2 className="flex items-center gap-2 text-base font-semibold text-foreground">
-            <Building2 className="size-4 text-primary" aria-hidden />
-            Datos del punto
-          </h2>
-          <div className={`mt-5 ${popSettingsFormColumnClass}`}>
-            <div className={popSettingsFormFieldStackClass}>
-              <CheckoutSectionLabel>Nombre comercial</CheckoutSectionLabel>
-              <input
-                id="pop-name"
-                value={form.name}
-                onChange={(e) =>
-                  setForm((f) => ({ ...f, name: e.target.value }))
-                }
-                disabled={!canUpdate}
-                className={popSettingsFormTextFieldClass}
-                required
+    <div
+      className={cn(
+        "grid gap-6 lg:items-start",
+        isOwner ? "lg:grid-cols-3" : "lg:grid-cols-2",
+      )}
+    >
+        <SettingsSectionCard title="Datos del punto" showHeaderDivider={false}>
+          <div className={rootsFormColumnClass}>
+            <RootsFormTextField
+              label="Nombre comercial"
+              id="pop-name"
+              value={form.name}
+              onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
+              disabled={!canUpdate}
+              required
+            />
+
+            <RootsFormPhoneField
+              id="pop-phone"
+              value={form.phone}
+              onChange={(e) => setForm((f) => ({ ...f, phone: e.target.value }))}
+              disabled={!canUpdate}
+            />
+
+            <div className={rootsFormTwoColRowClass}>
+              <RootsFormTextField
+                label="País"
+                id="pop-country"
+                value={ARGENTINA_COUNTRY_LABEL}
+                disabled
+                readOnly
               />
-            </div>
-
-            <div className={popSettingsFormFieldStackClass}>
-              <CheckoutSectionLabel>Teléfono</CheckoutSectionLabel>
-              <input
-                id="pop-phone"
-                value={form.phone}
-                onChange={(e) =>
-                  setForm((f) => ({ ...f, phone: e.target.value }))
-                }
+              <RootsFormSelectField
+                label="Provincia"
+                id="pop-state"
+                value={provinceValue}
+                onValueChange={(value) => {
+                  if (value === PROVINCE_SELECT_NONE) {
+                    setForm((f) => ({
+                      ...f,
+                      country: ARGENTINA_COUNTRY_CODE,
+                      state: "",
+                      city: "",
+                      postalCode: "",
+                    }))
+                    return
+                  }
+                  setForm((f) => ({
+                    ...f,
+                    country: ARGENTINA_COUNTRY_CODE,
+                    state: value,
+                    city: "",
+                    postalCode: "",
+                  }))
+                }}
                 disabled={!canUpdate}
-                className={popSettingsFormTextFieldClass}
-              />
+                placeholder="Elegí una provincia"
+              >
+                <RootsFormSelectItem value={PROVINCE_SELECT_NONE}>
+                  (sin seleccionar)
+                </RootsFormSelectItem>
+                {ARGENTINA_PROVINCES.map((province) => (
+                  <RootsFormSelectItem key={province.name} value={province.name}>
+                    {province.name}
+                  </RootsFormSelectItem>
+                ))}
+              </RootsFormSelectField>
             </div>
 
-            <div className={popSettingsFormTwoColRowClass}>
-              <div className={popSettingsFormFieldStackClass}>
-                <CheckoutSectionLabel>País</CheckoutSectionLabel>
-                <input
-                  id="pop-country"
-                  value={form.country}
-                  onChange={(e) =>
-                    setForm((f) => ({ ...f, country: e.target.value }))
-                  }
-                  disabled={!canUpdate}
-                  placeholder="AR"
-                  className={popSettingsFormTextFieldClass}
-                />
-                <CheckoutFieldHint>
-                  Código ISO (ej. AR). Define la zona horaria para fechas y
-                  horarios del local.
-                </CheckoutFieldHint>
-              </div>
-              <div className={popSettingsFormFieldStackClass}>
-                <CheckoutSectionLabel>Provincia / estado</CheckoutSectionLabel>
-                <input
-                  id="pop-state"
-                  value={form.state}
-                  onChange={(e) =>
-                    setForm((f) => ({ ...f, state: e.target.value }))
-                  }
-                  disabled={!canUpdate}
-                  className={popSettingsFormTextFieldClass}
-                />
-              </div>
-            </div>
-
-            <div className={popSettingsFormFieldStackClass}>
-              <CheckoutSectionLabel>Ciudad</CheckoutSectionLabel>
-              <input
+            <div className={rootsFormTwoColRowClass}>
+              <RootsFormSelectField
+                label="Ciudad"
                 id="pop-city"
-                value={form.city}
-                onChange={(e) =>
-                  setForm((f) => ({ ...f, city: e.target.value }))
+                value={cityValue}
+                onValueChange={(value) => {
+                  if (value === CITY_SELECT_NONE) {
+                    setForm((f) => ({ ...f, city: "", postalCode: "" }))
+                    return
+                  }
+                  const locality = findArgentinaLocality(form.state, value)
+                  setForm((f) => ({
+                    ...f,
+                    city: value,
+                    postalCode: locality?.postalCode ?? f.postalCode,
+                  }))
+                }}
+                disabled={!canUpdate || !form.state?.trim()}
+                placeholder={
+                  form.state?.trim()
+                    ? "Elegí una ciudad"
+                    : "Seleccioná una provincia primero"
                 }
-                disabled={!canUpdate}
-                className={popSettingsFormTextFieldClass}
-              />
-            </div>
+              >
+                <RootsFormSelectItem value={CITY_SELECT_NONE}>
+                  (sin seleccionar)
+                </RootsFormSelectItem>
+                {localityOptions.map((locality) => (
+                  <RootsFormSelectItem key={locality.name} value={locality.name}>
+                    {locality.name}
+                  </RootsFormSelectItem>
+                ))}
+              </RootsFormSelectField>
 
-            <div className={popSettingsFormFieldStackClass}>
-              <CheckoutSectionLabel>Domicilio</CheckoutSectionLabel>
-              <input
-                id="pop-street"
-                value={form.streetAddress}
-                onChange={(e) =>
-                  setForm((f) => ({ ...f, streetAddress: e.target.value }))
-                }
-                disabled={!canUpdate}
-                className={popSettingsFormTextFieldClass}
-              />
-            </div>
-
-            <div className={popSettingsFormFieldStackClass}>
-              <CheckoutSectionLabel>Código postal</CheckoutSectionLabel>
-              <input
+              <RootsFormTextField
+                label="Código postal"
                 id="pop-cp"
                 value={form.postalCode}
                 onChange={(e) =>
                   setForm((f) => ({ ...f, postalCode: e.target.value }))
                 }
-                disabled={!canUpdate}
-                className={popSettingsFormTextFieldClass}
+                disabled={!canUpdate || postalCodeLocked}
               />
             </div>
+
+            <RootsFormTextField
+              label="Domicilio"
+              id="pop-street"
+              value={form.streetAddress}
+              onChange={(e) =>
+                setForm((f) => ({ ...f, streetAddress: e.target.value }))
+              }
+              disabled={!canUpdate}
+            />
           </div>
-        </CheckoutSectionPanel>
+        </SettingsSectionCard>
 
         {isOwner ? (
-          <CheckoutSectionPanel className="bg-card p-5 shadow-sm">
-            <h2 className="text-base font-semibold text-foreground">
-              Fiscal (titular)
-            </h2>
-            <CheckoutFieldHint>
-              CUIT y datos del emisor. Al escribir el CUIT o al sincronizar, el
-              padrón trae razón social y la lista de actividades. El inicio de
-              actividades y el texto de ingresos brutos los cargás vos (no vienen
-              fiables desde ARCA por rubro). Guardá para persistir en el punto.
-            </CheckoutFieldHint>
-            <div className={`mt-5 ${popSettingsFormColumnClass}`}>
-              <div className={popSettingsFormFieldStackClass}>
-                <CheckoutSectionLabel>CUIT</CheckoutSectionLabel>
-                <input
-                  id="pop-cuit"
-                  value={form.fiscalCuit ?? ""}
-                  onChange={(e) =>
-                    setForm((f) => ({ ...f, fiscalCuit: e.target.value }))
-                  }
-                  disabled={!canUpdate}
-                  placeholder="11 dígitos sin guiones"
-                  className={popSettingsFormTextFieldClass}
-                />
-                {padron.busy ? (
-                  <p className="flex items-center gap-2 text-xs text-muted-foreground">
-                    <Loader2 className="size-3.5 animate-spin" aria-hidden />
-                    Consultando padrón…
-                  </p>
-                ) : padron.error ? (
-                  <p className="text-xs text-destructive">{padron.error}</p>
-                ) : null}
-              </div>
+          <SettingsSectionCard
+            title="Datos fiscales"
+            showHeaderDivider={false}
+            description="Estos datos se utilizan para facturar en este punto de venta."
+          >
+            <div className={rootsFormColumnClass}>
+              <RootsFormField
+                label="CUIT"
+                htmlFor="pop-cuit"
+                error={padron.error ?? undefined}
+                hint={
+                  padron.busy ? (
+                    <span className="inline-flex items-center gap-2">
+                      <Loader2 className="size-3.5 animate-spin" aria-hidden />
+                      Consultando padrón…
+                    </span>
+                  ) : undefined
+                }
+              >
+                <div className="flex items-center gap-2">
+                  <Input
+                    id="pop-cuit"
+                    value={form.fiscalCuit ?? ""}
+                    onChange={(e) =>
+                      setForm((f) => ({ ...f, fiscalCuit: e.target.value }))
+                    }
+                    disabled={!canUpdate}
+                    placeholder="11 dígitos sin guiones"
+                    className={cn(rootsFormTextFieldClass, "min-w-0 flex-1")}
+                  />
+                  <RootsIconButton
+                    tone="secondary"
+                    surface="light"
+                    size="compact"
+                    label="Sincronizar padrón"
+                    disabled={!canUpdate || padronBusy}
+                    onClick={onSyncPadron}
+                    className="shrink-0"
+                  >
+                    {padronBusy ? (
+                      <Loader2 className="size-4 animate-spin" aria-hidden />
+                    ) : (
+                      <RefreshCw className="size-4" aria-hidden />
+                    )}
+                  </RootsIconButton>
+                </div>
+              </RootsFormField>
 
-              <div className="flex flex-wrap items-end gap-2">
-                <div className={`min-w-0 flex-1 ${popSettingsFormFieldStackClass}`}>
-                  <CheckoutSectionLabel>Razón social</CheckoutSectionLabel>
-                  <input
-                    id="pop-rs"
-                    value={form.fiscalRazonSocial ?? ""}
+              <RootsFormTextField
+                label="Razón social"
+                id="pop-rs"
+                value={form.fiscalRazonSocial ?? ""}
+                disabled
+                readOnly
+              />
+
+              <RootsFormSelectField
+                label="Rubro"
+                id="pop-actividad"
+                value={
+                  form.fiscalActividadSeleccionadaId?.trim() ||
+                  ACTIVIDAD_SELECT_NONE
+                }
+                onValueChange={(v) => {
+                  const id = v === ACTIVIDAD_SELECT_NONE ? "" : v
+                  const act = actividadesPadronList.find(
+                    (a) => a.idActividad === id,
+                  )
+                  const fecha =
+                    act?.inicioActividadesDate?.trim() ||
+                    periodoAfipToYmdFirstDay(act?.periodo)
+                  setForm((f) => ({
+                    ...f,
+                    fiscalActividadSeleccionadaId: id,
+                    ...(fecha ? { fiscalInicioActividadesDate: fecha } : {}),
+                  }))
+                }}
+                disabled={!canUpdate || actividadesPadronList.length === 0}
+                placeholder="Elegí la actividad que usás para facturar"
+              >
+                <RootsFormSelectItem value={ACTIVIDAD_SELECT_NONE}>
+                  (sin seleccionar)
+                </RootsFormSelectItem>
+                {actividadesPadronList.map((a) => (
+                  <RootsFormSelectItem key={a.idActividad} value={a.idActividad}>
+                    {a.descripcionActividad
+                      ? `${a.descripcionActividad} (${a.idActividad})`
+                      : a.idActividad}
+                  </RootsFormSelectItem>
+                ))}
+              </RootsFormSelectField>
+
+              <RootsFormDateField
+                label="Inicio de actividad"
+                id="pop-fiscal-inicio"
+                value={form.fiscalInicioActividadesDate ?? ""}
+                onChange={(value) =>
+                  setForm((f) => ({
+                    ...f,
+                    fiscalInicioActividadesDate: value,
+                  }))
+                }
+                disabled={!canUpdate}
+                hint="Cargá la fecha según tu constancia."
+              />
+
+              <RootsFormField label="Ingresos brutos" htmlFor="pop-fiscal-ib">
+                <div className="flex items-center gap-2">
+                  <Input
+                    id="pop-fiscal-ib"
+                    value={(form.fiscalIngresosBrutosText ?? "").replace(/\D/g, "")}
                     onChange={(e) =>
                       setForm((f) => ({
                         ...f,
-                        fiscalRazonSocial: e.target.value,
+                        fiscalIngresosBrutosText: e.target.value.replace(/\D/g, ""),
                       }))
                     }
                     disabled={!canUpdate}
-                    className={popSettingsFormTextFieldClass}
+                    inputMode="numeric"
+                    placeholder="30715581759"
+                    className={cn(rootsFormTextFieldClass, "min-w-0 flex-1")}
                   />
-                </div>
-                <Button
-                  type="button"
-                  variant="outline"
-                  disabled={!canUpdate || padronBusy}
-                  onClick={onSyncPadron}
-                  className="shrink-0"
-                >
-                  {padronBusy ? (
-                    <Loader2 className="size-4 animate-spin" aria-hidden />
-                  ) : (
-                    <RefreshCw className="size-4" aria-hidden />
-                  )}
-                  <span className="ml-2">Sincronizar padrón</span>
-                </Button>
-              </div>
-
-              <div className={popSettingsFormFieldStackClass}>
-                <CheckoutSectionLabel>Rubro / actividad (padrón)</CheckoutSectionLabel>
-                <Select
-                  value={
-                    form.fiscalActividadSeleccionadaId?.trim() ||
-                    ACTIVIDAD_SELECT_NONE
-                  }
-                  onValueChange={(v) => {
-                    const id = v === ACTIVIDAD_SELECT_NONE ? "" : v
-                    const act = actividadesPadronList.find(
-                      (a) => a.idActividad === id,
-                    )
-                    const fecha =
-                      act?.inicioActividadesDate?.trim() ||
-                      periodoAfipToYmdFirstDay(act?.periodo)
-                    setForm((f) => ({
-                      ...f,
-                      fiscalActividadSeleccionadaId: id,
-                      ...(fecha ? { fiscalInicioActividadesDate: fecha } : {}),
-                    }))
-                  }}
-                  disabled={!canUpdate || actividadesPadronList.length === 0}
-                >
-                  <SelectTrigger className={popSettingsFormSelectTriggerClass}>
-                    <SelectValue placeholder="Elegí la actividad que usás para facturar" />
-                  </SelectTrigger>
-                  <SelectContent className={popSettingsFormSelectContentClass}>
-                    <SelectItem
-                      value={ACTIVIDAD_SELECT_NONE}
-                      className={popSettingsFormSelectItemClass}
-                    >
-                      (sin seleccionar)
-                    </SelectItem>
-                    {actividadesPadronList.map((a) => (
-                      <SelectItem
-                        key={a.idActividad}
-                        value={a.idActividad}
-                        className={popSettingsFormSelectItemClass}
-                      >
-                        {a.descripcionActividad
-                          ? `${a.descripcionActividad} (${a.idActividad})`
-                          : a.idActividad}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                {actividadesPadronList.length === 0 ? (
-                  <CheckoutFieldHint>
-                    Sin actividades: cargá el CUIT y esperá la consulta al padrón,
-                    o usá &quot;Sincronizar padrón&quot;.
-                  </CheckoutFieldHint>
-                ) : null}
-              </div>
-
-              <div className={popSettingsFormTwoColRowClass}>
-                <div className={popSettingsFormFieldStackClass}>
-                  <CheckoutSectionLabel>Inicio de actividades</CheckoutSectionLabel>
-                  <CheckoutFieldHint>
-                    Suele depender del rubro. ARCA suele mandar inicio explícito o
-                    el período (YYYYMM) por actividad: usamos el primer día de ese
-                    mes como referencia; si no alcanza, cargá la fecha según tu
-                    constancia.
-                  </CheckoutFieldHint>
-                  <input
-                    id="pop-fiscal-inicio"
-                    type="date"
-                    value={form.fiscalInicioActividadesDate ?? ""}
-                    onChange={(e) =>
-                      setForm((f) => ({
-                        ...f,
-                        fiscalInicioActividadesDate: e.target.value,
-                      }))
-                    }
-                    disabled={!canUpdate}
-                    className={popSettingsFormDateFieldClass}
-                  />
-                </div>
-              </div>
-
-              <div className={popSettingsFormFieldStackClass}>
-                <div className="flex flex-wrap items-end gap-2">
-                  <div className="min-w-0 flex-1 space-y-2">
-                    <CheckoutSectionLabel>
-                      Ingresos brutos (texto libre)
-                    </CheckoutSectionLabel>
-                    <CheckoutFieldHint>
-                      Número de inscripción por jurisdicción, situación o lo que
-                      necesites en comprobantes. En muchos casos se repite el CUIT
-                      con guiones.
-                    </CheckoutFieldHint>
-                    <textarea
-                      id="pop-fiscal-ib"
-                      value={form.fiscalIngresosBrutosText ?? ""}
-                      onChange={(e) =>
-                        setForm((f) => ({
-                          ...f,
-                          fiscalIngresosBrutosText: e.target.value,
-                        }))
-                      }
-                      disabled={!canUpdate}
-                      rows={3}
-                      placeholder="Ej.: 20-12345678-9 o texto según tu provincia"
-                      className={popSettingsFormTextareaClass}
-                    />
-                  </div>
-                  <Button
+                  <RootsSubtleButton
                     type="button"
-                    variant="outline"
                     disabled={
                       !canUpdate ||
                       !(form.fiscalCuit ?? "").replace(/\D/g, "").length
@@ -358,92 +422,29 @@ export function PopSettingsFormFields({
                     onClick={() =>
                       setForm((f) => ({
                         ...f,
-                        fiscalIngresosBrutosText: formatCuitHyphenated(
-                          f.fiscalCuit ?? "",
+                        fiscalIngresosBrutosText: (f.fiscalCuit ?? "").replace(
+                          /\D/g,
+                          "",
                         ),
                       }))
                     }
-                    className="shrink-0 self-end"
+                    className="shrink-0"
                   >
                     Igual al CUIT
-                  </Button>
+                  </RootsSubtleButton>
                 </div>
-              </div>
-
-              {form.fiscalPadronSyncedAt ? (
-                <CheckoutFieldHint>
-                  Última sync:{" "}
-                  {formatLocaleDateTime(form.fiscalPadronSyncedAt)}
-                </CheckoutFieldHint>
-              ) : null}
+              </RootsFormField>
             </div>
-          </CheckoutSectionPanel>
+          </SettingsSectionCard>
         ) : null}
-      </div>
 
-      <CheckoutSectionPanel className="bg-card p-5 shadow-sm">
-        <h2 className="flex items-center gap-2 text-base font-semibold text-foreground">
-          <ImageIcon className="size-4 text-primary" aria-hidden />
-          Imágenes del punto
-        </h2>
-        <CheckoutFieldHint>
-          Las imágenes se suben al elegirlas; guardá el formulario para persistir
-          los cambios. El logo de ticket se convierte a blanco y negro con fondo
-          transparente para impresoras térmicas.
-        </CheckoutFieldHint>
-        <div className="mt-5 grid w-full min-w-0 gap-5 lg:grid-cols-3">
-          <PopSettingsImageUploadField
-            id="pop-logo"
-            popId={popId}
-            kind="logo"
-            label="Logo del negocio"
-            hint="Se muestra en el menú del POP y en la app."
-            emptyTitle="Agregar logo del negocio"
-            emptySubtitle="Cuadrado o circular · se optimiza a WebP"
-            value={form.imageUrl ?? ""}
-            onChange={(imageUrl) => setForm((f) => ({ ...f, imageUrl }))}
-            disabled={!canUpdate}
-            previewAspectClass="aspect-square max-w-[220px]"
-            previewObjectFit="contain"
-            previewCaption="Logo del negocio"
-          />
-          <PopSettingsImageUploadField
-            id="pop-ticket-logo"
-            popId={popId}
-            kind="ticket-logo"
-            label="Logo para tickets"
-            hint="Blanco y negro, fondo blanco o transparente. Ideal para impresoras láser/térmicas de tickets."
-            emptyTitle="Agregar logo para tickets"
-            emptySubtitle="Se convierte automáticamente a PNG B/N"
-            value={form.invoiceLogoUrl ?? ""}
-            onChange={(invoiceLogoUrl) =>
-              setForm((f) => ({ ...f, invoiceLogoUrl }))
-            }
-            disabled={!canUpdate}
-            previewAspectClass="aspect-[3/2]"
-            previewObjectFit="contain"
-            previewCheckerboard
-            previewCaption="Logo para tickets"
-          />
-          <PopSettingsImageUploadField
-            id="pop-menu-bg"
-            popId={popId}
-            kind="menu-background"
-            label="Fondo del menú"
-            hint="Imagen de fondo de la pantalla principal del menú del POP."
-            emptyTitle="Agregar fondo del menú"
-            emptySubtitle="Horizontal · se optimiza a WebP"
-            value={form.backgroundImageUrl ?? ""}
-            onChange={(backgroundImageUrl) =>
-              setForm((f) => ({ ...f, backgroundImageUrl }))
-            }
-            disabled={!canUpdate}
-            previewAspectClass="aspect-video"
-            previewObjectFit="cover"
-            previewCaption="Fondo del menú"
-          />
-        </div>
-      </CheckoutSectionPanel>
+      <SettingsSectionCard
+        title="Imágenes del POP"
+        showHeaderDivider={false}
+        className="min-w-0"
+      >
+        {imageFields}
+      </SettingsSectionCard>
     </div>
   )
 }

@@ -7,11 +7,20 @@ import {
   type PopSettingsFormInput,
 } from "@/app/[siteId]/[popId]/settings/actions"
 import { PopSettingsFormFields } from "@/app/[siteId]/[popId]/settings/PopSettingsFormFields"
+import "@/app/[siteId]/[popId]/library/color/rootsyNaturePalette.css"
+import {
+  dataWorkspaceBlocksContentInnerClass,
+  dataWorkspaceBlocksContentScopeClass,
+} from "@/components/data-workspace/dataWorkspaceListStyles"
 import { DataWorkspaceLayout } from "@/components/layouts/DataWorkspaceLayout"
-import { Button } from "@/components/ui/button"
+import { RootsPrimaryButton } from "@/components/rootsy-button"
 import withAuth from "@/hoc/withAuth"
 import { usePopWorkspace } from "@/context/PopWorkspaceContext"
 import { usePadronAutofillRazonSocial } from "@/hooks/usePadronAutofillRazonSocial"
+import {
+  ARGENTINA_COUNTRY_CODE,
+  resolveArgentinaCountryCode,
+} from "@/lib/argentinaLocalities"
 import { parsePadronActividadesJson } from "@/lib/padronActividadesHelpers"
 import { useParams, useRouter } from "next/navigation"
 import {
@@ -22,6 +31,50 @@ import {
   useState,
   type FormEvent,
 } from "react"
+import { cn } from "@/lib/utils"
+
+type SettingsFormState = PopSettingsFormInput & {
+  fiscalPadronSyncedAt: string | null
+}
+
+function buildPersistedSnapshot(
+  form: SettingsFormState,
+  isOwner: boolean,
+): PopSettingsFormInput {
+  const base: PopSettingsFormInput = {
+    name: form.name.trim(),
+    phone: form.phone.trim(),
+    country: resolveArgentinaCountryCode(form.country),
+    state: form.state.trim(),
+    city: form.city.trim(),
+    streetAddress: form.streetAddress.trim(),
+    postalCode: form.postalCode.trim(),
+    imageUrl: form.imageUrl ?? "",
+    invoiceLogoUrl: form.invoiceLogoUrl ?? "",
+    backgroundImageUrl: form.backgroundImageUrl ?? "",
+  }
+
+  if (!isOwner) return base
+
+  return {
+    ...base,
+    fiscalCuit: (form.fiscalCuit ?? "").trim(),
+    fiscalRazonSocial: (form.fiscalRazonSocial ?? "").trim(),
+    fiscalInicioActividadesDate: (form.fiscalInicioActividadesDate ?? "").trim(),
+    fiscalIngresosBrutosText: (form.fiscalIngresosBrutosText ?? "").replace(
+      /\D/g,
+      "",
+    ),
+    fiscalPadronActividadesJson: form.fiscalPadronActividadesJson ?? "",
+    fiscalActividadSeleccionadaId: (
+      form.fiscalActividadSeleccionadaId ?? ""
+    ).trim(),
+  }
+}
+
+function snapshotKey(form: SettingsFormState, isOwner: boolean): string {
+  return JSON.stringify(buildPersistedSnapshot(form, isOwner))
+}
 
 function SettingsPage() {
   const router = useRouter()
@@ -45,10 +98,9 @@ function SettingsPage() {
   const [saving, setSaving] = useState(false)
   const [banner, setBanner] = useState<string | null>(null)
   const [padronBusy, setPadronBusy] = useState(false)
+  const [savedSnapshot, setSavedSnapshot] = useState<string | null>(null)
 
-  const [form, setForm] = useState<
-    PopSettingsFormInput & { fiscalPadronSyncedAt: string | null }
-  >({
+  const [form, setForm] = useState<SettingsFormState>({
     name: "",
     phone: "",
     country: "",
@@ -85,8 +137,9 @@ function SettingsPage() {
     }
     setIsOwner(res.isOwner)
     setCanUpdate(res.canUpdate)
-    setForm({
+    const nextForm: SettingsFormState = {
       ...res.form,
+      country: resolveArgentinaCountryCode(res.form.country),
       imageUrl: res.form.imageUrl ?? "",
       invoiceLogoUrl: res.form.invoiceLogoUrl ?? "",
       backgroundImageUrl: res.form.backgroundImageUrl ?? "",
@@ -96,7 +149,9 @@ function SettingsPage() {
       fiscalIngresosBrutosText: res.form.fiscalIngresosBrutosText ?? "",
       fiscalPadronActividadesJson: res.form.fiscalPadronActividadesJson ?? "",
       fiscalActividadSeleccionadaId: res.form.fiscalActividadSeleccionadaId ?? "",
-    })
+    }
+    setForm(nextForm)
+    setSavedSnapshot(snapshotKey(nextForm, res.isOwner))
     setError(null)
   }, [popId, siteId])
 
@@ -123,6 +178,10 @@ function SettingsPage() {
     () => parsePadronActividadesJson(form.fiscalPadronActividadesJson),
     [form.fiscalPadronActividadesJson],
   )
+
+  const isDirty =
+    savedSnapshot !== null &&
+    snapshotKey(form, isOwner) !== savedSnapshot
 
   useEffect(() => {
     if (!isOwner || loading) return
@@ -164,13 +223,13 @@ function SettingsPage() {
 
   const submit = async (e: FormEvent) => {
     e.preventDefault()
-    if (!popId || !siteId || !canUpdate) return
+    if (!popId || !siteId || !canUpdate || !isDirty) return
     setSaving(true)
     setBanner(null)
     const res = await updatePopSettings(popId, {
       name: form.name,
       phone: form.phone,
-      country: form.country,
+      country: ARGENTINA_COUNTRY_CODE,
       state: form.state,
       city: form.city,
       streetAddress: form.streetAddress,
@@ -250,48 +309,70 @@ function SettingsPage() {
       userAvatarSrc={bootstrap?.userImageUrl ?? undefined}
       userRoleLabel={bootstrap?.roleLabel}
       contentFlush
-      mainMaxWidthClass="max-w-6xl"
-      mainClassName="min-h-0 overflow-y-auto"
+      mainMaxWidthClass="max-w-none"
+      mainClassName="rootsy-app-light rootsy-nature-palette min-h-0 flex-1 flex-col overflow-hidden bg-background"
     >
-      <div className="px-4 py-6 sm:px-6 lg:px-8">
-        {error || bootstrapError ? (
-          <div
-            role="alert"
-            className="mb-4 rounded-lg border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive"
-          >
-            {error ?? bootstrapError}
-          </div>
-        ) : null}
-
-        {!pageLoading && !error && !bootstrapError ? (
-          <form onSubmit={(e) => void submit(e)} className="space-y-8">
-            {banner ? (
-              <p
-                role="status"
-                className="rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800"
+      <div className="flex min-h-0 flex-1 flex-col">
+        <div
+          className={cn(
+            dataWorkspaceBlocksContentScopeClass,
+            dataWorkspaceBlocksContentInnerClass,
+            "min-h-0 flex-1 overflow-y-auto",
+          )}
+        >
+          <div className="mx-auto w-full max-w-[88rem]">
+            {error || bootstrapError ? (
+              <div
+                role="alert"
+                className="mb-4 rounded-lg border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive"
               >
-                {banner}
-              </p>
+                {error ?? bootstrapError}
+              </div>
             ) : null}
 
-            <PopSettingsFormFields
-              popId={popId}
-              form={form}
-              setForm={setForm}
-              canUpdate={canUpdate}
-              isOwner={isOwner}
-              padron={padron}
-              padronBusy={padronBusy}
-              onSyncPadron={() => void onSyncPadron()}
-              actividadesPadronList={actividadesPadronList}
-            />
+            {!pageLoading && !error && !bootstrapError ? (
+              <form
+                id="pop-settings-form"
+                onSubmit={(e) => void submit(e)}
+                className="space-y-6"
+              >
+                {banner ? (
+                  <p
+                    role="status"
+                    className="rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800"
+                  >
+                    {banner}
+                  </p>
+                ) : null}
 
-            <div className="flex justify-end">
-              <Button type="submit" disabled={!canUpdate || saving}>
+                <PopSettingsFormFields
+                  popId={popId}
+                  form={form}
+                  setForm={setForm}
+                  canUpdate={canUpdate}
+                  isOwner={isOwner}
+                  padron={padron}
+                  padronBusy={padronBusy}
+                  onSyncPadron={() => void onSyncPadron()}
+                  actividadesPadronList={actividadesPadronList}
+                />
+              </form>
+            ) : null}
+          </div>
+        </div>
+
+        {!pageLoading && !error && !bootstrapError ? (
+          <footer className="relative z-20 shrink-0 border-t border-border/60 bg-white">
+            <div className="mx-auto flex h-18 w-full max-w-[88rem] items-center justify-end px-4 sm:px-6 lg:px-8">
+              <RootsPrimaryButton
+                type="submit"
+                form="pop-settings-form"
+                disabled={!canUpdate || saving || !isDirty}
+              >
                 {saving ? "Guardando…" : "Guardar"}
-              </Button>
+              </RootsPrimaryButton>
             </div>
-          </form>
+          </footer>
         ) : null}
       </div>
     </DataWorkspaceLayout>

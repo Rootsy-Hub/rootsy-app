@@ -1,6 +1,14 @@
 "use client"
 
-import { DOCK_SLOT_SHIFT_PX } from "@/app/[siteId]/[popId]/menu/MenuDockDndContext"
+import {
+  DOCK_EDIT_DIVIDER_HEIGHT_PX,
+  DOCK_ICON_SIZE_PX,
+  DOCK_SHELL_PADDING_X_PX,
+  DOCK_SHELL_PADDING_Y_PX,
+  DOCK_SLOT_SHIFT_PX,
+  DOCK_TRACK_HEIGHT_PX,
+  DOCK_TRACK_INSET_Y_PX,
+} from "@/app/[siteId]/[popId]/menu/MenuDockDndContext"
 import {
   menuFloatingPillShellClass,
   menuHeaderBorderClass,
@@ -18,7 +26,6 @@ import { DEFAULT_MENU_DOCK_IDS } from "@/lib/menuCatalog"
 import { cn } from "@/lib/utils"
 
 const LABEL_WIDTHS = ["w-14", "w-16", "w-12", "w-[3.25rem]", "w-14", "w-11"] as const
-const DOCK_ICON_SIZE_PX = 48
 const SECTION_DOT_COUNT = 3
 
 function MenuIconTileSkeleton({ index }: { index: number }) {
@@ -101,7 +108,6 @@ function MenuPageSkeletonHeader() {
         <div className="flex min-w-0 items-center justify-end gap-6">
           <div className="flex items-center gap-1">
             <Skeleton className="size-10 rounded-xl bg-muted-foreground/8" />
-            <Skeleton className="size-10 rounded-xl bg-muted-foreground/8" />
           </div>
           <div className="hidden h-6 w-px bg-border sm:block" />
           <div className="hidden shrink-0 flex-col items-end gap-1.5 sm:flex">
@@ -128,23 +134,28 @@ function MenuPageSkeletonDock() {
   const iconInset = (DOCK_SLOT_SHIFT_PX - DOCK_ICON_SIZE_PX) / 2
 
   return (
-    <div className="absolute bottom-4 left-1/2 z-20 -translate-x-1/2">
+    <div className="absolute bottom-2 left-1/2 z-20 -translate-x-1/2">
       <div
-        className={cn(
-          "flex items-end gap-1 overflow-visible px-2.5 py-2 sm:gap-1.5 sm:px-3",
-          menuFloatingPillShellClass,
-        )}
+        className={cn("flex items-end overflow-visible", menuFloatingPillShellClass)}
+        style={{
+          paddingTop: DOCK_SHELL_PADDING_Y_PX,
+          paddingBottom: DOCK_SHELL_PADDING_Y_PX,
+          paddingLeft: DOCK_SHELL_PADDING_X_PX,
+          paddingRight: DOCK_SHELL_PADDING_X_PX,
+          gap: DOCK_SHELL_PADDING_X_PX,
+        }}
       >
         <div
           aria-hidden
-          className="relative min-h-12 shrink-0 pt-2.5"
-          style={{ width: trackWidth }}
+          className="relative shrink-0"
+          style={{ width: trackWidth, height: DOCK_TRACK_HEIGHT_PX }}
         >
           {Array.from({ length: iconCount }, (_, index) => (
             <Skeleton
               key={index}
-              className="absolute bottom-0 size-12 rounded-[22%] bg-muted-foreground/12"
+              className="absolute size-12 rounded-[22%] bg-muted-foreground/12"
               style={{
+                bottom: DOCK_TRACK_INSET_Y_PX,
                 left: index * DOCK_SLOT_SHIFT_PX + iconInset,
                 animationDelay: `${index * 60}ms`,
               }}
@@ -152,8 +163,19 @@ function MenuPageSkeletonDock() {
           ))}
         </div>
 
-        <div className="ml-1 flex h-12 shrink-0 items-center gap-2.5 sm:ml-1.5">
-          <div className="h-8 w-px bg-border" aria-hidden />
+        <div
+          className="flex shrink-0 items-center self-end"
+          style={{
+            height: DOCK_ICON_SIZE_PX,
+            marginBottom: DOCK_TRACK_INSET_Y_PX,
+            gap: DOCK_SHELL_PADDING_X_PX,
+          }}
+        >
+          <div
+            className="w-px shrink-0 bg-border"
+            style={{ height: DOCK_EDIT_DIVIDER_HEIGHT_PX }}
+            aria-hidden
+          />
           <Skeleton className="size-8 rounded-xl bg-muted-foreground/10" />
         </div>
       </div>
