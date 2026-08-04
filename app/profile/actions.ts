@@ -20,7 +20,6 @@ export type UserProfileDTO = {
   gender: string | null
   bio: string | null
   website: string | null
-  timezone: string | null
   language: string | null
   isEmailVerified: boolean
   isPhoneVerified: boolean
@@ -76,7 +75,6 @@ function mapRowToDto(
     gender: (row.gender as string | null) ?? null,
     bio: (row.bio as string | null) ?? null,
     website: (row.website as string | null) ?? null,
-    timezone: (row.timezone as string | null) ?? null,
     language: (row.language as string | null) ?? null,
     isEmailVerified: Boolean(row.is_email_verified),
     isPhoneVerified: Boolean(row.is_phone_verified),
@@ -93,7 +91,7 @@ export async function getUserProfile(): Promise<UserProfileDTO> {
     const { data: userProfile, error } = await supabase
       .from("users")
       .select(
-        "first_name, last_name, image_url, phone, address, city, state, country, postal_code, date_of_birth, gender, bio, website, timezone, language, is_email_verified, is_phone_verified, last_login_at, metadata",
+        "first_name, last_name, image_url, phone, address, city, state, country, postal_code, date_of_birth, gender, bio, website, language, is_email_verified, is_phone_verified, last_login_at, metadata",
       )
       .eq("id", user.uid)
       .single()
@@ -107,11 +105,10 @@ export async function getUserProfile(): Promise<UserProfileDTO> {
           first_name: emailName,
           last_name: "",
           country: "AR",
-          timezone: "America/Argentina/Buenos_Aires",
           language: "es",
         })
         .select(
-          "first_name, last_name, image_url, phone, address, city, state, country, postal_code, date_of_birth, gender, bio, website, timezone, language, is_email_verified, is_phone_verified, last_login_at, metadata",
+          "first_name, last_name, image_url, phone, address, city, state, country, postal_code, date_of_birth, gender, bio, website, language, is_email_verified, is_phone_verified, last_login_at, metadata",
         )
         .single()
 
@@ -132,7 +129,6 @@ export async function getUserProfile(): Promise<UserProfileDTO> {
           gender: null,
           bio: null,
           website: null,
-          timezone: "America/Argentina/Buenos_Aires",
           language: "es",
           isEmailVerified: false,
           isPhoneVerified: false,
@@ -171,7 +167,6 @@ export async function getUserProfile(): Promise<UserProfileDTO> {
       gender: null,
       bio: null,
       website: null,
-      timezone: "America/Argentina/Buenos_Aires",
       language: "es",
       isEmailVerified: false,
       isPhoneVerified: false,

@@ -1,8 +1,7 @@
 /**
- * Zona horaria para fecha de asiento según país del POP o sitio (p. ej. `arg` → Argentina).
+ * Zona horaria para fecha de asiento según país del POP o `site_id` (ej. `arg` → Argentina).
  *
- * Configuración del POP: Ajustes → **País** (`pops.country`, código ISO ej. `AR`)
- * y `site_id` / settings del POP. No hay campo timezone aparte.
+ * No hay timezone en `users`; la fuente es el POP activo (`pops.country`, `pops.site_id`).
  */
 const COUNTRY_TO_IANA: Record<string, string> = {
   AR: "America/Argentina/Buenos_Aires",
