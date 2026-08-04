@@ -1,5 +1,6 @@
 "use client"
 
+import "@/app/[siteId]/[popId]/library/color/rootsyNaturePalette.css"
 import {
   createTreasuryAccount,
   createTreasuryChildAccount,
@@ -26,7 +27,12 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { DataWorkspaceLayout } from "@/components/layouts/DataWorkspaceLayout"
 import { DataWorkspaceHeaderIconButton } from "@/components/layouts/DataWorkspaceHeaderIconButton"
-import { dataWorkspaceEntityCardsGridClass } from "@/components/data-workspace/dataWorkspaceListStyles"
+import {
+  dataWorkspaceBlocksEmptyStateClass,
+  dataWorkspaceBlocksPageContentClass,
+  dataWorkspaceBlocksPageMainClass,
+  dataWorkspaceEntityCardsGridClass,
+} from "@/components/data-workspace/dataWorkspaceListStyles"
 import withAuth from "@/hoc/withAuth"
 import {
   TREASURY_ACCOUNT_KINDS,
@@ -354,7 +360,7 @@ function AccountsPage() {
       userRoleLabel={bootstrap?.roleLabel}
       contentFlush
       mainMaxWidthClass="max-w-none"
-      mainClassName="min-h-0 overflow-y-auto"
+      mainClassName={dataWorkspaceBlocksPageMainClass}
       headerActions={
         canCreate ? (
           <DataWorkspaceHeaderIconButton
@@ -368,8 +374,7 @@ function AccountsPage() {
         ) : null
       }
     >
-      <div className="relative flex w-full min-h-0 flex-1 flex-col">
-        <div className="relative flex w-full flex-col gap-6 px-4 py-6 sm:px-6 lg:px-8">
+      <div className={dataWorkspaceBlocksPageContentClass}>
           {headerError ? (
             <div
               role="alert"
@@ -386,7 +391,7 @@ function AccountsPage() {
               {error}
             </div>
           ) : rows.length === 0 ? (
-            <p className="rounded-xl border border-dashed border-border bg-muted/20 px-4 py-10 text-center text-sm text-muted-foreground">
+            <p className={dataWorkspaceBlocksEmptyStateClass}>
               No hay cuentas configuradas.
             </p>
           ) : (
@@ -404,7 +409,6 @@ function AccountsPage() {
               ))}
             </div>
           )}
-        </div>
       </div>
     </DataWorkspaceLayout>
 

@@ -7,7 +7,11 @@ import {
   formatCashRegisterMoney,
 } from "@/app/[siteId]/[popId]/cash-registers/cashRegisterFormatters"
 import { DataWorkspacePeriodFilter } from "@/components/data-workspace/DataWorkspacePeriodFilter"
-import { tdMoneyClass } from "@/components/data-workspace/dataWorkspaceListStyles"
+import {
+  dataWorkspaceDetailCardClass,
+  dataWorkspaceDetailToolbarClass,
+  tdMoneyClass,
+} from "@/components/data-workspace/dataWorkspaceListStyles"
 import type { DataWorkspaceDatePreset } from "@/lib/dataWorkspaceDateFilter"
 import { cn } from "@/lib/utils"
 import { usePopTimeZone } from "@/hooks/usePopTimeZone"
@@ -79,8 +83,8 @@ export function CashRegisterClosedSessionsPanel({
   )
 
   return (
-    <article className="overflow-hidden rounded-2xl border border-border/60 bg-card shadow-sm">
-      <div className="flex flex-col gap-3 border-b border-border/60 bg-muted/15 px-4 py-3 lg:flex-row lg:items-center lg:justify-between lg:px-5">
+    <article className={dataWorkspaceDetailCardClass}>
+      <div className={dataWorkspaceDetailToolbarClass}>
         <DataWorkspacePeriodFilter
           variant="compact"
           hideAllPreset
@@ -105,7 +109,7 @@ export function CashRegisterClosedSessionsPanel({
         <div className="overflow-x-auto">
           <table className="w-full min-w-[720px] border-collapse text-sm">
             <thead>
-              <tr className="border-b border-border/60 bg-muted/30 text-left text-[10px] uppercase tracking-widest text-muted-foreground">
+              <tr className="border-b border-[color:var(--wt-border)] bg-white text-left text-[10px] uppercase tracking-widest text-muted-foreground">
                 <th className="w-16 px-4 py-2.5 lg:px-5">#</th>
                 <th className="px-4 py-2.5 lg:px-5">Apertura</th>
                 <th className="px-4 py-2.5 lg:px-5">Cierre</th>
@@ -138,10 +142,10 @@ export function CashRegisterClosedSessionsPanel({
                       }
                     }}
                     className={cn(
-                      "cursor-pointer border-b border-border/60 text-foreground transition-colors duration-150 last:border-b-0",
+                      "cursor-pointer border-b border-[color:var(--wt-border)] text-foreground transition-colors duration-150 last:border-b-0",
                       isOpenSession
-                        ? "sticky top-0 z-10 bg-emerald-50/90 shadow-[0_1px_0_0_var(--border)] hover:bg-emerald-50"
-                        : "hover:bg-muted/30",
+                        ? "sticky top-0 z-10 bg-emerald-50/90 shadow-[0_1px_0_0_var(--border)] hover:bg-emerald-50/75"
+                        : "hover:bg-muted/20",
                     )}
                   >
                     <td className="whitespace-nowrap px-4 py-2.5 text-sm font-medium tabular-nums text-muted-foreground lg:px-5">

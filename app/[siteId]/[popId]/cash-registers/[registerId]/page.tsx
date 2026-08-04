@@ -1,7 +1,12 @@
 "use client"
 
+import "@/app/[siteId]/[popId]/library/color/rootsyNaturePalette.css"
 import { CashRegisterDetailView } from "@/app/[siteId]/[popId]/cash-registers/CashRegisterDetailView"
 import { DataWorkspaceLayout } from "@/components/layouts/DataWorkspaceLayout"
+import {
+  dataWorkspaceBlocksPageMainClass,
+  dataWorkspaceBlocksPageScopeClass,
+} from "@/components/data-workspace/dataWorkspaceListStyles"
 import { usePopWorkspace } from "@/context/PopWorkspaceContext"
 import withAuth from "@/hoc/withAuth"
 import { useParams } from "next/navigation"
@@ -37,17 +42,17 @@ function CashRegisterDetailPage() {
       userRoleLabel={bootstrap?.roleLabel}
       contentFlush
       mainMaxWidthClass="max-w-none"
-      mainClassName="min-h-0 flex-1 overflow-y-auto"
+      mainClassName={dataWorkspaceBlocksPageMainClass}
     >
-      {bootstrapError ? (
-        <div
-          role="alert"
-          className="mx-4 mt-4 rounded-lg border border-destructive/25 bg-destructive/10 px-4 py-3 text-sm text-destructive sm:mx-6 lg:px-8"
-        >
-          Cabecera: {bootstrapError}
-        </div>
-      ) : null}
-      <div className="relative flex w-full min-h-full flex-1 flex-col">
+      <div className={dataWorkspaceBlocksPageScopeClass}>
+        {bootstrapError ? (
+          <div
+            role="alert"
+            className="mx-4 mt-4 rounded-lg border border-destructive/25 bg-destructive/10 px-4 py-3 text-sm text-destructive sm:mx-6 lg:px-8"
+          >
+            Cabecera: {bootstrapError}
+          </div>
+        ) : null}
         <CashRegisterDetailView
           siteId={siteId}
           popId={popId}

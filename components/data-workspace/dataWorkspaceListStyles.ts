@@ -25,13 +25,31 @@ import {
 } from "@/components/rootsy-button/rootsButtonStyles"
 import { cn } from "@/lib/utils"
 
+/** Superficie blanca — shell y zonas internas de tarjetas bloques. */
+export const dataWorkspaceBlocksCardSurfaceClass = "bg-white"
+
 export const dataWorkspaceShellCard =
-  "rounded-2xl border border-border/80 bg-card shadow-sm"
+  "rounded-2xl border border-border/80 bg-white shadow-sm"
 
 /** Tarjeta workspace pegada al borde inferior del main (sin redondeo ni borde abajo). */
 export const dataWorkspaceFlushBottomShellCard = cn(
   dataWorkspaceShellCard,
   "rounded-b-none border-b-0",
+)
+
+/** Panel flush — columna chrome + cuerpo pegado al piso. */
+export const dataWorkspaceFlushBottomPanelClass = "flex min-h-0 flex-1 flex-col"
+
+/** Chrome superior — radio y borde arriba/laterales; separa toolbar y KPIs del listado. */
+export const dataWorkspaceFlushBottomPanelChromeClass = cn(
+  dataWorkspaceBlocksCardSurfaceClass,
+  "shrink-0 overflow-hidden rounded-t-2xl border border-b-0 border-border/60 shadow-sm",
+)
+
+/** Cuerpo inferior — sin borde inferior; laterales opcionales vía hermano chrome. */
+export const dataWorkspaceFlushBottomPanelBodyClass = cn(
+  dataWorkspaceBlocksCardSurfaceClass,
+  "flex min-h-0 flex-1 flex-col border-x border-border/60",
 )
 
 /** Grid de tarjetas (cuentas, cajas): columnas automáticas con ancho mínimo legible. */
@@ -44,6 +62,118 @@ export const workspaceTableSurfaceClass =
 
 /** Scope raíz — tokens --wt-* (ver rootsyNaturePalette.css). */
 export const workspaceTableNatureScopeClass = "workspace-table-nature"
+
+/** Cuerpo tierra orgánica — pantallas bloques (cuentas, cajas). Requiere `.rootsy-nature-palette`. */
+export const dataWorkspaceBlocksContentScopeClass = cn(
+  workspaceTableNatureScopeClass,
+  "workspace-table-nature--earth-organic",
+  "bg-[var(--wt-surface)]",
+)
+
+/** Padding estándar del área de grid bloques. */
+export const dataWorkspaceBlocksContentInnerClass =
+  "relative flex w-full flex-col gap-6 px-4 py-6 sm:px-6 lg:px-8"
+
+/** `<main>` flush de pantallas bloques — puente shadcn + paleta Nature. */
+export const dataWorkspaceBlocksPageMainClass = cn(
+  "rootsy-app-light rootsy-nature-palette min-h-0 overflow-y-auto bg-background",
+)
+
+/** Contenedor tierra orgánica — debe ser hijo del main con `.rootsy-nature-palette`. */
+export const dataWorkspaceBlocksPageContentClass = cn(
+  dataWorkspaceBlocksContentScopeClass,
+  dataWorkspaceBlocksContentInnerClass,
+  "min-h-full flex-1",
+)
+
+/**
+ * Tarjeta interactiva de entidad — elevation.card.interactive + radius.card.library (rounded-2xl).
+ * Sombra base con tinte canopy; hover eleva a shadow-md.
+ */
+export const dataWorkspaceEntityCardClass = cn(
+  "group relative flex h-full flex-col overflow-hidden rounded-2xl",
+  "border border-border/60 shadow-sm transition-[border-color,box-shadow] duration-200",
+  dataWorkspaceBlocksCardSurfaceClass,
+  "hover:border-border hover:shadow-md",
+)
+
+export const dataWorkspaceEntityCardHeaderClass =
+  "border-b border-border/60 px-4 py-4 pr-11"
+
+/** Zona interna de tarjeta — misma superficie blanca que el shell. */
+export const dataWorkspaceEntityCardBodySunkenClass =
+  dataWorkspaceBlocksCardSurfaceClass
+
+export const dataWorkspaceEntityCardBodyClass = cn(
+  "flex min-h-0 flex-1 flex-col px-4 py-4",
+  dataWorkspaceEntityCardBodySunkenClass,
+)
+
+export const dataWorkspaceEntityCardFooterClass = cn(
+  "border-t border-border/40",
+  dataWorkspaceEntityCardBodySunkenClass,
+)
+
+export const dataWorkspaceEntityCardIsotypeClass =
+  "flex size-11 shrink-0 items-center justify-center rounded-xl border border-border/60 bg-white text-muted-foreground shadow-xs"
+
+/** Shell skeleton — misma superficie que la tarjeta final, sin hover. */
+export const dataWorkspaceEntityCardSkeletonShellClass = cn(
+  "relative flex h-full flex-col overflow-hidden rounded-2xl",
+  "border border-border/60 shadow-sm",
+  dataWorkspaceBlocksCardSurfaceClass,
+)
+
+export const dataWorkspaceBlocksEmptyStateClass =
+  "rounded-xl border border-dashed border-[var(--wt-border-strong)] bg-white px-4 py-10 text-center text-sm text-[var(--wt-text-secondary)]"
+
+/** Scope tierra sin padding — vistas detalle con layout propio. Hijo de `dataWorkspaceBlocksPageMainClass`. */
+export const dataWorkspaceBlocksPageScopeClass = cn(
+  dataWorkspaceBlocksContentScopeClass,
+  "min-h-full flex-1",
+)
+
+/** Tarjeta / panel de detalle — misma elevación y radio que bloques, sin hover. */
+export const dataWorkspaceDetailCardClass = cn(
+  "overflow-hidden rounded-2xl border border-border/60 shadow-sm",
+  dataWorkspaceBlocksCardSurfaceClass,
+)
+
+export const dataWorkspaceDetailCardHeaderClass =
+  "border-b border-border/60 px-4 py-4 sm:px-6 lg:px-8"
+
+export const dataWorkspaceDetailCardStatsClass = cn(
+  "grid gap-4 px-4 py-4 sm:grid-cols-2 sm:px-6 lg:flex lg:flex-wrap lg:items-end lg:gap-x-10 lg:gap-y-3 lg:px-8",
+  dataWorkspaceEntityCardBodySunkenClass,
+)
+
+/** Toolbar de filtros / tabs en paneles de detalle. */
+export const dataWorkspaceDetailToolbarClass = cn(
+  "flex flex-col gap-3 border-b border-border/60 px-4 py-3 lg:flex-row lg:items-center lg:justify-between lg:px-5",
+  dataWorkspaceEntityCardBodySunkenClass,
+)
+
+/** Franja KPI dentro de paneles (3 columnas). */
+export const dataWorkspaceDetailKpiStripClass = cn(
+  "grid divide-y divide-border/60 border-b border-border/60 sm:grid-cols-3 sm:divide-x sm:divide-y-0",
+  dataWorkspaceBlocksCardSurfaceClass,
+)
+
+/** Franja KPI (2 columnas — saldos de período). */
+export const dataWorkspaceDetailKpiStripTwoColClass = cn(
+  "grid divide-y divide-border/60 border-b border-border/60 sm:grid-cols-2 sm:divide-x sm:divide-y-0",
+  dataWorkspaceBlocksCardSurfaceClass,
+)
+
+export const dataWorkspaceDetailPanelClass = cn(
+  dataWorkspaceDetailCardClass,
+  "overflow-hidden",
+)
+
+export const dataWorkspaceDetailSectionClass =
+  "border-t border-[color:var(--wt-border)] px-4 py-4 lg:px-5"
+
+export const dataWorkspaceDetailBodyClass = "px-4 py-4 lg:px-5"
 
 export type WorkspaceTableTone = "default" | "nature" | "earth"
 

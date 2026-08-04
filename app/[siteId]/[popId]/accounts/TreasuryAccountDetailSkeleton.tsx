@@ -1,19 +1,24 @@
 "use client"
 
-import { dataWorkspaceFlushBottomShellCard, dataWorkspaceShellCard } from "@/components/data-workspace/dataWorkspaceListStyles"
+import {
+  dataWorkspaceDetailCardClass,
+  dataWorkspaceDetailCardHeaderClass,
+  dataWorkspaceDetailCardStatsClass,
+  dataWorkspaceDetailKpiStripClass,
+  dataWorkspaceDetailKpiStripTwoColClass,
+  dataWorkspaceDetailPanelClass,
+  dataWorkspaceDetailToolbarClass,
+  dataWorkspaceFlushBottomPanelBodyClass,
+  dataWorkspaceFlushBottomPanelChromeClass,
+  dataWorkspaceFlushBottomPanelClass,
+  workspaceTableNatureSkeletonTone,
+} from "@/components/data-workspace/dataWorkspaceListStyles"
 import { cn } from "@/lib/utils"
 import { Loader2 } from "lucide-react"
 
-const sk = {
-  bar: "animate-pulse rounded-[3px] bg-muted-foreground/12",
-  barSm: "animate-pulse rounded-[3px] bg-muted-foreground/8",
-  pill: "animate-pulse rounded-full bg-muted-foreground/12",
-  box: "animate-pulse rounded-md bg-muted-foreground/10",
-  isotype: "animate-pulse rounded-xl bg-muted-foreground/12",
-} as const
+const sk = workspaceTableNatureSkeletonTone
 
-const shellCard = dataWorkspaceShellCard
-const flushBottomShellCard = dataWorkspaceFlushBottomShellCard
+const shellCard = dataWorkspaceDetailPanelClass
 
 type SkeletonVariant = "default" | "cash"
 type DashboardToolbarMode = "none" | "movements" | "tabs"
@@ -24,9 +29,8 @@ function TreasuryDashboardKpiStripSkeleton({ columns = 2 }: { columns?: 2 | 3 })
   return (
     <div
       className={cn(
-        "grid divide-y divide-border/60 border-b border-border/60 bg-muted/5",
-        columns === 2 && "sm:grid-cols-2 sm:divide-x sm:divide-y-0",
-        columns === 3 && "sm:grid-cols-3 sm:divide-x sm:divide-y-0",
+        columns === 2 && dataWorkspaceDetailKpiStripTwoColClass,
+        columns === 3 && dataWorkspaceDetailKpiStripClass,
       )}
     >
       {Array.from({ length: columns }).map((_, index) => (
@@ -50,7 +54,7 @@ function TreasuryGroupedMovementsSkeleton({ rows = 5 }: { rows?: number }) {
         <div className={cn("h-3.5 w-24", sk.barSm)} />
       </div>
 
-      <ul className="divide-y divide-border/40">
+      <ul className="divide-y divide-border/60">
         {Array.from({ length: rows }).map((_, index) => (
           <li
             key={index}
@@ -71,6 +75,24 @@ function TreasuryGroupedMovementsSkeleton({ rows = 5 }: { rows?: number }) {
   )
 }
 
+function TreasuryResumenBodySkeleton({ variant = "default" }: { variant?: SkeletonVariant }) {
+  const isCash = variant === "cash"
+
+  if (isCash) {
+    return <TreasuryGroupedMovementsSkeleton />
+  }
+
+  return (
+    <>
+      <div className="space-y-1.5 px-4 py-4 lg:px-5">
+        <div className={cn("h-4 w-36", sk.barSm)} />
+        <div className={cn("h-3 w-52", sk.pill)} />
+      </div>
+      <TreasuryGroupedMovementsSkeleton rows={4} />
+    </>
+  )
+}
+
 function TreasuryAccountDetailBannerSkeleton({
   variant = "default",
 }: {
@@ -79,15 +101,12 @@ function TreasuryAccountDetailBannerSkeleton({
   const isCash = variant === "cash"
 
   return (
-    <article
-      aria-hidden
-      className="overflow-hidden rounded-2xl border border-border/60 bg-card shadow-sm"
-    >
-      <div className="border-b border-border/60 px-4 py-4 sm:px-6 lg:px-8">
+    <article aria-hidden className={dataWorkspaceDetailCardClass}>
+      <div className={dataWorkspaceDetailCardHeaderClass}>
         <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
           <div className="flex min-w-0 items-center gap-3 sm:gap-4">
             <div className={cn("size-9 shrink-0 rounded-md", sk.box)} />
-            <div className={cn("size-11 shrink-0", sk.isotype)} />
+            <div className={cn("size-11 shrink-0 rounded-xl", sk.box)} />
             <div className="min-w-0 flex-1 space-y-2">
               <div className={cn("h-2.5 w-20", sk.pill)} />
               <div className={cn("h-7 w-40 max-w-full sm:w-52", sk.bar)} />
@@ -98,11 +117,11 @@ function TreasuryAccountDetailBannerSkeleton({
               {Array.from({ length: 2 }).map((_, index) => (
                 <div
                   key={index}
-                  className="flex h-14 w-44 max-w-full items-center gap-3 rounded-xl border border-border/70 bg-background px-4 py-2.5 shadow-xs"
+                  className="flex h-14 w-44 max-w-full items-center gap-3 rounded-xl border border-border/60 bg-white px-4 py-2.5 shadow-xs"
                 >
                   <div
                     className={cn(
-                      "size-9 shrink-0 rounded-lg ring-1 ring-border/40",
+                      "size-9 shrink-0 rounded-lg ring-1 ring-border/60",
                       sk.box,
                     )}
                   />
@@ -117,7 +136,7 @@ function TreasuryAccountDetailBannerSkeleton({
         </div>
       </div>
 
-      <div className="grid gap-4 bg-muted/20 px-4 py-4 sm:grid-cols-2 sm:px-6 lg:flex lg:gap-x-10 lg:px-8">
+      <div className={dataWorkspaceDetailCardStatsClass}>
         <div className="space-y-2 lg:min-w-36">
           <div className={cn("h-2.5 w-16", sk.pill)} />
           <div className={cn("h-8 w-32", sk.bar)} />
@@ -148,44 +167,38 @@ function TreasuryAccountDetailDashboardSkeleton({
   toolbarMode?: DashboardToolbarMode
   flushBottom?: boolean
 }) {
-  const isCash = variant === "cash"
+  const toolbarSkeleton =
+    toolbarMode === "movements" ? (
+      <div className={dataWorkspaceDetailToolbarClass}>
+        <div className={cn("h-9 w-36 shrink-0 rounded-md", sk.box)} />
+        <div className={cn("h-9 w-40 shrink-0 rounded-md", sk.box)} />
+      </div>
+    ) : toolbarMode === "tabs" ? (
+      <div className={dataWorkspaceDetailToolbarClass}>
+        <div className={cn("h-10 w-full rounded-lg lg:w-88", sk.box)} />
+        <div className={cn("h-9 w-36 shrink-0 rounded-md", sk.box)} />
+      </div>
+    ) : null
+
+  if (flushBottom) {
+    return (
+      <div aria-hidden className={dataWorkspaceFlushBottomPanelClass}>
+        <div className={dataWorkspaceFlushBottomPanelChromeClass}>
+          {toolbarSkeleton}
+          <TreasuryDashboardKpiStripSkeleton columns={2} />
+        </div>
+        <div className={dataWorkspaceFlushBottomPanelBodyClass}>
+          <TreasuryResumenBodySkeleton variant={variant} />
+        </div>
+      </div>
+    )
+  }
 
   return (
-    <div
-      aria-hidden
-      className={cn(
-        flushBottom ? flushBottomShellCard : shellCard,
-        "overflow-hidden",
-        flushBottom && "flex flex-1 flex-col",
-      )}
-    >
-      {toolbarMode === "movements" ? (
-        <div className="flex flex-col gap-3 border-b border-border/60 bg-muted/15 px-4 py-3 lg:flex-row lg:items-center lg:justify-between lg:px-5">
-          <div className={cn("h-9 w-36 shrink-0 rounded-md", sk.box)} />
-          <div className={cn("h-9 w-40 shrink-0 rounded-md", sk.box)} />
-        </div>
-      ) : null}
-
-      {toolbarMode === "tabs" ? (
-        <div className="flex flex-col gap-3 border-b border-border/60 bg-muted/15 px-4 py-3 lg:flex-row lg:items-center lg:justify-between lg:px-5">
-          <div className={cn("h-10 w-full rounded-lg lg:w-88", sk.box)} />
-          <div className={cn("h-9 w-36 shrink-0 rounded-md", sk.box)} />
-        </div>
-      ) : null}
-
+    <div aria-hidden className={shellCard}>
+      {toolbarSkeleton}
       <TreasuryDashboardKpiStripSkeleton columns={2} />
-
-      {isCash ? (
-        <TreasuryGroupedMovementsSkeleton />
-      ) : (
-        <>
-          <div className="space-y-1.5 px-4 py-4 lg:px-5">
-            <div className={cn("h-4 w-36", sk.barSm)} />
-            <div className={cn("h-3 w-52", sk.pill)} />
-          </div>
-          <TreasuryGroupedMovementsSkeleton rows={4} />
-        </>
-      )}
+      <TreasuryResumenBodySkeleton variant={variant} />
     </div>
   )
 }
@@ -220,11 +233,25 @@ export function TreasuryAccountDetailSkeleton({
   )
 }
 
-export function TreasuryAccountDetailContentSkeleton(_props?: {
+export function TreasuryAccountDetailContentSkeleton({
+  variant = "default",
+  chromeOnly = false,
+  bodyOnly = false,
+}: {
   variant?: SkeletonVariant
+  chromeOnly?: boolean
+  bodyOnly?: boolean
   /** @deprecated El toolbar real lo renderiza el padre. */
   showToolbar?: boolean
 }) {
+  if (chromeOnly) {
+    return <TreasuryDashboardKpiStripSkeleton columns={2} />
+  }
+
+  if (bodyOnly) {
+    return <TreasuryResumenBodySkeleton variant={variant} />
+  }
+
   return (
     <div
       role="status"

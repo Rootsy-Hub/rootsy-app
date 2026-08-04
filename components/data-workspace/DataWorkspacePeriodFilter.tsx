@@ -89,6 +89,8 @@ export function DataWorkspacePeriodFilter({
   const triggerId = triggerIdProp ?? autoTriggerId
   const isCompact = variant === "compact"
   const isLayout = variant === "layout"
+  /** Trigger RootsForm (prefijo calendario) — barra de filtros o toolbar inline. */
+  const useRootsFormTrigger = isLayout || isCompact
   const [popoverOpen, setPopoverOpen] = useState(false)
   const [pickerView, setPickerView] = useState<"shortcuts" | "calendar">(
     "shortcuts",
@@ -131,20 +133,19 @@ export function DataWorkspacePeriodFilter({
   }
 
   const triggerClass = cn(
-    isLayout
+    useRootsFormTrigger
       ? cn(
           rootsFormPrefixedDateTriggerClass,
           "cursor-pointer",
           active && rootsFormFilterTriggerActiveClass,
         )
       : dateFilterTriggerClass,
-    isCompact
-      ? "h-8 min-w-[12rem] max-w-[18rem] px-3 text-sm font-medium shadow-sm"
-      : !isLayout && "min-w-0 shadow-xs",
-    !isLayout && active && lightToolbarControlActiveClass,
+    isCompact && "min-w-[12rem] max-w-[18rem] w-full sm:w-auto",
+    !useRootsFormTrigger && "min-w-0 shadow-xs",
+    !useRootsFormTrigger && active && lightToolbarControlActiveClass,
   )
 
-  const periodTrigger = isLayout ? (
+  const periodTrigger = useRootsFormTrigger ? (
     <button
       id={triggerId}
       type="button"
@@ -228,10 +229,10 @@ export function DataWorkspacePeriodFilter({
       <PopoverContent
         align={isCompact ? "end" : "start"}
         side="bottom"
-        sideOffset={isLayout ? 6 : 8}
+        sideOffset={useRootsFormTrigger ? 6 : 8}
         collisionPadding={20}
         className={cn(
-          isLayout ? "z-50" : "z-[100]",
+          useRootsFormTrigger ? "z-50" : "z-[100]",
           "rounded-xl p-0",
           "w-[min(21.5rem,calc(100vw-1.5rem))] max-w-[calc(100vw-1.5rem)]",
           lightDatePopoverContentClass,

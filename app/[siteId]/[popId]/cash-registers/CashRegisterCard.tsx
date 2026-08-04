@@ -7,6 +7,13 @@ import {
   dataWorkspaceLightDropdownLogoutItemClass,
   dataWorkspaceLightDropdownSeparatorClass,
 } from "@/components/layouts/dataWorkspaceHeaderStyles"
+import {
+  dataWorkspaceEntityCardBodyClass,
+  dataWorkspaceEntityCardClass,
+  dataWorkspaceEntityCardFooterClass,
+  dataWorkspaceEntityCardHeaderClass,
+  dataWorkspaceEntityCardIsotypeClass,
+} from "@/components/data-workspace/dataWorkspaceListStyles"
 import { Button } from "@/components/ui/button"
 import {
   DropdownMenu,
@@ -239,12 +246,7 @@ export function CashRegisterCard({
   ].filter((section): section is MenuItem[] => section != null)
 
   return (
-    <article
-      className={cn(
-        "group relative flex h-full flex-col overflow-hidden rounded-2xl border border-border/60 bg-card shadow-sm transition-all",
-        "hover:border-border hover:shadow-md",
-      )}
-    >
+    <article className={dataWorkspaceEntityCardClass}>
       {menuSections.length > 0 ? (
         <div
           className="absolute right-3 top-3 z-20"
@@ -304,12 +306,9 @@ export function CashRegisterCard({
           href={detailHref}
           className="flex min-h-0 flex-1 flex-col text-left"
         >
-          <div className="border-b border-border/60 px-4 py-4 pr-11">
+          <div className={dataWorkspaceEntityCardHeaderClass}>
             <div className="flex items-start gap-3">
-              <span
-                className="flex size-11 shrink-0 items-center justify-center rounded-xl border border-border/60 bg-background text-muted-foreground shadow-xs"
-                aria-hidden
-              >
+              <span className={dataWorkspaceEntityCardIsotypeClass} aria-hidden>
                 <Calculator className="size-5" strokeWidth={1.75} />
               </span>
               <div className="min-w-0 flex-1">
@@ -338,14 +337,14 @@ export function CashRegisterCard({
             </div>
           </div>
 
-          <div className="flex min-h-0 flex-1 flex-col bg-muted/20 px-4 py-4">
+          <div className={dataWorkspaceEntityCardBodyClass}>
             <CashRegisterPrimaryStat
               label="Cobrado en el turno"
               value={moneyOrDash(isOpen ? totalTurno : null)}
             />
 
             {isOpen ? (
-              <div className="mt-auto min-h-[4.75rem] border-t border-border/40 pt-4">
+              <div className={cn("mt-auto min-h-[4.75rem] pt-4", dataWorkspaceEntityCardFooterClass)}>
                 <CashRegisterSecondaryStat
                   label="Efectivo en caja"
                   value={moneyOrDash(efectivoEnCajon)}
@@ -356,7 +355,7 @@ export function CashRegisterCard({
         </Link>
 
         {!isOpen ? (
-          <div className="flex min-h-[4.75rem] items-center justify-between gap-3 border-t border-border/40 bg-muted/20 px-4 py-4">
+          <div className={cn("flex min-h-[4.75rem] items-center justify-between gap-3 px-4 py-4", dataWorkspaceEntityCardFooterClass)}>
             <p className="text-xs leading-snug text-muted-foreground">
               {row.isActive ? "Sin turno abierto" : "Caja desactivada"}
             </p>

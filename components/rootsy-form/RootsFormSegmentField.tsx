@@ -28,9 +28,16 @@ type Props = {
 } & RootsFormFieldAssistProps
 
 function segmentGridClass(count: number) {
-  if (count >= 4) return "grid-cols-4"
-  if (count === 3) return "grid-cols-3"
-  return "grid-cols-2"
+  switch (count) {
+    case 2:
+      return "grid-cols-2"
+    case 3:
+      return "grid-cols-3"
+    case 4:
+      return "grid-cols-4"
+    default:
+      return "grid-cols-2"
+  }
 }
 
 function segmentIndicatorStyle(optionCount: number, selectedIndex: number) {
@@ -66,6 +73,7 @@ export function RootsFormSegmentField({
     0,
     options.findIndex((option) => option.value === value),
   )
+  const useScrollLayout = options.length > 4
 
   return (
     <RootsFormField
@@ -82,15 +90,19 @@ export function RootsFormSegmentField({
         aria-label={ariaLabel ?? label}
         className={cn(
           rootsFormSegmentGroupClass,
-          segmentGridClass(options.length),
+          useScrollLayout
+            ? "flex overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+            : segmentGridClass(options.length),
           groupClassName,
         )}
       >
-        <span
-          aria-hidden
-          className={rootsFormSegmentIndicatorClass}
-          style={segmentIndicatorStyle(options.length, selectedIndex)}
-        />
+        {!useScrollLayout ? (
+          <span
+            aria-hidden
+            className={rootsFormSegmentIndicatorClass}
+            style={segmentIndicatorStyle(options.length, selectedIndex)}
+          />
+        ) : null}
         {options.map((option) => {
           const isSelected = value === option.value
           const isDisabled = disabled || option.disabled
@@ -101,7 +113,14 @@ export function RootsFormSegmentField({
               type="button"
               disabled={isDisabled}
               aria-pressed={isSelected}
-              className={rootsFormSegmentOptionClass(isSelected, isDisabled)}
+              className={cn(
+                rootsFormSegmentOptionClass(isSelected, isDisabled),
+                useScrollLayout &&
+                  "h-full shrink-0 whitespace-nowrap px-3.5",
+                useScrollLayout &&
+                  isSelected &&
+                  "bg-white shadow-sm",
+              )}
               onClick={() => onValueChange(option.value)}
             >
               {option.label}

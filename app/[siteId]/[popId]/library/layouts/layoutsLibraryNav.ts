@@ -3,6 +3,7 @@ export const LAYOUTS_LIBRARY_ROOT = { id: "layouts", label: "Layouts" } as const
 
 export const LAYOUTS_LIBRARY_SUBITEMS = [
   { id: "layouts-tables", label: "Tablas" },
+  { id: "layouts-blocks", label: "Bloques" },
 ] as const
 
 export const LAYOUTS_LIBRARY_ITEMS = [
@@ -34,6 +35,12 @@ export const LAYOUTS_PAGE_META: Record<string, LayoutsPageMeta> = {
     title: "Tablas",
     description:
       "Anatomía del listado workspace: header nocturno, toolbar de filtros, tabla Nature y footer de paginación.",
+  },
+  "layouts-blocks": {
+    id: "layouts-blocks",
+    title: "Bloques",
+    description:
+      "Grid de tarjetas para entidades como cuentas de tesorería y cajas registradoras — header nocturno y cuerpo con cards responsivas.",
   },
 }
 

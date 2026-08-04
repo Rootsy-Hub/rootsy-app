@@ -7,15 +7,20 @@ import {
   formatCashRegisterMoney,
 } from "@/app/[siteId]/[popId]/cash-registers/cashRegisterFormatters"
 import {
-  dataWorkspaceFlushBottomShellCard,
-  dataWorkspaceShellCard,
-  lightToolbarFocusClass,
+  dataWorkspaceDetailPanelClass,
+  dataWorkspaceFlushBottomPanelBodyClass,
+  dataWorkspaceFlushBottomPanelChromeClass,
+  dataWorkspaceFlushBottomPanelClass,
   tdMoneyClass,
 } from "@/components/data-workspace/dataWorkspaceListStyles"
+import { RootsFormSegmentField } from "@/components/rootsy-form"
 import { usePopTimeZone } from "@/hooks/usePopTimeZone"
 import type { CashRegisterClosingComparisonLine } from "@/lib/cashRegisterCloseSettlement"
 import { cn } from "@/lib/utils"
+import { LockOpen } from "lucide-react"
 import { useEffect, useMemo, useState } from "react"
+
+const ALL_OPERATIONS_FILTER = "__all__"
 
 const sectionLabel =
   "text-[11px] font-medium uppercase tracking-[0.12em] text-muted-foreground"
@@ -63,10 +68,23 @@ function ColumnSideHeader({
   userLabel: string
 }) {
   return (
-    <div className="border-b border-border/60 bg-muted/15 px-4 py-3 sm:px-5">
+    <div className="space-y-1 border-b border-border/60 px-4 py-3 sm:px-5">
       <p className={sectionLabel}>{title}</p>
-      <p className="mt-1.5 text-sm font-medium text-foreground">{dateLabel}</p>
-      <p className="mt-0.5 truncate text-sm text-muted-foreground">{userLabel}</p>
+      <p className="text-sm font-medium text-foreground">{dateLabel}</p>
+      <p className="truncate text-sm text-muted-foreground">{userLabel}</p>
+    </div>
+  )
+}
+
+function OpenSessionClosingEmptyState() {
+  return (
+    <div className="flex min-h-56 flex-col items-center justify-center gap-3 px-4 py-10 text-center sm:px-5">
+      <span className="inline-flex size-11 items-center justify-center rounded-full border border-border/60 bg-muted/15 text-muted-foreground">
+        <LockOpen className="size-5" aria-hidden />
+      </span>
+      <p className="max-w-[16rem] text-sm leading-relaxed text-muted-foreground">
+        Turno abierto. El cierre se completa al cerrar la caja.
+      </p>
     </div>
   )
 }
@@ -90,58 +108,6 @@ function resolveOperationAccountLabel(paymentMethodLabel: string): string {
   const idx = label.lastIndexOf(separator)
   if (idx >= 0) return label.slice(idx + separator.length).trim()
   return label
-}
-
-function OperationsKpiStat({
-  label,
-  value,
-  active = false,
-  onClick,
-}: {
-  label: string
-  value: string
-  active?: boolean
-  onClick?: () => void
-}) {
-  const className = cn(
-    "min-w-[8.5rem] rounded-xl px-3 py-2.5 text-left transition-[color,background-color,box-shadow,opacity] duration-150",
-    onClick && "cursor-pointer",
-    onClick && !active && "opacity-80 hover:bg-background/55 hover:opacity-100",
-    active && "bg-card shadow-sm",
-    onClick && lightToolbarFocusClass,
-  )
-
-  const labelClassName = cn(
-    sectionLabel,
-    active ? "text-foreground" : "text-muted-foreground",
-  )
-
-  const valueClassName = cn(
-    "mt-1.5 font-numeric text-2xl font-bold tabular-nums tracking-tight",
-    active ? "text-foreground" : "text-foreground/80",
-  )
-
-  const content = (
-    <>
-      <p className={labelClassName}>{label}</p>
-      <p className={valueClassName}>{value}</p>
-    </>
-  )
-
-  if (!onClick) {
-    return <div className={className}>{content}</div>
-  }
-
-  return (
-    <button
-      type="button"
-      className={className}
-      onClick={onClick}
-      aria-pressed={active}
-    >
-      {content}
-    </button>
-  )
 }
 
 type Props = {
@@ -221,9 +187,25 @@ export function CashRegisterSessionArqueoView({
     )
   }, [accountFilter, operations])
 
+  const operationsSegmentOptions = useMemo(
+    () => [
+      {
+        value: ALL_OPERATIONS_FILTER,
+        label: `Operaciones (${operationsSummary.total})`,
+      },
+      ...operationsSummary.byAccount.map((item) => ({
+        value: item.label,
+        label: `${item.label} (${item.count})`,
+      })),
+    ],
+    [operationsSummary],
+  )
+
+  const operationsSegmentValue = accountFilter ?? ALL_OPERATIONS_FILTER
+
   return (
     <div className={cn("flex flex-1 flex-col gap-6", className)}>
-      <section className={cn(dataWorkspaceShellCard, "shrink-0 overflow-hidden")}>
+      <section className={cn(dataWorkspaceDetailPanelClass, "shrink-0 overflow-hidden")}>
         <div className="grid gap-0 lg:grid-cols-2">
           <div className="border-b border-border/60 lg:border-b-0 lg:border-r">
             <ColumnSideHeader
@@ -279,13 +261,11 @@ export function CashRegisterSessionArqueoView({
                 session.closedByName ?? (isOpen ? "Pendiente" : "—")
               }
             />
+            {isOpen ? (
+              <OpenSessionClosingEmptyState />
+            ) : (
             <div className="space-y-0.5 px-4 py-4 sm:px-5">
-              {isOpen ? (
-                <p className="py-2 text-sm text-muted-foreground">
-                  El turno sigue abierto. Los totales reportados y las
-                  diferencias aparecerán al cerrar la caja.
-                </p>
-              ) : reportedLines.length > 0 ? (
+              {reportedLines.length > 0 ? (
                 <>
                   <p className={cn(sectionLabel, "mb-2")}>Totales reportados</p>
                   <div className="space-y-0.5">
@@ -304,7 +284,7 @@ export function CashRegisterSessionArqueoView({
                 </p>
               )}
 
-              {!isOpen && differenceLines.length > 0 ? (
+              {differenceLines.length > 0 ? (
                 <>
                   <p className={cn(sectionLabel, "mb-2 mt-4")}>Diferencia</p>
                   <div className="space-y-0.5">
@@ -326,8 +306,7 @@ export function CashRegisterSessionArqueoView({
                 </>
               ) : null}
 
-              {!isOpen &&
-              session.closedByName &&
+              {session.closedByName &&
               session.closedByUserId &&
               session.openedByUserId &&
               session.closedByUserId !== session.openedByUserId ? (
@@ -336,9 +315,7 @@ export function CashRegisterSessionArqueoView({
                 </p>
               ) : null}
 
-              {!isOpen &&
-              differenceLines.length > 0 &&
-              hasAccountingEntry ? (
+              {differenceLines.length > 0 && hasAccountingEntry ? (
                 <p className="mt-4 text-xs text-muted-foreground">
                   Las diferencias quedaron registradas en un asiento de cierre
                   de caja.
@@ -346,47 +323,46 @@ export function CashRegisterSessionArqueoView({
               ) : null}
 
               {session.closingSnapshot?.note ? (
-                <div className="mt-4 rounded-xl border border-border/60 bg-muted/10 px-3.5 py-3 text-sm">
+                <div className="mt-4 rounded-xl border border-border/60 bg-white px-3.5 py-3 text-sm">
                   <p className={cn(sectionLabel, "mb-1")}>Nota de cierre</p>
                   <p className="text-foreground">{session.closingSnapshot.note}</p>
                 </div>
               ) : null}
             </div>
+            )}
           </div>
         </div>
       </section>
 
-      <section
-        className={cn(
-          dataWorkspaceFlushBottomShellCard,
-          "flex flex-1 flex-col",
-        )}
-      >
-        <div className="shrink-0 border-b border-border/60 bg-muted/20 px-4 py-4 sm:px-6 lg:px-8">
-          <div className="grid gap-4 sm:grid-cols-[repeat(auto-fill,minmax(min(100%,8.5rem),1fr))]">
-            <OperationsKpiStat
-              label="Operaciones"
-              value={String(operationsSummary.total)}
-              active={accountFilter == null}
-              onClick={() => setAccountFilter(null)}
-            />
-            {operationsSummary.byAccount.map((item) => (
-              <OperationsKpiStat
-                key={item.label}
-                label={item.label}
-                value={String(item.count)}
-                active={accountFilter === item.label}
-                onClick={() => setAccountFilter(item.label)}
-              />
-            ))}
-          </div>
+      <section className={dataWorkspaceFlushBottomPanelClass}>
+        <div
+          className={cn(
+            "shrink-0 border-b border-border/60 px-4 py-4 lg:px-5",
+            dataWorkspaceFlushBottomPanelChromeClass,
+          )}
+        >
+          <RootsFormSegmentField
+            label="Filtrar operaciones"
+            aria-label="Filtrar operaciones por cuenta"
+            value={operationsSegmentValue}
+            onValueChange={(value) =>
+              setAccountFilter(
+                value === ALL_OPERATIONS_FILTER ? null : value,
+              )
+            }
+            options={operationsSegmentOptions}
+            className="[&>p:first-child]:sr-only"
+            groupClassName="w-full"
+          />
         </div>
-        <CashRegisterSessionOperationsTable
-          siteId={siteId}
-          popId={popId}
-          operations={filteredOperations}
-          fullWidth
-        />
+        <div className={dataWorkspaceFlushBottomPanelBodyClass}>
+          <CashRegisterSessionOperationsTable
+            siteId={siteId}
+            popId={popId}
+            operations={filteredOperations}
+            fullWidth
+          />
+        </div>
       </section>
     </div>
   )

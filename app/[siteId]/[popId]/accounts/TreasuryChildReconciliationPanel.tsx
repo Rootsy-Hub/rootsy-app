@@ -23,8 +23,17 @@ import {
 import { TreasuryYearGroupedMovementsView } from "@/app/[siteId]/[popId]/accounts/TreasuryYearGroupedMovementsView"
 import { usePopTimeZone } from "@/hooks/usePopTimeZone"
 import { DataWorkspacePeriodFilter } from "@/components/data-workspace/DataWorkspacePeriodFilter"
-import { Button } from "@/components/ui/button"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import {
+  dataWorkspaceDetailBodyClass,
+  dataWorkspaceDetailKpiStripClass,
+  dataWorkspaceDetailKpiStripTwoColClass,
+  dataWorkspaceDetailToolbarClass,
+  dataWorkspaceFlushBottomPanelBodyClass,
+  dataWorkspaceFlushBottomPanelChromeClass,
+  dataWorkspaceFlushBottomPanelClass,
+} from "@/components/data-workspace/dataWorkspaceListStyles"
+import { RootsFormSegmentField } from "@/components/rootsy-form"
+import { RootsPrimaryButton, rootsButtonCompactSizeClass } from "@/components/rootsy-button"
 import { cn } from "@/lib/utils"
 import {
   type DataWorkspaceDatePreset,
@@ -199,11 +208,7 @@ export function TreasuryChildReconciliationPanel({
     : "No hay consumos en el período seleccionado"
 
   const reconciliationsSummaryBar = (
-    <div
-      className={cn(
-        "grid shrink-0 grid-cols-1 divide-y divide-border/60 border-b border-border/60 bg-muted/5 sm:grid-cols-3 sm:divide-x sm:divide-y-0",
-      )}
-    >
+    <div className={cn("grid shrink-0 grid-cols-1 sm:grid-cols-3", dataWorkspaceDetailKpiStripClass)}>
       <div className="px-4 py-4 lg:px-5">
         <p className="text-[11px] font-medium uppercase tracking-[0.12em] text-muted-foreground">
           {isPos ? "Liquidado en el período" : "Pagado en el período"}
@@ -272,10 +277,10 @@ export function TreasuryChildReconciliationPanel({
   )
 
   const conciliarButton = canConciliar ? (
-    <Button
+    <RootsPrimaryButton
       type="button"
       size="sm"
-      className="shrink-0 gap-1.5 self-end font-medium lg:self-auto"
+      className={cn(rootsButtonCompactSizeClass, "shrink-0 self-end lg:self-auto")}
       onClick={onConciliar}
     >
       {isPos ? (
@@ -289,32 +294,36 @@ export function TreasuryChildReconciliationPanel({
           Pagar
         </>
       )}
-    </Button>
+    </RootsPrimaryButton>
   ) : null
-
-  const panelTabSliderClass =
-    "pointer-events-none absolute inset-y-0.5 left-0.5 w-[calc(50%-2px)] rounded-md bg-background shadow-sm transition-transform duration-200 ease-out"
-
-  const panelTabTriggerClass = cn(
-    "relative z-10 h-full rounded-md border-0 bg-transparent px-4 py-0 text-sm font-semibold shadow-none",
-    "text-muted-foreground transition-colors duration-200",
-    "data-[state=active]:bg-transparent data-[state=active]:text-foreground data-[state=active]:shadow-none",
-    "dark:data-[state=active]:bg-transparent dark:data-[state=active]:text-foreground",
-    "focus-visible:ring-2 focus-visible:ring-ring/30 focus-visible:outline-none",
-  )
-
-  const panelTabsListClass = cn(
-    "relative grid h-8 shrink-0 grid-cols-2 gap-0 rounded-lg bg-muted/35 p-0.5",
-    "w-full border-0 shadow-none sm:w-auto sm:min-w-[21rem]",
-  )
 
   const primaryTabValue = isPos ? "resumen" : "consumos"
   const secondaryTabValue = isPos ? "liquidaciones" : "pagos"
   const primaryTabLabel = isPos ? "Resumen POS" : "Resumen TC"
   const secondaryTabLabel = isPos ? "Liquidaciones" : "Pagos"
 
+  const panelSegmentOptions = useMemo(
+    () => [
+      { value: primaryTabValue, label: primaryTabLabel },
+      { value: secondaryTabValue, label: secondaryTabLabel },
+    ],
+    [primaryTabValue, primaryTabLabel, secondaryTabValue, secondaryTabLabel],
+  )
+
+  const panelSegmentField = (
+    <RootsFormSegmentField
+      label={isPos ? "Vista POS" : "Vista tarjeta"}
+      aria-label={isPos ? "Sección POS" : "Sección tarjeta"}
+      value={panelTab}
+      onValueChange={setPanelTab}
+      options={panelSegmentOptions}
+      className="w-full sm:w-auto sm:min-w-[21rem] [&>p:first-child]:sr-only"
+      groupClassName="w-full"
+    />
+  )
+
   const posResumenKpiStrip = (
-    <div className="grid shrink-0 divide-y divide-border/60 border-b border-border/60 bg-muted/5 sm:grid-cols-2 sm:divide-x sm:divide-y-0">
+    <div className={cn("grid shrink-0 sm:grid-cols-2", dataWorkspaceDetailKpiStripTwoColClass)}>
       <div className="px-4 py-4 lg:px-5">
         <p className="text-[11px] font-medium uppercase tracking-[0.12em] text-muted-foreground">
           A liquidar antes del período
@@ -337,7 +346,12 @@ export function TreasuryChildReconciliationPanel({
   )
 
   const cardConsumosKpiStrip = (
-    <div className="shrink-0 border-b border-border/60 bg-muted/5 px-4 py-4 lg:px-5">
+    <div
+      className={cn(
+        "shrink-0 border-b border-border/60",
+        dataWorkspaceDetailBodyClass,
+      )}
+    >
       <p className="text-[11px] font-medium uppercase tracking-[0.12em] text-muted-foreground">
         Consumos del período
       </p>
@@ -347,98 +361,72 @@ export function TreasuryChildReconciliationPanel({
     </div>
   )
 
-  const primaryPanelContent = isPos ? (
-    <>
-      {posResumenKpiStrip}
-      <TreasuryGroupedSummaryMovementsList
-        movements={summaryMovements}
-        emptyStateMessage={summaryEmptyStateMessage}
-      />
-    </>
-  ) : (
-    <>
-      {cardConsumosKpiStrip}
-      <TreasuryGroupedSummaryMovementsList
-        movements={summaryMovements}
-        emptyStateMessage={summaryEmptyStateMessage}
-        positiveAmounts
-      />
-    </>
+  const activeTabKpiStrip = isPos
+    ? isSecondaryPanelTab
+      ? reconciliationsSummaryBar
+      : posResumenKpiStrip
+    : isSecondaryPanelTab
+      ? reconciliationsSummaryBar
+      : cardConsumosKpiStrip
+
+  const primaryPanelBody = (
+    <TreasuryGroupedSummaryMovementsList
+      movements={summaryMovements}
+      emptyStateMessage={summaryEmptyStateMessage}
+      positiveAmounts={!isPos}
+    />
   )
 
-  const secondaryPanelContent = (
-    <>
-      {reconciliationsSummaryBar}
-      <ReconciliationEventsList
-        events={events}
-        timeZone={timeZone}
-        isPos={isPos}
-        emptyStateMessage={reconciliationsEmptyStateMessage}
-      />
-    </>
+  const secondaryPanelBody = (
+    <ReconciliationEventsList
+      events={events}
+      timeZone={timeZone}
+      isPos={isPos}
+      emptyStateMessage={reconciliationsEmptyStateMessage}
+    />
   )
+
+  const activeTabBody = isSecondaryPanelTab ? secondaryPanelBody : primaryPanelBody
 
   return (
-    <Tabs
-      value={panelTab}
-      onValueChange={setPanelTab}
-      className="flex flex-1 flex-col gap-0"
-    >
-      <div className="flex shrink-0 flex-col gap-3 border-b border-border/60 bg-muted/15 px-4 py-3 lg:flex-row lg:items-center lg:justify-between lg:px-5">
+    <div className={dataWorkspaceFlushBottomPanelClass}>
+      <div className={dataWorkspaceFlushBottomPanelChromeClass}>
+        <div className={dataWorkspaceDetailToolbarClass}>
           <div className="flex min-w-0 flex-1 flex-col gap-3 sm:flex-row sm:items-center sm:gap-3">
             <div className="min-w-0 sm:max-w-xs lg:max-w-sm">{periodFilterControl}</div>
-            <TabsList className={panelTabsListClass}>
-              <span
-                aria-hidden
-                className={panelTabSliderClass}
-                style={{
-                  transform: isSecondaryPanelTab
-                    ? "translateX(100%)"
-                    : "translateX(0)",
-                }}
-              />
-              <TabsTrigger value={primaryTabValue} className={panelTabTriggerClass}>
-                {primaryTabLabel}
-              </TabsTrigger>
-              <TabsTrigger value={secondaryTabValue} className={panelTabTriggerClass}>
-                {secondaryTabLabel}
-              </TabsTrigger>
-            </TabsList>
+            {panelSegmentField}
           </div>
           {conciliarButton}
         </div>
 
         {error ? (
-          <div className="shrink-0 border-b border-destructive/20 bg-destructive/5 px-4 py-2.5 text-sm text-destructive lg:px-5">
+          <div className="border-b border-destructive/20 bg-destructive/5 px-4 py-2.5 text-sm text-destructive lg:px-5">
             {error}
           </div>
         ) : null}
 
-      {loading ? (
-        <div
-          role="status"
-          aria-busy="true"
-          aria-label="Cargando resumen"
-          className="flex min-h-48 items-center justify-center px-4 py-10"
-        >
-          <Loader2
-            className="size-6 animate-spin text-muted-foreground"
-            aria-hidden
-          />
-          <span className="sr-only">Cargando…</span>
-        </div>
-      ) : (
-        <>
-          <TabsContent value={primaryTabValue} className="mt-0">
-            {primaryPanelContent}
-          </TabsContent>
+        {!loading ? activeTabKpiStrip : null}
+      </div>
 
-          <TabsContent value={secondaryTabValue} className="mt-0">
-            {secondaryPanelContent}
-          </TabsContent>
-        </>
-      )}
-    </Tabs>
+      <div className={dataWorkspaceFlushBottomPanelBodyClass}>
+        {loading ? (
+          <div
+            role="status"
+            aria-busy="true"
+            aria-label="Cargando resumen"
+            className="flex min-h-48 items-center justify-center px-4 py-10"
+          >
+            <Loader2
+              className="size-6 animate-spin text-muted-foreground"
+              aria-hidden
+            />
+            <span className="sr-only">Cargando…</span>
+          </div>
+        ) : (
+          activeTabBody
+        )}
+      </div>
+    </div>
   )
 }
 
@@ -474,13 +462,13 @@ export function ChildIntegrationChip({
               "border shadow-xs hover:shadow-sm",
               selected
                 ? "border-primary/40 bg-primary/[0.04] ring-1 ring-primary/20"
-                : "border-border/70 bg-background hover:border-border hover:bg-muted/20",
+                : "border-border/70 bg-white hover:border-border hover:bg-muted/20",
             )
           : cn(
               "rounded-xl border hover:border-primary/35 hover:bg-muted/25 hover:shadow-sm",
               selected
                 ? "border-primary bg-primary/5 shadow-sm ring-1 ring-primary/25"
-                : "border-border/60 bg-muted/15",
+                : "border-border/60 bg-white",
             ),
         className,
       )}
@@ -492,8 +480,8 @@ export function ChildIntegrationChip({
           selected
             ? "bg-primary/10 ring-primary/15"
             : compact
-              ? "bg-muted/35 group-hover:bg-muted/50"
-              : "bg-background/80 group-hover:bg-background",
+              ? "bg-white ring-1 ring-border/40 group-hover:bg-muted/20"
+              : "bg-white group-hover:bg-muted/20",
         )}
       >
         {isPos ? (

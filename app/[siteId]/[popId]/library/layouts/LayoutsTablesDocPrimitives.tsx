@@ -894,10 +894,12 @@ export function LayoutsTablesOverviewIntro() {
             Patrones de listado
           </h2>
           <p className="max-w-2xl text-sm leading-relaxed text-muted-foreground">
-            Documentamos cada capa del layout de tablas por separado — header bosque
-            nocturno, toolbar claro Nature, cuerpo tierra/canopy y footer de paginación.
-            Empezá por{" "}
-            <span className="font-medium text-foreground">Tablas</span> en el menú lateral.
+            Documentamos dos familias de pantalla operativa en el POP:{" "}
+            <span className="font-medium text-foreground">Tablas</span> para listados
+            densos con filtros y paginación, y{" "}
+            <span className="font-medium text-foreground">Bloques</span> para grids de
+            tarjetas como cuentas de tesorería y cajas registradoras. Empezá por el
+            patrón que corresponda en el menú lateral.
           </p>
         </div>
       </div>

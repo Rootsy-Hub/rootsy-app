@@ -33,6 +33,7 @@ import { BorderFoundationView } from "@/app/[siteId]/[popId]/library/border/Bord
 import { isBorderLibrarySection } from "@/app/[siteId]/[popId]/library/border/borderLibraryNav"
 import { RadiusFoundationView } from "@/app/[siteId]/[popId]/library/radius/RadiusFoundationView"
 import { isRadiusLibrarySection } from "@/app/[siteId]/[popId]/library/radius/radiusLibraryNav"
+import { LayoutsBlocksFoundationView } from "@/app/[siteId]/[popId]/library/layouts/LayoutsBlocksFoundationView"
 import { LayoutsTablesFoundationView } from "@/app/[siteId]/[popId]/library/layouts/LayoutsTablesFoundationView"
 import { isLayoutsLibrarySection } from "@/app/[siteId]/[popId]/library/layouts/layoutsLibraryNav"
 import {
@@ -448,6 +449,16 @@ export function LibrarySectionView({
   }
 
   if (isLayoutsLibrarySection(sectionId)) {
+    if (sectionId === "layouts-blocks") {
+      return (
+        <LayoutsBlocksFoundationView
+          sectionId={sectionId}
+          siteId={siteId}
+          popId={popId}
+        />
+      )
+    }
+
     return (
       <LayoutsTablesFoundationView
         sectionId={sectionId}

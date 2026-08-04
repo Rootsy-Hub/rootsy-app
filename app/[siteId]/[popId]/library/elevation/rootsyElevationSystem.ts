@@ -215,10 +215,10 @@ export const ROOTSY_ELEVATION_SEMANTIC: ElevationSemanticMapping[] = [
   },
   {
     token: "elevation.card.interactive",
-    component: "CashRegisterCard",
+    component: "TreasuryAccountCard · CashRegisterCard",
     levelId: "raised",
-    source: "CashRegisterCard.tsx",
-    notes: "shadow-sm → hover:shadow-md.",
+    source: "dataWorkspaceListStyles.ts · dataWorkspaceEntityCardClass",
+    notes: "shadow-sm → hover:shadow-md · rounded-2xl.",
   },
   {
     token: "elevation.dialog.article",

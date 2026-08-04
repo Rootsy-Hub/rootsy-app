@@ -1,36 +1,34 @@
 "use client"
 
 import { cn } from "@/lib/utils"
-import { dataWorkspaceEntityCardsGridClass } from "@/components/data-workspace/dataWorkspaceListStyles"
+import {
+  dataWorkspaceEntityCardBodyClass,
+  dataWorkspaceEntityCardFooterClass,
+  dataWorkspaceEntityCardHeaderClass,
+  dataWorkspaceEntityCardSkeletonShellClass,
+  dataWorkspaceEntityCardsGridClass,
+  workspaceTableNatureSkeletonTone,
+} from "@/components/data-workspace/dataWorkspaceListStyles"
 
 const NAME_WIDTHS = ["w-24", "w-32", "w-28", "w-20"] as const
 const BALANCE_WIDTHS = ["w-36", "w-32", "w-40", "w-28"] as const
 
-const sk = {
-  bar: "animate-pulse rounded-[3px] bg-muted-foreground/12",
-  barSm: "animate-pulse rounded-[3px] bg-muted-foreground/8",
-  pill: "animate-pulse rounded-full bg-muted-foreground/12",
-  box: "animate-pulse rounded-md bg-muted-foreground/10",
-  isotype: "animate-pulse rounded-xl bg-muted-foreground/12",
-} as const
+const sk = workspaceTableNatureSkeletonTone
 
 function CashRegisterCardSkeleton({ index }: { index: number }) {
   const nameWidth = NAME_WIDTHS[index % NAME_WIDTHS.length]
   const balanceWidth = BALANCE_WIDTHS[index % BALANCE_WIDTHS.length]
 
   return (
-    <article
-      aria-hidden
-      className="relative flex h-full flex-col overflow-hidden rounded-2xl border border-border/60 bg-card shadow-sm"
-    >
+    <article aria-hidden className={dataWorkspaceEntityCardSkeletonShellClass}>
       <div
         className={cn("absolute right-3 top-3 z-10 size-8 rounded-lg", sk.box)}
       />
 
       <div className="flex h-full min-h-0 flex-1 flex-col">
-        <div className="border-b border-border/60 px-4 py-4 pr-11">
+        <div className={dataWorkspaceEntityCardHeaderClass}>
           <div className="flex items-start gap-3">
-            <div className={cn("size-11 shrink-0", sk.isotype)} />
+            <div className={cn("size-11 shrink-0 rounded-xl", sk.box)} />
             <div className="min-w-0 flex-1">
               <div className="flex items-start justify-between gap-2">
                 <div className={cn("h-2.5 w-[5.5rem]", sk.pill)} />
@@ -42,14 +40,14 @@ function CashRegisterCardSkeleton({ index }: { index: number }) {
           </div>
         </div>
 
-        <div className="flex min-h-0 flex-1 flex-col bg-muted/20 px-4 py-4">
+        <div className={dataWorkspaceEntityCardBodyClass}>
           <div>
             <div className={cn("h-2.5 w-24", sk.pill)} />
             <div className={cn("mt-1.5 h-8", sk.bar, balanceWidth)} />
           </div>
         </div>
 
-        <div className="flex min-h-[4.75rem] items-center justify-between gap-3 border-t border-border/40 bg-muted/20 px-4 py-4">
+        <div className={cn("flex min-h-[4.75rem] items-center justify-between gap-3 px-4 py-4", dataWorkspaceEntityCardFooterClass)}>
           <div className={cn("h-3 w-28", sk.barSm)} />
           <div className={cn("h-8 w-24 rounded-md", sk.box)} />
         </div>

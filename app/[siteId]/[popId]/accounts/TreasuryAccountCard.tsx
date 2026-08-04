@@ -12,6 +12,12 @@ import {
   dataWorkspaceLightDropdownSeparatorClass,
 } from "@/components/layouts/dataWorkspaceHeaderStyles"
 import {
+  dataWorkspaceEntityCardBodyClass,
+  dataWorkspaceEntityCardClass,
+  dataWorkspaceEntityCardFooterClass,
+  dataWorkspaceEntityCardHeaderClass,
+} from "@/components/data-workspace/dataWorkspaceListStyles"
+import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
@@ -81,7 +87,7 @@ function TreasuryIntegrationBadges({
   if (!hasPos && !hasCard) return null
 
   const badgeClass =
-    "inline-flex items-center gap-1.5 rounded-lg border border-border/70 bg-background px-2.5 py-1.5 text-[10px] font-medium uppercase tracking-[0.08em] text-muted-foreground shadow-xs [&_svg]:size-3.5 [&_svg]:text-muted-foreground"
+    "inline-flex items-center gap-1.5 rounded-lg border border-border/70 bg-white px-2.5 py-1.5 text-[10px] font-medium uppercase tracking-[0.08em] text-muted-foreground shadow-xs [&_svg]:size-3.5 [&_svg]:text-muted-foreground"
 
   return (
     <div
@@ -188,12 +194,7 @@ export function TreasuryAccountCard({
     (row.hasPosIntegration || row.hasCardIntegration)
 
   return (
-    <article
-      className={cn(
-        "group relative flex h-full flex-col overflow-hidden rounded-2xl border border-border/60 bg-card shadow-sm transition-all",
-        "hover:border-border hover:shadow-md",
-      )}
-    >
+    <article className={dataWorkspaceEntityCardClass}>
       {menuActions.length > 0 ? (
         <div
           className="absolute right-3 top-3 z-20"
@@ -248,7 +249,7 @@ export function TreasuryAccountCard({
       ) : null}
 
       <Link href={detailHref} className="flex h-full min-h-0 flex-1 flex-col text-left">
-        <div className="border-b border-border/60 px-4 py-4 pr-11">
+        <div className={dataWorkspaceEntityCardHeaderClass}>
           <div className="flex flex-col gap-2.5">
             <div className="flex min-w-0 items-center gap-3">
               <TreasuryBrandIsotype
@@ -284,13 +285,13 @@ export function TreasuryAccountCard({
           </div>
         </div>
 
-        <div className="flex min-h-0 flex-1 flex-col bg-muted/20 px-4 py-4">
+        <div className={dataWorkspaceEntityCardBodyClass}>
           <TreasuryStat
             label="Saldo real"
             value={moneyOrDash(row.ledgerBalance)}
             large
           />
-          <div className="mt-auto min-h-[4.75rem] border-t border-border/40 pt-4">
+          <div className={cn("mt-auto min-h-[4.75rem] pt-4", dataWorkspaceEntityCardFooterClass)}>
             {showSettlementStats ? (
               <div className="grid grid-cols-2 gap-4">
                 <TreasuryStat

@@ -42,7 +42,21 @@ import {
   treasuryMovementKindLabel,
 } from "@/app/[siteId]/[popId]/accounts/treasuryAccountUiUtils"
 import { DataWorkspacePeriodFilter } from "@/components/data-workspace/DataWorkspacePeriodFilter"
-import { dataWorkspaceFlushBottomShellCard, dataWorkspaceShellCard } from "@/components/data-workspace/dataWorkspaceListStyles"
+import {
+  dataWorkspaceDetailBodyClass,
+  dataWorkspaceDetailCardClass,
+  dataWorkspaceDetailCardHeaderClass,
+  dataWorkspaceDetailCardStatsClass,
+  dataWorkspaceDetailKpiStripClass,
+  dataWorkspaceDetailToolbarClass,
+  dataWorkspaceDetailKpiStripTwoColClass,
+  dataWorkspaceDetailPanelClass,
+  dataWorkspaceDetailSectionClass,
+  dataWorkspaceFlushBottomPanelBodyClass,
+  dataWorkspaceFlushBottomPanelChromeClass,
+  dataWorkspaceFlushBottomPanelClass,
+} from "@/components/data-workspace/dataWorkspaceListStyles"
+import { RootsDefaultButton, rootsButtonCompactSizeClass } from "@/components/rootsy-button"
 import { Button } from "@/components/ui/button"
 import { DatePicker } from "@/components/ui/date-picker"
 import {
@@ -85,8 +99,7 @@ import {
 import type { DateRange } from "react-day-picker"
 import Link from "next/link"
 
-const shellCard = dataWorkspaceShellCard
-const flushBottomShellCard = dataWorkspaceFlushBottomShellCard
+const shellCard = dataWorkspaceDetailPanelClass
 
 type DetailSection = "resumen" | "movimientos" | "conciliacion"
 
@@ -149,16 +162,13 @@ function DashboardEmptyState({ message }: { message: string }) {
   )
 }
 
-const dashboardKpiStripClass =
-  "grid divide-y divide-border/60 border-b border-border/60 bg-muted/5 sm:grid-cols-3 sm:divide-x sm:divide-y-0"
+const dashboardKpiStripClass = dataWorkspaceDetailKpiStripClass
 
-const dashboardBalanceStripClass =
-  "grid divide-y divide-border/60 border-b border-border/60 bg-muted/5 sm:grid-cols-2 sm:divide-x sm:divide-y-0"
+const dashboardBalanceStripClass = dataWorkspaceDetailKpiStripTwoColClass
 
-const dashboardBodyClass = "px-4 py-4 lg:px-5"
+const dashboardBodyClass = dataWorkspaceDetailBodyClass
 
-const dashboardSectionClass =
-  "border-t border-border/60 px-4 py-4 lg:px-5"
+const dashboardSectionClass = dataWorkspaceDetailSectionClass
 
 function TreasuryStat({
   label,
@@ -605,23 +615,22 @@ export function TreasuryAccountDetailView({
   )
 
   const exportPeriodButton = (
-    <Button
+    <RootsDefaultButton
       type="button"
       size="sm"
-      variant="outline"
       disabled={
         detailLoading || !detailData || detailData.movements.length === 0
       }
       onClick={handleExportPeriod}
-      className="gap-2 self-end border-border/80 bg-background font-medium shadow-sm lg:self-auto"
+      className={cn(rootsButtonCompactSizeClass, "self-end lg:self-auto")}
     >
       <Download className="size-4 shrink-0" aria-hidden />
       Resumen del período
-    </Button>
+    </RootsDefaultButton>
   )
 
   const movementsToolbar = (
-    <div className="flex flex-col gap-3 border-b border-border/60 bg-muted/15 px-4 py-3 lg:flex-row lg:items-center lg:justify-between lg:px-5">
+    <div className={dataWorkspaceDetailToolbarClass}>
       <div className="min-w-0 flex-1">{periodFilter}</div>
       {exportPeriodButton}
     </div>
@@ -655,12 +664,31 @@ export function TreasuryAccountDetailView({
     </div>
   ) : null
 
-  const periodContentSkeleton = (
-    <TreasuryAccountDetailContentSkeleton variant={skeletonVariant} />
-  )
+  const periodMovementsBody = detailLoading ? (
+    <TreasuryAccountDetailContentSkeleton variant={skeletonVariant} bodyOnly />
+  ) : detailData ? (
+    isMovementsOnlyView ? (
+      <TreasuryCashMovementsTable
+        movements={detailData.movements}
+        fullWidth
+      />
+    ) : (
+      <div className={dashboardBodyClass}>
+        <DashboardSectionHeader
+          title="Últimos movimientos"
+          description="Vista rápida del período seleccionado"
+        />
+        {recentMovements.length > 0 ? (
+          <MovementList movements={recentMovements} compact embedded />
+        ) : (
+          <DashboardEmptyState message="No hay movimientos recientes en este período." />
+        )}
+      </div>
+    )
+  ) : null
 
   const resumenContent = detailLoading ? (
-    periodContentSkeleton
+    <TreasuryAccountDetailContentSkeleton variant={skeletonVariant} />
   ) : detailData ? (
     isMovementsOnlyView ? (
       <>
@@ -688,7 +716,7 @@ export function TreasuryAccountDetailView({
     )
   ) : null
 
-  const bottomPanelContent =
+  const flushMovementsPanel =
     isMotherBankWallet && selectedIntegrationChild ? (
       <TreasuryChildReconciliationPanel
         popId={popId}
@@ -703,6 +731,33 @@ export function TreasuryAccountDetailView({
         onConciliar={() => setReconcileOpen(true)}
         refreshKey={childReconciliationRefreshKey}
       />
+    ) : (
+      <div className={dataWorkspaceFlushBottomPanelClass}>
+        <div className={dataWorkspaceFlushBottomPanelChromeClass}>
+          {movementsToolbar}
+          {detailError ? (
+            <div className="border-b border-destructive/20 bg-destructive/5 px-4 py-2.5 text-sm text-destructive lg:px-5">
+              {detailError}
+            </div>
+          ) : null}
+          {detailLoading ? (
+            <TreasuryAccountDetailContentSkeleton
+              variant={skeletonVariant}
+              chromeOnly
+            />
+          ) : (
+            periodBalanceStrip
+          )}
+        </div>
+        <div className={dataWorkspaceFlushBottomPanelBodyClass}>
+          {periodMovementsBody}
+        </div>
+      </div>
+    )
+
+  const bottomPanelContent =
+    isMovementsOnlyView ? (
+      flushMovementsPanel
     ) : (
       <>
         {movementsToolbar}
@@ -738,8 +793,8 @@ export function TreasuryAccountDetailView({
             </div>
           ) : account ? (
             <>
-              <article className="shrink-0 overflow-hidden rounded-2xl border border-border/60 bg-card shadow-sm">
-                <div className="border-b border-border/60 px-4 py-4 sm:px-6 lg:px-8">
+              <article className={cn("shrink-0", dataWorkspaceDetailCardClass)}>
+                <div className={dataWorkspaceDetailCardHeaderClass}>
                   <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
                     <div className="flex min-w-0 items-center gap-3 sm:gap-4">
                       <Button
@@ -810,7 +865,7 @@ export function TreasuryAccountDetailView({
                   </div>
                 </div>
 
-                <div className="grid gap-4 bg-muted/20 px-4 py-4 sm:grid-cols-2 sm:px-6 lg:flex lg:flex-wrap lg:items-end lg:gap-x-10 lg:gap-y-3 lg:px-8">
+                <div className={dataWorkspaceDetailCardStatsClass}>
                   <TreasuryStat
                     label="Saldo real"
                     value={moneyOrDash(account.ledgerBalance)}
@@ -841,7 +896,7 @@ export function TreasuryAccountDetailView({
                 </div>
 
                 {!isMother && account.isCardPayable && canSettle ? (
-                  <div className="border-t border-border/60 bg-background px-4 py-3 sm:px-6 lg:px-8">
+                  <div className="border-t border-[color:var(--wt-border)] bg-card px-4 py-3 sm:px-6 lg:px-8">
                     <Button
                       type="button"
                       size="sm"
@@ -869,7 +924,7 @@ export function TreasuryAccountDetailView({
                 (account.ledgerBalance ?? 0) > 0 &&
                 canUpdate &&
                 parentAccount ? (
-                  <div className="border-t border-border/60 bg-background px-4 py-3 sm:px-6 lg:px-8">
+                  <div className="border-t border-[color:var(--wt-border)] bg-card px-4 py-3 sm:px-6 lg:px-8">
                     <Button
                       type="button"
                       size="sm"
@@ -893,14 +948,7 @@ export function TreasuryAccountDetailView({
               </article>
 
               {isMovementsOnlyView ? (
-                <div
-                  className={cn(
-                    flushBottomShellCard,
-                    "flex flex-1 flex-col",
-                  )}
-                >
-                  {bottomPanelContent}
-                </div>
+                bottomPanelContent
               ) : (
               <Tabs
                 value={section}
@@ -908,10 +956,10 @@ export function TreasuryAccountDetailView({
                 className="w-full"
               >
                 <div className={cn(shellCard, "overflow-hidden")}>
-                  <div className="flex flex-col gap-3 border-b border-border/60 bg-muted/15 px-4 py-3 lg:flex-row lg:items-center lg:justify-between lg:px-5">
+                  <div className={dataWorkspaceDetailToolbarClass}>
                     <TabsList
                       className={cn(
-                        "grid h-auto w-full gap-1 rounded-lg bg-background/70 p-1 shadow-sm",
+                        "grid h-auto w-full gap-1 rounded-lg border border-border/60 bg-white p-1 shadow-sm",
                         tabItems.length === 2 && "grid-cols-2",
                         tabItems.length === 3 && "grid-cols-3",
                         "lg:w-auto lg:min-w-[22rem]",
