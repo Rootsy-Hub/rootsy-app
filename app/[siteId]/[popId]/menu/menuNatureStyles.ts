@@ -24,13 +24,14 @@ const menuSectionIconGradientByVariant: Record<
 > = {
   operar: {
     default: cn(
-      "bg-gradient-to-br from-[#3FC87E] to-[#1E8F5A]",
+      "bg-gradient-to-br from-[color:var(--nature-canopy-400)] to-[color:var(--nature-canopy-600)]",
       menuIconMacShadowClass,
     ),
-    dock: "bg-gradient-to-br from-[#3FC87E] to-[#1E8F5A]",
+    dock: "bg-gradient-to-br from-[color:var(--nature-canopy-400)] to-[color:var(--nature-canopy-600)]",
     muted:
-      "bg-gradient-to-br from-[#3FC87E]/50 to-[#1E8F5A]/50 shadow-none",
-    overlay: "bg-gradient-to-br from-[#4FD88E] to-[#24AD6A]",
+      "bg-gradient-to-br from-[color:var(--nature-canopy-400)]/50 to-[color:var(--nature-canopy-600)]/50 shadow-none",
+    overlay:
+      "bg-gradient-to-br from-[color:var(--nature-canopy-300)] to-[color:var(--nature-canopy-500)]",
   },
   administrar: {
     default: cn(
@@ -44,13 +45,14 @@ const menuSectionIconGradientByVariant: Record<
   },
   configurar: {
     default: cn(
-      "bg-gradient-to-br from-[#38BDF8] to-[#0EA5E9]",
+      "bg-gradient-to-br from-[color:var(--nature-dusk-400)] to-[color:var(--nature-dusk-700)]",
       menuIconMacShadowClass,
     ),
-    dock: "bg-gradient-to-br from-[#38BDF8] to-[#0EA5E9]",
+    dock: "bg-gradient-to-br from-[color:var(--nature-dusk-400)] to-[color:var(--nature-dusk-700)]",
     muted:
-      "bg-gradient-to-br from-[#38BDF8]/50 to-[#0EA5E9]/50 shadow-none",
-    overlay: "bg-gradient-to-br from-[#5BC4FA] to-[#1090CC]",
+      "bg-gradient-to-br from-[color:var(--nature-dusk-400)]/50 to-[color:var(--nature-dusk-700)]/50 shadow-none",
+    overlay:
+      "bg-gradient-to-br from-[color:var(--nature-dusk-300)] to-[color:var(--nature-dusk-500)]",
   },
 }
 
