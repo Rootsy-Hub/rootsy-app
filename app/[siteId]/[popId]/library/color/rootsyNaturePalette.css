@@ -1,0 +1,97 @@
+/**
+ * Paleta Nature Rootsy — fuente visual de la librería de color.
+ * Scoped a .rootsy-nature-palette hasta migrar a producción.
+ */
+.rootsy-nature-palette {
+  /* Canopy — verde planta en esplendor */
+  --nature-canopy-950: #052e1f;
+  --nature-canopy-900: #0a4030;
+  --nature-canopy-800: #0f5739;
+  --nature-canopy-700: #16704a;
+  --nature-canopy-600: #1e8f5a;
+  --nature-canopy-500: #24ad6a;
+  --nature-canopy-400: #3fc87e;
+  --nature-canopy-300: #6dd99e;
+  --nature-canopy-200: #a8ebc4;
+  --nature-canopy-100: #ddf5e8;
+  --nature-canopy-50: #f0fbf4;
+
+  /* Otoño — hojas doradas */
+  --nature-autumn-800: #92400e;
+  --nature-autumn-700: #b45309;
+  --nature-autumn-600: #d97706;
+  --nature-autumn-500: #f59e0b;
+  --nature-autumn-400: #fbbf24;
+  --nature-autumn-300: #fcd34d;
+  --nature-autumn-200: #fde68a;
+  --nature-autumn-100: #fef3c7;
+
+  /* Fuego — lava y brasa */
+  --nature-fire-800: #9a3412;
+  --nature-fire-700: #c2410c;
+  --nature-fire-600: #ea580c;
+  --nature-fire-500: #f97316;
+  --nature-fire-400: #fb923c;
+  --nature-fire-300: #fdba74;
+  --nature-ember-700: #b91c1c;
+  --nature-ember-600: #dc2626;
+  --nature-ember-500: #ef4444;
+
+  /* Cielo */
+  --nature-sky-700: #0369a1;
+  --nature-sky-600: #0284c7;
+  --nature-sky-500: #0ea5e9;
+  --nature-sky-400: #38bdf8;
+  --nature-sky-300: #7dd3fc;
+  --nature-sky-200: #bae6fd;
+  --nature-sky-100: #e0f2fe;
+
+  /* Mar */
+  --nature-sea-800: #155e75;
+  --nature-sea-700: #0e7490;
+  --nature-sea-600: #0891b2;
+  --nature-sea-500: #06b6d4;
+  --nature-sea-400: #22d3ee;
+  --nature-sea-300: #67e8f9;
+  --nature-sea-900: #164e63;
+
+  /* Crepúsculo — violeta del atardecer */
+  --nature-dusk-700: #6d28d9;
+  --nature-dusk-600: #7c3aed;
+  --nature-dusk-500: #8b5cf6;
+  --nature-dusk-400: #a78bfa;
+  --nature-dusk-300: #c4b5fd;
+  --nature-dusk-200: #ddd6fe;
+
+  /* Tierra */
+  --nature-earth-900: #292524;
+  --nature-earth-800: #44403c;
+  --nature-earth-700: #57534e;
+  --nature-earth-600: #78716c;
+  --nature-earth-500: #a8a29e;
+  --nature-earth-400: #d6d3d1;
+  --nature-earth-200: #e7e5e4;
+  --nature-earth-100: #f5f5f0;
+  --nature-earth-50: #fafaf7;
+
+  /* Noche — carbón y bosque nocturno */
+  --nature-night-950: #060908;
+  --nature-night-900: #0c1210;
+  --nature-night-800: #141c19;
+  --nature-night-700: #1c2824;
+  --nature-night-600: #263530;
+  --nature-night-500: #33443d;
+
+  /* Semánticos derivados */
+  --nature-brand: var(--nature-canopy-600);
+  --nature-brand-bold: var(--nature-canopy-700);
+  --nature-brand-soft: var(--nature-canopy-400);
+  --nature-brand-mist: var(--nature-canopy-100);
+  --nature-surface-light: var(--nature-earth-50);
+  --nature-surface-card: #ffffff;
+  --nature-text-primary: var(--nature-night-800);
+  --nature-text-secondary: var(--nature-earth-600);
+  --nature-danger: var(--nature-ember-600);
+  --nature-warning: var(--nature-autumn-600);
+  --nature-success: var(--nature-canopy-600);
+}

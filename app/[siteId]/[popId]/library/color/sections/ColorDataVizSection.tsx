@@ -10,6 +10,7 @@ import {
   SingleColorChartDemo,
   StatusChartDemo,
 } from "@/app/[siteId]/[popId]/library/color/ColorDocPrimitives"
+import { CHART_NATURE_SEQUENCE } from "@/app/[siteId]/[popId]/library/color/rootsyNaturePalette"
 import { LibrarySection } from "@/app/[siteId]/[popId]/library/layoutLibraryShared"
 
 export function ColorDataVizSection() {
@@ -23,51 +24,48 @@ export function ColorDataVizSection() {
     >
       <div className="space-y-10">
         <ColorDocLead>
-          El color en gráficos ayuda a comparar y destacar — pero no debe ser el
-          único indicador. Combiná con etiquetas, formas o patrones para que todos
-          puedan leer los datos.
+          Los gráficos respiran naturaleza: canopy como serie principal, mar y cielo
+          como contrapuntos frescos, otoño y crepúsculo para calor y novedad. Fuego solo
+          para severidad — nunca decoración.
         </ColorDocLead>
 
         <ColorDocSection
-          id="viz-single"
-          title="Un solo color"
-          description="Verde de marca por defecto; neutro para datos secundarios."
+          id="viz-sequence"
+          title="Secuencia categórica"
+          description="Orden recomendado — máximo contraste entre vecinos."
         >
+          <div className="flex flex-wrap gap-2">
+            {CHART_NATURE_SEQUENCE.map((c) => (
+              <div
+                key={c.id}
+                className="flex items-center gap-2 rounded-full px-3 py-1 text-xs font-medium text-white"
+                style={{ backgroundColor: c.hex }}
+              >
+                {c.label}
+              </div>
+            ))}
+          </div>
+        </ColorDocSection>
+
+        <ColorDocSection id="viz-single" title="Un solo color">
           <SingleColorChartDemo />
         </ColorDocSection>
 
-        <ColorDocSection
-          id="viz-categorical"
-          title="Categórico"
-          description="Hasta 5–6 series distintas; agrupá el resto."
-        >
+        <ColorDocSection id="viz-categorical" title="Categórico">
           <CategoricalChartDemo />
         </ColorDocSection>
 
-        <ColorDocSection
-          id="viz-status"
-          title="Estado y severidad"
-          description="Verde, ámbar, rojo y neutro cuando el dato tiene significado fijo."
-        >
+        <ColorDocSection id="viz-status" title="Estado y severidad">
           <StatusChartDemo />
         </ColorDocSection>
 
-        <ColorDocSection
-          id="viz-interaction"
-          title="Interacción"
-          description="Hover puede resaltar un segmento o atenuar el resto."
-        >
+        <ColorDocSection id="viz-interaction" title="Interacción">
           <ChartInteractionDemo />
         </ColorDocSection>
 
         <GuidelinePair
-          doText="Dejá espacio o borde entre segmentos de color adyacentes."
-          dontText="No coloques barras o sectores del mismo tono pegados sin separación."
-        />
-
-        <GuidelinePair
-          doText="Ubicá etiquetas junto al dato, no encima del color del gráfico."
-          dontText="No confíes solo en el color para comunicar significado."
+          doText="Separá segmentos con espacio o borde tierra — colores vivos pegados confunden."
+          dontText="No pongas texto sobre barras de chart — ubicá etiquetas al lado."
         />
       </div>
     </LibrarySection>

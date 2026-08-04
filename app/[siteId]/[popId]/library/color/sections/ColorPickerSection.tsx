@@ -20,15 +20,15 @@ export function ColorPickerSection() {
     >
       <div className="space-y-10">
         <ColorDocLead>
-          Los selectores de color permiten que la persona usuaria personalice su
-          contenido. Ofrecé opciones que funcionen en workspace claro y oscuro, con
-          descripciones como «sutil verde» o «intenso ámbar» — no «claro» u «oscuro».
+          Cuando la persona usuaria pinta su contenido, ofrecé la naturaleza entera:
+          «sutil prado», «intenso cielo», «brasa suave». Describí por énfasis y familia —
+          no «claro» u «oscuro» — para que funcione en workspace y mostrador.
         </ColorDocLead>
 
         <ColorDocSection
           id="picker-text"
           title="Selector de texto"
-          description="Dos intensidades por color — normal e intenso."
+          description="Normal e intenso por familia — legible sobre fondos claros."
         >
           <ColorPickerGrid variant="text" />
         </ColorDocSection>
@@ -36,7 +36,7 @@ export function ColorPickerSection() {
         <ColorDocSection
           id="picker-background"
           title="Selector de fondo"
-          description="Cuatro niveles de énfasis por color, más opción de superficie default."
+          description="Cuatro brumas por color — de casi transparente a hoja densa."
         >
           <ColorPickerGrid variant="background" />
         </ColorDocSection>
@@ -44,19 +44,14 @@ export function ColorPickerSection() {
         <ColorDocSection
           id="picker-chart"
           title="Selector para gráficos"
-          description="Tres intensidades por color para series personalizables."
+          description="Tres intensidades — suave, media, plena luz."
         >
           <ColorPickerGrid variant="chart" />
         </ColorDocSection>
 
         <GuidelinePair
-          doText="Ofrecé combinaciones que permitan contraste accesible entre texto y fondo."
-          dontText="No incluyas colores que no puedan emparejarse de forma legible."
-        />
-
-        <GuidelinePair
-          doText="Preferí ámbar u otro cálido en lugar de amarillo puro — el amarillo suele verse apagado al cumplir contraste."
-          dontText="Evitá amarillo en selectores de texto; puede leerse como marrón."
+          doText="Incluí canopy, mar, otoño y crepúsculo — suficiente contraste al emparejar."
+          dontText="Evitá amarillo puro en texto; en otoño usá ámbar con alma de hoja."
         />
       </div>
     </LibrarySection>

@@ -1,19 +1,65 @@
 "use client"
 
-import {
-  ROOTSY_DARK_NEUTRALS,
-  ROOTSY_LIGHT_NEUTRALS,
-  ROOTSY_SATURATED_PALETTES,
-} from "@/app/[siteId]/[popId]/library/color/colorExtendedData"
 import { getColorPageMeta } from "@/app/[siteId]/[popId]/library/color/colorLibraryNav"
 import {
   ColorDocLead,
   ColorDocSection,
   DarkModeSymmetryDemo,
-  NeutralPaletteComparison,
-  PaletteFamilyRamp,
+  NatureFamilyRamp,
+  ThemeComparison,
 } from "@/app/[siteId]/[popId]/library/color/ColorDocPrimitives"
+import {
+  ALL_NATURE_FAMILIES,
+  EARTH_FAMILY,
+  NIGHT_FAMILY,
+} from "@/app/[siteId]/[popId]/library/color/rootsyNaturePalette"
 import { LibrarySection } from "@/app/[siteId]/[popId]/library/layoutLibraryShared"
+
+function NeutralRampComparison({
+  title,
+  lightLabel,
+  darkLabel,
+  lightSteps,
+  darkSteps,
+}: {
+  title: string
+  lightLabel: string
+  darkLabel: string
+  lightSteps: { hex: string }[]
+  darkSteps: { hex: string }[]
+}) {
+  return (
+    <div className="space-y-3">
+      <p className="text-sm font-medium text-foreground">{title}</p>
+      <div className="grid gap-3 lg:grid-cols-2">
+        <div>
+          <p className="mb-2 text-xs text-muted-foreground">{lightLabel}</p>
+          <div className="flex overflow-hidden rounded-xl border border-border/70">
+            {lightSteps.map((step, i) => (
+              <div
+                key={i}
+                className="h-10 min-w-0 flex-1"
+                style={{ backgroundColor: step.hex }}
+              />
+            ))}
+          </div>
+        </div>
+        <div>
+          <p className="mb-2 text-xs text-muted-foreground">{darkLabel}</p>
+          <div className="flex overflow-hidden rounded-xl border border-border/70">
+            {darkSteps.map((step, i) => (
+              <div
+                key={i}
+                className="h-10 min-w-0 flex-1"
+                style={{ backgroundColor: step.hex }}
+              />
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
 
 export function ColorPaletteSection() {
   const meta = getColorPageMeta("colors-palette")!
@@ -26,41 +72,44 @@ export function ColorPaletteSection() {
     >
       <div className="space-y-10">
         <ColorDocLead>
-          Rampas completas de la paleta nature Rootsy. Los neutros tienen equivalente
-          en workspace claro y mostrador oscuro; los saturados siguen simetría entre
-          temas para mantener jerarquía.
+          La paleta completa de Rootsy — ocho familias, rampas de 6 a 11 pasos, neutros
+          cálidos de tierra y noche viva. Canopy es la más extensa porque es el alma de
+          la marca.
         </ColorDocLead>
 
         <ColorDocSection
-          id="palette-saturated"
-          title="Colores saturados"
-          description="Verde, ámbar y tierra — de tinte suave a intenso."
+          id="palette-all"
+          title="Familias saturadas"
+          description="Verde, otoño, fuego, cielo, mar, crepúsculo, tierra y noche."
         >
-          <div className="space-y-6">
-            {ROOTSY_SATURATED_PALETTES.map((family) => (
-              <PaletteFamilyRamp key={family.id} family={family} />
+          <div className="space-y-10">
+            {ALL_NATURE_FAMILIES.map((family) => (
+              <NatureFamilyRamp key={family.id} family={family} />
             ))}
           </div>
         </ColorDocSection>
 
         <ColorDocSection
           id="palette-neutrals"
-          title="Neutros"
-          description="Escala dedicada para cada tema — claro y oscuro."
+          title="Neutros · tierra y noche"
+          description="Arena bajo sol · carbón bajo luna — sin grises muertos."
         >
-          <NeutralPaletteComparison
-            title="Neutros sólidos"
-            lightSteps={ROOTSY_LIGHT_NEUTRALS}
-            darkSteps={ROOTSY_DARK_NEUTRALS}
+          <NeutralRampComparison
+            title="Superficies"
+            lightLabel="Tierra · workspace"
+            darkLabel="Noche · mostrador"
+            lightSteps={EARTH_FAMILY.steps.slice(-5)}
+            darkSteps={NIGHT_FAMILY.steps}
           />
         </ColorDocSection>
 
         <ColorDocSection
-          id="palette-dark-mapping"
-          title="Claro y oscuro"
-          description="Un tono intenso en claro se equilibra con uno más luminoso en oscuro."
+          id="palette-mapping"
+          title="Simetría claro / oscuro"
+          description="El intenso en claro se ilumina en oscuro — misma jerarquía, distinta hora del día."
         >
           <DarkModeSymmetryDemo />
+          <ThemeComparison />
         </ColorDocSection>
       </div>
     </LibrarySection>

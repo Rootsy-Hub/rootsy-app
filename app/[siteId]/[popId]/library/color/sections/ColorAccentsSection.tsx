@@ -5,15 +5,16 @@ import {
   AccentBackgroundEmphasisDemo,
   AccentPairingDemo,
   AccentTagsDemo,
-  AccentTextIconDemo,
   ColorDocLead,
   ColorDocSection,
   GuidelinePair,
 } from "@/app/[siteId]/[popId]/library/color/ColorDocPrimitives"
+import { CANOPY_FAMILY, NATURE_ACCENTS } from "@/app/[siteId]/[popId]/library/color/rootsyNaturePalette"
 import { LibrarySection } from "@/app/[siteId]/[popId]/library/layoutLibraryShared"
 
 export function ColorAccentsSection() {
   const meta = getColorPageMeta("colors-accents")!
+  const showcase = NATURE_ACCENTS[0]
 
   return (
     <LibrarySection
@@ -23,15 +24,15 @@ export function ColorAccentsSection() {
     >
       <div className="space-y-10">
         <ColorDocLead>
-          Los acentos diferencian elementos como categorías, íconos de proyecto y
-          notas — sin comunicar éxito, aviso ni error. Si cambiás uno por otro, la
-          experiencia debe seguir igual.
+          Los acentos son hojas de distintos árboles en el mismo bosque — intercambiables
+          sin cambiar el significado. Canopy sigue siendo la marca; mar, cielo, otoño,
+          crepúsculo y tierra categorizan y decoran.
         </ColorDocLead>
 
         <ColorDocSection
           id="accent-options"
           title="Opciones de acento"
-          description="Paleta nature Rootsy para tags, íconos y agrupación visual."
+          description="Ocho familias nature — tags, íconos de categoría, notas adhesivas."
         >
           <AccentTagsDemo />
         </ColorDocSection>
@@ -39,35 +40,41 @@ export function ColorAccentsSection() {
         <ColorDocSection
           id="accent-backgrounds"
           title="Énfasis en fondos"
-          description="Cuatro niveles de intensidad — de más sutil a más intenso."
+          description="De bruma a hoja densa — cuatro niveles por familia."
         >
-          <AccentBackgroundEmphasisDemo />
-        </ColorDocSection>
-
-        <ColorDocSection
-          id="accent-text-icon"
-          title="Texto e íconos"
-          description="Dos niveles: normal e intenso."
-        >
-          <AccentTextIconDemo />
+          <AccentBackgroundEmphasisDemo accent={showcase} />
         </ColorDocSection>
 
         <ColorDocSection
           id="accent-pairing"
-          title="Emparejamiento accesible"
-          description="Combinaciones recomendadas de fondo y texto sobre acentos."
+          title="Emparejamiento"
+          description="Texto e fondo de la misma familia — armonía y contraste legible."
         >
-          <AccentPairingDemo />
+          <AccentPairingDemo accent={showcase} />
+        </ColorDocSection>
+
+        <ColorDocSection
+          id="accent-canopy-rule"
+          title="Canopy vs acento"
+          description="Verde esplendor = marca. Los demás = elección libre de la persona usuaria."
+        >
+          <div
+            className="rounded-xl border p-4"
+            style={{ borderColor: "#A8EBC4", backgroundColor: "#F0FBF4" }}
+          >
+            <p className="text-sm font-semibold" style={{ color: "#16704A" }}>
+              ★ {CANOPY_FAMILY.steps.find((s) => s.id === "c600")?.label} — reservado para Rootsy
+            </p>
+            <p className="mt-1 text-sm" style={{ color: "#0F5739" }}>
+              Mar, cielo, otoño, fuego, crepúsculo y tierra compiten en categorías — no en
+              identidad de marca.
+            </p>
+          </div>
         </ColorDocSection>
 
         <GuidelinePair
-          doText="Usá acentos cuando el color es una elección libre — categorías, íconos, etiquetas."
-          dontText="No uses acento cuando el color debe significar éxito, aviso o peligro."
-        />
-
-        <GuidelinePair
-          doText="Combiná fondo y texto de la misma familia de color."
-          dontText="No mezcles un fondo verde con texto ámbar — pierde armonía y contraste."
+          doText="Usá acentos cuando el color es elección libre — categorías, íconos, etiquetas."
+          dontText="No uses fuego o canopy decorativo — tienen significado fijo."
         />
       </div>
     </LibrarySection>

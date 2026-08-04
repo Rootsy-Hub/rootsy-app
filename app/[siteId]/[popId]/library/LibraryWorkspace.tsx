@@ -100,7 +100,7 @@ export function LibraryWorkspace({ siteId, popId, sectionId }: Props) {
 
             <LibraryPageHeader
               title="Librería UI"
-              description="Referencia del design system para workspace claro: tokens, formularios, componentes y overlays."
+              description="Referencia del design system Rootsy — naturaleza viva, formularios, componentes y overlays."
               actions={
                 <Button
                   type="button"

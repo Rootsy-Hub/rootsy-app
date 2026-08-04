@@ -1,5 +1,6 @@
 "use client"
 
+import "./rootsyNaturePalette.css"
 import { COLOR_RELATED_LINKS } from "@/app/[siteId]/[popId]/library/color/colorLibraryNav"
 import { getColorPageMeta } from "@/app/[siteId]/[popId]/library/color/colorLibraryNav"
 import { ColorOverviewSection } from "@/app/[siteId]/[popId]/library/color/sections/ColorOverviewSection"
@@ -39,7 +40,7 @@ export function ColorFoundationView({ sectionId, siteId, popId }: Props) {
   }
 
   return (
-    <div className="space-y-10">
+    <div className="rootsy-nature-palette space-y-10">
       {content}
       <div className="space-y-3 border-t border-border/60 pt-8">
         <p className="text-sm font-semibold text-foreground">Relacionado</p>

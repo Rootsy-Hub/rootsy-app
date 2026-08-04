@@ -24,31 +24,31 @@ export const COLOR_PAGE_META: Record<string, ColorPageMeta> = {
     id: "colors",
     title: "Color",
     description:
-      "El color distingue la marca Rootsy y mantiene experiencias coherentes en todo el producto.",
+      "Rootsy grita naturaleza — verde canopy en esplendor como eje, con cielo, mar, otoño, fuego, tierra y noche.",
   },
   "colors-accents": {
     id: "colors-accents",
     title: "Acentos",
     description:
-      "Colores decorativos para categorizar contenido, íconos de proyecto y elecciones de la persona usuaria.",
+      "Ocho familias nature intercambiables — mar, cielo, otoño, crepúsculo y tierra para categorizar sin competir con la marca.",
   },
   "colors-picker": {
     id: "colors-picker",
     title: "Muestras de selector",
     description:
-      "Opciones de color cuando la persona usuaria elige un tono para su contenido.",
+      "Brumas, intensidades y tonos vivos cuando la persona usuaria elige color para su contenido.",
   },
   "colors-data-viz": {
     id: "colors-data-viz",
     title: "Visualización de datos",
     description:
-      "Color en gráficos, reportes y dashboards — con contraste y significado claros.",
+      "Gráficos que respiran naturaleza — canopy primero, fuego solo para severidad, contraste entre vecinos.",
   },
   "colors-palette": {
     id: "colors-palette",
     title: "Paleta completa",
     description:
-      "Rampas de color nature Rootsy para workspace claro y mostrador oscuro.",
+      "Ocho familias con rampas completas — prado bajo sol y bosque bajo luna.",
   },
 }
 
@@ -60,26 +60,26 @@ export const COLOR_RELATED_LINKS = [
   {
     sectionId: "colors-accents",
     label: "Acentos",
-    hint: "Tags, íconos y categorías sin significado fijo.",
+    hint: "Mar, cielo, otoño — hojas del mismo bosque.",
   },
   {
     sectionId: "colors-picker",
     label: "Muestras de selector",
-    hint: "Cuando la persona usuaria elige un color.",
+    hint: "Brumas e intensidades para elegir color.",
   },
   {
     sectionId: "colors-data-viz",
     label: "Visualización de datos",
-    hint: "Gráficos y reportes.",
+    hint: "Canopy, mar y fuego con propósito.",
   },
   {
     sectionId: "colors-palette",
     label: "Paleta completa",
-    hint: "Rampas claro y oscuro.",
+    hint: "Ocho familias — prado y noche.",
   },
   {
     sectionId: "colors",
     label: "Color",
-    hint: "Roles, énfasis y anatomía.",
+    hint: "Manifesto, gradientes y roles.",
   },
 ] as const
