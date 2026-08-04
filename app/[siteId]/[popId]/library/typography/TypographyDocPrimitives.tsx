@@ -13,14 +13,21 @@ import {
   type RootsyTypeface,
   type TypographyStyle,
 } from "@/app/[siteId]/[popId]/library/typography/rootsyTypographySystem"
-import { librarySectionHref } from "@/app/[siteId]/[popId]/library/layoutLibraryShared"
-import Link from "next/link"
+import {
+  CANOPY,
+  CANOPY_DARK,
+  CANOPY_MIST,
+  LibraryDocLead,
+  LibraryDocSection,
+  LibraryGuidelineCards,
+  LibraryManifestoHero,
+  LibraryPrinciplesGrid,
+} from "@/app/[siteId]/[popId]/library/libraryDocPrimitives"
 import type { ReactNode } from "react"
 
-const CANOPY = "#1E8F5A"
-const CANOPY_LIGHT = "#A8EBC4"
-const CANOPY_MIST = "#F0FBF4"
-const CANOPY_DARK = "#16704A"
+export {
+  LibraryRelatedLinks as TypographyRelatedLinks,
+} from "@/app/[siteId]/[popId]/library/libraryDocPrimitives"
 
 const FONT_CLASS: Record<TypographyStyle["fontFamily"], string> = {
   canopy: "font-canopy",
@@ -30,11 +37,7 @@ const FONT_CLASS: Record<TypographyStyle["fontFamily"], string> = {
 }
 
 export function TypographyDocLead({ children }: { children: ReactNode }) {
-  return (
-    <p className="max-w-3xl text-base leading-relaxed text-muted-foreground font-stream">
-      {children}
-    </p>
-  )
+  return <LibraryDocLead className="font-stream">{children}</LibraryDocLead>
 }
 
 export function TypographyDocSection({
@@ -49,47 +52,28 @@ export function TypographyDocSection({
   children: ReactNode
 }) {
   return (
-    <section
+    <LibraryDocSection
       id={id}
-      className="scroll-mt-24 space-y-5 border-t border-border/60 pt-10 first:border-t-0 first:pt-0"
+      title={title}
+      description={description}
+      titleClassName="font-canopy"
+      descriptionClassName="font-stream"
     >
-      <div className="max-w-3xl space-y-2">
-        <h3 className="text-xl font-semibold tracking-tight text-foreground font-canopy">
-          {title}
-        </h3>
-        {description ? (
-          <p className="text-sm leading-relaxed text-muted-foreground font-stream">
-            {description}
-          </p>
-        ) : null}
-      </div>
       {children}
-    </section>
+    </LibraryDocSection>
   )
 }
 
 export function TypographyManifestoHero() {
   return (
-    <div className="overflow-hidden rounded-2xl border border-border/70 shadow-sm">
-      <div
-        className="relative px-6 py-10 sm:px-8"
-        style={{
-          background: `linear-gradient(135deg, ${CANOPY_DARK} 0%, ${CANOPY} 50%, ${CANOPY_LIGHT} 100%)`,
-        }}
-      >
-        <div className="relative max-w-2xl space-y-2">
-          <p className="text-xs font-bold uppercase tracking-[0.2em] text-white/80 font-canopy">
-            Rootsy · Typography System
-          </p>
-          <p className="font-canopy text-2xl font-bold tracking-tight text-white sm:text-3xl">
-            Canopy · Stream · Ledger
-          </p>
-          <p className="text-sm leading-relaxed text-white/85 font-stream">
-            Tres voces nature — UI cálida, lectura fluida, números precisos.
-          </p>
-        </div>
-      </div>
-    </div>
+    <LibraryManifestoHero
+      eyebrow="Rootsy · Tipografía"
+      title="Canopy · Stream · Ledger"
+      description="Tres voces nature — UI cálida, lectura fluida, números precisos."
+      eyebrowClassName="font-canopy"
+      titleClassName="font-canopy font-bold"
+      descriptionClassName="font-stream"
+    />
   )
 }
 
@@ -99,17 +83,11 @@ export function TypographyPrinciplesGrid({
   principles: ReadonlyArray<{ title: string; detail: string }>
 }) {
   return (
-    <div className="grid gap-3 sm:grid-cols-2">
-      {principles.map((item) => (
-        <div
-          key={item.title}
-          className="rounded-xl border border-border/70 bg-card p-4 shadow-sm"
-        >
-          <p className="text-sm font-semibold text-foreground font-canopy">{item.title}</p>
-          <p className="mt-1 text-sm text-muted-foreground font-stream">{item.detail}</p>
-        </div>
-      ))}
-    </div>
+    <LibraryPrinciplesGrid
+      principles={principles}
+      titleClassName="font-canopy"
+      detailClassName="font-stream"
+    />
   )
 }
 
@@ -360,26 +338,12 @@ export function FontWeightsTable() {
 
 export function ApplyingGuidelineCards() {
   return (
-    <div className="grid gap-4 sm:grid-cols-2">
-      {TYPOGRAPHY_APPLYING_GUIDELINES.map((g) => (
-        <div key={g.id} className="rounded-xl border border-border/70 bg-card p-4">
-          <p className="text-sm font-semibold text-foreground font-canopy">{g.title}</p>
-          <div className="mt-3 grid gap-2">
-            <div
-              className="rounded-lg p-3 text-xs font-stream"
-              style={{ backgroundColor: CANOPY_MIST, color: CANOPY_DARK }}
-            >
-              <span className="font-semibold">✓ </span>
-              {g.doText}
-            </div>
-            <div className="rounded-lg bg-muted/60 p-3 text-xs text-muted-foreground font-stream">
-              <span className="font-semibold">✗ </span>
-              {g.dontText}
-            </div>
-          </div>
-        </div>
-      ))}
-    </div>
+    <LibraryGuidelineCards
+      items={TYPOGRAPHY_APPLYING_GUIDELINES}
+      split={false}
+      titleClassName="font-canopy"
+      textClassName="font-stream"
+    />
   )
 }
 
@@ -410,35 +374,6 @@ export function HierarchyDemo() {
       <p className="mt-2 font-ledger text-xl font-bold tabular-nums" style={{ color: CANOPY_DARK }}>
         $ 42.300,00
       </p>
-    </div>
-  )
-}
-
-export function TypographyRelatedLinks({
-  siteId,
-  popId,
-  excludeId,
-  links,
-}: {
-  siteId: string
-  popId: string
-  excludeId?: string
-  links: ReadonlyArray<{ sectionId: string; label: string; hint: string }>
-}) {
-  return (
-    <div className="grid gap-2 sm:grid-cols-2">
-      {links
-        .filter((link) => link.sectionId !== excludeId)
-        .map((link) => (
-          <Link
-            key={link.sectionId}
-            href={librarySectionHref(siteId, popId, link.sectionId)}
-            className="rounded-xl border border-border/70 bg-card p-4 shadow-sm transition-colors hover:border-[#A8EBC4] hover:bg-[#F0FBF4]"
-          >
-            <p className="text-sm font-semibold text-foreground font-canopy">{link.label}</p>
-            <p className="mt-1 text-xs text-muted-foreground font-stream">{link.hint}</p>
-          </Link>
-        ))}
     </div>
   )
 }

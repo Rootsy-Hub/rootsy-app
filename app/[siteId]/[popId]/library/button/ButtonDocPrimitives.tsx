@@ -8,7 +8,10 @@ import {
   ROOTSY_BUTTON_SIZES,
   ROOTSY_BUTTON_STATES,
 } from "@/app/[siteId]/[popId]/library/button/rootsyButtonSystem"
-import { librarySectionHref } from "@/app/[siteId]/[popId]/library/layoutLibraryShared"
+import {
+  LibraryManifestoHero,
+  LibraryRelatedLinks,
+} from "@/app/[siteId]/[popId]/library/libraryDocPrimitives"
 import {
   RootsProgressButton,
   rootsButtonClassForVariant,
@@ -27,88 +30,21 @@ import {
   Trash2,
   Underline,
 } from "lucide-react"
-import Link from "next/link"
-import { useState, type ReactNode } from "react"
+import { useState } from "react"
 
-const CANOPY = "#1E8F5A"
-const CANOPY_DARK = "#16704A"
-const CANOPY_LIGHT = "#A8EBC4"
-
-export function ButtonDocLead({ children }: { children: ReactNode }) {
-  return (
-    <p className="max-w-3xl text-base leading-relaxed text-muted-foreground">{children}</p>
-  )
-}
-
-export function ButtonDocSection({
-  id,
-  title,
-  description,
-  children,
-}: {
-  id: string
-  title: string
-  description?: string
-  children: ReactNode
-}) {
-  return (
-    <section
-      id={id}
-      className="scroll-mt-24 space-y-5 border-t border-border/60 pt-10 first:border-t-0 first:pt-0"
-    >
-      <div className="max-w-3xl space-y-2">
-        <h3 className="text-xl font-semibold tracking-tight text-foreground">{title}</h3>
-        {description ? (
-          <p className="text-sm leading-relaxed text-muted-foreground">{description}</p>
-        ) : null}
-      </div>
-      {children}
-    </section>
-  )
-}
+export {
+  LibraryDocLead as ButtonDocLead,
+  LibraryDocSection as ButtonDocSection,
+  LibraryPrinciplesGrid as ButtonPrinciplesGrid,
+} from "@/app/[siteId]/[popId]/library/libraryDocPrimitives"
 
 export function ButtonManifestoHero() {
   return (
-    <div className="overflow-hidden rounded-2xl border border-border/70 shadow-sm">
-      <div
-        className="relative px-6 py-10 sm:px-8"
-        style={{
-          background: `linear-gradient(165deg, ${CANOPY_DARK} 0%, #0F5739 40%, ${CANOPY} 70%, ${CANOPY_LIGHT} 100%)`,
-        }}
-      >
-        <div className="relative max-w-2xl space-y-2">
-          <p className="text-xs font-bold uppercase tracking-[0.2em] text-white/80">
-            Rootsy · Button System
-          </p>
-          <p className="text-2xl font-semibold tracking-tight text-white sm:text-3xl">
-            Acción clara · jerarquía canopy
-          </p>
-          <p className="text-sm leading-relaxed text-white/85">
-            default · primary · subtle · danger — alineado a Atlassian, implementado en shadcn.
-          </p>
-        </div>
-      </div>
-    </div>
-  )
-}
-
-export function ButtonPrinciplesGrid({
-  principles,
-}: {
-  principles: ReadonlyArray<{ title: string; detail: string }>
-}) {
-  return (
-    <div className="grid gap-3 sm:grid-cols-2">
-      {principles.map((item) => (
-        <div
-          key={item.title}
-          className="rounded-xl border border-border/70 bg-card p-4 shadow-sm"
-        >
-          <p className="text-sm font-semibold text-foreground">{item.title}</p>
-          <p className="mt-1 text-sm text-muted-foreground">{item.detail}</p>
-        </div>
-      ))}
-    </div>
+    <LibraryManifestoHero
+      eyebrow="Rootsy · Botones"
+      title="Acción clara · jerarquía canopy"
+      description="default · primary · subtle · danger — alineado a Atlassian, implementado en shadcn."
+    />
   )
 }
 
@@ -514,7 +450,7 @@ export function ButtonGuidelinesGrid() {
   return (
     <div className="grid gap-4 lg:grid-cols-2">
       <div className="rounded-2xl border border-emerald-500/25 bg-emerald-500/5 p-4">
-        <p className="text-xs font-bold uppercase tracking-[0.14em] text-emerald-700">Do</p>
+        <p className="text-xs font-bold uppercase tracking-[0.14em] text-emerald-700">Hacer</p>
         <ul className="mt-3 space-y-2">
           {BUTTON_GUIDELINES.do.map((item) => (
             <li key={item} className="flex gap-2 text-sm text-foreground">
@@ -527,7 +463,7 @@ export function ButtonGuidelinesGrid() {
         </ul>
       </div>
       <div className="rounded-2xl border border-red-500/20 bg-red-500/5 p-4">
-        <p className="text-xs font-bold uppercase tracking-[0.14em] text-red-700">Don&apos;t</p>
+        <p className="text-xs font-bold uppercase tracking-[0.14em] text-red-700">Evitar</p>
         <ul className="mt-3 space-y-2">
           {BUTTON_GUIDELINES.dont.map((item) => (
             <li key={item} className="flex gap-2 text-sm text-foreground">
@@ -551,17 +487,6 @@ export function ButtonRelatedLinks({
   popId: string
 }) {
   return (
-    <div className="flex flex-wrap gap-2">
-      {BUTTON_RELATED_LINKS.map((link) => (
-        <Link
-          key={link.sectionId}
-          href={librarySectionHref(siteId, popId, link.sectionId)}
-          className="rounded-lg border border-border/70 bg-card px-3 py-2 text-sm shadow-sm transition-colors hover:bg-muted/50"
-        >
-          <span className="font-medium text-foreground">{link.label}</span>
-          <span className="mt-0.5 block text-[11px] text-muted-foreground">{link.hint}</span>
-        </Link>
-      ))}
-    </div>
+    <LibraryRelatedLinks siteId={siteId} popId={popId} links={BUTTON_RELATED_LINKS} />
   )
 }

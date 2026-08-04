@@ -12,10 +12,12 @@ import {
   ROOTSY_LOGOMARKS,
   type PopIdentityVariantId,
 } from "@/app/[siteId]/[popId]/library/logos/rootsyLogoSystem"
-import { librarySectionHref } from "@/app/[siteId]/[popId]/library/layoutLibraryShared"
+import {
+  LibraryManifestoHero,
+  LibraryPrinciplesGrid,
+} from "@/app/[siteId]/[popId]/library/libraryDocPrimitives"
 import { Badge } from "@/components/ui/badge"
 import { cn } from "@/lib/utils"
-import Link from "next/link"
 import type { ReactNode } from "react"
 
 type PreviewBg = "light" | "canopy" | "dark" | "neutral"
@@ -27,36 +29,19 @@ const PREVIEW_BG_CLASS: Record<PreviewBg, string> = {
   neutral: "logo-preview-surface--neutral",
 }
 
-export function LogosDocLead({ children }: { children: ReactNode }) {
-  return (
-    <p className="max-w-3xl text-base leading-relaxed text-muted-foreground">{children}</p>
-  )
-}
+export {
+  LibraryDocLead as LogosDocLead,
+  LibraryDocSection as LogosDocSection,
+  LibraryRelatedLinks as LogosRelatedLinks,
+} from "@/app/[siteId]/[popId]/library/libraryDocPrimitives"
 
-export function LogosDocSection({
-  id,
-  title,
-  description,
-  children,
-}: {
-  id: string
-  title: string
-  description?: string
-  children: ReactNode
-}) {
+export function LogosManifestoHero() {
   return (
-    <section
-      id={id}
-      className="scroll-mt-24 space-y-5 border-t border-border/60 pt-10 first:border-t-0 first:pt-0"
-    >
-      <div className="max-w-3xl space-y-2">
-        <h3 className="text-xl font-semibold tracking-tight text-foreground">{title}</h3>
-        {description ? (
-          <p className="text-sm leading-relaxed text-muted-foreground">{description}</p>
-        ) : null}
-      </div>
-      {children}
-    </section>
+    <LibraryManifestoHero
+      eyebrow="Rootsy · Logotipos"
+      title="Raíz visible de la marca"
+      description="Logomark, wordmark y lockups — Rootsy y la identidad de cada POP conviven sin competir."
+    />
   )
 }
 
@@ -84,17 +69,12 @@ export function LogosPrinciplesGrid({
   principles: readonly { title: string; body: string }[]
 }) {
   return (
-    <div className="grid gap-3 sm:grid-cols-2">
-      {principles.map((item) => (
-        <div
-          key={item.title}
-          className="rounded-xl border border-border/70 bg-muted/20 px-4 py-3"
-        >
-          <p className="text-sm font-semibold text-foreground">{item.title}</p>
-          <p className="mt-1 text-sm leading-relaxed text-muted-foreground">{item.body}</p>
-        </div>
-      ))}
-    </div>
+    <LibraryPrinciplesGrid
+      principles={principles.map((item) => ({
+        title: item.title,
+        detail: item.body,
+      }))}
+    />
   )
 }
 
@@ -554,31 +534,3 @@ export function LogoAttributionDemo() {
   )
 }
 
-export function LogosRelatedLinks({
-  siteId,
-  popId,
-  excludeId,
-  links,
-}: {
-  siteId: string
-  popId: string
-  excludeId: string
-  links: readonly { sectionId: string; label: string; hint: string }[]
-}) {
-  return (
-    <div className="grid gap-2 sm:grid-cols-2">
-      {links
-        .filter((link) => link.sectionId !== excludeId)
-        .map((link) => (
-          <Link
-            key={link.sectionId}
-            href={librarySectionHref(siteId, popId, link.sectionId)}
-            className="rounded-xl border border-border/70 bg-card px-4 py-3 transition-colors hover:border-primary/30 hover:bg-primary/5"
-          >
-            <p className="text-sm font-medium text-foreground">{link.label}</p>
-            <p className="mt-0.5 text-xs text-muted-foreground">{link.hint}</p>
-          </Link>
-        ))}
-    </div>
-  )
-}

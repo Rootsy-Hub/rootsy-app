@@ -1,6 +1,7 @@
 "use client"
 
 import { getIllustrationsPageMeta } from "@/app/[siteId]/[popId]/library/illustrations/illustrationsLibraryNav"
+import { LibraryManifestoHero } from "@/app/[siteId]/[popId]/library/libraryDocPrimitives"
 import { LibrarySection } from "@/app/[siteId]/[popId]/library/layoutLibraryShared"
 
 type Props = {
@@ -14,6 +15,11 @@ export function IllustrationsFoundationView({ sectionId }: Props) {
 
   return (
     <LibrarySection id="illustrations" title={meta.title} description={meta.description}>
+      <LibraryManifestoHero
+        eyebrow="Rootsy · Ilustraciones"
+        title="El bosque también dibuja"
+        description="Spots, mascota y patrones ambient — en definición, con la misma raíz canopy."
+      />
       <div className="rounded-2xl border border-dashed border-border/70 bg-muted/20 px-6 py-16 text-center">
         <p className="text-xs font-bold uppercase tracking-[0.16em] text-muted-foreground">
           Fundamentos

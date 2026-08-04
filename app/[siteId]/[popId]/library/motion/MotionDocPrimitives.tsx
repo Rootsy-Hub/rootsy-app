@@ -9,91 +9,31 @@ import {
   ROOTSY_MOTION_PROPERTIES,
   ROOTSY_MOTION_SEMANTIC,
 } from "@/app/[siteId]/[popId]/library/motion/rootsyMotionSystem"
-import { librarySectionHref } from "@/app/[siteId]/[popId]/library/layoutLibraryShared"
-import Link from "next/link"
+import {
+  CANOPY,
+  CANOPY_DARK,
+  CANOPY_LIGHT,
+  CANOPY_MIST,
+  LibraryGuidelineCards,
+  LibraryManifestoHero,
+} from "@/app/[siteId]/[popId]/library/libraryDocPrimitives"
 import { useState } from "react"
 import type { ReactNode } from "react"
 
-const CANOPY = "#1E8F5A"
-const CANOPY_LIGHT = "#A8EBC4"
-const CANOPY_MIST = "#F0FBF4"
-const CANOPY_DARK = "#16704A"
-
-export function MotionDocLead({ children }: { children: ReactNode }) {
-  return (
-    <p className="max-w-3xl text-base leading-relaxed text-muted-foreground">{children}</p>
-  )
-}
-
-export function MotionDocSection({
-  id,
-  title,
-  description,
-  children,
-}: {
-  id: string
-  title: string
-  description?: string
-  children: ReactNode
-}) {
-  return (
-    <section
-      id={id}
-      className="scroll-mt-24 space-y-5 border-t border-border/60 pt-10 first:border-t-0 first:pt-0"
-    >
-      <div className="max-w-3xl space-y-2">
-        <h3 className="text-xl font-semibold tracking-tight text-foreground">{title}</h3>
-        {description ? (
-          <p className="text-sm leading-relaxed text-muted-foreground">{description}</p>
-        ) : null}
-      </div>
-      {children}
-    </section>
-  )
-}
+export {
+  LibraryDocLead as MotionDocLead,
+  LibraryDocSection as MotionDocSection,
+  LibraryPrinciplesGrid as MotionPrinciplesGrid,
+  LibraryRelatedLinks as MotionRelatedLinks,
+} from "@/app/[siteId]/[popId]/library/libraryDocPrimitives"
 
 export function MotionManifestoHero() {
   return (
-    <div className="overflow-hidden rounded-2xl border border-border/70 shadow-sm">
-      <div
-        className="relative px-6 py-10 sm:px-8"
-        style={{
-          background: `linear-gradient(160deg, ${CANOPY_DARK} 0%, #0F5739 40%, ${CANOPY} 70%, ${CANOPY_LIGHT} 100%)`,
-        }}
-      >
-        <div className="relative max-w-2xl space-y-2">
-          <p className="text-xs font-bold uppercase tracking-[0.2em] text-white/80">
-            Rootsy · Motion System
-          </p>
-          <p className="text-2xl font-semibold tracking-tight text-white sm:text-3xl">
-            Viento con intención
-          </p>
-          <p className="text-sm leading-relaxed text-white/85">
-            Brisa en hover · ráfaga en modal · despegue en salida — nunca ruido.
-          </p>
-        </div>
-      </div>
-    </div>
-  )
-}
-
-export function MotionPrinciplesGrid({
-  principles,
-}: {
-  principles: ReadonlyArray<{ title: string; detail: string }>
-}) {
-  return (
-    <div className="grid gap-3 sm:grid-cols-2">
-      {principles.map((item) => (
-        <div
-          key={item.title}
-          className="rounded-xl border border-border/70 bg-card p-4 shadow-sm"
-        >
-          <p className="text-sm font-semibold text-foreground">{item.title}</p>
-          <p className="mt-1 text-sm text-muted-foreground">{item.detail}</p>
-        </div>
-      ))}
-    </div>
+    <LibraryManifestoHero
+      eyebrow="Rootsy · Movimiento"
+      title="Viento con intención"
+      description="Brisa en hover · ráfaga en modal · despegue en salida — nunca ruido."
+    />
   )
 }
 
@@ -423,28 +363,7 @@ export function KeyframesTable() {
 }
 
 export function ApplyingGuidelineCards() {
-  return (
-    <div className="grid gap-4 sm:grid-cols-2">
-      {MOTION_APPLYING_GUIDELINES.map((g) => (
-        <div key={g.id} className="rounded-xl border border-border/70 bg-card p-4">
-          <p className="text-sm font-semibold text-foreground">{g.title}</p>
-          <div className="mt-3 grid gap-2">
-            <div
-              className="rounded-lg p-3 text-xs"
-              style={{ backgroundColor: CANOPY_MIST, color: CANOPY_DARK }}
-            >
-              <span className="font-semibold">✓ </span>
-              {g.doText}
-            </div>
-            <div className="rounded-lg bg-muted/60 p-3 text-xs text-muted-foreground">
-              <span className="font-semibold">✗ </span>
-              {g.dontText}
-            </div>
-          </div>
-        </div>
-      ))}
-    </div>
-  )
+  return <LibraryGuidelineCards items={MOTION_APPLYING_GUIDELINES} split={false} />
 }
 
 export function ReducedMotionNote() {
@@ -464,31 +383,3 @@ export function ReducedMotionNote() {
   )
 }
 
-export function MotionRelatedLinks({
-  siteId,
-  popId,
-  excludeId,
-  links,
-}: {
-  siteId: string
-  popId: string
-  excludeId?: string
-  links: ReadonlyArray<{ sectionId: string; label: string; hint: string }>
-}) {
-  return (
-    <div className="grid gap-2 sm:grid-cols-2">
-      {links
-        .filter((link) => link.sectionId !== excludeId)
-        .map((link) => (
-          <Link
-            key={link.sectionId}
-            href={librarySectionHref(siteId, popId, link.sectionId)}
-            className="rounded-xl border border-border/70 bg-card p-4 shadow-sm transition-colors hover:border-[#A8EBC4] hover:bg-[#F0FBF4]"
-          >
-            <p className="text-sm font-semibold text-foreground">{link.label}</p>
-            <p className="mt-1 text-xs text-muted-foreground">{link.hint}</p>
-          </Link>
-        ))}
-    </div>
-  )
-}

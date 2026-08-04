@@ -8,97 +8,30 @@ import {
   ROOTSY_GRID_BREAKPOINTS,
   ROOTSY_GRID_TYPES,
 } from "@/app/[siteId]/[popId]/library/grid/rootsyGridSystem"
-import { librarySectionHref } from "@/app/[siteId]/[popId]/library/layoutLibraryShared"
-import Link from "next/link"
-import type { ReactNode } from "react"
+import {
+  CANOPY,
+  CANOPY_DARK,
+  CANOPY_LIGHT,
+  CANOPY_MIST,
+  EARTH,
+  LibraryGuidelineCards,
+  LibraryManifestoHero,
+} from "@/app/[siteId]/[popId]/library/libraryDocPrimitives"
 
-const CANOPY = "#1E8F5A"
-const CANOPY_LIGHT = "#A8EBC4"
-const CANOPY_MIST = "#F0FBF4"
-const CANOPY_DARK = "#16704A"
-const EARTH = "#78716C"
-
-export function GridDocLead({ children }: { children: ReactNode }) {
-  return (
-    <p className="max-w-3xl text-base leading-relaxed text-muted-foreground">
-      {children}
-    </p>
-  )
-}
-
-export function GridDocSection({
-  id,
-  title,
-  description,
-  children,
-}: {
-  id: string
-  title: string
-  description?: string
-  children: ReactNode
-}) {
-  return (
-    <section
-      id={id}
-      className="scroll-mt-24 space-y-5 border-t border-border/60 pt-10 first:border-t-0 first:pt-0"
-    >
-      <div className="max-w-3xl space-y-2">
-        <h3 className="text-xl font-semibold tracking-tight text-foreground">
-          {title}
-        </h3>
-        {description ? (
-          <p className="text-sm leading-relaxed text-muted-foreground">
-            {description}
-          </p>
-        ) : null}
-      </div>
-      {children}
-    </section>
-  )
-}
+export {
+  LibraryDocLead as GridDocLead,
+  LibraryDocSection as GridDocSection,
+  LibraryPrinciplesGrid as GridPrinciplesGrid,
+  LibraryRelatedLinks as GridRelatedLinks,
+} from "@/app/[siteId]/[popId]/library/libraryDocPrimitives"
 
 export function GridManifestoHero() {
   return (
-    <div className="overflow-hidden rounded-2xl border border-border/70 shadow-sm">
-      <div
-        className="relative px-6 py-10 sm:px-8"
-        style={{
-          background: `linear-gradient(160deg, ${CANOPY_DARK} 0%, ${CANOPY} 45%, ${CANOPY_LIGHT} 100%)`,
-        }}
-      >
-        <div className="relative max-w-2xl space-y-2">
-          <p className="text-xs font-bold uppercase tracking-[0.2em] text-white/80">
-            Rootsy · Grid System
-          </p>
-          <p className="text-2xl font-semibold tracking-tight text-white sm:text-3xl">
-            Surcos en el claro
-          </p>
-          <p className="text-sm leading-relaxed text-white/85">
-            12 columnas · sendas y orillas · alineación sin rigidez innecesaria.
-          </p>
-        </div>
-      </div>
-    </div>
-  )
-}
-
-export function GridPrinciplesGrid({
-  principles,
-}: {
-  principles: ReadonlyArray<{ title: string; detail: string }>
-}) {
-  return (
-    <div className="grid gap-3 sm:grid-cols-2">
-      {principles.map((item) => (
-        <div
-          key={item.title}
-          className="rounded-xl border border-border/70 bg-card p-4 shadow-sm"
-        >
-          <p className="text-sm font-semibold text-foreground">{item.title}</p>
-          <p className="mt-1 text-sm text-muted-foreground">{item.detail}</p>
-        </div>
-      ))}
-    </div>
+    <LibraryManifestoHero
+      eyebrow="Rootsy · Grilla"
+      title="Surcos en el claro"
+      description="12 columnas · sendas y orillas · alineación sin rigidez innecesaria."
+    />
   )
 }
 
@@ -357,28 +290,7 @@ export function NestedGridDemo() {
 }
 
 export function GridGuidelineCards() {
-  return (
-    <div className="grid gap-4 sm:grid-cols-2">
-      {GRID_ALIGNMENT_GUIDELINES.map((g) => (
-        <div key={g.id} className="rounded-xl border border-border/70 bg-card p-4">
-          <p className="text-sm font-semibold text-foreground">{g.title}</p>
-          <div className="mt-3 grid gap-2 sm:grid-cols-2">
-            <div
-              className="rounded-lg p-3 text-xs"
-              style={{ backgroundColor: CANOPY_MIST, color: CANOPY_DARK }}
-            >
-              <span className="font-semibold">✓ </span>
-              {g.doText}
-            </div>
-            <div className="rounded-lg bg-muted/60 p-3 text-xs text-muted-foreground">
-              <span className="font-semibold">✗ </span>
-              {g.dontText}
-            </div>
-          </div>
-        </div>
-      ))}
-    </div>
-  )
+  return <LibraryGuidelineCards items={GRID_ALIGNMENT_GUIDELINES} />
 }
 
 export function GridBreakpointTable() {
@@ -543,31 +455,3 @@ export function FixedVsFluidDemo() {
   )
 }
 
-export function GridRelatedLinks({
-  siteId,
-  popId,
-  excludeId,
-  links,
-}: {
-  siteId: string
-  popId: string
-  excludeId?: string
-  links: ReadonlyArray<{ sectionId: string; label: string; hint: string }>
-}) {
-  return (
-    <div className="grid gap-2 sm:grid-cols-2">
-      {links
-        .filter((link) => link.sectionId !== excludeId)
-        .map((link) => (
-          <Link
-            key={link.sectionId}
-            href={librarySectionHref(siteId, popId, link.sectionId)}
-            className="rounded-xl border border-border/70 bg-card p-4 shadow-sm transition-colors hover:border-[#A8EBC4] hover:bg-[#F0FBF4]"
-          >
-            <p className="text-sm font-semibold text-foreground">{link.label}</p>
-            <p className="mt-1 text-xs text-muted-foreground">{link.hint}</p>
-          </Link>
-        ))}
-    </div>
-  )
-}

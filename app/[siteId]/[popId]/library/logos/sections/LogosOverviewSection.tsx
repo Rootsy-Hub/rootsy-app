@@ -8,6 +8,7 @@ import {
   LogosAnatomyGrid,
   LogosDocLead,
   LogosDocSection,
+  LogosManifestoHero,
   LogosPrinciplesGrid,
   PopHeaderLogoDemo,
   PopHomeScreenDemo,
@@ -27,6 +28,7 @@ export function LogosOverviewSection() {
   return (
     <LibrarySection id="logos" title={meta.title} description={meta.description}>
       <div className="space-y-10">
+        <LogosManifestoHero />
         <LogosDocLead>{ROOTSY_LOGO_MANIFESTO}</LogosDocLead>
         <LogosPrinciplesGrid principles={ROOTSY_LOGO_PRINCIPLES} />
 

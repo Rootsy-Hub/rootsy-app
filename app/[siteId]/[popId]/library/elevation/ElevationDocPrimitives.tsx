@@ -12,90 +12,23 @@ import {
   SUNKEN_VS_NEUTRAL,
   type ElevationLevel,
 } from "@/app/[siteId]/[popId]/library/elevation/rootsyElevationSystem"
-import { librarySectionHref } from "@/app/[siteId]/[popId]/library/layoutLibraryShared"
+import { LibraryManifestoHero } from "@/app/[siteId]/[popId]/library/libraryDocPrimitives"
 import { cn } from "@/lib/utils"
-import Link from "next/link"
-import type { ReactNode } from "react"
 
-const CANOPY = "#1E8F5A"
-const CANOPY_DARK = "#16704A"
-const CANOPY_LIGHT = "#A8EBC4"
-
-export function ElevationDocLead({ children }: { children: ReactNode }) {
-  return (
-    <p className="max-w-3xl text-base leading-relaxed text-muted-foreground">{children}</p>
-  )
-}
-
-export function ElevationDocSection({
-  id,
-  title,
-  description,
-  children,
-}: {
-  id: string
-  title: string
-  description?: string
-  children: ReactNode
-}) {
-  return (
-    <section
-      id={id}
-      className="scroll-mt-24 space-y-5 border-t border-border/60 pt-10 first:border-t-0 first:pt-0"
-    >
-      <div className="max-w-3xl space-y-2">
-        <h3 className="text-xl font-semibold tracking-tight text-foreground">{title}</h3>
-        {description ? (
-          <p className="text-sm leading-relaxed text-muted-foreground">{description}</p>
-        ) : null}
-      </div>
-      {children}
-    </section>
-  )
-}
+export {
+  LibraryDocLead as ElevationDocLead,
+  LibraryDocSection as ElevationDocSection,
+  LibraryPrinciplesGrid as ElevationPrinciplesGrid,
+  LibraryRelatedLinks as ElevationRelatedLinks,
+} from "@/app/[siteId]/[popId]/library/libraryDocPrimitives"
 
 export function ElevationManifestoHero() {
   return (
-    <div className="overflow-hidden rounded-2xl border border-border/70 shadow-sm">
-      <div
-        className="relative px-6 py-10 sm:px-8"
-        style={{
-          background: `linear-gradient(165deg, ${CANOPY_DARK} 0%, #0F5739 35%, ${CANOPY} 65%, ${CANOPY_LIGHT} 100%)`,
-        }}
-      >
-        <div className="relative max-w-2xl space-y-2">
-          <p className="text-xs font-bold uppercase tracking-[0.2em] text-white/80">
-            Rootsy · Elevation System
-          </p>
-          <p className="text-2xl font-semibold tracking-tight text-white sm:text-3xl">
-            Capas del bosque
-          </p>
-          <p className="text-sm leading-relaxed text-white/85">
-            Claro · suelo · brote · dosel — profundidad con tinte canopy.
-          </p>
-        </div>
-      </div>
-    </div>
-  )
-}
-
-export function ElevationPrinciplesGrid({
-  principles,
-}: {
-  principles: ReadonlyArray<{ title: string; detail: string }>
-}) {
-  return (
-    <div className="grid gap-3 sm:grid-cols-2">
-      {principles.map((item) => (
-        <div
-          key={item.title}
-          className="rounded-xl border border-border/70 bg-card p-4 shadow-sm"
-        >
-          <p className="text-sm font-semibold text-foreground">{item.title}</p>
-          <p className="mt-1 text-sm text-muted-foreground">{item.detail}</p>
-        </div>
-      ))}
-    </div>
+    <LibraryManifestoHero
+      eyebrow="Rootsy · Elevación"
+      title="Capas del bosque"
+      description="Claro · suelo · brote · dosel — profundidad con tinte canopy."
+    />
   )
 }
 
@@ -371,7 +304,7 @@ export function ElevationGuidelinesGrid() {
   return (
     <div className="grid gap-4 lg:grid-cols-2">
       <div className="rounded-2xl border border-emerald-500/25 bg-emerald-500/5 p-4">
-        <p className="text-xs font-bold uppercase tracking-[0.14em] text-emerald-700">Do</p>
+        <p className="text-xs font-bold uppercase tracking-[0.14em] text-emerald-700">Hacer</p>
         <ul className="mt-3 space-y-2">
           {ELEVATION_GUIDELINES.do.map((item) => (
             <li key={item} className="flex gap-2 text-sm text-foreground">
@@ -384,7 +317,7 @@ export function ElevationGuidelinesGrid() {
         </ul>
       </div>
       <div className="rounded-2xl border border-red-500/20 bg-red-500/5 p-4">
-        <p className="text-xs font-bold uppercase tracking-[0.14em] text-red-700">Don&apos;t</p>
+        <p className="text-xs font-bold uppercase tracking-[0.14em] text-red-700">Evitar</p>
         <ul className="mt-3 space-y-2">
           {ELEVATION_GUIDELINES.dont.map((item) => (
             <li key={item} className="flex gap-2 text-sm text-foreground">
@@ -433,31 +366,3 @@ export function ElevationOverflowDemo() {
   )
 }
 
-export function ElevationRelatedLinks({
-  siteId,
-  popId,
-  excludeId,
-  links,
-}: {
-  siteId: string
-  popId: string
-  excludeId: string
-  links: readonly { sectionId: string; label: string; hint: string }[]
-}) {
-  return (
-    <div className="grid gap-2 sm:grid-cols-2">
-      {links
-        .filter((link) => link.sectionId !== excludeId)
-        .map((link) => (
-          <Link
-            key={link.sectionId}
-            href={librarySectionHref(siteId, popId, link.sectionId)}
-            className="rounded-xl border border-border/70 bg-card px-4 py-3 transition-colors hover:border-primary/30 hover:bg-primary/5"
-          >
-            <p className="text-sm font-medium text-foreground">{link.label}</p>
-            <p className="mt-0.5 text-xs text-muted-foreground">{link.hint}</p>
-          </Link>
-        ))}
-    </div>
-  )
-}

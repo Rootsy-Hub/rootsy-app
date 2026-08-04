@@ -11,99 +11,30 @@ import {
   SPACING_RANGE_META,
   type SpacingToken,
 } from "@/app/[siteId]/[popId]/library/spacing/rootsySpacingScale"
-import { librarySectionHref } from "@/app/[siteId]/[popId]/library/layoutLibraryShared"
-import Link from "next/link"
-import type { CSSProperties, ReactNode } from "react"
+import {
+  CANOPY,
+  CANOPY_DARK,
+  CANOPY_LIGHT,
+  CANOPY_MIST,
+  LibraryGuidelineCards,
+  LibraryManifestoHero,
+} from "@/app/[siteId]/[popId]/library/libraryDocPrimitives"
+import type { CSSProperties } from "react"
 
-const CANOPY = "#1E8F5A"
-const CANOPY_LIGHT = "#A8EBC4"
-const CANOPY_MIST = "#F0FBF4"
-
-export function SpacingDocLead({ children }: { children: ReactNode }) {
-  return (
-    <p className="max-w-3xl text-base leading-relaxed text-muted-foreground">
-      {children}
-    </p>
-  )
-}
-
-export function SpacingDocSection({
-  id,
-  title,
-  description,
-  children,
-}: {
-  id: string
-  title: string
-  description?: string
-  children: ReactNode
-}) {
-  return (
-    <section
-      id={id}
-      className="scroll-mt-24 space-y-5 border-t border-border/60 pt-10 first:border-t-0 first:pt-0"
-    >
-      <div className="max-w-3xl space-y-2">
-        <h3 className="text-xl font-semibold tracking-tight text-foreground">
-          {title}
-        </h3>
-        {description ? (
-          <p className="text-sm leading-relaxed text-muted-foreground">
-            {description}
-          </p>
-        ) : null}
-      </div>
-      {children}
-    </section>
-  )
-}
+export {
+  LibraryDocLead as SpacingDocLead,
+  LibraryDocSection as SpacingDocSection,
+  LibraryPrinciplesGrid as SpacingPrinciplesGrid,
+  LibraryRelatedLinks as SpacingRelatedLinks,
+} from "@/app/[siteId]/[popId]/library/libraryDocPrimitives"
 
 export function SpacingManifestoHero() {
   return (
-    <div className="overflow-hidden rounded-2xl border border-border/70 shadow-sm">
-      <div
-        className="relative px-6 py-10 sm:px-8"
-        style={{
-          background: `linear-gradient(135deg, ${CANOPY_MIST} 0%, ${CANOPY_LIGHT} 40%, #DDF5E8 100%)`,
-        }}
-      >
-        <div className="relative max-w-2xl space-y-2">
-          <p
-            className="text-xs font-bold uppercase tracking-[0.2em]"
-            style={{ color: "#16704A" }}
-          >
-            Rootsy · Spacing System
-          </p>
-          <p className="text-2xl font-semibold tracking-tight text-foreground sm:text-3xl">
-            El bosque tiene ritmo
-          </p>
-          <p className="text-sm leading-relaxed text-muted-foreground">
-            Rocío, hoja, rama, tronco, claro y horizonte — seis capas de distancia
-            sobre una base de 8px.
-          </p>
-        </div>
-      </div>
-    </div>
-  )
-}
-
-export function SpacingPrinciplesGrid({
-  principles,
-}: {
-  principles: ReadonlyArray<{ title: string; detail: string }>
-}) {
-  return (
-    <div className="grid gap-3 sm:grid-cols-2">
-      {principles.map((item) => (
-        <div
-          key={item.title}
-          className="rounded-xl border border-border/70 bg-card p-4 shadow-sm"
-        >
-          <p className="text-sm font-semibold text-foreground">{item.title}</p>
-          <p className="mt-1 text-sm text-muted-foreground">{item.detail}</p>
-        </div>
-      ))}
-    </div>
+    <LibraryManifestoHero
+      eyebrow="Rootsy · Espaciado"
+      title="El bosque tiene ritmo"
+      description="Rocío, hoja, rama, tronco, claro y horizonte — seis capas de distancia sobre una base de 8px."
+    />
   )
 }
 
@@ -192,7 +123,7 @@ export function NatureRhythmTiersGrid() {
           }}
         >
           <p className="text-sm font-semibold text-foreground">{tier.title}</p>
-          <p className="text-xs font-medium" style={{ color: "#16704A" }}>
+          <p className="text-xs font-medium" style={{ color: CANOPY_DARK }}>
             {tier.subtitle} · {tier.pxRange}
           </p>
           <p className="mt-2 font-mono text-[10px] text-muted-foreground">
@@ -356,28 +287,7 @@ export function SpacingRangeOverview() {
 }
 
 export function SpacingGuidelineCards() {
-  return (
-    <div className="grid gap-4 sm:grid-cols-2">
-      {SPACING_LAYOUT_GUIDELINES.map((g) => (
-        <div key={g.id} className="rounded-xl border border-border/70 bg-card p-4">
-          <p className="text-sm font-semibold text-foreground">{g.title}</p>
-          <div className="mt-3 grid gap-2 sm:grid-cols-2">
-            <div
-              className="rounded-lg p-3 text-xs"
-              style={{ backgroundColor: CANOPY_MIST, color: "#16704A" }}
-            >
-              <span className="font-semibold">✓ </span>
-              {g.doText}
-            </div>
-            <div className="rounded-lg bg-muted/60 p-3 text-xs text-muted-foreground">
-              <span className="font-semibold">✗ </span>
-              {g.dontText}
-            </div>
-          </div>
-        </div>
-      ))}
-    </div>
-  )
+  return <LibraryGuidelineCards items={SPACING_LAYOUT_GUIDELINES} />
 }
 
 export function SimilarityDemo() {
@@ -471,7 +381,7 @@ function DemoCard({ label }: { label: string }) {
   return (
     <div
       className="flex min-h-[72px] min-w-[100px] flex-1 items-center justify-center rounded-lg border text-xs font-medium"
-      style={{ borderColor: CANOPY_LIGHT, backgroundColor: "#fff", color: "#16704A" }}
+      style={{ borderColor: CANOPY_LIGHT, backgroundColor: "#fff", color: CANOPY_DARK }}
     >
       {label}
     </div>
@@ -624,7 +534,7 @@ export function NegativeSpacingDemo() {
           boxShadow: "0 4px 12px rgba(30, 143, 90, 0.12)",
         }}
       >
-        <p className="font-medium" style={{ color: "#16704A" }}>
+        <p className="font-medium" style={{ color: CANOPY_DARK }}>
           Bleed / negative space.100 (−8px)
         </p>
         <p className="mt-1 text-xs text-muted-foreground">
@@ -632,35 +542,6 @@ export function NegativeSpacingDemo() {
           superposición controlada.
         </p>
       </div>
-    </div>
-  )
-}
-
-export function SpacingRelatedLinks({
-  siteId,
-  popId,
-  excludeId,
-  links,
-}: {
-  siteId: string
-  popId: string
-  excludeId?: string
-  links: ReadonlyArray<{ sectionId: string; label: string; hint: string }>
-}) {
-  return (
-    <div className="grid gap-2 sm:grid-cols-2">
-      {links
-        .filter((link) => link.sectionId !== excludeId)
-        .map((link) => (
-          <Link
-            key={link.sectionId}
-            href={librarySectionHref(siteId, popId, link.sectionId)}
-            className="rounded-xl border border-border/70 bg-card p-4 shadow-sm transition-colors hover:border-[#A8EBC4] hover:bg-[#F0FBF4]"
-          >
-            <p className="text-sm font-semibold text-foreground">{link.label}</p>
-            <p className="mt-1 text-xs text-muted-foreground">{link.hint}</p>
-          </Link>
-        ))}
     </div>
   )
 }

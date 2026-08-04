@@ -12,93 +12,29 @@ import {
   NATURE_COLOR_ROLES,
   NATURE_GRADIENTS,
 } from "@/app/[siteId]/[popId]/library/color/rootsyNaturePalette"
-import { librarySectionHref } from "@/app/[siteId]/[popId]/library/layoutLibraryShared"
-import Link from "next/link"
+import {
+  CANOPY,
+  CANOPY_DARK,
+  LibraryManifestoHero,
+} from "@/app/[siteId]/[popId]/library/libraryDocPrimitives"
 import type { CSSProperties, ReactNode } from "react"
 
-export function ColorDocLead({ children }: { children: ReactNode }) {
-  return (
-    <p className="max-w-3xl text-base leading-relaxed text-muted-foreground">
-      {children}
-    </p>
-  )
-}
-
-export function ColorDocSection({
-  id,
-  title,
-  description,
-  children,
-}: {
-  id: string
-  title: string
-  description?: string
-  children: ReactNode
-}) {
-  return (
-    <section
-      id={id}
-      className="scroll-mt-24 space-y-5 border-t border-border/60 pt-10 first:border-t-0 first:pt-0"
-    >
-      <div className="max-w-3xl space-y-2">
-        <h3 className="text-xl font-semibold tracking-tight text-foreground">
-          {title}
-        </h3>
-        {description ? (
-          <p className="text-sm leading-relaxed text-muted-foreground">
-            {description}
-          </p>
-        ) : null}
-      </div>
-      {children}
-    </section>
-  )
-}
+export {
+  LibraryDocLead as ColorDocLead,
+  LibraryDocSection as ColorDocSection,
+  LibraryPrinciplesGrid as NaturePrinciplesGrid,
+  LibraryDoDontPair as GuidelinePair,
+  LibraryRelatedLinks as ColorRelatedLinks,
+} from "@/app/[siteId]/[popId]/library/libraryDocPrimitives"
 
 export function NatureManifestoHero() {
   return (
-    <div className="overflow-hidden rounded-2xl border border-border/70 shadow-sm">
-      <div
-        className="relative px-6 py-10 sm:px-8"
-        style={{
-          background:
-            "linear-gradient(135deg, #052E1F 0%, #16704A 35%, #3FC87E 60%, #F59E0B 85%, #8B5CF6 100%)",
-        }}
-      >
-        <div className="relative max-w-2xl space-y-2">
-          <p className="text-xs font-bold uppercase tracking-[0.2em] text-white/80">
-            Rootsy · Nature System
-          </p>
-          <p className="text-2xl font-semibold tracking-tight text-white sm:text-3xl">
-            La naturaleza en su mejor esplendor
-          </p>
-          <p className="text-sm leading-relaxed text-white/85">
-            Verde canopy como protagonista — otoño, cielo, mar, fuego, tierra y
-            noche como el mundo real.
-          </p>
-        </div>
-      </div>
-    </div>
-  )
-}
-
-export function NaturePrinciplesGrid({
-  principles,
-}: {
-  principles: ReadonlyArray<{ title: string; detail: string }>
-}) {
-  return (
-    <div className="grid gap-3 sm:grid-cols-2">
-      {principles.map((item) => (
-        <div
-          key={item.title}
-          className="rounded-xl border border-border/70 bg-card p-4 shadow-sm"
-        >
-          <p className="text-sm font-semibold text-foreground">{item.title}</p>
-          <p className="mt-1 text-sm text-muted-foreground">{item.detail}</p>
-        </div>
-      ))}
-    </div>
+    <LibraryManifestoHero
+      tone="spectrum"
+      eyebrow="Rootsy · Color"
+      title="La naturaleza en su mejor esplendor"
+      description="Verde canopy como protagonista — otoño, cielo, mar, fuego, tierra y noche como el mundo real."
+    />
   )
 }
 
@@ -262,8 +198,8 @@ export function NatureRoleTable() {
 }
 
 export function AppliedNatureDemo() {
-  const brand = "#1E8F5A"
-  const focus = "#16704A"
+  const brand = CANOPY
+  const focus = CANOPY_DARK
   return (
     <div className="overflow-hidden rounded-2xl border border-border/70 bg-card shadow-sm">
       <div
@@ -390,41 +326,6 @@ export function InteractionStatesDemo() {
           </div>
         </div>
       ))}
-    </div>
-  )
-}
-
-export function GuidelinePair({
-  doText,
-  dontText,
-}: {
-  doText: string
-  dontText: string
-}) {
-  return (
-    <div className="grid gap-3 sm:grid-cols-2">
-      <div
-        className="rounded-xl border p-4"
-        style={{ borderColor: "#A8EBC4", backgroundColor: "#F0FBF4" }}
-      >
-        <p className="text-xs font-bold uppercase tracking-wide" style={{ color: "#16704A" }}>
-          Hacer
-        </p>
-        <p className="mt-2 text-sm leading-relaxed" style={{ color: "#0F5739" }}>
-          {doText}
-        </p>
-      </div>
-      <div
-        className="rounded-xl border p-4"
-        style={{ borderColor: "#FECACA", backgroundColor: "#FEF2F2" }}
-      >
-        <p className="text-xs font-bold uppercase tracking-wide" style={{ color: "#DC2626" }}>
-          Evitar
-        </p>
-        <p className="mt-2 text-sm leading-relaxed" style={{ color: "#B91C1C" }}>
-          {dontText}
-        </p>
-      </div>
     </div>
   )
 }
@@ -831,31 +732,3 @@ export function AlphaOverlayDemo() {
   )
 }
 
-export function ColorRelatedLinks({
-  siteId,
-  popId,
-  excludeId,
-  links,
-}: {
-  siteId: string
-  popId: string
-  excludeId?: string
-  links: ReadonlyArray<{ sectionId: string; label: string; hint: string }>
-}) {
-  return (
-    <div className="grid gap-2 sm:grid-cols-2">
-      {links
-        .filter((link) => link.sectionId !== excludeId)
-        .map((link) => (
-          <Link
-            key={link.sectionId}
-            href={librarySectionHref(siteId, popId, link.sectionId)}
-            className="rounded-xl border border-border/70 bg-card p-4 shadow-sm transition-colors hover:border-[#A8EBC4] hover:bg-[#F0FBF4]"
-          >
-            <p className="text-sm font-semibold text-foreground">{link.label}</p>
-            <p className="mt-1 text-xs text-muted-foreground">{link.hint}</p>
-          </Link>
-        ))}
-    </div>
-  )
-}
