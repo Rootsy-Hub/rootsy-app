@@ -163,6 +163,14 @@ export function shortUnitOfMeasure(value: string | null | undefined): string {
   return UOM_SHORT[value] ?? value
 }
 
+export function isCustomUnitOfMeasure(
+  value: string | null | undefined,
+): boolean {
+  const trimmed = value?.trim()
+  if (!trimmed) return false
+  return !isUnitOfMeasure(trimmed)
+}
+
 export function isPartialItemKindsFilter(
   kinds: readonly ArticleItemKind[],
 ): boolean {

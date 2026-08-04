@@ -5,25 +5,23 @@ import type {
   PromotionSlotInput,
   PromotionSlotOptionInput,
 } from "@/app/[siteId]/[popId]/promotions/actions"
-import { promotionFormFieldClass } from "@/app/[siteId]/[popId]/promotions/promotionConstants"
 import { QUANTITY_DEAL_SLOT_LABEL } from "@/app/[siteId]/[popId]/promotions/promotionConstants"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
 import {
-  Select,
-  SelectContent,
-  SelectGroup,
-  SelectItem,
-  SelectLabel,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
+  RootsFormQuantityField,
+  RootsFormSelectField,
+  RootsFormSelectItem,
+  RootsFormTextField,
+  rootsFormEarthTextSecondaryClass,
+  rootsFormFieldLabelClass,
+} from "@/components/rootsy-form"
+import { RootsSubtleButton } from "@/components/rootsy-button"
+import { SelectGroup, SelectLabel } from "@/components/ui/select"
 import {
   PROMOTION_OPTION_KIND_LABEL,
   type PromotionOptionKind,
   type PromotionType,
 } from "@/lib/promotionTypes"
+import { cn } from "@/lib/utils"
 import { Plus, Trash2 } from "lucide-react"
 import { useMemo } from "react"
 
@@ -41,6 +39,7 @@ export type PromotionOptionFormLine = {
 }
 
 type Props = {
+  idPrefix: string
   promotionType: PromotionType
   lines: PromotionSlotFormLine[]
   catalogOptions: PromotionCatalogOption[]
@@ -151,6 +150,7 @@ function parseOptionSelectValue(value: string): PromotionOptionFormLine | null {
 }
 
 export function PromotionSlotEditor({
+  idPrefix,
   promotionType,
   lines,
   catalogOptions,
@@ -232,166 +232,163 @@ export function PromotionSlotEditor({
   }
 
   return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between gap-2">
+    <section className="flex flex-col gap-4">
+      <div className="flex items-start justify-between gap-3">
         <div>
-          <Label className="text-sm font-medium">
+          <h3 className={rootsFormFieldLabelClass}>
             {isQuantityDeal ? "Productos y recetas elegibles" : "Ítems del combo"}
-          </Label>
-          <p className="text-xs text-muted-foreground">
+          </h3>
+          <p className={cn("mt-1 text-xs leading-relaxed", rootsFormEarthTextSecondaryClass)}>
             {isQuantityDeal
               ? "Unidades que participan de la oferta por cantidad."
               : "Cada ítem agrupa las opciones que el cliente puede elegir."}
           </p>
         </div>
         {!isQuantityDeal ? (
-          <Button
+          <RootsSubtleButton
             type="button"
-            variant="outline"
-            size="sm"
+            className="shrink-0"
             disabled={disabled}
             onClick={addLine}
           >
-            <Plus className="mr-1 size-4" />
+            <Plus className="size-4" aria-hidden />
             Ítem
-          </Button>
+          </RootsSubtleButton>
         ) : null}
       </div>
 
-      {displayLines.map((line, slotIndex) => (
-        <div
-          key={line.key}
-          className="rounded-xl border border-border/70 bg-muted/10 p-4"
-        >
-          {!isQuantityDeal ? (
-            <div className="mb-3 flex flex-wrap items-end gap-3">
-              <div className="min-w-[140px] flex-1 space-y-1.5">
-                <Label htmlFor={`slot-label-${line.key}`}>Nombre del ítem</Label>
-                <Input
-                  id={`slot-label-${line.key}`}
-                  value={line.label}
-                  disabled={disabled}
-                  className={promotionFormFieldClass}
-                  placeholder="Ej. Cerveza"
-                  onChange={(e) =>
-                    updateLine(slotIndex, { label: e.target.value })
-                  }
-                />
-              </div>
-              <div className="w-24 space-y-1.5">
-                <Label htmlFor={`slot-qty-${line.key}`}>Cant.</Label>
-                <Input
-                  id={`slot-qty-${line.key}`}
-                  value={line.quantity}
-                  disabled={disabled}
-                  inputMode="numeric"
-                  className={promotionFormFieldClass}
-                  onChange={(e) =>
-                    updateLine(slotIndex, { quantity: e.target.value })
-                  }
-                />
-              </div>
-              {lines.length > 1 ? (
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon"
-                  disabled={disabled}
-                  className="shrink-0 text-destructive"
-                  aria-label="Quitar ítem"
-                  onClick={() => removeLine(slotIndex)}
-                >
-                  <Trash2 className="size-4" />
-                </Button>
-              ) : null}
-            </div>
-          ) : null}
-
-          <div className="space-y-2">
-            {line.options.length === 0 ? (
-              <p className="text-xs text-muted-foreground">
-                Todavía no hay opciones en este ítem.
-              </p>
-            ) : (
-              line.options.map((opt, optIndex) => {
-                const meta = optionsByKey.get(`${opt.kind}:${opt.refId}`)
-                return (
-                  <div
-                    key={opt.key}
-                    className="flex flex-wrap items-center gap-2"
+      <div className="flex flex-col gap-4">
+        {displayLines.map((line, slotIndex) => (
+          <div
+            key={line.key}
+            className="rounded-xl border border-border/70 bg-muted/10 p-4"
+          >
+            {!isQuantityDeal ? (
+              <div className="mb-4 flex flex-wrap items-end gap-3">
+                <div className="min-w-[10rem] flex-1">
+                  <RootsFormTextField
+                    label="Nombre del ítem"
+                    id={`${idPrefix}-slot-label-${line.key}`}
+                    value={line.label}
+                    disabled={disabled}
+                    placeholder="Ej. Cerveza"
+                    onChange={(e) =>
+                      updateLine(slotIndex, { label: e.target.value })
+                    }
+                  />
+                </div>
+                <div className="w-28 shrink-0">
+                  <RootsFormQuantityField
+                    label="Cant."
+                    id={`${idPrefix}-slot-qty-${line.key}`}
+                    value={line.quantity}
+                    disabled={disabled}
+                    prefix="uds."
+                    onChange={(value) => updateLine(slotIndex, { quantity: value })}
+                  />
+                </div>
+                {lines.length > 1 ? (
+                  <button
+                    type="button"
+                    disabled={disabled}
+                    className="mb-1 inline-flex size-11 shrink-0 items-center justify-center rounded-lg text-destructive transition-colors hover:bg-destructive/10 disabled:opacity-50"
+                    aria-label="Quitar ítem"
+                    onClick={() => removeLine(slotIndex)}
                   >
-                    <Select
-                      value={optionSelectValue(opt.kind, opt.refId)}
-                      disabled={disabled}
-                      onValueChange={(v) =>
-                        setOptionFromSelect(slotIndex, optIndex, v)
-                      }
+                    <Trash2 className="size-4" aria-hidden />
+                  </button>
+                ) : null}
+              </div>
+            ) : null}
+
+            <div className="flex flex-col gap-3">
+              {line.options.length === 0 ? (
+                <p className={cn("text-xs", rootsFormEarthTextSecondaryClass)}>
+                  Todavía no hay opciones en este ítem.
+                </p>
+              ) : (
+                line.options.map((opt, optIndex) => {
+                  const meta = optionsByKey.get(`${opt.kind}:${opt.refId}`)
+                  return (
+                    <div
+                      key={opt.key}
+                      className="flex flex-wrap items-end gap-2"
                     >
-                      <SelectTrigger className="min-w-[220px] flex-1 bg-background">
-                        <SelectValue placeholder="Elegir producto o receta" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {articles.length > 0 ? (
-                          <SelectGroup>
-                            <SelectLabel>Productos</SelectLabel>
-                            {articles.map((a) => (
-                              <SelectItem
-                                key={`article:${a.id}`}
-                                value={`article:${a.id}`}
-                              >
-                                {a.name} · {formatMoney(a.salePrice)}
-                              </SelectItem>
-                            ))}
-                          </SelectGroup>
-                        ) : null}
-                        {recipes.length > 0 ? (
-                          <SelectGroup>
-                            <SelectLabel>Recetas</SelectLabel>
-                            {recipes.map((r) => (
-                              <SelectItem
-                                key={`recipe:${r.id}`}
-                                value={`recipe:${r.id}`}
-                              >
-                                {r.name} · {formatMoney(r.salePrice)}
-                              </SelectItem>
-                            ))}
-                          </SelectGroup>
-                        ) : null}
-                      </SelectContent>
-                    </Select>
-                    {meta ? (
-                      <span className="text-xs text-muted-foreground">
-                        {PROMOTION_OPTION_KIND_LABEL[meta.kind]}
-                      </span>
-                    ) : null}
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="icon"
-                      disabled={disabled}
-                      className="shrink-0 text-destructive"
-                      aria-label="Quitar opción"
-                      onClick={() => removeOption(slotIndex, optIndex)}
-                    >
-                      <Trash2 className="size-4" />
-                    </Button>
-                  </div>
-                )
-              })
-            )}
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              disabled={disabled}
-              onClick={() => addOption(slotIndex)}
-            >
-              <Plus className="mr-1 size-4" />
-              Agregar opción
-            </Button>
+                      <div className="min-w-[220px] flex-1">
+                        <RootsFormSelectField
+                          label="Producto o receta"
+                          id={`${idPrefix}-opt-${opt.key}`}
+                          value={optionSelectValue(opt.kind, opt.refId)}
+                          onValueChange={(value) =>
+                            setOptionFromSelect(slotIndex, optIndex, value)
+                          }
+                          disabled={disabled}
+                          placeholder="Elegir producto o receta"
+                        >
+                          {articles.length > 0 ? (
+                            <SelectGroup>
+                              <SelectLabel>Productos</SelectLabel>
+                              {articles.map((a) => (
+                                <RootsFormSelectItem
+                                  key={`article:${a.id}`}
+                                  value={`article:${a.id}`}
+                                >
+                                  {a.name} · {formatMoney(a.salePrice)}
+                                </RootsFormSelectItem>
+                              ))}
+                            </SelectGroup>
+                          ) : null}
+                          {recipes.length > 0 ? (
+                            <SelectGroup>
+                              <SelectLabel>Recetas</SelectLabel>
+                              {recipes.map((r) => (
+                                <RootsFormSelectItem
+                                  key={`recipe:${r.id}`}
+                                  value={`recipe:${r.id}`}
+                                >
+                                  {r.name} · {formatMoney(r.salePrice)}
+                                </RootsFormSelectItem>
+                              ))}
+                            </SelectGroup>
+                          ) : null}
+                        </RootsFormSelectField>
+                      </div>
+                      {meta ? (
+                        <span
+                          className={cn(
+                            "pb-3 text-xs",
+                            rootsFormEarthTextSecondaryClass,
+                          )}
+                        >
+                          {PROMOTION_OPTION_KIND_LABEL[meta.kind]}
+                        </span>
+                      ) : null}
+                      <button
+                        type="button"
+                        disabled={disabled}
+                        className="mb-1 inline-flex size-11 shrink-0 items-center justify-center rounded-lg text-destructive transition-colors hover:bg-destructive/10 disabled:opacity-50"
+                        aria-label="Quitar opción"
+                        onClick={() => removeOption(slotIndex, optIndex)}
+                      >
+                        <Trash2 className="size-4" aria-hidden />
+                      </button>
+                    </div>
+                  )
+                })
+              )}
+              <RootsSubtleButton
+                type="button"
+                className="self-start"
+                disabled={disabled}
+                onClick={() => addOption(slotIndex)}
+              >
+                <Plus className="size-4" aria-hidden />
+                Agregar opción
+              </RootsSubtleButton>
+            </div>
           </div>
-        </div>
-      ))}
-    </div>
+        ))}
+      </div>
+    </section>
   )
 }

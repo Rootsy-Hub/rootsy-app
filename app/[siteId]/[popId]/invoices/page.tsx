@@ -7,19 +7,95 @@ import {
   testArcaInvoiceHomologacion,
   type InvoiceArcaTableRow,
 } from "@/app/[siteId]/[popId]/invoices/actions"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { Button } from "@/components/ui/button"
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Textarea } from "@/components/ui/textarea"
+  formatInvoiceCbteFch,
+  invoiceMoneyFormatter,
+  invoiceRegimenLabel,
+  invoiceStatusLabel,
+} from "@/app/[siteId]/[popId]/invoices/invoiceConstants"
+import { InvoiceComposeDialog } from "@/app/[siteId]/[popId]/invoices/InvoiceComposeDialog"
+import {
+  defaultInvoiceComposeFormState,
+  invoiceComposeFormToFormData,
+  type InvoiceComposeFormState,
+} from "@/app/[siteId]/[popId]/invoices/invoiceComposeFormState"
+import {
+  defaultInvoicesFilters,
+  type InvoicesAppliedFilters,
+} from "@/app/[siteId]/[popId]/invoices/invoiceFormState"
+import { InvoicesFiltersDialog } from "@/app/[siteId]/[popId]/invoices/InvoicesFiltersDialog"
+import {
+  InvoiceStatusToolbarFilter,
+  invoiceStatusFilterToQuery,
+  resolveInvoiceStatusFilterId,
+} from "@/app/[siteId]/[popId]/invoices/InvoiceStatusToolbarFilter"
+import {
+  InvoiceTableCaeCell,
+  InvoiceTableDateCell,
+  InvoiceTableExpandCell,
+  InvoiceTableExpandedDetailRow,
+  InvoiceTableNumberCell,
+  InvoiceTableReceptorCell,
+  InvoiceTableStatusCell,
+  InvoiceTableTotalCell,
+  InvoiceTableTypeCell,
+} from "@/app/[siteId]/[popId]/invoices/invoicesTableCells"
+import {
+  invoiceTableCaeColumnClass,
+  invoiceTableDateColumnClass,
+  invoiceTableExpandColumnClass,
+  invoiceTableHeaderClass,
+  invoiceTableNumberColumnClass,
+  invoiceTableReceptorColumnClass,
+  invoiceTableStatusColumnClass,
+  invoiceTableTotalColumnClass,
+  invoiceTableTypeColumnClass,
+} from "@/app/[siteId]/[popId]/invoices/invoicesTableLayout"
+import {
+  INVOICE_TABLE_PAGE_SIZES,
+  mergeInvoicesWorkspaceUrl,
+  parseInvoicesWorkspaceUrl,
+} from "@/app/[siteId]/[popId]/invoices/workspaceUrl"
+import { buildPaginationItems } from "@/app/[siteId]/[popId]/layout/layoutPreviewPagination"
+import { DataWorkspaceListActiveFiltersBar } from "@/components/data-workspace/DataWorkspaceListActiveFiltersBar"
+import { DataWorkspaceListFilterChip } from "@/components/data-workspace/DataWorkspaceListFilterChip"
+import {
+  DataWorkspaceListFiltersDialogTrigger,
+  DataWorkspaceListSearchField,
+} from "@/components/data-workspace/DataWorkspaceListFilterFields"
+import { DataWorkspaceListPaginationFooter } from "@/components/data-workspace/DataWorkspaceListPaginationFooter"
+import { DataWorkspaceListTableShell } from "@/components/data-workspace/DataWorkspaceListTableShell"
+import {
+  DataWorkspaceListTableFrame,
+  DataWorkspaceTableEmptyMascot,
+} from "@/components/data-workspace/DataWorkspaceListTablePrimitives"
+import {
+  workspaceTableLayoutClassName,
+  workspaceTableNatureBodyRowClassNames,
+  workspaceTableStaticRowClass,
+} from "@/components/data-workspace/dataWorkspaceListStyles"
+import {
+  dataWorkspaceListFiltersBarClass,
+  dataWorkspaceListFiltersBarInnerClass,
+  dataWorkspaceListFiltersBarRowClass,
+  dataWorkspaceListFiltersGridClass,
+  dataWorkspaceListFiltersPanelClass,
+  dataWorkspaceListFiltersPanelLastClass,
+  workspaceTableLayoutBodyRowClass,
+  workspaceTableLayoutListBodyScopeClass,
+  workspaceTableLayoutListSurfaceClass,
+  workspaceTableNatureEarthOrganicScopeClass,
+} from "@/components/data-workspace/dataWorkspaceTablesLayout"
+import {
+  WorkspaceTableHead,
+  WorkspaceTableHeader,
+  WorkspaceTableHeaderRow,
+} from "@/components/data-workspace/WorkspaceTableHeader"
+import { WorkspaceTableSkeletonRows } from "@/components/data-workspace/WorkspaceTableSkeleton"
+import { invoicesSkeletonColumns } from "@/components/data-workspace/workspaceTableSkeletonPresets"
+import { DataWorkspaceLayout } from "@/components/layouts/DataWorkspaceLayout"
+import { DataWorkspaceHeaderIconButton } from "@/components/layouts/DataWorkspaceHeaderIconButton"
+import { Button } from "@/components/ui/button"
 import {
   Sheet,
   SheetContent,
@@ -27,140 +103,84 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet"
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { useAuth } from "@/context/AuthContextSupabase"
+import { TableBody, TableRow } from "@/components/ui/table"
+import { usePopWorkspace } from "@/context/PopWorkspaceContext"
 import withAuth from "@/hoc/withAuth"
-import { popMenuHref } from "@/lib/popRoutes"
 import { cn } from "@/lib/utils"
 import {
-  ArrowLeft,
   CheckCircle2,
-  ChevronDown,
-  ChevronRight,
-  FileText,
-  Leaf,
-  Maximize2,
-  Minimize2,
   Plus,
   Sparkles,
-  Wifi,
-  WifiOff,
 } from "lucide-react"
-import Link from "next/link"
-import { useParams, useRouter } from "next/navigation"
+import {
+  useParams,
+  usePathname,
+  useRouter,
+  useSearchParams,
+} from "next/navigation"
 import {
   Fragment,
   useCallback,
   useEffect,
+  useId,
+  useMemo,
   useRef,
   useState,
   type FormEvent,
 } from "react"
 
-const fmt = new Intl.NumberFormat("es-AR", {
-  style: "currency",
-  currency: "ARS",
-  minimumFractionDigits: 2,
-})
-
-function formatCbteFch(s: string) {
-  if (!s) return "—"
-  if (/^\d{8}$/.test(s)) {
-    const y = s.slice(0, 4)
-    const m = s.slice(4, 6)
-    const d = s.slice(6, 8)
-    return `${d}/${m}/${y}`
-  }
-  const d = new Date(s)
-  if (!Number.isNaN(d.getTime())) {
-    return new Intl.DateTimeFormat("es-AR", { dateStyle: "short" }).format(d)
-  }
-  return s
-}
-
-const REGIMEN_LABEL: Record<string, string> = {
-  fe_general: "FE general",
-  fce_mipyme: "FCE MiPyME",
-}
-
-function regimenLabel(r: string) {
-  return REGIMEN_LABEL[r] ?? r
-}
-
-const STATUS_LABEL: Record<string, string> = {
-  draft: "Borrador",
-  pending_afip: "Pendiente AFIP",
-  authorized: "Autorizada",
-  rejected: "Rechazada",
-  cancelled: "Anulada",
-}
-
-function statusLabel(s: string) {
-  return STATUS_LABEL[s] ?? s
-}
-
-function statusPillClass(s: string) {
-  if (s === "authorized") {
-    return "border-emerald-500/35 bg-emerald-50 text-emerald-900"
-  }
-  if (s === "rejected" || s === "cancelled") {
-    return "border-border bg-muted text-muted-foreground"
-  }
-  if (s === "pending_afip") {
-    return "border-sky-500/35 bg-sky-50 text-sky-900"
-  }
-  return "border-amber-500/35 bg-amber-50 text-amber-950"
-}
-
-function jsonPretty(v: unknown): string {
-  try {
-    return JSON.stringify(v ?? {}, null, 2)
-  } catch {
-    return String(v)
-  }
-}
-
-function shortId(id: string | null) {
-  if (!id) return "—"
-  return id.length > 10 ? `${id.slice(0, 8)}…` : id
-}
-
 function InvoicesPage() {
   const router = useRouter()
   const routerRef = useRef(router)
   routerRef.current = router
+  const pathname = usePathname()
+  const searchParams = useSearchParams()
   const params = useParams()
-  const { user } = useAuth()
   const siteId = typeof params?.siteId === "string" ? params.siteId : ""
   const popId = typeof params?.popId === "string" ? params.popId : undefined
 
-  const [popName, setPopName] = useState("")
+  const ws = useMemo(
+    () => parseInvoicesWorkspaceUrl(searchParams),
+    [searchParams],
+  )
+  const searchInputId = useId()
+  const filtersButtonId = useId()
+  const pageSizeLabelId = useId()
+
+  const { bootstrap, loading: bootstrapLoading } = usePopWorkspace()
+
   const [invoices, setInvoices] = useState<InvoiceArcaTableRow[]>([])
   const [formCtx, setFormCtx] = useState<Awaited<
     ReturnType<typeof getInvoiceFormContext>
   > | null>(null)
+  const [totalCount, setTotalCount] = useState(0)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [canCreate, setCanCreate] = useState(false)
   const [expandedId, setExpandedId] = useState<string | null>(null)
-  const [isOnline, setIsOnline] = useState(true)
-  const [isFullscreen, setIsFullscreen] = useState(false)
+
+  const [searchInput, setSearchInput] = useState(ws.q)
+  const [filtersModalOpen, setFiltersModalOpen] = useState(false)
+  const [draftFilters, setDraftFilters] = useState<InvoicesAppliedFilters>(
+    defaultInvoicesFilters(),
+  )
+  const searchInputRef = useRef<HTMLInputElement>(null)
+
+  const composeIdPrefix = "invoice-compose"
 
   const [composeOpen, setComposeOpen] = useState(false)
-  const [composeTab, setComposeTab] = useState<"caja" | "homologacion">("caja")
+  const [composeForm, setComposeForm] = useState<InvoiceComposeFormState>(
+    defaultInvoiceComposeFormState(),
+  )
   const [composeBanner, setComposeBanner] = useState<string | null>(null)
   const [composeDebugFecae, setComposeDebugFecae] = useState<string | null>(
     null,
   )
-  const [cashBusy, setCashBusy] = useState(false)
-  const [testBusy, setTestBusy] = useState(false)
+  const [composeSaving, setComposeSaving] = useState(false)
+  const [crtFile, setCrtFile] = useState<File | null>(null)
+  const [keyFile, setKeyFile] = useState<File | null>(null)
+  const crtInputRef = useRef<HTMLInputElement>(null)
+  const keyInputRef = useRef<HTMLInputElement>(null)
   const [issuedHighlight, setIssuedHighlight] = useState<{
     mode: "homologacion" | "guardada"
     cae: string
@@ -171,31 +191,51 @@ function InvoicesPage() {
     invoiceId?: string
   } | null>(null)
 
-  const load = useCallback(async () => {
-    if (!popId || !siteId) return
+  const pushWs = useCallback(
+    (patch: Parameters<typeof mergeInvoicesWorkspaceUrl>[1]) => {
+      const next = mergeInvoicesWorkspaceUrl(searchParams, patch)
+      router.replace(`${pathname}?${next.toString()}`)
+    },
+    [pathname, router, searchParams],
+  )
+
+  const activeStatusFilterId = useMemo(
+    () => resolveInvoiceStatusFilterId(ws.status),
+    [ws.status],
+  )
+
+  const loadTable = useCallback(async () => {
+    if (!popId) return
+    setLoading(true)
     const [res, ctx] = await Promise.all([
-      getPopInvoicesArcaTable(popId),
+      getPopInvoicesArcaTable(popId, {
+        q: ws.q,
+        page: ws.page,
+        pageSize: ws.pageSize,
+        status: ws.status,
+        regimen: ws.regimen,
+      }),
       getInvoiceFormContext(popId),
     ])
+    setLoading(false)
     if (!res.success) {
       setError(res.error || "Error")
-      setInvoices([])
-      setPopName(res.popName ?? "")
-      setFormCtx(null)
-      if (res.redirect) {
-        setTimeout(() => routerRef.current.push(res.redirect!), 1200)
-      }
+      setInvoices(res.invoices)
+      setTotalCount(res.totalCount)
+      setCanCreate(res.canCreate)
+      if (res.redirect) routerRef.current.replace(res.redirect)
       return
     }
-    setInvoices(res.invoices)
-    setPopName(res.popName)
     setError(null)
-    if (ctx.success) {
-      setFormCtx(ctx)
-    } else {
-      setFormCtx(null)
-    }
-  }, [popId, siteId])
+    setInvoices(res.invoices)
+    setTotalCount(res.totalCount)
+    setCanCreate(res.canCreate)
+    if (ctx.success) setFormCtx(ctx)
+  }, [popId, ws])
+
+  useEffect(() => {
+    void loadTable()
+  }, [loadTable])
 
   useEffect(() => {
     if (!composeOpen || !popId) return
@@ -210,87 +250,109 @@ function InvoicesPage() {
   }, [composeOpen, popId])
 
   useEffect(() => {
-    if (!popId || !siteId) {
-      setLoading(false)
-      setError("Punto de venta no encontrado")
-      return
-    }
-    let cancelled = false
-    ;(async () => {
-      setLoading(true)
-      await load()
-      if (!cancelled) setLoading(false)
-    })()
-    return () => {
-      cancelled = true
-    }
-  }, [load, popId, siteId])
+    setSearchInput(ws.q)
+  }, [ws.q])
 
-  const toggleFullscreen = useCallback(async () => {
-    if (typeof document === "undefined") return
-    try {
-      if (!document.fullscreenElement) {
-        await document.documentElement.requestFullscreen()
-        setIsFullscreen(true)
-      } else {
-        await document.exitFullscreen()
-        setIsFullscreen(false)
+  useEffect(() => {
+    const t = window.setTimeout(() => {
+      const next = searchInput.trim()
+      if (next === ws.q.trim()) return
+      pushWs({ q: next, page: 1 })
+    }, 400)
+    return () => window.clearTimeout(t)
+  }, [searchInput, ws.q, pushWs])
+
+  useEffect(() => {
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key !== "/" || e.metaKey || e.ctrlKey || e.altKey) return
+      const target = e.target
+      if (!(target instanceof HTMLElement)) return
+      if (
+        target.tagName === "INPUT" ||
+        target.tagName === "TEXTAREA" ||
+        target.tagName === "SELECT" ||
+        target.isContentEditable
+      ) {
+        return
       }
-    } catch {
-      setIsFullscreen(Boolean(document.fullscreenElement))
+      e.preventDefault()
+      searchInputRef.current?.focus()
     }
+    document.addEventListener("keydown", onKeyDown)
+    return () => document.removeEventListener("keydown", onKeyDown)
   }, [])
 
-  useEffect(() => {
-    const onFs = () => setIsFullscreen(Boolean(document.fullscreenElement))
-    document.addEventListener("fullscreenchange", onFs)
-    return () => document.removeEventListener("fullscreenchange", onFs)
-  }, [])
+  const totalPages = Math.max(1, Math.ceil(totalCount / ws.pageSize))
+  const rangeStart =
+    totalCount === 0 ? 0 : (ws.page - 1) * ws.pageSize + 1
+  const rangeEnd = Math.min(ws.page * ws.pageSize, totalCount)
+  const skeletonRowCount = Math.min(12, Math.max(5, ws.pageSize))
+  const paginationItems = useMemo(
+    () => buildPaginationItems(totalPages, ws.page),
+    [totalPages, ws.page],
+  )
 
-  useEffect(() => {
-    setIsOnline(navigator.onLine)
-    const up = () => setIsOnline(true)
-    const down = () => setIsOnline(false)
-    window.addEventListener("online", up)
-    window.addEventListener("offline", down)
-    return () => {
-      window.removeEventListener("online", up)
-      window.removeEventListener("offline", down)
-    }
-  }, [])
+  const modalFiltersActiveCount = ws.regimen ? 1 : 0
+  const hasFilterChips =
+    ws.q.trim() !== "" || ws.status !== "" || ws.regimen !== ""
+  const activeFilterCount = useMemo(() => {
+    let count = 0
+    if (ws.q.trim()) count++
+    if (ws.status) count++
+    if (ws.regimen) count++
+    return count
+  }, [ws.q, ws.status, ws.regimen])
 
-  const headerUserName =
-    (typeof user?.user_metadata?.full_name === "string" &&
-      user.user_metadata.full_name.trim()) ||
-    user?.email?.split("@")[0] ||
-    "Usuario"
-  const userAvatarSrc =
-    user?.user_metadata?.avatar_url ||
-    `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(user?.email || "u")}`
+  const resultsSummary = useMemo(() => {
+    if (loading && totalCount === 0) return "…"
+    if (totalCount === 0) return "Sin resultados"
+    const noun = totalCount === 1 ? "comprobante" : "comprobantes"
+    return `${totalCount.toLocaleString("es-AR")} ${noun}`
+  }, [loading, totalCount])
 
-  const popLogoSrc = `https://api.dicebear.com/7.x/shapes/svg?seed=${encodeURIComponent(popId || "pop")}&backgroundColor=e8f5ef`
+  const clearAllFilters = useCallback(() => {
+    setSearchInput("")
+    pushWs({ q: "", status: "", regimen: "", page: 1 })
+    searchInputRef.current?.focus()
+  }, [pushWs])
 
-  const canEmit =
-    formCtx?.success === true && formCtx.canCreateInvoice === true
+  const canEmit = formCtx?.success === true && formCtx.canCreateInvoice === true
 
   const hasOpenCashSession =
-    formCtx?.success === true &&
-    formCtx.cashSession != null
+    formCtx?.success === true && formCtx.cashSession != null
 
   const cashEmitReady =
     hasOpenCashSession &&
     Boolean(formCtx?.cashSession?.hasCertificates) &&
     formCtx?.cashSession?.ptoVta != null
 
-  const submitHomolog = async (e: FormEvent) => {
+  const submitCompose = async (e: FormEvent) => {
     e.preventDefault()
-    if (!popId) return
-    setTestBusy(true)
+    if (!popId || composeSaving) return
+
+    if (composeForm.tab === "homologacion") {
+      if (!crtFile || !keyFile) {
+        setComposeBanner("Subí certificado y clave para homologación.")
+        return
+      }
+      if (!composeForm.ptoVta.trim()) {
+        setComposeBanner("Indicá el punto de venta.")
+        return
+      }
+    }
+
+    setComposeSaving(true)
     setComposeBanner(null)
     setComposeDebugFecae(null)
-    const fd = new FormData(e.target as HTMLFormElement)
-    const res = await testArcaInvoiceHomologacion(popId, fd)
-    setTestBusy(false)
+    const fd = invoiceComposeFormToFormData(composeForm, {
+      crt: crtFile,
+      key: keyFile,
+    })
+    const res =
+      composeForm.tab === "homologacion"
+        ? await testArcaInvoiceHomologacion(popId, fd)
+        : await createArcaInvoiceWithOpenCashRegister(popId, fd)
+    setComposeSaving(false)
     if (!res.success) {
       setComposeBanner(res.error)
       setComposeDebugFecae(
@@ -300,45 +362,42 @@ function InvoicesPage() {
     }
     setComposeOpen(false)
     setIssuedHighlight({
-      mode: "homologacion",
+      mode: composeForm.tab === "homologacion" ? "homologacion" : "guardada",
       cae: res.cae,
       caeFchVto: res.caeFchVto,
       cbteNro: res.cbteNro,
       ptoVta: res.ptoVta,
       impTotal: res.impTotal,
+      invoiceId:
+        composeForm.tab === "caja" && "invoiceId" in res
+          ? res.invoiceId
+          : undefined,
     })
-    await load()
+    if (composeForm.tab === "caja" && "invoiceId" in res) {
+      setExpandedId(res.invoiceId)
+    }
+    await loadTable()
   }
 
-  const submitCash = async (e: FormEvent) => {
-    e.preventDefault()
-    if (!popId) return
-    setCashBusy(true)
+  const finalizeComposeClose = () => {
+    setComposeForm(defaultInvoiceComposeFormState())
     setComposeBanner(null)
     setComposeDebugFecae(null)
-    const fd = new FormData(e.target as HTMLFormElement)
-    const res = await createArcaInvoiceWithOpenCashRegister(popId, fd)
-    setCashBusy(false)
-    if (!res.success) {
-      setComposeBanner(res.error)
-      setComposeDebugFecae(
-        "debugFecaeSoap" in res ? res.debugFecaeSoap ?? null : null,
-      )
-      return
-    }
-    setComposeOpen(false)
-    setIssuedHighlight({
-      mode: "guardada",
-      cae: res.cae,
-      caeFchVto: res.caeFchVto,
-      cbteNro: res.cbteNro,
-      ptoVta: res.ptoVta,
-      impTotal: res.impTotal,
-      invoiceId: res.invoiceId,
-    })
-    setExpandedId(res.invoiceId)
-    await load()
+    setComposeSaving(false)
+    setCrtFile(null)
+    setKeyFile(null)
+    if (crtInputRef.current) crtInputRef.current.value = ""
+    if (keyInputRef.current) keyInputRef.current.value = ""
   }
+
+  const composeConfirmDisabled =
+    composeSaving ||
+    (composeForm.tab === "caja"
+      ? !cashEmitReady || !canEmit
+      : !crtFile ||
+        !keyFile ||
+        !composeForm.ptoVta.trim() ||
+        !composeForm.importeTotal.trim())
 
   if (!popId || !siteId) {
     return (
@@ -348,721 +407,362 @@ function InvoicesPage() {
     )
   }
 
+  const listLoading = bootstrapLoading || loading
+
+  const openCompose = () => {
+    setComposeBanner(null)
+    setComposeDebugFecae(null)
+    setComposeOpen(true)
+  }
+
   return (
-    <div className="rootsy-app-light relative min-h-screen overflow-hidden bg-background text-foreground">
-      <div
-        className="pointer-events-none absolute inset-0 motion-reduce:opacity-50"
-        aria-hidden
+    <>
+      <DataWorkspaceLayout
+        siteId={siteId}
+        popId={popId}
+        popName={bootstrap?.popName ?? ""}
+        title="Facturas"
+        headerVariant="dark"
+        contentFlush
+        sidebarCollapsible={false}
+        loading={listLoading}
+        userName={bootstrap?.userFullName}
+        userAvatarSrc={bootstrap?.userImageUrl ?? undefined}
+        userRoleLabel={bootstrap?.roleLabel ?? undefined}
+        pillLabel="ARCA / AFIP"
+        mainClassName="rootsy-nature-palette min-h-0 overflow-hidden"
+        headerActions={
+          canCreate ? (
+            <DataWorkspaceHeaderIconButton
+              label="Nueva factura"
+              headerVariant="dark"
+              primary
+              onClick={openCompose}
+            >
+              <Plus className="size-5" aria-hidden />
+            </DataWorkspaceHeaderIconButton>
+          ) : null
+        }
       >
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_50%_at_50%_-20%,oklch(0.75_0.12_155/0.35),transparent),radial-gradient(ellipse_60%_40%_at_100%_50%,oklch(0.85_0.08_140/0.2),transparent)]" />
-        <div className="absolute inset-0 bg-[linear-gradient(oklch(0.92_0.02_130/0.35)_1px,transparent_1px),linear-gradient(90deg,oklch(0.92_0.02_130/0.35)_1px,transparent_1px)] bg-size-[48px_48px] opacity-40" />
-      </div>
-
-      <div className="relative z-10 flex min-h-screen flex-col">
-        <header className="border-b border-rootsy-hairline bg-card/90 shadow-sm backdrop-blur-xl">
-          <div className="grid h-18 grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-4 px-4">
-            <div className="flex min-w-0 items-center gap-3">
-              <Link
-                href={popMenuHref(siteId, popId)}
-                className="group inline-flex size-10 items-center justify-center rounded-xl border border-foreground/10 bg-secondary text-foreground/70 transition-all hover:border-primary/25 hover:bg-muted hover:text-foreground"
-                aria-label="Volver al menú"
-              >
-                <ArrowLeft className="size-5 transition-transform group-hover:-translate-x-0.5" />
-              </Link>
-              <div className="h-6 w-px bg-border" />
-              <div className="flex min-w-0 items-center gap-2.5">
-                <div className="size-8 overflow-hidden rounded-lg ring-1 ring-border">
-                  <img
-                    src={popLogoSrc}
-                    alt=""
-                    className="size-full object-cover"
-                  />
-                </div>
-                <span className="truncate text-sm font-semibold text-foreground/90">
-                  {popName || (loading ? "…" : "—")}
-                </span>
-              </div>
-            </div>
-
-            <div className="flex items-center gap-2">
-              <h1 className="flex items-center gap-2 text-[1.65rem] font-black tracking-tight text-foreground">
-                <span className="inline-flex size-9 items-center justify-center rounded-xl bg-primary/15 text-primary">
-                  <FileText className="size-5" aria-hidden />
-                </span>
-                Facturas
-              </h1>
-              <div
-                className={cn(
-                  "inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-widest",
-                  isOnline
-                    ? "border-primary/30 bg-primary/10 text-forest"
-                    : "border-destructive/30 bg-destructive/10 text-destructive",
-                )}
-              >
-                {isOnline ? (
-                  <Wifi className="size-3" aria-hidden />
-                ) : (
-                  <WifiOff className="size-3" aria-hidden />
-                )}
-                {isOnline ? "Online" : "Offline"}
-              </div>
-            </div>
-
-            <div className="flex shrink-0 items-center justify-end gap-2">
-              {canEmit ? (
-                <Button
-                  type="button"
-                  size="sm"
-                  className="h-9 gap-1.5 rounded-xl bg-primary text-primary-foreground shadow-sm hover:bg-primary/90"
-                  onClick={() => {
-                    setComposeBanner(null)
-                    setComposeDebugFecae(null)
-                    setComposeOpen(true)
-                  }}
-                >
-                  <Plus className="size-4" aria-hidden />
-                  <span className="hidden sm:inline">Nueva factura</span>
-                </Button>
-              ) : null}
-              <button
-                type="button"
-                onClick={() => void toggleFullscreen()}
-                className="group inline-flex size-9 items-center justify-center rounded-xl text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-                aria-label={
-                  isFullscreen
-                    ? "Salir de pantalla completa"
-                    : "Pantalla completa"
-                }
-              >
-                {isFullscreen ? (
-                  <Minimize2 className="size-4.5" />
-                ) : (
-                  <Maximize2 className="size-4.5" />
-                )}
-              </button>
-              <div className="h-6 w-px bg-border" />
-              <div className="flex items-center gap-3">
-                <div className="relative">
-                  <Avatar className="size-10 ring-1 ring-border">
-                    <AvatarImage src={userAvatarSrc} alt="" />
-                    <AvatarFallback className="bg-primary/10 text-xs text-primary">
-                      {headerUserName.slice(0, 2).toUpperCase()}
-                    </AvatarFallback>
-                  </Avatar>
-                  <div className="absolute -right-0.5 -bottom-0.5 size-2.5 rounded-full border-2 border-card bg-primary" />
-                </div>
-                <div className="hidden min-w-0 flex-col leading-tight sm:flex">
-                  <span className="truncate text-sm font-semibold text-foreground/90">
-                    {headerUserName}
-                  </span>
-                  <span className="flex items-center gap-1 text-[10px] font-semibold uppercase tracking-wider text-meadow">
-                    <Leaf className="size-3" aria-hidden />
-                    ARCA / AFIP
-                  </span>
-                </div>
-              </div>
-            </div>
-          </div>
-        </header>
-
-        <main className="relative z-10 mx-auto w-full max-w-6xl flex-1 px-4 py-8 sm:px-6">
-          {loading ? (
-            <p className="text-sm text-muted-foreground">
-              Cargando comprobantes…
-            </p>
-          ) : error ? (
+        <div className="relative flex min-h-0 w-full flex-1 flex-col">
+          {error ? (
             <div
               role="alert"
-              className="rounded-2xl border border-destructive/25 bg-destructive/5 px-4 py-3 text-sm text-destructive"
+              className="relative shrink-0 border-b border-destructive/25 bg-destructive/10 px-4 py-3 text-sm text-destructive"
             >
               {error}
             </div>
-          ) : (
-            <div className="space-y-6">
-              <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
-                <div>
-                  <h2 className="text-lg font-semibold text-foreground">
-                    Comprobantes electrónicos
-                  </h2>
-                  <p className="max-w-xl text-sm text-muted-foreground">
-                    Facturas emitidas vía ARCA / AFIP para este punto de venta.
-                    Expandí una fila para ver detalle, importes y payloads.
-                  </p>
-                </div>
-                <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                  <span className="rounded-full bg-muted px-3 py-1 font-medium text-foreground/80">
-                    {invoices.length}{" "}
-                    {invoices.length === 1 ? "comprobante" : "comprobantes"}
-                  </span>
-                </div>
-              </div>
+          ) : null}
 
-              <div className="overflow-hidden rounded-2xl border border-border bg-card/95 shadow-md shadow-primary/5 backdrop-blur-sm">
-                <div className="flex items-center gap-2 border-b border-border px-4 py-3">
-                  <FileText className="size-4 text-primary" aria-hidden />
-                  <span className="text-sm font-semibold text-foreground">
-                    Listado
-                  </span>
-                  <span className="text-xs text-muted-foreground">
-                    {invoices.length} facturas
-                  </span>
-                </div>
-
-                <div className="overflow-x-auto">
-                  <Table>
-                    <TableHeader>
-                      <TableRow className="border-border bg-muted/40 hover:bg-muted/40">
-                        <TableHead className="w-10" />
-                        <TableHead className="font-semibold text-foreground">
-                          Tipo
-                        </TableHead>
-                        <TableHead className="font-semibold text-foreground">
-                          Fecha
-                        </TableHead>
-                        <TableHead className="font-semibold text-foreground">
-                          Pto. / Nº
-                        </TableHead>
-                        <TableHead className="font-semibold text-foreground">
-                          Receptor
-                        </TableHead>
-                        <TableHead className="text-right font-semibold text-foreground">
-                          Total
-                        </TableHead>
-                        <TableHead className="font-semibold text-foreground">
-                          CAE
-                        </TableHead>
-                        <TableHead className="font-semibold text-foreground">
-                          Estado
-                        </TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {invoices.length === 0 ? (
-                        <TableRow className="border-border">
-                          <TableCell
-                            colSpan={8}
-                            className="py-10 text-center text-muted-foreground"
-                          >
-                            No hay comprobantes ARCA registrados en este punto.
-                          </TableCell>
-                        </TableRow>
-                      ) : (
-                        invoices.map((inv) => {
-                          const open = expandedId === inv.id
-                          const justIssued =
-                            issuedHighlight?.invoiceId === inv.id
-                          return (
-                            <Fragment key={inv.id}>
-                              <TableRow
-                                className={cn(
-                                  "border-border transition-[box-shadow,background-color]",
-                                  justIssued
-                                    ? "bg-primary/8 shadow-[inset_0_0_0_2px_oklch(0.55_0.15_155/0.45)]"
-                                    : open
-                                      ? "bg-muted/50"
-                                      : "hover:bg-muted/30",
-                                )}
-                              >
-                                <TableCell className="align-middle">
-                                  <Button
-                                    type="button"
-                                    variant="ghost"
-                                    size="icon"
-                                    className="size-8 text-muted-foreground hover:bg-muted hover:text-foreground"
-                                    aria-expanded={open}
-                                    aria-label={
-                                      open
-                                        ? "Ocultar detalle del comprobante"
-                                        : "Ver detalle del comprobante"
-                                    }
-                                    onClick={() =>
-                                      setExpandedId((id) =>
-                                        id === inv.id ? null : inv.id,
-                                      )
-                                    }
-                                  >
-                                    {open ? (
-                                      <ChevronDown className="size-4" />
-                                    ) : (
-                                      <ChevronRight className="size-4" />
-                                    )}
-                                  </Button>
-                                </TableCell>
-                                <TableCell className="max-w-[140px] text-sm text-foreground">
-                                  <span className="font-medium">
-                                    {inv.tipoLabel}
-                                  </span>
-                                  <span className="mt-0.5 block text-[10px] text-muted-foreground">
-                                    Cbte. {inv.arcaCbteTipo}
-                                  </span>
-                                </TableCell>
-                                <TableCell className="text-sm tabular-nums text-foreground">
-                                  {formatCbteFch(inv.cbteFch)}
-                                </TableCell>
-                                <TableCell className="text-sm tabular-nums text-foreground/90">
-                                  {inv.ptoVta} — {inv.cbteNro}
-                                </TableCell>
-                                <TableCell className="max-w-[180px] truncate text-sm text-foreground/90">
-                                  {inv.receptorRazonSocial || "—"}
-                                </TableCell>
-                                <TableCell className="text-right text-sm font-semibold font-numeric tabular-nums text-primary">
-                                  {fmt.format(inv.impTotal)}
-                                </TableCell>
-                                <TableCell className="max-w-[100px] truncate text-xs text-muted-foreground">
-                                  {inv.cae ?? "—"}
-                                </TableCell>
-                                <TableCell>
-                                  <span
-                                    className={cn(
-                                      "inline-flex rounded-md border px-2 py-0.5 text-xs font-medium",
-                                      statusPillClass(inv.status),
-                                    )}
-                                  >
-                                    {statusLabel(inv.status)}
-                                  </span>
-                                </TableCell>
-                              </TableRow>
-                              {open ? (
-                                <TableRow className="border-border bg-muted/25 hover:bg-muted/30">
-                                  <TableCell colSpan={8} className="p-0">
-                                    <div className="space-y-4 px-4 py-4 sm:px-6">
-                                      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-                                        <div className="rounded-lg border border-border bg-card px-3 py-2">
-                                          <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-                                            Régimen
-                                          </p>
-                                          <p className="text-sm font-medium text-foreground">
-                                            {regimenLabel(inv.arcaRegimen)}
-                                          </p>
-                                        </div>
-                                        <div className="rounded-lg border border-border bg-card px-3 py-2">
-                                          <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-                                            Venta (id)
-                                          </p>
-                                          <p
-                                            className="text-sm font-medium text-foreground"
-                                            title={inv.saleId ?? undefined}
-                                          >
-                                            {shortId(inv.saleId)}
-                                          </p>
-                                        </div>
-                                        <div className="rounded-lg border border-border bg-card px-3 py-2">
-                                          <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-                                            Doc. receptor
-                                          </p>
-                                          <p className="text-sm font-medium tabular-nums text-foreground">
-                                            {inv.docTipo != null
-                                              ? `Tipo ${inv.docTipo}`
-                                              : "—"}{" "}
-                                            {inv.docNro || ""}
-                                          </p>
-                                        </div>
-                                        <div className="rounded-lg border border-border bg-card px-3 py-2">
-                                          <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-                                            Moneda / cotiz.
-                                          </p>
-                                          <p className="text-sm font-medium text-foreground">
-                                            {inv.monId}{" "}
-                                            <span className="tabular-nums">
-                                              {inv.monCotiz}
-                                            </span>
-                                          </p>
-                                        </div>
-                                      </div>
-
-                                      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-                                        <div className="rounded-lg border border-border bg-card px-3 py-2">
-                                          <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-                                            Neto
-                                          </p>
-                                          <p className="text-sm font-medium tabular-nums text-foreground">
-                                            {fmt.format(inv.impNeto)}
-                                          </p>
-                                        </div>
-                                        <div className="rounded-lg border border-border bg-card px-3 py-2">
-                                          <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-                                            IVA
-                                          </p>
-                                          <p className="text-sm font-medium tabular-nums text-foreground">
-                                            {fmt.format(inv.impIva)}
-                                          </p>
-                                        </div>
-                                        <div className="rounded-lg border border-border bg-card px-3 py-2">
-                                          <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-                                            Tributos
-                                          </p>
-                                          <p className="text-sm font-medium tabular-nums text-foreground">
-                                            {fmt.format(inv.impTrib)}
-                                          </p>
-                                        </div>
-                                        <div className="rounded-lg border border-border bg-card px-3 py-2">
-                                          <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-                                            Vto. CAE
-                                          </p>
-                                          <p className="text-sm font-medium tabular-nums text-foreground">
-                                            {inv.caeFchVto
-                                              ? formatCbteFch(inv.caeFchVto)
-                                              : "—"}
-                                          </p>
-                                        </div>
-                                      </div>
-
-                                      {inv.arcaResultado || inv.arcaObservaciones ? (
-                                        <div className="rounded-lg border border-border bg-muted/40 px-3 py-2">
-                                          <p className="mb-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-                                            Resultado AFIP
-                                          </p>
-                                          {inv.arcaResultado ? (
-                                            <p className="text-sm text-foreground">
-                                              {inv.arcaResultado}
-                                            </p>
-                                          ) : null}
-                                          {inv.arcaObservaciones ? (
-                                            <p className="mt-1 whitespace-pre-wrap text-sm text-muted-foreground">
-                                              {inv.arcaObservaciones}
-                                            </p>
-                                          ) : null}
-                                        </div>
-                                      ) : null}
-
-                                      <div className="grid gap-3 lg:grid-cols-2">
-                                        <div>
-                                          <p className="mb-1 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                                            Payload solicitud
-                                          </p>
-                                          <pre className="max-h-48 overflow-auto rounded-lg border border-border bg-muted/60 p-3 text-[10px] leading-relaxed text-foreground/80">
-                                            {jsonPretty(inv.payloadRequest)}
-                                          </pre>
-                                        </div>
-                                        <div>
-                                          <p className="mb-1 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                                            Payload respuesta
-                                          </p>
-                                          <pre className="max-h-48 overflow-auto rounded-lg border border-border bg-muted/60 p-3 text-[10px] leading-relaxed text-foreground/80">
-                                            {jsonPretty(inv.payloadResponse)}
-                                          </pre>
-                                        </div>
-                                      </div>
-                                    </div>
-                                  </TableCell>
-                                </TableRow>
-                              ) : null}
-                            </Fragment>
-                          )
+          <div className="relative flex min-h-0 flex-1 flex-col">
+            <div
+              className={dataWorkspaceListFiltersBarClass}
+              role="toolbar"
+              aria-label="Filtros del listado"
+            >
+              <div
+                className={cn(
+                  dataWorkspaceListFiltersBarInnerClass,
+                  dataWorkspaceListFiltersBarRowClass,
+                )}
+              >
+                <div className={dataWorkspaceListFiltersGridClass}>
+                  <div className={dataWorkspaceListFiltersPanelClass}>
+                    <InvoiceStatusToolbarFilter
+                      value={activeStatusFilterId}
+                      onChange={(id) =>
+                        pushWs({
+                          status: invoiceStatusFilterToQuery(id),
+                          page: 1,
                         })
-                      )}
-                    </TableBody>
-                  </Table>
+                      }
+                    />
+                  </div>
+
+                  <div className={dataWorkspaceListFiltersPanelClass}>
+                    <DataWorkspaceListFiltersDialogTrigger
+                      id={filtersButtonId}
+                      placeholder="Régimen"
+                      activeCount={modalFiltersActiveCount}
+                      expanded={filtersModalOpen}
+                      onClick={() => {
+                        setDraftFilters({ regimen: ws.regimen })
+                        setFiltersModalOpen(true)
+                      }}
+                    />
+                  </div>
+
+                  <div className={dataWorkspaceListFiltersPanelLastClass}>
+                    <DataWorkspaceListSearchField
+                      id={searchInputId}
+                      inputRef={searchInputRef}
+                      value={searchInput}
+                      onChange={(e) => setSearchInput(e.target.value)}
+                      onClear={() => {
+                        setSearchInput("")
+                        searchInputRef.current?.focus()
+                      }}
+                      placeholder="Receptor, CAE, nº comprobante… ( / )"
+                      resultsSummary={resultsSummary}
+                    />
+                  </div>
                 </div>
               </div>
             </div>
-          )}
-        </main>
-      </div>
 
-      <Dialog
+            <DataWorkspaceListTableShell
+              variant="flush"
+              className={cn(
+                workspaceTableNatureEarthOrganicScopeClass,
+                workspaceTableLayoutListBodyScopeClass,
+                workspaceTableLayoutListSurfaceClass,
+              )}
+              activeFiltersBar={
+                hasFilterChips ? (
+                  <DataWorkspaceListActiveFiltersBar
+                    activeCount={activeFilterCount}
+                    onClearAll={clearAllFilters}
+                  >
+                    {ws.q.trim() ? (
+                      <DataWorkspaceListFilterChip
+                        label={`Buscar: «${ws.q.trim()}»`}
+                        onRemove={() => pushWs({ q: "", page: 1 })}
+                        removeAriaLabel="Quitar búsqueda"
+                      />
+                    ) : null}
+                    {ws.status ? (
+                      <DataWorkspaceListFilterChip
+                        label={`Estado: ${invoiceStatusLabel(ws.status)}`}
+                        onRemove={() => pushWs({ status: "", page: 1 })}
+                        removeAriaLabel="Quitar filtro de estado"
+                      />
+                    ) : null}
+                    {ws.regimen ? (
+                      <DataWorkspaceListFilterChip
+                        label={`Régimen: ${invoiceRegimenLabel(ws.regimen)}`}
+                        onRemove={() => pushWs({ regimen: "", page: 1 })}
+                        removeAriaLabel="Quitar filtro de régimen"
+                      />
+                    ) : null}
+                  </DataWorkspaceListActiveFiltersBar>
+                ) : null
+              }
+              overlay={
+                !loading && totalCount === 0 ? (
+                  <DataWorkspaceTableEmptyMascot />
+                ) : null
+              }
+              footer={
+                <DataWorkspaceListPaginationFooter
+                  variant="dark"
+                  listFetching={loading}
+                  totalCount={totalCount}
+                  rangeStart={rangeStart}
+                  rangeEnd={rangeEnd}
+                  currentPage={ws.page}
+                  totalPages={totalPages}
+                  pageSize={ws.pageSize}
+                  pageSizeOptions={INVOICE_TABLE_PAGE_SIZES}
+                  paginationItems={paginationItems}
+                  onPageChange={(p) => pushWs({ page: p })}
+                  onPageSizeChange={(ps) =>
+                    pushWs({
+                      pageSize: ps as typeof ws.pageSize,
+                      page: 1,
+                    })
+                  }
+                  pageSizeLabelId={pageSizeLabelId}
+                />
+              }
+            >
+              <DataWorkspaceListTableFrame
+                className={workspaceTableLayoutListSurfaceClass}
+              >
+                <table
+                  className={cn(workspaceTableLayoutClassName, "min-w-[64rem]")}
+                  aria-busy={loading}
+                >
+                  <WorkspaceTableHeader>
+                    <WorkspaceTableHeaderRow>
+                      <WorkspaceTableHead
+                        tone="nature"
+                        className={invoiceTableHeaderClass(
+                          invoiceTableExpandColumnClass,
+                        )}
+                        srOnly
+                      >
+                        Detalle
+                      </WorkspaceTableHead>
+                      <WorkspaceTableHead
+                        tone="nature"
+                        className={invoiceTableHeaderClass(
+                          invoiceTableTypeColumnClass,
+                        )}
+                      >
+                        Tipo
+                      </WorkspaceTableHead>
+                      <WorkspaceTableHead
+                        tone="nature"
+                        className={invoiceTableHeaderClass(
+                          invoiceTableDateColumnClass,
+                        )}
+                      >
+                        Fecha
+                      </WorkspaceTableHead>
+                      <WorkspaceTableHead
+                        tone="nature"
+                        className={invoiceTableHeaderClass(
+                          invoiceTableNumberColumnClass,
+                        )}
+                      >
+                        Pto. / Nº
+                      </WorkspaceTableHead>
+                      <WorkspaceTableHead
+                        tone="nature"
+                        className={invoiceTableHeaderClass(
+                          invoiceTableReceptorColumnClass,
+                        )}
+                      >
+                        Receptor
+                      </WorkspaceTableHead>
+                      <WorkspaceTableHead
+                        tone="nature"
+                        className={invoiceTableHeaderClass(
+                          invoiceTableTotalColumnClass,
+                          "text-right",
+                        )}
+                      >
+                        Total
+                      </WorkspaceTableHead>
+                      <WorkspaceTableHead
+                        tone="nature"
+                        className={invoiceTableHeaderClass(
+                          invoiceTableCaeColumnClass,
+                        )}
+                      >
+                        CAE
+                      </WorkspaceTableHead>
+                      <WorkspaceTableHead
+                        tone="nature"
+                        className={invoiceTableHeaderClass(
+                          invoiceTableStatusColumnClass,
+                        )}
+                      >
+                        Estado
+                      </WorkspaceTableHead>
+                    </WorkspaceTableHeaderRow>
+                  </WorkspaceTableHeader>
+                  <TableBody>
+                    {loading ? (
+                      <WorkspaceTableSkeletonRows
+                        rowCount={skeletonRowCount}
+                        rowKeyPrefix="invoices-sk"
+                        columns={invoicesSkeletonColumns()}
+                        tone="nature"
+                      />
+                    ) : totalCount === 0 ? null : (
+                      invoices.map((inv, index) => {
+                        const open = expandedId === inv.id
+                        const justIssued = issuedHighlight?.invoiceId === inv.id
+                        return (
+                          <Fragment key={inv.id}>
+                            <TableRow
+                              className={cn(
+                                workspaceTableLayoutBodyRowClass,
+                                workspaceTableNatureBodyRowClassNames(index, {
+                                  noHover: true,
+                                  selected: justIssued,
+                                }),
+                                open &&
+                                  !justIssued &&
+                                  "bg-[var(--wt-surface-hover)] hover:bg-[var(--wt-surface-hover)]",
+                              )}
+                            >
+                              <InvoiceTableExpandCell
+                                open={open}
+                                onToggle={() =>
+                                  setExpandedId((id) =>
+                                    id === inv.id ? null : inv.id,
+                                  )
+                                }
+                              />
+                              <InvoiceTableTypeCell row={inv} />
+                              <InvoiceTableDateCell row={inv} />
+                              <InvoiceTableNumberCell row={inv} />
+                              <InvoiceTableReceptorCell row={inv} />
+                              <InvoiceTableTotalCell row={inv} />
+                              <InvoiceTableCaeCell row={inv} />
+                              <InvoiceTableStatusCell row={inv} />
+                            </TableRow>
+                            {open ? (
+                              <TableRow className={workspaceTableStaticRowClass}>
+                                <InvoiceTableExpandedDetailRow row={inv} />
+                              </TableRow>
+                            ) : null}
+                          </Fragment>
+                        )
+                      })
+                    )}
+                  </TableBody>
+                </table>
+              </DataWorkspaceListTableFrame>
+            </DataWorkspaceListTableShell>
+          </div>
+        </div>
+      </DataWorkspaceLayout>
+
+      <InvoicesFiltersDialog
+        open={filtersModalOpen}
+        onOpenChange={setFiltersModalOpen}
+        draft={draftFilters}
+        onDraftChange={setDraftFilters}
+        onApply={() => {
+          pushWs({ regimen: draftFilters.regimen, page: 1 })
+          setFiltersModalOpen(false)
+        }}
+      />
+
+      <InvoiceComposeDialog
         open={composeOpen}
-        onOpenChange={(o) => {
-          setComposeOpen(o)
-          if (!o) {
+        onOpenChange={(open) => {
+          setComposeOpen(open)
+          if (!open) {
             setComposeBanner(null)
             setComposeDebugFecae(null)
           }
         }}
-      >
-        <DialogContent className="max-h-[min(90vh,720px)] gap-0 overflow-hidden border-border bg-card p-0 sm:max-w-lg">
-          <DialogHeader className="border-b border-border px-6 py-4 text-left">
-            <DialogTitle className="text-lg font-semibold tracking-tight">
-              Nueva factura ARCA
-            </DialogTitle>
-            <DialogDescription className="text-sm text-muted-foreground">
-              Factura B consumidor final. Elegí si emitís con la caja abierta o
-              una prueba en homologación sin guardar.
-            </DialogDescription>
-          </DialogHeader>
-
-          <div className="max-h-[min(70vh,560px)] overflow-y-auto px-6 py-4">
-            {composeBanner ? (
-              <div
-                role="alert"
-                className="mb-4 rounded-xl border border-destructive/30 bg-destructive/5 px-3 py-2 text-sm text-destructive"
-              >
-                <p>{composeBanner}</p>
-                {composeDebugFecae ? (
-                  <details className="mt-3 border-t border-destructive/20 pt-2 text-foreground">
-                    <summary className="cursor-pointer text-xs font-medium text-destructive/90">
-                      Detalle técnico (copiar para soporte)
-                    </summary>
-                    <pre className="mt-2 max-h-52 overflow-auto whitespace-pre-wrap break-all rounded-lg border border-border bg-muted/60 p-2 text-[11px] leading-snug text-foreground">
-                      {composeDebugFecae}
-                    </pre>
-                  </details>
-                ) : null}
-              </div>
-            ) : null}
-
-            <Tabs
-              value={composeTab}
-              onValueChange={(v) => {
-                setComposeTab(v === "homologacion" ? "homologacion" : "caja")
-                setComposeBanner(null)
-                setComposeDebugFecae(null)
-              }}
-            >
-              <TabsList className="grid w-full grid-cols-2 rounded-xl bg-muted/80 p-1">
-                <TabsTrigger
-                  value="caja"
-                  className="rounded-lg text-xs font-semibold sm:text-sm"
-                >
-                  Con caja abierta
-                </TabsTrigger>
-                <TabsTrigger
-                  value="homologacion"
-                  className="rounded-lg text-xs font-semibold sm:text-sm"
-                >
-                  Prueba homologación
-                </TabsTrigger>
-              </TabsList>
-
-              <TabsContent value="caja" className="mt-4 space-y-4">
-                {formCtx?.success && formCtx.cashSession ? (
-                  <div className="rounded-xl border border-border bg-muted/40 px-3 py-2.5 text-sm">
-                    <p className="font-medium text-foreground">
-                      {formCtx.cashSession.cashRegisterName || "Caja"}
-                    </p>
-                    <p className="mt-1 text-xs text-muted-foreground">
-                      Punto de venta AFIP:{" "}
-                      <span className="tabular-nums text-foreground">
-                        {formCtx.cashSession.ptoVta ?? "—"}
-                      </span>
-                    </p>
-                  </div>
-                ) : null}
-
-                {formCtx?.success && !hasOpenCashSession ? (
-                  <div
-                    className="rounded-xl border border-amber-500/35 bg-amber-50/80 px-3 py-2.5 text-sm text-amber-950 dark:bg-amber-950/20 dark:text-amber-100"
-                    role="status"
-                  >
-                    <p className="font-medium">No hay sesión de caja abierta</p>
-                    <p className="mt-1 text-xs opacity-90">
-                      Abrí una sesión en Cajas para este punto de venta. Si acabás
-                      de abrirla, esperá un momento o cerrá y volvé a abrir este
-                      modal.
-                    </p>
-                  </div>
-                ) : null}
-
-                {hasOpenCashSession && !cashEmitReady ? (
-                  <div
-                    className="rounded-xl border border-amber-500/35 bg-amber-50/80 px-3 py-2.5 text-sm text-amber-950 dark:bg-amber-950/20 dark:text-amber-100"
-                    role="status"
-                  >
-                    <p className="font-medium">Falta configuración ARCA en la caja</p>
-                    <p className="mt-1 text-xs opacity-90">
-                      {!formCtx?.cashSession?.hasCertificates
-                        ? "Cargá certificado y clave ARCA en el almacenamiento seguro (editar caja). "
-                        : null}
-                      {formCtx?.cashSession?.ptoVta == null
-                        ? "Definí el punto de venta AFIP en la configuración de la caja."
-                        : null}
-                    </p>
-                  </div>
-                ) : null}
-
-                {formCtx?.success && !canEmit ? (
-                  <div
-                    className="rounded-xl border border-border bg-muted/50 px-3 py-2.5 text-sm text-muted-foreground"
-                    role="status"
-                  >
-                    No tenés permiso para emitir facturas en este punto de venta.
-                  </div>
-                ) : null}
-
-                <form className="space-y-3" onSubmit={submitCash}>
-                  <div className="space-y-1.5">
-                    <Label htmlFor="cash-importe">Importe total (ARS)</Label>
-                    <Input
-                      id="cash-importe"
-                      name="importeTotal"
-                      type="text"
-                      inputMode="decimal"
-                      placeholder="Ej. 1210"
-                      required
-                      className="rounded-xl"
-                    />
-                  </div>
-                  <div className="grid gap-3 sm:grid-cols-2">
-                    <div className="space-y-1.5">
-                      <Label htmlFor="cash-docTipo">Tipo doc. receptor</Label>
-                      <Input
-                        id="cash-docTipo"
-                        name="docTipo"
-                        type="number"
-                        defaultValue={99}
-                        min={0}
-                        className="rounded-xl font-numeric tabular-nums"
-                      />
-                    </div>
-                    <div className="space-y-1.5">
-                      <Label htmlFor="cash-docNro">Nº documento</Label>
-                      <Input
-                        id="cash-docNro"
-                        name="docNro"
-                        type="text"
-                        defaultValue="0"
-                        className="rounded-xl font-numeric tabular-nums"
-                      />
-                    </div>
-                  </div>
-                  <div className="space-y-1.5">
-                    <Label htmlFor="cash-razon">Razón social receptor</Label>
-                    <Textarea
-                      id="cash-razon"
-                      name="receptorRazonSocial"
-                      rows={2}
-                      defaultValue="Consumidor Final"
-                      className="min-h-[72px] resize-y rounded-xl"
-                    />
-                  </div>
-                  <DialogFooter className="gap-2 pt-2 sm:justify-end">
-                    <Button
-                      type="button"
-                      variant="outline"
-                      className="rounded-xl"
-                      onClick={() => setComposeOpen(false)}
-                    >
-                      Cancelar
-                    </Button>
-                    <Button
-                      type="submit"
-                      disabled={
-                        !cashEmitReady || cashBusy || !canEmit
-                      }
-                      className="rounded-xl bg-primary"
-                    >
-                      {cashBusy ? "Emitiendo…" : "Emitir y guardar"}
-                    </Button>
-                  </DialogFooter>
-                </form>
-              </TabsContent>
-
-              <TabsContent value="homologacion" className="mt-4 space-y-4">
-                <p className="text-xs text-muted-foreground">
-                  Es un ambiente distinto al de producción: el WSAA solo acepta el
-                  certificado digital que generaste para{" "}
-                  <strong className="font-medium text-foreground">homologación</strong>{" "}
-                  (no el .crt de producción). No se guarda ningún registro en Rootsy.
-                </p>
-                <form
-                  key={composeOpen ? "homolog-open" : "homolog-closed"}
-                  className="space-y-3"
-                  onSubmit={submitHomolog}
-                >
-                  <div className="grid gap-3 sm:grid-cols-2">
-                    <div className="space-y-1.5">
-                      <Label htmlFor="h-crt">Certificado (.crt)</Label>
-                      <Input
-                        id="h-crt"
-                        name="crt"
-                        type="file"
-                        accept=".crt,.pem,text/*"
-                        required
-                        className="cursor-pointer rounded-xl text-sm file:mr-2 file:rounded-lg file:border-0 file:bg-primary/10 file:px-2 file:py-1 file:text-xs file:font-medium"
-                      />
-                    </div>
-                    <div className="space-y-1.5">
-                      <Label htmlFor="h-key">Clave privada (.key)</Label>
-                      <Input
-                        id="h-key"
-                        name="key"
-                        type="file"
-                        accept=".key,.pem,text/*"
-                        required
-                        className="cursor-pointer rounded-xl text-sm file:mr-2 file:rounded-lg file:border-0 file:bg-primary/10 file:px-2 file:py-1 file:text-xs file:font-medium"
-                      />
-                    </div>
-                  </div>
-                  <div className="space-y-1.5">
-                    <Label htmlFor="h-pto">Punto de venta</Label>
-                    <Input
-                      id="h-pto"
-                      name="ptoVta"
-                      type="number"
-                      min={0}
-                      max={99999}
-                      required
-                      className="rounded-xl font-numeric tabular-nums"
-                    />
-                  </div>
-                  <div className="space-y-1.5">
-                    <Label htmlFor="h-importe">Importe total (ARS)</Label>
-                    <Input
-                      id="h-importe"
-                      name="importeTotal"
-                      type="text"
-                      inputMode="decimal"
-                      placeholder="Ej. 1210"
-                      required
-                      className="rounded-xl"
-                    />
-                  </div>
-                  <div className="grid gap-3 sm:grid-cols-2">
-                    <div className="space-y-1.5">
-                      <Label htmlFor="h-docTipo">Tipo doc. receptor</Label>
-                      <Input
-                        id="h-docTipo"
-                        name="docTipo"
-                        type="number"
-                        defaultValue={99}
-                        min={0}
-                        className="rounded-xl font-numeric tabular-nums"
-                      />
-                    </div>
-                    <div className="space-y-1.5">
-                      <Label htmlFor="h-docNro">Nº documento</Label>
-                      <Input
-                        id="h-docNro"
-                        name="docNro"
-                        type="text"
-                        defaultValue="0"
-                        className="rounded-xl font-numeric tabular-nums"
-                      />
-                    </div>
-                  </div>
-                  <div className="space-y-1.5">
-                    <Label htmlFor="h-razon">Razón social receptor</Label>
-                    <Textarea
-                      id="h-razon"
-                      name="receptorRazonSocial"
-                      rows={2}
-                      defaultValue="Consumidor Final"
-                      className="min-h-[72px] resize-y rounded-xl"
-                    />
-                  </div>
-                  <DialogFooter className="gap-2 pt-2 sm:justify-end">
-                    <Button
-                      type="button"
-                      variant="outline"
-                      className="rounded-xl"
-                      onClick={() => setComposeOpen(false)}
-                    >
-                      Cancelar
-                    </Button>
-                    <Button
-                      type="submit"
-                      disabled={testBusy}
-                      className="rounded-xl bg-primary"
-                    >
-                      {testBusy ? "Probando…" : "Emitir prueba"}
-                    </Button>
-                  </DialogFooter>
-                </form>
-              </TabsContent>
-            </Tabs>
-          </div>
-        </DialogContent>
-      </Dialog>
+        idPrefix={composeIdPrefix}
+        form={composeForm}
+        setForm={(next) => {
+          setComposeForm((current) => {
+            const resolved =
+              typeof next === "function" ? next(current) : next
+            if (resolved.tab !== current.tab) {
+              setComposeBanner(null)
+              setComposeDebugFecae(null)
+            }
+            return resolved
+          })
+        }}
+        formCtx={formCtx}
+        canEmit={canEmit}
+        cashEmitReady={cashEmitReady}
+        hasOpenCashSession={hasOpenCashSession}
+        crtFile={crtFile}
+        onCrtFileChange={setCrtFile}
+        crtInputRef={crtInputRef}
+        keyFile={keyFile}
+        onKeyFileChange={setKeyFile}
+        keyInputRef={keyInputRef}
+        disabled={composeSaving}
+        saving={composeSaving}
+        banner={composeBanner}
+        debugFecae={composeDebugFecae}
+        confirmDisabled={composeConfirmDisabled}
+        onSubmit={submitCompose}
+        onCancel={() => setComposeOpen(false)}
+        onAfterClose={finalizeComposeClose}
+      />
 
       <Sheet
         open={issuedHighlight != null}
@@ -1142,7 +842,7 @@ function InvoicesPage() {
                       Vto. CAE
                     </p>
                     <p className="mt-0.5 text-sm font-semibold tabular-nums text-foreground">
-                      {formatCbteFch(issuedHighlight.caeFchVto)}
+                      {formatInvoiceCbteFch(issuedHighlight.caeFchVto)}
                     </p>
                   </div>
                 </div>
@@ -1152,7 +852,7 @@ function InvoicesPage() {
                     Total factura
                   </p>
                   <p className="mt-1 text-3xl font-black tabular-nums tracking-tight text-primary">
-                    {fmt.format(issuedHighlight.impTotal)}
+                    {invoiceMoneyFormatter.format(issuedHighlight.impTotal)}
                   </p>
                 </div>
               </div>
@@ -1170,7 +870,7 @@ function InvoicesPage() {
           ) : null}
         </SheetContent>
       </Sheet>
-    </div>
+    </>
   )
 }
 

@@ -1,6 +1,6 @@
 "use server"
 
-import { PROMOTION_DELETE_CONFIRM_PHRASE } from "@/app/[siteId]/[popId]/promotions/promotionConstants"
+import { promotionDeleteConfirmPhrase } from "@/app/[siteId]/[popId]/promotions/promotionConstants"
 import {
   DEFAULT_PROMOTION_TABLE_PAGE_SIZE,
   PROMOTION_TABLE_PAGE_SIZES,
@@ -1129,11 +1129,34 @@ export async function deletePopPromotion(
     if (!isUuid(promotionId)) {
       return { success: false, error: "Promoción inválida." }
     }
-    if (confirmPhrase.trim() !== PROMOTION_DELETE_CONFIRM_PHRASE) {
-      return { success: false, error: "Confirmación incorrecta." }
-    }
 
     const supabase = await createClient()
+    const { data: promotion, error: fetchError } = await supabase
+      .from("promotions")
+      .select("name")
+      .eq("id", promotionId)
+      .eq("pop_id", popId)
+      .maybeSingle()
+    if (fetchError) {
+      return {
+        success: false,
+        error: fetchError.message || "No se encontró la promoción.",
+      }
+    }
+    if (!promotion) {
+      return { success: false, error: "No se encontró la promoción." }
+    }
+
+    const expectedPhrase = promotionDeleteConfirmPhrase(
+      String(promotion.name ?? ""),
+    )
+    if (confirmPhrase.trim() !== expectedPhrase) {
+      return {
+        success: false,
+        error: `Escribí (${expectedPhrase}) para confirmar el borrado.`,
+      }
+    }
+
     const { error } = await supabase
       .from("promotions")
       .delete()

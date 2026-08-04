@@ -8,30 +8,22 @@ import {
   getPromotionCatalogOptions,
   updatePopPromotion,
   type PromotionCatalogOption,
-  type PromotionDetail,
   type PromotionTableRow,
 } from "@/app/[siteId]/[popId]/promotions/actions"
+import { PromotionDeleteDialog } from "@/app/[siteId]/[popId]/promotions/PromotionDeleteDialog"
+import { PromotionUpsertDialog } from "@/app/[siteId]/[popId]/promotions/PromotionUpsertDialog"
 import {
-  PromotionSlotEditor,
-  createEmptySlotLine,
-  slotLinesFromDetail,
-  slotLinesToInput,
-  type PromotionSlotFormLine,
-} from "@/app/[siteId]/[popId]/promotions/components/PromotionSlotEditor"
+  defaultPromotionFormState,
+  promotionFormFromDetail,
+  promotionFormToPayload,
+  type PromotionFormState,
+} from "@/app/[siteId]/[popId]/promotions/promotionFormState"
 import {
-  PROMOTION_DELETE_CONFIRM_PHRASE,
   PROMOTION_TABLE_PAGE_SIZES,
-  QUANTITY_DEAL_SLOT_LABEL,
   promotionDialogBodyClass,
   promotionDialogFooterClass,
   promotionDialogHeaderClass,
   promotionDialogSurfaceClass,
-  promotionDialogSurfaceWideClass,
-  promotionFormFieldClass,
-  promotionFormSelectContentClass,
-  promotionFormSelectItemClass,
-  promotionFormSelectTriggerClass,
-  promotionFormTextareaClass,
 } from "@/app/[siteId]/[popId]/promotions/promotionConstants"
 import {
   PromotionTypeToolbarFilter,
@@ -49,10 +41,26 @@ import {
   PromotionTableTypeCell,
 } from "@/app/[siteId]/[popId]/promotions/promotionsTableCells"
 import {
+  promotionTableActionsColumnClass,
+  promotionTableImageColumnClass,
+  promotionTableItemsColumnClass,
+  promotionTableNameColumnClass,
+  promotionTablePricingColumnClass,
+  promotionTableScheduleColumnClass,
+  promotionTableStatusColumnClass,
+  promotionTableTypeColumnClass,
+} from "@/app/[siteId]/[popId]/promotions/promotionsTableLayout"
+import {
   mergePromotionsWorkspaceUrl,
   parsePromotionsWorkspaceUrl,
 } from "@/app/[siteId]/[popId]/promotions/workspaceUrl"
 import { buildPaginationItems } from "@/app/[siteId]/[popId]/layout/layoutPreviewPagination"
+import { DataWorkspaceListActiveFiltersBar } from "@/components/data-workspace/DataWorkspaceListActiveFiltersBar"
+import { DataWorkspaceListFilterChip } from "@/components/data-workspace/DataWorkspaceListFilterChip"
+import {
+  DataWorkspaceListFiltersDialogTrigger,
+  DataWorkspaceListSearchField,
+} from "@/components/data-workspace/DataWorkspaceListFilterFields"
 import { DataWorkspaceListPaginationFooter } from "@/components/data-workspace/DataWorkspaceListPaginationFooter"
 import { DataWorkspaceListTableShell } from "@/components/data-workspace/DataWorkspaceListTableShell"
 import {
@@ -61,27 +69,34 @@ import {
   DataWorkspaceTableIconAction,
 } from "@/components/data-workspace/DataWorkspaceListTablePrimitives"
 import {
-  lightFilterChipClass,
-  lightTableThClass,
-  lightToolbarButtonClass,
-  lightToolbarControlActiveClass,
-  lightToolbarInputClass,
-  lightToolbarClearButtonClass,
-  lightToolbarPanelClass,
-  lightToolbarPanelLastClass,
-  lightToolbarShellClass,
-  selectColumnInnerClass,
-  tableRowSelectCheckboxClass,
-  toolbarBlockLabelClass,
-  workspaceDataTableClassName,
-  workspaceTableBodyRowClassNames,
-  workspaceTableHeaderRowClass,
+  workspaceTableLayoutClassName,
+  workspaceTableNatureBodyRowClassNames,
 } from "@/components/data-workspace/dataWorkspaceListStyles"
+import {
+  dataWorkspaceListFiltersBarClass,
+  dataWorkspaceListFiltersBarInnerClass,
+  dataWorkspaceListFiltersBarRowClass,
+  dataWorkspaceListFiltersGridClass,
+  dataWorkspaceListFiltersPanelClass,
+  dataWorkspaceListFiltersPanelLastClass,
+  workspaceTableLayoutActionsBodyCellClass,
+  workspaceTableLayoutBodyRowClass,
+  workspaceTableLayoutHeaderHeadClass,
+  workspaceTableLayoutImageColumnClass,
+  workspaceTableLayoutListBodyScopeClass,
+  workspaceTableLayoutListSurfaceClass,
+  workspaceTableNatureEarthOrganicScopeClass,
+} from "@/components/data-workspace/dataWorkspaceTablesLayout"
+import {
+  WorkspaceTableHead,
+  WorkspaceTableHeader,
+  WorkspaceTableHeaderRow,
+  WorkspaceTableSelectHead,
+} from "@/components/data-workspace/WorkspaceTableHeader"
 import { WorkspaceTableSkeletonRows } from "@/components/data-workspace/WorkspaceTableSkeleton"
 import { promotionsSkeletonColumns } from "@/components/data-workspace/workspaceTableSkeletonPresets"
 import { DataWorkspaceLayout } from "@/components/layouts/DataWorkspaceLayout"
 import { DataWorkspaceHeaderIconButton } from "@/components/layouts/DataWorkspaceHeaderIconButton"
-import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
 import {
@@ -92,37 +107,18 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
 import {
   TableBody,
   TableCell,
-  TableHead,
-  TableHeader,
   TableRow,
 } from "@/components/ui/table"
-import { Textarea } from "@/components/ui/textarea"
 import withAuth from "@/hoc/withAuth"
 import { usePopWorkspace } from "@/context/PopWorkspaceContext"
 import {
-  ALL_PROMOTION_WEEKDAYS,
-  PROMOTION_BENEFIT_TARGET_LABEL,
-  PROMOTION_PRICING_MODE_LABEL,
   PROMOTION_TYPE_LABEL,
-  PROMOTION_WEEKDAY_OPTIONS,
-  type PromotionBenefitTarget,
-  type PromotionPricingMode,
-  type PromotionType,
 } from "@/lib/promotionTypes"
 import { cn } from "@/lib/utils"
-import { Filter, Loader2, Pencil, Plus, Search, Trash2, X } from "lucide-react"
+import { Pencil, Plus, Trash2 } from "lucide-react"
 import {
   useParams,
   usePathname,
@@ -139,145 +135,6 @@ import {
   type FormEvent,
 } from "react"
 
-type PromotionFormState = {
-  name: string
-  description: string
-  imageUrl: string
-  promotionType: PromotionType
-  pricingMode: PromotionPricingMode
-  fixedPrice: string
-  discountMode: "porcentaje" | "fijo"
-  discountValue: string
-  buyQuantity: string
-  benefitQuantity: string
-  benefitDiscountPct: string
-  applyBenefitTo: PromotionBenefitTarget
-  autoApply: boolean
-  showInMenu: boolean
-  isActive: boolean
-  validFrom: string
-  validUntil: string
-  validTimeStart: string
-  validTimeEnd: string
-  scheduleDays: number[]
-  slots: PromotionSlotFormLine[]
-}
-
-function defaultFormState(): PromotionFormState {
-  return {
-    name: "",
-    description: "",
-    imageUrl: "",
-    promotionType: "combo",
-    pricingMode: "fixed_total",
-    fixedPrice: "",
-    discountMode: "porcentaje",
-    discountValue: "",
-    buyQuantity: "2",
-    benefitQuantity: "1",
-    benefitDiscountPct: "100",
-    applyBenefitTo: "cheapest",
-    autoApply: true,
-    showInMenu: true,
-    isActive: true,
-    validFrom: "",
-    validUntil: "",
-    validTimeStart: "",
-    validTimeEnd: "",
-    scheduleDays: [...ALL_PROMOTION_WEEKDAYS],
-    slots: [createEmptySlotLine()],
-  }
-}
-
-function formFromDetail(promotion: PromotionDetail): PromotionFormState {
-  return {
-    name: promotion.name,
-    description: promotion.description,
-    imageUrl: promotion.imageUrl ?? "",
-    promotionType: promotion.promotionType,
-    pricingMode: promotion.pricingMode,
-    fixedPrice:
-      promotion.fixedPrice != null ? String(promotion.fixedPrice) : "",
-    discountMode: promotion.discountMode ?? "porcentaje",
-    discountValue:
-      promotion.discountValue != null ? String(promotion.discountValue) : "",
-    buyQuantity:
-      promotion.buyQuantity != null ? String(promotion.buyQuantity) : "2",
-    benefitQuantity:
-      promotion.benefitQuantity != null
-        ? String(promotion.benefitQuantity)
-        : "1",
-    benefitDiscountPct:
-      promotion.benefitDiscountPct != null
-        ? String(promotion.benefitDiscountPct)
-        : "100",
-    applyBenefitTo: promotion.applyBenefitTo ?? "cheapest",
-    autoApply: promotion.autoApply,
-    showInMenu: promotion.showInMenu,
-    isActive: promotion.isActive,
-    validFrom: promotion.validFrom ?? "",
-    validUntil: promotion.validUntil ?? "",
-    validTimeStart: promotion.validTimeStart ?? "",
-    validTimeEnd: promotion.validTimeEnd ?? "",
-    scheduleDays: promotion.scheduleDays,
-    slots: slotLinesFromDetail(promotion.promotionType, promotion.slots),
-  }
-}
-
-function formToPayload(form: PromotionFormState) {
-  const slots =
-    form.promotionType === "quantity_deal"
-      ? [
-          {
-            label: QUANTITY_DEAL_SLOT_LABEL,
-            quantity: 1,
-            options: slotLinesToInput(form.slots)[0]?.options ?? [],
-          },
-        ]
-      : slotLinesToInput(form.slots)
-
-  return {
-    name: form.name,
-    description: form.description,
-    imageUrl: form.imageUrl,
-    promotionType: form.promotionType,
-    pricingMode: form.pricingMode,
-    fixedPrice:
-      form.pricingMode === "fixed_total"
-        ? Number(form.fixedPrice.replace(",", "."))
-        : null,
-    discountMode:
-      form.pricingMode === "fixed_total" ? null : form.discountMode,
-    discountValue:
-      form.pricingMode === "fixed_total"
-        ? null
-        : Number(form.discountValue.replace(",", ".")),
-    buyQuantity:
-      form.promotionType === "quantity_deal"
-        ? Number(form.buyQuantity.replace(",", "."))
-        : null,
-    benefitQuantity:
-      form.promotionType === "quantity_deal"
-        ? Number(form.benefitQuantity.replace(",", "."))
-        : null,
-    benefitDiscountPct:
-      form.promotionType === "quantity_deal"
-        ? Number(form.benefitDiscountPct.replace(",", "."))
-        : null,
-    applyBenefitTo:
-      form.promotionType === "quantity_deal" ? form.applyBenefitTo : null,
-    autoApply: form.autoApply,
-    showInMenu: form.showInMenu,
-    isActive: form.isActive,
-    validFrom: form.validFrom.trim() || null,
-    validUntil: form.validUntil.trim() || null,
-    validTimeStart: form.validTimeStart.trim() || null,
-    validTimeEnd: form.validTimeEnd.trim() || null,
-    scheduleDays: form.scheduleDays,
-    slots,
-  }
-}
-
 function PromotionsPage() {
   const params = useParams()
   const router = useRouter()
@@ -290,6 +147,7 @@ function PromotionsPage() {
     [searchParams],
   )
   const searchInputId = useId()
+  const filtersButtonId = useId()
   const pageSizeLabelId = useId()
 
   const { bootstrap, loading: bootstrapLoading } = usePopWorkspace()
@@ -326,16 +184,18 @@ function PromotionsPage() {
   )
 
   const [formOpen, setFormOpen] = useState(false)
-  const [formBusy, setFormBusy] = useState(false)
+  const [formDetailLoading, setFormDetailLoading] = useState(false)
+  const [formSaving, setFormSaving] = useState(false)
   const [formError, setFormError] = useState<string | null>(null)
   const [editingId, setEditingId] = useState<string | null>(null)
-  const [form, setForm] = useState<PromotionFormState>(defaultFormState())
+  const [form, setForm] = useState<PromotionFormState>(defaultPromotionFormState())
 
   const [deleteOpen, setDeleteOpen] = useState(false)
   const [deleteTarget, setDeleteTarget] = useState<PromotionTableRow | null>(
     null,
   )
-  const [deleteConfirm, setDeleteConfirm] = useState("")
+  const [deleteTyped, setDeleteTyped] = useState("")
+  const [deleteBanner, setDeleteBanner] = useState<string | null>(null)
   const [deleteBusy, setDeleteBusy] = useState(false)
 
   const loadTable = useCallback(async () => {
@@ -461,91 +321,84 @@ function PromotionsPage() {
 
   const openCreate = () => {
     setEditingId(null)
-    setForm(defaultFormState())
+    setForm(defaultPromotionFormState())
     setFormError(null)
     setFormOpen(true)
   }
 
   const openEdit = async (row: PromotionTableRow) => {
     setFormError(null)
-    setFormBusy(true)
+    setFormDetailLoading(true)
     setFormOpen(true)
     setEditingId(row.id)
     const res = await getPopPromotionDetail(popId, row.id)
-    setFormBusy(false)
+    setFormDetailLoading(false)
     if (!res.success) {
       setFormError(res.error)
       return
     }
-    setForm(formFromDetail(res.promotion))
+    setForm(promotionFormFromDetail(res.promotion))
   }
 
   const closeForm = () => {
-    if (formBusy) return
     setFormOpen(false)
+  }
+
+  const finalizeFormClose = () => {
     setEditingId(null)
     setFormError(null)
+    setFormDetailLoading(false)
+    setFormSaving(false)
+    setForm(defaultPromotionFormState())
   }
 
   const submitForm = async (e: FormEvent) => {
     e.preventDefault()
-    if (formBusy) return
-    setFormBusy(true)
+    if (formSaving || formDetailLoading) return
+    setFormSaving(true)
     setFormError(null)
-    const payload = formToPayload(form)
+    const payload = promotionFormToPayload(form)
     const res = editingId
       ? await updatePopPromotion(popId, editingId, payload)
       : await createPopPromotion(popId, payload)
-    setFormBusy(false)
+    setFormSaving(false)
     if (!res.success) {
       setFormError(res.error)
       return
     }
     setFormOpen(false)
-    setEditingId(null)
     await loadTable()
   }
 
-  const confirmDelete = async () => {
+  const submitDelete = async () => {
     if (!deleteTarget || deleteBusy) return
     setDeleteBusy(true)
-    const res = await deletePopPromotion(popId, deleteTarget.id, deleteConfirm)
+    setDeleteBanner(null)
+    const res = await deletePopPromotion(popId, deleteTarget.id, deleteTyped)
     setDeleteBusy(false)
     if (!res.success) {
-      setError(res.error)
+      setDeleteBanner(res.error)
       return
     }
-    setDeleteOpen(false)
-    setDeleteTarget(null)
-    setDeleteConfirm("")
+    requestCloseDelete()
     await loadTable()
   }
 
-  const toggleWeekday = (day: number) => {
-    setForm((prev) => {
-      const set = new Set(prev.scheduleDays)
-      if (set.has(day)) set.delete(day)
-      else set.add(day)
-      return { ...prev, scheduleDays: [...set].sort((a, b) => a - b) }
-    })
+  const requestCloseDelete = () => {
+    setDeleteOpen(false)
   }
 
-  const setPromotionType = (type: PromotionType) => {
-    setForm((prev) => ({
-      ...prev,
-      promotionType: type,
-      slots:
-        type === "quantity_deal"
-          ? [
-              {
-                ...createEmptySlotLine(QUANTITY_DEAL_SLOT_LABEL),
-                options: prev.slots[0]?.options ?? [],
-              },
-            ]
-          : prev.slots.length > 0 && prev.slots[0].label !== QUANTITY_DEAL_SLOT_LABEL
-            ? prev.slots
-            : [createEmptySlotLine()],
-    }))
+  const finalizeDeleteClose = () => {
+    setDeleteTarget(null)
+    setDeleteTyped("")
+    setDeleteBanner(null)
+  }
+
+  const openDelete = (row: PromotionTableRow) => {
+    setDeleteTarget(row)
+    setDeleteTyped("")
+    setDeleteBanner(null)
+    setDeleteOpen(true)
   }
 
   if (!popId || !siteId) {
@@ -570,7 +423,7 @@ function PromotionsPage() {
       userAvatarSrc={bootstrap?.userImageUrl ?? undefined}
       userRoleLabel={bootstrap?.roleLabel ?? undefined}
       pillLabel="Menú"
-      mainClassName="min-h-0 overflow-hidden"
+      mainClassName="rootsy-nature-palette min-h-0 overflow-hidden"
       headerActions={
         canCreate ? (
           <DataWorkspaceHeaderIconButton
@@ -594,204 +447,99 @@ function PromotionsPage() {
           </div>
         ) : null}
 
-        <div
-          className={lightToolbarShellClass}
-          role="toolbar"
-          aria-label="Filtros del listado"
-        >
-          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-12">
-            <PromotionTypeToolbarFilter
-              className="order-1 w-full min-w-0 md:col-span-1 xl:col-span-3"
-              value={activePromotionTypeFilterId}
-              onChange={(id) =>
-                pushWs({
-                  promotionType: promotionTypeFilterToQuery(id),
-                  page: 1,
-                })
-              }
-            />
-
+        <div className="relative flex min-h-0 flex-1 flex-col">
+          <div
+            className={dataWorkspaceListFiltersBarClass}
+            role="toolbar"
+            aria-label="Filtros del listado"
+          >
             <div
               className={cn(
-                lightToolbarPanelClass,
-                "order-2 w-full min-w-0 md:col-span-1 xl:order-2 xl:col-span-3",
+                dataWorkspaceListFiltersBarInnerClass,
+                dataWorkspaceListFiltersBarRowClass,
               )}
             >
-              <div className="mb-2 flex min-w-0 items-baseline justify-between gap-3">
-                <span className={toolbarBlockLabelClass}>Filtros</span>
-                {modalFiltersActiveCount > 0 ? (
-                  <span className="shrink-0 text-[11px] font-medium text-primary">
-                    Activo
-                  </span>
-                ) : null}
-              </div>
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                className={cn(
-                  lightToolbarButtonClass,
-                  modalFiltersActiveCount > 0 && lightToolbarControlActiveClass,
-                )}
-                aria-haspopup="dialog"
-                aria-expanded={filtersModalOpen}
-                onClick={() => {
-                  setDraftSoloActivos(ws.soloActivos)
-                  setFiltersModalOpen(true)
-                }}
-              >
-                <Filter className="size-4 shrink-0 opacity-80" aria-hidden />
-                <span className="min-w-0 flex-1 truncate text-left">
-                  {modalFiltersActiveCount > 0 ? "Refinar filtros" : "Estado"}
-                </span>
-                {modalFiltersActiveCount > 0 ? (
-                  <span
-                    className="inline-flex size-5 shrink-0 items-center justify-center rounded-full bg-primary/15 text-[10px] font-semibold tabular-nums text-primary"
-                    aria-hidden
-                  >
-                    {modalFiltersActiveCount}
-                  </span>
-                ) : null}
-              </Button>
-            </div>
+              <div className={dataWorkspaceListFiltersGridClass}>
+                <div className={dataWorkspaceListFiltersPanelClass}>
+                  <PromotionTypeToolbarFilter
+                    value={activePromotionTypeFilterId}
+                    onChange={(id) =>
+                      pushWs({
+                        promotionType: promotionTypeFilterToQuery(id),
+                        page: 1,
+                      })
+                    }
+                  />
+                </div>
 
-            <div
-              className={cn(
-                lightToolbarPanelLastClass,
-                "order-3 min-w-0 md:col-span-2 xl:order-3 xl:col-span-6",
-              )}
-            >
-              <div className="mb-2 flex min-w-0 items-baseline justify-between gap-3">
-                <label htmlFor={searchInputId} className={toolbarBlockLabelClass}>
-                  Buscar
-                </label>
-                <span
-                  className="shrink-0 text-[11px] font-medium text-muted-foreground"
-                  aria-live="polite"
-                  aria-atomic="true"
-                >
-                  {resultsSummary}
-                </span>
-              </div>
-              <div className="relative min-w-0">
-                <Search
-                  className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground"
-                  aria-hidden
-                />
-                <Input
-                  ref={searchInputRef}
-                  id={searchInputId}
-                  type="search"
-                  value={searchInput}
-                  onChange={(e) => setSearchInput(e.target.value)}
-                  placeholder="Nombre, descripción… ( / )"
-                  className={cn(
-                    lightToolbarInputClass,
-                    searchInput.trim().length > 0 && "pr-10",
-                  )}
-                  autoComplete="off"
-                  spellCheck={false}
-                  aria-label="Buscar promociones"
-                />
-                {searchInput.trim().length > 0 ? (
-                  <button
-                    type="button"
-                    aria-label="Limpiar búsqueda"
-                    className={lightToolbarClearButtonClass}
+                <div className={dataWorkspaceListFiltersPanelClass}>
+                  <DataWorkspaceListFiltersDialogTrigger
+                    id={filtersButtonId}
+                    placeholder="Estado"
+                    activeCount={modalFiltersActiveCount}
+                    expanded={filtersModalOpen}
                     onClick={() => {
+                      setDraftSoloActivos(ws.soloActivos)
+                      setFiltersModalOpen(true)
+                    }}
+                  />
+                </div>
+
+                <div className={dataWorkspaceListFiltersPanelLastClass}>
+                  <DataWorkspaceListSearchField
+                    id={searchInputId}
+                    inputRef={searchInputRef}
+                    value={searchInput}
+                    onChange={(e) => setSearchInput(e.target.value)}
+                    onClear={() => {
                       setSearchInput("")
                       searchInputRef.current?.focus()
                     }}
-                  >
-                    <X className="size-3.5" aria-hidden />
-                  </button>
-                ) : null}
+                    placeholder="Nombre, descripción… ( / )"
+                    resultsSummary={resultsSummary}
+                  />
+                </div>
               </div>
             </div>
           </div>
 
-          {hasFilterChips ? (
-            <div
-              className="border-t border-border/80 bg-card px-4 py-3"
-              role="region"
-              aria-label="Filtros activos"
-            >
-              <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
-                <p className={toolbarBlockLabelClass}>
-                  Filtros activos
-                  <span className="sr-only">: {activeFilterCount}</span>
-                  <span
-                    className="ml-1.5 inline-flex min-w-5 items-center justify-center rounded-full bg-muted px-1.5 py-0.5 text-[10px] font-semibold tabular-nums normal-case tracking-normal text-muted-foreground"
-                    aria-hidden
-                  >
-                    {activeFilterCount}
-                  </span>
-                </p>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  className="h-8 px-2.5 text-xs font-medium text-muted-foreground hover:text-foreground"
-                  onClick={clearAllFilters}
-                >
-                  Limpiar todo
-                </Button>
-              </div>
-              <div className="flex flex-wrap items-center gap-1.5">
-                {ws.q.trim() ? (
-                  <Badge variant="secondary" className={lightFilterChipClass}>
-                    <span className="truncate">Buscar: «{ws.q.trim()}»</span>
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="icon"
-                      className="size-6 shrink-0"
-                      onClick={() => pushWs({ q: "", page: 1 })}
-                      aria-label="Quitar búsqueda"
-                    >
-                      <X className="size-3" />
-                    </Button>
-                  </Badge>
-                ) : null}
-                {ws.soloActivos ? (
-                  <Badge variant="secondary" className={lightFilterChipClass}>
-                    Solo activas
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="icon"
-                      className="size-6 shrink-0"
-                      onClick={() => pushWs({ soloActivos: false, page: 1 })}
-                      aria-label="Quitar filtro solo activas"
-                    >
-                      <X className="size-3" />
-                    </Button>
-                  </Badge>
-                ) : null}
-                {ws.promotionType ? (
-                  <Badge variant="secondary" className={lightFilterChipClass}>
-                    <span className="truncate">
-                      Tipo: {PROMOTION_TYPE_LABEL[ws.promotionType]}
-                    </span>
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="icon"
-                      className="size-6 shrink-0"
-                      onClick={() => pushWs({ promotionType: "", page: 1 })}
-                      aria-label="Quitar filtro de tipo"
-                    >
-                      <X className="size-3" />
-                    </Button>
-                  </Badge>
-                ) : null}
-              </div>
-            </div>
-          ) : null}
-        </div>
-
         <DataWorkspaceListTableShell
           variant="flush"
+          className={cn(
+            workspaceTableNatureEarthOrganicScopeClass,
+            workspaceTableLayoutListBodyScopeClass,
+            workspaceTableLayoutListSurfaceClass,
+          )}
+          activeFiltersBar={
+            hasFilterChips ? (
+              <DataWorkspaceListActiveFiltersBar
+                activeCount={activeFilterCount}
+                onClearAll={clearAllFilters}
+              >
+                {ws.q.trim() ? (
+                  <DataWorkspaceListFilterChip
+                    label={`Buscar: «${ws.q.trim()}»`}
+                    onRemove={() => pushWs({ q: "", page: 1 })}
+                    removeAriaLabel="Quitar búsqueda"
+                  />
+                ) : null}
+                {ws.soloActivos ? (
+                  <DataWorkspaceListFilterChip
+                    label="Solo activas"
+                    onRemove={() => pushWs({ soloActivos: false, page: 1 })}
+                    removeAriaLabel="Quitar filtro solo activas"
+                  />
+                ) : null}
+                {ws.promotionType ? (
+                  <DataWorkspaceListFilterChip
+                    label={`Tipo: ${PROMOTION_TYPE_LABEL[ws.promotionType]}`}
+                    onRemove={() => pushWs({ promotionType: "", page: 1 })}
+                    removeAriaLabel="Quitar filtro de tipo"
+                  />
+                ) : null}
+              </DataWorkspaceListActiveFiltersBar>
+            ) : null
+          }
           overlay={
             !loading && totalCount === 0 ? (
               <DataWorkspaceTableEmptyMascot />
@@ -820,141 +568,197 @@ function PromotionsPage() {
             />
           }
         >
-          <DataWorkspaceListTableFrame>
-            <table className={workspaceDataTableClassName} aria-busy={loading}>
-            <TableHeader>
-              <TableRow className={workspaceTableHeaderRowClass}>
-                <TableHead className={cn(lightTableThClass, "w-12 !px-0 text-center")}>
-                  <div className={cn(selectColumnInnerClass, "min-h-10")}>
-                    <Checkbox
-                      className={tableRowSelectCheckboxClass}
-                      checked={
-                        allVisibleSelected
-                          ? true
-                          : someVisibleSelected
-                            ? "indeterminate"
-                            : false
-                      }
-                      onCheckedChange={(checked) => {
-                        setSelected((prev) => {
-                          const next = new Set(prev)
-                          if (checked === true) {
-                            visibleIds.forEach((id) => next.add(id))
-                          } else {
-                            visibleIds.forEach((id) => next.delete(id))
-                          }
-                          return next
-                        })
-                      }}
-                      disabled={
-                        loading || totalCount === 0 || promotions.length === 0
-                      }
-                      aria-label="Seleccionar filas visibles"
-                    />
-                  </div>
-                </TableHead>
-                <TableHead className={cn(lightTableThClass, "w-24 px-3 text-left")}>
-                  <span className="sr-only">Imagen</span>
-                </TableHead>
-                <TableHead
-                  className={cn(
-                    lightTableThClass,
-                    "w-[14rem] min-w-0 max-w-[14rem] px-3 text-left",
-                  )}
-                >
-                  Promoción
-                </TableHead>
-                <TableHead className={cn(lightTableThClass, "w-[7rem] px-3 text-left")}>
-                  Tipo
-                </TableHead>
-                <TableHead className={cn(lightTableThClass, "min-w-[9rem] px-3 text-left")}>
-                  Precio / regla
-                </TableHead>
-                <TableHead className={cn(lightTableThClass, "min-w-[10rem] px-3 text-left")}>
-                  Vigencia
-                </TableHead>
-                <TableHead className={cn(lightTableThClass, "w-[8rem] px-3 text-left")}>
-                  Ítems
-                </TableHead>
-                <TableHead className={cn(lightTableThClass, "w-[7.5rem] px-3 text-left")}>
-                  Estado
-                </TableHead>
-                {(canUpdate || canDelete) ? (
-                  <TableHead className={cn(lightTableThClass, "w-[6.5rem] px-3 text-right")}>
-                    <span className="sr-only">Acciones</span>
-                  </TableHead>
-                ) : null}
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {loading ? (
-                <WorkspaceTableSkeletonRows
-                  rowCount={skeletonRowCount}
-                  rowKeyPrefix="promotions-sk"
-                  columns={promotionsSkeletonColumns({
-                    hasActionsColumn: Boolean(canUpdate || canDelete),
-                  })}
-                />
-              ) : totalCount === 0 ? null : (
-                promotions.map((row, index) => (
-                  <TableRow
-                    key={row.id}
-                    className={workspaceTableBodyRowClassNames(index)}
+          <DataWorkspaceListTableFrame className={workspaceTableLayoutListSurfaceClass}>
+            <table
+              className={cn(workspaceTableLayoutClassName, "min-w-[80rem]")}
+              aria-busy={loading}
+            >
+              <WorkspaceTableHeader>
+                <WorkspaceTableHeaderRow>
+                  <WorkspaceTableSelectHead
+                    tone="nature"
+                    className={workspaceTableLayoutHeaderHeadClass}
+                    checked={
+                      allVisibleSelected
+                        ? true
+                        : someVisibleSelected
+                          ? "indeterminate"
+                          : false
+                    }
+                    onCheckedChange={(checked) => {
+                      setSelected((prev) => {
+                        const next = new Set(prev)
+                        if (checked === true) {
+                          visibleIds.forEach((id) => next.add(id))
+                        } else {
+                          visibleIds.forEach((id) => next.delete(id))
+                        }
+                        return next
+                      })
+                    }}
+                    disabled={
+                      loading || totalCount === 0 || promotions.length === 0
+                    }
+                    ariaLabel="Seleccionar filas visibles"
+                  />
+                  <WorkspaceTableHead
+                    tone="nature"
+                    className={cn(
+                      workspaceTableLayoutImageColumnClass,
+                      promotionTableImageColumnClass,
+                      "px-3",
+                      workspaceTableLayoutHeaderHeadClass,
+                    )}
+                    srOnly
                   >
-                    <PromotionTableSelectCell
-                      checked={selected.has(row.id)}
-                      onCheckedChange={(checked) => {
-                        setSelected((prev) => {
-                          const next = new Set(prev)
-                          if (checked) next.add(row.id)
-                          else next.delete(row.id)
-                          return next
-                        })
-                      }}
-                      label={`Seleccionar ${row.name || "promoción"}`}
-                    />
-                    <PromotionTableImageCell row={row} />
-                    <PromotionTableNameCell row={row} />
-                    <PromotionTableTypeCell row={row} />
-                    <PromotionTablePricingCell row={row} />
-                    <PromotionTableScheduleCell row={row} />
-                    <PromotionTableItemsCell row={row} />
-                    <PromotionTableStatusCell row={row} />
-                    {canUpdate || canDelete ? (
-                      <TableCell className="w-[6.5rem] px-3 py-2.5 text-right align-middle">
-                        <div className="flex items-center justify-end gap-0.5">
-                          {canUpdate ? (
-                            <DataWorkspaceTableIconAction
-                              label={`Editar ${row.name}`}
-                              icon={Pencil}
-                              onClick={() => void openEdit(row)}
-                            />
-                          ) : null}
-                          {canDelete ? (
-                            <DataWorkspaceTableIconAction
-                              label={`Eliminar ${row.name}`}
-                              variant="destructive"
-                              icon={Trash2}
-                              onClick={() => {
-                                setDeleteTarget(row)
-                                setDeleteConfirm("")
-                                setDeleteOpen(true)
-                              }}
-                            />
-                          ) : null}
-                        </div>
-                      </TableCell>
-                    ) : null}
-                  </TableRow>
-                ))
-              )}
-            </TableBody>
+                    Imagen
+                  </WorkspaceTableHead>
+                  <WorkspaceTableHead
+                    tone="nature"
+                    className={cn(
+                      promotionTableNameColumnClass,
+                      "px-3",
+                      workspaceTableLayoutHeaderHeadClass,
+                    )}
+                  >
+                    Promoción
+                  </WorkspaceTableHead>
+                  <WorkspaceTableHead
+                    tone="nature"
+                    className={cn(
+                      promotionTableTypeColumnClass,
+                      "px-3",
+                      workspaceTableLayoutHeaderHeadClass,
+                    )}
+                  >
+                    Tipo
+                  </WorkspaceTableHead>
+                  <WorkspaceTableHead
+                    tone="nature"
+                    className={cn(
+                      promotionTablePricingColumnClass,
+                      "px-3",
+                      workspaceTableLayoutHeaderHeadClass,
+                    )}
+                  >
+                    Precio / regla
+                  </WorkspaceTableHead>
+                  <WorkspaceTableHead
+                    tone="nature"
+                    className={cn(
+                      promotionTableScheduleColumnClass,
+                      "px-3",
+                      workspaceTableLayoutHeaderHeadClass,
+                    )}
+                  >
+                    Vigencia
+                  </WorkspaceTableHead>
+                  <WorkspaceTableHead
+                    tone="nature"
+                    className={cn(
+                      promotionTableItemsColumnClass,
+                      "px-3",
+                      workspaceTableLayoutHeaderHeadClass,
+                    )}
+                  >
+                    Ítems
+                  </WorkspaceTableHead>
+                  <WorkspaceTableHead
+                    tone="nature"
+                    className={cn(
+                      promotionTableStatusColumnClass,
+                      "px-3",
+                      workspaceTableLayoutHeaderHeadClass,
+                    )}
+                  >
+                    Estado
+                  </WorkspaceTableHead>
+                  {canUpdate || canDelete ? (
+                    <WorkspaceTableHead
+                      tone="nature"
+                      className={cn(
+                        promotionTableActionsColumnClass,
+                        "px-3 text-right",
+                        workspaceTableLayoutHeaderHeadClass,
+                      )}
+                      srOnly
+                    >
+                      Acciones
+                    </WorkspaceTableHead>
+                  ) : null}
+                </WorkspaceTableHeaderRow>
+              </WorkspaceTableHeader>
+              <TableBody>
+                {loading ? (
+                  <WorkspaceTableSkeletonRows
+                    rowCount={skeletonRowCount}
+                    rowKeyPrefix="promotions-sk"
+                    columns={promotionsSkeletonColumns({
+                      hasActionsColumn: Boolean(canUpdate || canDelete),
+                    })}
+                    tone="nature"
+                  />
+                ) : totalCount === 0 ? null : (
+                  promotions.map((row, index) => (
+                    <TableRow
+                      key={row.id}
+                      className={cn(
+                        workspaceTableLayoutBodyRowClass,
+                        workspaceTableNatureBodyRowClassNames(index, {
+                          selected: selected.has(row.id),
+                          noHover: true,
+                          inactive: !row.isActive,
+                        }),
+                      )}
+                    >
+                      <PromotionTableSelectCell
+                        checked={selected.has(row.id)}
+                        onCheckedChange={(checked) => {
+                          setSelected((prev) => {
+                            const next = new Set(prev)
+                            if (checked) next.add(row.id)
+                            else next.delete(row.id)
+                            return next
+                          })
+                        }}
+                        label={`Seleccionar ${row.name || "promoción"}`}
+                      />
+                      <PromotionTableImageCell row={row} />
+                      <PromotionTableNameCell row={row} />
+                      <PromotionTableTypeCell row={row} />
+                      <PromotionTablePricingCell row={row} />
+                      <PromotionTableScheduleCell row={row} />
+                      <PromotionTableItemsCell row={row} />
+                      <PromotionTableStatusCell row={row} />
+                      {canUpdate || canDelete ? (
+                        <TableCell className={workspaceTableLayoutActionsBodyCellClass}>
+                          <div className="flex items-center justify-end gap-0.5">
+                            {canUpdate ? (
+                              <DataWorkspaceTableIconAction
+                                label={`Editar ${row.name}`}
+                                icon={Pencil}
+                                onClick={() => void openEdit(row)}
+                              />
+                            ) : null}
+                            {canDelete ? (
+                              <DataWorkspaceTableIconAction
+                                label={`Eliminar ${row.name}`}
+                                variant="destructive"
+                                icon={Trash2}
+                              onClick={() => openDelete(row)}
+                              />
+                            ) : null}
+                          </div>
+                        </TableCell>
+                      ) : null}
+                    </TableRow>
+                  ))
+                )}
+              </TableBody>
             </table>
-            {!loading && totalCount === 0 ? (
-              <div className="min-h-[12rem]" aria-hidden />
-            ) : null}
           </DataWorkspaceListTableFrame>
         </DataWorkspaceListTableShell>
+        </div>
       </div>
 
       <Dialog
@@ -1010,457 +814,43 @@ function PromotionsPage() {
         </DialogContent>
       </Dialog>
 
-      <Dialog open={formOpen} onOpenChange={(o) => !o && closeForm()}>
-        <DialogContent
-          showCloseButton
-          className={promotionDialogSurfaceWideClass}
-          data-rootsy-light-shell="true"
-        >
-          <DialogHeader className={promotionDialogHeaderClass}>
-            <DialogTitle>
-              {editingId ? "Editar promoción" : "Nueva promoción"}
-            </DialogTitle>
-            <DialogDescription>
-              Combos con ítems configurables u ofertas por cantidad (2x1, etc.).
-            </DialogDescription>
-          </DialogHeader>
+      <PromotionUpsertDialog
+        open={formOpen}
+        onOpenChange={(open) => {
+          if (!open && !formSaving) closeForm()
+        }}
+        mode={editingId ? "edit" : "create"}
+        idPrefix={editingId ? "promo-edit" : "promo-create"}
+        title={editingId ? "Editar promoción" : "Nueva promoción"}
+        description="Combos con ítems configurables u ofertas por cantidad (2x1, etc.)."
+        loading={formDetailLoading}
+        saving={formSaving}
+        banner={formError}
+        onSubmit={(e) => void submitForm(e)}
+        onCancel={closeForm}
+        onAfterClose={finalizeFormClose}
+        form={form}
+        setForm={setForm}
+        catalogOptions={catalogOptions}
+        disabled={formDetailLoading || formSaving}
+      />
 
-          <form onSubmit={(e) => void submitForm(e)} className="flex min-h-0 flex-1 flex-col">
-            <div className={promotionDialogBodyClass}>
-              {formError ? (
-                <p className="mb-4 rounded-lg border border-destructive/25 bg-destructive/5 px-3 py-2 text-sm text-destructive">
-                  {formError}
-                </p>
-              ) : null}
-              {formBusy && editingId ? (
-                <div className="mb-4 flex items-center gap-2 text-sm text-muted-foreground">
-                  <Loader2 className="size-4 animate-spin" />
-                  Cargando promoción…
-                </div>
-              ) : null}
-
-              <div className="space-y-6">
-                <section className="space-y-3">
-                  <h3 className="text-sm font-semibold">General</h3>
-                  <div className="grid gap-3 sm:grid-cols-2">
-                    <div className="space-y-1.5 sm:col-span-2">
-                      <Label htmlFor="promo-name">Nombre</Label>
-                      <Input
-                        id="promo-name"
-                        required
-                        value={form.name}
-                        disabled={formBusy}
-                        className={promotionFormFieldClass}
-                        onChange={(e) =>
-                          setForm((p) => ({ ...p, name: e.target.value }))
-                        }
-                      />
-                    </div>
-                    <div className="space-y-1.5 sm:col-span-2">
-                      <Label htmlFor="promo-desc">Descripción</Label>
-                      <Textarea
-                        id="promo-desc"
-                        value={form.description}
-                        disabled={formBusy}
-                        className={promotionFormTextareaClass}
-                        rows={2}
-                        onChange={(e) =>
-                          setForm((p) => ({ ...p, description: e.target.value }))
-                        }
-                      />
-                    </div>
-                    <div className="space-y-1.5 sm:col-span-2">
-                      <Label htmlFor="promo-image">Imagen (URL)</Label>
-                      <Input
-                        id="promo-image"
-                        value={form.imageUrl}
-                        disabled={formBusy}
-                        className={promotionFormFieldClass}
-                        onChange={(e) =>
-                          setForm((p) => ({ ...p, imageUrl: e.target.value }))
-                        }
-                      />
-                    </div>
-                    <div className="space-y-1.5">
-                      <Label>Tipo</Label>
-                      <Select
-                        value={form.promotionType}
-                        disabled={formBusy}
-                        onValueChange={(v) => setPromotionType(v as PromotionType)}
-                      >
-                        <SelectTrigger className={promotionFormSelectTriggerClass}>
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent className={promotionFormSelectContentClass}>
-                          <SelectItem value="combo" className={promotionFormSelectItemClass}>
-                            Combo
-                          </SelectItem>
-                          <SelectItem
-                            value="quantity_deal"
-                            className={promotionFormSelectItemClass}
-                          >
-                            Por cantidad
-                          </SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div className="flex flex-col justify-end gap-3 sm:col-span-1">
-                      <label className="flex items-center gap-2 text-sm">
-                        <Checkbox
-                          checked={form.isActive}
-                          disabled={formBusy}
-                          onCheckedChange={(v) =>
-                            setForm((p) => ({ ...p, isActive: Boolean(v) }))
-                          }
-                        />
-                        Activa
-                      </label>
-                      <label className="flex items-center gap-2 text-sm">
-                        <Checkbox
-                          checked={form.showInMenu}
-                          disabled={formBusy}
-                          onCheckedChange={(v) =>
-                            setForm((p) => ({ ...p, showInMenu: Boolean(v) }))
-                          }
-                        />
-                        Visible en menú
-                      </label>
-                      <label className="flex items-center gap-2 text-sm">
-                        <Checkbox
-                          checked={form.autoApply}
-                          disabled={formBusy}
-                          onCheckedChange={(v) =>
-                            setForm((p) => ({ ...p, autoApply: Boolean(v) }))
-                          }
-                        />
-                        Aplicar automáticamente
-                      </label>
-                    </div>
-                  </div>
-                </section>
-
-                <section className="space-y-3">
-                  <h3 className="text-sm font-semibold">
-                    {form.promotionType === "combo"
-                      ? "Precio del combo"
-                      : "Regla por cantidad"}
-                  </h3>
-                  {form.promotionType === "combo" ? (
-                    <div className="grid gap-3 sm:grid-cols-2">
-                      <div className="space-y-1.5">
-                        <Label>Modo de precio</Label>
-                        <Select
-                          value={form.pricingMode}
-                          disabled={formBusy}
-                          onValueChange={(v) =>
-                            setForm((p) => ({
-                              ...p,
-                              pricingMode: v as PromotionPricingMode,
-                            }))
-                          }
-                        >
-                          <SelectTrigger className={promotionFormFieldClass}>
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {(
-                              Object.entries(PROMOTION_PRICING_MODE_LABEL) as [
-                                PromotionPricingMode,
-                                string,
-                              ][]
-                            ).map(([value, label]) => (
-                              <SelectItem key={value} value={value}>
-                                {label}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
-                      {form.pricingMode === "fixed_total" ? (
-                        <div className="space-y-1.5">
-                          <Label htmlFor="promo-fixed">Precio fijo total</Label>
-                          <Input
-                            id="promo-fixed"
-                            required
-                            value={form.fixedPrice}
-                            disabled={formBusy}
-                            className={promotionFormFieldClass}
-                            inputMode="decimal"
-                            onChange={(e) =>
-                              setForm((p) => ({ ...p, fixedPrice: e.target.value }))
-                            }
-                          />
-                        </div>
-                      ) : (
-                        <div className="space-y-1.5">
-                          <Label htmlFor="promo-discount">
-                            {form.pricingMode === "percent_off"
-                              ? "Porcentaje (%)"
-                              : "Monto de descuento ($)"}
-                          </Label>
-                          <Input
-                            id="promo-discount"
-                            required
-                            value={form.discountValue}
-                            disabled={formBusy}
-                            className={promotionFormFieldClass}
-                            inputMode="decimal"
-                            onChange={(e) =>
-                              setForm((p) => ({
-                                ...p,
-                                discountValue: e.target.value,
-                                discountMode:
-                                  form.pricingMode === "percent_off"
-                                    ? "porcentaje"
-                                    : "fijo",
-                              }))
-                            }
-                          />
-                        </div>
-                      )}
-                    </div>
-                  ) : (
-                    <div className="grid gap-3 sm:grid-cols-2">
-                      <div className="space-y-1.5">
-                        <Label htmlFor="promo-buy">Cantidad a comprar</Label>
-                        <Input
-                          id="promo-buy"
-                          required
-                          value={form.buyQuantity}
-                          disabled={formBusy}
-                          className={promotionFormFieldClass}
-                          inputMode="numeric"
-                          onChange={(e) =>
-                            setForm((p) => ({ ...p, buyQuantity: e.target.value }))
-                          }
-                        />
-                      </div>
-                      <div className="space-y-1.5">
-                        <Label htmlFor="promo-benefit">Unidades bonificadas</Label>
-                        <Input
-                          id="promo-benefit"
-                          required
-                          value={form.benefitQuantity}
-                          disabled={formBusy}
-                          className={promotionFormFieldClass}
-                          inputMode="numeric"
-                          onChange={(e) =>
-                            setForm((p) => ({
-                              ...p,
-                              benefitQuantity: e.target.value,
-                            }))
-                          }
-                        />
-                      </div>
-                      <div className="space-y-1.5">
-                        <Label htmlFor="promo-benefit-pct">Descuento (%)</Label>
-                        <Input
-                          id="promo-benefit-pct"
-                          required
-                          value={form.benefitDiscountPct}
-                          disabled={formBusy}
-                          className={promotionFormFieldClass}
-                          inputMode="decimal"
-                          onChange={(e) =>
-                            setForm((p) => ({
-                              ...p,
-                              benefitDiscountPct: e.target.value,
-                            }))
-                          }
-                        />
-                        <p className="text-[11px] text-muted-foreground">
-                          100% = gratis (ej. 2x1), 50% = mitad de precio.
-                        </p>
-                      </div>
-                      <div className="space-y-1.5">
-                        <Label>Aplicar beneficio a</Label>
-                        <Select
-                          value={form.applyBenefitTo}
-                          disabled={formBusy}
-                          onValueChange={(v) =>
-                            setForm((p) => ({
-                              ...p,
-                              applyBenefitTo: v as PromotionBenefitTarget,
-                            }))
-                          }
-                        >
-                          <SelectTrigger className={promotionFormFieldClass}>
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {(
-                              Object.entries(PROMOTION_BENEFIT_TARGET_LABEL) as [
-                                PromotionBenefitTarget,
-                                string,
-                              ][]
-                            ).map(([value, label]) => (
-                              <SelectItem key={value} value={value}>
-                                {label}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
-                    </div>
-                  )}
-                </section>
-
-                <section className="space-y-3">
-                  <h3 className="text-sm font-semibold">Vigencia</h3>
-                  <div className="grid gap-3 sm:grid-cols-2">
-                    <div className="space-y-1.5">
-                      <Label htmlFor="promo-from">Desde (fecha)</Label>
-                      <Input
-                        id="promo-from"
-                        type="date"
-                        value={form.validFrom}
-                        disabled={formBusy}
-                        className={promotionFormFieldClass}
-                        onChange={(e) =>
-                          setForm((p) => ({ ...p, validFrom: e.target.value }))
-                        }
-                      />
-                    </div>
-                    <div className="space-y-1.5">
-                      <Label htmlFor="promo-until">Hasta (fecha)</Label>
-                      <Input
-                        id="promo-until"
-                        type="date"
-                        value={form.validUntil}
-                        disabled={formBusy}
-                        className={promotionFormFieldClass}
-                        onChange={(e) =>
-                          setForm((p) => ({ ...p, validUntil: e.target.value }))
-                        }
-                      />
-                    </div>
-                    <div className="space-y-1.5">
-                      <Label htmlFor="promo-time-start">Hora inicio</Label>
-                      <Input
-                        id="promo-time-start"
-                        type="time"
-                        value={form.validTimeStart}
-                        disabled={formBusy}
-                        className={promotionFormFieldClass}
-                        onChange={(e) =>
-                          setForm((p) => ({
-                            ...p,
-                            validTimeStart: e.target.value,
-                          }))
-                        }
-                      />
-                    </div>
-                    <div className="space-y-1.5">
-                      <Label htmlFor="promo-time-end">Hora fin</Label>
-                      <Input
-                        id="promo-time-end"
-                        type="time"
-                        value={form.validTimeEnd}
-                        disabled={formBusy}
-                        className={promotionFormFieldClass}
-                        onChange={(e) =>
-                          setForm((p) => ({ ...p, validTimeEnd: e.target.value }))
-                        }
-                      />
-                    </div>
-                  </div>
-                  <div>
-                    <Label className="mb-2 block">Días de la semana</Label>
-                    <div className="flex flex-wrap gap-2">
-                      {PROMOTION_WEEKDAY_OPTIONS.map(({ value, label }) => (
-                        <label
-                          key={value}
-                          className={cn(
-                            "inline-flex cursor-pointer items-center gap-1.5 rounded-full border px-3 py-1 text-xs",
-                            form.scheduleDays.includes(value)
-                              ? "border-primary bg-primary/10 text-primary"
-                              : "border-border text-muted-foreground",
-                          )}
-                        >
-                          <Checkbox
-                            className="sr-only"
-                            checked={form.scheduleDays.includes(value)}
-                            disabled={formBusy}
-                            onCheckedChange={() => toggleWeekday(value)}
-                          />
-                          {label}
-                        </label>
-                      ))}
-                    </div>
-                  </div>
-                </section>
-
-                <section>
-                  <PromotionSlotEditor
-                    promotionType={form.promotionType}
-                    lines={form.slots}
-                    catalogOptions={catalogOptions}
-                    disabled={formBusy}
-                    onChange={(slots) => setForm((p) => ({ ...p, slots }))}
-                  />
-                </section>
-              </div>
-            </div>
-
-            <DialogFooter className={promotionDialogFooterClass}>
-              <Button type="button" variant="outline" disabled={formBusy} onClick={closeForm}>
-                Cancelar
-              </Button>
-              <Button type="submit" disabled={formBusy}>
-                {formBusy ? (
-                  <>
-                    <Loader2 className="mr-2 size-4 animate-spin" />
-                    Guardando…
-                  </>
-                ) : editingId ? (
-                  "Guardar cambios"
-                ) : (
-                  "Crear promoción"
-                )}
-              </Button>
-            </DialogFooter>
-          </form>
-        </DialogContent>
-      </Dialog>
-
-      <Dialog open={deleteOpen} onOpenChange={setDeleteOpen}>
-        <DialogContent
-          className={promotionDialogSurfaceClass}
-          showCloseButton
-          data-rootsy-light-shell="true"
-        >
-          <DialogHeader className={promotionDialogHeaderClass}>
-            <DialogTitle className="text-base font-semibold tracking-tight">
-              Eliminar promoción
-            </DialogTitle>
-            <DialogDescription className="text-sm leading-relaxed">
-              Esta acción no se puede deshacer. Escribí{" "}
-              <strong>{PROMOTION_DELETE_CONFIRM_PHRASE}</strong> para confirmar.
-            </DialogDescription>
-          </DialogHeader>
-          <div className={promotionDialogBodyClass}>
-            <Input
-              value={deleteConfirm}
-              onChange={(e) => setDeleteConfirm(e.target.value)}
-              placeholder={PROMOTION_DELETE_CONFIRM_PHRASE}
-              className={promotionFormFieldClass}
-            />
-          </div>
-          <DialogFooter className={promotionDialogFooterClass}>
-            <Button type="button" variant="outline" onClick={() => setDeleteOpen(false)}>
-              Cancelar
-            </Button>
-            <Button
-              type="button"
-              variant="destructive"
-              disabled={deleteBusy || deleteConfirm !== PROMOTION_DELETE_CONFIRM_PHRASE}
-              onClick={() => void confirmDelete()}
-            >
-              Eliminar
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      {deleteTarget ? (
+        <PromotionDeleteDialog
+          open={deleteOpen}
+          promotionName={deleteTarget.name}
+          confirmValue={deleteTyped}
+          banner={deleteBanner}
+          busy={deleteBusy}
+          onOpenChange={(open) => {
+            if (!open && !deleteBusy) requestCloseDelete()
+          }}
+          onClose={requestCloseDelete}
+          onAfterClose={finalizeDeleteClose}
+          onConfirmValueChange={setDeleteTyped}
+          onConfirmDelete={() => void submitDelete()}
+        />
+      ) : null}
     </DataWorkspaceLayout>
   )
 }

@@ -1,6 +1,12 @@
 "use server"
 
 import {
+  DEFAULT_INVOICE_TABLE_PAGE_SIZE,
+  INVOICE_TABLE_PAGE_SIZES,
+  isInvoiceRegimenValue,
+  isInvoiceStatusValue,
+} from "@/app/[siteId]/[popId]/invoices/invoiceConstants"
+import {
   POP_PERMS,
   permissionKeysInclude,
 } from "@/lib/popPermissionConstants"
@@ -49,6 +55,91 @@ function parseMoney(v: unknown): number {
   const n = Number(v)
   if (!Number.isFinite(n)) return 0
   return Math.round(n * 100) / 100
+}
+
+const INVOICE_ARCA_SELECT = `
+        id,
+        sale_id,
+        arca_cbte_tipo,
+        arca_regimen,
+        pto_vta,
+        cbte_nro,
+        cbte_fch,
+        doc_tipo,
+        doc_nro,
+        receptor_razon_social,
+        imp_total,
+        imp_neto,
+        imp_iva,
+        imp_trib,
+        mon_id,
+        mon_cotiz,
+        cae,
+        cae_fch_vto,
+        status,
+        arca_resultado,
+        arca_observaciones,
+        payload_request,
+        payload_response
+      `
+
+function escapeIlikePattern(q: string): string {
+  return q
+    .replace(/\\/g, "\\\\")
+    .replace(/%/g, "\\%")
+    .replace(/_/g, "\\_")
+    .replace(/,/g, " ")
+}
+
+function mapInvoiceArcaRow(
+  row: Record<string, unknown>,
+  siteId: string,
+): InvoiceArcaTableRow {
+  const cbteTipo = Number(row.arca_cbte_tipo ?? 0)
+  const opt = findSaleInvoiceTypeByArcaCbteTipo(siteId, cbteTipo)
+  const tipoLabel = opt?.label ?? `CbteTipo ${cbteTipo}`
+  const nro = row.cbte_nro
+  const cbteNroStr =
+    typeof nro === "bigint" || typeof nro === "number"
+      ? String(nro)
+      : String(nro ?? "")
+
+  return {
+    id: String(row.id),
+    saleId: row.sale_id != null ? String(row.sale_id) : null,
+    arcaCbteTipo: cbteTipo,
+    tipoLabel,
+    arcaRegimen: String(row.arca_regimen ?? "fe_general"),
+    ptoVta: Number(row.pto_vta ?? 0),
+    cbteNro: cbteNroStr,
+    cbteFch: String(row.cbte_fch ?? ""),
+    docTipo: row.doc_tipo != null ? Number(row.doc_tipo) : null,
+    docNro: String(row.doc_nro ?? ""),
+    receptorRazonSocial: String(row.receptor_razon_social ?? ""),
+    impTotal: parseMoney(row.imp_total),
+    impNeto: parseMoney(row.imp_neto),
+    impIva: parseMoney(row.imp_iva),
+    impTrib: parseMoney(row.imp_trib),
+    monId: String(row.mon_id ?? "PES"),
+    monCotiz: Number(row.mon_cotiz ?? 1),
+    cae: row.cae != null ? String(row.cae) : null,
+    caeFchVto: row.cae_fch_vto != null ? String(row.cae_fch_vto) : null,
+    status: String(row.status ?? ""),
+    arcaResultado:
+      row.arca_resultado != null ? String(row.arca_resultado) : null,
+    arcaObservaciones:
+      row.arca_observaciones != null ? String(row.arca_observaciones) : null,
+    payloadRequest: row.payload_request ?? {},
+    payloadResponse: row.payload_response ?? {},
+  }
+}
+
+export type GetPopInvoicesArcaTableInput = {
+  q?: string
+  page?: number
+  pageSize?: number
+  status?: string
+  regimen?: string
 }
 
 function normalizeCuitDigits(s: string): string {
@@ -498,11 +589,16 @@ export async function createArcaInvoiceWithOpenCashRegister(
   }
 }
 
-export async function getPopInvoicesArcaTable(popId: string): Promise<
+export async function getPopInvoicesArcaTable(
+  popId: string,
+  input: GetPopInvoicesArcaTableInput = {},
+): Promise<
   | {
       success: true
       popName: string
       invoices: InvoiceArcaTableRow[]
+      totalCount: number
+      page: number
       canCreate: boolean
       canUpdate: boolean
       canDelete: boolean
@@ -512,6 +608,8 @@ export async function getPopInvoicesArcaTable(popId: string): Promise<
       error: string
       redirect?: string
       invoices: InvoiceArcaTableRow[]
+      totalCount: number
+      page: number
       popName?: string
       canCreate: boolean
       canUpdate: boolean
@@ -520,6 +618,8 @@ export async function getPopInvoicesArcaTable(popId: string): Promise<
 > {
   const empty = {
     invoices: [] as InvoiceArcaTableRow[],
+    totalCount: 0,
+    page: 1,
     canCreate: false,
     canUpdate: false,
     canDelete: false,
@@ -567,6 +667,19 @@ export async function getPopInvoicesArcaTable(popId: string): Promise<
       POP_PERMS.INVOICES_DELETE.action,
     )
 
+    const pageSizeRaw = Number(input.pageSize)
+    const pageSize = INVOICE_TABLE_PAGE_SIZES.includes(
+      pageSizeRaw as (typeof INVOICE_TABLE_PAGE_SIZES)[number],
+    )
+      ? pageSizeRaw
+      : DEFAULT_INVOICE_TABLE_PAGE_SIZE
+    const pageRaw = Number(input.page)
+    const page =
+      Number.isFinite(pageRaw) && pageRaw >= 1 ? Math.floor(pageRaw) : 1
+    const q = input.q?.trim() ?? ""
+    const statusFilter = input.status?.trim() ?? ""
+    const regimenFilter = input.regimen?.trim() ?? ""
+
     const popRes = await getPopById(popId)
     const popName =
       popRes.success && popRes.pop ? String(popRes.pop.name ?? "") : ""
@@ -576,39 +689,36 @@ export async function getPopInvoicesArcaTable(popId: string): Promise<
         : DEFAULT_SALE_SITE_ID
 
     const supabase = await createClient()
-    const { data, error } = await supabase
+    let query = supabase
       .from("invoices_arca")
-      .select(
-        `
-        id,
-        sale_id,
-        arca_cbte_tipo,
-        arca_regimen,
-        pto_vta,
-        cbte_nro,
-        cbte_fch,
-        doc_tipo,
-        doc_nro,
-        receptor_razon_social,
-        imp_total,
-        imp_neto,
-        imp_iva,
-        imp_trib,
-        mon_id,
-        mon_cotiz,
-        cae,
-        cae_fch_vto,
-        status,
-        arca_resultado,
-        arca_observaciones,
-        payload_request,
-        payload_response
-      `,
-      )
+      .select(INVOICE_ARCA_SELECT, { count: "exact" })
       .eq("pop_id", popId)
+
+    if (statusFilter && isInvoiceStatusValue(statusFilter)) {
+      query = query.eq("status", statusFilter)
+    }
+    if (regimenFilter && isInvoiceRegimenValue(regimenFilter)) {
+      query = query.eq("arca_regimen", regimenFilter)
+    }
+    if (q) {
+      const escaped = escapeIlikePattern(q)
+      const pattern = `%${escaped}%`
+      const orParts = [
+        `receptor_razon_social.ilike.${pattern}`,
+        `cae.ilike.${pattern}`,
+        `doc_nro.ilike.${pattern}`,
+      ]
+      if (/^\d+$/.test(q)) {
+        orParts.push(`cbte_nro.eq.${q}`, `pto_vta.eq.${q}`)
+      }
+      query = query.or(orParts.join(","))
+    }
+
+    const from = (page - 1) * pageSize
+    const { data, error, count } = await query
       .order("cbte_fch", { ascending: false })
       .order("created_at", { ascending: false })
-      .limit(500)
+      .range(from, from + pageSize - 1)
 
     if (error) {
       return {
@@ -619,49 +729,17 @@ export async function getPopInvoicesArcaTable(popId: string): Promise<
       }
     }
 
-    const invoices: InvoiceArcaTableRow[] = (data || []).map((row) => {
-      const cbteTipo = Number(row.arca_cbte_tipo ?? 0)
-      const opt = findSaleInvoiceTypeByArcaCbteTipo(siteId, cbteTipo)
-      const tipoLabel = opt?.label ?? `CbteTipo ${cbteTipo}`
-      const nro = row.cbte_nro
-      const cbteNroStr =
-        typeof nro === "bigint" || typeof nro === "number"
-          ? String(nro)
-          : String(nro ?? "")
-
-      return {
-        id: String(row.id),
-        saleId: row.sale_id != null ? String(row.sale_id) : null,
-        arcaCbteTipo: cbteTipo,
-        tipoLabel,
-        arcaRegimen: String(row.arca_regimen ?? "fe_general"),
-        ptoVta: Number(row.pto_vta ?? 0),
-        cbteNro: cbteNroStr,
-        cbteFch: String(row.cbte_fch ?? ""),
-        docTipo: row.doc_tipo != null ? Number(row.doc_tipo) : null,
-        docNro: String(row.doc_nro ?? ""),
-        receptorRazonSocial: String(row.receptor_razon_social ?? ""),
-        impTotal: parseMoney(row.imp_total),
-        impNeto: parseMoney(row.imp_neto),
-        impIva: parseMoney(row.imp_iva),
-        impTrib: parseMoney(row.imp_trib),
-        monId: String(row.mon_id ?? "PES"),
-        monCotiz: Number(row.mon_cotiz ?? 1),
-        cae: row.cae != null ? String(row.cae) : null,
-        caeFchVto: row.cae_fch_vto != null ? String(row.cae_fch_vto) : null,
-        status: String(row.status ?? ""),
-        arcaResultado: row.arca_resultado != null ? String(row.arca_resultado) : null,
-        arcaObservaciones:
-          row.arca_observaciones != null ? String(row.arca_observaciones) : null,
-        payloadRequest: row.payload_request ?? {},
-        payloadResponse: row.payload_response ?? {},
-      }
-    })
+    const invoices: InvoiceArcaTableRow[] = (data || []).map((row) =>
+      mapInvoiceArcaRow(row as Record<string, unknown>, siteId),
+    )
+    const totalCount = count ?? invoices.length
 
     return {
       success: true,
       popName,
       invoices,
+      totalCount,
+      page,
       canCreate,
       canUpdate,
       canDelete,

@@ -1,3 +1,4 @@
+import "@/app/[siteId]/[popId]/library/color/rootsyNaturePalette.css"
 import { Suspense, type ReactNode } from "react"
 
 export default function RecipesLayout({ children }: { children: ReactNode }) {

@@ -2,24 +2,52 @@
 
 import type { PromotionTableRow } from "@/app/[siteId]/[popId]/promotions/actions"
 import { ArticleCatalogImagePlaceholder } from "@/app/[siteId]/[popId]/articles/ArticleCatalogImagePlaceholder"
+import {
+  promotionTableImageColumnClass,
+  promotionTableItemsColumnClass,
+  promotionTableNameColumnClass,
+  promotionTablePricingColumnClass,
+  promotionTableScheduleColumnClass,
+  promotionTableStatusColumnClass,
+  promotionTableTypeColumnClass,
+} from "@/app/[siteId]/[popId]/promotions/promotionsTableLayout"
 import { DataWorkspaceTableThumbnail } from "@/components/data-workspace/DataWorkspaceListTablePrimitives"
 import {
   selectColumnInnerClass,
-  tableRowSelectCheckboxClass,
-  tdTruncatedNameCellClass,
-  tdTruncatedTextCellClass,
+  workspaceTableNatureCheckboxClass,
+  workspaceTableNatureTextPrimaryClass,
+  workspaceTableNatureTextSecondaryClass,
 } from "@/components/data-workspace/dataWorkspaceListStyles"
-import { Badge } from "@/components/ui/badge"
+import {
+  workspaceTableLayoutBodyCellClass,
+  workspaceTableLayoutCellPrimaryTextClass,
+  workspaceTableLayoutCellSecondaryTextClass,
+  workspaceTableLayoutCellStackClass,
+  workspaceTableLayoutImageColumnClass,
+  workspaceTableLayoutSelectBodyCellClass,
+} from "@/components/data-workspace/dataWorkspaceTablesLayout"
+import { RootsNaturePill } from "@/components/rootsy-pill"
 import { Checkbox } from "@/components/ui/checkbox"
 import { PROMOTION_TYPE_LABEL } from "@/lib/promotionTypes"
 import { cn } from "@/lib/utils"
 import { TableCell } from "@/components/ui/table"
 
-const primaryClass =
-  "block min-w-0 truncate text-sm font-medium leading-snug text-foreground"
+const primaryClass = cn(
+  workspaceTableLayoutCellPrimaryTextClass,
+  workspaceTableNatureTextPrimaryClass,
+)
 
-const secondaryClass =
-  "block min-w-0 truncate text-xs leading-snug text-muted-foreground"
+const secondaryClass = cn(
+  workspaceTableLayoutCellSecondaryTextClass,
+  workspaceTableNatureTextSecondaryClass,
+)
+
+function promotionStatusMeta(row: PromotionTableRow): string | null {
+  const parts: string[] = []
+  if (row.showInMenu) parts.push("Menú")
+  if (row.autoApply) parts.push("Auto")
+  return parts.length > 0 ? parts.join(" · ") : null
+}
 
 export function PromotionTableSelectCell({
   checked,
@@ -31,10 +59,10 @@ export function PromotionTableSelectCell({
   label: string
 }) {
   return (
-    <TableCell className="w-12 !px-0 py-2.5 align-middle">
+    <TableCell className={workspaceTableLayoutSelectBodyCellClass}>
       <div className={selectColumnInnerClass}>
         <Checkbox
-          className={tableRowSelectCheckboxClass}
+          className={workspaceTableNatureCheckboxClass}
           checked={checked}
           onCheckedChange={(c) => onCheckedChange(c === true)}
           aria-label={label}
@@ -48,96 +76,137 @@ export function PromotionTableImageCell({ row }: { row: PromotionTableRow }) {
   const src = row.imageUrl?.trim()
 
   return (
-    <TableCell className="w-24 px-3 py-2.5 align-middle">
+    <TableCell
+      className={cn(
+        workspaceTableLayoutImageColumnClass,
+        promotionTableImageColumnClass,
+        workspaceTableLayoutBodyCellClass,
+      )}
+    >
       {src ? (
-        <DataWorkspaceTableThumbnail src={src} alt={row.name} size="lg" />
+        <DataWorkspaceTableThumbnail src={src} alt={row.name} size="sm" />
       ) : (
-        <ArticleCatalogImagePlaceholder size="lg" />
+        <ArticleCatalogImagePlaceholder size="sm" />
       )}
     </TableCell>
   )
 }
 
 export function PromotionTableNameCell({ row }: { row: PromotionTableRow }) {
+  const description = row.description.trim()
+  const secondary = description || null
+
   return (
-    <TableCell className={tdTruncatedNameCellClass}>
-      <div className="flex min-w-0 flex-col gap-0.5">
-        <span className={primaryClass} title={row.name || undefined}>
+    <TableCell
+      className={cn(
+        promotionTableNameColumnClass,
+        "min-w-0",
+        workspaceTableLayoutBodyCellClass,
+      )}
+    >
+      <div className={workspaceTableLayoutCellStackClass}>
+        <p className={cn(primaryClass, "truncate")} title={row.name || undefined}>
           {row.name || "—"}
-        </span>
-        {row.description.trim() ? (
-          <span className={secondaryClass} title={row.description}>
-            {row.description}
-          </span>
-        ) : null}
+        </p>
+        <p
+          className={cn(
+            secondaryClass,
+            "truncate",
+            !secondary && "invisible",
+          )}
+          title={secondary ?? undefined}
+          aria-hidden={!secondary}
+        >
+          {secondary ?? "\u00A0"}
+        </p>
       </div>
     </TableCell>
   )
 }
 
 export function PromotionTableTypeCell({ row }: { row: PromotionTableRow }) {
+  const label = PROMOTION_TYPE_LABEL[row.promotionType]
+
   return (
-    <TableCell className={tdTruncatedTextCellClass}>
-      {PROMOTION_TYPE_LABEL[row.promotionType]}
+    <TableCell
+      className={cn(promotionTableTypeColumnClass, workspaceTableLayoutBodyCellClass)}
+    >
+      <div className={workspaceTableLayoutCellStackClass}>
+        <p className={cn(primaryClass, "truncate")} title={label}>
+          {label}
+        </p>
+      </div>
     </TableCell>
   )
 }
 
 export function PromotionTablePricingCell({ row }: { row: PromotionTableRow }) {
   return (
-    <TableCell className={tdTruncatedTextCellClass}>
-      <span className="block truncate" title={row.pricingSummary}>
-        {row.pricingSummary}
-      </span>
+    <TableCell
+      className={cn(promotionTablePricingColumnClass, workspaceTableLayoutBodyCellClass)}
+    >
+      <div className={workspaceTableLayoutCellStackClass}>
+        <p className={cn(primaryClass, "truncate")} title={row.pricingSummary}>
+          {row.pricingSummary}
+        </p>
+      </div>
     </TableCell>
   )
 }
 
 export function PromotionTableScheduleCell({ row }: { row: PromotionTableRow }) {
   return (
-    <TableCell className={tdTruncatedTextCellClass}>
-      <span className="block truncate text-xs" title={row.scheduleSummary}>
-        {row.scheduleSummary}
-      </span>
+    <TableCell
+      className={cn(promotionTableScheduleColumnClass, workspaceTableLayoutBodyCellClass)}
+    >
+      <div className={workspaceTableLayoutCellStackClass}>
+        <p className={cn(secondaryClass, "truncate")} title={row.scheduleSummary}>
+          {row.scheduleSummary}
+        </p>
+      </div>
     </TableCell>
   )
 }
 
 export function PromotionTableItemsCell({ row }: { row: PromotionTableRow }) {
+  const label =
+    row.promotionType === "combo"
+      ? `${row.slotCount} ítems · ${row.optionCount} opc.`
+      : `${row.optionCount} elegibles`
+
   return (
-    <TableCell className={tdTruncatedTextCellClass}>
-      {row.promotionType === "combo"
-        ? `${row.slotCount} ítems · ${row.optionCount} opc.`
-        : `${row.optionCount} elegibles`}
+    <TableCell
+      className={cn(promotionTableItemsColumnClass, workspaceTableLayoutBodyCellClass)}
+    >
+      <div className={workspaceTableLayoutCellStackClass}>
+        <p className={cn(secondaryClass, "truncate")} title={label}>
+          {label}
+        </p>
+      </div>
     </TableCell>
   )
 }
 
 export function PromotionTableStatusCell({ row }: { row: PromotionTableRow }) {
+  const meta = promotionStatusMeta(row)
+
   return (
-    <TableCell className="w-[7.5rem] px-3 py-2.5 align-middle">
-      <div className="flex flex-wrap gap-1">
-        <Badge
-          variant="outline"
-          className={cn(
-            "font-normal",
-            row.isActive
-              ? "border-emerald-200/90 bg-emerald-50/90 text-emerald-700"
-              : "text-muted-foreground",
-          )}
+    <TableCell
+      className={cn(promotionTableStatusColumnClass, workspaceTableLayoutBodyCellClass)}
+    >
+      <div className={workspaceTableLayoutCellStackClass}>
+        <div className="flex min-h-4 min-w-0 items-center">
+          <RootsNaturePill variant={row.isActive ? "canopy" : "earthMuted"}>
+            {row.isActive ? "Activa" : "Inactiva"}
+          </RootsNaturePill>
+        </div>
+        <p
+          className={cn(secondaryClass, "truncate", !meta && "invisible")}
+          title={meta ?? undefined}
+          aria-hidden={!meta}
         >
-          {row.isActive ? "Activa" : "Inactiva"}
-        </Badge>
-        {row.showInMenu ? (
-          <Badge variant="secondary" className="font-normal">
-            Menú
-          </Badge>
-        ) : null}
-        {row.autoApply ? (
-          <Badge variant="secondary" className="font-normal">
-            Auto
-          </Badge>
-        ) : null}
+          {meta ?? "\u00A0"}
+        </p>
       </div>
     </TableCell>
   )

@@ -16,14 +16,19 @@ import {
   type RecipeIngredientOption,
   type RecipeTableRow,
 } from "@/app/[siteId]/[popId]/recipes/actions"
-import { RecipeCategoriesMenuBoard } from "@/app/[siteId]/[popId]/recipes/components/RecipeCategoriesMenuBoard"
+import { ingredientLinesFromDetail } from "@/app/[siteId]/[popId]/recipes/components/RecipeIngredientEditor"
+import { RecipeCategoriesDialog } from "@/app/[siteId]/[popId]/recipes/RecipeCategoriesDialog"
+import { RecipeDeleteDialog } from "@/app/[siteId]/[popId]/recipes/RecipeDeleteDialog"
+import { RecipesFiltersDialog } from "@/app/[siteId]/[popId]/recipes/RecipesFiltersDialog"
+import { RecipeUpsertDialog } from "@/app/[siteId]/[popId]/recipes/RecipeUpsertDialog"
 import {
-  RecipeIngredientEditor,
-  createEmptyIngredientLine,
-  ingredientLinesFromDetail,
-  ingredientLinesToInput,
-  type RecipeIngredientFormLine,
-} from "@/app/[siteId]/[popId]/recipes/components/RecipeIngredientEditor"
+  defaultRecipeFormState,
+  defaultRecipesFilters,
+  recipeFormFromDetail,
+  recipeFormToPayload,
+  type RecipeFormState,
+  type RecipesAppliedFilters,
+} from "@/app/[siteId]/[popId]/recipes/recipeFormState"
 import {
   RecipeTableCategoryCell,
   RecipeTableCostPriceCell,
@@ -35,33 +40,28 @@ import {
   RecipeTableStatusCell,
 } from "@/app/[siteId]/[popId]/recipes/recipesTableCells"
 import {
-  RECIPE_DELETE_CONFIRM_PHRASE,
-  recipeDialogBodyClass,
-  recipeDialogFooterClass,
-  recipeDialogHeaderClass,
-  recipeDialogSurfaceClass,
-  recipeDialogSurfaceWideClass,
-  recipeFormFieldClass,
-  recipeFormSelectContentClass,
-  recipeFormSelectItemClass,
-  recipeFormSelectTriggerClass,
-  recipeFormTextareaClass,
-} from "@/app/[siteId]/[popId]/recipes/recipeConstants"
+  recipeTableActionsColumnClass,
+  recipeTableCategoryColumnClass,
+  recipeTableCostColumnClass,
+  recipeTableHeaderClass,
+  recipeTableImageColumnClass,
+  recipeTableIngredientsColumnClass,
+  recipeTableNameColumnClass,
+  recipeTableSaleColumnClass,
+  recipeTableStatusColumnClass,
+} from "@/app/[siteId]/[popId]/recipes/recipesTableLayout"
 import {
   RECIPE_TABLE_PAGE_SIZES,
   mergeRecipesWorkspaceUrl,
   parseRecipesWorkspaceUrl,
 } from "@/app/[siteId]/[popId]/recipes/workspaceUrl"
 import { buildPaginationItems } from "@/app/[siteId]/[popId]/layout/layoutPreviewPagination"
+import { DataWorkspaceListActiveFiltersBar } from "@/components/data-workspace/DataWorkspaceListActiveFiltersBar"
+import { DataWorkspaceListFilterChip } from "@/components/data-workspace/DataWorkspaceListFilterChip"
 import {
-  articleDialogBodyClass,
-  articleDialogDescriptionClass,
-  articleDialogFooterClass,
-  articleDialogHeaderClass,
-  articleDialogOverlayClass,
-  articleDialogSurfaceClass,
-  articleDialogTitleClass,
-} from "@/app/[siteId]/[popId]/articles/articleConstants"
+  DataWorkspaceListFiltersDialogTrigger,
+  DataWorkspaceListSearchField,
+} from "@/components/data-workspace/DataWorkspaceListFilterFields"
 import { DataWorkspaceListPaginationFooter } from "@/components/data-workspace/DataWorkspaceListPaginationFooter"
 import { DataWorkspaceListTableShell } from "@/components/data-workspace/DataWorkspaceListTableShell"
 import {
@@ -70,67 +70,39 @@ import {
   DataWorkspaceTableIconAction,
 } from "@/components/data-workspace/DataWorkspaceListTablePrimitives"
 import {
-  lightFilterChipClass,
-  lightTableThClass,
-  lightToolbarButtonClass,
-  lightToolbarControlActiveClass,
-  lightToolbarInputClass,
-  lightToolbarClearButtonClass,
-  lightToolbarPanelClass,
-  lightToolbarPanelLastClass,
-  lightToolbarShellClass,
-  selectColumnInnerClass,
-  tableRowSelectCheckboxClass,
-  toolbarBlockLabelClass,
-  workspaceDataTableClassName,
-  workspaceTableBodyRowClassNames,
-  workspaceTableHeaderRowClass,
+  workspaceTableLayoutClassName,
+  workspaceTableNatureBodyRowClassNames,
 } from "@/components/data-workspace/dataWorkspaceListStyles"
+import {
+  dataWorkspaceListFiltersBarClass,
+  dataWorkspaceListFiltersBarInnerClass,
+  dataWorkspaceListFiltersBarRowClass,
+  dataWorkspaceListFiltersGridClass,
+  dataWorkspaceListFiltersPanelClass,
+  dataWorkspaceListFiltersPanelLastClass,
+  workspaceTableLayoutActionsBodyCellClass,
+  workspaceTableLayoutBodyRowClass,
+  workspaceTableLayoutHeaderHeadClass,
+  workspaceTableLayoutImageColumnClass,
+  workspaceTableLayoutListBodyScopeClass,
+  workspaceTableLayoutListSurfaceClass,
+  workspaceTableNatureEarthOrganicScopeClass,
+} from "@/components/data-workspace/dataWorkspaceTablesLayout"
+import {
+  WorkspaceTableHead,
+  WorkspaceTableHeader,
+  WorkspaceTableHeaderRow,
+  WorkspaceTableSelectHead,
+} from "@/components/data-workspace/WorkspaceTableHeader"
 import { WorkspaceTableSkeletonRows } from "@/components/data-workspace/WorkspaceTableSkeleton"
 import { recipesSkeletonColumns } from "@/components/data-workspace/workspaceTableSkeletonPresets"
 import { DataWorkspaceLayout } from "@/components/layouts/DataWorkspaceLayout"
 import { DataWorkspaceHeaderIconButton } from "@/components/layouts/DataWorkspaceHeaderIconButton"
-import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
-import { Checkbox } from "@/components/ui/checkbox"
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
-import {
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table"
-import { Textarea } from "@/components/ui/textarea"
+import { TableBody, TableCell, TableRow } from "@/components/ui/table"
 import withAuth from "@/hoc/withAuth"
 import { usePopWorkspace } from "@/context/PopWorkspaceContext"
 import { cn } from "@/lib/utils"
-import {
-  Filter,
-  FolderTree,
-  Loader2,
-  Pencil,
-  Plus,
-  Search,
-  Trash2,
-  X,
-} from "lucide-react"
+import { FolderTree, Pencil, Plus, Trash2 } from "lucide-react"
 import {
   useParams,
   usePathname,
@@ -147,57 +119,6 @@ import {
   type FormEvent,
 } from "react"
 
-type RecipesAppliedFilters = {
-  soloActivos: boolean
-  categoryId: string
-}
-
-const defaultRecipesFilters = (): RecipesAppliedFilters => ({
-  soloActivos: false,
-  categoryId: "",
-})
-
-type RecipeFormState = {
-  name: string
-  description: string
-  imageUrl: string
-  categoryId: string
-  salePrice: string
-  iva: string
-  isActive: boolean
-  ingredients: RecipeIngredientFormLine[]
-}
-
-function defaultFormState(): RecipeFormState {
-  return {
-    name: "",
-    description: "",
-    imageUrl: "",
-    categoryId: "",
-    salePrice: "0",
-    iva: "21",
-    isActive: true,
-    ingredients: [createEmptyIngredientLine()],
-  }
-}
-
-function formFromRow(
-  row: RecipeTableRow,
-  ingredients: RecipeIngredientFormLine[],
-): RecipeFormState {
-  return {
-    name: row.name,
-    description: row.description,
-    imageUrl: row.imageUrl ?? "",
-    categoryId: row.categoryId ?? "",
-    salePrice: String(row.salePrice),
-    iva: String(row.iva),
-    isActive: row.isActive,
-    ingredients:
-      ingredients.length > 0 ? ingredients : [createEmptyIngredientLine()],
-  }
-}
-
 function RecipesPage() {
   const params = useParams()
   const popId = String(params.popId ?? "")
@@ -210,6 +131,10 @@ function RecipesPage() {
     [searchParams],
   )
 
+  const searchInputId = useId()
+  const filtersButtonId = useId()
+  const pageSizeLabelId = useId()
+
   const { bootstrap, loading: bootstrapLoading } = usePopWorkspace()
 
   const [recipes, setRecipes] = useState<RecipeTableRow[]>([])
@@ -217,7 +142,6 @@ function RecipesPage() {
   const [totalCount, setTotalCount] = useState(0)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const pageSizeLabelId = useId()
   const [canCreate, setCanCreate] = useState(false)
   const [canUpdate, setCanUpdate] = useState(false)
   const [canDelete, setCanDelete] = useState(false)
@@ -228,21 +152,23 @@ function RecipesPage() {
   >([])
 
   const [searchInput, setSearchInput] = useState(ws.q)
-  const searchInputId = useId()
   const searchInputRef = useRef<HTMLInputElement>(null)
   const [filtersModalOpen, setFiltersModalOpen] = useState(false)
-  const [draftFilters, setDraftFilters] =
-    useState<RecipesAppliedFilters>(defaultRecipesFilters)
+  const [draftFilters, setDraftFilters] = useState<RecipesAppliedFilters>(
+    defaultRecipesFilters,
+  )
 
   const [formOpen, setFormOpen] = useState(false)
-  const [editingId, setEditingId] = useState<string | null>(null)
-  const [form, setForm] = useState<RecipeFormState>(defaultFormState)
-  const [formBusy, setFormBusy] = useState(false)
+  const [formDetailLoading, setFormDetailLoading] = useState(false)
+  const [formSaving, setFormSaving] = useState(false)
   const [formError, setFormError] = useState<string | null>(null)
+  const [editingId, setEditingId] = useState<string | null>(null)
+  const [form, setForm] = useState<RecipeFormState>(defaultRecipeFormState())
 
   const [deleteOpen, setDeleteOpen] = useState(false)
   const [deleteTarget, setDeleteTarget] = useState<RecipeTableRow | null>(null)
-  const [deleteConfirm, setDeleteConfirm] = useState("")
+  const [deleteTyped, setDeleteTyped] = useState("")
+  const [deleteBanner, setDeleteBanner] = useState<string | null>(null)
   const [deleteBusy, setDeleteBusy] = useState(false)
 
   const [categoriesOpen, setCategoriesOpen] = useState(false)
@@ -355,15 +281,15 @@ function RecipesPage() {
     [totalPages, ws.page],
   )
 
-  const hasFilterChips =
-    ws.q.trim() !== "" || ws.soloActivos || ws.categoryId.trim() !== ""
-
   const modalFiltersActiveCount = useMemo(() => {
     let count = 0
     if (ws.soloActivos) count++
     if (ws.categoryId.trim()) count++
     return count
   }, [ws.soloActivos, ws.categoryId])
+
+  const hasFilterChips =
+    ws.q.trim() !== "" || ws.soloActivos || ws.categoryId.trim() !== ""
 
   const activeFilterCount = useMemo(() => {
     let count = 0
@@ -405,24 +331,24 @@ function RecipesPage() {
 
   const openCreate = () => {
     setEditingId(null)
-    setForm(defaultFormState())
+    setForm(defaultRecipeFormState())
     setFormError(null)
     setFormOpen(true)
   }
 
   const openEdit = async (row: RecipeTableRow) => {
     setFormError(null)
-    setFormBusy(true)
+    setFormDetailLoading(true)
     setFormOpen(true)
     setEditingId(row.id)
     const res = await getPopRecipeDetail(popId, row.id)
-    setFormBusy(false)
+    setFormDetailLoading(false)
     if (!res.success) {
       setFormError(res.error)
       return
     }
     setForm(
-      formFromRow(
+      recipeFormFromDetail(
         res.recipe,
         ingredientLinesFromDetail(res.recipe.ingredients),
       ),
@@ -430,53 +356,64 @@ function RecipesPage() {
   }
 
   const closeForm = () => {
-    if (formBusy) return
     setFormOpen(false)
+  }
+
+  const finalizeFormClose = () => {
     setEditingId(null)
     setFormError(null)
+    setFormDetailLoading(false)
+    setFormSaving(false)
+    setForm(defaultRecipeFormState())
   }
 
   const submitForm = async (e: FormEvent) => {
     e.preventDefault()
-    if (formBusy) return
-    setFormBusy(true)
+    if (formSaving || formDetailLoading) return
+    setFormSaving(true)
     setFormError(null)
-    const payload = {
-      name: form.name,
-      description: form.description,
-      imageUrl: form.imageUrl,
-      categoryId: form.categoryId,
-      salePrice: Number(form.salePrice.replace(",", ".")),
-      iva: Number(form.iva.replace(",", ".")),
-      isActive: form.isActive,
-      ingredients: ingredientLinesToInput(form.ingredients),
-    }
+    const payload = recipeFormToPayload(form)
     const res = editingId
       ? await updatePopRecipe(popId, editingId, payload)
       : await createPopRecipe(popId, payload)
-    setFormBusy(false)
+    setFormSaving(false)
     if (!res.success) {
       setFormError(res.error)
       return
     }
     setFormOpen(false)
-    setEditingId(null)
     await loadTable()
   }
 
-  const confirmDelete = async () => {
+  const submitDelete = async () => {
     if (!deleteTarget || deleteBusy) return
     setDeleteBusy(true)
-    const res = await deletePopRecipe(popId, deleteTarget.id, deleteConfirm)
+    setDeleteBanner(null)
+    const res = await deletePopRecipe(popId, deleteTarget.id, deleteTyped)
     setDeleteBusy(false)
     if (!res.success) {
-      setError(res.error)
+      setDeleteBanner(res.error)
       return
     }
-    setDeleteOpen(false)
-    setDeleteTarget(null)
-    setDeleteConfirm("")
+    requestCloseDelete()
     await loadTable()
+  }
+
+  const requestCloseDelete = () => {
+    setDeleteOpen(false)
+  }
+
+  const finalizeDeleteClose = () => {
+    setDeleteTarget(null)
+    setDeleteTyped("")
+    setDeleteBanner(null)
+  }
+
+  const openDelete = (row: RecipeTableRow) => {
+    setDeleteTarget(row)
+    setDeleteTyped("")
+    setDeleteBanner(null)
+    setDeleteOpen(true)
   }
 
   const handleCreateCategory = async () => {
@@ -541,7 +478,7 @@ function RecipesPage() {
       userAvatarSrc={bootstrap?.userImageUrl ?? undefined}
       userRoleLabel={bootstrap?.roleLabel}
       pillLabel="Menú"
-      mainClassName="min-h-0 overflow-hidden"
+      mainClassName="rootsy-nature-palette min-h-0 overflow-hidden"
       headerActions={
         <>
           {canCreate ? (
@@ -578,298 +515,88 @@ function RecipesPage() {
 
         <div className="relative flex min-h-0 flex-1 flex-col">
           <div
-            className={lightToolbarShellClass}
+            className={dataWorkspaceListFiltersBarClass}
             role="toolbar"
             aria-label="Filtros del listado"
           >
-            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-12">
-              <div
-                className={cn(
-                  lightToolbarPanelClass,
-                  "order-2 w-full min-w-0 md:col-span-1 xl:order-1 xl:col-span-3",
-                )}
-              >
-                <div className="mb-2 flex min-w-0 items-baseline justify-between gap-3">
-                  <span className={toolbarBlockLabelClass}>Filtros</span>
-                  {modalFiltersActiveCount > 0 ? (
-                    <span className="shrink-0 text-[11px] font-medium text-primary">
-                      Activo
-                    </span>
-                  ) : null}
-                </div>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  className={cn(
-                    lightToolbarButtonClass,
-                    modalFiltersActiveCount > 0 &&
-                      lightToolbarControlActiveClass,
-                  )}
-                  aria-haspopup="dialog"
-                  aria-expanded={filtersModalOpen}
-                  onClick={() => {
-                    setDraftFilters({
-                      soloActivos: ws.soloActivos,
-                      categoryId: ws.categoryId,
-                    })
-                    setFiltersModalOpen(true)
-                  }}
-                >
-                  <Filter className="size-4 shrink-0 opacity-80" aria-hidden />
-                  <span className="min-w-0 flex-1 truncate text-left">
-                    {modalFiltersActiveCount > 0
-                      ? "Refinar filtros"
-                      : "Estado y categoría"}
-                  </span>
-                  {modalFiltersActiveCount > 0 ? (
-                    <span
-                      className="inline-flex size-5 shrink-0 items-center justify-center rounded-full bg-primary/15 text-[10px] font-semibold tabular-nums text-primary"
-                      aria-hidden
-                    >
-                      {modalFiltersActiveCount}
-                    </span>
-                  ) : null}
-                </Button>
-              </div>
-
-              <div
-                className={cn(
-                  lightToolbarPanelLastClass,
-                  "order-3 min-w-0 md:col-span-2 xl:order-2 xl:col-span-6",
-                )}
-              >
-                <div className="mb-2 flex min-w-0 items-baseline justify-between gap-3">
-                  <label htmlFor={searchInputId} className={toolbarBlockLabelClass}>
-                    Buscar
-                  </label>
-                  <span
-                    className="shrink-0 text-[11px] font-medium text-muted-foreground"
-                    aria-live="polite"
-                    aria-atomic="true"
-                  >
-                    {resultsSummary}
-                  </span>
-                </div>
-                <div className="relative min-w-0">
-                  <Search
-                    className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground"
-                    aria-hidden
+            <div
+              className={cn(
+                dataWorkspaceListFiltersBarInnerClass,
+                dataWorkspaceListFiltersBarRowClass,
+              )}
+            >
+              <div className={dataWorkspaceListFiltersGridClass}>
+                <div className={dataWorkspaceListFiltersPanelClass}>
+                  <DataWorkspaceListFiltersDialogTrigger
+                    id={filtersButtonId}
+                    placeholder="Estado y categoría"
+                    activeCount={modalFiltersActiveCount}
+                    expanded={filtersModalOpen}
+                    onClick={() => {
+                      setDraftFilters({
+                        soloActivos: ws.soloActivos,
+                        categoryId: ws.categoryId,
+                      })
+                      setFiltersModalOpen(true)
+                    }}
                   />
-                  <Input
-                    ref={searchInputRef}
+                </div>
+
+                <div className={dataWorkspaceListFiltersPanelLastClass}>
+                  <DataWorkspaceListSearchField
                     id={searchInputId}
-                    type="search"
+                    inputRef={searchInputRef}
                     value={searchInput}
                     onChange={(e) => setSearchInput(e.target.value)}
+                    onClear={() => {
+                      setSearchInput("")
+                      searchInputRef.current?.focus()
+                    }}
                     placeholder="Nombre, descripción… ( / )"
-                    className={cn(
-                      lightToolbarInputClass,
-                      searchInput.trim().length > 0 && "pr-10",
-                    )}
-                    autoComplete="off"
-                    spellCheck={false}
-                    aria-label="Buscar recetas"
+                    resultsSummary={resultsSummary}
                   />
-                  {searchInput.trim().length > 0 ? (
-                    <button
-                      type="button"
-                      aria-label="Limpiar búsqueda"
-                      className={lightToolbarClearButtonClass}
-                      onClick={() => {
-                        setSearchInput("")
-                        searchInputRef.current?.focus()
-                      }}
-                    >
-                      <X className="size-3.5" aria-hidden />
-                    </button>
-                  ) : null}
                 </div>
               </div>
             </div>
-
-            {hasFilterChips ? (
-              <div
-                className="border-t border-border/80 bg-card px-4 py-3"
-                role="region"
-                aria-label="Filtros activos"
-              >
-                <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
-                  <p className={toolbarBlockLabelClass}>
-                    Filtros activos
-                    <span className="sr-only">: {activeFilterCount}</span>
-                    <span
-                      className="ml-1.5 inline-flex min-w-5 items-center justify-center rounded-full bg-muted px-1.5 py-0.5 text-[10px] font-semibold tabular-nums normal-case tracking-normal text-muted-foreground"
-                      aria-hidden
-                    >
-                      {activeFilterCount}
-                    </span>
-                  </p>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    className="h-8 px-2.5 text-xs font-medium text-muted-foreground hover:text-foreground"
-                    onClick={clearAllFilters}
-                  >
-                    Limpiar todo
-                  </Button>
-                </div>
-                <div className="flex flex-wrap items-center gap-1.5">
-                  {ws.q.trim() ? (
-                    <Badge variant="secondary" className={lightFilterChipClass}>
-                      <span className="truncate">Buscar: «{ws.q.trim()}»</span>
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="icon"
-                        className="size-6 shrink-0"
-                        onClick={() => pushWs({ q: "", page: 1 })}
-                        aria-label="Quitar búsqueda"
-                      >
-                        <X className="size-3" />
-                      </Button>
-                    </Badge>
-                  ) : null}
-                  {ws.soloActivos ? (
-                    <Badge variant="secondary" className={lightFilterChipClass}>
-                      Solo activas
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="icon"
-                        className="size-6 shrink-0"
-                        onClick={() =>
-                          pushWs({ soloActivos: false, page: 1 })
-                        }
-                        aria-label="Quitar filtro solo activas"
-                      >
-                        <X className="size-3" />
-                      </Button>
-                    </Badge>
-                  ) : null}
-                  {ws.categoryId.trim() ? (
-                    <Badge variant="secondary" className={lightFilterChipClass}>
-                      <span className="truncate">
-                        Categoría:{" "}
-                        {categoryLabelForChip || ws.categoryId}
-                      </span>
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="icon"
-                        className="size-6 shrink-0"
-                        onClick={() => pushWs({ categoryId: "", page: 1 })}
-                        aria-label="Quitar filtro categoría"
-                      >
-                        <X className="size-3" />
-                      </Button>
-                    </Badge>
-                  ) : null}
-                </div>
-              </div>
-            ) : null}
           </div>
-
-          <Dialog
-            open={filtersModalOpen}
-            onOpenChange={(open) => {
-              if (open) {
-                setDraftFilters({
-                  soloActivos: ws.soloActivos,
-                  categoryId: ws.categoryId,
-                })
-              }
-              setFiltersModalOpen(open)
-            }}
-          >
-            <DialogContent
-              className={articleDialogSurfaceClass}
-              overlayClassName={articleDialogOverlayClass}
-              showCloseButton
-              data-rootsy-light-shell="true"
-            >
-              <DialogHeader className={articleDialogHeaderClass}>
-                <DialogTitle className={articleDialogTitleClass}>
-                  Filtros
-                </DialogTitle>
-                <DialogDescription className={articleDialogDescriptionClass}>
-                  Combinan con la búsqueda. El listado se pagina en el servidor.
-                </DialogDescription>
-              </DialogHeader>
-              <div className={articleDialogBodyClass}>
-                <div className="grid gap-4">
-                  <label className="flex cursor-pointer items-center gap-2 rounded-md border border-transparent px-1 py-0.5 hover:bg-muted/50">
-                    <Checkbox
-                      checked={draftFilters.soloActivos}
-                      onCheckedChange={(c) =>
-                        setDraftFilters((f) => ({
-                          ...f,
-                          soloActivos: c === true,
-                        }))
-                      }
-                      aria-label="Solo recetas activas"
-                    />
-                    <span className="text-sm text-foreground">
-                      Solo recetas activas
-                    </span>
-                  </label>
-                  <div className="space-y-2">
-                    <Label htmlFor="recipes-filter-category">Categoría</Label>
-                    <Select
-                      value={draftFilters.categoryId.trim() || "__all__"}
-                      onValueChange={(v) =>
-                        setDraftFilters((f) => ({
-                          ...f,
-                          categoryId: v === "__all__" ? "" : v,
-                        }))
-                      }
-                    >
-                      <SelectTrigger
-                        id="recipes-filter-category"
-                        className="bg-background"
-                      >
-                        <SelectValue placeholder="Todas" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="__all__">Todas</SelectItem>
-                        {categories.map((c) => (
-                          <SelectItem key={c.id} value={c.id}>
-                            {c.name || "—"}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-              </div>
-              <DialogFooter className={articleDialogFooterClass}>
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => setDraftFilters(defaultRecipesFilters())}
-                >
-                  Restablecer
-                </Button>
-                <Button
-                  type="button"
-                  onClick={() => {
-                    pushWs({
-                      soloActivos: draftFilters.soloActivos,
-                      categoryId: draftFilters.categoryId,
-                      page: 1,
-                    })
-                    setFiltersModalOpen(false)
-                  }}
-                >
-                  Aplicar
-                </Button>
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
 
           <DataWorkspaceListTableShell
             variant="flush"
+            className={cn(
+              workspaceTableNatureEarthOrganicScopeClass,
+              workspaceTableLayoutListBodyScopeClass,
+              workspaceTableLayoutListSurfaceClass,
+            )}
+            activeFiltersBar={
+              hasFilterChips ? (
+                <DataWorkspaceListActiveFiltersBar
+                  activeCount={activeFilterCount}
+                  onClearAll={clearAllFilters}
+                >
+                  {ws.q.trim() ? (
+                    <DataWorkspaceListFilterChip
+                      label={`Buscar: «${ws.q.trim()}»`}
+                      onRemove={() => pushWs({ q: "", page: 1 })}
+                      removeAriaLabel="Quitar búsqueda"
+                    />
+                  ) : null}
+                  {ws.soloActivos ? (
+                    <DataWorkspaceListFilterChip
+                      label="Solo activas"
+                      onRemove={() => pushWs({ soloActivos: false, page: 1 })}
+                      removeAriaLabel="Quitar filtro solo activas"
+                    />
+                  ) : null}
+                  {ws.categoryId.trim() ? (
+                    <DataWorkspaceListFilterChip
+                      label={`Categoría: ${categoryLabelForChip || ws.categoryId}`}
+                      onRemove={() => pushWs({ categoryId: "", page: 1 })}
+                      removeAriaLabel="Quitar filtro categoría"
+                    />
+                  ) : null}
+                </DataWorkspaceListActiveFiltersBar>
+              ) : null
+            }
             overlay={
               !loading && totalCount === 0 ? (
                 <DataWorkspaceTableEmptyMascot />
@@ -895,77 +622,115 @@ function RecipesPage() {
               />
             }
           >
-            <DataWorkspaceListTableFrame>
+            <DataWorkspaceListTableFrame
+              className={workspaceTableLayoutListSurfaceClass}
+            >
               <table
-                className={workspaceDataTableClassName}
+                className={cn(workspaceTableLayoutClassName, "min-w-[80rem]")}
                 aria-busy={loading}
               >
-                <TableHeader>
-                  <TableRow className={workspaceTableHeaderRowClass}>
-                    <TableHead className={cn(lightTableThClass, "w-12 !px-0 text-center")}>
-                      <div className={cn(selectColumnInnerClass, "min-h-10")}>
-                        <Checkbox
-                          className={tableRowSelectCheckboxClass}
-                          checked={
-                            allVisibleSelected
-                              ? true
-                              : someVisibleSelected
-                                ? "indeterminate"
-                                : false
+                <WorkspaceTableHeader>
+                  <WorkspaceTableHeaderRow>
+                    <WorkspaceTableSelectHead
+                      tone="nature"
+                      className={workspaceTableLayoutHeaderHeadClass}
+                      checked={
+                        allVisibleSelected
+                          ? true
+                          : someVisibleSelected
+                            ? "indeterminate"
+                            : false
+                      }
+                      onCheckedChange={(checked) => {
+                        setSelected((prev) => {
+                          const next = new Set(prev)
+                          if (checked === true) {
+                            visibleIds.forEach((id) => next.add(id))
+                          } else {
+                            visibleIds.forEach((id) => next.delete(id))
                           }
-                          onCheckedChange={(checked) => {
-                            setSelected((prev) => {
-                              const next = new Set(prev)
-                              if (checked === true) {
-                                visibleIds.forEach((id) => next.add(id))
-                              } else {
-                                visibleIds.forEach((id) => next.delete(id))
-                              }
-                              return next
-                            })
-                          }}
-                          disabled={
-                            loading || totalCount === 0 || recipes.length === 0
-                          }
-                          aria-label="Seleccionar filas visibles"
-                        />
-                      </div>
-                    </TableHead>
-                    <TableHead className={cn(lightTableThClass, "w-24 px-3 text-left")}>
-                      <span className="sr-only">Foto</span>
-                    </TableHead>
-                    <TableHead
+                          return next
+                        })
+                      }}
+                      disabled={
+                        loading || totalCount === 0 || recipes.length === 0
+                      }
+                      ariaLabel="Seleccionar filas visibles"
+                    />
+                    <WorkspaceTableHead
+                      tone="nature"
                       className={cn(
-                        lightTableThClass,
-                        "w-[14rem] min-w-0 max-w-[14rem] px-3 text-left",
+                        workspaceTableLayoutImageColumnClass,
+                        recipeTableImageColumnClass,
+                        recipeTableHeaderClass(),
                       )}
+                      srOnly
+                    >
+                      Foto
+                    </WorkspaceTableHead>
+                    <WorkspaceTableHead
+                      tone="nature"
+                      className={recipeTableHeaderClass(recipeTableNameColumnClass)}
                     >
                       Receta
-                    </TableHead>
-                    <TableHead className={cn(lightTableThClass, "w-[10rem] px-3 text-left")}>
+                    </WorkspaceTableHead>
+                    <WorkspaceTableHead
+                      tone="nature"
+                      className={recipeTableHeaderClass(
+                        recipeTableCategoryColumnClass,
+                      )}
+                    >
                       Categoría
-                    </TableHead>
-                    <TableHead className={cn(lightTableThClass, "px-3 text-right")}>
+                    </WorkspaceTableHead>
+                    <WorkspaceTableHead
+                      tone="nature"
+                      className={recipeTableHeaderClass(
+                        recipeTableSaleColumnClass,
+                        "text-right",
+                      )}
+                    >
                       Venta
-                    </TableHead>
-                    <TableHead className={cn(lightTableThClass, "px-3 text-right")}>
+                    </WorkspaceTableHead>
+                    <WorkspaceTableHead
+                      tone="nature"
+                      className={recipeTableHeaderClass(
+                        recipeTableCostColumnClass,
+                        "text-right",
+                      )}
+                    >
                       Costo
-                    </TableHead>
-                    <TableHead className={cn(lightTableThClass, "w-[5.5rem] px-3 text-center")}>
+                    </WorkspaceTableHead>
+                    <WorkspaceTableHead
+                      tone="nature"
+                      className={recipeTableHeaderClass(
+                        recipeTableIngredientsColumnClass,
+                        "text-center",
+                      )}
+                    >
                       Ingredientes
-                    </TableHead>
-                    <TableHead className={cn(lightTableThClass, "w-[6.5rem] px-3 text-left")}>
+                    </WorkspaceTableHead>
+                    <WorkspaceTableHead
+                      tone="nature"
+                      className={recipeTableHeaderClass(
+                        recipeTableStatusColumnClass,
+                      )}
+                    >
                       Estado
-                    </TableHead>
+                    </WorkspaceTableHead>
                     {canUpdate || canDelete ? (
-                      <TableHead
-                        className={cn(lightTableThClass, "w-[6.5rem] px-3 text-right")}
+                      <WorkspaceTableHead
+                        tone="nature"
+                        className={recipeTableHeaderClass(
+                          recipeTableActionsColumnClass,
+                          "text-right",
+                        )}
+                        srOnly
                       >
-                        <span className="sr-only">Acciones</span>
-                      </TableHead>
+                        Acciones
+                      </WorkspaceTableHead>
                     ) : null}
-                  </TableRow>
-                </TableHeader>
+                  </WorkspaceTableHeaderRow>
+                </WorkspaceTableHeader>
                 <TableBody>
                   {loading ? (
                     <WorkspaceTableSkeletonRows
@@ -974,12 +739,20 @@ function RecipesPage() {
                       columns={recipesSkeletonColumns({
                         hasActionsColumn: Boolean(canUpdate || canDelete),
                       })}
+                      tone="nature"
                     />
                   ) : totalCount === 0 ? null : (
                     recipes.map((row, index) => (
                       <TableRow
                         key={row.id}
-                        className={workspaceTableBodyRowClassNames(index)}
+                        className={cn(
+                          workspaceTableLayoutBodyRowClass,
+                          workspaceTableNatureBodyRowClassNames(index, {
+                            selected: selected.has(row.id),
+                            noHover: true,
+                            inactive: !row.isActive,
+                          }),
+                        )}
                       >
                         <RecipeTableSelectCell
                           checked={selected.has(row.id)}
@@ -1001,7 +774,9 @@ function RecipesPage() {
                         <RecipeTableIngredientsCell row={row} />
                         <RecipeTableStatusCell row={row} />
                         {canUpdate || canDelete ? (
-                          <TableCell className="w-[6.5rem] px-3 py-2.5 text-right align-middle">
+                          <TableCell
+                            className={workspaceTableLayoutActionsBodyCellClass}
+                          >
                             <div className="flex items-center justify-end gap-0.5">
                               {canUpdate ? (
                                 <DataWorkspaceTableIconAction
@@ -1015,11 +790,7 @@ function RecipesPage() {
                                   label={`Eliminar ${row.name}`}
                                   icon={Trash2}
                                   variant="destructive"
-                                  onClick={() => {
-                                    setDeleteTarget(row)
-                                    setDeleteConfirm("")
-                                    setDeleteOpen(true)
-                                  }}
+                                  onClick={() => openDelete(row)}
                                 />
                               ) : null}
                             </div>
@@ -1030,285 +801,107 @@ function RecipesPage() {
                   )}
                 </TableBody>
               </table>
-              {!loading && totalCount === 0 ? (
-                <div className="min-h-[12rem]" aria-hidden />
-              ) : null}
             </DataWorkspaceListTableFrame>
           </DataWorkspaceListTableShell>
         </div>
       </div>
 
-      <Dialog open={formOpen} onOpenChange={(o) => !o && closeForm()}>
-        <DialogContent
-          className={recipeDialogSurfaceWideClass}
-          overlayClassName={articleDialogOverlayClass}
-          data-rootsy-light-shell="true"
-          showCloseButton
-        >
-          <DialogHeader className={recipeDialogHeaderClass}>
-            <DialogTitle className={articleDialogTitleClass}>
-              {editingId ? "Editar receta" : "Nueva receta"}
-            </DialogTitle>
-            <DialogDescription className={articleDialogDescriptionClass}>
-              Platos o tragos vendibles por unidad. El costo se calcula desde los
-              ingredientes.
-            </DialogDescription>
-          </DialogHeader>
-          <form
-            className="flex min-h-0 flex-1 flex-col overflow-hidden"
-            onSubmit={(e) => void submitForm(e)}
-          >
-            <div className={recipeDialogBodyClass}>
-              {formError ? (
-                <p className="mb-3 rounded-xl border border-destructive/25 bg-destructive/5 px-3 py-2 text-sm text-destructive">
-                  {formError}
-                </p>
-              ) : null}
-              <div className="grid gap-4 sm:grid-cols-2">
-                <div className="space-y-2 sm:col-span-2">
-                  <Label htmlFor="recipe-name">Nombre *</Label>
-                  <Input
-                    id="recipe-name"
-                    value={form.name}
-                    onChange={(e) =>
-                      setForm((f) => ({ ...f, name: e.target.value }))
-                    }
-                    required
-                    className={recipeFormFieldClass}
-                  />
-                </div>
-                <div className="space-y-2 sm:col-span-2">
-                  <Label htmlFor="recipe-desc">Descripción</Label>
-                  <Textarea
-                    id="recipe-desc"
-                    value={form.description}
-                    onChange={(e) =>
-                      setForm((f) => ({ ...f, description: e.target.value }))
-                    }
-                    rows={2}
-                    className={recipeFormTextareaClass}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label>Categoría *</Label>
-                  <Select
-                    value={form.categoryId || undefined}
-                    onValueChange={(v) =>
-                      setForm((f) => ({ ...f, categoryId: v }))
-                    }
-                  >
-                    <SelectTrigger className={recipeFormFieldClass}>
-                      <SelectValue placeholder="Elegir categoría" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {categories
-                        .filter((c) => c.isActive)
-                        .map((c) => (
-                          <SelectItem key={c.id} value={c.id}>
-                            {c.name}
-                          </SelectItem>
-                        ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="recipe-image">URL imagen</Label>
-                  <Input
-                    id="recipe-image"
-                    value={form.imageUrl}
-                    onChange={(e) =>
-                      setForm((f) => ({ ...f, imageUrl: e.target.value }))
-                    }
-                    className={recipeFormFieldClass}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="recipe-sale">Precio venta *</Label>
-                  <Input
-                    id="recipe-sale"
-                    inputMode="decimal"
-                    value={form.salePrice}
-                    onChange={(e) =>
-                      setForm((f) => ({ ...f, salePrice: e.target.value }))
-                    }
-                    className={recipeFormFieldClass}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="recipe-iva">IVA %</Label>
-                  <Input
-                    id="recipe-iva"
-                    inputMode="decimal"
-                    value={form.iva}
-                    onChange={(e) =>
-                      setForm((f) => ({ ...f, iva: e.target.value }))
-                    }
-                    className={recipeFormFieldClass}
-                  />
-                </div>
-                <label className="flex items-center gap-2 sm:col-span-2">
-                  <Checkbox
-                    checked={form.isActive}
-                    onCheckedChange={(v) =>
-                      setForm((f) => ({ ...f, isActive: v === true }))
-                    }
-                  />
-                  <span className="text-sm text-foreground">Receta activa</span>
-                </label>
-              </div>
+      <RecipesFiltersDialog
+        open={filtersModalOpen}
+        onOpenChange={(open) => {
+          if (open) {
+            setDraftFilters({
+              soloActivos: ws.soloActivos,
+              categoryId: ws.categoryId,
+            })
+          }
+          setFiltersModalOpen(open)
+        }}
+        draft={draftFilters}
+        onDraftChange={setDraftFilters}
+        categories={categories}
+        onApply={() => {
+          pushWs({
+            soloActivos: draftFilters.soloActivos,
+            categoryId: draftFilters.categoryId,
+            page: 1,
+          })
+          setFiltersModalOpen(false)
+        }}
+      />
 
-              <div className="mt-6 border-t border-slate-100 pt-4">
-                <RecipeIngredientEditor
-                  lines={form.ingredients}
-                  options={ingredientOptions}
-                  disabled={formBusy}
-                  onChange={(ingredients) =>
-                    setForm((f) => ({ ...f, ingredients }))
-                  }
-                />
-              </div>
-            </div>
-            <DialogFooter className={recipeDialogFooterClass}>
-              <Button type="button" variant="outline" onClick={closeForm}>
-                Cancelar
-              </Button>
-              <Button type="submit" disabled={formBusy}>
-                {formBusy ? (
-                  <>
-                    <Loader2 className="mr-2 size-4 animate-spin" />
-                    Guardando…
-                  </>
-                ) : editingId ? (
-                  "Guardar cambios"
-                ) : (
-                  "Crear receta"
-                )}
-              </Button>
-            </DialogFooter>
-          </form>
-        </DialogContent>
-      </Dialog>
+      <RecipeUpsertDialog
+        open={formOpen}
+        onOpenChange={(open) => {
+          if (!open && !formSaving) closeForm()
+        }}
+        mode={editingId ? "edit" : "create"}
+        idPrefix={editingId ? "recipe-edit" : "recipe-create"}
+        title={editingId ? "Editar receta" : "Nueva receta"}
+        description="Platos o tragos vendibles por unidad. El costo se calcula desde los ingredientes."
+        loading={formDetailLoading}
+        saving={formSaving}
+        banner={formError}
+        onSubmit={(e) => void submitForm(e)}
+        onCancel={closeForm}
+        onAfterClose={finalizeFormClose}
+        form={form}
+        setForm={setForm}
+        siteId={siteId}
+        categories={categories}
+        ingredientOptions={ingredientOptions}
+        disabled={formDetailLoading || formSaving}
+      />
 
-      <Dialog open={deleteOpen} onOpenChange={setDeleteOpen}>
-        <DialogContent
-          className={recipeDialogSurfaceClass}
-          overlayClassName={articleDialogOverlayClass}
-          data-rootsy-light-shell="true"
-          showCloseButton
-        >
-          <DialogHeader className={recipeDialogHeaderClass}>
-            <DialogTitle className={articleDialogTitleClass}>
-              Eliminar receta
-            </DialogTitle>
-            <DialogDescription className={articleDialogDescriptionClass}>
-              Esta acción no se puede deshacer. Escribí{" "}
-              <strong>{RECIPE_DELETE_CONFIRM_PHRASE}</strong> para confirmar.
-            </DialogDescription>
-          </DialogHeader>
-          <div className={recipeDialogBodyClass}>
-            <p className="text-sm text-foreground">
-              {deleteTarget ? `«${deleteTarget.name}»` : ""}
-            </p>
-            <Input
-              value={deleteConfirm}
-              onChange={(e) => setDeleteConfirm(e.target.value)}
-              placeholder={RECIPE_DELETE_CONFIRM_PHRASE}
-              className={cn("mt-3", recipeFormFieldClass)}
-            />
-          </div>
-          <DialogFooter className={recipeDialogFooterClass}>
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => setDeleteOpen(false)}
-            >
-              Cancelar
-            </Button>
-            <Button
-              type="button"
-              variant="destructive"
-              disabled={
-                deleteBusy || deleteConfirm !== RECIPE_DELETE_CONFIRM_PHRASE
-              }
-              onClick={() => void confirmDelete()}
-            >
-              {deleteBusy ? "Eliminando…" : "Eliminar"}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      {deleteTarget ? (
+        <RecipeDeleteDialog
+          open={deleteOpen}
+          recipeName={deleteTarget.name}
+          confirmValue={deleteTyped}
+          banner={deleteBanner}
+          busy={deleteBusy}
+          onOpenChange={(open) => {
+            if (!open && !deleteBusy) requestCloseDelete()
+          }}
+          onClose={requestCloseDelete}
+          onAfterClose={finalizeDeleteClose}
+          onConfirmValueChange={setDeleteTyped}
+          onConfirmDelete={() => void submitDelete()}
+        />
+      ) : null}
 
-      <Dialog open={categoriesOpen} onOpenChange={setCategoriesOpen}>
-        <DialogContent
-          className={recipeDialogSurfaceWideClass}
-          overlayClassName={articleDialogOverlayClass}
-          data-rootsy-light-shell="true"
-          showCloseButton
-        >
-          <DialogHeader className={recipeDialogHeaderClass}>
-            <DialogTitle className={articleDialogTitleClass}>
-              Categorías de recetas
-            </DialogTitle>
-            <DialogDescription className={articleDialogDescriptionClass}>
-              Organizá el menú de Mesas y Mostrador.
-            </DialogDescription>
-          </DialogHeader>
-          <div className={recipeDialogBodyClass}>
-            {canCreate ? (
-              <div className="mb-4 flex gap-2">
-                <Input
-                  value={newCategoryName}
-                  onChange={(e) => setNewCategoryName(e.target.value)}
-                  placeholder="Nueva categoría"
-                  className={recipeFormFieldClass}
-                />
-                <Button
-                  type="button"
-                  onClick={() => void handleCreateCategory()}
-                  disabled={categoryBusy || !newCategoryName.trim()}
-                >
-                  Agregar
-                </Button>
-              </div>
-            ) : null}
-            <RecipeCategoriesMenuBoard
-              categories={categories}
-              canUpdate={canUpdate}
-              canDelete={canDelete}
-              editingCategoryId={editingCategoryId}
-              editingCategoryName={editingCategoryName}
-              categorySaveBusy={categoryBusy}
-              onStartEdit={(c) => {
-                setEditingCategoryId(c.id)
-                setEditingCategoryName(c.name)
-              }}
-              onCancelEdit={() => {
-                setEditingCategoryId(null)
-                setEditingCategoryName("")
-              }}
-              onEditingNameChange={setEditingCategoryName}
-              onSaveEdit={() => void handleSaveCategoryEdit()}
-              onDelete={(id, name) => void handleDeleteCategory(id, name)}
-              onLayoutChange={async (updates) => {
-                setCategoryBusy(true)
-                const res = await syncRecipeCategoryMenuLayout(popId, updates)
-                setCategoryBusy(false)
-                if (!res.success) setError(res.error)
-                else await loadCategories()
-              }}
-            />
-          </div>
-          <DialogFooter className={recipeDialogFooterClass}>
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => setCategoriesOpen(false)}
-            >
-              Cerrar
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <RecipeCategoriesDialog
+        open={categoriesOpen}
+        onOpenChange={setCategoriesOpen}
+        categories={categories}
+        canCreate={canCreate}
+        canUpdate={canUpdate}
+        canDelete={canDelete}
+        newCategoryName={newCategoryName}
+        onNewCategoryNameChange={setNewCategoryName}
+        onCreateCategory={() => void handleCreateCategory()}
+        categoryBusy={categoryBusy}
+        editingCategoryId={editingCategoryId}
+        editingCategoryName={editingCategoryName}
+        onEditingCategoryNameChange={setEditingCategoryName}
+        onStartEdit={(c) => {
+          setEditingCategoryId(c.id)
+          setEditingCategoryName(c.name)
+        }}
+        onCancelEdit={() => {
+          setEditingCategoryId(null)
+          setEditingCategoryName("")
+        }}
+        onSaveEdit={() => void handleSaveCategoryEdit()}
+        onDeleteCategory={(id, name) => void handleDeleteCategory(id, name)}
+        onLayoutChange={async (updates) => {
+          setCategoryBusy(true)
+          const res = await syncRecipeCategoryMenuLayout(popId, updates)
+          setCategoryBusy(false)
+          if (!res.success) setError(res.error)
+          else await loadCategories()
+        }}
+      />
     </DataWorkspaceLayout>
   )
 }

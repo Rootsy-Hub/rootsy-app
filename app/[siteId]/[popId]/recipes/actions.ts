@@ -1,6 +1,6 @@
 "use server"
 
-import { RECIPE_DELETE_CONFIRM_PHRASE } from "@/app/[siteId]/[popId]/recipes/recipeConstants"
+import { recipeDeleteConfirmPhrase } from "@/app/[siteId]/[popId]/recipes/recipeConstants"
 import {
   DEFAULT_RECIPE_TABLE_PAGE_SIZE,
   RECIPE_TABLE_PAGE_SIZES,
@@ -1031,11 +1031,32 @@ export async function deletePopRecipe(
       return { success: false, error: "Sin permiso para eliminar recetas." }
     }
     if (!isUuid(recipeId)) return { success: false, error: "Receta inválida." }
-    if (confirmPhrase.trim() !== RECIPE_DELETE_CONFIRM_PHRASE) {
-      return { success: false, error: "Confirmación incorrecta." }
-    }
 
     const supabase = await createClient()
+    const { data: recipe, error: fetchError } = await supabase
+      .from("recipes")
+      .select("name")
+      .eq("id", recipeId)
+      .eq("pop_id", popId)
+      .maybeSingle()
+    if (fetchError) {
+      return {
+        success: false,
+        error: fetchError.message || "No se encontró la receta.",
+      }
+    }
+    if (!recipe) {
+      return { success: false, error: "No se encontró la receta." }
+    }
+
+    const expectedPhrase = recipeDeleteConfirmPhrase(String(recipe.name ?? ""))
+    if (confirmPhrase.trim() !== expectedPhrase) {
+      return {
+        success: false,
+        error: `Escribí (${expectedPhrase}) para confirmar el borrado.`,
+      }
+    }
+
     const { error } = await supabase
       .from("recipes")
       .delete()

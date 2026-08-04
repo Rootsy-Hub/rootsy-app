@@ -1,10 +1,11 @@
 "use client"
 
-import { lightToolbarPanelClass } from "@/components/data-workspace/dataWorkspaceListStyles"
+import { dataWorkspaceListFiltersFieldClass } from "@/components/data-workspace/dataWorkspaceTablesLayout"
 import {
   RootsFormSelectField,
   RootsFormSelectItem,
 } from "@/components/rootsy-form"
+import { lightToolbarPanelClass } from "@/components/data-workspace/dataWorkspaceListStyles"
 import { PROMOTION_TYPE_LABEL, type PromotionType } from "@/lib/promotionTypes"
 import { cn } from "@/lib/utils"
 import { Tags } from "lucide-react"
@@ -35,10 +36,12 @@ export function PromotionTypeToolbarFilter({
   value,
   onChange,
   className,
+  variant = "layout",
 }: {
   value: PromotionTypeFilterId
   onChange: (value: PromotionTypeFilterId) => void
   className?: string
+  variant?: "panel" | "layout"
 }) {
   return (
     <RootsFormSelectField
@@ -46,7 +49,12 @@ export function PromotionTypeToolbarFilter({
       value={value}
       onValueChange={(next) => onChange(next as PromotionTypeFilterId)}
       prefix={<Tags className="size-4" aria-hidden />}
-      className={cn(lightToolbarPanelClass, className)}
+      className={cn(
+        variant === "layout"
+          ? dataWorkspaceListFiltersFieldClass()
+          : lightToolbarPanelClass,
+        className,
+      )}
       triggerClassName={value !== "all" ? filterTriggerActiveClass : undefined}
     >
       {FILTER_ITEMS.map((item) => (

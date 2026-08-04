@@ -10,6 +10,7 @@ import { forwardRef, type ComponentProps, type ReactNode } from "react"
 
 type Props = {
   prefix: ReactNode
+  prefixClassName?: string
   id: string
   disabled?: boolean
   invalid?: boolean
@@ -21,6 +22,7 @@ export const RootsFormPrefixedInput = forwardRef<HTMLInputElement, Props>(
   function RootsFormPrefixedInput(
     {
       prefix,
+      prefixClassName,
       id,
       disabled,
       invalid,
@@ -38,7 +40,10 @@ export const RootsFormPrefixedInput = forwardRef<HTMLInputElement, Props>(
           className,
         )}
       >
-        <span className={rootsFormAffixPrefixClass} aria-hidden>
+        <span
+          className={cn(rootsFormAffixPrefixClass, prefixClassName)}
+          aria-hidden
+        >
           {prefix}
         </span>
         <input

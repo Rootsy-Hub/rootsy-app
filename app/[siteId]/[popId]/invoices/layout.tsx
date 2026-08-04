@@ -1,7 +1,7 @@
 import "@/app/[siteId]/[popId]/library/color/rootsyNaturePalette.css"
 import { Suspense, type ReactNode } from "react"
 
-export default function PromotionsLayout({ children }: { children: ReactNode }) {
+export default function InvoicesLayout({ children }: { children: ReactNode }) {
   return (
     <Suspense
       fallback={

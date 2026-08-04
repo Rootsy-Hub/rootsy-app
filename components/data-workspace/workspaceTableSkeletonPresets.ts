@@ -131,16 +131,16 @@ export function recipesSkeletonColumns(options?: {
 }): WorkspaceTableSkeletonColumn[] {
   const columns: WorkspaceTableSkeletonColumn[] = [
     { kind: "select" },
-    { kind: "thumbnail", className: "w-24" },
-    { kind: "text", className: "w-[14rem] min-w-0 max-w-[14rem]", lines: 3 },
-    { kind: "text", className: "min-w-0 max-w-[12rem]" },
-    { kind: "money" },
-    { kind: "money" },
-    { kind: "text", className: "w-[5.5rem] text-center" },
-    { kind: "pill", className: "w-[6.5rem]" },
+    { kind: "thumbnail", className: "w-14" },
+    { kind: "text", className: "w-56 min-w-56 max-w-64", lines: 2 },
+    { kind: "text", className: "w-40" },
+    { kind: "money", className: "w-32" },
+    { kind: "money", className: "w-32" },
+    { kind: "text", className: "w-28 text-center" },
+    { kind: "pill", className: "w-32" },
   ]
   if (options?.hasActionsColumn) {
-    columns.push({ kind: "actions", className: "w-[6.5rem]", actionCount: 1 })
+    columns.push({ kind: "actions", className: "w-[7.25rem]", actionCount: 2 })
   }
   return columns
 }
@@ -150,18 +150,31 @@ export function promotionsSkeletonColumns(options?: {
 }): WorkspaceTableSkeletonColumn[] {
   const columns: WorkspaceTableSkeletonColumn[] = [
     { kind: "select" },
-    { kind: "thumbnail", className: "w-24" },
-    { kind: "text", className: "w-[14rem] min-w-0 max-w-[14rem]", lines: 3 },
-    { kind: "pill", className: "w-[7rem]" },
-    { kind: "text", className: "min-w-[9rem]" },
-    { kind: "text", className: "min-w-[10rem]" },
-    { kind: "text", className: "w-[8rem]" },
-    { kind: "pill", className: "w-[7.5rem]" },
+    { kind: "thumbnail", className: "w-14" },
+    { kind: "text", className: "w-56 min-w-56 max-w-64", lines: 2 },
+    { kind: "pill", className: "w-28" },
+    { kind: "text", className: "w-40" },
+    { kind: "text", className: "w-56", lines: 2 },
+    { kind: "text", className: "w-32" },
+    { kind: "pill", className: "w-32" },
   ]
   if (options?.hasActionsColumn) {
-    columns.push({ kind: "actions", className: "w-[6.5rem]", actionCount: 1 })
+    columns.push({ kind: "actions", className: "w-[7.25rem]", actionCount: 2 })
   }
   return columns
+}
+
+export function invoicesSkeletonColumns(): WorkspaceTableSkeletonColumn[] {
+  return [
+    { kind: "actions", className: "w-12", actionCount: 1 },
+    { kind: "text", className: "w-36 min-w-36", lines: 2 },
+    { kind: "text", className: "w-28" },
+    { kind: "text", className: "w-32" },
+    { kind: "text", className: "min-w-[10rem]" },
+    { kind: "money" },
+    { kind: "text", className: "w-28" },
+    { kind: "pill", className: "w-32" },
+  ]
 }
 
 export function layoutPreviewSkeletonColumns(): WorkspaceTableSkeletonColumn[] {

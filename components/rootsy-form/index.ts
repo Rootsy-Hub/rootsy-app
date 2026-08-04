@@ -4,6 +4,10 @@ export { RootsFormTextareaField } from "@/components/rootsy-form/RootsFormTextar
 export { RootsFormPrefixedInput } from "@/components/rootsy-form/RootsFormPrefixedInput"
 export { RootsFormMoneyField } from "@/components/rootsy-form/RootsFormMoneyField"
 export { RootsFormQuantityField } from "@/components/rootsy-form/RootsFormQuantityField"
+export {
+  unitOfMeasureAffix,
+  type UnitOfMeasureAffix,
+} from "@/components/rootsy-form/RootsFormUnitOfMeasureAffix"
 export { RootsFormSelectContent } from "@/components/rootsy-form/RootsFormSelectContent"
 export { RootsFormSelectField } from "@/components/rootsy-form/RootsFormSelectField"
 export { RootsFormSelectItem } from "@/components/rootsy-form/RootsFormSelectItem"

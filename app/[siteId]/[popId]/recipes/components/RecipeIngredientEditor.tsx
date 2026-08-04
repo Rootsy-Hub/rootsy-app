@@ -4,23 +4,24 @@ import type {
   RecipeIngredientInput,
   RecipeIngredientOption,
 } from "@/app/[siteId]/[popId]/recipes/actions"
+import { RootsSubtleButton } from "@/components/rootsy-button"
+import {
+  RootsFormQuantityField,
+  RootsFormSelectField,
+  RootsFormSelectItem,
+  RootsFormTextField,
+  rootsFormEarthTextSecondaryClass,
+  rootsFormFieldLabelClass,
+} from "@/components/rootsy-form"
+import { unitOfMeasureAffix } from "@/components/rootsy-form/RootsFormUnitOfMeasureAffix"
 import { computeRecipeCostPrice } from "@/lib/recipeCost"
 import {
   ARTICLE_ITEM_KIND_STOCK_LABEL,
+  isCustomUnitOfMeasure,
   labelUnitOfMeasure,
-  shortUnitOfMeasure,
 } from "@/lib/articleItemKind"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
-import { recipeFormFieldClass } from "@/app/[siteId]/[popId]/recipes/recipeConstants"
-import { Trash2 } from "lucide-react"
+import { cn } from "@/lib/utils"
+import { Plus, Trash2 } from "lucide-react"
 import { useMemo } from "react"
 
 export type RecipeIngredientFormLine = {
@@ -31,6 +32,7 @@ export type RecipeIngredientFormLine = {
 }
 
 type Props = {
+  idPrefix: string
   lines: RecipeIngredientFormLine[]
   options: RecipeIngredientOption[]
   onChange: (lines: RecipeIngredientFormLine[]) => void
@@ -89,6 +91,7 @@ export function ingredientLinesFromDetail(
 }
 
 export function RecipeIngredientEditor({
+  idPrefix,
   lines,
   options,
   onChange,
@@ -140,115 +143,127 @@ export function RecipeIngredientEditor({
   }
 
   return (
-    <div className="space-y-3">
-      <div className="flex items-center justify-between gap-2">
+    <section className="flex flex-col gap-4">
+      <div className="flex items-start justify-between gap-3">
         <div>
-          <p className="text-sm font-semibold text-slate-800">Ingredientes</p>
-          <p className="text-xs text-slate-500">
+          <h3 className={rootsFormFieldLabelClass}>Ingredientes</h3>
+          <p className={cn("mt-1 text-xs leading-relaxed", rootsFormEarthTextSecondaryClass)}>
             Materias primas e insumos. Mínimo 1 línea.
           </p>
         </div>
-        <p className="text-sm font-semibold text-slate-700">
+        <p className={cn("text-sm font-semibold tabular-nums", rootsFormFieldLabelClass)}>
           Costo: {formatMoney(computedCost)}
         </p>
       </div>
 
       {lines.length === 0 ? (
-        <p className="rounded-lg border border-dashed border-slate-200 px-3 py-4 text-center text-sm text-slate-500">
+        <p
+          className={cn(
+            "rounded-lg border border-dashed border-border/70 px-3 py-4 text-center text-sm",
+            rootsFormEarthTextSecondaryClass,
+          )}
+        >
           Agregá al menos un ingrediente.
         </p>
       ) : (
-        <ul className="space-y-2">
+        <ul className="flex flex-col gap-3">
           {lines.map((line) => {
             const opt = line.articleId ? optionsById.get(line.articleId) : null
+            const quantityAffix = unitOfMeasureAffix(opt?.unitOfMeasure)
             return (
               <li
                 key={line.key}
-                className="grid gap-2 rounded-lg border border-slate-200 bg-slate-50/50 p-3 sm:grid-cols-[minmax(0,1fr)_100px_90px_auto]"
+                className="rounded-xl border border-border/70 bg-muted/10 p-3"
               >
-                <div>
-                  <Select
-                    value={line.articleId || undefined}
-                    onValueChange={(v) => updateLine(line.key, { articleId: v })}
-                    disabled={disabled}
-                  >
-                    <SelectTrigger className={recipeFormFieldClass}>
-                      <SelectValue placeholder="Elegir ingrediente" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {options.map((o) => (
-                        <SelectItem
-                          key={o.id}
-                          value={o.id}
-                          disabled={usedIds.has(o.id) && o.id !== line.articleId}
-                        >
-                          {o.name} · {ARTICLE_ITEM_KIND_STOCK_LABEL[o.itemKind]}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  {opt ? (
-                    <p className="mt-1 text-xs text-slate-500">
-                      {labelUnitOfMeasure(opt.unitOfMeasure)}
+                <div className="flex flex-col gap-3">
+                  <div className="flex flex-wrap items-end gap-2">
+                    <div className="min-w-[12rem] flex-1">
+                      <RootsFormSelectField
+                        label="Ingrediente"
+                        id={`${idPrefix}-ing-${line.key}`}
+                        value={line.articleId}
+                        onValueChange={(value) =>
+                          updateLine(line.key, { articleId: value })
+                        }
+                        disabled={disabled}
+                        placeholder="Elegir ingrediente"
+                      >
+                        {options.map((o) => (
+                          <RootsFormSelectItem
+                            key={o.id}
+                            value={o.id}
+                            disabled={usedIds.has(o.id) && o.id !== line.articleId}
+                          >
+                            {o.name} · {ARTICLE_ITEM_KIND_STOCK_LABEL[o.itemKind]}
+                          </RootsFormSelectItem>
+                        ))}
+                      </RootsFormSelectField>
+                    </div>
+                    <button
+                      type="button"
+                      disabled={disabled || lines.length <= 1}
+                      className="mb-1 inline-flex size-11 shrink-0 items-center justify-center rounded-lg text-destructive transition-colors hover:bg-destructive/10 disabled:opacity-50"
+                      aria-label="Quitar ingrediente"
+                      onClick={() => removeLine(line.key)}
+                    >
+                      <Trash2 className="size-4" aria-hidden />
+                    </button>
+                  </div>
+                  {opt &&
+                  (!isCustomUnitOfMeasure(opt.unitOfMeasure) ||
+                    opt.defaultWastePct != null) ? (
+                    <p className={cn("text-xs", rootsFormEarthTextSecondaryClass)}>
+                      {!isCustomUnitOfMeasure(opt.unitOfMeasure)
+                        ? labelUnitOfMeasure(opt.unitOfMeasure)
+                        : null}
                       {opt.defaultWastePct != null
-                        ? ` · merma base ${opt.defaultWastePct}%`
-                        : ""}
+                        ? `${
+                            !isCustomUnitOfMeasure(opt.unitOfMeasure)
+                              ? " · "
+                              : ""
+                          }merma base ${opt.defaultWastePct}%`
+                        : null}
                     </p>
                   ) : null}
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    <RootsFormQuantityField
+                      label="Cantidad"
+                      id={`${idPrefix}-qty-${line.key}`}
+                      value={line.quantity}
+                      onChange={(value) => updateLine(line.key, { quantity: value })}
+                      disabled={disabled}
+                      prefix={quantityAffix.prefix}
+                      prefixClassName={quantityAffix.prefixClassName}
+                      hint={quantityAffix.hint}
+                    />
+                    <RootsFormTextField
+                      label="Merma (%)"
+                      id={`${idPrefix}-waste-${line.key}`}
+                      value={line.wastePct}
+                      onChange={(e) =>
+                        updateLine(line.key, { wastePct: e.target.value })
+                      }
+                      disabled={disabled}
+                      placeholder="Opcional"
+                      inputMode="decimal"
+                    />
+                  </div>
                 </div>
-                <div>
-                  <Input
-                    value={line.quantity}
-                    onChange={(e) =>
-                      updateLine(line.key, { quantity: e.target.value })
-                    }
-                    placeholder="Cant."
-                    disabled={disabled}
-                    className={recipeFormFieldClass}
-                  />
-                  {opt ? (
-                    <p className="mt-1 text-[10px] text-slate-400">
-                      {shortUnitOfMeasure(opt.unitOfMeasure)}
-                    </p>
-                  ) : null}
-                </div>
-                <div>
-                  <Input
-                    value={line.wastePct}
-                    onChange={(e) =>
-                      updateLine(line.key, { wastePct: e.target.value })
-                    }
-                    placeholder="Merma %"
-                    disabled={disabled}
-                    className={recipeFormFieldClass}
-                  />
-                </div>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon"
-                  className="shrink-0 self-start text-slate-500 hover:text-red-600"
-                  disabled={disabled || lines.length <= 1}
-                  onClick={() => removeLine(line.key)}
-                  aria-label="Quitar ingrediente"
-                >
-                  <Trash2 className="size-4" />
-                </Button>
               </li>
             )
           })}
         </ul>
       )}
 
-      <Button
+      <RootsSubtleButton
         type="button"
-        variant="outline"
-        size="sm"
+        className="self-start"
         disabled={disabled}
         onClick={addLine}
       >
+        <Plus className="size-4" aria-hidden />
         Agregar ingrediente
-      </Button>
-    </div>
+      </RootsSubtleButton>
+    </section>
   )
 }

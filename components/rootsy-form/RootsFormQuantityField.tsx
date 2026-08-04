@@ -20,6 +20,7 @@ type Props = {
   value: string
   onChange: (value: string) => void
   prefix?: ReactNode
+  prefixClassName?: string
   placeholder?: string
   disabled?: boolean
   invalid?: boolean
@@ -34,6 +35,7 @@ export function RootsFormQuantityField({
   value,
   onChange,
   prefix = "uds.",
+  prefixClassName,
   placeholder = "0",
   disabled,
   invalid,
@@ -75,6 +77,7 @@ export function RootsFormQuantityField({
       <RootsFormPrefixedInput
         id={fieldId}
         prefix={prefix}
+        prefixClassName={prefixClassName}
         inputMode="numeric"
         autoComplete="off"
         value={value}
