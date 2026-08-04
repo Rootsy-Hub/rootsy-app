@@ -34,7 +34,7 @@ export function MenuSectionNavigator({
         menuFloatingPillShellClass,
       )}
     >
-      <span className="truncate text-sm font-bold leading-none tracking-wide text-foreground">
+      <span className="truncate text-sm font-semibold leading-none tracking-wide text-foreground/95">
         {currentTitle}
       </span>
 
