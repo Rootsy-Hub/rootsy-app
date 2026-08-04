@@ -340,7 +340,7 @@ export function MenuDock({ siteId, popId }: Props) {
         ) : null}
 
         <div className="ml-1 flex shrink-0 items-end gap-2.5 self-end sm:ml-1.5">
-          <div className="mb-1.5 h-8 w-px bg-white/15" aria-hidden />
+          <div className="mb-1.5 h-8 w-px bg-border" aria-hidden />
           <button
             type="button"
             onClick={() => setEditing(!editing)}

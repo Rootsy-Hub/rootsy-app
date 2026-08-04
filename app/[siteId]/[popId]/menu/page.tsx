@@ -17,6 +17,10 @@ import {
   menuRoleLabelClass,
   menuVignetteClass,
 } from "@/app/[siteId]/[popId]/menu/menuNatureStyles"
+import {
+  menuHeaderBorderClass,
+  menuHeaderChromeClass,
+} from "@/app/[siteId]/[popId]/menu/menuFloatingPillStyles"
 import "@/app/[siteId]/[popId]/library/color/rootsyNaturePalette.css"
 import "@/app/[siteId]/[popId]/menu/menuNaturePalette.css"
 import { canAccessMenuItem } from "@/lib/menuPermissions"
@@ -379,9 +383,9 @@ function MenuPage() {
             <img
               src={popBackgroundImageUrl.trim()}
               alt=""
-              className="absolute inset-0 size-full object-cover opacity-[0.32]"
+              className="absolute inset-0 size-full object-cover opacity-[0.40]"
             />
-            <div className="absolute inset-0 bg-background/42" />
+            <div className="absolute inset-0 bg-background/32" />
           </>
         ) : null}
         <div
@@ -414,7 +418,13 @@ function MenuPage() {
         <div className={cn("absolute inset-0", menuVignetteClass)} />
       </div>
 
-      <header className="relative z-20 border-b border-rootsy-hairline/80 bg-card/55 backdrop-blur-2xl backdrop-saturate-150 supports-[backdrop-filter]:bg-card/45">
+      <header
+        className={cn(
+          "relative z-20 border-b",
+          menuHeaderBorderClass,
+          menuHeaderChromeClass,
+        )}
+      >
         <div className="grid grid-cols-[minmax(0,1fr)_minmax(0,280px)_minmax(0,1fr)] items-center gap-4 px-6 py-5 sm:gap-6 sm:px-8">
           <div className="flex min-w-0 items-center gap-6">
             <Link

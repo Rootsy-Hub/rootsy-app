@@ -82,10 +82,10 @@ export const menuAmbientTopGlowClass =
   "bg-[color:var(--nature-canopy-600)]/5 blur-[120px]"
 
 export const menuVignetteClass =
-  "bg-[radial-gradient(ellipse_at_center,transparent_0%,color-mix(in_srgb,var(--nature-night-950)_58%,transparent)_100%)]"
+  "bg-[radial-gradient(ellipse_at_center,transparent_0%,color-mix(in_srgb,var(--nature-night-950)_50%,transparent)_100%)]"
 
 export const menuVignetteSoftClass =
-  "bg-[radial-gradient(ellipse_at_center,transparent_0%,color-mix(in_srgb,var(--nature-night-950)_55%,transparent)_100%)]"
+  "bg-[radial-gradient(ellipse_at_center,transparent_0%,color-mix(in_srgb,var(--nature-night-950)_48%,transparent)_100%)]"
 
 export const menuRoleLabelClass =
   "text-[color:var(--nature-canopy-300)]"

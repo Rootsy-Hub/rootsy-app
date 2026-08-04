@@ -1,7 +1,11 @@
 "use client"
 
 import { DOCK_SLOT_SHIFT_PX } from "@/app/[siteId]/[popId]/menu/MenuDockDndContext"
-import { menuFloatingPillShellClass } from "@/app/[siteId]/[popId]/menu/menuFloatingPillStyles"
+import {
+  menuFloatingPillShellClass,
+  menuHeaderBorderClass,
+  menuHeaderChromeClass,
+} from "@/app/[siteId]/[popId]/menu/menuFloatingPillStyles"
 import {
   menuAmbientTopGlowClass,
   menuNatureShellClass,
@@ -71,7 +75,13 @@ function MenuSectionNavigatorSkeleton() {
 
 function MenuPageSkeletonHeader() {
   return (
-    <header className="relative z-20 border-b border-rootsy-hairline/80 bg-card/55 backdrop-blur-2xl backdrop-saturate-150 supports-[backdrop-filter]:bg-card/45">
+    <header
+      className={cn(
+        "relative z-20 border-b",
+        menuHeaderBorderClass,
+        menuHeaderChromeClass,
+      )}
+    >
       <div className="grid grid-cols-[minmax(0,1fr)_minmax(0,280px)_minmax(0,1fr)] items-center gap-4 px-6 py-5 sm:gap-6 sm:px-8">
         <div className="flex min-w-0 items-center gap-6">
           <Skeleton className="size-12 shrink-0 rounded-xl bg-muted-foreground/10" />
