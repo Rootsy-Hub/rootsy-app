@@ -227,33 +227,32 @@ export const lightToolbarDropdownLabelClass =
 
 /** Popover del calendario en paneles claros (modales light, filtros de período). */
 export const lightDatePopoverContentClass =
-  "border border-zinc-200/90 bg-white p-0 text-zinc-900 shadow-xl shadow-zinc-900/8 dark:border-zinc-200 dark:bg-white dark:text-zinc-900"
+  "border border-[#e7e5e4]/90 bg-white p-0 text-[#292524] shadow-xl shadow-[#292524]/8"
 
 /** Calendario dentro del popover: isla clara; anula tokens dark del shell. */
 export const lightDateCalendarClass = cn(
-  "rounded-xl border border-zinc-100 bg-white p-1.5 shadow-inner shadow-zinc-900/5",
-  "dark:border-zinc-100 dark:bg-white",
+  "rounded-xl border border-[#f5f5f0] bg-white p-1.5 shadow-inner shadow-[#292524]/5",
   "[&_[data-slot=calendar]]:w-full [&_[data-slot=calendar]]:max-w-none",
   "[&_.rdp-root]:!w-full [&_.rdp-root]:max-w-none",
   "[&_.rdp-month]:w-full min-w-0",
   "[&_.rdp-month_grid]:w-full [&_.rdp-month_grid]:table-fixed",
-  "[&_button[data-day]]:!text-zinc-800 dark:[&_button[data-day]]:!text-zinc-800",
+  "[&_button[data-day]]:!text-[#44403c]",
   "[&_button[data-day]>span]:!opacity-100 [&_button[data-day]>span]:!text-inherit",
-  "[&_button[data-day]:not([data-range-start=true]):not([data-range-end=true]):not([data-selected-single=true]):not([data-range-middle=true]):hover]:!bg-zinc-100",
-  "[&_button[data-day]:not([data-range-start=true]):not([data-range-end=true]):not([data-selected-single=true]):not([data-range-middle=true]):hover]:!text-zinc-900",
+  "[&_button[data-day]:not([data-range-start=true]):not([data-range-end=true]):not([data-selected-single=true]):not([data-range-middle=true]):hover]:!bg-[#f5f5f0]",
+  "[&_button[data-day]:not([data-range-start=true]):not([data-range-end=true]):not([data-selected-single=true]):not([data-range-middle=true]):hover]:!text-[#292524]",
   "[&_button[data-day][data-range-start=true]:hover]:!bg-emerald-700 [&_button[data-day][data-range-start=true]:hover]:!text-white",
   "[&_button[data-day][data-range-end=true]:hover]:!bg-emerald-700 [&_button[data-day][data-range-end=true]:hover]:!text-white",
   "[&_button[data-day][data-selected-single=true]:hover]:!bg-emerald-700 [&_button[data-day][data-selected-single=true]:hover]:!text-white",
-  "[&_button[data-day][data-range-middle=true]:hover]:!bg-emerald-200 [&_button[data-day][data-range-middle=true]:hover]:!text-zinc-900",
+  "[&_button[data-day][data-range-middle=true]:hover]:!bg-emerald-200 [&_button[data-day][data-range-middle=true]:hover]:!text-[#292524]",
   "[&_button[data-day][data-selected-single=true]]:!bg-emerald-600 [&_button[data-day][data-selected-single=true]]:!text-white",
   "[&_button[data-day][data-range-start=true]]:!bg-emerald-600 [&_button[data-day][data-range-start=true]]:!text-white",
   "[&_button[data-day][data-range-end=true]]:!bg-emerald-600 [&_button[data-day][data-range-end=true]]:!text-white",
-  "[&_button[data-day][data-range-middle=true]]:!bg-emerald-100 [&_button[data-day][data-range-middle=true]]:!text-zinc-800",
-  "[&_.rdp-button_previous]:!text-zinc-700 [&_.rdp-button_next]:!text-zinc-700",
-  "[&_.rdp-weekday]:!text-zinc-500",
-  "[&_.rdp-caption_label]:!text-zinc-900",
-  "[&_td.rdp-outside_button[data-day]]:!text-zinc-400",
-  "[&_td.rdp-disabled_button[data-day]]:!text-zinc-300",
+  "[&_button[data-day][data-range-middle=true]]:!bg-emerald-100 [&_button[data-day][data-range-middle=true]]:!text-[#44403c]",
+  "[&_.rdp-button_previous]:!text-[#57534e] [&_.rdp-button_next]:!text-[#57534e]",
+  "[&_.rdp-weekday]:!text-[#78716c]",
+  "[&_.rdp-caption_label]:!text-[#292524]",
+  "[&_td.rdp-outside_button[data-day]]:!text-[#a8a29e]",
+  "[&_td.rdp-disabled_button[data-day]]:!text-[#d6d3d1]",
 )
 
 export const lightFilterChipClass =

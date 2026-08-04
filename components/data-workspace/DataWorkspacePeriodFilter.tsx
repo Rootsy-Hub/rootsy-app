@@ -45,13 +45,12 @@ const dateFilterTriggerClass = cn(
 )
 
 const dateShortcutButtonClass = cn(
-  "rounded-lg px-2.5 py-2 text-left text-sm text-zinc-800 transition-colors",
-  "hover:bg-zinc-100 focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-emerald-600/40",
-  "dark:text-zinc-800 dark:hover:bg-zinc-100",
+  "rounded-lg px-2.5 py-2 text-left text-sm text-[#44403c] transition-colors",
+  "hover:bg-[#f5f5f0] focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-emerald-600/40",
 )
 
 const dateShortcutButtonActiveClass =
-  "bg-zinc-100 font-medium text-zinc-950 dark:bg-zinc-100 dark:text-zinc-950"
+  "bg-[#f5f5f0] font-medium text-[#292524]"
 
 const rootsFormFilterTriggerActiveClass =
   "!border-[#16704a] ring-2 ring-[#16704a]/20"
@@ -166,7 +165,7 @@ export function DataWorkspacePeriodFilter({
       </span>
       <ChevronDown
         className={cn(
-          "my-auto mr-3 size-4 shrink-0 text-zinc-500 transition-transform duration-200",
+          "my-auto mr-3 size-4 shrink-0 text-[#78716c] transition-transform duration-200",
           popoverOpen && "rotate-180",
         )}
         aria-hidden
@@ -266,10 +265,10 @@ export function DataWorkspacePeriodFilter({
             <div
               className={cn(
                 "px-2 py-2",
-                !isCompact && "border-b border-zinc-100",
+                !isCompact && "border-b border-[#f5f5f0]",
               )}
             >
-              <p className="px-2 pb-1.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-zinc-400">
+              <p className="px-2 pb-1.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-[#a8a29e]">
                 Atajos
               </p>
               <div
@@ -314,7 +313,7 @@ export function DataWorkspacePeriodFilter({
               </div>
             </div>
 
-            <div className="border-t border-zinc-100 px-2 py-2">
+            <div className="border-t border-[#f5f5f0] px-2 py-2">
               <button
                 type="button"
                 onClick={() => {

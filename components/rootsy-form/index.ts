@@ -65,3 +65,10 @@ export {
   rootsFormDiscountModePrefixClass,
   rootsFormDiscountModeButtonClass,
 } from "@/components/rootsy-form/rootsFormStyles"
+export {
+  ROOTSY_FORM_EARTH,
+  rootsFormEarthBorderClass,
+  rootsFormEarthTextClass,
+  rootsFormEarthTextSecondaryClass,
+  rootsFormTextInputSurfaceClass,
+} from "@/components/rootsy-form/rootsFormEarthTokens"

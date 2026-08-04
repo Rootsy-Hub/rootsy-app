@@ -36,7 +36,7 @@ export const RootsFormSelectTrigger = forwardRef<
         <ChevronDownIcon
           className={cn(
             "size-4 shrink-0 opacity-100",
-            tone === "dark" ? "text-zinc-400" : "text-zinc-500",
+            tone === "dark" ? "text-[#d6d3d1]" : "text-[#78716c]",
             prefixed && "my-auto mr-3",
           )}
           aria-hidden

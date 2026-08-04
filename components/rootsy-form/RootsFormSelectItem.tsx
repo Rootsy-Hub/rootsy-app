@@ -31,7 +31,7 @@ export function RootsFormSelectItem({
       <span
         className={cn(
           "pointer-events-none absolute inset-y-0 right-3 flex w-4 items-center justify-center",
-          tone === "dark" ? "text-emerald-300/90" : "text-zinc-500",
+          tone === "dark" ? "text-emerald-300/90" : "text-[#78716c]",
         )}
       >
         <SelectPrimitive.ItemIndicator>
