@@ -7,12 +7,15 @@ import type {
 import {
   RootsSortableActionList,
   RootsSortableActionListPanel,
+  rootsSortableListFooterHintClass,
   type RootsSortableActionListItem,
 } from "@/components/rootsy-list"
 import { useCallback, useEffect, useRef, useState } from "react"
 
 type Props = {
   categories: ArticleCategoryOption[]
+  /** Sin panel propio — para usar dentro de un modal con header ya definido. */
+  embedded?: boolean
   canUpdate: boolean
   canDelete: boolean
   editingCategoryId: string | null
@@ -33,6 +36,22 @@ function sortByOrder(a: ArticleCategoryOption, b: ArticleCategoryOption) {
 function layoutSignature(categories: ArticleCategoryOption[]): string {
   return categories
     .map((c) => `${c.id}:${c.sortOrder}:${c.showInSale ? 1 : 0}`)
+    .join("|")
+}
+
+function categoryIdSetKey(categories: ArticleCategoryOption[]): string {
+  return categories
+    .map((c) => c.id)
+    .sort()
+    .join("|")
+}
+
+function idsFromLayoutSignature(sig: string): string {
+  return sig
+    .split("|")
+    .map((part) => part.split(":")[0] ?? "")
+    .filter(Boolean)
+    .sort()
     .join("|")
 }
 
@@ -65,6 +84,7 @@ function mergeListOrder(
 
 export function ArticleCategoriesSaleBoard({
   categories,
+  embedded = false,
   canUpdate,
   canDelete,
   editingCategoryId,
@@ -83,11 +103,16 @@ export function ArticleCategoriesSaleBoard({
   useEffect(() => {
     const incomingSig = layoutSignature(categories)
     const pending = pendingLayoutSigRef.current
+    const incomingIds = categoryIdSetKey(categories)
+
     if (pending) {
       if (incomingSig === pending) {
         pendingLayoutSigRef.current = null
-      } else {
+      } else if (idsFromLayoutSignature(pending) === incomingIds) {
+        // Mismo conjunto de categorías: optimismo de orden/visibilidad en curso.
         return
+      } else {
+        pendingLayoutSigRef.current = null
       }
     }
     setItems([...categories].sort(sortByOrder))
@@ -130,6 +155,45 @@ export function ArticleCategoriesSaleBoard({
     [items],
   )
 
+  const list = (
+    <RootsSortableActionList
+      listId="article-categories"
+      items={toListItems(items)}
+      onReorder={handleReorder}
+      emptyMessage="Todavía no hay categorías."
+      canReorder={canUpdate}
+      canToggleVisibility={canUpdate}
+      canEdit={canUpdate}
+      canDelete={canDelete}
+      editingId={editingCategoryId}
+      editingValue={editingCategoryName}
+      editSaveBusy={categorySaveBusy}
+      onStartEdit={(item) => {
+        const category = categoryById(item.id)
+        if (category) onStartEdit(category)
+      }}
+      onCancelEdit={onCancelEdit}
+      onEditingValueChange={onEditingNameChange}
+      onSaveEdit={onSaveEdit}
+      onDelete={(item) => onDelete(item.id, item.label)}
+      onToggleVisibility={toggleVisibility}
+    />
+  )
+
+  if (embedded) {
+    return (
+      <div className="space-y-3">
+        {list}
+        {canUpdate ? (
+          <p className={rootsSortableListFooterHintClass}>
+            Los cambios de orden y visibilidad se guardan al soltar o al tocar
+            el ojo.
+          </p>
+        ) : null}
+      </div>
+    )
+  }
+
   return (
     <RootsSortableActionListPanel
       title="Categorías"
@@ -140,28 +204,7 @@ export function ArticleCategoriesSaleBoard({
           : undefined
       }
     >
-      <RootsSortableActionList
-        listId="article-categories"
-        items={toListItems(items)}
-        onReorder={handleReorder}
-        emptyMessage="Todavía no hay categorías."
-        canReorder={canUpdate}
-        canToggleVisibility={canUpdate}
-        canEdit={canUpdate}
-        canDelete={canDelete}
-        editingId={editingCategoryId}
-        editingValue={editingCategoryName}
-        editSaveBusy={categorySaveBusy}
-        onStartEdit={(item) => {
-          const category = categoryById(item.id)
-          if (category) onStartEdit(category)
-        }}
-        onCancelEdit={onCancelEdit}
-        onEditingValueChange={onEditingNameChange}
-        onSaveEdit={onSaveEdit}
-        onDelete={(item) => onDelete(item.id, item.label)}
-        onToggleVisibility={toggleVisibility}
-      />
+      {list}
     </RootsSortableActionListPanel>
   )
 }

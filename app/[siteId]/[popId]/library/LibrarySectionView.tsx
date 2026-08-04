@@ -8,6 +8,7 @@ import {
   articleDialogSurfaceClass,
   articleDialogTitleClass,
 } from "@/app/[siteId]/[popId]/articles/articleConstants"
+import { ArticleDeleteAlertLibraryDemo } from "@/app/[siteId]/[popId]/library/ArticleDeleteAlertLibraryDemo"
 import { LayoutButtonLibrarySection } from "@/app/[siteId]/[popId]/library/LayoutButtonLibrarySection"
 import { LayoutDropdownLibrarySection } from "@/app/[siteId]/[popId]/library/LayoutDropdownLibrarySection"
 import { ColorFoundationView } from "@/app/[siteId]/[popId]/library/color/ColorFoundationView"
@@ -1031,7 +1032,7 @@ export function LibrarySectionView({
             <SpecCard
               title="RootsSortableActionList"
               source="components/rootsy-list · ArticleCategoriesSaleBoard"
-              tokens={["grip", "eye", "pencil", "trash"]}
+              tokens={["tierra e50", "corteza e400", "canopy acciones"]}
             >
               <RootsSortableActionListPanel
                 title="Categorías"
@@ -1162,7 +1163,7 @@ export function LibrarySectionView({
           <LibrarySection
             id="modals-alert"
             title="Alert dialog"
-            description="Confirmaciones destructivas — variante aparte del modal estándar."
+            description="Confirmaciones destructivas — shell compacto con saleOpAlertDialogContent. Incluye variante simple (venta) y con confirmación escrita (stock)."
           >
             <SpecCard title="Alert venta" source="saleOpAlertDialogContent">
               <AlertDialog open={false}>
@@ -1201,6 +1202,8 @@ export function LibrarySectionView({
                 </div>
               </div>
             </SpecCard>
+
+            <ArticleDeleteAlertLibraryDemo />
           </LibrarySection>
       )
     default:

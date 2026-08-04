@@ -1,25 +1,42 @@
 "use client"
 
 import type { ArticleTableRow } from "@/app/[siteId]/[popId]/articles/actions"
+import {
+  ArticleTableRowPills,
+  formatArticleStockOnHand,
+} from "@/app/[siteId]/[popId]/articles/articlesTableCells"
 import { DataWorkspaceTableThumbnail } from "@/components/data-workspace/DataWorkspaceListTablePrimitives"
 import {
   tdMoneyClass,
   tdMoneyMutedClass,
   tdMoneyVatClass,
 } from "@/components/data-workspace/dataWorkspaceListStyles"
-import { Badge } from "@/components/ui/badge"
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog"
-import { ArticleCatalogDiscountBadge } from "@/app/[siteId]/[popId]/articles/ArticleCatalogDiscountBadge"
-import { formatArticleStockOnHand } from "@/app/[siteId]/[popId]/articles/articlesTableCells"
+  RootsDialogBody,
+  RootsDialogContent,
+  RootsDialogFooter,
+  RootsDialogHeader,
+  rootsDialogDetailFieldStackClass,
+  rootsDialogDetailLabelClass,
+  rootsDialogDetailMetaClass,
+  rootsDialogDetailValueClass,
+  rootsDialogDetailValueMultilineClass,
+} from "@/components/rootsy-dialog"
+import {
+  RootsFormGrid,
+  rootsFormColumnClass,
+  rootsFormTwoColRowClass,
+} from "@/components/rootsy-form"
+import {
+  rootsButtonClassForVariant,
+  rootsButtonVariant,
+} from "@/components/rootsy-button"
+import { Button } from "@/components/ui/button"
+import { Dialog } from "@/components/ui/dialog"
 import {
   articleHasCatalogDiscount,
   effectiveArticleSalePrice,
+  formatArticleDiscountBadge,
 } from "@/lib/articleDiscount"
 import {
   ARTICLE_ITEM_KIND_STOCK_LABEL,
@@ -35,30 +52,27 @@ const fmt = new Intl.NumberFormat("es-AR", {
   minimumFractionDigits: 2,
 })
 
-const dialogSurface = cn(
-  "rootsy-app-light gap-0 overflow-hidden rounded-2xl border border-border/60 bg-card p-0 text-foreground shadow-2xl ring-1 ring-black/[0.04] sm:max-w-2xl",
-  "max-h-[min(90vh,760px)] flex flex-col overflow-hidden",
-)
-
-const dialogHeader =
-  "shrink-0 space-y-1.5 border-b border-border/50 bg-muted/25 px-6 pb-4 pt-5 text-left"
-
-const dialogBody =
-  "min-h-0 flex-1 overflow-y-auto overscroll-contain px-6 py-4"
-
 function DetailField({
   label,
   children,
+  multiline = false,
 }: {
   label: string
   children: ReactNode
+  multiline?: boolean
 }) {
   return (
-    <div className="rounded-lg border border-border bg-muted/20 px-3 py-2">
-      <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-        {label}
-      </p>
-      <div className="mt-1 text-sm text-foreground">{children}</div>
+    <div className={rootsDialogDetailFieldStackClass}>
+      <p className={rootsDialogDetailLabelClass}>{label}</p>
+      <div
+        className={
+          multiline
+            ? rootsDialogDetailValueMultilineClass
+            : rootsDialogDetailValueClass
+        }
+      >
+        {children}
+      </div>
     </div>
   )
 }
@@ -77,8 +91,8 @@ function DetailMoney({
   return (
     <span
       className={cn(
-        "text-sm font-medium",
-        strikethrough && "text-muted-foreground line-through",
+        "font-medium tabular-nums",
+        strikethrough && "font-normal text-muted-foreground line-through",
         !strikethrough &&
           (vat ? tdMoneyVatClass : muted ? tdMoneyMutedClass : tdMoneyClass),
       )}
@@ -86,6 +100,11 @@ function DetailMoney({
       {vat ? `${value} %` : fmt.format(value)}
     </span>
   )
+}
+
+function emptyValue(value: string | null | undefined) {
+  const trimmed = value?.trim()
+  return trimmed ? trimmed : "—"
 }
 
 export function ArticlesTableDetailDialog({
@@ -101,7 +120,7 @@ export function ArticlesTableDetailDialog({
 }) {
   if (!row) return null
 
-  const sellable = row.itemKind === "merchandise"
+  const isMerchandise = row.itemKind === "merchandise"
   const hasDiscount = articleHasCatalogDiscount(
     row.discountMode,
     row.discountValue,
@@ -116,121 +135,144 @@ export function ArticlesTableDetailDialog({
       ? row.suppliers.map((s) => s.name).join(", ")
       : "—"
 
+  const headerMeta = [
+    ARTICLE_ITEM_KIND_STOCK_LABEL[row.itemKind],
+    row.categoryName || null,
+    row.brand.trim() || null,
+  ]
+    .filter(Boolean)
+    .join(" · ")
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className={dialogSurface} data-rootsy-light-shell="true">
-        <DialogHeader className={dialogHeader}>
-          <DialogTitle className="text-base font-semibold tracking-tight">
-            {row.name || "Artículo"}
-          </DialogTitle>
-          <DialogDescription className="text-sm leading-relaxed">
-            {ARTICLE_ITEM_KIND_STOCK_LABEL[row.itemKind]}
-            {row.categoryName ? ` · ${row.categoryName}` : ""}
-            {row.brand.trim() ? ` · ${row.brand}` : ""}
-          </DialogDescription>
-        </DialogHeader>
-        <div className={dialogBody}>
-          <div className="mb-4 flex items-start gap-4">
+      <RootsDialogContent size="twoCol">
+        <RootsDialogHeader
+          title={row.name || "Artículo"}
+          description={headerMeta || "Detalle del artículo"}
+        />
+
+        <RootsDialogBody>
+          <div className="mb-5 flex flex-wrap items-start gap-4">
             <DataWorkspaceTableThumbnail
               src={row.imageUrl}
               alt={row.name || "Artículo"}
               size="lg"
             />
-            <div className="min-w-0 flex-1 space-y-2">
-              <Badge
-                variant="secondary"
-                className={cn(
-                  "font-normal",
-                  row.isActive
-                    ? "border-primary/25 bg-primary/10 text-forest"
-                    : "bg-muted text-muted-foreground",
-                )}
-              >
-                {row.isActive ? "Activo" : "Inactivo"}
-              </Badge>
-              {sellable ? (
-                <Badge variant="outline" className="font-normal">
-                  Vendible
-                </Badge>
-              ) : null}
-              {hasDiscount && row.discountMode && row.discountValue != null ? (
-                <ArticleCatalogDiscountBadge
-                  mode={row.discountMode}
-                  value={row.discountValue}
-                />
-              ) : null}
+            <div className="flex min-w-0 flex-1 flex-col gap-2">
+              <ArticleTableRowPills row={row} />
+              <p className={rootsDialogDetailMetaClass}>
+                ID · {row.id}
+              </p>
             </div>
           </div>
 
-          {row.description.trim() ? (
-            <div className="mb-4 rounded-lg border border-border bg-muted/15 px-3 py-2.5">
-              <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-                Descripción
-              </p>
-              <p className="mt-1 whitespace-pre-wrap text-sm leading-relaxed text-foreground">
-                {row.description}
-              </p>
-            </div>
-          ) : null}
-
-          <div className="grid gap-3 sm:grid-cols-2">
-            <DetailField label="Tipo">
-              {ARTICLE_ITEM_KIND_STOCK_LABEL[row.itemKind]}
-            </DetailField>
-            <DetailField label="Categoría">{row.categoryName || "—"}</DetailField>
-            <DetailField label="Marca">{row.brand.trim() || "—"}</DetailField>
-            <DetailField label="SKU">{row.sku?.trim() || "—"}</DetailField>
-            {sellable ? (
-              <DetailField label="Código de barras">
-                {row.barcode?.trim() || "—"}
-              </DetailField>
-            ) : null}
-            <DetailField label="Proveedores">{supplierLabel}</DetailField>
-            <DetailField label="Unidad de medida">
-              {labelUnitOfMeasure(row.unitOfMeasure)}
-            </DetailField>
-            <DetailField label="IVA">
-              <span className={tdMoneyVatClass}>
-                {labelArticleIvaRate(siteId, row.iva)}
-              </span>
-            </DetailField>
-            <DetailField label="Precio venta">
-              {sellable ? (
-                hasDiscount ? (
-                  <span className="inline-flex flex-wrap items-baseline gap-x-2 gap-y-1">
-                    <DetailMoney value={row.salePrice} strikethrough />
-                    <DetailMoney value={effectivePrice} />
-                  </span>
+          <RootsFormGrid>
+            <div className={rootsFormColumnClass}>
+              <DetailField label="Descripción" multiline>
+                {row.description.trim() ? (
+                  <span className="whitespace-pre-wrap">{row.description}</span>
                 ) : (
-                  <DetailMoney value={row.salePrice} />
-                )
-              ) : (
-                "—"
-              )}
-            </DetailField>
-            <DetailField label="Precio costo">
-              <DetailMoney value={row.costPrice} muted />
-            </DetailField>
-            <DetailField label="Stock actual">
-              {formatArticleStockOnHand(row.stockOnHand)}
-            </DetailField>
-            {row.itemKind === "raw_material" ? (
-              <DetailField label="Merma esperada">
-                {row.defaultWastePct != null ? `${row.defaultWastePct} %` : "—"}
+                  "—"
+                )}
               </DetailField>
-            ) : null}
-            {row.itemKind !== "merchandise" ? (
-              <DetailField label="Stock mínimo">
-                {row.minStockLevel != null ? row.minStockLevel : "—"}
-              </DetailField>
-            ) : null}
-          </div>
 
-          <p className="mt-4 break-all text-[11px] text-muted-foreground">
-            {row.id}
-          </p>
-        </div>
-      </DialogContent>
+              <div className={rootsFormTwoColRowClass}>
+                <DetailField label="Tipo">
+                  {ARTICLE_ITEM_KIND_STOCK_LABEL[row.itemKind]}
+                </DetailField>
+                <DetailField label="Categoría">
+                  {emptyValue(row.categoryName)}
+                </DetailField>
+              </div>
+
+              <div className={rootsFormTwoColRowClass}>
+                <DetailField label="Marca">{emptyValue(row.brand)}</DetailField>
+                <DetailField label="SKU">{emptyValue(row.sku)}</DetailField>
+              </div>
+
+              {isMerchandise ? (
+                <DetailField label="Código de barras">
+                  {emptyValue(row.barcode)}
+                </DetailField>
+              ) : null}
+
+              <DetailField label="Proveedores" multiline>
+                {supplierLabel}
+              </DetailField>
+            </div>
+
+            <div className={rootsFormColumnClass}>
+              <DetailField label="Unidad de medida">
+                {labelUnitOfMeasure(row.unitOfMeasure)}
+              </DetailField>
+
+              <DetailField label="IVA">
+                <span className={tdMoneyVatClass}>
+                  {labelArticleIvaRate(siteId, row.iva)}
+                </span>
+              </DetailField>
+
+              {isMerchandise ? (
+                <>
+                  <DetailField label="Precio venta">
+                    {hasDiscount ? (
+                      <span className="inline-flex flex-wrap items-baseline gap-x-2 gap-y-1">
+                        <DetailMoney value={row.salePrice} strikethrough />
+                        <DetailMoney value={effectivePrice} />
+                      </span>
+                    ) : (
+                      <DetailMoney value={row.salePrice} />
+                    )}
+                  </DetailField>
+
+                  <DetailField label="Descuento de catálogo">
+                    {hasDiscount && row.discountMode && row.discountValue != null ? (
+                      formatArticleDiscountBadge(row.discountMode, row.discountValue)
+                    ) : (
+                      "—"
+                    )}
+                  </DetailField>
+
+                  <DetailField label="Vender con stock negativo">
+                    {row.allowNegativeStock ? "Sí, permitido" : "No"}
+                  </DetailField>
+                </>
+              ) : null}
+
+              <DetailField label="Precio de compra">
+                <DetailMoney value={row.costPrice} muted />
+              </DetailField>
+
+              <DetailField label="Stock actual">
+                {formatArticleStockOnHand(row.stockOnHand)}
+              </DetailField>
+
+              {row.itemKind === "raw_material" ? (
+                <DetailField label="Merma esperada">
+                  {row.defaultWastePct != null ? `${row.defaultWastePct} %` : "—"}
+                </DetailField>
+              ) : null}
+
+              {!isMerchandise ? (
+                <DetailField label="Stock mínimo">
+                  {row.minStockLevel != null ? row.minStockLevel : "—"}
+                </DetailField>
+              ) : null}
+            </div>
+          </RootsFormGrid>
+        </RootsDialogBody>
+
+        <RootsDialogFooter className="sm:justify-end">
+          <Button
+            type="button"
+            variant={rootsButtonVariant.tertiary}
+            className={rootsButtonClassForVariant("tertiary")}
+            onClick={() => onOpenChange(false)}
+          >
+            Cerrar
+          </Button>
+        </RootsDialogFooter>
+      </RootsDialogContent>
     </Dialog>
   )
 }

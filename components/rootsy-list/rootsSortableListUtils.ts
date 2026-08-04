@@ -55,11 +55,19 @@ export function rootsSortableListTrackHeight(itemCount: number) {
 
 export function rootsSortableInsertZoneTop(index: number, itemCount: number) {
   if (index >= itemCount) {
-    return (
-      (itemCount - 1) * ROOTS_SORTABLE_SLOT_SHIFT_PX + ROOTS_SORTABLE_ROW_HEIGHT_PX
-    )
+    const trackHeight = rootsSortableListTrackHeight(itemCount)
+    return Math.max(0, trackHeight - ROOTS_SORTABLE_SLOT_SHIFT_PX)
   }
   return index * ROOTS_SORTABLE_SLOT_SHIFT_PX
+}
+
+export function rootsSortableInsertZoneHeight(index: number, itemCount: number) {
+  if (index >= itemCount) {
+    const trackHeight = rootsSortableListTrackHeight(itemCount)
+    const top = rootsSortableInsertZoneTop(index, itemCount)
+    return Math.min(ROOTS_SORTABLE_SLOT_SHIFT_PX, trackHeight - top)
+  }
+  return ROOTS_SORTABLE_SLOT_SHIFT_PX
 }
 
 export function getRootsSortableShiftY<T extends { id: string }>(

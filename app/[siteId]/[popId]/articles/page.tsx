@@ -5,7 +5,9 @@ import {
   defaultArticleCatalogExtraFormState,
   type ArticleCatalogExtraFormState,
 } from "@/app/[siteId]/[popId]/articles/ArticleCatalogExtraFields"
-import { ArticleCategoriesSaleBoard } from "@/app/[siteId]/[popId]/articles/ArticleCategoriesSaleBoard"
+import { ArticleDeleteDialog } from "@/app/[siteId]/[popId]/articles/ArticleDeleteDialog"
+import { ArticleCategoriesDialog } from "@/app/[siteId]/[popId]/articles/ArticleCategoriesDialog"
+import { ArticleCategoryDeleteDialog } from "@/app/[siteId]/[popId]/articles/ArticleCategoryDeleteDialog"
 import { ArticleItemKindToolbarFilter, articleItemKindFilterToQuery, resolveArticleItemKindFilterId } from "@/app/[siteId]/[popId]/articles/ArticleItemKindToolbarFilter"
 import {
   createPopArticle,
@@ -29,31 +31,25 @@ import {
 } from "@/app/[siteId]/[popId]/articles/ArticleItemFormFields"
 import { ArticleUpsertDialog } from "@/app/[siteId]/[popId]/articles/ArticleUpsertDialog"
 import type { ArticleUpsertFormState } from "@/app/[siteId]/[popId]/articles/ArticleUpsertFormFields"
-import { ArticleImagePreviewDialog } from "@/app/[siteId]/[popId]/articles/ArticleImagePreviewDialog"
+import { ArticlesFiltersDialog } from "@/app/[siteId]/[popId]/articles/ArticlesFiltersDialog"
 import { ArticlesTableDetailDialog } from "@/app/[siteId]/[popId]/articles/ArticlesTableDetailDialog"
+import { ArticleImagePreviewDialog } from "@/app/[siteId]/[popId]/articles/ArticleImagePreviewDialog"
 import {
   ArticleTableArticleCell,
   ArticleTableCategoryCell,
   ArticleTableDetailCell,
   ArticleTableImageCell,
   ArticleTableStockCell,
-  ArticleTableSuppliersCell,
+  articleTableArticleColumnClass,
+  articleTableDetailColumnClass,
 } from "@/app/[siteId]/[popId]/articles/articlesTableCells"
 import {
-  ARTICLE_DELETE_CONFIRM_PHRASE,
-  articleDialogBodyClass,
-  articleDialogDescriptionClass,
-  articleDialogFooterClass,
-  articleDialogHeaderClass,
-  articleDialogOverlayClass,
-  articleDialogSurfaceClass,
-  articleDialogSurfaceWideClass,
-  articleDialogTitleClass,
-} from "@/app/[siteId]/[popId]/articles/articleConstants"
-import {
   ARTICLE_TABLE_PAGE_SIZES,
+  articlesModalFiltersFromWorkspace,
+  defaultArticlesModalFilters,
   mergeArticlesWorkspaceUrl,
   parseArticlesWorkspaceUrl,
+  type ArticlesModalFilters,
 } from "@/app/[siteId]/[popId]/articles/workspaceUrl"
 import { buildPaginationItems } from "@/app/[siteId]/[popId]/layout/layoutPreviewPagination"
 import { DataWorkspaceListActiveFiltersBar } from "@/components/data-workspace/DataWorkspaceListActiveFiltersBar"
@@ -106,25 +102,7 @@ import { WorkspaceTableSkeletonRows } from "@/components/data-workspace/Workspac
 import { articlesSkeletonColumns } from "@/components/data-workspace/workspaceTableSkeletonPresets"
 import { DataWorkspaceLayout } from "@/components/layouts/DataWorkspaceLayout"
 import { DataWorkspaceHeaderIconButton } from "@/components/layouts/DataWorkspaceHeaderIconButton"
-import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
 import {
   TableBody,
   TableCell,
@@ -241,15 +219,6 @@ function parseCatalogFieldsForSubmit(form: ArticleFormState):
   }
 }
 
-type ArticlesAppliedFilters = {
-  soloActivos: boolean
-  categoryId: string
-}
-
-const defaultArticlesFilters = (): ArticlesAppliedFilters => ({
-  soloActivos: false,
-  categoryId: "",
-})
 
 function defaultItemFormFields(kind: ArticleItemKind): ArticleItemFormState {
   return {
@@ -304,8 +273,8 @@ function ArticlesPage() {
   const searchInputRef = useRef<HTMLInputElement>(null)
 
   const [filtersModalOpen, setFiltersModalOpen] = useState(false)
-  const [draftFilters, setDraftFilters] = useState<ArticlesAppliedFilters>(
-    defaultArticlesFilters,
+  const [draftFilters, setDraftFilters] = useState<ArticlesModalFilters>(
+    defaultArticlesModalFilters,
   )
   const [filterCategoryList, setFilterCategoryList] = useState<
     ArticleCategoryOption[]
@@ -335,7 +304,8 @@ function ArticlesPage() {
   }))
   const [editBanner, setEditBanner] = useState<string | null>(null)
 
-  const [deleteRow, setDeleteRow] = useState<ArticleTableRow | null>(null)
+  const [deleteTarget, setDeleteTarget] = useState<ArticleTableRow | null>(null)
+  const [deleteOpen, setDeleteOpen] = useState(false)
   const [deleteTyped, setDeleteTyped] = useState("")
   const [deleteBusy, setDeleteBusy] = useState(false)
   const [deleteBanner, setDeleteBanner] = useState<string | null>(null)
@@ -391,7 +361,7 @@ function ArticlesPage() {
       page: workspaceParsed.page,
       pageSize: workspaceParsed.pageSize,
       search: workspaceParsed.q,
-      soloActivos: workspaceParsed.soloActivos,
+      ...articlesModalFiltersFromWorkspace(workspaceParsed),
       categoryId: workspaceParsed.categoryId,
       itemKinds: workspaceParsed.itemKinds,
     }),
@@ -400,6 +370,13 @@ function ArticlesPage() {
       workspaceParsed.pageSize,
       workspaceParsed.q,
       workspaceParsed.soloActivos,
+      workspaceParsed.soloInactivos,
+      workspaceParsed.conDescuento,
+      workspaceParsed.sinDescuento,
+      workspaceParsed.conStock,
+      workspaceParsed.sinStock,
+      workspaceParsed.stockNegativo,
+      workspaceParsed.ventaSinStock,
       workspaceParsed.categoryId,
       workspaceParsed.itemKinds.join(","),
     ],
@@ -699,17 +676,21 @@ function ArticlesPage() {
     if (!popId || !siteId || !newCategoryName.trim()) return
     setNewCategorySaving(true)
     setCategoriesBanner(null)
-    const res = await createPopCategory(popId, newCategoryName)
-    setNewCategorySaving(false)
-    if (!res.success) {
-      setCategoriesBanner(res.error)
-      return
-    }
-    setNewCategoryName("")
-    await loadModalCategories({ silent: true })
-    const fresh = await getPopArticleCategories(popId)
-    if (fresh.success) {
-      setFilterCategoryList(fresh.categories)
+    try {
+      const res = await createPopCategory(popId, newCategoryName)
+      if (!res.success) {
+        setCategoriesBanner(res.error)
+        return
+      }
+      setNewCategoryName("")
+      await loadModalCategories({ silent: true })
+      setCategoriesBoardKey((k) => k + 1)
+      const fresh = await getPopArticleCategories(popId)
+      if (fresh.success) {
+        setFilterCategoryList(fresh.categories)
+      }
+    } finally {
+      setNewCategorySaving(false)
     }
   }
 
@@ -818,15 +799,6 @@ function ArticlesPage() {
     }
   }
 
-  const deleteCategoryBlocked =
-    deleteCategoryTarget != null &&
-    deleteCategoryTarget.articleCount != null &&
-    deleteCategoryTarget.articleCount > 0
-  const deleteCategoryReady =
-    deleteCategoryTarget != null && deleteCategoryTarget.articleCount === 0
-  const deleteCategoryChecking =
-    deleteCategoryTarget != null && deleteCategoryTarget.articleCount === null
-
   const submitEdit = async (e: FormEvent) => {
     e.preventDefault()
     if (!popId || !siteId || !editRow) return
@@ -878,26 +850,31 @@ function ArticlesPage() {
   const openDelete = (row: ArticleTableRow) => {
     setDeleteBanner(null)
     setDeleteTyped("")
-    setDeleteRow(row)
+    setDeleteTarget(row)
+    setDeleteOpen(true)
   }
 
-  const closeDelete = () => {
-    setDeleteRow(null)
+  const requestCloseDelete = () => {
+    setDeleteOpen(false)
+  }
+
+  const finalizeDeleteClose = () => {
+    setDeleteTarget(null)
     setDeleteTyped("")
     setDeleteBanner(null)
   }
 
   const submitDelete = async () => {
-    if (!popId || !siteId || !deleteRow) return
+    if (!popId || !siteId || !deleteTarget) return
     setDeleteBusy(true)
     setDeleteBanner(null)
-    const res = await deletePopArticle(popId, deleteRow.id, deleteTyped)
+    const res = await deletePopArticle(popId, deleteTarget.id, deleteTyped)
     setDeleteBusy(false)
     if (!res.success) {
       setDeleteBanner(res.error)
       return
     }
-    closeDelete()
+    requestCloseDelete()
     await fetchArticlesList()
   }
 
@@ -937,6 +914,13 @@ function ArticlesPage() {
   const hasFilterChips =
     workspaceParsed.q.trim() !== "" ||
     workspaceParsed.soloActivos ||
+    workspaceParsed.soloInactivos ||
+    workspaceParsed.conDescuento ||
+    workspaceParsed.sinDescuento ||
+    workspaceParsed.conStock ||
+    workspaceParsed.sinStock ||
+    workspaceParsed.stockNegativo ||
+    workspaceParsed.ventaSinStock ||
     workspaceParsed.categoryId.trim() !== "" ||
     activeItemKindFilterId !== "all"
 
@@ -952,13 +936,17 @@ function ArticlesPage() {
   }, [filterCategoryList, workspaceParsed.categoryId])
 
   const modalFiltersActiveCount = useMemo(() => {
-    let count = 0
-    if (workspaceParsed.soloActivos) count++
-    if (workspaceParsed.categoryId.trim()) count++
-    return count
+    const filters = articlesModalFiltersFromWorkspace(workspaceParsed)
+    return Object.values(filters).filter(Boolean).length
   }, [
     workspaceParsed.soloActivos,
-    workspaceParsed.categoryId,
+    workspaceParsed.soloInactivos,
+    workspaceParsed.conDescuento,
+    workspaceParsed.sinDescuento,
+    workspaceParsed.conStock,
+    workspaceParsed.sinStock,
+    workspaceParsed.stockNegativo,
+    workspaceParsed.ventaSinStock,
   ])
 
   const activeFilterCount = useMemo(() => {
@@ -980,8 +968,7 @@ function ArticlesPage() {
     setSearchInput("")
     replaceWorkspaceQuery({
       q: "",
-      soloActivos: false,
-      categoryId: "",
+      ...defaultArticlesModalFilters(),
       itemKinds: [],
       page: 1,
     })
@@ -1117,14 +1104,13 @@ function ArticlesPage() {
                 <div className={dataWorkspaceListFiltersPanelClass}>
                   <DataWorkspaceListFiltersDialogTrigger
                     id={filtersButtonId}
-                    placeholder="Estado y categoría"
+                    placeholder="Estado y stock"
                     activeCount={modalFiltersActiveCount}
                     expanded={filtersModalOpen}
                     onClick={() => {
-                      setDraftFilters({
-                        soloActivos: workspaceParsed.soloActivos,
-                        categoryId: workspaceParsed.categoryId,
-                      })
+                      setDraftFilters(
+                        articlesModalFiltersFromWorkspace(workspaceParsed),
+                      )
                       setFiltersModalOpen(true)
                     }}
                   />
@@ -1148,105 +1134,26 @@ function ArticlesPage() {
             </div>
           </div>
 
-            <Dialog
+            <ArticlesFiltersDialog
               open={filtersModalOpen}
               onOpenChange={(open) => {
                 if (open) {
-                  setDraftFilters({
-                    soloActivos: workspaceParsed.soloActivos,
-                    categoryId: workspaceParsed.categoryId,
-                  })
+                  setDraftFilters(
+                    articlesModalFiltersFromWorkspace(workspaceParsed),
+                  )
                 }
                 setFiltersModalOpen(open)
               }}
-            >
-              <DialogContent
-                className={articleDialogSurfaceClass}
-                overlayClassName={articleDialogOverlayClass}
-                showCloseButton
-                data-rootsy-light-shell="true"
-              >
-                <DialogHeader className={articleDialogHeaderClass}>
-                  <DialogTitle className={articleDialogTitleClass}>
-                    Filtros
-                  </DialogTitle>
-                  <DialogDescription className={articleDialogDescriptionClass}>
-                    Combinan con la búsqueda. El listado se pagina en el
-                    servidor.
-                  </DialogDescription>
-                </DialogHeader>
-                <div className={articleDialogBodyClass}>
-                  <div className="grid gap-4">
-                    <label className="flex cursor-pointer items-center gap-2 rounded-md border border-transparent px-1 py-0.5 hover:bg-muted/50">
-                      <Checkbox
-                        checked={draftFilters.soloActivos}
-                        onCheckedChange={(c) =>
-                          setDraftFilters((f) => ({
-                            ...f,
-                            soloActivos: c === true,
-                          }))
-                        }
-                        aria-label="Solo artículos activos"
-                      />
-                      <span className="text-sm text-foreground">
-                        Solo artículos activos
-                      </span>
-                    </label>
-                    <div className="space-y-2">
-                      <Label htmlFor="articles-filter-category">Categoría</Label>
-                      <Select
-                        value={
-                          draftFilters.categoryId.trim() || "__all__"
-                        }
-                        onValueChange={(v) =>
-                          setDraftFilters((f) => ({
-                            ...f,
-                            categoryId: v === "__all__" ? "" : v,
-                          }))
-                        }
-                      >
-                        <SelectTrigger
-                          id="articles-filter-category"
-                          className="bg-background"
-                        >
-                          <SelectValue placeholder="Todas" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="__all__">Todas</SelectItem>
-                          {filterCategoryList.map((c) => (
-                            <SelectItem key={c.id} value={c.id}>
-                              {c.name || "—"}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </div>
-                </div>
-                <DialogFooter className={articleDialogFooterClass}>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() => setDraftFilters(defaultArticlesFilters())}
-                  >
-                    Restablecer
-                  </Button>
-                  <Button
-                    type="button"
-                    onClick={() => {
-                      replaceWorkspaceQuery({
-                        soloActivos: draftFilters.soloActivos,
-                        categoryId: draftFilters.categoryId,
-                        page: 1,
-                      })
-                      setFiltersModalOpen(false)
-                    }}
-                  >
-                    Aplicar
-                  </Button>
-                </DialogFooter>
-              </DialogContent>
-            </Dialog>
+              draft={draftFilters}
+              onDraftChange={setDraftFilters}
+              onApply={() => {
+                replaceWorkspaceQuery({
+                  ...draftFilters,
+                  page: 1,
+                })
+                setFiltersModalOpen(false)
+              }}
+            />
 
             <DataWorkspaceListTableShell
               variant="flush"
@@ -1281,14 +1188,98 @@ function ArticlesPage() {
                     ) : null}
                     {workspaceParsed.soloActivos ? (
                       <DataWorkspaceListFilterChip
-                        label="Solo activos"
+                        label="Activos"
                         onRemove={() =>
                           replaceWorkspaceQuery({
                             soloActivos: false,
                             page: 1,
                           })
                         }
-                        removeAriaLabel="Quitar filtro solo activos"
+                        removeAriaLabel="Quitar filtro activos"
+                      />
+                    ) : null}
+                    {workspaceParsed.soloInactivos ? (
+                      <DataWorkspaceListFilterChip
+                        label="Inactivos"
+                        onRemove={() =>
+                          replaceWorkspaceQuery({
+                            soloInactivos: false,
+                            page: 1,
+                          })
+                        }
+                        removeAriaLabel="Quitar filtro inactivos"
+                      />
+                    ) : null}
+                    {workspaceParsed.conDescuento ? (
+                      <DataWorkspaceListFilterChip
+                        label="Con descuento"
+                        onRemove={() =>
+                          replaceWorkspaceQuery({
+                            conDescuento: false,
+                            page: 1,
+                          })
+                        }
+                        removeAriaLabel="Quitar filtro con descuento"
+                      />
+                    ) : null}
+                    {workspaceParsed.sinDescuento ? (
+                      <DataWorkspaceListFilterChip
+                        label="Sin descuento"
+                        onRemove={() =>
+                          replaceWorkspaceQuery({
+                            sinDescuento: false,
+                            page: 1,
+                          })
+                        }
+                        removeAriaLabel="Quitar filtro sin descuento"
+                      />
+                    ) : null}
+                    {workspaceParsed.conStock ? (
+                      <DataWorkspaceListFilterChip
+                        label="Con stock"
+                        onRemove={() =>
+                          replaceWorkspaceQuery({
+                            conStock: false,
+                            page: 1,
+                          })
+                        }
+                        removeAriaLabel="Quitar filtro con stock"
+                      />
+                    ) : null}
+                    {workspaceParsed.sinStock ? (
+                      <DataWorkspaceListFilterChip
+                        label="Sin stock (0)"
+                        onRemove={() =>
+                          replaceWorkspaceQuery({
+                            sinStock: false,
+                            page: 1,
+                          })
+                        }
+                        removeAriaLabel="Quitar filtro sin stock"
+                      />
+                    ) : null}
+                    {workspaceParsed.stockNegativo ? (
+                      <DataWorkspaceListFilterChip
+                        label="Con stock negativo"
+                        onRemove={() =>
+                          replaceWorkspaceQuery({
+                            stockNegativo: false,
+                            page: 1,
+                          })
+                        }
+                        removeAriaLabel="Quitar filtro stock negativo"
+                      />
+                    ) : null}
+                    {workspaceParsed.ventaSinStock ? (
+                      <DataWorkspaceListFilterChip
+                        label="Venta sin stock"
+                        onRemove={() =>
+                          replaceWorkspaceQuery({
+                            ventaSinStock: false,
+                            page: 1,
+                          })
+                        }
+                        removeAriaLabel="Quitar filtro venta sin stock"
                       />
                     ) : null}
                     {workspaceParsed.categoryId.trim() ? (
@@ -1401,7 +1392,8 @@ function ArticlesPage() {
                     <WorkspaceTableHead
                       tone="nature"
                       className={cn(
-                        "min-w-48 px-3",
+                        articleTableArticleColumnClass,
+                        "px-3",
                         workspaceTableLayoutHeaderHeadClass,
                       )}
                     >
@@ -1410,7 +1402,8 @@ function ArticlesPage() {
                     <WorkspaceTableHead
                       tone="nature"
                       className={cn(
-                        "w-44 px-3",
+                        articleTableDetailColumnClass,
+                        "px-3",
                         workspaceTableLayoutHeaderHeadClass,
                       )}
                     >
@@ -1424,15 +1417,6 @@ function ArticlesPage() {
                       )}
                     >
                       Categoría
-                    </WorkspaceTableHead>
-                    <WorkspaceTableHead
-                      tone="nature"
-                      className={cn(
-                        "w-40 px-3",
-                        workspaceTableLayoutHeaderHeadClass,
-                      )}
-                    >
-                      Proveedores
                     </WorkspaceTableHead>
                     <WorkspaceTableHead
                       tone="nature"
@@ -1506,6 +1490,7 @@ function ArticlesPage() {
                           workspaceTableNatureBodyRowClassNames(i, {
                             selected: selected.has(a.id),
                             noHover: true,
+                            inactive: !a.isActive,
                           }),
                         )}
                       >
@@ -1541,7 +1526,6 @@ function ArticlesPage() {
                           onVerDetalle={() => setDetailRow(a)}
                         />
                         <ArticleTableCategoryCell name={a.categoryName} />
-                        <ArticleTableSuppliersCell suppliers={a.suppliers} />
                         <TableCell
                           className={cn(
                             workspaceTableLayoutBodyCellClass,
@@ -1660,70 +1644,20 @@ function ArticlesPage() {
         disabled={editSaving}
       />
 
-      <Dialog open={deleteRow !== null} onOpenChange={(o) => !o && closeDelete()}>
-        <DialogContent
-          data-rootsy-light-shell="true"
-          showCloseButton
-          className={articleDialogSurfaceClass}
-          overlayClassName={articleDialogOverlayClass}
-        >
-          <DialogHeader className={articleDialogHeaderClass}>
-            <DialogTitle className={articleDialogTitleClass}>
-              Eliminar artículo
-            </DialogTitle>
-            <DialogDescription className={articleDialogDescriptionClass}>
-              Esta acción no se puede deshacer desde acá.
-            </DialogDescription>
-          </DialogHeader>
-          <div className={articleDialogBodyClass}>
-            <p className="text-sm text-muted-foreground">
-              Vas a borrar{" "}
-              <strong className="text-foreground">
-                {deleteRow?.name || "este artículo"}
-              </strong>
-              .
-            </p>
-            <p className="mt-3 text-sm text-muted-foreground">
-              Para confirmar, escribí{" "}
-              <strong className="text-foreground">
-                {ARTICLE_DELETE_CONFIRM_PHRASE}
-              </strong>{" "}
-              abajo.
-            </p>
-            {deleteBanner ? (
-              <p
-                role="alert"
-                className="mt-4 rounded-lg border border-destructive/25 bg-destructive/5 px-3 py-2 text-sm text-destructive"
-              >
-                {deleteBanner}
-              </p>
-            ) : null}
-            <Input
-              autoComplete="off"
-              value={deleteTyped}
-              onChange={(e) => setDeleteTyped(e.target.value)}
-              placeholder={ARTICLE_DELETE_CONFIRM_PHRASE}
-              className="mt-4 bg-background"
-            />
-          </div>
-          <DialogFooter className={articleDialogFooterClass}>
-            <Button type="button" variant="outline" onClick={closeDelete}>
-              Cancelar
-            </Button>
-            <Button
-              type="button"
-              variant="destructive"
-              disabled={
-                deleteBusy ||
-                deleteTyped.trim() !== ARTICLE_DELETE_CONFIRM_PHRASE
-              }
-              onClick={() => void submitDelete()}
-            >
-              {deleteBusy ? "Eliminando…" : "Eliminar definitivamente"}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <ArticleDeleteDialog
+        open={deleteOpen}
+        articleName={deleteTarget?.name ?? ""}
+        confirmValue={deleteTyped}
+        banner={deleteBanner}
+        busy={deleteBusy}
+        onOpenChange={(open) => {
+          if (!open) requestCloseDelete()
+        }}
+        onClose={requestCloseDelete}
+        onAfterClose={finalizeDeleteClose}
+        onConfirmValueChange={setDeleteTyped}
+        onConfirmDelete={() => void submitDelete()}
+      />
 
       <ArticleUpsertDialog
         open={createOpen}
@@ -1748,186 +1682,48 @@ function ArticlesPage() {
         disabled={createSaving}
       />
 
-      <Dialog
+      <ArticleCategoriesDialog
         open={categoriesOpen}
-        onOpenChange={(o) => {
-          setCategoriesOpen(o)
-          if (!o) {
+        onOpenChange={(open) => {
+          setCategoriesOpen(open)
+          if (!open) {
             setCategoriesBanner(null)
             cancelEditCategory()
             setNewCategoryName("")
             closeDeleteCategory()
           }
         }}
-      >
-        <DialogContent
-          data-rootsy-light-shell="true"
-          showCloseButton
-          className={articleDialogSurfaceWideClass}
-          overlayClassName={articleDialogOverlayClass}
-        >
-          <DialogHeader className={articleDialogHeaderClass}>
-            <DialogTitle className={articleDialogTitleClass}>
-              Categorías
-            </DialogTitle>
-            <DialogDescription className={articleDialogDescriptionClass}>
-              Ordená las categorías y elegí cuáles se muestran en ventas.
-            </DialogDescription>
-          </DialogHeader>
-          <div className={articleDialogBodyClass}>
-            {categoriesBanner ? (
-              <p
-                role="alert"
-                className="mb-4 rounded-lg border border-destructive/25 bg-destructive/5 px-3 py-2 text-sm text-destructive"
-              >
-                {categoriesBanner}
-              </p>
-            ) : null}
-            {canCreate ? (
-              <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-end">
-                <div className="min-w-0 flex-1 space-y-2">
-                  <Label htmlFor="new-cat-name" className="text-foreground">
-                    Nueva categoría
-                  </Label>
-                  <Input
-                    id="new-cat-name"
-                    value={newCategoryName}
-                    onChange={(e) => setNewCategoryName(e.target.value)}
-                    placeholder="Nombre"
-                    className="bg-background"
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter") {
-                        e.preventDefault()
-                        void submitNewCategory()
-                      }
-                    }}
-                  />
-                </div>
-                <Button
-                  type="button"
-                  className="shrink-0"
-                  disabled={newCategorySaving || !newCategoryName.trim()}
-                  onClick={() => void submitNewCategory()}
-                >
-                  {newCategorySaving ? "Agregando…" : "Agregar"}
-                </Button>
-              </div>
-            ) : null}
-            {categoriesLoading && categoriesRows.length === 0 ? (
-              <p className="text-sm text-muted-foreground">
-                Cargando categorías…
-              </p>
-            ) : (
-              <ArticleCategoriesSaleBoard
-                key={categoriesBoardKey}
-                categories={categoriesRows}
-                canUpdate={canUpdate}
-                canDelete={canDelete}
-                editingCategoryId={editingCategoryId}
-                editingCategoryName={editingCategoryName}
-                categorySaveBusy={categorySaveBusy}
-                onStartEdit={startEditCategory}
-                onCancelEdit={cancelEditCategory}
-                onEditingNameChange={setEditingCategoryName}
-                onSaveEdit={() => void saveEditCategory()}
-                onDelete={removeCategory}
-                onLayoutChange={(updates) => void saveCategoryLayout(updates)}
-              />
-            )}
-          </div>
-        </DialogContent>
-      </Dialog>
+        banner={categoriesBanner}
+        canCreate={canCreate}
+        canUpdate={canUpdate}
+        canDelete={canDelete}
+        loading={categoriesLoading}
+        categories={categoriesRows}
+        boardKey={categoriesBoardKey}
+        newCategoryName={newCategoryName}
+        newCategorySaving={newCategorySaving}
+        onNewCategoryNameChange={setNewCategoryName}
+        onSubmitNewCategory={() => void submitNewCategory()}
+        editingCategoryId={editingCategoryId}
+        editingCategoryName={editingCategoryName}
+        categorySaveBusy={categorySaveBusy}
+        onStartEdit={startEditCategory}
+        onCancelEdit={cancelEditCategory}
+        onEditingNameChange={setEditingCategoryName}
+        onSaveEdit={() => void saveEditCategory()}
+        onDelete={removeCategory}
+        onLayoutChange={(updates) => void saveCategoryLayout(updates)}
+      />
 
-      <Dialog
+      <ArticleCategoryDeleteDialog
         open={deleteCategoryTarget !== null}
-        onOpenChange={(o) => !o && closeDeleteCategory()}
-      >
-        <DialogContent
-          data-rootsy-light-shell="true"
-          showCloseButton
-          className={articleDialogSurfaceClass}
-          overlayClassName={articleDialogOverlayClass}
-        >
-          <DialogHeader className={articleDialogHeaderClass}>
-            <DialogTitle className={articleDialogTitleClass}>
-              {deleteCategoryBlocked
-                ? "No se puede eliminar"
-                : "Eliminar categoría"}
-            </DialogTitle>
-            <DialogDescription className={articleDialogDescriptionClass}>
-              {deleteCategoryChecking
-                ? "Verificando artículos relacionados…"
-                : deleteCategoryBlocked
-                  ? "La categoría todavía está en uso en el stock."
-                  : "Esta acción no se puede deshacer."}
-            </DialogDescription>
-          </DialogHeader>
-          <div className={articleDialogBodyClass}>
-            {deleteCategoryChecking ? (
-              <p className="text-sm text-muted-foreground">
-                Un momento…
-              </p>
-            ) : deleteCategoryBlocked ? (
-              <p className="text-sm leading-relaxed text-muted-foreground">
-                La categoría{" "}
-                <strong className="text-foreground">
-                  {deleteCategoryTarget?.name || "seleccionada"}
-                </strong>{" "}
-                tiene{" "}
-                <strong className="text-foreground">
-                  {deleteCategoryTarget?.articleCount === 1
-                    ? "1 artículo relacionado"
-                    : `${deleteCategoryTarget?.articleCount ?? 0} artículos relacionados`}
-                </strong>
-                . Para eliminar, cambiá la categoría de los artículos que la
-                utilizan actualmente.
-              </p>
-            ) : (
-              <p className="text-sm text-muted-foreground">
-                ¿Eliminar la categoría{" "}
-                <strong className="text-foreground">
-                  {deleteCategoryTarget?.name || "seleccionada"}
-                </strong>
-                ?
-              </p>
-            )}
-            {deleteCategoryBanner ? (
-              <p
-                role="alert"
-                className="mt-4 rounded-lg border border-destructive/25 bg-destructive/5 px-3 py-2 text-sm text-destructive"
-              >
-                {deleteCategoryBanner}
-              </p>
-            ) : null}
-          </div>
-          <DialogFooter className={articleDialogFooterClass}>
-            {deleteCategoryBlocked ? (
-              <Button type="button" onClick={closeDeleteCategory}>
-                Entendido
-              </Button>
-            ) : (
-              <>
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={closeDeleteCategory}
-                  disabled={deleteCategoryBusy || deleteCategoryChecking}
-                >
-                  Cancelar
-                </Button>
-                <Button
-                  type="button"
-                  variant="destructive"
-                  disabled={!deleteCategoryReady || deleteCategoryBusy}
-                  onClick={() => void submitDeleteCategory()}
-                >
-                  {deleteCategoryBusy ? "Eliminando…" : "Eliminar"}
-                </Button>
-              </>
-            )}
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+        target={deleteCategoryTarget}
+        banner={deleteCategoryBanner}
+        busy={deleteCategoryBusy}
+        onOpenChange={(open) => !open && closeDeleteCategory()}
+        onClose={closeDeleteCategory}
+        onConfirmDelete={() => void submitDeleteCategory()}
+      />
 
       <ArticleImagePreviewDialog
         open={imagePreview !== null}

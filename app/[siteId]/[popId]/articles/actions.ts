@@ -1,7 +1,7 @@
 "use server"
 
 import { createInitialStockLedgerForArticle } from "@/app/[siteId]/[popId]/inventory/actions"
-import { ARTICLE_DELETE_CONFIRM_PHRASE } from "@/app/[siteId]/[popId]/articles/articleConstants"
+import { articleDeleteConfirmPhrase } from "@/app/[siteId]/[popId]/articles/articleConstants"
 import {
   POP_PERMS,
   permissionKeysInclude,
@@ -1021,12 +1021,6 @@ export async function deletePopArticle(
   confirmationTyped: string,
 ): Promise<{ success: true } | { success: false; error: string }> {
   try {
-    if (confirmationTyped.trim() !== ARTICLE_DELETE_CONFIRM_PHRASE) {
-      return {
-        success: false,
-        error: `Escribí ${ARTICLE_DELETE_CONFIRM_PHRASE} para confirmar el borrado.`,
-      }
-    }
     const access = await validatePopAccess(popId)
     if (!access.hasAccess || !access.isActive) {
       return { success: false, error: access.error || "Sin acceso" }
@@ -1042,6 +1036,25 @@ export async function deletePopArticle(
       return { success: false, error: "Sin permiso para eliminar artículos." }
     }
     const supabase = await createClient()
+    const { data: article, error: fetchError } = await supabase
+      .from("articles")
+      .select("name")
+      .eq("id", articleId)
+      .eq("pop_id", popId)
+      .maybeSingle()
+    if (fetchError) {
+      return { success: false, error: fetchError.message || "No se encontró el artículo." }
+    }
+    if (!article) {
+      return { success: false, error: "No se encontró el artículo." }
+    }
+    const expectedPhrase = articleDeleteConfirmPhrase(String(article.name ?? ""))
+    if (confirmationTyped.trim() !== expectedPhrase) {
+      return {
+        success: false,
+        error: `Escribí (${expectedPhrase}) para confirmar el borrado.`,
+      }
+    }
     const { error } = await supabase
       .from("articles")
       .delete()
@@ -1062,9 +1075,58 @@ export type GetPopArticlesTableInput = {
   pageSize: number
   search: string
   soloActivos: boolean
+  soloInactivos: boolean
+  conDescuento: boolean
+  sinDescuento: boolean
+  conStock: boolean
+  sinStock: boolean
+  stockNegativo: boolean
+  ventaSinStock: boolean
   categoryId: string
   /** Vacío o los tres tipos = sin filtrar por tipo. */
   itemKinds: ArticleItemKind[]
+}
+
+function articleMatchesStockFilter(
+  stock: number,
+  input: Pick<
+    GetPopArticlesTableInput,
+    "conStock" | "sinStock" | "stockNegativo"
+  >,
+): boolean {
+  if (!input.conStock && !input.sinStock && !input.stockNegativo) return true
+  const zero = Math.abs(stock) < 1e-6
+  const positive = stock > 1e-6
+  const negative = stock < -1e-6
+  const checks: boolean[] = []
+  if (input.conStock) checks.push(positive)
+  if (input.sinStock) checks.push(zero)
+  if (input.stockNegativo) checks.push(negative)
+  return checks.some(Boolean)
+}
+
+async function stockOnHandForPop(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  popId: string,
+): Promise<Map<string, number>> {
+  const out = new Map<string, number>()
+  const { data, error } = await supabase
+    .from("inventory_movements")
+    .select("article_id, quantity_delta")
+    .eq("pop_id", popId)
+
+  if (error) return out
+
+  for (const row of data ?? []) {
+    const id = String(row.article_id)
+    out.set(id, (out.get(id) ?? 0) + parseStockQty(row.quantity_delta))
+  }
+
+  for (const [id, qty] of out) {
+    out.set(id, Math.round(qty * 1e6) / 1e6)
+  }
+
+  return out
 }
 
 function normalizeArticlesListPaging(page: number, pageSize: number) {
@@ -1090,11 +1152,27 @@ function appendArticleListFilters<
     eq: (a: string, b: string | boolean) => Q
     or: (s: string) => Q
     in: (column: string, values: readonly string[]) => Q
+    not: (column: string, operator: string, value: null) => Q
+    gt: (column: string, value: number) => Q
   },
 >(q: Q, input: GetPopArticlesTableInput): Q {
   let x = q
   if (input.soloActivos) {
     x = x.eq("is_active", true)
+  }
+  if (input.soloInactivos) {
+    x = x.eq("is_active", false)
+  }
+  if (input.conDescuento) {
+    x = x.not("discount_mode", "is", null).gt("discount_value", 0)
+  }
+  if (input.sinDescuento) {
+    x = x.or(
+      "discount_mode.is.null,discount_value.is.null,discount_value.lte.0",
+    )
+  }
+  if (input.ventaSinStock) {
+    x = x.eq("allow_negative_stock", true)
   }
   const kinds = input.itemKinds.filter((k) => isArticleItemKind(k))
   if (kinds.length > 0 && kinds.length < ARTICLE_ITEM_KINDS.length) {
@@ -1235,11 +1313,53 @@ export async function getPopArticlesTable(
 
     const supabase = await createClient()
 
+    const needsStockFilter =
+      input.conStock || input.sinStock || input.stockNegativo
+    let stockArticleIds: string[] | null = null
+
+    if (needsStockFilter) {
+      let idQuery = supabase.from("articles").select("id").eq("pop_id", popId)
+      idQuery = appendArticleListFilters(idQuery, input)
+      const { data: idRows, error: idErr } = await idQuery
+      if (idErr) {
+        return {
+          success: false,
+          error: idErr.message || "No se pudieron cargar los artículos.",
+          ...empty,
+          popName,
+        }
+      }
+
+      const stockById = await stockOnHandForPop(supabase, popId)
+      stockArticleIds = (idRows ?? [])
+        .map((row) => String(row.id))
+        .filter((id) =>
+          articleMatchesStockFilter(stockById.get(id) ?? 0, input),
+        )
+
+      if (stockArticleIds.length === 0) {
+        return {
+          success: true,
+          articles: [],
+          totalCount: 0,
+          page: 1,
+          popName,
+          canCreate,
+          canPostInitialStock,
+          canUpdate,
+          canDelete,
+        }
+      }
+    }
+
     let countQuery = supabase
       .from("articles")
       .select("id", { count: "exact", head: true })
       .eq("pop_id", popId)
     countQuery = appendArticleListFilters(countQuery, input)
+    if (stockArticleIds) {
+      countQuery = countQuery.in("id", stockArticleIds)
+    }
 
     const { count: countRaw, error: countErr } = await countQuery
     if (countErr) {
@@ -1262,6 +1382,9 @@ export async function getPopArticlesTable(
       .select(ARTICLE_LIST_SELECT)
       .eq("pop_id", popId)
     dataQuery = appendArticleListFilters(dataQuery, input)
+    if (stockArticleIds) {
+      dataQuery = dataQuery.in("id", stockArticleIds)
+    }
     dataQuery = dataQuery.order("name", { ascending: true }).range(from, to)
 
     const { data, error } = await dataQuery

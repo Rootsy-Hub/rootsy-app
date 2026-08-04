@@ -15,6 +15,8 @@ export type { RootsFormDiscountMode } from "@/components/rootsy-form/RootsFormDi
 export { RootsFormImageUploadField } from "@/components/rootsy-form/RootsFormImageUploadField"
 export { RootsFormGrid, RootsFormGridDivider } from "@/components/rootsy-form/RootsFormGrid"
 export { RootsFormSwitchField } from "@/components/rootsy-form/RootsFormSwitchField"
+export { RootsFormCheckbox } from "@/components/rootsy-form/RootsFormCheckbox"
+export { RootsFormCheckboxField } from "@/components/rootsy-form/RootsFormCheckboxField"
 export { RootsFormSwitch } from "@/components/rootsy-form/RootsFormSwitch"
 export { RootsFormSelectTrigger } from "@/components/rootsy-form/RootsFormSelectTrigger"
 export { RootsFormFieldMessage } from "@/components/rootsy-form/RootsFormFieldMessage"
@@ -56,6 +58,7 @@ export {
   rootsFormSwitchLabelClass,
   rootsFormSwitchDescriptionClass,
   rootsFormSwitchTrackClass,
+  rootsFormCheckboxClass,
   rootsFormFieldHintClass,
   rootsFormFieldErrorClass,
   rootsFormFieldWarningClass,

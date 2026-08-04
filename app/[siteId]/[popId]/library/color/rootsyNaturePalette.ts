@@ -337,6 +337,52 @@ export const NATURE_COLOR_ROLES = [
   },
 ]
 
+/** Pills de estado — soft (bruma) y solid (canopy) para badges en tablas y modales. */
+export const NATURE_PILL_VARIANTS = [
+  {
+    id: "canopy",
+    label: "Canopy · activo",
+    emphasis: "soft" as const,
+    description: "Estado positivo — artículo activo, OK, disponible.",
+    example: "Activo",
+  },
+  {
+    id: "earth",
+    label: "Tierra · neutro",
+    emphasis: "soft" as const,
+    description: "Metadato o tipo — sin urgencia semántica.",
+    example: "Mercadería vendible",
+  },
+  {
+    id: "earthMuted",
+    label: "Tierra · apagado",
+    emphasis: "soft" as const,
+    description: "Inactivo o secundario — mismo fondo, texto más suave.",
+    example: "Inactivo",
+  },
+  {
+    id: "autumn",
+    label: "Otoño · aviso",
+    emphasis: "soft" as const,
+    description: "Pendiente o revisión — calor estacional.",
+    example: "Pendiente",
+  },
+  {
+    id: "ember",
+    label: "Fuego · crítico",
+    emphasis: "soft" as const,
+    description: "Vencido o error — lava contenida, no botón danger.",
+    example: "Vencido",
+  },
+  {
+    id: "canopySolid",
+    label: "Canopy · sólido",
+    emphasis: "solid" as const,
+    description: "Énfasis alto — descuentos, métricas que deben leerse al instante.",
+    example: "-10 %",
+  },
+] as const
+
 export const NATURE_ACCENTS: NatureAccent[] = [
   {
     id: "canopy",

@@ -12,6 +12,7 @@ import {
   NatureFamilyRamp,
   NatureGradientGallery,
   NatureManifestoHero,
+  NaturePillsDemo,
   NaturePrinciplesGrid,
   NatureRoleTable,
   NatureSwatchCard,
@@ -78,6 +79,18 @@ export function ColorOverviewSection() {
               <NatureFamilyRamp key={family.id} family={family} />
             ))}
           </div>
+        </ColorDocSection>
+
+        <ColorDocSection
+          id="nature-pills"
+          title="Pills de estado"
+          description="Bruma soft para estados y metadatos; canopy sólido para descuentos y números que deben destacar."
+        >
+          <NaturePillsDemo />
+          <GuidelinePair
+            doText="Usá soft para activo/inactivo/tipo; solid solo cuando el dato es numérico o promocional."
+            dontText="No mezcles solid y botón primary en la misma fila — compiten por atención."
+          />
         </ColorDocSection>
 
         <ColorDocSection

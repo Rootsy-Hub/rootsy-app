@@ -1,6 +1,7 @@
 "use client"
 
 import { ARTICLE_TABLE_PAGE_SIZES } from "@/app/[siteId]/[popId]/articles/workspaceUrl"
+import { articleTableArticleColumnClass, articleTableDetailColumnClass } from "@/app/[siteId]/[popId]/articles/articlesTableCells"
 import { DataWorkspaceListPaginationFooter } from "@/components/data-workspace/DataWorkspaceListPaginationFooter"
 import { DataWorkspaceListTableShell } from "@/components/data-workspace/DataWorkspaceListTableShell"
 import { DataWorkspaceListTableFrame } from "@/components/data-workspace/DataWorkspaceListTablePrimitives"
@@ -171,7 +172,8 @@ export function ArticlesPageSkeleton() {
                     <WorkspaceTableHead
                       tone="nature"
                       className={cn(
-                        "min-w-48 px-3",
+                        articleTableArticleColumnClass,
+                        "px-3",
                         workspaceTableLayoutHeaderHeadClass,
                       )}
                     >
@@ -180,7 +182,8 @@ export function ArticlesPageSkeleton() {
                     <WorkspaceTableHead
                       tone="nature"
                       className={cn(
-                        "w-44 px-3",
+                        articleTableDetailColumnClass,
+                        "px-3",
                         workspaceTableLayoutHeaderHeadClass,
                       )}
                     >
@@ -194,15 +197,6 @@ export function ArticlesPageSkeleton() {
                       )}
                     >
                       Categoría
-                    </WorkspaceTableHead>
-                    <WorkspaceTableHead
-                      tone="nature"
-                      className={cn(
-                        "w-40 px-3",
-                        workspaceTableLayoutHeaderHeadClass,
-                      )}
-                    >
-                      Proveedores
                     </WorkspaceTableHead>
                     <WorkspaceTableHead
                       tone="nature"

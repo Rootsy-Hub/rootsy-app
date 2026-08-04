@@ -331,6 +331,16 @@ export const rootsFormSwitchTrackClass = cn(
   "disabled:cursor-not-allowed disabled:opacity-50",
 )
 
+/** Checkbox — borde tierra, marca canopy al marcar (formularios y filtros). */
+export const rootsFormCheckboxClass = cn(
+  "size-4 shrink-0 rounded-[4px] border shadow-none [&_[data-slot=checkbox-indicator]_svg]:size-3.5",
+  rootsFormEarthBorderClass,
+  "bg-white",
+  "data-[state=checked]:border-[color:var(--nature-canopy-600)] data-[state=checked]:bg-[color:var(--nature-canopy-600)] data-[state=checked]:text-white",
+  "focus-visible:ring-2 focus-visible:ring-[#16704a]/40 focus-visible:ring-offset-2 focus-visible:ring-offset-white",
+  "disabled:cursor-not-allowed disabled:opacity-50",
+)
+
 /** Track del segment group — pill inset con gap, h-11 como inputs. */
 export const rootsFormSegmentGroupClass = cn(
   "relative grid h-11 w-full gap-1 rounded-lg border p-1 shadow-xs",

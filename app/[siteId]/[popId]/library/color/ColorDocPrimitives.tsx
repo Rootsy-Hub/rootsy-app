@@ -11,7 +11,9 @@ import {
   NATURE_ACCENTS,
   NATURE_COLOR_ROLES,
   NATURE_GRADIENTS,
+  NATURE_PILL_VARIANTS,
 } from "@/app/[siteId]/[popId]/library/color/rootsyNaturePalette"
+import { RootsNaturePill } from "@/components/rootsy-pill"
 import {
   CANOPY,
   CANOPY_DARK,
@@ -326,6 +328,90 @@ export function InteractionStatesDemo() {
           </div>
         </div>
       ))}
+    </div>
+  )
+}
+
+export function NaturePillsDemo() {
+  return (
+    <div className="space-y-6">
+      <div className="overflow-hidden rounded-2xl border border-border/70 bg-card p-4 shadow-sm">
+        <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+          Soft · bruma + borde
+        </p>
+        <div className="mt-4 flex flex-wrap gap-2">
+          {NATURE_PILL_VARIANTS.filter((v) => v.emphasis === "soft").map(
+            (variant) => (
+              <RootsNaturePill
+                key={variant.id}
+                variant={variant.id}
+                title={variant.description}
+              >
+                {variant.example}
+              </RootsNaturePill>
+            ),
+          )}
+        </div>
+      </div>
+      <div className="overflow-hidden rounded-2xl border border-border/70 bg-card p-4 shadow-sm">
+        <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+          Solid · canopy vivo
+        </p>
+        <div className="mt-4 flex flex-wrap gap-2">
+          {NATURE_PILL_VARIANTS.filter((v) => v.emphasis === "solid").map(
+            (variant) => (
+              <RootsNaturePill
+                key={variant.id}
+                variant={variant.id}
+                title={variant.description}
+              >
+                {variant.example}
+              </RootsNaturePill>
+            ),
+          )}
+        </div>
+        <p className="mt-3 text-xs text-muted-foreground">
+          Descuentos de catálogo, badges numéricos y acentos que compiten con el
+          CTA primario.
+        </p>
+      </div>
+      <div className="overflow-hidden rounded-2xl border border-border/70">
+        <table className="w-full text-left text-sm">
+          <thead>
+            <tr className="border-b border-border/60 bg-muted/40">
+              <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                Variante
+              </th>
+              <th className="hidden px-4 py-3 text-xs font-semibold uppercase tracking-wide text-muted-foreground md:table-cell">
+                Cuándo
+              </th>
+              <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                Ejemplo
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            {NATURE_PILL_VARIANTS.map((variant) => (
+              <tr
+                key={variant.id}
+                className="border-b border-border/40 last:border-b-0"
+              >
+                <td className="px-4 py-3 align-top font-medium text-foreground">
+                  {variant.label}
+                </td>
+                <td className="hidden px-4 py-3 align-top text-muted-foreground md:table-cell">
+                  {variant.description}
+                </td>
+                <td className="px-4 py-3 align-top">
+                  <RootsNaturePill variant={variant.id}>
+                    {variant.example}
+                  </RootsNaturePill>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
     </div>
   )
 }

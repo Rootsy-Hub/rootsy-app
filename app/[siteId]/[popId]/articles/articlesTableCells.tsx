@@ -1,6 +1,7 @@
 "use client"
 
 import type { ArticleTableRow } from "@/app/[siteId]/[popId]/articles/actions"
+import { ArticleCatalogDiscountBadge } from "@/app/[siteId]/[popId]/articles/ArticleCatalogDiscountBadge"
 import { ArticleCatalogImagePlaceholder } from "@/app/[siteId]/[popId]/articles/ArticleCatalogImagePlaceholder"
 import { DataWorkspaceTableThumbnail } from "@/components/data-workspace/DataWorkspaceListTablePrimitives"
 import {
@@ -15,7 +16,10 @@ import {
   workspaceTableNatureMoneyClass,
   workspaceTableNatureTextPrimaryClass,
   workspaceTableNatureTextSecondaryClass,
+  workspaceTableNatureTextTertiaryClass,
 } from "@/components/data-workspace/dataWorkspaceListStyles"
+import { RootsNaturePill } from "@/components/rootsy-pill"
+import { articleHasCatalogDiscount, formatArticleDiscountBadge } from "@/lib/articleDiscount"
 import { cn } from "@/lib/utils"
 import { TableCell } from "@/components/ui/table"
 
@@ -62,17 +66,28 @@ export function ArticleTableImageCell({
   )
 }
 
+export const articleTableArticleColumnClass = "w-40 min-w-40 max-w-44"
+
 export function ArticleTableArticleCell({ row }: { row: ArticleTableRow }) {
-  const secondary =
+  const metaSecondary =
     row.description.trim() || row.brand.trim() || null
+  const secondary = !row.isActive ? "Inactivo" : metaSecondary
 
   return (
-    <TableCell className={cn("min-w-0", workspaceTableLayoutBodyCellClass)}>
+    <TableCell
+      className={cn(
+        articleTableArticleColumnClass,
+        "min-w-0",
+        workspaceTableLayoutBodyCellClass,
+      )}
+    >
       <div className={workspaceTableLayoutCellStackClass}>
         <p
           className={cn(
             workspaceTableLayoutCellPrimaryTextClass,
-            workspaceTableNatureTextPrimaryClass,
+            row.isActive
+              ? workspaceTableNatureTextPrimaryClass
+              : workspaceTableNatureTextSecondaryClass,
           )}
           title={row.name || undefined}
         >
@@ -82,7 +97,9 @@ export function ArticleTableArticleCell({ row }: { row: ArticleTableRow }) {
           className={cn(
             workspaceTableLayoutCellSecondaryTextClass,
             secondary
-              ? workspaceTableNatureTextSecondaryClass
+              ? row.isActive
+                ? workspaceTableNatureTextSecondaryClass
+                : workspaceTableNatureTextTertiaryClass
               : "invisible",
           )}
           title={secondary ?? undefined}
@@ -95,6 +112,59 @@ export function ArticleTableArticleCell({ row }: { row: ArticleTableRow }) {
   )
 }
 
+function getArticleTableRowDetailText(row: ArticleTableRow): string {
+  const parts: string[] = []
+  if (row.itemKind === "merchandise") {
+    parts.push("Mercadería vendible")
+  }
+  if (
+    articleHasCatalogDiscount(row.discountMode, row.discountValue) &&
+    row.discountMode &&
+    row.discountValue != null
+  ) {
+    parts.push(formatArticleDiscountBadge(row.discountMode, row.discountValue))
+  }
+  return parts.length > 0 ? parts.join(" · ") : "—"
+}
+
+export function ArticleTableRowPills({
+  row,
+  singleLine = false,
+}: {
+  row: ArticleTableRow
+  singleLine?: boolean
+}) {
+  const isMerchandise = row.itemKind === "merchandise"
+  const hasDiscount = articleHasCatalogDiscount(
+    row.discountMode,
+    row.discountValue,
+  )
+
+  return (
+    <div
+      className={cn(
+        "flex min-w-0 items-center gap-1",
+        singleLine ? "flex-nowrap overflow-hidden" : "flex-wrap",
+      )}
+    >
+      <RootsNaturePill variant={row.isActive ? "canopy" : "earthMuted"}>
+        {row.isActive ? "Activo" : "Inactivo"}
+      </RootsNaturePill>
+      {isMerchandise ? (
+        <RootsNaturePill variant="earth">Mercadería vendible</RootsNaturePill>
+      ) : null}
+      {hasDiscount && row.discountMode && row.discountValue != null ? (
+        <ArticleCatalogDiscountBadge
+          mode={row.discountMode}
+          value={row.discountValue}
+        />
+      ) : null}
+    </div>
+  )
+}
+
+export const articleTableDetailColumnClass = "w-56 min-w-56 max-w-64"
+
 export function ArticleTableDetailCell({
   row,
   onVerDetalle,
@@ -102,18 +172,30 @@ export function ArticleTableDetailCell({
   row: ArticleTableRow
   onVerDetalle: () => void
 }) {
+  const detailText = getArticleTableRowDetailText(row)
+
   return (
     <TableCell
       className={cn(
         workspaceTableLayoutBodyCellClass,
-        "min-w-[9rem] max-w-[11rem]",
+        articleTableDetailColumnClass,
       )}
     >
       <div className={workspaceTableLayoutCellStackClass}>
+        <p
+          className={cn(
+            workspaceTableLayoutCellPrimaryTextClass,
+            workspaceTableNatureTextPrimaryClass,
+            "truncate",
+          )}
+          title={detailText === "—" ? undefined : detailText}
+        >
+          {detailText}
+        </p>
         <button
           type="button"
           className={cn(
-            "w-fit text-left text-xs font-medium leading-4 underline-offset-2 hover:underline",
+            "h-4 min-h-4 w-full truncate text-left text-xs font-medium leading-4 underline-offset-2 hover:underline",
             workspaceTableNatureLinkClass,
           )}
           onClick={onVerDetalle}

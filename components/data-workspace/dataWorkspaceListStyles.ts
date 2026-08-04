@@ -64,9 +64,15 @@ export const workspaceTableNatureHeaderCellClass = cn(
   "supports-[backdrop-filter]:bg-[color-mix(in_srgb,var(--wt-header-bg)_86%,transparent)]",
 )
 
+export const workspaceTableNatureBodyRowInactiveClass = "opacity-[0.78]"
+
 export function workspaceTableNatureBodyRowClassNames(
   index: number,
-  options?: { selected?: boolean; noHover?: boolean },
+  options?: {
+    selected?: boolean
+    noHover?: boolean
+    inactive?: boolean
+  },
 ): string {
   const isEven = index % 2 === 0
   const rowSurface = isEven
@@ -84,6 +90,7 @@ export function workspaceTableNatureBodyRowClassNames(
       : "hover:bg-[var(--wt-surface-hover)]",
     options?.selected &&
       "bg-[var(--wt-surface-selected)] hover:bg-[var(--wt-surface-selected)] ring-1 ring-inset ring-[var(--wt-surface-selected-ring)]",
+    options?.inactive && workspaceTableNatureBodyRowInactiveClass,
   )
 }
 

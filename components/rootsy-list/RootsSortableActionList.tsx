@@ -17,6 +17,7 @@ import {
   rootsSortableDragId,
   rootsSortableInsertId,
   rootsSortableInsertZoneTop,
+  rootsSortableInsertZoneHeight,
   rootsSortableListTrackHeight,
 } from "@/components/rootsy-list/rootsSortableListUtils"
 import { snapGrabPointToCursor } from "@/lib/dndModifiers"
@@ -87,7 +88,7 @@ function SortableInsertZone({
       )}
       style={{
         top: rootsSortableInsertZoneTop(index, itemCount),
-        height: ROOTS_SORTABLE_SLOT_SHIFT_PX,
+        height: rootsSortableInsertZoneHeight(index, itemCount),
       }}
       aria-hidden
     />

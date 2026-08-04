@@ -2,8 +2,11 @@
 
 import {
   rootsSortableListDragHandleClass,
+  rootsSortableListDragHandleIconClass,
+  rootsSortableListInlineEditInputClass,
   rootsSortableListRowClass,
-  rootsSortableListRowMutedClass,
+  rootsSortableListRowLabelClass,
+  rootsSortableListRowLabelMutedClass,
 } from "@/components/rootsy-list/rootsListStyles"
 import { DataWorkspaceTableIconAction } from "@/components/data-workspace/DataWorkspaceListTablePrimitives"
 import { Input } from "@/components/ui/input"
@@ -64,12 +67,7 @@ export function RootsSortableActionListRow({
   const showActions = canEdit || canDelete || canToggleVisibility
 
   return (
-    <div
-      className={cn(
-        rootsSortableListRowClass,
-        !visible && rootsSortableListRowMutedClass,
-      )}
-    >
+    <div className={rootsSortableListRowClass}>
       {canReorder && dragHandleProps ? (
         <button
           type="button"
@@ -82,7 +80,7 @@ export function RootsSortableActionListRow({
         </button>
       ) : canReorder ? (
         <GripVertical
-          className="size-4 shrink-0 text-zinc-500"
+          className={cn("size-4 shrink-0", rootsSortableListDragHandleIconClass)}
           aria-hidden
         />
       ) : null}
@@ -92,7 +90,7 @@ export function RootsSortableActionListRow({
           <Input
             value={editingValue}
             onChange={(event) => onEditingValueChange(event.target.value)}
-            className="h-8 bg-white"
+            className={rootsSortableListInlineEditInputClass}
             autoFocus
             onKeyDown={(event) => {
               if (event.key === "Enter") {
@@ -106,7 +104,14 @@ export function RootsSortableActionListRow({
             }}
           />
         ) : (
-          <p className="truncate text-sm font-medium text-foreground">{label}</p>
+          <p
+            className={cn(
+              rootsSortableListRowLabelClass,
+              !visible && rootsSortableListRowLabelMutedClass,
+            )}
+          >
+            {label}
+          </p>
         )}
       </div>
 

@@ -113,9 +113,8 @@ export function articlesSkeletonColumns(options?: {
   const columns: WorkspaceTableSkeletonColumn[] = [
     { kind: "select" },
     { kind: "thumbnail", className: "w-14" },
-    { kind: "text", className: "min-w-48", lines: 2 },
-    { kind: "text", className: "w-44", lines: 1 },
-    { kind: "text", className: "w-40", lines: 1 },
+    { kind: "text", className: "w-40 min-w-40 max-w-44", lines: 2 },
+    { kind: "text", className: "w-56", lines: 2 },
     { kind: "text", className: "w-40", lines: 1 },
     { kind: "money" },
     { kind: "money" },

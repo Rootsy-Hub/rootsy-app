@@ -14,7 +14,11 @@ import { rootsyElevationOverlayLightClass } from "@/components/elevation/rootsyE
 import { rootsDialogBodyClass } from "@/components/rootsy-dialog/rootsDialogStyles"
 import { cn } from "@/lib/utils"
 
-export const ARTICLE_DELETE_CONFIRM_PHRASE = "ELIMINAR"
+/** Frase que el usuario debe escribir para confirmar borrado de un artículo. */
+export function articleDeleteConfirmPhrase(articleName: string): string {
+  const name = articleName.trim() || "este artículo"
+  return `Eliminar ${name}`
+}
 
 /** Altura única para inputs, selects y controles de una línea en el formulario de artículo. */
 export const articleFormControlHeightClass = "h-11"

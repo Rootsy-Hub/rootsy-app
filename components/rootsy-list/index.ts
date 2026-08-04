@@ -10,4 +10,6 @@ export {
   ROOTS_SORTABLE_SLOT_SHIFT_PX,
   rootsSortableListPanelClass,
   rootsSortableListRowClass,
+  rootsSortableListRowLabelClass,
+  rootsSortableListFooterHintClass,
 } from "@/components/rootsy-list/rootsListStyles"
