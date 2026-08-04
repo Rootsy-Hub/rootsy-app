@@ -1,0 +1,125 @@
+"use client"
+
+import { getSpacingPageMeta } from "@/app/[siteId]/[popId]/library/spacing/spacingLibraryNav"
+import {
+  BaseUnitDemo,
+  NatureRhythmTiersGrid,
+  NegativeSpacingDemo,
+  NegativeSpacingTable,
+  ProximityDemo,
+  SimilarityDemo,
+  SpacingDocLead,
+  SpacingDocSection,
+  SpacingGuidelineCards,
+  SpacingManifestoHero,
+  SpacingPrinciplesGrid,
+  SpacingRangeOverview,
+  SpacingScaleTable,
+  SpacingSemanticRolesTable,
+  TokenUsageStrip,
+} from "@/app/[siteId]/[popId]/library/spacing/SpacingDocPrimitives"
+import {
+  ROOTSY_SPACING_MANIFESTO,
+  ROOTSY_SPACING_PRINCIPLES,
+} from "@/app/[siteId]/[popId]/library/spacing/rootsySpacingScale"
+import { LibrarySection } from "@/app/[siteId]/[popId]/library/layoutLibraryShared"
+
+export function SpacingOverviewSection() {
+  const meta = getSpacingPageMeta("spacing")!
+
+  return (
+    <LibrarySection id="spacing" title={meta.title} description={meta.description}>
+      <div className="space-y-10">
+        <SpacingManifestoHero />
+        <SpacingDocLead>{ROOTSY_SPACING_MANIFESTO}</SpacingDocLead>
+        <SpacingPrinciplesGrid principles={ROOTSY_SPACING_PRINCIPLES} />
+
+        <SpacingDocSection
+          id="nature-rhythm"
+          title="Capas nature"
+          description="Seis distancias con alma de bosque — cada una con su territorio en la UI."
+        >
+          <NatureRhythmTiersGrid />
+        </SpacingDocSection>
+
+        <SpacingDocSection
+          id="base-unit"
+          title="Unidad base de 8 píxeles"
+          description="space.100 = 8px — la savia. Todo token es múltiplo de esta unidad."
+        >
+          <BaseUnitDemo />
+        </SpacingDocSection>
+
+        <SpacingDocSection
+          id="scale"
+          title="Escala completa"
+          description="De space.0 a space.1000 — 0 a 80px con nombre nature en cada paso."
+        >
+          <SpacingScaleTable />
+        </SpacingDocSection>
+
+        <SpacingDocSection
+          id="semantic-roles"
+          title="Roles semánticos"
+          description="Qué token usar según la intención — no según el componente de hoy."
+        >
+          <SpacingSemanticRolesTable />
+        </SpacingDocSection>
+
+        <SpacingDocSection
+          id="ranges"
+          title="Rangos de uso"
+          description="Pequeño, mediano y grande — tres bandas para decidir rápido."
+        >
+          <SpacingRangeOverview />
+        </SpacingDocSection>
+
+        <SpacingDocSection
+          id="usage-examples"
+          title="Ejemplos visuales"
+          description="Mismo token, distintas densidades."
+        >
+          <div className="grid gap-4 sm:grid-cols-3">
+            <div className="rounded-xl border border-border/70 bg-card p-4">
+              <p className="font-mono text-xs text-muted-foreground">space.050 · Rocío</p>
+              <TokenUsageStrip gapPx={4} />
+            </div>
+            <div className="rounded-xl border border-border/70 bg-card p-4">
+              <p className="font-mono text-xs text-muted-foreground">space.100 · Hoja</p>
+              <TokenUsageStrip gapPx={8} />
+            </div>
+            <div className="rounded-xl border border-border/70 bg-card p-4">
+              <p className="font-mono text-xs text-muted-foreground">space.200 · Rama</p>
+              <TokenUsageStrip gapPx={16} />
+            </div>
+          </div>
+        </SpacingDocSection>
+
+        <SpacingDocSection
+          id="negative"
+          title="Valores negativos"
+          description="Romper el contenedor con intención — bleed, superposición, overlap."
+        >
+          <NegativeSpacingTable />
+          <NegativeSpacingDemo />
+        </SpacingDocSection>
+
+        <SpacingDocSection
+          id="layout-guidelines"
+          title="Guías de layout"
+          description="Similitud, proximidad, jerarquía y ajuste óptico — siempre dentro de la escala."
+        >
+          <SpacingGuidelineCards />
+        </SpacingDocSection>
+
+        <SpacingDocSection id="similarity-demo" title="Agrupar por similitud">
+          <SimilarityDemo />
+        </SpacingDocSection>
+
+        <SpacingDocSection id="proximity-demo" title="Agrupar por proximidad">
+          <ProximityDemo />
+        </SpacingDocSection>
+      </div>
+    </LibrarySection>
+  )
+}

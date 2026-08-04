@@ -6,6 +6,16 @@ import {
   getColorFoundationHeading,
 } from "@/app/[siteId]/[popId]/library/color/ColorFoundationView"
 import { isColorLibrarySection } from "@/app/[siteId]/[popId]/library/color/colorLibraryNav"
+import { getSpacingFoundationHeading } from "@/app/[siteId]/[popId]/library/spacing/SpacingFoundationView"
+import { isSpacingLibrarySection } from "@/app/[siteId]/[popId]/library/spacing/spacingLibraryNav"
+import { getGridFoundationHeading } from "@/app/[siteId]/[popId]/library/grid/GridFoundationView"
+import { isGridLibrarySection } from "@/app/[siteId]/[popId]/library/grid/gridLibraryNav"
+import { getTypographyFoundationHeading } from "@/app/[siteId]/[popId]/library/typography/TypographyFoundationView"
+import { isTypographyLibrarySection } from "@/app/[siteId]/[popId]/library/typography/typographyLibraryNav"
+import { getMotionFoundationHeading } from "@/app/[siteId]/[popId]/library/motion/MotionFoundationView"
+import { isMotionLibrarySection } from "@/app/[siteId]/[popId]/library/motion/motionLibraryNav"
+import { getIconographyFoundationHeading } from "@/app/[siteId]/[popId]/library/iconography/IconographyFoundationView"
+import { isIconographyLibrarySection } from "@/app/[siteId]/[popId]/library/iconography/iconographyLibraryNav"
 import {
   getLibraryNavGroup,
   LIBRARY_NAV_GROUPS,
@@ -39,11 +49,18 @@ export function LibraryWorkspace({ siteId, popId, sectionId }: Props) {
   const navOptions = LIBRARY_NAV_GROUPS.flatMap((group) =>
     group.items.flatMap((item) => {
       if (item.children?.length) {
-        return item.children.map((child) => ({
-          id: child.id,
-          label: child.label,
-          groupLabel: `${group.label} · ${item.label}`,
-        }))
+        return [
+          {
+            id: item.id,
+            label: item.label,
+            groupLabel: `${group.label} · ${item.label}`,
+          },
+          ...item.children.map((child) => ({
+            id: child.id,
+            label: child.label,
+            groupLabel: `${group.label} · ${item.label}`,
+          })),
+        ]
       }
       return [
         {
@@ -57,7 +74,17 @@ export function LibraryWorkspace({ siteId, popId, sectionId }: Props) {
 
   const breadcrumbLabel = isColorLibrarySection(sectionId)
     ? `Fundamentos · Color · ${getColorFoundationHeading(sectionId)}`
-    : activeGroup?.label
+    : isSpacingLibrarySection(sectionId)
+      ? `Fundamentos · Espaciado · ${getSpacingFoundationHeading(sectionId)}`
+      : isGridLibrarySection(sectionId)
+        ? `Fundamentos · Grilla · ${getGridFoundationHeading(sectionId)}`
+        : isTypographyLibrarySection(sectionId)
+          ? `Fundamentos · Tipografía · ${getTypographyFoundationHeading(sectionId)}`
+          : isMotionLibrarySection(sectionId)
+            ? `Fundamentos · Movimiento · ${getMotionFoundationHeading(sectionId)}`
+            : isIconographyLibrarySection(sectionId)
+              ? `Fundamentos · Iconografía · ${getIconographyFoundationHeading(sectionId)}`
+              : activeGroup?.label
 
   return (
     <>

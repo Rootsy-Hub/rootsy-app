@@ -11,6 +11,16 @@ import {
 import { LayoutButtonLibrarySection } from "@/app/[siteId]/[popId]/library/LayoutButtonLibrarySection"
 import { ColorFoundationView } from "@/app/[siteId]/[popId]/library/color/ColorFoundationView"
 import { isColorLibrarySection } from "@/app/[siteId]/[popId]/library/color/colorLibraryNav"
+import { SpacingFoundationView } from "@/app/[siteId]/[popId]/library/spacing/SpacingFoundationView"
+import { isSpacingLibrarySection } from "@/app/[siteId]/[popId]/library/spacing/spacingLibraryNav"
+import { GridFoundationView } from "@/app/[siteId]/[popId]/library/grid/GridFoundationView"
+import { isGridLibrarySection } from "@/app/[siteId]/[popId]/library/grid/gridLibraryNav"
+import { TypographyFoundationView } from "@/app/[siteId]/[popId]/library/typography/TypographyFoundationView"
+import { isTypographyLibrarySection } from "@/app/[siteId]/[popId]/library/typography/typographyLibraryNav"
+import { MotionFoundationView } from "@/app/[siteId]/[popId]/library/motion/MotionFoundationView"
+import { isMotionLibrarySection } from "@/app/[siteId]/[popId]/library/motion/motionLibraryNav"
+import { IconographyFoundationView } from "@/app/[siteId]/[popId]/library/iconography/IconographyFoundationView"
+import { isIconographyLibrarySection } from "@/app/[siteId]/[popId]/library/iconography/iconographyLibraryNav"
 import {
   LibrarySection,
   SpecCard,
@@ -296,6 +306,56 @@ export function LibrarySectionView({
   if (isColorLibrarySection(sectionId)) {
     return (
       <ColorFoundationView
+        sectionId={sectionId}
+        siteId={siteId}
+        popId={popId}
+      />
+    )
+  }
+
+  if (isSpacingLibrarySection(sectionId)) {
+    return (
+      <SpacingFoundationView
+        sectionId={sectionId}
+        siteId={siteId}
+        popId={popId}
+      />
+    )
+  }
+
+  if (isGridLibrarySection(sectionId)) {
+    return (
+      <GridFoundationView
+        sectionId={sectionId}
+        siteId={siteId}
+        popId={popId}
+      />
+    )
+  }
+
+  if (isTypographyLibrarySection(sectionId)) {
+    return (
+      <TypographyFoundationView
+        sectionId={sectionId}
+        siteId={siteId}
+        popId={popId}
+      />
+    )
+  }
+
+  if (isMotionLibrarySection(sectionId)) {
+    return (
+      <MotionFoundationView
+        sectionId={sectionId}
+        siteId={siteId}
+        popId={popId}
+      />
+    )
+  }
+
+  if (isIconographyLibrarySection(sectionId)) {
+    return (
+      <IconographyFoundationView
         sectionId={sectionId}
         siteId={siteId}
         popId={popId}

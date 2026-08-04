@@ -1,0 +1,18 @@
+/**
+ * Iconografía Rootsy — tokens scoped a la librería.
+ */
+.rootsy-iconography-system {
+  --icon-size-small: 12px;
+  --icon-size-medium: 16px;
+  --icon-size-large: 20px;
+  --icon-size-xlarge: 24px;
+
+  --icon-color-default: #57534e;
+  --icon-color-subtle: #a8a29e;
+  --icon-color-brand: #1e8f5a;
+  --icon-color-inverse: #ffffff;
+  --icon-color-info: #0284c7;
+  --icon-color-warning: #d97706;
+  --icon-color-danger: #dc2626;
+  --icon-color-success: #16704a;
+}

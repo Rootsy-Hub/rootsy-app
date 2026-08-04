@@ -1,0 +1,26 @@
+/**
+ * Motion Rootsy — variables scoped a la librería.
+ */
+.rootsy-motion-system {
+  --motion-duration-instant: 0ms;
+  --motion-duration-xxshort: 50ms;
+  --motion-duration-xshort: 100ms;
+  --motion-duration-short: 150ms;
+  --motion-duration-medium: 200ms;
+  --motion-duration-long: 250ms;
+  --motion-duration-xlong: 400ms;
+  --motion-duration-xxlong: 600ms;
+
+  --motion-easing-out-bold: cubic-bezier(0, 0.4, 0, 1);
+  --motion-easing-inout-bold: cubic-bezier(0.4, 0, 0, 1);
+  --motion-easing-in-practical: cubic-bezier(0.6, 0, 0.8, 0.6);
+  --motion-easing-out-practical: cubic-bezier(0.4, 1, 0.6, 1);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .rootsy-motion-system .motion-demo-animated {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

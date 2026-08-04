@@ -1,10 +1,22 @@
 "use client"
 
-import { COLOR_LIBRARY_ITEMS } from "@/app/[siteId]/[popId]/library/color/colorLibraryNav"
+import { COLOR_LIBRARY_ROOT, COLOR_LIBRARY_SUBITEMS } from "@/app/[siteId]/[popId]/library/color/colorLibraryNav"
 import { isColorLibrarySection } from "@/app/[siteId]/[popId]/library/color/colorLibraryNav"
+import { SPACING_LIBRARY_ROOT, SPACING_LIBRARY_SUBITEMS } from "@/app/[siteId]/[popId]/library/spacing/spacingLibraryNav"
+import { isSpacingLibrarySection } from "@/app/[siteId]/[popId]/library/spacing/spacingLibraryNav"
+import { GRID_LIBRARY_ROOT, GRID_LIBRARY_SUBITEMS } from "@/app/[siteId]/[popId]/library/grid/gridLibraryNav"
+import { isGridLibrarySection } from "@/app/[siteId]/[popId]/library/grid/gridLibraryNav"
+import { TYPOGRAPHY_LIBRARY_ROOT, TYPOGRAPHY_LIBRARY_SUBITEMS } from "@/app/[siteId]/[popId]/library/typography/typographyLibraryNav"
+import { isTypographyLibrarySection } from "@/app/[siteId]/[popId]/library/typography/typographyLibraryNav"
+import { MOTION_LIBRARY_ROOT, MOTION_LIBRARY_SUBITEMS } from "@/app/[siteId]/[popId]/library/motion/motionLibraryNav"
+import { isMotionLibrarySection } from "@/app/[siteId]/[popId]/library/motion/motionLibraryNav"
+import { ICONOGRAPHY_LIBRARY_ROOT } from "@/app/[siteId]/[popId]/library/iconography/iconographyLibraryNav"
+import { isIconographyLibrarySection } from "@/app/[siteId]/[popId]/library/iconography/iconographyLibraryNav"
 import { popScopedHref } from "@/lib/popRoutes"
 import { cn } from "@/lib/utils"
+import { ChevronRight } from "lucide-react"
 import Link from "next/link"
+import { useEffect, useState } from "react"
 import type { ReactNode } from "react"
 
 export type LibraryNavItem = {
@@ -26,10 +38,26 @@ export const LIBRARY_NAV_GROUPS: LibraryNavGroup[] = [
     label: "Fundamentos",
     items: [
       {
-        id: "colors-group",
-        label: "Color",
-        children: [...COLOR_LIBRARY_ITEMS],
+        ...COLOR_LIBRARY_ROOT,
+        children: [...COLOR_LIBRARY_SUBITEMS],
       },
+      {
+        ...SPACING_LIBRARY_ROOT,
+        children: [...SPACING_LIBRARY_SUBITEMS],
+      },
+      {
+        ...GRID_LIBRARY_ROOT,
+        children: [...GRID_LIBRARY_SUBITEMS],
+      },
+      {
+        ...TYPOGRAPHY_LIBRARY_ROOT,
+        children: [...TYPOGRAPHY_LIBRARY_SUBITEMS],
+      },
+      {
+        ...MOTION_LIBRARY_ROOT,
+        children: [...MOTION_LIBRARY_SUBITEMS],
+      },
+      { ...ICONOGRAPHY_LIBRARY_ROOT },
     ],
   },
   {
@@ -72,7 +100,7 @@ export const DEFAULT_LIBRARY_SECTION = "colors"
 export const LIBRARY_SECTION_IDS = LIBRARY_NAV_GROUPS.flatMap((group) =>
   group.items.flatMap((item) =>
     item.children?.length
-      ? item.children.map((child) => child.id)
+      ? [item.id, ...item.children.map((child) => child.id)]
       : [item.id],
   ),
 )
@@ -94,7 +122,14 @@ export function libraryHomeHref(siteId: string, popId: string): string {
 }
 
 export function getLibraryNavGroup(sectionId: string): LibraryNavGroup | undefined {
-  if (isColorLibrarySection(sectionId)) {
+  if (
+    isColorLibrarySection(sectionId) ||
+    isSpacingLibrarySection(sectionId) ||
+    isGridLibrarySection(sectionId) ||
+    isTypographyLibrarySection(sectionId) ||
+    isMotionLibrarySection(sectionId) ||
+    isIconographyLibrarySection(sectionId)
+  ) {
     return LIBRARY_NAV_GROUPS.find((group) => group.id === "foundation")
   }
   return LIBRARY_NAV_GROUPS.find((group) =>
@@ -103,6 +138,77 @@ export function getLibraryNavGroup(sectionId: string): LibraryNavGroup | undefin
         item.id === sectionId ||
         item.children?.some((child) => child.id === sectionId),
     ),
+  )
+}
+
+function NavAccordionGroup({
+  siteId,
+  popId,
+  item,
+  activeSectionId,
+}: {
+  siteId: string
+  popId: string
+  item: LibraryNavItem & { children: LibraryNavItem[] }
+  activeSectionId: string
+}) {
+  const isRootActive = item.id === activeSectionId
+  const isChildActive = item.children.some((child) => child.id === activeSectionId)
+  const isGroupActive = isRootActive || isChildActive
+  const [open, setOpen] = useState(isGroupActive)
+
+  useEffect(() => {
+    if (isGroupActive) setOpen(true)
+  }, [isGroupActive, activeSectionId])
+
+  return (
+    <li>
+      <div className="flex items-stretch gap-0.5">
+        <Link
+          href={librarySectionHref(siteId, popId, item.id)}
+          aria-current={isRootActive ? "page" : undefined}
+          className={cn(
+            "min-w-0 flex-1 rounded-lg py-1.5 pl-2 pr-1 text-sm transition-colors",
+            isRootActive
+              ? "bg-primary/10 font-medium text-primary"
+              : isGroupActive
+                ? "font-medium text-foreground hover:bg-muted/50"
+                : "text-muted-foreground hover:bg-muted/50 hover:text-foreground",
+          )}
+        >
+          {item.label}
+        </Link>
+        <button
+          type="button"
+          aria-expanded={open}
+          aria-label={open ? `Contraer ${item.label}` : `Expandir ${item.label}`}
+          onClick={() => setOpen((prev) => !prev)}
+          className={cn(
+            "inline-flex shrink-0 items-center justify-center rounded-lg px-1.5 py-1.5 text-muted-foreground transition-colors hover:bg-muted/50 hover:text-foreground",
+            isGroupActive && "text-foreground",
+          )}
+        >
+          <ChevronRight
+            className={cn("size-4 transition-transform duration-200", open && "rotate-90")}
+          />
+        </button>
+      </div>
+      {open ? (
+        <ul className="mt-0.5 space-y-0.5">
+          {item.children.map((child) => (
+            <li key={child.id}>
+              <NavLink
+                siteId={siteId}
+                popId={popId}
+                item={child}
+                activeSectionId={activeSectionId}
+                nested
+              />
+            </li>
+          ))}
+        </ul>
+      ) : null}
+    </li>
   )
 }
 
@@ -158,35 +264,14 @@ export function LibraryNav({
           <ul className="mt-2 space-y-0.5">
             {group.items.map((item) => {
               if (item.children?.length) {
-                const colorGroupActive = item.children.some(
-                  (child) => child.id === activeSectionId,
-                )
                 return (
-                  <li key={item.id}>
-                    <p
-                      className={cn(
-                        "px-2 py-1.5 text-sm font-medium",
-                        colorGroupActive
-                          ? "text-foreground"
-                          : "text-muted-foreground",
-                      )}
-                    >
-                      {item.label}
-                    </p>
-                    <ul className="space-y-0.5">
-                      {item.children.map((child) => (
-                        <li key={child.id}>
-                          <NavLink
-                            siteId={siteId}
-                            popId={popId}
-                            item={child}
-                            activeSectionId={activeSectionId}
-                            nested
-                          />
-                        </li>
-                      ))}
-                    </ul>
-                  </li>
+                  <NavAccordionGroup
+                    key={item.id}
+                    siteId={siteId}
+                    popId={popId}
+                    item={item as LibraryNavItem & { children: LibraryNavItem[] }}
+                    activeSectionId={activeSectionId}
+                  />
                 )
               }
 
