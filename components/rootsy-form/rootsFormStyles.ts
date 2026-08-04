@@ -38,10 +38,15 @@ export const rootsFormFieldSuccessClass =
 export const rootsFormControlTypographyClass =
   "font-sans text-base leading-normal font-normal text-zinc-900 md:text-sm"
 
+/** Selección de texto en controles editables — gris neutro, no canopy. */
+export const rootsFormControlSelectionClass =
+  "selection:!bg-zinc-200 selection:!text-zinc-900"
+
 const rootsFormControlBaseClass =
   cn(
     "w-full min-w-0 rounded-lg border border-zinc-200 bg-white shadow-xs outline-none transition-[color,box-shadow,border-color] placeholder:text-zinc-400 hover:border-zinc-300 disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-2 aria-invalid:ring-destructive/25 dark:border-zinc-200 dark:bg-white dark:text-zinc-900 dark:placeholder:text-zinc-400 focus-visible:!border-[#16704a] focus-visible:!ring-2 focus-visible:!ring-[#16704a]/45 focus-visible:ring-offset-0",
     rootsFormControlTypographyClass,
+    rootsFormControlSelectionClass,
   )
 
 /** Texto una línea — light form con radio más contenido y foco verde Roots. */
@@ -63,6 +68,7 @@ export const rootsFormAffixPrefixClass =
 export const rootsFormAffixInputClass =
   cn(
     rootsFormControlTypographyClass,
+    rootsFormControlSelectionClass,
     "min-w-0 flex-1 bg-transparent px-3 font-numeric tabular-nums outline-none placeholder:text-zinc-400 disabled:cursor-not-allowed dark:placeholder:text-zinc-400",
   )
 
