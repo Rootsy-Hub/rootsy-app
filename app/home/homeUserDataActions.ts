@@ -14,17 +14,19 @@ import {
   parseRolePermissionGrants,
 } from "@/app/home/popAccessResolve"
 import { requireAuthenticatedUser } from "@/lib/authHelpers"
+import { mapPopAccessFiscal } from "@/lib/popFiscalSettings"
 import { siteIdFromPopRow } from "@/lib/popRoutes"
 import { createClient } from "@/utils/supabase/server"
 
 const POP_ACCESS_SELECT =
-  "id, name, image_url, background_image_url, is_active, owner_user_id, business_type_id, subscription_id, site_id, street_address, settings" as const
+  "id, name, image_url, background_image_url, fiscal_cuit, is_active, owner_user_id, business_type_id, subscription_id, site_id, street_address, settings" as const
 
 type PopAccessRow = {
   id: string
   name: string
   image_url: string | null
   background_image_url: string | null
+  fiscal_cuit: string | null
   is_active: boolean
   owner_user_id: string
   business_type_id: string | null
@@ -199,6 +201,10 @@ export async function getPopAccessCache(
   })
 
   const canEnter = Boolean(pop.is_active) && subscription.isActive
+  const fiscal = mapPopAccessFiscal({
+    fiscalCuit: pop.fiscal_cuit ?? null,
+    settings: pop.settings,
+  })
 
   return {
     pop: {
@@ -219,6 +225,7 @@ export async function getPopAccessCache(
     subscription,
     enabledModules,
     limits,
+    fiscal,
     isOwner,
     role,
     canEnter,

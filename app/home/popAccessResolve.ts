@@ -16,36 +16,9 @@ import {
   type RootsModuleSectionKey,
 } from "@/lib/rootsySubscriptionCatalog"
 
-const MODULE_TO_PAGE_KEY: Record<string, PopPageKey | null> = {
-  sale: "sale",
-  mesas: "mesas",
-  mostrador: "mostrador",
-  purchases: "purchases",
-  expenses: "expenses",
-  stock: "articles",
-  clients: "clients",
-  suppliers: "suppliers",
-  promotions: "promotions",
-  recipes: "recipes",
-  inventory: "inventory",
-  operations: "operations",
-  invoices: "invoices",
-  accounts: "accounts",
-  hr: "hr",
-  settings: "settings",
-  printers: "printers",
-  cash_registers: "cash-registers",
-  current_accounts: null,
-  checks: null,
-  summary: null,
-  statistics: null,
-  reports: null,
-  alerts: null,
-  quotes: null,
-  purchase_orders: null,
-  manufacturing: null,
-  chat: null,
-}
+import {
+  POP_ACCESS_MODULE_TO_PAGE_KEY,
+} from "@/lib/popAccessModuleMap"
 
 type ExtraModuleEntry = {
   key: string
@@ -62,7 +35,7 @@ function resolveModulePermissions(
   grants: readonly string[],
   isOwner: boolean,
 ): PopAccessModulePermissions | null {
-  const pageKey = MODULE_TO_PAGE_KEY[moduleKey]
+  const pageKey = POP_ACCESS_MODULE_TO_PAGE_KEY[moduleKey]
   if (!pageKey || !(pageKey in POP_PAGES)) return null
   const perms = POP_PAGES[pageKey].permissions
   if (isOwner) {

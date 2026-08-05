@@ -51,6 +51,13 @@ export type PopAccessRole = {
   permissionGrants: string[]
 }
 
+import type { PopEmisorIvaCondition } from "@/lib/saleComprobanteRules"
+
+export type PopAccessFiscal = {
+  hasValidCuit: boolean
+  emisorIvaCondition: PopEmisorIvaCondition
+}
+
 /** Cache `_pop-access` por popId. */
 export type PopAccessCache = {
   pop: {
@@ -65,6 +72,7 @@ export type PopAccessCache = {
   subscription: PopAccessSubscription
   enabledModules: PopAccessModule[]
   limits: PopAccessLimits
+  fiscal: PopAccessFiscal
   isOwner: boolean
   role: PopAccessRole | null
   canEnter: boolean

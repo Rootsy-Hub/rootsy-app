@@ -6,7 +6,6 @@ import {
   menuVignetteClass,
 } from "@/app/[siteId]/[popId]/menu/menuNatureStyles"
 import "@/app/[siteId]/[popId]/menu/menuNaturePalette.css"
-import { PopHeaderBackdropLayers } from "@/components/layouts/PopHeaderBackdropLayers"
 import { cn } from "@/lib/utils"
 
 type Props = {
@@ -15,23 +14,32 @@ type Props = {
 }
 
 /**
- * Fondo fijo de página — imagen POP + oscurecido (bg-background/32) + viñeta.
- * Igual que el menú; el header/footer solo llevan cristal encima.
+ * Capa de fondo POP — absolute dentro de un contenedor `fixed inset-0`
+ * (misma estructura que el menú). Header y footer van encima con cristal propio.
  */
 export function PopWorkspaceBackdrop({ backgroundImageUrl, className }: Props) {
   const url = backgroundImageUrl?.trim()
-  if (!url) return null
 
   return (
     <div
       className={cn(
-        "pointer-events-none fixed inset-0 z-0 overflow-hidden bg-background",
+        "pointer-events-none absolute inset-0 overflow-hidden",
         menuNatureShellClass,
         className,
       )}
       aria-hidden
     >
-      <PopHeaderBackdropLayers backgroundImageUrl={url} />
+      {url ? (
+        <>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={url}
+            alt=""
+            className="absolute inset-0 size-full object-cover opacity-[0.40]"
+          />
+          <div className="absolute inset-0 bg-background/32" />
+        </>
+      ) : null}
       <div
         className={cn(
           "absolute top-0 left-1/2 h-[400px] w-[1000px] -translate-x-1/2 rounded-full blur-[120px]",

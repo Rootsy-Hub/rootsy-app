@@ -41,3 +41,41 @@ export function popSubscriptionQueryKey(popId: string) {
 export function canUserCreatePopQueryKey(userId: string) {
   return ["can-user-create-pop", userId] as const
 }
+
+export type PopClientsQueryParams = {
+  page: number
+  pageSize: number
+  search: string
+  soloActivos: boolean
+  withEmail: boolean
+  withTaxId: boolean
+}
+
+/** @deprecated Usar PopClientsQueryParams */
+export type PopClientsTableQueryParams = PopClientsQueryParams
+
+export function popClientsQueryKey(
+  popId: string,
+  params: PopClientsQueryParams,
+) {
+  return [
+    "pop-clients",
+    popId,
+    params.page,
+    params.pageSize,
+    params.search.trim(),
+    params.soloActivos,
+    params.withEmail,
+    params.withTaxId,
+  ] as const
+}
+
+export function popClientsQueryRoot(popId: string) {
+  return ["pop-clients", popId] as const
+}
+
+/** @deprecated Usar popClientsQueryKey */
+export const popClientsTableQueryKey = popClientsQueryKey
+
+/** @deprecated Usar popClientsQueryRoot */
+export const popClientsTableQueryRoot = popClientsQueryRoot

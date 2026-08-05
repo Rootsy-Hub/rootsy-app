@@ -1,9 +1,9 @@
 "use client"
 
+import "@/app/[siteId]/[popId]/library/color/rootsyNaturePalette.css"
 import {
   createPopClient,
   deletePopClient,
-  getPopClientsTable,
   updatePopClient,
   type ClientTableRow,
   type UpsertPopClientInput,
@@ -45,6 +45,7 @@ import {
   workspaceTableNatureBodyRowClassNames,
   workspaceTableNatureCheckboxClass,
   workspaceTableNatureMoneyClass,
+  workspaceTableNatureTextPrimaryClass,
   workspaceTableNatureTextSecondaryClass,
 } from "@/components/data-workspace/dataWorkspaceListStyles"
 import {
@@ -60,7 +61,6 @@ import {
   workspaceTableLayoutCellStackClass,
   workspaceTableLayoutHeaderHeadClass,
   workspaceTableLayoutListBodyScopeClass,
-  workspaceTableLayoutListSurfaceClass,
   workspaceTableLayoutSelectBodyCellClass,
   workspaceTableNatureEarthOrganicScopeClass,
 } from "@/components/data-workspace/dataWorkspaceTablesLayout"
@@ -83,9 +83,12 @@ import {
   parseClientsWorkspaceUrl,
 } from "@/app/[siteId]/[popId]/clients/workspaceUrl"
 import { usePopWorkspace } from "@/context/PopWorkspaceContext"
+import { usePopClientsTable } from "@/hooks/usePopClientsTable"
+import { popClientsQueryRoot } from "@/lib/queryKeys"
 import { cn } from "@/lib/utils"
 import withAuth from "@/hoc/withAuth"
 import { usePadronAutofillRazonSocial } from "@/hooks/usePadronAutofillRazonSocial"
+import { useQueryClient } from "@tanstack/react-query"
 import {
   Pencil,
   Plus,
@@ -160,6 +163,7 @@ function ClientsPage() {
   const popId = typeof params?.popId === "string" ? params.popId : undefined
 
   const { bootstrap, loading: bootstrapLoading } = usePopWorkspace()
+  const queryClient = useQueryClient()
 
   const workspaceParsed = useMemo(
     () => parseClientsWorkspaceUrl(searchParams),
@@ -175,18 +179,7 @@ function ClientsPage() {
     [pathname, router, searchParams],
   )
 
-  const [rows, setRows] = useState<ClientTableRow[]>([])
-  const [totalCount, setTotalCount] = useState(0)
-  const [canCreate, setCanCreate] = useState(false)
-  const [canUpdate, setCanUpdate] = useState(false)
-  const [canDelete, setCanDelete] = useState(false)
-  const [listFetching, setListFetching] = useState(true)
-  const [error, setError] = useState<string | null>(null)
-  const fetchGenRef = useRef(0)
-  const createTaxInputRef = useRef<HTMLInputElement>(null)
-  const pendingCreateFromUrlRef = useRef(false)
-
-  const listQuery = useMemo(
+  const listQueryParams = useMemo(
     () => ({
       page: workspaceParsed.page,
       pageSize: workspaceParsed.pageSize,
@@ -204,6 +197,34 @@ function ClientsPage() {
       workspaceParsed.withTaxId,
     ],
   )
+
+  const clientsTableQuery = usePopClientsTable(popId, listQueryParams, {
+    enabled: Boolean(popId && siteId),
+  })
+
+  const rows = clientsTableQuery.data?.clients ?? []
+  const totalCount = clientsTableQuery.data?.totalCount ?? 0
+  const canCreate = clientsTableQuery.data?.canCreate ?? false
+  const canUpdate = clientsTableQuery.data?.canUpdate ?? false
+  const canDelete = clientsTableQuery.data?.canDelete ?? false
+  const listFetching =
+    clientsTableQuery.isPending ||
+    (clientsTableQuery.isFetching && !clientsTableQuery.isFetched)
+  const error =
+    clientsTableQuery.data?.success === false
+      ? clientsTableQuery.data.error || "Error"
+      : clientsTableQuery.error instanceof Error
+        ? clientsTableQuery.error.message
+        : clientsTableQuery.error
+          ? String(clientsTableQuery.error)
+          : null
+
+  const refreshClientList = useCallback(async () => {
+    if (!popId) return
+    await queryClient.invalidateQueries({
+      queryKey: popClientsQueryRoot(popId),
+    })
+  }, [popId, queryClient])
 
   const [searchInput, setSearchInput] = useState(workspaceParsed.q)
   const [createOpen, setCreateOpen] = useState(false)
@@ -234,6 +255,9 @@ function ClientsPage() {
   const [selected, setSelected] = useState<Set<string>>(() => new Set())
 
   const createOpenEffective = createOpen && canCreate
+
+  const createTaxInputRef = useRef<HTMLInputElement>(null)
+  const pendingCreateFromUrlRef = useRef(false)
 
   const comprobanteFormOptions = useMemo(
     () =>
@@ -268,54 +292,26 @@ function ClientsPage() {
     enabled: Boolean(popId) && editRow !== null && canUpdate,
   })
 
-  const fetchClientList = useCallback(async () => {
-    if (!popId || !siteId) return
-    const gen = ++fetchGenRef.current
-    setListFetching(true)
-    setError(null)
-    try {
-      const res = await getPopClientsTable(popId, listQuery)
-      if (gen !== fetchGenRef.current) return
-      if (!res.success) {
-        setError(res.error || "Error")
-        setRows([])
-        setTotalCount(0)
-        setCanCreate(false)
-        setCanUpdate(false)
-        setCanDelete(false)
-        if (res.redirect) {
-          setTimeout(() => routerRef.current.push(res.redirect!), 1200)
-        }
-        return
-      }
-      setRows(res.clients)
-      setTotalCount(res.totalCount)
-      setCanCreate(res.canCreate)
-      setCanUpdate(res.canUpdate)
-      setCanDelete(res.canDelete)
-      setError(null)
-      if (res.page !== workspaceParsed.page) {
-        replaceWorkspaceQuery({ page: res.page })
-      }
-    } catch {
-      if (gen === fetchGenRef.current) {
-        setError("Unexpected error")
-      }
-    } finally {
-      if (gen === fetchGenRef.current) {
-        setListFetching(false)
-      }
-    }
-  }, [popId, siteId, listQuery, workspaceParsed.page, replaceWorkspaceQuery])
-
-  useEffect(() => {
-    setRows([])
-    setTotalCount(0)
-  }, [popId])
-
   useEffect(() => {
     setSearchInput(workspaceParsed.q)
   }, [workspaceParsed.q])
+
+  useEffect(() => {
+    if (clientsTableQuery.data?.success !== false || !clientsTableQuery.data.redirect) {
+      return
+    }
+    const t = window.setTimeout(() => {
+      routerRef.current.push(clientsTableQuery.data!.redirect!)
+    }, 1200)
+    return () => window.clearTimeout(t)
+  }, [clientsTableQuery.data])
+
+  useEffect(() => {
+    if (clientsTableQuery.data?.success !== true) return
+    if (clientsTableQuery.data.page !== workspaceParsed.page) {
+      replaceWorkspaceQuery({ page: clientsTableQuery.data.page })
+    }
+  }, [clientsTableQuery.data, workspaceParsed.page, replaceWorkspaceQuery])
 
   useEffect(() => {
     const t = window.setTimeout(() => {
@@ -372,15 +368,6 @@ function ClientsPage() {
     }, 0)
     return () => window.clearTimeout(t)
   }, [createOpenEffective])
-
-  useEffect(() => {
-    if (!popId || !siteId) {
-      setListFetching(false)
-      setError("Store ID not found")
-      return
-    }
-    void fetchClientList()
-  }, [popId, siteId, fetchClientList])
 
   useEffect(() => {
     if (!createOpenEffective || !canCreate) return
@@ -462,7 +449,7 @@ function ClientsPage() {
         return
       }
       closeCreate()
-      await fetchClientList()
+      await refreshClientList()
     } finally {
       setCreateSaving(false)
     }
@@ -496,7 +483,7 @@ function ClientsPage() {
         return
       }
       closeEdit()
-      await fetchClientList()
+      await refreshClientList()
     } finally {
       setEditSaving(false)
     }
@@ -513,7 +500,7 @@ function ClientsPage() {
       return
     }
     requestCloseDelete()
-    await fetchClientList()
+    await refreshClientList()
   }
 
   const requestCloseDelete = () => {
@@ -619,6 +606,8 @@ function ClientsPage() {
     )
   }
 
+  const hasPopBackdrop = Boolean(bootstrap?.backgroundImageUrl?.trim())
+
   return (
     <DataWorkspaceLayout
       siteId={siteId}
@@ -632,7 +621,7 @@ function ClientsPage() {
       userName={bootstrap?.userFullName}
       userAvatarSrc={bootstrap?.userImageUrl ?? undefined}
       userRoleLabel={bootstrap?.roleLabel}
-      mainClassName="rootsy-nature-palette min-h-0 overflow-hidden"
+      mainClassName="min-h-0"
       pillLabel="CRM"
       headerActions={
         canCreate ? (
@@ -656,7 +645,12 @@ function ClientsPage() {
             {error}
           </div>
         ) : null}
-        <div className="relative flex min-h-0 flex-1 flex-col">
+        <div
+          className={cn(
+            "rootsy-app-light rootsy-nature-palette flex min-h-0 flex-1 flex-col",
+            workspaceTableNatureEarthOrganicScopeClass,
+          )}
+        >
           <div
             className={dataWorkspaceListFiltersBarClass}
             role="toolbar"
@@ -729,11 +723,8 @@ function ClientsPage() {
 
           <DataWorkspaceListTableShell
             variant="flush"
-            className={cn(
-              workspaceTableNatureEarthOrganicScopeClass,
-              workspaceTableLayoutListBodyScopeClass,
-              workspaceTableLayoutListSurfaceClass,
-            )}
+            glassFooter={hasPopBackdrop}
+            className={workspaceTableLayoutListBodyScopeClass}
             activeFiltersBar={
               hasFilterChips ? (
                 <DataWorkspaceListActiveFiltersBar
@@ -824,7 +815,7 @@ function ClientsPage() {
                 />
               }
             >
-              <DataWorkspaceListTableFrame className={workspaceTableLayoutListSurfaceClass}>
+              <DataWorkspaceListTableFrame>
               <table
                 className={cn(workspaceTableLayoutClassName, "min-w-[72rem]")}
                 aria-busy={listFetching}
@@ -979,7 +970,7 @@ function ClientsPage() {
                           </div>
                         </TableCell>
                         <TableCell className={cn(workspaceTableLayoutBodyCellClass, "min-w-[10rem]")}>
-                          <p className="truncate font-medium text-foreground">
+                          <p className={cn("truncate font-medium", workspaceTableNatureTextPrimaryClass)}>
                             {r.name || "—"}
                           </p>
                           {r.addressLine.trim() ? (
@@ -1067,7 +1058,7 @@ function ClientsPage() {
                         >
                           {r.completedSalesCount > 0 ? (
                             <div className={cn(workspaceTableLayoutCellStackClass, "items-end")}>
-                              <span className="text-foreground">
+                              <span className={workspaceTableNatureTextPrimaryClass}>
                                 {r.completedSalesCount.toLocaleString("es-AR")}{" "}
                                 <span className={cn("font-normal", workspaceTableNatureTextSecondaryClass)}>
                                   ventas

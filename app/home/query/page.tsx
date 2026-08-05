@@ -91,6 +91,12 @@ export default function HomeQueryDocsPage() {
               Define <code>canEnter</code> (POP activo + subscripción vigente).
             </li>
             <li>
+              <strong className="text-zinc-100">Datos fiscales:</strong>{" "}
+              <code>fiscal_cuit</code>, condición IVA del emisor (
+              <code>fiscal.hasValidCuit</code>,{" "}
+              <code>fiscal.emisorIvaCondition</code>).
+            </li>
+            <li>
               <strong className="text-zinc-100">Tipo de negocio:</strong>{" "}
               <code>businessTypeName</code> y{" "}
               <code>businessTypeDisplayName</code> dentro de{" "}

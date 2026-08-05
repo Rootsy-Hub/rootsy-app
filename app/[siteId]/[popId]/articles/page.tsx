@@ -1160,16 +1160,10 @@ function ArticlesPage() {
             <DataWorkspaceListTableShell
               variant="flush"
               glassFooter={hasPopBackdrop}
-              contentSurfaceClass={cn(
-                workspaceTableLayoutListSurfaceClass,
-                workspaceTableNatureSurfaceClass,
-              )}
               className={cn(
-                hasPopBackdrop
-                  ? workspaceTableNatureEarthOrganicTokensClass
-                  : workspaceTableNatureEarthOrganicScopeClass,
+                workspaceTableNatureEarthOrganicScopeClass,
                 workspaceTableLayoutListBodyScopeClass,
-                !hasPopBackdrop && workspaceTableLayoutListSurfaceClass,
+                workspaceTableLayoutListSurfaceClass,
               )}
               activeFiltersBar={
                 hasFilterChips ? (

@@ -17,10 +17,8 @@ export type DataWorkspaceListTableShellProps = {
   footer?: ReactNode
   overlay?: ReactNode
   variant?: "default" | "flush"
-  /** Pie con cristal POP — el shell no tapa el fondo de página detrás del footer. */
+  /** Pie con cristal POP — cuerpo opaco; solo el footer deja ver el fondo de página. */
   glassFooter?: boolean
-  /** Fondo del área de scroll cuando `glassFooter` separa el pie del cuerpo. */
-  contentSurfaceClass?: string
   className?: string
 }
 
@@ -32,37 +30,33 @@ export function DataWorkspaceListTableShell({
   overlay,
   variant = "default",
   glassFooter = false,
-  contentSurfaceClass,
   className,
 }: DataWorkspaceListTableShellProps) {
   const isFlush = variant === "flush"
   const useChromeStack = activeFiltersBar != null
-  const splitFooterFromSurface = isFlush && glassFooter && footer != null
-  const scrollSurfaceClass =
-    contentSurfaceClass ??
-    (splitFooterFromSurface ? workspaceTableSurfaceClass : undefined)
+  const bodySurfaceClass = isFlush ? workspaceTableSurfaceClass : dataWorkspaceShellCard
+  const resolvedBodySurface = className ? undefined : bodySurfaceClass
 
   return (
     <div
       className={cn(
-        "relative flex min-h-0 flex-1 flex-col [--dw-table-footer-height:4rem]",
-        !splitFooterFromSurface && "overflow-hidden",
-        splitFooterFromSurface
-          ? "bg-transparent"
-          : isFlush
-            ? workspaceTableSurfaceClass
-            : dataWorkspaceShellCard,
-        className,
-        splitFooterFromSurface && "!bg-transparent",
+        "relative flex min-h-0 flex-1 flex-col overflow-hidden [--dw-table-footer-height:4rem]",
+        !glassFooter && resolvedBodySurface,
+        !glassFooter && className,
       )}
     >
-      {!isFlush ? (
+      {!isFlush && !glassFooter ? (
         <div
           className="pointer-events-none absolute -right-10 -top-10 size-40 rounded-full bg-primary/10 blur-3xl"
           aria-hidden
         />
       ) : null}
-      <div className="relative flex min-h-0 flex-1 flex-col overflow-hidden">
+      <div
+        className={cn(
+          "relative flex min-h-0 flex-1 flex-col overflow-hidden",
+          glassFooter && (className ?? resolvedBodySurface),
+        )}
+      >
         {useChromeStack ? (
           <div className={listTableChromeStackClass}>
             {activeFiltersBar}
@@ -75,12 +69,7 @@ export function DataWorkspaceListTableShell({
         ) : (
           bulkToolbar ?? null
         )}
-        <div
-          className={cn(
-            "relative min-h-0 flex-1",
-            splitFooterFromSurface && scrollSurfaceClass,
-          )}
-        >
+        <div className="relative min-h-0 flex-1">
           <div
             className={cn(
               "rootsy-scroll-minimal absolute inset-0 overflow-auto",
@@ -99,12 +88,7 @@ export function DataWorkspaceListTableShell({
         </div>
       </div>
       {footer ? (
-        <div
-          className={cn(
-            "relative z-20 shrink-0",
-            glassFooter && "bg-transparent",
-          )}
-        >
+        <div className={cn("relative z-20 shrink-0", glassFooter && "bg-transparent")}>
           {footer}
         </div>
       ) : null}

@@ -1,18 +1,20 @@
 "use client"
 
-import {
-  getPopWorkspaceBootstrap,
-  type PopWorkspaceBootstrapData,
-} from "@/lib/popWorkspaceBootstrap"
+import type { PopAccessCache } from "@/app/home/homeUserDataTypes"
 import {
   getPopCacheRevisions,
   type PopCacheRevisions,
 } from "@/lib/popCacheRevisions"
-import { popWorkspaceBootstrapQueryKey } from "@/lib/queryKeys"
-import { USER_PROFILE_UPDATED_EVENT } from "@/lib/userProfileEvents"
+import { permissionKeysFromPopAccess } from "@/lib/popAccessPermissions"
 import { permissionKeysInclude } from "@/lib/popPermissionConstants"
+import { siteIdsMatchClientRoute } from "@/lib/popRoutes"
+import type { PopWorkspaceBootstrapData } from "@/lib/popWorkspaceBootstrap"
+import { buildWorkspaceBootstrapFromAccess } from "@/lib/popWorkspaceFromAccess"
+import { usePopAccessData } from "@/hooks/usePopAccessData"
+import { popAccessQueryKey, userProfileQueryKey } from "@/lib/queryKeys"
+import { USER_PROFILE_UPDATED_EVENT } from "@/lib/userProfileEvents"
 import { useAuth } from "@/context/AuthContextSupabase"
-import { useQuery, useQueryClient } from "@tanstack/react-query"
+import { useQueryClient } from "@tanstack/react-query"
 import { useRouter } from "next/navigation"
 import {
   createContext,
@@ -20,17 +22,16 @@ import {
   useContext,
   useEffect,
   useMemo,
-  useState,
   type ReactNode,
 } from "react"
 
 export type PopWorkspaceContextValue = {
   siteId: string
   popId: string
+  popAccess: PopAccessCache | null
   bootstrap: PopWorkspaceBootstrapData | null
   cacheRevisions: PopCacheRevisions | null
   loading: boolean
-  /** Refetch en background (React Query). */
   revalidating: boolean
   error: string | null
   refresh: () => Promise<void>
@@ -45,53 +46,50 @@ const PopWorkspaceContext = createContext<PopWorkspaceContextValue | undefined>(
 type ProviderProps = {
   siteId: string
   popId: string
-  /** Si false, no monta la query de bootstrap (p. ej. menú POP). */
-  bootstrapEnabled?: boolean
+  /** Si false, no carga `_pop-access` (p. ej. menú POP con hook propio). */
+  accessEnabled?: boolean
   children: ReactNode
 }
 
-type BootstrapLoaderProps = {
-  siteId: string
-  popId: string
-  userId: string
-  onState: (state: BootstrapLoaderState) => void
-}
-
-type BootstrapLoaderState = {
-  bootstrap: PopWorkspaceBootstrapData | null
-  loading: boolean
-  revalidating: boolean
-  error: string | null
-  refresh: () => Promise<void>
-}
-
-function PopWorkspaceBootstrapLoader({
+export function PopWorkspaceProvider({
   siteId,
   popId,
-  userId,
-  onState,
-}: BootstrapLoaderProps) {
+  accessEnabled = true,
+  children,
+}: ProviderProps) {
   const router = useRouter()
   const queryClient = useQueryClient()
+  const { user, loading: authLoading } = useAuth()
+  const userId = user?.id ?? null
 
-  const bootstrapQuery = useQuery({
-    queryKey: popWorkspaceBootstrapQueryKey(siteId, popId, userId),
-    queryFn: async (): Promise<PopWorkspaceBootstrapData> => {
-      const res = await getPopWorkspaceBootstrap(popId, siteId)
-      if (!res.success) {
-        if (res.redirect) {
-          router.replace(res.redirect)
-        }
-        throw new Error(res.error)
-      }
-      return res.data
-    },
-    enabled: Boolean(popId && siteId && userId),
-  })
+  const {
+    isLoading: accessLoading,
+    loadError,
+    popAccess,
+    profile,
+    refetch,
+  } = usePopAccessData(popId, { enabled: accessEnabled })
 
-  const refresh = useCallback(async () => {
-    await bootstrapQuery.refetch()
-  }, [bootstrapQuery])
+  const accessReady =
+    accessEnabled && !accessLoading && Boolean(popAccess && profile)
+
+  const routeError = useMemo(() => {
+    if (!accessEnabled || accessLoading || !popAccess) return null
+    if (!siteIdsMatchClientRoute(siteId, popAccess.pop.siteId)) {
+      return "Ruta inválida para este punto de venta."
+    }
+    if (!popAccess.canEnter) {
+      return "No tenés acceso activo a este punto de venta."
+    }
+    return null
+  }, [accessEnabled, accessLoading, popAccess, siteId])
+
+  useEffect(() => {
+    if (!routeError || !popAccess) return
+    if (!siteIdsMatchClientRoute(siteId, popAccess.pop.siteId)) {
+      router.replace(`/${popAccess.pop.siteId}/${popId}/menu`)
+    }
+  }, [routeError, popAccess, siteId, popId, router])
 
   useEffect(() => {
     if (!userId) return
@@ -100,7 +98,10 @@ function PopWorkspaceBootstrapLoader({
       const detail = (event as CustomEvent<{ userId?: string }>).detail
       if (detail?.userId && detail.userId !== userId) return
       void queryClient.invalidateQueries({
-        queryKey: popWorkspaceBootstrapQueryKey(siteId, popId, userId),
+        queryKey: userProfileQueryKey(userId),
+      })
+      void queryClient.invalidateQueries({
+        queryKey: popAccessQueryKey(popId),
       })
       void queryClient.invalidateQueries({
         queryKey: ["sale-comprobante-emitter", popId],
@@ -111,103 +112,74 @@ function PopWorkspaceBootstrapLoader({
     return () => {
       window.removeEventListener(USER_PROFILE_UPDATED_EVENT, onProfileUpdated)
     }
-  }, [userId, siteId, popId, queryClient])
+  }, [userId, popId, queryClient])
 
-  useEffect(() => {
-    onState({
-      bootstrap: bootstrapQuery.data ?? null,
-      loading: bootstrapQuery.isLoading,
-      revalidating: bootstrapQuery.isFetching && !bootstrapQuery.isLoading,
-      error:
-        bootstrapQuery.error instanceof Error
-          ? bootstrapQuery.error.message
-          : bootstrapQuery.error
-            ? String(bootstrapQuery.error)
-            : null,
-      refresh,
-    })
-  }, [
-    bootstrapQuery.data,
-    bootstrapQuery.isLoading,
-    bootstrapQuery.isFetching,
-    bootstrapQuery.error,
-    refresh,
-    onState,
-  ])
+  const bootstrap = useMemo((): PopWorkspaceBootstrapData | null => {
+    if (!accessReady || !popAccess || !profile) return null
+    return buildWorkspaceBootstrapFromAccess(popAccess, profile)
+  }, [accessReady, popAccess, profile])
 
-  return null
-}
-
-export function PopWorkspaceProvider({
-  siteId,
-  popId,
-  bootstrapEnabled = true,
-  children,
-}: ProviderProps) {
-  const queryClient = useQueryClient()
-  const { user, loading: authLoading } = useAuth()
-  const userId = user?.id ?? null
-
-  const [bootstrapState, setBootstrapState] = useState<BootstrapLoaderState>({
-    bootstrap: null,
-    loading: false,
-    revalidating: false,
-    error: null,
-    refresh: async () => {},
-  })
-
-  const handleBootstrapState = useCallback((state: BootstrapLoaderState) => {
-    setBootstrapState(state)
-  }, [])
-
-  const refreshRevisions = useCallback(async (): Promise<PopCacheRevisions | null> => {
-    if (!popId || !userId) return null
-    const res = await getPopCacheRevisions(popId)
-    if (!res.success) return null
-
-    queryClient.setQueryData<PopWorkspaceBootstrapData>(
-      popWorkspaceBootstrapQueryKey(siteId, popId, userId),
-      (prev) => (prev ? { ...prev, cacheRevisions: res.revisions } : prev),
-    )
-    return res.revisions
-  }, [popId, siteId, userId, queryClient])
-
-  const bootstrap = bootstrapEnabled ? bootstrapState.bootstrap : null
-  const error = bootstrapEnabled ? bootstrapState.error : null
-  const refresh = bootstrapEnabled ? bootstrapState.refresh : async () => {}
+  const permissionKeys = useMemo(
+    () => (popAccess ? permissionKeysFromPopAccess(popAccess) : []),
+    [popAccess],
+  )
 
   const hasPermission = useCallback(
     (resource: string, action: string) => {
-      if (!bootstrap) return false
-      return permissionKeysInclude(bootstrap.permissionKeys, resource, action)
+      if (!popAccess) return false
+      return permissionKeysInclude(permissionKeys, resource, action)
     },
-    [bootstrap],
+    [popAccess, permissionKeys],
   )
+
+  const refreshRevisions = useCallback(async (): Promise<PopCacheRevisions | null> => {
+    if (!popId) return null
+    const res = await getPopCacheRevisions(popId)
+    if (!res.success) return null
+    return res.revisions
+  }, [popId])
+
+  const error = useMemo(() => {
+    if (!accessEnabled) return null
+    if (loadError) return "Error al cargar datos del punto de venta."
+    if (routeError) return routeError
+    if (!accessLoading && accessEnabled && !popAccess && !authLoading) {
+      return "No tenés acceso a este punto de venta."
+    }
+    return null
+  }, [
+    accessEnabled,
+    loadError,
+    routeError,
+    accessLoading,
+    popAccess,
+    authLoading,
+  ])
 
   const value = useMemo(
     (): PopWorkspaceContextValue => ({
       siteId,
       popId,
+      popAccess: accessEnabled ? popAccess : null,
       bootstrap,
       cacheRevisions: bootstrap?.cacheRevisions ?? null,
-      loading:
-        authLoading || (bootstrapEnabled && bootstrapState.loading),
-      revalidating: bootstrapEnabled && bootstrapState.revalidating,
+      loading: authLoading || (accessEnabled && accessLoading),
+      revalidating: false,
       error,
-      refresh,
+      refresh: accessEnabled ? refetch : async () => {},
       refreshRevisions,
       hasPermission,
     }),
     [
       siteId,
       popId,
+      accessEnabled,
+      popAccess,
       bootstrap,
       authLoading,
-      bootstrapEnabled,
-      bootstrapState.loading,
-      bootstrapState.revalidating,
+      accessLoading,
       error,
-      refresh,
+      refetch,
       refreshRevisions,
       hasPermission,
     ],
@@ -215,14 +187,6 @@ export function PopWorkspaceProvider({
 
   return (
     <PopWorkspaceContext.Provider value={value}>
-      {bootstrapEnabled && userId ? (
-        <PopWorkspaceBootstrapLoader
-          siteId={siteId}
-          popId={popId}
-          userId={userId}
-          onState={handleBootstrapState}
-        />
-      ) : null}
       {children}
     </PopWorkspaceContext.Provider>
   )

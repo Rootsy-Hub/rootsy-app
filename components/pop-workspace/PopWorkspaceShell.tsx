@@ -20,7 +20,7 @@ export function PopWorkspaceShell({ children }: { children: ReactNode }) {
     <PopWorkspaceProvider
       siteId={siteId}
       popId={popId}
-      bootstrapEnabled={bootstrapEnabled}
+      accessEnabled={bootstrapEnabled}
     >
       {children}
     </PopWorkspaceProvider>

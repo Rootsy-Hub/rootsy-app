@@ -1,10 +1,7 @@
 "use client"
 
-import { menuHeaderBorderClass } from "@/app/[siteId]/[popId]/menu/menuFloatingPillStyles"
-import {
-  menuNatureShellClass,
-  menuPopChromeClass,
-} from "@/app/[siteId]/[popId]/menu/menuNatureStyles"
+import { menuHeaderBorderClass, menuHeaderChromeClass } from "@/app/[siteId]/[popId]/menu/menuFloatingPillStyles"
+import { menuNatureShellClass } from "@/app/[siteId]/[popId]/menu/menuNatureStyles"
 import "@/app/[siteId]/[popId]/menu/menuNaturePalette.css"
 import { PopWorkspaceBackdrop } from "@/components/layouts/PopWorkspaceBackdrop"
 import {
@@ -107,7 +104,10 @@ export function DataWorkspaceLayout({
   userAvatarSrc,
 }: DataWorkspaceLayoutProps) {
   const popWorkspace = usePopWorkspaceOptional()
-  const backgroundImageUrl = popWorkspace?.bootstrap?.backgroundImageUrl ?? null
+  const backgroundImageUrl =
+    popWorkspace?.bootstrap?.backgroundImageUrl ??
+    popWorkspace?.popAccess?.pop.backgroundImageUrl ??
+    null
   const [isOnline, setIsOnline] = useState(true)
   const [isFullscreen, setIsFullscreen] = useState(false)
   const isTintedHeader = isDataWorkspaceTintedHeader(headerVariant)
@@ -198,40 +198,45 @@ export function DataWorkspaceLayout({
 
   const chromeButtonClass = dataWorkspaceHeaderChromeButtonClass(headerVariant)
   const popBackdropUrl = backgroundImageUrl?.trim() || null
-  const usePopGlassHeader = isTintedHeader && Boolean(popBackdropUrl)
+  const hasPopBackdrop = isTintedHeader && Boolean(popBackdropUrl)
 
   return (
     <div
       className={cn(
-        "rootsy-app-light relative min-h-screen overflow-hidden text-foreground select-none",
-        usePopGlassHeader ? "bg-transparent" : "bg-background",
+        "text-foreground select-none",
+                hasPopBackdrop
+          ? cn(
+              menuNatureShellClass,
+              "fixed inset-0 flex flex-col overflow-hidden bg-background",
+            )
+          : cn(
+              "rootsy-app-light relative min-h-screen overflow-hidden bg-background",
+            ),
       )}
     >
-      {usePopGlassHeader ? (
+      {hasPopBackdrop ? (
         <PopWorkspaceBackdrop backgroundImageUrl={popBackdropUrl} />
-      ) : null}
+      ) : (
+        <div
+          className="pointer-events-none absolute inset-0 motion-reduce:opacity-50"
+          aria-hidden
+        >
+          <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_50%_at_50%_-20%,oklch(0.75_0.12_155/0.35),transparent),radial-gradient(ellipse_60%_40%_at_100%_50%,oklch(0.85_0.08_140/0.2),transparent)]" />
+          <div className="absolute inset-0 bg-[linear-gradient(oklch(0.92_0.02_130/0.35)_1px,transparent_1px),linear-gradient(90deg,oklch(0.92_0.02_130/0.35)_1px,transparent_1px)] bg-size-[48px_48px] opacity-40" />
+        </div>
+      )}
+
       <div
         className={cn(
-          "pointer-events-none absolute inset-0 motion-reduce:opacity-50",
-          usePopGlassHeader && "opacity-0",
+          "relative z-10 flex min-h-0 flex-col overflow-hidden",
+                hasPopBackdrop ? "min-h-0 flex-1" : "h-svh",
         )}
-        aria-hidden
       >
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_50%_at_50%_-20%,oklch(0.75_0.12_155/0.35),transparent),radial-gradient(ellipse_60%_40%_at_100%_50%,oklch(0.85_0.08_140/0.2),transparent)]" />
-        <div className="absolute inset-0 bg-[linear-gradient(oklch(0.92_0.02_130/0.35)_1px,transparent_1px),linear-gradient(90deg,oklch(0.92_0.02_130/0.35)_1px,transparent_1px)] bg-size-[48px_48px] opacity-40" />
-      </div>
-
-      <div className="relative z-10 flex h-svh min-h-0 flex-col overflow-hidden">
         <header
           className={cn(
             "relative z-20 shrink-0 border-b",
-            usePopGlassHeader
-              ? cn(
-                  "text-zinc-100",
-                  menuNatureShellClass,
-                  menuPopChromeClass,
-                  menuHeaderBorderClass,
-                )
+                hasPopBackdrop
+              ? cn("text-zinc-100", menuHeaderBorderClass, menuHeaderChromeClass)
               : isTintedHeader
                 ? cn("text-zinc-100", dataWorkspaceHeaderSurfaceClass(headerVariant))
                 : cn(
@@ -398,7 +403,7 @@ export function DataWorkspaceLayout({
             <div
               className={cn(
                 "relative z-10 border-t px-4 py-2 sm:px-6",
-                usePopGlassHeader
+                hasPopBackdrop
                   ? menuHeaderBorderClass
                   : dataWorkspaceHeaderToolbarClass(headerVariant),
               )}
@@ -442,11 +447,12 @@ export function DataWorkspaceLayout({
             <main
               className={cn(
                 "relative z-10 flex min-h-0 min-w-0 flex-1 flex-col",
+                hasPopBackdrop && "bg-transparent",
                 mainClassName,
                 contentFlush
                   ? cn(
                       "p-0",
-                      usePopGlassHeader ? "overflow-visible" : "overflow-hidden",
+                      hasPopBackdrop ? "overflow-visible" : "overflow-hidden",
                     )
                   : cn(
                       "overflow-y-auto px-4 py-8 sm:pl-5 sm:pr-8",
@@ -462,11 +468,12 @@ export function DataWorkspaceLayout({
           <main
             className={cn(
               "relative z-10 flex min-h-0 w-full flex-1 flex-col",
+              hasPopBackdrop && "bg-transparent",
               mainClassName,
               contentFlush
                 ? cn(
                     "p-0",
-                    usePopGlassHeader ? "overflow-visible" : "overflow-hidden",
+                    hasPopBackdrop ? "overflow-visible" : "overflow-hidden",
                   )
                 : cn(
                     "mx-auto overflow-y-auto px-4 py-8 sm:px-6",

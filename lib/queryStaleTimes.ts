@@ -8,3 +8,12 @@ export const oneDayQueryOptions = {
   refetchOnWindowFocus: false,
   refetchOnReconnect: false,
 } as const
+
+/** Listados de workspace: cache en sesión; refetch solo en F5 o invalidación explícita. */
+export const sessionListQueryOptions = {
+  staleTime: Number.POSITIVE_INFINITY,
+  gcTime: ONE_DAY_MS,
+  refetchOnMount: false,
+  refetchOnWindowFocus: false,
+  refetchOnReconnect: false,
+} as const

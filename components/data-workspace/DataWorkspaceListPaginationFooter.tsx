@@ -69,7 +69,10 @@ export function DataWorkspaceListPaginationFooter({
   variant = "default",
 }: DataWorkspaceListPaginationFooterProps) {
   const popWorkspace = usePopWorkspaceOptional()
-  const backgroundImageUrl = popWorkspace?.bootstrap?.backgroundImageUrl ?? null
+  const backgroundImageUrl =
+    popWorkspace?.bootstrap?.backgroundImageUrl ??
+    popWorkspace?.popAccess?.pop.backgroundImageUrl ??
+    null
   const isDark = variant === "dark"
   const isEmpty = !listFetching && totalCount <= 0
   const paginationDisabled = listFetching || isEmpty
