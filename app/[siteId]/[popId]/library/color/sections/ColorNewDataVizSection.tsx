@@ -24,7 +24,7 @@ export function ColorNewDataVizSection() {
     <LibrarySection id="colors-new-data-viz" title={meta.title} description={meta.description}>
       <div className="space-y-10">
         <ColorDocLead>
-          Gráficos usan la paleta de producto primero — savia, teal landing, ceniza y
+          Gráficos usan la paleta de producto primero — savia, teal promocional, sombra y
           bruma. Ámbar y rojo son funcionales para aviso/crítico, no familias del sistema.
         </ColorDocLead>
 
@@ -39,7 +39,7 @@ export function ColorNewDataVizSection() {
         <ColorDocSection
           id="dataviz-categorical"
           title="Categórico"
-          description="Secuencia de producto — sin mar, otoño ni crepúsculo."
+          description="Secuencia de producto — solo sombra, bruma y savia."
         >
           <ProductCategoricalChartDemo />
           <div className="mt-4 flex flex-wrap gap-2">
@@ -77,8 +77,8 @@ export function ColorNewDataVizSection() {
         </ColorDocSection>
 
         <GuidelinePair
-          doText="Neutros bruma/ceniza para ejes y grids; savia solo para el dato que importa."
-          dontText="No uses aurora neón ni rampas nature en dashboards operativos."
+          doText="Neutros bruma/sombra para ejes y grids; savia solo para el dato que importa."
+          dontText="No uses aurora neón ni rampas legacy en dashboards operativos."
         />
       </div>
     </LibrarySection>

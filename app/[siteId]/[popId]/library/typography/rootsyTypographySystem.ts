@@ -269,7 +269,7 @@ export const ROOTSY_HEADING_STYLES: TypographyStyle[] = [
     fontSizePx: 28,
     lineHeightRem: "2rem",
     lineHeightPx: 32,
-    usage: "Títulos de campaña, landing interna.",
+    usage: "Títulos de campaña y hero de marketing.",
   },
   {
     id: "h-l",

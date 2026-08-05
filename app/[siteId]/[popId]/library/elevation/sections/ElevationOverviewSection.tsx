@@ -4,17 +4,15 @@ import { getElevationPageMeta } from "@/app/[siteId]/[popId]/library/elevation/e
 import {
   ElevationDocLead,
   ElevationDocSection,
-  ElevationGuidelinesGrid,
   ElevationInteractionDemo,
-  ElevationInteractionTable,
   ElevationLevelsGallery,
-  ElevationManifestoHero,
   ElevationModalPreview,
   ElevationOverflowDemo,
   ElevationPrinciplesGrid,
-  ElevationShadowTokensTable,
   ElevationStackDemo,
   ElevationSurfacesCompare,
+  ElevationSystemHero,
+  ElevationTechnicalDetails,
   SunkenVsNeutralCard,
 } from "@/app/[siteId]/[popId]/library/elevation/ElevationDocPrimitives"
 import {
@@ -29,14 +27,14 @@ export function ElevationOverviewSection() {
   return (
     <LibrarySection id="elevation" title={meta.title} description={meta.description}>
       <div className="space-y-10">
-        <ElevationManifestoHero />
-        <ElevationDocLead>{ROOTSY_ELEVATION_MANIFESTO}</ElevationDocLead>
-        <ElevationPrinciplesGrid principles={ROOTSY_ELEVATION_PRINCIPLES} />
+        <ElevationSystemHero />
+        <ElevationDocLead className="font-canopy">{ROOTSY_ELEVATION_MANIFESTO}</ElevationDocLead>
+        <ElevationPrinciplesGrid principles={[...ROOTSY_ELEVATION_PRINCIPLES]} />
 
         <ElevationDocSection
           id="levels"
-          title="Niveles de elevación"
-          description="Sunken → default → raised → overlay · overflow como sombra de scroll."
+          title="Niveles"
+          description="Sunken → default → raised → overlay — profundidad con bruma y sombra."
         >
           <ElevationLevelsGallery />
           <ElevationStackDemo />
@@ -44,41 +42,43 @@ export function ElevationOverviewSection() {
 
         <ElevationDocSection
           id="shadows"
-          title="Sombras · tinte canopy"
-          description="Raised y overlay siempre emparejados — valores oklch verdes, no gris plano."
+          title="Sombras y overlay"
+          description="Matiz bosque — raised y overlay siempre emparejados."
         >
-          <ElevationShadowTokensTable />
           <ElevationModalPreview />
           <ElevationOverflowDemo />
         </ElevationDocSection>
 
         <ElevationDocSection
           id="surfaces"
-          title="Superficies light / dark"
-          description="En dark las capas altas se aclaran — como luz filtrada entre hojas."
+          title="Superficies claro / oscuro"
+          description="Workspace sube hacia blanco; POS separa capas con sombra."
         >
           <ElevationSurfacesCompare />
         </ElevationDocSection>
 
         <ElevationDocSection
           id="sunken-neutral"
-          title="Sunken vs neutral"
-          description="Opaco para agrupar en la misma capa · transparente cuando el padre define el nivel."
+          title="Sunken vs transparente"
+          description="Opaco para agrupar · transparente cuando hereda del padre."
         >
           <SunkenVsNeutralCard />
         </ElevationDocSection>
 
         <ElevationDocSection
           id="interaction"
-          title="Estados hover / pressed"
-          description="Cambio de color de superficie — preferido. Transiciones de nivel solo con moderación."
+          title="Hover y pressed"
+          description="Cambio de superficie antes que subir de nivel."
         >
           <ElevationInteractionDemo />
-          <ElevationInteractionTable />
         </ElevationDocSection>
 
-        <ElevationDocSection id="guidelines" title="Guías Do / Don't">
-          <ElevationGuidelinesGrid />
+        <ElevationDocSection
+          id="elevation-technical"
+          title="Detalles técnicos"
+          description="Sombras, estados, tokens semánticos, z-index y guías."
+        >
+          <ElevationTechnicalDetails />
         </ElevationDocSection>
       </div>
     </LibrarySection>

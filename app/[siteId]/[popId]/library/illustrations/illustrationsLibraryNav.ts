@@ -17,7 +17,8 @@ export const ILLUSTRATIONS_PAGE_META: Record<string, IllustrationsPageMeta> = {
   illustrations: {
     id: "illustrations",
     title: "Ilustraciones",
-    description: "Spots, mascota Rootsy, low-fi UI y patrones ambient — documentación en preparación.",
+    description:
+      "Spots, mascota Rootsy y patrones ambient — alineados a sombra · bruma · savia.",
   },
 }
 

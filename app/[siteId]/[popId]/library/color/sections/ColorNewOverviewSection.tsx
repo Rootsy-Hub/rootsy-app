@@ -36,8 +36,8 @@ export function ColorNewOverviewSection() {
 
         <ColorDocSection
           id="colors-new-architecture"
-          title="Las cuatro familias"
-          description="Todo el producto se reduce a ceniza, bruma, savia y landing — nada más."
+          title="Las tres familias"
+          description="Todo el producto se reduce a sombra, bruma y savia — tres familias naturales."
         >
           <ColorFamiliesRow />
         </ColorDocSection>
@@ -45,7 +45,7 @@ export function ColorNewOverviewSection() {
         <ColorDocSection
           id="colors-new-split"
           title="Split POS"
-          description="Ceniza y bruma en la misma pantalla — la regla de oro del mostrador."
+          description="Sombra bajo el dosel y bruma neblinosa — el par natural del mostrador."
         >
           <PosSplitDemo />
         </ColorDocSection>
@@ -53,7 +53,7 @@ export function ColorNewOverviewSection() {
         <ColorDocSection
           id="colors-new-themes-preview"
           title="Contextos de producto"
-          description="POS, workspace, landing y librería — mismas familias, distinta composición."
+          description="POS, workspace, marketing y librería — composiciones de las tres familias."
         >
           <ThemeGallery />
         </ColorDocSection>
@@ -79,8 +79,8 @@ export function ColorNewOverviewSection() {
         </ColorDocSection>
 
         <GuidelinePair
-          doText="Usá savia 600 para toda acción; bruma 100 para todo ticket; ceniza 600 para todo catálogo oscuro."
-          dontText="No importes rampas nature, canopy ni tierra — no son parte de este sistema."
+          doText="Usá savia 600 para toda acción; bruma 100 para todo ticket; sombra 600 para todo catálogo bajo el dosel."
+          dontText="No uses grises slate de dashboard — sombra tiene matiz bosque; bruma es neblina, no gris neutro."
         />
 
         <ColorDocSection

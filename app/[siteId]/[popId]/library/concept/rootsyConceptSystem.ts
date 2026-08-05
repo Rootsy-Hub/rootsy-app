@@ -44,19 +44,20 @@ export const ROOTSY_DESIGN_PRINCIPLES = [
     detail: "Transiciones suaves, con aceleración y frenado creíbles. Nada mecánico ni brusco.",
   },
   {
-    title: "Datos mínimos",
-    detail: "Solo lo necesario, en lenguaje directo. Menos columnas, más claridad.",
+    title: "Color con función",
+    detail:
+      "Sombra, bruma y savia — cada tono nombra una superficie del parque. Savia aparece solo donde hay acción o foco.",
   },
 ] as const
 
-/** Muestra de paleta bruma + resaltado savia para demos de concepto. */
+/** Muestra de paleta — bruma, sombra y savia del ecosistema Rootsy. */
 export const CONCEPT_PALETTE_DEMO = [
-  { label: "Bruma 100", hex: "#EEF1F5", role: "Fondo" },
-  { label: "Bruma 50", hex: "#F4F6F9", role: "Superficie" },
-  { label: "Blanco", hex: "#FFFFFF", role: "Card" },
-  { label: "Bruma 500", hex: "#64748B", role: "Metadatos" },
-  { label: "Bruma 900", hex: "#121417", role: "Texto" },
-  { label: "Savia 600", hex: "#059669", role: "Acción · vida" },
+  { label: "Bruma 100", hex: rootsyColorHex("bruma", "100"), role: "Neblina · fondo" },
+  { label: "Bruma 50", hex: rootsyColorHex("bruma", "50"), role: "Superficie" },
+  { label: "Blanco", hex: ROOTSY_COLOR_SEMANTIC.white, role: "Card" },
+  { label: "Sombra 600", hex: rootsyColorHex("sombra", "600"), role: "Dosel · catálogo" },
+  { label: "Bruma 900", hex: rootsyColorHex("bruma", "900"), role: "Texto" },
+  { label: "Savia 600", hex: rootsyColorHex("savia", "600"), role: "Acción · vida" },
 ] as const
 
 export const CONCEPT_LIST_ITEMS = [
@@ -69,14 +70,17 @@ export const CONCEPT_TOKENS = {
   bruma100: rootsyColorHex("bruma", "100"),
   bruma50: rootsyColorHex("bruma", "50"),
   bruma200: rootsyColorHex("bruma", "200"),
+  bruma400: rootsyColorHex("bruma", "400"),
   bruma500: rootsyColorHex("bruma", "500"),
   bruma600: rootsyColorHex("bruma", "600"),
   bruma900: rootsyColorHex("bruma", "900"),
   savia600: rootsyColorHex("savia", "600"),
   savia500: rootsyColorHex("savia", "500"),
+  savia100: rootsyColorHex("savia", "100"),
   savia50: rootsyColorHex("savia", "50"),
   savia800: rootsyColorHex("savia", "800"),
-  ceniza900: rootsyColorHex("ceniza", "900"),
-  ceniza700: rootsyColorHex("ceniza", "700"),
+  sombra900: rootsyColorHex("sombra", "900"),
+  sombra700: rootsyColorHex("sombra", "700"),
+  sombra600: rootsyColorHex("sombra", "600"),
   white: ROOTSY_COLOR_SEMANTIC.white,
 } as const

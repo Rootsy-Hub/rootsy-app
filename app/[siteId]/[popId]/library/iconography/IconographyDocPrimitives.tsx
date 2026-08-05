@@ -3,6 +3,7 @@
 import {
   ICONOGRAPHY_GUIDELINES,
   ICON_SMALL_USE_CASES,
+  ROOTSY_ICONOGRAPHY_CONCEPT,
   ROOTSY_ICON_CATEGORIES,
   ROOTSY_ICON_COLOR_ROLES,
   ROOTSY_ICON_LIBRARY,
@@ -13,10 +14,11 @@ import {
   type IconsaxVariant,
 } from "@/app/[siteId]/[popId]/library/iconography/rootsyIconographySystem"
 import {
-  CANOPY,
-  CANOPY_MIST,
-  LibraryManifestoHero,
-} from "@/app/[siteId]/[popId]/library/libraryDocPrimitives"
+  CONCEPT_TOKENS,
+  FoundationBrumaStage,
+  FoundationSpecCard,
+} from "@/app/[siteId]/[popId]/library/libraryFoundationDocShared"
+import type { ReactNode } from "react"
 import { cn } from "@/lib/utils"
 import {
   Add,
@@ -73,20 +75,91 @@ export {
   LibraryRelatedLinks as IconographyRelatedLinks,
 } from "@/app/[siteId]/[popId]/library/libraryDocPrimitives"
 
-export function IconographyManifestoHero() {
+function TechnicalSubheading({ children }: { children: ReactNode }) {
   return (
-    <LibraryManifestoHero
-      eyebrow="Rootsy · Iconografía"
-      title="Señales SaaS"
-      description="Iconsax · Linear 16px · Bold en activo · tier gratuito."
-      aside={
-        <div className="flex items-center gap-3 rounded-xl bg-white/10 px-4 py-3 backdrop-blur-sm">
-          <Element4 size={24} variant={VARIANT_ACTIVE} color="#fff" />
-          <Receipt size={20} variant={VARIANT_UI} color="rgba(255,255,255,0.85)" />
-          <Setting2 size={16} variant={VARIANT_UI} color="rgba(255,255,255,0.7)" />
+    <p
+      className="font-canopy text-xs font-semibold uppercase tracking-wide"
+      style={{ color: CONCEPT_TOKENS.bruma500 }}
+    >
+      {children}
+    </p>
+  )
+}
+
+export function IconographySystemHero() {
+  return (
+    <FoundationSpecCard className="space-y-6">
+      <div className="space-y-3">
+        <p
+          className="font-canopy text-[10px] font-bold uppercase tracking-[0.2em]"
+          style={{ color: CONCEPT_TOKENS.bruma500 }}
+        >
+          Rootsy · Iconografía
+        </p>
+        <p
+          className="font-canopy text-2xl font-bold tracking-tight sm:text-3xl"
+          style={{ color: CONCEPT_TOKENS.bruma900 }}
+        >
+          {ROOTSY_ICONOGRAPHY_CONCEPT.title}
+        </p>
+        <p
+          className="max-w-2xl font-canopy text-sm leading-relaxed"
+          style={{ color: CONCEPT_TOKENS.bruma900 }}
+        >
+          {ROOTSY_ICONOGRAPHY_CONCEPT.lead}
+        </p>
+      </div>
+
+      <div className="space-y-2">
+        <p
+          className="font-canopy text-xs font-semibold uppercase tracking-wide"
+          style={{ color: CONCEPT_TOKENS.bruma500 }}
+        >
+          Por qué
+        </p>
+        <ul className="max-w-2xl space-y-2">
+          {ROOTSY_ICONOGRAPHY_CONCEPT.why.map((line) => (
+            <li
+              key={line}
+              className="font-canopy text-sm leading-relaxed"
+              style={{ color: CONCEPT_TOKENS.bruma600 }}
+            >
+              {line}
+            </li>
+          ))}
+        </ul>
+      </div>
+
+      <FoundationBrumaStage caption="Linear 16px en UI · Bold en nav activo — Iconsax tier gratuito.">
+        <div className="flex flex-wrap items-center gap-4">
+          <div
+            className="inline-flex items-center gap-2 rounded-lg px-3 py-2 font-canopy text-sm font-medium"
+            style={{ backgroundColor: CONCEPT_TOKENS.savia50, color: CONCEPT_TOKENS.savia800 }}
+          >
+            <ShoppingCart size={16} variant={VARIANT_ACTIVE} color={CONCEPT_TOKENS.savia600} />
+            Ventas
+          </div>
+          <div className="inline-flex items-center gap-2 rounded-lg px-3 py-2 font-canopy text-sm font-medium text-muted-foreground">
+            <Receipt size={16} variant={VARIANT_UI} color={CONCEPT_TOKENS.bruma500} />
+            Operaciones
+          </div>
+          <div className="inline-flex items-center gap-2 rounded-lg px-3 py-2 font-canopy text-sm font-medium text-muted-foreground">
+            <Setting2 size={16} variant={VARIANT_UI} color={CONCEPT_TOKENS.bruma500} />
+            Ajustes
+          </div>
         </div>
-      }
-    />
+      </FoundationBrumaStage>
+
+      <p
+        className="border-t pt-4 font-stream text-sm leading-relaxed"
+        style={{
+          borderColor: CONCEPT_TOKENS.bruma200,
+          color: CONCEPT_TOKENS.bruma500,
+        }}
+      >
+        {ROOTSY_ICONOGRAPHY_CONCEPT.closing}
+      </p>
+    </FoundationSpecCard>
   )
 }
 
@@ -132,7 +205,7 @@ export function IconVariantDemo() {
           key={item.id}
           className="flex items-center gap-3 rounded-xl border border-border/70 bg-card p-4 shadow-sm"
         >
-          <Box size={20} variant={item.id} color={CANOPY} />
+          <Box size={20} variant={item.id} color={CONCEPT_TOKENS.savia600} />
           <div>
             <p className="font-mono text-xs text-primary">variant=&quot;{item.id}&quot;</p>
             <p className="text-xs text-muted-foreground">{item.usage}</p>
@@ -188,7 +261,7 @@ export function IconSizeTable() {
                 </td>
                 <td className="px-4 py-2.5 text-right font-mono font-medium">{size.px}</td>
                 <td className="px-4 py-2.5">
-                  <Box size={size.px} variant={VARIANT_UI} color={CANOPY} />
+                  <Box size={size.px} variant={VARIANT_UI} color={CONCEPT_TOKENS.savia600} />
                 </td>
                 <td className="px-4 py-2.5 text-xs text-muted-foreground">{size.usage}</td>
               </tr>
@@ -289,8 +362,17 @@ export function IconGuidelinesGrid() {
         >
           <p className="text-sm font-semibold text-foreground">{g.title}</p>
           <div className="mt-3 grid gap-3 sm:grid-cols-2">
-            <div className="rounded-lg border border-[#A8EBC4] bg-[#F0FBF4] p-3">
-              <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-[#16704A]">
+            <div
+              className="rounded-lg border p-3"
+              style={{
+                borderColor: CONCEPT_TOKENS.savia100,
+                backgroundColor: CONCEPT_TOKENS.savia50,
+              }}
+            >
+              <p
+                className="text-[10px] font-bold uppercase tracking-[0.12em]"
+                style={{ color: CONCEPT_TOKENS.savia800 }}
+              >
                 Hacer
               </p>
               <p className="mt-1 text-sm text-foreground">{g.doText}</p>
@@ -400,13 +482,91 @@ export function IconTileDemo() {
               "inline-flex items-center justify-center rounded-xl",
               spec.tile,
             )}
-            style={{ backgroundColor: CANOPY_MIST, color: CANOPY }}
+            style={{ backgroundColor: CONCEPT_TOKENS.savia50, color: CONCEPT_TOKENS.savia600 }}
           >
-            <Box size={spec.size} variant={VARIANT_UI} color={CANOPY} />
+            <Box size={spec.size} variant={VARIANT_UI} color={CONCEPT_TOKENS.savia600} />
           </div>
           <p className="mt-2 font-mono text-[10px] text-muted-foreground">{spec.label}</p>
         </div>
       ))}
+    </div>
+  )
+}
+
+export function IconographyTechnicalDetails() {
+  return (
+    <div className="space-y-8">
+      <div className="space-y-3">
+        <TechnicalSubheading>Tamaños</TechnicalSubheading>
+        <div className="overflow-x-auto rounded-2xl border border-border/70">
+          <table className="w-full min-w-[560px] text-left font-canopy text-sm">
+            <thead>
+              <tr className="border-b border-border/60 bg-muted/30">
+                <th className="px-4 py-3 font-semibold">Token</th>
+                <th className="px-4 py-3 font-semibold">Label</th>
+                <th className="px-4 py-3 font-semibold">px</th>
+                <th className="px-4 py-3 font-semibold">Uso</th>
+              </tr>
+            </thead>
+            <tbody>
+              {ROOTSY_ICON_SIZES.map((row) => (
+                <tr key={row.id} className="border-b border-border/40 last:border-0">
+                  <td className="px-4 py-3 font-mono text-xs text-primary">{row.token}</td>
+                  <td className="px-4 py-3 text-foreground">{row.label}</td>
+                  <td className="px-4 py-3 font-mono text-xs">{row.px}</td>
+                  <td className="px-4 py-3 text-xs text-muted-foreground">{row.usage}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div className="space-y-3">
+        <TechnicalSubheading>Color</TechnicalSubheading>
+        <div className="overflow-x-auto rounded-2xl border border-border/70">
+          <table className="w-full min-w-[520px] text-left font-canopy text-sm">
+            <tbody>
+              {ROOTSY_ICON_COLOR_ROLES.map((row) => (
+                <tr key={row.id} className="border-b border-border/40 last:border-0">
+                  <td className="px-4 py-3 font-mono text-xs text-primary">{row.token}</td>
+                  <td className="px-4 py-3 text-foreground">{row.label}</td>
+                  <td className="px-4 py-3 font-mono text-[10px] text-muted-foreground">{row.hex}</td>
+                  <td className="px-4 py-3 text-xs text-muted-foreground">{row.usage}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div className="space-y-3">
+        <TechnicalSubheading>Variantes Iconsax</TechnicalSubheading>
+        <div className="overflow-x-auto rounded-2xl border border-border/70">
+          <table className="w-full min-w-[480px] text-left font-canopy text-sm">
+            <tbody>
+              {ROOTSY_ICON_VARIANTS.map((row) => (
+                <tr key={row.id} className="border-b border-border/40 last:border-0">
+                  <td className="px-4 py-3 font-mono text-xs text-primary">{row.id}</td>
+                  <td className="px-4 py-3 text-xs text-muted-foreground">{row.usage}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div className="space-y-3">
+        <TechnicalSubheading>Import</TechnicalSubheading>
+        <pre className="overflow-x-auto rounded-xl bg-muted/40 p-4 font-mono text-[11px] leading-relaxed text-foreground">
+          {ICONSAX_IMPORT_EXAMPLE}
+        </pre>
+      </div>
+
+      <div className="space-y-3">
+        <TechnicalSubheading>Guías Do / Don't</TechnicalSubheading>
+        <IconGuidelinesGrid />
+      </div>
     </div>
   )
 }

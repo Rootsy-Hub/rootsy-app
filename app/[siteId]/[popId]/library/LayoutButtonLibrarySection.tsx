@@ -1,20 +1,22 @@
 "use client"
 
 import {
-  ButtonAppearancesGallery,
-  ButtonAppearancesTable,
+  ButtonAppearancesSpecTable,
+  ButtonColorTokensGallery,
   ButtonDocLead,
   ButtonDocSection,
-  ButtonGroupDemo,
   ButtonGuidelinesGrid,
+  ButtonIconButtonsGallery,
   ButtonIconsDemo,
   ButtonManifestoHero,
-  ButtonModalFooterDemo,
+  ButtonPatternsDemo,
   ButtonPrinciplesGrid,
   ButtonRelatedLinks,
   ButtonSemanticTable,
-  ButtonSizesDemo,
+  ButtonSizesMatrix,
+  ButtonSizesSpecTable,
   ButtonStatesDemo,
+  ButtonVariantMatrix,
 } from "@/app/[siteId]/[popId]/library/button/ButtonDocPrimitives"
 import {
   ROOTSY_BUTTON_MANIFESTO,
@@ -32,7 +34,7 @@ export function LayoutButtonLibrarySection({ siteId = "", popId = "" }: Props) {
     <LibrarySection
       id="buttons"
       title="Botones"
-      description="Dispara una acción — appearance, tamaño, iconos y estados alineados a Atlassian Button."
+      description="Dispara una acción — cinco appearances, tres tamaños, icon buttons y estados sobre bruma y savia."
     >
       <div className="space-y-10">
         <ButtonManifestoHero />
@@ -40,25 +42,49 @@ export function LayoutButtonLibrarySection({ siteId = "", popId = "" }: Props) {
         <ButtonPrinciplesGrid principles={ROOTSY_BUTTON_PRINCIPLES} />
 
         <ButtonDocSection
+          id="colors"
+          title="Color"
+          description="Savia en primary y link · bruma en default y subtle · rojo funcional en danger."
+        >
+          <ButtonColorTokensGallery />
+        </ButtonDocSection>
+
+        <ButtonDocSection
+          id="variants"
+          title="Variantes"
+          description="Matriz completa — appearance × estado. Referencia principal del componente."
+        >
+          <ButtonVariantMatrix />
+        </ButtonDocSection>
+
+        <ButtonDocSection
           id="appearances"
           title="Appearances"
-          description="default · primary · subtle · danger · link — mapeados a components/ui/button y rootsButtonStyles."
+          description="primary · default · subtle · danger · link — tokens, uso y reglas."
         >
-          <ButtonAppearancesGallery />
-          <ButtonAppearancesTable />
+          <ButtonAppearancesSpecTable />
         </ButtonDocSection>
 
         <ButtonDocSection
           id="sizes"
           title="Tamaños"
-          description="default en formularios · compact solo en superficies densas · icon con aria-label."
+          description="Compact · default · large — misma jerarquía en primary, default y subtle."
         >
-          <ButtonSizesDemo />
+          <ButtonSizesMatrix />
+          <ButtonSizesSpecTable />
+        </ButtonDocSection>
+
+        <ButtonDocSection
+          id="icon-buttons"
+          title="Icon buttons"
+          description="RootsIconButton — light, dark, ghost, secondary y action en tablas."
+        >
+          <ButtonIconButtonsGallery />
         </ButtonDocSection>
 
         <ButtonDocSection
           id="icons"
-          title="Iconos"
+          title="Iconos en botones"
           description="iconBefore / iconAfter — currentColor, size-4, gap-2."
         >
           <ButtonIconsDemo />
@@ -67,31 +93,28 @@ export function LayoutButtonLibrarySection({ siteId = "", popId = "" }: Props) {
         <ButtonDocSection
           id="states"
           title="Estados"
-          description="disabled · loading · selected — sin layout shift en progreso."
+          description="Loading, selected y disabled — sin layout shift en progreso."
         >
           <ButtonStatesDemo />
         </ButtonDocSection>
 
         <ButtonDocSection
           id="patterns"
-          title="Patrones compuestos"
-          description="Button group, footer de modal y jerarquía izquierda/derecha."
+          title="Patrones"
+          description="Button group y footer de modal — jerarquía izquierda/derecha."
         >
-          <div className="grid gap-4 lg:grid-cols-2">
-            <ButtonGroupDemo />
-            <ButtonModalFooterDemo />
-          </div>
+          <ButtonPatternsDemo />
         </ButtonDocSection>
 
         <ButtonDocSection
           id="semantic"
-          title="Mapeo en producto"
+          title="En producto"
           description="Dónde vive cada appearance hoy en Rootsy."
         >
           <ButtonSemanticTable />
         </ButtonDocSection>
 
-        <ButtonDocSection id="guidelines" title="Guías Do / Don't">
+        <ButtonDocSection id="guidelines" title="Guías">
           <ButtonGuidelinesGrid />
         </ButtonDocSection>
 

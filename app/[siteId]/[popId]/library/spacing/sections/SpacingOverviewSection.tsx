@@ -5,17 +5,14 @@ import {
   BaseUnitDemo,
   NatureRhythmTiersGrid,
   NegativeSpacingDemo,
-  NegativeSpacingTable,
   ProximityDemo,
   SimilarityDemo,
   SpacingDocLead,
   SpacingDocSection,
-  SpacingGuidelineCards,
-  SpacingManifestoHero,
   SpacingPrinciplesGrid,
   SpacingRangeOverview,
-  SpacingScaleTable,
-  SpacingSemanticRolesTable,
+  SpacingSystemHero,
+  SpacingTechnicalDetails,
   TokenUsageStrip,
 } from "@/app/[siteId]/[popId]/library/spacing/SpacingDocPrimitives"
 import {
@@ -30,9 +27,9 @@ export function SpacingOverviewSection() {
   return (
     <LibrarySection id="spacing" title={meta.title} description={meta.description}>
       <div className="space-y-10">
-        <SpacingManifestoHero />
-        <SpacingDocLead>{ROOTSY_SPACING_MANIFESTO}</SpacingDocLead>
-        <SpacingPrinciplesGrid principles={ROOTSY_SPACING_PRINCIPLES} />
+        <SpacingSystemHero />
+        <SpacingDocLead className="font-canopy">{ROOTSY_SPACING_MANIFESTO}</SpacingDocLead>
+        <SpacingPrinciplesGrid principles={[...ROOTSY_SPACING_PRINCIPLES]} />
 
         <SpacingDocSection
           id="nature-rhythm"
@@ -48,22 +45,6 @@ export function SpacingOverviewSection() {
           description="space.100 = 8px — la savia. Todo token es múltiplo de esta unidad."
         >
           <BaseUnitDemo />
-        </SpacingDocSection>
-
-        <SpacingDocSection
-          id="scale"
-          title="Escala completa"
-          description="De space.0 a space.1000 — 0 a 80px con nombre nature en cada paso."
-        >
-          <SpacingScaleTable />
-        </SpacingDocSection>
-
-        <SpacingDocSection
-          id="semantic-roles"
-          title="Roles semánticos"
-          description="Qué token usar según la intención — no según el componente de hoy."
-        >
-          <SpacingSemanticRolesTable />
         </SpacingDocSection>
 
         <SpacingDocSection
@@ -100,16 +81,7 @@ export function SpacingOverviewSection() {
           title="Valores negativos"
           description="Romper el contenedor con intención — bleed, superposición, overlap."
         >
-          <NegativeSpacingTable />
           <NegativeSpacingDemo />
-        </SpacingDocSection>
-
-        <SpacingDocSection
-          id="layout-guidelines"
-          title="Guías de layout"
-          description="Similitud, proximidad, jerarquía y ajuste óptico — siempre dentro de la escala."
-        >
-          <SpacingGuidelineCards />
         </SpacingDocSection>
 
         <SpacingDocSection id="similarity-demo" title="Agrupar por similitud">
@@ -118,6 +90,14 @@ export function SpacingOverviewSection() {
 
         <SpacingDocSection id="proximity-demo" title="Agrupar por proximidad">
           <ProximityDemo />
+        </SpacingDocSection>
+
+        <SpacingDocSection
+          id="spacing-technical"
+          title="Detalles técnicos"
+          description="Escala, roles semánticos, negativos y guías."
+        >
+          <SpacingTechnicalDetails />
         </SpacingDocSection>
       </div>
     </LibrarySection>

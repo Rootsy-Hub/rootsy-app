@@ -2,29 +2,37 @@
   --border-width: 1px;
   --border-width-selected: 2px;
   --border-width-focused: 2px;
-  --border-color: oklch(0.88 0.025 130 / 0.7);
-  --border-color-selected: oklch(0.55 0.14 155);
-  --border-color-focused: oklch(0.45 0.12 155);
-  --border-color-danger: oklch(0.55 0.2 25);
+  --border-color: var(--rootsy-bruma-200, #dfe4ea);
+  --border-color-dark: var(--rootsy-sombra-border, #2a3530);
+  --border-color-selected: var(--rootsy-savia-600, #059669);
+  --border-color-focused: var(--rootsy-savia-400, #34d399);
+  --border-color-danger: #dc2626;
 }
 
 .rootsy-border-demo-default {
   border: var(--border-width) solid var(--border-color);
   border-radius: 0.75rem;
-  background: oklch(0.995 0.002 110);
+  background: #ffffff;
+}
+
+.rootsy-border-demo-dark {
+  border: var(--border-width) solid var(--border-color-dark);
+  border-radius: 0.75rem;
+  background: var(--rootsy-sombra-600, #1b2420);
+  color: #f4f8f6;
 }
 
 .rootsy-border-demo-selected {
   border: var(--border-width-selected) solid var(--border-color-selected);
   border-radius: 0.75rem;
-  background: oklch(0.96 0.03 155 / 0.35);
+  background: var(--rootsy-savia-50, #ecfdf5);
 }
 
 .rootsy-border-demo-focused {
   border: var(--border-width) solid var(--border-color-focused);
   border-radius: 0.75rem;
   background: white;
-  box-shadow: 0 0 0 var(--border-width-focused) oklch(0.45 0.12 155 / 0.45);
+  box-shadow: 0 0 0 var(--border-width-focused) rgb(52 211 153 / 0.45);
   outline: none;
 }
 
@@ -32,13 +40,13 @@
   border: var(--border-width) solid var(--border-color-danger);
   border-radius: 0.75rem;
   background: white;
-  box-shadow: 0 0 0 2px oklch(0.55 0.2 25 / 0.2);
+  box-shadow: 0 0 0 2px rgb(220 38 38 / 0.2);
 }
 
 .rootsy-border-demo-hairline {
-  border: var(--border-width) solid oklch(0.9 0.02 130);
+  border: var(--border-width) solid var(--rootsy-bruma-200, #dfe4ea);
   border-radius: 0.75rem;
-  background: oklch(0.98 0.005 110);
+  background: var(--rootsy-bruma-100, #eef1f5);
 }
 
 .rootsy-border-segment-demo {
@@ -47,7 +55,7 @@
   padding: 0.25rem;
   border: var(--border-width) solid var(--border-color);
   border-radius: 0.75rem;
-  background: oklch(0.96 0.012 110);
+  background: var(--rootsy-bruma-50, #f4f6f9);
 }
 
 .rootsy-border-segment-demo__item {
@@ -57,17 +65,17 @@
   text-align: center;
   font-size: 0.8125rem;
   font-weight: 500;
-  color: oklch(0.45 0.03 150);
+  color: var(--rootsy-bruma-600, #475569);
 }
 
 .rootsy-border-segment-demo__item--active {
   background: white;
-  box-shadow: 0 1px 2px oklch(0.25 0.03 150 / 0.06);
-  color: oklch(0.25 0.03 150);
+  box-shadow: 0 1px 2px rgb(5 8 7 / 0.06);
+  color: var(--rootsy-bruma-900, #121417);
 }
 
 .rootsy-border-segment-demo__item--selected-outline {
   border: var(--border-width-selected) solid var(--border-color-selected);
-  background: oklch(0.96 0.04 155 / 0.4);
-  color: oklch(0.35 0.08 155);
+  background: var(--rootsy-savia-50, #ecfdf5);
+  color: var(--rootsy-savia-800, #065f46);
 }

@@ -19,7 +19,7 @@ export function ElevationApplyingSection() {
       description={meta.description}
     >
       <div className="space-y-10">
-        <ElevationDocLead>
+        <ElevationDocLead className="font-canopy">
           Empezá por el nivel semántico — elevation.card.library, elevation.dialog.article.
           Cada overlay necesita su z-index aunque comparta el mismo estilo de sombra.
         </ElevationDocLead>

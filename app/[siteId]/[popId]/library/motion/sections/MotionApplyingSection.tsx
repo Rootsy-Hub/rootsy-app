@@ -20,7 +20,7 @@ export function MotionApplyingSection() {
       description={meta.description}
     >
       <div className="space-y-10">
-        <MotionDocLead>
+        <MotionDocLead className="font-canopy">
           Empezá por tokens semánticos — motion.modal.enter, motion.popup.enter.bottom.
           Solo componé custom cuando ningún token encaja.
         </MotionDocLead>

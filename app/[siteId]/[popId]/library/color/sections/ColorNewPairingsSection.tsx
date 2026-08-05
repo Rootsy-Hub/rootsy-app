@@ -22,13 +22,13 @@ export function ColorNewPairingsSection() {
       <div className="space-y-10">
         <ColorDocLead>
           Complementarios derivados de pantallas reales — no teoría cromática abstracta.
-          Cada par resuelve un layout concreto: split POS, workspace claro, hero landing.
+          Cada par resuelve un layout concreto: split POS, workspace claro, hero de marketing.
         </ColorDocLead>
 
         <ColorDocSection
           id="pairings-operational"
           title="Operación"
-          description="POS y workspace — ceniza, bruma, savia."
+          description="POS y workspace — sombra, bruma, savia."
         >
           <div className="grid gap-4 lg:grid-cols-2">
             {ROOTSY_COMPLEMENTARY_PAIRINGS.filter((p) =>
@@ -42,12 +42,12 @@ export function ColorNewPairingsSection() {
         </ColorDocSection>
 
         <ColorDocSection
-          id="pairings-landing"
-          title="Landing"
-          description="Promesa y CTA — landing 950, meadow, teal."
+          id="pairings-marketing"
+          title="Marketing"
+          description="Promesa y CTA — sombra 900, savia 400/500, teal."
         >
           <div className="grid gap-4 lg:grid-cols-2">
-            {ROOTSY_COMPLEMENTARY_PAIRINGS.filter((p) => p.id.startsWith("landing")).map(
+            {ROOTSY_COMPLEMENTARY_PAIRINGS.filter((p) => p.id.startsWith("marketing")).map(
               (pairing) => (
                 <PairingCard key={pairing.id} pairing={pairing} />
               ),
@@ -58,7 +58,7 @@ export function ColorNewPairingsSection() {
         <ColorDocSection
           id="pairings-status"
           title="Estados funcionales"
-          description="Fuera de las cuatro familias — solo semántica UX."
+          description="Fuera de las tres familias — solo semántica UX."
         >
           <PairingCard
             pairing={
@@ -69,7 +69,7 @@ export function ColorNewPairingsSection() {
 
         <GuidelinePair
           doText="Documentá pares con contexto de pantalla — no solo armonía teórica."
-          dontText="No combines landing aurora con ceniza en la misma columna operativa."
+          dontText="No combines aurora de atmósfera con sombra operativa en la misma columna."
         />
       </div>
     </LibrarySection>

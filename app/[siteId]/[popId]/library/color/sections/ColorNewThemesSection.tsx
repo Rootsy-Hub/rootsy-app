@@ -23,9 +23,9 @@ export function ColorNewThemesSection() {
     <LibrarySection id="colors-new-themes" title={meta.title} description={meta.description}>
       <div className="space-y-10">
         <ColorDocLead>
-          Tres pantallas de producto más la librería como spec vivo: POS split
-          ceniza/bruma, workspace bruma con header ceniza, landing carbón con savia
-          promocional.
+          Cuatro contextos de producto: POS split sombra/bruma, workspace bruma con header
+          sombra, marketing noche del parque con savia promocional, y librería como spec
+          vivo.
         </ColorDocLead>
 
         <ColorDocSection
@@ -39,7 +39,7 @@ export function ColorNewThemesSection() {
         <ColorDocSection
           id="themes-split"
           title="Split POS"
-          description="Ceniza y bruma en la misma pantalla — regla de oro del mostrador."
+          description="Sombra y bruma en la misma pantalla — dosel y neblina del mostrador."
         >
           <PosSplitDemo />
         </ColorDocSection>
@@ -52,14 +52,14 @@ export function ColorNewThemesSection() {
           <div className="grid gap-8 lg:grid-cols-2">
             <SurfaceStackDemo themeId="POS" layers={ROOTSY_SURFACE_STACKS.pos} />
             <SurfaceStackDemo themeId="Workspace" layers={ROOTSY_SURFACE_STACKS.workspace} />
-            <SurfaceStackDemo themeId="Landing" layers={ROOTSY_SURFACE_STACKS.landing} />
+            <SurfaceStackDemo themeId="Marketing" layers={ROOTSY_SURFACE_STACKS.marketing} />
             <SurfaceStackDemo themeId="Librería" layers={ROOTSY_SURFACE_STACKS.library} />
           </div>
         </ColorDocSection>
 
         <GuidelinePair
-          doText="Header ceniza + cuerpo bruma en workspace y librería — continuidad con POS."
-          dontText="No mezcles landing 950 como fondo de formularios operativos."
+          doText="Header sombra + cuerpo bruma en workspace y librería — continuidad con POS."
+          dontText="No mezcles sombra 900 de marketing como fondo de formularios operativos."
         />
       </div>
     </LibrarySection>

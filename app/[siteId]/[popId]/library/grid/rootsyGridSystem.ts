@@ -33,25 +33,42 @@ export type GridGuideline = {
   dontText: string
 }
 
+export const ROOTSY_GRID_CONCEPT = {
+  title: "Surcos en el claro",
+  lead:
+    "La grilla es el suelo del claro — donde el contenido Rootsy se planta en surcos regulares. Doce columnas en desktop dividen el horizonte; sendas y orillas dan aire sin perder alineación.",
+  why: [
+    "Naturalidad: surcos, sendas y orillas — metáforas de cultivo que el ojo entiende al primer vistazo.",
+    "Simplicidad: 12 columnas en desktop, 6 en tablet, 2 en móvil — tres lecturas, no seis reglas.",
+    "Intuitivo: cards y tablas al surco; botones e íconos respiran con space tokens — no todo necesita columna.",
+  ],
+  closing:
+    "Como un prado ordenado: estructura visible, rigidez invisible — el contenido manda, la grilla orienta.",
+} as const
+
 export const ROOTSY_GRID_MANIFESTO =
   "La grilla es el suelo del claro — donde el contenido Rootsy se planta en surcos regulares. Doce columnas en desktop dividen el horizonte; sendas entre surcos y orillas al borde dan aire sin perder alineación. Los botones y los íconos no necesitan tocarse a la grilla: respiran con tokens de espacio. Las tarjetas, tablas y formularios sí."
 
 export const ROOTSY_GRID_PRINCIPLES = [
   {
-    title: "Solo el claro principal",
-    detail: "La grilla vive en el área de contenido — no en nav lateral, panel ni overlays flotantes.",
+    title: "Intuitivo · qué alinear",
+    detail:
+      "Contenedores top-level al surco; botones e íconos con space tokens — no todo necesita columna.",
   },
   {
-    title: "Contenedores a la grilla",
-    detail: "Cards, tablas, formularios e imágenes top-level alinean a surcos. Adentro mandan space tokens.",
+    title: "Simplicidad · solo el claro",
+    detail:
+      "La grilla vive en el área de contenido — nav, panel y overlays quedan fuera del prado.",
   },
   {
-    title: "Viewport define breakpoint",
-    detail: "El ancho del viewport — no el del main — decide cuántas columnas hay.",
+    title: "Naturalidad · surcos y sendas",
+    detail:
+      "12 · 6 · 2 columnas según viewport — sendas con space.150/200, orillas con space.200/400.",
   },
   {
     title: "Fixed por defecto",
-    detail: "Fixed-wide (1296px) para workspace estructurado. Fluid solo cuando el contenido no tiene techo horizontal.",
+    detail:
+      "Fixed-wide (1296px) para workspace estructurado. Fluid solo sin techo horizontal natural.",
   },
 ] as const
 

@@ -38,15 +38,29 @@ import {
 } from "@/app/[siteId]/[popId]/library/layouts/layoutsLibraryNav"
 import { isLayoutsLibrarySection } from "@/app/[siteId]/[popId]/library/layouts/layoutsLibraryNav"
 import {
+  UI_COMPONENTS_LIBRARY_ROOT,
+  UI_COMPONENTS_LIBRARY_SUBITEMS,
+  isUiComponentsLibrarySection,
+} from "@/app/[siteId]/[popId]/library/ui-components/uiComponentsLibraryNav"
+import {
+  TEXT_COMPONENT_LIBRARY_ROOT,
+  TEXT_COMPONENT_LIBRARY_SUBITEMS,
+} from "@/app/[siteId]/[popId]/library/text-component/textComponentLibraryNav"
+import {
+  libraryNavGroupClass,
   libraryNavGroupLabelClass,
-  libraryNavLinkActiveClass,
-  libraryNavLinkClass,
-  libraryNavLinkParentActiveClass,
+  libraryNavItemActiveClass,
+  libraryNavItemClass,
+  libraryNavItemIconClass,
+  libraryNavItemLabelClass,
+  libraryNavItemNestedClass,
+  libraryNavNestedListClass,
   libraryNavToggleClass,
   libraryPageHeaderBadgeClass,
   libraryPageHeaderClass,
   libraryPageHeaderMonoClass,
 } from "@/app/[siteId]/[popId]/library/libraryColorTheme"
+import { getLibraryNavIcon } from "@/app/[siteId]/[popId]/library/libraryNavIcons"
 import { popScopedHref } from "@/lib/popRoutes"
 import { cn } from "@/lib/utils"
 import { ChevronRight } from "lucide-react"
@@ -102,6 +116,10 @@ export const LIBRARY_NAV_GROUPS: LibraryNavGroup[] = [
       },
       { ...BORDER_LIBRARY_ROOT },
       { ...RADIUS_LIBRARY_ROOT },
+      {
+        ...UI_COMPONENTS_LIBRARY_ROOT,
+        children: [...UI_COMPONENTS_LIBRARY_SUBITEMS],
+      },
     ],
   },
   {
@@ -124,6 +142,10 @@ export const LIBRARY_NAV_GROUPS: LibraryNavGroup[] = [
     id: "components",
     label: "Componentes",
     items: [
+      {
+        ...TEXT_COMPONENT_LIBRARY_ROOT,
+        children: [...TEXT_COMPONENT_LIBRARY_SUBITEMS],
+      },
       { id: "buttons", label: "Botones" },
       { id: "sortable-list", label: "Lista ordenable" },
       { id: "feedback", label: "Banners" },
@@ -190,6 +212,7 @@ export function getLibraryNavGroup(sectionId: string): LibraryNavGroup | undefin
     isElevationLibrarySection(sectionId) ||
     isBorderLibrarySection(sectionId) ||
     isRadiusLibrarySection(sectionId) ||
+    isUiComponentsLibrarySection(sectionId) ||
     isLayoutsLibrarySection(sectionId)
   ) {
     if (isLayoutsLibrarySection(sectionId)) {
@@ -203,6 +226,42 @@ export function getLibraryNavGroup(sectionId: string): LibraryNavGroup | undefin
         item.id === sectionId ||
         item.children?.some((child) => child.id === sectionId),
     ),
+  )
+}
+
+function NavItemIcon({ sectionId }: { sectionId: string }) {
+  const Icon = getLibraryNavIcon(sectionId)
+  if (!Icon) return null
+  return <Icon className={libraryNavItemIconClass} aria-hidden />
+}
+
+function NavLink({
+  siteId,
+  popId,
+  item,
+  activeSectionId,
+  nested = false,
+}: {
+  siteId: string
+  popId: string
+  item: LibraryNavItem
+  activeSectionId: string
+  nested?: boolean
+}) {
+  const isActive = item.id === activeSectionId
+  return (
+    <Link
+      href={librarySectionHref(siteId, popId, item.id)}
+      aria-current={isActive ? "page" : undefined}
+      className={cn(
+        libraryNavItemClass,
+        nested && libraryNavItemNestedClass,
+        isActive && libraryNavItemActiveClass,
+      )}
+    >
+      {!nested ? <NavItemIcon sectionId={item.id} /> : null}
+      <span className={libraryNavItemLabelClass}>{item.label}</span>
+    </Link>
   )
 }
 
@@ -227,40 +286,35 @@ function NavAccordionGroup({
   }, [isGroupActive, activeSectionId])
 
   return (
-    <li>
-      <div className="flex items-stretch gap-0.5">
+    <li className="library-nav-accordion">
+      <div className="library-nav-accordion-row">
         <Link
           href={librarySectionHref(siteId, popId, item.id)}
           aria-current={isRootActive ? "page" : undefined}
           className={cn(
-            "min-w-0 flex-1 py-1.5 pl-0 pr-1 text-sm",
-            libraryNavLinkClass,
-            isRootActive
-              ? libraryNavLinkActiveClass
-              : isGroupActive
-                ? libraryNavLinkParentActiveClass
-                : undefined,
+            libraryNavItemClass,
+            "min-w-0 flex-1",
+            isRootActive && libraryNavItemActiveClass,
           )}
         >
-          {item.label}
+          <NavItemIcon sectionId={item.id} />
+          <span className={libraryNavItemLabelClass}>{item.label}</span>
         </Link>
         <button
           type="button"
           aria-expanded={open}
           aria-label={open ? `Contraer ${item.label}` : `Expandir ${item.label}`}
           onClick={() => setOpen((prev) => !prev)}
-          className={cn(
-            "inline-flex shrink-0 items-center justify-center px-0.5 py-1.5",
-            libraryNavToggleClass,
-          )}
+          className={libraryNavToggleClass}
         >
           <ChevronRight
-            className={cn("size-4 transition-transform duration-200", open && "rotate-90")}
+            className={cn("library-nav-chevron size-4", open && "library-nav-chevron--open")}
+            aria-hidden
           />
         </button>
       </div>
       {open ? (
-        <ul className="mt-0.5 space-y-0.5">
+        <ul className={libraryNavNestedListClass}>
           {item.children.map((child) => (
             <li key={child.id}>
               <NavLink
@@ -278,36 +332,6 @@ function NavAccordionGroup({
   )
 }
 
-function NavLink({
-  siteId,
-  popId,
-  item,
-  activeSectionId,
-  nested = false,
-}: {
-  siteId: string
-  popId: string
-  item: LibraryNavItem
-  activeSectionId: string
-  nested?: boolean
-}) {
-  const isActive = item.id === activeSectionId
-  return (
-    <Link
-      href={librarySectionHref(siteId, popId, item.id)}
-      aria-current={isActive ? "page" : undefined}
-      className={cn(
-        "block py-1 text-sm",
-        libraryNavLinkClass,
-        nested ? "pl-3" : "pl-0",
-        isActive && libraryNavLinkActiveClass,
-      )}
-    >
-      {item.label}
-    </Link>
-  )
-}
-
 export function LibraryNav({
   siteId,
   popId,
@@ -320,13 +344,14 @@ export function LibraryNav({
   className?: string
 }) {
   return (
-    <nav className={cn("space-y-6", className)}>
-      {LIBRARY_NAV_GROUPS.map((group) => (
-        <div key={group.id}>
-          <p className={cn("mb-2 px-0", libraryNavGroupLabelClass)}>
-            {group.label}
-          </p>
-          <ul className="mt-2 space-y-0.5">
+    <nav className={cn("library-nav", className)} aria-label="Secciones de la librería">
+      {LIBRARY_NAV_GROUPS.map((group, groupIndex) => (
+        <section
+          key={group.id}
+          className={cn(libraryNavGroupClass, groupIndex > 0 && "library-nav-group--separated")}
+        >
+          <h2 className={libraryNavGroupLabelClass}>{group.label}</h2>
+          <ul className="library-nav-list">
             {group.items.map((item) => {
               if (item.children?.length) {
                 return (
@@ -352,7 +377,7 @@ export function LibraryNav({
               )
             })}
           </ul>
-        </div>
+        </section>
       ))}
     </nav>
   )
@@ -386,7 +411,7 @@ export function LibraryPageHeader({
                 libraryPageHeaderMonoClass,
               )}
             >
-              rootsy-library · ceniza/bruma
+              rootsy-library · sombra/bruma
             </span>
           </div>
           <h1 className="text-2xl font-semibold tracking-tight text-foreground">

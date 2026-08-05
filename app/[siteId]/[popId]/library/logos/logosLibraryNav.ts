@@ -27,7 +27,7 @@ export function getLogosPageMeta(sectionId: string): LogosPageMeta | undefined {
 }
 
 export const LOGOS_RELATED_LINKS = [
-  { sectionId: "colors", label: "Color", hint: "Canopy y superficies para fondos de logo." },
+  { sectionId: "colors", label: "Color", hint: "Sombra, bruma y savia para fondos de logo." },
   { sectionId: "typography", label: "Tipografía", hint: "Nombre del POP junto al logomark." },
   { sectionId: "iconography", label: "Iconografía", hint: "Tile y radio alineados al logomark." },
   { sectionId: "spacing", label: "Espaciado", hint: "Clearance mínimo alrededor del lockup." },

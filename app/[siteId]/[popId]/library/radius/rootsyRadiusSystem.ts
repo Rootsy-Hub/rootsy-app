@@ -1,6 +1,5 @@
 /**
- * Sistema de radio Rootsy — fuente de verdad del design system.
- * Alineado a Atlassian Radius + valores reales del theme (--radius 0.75rem).
+ * Sistema de radio Rootsy — escala orgánica alineada al theme (--radius 0.75rem).
  */
 
 export type RadiusToken = {
@@ -21,29 +20,45 @@ export type RadiusSemanticMapping = {
   source: string
 }
 
+export const ROOTSY_RADIUS_CONCEPT = {
+  title: "Formas que respiran",
+  lead:
+    "Las curvas en Rootsy siguen proporciones naturales: poco redondeo donde hay datos densos, más donde el contenedor abraza al contenido. Una escala, un idioma — no re-decidir en cada pantalla.",
+  why: [
+    "Naturalidad: de semilla a copa — la curva crece con el elemento, como en el parque.",
+    "Simplicidad: large en controles, xlarge en cards, xxlarge en modales — tres paradas que cubren casi todo.",
+    "Intuitivo: si ya usaste un formulario Rootsy, conocés el radio — misma forma en todo el producto.",
+  ],
+  closing:
+    "Formas legibles al primer vistazo: nada de rounded-[13px] ni esquinas que sorprendan.",
+} as const
+
 export const ROOTSY_RADIUS_MANIFESTO =
-  "La redondez en Rootsy crece con el elemento: semilla en badges, hoja en inputs, copa en modales, círculo completo en avatares POP. El focus ring siempre respeta la forma — radio del anillo = radio del componente + 2px, offset 2px, en canopy emerald."
+  "De semilla a copa: xsmall en badges, large en controles, xlarge en cards, xxlarge en modales, full en avatares. El tile (~34%) es exclusivo del logomark — no reutilizar. Focus siempre +2px con savia."
 
 export const ROOTSY_RADIUS_PRINCIPLES = [
   {
-    title: "Escala orgánica",
-    detail: "Más redondez en contenedores grandes — menos en detalle y datos densos.",
+    title: "Intuitivo · una escala",
+    detail:
+      "Misma curva en formularios, cards y modales — el usuario no reaprende por pantalla.",
   },
   {
-    title: "Focus +2px",
-    detail: "radius.focus.* = radius.* + 2px — no calcular a mano en diseño.",
+    title: "Proporciones naturales",
+    detail:
+      "Más redondez en contenedores grandes; menos en tablas y datos densos.",
   },
   {
-    title: "Tile exclusivo",
-    detail: "radius.tile solo para logomark Rootsy y tiles de iconografía — ~34% del lado.",
+    title: "Formas claras",
+    detail:
+      "Controles con contorno definido — rounded-lg en inputs, sin curvas arbitrarias.",
   },
   {
-    title: "Full para personas",
-    detail: "Avatares POP y pills circulares — rounded-full, no radius arbitrario.",
+    title: "Focus +2px savia",
+    detail:
+      "El anillo respeta la forma del control — accesible y coherente con borde y color.",
   },
 ] as const
 
-/** Valores alineados a --radius: 0.75rem (12px) como large/xlarge en producto. */
 export const ROOTSY_RADIUS_TOKENS: RadiusToken[] = [
   {
     id: "xsmall",
@@ -53,7 +68,7 @@ export const ROOTSY_RADIUS_TOKENS: RadiusToken[] = [
     focusToken: "radius.focus.xsmall",
     focusValue: "4px",
     tailwind: "rounded-[2px]",
-    usage: "Badges mínimos, keyboard shortcuts en tooltip.",
+    usage: "Badges mínimos, shortcuts en tooltip.",
   },
   {
     id: "small",
@@ -62,8 +77,8 @@ export const ROOTSY_RADIUS_TOKENS: RadiusToken[] = [
     value: "4px",
     focusToken: "radius.focus.small",
     focusValue: "6px",
-    tailwind: "rounded-sm (theme ~8px) · rounded-[4px] doc",
-    usage: "Tags, timestamps, thumbs en tablas, botones compactos internos.",
+    tailwind: "rounded-sm",
+    usage: "Tags, timestamps, celdas compactas.",
   },
   {
     id: "medium",
@@ -73,7 +88,7 @@ export const ROOTSY_RADIUS_TOKENS: RadiusToken[] = [
     focusToken: "radius.focus.medium",
     focusValue: "10px",
     tailwind: "rounded-md",
-    usage: "Segment pills internos, botones icono, calendario día.",
+    usage: "Pills internos, botones icono.",
   },
   {
     id: "large",
@@ -83,7 +98,7 @@ export const ROOTSY_RADIUS_TOKENS: RadiusToken[] = [
     focusToken: "radius.focus.large",
     focusValue: "14px",
     tailwind: "rounded-lg · --radius-lg",
-    usage: "Inputs, selects, buttons, dropdowns — light form.",
+    usage: "Inputs, selects, buttons — light form.",
   },
   {
     id: "xlarge",
@@ -93,7 +108,7 @@ export const ROOTSY_RADIUS_TOKENS: RadiusToken[] = [
     focusToken: "radius.focus.xlarge",
     focusValue: "18px",
     tailwind: "rounded-xl · --radius-xl",
-    usage: "Cards, SpecCard, paneles checkout, floating UI.",
+    usage: "Cards, SpecCard, paneles checkout.",
   },
   {
     id: "xxlarge",
@@ -103,27 +118,23 @@ export const ROOTSY_RADIUS_TOKENS: RadiusToken[] = [
     focusToken: "radius.focus.xxlarge",
     focusValue: "24px",
     tailwind: "rounded-[1.375rem]",
-    usage: "Modales articleDialog · contenedores full-page.",
+    usage: "Modales articleDialog · full-page.",
   },
   {
     id: "full",
     token: "radius.full",
     natureName: "Redondo",
     value: "9999px",
-    focusToken: undefined,
-    focusValue: undefined,
     tailwind: "rounded-full",
-    usage: "Avatares POP en home, switch thumb, pills circulares.",
+    usage: "Avatares POP, switch thumb, pills circulares.",
   },
   {
     id: "tile",
     token: "radius.tile",
     natureName: "Loseta",
     value: "~34% del lado",
-    focusToken: undefined,
-    focusValue: undefined,
-    tailwind: "rx ≈ 9.95 / 29 en logomark SVG",
-    usage: "Solo logomark Rootsy e icon tiles — no reutilizar fuera.",
+    tailwind: "rx ≈ 34% en logomark SVG",
+    usage: "Solo logomark Rootsy — no reutilizar.",
   },
 ]
 
@@ -132,19 +143,13 @@ export const ROOTSY_RADIUS_SEMANTIC: RadiusSemanticMapping[] = [
     token: "radius.form.control",
     component: "RootsFormTextField · Money · Select",
     radiusToken: "radius.large",
-    source: "rootsFormStyles · rounded-lg",
-  },
-  {
-    token: "radius.form.segment",
-    component: "RootsFormSegmentField",
-    radiusToken: "radius.large",
-    source: "outer rounded-lg · inner rounded-md",
+    source: "rounded-lg",
   },
   {
     token: "radius.card.library",
-    component: "SpecCard · Library panels",
+    component: "library-spec-card",
     radiusToken: "radius.xlarge",
-    source: "rounded-2xl (1rem) en doc · rounded-xl en cards",
+    source: "rounded-2xl",
   },
   {
     token: "radius.dialog",
@@ -154,31 +159,21 @@ export const ROOTSY_RADIUS_SEMANTIC: RadiusSemanticMapping[] = [
   },
   {
     token: "radius.avatar.pop",
-    component: "Home POP picker · header logomark",
-    radiusToken: "radius.full / radius.large",
-    source: "rounded-full home · rounded-lg header 32px",
+    component: "Home POP picker",
+    radiusToken: "radius.full",
+    source: "rounded-full",
   },
   {
     token: "radius.logo.tile",
     component: "Rootsy logomark",
     radiusToken: "radius.tile",
-    source: "public/rootsy-logo.svg",
+    source: "SVG logomark",
   },
 ]
 
 export const RADIUS_GUIDELINES = {
-  do: [
-    "Usar rounded-lg en todos los controles light form.",
-    "Modal con rounded-[1.375rem] — no mezclar con rounded-xl.",
-    "Focus ring offset 2px y radio +2px respecto al control.",
-    "rounded-full solo para avatares y elementos circulares.",
-  ],
-  dont: [
-    "No usar radius.tile en cards o inputs.",
-    "No inventar rounded-[13px] — elegir token de la escala.",
-    "No poner rounded-2xl en inputs — demasiado blando para datos.",
-    "No omitir radius.focus en specs de diseño Figma.",
-  ],
+  do: "rounded-lg en controles light form; modal con xxlarge; focus +2px savia; full solo círculos.",
+  dont: "No uses tile en cards; no inventes rounded-[13px]; no xxlarge en inputs densos.",
 } as const
 
 export const ROOTSY_RADIUS_THEME = {

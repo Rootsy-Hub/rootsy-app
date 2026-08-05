@@ -24,7 +24,7 @@ export const GRID_PAGE_META: Record<string, GridPageMeta> = {
     id: "grid",
     title: "Grilla",
     description:
-      "Surcos, sendas y orillas — estructura horizontal del claro principal donde vive el contenido Rootsy.",
+      "Doce surcos en el claro — sendas, orillas y alineación sin rigidez innecesaria.",
   },
   "grid-responsive": {
     id: "grid-responsive",

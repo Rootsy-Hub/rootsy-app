@@ -20,13 +20,14 @@ export function ColorNewPalettesSection() {
     <LibrarySection id="colors-new-palettes" title={meta.title} description={meta.description}>
       <div className="space-y-10">
         <ColorDocLead>
-          El sistema completo son cuatro rampas — extraídas de Vender, workspace,
-          landing y la propia librería. Nada más entra en la paleta oficial.
+          El sistema completo son tres rampas de marca — sombra, bruma y savia — extraídas de
+          Vender, workspace y marketing. Atmósfera es composición de efectos, no una cuarta
+          rampa.
         </ColorDocLead>
 
         <ColorDocSection
           id="palettes-all"
-          title="Ceniza · Bruma · Savia · Landing"
+          title="Sombra · Bruma · Savia"
           description="Rampas completas con pasos y uso en producto."
         >
           <div className="space-y-10">
@@ -39,7 +40,7 @@ export function ColorNewPalettesSection() {
         <ColorDocSection
           id="palettes-gradients"
           title="Gradientes"
-          description="Solo transiciones con función — POS, split y landing."
+          description="Solo transiciones con función — POS, split y marketing."
         >
           <NatureGradientGallery items={COLOR_NEW_GRADIENTS} />
         </ColorDocSection>

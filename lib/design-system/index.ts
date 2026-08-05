@@ -7,6 +7,7 @@
 export {
   ROOTSY_COLOR_RAMPS,
   ROOTSY_COLOR_SEMANTIC,
+  ROOTSY_ATMOSPHERE,
   rootsyColorHex,
   rootsyColorVar,
   type RootsyColorFamily,

@@ -1,21 +1,27 @@
 /**
  * Tokens de color Rootsy — fuente de verdad (TS).
  * Espejo de styles/rootsy/tokens/colors.css
- * Familias: ceniza · bruma · savia · landing
+ *
+ * Tres familias de marca: sombra · bruma · savia
+ * Atmósfera = efectos decorativos de marketing (no familia aplicable a UI).
  */
 
-export type RootsyColorFamily = "ceniza" | "bruma" | "savia" | "landing"
+export type RootsyColorFamily = "sombra" | "bruma" | "savia"
+
+/** @deprecated Alias de migración — ceniza → sombra, landing/marketing → sombra/savia/atmosphere */
+export type LegacyRootsyColorFamily = RootsyColorFamily | "ceniza" | "landing" | "marketing" | "atmosphere"
 
 export const ROOTSY_COLOR_RAMPS = {
-  ceniza: {
-    "950": "#070A09",
-    "900": "#0B100E",
-    "800": "#0F1416",
-    "700": "#1A2027",
-    "600": "#20262E",
-    "500": "#252B34",
-    "400": "#64748B",
-    "300": "#94A3B8",
+  sombra: {
+    "950": "#050807",
+    "900": "#080C0B",
+    "800": "#0E1311",
+    "700": "#151C19",
+    "600": "#1B2420",
+    "500": "#222B27",
+    "400": "#5A6B63",
+    "300": "#8FA396",
+    border: "#2A3530",
   },
   bruma: {
     "50": "#F4F6F9",
@@ -43,39 +49,72 @@ export const ROOTSY_COLOR_RAMPS = {
     "200": "#A7F3D0",
     "100": "#D1FAE5",
     "50": "#ECFDF5",
-  },
-  landing: {
-    "950": "#080C0B",
-    "900": "#070A09",
-    "800": "#0A0E0D",
-    "500": "#10B981",
-    "400": "#34D399",
-    "300": "#6EE7B7",
-    "200": "#A7F3D0",
+    /** Extensión promocional — gradiente CTA hero (savia → teal). */
     teal: "#14B8A6",
-    neon: "#25FE02",
-    "neon-2": "#02FE85",
   },
 } as const
 
+/** Auroras y glow — solo blur/atmosphere en marketing. Nunca texto, borde ni botón sólido. */
+export const ROOTSY_ATMOSPHERE = {
+  neon: "#25FE02",
+  "neon-2": "#02FE85",
+} as const
+
+const LANDING_ALIAS: Record<string, { family: RootsyColorFamily | "atmosphere"; step: string }> = {
+  "950": { family: "sombra", step: "900" },
+  "900": { family: "sombra", step: "950" },
+  "800": { family: "sombra", step: "800" },
+  "500": { family: "savia", step: "500" },
+  "400": { family: "savia", step: "400" },
+  "300": { family: "savia", step: "300" },
+  "200": { family: "savia", step: "200" },
+  teal: { family: "savia", step: "teal" },
+  neon: { family: "atmosphere", step: "neon" },
+  "neon-2": { family: "atmosphere", step: "neon-2" },
+}
+
+function resolveLegacyColor(
+  family: LegacyRootsyColorFamily,
+  step: string | number,
+): { family: RootsyColorFamily | "atmosphere"; step: string } {
+  const key = String(step)
+  if (family === "ceniza") return { family: "sombra", step: key }
+  if (family === "marketing" || family === "landing") {
+    const mapped = LANDING_ALIAS[key]
+    if (mapped) return mapped
+    throw new Error(`Unknown landing color alias: landing.${key}`)
+  }
+  if (family === "atmosphere") return { family: "atmosphere", step: key }
+  return { family, step: key }
+}
+
 /** Referencia CSS: var(--rootsy-bruma-100) */
 export function rootsyColorVar(
-  family: RootsyColorFamily,
+  family: LegacyRootsyColorFamily,
   step: string | number,
 ): string {
-  return `var(--rootsy-${family}-${step})`
+  const resolved = resolveLegacyColor(family, step)
+  if (resolved.family === "atmosphere") {
+    return `var(--rootsy-atmosphere-${resolved.step})`
+  }
+  return `var(--rootsy-${resolved.family}-${resolved.step})`
 }
 
 /** Hex literal para TS / canvas / docs. */
 export function rootsyColorHex(
-  family: RootsyColorFamily,
+  family: LegacyRootsyColorFamily,
   step: string | number,
 ): string {
-  const ramp = ROOTSY_COLOR_RAMPS[family] as Record<string, string>
-  const key = String(step)
-  const hex = ramp[key]
+  const resolved = resolveLegacyColor(family, step)
+  if (resolved.family === "atmosphere") {
+    const hex = ROOTSY_ATMOSPHERE[resolved.step as keyof typeof ROOTSY_ATMOSPHERE]
+    if (!hex) throw new Error(`Unknown atmosphere color: ${resolved.step}`)
+    return hex
+  }
+  const ramp = ROOTSY_COLOR_RAMPS[resolved.family] as Record<string, string>
+  const hex = ramp[resolved.step]
   if (!hex) {
-    throw new Error(`Unknown rootsy color: ${family}.${key}`)
+    throw new Error(`Unknown rootsy color: ${resolved.family}.${resolved.step}`)
   }
   return hex
 }
@@ -83,8 +122,9 @@ export function rootsyColorHex(
 /** Atajos semánticos usados en demos y componentes. */
 export const ROOTSY_COLOR_SEMANTIC = {
   white: "#FFFFFF",
-  textOnDark: "#F8FAFC",
+  textOnDark: "#F4F8F6",
   action: rootsyColorHex("savia", "600"),
   actionHover: rootsyColorHex("savia", "700"),
   accent: rootsyColorHex("savia", "400"),
+  promoGradientEnd: rootsyColorHex("savia", "teal"),
 } as const

@@ -18,7 +18,7 @@ export const ICONOGRAPHY_PAGE_META: Record<string, IconographyPageMeta> = {
     id: "iconography",
     title: "Iconografía",
     description:
-      "Iconsax — tier gratuito, variant Linear/Bold, tokens de color y tamaño para producto B2B.",
+      "Señales SaaS — Iconsax Linear/Bold, savia en brand, tokens de tamaño y color.",
   },
 }
 

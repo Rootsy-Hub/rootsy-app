@@ -5,14 +5,14 @@
 
 :root,
 .rootsy-nature-palette {
-  --nature-ceniza-950: var(--rootsy-ceniza-950);
-  --nature-ceniza-900: var(--rootsy-ceniza-900);
-  --nature-ceniza-800: var(--rootsy-ceniza-800);
-  --nature-ceniza-700: var(--rootsy-ceniza-700);
-  --nature-ceniza-600: var(--rootsy-ceniza-600);
-  --nature-ceniza-500: var(--rootsy-ceniza-500);
-  --nature-ceniza-400: var(--rootsy-ceniza-400);
-  --nature-ceniza-300: var(--rootsy-ceniza-300);
+  --nature-ceniza-950: var(--rootsy-sombra-950);
+  --nature-ceniza-900: var(--rootsy-sombra-900);
+  --nature-ceniza-800: var(--rootsy-sombra-800);
+  --nature-ceniza-700: var(--rootsy-sombra-700);
+  --nature-ceniza-600: var(--rootsy-sombra-600);
+  --nature-ceniza-500: var(--rootsy-sombra-500);
+  --nature-ceniza-400: var(--rootsy-sombra-400);
+  --nature-ceniza-300: var(--rootsy-sombra-300);
 
   --nature-bruma-50: var(--rootsy-bruma-50);
   --nature-bruma-100: var(--rootsy-bruma-100);

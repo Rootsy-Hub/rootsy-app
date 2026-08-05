@@ -10,7 +10,7 @@ import {
 import { cn } from "@/lib/utils"
 
 const rootsButtonFocusRingPrimary =
-  "focus-visible:ring-2 focus-visible:ring-[#16704a]/45 focus-visible:ring-offset-2"
+  "focus-visible:ring-2 focus-visible:ring-[color-mix(in_srgb,var(--rootsy-savia-600)_45%,transparent)] focus-visible:ring-offset-2"
 
 const rootsButtonFocusRingDestructive =
   "focus-visible:ring-2 focus-visible:ring-[#dc2626]/45 focus-visible:ring-offset-2"
@@ -19,7 +19,7 @@ export type RootsButtonSize = "default" | "large"
 
 const rootsButtonPrimarySkin = cn(
   "font-semibold text-white shadow-sm",
-  "bg-[#1e8f5a] hover:bg-[#24ad6a] active:bg-[#16704a]",
+  "bg-[var(--rootsy-savia-600)] hover:bg-[var(--rootsy-savia-500)] active:bg-[var(--rootsy-savia-700)]",
   rootsButtonFocusRingPrimary,
 )
 
@@ -61,8 +61,8 @@ export const rootsButtonTertiaryClass = cn(
 
 export const rootsButtonLinkClass = cn(
   "h-10 rounded-lg px-3 font-medium",
-  "text-[#16704a] hover:text-[#1e8f5a] hover:underline",
-  "active:text-[#0f5739] active:underline active:decoration-2",
+  "text-[var(--rootsy-savia-700)] hover:text-[var(--rootsy-savia-600)] hover:underline",
+  "active:text-[var(--rootsy-savia-800)] active:underline active:decoration-2",
 )
 
 export const rootsButtonDestructiveClass = cn(
@@ -130,9 +130,9 @@ const rootsIconButtonActionIntentClass: Record<
     "active:bg-[#e7e5e4]/80 active:text-[#292524]",
   ),
   edit: cn(
-    "hover:bg-[#f0fbf4] hover:text-[#16704a]",
-    "focus-visible:bg-[#f0fbf4] focus-visible:text-[#16704a] focus-visible:ring-2 focus-visible:ring-[#16704a]/25 focus-visible:ring-offset-0",
-    "active:bg-[#ddf5e8] active:text-[#0f5739]",
+    "hover:bg-[var(--rootsy-savia-50)] hover:text-[var(--rootsy-savia-700)]",
+    "focus-visible:bg-[var(--rootsy-savia-50)] focus-visible:text-[var(--rootsy-savia-700)] focus-visible:ring-2 focus-visible:ring-[color-mix(in_srgb,var(--rootsy-savia-600)_25%,transparent)] focus-visible:ring-offset-0",
+    "active:bg-[var(--rootsy-savia-100)] active:text-[var(--rootsy-savia-800)]",
   ),
   destructive: cn(
     "hover:bg-[#dc2626]/10 hover:text-[#dc2626]",

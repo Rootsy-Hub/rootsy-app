@@ -6,17 +6,16 @@ import {
   GRID_LAYOUT_ANATOMY,
   GRID_SPAN_PRESETS,
   ROOTSY_GRID_BREAKPOINTS,
+  ROOTSY_GRID_CONCEPT,
   ROOTSY_GRID_TYPES,
 } from "@/app/[siteId]/[popId]/library/grid/rootsyGridSystem"
 import {
-  CANOPY,
-  CANOPY_DARK,
-  CANOPY_LIGHT,
-  CANOPY_MIST,
-  EARTH,
-  LibraryGuidelineCards,
-  LibraryManifestoHero,
-} from "@/app/[siteId]/[popId]/library/libraryDocPrimitives"
+  CONCEPT_TOKENS,
+  FoundationBrumaStage,
+  FoundationConceptHero,
+} from "@/app/[siteId]/[popId]/library/libraryFoundationDocShared"
+import { EARTH, LibraryGuidelineCards } from "@/app/[siteId]/[popId]/library/libraryDocPrimitives"
+import type { ReactNode } from "react"
 
 export {
   LibraryDocLead as GridDocLead,
@@ -25,14 +24,57 @@ export {
   LibraryRelatedLinks as GridRelatedLinks,
 } from "@/app/[siteId]/[popId]/library/libraryDocPrimitives"
 
-export function GridManifestoHero() {
+function TechnicalSubheading({ children }: { children: ReactNode }) {
   return (
-    <LibraryManifestoHero
+    <p
+      className="font-canopy text-xs font-semibold uppercase tracking-wide"
+      style={{ color: CONCEPT_TOKENS.bruma500 }}
+    >
+      {children}
+    </p>
+  )
+}
+
+function GridTwelveColSketch() {
+  return (
+    <div
+      className="grid gap-1.5 rounded-xl p-3"
+      style={{
+        gridTemplateColumns: "repeat(12, 1fr)",
+        backgroundColor: CONCEPT_TOKENS.bruma50,
+      }}
+    >
+      {Array.from({ length: 12 }).map((_, i) => (
+        <div
+          key={i}
+          className="min-h-10 rounded-sm"
+          style={{
+            backgroundColor: i === 0 || i === 11 ? CONCEPT_TOKENS.savia600 : CONCEPT_TOKENS.savia100,
+            opacity: i === 0 || i === 11 ? 1 : 0.55 + (i % 3) * 0.12,
+          }}
+        />
+      ))}
+    </div>
+  )
+}
+
+export function GridSystemHero() {
+  return (
+    <FoundationConceptHero
       eyebrow="Rootsy · Grilla"
-      title="Surcos en el claro"
-      description="12 columnas · sendas y orillas · alineación sin rigidez innecesaria."
+      concept={ROOTSY_GRID_CONCEPT}
+      stage={
+        <FoundationBrumaStage caption="12 surcos en desktop · sendas entre columnas · orillas al borde del claro.">
+          <GridTwelveColSketch />
+        </FoundationBrumaStage>
+      }
     />
   )
+}
+
+/** @deprecated Usar GridSystemHero */
+export function GridManifestoHero() {
+  return <GridSystemHero />
 }
 
 function GridColumn({
@@ -46,8 +88,8 @@ function GridColumn({
     <div
       className="relative min-h-[48px] rounded-sm"
       style={{
-        backgroundColor: filled ? CANOPY : `${CANOPY_LIGHT}66`,
-        border: `1px dashed ${filled ? CANOPY_DARK : CANOPY_LIGHT}`,
+        backgroundColor: filled ? CONCEPT_TOKENS.savia600 : `${CONCEPT_TOKENS.savia100}66`,
+        border: `1px dashed ${filled ? CONCEPT_TOKENS.savia800 : CONCEPT_TOKENS.savia100}`,
       }}
     >
       {label ? (
@@ -65,11 +107,11 @@ export function GridAnatomyDiagram() {
       <div className="overflow-hidden rounded-2xl border border-border/70">
         <div
           className="px-4 py-3 text-xs font-bold uppercase tracking-wider"
-          style={{ backgroundColor: CANOPY_MIST, color: CANOPY_DARK }}
+          style={{ backgroundColor: CONCEPT_TOKENS.bruma50, color: CONCEPT_TOKENS.savia800 }}
         >
           Claro · área principal con grilla
         </div>
-        <div className="p-4" style={{ backgroundColor: "#FAFAF7" }}>
+        <div className="p-4" style={{ backgroundColor: CONCEPT_TOKENS.bruma50 }}>
           {/* Margin indicators */}
           <div className="relative">
             <div
@@ -96,7 +138,7 @@ export function GridAnatomyDiagram() {
               Orilla (margin)
             </span>
             <span className="flex items-center gap-1.5">
-              <span className="size-3 rounded-sm" style={{ backgroundColor: `${CANOPY_LIGHT}66`, border: `1px dashed ${CANOPY_LIGHT}` }} />
+              <span className="size-3 rounded-sm" style={{ backgroundColor: `${CONCEPT_TOKENS.savia100}66`, border: `1px dashed ${CONCEPT_TOKENS.savia100}` }} />
               Surco (columna)
             </span>
             <span className="flex items-center gap-1.5">
@@ -113,7 +155,7 @@ export function GridAnatomyDiagram() {
             className="rounded-xl border border-border/70 bg-card p-4 shadow-sm"
           >
             <p className="text-sm font-semibold text-foreground">{part.term}</p>
-            <p className="text-xs font-medium" style={{ color: CANOPY_DARK }}>
+            <p className="text-xs font-medium" style={{ color: CONCEPT_TOKENS.savia800 }}>
               {part.natureMetaphor}
             </p>
             <p className="mt-2 text-sm text-muted-foreground">{part.description}</p>
@@ -140,9 +182,9 @@ export function LayoutShellDiagram() {
             key={r.key}
             className={`${r.span} ${r.height} flex items-center justify-center rounded-lg px-2 text-center text-[10px] font-medium`}
             style={{
-              backgroundColor: r.highlight ? CANOPY_MIST : "var(--muted)",
-              color: r.highlight ? CANOPY_DARK : undefined,
-              outline: r.highlight ? `2px solid ${CANOPY}` : undefined,
+              backgroundColor: r.highlight ? CONCEPT_TOKENS.bruma50 : "var(--muted)",
+              color: r.highlight ? CONCEPT_TOKENS.savia800 : undefined,
+              outline: r.highlight ? `2px solid ${CONCEPT_TOKENS.savia600}` : undefined,
             }}
           >
             {r.label}
@@ -217,23 +259,23 @@ export function GridCenteredSpanDemo() {
 export function GridAlignmentDemo() {
   return (
     <div className="grid gap-4 lg:grid-cols-2">
-      <div className="rounded-xl border-2 p-4" style={{ borderColor: CANOPY }}>
-        <p className="mb-3 text-xs font-bold uppercase tracking-wider" style={{ color: CANOPY_DARK }}>
+      <div className="rounded-xl border-2 p-4" style={{ borderColor: CONCEPT_TOKENS.savia600 }}>
+        <p className="mb-3 text-xs font-bold uppercase tracking-wider" style={{ color: CONCEPT_TOKENS.savia800 }}>
           ✓ Contenedor a la grilla
         </p>
         <div className="grid grid-cols-12 gap-2">
-          <div className="col-span-4 rounded-lg p-3 text-xs" style={{ backgroundColor: CANOPY_MIST }}>
+          <div className="col-span-4 rounded-lg p-3 text-xs" style={{ backgroundColor: CONCEPT_TOKENS.bruma50 }}>
             Card · 4 surcos
           </div>
-          <div className="col-span-4 rounded-lg p-3 text-xs" style={{ backgroundColor: CANOPY_MIST }}>
+          <div className="col-span-4 rounded-lg p-3 text-xs" style={{ backgroundColor: CONCEPT_TOKENS.bruma50 }}>
             Card · 4 surcos
           </div>
-          <div className="col-span-4 rounded-lg p-3 text-xs" style={{ backgroundColor: CANOPY_MIST }}>
+          <div className="col-span-4 rounded-lg p-3 text-xs" style={{ backgroundColor: CONCEPT_TOKENS.bruma50 }}>
             Card · 4 surcos
           </div>
         </div>
         <div className="mt-3 flex gap-2">
-          <button type="button" className="rounded-md px-3 py-1 text-xs" style={{ backgroundColor: CANOPY, color: "#fff" }}>
+          <button type="button" className="rounded-md px-3 py-1 text-xs" style={{ backgroundColor: CONCEPT_TOKENS.savia600, color: CONCEPT_TOKENS.white }}>
             Botón
           </button>
           <span className="text-[10px] text-muted-foreground self-center">← space tokens, no surcos</span>
@@ -246,11 +288,11 @@ export function GridAlignmentDemo() {
         <div className="grid grid-cols-12 gap-2">
           <div
             className="col-span-6 rounded-lg p-3 text-xs"
-            style={{ backgroundColor: CANOPY_MIST, marginRight: -8 }}
+            style={{ backgroundColor: CONCEPT_TOKENS.bruma50, marginRight: -8 }}
           >
             Card invade gutter
           </div>
-          <div className="col-span-6 rounded-lg p-3 text-xs" style={{ backgroundColor: CANOPY_MIST }}>
+          <div className="col-span-6 rounded-lg p-3 text-xs" style={{ backgroundColor: CONCEPT_TOKENS.bruma50 }}>
             Card vecina
           </div>
         </div>
@@ -262,15 +304,15 @@ export function GridAlignmentDemo() {
 export function NestedGridDemo() {
   return (
     <div className="overflow-hidden rounded-2xl border border-border/70">
-      <div className="grid grid-cols-12 gap-3 p-4" style={{ backgroundColor: "#FAFAF7" }}>
+      <div className="grid grid-cols-12 gap-3 p-4" style={{ backgroundColor: CONCEPT_TOKENS.bruma50 }}>
         <div className="col-span-8 rounded-xl border border-border/70 bg-card p-4 shadow-sm">
           <p className="text-sm font-semibold">Card · 8 surcos (grilla principal)</p>
-          <div className="mt-3 grid grid-cols-6 gap-2 rounded-lg p-2" style={{ backgroundColor: CANOPY_MIST }}>
+          <div className="mt-3 grid grid-cols-6 gap-2 rounded-lg p-2" style={{ backgroundColor: CONCEPT_TOKENS.bruma50 }}>
             {Array.from({ length: 3 }).map((_, i) => (
               <div
                 key={i}
                 className="col-span-2 rounded-md py-4 text-center text-[10px] font-medium"
-                style={{ backgroundColor: "#fff", color: CANOPY_DARK }}
+                style={{ backgroundColor: CONCEPT_TOKENS.white, color: CONCEPT_TOKENS.savia800 }}
               >
                 Interno · space
               </div>
@@ -349,14 +391,14 @@ export function GridBreakpointVisualizer() {
             className="grid gap-1.5 rounded-lg p-3"
             style={{
               gridTemplateColumns: `repeat(${sample.cols}, 1fr)`,
-              backgroundColor: CANOPY_MIST,
+              backgroundColor: CONCEPT_TOKENS.bruma50,
             }}
           >
             {Array.from({ length: sample.cols }).map((_, i) => (
               <div
                 key={i}
                 className="h-8 rounded-sm"
-                style={{ backgroundColor: CANOPY, opacity: 0.35 + (i % 3) * 0.15 }}
+                style={{ backgroundColor: CONCEPT_TOKENS.savia600, opacity: 0.35 + (i % 3) * 0.15 }}
               />
             ))}
           </div>
@@ -374,7 +416,7 @@ export function GridTypesComparison() {
         <div
           key={type.id}
           className="rounded-xl border border-border/70 bg-card p-5 shadow-sm"
-          style={type.isDefault ? { borderLeftWidth: 3, borderLeftColor: CANOPY } : undefined}
+          style={type.isDefault ? { borderLeftWidth: 3, borderLeftColor: CONCEPT_TOKENS.savia600 } : undefined}
         >
           <div className="flex flex-wrap items-start justify-between gap-2">
             <div>
@@ -383,13 +425,13 @@ export function GridTypesComparison() {
                 {type.isDefault ? (
                   <span
                     className="ml-2 rounded px-1.5 py-0.5 text-[10px] font-bold uppercase text-white"
-                    style={{ backgroundColor: CANOPY }}
+                    style={{ backgroundColor: CONCEPT_TOKENS.savia600 }}
                   >
                     default
                   </span>
                 ) : null}
               </p>
-              <p className="text-sm font-medium" style={{ color: CANOPY_DARK }}>
+              <p className="text-sm font-medium" style={{ color: CONCEPT_TOKENS.savia800 }}>
                 {type.natureName}
                 {type.maxWidthPx ? ` · max ${type.maxWidthPx}px` : " · sin máximo"}
               </p>
@@ -407,18 +449,18 @@ export function GridTypesComparison() {
             </p>
           </div>
           {type.maxWidthPx ? (
-            <div className="mt-4 flex justify-center rounded-lg p-4" style={{ backgroundColor: "#FAFAF7" }}>
+            <div className="mt-4 flex justify-center rounded-lg p-4" style={{ backgroundColor: CONCEPT_TOKENS.bruma50 }}>
               <div
                 className="h-3 w-full max-w-full rounded-full"
                 style={{
                   maxWidth: type.maxWidthPx / 4,
-                  backgroundColor: CANOPY,
+                  backgroundColor: CONCEPT_TOKENS.savia600,
                   opacity: type.isDefault ? 1 : 0.6,
                 }}
               />
             </div>
           ) : (
-            <div className="mt-4 h-3 w-full rounded-full" style={{ background: `linear-gradient(90deg, ${CANOPY}, ${CANOPY_LIGHT})` }} />
+            <div className="mt-4 h-3 w-full rounded-full" style={{ background: `linear-gradient(90deg, ${CONCEPT_TOKENS.savia600}, ${CONCEPT_TOKENS.savia100})` }} />
           )}
         </div>
       ))}
@@ -434,7 +476,7 @@ export function FixedVsFluidDemo() {
         <div className="mt-3 rounded-lg p-2" style={{ backgroundColor: EARTH + "22" }}>
           <div
             className="mx-auto rounded-md px-2 py-6 text-center text-xs text-white"
-            style={{ maxWidth: 280, backgroundColor: CANOPY }}
+            style={{ maxWidth: 280, backgroundColor: CONCEPT_TOKENS.savia600 }}
           >
             max 1296px
           </div>
@@ -445,11 +487,61 @@ export function FixedVsFluidDemo() {
         <div className="mt-3 rounded-lg p-2" style={{ backgroundColor: EARTH + "22" }}>
           <div
             className="w-full rounded-md py-6 text-center text-xs text-white"
-            style={{ backgroundColor: CANOPY }}
+            style={{ backgroundColor: CONCEPT_TOKENS.savia600 }}
           >
             100% del main
           </div>
         </div>
+      </div>
+    </div>
+  )
+}
+
+export function GridTechnicalDetails() {
+  return (
+    <div className="space-y-8">
+      <div className="space-y-3">
+        <TechnicalSubheading>Anatomía</TechnicalSubheading>
+        <div className="overflow-x-auto rounded-2xl border border-border/70">
+          <table className="w-full min-w-[480px] text-left font-canopy text-sm">
+            <tbody>
+              {GRID_ANATOMY_PARTS.map((part) => (
+                <tr key={part.id} className="border-b border-border/40 last:border-0">
+                  <td className="px-4 py-3 font-medium text-foreground">{part.term}</td>
+                  <td className="px-4 py-3 text-xs text-muted-foreground">{part.natureMetaphor}</td>
+                  <td className="px-4 py-3 text-xs text-muted-foreground">{part.description}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div className="space-y-3">
+        <TechnicalSubheading>Spans frecuentes</TechnicalSubheading>
+        <div className="overflow-x-auto rounded-2xl border border-border/70">
+          <table className="w-full min-w-[480px] text-left font-canopy text-sm">
+            <tbody>
+              {GRID_SPAN_PRESETS.map((preset) => (
+                <tr key={preset.span} className="border-b border-border/40 last:border-0">
+                  <td className="px-4 py-3 font-mono text-xs text-primary">{preset.span}/12</td>
+                  <td className="px-4 py-3 text-foreground">{preset.label}</td>
+                  <td className="px-4 py-3 text-xs text-muted-foreground">{preset.usage}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div className="space-y-3">
+        <TechnicalSubheading>Breakpoints</TechnicalSubheading>
+        <GridBreakpointTable />
+      </div>
+
+      <div className="space-y-3">
+        <TechnicalSubheading>Guías de alineación</TechnicalSubheading>
+        <GridGuidelineCards />
       </div>
     </div>
   )

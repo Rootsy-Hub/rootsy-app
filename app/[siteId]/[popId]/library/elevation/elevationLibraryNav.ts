@@ -27,7 +27,7 @@ export const ELEVATION_PAGE_META: Record<string, ElevationPageMeta> = {
     id: "elevation",
     title: "Elevación",
     description:
-      "Capas del bosque — suelo, brote y dosel. Superficies + sombras con tinte canopy para profundidad sin ruido.",
+      "Profundidad con bruma y sombra — sunken, raised y overlay sin ruido visual.",
   },
   "elevation-applying": {
     id: "elevation-applying",

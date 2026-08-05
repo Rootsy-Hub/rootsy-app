@@ -6,13 +6,10 @@ import {
   RadiusDocSection,
   RadiusExamplesRow,
   RadiusFocusDemo,
-  RadiusGuidelinesGrid,
-  RadiusManifestoHero,
   RadiusPrinciplesGrid,
   RadiusScaleGallery,
-  RadiusSemanticTable,
-  RadiusThemeNote,
-  RadiusTokensTable,
+  RadiusSystemHero,
+  RadiusTechnicalDetails,
 } from "@/app/[siteId]/[popId]/library/radius/RadiusDocPrimitives"
 import {
   ROOTSY_RADIUS_MANIFESTO,
@@ -26,45 +23,41 @@ export function RadiusOverviewSection() {
   return (
     <LibrarySection id="radius" title={meta.title} description={meta.description}>
       <div className="space-y-10">
-        <RadiusManifestoHero />
-        <RadiusDocLead>{ROOTSY_RADIUS_MANIFESTO}</RadiusDocLead>
-        <RadiusPrinciplesGrid principles={ROOTSY_RADIUS_PRINCIPLES} />
+        <RadiusSystemHero />
+
+        <RadiusDocLead className="font-canopy">{ROOTSY_RADIUS_MANIFESTO}</RadiusDocLead>
+        <RadiusPrinciplesGrid principles={[...ROOTSY_RADIUS_PRINCIPLES]} />
 
         <RadiusDocSection
           id="scale"
-          title="Escala de radios"
-          description="De radius.xsmall (2px) a radius.full — preview visual."
+          title="Escala completa"
+          description="De semilla (2px) a copa (22px) — preview en bruma stage."
         >
           <RadiusScaleGallery />
-          <RadiusTokensTable />
         </RadiusDocSection>
 
         <RadiusDocSection
           id="focus"
           title="Focus ring"
-          description="Offset 2px · radio del anillo = radio del elemento + 2px."
+          description="Radio +2px · savia 400 · offset 2px."
         >
           <RadiusFocusDemo />
         </RadiusDocSection>
 
         <RadiusDocSection
           id="examples"
-          title="Ejemplos en producto"
+          title="En producto"
           description="Input, modal y avatar POP."
         >
           <RadiusExamplesRow />
         </RadiusDocSection>
 
-        <RadiusDocSection id="theme" title="Theme CSS">
-          <RadiusThemeNote />
-        </RadiusDocSection>
-
-        <RadiusDocSection id="semantic" title="Mapeo semántico">
-          <RadiusSemanticTable />
-        </RadiusDocSection>
-
-        <RadiusDocSection id="guidelines" title="Guías Do / Don't">
-          <RadiusGuidelinesGrid />
+        <RadiusDocSection
+          id="radius-technical"
+          title="Detalles técnicos"
+          description="Tokens, theme CSS, semántica y guías."
+        >
+          <RadiusTechnicalDetails />
         </RadiusDocSection>
       </div>
     </LibrarySection>

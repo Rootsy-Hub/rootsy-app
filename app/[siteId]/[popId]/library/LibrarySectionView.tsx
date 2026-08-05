@@ -9,6 +9,10 @@ import {
   articleDialogTitleClass,
 } from "@/app/[siteId]/[popId]/articles/articleConstants"
 import { ArticleDeleteAlertLibraryDemo } from "@/app/[siteId]/[popId]/library/ArticleDeleteAlertLibraryDemo"
+import { TextComponentFoundationView } from "@/app/[siteId]/[popId]/library/text-component/TextComponentFoundationView"
+import { isUiComponentsLibrarySection } from "@/app/[siteId]/[popId]/library/ui-components/uiComponentsLibraryNav"
+import { UiComponentsFoundationView } from "@/app/[siteId]/[popId]/library/ui-components/UiComponentsFoundationView"
+import { isTextComponentLibrarySection } from "@/app/[siteId]/[popId]/library/text-component/textComponentLibraryNav"
 import { LayoutButtonLibrarySection } from "@/app/[siteId]/[popId]/library/LayoutButtonLibrarySection"
 import { LayoutDropdownLibrarySection } from "@/app/[siteId]/[popId]/library/LayoutDropdownLibrarySection"
 import { ConceptFoundationView } from "@/app/[siteId]/[popId]/library/concept/ConceptFoundationView"
@@ -486,6 +490,26 @@ export function LibrarySectionView({
 
     return (
       <LayoutsTablesFoundationView
+        sectionId={sectionId}
+        siteId={siteId}
+        popId={popId}
+      />
+    )
+  }
+
+  if (isUiComponentsLibrarySection(sectionId)) {
+    return (
+      <UiComponentsFoundationView
+        sectionId={sectionId}
+        siteId={siteId}
+        popId={popId}
+      />
+    )
+  }
+
+  if (isTextComponentLibrarySection(sectionId)) {
+    return (
+      <TextComponentFoundationView
         sectionId={sectionId}
         siteId={siteId}
         popId={popId}

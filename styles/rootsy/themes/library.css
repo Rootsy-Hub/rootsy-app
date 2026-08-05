@@ -1,9 +1,9 @@
 /**
- * Tema Librería — rail ceniza + contenido bruma.
+ * Tema Librería — rail sombra + contenido bruma.
  */
 
 .rootsy-theme-library {
-  --color-shell: var(--rootsy-ceniza-700);
+  --color-shell: var(--rootsy-sombra-700);
   --color-surface: var(--rootsy-bruma-100);
   --color-elevated: var(--rootsy-white);
   --color-border: var(--rootsy-bruma-200);

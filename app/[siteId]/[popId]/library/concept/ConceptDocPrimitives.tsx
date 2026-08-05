@@ -403,14 +403,14 @@ export function ConceptPosSplitDemo() {
   return (
     <ConceptBrumaStage
       className="!p-0"
-      caption="Split ceniza + bruma del POS — oscuro para navegar, claro para trabajar. Dos atmósferas, un mismo sistema."
+      caption="Split sombra + bruma del POS — dosel para navegar, neblina para trabajar. Dos atmósferas, un mismo ecosistema."
     >
       <div className="flex min-h-[240px] overflow-hidden rounded-xl">
         <div
           className="flex w-36 shrink-0 flex-col gap-1 p-3 sm:w-44"
-          style={{ backgroundColor: CONCEPT_TOKENS.ceniza900 }}
+          style={{ backgroundColor: CONCEPT_TOKENS.sombra900 }}
         >
-          <p className="mb-3 px-2 font-canopy text-[10px] font-bold uppercase tracking-wider text-[#94A3B8]">
+          <p className="mb-3 px-2 font-canopy text-[10px] font-bold uppercase tracking-wider" style={{ color: CONCEPT_TOKENS.bruma400 }}>
             Mostrador
           </p>
           {navItems.map(({ label, active, icon: Icon }) => (
@@ -418,7 +418,7 @@ export function ConceptPosSplitDemo() {
               key={label}
               className="flex items-center gap-2 rounded-lg px-2 py-2 font-canopy text-xs font-medium"
               style={{
-                backgroundColor: active ? CONCEPT_TOKENS.ceniza700 : "transparent",
+                backgroundColor: active ? CONCEPT_TOKENS.sombra700 : "transparent",
                 color: active ? CONCEPT_TOKENS.white : "#94A3B8",
               }}
             >

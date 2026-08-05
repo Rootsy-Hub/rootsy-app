@@ -3,12 +3,14 @@
 import "./rootsyNaturePalette.css"
 import {
   COLOR_NEW_RELATED_LINKS,
+  resolveColorNewSectionId,
   getColorNewPageMeta,
 } from "@/app/[siteId]/[popId]/library/color/colorNewLibraryNav"
 import { ColorRelatedLinks } from "@/app/[siteId]/[popId]/library/color/ColorDocPrimitives"
 import { ColorNewAccentsSection } from "@/app/[siteId]/[popId]/library/color/sections/ColorNewAccentsSection"
 import { ColorNewContrastSection } from "@/app/[siteId]/[popId]/library/color/sections/ColorNewContrastSection"
 import { ColorNewDataVizSection } from "@/app/[siteId]/[popId]/library/color/sections/ColorNewDataVizSection"
+import { ColorNewExamplesSection } from "@/app/[siteId]/[popId]/library/color/sections/ColorNewExamplesSection"
 import { ColorNewFamilySection } from "@/app/[siteId]/[popId]/library/color/sections/ColorNewFamilySection"
 import { ColorNewOverviewSection } from "@/app/[siteId]/[popId]/library/color/sections/ColorNewOverviewSection"
 import { ColorNewPairingsSection } from "@/app/[siteId]/[popId]/library/color/sections/ColorNewPairingsSection"
@@ -24,8 +26,9 @@ type Props = {
 }
 
 export function ColorNewFoundationView({ sectionId, siteId, popId }: Props) {
+  const resolvedSectionId = resolveColorNewSectionId(sectionId)
   let content: ReactNode = null
-  switch (sectionId) {
+  switch (resolvedSectionId) {
     case "colors-new":
       content = <ColorNewOverviewSection />
       break
@@ -50,9 +53,13 @@ export function ColorNewFoundationView({ sectionId, siteId, popId }: Props) {
     case "colors-new-data-viz":
       content = <ColorNewDataVizSection />
       break
-    case "colors-new-ceniza":
+    case "colors-new-examples":
+      content = <ColorNewExamplesSection />
+      break
+    case "colors-new-sombra":
     case "colors-new-bruma":
     case "colors-new-savia":
+    case "colors-new-atmosphere":
     case "colors-new-landing":
       content = <ColorNewFamilySection sectionId={sectionId} />
       break

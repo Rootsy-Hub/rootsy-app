@@ -1,36 +1,25 @@
 "use client"
 
+import { IllustrationsOverviewSection } from "@/app/[siteId]/[popId]/library/illustrations/sections/IllustrationsOverviewSection"
 import { getIllustrationsPageMeta } from "@/app/[siteId]/[popId]/library/illustrations/illustrationsLibraryNav"
-import { LibraryManifestoHero } from "@/app/[siteId]/[popId]/library/libraryDocPrimitives"
-import { LibrarySection } from "@/app/[siteId]/[popId]/library/layoutLibraryShared"
+import type { ReactNode } from "react"
 
 type Props = {
   sectionId: string
 }
 
 export function IllustrationsFoundationView({ sectionId }: Props) {
-  if (sectionId !== "illustrations") return null
+  let content: ReactNode = null
 
-  const meta = getIllustrationsPageMeta("illustrations")!
+  switch (sectionId) {
+    case "illustrations":
+      content = <IllustrationsOverviewSection />
+      break
+    default:
+      return null
+  }
 
-  return (
-    <LibrarySection id="illustrations" title={meta.title} description={meta.description}>
-      <LibraryManifestoHero
-        eyebrow="Rootsy · Ilustraciones"
-        title="El bosque también dibuja"
-        description="Spots, mascota y patrones ambient — en definición, con la misma raíz canopy."
-      />
-      <div className="rounded-2xl border border-dashed border-border/70 bg-muted/20 px-6 py-16 text-center">
-        <p className="text-xs font-bold uppercase tracking-[0.16em] text-muted-foreground">
-          Fundamentos
-        </p>
-        <p className="mt-3 text-2xl font-semibold tracking-tight text-foreground">Próximamente</p>
-        <p className="mx-auto mt-2 max-w-md text-sm text-muted-foreground">
-          Estamos definiendo spots, mascota y patrones ambient alineados a la marca Rootsy.
-        </p>
-      </div>
-    </LibrarySection>
-  )
+  return <div className="space-y-10">{content}</div>
 }
 
 export function getIllustrationsFoundationHeading(sectionId: string) {

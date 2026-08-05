@@ -24,9 +24,9 @@ export function ColorNewSemanticSection() {
     >
       <div className="space-y-10">
         <ColorDocLead>
-          Los tokens nombran propósito, no familia decorativa. Savia 600 es siempre
-          --color-action-primary en POS y workspace; landing tiene su propio CTA; aviso
-          y peligro usan colores funcionales fuera de la paleta principal.
+          Los tokens nombran propósito, no familia decorativa. --color-action es savia 600 en
+          POS y workspace; en marketing el mismo token mapea a savia 500. Aviso y peligro usan
+          colores funcionales fuera de la paleta principal.
         </ColorDocLead>
 
         <ColorDocSection
@@ -40,7 +40,7 @@ export function ColorNewSemanticSection() {
         <ColorDocSection
           id="semantic-roles"
           title="Roles en UI"
-          description="Mapeo directo a las cuatro familias."
+          description="Mapeo directo a las tres familias — sombra, bruma, savia."
         >
           <ProductRoleTable />
         </ColorDocSection>
@@ -54,8 +54,8 @@ export function ColorNewSemanticSection() {
         </ColorDocSection>
 
         <GuidelinePair
-          doText="Un token, un hex — referenciá variables CSS en componentes."
-          dontText="No uses --color-action-landing en workspace ni savia en auroras blur."
+          doText="Un token, un hex — referenciá variables CSS de tema (--color-shell, --color-action)."
+          dontText="No uses savia en auroras blur ni atmósfera en formularios operativos."
         />
       </div>
     </LibrarySection>

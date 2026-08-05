@@ -3,6 +3,19 @@
  * Alineado a Atlassian Motion con capa nature: orgánico, claro, accesible, ágil.
  */
 
+export const ROOTSY_MOTION_CONCEPT = {
+  title: "Viento con intención",
+  lead:
+    "El movimiento en Rootsy respira como el bosque: brisa en hover, ráfaga al abrir un modal, despegue al irse. Nunca decoración — siempre clarifica qué cambió y qué sigue.",
+  why: [
+    "Naturalidad: curvas orgánicas — aterrizaje, balance, despegue — como brisa y ráfaga, no como resorte mecánico.",
+    "Simplicidad: ocho duraciones, cuatro easings, tokens semánticos — composición antes que CSS suelto en cada componente.",
+    "Intuitivo: dropdown desde su trigger, modal que escala desde el centro — el ojo sigue el origen sin perderse.",
+  ],
+  closing:
+    "Orgánico pero ágil; accesible con prefers-reduced-motion; performante solo con transform y opacity.",
+} as const
+
 export type MotionDuration = {
   id: string
   token: string
@@ -43,20 +56,24 @@ export const ROOTSY_MOTION_MANIFESTO =
 
 export const ROOTSY_MOTION_PRINCIPLES = [
   {
-    title: "Orgánico",
-    detail: "Movimiento humano — sutil, rítmico, cálido. No mecánico ni elástico exagerado.",
+    title: "Naturalidad · orgánico",
+    detail:
+      "Curvas con nombre de bosque — brisa, ráfaga, aterrizaje. Sutil y cálido, nunca elástico exagerado.",
   },
   {
-    title: "Claro",
-    detail: "Guía la atención — el usuario entiende qué cambió y por qué.",
+    title: "Simplicidad · tokens",
+    detail:
+      "motion.modal.enter antes de armar duration+easing sueltos — ocho duraciones cubren casi todo.",
   },
   {
-    title: "Accesible",
-    detail: "Respeta reduced-motion — instant o sin animación. Sin flash ni oscilación rápida.",
+    title: "Intuitivo · origen espacial",
+    detail:
+      "El usuario entiende qué cambió y desde dónde — popup desde trigger, salida más rápida que entrada.",
   },
   {
-    title: "Ágil",
-    detail: "Salidas más rápidas que entradas. Interacciones frecuentes bajo 150ms.",
+    title: "Accesible · reduced motion",
+    detail:
+      "prefers-reduced-motion → instant o none. Sin flash ni oscilación rápida.",
   },
 ] as const
 

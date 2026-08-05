@@ -1,9 +1,18 @@
 "use client"
 
 import {
+  LayoutsDocLead,
+  LayoutsPrinciplesGrid,
+  LayoutsSystemHero,
+} from "@/app/[siteId]/[popId]/library/layouts/LayoutsDocShared"
+import {
   LAYOUTS_RELATED_LINKS,
   getLayoutsPageMeta,
 } from "@/app/[siteId]/[popId]/library/layouts/layoutsLibraryNav"
+import {
+  ROOTSY_LAYOUTS_MANIFESTO,
+  ROOTSY_LAYOUTS_PRINCIPLES,
+} from "@/app/[siteId]/[popId]/library/layouts/rootsyLayoutsSystem"
 import {
   LayoutsTablesChromeButtonsDemo,
   LayoutsTablesFooterComponentsDemo,
@@ -35,11 +44,19 @@ export function LayoutsTablesFoundationView({ sectionId, siteId, popId }: Props)
 
   switch (sectionId) {
     case "layouts":
-      content = <LayoutsTablesOverviewIntro />
+      content = (
+        <>
+          <LayoutsSystemHero variant="hub" />
+          <LayoutsDocLead className="font-canopy">{ROOTSY_LAYOUTS_MANIFESTO}</LayoutsDocLead>
+          <LayoutsPrinciplesGrid principles={[...ROOTSY_LAYOUTS_PRINCIPLES]} />
+          <LayoutsTablesOverviewIntro />
+        </>
+      )
       break
     case "layouts-tables":
       content = (
         <>
+          <LayoutsSystemHero variant="tables" />
           <LibraryDocSection
             id="layouts-tables-draft"
             title="Vista completa"

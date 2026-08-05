@@ -1,10 +1,10 @@
 /**
- * Librería — minimal. Ceniza sidebar, bruma content, texto plano en nav.
+ * Librería — dosel sombra en nav, bruma en contenido, savia en foco activo.
  * Tokens: --rootsy-* (styles/rootsy/) · tema: .rootsy-theme-library
  */
 
 .rootsy-app-light:has(.rootsy-library-shell) {
-  background-color: var(--rootsy-ceniza-950);
+  background-color: var(--rootsy-sombra-950);
   color: var(--foreground);
 }
 
@@ -12,27 +12,27 @@
   display: none;
 }
 
-.rootsy-app-light:has(.rootsy-library-shell) header {
-  background-color: var(--rootsy-ceniza-900) !important;
+.rootsy-app-light:has(.rootsy-library-shell) header.h-17 {
+  background-color: var(--rootsy-sombra-900) !important;
   border-color: rgb(51 65 85 / 0.45) !important;
   color: #f8fafc !important;
 }
 
-.rootsy-app-light:has(.rootsy-library-shell) header a.rounded-xl,
-.rootsy-app-light:has(.rootsy-library-shell) header button.rounded-xl {
+.rootsy-app-light:has(.rootsy-library-shell) header.h-17 a.rounded-xl,
+.rootsy-app-light:has(.rootsy-library-shell) header.h-17 button.rounded-xl {
   border-color: rgb(51 65 85 / 0.6) !important;
   background-color: transparent !important;
-  color: var(--rootsy-ceniza-300) !important;
+  color: var(--rootsy-sombra-300) !important;
 }
 
-.rootsy-app-light:has(.rootsy-library-shell) header a.rounded-xl:hover,
-.rootsy-app-light:has(.rootsy-library-shell) header button.rounded-xl:hover {
+.rootsy-app-light:has(.rootsy-library-shell) header.h-17 a.rounded-xl:hover,
+.rootsy-app-light:has(.rootsy-library-shell) header.h-17 button.rounded-xl:hover {
   border-color: rgb(100 116 139 / 0.5) !important;
   background-color: rgb(255 255 255 / 0.04) !important;
   color: #f8fafc !important;
 }
 
-.rootsy-app-light:has(.rootsy-library-shell) header .h-6.w-px {
+.rootsy-app-light:has(.rootsy-library-shell) header.h-17 .h-6.w-px {
   background-color: rgb(51 65 85 / 0.7) !important;
 }
 
@@ -46,46 +46,181 @@
 }
 
 .library-sidebar {
-  background-color: var(--rootsy-ceniza-700) !important;
-  border-color: rgb(51 65 85 / 0.35);
+  /* Rail oscuro — espejo de ColorExampleSideNav */
+  --library-nav-text: var(--rootsy-sombra-300);
+  --library-nav-text-hover: #f4f8f6;
+  --library-nav-text-active: #f4f8f6;
+  --library-nav-label: var(--rootsy-sombra-300);
+  background-color: var(--rootsy-sombra-700) !important;
+  border-color: var(--rootsy-sombra-border);
+}
+
+/* ── Sidebar header ── */
+.library-sidebar-header {
+  /* Sin bloque de marca — misma voz que labels de grupo */
 }
 
 .library-sidebar-eyebrow,
 .library-nav-group-label {
-  color: var(--rootsy-ceniza-400);
-  font-size: 10px;
+  color: var(--library-nav-label);
+  font-family: var(--rootsy-font-ui, inherit);
+  font-size: var(--rootsy-text-heading-xxsmall-size, 0.75rem);
   font-weight: 600;
-  letter-spacing: 0.1em;
+  letter-spacing: 0.08em;
   text-transform: uppercase;
 }
 
-.library-nav-link {
-  color: var(--rootsy-ceniza-300);
+.library-nav-group-label {
+  margin-bottom: 0.75rem;
+  padding: 0 0.5rem;
+}
+
+/* ── Nav structure ── */
+.library-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 0.125rem;
+}
+
+.library-nav-group {
+  padding: 0;
+}
+
+.library-nav-group--separated {
+  margin-top: 1.5rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid rgb(255 255 255 / 0.06);
+}
+
+.library-nav-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.0625rem;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.library-nav-accordion-row {
+  display: flex;
+  align-items: stretch;
+  gap: 0;
+}
+
+/* ── Nav items — font.body + contraste AA sobre sombra ── */
+.library-nav-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-height: 2.25rem;
+  padding: 0.375rem 0.5rem;
+  border-radius: 0.5rem;
+  font-family: var(--rootsy-font-ui, inherit);
+  font-size: var(--rootsy-text-body-size, 0.875rem);
+  font-weight: 400;
+  line-height: var(--rootsy-text-body-lh, 1.25rem);
+  color: var(--library-nav-text);
   background: transparent;
-  transition: color 0.12s ease;
+  text-decoration: none;
+  transition: color 0.12s ease, background-color 0.12s ease;
 }
 
-.library-nav-link:hover {
-  color: #e2e8f0;
+.library-nav-item:hover {
+  color: var(--library-nav-text-hover);
 }
 
-.library-nav-link--active {
-  color: #f8fafc;
+.library-nav-item:focus {
+  outline: none;
+}
+
+.library-nav-item:focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--rootsy-savia-500) 45%, transparent);
+  outline-offset: 1px;
+}
+
+.library-nav-item--active {
+  color: var(--library-nav-text-active);
   font-weight: 500;
 }
 
-.library-nav-link--parent-active {
-  color: #cbd5e1;
-  font-weight: 400;
+.library-nav-item-icon {
+  width: 1rem;
+  height: 1rem;
+  flex-shrink: 0;
+  color: inherit;
+  opacity: 0.8;
 }
 
-.library-nav-toggle {
-  color: var(--rootsy-ceniza-400);
+.library-nav-item-label {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ── Nested — misma escala body, solo indentación ── */
+.library-nav-nested-list {
+  margin: 0.125rem 0 0.25rem 1rem;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 0.0625rem;
+}
+
+.library-nav-item--nested {
+  min-height: 2.25rem;
+  padding: 0.375rem 0.5rem 0.375rem 1rem;
+  font-size: var(--rootsy-text-body-size, 0.875rem);
+  line-height: var(--rootsy-text-body-lh, 1.25rem);
+  color: var(--library-nav-text);
+}
+
+.library-nav-item--nested:hover {
+  color: var(--library-nav-text-hover);
   background: transparent;
 }
 
+.library-nav-item--nested.library-nav-item--active {
+  color: var(--library-nav-text-active);
+  font-weight: 500;
+}
+
+/* ── Accordion toggle ── */
+.library-nav-toggle {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  min-height: 2.25rem;
+  border-radius: 0.375rem;
+  border: none;
+  color: var(--library-nav-label);
+  background: transparent;
+  cursor: pointer;
+  transition: color 0.12s ease;
+}
+
 .library-nav-toggle:hover {
-  color: #e2e8f0;
+  color: var(--library-nav-text-hover);
+}
+
+.library-nav-toggle:focus {
+  outline: none;
+}
+
+.library-nav-toggle:focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--rootsy-savia-500) 45%, transparent);
+  outline-offset: 1px;
+}
+
+.library-nav-chevron {
+  transition: transform 0.18s ease;
+}
+
+.library-nav-chevron--open {
+  transform: rotate(90deg);
 }
 
 .library-content-area {

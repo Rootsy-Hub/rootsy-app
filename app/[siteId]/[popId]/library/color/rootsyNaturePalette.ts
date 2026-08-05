@@ -1,8 +1,11 @@
 /**
- * Paleta Nature Rootsy — definición completa para la librería de color.
- * Rootsy grita naturaleza: verde en esplendor como eje, con cielo, mar,
- * otoño, fuego, tierra y noche como familias complementarias.
+ * Paleta de producto Rootsy — rampas para la librería Color (nuevo).
+ * Tres familias: sombra · bruma · savia. Atmósfera = composición de marketing.
  */
+
+import { rootsyColorHex } from "@/lib/design-system"
+
+const hx = rootsyColorHex
 
 export type NatureRampStep = {
   id: string
@@ -73,131 +76,131 @@ export const ROOTSY_NATURE_PRINCIPLES = [
   },
 ] as const
 
-/** Neutros oscuros azul-ceniza — columna catálogo y mostrador POS (pantalla Vender). */
-export const CENIZA_FAMILY: NatureFamily = {
-  id: "ceniza",
-  title: "Ceniza · grises azulados oscuros",
+/** Neutros oscuros con matiz bosque — bajo el dosel: catálogo y mostrador POS. */
+export const SOMBRA_FAMILY: NatureFamily = {
+  id: "sombra",
+  title: "Sombra · oscuros bajo el dosel",
   subtitle: "Mostrador y catálogo",
   description:
-    "Azul-ceniza profundo — no negro plano ni tierra cálida. Shell, rail, canvas, cards y toolbox de operaciones. Combina con canopy y noche viva.",
+    "Carbón verdoso — no gris de oficina ni tierra cálida. Shell, rail, canvas, cards y toolbox de operaciones. Continuidad con marketing y profundidad savia.",
   steps: [
-    { id: "z950", label: "950", hex: "#070A09", usage: "★ Shell POS — fondo general." },
-    { id: "z900", label: "900", hex: "#0B100E", usage: "Toolbox inferior — cliente, pago." },
-    { id: "z800", label: "800", hex: "#0F1416", usage: "Media de card — void detrás de foto." },
-    { id: "z700", label: "700", hex: "#1A2027", usage: "★ Rail categorías — sidebar 280px." },
-    { id: "z600", label: "600", hex: "#20262E", usage: "Canvas catálogo — grilla de productos." },
-    { id: "z500", label: "500", hex: "#252B34", usage: "★ Superficie card — cuerpo del producto." },
-    { id: "z400", label: "400", hex: "#64748B", usage: "Labels de sección — slate muted." },
-    { id: "z300", label: "300", hex: "#94A3B8", usage: "Texto inactivo — ítems del rail." },
+    { id: "z950", label: "950", hex: hx("sombra", "950"), usage: "★ Shell POS — fondo general." },
+    { id: "z900", label: "900", hex: hx("sombra", "900"), usage: "Toolbox inferior — cliente, pago." },
+    { id: "z800", label: "800", hex: hx("sombra", "800"), usage: "Media de card — void detrás de foto." },
+    { id: "z700", label: "700", hex: hx("sombra", "700"), usage: "★ Rail categorías — sidebar 280px." },
+    { id: "z600", label: "600", hex: hx("sombra", "600"), usage: "Canvas catálogo — grilla de productos." },
+    { id: "z500", label: "500", hex: hx("sombra", "500"), usage: "★ Superficie card — cuerpo del producto." },
+    { id: "z400", label: "400", hex: hx("sombra", "400"), usage: "Labels de sección — sage muted." },
+    { id: "z300", label: "300", hex: hx("sombra", "300"), usage: "Texto inactivo — ítems del rail." },
   ],
 }
 
-/** Neutros claros azul-ceniza — ticket, listados y paneles light del POS. */
+/** @deprecated Alias — usar SOMBRA_FAMILY */
+export const CENIZA_FAMILY = SOMBRA_FAMILY
+
+/** Neutros claros — neblina matinal: ticket, listados y paneles light. */
 export const BRUMA_FAMILY: NatureFamily = {
   id: "bruma",
-  title: "Bruma · claros ceniza azulados",
+  title: "Bruma · neblina clara",
   subtitle: "Ticket y listados",
   description:
-    "Off-white frío para columnas de resumen, tickets y tablas workspace. Contraste limpio con ceniza oscura y acentos savia.",
+    "Off-white frío como neblina matinal — columnas de resumen, tickets y tablas workspace. Contraste limpio con sombra bajo el dosel y acentos savia.",
   steps: [
-    { id: "b50", label: "50", hex: "#F4F6F9", usage: "★ Superficie listado — ítems del ticket." },
-    { id: "b100", label: "100", hex: "#EEF1F5", usage: "★ Panel resumen — aside TU PEDIDO." },
-    { id: "b200", label: "200", hex: "#DFE4EA", usage: "Divisores hairline — filas del ticket." },
-    { id: "b300", label: "300", hex: "#CBD5E1", usage: "Bordes suaves — inputs y tabs." },
-    { id: "b400", label: "400", hex: "#94A3B8", usage: "Metadatos — contador de líneas." },
-    { id: "b500", label: "500", hex: "#64748B", usage: "Encabezados secundarios — TU PEDIDO." },
-    { id: "b600", label: "600", hex: "#475569", usage: "Descripciones — hints en panel claro." },
-    { id: "b700", label: "700", hex: "#334155", usage: "Texto empty state — títulos muted." },
-    { id: "b900", label: "900", hex: "#121417", usage: "★ Texto principal — cuerpo en panel claro." },
+    { id: "b50", label: "50", hex: hx("bruma", "50"), usage: "★ Superficie listado — ítems del ticket." },
+    { id: "b100", label: "100", hex: hx("bruma", "100"), usage: "★ Panel resumen — aside TU PEDIDO." },
+    { id: "b200", label: "200", hex: hx("bruma", "200"), usage: "Divisores hairline — filas del ticket." },
+    { id: "b300", label: "300", hex: hx("bruma", "300"), usage: "Bordes suaves — inputs y tabs." },
+    { id: "b400", label: "400", hex: hx("bruma", "400"), usage: "Metadatos — contador de líneas." },
+    { id: "b500", label: "500", hex: hx("bruma", "500"), usage: "Encabezados secundarios — TU PEDIDO." },
+    { id: "b600", label: "600", hex: hx("bruma", "600"), usage: "Descripciones — hints en panel claro." },
+    { id: "b700", label: "700", hex: hx("bruma", "700"), usage: "Texto empty state — títulos muted." },
+    { id: "b900", label: "900", hex: hx("bruma", "900"), usage: "★ Texto principal — cuerpo en panel claro." },
   ],
 }
 
-/** Verde operativo POS — savia emerald de la pantalla Vender (distinto del canopy de marca). */
+/** Verde operativo — savia emerald de la pantalla Vender. */
 export const SAVIA_FAMILY: NatureFamily = {
   id: "savia",
-  title: "Savia · verde operativo POS",
-  subtitle: "Acciones, foco y éxito en mostrador",
+  title: "Savia · verde operativo",
+  subtitle: "Acciones, foco y éxito",
   description:
-    "Emerald vivo sobre ceniza — CTA Vender, botón agregar, rail activo, toolbox configurado y barra de totales. Más eléctrico que Canopy; pensado para contraste en UI oscura.",
+    "Emerald vivo sobre sombra — CTA Vender, botón agregar, rail activo, toolbox configurado y barra de totales. El único verde con intención en producto.",
   steps: [
-    { id: "s990", label: "990", hex: "#061009", usage: "Totales POS — cierre del gradiente." },
-    { id: "s975", label: "975", hex: "#07120E", usage: "★ Totales POS — inicio del gradiente." },
-    { id: "s960", label: "960", hex: "#0C1F17", usage: "Totales POS — centro del gradiente." },
-    { id: "s950", label: "950", hex: "#022C22", usage: "Texto sobre botón + — emerald-950." },
-    { id: "s900", label: "900", hex: "#064E3B", usage: "Overlays oscuros — badges sobre cards." },
-    { id: "s800", label: "800", hex: "#065F46", usage: "Badges pagado — texto en ticket claro." },
-    { id: "s700", label: "700", hex: "#047857", usage: "Estado active/pressed." },
-    { id: "s600", label: "600", hex: "#059669", usage: "★ CTA Vender / Confirmar venta." },
-    { id: "s500", label: "500", hex: "#10B981", usage: "★ Agregar producto · toolbox configurado." },
-    { id: "s400", label: "400", hex: "#34D399", usage: "★ Acento rail · focus · barra selección." },
-    { id: "s300", label: "300", hex: "#6EE7B7", usage: "Glow cards · descuentos en totales." },
-    { id: "s200", label: "200", hex: "#A7F3D0", usage: "Iconos toolbox · labels barra totales." },
-    { id: "s100", label: "100", hex: "#D1FAE5", usage: "Promociones rail · badges suaves ticket." },
-    { id: "s50", label: "50", hex: "#ECFDF5", usage: "Filas pagadas / highlight ticket claro." },
+    { id: "s990", label: "990", hex: hx("savia", "990"), usage: "Totales POS — cierre del gradiente." },
+    { id: "s975", label: "975", hex: hx("savia", "975"), usage: "★ Totales POS — inicio del gradiente." },
+    { id: "s960", label: "960", hex: hx("savia", "960"), usage: "Totales POS — centro del gradiente." },
+    { id: "s950", label: "950", hex: hx("savia", "950"), usage: "Texto sobre botón + — emerald-950." },
+    { id: "s900", label: "900", hex: hx("savia", "900"), usage: "Overlays oscuros — badges sobre cards." },
+    { id: "s800", label: "800", hex: hx("savia", "800"), usage: "Badges pagado — texto en ticket claro." },
+    { id: "s700", label: "700", hex: hx("savia", "700"), usage: "Estado active/pressed." },
+    { id: "s600", label: "600", hex: hx("savia", "600"), usage: "★ CTA Vender / Confirmar venta." },
+    { id: "s500", label: "500", hex: hx("savia", "500"), usage: "★ Agregar producto · CTA marketing." },
+    { id: "s400", label: "400", hex: hx("savia", "400"), usage: "★ Acento rail · focus · links hero." },
+    { id: "s300", label: "300", hex: hx("savia", "300"), usage: "Glow cards · descuentos en totales." },
+    { id: "s200", label: "200", hex: hx("savia", "200"), usage: "Iconos toolbox · labels barra totales." },
+    { id: "s100", label: "100", hex: hx("savia", "100"), usage: "Promociones rail · badges suaves ticket." },
+    { id: "s50", label: "50", hex: hx("savia", "50"), usage: "Filas pagadas / highlight ticket claro." },
   ],
 }
 
-/** Hero promocional — fondo carbón, emerald/meadow y auroras de la landing. */
-export const LANDING_FAMILY: NatureFamily = {
-  id: "landing",
-  title: "Landing · hero promocional",
-  subtitle: "Marketing y primera impresión",
+/** Composición del hero — no es una familia. Usa sombra + savia + atmósfera. */
+export const ATMOSPHERE_SPEC: NatureFamily = {
+  id: "atmosphere",
+  title: "Atmósfera · efectos de marketing",
+  subtitle: "Composición, no paleta",
   description:
-    "Fondo carbón verdoso, forest/meadow como acentos, auroras neón decorativas y CTA emerald→teal. Extraído de HeroLanding, LandingAtmosphere y CTAs.",
+    "El hero no tiene colores propios: fondo sombra 900, acentos savia 500/400, gradiente CTA savia→teal, auroras neón solo en blur. Composición de marketing — no es una cuarta familia.",
   steps: [
-    { id: "l950", label: "950", hex: "#080C0B", usage: "★ Fondo hero — LANDING_BG." },
-    { id: "l900", label: "900", hex: "#070A09", usage: "Shell login / chrome oscuro." },
-    { id: "l800", label: "800", hex: "#0A0E0D", usage: "Overlay gradiente hero." },
-    { id: "l500", label: "500", hex: "#10B981", usage: "★ Forest / emerald-500 — acento principal." },
-    { id: "l400", label: "400", hex: "#34D399", usage: "★ Meadow / emerald-400 — glow y focus." },
-    { id: "l300", label: "300", hex: "#6EE7B7", usage: "Halo aurora suave — emerald-300." },
-    { id: "l200", label: "200", hex: "#A7F3D0", usage: "Partículas y halos secundarios." },
-    { id: "t500", label: "Teal", hex: "#14B8A6", usage: "★ CTA gradient end — teal-500." },
-    { id: "n400", label: "Neón", hex: "#25FE02", usage: "Aurora decorativa (no UI sólida)." },
-    { id: "n300", label: "Neón 2", hex: "#02FE85", usage: "Aurora secundaria — base del glow." },
-    { id: "c600", label: "Canopy", hex: "#1E8F5A", usage: "Primary light mode — puente con marca." },
+    { id: "a-bg", label: "Fondo", hex: hx("sombra", "900"), usage: "★ Sombra 900 — noche del parque." },
+    { id: "a-s500", label: "Savia 500", hex: hx("savia", "500"), usage: "★ Acento principal — CTA y títulos." },
+    { id: "a-s400", label: "Savia 400", hex: hx("savia", "400"), usage: "★ Glow y links del hero." },
+    { id: "a-teal", label: "Teal", hex: hx("savia", "teal"), usage: "★ Savia teal — fin del gradiente CTA." },
+    { id: "a-n1", label: "Aurora", hex: hx("atmosphere", "neon"), usage: "Atmósfera blur — nunca UI sólida." },
+    { id: "a-n2", label: "Aurora 2", hex: hx("atmosphere", "neon-2"), usage: "Base del glow atmosférico." },
   ],
 }
 
-/** Paletas del grupo Color (nuevo) — POS + landing. */
+/** @deprecated Usar ATMOSPHERE_SPEC — landing no es familia de marca. */
+export const LANDING_FAMILY = ATMOSPHERE_SPEC
+
+/** Paletas del grupo Color (nuevo) — tres familias de marca. */
 export const COLOR_NEW_FAMILIES: NatureFamily[] = [
-  CENIZA_FAMILY,
+  SOMBRA_FAMILY,
   BRUMA_FAMILY,
   SAVIA_FAMILY,
-  LANDING_FAMILY,
 ]
 
 export const COLOR_NEW_GRADIENTS: NatureGradient[] = [
   {
-    id: "landing-aurora",
+    id: "marketing-aurora",
     title: "Aurora del hero",
-    description: "Neón verde desde la base — LandingAtmosphere.",
-    from: "#25FE02",
-    via: "#02FE85",
-    to: "#34D399",
+    description: "Neón verde desde la base — atmósfera blur de marketing.",
+    from: hx("atmosphere", "neon"),
+    via: hx("atmosphere", "neon-2"),
+    to: hx("savia", "400"),
   },
   {
-    id: "landing-cta",
-    title: "CTA primario",
-    description: "Emerald a teal — botón principal de la landing.",
-    from: "#10B981",
-    to: "#14B8A6",
+    id: "marketing-cta",
+    title: "CTA marketing",
+    description: "Savia 500 a teal — botón principal del hero.",
+    from: hx("savia", "500"),
+    to: hx("savia", "teal"),
   },
   {
     id: "pos-totals",
     title: "Totales del mostrador",
-    description: "Savia profunda bajo la barra de cobro — glow emerald en ceniza.",
-    from: "#07120E",
-    via: "#0C1F17",
-    to: "#061009",
+    description: "Savia profunda bajo la barra de cobro — glow emerald bajo el dosel.",
+    from: hx("savia", "975"),
+    via: hx("savia", "960"),
+    to: hx("savia", "990"),
   },
   {
     id: "pos-floor",
     title: "Mostrador operativo",
-    description: "Ceniza del catálogo abriendo a bruma del ticket — contraste POS.",
-    from: "#070A09",
-    via: "#20262E",
-    to: "#EEF1F5",
+    description: "Sombra del catálogo abriendo a bruma del ticket — contraste natural del POS.",
+    from: hx("sombra", "950"),
+    via: hx("sombra", "600"),
+    to: hx("bruma", "100"),
   },
 ]
 

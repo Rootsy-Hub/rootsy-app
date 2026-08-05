@@ -5,7 +5,10 @@
 
 import { rootsyColorHex } from "@/lib/design-system/tokens/colors"
 
-export type RootsyThemeId = "pos" | "workspace" | "landing" | "library"
+export type RootsyThemeId = "pos" | "workspace" | "marketing" | "library"
+
+/** @deprecated Usar "marketing" */
+export type LegacyRootsyThemeId = RootsyThemeId | "landing"
 
 export type RootsyThemeTokens = {
   id: RootsyThemeId
@@ -27,12 +30,12 @@ export const ROOTSY_THEMES: RootsyThemeTokens[] = [
     id: "pos",
     label: "Mostrador POS",
     className: "rootsy-theme-pos",
-    shell: rootsyColorHex("ceniza", "950"),
-    surface: rootsyColorHex("ceniza", "600"),
-    elevated: rootsyColorHex("ceniza", "500"),
-    border: "#334155",
-    textPrimary: "#F8FAFC",
-    textSecondary: rootsyColorHex("ceniza", "300"),
+    shell: rootsyColorHex("sombra", "950"),
+    surface: rootsyColorHex("sombra", "600"),
+    elevated: rootsyColorHex("sombra", "500"),
+    border: rootsyColorHex("sombra", "border"),
+    textPrimary: "#F4F8F6",
+    textSecondary: rootsyColorHex("sombra", "300"),
     action: rootsyColorHex("savia", "600"),
     actionText: "#FFFFFF",
     accent: rootsyColorHex("savia", "400"),
@@ -52,24 +55,24 @@ export const ROOTSY_THEMES: RootsyThemeTokens[] = [
     accent: rootsyColorHex("savia", "400"),
   },
   {
-    id: "landing",
-    label: "Landing",
+    id: "marketing",
+    label: "Marketing · hero",
     className: "rootsy-theme-landing",
-    shell: rootsyColorHex("landing", "950"),
-    surface: rootsyColorHex("landing", "800"),
+    shell: rootsyColorHex("sombra", "900"),
+    surface: rootsyColorHex("sombra", "800"),
     elevated: "#141C19",
-    border: rootsyColorHex("ceniza", "700"),
+    border: rootsyColorHex("sombra", "border"),
     textPrimary: "#FFFFFF",
-    textSecondary: rootsyColorHex("ceniza", "300"),
-    action: rootsyColorHex("landing", "500"),
+    textSecondary: rootsyColorHex("sombra", "300"),
+    action: rootsyColorHex("savia", "500"),
     actionText: "#FFFFFF",
-    accent: rootsyColorHex("landing", "400"),
+    accent: rootsyColorHex("savia", "400"),
   },
   {
     id: "library",
     label: "Librería",
     className: "rootsy-theme-library",
-    shell: rootsyColorHex("ceniza", "700"),
+    shell: rootsyColorHex("sombra", "700"),
     surface: rootsyColorHex("bruma", "100"),
     elevated: "#FFFFFF",
     border: rootsyColorHex("bruma", "200"),
@@ -81,8 +84,9 @@ export const ROOTSY_THEMES: RootsyThemeTokens[] = [
   },
 ]
 
-export function getRootsyTheme(id: RootsyThemeId): RootsyThemeTokens {
-  const theme = ROOTSY_THEMES.find((t) => t.id === id)
+export function getRootsyTheme(id: RootsyThemeId | "landing"): RootsyThemeTokens {
+  const resolved = id === "landing" ? "marketing" : id
+  const theme = ROOTSY_THEMES.find((t) => t.id === resolved)
   if (!theme) throw new Error(`Unknown theme: ${id}`)
   return theme
 }

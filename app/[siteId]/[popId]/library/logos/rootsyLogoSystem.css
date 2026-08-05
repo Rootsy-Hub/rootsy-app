@@ -1,5 +1,6 @@
 .rootsy-logos-system {
-  --logo-preview-canopy: #16704a;
+  --logo-preview-sombra: #1b2420;
+  --logo-preview-savia: #059669;
   --logo-preview-dark: #080c0b;
   --logo-preview-neutral: #f5f5f4;
 }
@@ -18,8 +19,12 @@
   border: 1px solid oklch(0.92 0.02 130 / 0.35);
 }
 
-.rootsy-logos-system .logo-preview-surface--canopy {
-  background: var(--logo-preview-canopy);
+.rootsy-logos-system .logo-preview-surface--sombra {
+  background: var(--logo-preview-sombra);
+}
+
+.rootsy-logos-system .logo-preview-surface--savia {
+  background: var(--logo-preview-savia);
 }
 
 .rootsy-logos-system .logo-preview-surface--dark {

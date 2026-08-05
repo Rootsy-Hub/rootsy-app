@@ -18,7 +18,7 @@ export const BORDER_PAGE_META: Record<string, BorderPageMeta> = {
     id: "border",
     title: "Borde",
     description:
-      "Ancho + color — vena sutil, selección canopy y foco accesible. Siempre emparejar width con color.",
+      "Ancho + color — hairline bruma, sombra-border en POS, savia en foco y selección.",
   },
 }
 
@@ -28,7 +28,7 @@ export function getBorderPageMeta(sectionId: string): BorderPageMeta | undefined
 
 export const BORDER_RELATED_LINKS = [
   { sectionId: "radius", label: "Radio", hint: "Esquinas + focus ring radius." },
-  { sectionId: "colors", label: "Color", hint: "color.border.* y contraste 3:1." },
+  { sectionId: "colors", label: "Color", hint: "bruma 200 · sombra-border · savia foco." },
   { sectionId: "elevation", label: "Elevación", hint: "Bordes vs sombras en cards." },
   { sectionId: "spacing", label: "Espaciado", hint: "Separadores y hairlines." },
 ] as const

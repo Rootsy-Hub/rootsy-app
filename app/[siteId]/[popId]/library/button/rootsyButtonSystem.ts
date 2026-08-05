@@ -1,8 +1,11 @@
 /**
  * Sistema de botones Rootsy — fuente de verdad del design system.
- * Alineado a Atlassian Button: appearance, tamaño, estados e iconografía.
- * @see https://atlassian.design/components/button
+ * Colores: familia savia (primary/link), bruma (neutral), funcional (danger).
  */
+
+import { rootsyColorHex } from "@/lib/design-system"
+
+const hx = rootsyColorHex
 
 export type ButtonAppearance = {
   id: string
@@ -30,12 +33,13 @@ export type ButtonSemanticMapping = {
 }
 
 export const ROOTSY_BUTTON_MANIFESTO =
-  "Un botón comunica qué pasa después. Una acción primary por sección — el resto en default o subtle. Verbos imperativos, sentence case, iconos en currentColor. Loading sin saltar layout."
+  "Un botón comunica qué pasa después. Savia marca la acción principal — una por área. El resto va en default o subtle. Verbos imperativos, iconos en currentColor, loading sin saltar layout."
 
 export const ROOTSY_BUTTON_PRINCIPLES = [
   {
     title: "Un primary por área",
-    detail: "Solo un appearance primary por footer, toolbar o sección. Si hay dos, uno debería ser default.",
+    detail:
+      "Solo un appearance primary por footer, toolbar o sección. Savia aparece donde hay una sola acción decisiva.",
   },
   {
     title: "Verbo imperativo",
@@ -43,59 +47,131 @@ export const ROOTSY_BUTTON_PRINCIPLES = [
   },
   {
     title: "Subtle antes que inventar",
-    detail: "Cancelar y acciones de bajo peso usan subtle (ghost-neutral), no un estilo ad-hoc.",
+    detail:
+      "Cancelar y acciones terciarias usan subtle (ghost-neutral), no un estilo ad-hoc.",
   },
   {
     title: "Danger solo destructivo",
-    detail: "appearance danger confirma acciones irreversibles — no para CTAs normales.",
+    detail:
+      "Appearance danger confirma acciones irreversibles — no para CTAs normales.",
   },
 ] as const
 
-/** Appearances alineados a Atlassian — mapeados a shadcn + rootsButtonStyles. */
-export const ROOTSY_BUTTON_APPEARANCES: ButtonAppearance[] = [
+export type ButtonVariantState = "default" | "disabled" | "loading" | "icon"
+
+export const BUTTON_VARIANT_MATRIX_COLUMNS: ReadonlyArray<{
+  id: ButtonVariantState
+  label: string
+}> = [
+  { id: "default", label: "Default" },
+  { id: "disabled", label: "Deshabilitado" },
+  { id: "loading", label: "Cargando" },
+  { id: "icon", label: "Con ícono" },
+] as const
+
+export type ButtonColorToken = {
+  appearance: string
+  role: string
+  tokens: ReadonlyArray<{ label: string; token: string; hex: string }>
+}
+
+/** Mapeo appearance → familia de color nueva (sombra · bruma · savia). */
+export const ROOTSY_BUTTON_COLOR_TOKENS: ButtonColorToken[] = [
   {
-    id: "default",
-    appearance: "default",
-    natureName: "Estándar",
-    rootsyVariant: "outline",
-    rootsyClass: "h-10 rounded-lg",
-    usage: "Acciones frecuentes que no son la CTA principal — exportar, duplicar, filtrar.",
-    atlassianRule: "Menos prominente que primary; texto subtle intencional.",
+    appearance: "primary",
+    role: "Acción principal — savia",
+    tokens: [
+      { label: "Fondo", token: "savia-600", hex: hx("savia", "600") },
+      { label: "Hover", token: "savia-500", hex: hx("savia", "500") },
+      { label: "Active", token: "savia-700", hex: hx("savia", "700") },
+      { label: "Texto", token: "white", hex: "#FFFFFF" },
+    ],
   },
+  {
+    appearance: "default",
+    role: "Secundario — bruma + borde",
+    tokens: [
+      { label: "Fondo", token: "white", hex: "#FFFFFF" },
+      { label: "Borde", token: "bruma-200", hex: hx("bruma", "200") },
+      { label: "Hover", token: "bruma-50", hex: hx("bruma", "50") },
+      { label: "Texto", token: "bruma-900", hex: hx("bruma", "900") },
+    ],
+  },
+  {
+    appearance: "subtle",
+    role: "Terciario — bruma muted",
+    tokens: [
+      { label: "Fondo", token: "transparent", hex: "—" },
+      { label: "Hover", token: "bruma-50", hex: hx("bruma", "50") },
+      { label: "Texto", token: "bruma-600", hex: hx("bruma", "600") },
+    ],
+  },
+  {
+    appearance: "danger",
+    role: "Destructivo — funcional",
+    tokens: [
+      { label: "Fondo", token: "danger", hex: "#DC2626" },
+      { label: "Hover", token: "danger-light", hex: "#EF4444" },
+      { label: "Active", token: "danger-dark", hex: "#B91C1C" },
+    ],
+  },
+  {
+    appearance: "link",
+    role: "Enlace — savia texto",
+    tokens: [
+      { label: "Default", token: "savia-700", hex: hx("savia", "700") },
+      { label: "Hover", token: "savia-600", hex: hx("savia", "600") },
+      { label: "Active", token: "savia-800", hex: hx("savia", "800") },
+    ],
+  },
+]
+
+/** Appearances del sistema — mapeados a shadcn + rootsButtonStyles. */
+export const ROOTSY_BUTTON_APPEARANCES: ButtonAppearance[] = [
   {
     id: "primary",
     appearance: "primary",
-    natureName: "Principal",
+    natureName: "Savia",
     rootsyVariant: "default",
-    rootsyClass: "h-10 bg-emerald-600 font-semibold text-white shadow-sm hover:bg-emerald-500 active:bg-emerald-700",
+    rootsyClass: "bg-[var(--rootsy-savia-600)] hover:bg-[var(--rootsy-savia-500)]",
     usage: "Submit de formulario, guardar, confirmar — una sola vez por área.",
     atlassianRule: "Máximo uno por sección o footer de modal.",
+  },
+  {
+    id: "default",
+    appearance: "default",
+    natureName: "Borde",
+    rootsyVariant: "outline",
+    rootsyClass: "border bruma-200 · hover bruma-50 · texto bruma-900",
+    usage: "Acciones frecuentes que no son la CTA principal — exportar, duplicar, filtrar.",
+    atlassianRule: "Menos prominente que primary; borde neutro sobre bruma.",
   },
   {
     id: "subtle",
     appearance: "subtle",
     natureName: "Sutil",
     rootsyVariant: "ghost-neutral",
-    rootsyClass: "h-10 rounded-lg",
+    rootsyClass: "transparent · hover bruma-50",
     usage: "Cancelar, quitar descuento, acciones terciarias sin borde.",
     atlassianRule: "Par ideal con primary en footers — Cancelar a la izquierda.",
   },
   {
     id: "danger",
     appearance: "danger",
-    natureName: "Peligro",
+    natureName: "Destructivo",
     rootsyVariant: "destructive",
-    rootsyClass: "h-10 bg-rose-600 font-semibold text-white shadow-sm hover:bg-rose-500 active:bg-rose-700",
+    rootsyClass: "danger #DC2626 · hover #EF4444",
     usage: "Eliminar definitivamente, confirmación destructiva en alert dialog.",
-    atlassianRule: "Solo acciones irreversibles — nunca Save en naranja/rojo.",
+    atlassianRule: "Solo acciones irreversibles — nunca Save en rojo.",
   },
   {
     id: "link",
     appearance: "link",
     natureName: "Enlace",
     rootsyVariant: "link",
+    rootsyClass: "text savia-700 · hover savia-600",
     usage: "Navegación inline de bajo peso — Ver detalle, Más información.",
-    atlassianRule: "Preferir link button antes de inventar texto suelto clickeable.",
+    atlassianRule: "Preferir link button antes de texto suelto clickeable.",
   },
 ]
 
@@ -297,8 +373,141 @@ export const BUTTON_GUIDELINES = {
 } as const
 
 export const BUTTON_RELATED_LINKS = [
-  { sectionId: "radius", label: "Radio", hint: "radius.medium en botones e inputs." },
-  { sectionId: "border", label: "Borde", hint: "border.width.focused en focus ring." },
-  { sectionId: "iconography", label: "Iconografía", hint: "Iconsax / lucide size-4 en botones." },
-  { sectionId: "motion", label: "Movimiento", hint: "transition-all en hover y pressed." },
+  { sectionId: "colors-new", label: "Color", hint: "Savia en primary · bruma en superficies." },
+  { sectionId: "component-text", label: "Texto", hint: "Labels y copy en botones." },
+  { sectionId: "radius", label: "Radio", hint: "radius.lg en botones e inputs." },
+  { sectionId: "iconography", label: "Iconografía", hint: "Lucide size-4 en botones con texto." },
+  { sectionId: "motion", label: "Movimiento", hint: "Transiciones en hover y pressed." },
 ] as const
+
+// ─── Icon button · modelo foundations (tema + énfasis) ───────────────────────
+
+export type IconButtonThemeId = "workspace" | "pos"
+
+export type IconButtonEmphasisId = "outlined" | "filled" | "ghost"
+
+export type IconButtonRowIntentId = "neutral" | "edit" | "destructive"
+
+export type IconButtonSizeId = "compact" | "default" | "large"
+
+export const ROOTSY_ICON_BUTTON_MANIFESTO =
+  "Solo ícono cuando el verbo no aporta — siempre con aria-label. Tema workspace o POS; énfasis outlined, filled o ghost. Savia solo en acciones de fila edit — danger funcional en destructive."
+
+export const ROOTSY_ICON_BUTTON_SIZES: {
+  id: IconButtonSizeId
+  token: string
+  hitAreaToken: string
+  hitAreaPx: number
+  iconToken: string
+  iconPx: number
+  usage: string
+}[] = [
+  {
+    id: "compact",
+    token: "icon-button.size.compact",
+    hitAreaToken: "space.400",
+    hitAreaPx: 32,
+    iconToken: "icon.size.medium",
+    iconPx: 16,
+    usage: "Tablas, filas densas, acciones de fila.",
+  },
+  {
+    id: "default",
+    token: "icon-button.size.default",
+    hitAreaToken: "space.500",
+    hitAreaPx: 40,
+    iconToken: "icon.size.large",
+    iconPx: 20,
+    usage: "Header workspace, toolbar, utilidades.",
+  },
+  {
+    id: "large",
+    token: "icon-button.size.large",
+    hitAreaToken: "space.600",
+    hitAreaPx: 48,
+    iconToken: "icon.size.large",
+    iconPx: 20,
+    usage: "CTA icon-only puntual — no reemplaza default.",
+  },
+]
+
+export const ROOTSY_ICON_BUTTON_VARIANTS: {
+  id: string
+  theme: IconButtonThemeId
+  emphasis: IconButtonEmphasisId
+  usage: string
+}[] = [
+  {
+    id: "workspace-outlined",
+    theme: "workspace",
+    emphasis: "outlined",
+    usage: "Outline neutro — toolbar y acciones secundarias sobre bruma.",
+  },
+  {
+    id: "workspace-filled",
+    theme: "workspace",
+    emphasis: "filled",
+    usage: "Chrome con relleno — menú Home, header workspace.",
+  },
+  {
+    id: "workspace-ghost",
+    theme: "workspace",
+    emphasis: "ghost",
+    usage: "Sin borde — volver, campana y ajustes sobre superficie clara.",
+  },
+  {
+    id: "pos-outlined",
+    theme: "pos",
+    emphasis: "outlined",
+    usage: "Chrome con borde — header nocturno sobre sombra.",
+  },
+  {
+    id: "pos-filled",
+    theme: "pos",
+    emphasis: "filled",
+    usage: "Mismo chrome elevado — navegación sobre fondo oscuro.",
+  },
+  {
+    id: "pos-ghost",
+    theme: "pos",
+    emphasis: "ghost",
+    usage: "Sin borde — utilidades sobre tema POS.",
+  },
+]
+
+export const ROOTSY_ICON_BUTTON_ROW_INTENTS: {
+  id: IconButtonRowIntentId
+  token: string
+  usage: string
+}[] = [
+  {
+    id: "neutral",
+    token: "icon-button.row.neutral",
+    usage: "Ver detalle, acciones de lectura en tablas.",
+  },
+  {
+    id: "edit",
+    token: "icon-button.row.edit",
+    usage: "Editar fila — hover savia, default bruma secundario.",
+  },
+  {
+    id: "destructive",
+    token: "icon-button.row.destructive",
+    usage: "Eliminar fila — danger funcional.",
+  },
+]
+
+export const ROOTSY_ICON_BUTTON_GUIDELINES = {
+  do: [
+    "aria-label en todo control solo-ícono",
+    "Tema workspace en shell claro · tema POS en shell oscuro",
+    "icon.size.medium (16px) en compact · icon.size.large (20px) en default/large",
+    "radius.medium en hit area",
+  ],
+  dont: [
+    "Inventar tone=light/dark legacy — usar theme + emphasis",
+    "Hex sueltos — solo sombra · bruma · savia + funcional danger",
+    "Large como tamaño default global",
+    "Ícono sin label accesible",
+  ],
+} as const

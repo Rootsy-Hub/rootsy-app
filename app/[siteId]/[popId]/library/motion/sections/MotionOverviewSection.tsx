@@ -8,8 +8,9 @@ import {
   InteractionVsTransitionDemo,
   MotionDocLead,
   MotionDocSection,
-  MotionManifestoHero,
   MotionPrinciplesGrid,
+  MotionSystemHero,
+  MotionTechnicalDetails,
   PropertiesGallery,
   ReducedMotionNote,
 } from "@/app/[siteId]/[popId]/library/motion/MotionDocPrimitives"
@@ -25,9 +26,9 @@ export function MotionOverviewSection() {
   return (
     <LibrarySection id="motion" title={meta.title} description={meta.description}>
       <div className="space-y-10">
-        <MotionManifestoHero />
-        <MotionDocLead>{ROOTSY_MOTION_MANIFESTO}</MotionDocLead>
-        <MotionPrinciplesGrid principles={ROOTSY_MOTION_PRINCIPLES} />
+        <MotionSystemHero />
+        <MotionDocLead className="font-canopy">{ROOTSY_MOTION_MANIFESTO}</MotionDocLead>
+        <MotionPrinciplesGrid principles={[...ROOTSY_MOTION_PRINCIPLES]} />
 
         <MotionDocSection
           id="duration"
@@ -63,6 +64,14 @@ export function MotionOverviewSection() {
 
         <MotionDocSection id="reduced-motion" title="Accesibilidad">
           <ReducedMotionNote />
+        </MotionDocSection>
+
+        <MotionDocSection
+          id="motion-technical"
+          title="Detalles técnicos"
+          description="Duración, easing, tokens semánticos, keyframes y guías."
+        >
+          <MotionTechnicalDetails />
         </MotionDocSection>
       </div>
     </LibrarySection>

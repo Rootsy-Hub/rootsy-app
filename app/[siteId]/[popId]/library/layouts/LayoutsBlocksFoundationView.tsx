@@ -1,6 +1,9 @@
 "use client"
 
 import {
+  LayoutsSystemHero,
+} from "@/app/[siteId]/[popId]/library/layouts/LayoutsDocShared"
+import {
   LAYOUTS_RELATED_LINKS,
   getLayoutsPageMeta,
 } from "@/app/[siteId]/[popId]/library/layouts/layoutsLibraryNav"
@@ -35,6 +38,7 @@ export function LayoutsBlocksFoundationView({ sectionId, siteId, popId }: Props)
     case "layouts-blocks":
       content = (
         <>
+          <LayoutsSystemHero variant="blocks" />
           <LayoutsBlocksOverviewIntro />
 
           <LibraryDocSection

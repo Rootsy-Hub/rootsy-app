@@ -1,7 +1,7 @@
 /**
  * Sistema de color Rootsy — solo paleta de producto.
- * Cuatro familias: ceniza, bruma, savia, landing.
- * Tres contextos: POS, workspace, landing (+ librería como demo del split).
+ * Tres familias de marca: sombra, bruma, savia.
+ * Contextos de pantalla: POS, workspace, marketing (hero), librería.
  */
 
 import { ROOTSY_COLOR_SEMANTIC, rootsyColorHex } from "@/lib/design-system"
@@ -22,15 +22,16 @@ export const COLOR_TOKENS = {
   savia500: hx("savia", "500"),
   savia400: hx("savia", "400"),
   savia100: hx("savia", "100"),
-  ceniza600: hx("ceniza", "600"),
-  ceniza700: hx("ceniza", "700"),
-  ceniza500: hx("ceniza", "500"),
-  ceniza300: hx("ceniza", "300"),
-  landing950: hx("landing", "950"),
+  sombra600: hx("sombra", "600"),
+  sombra700: hx("sombra", "700"),
+  sombra500: hx("sombra", "500"),
+  sombra300: hx("sombra", "300"),
+  sombraBorder: hx("sombra", "border"),
+  landing950: hx("sombra", "900"),
   white: W,
 } as const
 
-/** Colores funcionales UX — fuera de las cuatro familias. */
+/** Colores funcionales UX — fuera de las tres familias de marca. */
 const FUNCTIONAL = {
   warning: "#D97706",
   warningText: "#78350F",
@@ -41,7 +42,10 @@ const FUNCTIONAL = {
   infoDark: "#0D9488",
 } as const
 
-export type ColorThemeId = "pos" | "workspace" | "landing" | "library"
+export type ColorThemeId = "pos" | "workspace" | "marketing" | "library"
+
+/** @deprecated Usar "marketing". Alias de migración desde landing. */
+export type LegacyColorThemeId = ColorThemeId | "landing"
 
 export type SemanticToken = {
   id: string
@@ -119,29 +123,42 @@ export type ProductEmphasisFamily = {
   levels: ProductEmphasisLevel[]
 }
 
+export const ROOTSY_COLOR_CONCEPT = {
+  title: "Un ecosistema de luz y sombra",
+  lead:
+    "Rootsy no pinta interfaces: traduce un parque digital. Hay zonas bajo el dosel, neblina que aclara el camino y savia que marca dónde actuar.",
+  why: [
+    "Cada color nombra una sensación del mundo de la mascota — no un hex suelto ni un gris de dashboard.",
+    "Claro y oscuro comparten el mismo matiz bosque: la bruma del ticket y la sombra del catálogo son el mismo ecosistema.",
+    "Savia es el único verde con intención — vida, acción, foco. Todo lo demás es neutro con alma natural.",
+  ],
+  closing:
+    "Si el usuario ya recorrió el parque una vez, los colores le resultan familiares antes de leer una etiqueta.",
+} as const
+
 export const ROOTSY_COLOR_MANIFESTO =
-  "Cuatro familias, cero ambigüedad. Ceniza oscurece el mostrador; bruma aclara el ticket; savia mueve cada acción; landing promete antes del login. Todo lo demás — estados, gráficos, avisos — se apoya en estas rampas o en neutros funcionales documentados aparte."
+  "Tres familias, un ecosistema. Sombra es el dosel — oscuro con alma de bosque; bruma es la neblina que aclara; savia es la vida que acciona. El hero de marketing no es una cuarta paleta: es la misma noche (sombra) con savia encendida y auroras de atmósfera."
 
 export const ROOTSY_COLOR_PRINCIPLES = [
   {
-    title: "Cuatro familias, roles fijos",
+    title: "Tres familias, roles fijos",
     detail:
-      "Ceniza, bruma, savia y landing no se intercambian. Cada una responde a una superficie real del producto.",
+      "Sombra, bruma y savia no se intercambian. Cada una responde a una superficie o acción del producto.",
   },
   {
     title: "Un verde operativo",
     detail:
-      "Savia es el único verde de acción en POS y workspace. Landing usa forest/meadow del hero — mismo matiz, distinto contexto.",
+      "Savia es el verde de acción en POS y workspace. En marketing el CTA puede ir a savia 500→teal — misma familia, más luminosa.",
   },
   {
-    title: "Temperatura fría en operación",
+    title: "Un eje verde-bosque",
     detail:
-      "Ceniza y bruma comparten eje azul-ceniza. En columnas POS no entra ningún neutro cálido.",
+      "Sombra lleva carbón verdoso; bruma es neblina fría. Sin slate azulado de dashboard genérico.",
   },
   {
     title: "Contraste como requisito",
     detail:
-      "Texto bruma 900 sobre bruma 100; inverso #F8FAFC sobre ceniza 500+. Savia 600 lleva blanco en CTAs.",
+      "Texto bruma 900 sobre bruma 100; inverso sobre sombra 500+. Savia 600 lleva blanco en CTAs.",
   },
   {
     title: "Estados fuera de la marca",
@@ -149,9 +166,9 @@ export const ROOTSY_COLOR_PRINCIPLES = [
       "Aviso, peligro e info usan ámbar, rojo y teal funcionales — no son familias del sistema, solo semántica UX.",
   },
   {
-    title: "Decoración aislada",
+    title: "Atmósfera aislada",
     detail:
-      "Aurora neón (#25FE02) vive solo en capas blur de landing. Nunca texto, borde ni botón.",
+      "Aurora neón (#25FE02) vive solo en blur del hero. Nunca texto, borde ni botón sólido.",
   },
 ] as const
 
@@ -161,13 +178,13 @@ export const ROOTSY_THEMES: ColorTheme[] = [
     label: "Mostrador POS",
     subtitle: "Vender",
     description:
-      "Split ceniza + bruma con savia en acciones. Rail, canvas y cards en ceniza; ticket en bruma; totales en gradiente savia profundo.",
-    shell: hx("ceniza", "950"),
-    surface: hx("ceniza", "600"),
-    elevated: hx("ceniza", "500"),
-    border: hx("bruma", "700"),
+      "Split sombra + bruma con savia en acciones. Rail, canvas y cards bajo el dosel; ticket en bruma; totales en gradiente savia profundo.",
+    shell: hx("sombra", "950"),
+    surface: hx("sombra", "600"),
+    elevated: hx("sombra", "500"),
+    border: hx("sombra", "border"),
     textPrimary: ON_DARK,
-    textSecondary: hx("ceniza", "300"),
+    textSecondary: hx("sombra", "300"),
     action: hx("savia", "600"),
     actionText: W,
     accent: hx("savia", "400"),
@@ -177,7 +194,7 @@ export const ROOTSY_THEMES: ColorTheme[] = [
     label: "Workspace",
     subtitle: "Backoffice",
     description:
-      "Superficies bruma y blanco; texto bruma 900; acciones savia 600. Header y rail opcionales en ceniza — misma familia que POS.",
+      "Superficies bruma y blanco; texto bruma 900; acciones savia 600. Header y rail opcionales en sombra — misma familia que POS.",
     shell: hx("bruma", "100"),
     surface: W,
     elevated: hx("bruma", "50"),
@@ -189,17 +206,17 @@ export const ROOTSY_THEMES: ColorTheme[] = [
     accent: hx("savia", "400"),
   },
   {
-    id: "landing",
-    label: "Landing",
-    subtitle: "Hero promocional",
+    id: "marketing",
+    label: "Marketing · hero",
+    subtitle: "Primera impresión",
     description:
-      "Shell landing 950, acentos forest/meadow, CTA emerald→teal 500, auroras neón solo en atmósfera.",
-    shell: hx("landing", "950"),
-    surface: hx("landing", "800"),
+      "Composición sombra 900 + savia 500/400 + gradiente a savia teal. Auroras neón solo en atmósfera blur — no es paleta aparte.",
+    shell: hx("sombra", "900"),
+    surface: hx("sombra", "800"),
     elevated: "#141C19",
-    border: hx("ceniza", "700"),
+    border: hx("sombra", "border"),
     textPrimary: W,
-    textSecondary: hx("ceniza", "300"),
+    textSecondary: hx("sombra", "300"),
     action: hx("savia", "500"),
     actionText: W,
     accent: hx("savia", "400"),
@@ -209,8 +226,8 @@ export const ROOTSY_THEMES: ColorTheme[] = [
     label: "Librería",
     subtitle: "Documentación",
     description:
-      "Demostración del split: rail ceniza 700, contenido bruma 100 — la propia página de color como spec.",
-    shell: hx("ceniza", "700"),
+      "Demostración del split: rail sombra 700, contenido bruma 100 — la propia página de color como spec.",
+    shell: hx("sombra", "700"),
     surface: hx("bruma", "100"),
     elevated: W,
     border: hx("bruma", "200"),
@@ -225,113 +242,113 @@ export const ROOTSY_THEMES: ColorTheme[] = [
 export const ROOTSY_SEMANTIC_TOKENS: SemanticToken[] = [
   {
     id: "background-shell",
-    token: "--color-background-shell",
+    token: "--color-shell",
     label: "Shell",
-    hex: hx("ceniza", "950"),
-    usage: "Viewport raíz — POS oscuro y landing.",
-    themes: ["pos", "landing"],
+    hex: hx("sombra", "950"),
+    usage: "Viewport raíz — POS oscuro y marketing (.rootsy-theme-landing).",
+    themes: ["pos", "marketing"],
   },
   {
     id: "background-surface",
-    token: "--color-background-surface",
+    token: "--color-surface",
     label: "Superficie",
-    hex: hx("ceniza", "600"),
-    usage: "Canvas catálogo, panel base POS.",
-    themes: ["pos"],
+    hex: hx("sombra", "600"),
+    usage: "Canvas catálogo POS; cards en workspace.",
+    themes: ["pos", "workspace", "marketing", "library"],
   },
   {
     id: "background-elevated",
-    token: "--color-background-elevated",
+    token: "--color-elevated",
     label: "Elevada",
-    hex: hx("ceniza", "500"),
-    usage: "Cards de producto sobre canvas.",
-    themes: ["pos"],
+    hex: hx("sombra", "500"),
+    usage: "Cards sobre canvas; filas zebra en workspace.",
+    themes: ["pos", "workspace", "marketing", "library"],
   },
   {
     id: "background-ticket",
-    token: "--color-background-ticket",
+    token: "--rootsy-bruma-100",
     label: "Ticket",
     hex: hx("bruma", "100"),
     textHex: hx("bruma", "900"),
     borderHex: hx("bruma", "200"),
-    usage: "Columna TU PEDIDO, filas de ticket.",
-    themes: ["pos", "workspace", "library"],
+    usage: "Composición POS — columna TU PEDIDO (no token de tema).",
+    themes: ["pos", "library"],
   },
   {
     id: "background-workspace",
-    token: "--color-background-workspace",
-    label: "Workspace",
+    token: "--color-elevated",
+    label: "Workspace sutil",
     hex: hx("bruma", "50"),
     textHex: hx("bruma", "900"),
     borderHex: hx("bruma", "200"),
-    usage: "Filas alternadas, wells, fondo secundario claro.",
+    usage: "Filas alternadas — mapea a --color-elevated en .rootsy-theme-workspace.",
     themes: ["workspace", "library"],
   },
   {
     id: "foreground-primary",
-    token: "--color-foreground-primary",
+    token: "--color-text-primary",
     label: "Texto primario",
     hex: hx("bruma", "900"),
-    usage: "Cuerpo en bruma — ticket y workspace.",
-    themes: ["workspace", "pos", "library"],
+    usage: "Cuerpo en temas claros; blanco en marketing.",
+    themes: ["workspace", "pos", "library", "marketing"],
   },
   {
     id: "foreground-inverse",
-    token: "--color-foreground-inverse",
+    token: "--color-text-primary",
     label: "Texto inverso",
     hex: ON_DARK,
-    usage: "Títulos sobre ceniza y cards POS.",
-    themes: ["pos", "landing", "library"],
+    usage: "Títulos sobre sombra — valor fijo #f4f8f6 en tema POS.",
+    themes: ["pos", "marketing", "library"],
   },
   {
     id: "foreground-muted",
-    token: "--color-foreground-muted",
+    token: "--color-text-secondary",
     label: "Texto secundario",
-    hex: hx("bruma", "500"),
-    usage: "Metadatos — bruma 500 / ceniza 400 según fondo.",
-    themes: ["pos", "workspace", "landing", "library"],
+    hex: hx("sombra", "300"),
+    usage: "Metadatos — sombra 300 en POS/marketing; bruma 500 en workspace.",
+    themes: ["pos", "workspace", "marketing", "library"],
   },
   {
     id: "border-subtle",
-    token: "--color-border-subtle",
-    label: "Borde sutil",
+    token: "--color-border",
+    label: "Borde",
     hex: hx("bruma", "200"),
     usage: "Hairlines en ticket y tablas claras.",
     themes: ["workspace", "pos", "library"],
   },
   {
     id: "border-strong",
-    token: "--color-border-strong",
-    label: "Borde fuerte",
-    hex: hx("bruma", "700"),
-    usage: "Separadores en UI ceniza — rail, toolbox.",
-    themes: ["pos"],
+    token: "--rootsy-sombra-border",
+    label: "Borde sombra",
+    hex: hx("sombra", "border"),
+    usage: "Separadores en UI oscura — rail, toolbox.",
+    themes: ["pos", "marketing"],
   },
   {
     id: "action-primary",
-    token: "--color-action-primary",
+    token: "--color-action",
     label: "Acción",
     hex: hx("savia", "600"),
     textHex: W,
-    usage: "Vender, guardar, confirmar — savia 600 en todo producto.",
+    usage: "Vender, guardar, confirmar — savia 600 en POS y workspace.",
     themes: ["pos", "workspace", "library"],
   },
   {
-    id: "action-landing",
-    token: "--color-action-landing",
-    label: "CTA landing",
+    id: "action-promo",
+    token: "--color-action",
+    label: "CTA marketing",
     hex: hx("savia", "500"),
     textHex: W,
-    usage: "Botón hero — gradiente a teal 500 en código.",
-    themes: ["landing"],
+    usage: "Botón hero — savia 500 en .rootsy-theme-landing; gradiente a savia teal en código.",
+    themes: ["marketing"],
   },
   {
     id: "accent-focus",
-    token: "--color-accent-focus",
+    token: "--color-accent",
     label: "Foco",
     hex: hx("savia", "400"),
-    usage: "Selección rail, ring de foco, nav activo — savia 400.",
-    themes: ["pos", "landing", "library"],
+    usage: "Selección rail, ring de foco — savia 400.",
+    themes: ["pos", "marketing", "library"],
   },
   {
     id: "status-success",
@@ -364,28 +381,28 @@ export const ROOTSY_SEMANTIC_TOKENS: SemanticToken[] = [
     id: "status-info",
     token: "--color-status-info",
     label: "Información",
-    hex: hx("landing", "teal"),
+    hex: hx("savia", "teal"),
     textHex: FUNCTIONAL.infoText,
-    usage: "Contexto, en curso — teal landing (fuera de acción).",
-    themes: ["workspace", "landing"],
+    usage: "Contexto, en curso — savia teal (extensión promocional).",
+    themes: ["workspace", "marketing"],
   },
   {
     id: "decorative-aurora",
     token: "--color-decorative-aurora",
     label: "Aurora",
-    hex: hx("landing", "neon"),
-    usage: "Solo blur en landing — no UI.",
-    themes: ["landing"],
+    hex: hx("atmosphere", "neon"),
+    usage: "Solo blur en hero — no UI.",
+    themes: ["marketing"],
   },
 ]
 
 export const ROOTSY_COLOR_ROLES: ProductColorRole[] = [
   {
-    roleLabel: "Ceniza · catálogo",
+    roleLabel: "Sombra · catálogo",
     description: "Rail, canvas, cards, toolbox — columna oscura POS.",
-    bg: hx("ceniza", "600"),
+    bg: hx("sombra", "600"),
     text: ON_DARK,
-    border: hx("bruma", "700"),
+    border: hx("sombra", "border"),
     exampleLabel: "Catálogo",
   },
   {
@@ -406,21 +423,21 @@ export const ROOTSY_COLOR_ROLES: ProductColorRole[] = [
   {
     roleLabel: "Savia · selección",
     description: "Rail activo, ring, barra de foco — sin elevar a CTA.",
-    bg: hx("ceniza", "600"),
+    bg: hx("sombra", "600"),
     text: hx("savia", "400"),
     border: hx("savia", "400"),
     exampleLabel: "Bebidas",
   },
   {
-    roleLabel: "Landing · hero",
-    description: "Fondo promocional, títulos blancos, links meadow.",
-    bg: hx("landing", "950"),
+    roleLabel: "Sombra · noche",
+    description: "Fondo del hero — sombra 900, misma noche que el parque digital.",
+    bg: hx("sombra", "900"),
     text: W,
     exampleLabel: "Rootsy",
   },
   {
-    roleLabel: "Landing · CTA",
-    description: "Emerald a teal — único botón primario del hero.",
+    roleLabel: "Savia · CTA promo",
+    description: "Emerald a teal — botón primario del hero (savia 500→teal).",
     bg: hx("savia", "500"),
     text: W,
     exampleLabel: "Empezar",
@@ -429,13 +446,13 @@ export const ROOTSY_COLOR_ROLES: ProductColorRole[] = [
 
 export const ROOTSY_PRODUCT_EMPHASIS: ProductEmphasisFamily[] = [
   {
-    id: "ceniza",
-    label: "Ceniza",
+    id: "sombra",
+    label: "Sombra",
     levels: [
-      { id: "z950", label: "950 · shell", hex: hx("ceniza", "950") },
-      { id: "z700", label: "700 · rail", hex: hx("ceniza", "700") },
-      { id: "z600", label: "600 · canvas", hex: hx("ceniza", "600") },
-      { id: "z500", label: "500 · card", hex: hx("ceniza", "500") },
+      { id: "z950", label: "950 · shell", hex: hx("sombra", "950") },
+      { id: "z700", label: "700 · rail", hex: hx("sombra", "700") },
+      { id: "z600", label: "600 · canvas", hex: hx("sombra", "600") },
+      { id: "z500", label: "500 · card", hex: hx("sombra", "500") },
     ],
   },
   {
@@ -458,42 +475,32 @@ export const ROOTSY_PRODUCT_EMPHASIS: ProductEmphasisFamily[] = [
       { id: "s975", label: "975 · totales", hex: hx("savia", "975") },
     ],
   },
-  {
-    id: "landing",
-    label: "Landing",
-    levels: [
-      { id: "l950", label: "950 · hero", hex: hx("landing", "950") },
-      { id: "l500", label: "500 · forest", hex: hx("savia", "500") },
-      { id: "l400", label: "400 · meadow", hex: hx("savia", "400") },
-      { id: "t500", label: "Teal · CTA end", hex: hx("landing", "teal") },
-    ],
-  },
 ]
 
 export const ROOTSY_COMPLEMENTARY_PAIRINGS: ComplementaryPairing[] = [
   {
     id: "pos-core",
-    title: "Ceniza + Savia",
-    description: "Par rector del mostrador — neutro frío sostiene, savia acciona.",
-    primary: { label: "Ceniza 600", hex: hx("ceniza", "600") },
+    title: "Sombra + Savia",
+    description: "Par rector del mostrador — dosel verde sostiene, savia acciona.",
+    primary: { label: "Sombra 600", hex: hx("sombra", "600") },
     secondary: { label: "Savia 600", hex: hx("savia", "600") },
     harmony: "neutral-action",
     usage: "Catálogo + Vender + cards seleccionadas.",
   },
   {
     id: "pos-split",
-    title: "Ceniza + Bruma",
-    description: "Split de columnas — mismo matiz azul-ceniza, máxima legibilidad.",
-    primary: { label: "Ceniza 700", hex: hx("ceniza", "700") },
+    title: "Sombra + Bruma",
+    description: "Split de columnas — dosel y neblina, máxima legibilidad natural.",
+    primary: { label: "Sombra 700", hex: hx("sombra", "700") },
     secondary: { label: "Bruma 100", hex: hx("bruma", "100") },
     harmony: "complementary",
     usage: "Layout Vender completo.",
   },
   {
     id: "pos-focus",
-    title: "Ceniza + Savia 400",
+    title: "Sombra + Savia 400",
     description: "Foco sin competir con CTA — anillo y rail activo.",
-    primary: { label: "Ceniza 500", hex: hx("ceniza", "500") },
+    primary: { label: "Sombra 500", hex: hx("sombra", "500") },
     secondary: { label: "Savia 400", hex: hx("savia", "400") },
     harmony: "analogous",
     usage: "Categoría activa, card seleccionada, ring input.",
@@ -509,31 +516,31 @@ export const ROOTSY_COMPLEMENTARY_PAIRINGS: ComplementaryPairing[] = [
   },
   {
     id: "workspace-header",
-    title: "Ceniza header + Bruma body",
-    description: "Continuidad POS→workspace — header ceniza, contenido bruma.",
-    primary: { label: "Ceniza 700", hex: hx("ceniza", "700") },
+    title: "Sombra header + Bruma body",
+    description: "Continuidad POS→workspace — header bajo el dosel, contenido en bruma.",
+    primary: { label: "Sombra 700", hex: hx("sombra", "700") },
     secondary: { label: "Bruma 100", hex: hx("bruma", "100") },
     harmony: "complementary",
     usage: "DataWorkspace, librería, listados.",
   },
   {
-    id: "landing-cta",
-    title: "Forest + Teal",
-    description: "CTA promocional — confianza emerald, cierre teal.",
-    primary: { label: "Forest 500", hex: hx("savia", "500") },
-    secondary: { label: "Teal 500", hex: hx("landing", "teal") },
+    id: "marketing-cta",
+    title: "Savia + Teal",
+    description: "CTA promocional — confianza emerald, cierre teal (misma familia savia).",
+    primary: { label: "Savia 500", hex: hx("savia", "500") },
+    secondary: { label: "Savia teal", hex: hx("savia", "teal") },
     harmony: "analogous",
-    usage: "Botón hero landing.",
+    usage: "Botón hero marketing.",
   },
   {
-    id: "landing-glow",
-    title: "Landing 950 + Meadow",
-    description: "Hero nocturno — carbón verdoso, acento luminoso.",
-    primary: { label: "Landing 950", hex: hx("landing", "950") },
-    secondary: { label: "Meadow 400", hex: hx("savia", "400") },
-    accent: { label: "Aurora", hex: hx("landing", "neon") },
+    id: "marketing-glow",
+    title: "Sombra + Savia + Aurora",
+    description: "Hero nocturno — noche del parque, savia luminosa, aurora en blur.",
+    primary: { label: "Sombra 900", hex: hx("sombra", "900") },
+    secondary: { label: "Savia 400", hex: hx("savia", "400") },
+    accent: { label: "Aurora", hex: hx("atmosphere", "neon") },
     harmony: "split",
-    usage: "Títulos, links, glow — aurora solo en blur.",
+    usage: "Títulos, links, glow — aurora solo en atmósfera.",
   },
   {
     id: "status-functional",
@@ -558,19 +565,19 @@ export const ROOTSY_CONTRAST_PAIRS: ContrastPair[] = [
   },
   {
     id: "pos-muted",
-    foreground: hx("ceniza", "300"),
-    background: hx("ceniza", "600"),
+    foreground: hx("sombra", "300"),
+    background: hx("sombra", "600"),
     ratio: "5.8:1",
     level: "AA",
-    context: "Labels inactivos rail sobre ceniza 600.",
+    context: "Labels inactivos rail sobre sombra 600.",
   },
   {
     id: "pos-primary-text",
     foreground: ON_DARK,
-    background: hx("ceniza", "500"),
+    background: hx("sombra", "500"),
     ratio: "11.2:1",
     level: "AAA",
-    context: "Título producto en card ceniza 500.",
+    context: "Título producto en card sombra 500.",
   },
   {
     id: "cta-savia-white",
@@ -597,28 +604,36 @@ export const ROOTSY_CONTRAST_PAIRS: ContrastPair[] = [
     context: "Cuerpo en formularios workspace.",
   },
   {
-    id: "landing-hero",
+    id: "marketing-hero",
     foreground: W,
-    background: hx("landing", "950"),
+    background: hx("sombra", "900"),
     ratio: "15.8:1",
     level: "AAA",
-    context: "Headline hero landing.",
+    context: "Headline hero marketing.",
   },
   {
-    id: "landing-meadow",
+    id: "marketing-savia-link",
     foreground: hx("savia", "400"),
-    background: hx("landing", "950"),
+    background: hx("sombra", "900"),
     ratio: "8.9:1",
     level: "AAA",
-    context: "Links meadow en hero.",
+    context: "Links savia 400 en hero marketing.",
   },
   {
     id: "library-nav",
+    foreground: "#F8FAFC",
+    background: hx("sombra", "700"),
+    ratio: "11.5:1",
+    level: "AAA",
+    context: "Nav activo en librería — blanco sobre sombra 700.",
+  },
+  {
+    id: "library-nav-focus",
     foreground: hx("savia", "400"),
-    background: hx("ceniza", "700"),
+    background: hx("sombra", "700"),
     ratio: "6.2:1",
     level: "AA",
-    context: "Nav activo savia 400 sobre ceniza 700.",
+    context: "Acento savia 400 — ring y estados de foco en nav.",
   },
   {
     id: "fail-muted-light",
@@ -632,31 +647,31 @@ export const ROOTSY_CONTRAST_PAIRS: ContrastPair[] = [
 
 export const ROOTSY_SURFACE_STACKS: Record<ColorThemeId, SurfaceLayer[]> = {
   pos: [
-    { level: 0, label: "Shell", token: "ceniza-950", hex: hx("ceniza", "950"), usage: "Viewport." },
-    { level: 1, label: "Rail", token: "ceniza-700", hex: hx("ceniza", "700"), usage: "Categorías." },
-    { level: 2, label: "Canvas", token: "ceniza-600", hex: hx("ceniza", "600"), usage: "Grilla." },
-    { level: 3, label: "Card", token: "ceniza-500", hex: hx("ceniza", "500"), usage: "Producto." },
-    { level: 4, label: "Toolbox", token: "ceniza-900", hex: hx("ceniza", "900"), usage: "Barra inferior." },
+    { level: 0, label: "Shell", token: "sombra-950", hex: hx("sombra", "950"), usage: "Viewport." },
+    { level: 1, label: "Rail", token: "sombra-700", hex: hx("sombra", "700"), usage: "Categorías." },
+    { level: 2, label: "Canvas", token: "sombra-600", hex: hx("sombra", "600"), usage: "Grilla." },
+    { level: 3, label: "Card", token: "sombra-500", hex: hx("sombra", "500"), usage: "Producto." },
+    { level: 4, label: "Toolbox", token: "sombra-900", hex: hx("sombra", "900"), usage: "Barra inferior." },
     { level: 5, label: "Totales", token: "savia-975→990", hex: hx("savia", "975"), usage: "Gradiente cobro." },
   ],
   workspace: [
     { level: 0, label: "Shell", token: "bruma-100", hex: hx("bruma", "100"), usage: "Fondo página." },
     { level: 1, label: "Surface", token: "white", hex: W, usage: "Cards, inputs." },
     { level: 2, label: "Subtle", token: "bruma-50", hex: hx("bruma", "50"), usage: "Filas zebra." },
-    { level: 3, label: "Header", token: "ceniza-700", hex: hx("ceniza", "700"), usage: "Cabecera oscura." },
-    { level: 4, label: "Overlay", token: "ceniza-950/40", hex: "#070A0966", usage: "Scrim modal." },
+    { level: 3, label: "Header", token: "sombra-700", hex: hx("sombra", "700"), usage: "Cabecera oscura." },
+    { level: 4, label: "Overlay", token: "sombra-950/40", hex: "#05080766", usage: "Scrim modal." },
   ],
-  landing: [
-    { level: 0, label: "Atmosphere", token: "landing-950", hex: hx("landing", "950"), usage: "Hero fijo." },
-    { level: 1, label: "Content", token: "landing-800", hex: hx("landing", "800"), usage: "Paneles." },
+  marketing: [
+    { level: 0, label: "Atmosphere", token: "sombra-900", hex: hx("sombra", "900"), usage: "Hero fijo." },
+    { level: 1, label: "Content", token: "sombra-800", hex: hx("sombra", "800"), usage: "Paneles." },
     { level: 2, label: "Glass", token: "white/6", hex: "#FFFFFF0F", usage: "Tiles." },
-    { level: 3, label: "Glow", token: "meadow/32", hex: "#34D39952", usage: "Halos blur." },
+    { level: 3, label: "Glow", token: "savia-400/32", hex: "#34D39952", usage: "Halos blur savia." },
   ],
   library: [
-    { level: 0, label: "Rail", token: "ceniza-700", hex: hx("ceniza", "700"), usage: "Sidebar nav." },
+    { level: 0, label: "Rail", token: "sombra-700", hex: hx("sombra", "700"), usage: "Sidebar nav." },
     { level: 1, label: "Content", token: "bruma-100", hex: hx("bruma", "100"), usage: "Área lectura." },
     { level: 2, label: "Card", token: "white", hex: W, usage: "Docs, tablas." },
-    { level: 3, label: "Header", token: "ceniza-gradient", hex: hx("ceniza", "950"), usage: "Top bar." },
+    { level: 3, label: "Header", token: "sombra-gradient", hex: hx("sombra", "950"), usage: "Top bar." },
   ],
 }
 
@@ -688,8 +703,8 @@ export const ROOTSY_INTERACTION_STATES = [
   {
     id: "pos-rest",
     label: "Reposo POS",
-    border: hx("bruma", "700"),
-    background: hx("ceniza", "500"),
+    border: hx("sombra", "border"),
+    background: hx("sombra", "500"),
     ring: "none",
     context: "pos",
   },
@@ -697,7 +712,7 @@ export const ROOTSY_INTERACTION_STATES = [
     id: "pos-active",
     label: "Activo POS",
     border: hx("savia", "400"),
-    background: hx("ceniza", "600"),
+    background: hx("sombra", "600"),
     ring: `0 0 0 2px ${hx("savia", "400")}66`,
     context: "pos",
   },
@@ -714,10 +729,10 @@ export const ROOTSY_INTERACTION_STATES = [
 /** Secuencia categórica — solo familias de producto. */
 export const ROOTSY_CHART_SEQUENCE = [
   { id: "ch1", label: "Savia", hex: hx("savia", "600"), usage: "Serie principal." },
-  { id: "ch2", label: "Teal", hex: hx("landing", "teal"), usage: "Serie 2 — landing." },
-  { id: "ch3", label: "Ceniza", hex: hx("ceniza", "400"), usage: "Referencia neutra." },
+  { id: "ch2", label: "Teal", hex: hx("savia", "teal"), usage: "Serie 2 — extensión savia." },
+  { id: "ch3", label: "Sombra", hex: hx("sombra", "400"), usage: "Referencia neutra." },
   { id: "ch4", label: "Bruma", hex: hx("bruma", "600"), usage: "Serie secundaria." },
-  { id: "ch5", label: "Meadow", hex: hx("savia", "400"), usage: "Highlight POS." },
+  { id: "ch5", label: "Savia 400", hex: hx("savia", "400"), usage: "Highlight POS." },
 ] as const
 
 /** Estados en gráficos — savia + funcionales. */
@@ -725,6 +740,6 @@ export const ROOTSY_CHART_STATUS = [
   { id: "ok", label: "OK / en curso", hex: hx("savia", "500"), boldHex: hx("savia", "600") },
   { id: "warn", label: "Atención", hex: FUNCTIONAL.warning, boldHex: FUNCTIONAL.warningDark },
   { id: "crit", label: "Crítico", hex: FUNCTIONAL.danger, boldHex: FUNCTIONAL.dangerDark },
-  { id: "info", label: "Información", hex: hx("landing", "teal"), boldHex: FUNCTIONAL.infoDark },
-  { id: "idle", label: "Pendiente", hex: hx("ceniza", "300"), boldHex: hx("bruma", "500") },
+  { id: "info", label: "Información", hex: hx("savia", "teal"), boldHex: FUNCTIONAL.infoDark },
+  { id: "idle", label: "Pendiente", hex: hx("sombra", "300"), boldHex: hx("sombra", "400") },
 ] as const

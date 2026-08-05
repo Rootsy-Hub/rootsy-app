@@ -5,6 +5,7 @@ import {
   NATURE_RHYTHM_TIERS,
   ROOTSY_NEGATIVE_SPACING_TOKENS,
   ROOTSY_SPACING_BASE_PX,
+  ROOTSY_SPACING_CONCEPT,
   ROOTSY_SPACING_SEMANTIC_ROLES,
   ROOTSY_SPACING_TOKENS,
   SPACING_LAYOUT_GUIDELINES,
@@ -12,14 +13,12 @@ import {
   type SpacingToken,
 } from "@/app/[siteId]/[popId]/library/spacing/rootsySpacingScale"
 import {
-  CANOPY,
-  CANOPY_DARK,
-  CANOPY_LIGHT,
-  CANOPY_MIST,
-  LibraryGuidelineCards,
-  LibraryManifestoHero,
-} from "@/app/[siteId]/[popId]/library/libraryDocPrimitives"
-import type { CSSProperties } from "react"
+  CONCEPT_TOKENS,
+  FoundationBrumaStage,
+  FoundationConceptHero,
+} from "@/app/[siteId]/[popId]/library/libraryFoundationDocShared"
+import { LibraryGuidelineCards } from "@/app/[siteId]/[popId]/library/libraryDocPrimitives"
+import type { CSSProperties, ReactNode } from "react"
 
 export {
   LibraryDocLead as SpacingDocLead,
@@ -28,14 +27,72 @@ export {
   LibraryRelatedLinks as SpacingRelatedLinks,
 } from "@/app/[siteId]/[popId]/library/libraryDocPrimitives"
 
-export function SpacingManifestoHero() {
+function TechnicalSubheading({ children }: { children: ReactNode }) {
   return (
-    <LibraryManifestoHero
+    <p
+      className="font-canopy text-xs font-semibold uppercase tracking-wide"
+      style={{ color: CONCEPT_TOKENS.bruma500 }}
+    >
+      {children}
+    </p>
+  )
+}
+
+function SpacingRhythmBarsDemo() {
+  const samples = [
+    { px: 8, label: "space.100 · Hoja", isBase: true },
+    { px: 16, label: "space.200 · Rama", isBase: false },
+    { px: 24, label: "space.300 · Tronco", isBase: false },
+    { px: 32, label: "space.400 · Claro", isBase: false },
+  ] as const
+
+  return (
+    <div className="space-y-3">
+      {samples.map((sample) => (
+        <div key={sample.label} className="flex items-center gap-3">
+          <span
+            className="w-32 shrink-0 font-canopy text-[10px]"
+            style={{ color: CONCEPT_TOKENS.bruma600 }}
+          >
+            {sample.label}
+          </span>
+          <div
+            className="rounded-sm"
+            style={{
+              width: sample.px,
+              height: 24,
+              backgroundColor: sample.isBase
+                ? CONCEPT_TOKENS.savia600
+                : CONCEPT_TOKENS.savia100,
+              outline: sample.isBase ? `2px solid ${CONCEPT_TOKENS.savia600}` : undefined,
+            }}
+          />
+          <span className="font-mono text-[10px]" style={{ color: CONCEPT_TOKENS.bruma500 }}>
+            {sample.px}px
+          </span>
+        </div>
+      ))}
+    </div>
+  )
+}
+
+export function SpacingSystemHero() {
+  return (
+    <FoundationConceptHero
       eyebrow="Rootsy · Espaciado"
-      title="El bosque tiene ritmo"
-      description="Rocío, hoja, rama, tronco, claro y horizonte — seis capas de distancia sobre una base de 8px."
+      concept={ROOTSY_SPACING_CONCEPT}
+      stage={
+        <FoundationBrumaStage caption="Rocío → horizonte · savia marca la unidad base (space.100).">
+          <SpacingRhythmBarsDemo />
+        </FoundationBrumaStage>
+      }
     />
   )
+}
+
+/** @deprecated Usar SpacingSystemHero */
+export function SpacingManifestoHero() {
+  return <SpacingSystemHero />
 }
 
 function SpacingBar({ token }: { token: SpacingToken }) {
@@ -49,8 +106,8 @@ function SpacingBar({ token }: { token: SpacingToken }) {
         style={{
           width,
           height: 24,
-          backgroundColor: isBase ? CANOPY : CANOPY_LIGHT,
-          outline: isBase ? `2px solid ${CANOPY}` : undefined,
+          backgroundColor: isBase ? CONCEPT_TOKENS.savia600 : CONCEPT_TOKENS.savia100,
+          outline: isBase ? `2px solid ${CONCEPT_TOKENS.savia600}` : undefined,
         }}
       />
       <span className="w-12 shrink-0 text-right font-mono text-xs text-muted-foreground">
@@ -78,14 +135,14 @@ export function SpacingScaleTable() {
             <div
               key={token.id}
               className="grid grid-cols-[1fr_auto_auto_auto_auto_auto] items-center gap-x-3 px-4 py-2.5"
-              style={isBase ? { backgroundColor: CANOPY_MIST } : undefined}
+              style={isBase ? { backgroundColor: CONCEPT_TOKENS.bruma50 } : undefined}
             >
               <span className="font-mono text-sm text-foreground">
                 {token.token}
                 {isBase ? (
                   <span
                     className="ml-2 rounded px-1.5 py-0.5 text-[10px] font-bold uppercase"
-                    style={{ backgroundColor: CANOPY, color: "#fff" }}
+                    style={{ backgroundColor: CONCEPT_TOKENS.savia600, color: CONCEPT_TOKENS.white }}
                   >
                     base
                   </span>
@@ -119,11 +176,11 @@ export function NatureRhythmTiersGrid() {
           className="rounded-xl border border-border/70 bg-card p-4 shadow-sm"
           style={{
             borderLeftWidth: 3,
-            borderLeftColor: `color-mix(in srgb, ${CANOPY} ${40 + index * 10}%, ${CANOPY_LIGHT})`,
+            borderLeftColor: `color-mix(in srgb, ${CONCEPT_TOKENS.savia600} ${40 + index * 10}%, ${CONCEPT_TOKENS.savia100})`,
           }}
         >
           <p className="text-sm font-semibold text-foreground">{tier.title}</p>
-          <p className="text-xs font-medium" style={{ color: CANOPY_DARK }}>
+          <p className="text-xs font-medium" style={{ color: CONCEPT_TOKENS.savia800 }}>
             {tier.subtitle} · {tier.pxRange}
           </p>
           <p className="mt-2 font-mono text-[10px] text-muted-foreground">
@@ -199,7 +256,7 @@ export function BaseUnitDemo() {
             style={{
               width: ROOTSY_SPACING_BASE_PX,
               height: ROOTSY_SPACING_BASE_PX * 4,
-              backgroundColor: CANOPY,
+              backgroundColor: CONCEPT_TOKENS.savia600,
             }}
           />
           <p className="font-mono text-xs text-foreground">8 × 32px</p>
@@ -228,15 +285,15 @@ export function SpacingRangeOverview() {
         <div className="relative h-8 overflow-hidden rounded-full bg-muted/50">
           <div
             className="absolute inset-y-0 left-0 rounded-l-full"
-            style={{ width: "10%", backgroundColor: CANOPY_LIGHT }}
+            style={{ width: "10%", backgroundColor: CONCEPT_TOKENS.savia100 }}
           />
           <div
             className="absolute inset-y-0"
-            style={{ left: "10%", width: "17.5%", backgroundColor: "#6DD99E" }}
+            style={{ left: "10%", width: "17.5%", backgroundColor: CONCEPT_TOKENS.savia500 }}
           />
           <div
             className="absolute inset-y-0 rounded-r-full"
-            style={{ left: "27.5%", width: "72.5%", backgroundColor: CANOPY }}
+            style={{ left: "27.5%", width: "72.5%", backgroundColor: CONCEPT_TOKENS.savia600 }}
           />
           <div
             className="absolute inset-y-0 w-0.5 bg-white/80"
@@ -293,7 +350,7 @@ export function SpacingGuidelineCards() {
 export function SimilarityDemo() {
   return (
     <div className="grid gap-4 sm:grid-cols-2">
-      <div className="rounded-xl border-2 p-4" style={{ borderColor: CANOPY }}>
+      <div className="rounded-xl border-2 p-4" style={{ borderColor: CONCEPT_TOKENS.savia600 }}>
         <p className="mb-3 text-xs font-bold uppercase tracking-wider text-primary">
           ✓ Hacer
         </p>
@@ -302,11 +359,11 @@ export function SimilarityDemo() {
             <div
               key={i}
               className="flex items-center gap-2 rounded-lg px-3 py-2"
-              style={{ backgroundColor: CANOPY_MIST }}
+              style={{ backgroundColor: CONCEPT_TOKENS.bruma50 }}
             >
               <div
                 className="size-8 shrink-0 rounded-md"
-                style={{ backgroundColor: CANOPY_LIGHT }}
+                style={{ backgroundColor: CONCEPT_TOKENS.savia100 }}
               />
               <div className="min-w-0 flex-1">
                 <p className="text-sm font-medium">Ítem {i}</p>
@@ -326,13 +383,13 @@ export function SimilarityDemo() {
               key={i}
               className="flex items-center gap-2 rounded-lg px-3 py-2"
               style={{
-                backgroundColor: CANOPY_MIST,
+                backgroundColor: CONCEPT_TOKENS.bruma50,
                 marginBottom: gap,
               }}
             >
               <div
                 className="size-8 shrink-0 rounded-md"
-                style={{ backgroundColor: CANOPY_LIGHT }}
+                style={{ backgroundColor: CONCEPT_TOKENS.savia100 }}
               />
               <p className="text-sm">Ítem {i + 1} · gap {gap}px</p>
             </div>
@@ -355,14 +412,14 @@ export function ProximityDemo() {
           <button
             type="button"
             className="rounded-lg px-4 py-2 text-sm font-medium text-white"
-            style={{ backgroundColor: CANOPY }}
+            style={{ backgroundColor: CONCEPT_TOKENS.savia600 }}
           >
             Acción principal
           </button>
           <button
             type="button"
             className="rounded-lg border px-4 py-2 text-sm"
-            style={{ borderColor: CANOPY_LIGHT }}
+            style={{ borderColor: CONCEPT_TOKENS.savia100 }}
           >
             Secundaria
           </button>
@@ -381,7 +438,7 @@ function DemoCard({ label }: { label: string }) {
   return (
     <div
       className="flex min-h-[72px] min-w-[100px] flex-1 items-center justify-center rounded-lg border text-xs font-medium"
-      style={{ borderColor: CANOPY_LIGHT, backgroundColor: "#fff", color: CANOPY_DARK }}
+      style={{ borderColor: CONCEPT_TOKENS.savia100, backgroundColor: CONCEPT_TOKENS.white, color: CONCEPT_TOKENS.savia800 }}
     >
       {label}
     </div>
@@ -395,11 +452,11 @@ export function BoxPrimitiveDemo() {
         className="rounded-2xl border border-dashed border-border/70"
         style={{
           padding: 24,
-          backgroundColor: CANOPY_MIST,
+          backgroundColor: CONCEPT_TOKENS.bruma50,
         }}
       >
         <p className="mb-4 text-xs font-mono text-muted-foreground">
-          Box · padding space.300 (24px) · bg canopy-50
+          Box · padding space.300 (24px) · bg bruma-50
         </p>
         <div className="flex flex-wrap gap-4">
           <DemoCard label="Card A" />
@@ -455,7 +512,7 @@ export function CombinedPrimitivesDemo() {
   return (
     <div
       className="rounded-2xl border border-border/70 p-6"
-      style={{ backgroundColor: CANOPY_MIST }}
+      style={{ backgroundColor: CONCEPT_TOKENS.bruma50 }}
     >
       <div className="flex flex-col" style={{ gap: 32 }}>
         <div>
@@ -524,17 +581,17 @@ export function NegativeSpacingDemo() {
     <div className="relative overflow-hidden rounded-2xl border border-border/70 p-8">
       <div
         className="absolute inset-4 rounded-xl border-2 border-dashed"
-        style={{ borderColor: CANOPY_LIGHT }}
+        style={{ borderColor: CONCEPT_TOKENS.savia100 }}
       />
       <div
         className="relative rounded-xl p-4 text-sm"
         style={{
-          backgroundColor: "#fff",
+          backgroundColor: CONCEPT_TOKENS.white,
           margin: -8,
           boxShadow: "0 4px 12px rgba(30, 143, 90, 0.12)",
         }}
       >
-        <p className="font-medium" style={{ color: CANOPY_DARK }}>
+        <p className="font-medium" style={{ color: CONCEPT_TOKENS.savia800 }}>
           Bleed / negative space.100 (−8px)
         </p>
         <p className="mt-1 text-xs text-muted-foreground">
@@ -552,6 +609,32 @@ export function TokenUsageStrip({ gapPx }: { gapPx: number }) {
     <div className="flex items-center" style={style}>
       <div className="size-6 rounded bg-primary/20" />
       <span className="text-sm">Texto</span>
+    </div>
+  )
+}
+
+export function SpacingTechnicalDetails() {
+  return (
+    <div className="space-y-8">
+      <div className="space-y-3">
+        <TechnicalSubheading>Escala completa</TechnicalSubheading>
+        <SpacingScaleTable />
+      </div>
+
+      <div className="space-y-3">
+        <TechnicalSubheading>Roles semánticos</TechnicalSubheading>
+        <SpacingSemanticRolesTable />
+      </div>
+
+      <div className="space-y-3">
+        <TechnicalSubheading>Valores negativos</TechnicalSubheading>
+        <NegativeSpacingTable />
+      </div>
+
+      <div className="space-y-3">
+        <TechnicalSubheading>Guías de layout</TechnicalSubheading>
+        <SpacingGuidelineCards />
+      </div>
     </div>
   )
 }

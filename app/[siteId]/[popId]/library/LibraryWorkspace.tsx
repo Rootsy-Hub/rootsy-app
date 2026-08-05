@@ -1,18 +1,13 @@
 "use client"
 
 import { LibrarySectionView } from "@/app/[siteId]/[popId]/library/LibrarySectionView"
+import { LibrarySidebar } from "@/app/[siteId]/[popId]/library/LibrarySidebar"
 import {
   libraryContentAreaClass,
   libraryContentEyebrowClass,
-  libraryScrollDarkClass,
   libraryScrollLightClass,
-  librarySidebarClass,
-  librarySidebarEyebrowClass,
 } from "@/app/[siteId]/[popId]/library/libraryColorTheme"
-import {
-  getLibraryNavGroup,
-  LibraryNav,
-} from "@/app/[siteId]/[popId]/library/layoutLibraryShared"
+import { getLibraryNavGroup } from "@/app/[siteId]/[popId]/library/layoutLibraryShared"
 import { useState } from "react"
 
 type Props = {
@@ -28,25 +23,7 @@ export function LibraryWorkspace({ siteId, popId, sectionId }: Props) {
   return (
     <>
       <div className="flex min-h-0 flex-1">
-        <aside
-          className={`hidden w-60 shrink-0 border-r lg:block ${librarySidebarClass}`}
-        >
-          <div
-            className={`sticky top-0 max-h-[calc(100dvh-4rem)] overflow-y-auto px-4 py-6 ${libraryScrollDarkClass}`}
-          >
-            <p
-              className={`mb-4 px-0 text-[10px] font-semibold uppercase ${librarySidebarEyebrowClass}`}
-            >
-              Librería
-            </p>
-            <LibraryNav
-              siteId={siteId}
-              popId={popId}
-              activeSectionId={sectionId}
-              className="mt-4"
-            />
-          </div>
-        </aside>
+        <LibrarySidebar siteId={siteId} popId={popId} activeSectionId={sectionId} />
 
         <div
           className={`min-h-0 flex-1 overflow-y-auto px-4 py-6 sm:px-6 lg:px-10 ${libraryContentAreaClass} ${libraryScrollLightClass}`}

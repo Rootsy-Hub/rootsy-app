@@ -3,6 +3,23 @@
  * Iconsax (tier gratuito) como set de producto.
  */
 
+import { rootsyColorHex } from "@/lib/design-system"
+
+const hx = rootsyColorHex
+
+export const ROOTSY_ICONOGRAPHY_CONCEPT = {
+  title: "Señales SaaS",
+  lead:
+    "Los íconos de Rootsy son señales de producto — neutras, legibles, sin decoración. Iconsax en tier gratuito: ~1.000 íconos sobre grid 24px. La identidad nature vive en color, tipografía e ilustración — no en íconos orgánicos dentro de la app.",
+  why: [
+    "Naturalidad: la marca respira en savia y bruma — el ícono acompaña, no compite con la identidad visual.",
+    "Simplicidad: Linear 16px en UI, Bold en activo — un set, dos variantes, sin SVG ad hoc.",
+    "Intuitivo: carrito, recibo, engranaje — metáforas establecidas que el usuario reconoce al instante.",
+  ],
+  closing:
+    "Cada ícono acompaña una acción o estado, con label de texto siempre que sea posible.",
+} as const
+
 export type IconSize = {
   id: string
   token: string
@@ -35,20 +52,24 @@ export const ROOTSY_ICONOGRAPHY_MANIFESTO =
 
 export const ROOTSY_ICONOGRAPHY_PRINCIPLES = [
   {
-    title: "Comprensión universal",
-    detail: "Metáforas establecidas — carrito, recibo, engranaje. Sin símbolos decorativos en UI.",
+    title: "Intuitivo · metáforas claras",
+    detail:
+      "Carrito, recibo, engranaje — símbolos que el usuario ya conoce. Sin decoración en UI operativa.",
   },
   {
-    title: "Simplicidad legible",
-    detail: "Silueta mínima en 16px — reconocible al instante en mostrador y tesorería.",
+    title: "Simplicidad · Linear 16px",
+    detail:
+      "Silueta mínima reconocible en mostrador y tesorería — chevrons 12px en triggers compactos.",
   },
   {
-    title: "Armonía visual",
-    detail: "Un solo set Iconsax · variant Linear en UI · Bold en nav activo.",
+    title: "Naturalidad · neutro en producto",
+    detail:
+      "Iconsax como capa SaaS; savia y bruma en color — la identidad nature no vive en el trazo del ícono.",
   },
   {
     title: "Uso intencional",
-    detail: "Ícono + texto label. Sin íconos donde un botón con palabra basta.",
+    detail:
+      "Ícono + texto label. Sin íconos donde un botón con palabra basta.",
   },
 ] as const
 
@@ -144,15 +165,15 @@ export const ROOTSY_ICON_COLOR_ROLES: IconColorRole[] = [
   {
     id: "brand",
     token: "icon.color.brand",
-    label: "Canopy",
+    label: "Savia",
     usage: "Acciones primarias, nav activo.",
-    hex: "#1E8F5A",
+    hex: hx("savia", "600"),
   },
   {
     id: "inverse",
     token: "icon.color.inverse",
     label: "Inverso",
-    usage: "Sobre fondos canopy o dark shell.",
+    usage: "Sobre fondos savia o dark shell.",
     hex: "#FFFFFF",
   },
   {

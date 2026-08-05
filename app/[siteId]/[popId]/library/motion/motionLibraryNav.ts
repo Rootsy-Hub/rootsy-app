@@ -24,13 +24,13 @@ export const MOTION_PAGE_META: Record<string, MotionPageMeta> = {
     id: "motion",
     title: "Movimiento",
     description:
-      "Viento, brisa y ráfaga — motion orgánico que guía sin distraer, al ritmo de Rootsy.",
+      "Naturalidad, simplicidad e intuición — brisa en hover, ráfaga en modal, tokens semánticos.",
   },
   "motion-applying": {
     id: "motion-applying",
     title: "Aplicar movimiento",
     description:
-      "Tokens semánticos, composición custom e interacciones vs transiciones.",
+      "Tokens semánticos primero — composición custom, entradas/salidas y reduced motion.",
   },
 }
 

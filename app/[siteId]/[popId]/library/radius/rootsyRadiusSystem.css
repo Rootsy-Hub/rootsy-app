@@ -7,6 +7,7 @@
   --radius-xxlarge: 22px;
   --radius-full: 9999px;
   --radius-tile: 34%;
+  --radius-focus-color: var(--rootsy-savia-400, #34d399);
 }
 
 .rootsy-radius-preview {
@@ -15,9 +16,9 @@
   justify-content: center;
   width: 4.5rem;
   height: 3rem;
-  background: oklch(0.55 0.14 155 / 0.12);
-  border: 1px solid oklch(0.55 0.14 155 / 0.25);
-  color: oklch(0.35 0.08 155);
+  background: var(--rootsy-savia-50, #ecfdf5);
+  border: 1px solid rgb(5 150 105 / 0.25);
+  color: var(--rootsy-savia-800, #065f46);
   font-size: 0.625rem;
   font-weight: 700;
   text-transform: uppercase;
@@ -49,7 +50,7 @@
 .rootsy-radius-focus-demo__ring {
   position: absolute;
   inset: -4px;
-  border: 2px solid oklch(0.45 0.12 155 / 0.55);
+  border: 2px solid rgb(52 211 153 / 0.55);
   pointer-events: none;
 }
 
@@ -78,24 +79,24 @@
 .rootsy-radius-form-demo input {
   height: 2.75rem;
   padding: 0 0.75rem;
-  border: 1px solid oklch(0.88 0.02 130);
+  border: 1px solid var(--rootsy-bruma-200, #dfe4ea);
   border-radius: var(--radius-large);
   font-size: 0.875rem;
   outline: none;
 }
 
 .rootsy-radius-form-demo input:focus-visible {
-  border-color: oklch(0.45 0.12 155);
-  box-shadow: 0 0 0 2px oklch(0.45 0.12 155 / 0.45);
+  border-color: var(--radius-focus-color);
+  box-shadow: 0 0 0 2px rgb(52 211 153 / 0.45);
 }
 
 .rootsy-radius-modal-demo {
   max-width: 14rem;
   padding: 1rem 1.25rem;
-  border: 1px solid oklch(0 0 0 / 0.04);
+  border: 1px solid rgb(0 0 0 / 0.04);
   border-radius: var(--radius-xxlarge);
   background: white;
-  box-shadow: 0 22px 70px -18px oklch(0.25 0.03 150 / 0.28);
+  box-shadow: 0 22px 70px -18px rgb(5 8 7 / 0.28);
 }
 
 .rootsy-radius-avatar-demo {
@@ -103,6 +104,6 @@
   height: 3.5rem;
   overflow: hidden;
   border-radius: var(--radius-full);
-  box-shadow: 0 0 0 2px oklch(1 0 0 / 0.14);
-  background: oklch(0.55 0.14 155 / 0.2);
+  box-shadow: 0 0 0 2px rgb(255 255 255 / 0.14);
+  background: var(--rootsy-savia-100, #d1fae5);
 }

@@ -28,7 +28,7 @@ export function getRadiusPageMeta(sectionId: string): RadiusPageMeta | undefined
 
 export const RADIUS_RELATED_LINKS = [
   { sectionId: "border", label: "Borde", hint: "Ancho de focus ring 2px." },
-  { sectionId: "colors", label: "Color", hint: "Ring emerald en foco." },
+  { sectionId: "colors", label: "Color", hint: "Ring savia 400 en foco." },
   { sectionId: "logos", label: "Logotipos", hint: "radius.tile en logomark." },
   { sectionId: "motion", label: "Movimiento", hint: "Transición en segment controls." },
 ] as const

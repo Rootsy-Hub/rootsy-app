@@ -11,6 +11,7 @@ import {
   COLOR_TOKENS,
   ROOTSY_CHART_SEQUENCE,
   ROOTSY_CHART_STATUS,
+  ROOTSY_COLOR_CONCEPT,
   ROOTSY_COLOR_ROLES,
   ROOTSY_INTERACTION_STATES,
   ROOTSY_PRODUCT_EMPHASIS,
@@ -75,64 +76,180 @@ function ColorExampleLabel({ children }: { children: ReactNode }) {
 }
 
 const FAMILY_ARCHITECTURE = [
-  { label: "Ceniza", hex: COLOR_TOKENS.ceniza600, sub: "Catálogo · rail · cards" },
-  { label: "Bruma", hex: COLOR_TOKENS.bruma100, sub: "Ticket · tablas · workspace", text: COLOR_TOKENS.bruma900 },
-  { label: "Savia", hex: COLOR_TOKENS.savia600, sub: "Acción · foco · totales" },
-  { label: "Landing", hex: COLOR_TOKENS.landing950, sub: "Hero · CTA · aurora" },
+  { label: "Sombra", hex: COLOR_TOKENS.sombra600, sub: "Bajo el dosel · catálogo" },
+  { label: "Bruma", hex: COLOR_TOKENS.bruma100, sub: "Neblina · ticket · tablas", text: COLOR_TOKENS.bruma900 },
+  { label: "Savia", hex: COLOR_TOKENS.savia600, sub: "Vida · acción · foco" },
 ] as const
+
+const ON_DARK_PREVIEW = "#F4F8F6"
+
+function ColorDarkEnvironmentDemo() {
+  return (
+    <div className="space-y-2">
+      <ColorExampleLabel>Ambiente oscuro · mostrador</ColorExampleLabel>
+      <div
+        className="overflow-hidden rounded-xl border"
+        style={{
+          backgroundColor: COLOR_TOKENS.sombra600,
+          borderColor: COLOR_TOKENS.sombraBorder,
+        }}
+      >
+        <div className="space-y-3 p-4">
+          <div className="flex items-center justify-between">
+            <p
+              className="font-canopy text-xs font-semibold uppercase tracking-wide"
+              style={{ color: COLOR_TOKENS.sombra300 }}
+            >
+              Catálogo
+            </p>
+            <span
+              className="font-canopy text-[10px]"
+              style={{ color: COLOR_TOKENS.sombra300 }}
+            >
+              Bebidas
+            </span>
+          </div>
+          <div
+            className="rounded-lg p-3"
+            style={{
+              backgroundColor: COLOR_TOKENS.sombra500,
+              border: `1px solid ${COLOR_TOKENS.sombraBorder}`,
+            }}
+          >
+            <p className="font-canopy text-sm font-medium" style={{ color: ON_DARK_PREVIEW }}>
+              Cola 500 ml
+            </p>
+            <p
+              className="mt-1 font-ledger text-xs font-bold tabular-nums"
+              style={{ color: COLOR_TOKENS.sombra300 }}
+            >
+              $ 1.250
+            </p>
+          </div>
+          <span
+            className="inline-flex rounded-lg px-3 py-1.5 font-canopy text-xs font-medium"
+            style={{ backgroundColor: COLOR_TOKENS.savia600, color: COLOR_TOKENS.white }}
+          >
+            Vender
+          </span>
+        </div>
+      </div>
+      <p className="font-canopy text-[11px] leading-relaxed" style={{ color: COLOR_TOKENS.bruma500 }}>
+        Sombra sostiene la profundidad; savia 600 aparece solo donde hay acción.
+      </p>
+    </div>
+  )
+}
+
+function ColorLightEnvironmentDemo() {
+  return (
+    <div className="space-y-2">
+      <ColorExampleLabel>Ambiente claro · workspace</ColorExampleLabel>
+      <div
+        className="overflow-hidden rounded-xl border"
+        style={{
+          backgroundColor: COLOR_TOKENS.bruma100,
+          borderColor: COLOR_TOKENS.bruma200,
+        }}
+      >
+        <div className="space-y-3 p-4">
+          <p
+            className="font-canopy text-sm font-semibold"
+            style={{ color: COLOR_TOKENS.bruma900 }}
+          >
+            Editar artículo
+          </p>
+          <div
+            className="rounded-lg border px-3 py-2 font-canopy text-sm"
+            style={{
+              backgroundColor: COLOR_TOKENS.white,
+              borderColor: COLOR_TOKENS.bruma200,
+              color: COLOR_TOKENS.bruma900,
+            }}
+          >
+            Medialuna clásica
+          </div>
+          <div
+            className="rounded-lg px-3 py-2 font-canopy text-xs"
+            style={{
+              backgroundColor: COLOR_TOKENS.bruma50,
+              color: COLOR_TOKENS.bruma500,
+            }}
+          >
+            Precio de lista · actualizado hoy
+          </div>
+          <span
+            className="inline-flex rounded-lg px-3 py-1.5 font-canopy text-xs font-medium"
+            style={{ backgroundColor: COLOR_TOKENS.savia600, color: COLOR_TOKENS.white }}
+          >
+            Guardar
+          </span>
+        </div>
+      </div>
+      <p className="font-canopy text-[11px] leading-relaxed" style={{ color: COLOR_TOKENS.bruma500 }}>
+        Bruma respira; el verde operativo confirma — misma savia que en el mostrador.
+      </p>
+    </div>
+  )
+}
 
 export function ColorSystemHero() {
   return (
-    <ColorWhiteCard>
-      <p
-        className="font-canopy text-[10px] font-bold uppercase tracking-[0.2em]"
-        style={{ color: COLOR_TOKENS.bruma500 }}
-      >
-        Rootsy · Sistema de color
-      </p>
-      <p
-        className="mt-3 font-canopy text-2xl font-bold tracking-tight sm:text-3xl"
-        style={{ color: COLOR_TOKENS.bruma900 }}
-      >
-        Ceniza, bruma, savia, landing
-      </p>
-      <p
-        className="mt-2 max-w-xl font-canopy text-sm leading-relaxed"
-        style={{ color: COLOR_TOKENS.bruma500 }}
-      >
-        Cuatro familias extraídas de pantallas reales — mostrador, ticket, acción y hero.
-        Sin paletas decorativas paralelas.
-      </p>
-      <div className="mt-6 grid grid-cols-2 gap-2 sm:grid-cols-4">
-        {FAMILY_ARCHITECTURE.map((family) => (
-          <div
-            key={family.label}
-            className="overflow-hidden rounded-xl border"
-            style={{ borderColor: COLOR_TOKENS.bruma200 }}
-          >
-            <div
-              className="flex h-14 items-end p-2.5"
-              style={{ backgroundColor: family.hex }}
-            >
-              <span
-                className="font-canopy text-[11px] font-semibold"
-                style={{ color: "text" in family ? family.text : COLOR_TOKENS.white }}
-              >
-                {family.label}
-              </span>
-            </div>
-          </div>
-        ))}
+    <ColorWhiteCard className="space-y-6">
+      <div className="space-y-3">
+        <p
+          className="font-canopy text-[10px] font-bold uppercase tracking-[0.2em]"
+          style={{ color: COLOR_TOKENS.bruma500 }}
+        >
+          Rootsy · Sistema de color
+        </p>
+        <p
+          className="font-canopy text-2xl font-bold tracking-tight sm:text-3xl"
+          style={{ color: COLOR_TOKENS.bruma900 }}
+        >
+          {ROOTSY_COLOR_CONCEPT.title}
+        </p>
+        <p
+          className="max-w-2xl font-canopy text-sm leading-relaxed"
+          style={{ color: COLOR_TOKENS.bruma900 }}
+        >
+          {ROOTSY_COLOR_CONCEPT.lead}
+        </p>
       </div>
+
+      <div className="space-y-2">
+        <p
+          className="font-canopy text-xs font-semibold uppercase tracking-wide"
+          style={{ color: COLOR_TOKENS.bruma500 }}
+        >
+          Por qué
+        </p>
+        <ul className="max-w-2xl space-y-2">
+          {ROOTSY_COLOR_CONCEPT.why.map((line) => (
+            <li
+              key={line}
+              className="font-canopy text-sm leading-relaxed"
+              style={{ color: COLOR_TOKENS.bruma700 }}
+            >
+              {line}
+            </li>
+          ))}
+        </ul>
+      </div>
+
+      <div className="grid gap-4 sm:grid-cols-2">
+        <ColorDarkEnvironmentDemo />
+        <ColorLightEnvironmentDemo />
+      </div>
+
       <p
-        className="mt-4 border-t pt-4 font-stream text-sm leading-relaxed"
+        className="border-t pt-4 font-stream text-sm leading-relaxed"
         style={{
           borderColor: COLOR_TOKENS.bruma200,
           color: COLOR_TOKENS.bruma500,
         }}
       >
-        El color no decora: orienta. Cada tono responde a una superficie que el usuario ya
-        conoce del producto.
+        {ROOTSY_COLOR_CONCEPT.closing}
       </p>
     </ColorWhiteCard>
   )
@@ -140,7 +257,7 @@ export function ColorSystemHero() {
 
 export function ColorFamiliesRow() {
   return (
-    <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+    <div className="grid gap-3 sm:grid-cols-3">
       {FAMILY_ARCHITECTURE.map((layer) => (
         <ColorWhiteCard key={layer.label} className="space-y-2 p-4">
           <div
@@ -164,10 +281,31 @@ export function ColorFamiliesRow() {
 
 export function ColorSemanticPreview() {
   const highlights = [
-    { label: "Ticket", hex: COLOR_TOKENS.bruma100, text: COLOR_TOKENS.bruma900 },
-    { label: "Acción", hex: COLOR_TOKENS.savia600, text: COLOR_TOKENS.white },
-    { label: "Catálogo", hex: COLOR_TOKENS.ceniza600, text: ON_DARK_PREVIEW },
-    { label: "Foco", hex: COLOR_TOKENS.ceniza500, text: COLOR_TOKENS.savia400, border: COLOR_TOKENS.savia400 },
+    {
+      label: "Shell",
+      hex: COLOR_TOKENS.sombra600,
+      text: ON_DARK_PREVIEW,
+      token: "--color-shell",
+    },
+    {
+      label: "Ticket",
+      hex: COLOR_TOKENS.bruma100,
+      text: COLOR_TOKENS.bruma900,
+      token: "--rootsy-bruma-100",
+    },
+    {
+      label: "Acción",
+      hex: COLOR_TOKENS.savia600,
+      text: COLOR_TOKENS.white,
+      token: "--color-action",
+    },
+    {
+      label: "Foco",
+      hex: COLOR_TOKENS.sombra500,
+      text: COLOR_TOKENS.savia400,
+      border: COLOR_TOKENS.savia400,
+      token: "--color-accent",
+    },
   ] as const
 
   return (
@@ -186,7 +324,7 @@ export function ColorSemanticPreview() {
               {item.label}
             </span>
             <p className="font-canopy text-xs" style={{ color: COLOR_TOKENS.bruma500 }}>
-              --color-{item.label.toLowerCase()}
+              {item.token}
             </p>
           </ColorWhiteCard>
         ))}
@@ -194,8 +332,6 @@ export function ColorSemanticPreview() {
     </ColorBrumaStage>
   )
 }
-
-const ON_DARK_PREVIEW = "#F8FAFC"
 
 export function ThemePreviewCard({ theme }: { theme: ColorTheme }) {
   return (
@@ -765,21 +901,21 @@ export function InteractionStatesGallery() {
 
 export function PosSplitDemo() {
   return (
-    <ColorBrumaStage caption="Split ceniza + bruma — regla de oro del mostrador. Savia solo en acciones.">
+    <ColorBrumaStage caption="Split sombra + bruma — dosel y neblina en el mostrador. Savia solo en acciones.">
       <ColorWhiteCard className="overflow-hidden p-0">
         <div className="grid min-h-[200px] lg:grid-cols-[1.2fr_0.8fr]">
-          <div className="space-y-3 p-4" style={{ backgroundColor: COLOR_TOKENS.ceniza600 }}>
+          <div className="space-y-3 p-4" style={{ backgroundColor: COLOR_TOKENS.sombra600 }}>
             <p
               className="font-canopy text-xs font-semibold uppercase tracking-wide"
-              style={{ color: COLOR_TOKENS.ceniza300 }}
+              style={{ color: COLOR_TOKENS.sombra300 }}
             >
-              Ceniza · catálogo
+              Sombra · catálogo
             </p>
             <div
               className="rounded-lg p-3"
               style={{
-                backgroundColor: COLOR_TOKENS.ceniza500,
-                border: `1px solid ${COLOR_TOKENS.bruma700}`,
+                backgroundColor: COLOR_TOKENS.sombra500,
+                border: `1px solid ${COLOR_TOKENS.sombraBorder}`,
               }}
             >
               <p
@@ -790,7 +926,7 @@ export function PosSplitDemo() {
               </p>
               <p
                 className="mt-1 font-ledger text-xs font-bold tabular-nums"
-                style={{ color: COLOR_TOKENS.ceniza300 }}
+                style={{ color: COLOR_TOKENS.sombra300 }}
               >
                 $ 1.250
               </p>

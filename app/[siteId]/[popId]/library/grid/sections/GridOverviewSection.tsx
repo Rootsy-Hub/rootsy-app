@@ -7,10 +7,10 @@ import {
   GridCenteredSpanDemo,
   GridDocLead,
   GridDocSection,
-  GridGuidelineCards,
-  GridManifestoHero,
   GridPrinciplesGrid,
   GridSpanGallery,
+  GridSystemHero,
+  GridTechnicalDetails,
   LayoutShellDiagram,
   NestedGridDemo,
 } from "@/app/[siteId]/[popId]/library/grid/GridDocPrimitives"
@@ -26,9 +26,9 @@ export function GridOverviewSection() {
   return (
     <LibrarySection id="grid" title={meta.title} description={meta.description}>
       <div className="space-y-10">
-        <GridManifestoHero />
-        <GridDocLead>{ROOTSY_GRID_MANIFESTO}</GridDocLead>
-        <GridPrinciplesGrid principles={ROOTSY_GRID_PRINCIPLES} />
+        <GridSystemHero />
+        <GridDocLead className="font-canopy">{ROOTSY_GRID_MANIFESTO}</GridDocLead>
+        <GridPrinciplesGrid principles={[...ROOTSY_GRID_PRINCIPLES]} />
 
         <GridDocSection
           id="grid-shell"
@@ -72,10 +72,11 @@ export function GridOverviewSection() {
         </GridDocSection>
 
         <GridDocSection
-          id="grid-guidelines"
-          title="Guías de alineación"
+          id="grid-technical"
+          title="Detalles técnicos"
+          description="Anatomía, spans, breakpoints y guías de alineación."
         >
-          <GridGuidelineCards />
+          <GridTechnicalDetails />
         </GridDocSection>
       </div>
     </LibrarySection>

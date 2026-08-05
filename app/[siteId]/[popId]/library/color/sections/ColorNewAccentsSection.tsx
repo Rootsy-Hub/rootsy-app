@@ -7,6 +7,7 @@ import {
   ColorDocSection,
   GuidelinePair,
 } from "@/app/[siteId]/[popId]/library/color/ColorDocPrimitives"
+import { COLOR_TOKENS } from "@/app/[siteId]/[popId]/library/color/rootsyColorSystem"
 import { COLOR_NEW_FAMILIES } from "@/app/[siteId]/[popId]/library/color/rootsyNaturePalette"
 import { LibrarySection } from "@/app/[siteId]/[popId]/library/layoutLibraryShared"
 
@@ -17,9 +18,9 @@ export function ColorNewAccentsSection() {
     <LibrarySection id="colors-new-accents" title={meta.title} description={meta.description}>
       <div className="space-y-10">
         <ColorDocLead>
-          No hay acentos intercambiables tipo mar u otoño en este sistema. Énfasis =
-          escalas dentro de cada familia: de shell a card en ceniza, de panel a cuerpo
-          en bruma, de soft a CTA en savia.
+          No hay acentos intercambiables en este sistema. Énfasis = escalas dentro de cada
+          familia: de shell a card en sombra, de panel a cuerpo en bruma, de soft a CTA en
+          savia.
         </ColorDocLead>
 
         <ColorDocSection
@@ -33,15 +34,35 @@ export function ColorNewAccentsSection() {
         <ColorDocSection
           id="emphasis-tags"
           title="Tags de producto"
-          description="Solo combinaciones de las cuatro familias."
+          description="Solo combinaciones de las tres familias."
         >
           <div className="flex flex-wrap gap-2">
             {[
-              { bg: "#20262E", text: "#94A3B8", label: "Ceniza · inactivo" },
-              { bg: "#EEF1F5", text: "#121417", label: "Bruma · ticket" },
-              { bg: "#D1FAE5", text: "#047857", label: "Savia · pagado" },
-              { bg: "#059669", text: "#FFFFFF", label: "Savia · CTA" },
-              { bg: "#080C0B", text: "#34D399", label: "Landing · link" },
+              {
+                bg: COLOR_TOKENS.sombra500,
+                text: COLOR_TOKENS.sombra300,
+                label: "Sombra · inactivo",
+              },
+              {
+                bg: COLOR_TOKENS.bruma100,
+                text: COLOR_TOKENS.bruma900,
+                label: "Bruma · ticket",
+              },
+              {
+                bg: COLOR_TOKENS.savia100,
+                text: COLOR_TOKENS.savia500,
+                label: "Savia · pagado",
+              },
+              {
+                bg: COLOR_TOKENS.savia600,
+                text: COLOR_TOKENS.white,
+                label: "Savia · CTA",
+              },
+              {
+                bg: COLOR_TOKENS.sombra600,
+                text: COLOR_TOKENS.savia400,
+                label: "Marketing · link",
+              },
             ].map((tag) => (
               <span
                 key={tag.label}
@@ -70,7 +91,7 @@ export function ColorNewAccentsSection() {
         </ColorDocSection>
 
         <GuidelinePair
-          doText="Elegí el paso de la familia correcta — ceniza para oscuro, bruma para claro, savia para acción."
+          doText="Elegí el paso de la familia correcta — sombra para oscuro, bruma para claro, savia para acción."
           dontText="No importes colores de categoría libre — no existen en este sistema."
         />
       </div>

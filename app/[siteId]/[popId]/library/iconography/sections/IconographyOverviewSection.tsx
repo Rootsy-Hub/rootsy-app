@@ -10,8 +10,9 @@ import {
   IconNavActiveDemo,
   IconographyDocLead,
   IconographyDocSection,
-  IconographyManifestoHero,
   IconographyPrinciplesGrid,
+  IconographySystemHero,
+  IconographyTechnicalDetails,
   IconSizeTable,
   IconSmallUseCasesList,
   IconTileDemo,
@@ -31,9 +32,9 @@ export function IconographyOverviewSection() {
   return (
     <LibrarySection id="iconography" title={meta.title} description={meta.description}>
       <div className="space-y-10">
-        <IconographyManifestoHero />
-        <IconographyDocLead>{ROOTSY_ICONOGRAPHY_MANIFESTO}</IconographyDocLead>
-        <IconographyPrinciplesGrid principles={ROOTSY_ICONOGRAPHY_PRINCIPLES} />
+        <IconographySystemHero />
+        <IconographyDocLead className="font-canopy">{ROOTSY_ICONOGRAPHY_MANIFESTO}</IconographyDocLead>
+        <IconographyPrinciplesGrid principles={[...ROOTSY_ICONOGRAPHY_PRINCIPLES]} />
 
         <IconographyDocSection
           id="library"
@@ -64,7 +65,7 @@ export function IconographyOverviewSection() {
         <IconographyDocSection
           id="color"
           title="Color"
-          description="Tokens icon.color.* — contraste suficiente sobre superficies canopy y card."
+          description="Tokens icon.color.* — contraste suficiente sobre superficies bruma y card."
         >
           <IconColorRolesGrid />
         </IconographyDocSection>
@@ -90,13 +91,21 @@ export function IconographyOverviewSection() {
         <IconographyDocSection
           id="icon-tile"
           title="Icon tile"
-          description="Para empty states y onboarding — ícono sobre tile canopy-mist, no inline denso."
+          description="Para empty states y onboarding — ícono sobre tile savia-50, no inline denso."
         >
           <IconTileDemo />
         </IconographyDocSection>
 
         <IconographyDocSection id="guidelines" title="Guías Do / Don't">
           <IconGuidelinesGrid />
+        </IconographyDocSection>
+
+        <IconographyDocSection
+          id="iconography-technical"
+          title="Detalles técnicos"
+          description="Tamaños, color, variantes Iconsax, import y guías."
+        >
+          <IconographyTechnicalDetails />
         </IconographyDocSection>
       </div>
     </LibrarySection>

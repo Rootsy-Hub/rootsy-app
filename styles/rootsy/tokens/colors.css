@@ -1,20 +1,22 @@
 /**
  * Primitivos de color Rootsy — :root global.
  * Fuente CSS espejo de lib/design-system/tokens/colors.ts
+ * Tres familias: sombra · bruma · savia
  */
 
 :root {
-  /* Ceniza */
-  --rootsy-ceniza-950: #070a09;
-  --rootsy-ceniza-900: #0b100e;
-  --rootsy-ceniza-800: #0f1416;
-  --rootsy-ceniza-700: #1a2027;
-  --rootsy-ceniza-600: #20262e;
-  --rootsy-ceniza-500: #252b34;
-  --rootsy-ceniza-400: #64748b;
-  --rootsy-ceniza-300: #94a3b8;
+  /* Sombra — bajo el dosel */
+  --rootsy-sombra-950: #050807;
+  --rootsy-sombra-900: #080c0b;
+  --rootsy-sombra-800: #0e1311;
+  --rootsy-sombra-700: #151c19;
+  --rootsy-sombra-600: #1b2420;
+  --rootsy-sombra-500: #222b27;
+  --rootsy-sombra-400: #5a6b63;
+  --rootsy-sombra-300: #8fa396;
+  --rootsy-sombra-border: #2a3530;
 
-  /* Bruma */
+  /* Bruma — neblina clara */
   --rootsy-bruma-50: #f4f6f9;
   --rootsy-bruma-100: #eef1f5;
   --rootsy-bruma-200: #dfe4ea;
@@ -25,7 +27,7 @@
   --rootsy-bruma-700: #334155;
   --rootsy-bruma-900: #121417;
 
-  /* Savia */
+  /* Savia — vida y acción */
   --rootsy-savia-990: #061009;
   --rootsy-savia-975: #07120e;
   --rootsy-savia-960: #0c1f17;
@@ -40,18 +42,33 @@
   --rootsy-savia-200: #a7f3d0;
   --rootsy-savia-100: #d1fae5;
   --rootsy-savia-50: #ecfdf5;
+  --rootsy-savia-teal: #14b8a6;
 
-  /* Landing */
-  --rootsy-landing-950: #080c0b;
-  --rootsy-landing-900: #070a09;
-  --rootsy-landing-800: #0a0e0d;
-  --rootsy-landing-500: #10b981;
-  --rootsy-landing-400: #34d399;
-  --rootsy-landing-300: #6ee7b7;
-  --rootsy-landing-200: #a7f3d0;
-  --rootsy-landing-teal: #14b8a6;
-  --rootsy-landing-neon: #25fe02;
-  --rootsy-landing-neon-2: #02fe85;
+  /* Atmósfera — auroras de marketing (blur only) */
+  --rootsy-atmosphere-neon: #25fe02;
+  --rootsy-atmosphere-neon-2: #02fe85;
+
+  /* Alias deprecated — ceniza → sombra */
+  --rootsy-ceniza-950: var(--rootsy-sombra-950);
+  --rootsy-ceniza-900: var(--rootsy-sombra-900);
+  --rootsy-ceniza-800: var(--rootsy-sombra-800);
+  --rootsy-ceniza-700: var(--rootsy-sombra-700);
+  --rootsy-ceniza-600: var(--rootsy-sombra-600);
+  --rootsy-ceniza-500: var(--rootsy-sombra-500);
+  --rootsy-ceniza-400: var(--rootsy-sombra-400);
+  --rootsy-ceniza-300: var(--rootsy-sombra-300);
+
+  /* Alias deprecated — landing → composición sombra/savia/atmosphere */
+  --rootsy-landing-950: var(--rootsy-sombra-900);
+  --rootsy-landing-900: var(--rootsy-sombra-950);
+  --rootsy-landing-800: var(--rootsy-sombra-800);
+  --rootsy-landing-500: var(--rootsy-savia-500);
+  --rootsy-landing-400: var(--rootsy-savia-400);
+  --rootsy-landing-300: var(--rootsy-savia-300);
+  --rootsy-landing-200: var(--rootsy-savia-200);
+  --rootsy-landing-teal: var(--rootsy-savia-teal);
+  --rootsy-landing-neon: var(--rootsy-atmosphere-neon);
+  --rootsy-landing-neon-2: var(--rootsy-atmosphere-neon-2);
 
   --rootsy-white: #ffffff;
 }

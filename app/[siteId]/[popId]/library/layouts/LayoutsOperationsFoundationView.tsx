@@ -1,6 +1,9 @@
 "use client"
 
 import {
+  LayoutsSystemHero,
+} from "@/app/[siteId]/[popId]/library/layouts/LayoutsDocShared"
+import {
   LAYOUTS_RELATED_LINKS,
   getLayoutsPageMeta,
   layoutsOperationsPreviewHref,
@@ -32,6 +35,7 @@ export function LayoutsOperationsFoundationView({ sectionId, siteId, popId }: Pr
     case "layouts-operations":
       content = (
         <>
+          <LayoutsSystemHero variant="operations" />
           <LayoutsOperationsOverviewIntro />
 
           <LibraryDocSection

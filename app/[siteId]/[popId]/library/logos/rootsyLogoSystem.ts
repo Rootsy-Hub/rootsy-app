@@ -1,5 +1,7 @@
 export type LogoColorVariant = "brand" | "inverse" | "neutral"
 
+export type LogoPreviewBg = "light" | "sombra" | "savia" | "dark" | "neutral"
+
 export type LogoLockup = {
   id: string
   label: string
@@ -7,7 +9,7 @@ export type LogoLockup = {
   src: string
   alt: string
   /** Fondo recomendado para previsualizar legibilidad */
-  previewBg: "light" | "canopy" | "dark" | "neutral"
+  previewBg: LogoPreviewBg
   usage: string
 }
 
@@ -17,29 +19,46 @@ export type LogoLogomark = {
   variant: LogoColorVariant
   src: string
   alt: string
-  previewBg: "light" | "canopy" | "dark"
+  previewBg: Exclude<LogoPreviewBg, "neutral">
   usage: string
 }
 
+export const ROOTSY_LOGO_CONCEPT = {
+  title: "Raíz visible de la marca",
+  lead:
+    "Rootsy se reconoce por logomark + wordmark; cada POP se reconoce por su foto y su nombre comercial. Dos identidades en el mismo producto — plataforma y negocio — sin competir por atención.",
+  why: [
+    "Naturalidad: el avatar del POP es la cara del negocio; Rootsy aparece cuando el contexto de plataforma no es obvio.",
+    "Simplicidad: lockup fijo para Rootsy; tipografía nativa para el nombre del tenant — nada de wordmarks duplicados.",
+    "Intuitivo: círculo en home, cuadrado en header, logo B/N aparte en tickets — la forma anticipa el uso.",
+  ],
+  closing:
+    "Como un letrero en el sendero: la marca orienta, el negocio habla por sí mismo.",
+} as const
+
 export const ROOTSY_LOGO_MANIFESTO =
-  "Un logotipo representa la marca en producto y marketing. Rootsy usa logomark + wordmark en lockup; la identidad del POP es avatar (foto subida) + nombre comercial, con variantes que pueden sumar dirección u otros metadatos según la pantalla."
+  "Un logotipo representa la marca en producto y marketing. Rootsy usa logomark + wordmark en lockup sobre sombra o savia; la identidad del POP es avatar (pop.imageUrl) + nombre comercial, con variantes que suman dirección u otros metadatos según la pantalla."
 
 export const ROOTSY_LOGO_PRINCIPLES = [
   {
     title: "Logomark + wordmark",
-    body: "El tile con la R es el logomark. Rootsy como texto es el wordmark. En producto pueden usarse juntos (lockup) o separados cuando el contexto es claro.",
+    detail:
+      "El tile con la R es el logomark. Rootsy como texto es el wordmark. En producto pueden usarse juntos (lockup) o separados cuando el contexto es claro.",
   },
   {
     title: "POP = avatar + nombre",
-    body: "Cada negocio sube su foto (pop.imageUrl). El nombre comercial se renderiza con tipografía nativa — no hay wordmark fijo del tenant.",
+    detail:
+      "Cada negocio sube su foto (pop.imageUrl). El nombre comercial se renderiza con tipografía nativa — no hay wordmark fijo del tenant.",
   },
   {
     title: "Variantes de color",
-    body: "Brand / inverse / neutral para Rootsy. El POP reutiliza la misma foto en círculo (home) o cuadrado (header) según densidad.",
+    detail:
+      "Brand / inverse / neutral para Rootsy. El POP reutiliza la misma foto en círculo (home) o cuadrado (header) según densidad.",
   },
   {
     title: "Alt-text descriptivo",
-    body: 'Rootsy: alt="Rootsy". POP: alt="" en avatar decorativo; el nombre va en texto visible o aria-label del control.',
+    detail:
+      'Rootsy: alt="Rootsy". POP: alt="" en avatar decorativo; el nombre va en texto visible o aria-label del control.',
   },
 ] as const
 
@@ -50,8 +69,8 @@ export const ROOTSY_LOGO_LOCKUPS: LogoLockup[] = [
     variant: "inverse",
     src: "/rootsy-logo.svg",
     alt: "Rootsy",
-    previewBg: "canopy",
-    usage: "Landing, login y hero oscuro — asset de producción actual.",
+    previewBg: "savia",
+    usage: "Landing, login y hero savia — asset de producción actual.",
   },
   {
     id: "rootsy-brand",
@@ -89,7 +108,7 @@ export const ROOTSY_LOGOMARKS: LogoLogomark[] = [
     variant: "inverse",
     src: "/logos/rootsy/rootsy-logomark-inverse.svg",
     alt: "Rootsy",
-    previewBg: "canopy",
+    previewBg: "sombra",
     usage: "Nav superior en contextos oscuros — emparejar con label.",
   },
 ]

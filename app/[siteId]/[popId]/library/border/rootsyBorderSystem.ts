@@ -1,7 +1,11 @@
 /**
- * Sistema de borde Rootsy — fuente de verdad del design system.
- * Alineado a Atlassian Border: width + color siempre emparejados.
+ * Sistema de borde Rootsy — ancho + color siempre emparejados.
+ * Alineado a bruma · sombra · savia del design system.
  */
+
+import { rootsyColorHex } from "@/lib/design-system"
+
+const hx = rootsyColorHex
 
 export type BorderWidthToken = {
   id: string
@@ -28,25 +32,42 @@ export type BorderSemanticMapping = {
   source: string
 }
 
+export const ROOTSY_BORDER_CONCEPT = {
+  title: "Delimitar sin gritar",
+  lead:
+    "Un borde en Rootsy casi no se nota — como la orilla de un sendero: está, separa, pero el ojo sigue caminando. Solo savia interrumpe cuando hay foco o elección.",
+  why: [
+    "Naturalidad: hairline bruma en ticket — neblina que divide, no reja metálica.",
+    "Simplicidad: tres estados visuales — reposo (1px), selección (2px savia), foco (ring savia). Nada más.",
+    "Intuitivo: si el contorno compite con el dato, es demasiado fuerte; el borde orienta, no decora.",
+  ],
+  closing:
+    "Formas claras, contorno definido — pero el contenido manda. Como dice el concepto: pocos datos, bien presentados.",
+} as const
+
 export const ROOTSY_BORDER_MANIFESTO =
-  "Los bordes delimitan sin gritar: una vena de 1px para dividir, 2px cuando algo está seleccionado o recibe foco por teclado. Ancho y color van juntos — border.width.selected siempre con color.border.selected, border.width.focused siempre con color.border.focused en canopy."
+  "Los bordes dividen, no decoran: hairline bruma en ticket y tablas; sombra-border en catálogo; savia 400 cuando hay foco o selección. Ancho y color siempre emparejados — nunca 2px gris genérico."
 
 export const ROOTSY_BORDER_PRINCIPLES = [
   {
-    title: "Ancho + color",
-    detail: "Nunca aplicar grosor sin el token de color que comunica el estado.",
+    title: "Intuitivo · tres estados",
+    detail:
+      "Reposo, selección, foco — el usuario distingue sin leer especificaciones de ancho.",
   },
   {
-    title: "Hairline canopy",
-    detail: "Dividers sutiles con border-border/70 o --rootsy-hairline — no negro duro.",
+    title: "Simplicidad · hairline",
+    detail:
+      "1px bruma para dividir; 2px solo cuando hay intención (elegir o enfocar).",
   },
   {
-    title: "Foco accesible",
-    detail: "Ring 2px emerald-700/45 en formularios — contraste visible para teclado.",
+    title: "Naturalidad · bruma y sombra",
+    detail:
+      "Ticket respira con bruma 200; catálogo usa sombra-border — cada ambiente su neutro.",
   },
   {
-    title: "Selección clara",
-    detail: "2px primary/canopy cuando el usuario elige tab, segment o ítem activo.",
+    title: "Formas claras",
+    detail:
+      "Ancho y color siempre juntos — contorno definido, nunca gris genérico suelto.",
   },
 ] as const
 
@@ -64,7 +85,7 @@ export const ROOTSY_BORDER_WIDTHS: BorderWidthToken[] = [
     token: "border.width.selected",
     natureName: "Selección",
     value: "2px",
-    usage: "Tab activo, segment seleccionado, ítem elegido en lista.",
+    usage: "Tab activo, segment seleccionado, ítem elegido.",
     pairWith: "color.border.selected",
   },
   {
@@ -72,7 +93,7 @@ export const ROOTSY_BORDER_WIDTHS: BorderWidthToken[] = [
     token: "border.width.focused",
     natureName: "Foco",
     value: "2px",
-    usage: "Focus ring en elementos interactivos — teclado Tab.",
+    usage: "Focus ring — teclado Tab.",
     pairWith: "color.border.focused",
   },
 ]
@@ -80,116 +101,112 @@ export const ROOTSY_BORDER_WIDTHS: BorderWidthToken[] = [
 export const ROOTSY_BORDER_COLOR_TOKENS = [
   {
     token: "color.border",
-    value: "oklch(0.88 0.025 130)",
-    tailwind: "border-border · border-zinc-200 (light form)",
-    usage: "Default · dividers · SpecCard border-border/70.",
+    value: hx("bruma", "200"),
+    tailwind: "border-border · --color-border",
+    usage: "Default claro — SpecCard, ticket, inputs.",
   },
   {
     token: "color.border.subtle",
-    value: "oklch(0.90 0.02 130)",
-    tailwind: "--rootsy-hairline",
-    usage: "Hairlines en landing y chrome ligero.",
+    value: hx("bruma", "200"),
+    tailwind: "border-border/70",
+    usage: "Hairlines en librería y workspace.",
+  },
+  {
+    token: "color.border.dark",
+    value: hx("sombra", "border"),
+    tailwind: "--rootsy-sombra-border",
+    usage: "Rail, cards y toolbox POS.",
   },
   {
     token: "color.border.selected",
-    value: "oklch(0.55 0.14 155)",
-    tailwind: "border-primary · border-emerald-600",
+    value: hx("savia", "600"),
+    tailwind: "border-primary",
     usage: "Par con border.width.selected.",
   },
   {
     token: "color.border.focused",
-    value: "oklch(0.45 0.12 155)",
-    tailwind: "ring-emerald-700/45 · border-emerald-700",
+    value: hx("savia", "400"),
+    tailwind: "ring-savia-400/45",
     usage: "Par con border.width.focused · rootsFormControlBaseClass.",
   },
   {
     token: "color.border.danger",
-    value: "oklch(0.55 0.2 25)",
+    value: "#DC2626",
     tailwind: "border-destructive · aria-invalid",
-    usage: "Validación de error en campos.",
+    usage: "Validación de error — funcional, fuera de familias.",
   },
 ] as const
 
 export const ROOTSY_BORDER_PAIRINGS: BorderColorPairing[] = [
   {
-    id: "default",
+    id: "default-light",
     widthToken: "border.width",
     colorToken: "color.border",
     cssExample: "border border-border/70",
-    usage: "Cards de librería, paneles checkout, listas.",
+    usage: "Cards librería, ticket, listas workspace.",
+  },
+  {
+    id: "default-dark",
+    widthToken: "border.width",
+    colorToken: "color.border.dark",
+    cssExample: "border border-[--rootsy-sombra-border]",
+    usage: "Cards catálogo POS, rail.",
   },
   {
     id: "selected",
     widthToken: "border.width.selected",
     colorToken: "color.border.selected",
     cssExample: "border-2 border-primary",
-    usage: "RootsFormSegmentField · tab activo.",
+    usage: "Segment activo · tab seleccionado.",
   },
   {
     id: "focused",
     widthToken: "border.width.focused",
     colorToken: "color.border.focused",
-    cssExample: "focus-visible:ring-2 focus-visible:ring-emerald-700/45",
-    usage: "Inputs, selects, botones — sin ring-offset en light form.",
+    cssExample: "focus-visible:ring-2 ring-savia-400/45",
+    usage: "Inputs, selects, botones.",
   },
   {
     id: "invalid",
     widthToken: "border.width",
     colorToken: "color.border.danger",
-    cssExample: "aria-invalid:border-destructive aria-invalid:ring-destructive/25",
-    usage: "RootsForm*Field en error.",
+    cssExample: "aria-invalid:border-destructive",
+    usage: "Campos en error.",
   },
 ]
 
 export const ROOTSY_BORDER_SEMANTIC: BorderSemanticMapping[] = [
   {
     token: "border.form.control",
-    component: "RootsFormTextField · Select · Date",
+    component: "RootsFormTextField · Select",
     widthToken: "border.width",
     colorToken: "color.border",
-    source: "rootsFormStyles.ts · border-zinc-200",
+    source: "rootsFormStyles · bruma 200",
   },
   {
     token: "border.form.focus",
     component: "rootsFormControlBaseClass",
     widthToken: "border.width.focused",
     colorToken: "color.border.focused",
-    source: "focus-visible:ring-2 ring-emerald-700/45",
+    source: "ring savia 400",
   },
   {
     token: "border.library.card",
-    component: "SpecCard",
+    component: "library-spec-card",
     widthToken: "border.width",
-    colorToken: "color.border",
-    source: "layoutLibraryShared.tsx · border-border/70",
+    colorToken: "color.border.subtle",
+    source: "border bruma 200",
   },
   {
-    token: "border.dialog",
-    component: "articleDialogIOSShellClass",
+    token: "border.pos.card",
+    component: "Product card catálogo",
     widthToken: "border.width",
-    colorToken: "color.border",
-    source: "border-black/[0.04]",
-  },
-  {
-    token: "border.workspace.header",
-    component: "DataWorkspaceLayout header",
-    widthToken: "border.width",
-    colorToken: "color.border",
-    source: "border-b border-border · ring-zinc-600 dark",
+    colorToken: "color.border.dark",
+    source: "sombra-border",
   },
 ]
 
 export const BORDER_GUIDELINES = {
-  do: [
-    "Emparejar border.width.selected + color.border.selected.",
-    "Usar ring 2px canopy en focus-visible — contraste para teclado.",
-    "Preferir border-border/70 sobre negro puro en cards.",
-    "Accent border en fondos sutiles para cumplir contraste 3:1.",
-  ],
-  dont: [
-    "No usar 2px de borde sin token de color semántico.",
-    "No mezclar ring gris genérico en formularios Rootsy — usar emerald.",
-    "No duplicar borde + sombra fuerte en el mismo contenedor sin intención.",
-    "No omitir estado focus en controles custom.",
-  ],
+  do: "Emparejá ancho + color semántico; bruma 200 en claro; savia 400 en foco; sombra-border en POS.",
+  dont: "No uses 2px gris sin token; no mezcles ring zinc en formularios Rootsy; no dupliques borde + sombra fuerte.",
 } as const

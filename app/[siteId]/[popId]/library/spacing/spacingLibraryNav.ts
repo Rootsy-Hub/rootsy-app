@@ -27,7 +27,7 @@ export const SPACING_PAGE_META: Record<string, SpacingPageMeta> = {
     id: "spacing",
     title: "Espaciado",
     description:
-      "Rocío, hoja, rama, tronco, claro y horizonte — ritmo nature sobre base 8px.",
+      "Ritmo nature sobre base 8px — rocío a horizonte, tokens antes que píxeles sueltos.",
   },
   "spacing-primitives": {
     id: "spacing-primitives",

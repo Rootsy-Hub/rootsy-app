@@ -33,25 +33,42 @@ export type SpacingSemanticRole = {
 
 export const ROOTSY_SPACING_BASE_PX = 8
 
+export const ROOTSY_SPACING_CONCEPT = {
+  title: "El bosque tiene ritmo",
+  lead:
+    "Rootsy respira como la naturaleza: denso donde los elementos comparten savia — ícono y texto, label y campo — y amplio donde la vista descansa en un claro. El espaciado no es decoración: es la distancia entre hojas del mismo árbol.",
+  why: [
+    "Naturalidad: rocío, hoja, rama, tronco, claro y horizonte — seis capas que el ojo reconoce sin manual.",
+    "Simplicidad: base 8px — space.100 es el latido. Sin 7px, sin 15px, sin excepciones silenciosas.",
+    "Intuitivo: lo relacionado cerca; los capítulos separados — la proximidad agrupa antes que el contorno.",
+  ],
+  closing:
+    "Pocos datos, bien presentados — el ritmo guía la mirada como un sendero conocido, no como una rejilla arbitraria.",
+} as const
+
 export const ROOTSY_SPACING_MANIFESTO =
   "Rootsy respira como la naturaleza: denso donde los elementos comparten savia — ícono y texto, label y campo — y amplio donde la vista descansa en un claro. El espaciado no es decoración: es la distancia entre hojas del mismo árbol, entre troncos del bosque, entre el suelo y el cielo. Todo parte de 8px — la unidad mínima, como una gota de rocío."
 
 export const ROOTSY_SPACING_PRINCIPLES = [
   {
-    title: "8px como savia",
-    detail: "space.100 es el latido — todo múltiplo de 8. Sin 7px, sin 15px, sin excepciones silenciosas.",
+    title: "Intuitivo · proximidad",
+    detail:
+      "Lo relacionado cerca — label, campo e hint en el mismo tallo; capítulos separados con claro.",
   },
   {
-    title: "Capas nature",
-    detail: "Rocío, hoja, rama, tronco, claro, horizonte — cada capa tiene un territorio en la UI.",
+    title: "Simplicidad · base 8px",
+    detail:
+      "space.100 es el latido — todo múltiplo de 8. Tokens en código y Figma, nunca px sueltos.",
   },
   {
-    title: "Tokens antes que píxeles",
-    detail: "space.200 en código y en Figma — nunca «16px» suelto en un handover.",
+    title: "Naturalidad · capas nature",
+    detail:
+      "Rocío a horizonte — cada distancia tiene territorio; denso en savia, amplio en claros.",
   },
   {
     title: "Ritmo, no relleno",
-    detail: "Más espacio = más importancia o más separación semántica. El claro entre bloques guía la mirada.",
+    detail:
+      "Más espacio = más separación semántica. El claro entre bloques guía la mirada.",
   },
 ] as const
 

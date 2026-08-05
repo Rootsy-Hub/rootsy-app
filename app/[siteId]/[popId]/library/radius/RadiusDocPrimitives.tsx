@@ -2,27 +2,145 @@
 
 import {
   RADIUS_GUIDELINES,
+  ROOTSY_RADIUS_CONCEPT,
   ROOTSY_RADIUS_SEMANTIC,
   ROOTSY_RADIUS_THEME,
   ROOTSY_RADIUS_TOKENS,
 } from "@/app/[siteId]/[popId]/library/radius/rootsyRadiusSystem"
+import { CONCEPT_TOKENS } from "@/app/[siteId]/[popId]/library/concept/rootsyConceptSystem"
 import { POP_IDENTITY_SPECIMEN } from "@/app/[siteId]/[popId]/library/logos/rootsyLogoSystem"
-import { LibraryManifestoHero } from "@/app/[siteId]/[popId]/library/libraryDocPrimitives"
+import { LibraryDoDontPair } from "@/app/[siteId]/[popId]/library/libraryDocPrimitives"
+import { cn } from "@/lib/utils"
+import type { ReactNode } from "react"
 
 export {
   LibraryDocLead as RadiusDocLead,
   LibraryDocSection as RadiusDocSection,
   LibraryPrinciplesGrid as RadiusPrinciplesGrid,
+  LibraryDoDontPair as RadiusGuidelinePair,
   LibraryRelatedLinks as RadiusRelatedLinks,
 } from "@/app/[siteId]/[popId]/library/libraryDocPrimitives"
 
-export function RadiusManifestoHero() {
+function SpecCard({ children, className }: { children: ReactNode; className?: string }) {
   return (
-    <LibraryManifestoHero
-      eyebrow="Rootsy · Radio"
-      title="De semilla a copa"
-      description="Escala orgánica · focus +2px · tile solo en logomark."
-    />
+    <div className={cn("library-spec-card rounded-2xl border p-5 sm:p-6", className)}>
+      {children}
+    </div>
+  )
+}
+
+function BrumaStage({
+  caption,
+  children,
+}: {
+  caption?: string
+  children: ReactNode
+}) {
+  return (
+    <div
+      className="overflow-hidden rounded-2xl border"
+      style={{
+        backgroundColor: CONCEPT_TOKENS.bruma100,
+        borderColor: CONCEPT_TOKENS.bruma200,
+      }}
+    >
+      <div className="p-5 sm:p-6">{children}</div>
+      {caption ? (
+        <p
+          className="border-t px-4 py-3 font-canopy text-[11px] leading-relaxed"
+          style={{
+            borderColor: CONCEPT_TOKENS.bruma200,
+            color: CONCEPT_TOKENS.bruma500,
+          }}
+        >
+          {caption}
+        </p>
+      ) : null}
+    </div>
+  )
+}
+
+export function RadiusSystemHero() {
+  return (
+    <SpecCard className="space-y-6">
+      <div className="space-y-3">
+        <p
+          className="font-canopy text-[10px] font-bold uppercase tracking-[0.2em]"
+          style={{ color: CONCEPT_TOKENS.bruma500 }}
+        >
+          Rootsy · Radio
+        </p>
+        <p
+          className="font-canopy text-2xl font-bold tracking-tight sm:text-3xl"
+          style={{ color: CONCEPT_TOKENS.bruma900 }}
+        >
+          {ROOTSY_RADIUS_CONCEPT.title}
+        </p>
+        <p
+          className="max-w-2xl font-canopy text-sm leading-relaxed"
+          style={{ color: CONCEPT_TOKENS.bruma900 }}
+        >
+          {ROOTSY_RADIUS_CONCEPT.lead}
+        </p>
+      </div>
+
+      <div className="space-y-2">
+        <p
+          className="font-canopy text-xs font-semibold uppercase tracking-wide"
+          style={{ color: CONCEPT_TOKENS.bruma500 }}
+        >
+          Por qué
+        </p>
+        <ul className="max-w-2xl space-y-2">
+          {ROOTSY_RADIUS_CONCEPT.why.map((line) => (
+            <li
+              key={line}
+              className="font-canopy text-sm leading-relaxed"
+              style={{ color: CONCEPT_TOKENS.bruma600 }}
+            >
+              {line}
+            </li>
+          ))}
+        </ul>
+      </div>
+
+      <BrumaStage caption="La curva crece con el contenedor — controles compactos, cards amplias, modales copa.">
+        <div className="flex flex-wrap items-end gap-3">
+          {[
+            { label: "large", className: "rootsy-radius-large", sub: "12px · inputs" },
+            { label: "xlarge", className: "rootsy-radius-xlarge", sub: "16px · cards" },
+            { label: "xxlarge", className: "rootsy-radius-xxlarge", sub: "22px · modales" },
+          ].map((item) => (
+            <div key={item.label} className="space-y-1.5 text-center">
+              <div
+                className={cn(
+                  "flex h-12 w-16 items-center justify-center font-canopy text-[10px] font-semibold",
+                  item.className,
+                )}
+                style={{
+                  backgroundColor: CONCEPT_TOKENS.savia50,
+                  color: CONCEPT_TOKENS.savia800,
+                  border: `1px solid ${CONCEPT_TOKENS.savia600}33`,
+                }}
+              >
+                {item.label}
+              </div>
+              <p className="font-canopy text-[10px] text-muted-foreground">{item.sub}</p>
+            </div>
+          ))}
+        </div>
+      </BrumaStage>
+
+      <p
+        className="border-t pt-4 font-stream text-sm leading-relaxed"
+        style={{
+          borderColor: CONCEPT_TOKENS.bruma200,
+          color: CONCEPT_TOKENS.bruma500,
+        }}
+      >
+        {ROOTSY_RADIUS_CONCEPT.closing}
+      </p>
+    </SpecCard>
   )
 }
 
@@ -42,42 +160,12 @@ export function RadiusScaleGallery() {
     <div className="rootsy-radius-scale-row">
       {ROOTSY_RADIUS_TOKENS.map((token) => (
         <div key={token.id} className="space-y-2 text-center">
-          <div className={`rootsy-radius-preview ${cssMap[token.id]}`}>{token.natureName}</div>
-          <p className="font-mono text-[10px] text-primary">{token.token}</p>
-          <p className="text-[10px] text-muted-foreground">{token.value}</p>
+          <div className={cn("rootsy-radius-preview font-canopy", cssMap[token.id])}>
+            {token.natureName}
+          </div>
+          <p className="font-mono text-[10px] text-primary">{token.value}</p>
         </div>
       ))}
-    </div>
-  )
-}
-
-export function RadiusTokensTable() {
-  return (
-    <div className="overflow-x-auto rounded-2xl border border-border/70">
-      <table className="w-full min-w-[680px] text-left text-sm">
-        <thead>
-          <tr className="border-b border-border/60 bg-muted/30">
-            <th className="px-4 py-3 font-semibold text-foreground">Token</th>
-            <th className="px-4 py-3 font-semibold text-foreground">Nature</th>
-            <th className="px-4 py-3 font-semibold text-foreground">Valor</th>
-            <th className="px-4 py-3 font-semibold text-foreground">Focus</th>
-            <th className="px-4 py-3 font-semibold text-foreground">Uso</th>
-          </tr>
-        </thead>
-        <tbody>
-          {ROOTSY_RADIUS_TOKENS.map((row) => (
-            <tr key={row.id} className="border-b border-border/40 last:border-0">
-              <td className="px-4 py-3 font-mono text-xs text-primary">{row.token}</td>
-              <td className="px-4 py-3 text-foreground">{row.natureName}</td>
-              <td className="px-4 py-3 font-mono text-[10px]">{row.value}</td>
-              <td className="px-4 py-3 font-mono text-[10px] text-muted-foreground">
-                {row.focusToken ? `${row.focusToken} (${row.focusValue})` : "—"}
-              </td>
-              <td className="max-w-xs px-4 py-3 text-xs text-muted-foreground">{row.usage}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
     </div>
   )
 }
@@ -86,8 +174,8 @@ export function RadiusFocusDemo() {
   return (
     <div className="grid gap-6 sm:grid-cols-2">
       <div className="space-y-2">
-        <p className="text-[11px] font-medium uppercase tracking-[0.12em] text-muted-foreground">
-          Input · radius.large + focus.large
+        <p className="font-canopy text-[11px] font-medium uppercase tracking-[0.12em] text-muted-foreground">
+          Input · large + focus
         </p>
         <div className="rootsy-radius-focus-demo">
           <div className="rootsy-radius-form-demo">
@@ -100,13 +188,17 @@ export function RadiusFocusDemo() {
         </div>
       </div>
       <div className="space-y-2">
-        <p className="text-[11px] font-medium uppercase tracking-[0.12em] text-muted-foreground">
-          Card · radius.xlarge + focus.xlarge
+        <p className="font-canopy text-[11px] font-medium uppercase tracking-[0.12em] text-muted-foreground">
+          Card · xlarge + savia ring
         </p>
         <div className="rootsy-radius-focus-demo">
           <div
-            className="rounded-xl border border-border/70 bg-card px-4 py-3 text-sm"
-            style={{ borderRadius: "var(--radius-xlarge)" }}
+            className="border px-4 py-3 font-canopy text-sm"
+            style={{
+              borderRadius: "var(--radius-xlarge)",
+              borderColor: CONCEPT_TOKENS.bruma200,
+              backgroundColor: CONCEPT_TOKENS.white,
+            }}
           >
             Elemento con foco
           </div>
@@ -123,21 +215,21 @@ export function RadiusFocusDemo() {
 export function RadiusExamplesRow() {
   return (
     <div className="grid gap-4 lg:grid-cols-3">
-      <div className="rounded-xl border border-border/70 bg-card p-4 shadow-sm">
-        <p className="text-xs font-semibold text-foreground">Form · radius.large</p>
+      <SpecCard>
+        <p className="font-canopy text-xs font-semibold text-foreground">Form · large</p>
         <div className="rootsy-radius-form-demo mt-3">
           <input type="text" placeholder="Nombre" aria-label="Demo input" />
         </div>
-      </div>
-      <div className="rounded-xl border border-border/70 bg-card p-4 shadow-sm">
-        <p className="text-xs font-semibold text-foreground">Modal · radius.xxlarge</p>
+      </SpecCard>
+      <SpecCard>
+        <p className="font-canopy text-xs font-semibold text-foreground">Modal · xxlarge</p>
         <div className="rootsy-radius-modal-demo mt-3">
-          <p className="text-sm font-semibold">Dosel</p>
-          <p className="mt-1 text-xs text-muted-foreground">rounded-[1.375rem]</p>
+          <p className="font-canopy text-sm font-semibold">Dosel</p>
+          <p className="mt-1 font-canopy text-xs text-muted-foreground">rounded-[1.375rem]</p>
         </div>
-      </div>
-      <div className="rounded-xl border border-border/70 bg-card p-4 shadow-sm">
-        <p className="text-xs font-semibold text-foreground">Avatar · radius.full</p>
+      </SpecCard>
+      <SpecCard>
+        <p className="font-canopy text-xs font-semibold text-foreground">Avatar · full</p>
         <div className="mt-3 flex justify-center">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
@@ -146,81 +238,106 @@ export function RadiusExamplesRow() {
             className="rootsy-radius-avatar-demo object-cover"
           />
         </div>
-      </div>
+      </SpecCard>
     </div>
   )
 }
 
+export function RadiusTechnicalDetails() {
+  return (
+    <div className="space-y-8">
+      <div className="space-y-3">
+        <p
+          className="font-canopy text-xs font-semibold uppercase tracking-wide"
+          style={{ color: CONCEPT_TOKENS.bruma500 }}
+        >
+          Escala completa
+        </p>
+        <div className="overflow-x-auto rounded-2xl border border-border/70">
+          <table className="w-full min-w-[640px] text-left font-canopy text-sm">
+            <thead>
+              <tr className="border-b border-border/60 bg-muted/30">
+                <th className="px-4 py-3 font-semibold">Token</th>
+                <th className="px-4 py-3 font-semibold">Valor</th>
+                <th className="px-4 py-3 font-semibold">Focus</th>
+                <th className="px-4 py-3 font-semibold">Uso</th>
+              </tr>
+            </thead>
+            <tbody>
+              {ROOTSY_RADIUS_TOKENS.map((row) => (
+                <tr key={row.id} className="border-b border-border/40 last:border-0">
+                  <td className="px-4 py-3 font-mono text-xs text-primary">{row.token}</td>
+                  <td className="px-4 py-3 font-mono text-[10px]">{row.value}</td>
+                  <td className="px-4 py-3 font-mono text-[10px] text-muted-foreground">
+                    {row.focusValue ?? "—"}
+                  </td>
+                  <td className="max-w-xs px-4 py-3 text-xs text-muted-foreground">{row.usage}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <SpecCard>
+        <p className="font-canopy text-sm font-semibold text-foreground">Theme CSS</p>
+        <div className="mt-2 space-y-1 font-mono text-[11px] text-muted-foreground">
+          <p>--radius: {ROOTSY_RADIUS_THEME.base}</p>
+          <p>--radius-lg: {ROOTSY_RADIUS_THEME.lg}</p>
+          <p>--radius-xl: {ROOTSY_RADIUS_THEME.xl}</p>
+        </div>
+      </SpecCard>
+
+      <div className="space-y-3">
+        <p
+          className="font-canopy text-xs font-semibold uppercase tracking-wide"
+          style={{ color: CONCEPT_TOKENS.bruma500 }}
+        >
+          Semántica
+        </p>
+        <div className="overflow-x-auto rounded-2xl border border-border/70">
+          <table className="w-full min-w-[480px] text-left font-canopy text-sm">
+            <tbody>
+              {ROOTSY_RADIUS_SEMANTIC.map((row) => (
+                <tr key={row.token} className="border-b border-border/40 last:border-0">
+                  <td className="px-4 py-3 font-mono text-xs text-primary">{row.token}</td>
+                  <td className="px-4 py-3 text-foreground">{row.component}</td>
+                  <td className="px-4 py-3 font-mono text-[10px] text-muted-foreground">
+                    {row.source}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <LibraryDoDontPair doText={RADIUS_GUIDELINES.do} dontText={RADIUS_GUIDELINES.dont} />
+    </div>
+  )
+}
+
+/** @deprecated Usar RadiusSystemHero */
+export function RadiusManifestoHero() {
+  return <RadiusSystemHero />
+}
+
+/** @deprecated */
+export function RadiusTokensTable() {
+  return null
+}
+
+/** @deprecated */
 export function RadiusThemeNote() {
-  return (
-    <div className="rounded-xl border border-border/70 bg-muted/20 p-4 font-mono text-[11px] leading-relaxed text-muted-foreground">
-      <p className="font-semibold text-foreground">Theme CSS · app/globals.css</p>
-      <p className="mt-2">--radius: {ROOTSY_RADIUS_THEME.base}</p>
-      <p>--radius-sm: {ROOTSY_RADIUS_THEME.sm}</p>
-      <p>--radius-md: {ROOTSY_RADIUS_THEME.md}</p>
-      <p>--radius-lg: {ROOTSY_RADIUS_THEME.lg}</p>
-      <p>--radius-xl: {ROOTSY_RADIUS_THEME.xl}</p>
-    </div>
-  )
+  return null
 }
 
+/** @deprecated */
 export function RadiusSemanticTable() {
-  return (
-    <div className="overflow-x-auto rounded-2xl border border-border/70">
-      <table className="w-full min-w-[560px] text-left text-sm">
-        <thead>
-          <tr className="border-b border-border/60 bg-muted/30">
-            <th className="px-4 py-3 font-semibold text-foreground">Token</th>
-            <th className="px-4 py-3 font-semibold text-foreground">Componente</th>
-            <th className="px-4 py-3 font-semibold text-foreground">Fuente</th>
-          </tr>
-        </thead>
-        <tbody>
-          {ROOTSY_RADIUS_SEMANTIC.map((row) => (
-            <tr key={row.token} className="border-b border-border/40 last:border-0">
-              <td className="px-4 py-3 font-mono text-xs text-primary">{row.token}</td>
-              <td className="px-4 py-3 text-foreground">{row.component}</td>
-              <td className="px-4 py-3 font-mono text-[10px] text-muted-foreground">
-                {row.source}
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
-  )
+  return null
 }
 
+/** @deprecated */
 export function RadiusGuidelinesGrid() {
-  return (
-    <div className="grid gap-4 lg:grid-cols-2">
-      <div className="rounded-2xl border border-emerald-500/25 bg-emerald-500/5 p-4">
-        <p className="text-xs font-bold uppercase tracking-[0.14em] text-emerald-700">Hacer</p>
-        <ul className="mt-3 space-y-2">
-          {RADIUS_GUIDELINES.do.map((item) => (
-            <li key={item} className="flex gap-2 text-sm text-foreground">
-              <span className="text-emerald-600" aria-hidden>
-                ✓
-              </span>
-              {item}
-            </li>
-          ))}
-        </ul>
-      </div>
-      <div className="rounded-2xl border border-red-500/20 bg-red-500/5 p-4">
-        <p className="text-xs font-bold uppercase tracking-[0.14em] text-red-700">Evitar</p>
-        <ul className="mt-3 space-y-2">
-          {RADIUS_GUIDELINES.dont.map((item) => (
-            <li key={item} className="flex gap-2 text-sm text-foreground">
-              <span className="text-red-600" aria-hidden>
-                ✕
-              </span>
-              {item}
-            </li>
-          ))}
-        </ul>
-      </div>
-    </div>
-  )
+  return null
 }
-

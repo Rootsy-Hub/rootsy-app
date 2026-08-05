@@ -1,20 +1,16 @@
 .rootsy-elevation-system {
-  --elevation-surface-sunken: oklch(0.95 0.015 110);
-  --elevation-surface: oklch(0.98 0.005 110);
-  --elevation-surface-raised: oklch(0.995 0.002 110);
-  --elevation-surface-overlay: oklch(1 0 0);
-  --elevation-surface-hovered: oklch(0.96 0.012 110);
-  --elevation-surface-pressed: oklch(0.94 0.018 110);
+  --elevation-surface-sunken: var(--rootsy-bruma-50, #f4f6f9);
+  --elevation-surface: var(--rootsy-bruma-100, #eef1f5);
+  --elevation-surface-raised: #ffffff;
+  --elevation-surface-overlay: #ffffff;
+  --elevation-surface-hovered: var(--rootsy-bruma-50, #f4f6f9);
+  --elevation-surface-pressed: var(--rootsy-bruma-200, #dfe4ea);
+  --elevation-border: var(--rootsy-bruma-200, #dfe4ea);
   --elevation-shadow-raised:
-    0 1px 2px oklch(0.55 0.14 155 / 0.07),
-    0 4px 14px oklch(0.25 0.03 150 / 0.08);
-  --elevation-shadow-overlay: 0 22px 70px -18px oklch(0.25 0.03 150 / 0.28);
-  --elevation-shadow-overflow: linear-gradient(
-    to right,
-    oklch(0.55 0.14 155 / 0.14),
-    transparent 72%
-  );
-  --elevation-border: oklch(0.88 0.025 130 / 0.7);
+    0 1px 2px rgb(5 8 7 / 0.07),
+    0 4px 14px rgb(5 8 7 / 0.08);
+  --elevation-shadow-overlay: 0 22px 70px -18px rgb(5 8 7 / 0.28);
+  --elevation-shadow-overflow: linear-gradient(to right, rgb(5 8 7 / 0.12), transparent 72%);
 }
 
 .rootsy-elevation-sunken {
@@ -41,7 +37,7 @@
 
 .rootsy-elevation-overlay {
   background: var(--elevation-surface-overlay);
-  border: 1px solid oklch(0 0 0 / 0.04);
+  border: 1px solid rgb(0 0 0 / 0.04);
   border-radius: 1.375rem;
   box-shadow: var(--elevation-shadow-overlay);
 }
@@ -68,7 +64,7 @@
   padding: 1.5rem;
   border-radius: 1rem;
   background: var(--elevation-surface);
-  border: 1px dashed oklch(0.75 0.08 155 / 0.35);
+  border: 1px dashed var(--rootsy-bruma-300, #cbd5e1);
 }
 
 .rootsy-elevation-stack-demo__sunken {
@@ -78,14 +74,14 @@
 }
 
 .rootsy-elevation-dark-preview {
-  --elevation-surface-sunken: #0a0d0c;
-  --elevation-surface: #070a09;
-  --elevation-surface-raised: #0c0f0e;
-  --elevation-surface-overlay: #121816;
+  --elevation-surface-sunken: var(--rootsy-sombra-700, #151c19);
+  --elevation-surface: var(--rootsy-sombra-600, #1b2420);
+  --elevation-surface-raised: var(--rootsy-sombra-500, #222b27);
+  --elevation-surface-overlay: var(--rootsy-sombra-500, #222b27);
   --elevation-shadow-raised:
-    0 1px 2px oklch(0 0 0 / 0.35),
-    0 8px 24px oklch(0 0 0 / 0.45);
-  --elevation-shadow-overlay: 0 24px 80px -16px oklch(0 0 0 / 0.65);
+    0 1px 2px rgb(0 0 0 / 0.35),
+    0 8px 24px rgb(0 0 0 / 0.45);
+  --elevation-shadow-overlay: 0 24px 80px -16px rgb(0 0 0 / 0.65);
   background: var(--elevation-surface);
   border-radius: 1rem;
   padding: 1.25rem;
@@ -107,6 +103,6 @@
 
 .rootsy-elevation-raised.rootsy-elevation-interactive-demo:hover {
   box-shadow:
-    0 2px 4px oklch(0.55 0.14 155 / 0.1),
-    0 8px 20px oklch(0.25 0.03 150 / 0.12);
+    0 2px 4px rgb(5 8 7 / 0.1),
+    0 8px 20px rgb(5 8 7 / 0.12);
 }

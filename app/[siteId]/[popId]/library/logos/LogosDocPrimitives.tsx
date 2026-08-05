@@ -8,23 +8,24 @@ import {
   POP_IDENTITY_SPECIMEN,
   POP_IDENTITY_VARIANTS,
   POP_TICKET_LOGO_SPECIMEN,
+  ROOTSY_LOGO_CONCEPT,
   ROOTSY_LOGO_LOCKUPS,
   ROOTSY_LOGOMARKS,
+  type LogoPreviewBg,
   type PopIdentityVariantId,
 } from "@/app/[siteId]/[popId]/library/logos/rootsyLogoSystem"
 import {
-  LibraryManifestoHero,
-  LibraryPrinciplesGrid,
-} from "@/app/[siteId]/[popId]/library/libraryDocPrimitives"
+  FoundationBrumaStage,
+  FoundationConceptHero,
+} from "@/app/[siteId]/[popId]/library/libraryFoundationDocShared"
 import { Badge } from "@/components/ui/badge"
 import { cn } from "@/lib/utils"
 import type { ReactNode } from "react"
 
-type PreviewBg = "light" | "canopy" | "dark" | "neutral"
-
-const PREVIEW_BG_CLASS: Record<PreviewBg, string> = {
+const PREVIEW_BG_CLASS: Record<LogoPreviewBg, string> = {
   light: "logo-preview-surface--light",
-  canopy: "logo-preview-surface--canopy",
+  sombra: "logo-preview-surface--sombra",
+  savia: "logo-preview-surface--savia",
   dark: "logo-preview-surface--dark",
   neutral: "logo-preview-surface--neutral",
 }
@@ -32,17 +33,37 @@ const PREVIEW_BG_CLASS: Record<PreviewBg, string> = {
 export {
   LibraryDocLead as LogosDocLead,
   LibraryDocSection as LogosDocSection,
+  LibraryPrinciplesGrid as LogosPrinciplesGrid,
   LibraryRelatedLinks as LogosRelatedLinks,
 } from "@/app/[siteId]/[popId]/library/libraryDocPrimitives"
 
-export function LogosManifestoHero() {
+export function LogosSystemHero() {
   return (
-    <LibraryManifestoHero
-      eyebrow="Rootsy · Logotipos"
-      title="Raíz visible de la marca"
-      description="Logomark, wordmark y lockups — Rootsy y la identidad de cada POP conviven sin competir."
-    />
+    <div className="space-y-4">
+      <FoundationConceptHero eyebrow="Rootsy · Logotipos" concept={ROOTSY_LOGO_CONCEPT} />
+      <FoundationBrumaStage caption="Lockups en savia y sombra — inverse para hero, brand para ticket.">
+        <div className="flex flex-wrap items-center justify-center gap-4">
+          {ROOTSY_LOGO_LOCKUPS.slice(0, 2).map((logo) => (
+            <div
+              key={logo.id}
+              className={cn(
+                "logo-preview-surface min-h-0 px-6 py-4",
+                PREVIEW_BG_CLASS[logo.previewBg],
+              )}
+            >
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={logo.src} alt={logo.alt} className="h-7 w-auto object-contain" />
+            </div>
+          ))}
+        </div>
+      </FoundationBrumaStage>
+    </div>
   )
+}
+
+/** @deprecated Usar LogosSystemHero */
+export function LogosManifestoHero() {
+  return <LogosSystemHero />
 }
 
 export function LogosAnatomyGrid() {
@@ -63,27 +84,12 @@ export function LogosAnatomyGrid() {
   )
 }
 
-export function LogosPrinciplesGrid({
-  principles,
-}: {
-  principles: readonly { title: string; body: string }[]
-}) {
-  return (
-    <LibraryPrinciplesGrid
-      principles={principles.map((item) => ({
-        title: item.title,
-        detail: item.body,
-      }))}
-    />
-  )
-}
-
 function LogoPreviewSurface({
   bg,
   children,
   className,
 }: {
-  bg: PreviewBg
+  bg: LogoPreviewBg
   children: ReactNode
   className?: string
 }) {
@@ -106,7 +112,7 @@ function LogoAssetCard({
   label: string
   src: string
   alt: string
-  previewBg: PreviewBg
+  previewBg: LogoPreviewBg
   usage: string
   assetPath?: string
   variantTag?: string

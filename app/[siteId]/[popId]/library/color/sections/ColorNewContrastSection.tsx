@@ -52,8 +52,8 @@ export function ColorNewContrastSection() {
         >
           <ul className="space-y-2 text-sm text-muted-foreground">
             <li>
-              <strong className="text-foreground">Texto secundario POS:</strong> bruma 300–400
-              sobre ceniza 600+ — nunca bruma 400 sobre bruma 100.
+              <strong className="text-foreground">Texto secundario POS:</strong> sombra 300
+              sobre sombra 600+ — nunca bruma 400 sobre bruma 100.
             </li>
             <li>
               <strong className="text-foreground">CTA savia:</strong> blanco sobre savia 600, o
@@ -64,8 +64,8 @@ export function ColorNewContrastSection() {
               100 — metadatos en bruma 500 mínimo.
             </li>
             <li>
-              <strong className="text-foreground">Landing:</strong> blanco o meadow 400 sobre
-              #080C0B — neón nunca como color de texto.
+              <strong className="text-foreground">Marketing:</strong> blanco o savia 400 sobre
+              sombra 900 — neón de atmósfera nunca como color de texto.
             </li>
           </ul>
         </ColorDocSection>
