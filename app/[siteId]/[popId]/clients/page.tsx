@@ -606,8 +606,6 @@ function ClientsPage() {
     )
   }
 
-  const hasPopBackdrop = Boolean(bootstrap?.backgroundImageUrl?.trim())
-
   return (
     <DataWorkspaceLayout
       siteId={siteId}
@@ -723,7 +721,6 @@ function ClientsPage() {
 
           <DataWorkspaceListTableShell
             variant="flush"
-            glassFooter={hasPopBackdrop}
             className={workspaceTableLayoutListBodyScopeClass}
             activeFiltersBar={
               hasFilterChips ? (
@@ -797,7 +794,7 @@ function ClientsPage() {
             }
               footer={
                 <DataWorkspaceListPaginationFooter
-                  variant="dark"
+                  variant="earth"
                   listFetching={listFetching}
                   totalCount={totalCount}
                   rangeStart={rangeLabel.start}

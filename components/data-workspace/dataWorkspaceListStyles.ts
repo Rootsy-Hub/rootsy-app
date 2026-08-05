@@ -516,6 +516,56 @@ export const darkTableFooterTotalLabelClass = cn(
   nightForestMutedTextClass,
 )
 
+/** Pie compacto layout — tierra oscura (carbón cálido, no bosque nocturno). */
+export const earthTableFooterClass = cn(
+  "border-t border-[color-mix(in_srgb,var(--nature-earth-600)_38%,transparent)]",
+  "bg-[color-mix(in_srgb,var(--nature-earth-800)_92%,var(--nature-earth-900))]",
+)
+
+export const earthTableFooterNavIconButtonClass = cn(
+  "inline-flex size-10 shrink-0 items-center justify-center rounded-xl border outline-none transition-all",
+  "border-[color-mix(in_srgb,var(--nature-earth-600)_50%,transparent)]",
+  "bg-[color-mix(in_srgb,var(--nature-earth-700)_72%,var(--nature-earth-800))]",
+  "text-[var(--nature-earth-400)]",
+  "hover:border-[color-mix(in_srgb,var(--nature-earth-500)_55%,transparent)]",
+  "hover:bg-[color-mix(in_srgb,var(--nature-earth-600)_55%,var(--nature-earth-700))]",
+  "hover:text-[var(--nature-earth-200)]",
+  "focus-visible:ring-2 focus-visible:ring-[color-mix(in_srgb,var(--nature-earth-500)_35%,transparent)] focus-visible:ring-offset-0",
+  "disabled:pointer-events-none disabled:opacity-40",
+  "[&_svg]:size-5",
+)
+
+export const earthTableFooterCenterClass =
+  "flex flex-wrap items-center justify-center gap-x-3 gap-y-2"
+
+/** Trigger compacto — tierra oscura (dropdown aparte en estilo light). */
+export const earthTableFooterSelectTriggerClass = cn(
+  "!h-10 !min-h-10 !w-[4.25rem] min-w-[4.25rem] max-w-[4.25rem] justify-between gap-1 !rounded-md px-2 text-xs font-medium",
+  "!border-[color-mix(in_srgb,var(--nature-earth-600)_50%,transparent)]",
+  "!bg-[color-mix(in_srgb,var(--nature-earth-700)_72%,var(--nature-earth-800))]",
+  "!text-[var(--nature-earth-400)]",
+  "shadow-none outline-none transition-all",
+  "hover:!border-[color-mix(in_srgb,var(--nature-earth-500)_55%,transparent)]",
+  "hover:!bg-[color-mix(in_srgb,var(--nature-earth-600)_55%,var(--nature-earth-700))]",
+  "hover:!text-[var(--nature-earth-200)]",
+  "data-[state=open]:!border-[color-mix(in_srgb,var(--nature-earth-500)_55%,transparent)]",
+  "data-[state=closed]:focus:!border-[color-mix(in_srgb,var(--nature-earth-600)_50%,transparent)] data-[state=closed]:focus:!ring-0",
+  "focus-visible:!ring-2 focus-visible:!ring-[color-mix(in_srgb,var(--nature-earth-500)_35%,transparent)] focus-visible:!ring-offset-0",
+  "disabled:pointer-events-none disabled:opacity-40",
+  "[&_[data-slot=select-value]]:min-w-0 [&_[data-slot=select-value]]:flex-1 [&_[data-slot=select-value]]:truncate [&_[data-slot=select-value]]:text-left",
+  "[&_[data-slot=select-value][data-placeholder]]:!text-[var(--nature-earth-500)]",
+  "[&_svg]:!size-3.5 [&_svg]:!text-[var(--nature-earth-400)]",
+)
+
+export const earthTableFooterSelectItemClass = "py-1.5 text-xs"
+
+export const earthTableFooterTotalLabelClass = cn(
+  workspaceTableLayoutMetaLabelClass,
+  "text-[var(--nature-earth-500)]",
+)
+
+export const earthTableFooterDotClass = "text-[var(--nature-earth-600)]"
+
 /** @deprecated Usar darkTableFooterTotalLabelClass */
 export const darkTableFooterCenterMutedClass = darkTableFooterTotalLabelClass
 

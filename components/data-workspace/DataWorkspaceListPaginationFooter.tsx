@@ -19,6 +19,13 @@ import {
   darkTableFooterClass,
   darkTableFooterNavIconButtonClass,
   darkTableFooterNavSideClass,
+  earthTableFooterClass,
+  earthTableFooterDotClass,
+  earthTableFooterCenterClass,
+  earthTableFooterNavIconButtonClass,
+  earthTableFooterSelectItemClass,
+  earthTableFooterSelectTriggerClass,
+  earthTableFooterTotalLabelClass,
   tableChromeFooterClass,
 } from "@/components/data-workspace/dataWorkspaceListStyles"
 import { FooterTotalCountSkeleton } from "@/components/data-workspace/DataWorkspaceListPaginationFooterSkeleton"
@@ -50,7 +57,7 @@ export type DataWorkspaceListPaginationFooterProps = {
   onPageChange: (page: number) => void
   onPageSizeChange: (pageSize: number) => void
   pageSizeLabelId: string
-  variant?: "default" | "dark"
+  variant?: "default" | "dark" | "earth"
 }
 
 export function DataWorkspaceListPaginationFooter({
@@ -74,6 +81,8 @@ export function DataWorkspaceListPaginationFooter({
     popWorkspace?.popAccess?.pop.backgroundImageUrl ??
     null
   const isDark = variant === "dark"
+  const isEarth = variant === "earth"
+  const isCompact = isDark || isEarth
   const isEmpty = !listFetching && totalCount <= 0
   const paginationDisabled = listFetching || isEmpty
   const totalCountLabel = totalCount.toLocaleString("es-AR")
@@ -92,7 +101,7 @@ export function DataWorkspaceListPaginationFooter({
 
   const effectiveTotalPages = Math.max(1, totalPages)
 
-  if (isDark) {
+  if (isCompact) {
     const pageOptions = Array.from(
       { length: effectiveTotalPages },
       (_, i) => i + 1,
@@ -101,14 +110,28 @@ export function DataWorkspaceListPaginationFooter({
       ? 1
       : Math.min(Math.max(1, currentPage), effectiveTotalPages)
 
-    const usePopGlassFooter = Boolean(backgroundImageUrl?.trim())
+    const usePopGlassFooter = isDark && Boolean(backgroundImageUrl?.trim())
+    const selectTone = "dark"
+    const navButtonClass = isEarth
+      ? earthTableFooterNavIconButtonClass
+      : darkTableFooterNavIconButtonClass
+    const dotClass = isEarth ? earthTableFooterDotClass : usePopGlassFooter ? popGlassFooterDotClass : "text-[#33443d]"
+    const totalLabelClass = cn(
+      isEarth ? earthTableFooterTotalLabelClass : darkTableFooterTotalLabelClass,
+      isDark && usePopGlassFooter && popGlassFooterMutedTextClass,
+    )
+    const skeletonVariant = isEarth ? "earth" : "dark"
+    const centerClass = isEarth ? earthTableFooterCenterClass : darkTableFooterCenterClass
+    const footerLayoutClass = isEarth
+      ? "grid h-full w-full grid-cols-[1fr_auto_1fr] items-center"
+      : "flex h-full w-full items-center"
 
     const footerBody = (
-      <div className="flex h-full w-full items-center">
-          <div className={cn(darkTableFooterNavSideClass, "justify-start")}>
+      <div className={footerLayoutClass}>
+          <div className={cn(darkTableFooterNavSideClass, "justify-start", isEarth && "!w-auto")}>
             <button
               type="button"
-              className={darkTableFooterNavIconButtonClass}
+              className={navButtonClass}
               disabled={paginationDisabled || safeCurrentPage <= 1}
               aria-label="Ir al inicio"
               onClick={() => onPageChange(1)}
@@ -117,7 +140,7 @@ export function DataWorkspaceListPaginationFooter({
             </button>
             <button
               type="button"
-              className={darkTableFooterNavIconButtonClass}
+              className={navButtonClass}
               disabled={paginationDisabled || safeCurrentPage <= 1}
               aria-label="Retroceder una página"
               onClick={() => onPageChange(Math.max(1, safeCurrentPage - 1))}
@@ -126,75 +149,128 @@ export function DataWorkspaceListPaginationFooter({
             </button>
           </div>
 
-          <div className={darkTableFooterCenterClass}>
+          <div className={centerClass}>
             <span className="sr-only" aria-live="polite" aria-atomic="true">
               {footerPaginationAriaLabel}
             </span>
 
-            <Select
-              value={String(safeCurrentPage)}
-              disabled={paginationDisabled}
-              onValueChange={(v) => onPageChange(Number(v))}
-            >
-              <RootsFormSelectTrigger tone="dark" aria-label="Página">
-                <SelectValue />
-              </RootsFormSelectTrigger>
-              <RootsFormSelectContent tone="dark" align="center">
-                {pageOptions.map((p) => (
-                  <RootsFormSelectItem key={p} tone="dark" value={String(p)}>
-                    {p.toLocaleString("es-AR")}
-                  </RootsFormSelectItem>
-                ))}
-              </RootsFormSelectContent>
-            </Select>
+            {isEarth ? (
+              <>
+                <Select
+                  value={String(safeCurrentPage)}
+                  disabled={paginationDisabled}
+                  onValueChange={(v) => onPageChange(Number(v))}
+                >
+                  <RootsFormSelectTrigger
+                    tone="dark"
+                    aria-label="Página"
+                    className={earthTableFooterSelectTriggerClass}
+                  >
+                    <SelectValue />
+                  </RootsFormSelectTrigger>
+                  <RootsFormSelectContent tone="light" align="center">
+                    {pageOptions.map((p) => (
+                      <RootsFormSelectItem
+                        key={p}
+                        tone="light"
+                        className={earthTableFooterSelectItemClass}
+                        value={String(p)}
+                      >
+                        {p.toLocaleString("es-AR")}
+                      </RootsFormSelectItem>
+                    ))}
+                  </RootsFormSelectContent>
+                </Select>
 
-            <span
-              className={usePopGlassFooter ? popGlassFooterDotClass : "text-[#33443d]"}
-              aria-hidden
-            >
+                <span className={dotClass} aria-hidden>
+                  ·
+                </span>
+
+                <Select
+                  value={String(pageSize)}
+                  disabled={paginationDisabled}
+                  onValueChange={(v) => onPageSizeChange(Number(v))}
+                >
+                  <RootsFormSelectTrigger
+                    tone="dark"
+                    aria-label="Cantidad por página"
+                    className={earthTableFooterSelectTriggerClass}
+                  >
+                    <SelectValue />
+                  </RootsFormSelectTrigger>
+                  <RootsFormSelectContent tone="light" align="center">
+                    {pageSizeOptions.map((n) => (
+                      <RootsFormSelectItem
+                        key={n}
+                        tone="light"
+                        className={earthTableFooterSelectItemClass}
+                        value={String(n)}
+                      >
+                        {n.toLocaleString("es-AR")}
+                      </RootsFormSelectItem>
+                    ))}
+                  </RootsFormSelectContent>
+                </Select>
+              </>
+            ) : (
+              <>
+                <Select
+                  value={String(safeCurrentPage)}
+                  disabled={paginationDisabled}
+                  onValueChange={(v) => onPageChange(Number(v))}
+                >
+                  <RootsFormSelectTrigger tone={selectTone} aria-label="Página">
+                    <SelectValue />
+                  </RootsFormSelectTrigger>
+                  <RootsFormSelectContent tone={selectTone} align="center">
+                    {pageOptions.map((p) => (
+                      <RootsFormSelectItem key={p} tone={selectTone} value={String(p)}>
+                        {p.toLocaleString("es-AR")}
+                      </RootsFormSelectItem>
+                    ))}
+                  </RootsFormSelectContent>
+                </Select>
+
+                <span className={dotClass} aria-hidden>
+                  ·
+                </span>
+
+                <Select
+                  value={String(pageSize)}
+                  disabled={paginationDisabled}
+                  onValueChange={(v) => onPageSizeChange(Number(v))}
+                >
+                  <RootsFormSelectTrigger
+                    tone={selectTone}
+                    aria-labelledby={pageSizeLabelId}
+                    aria-label="Resultados por página"
+                  >
+                    <SelectValue />
+                  </RootsFormSelectTrigger>
+                  <RootsFormSelectContent tone={selectTone} align="center">
+                    {pageSizeOptions.map((n) => (
+                      <RootsFormSelectItem key={n} tone={selectTone} value={String(n)}>
+                        {n.toLocaleString("es-AR")}
+                      </RootsFormSelectItem>
+                    ))}
+                  </RootsFormSelectContent>
+                </Select>
+              </>
+            )}
+
+            <span className={dotClass} aria-hidden>
               ·
             </span>
-
-            <Select
-              value={String(pageSize)}
-              disabled={paginationDisabled}
-              onValueChange={(v) => onPageSizeChange(Number(v))}
-            >
-              <RootsFormSelectTrigger
-                tone="dark"
-                aria-labelledby={pageSizeLabelId}
-                aria-label="Resultados por página"
-              >
-                <SelectValue />
-              </RootsFormSelectTrigger>
-              <RootsFormSelectContent tone="dark" align="center">
-                {pageSizeOptions.map((n) => (
-                  <RootsFormSelectItem key={n} tone="dark" value={String(n)}>
-                    {n.toLocaleString("es-AR")}
-                  </RootsFormSelectItem>
-                ))}
-              </RootsFormSelectContent>
-            </Select>
-
             <span
-              className={usePopGlassFooter ? popGlassFooterDotClass : "text-[#33443d]"}
-              aria-hidden
-            >
-              ·
-            </span>
-            <span
-              id={pageSizeLabelId}
-              className={cn(
-                darkTableFooterTotalLabelClass,
-                usePopGlassFooter && popGlassFooterMutedTextClass,
-              )}
-              aria-hidden
+              id={isEarth ? undefined : pageSizeLabelId}
+              className={totalLabelClass}
+              aria-hidden={isEarth}
             >
               {listFetching ? (
                 <>
-                  <FooterTotalCountSkeleton variant="dark" className="md:hidden" />
+                  <FooterTotalCountSkeleton variant={skeletonVariant} className="md:hidden" />
                   <span className="hidden items-center gap-1 md:inline-flex">
-                    <FooterTotalCountSkeleton variant="dark" />
+                    <FooterTotalCountSkeleton variant={skeletonVariant} />
                     <span> en total</span>
                   </span>
                 </>
@@ -207,10 +283,10 @@ export function DataWorkspaceListPaginationFooter({
             </span>
           </div>
 
-          <div className={cn(darkTableFooterNavSideClass, "justify-end")}>
+          <div className={cn(darkTableFooterNavSideClass, "justify-end", isEarth && "!w-auto")}>
             <button
               type="button"
-              className={darkTableFooterNavIconButtonClass}
+              className={navButtonClass}
               disabled={paginationDisabled || safeCurrentPage >= effectiveTotalPages}
               aria-label="Avanzar una página"
               onClick={() =>
@@ -221,7 +297,7 @@ export function DataWorkspaceListPaginationFooter({
             </button>
             <button
               type="button"
-              className={darkTableFooterNavIconButtonClass}
+              className={navButtonClass}
               disabled={paginationDisabled || safeCurrentPage >= effectiveTotalPages}
               aria-label="Ir al final"
               onClick={() => onPageChange(effectiveTotalPages)}
@@ -249,7 +325,10 @@ export function DataWorkspaceListPaginationFooter({
 
     return (
       <div
-        className={cn(darkTableFooterClass, "h-17 shrink-0")}
+        className={cn(
+          isEarth ? earthTableFooterClass : darkTableFooterClass,
+          "h-17 shrink-0",
+        )}
         role="navigation"
         aria-label="Paginación del listado"
         aria-busy={listFetching}

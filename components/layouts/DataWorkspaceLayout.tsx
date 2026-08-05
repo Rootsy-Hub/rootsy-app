@@ -451,8 +451,8 @@ export function DataWorkspaceLayout({
                 mainClassName,
                 contentFlush
                   ? cn(
-                      "p-0",
-                      hasPopBackdrop ? "overflow-visible" : "overflow-hidden",
+                      "min-h-0 p-0",
+                      hasPopBackdrop ? "overflow-y-auto" : "overflow-hidden",
                     )
                   : cn(
                       "overflow-y-auto px-4 py-8 sm:pl-5 sm:pr-8",
@@ -472,8 +472,8 @@ export function DataWorkspaceLayout({
               mainClassName,
               contentFlush
                 ? cn(
-                    "p-0",
-                    hasPopBackdrop ? "overflow-visible" : "overflow-hidden",
+                    "min-h-0 p-0",
+                    hasPopBackdrop ? "overflow-y-auto" : "overflow-hidden",
                   )
                 : cn(
                     "mx-auto overflow-y-auto px-4 py-8 sm:px-6",
