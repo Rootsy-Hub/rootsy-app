@@ -64,6 +64,7 @@ import {
   DataWorkspaceTableListPage,
   DataWorkspaceTableListPaginationFooter,
   DataWorkspaceTableListShell,
+  dataWorkspaceTableListHeaderVariant,
 } from "@/components/data-workspace/DataWorkspaceTableListLayout"
 import {
   DataWorkspaceListTableFrame,
@@ -1038,7 +1039,7 @@ function ArticlesPage() {
             {canCreate ? (
               <DataWorkspaceHeaderIconButton
                 label="Nuevo artículo"
-                headerVariant="dark"
+                headerVariant={dataWorkspaceTableListHeaderVariant}
                 primary
                 onClick={openCreate}
               >
@@ -1047,7 +1048,7 @@ function ArticlesPage() {
             ) : null}
             <DataWorkspaceHeaderIconButton
               label="Gestionar categorías"
-              headerVariant="dark"
+              headerVariant={dataWorkspaceTableListHeaderVariant}
               onClick={() => {
                 setCategoriesOpen(true)
                 void loadModalCategories({

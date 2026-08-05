@@ -68,6 +68,7 @@ import {
   DataWorkspaceTableListPage,
   DataWorkspaceTableListPaginationFooter,
   DataWorkspaceTableListShell,
+  dataWorkspaceTableListHeaderVariant,
 } from "@/components/data-workspace/DataWorkspaceTableListLayout"
 import {
   DataWorkspaceListTableFrame,
@@ -479,7 +480,7 @@ function RecipesPage() {
             {canCreate ? (
               <DataWorkspaceHeaderIconButton
                 label="Nueva receta"
-                headerVariant="dark"
+                headerVariant={dataWorkspaceTableListHeaderVariant}
                 primary
                 onClick={openCreate}
               >
@@ -489,7 +490,7 @@ function RecipesPage() {
             {(canUpdate || canCreate) && (
               <DataWorkspaceHeaderIconButton
                 label="Gestionar categorías"
-                headerVariant="dark"
+                headerVariant={dataWorkspaceTableListHeaderVariant}
                 onClick={() => setCategoriesOpen(true)}
               >
                 <FolderTree className="size-5" aria-hidden />

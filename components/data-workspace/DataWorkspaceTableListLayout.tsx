@@ -15,16 +15,19 @@ import {
   dataWorkspaceListFiltersBarInnerClass,
   dataWorkspaceListFiltersBarRowClass,
   workspaceTableLayoutListBodyScopeClass,
-  workspaceTableNatureEarthOrganicScopeClass,
 } from "@/components/data-workspace/dataWorkspaceTablesLayout"
+import { workspaceLayoutsTablesShellClass } from "@/components/layouts-tables/rootsLayoutsTablesProductStyles"
+import "@/components/layouts-tables/rootsLayoutsTablesScope.css"
 import { cn } from "@/lib/utils"
 import type { ReactNode } from "react"
+import type { DataWorkspaceHeaderVariant } from "@/components/layouts/dataWorkspaceHeaderStyles"
 
-/** Clases del scope tierra orgánica — filtros + tabla (patrón Clientes). */
-export const dataWorkspaceTableListNatureShellClass = cn(
-  "rootsy-app-light rootsy-nature-palette flex min-h-0 flex-1 flex-col",
-  workspaceTableNatureEarthOrganicScopeClass,
-)
+/** Variante de header para listados tabla — chrome sombra DS. */
+export const dataWorkspaceTableListHeaderVariant =
+  "tables" satisfies DataWorkspaceHeaderVariant
+
+/** Clases del scope layout tablas — filtros + tabla. */
+export const dataWorkspaceTableListNatureShellClass = workspaceLayoutsTablesShellClass
 
 /** Clases del cuerpo de página listado tabla — error + nature shell. */
 export const dataWorkspaceTableListPageBodyClass =
@@ -65,7 +68,7 @@ export function DataWorkspaceTableListPage({
   return (
     <DataWorkspaceLayout
       {...layout}
-      headerVariant="dark"
+      headerVariant="tables"
       contentFlush
       sidebarCollapsible={false}
       mainClassName="min-h-0"
@@ -92,7 +95,7 @@ export type DataWorkspaceTableListNatureShellProps = {
   className?: string
 }
 
-/** Contenedor tierra orgánica — envuelve filtros + tabla. */
+/** Contenedor layout tablas — envuelve filtros + tabla. */
 export function DataWorkspaceTableListNatureShell({
   children,
   className,
@@ -103,6 +106,9 @@ export function DataWorkspaceTableListNatureShell({
     </div>
   )
 }
+
+/** @deprecated Alias de DataWorkspaceTableListNatureShell */
+export const DataWorkspaceTableListLayoutsShell = DataWorkspaceTableListNatureShell
 
 export type DataWorkspaceTableListFiltersBarProps = {
   children: ReactNode
@@ -142,11 +148,11 @@ export type DataWorkspaceTableListShellProps = Omit<
   DataWorkspaceListTableShellProps,
   "variant"
 > & {
-  /** Por defecto `earth` (pie tierra oscuro + selects). */
+  /** Por defecto `tables` (pie sombra · layout librería). */
   footerVariant?: DataWorkspaceListPaginationFooterProps["variant"]
 }
 
-/** Shell flush con scope layout h-11/h-14 — defaults del listado Nature. */
+/** Shell flush con scope layout h-10/h-14 — listado tablas DS. */
 export function DataWorkspaceTableListShell({
   className,
   footerVariant: _footerVariant,
@@ -168,9 +174,9 @@ export type DataWorkspaceTableListPaginationFooterProps = Omit<
   variant?: DataWorkspaceListPaginationFooterProps["variant"]
 }
 
-/** Pie de paginación — `variant="earth"` por defecto. */
+/** Pie de paginación — `variant="tables"` por defecto (layout librería). */
 export function DataWorkspaceTableListPaginationFooter({
-  variant = "earth",
+  variant = "tables",
   ...props
 }: DataWorkspaceTableListPaginationFooterProps) {
   return <DataWorkspaceListPaginationFooter variant={variant} {...props} />

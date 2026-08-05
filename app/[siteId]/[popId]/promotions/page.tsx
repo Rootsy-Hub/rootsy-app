@@ -67,6 +67,7 @@ import {
   DataWorkspaceTableListPage,
   DataWorkspaceTableListPaginationFooter,
   DataWorkspaceTableListShell,
+  dataWorkspaceTableListHeaderVariant,
 } from "@/components/data-workspace/DataWorkspaceTableListLayout"
 import {
   DataWorkspaceListTableFrame,
@@ -422,7 +423,7 @@ function PromotionsPage() {
         headerActions: canCreate ? (
           <DataWorkspaceHeaderIconButton
             label="Nueva promoción"
-            headerVariant="dark"
+            headerVariant={dataWorkspaceTableListHeaderVariant}
             primary
             onClick={openCreate}
           >

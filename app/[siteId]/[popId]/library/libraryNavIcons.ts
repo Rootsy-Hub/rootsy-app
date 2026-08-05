@@ -53,6 +53,7 @@ const LIBRARY_NAV_ICONS: Record<string, LucideIcon> = {
   "ui-components-banners": Megaphone,
   "ui-components-dropdown": ChevronDown,
   layouts: LayoutTemplate,
+  "layouts-module": Layers,
   "layouts-tables": PanelLeft,
   "layouts-blocks": LayoutGrid,
   "layouts-operations": Layers,

@@ -190,13 +190,11 @@ export const workspaceTableLayoutMetaLabelClass = cn(
   "font-bold",
 )
 
-/** Encabezado — tierra con bruma canopy. */
+/** Encabezado — bruma sunken (layout tablas). */
 export const workspaceTableNatureHeaderCellClass = cn(
   "sticky top-0 z-20 h-10 border-b px-2 py-2",
   workspaceTableLayoutMetaLabelClass,
-  "border-[var(--wt-border-strong)] bg-[var(--wt-header-bg)] text-[var(--wt-header-text)]",
-  "shadow-[0_1px_0_0_var(--wt-border-strong)] backdrop-blur-sm",
-  "supports-[backdrop-filter]:bg-[color-mix(in_srgb,var(--wt-header-bg)_86%,transparent)]",
+  "border-[var(--wt-border)] bg-[var(--wt-header-bg)] text-[var(--wt-header-text)]",
 )
 
 export const workspaceTableNatureBodyRowInactiveClass = "opacity-[0.78]"
@@ -255,9 +253,9 @@ export const listBulkToolbarBarClass =
 
 /** Contenedor único — filtros activos + selección antes de la tabla. */
 export const listTableChromeStackClass =
-  "shrink-0 overflow-hidden bg-white border-b border-[var(--wt-border)]"
+  "shrink-0 overflow-hidden border-b border-[var(--wt-border)] bg-white"
 
-/** Separador interno suave entre filas del stack (no `--wt-border-strong`). */
+/** Separador interno suave entre filas del stack. */
 export const listTableChromeStackFollowRowClass =
   "border-t border-[var(--wt-border)]"
 
@@ -302,11 +300,11 @@ export const workspaceTableNatureStatusBadgeClass: Record<
   string
 > = {
   activo:
-    "border-[color:var(--nature-canopy-400)]/45 bg-[color:var(--nature-canopy-100)] text-[color:var(--nature-canopy-800)]",
+    "border-[color-mix(in_srgb,var(--rootsy-savia-600)_25%,var(--rootsy-bruma-200))] bg-[color-mix(in_srgb,var(--rootsy-savia-600)_10%,white)] text-[var(--rootsy-savia-800)]",
   pendiente:
-    "border-[color:var(--nature-autumn-400)]/50 bg-[color:var(--nature-autumn-100)] text-[color:var(--nature-autumn-800)]",
+    "border-[color-mix(in_srgb,#f59e0b_25%,var(--rootsy-bruma-200))] bg-[color-mix(in_srgb,#f59e0b_10%,white)] text-[#78350f]",
   vencido:
-    "border-[color:var(--nature-ember-500)]/40 bg-[color:var(--nature-ember-600)]/10 text-[color:var(--nature-ember-700)]",
+    "border-[color-mix(in_srgb,#ef4444_25%,var(--rootsy-bruma-200))] bg-[color-mix(in_srgb,#ef4444_10%,white)] text-[#dc2626]",
 }
 
 export const workspaceTableNatureSkeletonTone = {
@@ -316,12 +314,12 @@ export const workspaceTableNatureSkeletonTone = {
   pill: "animate-pulse rounded-md bg-[var(--wt-skeleton)]",
 } as const
 
-/** Checkbox — borde corteza, marca canopy al marcar. */
+/** Checkbox — borde bruma, marca savia al marcar. */
 export const workspaceTableNatureCheckboxClass = cn(
-  "size-4 border shadow-none [&_[data-slot=checkbox-indicator]_svg]:size-3.5",
-  "border-[var(--wt-border-strong)] bg-[var(--wt-surface)]",
-  "data-[state=checked]:border-[color:var(--nature-canopy-600)] data-[state=checked]:bg-[color:var(--nature-canopy-600)] data-[state=checked]:text-white",
-  "data-[state=indeterminate]:border-[color:var(--nature-canopy-600)]/50 data-[state=indeterminate]:bg-[color:var(--nature-canopy-100)] data-[state=indeterminate]:text-[color:var(--nature-canopy-700)]",
+  "size-4 rounded border shadow-none [&_[data-slot=checkbox-indicator]_svg]:size-3.5",
+  "border-[var(--rootsy-bruma-300)] bg-white",
+  "data-[state=checked]:border-[var(--rootsy-savia-600)] data-[state=checked]:bg-[var(--rootsy-savia-600)] data-[state=checked]:text-white",
+  "data-[state=indeterminate]:border-[color-mix(in_srgb,var(--rootsy-savia-600)_50%,var(--rootsy-bruma-300))] data-[state=indeterminate]:bg-[var(--rootsy-savia-100)] data-[state=indeterminate]:text-[var(--rootsy-savia-700)]",
 )
 
 /** @deprecated Usar workspaceTableNatureCheckboxClass */

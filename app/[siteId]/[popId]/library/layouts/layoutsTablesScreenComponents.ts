@@ -39,6 +39,12 @@ export const LAYOUTS_TABLES_SCREEN_COMPONENTS: LayoutsTablesScreenComponentRow[]
   },
   {
     layer: "Header",
+    component: "Nombre POP",
+    token: "body semibold · textOnDark",
+    source: "layoutsTablesHardcodedSpec · getLayoutsTablesPopNameStyle",
+  },
+  {
+    layer: "Header",
     component: "Título central",
     token: "font.heading.small · textOnDark",
     source: "layoutsTablesHardcodedSpec",
@@ -54,6 +60,12 @@ export const LAYOUTS_TABLES_SCREEN_COMPONENTS: LayoutsTablesScreenComponentRow[]
     component: "Acción secundaria",
     token: "icon-button · pos outlined",
     source: "buttonsUiHardcodedSpec",
+  },
+  {
+    layer: "Header",
+    component: "Nombre usuario",
+    token: "body semibold · textOnDark",
+    source: "layoutsTablesHardcodedSpec · getLayoutsTablesUserNameStyle",
   },
   {
     layer: "Header",
@@ -141,6 +153,12 @@ export const LAYOUTS_TABLES_SCREEN_COMPONENTS: LayoutsTablesScreenComponentRow[]
   },
   {
     layer: "Footer",
+    component: "Conteo resultados",
+    token: "body.small · sombra-400 / textOnDark",
+    source: "getLayoutsTablesFooterTextStyle",
+  },
+  {
+    layer: "Footer",
     component: "Select por página",
     token: "form.control · dark sunken",
     source: "getLayoutsTablesFooterSelectStyle",
@@ -152,3 +170,17 @@ export const LAYOUTS_TABLES_SCREEN_COMPONENTS: LayoutsTablesScreenComponentRow[]
     source: "getLayoutsTablesFooterNavButtonStyle",
   },
 ]
+
+export function getLayoutsTablesScreenComponentsByLayer(
+  ...layers: string[]
+): LayoutsTablesScreenComponentRow[] {
+  const allowed = new Set(layers)
+  return LAYOUTS_TABLES_SCREEN_COMPONENTS.filter((row) => allowed.has(row.layer))
+}
+
+export const LAYOUTS_TABLES_HEADER_COMPONENTS = getLayoutsTablesScreenComponentsByLayer("Header")
+export const LAYOUTS_TABLES_BODY_COMPONENTS = getLayoutsTablesScreenComponentsByLayer(
+  "Toolbar",
+  "Tabla",
+)
+export const LAYOUTS_TABLES_FOOTER_COMPONENTS = getLayoutsTablesScreenComponentsByLayer("Footer")

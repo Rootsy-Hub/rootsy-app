@@ -1,7 +1,11 @@
 "use client"
 
+import { LayoutsModuleShellWithContent } from "@/app/[siteId]/[popId]/library/layouts/LayoutsModuleDocPrimitives"
 import { LayoutsTablesNightForestSurface } from "@/app/[siteId]/[popId]/library/layouts/LayoutsTablesNightForestSurface"
-import { LAYOUTS_TABLES_SCREEN_COMPONENTS } from "@/app/[siteId]/[popId]/library/layouts/layoutsTablesScreenComponents"
+import {
+  getLayoutsTablesScreenComponentsByLayer,
+  LAYOUTS_TABLES_SCREEN_COMPONENTS,
+} from "@/app/[siteId]/[popId]/library/layouts/layoutsTablesScreenComponents"
 import {
   getLayoutsTablesBodyCanvasStyle,
   getLayoutsTablesBodyCellStyle,
@@ -35,6 +39,7 @@ import {
   getLayoutsTablesToolbarShellStyle,
   getLayoutsTablesUserNameStyle,
   getLayoutsTablesWireframeZoneStyle,
+  getLayoutsTablesWireframeColumnDividerColor,
   LAYOUTS_TABLES_ANATOMY,
   type LayoutsTablesStatusId,
 } from "@/app/[siteId]/[popId]/library/layouts/layoutsTablesHardcodedSpec"
@@ -55,7 +60,7 @@ import {
   Maximize2,
   Plus,
 } from "lucide-react"
-import type { CSSProperties } from "react"
+import type { CSSProperties, ReactNode } from "react"
 
 const DEMO_PAGE_TITLE = "Layout tablas"
 const DEMO_USER_ROLE = "Administradora"
@@ -117,6 +122,31 @@ function LayoutHeightBadge({ label }: { label: string }) {
     >
       {label}
     </span>
+  )
+}
+
+/** Sub-sección doc — vista / wireframe / componentes dentro de una zona. */
+export function LayoutsTablesDocZone({
+  title,
+  description,
+  children,
+}: {
+  title: string
+  description?: string
+  children: ReactNode
+}) {
+  return (
+    <div className="space-y-4">
+      <div>
+        <h4 className="text-sm font-semibold tracking-tight text-foreground">{title}</h4>
+        {description ? (
+          <p className="mt-1 max-w-3xl text-xs leading-relaxed text-muted-foreground">
+            {description}
+          </p>
+        ) : null}
+      </div>
+      {children}
+    </div>
   )
 }
 
@@ -269,7 +299,15 @@ export function LayoutsTablesHeaderDemo({ composed = false }: LayoutsTablesDemoP
   )
 }
 
-function WireframeColumnGrid({ heightPx, kind }: { heightPx: number; kind: Parameters<typeof getLayoutsTablesWireframeZoneStyle>[0] }) {
+function WireframeColumnGrid({
+  heightPx,
+  kind,
+}: {
+  heightPx: number
+  kind: "chrome" | "toolbar" | "footer"
+}) {
+  const columnDivider = getLayoutsTablesWireframeColumnDividerColor(kind)
+
   return (
     <div style={{ ...getLayoutsTablesWireframeZoneStyle(kind), height: heightPx }}>
       <div
@@ -283,7 +321,7 @@ function WireframeColumnGrid({ heightPx, kind }: { heightPx: number; kind: Param
           <div
             key={index}
             style={{
-              borderRight: index < 2 ? `1px solid ${LAYOUTS_TABLES_ANATOMY.columnDividerColor}` : undefined,
+              borderRight: index < 2 ? `1px solid ${columnDivider}` : undefined,
             }}
           />
         ))}
@@ -292,12 +330,157 @@ function WireframeColumnGrid({ heightPx, kind }: { heightPx: number; kind: Param
   )
 }
 
-export function LayoutsTablesLayoutGridDemo() {
+function LayoutsTablesContentGridBody({
+  scrollRows = 8,
+  showFooter = true,
+}: {
+  scrollRows?: number
+  showFooter?: boolean
+}) {
+  return (
+    <>
+      <div className="relative shrink-0">
+        <LayoutHeightBadge label={`layout.toolbar · ${LAYOUTS_TABLES_ANATOMY.toolbarHeightPx}px`} />
+        <WireframeColumnGrid heightPx={LAYOUTS_TABLES_ANATOMY.toolbarHeightPx} kind="toolbar" />
+      </div>
+
+      <div
+        style={{
+          ...getLayoutsTablesBodyCanvasStyle(),
+          position: "relative",
+          flex: 1,
+          minHeight: 0,
+          display: "flex",
+          flexDirection: "column",
+        }}
+      >
+        <div className="relative shrink-0">
+          <LayoutHeightBadge label={`table.head · ${LAYOUTS_TABLES_ANATOMY.tableHeadHeightPx}px`} />
+          <div
+            style={{
+              ...getLayoutsTablesWireframeZoneStyle("head"),
+              height: LAYOUTS_TABLES_ANATOMY.tableHeadHeightPx,
+            }}
+          />
+        </div>
+        <div className="relative min-h-0 flex-1 overflow-auto">
+          <LayoutHeightBadge
+            label={`table.body · ${LAYOUTS_TABLES_ANATOMY.tableRowHeightPx}px/fila · scroll`}
+          />
+          <div>
+            {Array.from({ length: scrollRows }, (_, index) => (
+              <div
+                key={index}
+                style={{
+                  height: LAYOUTS_TABLES_ANATOMY.tableRowHeightPx,
+                  backgroundColor: getLayoutsTablesRowBackground(index, { noHover: true }),
+                  borderBottom: `1px solid ${LAYOUTS_TABLES_ANATOMY.contentBorderColor}`,
+                }}
+              />
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {showFooter ? (
+        <div className="relative shrink-0">
+          <LayoutHeightBadge label={`layout.footer · ${LAYOUTS_TABLES_ANATOMY.footerHeightPx}px`} />
+          <WireframeColumnGrid heightPx={LAYOUTS_TABLES_ANATOMY.footerHeightPx} kind="footer" />
+        </div>
+      ) : null}
+    </>
+  )
+}
+
+export function LayoutsTablesDocSubsection({
+  title,
+  children,
+}: {
+  title: string
+  children: ReactNode
+}) {
+  return (
+    <div className="space-y-3">
+      <h4 className="text-sm font-semibold text-foreground">{title}</h4>
+      {children}
+    </div>
+  )
+}
+
+/** Vista previa — tablas dentro del shell módulo (fondo POP + header glass + bruma). */
+export function LayoutsTablesModulePreviewDemo() {
+  return (
+    <LayoutsModuleShellWithContent
+      height="26rem"
+      contentLabel="layout.module.content · tablas"
+    >
+      <LayoutsTablesFullPageDraft composed />
+    </LayoutsModuleShellWithContent>
+  )
+}
+
+/** 1 · Grid del contenido — toolbar · tabla scroll · footer. */
+export function LayoutsTablesContentGridWireframeDemo() {
+  return (
+    <div
+      className="mx-auto flex max-w-4xl flex-col overflow-hidden rounded-2xl border border-border/70"
+      style={{ height: "22rem" }}
+    >
+      <LayoutsTablesContentGridBody scrollRows={10} />
+    </div>
+  )
+}
+
+export function LayoutsTablesLayoutGridDemo({ contentOnly = false }: { contentOnly?: boolean }) {
+  const body = <LayoutsTablesContentGridBody scrollRows={contentOnly ? 6 : 12} showFooter={!contentOnly} />
+
+  if (contentOnly) {
+    return <div className="flex h-64 flex-col overflow-hidden">{body}</div>
+  }
+
   return (
     <div
       className="mx-auto flex max-w-4xl flex-col overflow-hidden"
       style={{
         height: "28rem",
+        ...getLayoutsTablesShellStyle(false),
+      }}
+    >
+      <div className="relative shrink-0">
+        <LayoutHeightBadge label={`layout.header · ${LAYOUTS_TABLES_ANATOMY.headerHeightPx}px`} />
+        <WireframeColumnGrid heightPx={LAYOUTS_TABLES_ANATOMY.headerHeightPx} kind="chrome" />
+      </div>
+      {body}
+    </div>
+  )
+}
+
+/** Vista ensamblada — header + toolbar + tabla (sin footer). */
+export function LayoutsTablesHeaderBodyFullDemo() {
+  return (
+    <div
+      className="mx-auto flex max-w-4xl flex-col overflow-hidden"
+      style={{
+        height: "24rem",
+        ...getLayoutsTablesShellStyle(false),
+      }}
+    >
+      <LayoutsTablesHeaderDemo composed />
+      <LayoutsTablesFiltersDemo composed />
+      <div style={{ ...getLayoutsTablesBodyCanvasStyle(), flex: 1, minHeight: 0 }}>
+        <LayoutsTablesBodyDemo composed />
+      </div>
+    </div>
+  )
+}
+
+/** Wireframe — header + toolbar + cuerpo scrollable (sin footer). */
+export function LayoutsTablesHeaderBodyWireframeDemo() {
+  return (
+    <div
+      className="mx-auto flex max-w-4xl flex-col overflow-hidden"
+      style={{
+        height: "22rem",
         ...getLayoutsTablesShellStyle(false),
       }}
     >
@@ -311,7 +494,7 @@ export function LayoutsTablesLayoutGridDemo() {
         <WireframeColumnGrid heightPx={LAYOUTS_TABLES_ANATOMY.toolbarHeightPx} kind="toolbar" />
       </div>
 
-      <div style={{ ...getLayoutsTablesBodyCanvasStyle(), position: "relative" }}>
+      <div style={{ ...getLayoutsTablesBodyCanvasStyle(), position: "relative", flex: 1, minHeight: 0 }}>
         <div className="relative shrink-0">
           <LayoutHeightBadge label="table.head · 40px" />
           <div style={{ ...getLayoutsTablesWireframeZoneStyle("head"), height: LAYOUTS_TABLES_ANATOMY.tableHeadHeightPx }} />
@@ -319,21 +502,33 @@ export function LayoutsTablesLayoutGridDemo() {
         <div className="relative min-h-0 flex-1 overflow-auto">
           <LayoutHeightBadge label="table.row · 56px · scroll" />
           <div>
-            {Array.from({ length: 12 }, (_, index) => (
+            {Array.from({ length: 8 }, (_, index) => (
               <div
                 key={index}
                 style={{
                   height: LAYOUTS_TABLES_ANATOMY.tableRowHeightPx,
                   backgroundColor: getLayoutsTablesRowBackground(index, { noHover: true }),
-                  borderBottom: `1px solid ${LAYOUTS_TABLES_ANATOMY.toolbarDividerColor}`,
+                  borderBottom: `1px solid ${LAYOUTS_TABLES_ANATOMY.contentBorderColor}`,
                 }}
               />
             ))}
           </div>
         </div>
       </div>
+    </div>
+  )
+}
 
-      <div className="relative shrink-0">
+/** Wireframe — solo footer de paginación. */
+export function LayoutsTablesFooterWireframeDemo() {
+  return (
+    <div
+      className="mx-auto max-w-4xl overflow-hidden"
+      style={{
+        ...getLayoutsTablesShellStyle(false),
+      }}
+    >
+      <div className="relative">
         <LayoutHeightBadge label="layout.footer · 68px" />
         <WireframeColumnGrid heightPx={LAYOUTS_TABLES_ANATOMY.footerHeightPx} kind="footer" />
       </div>
@@ -418,30 +613,92 @@ export function LayoutsTablesUserProfileDemo() {
   )
 }
 
-export function LayoutsTablesComponentsTable() {
+export function LayoutsTablesComponentsTable({
+  rows = LAYOUTS_TABLES_SCREEN_COMPONENTS,
+  caption,
+}: {
+  rows?: typeof LAYOUTS_TABLES_SCREEN_COMPONENTS
+  caption?: string
+}) {
   return (
-    <div className="overflow-x-auto rounded-2xl border border-border/70">
-      <table className="w-full min-w-[720px] text-left text-sm">
-        <thead>
-          <tr className="border-b border-border/60 bg-muted/30">
-            <th className="px-4 py-3 font-semibold text-foreground">Capa</th>
-            <th className="px-4 py-3 font-semibold text-foreground">Componente</th>
-            <th className="px-4 py-3 font-semibold text-foreground">Token</th>
-            <th className="px-4 py-3 font-semibold text-foreground">Fuente</th>
-          </tr>
-        </thead>
-        <tbody>
-          {LAYOUTS_TABLES_SCREEN_COMPONENTS.map((row) => (
-            <tr key={`${row.layer}-${row.component}-${row.token}`} className="border-b border-border/40 last:border-0">
-              <td className="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-muted-foreground">{row.layer}</td>
-              <td className="px-4 py-3 text-foreground">{row.component}</td>
-              <td className="px-4 py-3 font-mono text-[11px] text-primary">{row.token}</td>
-              <td className="px-4 py-3 font-mono text-[10px] text-muted-foreground">{row.source}</td>
+    <div className="space-y-2">
+      {caption ? (
+        <p className="font-mono text-[11px] uppercase tracking-[0.1em] text-muted-foreground">
+          {caption}
+        </p>
+      ) : null}
+      <div className="overflow-x-auto rounded-2xl border border-border/70">
+        <table className="w-full min-w-[720px] text-left text-sm">
+          <thead>
+            <tr className="border-b border-border/60 bg-muted/30">
+              <th className="px-4 py-3 font-semibold text-foreground">Capa</th>
+              <th className="px-4 py-3 font-semibold text-foreground">Componente</th>
+              <th className="px-4 py-3 font-semibold text-foreground">Token</th>
+              <th className="px-4 py-3 font-semibold text-foreground">Fuente</th>
             </tr>
-          ))}
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            {rows.map((row) => (
+              <tr key={`${row.layer}-${row.component}-${row.token}`} className="border-b border-border/40 last:border-0">
+                <td className="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-muted-foreground">{row.layer}</td>
+                <td className="px-4 py-3 text-foreground">{row.component}</td>
+                <td className="px-4 py-3 font-mono text-[11px] text-primary">{row.token}</td>
+                <td className="px-4 py-3 font-mono text-[10px] text-muted-foreground">{row.source}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
     </div>
+  )
+}
+
+export function LayoutsTablesHeaderComponentsPanel() {
+  return (
+    <div className="space-y-6">
+      <LayoutsTablesDocZone
+        title="Ensamblado"
+        description="Tres columnas — izquierda chrome + POP, centro título, derecha acciones + usuario."
+      >
+        <LayoutsTablesHeaderStructureDemo />
+      </LayoutsTablesDocZone>
+
+      <LayoutsTablesDocZone
+        title="Piezas sueltas"
+        description="Cada control del header sobre chrome sombra."
+      >
+        <div className="flex flex-wrap items-start gap-4">
+          <LayoutsTablesChromeButtonsDemo />
+          <LayoutsTablesSecondaryIconButtonsDemo />
+          <LayoutsTablesPrimaryIconButtonsDemo />
+          <LayoutsTablesPopProfileDemo />
+          <LayoutsTablesUserProfileDemo />
+        </div>
+      </LayoutsTablesDocZone>
+
+      <LayoutsTablesComponentsTable
+        rows={getLayoutsTablesScreenComponentsByLayer("Header")}
+        caption="Inventario · header"
+      />
+    </div>
+  )
+}
+
+export function LayoutsTablesBodyComponentsPanel() {
+  return (
+    <LayoutsTablesComponentsTable
+      rows={getLayoutsTablesScreenComponentsByLayer("Toolbar", "Tabla")}
+      caption="Inventario · toolbar + tabla"
+    />
+  )
+}
+
+export function LayoutsTablesFooterComponentsPanel() {
+  return (
+    <LayoutsTablesComponentsTable
+      rows={getLayoutsTablesScreenComponentsByLayer("Footer")}
+      caption="Inventario · footer"
+    />
   )
 }
 
@@ -489,6 +746,79 @@ function LayoutsTablesTableContent({ rows, composed = false }: { rows: DemoRow[]
         ))}
       </tbody>
     </table>
+  )
+}
+
+export function LayoutsTablesFiltersSectionDemo() {
+  return (
+    <div
+      className="mx-auto max-w-4xl overflow-hidden rounded-2xl border border-border/70"
+      style={getLayoutsTablesShellStyle(false)}
+    >
+      <div className="relative">
+        <LayoutHeightBadge label={`layout.toolbar · ${LAYOUTS_TABLES_ANATOMY.toolbarHeightPx}px`} />
+        <LayoutsTablesFiltersDemo composed hideLabels={false} />
+      </div>
+    </div>
+  )
+}
+
+/** 3 · Head de tabla — selección + columnas. */
+export function LayoutsTablesTableHeadDemo() {
+  const headStyle = getLayoutsTablesHeadCellStyle()
+  const checkboxStyle = getLayoutsTablesCheckboxStyle()
+
+  return (
+    <div
+      className="relative mx-auto max-w-4xl overflow-hidden rounded-2xl border border-border/70"
+      style={getLayoutsTablesShellStyle(false)}
+    >
+      <LayoutHeightBadge label={`table.head · ${LAYOUTS_TABLES_ANATOMY.tableHeadHeightPx}px`} />
+      <div style={getLayoutsTablesTableShellStyle(false)}>
+        <table style={getLayoutsTablesTableStyle()}>
+          <thead>
+            <tr>
+              <th style={{ ...headStyle, width: 48, paddingLeft: 0, paddingRight: 0 }} scope="col">
+                <div style={{ display: "flex", justifyContent: "center" }}>
+                  <div style={checkboxStyle} aria-hidden />
+                </div>
+              </th>
+              <th style={headStyle}>Artículo</th>
+              <th style={{ ...headStyle, width: 144 }}>Referencia</th>
+              <th style={{ ...headStyle, width: 112, textAlign: "right" }}>Monto</th>
+              <th style={{ ...headStyle, width: 112 }}>Estado</th>
+            </tr>
+          </thead>
+        </table>
+      </div>
+    </div>
+  )
+}
+
+/** 4 · Body de tabla — filas alternadas + scroll. */
+export function LayoutsTablesTableBodySectionDemo() {
+  return (
+    <div
+      className="relative mx-auto flex max-w-4xl flex-col overflow-hidden rounded-2xl border border-border/70"
+      style={{ height: "16rem", ...getLayoutsTablesShellStyle(false) }}
+    >
+      <LayoutHeightBadge
+        label={`table.body · ${LAYOUTS_TABLES_ANATOMY.tableRowHeightPx}px/fila · scroll`}
+      />
+      <div style={{ ...getLayoutsTablesBodyCanvasStyle(), flex: 1, minHeight: 0, overflow: "auto" }}>
+        <LayoutsTablesBodyDemo composed />
+      </div>
+    </div>
+  )
+}
+
+/** 5 · Footer de tabla — paginación. */
+export function LayoutsTablesTableFooterSectionDemo() {
+  return (
+    <div className="relative mx-auto max-w-4xl overflow-hidden rounded-2xl border border-border/70">
+      <LayoutHeightBadge label={`layout.footer · ${LAYOUTS_TABLES_ANATOMY.footerHeightPx}px`} />
+      <LayoutsTablesFooterDemo composed />
+    </div>
   )
 }
 
@@ -543,7 +873,21 @@ export function LayoutsTablesFooterDemo({ composed = false }: LayoutsTablesDemoP
   )
 }
 
-export function LayoutsTablesFullPageDraft() {
+export function LayoutsTablesFullPageDraft({ composed = false }: LayoutsTablesDemoPartProps) {
+  const inner = (
+    <>
+      <LayoutsTablesFiltersDemo composed />
+      <div style={{ ...getLayoutsTablesBodyCanvasStyle(), flex: 1, minHeight: 0, display: "flex", flexDirection: "column" }}>
+        <LayoutsTablesBodyDemo composed />
+        <LayoutsTablesFooterDemo composed />
+      </div>
+    </>
+  )
+
+  if (composed) {
+    return <div className="flex min-h-0 flex-1 flex-col">{inner}</div>
+  }
+
   return (
     <div
       className="mx-auto flex max-w-4xl flex-col"
@@ -553,11 +897,7 @@ export function LayoutsTablesFullPageDraft() {
       }}
     >
       <LayoutsTablesHeaderDemo composed />
-      <LayoutsTablesFiltersDemo composed />
-      <div style={getLayoutsTablesBodyCanvasStyle()}>
-        <LayoutsTablesBodyDemo composed />
-        <LayoutsTablesFooterDemo composed />
-      </div>
+      {inner}
     </div>
   )
 }

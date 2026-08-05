@@ -1,5 +1,5 @@
 import type { DataWorkspaceHeaderVariant } from "@/components/layouts/dataWorkspaceHeaderStyles"
-import { isNightForestHeader } from "@/components/layouts/dataWorkspaceHeaderStyles"
+import { isDarkChromeHeader } from "@/components/layouts/dataWorkspaceHeaderStyles"
 import { cn } from "@/lib/utils"
 
 export type DataWorkspaceHeaderTitleProps = {
@@ -11,9 +11,9 @@ export function DataWorkspaceHeaderTitle({
   title,
   headerVariant = "default",
 }: DataWorkspaceHeaderTitleProps) {
-  const isNightForest = isNightForestHeader(headerVariant)
+  const isDarkChrome = isDarkChromeHeader(headerVariant)
 
-  if (isNightForest) {
+  if (isDarkChrome) {
     return (
       <h1 className="inline-flex flex-col items-center">
         <span className="text-[1.65rem] font-black tracking-tight text-zinc-50">

@@ -270,8 +270,33 @@ export function getDateControlUiSurface(
   return withLeading ? getCompositeShellUiSurface(state) : getFormControlUiSurface(state)
 }
 
-export type ImageUploadUiSurface = FormControlUiSurface & {
+export type ImageUploadUiSurface = Omit<FormControlUiSurface, "border"> & {
+  borderWidth: string
   borderStyle: "solid" | "dashed"
+  borderColor: string
+}
+
+function imageUploadBorder(
+  color: string,
+  style: "solid" | "dashed",
+): Pick<ImageUploadUiSurface, "borderWidth" | "borderStyle" | "borderColor"> {
+  return {
+    borderWidth: "1px",
+    borderStyle: style,
+    borderColor: color,
+  }
+}
+
+function imageUploadSurfaceFromBase(
+  base: FormControlUiSurface,
+  style: "solid" | "dashed",
+  borderColor = borderHex("color.border"),
+): ImageUploadUiSurface {
+  const { border: _border, ...rest } = base
+  return {
+    ...rest,
+    ...imageUploadBorder(borderColor, style),
+  }
 }
 
 export function getImageUploadUiSurface(
@@ -279,51 +304,42 @@ export function getImageUploadUiSurface(
   state: FormImageUploadDisplayStateId = "default",
 ): ImageUploadUiSurface {
   const base = getDefaultControlSurface()
+  const borderStyle: "solid" | "dashed" = mode === "empty" ? "dashed" : "solid"
 
   if (state === "drag") {
     return {
       backgroundColor: `color-mix(in srgb, ${borderHex("color.border.selected")} 4%, ${elevationHex("elevation.surface.overlay")})`,
       color: hx("bruma", "900"),
-      border: `1px solid ${borderHex("color.border.selected")}`,
-      borderStyle: mode === "empty" ? "dashed" : "solid",
+      ...imageUploadBorder(borderHex("color.border.selected"), borderStyle),
       boxShadow: `0 0 0 2px color-mix(in srgb, ${borderHex("color.border.selected")} 20%, transparent)`,
     }
   }
 
-  const borderStyle: "solid" | "dashed" = mode === "empty" ? "dashed" : "solid"
-
   switch (state) {
     case "default":
-      return { ...base, borderStyle }
+      return imageUploadSurfaceFromBase(base, borderStyle)
     case "hover":
       return {
-        ...base,
-        border: `1px solid ${hx("bruma", "300")}`,
+        ...imageUploadSurfaceFromBase(base, borderStyle, hx("bruma", "300")),
         backgroundColor:
           mode === "empty" ? elevationHex("elevation.surface.sunken") : base.backgroundColor,
-        borderStyle,
       }
     case "focus":
       return {
-        ...base,
-        border: `1px solid ${borderHex("color.border.focused")}`,
+        ...imageUploadSurfaceFromBase(base, borderStyle, borderHex("color.border.focused")),
         boxShadow: FOCUS_RING,
-        borderStyle,
       }
     case "disabled":
-      return { ...base, opacity: 0.5, borderStyle }
+      return { ...imageUploadSurfaceFromBase(base, borderStyle), opacity: 0.5 }
     case "error":
       return {
-        ...base,
-        border: `1px solid ${semanticHex("status-danger")}`,
+        ...imageUploadSurfaceFromBase(base, borderStyle, semanticHex("status-danger")),
         boxShadow: ERROR_RING,
-        borderStyle,
       }
     case "readonly":
       return {
-        ...base,
+        ...imageUploadSurfaceFromBase(base, "solid"),
         backgroundColor: elevationHex("elevation.surface.sunken"),
-        borderStyle: "solid",
       }
   }
 }
@@ -333,8 +349,9 @@ export function getImageUploadThumbUiStyle(
   state: FormImageUploadDisplayStateId = "default",
 ): {
   backgroundColor: string
-  border: string
+  borderWidth: string
   borderStyle: "solid" | "dashed"
+  borderColor: string
   borderRadiusPx: number
   opacity?: number
 } {
@@ -349,8 +366,7 @@ export function getImageUploadThumbUiStyle(
   return {
     backgroundColor:
       mode === "filled" ? hx("bruma", "100") : elevationHex("elevation.surface.sunken"),
-    border: `1px solid ${borderColor}`,
-    borderStyle: mode === "empty" ? "dashed" : "solid",
+    ...imageUploadBorder(borderColor, mode === "empty" ? "dashed" : "solid"),
     borderRadiusPx: ROOTSY_FORM_CONTROL_SPECS["image-upload"].thumbRadiusPx,
     opacity: shell.opacity,
   }

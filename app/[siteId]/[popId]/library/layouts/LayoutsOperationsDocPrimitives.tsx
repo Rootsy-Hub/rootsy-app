@@ -722,7 +722,15 @@ function LayoutsOperationsFrame({
   )
 }
 
-export function LayoutsOperationsFullPageDraft() {
+export function LayoutsOperationsFullPageDraft({ composed = false }: { composed?: boolean } = {}) {
+  if (composed) {
+    return (
+      <div className="flex min-h-0 flex-1 flex-col">
+        <LayoutsOperationsBody composed />
+      </div>
+    )
+  }
+
   return (
     <LayoutsOperationsFrame heightClass="h-[32rem]">
       <LayoutsOperationsHeaderDemo composed />
@@ -731,7 +739,15 @@ export function LayoutsOperationsFullPageDraft() {
   )
 }
 
-export function LayoutsOperationsLayoutGridDemo() {
+export function LayoutsOperationsLayoutGridDemo({ contentOnly = false }: { contentOnly?: boolean } = {}) {
+  if (contentOnly) {
+    return (
+      <div className="h-64 overflow-hidden">
+        <LayoutsOperationsBody wireframe />
+      </div>
+    )
+  }
+
   return (
     <LayoutsOperationsFrame>
       <LayoutsOperationsHeaderDemo wireframe />

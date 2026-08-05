@@ -54,7 +54,7 @@ export default function RootLayout({
   children: React.ReactNode
 }>) {
   return (
-    <html lang="es" className="dark scroll-smooth">
+    <html lang="es" className="dark scroll-smooth" data-scroll-behavior="smooth">
       <body className={`${nunitoSans.variable} ${sourceSans.variable} ${inter.variable} font-sans antialiased`}>
         <AuthProvider>
           <QueryProvider>

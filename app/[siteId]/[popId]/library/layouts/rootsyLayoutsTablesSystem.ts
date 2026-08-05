@@ -71,8 +71,11 @@ export const ROOTSY_LAYOUTS_TABLES_ANATOMY = {
   shellBorder: `1px solid ${borderHex("color.border")}`,
   shellShadow: elevationShadow("elevation.shadow.overlay"),
   headerDividerColor: hx("sombra", "600"),
+  /** Columnas chrome/footer — sombra-600 70% · layoutsTablesFooterSurfaceClass border-t */
   columnDividerColor: `color-mix(in srgb, ${hx("sombra", "600")} 70%, transparent)`,
+  /** Toolbar · head · filas — bruma-200 · --wt-border · color.border */
   toolbarDividerColor: borderHex("color.border"),
+  contentBorderColor: borderHex("color.border"),
 } as const
 
 export const ROOTSY_LAYOUTS_TABLES_CHROME = {

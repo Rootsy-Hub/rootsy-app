@@ -31,6 +31,7 @@ import {
   DataWorkspaceTableListFiltersBar,
   DataWorkspaceTableListShell,
   DataWorkspaceTableListPaginationFooter,
+  dataWorkspaceTableListHeaderVariant,
 } from "@/components/data-workspace/DataWorkspaceTableListLayout"
 import {
   DataWorkspaceListTableFrame,
@@ -522,7 +523,7 @@ function SuppliersPage() {
         headerActions: canCreate ? (
           <DataWorkspaceHeaderIconButton
             label="Nuevo proveedor"
-            headerVariant="dark"
+            headerVariant={dataWorkspaceTableListHeaderVariant}
             primary
             onClick={openCreate}
           >

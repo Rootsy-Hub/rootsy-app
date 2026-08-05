@@ -69,6 +69,7 @@ import {
   DataWorkspaceTableListPage,
   DataWorkspaceTableListPaginationFooter,
   DataWorkspaceTableListShell,
+  dataWorkspaceTableListHeaderVariant,
 } from "@/components/data-workspace/DataWorkspaceTableListLayout"
 import {
   DataWorkspaceListTableFrame,
@@ -428,7 +429,7 @@ function InvoicesPage() {
           headerActions: canCreate ? (
             <DataWorkspaceHeaderIconButton
               label="Nueva factura"
-              headerVariant="dark"
+              headerVariant={dataWorkspaceTableListHeaderVariant}
               primary
               onClick={openCompose}
             >

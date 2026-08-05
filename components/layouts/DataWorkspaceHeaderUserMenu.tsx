@@ -6,8 +6,9 @@ import {
   dataWorkspaceHeaderDropdownLogoutItemClass,
   dataWorkspaceHeaderDropdownSeparatorClassForVariant,
   dataWorkspaceHeaderUserDropdownContentClassForVariant,
+  isDarkChromeHeader,
   isDataWorkspaceTintedHeader,
-  isNightForestHeader,
+  isLayoutsTablesHeader,
   type DataWorkspaceHeaderVariant,
 } from "@/components/layouts/dataWorkspaceHeaderStyles"
 import {
@@ -37,8 +38,8 @@ export function DataWorkspaceHeaderUserMenu({
   headerVariant = "default",
 }: DataWorkspaceHeaderUserMenuProps) {
   const isTinted = isDataWorkspaceTintedHeader(headerVariant)
-  const isNightForest = isNightForestHeader(headerVariant)
-  const theme = isNightForest ? "dark" : "light"
+  const isTables = isLayoutsTablesHeader(headerVariant)
+  const theme = isDarkChromeHeader(headerVariant) ? "dark" : "light"
   const { logOut } = useAuth()
   const router = useRouter()
 
@@ -73,9 +74,9 @@ export function DataWorkspaceHeaderUserMenu({
             <AvatarFallback
               className={cn(
                 "rounded-[inherit] text-[11px] font-semibold",
-                isNightForest
-                  ? "bg-[#1c2824] text-emerald-200"
-                  : isTinted
+                isTables
+                  ? "bg-[var(--rootsy-sombra-800)] text-[var(--rootsy-savia-300)]"
+                  : isTinted && !isTables
                     ? "bg-zinc-800 text-emerald-300"
                     : "bg-primary/10 text-primary",
               )}
@@ -89,8 +90,8 @@ export function DataWorkspaceHeaderUserMenu({
             title={isOnline ? "En línea" : "Sin conexión"}
             className={cn(
               "absolute bottom-1 right-1 size-2.5 rounded-full ring-2",
-              isNightForest
-                ? "ring-[#0c1210]"
+              isTables
+                ? "ring-[var(--rootsy-sombra-950)]"
                 : isTinted
                   ? "ring-zinc-900"
                   : "ring-secondary",

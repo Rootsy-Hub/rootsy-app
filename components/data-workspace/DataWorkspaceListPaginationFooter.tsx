@@ -28,6 +28,18 @@ import {
   earthTableFooterTotalLabelClass,
   tableChromeFooterClass,
 } from "@/components/data-workspace/dataWorkspaceListStyles"
+import {
+  layoutsTablesChromeIconButtonClass,
+  layoutsTablesFooterCountStrongClass,
+  layoutsTablesFooterCountTextClass,
+  layoutsTablesFooterGridClass,
+  layoutsTablesFooterNavClusterClass,
+  layoutsTablesFooterPageLabelClass,
+  layoutsTablesFooterPageSizeClusterClass,
+  layoutsTablesFooterSelectItemClass,
+  layoutsTablesFooterSelectTriggerClass,
+  layoutsTablesFooterSurfaceClass,
+} from "@/components/layouts-tables/rootsLayoutsTablesProductStyles"
 import { FooterTotalCountSkeleton } from "@/components/data-workspace/DataWorkspaceListPaginationFooterSkeleton"
 import { PopGlassChrome } from "@/components/layouts/PopGlassChrome"
 import {
@@ -57,7 +69,7 @@ export type DataWorkspaceListPaginationFooterProps = {
   onPageChange: (page: number) => void
   onPageSizeChange: (pageSize: number) => void
   pageSizeLabelId: string
-  variant?: "default" | "dark" | "earth"
+  variant?: "default" | "dark" | "earth" | "tables"
 }
 
 export function DataWorkspaceListPaginationFooter({
@@ -82,7 +94,8 @@ export function DataWorkspaceListPaginationFooter({
     null
   const isDark = variant === "dark"
   const isEarth = variant === "earth"
-  const isCompact = isDark || isEarth
+  const isTables = variant === "tables"
+  const isCompact = isDark || isEarth || isTables
   const isEmpty = !listFetching && totalCount <= 0
   const paginationDisabled = listFetching || isEmpty
   const totalCountLabel = totalCount.toLocaleString("es-AR")
@@ -109,6 +122,123 @@ export function DataWorkspaceListPaginationFooter({
     const safeCurrentPage = isEmpty
       ? 1
       : Math.min(Math.max(1, currentPage), effectiveTotalPages)
+
+    if (isTables) {
+      const footerBody = (
+        <div className={layoutsTablesFooterGridClass}>
+          <p className={cn(layoutsTablesFooterCountTextClass, "min-w-0 truncate")}>
+            <span className="sr-only" aria-live="polite" aria-atomic="true">
+              {footerPaginationAriaLabel}
+            </span>
+            <span aria-hidden>
+              Mostrando{" "}
+              <strong className={layoutsTablesFooterCountStrongClass}>
+                {listFetching ? "…" : `${rangeStart.toLocaleString("es-AR")}–${rangeEnd.toLocaleString("es-AR")}`}
+              </strong>{" "}
+              de{" "}
+              {listFetching ? (
+                <FooterTotalCountSkeleton variant="tables" />
+              ) : (
+                <strong className={layoutsTablesFooterCountStrongClass}>
+                  {totalCountLabel}
+                </strong>
+              )}
+            </span>
+          </p>
+
+          <div className={layoutsTablesFooterNavClusterClass}>
+            <button
+              type="button"
+              className={layoutsTablesChromeIconButtonClass}
+              disabled={paginationDisabled || safeCurrentPage <= 1}
+              aria-label="Ir al inicio"
+              onClick={() => onPageChange(1)}
+            >
+              <ChevronsLeft className="size-4" aria-hidden />
+            </button>
+            <button
+              type="button"
+              className={layoutsTablesChromeIconButtonClass}
+              disabled={paginationDisabled || safeCurrentPage <= 1}
+              aria-label="Retroceder una página"
+              onClick={() => onPageChange(Math.max(1, safeCurrentPage - 1))}
+            >
+              <ChevronLeft className="size-4" aria-hidden />
+            </button>
+            <span className={layoutsTablesFooterPageLabelClass} aria-hidden>
+              {safeCurrentPage.toLocaleString("es-AR")} /{" "}
+              {effectiveTotalPages.toLocaleString("es-AR")}
+            </span>
+            <button
+              type="button"
+              className={layoutsTablesChromeIconButtonClass}
+              disabled={paginationDisabled || safeCurrentPage >= effectiveTotalPages}
+              aria-label="Avanzar una página"
+              onClick={() =>
+                onPageChange(Math.min(effectiveTotalPages, safeCurrentPage + 1))
+              }
+            >
+              <ChevronRight className="size-4" aria-hidden />
+            </button>
+            <button
+              type="button"
+              className={layoutsTablesChromeIconButtonClass}
+              disabled={paginationDisabled || safeCurrentPage >= effectiveTotalPages}
+              aria-label="Ir al final"
+              onClick={() => onPageChange(effectiveTotalPages)}
+            >
+              <ChevronsRight className="size-4" aria-hidden />
+            </button>
+          </div>
+
+          <div className={layoutsTablesFooterPageSizeClusterClass}>
+            <span
+              id={pageSizeLabelId}
+              className={cn(layoutsTablesFooterCountTextClass, "whitespace-nowrap")}
+            >
+              Por página
+            </span>
+            <Select
+              value={String(pageSize)}
+              disabled={paginationDisabled}
+              onValueChange={(v) => onPageSizeChange(Number(v))}
+            >
+              <RootsFormSelectTrigger
+                tone="dark"
+                aria-labelledby={pageSizeLabelId}
+                aria-label="Resultados por página"
+                className={layoutsTablesFooterSelectTriggerClass}
+              >
+                <SelectValue />
+              </RootsFormSelectTrigger>
+              <RootsFormSelectContent tone="light" align="end">
+                {pageSizeOptions.map((n) => (
+                  <RootsFormSelectItem
+                    key={n}
+                    tone="light"
+                    className={layoutsTablesFooterSelectItemClass}
+                    value={String(n)}
+                  >
+                    {n.toLocaleString("es-AR")}
+                  </RootsFormSelectItem>
+                ))}
+              </RootsFormSelectContent>
+            </Select>
+          </div>
+        </div>
+      )
+
+      return (
+        <div
+          className={cn(layoutsTablesFooterSurfaceClass, "h-17 shrink-0")}
+          role="navigation"
+          aria-label="Paginación del listado"
+          aria-busy={listFetching}
+        >
+          {footerBody}
+        </div>
+      )
+    }
 
     const usePopGlassFooter = isDark && Boolean(backgroundImageUrl?.trim())
     const selectTone = "dark"

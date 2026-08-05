@@ -3,42 +3,39 @@ import {
   lightToolbarPanelLastClass,
   lightToolbarShellClass,
   workspaceTableLayoutMetaLabelClass,
-  workspaceTableNatureScopeClass,
-  workspaceTableNatureSurfaceClass,
 } from "@/components/data-workspace/dataWorkspaceListStyles"
+import {
+  workspaceLayoutsTablesScopeClass,
+} from "@/components/layouts-tables/rootsLayoutsTablesProductStyles"
 import { cn } from "@/lib/utils"
 
-/** Variante tierra orgánica — tablas de layout workspace. */
-export const workspaceTableNatureEarthOrganicClass =
-  "workspace-table-nature--earth-organic"
+/** @deprecated Alias — usar workspaceLayoutsTablesScopeClass */
+export const workspaceTableNatureEarthOrganicClass = workspaceLayoutsTablesScopeClass
 
-/** Scope + tokens Nature sin fondo opaco (p. ej. pie cristal POP). */
-export const workspaceTableNatureEarthOrganicTokensClass = cn(
-  workspaceTableNatureScopeClass,
-  workspaceTableNatureEarthOrganicClass,
-)
+/** Scope tokens layout tablas sin fondo opaco (p. ej. pie cristal POP). */
+export const workspaceTableNatureEarthOrganicTokensClass =
+  workspaceLayoutsTablesScopeClass
 
 export const workspaceTableNatureEarthOrganicScopeClass = cn(
-  workspaceTableNatureEarthOrganicTokensClass,
-  workspaceTableNatureSurfaceClass,
+  workspaceLayoutsTablesScopeClass,
+  "bg-[var(--wt-surface)]",
 )
 
 /** Altura fija filas body (h-14 total, padding horizontal px-3). */
 export const workspaceTableLayoutRowHeightClass =
   "!h-14 !max-h-14 box-border"
 
-/** Altura header layout — h-11, más compacto que filas. */
+/** Altura header layout — h-10 (space.500). */
 export const workspaceTableLayoutHeaderHeightClass =
-  "!h-11 !max-h-11 box-border"
+  "!h-10 !max-h-10 box-border"
 
-/** Encabezado layout — blanco translúcido + blur al scroll; sin borde inferior. */
+/** Encabezado layout — bruma sunken, sin blur. */
 export const workspaceTableLayoutHeaderHeadClass = cn(
   workspaceTableLayoutMetaLabelClass,
   workspaceTableLayoutHeaderHeightClass,
   "sticky top-0 z-20 !py-0 px-3 align-middle",
-  "!border-b-0 !shadow-none",
-  "bg-white/75 backdrop-blur-md",
-  "supports-[backdrop-filter]:bg-white/62",
+  "!border-b border-[var(--wt-border)] !shadow-none",
+  "bg-[var(--wt-header-bg)] text-[var(--wt-header-text)]",
 )
 
 export const workspaceTableLayoutBodyRowClass = cn(
@@ -63,11 +60,12 @@ export const workspaceTableLayoutActionsBodyCellClass = cn(
   "px-1 !py-0 align-middle",
 )
 
-/** Scope layout — h-11 header · h-14 filas · sin borde inferior en th. */
+/** Scope layout — h-10 header · h-14 filas. */
 export const workspaceTableLayoutListBodyScopeClass = cn(
   "[&_[data-slot=table-header]_[data-slot=table-row]]:!border-b-0",
-  "[&_[data-slot=table-head]]:!h-11 [&_[data-slot=table-head]]:!max-h-11 [&_[data-slot=table-head]]:box-border [&_[data-slot=table-head]]:!py-0",
-  "[&_[data-slot=table-head]]:!border-b-0 [&_[data-slot=table-head]]:!shadow-none",
+  "[&_[data-slot=table-head]]:!h-10 [&_[data-slot=table-head]]:!max-h-10 [&_[data-slot=table-head]]:box-border [&_[data-slot=table-head]]:!py-0",
+  "[&_[data-slot=table-head]]:!border-b [&_[data-slot=table-head]]:!border-[var(--wt-border)] [&_[data-slot=table-head]]:!shadow-none",
+  "[&_[data-slot=table-head]]:!bg-[var(--wt-header-bg)] [&_[data-slot=table-head]]:!text-[var(--wt-header-text)]",
   "[&_[data-slot=table-head]>div]:!h-full [&_[data-slot=table-head]>div]:!min-h-0",
   "[&_[data-slot=table-body]_[data-slot=table-row]]:!h-14 [&_[data-slot=table-body]_[data-slot=table-row]]:!max-h-14",
   "[&_[data-slot=table-body]_[data-slot=table-cell]]:!h-14 [&_[data-slot=table-body]_[data-slot=table-cell]]:!max-h-14 [&_[data-slot=table-body]_[data-slot=table-cell]]:box-border [&_[data-slot=table-body]_[data-slot=table-cell]]:!py-0",
@@ -77,8 +75,9 @@ export const workspaceTableLayoutListBodyScopeClass = cn(
 /** Operaciones — header compacto layout; filas flexibles (celdas multilínea). */
 export const workspaceTableOperationsListHeaderScopeClass = cn(
   "[&_[data-slot=table-header]_[data-slot=table-row]]:!border-b-0",
-  "[&_[data-slot=table-head]]:!h-11 [&_[data-slot=table-head]]:!max-h-11 [&_[data-slot=table-head]]:box-border [&_[data-slot=table-head]]:!py-0",
-  "[&_[data-slot=table-head]]:!border-b-0 [&_[data-slot=table-head]]:!shadow-none",
+  "[&_[data-slot=table-head]]:!h-10 [&_[data-slot=table-head]]:!max-h-10 [&_[data-slot=table-head]]:box-border [&_[data-slot=table-head]]:!py-0",
+  "[&_[data-slot=table-head]]:!border-b [&_[data-slot=table-head]]:!border-[var(--wt-border)] [&_[data-slot=table-head]]:!shadow-none",
+  "[&_[data-slot=table-head]]:!bg-[var(--wt-header-bg)] [&_[data-slot=table-head]]:!text-[var(--wt-header-text)]",
   "[&_[data-slot=table-head]>div]:!h-full [&_[data-slot=table-head]>div]:!min-h-0",
 )
 
@@ -94,15 +93,17 @@ export const workspaceTableLayoutCellPrimaryTextClass =
 export const workspaceTableLayoutCellSecondaryTextClass =
   "truncate text-xs leading-4"
 
-/** Superficie listado layout — mismo tono que barra de filtros (`bg-background`). */
-export const workspaceTableLayoutListSurfaceClass = "bg-background"
+/** Superficie listado layout — canvas bruma. */
+export const workspaceTableLayoutListSurfaceClass = "bg-[var(--rootsy-bruma-50)]"
 
-/** Barra de filtros — h-23 · tres columnas iguales · labels visibles. */
-export const dataWorkspaceListFiltersBarClass = "shrink-0 bg-background"
+/** Barra de filtros — h-23 · toolbar elevation.overlay. */
+export const dataWorkspaceListFiltersBarClass = cn(
+  "shrink-0 border-b border-[var(--rootsy-bruma-200)] bg-white",
+)
 
 /** Fila principal de filtros (PERÍODO / FILTROS / BUSCAR). */
 export const dataWorkspaceListFiltersBarRowClass =
-  "border-b border-border/80"
+  "border-b border-[var(--rootsy-bruma-200)]"
 
 export const dataWorkspaceListFiltersBarInnerClass = "h-23"
 
@@ -110,7 +111,7 @@ export const dataWorkspaceListFiltersGridClass =
   "grid h-full grid-cols-1 md:grid-cols-3"
 
 export const dataWorkspaceListFiltersPanelClass =
-  "flex h-full min-w-0 items-center border-r border-border/80 px-3"
+  "flex h-full min-w-0 items-center border-r border-[var(--rootsy-bruma-200)] px-3"
 
 export const dataWorkspaceListFiltersPanelLastClass = cn(
   dataWorkspaceListFiltersPanelClass,

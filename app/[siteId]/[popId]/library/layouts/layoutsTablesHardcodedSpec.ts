@@ -393,18 +393,38 @@ export function getLayoutsTablesFooterSelectStyle() {
   }
 }
 
+export function getLayoutsTablesWireframeColumnDividerColor(
+  kind: "chrome" | "toolbar" | "head" | "footer",
+) {
+  return kind === "toolbar" || kind === "head"
+    ? ROOTSY_LAYOUTS_TABLES_ANATOMY.contentBorderColor
+    : ROOTSY_LAYOUTS_TABLES_ANATOMY.columnDividerColor
+}
+
 export function getLayoutsTablesWireframeZoneStyle(kind: "chrome" | "toolbar" | "head" | "row" | "footer") {
+  const contentBorder = ROOTSY_LAYOUTS_TABLES_ANATOMY.contentBorderColor
+  const chromeBorder = ROOTSY_LAYOUTS_TABLES_ANATOMY.columnDividerColor
+
   switch (kind) {
     case "chrome":
       return { background: ROOTSY_LAYOUTS_TABLES_CHROME.headerBackground }
     case "toolbar":
-      return { backgroundColor: ROOTSY_LAYOUTS_TABLES_TOOLBAR.backgroundColor }
+      return {
+        backgroundColor: ROOTSY_LAYOUTS_TABLES_TOOLBAR.backgroundColor,
+        borderBottom: `1px solid ${contentBorder}`,
+      }
     case "head":
-      return { backgroundColor: ROOTSY_LAYOUTS_TABLES_BODY.headBackground }
+      return {
+        backgroundColor: ROOTSY_LAYOUTS_TABLES_BODY.headBackground,
+        borderBottom: `1px solid ${contentBorder}`,
+      }
     case "row":
       return { backgroundColor: ROOTSY_LAYOUTS_TABLES_BODY.rowEvenBackground }
     case "footer":
-      return { background: ROOTSY_LAYOUTS_TABLES_CHROME.footerBackground }
+      return {
+        background: ROOTSY_LAYOUTS_TABLES_CHROME.footerBackground,
+        borderTop: `1px solid ${chromeBorder}`,
+      }
   }
 }
 

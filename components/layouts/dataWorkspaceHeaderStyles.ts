@@ -17,10 +17,14 @@ import {
   rootsDropdownSeparatorDarkClass,
   rootsDropdownSeparatorLightClass,
 } from "@/components/rootsy-dropdown/rootsDropdownStyles"
+import {
+  layoutsTablesChromeIconButtonClass,
+  layoutsTablesChromeSurfaceClass,
+} from "@/components/layouts-tables/rootsLayoutsTablesProductStyles"
 import { cn } from "@/lib/utils"
 import { popHeaderGlassBorderClass } from "@/components/layouts/popHeaderBackdropStyles"
 
-export type DataWorkspaceHeaderVariant = "default" | "dark" | "night"
+export type DataWorkspaceHeaderVariant = "default" | "dark" | "night" | "tables"
 export const nightForestSurfaceClass =
   "border-[#263530]/90 bg-[linear-gradient(165deg,#060908_0%,#0c1210_52%,#141c19_100%)]"
 
@@ -46,13 +50,26 @@ export function isNightForestHeader(
   return headerVariant === "dark" || headerVariant === "night"
 }
 
+/** Header chrome oscuro — incluye layout tablas (sombra) y bosque nocturno. */
+export function isDarkChromeHeader(
+  headerVariant: DataWorkspaceHeaderVariant = "default",
+): boolean {
+  return isNightForestHeader(headerVariant) || headerVariant === "tables"
+}
+
+export function isLayoutsTablesHeader(
+  headerVariant: DataWorkspaceHeaderVariant = "default",
+): boolean {
+  return headerVariant === "tables"
+}
+
 /** @deprecated Usar isNightForestHeader */
 export const isNightSkyHeader = isNightForestHeader
 
 export function isDataWorkspaceTintedHeader(
   headerVariant: DataWorkspaceHeaderVariant = "default",
 ): boolean {
-  return isNightForestHeader(headerVariant)
+  return isDarkChromeHeader(headerVariant)
 }
 
 /** Superficie bosque nocturno — carbón vegetal. */
@@ -68,6 +85,15 @@ const dataWorkspaceHeaderButtonFocusClass =
 function dataWorkspaceHeaderButtonOpenClass(
   headerVariant: DataWorkspaceHeaderVariant = "default",
 ): string {
+  if (isLayoutsTablesHeader(headerVariant)) {
+    return cn(
+      "data-[state=open]:border-[color-mix(in_srgb,var(--rootsy-white)_14%,var(--rootsy-sombra-500))]",
+      "data-[state=open]:bg-[color-mix(in_srgb,var(--rootsy-sombra-700)_72%,transparent)]",
+      "data-[state=open]:text-white",
+      "data-[state=open]:ring-0 data-[state=open]:outline-none",
+      "focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[color-mix(in_srgb,var(--rootsy-white)_14%,var(--rootsy-savia-400)_6%)]",
+    )
+  }
   if (isNightForestHeader(headerVariant)) {
     return cn(
       "data-[state=open]:border-[#33443d] data-[state=open]:bg-[#1c2824] data-[state=open]:text-[#e7e5e4]",
@@ -85,6 +111,14 @@ function dataWorkspaceHeaderButtonOpenClass(
 export function dataWorkspaceHeaderChromeButtonClass(
   headerVariant: DataWorkspaceHeaderVariant = "default",
 ): string {
+  if (isLayoutsTablesHeader(headerVariant)) {
+    return cn(
+      "group",
+      layoutsTablesChromeIconButtonClass,
+      dataWorkspaceHeaderButtonFocusClass,
+      dataWorkspaceHeaderButtonOpenClass(headerVariant),
+    )
+  }
   if (isNightForestHeader(headerVariant)) {
     return cn(
       "group inline-flex size-10 shrink-0 items-center justify-center rounded-xl border transition-all",
@@ -106,6 +140,15 @@ export function dataWorkspaceHeaderIconButtonClass(
   options?: { primary?: boolean },
 ): string {
   const primary = options?.primary ?? false
+  if (isLayoutsTablesHeader(headerVariant)) {
+    return cn(
+      "group",
+      layoutsTablesChromeIconButtonClass,
+      dataWorkspaceHeaderButtonFocusClass,
+      dataWorkspaceHeaderButtonOpenClass(headerVariant),
+      "disabled:pointer-events-none disabled:opacity-40",
+    )
+  }
   if (isNightForestHeader(headerVariant)) {
     return cn(
       "group inline-flex size-10 shrink-0 items-center justify-center rounded-xl border transition-all",
@@ -135,6 +178,21 @@ export function dataWorkspaceHeaderIconButtonClass(
 export function dataWorkspaceSectionMenuTriggerClass(
   headerVariant: DataWorkspaceHeaderVariant = "default",
 ): string {
+  if (isLayoutsTablesHeader(headerVariant)) {
+    return cn(
+      "group inline-flex h-10 w-auto max-w-[min(100%,13rem)] shrink-0 items-center gap-2 rounded-xl border px-2.5 text-sm font-semibold transition-all",
+      dataWorkspaceHeaderButtonFocusClass,
+      "border-[color-mix(in_srgb,var(--rootsy-white)_12%,var(--rootsy-savia-600))]",
+      "bg-[color-mix(in_srgb,var(--rootsy-savia-600)_12%,transparent)] text-[var(--rootsy-savia-300)]",
+      "hover:border-[color-mix(in_srgb,var(--rootsy-white)_16%,var(--rootsy-savia-500))]",
+      "hover:bg-[color-mix(in_srgb,var(--rootsy-savia-600)_18%,transparent)] hover:text-white",
+      "data-[state=open]:border-[color-mix(in_srgb,var(--rootsy-white)_18%,var(--rootsy-savia-500))]",
+      "data-[state=open]:bg-[color-mix(in_srgb,var(--rootsy-savia-600)_22%,transparent)] data-[state=open]:text-white",
+      "data-[state=open]:ring-0 data-[state=open]:outline-none",
+      "focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[color-mix(in_srgb,var(--rootsy-white)_12%,var(--rootsy-savia-400)_8%)]",
+      "[&_svg]:text-[var(--rootsy-savia-400)]",
+    )
+  }
   if (isNightForestHeader(headerVariant)) {
     return cn(
       "group inline-flex h-10 w-auto max-w-[min(100%,13rem)] shrink-0 items-center gap-2 rounded-xl border px-2.5 text-sm font-semibold transition-all",
@@ -164,7 +222,7 @@ export function dataWorkspaceSectionMenuDropdownItemClass(
   headerVariant: DataWorkspaceHeaderVariant = "default",
   selected = false,
 ): string {
-  const theme = isNightForestHeader(headerVariant) ? "dark" : "light"
+  const theme = isDarkChromeHeader(headerVariant) ? "dark" : "light"
   return cn("gap-2", rootsDropdownItemClassForTheme(theme, "default", { selected }))
 }
 
@@ -172,7 +230,7 @@ export function dataWorkspaceSectionMenuDropdownItemClass(
 export function dataWorkspaceDropdownCheckIconClass(
   headerVariant: DataWorkspaceHeaderVariant = "default",
 ): string {
-  return isNightForestHeader(headerVariant)
+  return isDarkChromeHeader(headerVariant)
     ? "text-[var(--rootsy-savia-400)]"
     : "text-[var(--rootsy-savia-600)]"
 }
@@ -191,7 +249,7 @@ export const dataWorkspaceHeaderDropdownContentClass =
 export function dataWorkspaceHeaderDropdownContentClassForVariant(
   headerVariant: DataWorkspaceHeaderVariant = "default",
 ): string {
-  if (isNightForestHeader(headerVariant)) {
+  if (isDarkChromeHeader(headerVariant)) {
     return dataWorkspaceNightHeaderDropdownContentClass
   }
   return dataWorkspaceLightDropdownContentClass
@@ -209,7 +267,7 @@ export const dataWorkspaceHeaderUserDropdownContentClass =
 export function dataWorkspaceHeaderUserDropdownContentClassForVariant(
   headerVariant: DataWorkspaceHeaderVariant = "default",
 ): string {
-  if (isNightForestHeader(headerVariant)) {
+  if (isDarkChromeHeader(headerVariant)) {
     return dataWorkspaceNightHeaderUserDropdownContentClass
   }
   return cn(dataWorkspaceLightDropdownContentClass, "origin-top-right")
@@ -238,7 +296,7 @@ export const dataWorkspaceHeaderDropdownLabelClass =
 export function dataWorkspaceHeaderDropdownLabelClassForVariant(
   headerVariant: DataWorkspaceHeaderVariant = "default",
 ): string {
-  if (isNightForestHeader(headerVariant)) {
+  if (isDarkChromeHeader(headerVariant)) {
     return dataWorkspaceNightHeaderDropdownLabelClass
   }
   return rootsDropdownLabelLightClass
@@ -253,7 +311,7 @@ export const dataWorkspaceDarkHeaderDropdownItemClass =
 export function dataWorkspaceHeaderDropdownItemClassForVariant(
   headerVariant: DataWorkspaceHeaderVariant = "default",
 ): string {
-  if (isNightForestHeader(headerVariant)) {
+  if (isDarkChromeHeader(headerVariant)) {
     return dataWorkspaceNightHeaderDropdownItemClass
   }
   return dataWorkspaceLightDropdownItemClass
@@ -268,7 +326,7 @@ export const dataWorkspaceHeaderDropdownSeparatorClass =
 export function dataWorkspaceHeaderDropdownSeparatorClassForVariant(
   headerVariant: DataWorkspaceHeaderVariant = "default",
 ): string {
-  if (isNightForestHeader(headerVariant)) {
+  if (isDarkChromeHeader(headerVariant)) {
     return dataWorkspaceNightHeaderDropdownSeparatorClass
   }
   return dataWorkspaceLightDropdownSeparatorClass
@@ -279,6 +337,9 @@ export const dataWorkspaceHeaderDropdownLogoutItemClass = rootsDropdownDestructi
 export function dataWorkspaceHeaderDividerClass(
   headerVariant: DataWorkspaceHeaderVariant = "default",
 ): string {
+  if (isLayoutsTablesHeader(headerVariant)) {
+    return "bg-[var(--rootsy-sombra-600)]"
+  }
   if (isNightForestHeader(headerVariant)) return nightForestDividerClass
   return "bg-border"
 }
@@ -286,6 +347,9 @@ export function dataWorkspaceHeaderDividerClass(
 export function dataWorkspaceHeaderPopRingClass(
   headerVariant: DataWorkspaceHeaderVariant = "default",
 ): string {
+  if (isLayoutsTablesHeader(headerVariant)) {
+    return "ring-[color-mix(in_srgb,var(--rootsy-white)_12%,var(--rootsy-sombra-700))]"
+  }
   if (isNightForestHeader(headerVariant)) return "ring-[#33443d]"
   return "ring-border"
 }
@@ -293,6 +357,9 @@ export function dataWorkspaceHeaderPopRingClass(
 export function dataWorkspaceHeaderSurfaceClass(
   headerVariant: DataWorkspaceHeaderVariant = "default",
 ): string {
+  if (isLayoutsTablesHeader(headerVariant)) {
+    return cn(layoutsTablesChromeSurfaceClass, "text-white")
+  }
   if (isNightForestHeader(headerVariant)) {
     return cn(dataWorkspaceNightHeaderSurfaceClass, "text-zinc-100")
   }
@@ -302,6 +369,12 @@ export function dataWorkspaceHeaderSurfaceClass(
 export function dataWorkspaceHeaderToolbarClass(
   headerVariant: DataWorkspaceHeaderVariant = "default",
 ): string {
+  if (isLayoutsTablesHeader(headerVariant)) {
+    return cn(
+      "border-t border-[color-mix(in_srgb,var(--rootsy-sombra-600)_70%,transparent)]",
+      "bg-[color-mix(in_srgb,var(--rootsy-sombra-950)_42%,transparent)] backdrop-blur-xl",
+    )
+  }
   if (isNightForestHeader(headerVariant)) {
     return cn(
       popHeaderGlassBorderClass,
@@ -314,6 +387,14 @@ export function dataWorkspaceHeaderToolbarClass(
 export function dataWorkspaceHeaderEdgeToggleClass(
   headerVariant: DataWorkspaceHeaderVariant = "default",
 ): string {
+  if (isLayoutsTablesHeader(headerVariant)) {
+    return cn(
+      "border-[color-mix(in_srgb,var(--rootsy-white)_8%,var(--rootsy-sombra-600))]",
+      "bg-[var(--rootsy-sombra-800)] text-[var(--rootsy-sombra-400)]",
+      "hover:border-[color-mix(in_srgb,var(--rootsy-white)_12%,var(--rootsy-sombra-500))]",
+      "hover:bg-[var(--rootsy-sombra-700)] hover:text-[var(--rootsy-sombra-300)]",
+    )
+  }
   if (isNightForestHeader(headerVariant)) {
     return cn(
       "border-white/8 bg-[#141c19] text-[#78716c]",
@@ -329,9 +410,11 @@ export function dataWorkspaceHeaderRoleLabelClass(
   hasRole: boolean,
 ): string {
   if (hasRole) {
+    if (isLayoutsTablesHeader(headerVariant)) return "text-[var(--rootsy-savia-400)]"
     if (isNightForestHeader(headerVariant)) return "text-emerald-300/90"
     return "text-emerald-700"
   }
+  if (isLayoutsTablesHeader(headerVariant)) return "text-[var(--rootsy-sombra-400)]"
   if (isNightForestHeader(headerVariant)) return nightForestMutedTextClass
   return "text-muted-foreground"
 }

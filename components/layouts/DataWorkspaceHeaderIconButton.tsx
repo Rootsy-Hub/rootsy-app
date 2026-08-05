@@ -3,7 +3,7 @@
 import {
   dataWorkspaceHeaderChromeButtonClass,
   dataWorkspaceHeaderIconButtonClass,
-  isNightForestHeader,
+  isDarkChromeHeader,
   type DataWorkspaceHeaderVariant,
 } from "@/components/layouts/dataWorkspaceHeaderStyles"
 import { cn } from "@/lib/utils"
@@ -27,7 +27,7 @@ export function DataWorkspaceHeaderIconButton({
   children,
   ...rest
 }: DataWorkspaceHeaderIconButtonProps) {
-  const useDarkIconButton = isNightForestHeader(headerVariant)
+  const useDarkIconButton = isDarkChromeHeader(headerVariant)
 
   return (
     <button

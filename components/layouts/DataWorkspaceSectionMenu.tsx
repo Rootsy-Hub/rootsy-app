@@ -5,7 +5,7 @@ import {
   dataWorkspaceHeaderDropdownLabelClassForVariant,
   dataWorkspaceHeaderDropdownSeparatorClassForVariant,
   dataWorkspaceSectionMenuTriggerClass,
-  isNightForestHeader,
+  isDarkChromeHeader,
   type DataWorkspaceHeaderVariant,
 } from "@/components/layouts/dataWorkspaceHeaderStyles"
 import {
@@ -42,7 +42,7 @@ export function DataWorkspaceSectionMenu({
   viewsSectionLabel = "Vista",
   headerVariant = "default",
 }: DataWorkspaceSectionMenuProps) {
-  const theme = isNightForestHeader(headerVariant) ? "dark" : "light"
+  const theme = isDarkChromeHeader(headerVariant) ? "dark" : "light"
   const activeView =
     viewItems.find((item) => item.id === activeId) ??
     viewItems[0] ??

@@ -43,6 +43,8 @@ import { isBorderLibrarySection } from "@/app/[siteId]/[popId]/library/border/bo
 import { RadiusFoundationView } from "@/app/[siteId]/[popId]/library/radius/RadiusFoundationView"
 import { isRadiusLibrarySection } from "@/app/[siteId]/[popId]/library/radius/radiusLibraryNav"
 import { LayoutsBlocksFoundationView } from "@/app/[siteId]/[popId]/library/layouts/LayoutsBlocksFoundationView"
+import { LayoutsHubFoundationView } from "@/app/[siteId]/[popId]/library/layouts/LayoutsHubFoundationView"
+import { LayoutsModuleFoundationView } from "@/app/[siteId]/[popId]/library/layouts/LayoutsModuleFoundationView"
 import { LayoutsOperationsFoundationView } from "@/app/[siteId]/[popId]/library/layouts/LayoutsOperationsFoundationView"
 import { LayoutsTablesFoundationView } from "@/app/[siteId]/[popId]/library/layouts/LayoutsTablesFoundationView"
 import { isLayoutsLibrarySection } from "@/app/[siteId]/[popId]/library/layouts/layoutsLibraryNav"
@@ -467,6 +469,26 @@ export function LibrarySectionView({
   }
 
   if (isLayoutsLibrarySection(sectionId)) {
+    if (sectionId === "layouts") {
+      return (
+        <LayoutsHubFoundationView
+          sectionId={sectionId}
+          siteId={siteId}
+          popId={popId}
+        />
+      )
+    }
+
+    if (sectionId === "layouts-module") {
+      return (
+        <LayoutsModuleFoundationView
+          sectionId={sectionId}
+          siteId={siteId}
+          popId={popId}
+        />
+      )
+    }
+
     if (sectionId === "layouts-blocks") {
       return (
         <LayoutsBlocksFoundationView

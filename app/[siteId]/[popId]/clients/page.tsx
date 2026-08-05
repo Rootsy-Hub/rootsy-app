@@ -36,6 +36,7 @@ import {
   DataWorkspaceTableListFiltersBar,
   DataWorkspaceTableListShell,
   DataWorkspaceTableListPaginationFooter,
+  dataWorkspaceTableListHeaderVariant,
 } from "@/components/data-workspace/DataWorkspaceTableListLayout"
 import {
   DataWorkspaceListTableFrame,
@@ -620,7 +621,7 @@ function ClientsPage() {
         headerActions: canCreate ? (
           <DataWorkspaceHeaderIconButton
             label="Nuevo cliente"
-            headerVariant="dark"
+            headerVariant={dataWorkspaceTableListHeaderVariant}
             primary
             onClick={openCreate}
           >

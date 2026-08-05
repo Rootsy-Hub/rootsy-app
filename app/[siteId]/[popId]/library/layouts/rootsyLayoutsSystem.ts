@@ -3,7 +3,7 @@
  * Alineado al concepto de diseño: pocos datos, bien presentados.
  */
 
-export type LayoutsHeroVariant = "hub" | "tables" | "blocks" | "operations"
+export type LayoutsHeroVariant = "hub" | "module" | "tables" | "blocks" | "operations"
 
 export type LayoutsConceptBlock = {
   title: string
@@ -26,70 +26,76 @@ export const ROOTSY_LAYOUTS_CONCEPT: LayoutsConceptBlock = {
 } as const
 
 export const ROOTSY_LAYOUTS_MANIFESTO =
-  "Patrones de pantalla operativa: header nocturno compartido, cuerpo con bruma o tierra según densidad, footer cuando hay paginación. Tablas, bloques y operaciones — misma raíz, distinta anatomía."
+  "Layouts del POP — módulos con fondo compartido, header reutilizable y tres tipos de contenido."
 
 export const ROOTSY_LAYOUTS_PRINCIPLES = [
   {
-    title: "Shell compartido",
-    detail:
-      "Header h-17, gradiente sombra y perfil POP — el usuario reconoce el workspace antes de leer el título.",
+    title: "Fondo POP",
+    detail: "Imagen cover + velo — o fallback sombra. Igual que el menú.",
   },
   {
-    title: "Densidad con propósito",
-    detail:
-      "Tablas para listados largos; bloques para entidades con saldo; operaciones para flujos en tiempo real.",
+    title: "Shell 2 filas",
+    detail: "Header h-17 · contenido bruma scrollable.",
   },
   {
-    title: "Split POS",
-    detail:
-      "Columna fluida para acción + columna fija ~380px para resumen — ticket, totales y confirmación siempre visibles.",
-  },
-  {
-    title: "Piezas reutilizables",
-    detail:
-      "Toolbar, paginación, cards y chrome — documentados una vez, ensamblados en cada patrón.",
+    title: "Tipos de contenido",
+    detail: "Tablas · bloques · operaciones — dentro del row de contenido.",
   },
 ] as const
 
 export const ROOTSY_LAYOUTS_VARIANT_CONCEPT: Record<LayoutsHeroVariant, LayoutsConceptBlock & { eyebrow: string }> = {
   hub: {
     eyebrow: "Rootsy · Layouts",
-    ...ROOTSY_LAYOUTS_CONCEPT,
+    title: "Profundidad de layout",
+    lead: "Páginas custom aparte. Acá documentamos el shell de módulos POP y lo que va dentro del contenido.",
+    why: [
+      "Fondo → header → contenido.",
+      "Tablas · bloques · operaciones.",
+    ],
+    closing: "Un shell, tres densidades.",
+  },
+  module: {
+    eyebrow: "Rootsy · Layouts · Módulo",
+    title: "Shell del módulo",
+    lead: "Fondo POP a pantalla completa, grid header + contenido bruma.",
+    why: [
+      "Foto cover + scrim + viñeta.",
+      "Header sombra reutilizable.",
+      "Contenido: bruma-50 por defecto.",
+    ],
+    closing: "Base compartida de clientes, cuentas, ventas…",
   },
   tables: {
     eyebrow: "Rootsy · Layouts · Tablas",
-    title: "Listados que respiran",
-    lead:
-      "Header sombra, toolbar bruma, tabla densa y footer sombra — la anatomía del listado workspace con filtros, filas alternadas y paginación.",
+    title: "Contenido · tablas",
+    lead: "Dentro del row de contenido — filtros, tabla densa, footer paginador.",
     why: [
-      "Naturalidad: filas alternadas en bruma, selección con savia — el ojo sigue la columna sin perderse.",
-      "Simplicidad: cuatro zonas fijas — header, toolbar, cuerpo scrollable, footer.",
-      "Intuitivo: filtros arriba, datos en el centro, totales y páginas abajo — lectura vertical clara.",
+      "Toolbar 92px.",
+      "Filas alternadas bruma/savia.",
+      "Footer sombra 3 columnas.",
     ],
-    closing: "Muchos registros, una sola lectura — densidad sin ruido.",
+    closing: "Listados densos.",
   },
   blocks: {
     eyebrow: "Rootsy · Layouts · Bloques",
-    title: "Tarjetas con jerarquía",
-    lead:
-      "Mismo shell workspace sin toolbar ni paginación: grid responsivo de cards con elevación interactiva, radio copa y superficie blanca uniforme.",
+    title: "Contenido · bloques",
+    lead: "Grid de tarjetas — cuentas, cajas. Sin toolbar ni paginación.",
     why: [
-      "Naturalidad: cada tarjeta es una entidad — saldo, meta y acción primaria en tres zonas claras.",
-      "Simplicidad: grid auto-fill en lugar de columnas rígidas — se adapta al ancho sin romper el ritmo.",
-      "Intuitivo: cards elevadas al hover — la interacción se anticipa antes del click.",
+      "Grid auto-fill.",
+      "Cards elevación interactiva.",
+      "Superficie blanca.",
     ],
-    closing: "Entidades con cara propia — no filas genéricas.",
+    closing: "Entidades con cara propia.",
   },
   operations: {
     eyebrow: "Rootsy · Layouts · Operaciones",
-    title: "Flujo en vivo, resumen fijo",
-    lead:
-      "Header reutilizable y dos columnas — canvas nocturno fluido a la izquierda, panel de resumen ~380px a la derecha. Mesas, mostrador y compras comparten la misma estructura.",
+    title: "Contenido · operaciones",
+    lead: "Split POS — canvas fluido + panel resumen ~380px.",
     why: [
-      "Naturalidad: la columna noche concentra la acción; la columna tierra sostiene el ticket — como mostrador y caja registradora.",
-      "Simplicidad: un split, dos lecturas — no tres paneles compitiendo.",
-      "Intuitivo: el resumen nunca se pierde al scrollear el canvas — totales siempre a la vista.",
+      "Acción izquierda.",
+      "Ticket derecha fijo.",
+      "Ventas · mesas · compras.",
     ],
-    closing: "Operar a la izquierda, confirmar a la derecha — el split POS en acción.",
+    closing: "Flujo en vivo.",
   },
 }

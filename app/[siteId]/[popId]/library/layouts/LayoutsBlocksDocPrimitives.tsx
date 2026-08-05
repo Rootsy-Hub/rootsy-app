@@ -82,8 +82,51 @@ function LayoutsBlocksHeaderDemo({ composed = false }: { composed?: boolean }) {
   )
 }
 
-/** 1 · Grid del layout — header + área de contenido con tarjetas. */
-export function LayoutsBlocksLayoutGridDemo() {
+/** Grid del layout — header + área de contenido con tarjetas. */
+export function LayoutsBlocksLayoutGridDemo({ contentOnly = false }: { contentOnly?: boolean }) {
+  const content = (
+    <LayoutsBlocksEarthScope className={cn("relative min-h-0 flex-1 overflow-auto", contentOnly && "rounded-none")}>
+      <LayoutHeightBadge label="grid · scroll" />
+      <div className={cn(dataWorkspaceBlocksContentInnerClass, "gap-0 py-6 sm:py-6")}>
+        <div className={dataWorkspaceEntityCardsGridClass}>
+          {Array.from({ length: contentOnly ? 4 : 6 }, (_, index) => (
+            <div
+              key={index}
+              className={cn(
+                dataWorkspaceEntityCardClass,
+                "pointer-events-none min-h-56 shadow-sm hover:shadow-sm",
+              )}
+            >
+              <div className={dataWorkspaceEntityCardHeaderClass}>
+                <div className="flex items-start gap-3">
+                  <div className={cn("size-11 shrink-0 rounded-xl", sk.box)} />
+                  <div className="min-w-0 flex-1 space-y-2">
+                    <div className={cn("h-2.5 w-16 rounded-full", sk.pill)} />
+                    <div className={cn("h-5 w-28", sk.bar)} />
+                  </div>
+                </div>
+              </div>
+              <div className={dataWorkspaceEntityCardBodyClass}>
+                <div className={cn("h-2.5 w-20 rounded-full", sk.pill)} />
+                <div className={cn("mt-2 h-8 w-32", sk.bar)} />
+              </div>
+              <div className={cn("min-h-19 px-4 py-4", dataWorkspaceEntityCardFooterClass)}>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className={cn("h-6", sk.barSm)} />
+                  <div className={cn("h-6", sk.barSm)} />
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </LayoutsBlocksEarthScope>
+  )
+
+  if (contentOnly) {
+    return <div className="h-64 overflow-hidden">{content}</div>
+  }
+
   return (
     <div
       className={cn(
@@ -102,43 +145,7 @@ export function LayoutsBlocksLayoutGridDemo() {
           </div>
         </LayoutsTablesNightForestSurface>
       </div>
-
-      <LayoutsBlocksEarthScope className="relative min-h-0 flex-1 overflow-auto">
-        <LayoutHeightBadge label="tierra orgánica · px-4 py-6 · scroll" />
-        <div className={cn(dataWorkspaceBlocksContentInnerClass, "gap-0 py-6 sm:py-6")}>
-          <div className={dataWorkspaceEntityCardsGridClass}>
-            {Array.from({ length: 6 }, (_, index) => (
-              <div
-                key={index}
-                className={cn(
-                  dataWorkspaceEntityCardClass,
-                  "pointer-events-none min-h-56 shadow-sm hover:shadow-sm",
-                )}
-              >
-                <div className={dataWorkspaceEntityCardHeaderClass}>
-                  <div className="flex items-start gap-3">
-                    <div className={cn("size-11 shrink-0 rounded-xl", sk.box)} />
-                    <div className="min-w-0 flex-1 space-y-2">
-                      <div className={cn("h-2.5 w-16 rounded-full", sk.pill)} />
-                      <div className={cn("h-5 w-28", sk.bar)} />
-                    </div>
-                  </div>
-                </div>
-                <div className={dataWorkspaceEntityCardBodyClass}>
-                  <div className={cn("h-2.5 w-20 rounded-full", sk.pill)} />
-                  <div className={cn("mt-2 h-8 w-32", sk.bar)} />
-                </div>
-                <div className={cn("min-h-19 px-4 py-4", dataWorkspaceEntityCardFooterClass)}>
-                  <div className="grid grid-cols-2 gap-3">
-                    <div className={cn("h-6", sk.barSm)} />
-                    <div className={cn("h-6", sk.barSm)} />
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </LayoutsBlocksEarthScope>
+      {content}
     </div>
   )
 }
@@ -280,7 +287,19 @@ export function LayoutsBlocksCardSurfaceDemo() {
   )
 }
 
-export function LayoutsBlocksFullPageDraft() {
+export function LayoutsBlocksFullPageDraft({ composed = false }: { composed?: boolean }) {
+  const grid = (
+    <div className={cn("rootsy-app-light rootsy-nature-palette min-h-0 flex-1 overflow-y-auto bg-background")}>
+      <div className={dataWorkspaceBlocksPageContentClass}>
+        <LayoutsBlocksTreasuryCardsGrid />
+      </div>
+    </div>
+  )
+
+  if (composed) {
+    return grid
+  }
+
   return (
     <div
       className={cn(
@@ -290,11 +309,7 @@ export function LayoutsBlocksFullPageDraft() {
       )}
     >
       <LayoutsBlocksHeaderDemo composed />
-      <div className={cn("rootsy-app-light rootsy-nature-palette min-h-0 flex-1 overflow-y-auto bg-background")}>
-        <div className={dataWorkspaceBlocksPageContentClass}>
-          <LayoutsBlocksTreasuryCardsGrid />
-        </div>
-      </div>
+      {grid}
     </div>
   )
 }
