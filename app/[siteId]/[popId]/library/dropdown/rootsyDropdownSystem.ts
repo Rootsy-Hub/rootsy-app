@@ -1,143 +1,284 @@
 /**
- * Sistema de dropdown Rootsy — tokens de superficie y guías de uso.
- * Base: Radix DropdownMenu en components/ui/dropdown-menu.
+ * Sistema dropdown Rootsy — fuente de verdad del design system.
+ * Derivado de: elevation · border · radius · spacing · color semántico · tipografía.
  */
 
-export type DropdownSurfaceToken = {
-  id: string
-  name: string
-  contentClass: string
-  itemClass: string
-  labelClass?: string
-  separatorClass?: string
-  destructiveItemClass?: string
-  usage: string
-  source: string
+import { ROOTSY_BORDER_COLOR_TOKENS } from "@/app/[siteId]/[popId]/library/border/rootsyBorderSystem"
+import { ROOTSY_SEMANTIC_TOKENS } from "@/app/[siteId]/[popId]/library/color/rootsyColorSystem"
+import {
+  ROOTSY_ELEVATION_SHADOW_TOKENS,
+  ROOTSY_ELEVATION_SURFACES_DARK,
+  ROOTSY_ELEVATION_SURFACES_LIGHT,
+} from "@/app/[siteId]/[popId]/library/elevation/rootsyElevationSystem"
+import { ROOTSY_RADIUS_TOKENS } from "@/app/[siteId]/[popId]/library/radius/rootsyRadiusSystem"
+import { ROOTSY_COLOR_SEMANTIC, rootsyColorHex, rootsySpacePx } from "@/lib/design-system"
+
+const hx = rootsyColorHex
+
+function borderHex(token: string): string {
+  return ROOTSY_BORDER_COLOR_TOKENS.find((item) => item.token === token)!.value
 }
 
+function elevationHexLight(token: string): string {
+  return ROOTSY_ELEVATION_SURFACES_LIGHT.find((item) => item.token === token)!.value
+}
+
+function elevationHexDark(token: string): string {
+  return ROOTSY_ELEVATION_SURFACES_DARK.find((item) => item.token === token)!.value
+}
+
+function elevationShadow(token: string): string {
+  return ROOTSY_ELEVATION_SHADOW_TOKENS.find((item) => item.token === token)!.value
+}
+
+function radiusPx(id: "medium" | "large" | "xlarge" | "full"): number {
+  return Number.parseInt(ROOTSY_RADIUS_TOKENS.find((item) => item.id === id)!.value, 10)
+}
+
+function semanticHex(id: string): string {
+  return ROOTSY_SEMANTIC_TOKENS.find((item) => item.id === id)!.hex
+}
+
+export type DropdownThemeId = "light" | "dark"
+
+export type DropdownDensityId = "default" | "compact"
+
+export type DropdownTriggerId = "icon-button" | "button-default" | "button-subtle"
+
+export type DropdownItemStateId =
+  | "default"
+  | "hover"
+  | "selected"
+  | "disabled"
+  | "destructive"
+  | "destructive-hover"
+
+export type DropdownAlignId = "start" | "end"
+
 export const ROOTSY_DROPDOWN_MANIFESTO =
-  "Un dropdown agrupa acciones secundarias sin ocupar la barra principal. Los triggers solo usan componentes de la librería: RootsIconButton para menús solo-icono y DataWorkspaceSectionMenu en header nocturno. Para filtros con valor visible usá RootsFormSelectField (sección Select), no dropdown."
+  "Un dropdown agrupa acciones secundarias — overlay + shadow.overlay, radius.xlarge. Ítems space.500 de alto, hover bruma-50, selección savia tint. Triggers desde Botones UI; filtros con valor visible → Select, no dropdown."
 
 export const ROOTSY_DROPDOWN_PRINCIPLES = [
   {
-    title: "Superficie según contexto",
-    detail:
-      "Headers bosque nocturno usan dataWorkspaceNightHeader*; tarjetas light usan dataWorkspaceLightDropdown*; acciones de fila usan lightToolbarDropdown* en el panel.",
+    title: "Overlay emparejado",
+    detail: "elevation.surface.overlay + elevation.shadow.overlay — la capa flotante siempre lleva sombra.",
   },
   {
-    title: "Triggers de librería",
-    detail:
-      "RootsIconButton (tone action, compact) para ⋮ de fila; DataWorkspaceSectionMenu en header dark. Selección con label visible → RootsFormSelectField.",
-  },
-  {
-    title: "Agrupar con labels y separadores",
-    detail:
-      "DropdownMenuLabel en uppercase 10px; DropdownMenuSeparator entre secciones (Nuevo / Vista, acciones / destructivas).",
+    title: "Select ≠ Dropdown",
+    detail: "Valor visible en toolbar → Formulario UI · select. Dropdown solo para menús de acción o navegación oculta.",
   },
   {
     title: "Destructive aislado",
-    detail:
-      "variant=\"destructive\" o token logout/destructive al final, después de un separador — nunca mezclado con acciones frecuentes.",
+    detail: "status-danger al final, después de color.border separator — nunca mezclado con acciones frecuentes.",
+  },
+  {
+    title: "Triggers de librería",
+    detail: "icon-button compact en filas · button default/subtle con chevron en headers — sin triggers inventados.",
   },
 ] as const
 
-export const ROOTSY_DROPDOWN_SURFACES: DropdownSurfaceToken[] = [
+export const ROOTSY_DROPDOWN_COLOR_TOKENS = [
   {
-    id: "light-header",
-    name: "Header / tarjeta clara",
-    contentClass: "dataWorkspaceLightDropdownContentClass",
-    itemClass: "dataWorkspaceLightDropdownItemClass",
-    labelClass: undefined,
-    separatorClass: "dataWorkspaceLightDropdownSeparatorClass",
-    destructiveItemClass: "dataWorkspaceLightDropdownLogoutItemClass",
-    usage: "Menús de cuenta, caja registradora, tarjetas treasury en shell claro.",
-    source: "components/layouts/dataWorkspaceHeaderStyles.ts",
+    role: "Panel · fondo claro",
+    token: "elevation.surface.overlay",
+    hex: elevationHexLight("elevation.surface.overlay"),
   },
   {
-    id: "night-header",
-    name: "Header bosque nocturno",
-    contentClass: "dataWorkspaceNightHeaderDropdownContentClass",
-    itemClass: "dataWorkspaceNightHeaderDropdownItemClass",
-    labelClass: "dataWorkspaceNightHeaderDropdownLabelClass",
-    separatorClass: "dataWorkspaceNightHeaderDropdownSeparatorClass",
-    usage: "Selector de vista/sección en header dark (DataWorkspaceSectionMenu).",
-    source: "components/layouts/dataWorkspaceHeaderStyles.ts",
+    role: "Panel · fondo oscuro",
+    token: "elevation.surface.overlay (dark)",
+    hex: elevationHexDark("elevation.surface.overlay"),
   },
   {
-    id: "row-actions",
-    name: "Acciones de fila",
-    contentClass: "lightToolbarDropdownContentClass (+ w-44)",
-    itemClass: "lightToolbarDropdownItemClass",
-    usage: "Menú ⋮ en tablas layout — Duplicar, Editar, Eliminar.",
-    source: "app/.../layout/LayoutPreviewListTable.tsx",
+    role: "Panel · borde",
+    token: "color.border",
+    hex: borderHex("color.border"),
+  },
+  {
+    role: "Ítem · hover claro",
+    token: "bruma-50",
+    hex: hx("bruma", "50"),
+  },
+  {
+    role: "Ítem · seleccionado",
+    token: "savia-100",
+    hex: hx("savia", "100"),
+  },
+  {
+    role: "Ítem · destructive",
+    token: "status-danger",
+    hex: semanticHex("status-danger"),
+  },
+  {
+    role: "Sombra",
+    token: "elevation.shadow.overlay",
+    hex: elevationShadow("elevation.shadow.overlay"),
+  },
+] as const
+
+export const ROOTSY_DROPDOWN_THEMES: {
+  id: DropdownThemeId
+  token: string
+  label: string
+  surfaceToken: string
+  usage: string
+}[] = [
+  {
+    id: "light",
+    token: "dropdown.theme.light",
+    label: "Workspace claro",
+    surfaceToken: "elevation.surface.overlay",
+    usage: "Tablas, tarjetas, formularios — bruma + savia en selección.",
+  },
+  {
+    id: "dark",
+    token: "dropdown.theme.dark",
+    label: "Shell sombra",
+    surfaceToken: "elevation.surface.overlay",
+    usage: "Header nocturno, POS — texto on-dark · hover sombra-600.",
   },
 ]
 
-/** Mapeo a elevación — rootsyElevationOverlay* en components/elevation/rootsyElevationStyles.ts */
-export const ROOTSY_DROPDOWN_ELEVATION = {
-  level: "overlay",
-  semanticToken: "elevation.popover.select",
-  light: {
-    surface: "bg-white (elevation.surface.overlay)",
-    border: "border-black/[0.04]",
-    radius: "rounded-[1.375rem]",
-    shadow: "shadow-[0_22px_70px_-18px_rgba(0,0,0,0.28)]",
-    zIndex: "z-50",
+export const ROOTSY_DROPDOWN_DENSITIES: {
+  id: DropdownDensityId
+  token: string
+  label: string
+  minWidthPx: number
+  itemHeightPx: number
+  usage: string
+}[] = [
+  {
+    id: "default",
+    token: "dropdown.density.default",
+    label: "Default",
+    minWidthPx: rootsySpacePx("400") * 5.5,
+    itemHeightPx: rootsySpacePx("500"),
+    usage: "Menús de cuenta, navegación de sección.",
   },
-  dark: {
-    surface: "bg-[#121816] (elevation.surface.overlay dark)",
-    border: "border-black/[0.04]",
-    radius: "rounded-[1.375rem]",
-    shadow: "shadow-[0_24px_80px_-16px_oklch(0_0_0/0.65)]",
-    zIndex: "z-50",
-    note: "rootsyElevationPopoverContentDarkClass.",
+  {
+    id: "compact",
+    token: "dropdown.density.compact",
+    label: "Compacto",
+    minWidthPx: rootsySpacePx("400") * 4.4,
+    itemHeightPx: rootsySpacePx("400"),
+    usage: "Acciones de fila ⋮ — alineado a icon-button compact.",
   },
+]
+
+export const ROOTSY_DROPDOWN_TRIGGERS: {
+  id: DropdownTriggerId
+  token: string
+  label: string
+  usage: string
+}[] = [
+  {
+    id: "icon-button",
+    token: "dropdown.trigger.icon-button",
+    label: "Icon button",
+    usage: "⋮ en filas — icon-button.row.neutral · compact · aria-label.",
+  },
+  {
+    id: "button-default",
+    token: "dropdown.trigger.button-default",
+    label: "Botón default",
+    usage: "Selector de sección con chevron — appearance default.",
+  },
+  {
+    id: "button-subtle",
+    token: "dropdown.trigger.button-subtle",
+    label: "Botón subtle",
+    usage: "Acciones terciarias en toolbar — appearance subtle.",
+  },
+]
+
+export const ROOTSY_DROPDOWN_ITEM_STATES: {
+  id: DropdownItemStateId
+  token: string
+  label: string
+  usage: string
+}[] = [
+  { id: "default", token: "dropdown.item.default", label: "Default", usage: "body · bruma-900." },
+  { id: "hover", token: "dropdown.item.hover", label: "Hover", usage: "Fondo bruma-50 · sombra-600 en dark." },
+  { id: "selected", token: "dropdown.item.selected", label: "Seleccionado", usage: "savia-100 + medium + check trailing." },
+  { id: "disabled", token: "dropdown.item.disabled", label: "Deshabilitado", usage: "bruma-400 · pointer none." },
+  { id: "destructive", token: "dropdown.item.destructive", label: "Destructive", usage: "status-danger · después de separator." },
+  {
+    id: "destructive-hover",
+    token: "dropdown.item.destructive-hover",
+    label: "Destructive hover",
+    usage: "Tint danger 8% · texto danger.",
+  },
+]
+
+export const ROOTSY_DROPDOWN_ANATOMY = {
+  panelRadiusPx: radiusPx("xlarge"),
+  panelPaddingYPx: rootsySpacePx("100"),
+  panelBorder: `1px solid ${borderHex("color.border")}`,
+  shadowToken: "elevation.shadow.overlay",
+  anchorGapPx: rootsySpacePx("100"),
+  itemPaddingXPx: rootsySpacePx("150"),
+  itemGapPx: rootsySpacePx("150"),
+  iconSlotPx: rootsySpacePx("200"),
+  checkSlotPx: rootsySpacePx("200"),
+  labelPaddingXPx: rootsySpacePx("150"),
+  labelPaddingTopPx: rootsySpacePx("100"),
+  labelPaddingBottomPx: rootsySpacePx("050"),
+  separatorHeightPx: 1,
+  separatorMarginYPx: rootsySpacePx("050"),
+  destructiveTintPercent: 8,
 } as const
 
-export const ROOTSY_DROPDOWN_GUIDELINES = [
-  {
-    do: "Usar align=\"end\" en menús de fila y header nocturno.",
-    dont: "Inventar triggers outline con ícono + texto + chevron — no están en la librería.",
-  },
-  {
-    do: "RootsIconButton con label accesible en triggers solo-icono.",
-    dont: "Usar DropdownMenu para selección única con valor visible — usá Select.",
-  },
-  {
-    do: "Separadores y labels para agrupar acciones (cuenta, vista, destructivas).",
-    dont: "Mezclar tokens light y dark en el mismo menú — rompe contraste y hover.",
-  },
-] as const
+export function getDropdownPanelBackground(theme: DropdownThemeId): string {
+  return theme === "light"
+    ? elevationHexLight("elevation.surface.overlay")
+    : elevationHexDark("elevation.surface.overlay")
+}
 
-export const ROOTSY_DROPDOWN_RELATED_LINKS = [
-  {
-    sectionId: "elevation",
-    label: "Elevación",
-    hint: "Nivel overlay · rootsyElevationOverlay*.",
-  },
-  {
-    sectionId: "select",
-    label: "Select",
-    hint: "Filtros toolbar con valor visible y check de opción activa.",
-  },
-  {
-    sectionId: "buttons",
-    label: "Botones",
-    hint: "RootsIconButton y botones semánticos para triggers.",
-  },
-  {
-    sectionId: "modals",
-    label: "Modales",
-    hint: "Confirmación antes de acciones destructive del menú.",
-  },
-  {
-    sectionId: "layouts-tables",
-    label: "Tablas layout",
-    hint: "Menú ⋮ en filas compactas h-11.",
-  },
-  {
-    sectionId: "motion",
-    label: "Motion",
-    hint: "Entrada slide-in-zero en dropdowns de header.",
-  },
-] as const
+export function getDropdownPanelShadow(): string {
+  return elevationShadow(ROOTSY_DROPDOWN_ANATOMY.shadowToken)
+}
+
+export function getDropdownDensitySpec(density: DropdownDensityId) {
+  return ROOTSY_DROPDOWN_DENSITIES.find((item) => item.id === density)!
+}
+
+export function getDropdownItemLabelHex(theme: DropdownThemeId, state: DropdownItemStateId): string {
+  if (state === "disabled") {
+    return theme === "light" ? hx("bruma", "400") : hx("bruma", "500")
+  }
+  if (state === "destructive" || state === "destructive-hover") {
+    return semanticHex("status-danger")
+  }
+  return theme === "light" ? hx("bruma", "900") : ROOTSY_COLOR_SEMANTIC.textOnDark
+}
+
+export function getDropdownItemBackground(
+  theme: DropdownThemeId,
+  state: DropdownItemStateId,
+): string {
+  if (state === "hover") {
+    return theme === "light" ? hx("bruma", "50") : hx("sombra", "600")
+  }
+  if (state === "selected") {
+    return theme === "light"
+      ? hx("savia", "100")
+      : `color-mix(in srgb, ${hx("savia", "500")} 18%, ${elevationHexDark("elevation.surface.overlay")})`
+  }
+  if (state === "destructive-hover") {
+    const danger = semanticHex("status-danger")
+    const base = getDropdownPanelBackground(theme)
+    return `color-mix(in srgb, ${danger} ${ROOTSY_DROPDOWN_ANATOMY.destructiveTintPercent}%, ${base})`
+  }
+  return "transparent"
+}
+
+export function getDropdownLabelHex(theme: DropdownThemeId): string {
+  return theme === "light" ? hx("bruma", "500") : hx("bruma", "400")
+}
+
+export function getDropdownSeparatorColor(theme: DropdownThemeId): string {
+  return theme === "light" ? borderHex("color.border") : hx("sombra", "600")
+}
+
+export function getDropdownCheckHex(theme: DropdownThemeId): string {
+  return theme === "light" ? hx("savia", "600") : hx("savia", "400")
+}

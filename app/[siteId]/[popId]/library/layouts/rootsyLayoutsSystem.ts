@@ -60,11 +60,11 @@ export const ROOTSY_LAYOUTS_VARIANT_CONCEPT: Record<LayoutsHeroVariant, LayoutsC
     eyebrow: "Rootsy · Layouts · Tablas",
     title: "Listados que respiran",
     lead:
-      "Header nocturno, toolbar de filtros, tabla Nature y footer de paginación — la anatomía del listado workspace para datos densos con acciones por fila.",
+      "Header sombra, toolbar bruma, tabla densa y footer sombra — la anatomía del listado workspace con filtros, filas alternadas y paginación.",
     why: [
       "Naturalidad: filas alternadas en bruma, selección con savia — el ojo sigue la columna sin perderse.",
-      "Simplicidad: tres zonas fijas — chrome, cuerpo scrollable, pie de paginación.",
-      "Intuitivo: filtros arriba, datos en el centro, totales y páginas abajo — como un libro de cuentas abierto.",
+      "Simplicidad: cuatro zonas fijas — header, toolbar, cuerpo scrollable, footer.",
+      "Intuitivo: filtros arriba, datos en el centro, totales y páginas abajo — lectura vertical clara.",
     ],
     closing: "Muchos registros, una sola lectura — densidad sin ruido.",
   },

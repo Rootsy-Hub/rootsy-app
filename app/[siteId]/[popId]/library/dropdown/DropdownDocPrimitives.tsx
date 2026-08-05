@@ -5,7 +5,7 @@ import {
   ROOTSY_DROPDOWN_GUIDELINES,
   ROOTSY_DROPDOWN_RELATED_LINKS,
   ROOTSY_DROPDOWN_SURFACES,
-} from "@/app/[siteId]/[popId]/library/dropdown/rootsyDropdownSystem"
+} from "@/app/[siteId]/[popId]/library/dropdown/rootsyDropdownLegacyCatalog"
 import {
   LibraryManifestoHero,
   LibraryRelatedLinks,

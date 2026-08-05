@@ -1,40 +1,58 @@
 /**
- * Specs hardcodeadas Formulario UI — fundamentos actuales.
+ * Specs hardcodeadas Formulario UI — 100% fundamentos actuales.
+ *
+ * Fuentes autorizadas:
+ * - rootsyFormSystem
+ * - rootsyBorderSystem · rootsyElevationSystem · rootsyRadiusSystem · rootsySpacingScale
+ * - rootsyColorSystem (semánticos funcionales)
+ * - lib/design-system (themes, spacing, typography)
  */
 
 import {
   ROOTSY_FORM_ASSIST_VARIANTS,
-  ROOTSY_FORM_COLOR_TOKENS,
   ROOTSY_FORM_CONTROL_SPECS,
   ROOTSY_FORM_CONTROL_STATES,
   ROOTSY_FORM_CONTROL_TYPES,
   ROOTSY_FORM_FIELD_STACK,
+  ROOTSY_FORM_LABEL_SPEC,
+  ROOTSY_FORM_TOOLBAR_CONTEXT,
+  ROOTSY_FORM_TOOLBAR_VARIANTS,
   type FormAssistVariantId,
   type FormControlStateId,
   type FormControlTypeId,
-  type FormImageUploadModeId,
   type FormImageUploadDisplayStateId,
+  type FormImageUploadModeId,
+  type FormToolbarContextVariantId,
 } from "@/app/[siteId]/[popId]/library/form/rootsyFormSystem"
+import { ROOTSY_BORDER_COLOR_TOKENS } from "@/app/[siteId]/[popId]/library/border/rootsyBorderSystem"
 import { ROOTSY_RADIUS_TOKENS } from "@/app/[siteId]/[popId]/library/radius/rootsyRadiusSystem"
+import { ROOTSY_ELEVATION_SURFACES_LIGHT } from "@/app/[siteId]/[popId]/library/elevation/rootsyElevationSystem"
+import { ROOTSY_SEMANTIC_TOKENS } from "@/app/[siteId]/[popId]/library/color/rootsyColorSystem"
 import { getRootsyTheme, rootsyColorHex, rootsySpacePx } from "@/lib/design-system"
 import { ROOTSY_FONT_WEIGHTS, ROOTSY_TEXT_STYLES } from "@/lib/design-system/tokens/typography"
 
 const hx = rootsyColorHex
 const workspace = getRootsyTheme("workspace")
 
-function colorHex(token: string): string {
-  return ROOTSY_FORM_COLOR_TOKENS.find((item) => item.token === token)!.hex
+function borderHex(token: string): string {
+  return ROOTSY_BORDER_COLOR_TOKENS.find((item) => item.token === token)!.value
 }
 
-function radiusPx(): number {
-  return Number.parseInt(
-    ROOTSY_RADIUS_TOKENS.find((item) => item.id === "large")!.value,
-    10,
-  )
+function elevationHex(token: string): string {
+  return ROOTSY_ELEVATION_SURFACES_LIGHT.find((item) => item.token === token)!.value
 }
 
-const FOCUS_RING = `0 0 0 2px color-mix(in srgb, ${hx("savia", "400")} 45%, transparent)`
-const ERROR_RING = `0 0 0 2px color-mix(in srgb, #DC2626 25%, transparent)`
+function semanticHex(id: string): string {
+  return ROOTSY_SEMANTIC_TOKENS.find((item) => item.id === id)!.hex
+}
+
+function semanticTextHex(id: string): string {
+  const row = ROOTSY_SEMANTIC_TOKENS.find((item) => item.id === id)!
+  return "textHex" in row && row.textHex ? row.textHex : row.hex
+}
+
+const FOCUS_RING = `0 0 0 2px color-mix(in srgb, ${borderHex("color.border.focused")} 45%, transparent)`
+const ERROR_RING = `0 0 0 2px color-mix(in srgb, ${semanticHex("status-danger")} 25%, transparent)`
 
 export type FormControlUiSurface = {
   backgroundColor: string
@@ -54,14 +72,13 @@ export const FORM_UI_FIELD_STACK = {
   gapPx: rootsySpacePx("100"),
 }
 
+/** Label — font.body medium · bruma-700 · sin all-caps (typography guidelines). */
 export const FORM_UI_LABEL_STYLE = {
   fontFamily: "var(--rootsy-font-ui)",
-  fontSize: "10px",
-  lineHeight: "14px",
-  fontWeight: ROOTSY_FONT_WEIGHTS.semibold.value,
-  letterSpacing: "0.12em",
-  textTransform: "uppercase" as const,
-  color: colorHex("bruma-500"),
+  fontSize: ROOTSY_TEXT_STYLES.body.fontSize,
+  lineHeight: ROOTSY_TEXT_STYLES.body.lineHeight,
+  fontWeight: ROOTSY_FONT_WEIGHTS.medium.value,
+  color: hx("bruma", "700"),
 }
 
 export const FORM_UI_CONTROL_TYPOGRAPHY = {
@@ -71,12 +88,18 @@ export const FORM_UI_CONTROL_TYPOGRAPHY = {
   fontWeight: ROOTSY_FONT_WEIGHTS.regular.value,
 }
 
+export const FORM_UI_LEADING_SLOT_TYPOGRAPHY = {
+  ...FORM_UI_CONTROL_TYPOGRAPHY,
+  fontWeight: ROOTSY_FONT_WEIGHTS.medium.value,
+  color: hx("bruma", "600"),
+}
+
 function getDefaultControlSurface(): FormControlUiSurface {
   return {
-    backgroundColor: colorHex("workspace.surface"),
-    color: colorHex("bruma-900"),
-    border: `1px solid ${colorHex("color.border")}`,
-    placeholderColor: colorHex("bruma-500"),
+    backgroundColor: elevationHex("elevation.surface.overlay"),
+    color: hx("bruma", "900"),
+    border: `1px solid ${borderHex("color.border")}`,
+    placeholderColor: hx("bruma", "500"),
   }
 }
 
@@ -91,12 +114,12 @@ export function getFormControlUiSurface(
     case "hover":
       return {
         ...base,
-        border: `1px solid ${colorHex("bruma-300")}`,
+        border: `1px solid ${hx("bruma", "300")}`,
       }
     case "focus":
       return {
         ...base,
-        border: `1px solid ${colorHex("color.border.focused")}`,
+        border: `1px solid ${borderHex("color.border.focused")}`,
         boxShadow: FOCUS_RING,
       }
     case "disabled":
@@ -104,13 +127,13 @@ export function getFormControlUiSurface(
     case "error":
       return {
         ...base,
-        border: `1px solid ${colorHex("color.border.danger")}`,
+        border: `1px solid ${semanticHex("status-danger")}`,
         boxShadow: ERROR_RING,
       }
     case "readonly":
       return {
         ...base,
-        backgroundColor: hx("bruma", "50"),
+        backgroundColor: elevationHex("elevation.surface.sunken"),
         color: workspace.textPrimary,
       }
   }
@@ -126,13 +149,13 @@ export function getFormAssistUiStyle(variant: FormAssistVariantId): CSSPropertie
 
   switch (variant) {
     case "hint":
-      return { ...base, color: colorHex("bruma-500") }
+      return { ...base, color: hx("bruma", "500") }
     case "error":
-      return { ...base, color: colorHex("color.border.danger") }
+      return { ...base, color: semanticHex("status-danger") }
     case "warning":
-      return { ...base, color: "#D97706" }
+      return { ...base, color: semanticTextHex("status-warning") }
     case "success":
-      return { ...base, color: hx("savia", "700") }
+      return { ...base, color: semanticTextHex("status-success") }
   }
 }
 
@@ -153,8 +176,8 @@ export function getCheckboxUiSurface(
   if (checked) {
     return {
       backgroundColor: state === "disabled" ? hx("savia", "400") : hx("savia", "600"),
-      color: "#FFFFFF",
-      border: `1px solid ${state === "error" ? colorHex("color.border.danger") : hx("savia", "600")}`,
+      color: elevationHex("elevation.surface.overlay"),
+      border: `1px solid ${state === "error" ? semanticHex("status-danger") : hx("savia", "600")}`,
       boxShadow: base.boxShadow,
       opacity: base.opacity,
     }
@@ -162,7 +185,7 @@ export function getCheckboxUiSurface(
 
   return {
     ...base,
-    backgroundColor: workspace.surface,
+    backgroundColor: elevationHex("elevation.surface.overlay"),
   }
 }
 
@@ -179,84 +202,70 @@ export function getSwitchUiSurface(
 
   return {
     trackColor: on ? hx("savia", "600") : hx("bruma", "200"),
-    thumbColor: "#FFFFFF",
+    thumbColor: elevationHex("elevation.surface.overlay"),
     opacity: control.opacity,
     boxShadow: control.boxShadow,
   }
 }
 
-export type AffixPrefixUiStyle = {
+export type LeadingSlotUiStyle = {
   backgroundColor: string
   color: string
   borderRight: string
-  fontWeight: number
+  fontFamily: string
   fontSize: string
   lineHeight: string
-  fontFamily: string
+  fontWeight: number
   opacity?: number
 }
 
-export function getAffixShellUiSurface(state: FormControlStateId = "default"): FormControlUiSurface {
-  const base = getDefaultControlSurface()
+export function getCompositeShellUiSurface(state: FormControlStateId = "default"): FormControlUiSurface {
+  return getFormControlUiSurface(state)
+}
 
-  switch (state) {
-    case "default":
-      return base
-    case "hover":
-      return {
-        ...base,
-        border: `1px solid ${colorHex("bruma-300")}`,
-      }
-    case "focus":
-      return {
-        ...base,
-        border: `1px solid ${colorHex("color.border.focused")}`,
-        boxShadow: FOCUS_RING,
-      }
-    case "disabled":
-      return { ...base, opacity: 0.5 }
-    case "error":
-      return {
-        ...base,
-        border: `1px solid ${colorHex("color.border.danger")}`,
-        boxShadow: ERROR_RING,
-      }
-    case "readonly":
-      return {
-        ...base,
-        backgroundColor: hx("bruma", "50"),
-      }
+export function getLeadingSlotUiStyle(state: FormControlStateId = "default"): LeadingSlotUiStyle {
+  const shell = getCompositeShellUiSurface(state)
+  const dividerColor =
+    state === "hover"
+      ? hx("bruma", "300")
+      : state === "error"
+        ? semanticHex("status-danger")
+        : state === "focus"
+          ? borderHex("color.border.focused")
+          : borderHex("color.border")
+
+  return {
+    ...FORM_UI_LEADING_SLOT_TYPOGRAPHY,
+    backgroundColor: elevationHex("elevation.surface.sunken"),
+    borderRight: `1px solid ${dividerColor}`,
+    opacity: shell.opacity,
   }
 }
 
-export function getAffixPrefixUiStyle(state: FormControlStateId = "default"): AffixPrefixUiStyle {
-  const shell = getAffixShellUiSurface(state)
-  const borderColor =
-    state === "hover"
-      ? colorHex("bruma-300")
-      : state === "error"
-        ? colorHex("color.border.danger")
-        : state === "focus"
-          ? colorHex("color.border.focused")
-          : colorHex("bruma-200")
+export function getCompositeValueUiStyle(state: FormControlStateId = "default"): {
+  backgroundColor: string
+  opacity?: number
+} {
+  const shell = getCompositeShellUiSurface(state)
+
+  if (state === "readonly") {
+    return {
+      backgroundColor: elevationHex("elevation.surface.sunken"),
+      opacity: shell.opacity,
+    }
+  }
 
   return {
-    fontFamily: "var(--rootsy-font-ui)",
-    fontSize: ROOTSY_TEXT_STYLES.body.fontSize,
-    lineHeight: ROOTSY_TEXT_STYLES.body.lineHeight,
-    fontWeight: ROOTSY_FONT_WEIGHTS.semibold.value,
-    backgroundColor: colorHex("elevation.surface.sunken"),
-    color: colorHex("bruma-600"),
-    borderRight: `1px solid ${borderColor}`,
+    backgroundColor: "transparent",
     opacity: shell.opacity,
   }
 }
 
 export function getDateControlUiSurface(
   state: FormControlStateId = "default",
-  withPrefix = false,
+  withLeading = false,
 ): FormControlUiSurface {
-  return withPrefix ? getAffixShellUiSurface(state) : getFormControlUiSurface(state)
+  return withLeading ? getCompositeShellUiSurface(state) : getFormControlUiSurface(state)
 }
 
 export type ImageUploadUiSurface = FormControlUiSurface & {
@@ -271,11 +280,11 @@ export function getImageUploadUiSurface(
 
   if (state === "drag") {
     return {
-      backgroundColor: `color-mix(in srgb, ${hx("savia", "600")} 4%, #FFFFFF)`,
-      color: colorHex("bruma-900"),
-      border: `1px solid ${hx("savia", "600")}`,
+      backgroundColor: `color-mix(in srgb, ${borderHex("color.border.selected")} 4%, ${elevationHex("elevation.surface.overlay")})`,
+      color: hx("bruma", "900"),
+      border: `1px solid ${borderHex("color.border.selected")}`,
       borderStyle: mode === "empty" ? "dashed" : "solid",
-      boxShadow: `0 0 0 2px color-mix(in srgb, ${hx("savia", "600")} 20%, transparent)`,
+      boxShadow: `0 0 0 2px color-mix(in srgb, ${borderHex("color.border.selected")} 20%, transparent)`,
     }
   }
 
@@ -287,14 +296,15 @@ export function getImageUploadUiSurface(
     case "hover":
       return {
         ...base,
-        border: `1px solid ${colorHex("bruma-300")}`,
-        backgroundColor: mode === "empty" ? hx("bruma", "50") : base.backgroundColor,
+        border: `1px solid ${hx("bruma", "300")}`,
+        backgroundColor:
+          mode === "empty" ? elevationHex("elevation.surface.sunken") : base.backgroundColor,
         borderStyle,
       }
     case "focus":
       return {
         ...base,
-        border: `1px solid ${colorHex("color.border.focused")}`,
+        border: `1px solid ${borderHex("color.border.focused")}`,
         boxShadow: FOCUS_RING,
         borderStyle,
       }
@@ -303,14 +313,14 @@ export function getImageUploadUiSurface(
     case "error":
       return {
         ...base,
-        border: `1px solid ${colorHex("color.border.danger")}`,
+        border: `1px solid ${semanticHex("status-danger")}`,
         boxShadow: ERROR_RING,
         borderStyle,
       }
     case "readonly":
       return {
         ...base,
-        backgroundColor: hx("bruma", "50"),
+        backgroundColor: elevationHex("elevation.surface.sunken"),
         borderStyle: "solid",
       }
   }
@@ -323,21 +333,39 @@ export function getImageUploadThumbUiStyle(
   backgroundColor: string
   border: string
   borderStyle: "solid" | "dashed"
+  borderRadiusPx: number
   opacity?: number
 } {
   const shell = getImageUploadUiSurface(mode, state === "drag" ? "drag" : state)
   const borderColor =
     state === "error"
-      ? colorHex("color.border.danger")
+      ? semanticHex("status-danger")
       : state === "focus" || state === "drag"
-        ? hx("savia", "400")
-        : hx("bruma", "200")
+        ? borderHex("color.border.focused")
+        : borderHex("color.border")
 
   return {
     backgroundColor:
-      mode === "filled" ? hx("bruma", "100") : colorHex("elevation.surface.sunken"),
+      mode === "filled" ? hx("bruma", "100") : elevationHex("elevation.surface.sunken"),
     border: `1px solid ${borderColor}`,
     borderStyle: mode === "empty" ? "dashed" : "solid",
+    borderRadiusPx: ROOTSY_FORM_CONTROL_SPECS["image-upload"].thumbRadiusPx,
+    opacity: shell.opacity,
+  }
+}
+
+export function getImageUploadActionUiStyle(state: FormControlStateId = "default"): {
+  sizePx: number
+  color: string
+  hoverBackground: string
+  opacity?: number
+} {
+  const shell = getFormControlUiSurface(state)
+
+  return {
+    sizePx: ROOTSY_FORM_CONTROL_SPECS["image-upload"].actionHitPx,
+    color: hx("bruma", "500"),
+    hoverBackground: elevationHex("elevation.surface.sunken"),
     opacity: shell.opacity,
   }
 }
@@ -345,7 +373,7 @@ export function getImageUploadThumbUiStyle(
 export const FORM_UI_IMAGE_UPLOAD_TITLE_STYLE = {
   ...FORM_UI_CONTROL_TYPOGRAPHY,
   fontWeight: ROOTSY_FONT_WEIGHTS.medium.value,
-  lineHeight: "1.25",
+  lineHeight: ROOTSY_TEXT_STYLES.body.lineHeight,
 }
 
 export const FORM_UI_IMAGE_UPLOAD_META_STYLE = {
@@ -353,8 +381,7 @@ export const FORM_UI_IMAGE_UPLOAD_META_STYLE = {
   fontSize: ROOTSY_TEXT_STYLES["body.small"].fontSize,
   lineHeight: ROOTSY_TEXT_STYLES["body.small"].lineHeight,
   fontWeight: ROOTSY_FONT_WEIGHTS.regular.value,
-  color: colorHex("bruma-500"),
-  marginTop: 2,
+  color: hx("bruma", "500"),
 }
 
 export const FORM_UI_DEMO_COPY = {
@@ -373,28 +400,33 @@ export const FORM_UI_DEMO_COPY = {
     value: "Bebidas",
     placeholder: "Seleccionar…",
   },
+  selectLeading: {
+    label: "Medio de pago",
+    value: "Efectivo",
+    placeholder: "Elegir medio",
+  },
   checkbox: {
     label: "Disponible en mostrador",
   },
   switch: {
     label: "Activo en catálogo",
   },
-  prefixMoney: {
+  leadingCurrency: {
     label: "Precio de venta",
     value: "1.250",
-    prefix: "$",
+    leading: "$",
   },
-  prefixQuantity: {
+  leadingUnit: {
     label: "Stock inicial",
     value: "24",
-    prefix: "uds.",
+    leading: "uds.",
   },
   date: {
     label: "Fecha de alta",
     value: "3 de agosto de 2026",
     placeholder: "Elegí una fecha",
   },
-  datePrefix: {
+  dateLeading: {
     label: "Vencimiento",
     value: "3 de agosto de 2026",
     placeholder: "Elegí una fecha",
@@ -408,9 +440,16 @@ export const FORM_UI_DEMO_COPY = {
   },
   hint: "Texto de ayuda neutral debajo del control.",
   error: "Este campo es obligatorio.",
+  toolbar: {
+    period: { label: "Período", placeholder: "Todas las fechas" },
+    filters: { label: "Filtros", placeholder: "Estado y tipo" },
+    search: { label: "Buscar", placeholder: "Título o referencia…" },
+  },
 } as const
 
 export const FORM_UI_ASSIST_VARIANTS = ROOTSY_FORM_ASSIST_VARIANTS
+
+export const FORM_UI_LABEL_SPEC = ROOTSY_FORM_LABEL_SPEC
 
 export type {
   FormAssistVariantId,
@@ -418,6 +457,14 @@ export type {
   FormControlTypeId,
   FormImageUploadModeId,
   FormImageUploadDisplayStateId,
+  FormToolbarContextVariantId,
+  FormToolbarFieldRoleId,
+} from "@/app/[siteId]/[popId]/library/form/rootsyFormSystem"
+
+export {
+  ROOTSY_FORM_TOOLBAR_CONTEXT,
+  ROOTSY_FORM_TOOLBAR_FIELDS,
+  ROOTSY_FORM_TOOLBAR_VARIANTS,
 } from "@/app/[siteId]/[popId]/library/form/rootsyFormSystem"
 
 export function getFormControlSpec(type: "text"): (typeof ROOTSY_FORM_CONTROL_SPECS)["text"]
@@ -426,15 +473,20 @@ export function getFormControlSpec(type: "select"): (typeof ROOTSY_FORM_CONTROL_
 export function getFormControlSpec(type: "checkbox"): (typeof ROOTSY_FORM_CONTROL_SPECS)["checkbox"]
 export function getFormControlSpec(type: "switch"): (typeof ROOTSY_FORM_CONTROL_SPECS)["switch"]
 export function getFormControlSpec(
-  type: "prefix-money" | "prefix-quantity" | "date-prefix",
-): (typeof ROOTSY_FORM_CONTROL_SPECS)["affix"]
+  type: "leading-currency" | "leading-unit" | "date-leading" | "select-leading",
+): (typeof ROOTSY_FORM_CONTROL_SPECS)["leading"]
 export function getFormControlSpec(type: "date"): (typeof ROOTSY_FORM_CONTROL_SPECS)["date"]
 export function getFormControlSpec(
   type: "image-upload",
 ): (typeof ROOTSY_FORM_CONTROL_SPECS)["image-upload"]
 export function getFormControlSpec(type: FormControlTypeId) {
-  if (type === "prefix-money" || type === "prefix-quantity" || type === "date-prefix") {
-    return ROOTSY_FORM_CONTROL_SPECS.affix
+  if (
+    type === "leading-currency" ||
+    type === "leading-unit" ||
+    type === "date-leading" ||
+    type === "select-leading"
+  ) {
+    return ROOTSY_FORM_CONTROL_SPECS.leading
   }
   if (type === "date") {
     return ROOTSY_FORM_CONTROL_SPECS.date
@@ -445,4 +497,70 @@ export function getFormControlSpec(type: FormControlTypeId) {
   return ROOTSY_FORM_CONTROL_SPECS[type]
 }
 
-export { radiusPx as FORM_UI_CONTROL_RADIUS_PX }
+/** @deprecated Usar getCompositeShellUiSurface */
+export const getAffixShellUiSurface = getCompositeShellUiSurface
+
+/** @deprecated Usar getLeadingSlotUiStyle */
+export const getAffixPrefixUiStyle = getLeadingSlotUiStyle
+
+function toolbarRadiusPx(): number {
+  return Number.parseInt(
+    ROOTSY_RADIUS_TOKENS.find((item) => item.id === "xlarge")!.value,
+    10,
+  )
+}
+
+/** Shell de layout.toolbar — mismo contexto que Layouts · Tablas. */
+export function getFormUiToolbarEmbedShellStyle() {
+  return {
+    height: ROOTSY_FORM_TOOLBAR_CONTEXT.embedHeightPx,
+    backgroundColor: elevationHex(ROOTSY_FORM_TOOLBAR_CONTEXT.embedBackgroundToken),
+    borderBottom: `1px solid ${borderHex("color.border")}`,
+    display: "flex" as const,
+    alignItems: "center" as const,
+    width: "100%",
+  }
+}
+
+export function getFormUiToolbarContextShellStyle(flush = true) {
+  if (flush) {
+    return {
+      backgroundColor: elevationHex("elevation.surface.overlay"),
+      width: "100%",
+    } as const
+  }
+
+  return {
+    backgroundColor: elevationHex("elevation.surface.overlay"),
+    border: `1px solid ${borderHex("color.border")}`,
+    borderRadius: toolbarRadiusPx(),
+    overflow: "hidden" as const,
+    width: "100%",
+  }
+}
+
+export function getFormUiToolbarContextGridStyle() {
+  return {
+    display: "grid" as const,
+    gridTemplateColumns: "repeat(3, minmax(0, 1fr))",
+    width: "100%",
+  }
+}
+
+export function getFormUiToolbarContextCellStyle(isLast = false) {
+  return {
+    display: "flex" as const,
+    alignItems: "center" as const,
+    padding: `${rootsySpacePx("200")}px ${rootsySpacePx("200")}px`,
+    borderRight: isLast ? undefined : `1px solid ${borderHex("color.border")}`,
+    minWidth: 0,
+  }
+}
+
+export function getFormUiToolbarVariantOptions(variant: FormToolbarContextVariantId) {
+  const spec = ROOTSY_FORM_TOOLBAR_VARIANTS.find((item) => item.id === variant)!
+  return {
+    hideLabels: !spec.showLabels,
+    flush: spec.flush,
+  }
+}

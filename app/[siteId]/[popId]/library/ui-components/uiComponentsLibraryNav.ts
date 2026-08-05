@@ -8,6 +8,9 @@ export const UI_COMPONENTS_LIBRARY_ROOT = {
 export const UI_COMPONENTS_LIBRARY_SUBITEMS = [
   { id: "ui-components-buttons", label: "Botones UI" },
   { id: "ui-components-forms", label: "Formulario UI" },
+  { id: "ui-components-modals", label: "Modales UI" },
+  { id: "ui-components-banners", label: "Banners UI" },
+  { id: "ui-components-dropdown", label: "Dropdown UI" },
 ] as const
 
 export const UI_COMPONENTS_LIBRARY_ITEMS = [
@@ -44,7 +47,25 @@ export const UI_COMPONENTS_PAGE_META: Record<string, UiComponentsPageMeta> = {
     id: "ui-components-forms",
     title: "Formulario UI",
     description:
-      "Captura datos — texto, select, booleanos, prefijos w-11, fecha e imagen con stack de campo y estados completos.",
+      "Captura datos — stack field · space.500 · leading compuesto · fecha · imagen · form.context.toolbar-list · tokens border/elevation/spacing.",
+  },
+  "ui-components-modals": {
+    id: "ui-components-modals",
+    title: "Modales UI",
+    description:
+      "Diálogos y alertas — scrim sombra · overlay + shadow · panel-padding · tipografía heading · footers desde Botones UI.",
+  },
+  "ui-components-banners": {
+    id: "ui-components-banners",
+    title: "Banners UI",
+    description:
+      "Feedback inline — intents semánticos · tint 8% · radius.large · sin shadow · densidad default/compact · acción y dismiss.",
+  },
+  "ui-components-dropdown": {
+    id: "ui-components-dropdown",
+    title: "Dropdown UI",
+    description:
+      "Menú de acciones — overlay + shadow.overlay · radius.xlarge · ítems space.500 · triggers Botones UI · destructive aislado.",
   },
 }
 
@@ -54,7 +75,10 @@ export function getUiComponentsPageMeta(sectionId: string): UiComponentsPageMeta
 
 export const UI_COMPONENTS_RELATED_LINKS = [
   { sectionId: "ui-components-buttons", label: "Botones UI", hint: "Appearances · tamaños · estados." },
-  { sectionId: "ui-components-forms", label: "Formulario UI", hint: "Controles · stack · estados." },
+  { sectionId: "ui-components-forms", label: "Formulario UI", hint: "Controles · stack · toolbar listado." },
+  { sectionId: "ui-components-modals", label: "Modales UI", hint: "Modal · alert · footers." },
+  { sectionId: "ui-components-banners", label: "Banners UI", hint: "Intents · densidad · dismiss." },
+  { sectionId: "ui-components-dropdown", label: "Dropdown UI", hint: "Overlay · ítems · triggers." },
   { sectionId: "colors-new", label: "Color", hint: "Savia · bruma · funcional." },
   { sectionId: "typography", label: "Tipografía", hint: "Labels y body en campos." },
   { sectionId: "radius", label: "Radio", hint: "radius.large en controles." },

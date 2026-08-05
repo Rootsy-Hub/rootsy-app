@@ -1,15 +1,14 @@
 "use client"
 
-import { dataWorkspaceHeaderSurfaceClass } from "@/components/layouts/dataWorkspaceHeaderStyles"
-import { cn } from "@/lib/utils"
+import { ROOTSY_LAYOUTS_TABLES_CHROME } from "@/app/[siteId]/[popId]/library/layouts/rootsyLayoutsTablesSystem"
 import type { ReactNode } from "react"
-
-const HEADER_VARIANT = "dark" as const
 
 type Props = {
   className?: string
   contentClassName?: string
-  /** Bloque vacío (solo degradé bosque nocturno). */
+  style?: React.CSSProperties
+  contentStyle?: React.CSSProperties
+  /** Bloque vacío (solo degradé sombra). */
   bare?: boolean
   children?: ReactNode
 }
@@ -17,18 +16,25 @@ type Props = {
 export function LayoutsTablesNightForestSurface({
   className,
   contentClassName,
+  style,
+  contentStyle,
   bare = false,
   children,
 }: Props) {
-  const surfaceClass = dataWorkspaceHeaderSurfaceClass(HEADER_VARIANT)
+  const shellStyle: React.CSSProperties = {
+    background: ROOTSY_LAYOUTS_TABLES_CHROME.headerBackground,
+    ...style,
+  }
 
   if (bare) {
-    return <div className={cn(surfaceClass, className)} aria-hidden />
+    return <div className={className} style={shellStyle} aria-hidden />
   }
 
   return (
-    <div className={cn(surfaceClass, className)}>
-      <div className={cn(contentClassName)}>{children}</div>
+    <div className={className} style={shellStyle}>
+      <div className={contentClassName} style={contentStyle}>
+        {children}
+      </div>
     </div>
   )
 }

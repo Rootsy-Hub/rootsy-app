@@ -16,9 +16,9 @@ import {
   DropdownTriggersDemo,
 } from "@/app/[siteId]/[popId]/library/dropdown/DropdownDocPrimitives"
 import {
-  ROOTSY_DROPDOWN_MANIFESTO,
-  ROOTSY_DROPDOWN_PRINCIPLES,
-} from "@/app/[siteId]/[popId]/library/dropdown/rootsyDropdownSystem"
+  ROOTSY_DROPDOWN_LEGACY_MANIFESTO as ROOTSY_DROPDOWN_MANIFESTO,
+  ROOTSY_DROPDOWN_LEGACY_PRINCIPLES as ROOTSY_DROPDOWN_PRINCIPLES,
+} from "@/app/[siteId]/[popId]/library/dropdown/rootsyDropdownLegacyCatalog"
 import { LibrarySection } from "@/app/[siteId]/[popId]/library/layoutLibraryShared"
 
 type Props = {

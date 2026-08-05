@@ -8,15 +8,15 @@ import {
   FORM_UI_INTERACTION_STATES,
   FORM_UI_LABEL_STYLE,
   FORM_UI_CONTROL_TYPES,
+  ROOTSY_FORM_TOOLBAR_CONTEXT,
   getCheckboxUiSurface,
   getFormAssistUiStyle,
   getFormControlSpec,
   getFormControlUiSurface,
-  getAffixShellUiSurface,
-  getAffixPrefixUiStyle,
   getDateControlUiSurface,
   getImageUploadUiSurface,
   getImageUploadThumbUiStyle,
+  getImageUploadActionUiStyle,
   FORM_UI_IMAGE_UPLOAD_TITLE_STYLE,
   FORM_UI_IMAGE_UPLOAD_META_STYLE,
   getSwitchUiSurface,
@@ -25,9 +25,17 @@ import {
   type FormImageUploadModeId,
   type FormImageUploadDisplayStateId,
 } from "@/app/[siteId]/[popId]/library/ui-components/formsUiHardcodedSpec"
+import {
+  FormUiLeadingControl,
+  FormUiSelectChevron,
+  FormUiToolbarListFiltersEmbeddedDemo,
+} from "@/app/[siteId]/[popId]/library/ui-components/formsUiHardcodedComponents"
 import { COLOR_TOKENS } from "@/app/[siteId]/[popId]/library/color/rootsyColorSystem"
 import { FoundationBrumaStage } from "@/app/[siteId]/[popId]/library/libraryFoundationDocShared"
+import { rootsySpacePx } from "@/lib/design-system"
 import type { CSSProperties, ReactNode } from "react"
+
+const THUMB_INSET_PX = rootsySpacePx("025")
 
 const STATE_ORDER = FORM_UI_INTERACTION_STATES
 
@@ -263,13 +271,12 @@ function HardcodedSwitch({
 
   const thumbStyle: CSSProperties = {
     position: "absolute",
-    top: 2,
-    left: on ? spec.widthPx - spec.thumbPx - 2 : 2,
+    top: THUMB_INSET_PX,
+    left: on ? spec.widthPx - spec.thumbPx - THUMB_INSET_PX : THUMB_INSET_PX,
     width: spec.thumbPx,
     height: spec.thumbPx,
     borderRadius: 9999,
     backgroundColor: surface.thumbColor,
-    boxShadow: "0 1px 2px rgb(0 0 0 / 0.12)",
   }
 
   return (
@@ -298,84 +305,77 @@ function ImageIconGlyph() {
   )
 }
 
-function HardcodedAffixField({
+function LandmarkIconGlyph() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+      <path d="M3 10h18M5 10V7l7-4 7 4v3M6 10v9h12v-9" />
+    </svg>
+  )
+}
+
+function HardcodedLeadingField({
   state = "default",
-  prefix,
+  leading,
   value,
   placeholder,
   numeric = false,
+  trailing,
 }: {
   state?: FormControlStateId
-  prefix: ReactNode
+  leading: ReactNode
   value?: string
   placeholder?: string
   numeric?: boolean
+  trailing?: ReactNode
 }) {
-  const spec = getFormControlSpec("prefix-money")
-  const shell = getAffixShellUiSurface(state)
-  const prefixStyle = getAffixPrefixUiStyle(state)
-
-  const shellStyle: CSSProperties = {
-    display: "flex",
-    alignItems: "stretch",
-    width: "100%",
-    height: spec.heightPx,
-    overflow: "hidden",
-    borderRadius: spec.radiusPx,
-    backgroundColor: shell.backgroundColor,
-    border: shell.border,
-    boxShadow: shell.boxShadow,
-    opacity: shell.opacity,
-    userSelect: "none",
-  }
-
-  const slotStyle: CSSProperties = {
-    ...prefixStyle,
-    display: "inline-flex",
-    alignItems: "center",
-    justifyContent: "center",
-    width: spec.prefixWidthPx,
-    flexShrink: 0,
-    fontVariantNumeric: numeric ? "tabular-nums" : undefined,
-  }
-
-  const inputStyle: CSSProperties = {
-    ...FORM_UI_CONTROL_TYPOGRAPHY,
-    display: "flex",
-    alignItems: "center",
-    flex: 1,
-    minWidth: 0,
-    paddingLeft: spec.inputPaddingXPx,
-    paddingRight: spec.inputPaddingXPx,
-    color: value ? shell.color : shell.placeholderColor,
-    fontVariantNumeric: numeric ? "tabular-nums" : undefined,
-    backgroundColor: state === "readonly" ? shell.backgroundColor : "transparent",
-  }
-
   return (
-    <div aria-hidden style={shellStyle}>
-      <span style={slotStyle}>{prefix}</span>
-      <span style={inputStyle}>{value ?? placeholder}</span>
-    </div>
+    <FormUiLeadingControl
+      state={state}
+      leading={leading}
+      value={value}
+      placeholder={placeholder}
+      numeric={numeric}
+      trailing={trailing}
+    />
+  )
+}
+
+function HardcodedSelectLeading({
+  state = "default",
+  value,
+  placeholder,
+}: {
+  state?: FormControlStateId
+  value?: string
+  placeholder?: string
+}) {
+  return (
+    <HardcodedLeadingField
+      state={state}
+      leading={<LandmarkIconGlyph />}
+      value={value}
+      placeholder={placeholder}
+      trailing={<FormUiSelectChevron />}
+    />
   )
 }
 
 function HardcodedDateField({
   state = "default",
-  withPrefix = false,
+  withLeading = false,
   value,
   placeholder,
 }: {
   state?: FormControlStateId
-  withPrefix?: boolean
+  withLeading?: boolean
   value?: string
   placeholder?: string
 }) {
-  if (withPrefix) {
+  if (withLeading) {
     return (
-      <HardcodedAffixField
+      <HardcodedLeadingField
         state={state}
-        prefix={<CalendarIconGlyph />}
+        leading={<CalendarIconGlyph />}
         value={value}
         placeholder={placeholder}
       />
@@ -415,6 +415,7 @@ function HardcodedImageUpload({
   const spec = getFormControlSpec("image-upload")
   const shell = getImageUploadUiSurface(mode, state)
   const thumb = getImageUploadThumbUiStyle(mode, state)
+  const action = getImageUploadActionUiStyle(state === "drag" ? "default" : state)
   const copy = FORM_UI_DEMO_COPY.imageUpload
 
   const shellStyle: CSSProperties = {
@@ -439,13 +440,25 @@ function HardcodedImageUpload({
     width: spec.thumbPx,
     height: spec.thumbPx,
     flexShrink: 0,
-    borderRadius: 8,
+    borderRadius: thumb.borderRadiusPx,
     backgroundColor: thumb.backgroundColor,
     border: thumb.border,
     borderStyle: thumb.borderStyle,
     opacity: thumb.opacity,
     color: COLOR_TOKENS.bruma500,
     overflow: "hidden",
+  }
+
+  const actionStyle: CSSProperties = {
+    display: "inline-flex",
+    alignItems: "center",
+    justifyContent: "center",
+    width: action.sizePx,
+    height: action.sizePx,
+    borderRadius: thumb.borderRadiusPx,
+    color: action.color,
+    flexShrink: 0,
+    opacity: action.opacity,
   }
 
   return (
@@ -488,6 +501,20 @@ function HardcodedImageUpload({
           {mode === "empty" ? copy.emptySubtitle : copy.filledMeta}
         </p>
       </div>
+      {mode === "filled" ? (
+        <div style={{ display: "flex", gap: rootsySpacePx("050"), flexShrink: 0 }}>
+          <span style={actionStyle} title="Cambiar">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M12 20h9M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z" />
+            </svg>
+          </span>
+          <span style={{ ...actionStyle, color: COLOR_TOKENS.bruma500 }} title="Eliminar">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M3 6h18M8 6V4h8v2M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6" />
+            </svg>
+          </span>
+        </div>
+      ) : null}
     </div>
   )
 }
@@ -625,19 +652,41 @@ function SwitchControlStatesBlock() {
   )
 }
 
-function PrefixMoneyControlStatesBlock() {
-  const meta = FORM_UI_CONTROL_TYPES.find((item) => item.id === "prefix-money")!
+function SelectLeadingControlStatesBlock() {
+  const meta = FORM_UI_CONTROL_TYPES.find((item) => item.id === "select-leading")!
 
   return (
     <SpecBlock title={`${meta.token} · ${meta.label}`} hint={meta.usage}>
       <StateRow>
         {STATE_ORDER.map((state) => (
           <StateSpecCell key={state.id} label={state.label}>
-            <FieldStack label={FORM_UI_DEMO_COPY.prefixMoney.label}>
-              <HardcodedAffixField
+            <FieldStack label={FORM_UI_DEMO_COPY.selectLeading.label}>
+              <HardcodedSelectLeading
                 state={state.id}
-                prefix={FORM_UI_DEMO_COPY.prefixMoney.prefix}
-                value={state.id === "default" || state.id === "readonly" ? FORM_UI_DEMO_COPY.prefixMoney.value : undefined}
+                value={state.id === "default" || state.id === "readonly" ? FORM_UI_DEMO_COPY.selectLeading.value : undefined}
+                placeholder={FORM_UI_DEMO_COPY.selectLeading.placeholder}
+              />
+            </FieldStack>
+          </StateSpecCell>
+        ))}
+      </StateRow>
+    </SpecBlock>
+  )
+}
+
+function LeadingCurrencyControlStatesBlock() {
+  const meta = FORM_UI_CONTROL_TYPES.find((item) => item.id === "leading-currency")!
+
+  return (
+    <SpecBlock title={`${meta.token} · ${meta.label}`} hint={meta.usage}>
+      <StateRow>
+        {STATE_ORDER.map((state) => (
+          <StateSpecCell key={state.id} label={state.label}>
+            <FieldStack label={FORM_UI_DEMO_COPY.leadingCurrency.label}>
+              <HardcodedLeadingField
+                state={state.id}
+                leading={FORM_UI_DEMO_COPY.leadingCurrency.leading}
+                value={state.id === "default" || state.id === "readonly" ? FORM_UI_DEMO_COPY.leadingCurrency.value : undefined}
                 placeholder="0"
                 numeric
               />
@@ -649,19 +698,19 @@ function PrefixMoneyControlStatesBlock() {
   )
 }
 
-function PrefixQuantityControlStatesBlock() {
-  const meta = FORM_UI_CONTROL_TYPES.find((item) => item.id === "prefix-quantity")!
+function LeadingUnitControlStatesBlock() {
+  const meta = FORM_UI_CONTROL_TYPES.find((item) => item.id === "leading-unit")!
 
   return (
     <SpecBlock title={`${meta.token} · ${meta.label}`} hint={meta.usage}>
       <StateRow>
         {STATE_ORDER.map((state) => (
           <StateSpecCell key={state.id} label={state.label}>
-            <FieldStack label={FORM_UI_DEMO_COPY.prefixQuantity.label}>
-              <HardcodedAffixField
+            <FieldStack label={FORM_UI_DEMO_COPY.leadingUnit.label}>
+              <HardcodedLeadingField
                 state={state.id}
-                prefix={FORM_UI_DEMO_COPY.prefixQuantity.prefix}
-                value={state.id === "default" || state.id === "readonly" ? FORM_UI_DEMO_COPY.prefixQuantity.value : undefined}
+                leading={FORM_UI_DEMO_COPY.leadingUnit.leading}
+                value={state.id === "default" || state.id === "readonly" ? FORM_UI_DEMO_COPY.leadingUnit.value : undefined}
                 placeholder="0"
                 numeric
               />
@@ -695,20 +744,20 @@ function DateControlStatesBlock() {
   )
 }
 
-function DatePrefixControlStatesBlock() {
-  const meta = FORM_UI_CONTROL_TYPES.find((item) => item.id === "date-prefix")!
+function DateLeadingControlStatesBlock() {
+  const meta = FORM_UI_CONTROL_TYPES.find((item) => item.id === "date-leading")!
 
   return (
     <SpecBlock title={`${meta.token} · ${meta.label}`} hint={meta.usage}>
       <StateRow>
         {STATE_ORDER.map((state) => (
           <StateSpecCell key={state.id} label={state.label}>
-            <FieldStack label={FORM_UI_DEMO_COPY.datePrefix.label}>
+            <FieldStack label={FORM_UI_DEMO_COPY.dateLeading.label}>
               <HardcodedDateField
                 state={state.id}
-                withPrefix
-                value={state.id === "default" || state.id === "readonly" ? FORM_UI_DEMO_COPY.datePrefix.value : undefined}
-                placeholder={FORM_UI_DEMO_COPY.datePrefix.placeholder}
+                withLeading
+                value={state.id === "default" || state.id === "readonly" ? FORM_UI_DEMO_COPY.dateLeading.value : undefined}
+                placeholder={FORM_UI_DEMO_COPY.dateLeading.placeholder}
               />
             </FieldStack>
           </StateSpecCell>
@@ -739,7 +788,7 @@ function ImageUploadEmptyStatesBlock() {
   const meta = FORM_UI_CONTROL_TYPES.find((item) => item.id === "image-upload")!
 
   return (
-    <SpecBlock title={`${meta.token} · empty`} hint="Borde dashed · hover bruma-50 · drag savia-600.">
+    <SpecBlock title={`${meta.token} · empty`} hint="Borde dashed · hover sunken · drag color.border.selected.">
       <StateRow>
         {IMAGE_UPLOAD_EMPTY_STATES.map((state) => (
           <StateSpecCell key={state} label={state}>
@@ -757,7 +806,7 @@ function ImageUploadFilledStatesBlock() {
   const meta = FORM_UI_CONTROL_TYPES.find((item) => item.id === "image-upload")!
 
   return (
-    <SpecBlock title={`${meta.token} · filled`} hint="Miniatura 56px · borde sólido · metadata debajo del título.">
+    <SpecBlock title={`${meta.token} · filled`} hint="Thumb space.500 · acciones space.400 · metadata body.small.">
       <StateRow>
         {IMAGE_UPLOAD_FILLED_STATES.map((state) => (
           <StateSpecCell key={state} label={state}>
@@ -774,7 +823,7 @@ function ImageUploadFilledStatesBlock() {
 export function FormsUiHardcodedGallery() {
   return (
     <div className="space-y-10">
-      <FoundationBrumaStage caption="ROOTSY_FORM_FIELD_STACK · space.100 · label + control + assist.">
+      <FoundationBrumaStage caption="field-stack · space.100 · font.body label · body.small assist.">
         <div className="space-y-8">
           <SectionHeading
             title="Anatomía de campo"
@@ -812,11 +861,11 @@ export function FormsUiHardcodedGallery() {
         </div>
       </FoundationBrumaStage>
 
-      <FoundationBrumaStage caption="ROOTSY_FORM_COLOR_TOKENS · border.form · radius.large · estados completos.">
+      <FoundationBrumaStage caption="ROOTSY_FORM_COLOR_TOKENS · border.form · radius.large · space.500 · estados completos.">
         <div className="space-y-8">
           <SectionHeading
-            title="Controles"
-            description="Cinco tipos · seis estados — default · hover · focus · disabled · error · readonly."
+            title="Controles base"
+            description="Texto · multilínea · select · booleanos — seis estados · space.500 alineado a botón default."
           />
 
           <TextControlStatesBlock />
@@ -827,19 +876,37 @@ export function FormsUiHardcodedGallery() {
         </div>
       </FoundationBrumaStage>
 
-      <FoundationBrumaStage caption="form.control.prefix · form.control.date · form.control.image-upload · w-11 · focus-within savia.">
+      <FoundationBrumaStage caption="form.control.leading · form.control.date · form.control.image-upload · space.500 · focus-within savia.">
         <div className="space-y-8">
           <SectionHeading
-            title="Prefijo · fecha · imagen"
-            description="Shell affix w-11 · date trigger · carga compacta con miniatura 56px y drag savia."
+            title="Compuestos · fecha · imagen"
+            description="Shell compuesta con slot leading space.500 · date trigger · carga inline sin elevación."
           />
 
-          <PrefixMoneyControlStatesBlock />
-          <PrefixQuantityControlStatesBlock />
+          <LeadingCurrencyControlStatesBlock />
+          <LeadingUnitControlStatesBlock />
+          <SelectLeadingControlStatesBlock />
           <DateControlStatesBlock />
-          <DatePrefixControlStatesBlock />
+          <DateLeadingControlStatesBlock />
           <ImageUploadEmptyStatesBlock />
           <ImageUploadFilledStatesBlock />
+        </div>
+      </FoundationBrumaStage>
+
+      <FoundationBrumaStage caption="form.context.toolbar-list · layout.toolbar · select-leading · leading search · flush.">
+        <div className="space-y-8">
+          <SectionHeading
+            title="En contexto · toolbar listado"
+            description="Misma barra embebida que Layouts · Tablas — flush, labels visibles, divisores color.border, shell layout.toolbar · 92px."
+          />
+          <SpecBlock
+            title={`${ROOTSY_FORM_TOOLBAR_CONTEXT.token} · flush`}
+            hint="select-leading ×2 · leading search · field-stack · embebido en layout.toolbar."
+          >
+            <div className="mx-auto max-w-3xl">
+              <FormUiToolbarListFiltersEmbeddedDemo />
+            </div>
+          </SpecBlock>
         </div>
       </FoundationBrumaStage>
     </div>
