@@ -75,6 +75,7 @@ const LIBRARY_NAV_ICONS: Record<string, LucideIcon> = {
   "component-text-metric": Hash,
   "component-text-reading": BookOpen,
   "component-text-code": Code,
+  formulario: TextCursor,
   "sortable-list": GripVertical,
   feedback: Megaphone,
   dropdown: ChevronDown,

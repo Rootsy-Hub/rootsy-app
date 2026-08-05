@@ -4,11 +4,15 @@ import { RootsFormField } from "@/components/rootsy-form/RootsFormField"
 import type { RootsFormFieldAssistProps } from "@/components/rootsy-form/rootsFormFieldAssist"
 import { useRootsFormFieldControlProps } from "@/components/rootsy-form/rootsFormFieldContext"
 import {
-  rootsFormAffixFieldShellClass,
+  getFormCompositeInputStyle,
+  getFormCompositeShellStyle,
+  getFormDiscountModeButtonStyle,
+  getFormDiscountModeGroupStyle,
+} from "@/components/rootsy-form/rootsFormSpecRuntime"
+import { useRootsFormControlInteraction } from "@/components/rootsy-form/useRootsFormControlInteraction"
+import {
   rootsFormAffixClearButtonClass,
-  rootsFormAffixInputClass,
-  rootsFormDiscountModeButtonClass,
-  rootsFormDiscountModePrefixClass,
+  rootsFormControlSelectionClass,
 } from "@/components/rootsy-form/rootsFormStyles"
 import { useMoneyInputField } from "@/components/rootsy-form/useMoneyInputField"
 import { usePatternInputHandlers } from "@/components/rootsy-form/usePatternInputHandlers"
@@ -109,6 +113,9 @@ export function RootsFormDiscountField({
   const autoId = useId()
   const fieldId = id ?? autoId
   const controlProps = useRootsFormFieldControlProps({ invalid })
+  const { state, interactionHandlers } = useRootsFormControlInteraction({ disabled, invalid })
+  const shellStyle = getFormCompositeShellStyle(state)
+  const modeGroupStyle = getFormDiscountModeGroupStyle(state)
   const isPercent = mode === "porcentaje"
   const valueDisabled =
     disabled || (!isPercent && Boolean(fixedAmountDisabled))
@@ -162,22 +169,25 @@ export function RootsFormDiscountField({
       invalid={invalid}
     >
       <div
-        className={cn(
-          rootsFormAffixFieldShellClass,
-          disabled && "pointer-events-none opacity-50",
-        )}
+        aria-invalid={invalid || undefined}
+        className={cn("group min-w-0", disabled && "pointer-events-none opacity-50")}
+        style={shellStyle}
+        onMouseEnter={interactionHandlers.onMouseEnter}
+        onMouseLeave={interactionHandlers.onMouseLeave}
       >
         <div
           role="group"
           aria-label="Tipo de descuento"
-          className={cn(rootsFormDiscountModePrefixClass, "relative z-1")}
+          className="relative z-[1]"
+          style={modeGroupStyle}
         >
           <button
             type="button"
             disabled={disabled}
             aria-pressed={isPercent}
             aria-label="Porcentaje"
-            className={rootsFormDiscountModeButtonClass(isPercent, disabled)}
+            style={getFormDiscountModeButtonStyle(state, isPercent)}
+            className="focus-visible:outline-none"
             onClick={handlePercentModeSelect}
           >
             %
@@ -187,7 +197,8 @@ export function RootsFormDiscountField({
             disabled={disabled}
             aria-pressed={!isPercent}
             aria-label="Monto fijo"
-            className={rootsFormDiscountModeButtonClass(!isPercent, disabled)}
+            style={getFormDiscountModeButtonStyle(state, !isPercent)}
+            className="focus-visible:outline-none"
             onClick={handleFixedModeSelect}
           >
             $
@@ -210,22 +221,37 @@ export function RootsFormDiscountField({
             }
             placeholder={isPercent ? "0" : "0,00"}
             className={cn(
-              rootsFormAffixInputClass,
+              "font-canopy placeholder:text-[var(--rootsy-bruma-500)] disabled:cursor-not-allowed",
+              rootsFormControlSelectionClass,
               showClear && "pr-10",
               inputClassName,
             )}
+            style={getFormCompositeInputStyle(state, {
+              numeric: true,
+              hasTrailing: showClear,
+            })}
             onMouseDown={isPercent ? undefined : moneyHandlers.handleMouseDown}
             onChange={
               isPercent
                 ? (e) => handlePercentChange(e.target.value)
                 : moneyHandlers.handleChange
             }
-            onFocus={
-              isPercent ? percentHandlers.handleFocus : moneyHandlers.handleFocus
-            }
-            onBlur={
-              isPercent ? percentHandlers.handleBlur : moneyHandlers.handleBlur
-            }
+            onFocus={(event) => {
+              interactionHandlers.onFocus()
+              if (isPercent) {
+                percentHandlers.handleFocus(event)
+              } else {
+                moneyHandlers.handleFocus(event)
+              }
+            }}
+            onBlur={() => {
+              interactionHandlers.onBlur()
+              if (isPercent) {
+                percentHandlers.handleBlur()
+              } else {
+                moneyHandlers.handleBlur()
+              }
+            }}
             onKeyDown={isPercent ? undefined : moneyHandlers.handleKeyDown}
             onPaste={isPercent ? handlePercentPaste : moneyHandlers.handlePaste}
           />

@@ -124,6 +124,28 @@ export function getBannerUiSurface(
   }
 }
 
+/** Shell CSS — mapea borderRadiusPx → borderRadius (radius.large · 12px). */
+export function getBannerShellUiStyle(
+  intent: BannerIntentId,
+  density: BannerDensityId = "default",
+  options?: { fullWidth?: boolean },
+) {
+  const surface = getBannerUiSurface(intent, density)
+
+  return {
+    backgroundColor: surface.backgroundColor,
+    border: surface.border,
+    borderRadius: surface.borderRadiusPx,
+    paddingLeft: surface.paddingLeft,
+    paddingRight: surface.paddingRight,
+    paddingTop: surface.paddingTop,
+    paddingBottom: surface.paddingBottom,
+    maxWidth: options?.fullWidth ? undefined : surface.maxWidthPx,
+    width: options?.fullWidth ? ("100%" as const) : undefined,
+    boxSizing: "border-box" as const,
+  }
+}
+
 export function getBannerIconUiStyle(intent: BannerIntentId) {
   return {
     width: ROOTSY_BANNER_ANATOMY.iconSlotPx,

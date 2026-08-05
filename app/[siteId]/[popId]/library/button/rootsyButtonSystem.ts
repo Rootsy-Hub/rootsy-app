@@ -425,9 +425,9 @@ export const ROOTSY_ICON_BUTTON_SIZES: {
     token: "icon-button.size.large",
     hitAreaToken: "space.600",
     hitAreaPx: 48,
-    iconToken: "icon.size.large",
-    iconPx: 20,
-    usage: "CTA icon-only puntual — no reemplaza default.",
+    iconToken: "icon.size.xlarge",
+    iconPx: 24,
+    usage: "CTA icon-only puntual — hit area space.600 · ícono xlarge.",
   },
 ]
 
@@ -501,7 +501,7 @@ export const ROOTSY_ICON_BUTTON_GUIDELINES = {
   do: [
     "aria-label en todo control solo-ícono",
     "Tema workspace en shell claro · tema POS en shell oscuro",
-    "icon.size.medium (16px) en compact · icon.size.large (20px) en default/large",
+    "icon.size.medium (16px) en compact · icon.size.large (20px) en default · icon.size.xlarge (24px) en large",
     "radius.medium en hit area",
   ],
   dont: [

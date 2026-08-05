@@ -1,8 +1,8 @@
 "use client"
 
 import { CheckoutSectionLabel } from "@/components/checkout/CheckoutFormFields"
+import { RootsBanner } from "@/components/rootsy-banner"
 import {
-  saleOpChannelWarningBanner,
   saleOpLightInsetPanel,
 } from "@/components/sale-operation/saleOperationStyles"
 import { cn } from "@/lib/utils"
@@ -60,21 +60,28 @@ export function CashRegisterArcaPopFiscalPanel({
           </div>
         </div>
       ) : (
-        <div className={saleOpChannelWarningBanner}>
-          <p>
-            Todavía no hay un CUIT configurado en los ajustes del punto de venta.
-            Configuralo antes de cargar certificados ARCA o facturar.
-          </p>
-          {settingsHref ? (
-            <Link
-              href={settingsHref}
-              className="mt-2 inline-flex items-center gap-1.5 text-xs font-semibold text-amber-950 underline-offset-2 hover:underline"
-            >
-              Ir a ajustes del punto de venta
-              <ExternalLink className="size-3.5" aria-hidden />
-            </Link>
-          ) : null}
-        </div>
+        <RootsBanner
+          intent="warning"
+          layout="message"
+          message={
+            <>
+              <span className="block">
+                Todavía no hay un CUIT configurado en los ajustes del punto de venta.
+                Configuralo antes de cargar certificados ARCA o facturar.
+              </span>
+              {settingsHref ? (
+                <Link
+                  href={settingsHref}
+                  className="mt-2 inline-flex items-center gap-1.5 font-medium underline-offset-2 hover:underline"
+                  style={{ color: "inherit" }}
+                >
+                  Ir a ajustes del punto de venta
+                  <ExternalLink className="size-3.5" aria-hidden />
+                </Link>
+              ) : null}
+            </>
+          }
+        />
       )}
     </div>
   )

@@ -1,9 +1,10 @@
 /** Tokens compartidos entre listados tipo “workspace” (layout preview, clientes, etc.). */
 
 import {
-  rootsyElevationPopoverContentLightClass,
-  rootsyElevationPopoverMenuItemRadiusClass,
-} from "@/components/elevation/rootsyElevationStyles"
+  rootsDropdownContentLightClass,
+  rootsDropdownItemLightCompactClass,
+  rootsDropdownLabelLightClass,
+} from "@/components/rootsy-dropdown/rootsDropdownStyles"
 import {
   nightForestBorderClass,
   nightForestFocusRingClass,
@@ -23,6 +24,10 @@ import {
   rootsButtonCompactSizeClass,
   rootsIconButtonClass,
 } from "@/components/rootsy-button/rootsButtonStyles"
+import {
+  rootsyDateCalendarPanelClass,
+  rootsyDatePopoverContentClass,
+} from "@/components/ui/rootsyDateCalendarStyles"
 import { cn } from "@/lib/utils"
 
 /** Superficie blanca — shell y zonas internas de tarjetas bloques. */
@@ -399,47 +404,20 @@ export const lightToolbarClearButtonClass =
 
 /** Menú desplegable de acciones en toolbars / filas claras. */
 export const lightToolbarDropdownContentClass = cn(
-  "rootsy-app-light w-56 p-1.5 text-popover-foreground",
-  rootsyElevationPopoverContentLightClass,
-  rootsyElevationPopoverMenuItemRadiusClass,
+  "rootsy-app-light w-56",
+  rootsDropdownContentLightClass,
   "origin-(--radix-dropdown-menu-content-transform-origin)",
 )
 
-export const lightToolbarDropdownItemClass =
-  "gap-2 text-popover-foreground focus:bg-muted focus:text-foreground data-[highlighted]:bg-muted data-[highlighted]:text-foreground [&_svg:not([class*='text-'])]:text-muted-foreground [&_svg]:opacity-70"
+export const lightToolbarDropdownItemClass = rootsDropdownItemLightCompactClass
 
-export const lightToolbarDropdownLabelClass =
-  "px-2 py-1.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground"
+export const lightToolbarDropdownLabelClass = rootsDropdownLabelLightClass
 
 /** Popover del calendario en paneles claros (modales light, filtros de período). */
-export const lightDatePopoverContentClass =
-  "border border-[#e7e5e4]/90 bg-white p-0 text-[#292524] shadow-xl shadow-[#292524]/8"
+export const lightDatePopoverContentClass = rootsyDatePopoverContentClass
 
-/** Calendario dentro del popover: isla clara; anula tokens dark del shell. */
-export const lightDateCalendarClass = cn(
-  "rounded-xl border border-[#f5f5f0] bg-white p-1.5 shadow-inner shadow-[#292524]/5",
-  "[&_[data-slot=calendar]]:w-full [&_[data-slot=calendar]]:max-w-none",
-  "[&_.rdp-root]:!w-full [&_.rdp-root]:max-w-none",
-  "[&_.rdp-month]:w-full min-w-0",
-  "[&_.rdp-month_grid]:w-full [&_.rdp-month_grid]:table-fixed",
-  "[&_button[data-day]]:!text-[#44403c]",
-  "[&_button[data-day]>span]:!opacity-100 [&_button[data-day]>span]:!text-inherit",
-  "[&_button[data-day]:not([data-range-start=true]):not([data-range-end=true]):not([data-selected-single=true]):not([data-range-middle=true]):hover]:!bg-[#f5f5f0]",
-  "[&_button[data-day]:not([data-range-start=true]):not([data-range-end=true]):not([data-selected-single=true]):not([data-range-middle=true]):hover]:!text-[#292524]",
-  "[&_button[data-day][data-range-start=true]:hover]:!bg-emerald-700 [&_button[data-day][data-range-start=true]:hover]:!text-white",
-  "[&_button[data-day][data-range-end=true]:hover]:!bg-emerald-700 [&_button[data-day][data-range-end=true]:hover]:!text-white",
-  "[&_button[data-day][data-selected-single=true]:hover]:!bg-emerald-700 [&_button[data-day][data-selected-single=true]:hover]:!text-white",
-  "[&_button[data-day][data-range-middle=true]:hover]:!bg-emerald-200 [&_button[data-day][data-range-middle=true]:hover]:!text-[#292524]",
-  "[&_button[data-day][data-selected-single=true]]:!bg-emerald-600 [&_button[data-day][data-selected-single=true]]:!text-white",
-  "[&_button[data-day][data-range-start=true]]:!bg-emerald-600 [&_button[data-day][data-range-start=true]]:!text-white",
-  "[&_button[data-day][data-range-end=true]]:!bg-emerald-600 [&_button[data-day][data-range-end=true]]:!text-white",
-  "[&_button[data-day][data-range-middle=true]]:!bg-emerald-100 [&_button[data-day][data-range-middle=true]]:!text-[#44403c]",
-  "[&_.rdp-button_previous]:!text-[#57534e] [&_.rdp-button_next]:!text-[#57534e]",
-  "[&_.rdp-weekday]:!text-[#78716c]",
-  "[&_.rdp-caption_label]:!text-[#292524]",
-  "[&_td.rdp-outside_button[data-day]]:!text-[#a8a29e]",
-  "[&_td.rdp-disabled_button[data-day]]:!text-[#d6d3d1]",
-)
+/** Calendario dentro del popover — paleta bruma/savia. */
+export const lightDateCalendarClass = rootsyDateCalendarPanelClass
 
 export const lightFilterChipClass =
   "max-w-full gap-1 rounded-md border-border/50 py-0 pr-0.5 font-normal"

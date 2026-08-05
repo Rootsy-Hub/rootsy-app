@@ -1,10 +1,9 @@
 "use client"
 
+import { RootsFormControlInput } from "@/components/rootsy-form/RootsFormControlInput"
 import { RootsFormField } from "@/components/rootsy-form/RootsFormField"
 import type { RootsFormFieldAssistProps } from "@/components/rootsy-form/rootsFormFieldAssist"
 import { useRootsFormFieldControlProps } from "@/components/rootsy-form/rootsFormFieldContext"
-import { rootsFormTextFieldClass } from "@/components/rootsy-form/rootsFormStyles"
-import { Input } from "@/components/ui/input"
 import { cn } from "@/lib/utils"
 import { forwardRef, useId, type ComponentProps } from "react"
 
@@ -47,10 +46,12 @@ export const RootsFormTextField = forwardRef<HTMLInputElement, Props>(
         success={success}
         invalid={invalid}
       >
-        <Input
+        <RootsFormControlInput
           ref={ref}
           id={fieldId}
-          className={cn(rootsFormTextFieldClass, inputClassName)}
+          invalid={controlProps.isInvalid}
+          disabled={inputProps.disabled}
+          className={inputClassName}
           aria-describedby={controlProps.describedBy}
           aria-invalid={controlProps.isInvalid || undefined}
           {...inputProps}

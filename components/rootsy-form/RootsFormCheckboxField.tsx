@@ -2,11 +2,15 @@
 
 import { RootsFormCheckbox } from "@/components/rootsy-form/RootsFormCheckbox"
 import {
-  rootsFormFieldStackClass,
-  rootsFormSwitchBoxClass,
-  rootsFormSwitchDescriptionClass,
-  rootsFormSwitchLabelClass,
-} from "@/components/rootsy-form/rootsFormStyles"
+  getFormChoiceDescriptionStyle,
+  getFormChoiceLabelStyle,
+} from "@/components/rootsy-form/rootsFormSpecRuntime"
+import {
+  rootsFormUiChoiceDescriptionClass,
+  rootsFormUiChoiceLabelClass,
+  rootsFormUiChoiceRowClass,
+  rootsFormUiChoiceTextWrapClass,
+} from "@/components/rootsy-form/rootsFormUiStyles"
 import { cn } from "@/lib/utils"
 import { useId, useRef } from "react"
 
@@ -17,8 +21,8 @@ type Props = {
   checked: boolean
   onCheckedChange: (checked: boolean) => void
   disabled?: boolean
+  invalid?: boolean
   className?: string
-  boxClassName?: string
 }
 
 export function RootsFormCheckboxField({
@@ -28,44 +32,53 @@ export function RootsFormCheckboxField({
   checked,
   onCheckedChange,
   disabled,
+  invalid,
   className,
-  boxClassName,
 }: Props) {
   const autoId = useId()
   const checkboxId = id ?? autoId
   const checkboxRef = useRef<HTMLButtonElement>(null)
+  const labelStyle = getFormChoiceLabelStyle("checkbox")
+  const descriptionStyle = getFormChoiceDescriptionStyle()
 
   return (
-    <div className={cn(rootsFormFieldStackClass, className)}>
-      <label
-        htmlFor={checkboxId}
+    <label
+      htmlFor={checkboxId}
+      className={cn(
+        rootsFormUiChoiceRowClass,
+        description ? "items-start" : "items-center",
+        disabled && "cursor-not-allowed opacity-50",
+        className,
+      )}
+    >
+      <RootsFormCheckbox
+        ref={checkboxRef}
+        id={checkboxId}
+        checked={checked}
+        invalid={invalid}
+        className={cn("self-center", description && "mt-0.5")}
+        onCheckedChange={(value) => {
+          onCheckedChange(value === true)
+          requestAnimationFrame(() => checkboxRef.current?.blur())
+        }}
+        disabled={disabled}
+        aria-label={label}
+      />
+      <span
         className={cn(
-          rootsFormSwitchBoxClass,
-          !description && "h-11 py-0",
-          disabled && "cursor-not-allowed opacity-50",
-          boxClassName,
+          rootsFormUiChoiceTextWrapClass,
+          description && "flex-col items-start",
         )}
       >
-        <span className="min-w-0 flex-1 pr-3">
-          <span className={rootsFormSwitchLabelClass}>{label}</span>
-          {description ? (
-            <span className={rootsFormSwitchDescriptionClass}>
-              {description}
-            </span>
-          ) : null}
+        <span className={rootsFormUiChoiceLabelClass} style={labelStyle}>
+          {label}
         </span>
-        <RootsFormCheckbox
-          ref={checkboxRef}
-          id={checkboxId}
-          checked={checked}
-          onCheckedChange={(value) => {
-            onCheckedChange(value === true)
-            requestAnimationFrame(() => checkboxRef.current?.blur())
-          }}
-          disabled={disabled}
-          aria-label={label}
-        />
-      </label>
-    </div>
+        {description ? (
+          <span className={rootsFormUiChoiceDescriptionClass} style={descriptionStyle}>
+            {description}
+          </span>
+        ) : null}
+      </span>
+    </label>
   )
 }

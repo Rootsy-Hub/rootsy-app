@@ -40,7 +40,7 @@ import {
 } from "@/app/[siteId]/[popId]/library/layouts/layoutsTablesHardcodedSpec"
 import { ROOTSY_LAYOUTS_TABLES_CHROME } from "@/app/[siteId]/[popId]/library/layouts/rootsyLayoutsTablesSystem"
 import { COLOR_TOKENS } from "@/app/[siteId]/[popId]/library/color/rootsyColorSystem"
-import { FormUiToolbarListFilters } from "@/app/[siteId]/[popId]/library/ui-components/formsUiHardcodedComponents"
+import { RootsFormToolbarListFilters } from "@/components/rootsy-form"
 import { getIconButtonUiRowSurface } from "@/app/[siteId]/[popId]/library/ui-components/buttonsUiHardcodedSpec"
 import { cn } from "@/lib/utils"
 import {
@@ -135,7 +135,7 @@ export function LayoutsTablesFiltersDemo({ composed = false, hideLabels = false 
             }),
       }}
     >
-      <FormUiToolbarListFilters variant={hideLabels ? "compact" : "flush"} />
+      <RootsFormToolbarListFilters hideLabels={hideLabels} />
     </div>
   )
 }

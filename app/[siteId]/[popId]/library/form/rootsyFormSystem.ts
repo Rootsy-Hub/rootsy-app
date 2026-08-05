@@ -73,6 +73,8 @@ export type FormAssistVariantId = "hint" | "error" | "warning" | "success"
 
 export type FormToolbarContextVariantId = "flush" | "compact"
 
+export type FormToolbarControlShellId = "inline-icon" | "leading-sunken"
+
 export type FormToolbarFieldRoleId = "period" | "filters" | "search"
 
 export const ROOTSY_FORM_MANIFESTO =
@@ -97,9 +99,29 @@ export const ROOTSY_FORM_PRINCIPLES = [
   },
   {
     title: "Contexto toolbar",
-    detail: "form.context.toolbar-list — select-leading ×2 + leading search en grilla 3 cols · labels visibles · divisores color.border.",
+    detail: "form.context.toolbar-list — inline-icon en listados · leading-sunken en formularios densos.",
   },
 ] as const
+
+export const ROOTSY_FORM_COMPOSITE_SHELLS: {
+  id: FormToolbarControlShellId
+  token: string
+  label: string
+  usage: string
+}[] = [
+  {
+    id: "inline-icon",
+    token: "form.control.shell.inline-icon",
+    label: "Ícono inline",
+    usage: "Fondo blanco · ícono + gap space.100 · sin casilla sunken — toolbar listados.",
+  },
+  {
+    id: "leading-sunken",
+    token: "form.control.shell.leading-sunken",
+    label: "Slot leading sunken",
+    usage: "Casilla bruma-50 space.500 · divisor vertical · shell compuesta.",
+  },
+]
 
 export const ROOTSY_FORM_COLOR_TOKENS = [
   {
@@ -371,8 +393,9 @@ export const ROOTSY_FORM_TOOLBAR_CONTEXT = {
   embedShellToken: "layout.toolbar",
   embedHeightPx: rootsySpacePx("600") + rootsySpacePx("400") + rootsySpacePx("150"),
   embedBackgroundToken: "elevation.surface.overlay",
+  defaultControlShell: "inline-icon" as FormToolbarControlShellId,
   usage:
-    "Barra de filtros embebida en layout.toolbar — tres field-stacks · select-leading ×2 · leading search · flush sin borde exterior.",
+    "Barra de filtros embebida en layout.toolbar — field-stack ×3 · inline-icon default · flush sin borde exterior.",
 } as const
 
 export const ROOTSY_FORM_TOOLBAR_VARIANTS: {
@@ -382,14 +405,16 @@ export const ROOTSY_FORM_TOOLBAR_VARIANTS: {
   usage: string
   showLabels: boolean
   flush: boolean
+  controlShell: FormToolbarControlShellId
 }[] = [
   {
     id: "flush",
     token: "form.context.toolbar-list.flush",
     label: "Flush",
-    usage: "Sin borde exterior — embebido en layout.toolbar · labels visibles (Layouts · Tablas).",
+    usage: "Embebido en layout.toolbar · labels visibles · inline-icon (Layouts · Tablas).",
     showLabels: true,
     flush: true,
+    controlShell: "inline-icon",
   },
   {
     id: "compact",
@@ -398,6 +423,7 @@ export const ROOTSY_FORM_TOOLBAR_VARIANTS: {
     usage: "Sin labels — solo controles space.500 en celdas densas.",
     showLabels: false,
     flush: true,
+    controlShell: "inline-icon",
   },
 ]
 
@@ -412,22 +438,22 @@ export const ROOTSY_FORM_TOOLBAR_FIELDS: {
     id: "period",
     token: "form.context.toolbar-list.period",
     label: "Período",
-    controlToken: "form.control.select.leading",
-    usage: "Ícono calendario · chevron · placeholder de rango.",
+    controlToken: "form.control.shell.inline-icon",
+    usage: "Ícono calendario inline · chevron · placeholder de rango.",
   },
   {
     id: "filters",
     token: "form.context.toolbar-list.filters",
     label: "Filtros",
-    controlToken: "form.control.select.leading",
-    usage: "Ícono filtro · chevron · estado y tipo.",
+    controlToken: "form.control.shell.inline-icon",
+    usage: "Ícono filtro inline · chevron · estado y tipo.",
   },
   {
     id: "search",
     token: "form.context.toolbar-list.search",
     label: "Buscar",
-    controlToken: "form.control.leading",
-    usage: "Ícono lupa · sin chevron · texto libre.",
+    controlToken: "form.control.shell.inline-icon",
+    usage: "Ícono lupa inline · sin chevron · texto libre.",
   },
 ]
 

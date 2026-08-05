@@ -147,6 +147,7 @@ export const LIBRARY_NAV_GROUPS: LibraryNavGroup[] = [
         children: [...TEXT_COMPONENT_LIBRARY_SUBITEMS],
       },
       { id: "buttons", label: "Botones" },
+      { id: "formulario", label: "Formulario" },
       { id: "sortable-list", label: "Lista ordenable" },
       { id: "feedback", label: "Banners" },
     ],

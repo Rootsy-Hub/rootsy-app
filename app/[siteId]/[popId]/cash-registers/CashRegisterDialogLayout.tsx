@@ -1,8 +1,8 @@
 "use client"
 
+import { RootsBanner } from "@/components/rootsy-banner"
 import { cn } from "@/lib/utils"
 import {
-  saleOpChannelErrorBanner,
   saleOpDialogBody,
   saleOpDialogLight,
   saleOpDialogMaxViewport,
@@ -48,9 +48,7 @@ export function CashRegisterDialogSingleColumnBody({
       )}
     >
       {banner ? (
-        <p role="alert" className={saleOpChannelErrorBanner}>
-          {banner}
-        </p>
+        <RootsBanner intent="danger" layout="message" message={banner} />
       ) : null}
       {children}
     </div>
@@ -76,9 +74,7 @@ export function CashRegisterDialogTwoColumnBody({
       )}
     >
       {banner ? (
-        <p role="alert" className={cn(saleOpChannelErrorBanner, "mb-4")}>
-          {banner}
-        </p>
+        <RootsBanner intent="danger" layout="message" className="mb-4" message={banner} />
       ) : null}
 
       <div className="grid gap-4 lg:grid-cols-2 lg:items-start lg:gap-6">

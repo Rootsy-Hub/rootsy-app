@@ -1,24 +1,22 @@
 "use client"
 
 import {
-  dataWorkspaceSectionMenuDropdownItemClass,
-  dataWorkspaceSectionMenuTriggerClass,
   dataWorkspaceHeaderDropdownContentClassForVariant,
   dataWorkspaceHeaderDropdownLabelClassForVariant,
   dataWorkspaceHeaderDropdownSeparatorClassForVariant,
+  dataWorkspaceSectionMenuTriggerClass,
   isNightForestHeader,
   type DataWorkspaceHeaderVariant,
 } from "@/components/layouts/dataWorkspaceHeaderStyles"
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
-import { cn } from "@/lib/utils"
-import { Check, ChevronDown, LayoutGrid, Sparkles } from "lucide-react"
+  RootsDropdownContent,
+  RootsDropdownItem,
+  RootsDropdownLabel,
+  RootsDropdownMenu,
+  RootsDropdownSeparator,
+  RootsDropdownTrigger,
+} from "@/components/rootsy-dropdown"
+import { ChevronDown, LayoutGrid, Sparkles } from "lucide-react"
 import type {
   DataWorkspaceSidebarCreationItem,
   DataWorkspaceSidebarViewItem,
@@ -44,7 +42,7 @@ export function DataWorkspaceSectionMenu({
   viewsSectionLabel = "Vista",
   headerVariant = "default",
 }: DataWorkspaceSectionMenuProps) {
-  const isNightForest = isNightForestHeader(headerVariant)
+  const theme = isNightForestHeader(headerVariant) ? "dark" : "light"
   const activeView =
     viewItems.find((item) => item.id === activeId) ??
     viewItems[0] ??
@@ -55,22 +53,17 @@ export function DataWorkspaceSectionMenu({
   const DisplayIcon = displayItem?.icon ?? LayoutGrid
 
   const triggerClass = dataWorkspaceSectionMenuTriggerClass(headerVariant)
-  const dropdownContentClass = dataWorkspaceHeaderDropdownContentClassForVariant(
-    headerVariant,
-  )
-  const dropdownLabelClass = dataWorkspaceHeaderDropdownLabelClassForVariant(
-    headerVariant,
-  )
-  const dropdownSeparatorClass =
-    dataWorkspaceHeaderDropdownSeparatorClassForVariant(headerVariant)
+  const dropdownContentClass = dataWorkspaceHeaderDropdownContentClassForVariant(headerVariant)
+  const dropdownLabelClass = dataWorkspaceHeaderDropdownLabelClassForVariant(headerVariant)
+  const dropdownSeparatorClass = dataWorkspaceHeaderDropdownSeparatorClassForVariant(headerVariant)
 
   if (viewItems.length === 0 && creationItems.length === 0) {
     return null
   }
 
   return (
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild>
+    <RootsDropdownMenu>
+      <RootsDropdownTrigger asChild>
         <button
           type="button"
           className={triggerClass}
@@ -84,76 +77,49 @@ export function DataWorkspaceSectionMenu({
             aria-hidden
           />
         </button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent
-        align="end"
-        sideOffset={6}
-        className={dropdownContentClass ?? "w-56"}
-      >
+      </RootsDropdownTrigger>
+      <RootsDropdownContent theme={theme} align="end" className={dropdownContentClass}>
         {creationItems.length > 0 ? (
           <>
-            <DropdownMenuLabel
-              className={
-                dropdownLabelClass ??
-                "text-[10px] uppercase tracking-wider text-muted-foreground"
-              }
-            >
+            <RootsDropdownLabel theme={theme} className={dropdownLabelClass}>
               {creationSectionLabel}
-            </DropdownMenuLabel>
+            </RootsDropdownLabel>
             {creationItems.map((item) => {
               const Icon = item.icon ?? Sparkles
               const selected = activeId === item.id
               return (
-                <DropdownMenuItem
+                <RootsDropdownItem
                   key={item.id}
-                  className={dataWorkspaceSectionMenuDropdownItemClass(
-                    headerVariant,
-                    selected,
-                  )}
-                  onClick={() => onSelect(item.id)}
+                  theme={theme}
+                  selected={selected}
+                  className="gap-2"
+                  onSelect={() => onSelect(item.id)}
                 >
                   <Icon className="size-4 shrink-0 opacity-70" aria-hidden />
                   <span className="min-w-0 flex-1 truncate">{item.label}</span>
-                  {selected ? (
-                    <Check
-                      className={cn(
-                        "size-4 shrink-0",
-                        isNightForest
-                          ? "text-emerald-300"
-                          : "text-primary",
-                      )}
-                      aria-hidden
-                    />
-                  ) : null}
-                </DropdownMenuItem>
+                </RootsDropdownItem>
               )
             })}
             {viewItems.length > 0 ? (
-              <DropdownMenuSeparator className={dropdownSeparatorClass} />
+              <RootsDropdownSeparator theme={theme} className={dropdownSeparatorClass} />
             ) : null}
           </>
         ) : null}
         {viewItems.length > 0 ? (
           <>
-            <DropdownMenuLabel
-              className={
-                dropdownLabelClass ??
-                "text-[10px] uppercase tracking-wider text-muted-foreground"
-              }
-            >
+            <RootsDropdownLabel theme={theme} className={dropdownLabelClass}>
               {viewsSectionLabel}
-            </DropdownMenuLabel>
+            </RootsDropdownLabel>
             {viewItems.map((item) => {
               const Icon = item.icon
               const selected = activeId === item.id
               return (
-                <DropdownMenuItem
+                <RootsDropdownItem
                   key={item.id}
-                  className={dataWorkspaceSectionMenuDropdownItemClass(
-                    headerVariant,
-                    selected,
-                  )}
-                  onClick={() => onSelect(item.id)}
+                  theme={theme}
+                  selected={selected}
+                  className="gap-2"
+                  onSelect={() => onSelect(item.id)}
                 >
                   {Icon ? (
                     <Icon className="size-4 shrink-0 opacity-70" aria-hidden />
@@ -161,23 +127,12 @@ export function DataWorkspaceSectionMenu({
                     <span className="size-4 shrink-0" aria-hidden />
                   )}
                   <span className="min-w-0 flex-1 truncate">{item.label}</span>
-                  {selected ? (
-                    <Check
-                      className={cn(
-                        "size-4 shrink-0",
-                        isNightForest
-                          ? "text-emerald-300"
-                          : "text-primary",
-                      )}
-                      aria-hidden
-                    />
-                  ) : null}
-                </DropdownMenuItem>
+                </RootsDropdownItem>
               )
             })}
           </>
         ) : null}
-      </DropdownMenuContent>
-    </DropdownMenu>
+      </RootsDropdownContent>
+    </RootsDropdownMenu>
   )
 }

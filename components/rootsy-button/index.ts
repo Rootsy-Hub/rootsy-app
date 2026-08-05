@@ -9,6 +9,7 @@ export {
 export {
   RootsDangerButton,
   RootsDefaultButton,
+  RootsLinkButton,
   RootsPrimaryButton,
   RootsSemanticButton,
   RootsSubtleButton,

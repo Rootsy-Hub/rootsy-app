@@ -4,13 +4,15 @@ import { RootsFormField } from "@/components/rootsy-form/RootsFormField"
 import type { RootsFormFieldAssistProps } from "@/components/rootsy-form/rootsFormFieldAssist"
 import { useRootsFormFieldControlProps } from "@/components/rootsy-form/rootsFormFieldContext"
 import {
-  rootsFormAffixPrefixClass,
-  rootsFormControlTypographyClass,
+  getFormDateTriggerStyle,
+  getFormDateValueStyle,
+  getFormLeadingPrefixStyle,
+} from "@/components/rootsy-form/rootsFormSpecRuntime"
+import { useRootsFormControlInteraction } from "@/components/rootsy-form/useRootsFormControlInteraction"
+import {
   rootsFormDateCalendarClassNames,
   rootsFormDateCalendarShellClass,
   rootsFormDatePopoverContentClass,
-  rootsFormDateTriggerClass,
-  rootsFormPrefixedDateTriggerClass,
 } from "@/components/rootsy-form/rootsFormStyles"
 import { Calendar } from "@/components/ui/calendar"
 import {
@@ -64,9 +66,19 @@ export function RootsFormDateField({
   const hasPrefix = prefix != null
   const triggerRef = useRef<HTMLButtonElement>(null)
   const controlProps = useRootsFormFieldControlProps({ invalid })
+  const { state, interactionHandlers } = useRootsFormControlInteraction({
+    disabled,
+    invalid: controlProps.isInvalid,
+  })
   const [open, setOpen] = useState(false)
   const selected = useMemo(() => parseRootsFormIsoDate(value), [value])
   const displayValue = selected ? formatRootsFormDisplayDate(selected) : null
+  const triggerStyle = getFormDateTriggerStyle(state, { prefixed: hasPrefix })
+  const prefixStyle = hasPrefix ? getFormLeadingPrefixStyle(state) : undefined
+  const valueStyle = getFormDateValueStyle(state, {
+    prefixed: hasPrefix,
+    placeholder: !displayValue,
+  })
 
   return (
     <RootsFormField
@@ -100,22 +112,21 @@ export function RootsFormDateField({
             aria-expanded={open}
             data-state={open ? "open" : "closed"}
             className={cn(
-              hasPrefix
-                ? rootsFormPrefixedDateTriggerClass
-                : rootsFormDateTriggerClass,
+              "w-full font-canopy text-sm font-normal leading-5 disabled:pointer-events-none disabled:cursor-not-allowed",
               triggerClassName,
             )}
+            style={triggerStyle}
+            onMouseEnter={interactionHandlers.onMouseEnter}
+            onMouseLeave={interactionHandlers.onMouseLeave}
+            onFocus={interactionHandlers.onFocus}
+            onBlur={interactionHandlers.onBlur}
           >
             {hasPrefix ? (
-              <span className={rootsFormAffixPrefixClass} aria-hidden>
+              <span style={prefixStyle} aria-hidden>
                 {prefix}
               </span>
             ) : null}
-            <span
-              data-slot="date-value"
-              data-placeholder={displayValue ? undefined : ""}
-              className={cn(rootsFormControlTypographyClass, "truncate")}
-            >
+            <span data-slot="date-value" data-placeholder={displayValue ? undefined : ""} style={valueStyle}>
               {displayValue ?? placeholder}
             </span>
           </button>

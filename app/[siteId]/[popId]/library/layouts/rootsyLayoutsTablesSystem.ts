@@ -46,7 +46,7 @@ export const ROOTSY_LAYOUTS_TABLES_PRINCIPLES = [
   },
   {
     title: "Toolbar claro",
-    detail: "Filtros con form.control.select.leading + leading search · layout.toolbar 92px · composición FormUiToolbarListFilters.",
+    detail: "Filtros con form.control.shell.inline-icon · layout.toolbar 92px · composición FormUiToolbarListFilters.",
   },
   {
     title: "Tabla bruma",

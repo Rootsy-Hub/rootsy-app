@@ -1,21 +1,24 @@
 "use client"
 
-import { CheckoutSectionLabel } from "@/components/checkout/CheckoutFormFields"
 import { RootsFormFieldMessage } from "@/components/rootsy-form/RootsFormFieldMessage"
 import {
   resolveRootsFormFieldMessage,
   type RootsFormFieldAssistProps,
 } from "@/components/rootsy-form/rootsFormFieldAssist"
 import { RootsFormFieldContext } from "@/components/rootsy-form/rootsFormFieldContext"
-import { rootsFormFieldStackClass } from "@/components/rootsy-form/rootsFormStyles"
+import {
+  FORM_UI_LABEL_STYLE,
+  getFormFieldStackStyle,
+} from "@/components/rootsy-form/rootsFormSpecRuntime"
 import { cn } from "@/lib/utils"
-import { useId, type ReactNode } from "react"
+import { useId, type CSSProperties, type ReactNode } from "react"
 
 type Props = {
   label: string
   htmlFor?: string
   children: ReactNode
   className?: string
+  style?: CSSProperties
 } & RootsFormFieldAssistProps
 
 export function RootsFormField({
@@ -28,6 +31,7 @@ export function RootsFormField({
   invalid,
   children,
   className,
+  style,
 }: Props) {
   const messageId = useId()
   const message = resolveRootsFormFieldMessage({ hint, error, warning, success })
@@ -40,8 +44,14 @@ export function RootsFormField({
         invalid: isInvalid || undefined,
       }}
     >
-      <div className={cn(rootsFormFieldStackClass, className)}>
-        <CheckoutSectionLabel htmlFor={htmlFor}>{label}</CheckoutSectionLabel>
+      <div className={cn(className)} style={{ ...getFormFieldStackStyle(), ...style }}>
+        {htmlFor ? (
+          <label htmlFor={htmlFor} style={FORM_UI_LABEL_STYLE}>
+            {label}
+          </label>
+        ) : (
+          <span style={FORM_UI_LABEL_STYLE}>{label}</span>
+        )}
         {children}
         {message ? (
           <RootsFormFieldMessage id={messageId} variant={message.variant}>

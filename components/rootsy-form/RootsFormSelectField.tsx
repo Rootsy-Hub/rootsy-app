@@ -5,7 +5,6 @@ import type { RootsFormFieldAssistProps } from "@/components/rootsy-form/rootsFo
 import { useRootsFormFieldControlProps } from "@/components/rootsy-form/rootsFormFieldContext"
 import { RootsFormSelectContent } from "@/components/rootsy-form/RootsFormSelectContent"
 import { RootsFormSelectTrigger } from "@/components/rootsy-form/RootsFormSelectTrigger"
-import { rootsFormAffixPrefixClass } from "@/components/rootsy-form/rootsFormStyles"
 import { Select, SelectValue } from "@/components/ui/select"
 import { useId, useRef, type ReactNode } from "react"
 
@@ -18,6 +17,7 @@ type Props = {
   disabled?: boolean
   invalid?: boolean
   prefix?: ReactNode
+  prefixVariant?: "sunken" | "inline"
   className?: string
   triggerClassName?: string
   contentClassName?: string
@@ -38,6 +38,7 @@ export function RootsFormSelectField({
   warning,
   success,
   prefix,
+  prefixVariant = "sunken",
   className,
   triggerClassName,
   contentClassName,
@@ -75,16 +76,14 @@ export function RootsFormSelectField({
           ref={triggerRef}
           id={fieldId}
           tone={tone}
+          invalid={controlProps.isInvalid}
           aria-invalid={controlProps.isInvalid}
           aria-describedby={controlProps.describedBy}
           prefixed={hasPrefix}
+          prefixVariant={prefixVariant}
+          leadingPrefix={hasPrefix ? prefix : undefined}
           className={triggerClassName}
         >
-          {hasPrefix ? (
-            <span className={rootsFormAffixPrefixClass} aria-hidden>
-              {prefix}
-            </span>
-          ) : null}
           <SelectValue placeholder={placeholder} />
         </RootsFormSelectTrigger>
         <RootsFormSelectContent tone={tone} className={contentClassName}>

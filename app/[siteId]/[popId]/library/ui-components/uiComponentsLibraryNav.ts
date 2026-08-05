@@ -47,7 +47,7 @@ export const UI_COMPONENTS_PAGE_META: Record<string, UiComponentsPageMeta> = {
     id: "ui-components-forms",
     title: "Formulario UI",
     description:
-      "Captura datos — stack field · space.500 · leading compuesto · fecha · imagen · form.context.toolbar-list · tokens border/elevation/spacing.",
+      "Captura datos — stack field · space.500 · inline-icon · leading sunken · form.context.toolbar-list · tokens border/elevation/spacing.",
   },
   "ui-components-modals": {
     id: "ui-components-modals",

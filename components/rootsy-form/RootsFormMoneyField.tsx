@@ -53,6 +53,7 @@ export function RootsFormMoneyField({
 
   const {
     inputRef,
+    inputValue,
     handleMouseDown,
     handleFocus,
     handleChange,
@@ -81,10 +82,11 @@ export function RootsFormMoneyField({
         ref={inputRef}
         id={fieldId}
         prefix={prefix}
+        numeric
         inputMode="decimal"
         autoComplete="off"
         autoFocus={autoFocus}
-        value={value}
+        value={inputValue}
         maxLength={MONEY_INPUT_DISPLAY_MAX_LEN}
         disabled={disabled}
         invalid={controlProps.isInvalid}
@@ -96,7 +98,7 @@ export function RootsFormMoneyField({
         onPaste={handlePaste}
         onFocus={handleFocus}
         onBlur={handleBlur}
-        inputClassName={cn(inputClassName)}
+        inputClassName={cn("tabular-nums", inputClassName)}
       />
     </RootsFormField>
   )

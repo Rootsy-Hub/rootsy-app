@@ -212,6 +212,7 @@ export const ROOTSY_DROPDOWN_ITEM_STATES: {
 export const ROOTSY_DROPDOWN_ANATOMY = {
   panelRadiusPx: radiusPx("xlarge"),
   panelPaddingYPx: rootsySpacePx("100"),
+  panelPaddingXPx: rootsySpacePx("050"),
   panelBorder: `1px solid ${borderHex("color.border")}`,
   shadowToken: "elevation.shadow.overlay",
   anchorGapPx: rootsySpacePx("100"),
@@ -224,6 +225,8 @@ export const ROOTSY_DROPDOWN_ANATOMY = {
   labelPaddingBottomPx: rootsySpacePx("050"),
   separatorHeightPx: 1,
   separatorMarginYPx: rootsySpacePx("050"),
+  separatorInsetXPx: rootsySpacePx("100"),
+  itemStackGapPx: rootsySpacePx("025"),
   destructiveTintPercent: 8,
 } as const
 

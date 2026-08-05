@@ -13,6 +13,8 @@ import { TextComponentFoundationView } from "@/app/[siteId]/[popId]/library/text
 import { isUiComponentsLibrarySection } from "@/app/[siteId]/[popId]/library/ui-components/uiComponentsLibraryNav"
 import { UiComponentsFoundationView } from "@/app/[siteId]/[popId]/library/ui-components/UiComponentsFoundationView"
 import { isTextComponentLibrarySection } from "@/app/[siteId]/[popId]/library/text-component/textComponentLibraryNav"
+import { LayoutFormLibrarySection } from "@/app/[siteId]/[popId]/library/components/LayoutFormLibrarySection"
+import { LayoutBannerLibrarySection } from "@/app/[siteId]/[popId]/library/LayoutBannerLibrarySection"
 import { LayoutButtonLibrarySection } from "@/app/[siteId]/[popId]/library/LayoutButtonLibrarySection"
 import { LayoutDropdownLibrarySection } from "@/app/[siteId]/[popId]/library/LayoutDropdownLibrarySection"
 import { ConceptFoundationView } from "@/app/[siteId]/[popId]/library/concept/ConceptFoundationView"
@@ -90,9 +92,6 @@ import {
 } from "@/components/rootsy-button"
 import {
   saleOpAlertDialogContent,
-  saleOpChannelErrorBanner,
-  saleOpChannelHint,
-  saleOpChannelWarningBanner,
 } from "@/components/sale-operation/saleOperationStyles"
 import {
   AlertDialog,
@@ -1080,6 +1079,8 @@ export function LibrarySectionView({
       )
     case "buttons":
       return <LayoutButtonLibrarySection siteId={siteId} popId={popId} />
+    case "formulario":
+      return <LayoutFormLibrarySection />
     case "dropdown":
       return <LayoutDropdownLibrarySection siteId={siteId} popId={popId} />
     case "sortable-list":
@@ -1092,7 +1093,7 @@ export function LibrarySectionView({
             <SpecCard
               title="RootsSortableActionList"
               source="components/rootsy-list · ArticleCategoriesSaleBoard"
-              tokens={["tierra e50", "corteza e400", "canopy acciones"]}
+              tokens={["bruma-50 panel", "bruma-200 borde", "icon-button.row.* acciones"]}
             >
               <RootsSortableActionListPanel
                 title="Categorías"
@@ -1154,25 +1155,7 @@ export function LibrarySectionView({
           </LibrarySection>
       )
     case "feedback":
-      return (
-          <LibrarySection
-            id="feedback"
-            title="Banners"
-            description="Mensajes inline dentro de modales y paneles."
-          >
-            <div className="grid gap-4">
-              <div className={saleOpChannelErrorBanner}>
-                No se pudo guardar. Revisá los campos obligatorios.
-              </div>
-              <div className={saleOpChannelWarningBanner}>
-                El stock quedará negativo si confirmás esta operación.
-              </div>
-              <div className={saleOpChannelHint}>
-                Tip: podés escanear el código de barras directamente en el campo SKU.
-              </div>
-            </div>
-          </LibrarySection>
-      )
+      return <LayoutBannerLibrarySection siteId={siteId} popId={popId} />
     case "modals":
       return (
         <>

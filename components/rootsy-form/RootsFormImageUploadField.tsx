@@ -3,18 +3,19 @@
 import { RootsFormField } from "@/components/rootsy-form/RootsFormField"
 import type { RootsFormFieldAssistProps } from "@/components/rootsy-form/rootsFormFieldAssist"
 import { useRootsFormFieldControlProps } from "@/components/rootsy-form/rootsFormFieldContext"
-import { rootsFormEarthPrefixTextClass } from "@/components/rootsy-form/rootsFormEarthTokens"
+import {
+  getFormImageUploadShellStyle,
+  getFormImageUploadThumbStyle,
+} from "@/components/rootsy-form/rootsFormSpecRuntime"
+import { useRootsFormControlInteraction } from "@/components/rootsy-form/useRootsFormControlInteraction"
 import {
   rootsFormImageUploadActionClass,
   rootsFormImageUploadActionDestructiveClass,
   rootsFormImageUploadMetaClass,
-  rootsFormImageUploadShellClass,
-  rootsFormImageUploadShellDragClass,
-  rootsFormImageUploadShellEmptyClass,
-  rootsFormImageUploadThumbClass,
-  rootsFormImageUploadThumbEmptyClass,
   rootsFormImageUploadTitleClass,
 } from "@/components/rootsy-form/rootsFormStyles"
+import { RootsFormImageUploadIcon } from "@/components/rootsy-form/RootsFormImageUploadIcon"
+import type { FormImageUploadDisplayStateId } from "@/app/[siteId]/[popId]/library/ui-components/formsUiHardcodedSpec"
 import { cn } from "@/lib/utils"
 import { ImagePlus, Loader2, Trash2 } from "lucide-react"
 import { useId, useRef, useState, type DragEvent } from "react"
@@ -35,6 +36,7 @@ type Props = {
   accept?: string
   onFileSelect: (file: File) => void
   onRemove?: () => void
+  className?: string
 } & RootsFormFieldAssistProps
 
 export function RootsFormImageUploadField({
@@ -62,10 +64,18 @@ export function RootsFormImageUploadField({
   const inputId = `${fieldId}-file`
   const inputRef = useRef<HTMLInputElement>(null)
   const controlProps = useRootsFormFieldControlProps({ invalid })
+  const { state: interactionState, interactionHandlers } = useRootsFormControlInteraction({
+    disabled: disabled || busy,
+    invalid: invalid ?? Boolean(error),
+  })
   const [dragOver, setDragOver] = useState(false)
 
   const hasPreview = Boolean(previewSrc?.trim())
   const isDisabled = disabled || busy
+  const uploadMode = hasPreview ? "filled" : "empty"
+  const displayState: FormImageUploadDisplayStateId = dragOver ? "drag" : interactionState
+  const shellStyle = getFormImageUploadShellStyle(uploadMode, displayState)
+  const thumbStyle = getFormImageUploadThumbStyle(uploadMode, displayState)
 
   const openPicker = () => {
     if (isDisabled) return
@@ -107,9 +117,14 @@ export function RootsFormImageUploadField({
     onDragLeave: handleDragLeave,
     onDragOver: handleDragOver,
     onDrop: handleDrop,
+    onMouseEnter: interactionHandlers.onMouseEnter,
+    onMouseLeave: interactionHandlers.onMouseLeave,
   }
 
-  const dragClass = dragOver ? rootsFormImageUploadShellDragClass : undefined
+  const focusProps = {
+    onFocus: interactionHandlers.onFocus,
+    onBlur: interactionHandlers.onBlur,
+  }
 
   return (
     <RootsFormField
@@ -138,11 +153,8 @@ export function RootsFormImageUploadField({
 
       {hasPreview ? (
         <div
-          className={cn(
-            rootsFormImageUploadShellClass,
-            dragClass,
-            isDisabled && "pointer-events-none opacity-50",
-          )}
+          className={cn(isDisabled && "pointer-events-none opacity-50")}
+          style={shellStyle}
           {...dragProps}
         >
           <button
@@ -150,8 +162,10 @@ export function RootsFormImageUploadField({
             id={fieldId}
             disabled={isDisabled}
             aria-label="Cambiar imagen"
-            className={cn(rootsFormImageUploadThumbClass, "cursor-pointer p-0")}
+            className="cursor-pointer border-0 bg-transparent p-0"
+            style={thumbStyle}
             onClick={openPicker}
+            {...focusProps}
           >
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
@@ -205,22 +219,19 @@ export function RootsFormImageUploadField({
           disabled={isDisabled}
           aria-describedby={controlProps.describedBy}
           className={cn(
-            rootsFormImageUploadShellEmptyClass,
-            dragClass,
+            "w-full cursor-pointer appearance-none text-left",
             isDisabled && "cursor-not-allowed opacity-50",
           )}
+          style={shellStyle}
           onClick={openPicker}
           {...dragProps}
+          {...focusProps}
         >
-          <span className={rootsFormImageUploadThumbEmptyClass}>
+          <span style={thumbStyle}>
             {busy ? (
               <Loader2 className="size-5 animate-spin text-[#57534e]" aria-hidden />
             ) : (
-              <ImagePlus
-                className={cn("size-5", rootsFormEarthPrefixTextClass)}
-                strokeWidth={1.75}
-                aria-hidden
-              />
+              <RootsFormImageUploadIcon className="size-5 text-[var(--rootsy-bruma-500)]" />
             )}
           </span>
           <span className="min-w-0 flex-1 text-left">

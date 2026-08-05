@@ -8,6 +8,7 @@ import {
   FORM_UI_INTERACTION_STATES,
   FORM_UI_LABEL_STYLE,
   FORM_UI_CONTROL_TYPES,
+  ROOTSY_FORM_COMPOSITE_SHELLS,
   ROOTSY_FORM_TOOLBAR_CONTEXT,
   getCheckboxUiSurface,
   getFormAssistUiStyle,
@@ -26,13 +27,16 @@ import {
   type FormImageUploadDisplayStateId,
 } from "@/app/[siteId]/[popId]/library/ui-components/formsUiHardcodedSpec"
 import {
+  FormUiInlineIconControl,
   FormUiLeadingControl,
   FormUiSelectChevron,
+  FormUiSelectInlineIconControl,
   FormUiToolbarListFiltersEmbeddedDemo,
 } from "@/app/[siteId]/[popId]/library/ui-components/formsUiHardcodedComponents"
 import { COLOR_TOKENS } from "@/app/[siteId]/[popId]/library/color/rootsyColorSystem"
 import { FoundationBrumaStage } from "@/app/[siteId]/[popId]/library/libraryFoundationDocShared"
 import { rootsySpacePx } from "@/lib/design-system"
+import { CalendarRange, Search } from "lucide-react"
 import type { CSSProperties, ReactNode } from "react"
 
 const THUMB_INSET_PX = rootsySpacePx("025")
@@ -652,6 +656,37 @@ function SwitchControlStatesBlock() {
   )
 }
 
+function InlineIconControlStatesBlock() {
+  const meta = ROOTSY_FORM_COMPOSITE_SHELLS.find((item) => item.id === "inline-icon")!
+
+  return (
+    <SpecBlock title={`${meta.token} · ${meta.label}`} hint={meta.usage}>
+      <StateRow>
+        {STATE_ORDER.map((state) => (
+          <StateSpecCell key={state.id} label={state.label}>
+            <FieldStack label={FORM_UI_DEMO_COPY.selectLeading.label}>
+              <FormUiSelectInlineIconControl
+                state={state.id}
+                leading={<CalendarRange size={16} aria-hidden />}
+                value={state.id === "default" || state.id === "readonly" ? FORM_UI_DEMO_COPY.selectLeading.value : undefined}
+                placeholder={FORM_UI_DEMO_COPY.selectLeading.placeholder}
+              />
+            </FieldStack>
+          </StateSpecCell>
+        ))}
+      </StateRow>
+      <div className="mt-4">
+        <FieldStack label={FORM_UI_DEMO_COPY.toolbar.search.label}>
+          <FormUiInlineIconControl
+            leading={<Search size={16} aria-hidden />}
+            placeholder={FORM_UI_DEMO_COPY.toolbar.search.placeholder}
+          />
+        </FieldStack>
+      </div>
+    </SpecBlock>
+  )
+}
+
 function SelectLeadingControlStatesBlock() {
   const meta = FORM_UI_CONTROL_TYPES.find((item) => item.id === "select-leading")!
 
@@ -885,6 +920,7 @@ export function FormsUiHardcodedGallery() {
 
           <LeadingCurrencyControlStatesBlock />
           <LeadingUnitControlStatesBlock />
+          <InlineIconControlStatesBlock />
           <SelectLeadingControlStatesBlock />
           <DateControlStatesBlock />
           <DateLeadingControlStatesBlock />
@@ -893,18 +929,32 @@ export function FormsUiHardcodedGallery() {
         </div>
       </FoundationBrumaStage>
 
-      <FoundationBrumaStage caption="form.context.toolbar-list · layout.toolbar · select-leading · leading search · flush.">
+      <FoundationBrumaStage caption="form.context.toolbar-list · form.control.shell.inline-icon · layout.toolbar · flush.">
         <div className="space-y-8">
           <SectionHeading
             title="En contexto · toolbar listado"
-            description="Misma barra embebida que Layouts · Tablas — flush, labels visibles, divisores color.border, shell layout.toolbar · 92px."
+            description="Barra de filtros en listados — inline-icon default · labels · divisores · layout.toolbar · 92px."
           />
           <SpecBlock
-            title={`${ROOTSY_FORM_TOOLBAR_CONTEXT.token} · flush`}
-            hint="select-leading ×2 · leading search · field-stack · embebido en layout.toolbar."
+            title={`${ROOTSY_FORM_TOOLBAR_CONTEXT.token} · inline-icon`}
+            hint="Ícono inline · fondo blanco · chevron en selects · embebido en layout.toolbar."
           >
-            <div className="mx-auto max-w-3xl">
-              <FormUiToolbarListFiltersEmbeddedDemo />
+            <div
+              className="mx-auto max-w-4xl overflow-hidden rounded-2xl"
+              style={{ border: `1px solid ${COLOR_TOKENS.bruma200}` }}
+            >
+              <FormUiToolbarListFiltersEmbeddedDemo controlShell="inline-icon" withTableHead />
+            </div>
+          </SpecBlock>
+          <SpecBlock
+            title={`${ROOTSY_FORM_TOOLBAR_CONTEXT.token} · leading-sunken`}
+            hint="Alternativa compuesta — casilla bruma-50 · divisor vertical · form.control.shell.leading-sunken."
+          >
+            <div
+              className="mx-auto max-w-4xl overflow-hidden rounded-2xl"
+              style={{ border: `1px solid ${COLOR_TOKENS.bruma200}` }}
+            >
+              <FormUiToolbarListFiltersEmbeddedDemo controlShell="leading-sunken" withTableHead />
             </div>
           </SpecBlock>
         </div>

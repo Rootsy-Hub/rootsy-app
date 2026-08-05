@@ -30,7 +30,7 @@ export type {
   RootsFormFieldMessageVariant,
 } from "@/components/rootsy-form/rootsFormFieldAssist"
 export { resolveRootsFormFieldMessage } from "@/components/rootsy-form/rootsFormFieldAssist"
-export { useRootsFormFieldControlProps } from "@/components/rootsy-form/rootsFormFieldContext"
+export { RootsFormToolbarListFilters } from "@/components/rootsy-form/RootsFormToolbarListFilters"
 export {
   rootsFormFieldLabelClass,
   rootsFormFieldLabelTypographyClass,

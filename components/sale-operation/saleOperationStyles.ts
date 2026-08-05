@@ -238,15 +238,6 @@ export const saleOpLightSelectContent = cn(
 export const saleOpLightSelectItem =
   "focus:bg-zinc-100 focus:text-zinc-900 data-[highlighted]:bg-zinc-100 data-[highlighted]:text-zinc-900 dark:focus:bg-zinc-100 dark:focus:text-zinc-900 dark:data-[highlighted]:bg-zinc-100 dark:data-[highlighted]:text-zinc-900"
 
-export const saleOpChannelHint =
-  "flex items-center gap-2 rounded-xl border border-border/50 bg-muted/10 px-3.5 py-2.5 text-xs leading-relaxed text-muted-foreground"
-
-export const saleOpChannelErrorBanner =
-  "rounded-xl border border-destructive/25 bg-destructive/10 px-3.5 py-2.5 text-sm text-destructive"
-
-export const saleOpChannelWarningBanner =
-  "rounded-xl border border-amber-500/25 bg-amber-500/10 px-3.5 py-2.5 text-xs leading-relaxed text-amber-900"
-
 export const saleOpChannelSegmentGroup =
   "grid grid-cols-2 gap-1 rounded-xl border border-border/70 bg-muted/15 p-1"
 

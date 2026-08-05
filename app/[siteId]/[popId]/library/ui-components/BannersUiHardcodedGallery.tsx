@@ -12,7 +12,7 @@ import {
   getBannerMessageUiStyle,
   getBannerRowUiStyle,
   getBannerTitleUiStyle,
-  getBannerUiSurface,
+  getBannerShellUiStyle,
   type BannerDensityId,
   type BannerIntentId,
   type BannerLayoutId,
@@ -150,7 +150,7 @@ function BannerDismissButton() {
         border: "none",
         background: "transparent",
         color: dismiss.color,
-        borderRadius: dismiss.borderRadiusPx,
+        borderRadius: `${dismiss.borderRadiusPx}px`,
         cursor: "default",
         flexShrink: 0,
         padding: 0,
@@ -176,7 +176,6 @@ function HardcodedBanner({
   showIcon?: boolean
   fullWidth?: boolean
 }) {
-  const surface = getBannerUiSurface(intent, density)
   const copy =
     intent === "neutral" ||
     intent === "info" ||
@@ -191,12 +190,7 @@ function HardcodedBanner({
   const messageStyle = getBannerMessageUiStyle(intent)
   const actionStyle = getBannerActionUiStyle(intent)
 
-  const shellStyle: CSSProperties = {
-    ...surface,
-    width: fullWidth ? "100%" : undefined,
-    maxWidth: fullWidth ? undefined : surface.maxWidthPx,
-    boxSizing: "border-box",
-  }
+  const shellStyle: CSSProperties = getBannerShellUiStyle(intent, density, { fullWidth })
 
   const messageOnlyCopy =
     layout === "message" && (intent === "neutral" || intent === "danger")

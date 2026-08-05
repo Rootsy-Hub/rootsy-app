@@ -15,8 +15,10 @@ import {
   ROOTSY_FORM_CONTROL_TYPES,
   ROOTSY_FORM_FIELD_STACK,
   ROOTSY_FORM_LABEL_SPEC,
+  ROOTSY_FORM_COMPOSITE_SHELLS,
   ROOTSY_FORM_TOOLBAR_CONTEXT,
   ROOTSY_FORM_TOOLBAR_VARIANTS,
+  type FormToolbarControlShellId,
   type FormAssistVariantId,
   type FormControlStateId,
   type FormControlTypeId,
@@ -91,7 +93,7 @@ export const FORM_UI_CONTROL_TYPOGRAPHY = {
 export const FORM_UI_LEADING_SLOT_TYPOGRAPHY = {
   ...FORM_UI_CONTROL_TYPOGRAPHY,
   fontWeight: ROOTSY_FONT_WEIGHTS.medium.value,
-  color: hx("bruma", "600"),
+  color: hx("bruma", "500"),
 }
 
 function getDefaultControlSurface(): FormControlUiSurface {
@@ -438,6 +440,21 @@ export const FORM_UI_DEMO_COPY = {
     filledTitle: "foto-producto.jpg",
     filledMeta: "128 KB · JPG",
   },
+  discount: {
+    label: "Descuento",
+    hint: "Tipo y valor en el mismo control.",
+  },
+  segmentDelivery: {
+    label: "Tipo de entrega",
+  },
+  segmentItemKind: {
+    label: "Tipo de artículo",
+    hint: "Define cómo se descuenta stock al vender.",
+  },
+  phone: {
+    label: "Teléfono",
+    value: "3704 708043",
+  },
   hint: "Texto de ayuda neutral debajo del control.",
   error: "Este campo es obligatorio.",
   toolbar: {
@@ -458,10 +475,12 @@ export type {
   FormImageUploadModeId,
   FormImageUploadDisplayStateId,
   FormToolbarContextVariantId,
+  FormToolbarControlShellId,
   FormToolbarFieldRoleId,
 } from "@/app/[siteId]/[popId]/library/form/rootsyFormSystem"
 
 export {
+  ROOTSY_FORM_COMPOSITE_SHELLS,
   ROOTSY_FORM_TOOLBAR_CONTEXT,
   ROOTSY_FORM_TOOLBAR_FIELDS,
   ROOTSY_FORM_TOOLBAR_VARIANTS,
@@ -516,9 +535,25 @@ export function getFormUiToolbarEmbedShellStyle() {
     height: ROOTSY_FORM_TOOLBAR_CONTEXT.embedHeightPx,
     backgroundColor: elevationHex(ROOTSY_FORM_TOOLBAR_CONTEXT.embedBackgroundToken),
     borderBottom: `1px solid ${borderHex("color.border")}`,
-    display: "flex" as const,
-    alignItems: "center" as const,
     width: "100%",
+  }
+}
+
+export function getFormUiToolbarTableHeadPreviewStyle() {
+  return {
+    display: "grid" as const,
+    gridTemplateColumns: "2fr 1fr 1fr 1fr",
+    height: rootsySpacePx("500"),
+    alignItems: "center" as const,
+    paddingLeft: rootsySpacePx("150"),
+    paddingRight: rootsySpacePx("150"),
+    backgroundColor: elevationHex("elevation.surface.sunken"),
+    borderBottom: `1px solid ${borderHex("color.border")}`,
+    fontFamily: "var(--rootsy-font-ui)",
+    fontSize: ROOTSY_TEXT_STYLES["body.small"].fontSize,
+    lineHeight: ROOTSY_TEXT_STYLES["body.small"].lineHeight,
+    fontWeight: ROOTSY_FONT_WEIGHTS.medium.value,
+    color: hx("bruma", "500"),
   }
 }
 
@@ -527,6 +562,7 @@ export function getFormUiToolbarContextShellStyle(flush = true) {
     return {
       backgroundColor: elevationHex("elevation.surface.overlay"),
       width: "100%",
+      height: "100%",
     } as const
   }
 
@@ -544,6 +580,7 @@ export function getFormUiToolbarContextGridStyle() {
     display: "grid" as const,
     gridTemplateColumns: "repeat(3, minmax(0, 1fr))",
     width: "100%",
+    height: "100%",
   }
 }
 
@@ -557,10 +594,36 @@ export function getFormUiToolbarContextCellStyle(isLast = false) {
   }
 }
 
+export function getFormUiInlineIconShellStyle(state: FormControlStateId = "default") {
+  const spec = getFormControlSpec("text")
+  const shell = getFormControlUiSurface(state)
+
+  return {
+    spec,
+    shell,
+    iconColor: hx("bruma", "500"),
+    gapPx: rootsySpacePx("100"),
+    paddingXPx: spec.paddingXPx,
+    typography: FORM_UI_CONTROL_TYPOGRAPHY,
+  }
+}
+
 export function getFormUiToolbarVariantOptions(variant: FormToolbarContextVariantId) {
   const spec = ROOTSY_FORM_TOOLBAR_VARIANTS.find((item) => item.id === variant)!
   return {
     hideLabels: !spec.showLabels,
     flush: spec.flush,
+    controlShell: spec.controlShell,
+  }
+}
+
+export function getFormUiToolbarVariantOptionsWithShell(
+  variant: FormToolbarContextVariantId,
+  controlShell?: FormToolbarControlShellId,
+) {
+  const options = getFormUiToolbarVariantOptions(variant)
+  return {
+    ...options,
+    controlShell: controlShell ?? options.controlShell,
   }
 }

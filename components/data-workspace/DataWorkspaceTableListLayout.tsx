@@ -1,6 +1,7 @@
 "use client"
 
 import { DataWorkspaceLayout, type DataWorkspaceLayoutProps } from "@/components/layouts/DataWorkspaceLayout"
+import { RootsBanner } from "@/components/rootsy-banner"
 import {
   DataWorkspaceListPaginationFooter,
   type DataWorkspaceListPaginationFooterProps,
@@ -29,8 +30,7 @@ export const dataWorkspaceTableListNatureShellClass = cn(
 export const dataWorkspaceTableListPageBodyClass =
   "relative flex min-h-0 w-full flex-1 flex-col"
 
-export const dataWorkspaceTableListErrorBannerClass =
-  "relative shrink-0 border-b border-destructive/25 bg-destructive/10 px-4 py-3 text-sm text-destructive"
+export const dataWorkspaceTableListErrorBannerClass = "relative shrink-0"
 
 export type DataWorkspaceTableListPageProps = {
   /** Props passthrough al shell operativo. */
@@ -72,9 +72,14 @@ export function DataWorkspaceTableListPage({
     >
       <div className={dataWorkspaceTableListPageBodyClass}>
         {error ? (
-          <div role="alert" className={dataWorkspaceTableListErrorBannerClass}>
-            {errorPrefix}: {error}
-          </div>
+          <RootsBanner
+            intent="danger"
+            layout="message"
+            variant="strip"
+            fullWidth
+            className={dataWorkspaceTableListErrorBannerClass}
+            message={`${errorPrefix}: ${error}`}
+          />
         ) : null}
         {children}
       </div>

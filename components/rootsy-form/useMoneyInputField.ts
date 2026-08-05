@@ -10,7 +10,9 @@ import {
 import { formatMoneyInputForField, parseMoneyInput } from "@/lib/moneyInput"
 import {
   useLayoutEffect,
+  useMemo,
   useRef,
+  useState,
   type ClipboardEvent,
   type FocusEvent,
   type KeyboardEvent,
@@ -33,6 +35,17 @@ export function useMoneyInputField({
   const pendingSelection = useRef<{ start: number; end: number } | null>(null)
   const isFocusedRef = useRef(false)
   const repositionClickRef = useRef(false)
+  const [isFocused, setIsFocused] = useState(false)
+
+  const inputValue = useMemo(() => {
+    if (!value.trim()) return ""
+    if (!formatOnBlur) return value
+    const parsed = parseMoneyInput(value, Number.NaN)
+    const formatted = Number.isFinite(parsed) ? formatValue(parsed) : null
+    if (!isFocused) return formatted ?? value
+    if (formatted && formatted !== value) return formatted
+    return value
+  }, [formatOnBlur, formatValue, isFocused, value])
 
   useLayoutEffect(() => {
     const input = inputRef.current
@@ -41,6 +54,14 @@ export function useMoneyInputField({
     input.setSelectionRange(selection.start, selection.end)
     pendingSelection.current = null
   }, [value])
+
+  useLayoutEffect(() => {
+    if (isFocused || !formatOnBlur || !value.trim()) return
+    const parsed = parseMoneyInput(value, Number.NaN)
+    if (!Number.isFinite(parsed)) return
+    const formatted = formatValue(parsed)
+    if (formatted !== value) onChange(formatted)
+  }, [formatOnBlur, formatValue, isFocused, onChange, value])
 
   const applyEdit = (result: {
     value: string
@@ -62,6 +83,7 @@ export function useMoneyInputField({
 
   const handleFocus = (e: FocusEvent<HTMLInputElement>) => {
     isFocusedRef.current = true
+    setIsFocused(true)
 
     if (repositionClickRef.current) {
       repositionClickRef.current = false
@@ -69,6 +91,21 @@ export function useMoneyInputField({
     }
 
     const input = e.currentTarget
+
+    if (formatOnBlur && value.trim()) {
+      const parsed = parseMoneyInput(value, Number.NaN)
+      if (Number.isFinite(parsed)) {
+        const formatted = formatValue(parsed)
+        if (formatted !== value) {
+          onChange(formatted)
+          requestAnimationFrame(() => {
+            if (input.isConnected) input.select()
+          })
+          return
+        }
+      }
+    }
+
     requestAnimationFrame(() => {
       if (input.isConnected) input.select()
     })
@@ -78,28 +115,29 @@ export function useMoneyInputField({
     const input = e.currentTarget
     const start = input.selectionStart ?? 0
     const end = input.selectionEnd ?? start
+    const editValue = inputValue
 
     if (e.key.length === 1 && /\d/.test(e.key)) {
       e.preventDefault()
-      applyEdit(applyMoneyDigitInput(value, start, end, e.key))
+      applyEdit(applyMoneyDigitInput(editValue, start, end, e.key))
       return
     }
 
     if (e.key === "Backspace") {
       e.preventDefault()
-      applyEdit(applyMoneyBackspace(value, start, end))
+      applyEdit(applyMoneyBackspace(editValue, start, end))
       return
     }
 
     if (e.key === "Delete") {
       e.preventDefault()
-      applyEdit(applyMoneyDelete(value, start, end))
+      applyEdit(applyMoneyDelete(editValue, start, end))
       return
     }
 
     if (e.key === "," || e.key === ".") {
       e.preventDefault()
-      applyEdit(applyMoneyDecimalJump(value))
+      applyEdit(applyMoneyDecimalJump(editValue))
     }
   }
 
@@ -109,11 +147,12 @@ export function useMoneyInputField({
     const start = input.selectionStart ?? 0
     const end = input.selectionEnd ?? start
     const pasted = e.clipboardData.getData("text")
-    applyEdit(applyMoneyPaste(value, start, end, pasted))
+    applyEdit(applyMoneyPaste(inputValue, start, end, pasted))
   }
 
   const handleBlur = () => {
     isFocusedRef.current = false
+    setIsFocused(false)
     repositionClickRef.current = false
 
     if (!formatOnBlur || !value.trim()) return
@@ -129,6 +168,7 @@ export function useMoneyInputField({
 
   return {
     inputRef,
+    inputValue,
     handleMouseDown,
     handleFocus,
     handleChange,

@@ -1,17 +1,16 @@
 "use client"
 
 import { Button } from "@/components/ui/button"
+import { RootsBanner } from "@/components/rootsy-banner"
+import { getBannerIconStyle } from "@/components/rootsy-banner/rootsBannerSpecRuntime"
 import {
   saleOpChannelDataLabel,
   saleOpChannelDataValue,
-  saleOpChannelErrorBanner,
-  saleOpChannelHint,
   saleOpChannelPanelHeaderMeta,
   saleOpChannelPanelHeaderTitle,
   saleOpChannelPanelScroll,
   saleOpChannelPanelSection,
   saleOpChannelStatusBadge,
-  saleOpChannelWarningBanner,
   saleOpDialogPrimaryBtn,
   saleOpDialogSecondaryBtn,
   saleOpEmptyStateContainerClass,
@@ -120,11 +119,11 @@ export function ChannelDataField({
 }
 
 export function ChannelDataErrorBanner({ children }: { children: ReactNode }) {
-  return <p className={saleOpChannelErrorBanner}>{children}</p>
+  return <RootsBanner intent="danger" layout="message" message={children} />
 }
 
 export function ChannelDataWarningBanner({ children }: { children: ReactNode }) {
-  return <p className={saleOpChannelWarningBanner}>{children}</p>
+  return <RootsBanner intent="warning" layout="message" message={children} />
 }
 
 export function ChannelDataHint({
@@ -135,10 +134,20 @@ export function ChannelDataHint({
   children: ReactNode
 }) {
   return (
-    <p className={saleOpChannelHint}>
-      {Icon ? <Icon className="size-4 shrink-0" aria-hidden /> : null}
-      {children}
-    </p>
+    <RootsBanner
+      intent="neutral"
+      layout="message"
+      density="compact"
+      icon={
+        Icon ? (
+          <Icon
+            style={{ ...getBannerIconStyle("neutral"), width: 16, height: 16 }}
+            aria-hidden
+          />
+        ) : undefined
+      }
+      message={children}
+    />
   )
 }
 

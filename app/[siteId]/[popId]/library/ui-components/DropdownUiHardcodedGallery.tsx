@@ -12,10 +12,10 @@ import {
   DROPDOWN_UI_TRIGGERS,
   getDropdownCheckUiStyle,
   getDropdownChevronUiStyle,
+  getDropdownItemShellUiStyle,
   getDropdownItemRowUiStyle,
-  getDropdownItemUiStyle,
   getDropdownLabelUiStyle,
-  getDropdownPanelUiSurface,
+  getDropdownPanelShellUiStyle,
   getDropdownSeparatorUiStyle,
   type DropdownDensityId,
   type DropdownItemStateId,
@@ -147,7 +147,7 @@ function HardcodedDropdownTrigger({
           border: surface.border,
           backgroundColor: surface.backgroundColor,
           color: surface.iconColor,
-          borderRadius: surface.borderRadiusPx,
+          borderRadius: `${surface.borderRadiusPx}px`,
           boxShadow: surface.boxShadow,
           cursor: "default",
           padding: 0,
@@ -177,7 +177,7 @@ function HardcodedDropdownTrigger({
         border: surface.border,
         backgroundColor: surface.backgroundColor,
         color: surface.color,
-        borderRadius: size.radiusPx,
+        borderRadius: `${size.radiusPx}px`,
         boxShadow: surface.boxShadow,
         fontFamily: "var(--rootsy-font-ui)",
         fontSize: size.fontSize,
@@ -207,21 +207,11 @@ function HardcodedDropdownItem({
   icon?: ReactNode
   showCheck?: boolean
 }) {
-  const style = getDropdownItemUiStyle(theme, state, density)
+  const style = getDropdownItemShellUiStyle(theme, state, density)
   const rowStyle = getDropdownItemRowUiStyle()
 
   return (
-    <div
-      style={{
-        ...style,
-        display: "flex",
-        alignItems: "center",
-        boxSizing: "border-box",
-        marginLeft: rootsySpacePx("050"),
-        marginRight: rootsySpacePx("050"),
-        width: `calc(100% - ${rootsySpacePx("100")}px)`,
-      }}
-    >
+    <div style={style}>
       <div style={{ ...rowStyle, flex: 1 }}>
         {icon}
         <span style={{ flex: 1 }}>{label}</span>
@@ -240,16 +230,10 @@ function HardcodedDropdownPanel({
   density?: DropdownDensityId
   variant?: "sections" | "grouped" | "compact-actions"
 }) {
-  const panel = getDropdownPanelUiSurface(theme, density)
   const labelStyle = getDropdownLabelUiStyle(theme)
   const separatorStyle = getDropdownSeparatorUiStyle(theme)
   const copy = DROPDOWN_UI_DEMO_COPY
-
-  const shellStyle: CSSProperties = {
-    ...panel,
-    boxSizing: "border-box",
-    width: "100%",
-  }
+  const shellStyle: CSSProperties = getDropdownPanelShellUiStyle(theme, density)
 
   return (
     <div style={shellStyle} role="menu">
@@ -356,21 +340,9 @@ function DropdownItemStatesBlock() {
   return (
     <SpecBlock title="dropdown.item · estados" hint="default · hover · selected · disabled · destructive.">
       <VariantRow>
-        {states.map((state) => {
-          const panel = getDropdownPanelUiSurface("light", "default")
-          return (
+        {states.map((state) => (
             <VariantSpecCell key={state.id} label={state.token}>
-              <div
-                style={{
-                  backgroundColor: panel.backgroundColor,
-                  border: panel.border,
-                  borderRadius: panel.borderRadiusPx,
-                  paddingTop: panel.paddingTop,
-                  paddingBottom: panel.paddingBottom,
-                  minWidth: panel.minWidthPx,
-                  boxSizing: "border-box",
-                }}
-              >
+              <div style={getDropdownPanelShellUiStyle("light", "default")}>
                 <HardcodedDropdownItem
                   label={DROPDOWN_UI_DEMO_COPY.items.edit}
                   state={state.id}
@@ -378,8 +350,7 @@ function DropdownItemStatesBlock() {
                 />
               </div>
             </VariantSpecCell>
-          )
-        })}
+          ))}
       </VariantRow>
     </SpecBlock>
   )
@@ -431,7 +402,7 @@ function DropdownInContextBlock() {
           width: "100%",
           maxWidth: 420,
           padding: `${rootsySpacePx("150")}px ${rootsySpacePx("200")}px`,
-          borderRadius: rootsySpacePx("150"),
+          borderRadius: `${rootsySpacePx("150")}px`,
           border: `1px solid ${COLOR_TOKENS.bruma200}`,
           backgroundColor: COLOR_TOKENS.white,
         }}

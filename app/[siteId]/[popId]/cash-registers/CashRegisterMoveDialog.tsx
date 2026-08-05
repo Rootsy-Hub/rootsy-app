@@ -19,9 +19,9 @@ import {
 import { Textarea } from "@/components/ui/textarea"
 import { isMoneyInputComplete } from "@/lib/moneyInput"
 import { cn } from "@/lib/utils"
+import { RootsBanner } from "@/components/rootsy-banner"
 import {
   saleOpChannelFormField,
-  saleOpChannelHint,
   saleOpDialogHeader,
 } from "@/components/sale-operation/saleOperationStyles"
 import { useRef, type FormEvent } from "react"
@@ -113,7 +113,7 @@ export function CashRegisterMoveDialog({
                   autoFocus
                   ariaLabel={labels.amountLabel}
                 />
-                <p className={saleOpChannelHint}>{labels.hint}</p>
+                <RootsBanner intent="neutral" layout="message" density="compact" message={labels.hint} />
               </div>
 
               <div className="space-y-2.5">

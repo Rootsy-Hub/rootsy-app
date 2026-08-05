@@ -8,7 +8,7 @@ import {
   rootsSortableListRowLabelClass,
   rootsSortableListRowLabelMutedClass,
 } from "@/components/rootsy-list/rootsListStyles"
-import { DataWorkspaceTableIconAction } from "@/components/data-workspace/DataWorkspaceListTablePrimitives"
+import { RootsIconButton } from "@/components/rootsy-button/RootsIconButton"
 import { Input } from "@/components/ui/input"
 import { cn } from "@/lib/utils"
 import type { DraggableAttributes } from "@dnd-kit/core"
@@ -119,48 +119,55 @@ export function RootsSortableActionListRow({
         <div className="flex shrink-0 items-center justify-end gap-0.5">
           {isEditing ? (
             <>
-              <DataWorkspaceTableIconAction
+              <RootsIconButton
                 label="Cancelar edición"
-                icon={X}
-                variant="neutral"
+                rowIntent="neutral"
+                size="compact"
                 onClick={onCancelEdit}
-              />
-              <DataWorkspaceTableIconAction
+              >
+                <X aria-hidden />
+              </RootsIconButton>
+              <RootsIconButton
                 label={`Guardar ${label}`}
-                icon={Check}
-                variant="edit"
+                rowIntent="edit"
+                size="compact"
                 disabled={editSaveBusy || !editingValue.trim()}
                 onClick={onSaveEdit}
-              />
+              >
+                <Check aria-hidden />
+              </RootsIconButton>
             </>
           ) : (
             <>
               {canToggleVisibility ? (
-                <DataWorkspaceTableIconAction
-                  label={
-                    visible
-                      ? `Ocultar ${label}`
-                      : `Mostrar ${label}`
-                  }
-                  icon={visible ? Eye : EyeOff}
-                  variant="neutral"
+                <RootsIconButton
+                  label={visible ? `Ocultar ${label}` : `Mostrar ${label}`}
+                  rowIntent="neutral"
+                  size="compact"
                   onClick={onToggleVisibility}
-                />
+                >
+                  {visible ? <Eye aria-hidden /> : <EyeOff aria-hidden />}
+                </RootsIconButton>
               ) : null}
               {canEdit ? (
-                <DataWorkspaceTableIconAction
+                <RootsIconButton
                   label={`Editar ${label}`}
-                  icon={Pencil}
+                  rowIntent="edit"
+                  size="compact"
                   onClick={onStartEdit}
-                />
+                >
+                  <Pencil aria-hidden />
+                </RootsIconButton>
               ) : null}
               {canDelete ? (
-                <DataWorkspaceTableIconAction
+                <RootsIconButton
                   label={`Eliminar ${label}`}
-                  icon={Trash2}
-                  variant="destructive"
+                  rowIntent="destructive"
+                  size="compact"
                   onClick={onDelete}
-                />
+                >
+                  <Trash2 aria-hidden />
+                </RootsIconButton>
               ) : null}
             </>
           )}

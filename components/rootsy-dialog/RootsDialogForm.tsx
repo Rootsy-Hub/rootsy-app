@@ -1,7 +1,7 @@
 "use client"
 
 import { rootsDialogLoadingBodyClass } from "@/components/rootsy-dialog/rootsDialogStyles"
-import { saleOpChannelErrorBanner } from "@/components/sale-operation/saleOperationStyles"
+import { RootsBanner } from "@/components/rootsy-banner"
 import { Spinner } from "@/components/ui/spinner"
 import { cn } from "@/lib/utils"
 import type { ComponentProps, FormEventHandler, ReactNode } from "react"
@@ -26,13 +26,15 @@ export function RootsDialogForm({ onSubmit, children, className }: Props) {
   )
 }
 
-type BannerProps = ComponentProps<"p">
+type BannerProps = Omit<ComponentProps<typeof RootsBanner>, "intent" | "layout" | "message">
 
-export function RootsDialogErrorBanner({ className, ...props }: BannerProps) {
+export function RootsDialogErrorBanner({ className, children, ...props }: BannerProps) {
   return (
-    <p
-      role="alert"
-      className={cn(saleOpChannelErrorBanner, "mb-4", className)}
+    <RootsBanner
+      intent="danger"
+      layout="message"
+      className={cn("mb-4", className)}
+      message={children}
       {...props}
     />
   )

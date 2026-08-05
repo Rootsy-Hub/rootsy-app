@@ -126,6 +126,8 @@ export function DropdownElevationTable() {
               {light.border}
               <br />
               {light.radius}
+              <br />
+              {light.itemRadius}
             </td>
             <td className="px-4 py-3 font-mono text-[10px] text-muted-foreground">
               {light.shadow}
@@ -138,6 +140,8 @@ export function DropdownElevationTable() {
               {dark.border}
               <br />
               {dark.radius}
+              <br />
+              {dark.itemRadius}
             </td>
             <td className="px-4 py-3 font-mono text-[10px] text-muted-foreground">
               {dark.shadow}
@@ -148,9 +152,10 @@ export function DropdownElevationTable() {
       <p className="border-t border-border/60 px-4 py-3 text-xs text-muted-foreground">
         Fuente:{" "}
         <span className="font-mono text-foreground">
-          components/elevation/rootsyElevationStyles.ts
+          components/rootsy-dropdown/rootsDropdownStyles.ts
         </span>{" "}
-        — mismo par que <span className="font-mono text-foreground">.rootsy-elevation-overlay</span>.
+        — panel <span className="font-mono text-foreground">radius.xlarge (16px)</span> · ítems{" "}
+        <span className="font-mono text-foreground">space.050 (4px)</span>.
       </p>
     </div>
   )

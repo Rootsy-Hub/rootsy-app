@@ -2,15 +2,7 @@
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
-import {
   dataWorkspaceHeaderChromeButtonClass,
-  dataWorkspaceHeaderDropdownItemClassForVariant,
   dataWorkspaceHeaderDropdownLogoutItemClass,
   dataWorkspaceHeaderDropdownSeparatorClassForVariant,
   dataWorkspaceHeaderUserDropdownContentClassForVariant,
@@ -18,6 +10,13 @@ import {
   isNightForestHeader,
   type DataWorkspaceHeaderVariant,
 } from "@/components/layouts/dataWorkspaceHeaderStyles"
+import {
+  RootsDropdownContent,
+  RootsDropdownItem,
+  RootsDropdownMenu,
+  RootsDropdownSeparator,
+  RootsDropdownTrigger,
+} from "@/components/rootsy-dropdown"
 import { useAuth } from "@/context/AuthContextSupabase"
 import { cn } from "@/lib/utils"
 import { LogOut, UserCog } from "lucide-react"
@@ -39,6 +38,7 @@ export function DataWorkspaceHeaderUserMenu({
 }: DataWorkspaceHeaderUserMenuProps) {
   const isTinted = isDataWorkspaceTintedHeader(headerVariant)
   const isNightForest = isNightForestHeader(headerVariant)
+  const theme = isNightForest ? "dark" : "light"
   const { logOut } = useAuth()
   const router = useRouter()
 
@@ -53,13 +53,12 @@ export function DataWorkspaceHeaderUserMenu({
     router.push("/login")
   }
 
-  const dropdownItemClass = dataWorkspaceHeaderDropdownItemClassForVariant(headerVariant)
-  const dropdownSeparatorClass =
-    dataWorkspaceHeaderDropdownSeparatorClassForVariant(headerVariant)
+  const dropdownSeparatorClass = dataWorkspaceHeaderDropdownSeparatorClassForVariant(headerVariant)
+  const dropdownContentClass = dataWorkspaceHeaderUserDropdownContentClassForVariant(headerVariant)
 
   return (
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild>
+    <RootsDropdownMenu>
+      <RootsDropdownTrigger asChild>
         <button
           type="button"
           className={cn(
@@ -99,34 +98,26 @@ export function DataWorkspaceHeaderUserMenu({
             )}
           />
         </button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent
+      </RootsDropdownTrigger>
+      <RootsDropdownContent
+        theme={theme}
         align="end"
         side="bottom"
         sideOffset={8}
         collisionPadding={{ right: 16 }}
-        className={
-          dataWorkspaceHeaderUserDropdownContentClassForVariant(headerVariant) ??
-          "w-56 origin-top-right"
-        }
+        className={dropdownContentClass}
       >
-        <DropdownMenuItem
-          asChild
-          className={cn("gap-2", dropdownItemClass)}
-        >
+        <RootsDropdownItem theme={theme} asChild className="gap-2">
           <Link href="/home">
             <UserCog className="size-4 shrink-0 opacity-70" aria-hidden />
             <span className="min-w-0 flex-1 truncate">Editar perfil</span>
           </Link>
-        </DropdownMenuItem>
-        <DropdownMenuSeparator className={dropdownSeparatorClass} />
-        <DropdownMenuItem
+        </RootsDropdownItem>
+        <RootsDropdownSeparator theme={theme} className={dropdownSeparatorClass} />
+        <RootsDropdownItem
+          theme={theme}
           variant={isTinted ? "default" : "destructive"}
-          className={cn(
-            isTinted
-              ? dataWorkspaceHeaderDropdownLogoutItemClass
-              : "gap-2",
-          )}
+          className={cn(isTinted ? dataWorkspaceHeaderDropdownLogoutItemClass : "gap-2")}
           onSelect={() => void handleLogOut()}
         >
           <LogOut
@@ -134,8 +125,8 @@ export function DataWorkspaceHeaderUserMenu({
             aria-hidden
           />
           <span className="min-w-0 flex-1 truncate">Cerrar sesión</span>
-        </DropdownMenuItem>
-      </DropdownMenuContent>
-    </DropdownMenu>
+        </RootsDropdownItem>
+      </RootsDropdownContent>
+    </RootsDropdownMenu>
   )
 }

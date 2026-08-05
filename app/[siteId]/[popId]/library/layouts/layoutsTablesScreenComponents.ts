@@ -76,20 +76,20 @@ export const LAYOUTS_TABLES_SCREEN_COMPONENTS: LayoutsTablesScreenComponentRow[]
   {
     layer: "Toolbar",
     component: "Campo select · período",
-    token: "form.control.select.leading",
-    source: "formsUiHardcodedComponents · FormUiSelectLeadingControl",
+    token: "form.control.shell.inline-icon",
+    source: "formsUiHardcodedComponents · FormUiSelectInlineIconControl",
   },
   {
     layer: "Toolbar",
     component: "Campo select · filtros",
-    token: "form.control.select.leading",
-    source: "formsUiHardcodedComponents · FormUiSelectLeadingControl",
+    token: "form.control.shell.inline-icon",
+    source: "formsUiHardcodedComponents · FormUiSelectInlineIconControl",
   },
   {
     layer: "Toolbar",
     component: "Campo búsqueda",
-    token: "form.control.leading · search",
-    source: "formsUiHardcodedComponents · FormUiLeadingControl",
+    token: "form.control.shell.inline-icon",
+    source: "formsUiHardcodedComponents · FormUiInlineIconControl",
   },
   {
     layer: "Tabla",

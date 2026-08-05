@@ -9,21 +9,20 @@ import {
   dataWorkspaceHeaderDropdownContentClassForVariant,
   dataWorkspaceHeaderDropdownLabelClassForVariant,
   dataWorkspaceHeaderDropdownSeparatorClassForVariant,
-  dataWorkspaceSectionMenuDropdownItemClass,
   dataWorkspaceSectionMenuTriggerClass,
   isNightForestHeader,
   type DataWorkspaceHeaderVariant,
 } from "@/components/layouts/dataWorkspaceHeaderStyles"
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
+  RootsDropdownContent,
+  RootsDropdownItem,
+  RootsDropdownLabel,
+  RootsDropdownMenu,
+  RootsDropdownSeparator,
+  RootsDropdownTrigger,
+} from "@/components/rootsy-dropdown"
 import { cn } from "@/lib/utils"
-import { BookOpen, Check, ChevronDown } from "lucide-react"
+import { BookOpen, ChevronDown } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { useMemo } from "react"
 
@@ -85,15 +84,11 @@ export function LibrarySectionMenu({
 }: Props) {
   const router = useRouter()
   const activeLabel = getLibrarySectionLabel(sectionId)
+  const theme = isNightForestHeader(headerVariant) ? "dark" : "light"
 
-  const dropdownContentClass = dataWorkspaceHeaderDropdownContentClassForVariant(
-    headerVariant,
-  )
-  const dropdownLabelClass = dataWorkspaceHeaderDropdownLabelClassForVariant(
-    headerVariant,
-  )
-  const dropdownSeparatorClass =
-    dataWorkspaceHeaderDropdownSeparatorClassForVariant(headerVariant)
+  const dropdownContentClass = dataWorkspaceHeaderDropdownContentClassForVariant(headerVariant)
+  const dropdownLabelClass = dataWorkspaceHeaderDropdownLabelClassForVariant(headerVariant)
+  const dropdownSeparatorClass = dataWorkspaceHeaderDropdownSeparatorClassForVariant(headerVariant)
 
   const groupedItems = useMemo(
     () =>
@@ -105,8 +100,8 @@ export function LibrarySectionMenu({
   )
 
   return (
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild>
+    <RootsDropdownMenu>
+      <RootsDropdownTrigger asChild>
         <button
           type="button"
           className={dataWorkspaceSectionMenuTriggerClass(headerVariant)}
@@ -120,54 +115,39 @@ export function LibrarySectionMenu({
             aria-hidden
           />
         </button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent
+      </RootsDropdownTrigger>
+      <RootsDropdownContent
+        theme={theme}
         align="end"
-        sideOffset={6}
         className={cn(dropdownContentClass, "max-h-[min(70vh,28rem)] w-64 overflow-y-auto")}
       >
         {groupedItems.map(({ group, items }, groupIndex) => (
           <div key={group.id}>
             {groupIndex > 0 ? (
-              <DropdownMenuSeparator className={dropdownSeparatorClass} />
+              <RootsDropdownSeparator theme={theme} className={dropdownSeparatorClass} />
             ) : null}
-            <DropdownMenuLabel className={dropdownLabelClass}>
+            <RootsDropdownLabel theme={theme} className={dropdownLabelClass}>
               {group.label}
-            </DropdownMenuLabel>
+            </RootsDropdownLabel>
             {items.map((item) => {
               const selected = item.id === sectionId
               return (
-                <DropdownMenuItem
+                <RootsDropdownItem
                   key={item.id}
-                  className={cn(
-                    dataWorkspaceSectionMenuDropdownItemClass(
-                      headerVariant,
-                      selected,
-                    ),
-                    item.depth === 1 && "pl-6",
-                  )}
-                  onClick={() =>
+                  theme={theme}
+                  selected={selected}
+                  className={cn("gap-2", item.depth === 1 && "pl-6")}
+                  onSelect={() =>
                     router.push(librarySectionHref(siteId, popId, item.id))
                   }
                 >
                   <span className="min-w-0 flex-1 truncate">{item.label}</span>
-                  {selected ? (
-                    <Check
-                      className={cn(
-                        "size-4 shrink-0",
-                        isNightForestHeader(headerVariant)
-                          ? "text-emerald-300"
-                          : "text-primary",
-                      )}
-                      aria-hidden
-                    />
-                  ) : null}
-                </DropdownMenuItem>
+                </RootsDropdownItem>
               )
             })}
           </div>
         ))}
-      </DropdownMenuContent>
-    </DropdownMenu>
+      </RootsDropdownContent>
+    </RootsDropdownMenu>
   )
 }

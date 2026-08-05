@@ -93,7 +93,7 @@ export function rootsIconButtonIconClass(size: RootsIconButtonSize = "default") 
     case "default":
       return "size-5"
     case "large":
-      return "size-5"
+      return "size-6"
   }
 }
 
@@ -110,7 +110,7 @@ function rootsIconButtonSvgClass(size: RootsIconButtonSize) {
     case "default":
       return "[&_svg:not([class*='size-'])]:size-5"
     case "large":
-      return "[&_svg:not([class*='size-'])]:size-5"
+      return "[&_svg:not([class*='size-'])]:size-6"
   }
 }
 

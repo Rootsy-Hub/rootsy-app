@@ -77,6 +77,7 @@ export function RootsFormQuantityField({
       <RootsFormPrefixedInput
         id={fieldId}
         prefix={prefix}
+        numeric
         prefixClassName={prefixClassName}
         inputMode="numeric"
         autoComplete="off"
@@ -89,7 +90,7 @@ export function RootsFormQuantityField({
         onChange={(e) => handleChange(e.target.value)}
         onFocus={handleFocus}
         onBlur={handleBlur}
-        inputClassName={cn(inputClassName)}
+        inputClassName={cn("tabular-nums", inputClassName)}
       />
     </RootsFormField>
   )

@@ -45,15 +45,15 @@ const dateFilterTriggerClass = cn(
 )
 
 const dateShortcutButtonClass = cn(
-  "rounded-lg px-2.5 py-2 text-left text-sm text-[#44403c] transition-colors",
-  "hover:bg-[#f5f5f0] focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-emerald-600/40",
+  "rounded-lg px-2.5 py-2 text-left text-sm text-[var(--rootsy-bruma-700)] transition-colors",
+  "hover:bg-[var(--rootsy-bruma-50)] focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-[color-mix(in_srgb,var(--rootsy-savia-600)_40%,transparent)]",
 )
 
 const dateShortcutButtonActiveClass =
-  "bg-[#f5f5f0] font-medium text-[#292524]"
+  "bg-[var(--rootsy-bruma-50)] font-medium text-[var(--rootsy-bruma-900)]"
 
 const rootsFormFilterTriggerActiveClass =
-  "!border-[#16704a] ring-2 ring-[#16704a]/20"
+  "!border-[var(--rootsy-savia-600)] ring-2 ring-[color-mix(in_srgb,var(--rootsy-savia-600)_20%,transparent)]"
 
 export function DataWorkspacePeriodFilter({
   preset,
@@ -266,7 +266,7 @@ export function DataWorkspacePeriodFilter({
             <div
               className={cn(
                 "px-2 py-2",
-                !isCompact && "border-b border-[#f5f5f0]",
+                !isCompact && "border-b border-[var(--rootsy-bruma-100)]",
               )}
             >
               <p className="px-2 pb-1.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-[#a8a29e]">
@@ -314,7 +314,7 @@ export function DataWorkspacePeriodFilter({
               </div>
             </div>
 
-            <div className="border-t border-[#f5f5f0] px-2 py-2">
+            <div className="border-t border-[var(--rootsy-bruma-100)] px-2 py-2">
               <button
                 type="button"
                 onClick={() => {

@@ -68,14 +68,14 @@ export function DatePicker({
         "flex h-11 w-full overflow-hidden rounded-md border border-input bg-background text-left shadow-xs transition-[color,box-shadow] outline-none",
         "focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]",
         "disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50",
-        light && "border-zinc-200 bg-white text-zinc-900 dark:border-zinc-200 dark:bg-white",
+        light && "border-[var(--rootsy-bruma-200)] bg-[var(--rootsy-white)] text-[var(--rootsy-bruma-900)] dark:border-[var(--rootsy-bruma-200)] dark:bg-[var(--rootsy-white)]",
         className,
       )}
     >
       <span
         className={cn(
           "flex h-11 shrink-0 items-center border-r border-border/70 bg-muted/35 px-3.5 text-zinc-600 dark:text-zinc-600",
-          light && "border-zinc-200 bg-zinc-50",
+          light && "border-[var(--rootsy-bruma-200)] bg-[var(--rootsy-bruma-50)]",
           prefixClassName,
         )}
       >
@@ -87,8 +87,8 @@ export function DatePicker({
           selected
             ? "text-foreground"
             : "text-muted-foreground",
-          light && selected && "text-zinc-900 dark:text-zinc-900",
-          light && !selected && "text-zinc-400 dark:text-zinc-400",
+          light && selected && "text-[var(--rootsy-bruma-900)] dark:text-[var(--rootsy-bruma-900)]",
+          light && !selected && "text-[var(--rootsy-bruma-400)] dark:text-[var(--rootsy-bruma-400)]",
         )}
       >
         {displayValue}
@@ -106,7 +106,7 @@ export function DatePicker({
         "justify-start gap-2 px-3 font-normal",
         light && cn(lightToolbarControlClass, lightToolbarFocusClass),
         !selected && "text-muted-foreground",
-        light && selected && "text-zinc-900 dark:text-zinc-900",
+        light && selected && "text-[var(--rootsy-bruma-900)] dark:text-[var(--rootsy-bruma-900)]",
         className,
       )}
     >

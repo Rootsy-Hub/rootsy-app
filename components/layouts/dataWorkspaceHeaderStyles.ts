@@ -3,10 +3,20 @@ import {
   rootsIconButtonNightFocusRingClass,
 } from "@/components/rootsy-button/rootsIconButtonNightStyles"
 import {
-  rootsyElevationPopoverContentDarkClass,
-  rootsyElevationPopoverContentLightClass,
-  rootsyElevationPopoverMenuItemRadiusClass,
-} from "@/components/elevation/rootsyElevationStyles"
+  rootsDropdownContentDarkClass,
+  rootsDropdownContentLightClass,
+  rootsDropdownDestructiveItemClass,
+  rootsDropdownDestructiveItemDarkClass,
+  rootsDropdownItemClassForTheme,
+  rootsDropdownItemDarkClass,
+  rootsDropdownItemDarkSelectedClass,
+  rootsDropdownItemLightClass,
+  rootsDropdownItemLightSelectedClass,
+  rootsDropdownLabelDarkClass,
+  rootsDropdownLabelLightClass,
+  rootsDropdownSeparatorDarkClass,
+  rootsDropdownSeparatorLightClass,
+} from "@/components/rootsy-dropdown/rootsDropdownStyles"
 import { cn } from "@/lib/utils"
 import { popHeaderGlassBorderClass } from "@/components/layouts/popHeaderBackdropStyles"
 
@@ -154,30 +164,22 @@ export function dataWorkspaceSectionMenuDropdownItemClass(
   headerVariant: DataWorkspaceHeaderVariant = "default",
   selected = false,
 ): string {
-  if (!selected) {
-    return cn(
-      "gap-2",
-      isNightForestHeader(headerVariant) &&
-        dataWorkspaceHeaderDropdownItemClassForVariant(headerVariant),
-    )
-  }
-  if (isNightForestHeader(headerVariant)) {
-    return cn(
-      "gap-2",
-      dataWorkspaceHeaderDropdownItemClassForVariant(headerVariant),
-      "bg-emerald-500/12 text-emerald-100 focus:bg-emerald-500/16 focus:text-white [&_svg:not([class*='text-'])]:text-emerald-300/90",
-    )
-  }
-  return cn(
-    "gap-2",
-    "bg-primary/10 text-foreground focus:bg-primary/14",
-  )
+  const theme = isNightForestHeader(headerVariant) ? "dark" : "light"
+  return cn("gap-2", rootsDropdownItemClassForTheme(theme, "default", { selected }))
+}
+
+/** Check trailing en ítem seleccionado — savia-600 light · savia-400 dark. */
+export function dataWorkspaceDropdownCheckIconClass(
+  headerVariant: DataWorkspaceHeaderVariant = "default",
+): string {
+  return isNightForestHeader(headerVariant)
+    ? "text-[var(--rootsy-savia-400)]"
+    : "text-[var(--rootsy-savia-600)]"
 }
 
 export const dataWorkspaceNightHeaderDropdownContentClass = cn(
-  "relative w-56 p-1.5 text-[#e7e5e4]",
-  rootsyElevationPopoverContentDarkClass,
-  rootsyElevationPopoverMenuItemRadiusClass,
+  "relative w-56",
+  rootsDropdownContentDarkClass,
   "data-[side=bottom]:slide-in-from-top-0 data-[side=top]:slide-in-from-bottom-0",
   "data-[side=left]:slide-in-from-right-0 data-[side=right]:slide-in-from-left-0",
 )
@@ -188,11 +190,11 @@ export const dataWorkspaceHeaderDropdownContentClass =
 
 export function dataWorkspaceHeaderDropdownContentClassForVariant(
   headerVariant: DataWorkspaceHeaderVariant = "default",
-): string | undefined {
+): string {
   if (isNightForestHeader(headerVariant)) {
     return dataWorkspaceNightHeaderDropdownContentClass
   }
-  return undefined
+  return dataWorkspaceLightDropdownContentClass
 }
 
 export const dataWorkspaceNightHeaderUserDropdownContentClass = cn(
@@ -206,34 +208,28 @@ export const dataWorkspaceHeaderUserDropdownContentClass =
 
 export function dataWorkspaceHeaderUserDropdownContentClassForVariant(
   headerVariant: DataWorkspaceHeaderVariant = "default",
-): string | undefined {
+): string {
   if (isNightForestHeader(headerVariant)) {
     return dataWorkspaceNightHeaderUserDropdownContentClass
   }
-  return undefined
+  return cn(dataWorkspaceLightDropdownContentClass, "origin-top-right")
 }
 
 export const dataWorkspaceLightDropdownContentClass = cn(
-  "rootsy-app-light w-56 p-1.5 text-popover-foreground",
-  rootsyElevationPopoverContentLightClass,
-  rootsyElevationPopoverMenuItemRadiusClass,
+  "rootsy-app-light w-56",
+  rootsDropdownContentLightClass,
   "origin-top-right",
   "data-[side=bottom]:slide-in-from-top-0 data-[side=top]:slide-in-from-bottom-0",
   "data-[side=left]:slide-in-from-right-0 data-[side=right]:slide-in-from-left-0",
 )
 
-export const dataWorkspaceLightDropdownItemClass =
-  "gap-2 text-popover-foreground focus:bg-muted focus:text-foreground data-[highlighted]:bg-muted data-[highlighted]:text-foreground [&_svg:not([class*='text-'])]:text-muted-foreground [&_svg]:opacity-70"
+export const dataWorkspaceLightDropdownItemClass = rootsDropdownItemLightClass
 
-export const dataWorkspaceLightDropdownSeparatorClass = "bg-border/60"
+export const dataWorkspaceLightDropdownSeparatorClass = rootsDropdownSeparatorLightClass
 
-export const dataWorkspaceLightDropdownLogoutItemClass = cn(
-  "gap-2 text-destructive focus:bg-destructive/10 focus:text-destructive data-[highlighted]:bg-destructive/10 data-[highlighted]:text-destructive",
-  "[&_svg]:!text-destructive",
-)
+export const dataWorkspaceLightDropdownLogoutItemClass = rootsDropdownDestructiveItemClass
 
-export const dataWorkspaceNightHeaderDropdownLabelClass =
-  "text-[10px] font-semibold uppercase tracking-[0.14em] text-[#78716c]"
+export const dataWorkspaceNightHeaderDropdownLabelClass = rootsDropdownLabelDarkClass
 
 /** @deprecated Alias de dataWorkspaceNightHeaderDropdownLabelClass */
 export const dataWorkspaceHeaderDropdownLabelClass =
@@ -241,15 +237,14 @@ export const dataWorkspaceHeaderDropdownLabelClass =
 
 export function dataWorkspaceHeaderDropdownLabelClassForVariant(
   headerVariant: DataWorkspaceHeaderVariant = "default",
-): string | undefined {
+): string {
   if (isNightForestHeader(headerVariant)) {
     return dataWorkspaceNightHeaderDropdownLabelClass
   }
-  return undefined
+  return rootsDropdownLabelLightClass
 }
 
-export const dataWorkspaceNightHeaderDropdownItemClass =
-  "gap-2 text-[#d6d3d1] focus:bg-white/6 focus:text-white [&_svg:not([class*='text-'])]:text-[#a8a29e] [&_svg]:opacity-70"
+export const dataWorkspaceNightHeaderDropdownItemClass = rootsDropdownItemDarkClass
 
 /** @deprecated Alias de dataWorkspaceNightHeaderDropdownItemClass */
 export const dataWorkspaceDarkHeaderDropdownItemClass =
@@ -257,14 +252,14 @@ export const dataWorkspaceDarkHeaderDropdownItemClass =
 
 export function dataWorkspaceHeaderDropdownItemClassForVariant(
   headerVariant: DataWorkspaceHeaderVariant = "default",
-): string | undefined {
+): string {
   if (isNightForestHeader(headerVariant)) {
     return dataWorkspaceNightHeaderDropdownItemClass
   }
-  return undefined
+  return dataWorkspaceLightDropdownItemClass
 }
 
-export const dataWorkspaceNightHeaderDropdownSeparatorClass = "bg-[#263530]"
+export const dataWorkspaceNightHeaderDropdownSeparatorClass = rootsDropdownSeparatorDarkClass
 
 /** @deprecated Alias de dataWorkspaceNightHeaderDropdownSeparatorClass */
 export const dataWorkspaceHeaderDropdownSeparatorClass =
@@ -272,18 +267,14 @@ export const dataWorkspaceHeaderDropdownSeparatorClass =
 
 export function dataWorkspaceHeaderDropdownSeparatorClassForVariant(
   headerVariant: DataWorkspaceHeaderVariant = "default",
-): string | undefined {
+): string {
   if (isNightForestHeader(headerVariant)) {
     return dataWorkspaceNightHeaderDropdownSeparatorClass
   }
-  return undefined
+  return dataWorkspaceLightDropdownSeparatorClass
 }
 
-export const dataWorkspaceHeaderDropdownLogoutItemClass = cn(
-  "gap-2 text-red-400/95",
-  "focus:bg-red-500/14 focus:text-red-300",
-  "[&_svg]:!text-red-400/90",
-)
+export const dataWorkspaceHeaderDropdownLogoutItemClass = rootsDropdownDestructiveItemDarkClass
 
 export function dataWorkspaceHeaderDividerClass(
   headerVariant: DataWorkspaceHeaderVariant = "default",

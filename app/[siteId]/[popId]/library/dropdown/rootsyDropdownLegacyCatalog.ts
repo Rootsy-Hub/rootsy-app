@@ -78,18 +78,20 @@ export const ROOTSY_DROPDOWN_ELEVATION = {
   semanticToken: "elevation.popover.select",
   light: {
     surface: "bg-white (elevation.surface.overlay)",
-    border: "border-black/[0.04]",
-    radius: "rounded-[1.375rem]",
+    border: "border-[var(--rootsy-bruma-200)]",
+    radius: "rounded-[16px] · radius.xlarge",
+    itemRadius: "rounded-[4px] · space.050",
     shadow: "shadow-[0_22px_70px_-18px_rgba(0,0,0,0.28)]",
     zIndex: "z-50",
   },
   dark: {
     surface: "bg-[#121816] (elevation.surface.overlay dark)",
     border: "border-black/[0.04]",
-    radius: "rounded-[1.375rem]",
+    radius: "rounded-[16px] · radius.xlarge",
+    itemRadius: "rounded-[4px] · space.050",
     shadow: "shadow-[0_24px_80px_-16px_oklch(0_0_0/0.65)]",
     zIndex: "z-50",
-    note: "rootsyElevationPopoverContentDarkClass.",
+    note: "rootsDropdownContentDarkClass.",
   },
 } as const
 

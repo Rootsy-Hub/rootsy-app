@@ -59,6 +59,8 @@ export type DropdownPanelUiSurface = {
   minWidthPx: number
   paddingTop: number
   paddingBottom: number
+  paddingLeft: number
+  paddingRight: number
 }
 
 export type DropdownItemUiStyle = {
@@ -89,6 +91,34 @@ export function getDropdownPanelUiSurface(
     minWidthPx: densitySpec.minWidthPx,
     paddingTop: ROOTSY_DROPDOWN_ANATOMY.panelPaddingYPx,
     paddingBottom: ROOTSY_DROPDOWN_ANATOMY.panelPaddingYPx,
+    paddingLeft: ROOTSY_DROPDOWN_ANATOMY.panelPaddingXPx,
+    paddingRight: ROOTSY_DROPDOWN_ANATOMY.panelPaddingXPx,
+  }
+}
+
+/** Panel CSS — mapea borderRadiusPx → borderRadius (radius.xlarge · 16px). */
+export function getDropdownPanelShellUiStyle(
+  theme: DropdownThemeId = "light",
+  density: DropdownDensityId = "default",
+  options?: { width?: string },
+) {
+  const panel = getDropdownPanelUiSurface(theme, density)
+
+  return {
+    backgroundColor: panel.backgroundColor,
+    border: panel.border,
+    boxShadow: panel.boxShadow,
+    borderRadius: `${panel.borderRadiusPx}px`,
+    minWidth: panel.minWidthPx,
+    paddingTop: panel.paddingTop,
+    paddingBottom: panel.paddingBottom,
+    paddingLeft: panel.paddingLeft,
+    paddingRight: panel.paddingRight,
+    display: "flex" as const,
+    flexDirection: "column" as const,
+    gap: ROOTSY_DROPDOWN_ANATOMY.itemStackGapPx,
+    boxSizing: "border-box" as const,
+    width: options?.width ?? ("100%" as const),
   }
 }
 
@@ -129,14 +159,64 @@ export function getDropdownItemUiStyle(
   }
 }
 
+/** Layout interactivo — sin background/color inline para no pisar hover Radix. */
+export function getDropdownItemInteractiveLayoutStyle(
+  density: DropdownDensityId = "default",
+) {
+  const style = getDropdownItemUiStyle("light", "default", density)
+
+  return {
+    minHeight: style.minHeightPx,
+    paddingLeft: style.paddingLeft,
+    paddingRight: style.paddingRight,
+    borderRadius: `${style.borderRadiusPx}px`,
+    display: "flex" as const,
+    alignItems: "center" as const,
+    boxSizing: "border-box" as const,
+    width: "100%",
+    outline: "none",
+    overflow: "hidden" as const,
+  }
+}
+
+/** Ítem CSS — borderRadius space.050 (4px) · inset vía px-1 del panel. */
+export function getDropdownItemShellUiStyle(
+  theme: DropdownThemeId = "light",
+  state: DropdownItemStateId = "default",
+  density: DropdownDensityId = "default",
+) {
+  const style = getDropdownItemUiStyle(theme, state, density)
+
+  return {
+    backgroundColor: style.backgroundColor,
+    color: style.color,
+    fontFamily: style.fontFamily,
+    fontSize: style.fontSize,
+    lineHeight: style.lineHeight,
+    fontWeight: style.fontWeight,
+    minHeight: style.minHeightPx,
+    paddingLeft: style.paddingLeft,
+    paddingRight: style.paddingRight,
+    opacity: style.opacity,
+    borderRadius: `${style.borderRadiusPx}px`,
+    display: "flex" as const,
+    alignItems: "center" as const,
+    boxSizing: "border-box" as const,
+    width: "100%",
+    overflow: "hidden" as const,
+    outline: "none",
+    cursor: state === "disabled" ? ("not-allowed" as const) : ("default" as const),
+  }
+}
+
 export function getDropdownSeparatorUiStyle(theme: DropdownThemeId = "light") {
   return {
     height: ROOTSY_DROPDOWN_ANATOMY.separatorHeightPx,
     backgroundColor: getDropdownSeparatorColor(theme),
     marginTop: ROOTSY_DROPDOWN_ANATOMY.separatorMarginYPx,
     marginBottom: ROOTSY_DROPDOWN_ANATOMY.separatorMarginYPx,
-    marginLeft: ROOTSY_DROPDOWN_ANATOMY.itemPaddingXPx,
-    marginRight: ROOTSY_DROPDOWN_ANATOMY.itemPaddingXPx,
+    marginLeft: ROOTSY_DROPDOWN_ANATOMY.separatorInsetXPx,
+    marginRight: ROOTSY_DROPDOWN_ANATOMY.separatorInsetXPx,
   }
 }
 

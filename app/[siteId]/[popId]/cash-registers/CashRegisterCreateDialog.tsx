@@ -21,8 +21,8 @@ import {
 } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { cn } from "@/lib/utils"
+import { RootsBanner } from "@/components/rootsy-banner"
 import {
-  saleOpChannelHint,
   saleOpDialogHeader,
   saleOpLightFormInput,
 } from "@/components/sale-operation/saleOperationStyles"
@@ -138,10 +138,12 @@ export function CashRegisterCreateDialog({
                       onValueChange={setCashTreasuryAccountId}
                       accounts={cashTreasuryAccounts}
                     />
-                    <p className={saleOpChannelHint}>
-                      Los cobros en efectivo del turno se imputan a esta cuenta de
-                      tesorería.
-                    </p>
+                    <RootsBanner
+                      intent="neutral"
+                      layout="message"
+                      density="compact"
+                      message="Los cobros en efectivo del turno se imputan a esta cuenta de tesorería."
+                    />
                   </div>
                 </div>
 

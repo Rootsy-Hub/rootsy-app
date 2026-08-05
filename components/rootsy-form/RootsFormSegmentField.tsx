@@ -2,6 +2,7 @@
 
 import { RootsFormField } from "@/components/rootsy-form/RootsFormField"
 import type { RootsFormFieldAssistProps } from "@/components/rootsy-form/rootsFormFieldAssist"
+import { getFormSegmentIndicatorLayoutStyle } from "@/components/rootsy-form/rootsFormSpecRuntime"
 import {
   rootsFormSegmentGroupClass,
   rootsFormSegmentIndicatorClass,
@@ -37,20 +38,6 @@ function segmentGridClass(count: number) {
       return "grid-cols-4"
     default:
       return "grid-cols-2"
-  }
-}
-
-function segmentIndicatorStyle(optionCount: number, selectedIndex: number) {
-  const inset = 0.25 // p-1
-  const gap = 0.25 // gap-1
-  const gapsTotal = (optionCount - 1) * gap
-
-  return {
-    top: `${inset}rem`,
-    bottom: `${inset}rem`,
-    left: `${inset}rem`,
-    width: `calc((100% - ${inset * 2}rem - ${gapsTotal}rem) / ${optionCount})`,
-    transform: `translateX(calc(${selectedIndex} * (100% + ${gap}rem)))`,
   }
 }
 
@@ -100,7 +87,7 @@ export function RootsFormSegmentField({
           <span
             aria-hidden
             className={rootsFormSegmentIndicatorClass}
-            style={segmentIndicatorStyle(options.length, selectedIndex)}
+            style={getFormSegmentIndicatorLayoutStyle(options.length, selectedIndex)}
           />
         ) : null}
         {options.map((option) => {
@@ -119,7 +106,7 @@ export function RootsFormSegmentField({
                   "h-full shrink-0 whitespace-nowrap px-3.5",
                 useScrollLayout &&
                   isSelected &&
-                  "bg-white shadow-sm",
+                  "rounded-[8px] bg-[var(--rootsy-white)] shadow-sm",
               )}
               onClick={() => onValueChange(option.value)}
             >
