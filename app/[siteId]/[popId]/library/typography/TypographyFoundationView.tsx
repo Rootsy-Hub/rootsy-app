@@ -37,7 +37,7 @@ export function TypographyFoundationView({ sectionId, siteId, popId }: Props) {
     <div className="rootsy-typography-system space-y-10">
       {content}
       <div className="space-y-3 border-t border-border/60 pt-8">
-        <p className="text-sm font-semibold text-foreground font-canopy">Relacionado</p>
+        <p className="text-sm font-semibold text-foreground">Relacionado</p>
         <TypographyRelatedLinks
           siteId={siteId}
           popId={popId}

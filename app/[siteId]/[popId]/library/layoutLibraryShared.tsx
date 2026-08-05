@@ -1,7 +1,14 @@
 "use client"
 
-import { COLOR_LIBRARY_ROOT, COLOR_LIBRARY_SUBITEMS } from "@/app/[siteId]/[popId]/library/color/colorLibraryNav"
-import { isColorLibrarySection } from "@/app/[siteId]/[popId]/library/color/colorLibraryNav"
+import {
+  CONCEPT_LIBRARY_ROOT,
+} from "@/app/[siteId]/[popId]/library/concept/conceptLibraryNav"
+import { isConceptLibrarySection } from "@/app/[siteId]/[popId]/library/concept/conceptLibraryNav"
+import {
+  COLOR_NEW_LIBRARY_ROOT,
+  COLOR_NEW_LIBRARY_SUBITEMS,
+} from "@/app/[siteId]/[popId]/library/color/colorNewLibraryNav"
+import { isColorNewLibrarySection } from "@/app/[siteId]/[popId]/library/color/colorNewLibraryNav"
 import { SPACING_LIBRARY_ROOT, SPACING_LIBRARY_SUBITEMS } from "@/app/[siteId]/[popId]/library/spacing/spacingLibraryNav"
 import { isSpacingLibrarySection } from "@/app/[siteId]/[popId]/library/spacing/spacingLibraryNav"
 import { GRID_LIBRARY_ROOT, GRID_LIBRARY_SUBITEMS } from "@/app/[siteId]/[popId]/library/grid/gridLibraryNav"
@@ -30,6 +37,16 @@ import {
   LAYOUTS_LIBRARY_SUBITEMS,
 } from "@/app/[siteId]/[popId]/library/layouts/layoutsLibraryNav"
 import { isLayoutsLibrarySection } from "@/app/[siteId]/[popId]/library/layouts/layoutsLibraryNav"
+import {
+  libraryNavGroupLabelClass,
+  libraryNavLinkActiveClass,
+  libraryNavLinkClass,
+  libraryNavLinkParentActiveClass,
+  libraryNavToggleClass,
+  libraryPageHeaderBadgeClass,
+  libraryPageHeaderClass,
+  libraryPageHeaderMonoClass,
+} from "@/app/[siteId]/[popId]/library/libraryColorTheme"
 import { popScopedHref } from "@/lib/popRoutes"
 import { cn } from "@/lib/utils"
 import { ChevronRight } from "lucide-react"
@@ -55,9 +72,10 @@ export const LIBRARY_NAV_GROUPS: LibraryNavGroup[] = [
     id: "foundation",
     label: "Fundamentos",
     items: [
+      { ...CONCEPT_LIBRARY_ROOT },
       {
-        ...COLOR_LIBRARY_ROOT,
-        children: [...COLOR_LIBRARY_SUBITEMS],
+        ...COLOR_NEW_LIBRARY_ROOT,
+        children: [...COLOR_NEW_LIBRARY_SUBITEMS],
       },
       {
         ...SPACING_LIBRARY_ROOT,
@@ -132,7 +150,7 @@ export const LIBRARY_NAV_GROUPS: LibraryNavGroup[] = [
   },
 ]
 
-export const DEFAULT_LIBRARY_SECTION = "colors"
+export const DEFAULT_LIBRARY_SECTION = "concept"
 
 export const LIBRARY_SECTION_IDS = LIBRARY_NAV_GROUPS.flatMap((group) =>
   group.items.flatMap((item) =>
@@ -160,7 +178,8 @@ export function libraryHomeHref(siteId: string, popId: string): string {
 
 export function getLibraryNavGroup(sectionId: string): LibraryNavGroup | undefined {
   if (
-    isColorLibrarySection(sectionId) ||
+    isConceptLibrarySection(sectionId) ||
+    isColorNewLibrarySection(sectionId) ||
     isSpacingLibrarySection(sectionId) ||
     isGridLibrarySection(sectionId) ||
     isTypographyLibrarySection(sectionId) ||
@@ -214,12 +233,13 @@ function NavAccordionGroup({
           href={librarySectionHref(siteId, popId, item.id)}
           aria-current={isRootActive ? "page" : undefined}
           className={cn(
-            "min-w-0 flex-1 rounded-lg py-1.5 pl-2 pr-1 text-sm transition-colors",
+            "min-w-0 flex-1 py-1.5 pl-0 pr-1 text-sm",
+            libraryNavLinkClass,
             isRootActive
-              ? "bg-primary/10 font-medium text-primary"
+              ? libraryNavLinkActiveClass
               : isGroupActive
-                ? "font-medium text-foreground hover:bg-muted/50"
-                : "text-muted-foreground hover:bg-muted/50 hover:text-foreground",
+                ? libraryNavLinkParentActiveClass
+                : undefined,
           )}
         >
           {item.label}
@@ -230,8 +250,8 @@ function NavAccordionGroup({
           aria-label={open ? `Contraer ${item.label}` : `Expandir ${item.label}`}
           onClick={() => setOpen((prev) => !prev)}
           className={cn(
-            "inline-flex shrink-0 items-center justify-center rounded-lg px-1.5 py-1.5 text-muted-foreground transition-colors hover:bg-muted/50 hover:text-foreground",
-            isGroupActive && "text-foreground",
+            "inline-flex shrink-0 items-center justify-center px-0.5 py-1.5",
+            libraryNavToggleClass,
           )}
         >
           <ChevronRight
@@ -277,11 +297,10 @@ function NavLink({
       href={librarySectionHref(siteId, popId, item.id)}
       aria-current={isActive ? "page" : undefined}
       className={cn(
-        "block rounded-lg py-1.5 text-sm transition-colors",
-        nested ? "pl-6 pr-2" : "px-2",
-        isActive
-          ? "bg-primary/10 font-medium text-primary"
-          : "text-muted-foreground hover:bg-muted/50 hover:text-foreground",
+        "block py-1 text-sm",
+        libraryNavLinkClass,
+        nested ? "pl-3" : "pl-0",
+        isActive && libraryNavLinkActiveClass,
       )}
     >
       {item.label}
@@ -304,7 +323,7 @@ export function LibraryNav({
     <nav className={cn("space-y-6", className)}>
       {LIBRARY_NAV_GROUPS.map((group) => (
         <div key={group.id}>
-          <p className="px-2 text-[10px] font-bold uppercase tracking-[0.14em] text-muted-foreground">
+          <p className={cn("mb-2 px-0", libraryNavGroupLabelClass)}>
             {group.label}
           </p>
           <ul className="mt-2 space-y-0.5">
@@ -349,15 +368,25 @@ export function LibraryPageHeader({
   actions?: ReactNode
 }) {
   return (
-    <header className="rounded-2xl border border-border/70 bg-card px-5 py-5 shadow-sm">
+    <header className={cn("rounded-2xl border px-5 py-5 shadow-sm", libraryPageHeaderClass)}>
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div className="max-w-3xl space-y-2">
           <div className="flex flex-wrap items-center gap-2">
-            <span className="rounded-md bg-primary/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.12em] text-primary">
+            <span
+              className={cn(
+                "rounded-md px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.12em]",
+                libraryPageHeaderBadgeClass,
+              )}
+            >
               Design system
             </span>
-            <span className="rounded-md bg-muted px-2 py-0.5 font-mono text-[10px] text-muted-foreground">
-              rootsy-app-light
+            <span
+              className={cn(
+                "rounded-md px-2 py-0.5 font-mono text-[10px]",
+                libraryPageHeaderMonoClass,
+              )}
+            >
+              rootsy-library · ceniza/bruma
             </span>
           </div>
           <h1 className="text-2xl font-semibold tracking-tight text-foreground">
@@ -417,7 +446,7 @@ export function SpecCard({
   return (
     <div
       className={cn(
-        "rounded-2xl border border-border/70 bg-card p-4 shadow-sm",
+        "rounded-2xl border p-4 shadow-sm library-spec-card",
         className,
       )}
     >

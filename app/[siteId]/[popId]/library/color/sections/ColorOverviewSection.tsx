@@ -75,7 +75,7 @@ export function ColorOverviewSection() {
           description="Ocho climas de color — cada uno con personalidad, todos vivos."
         >
           <div className="space-y-10">
-            {ALL_NATURE_FAMILIES.filter((f) => f.id !== "canopy").map((family) => (
+            {ALL_NATURE_FAMILIES.map((family) => (
               <NatureFamilyRamp key={family.id} family={family} />
             ))}
           </div>

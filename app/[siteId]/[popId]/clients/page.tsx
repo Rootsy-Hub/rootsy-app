@@ -30,7 +30,13 @@ import {
   DataWorkspaceListFiltersDialogTrigger,
   DataWorkspaceListSearchField,
 } from "@/components/data-workspace/DataWorkspaceListFilterFields"
-import { DataWorkspaceListPaginationFooter } from "@/components/data-workspace/DataWorkspaceListPaginationFooter"
+import {
+  DataWorkspaceTableListPage,
+  DataWorkspaceTableListNatureShell,
+  DataWorkspaceTableListFiltersBar,
+  DataWorkspaceTableListShell,
+  DataWorkspaceTableListPaginationFooter,
+} from "@/components/data-workspace/DataWorkspaceTableListLayout"
 import {
   DataWorkspaceListTableFrame,
   DataWorkspaceTableEmptyMascot,
@@ -38,7 +44,6 @@ import {
 } from "@/components/data-workspace/DataWorkspaceListTablePrimitives"
 import { WorkspaceTableSkeletonRows } from "@/components/data-workspace/WorkspaceTableSkeleton"
 import { clientsSkeletonColumns } from "@/components/data-workspace/workspaceTableSkeletonPresets"
-import { DataWorkspaceListTableShell } from "@/components/data-workspace/DataWorkspaceListTableShell"
 import {
   selectColumnInnerClass,
   workspaceTableLayoutClassName,
@@ -49,9 +54,6 @@ import {
   workspaceTableNatureTextSecondaryClass,
 } from "@/components/data-workspace/dataWorkspaceListStyles"
 import {
-  dataWorkspaceListFiltersBarClass,
-  dataWorkspaceListFiltersBarInnerClass,
-  dataWorkspaceListFiltersBarRowClass,
   dataWorkspaceListFiltersGridClass,
   dataWorkspaceListFiltersPanelClass,
   dataWorkspaceListFiltersPanelLastClass,
@@ -60,9 +62,7 @@ import {
   workspaceTableLayoutBodyRowClass,
   workspaceTableLayoutCellStackClass,
   workspaceTableLayoutHeaderHeadClass,
-  workspaceTableLayoutListBodyScopeClass,
   workspaceTableLayoutSelectBodyCellClass,
-  workspaceTableNatureEarthOrganicScopeClass,
 } from "@/components/data-workspace/dataWorkspaceTablesLayout"
 import {
   WorkspaceTableHead,
@@ -70,7 +70,6 @@ import {
   WorkspaceTableHeaderRow,
   WorkspaceTableSelectHead,
 } from "@/components/data-workspace/WorkspaceTableHeader"
-import { DataWorkspaceLayout } from "@/components/layouts/DataWorkspaceLayout"
 import { DataWorkspaceHeaderIconButton } from "@/components/layouts/DataWorkspaceHeaderIconButton"
 import {
   TableBody,
@@ -607,22 +606,18 @@ function ClientsPage() {
   }
 
   return (
-    <DataWorkspaceLayout
-      siteId={siteId}
-      popId={popId}
-      popName={bootstrap?.popName ?? ""}
-      title="Clientes"
-      headerVariant="dark"
-      contentFlush
-      sidebarCollapsible={false}
-      loading={bootstrapLoading || listFetching}
-      userName={bootstrap?.userFullName}
-      userAvatarSrc={bootstrap?.userImageUrl ?? undefined}
-      userRoleLabel={bootstrap?.roleLabel}
-      mainClassName="min-h-0"
-      pillLabel="CRM"
-      headerActions={
-        canCreate ? (
+    <DataWorkspaceTableListPage
+      layout={{
+        siteId,
+        popId,
+        popName: bootstrap?.popName ?? "",
+        title: "Clientes",
+        loading: bootstrapLoading || listFetching,
+        userName: bootstrap?.userFullName,
+        userAvatarSrc: bootstrap?.userImageUrl ?? undefined,
+        userRoleLabel: bootstrap?.roleLabel,
+        pillLabel: "CRM",
+        headerActions: canCreate ? (
           <DataWorkspaceHeaderIconButton
             label="Nuevo cliente"
             headerVariant="dark"
@@ -631,36 +626,13 @@ function ClientsPage() {
           >
             <Plus className="size-5" aria-hidden />
           </DataWorkspaceHeaderIconButton>
-        ) : null
-      }
+        ) : null,
+      }}
+      error={error}
     >
-      <div className="relative flex min-h-0 w-full flex-1 flex-col">
-        {error ? (
-          <div
-            role="alert"
-            className="relative shrink-0 border-b border-destructive/25 bg-destructive/10 px-4 py-3 text-sm text-destructive"
-          >
-            {error}
-          </div>
-        ) : null}
-        <div
-          className={cn(
-            "rootsy-app-light rootsy-nature-palette flex min-h-0 flex-1 flex-col",
-            workspaceTableNatureEarthOrganicScopeClass,
-          )}
-        >
-          <div
-            className={dataWorkspaceListFiltersBarClass}
-            role="toolbar"
-            aria-label="Filtros del listado"
-          >
-            <div
-              className={cn(
-                dataWorkspaceListFiltersBarInnerClass,
-                dataWorkspaceListFiltersBarRowClass,
-              )}
-            >
-              <div className={dataWorkspaceListFiltersGridClass}>
+      <DataWorkspaceTableListNatureShell>
+        <DataWorkspaceTableListFiltersBar>
+          <div className={dataWorkspaceListFiltersGridClass}>
                 <div className={dataWorkspaceListFiltersPanelClass}>
                   <DataWorkspaceListFiltersDialogTrigger
                     id={filtersButtonId}
@@ -693,10 +665,9 @@ function ClientsPage() {
                   />
                 </div>
               </div>
-            </div>
-          </div>
+        </DataWorkspaceTableListFiltersBar>
 
-          <ClientsFiltersDialog
+        <ClientsFiltersDialog
             open={filtersModalOpen}
             onOpenChange={(open) => {
               if (open) {
@@ -719,10 +690,8 @@ function ClientsPage() {
             }}
           />
 
-          <DataWorkspaceListTableShell
-            variant="flush"
-            className={workspaceTableLayoutListBodyScopeClass}
-            activeFiltersBar={
+        <DataWorkspaceTableListShell
+          activeFiltersBar={
               hasFilterChips ? (
                 <DataWorkspaceListActiveFiltersBar
                   activeCount={activeFilterCount}
@@ -792,10 +761,9 @@ function ClientsPage() {
                 <DataWorkspaceTableEmptyMascot />
               ) : null
             }
-              footer={
-                <DataWorkspaceListPaginationFooter
-                  variant="earth"
-                  listFetching={listFetching}
+          footer={
+            <DataWorkspaceTableListPaginationFooter
+              listFetching={listFetching}
                   totalCount={totalCount}
                   rangeStart={rangeLabel.start}
                   rangeEnd={rangeLabel.end}
@@ -808,11 +776,11 @@ function ClientsPage() {
                   onPageSizeChange={(ps) =>
                     replaceWorkspaceQuery({ pageSize: ps, page: 1 })
                   }
-                  pageSizeLabelId={pageSizeLabelId}
-                />
-              }
-            >
-              <DataWorkspaceListTableFrame>
+              pageSizeLabelId={pageSizeLabelId}
+            />
+          }
+        >
+          <DataWorkspaceListTableFrame>
               <table
                 className={cn(workspaceTableLayoutClassName, "min-w-[72rem]")}
                 aria-busy={listFetching}
@@ -1102,9 +1070,9 @@ function ClientsPage() {
                   )}
                 </TableBody>
               </table>
-              </DataWorkspaceListTableFrame>
-            </DataWorkspaceListTableShell>
-          </div>
+          </DataWorkspaceListTableFrame>
+        </DataWorkspaceTableListShell>
+      </DataWorkspaceTableListNatureShell>
 
       <ClientUpsertDialog
         open={createOpenEffective}
@@ -1167,8 +1135,7 @@ function ClientsPage() {
           onConfirmDelete={() => void submitDelete()}
         />
       ) : null}
-      </div>
-    </DataWorkspaceLayout>
+    </DataWorkspaceTableListPage>
   )
 }
 

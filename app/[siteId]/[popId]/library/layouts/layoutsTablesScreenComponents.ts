@@ -14,6 +14,12 @@ export const LAYOUTS_TABLES_SCREEN_COMPONENTS: LayoutsTablesScreenComponentRow[]
     source: "components/layouts/DataWorkspaceLayout.tsx",
   },
   {
+    layer: "Página",
+    component: "Listado tabla · shell completo",
+    token: "DataWorkspaceTableListPage",
+    source: "components/data-workspace/DataWorkspaceTableListLayout.tsx",
+  },
+  {
     layer: "Header",
     component: "Botón chrome · volver",
     token: "dataWorkspaceHeaderChromeButtonClass",
@@ -69,9 +75,21 @@ export const LAYOUTS_TABLES_SCREEN_COMPONENTS: LayoutsTablesScreenComponentRow[]
   },
   {
     layer: "Toolbar",
-    component: "Shell de filtros",
-    token: "lightToolbarShellClass",
-    source: "dataWorkspaceListStyles.ts",
+    component: "Shell de filtros flush",
+    token: "DataWorkspaceTableListFiltersBar",
+    source: "components/data-workspace/DataWorkspaceTableListLayout.tsx",
+  },
+  {
+    layer: "Toolbar",
+    component: "Scope tierra orgánica",
+    token: "DataWorkspaceTableListNatureShell",
+    source: "components/data-workspace/DataWorkspaceTableListLayout.tsx",
+  },
+  {
+    layer: "Tabla",
+    component: "Shell listado flush",
+    token: "DataWorkspaceTableListShell",
+    source: "components/data-workspace/DataWorkspaceTableListLayout.tsx",
   },
   {
     layer: "Toolbar",
@@ -135,20 +153,20 @@ export const LAYOUTS_TABLES_SCREEN_COMPONENTS: LayoutsTablesScreenComponentRow[]
   },
   {
     layer: "Footer",
-    component: "Select paginación · página",
-    token: "rootsFormSelectDarkTriggerClass",
+    component: "Select paginación · trigger tierra",
+    token: "earthTableFooterSelectTriggerClass",
+    source: "dataWorkspaceListStyles.ts",
+  },
+  {
+    layer: "Footer",
+    component: "Select paginación · dropdown light",
+    token: "RootsFormSelectContent · tone=light",
     source: "rootsFormStyles.ts",
   },
   {
     layer: "Footer",
-    component: "Select paginación · por página",
-    token: "rootsFormSelectDarkTriggerClass",
-    source: "rootsFormStyles.ts",
-  },
-  {
-    layer: "Footer",
-    component: "Paginación oscura",
-    token: "DataWorkspaceListPaginationFooter · variant=dark",
-    source: "DataWorkspaceListPaginationFooter.tsx",
+    component: "Paginación tierra oscura",
+    token: "DataWorkspaceTableListPaginationFooter · variant=earth",
+    source: "DataWorkspaceTableListLayout.tsx",
   },
 ]

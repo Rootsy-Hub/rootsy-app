@@ -55,6 +55,10 @@ export function getLayoutsPageMeta(sectionId: string): LayoutsPageMeta | undefin
   return LAYOUTS_PAGE_META[sectionId]
 }
 
+export function layoutsOperationsPreviewHref(siteId: string, popId: string): string {
+  return `/${siteId}/${popId}/library/layouts-operations-preview`
+}
+
 export const LAYOUTS_RELATED_LINKS = [
   { sectionId: "colors", label: "Color", hint: "Paleta Nature y tokens semánticos." },
   { sectionId: "spacing", label: "Espaciado", hint: "Ritmo del toolbar y celdas." },

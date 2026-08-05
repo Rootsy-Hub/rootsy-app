@@ -2,13 +2,12 @@
 
 import { getTypographyPageMeta } from "@/app/[siteId]/[popId]/library/typography/typographyLibraryNav"
 import {
-  FontWeightsTable,
-  TypeScaleDiagram,
-  TypefacesGallery,
-  TypographyDocLead,
   TypographyDocSection,
+  TypographyScaleLadder,
+  TypographyTokensReference,
+  TypographyTypefacesDetail,
+  TypographyWeightsDemo,
 } from "@/app/[siteId]/[popId]/library/typography/TypographyDocPrimitives"
-import { TYPE_SCALE_NOTES } from "@/app/[siteId]/[popId]/library/typography/rootsyTypographySystem"
 import { LibrarySection } from "@/app/[siteId]/[popId]/library/layoutLibraryShared"
 
 export function TypographyTypefacesSection() {
@@ -21,23 +20,20 @@ export function TypographyTypefacesSection() {
       description={meta.description}
     >
       <div className="space-y-10">
-        <TypographyDocLead>
-          Escala minor third (×{TYPE_SCALE_NOTES.ratio}) sobre base {TYPE_SCALE_NOTES.basePx}px —
-          line-heights redondeados al múltiplo de 4px, alineados con espaciado e iconografía.
-        </TypographyDocLead>
-
         <TypographyDocSection
-          id="typeface-detail"
-          title="Familias en detalle"
+          id="typeface-families"
+          title="Familias"
+          description="Nunito Sans, Source Sans 3 e Inter — roles fijos en producto."
         >
-          <TypefacesGallery />
+          <TypographyTypefacesDetail />
         </TypographyDocSection>
 
         <TypographyDocSection
           id="type-scale"
-          title="Escala tipográfica"
+          title="Escala visual"
+          description="Los cinco tamaños del día a día, con token al lado."
         >
-          <TypeScaleDiagram />
+          <TypographyScaleLadder />
         </TypographyDocSection>
 
         <TypographyDocSection
@@ -45,7 +41,15 @@ export function TypographyTypefacesSection() {
           title="Pesos"
           description="Regular, medium, semibold y bold — medium junto a íconos."
         >
-          <FontWeightsTable />
+          <TypographyWeightsDemo />
+        </TypographyDocSection>
+
+        <TypographyDocSection
+          id="tokens"
+          title="Tokens"
+          description="Referencia técnica compacta — heading, body y metric."
+        >
+          <TypographyTokensReference />
         </TypographyDocSection>
       </div>
     </LibrarySection>

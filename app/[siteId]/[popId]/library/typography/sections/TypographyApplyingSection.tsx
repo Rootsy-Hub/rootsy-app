@@ -2,12 +2,12 @@
 
 import { getTypographyPageMeta } from "@/app/[siteId]/[popId]/library/typography/typographyLibraryNav"
 import {
-  AccessibilityNotesList,
-  ApplyingGuidelineCards,
-  HierarchyDemo,
-  MetricDemo,
-  TypographyDocLead,
+  TypographyAccessibilityCard,
   TypographyDocSection,
+  TypographyGuidelinesGrid,
+  TypographyMetricComparison,
+  TypographyProductScreenDemo,
+  TypographyReadingDemo,
 } from "@/app/[siteId]/[popId]/library/typography/TypographyDocPrimitives"
 import { LibrarySection } from "@/app/[siteId]/[popId]/library/layoutLibraryShared"
 
@@ -21,40 +21,40 @@ export function TypographyApplyingSection() {
       description={meta.description}
     >
       <div className="space-y-10">
-        <TypographyDocLead>
-          Tokens en código, estilos en Figma — mismos nombres, misma jerarquía. Combiná con
-          color tokens y space tokens para experiencias coherentes.
-        </TypographyDocLead>
-
         <TypographyDocSection
-          id="apply-hierarchy"
-          title="Jerarquía visual"
-          description="Tamaño, peso y voz — heading, body y metric en una vista."
+          id="apply-screen"
+          title="Pantalla de formulario"
+          description="Título, ayuda, campo y monto — la jerarquía que se repite en el producto."
         >
-          <HierarchyDemo />
+          <TypographyProductScreenDemo />
         </TypographyDocSection>
 
         <TypographyDocSection
           id="apply-metric"
-          title="Metric"
-          description="Ledger bold en el número — body.small en la etiqueta."
+          title="Números"
+          description="El monto destaca; la etiqueta acompaña sin competir."
         >
-          <MetricDemo />
+          <TypographyMetricComparison />
         </TypographyDocSection>
 
         <TypographyDocSection
-          id="apply-guidelines"
-          title="Guías de uso"
+          id="apply-reading"
+          title="Lectura larga"
+          description="Source Sans 3 solo cuando hay prosa — no en controles."
         >
-          <ApplyingGuidelineCards />
+          <TypographyReadingDemo />
+        </TypographyDocSection>
+
+        <TypographyDocSection id="apply-guidelines" title="Guías rápidas">
+          <TypographyGuidelinesGrid />
         </TypographyDocSection>
 
         <TypographyDocSection
           id="apply-a11y"
           title="Accesibilidad"
-          description="rem, contraste, headings semánticos y tamaños mínimos."
+          description="Tres reglas que cubren el 90% de los casos."
         >
-          <AccessibilityNotesList />
+          <TypographyAccessibilityCard />
         </TypographyDocSection>
       </div>
     </LibrarySection>

@@ -17,23 +17,21 @@ import { DataWorkspaceListActiveFiltersBar } from "@/components/data-workspace/D
 import { DataWorkspaceListBulkToolbar } from "@/components/data-workspace/DataWorkspaceListBulkToolbar"
 import { DataWorkspaceListFilterChip } from "@/components/data-workspace/DataWorkspaceListFilterChip"
 import { DataWorkspaceListSearchField } from "@/components/data-workspace/DataWorkspaceListFilterFields"
-import { DataWorkspaceListPaginationFooter } from "@/components/data-workspace/DataWorkspaceListPaginationFooter"
-import { DataWorkspaceListTableShell } from "@/components/data-workspace/DataWorkspaceListTableShell"
+import {
+  DataWorkspaceTableListFiltersBar,
+  DataWorkspaceTableListNatureShell,
+  DataWorkspaceTableListPage,
+  DataWorkspaceTableListPaginationFooter,
+  DataWorkspaceTableListShell,
+} from "@/components/data-workspace/DataWorkspaceTableListLayout"
 import { DataWorkspaceTableEmptyMascot } from "@/components/data-workspace/DataWorkspaceListTablePrimitives"
 import { DataWorkspacePeriodFilter } from "@/components/data-workspace/DataWorkspacePeriodFilter"
 import { DataWorkspaceViewFilter } from "@/components/data-workspace/DataWorkspaceViewFilter"
 import {
-  dataWorkspaceListFiltersBarClass,
-  dataWorkspaceListFiltersBarInnerClass,
-  dataWorkspaceListFiltersBarRowClass,
   dataWorkspaceListFiltersGridClass,
   dataWorkspaceListFiltersPanelClass,
   dataWorkspaceListFiltersPanelLastClass,
-  workspaceTableLayoutListBodyScopeClass,
-  workspaceTableLayoutListSurfaceClass,
-  workspaceTableNatureEarthOrganicScopeClass,
 } from "@/components/data-workspace/dataWorkspaceTablesLayout"
-import { DataWorkspaceLayout } from "@/components/layouts/DataWorkspaceLayout"
 import { usePopWorkspace } from "@/context/PopWorkspaceContext"
 import { usePopTimeZone } from "@/hooks/usePopTimeZone"
 import withAuth from "@/hoc/withAuth"
@@ -46,7 +44,6 @@ import {
   writeSavedOperationsView,
   type OperationsViewId,
 } from "@/lib/operationsViewPreference"
-import { cn } from "@/lib/utils"
 import {
   Receipt,
   ShoppingCart,
@@ -335,41 +332,20 @@ function OperationsPage() {
   }
 
   return (
-    <DataWorkspaceLayout
-      siteId={siteId}
-      popId={popId}
-      popName={bootstrap?.popName ?? ""}
-      title="Operaciones"
-      headerVariant="dark"
-      contentFlush
-      sidebarCollapsible={false}
-      loading={bootstrapLoading || listFetching}
-      userName={bootstrap?.userFullName}
-      userAvatarSrc={bootstrap?.userImageUrl ?? undefined}
-      mainClassName="rootsy-nature-palette min-h-0 overflow-hidden"
+    <DataWorkspaceTableListPage
+      layout={{
+        siteId,
+        popId,
+        popName: bootstrap?.popName ?? "",
+        title: "Operaciones",
+        loading: bootstrapLoading || listFetching,
+        userName: bootstrap?.userFullName,
+        userAvatarSrc: bootstrap?.userImageUrl ?? undefined,
+      }}
+      error={error}
     >
-      <div className="relative flex min-h-0 w-full flex-1 flex-col">
-        {error ? (
-          <div
-            role="alert"
-            className="relative shrink-0 border-b border-destructive/25 bg-destructive/10 px-4 py-3 text-sm text-destructive"
-          >
-            {error}
-          </div>
-        ) : null}
-
-        <div className="relative flex min-h-0 flex-1 flex-col">
-          <div
-            className={dataWorkspaceListFiltersBarClass}
-            role="toolbar"
-            aria-label="Filtros del listado"
-          >
-            <div
-              className={cn(
-                dataWorkspaceListFiltersBarInnerClass,
-                dataWorkspaceListFiltersBarRowClass,
-              )}
-            >
+      <DataWorkspaceTableListNatureShell>
+        <DataWorkspaceTableListFiltersBar>
               <div className={dataWorkspaceListFiltersGridClass}>
                 <div className={dataWorkspaceListFiltersPanelClass}>
                   <DataWorkspaceViewFilter
@@ -420,16 +396,9 @@ function OperationsPage() {
                   />
                 </div>
               </div>
-            </div>
-          </div>
+        </DataWorkspaceTableListFiltersBar>
 
-          <DataWorkspaceListTableShell
-            variant="flush"
-            className={cn(
-              workspaceTableNatureEarthOrganicScopeClass,
-              workspaceTableLayoutListBodyScopeClass,
-              workspaceTableLayoutListSurfaceClass,
-            )}
+          <DataWorkspaceTableListShell
             activeFiltersBar={
               hasSearchChip ? (
                 <DataWorkspaceListActiveFiltersBar
@@ -463,8 +432,7 @@ function OperationsPage() {
               ) : null
             }
             footer={
-              <DataWorkspaceListPaginationFooter
-                variant="dark"
+              <DataWorkspaceTableListPaginationFooter
                 listFetching={listFetching}
                 totalCount={totalCount}
                 rangeStart={rangeLabel.start}
@@ -517,10 +485,9 @@ function OperationsPage() {
                 onSelectedChange={setSelected}
               />
             )}
-          </DataWorkspaceListTableShell>
-        </div>
-      </div>
-    </DataWorkspaceLayout>
+          </DataWorkspaceTableListShell>
+      </DataWorkspaceTableListNatureShell>
+    </DataWorkspaceTableListPage>
   )
 }
 

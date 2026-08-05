@@ -72,7 +72,7 @@ export function LibraryDocSection({
   return (
     <section
       id={id}
-      className="scroll-mt-24 space-y-5 border-t border-border/60 pt-10 first:border-t-0 first:pt-0"
+      className="library-doc-section scroll-mt-24 space-y-5 border-t border-border/60 pt-10 first:border-t-0 first:pt-0"
     >
       <div className="max-w-3xl space-y-2">
         <h3

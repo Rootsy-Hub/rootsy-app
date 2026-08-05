@@ -10,7 +10,7 @@ import {
   RootsFormSelectField,
   RootsFormSelectItem,
 } from "@/components/rootsy-form"
-import { DataWorkspaceListPaginationFooter } from "@/components/data-workspace/DataWorkspaceListPaginationFooter"
+import { DataWorkspaceTableListPaginationFooter } from "@/components/data-workspace/DataWorkspaceTableListLayout"
 import {
   darkTableFooterClass,
   workspaceTableNatureBodyRowClassNames,
@@ -843,8 +843,7 @@ export function LayoutsTablesFooterDemo({ composed = false }: LayoutsTablesDemoP
           "rounded-2xl border border-border/80 shadow-[0_24px_48px_-28px_rgba(41,37,36,0.38)] ring-1 ring-black/[0.04]",
       )}
     >
-      <DataWorkspaceListPaginationFooter
-        variant="dark"
+      <DataWorkspaceTableListPaginationFooter
         listFetching={false}
         totalCount={1248}
         rangeStart={1}

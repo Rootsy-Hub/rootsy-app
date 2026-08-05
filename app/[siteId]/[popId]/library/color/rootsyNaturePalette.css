@@ -3,6 +3,55 @@
  * Scoped a .rootsy-nature-palette hasta migrar a producción.
  */
 .rootsy-nature-palette {
+  /* Ceniza — neutros oscuros POS (azul-ceniza) */
+  --nature-ceniza-950: #070a09;
+  --nature-ceniza-900: #0b100e;
+  --nature-ceniza-800: #0f1416;
+  --nature-ceniza-700: #1a2027;
+  --nature-ceniza-600: #20262e;
+  --nature-ceniza-500: #252b34;
+  --nature-ceniza-400: #64748b;
+  --nature-ceniza-300: #94a3b8;
+
+  /* Bruma — neutros claros ticket y listados (ceniza azulado) */
+  --nature-bruma-50: #f4f6f9;
+  --nature-bruma-100: #eef1f5;
+  --nature-bruma-200: #dfe4ea;
+  --nature-bruma-300: #cbd5e1;
+  --nature-bruma-400: #94a3b8;
+  --nature-bruma-500: #64748b;
+  --nature-bruma-600: #475569;
+  --nature-bruma-700: #334155;
+  --nature-bruma-900: #121417;
+
+  /* Savia — verde operativo POS (emerald Vender) */
+  --nature-savia-990: #061009;
+  --nature-savia-975: #07120e;
+  --nature-savia-960: #0c1f17;
+  --nature-savia-950: #022c22;
+  --nature-savia-900: #064e3b;
+  --nature-savia-800: #065f46;
+  --nature-savia-700: #047857;
+  --nature-savia-600: #059669;
+  --nature-savia-500: #10b981;
+  --nature-savia-400: #34d399;
+  --nature-savia-300: #6ee7b7;
+  --nature-savia-200: #a7f3d0;
+  --nature-savia-100: #d1fae5;
+  --nature-savia-50: #ecfdf5;
+
+  /* Landing — hero promocional */
+  --nature-landing-950: #080c0b;
+  --nature-landing-900: #070a09;
+  --nature-landing-800: #0a0e0d;
+  --nature-landing-500: #10b981;
+  --nature-landing-400: #34d399;
+  --nature-landing-300: #6ee7b7;
+  --nature-landing-200: #a7f3d0;
+  --nature-landing-teal: #14b8a6;
+  --nature-landing-neon: #25fe02;
+  --nature-landing-neon-2: #02fe85;
+
   /* Canopy — verde planta en esplendor */
   --nature-canopy-950: #052e1f;
   --nature-canopy-900: #0a4030;
@@ -281,30 +330,154 @@
 /**
  * Layout operaciones — composición colorista dark / light.
  * Izquierda: bosque nocturno (catálogo + configuración).
- * Derecha: papel tierra (resumen legible).
+ * Derecha: ticket claro + totales en gradiente tierra oscuro.
  */
 .rootsy-nature-palette .layouts-operations-body {
-  /* Dark · catálogo y configuración — noche profunda, sin tinte canopy */
+  /* Dark · noche 950 (rail) → 900 (canvas) → 800 (toolbox) */
   --op-dark-shell: var(--nature-night-950);
   --op-dark-rail: var(--nature-night-950);
   --op-dark-canvas: var(--nature-night-900);
-  --op-dark-footer: var(--nature-night-950);
-  --op-dark-divider: color-mix(in srgb, var(--nature-night-700) 22%, transparent);
+  --op-dark-footer: var(--nature-night-800);
+  --op-dark-divider: color-mix(in srgb, var(--nature-night-600) 38%, transparent);
+
+  /* Rail catálogo — categorías sobre noche 950 */
+  --op-rail-section-label: color-mix(in srgb, var(--nature-night-500) 88%, var(--nature-canopy-400));
+  --op-rail-item-text: color-mix(in srgb, var(--nature-night-500) 72%, #ffffff);
+  --op-rail-item-text-hover: color-mix(in srgb, var(--nature-earth-100) 92%, #ffffff);
+  --op-rail-item-text-selected: #fafaf9;
+  --op-rail-item-hover: color-mix(in srgb, var(--nature-night-800) 42%, transparent);
+  --op-rail-item-selected: color-mix(in srgb, var(--nature-night-700) 48%, transparent);
+  --op-rail-item-border: color-mix(in srgb, var(--nature-night-700) 42%, transparent);
+  --op-rail-accent: var(--nature-canopy-400);
+  --op-rail-focus-ring: color-mix(in srgb, var(--nature-canopy-400) 45%, transparent);
+  --op-rail-promo-selected: color-mix(in srgb, var(--nature-canopy-600) 20%, var(--nature-night-900));
+  --op-rail-promo-text: color-mix(in srgb, var(--nature-canopy-200) 92%, white);
+  --op-rail-promo-accent: var(--nature-canopy-400);
+  --op-rail-discount-selected: color-mix(in srgb, var(--nature-autumn-500) 18%, var(--nature-night-900));
+  --op-rail-discount-text: color-mix(in srgb, var(--nature-autumn-200) 90%, white);
+  --op-rail-discount-accent: var(--nature-autumn-400);
+
+  /* Footer toolbox — h-20 sobre noche 800 */
+  --op-footer-slot-border: color-mix(in srgb, var(--nature-night-900) 52%, transparent);
+  --op-footer-slot-hover: color-mix(in srgb, var(--nature-night-900) 32%, transparent);
+  --op-footer-slot-configured: color-mix(
+    in srgb,
+    var(--nature-canopy-600) 16%,
+    var(--nature-night-800)
+  );
+  --op-footer-slot-highlight: color-mix(in srgb, var(--nature-canopy-400) 16%, transparent);
+  --op-footer-slot-label: color-mix(in srgb, var(--nature-night-500) 82%, transparent);
+  --op-footer-slot-value: color-mix(in srgb, var(--nature-earth-100) 94%, #ffffff);
+  --op-footer-slot-value-muted: color-mix(in srgb, var(--nature-night-500) 78%, var(--nature-night-600));
+  --op-footer-icon-bg: color-mix(in srgb, var(--nature-night-900) 38%, transparent);
+  --op-footer-icon-text: color-mix(in srgb, var(--nature-night-500) 88%, #ffffff);
+  --op-footer-icon-hover-bg: color-mix(in srgb, var(--nature-night-900) 52%, transparent);
+  --op-footer-icon-hover-text: color-mix(in srgb, var(--nature-earth-200) 92%, #ffffff);
+  --op-footer-icon-configured-bg: color-mix(in srgb, var(--nature-canopy-600) 32%, transparent);
+  --op-footer-icon-configured-text: color-mix(in srgb, var(--nature-canopy-200) 92%, white);
+
+  /* Product cards — noche 800 elevada sobre canvas noche 900 */
+  --op-product-card-surface: var(--nature-night-800);
+  --op-product-card-media-bg: color-mix(in srgb, var(--nature-night-900) 72%, var(--nature-night-950));
+  --op-product-card-border: color-mix(in srgb, var(--nature-night-600) 42%, transparent);
+  --op-product-card-shadow:
+    0 1px 2px color-mix(in srgb, var(--nature-night-950) 55%, transparent),
+    0 4px 14px color-mix(in srgb, var(--nature-night-950) 42%, transparent),
+    0 0 0 1px color-mix(in srgb, var(--nature-night-600) 28%, transparent);
+  --op-product-card-shadow-hover:
+    0 2px 4px color-mix(in srgb, var(--nature-night-950) 62%, transparent),
+    0 8px 22px color-mix(in srgb, var(--nature-night-950) 48%, transparent),
+    0 0 0 1px color-mix(in srgb, var(--nature-canopy-500) 22%, transparent);
+  --op-product-card-title: #fafaf9;
+  --op-product-card-desc: color-mix(in srgb, var(--nature-night-500) 58%, #ffffff);
+  --op-product-card-price: color-mix(in srgb, var(--nature-canopy-300) 88%, #ffffff);
+  --op-product-card-offer-bg: color-mix(in srgb, var(--nature-autumn-500) 88%, var(--nature-autumn-600));
+  --op-product-card-offer-text: var(--nature-earth-50);
+  --op-product-card-placeholder-icon-bg: color-mix(in srgb, var(--nature-night-700) 52%, transparent);
+  --op-product-card-placeholder-icon-ring: color-mix(in srgb, var(--nature-night-600) 46%, transparent);
+  --op-product-card-placeholder-icon-text: color-mix(
+    in srgb,
+    var(--nature-night-500) 62%,
+    var(--nature-canopy-400)
+  );
+  --op-product-card-placeholder-label: color-mix(in srgb, var(--nature-night-500) 58%, #ffffff);
 
   --op-light-panel: var(--nature-earth-50);
-  --op-light-tabs: #ffffff;
-  --op-light-content: #ffffff;
-  --op-light-totals: color-mix(
-    in srgb,
-    var(--nature-earth-100) 72%,
-    var(--nature-earth-200)
+  --op-light-tabs: var(--nature-earth-50);
+  --op-light-content: var(--nature-earth-100);
+  --op-light-cart-heading: var(--nature-earth-600);
+  --op-light-cart-meta: color-mix(in srgb, var(--nature-earth-500) 78%, var(--nature-earth-400));
+  --op-light-empty-icon-bg: var(--nature-earth-50);
+  --op-light-empty-icon-ring: color-mix(in srgb, var(--nature-earth-400) 62%, transparent);
+  --op-light-empty-icon-text: var(--nature-earth-600);
+  --op-light-empty-title: var(--nature-earth-700);
+  --op-light-empty-shadow: 0 1px 2px color-mix(in srgb, var(--nature-earth-900) 10%, transparent);
+  --op-light-totals: linear-gradient(
+    165deg,
+    var(--nature-earth-700) 0%,
+    var(--nature-earth-800) 48%,
+    var(--nature-earth-900) 100%
   );
+  --op-light-totals-border: color-mix(in srgb, var(--nature-earth-900) 32%, transparent);
   --op-light-border: color-mix(in srgb, var(--nature-earth-400) 48%, transparent);
-  --op-light-border-panel: color-mix(in srgb, var(--nature-earth-500) 28%, transparent);
+  --op-light-border-panel: var(--nature-night-700);
   --op-light-text-muted: var(--nature-earth-600);
   --op-light-text-strong: var(--nature-earth-900);
-  --op-light-text-totals-label: var(--nature-earth-700);
-  --op-light-edge-glow: color-mix(in srgb, var(--nature-earth-500) 38%, transparent);
+  --op-light-text-totals-label: var(--nature-earth-200);
+  --op-light-text-totals-amount: var(--nature-earth-50);
+  --op-light-edge-glow: color-mix(in srgb, var(--nature-earth-400) 55%, transparent);
+}
+
+/** Totales — bg con gradiente (Tailwind bg-[var] solo setea background-color). */
+.rootsy-nature-palette .layouts-operations-body .layouts-operations-summary-totals {
+  background: var(--op-light-totals);
+}
+
+/** Scroll minimalista del rail catálogo — thumb fino noche. */
+.rootsy-nature-palette .layouts-operations-body .layouts-operations-catalog-rail-scroll,
+.rootsy-nature-palette .layouts-operations-body .layouts-operations-scroll-minimal {
+  scrollbar-width: thin;
+  scrollbar-color: color-mix(in srgb, var(--nature-night-500) 28%, transparent) transparent;
+}
+
+.rootsy-nature-palette .layouts-operations-body .layouts-operations-catalog-rail-scroll::-webkit-scrollbar,
+.rootsy-nature-palette .layouts-operations-body .layouts-operations-scroll-minimal::-webkit-scrollbar {
+  width: 3px;
+  height: 3px;
+}
+
+.rootsy-nature-palette .layouts-operations-body .layouts-operations-catalog-rail-scroll::-webkit-scrollbar-track,
+.rootsy-nature-palette .layouts-operations-body .layouts-operations-scroll-minimal::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.rootsy-nature-palette .layouts-operations-body .layouts-operations-catalog-rail-scroll::-webkit-scrollbar-thumb,
+.rootsy-nature-palette .layouts-operations-body .layouts-operations-scroll-minimal::-webkit-scrollbar-thumb {
+  border-radius: 9999px;
+  background: color-mix(in srgb, var(--nature-night-500) 26%, transparent);
+  border: none;
+}
+
+.rootsy-nature-palette .layouts-operations-body .layouts-operations-catalog-rail-scroll:hover::-webkit-scrollbar-thumb,
+.rootsy-nature-palette .layouts-operations-body .layouts-operations-scroll-minimal:hover::-webkit-scrollbar-thumb {
+  background: color-mix(in srgb, var(--nature-night-500) 42%, transparent);
+}
+
+.rootsy-nature-palette .layouts-operations-body .layouts-operations-catalog-rail-scroll::-webkit-scrollbar-thumb:hover,
+.rootsy-nature-palette .layouts-operations-body .layouts-operations-scroll-minimal::-webkit-scrollbar-thumb:hover {
+  background: color-mix(in srgb, var(--nature-night-600) 55%, var(--nature-night-500));
+}
+
+/** Product card — radius.xlarge + elevation.raised (noche 800 sobre canvas 900). */
+.rootsy-nature-palette.rootsy-radius-system .layouts-operations-body .layouts-operations-product-card {
+  border-radius: var(--radius-xlarge);
+  background: var(--op-product-card-surface);
+  border: 1px solid var(--op-product-card-border);
+  box-shadow: var(--op-product-card-shadow);
+}
+
+.rootsy-nature-palette.rootsy-radius-system .layouts-operations-body .layouts-operations-product-card:hover {
+  box-shadow: var(--op-product-card-shadow-hover);
 }
 
 /** Header operaciones — misma noche que el cuerpo (sin cristal POP de producción). */

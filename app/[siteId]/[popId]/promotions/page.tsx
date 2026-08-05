@@ -61,8 +61,13 @@ import {
   DataWorkspaceListFiltersDialogTrigger,
   DataWorkspaceListSearchField,
 } from "@/components/data-workspace/DataWorkspaceListFilterFields"
-import { DataWorkspaceListPaginationFooter } from "@/components/data-workspace/DataWorkspaceListPaginationFooter"
-import { DataWorkspaceListTableShell } from "@/components/data-workspace/DataWorkspaceListTableShell"
+import {
+  DataWorkspaceTableListFiltersBar,
+  DataWorkspaceTableListNatureShell,
+  DataWorkspaceTableListPage,
+  DataWorkspaceTableListPaginationFooter,
+  DataWorkspaceTableListShell,
+} from "@/components/data-workspace/DataWorkspaceTableListLayout"
 import {
   DataWorkspaceListTableFrame,
   DataWorkspaceTableEmptyMascot,
@@ -73,9 +78,6 @@ import {
   workspaceTableNatureBodyRowClassNames,
 } from "@/components/data-workspace/dataWorkspaceListStyles"
 import {
-  dataWorkspaceListFiltersBarClass,
-  dataWorkspaceListFiltersBarInnerClass,
-  dataWorkspaceListFiltersBarRowClass,
   dataWorkspaceListFiltersGridClass,
   dataWorkspaceListFiltersPanelClass,
   dataWorkspaceListFiltersPanelLastClass,
@@ -83,9 +85,6 @@ import {
   workspaceTableLayoutBodyRowClass,
   workspaceTableLayoutHeaderHeadClass,
   workspaceTableLayoutImageColumnClass,
-  workspaceTableLayoutListBodyScopeClass,
-  workspaceTableLayoutListSurfaceClass,
-  workspaceTableNatureEarthOrganicScopeClass,
 } from "@/components/data-workspace/dataWorkspaceTablesLayout"
 import {
   WorkspaceTableHead,
@@ -95,7 +94,6 @@ import {
 } from "@/components/data-workspace/WorkspaceTableHeader"
 import { WorkspaceTableSkeletonRows } from "@/components/data-workspace/WorkspaceTableSkeleton"
 import { promotionsSkeletonColumns } from "@/components/data-workspace/workspaceTableSkeletonPresets"
-import { DataWorkspaceLayout } from "@/components/layouts/DataWorkspaceLayout"
 import { DataWorkspaceHeaderIconButton } from "@/components/layouts/DataWorkspaceHeaderIconButton"
 import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
@@ -410,22 +408,18 @@ function PromotionsPage() {
   }
 
   return (
-    <DataWorkspaceLayout
-      siteId={siteId}
-      popId={popId}
-      popName={bootstrap?.popName ?? ""}
-      title="Promociones"
-      headerVariant="dark"
-      contentFlush
-      sidebarCollapsible={false}
-      loading={bootstrapLoading || loading}
-      userName={bootstrap?.userFullName}
-      userAvatarSrc={bootstrap?.userImageUrl ?? undefined}
-      userRoleLabel={bootstrap?.roleLabel ?? undefined}
-      pillLabel="Menú"
-      mainClassName="rootsy-nature-palette min-h-0 overflow-hidden"
-      headerActions={
-        canCreate ? (
+    <DataWorkspaceTableListPage
+      layout={{
+        siteId,
+        popId,
+        popName: bootstrap?.popName ?? "",
+        title: "Promociones",
+        loading: bootstrapLoading || loading,
+        userName: bootstrap?.userFullName,
+        userAvatarSrc: bootstrap?.userImageUrl ?? undefined,
+        userRoleLabel: bootstrap?.roleLabel ?? undefined,
+        pillLabel: "Menú",
+        headerActions: canCreate ? (
           <DataWorkspaceHeaderIconButton
             label="Nueva promoción"
             headerVariant="dark"
@@ -434,31 +428,12 @@ function PromotionsPage() {
           >
             <Plus className="size-5" aria-hidden />
           </DataWorkspaceHeaderIconButton>
-        ) : null
-      }
+        ) : null,
+      }}
+      error={error}
     >
-      <div className="relative flex min-h-0 w-full flex-1 flex-col">
-        {error ? (
-          <div
-            role="alert"
-            className="relative shrink-0 border-b border-destructive/25 bg-destructive/10 px-4 py-3 text-sm text-destructive"
-          >
-            {error}
-          </div>
-        ) : null}
-
-        <div className="relative flex min-h-0 flex-1 flex-col">
-          <div
-            className={dataWorkspaceListFiltersBarClass}
-            role="toolbar"
-            aria-label="Filtros del listado"
-          >
-            <div
-              className={cn(
-                dataWorkspaceListFiltersBarInnerClass,
-                dataWorkspaceListFiltersBarRowClass,
-              )}
-            >
+      <DataWorkspaceTableListNatureShell>
+        <DataWorkspaceTableListFiltersBar>
               <div className={dataWorkspaceListFiltersGridClass}>
                 <div className={dataWorkspaceListFiltersPanelClass}>
                   <PromotionTypeToolbarFilter
@@ -500,16 +475,9 @@ function PromotionsPage() {
                   />
                 </div>
               </div>
-            </div>
-          </div>
+        </DataWorkspaceTableListFiltersBar>
 
-        <DataWorkspaceListTableShell
-          variant="flush"
-          className={cn(
-            workspaceTableNatureEarthOrganicScopeClass,
-            workspaceTableLayoutListBodyScopeClass,
-            workspaceTableLayoutListSurfaceClass,
-          )}
+        <DataWorkspaceTableListShell
           activeFiltersBar={
             hasFilterChips ? (
               <DataWorkspaceListActiveFiltersBar
@@ -546,8 +514,7 @@ function PromotionsPage() {
             ) : null
           }
           footer={
-            <DataWorkspaceListPaginationFooter
-              variant="dark"
+            <DataWorkspaceTableListPaginationFooter
               listFetching={loading}
               totalCount={totalCount}
               rangeStart={rangeStart}
@@ -568,7 +535,7 @@ function PromotionsPage() {
             />
           }
         >
-          <DataWorkspaceListTableFrame className={workspaceTableLayoutListSurfaceClass}>
+          <DataWorkspaceListTableFrame>
             <table
               className={cn(workspaceTableLayoutClassName, "min-w-[80rem]")}
               aria-busy={loading}
@@ -757,9 +724,8 @@ function PromotionsPage() {
               </TableBody>
             </table>
           </DataWorkspaceListTableFrame>
-        </DataWorkspaceListTableShell>
-        </div>
-      </div>
+        </DataWorkspaceTableListShell>
+      </DataWorkspaceTableListNatureShell>
 
       <Dialog
         open={filtersModalOpen}
@@ -851,7 +817,7 @@ function PromotionsPage() {
           onConfirmDelete={() => void submitDelete()}
         />
       ) : null}
-    </DataWorkspaceLayout>
+    </DataWorkspaceTableListPage>
   )
 }
 

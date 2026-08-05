@@ -73,6 +73,8 @@ export type DataWorkspaceLayoutProps = {
   contentFlush?: boolean
   /** Clases extra en el `<main>`. */
   mainClassName?: string
+  /** Fondo fotográfico del POP detrás del header oscuro (p. ej. librería lo desactiva). */
+  usePopBackdrop?: boolean
   /** Sesión actual (opcional: si no se pasa, se oculta el bloque usuario a la derecha). */
   userName?: string
   userAvatarSrc?: string | null
@@ -100,6 +102,7 @@ export function DataWorkspaceLayout({
   mainMaxWidthClass = "max-w-6xl",
   contentFlush = false,
   mainClassName,
+  usePopBackdrop = true,
   userName,
   userAvatarSrc,
 }: DataWorkspaceLayoutProps) {
@@ -198,7 +201,8 @@ export function DataWorkspaceLayout({
 
   const chromeButtonClass = dataWorkspaceHeaderChromeButtonClass(headerVariant)
   const popBackdropUrl = backgroundImageUrl?.trim() || null
-  const hasPopBackdrop = isTintedHeader && Boolean(popBackdropUrl)
+  const hasPopBackdrop =
+    usePopBackdrop && isTintedHeader && Boolean(popBackdropUrl)
 
   return (
     <div
@@ -245,7 +249,7 @@ export function DataWorkspaceLayout({
                   ),
           )}
         >
-          <div className="relative z-10 grid h-18 grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-4 px-4">
+          <div className="relative z-10 grid h-17 grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-4 px-4">
             <div className="flex min-w-0 items-center gap-2">
               <Link
                 href={backHref}

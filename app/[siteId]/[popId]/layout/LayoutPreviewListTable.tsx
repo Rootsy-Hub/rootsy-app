@@ -31,16 +31,17 @@ import { DataWorkspaceListActiveFiltersBar } from "@/components/data-workspace/D
 import { DataWorkspaceListBulkToolbar } from "@/components/data-workspace/DataWorkspaceListBulkToolbar"
 import { DataWorkspaceListFilterChip } from "@/components/data-workspace/DataWorkspaceListFilterChip"
 import { DataWorkspacePeriodFilter } from "@/components/data-workspace/DataWorkspacePeriodFilter"
-import { DataWorkspaceListPaginationFooter } from "@/components/data-workspace/DataWorkspaceListPaginationFooter"
-import { DataWorkspaceListTableShell } from "@/components/data-workspace/DataWorkspaceListTableShell"
+import {
+  DataWorkspaceTableListFiltersBar,
+  DataWorkspaceTableListNatureShell,
+  DataWorkspaceTableListPaginationFooter,
+  DataWorkspaceTableListShell,
+} from "@/components/data-workspace/DataWorkspaceTableListLayout"
 import {
   DataWorkspaceTableIconAction,
   DataWorkspaceTableThumbnail,
 } from "@/components/data-workspace/DataWorkspaceListTablePrimitives"
 import {
-  dataWorkspaceListFiltersBarClass,
-  dataWorkspaceListFiltersBarInnerClass,
-  dataWorkspaceListFiltersBarRowClass,
   dataWorkspaceListFiltersGridClass,
   dataWorkspaceListFiltersPanelClass,
   dataWorkspaceListFiltersPanelLastClass,
@@ -51,11 +52,8 @@ import {
   workspaceTableLayoutCellStackClass,
   workspaceTableLayoutHeaderHeadClass,
   workspaceTableLayoutImageColumnClass,
-  workspaceTableLayoutListBodyScopeClass,
-  workspaceTableLayoutListSurfaceClass,
   workspaceTableLayoutSelectBodyCellClass,
   workspaceTableLayoutActionsBodyCellClass,
-  workspaceTableNatureEarthOrganicScopeClass,
 } from "@/components/data-workspace/dataWorkspaceTablesLayout"
 import {
   WorkspaceTableHead,
@@ -430,17 +428,8 @@ export function LayoutPreviewListTable({
 
   return (
     <div className="relative flex min-h-0 flex-1 flex-col">
-      <div
-        className={dataWorkspaceListFiltersBarClass}
-        role="toolbar"
-        aria-label="Filtros del listado"
-      >
-        <div
-          className={cn(
-            dataWorkspaceListFiltersBarInnerClass,
-            dataWorkspaceListFiltersBarRowClass,
-          )}
-        >
+      <DataWorkspaceTableListNatureShell>
+        <DataWorkspaceTableListFiltersBar>
           <div className={dataWorkspaceListFiltersGridClass}>
             <div className={dataWorkspaceListFiltersPanelClass}>
               <DataWorkspacePeriodFilter
@@ -477,174 +466,90 @@ export function LayoutPreviewListTable({
               />
             </div>
           </div>
-        </div>
-      </div>
+        </DataWorkspaceTableListFiltersBar>
 
-      <Dialog
-        open={filtersModalOpen}
-        onOpenChange={(open) => {
-          if (open) {
-            setDraftStatuses(new Set(includedStatuses))
-            setDraftRefTables(new Set(includedRefTables))
-          }
-          setFiltersModalOpen(open)
-        }}
-      >
-        <DialogContent className="gap-0 sm:max-w-md" showCloseButton>
-          <DialogHeader>
-            <DialogTitle>Filtros</DialogTitle>
-            <DialogDescription>
-              Elegí estados y tipo de referencia. Los cambios se aplican al
-              confirmar.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="grid gap-5 py-4">
-            <div className="grid gap-2">
-              <Label className="text-xs uppercase tracking-wide text-muted-foreground">
-                Estado
-              </Label>
-              <div className="flex flex-col gap-2">
-                {ALL_STATUSES.map((s) => (
-                  <label
-                    key={s}
-                    className="flex cursor-pointer items-center gap-2 rounded-md border border-transparent px-1 py-0.5 hover:bg-muted/50"
-                  >
-                    <Checkbox
-                      checked={draftStatuses.has(s)}
-                      onCheckedChange={() => toggleDraftStatus(s)}
-                      aria-label={STATUS_LABEL[s]}
-                    />
-                    <span className="text-sm">{STATUS_LABEL[s]}</span>
-                  </label>
-                ))}
-              </div>
-            </div>
-            <div className="grid gap-2">
-              <Label className="text-xs uppercase tracking-wide text-muted-foreground">
-                Referencia (entidad)
-              </Label>
-              <div className="flex flex-col gap-2">
-                {LAYOUT_PREVIEW_REF_TABLE_OPTIONS.map((t) => (
-                  <label
-                    key={t}
-                    className="flex cursor-pointer items-center gap-2 rounded-md border border-transparent px-1 py-0.5 hover:bg-muted/50"
-                  >
-                    <Checkbox
-                      checked={draftRefTables.has(t)}
-                      onCheckedChange={() => toggleDraftRef(t)}
-                      aria-label={t}
-                    />
-                    <span className="text-sm">{t}</span>
-                  </label>
-                ))}
-              </div>
-            </div>
-          </div>
-          <DialogFooter className="gap-2 sm:gap-0">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={resetModalDraft}
-            >
-              Restablecer
-            </Button>
-            <Button type="button" onClick={applyFiltersFromModal}>
-              Aplicar
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      <div className="rootsy-nature-palette flex min-h-0 flex-1 flex-col">
-      <DataWorkspaceListTableShell
-        variant="flush"
-        className={cn(
-          workspaceTableNatureEarthOrganicScopeClass,
-          workspaceTableLayoutListBodyScopeClass,
-          workspaceTableLayoutListSurfaceClass,
-        )}
-        activeFiltersBar={
-          hasFilterChips ? (
-            <DataWorkspaceListActiveFiltersBar
-              activeCount={activeFilterCount}
-              onClearAll={clearAllFilters}
-            >
-              {searchQuery.trim() ? (
-                <DataWorkspaceListFilterChip
-                  label={`Buscar: «${searchQuery.trim()}»`}
-                  onRemove={() => setSearchQuery("")}
-                  removeAriaLabel="Quitar búsqueda"
-                />
-              ) : null}
-              {statusFilterNarrow
-                ? ALL_STATUSES.filter((s) => includedStatuses.has(s)).map(
-                    (s) => (
+        <DataWorkspaceTableListShell
+          activeFiltersBar={
+            hasFilterChips ? (
+              <DataWorkspaceListActiveFiltersBar
+                activeCount={activeFilterCount}
+                onClearAll={clearAllFilters}
+              >
+                {searchQuery.trim() ? (
+                  <DataWorkspaceListFilterChip
+                    label={`Buscar: «${searchQuery.trim()}»`}
+                    onRemove={() => setSearchQuery("")}
+                    removeAriaLabel="Quitar búsqueda"
+                  />
+                ) : null}
+                {statusFilterNarrow
+                  ? ALL_STATUSES.filter((s) => includedStatuses.has(s)).map(
+                      (s) => (
+                        <DataWorkspaceListFilterChip
+                          key={s}
+                          label={STATUS_LABEL[s]}
+                          onRemove={() => removeStatusChip(s)}
+                          removeAriaLabel={`Quitar estado ${STATUS_LABEL[s]}`}
+                        />
+                      ),
+                    )
+                  : null}
+                {refFilterNarrow
+                  ? LAYOUT_PREVIEW_REF_TABLE_OPTIONS.filter((t) =>
+                      includedRefTables.has(t),
+                    ).map((t) => (
                       <DataWorkspaceListFilterChip
-                        key={s}
-                        label={STATUS_LABEL[s]}
-                        onRemove={() => removeStatusChip(s)}
-                        removeAriaLabel={`Quitar estado ${STATUS_LABEL[s]}`}
+                        key={t}
+                        label={t}
+                        onRemove={() => removeRefChip(t)}
+                        removeAriaLabel={`Quitar filtro ${t}`}
+                        className="max-w-48"
                       />
-                    ),
-                  )
-                : null}
-              {refFilterNarrow
-                ? LAYOUT_PREVIEW_REF_TABLE_OPTIONS.filter((t) =>
-                    includedRefTables.has(t),
-                  ).map((t) => (
-                    <DataWorkspaceListFilterChip
-                      key={t}
-                      label={t}
-                      onRemove={() => removeRefChip(t)}
-                      removeAriaLabel={`Quitar filtro ${t}`}
-                      className="max-w-48"
-                    />
-                  ))
-                : null}
-              {datePreset !== "all" ? (
-                <DataWorkspaceListFilterChip
-                  label={`Fecha: ${dateFilterSummary}`}
-                  onRemove={clearDateFilter}
-                  removeAriaLabel="Quitar filtro de fecha"
-                />
-              ) : null}
-            </DataWorkspaceListActiveFiltersBar>
-          ) : null
-        }
-        bulkToolbar={
-          selected.size > 0 ? (
-            <DataWorkspaceListBulkToolbar
-              selectedCount={selected.size}
-              onClear={() => setSelected(new Set())}
-              placement={hasFilterChips ? "stacked" : "standalone"}
-              actions={[
-                { label: "Eliminar selección", onClick: () => {} },
-                { label: "Exportar CSV", onClick: () => {} },
-              ]}
+                    ))
+                  : null}
+                {datePreset !== "all" ? (
+                  <DataWorkspaceListFilterChip
+                    label={`Fecha: ${dateFilterSummary}`}
+                    onRemove={clearDateFilter}
+                    removeAriaLabel="Quitar filtro de fecha"
+                  />
+                ) : null}
+              </DataWorkspaceListActiveFiltersBar>
+            ) : null
+          }
+          bulkToolbar={
+            selected.size > 0 ? (
+              <DataWorkspaceListBulkToolbar
+                selectedCount={selected.size}
+                onClear={() => setSelected(new Set())}
+                placement={hasFilterChips ? "stacked" : "standalone"}
+                actions={[
+                  { label: "Eliminar selección", onClick: () => {} },
+                  { label: "Exportar CSV", onClick: () => {} },
+                ]}
+              />
+            ) : null
+          }
+          footer={
+            <DataWorkspaceTableListPaginationFooter
+              listFetching={listFetching}
+              totalCount={filteredTotal}
+              rangeStart={rangeLabel.start}
+              rangeEnd={rangeLabel.end}
+              currentPage={currentPage}
+              totalPages={totalPages}
+              pageSize={pageSize}
+              pageSizeOptions={LAYOUT_PREVIEW_PAGE_SIZE_OPTIONS}
+              paginationItems={paginationItems}
+              onPageChange={setPage}
+              onPageSizeChange={(ps) => {
+                setPageSize(ps)
+                setPage(1)
+              }}
+              pageSizeLabelId={pageSizeLabelId}
             />
-          ) : null
-        }
-        footer={
-          <DataWorkspaceListPaginationFooter
-            variant="dark"
-            listFetching={listFetching}
-            totalCount={filteredTotal}
-            rangeStart={rangeLabel.start}
-            rangeEnd={rangeLabel.end}
-            currentPage={currentPage}
-            totalPages={totalPages}
-            pageSize={pageSize}
-            pageSizeOptions={LAYOUT_PREVIEW_PAGE_SIZE_OPTIONS}
-            paginationItems={paginationItems}
-            onPageChange={setPage}
-            onPageSizeChange={(ps) => {
-              setPageSize(ps)
-              setPage(1)
-            }}
-            pageSizeLabelId={pageSizeLabelId}
-          />
-        }
-      >
+          }
+        >
         <table
           className={cn(workspaceTableLayoutClassName, "min-w-[56rem]")}
           aria-busy={listFetching}
@@ -893,8 +798,83 @@ export function LayoutPreviewListTable({
             )}
           </TableBody>
         </table>
-      </DataWorkspaceListTableShell>
-      </div>
+      </DataWorkspaceTableListShell>
+      </DataWorkspaceTableListNatureShell>
+
+      <Dialog
+        open={filtersModalOpen}
+        onOpenChange={(open) => {
+          if (open) {
+            setDraftStatuses(new Set(includedStatuses))
+            setDraftRefTables(new Set(includedRefTables))
+          }
+          setFiltersModalOpen(open)
+        }}
+      >
+        <DialogContent className="gap-0 sm:max-w-md" showCloseButton>
+          <DialogHeader>
+            <DialogTitle>Filtros</DialogTitle>
+            <DialogDescription>
+              Elegí estados y tipo de referencia. Los cambios se aplican al
+              confirmar.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-5 py-4">
+            <div className="grid gap-2">
+              <Label className="text-xs uppercase tracking-wide text-muted-foreground">
+                Estado
+              </Label>
+              <div className="flex flex-col gap-2">
+                {ALL_STATUSES.map((s) => (
+                  <label
+                    key={s}
+                    className="flex cursor-pointer items-center gap-2 rounded-md border border-transparent px-1 py-0.5 hover:bg-muted/50"
+                  >
+                    <Checkbox
+                      checked={draftStatuses.has(s)}
+                      onCheckedChange={() => toggleDraftStatus(s)}
+                      aria-label={STATUS_LABEL[s]}
+                    />
+                    <span className="text-sm">{STATUS_LABEL[s]}</span>
+                  </label>
+                ))}
+              </div>
+            </div>
+            <div className="grid gap-2">
+              <Label className="text-xs uppercase tracking-wide text-muted-foreground">
+                Referencia (entidad)
+              </Label>
+              <div className="flex flex-col gap-2">
+                {LAYOUT_PREVIEW_REF_TABLE_OPTIONS.map((t) => (
+                  <label
+                    key={t}
+                    className="flex cursor-pointer items-center gap-2 rounded-md border border-transparent px-1 py-0.5 hover:bg-muted/50"
+                  >
+                    <Checkbox
+                      checked={draftRefTables.has(t)}
+                      onCheckedChange={() => toggleDraftRef(t)}
+                      aria-label={t}
+                    />
+                    <span className="text-sm">{t}</span>
+                  </label>
+                ))}
+              </div>
+            </div>
+          </div>
+          <DialogFooter className="gap-2 sm:gap-0">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={resetModalDraft}
+            >
+              Restablecer
+            </Button>
+            <Button type="button" onClick={applyFiltersFromModal}>
+              Aplicar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

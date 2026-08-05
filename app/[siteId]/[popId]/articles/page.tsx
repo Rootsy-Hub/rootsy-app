@@ -58,8 +58,13 @@ import {
   DataWorkspaceListFiltersDialogTrigger,
   DataWorkspaceListSearchField,
 } from "@/components/data-workspace/DataWorkspaceListFilterFields"
-import { DataWorkspaceListPaginationFooter } from "@/components/data-workspace/DataWorkspaceListPaginationFooter"
-import { DataWorkspaceListTableShell } from "@/components/data-workspace/DataWorkspaceListTableShell"
+import {
+  DataWorkspaceTableListFiltersBar,
+  DataWorkspaceTableListNatureShell,
+  DataWorkspaceTableListPage,
+  DataWorkspaceTableListPaginationFooter,
+  DataWorkspaceTableListShell,
+} from "@/components/data-workspace/DataWorkspaceTableListLayout"
 import {
   DataWorkspaceListTableFrame,
   DataWorkspaceTableEmptyMascot,
@@ -71,13 +76,9 @@ import {
   workspaceTableNatureBodyRowClassNames,
   workspaceTableNatureCheckboxClass,
   workspaceTableNatureMoneyClass,
-  workspaceTableNatureSurfaceClass,
   workspaceTableNatureTextSecondaryClass,
 } from "@/components/data-workspace/dataWorkspaceListStyles"
 import {
-  dataWorkspaceListFiltersBarClass,
-  dataWorkspaceListFiltersBarInnerClass,
-  dataWorkspaceListFiltersBarRowClass,
   dataWorkspaceListFiltersGridClass,
   dataWorkspaceListFiltersPanelClass,
   dataWorkspaceListFiltersPanelLastClass,
@@ -87,11 +88,7 @@ import {
   workspaceTableLayoutCellStackClass,
   workspaceTableLayoutHeaderHeadClass,
   workspaceTableLayoutImageColumnClass,
-  workspaceTableLayoutListBodyScopeClass,
-  workspaceTableLayoutListSurfaceClass,
   workspaceTableLayoutSelectBodyCellClass,
-  workspaceTableNatureEarthOrganicScopeClass,
-  workspaceTableNatureEarthOrganicTokensClass,
 } from "@/components/data-workspace/dataWorkspaceTablesLayout"
 import {
   WorkspaceTableHead,
@@ -101,7 +98,6 @@ import {
 } from "@/components/data-workspace/WorkspaceTableHeader"
 import { WorkspaceTableSkeletonRows } from "@/components/data-workspace/WorkspaceTableSkeleton"
 import { articlesSkeletonColumns } from "@/components/data-workspace/workspaceTableSkeletonPresets"
-import { DataWorkspaceLayout } from "@/components/layouts/DataWorkspaceLayout"
 import { DataWorkspaceHeaderIconButton } from "@/components/layouts/DataWorkspaceHeaderIconButton"
 import { Checkbox } from "@/components/ui/checkbox"
 import {
@@ -1025,71 +1021,49 @@ function ArticlesPage() {
     )
   }
 
-  const hasPopBackdrop = Boolean(bootstrap?.backgroundImageUrl?.trim())
-
   return (
-    <DataWorkspaceLayout
-      siteId={siteId}
-      popId={popId}
-      popName={bootstrap?.popName ?? ""}
-      title="Stock"
-      headerVariant="dark"
-      contentFlush
-      sidebarCollapsible={false}
-      loading={bootstrapLoading || listFetching}
-      userName={bootstrap?.userFullName}
-      userAvatarSrc={bootstrap?.userImageUrl ?? undefined}
-      userRoleLabel={bootstrap?.roleLabel}
-      pillLabel="Catálogo"
-      mainClassName="rootsy-nature-palette min-h-0"
-      headerActions={
-        <>
-          {canCreate ? (
+    <DataWorkspaceTableListPage
+      layout={{
+        siteId,
+        popId,
+        popName: bootstrap?.popName ?? "",
+        title: "Stock",
+        loading: bootstrapLoading || listFetching,
+        userName: bootstrap?.userFullName,
+        userAvatarSrc: bootstrap?.userImageUrl ?? undefined,
+        userRoleLabel: bootstrap?.roleLabel,
+        pillLabel: "Catálogo",
+        headerActions: (
+          <>
+            {canCreate ? (
+              <DataWorkspaceHeaderIconButton
+                label="Nuevo artículo"
+                headerVariant="dark"
+                primary
+                onClick={openCreate}
+              >
+                <Plus className="size-5" aria-hidden />
+              </DataWorkspaceHeaderIconButton>
+            ) : null}
             <DataWorkspaceHeaderIconButton
-              label="Nuevo artículo"
+              label="Gestionar categorías"
               headerVariant="dark"
-              primary
-              onClick={openCreate}
+              onClick={() => {
+                setCategoriesOpen(true)
+                void loadModalCategories({
+                  silent: categoriesRows.length > 0,
+                })
+              }}
             >
-              <Plus className="size-5" aria-hidden />
+              <FolderTree className="size-5" aria-hidden />
             </DataWorkspaceHeaderIconButton>
-          ) : null}
-          <DataWorkspaceHeaderIconButton
-            label="Gestionar categorías"
-            headerVariant="dark"
-            onClick={() => {
-              setCategoriesOpen(true)
-              void loadModalCategories({
-                silent: categoriesRows.length > 0,
-              })
-            }}
-          >
-            <FolderTree className="size-5" aria-hidden />
-          </DataWorkspaceHeaderIconButton>
-        </>
-      }
+          </>
+        ),
+      }}
+      error={error}
     >
-      <div className="relative flex min-h-0 w-full flex-1 flex-col">
-        {error ? (
-          <div
-            role="alert"
-            className="relative shrink-0 border-b border-destructive/25 bg-destructive/10 px-4 py-3 text-sm text-destructive"
-          >
-            {error}
-          </div>
-        ) : null}
-        <div className="relative flex min-h-0 flex-1 flex-col">
-          <div
-            className={dataWorkspaceListFiltersBarClass}
-            role="toolbar"
-            aria-label="Filtros del listado"
-          >
-            <div
-              className={cn(
-                dataWorkspaceListFiltersBarInnerClass,
-                dataWorkspaceListFiltersBarRowClass,
-              )}
-            >
+      <DataWorkspaceTableListNatureShell>
+        <DataWorkspaceTableListFiltersBar>
               <div className={dataWorkspaceListFiltersGridClass}>
                 <div className={dataWorkspaceListFiltersPanelClass}>
                   <ArticleItemKindToolbarFilter
@@ -1133,38 +1107,9 @@ function ArticlesPage() {
                   />
                 </div>
               </div>
-            </div>
-          </div>
+        </DataWorkspaceTableListFiltersBar>
 
-            <ArticlesFiltersDialog
-              open={filtersModalOpen}
-              onOpenChange={(open) => {
-                if (open) {
-                  setDraftFilters(
-                    articlesModalFiltersFromWorkspace(workspaceParsed),
-                  )
-                }
-                setFiltersModalOpen(open)
-              }}
-              draft={draftFilters}
-              onDraftChange={setDraftFilters}
-              onApply={() => {
-                replaceWorkspaceQuery({
-                  ...draftFilters,
-                  page: 1,
-                })
-                setFiltersModalOpen(false)
-              }}
-            />
-
-            <DataWorkspaceListTableShell
-              variant="flush"
-              glassFooter={hasPopBackdrop}
-              className={cn(
-                workspaceTableNatureEarthOrganicScopeClass,
-                workspaceTableLayoutListBodyScopeClass,
-                workspaceTableLayoutListSurfaceClass,
-              )}
+            <DataWorkspaceTableListShell
               activeFiltersBar={
                 hasFilterChips ? (
                   <DataWorkspaceListActiveFiltersBar
@@ -1329,8 +1274,7 @@ function ArticlesPage() {
                 ) : null
               }
               footer={
-                <DataWorkspaceListPaginationFooter
-                  variant="dark"
+                <DataWorkspaceTableListPaginationFooter
                   listFetching={listFetching}
                   totalCount={totalCount}
                   rangeStart={rangeLabel.start}
@@ -1348,7 +1292,7 @@ function ArticlesPage() {
                 />
               }
             >
-              <DataWorkspaceListTableFrame className={workspaceTableLayoutListSurfaceClass}>
+              <DataWorkspaceListTableFrame>
               <table
                 className={cn(workspaceTableLayoutClassName, "min-w-[80rem]")}
                 aria-busy={listFetching}
@@ -1622,8 +1566,29 @@ function ArticlesPage() {
                 <div className="min-h-[12rem] flex-1" aria-hidden />
               ) : null}
               </DataWorkspaceListTableFrame>
-            </DataWorkspaceListTableShell>
-          </div>
+            </DataWorkspaceTableListShell>
+      </DataWorkspaceTableListNatureShell>
+
+      <ArticlesFiltersDialog
+        open={filtersModalOpen}
+        onOpenChange={(open) => {
+          if (open) {
+            setDraftFilters(
+              articlesModalFiltersFromWorkspace(workspaceParsed),
+            )
+          }
+          setFiltersModalOpen(open)
+        }}
+        draft={draftFilters}
+        onDraftChange={setDraftFilters}
+        onApply={() => {
+          replaceWorkspaceQuery({
+            ...draftFilters,
+            page: 1,
+          })
+          setFiltersModalOpen(false)
+        }}
+      />
 
       <ArticleUpsertDialog
         open={editRow !== null}
@@ -1745,8 +1710,7 @@ function ArticlesPage() {
           if (!open) setDetailRow(null)
         }}
       />
-      </div>
-    </DataWorkspaceLayout>
+    </DataWorkspaceTableListPage>
   )
 }
 

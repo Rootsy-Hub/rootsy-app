@@ -11,7 +11,10 @@ import {
 import { ArticleDeleteAlertLibraryDemo } from "@/app/[siteId]/[popId]/library/ArticleDeleteAlertLibraryDemo"
 import { LayoutButtonLibrarySection } from "@/app/[siteId]/[popId]/library/LayoutButtonLibrarySection"
 import { LayoutDropdownLibrarySection } from "@/app/[siteId]/[popId]/library/LayoutDropdownLibrarySection"
-import { ColorFoundationView } from "@/app/[siteId]/[popId]/library/color/ColorFoundationView"
+import { ConceptFoundationView } from "@/app/[siteId]/[popId]/library/concept/ConceptFoundationView"
+import { isConceptLibrarySection } from "@/app/[siteId]/[popId]/library/concept/conceptLibraryNav"
+import { ColorNewFoundationView } from "@/app/[siteId]/[popId]/library/color/ColorNewFoundationView"
+import { isColorNewLibrarySection } from "@/app/[siteId]/[popId]/library/color/colorNewLibraryNav"
 import { isColorLibrarySection } from "@/app/[siteId]/[popId]/library/color/colorLibraryNav"
 import { SpacingFoundationView } from "@/app/[siteId]/[popId]/library/spacing/SpacingFoundationView"
 import { isSpacingLibrarySection } from "@/app/[siteId]/[popId]/library/spacing/spacingLibraryNav"
@@ -353,10 +356,21 @@ export function LibrarySectionView({
   )
   const liveModal = MODAL_VARIANTS.find((spec) => spec.id === liveModalId) ?? null
 
-  if (isColorLibrarySection(sectionId)) {
+  if (isConceptLibrarySection(sectionId)) {
     return (
-      <ColorFoundationView
+      <ConceptFoundationView
         sectionId={sectionId}
+        siteId={siteId}
+        popId={popId}
+      />
+    )
+  }
+
+  if (isColorLibrarySection(sectionId) || isColorNewLibrarySection(sectionId)) {
+    const resolvedSection = isColorLibrarySection(sectionId) ? "colors-new" : sectionId
+    return (
+      <ColorNewFoundationView
+        sectionId={resolvedSection}
         siteId={siteId}
         popId={popId}
       />

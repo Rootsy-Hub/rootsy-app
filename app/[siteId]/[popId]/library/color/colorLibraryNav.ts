@@ -30,7 +30,7 @@ export const COLOR_PAGE_META: Record<string, ColorPageMeta> = {
     id: "colors",
     title: "Color",
     description:
-      "Rootsy grita naturaleza — verde canopy en esplendor como eje, con cielo, mar, otoño, fuego, tierra y noche.",
+      "Verde canopy como eje de marca; familias nature complementarias, gradientes y roles.",
   },
   "colors-accents": {
     id: "colors-accents",

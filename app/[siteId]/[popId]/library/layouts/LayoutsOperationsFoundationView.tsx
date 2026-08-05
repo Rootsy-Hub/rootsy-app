@@ -3,6 +3,7 @@
 import {
   LAYOUTS_RELATED_LINKS,
   getLayoutsPageMeta,
+  layoutsOperationsPreviewHref,
 } from "@/app/[siteId]/[popId]/library/layouts/layoutsLibraryNav"
 import {
   LayoutsOperationsFullPageDraft,
@@ -13,6 +14,9 @@ import {
   LibraryDocSection,
   LibraryRelatedLinks,
 } from "@/app/[siteId]/[popId]/library/libraryDocPrimitives"
+import { Button } from "@/components/ui/button"
+import { ExternalLink } from "lucide-react"
+import Link from "next/link"
 import type { ReactNode } from "react"
 
 type Props = {
@@ -35,7 +39,21 @@ export function LayoutsOperationsFoundationView({ sectionId, siteId, popId }: Pr
             title="Vista completa"
             description="Header + dos columnas — misma estructura que el wireframe de abajo."
           >
-            <LayoutsOperationsFullPageDraft />
+            <div className="space-y-4">
+              <div className="flex justify-end">
+                <Button variant="outline" size="sm" asChild>
+                  <Link
+                    href={layoutsOperationsPreviewHref(siteId, popId)}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    <ExternalLink className="size-4" aria-hidden />
+                    Abrir en pantalla completa
+                  </Link>
+                </Button>
+              </div>
+              <LayoutsOperationsFullPageDraft />
+            </div>
           </LibraryDocSection>
 
           <LibraryDocSection id="layouts-operations-layout" title="1 · Layout">

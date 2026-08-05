@@ -2,6 +2,14 @@
 
 import { LibrarySectionView } from "@/app/[siteId]/[popId]/library/LibrarySectionView"
 import {
+  libraryContentAreaClass,
+  libraryContentEyebrowClass,
+  libraryScrollDarkClass,
+  libraryScrollLightClass,
+  librarySidebarClass,
+  librarySidebarEyebrowClass,
+} from "@/app/[siteId]/[popId]/library/libraryColorTheme"
+import {
   getLibraryNavGroup,
   LibraryNav,
 } from "@/app/[siteId]/[popId]/library/layoutLibraryShared"
@@ -20,9 +28,15 @@ export function LibraryWorkspace({ siteId, popId, sectionId }: Props) {
   return (
     <>
       <div className="flex min-h-0 flex-1">
-        <aside className="hidden w-60 shrink-0 border-r border-border/60 bg-muted/20 lg:block">
-          <div className="sticky top-0 max-h-[calc(100dvh-4rem)] overflow-y-auto px-4 py-6">
-            <p className="px-2 text-[10px] font-bold uppercase tracking-[0.14em] text-slate-500">
+        <aside
+          className={`hidden w-60 shrink-0 border-r lg:block ${librarySidebarClass}`}
+        >
+          <div
+            className={`sticky top-0 max-h-[calc(100dvh-4rem)] overflow-y-auto px-4 py-6 ${libraryScrollDarkClass}`}
+          >
+            <p
+              className={`mb-4 px-0 text-[10px] font-semibold uppercase ${librarySidebarEyebrowClass}`}
+            >
               Librería
             </p>
             <LibraryNav
@@ -34,10 +48,14 @@ export function LibraryWorkspace({ siteId, popId, sectionId }: Props) {
           </div>
         </aside>
 
-        <div className="min-h-0 flex-1 overflow-y-auto px-4 py-6 sm:px-6 lg:px-10">
+        <div
+          className={`min-h-0 flex-1 overflow-y-auto px-4 py-6 sm:px-6 lg:px-10 ${libraryContentAreaClass} ${libraryScrollLightClass}`}
+        >
           <div className="mx-auto max-w-5xl space-y-8">
             {activeGroup ? (
-              <p className="text-xs font-bold uppercase tracking-[0.16em] text-muted-foreground">
+              <p
+                className={`text-xs font-bold uppercase ${libraryContentEyebrowClass}`}
+              >
                 {activeGroup.label}
               </p>
             ) : null}

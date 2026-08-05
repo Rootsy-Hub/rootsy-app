@@ -72,14 +72,13 @@ export function ColorPaletteSection() {
     >
       <div className="space-y-10">
         <ColorDocLead>
-          La paleta completa de Rootsy — ocho familias, rampas de 6 a 11 pasos, neutros
-          cálidos de tierra y noche viva. Canopy es la más extensa porque es el alma de
-          la marca.
+          La paleta completa de Rootsy — canopy como referencia de marca y ocho familias nature
+          complementarias. Para ceniza, bruma, savia y landing, ver Color (nuevo).
         </ColorDocLead>
 
         <ColorDocSection
           id="palette-all"
-          title="Familias saturadas"
+          title="Familias saturadas y paisaje"
           description="Verde, otoño, fuego, cielo, mar, crepúsculo, tierra y noche."
         >
           <div className="space-y-10">
@@ -92,7 +91,7 @@ export function ColorPaletteSection() {
         <ColorDocSection
           id="palette-neutrals"
           title="Neutros · tierra y noche"
-          description="Arena bajo sol · carbón bajo luna — sin grises muertos."
+          description="Arena bajo sol · carbón bajo luna."
         >
           <NeutralRampComparison
             title="Superficies"

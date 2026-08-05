@@ -1,43 +1,91 @@
 "use client"
 
+import { CONCEPT_TOKENS } from "@/app/[siteId]/[popId]/library/concept/rootsyConceptSystem"
+import {
+  LibraryDocLead,
+  LibraryDocSection,
+  LibraryPrinciplesGrid,
+} from "@/app/[siteId]/[popId]/library/libraryDocPrimitives"
 import {
   ROOTSY_BODY_STYLES,
-  ROOTSY_CODE_STYLE,
   ROOTSY_FONT_WEIGHTS,
   ROOTSY_HEADING_STYLES,
   ROOTSY_METRIC_STYLES,
   ROOTSY_TYPEFACES,
-  TYPE_SCALE_NOTES,
   TYPOGRAPHY_ACCESSIBILITY_NOTES,
   TYPOGRAPHY_APPLYING_GUIDELINES,
+  TYPOGRAPHY_SCALE_SIMPLE,
+  TYPE_SCALE_NOTES,
   type RootsyTypeface,
   type TypographyStyle,
 } from "@/app/[siteId]/[popId]/library/typography/rootsyTypographySystem"
-import {
-  CANOPY,
-  CANOPY_DARK,
-  CANOPY_MIST,
-  LibraryDocLead,
-  LibraryDocSection,
-  LibraryGuidelineCards,
-  LibraryManifestoHero,
-  LibraryPrinciplesGrid,
-} from "@/app/[siteId]/[popId]/library/libraryDocPrimitives"
+import { cn } from "@/lib/utils"
 import type { ReactNode } from "react"
 
-export {
-  LibraryRelatedLinks as TypographyRelatedLinks,
-} from "@/app/[siteId]/[popId]/library/libraryDocPrimitives"
+export { LibraryRelatedLinks as TypographyRelatedLinks } from "@/app/[siteId]/[popId]/library/libraryDocPrimitives"
 
-const FONT_CLASS: Record<TypographyStyle["fontFamily"], string> = {
-  canopy: "font-canopy",
-  stream: "font-stream",
-  ledger: "font-ledger",
+const FONT_CLASS = {
+  ui: "font-canopy",
+  reading: "font-stream",
+  numeric: "font-ledger",
   code: "font-code",
+} as const
+
+function TypographyWhiteCard({
+  children,
+  className,
+}: {
+  children: ReactNode
+  className?: string
+}) {
+  return (
+    <div className={cn("library-spec-card rounded-2xl border p-5 sm:p-6", className)}>
+      {children}
+    </div>
+  )
+}
+
+function TypographyBrumaStage({
+  caption,
+  children,
+  className,
+}: {
+  caption?: string
+  children: ReactNode
+  className?: string
+}) {
+  return (
+    <div
+      className="overflow-hidden rounded-2xl border"
+      style={{
+        backgroundColor: CONCEPT_TOKENS.bruma100,
+        borderColor: CONCEPT_TOKENS.bruma200,
+      }}
+    >
+      <div className={cn("p-5 sm:p-6", className)}>{children}</div>
+      {caption ? (
+        <p
+          className="border-t px-4 py-3 text-[11px] leading-relaxed"
+          style={{
+            borderColor: CONCEPT_TOKENS.bruma200,
+            color: CONCEPT_TOKENS.bruma500,
+          }}
+        >
+          {caption}
+        </p>
+      ) : null}
+    </div>
+  )
+}
+
+function typefaceFontClass(id: RootsyTypeface["id"]) {
+  if (id === "reading") return FONT_CLASS.reading
+  if (id === "numeric") return FONT_CLASS.numeric
+  return FONT_CLASS.ui
 }
 
 export function TypographyDocLead({ children }: { children: ReactNode }) {
-  return <LibraryDocLead className="font-stream">{children}</LibraryDocLead>
+  return <LibraryDocLead>{children}</LibraryDocLead>
 }
 
 export function TypographyDocSection({
@@ -52,28 +100,9 @@ export function TypographyDocSection({
   children: ReactNode
 }) {
   return (
-    <LibraryDocSection
-      id={id}
-      title={title}
-      description={description}
-      titleClassName="font-canopy"
-      descriptionClassName="font-stream"
-    >
+    <LibraryDocSection id={id} title={title} description={description}>
       {children}
     </LibraryDocSection>
-  )
-}
-
-export function TypographyManifestoHero() {
-  return (
-    <LibraryManifestoHero
-      eyebrow="Rootsy · Tipografía"
-      title="Canopy · Stream · Ledger"
-      description="Tres voces nature — UI cálida, lectura fluida, números precisos."
-      eyebrowClassName="font-canopy"
-      titleClassName="font-canopy font-bold"
-      descriptionClassName="font-stream"
-    />
   )
 }
 
@@ -82,309 +111,503 @@ export function TypographyPrinciplesGrid({
 }: {
   principles: ReadonlyArray<{ title: string; detail: string }>
 }) {
+  return <LibraryPrinciplesGrid principles={principles} />
+}
+
+export function TypographyIntroHero() {
   return (
-    <LibraryPrinciplesGrid
-      principles={principles}
-      titleClassName="font-canopy"
-      detailClassName="font-stream"
-    />
+    <TypographyWhiteCard>
+      <p
+        className="text-[10px] font-bold uppercase tracking-[0.2em]"
+        style={{ color: CONCEPT_TOKENS.bruma500 }}
+      >
+        Tipografía Rootsy
+      </p>
+      <p
+        className="mt-3 font-canopy text-2xl font-bold tracking-tight sm:text-3xl"
+        style={{ color: CONCEPT_TOKENS.bruma900 }}
+      >
+        Ventas de hoy
+      </p>
+      <p className="mt-1 font-canopy text-sm" style={{ color: CONCEPT_TOKENS.bruma500 }}>
+        Resumen del turno · actualizado hace 5 min
+      </p>
+      <p
+        className="mt-4 max-w-lg font-canopy text-sm leading-relaxed"
+        style={{ color: CONCEPT_TOKENS.bruma900 }}
+      >
+        Doce ventas cerradas con un ticket promedio saludable. Los productos de panadería
+        concentran el volumen de la mañana.
+      </p>
+      <p
+        className="mt-4 font-ledger text-3xl font-bold tabular-nums tracking-tight"
+        style={{ color: CONCEPT_TOKENS.bruma900 }}
+      >
+        $ 48.320
+      </p>
+      <p className="mt-1 font-canopy text-xs" style={{ color: CONCEPT_TOKENS.bruma500 }}>
+        Total del día
+      </p>
+    </TypographyWhiteCard>
   )
 }
 
-function TypefaceCard({ face }: { face: RootsyTypeface }) {
+export function TypographyVoicesRow() {
   return (
-    <div className="rounded-xl border border-border/70 bg-card p-5 shadow-sm">
-      <p
-        className={`text-3xl font-bold tracking-tight ${face.id === "canopy" ? "font-canopy" : face.id === "stream" ? "font-stream" : face.id === "ledger" ? "font-ledger" : "font-code"}`}
-        style={{ color: CANOPY_DARK }}
-      >
-        {face.natureName}
-      </p>
-      <p className="mt-1 text-lg font-semibold text-foreground font-canopy">{face.family}</p>
-      <p className="font-mono text-[10px] text-primary">{face.role}</p>
-      <p className="mt-2 text-sm text-muted-foreground font-stream">{face.description}</p>
-      <div className="mt-3 flex flex-wrap gap-1">
-        {face.weights.map((w) => (
-          <span
-            key={w}
-            className="rounded-md bg-muted px-2 py-0.5 font-mono text-[10px] text-muted-foreground"
+    <div className="grid gap-4 lg:grid-cols-3">
+      {ROOTSY_TYPEFACES.map((face) => (
+        <TypographyWhiteCard key={face.id} className="space-y-3">
+          <div>
+            <p className="text-sm font-semibold" style={{ color: CONCEPT_TOKENS.bruma900 }}>
+              {face.label}
+            </p>
+            <p className="text-xs" style={{ color: CONCEPT_TOKENS.bruma500 }}>
+              {face.family}
+            </p>
+          </div>
+          <p
+            className={cn(
+              typefaceFontClass(face.id),
+              face.id === "numeric" && "text-2xl font-bold tabular-nums",
+              face.id === "reading" && "text-base leading-relaxed",
+              face.id === "ui" && "text-lg font-semibold",
+            )}
+            style={{ color: CONCEPT_TOKENS.bruma900 }}
           >
-            {w}
-          </span>
+            {face.sample}
+          </p>
+          <p className="text-xs leading-relaxed" style={{ color: CONCEPT_TOKENS.bruma500 }}>
+            {face.role}
+          </p>
+        </TypographyWhiteCard>
+      ))}
+    </div>
+  )
+}
+
+export function TypographyScalePreview() {
+  return (
+    <TypographyBrumaStage caption="Cinco niveles cubren casi toda la UI — título, sección, cuerpo, metadato y monto.">
+      <TypographyWhiteCard className="space-y-0 divide-y p-0">
+        {TYPOGRAPHY_SCALE_SIMPLE.map((step) => (
+          <div
+            key={step.id}
+            className="flex flex-wrap items-baseline justify-between gap-3 px-5 py-4"
+            style={{ borderColor: CONCEPT_TOKENS.bruma200 }}
+          >
+            <div className="min-w-0 flex-1">
+              <p className="text-[11px]" style={{ color: CONCEPT_TOKENS.bruma500 }}>
+                {step.label}
+              </p>
+              <p
+                className={cn(
+                  step.font === "numeric" ? FONT_CLASS.numeric : FONT_CLASS.ui,
+                  step.font === "numeric" && "tabular-nums",
+                )}
+                style={{
+                  fontSize: step.sizePx,
+                  fontWeight: step.weight,
+                  color: CONCEPT_TOKENS.bruma900,
+                  lineHeight: 1.25,
+                }}
+              >
+                {step.sample}
+              </p>
+            </div>
+            <p
+              className="shrink-0 font-mono text-[10px]"
+              style={{ color: CONCEPT_TOKENS.bruma500 }}
+            >
+              {step.sizePx}px
+            </p>
+          </div>
         ))}
-      </div>
-      {face.features ? (
-        <ul className="mt-3 space-y-0.5">
-          {face.features.map((f) => (
-            <li key={f} className="text-xs text-muted-foreground font-stream">
-              · {f}
+      </TypographyWhiteCard>
+    </TypographyBrumaStage>
+  )
+}
+
+export function TypographyInContextDemo() {
+  const items = [
+    { name: "Medialuna clásica", meta: "Panadería · x2", price: "$ 1.200" },
+    { name: "Café con leche", meta: "Bebidas · x1", price: "$ 2.800" },
+  ] as const
+
+  return (
+    <TypographyBrumaStage caption="En una lista: nombre en body, contexto en metadatos, monto en números — tres niveles, sin mezclar pesos.">
+      <TypographyWhiteCard className="overflow-hidden p-0">
+        <div
+          className="border-b px-4 py-3"
+          style={{
+            borderColor: CONCEPT_TOKENS.bruma200,
+            backgroundColor: CONCEPT_TOKENS.bruma50,
+          }}
+        >
+          <p
+            className="font-canopy text-xs font-semibold uppercase tracking-wide"
+            style={{ color: CONCEPT_TOKENS.bruma500 }}
+          >
+            Tu pedido
+          </p>
+        </div>
+        <ul>
+          {items.map((item, index) => (
+            <li
+              key={item.name}
+              className="flex items-center justify-between gap-3 px-4 py-3"
+              style={{
+                borderBottom:
+                  index < items.length - 1
+                    ? `1px solid ${CONCEPT_TOKENS.bruma200}`
+                    : undefined,
+              }}
+            >
+              <div>
+                <p
+                  className="font-canopy text-sm font-medium"
+                  style={{ color: CONCEPT_TOKENS.bruma900 }}
+                >
+                  {item.name}
+                </p>
+                <p className="font-canopy text-xs" style={{ color: CONCEPT_TOKENS.bruma500 }}>
+                  {item.meta}
+                </p>
+              </div>
+              <p
+                className="font-ledger text-sm font-semibold tabular-nums"
+                style={{ color: CONCEPT_TOKENS.bruma900 }}
+              >
+                {item.price}
+              </p>
             </li>
           ))}
         </ul>
-      ) : null}
-    </div>
-  )
-}
-
-export function TypefacesGallery() {
-  return (
-    <div className="grid gap-4 lg:grid-cols-2">
-      {ROOTSY_TYPEFACES.map((face) => (
-        <TypefaceCard key={face.id} face={face} />
-      ))}
-    </div>
-  )
-}
-
-function StylePreviewRow({ style }: { style: TypographyStyle }) {
-  return (
-    <div className="grid grid-cols-[1fr_auto_auto_auto] items-center gap-x-4 border-b border-border/40 px-4 py-3 last:border-b-0">
-      <div className="min-w-0">
-        <span
-          className={FONT_CLASS[style.fontFamily]}
-          style={{
-            fontWeight: style.fontWeight,
-            fontSize: style.fontSizeRem,
-            lineHeight: style.lineHeightRem,
-          }}
+        <div
+          className="flex items-center justify-between border-t px-4 py-3"
+          style={{ borderColor: CONCEPT_TOKENS.bruma200 }}
         >
-          {style.preview}
-        </span>
-        <p className="mt-1 font-mono text-[10px] text-primary">{style.token}</p>
-      </div>
-      <span className="text-right font-mono text-xs text-muted-foreground">
-        {style.fontWeightLabel}
-      </span>
-      <span className="text-right font-mono text-xs text-muted-foreground">
-        {style.fontSizePx}px / {style.lineHeightPx}px
-      </span>
-      <span className="hidden max-w-[200px] text-right text-xs text-muted-foreground sm:block font-stream">
-        {style.usage}
-      </span>
-    </div>
+          <span className="font-canopy text-sm" style={{ color: CONCEPT_TOKENS.bruma900 }}>
+            Total
+          </span>
+          <span
+            className="font-ledger text-lg font-bold tabular-nums"
+            style={{ color: CONCEPT_TOKENS.bruma900 }}
+          >
+            $ 4.000
+          </span>
+        </div>
+      </TypographyWhiteCard>
+    </TypographyBrumaStage>
   )
 }
 
-export function TypographyStylesTable({
-  title,
-  styles,
-}: {
-  title: string
-  styles: TypographyStyle[]
-}) {
+export function TypographyProductScreenDemo() {
   return (
-    <div className="overflow-hidden rounded-2xl border border-border/70">
-      <div
-        className="border-b border-border/60 px-4 py-2 text-sm font-semibold font-canopy"
-        style={{ backgroundColor: CANOPY_MIST, color: CANOPY_DARK }}
-      >
-        {title}
-      </div>
-      <div className="hidden grid-cols-[1fr_auto_auto_auto] gap-x-4 border-b border-border/60 bg-muted/30 px-4 py-2 text-[10px] font-bold uppercase tracking-[0.12em] text-muted-foreground sm:grid">
-        <span>Preview · token</span>
-        <span className="text-right">Peso</span>
-        <span className="text-right">Size / LH</span>
-        <span className="text-right">Uso</span>
-      </div>
-      {styles.map((style) => (
-        <StylePreviewRow key={style.id} style={style} />
-      ))}
-    </div>
+    <TypographyBrumaStage caption="Pantalla completa en miniatura — título, copy de apoyo, campo y acción. Todo en UI excepto el total.">
+      <TypographyWhiteCard className="mx-auto max-w-md space-y-4">
+        <div>
+          <p
+            className="font-canopy text-xl font-bold tracking-tight"
+            style={{ color: CONCEPT_TOKENS.bruma900 }}
+          >
+            Nuevo artículo
+          </p>
+          <p className="mt-1 font-canopy text-sm" style={{ color: CONCEPT_TOKENS.bruma500 }}>
+            Completá los datos del producto.
+          </p>
+        </div>
+        <label className="block space-y-1.5">
+          <span
+            className="font-canopy text-sm font-medium"
+            style={{ color: CONCEPT_TOKENS.bruma900 }}
+          >
+            Nombre
+          </span>
+          <div
+            className="rounded-lg border px-3 py-2 font-canopy text-sm"
+            style={{
+              borderColor: CONCEPT_TOKENS.bruma200,
+              color: CONCEPT_TOKENS.bruma900,
+            }}
+          >
+            Medialuna clásica
+          </div>
+          <span className="font-canopy text-xs" style={{ color: CONCEPT_TOKENS.bruma500 }}>
+            Visible en ventas y catálogo.
+          </span>
+        </label>
+        <div className="flex items-end justify-between gap-4 pt-2">
+          <div>
+            <p className="font-canopy text-xs" style={{ color: CONCEPT_TOKENS.bruma500 }}>
+              Precio
+            </p>
+            <p
+              className="font-ledger text-2xl font-bold tabular-nums"
+              style={{ color: CONCEPT_TOKENS.bruma900 }}
+            >
+              $ 600
+            </p>
+          </div>
+          <button
+            type="button"
+            className="rounded-lg px-4 py-2 font-canopy text-sm font-medium text-white"
+            style={{ backgroundColor: CONCEPT_TOKENS.savia600 }}
+          >
+            Guardar
+          </button>
+        </div>
+      </TypographyWhiteCard>
+    </TypographyBrumaStage>
   )
 }
 
-export function VoiceComparisonDemo() {
-  return (
-    <div className="grid gap-4 lg:grid-cols-3">
-      <div className="rounded-xl border border-border/70 p-4" style={{ backgroundColor: CANOPY_MIST }}>
-        <p className="text-xs font-bold uppercase tracking-wider font-canopy" style={{ color: CANOPY_DARK }}>
-          Canopy · UI
-        </p>
-        <p className="mt-2 font-canopy text-lg font-bold text-foreground">
-          Nuevo artículo
-        </p>
-        <p className="mt-1 font-canopy text-sm text-muted-foreground">
-          Completá los datos del producto.
-        </p>
-      </div>
-      <div className="rounded-xl border border-border/70 bg-card p-4">
-        <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground font-canopy">
-          Stream · lectura
-        </p>
-        <p className="mt-2 font-stream text-base leading-relaxed text-foreground">
-          Rootsy conecta inventario, ventas y tesorería en un solo ecosistema digital.
-        </p>
-      </div>
-      <div className="rounded-xl border border-border/70 bg-card p-4">
-        <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground font-canopy">
-          Ledger · números
-        </p>
-        <p className="mt-2 font-ledger text-2xl font-bold tabular-nums text-foreground">
-          $ 124.580,00
-        </p>
-        <p className="font-ledger text-sm tabular-nums text-muted-foreground">Stock: 1.248 uds.</p>
-      </div>
-    </div>
-  )
-}
-
-export function MetricDemo() {
+export function TypographyMetricComparison() {
   return (
     <div className="grid gap-4 sm:grid-cols-2">
-      <div className="rounded-xl border-2 p-5 text-center" style={{ borderColor: CANOPY }}>
-        <p className="font-ledger text-3xl font-bold tabular-nums" style={{ color: CANOPY_DARK }}>
+      <TypographyWhiteCard className="text-center">
+        <p
+          className="font-ledger text-3xl font-bold tabular-nums"
+          style={{ color: CONCEPT_TOKENS.bruma900 }}
+        >
           45%
         </p>
-        <p className="mt-1 font-canopy text-xs text-muted-foreground">capacidad · body.small</p>
-        <p className="mt-3 text-[10px] font-canopy" style={{ color: CANOPY_DARK }}>
-          ✓ metric en el número
+        <p className="mt-1 font-canopy text-xs" style={{ color: CONCEPT_TOKENS.bruma500 }}>
+          Capacidad usada
         </p>
-      </div>
-      <div className="rounded-xl border border-border/70 p-5 text-center opacity-80">
-        <p className="font-ledger text-3xl font-bold tabular-nums text-foreground">45%</p>
-        <p className="mt-1 font-ledger text-xs font-bold tabular-nums text-muted-foreground">
-          capacidad
+        <p className="mt-4 text-[11px]" style={{ color: CONCEPT_TOKENS.savia800 }}>
+          Número en Inter bold · etiqueta en body chico
         </p>
-        <p className="mt-3 text-[10px] text-muted-foreground font-canopy">
-          ✗ metric también en subtexto
+      </TypographyWhiteCard>
+      <TypographyWhiteCard className="text-center opacity-70">
+        <p
+          className="font-ledger text-3xl font-bold tabular-nums"
+          style={{ color: CONCEPT_TOKENS.bruma900 }}
+        >
+          45%
         </p>
-      </div>
+        <p
+          className="mt-1 font-ledger text-sm font-bold tabular-nums"
+          style={{ color: CONCEPT_TOKENS.bruma500 }}
+        >
+          Capacidad usada
+        </p>
+        <p className="mt-4 text-[11px]" style={{ color: CONCEPT_TOKENS.bruma500 }}>
+          Mismo peso en número y etiqueta — cuesta leer la jerarquía
+        </p>
+      </TypographyWhiteCard>
     </div>
   )
 }
 
-export function CodeBlockDemo() {
+export function TypographyGuidelinesGrid() {
   return (
-    <pre
-      className="overflow-x-auto rounded-xl border border-border/70 p-4 font-code text-xs leading-relaxed"
-      style={{ backgroundColor: "#052E1F", color: "#A8EBC4" }}
-    >
-      {`const token = "font.code"
-// Bark · JetBrains Mono
-export const canopy = "#1E8F5A"`}
-    </pre>
+    <div className="grid gap-4 sm:grid-cols-3">
+      {TYPOGRAPHY_APPLYING_GUIDELINES.map((item) => (
+        <TypographyWhiteCard key={item.id} className="space-y-3">
+          <p className="text-sm font-semibold" style={{ color: CONCEPT_TOKENS.bruma900 }}>
+            {item.title}
+          </p>
+          <div className="space-y-2 text-xs leading-relaxed">
+            <p style={{ color: CONCEPT_TOKENS.savia800 }}>✓ {item.doText}</p>
+            <p style={{ color: CONCEPT_TOKENS.bruma500 }}>✗ {item.dontText}</p>
+          </div>
+        </TypographyWhiteCard>
+      ))}
+    </div>
   )
 }
 
-export function TypeScaleDiagram() {
-  const steps = [
-    { label: "12px", token: "xxsmall / body.small" },
-    { label: "14px", token: "body · xsmall" },
-    { label: "16px", token: "body.large · small heading" },
-    { label: "20px", token: "heading.medium" },
-    { label: "24px", token: "heading.large" },
-    { label: "28px", token: "heading.xlarge · metric.large" },
-    { label: "32px", token: "heading.xxlarge" },
-  ]
-
+export function TypographyAccessibilityCard() {
   return (
-    <div className="space-y-4 rounded-2xl border border-border/70 p-6">
-      <p className="text-sm font-stream text-muted-foreground">
-        Base {TYPE_SCALE_NOTES.basePx}px · ratio {TYPE_SCALE_NOTES.ratio} (minor third) ·{" "}
+    <TypographyWhiteCard>
+      <ul className="space-y-2">
+        {TYPOGRAPHY_ACCESSIBILITY_NOTES.map((note) => (
+          <li
+            key={note}
+            className="flex gap-2 text-sm leading-relaxed"
+            style={{ color: CONCEPT_TOKENS.bruma600 }}
+          >
+            <span style={{ color: CONCEPT_TOKENS.savia600 }}>·</span>
+            {note}
+          </li>
+        ))}
+      </ul>
+    </TypographyWhiteCard>
+  )
+}
+
+export function TypographyScaleLadder() {
+  return (
+    <TypographyWhiteCard className="space-y-4">
+      <p className="text-sm leading-relaxed" style={{ color: CONCEPT_TOKENS.bruma600 }}>
+        Base {TYPE_SCALE_NOTES.basePx}px · ratio {TYPE_SCALE_NOTES.ratio} (minor third).{" "}
         {TYPE_SCALE_NOTES.rule}
       </p>
-      <div className="space-y-2">
-        {steps.map((step, i) => (
-          <div key={step.label} className="flex items-center gap-3">
-            <div
-              className="rounded-sm"
+      <div className="space-y-4">
+        {TYPOGRAPHY_SCALE_SIMPLE.map((step) => (
+          <div key={step.id} className="flex items-baseline gap-4">
+            <span
+              className="w-28 shrink-0 text-[11px]"
+              style={{ color: CONCEPT_TOKENS.bruma500 }}
+            >
+              {step.label}
+            </span>
+            <span
+              className={cn(
+                "min-w-0 flex-1",
+                step.font === "numeric" ? FONT_CLASS.numeric : FONT_CLASS.ui,
+                step.font === "numeric" && "tabular-nums",
+              )}
               style={{
-                width: 24 + i * 12,
-                height: 20,
-                backgroundColor: CANOPY,
-                opacity: 0.35 + i * 0.08,
+                fontSize: step.sizePx,
+                fontWeight: step.weight,
+                color: CONCEPT_TOKENS.bruma900,
               }}
-            />
-            <span className="font-mono text-xs text-foreground">{step.label}</span>
-            <span className="text-xs text-muted-foreground font-stream">{step.token}</span>
+            >
+              {step.sample}
+            </span>
+            <span
+              className="hidden shrink-0 font-mono text-[10px] sm:inline"
+              style={{ color: CONCEPT_TOKENS.bruma500 }}
+            >
+              {step.token}
+            </span>
           </div>
         ))}
       </div>
-      <div className="grid gap-2 sm:grid-cols-2">
-        <p className="rounded-lg bg-muted/50 px-3 py-2 text-xs font-stream">
-          Headings: {TYPE_SCALE_NOTES.lineHeightHeading}
+    </TypographyWhiteCard>
+  )
+}
+
+export function TypographyWeightsDemo() {
+  return (
+    <TypographyWhiteCard className="divide-y">
+      {ROOTSY_FONT_WEIGHTS.map((weight) => (
+        <div
+          key={weight.value}
+          className="flex flex-wrap items-center justify-between gap-3 py-3 first:pt-0 last:pb-0"
+          style={{ borderColor: CONCEPT_TOKENS.bruma200 }}
+        >
+          <span
+            className="font-canopy text-base"
+            style={{ fontWeight: weight.value, color: CONCEPT_TOKENS.bruma900 }}
+          >
+            {weight.label} — Confirmar venta
+          </span>
+          <span className="text-xs" style={{ color: CONCEPT_TOKENS.bruma500 }}>
+            {weight.usage}
+          </span>
+        </div>
+      ))}
+    </TypographyWhiteCard>
+  )
+}
+
+export function TypographyTypefacesDetail() {
+  return (
+    <div className="grid gap-4 lg:grid-cols-3">
+      {ROOTSY_TYPEFACES.map((face) => (
+        <TypographyWhiteCard key={face.id} className="space-y-2">
+          <p className="text-sm font-semibold" style={{ color: CONCEPT_TOKENS.bruma900 }}>
+            {face.label}
+          </p>
+          <p className="font-mono text-[10px]" style={{ color: CONCEPT_TOKENS.bruma500 }}>
+            {face.cssVar}
+          </p>
+          <p
+            className={cn(
+              typefaceFontClass(face.id),
+              face.id === "numeric" && "text-xl font-bold tabular-nums",
+            )}
+            style={{ color: CONCEPT_TOKENS.bruma900 }}
+          >
+            {face.sample}
+          </p>
+          <p className="text-xs leading-relaxed" style={{ color: CONCEPT_TOKENS.bruma500 }}>
+            {face.description}
+          </p>
+        </TypographyWhiteCard>
+      ))}
+    </div>
+  )
+}
+
+function TokenRow({ style }: { style: TypographyStyle }) {
+  const fontClass =
+    style.fontFamily === "numeric"
+      ? FONT_CLASS.numeric
+      : style.fontFamily === "reading"
+        ? FONT_CLASS.reading
+        : FONT_CLASS.ui
+
+  return (
+    <div
+      className="flex flex-wrap items-center justify-between gap-3 border-b py-3 last:border-b-0"
+      style={{ borderColor: CONCEPT_TOKENS.bruma200 }}
+    >
+      <span
+        className={cn(fontClass, style.fontFamily === "numeric" && "tabular-nums")}
+        style={{
+          fontWeight: style.fontWeight,
+          fontSize: style.fontSizeRem,
+          lineHeight: style.lineHeightRem,
+          color: CONCEPT_TOKENS.bruma900,
+        }}
+      >
+        {style.preview}
+      </span>
+      <div className="text-right">
+        <p className="font-mono text-[10px]" style={{ color: CONCEPT_TOKENS.bruma500 }}>
+          {style.token}
         </p>
-        <p className="rounded-lg bg-muted/50 px-3 py-2 text-xs font-stream">
-          Body: {TYPE_SCALE_NOTES.lineHeightBody}
+        <p className="text-[11px]" style={{ color: CONCEPT_TOKENS.bruma500 }}>
+          {style.fontSizePx}px · {style.fontWeightLabel}
         </p>
       </div>
     </div>
   )
 }
 
-export function FontWeightsTable() {
+export function TypographyTokensReference() {
+  const groups = [
+    { title: "Títulos", styles: ROOTSY_HEADING_STYLES },
+    { title: "Cuerpo", styles: ROOTSY_BODY_STYLES },
+    { title: "Montos", styles: ROOTSY_METRIC_STYLES },
+  ] as const
+
   return (
-    <div className="overflow-hidden rounded-2xl border border-border/70">
-      {ROOTSY_FONT_WEIGHTS.map((w) => (
-        <div
-          key={w.token}
-          className="flex items-center justify-between border-b border-border/40 px-4 py-3 last:border-b-0"
-        >
-          <span
-            className="font-canopy text-base"
-            style={{ fontWeight: w.value }}
+    <div className="grid gap-4 lg:grid-cols-3">
+      {groups.map((group) => (
+        <TypographyWhiteCard key={group.title}>
+          <p
+            className="mb-2 text-xs font-semibold uppercase tracking-wide"
+            style={{ color: CONCEPT_TOKENS.bruma500 }}
           >
-            Canopy {w.value}
-          </span>
-          <div className="text-right">
-            <p className="font-mono text-xs text-primary">{w.token}</p>
-            <p className="text-xs text-muted-foreground font-stream">{w.usage}</p>
-          </div>
-        </div>
+            {group.title}
+          </p>
+          {group.styles.map((style) => (
+            <TokenRow key={style.id} style={style} />
+          ))}
+        </TypographyWhiteCard>
       ))}
     </div>
   )
 }
 
-export function ApplyingGuidelineCards() {
+export function TypographyReadingDemo() {
   return (
-    <LibraryGuidelineCards
-      items={TYPOGRAPHY_APPLYING_GUIDELINES}
-      split={false}
-      titleClassName="font-canopy"
-      textClassName="font-stream"
-    />
-  )
-}
-
-export function AccessibilityNotesList() {
-  return (
-    <ul className="space-y-2 rounded-xl border border-border/70 bg-card p-4">
-      {TYPOGRAPHY_ACCESSIBILITY_NOTES.map((note) => (
-        <li key={note} className="flex gap-2 text-sm text-muted-foreground font-stream">
-          <span style={{ color: CANOPY }}>·</span>
-          {note}
-        </li>
-      ))}
-    </ul>
-  )
-}
-
-export function HierarchyDemo() {
-  return (
-    <div className="rounded-2xl border border-border/70 bg-card p-6">
-      <p className="font-canopy text-2xl font-bold text-foreground">Título de página</p>
-      <p className="mt-1 font-canopy text-sm font-medium text-muted-foreground">
-        Subtítulo · heading.xsmall / medium
+    <TypographyWhiteCard>
+      <p
+        className="font-stream text-base leading-relaxed"
+        style={{ color: CONCEPT_TOKENS.bruma900 }}
+      >
+        Rootsy conecta inventario, ventas y tesorería en un solo lugar. La tipografía de
+        lectura entra cuando hay párrafos largos — descripciones de artículos, ayuda de
+        campo o copy explicativo. En pantallas de trabajo, la UI lleva casi todo.
       </p>
-      <p className="mt-4 font-canopy text-sm leading-relaxed text-foreground">
-        Body default — descripción del módulo con font.body y line-height optimizado para
-        componentes.
+      <p className="mt-3 text-xs" style={{ color: CONCEPT_TOKENS.bruma500 }}>
+        Source Sans 3 · solo en bloques de prosa, no en botones ni labels.
       </p>
-      <p className="mt-2 font-ledger text-xl font-bold tabular-nums" style={{ color: CANOPY_DARK }}>
-        $ 42.300,00
-      </p>
-    </div>
-  )
-}
-
-export function AllTypographyStyles() {
-  return (
-    <div className="space-y-6">
-      <TypographyStylesTable title="Heading" styles={ROOTSY_HEADING_STYLES} />
-      <TypographyStylesTable title="Body" styles={ROOTSY_BODY_STYLES} />
-      <TypographyStylesTable title="Metric" styles={ROOTSY_METRIC_STYLES} />
-      <TypographyStylesTable title="Code" styles={[ROOTSY_CODE_STYLE]} />
-    </div>
+    </TypographyWhiteCard>
   )
 }

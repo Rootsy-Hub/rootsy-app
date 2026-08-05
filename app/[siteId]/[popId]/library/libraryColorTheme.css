@@ -1,0 +1,210 @@
+/**
+ * Librería — minimal. Ceniza sidebar, bruma content, texto plano en nav.
+ */
+
+.rootsy-app-light:has(.rootsy-library-shell) {
+  --library-ceniza-950: #070a09;
+  --library-ceniza-900: #0b100e;
+  --library-ceniza-700: #1a2027;
+  --library-ceniza-400: #64748b;
+  --library-ceniza-300: #94a3b8;
+  --library-bruma-50: #f4f6f9;
+  --library-bruma-100: #eef1f5;
+  --library-bruma-200: #dfe4ea;
+  --library-bruma-500: #64748b;
+  --library-bruma-900: #121417;
+  --library-savia-600: #059669;
+
+  --background: var(--library-bruma-100);
+  --foreground: var(--library-bruma-900);
+  --card: #ffffff;
+  --card-foreground: var(--library-bruma-900);
+  --popover: #ffffff;
+  --popover-foreground: var(--library-bruma-900);
+  --primary: var(--library-savia-600);
+  --primary-foreground: #ffffff;
+  --secondary: var(--library-bruma-50);
+  --secondary-foreground: var(--library-bruma-900);
+  --muted: var(--library-bruma-50);
+  --muted-foreground: var(--library-bruma-500);
+  --accent: var(--library-bruma-50);
+  --accent-foreground: var(--library-bruma-900);
+  --border: var(--library-bruma-200);
+  --input: var(--library-bruma-200);
+  --ring: var(--library-bruma-500);
+
+  background-color: var(--library-ceniza-950);
+  color: var(--foreground);
+}
+
+.rootsy-app-light:has(.rootsy-library-shell) > .pointer-events-none {
+  display: none;
+}
+
+.rootsy-app-light:has(.rootsy-library-shell) header {
+  background-color: var(--library-ceniza-900) !important;
+  border-color: rgb(51 65 85 / 0.45) !important;
+  color: #f8fafc !important;
+}
+
+.rootsy-app-light:has(.rootsy-library-shell) header a.rounded-xl,
+.rootsy-app-light:has(.rootsy-library-shell) header button.rounded-xl {
+  border-color: rgb(51 65 85 / 0.6) !important;
+  background-color: transparent !important;
+  color: var(--library-ceniza-300) !important;
+}
+
+.rootsy-app-light:has(.rootsy-library-shell) header a.rounded-xl:hover,
+.rootsy-app-light:has(.rootsy-library-shell) header button.rounded-xl:hover {
+  border-color: rgb(100 116 139 / 0.5) !important;
+  background-color: rgb(255 255 255 / 0.04) !important;
+  color: #f8fafc !important;
+}
+
+.rootsy-app-light:has(.rootsy-library-shell) header .h-6.w-px {
+  background-color: rgb(51 65 85 / 0.7) !important;
+}
+
+.rootsy-library-shell {
+  background-color: var(--library-bruma-100) !important;
+  color: var(--library-bruma-900);
+}
+
+.rootsy-library-shell > .relative.flex {
+  background-color: var(--library-bruma-100);
+}
+
+.library-sidebar {
+  background-color: var(--library-ceniza-700) !important;
+  border-color: rgb(51 65 85 / 0.35);
+}
+
+.library-sidebar-eyebrow,
+.library-nav-group-label {
+  color: var(--library-ceniza-400);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.library-nav-link {
+  color: var(--library-ceniza-300);
+  background: transparent;
+  transition: color 0.12s ease;
+}
+
+.library-nav-link:hover {
+  color: #e2e8f0;
+}
+
+.library-nav-link--active {
+  color: #f8fafc;
+  font-weight: 500;
+}
+
+.library-nav-link--parent-active {
+  color: #cbd5e1;
+  font-weight: 400;
+}
+
+.library-nav-toggle {
+  color: var(--library-ceniza-400);
+  background: transparent;
+}
+
+.library-nav-toggle:hover {
+  color: #e2e8f0;
+}
+
+.library-content-area {
+  background-color: var(--library-bruma-100) !important;
+}
+
+.library-content-eyebrow {
+  color: var(--library-bruma-500);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.library-page-header {
+  border-color: var(--library-bruma-200);
+  background-color: #ffffff;
+  box-shadow: none;
+}
+
+.library-page-header-badge {
+  background-color: var(--library-bruma-50);
+  color: var(--library-bruma-600);
+}
+
+.library-page-header-mono {
+  background-color: var(--library-bruma-50);
+  color: var(--library-bruma-500);
+}
+
+.rootsy-library-shell .library-doc-section {
+  border-color: var(--library-bruma-200);
+}
+
+.rootsy-library-shell .library-spec-card {
+  border-color: var(--library-bruma-200);
+  background-color: #ffffff;
+  box-shadow: none;
+}
+
+.rootsy-library-shell .library-related-links {
+  border-color: var(--library-bruma-200);
+}
+
+/* Scroll minimal — thumb pill, track invisible */
+.library-scroll {
+  scrollbar-gutter: stable;
+  scrollbar-width: thin;
+}
+
+.library-scroll--dark {
+  scrollbar-color: rgb(148 163 184 / 0.42) transparent;
+}
+
+.library-scroll--dark::-webkit-scrollbar {
+  width: 6px;
+}
+
+.library-scroll--dark::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.library-scroll--dark::-webkit-scrollbar-thumb {
+  background-color: rgb(148 163 184 / 0.38);
+  border: 1px solid rgb(255 255 255 / 0.1);
+  border-radius: 999px;
+}
+
+.library-scroll--dark::-webkit-scrollbar-thumb:hover {
+  background-color: rgb(148 163 184 / 0.52);
+}
+
+.library-scroll--light {
+  scrollbar-color: rgb(100 116 139 / 0.32) transparent;
+}
+
+.library-scroll--light::-webkit-scrollbar {
+  width: 6px;
+}
+
+.library-scroll--light::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.library-scroll--light::-webkit-scrollbar-thumb {
+  background-color: rgb(100 116 139 / 0.28);
+  border: 1px solid rgb(255 255 255 / 0.6);
+  border-radius: 999px;
+}
+
+.library-scroll--light::-webkit-scrollbar-thumb:hover {
+  background-color: rgb(100 116 139 / 0.42);
+}

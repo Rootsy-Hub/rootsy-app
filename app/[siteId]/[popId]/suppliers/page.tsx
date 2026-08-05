@@ -1,5 +1,6 @@
 "use client"
 
+import "@/app/[siteId]/[popId]/library/color/rootsyNaturePalette.css"
 import {
   createPopSupplier,
   deletePopSupplier,
@@ -18,12 +19,19 @@ import {
 } from "@/app/[siteId]/[popId]/suppliers/SuppliersFiltersDialog"
 import { buildPaginationItems } from "@/app/[siteId]/[popId]/layout/layoutPreviewPagination"
 import { DataWorkspaceListActiveFiltersBar } from "@/components/data-workspace/DataWorkspaceListActiveFiltersBar"
+import { DataWorkspaceListBulkToolbar } from "@/components/data-workspace/DataWorkspaceListBulkToolbar"
 import { DataWorkspaceListFilterChip } from "@/components/data-workspace/DataWorkspaceListFilterChip"
 import {
   DataWorkspaceListFiltersDialogTrigger,
   DataWorkspaceListSearchField,
 } from "@/components/data-workspace/DataWorkspaceListFilterFields"
-import { DataWorkspaceListPaginationFooter } from "@/components/data-workspace/DataWorkspaceListPaginationFooter"
+import {
+  DataWorkspaceTableListPage,
+  DataWorkspaceTableListNatureShell,
+  DataWorkspaceTableListFiltersBar,
+  DataWorkspaceTableListShell,
+  DataWorkspaceTableListPaginationFooter,
+} from "@/components/data-workspace/DataWorkspaceTableListLayout"
 import {
   DataWorkspaceListTableFrame,
   DataWorkspaceTableEmptyMascot,
@@ -31,38 +39,36 @@ import {
 } from "@/components/data-workspace/DataWorkspaceListTablePrimitives"
 import { WorkspaceTableSkeletonRows } from "@/components/data-workspace/WorkspaceTableSkeleton"
 import { suppliersSkeletonColumns } from "@/components/data-workspace/workspaceTableSkeletonPresets"
-import { DataWorkspaceListTableShell } from "@/components/data-workspace/DataWorkspaceListTableShell"
 import {
-  lightTableThClass,
-  listBulkToolbarClearButtonClass,
   selectColumnInnerClass,
-  tableRowSelectCheckboxClass,
-  workspaceDataTableClassName,
-  workspaceTableBodyRowClassNames,
+  workspaceTableLayoutClassName,
+  workspaceTableNatureBodyRowClassNames,
+  workspaceTableNatureCheckboxClass,
+  workspaceTableNatureTextPrimaryClass,
+  workspaceTableNatureTextSecondaryClass,
 } from "@/components/data-workspace/dataWorkspaceListStyles"
 import {
-  dataWorkspaceListFiltersBarClass,
-  dataWorkspaceListFiltersBarInnerClass,
-  dataWorkspaceListFiltersBarRowClass,
   dataWorkspaceListFiltersGridClass,
   dataWorkspaceListFiltersPanelClass,
   dataWorkspaceListFiltersPanelLastClass,
+  workspaceTableLayoutActionsBodyCellClass,
+  workspaceTableLayoutBodyCellClass,
+  workspaceTableLayoutBodyRowClass,
+  workspaceTableLayoutHeaderHeadClass,
+  workspaceTableLayoutSelectBodyCellClass,
 } from "@/components/data-workspace/dataWorkspaceTablesLayout"
-import { DataWorkspaceLayout } from "@/components/layouts/DataWorkspaceLayout"
+import {
+  WorkspaceTableHead,
+  WorkspaceTableHeader,
+  WorkspaceTableHeaderRow,
+  WorkspaceTableSelectHead,
+} from "@/components/data-workspace/WorkspaceTableHeader"
 import { DataWorkspaceHeaderIconButton } from "@/components/layouts/DataWorkspaceHeaderIconButton"
 import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "@/components/ui/tooltip"
 import {
   TableBody,
   TableCell,
-  TableHead,
-  TableHeader,
   TableRow,
 } from "@/components/ui/table"
 import withAuth from "@/hoc/withAuth"
@@ -494,7 +500,6 @@ function SuppliersPage() {
   }, [])
 
   const skeletonRowCount = Math.min(12, Math.max(5, pageSize))
-  const emptyCols = 6 + (canUpdate || canDelete ? 1 : 0)
 
   if (!popId || !siteId) {
     return (
@@ -505,61 +510,31 @@ function SuppliersPage() {
   }
 
   return (
-    <DataWorkspaceLayout
-      siteId={siteId}
-      popId={popId}
-      popName={bootstrap?.popName ?? ""}
-      title="Proveedores"
-      headerVariant="dark"
-      contentFlush
-      sidebarCollapsible={false}
-      loading={bootstrapLoading || listFetching}
-      userName={bootstrap?.userFullName}
-      userAvatarSrc={bootstrap?.userImageUrl ?? undefined}
-      mainClassName="rootsy-nature-palette min-h-0 overflow-hidden"
-      headerActions={
-        canCreate ? (
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <DataWorkspaceHeaderIconButton
-                label="Nuevo proveedor"
-                headerVariant="dark"
-                primary
-                onClick={openCreate}
-              >
-                <Plus className="size-5" aria-hidden />
-              </DataWorkspaceHeaderIconButton>
-            </TooltipTrigger>
-            <TooltipContent variant="dark" side="bottom" sideOffset={6}>
-              Nuevo proveedor
-            </TooltipContent>
-          </Tooltip>
-        ) : null
-      }
+    <DataWorkspaceTableListPage
+      layout={{
+        siteId,
+        popId,
+        popName: bootstrap?.popName ?? "",
+        title: "Proveedores",
+        loading: bootstrapLoading || listFetching,
+        userName: bootstrap?.userFullName,
+        userAvatarSrc: bootstrap?.userImageUrl ?? undefined,
+        headerActions: canCreate ? (
+          <DataWorkspaceHeaderIconButton
+            label="Nuevo proveedor"
+            headerVariant="dark"
+            primary
+            onClick={openCreate}
+          >
+            <Plus className="size-5" aria-hidden />
+          </DataWorkspaceHeaderIconButton>
+        ) : null,
+      }}
+      error={error}
     >
-      <div className="relative flex min-h-0 w-full flex-1 flex-col">
-        {error ? (
-          <div
-            role="alert"
-            className="relative shrink-0 border-b border-destructive/25 bg-destructive/10 px-4 py-3 text-sm text-destructive"
-          >
-            {error}
-          </div>
-        ) : null}
-
-        <div className="relative flex min-h-0 flex-1 flex-col">
-          <div
-            className={dataWorkspaceListFiltersBarClass}
-            role="toolbar"
-            aria-label="Filtros del listado"
-          >
-            <div
-              className={cn(
-                dataWorkspaceListFiltersBarInnerClass,
-                dataWorkspaceListFiltersBarRowClass,
-              )}
-            >
-              <div className={dataWorkspaceListFiltersGridClass}>
+      <DataWorkspaceTableListNatureShell>
+        <DataWorkspaceTableListFiltersBar>
+          <div className={dataWorkspaceListFiltersGridClass}>
                 <div className={dataWorkspaceListFiltersPanelClass}>
                   <DataWorkspaceListFiltersDialogTrigger
                     id={filtersButtonId}
@@ -588,10 +563,9 @@ function SuppliersPage() {
                   />
                 </div>
               </div>
-            </div>
-          </div>
+        </DataWorkspaceTableListFiltersBar>
 
-          <SuppliersFiltersDialog
+        <SuppliersFiltersDialog
             open={filtersModalOpen}
             onOpenChange={(open) => {
               if (open) {
@@ -608,9 +582,8 @@ function SuppliersPage() {
             }}
           />
 
-          <DataWorkspaceListTableShell
-            variant="flush"
-            activeFiltersBar={
+        <DataWorkspaceTableListShell
+          activeFiltersBar={
               hasFilterChips ? (
                 <DataWorkspaceListActiveFiltersBar
                   activeCount={activeFilterCount}
@@ -661,44 +634,31 @@ function SuppliersPage() {
                 <DataWorkspaceTableEmptyMascot />
               ) : null
             }
-            bulkToolbar={
-              selected.size > 0 ? (
-                <div
-                  className={cn(
-                    "flex flex-wrap items-center gap-2 border-b border-border/80 bg-muted/35 px-3 py-2.5 sm:px-4",
-                    listFetching && "pointer-events-none opacity-60",
-                  )}
-                  role="region"
-                  aria-label="Acciones sobre selección"
-                >
-                  <span className="text-sm text-foreground">
-                    <span className="font-semibold">{selected.size}</span>{" "}
-                    <span className="text-muted-foreground">seleccionados</span>
-                  </span>
-                  <div className="flex flex-wrap items-center gap-2">
-                    <Button type="button" size="sm" variant="outline" className="h-8">
-                      Eliminar selección
-                    </Button>
-                    <Button type="button" size="sm" variant="outline" className="h-8">
-                      Exportar CSV
-                    </Button>
-                    <Button
-                      type="button"
-                      size="sm"
-                      variant="ghost"
-                      className={listBulkToolbarClearButtonClass}
-                      onClick={() => setSelected(new Set())}
-                    >
-                      Limpiar
-                    </Button>
-                  </div>
-                </div>
-              ) : null
-            }
-            footer={
-              <DataWorkspaceListPaginationFooter
-                variant="dark"
-                listFetching={listFetching}
+          bulkToolbar={
+            selected.size > 0 ? (
+              <DataWorkspaceListBulkToolbar
+                selectedCount={selected.size}
+                onClear={() => setSelected(new Set())}
+                placement={hasFilterChips ? "stacked" : "standalone"}
+                disabled={listFetching}
+                actions={[
+                  ...(canDelete
+                    ? [
+                        {
+                          label: "Eliminar selección",
+                          onClick: () => {},
+                          semantic: "destructive" as const,
+                        },
+                      ]
+                    : []),
+                  { label: "Exportar CSV", onClick: () => {} },
+                ]}
+              />
+            ) : null
+          }
+          footer={
+            <DataWorkspaceTableListPaginationFooter
+              listFetching={listFetching}
                 totalCount={totalCount}
                 rangeStart={rangeLabel.start}
                 rangeEnd={rangeLabel.end}
@@ -712,204 +672,246 @@ function SuppliersPage() {
                   setPageSize(ps)
                   setPage(1)
                 }}
-                pageSizeLabelId={pageSizeLabelId}
-              />
-            }
-          >
-            <DataWorkspaceListTableFrame>
-              <table
-                className={workspaceDataTableClassName}
-                aria-busy={listFetching}
-              >
-                <TableHeader>
-                  <TableRow className="border-0 hover:bg-transparent">
-                    <TableHead className={cn(lightTableThClass, "w-12 !px-0 text-center")}>
-                      <div className={cn(selectColumnInnerClass, "min-h-10")}>
-                        <Checkbox
-                          className={tableRowSelectCheckboxClass}
-                          checked={
-                            allVisibleSelected
-                              ? true
-                              : someVisibleSelected
-                                ? "indeterminate"
-                                : false
-                          }
-                          onCheckedChange={(c) => {
-                            setSelected((prev) => {
-                              const next = new Set(prev)
-                              if (c === true) {
-                                visibleIds.forEach((id) => next.add(id))
-                              } else {
-                                visibleIds.forEach((id) => next.delete(id))
-                              }
-                              return next
-                            })
-                          }}
-                          disabled={
-                            listFetching ||
-                            totalCount === 0 ||
-                            pageRows.length === 0
-                          }
-                          aria-label="Seleccionar filas visibles"
-                        />
-                      </div>
-                    </TableHead>
-                    <TableHead className={cn(lightTableThClass, "min-w-[10rem] text-left")}>
-                      Nombre
-                    </TableHead>
-                    <TableHead
+              pageSizeLabelId={pageSizeLabelId}
+            />
+          }
+        >
+          <DataWorkspaceListTableFrame>
+            <table
+              className={cn(workspaceTableLayoutClassName, "min-w-[52rem]")}
+              aria-busy={listFetching}
+            >
+              <WorkspaceTableHeader>
+                <WorkspaceTableHeaderRow>
+                  <WorkspaceTableSelectHead
+                    tone="nature"
+                    className={workspaceTableLayoutHeaderHeadClass}
+                    checked={
+                      allVisibleSelected
+                        ? true
+                        : someVisibleSelected
+                          ? "indeterminate"
+                          : false
+                    }
+                    onCheckedChange={(checked) => {
+                      setSelected((prev) => {
+                        const next = new Set(prev)
+                        if (checked === true) {
+                          visibleIds.forEach((id) => next.add(id))
+                        } else {
+                          visibleIds.forEach((id) => next.delete(id))
+                        }
+                        return next
+                      })
+                    }}
+                    disabled={
+                      listFetching || totalCount === 0 || pageRows.length === 0
+                    }
+                    ariaLabel="Seleccionar filas visibles"
+                  />
+                  <WorkspaceTableHead
+                    tone="nature"
+                    className={cn(
+                      "min-w-[10rem] px-3",
+                      workspaceTableLayoutHeaderHeadClass,
+                    )}
+                  >
+                    Nombre
+                  </WorkspaceTableHead>
+                  <WorkspaceTableHead
+                    tone="nature"
+                    className={cn(
+                      "w-[12rem] min-w-0 max-w-[12rem] px-3",
+                      workspaceTableLayoutHeaderHeadClass,
+                    )}
+                  >
+                    E-mail
+                  </WorkspaceTableHead>
+                  <WorkspaceTableHead
+                    tone="nature"
+                    className={cn(
+                      "w-[9rem] min-w-0 max-w-[9rem] px-3",
+                      workspaceTableLayoutHeaderHeadClass,
+                    )}
+                  >
+                    Teléfono
+                  </WorkspaceTableHead>
+                  <WorkspaceTableHead
+                    tone="nature"
+                    className={cn(
+                      "w-[7.5rem] px-3",
+                      workspaceTableLayoutHeaderHeadClass,
+                    )}
+                  >
+                    CUIT / ID fiscal
+                  </WorkspaceTableHead>
+                  <WorkspaceTableHead
+                    tone="nature"
+                    className={cn(
+                      "min-w-[8.5rem] px-3",
+                      workspaceTableLayoutHeaderHeadClass,
+                    )}
+                  >
+                    IVA
+                  </WorkspaceTableHead>
+                  {canUpdate || canDelete ? (
+                    <WorkspaceTableHead
+                      tone="nature"
+                      align="right"
                       className={cn(
-                        lightTableThClass,
-                        "w-[12rem] min-w-0 max-w-[12rem] text-left",
+                        "w-[7.25rem] px-3",
+                        workspaceTableLayoutHeaderHeadClass,
+                      )}
+                      srOnly
+                    >
+                      Acciones
+                    </WorkspaceTableHead>
+                  ) : null}
+                </WorkspaceTableHeaderRow>
+              </WorkspaceTableHeader>
+              <TableBody>
+                {listFetching ? (
+                  <WorkspaceTableSkeletonRows
+                    rowCount={skeletonRowCount}
+                    rowKeyPrefix="suppliers-sk"
+                    columns={suppliersSkeletonColumns({
+                      hasActionsColumn: Boolean(canUpdate || canDelete),
+                    })}
+                    tone="nature"
+                  />
+                ) : totalCount === 0 ? (
+                  null
+                ) : (
+                  pageRows.map((r, i) => (
+                    <TableRow
+                      key={r.id}
+                      className={cn(
+                        workspaceTableLayoutBodyRowClass,
+                        workspaceTableNatureBodyRowClassNames(i, {
+                          selected: selected.has(r.id),
+                          noHover: true,
+                          inactive: !r.isActive,
+                        }),
                       )}
                     >
-                      E-mail
-                    </TableHead>
-                    <TableHead
-                      className={cn(
-                        lightTableThClass,
-                        "w-[9rem] min-w-0 max-w-[9rem] text-left",
-                      )}
-                    >
-                      Teléfono
-                    </TableHead>
-                    <TableHead className={cn(lightTableThClass, "w-[7.5rem] text-left")}>
-                      CUIT / ID fiscal
-                    </TableHead>
-                    <TableHead className={cn(lightTableThClass, "min-w-[8.5rem] text-left")}>
-                      IVA
-                    </TableHead>
-                    {canUpdate || canDelete ? (
-                      <TableHead className={cn(lightTableThClass, "w-[7.25rem] text-right")}>
-                        <span className="sr-only">Acciones</span>
-                      </TableHead>
-                    ) : null}
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {listFetching ? (
-                    <WorkspaceTableSkeletonRows
-                      rowCount={skeletonRowCount}
-                      rowKeyPrefix="suppliers-sk"
-                      columns={suppliersSkeletonColumns({
-                        hasActionsColumn: Boolean(canUpdate || canDelete),
-                      })}
-                    />
-                  ) : totalCount === 0 ? (
-                    null
-                  ) : (
-                    pageRows.map((r, i) => (
-                      <TableRow
-                        key={r.id}
+                      <TableCell className={workspaceTableLayoutSelectBodyCellClass}>
+                        <div className={selectColumnInnerClass}>
+                          <Checkbox
+                            className={workspaceTableNatureCheckboxClass}
+                            checked={selected.has(r.id)}
+                            onCheckedChange={(c) => {
+                              setSelected((prev) => {
+                                const next = new Set(prev)
+                                if (c === true) next.add(r.id)
+                                else next.delete(r.id)
+                                return next
+                              })
+                            }}
+                            aria-label={`Seleccionar ${r.name || "proveedor"}`}
+                          />
+                        </div>
+                      </TableCell>
+                      <TableCell className={cn(workspaceTableLayoutBodyCellClass, "min-w-[10rem]")}>
+                        <p className={cn("truncate font-medium", workspaceTableNatureTextPrimaryClass)}>
+                          {r.name || "—"}
+                        </p>
+                        {r.addressLine.trim() ? (
+                          <p
+                            className={cn(
+                              "truncate text-xs leading-4",
+                              workspaceTableNatureTextSecondaryClass,
+                            )}
+                            title={r.addressLine}
+                          >
+                            {r.addressLine}
+                          </p>
+                        ) : null}
+                        {!r.isActive ? (
+                          <Badge
+                            variant="outline"
+                            className="mt-1 border-muted-foreground/30 text-[10px] font-normal text-muted-foreground"
+                          >
+                            Inactivo
+                          </Badge>
+                        ) : null}
+                      </TableCell>
+                      <TableCell
                         className={cn(
-                          workspaceTableBodyRowClassNames(i),
-                          !r.isActive && "opacity-[0.88]",
+                          workspaceTableLayoutBodyCellClass,
+                          "min-w-0 max-w-[12rem] overflow-hidden",
+                          workspaceTableNatureTextSecondaryClass,
+                        )}
+                        title={r.email.trim() ? r.email : undefined}
+                      >
+                        <p className="truncate">{r.email || "—"}</p>
+                      </TableCell>
+                      <TableCell
+                        className={cn(
+                          workspaceTableLayoutBodyCellClass,
+                          "min-w-0 max-w-[9rem] overflow-hidden",
+                          workspaceTableNatureTextSecondaryClass,
+                        )}
+                        title={r.phone.trim() ? r.phone : undefined}
+                      >
+                        <p className="truncate">{r.phone || "—"}</p>
+                      </TableCell>
+                      <TableCell
+                        className={cn(
+                          workspaceTableLayoutBodyCellClass,
+                          workspaceTableNatureTextSecondaryClass,
                         )}
                       >
-                        <TableCell className="w-12 !px-0 py-2 align-middle">
-                          <div className={selectColumnInnerClass}>
-                            <Checkbox
-                              className={tableRowSelectCheckboxClass}
-                              checked={selected.has(r.id)}
-                              onCheckedChange={(c) => {
-                                setSelected((prev) => {
-                                  const next = new Set(prev)
-                                  if (c === true) next.add(r.id)
-                                  else next.delete(r.id)
-                                  return next
-                                })
-                              }}
-                              aria-label={`Seleccionar ${r.name || "proveedor"}`}
-                            />
+                        {r.taxId || "—"}
+                      </TableCell>
+                      <TableCell className={workspaceTableLayoutBodyCellClass}>
+                        {r.ivaCondition ? (
+                          <Badge
+                            variant="secondary"
+                            className="max-w-full truncate font-normal"
+                            title={
+                              IVA_LABEL_BY_VALUE[r.ivaCondition] ??
+                              r.ivaCondition
+                            }
+                          >
+                            <span className="truncate">
+                              {IVA_LABEL_BY_VALUE[r.ivaCondition] ?? "—"}
+                            </span>
+                          </Badge>
+                        ) : (
+                          <span className={workspaceTableNatureTextSecondaryClass}>
+                            —
+                          </span>
+                        )}
+                      </TableCell>
+                      {canUpdate || canDelete ? (
+                        <TableCell className={workspaceTableLayoutActionsBodyCellClass}>
+                          <div className="flex items-center justify-end gap-1">
+                            {canUpdate ? (
+                              <DataWorkspaceTableIconAction
+                                label={`Editar ${r.name || "proveedor"}`}
+                                icon={Pencil}
+                                onClick={() => openEdit(r)}
+                              />
+                            ) : null}
+                            {canDelete ? (
+                              <DataWorkspaceTableIconAction
+                                label={`Eliminar ${r.name || "proveedor"}`}
+                                icon={Trash2}
+                                destructive
+                                onClick={() => openDelete(r)}
+                              />
+                            ) : null}
                           </div>
                         </TableCell>
-                        <TableCell className="min-w-0 px-3 py-2.5 align-middle">
-                          <p className="truncate font-medium text-foreground">
-                            {r.name || "—"}
-                          </p>
-                          {r.addressLine.trim() ? (
-                            <p
-                              className="truncate text-xs text-muted-foreground"
-                              title={r.addressLine}
-                            >
-                              {r.addressLine}
-                            </p>
-                          ) : null}
-                          {!r.isActive ? (
-                            <Badge
-                              variant="outline"
-                              className="mt-1 border-muted-foreground/30 text-[10px] font-normal text-muted-foreground"
-                            >
-                              Inactivo
-                            </Badge>
-                          ) : null}
-                        </TableCell>
-                        <TableCell
-                          className="min-w-0 max-w-[12rem] overflow-hidden px-3 py-2.5 align-middle text-muted-foreground"
-                          title={r.email.trim() ? r.email : undefined}
-                        >
-                          <p className="truncate">{r.email || "—"}</p>
-                        </TableCell>
-                        <TableCell
-                          className="min-w-0 max-w-[9rem] overflow-hidden px-3 py-2.5 align-middle text-muted-foreground"
-                          title={r.phone.trim() ? r.phone : undefined}
-                        >
-                          <p className="truncate">{r.phone || "—"}</p>
-                        </TableCell>
-                        <TableCell className="px-3 py-2.5 text-muted-foreground">
-                          {r.taxId || "—"}
-                        </TableCell>
-                        <TableCell className="min-w-0 px-3 py-2.5 align-middle">
-                          {r.ivaCondition ? (
-                            <Badge
-                              variant="secondary"
-                              className="max-w-full truncate font-normal"
-                              title={
-                                IVA_LABEL_BY_VALUE[r.ivaCondition] ??
-                                r.ivaCondition
-                              }
-                            >
-                              <span className="truncate">
-                                {IVA_LABEL_BY_VALUE[r.ivaCondition] ?? "—"}
-                              </span>
-                            </Badge>
-                          ) : (
-                            <span className="text-muted-foreground">—</span>
-                          )}
-                        </TableCell>
-                        {canUpdate || canDelete ? (
-                          <TableCell className="px-1 py-1.5 align-middle">
-                            <div className="flex items-center justify-end gap-1">
-                              {canUpdate ? (
-                                <DataWorkspaceTableIconAction
-                                  label={`Editar ${r.name || "proveedor"}`}
-                                  icon={Pencil}
-                                  onClick={() => openEdit(r)}
-                                />
-                              ) : null}
-                              {canDelete ? (
-                                <DataWorkspaceTableIconAction
-                                  label={`Eliminar ${r.name || "proveedor"}`}
-                                  icon={Trash2}
-                                  destructive
-                                  onClick={() => openDelete(r)}
-                                />
-                              ) : null}
-                            </div>
-                          </TableCell>
-                        ) : null}
-                      </TableRow>
-                    ))
-                  )}
-                </TableBody>
-              </table>
-              {!listFetching && totalCount === 0 ? (
-                <div className="min-h-[12rem] flex-1" aria-hidden />
-              ) : null}
-            </DataWorkspaceListTableFrame>
-          </DataWorkspaceListTableShell>
-        </div>
-      </div>
+                      ) : null}
+                    </TableRow>
+                  ))
+                )}
+              </TableBody>
+            </table>
+          </DataWorkspaceListTableFrame>
+        </DataWorkspaceTableListShell>
+      </DataWorkspaceTableListNatureShell>
 
       <SupplierUpsertDialog
         open={createOpenEffective}
@@ -968,7 +970,7 @@ function SuppliersPage() {
           onConfirmDelete={() => void submitDelete()}
         />
       ) : null}
-    </DataWorkspaceLayout>
+    </DataWorkspaceTableListPage>
   )
 }
 

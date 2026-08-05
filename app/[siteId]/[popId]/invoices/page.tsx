@@ -63,8 +63,13 @@ import {
   DataWorkspaceListFiltersDialogTrigger,
   DataWorkspaceListSearchField,
 } from "@/components/data-workspace/DataWorkspaceListFilterFields"
-import { DataWorkspaceListPaginationFooter } from "@/components/data-workspace/DataWorkspaceListPaginationFooter"
-import { DataWorkspaceListTableShell } from "@/components/data-workspace/DataWorkspaceListTableShell"
+import {
+  DataWorkspaceTableListFiltersBar,
+  DataWorkspaceTableListNatureShell,
+  DataWorkspaceTableListPage,
+  DataWorkspaceTableListPaginationFooter,
+  DataWorkspaceTableListShell,
+} from "@/components/data-workspace/DataWorkspaceTableListLayout"
 import {
   DataWorkspaceListTableFrame,
   DataWorkspaceTableEmptyMascot,
@@ -75,16 +80,10 @@ import {
   workspaceTableStaticRowClass,
 } from "@/components/data-workspace/dataWorkspaceListStyles"
 import {
-  dataWorkspaceListFiltersBarClass,
-  dataWorkspaceListFiltersBarInnerClass,
-  dataWorkspaceListFiltersBarRowClass,
   dataWorkspaceListFiltersGridClass,
   dataWorkspaceListFiltersPanelClass,
   dataWorkspaceListFiltersPanelLastClass,
   workspaceTableLayoutBodyRowClass,
-  workspaceTableLayoutListBodyScopeClass,
-  workspaceTableLayoutListSurfaceClass,
-  workspaceTableNatureEarthOrganicScopeClass,
 } from "@/components/data-workspace/dataWorkspaceTablesLayout"
 import {
   WorkspaceTableHead,
@@ -93,7 +92,6 @@ import {
 } from "@/components/data-workspace/WorkspaceTableHeader"
 import { WorkspaceTableSkeletonRows } from "@/components/data-workspace/WorkspaceTableSkeleton"
 import { invoicesSkeletonColumns } from "@/components/data-workspace/workspaceTableSkeletonPresets"
-import { DataWorkspaceLayout } from "@/components/layouts/DataWorkspaceLayout"
 import { DataWorkspaceHeaderIconButton } from "@/components/layouts/DataWorkspaceHeaderIconButton"
 import { Button } from "@/components/ui/button"
 import {
@@ -416,23 +414,18 @@ function InvoicesPage() {
   }
 
   return (
-    <>
-      <DataWorkspaceLayout
-        siteId={siteId}
-        popId={popId}
-        popName={bootstrap?.popName ?? ""}
-        title="Facturas"
-        headerVariant="dark"
-        contentFlush
-        sidebarCollapsible={false}
-        loading={listLoading}
-        userName={bootstrap?.userFullName}
-        userAvatarSrc={bootstrap?.userImageUrl ?? undefined}
-        userRoleLabel={bootstrap?.roleLabel ?? undefined}
-        pillLabel="ARCA / AFIP"
-        mainClassName="rootsy-nature-palette min-h-0 overflow-hidden"
-        headerActions={
-          canCreate ? (
+    <DataWorkspaceTableListPage
+        layout={{
+          siteId,
+          popId,
+          popName: bootstrap?.popName ?? "",
+          title: "Facturas",
+          loading: listLoading,
+          userName: bootstrap?.userFullName,
+          userAvatarSrc: bootstrap?.userImageUrl ?? undefined,
+          userRoleLabel: bootstrap?.roleLabel ?? undefined,
+          pillLabel: "ARCA / AFIP",
+          headerActions: canCreate ? (
             <DataWorkspaceHeaderIconButton
               label="Nueva factura"
               headerVariant="dark"
@@ -441,31 +434,12 @@ function InvoicesPage() {
             >
               <Plus className="size-5" aria-hidden />
             </DataWorkspaceHeaderIconButton>
-          ) : null
-        }
+          ) : null,
+        }}
+        error={error}
       >
-        <div className="relative flex min-h-0 w-full flex-1 flex-col">
-          {error ? (
-            <div
-              role="alert"
-              className="relative shrink-0 border-b border-destructive/25 bg-destructive/10 px-4 py-3 text-sm text-destructive"
-            >
-              {error}
-            </div>
-          ) : null}
-
-          <div className="relative flex min-h-0 flex-1 flex-col">
-            <div
-              className={dataWorkspaceListFiltersBarClass}
-              role="toolbar"
-              aria-label="Filtros del listado"
-            >
-              <div
-                className={cn(
-                  dataWorkspaceListFiltersBarInnerClass,
-                  dataWorkspaceListFiltersBarRowClass,
-                )}
-              >
+        <DataWorkspaceTableListNatureShell>
+          <DataWorkspaceTableListFiltersBar>
                 <div className={dataWorkspaceListFiltersGridClass}>
                   <div className={dataWorkspaceListFiltersPanelClass}>
                     <InvoiceStatusToolbarFilter
@@ -507,16 +481,9 @@ function InvoicesPage() {
                     />
                   </div>
                 </div>
-              </div>
-            </div>
+          </DataWorkspaceTableListFiltersBar>
 
-            <DataWorkspaceListTableShell
-              variant="flush"
-              className={cn(
-                workspaceTableNatureEarthOrganicScopeClass,
-                workspaceTableLayoutListBodyScopeClass,
-                workspaceTableLayoutListSurfaceClass,
-              )}
+            <DataWorkspaceTableListShell
               activeFiltersBar={
                 hasFilterChips ? (
                   <DataWorkspaceListActiveFiltersBar
@@ -553,8 +520,7 @@ function InvoicesPage() {
                 ) : null
               }
               footer={
-                <DataWorkspaceListPaginationFooter
-                  variant="dark"
+                <DataWorkspaceTableListPaginationFooter
                   listFetching={loading}
                   totalCount={totalCount}
                   rangeStart={rangeStart}
@@ -575,9 +541,7 @@ function InvoicesPage() {
                 />
               }
             >
-              <DataWorkspaceListTableFrame
-                className={workspaceTableLayoutListSurfaceClass}
-              >
+              <DataWorkspaceListTableFrame>
                 <table
                   className={cn(workspaceTableLayoutClassName, "min-w-[64rem]")}
                   aria-busy={loading}
@@ -706,23 +670,21 @@ function InvoicesPage() {
                   </TableBody>
                 </table>
               </DataWorkspaceListTableFrame>
-            </DataWorkspaceListTableShell>
-          </div>
-        </div>
-      </DataWorkspaceLayout>
+            </DataWorkspaceTableListShell>
+        </DataWorkspaceTableListNatureShell>
 
-      <InvoicesFiltersDialog
-        open={filtersModalOpen}
-        onOpenChange={setFiltersModalOpen}
-        draft={draftFilters}
-        onDraftChange={setDraftFilters}
-        onApply={() => {
-          pushWs({ regimen: draftFilters.regimen, page: 1 })
-          setFiltersModalOpen(false)
-        }}
-      />
+        <InvoicesFiltersDialog
+          open={filtersModalOpen}
+          onOpenChange={setFiltersModalOpen}
+          draft={draftFilters}
+          onDraftChange={setDraftFilters}
+          onApply={() => {
+            pushWs({ regimen: draftFilters.regimen, page: 1 })
+            setFiltersModalOpen(false)
+          }}
+        />
 
-      <InvoiceComposeDialog
+        <InvoiceComposeDialog
         open={composeOpen}
         onOpenChange={(open) => {
           setComposeOpen(open)
@@ -762,9 +724,9 @@ function InvoicesPage() {
         onSubmit={submitCompose}
         onCancel={() => setComposeOpen(false)}
         onAfterClose={finalizeComposeClose}
-      />
+        />
 
-      <Sheet
+        <Sheet
         open={issuedHighlight != null}
         onOpenChange={(o) => {
           if (!o) setIssuedHighlight(null)
@@ -870,7 +832,7 @@ function InvoicesPage() {
           ) : null}
         </SheetContent>
       </Sheet>
-    </>
+    </DataWorkspaceTableListPage>
   )
 }
 
