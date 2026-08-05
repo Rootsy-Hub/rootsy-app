@@ -32,6 +32,11 @@ export function popMenuHref(siteId: string, popId: string): string {
   return popScopedHref(siteId, popId, "menu")
 }
 
+/** Ruta del menú POP (`/…/menu`, `/…/menu/…`), excluye `menu-catalog`. */
+export function isPopMenuPathname(pathname: string): boolean {
+  return /\/menu(?:\/|$)/.test(pathname) && !pathname.includes("/menu-catalog")
+}
+
 export function siteIdsMatchClientRoute(
   routeSiteId: string,
   popSiteId: string,

@@ -22,23 +22,20 @@ export function saleComprobanteEmitterQueryKey(
 }
 
 export function userProfileQueryKey(userId: string) {
-  return ["user-profile", userId] as const
+  return ["_user-profile", userId] as const
 }
 
-export function userPopsOwnerQueryKey(userId: string) {
-  return ["user-pops-owner", userId] as const
+export function userPopIdsQueryKey(userId: string) {
+  return ["_user-pop-ids", userId] as const
 }
 
-export function userPopsHomeQueryKey(userId: string) {
-  return ["user-pops-home", userId] as const
+export function popAccessQueryKey(popId: string) {
+  return ["_pop-access", popId] as const
 }
 
-export function userPopsQueryKey(userId: string) {
-  return ["user-pops", userId] as const
-}
-
+/** @deprecated Usar popAccessQueryKey — la suscripción vive en `_pop-access`. */
 export function popSubscriptionQueryKey(popId: string) {
-  return ["pop-subscription", popId] as const
+  return popAccessQueryKey(popId)
 }
 
 export function canUserCreatePopQueryKey(userId: string) {

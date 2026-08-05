@@ -4,7 +4,7 @@ import { DataWorkspaceHeaderUserMenu } from "@/components/layouts/DataWorkspaceH
 import { dataWorkspaceHeaderRoleLabelClass } from "@/components/layouts/dataWorkspaceHeaderStyles"
 import { RootsIconButton, rootsIconButtonClass } from "@/components/rootsy-button"
 import withAuth from "@/hoc/withAuth"
-import { getPopMenuData } from "@/app/[siteId]/[popId]/menu/actions"
+import { usePopMenuCache } from "@/hooks/usePopMenuCache"
 import { MenuDock } from "@/app/[siteId]/[popId]/menu/MenuDock"
 import { MenuDockDndProvider, useMenuDockEdit } from "@/app/[siteId]/[popId]/menu/MenuDockDndContext"
 import { MenuGridItemButton } from "@/app/[siteId]/[popId]/menu/MenuGridItemButton"
@@ -33,7 +33,7 @@ import {
 } from "@/app/[siteId]/[popId]/menu/menuSearchFieldStyles"
 import "@/app/[siteId]/[popId]/library/color/rootsyNaturePalette.css"
 import "@/app/[siteId]/[popId]/menu/menuNaturePalette.css"
-import { canAccessMenuItem } from "@/lib/menuPermissions"
+import { canAccessMenuItemFromPopAccess } from "@/lib/menuPopAccess"
 import {
   menuSectionsRaw,
   type MenuItemDef,
@@ -129,82 +129,30 @@ function MenuPage() {
     }>
   >([])
   const containerRef = useRef<HTMLDivElement>(null)
-
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
-  const [popName, setPopName] = useState("")
-  const [popStreetAddress, setPopStreetAddress] = useState<string | null>(null)
-  const [popCity, setPopCity] = useState<string | null>(null)
-  const [popState, setPopState] = useState<string | null>(null)
-  const [popCountry, setPopCountry] = useState<string | null>(null)
-  const [popImageUrl, setPopImageUrl] = useState<string | null>(null)
-  const [popBackgroundImageUrl, setPopBackgroundImageUrl] = useState<
-    string | null
-  >(null)
-  const [permissionKeys, setPermissionKeys] = useState<string[]>([])
-  const [userFullName, setUserFullName] = useState("")
-  const [userImageUrl, setUserImageUrl] = useState<string | null>(null)
-  const [userRoleLabel, setUserRoleLabel] = useState("")
   const [isOnline, setIsOnline] = useState(true)
 
-  useEffect(() => {
-    if (!popId || !siteId) {
-      setLoading(false)
-      setError("No se encontró el punto de venta.")
-      return
-    }
-
-    let cancelled = false
-    ;(async () => {
-      try {
-        setLoading(true)
-        setError(null)
-        const result = await getPopMenuData(popId)
-        if (cancelled) return
-        if (!result.success) {
-          setError(result.error || "Error al cargar")
-          if (result.redirect) {
-            setTimeout(() => router.push(result.redirect!), 1800)
-          }
-          setLoading(false)
-          return
-        }
-        setPopName(result.pop.name)
-        setPopStreetAddress(result.pop.streetAddress)
-        setPopCity(result.pop.city)
-        setPopState(result.pop.state)
-        setPopCountry(result.pop.country)
-        setPopImageUrl(result.pop.imageUrl)
-        setPopBackgroundImageUrl(result.pop.backgroundImageUrl ?? null)
-        setPermissionKeys(result.permissionKeys)
-        setUserFullName(result.user.fullName)
-        setUserImageUrl(result.user.imageUrl)
-        setUserRoleLabel(result.user.roleLabel)
-        setLoading(false)
-      } catch {
-        if (!cancelled) {
-          setError("Error al cargar el menú.")
-          setLoading(false)
-        }
-      }
-    })()
-    return () => {
-      cancelled = true
-    }
-  }, [popId, siteId, router])
+  const {
+    isLoading,
+    loadError,
+    popAccess,
+    profileFullName,
+    profile,
+    roleLabel,
+    enabledModules,
+  } = usePopMenuCache(popId)
 
   const filteredMenuSections = useMemo(() => {
     const out: Record<string, MenuSectionDef> = {}
     for (const [key, section] of Object.entries(menuSectionsRaw)) {
       const items = section.items.filter((item) =>
-        canAccessMenuItem(permissionKeys, item.link),
+        canAccessMenuItemFromPopAccess(enabledModules, item.link),
       )
       if (items.length > 0) {
         out[key] = { ...section, items }
       }
     }
     return out
-  }, [permissionKeys])
+  }, [enabledModules])
 
   const sections = useMemo(
     () => Object.keys(filteredMenuSections) as (keyof typeof filteredMenuSections)[],
@@ -357,11 +305,29 @@ function MenuPage() {
       : section.items
   }
 
-  const popLocationLine = useMemo(() => {
-    const parts = [popCity, popState, popCountry].filter(Boolean)
-    return parts.length > 0 ? parts.join(", ") : null
-  }, [popCity, popState, popCountry])
+  const popName = popAccess?.pop.name ?? ""
+  const popStreetAddress = popAccess?.pop.streetAddress ?? null
+  const popImageUrl = popAccess?.pop.imageUrl ?? null
+  const popBackgroundImageUrl = popAccess?.pop.backgroundImageUrl ?? null
+  const userFullName = profileFullName
+  const userImageUrl = profile?.imageUrl ?? null
+  const userRoleLabel = roleLabel
 
+  const cacheMismatch =
+    popAccess != null &&
+    popAccess.pop.siteId.trim().toLowerCase() !== siteId.trim().toLowerCase()
+
+  const loading = isLoading
+  const error =
+    !popId || !siteId
+      ? "No se encontró el punto de venta."
+      : loadError
+        ? "Error al cargar el menú."
+        : cacheMismatch
+          ? "La URL no coincide con este punto de venta."
+          : popAccess && !popAccess.canEnter
+            ? "No tenés acceso activo a este punto de venta."
+            : null
   const popLogoSrc =
     popImageUrl?.trim() ||
     `https://api.dicebear.com/7.x/shapes/svg?seed=${encodeURIComponent(popId || "pop")}&backgroundColor=1a1f1d`
@@ -399,7 +365,7 @@ function MenuPage() {
   }
 
   return (
-    <MenuDockDndProvider popId={popId} permissionKeys={permissionKeys}>
+    <MenuDockDndProvider popId={popId} enabledModules={enabledModules}>
     <div
       ref={containerRef}
       className={cn(menuNatureShellClass, "fixed inset-0 flex flex-col overflow-hidden bg-background")}
@@ -484,11 +450,6 @@ function MenuPage() {
                 <span className="truncate text-sm text-muted-foreground">
                   {popStreetAddress?.trim() || "Sin dirección"}
                 </span>
-                {popLocationLine ? (
-                  <span className="truncate text-sm text-muted-foreground">
-                    {popLocationLine}
-                  </span>
-                ) : null}
               </div>
             </div>
           </div>

@@ -13,7 +13,7 @@ export async function getActiveBusinessTypes(): Promise<BusinessTypeOption[]> {
   try {
     const supabase = await createClient()
     const { data, error } = await supabase
-      .from("business_types")
+      .from("_business_types")
       .select("id, name, display_name, description")
       .eq("is_active", true)
       .order("display_name", { ascending: true })

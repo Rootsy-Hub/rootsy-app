@@ -1,23 +1,32 @@
 "use server"
 
 import type {
-  UserPopCacheRow,
-  UserPopMembershipCache,
-  UserPopRoleCache,
+  PopAccessCache,
+  PopAccessRole,
+  UserPopIdsCache,
   UserProfileCache,
 } from "@/app/home/homeUserDataTypes"
+import {
+  buildPopAccessEnabledModules,
+  mapPopAccessLimits,
+  mapPopSubscriptionRow,
+  parseExtraModuleEntries,
+  parseRolePermissionGrants,
+} from "@/app/home/popAccessResolve"
 import { requireAuthenticatedUser } from "@/lib/authHelpers"
 import { siteIdFromPopRow } from "@/lib/popRoutes"
 import { createClient } from "@/utils/supabase/server"
 
-const POP_LIST_SELECT =
-  "id, name, image_url, is_active, business_type_id, subscription_id, site_id, street_address, settings" as const
+const POP_ACCESS_SELECT =
+  "id, name, image_url, background_image_url, is_active, owner_user_id, business_type_id, subscription_id, site_id, street_address, settings" as const
 
-type PopListRow = {
+type PopAccessRow = {
   id: string
   name: string
   image_url: string | null
+  background_image_url: string | null
   is_active: boolean
+  owner_user_id: string
   business_type_id: string | null
   subscription_id: string | null
   site_id: string | null
@@ -27,52 +36,17 @@ type PopListRow = {
 
 type MemberRoleRow = {
   pop_id: string
-  role_id: string
-  pops: PopListRow | PopListRow[] | null
   roles: {
-    id: string
     name: string
     display_name: string
     permission_grants: unknown
     pop_id: string | null
   } | {
-    id: string
     name: string
     display_name: string
     permission_grants: unknown
     pop_id: string | null
   }[] | null
-}
-
-function mapPopRow(row: PopListRow): UserPopCacheRow {
-  return {
-    id: String(row.id),
-    name: String(row.name ?? "").trim(),
-    imageUrl: row.image_url ?? null,
-    isActive: Boolean(row.is_active),
-    businessTypeId: row.business_type_id ?? null,
-    subscriptionId: row.subscription_id ?? null,
-    siteId: siteIdFromPopRow({
-      site_id: row.site_id,
-      settings: row.settings,
-    }),
-    streetAddress: row.street_address ?? null,
-  }
-}
-
-function parsePermissionGrants(raw: unknown): string[] {
-  if (!Array.isArray(raw)) return []
-  return raw.filter((entry): entry is string => typeof entry === "string")
-}
-
-function mapRoleRow(role: MemberRoleRow["roles"]): UserPopRoleCache | null {
-  const row = Array.isArray(role) ? role[0] : role
-  if (!row) return null
-  return {
-    name: String(row.name ?? "").trim(),
-    displayName: String(row.display_name ?? row.name ?? "").trim(),
-    permissionGrants: parsePermissionGrants(row.permission_grants),
-  }
 }
 
 function roleMatchesPop(
@@ -83,7 +57,17 @@ function roleMatchesPop(
   return String(rolePopId) === String(membershipPopId)
 }
 
-/** 1 — `users` por id de sesión → cache `user-profile`. */
+function mapMemberRole(role: MemberRoleRow["roles"]): PopAccessRole | null {
+  const row = Array.isArray(role) ? role[0] : role
+  if (!row) return null
+  return {
+    name: String(row.name ?? "").trim(),
+    displayName: String(row.display_name ?? row.name ?? "").trim(),
+    permissionGrants: parseRolePermissionGrants(row.permission_grants),
+  }
+}
+
+/** Cache `_user-profile`. */
 export async function getUserProfileCache(): Promise<UserProfileCache> {
   const user = await requireAuthenticatedUser()
   const supabase = await createClient()
@@ -110,58 +94,133 @@ export async function getUserProfileCache(): Promise<UserProfileCache> {
   }
 }
 
-/** 2 — `pops` donde `owner_user_id` = usuario → cache `user-pops-owner`. */
-export async function getUserOwnedPopsCache(): Promise<UserPopCacheRow[]> {
+/** Cache `_user-pop-ids` — POPs propios + POPs con rol activo. */
+export async function getUserPopIdsCache(): Promise<UserPopIdsCache> {
   const user = await requireAuthenticatedUser()
   const supabase = await createClient()
 
-  const { data, error } = await supabase
-    .from("pops")
-    .select(POP_LIST_SELECT)
-    .eq("owner_user_id", user.uid)
-    .order("name")
+  const [{ data: ownedRows }, { data: memberRows }] = await Promise.all([
+    supabase.from("pops").select("id").eq("owner_user_id", user.uid),
+    supabase
+      .from("user_pop_roles")
+      .select("pop_id")
+      .eq("user_id", user.uid)
+      .eq("is_active", true),
+  ])
 
-  if (error || !data) return []
-  return (data as PopListRow[]).map(mapPopRow)
+  const ids = new Set<string>()
+  for (const row of ownedRows ?? []) {
+    ids.add(String(row.id))
+  }
+  for (const row of memberRows ?? []) {
+    ids.add(String(row.pop_id))
+  }
+  return Array.from(ids)
 }
 
-/** 3 — `user_pop_roles` activos + pops + roles → cache `user-pops`. */
-export async function getUserMemberPopsCache(): Promise<UserPopMembershipCache[]> {
+/** Cache `_pop-access` por popId. */
+export async function getPopAccessCache(
+  popId: string,
+): Promise<PopAccessCache | null> {
   const user = await requireAuthenticatedUser()
   const supabase = await createClient()
 
-  const { data, error } = await supabase
-    .from("user_pop_roles")
-    .select(
-      `
-      pop_id,
-      role_id,
-      pops:pop_id (${POP_LIST_SELECT}),
-      roles:role_id ( id, name, display_name, permission_grants, pop_id )
-    `,
-    )
-    .eq("user_id", user.uid)
-    .eq("is_active", true)
+  const { data: popRow, error: popError } = await supabase
+    .from("pops")
+    .select(POP_ACCESS_SELECT)
+    .eq("id", popId)
+    .maybeSingle()
 
-  if (error || !data) return []
+  if (popError || !popRow) return null
 
-  const out: UserPopMembershipCache[] = []
+  const pop = popRow as PopAccessRow
+  const isOwner = String(pop.owner_user_id) === user.uid
 
-  for (const row of data as MemberRoleRow[]) {
-    const popRaw = Array.isArray(row.pops) ? row.pops[0] : row.pops
-    if (!popRaw) continue
+  let role: PopAccessRole | null = null
+  let permissionGrants: string[] = []
 
-    const roleRaw = Array.isArray(row.roles) ? row.roles[0] : row.roles
-    if (!roleRaw || !roleMatchesPop(roleRaw.pop_id, row.pop_id)) continue
+  if (!isOwner) {
+    const { data: membership } = await supabase
+      .from("user_pop_roles")
+      .select(
+        `
+        is_active,
+        roles:role_id ( name, display_name, permission_grants, pop_id )
+      `,
+      )
+      .eq("user_id", user.uid)
+      .eq("pop_id", popId)
+      .eq("is_active", true)
+      .maybeSingle()
 
-    const role = mapRoleRow(roleRaw)
-    if (!role) continue
+    if (!membership) return null
 
-    out.push({
-      pop: mapPopRow(popRaw),
-      role,
-    })
+    const roleRaw = Array.isArray(membership.roles)
+      ? membership.roles[0]
+      : membership.roles
+    if (!roleRaw || !roleMatchesPop(roleRaw.pop_id, popId)) return null
+
+    role = mapMemberRole(roleRaw)
+    if (!role) return null
+    permissionGrants = role.permissionGrants
   }
 
-  return out
+  const { data: subscriptionInfo, error: subscriptionError } =
+    await supabase.rpc("get_pop_subscription_info", { pop_id: popId })
+
+  if (
+    subscriptionError ||
+    !subscriptionInfo ||
+    subscriptionInfo.length === 0
+  ) {
+    return null
+  }
+
+  const subscriptionRaw = subscriptionInfo[0] as Record<string, unknown>
+  const subscription = mapPopSubscriptionRow(subscriptionRaw)
+  const limits = mapPopAccessLimits(subscriptionRaw)
+
+  let extraModules: ReturnType<typeof parseExtraModuleEntries> = []
+  if (pop.subscription_id) {
+    const { data: subRow } = await supabase
+      .from("_pop_subscriptions")
+      .select("extra_modules")
+      .eq("id", pop.subscription_id)
+      .maybeSingle()
+    extraModules = parseExtraModuleEntries(subRow?.extra_modules)
+  }
+
+  const enabledModules = buildPopAccessEnabledModules({
+    businessTypeName: subscription.businessTypeName,
+    extraModules,
+    allModules: limits.allModules,
+    permissionGrants,
+    isOwner,
+  })
+
+  const canEnter = Boolean(pop.is_active) && subscription.isActive
+
+  return {
+    pop: {
+      id: String(pop.id),
+      name: String(pop.name ?? "").trim(),
+      imageUrl: pop.image_url ?? null,
+      backgroundImageUrl:
+        pop.background_image_url != null
+          ? String(pop.background_image_url).trim() || null
+          : null,
+      siteId: siteIdFromPopRow({
+        site_id: pop.site_id,
+        settings: pop.settings,
+      }),
+      streetAddress: pop.street_address ?? null,
+      isActive: Boolean(pop.is_active),
+    },
+    subscription,
+    enabledModules,
+    limits,
+    isOwner,
+    role,
+    canEnter,
+  }
 }

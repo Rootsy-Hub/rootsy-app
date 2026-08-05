@@ -1,31 +1,85 @@
-/** Cache `user-profile` — solo nombre, apellido y foto. */
+/** Cache `_user-profile` — nombre, apellido y foto. */
 export type UserProfileCache = {
   firstName: string
   lastName: string
   imageUrl: string | null
 }
 
-/** Cache `user-pops-owner` / fila pops en `user-pops`. */
-export type UserPopCacheRow = {
-  id: string
-  name: string
-  imageUrl: string | null
-  isActive: boolean
-  businessTypeId: string | null
-  subscriptionId: string | null
-  siteId: string
-  streetAddress: string | null
+/** Cache `_user-pop-ids` — POPs accesibles (owner + miembro). */
+export type UserPopIdsCache = string[]
+
+export type PopAccessModulePermissions = {
+  read: boolean
+  create: boolean
+  update: boolean
+  delete: boolean
 }
 
-/** Rol del usuario en un POP (cache dentro de `user-pops`). */
-export type UserPopRoleCache = {
+export type PopAccessModule = {
+  key: string
+  label: string
+  section: "operar" | "administrar" | "configurar" | "extras"
+  isExtra: boolean
+  permissions: PopAccessModulePermissions | null
+}
+
+export type PopAccessLimits = {
+  maxUsers: number
+  maxUsersLabel: string
+  maxArticles: number
+  maxArticlesLabel: string
+  maxOperationsPerMonth: number
+  maxOperationsPerMonthLabel: string
+  allModules: boolean
+}
+
+export type PopAccessSubscription = {
+  status: string
+  planName: string
+  planDisplayName: string
+  businessTypeName: string
+  businessTypeDisplayName: string
+  daysRemaining: number | null
+  isActive: boolean
+  trialEndsAt: string | null
+  currentPeriodEnd: string | null
+}
+
+export type PopAccessRole = {
   name: string
   displayName: string
   permissionGrants: string[]
 }
 
-/** Membresía activa: pop + rol validado. */
-export type UserPopMembershipCache = {
-  pop: UserPopCacheRow
-  role: UserPopRoleCache
+/** Cache `_pop-access` por popId. */
+export type PopAccessCache = {
+  pop: {
+    id: string
+    name: string
+    imageUrl: string | null
+    backgroundImageUrl: string | null
+    siteId: string
+    streetAddress: string | null
+    isActive: boolean
+  }
+  subscription: PopAccessSubscription
+  enabledModules: PopAccessModule[]
+  limits: PopAccessLimits
+  isOwner: boolean
+  role: PopAccessRole | null
+  canEnter: boolean
+}
+
+export type HomePopListItem = {
+  id: string
+  siteId: string
+  name: string
+  imageUrl: string | null
+  roleName: string
+  isOwner: boolean
+  canEnter: boolean
+  subscription: PopAccessSubscription
+  enabledModules: PopAccessModule[]
+  limits: PopAccessLimits
+  role: PopAccessRole | null
 }

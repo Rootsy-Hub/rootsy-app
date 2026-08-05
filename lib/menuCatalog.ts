@@ -31,7 +31,9 @@ import {
   UtensilsCrossed,
   Wallet,
 } from "lucide-react"
+import type { PopAccessModule } from "@/app/home/homeUserDataTypes"
 import { canAccessMenuItem } from "@/lib/menuPermissions"
+import { canAccessMenuItemFromPopAccess } from "@/lib/menuPopAccess"
 
 export type MenuItemLink =
   | "sale"
@@ -99,6 +101,7 @@ export const menuSectionsRaw: Record<string, MenuSectionDef> = {
       { name: "Mostrador", icon: Monitor, link: "mostrador" },
       { name: "Mesas", icon: UtensilsCrossed, badge: "12", link: "mesas" },
       { name: "Comprar", icon: ShoppingBag, link: "purchases" },
+      { name: "Gastos", icon: Receipt, link: "expenses" },
       { name: "Fabricación", icon: Factory, link: "section" },
       { name: "Stock", icon: Package, badge: "3", link: "articles" },
       { name: "Clientes", icon: Users, link: "clients" },
@@ -117,7 +120,6 @@ export const menuSectionsRaw: Record<string, MenuSectionDef> = {
       { name: "Operaciones", icon: Activity, link: "operations" },
       { name: "Movimientos", icon: ArrowLeftRight, link: "section" },
       { name: "Inventario", icon: ClipboardList, link: "inventory" },
-      { name: "Gastos", icon: Receipt, link: "expenses" },
       { name: "Facturas", icon: FileBarChart, link: "invoices" },
       { name: "Reportes", icon: FileCheck, link: "section" },
       { name: "Cheques", icon: Wallet, link: "section" },
@@ -216,15 +218,25 @@ export function canUseMenuDockItem(
   return canAccessMenuItem(permissionKeys, item.link)
 }
 
+export function canUseMenuDockItemFromPopAccess(
+  id: MenuDockItemId,
+  enabledModules: readonly PopAccessModule[],
+): boolean {
+  if (id === "home") return true
+  const item = getMenuCatalogItem(id)
+  if (!item?.link) return false
+  return canAccessMenuItemFromPopAccess(enabledModules, item.link)
+}
+
 export function resolveMenuDockCatalogItems(
   ids: readonly MenuDockItemId[],
-  permissionKeys: readonly string[],
+  enabledModules: readonly PopAccessModule[],
 ): MenuCatalogItem[] {
   const out: MenuCatalogItem[] = []
   const seen = new Set<MenuDockItemId>()
   for (const id of ids) {
     if (seen.has(id)) continue
-    if (!canUseMenuDockItem(id, permissionKeys)) continue
+    if (!canUseMenuDockItemFromPopAccess(id, enabledModules)) continue
     const item = getMenuCatalogItem(id)
     if (!item) continue
     seen.add(id)

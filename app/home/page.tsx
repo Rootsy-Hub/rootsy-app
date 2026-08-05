@@ -12,7 +12,7 @@ import { DataWorkspaceHeaderUserMenu } from "@/components/layouts/DataWorkspaceH
 import { useAuth } from "@/context/AuthContextSupabase"
 import withAuth from "@/hoc/withAuth"
 import { useHomePageData } from "@/hooks/useHomePageData"
-import type { UserPopListItem } from "@/app/profile/actions"
+import type { HomePopListItem } from "@/app/home/homeUserDataTypes"
 import { cn } from "@/lib/utils"
 
 const ACCENTS = [
@@ -61,7 +61,7 @@ function HomePage() {
     isLoading: homeLoading,
     loadError,
     refetchAll,
-  } = useHomePageData(user?.id)
+  } = useHomePageData(user!.id)
 
   useEffect(() => {
     const sync = () => setIsOnline(navigator.onLine)
@@ -185,6 +185,7 @@ function HomePage() {
                   const sigla = initialsFromName(pop.name)
                   const sub = pop.subscription
                   const popLogoSrc = pop.imageUrl?.trim() || null
+                  const canEnter = pop.canEnter
 
                   return (
                     <li
@@ -194,10 +195,15 @@ function HomePage() {
                       <div className="mx-auto flex w-full max-w-40 flex-col items-center">
                         <button
                           type="button"
-                          onClick={() =>
+                          disabled={!canEnter}
+                          onClick={() => {
+                            if (!canEnter) return
                             router.push(`/${pop.siteId}/${pop.id}/menu`)
-                          }
-                          className="flex w-full flex-col items-center"
+                          }}
+                          className={cn(
+                            "flex w-full flex-col items-center",
+                            !canEnter && "cursor-not-allowed opacity-55",
+                          )}
                         >
                           <div className="relative">
                             <div
@@ -244,9 +250,7 @@ function HomePage() {
                           ) : null}
                         </button>
 
-                        {pop.isOwner &&
-                        sub &&
-                        sub.isActive === false ? (
+                        {pop.isOwner && !sub.isActive ? (
                           <Button
                             type="button"
                             size="sm"
@@ -307,16 +311,8 @@ function HomePage() {
   )
 }
 
-function PopStatusBadge({ pop }: { pop: UserPopListItem }) {
+function PopStatusBadge({ pop }: { pop: HomePopListItem }) {
   const sub = pop.subscription
-
-  if (!sub) {
-    return (
-      <Badge className="absolute -bottom-2 left-1/2 -translate-x-1/2 border-0 bg-black/70 text-[10px] uppercase tracking-wider text-emerald-200">
-        {pop.isOwner ? "Propietario" : "Activo"}
-      </Badge>
-    )
-  }
 
   if (sub.status === "trial") {
     return (

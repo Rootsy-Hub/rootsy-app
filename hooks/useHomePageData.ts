@@ -1,97 +1,80 @@
 "use client"
 
 import {
-  getUserMemberPopsCache,
-  getUserOwnedPopsCache,
+  getPopAccessCache,
+  getUserPopIdsCache,
   getUserProfileCache,
 } from "@/app/home/homeUserDataActions"
 import {
-  buildHomePopList,
+  buildHomePopListFromAccess,
   buildUserProfileFullName,
 } from "@/app/home/homeUserDataResolve"
-import { getPopSubscriptionInfo } from "@/app/profile/actions"
-import type { UserPopListItem } from "@/app/profile/actions"
+import type { HomePopListItem } from "@/app/home/homeUserDataTypes"
 import {
-  popSubscriptionQueryKey,
-  userPopsOwnerQueryKey,
-  userPopsQueryKey,
+  popAccessQueryKey,
+  userPopIdsQueryKey,
   userProfileQueryKey,
 } from "@/lib/queryKeys"
 import { oneDayQueryOptions } from "@/lib/queryStaleTimes"
+import { useQueryPersistReady } from "@/components/providers/QueryProvider"
 import { useQueries, useQuery } from "@tanstack/react-query"
 import { useMemo } from "react"
 
-export function useHomePageData(userId: string | undefined) {
-  const enabled = Boolean(userId)
+export function useHomePageData(userId: string) {
+  const persistReady = useQueryPersistReady()
+  const queriesEnabled = persistReady
 
   const profileQuery = useQuery({
-    queryKey: userProfileQueryKey(userId ?? ""),
+    queryKey: userProfileQueryKey(userId),
     queryFn: getUserProfileCache,
-    enabled,
+    enabled: queriesEnabled,
     ...oneDayQueryOptions,
   })
 
-  const ownedPopsQuery = useQuery({
-    queryKey: userPopsOwnerQueryKey(userId ?? ""),
-    queryFn: getUserOwnedPopsCache,
-    enabled,
+  const popIdsQuery = useQuery({
+    queryKey: userPopIdsQueryKey(userId),
+    queryFn: getUserPopIdsCache,
+    enabled: queriesEnabled,
     ...oneDayQueryOptions,
   })
 
-  const memberPopsQuery = useQuery({
-    queryKey: userPopsQueryKey(userId ?? ""),
-    queryFn: getUserMemberPopsCache,
-    enabled,
-    ...oneDayQueryOptions,
-  })
+  const popIds = popIdsQuery.data ?? []
 
-  const popsBase = useMemo(() => {
-    return buildHomePopList(
-      ownedPopsQuery.data ?? [],
-      memberPopsQuery.data ?? [],
-    )
-  }, [ownedPopsQuery.data, memberPopsQuery.data])
-
-  const subscriptionQueries = useQueries({
-    queries: popsBase.map((pop) => ({
-      queryKey: popSubscriptionQueryKey(pop.id),
-      queryFn: () => getPopSubscriptionInfo(pop.id),
-      enabled:
-        enabled &&
-        ownedPopsQuery.isSuccess &&
-        memberPopsQuery.isSuccess,
+  const popAccessQueries = useQueries({
+    queries: popIds.map((popId) => ({
+      queryKey: popAccessQueryKey(popId),
+      queryFn: () => getPopAccessCache(popId),
+      enabled: queriesEnabled && popIdsQuery.isSuccess,
       ...oneDayQueryOptions,
     })),
   })
 
-  const pops = useMemo((): UserPopListItem[] => {
-    return popsBase.map((pop, index) => ({
-      ...pop,
-      subscription: subscriptionQueries[index]?.data ?? null,
-    }))
-  }, [popsBase, subscriptionQueries])
+  const pops = useMemo((): HomePopListItem[] => {
+    const accessRows = popAccessQueries
+      .map((query) => query.data)
+      .filter((row): row is NonNullable<typeof row> => Boolean(row))
+    return buildHomePopListFromAccess(accessRows)
+  }, [popAccessQueries])
 
-  const subscriptionsPending =
-    popsBase.length > 0 &&
-    subscriptionQueries.some((query) => query.isLoading)
+  const popAccessPending =
+    popIds.length > 0 && popAccessQueries.some((query) => query.isPending)
 
   const isLoading =
-    profileQuery.isLoading ||
-    ownedPopsQuery.isLoading ||
-    memberPopsQuery.isLoading ||
-    subscriptionsPending
+    !persistReady ||
+    profileQuery.isPending ||
+    popIdsQuery.isPending ||
+    popAccessPending
 
   const loadError =
-    profileQuery.isError ||
-    ownedPopsQuery.isError ||
-    memberPopsQuery.isError
+    profileQuery.isError || popIdsQuery.isError || popAccessQueries.some(
+      (query) => query.isError,
+    )
 
   const refetchAll = async () => {
     await Promise.all([
       profileQuery.refetch(),
-      ownedPopsQuery.refetch(),
-      memberPopsQuery.refetch(),
-      ...subscriptionQueries.map((query) => query.refetch()),
+      popIdsQuery.refetch(),
+      ...popAccessQueries.map((query) => query.refetch()),
     ])
   }
 

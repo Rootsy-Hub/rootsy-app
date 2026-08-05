@@ -22,14 +22,15 @@ export default function HomeQueryDocsPage() {
         <div>
           <h1 className="text-2xl font-bold text-white">Consultas del inicio</h1>
           <p className="mt-2">
-            Al entrar al inicio, con usuario logueado, pedimos tres bloques de
-            datos al servidor y los guardamos en React Query (cache 24 h).
+            Al entrar al inicio pedimos un perfil global, la lista de POPs
+            accesibles y, por cada POP, un bloque de acceso completo en React
+            Query (cache 24 h).
           </p>
         </div>
 
         <section className="space-y-3">
           <h2 className="text-lg font-semibold text-white">
-            1. Perfil — <code className="text-emerald-300">user-profile</code>
+            1. Perfil — <code className="text-emerald-300">_user-profile</code>
           </h2>
           <p>
             <strong className="text-zinc-100">Tabla:</strong>{" "}
@@ -44,44 +45,82 @@ export default function HomeQueryDocsPage() {
 
         <section className="space-y-3">
           <h2 className="text-lg font-semibold text-white">
-            2. POPs propios —{" "}
-            <code className="text-emerald-300">user-pops-owner</code>
+            2. Índice de POPs —{" "}
+            <code className="text-emerald-300">_user-pop-ids</code>
           </h2>
           <p>
-            <strong className="text-zinc-100">Tabla:</strong>{" "}
-            <code>pops</code> donde <code>owner_user_id</code> = usuario.
+            Reemplaza las caches anteriores <code>user-pops-owner</code> y{" "}
+            <code>user-pops</code>. Devuelve solo los ids accesibles:
           </p>
-          <p>
-            <strong className="text-zinc-100">Campos en cache:</strong>{" "}
-            <code>id</code>, <code>name</code>, <code>image_url</code>,{" "}
-            <code>is_active</code>, <code>business_type_id</code>,{" "}
-            <code>subscription_id</code>, <code>site_id</code>,{" "}
-            <code>street_address</code>.
-          </p>
+          <ul className="list-disc space-y-1 pl-5">
+            <li>
+              POPs donde <code>owner_user_id</code> = usuario (
+              <code>pops</code>).
+            </li>
+            <li>
+              POPs con rol activo (<code>user_pop_roles</code> con{" "}
+              <code>is_active = true</code>).
+            </li>
+          </ul>
         </section>
 
         <section className="space-y-3">
           <h2 className="text-lg font-semibold text-white">
-            3. POPs con rol — <code className="text-emerald-300">user-pops</code>
+            3. Acceso por POP —{" "}
+            <code className="text-emerald-300">_pop-access</code> +{" "}
+            <code>popId</code>
           </h2>
           <p>
-            <strong className="text-zinc-100">Tabla:</strong>{" "}
-            <code>user_pop_roles</code> con <code>user_id</code> = usuario e{" "}
-            <code>is_active = true</code>.
+            Por cada id del punto 2 se consulta el acceso completo (owner y
+            miembros). Una sola cache por POP.
           </p>
-          <p>En la misma consulta (join) traemos:</p>
-          <ul className="list-disc space-y-1 pl-5">
+          <p>
+            <strong className="text-zinc-100">Contenido:</strong>
+          </p>
+          <ol className="list-decimal space-y-2 pl-5">
             <li>
-              El POP (<code>pops</code>) con los mismos campos que en el punto
-              2.
+              <strong className="text-zinc-100">Datos del POP:</strong>{" "}
+              <code>id</code>, <code>name</code>, <code>image_url</code>,{" "}
+              <code>background_image_url</code>, <code>site_id</code>,{" "}
+              <code>street_address</code>, <code>is_active</code>.
             </li>
             <li>
-              El rol (<code>roles</code>) validando que{" "}
-              <code>roles.pop_id</code> coincida con el POP (o sea rol de
-              sistema): <code>name</code>, <code>display_name</code>,{" "}
-              <code>permission_grants</code>.
+              <strong className="text-zinc-100">Estado de subscripción:</strong>{" "}
+              RPC <code>get_pop_subscription_info</code> →{" "}
+              <code>isActive</code>, <code>status</code>, plan, trial, período.
+              Define <code>canEnter</code> (POP activo + subscripción vigente).
             </li>
-          </ul>
+            <li>
+              <strong className="text-zinc-100">Tipo de negocio:</strong>{" "}
+              <code>businessTypeName</code> y{" "}
+              <code>businessTypeDisplayName</code> dentro de{" "}
+              <code>subscription</code> (RPC{" "}
+              <code>get_pop_subscription_info</code>).
+            </li>
+            <li>
+              <strong className="text-zinc-100">Módulos habilitados:</strong>{" "}
+              generales + específicos del tipo + extras contratados (o todos si
+              el plan incluye <code>all_modules</code>). Desde{" "}
+              <code>rootsySubscriptionCatalog</code> +{" "}
+              <code>_pop_subscriptions.extra_modules</code>.
+            </li>
+            <li>
+              <strong className="text-zinc-100">Límites:</strong> usuarios,
+              artículos y operaciones/mes del plan × tipo.
+            </li>
+            <li>
+              <strong className="text-zinc-100">isOwner:</strong> si el usuario
+              es titular del POP.
+            </li>
+            <li>
+              <strong className="text-zinc-100">Rol y permisos:</strong> si no
+              es owner, trae el rol activo (<code>roles</code>) y, por cada
+              módulo habilitado con pantalla en el POP, los permisos{" "}
+              <code>read/create/update/delete</code> según{" "}
+              <code>permission_grants</code>. El owner tiene acceso completo en
+              todos los módulos habilitados.
+            </li>
+          </ol>
         </section>
 
         <section className="space-y-3">
@@ -89,9 +128,10 @@ export default function HomeQueryDocsPage() {
             Pantalla del inicio
           </h2>
           <p>
-            Con esos tres caches unimos POPs propios y POPs con rol para la
-            grilla. Por cada POP pedimos aparte la suscripción (
-            <code className="text-emerald-300">pop-subscription</code>).
+            Con <code>_user-pop-ids</code> + N consultas{" "}
+            <code>_pop-access</code> armamos la grilla. Solo se puede entrar al
+            POP si <code>canEnter</code> es true; si es owner y la subscripción
+            está inactiva, puede ir a activarla.
           </p>
         </section>
 
@@ -99,11 +139,14 @@ export default function HomeQueryDocsPage() {
           <p>
             <strong className="text-zinc-200">Código:</strong>{" "}
             <code>homeUserDataActions.ts</code>,{" "}
+            <code>popAccessResolve.ts</code>,{" "}
             <code>hooks/useHomePageData.ts</code>
           </p>
           <p>
             <strong className="text-zinc-200">TTL cache:</strong> 24 h (
-            <code>oneDayQueryOptions</code>)
+            <code>oneDayQueryOptions</code>). Las claves con prefijo{" "}
+            <code>_</code> se persisten en <code>localStorage</code> para
+            sobrevivir recargas de página.
           </p>
         </section>
       </main>

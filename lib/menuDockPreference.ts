@@ -1,8 +1,9 @@
+import type { PopAccessModule } from "@/app/home/homeUserDataTypes"
 import {
   DEFAULT_MENU_DOCK_IDS,
   isMenuDockItemId,
   resolveMenuDockCatalogItems,
-  canUseMenuDockItem,
+  canUseMenuDockItemFromPopAccess,
   type MenuDockItemId,
 } from "@/lib/menuCatalog"
 
@@ -13,14 +14,14 @@ const STORAGE_PREFIX = "rootsy:menu-dock:"
 
 function sanitizeIds(
   raw: unknown,
-  permissionKeys: readonly string[],
+  enabledModules: readonly PopAccessModule[],
 ): MenuDockItemId[] {
   if (!Array.isArray(raw)) return []
   const out: MenuDockItemId[] = []
   const seen = new Set<MenuDockItemId>()
   for (const entry of raw) {
     if (!isMenuDockItemId(entry) || seen.has(entry)) continue
-    if (!canUseMenuDockItem(entry, permissionKeys)) continue
+    if (!canUseMenuDockItemFromPopAccess(entry, enabledModules)) continue
     seen.add(entry)
     out.push(entry)
     if (out.length >= MAX_MENU_DOCK_ITEMS) break
@@ -60,33 +61,33 @@ export function writeSavedMenuDockIds(
 
 export function resolveMenuDockIds(
   popId: string,
-  permissionKeys: readonly string[],
+  enabledModules: readonly PopAccessModule[],
 ): MenuDockItemId[] {
   const saved = readSavedMenuDockIds(popId)
-  const candidate = sanitizeIds(saved ?? DEFAULT_MENU_DOCK_IDS, permissionKeys)
+  const candidate = sanitizeIds(saved ?? DEFAULT_MENU_DOCK_IDS, enabledModules)
   if (candidate.length >= MIN_MENU_DOCK_ITEMS) return candidate
-  return sanitizeIds(DEFAULT_MENU_DOCK_IDS, permissionKeys)
+  return sanitizeIds(DEFAULT_MENU_DOCK_IDS, enabledModules)
 }
 
 export function persistMenuDockIds(
   popId: string,
   ids: readonly MenuDockItemId[],
-  permissionKeys: readonly string[],
+  enabledModules: readonly PopAccessModule[],
 ): MenuDockItemId[] {
-  const sanitized = sanitizeIds(ids, permissionKeys)
+  const sanitized = sanitizeIds(ids, enabledModules)
   const next =
     sanitized.length >= MIN_MENU_DOCK_ITEMS
       ? sanitized
-      : resolveMenuDockIds(popId, permissionKeys)
+      : resolveMenuDockIds(popId, enabledModules)
   writeSavedMenuDockIds(popId, next)
   return next
 }
 
 export function listResolvedMenuDockItems(
   popId: string,
-  permissionKeys: readonly string[],
+  enabledModules: readonly PopAccessModule[],
   dockIds?: readonly MenuDockItemId[],
 ) {
-  const ids = dockIds ?? resolveMenuDockIds(popId, permissionKeys)
-  return resolveMenuDockCatalogItems(ids, permissionKeys)
+  const ids = dockIds ?? resolveMenuDockIds(popId, enabledModules)
+  return resolveMenuDockCatalogItems(ids, enabledModules)
 }

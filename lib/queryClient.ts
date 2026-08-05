@@ -1,8 +1,9 @@
 import { QueryClient } from "@tanstack/react-query"
+import { oneDayQueryOptions } from "@/lib/queryStaleTimes"
 
 /** Sin cache por defecto — cada pantalla configurará staleTime más adelante. */
 export function createQueryClient() {
-  return new QueryClient({
+  const client = new QueryClient({
     defaultOptions: {
       queries: {
         staleTime: 0,
@@ -12,6 +13,16 @@ export function createQueryClient() {
         refetchOnReconnect: true,
         retry: 1,
       },
+      hydrate: {
+        queries: oneDayQueryOptions,
+      },
     },
   })
+
+  // Queries del home: sobreviven en memoria tras restore (sin observadores hasta auth + persistReady).
+  client.setQueryDefaults(["_user-profile"], oneDayQueryOptions)
+  client.setQueryDefaults(["_user-pop-ids"], oneDayQueryOptions)
+  client.setQueryDefaults(["_pop-access"], oneDayQueryOptions)
+
+  return client
 }

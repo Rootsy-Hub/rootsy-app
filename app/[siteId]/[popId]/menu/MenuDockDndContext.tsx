@@ -1,7 +1,8 @@
 "use client"
 
+import type { PopAccessModule } from "@/app/home/homeUserDataTypes"
 import {
-  canUseMenuDockItem,
+  canUseMenuDockItemFromPopAccess,
   DEFAULT_MENU_DOCK_IDS,
   getMenuCatalogItem,
   type MenuCatalogItem,
@@ -344,13 +345,13 @@ export function DockIconVisual({
 
 type ProviderProps = {
   popId: string
-  permissionKeys: readonly string[]
+  enabledModules: readonly PopAccessModule[]
   children: ReactNode
 }
 
 export function MenuDockDndProvider({
   popId,
-  permissionKeys,
+  enabledModules,
   children,
 }: ProviderProps) {
   const [editing, setEditing] = useState(false)
@@ -358,7 +359,7 @@ export function MenuDockDndProvider({
   const [activeDragKind, setActiveDragKind] = useState<DragKind | null>(null)
   const [dropPreviewIndex, setDropPreviewIndex] = useState<number | null>(null)
   const [dockIds, setDockIds] = useState<MenuDockItemId[]>(() =>
-    resolveMenuDockIds(popId, permissionKeys),
+    resolveMenuDockIds(popId, enabledModules),
   )
 
   const sensors = useSensors(
@@ -371,8 +372,8 @@ export function MenuDockDndProvider({
   )
 
   useEffect(() => {
-    setDockIds(resolveMenuDockIds(popId, permissionKeys))
-  }, [popId, permissionKeys])
+    setDockIds(resolveMenuDockIds(popId, enabledModules))
+  }, [popId, enabledModules])
 
   useEffect(() => {
     if (!editing) return
@@ -391,8 +392,8 @@ export function MenuDockDndProvider({
   }, [editing])
 
   const dockItems = useMemo(
-    () => listResolvedMenuDockItems(popId, permissionKeys, dockIds),
-    [popId, permissionKeys, dockIds],
+    () => listResolvedMenuDockItems(popId, enabledModules, dockIds),
+    [popId, enabledModules, dockIds],
   )
 
   const dockIdSet = useMemo(() => new Set(dockIds), [dockIds])
@@ -406,7 +407,7 @@ export function MenuDockDndProvider({
     }
     if (activeDragKind === "menu") {
       if (!canAddMore || dockIdSet.has(draggingItemId)) return dockIds
-      if (!canUseMenuDockItem(draggingItemId, permissionKeys)) return dockIds
+      if (!canUseMenuDockItemFromPopAccess(draggingItemId, enabledModules)) return dockIds
       return insertDockId(dockIds, draggingItemId, dropPreviewIndex)
     }
     return moveDockId(dockIds, draggingItemId, dropPreviewIndex)
@@ -417,15 +418,15 @@ export function MenuDockDndProvider({
     dockIds,
     canAddMore,
     dockIdSet,
-    permissionKeys,
+    enabledModules,
   ])
 
   const handleDockIdsChange = useCallback(
     (next: MenuDockItemId[]) => {
-      const persisted = persistMenuDockIds(popId, next, permissionKeys)
+      const persisted = persistMenuDockIds(popId, next, enabledModules)
       setDockIds(persisted)
     },
-    [popId, permissionKeys],
+    [popId, enabledModules],
   )
 
   const removeFromDock = useCallback(
@@ -447,9 +448,9 @@ export function MenuDockDndProvider({
       if (!id) return false
       if (dockIdSet.has(id)) return false
       if (!canAddMore) return false
-      return canUseMenuDockItem(id, permissionKeys)
+      return canUseMenuDockItemFromPopAccess(id, enabledModules)
     },
-    [editing, dockIdSet, canAddMore, permissionKeys],
+    [editing, dockIdSet, canAddMore, enabledModules],
   )
 
   const clearDragState = useCallback(() => {
@@ -497,7 +498,7 @@ export function MenuDockDndProvider({
         if (
           !canAddMore ||
           dockIdSet.has(dragMeta.itemId) ||
-          !canUseMenuDockItem(dragMeta.itemId, permissionKeys)
+          !canUseMenuDockItemFromPopAccess(dragMeta.itemId, enabledModules)
         ) {
           setDropPreviewIndex((prev) => (prev === null ? prev : null))
           return
@@ -506,7 +507,7 @@ export function MenuDockDndProvider({
 
       setDropPreviewIndex((prev) => (prev === insertIndex ? prev : insertIndex))
     },
-    [dockIds, canAddMore, dockIdSet, permissionKeys],
+    [dockIds, canAddMore, dockIdSet, enabledModules],
   )
 
   const handleDragEnd = useCallback(
@@ -529,7 +530,7 @@ export function MenuDockDndProvider({
 
       if (dragMeta.kind === "menu") {
         if (!canAddMore || dockIdSet.has(dragMeta.itemId)) return
-        if (!canUseMenuDockItem(dragMeta.itemId, permissionKeys)) return
+        if (!canUseMenuDockItemFromPopAccess(dragMeta.itemId, enabledModules)) return
         handleDockIdsChange(insertDockId(dockIds, dragMeta.itemId, insertIndex))
         return
       }
@@ -541,7 +542,7 @@ export function MenuDockDndProvider({
       dropPreviewIndex,
       canAddMore,
       dockIdSet,
-      permissionKeys,
+      enabledModules,
       clearDragState,
       handleDockIdsChange,
     ],

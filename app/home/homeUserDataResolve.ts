@@ -1,7 +1,6 @@
-import type { UserPopListItemBase } from "@/app/profile/actions"
 import type {
-  UserPopCacheRow,
-  UserPopMembershipCache,
+  HomePopListItem,
+  PopAccessCache,
   UserProfileCache,
 } from "@/app/home/homeUserDataTypes"
 
@@ -10,39 +9,24 @@ export function buildUserProfileFullName(profile: UserProfileCache): string {
   return full || profile.firstName || "Usuario"
 }
 
-/** Une POPs propios y POPs con rol para la grilla del inicio. */
-export function buildHomePopList(
-  ownedPops: UserPopCacheRow[],
-  memberPops: UserPopMembershipCache[],
-): UserPopListItemBase[] {
-  const byId = new Map<string, UserPopListItemBase>()
-
-  for (const pop of ownedPops) {
-    byId.set(pop.id, {
-      id: pop.id,
-      siteId: pop.siteId,
-      name: pop.name,
-      imageUrl: pop.imageUrl,
-      roleId: "",
-      roleName: "Dueño",
-      isOwner: true,
-    })
-  }
-
-  for (const { pop, role } of memberPops) {
-    if (byId.has(pop.id)) continue
-    byId.set(pop.id, {
-      id: pop.id,
-      siteId: pop.siteId,
-      name: pop.name,
-      imageUrl: pop.imageUrl,
-      roleId: "",
-      roleName: role.displayName || role.name || "Miembro",
-      isOwner: false,
-    })
-  }
-
-  return Array.from(byId.values()).sort((a, b) =>
-    a.name.localeCompare(b.name, "es"),
-  )
+export function buildHomePopListFromAccess(
+  accessRows: PopAccessCache[],
+): HomePopListItem[] {
+  return accessRows
+    .map((access) => ({
+      id: access.pop.id,
+      siteId: access.pop.siteId,
+      name: access.pop.name,
+      imageUrl: access.pop.imageUrl,
+      roleName: access.isOwner
+        ? "Dueño"
+        : access.role?.displayName || access.role?.name || "Miembro",
+      isOwner: access.isOwner,
+      canEnter: access.canEnter,
+      subscription: access.subscription,
+      enabledModules: access.enabledModules,
+      limits: access.limits,
+      role: access.role,
+    }))
+    .sort((a, b) => a.name.localeCompare(b.name, "es"))
 }
