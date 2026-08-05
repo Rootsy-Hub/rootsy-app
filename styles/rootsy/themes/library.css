@@ -1,0 +1,26 @@
+/**
+ * Tema Librería — rail ceniza + contenido bruma.
+ */
+
+.rootsy-theme-library {
+  --color-shell: var(--rootsy-ceniza-700);
+  --color-surface: var(--rootsy-bruma-100);
+  --color-elevated: var(--rootsy-white);
+  --color-border: var(--rootsy-bruma-200);
+  --color-text-primary: var(--rootsy-bruma-900);
+  --color-text-secondary: var(--rootsy-bruma-500);
+  --color-action: var(--rootsy-savia-600);
+  --color-action-text: var(--rootsy-white);
+  --color-accent: var(--rootsy-savia-400);
+
+  --background: var(--color-surface);
+  --foreground: var(--color-text-primary);
+  --card: var(--color-elevated);
+  --card-foreground: var(--color-text-primary);
+  --primary: var(--color-action);
+  --primary-foreground: var(--color-action-text);
+  --muted: var(--rootsy-bruma-50);
+  --muted-foreground: var(--color-text-secondary);
+  --border: var(--color-border);
+  --ring: var(--rootsy-bruma-500);
+}

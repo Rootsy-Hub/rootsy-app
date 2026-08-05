@@ -2,7 +2,7 @@
 
 import "@/app/[siteId]/[popId]/library/color/rootsyNaturePalette.css"
 import "@/app/[siteId]/[popId]/library/libraryColorTheme.css"
-import { libraryShellMainClass } from "@/app/[siteId]/[popId]/library/libraryColorTheme"
+import { libraryShellMainClass, libraryThemeClass } from "@/app/[siteId]/[popId]/library/libraryColorTheme"
 import { LayoutFinalComponentsModal } from "@/app/[siteId]/[popId]/library/LayoutFinalComponentsModal"
 import { DataWorkspaceLayout } from "@/components/layouts/DataWorkspaceLayout"
 import { DataWorkspaceHeaderIconButton } from "@/components/layouts/DataWorkspaceHeaderIconButton"
@@ -36,7 +36,7 @@ export function LibraryShell({ siteId, popId, sectionId, children }: Props) {
         userName={bootstrap?.userFullName || undefined}
         userAvatarSrc={bootstrap?.userImageUrl ?? undefined}
         userRoleLabel={bootstrap?.roleLabel || undefined}
-        mainClassName={`${libraryShellMainClass} rootsy-nature-palette min-h-0 flex-1 flex-col`}
+        mainClassName={`${libraryShellMainClass} ${libraryThemeClass} rootsy-nature-palette min-h-0 flex-1 flex-col`}
         headerActions={
           <DataWorkspaceHeaderIconButton
             label="Componentes finales"

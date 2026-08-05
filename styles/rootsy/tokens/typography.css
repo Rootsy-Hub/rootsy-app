@@ -1,0 +1,71 @@
+/**
+ * Primitivos tipográficos Rootsy.
+ * Fuente CSS espejo de lib/design-system/tokens/typography.ts
+ * Las fuentes se cargan en app/layout.tsx (--font-nunito-sans, etc.)
+ */
+
+:root {
+  --rootsy-font-ui: var(--font-nunito-sans), "Nunito Sans", sans-serif;
+  --rootsy-font-reading: var(--font-source-sans), "Source Sans 3", "Source Sans Pro", sans-serif;
+  --rootsy-font-numeric: var(--font-inter), "Inter", sans-serif;
+  --rootsy-font-code: ui-monospace, "JetBrains Mono", "SF Mono", monospace;
+
+  /* Heading */
+  --rootsy-text-heading-xxlarge-size: 2rem;
+  --rootsy-text-heading-xxlarge-lh: 2.25rem;
+  --rootsy-text-heading-xlarge-size: 1.75rem;
+  --rootsy-text-heading-xlarge-lh: 2rem;
+  --rootsy-text-heading-large-size: 1.5rem;
+  --rootsy-text-heading-large-lh: 1.75rem;
+  --rootsy-text-heading-medium-size: 1.25rem;
+  --rootsy-text-heading-medium-lh: 1.5rem;
+  --rootsy-text-heading-small-size: 1rem;
+  --rootsy-text-heading-small-lh: 1.25rem;
+  --rootsy-text-heading-xsmall-size: 0.875rem;
+  --rootsy-text-heading-xsmall-lh: 1.25rem;
+  --rootsy-text-heading-xxsmall-size: 0.75rem;
+  --rootsy-text-heading-xxsmall-lh: 1rem;
+
+  /* Body */
+  --rootsy-text-body-large-size: 1rem;
+  --rootsy-text-body-large-lh: 1.5rem;
+  --rootsy-text-body-size: 0.875rem;
+  --rootsy-text-body-lh: 1.25rem;
+  --rootsy-text-body-small-size: 0.75rem;
+  --rootsy-text-body-small-lh: 1rem;
+
+  /* Metric */
+  --rootsy-text-metric-large-size: 1.75rem;
+  --rootsy-text-metric-large-lh: 2rem;
+  --rootsy-text-metric-medium-size: 1.5rem;
+  --rootsy-text-metric-medium-lh: 1.75rem;
+  --rootsy-text-metric-small-size: 1rem;
+  --rootsy-text-metric-small-lh: 1.25rem;
+
+  /* Code */
+  --rootsy-text-code-size: 0.75rem;
+  --rootsy-text-code-lh: 1.25rem;
+}
+
+/* Alias de utilidad — compat con clases existentes en librería */
+.font-canopy {
+  font-family: var(--rootsy-font-ui);
+}
+
+.font-stream {
+  font-family: var(--rootsy-font-reading);
+}
+
+.font-ledger {
+  font-family: var(--rootsy-font-numeric);
+  font-variant-numeric: tabular-nums;
+}
+
+.font-code {
+  font-family: var(--rootsy-font-code);
+}
+
+.font-numeric {
+  font-family: var(--rootsy-font-numeric);
+  font-variant-numeric: tabular-nums;
+}

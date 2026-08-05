@@ -1,3 +1,5 @@
+import { ROOTSY_COLOR_SEMANTIC, rootsyColorHex } from "@/lib/design-system"
+
 export const ROOTSY_PRODUCT_ESSENCE =
   "Rootsy es un sistema de gestión online para cualquier tipo de negocio — panadería, ferretería, restaurante, servicios o lo que sea. Vender, stock, operaciones y el día a día del negocio en un solo lugar, sin importar el rubro."
 
@@ -64,17 +66,17 @@ export const CONCEPT_LIST_ITEMS = [
 ] as const
 
 export const CONCEPT_TOKENS = {
-  bruma100: "#EEF1F5",
-  bruma50: "#F4F6F9",
-  bruma200: "#DFE4EA",
-  bruma500: "#64748B",
-  bruma600: "#475569",
-  bruma900: "#121417",
-  savia600: "#059669",
-  savia500: "#10B981",
-  savia50: "#ECFDF5",
-  savia800: "#065F46",
-  ceniza900: "#1A2027",
-  ceniza700: "#2D3744",
-  white: "#FFFFFF",
+  bruma100: rootsyColorHex("bruma", "100"),
+  bruma50: rootsyColorHex("bruma", "50"),
+  bruma200: rootsyColorHex("bruma", "200"),
+  bruma500: rootsyColorHex("bruma", "500"),
+  bruma600: rootsyColorHex("bruma", "600"),
+  bruma900: rootsyColorHex("bruma", "900"),
+  savia600: rootsyColorHex("savia", "600"),
+  savia500: rootsyColorHex("savia", "500"),
+  savia50: rootsyColorHex("savia", "50"),
+  savia800: rootsyColorHex("savia", "800"),
+  ceniza900: rootsyColorHex("ceniza", "900"),
+  ceniza700: rootsyColorHex("ceniza", "700"),
+  white: ROOTSY_COLOR_SEMANTIC.white,
 } as const

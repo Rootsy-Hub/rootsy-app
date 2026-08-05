@@ -13,7 +13,6 @@ import {
 } from "@/app/[siteId]/[popId]/library/color/ColorDocPrimitives"
 import {
   ROOTSY_SURFACE_STACKS,
-  ROOTSY_THEMES,
 } from "@/app/[siteId]/[popId]/library/color/rootsyColorSystem"
 import { LibrarySection } from "@/app/[siteId]/[popId]/library/layoutLibraryShared"
 
@@ -35,56 +34,6 @@ export function ColorNewThemesSection() {
           description="Shell, superficie, acción y foco por contexto."
         >
           <ThemeGallery />
-        </ColorDocSection>
-
-        <ColorDocSection
-          id="themes-tokens"
-          title="Valores base"
-          description="Referencia de implementación."
-        >
-          <div className="overflow-hidden rounded-2xl border border-border/70">
-            <table className="w-full text-left text-sm">
-              <thead>
-                <tr className="border-b border-border/60 bg-muted/40">
-                  <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                    Tema
-                  </th>
-                  <th className="hidden px-4 py-3 text-xs font-semibold uppercase tracking-wide text-muted-foreground md:table-cell">
-                    Shell
-                  </th>
-                  <th className="hidden px-4 py-3 text-xs font-semibold uppercase tracking-wide text-muted-foreground md:table-cell">
-                    Acción
-                  </th>
-                  <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                    Foco
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {ROOTSY_THEMES.map((theme) => (
-                  <tr key={theme.id} className="border-b border-border/40 last:border-b-0">
-                    <td className="px-4 py-3 font-medium text-foreground">{theme.label}</td>
-                    <td className="hidden px-4 py-3 md:table-cell">
-                      <code className="text-xs text-muted-foreground">{theme.shell}</code>
-                    </td>
-                    <td className="hidden px-4 py-3 md:table-cell">
-                      <span
-                        className="inline-flex rounded-md px-2 py-0.5 text-xs font-medium text-white"
-                        style={{ backgroundColor: theme.action }}
-                      >
-                        {theme.action}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3">
-                      <span style={{ color: theme.accent }} className="text-sm font-semibold">
-                        {theme.accent}
-                      </span>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
         </ColorDocSection>
 
         <ColorDocSection

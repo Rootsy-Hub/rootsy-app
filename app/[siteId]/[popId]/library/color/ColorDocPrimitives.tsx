@@ -10,19 +10,22 @@ import {
   CHART_STATUS_NATURE,
   NATURE_ACCENTS,
   NATURE_COLOR_ROLES,
-  NATURE_GRADIENTS,
   NATURE_PILL_VARIANTS,
 } from "@/app/[siteId]/[popId]/library/color/rootsyNaturePalette"
-import { RootsNaturePill } from "@/components/rootsy-pill"
 import {
   CANOPY,
   CANOPY_DARK,
+  LibraryDocLead,
   LibraryManifestoHero,
 } from "@/app/[siteId]/[popId]/library/libraryDocPrimitives"
+import { RootsNaturePill } from "@/components/rootsy-pill"
 import type { CSSProperties, ReactNode } from "react"
 
+export function ColorDocLead({ children }: { children: ReactNode }) {
+  return <LibraryDocLead className="font-canopy">{children}</LibraryDocLead>
+}
+
 export {
-  LibraryDocLead as ColorDocLead,
   LibraryDocSection as ColorDocSection,
   LibraryPrinciplesGrid as NaturePrinciplesGrid,
   LibraryDoDontPair as GuidelinePair,

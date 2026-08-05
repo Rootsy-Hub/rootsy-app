@@ -2,29 +2,19 @@
 
 import { getColorNewPageMeta } from "@/app/[siteId]/[popId]/library/color/colorNewLibraryNav"
 import {
+  ColorSemanticPreview,
   InteractionStatesGallery,
   ProductRoleTable,
-  SemanticTokenTable,
 } from "@/app/[siteId]/[popId]/library/color/ColorSystemDocPrimitives"
 import {
   ColorDocLead,
   ColorDocSection,
   GuidelinePair,
 } from "@/app/[siteId]/[popId]/library/color/ColorDocPrimitives"
-import { ROOTSY_SEMANTIC_TOKENS } from "@/app/[siteId]/[popId]/library/color/rootsyColorSystem"
 import { LibrarySection } from "@/app/[siteId]/[popId]/library/layoutLibraryShared"
 
 export function ColorNewSemanticSection() {
   const meta = getColorNewPageMeta("colors-new-semantic")!
-
-  const surfaces = ROOTSY_SEMANTIC_TOKENS.filter((t) => t.id.startsWith("background"))
-  const text = ROOTSY_SEMANTIC_TOKENS.filter((t) => t.id.startsWith("foreground"))
-  const actions = ROOTSY_SEMANTIC_TOKENS.filter(
-    (t) => t.id.startsWith("action") || t.id.startsWith("accent"),
-  )
-  const status = ROOTSY_SEMANTIC_TOKENS.filter(
-    (t) => t.id.startsWith("status") || t.id.startsWith("decorative"),
-  )
 
   return (
     <LibrarySection
@@ -40,35 +30,11 @@ export function ColorNewSemanticSection() {
         </ColorDocLead>
 
         <ColorDocSection
-          id="semantic-surfaces"
-          title="Superficies"
-          description="Shell, canvas, ticket — jerarquía espacial."
+          id="semantic-overview"
+          title="Mapa semántico"
+          description="Superficies, acción y foco — los tokens que más se repiten en producto."
         >
-          <SemanticTokenTable tokens={surfaces} />
-        </ColorDocSection>
-
-        <ColorDocSection
-          id="semantic-text"
-          title="Texto"
-          description="Bruma 900 en claro; inverso en ceniza."
-        >
-          <SemanticTokenTable tokens={text} />
-        </ColorDocSection>
-
-        <ColorDocSection
-          id="semantic-actions"
-          title="Acción y foco"
-          description="Savia en producto; forest en landing."
-        >
-          <SemanticTokenTable tokens={actions} />
-        </ColorDocSection>
-
-        <ColorDocSection
-          id="semantic-status"
-          title="Estado y decoración"
-          description="Éxito = savia. Aviso/peligro/info = funcionales. Aurora = solo landing."
-        >
-          <SemanticTokenTable tokens={status} />
+          <ColorSemanticPreview />
         </ColorDocSection>
 
         <ColorDocSection

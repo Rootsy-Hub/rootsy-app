@@ -1,0 +1,27 @@
+/**
+ * Primitivos de espaciado Rootsy — base 8px.
+ * Fuente CSS espejo de lib/design-system/tokens/spacing.ts
+ */
+
+:root {
+  --rootsy-space-0: 0px;
+  --rootsy-space-025: 2px;
+  --rootsy-space-050: 4px;
+  --rootsy-space-075: 6px;
+  --rootsy-space-100: 8px;
+  --rootsy-space-150: 12px;
+  --rootsy-space-200: 16px;
+  --rootsy-space-250: 20px;
+  --rootsy-space-300: 24px;
+  --rootsy-space-400: 32px;
+  --rootsy-space-500: 40px;
+  --rootsy-space-600: 48px;
+  --rootsy-space-800: 64px;
+  --rootsy-space-1000: 80px;
+
+  --rootsy-space-negative-025: -2px;
+  --rootsy-space-negative-050: -4px;
+  --rootsy-space-negative-100: -8px;
+  --rootsy-space-negative-200: -16px;
+  --rootsy-space-negative-400: -32px;
+}

@@ -1,0 +1,26 @@
+/**
+ * Tema Workspace — bruma + blanco + savia.
+ */
+
+.rootsy-theme-workspace {
+  --color-shell: var(--rootsy-bruma-100);
+  --color-surface: var(--rootsy-white);
+  --color-elevated: var(--rootsy-bruma-50);
+  --color-border: var(--rootsy-bruma-200);
+  --color-text-primary: var(--rootsy-bruma-900);
+  --color-text-secondary: var(--rootsy-bruma-500);
+  --color-action: var(--rootsy-savia-600);
+  --color-action-text: var(--rootsy-white);
+  --color-accent: var(--rootsy-savia-400);
+
+  --background: var(--color-shell);
+  --foreground: var(--color-text-primary);
+  --card: var(--color-surface);
+  --card-foreground: var(--color-text-primary);
+  --primary: var(--color-action);
+  --primary-foreground: var(--color-action-text);
+  --muted: var(--color-elevated);
+  --muted-foreground: var(--color-text-secondary);
+  --border: var(--color-border);
+  --ring: var(--rootsy-bruma-500);
+}

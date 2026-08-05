@@ -1,4 +1,10 @@
-/** Clases del tema visual de la página Librería. */
+/**
+ * Tema visual de la página Librería.
+ * Consume tokens globales — lib/design-system/ + styles/rootsy/
+ */
+
+export const libraryThemeClass = "rootsy-theme-library"
+
 export const librarySidebarClass = "library-sidebar"
 export const librarySidebarEyebrowClass = "library-sidebar-eyebrow"
 export const libraryContentAreaClass = "library-content-area"

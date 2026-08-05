@@ -1,8 +1,8 @@
 import { cn } from "@/lib/utils"
 
 /**
- * Tipografía para importes y columnas numéricas (Inter + tabular-nums).
- * Usar en totales, precios, montos de tablas y tickets — no para IDs/código.
+ * Tipografía para importes y columnas numéricas.
+ * Fuentes: lib/design-system/tokens/typography.ts · --rootsy-font-numeric
  */
 export const importeBaseClass = "font-numeric tabular-nums tracking-tight"
 

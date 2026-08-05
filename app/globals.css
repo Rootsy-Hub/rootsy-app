@@ -1,5 +1,6 @@
 @import 'tailwindcss';
 @import 'tw-animate-css';
+@import '../styles/rootsy/rootsy.css';
 
 @custom-variant dark (&:is(.dark *));
 
@@ -190,9 +191,20 @@
 }
 
 @theme inline {
-  --font-sans: var(--font-nunito-sans), 'Nunito Sans', sans-serif;
-  --font-secondary: var(--font-source-sans), 'Source Sans 3', 'Source Sans Pro', sans-serif;
-  --font-numeric: var(--font-inter), 'Inter', sans-serif;
+  --font-sans: var(--rootsy-font-ui);
+  --font-secondary: var(--rootsy-font-reading);
+  --font-numeric: var(--rootsy-font-numeric);
+  --font-mono: var(--rootsy-font-code);
+  --color-rootsy-ceniza-700: var(--rootsy-ceniza-700);
+  --color-rootsy-ceniza-600: var(--rootsy-ceniza-600);
+  --color-rootsy-bruma-100: var(--rootsy-bruma-100);
+  --color-rootsy-bruma-200: var(--rootsy-bruma-200);
+  --color-rootsy-bruma-500: var(--rootsy-bruma-500);
+  --color-rootsy-bruma-900: var(--rootsy-bruma-900);
+  --color-rootsy-savia-600: var(--rootsy-savia-600);
+  --color-rootsy-savia-400: var(--rootsy-savia-400);
+  --color-rootsy-savia-50: var(--rootsy-savia-50);
+  --color-rootsy-savia-800: var(--rootsy-savia-800);
   --color-rootsy-hairline: var(--rootsy-hairline);
   --color-rootsy-particle: var(--rootsy-particle);
   --color-rootsy-section-alt: var(--rootsy-section-alt);

@@ -1,0 +1,57 @@
+/**
+ * Primitivos de color Rootsy — :root global.
+ * Fuente CSS espejo de lib/design-system/tokens/colors.ts
+ */
+
+:root {
+  /* Ceniza */
+  --rootsy-ceniza-950: #070a09;
+  --rootsy-ceniza-900: #0b100e;
+  --rootsy-ceniza-800: #0f1416;
+  --rootsy-ceniza-700: #1a2027;
+  --rootsy-ceniza-600: #20262e;
+  --rootsy-ceniza-500: #252b34;
+  --rootsy-ceniza-400: #64748b;
+  --rootsy-ceniza-300: #94a3b8;
+
+  /* Bruma */
+  --rootsy-bruma-50: #f4f6f9;
+  --rootsy-bruma-100: #eef1f5;
+  --rootsy-bruma-200: #dfe4ea;
+  --rootsy-bruma-300: #cbd5e1;
+  --rootsy-bruma-400: #94a3b8;
+  --rootsy-bruma-500: #64748b;
+  --rootsy-bruma-600: #475569;
+  --rootsy-bruma-700: #334155;
+  --rootsy-bruma-900: #121417;
+
+  /* Savia */
+  --rootsy-savia-990: #061009;
+  --rootsy-savia-975: #07120e;
+  --rootsy-savia-960: #0c1f17;
+  --rootsy-savia-950: #022c22;
+  --rootsy-savia-900: #064e3b;
+  --rootsy-savia-800: #065f46;
+  --rootsy-savia-700: #047857;
+  --rootsy-savia-600: #059669;
+  --rootsy-savia-500: #10b981;
+  --rootsy-savia-400: #34d399;
+  --rootsy-savia-300: #6ee7b7;
+  --rootsy-savia-200: #a7f3d0;
+  --rootsy-savia-100: #d1fae5;
+  --rootsy-savia-50: #ecfdf5;
+
+  /* Landing */
+  --rootsy-landing-950: #080c0b;
+  --rootsy-landing-900: #070a09;
+  --rootsy-landing-800: #0a0e0d;
+  --rootsy-landing-500: #10b981;
+  --rootsy-landing-400: #34d399;
+  --rootsy-landing-300: #6ee7b7;
+  --rootsy-landing-200: #a7f3d0;
+  --rootsy-landing-teal: #14b8a6;
+  --rootsy-landing-neon: #25fe02;
+  --rootsy-landing-neon-2: #02fe85;
+
+  --rootsy-white: #ffffff;
+}

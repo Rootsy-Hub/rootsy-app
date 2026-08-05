@@ -1,56 +1,57 @@
 /**
- * Paleta Nature Rootsy — fuente visual de la librería de color.
- * Scoped a .rootsy-nature-palette hasta migrar a producción.
+ * Paleta Nature Rootsy — extensiones scoped (tablas, layouts demo, canopy legacy).
+ * Primitivos ceniza/bruma/savia/landing: styles/rootsy/tokens/colors.css
+ * TS: lib/design-system/tokens/colors.ts
  */
 .rootsy-nature-palette {
   /* Ceniza — neutros oscuros POS (azul-ceniza) */
-  --nature-ceniza-950: #070a09;
-  --nature-ceniza-900: #0b100e;
-  --nature-ceniza-800: #0f1416;
-  --nature-ceniza-700: #1a2027;
-  --nature-ceniza-600: #20262e;
-  --nature-ceniza-500: #252b34;
-  --nature-ceniza-400: #64748b;
-  --nature-ceniza-300: #94a3b8;
+  --nature-ceniza-950: var(--rootsy-ceniza-950);
+  --nature-ceniza-900: var(--rootsy-ceniza-900);
+  --nature-ceniza-800: var(--rootsy-ceniza-800);
+  --nature-ceniza-700: var(--rootsy-ceniza-700);
+  --nature-ceniza-600: var(--rootsy-ceniza-600);
+  --nature-ceniza-500: var(--rootsy-ceniza-500);
+  --nature-ceniza-400: var(--rootsy-ceniza-400);
+  --nature-ceniza-300: var(--rootsy-ceniza-300);
 
   /* Bruma — neutros claros ticket y listados (ceniza azulado) */
-  --nature-bruma-50: #f4f6f9;
-  --nature-bruma-100: #eef1f5;
-  --nature-bruma-200: #dfe4ea;
-  --nature-bruma-300: #cbd5e1;
-  --nature-bruma-400: #94a3b8;
-  --nature-bruma-500: #64748b;
-  --nature-bruma-600: #475569;
-  --nature-bruma-700: #334155;
-  --nature-bruma-900: #121417;
+  --nature-bruma-50: var(--rootsy-bruma-50);
+  --nature-bruma-100: var(--rootsy-bruma-100);
+  --nature-bruma-200: var(--rootsy-bruma-200);
+  --nature-bruma-300: var(--rootsy-bruma-300);
+  --nature-bruma-400: var(--rootsy-bruma-400);
+  --nature-bruma-500: var(--rootsy-bruma-500);
+  --nature-bruma-600: var(--rootsy-bruma-600);
+  --nature-bruma-700: var(--rootsy-bruma-700);
+  --nature-bruma-900: var(--rootsy-bruma-900);
 
   /* Savia — verde operativo POS (emerald Vender) */
-  --nature-savia-990: #061009;
-  --nature-savia-975: #07120e;
-  --nature-savia-960: #0c1f17;
-  --nature-savia-950: #022c22;
-  --nature-savia-900: #064e3b;
-  --nature-savia-800: #065f46;
-  --nature-savia-700: #047857;
-  --nature-savia-600: #059669;
-  --nature-savia-500: #10b981;
-  --nature-savia-400: #34d399;
-  --nature-savia-300: #6ee7b7;
-  --nature-savia-200: #a7f3d0;
-  --nature-savia-100: #d1fae5;
-  --nature-savia-50: #ecfdf5;
+  --nature-savia-990: var(--rootsy-savia-990);
+  --nature-savia-975: var(--rootsy-savia-975);
+  --nature-savia-960: var(--rootsy-savia-960);
+  --nature-savia-950: var(--rootsy-savia-950);
+  --nature-savia-900: var(--rootsy-savia-900);
+  --nature-savia-800: var(--rootsy-savia-800);
+  --nature-savia-700: var(--rootsy-savia-700);
+  --nature-savia-600: var(--rootsy-savia-600);
+  --nature-savia-500: var(--rootsy-savia-500);
+  --nature-savia-400: var(--rootsy-savia-400);
+  --nature-savia-300: var(--rootsy-savia-300);
+  --nature-savia-200: var(--rootsy-savia-200);
+  --nature-savia-100: var(--rootsy-savia-100);
+  --nature-savia-50: var(--rootsy-savia-50);
 
   /* Landing — hero promocional */
-  --nature-landing-950: #080c0b;
-  --nature-landing-900: #070a09;
-  --nature-landing-800: #0a0e0d;
-  --nature-landing-500: #10b981;
-  --nature-landing-400: #34d399;
-  --nature-landing-300: #6ee7b7;
-  --nature-landing-200: #a7f3d0;
-  --nature-landing-teal: #14b8a6;
-  --nature-landing-neon: #25fe02;
-  --nature-landing-neon-2: #02fe85;
+  --nature-landing-950: var(--rootsy-landing-950);
+  --nature-landing-900: var(--rootsy-landing-900);
+  --nature-landing-800: var(--rootsy-landing-800);
+  --nature-landing-500: var(--rootsy-landing-500);
+  --nature-landing-400: var(--rootsy-landing-400);
+  --nature-landing-300: var(--rootsy-landing-300);
+  --nature-landing-200: var(--rootsy-landing-200);
+  --nature-landing-teal: var(--rootsy-landing-teal);
+  --nature-landing-neon: var(--rootsy-landing-neon);
+  --nature-landing-neon-2: var(--rootsy-landing-neon-2);
 
   /* Canopy — verde planta en esplendor */
   --nature-canopy-950: #052e1f;

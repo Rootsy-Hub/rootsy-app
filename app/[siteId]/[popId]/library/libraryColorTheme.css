@@ -1,39 +1,10 @@
 /**
  * Librería — minimal. Ceniza sidebar, bruma content, texto plano en nav.
+ * Tokens: --rootsy-* (styles/rootsy/) · tema: .rootsy-theme-library
  */
 
 .rootsy-app-light:has(.rootsy-library-shell) {
-  --library-ceniza-950: #070a09;
-  --library-ceniza-900: #0b100e;
-  --library-ceniza-700: #1a2027;
-  --library-ceniza-400: #64748b;
-  --library-ceniza-300: #94a3b8;
-  --library-bruma-50: #f4f6f9;
-  --library-bruma-100: #eef1f5;
-  --library-bruma-200: #dfe4ea;
-  --library-bruma-500: #64748b;
-  --library-bruma-900: #121417;
-  --library-savia-600: #059669;
-
-  --background: var(--library-bruma-100);
-  --foreground: var(--library-bruma-900);
-  --card: #ffffff;
-  --card-foreground: var(--library-bruma-900);
-  --popover: #ffffff;
-  --popover-foreground: var(--library-bruma-900);
-  --primary: var(--library-savia-600);
-  --primary-foreground: #ffffff;
-  --secondary: var(--library-bruma-50);
-  --secondary-foreground: var(--library-bruma-900);
-  --muted: var(--library-bruma-50);
-  --muted-foreground: var(--library-bruma-500);
-  --accent: var(--library-bruma-50);
-  --accent-foreground: var(--library-bruma-900);
-  --border: var(--library-bruma-200);
-  --input: var(--library-bruma-200);
-  --ring: var(--library-bruma-500);
-
-  background-color: var(--library-ceniza-950);
+  background-color: var(--rootsy-ceniza-950);
   color: var(--foreground);
 }
 
@@ -42,7 +13,7 @@
 }
 
 .rootsy-app-light:has(.rootsy-library-shell) header {
-  background-color: var(--library-ceniza-900) !important;
+  background-color: var(--rootsy-ceniza-900) !important;
   border-color: rgb(51 65 85 / 0.45) !important;
   color: #f8fafc !important;
 }
@@ -51,7 +22,7 @@
 .rootsy-app-light:has(.rootsy-library-shell) header button.rounded-xl {
   border-color: rgb(51 65 85 / 0.6) !important;
   background-color: transparent !important;
-  color: var(--library-ceniza-300) !important;
+  color: var(--rootsy-ceniza-300) !important;
 }
 
 .rootsy-app-light:has(.rootsy-library-shell) header a.rounded-xl:hover,
@@ -66,22 +37,22 @@
 }
 
 .rootsy-library-shell {
-  background-color: var(--library-bruma-100) !important;
-  color: var(--library-bruma-900);
+  background-color: var(--rootsy-bruma-100) !important;
+  color: var(--rootsy-bruma-900);
 }
 
 .rootsy-library-shell > .relative.flex {
-  background-color: var(--library-bruma-100);
+  background-color: var(--rootsy-bruma-100);
 }
 
 .library-sidebar {
-  background-color: var(--library-ceniza-700) !important;
+  background-color: var(--rootsy-ceniza-700) !important;
   border-color: rgb(51 65 85 / 0.35);
 }
 
 .library-sidebar-eyebrow,
 .library-nav-group-label {
-  color: var(--library-ceniza-400);
+  color: var(--rootsy-ceniza-400);
   font-size: 10px;
   font-weight: 600;
   letter-spacing: 0.1em;
@@ -89,7 +60,7 @@
 }
 
 .library-nav-link {
-  color: var(--library-ceniza-300);
+  color: var(--rootsy-ceniza-300);
   background: transparent;
   transition: color 0.12s ease;
 }
@@ -109,7 +80,7 @@
 }
 
 .library-nav-toggle {
-  color: var(--library-ceniza-400);
+  color: var(--rootsy-ceniza-400);
   background: transparent;
 }
 
@@ -118,11 +89,11 @@
 }
 
 .library-content-area {
-  background-color: var(--library-bruma-100) !important;
+  background-color: var(--rootsy-bruma-100) !important;
 }
 
 .library-content-eyebrow {
-  color: var(--library-bruma-500);
+  color: var(--rootsy-bruma-500);
   font-size: 11px;
   font-weight: 600;
   letter-spacing: 0.1em;
@@ -130,33 +101,33 @@
 }
 
 .library-page-header {
-  border-color: var(--library-bruma-200);
-  background-color: #ffffff;
+  border-color: var(--rootsy-bruma-200);
+  background-color: var(--rootsy-white);
   box-shadow: none;
 }
 
 .library-page-header-badge {
-  background-color: var(--library-bruma-50);
-  color: var(--library-bruma-600);
+  background-color: var(--rootsy-bruma-50);
+  color: var(--rootsy-bruma-600);
 }
 
 .library-page-header-mono {
-  background-color: var(--library-bruma-50);
-  color: var(--library-bruma-500);
+  background-color: var(--rootsy-bruma-50);
+  color: var(--rootsy-bruma-500);
 }
 
 .rootsy-library-shell .library-doc-section {
-  border-color: var(--library-bruma-200);
+  border-color: var(--rootsy-bruma-200);
 }
 
 .rootsy-library-shell .library-spec-card {
-  border-color: var(--library-bruma-200);
-  background-color: #ffffff;
+  border-color: var(--rootsy-bruma-200);
+  background-color: var(--rootsy-white);
   box-shadow: none;
 }
 
 .rootsy-library-shell .library-related-links {
-  border-color: var(--library-bruma-200);
+  border-color: var(--rootsy-bruma-200);
 }
 
 /* Scroll minimal — thumb pill, track invisible */
