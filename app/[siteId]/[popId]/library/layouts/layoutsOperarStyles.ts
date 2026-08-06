@@ -350,7 +350,7 @@ export function layoutsOperarToolboxIconWrapClass(configured: boolean) {
 
 /** Superficie ticket — filas 1.2.1–1.2.4 desde anatomía. */
 export const layoutsOperarSummaryPanelSurfaceClass = cn(
-  "rootsy-app-light grid min-h-0 overflow-hidden",
+  "layouts-operar-ticket-shell rootsy-app-light grid min-h-0 overflow-hidden",
   "[grid-template-rows:var(--layouts-operar-ticket-rows)]",
   "bg-[var(--rootsy-bruma-100)] text-[var(--rootsy-bruma-900)]",
 )
@@ -411,7 +411,7 @@ export const layoutsOperarSummaryActionsCellClass = layoutsOperarSummaryActionsR
 export const layoutsOperarSummaryTotalRowClass = cn(
   "layouts-operar-summary-totals flex items-center justify-between px-4 py-3",
   "border-t border-[var(--layouts-operar-border-totals)]",
-  "min-h-[var(--layouts-operar-ticket-total-min-h)] sm:min-h-[var(--layouts-operar-ticket-total-min-h-sm)]",
+  "min-h-[var(--layouts-operar-toolbox-min-h)] sm:min-h-[var(--layouts-operar-toolbox-min-h-sm)]",
 )
 
 /** Celdas ticket — placement explícito en grid 1.2.x. */
@@ -426,7 +426,10 @@ export const layoutsOperarSummaryCartCellClass = cn(
 )
 
 /** 1.2.4 — placement en grid ticket (shell en SaleOperationTotalBar tone operar). */
-export const layoutsOperarSummaryTotalsPlacementClass = "row-start-4 shrink-0 min-h-0"
+export const layoutsOperarSummaryTotalsPlacementClass = cn(
+  "row-start-4 shrink-0",
+  "min-h-[var(--layouts-operar-toolbox-min-h)] sm:min-h-[var(--layouts-operar-toolbox-min-h-sm)]",
+)
 
 /** @deprecated Usar layoutsOperarSummaryTotalsPlacementClass + TotalBar tone operar. */
 export const layoutsOperarSummaryTotalsCellClass = cn(

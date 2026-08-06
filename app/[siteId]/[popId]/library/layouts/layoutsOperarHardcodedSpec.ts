@@ -69,7 +69,8 @@ export function getLayoutsOperarGridCssVariables(): CSSProperties {
     ["--layouts-operar-toolbox-band-py" as string]: `${a.toolboxBandPaddingYPx}px`,
     ["--layouts-operar-toolbox-band-py-sm" as string]: `${a.toolboxBandPaddingYSmPx}px`,
     ["--layouts-operar-ticket-w" as string]: `${a.summaryPanelWidthPx}px`,
-    ["--layouts-operar-ticket-rows" as string]: `${a.ticketHeaderHeightPx}px minmax(0, 1fr) ${a.ticketActionsHeightPx}px minmax(${a.ticketTotalMinHeightPx}px, auto)`,
+    ["--layouts-operar-ticket-header-h" as string]: `${a.ticketHeaderHeightPx}px`,
+    ["--layouts-operar-ticket-rows" as string]: `${a.ticketHeaderHeightPx}px minmax(0, 1fr) ${a.ticketActionsHeightPx}px minmax(var(--layouts-operar-toolbox-min-h), auto)`,
     ["--layouts-operar-ticket-actions-h" as string]: `${a.ticketActionsHeightPx}px`,
     ["--layouts-operar-ticket-total-min-h" as string]: `${a.ticketTotalMinHeightPx}px`,
     ["--layouts-operar-ticket-total-min-h-sm" as string]: `${a.ticketTotalMinHeightSmPx}px`,
@@ -940,7 +941,7 @@ export function layoutsOperarTicketProposalTotalsShellClass(id: LayoutsOperarTic
     return cn(
       "layouts-operar-summary-totals relative box-border flex w-full shrink-0 flex-col justify-center",
       "border-t border-[color-mix(in_srgb,var(--rootsy-savia-800)_35%,transparent)] px-4 py-3",
-      "min-h-[var(--layouts-operar-ticket-total-min-h)] sm:min-h-[var(--layouts-operar-ticket-total-min-h-sm)]",
+      "min-h-[var(--layouts-operar-toolbox-min-h)] sm:min-h-[var(--layouts-operar-toolbox-min-h-sm)]",
       "bg-[var(--rootsy-savia-975)] text-[var(--rootsy-savia-50)]",
     )
   }
@@ -950,14 +951,12 @@ export function layoutsOperarTicketProposalTotalsShellClass(id: LayoutsOperarTic
       layoutsOperarSummaryTotalRowClass,
       "layouts-operar-summary-totals relative box-border flex w-full shrink-0 flex-col justify-center px-4 py-3",
       "ring-1 ring-inset ring-[color-mix(in_srgb,var(--rootsy-savia-400)_38%,transparent)]",
-      "min-h-[calc(var(--layouts-operar-ticket-total-min-h)+1.5rem)] sm:min-h-[calc(var(--layouts-operar-ticket-total-min-h-sm)+2rem)]",
     )
   }
 
   return cn(
     layoutsOperarSummaryTotalRowClass,
     "layouts-operar-summary-totals relative box-border flex w-full shrink-0 flex-col justify-center px-4 py-3",
-    "min-h-[calc(var(--layouts-operar-ticket-total-min-h)+1.5rem)] sm:min-h-[calc(var(--layouts-operar-ticket-total-min-h-sm)+2rem)]",
   )
 }
 

@@ -2,6 +2,7 @@
 
 import {
   SALE_CATALOG_DEFAULT_PRICE_LISTS,
+  SALE_CATALOG_PRICE_LIST_HELP,
   type SaleCatalogPriceListOption,
 } from "@/components/sale-operation/saleCatalogPriceLists"
 import {
@@ -29,15 +30,17 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
 import { cn } from "@/lib/utils"
 import {
   Barcode,
+  CircleHelp,
+  DollarSign,
   LayoutGrid,
   Minus,
   Plus,
   Rows3,
   Search,
-  Tags,
 } from "lucide-react"
 import { useId, type RefObject } from "react"
 
@@ -146,6 +149,43 @@ function priceListTriggerClass(variant: ToolbarVariant) {
     return layoutsOperarCatalogToolbarPriceListClass
   }
   return "h-10 min-w-[9.5rem] gap-2 rounded-md border-white/10 bg-black/20 text-sm text-white"
+}
+
+function priceListHelpButtonClass(variant: ToolbarVariant) {
+  if (variant === "operar") {
+    return cn(
+      "inline-flex size-8 shrink-0 items-center justify-center rounded-md transition-colors",
+      layoutsOperarCatalogToolbarIconMutedClass,
+      "hover:bg-[color-mix(in_srgb,var(--rootsy-sombra-900)_48%,transparent)] hover:text-[color-mix(in_srgb,var(--rootsy-bruma-100)_88%,white)]",
+      "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color-mix(in_srgb,var(--rootsy-savia-400)_45%,transparent)]",
+    )
+  }
+  return "inline-flex size-8 shrink-0 items-center justify-center rounded-md text-white/45 transition-colors hover:bg-white/8 hover:text-white/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-300/70"
+}
+
+function PriceListHelpTooltip({ variant }: { variant: ToolbarVariant }) {
+  return (
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <button
+          type="button"
+          className={priceListHelpButtonClass(variant)}
+          aria-label="Información sobre lista de precios"
+        >
+          <CircleHelp className="size-3.5" aria-hidden />
+        </button>
+      </TooltipTrigger>
+      <TooltipContent
+        variant="dark"
+        side="top"
+        align="end"
+        sideOffset={6}
+        className="max-w-[17rem] text-left leading-snug"
+      >
+        {SALE_CATALOG_PRICE_LIST_HELP}
+      </TooltipContent>
+    </Tooltip>
+  )
 }
 
 export function SaleCatalogToolbar({
@@ -337,7 +377,7 @@ export function SaleCatalogToolbar({
         </button>
       </div>
 
-      <div className="shrink-0">
+      <div className="flex shrink-0 items-center gap-1">
         <label id={priceListLabelId} className="sr-only">
           Lista de precio
         </label>
@@ -346,8 +386,8 @@ export function SaleCatalogToolbar({
             className={cn("flex items-center", priceListTriggerClass(variant))}
             aria-labelledby={priceListLabelId}
           >
-            <Tags className={priceListIconClass(variant)} aria-hidden />
-            {priceLists.find((p) => p.id === priceListId)?.label ?? "Mostrador"}
+            <DollarSign className={priceListIconClass(variant)} aria-hidden />
+            {priceLists.find((p) => p.id === priceListId)?.label ?? "Principal"}
           </div>
         ) : (
           <Select
@@ -365,8 +405,8 @@ export function SaleCatalogToolbar({
                   "h-10 w-fit data-[size=default]:h-10 dark:bg-[color-mix(in_srgb,var(--rootsy-sombra-950)_55%,transparent)] dark:hover:bg-[color-mix(in_srgb,var(--rootsy-sombra-950)_55%,transparent)]",
               )}
             >
-              <Tags className={priceListIconClass(variant)} aria-hidden />
-              <SelectValue placeholder="Lista de precio" />
+              <DollarSign className={priceListIconClass(variant)} aria-hidden />
+              <SelectValue placeholder="Principal" />
             </SelectTrigger>
             <SelectContent align="end">
               {priceLists.map((list) => (
@@ -377,6 +417,7 @@ export function SaleCatalogToolbar({
             </SelectContent>
           </Select>
         )}
+        <PriceListHelpTooltip variant={variant} />
       </div>
     </div>
   )

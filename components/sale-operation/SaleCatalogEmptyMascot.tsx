@@ -20,7 +20,7 @@ export function getSaleCatalogEmptyMascotCopy(hasSearch: boolean) {
 
   return {
     line1: "No encontré nada.",
-    line2: "¿Probamos otro filtro?",
+    line2: "¿Probamos otra búsqueda?",
   }
 }
 

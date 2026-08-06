@@ -429,7 +429,10 @@
   --op-light-edge-glow: color-mix(in srgb, var(--nature-earth-400) 55%, transparent);
 }
 
-/** Totales — bg con gradiente (Tailwind bg-[var] solo setea background-color). */
+/**
+ * Totales — gradiente earth (demos legacy sin rootsy-theme-pos).
+ * Producción operar: layoutsOperarTheme.css gana con mayor especificidad.
+ */
 .rootsy-nature-palette .layouts-operar-body .layouts-operar-summary-totals {
   background: var(--op-light-totals);
 }

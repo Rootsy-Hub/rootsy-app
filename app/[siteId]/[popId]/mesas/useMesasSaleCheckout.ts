@@ -998,6 +998,7 @@ export function useMesasSaleCheckout(
         return
       }
 
+      let affectedLineId: string | null = null
       setCarrito((prev) => {
         const result = addProductToTicketCart({
           carrito: prev,
@@ -1022,11 +1023,10 @@ export function useMesasSaleCheckout(
           )
         }
         setPaidPartialUnits(result.paidPartialUnits)
-        if (result.affectedLineId) {
-          onCartLineAdded?.(result.affectedLineId)
-        }
+        affectedLineId = result.affectedLineId
         return result.carrito
       })
+      if (affectedLineId) onCartLineAdded?.(affectedLineId)
     },
     [
       productosByKey,

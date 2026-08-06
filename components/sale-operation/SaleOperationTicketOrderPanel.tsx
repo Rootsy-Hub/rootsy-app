@@ -6,7 +6,6 @@ import type { OperationCartLineOverrideState } from "@/components/sale-operation
 import { SaleOperationActionsBar } from "@/components/sale-operation/SaleOperationActionsBar"
 import { SaleOperationTotalBar } from "@/components/sale-operation/SaleOperationTotalBar"
 import {
-  layoutsOperarSummaryActionsRowClass,
   layoutsOperarSummaryCartCellClass,
   layoutsOperarSummaryCartHeadingClass,
   layoutsOperarSummaryCartListSurfaceClass,
@@ -15,11 +14,12 @@ import {
   layoutsOperarSummaryEmptyStateContentClass,
   layoutsOperarSummaryEmptyIconWrapClass,
   layoutsOperarSummaryEmptyTitleClass,
-  layoutsOperarSummaryHeaderCellClass,
   layoutsOperarSummaryTotalsPlacementClass,
 } from "@/app/[siteId]/[popId]/library/layouts/layoutsOperarStyles"
 import {
+  layoutsOperarTicketProposalActionsClass,
   layoutsOperarTicketProposalCartListClass,
+  layoutsOperarTicketProposalHeaderClass,
 } from "@/app/[siteId]/[popId]/library/layouts/layoutsOperarHardcodedSpec"
 import { LAYOUTS_OPERAR_DEFAULT_TICKET_PROPOSAL } from "@/app/[siteId]/[popId]/library/layouts/rootsyLayoutsOperarSystem"
 import {
@@ -30,7 +30,6 @@ import type { MostradorCartLineEditInput } from "@/lib/menuCartLineMerge"
 import { getRowPaymentStatus } from "@/lib/partialCheckoutSelection"
 import type { CartListScrollHighlightValue } from "@/hooks/useCartListScrollHighlight"
 import { CartListScrollHighlightProvider } from "@/hooks/useCartListScrollHighlight"
-import { useCartListScrollContainerRef } from "@/hooks/useCartListScrollHighlight"
 import { cn } from "@/lib/utils"
 import { Receipt } from "lucide-react"
 import { useMemo } from "react"
@@ -70,7 +69,7 @@ export function SaleOperationTicketOrderPanel({
   emptyTitle = "Pedido vacío",
   cartScrollHighlight,
 }: Props) {
-  const scrollContainerRef = useCartListScrollContainerRef()
+  const cartScrollContainerRef = cartScrollHighlight?.scrollRef
 
   const cartDisplayGroups = useMemo(
     () => groupMostradorCartDisplayRows(cartDisplayRows, cartLineOverrides),
@@ -81,11 +80,17 @@ export function SaleOperationTicketOrderPanel({
     () => cartDisplayGroups.reduce((sum, group) => sum + group.rows.length, 0),
     [cartDisplayGroups],
   )
+  const hasTicketItems = ticketLineCount > 0
 
   const panel = (
     <>
       {/* 1.2.1 — cantidad de líneas */}
-      <div className={layoutsOperarSummaryHeaderCellClass}>
+      <div
+        className={cn(
+          layoutsOperarTicketProposalHeaderClass(TICKET_PROPOSAL),
+          "row-start-1 min-h-0 shrink-0",
+        )}
+      >
         <div className="min-w-0">
           <h2 className={layoutsOperarSummaryCartHeadingClass}>{listTitle}</h2>
           {listSubtitle ? (
@@ -101,7 +106,7 @@ export function SaleOperationTicketOrderPanel({
 
       {/* 1.2.2 — listado ticket */}
       <div
-        ref={scrollContainerRef ?? undefined}
+        ref={cartScrollContainerRef}
         className={cn(
           layoutsOperarSummaryCartCellClass,
           "layouts-operar-scroll-minimal overflow-y-auto",
@@ -110,7 +115,7 @@ export function SaleOperationTicketOrderPanel({
         aria-label="Ítems agregados"
       >
         {ticketLineCount === 0 ? (
-          <div className={layoutsOperarSummaryEmptyStateClass}>
+          <div className={layoutsOperarSummaryEmptyStateClass} data-ticket-empty="true">
             <div className={layoutsOperarSummaryEmptyStateContentClass}>
               <div className={layoutsOperarSummaryEmptyIconWrapClass} aria-hidden>
                 <Receipt className="size-7 stroke-[1.75]" />
@@ -165,14 +170,15 @@ export function SaleOperationTicketOrderPanel({
         )}
       </div>
 
-      {/* 1.2.3 — acciones: col Descartar | col Vender */}
-      <div className={layoutsOperarSummaryActionsRowClass}>
-        <SaleOperationActionsBar {...actions} variant="operar" />
-      </div>
+      {hasTicketItems ? (
+        <div className={layoutsOperarTicketProposalActionsClass(TICKET_PROPOSAL)}>
+          <SaleOperationActionsBar {...actions} variant="operar" />
+        </div>
+      ) : null}
 
       {/* 1.2.4 — totales */}
-      <div className={layoutsOperarSummaryTotalsPlacementClass}>
-        <SaleOperationTotalBar {...totalBar} tone="operar" className="h-full min-h-0" />
+      <div className={layoutsOperarSummaryTotalsPlacementClass} data-ticket-totals>
+        <SaleOperationTotalBar {...totalBar} tone="operar" className="h-full w-full" />
       </div>
     </>
   )

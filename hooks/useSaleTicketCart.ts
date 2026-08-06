@@ -296,6 +296,7 @@ export function useSaleTicketCart(input: {
         return
       }
 
+      let affectedLineId: string | null = null
       setCarrito((prev) => {
         const result = addProductToTicketCart({
           carrito: prev,
@@ -311,11 +312,10 @@ export function useSaleTicketCart(input: {
           },
           overrideActions: cartLineOverrideActions,
         })
-        if (result.affectedLineId) {
-          onCartLineAdded?.(result.affectedLineId)
-        }
+        affectedLineId = result.affectedLineId
         return result.carrito
       })
+      if (affectedLineId) onCartLineAdded?.(affectedLineId)
     },
     [
       productosByKey,

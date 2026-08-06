@@ -21,6 +21,32 @@ export type CartListScrollHighlightValue = {
 const CartListScrollHighlightContext =
   createContext<CartListScrollHighlightValue | null>(null)
 
+function scrollCartToAffectedLine(root: HTMLDivElement, lineId: string) {
+  const escaped = CSS.escape(lineId)
+  const el = root.querySelector<HTMLElement>(`[data-cart-line-id="${escaped}"]`)
+  if (!el) return false
+
+  const padding = 10
+  const rootRect = root.getBoundingClientRect()
+  const elRect = el.getBoundingClientRect()
+
+  if (elRect.bottom > rootRect.bottom - padding) {
+    const nextTop =
+      root.scrollTop + (elRect.bottom - rootRect.bottom) + padding
+    root.scrollTo({ top: nextTop, behavior: "smooth" })
+    return true
+  }
+
+  if (elRect.top < rootRect.top + padding) {
+    const nextTop =
+      root.scrollTop - (rootRect.top - elRect.top) - padding
+    root.scrollTo({ top: Math.max(0, nextTop), behavior: "smooth" })
+    return true
+  }
+
+  return true
+}
+
 export function useCartListScrollHighlight(): CartListScrollHighlightValue {
   const scrollRef = useRef<HTMLDivElement>(null)
   const [pulse, setPulse] = useState<{ lineId: string; tick: number } | null>(
@@ -43,29 +69,30 @@ export function useCartListScrollHighlight(): CartListScrollHighlightValue {
     let attempts = 0
     let raf = 0
 
-    const scrollToLine = () => {
-      const root = scrollRef.current
-      if (!root) return false
-      const escaped = CSS.escape(pulse.lineId)
-      const el = root.querySelector<HTMLElement>(
-        `[data-cart-line-id="${escaped}"]`,
-      )
-      if (!el) return false
-      el.scrollIntoView({ behavior: "smooth", block: "nearest" })
-      return true
-    }
-
     const tryScroll = () => {
-      if (scrollToLine() || attempts >= 8) return
+      const root = scrollRef.current
+      if (root && scrollCartToAffectedLine(root, pulse.lineId)) return
+      if (attempts >= 12) {
+        root?.scrollTo({ top: root.scrollHeight, behavior: "smooth" })
+        return
+      }
       attempts += 1
       raf = requestAnimationFrame(tryScroll)
     }
 
     raf = requestAnimationFrame(tryScroll)
+    const layoutFollowUp = window.setTimeout(() => {
+      const root = scrollRef.current
+      if (!root) return
+      if (!scrollCartToAffectedLine(root, pulse.lineId)) {
+        root.scrollTo({ top: root.scrollHeight, behavior: "smooth" })
+      }
+    }, 150)
     const clearHighlight = window.setTimeout(() => setPulse(null), 1300)
 
     return () => {
       cancelAnimationFrame(raf)
+      window.clearTimeout(layoutFollowUp)
       window.clearTimeout(clearHighlight)
     }
   }, [pulse?.lineId, pulse?.tick])
