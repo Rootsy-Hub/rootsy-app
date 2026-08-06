@@ -117,6 +117,12 @@ export const LAYOUTS_TABLES_SCREEN_COMPONENTS: LayoutsTablesScreenComponentRow[]
   },
   {
     layer: "Tabla",
+    component: "Botón orden columna",
+    token: "icon-button · row · neutral | edit · space.400",
+    source: "layoutsTablesHardcodedSpec · getLayoutsTablesSortButtonStyle",
+  },
+  {
+    layer: "Tabla",
     component: "Filas alternadas",
     token: "bruma-50 / white · space.600+100",
     source: "ROOTSY_LAYOUTS_TABLES_BODY",

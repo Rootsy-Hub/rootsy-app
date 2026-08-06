@@ -7,6 +7,7 @@ import {
   LayoutsTablesModulePreviewDemo,
   LayoutsTablesTableBodySectionDemo,
   LayoutsTablesTableFooterSectionDemo,
+  LayoutsTablesSortHeadSectionDemo,
   LayoutsTablesTableHeadDemo,
 } from "@/app/[siteId]/[popId]/library/layouts/LayoutsTablesDocPrimitives"
 import {
@@ -51,6 +52,9 @@ export function LayoutsTablesFoundationView({ sectionId, siteId, popId }: Props)
       <LibraryDocSection id="layouts-tables-head" title="3 · Header tabla">
         <LayoutsTablesDocSubsection title="3.1 · Selección y columnas">
           <LayoutsTablesTableHeadDemo />
+        </LayoutsTablesDocSubsection>
+        <LayoutsTablesDocSubsection title="3.2 · Orden de columnas">
+          <LayoutsTablesSortHeadSectionDemo />
         </LayoutsTablesDocSubsection>
       </LibraryDocSection>
 

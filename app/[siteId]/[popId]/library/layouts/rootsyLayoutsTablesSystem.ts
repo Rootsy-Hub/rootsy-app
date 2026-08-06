@@ -54,7 +54,7 @@ export const ROOTSY_LAYOUTS_TABLES_PRINCIPLES = [
   },
   {
     title: "Acciones por capa",
-    detail: "Chrome ghost POS · primaria savia-600 · fila ⋮ icon-button compact · destructive aislado.",
+    detail: "Chrome ghost POS · primaria savia-600 · fila ⋮ icon-button compact · sort row neutral/edit · destructive aislado.",
   },
 ] as const
 
@@ -109,6 +109,11 @@ export const ROOTSY_LAYOUTS_TABLES_BODY = {
   metaTextColor: hx("bruma", "500"),
   linkColor: hx("savia", "600"),
   moneyColor: hx("bruma", "900"),
+  /** Columna ordenable — label activo · ícono savia · reposo bruma-500. */
+  sortActiveLabelColor: hx("bruma", "700"),
+  sortInactiveLabelColor: hx("bruma", "500"),
+  sortActiveIconColor: hx("savia", "600"),
+  sortInactiveIconColor: hx("bruma", "500"),
 } as const
 
 export const ROOTSY_LAYOUTS_TABLES_STATUS: Record<

@@ -36,20 +36,30 @@ import {
   getLayoutsTablesTableShellStyle,
   getLayoutsTablesTableStyle,
   getLayoutsTablesHeadCellStyle,
+  getLayoutsTablesSortButtonStyle,
+  getLayoutsTablesSortHeadInnerStyle,
+  getLayoutsTablesSortHeadLabelStyle,
   getLayoutsTablesToolbarShellStyle,
   getLayoutsTablesUserNameStyle,
   getLayoutsTablesWireframeZoneStyle,
   getLayoutsTablesWireframeColumnDividerColor,
   LAYOUTS_TABLES_ANATOMY,
+  type LayoutsTablesSortDirection,
   type LayoutsTablesStatusId,
 } from "@/app/[siteId]/[popId]/library/layouts/layoutsTablesHardcodedSpec"
 import { ROOTSY_LAYOUTS_TABLES_CHROME } from "@/app/[siteId]/[popId]/library/layouts/rootsyLayoutsTablesSystem"
 import { COLOR_TOKENS } from "@/app/[siteId]/[popId]/library/color/rootsyColorSystem"
 import { RootsFormToolbarListFilters } from "@/components/rootsy-form"
-import { getIconButtonUiRowSurface } from "@/app/[siteId]/[popId]/library/ui-components/buttonsUiHardcodedSpec"
+import {
+  getIconButtonUiRowSurface,
+  type IconButtonUiInteractionState,
+} from "@/app/[siteId]/[popId]/library/ui-components/buttonsUiHardcodedSpec"
 import { cn } from "@/lib/utils"
 import {
+  ArrowDown,
   ArrowLeft,
+  ArrowUp,
+  ArrowUpDown,
   BookOpen,
   ChevronDown,
   ChevronLeft,
@@ -702,23 +712,108 @@ export function LayoutsTablesFooterComponentsPanel() {
   )
 }
 
-function LayoutsTablesTableContent({ rows, composed = false }: { rows: DemoRow[]; composed?: boolean }) {
+function LayoutsTablesSortButton({
+  direction = "none",
+  label,
+  interaction = "default",
+}: {
+  direction?: LayoutsTablesSortDirection
+  label: string
+  interaction?: IconButtonUiInteractionState
+}) {
+  const SortIcon =
+    direction === "asc" ? ArrowUp : direction === "desc" ? ArrowDown : ArrowUpDown
+  const sortLabel =
+    direction === "asc"
+      ? `${label}, orden ascendente`
+      : direction === "desc"
+        ? `${label}, orden descendente`
+        : `Ordenar ${label}`
+
+  return (
+    <button
+      type="button"
+      style={getLayoutsTablesSortButtonStyle(direction, interaction)}
+      aria-label={sortLabel}
+      tabIndex={-1}
+    >
+      <SortIcon size={16} aria-hidden />
+    </button>
+  )
+}
+
+function LayoutsTablesSortHeadCell({
+  label,
+  direction = "none",
+  align = "left",
+  width,
+  interaction = "default",
+}: {
+  label: string
+  direction?: LayoutsTablesSortDirection
+  align?: "left" | "right"
+  width?: number
+  interaction?: IconButtonUiInteractionState
+}) {
   const headStyle = getLayoutsTablesHeadCellStyle()
+
+  return (
+    <th
+      style={{
+        ...headStyle,
+        width,
+        textAlign: align === "right" ? "right" : "left",
+      }}
+      scope="col"
+      aria-sort={
+        direction === "asc"
+          ? "ascending"
+          : direction === "desc"
+            ? "descending"
+            : "none"
+      }
+    >
+      <div style={getLayoutsTablesSortHeadInnerStyle(align)}>
+        <span style={getLayoutsTablesSortHeadLabelStyle(direction)}>{label}</span>
+        <LayoutsTablesSortButton
+          direction={direction}
+          label={label}
+          interaction={interaction}
+        />
+      </div>
+    </th>
+  )
+}
+
+function LayoutsTablesTableHeadRow() {
+  const headStyle = getLayoutsTablesHeadCellStyle()
+  const checkboxStyle = getLayoutsTablesCheckboxStyle()
+
+  return (
+    <tr>
+      <th style={{ ...headStyle, width: 48, paddingLeft: 0, paddingRight: 0 }} scope="col">
+        <div style={{ display: "flex", justifyContent: "center" }}>
+          <div style={checkboxStyle} aria-hidden />
+        </div>
+      </th>
+      <LayoutsTablesSortHeadCell label="Artículo" direction="asc" />
+      <LayoutsTablesSortHeadCell label="Referencia" direction="none" width={144} />
+      <LayoutsTablesSortHeadCell label="Monto" direction="desc" align="right" width={112} />
+      <th style={{ ...headStyle, width: 112 }} scope="col">
+        Estado
+      </th>
+    </tr>
+  )
+}
+
+function LayoutsTablesTableContent({ rows, composed = false }: { rows: DemoRow[]; composed?: boolean }) {
   const cellStyle = getLayoutsTablesBodyCellStyle()
   const checkboxStyle = getLayoutsTablesCheckboxStyle()
 
   return (
     <table style={getLayoutsTablesTableStyle()}>
       <thead>
-        <tr>
-          <th style={{ ...headStyle, width: 48, paddingLeft: 0, paddingRight: 0 }} scope="col">
-            <span className="sr-only">Selección</span>
-          </th>
-          <th style={headStyle}>Artículo</th>
-          <th style={{ ...headStyle, width: 144 }}>Referencia</th>
-          <th style={{ ...headStyle, width: 112, textAlign: "right" }}>Monto</th>
-          <th style={{ ...headStyle, width: 112 }}>Estado</th>
-        </tr>
+        <LayoutsTablesTableHeadRow />
       </thead>
       <tbody>
         {rows.map((row, index) => (
@@ -763,11 +858,8 @@ export function LayoutsTablesFiltersSectionDemo() {
   )
 }
 
-/** 3 · Head de tabla — selección + columnas. */
+/** 3 · Head de tabla — selección + columnas ordenables. */
 export function LayoutsTablesTableHeadDemo() {
-  const headStyle = getLayoutsTablesHeadCellStyle()
-  const checkboxStyle = getLayoutsTablesCheckboxStyle()
-
   return (
     <div
       className="relative mx-auto max-w-4xl overflow-hidden rounded-2xl border border-border/70"
@@ -777,20 +869,97 @@ export function LayoutsTablesTableHeadDemo() {
       <div style={getLayoutsTablesTableShellStyle(false)}>
         <table style={getLayoutsTablesTableStyle()}>
           <thead>
-            <tr>
-              <th style={{ ...headStyle, width: 48, paddingLeft: 0, paddingRight: 0 }} scope="col">
-                <div style={{ display: "flex", justifyContent: "center" }}>
-                  <div style={checkboxStyle} aria-hidden />
-                </div>
-              </th>
-              <th style={headStyle}>Artículo</th>
-              <th style={{ ...headStyle, width: 144 }}>Referencia</th>
-              <th style={{ ...headStyle, width: 112, textAlign: "right" }}>Monto</th>
-              <th style={{ ...headStyle, width: 112 }}>Estado</th>
-            </tr>
+            <LayoutsTablesTableHeadRow />
           </thead>
         </table>
       </div>
+    </div>
+  )
+}
+
+/** 3.2 · Botón de orden en header — estados. */
+export function LayoutsTablesSortHeadSectionDemo() {
+  const headStyle = getLayoutsTablesHeadCellStyle()
+  const previewRows: Array<{
+    caption: string
+    label: string
+    direction: LayoutsTablesSortDirection
+    interaction?: IconButtonUiInteractionState
+  }> = [
+    { caption: "Reposo · sin orden", label: "Referencia", direction: "none" },
+    { caption: "Reposo · ascendente", label: "Artículo", direction: "asc" },
+    { caption: "Reposo · descendente", label: "Monto", direction: "desc" },
+    {
+      caption: "Hover · sin orden",
+      label: "Referencia",
+      direction: "none",
+      interaction: "hover",
+    },
+    {
+      caption: "Hover · ascendente",
+      label: "Artículo",
+      direction: "asc",
+      interaction: "hover",
+    },
+  ]
+
+  return (
+    <div className="space-y-6">
+      <LayoutsTablesDocZone
+        title="Columna ordenable"
+        description="Label body.small medium + icon-button row · neutral (reposo) · edit (activo) · space.400."
+      >
+        <div
+          className="relative mx-auto max-w-4xl overflow-hidden rounded-2xl border border-border/70"
+          style={getLayoutsTablesShellStyle(false)}
+        >
+          <LayoutHeightBadge label={`table.head.sort · ${LAYOUTS_TABLES_ANATOMY.tableHeadHeightPx}px`} />
+          <div style={getLayoutsTablesTableShellStyle(false)}>
+            <table style={getLayoutsTablesTableStyle()}>
+              <thead>
+                <LayoutsTablesTableHeadRow />
+              </thead>
+            </table>
+          </div>
+        </div>
+      </LayoutsTablesDocZone>
+
+      <LayoutsTablesDocZone
+        title="Estados del botón"
+        description="Ciclo none → asc → desc · ícono ArrowUpDown / ArrowUp / ArrowDown."
+      >
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          {previewRows.map((row) => (
+            <div
+              key={row.caption}
+              className="overflow-hidden rounded-2xl border border-border/70"
+              style={getLayoutsTablesTableShellStyle(false)}
+            >
+              <p className="border-b border-border/60 bg-muted/20 px-3 py-2 font-mono text-[10px] uppercase tracking-[0.08em] text-muted-foreground">
+                {row.caption}
+              </p>
+              <table style={getLayoutsTablesTableStyle()}>
+                <thead>
+                  <tr>
+                    <th style={headStyle} scope="col">
+                      <div style={getLayoutsTablesSortHeadInnerStyle("left")}>
+                        <span style={getLayoutsTablesSortHeadLabelStyle(row.direction)}>
+                          {row.label}
+                        </span>
+                        <LayoutsTablesSortButton
+                          direction={row.direction}
+                          label={row.label}
+                          interaction={row.interaction}
+                        />
+                      </div>
+                    </th>
+                  </tr>
+                </thead>
+              </table>
+            </div>
+          ))}
+        </div>
+      </LayoutsTablesDocZone>
     </div>
   )
 }

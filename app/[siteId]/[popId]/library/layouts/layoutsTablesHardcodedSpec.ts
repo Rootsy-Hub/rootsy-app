@@ -16,8 +16,10 @@ import {
 } from "@/app/[siteId]/[popId]/library/layouts/rootsyLayoutsTablesSystem"
 import { ROOTSY_FORM_CONTROL_HEIGHT_PX } from "@/app/[siteId]/[popId]/library/form/rootsyFormSystem"
 import {
+  getIconButtonUiRowSurface,
   getIconButtonUiSurface,
   ICON_BUTTON_UI_RADIUS_PX,
+  type IconButtonUiInteractionState,
 } from "@/app/[siteId]/[popId]/library/ui-components/buttonsUiHardcodedSpec"
 import {
   getFormControlUiSurface,
@@ -208,6 +210,66 @@ export function getLayoutsTablesHeadCellStyle() {
     color: ROOTSY_LAYOUTS_TABLES_BODY.headTextColor,
     textAlign: "left" as const,
     whiteSpace: "nowrap" as const,
+  }
+}
+
+export type LayoutsTablesSortDirection = "none" | "asc" | "desc"
+
+export function getLayoutsTablesSortHeadInnerStyle(
+  align: "left" | "right" = "left",
+) {
+  return {
+    display: "inline-flex" as const,
+    alignItems: "center" as const,
+    gap: rootsySpacePx("050"),
+    width: "100%" as const,
+    minWidth: 0,
+    justifyContent: align === "right" ? ("flex-end" as const) : ("flex-start" as const),
+  }
+}
+
+export function getLayoutsTablesSortHeadLabelStyle(
+  direction: LayoutsTablesSortDirection = "none",
+) {
+  return {
+    fontFamily: "var(--rootsy-font-ui)",
+    fontSize: ROOTSY_TEXT_STYLES["body.small"].fontSize,
+    lineHeight: ROOTSY_TEXT_STYLES["body.small"].lineHeight,
+    fontWeight: ROOTSY_FONT_WEIGHTS.medium.value,
+    color:
+      direction === "none"
+        ? ROOTSY_LAYOUTS_TABLES_BODY.sortInactiveLabelColor
+        : ROOTSY_LAYOUTS_TABLES_BODY.sortActiveLabelColor,
+    margin: 0,
+    overflow: "hidden" as const,
+    textOverflow: "ellipsis" as const,
+    whiteSpace: "nowrap" as const,
+  }
+}
+
+export function getLayoutsTablesSortButtonStyle(
+  direction: LayoutsTablesSortDirection = "none",
+  interaction: IconButtonUiInteractionState = "default",
+) {
+  const intent = direction === "none" ? "neutral" : "edit"
+  const surface = getIconButtonUiRowSurface(intent, interaction)
+  const sizePx = rootsySpacePx("400")
+
+  return {
+    display: "inline-flex" as const,
+    alignItems: "center" as const,
+    justifyContent: "center" as const,
+    width: sizePx,
+    height: sizePx,
+    flexShrink: 0,
+    backgroundColor: surface.backgroundColor,
+    color: surface.iconColor,
+    border: surface.border,
+    borderRadius: ICON_BUTTON_UI_RADIUS_PX,
+    boxShadow: surface.boxShadow,
+    opacity: surface.opacity,
+    padding: 0,
+    cursor: "default" as const,
   }
 }
 
