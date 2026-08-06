@@ -1,6 +1,11 @@
 "use client"
 
 import type { TreasuryYearGroupedItems } from "@/app/[siteId]/[popId]/accounts/treasuryAccountUiUtils"
+import {
+  treasuryMovementListEmptyClass,
+  treasuryMovementListTokensFor,
+  type TreasuryMovementListTokensVariant,
+} from "@/app/[siteId]/[popId]/accounts/treasuryMovementListStyles"
 import { cn } from "@/lib/utils"
 import type { KeyboardEvent, ReactNode } from "react"
 
@@ -8,6 +13,7 @@ type Props<T> = {
   yearGroups: TreasuryYearGroupedItems<T>[]
   emptyMessage: string
   fullWidth?: boolean
+  tokensVariant?: TreasuryMovementListTokensVariant
   className?: string
   rowClassName?: string
   getRowKey: (item: T) => string
@@ -27,11 +33,13 @@ export function TreasuryYearGroupedMovementsView<T>({
   yearGroups,
   emptyMessage,
   fullWidth = false,
+  tokensVariant = "default",
   className,
   rowClassName,
   getRowKey,
   renderRow,
 }: Props<T>) {
+  const tokens = treasuryMovementListTokensFor(tokensVariant)
   const totalItems = yearGroups.reduce(
     (sum, yearGroup) =>
       sum +
@@ -44,13 +52,7 @@ export function TreasuryYearGroupedMovementsView<T>({
 
   if (totalItems === 0) {
     return (
-      <div
-        className={cn(
-          "flex min-h-48 items-center justify-center px-4 py-10 text-center text-sm text-muted-foreground lg:px-5",
-          !fullWidth && "rounded-lg border border-border/60",
-          className,
-        )}
-      >
+      <div className={cn(treasuryMovementListEmptyClass(tokensVariant, fullWidth), className)}>
         {emptyMessage}
       </div>
     )
@@ -59,22 +61,22 @@ export function TreasuryYearGroupedMovementsView<T>({
   return (
     <div
       className={cn(
-        !fullWidth && "rounded-lg border border-border/60",
+        !fullWidth && cn("rounded-lg border", tokens.containerBorder),
         className,
       )}
     >
       {yearGroups.map((yearGroup, yearIndex) => (
         <section
           key={yearGroup.year}
-          className={cn(yearIndex > 0 && "border-t border-border/60")}
+          className={cn(yearIndex > 0 && cn("border-t", tokens.sectionBorder))}
         >
-          <h3 className="px-4 pt-4 pb-1 text-base font-bold text-foreground lg:px-5">
+          <h3 className={cn("px-4 pt-4 pb-1 lg:px-5", tokens.yearHeading)}>
             {yearGroup.year}
           </h3>
 
           {yearGroup.dateGroups.map((group) => (
             <section key={group.dateKey}>
-              <h4 className="px-4 pt-2 pb-0 text-sm font-bold text-foreground lg:px-5">
+              <h4 className={cn("px-4 pt-2 pb-0 lg:px-5", tokens.dateHeading)}>
                 {group.dateLabel}
               </h4>
               <ul>
@@ -87,9 +89,12 @@ export function TreasuryYearGroupedMovementsView<T>({
                       key={getRowKey(item)}
                       className={cn(
                         "flex items-start justify-between gap-4 px-4 py-3 lg:px-5",
-                        showTopBorder && "border-t border-border/40",
+                        showTopBorder && cn("border-t", tokens.rowBorder),
                         row.onClick &&
-                          "cursor-pointer transition-colors duration-150 hover:bg-muted/35",
+                          cn(
+                            "cursor-pointer transition-colors duration-150",
+                            tokens.rowHover,
+                          ),
                         rowClassName,
                       )}
                       {...(row.onClick
@@ -108,26 +113,18 @@ export function TreasuryYearGroupedMovementsView<T>({
                     >
                       <div className="min-w-0 flex-1">
                         <div
-                          className={cn(
-                            "text-sm leading-snug text-foreground",
-                            row.descriptionClassName,
-                          )}
+                          className={cn(tokens.description, row.descriptionClassName)}
                         >
                           {row.description}
                         </div>
                         {row.subtitle ? (
-                          <p className="mt-0.5 text-xs text-muted-foreground">
+                          <p className={cn("mt-0.5", tokens.subtitle)}>
                             {row.subtitle}
                           </p>
                         ) : null}
                       </div>
                       <div className="flex shrink-0 items-center gap-2">
-                        <span
-                          className={cn(
-                            "whitespace-nowrap font-numeric text-sm tabular-nums tracking-tight text-foreground",
-                            row.amountClassName,
-                          )}
-                        >
+                        <span className={cn(tokens.amount, row.amountClassName)}>
                           {row.amount}
                         </span>
                         {row.trailing}

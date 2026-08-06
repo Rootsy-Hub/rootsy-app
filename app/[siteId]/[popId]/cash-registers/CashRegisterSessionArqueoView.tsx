@@ -7,10 +7,10 @@ import {
   formatCashRegisterDateTime,
   formatCashRegisterMoney,
 } from "@/app/[siteId]/[popId]/cash-registers/cashRegisterFormatters"
+import { DataWorkspaceDetailEmptyState } from "@/components/data-workspace/DataWorkspaceDetailEmptyState"
 import {
   dataWorkspaceDetailBodyClass,
   dataWorkspaceDetailPanelClass,
-  dataWorkspaceEntityCardIsotypeClass,
   dataWorkspaceEntityCardStatLabelClass,
   dataWorkspaceFlushBottomPanelBodyClass,
   dataWorkspaceFlushBottomPanelChromeClass,
@@ -88,14 +88,11 @@ function ColumnSideHeader({
 
 function OpenSessionClosingEmptyState() {
   return (
-    <div className="flex min-h-56 flex-col items-center justify-center gap-3 px-4 py-10 text-center sm:px-5">
-      <span className={cn(dataWorkspaceEntityCardIsotypeClass, "size-11")}>
-        <LockOpen className="size-5" aria-hidden />
-      </span>
-      <p className="max-w-[16rem] font-canopy text-sm leading-relaxed text-[var(--rootsy-bruma-500)]">
-        Turno abierto. El cierre se completa al cerrar la caja.
-      </p>
-    </div>
+    <DataWorkspaceDetailEmptyState
+      icon={LockOpen}
+      title="El cierre se completa al cerrar la caja."
+      className="min-h-56 py-10"
+    />
   )
 }
 

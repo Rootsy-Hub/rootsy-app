@@ -1,6 +1,10 @@
 "use client"
 
 import { cn } from "@/lib/utils"
+import {
+  treasuryMovementListTokensFor,
+  type TreasuryMovementListTokensVariant,
+} from "@/app/[siteId]/[popId]/accounts/treasuryMovementListStyles"
 import { Loader2 } from "lucide-react"
 import { useEffect, useRef, useState, type RefObject } from "react"
 
@@ -49,6 +53,7 @@ export function TreasuryInfiniteScrollFooter({
   totalCount,
   sentinelRef,
   fullWidth = true,
+  tokensVariant = "default",
   itemLabel = "movimiento",
   itemLabelPlural = "movimientos",
 }: {
@@ -56,9 +61,11 @@ export function TreasuryInfiniteScrollFooter({
   totalCount: number
   sentinelRef: RefObject<HTMLDivElement | null>
   fullWidth?: boolean
+  tokensVariant?: TreasuryMovementListTokensVariant
   itemLabel?: string
   itemLabelPlural?: string
 }) {
+  const tokens = treasuryMovementListTokensFor(tokensVariant)
   const paddingClass = fullWidth ? "px-4 lg:px-5" : "px-3"
 
   if (hasMore) {
@@ -66,7 +73,9 @@ export function TreasuryInfiniteScrollFooter({
       <div
         ref={sentinelRef}
         className={cn(
-          "flex items-center justify-center gap-2 border-t border-border/50 py-4 text-xs text-muted-foreground",
+          "flex items-center justify-center gap-2 border-t py-4",
+          tokens.footer,
+          tokens.footerLoadingBorder,
           paddingClass,
         )}
       >
@@ -84,13 +93,14 @@ export function TreasuryInfiniteScrollFooter({
   return (
     <div
       className={cn(
-        "flex items-center gap-3 py-6 text-xs text-muted-foreground",
+        "flex items-center gap-3 py-6",
+        tokens.footer,
         paddingClass,
       )}
     >
-      <span className="h-px flex-1 bg-border/60" aria-hidden />
+      <span className={cn("h-px flex-1", tokens.footerDivider)} aria-hidden />
       <span className="shrink-0 text-center">Fin del listado · {countLabel}</span>
-      <span className="h-px flex-1 bg-border/60" aria-hidden />
+      <span className={cn("h-px flex-1", tokens.footerDivider)} aria-hidden />
     </div>
   )
 }

@@ -20,7 +20,6 @@ import type {
   OperationSaleDetailContext,
   OperationSaleRow,
 } from "@/app/[siteId]/[popId]/operations/actions"
-import { tdMoneyClass } from "@/components/data-workspace/dataWorkspaceListStyles"
 import { useDataWorkspaceMainScrollRoot } from "@/hooks/useDataWorkspaceMainScrollRoot"
 import { usePopTimeZone } from "@/hooks/usePopTimeZone"
 import { toPopCalendarDate } from "@/lib/popTimezone"
@@ -158,6 +157,7 @@ export function CashRegisterSessionOperationsTable({
           yearGroups={yearGroups}
           emptyMessage="No hay operaciones en este arqueo."
           fullWidth={fullWidth}
+          tokensVariant="bruma"
           getRowKey={(row) => row.id}
           renderRow={(row) => ({
             description: formatTreasuryInlineMovementDescription(
@@ -166,7 +166,6 @@ export function CashRegisterSessionOperationsTable({
             ),
             subtitle: row.paymentMethodLabel,
             amount: formatOperationAmount(row),
-            amountClassName: tdMoneyClass,
             onClick:
               row.kind === "sale" && row.saleId
                 ? () => void openSaleDetail(row.saleId!)
@@ -179,6 +178,7 @@ export function CashRegisterSessionOperationsTable({
           totalCount={totalCount}
           sentinelRef={sentinelRef}
           fullWidth={fullWidth}
+          tokensVariant="bruma"
           itemLabel="operación"
           itemLabelPlural="operaciones"
         />
