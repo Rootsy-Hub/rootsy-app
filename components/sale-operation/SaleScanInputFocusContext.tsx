@@ -29,7 +29,7 @@ export function SaleScanInputFocusProvider({ children }: { children: ReactNode }
       const el = scanInputRef.current
       if (!el || el.disabled) return
       el.focus({ preventScroll: true })
-    }, 0)
+    }, 50)
   }, [])
 
   const value = useMemo(

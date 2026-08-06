@@ -289,10 +289,8 @@ export function SaleCatalogBrowser({
             refocusScan()
           }}
           priceListId={priceListId}
-          onPriceListChange={(id) => {
-            setPriceListId(id)
-            refocusScan()
-          }}
+          onPriceListChange={setPriceListId}
+          onPriceListSelectClosed={refocusScan}
         />
 
         <div

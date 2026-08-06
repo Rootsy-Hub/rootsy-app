@@ -1,18 +1,13 @@
 "use client"
 
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog"
-import {
-  saleOpDialogContentMd,
-  saleOpDialogHeader,
-} from "@/components/sale-operation/saleOperationStyles"
-import { cn } from "@/lib/utils"
+  RootsDialogBody,
+  RootsDialogContent,
+  RootsDialogHeader,
+} from "@/components/rootsy-dialog"
 import { useSaleScanInputFocus } from "@/components/sale-operation/SaleScanInputFocusContext"
+import { Dialog } from "@/components/ui/dialog"
+import { cn } from "@/lib/utils"
 import { useEffect, useRef, useState } from "react"
 
 export const SALE_CATALOG_ENTRY_QTY_MIN = 1
@@ -83,37 +78,37 @@ export function SaleCatalogEntryQuantityDialog({
       </button>
 
       <Dialog open={open} onOpenChange={handleOpenChange}>
-        <DialogContent
-          className={cn(saleOpDialogContentMd, "max-w-xs gap-4 sm:max-w-sm")}
+        <RootsDialogContent
+          size="default"
+          className="sm:max-w-sm"
           onOpenAutoFocus={(event) => event.preventDefault()}
         >
-          <DialogHeader className={cn(saleOpDialogHeader, "shrink-0 text-center sm:text-center")}>
-            <DialogTitle className="text-base font-semibold tracking-tight">
-              Cantidad a ingresar
-            </DialogTitle>
-            <DialogDescription className="sr-only">
-              Ingresá la cantidad de unidades a agregar al pedido. Enter confirma.
-            </DialogDescription>
-          </DialogHeader>
-
-          <input
-            ref={inputRef}
-            type="text"
-            inputMode="numeric"
-            autoComplete="off"
-            value={draft}
-            onChange={(event) => setDraft(event.target.value.replace(/\D/g, ""))}
-            onKeyDown={(event) => {
-              if (event.key === "Enter") {
-                event.preventDefault()
-                commitDraft()
-                setOpen(false)
-              }
-            }}
-            aria-label="Cantidad a ingresar"
-            className="w-full border-0 bg-transparent py-2 text-center text-6xl font-bold tabular-nums tracking-tight text-foreground outline-none"
+          <RootsDialogHeader
+            title="Cantidad a ingresar"
+            description="Ingresá la cantidad de unidades a agregar al pedido. Enter confirma."
+            descriptionHidden
           />
-        </DialogContent>
+
+          <RootsDialogBody className="flex min-h-[9.5rem] items-center justify-center py-[var(--rootsy-space-300)]">
+            <input
+              ref={inputRef}
+              type="text"
+              inputMode="numeric"
+              autoComplete="off"
+              value={draft}
+              onChange={(event) => setDraft(event.target.value.replace(/\D/g, ""))}
+              onKeyDown={(event) => {
+                if (event.key === "Enter") {
+                  event.preventDefault()
+                  commitDraft()
+                  setOpen(false)
+                }
+              }}
+              aria-label="Cantidad a ingresar"
+              className="w-full border-0 bg-transparent py-2 text-center text-6xl font-bold tabular-nums tracking-tight text-[var(--rootsy-bruma-900)] outline-none"
+            />
+          </RootsDialogBody>
+        </RootsDialogContent>
       </Dialog>
     </>
   )

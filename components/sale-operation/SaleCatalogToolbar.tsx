@@ -67,6 +67,8 @@ type Props = {
   onCantidadIngresoChange: (cantidad: number) => void
   priceListId: string
   onPriceListChange: (priceListId: string) => void
+  /** Tras cerrar el select de lista (p. ej. devolver foco al escaneo). */
+  onPriceListSelectClosed?: () => void
   priceLists?: SaleCatalogPriceListOption[]
   variant?: ToolbarVariant
   demo?: boolean
@@ -157,6 +159,7 @@ export function SaleCatalogToolbar({
   onCantidadIngresoChange,
   priceListId,
   onPriceListChange,
+  onPriceListSelectClosed,
   priceLists = SALE_CATALOG_DEFAULT_PRICE_LISTS,
   variant = "pos-dark",
   demo = false,
@@ -347,7 +350,13 @@ export function SaleCatalogToolbar({
             {priceLists.find((p) => p.id === priceListId)?.label ?? "Mostrador"}
           </div>
         ) : (
-          <Select value={priceListId} onValueChange={onPriceListChange}>
+          <Select
+            value={priceListId}
+            onValueChange={onPriceListChange}
+            onOpenChange={(open) => {
+              if (!open) onPriceListSelectClosed?.()
+            }}
+          >
             <SelectTrigger
               aria-labelledby={priceListLabelId}
               className={cn(

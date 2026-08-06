@@ -192,9 +192,11 @@ export const layoutsOperarCatalogCanvasScrollClass = cn(
 /** Grilla demo — sale usa grid-cols-3 en desktop. */
 export const layoutsOperarCatalogGridClass = "grid grid-cols-2 gap-3 xl:grid-cols-3"
 
-/** Skeleton catálogo — 2 colores: sombra-600 (card) + sombra-800 (bloques). */
+/** Skeleton catálogo — 2 tonos sombra muy cercanos (700 base · bloque apenas más oscuro). */
+export const layoutsOperarCatalogSkeletonSurfaceClass = "bg-[var(--rootsy-sombra-700)]"
+
 export const layoutsOperarCatalogSkeletonGhostClass =
-  "animate-pulse bg-[var(--rootsy-sombra-800)]"
+  "animate-pulse bg-[color-mix(in_srgb,var(--rootsy-sombra-700)_38%,var(--rootsy-sombra-800))]"
 
 export const layoutsOperarProductCardClass = cn(
   "layouts-operar-product-card group relative grid h-[318px] w-full grid-rows-[152px_1fr] overflow-hidden rounded-2xl text-left",
@@ -211,11 +213,13 @@ export const layoutsOperarProductCardListClass = cn(
 
 export const layoutsOperarProductCardSkeletonShellClass = cn(
   layoutsOperarProductCardClass,
+  layoutsOperarCatalogSkeletonSurfaceClass,
   "pointer-events-none shadow-none hover:translate-y-0",
 )
 
 export const layoutsOperarProductCardListSkeletonShellClass = cn(
   layoutsOperarProductCardListClass,
+  layoutsOperarCatalogSkeletonSurfaceClass,
   "pointer-events-none shadow-none hover:translate-y-0",
 )
 
