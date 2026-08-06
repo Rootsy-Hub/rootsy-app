@@ -14,7 +14,7 @@ import {
   workspaceTableNatureSkeletonTone,
 } from "@/components/data-workspace/dataWorkspaceListStyles"
 import { cn } from "@/lib/utils"
-import { Loader2 } from "lucide-react"
+import { RootsSpinner } from "@/components/rootsy-spinner"
 
 const sk = workspaceTableNatureSkeletonTone
 
@@ -259,10 +259,7 @@ export function TreasuryAccountDetailContentSkeleton({
       aria-label="Cargando actividad"
       className="flex min-h-48 items-center justify-center px-4 py-10"
     >
-      <Loader2
-        className="size-6 animate-spin text-muted-foreground"
-        aria-hidden
-      />
+      <RootsSpinner size="default" />
       <span className="sr-only">Cargando…</span>
     </div>
   )

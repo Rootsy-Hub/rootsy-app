@@ -11,6 +11,10 @@ import {
 import {
   LAYOUTS_BLOCKS_LAYOUT_SPEC_ROWS,
 } from "@/app/[siteId]/[popId]/library/layouts/layoutsBlocksHardcodedSpec"
+import {
+  LAYOUTS_BLOCKS_EMPTY_STATE_DEMO_COPY,
+  LAYOUTS_BLOCKS_EMPTY_STATE_SPEC_ROWS,
+} from "@/app/[siteId]/[popId]/library/layouts/layoutsBlocksEmptyStateSpec"
 import { LayoutsModuleShellWithContent } from "@/app/[siteId]/[popId]/library/layouts/LayoutsModuleDocPrimitives"
 import {
   LayoutsTablesHeaderLeftZone,
@@ -19,6 +23,7 @@ import {
 import { LayoutsTablesNightForestSurface } from "@/app/[siteId]/[popId]/library/layouts/LayoutsTablesNightForestSurface"
 import "@/app/[siteId]/[popId]/library/color/rootsyNaturePalette.css"
 import { FoundationSpecCard } from "@/app/[siteId]/[popId]/library/libraryFoundationDocShared"
+import { DataWorkspaceDetailEmptyState } from "@/components/data-workspace/DataWorkspaceDetailEmptyState"
 import { DataWorkspaceHeaderTitle } from "@/components/layouts/DataWorkspaceHeaderTitle"
 import { layoutsModuleContentShellClass } from "@/components/layouts-module/rootsLayoutsModuleProductStyles"
 import {
@@ -32,6 +37,7 @@ import {
   dataWorkspaceEntityCardsGridClass,
 } from "@/components/data-workspace/dataWorkspaceListStyles"
 import { cn } from "@/lib/utils"
+import { Banknote, History, List } from "lucide-react"
 import type { ReactNode } from "react"
 
 const sk = dataWorkspaceBlocksSkeletonTone
@@ -334,7 +340,7 @@ export function LayoutsBlocksEntityDesignSectionDemo() {
 
       <LayoutsBlocksDocSubsection
         title="Estados de carga y vacío"
-        description="Skeleton alineado al grid · empty state dashed sobre bruma-50."
+        description="Skeleton alineado al grid · empty states grid y detalle."
       >
         <div
           className={cn(
@@ -357,7 +363,6 @@ export function LayoutsBlocksEntityDesignSectionDemo() {
                 </p>
                 <CashRegistersGridSkeleton count={3} />
               </div>
-              <p className={dataWorkspaceBlocksEmptyStateClass}>No hay cuentas configuradas.</p>
             </div>
           </LayoutsBlocksModuleContentScope>
         </div>
@@ -418,6 +423,119 @@ export function LayoutsBlocksCashRegisterCardsDemo() {
   )
 }
 
+export function LayoutsBlocksEmptyStateSpecTable() {
+  return (
+    <FoundationSpecCard className="space-y-4">
+      <p className="font-canopy text-xs leading-relaxed text-muted-foreground">
+        Dos variantes: grid dashed para listados vacíos · detalle con icon tile para paneles flush
+        (liquidaciones, arqueos, operaciones).
+      </p>
+      <div className="overflow-x-auto">
+        <table className="w-full min-w-[36rem] border-collapse text-left">
+          <thead>
+            <tr className="border-b border-border/70">
+              {["Rol", "Token", "Valor", "Producto"].map((heading) => (
+                <th
+                  key={heading}
+                  className="px-2 py-2 font-mono text-[10px] font-medium uppercase tracking-[0.1em] text-muted-foreground first:pl-0"
+                >
+                  {heading}
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {LAYOUTS_BLOCKS_EMPTY_STATE_SPEC_ROWS.map((row) => (
+              <tr key={`${row.role}-${row.token}`} className="border-b border-border/40 align-top">
+                <td className="py-2.5 pr-3 font-canopy text-xs font-medium text-foreground">{row.role}</td>
+                <td className="py-2.5 pr-3 font-mono text-[11px] text-muted-foreground">{row.token}</td>
+                <td className="max-w-[14rem] py-2.5 pr-3 font-mono text-[10px] leading-relaxed break-all text-foreground">
+                  {row.value}
+                </td>
+                <td className="py-2.5 font-canopy text-[11px] leading-relaxed text-muted-foreground">
+                  {row.product}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </FoundationSpecCard>
+  )
+}
+
+export function LayoutsBlocksEmptyStatesSectionDemo() {
+  return (
+    <div className="space-y-8">
+      <LayoutsBlocksEmptyStateSpecTable />
+
+      <LayoutsBlocksDocSubsection
+        title="Grid · listado vacío"
+        description="Borde dashed · bruma-300 · mensaje único centrado en el área del grid."
+      >
+        <div
+          className={cn(
+            "overflow-hidden rounded-2xl border border-[var(--rootsy-bruma-200)]",
+            "rootsy-app-light rootsy-nature-palette text-foreground",
+            layoutsModuleContentShellClass,
+          )}
+        >
+          <LayoutsBlocksModuleContentScope>
+            <p className={dataWorkspaceBlocksEmptyStateClass}>
+              {LAYOUTS_BLOCKS_EMPTY_STATE_DEMO_COPY.grid}
+            </p>
+          </LayoutsBlocksModuleContentScope>
+        </div>
+      </LayoutsBlocksDocSubsection>
+
+      <LayoutsBlocksDocSubsection
+        title="Detalle · panel flush"
+        description="Icon tile bruma-50 · título body.medium · sin descripción salvo contexto extra (p. ej. cierre de caja)."
+      >
+        <div
+          className={cn(
+            "overflow-hidden rounded-2xl border border-[var(--rootsy-bruma-200)] bg-white",
+            "rootsy-app-light rootsy-nature-palette text-foreground",
+          )}
+        >
+          <div className="grid gap-px bg-[var(--rootsy-bruma-200)] sm:grid-cols-3">
+            <div className="bg-white">
+              <p className="border-b border-[var(--rootsy-bruma-200)] px-4 py-2 font-mono text-[10px] uppercase tracking-[0.1em] text-muted-foreground">
+                Liquidaciones
+              </p>
+              <DataWorkspaceDetailEmptyState
+                icon={Banknote}
+                title={LAYOUTS_BLOCKS_EMPTY_STATE_DEMO_COPY.detailLiquidaciones.title}
+                className="min-h-52"
+              />
+            </div>
+            <div className="bg-white">
+              <p className="border-b border-[var(--rootsy-bruma-200)] px-4 py-2 font-mono text-[10px] uppercase tracking-[0.1em] text-muted-foreground">
+                Arqueos
+              </p>
+              <DataWorkspaceDetailEmptyState
+                icon={History}
+                title={LAYOUTS_BLOCKS_EMPTY_STATE_DEMO_COPY.detailArqueos.title}
+                className="min-h-52"
+              />
+            </div>
+            <div className="bg-white">
+              <p className="border-b border-[var(--rootsy-bruma-200)] px-4 py-2 font-mono text-[10px] uppercase tracking-[0.1em] text-muted-foreground">
+                Operaciones
+              </p>
+              <DataWorkspaceDetailEmptyState
+                icon={List}
+                title={LAYOUTS_BLOCKS_EMPTY_STATE_DEMO_COPY.detailOperaciones.title}
+                className="min-h-52"
+              />
+            </div>
+          </div>
+        </div>
+      </LayoutsBlocksDocSubsection>
+    </div>
+  )
+}
+
 export function LayoutsBlocksSkeletonDemo() {
   return (
     <div className={cn("space-y-8 rounded-xl p-4 sm:p-6", layoutsModuleContentShellClass)}>
@@ -430,7 +548,9 @@ export function LayoutsBlocksSkeletonDemo() {
 export function LayoutsBlocksEmptyStateDemo() {
   return (
     <div className={cn("rounded-xl p-4 sm:p-6", layoutsModuleContentShellClass)}>
-      <p className={dataWorkspaceBlocksEmptyStateClass}>No hay cuentas configuradas.</p>
+      <p className={dataWorkspaceBlocksEmptyStateClass}>
+        {LAYOUTS_BLOCKS_EMPTY_STATE_DEMO_COPY.grid}
+      </p>
     </div>
   )
 }

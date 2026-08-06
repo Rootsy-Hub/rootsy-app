@@ -8,10 +8,13 @@ import {
 import { cn } from "@/lib/utils"
 import type { LucideIcon } from "lucide-react"
 
-type Props = {
+export type DataWorkspaceDetailEmptyStateContent = {
   icon: LucideIcon
   title: string
   description?: string
+}
+
+type Props = DataWorkspaceDetailEmptyStateContent & {
   className?: string
 }
 

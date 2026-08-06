@@ -23,6 +23,8 @@ type Props = {
   onValueChange: (value: string) => void
   options: readonly RootsFormSegmentOption[]
   disabled?: boolean
+  /** grid = columnas iguales (formulario) · inline = ancho por contenido (toolbars). */
+  layout?: "grid" | "inline"
   className?: string
   groupClassName?: string
   "aria-label"?: string
@@ -47,6 +49,7 @@ export function RootsFormSegmentField({
   onValueChange,
   options,
   disabled,
+  layout = "grid",
   className,
   groupClassName,
   "aria-label": ariaLabel,
@@ -60,7 +63,7 @@ export function RootsFormSegmentField({
     0,
     options.findIndex((option) => option.value === value),
   )
-  const useScrollLayout = options.length > 4
+  const useInlineLayout = layout === "inline" || options.length > 4
 
   return (
     <RootsFormField
@@ -77,13 +80,13 @@ export function RootsFormSegmentField({
         aria-label={ariaLabel ?? label}
         className={cn(
           rootsFormSegmentGroupClass,
-          useScrollLayout
+          useInlineLayout
             ? "flex overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
             : segmentGridClass(options.length),
           groupClassName,
         )}
       >
-        {!useScrollLayout ? (
+        {!useInlineLayout ? (
           <span
             aria-hidden
             className={rootsFormSegmentIndicatorClass}
@@ -102,9 +105,9 @@ export function RootsFormSegmentField({
               aria-pressed={isSelected}
               className={cn(
                 rootsFormSegmentOptionClass(isSelected, isDisabled),
-                useScrollLayout &&
+                useInlineLayout &&
                   "h-full shrink-0 whitespace-nowrap px-3.5",
-                useScrollLayout &&
+                useInlineLayout &&
                   isSelected &&
                   "rounded-[8px] bg-[var(--rootsy-white)] shadow-sm",
               )}

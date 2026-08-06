@@ -5,7 +5,7 @@ import {
   treasuryMovementListTokensFor,
   type TreasuryMovementListTokensVariant,
 } from "@/app/[siteId]/[popId]/accounts/treasuryMovementListStyles"
-import { Loader2 } from "lucide-react"
+import { RootsSpinner } from "@/components/rootsy-spinner"
 import { useEffect, useRef, useState, type RefObject } from "react"
 
 export const TREASURY_MOVEMENTS_PAGE_SIZE = 20
@@ -79,7 +79,7 @@ export function TreasuryInfiniteScrollFooter({
           paddingClass,
         )}
       >
-        <Loader2 className="size-3.5 shrink-0 animate-spin" aria-hidden />
+        <RootsSpinner size="xs" aria-hidden className="shrink-0" />
         Cargando más…
       </div>
     )

@@ -5,6 +5,7 @@ import {
   TreasuryInfiniteScrollFooter,
   useTreasuryInfiniteScroll,
 } from "@/app/[siteId]/[popId]/accounts/treasuryInfiniteScroll"
+import type { DataWorkspaceDetailEmptyStateContent } from "@/components/data-workspace/DataWorkspaceDetailEmptyState"
 import { TreasuryYearGroupedMovementsView } from "@/app/[siteId]/[popId]/accounts/TreasuryYearGroupedMovementsView"
 import {
   formatTreasuryMovementAmount,
@@ -39,12 +40,12 @@ function summaryMovementDescription(
 
 export function TreasuryGroupedSummaryMovementsList({
   movements,
-  emptyStateMessage,
+  emptyState,
   positiveAmounts = false,
   scrollRoot = null,
 }: {
   movements: TreasuryPosSummaryMovementRow[]
-  emptyStateMessage: string
+  emptyState: DataWorkspaceDetailEmptyStateContent
   positiveAmounts?: boolean
   scrollRoot?: HTMLElement | null
 }) {
@@ -60,7 +61,7 @@ export function TreasuryGroupedSummaryMovementsList({
     <div className="overflow-hidden">
       <TreasuryYearGroupedMovementsView
         yearGroups={yearGroups}
-        emptyMessage={emptyStateMessage}
+        emptyState={emptyState}
         fullWidth
         getRowKey={(movement) => `${movement.kind}-${movement.id}`}
         renderRow={(movement) => ({

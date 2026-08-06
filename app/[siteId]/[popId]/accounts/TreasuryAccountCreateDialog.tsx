@@ -26,7 +26,8 @@ import {
 } from "@/lib/treasuryAccountBrands"
 import type { TreasuryAccountKind } from "@/lib/treasuryAccountKinds"
 import { cn } from "@/lib/utils"
-import { Banknote, CircleEllipsis, Landmark, Loader2, Wallet } from "lucide-react"
+import { RootsSpinner } from "@/components/rootsy-spinner"
+import { Banknote, CircleEllipsis, Landmark, Wallet } from "lucide-react"
 import { useEffect, useMemo, useState, type FormEvent } from "react"
 
 const KIND_ICONS = {
@@ -267,7 +268,7 @@ export function TreasuryAccountCreateDialog({
             <Button type="submit" disabled={saving || !canSubmit}>
               {saving ? (
                 <>
-                  <Loader2 className="size-4 animate-spin" aria-hidden />
+                  <RootsSpinner size="sm" aria-hidden />
                   Guardando…
                 </>
               ) : (

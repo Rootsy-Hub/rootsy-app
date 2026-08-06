@@ -5,10 +5,8 @@ import {
   TreasuryInfiniteScrollFooter,
   useTreasuryInfiniteScroll,
 } from "@/app/[siteId]/[popId]/accounts/treasuryInfiniteScroll"
+import { DataWorkspaceDetailEmptyState } from "@/components/data-workspace/DataWorkspaceDetailEmptyState"
 import { TreasuryYearGroupedMovementsView } from "@/app/[siteId]/[popId]/accounts/TreasuryYearGroupedMovementsView"
-import {
-  treasuryMovementListEmptyClass,
-} from "@/app/[siteId]/[popId]/accounts/treasuryMovementListStyles"
 import {
   formatTreasuryInlineMovementDescription,
   formatTreasuryMovementTime,
@@ -27,7 +25,13 @@ import { useDataWorkspaceMainScrollRoot } from "@/hooks/useDataWorkspaceMainScro
 import { usePopTimeZone } from "@/hooks/usePopTimeZone"
 import { toPopCalendarDate } from "@/lib/popTimezone"
 import { cn } from "@/lib/utils"
+import { List } from "lucide-react"
 import { useCallback, useMemo, useState } from "react"
+
+const operationsEmptyState = {
+  icon: List,
+  title: "Sin operaciones en este arqueo",
+} as const
 
 type Props = {
   siteId: string
@@ -130,9 +134,10 @@ export function CashRegisterSessionOperationsTable({
   if (operations.length === 0) {
     return (
       <>
-        <div className={treasuryMovementListEmptyClass("bruma", fullWidth)}>
-          No hay operaciones en este arqueo.
-        </div>
+        <DataWorkspaceDetailEmptyState
+          {...operationsEmptyState}
+          className="min-h-48"
+        />
         <OperationSaleDetailDialog
           sale={detailSale}
           context={detailContext}
@@ -158,7 +163,7 @@ export function CashRegisterSessionOperationsTable({
       >
         <TreasuryYearGroupedMovementsView
           yearGroups={yearGroups}
-          emptyMessage="No hay operaciones en este arqueo."
+          emptyState={operationsEmptyState}
           fullWidth={fullWidth}
           tokensVariant="bruma"
           getRowKey={(row) => row.id}

@@ -1,6 +1,7 @@
 "use client"
 
 import type { PaymentMethodMovementRow } from "@/app/[siteId]/[popId]/accounts/treasuryDetailActions"
+import type { DataWorkspaceDetailEmptyStateContent } from "@/components/data-workspace/DataWorkspaceDetailEmptyState"
 import { TreasuryYearGroupedMovementsView } from "@/app/[siteId]/[popId]/accounts/TreasuryYearGroupedMovementsView"
 import {
   expandTreasuryPaymentMethodMovementRows,
@@ -8,6 +9,7 @@ import {
   groupItemsByYearAndDate,
 } from "@/app/[siteId]/[popId]/accounts/treasuryAccountUiUtils"
 import { usePopTimeZone } from "@/hooks/usePopTimeZone"
+import { ArrowLeftRight } from "lucide-react"
 import { useMemo, type ReactNode } from "react"
 
 type Props = {
@@ -42,7 +44,10 @@ export function TreasuryGroupedMovementsList({
   return (
     <TreasuryYearGroupedMovementsView
       yearGroups={yearGroups}
-      emptyMessage="No hay movimientos en el período seleccionado."
+      emptyState={{
+        icon: ArrowLeftRight,
+        title: "Sin movimientos en el período",
+      }}
       fullWidth={fullWidth}
       className={className}
       rowClassName={rowClassName}

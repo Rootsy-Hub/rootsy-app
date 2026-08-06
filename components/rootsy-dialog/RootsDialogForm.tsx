@@ -2,7 +2,7 @@
 
 import { rootsDialogLoadingBodyClass } from "@/components/rootsy-dialog/rootsDialogStyles"
 import { RootsBanner } from "@/components/rootsy-banner"
-import { Spinner } from "@/components/ui/spinner"
+import { RootsSpinner } from "@/components/rootsy-spinner"
 import { cn } from "@/lib/utils"
 import type { ComponentProps, FormEventHandler, ReactNode } from "react"
 
@@ -55,7 +55,7 @@ export function RootsDialogLoadingState({
       aria-busy="true"
       aria-live="polite"
     >
-      <Spinner className="size-10 text-[var(--rootsy-savia-600)]" />
+      <RootsSpinner size="default" />
       <span className="sr-only">{message ?? "Cargando"}</span>
     </div>
   )

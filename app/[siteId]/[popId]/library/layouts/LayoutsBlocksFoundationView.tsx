@@ -2,6 +2,7 @@
 
 import {
   LayoutsBlocksEntityDesignSectionDemo,
+  LayoutsBlocksEmptyStatesSectionDemo,
   LayoutsBlocksLayoutSectionDemo,
   LayoutsBlocksModulePreviewDemo,
 } from "@/app/[siteId]/[popId]/library/layouts/LayoutsBlocksDocPrimitives"
@@ -40,6 +41,10 @@ export function LayoutsBlocksFoundationView({ sectionId, siteId, popId }: Props)
 
       <LibraryDocSection id="layouts-blocks-design" title="2 · Diseño de caja y cuentas">
         <LayoutsBlocksEntityDesignSectionDemo />
+      </LibraryDocSection>
+
+      <LibraryDocSection id="layouts-blocks-empty-states" title="3 · Empty states">
+        <LayoutsBlocksEmptyStatesSectionDemo />
       </LibraryDocSection>
 
       <p className="text-center text-xs text-muted-foreground">

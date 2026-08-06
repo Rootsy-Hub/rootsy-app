@@ -198,7 +198,7 @@ export function CashRegisterSessionArqueoView({
     () => [
       {
         value: ALL_OPERATIONS_FILTER,
-        label: `Operaciones (${operationsSummary.total})`,
+        label: `Todos (${operationsSummary.total})`,
       },
       ...operationsSummary.byAccount.map((item) => ({
         value: item.label,
@@ -359,6 +359,7 @@ export function CashRegisterSessionArqueoView({
           <RootsFormSegmentField
             label="Filtrar operaciones"
             aria-label="Filtrar operaciones por cuenta"
+            layout="inline"
             value={operationsSegmentValue}
             onValueChange={(value) =>
               setAccountFilter(
@@ -366,8 +367,8 @@ export function CashRegisterSessionArqueoView({
               )
             }
             options={operationsSegmentOptions}
-            className="[&>p:first-child]:sr-only"
-            groupClassName="w-full"
+            className="max-w-full"
+            groupClassName="!w-auto max-w-full"
           />
         </div>
         <div className={dataWorkspaceFlushBottomPanelBodyClass}>

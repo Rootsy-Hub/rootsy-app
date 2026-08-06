@@ -1,8 +1,9 @@
 "use client"
 
 import type { TreasuryYearGroupedItems } from "@/app/[siteId]/[popId]/accounts/treasuryAccountUiUtils"
+import type { DataWorkspaceDetailEmptyStateContent } from "@/components/data-workspace/DataWorkspaceDetailEmptyState"
+import { DataWorkspaceDetailEmptyState } from "@/components/data-workspace/DataWorkspaceDetailEmptyState"
 import {
-  treasuryMovementListEmptyClass,
   treasuryMovementListTokensFor,
   type TreasuryMovementListTokensVariant,
 } from "@/app/[siteId]/[popId]/accounts/treasuryMovementListStyles"
@@ -11,7 +12,7 @@ import type { KeyboardEvent, ReactNode } from "react"
 
 type Props<T> = {
   yearGroups: TreasuryYearGroupedItems<T>[]
-  emptyMessage: string
+  emptyState: DataWorkspaceDetailEmptyStateContent
   fullWidth?: boolean
   tokensVariant?: TreasuryMovementListTokensVariant
   className?: string
@@ -31,7 +32,7 @@ type Props<T> = {
 
 export function TreasuryYearGroupedMovementsView<T>({
   yearGroups,
-  emptyMessage,
+  emptyState,
   fullWidth = false,
   tokensVariant = "default",
   className,
@@ -52,9 +53,10 @@ export function TreasuryYearGroupedMovementsView<T>({
 
   if (totalItems === 0) {
     return (
-      <div className={cn(treasuryMovementListEmptyClass(tokensVariant, fullWidth), className)}>
-        {emptyMessage}
-      </div>
+      <DataWorkspaceDetailEmptyState
+        {...emptyState}
+        className={cn("min-h-48 flex-1", className)}
+      />
     )
   }
 

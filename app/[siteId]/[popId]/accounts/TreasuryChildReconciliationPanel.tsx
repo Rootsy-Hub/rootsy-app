@@ -23,6 +23,7 @@ import {
 import { TreasuryYearGroupedMovementsView } from "@/app/[siteId]/[popId]/accounts/TreasuryYearGroupedMovementsView"
 import { usePopTimeZone } from "@/hooks/usePopTimeZone"
 import { DataWorkspacePeriodFilter } from "@/components/data-workspace/DataWorkspacePeriodFilter"
+import type { DataWorkspaceDetailEmptyStateContent } from "@/components/data-workspace/DataWorkspaceDetailEmptyState"
 import {
   dataWorkspaceDetailBodyClass,
   dataWorkspaceDetailKpiStripClass,
@@ -43,12 +44,13 @@ import {
 } from "@/components/data-workspace/dataWorkspaceListStyles"
 import { RootsFormSegmentField } from "@/components/rootsy-form"
 import { RootsPrimaryButton, rootsButtonCompactSizeClass } from "@/components/rootsy-button"
+import { RootsSpinner } from "@/components/rootsy-spinner"
 import { cn } from "@/lib/utils"
 import {
   type DataWorkspaceDatePreset,
   computeDataWorkspaceDateBounds,
 } from "@/lib/dataWorkspaceDateFilter"
-import { Banknote, CreditCard, Loader2, Wifi } from "lucide-react"
+import { Banknote, CreditCard, Receipt, Wifi } from "lucide-react"
 import { useCallback, useEffect, useLayoutEffect, useMemo, useState } from "react"
 import type { DateRange } from "react-day-picker"
 
@@ -56,13 +58,13 @@ function ReconciliationEventsList({
   events,
   timeZone,
   isPos,
-  emptyStateMessage,
+  emptyState,
   scrollRoot = null,
 }: {
   events: TreasuryReconciliationEventRow[]
   timeZone: string
   isPos: boolean
-  emptyStateMessage: string
+  emptyState: DataWorkspaceDetailEmptyStateContent
   scrollRoot?: HTMLElement | null
 }) {
   const { visibleItems, hasMore, totalCount, sentinelRef } =
@@ -80,7 +82,7 @@ function ReconciliationEventsList({
     <div className="overflow-hidden">
       <TreasuryYearGroupedMovementsView
         yearGroups={yearGroups}
-        emptyMessage={emptyStateMessage}
+        emptyState={emptyState}
         fullWidth
         getRowKey={(row) => row.rowKey}
         renderRow={(row) => ({
@@ -209,12 +211,12 @@ export function TreasuryChildReconciliationPanel({
     0,
   )
   const periodReceivedInAccount = periodSettledTotal - periodAdjustmentTotal
-  const reconciliationsEmptyStateMessage = isPos
-    ? "No hay liquidaciones en el período seleccionado"
-    : "No hay pagos en el período seleccionado"
-  const summaryEmptyStateMessage = isPos
-    ? "No hay cobros POS en el período seleccionado"
-    : "No hay consumos en el período seleccionado"
+  const reconciliationsEmptyState: DataWorkspaceDetailEmptyStateContent = isPos
+    ? { icon: Banknote, title: "Sin liquidaciones en el período" }
+    : { icon: CreditCard, title: "Sin pagos en el período" }
+  const summaryEmptyState: DataWorkspaceDetailEmptyStateContent = isPos
+    ? { icon: Receipt, title: "Sin cobros POS en el período" }
+    : { icon: CreditCard, title: "Sin consumos en el período" }
 
   const reconciliationsSummaryBar = (
     <div className={cn("grid shrink-0 grid-cols-1 sm:grid-cols-3", dataWorkspaceDetailKpiStripClass)}>
@@ -380,7 +382,7 @@ export function TreasuryChildReconciliationPanel({
   const primaryPanelBody = (
     <TreasuryGroupedSummaryMovementsList
       movements={summaryMovements}
-      emptyStateMessage={summaryEmptyStateMessage}
+      emptyState={summaryEmptyState}
       positiveAmounts={!isPos}
     />
   )
@@ -390,7 +392,7 @@ export function TreasuryChildReconciliationPanel({
       events={events}
       timeZone={timeZone}
       isPos={isPos}
-      emptyStateMessage={reconciliationsEmptyStateMessage}
+      emptyState={reconciliationsEmptyState}
     />
   )
 
@@ -426,10 +428,7 @@ export function TreasuryChildReconciliationPanel({
             aria-label="Cargando resumen"
             className="flex min-h-48 items-center justify-center px-4 py-10"
           >
-            <Loader2
-              className="size-6 animate-spin text-muted-foreground"
-              aria-hidden
-            />
+            <RootsSpinner size="default" />
             <span className="sr-only">Cargando…</span>
           </div>
         ) : (

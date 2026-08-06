@@ -38,6 +38,7 @@ import {
   type ModalFooterVariantId,
   type ModalSurfaceSizeId,
 } from "@/app/[siteId]/[popId]/library/ui-components/modalsUiHardcodedSpec"
+import { RootsSpinner } from "@/components/rootsy-spinner"
 import {
   DialogGallerySectionHeading,
   DialogGallerySpecBlock,
@@ -169,15 +170,7 @@ function HardcodedLoadingSpinner() {
         minHeight: loading.minHeightPx,
       }}
     >
-      <div
-        style={{
-          width: loading.spinnerSizePx,
-          height: loading.spinnerSizePx,
-          borderRadius: 9999,
-          border: `${loading.spinnerBorderWidthPx}px solid ${loading.trackColor}`,
-          borderTopColor: loading.spinnerColor,
-        }}
-      />
+      <RootsSpinner size="default" aria-hidden />
     </div>
   )
 }

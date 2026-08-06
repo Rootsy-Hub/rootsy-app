@@ -44,8 +44,9 @@ import {
   SelectItem,
 } from "@/components/ui/select"
 import { Textarea } from "@/components/ui/textarea"
+import { RootsSpinner } from "@/components/rootsy-spinner"
 import { cn } from "@/lib/utils"
-import { Calculator, Loader2 } from "lucide-react"
+import { Calculator } from "lucide-react"
 import { useCallback, useEffect, useMemo, useState } from "react"
 
 const moneyFieldLabelClass =
@@ -516,7 +517,7 @@ export function TreasuryReconcileModal({
           >
             {saving ? (
               <>
-                <Loader2 className="size-4 animate-spin" aria-hidden />
+                <RootsSpinner size="sm" aria-hidden />
                 Registrando…
               </>
             ) : isPos ? (
