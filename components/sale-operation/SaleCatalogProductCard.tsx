@@ -1,33 +1,36 @@
 "use client"
 
+import {
+  layoutsOperarProductCardProposalAddClass,
+  layoutsOperarProductCardProposalBodyClass,
+  layoutsOperarProductCardProposalDescClass,
+  layoutsOperarProductCardProposalGridShellClass,
+  layoutsOperarProductCardProposalListShellClass,
+  layoutsOperarProductCardProposalMediaClass,
+  layoutsOperarProductCardProposalMediaStyle,
+  layoutsOperarProductCardProposalOfferClass,
+  layoutsOperarProductCardProposalPriceClass,
+  layoutsOperarProductCardProposalTitleClass,
+  type LayoutsOperarProductCardProposalId,
+} from "@/app/[siteId]/[popId]/library/layouts/layoutsOperarHardcodedSpec"
+import { LayoutsOperarProductCardMediaEmptyState } from "@/app/[siteId]/[popId]/library/layouts/LayoutsOperarProductCardProposalPrimitives"
+import { LAYOUTS_OPERAR_DEFAULT_PRODUCT_CARD_PROPOSAL } from "@/app/[siteId]/[popId]/library/layouts/rootsyLayoutsOperarSystem"
 import type { SaleCatalogProduct } from "@/components/sale-operation/saleCatalogProduct"
 import {
   SaleCatalogProductOfferOverlay,
-  saleCatalogDiscountPercent,
 } from "@/components/sale-operation/SaleCatalogProductOfferOverlay"
 import { saleOpFmt } from "@/components/sale-operation/saleOperationStyles"
-import {
-  LAYOUTS_OPERAR_CATALOG_SIDEBAR_WIDTH_PX,
-  layoutsOperarProductCardAddClass,
-  layoutsOperarProductCardClass,
-  layoutsOperarProductCardDescClass,
-  layoutsOperarProductCardGridBodyClass,
-  layoutsOperarProductCardListBodyClass,
-  layoutsOperarProductCardListClass,
-  layoutsOperarProductCardListMediaClass,
-  layoutsOperarProductCardMediaClass,
-  layoutsOperarProductCardPriceClass,
-  layoutsOperarProductCardTitleClass,
-} from "@/app/[siteId]/[popId]/library/layouts/layoutsOperarStyles"
 import { cn } from "@/lib/utils"
 import { Plus } from "lucide-react"
 import Image from "next/image"
+import { useState } from "react"
 
 type Props = {
   product: SaleCatalogProduct
   variant: "grid" | "lista"
   disabled?: boolean
   onClick: () => void
+  proposalId?: LayoutsOperarProductCardProposalId
 }
 
 export function SaleCatalogProductCard({
@@ -35,57 +38,79 @@ export function SaleCatalogProductCard({
   variant,
   disabled = false,
   onClick,
+  proposalId = LAYOUTS_OPERAR_DEFAULT_PRODUCT_CARD_PROPOSAL,
 }: Props) {
-  const descuentoPct = saleCatalogDiscountPercent(product.precioOriginal, product.precio)
-  const promoTrim = product.promo?.trim() ?? ""
-  const mostrarBadgeOferta = descuentoPct != null || promoTrim.length > 0
+  const [imageFailed, setImageFailed] = useState(false)
   const isList = variant === "lista"
+  const layoutVariant = isList ? "list" : "grid"
+  const promoTrim = product.promo?.trim() ?? ""
+  const showOfferOverlay =
+    product.precioOriginal != null && product.precioOriginal > product.precio
+  const imagenTrim = product.imagen?.trim() ?? ""
+  const showEmptyState = imagenTrim.length === 0 || imageFailed
+  const mediaStyle = layoutsOperarProductCardProposalMediaStyle(proposalId)
 
   return (
     <button
       type="button"
       disabled={disabled}
       onClick={onClick}
+      data-proposal={proposalId}
       className={cn(
-        isList ? layoutsOperarProductCardListClass : layoutsOperarProductCardClass,
+        isList
+          ? layoutsOperarProductCardProposalListShellClass(proposalId)
+          : layoutsOperarProductCardProposalGridShellClass(proposalId),
         disabled && "cursor-not-allowed opacity-50",
       )}
     >
       <div
-        className={cn(
-          isList ? layoutsOperarProductCardListMediaClass : layoutsOperarProductCardMediaClass,
-          !isList && "h-full w-full",
-        )}
+        className={layoutsOperarProductCardProposalMediaClass(proposalId, layoutVariant)}
+        style={mediaStyle}
       >
-        <Image
-          src={product.imagen}
-          alt={product.nombre}
-          fill
-          className="h-full w-full transition-transform duration-300 ease-out group-hover:scale-[1.03]"
-          unoptimized
-          sizes={isList ? `${LAYOUTS_OPERAR_CATALOG_SIDEBAR_WIDTH_PX}px` : "33vw"}
-          style={{ objectFit: "cover", objectPosition: "center" }}
-        />
-        {mostrarBadgeOferta ? (
+        {showEmptyState ? (
+          <LayoutsOperarProductCardMediaEmptyState
+            proposalId={proposalId}
+            seed={product.id}
+          />
+        ) : (
+          <Image
+            src={product.imagen}
+            alt=""
+            fill
+            onError={() => setImageFailed(true)}
+            className="size-full object-cover transition-transform duration-300 ease-out group-hover:scale-[1.03]"
+            unoptimized
+            sizes={isList ? "192px" : "33vw"}
+          />
+        )}
+        {showOfferOverlay ? (
           <SaleCatalogProductOfferOverlay
             precioOriginal={product.precioOriginal}
             precio={product.precio}
             promo={product.promo}
           />
+        ) : promoTrim ? (
+          <span className={layoutsOperarProductCardProposalOfferClass(proposalId)}>
+            {promoTrim}
+          </span>
         ) : null}
         {!disabled ? (
-          <span className={layoutsOperarProductCardAddClass} aria-hidden>
-            <Plus className="size-4.5" strokeWidth={2.5} />
+          <span className={layoutsOperarProductCardProposalAddClass(proposalId)} aria-hidden>
+            <Plus className="size-4" strokeWidth={2.5} aria-hidden />
           </span>
         ) : null}
       </div>
-      <div className={isList ? layoutsOperarProductCardListBodyClass : layoutsOperarProductCardGridBodyClass}>
+      <div className={layoutsOperarProductCardProposalBodyClass(proposalId, layoutVariant)}>
         <div className="min-h-0 self-start">
-          <h3 className={layoutsOperarProductCardTitleClass}>{product.nombre}</h3>
-          <p className={layoutsOperarProductCardDescClass}>{product.descripcion}</p>
+          <h3 className={layoutsOperarProductCardProposalTitleClass(proposalId)}>
+            {product.nombre}
+          </h3>
+          <p className={layoutsOperarProductCardProposalDescClass(proposalId)}>
+            {product.descripcion}
+          </p>
         </div>
         <div className={isList ? "shrink-0" : "self-end"}>
-          <span className={layoutsOperarProductCardPriceClass}>
+          <span className={layoutsOperarProductCardProposalPriceClass(proposalId)}>
             {saleOpFmt.format(product.precio)}
           </span>
         </div>
