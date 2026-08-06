@@ -44,9 +44,10 @@ import {
 } from "@/components/ui/dialog"
 import { Textarea } from "@/components/ui/textarea"
 import {
-  comboComponentCommentKey,
+  mostradorCartRowCommentKey,
   pricingForMostradorRow,
   productDescriptionForMostradorRow,
+  resolveMostradorCartRowComment,
   type MostradorCartDisplayRow,
 } from "@/lib/mostradorCartDisplay"
 import {
@@ -154,11 +155,13 @@ export function MostradorCartLineCard({
     suppressCatalog: true,
   })
 
-  const commentStorageKey =
-    row.variant === "combo_component" && row.comboComponentKey
-      ? comboComponentCommentKey(row.cartLineId, row.comboComponentKey)
-      : row.cartLineId
-  const comentario = itemComentarios[commentStorageKey] ?? row.comment ?? ""
+  const commentStorageKey = mostradorCartRowCommentKey(row)
+  const comentario = resolveMostradorCartRowComment(row, {
+    itemDescuentoModo,
+    itemDescuentoDraft,
+    itemDescuentoSuprimido,
+    itemComentarios,
+  })
   const pricing = pricingForMostradorRow(row, {
     itemDescuentoModo,
     itemDescuentoDraft,

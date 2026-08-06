@@ -53,6 +53,7 @@ export type SaleComprobantePreviewLine = {
 }
 
 export type SaleComprobantePreviewLineGroup = {
+  id: string
   category: string
   lines: SaleComprobantePreviewLine[]
   /** Descuento de promoción aplicado debajo de las líneas del grupo. */
@@ -463,8 +464,11 @@ function resolvePromotionGroupDiscountAmount(
 
 function buildPromoGroupPreviewSection(
   batch: MostradorCartDisplayRow[],
+  groupIndex: number,
 ): SaleComprobantePreviewLineGroup {
   const label = batch[0]?.promoGroupLabel?.trim() || "Promoción"
+  const groupId =
+    batch[0]?.promoGroupKey?.trim() || `promo-preview:${groupIndex}:${label}`
   const lines = batch.map((row) => {
     const pricing = resolvePromoItemListPricing(row)
     const category =
@@ -490,6 +494,7 @@ function buildPromoGroupPreviewSection(
   const discountAmount = resolvePromotionGroupDiscountAmount(batch)
 
   return {
+    id: groupId,
     category: label,
     lines,
     promotionDiscount:
@@ -535,6 +540,7 @@ export function buildSaleComprobantePreviewLineGroups(
 ): SaleComprobantePreviewLineGroup[] {
   const groups: SaleComprobantePreviewLineGroup[] = []
   let index = 0
+  let promoGroupIndex = 0
 
   while (index < rows.length) {
     const row = rows[index]
@@ -551,7 +557,8 @@ export function buildSaleComprobantePreviewLineGroups(
         index += 1
       }
       if (batch.length > 0) {
-        groups.push(buildPromoGroupPreviewSection(batch))
+        groups.push(buildPromoGroupPreviewSection(batch, promoGroupIndex))
+        promoGroupIndex += 1
       }
       continue
     }
@@ -594,7 +601,11 @@ export function groupSaleComprobantePreviewLines(
       groups[existing].lines.push(line)
     } else {
       indexByCategory.set(category, groups.length)
-      groups.push({ category, lines: [line] })
+      groups.push({
+        id: `category:${category}:${groups.length}`,
+        category,
+        lines: [line],
+      })
     }
   }
 

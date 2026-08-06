@@ -262,11 +262,11 @@ function TicketPreviewBody({ model }: { model: SaleComprobantePreviewModel }) {
           </p>
         ) : (
           model.lineGroups.map((group) => (
-            <div key={group.category} className="space-y-1.5">
+            <div key={group.id} className="space-y-1.5">
               <p className="text-[9px] font-bold uppercase">{group.category}</p>
               {group.lines.map((line, index) => (
                 <TicketLineItem
-                  key={`${group.category}-${line.description}-${index}`}
+                  key={`${group.id}-${line.description}-${index}`}
                   line={line}
                   showVatRate={model.showsLineVatRate}
                 />

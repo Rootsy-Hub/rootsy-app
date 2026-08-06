@@ -251,7 +251,8 @@ export function buildMostradorCartDisplayRows(input: {
   const itemsByLineId = new Map(input.items.map((item) => [item.lineId, item]))
   const rows: MostradorCartDisplayRow[] = []
 
-  for (const item of input.items) {
+  for (let itemIndex = 0; itemIndex < input.items.length; itemIndex++) {
+    const item = input.items[itemIndex]!
     const lineId = item.lineId
     const comment = cartLineCommentFingerprint(lineId, input.overrides)
     const itemPaidLocked = item.paidLocked === true
@@ -261,7 +262,7 @@ export function buildMostradorCartDisplayRows(input: {
       const promoName = promoMeta?.name ?? item.producto?.nombre ?? "Promoción"
 
       for (let comboIdx = 0; comboIdx < item.cantidad; comboIdx++) {
-        const promoGroupKey = `${lineId}:combo:${comboIdx}`
+        const promoGroupKey = `${lineId}@${itemIndex}:combo:${comboIdx}`
         for (const sel of item.promotionSelections) {
           const repeats = Math.max(1, Math.round(sel.slotQuantity))
           for (let r = 0; r < repeats; r++) {
@@ -288,10 +289,6 @@ export function buildMostradorCartDisplayRows(input: {
               promoGroupVariant: "promotion",
               topCloudVariant: "none",
               hidePrice: true,
-              comment:
-                input.overrides.itemComentarios[
-                  `combo:${lineId}:${componentKey}`
-                ]?.trim() || undefined,
               discountEditingDisabled: true,
               commentEditingDisabled: false,
               showGreenBorder: true,
@@ -515,6 +512,18 @@ function computeGroupPricing(
   return undefined
 }
 
+function uniqueMostradorCartGroupKey(
+  baseKey: string,
+  groups: MostradorCartDisplayGroup[],
+): string {
+  if (!groups.some((group) => group.key === baseKey)) return baseKey
+  let suffix = 2
+  while (groups.some((group) => group.key === `${baseKey}#${suffix}`)) {
+    suffix += 1
+  }
+  return `${baseKey}#${suffix}`
+}
+
 export function groupMostradorCartDisplayRows(
   rows: MostradorCartDisplayRow[],
   overrides?: CartLineOverrideSnapshot,
@@ -536,7 +545,7 @@ export function groupMostradorCartDisplayRows(
     }
 
     groups.push({
-      key: groupKey,
+      key: uniqueMostradorCartGroupKey(groupKey, groups),
       promoLabel: row.promoGroupLabel,
       promoVariant: row.promoGroupVariant,
       promoDiscountMode: row.promoGroupDiscountMode,
@@ -562,11 +571,71 @@ export function countAppliedPromotions(input: {
   return input.applications.length + input.comboLineCount
 }
 
+/** Clave estable por fila visible del ticket (post-consolidación). */
+export function mostradorCartRowCommentKey(row: MostradorCartDisplayRow): string {
+  return `row:${row.rowKey}`
+}
+
+export function resolveMostradorCartRowComment(
+  row: MostradorCartDisplayRow,
+  overrides: CartLineOverrideSnapshot,
+): string {
+  const rowKeyComment =
+    overrides.itemComentarios[mostradorCartRowCommentKey(row)]?.trim() ?? ""
+  if (rowKeyComment) return rowKeyComment
+
+  if (row.variant !== "combo_component") {
+    return overrides.itemComentarios[row.cartLineId]?.trim() ?? ""
+  }
+
+  return ""
+}
+
 export function comboComponentCommentKey(
   cartLineId: string,
   componentKey: string,
+  comboGroupId?: string,
 ): string {
+  if (comboGroupId?.trim()) {
+    return `combo:${comboGroupId.trim()}:${componentKey}`
+  }
   return `combo:${cartLineId}:${componentKey}`
+}
+
+export function isComboCommentKeyForCartLine(
+  key: string,
+  cartLineId: string,
+): boolean {
+  if (!key.startsWith("combo:")) return false
+  const rest = key.slice("combo:".length)
+  return rest.startsWith(`${cartLineId}:`) || rest.startsWith(`${cartLineId}@`)
+}
+
+function isRowCommentKeyForCartLine(key: string, cartLineId: string): boolean {
+  if (!key.startsWith("row:")) return false
+  const rowKey = key.slice("row:".length)
+  return (
+    rowKey.startsWith(`${cartLineId}:`) ||
+    rowKey.startsWith(`${cartLineId}@`) ||
+    rowKey === `${cartLineId}:regular`
+  )
+}
+
+export function clearComboCommentsForCartLine(
+  comments: Record<string, string>,
+  cartLineId: string,
+): Record<string, string> {
+  const cleaned = { ...comments }
+  for (const key of Object.keys(cleaned)) {
+    if (
+      key === cartLineId ||
+      isComboCommentKeyForCartLine(key, cartLineId) ||
+      isRowCommentKeyForCartLine(key, cartLineId)
+    ) {
+      delete cleaned[key]
+    }
+  }
+  return cleaned
 }
 
 export function resolveRowCartLineId(row: MostradorCartDisplayRow): string {

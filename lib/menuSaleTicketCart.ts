@@ -27,6 +27,7 @@ import {
   findMergeableCartLine,
   normalizeCartLineDiscountDraftForApply,
   peelCartLineUnits,
+  remapCommentStorageKeyAfterPeel,
   type CartLineOverrideSnapshot,
   type MostradorCartLineEditInput,
 } from "@/lib/menuCartLineMerge"
@@ -180,9 +181,11 @@ export function applyTicketLineEdit(input: {
     if (peeled) {
       nextCart = peeled.carrito
       targetLineId = peeled.peeledLineId
-      if (targetCommentKey === input.edit.cartLineId) {
-        targetCommentKey = peeled.peeledLineId
-      }
+      targetCommentKey = remapCommentStorageKeyAfterPeel(
+        targetCommentKey,
+        input.edit.cartLineId,
+        peeled.peeledLineId,
+      )
     }
   }
 

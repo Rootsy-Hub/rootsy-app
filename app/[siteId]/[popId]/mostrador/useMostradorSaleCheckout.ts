@@ -34,6 +34,7 @@ import type { PromotionCartSelection } from "@/lib/promotionPricing"
 import {
   buildMostradorCartDisplayRows,
   cartDetailItemsFromCarrito,
+  clearComboCommentsForCartLine,
   countAppliedPromotions,
   groupMostradorCartDisplayRows,
 } from "@/lib/mostradorCartDisplay"
@@ -1101,14 +1102,9 @@ export function useMostradorSaleCheckout(
           .filter((i) => i.cantidad > 0)
         if (delta < 0 && !next.some((i) => resolveCartLineId(i) === lineId)) {
           clearCartLineOverrides(lineId, cartLineOverrideActions)
-          setItemComentarios((comments) => {
-            const prefix = `combo:${lineId}:`
-            const cleaned = { ...comments }
-            for (const key of Object.keys(cleaned)) {
-              if (key.startsWith(prefix)) delete cleaned[key]
-            }
-            return cleaned
-          })
+          setItemComentarios((comments) =>
+            clearComboCommentsForCartLine(comments, lineId),
+          )
         }
         return next
       })

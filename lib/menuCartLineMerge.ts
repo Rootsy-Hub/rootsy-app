@@ -189,6 +189,38 @@ export function peelCartLineUnits(
   return { carrito: next, peeledLineId }
 }
 
+/** Reasigna claves de overrides cuando peelCartLineUnits crea una línea nueva. */
+export function remapCommentStorageKeyAfterPeel(
+  commentKey: string,
+  sourceLineId: string,
+  peeledLineId: string,
+): string {
+  if (commentKey.startsWith("row:")) {
+    const rowKey = commentKey.slice(4)
+    if (
+      rowKey.startsWith(`${sourceLineId}:`) ||
+      rowKey.startsWith(`${sourceLineId}@`)
+    ) {
+      return `row:${peeledLineId}${rowKey.slice(sourceLineId.length)}`
+    }
+    return commentKey
+  }
+
+  if (commentKey === sourceLineId) {
+    return peeledLineId
+  }
+
+  if (commentKey.startsWith(`combo:${sourceLineId}:`)) {
+    return `combo:${peeledLineId}:${commentKey.slice(`combo:${sourceLineId}:`.length)}`
+  }
+
+  if (commentKey.startsWith(`combo:${sourceLineId}@`)) {
+    return `combo:${peeledLineId}@${commentKey.slice(`combo:${sourceLineId}@`.length)}`
+  }
+
+  return commentKey
+}
+
 export function applyCartLineQuantityDelta(
   carrito: MenuCartItem[],
   lineId: string,
