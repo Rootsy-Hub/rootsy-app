@@ -4,6 +4,7 @@ import "@/app/[siteId]/[popId]/library/layouts/layoutsOperarTheme.css"
 import "@/app/[siteId]/[popId]/library/radius/rootsyRadiusSystem.css"
 import {
   getLayoutsOperarGridCssVariables,
+  getLayoutsOperarProductCardMediaEmptyPhotoLayers,
   layoutsOperarProductCardProposalAddClass,
   layoutsOperarProductCardProposalBodyClass,
   layoutsOperarProductCardProposalDescClass,
@@ -12,18 +13,19 @@ import {
   layoutsOperarProductCardProposalMediaClass,
   layoutsOperarProductCardProposalMediaStyle,
   layoutsOperarProductCardProposalOfferClass,
-  layoutsOperarProductCardProposalPlaceholderIconClass,
-  layoutsOperarProductCardProposalPlaceholderLabelClass,
-  layoutsOperarProductCardProposalPlaceholderWrapClass,
+  layoutsOperarProductCardMediaEmptyStateShellClass,
   layoutsOperarProductCardProposalPriceClass,
   layoutsOperarProductCardProposalTitleClass,
   type LayoutsOperarProductCardProposalId,
 } from "@/app/[siteId]/[popId]/library/layouts/layoutsOperarHardcodedSpec"
-import { layoutsOperarCatalogArticleDemoScopeClass } from "@/app/[siteId]/[popId]/library/layouts/layoutsOperarStyles"
+import {
+  layoutsOperarCatalogArticleDemoScopeClass,
+  layoutsOperarProductCardMediaEmptyStateGrainClass,
+} from "@/app/[siteId]/[popId]/library/layouts/layoutsOperarStyles"
 import { LAYOUTS_OPERAR_DEFAULT_PRODUCT_CARD_PROPOSAL } from "@/app/[siteId]/[popId]/library/layouts/rootsyLayoutsOperarSystem"
 import { SaleCatalogProductOfferOverlay } from "@/components/sale-operation/SaleCatalogProductOfferOverlay"
 import { cn } from "@/lib/utils"
-import { ImageOff, Plus } from "lucide-react"
+import { Plus } from "lucide-react"
 import { useState } from "react"
 
 export type LayoutsOperarDemoProduct = {
@@ -33,7 +35,7 @@ export type LayoutsOperarDemoProduct = {
   price: number
   originalPrice?: number
   offerLabel?: string
-  image: string
+  image?: string | null
 }
 
 export const LAYOUTS_OPERAR_DEMO_ARTICLE: LayoutsOperarDemoProduct = {
@@ -54,8 +56,45 @@ export const LAYOUTS_OPERAR_DEMO_ARTICLE_OFFER: LayoutsOperarDemoProduct = {
   offerLabel: "15% off",
 }
 
+export const LAYOUTS_OPERAR_DEMO_ARTICLE_NO_IMAGE: LayoutsOperarDemoProduct = {
+  id: "tomate",
+  name: "Tomate cherry",
+  description: "Bandeja 500 g · huerta local",
+  price: 2400,
+  image: null,
+}
+
 function formatDemoPrice(amount: number) {
   return `$ ${amount.toLocaleString("es-AR")},00`
+}
+
+/** Superficie foto ausente — sin icono ni copy; luz de estudio + grano como imagen real. */
+export function LayoutsOperarProductCardMediaEmptyState({
+  proposalId = LAYOUTS_OPERAR_DEFAULT_PRODUCT_CARD_PROPOSAL,
+  seed = "product",
+  className,
+}: {
+  proposalId?: LayoutsOperarProductCardProposalId
+  seed?: string
+  className?: string
+}) {
+  const layers = getLayoutsOperarProductCardMediaEmptyPhotoLayers(seed)
+
+  return (
+    <div
+      className={cn(layoutsOperarProductCardMediaEmptyStateShellClass(proposalId), className)}
+      role="img"
+      aria-label="Producto sin fotografía"
+    >
+      <div style={layers.base} aria-hidden />
+      <div style={layers.keyLight} aria-hidden />
+      <div style={layers.colorPoolA} aria-hidden />
+      <div style={layers.colorPoolB} aria-hidden />
+      <div style={layers.depth} aria-hidden />
+      <div style={layers.vignette} aria-hidden />
+      <div className={layoutsOperarProductCardMediaEmptyStateGrainClass} aria-hidden />
+    </div>
+  )
 }
 
 export function LayoutsOperarProductCardDemoCanvas({
@@ -87,24 +126,18 @@ function LayoutsOperarProductCardProposalMedia({
   const [imageFailed, setImageFailed] = useState(false)
   const showOfferOverlay = product.originalPrice != null && product.originalPrice > product.price
   const mediaStyle = layoutsOperarProductCardProposalMediaStyle(proposalId)
+  const showEmptyState = product.image == null || product.image === "" || imageFailed
 
   return (
     <div
       className={layoutsOperarProductCardProposalMediaClass(proposalId, variant)}
       style={mediaStyle}
     >
-      {imageFailed ? (
-        <div className={layoutsOperarProductCardProposalPlaceholderWrapClass(proposalId)} aria-hidden>
-          <div className={layoutsOperarProductCardProposalPlaceholderIconClass(proposalId)}>
-            <ImageOff className="size-7 stroke-[1.5]" />
-          </div>
-          <span className={layoutsOperarProductCardProposalPlaceholderLabelClass(proposalId)}>
-            Sin imagen
-          </span>
-        </div>
+      {showEmptyState ? (
+        <LayoutsOperarProductCardMediaEmptyState proposalId={proposalId} seed={product.id} />
       ) : (
         <img
-          src={product.image}
+          src={product.image ?? undefined}
           alt=""
           onError={() => setImageFailed(true)}
           className="size-full object-cover transition-transform duration-300 ease-out group-hover:scale-[1.03]"

@@ -332,12 +332,12 @@ export const ROOTSY_LAYOUTS_OPERAR_PRODUCT_CARD_PROPOSALS: LayoutsOperarProductC
 export const LAYOUTS_OPERAR_DEFAULT_PRODUCT_CARD_PROPOSAL: LayoutsOperarProductCardProposalId =
   "plano-dosel"
 
-export type LayoutsOperarCatalogRailProposalId = "lista-dosel" | "pastillas-sombra" | "surco-savia"
+export type LayoutsOperarTicketProposalId = "bruma-savia" | "bruma-plana" | "bruma-ascendente"
 
-export type LayoutsOperarCatalogRailProposalItemLayout = "lista" | "pastilla" | "surco"
+export type LayoutsOperarTicketProposalTotalsLayout = "gradiente" | "plano" | "ring"
 
-export type LayoutsOperarCatalogRailProposal = {
-  id: LayoutsOperarCatalogRailProposalId
+export type LayoutsOperarTicketProposal = {
+  id: LayoutsOperarTicketProposalId
   letter: "A" | "B" | "C"
   title: string
   pairingId: "pos-core" | "pos-split" | "pos-focus"
@@ -345,60 +345,51 @@ export type LayoutsOperarCatalogRailProposal = {
   summary: string
   uxNote: string
   recommended?: boolean
-  itemLayout: LayoutsOperarCatalogRailProposalItemLayout
-  sidebarWidthPx: number
-  itemMinHeightPx: number
+  totalsLayout: LayoutsOperarTicketProposalTotalsLayout
 }
 
-/** Propuestas rail categorías §2.3 — sidebar 288px · listados rápidos. */
-export const ROOTSY_LAYOUTS_OPERAR_CATALOG_RAIL_PROPOSALS: LayoutsOperarCatalogRailProposal[] = [
+/** Propuestas ticket §4 — bruma · savia · desglose como Vender. */
+export const ROOTSY_LAYOUTS_OPERAR_TICKET_PROPOSALS: LayoutsOperarTicketProposal[] = [
   {
-    id: "lista-dosel",
+    id: "bruma-savia",
     letter: "A",
-    title: "Lista dosel",
+    title: "Bruma savia",
     pairingId: "pos-core",
-    pairingLabel: "Sombra 950 + Savia 400 barra",
+    pairingLabel: "Bruma 100 + Savia pos-totals",
     summary:
-      "Ítems full-bleed · hairlines sombra-border · selección sombra-800 + barra inset savia 3px (actual lib).",
+      "Cart bruma-100 · dividers bruma-200 · banners wash savia · totales gradiente pos-totals con desglose.",
     uxNote:
-      "Lista continua bajo el dosel — escaneo vertical denso. Alineada al rail del grid y tokens --layouts-operar-rail-*.",
+      "Canónico del grid — la columna clara respira sobre el dosel denso y cierra con la barra savia de cobro.",
     recommended: true,
-    itemLayout: "lista",
-    sidebarWidthPx: ROOTSY_LAYOUTS_OPERAR_ANATOMY.catalogSidebarWidthPx,
-    itemMinHeightPx: 44,
+    totalsLayout: "gradiente",
   },
   {
-    id: "pastillas-sombra",
+    id: "bruma-plana",
     letter: "B",
-    title: "Pastillas sombra",
+    title: "Bruma plana",
     pairingId: "pos-split",
-    pairingLabel: "Sombra 900/800 + Savia 400 tick",
+    pairingLabel: "Bruma 50 + Savia 975 sólido",
     summary:
-      "Ítems rounded-lg con gap · sin hairlines · hover sombra-900 · selección losa sombra-800 + tick savia.",
+      "Cart bruma-50 · hairlines bruma-200 · banners planos · totales savia sólido sin gradiente.",
     uxNote:
-      "Bloques separados — menos ruido visual entre categorías. Mejor en listas cortas y dedo grueso.",
-    itemLayout: "pastilla",
-    sidebarWidthPx: ROOTSY_LAYOUTS_OPERAR_ANATOMY.catalogSidebarWidthPx,
-    itemMinHeightPx: 44,
+      "Lectura más plana — menos contraste en totales cuando el ticket tiene muchos ítems y grupos promo.",
+    totalsLayout: "plano",
   },
   {
-    id: "surco-savia",
+    id: "bruma-ascendente",
     letter: "C",
-    title: "Surco savia",
+    title: "Bruma ascendente",
     pairingId: "pos-focus",
-    pairingLabel: "Sombra 800 + Savia 400 ring",
+    pairingLabel: "Velo bruma + Savia ring",
     summary:
-      "Ítems rounded-lg · ring savia en selección · barra inset 3px + highlight bruma · labels savia.",
+      "Header velo bruma · cart bruma-100 · bisagra ring savia en totales · banners con ring savia.",
     uxNote:
-      "La savia marca la categoría activa antes del canvas — útil cuando el rail compite con muchos filtros.",
-    itemLayout: "surco",
-    sidebarWidthPx: ROOTSY_LAYOUTS_OPERAR_ANATOMY.catalogSidebarWidthPx,
-    itemMinHeightPx: 44,
+      "La neblina sube desde el header — anticipa la columna clara y marca la bisagra hacia el cobro.",
+    totalsLayout: "ring",
   },
 ]
 
-export const LAYOUTS_OPERAR_DEFAULT_CATALOG_RAIL_PROPOSAL: LayoutsOperarCatalogRailProposalId =
-  "lista-dosel"
+export const LAYOUTS_OPERAR_DEFAULT_TICKET_PROPOSAL: LayoutsOperarTicketProposalId = "bruma-savia"
 
 export const ROOTSY_LAYOUTS_OPERAR_PRODUCTION = {
   page: "app/[siteId]/[popId]/sale/page.tsx",

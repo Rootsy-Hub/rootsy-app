@@ -10,7 +10,11 @@ import {
 } from "@/components/sale-operation/SaleCatalogProductOfferOverlay"
 import { saleOpFmt, saleOpImporteBaseClass } from "@/components/sale-operation/saleOperationStyles"
 import { useDataWorkspaceSidebar } from "@/components/layouts/useDataWorkspaceSidebar"
-import { Input } from "@/components/ui/input"
+import { SaleCatalogToolbar } from "@/components/sale-operation/SaleCatalogToolbar"
+import {
+  SALE_CATALOG_DEFAULT_PRICE_LIST_ID,
+} from "@/components/sale-operation/saleCatalogPriceLists"
+import { findCatalogProductByScanQuery } from "@/lib/saleCatalogScan"
 import {
   readSavedSaleCatalogView,
   writeSavedSaleCatalogView,
@@ -23,11 +27,8 @@ import {
 } from "@/app/[siteId]/[popId]/library/layouts/layoutsOperarStyles"
 import { cn } from "@/lib/utils"
 import {
-  LayoutGrid,
   Percent,
   Plus,
-  Rows3,
-  Search,
   Tag,
 } from "lucide-react"
 import Image from "next/image"
@@ -40,19 +41,6 @@ const importeCardClass = cn(
   "block text-[clamp(1.05rem,1.65vw,1.3125rem)] leading-none font-semibold text-white/90",
 )
 
-function IconoLimpiarBusqueda({ className }: { className?: string }) {
-  return (
-    <svg
-      viewBox="0 0 24 24"
-      fill="currentColor"
-      className={cn("size-[14px] shrink-0", className)}
-      aria-hidden
-    >
-      <path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z" />
-    </svg>
-  )
-}
-
 type Props = {
   siteId: string
   popId: string
@@ -62,7 +50,7 @@ type Props = {
   products: SaleCatalogProduct[]
   loading: boolean
   error: string | null
-  onAddProduct: (productId: string, kind?: MenuCartItemKind) => void
+  onAddProduct: (productId: string, kind?: MenuCartItemKind, quantity?: number) => void
   addDisabled?: boolean
   /** Control externo del panel de categorías (p. ej. botón del header). */
   catalogSidebarOpen?: boolean
@@ -97,9 +85,35 @@ export function SaleCatalogBrowser({
   })
   const [modoVista, setModoVista] = useState<"grid" | "lista">("grid")
   const [busqueda, setBusqueda] = useState("")
+  const [cantidadIngreso, setCantidadIngreso] = useState(1)
+  const [priceListId, setPriceListId] = useState(SALE_CATALOG_DEFAULT_PRICE_LIST_ID)
   const busquedaInputRef = useRef<HTMLInputElement>(null)
   const vistaAntesBusquedaRef = useRef<SaleCatalogViewPersisted | null>(null)
   const busquedaTrimPrevRef = useRef("")
+
+  const handleAddProduct = useCallback(
+    (productId: string, kind?: MenuCartItemKind, quantity = cantidadIngreso) => {
+      if (addDisabled) return
+      onAddProduct(productId, kind, quantity)
+    },
+    [addDisabled, cantidadIngreso, onAddProduct],
+  )
+
+  const handleScanKeyDown = useCallback(
+    (event: React.KeyboardEvent<HTMLInputElement>) => {
+      if (event.key !== "Enter") return
+      event.preventDefault()
+      const match = findCatalogProductByScanQuery(products, busqueda)
+      if (!match) return
+      const kind =
+        "kind" in match && typeof match.kind === "string"
+          ? (match.kind as MenuCartItemKind)
+          : undefined
+      handleAddProduct(match.id, kind)
+      setBusqueda("")
+    },
+    [busqueda, handleAddProduct, products],
+  )
 
   const persistVistaCatalogo = useCallback(
     (view: SaleCatalogViewPersisted) => {
@@ -132,7 +146,8 @@ export function SaleCatalogBrowser({
       const matchQ =
         !q ||
         p.nombre.toLowerCase().includes(q) ||
-        p.descripcion.toLowerCase().includes(q)
+        p.descripcion.toLowerCase().includes(q) ||
+        (p.barcode != null && String(p.barcode).toLowerCase().includes(q))
       return matchVista && matchQ
     })
   }, [busqueda, vistaCatalogo, products])
@@ -329,75 +344,18 @@ export function SaleCatalogBrowser({
       </aside>
 
       <section className="grid min-h-0 min-w-0 flex-1 grid-rows-[auto_minmax(0,1fr)] bg-[#20262e]">
-        <div className="flex min-w-0 items-center gap-3 border-b border-white/10 px-4 py-3">
-          <div className="relative flex h-10 shrink-0 items-center rounded-lg border border-white/12 bg-black/25 p-1 shadow-[inset_0_1px_0_rgba(255,255,255,0.08),0_0_0_1px_rgba(16,185,129,0.06)]">
-            <span
-              aria-hidden
-              className="pointer-events-none absolute inset-y-1 left-1 w-10 rounded-md border border-emerald-300/35 bg-linear-to-b from-emerald-300/22 via-emerald-400/16 to-emerald-500/12 shadow-[0_0_18px_rgba(16,185,129,0.45),inset_0_1px_0_rgba(255,255,255,0.25)] transition-transform duration-300 ease-out"
-              style={{
-                transform:
-                  modoVista === "lista" ? "translateX(2.5rem)" : "translateX(0)",
-              }}
-            />
-            <button
-              type="button"
-              onClick={() => setModoVista("grid")}
-              className={cn(
-                "relative z-10 flex h-8 w-10 items-center justify-center rounded-md transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-300/70",
-                modoVista === "grid"
-                  ? "text-white drop-shadow-[0_0_10px_rgba(110,231,183,0.6)]"
-                  : "text-slate-300/80 hover:text-white/95",
-              )}
-              aria-label="Vista en grilla"
-              aria-pressed={modoVista === "grid"}
-            >
-              <LayoutGrid className="size-4.5" />
-            </button>
-            <button
-              type="button"
-              onClick={() => setModoVista("lista")}
-              className={cn(
-                "relative z-10 flex h-8 w-10 items-center justify-center rounded-md transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-300/70",
-                modoVista === "lista"
-                  ? "text-white drop-shadow-[0_0_10px_rgba(110,231,183,0.6)]"
-                  : "text-slate-300/80 hover:text-white/95",
-              )}
-              aria-label="Vista en columna"
-              aria-pressed={modoVista === "lista"}
-            >
-              <Rows3 className="size-4.5" />
-            </button>
-          </div>
-          <div className="relative min-w-0 max-w-md flex-1">
-            <Search className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-white/40" />
-            <Input
-              ref={busquedaInputRef}
-              value={busqueda}
-              onChange={(e) => setBusqueda(e.target.value)}
-              placeholder="Buscar o escanear producto..."
-              className={cn(
-                "h-10 border-white/10 bg-black/20 pl-9 text-white placeholder:text-white/35",
-                busqueda.length > 0 && "pr-9",
-              )}
-            />
-            {busqueda.length > 0 ? (
-              <button
-                type="button"
-                aria-label="Limpiar búsqueda"
-                className="absolute top-1/2 right-1.5 flex size-7 -translate-y-1/2 items-center justify-center rounded-full text-white/50 transition-colors hover:bg-white/[0.07] hover:text-white/90"
-                onClick={() => {
-                  setBusqueda("")
-                  busquedaInputRef.current?.focus()
-                }}
-              >
-                <IconoLimpiarBusqueda />
-              </button>
-            ) : null}
-          </div>
-          <span className="shrink-0 text-sm font-medium text-white/60">
-            {productosFiltrados.length} productos mostrados
-          </span>
-        </div>
+        <SaleCatalogToolbar
+          modoVista={modoVista}
+          onModoVistaChange={setModoVista}
+          busqueda={busqueda}
+          onBusquedaChange={setBusqueda}
+          onBusquedaKeyDown={handleScanKeyDown}
+          scanInputRef={busquedaInputRef}
+          cantidadIngreso={cantidadIngreso}
+          onCantidadIngresoChange={setCantidadIngreso}
+          priceListId={priceListId}
+          onPriceListChange={setPriceListId}
+        />
 
         <div
           className={cn(
@@ -458,7 +416,7 @@ export function SaleCatalogBrowser({
                     key={`${productKind ?? "article"}:${p.id}`}
                     type="button"
                     disabled={addDisabled}
-                    onClick={() => onAddProduct(p.id, productKind)}
+                    onClick={() => handleAddProduct(p.id, productKind)}
                     className={cn(
                       "group relative w-full overflow-hidden rounded-2xl border border-white/10 bg-[#252b34] text-left",
                       "shadow-[inset_0_1px_0_rgba(255,255,255,0.07),0_0_0_1px_rgba(0,0,0,0.45),0_1px_2px_rgba(0,0,0,0.22),0_6px_16px_rgba(0,0,0,0.28),0_16px_40px_rgba(0,0,0,0.38)]",

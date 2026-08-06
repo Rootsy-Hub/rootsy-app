@@ -7,22 +7,22 @@ import {
   layoutsOperarProductCardListClass,
   layoutsOperarProductCardListMediaClass,
   layoutsOperarProductCardMediaClass,
-  layoutsOperarProductCardMediaPlaceholderClass,
-  layoutsOperarProductCardMediaPlaceholderIconClass,
-  layoutsOperarProductCardMediaPlaceholderLabelClass,
+  layoutsOperarProductCardMediaEmptyStateClass,
+  layoutsOperarProductCardMediaEmptyStateGrainClass,
   layoutsOperarProductCardOfferClass,
   layoutsOperarProductCardPriceClass,
   layoutsOperarProductCardTitleClass,
-  layoutsOperarCatalogRailItemClass,
-  layoutsOperarCatalogRailItemDiscountSelectedClass,
-  layoutsOperarCatalogRailItemPromoSelectedClass,
-  layoutsOperarCatalogRailItemSelectedClass,
-  layoutsOperarCatalogRailItemWithIconClass,
-  layoutsOperarCatalogRailListClass,
-  layoutsOperarCatalogRailListItemClass,
-  layoutsOperarCatalogRailNavClass,
-  layoutsOperarCatalogRailScrollClass,
-  layoutsOperarCatalogRailSectionLabelClass,
+  layoutsOperarSummaryActionsRowClass,
+  layoutsOperarSummaryCartHeadingClass,
+  layoutsOperarSummaryCartMetaClass,
+  layoutsOperarSummaryCartRowClass,
+  layoutsOperarSummaryHeaderRowClass,
+  layoutsOperarSummaryPanelClass,
+  layoutsOperarSummaryPanelStandaloneClass,
+  layoutsOperarSummaryPanelSurfaceClass,
+  layoutsOperarSummaryTotalRowClass,
+  layoutsOperarSummaryTotalsAmountClass,
+  layoutsOperarSummaryTotalsLabelClass,
 } from "@/app/[siteId]/[popId]/library/layouts/layoutsOperarStyles"
 import {
   getLayoutsOperarBorderCss,
@@ -31,14 +31,14 @@ import {
   getLayoutsOperarWireframeHeaderStyle,
   LAYOUTS_OPERAR_DEFAULT_TOOLBOX_PROPOSAL,
   ROOTSY_LAYOUTS_OPERAR_ANATOMY,
-  ROOTSY_LAYOUTS_OPERAR_CATALOG_RAIL_PROPOSALS,
   ROOTSY_LAYOUTS_OPERAR_PRODUCT_CARD_PROPOSALS,
+  ROOTSY_LAYOUTS_OPERAR_TICKET_PROPOSALS,
   ROOTSY_LAYOUTS_OPERAR_SURFACES,
   ROOTSY_LAYOUTS_OPERAR_TOOLBOX_PROPOSALS,
   type LayoutsOperarProductCardProposal,
   type LayoutsOperarProductCardProposalId,
-  type LayoutsOperarCatalogRailProposal,
-  type LayoutsOperarCatalogRailProposalId,
+  type LayoutsOperarTicketProposal,
+  type LayoutsOperarTicketProposalId,
   type LayoutsOperarSurfaceId,
   type LayoutsOperarToolboxProposal,
   type LayoutsOperarToolboxProposalId,
@@ -631,35 +631,87 @@ export function layoutsOperarProductCardProposalPriceClass(id: LayoutsOperarProd
   return "text-lg font-bold tabular-nums text-[color-mix(in_srgb,var(--rootsy-savia-200)_92%,white)]"
 }
 
+function hashLayoutsOperarPhotoEmptySeed(seed: string) {
+  let hash = 0
+  for (let i = 0; i < seed.length; i += 1) {
+    hash = (hash * 31 + seed.charCodeAt(i)) | 0
+  }
+  return Math.abs(hash)
+}
+
+/** Capas foto ausente — luz de estudio + pools de color · variación por producto. */
+export function getLayoutsOperarProductCardMediaEmptyPhotoLayers(seed = "product") {
+  const hash = hashLayoutsOperarPhotoEmptySeed(seed)
+  const poolAX = 42 + (hash % 30)
+  const poolAY = 48 + ((hash >> 4) % 26)
+  const poolBX = 58 + ((hash >> 8) % 24)
+  const poolBY = 32 + ((hash >> 12) % 22)
+  const saviaA = 4 + (hash % 5)
+  const saviaB = 3 + ((hash >> 6) % 4)
+  const brumaKey = 8 + ((hash >> 10) % 7)
+
+  return {
+    base: {
+      position: "absolute" as const,
+      inset: 0,
+      background: `linear-gradient(152deg,
+        color-mix(in srgb, var(--rootsy-sombra-800) 90%, var(--rootsy-bruma-100) 10%) 0%,
+        var(--rootsy-sombra-900) 46%,
+        color-mix(in srgb, var(--rootsy-sombra-950) 94%, var(--rootsy-savia-975) 6%) 100%)`,
+    },
+    keyLight: {
+      position: "absolute" as const,
+      inset: 0,
+      background: `radial-gradient(ellipse 92% 72% at 16% 10%, color-mix(in srgb, var(--rootsy-bruma-100) ${brumaKey}%, transparent) 0%, transparent 70%)`,
+    },
+    colorPoolA: {
+      position: "absolute" as const,
+      inset: "-8%",
+      background: `radial-gradient(ellipse 68% 52% at ${poolAX}% ${poolAY}%, color-mix(in srgb, var(--rootsy-savia-600) ${saviaA}%, transparent) 0%, transparent 74%)`,
+      filter: "blur(10px)",
+    },
+    colorPoolB: {
+      position: "absolute" as const,
+      inset: "-6%",
+      background: `radial-gradient(ellipse 58% 44% at ${poolBX}% ${poolBY}%, color-mix(in srgb, var(--rootsy-savia-500) ${saviaB}%, transparent) 0%, transparent 72%)`,
+      filter: "blur(14px)",
+    },
+    depth: {
+      position: "absolute" as const,
+      inset: 0,
+      background: `radial-gradient(ellipse 88% 62% at 50% 108%, color-mix(in srgb, var(--rootsy-sombra-950) 42%, transparent) 0%, transparent 68%)`,
+    },
+    vignette: {
+      position: "absolute" as const,
+      inset: 0,
+      background: `radial-gradient(ellipse 108% 96% at 50% 46%, transparent 38%, color-mix(in srgb, var(--rootsy-sombra-950) 72%, transparent) 100%)`,
+      opacity: 0.9,
+    },
+  }
+}
+
+export function layoutsOperarProductCardMediaEmptyStateShellClass(
+  id: LayoutsOperarProductCardProposalId,
+) {
+  void id
+  return layoutsOperarProductCardMediaEmptyStateClass
+}
+
+/** @deprecated Usar layoutsOperarProductCardMediaEmptyStateShellClass */
 export function layoutsOperarProductCardProposalPlaceholderWrapClass(id: LayoutsOperarProductCardProposalId) {
-  if (id === "plano-dosel") return layoutsOperarProductCardMediaPlaceholderClass
-
-  return cn(
-    "flex size-full flex-col items-center justify-center gap-2",
-    id === "losa-sombra" ? "bg-[var(--rootsy-sombra-800)]" : "bg-[var(--rootsy-sombra-950)]",
-  )
+  return layoutsOperarProductCardMediaEmptyStateShellClass(id)
 }
 
+/** @deprecated Eliminado — foto ausente sin tile */
 export function layoutsOperarProductCardProposalPlaceholderIconClass(id: LayoutsOperarProductCardProposalId) {
-  if (id === "plano-dosel") return layoutsOperarProductCardMediaPlaceholderIconClass
-
-  return cn(
-    "flex size-11 items-center justify-center rounded-lg",
-    id === "losa-sombra"
-      ? "bg-[color-mix(in_srgb,var(--rootsy-sombra-900)_55%,transparent)] text-[color-mix(in_srgb,var(--rootsy-sombra-400)_75%,white)] ring-1 ring-[color-mix(in_srgb,var(--rootsy-sombra-border)_50%,transparent)]"
-      : "bg-[color-mix(in_srgb,var(--rootsy-sombra-900)_62%,transparent)] text-[color-mix(in_srgb,var(--rootsy-savia-400)_55%,white)] ring-1 ring-[color-mix(in_srgb,var(--rootsy-savia-400)_22%,transparent)]",
-  )
+  void id
+  return ""
 }
 
+/** @deprecated Eliminado — foto ausente sin copy visible */
 export function layoutsOperarProductCardProposalPlaceholderLabelClass(id: LayoutsOperarProductCardProposalId) {
-  if (id === "plano-dosel") return layoutsOperarProductCardMediaPlaceholderLabelClass
-
-  return cn(
-    "text-[10px] font-semibold uppercase tracking-[0.12em]",
-    id === "losa-sombra"
-      ? "text-[color-mix(in_srgb,var(--rootsy-sombra-400)_72%,transparent)]"
-      : "text-[color-mix(in_srgb,var(--rootsy-sombra-400)_62%,var(--rootsy-savia-400))]",
-  )
+  void id
+  return ""
 }
 
 export function layoutsOperarProductCardProposalOfferClass(id: LayoutsOperarProductCardProposalId) {
@@ -689,121 +741,316 @@ export function layoutsOperarProductCardProposalAddClass(id: LayoutsOperarProduc
   )
 }
 
-export function getLayoutsOperarCatalogRailProposal(
-  id: LayoutsOperarCatalogRailProposalId,
-): LayoutsOperarCatalogRailProposal {
-  const proposal = ROOTSY_LAYOUTS_OPERAR_CATALOG_RAIL_PROPOSALS.find((p) => p.id === id)
-  if (!proposal) throw new Error(`Unknown catalog rail proposal: ${id}`)
+export function getLayoutsOperarTicketProposal(
+  id: LayoutsOperarTicketProposalId,
+): LayoutsOperarTicketProposal {
+  const proposal = ROOTSY_LAYOUTS_OPERAR_TICKET_PROPOSALS.find((p) => p.id === id)
+  if (!proposal) throw new Error(`Unknown ticket proposal: ${id}`)
   return proposal
 }
 
-export function layoutsOperarCatalogRailProposalNavClass(id: LayoutsOperarCatalogRailProposalId) {
-  if (id === "lista-dosel") return layoutsOperarCatalogRailNavClass
-
-  return cn(
-    layoutsOperarCatalogRailScrollClass,
-    "flex h-full w-[var(--layouts-operar-catalog-sidebar-w)] min-w-[var(--layouts-operar-catalog-sidebar-w)] flex-col gap-6 overflow-y-auto px-3 py-4",
-  )
-}
-
-export function layoutsOperarCatalogRailProposalSectionLabelClass(id: LayoutsOperarCatalogRailProposalId) {
-  if (id === "lista-dosel") return layoutsOperarCatalogRailSectionLabelClass
-
-  if (id === "pastillas-sombra") {
-    return "mb-2 px-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-[color-mix(in_srgb,var(--rootsy-sombra-400)_82%,transparent)]"
-  }
-
-  return "mb-2.5 px-2 text-[10px] font-semibold uppercase tracking-[0.16em] text-[color-mix(in_srgb,var(--rootsy-savia-400)_55%,var(--rootsy-sombra-400))]"
-}
-
-export function layoutsOperarCatalogRailProposalListClass(id: LayoutsOperarCatalogRailProposalId) {
-  if (id === "lista-dosel") return layoutsOperarCatalogRailListClass
-  return "flex w-full flex-col gap-1 p-0"
-}
-
-export function layoutsOperarCatalogRailProposalListItemClass(id: LayoutsOperarCatalogRailProposalId) {
-  if (id === "lista-dosel") return layoutsOperarCatalogRailListItemClass
-  return "w-full"
-}
-
-export function layoutsOperarCatalogRailProposalItemClass(id: LayoutsOperarCatalogRailProposalId) {
-  if (id === "lista-dosel") return layoutsOperarCatalogRailItemClass
-
-  if (id === "pastillas-sombra") {
-    return cn(
-      "relative flex min-h-11 w-full items-center rounded-lg px-3 py-2.5 text-left text-sm font-medium transition-colors duration-150",
-      "text-[color-mix(in_srgb,var(--rootsy-sombra-300)_72%,transparent)]",
-      "hover:bg-[color-mix(in_srgb,var(--rootsy-sombra-900)_55%,transparent)] hover:text-[color-mix(in_srgb,var(--rootsy-bruma-100)_92%,#ffffff)]",
-      "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[color-mix(in_srgb,var(--rootsy-savia-400)_45%,transparent)]",
-    )
-  }
-
-  return cn(
-    "relative flex min-h-11 w-full items-center rounded-lg px-3 py-2.5 text-left text-sm font-semibold transition-[background-color,box-shadow,color] duration-150",
-    "text-[color-mix(in_srgb,var(--rootsy-sombra-300)_68%,transparent)]",
-    "hover:bg-[color-mix(in_srgb,var(--rootsy-sombra-900)_38%,transparent)] hover:text-[color-mix(in_srgb,var(--rootsy-bruma-100)_94%,white)]",
-    "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color-mix(in_srgb,var(--rootsy-savia-400)_40%,transparent)]",
-  )
-}
-
-export function layoutsOperarCatalogRailProposalItemSelectedClass(id: LayoutsOperarCatalogRailProposalId) {
-  if (id === "lista-dosel") return layoutsOperarCatalogRailItemSelectedClass
-
-  if (id === "pastillas-sombra") {
-    return cn(
-      "bg-[color-mix(in_srgb,var(--rootsy-sombra-800)_72%,transparent)] text-[#f4f8f6]",
-      "shadow-[inset_0_1px_0_color-mix(in_srgb,#ffffff_6%,transparent)]",
-      "before:absolute before:top-1/2 before:left-1.5 before:h-5 before:w-0.5 before:-translate-y-1/2 before:rounded-full before:bg-[var(--rootsy-savia-400)] before:content-['']",
-    )
-  }
-
-  return cn(
-    "bg-[color-mix(in_srgb,var(--rootsy-sombra-800)_55%,var(--rootsy-sombra-900))] text-[#f4f8f6]",
-    "ring-1 ring-[color-mix(in_srgb,var(--rootsy-savia-400)_28%,transparent)]",
-    "shadow-[inset_3px_0_0_0_var(--rootsy-savia-400),inset_0_1px_0_color-mix(in_srgb,#ffffff_8%,transparent)]",
-  )
-}
-
-export function layoutsOperarCatalogRailProposalItemWithIconClass(id: LayoutsOperarCatalogRailProposalId) {
-  if (id === "lista-dosel") return layoutsOperarCatalogRailItemWithIconClass
-  return "gap-2.5"
-}
-
-export function layoutsOperarCatalogRailProposalItemPromoSelectedClass(id: LayoutsOperarCatalogRailProposalId) {
-  if (id === "lista-dosel") return layoutsOperarCatalogRailItemPromoSelectedClass
-
-  if (id === "pastillas-sombra") {
-    return cn(
-      "bg-[color-mix(in_srgb,var(--rootsy-savia-600)_18%,var(--rootsy-sombra-900))] text-[color-mix(in_srgb,var(--rootsy-savia-200)_92%,white)]",
-      "before:absolute before:top-1/2 before:left-1.5 before:h-5 before:w-0.5 before:-translate-y-1/2 before:rounded-full before:bg-[var(--rootsy-savia-400)] before:content-['']",
-    )
-  }
-
-  return cn(
-    "bg-[color-mix(in_srgb,var(--rootsy-savia-600)_22%,var(--rootsy-sombra-900))] text-[color-mix(in_srgb,var(--rootsy-savia-100)_94%,white)]",
-    "ring-1 ring-[color-mix(in_srgb,var(--rootsy-savia-400)_35%,transparent)]",
-    "shadow-[inset_3px_0_0_0_var(--rootsy-savia-400)]",
-  )
-}
-
-export function layoutsOperarCatalogRailProposalItemDiscountSelectedClass(
-  id: LayoutsOperarCatalogRailProposalId,
+export function layoutsOperarTicketProposalPanelClass(
+  id: LayoutsOperarTicketProposalId,
+  placement: "grid" | "standalone" = "standalone",
 ) {
-  if (id === "lista-dosel") return layoutsOperarCatalogRailItemDiscountSelectedClass
+  const shell = cn(
+    layoutsOperarSummaryPanelSurfaceClass,
+    id === "bruma-plana" &&
+      "bg-[var(--rootsy-bruma-50)] text-[color-mix(in_srgb,var(--rootsy-bruma-900)_92%,black)]",
+  )
 
-  if (id === "pastillas-sombra") {
+  if (placement === "grid") {
+    return cn(layoutsOperarSummaryPanelClass, shell)
+  }
+
+  return cn(layoutsOperarSummaryPanelStandaloneClass, shell, "h-full w-full")
+}
+
+export function layoutsOperarTicketProposalHeaderClass(id: LayoutsOperarTicketProposalId) {
+  if (id === "bruma-ascendente") {
     return cn(
-      "bg-[color-mix(in_srgb,#f59e0b_16%,var(--rootsy-sombra-900))] text-[color-mix(in_srgb,#fde68a_90%,white)]",
-      "before:absolute before:top-1/2 before:left-1.5 before:h-5 before:w-0.5 before:-translate-y-1/2 before:rounded-full before:bg-[#fbbf24] before:content-['']",
+      layoutsOperarSummaryHeaderRowClass,
+      "relative border-b border-[color-mix(in_srgb,var(--rootsy-bruma-200)_85%,transparent)]",
+      "bg-[linear-gradient(180deg,color-mix(in_srgb,var(--rootsy-bruma-50)_92%,white)_0%,var(--rootsy-bruma-100)_100%)]",
+    )
+  }
+
+  if (id === "bruma-plana") {
+    return cn(
+      layoutsOperarSummaryHeaderRowClass,
+      "border-b border-[color-mix(in_srgb,var(--rootsy-bruma-200)_90%,transparent)] bg-[var(--rootsy-bruma-50)]",
+    )
+  }
+
+  return layoutsOperarSummaryHeaderRowClass
+}
+
+export function layoutsOperarTicketProposalCartRowClass(id: LayoutsOperarTicketProposalId) {
+  if (id === "bruma-plana") {
+    return cn(
+      layoutsOperarSummaryCartRowClass,
+      "bg-[var(--rootsy-bruma-50)]",
+    )
+  }
+
+  return layoutsOperarSummaryCartRowClass
+}
+
+export function layoutsOperarTicketProposalCartListClass(id: LayoutsOperarTicketProposalId) {
+  if (id === "bruma-plana") {
+    return "divide-y divide-[color-mix(in_srgb,var(--rootsy-bruma-200)_92%,transparent)]"
+  }
+
+  if (id === "bruma-ascendente") {
+    return "divide-y divide-[var(--layouts-operar-light-cart-divider)]"
+  }
+
+  return "divide-y divide-[var(--layouts-operar-light-cart-divider)]"
+}
+
+export function layoutsOperarTicketProposalLineGridClass(id: LayoutsOperarTicketProposalId) {
+  return cn(
+    "grid w-full grid-cols-[minmax(0,2.25rem)_minmax(0,1fr)_auto] items-start gap-x-2 px-3 py-2.5 text-left",
+    id === "bruma-plana" && "py-2",
+  )
+}
+
+export function layoutsOperarTicketProposalQtyClass(id: LayoutsOperarTicketProposalId) {
+  void id
+  return "block min-w-0 truncate pt-0.5 text-sm font-bold tabular-nums text-[var(--layouts-operar-light-cart-line-text)]"
+}
+
+export function layoutsOperarTicketProposalLineNameClass(id: LayoutsOperarTicketProposalId) {
+  void id
+  return "block text-sm font-semibold leading-snug text-[var(--layouts-operar-light-cart-line-text)]"
+}
+
+export function layoutsOperarTicketProposalLineMetaClass(id: LayoutsOperarTicketProposalId) {
+  void id
+  return "mt-0.5 block truncate text-xs leading-snug text-[var(--layouts-operar-light-cart-line-meta)]"
+}
+
+export function layoutsOperarTicketProposalLineAmountClass(id: LayoutsOperarTicketProposalId) {
+  if (id === "bruma-plana") {
+    return "text-sm font-semibold tabular-nums text-[color-mix(in_srgb,var(--rootsy-bruma-900)_88%,black)]"
+  }
+
+  return "text-sm font-semibold tabular-nums text-[var(--layouts-operar-light-cart-line-text)]"
+}
+
+export function layoutsOperarTicketProposalLineCommentClass(id: LayoutsOperarTicketProposalId) {
+  if (id === "bruma-plana") {
+    return cn(
+      "border-t border-[color-mix(in_srgb,var(--rootsy-bruma-200)_92%,transparent)] bg-[color-mix(in_srgb,var(--rootsy-bruma-100)_55%,white)] px-3 py-2",
+      "text-[11px] leading-snug text-[var(--layouts-operar-light-cart-line-meta)]",
     )
   }
 
   return cn(
-    "bg-[color-mix(in_srgb,#f59e0b_20%,var(--rootsy-sombra-900))] text-[color-mix(in_srgb,#fde68a_92%,white)]",
-    "ring-1 ring-[color-mix(in_srgb,#fbbf24_35%,transparent)]",
-    "shadow-[inset_3px_0_0_0_#fbbf24]",
+    "border-t border-[var(--layouts-operar-light-cart-divider)] bg-[color-mix(in_srgb,var(--rootsy-bruma-50)_65%,white)] px-3 py-2",
+    "text-[11px] leading-snug text-[var(--layouts-operar-light-cart-line-meta)]",
   )
 }
 
-export type { LayoutsOperarCatalogRailProposal, LayoutsOperarCatalogRailProposalId }
+export function layoutsOperarTicketProposalPromoBannerClass(
+  id: LayoutsOperarTicketProposalId,
+  variant: "promotion" | "discount",
+) {
+  const isDiscount = variant === "discount"
+
+  if (id === "bruma-plana") {
+    return cn(
+      "grid w-full grid-cols-[minmax(0,2.25rem)_minmax(0,1fr)_auto] items-center gap-x-2 px-3 py-2 text-left",
+      isDiscount
+        ? "border-y border-[color-mix(in_srgb,var(--rootsy-savia-600)_22%,var(--rootsy-bruma-200))] bg-[color-mix(in_srgb,var(--rootsy-savia-600)_8%,var(--rootsy-bruma-50))] text-[var(--layouts-operar-light-cart-discount-banner-text)]"
+        : "border-y border-[color-mix(in_srgb,var(--rootsy-savia-400)_24%,var(--rootsy-bruma-200))] bg-[color-mix(in_srgb,var(--rootsy-savia-400)_10%,var(--rootsy-bruma-50))] text-[var(--layouts-operar-light-cart-promo-banner-text)]",
+    )
+  }
+
+  if (id === "bruma-ascendente") {
+    return cn(
+      "grid w-full grid-cols-[minmax(0,2.25rem)_minmax(0,1fr)_auto] items-center gap-x-2 px-3 py-2 text-left",
+      isDiscount
+        ? "bg-[color-mix(in_srgb,var(--rootsy-savia-600)_14%,var(--rootsy-bruma-100))] text-[var(--layouts-operar-light-cart-discount-banner-text)] ring-1 ring-inset ring-[color-mix(in_srgb,var(--rootsy-savia-500)_28%,transparent)]"
+        : "bg-[color-mix(in_srgb,var(--rootsy-savia-400)_16%,var(--rootsy-bruma-100))] text-[var(--layouts-operar-light-cart-promo-banner-text)] ring-1 ring-inset ring-[color-mix(in_srgb,var(--rootsy-savia-400)_32%,transparent)]",
+    )
+  }
+
+  return cn(
+    "grid w-full grid-cols-[minmax(0,2.25rem)_minmax(0,1fr)_auto] items-center gap-x-2 px-3 py-2 text-left",
+    isDiscount
+      ? "bg-[var(--layouts-operar-light-cart-discount-banner-bg)] text-[var(--layouts-operar-light-cart-discount-banner-text)]"
+      : "bg-[var(--layouts-operar-light-cart-promo-banner-bg)] text-[var(--layouts-operar-light-cart-promo-banner-text)]",
+  )
+}
+
+export function layoutsOperarTicketProposalPromoBadgeClass(
+  id: LayoutsOperarTicketProposalId,
+  variant: "promotion" | "discount",
+) {
+  const isDiscount = variant === "discount"
+
+  if (id === "bruma-plana") {
+    return cn(
+      "shrink-0 rounded px-1.5 py-0.5 text-[11px] font-bold tabular-nums",
+      isDiscount
+        ? "bg-[color-mix(in_srgb,var(--rootsy-savia-600)_14%,transparent)] text-[var(--rootsy-savia-950)]"
+        : "bg-[color-mix(in_srgb,var(--rootsy-savia-500)_16%,transparent)] text-[var(--rootsy-savia-900)]",
+    )
+  }
+
+  if (id === "bruma-ascendente") {
+    return cn(
+      "shrink-0 rounded-md px-2 py-0.5 text-[11px] font-bold tabular-nums",
+      isDiscount
+        ? "bg-[color-mix(in_srgb,var(--rootsy-savia-600)_18%,transparent)] text-[var(--rootsy-savia-950)] ring-1 ring-[color-mix(in_srgb,var(--rootsy-savia-500)_24%,transparent)]"
+        : "bg-[color-mix(in_srgb,var(--rootsy-savia-500)_20%,transparent)] text-[var(--rootsy-savia-900)] ring-1 ring-[color-mix(in_srgb,var(--rootsy-savia-400)_28%,transparent)]",
+    )
+  }
+
+  return cn(
+    "shrink-0 rounded-md px-2 py-0.5 text-[11px] font-bold tabular-nums",
+    isDiscount
+      ? "bg-[var(--layouts-operar-light-cart-discount-badge-bg)] text-[var(--layouts-operar-light-cart-discount-badge-text)]"
+      : "bg-[var(--layouts-operar-light-cart-promo-badge-bg)] text-[var(--layouts-operar-light-cart-promo-badge-text)]",
+  )
+}
+
+export function layoutsOperarTicketProposalActionsClass(id: LayoutsOperarTicketProposalId) {
+  if (id === "bruma-plana") {
+    return cn(
+      layoutsOperarSummaryActionsRowClass,
+      "border-t border-[color-mix(in_srgb,var(--rootsy-bruma-200)_92%,transparent)] bg-[var(--rootsy-bruma-50)]",
+    )
+  }
+
+  return layoutsOperarSummaryActionsRowClass
+}
+
+export function layoutsOperarTicketProposalActionDiscardClass(id: LayoutsOperarTicketProposalId) {
+  void id
+  return "flex items-center justify-center text-sm font-semibold text-rose-700"
+}
+
+export function layoutsOperarTicketProposalActionSellClass(id: LayoutsOperarTicketProposalId) {
+  if (id === "bruma-plana") {
+    return "flex items-center justify-center bg-[var(--rootsy-savia-975)] text-sm font-semibold text-[var(--rootsy-savia-50)]"
+  }
+
+  return "flex items-center justify-center bg-[var(--rootsy-savia-600)] text-sm font-semibold text-white"
+}
+
+export function layoutsOperarTicketProposalTotalsShellClass(id: LayoutsOperarTicketProposalId) {
+  const proposal = getLayoutsOperarTicketProposal(id)
+
+  if (proposal.totalsLayout === "plano") {
+    return cn(
+      "layouts-operar-summary-totals relative box-border flex w-full shrink-0 flex-col justify-center",
+      "border-t border-[color-mix(in_srgb,var(--rootsy-savia-800)_35%,transparent)] px-4 py-3",
+      "min-h-[var(--layouts-operar-ticket-total-min-h)] sm:min-h-[var(--layouts-operar-ticket-total-min-h-sm)]",
+      "bg-[var(--rootsy-savia-975)] text-[var(--rootsy-savia-50)]",
+    )
+  }
+
+  if (proposal.totalsLayout === "ring") {
+    return cn(
+      layoutsOperarSummaryTotalRowClass,
+      "layouts-operar-summary-totals relative box-border flex w-full shrink-0 flex-col justify-center px-4 py-3",
+      "ring-1 ring-inset ring-[color-mix(in_srgb,var(--rootsy-savia-400)_38%,transparent)]",
+      "min-h-[calc(var(--layouts-operar-ticket-total-min-h)+1.5rem)] sm:min-h-[calc(var(--layouts-operar-ticket-total-min-h-sm)+2rem)]",
+    )
+  }
+
+  return cn(
+    layoutsOperarSummaryTotalRowClass,
+    "layouts-operar-summary-totals relative box-border flex w-full shrink-0 flex-col justify-center px-4 py-3",
+    "min-h-[calc(var(--layouts-operar-ticket-total-min-h)+1.5rem)] sm:min-h-[calc(var(--layouts-operar-ticket-total-min-h-sm)+2rem)]",
+  )
+}
+
+export function layoutsOperarTicketProposalTotalsGridClass(id: LayoutsOperarTicketProposalId) {
+  if (id === "bruma-savia") {
+    return "relative z-10 grid w-full grid-cols-[minmax(0,1fr)_auto] gap-x-4 gap-y-0.5"
+  }
+
+  return "relative z-10 grid w-full grid-cols-[minmax(0,1fr)_auto] gap-x-4 gap-y-0.5"
+}
+
+export function layoutsOperarTicketProposalTotalsDividerClass(id: LayoutsOperarTicketProposalId) {
+  if (id === "bruma-plana") {
+    return "col-span-2 mt-1.5 border-t border-[color-mix(in_srgb,var(--rootsy-savia-200)_20%,transparent)] pt-2"
+  }
+
+  if (id === "bruma-ascendente") {
+    return "col-span-2 mt-1.5 border-t border-[color-mix(in_srgb,var(--rootsy-savia-300)_24%,transparent)] pt-2"
+  }
+
+  return "col-span-2 mt-1.5 border-t border-[var(--layouts-operar-light-totals-divider)] pt-2.5"
+}
+
+export function layoutsOperarTicketProposalTotalsBreakdownLabelClass(
+  id: LayoutsOperarTicketProposalId,
+) {
+  if (id === "bruma-plana") {
+    return "self-center text-[10px] font-medium uppercase tracking-[0.12em] text-[color-mix(in_srgb,var(--rootsy-savia-200)_62%,transparent)]"
+  }
+
+  if (id === "bruma-savia") {
+    return "self-center text-[10px] font-medium uppercase tracking-[0.12em] text-[var(--layouts-operar-light-totals-breakdown-label)]"
+  }
+
+  return "self-center text-[10px] font-medium uppercase tracking-[0.12em] text-[var(--layouts-operar-light-totals-breakdown-label)]"
+}
+
+export function layoutsOperarTicketProposalTotalsBreakdownAmountClass(
+  id: LayoutsOperarTicketProposalId,
+  kind: "normal" | "discount" = "normal",
+) {
+  if (id === "bruma-savia") {
+    const base = "min-w-[6.5rem] text-right text-xs font-medium tabular-nums"
+
+    if (kind === "discount") {
+      return cn(base, "text-[var(--layouts-operar-light-totals-breakdown-discount)]")
+    }
+
+    return cn(base, "text-[var(--layouts-operar-light-totals-breakdown-amount)]")
+  }
+
+  const base = "min-w-[6.5rem] text-right text-sm font-semibold tabular-nums"
+
+  if (kind === "discount") {
+    if (id === "bruma-plana") {
+      return cn(base, "text-[var(--rootsy-savia-100)]")
+    }
+
+    return cn(base, "text-[var(--layouts-operar-light-totals-breakdown-discount)]")
+  }
+
+  if (id === "bruma-plana") {
+    return cn(base, "text-[color-mix(in_srgb,var(--rootsy-savia-50)_78%,white)]")
+  }
+
+  return cn(base, "text-[color-mix(in_srgb,var(--rootsy-savia-50)_78%,white)]")
+}
+
+export function layoutsOperarTicketProposalTotalsMainLabelClass(id: LayoutsOperarTicketProposalId) {
+  if (id === "bruma-savia") {
+    return cn(
+      layoutsOperarSummaryTotalsLabelClass,
+      "text-[11px] font-bold tracking-[0.18em] text-[var(--rootsy-savia-100)]",
+    )
+  }
+
+  return layoutsOperarSummaryTotalsLabelClass
+}
+
+export function layoutsOperarTicketProposalTotalsMainAmountClass(id: LayoutsOperarTicketProposalId) {
+  if (id === "bruma-savia") {
+    return layoutsOperarSummaryTotalsAmountClass
+  }
+
+  return layoutsOperarSummaryTotalsAmountClass
+}
+
 export type { LayoutsOperarProductCardProposal, LayoutsOperarProductCardProposalId }
+export type { LayoutsOperarTicketProposal, LayoutsOperarTicketProposalId }

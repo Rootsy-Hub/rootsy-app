@@ -305,7 +305,9 @@ export function addProductToTicketCart(input: {
     "setItemDescuentoModo" | "setItemDescuentoDraft" | "setItemDescuentoSuprimido"
   >
   paidPartialUnits?: Record<string, number>
+  quantity?: number
 }): TicketCartMutationResult {
+  const quantity = Math.max(1, Math.round(input.quantity ?? 1))
   const product =
     (input.kindHint
       ? input.productosByKey.get(`${input.kindHint}:${input.productoId}`)
@@ -336,7 +338,7 @@ export function addProductToTicketCart(input: {
     if (canMerge) {
       const merged = input.carrito.map((i) =>
         resolveCartLineId(i) === mergeTargetId
-          ? { ...i, cantidad: i.cantidad + 1 }
+          ? { ...i, cantidad: i.cantidad + quantity }
           : i,
       )
       return {
@@ -353,7 +355,7 @@ export function addProductToTicketCart(input: {
     ...materializeTicketCartAfterMutation(
       [
         ...input.carrito,
-        { lineId, productoId: input.productoId, cantidad: 1, kind },
+        { lineId, productoId: input.productoId, cantidad: quantity, kind },
       ],
       paidPartialUnits,
     ),

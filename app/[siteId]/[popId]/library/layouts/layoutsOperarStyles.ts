@@ -149,18 +149,14 @@ export const layoutsOperarCatalogArticleDemoScopeClass = cn(
 export const layoutsOperarProductCardMediaClass =
   "relative overflow-hidden bg-[var(--layouts-operar-product-card-media-bg)]"
 
-export const layoutsOperarProductCardMediaPlaceholderClass =
-  "flex size-full flex-col items-center justify-center gap-2 bg-[var(--layouts-operar-product-card-media-bg)]"
-
-export const layoutsOperarProductCardMediaPlaceholderIconClass = cn(
-  "flex size-11 items-center justify-center rounded-xl",
-  "bg-[var(--layouts-operar-product-card-placeholder-icon-bg)]",
-  "text-[var(--layouts-operar-product-card-placeholder-icon-text)]",
-  "ring-1 ring-[var(--layouts-operar-product-card-placeholder-icon-ring)]",
+/** Superficie foto ausente — sin icono ni copy; paridad object-cover + hover de imagen real. */
+export const layoutsOperarProductCardMediaEmptyStateClass = cn(
+  "relative size-full overflow-hidden",
+  "transition-transform duration-300 ease-out group-hover:scale-[1.03]",
 )
 
-export const layoutsOperarProductCardMediaPlaceholderLabelClass =
-  "text-[10px] font-semibold uppercase tracking-[0.12em] text-[var(--layouts-operar-product-card-placeholder-label)]"
+export const layoutsOperarProductCardMediaEmptyStateGrainClass =
+  "layouts-operar-product-card-media-empty-grain pointer-events-none absolute inset-0"
 
 export const layoutsOperarProductCardBodyClass =
   "flex min-h-0 flex-col justify-between gap-2 p-4"
@@ -304,7 +300,7 @@ export const layoutsOperarSummaryTotalsLabelClass =
   "text-[10px] font-semibold uppercase tracking-[0.16em] text-[var(--layouts-operar-light-totals-label)]"
 
 export const layoutsOperarSummaryTotalsAmountClass =
-  "text-lg font-semibold tabular-nums text-[var(--layouts-operar-light-totals-amount)]"
+  "text-xl font-bold tabular-nums tracking-tight text-[var(--layouts-operar-light-totals-amount)] sm:text-2xl"
 
 /** Nav rail catálogo — categorías. */
 export const layoutsOperarCatalogRailNavClass = cn(
@@ -313,32 +309,33 @@ export const layoutsOperarCatalogRailNavClass = cn(
 )
 
 export const layoutsOperarCatalogRailSectionLabelClass =
-  "mb-2.5 px-4 text-[10px] font-semibold uppercase tracking-[0.14em] text-[var(--layouts-operar-rail-section-label)]"
+  "mb-2 px-4 text-[11px] font-semibold uppercase tracking-[0.13em] text-[color-mix(in_srgb,var(--rootsy-sombra-400)_88%,var(--rootsy-bruma-100))]"
 
 export const layoutsOperarCatalogRailListClass = "flex w-full flex-col gap-0 p-0"
 export const layoutsOperarCatalogRailListItemClass = "w-full"
 
+/** Rail categorías — lista clara · legibilidad cajero. */
 export const layoutsOperarCatalogRailItemClass = cn(
-  "relative flex h-11 w-full items-center rounded-none px-4 text-left text-sm font-medium transition-colors duration-150",
+  "relative flex min-h-12 w-full items-center rounded-none px-4 text-left text-[15px] font-medium leading-snug transition-colors duration-150",
   "border-b border-[var(--layouts-operar-rail-item-border)] text-[var(--layouts-operar-rail-item-text)]",
   "hover:bg-[var(--layouts-operar-rail-item-hover)] hover:text-[var(--layouts-operar-rail-item-text-hover)]",
   "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[var(--layouts-operar-rail-focus-ring)]",
 )
 
 export const layoutsOperarCatalogRailItemSelectedClass = cn(
-  "bg-[var(--layouts-operar-rail-item-selected)] text-[var(--layouts-operar-rail-item-text-selected)]",
+  "bg-[var(--layouts-operar-rail-item-selected)] font-semibold text-[var(--layouts-operar-rail-item-text-selected)]",
   "shadow-[inset_3px_0_0_0_var(--layouts-operar-rail-accent)]",
 )
 
 export const layoutsOperarCatalogRailItemWithIconClass = "gap-2.5"
 
 export const layoutsOperarCatalogRailItemPromoSelectedClass = cn(
-  "bg-[var(--layouts-operar-rail-promo-selected)] text-[var(--layouts-operar-rail-promo-text)]",
+  "bg-[var(--layouts-operar-rail-promo-selected)] font-semibold text-[var(--layouts-operar-rail-promo-text)]",
   "shadow-[inset_3px_0_0_0_var(--layouts-operar-rail-promo-accent)]",
 )
 
 export const layoutsOperarCatalogRailItemDiscountSelectedClass = cn(
-  "bg-[var(--layouts-operar-rail-discount-selected)] text-[var(--layouts-operar-rail-discount-text)]",
+  "bg-[var(--layouts-operar-rail-discount-selected)] font-semibold text-[var(--layouts-operar-rail-discount-text)]",
   "shadow-[inset_3px_0_0_0_var(--layouts-operar-rail-discount-accent)]",
 )
 

@@ -15,12 +15,16 @@
     var(--rootsy-sombra-400) 88%,
     var(--rootsy-savia-400)
   );
-  --layouts-operar-rail-item-text: color-mix(in srgb, var(--rootsy-sombra-300) 72%, transparent);
-  --layouts-operar-rail-item-text-hover: color-mix(in srgb, var(--rootsy-bruma-100) 92%, #ffffff);
+  --layouts-operar-rail-item-text: color-mix(
+    in srgb,
+    var(--rootsy-bruma-100) 84%,
+    var(--rootsy-sombra-300)
+  );
+  --layouts-operar-rail-item-text-hover: color-mix(in srgb, var(--rootsy-bruma-50) 96%, white);
   --layouts-operar-rail-item-text-selected: #f4f8f6;
-  --layouts-operar-rail-item-hover: color-mix(in srgb, var(--rootsy-sombra-900) 42%, transparent);
-  --layouts-operar-rail-item-selected: color-mix(in srgb, var(--rootsy-sombra-800) 48%, transparent);
-  --layouts-operar-rail-item-border: color-mix(in srgb, var(--rootsy-sombra-border) 55%, transparent);
+  --layouts-operar-rail-item-hover: color-mix(in srgb, var(--rootsy-sombra-900) 48%, transparent);
+  --layouts-operar-rail-item-selected: color-mix(in srgb, var(--rootsy-sombra-800) 52%, transparent);
+  --layouts-operar-rail-item-border: color-mix(in srgb, var(--rootsy-sombra-border) 68%, transparent);
   --layouts-operar-rail-accent: var(--rootsy-savia-400);
   --layouts-operar-rail-focus-ring: color-mix(in srgb, var(--rootsy-savia-400) 45%, transparent);
   --layouts-operar-rail-promo-selected: color-mix(
@@ -65,26 +69,6 @@
   --layouts-operar-product-card-desc: color-mix(in srgb, var(--rootsy-sombra-300) 72%, transparent);
   --layouts-operar-product-card-price: color-mix(in srgb, var(--rootsy-savia-300) 88%, #ffffff);
   --layouts-operar-product-card-media-bg: var(--rootsy-sombra-900);
-  --layouts-operar-product-card-placeholder-icon-bg: color-mix(
-    in srgb,
-    var(--rootsy-sombra-800) 52%,
-    transparent
-  );
-  --layouts-operar-product-card-placeholder-icon-ring: color-mix(
-    in srgb,
-    var(--rootsy-sombra-border) 46%,
-    transparent
-  );
-  --layouts-operar-product-card-placeholder-icon-text: color-mix(
-    in srgb,
-    var(--rootsy-sombra-400) 62%,
-    var(--rootsy-savia-400)
-  );
-  --layouts-operar-product-card-placeholder-label: color-mix(
-    in srgb,
-    var(--rootsy-sombra-400) 58%,
-    #ffffff
-  );
 
   /* Ticket — bruma + savia */
   --layouts-operar-light-cart-heading: var(--rootsy-bruma-600);
@@ -100,6 +84,49 @@
   );
   --layouts-operar-light-totals-label: var(--rootsy-savia-200);
   --layouts-operar-light-totals-amount: var(--rootsy-savia-50);
+  --layouts-operar-light-totals-divider: color-mix(
+    in srgb,
+    var(--rootsy-savia-200) 22%,
+    transparent
+  );
+  --layouts-operar-light-totals-breakdown-label: color-mix(
+    in srgb,
+    var(--rootsy-savia-200) 38%,
+    transparent
+  );
+  --layouts-operar-light-totals-breakdown-amount: color-mix(
+    in srgb,
+    var(--rootsy-savia-100) 42%,
+    transparent
+  );
+  --layouts-operar-light-totals-breakdown-discount: color-mix(
+    in srgb,
+    var(--rootsy-savia-100) 52%,
+    transparent
+  );
+  --layouts-operar-light-cart-line-meta: var(--rootsy-bruma-500);
+  --layouts-operar-light-cart-divider: color-mix(in srgb, var(--rootsy-bruma-300) 70%, transparent);
+  --layouts-operar-light-cart-promo-banner-bg: linear-gradient(
+    90deg,
+    color-mix(in srgb, var(--rootsy-savia-400) 22%, var(--rootsy-bruma-100)) 0%,
+    transparent 100%
+  );
+  --layouts-operar-light-cart-discount-banner-bg: linear-gradient(
+    90deg,
+    color-mix(in srgb, var(--rootsy-savia-600) 18%, var(--rootsy-bruma-100)) 0%,
+    transparent 100%
+  );
+  --layouts-operar-light-cart-promo-banner-text: var(--rootsy-savia-950);
+  --layouts-operar-light-cart-discount-banner-text: color-mix(
+    in srgb,
+    var(--rootsy-savia-900) 88%,
+    var(--rootsy-bruma-900)
+  );
+  --layouts-operar-light-cart-promo-badge-bg: color-mix(in srgb, var(--rootsy-savia-500) 18%, transparent);
+  --layouts-operar-light-cart-promo-badge-text: var(--rootsy-savia-900);
+  --layouts-operar-light-cart-discount-badge-bg: color-mix(in srgb, var(--rootsy-savia-600) 16%, transparent);
+  --layouts-operar-light-cart-discount-badge-text: var(--rootsy-savia-950);
+  --layouts-operar-light-cart-line-text: var(--rootsy-bruma-900);
 }
 
 .rootsy-theme-pos.layouts-operar-header,
@@ -173,4 +200,12 @@
 .rootsy-theme-pos.rootsy-radius-system.layouts-operar-body .layouts-operar-product-card:not([data-proposal]):hover,
 .rootsy-theme-pos.rootsy-radius-system .layouts-operar-body .layouts-operar-product-card:not([data-proposal]):hover {
   box-shadow: var(--layouts-operar-product-card-shadow-hover);
+}
+
+.rootsy-theme-pos.layouts-operar-body .layouts-operar-product-card-media-empty-grain,
+.rootsy-theme-pos .layouts-operar-body .layouts-operar-product-card-media-empty-grain {
+  opacity: 0.042;
+  mix-blend-mode: overlay;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.78' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.62'/%3E%3C/svg%3E");
+  background-size: 120px 120px;
 }

@@ -17,7 +17,6 @@ import {
   layoutsOperarCatalogSidebarClass,
   layoutsOperarCatalogSidebarOpenClass,
   layoutsOperarCatalogSectionShellClass,
-  layoutsOperarCatalogToolbarClass,
   layoutsOperarHeaderGridClass,
   layoutsOperarHeaderScopeClass,
   layoutsOperarSummaryCartHeadingClass,
@@ -53,12 +52,19 @@ import {
   LAYOUTS_OPERAR_ANATOMY,
   type LayoutsOperarWireframeZone,
 } from "@/app/[siteId]/[popId]/library/layouts/layoutsOperarHardcodedSpec"
+import {
+  LayoutsOperarTicketDemoShell,
+  LayoutsOperarTicketProposalPanel,
+  LayoutsOperarTicketProposalsDemo,
+} from "@/app/[siteId]/[popId]/library/layouts/LayoutsOperarTicketProposalPrimitives"
+import { LAYOUTS_OPERAR_DEFAULT_TICKET_PROPOSAL } from "@/app/[siteId]/[popId]/library/layouts/rootsyLayoutsOperarSystem"
 import { LayoutsOperarCatalogRailProposal } from "@/app/[siteId]/[popId]/library/layouts/LayoutsOperarCatalogRailProposalPrimitives"
 import {
   LayoutsOperarProductCardDemoCanvas,
   LayoutsOperarProductCardProposalGrid,
   LayoutsOperarProductCardProposalList,
   LAYOUTS_OPERAR_DEMO_ARTICLE,
+  LAYOUTS_OPERAR_DEMO_ARTICLE_NO_IMAGE,
   LAYOUTS_OPERAR_DEMO_ARTICLE_OFFER,
   type LayoutsOperarDemoProduct,
 } from "@/app/[siteId]/[popId]/library/layouts/LayoutsOperarProductCardProposalPrimitives"
@@ -76,18 +82,18 @@ import {
   dataWorkspaceHeaderPopRingClass,
   dataWorkspaceHeaderRoleLabelClass,
 } from "@/components/layouts/dataWorkspaceHeaderStyles"
+import { SaleCatalogToolbar } from "@/components/sale-operation/SaleCatalogToolbar"
+import { SALE_CATALOG_DEFAULT_PRICE_LIST_ID } from "@/components/sale-operation/saleCatalogPriceLists"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { cn } from "@/lib/utils"
 import {
   ArrowLeft,
-  LayoutGrid,
   Maximize2,
   PanelLeftOpen,
   Receipt,
   Store,
-  Rows3,
-  Search,
 } from "lucide-react"
+import { useState } from "react"
 
 const HEADER_VARIANT = "dark" as const
 const DEMO_PAGE_TITLE = "Vender"
@@ -117,13 +123,7 @@ const DEMO_PRODUCTS: LayoutsOperarDemoProduct[] = [
     price: 5600,
     image: "https://images.unsplash.com/photo-1529692236671-f1f6cf9683ba?w=400&h=300&fit=crop",
   },
-  {
-    id: "tomate",
-    name: "Tomate cherry",
-    description: "Bandeja 500 g · huerta local",
-    price: 2400,
-    image: "https://images.unsplash.com/photo-1592924357888-269s2d88a169?w=400&h=300&fit=crop",
-  },
+  LAYOUTS_OPERAR_DEMO_ARTICLE_NO_IMAGE,
   {
     id: "arroz",
     name: "Arroz largo fino",
@@ -320,30 +320,23 @@ function LayoutsOperarProductCatalog() {
 }
 
 function LayoutsOperarCatalogToolbar() {
+  const [modoVista, setModoVista] = useState<"grid" | "lista">("grid")
+  const [cantidadIngreso, setCantidadIngreso] = useState(1)
+  const [priceListId, setPriceListId] = useState(SALE_CATALOG_DEFAULT_PRICE_LIST_ID)
+
   return (
-    <div className={layoutsOperarCatalogToolbarClass}>
-      <div className="relative flex h-10 shrink-0 items-center rounded-lg border border-[color-mix(in_srgb,var(--rootsy-sombra-border)_45%,transparent)] bg-[color-mix(in_srgb,var(--rootsy-sombra-950)_55%,transparent)] p-1">
-        <span
-          aria-hidden
-          className="pointer-events-none absolute inset-y-1 left-1 w-10 rounded-md border border-[color-mix(in_srgb,var(--rootsy-savia-400)_35%,transparent)] bg-[color-mix(in_srgb,var(--rootsy-savia-400)_15%,transparent)]"
-        />
-        <button type="button" className="relative z-10 flex h-8 w-10 items-center justify-center text-[#f4f8f6]" tabIndex={-1} aria-hidden>
-          <LayoutGrid className="size-4.5" />
-        </button>
-        <button type="button" className="relative z-10 flex h-8 w-10 items-center justify-center text-[color-mix(in_srgb,var(--rootsy-sombra-300)_72%,transparent)]" tabIndex={-1} aria-hidden>
-          <Rows3 className="size-4.5" />
-        </button>
-      </div>
-      <div className="relative min-w-0 flex-1 max-w-md">
-        <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-[color-mix(in_srgb,var(--rootsy-sombra-300)_55%,transparent)]" />
-        <div className="flex h-10 items-center rounded-md border border-[color-mix(in_srgb,var(--rootsy-sombra-border)_45%,transparent)] bg-[color-mix(in_srgb,var(--rootsy-sombra-950)_45%,transparent)] pl-9 pr-3 text-sm text-[color-mix(in_srgb,var(--rootsy-sombra-300)_55%,transparent)]">
-          Buscar o escanear producto…
-        </div>
-      </div>
-      <span className="shrink-0 text-sm font-medium text-[color-mix(in_srgb,var(--rootsy-sombra-300)_78%,transparent)]">
-        6 productos mostrados
-      </span>
-    </div>
+    <SaleCatalogToolbar
+      variant="operar"
+      demo
+      modoVista={modoVista}
+      onModoVistaChange={setModoVista}
+      busqueda=""
+      onBusquedaChange={() => {}}
+      cantidadIngreso={cantidadIngreso}
+      onCantidadIngresoChange={setCantidadIngreso}
+      priceListId={priceListId}
+      onPriceListChange={setPriceListId}
+    />
   )
 }
 
@@ -512,7 +505,14 @@ export function LayoutsOperarBody({
             proposalId={LAYOUTS_OPERAR_DEFAULT_TOOLBOX_PROPOSAL}
           />
         ) : null}
-        <LayoutsOperarSummaryPanel wireframe={wireframe} composed={composed} />
+        {wireframe ? (
+          <LayoutsOperarSummaryPanel wireframe={wireframe} composed={composed} />
+        ) : composed ? (
+          <LayoutsOperarTicketProposalPanel
+            proposalId={LAYOUTS_OPERAR_DEFAULT_TICKET_PROPOSAL}
+            placement="grid"
+          />
+        ) : null}
       </main>
     </div>
   )
@@ -809,6 +809,23 @@ export function LayoutsOperarCatalogSectionDemo() {
               </LayoutsOperarCatalogArticleCanvas>
             </div>
           </LayoutsOperarDocSubsection>
+
+          <LayoutsOperarDocSubsection title="Sin imagen">
+            <p className="text-sm text-muted-foreground">
+              Superficie foto ausente — luz de estudio, pools de color y grano. Sin icono ni copy en
+              el media; el nombre del producto va en el cuerpo de la tarjeta.
+            </p>
+            <div className="grid gap-4 lg:grid-cols-2">
+              <LayoutsOperarCatalogArticleCanvas>
+                <div className="max-w-xs">
+                  <LayoutsOperarProductCardProposalGrid product={LAYOUTS_OPERAR_DEMO_ARTICLE_NO_IMAGE} />
+                </div>
+              </LayoutsOperarCatalogArticleCanvas>
+              <LayoutsOperarCatalogArticleCanvas>
+                <LayoutsOperarProductCardProposalList product={LAYOUTS_OPERAR_DEMO_ARTICLE_NO_IMAGE} />
+              </LayoutsOperarCatalogArticleCanvas>
+            </div>
+          </LayoutsOperarDocSubsection>
         </div>
       </LayoutsOperarDocSubsection>
 
@@ -855,10 +872,22 @@ export function LayoutsOperarTicketSectionDemo() {
   return (
     <div className="space-y-6">
       <LayoutsOperarDocSubsection title="Ticket · pedido + acciones + total">
-        <LayoutsOperarAnatomyScope className="rootsy-theme-pos rootsy-radius-system mx-auto h-[24rem] w-[var(--layouts-operar-ticket-w)] max-w-[var(--layouts-operar-ticket-w)] overflow-hidden rounded-2xl border border-border/70">
-          <LayoutsOperarSummaryPanel composed standalone />
-        </LayoutsOperarAnatomyScope>
+        <p className="text-sm text-muted-foreground">
+          Ticket compuesto canónico (<code className="text-[11px]">bruma-savia</code>) — ítems sin
+          descuento, con descuento de catálogo, promo combo y desglose de totales como en Vender.
+        </p>
+        <LayoutsOperarTicketDemoShell heightClass="h-[32rem]">
+          <LayoutsOperarTicketProposalPanel proposalId={LAYOUTS_OPERAR_DEFAULT_TICKET_PROPOSAL} />
+        </LayoutsOperarTicketDemoShell>
       </LayoutsOperarDocSubsection>
+
+      <LayoutsOperarDocSubsection title="4.1 · Propuestas">
+        <p className="text-sm text-muted-foreground">
+          Tres variantes oficiales sobre bruma + savia — mismos ítems demo y desglose de totales.
+        </p>
+        <LayoutsOperarTicketProposalsDemo />
+      </LayoutsOperarDocSubsection>
+
       <LayoutsOperarComponentsTable
         rows={getLayoutsOperarScreenComponentsByLayer("Ticket")}
         caption="Inventario · ticket"

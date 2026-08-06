@@ -977,7 +977,7 @@ export function useMesasSaleCheckout(
   )
 
   const agregarAlCarrito = useCallback(
-    (productoId: string, kindHint?: MenuCartItemKind) => {
+    (productoId: string, kindHint?: MenuCartItemKind, quantity = 1) => {
       const product =
         (kindHint
           ? productosByKey.get(`${kindHint}:${productoId}`)
@@ -1004,6 +1004,7 @@ export function useMesasSaleCheckout(
           productoId,
           kindHint: kind,
           productosByKey,
+          quantity,
           overrides: {
             itemDescuentoModo,
             itemDescuentoDraft,

@@ -2,25 +2,21 @@
 
 import "@/app/[siteId]/[popId]/library/layouts/layoutsOperarTheme.css"
 import "@/app/[siteId]/[popId]/library/radius/rootsyRadiusSystem.css"
-import {
-  getLayoutsOperarGridCssVariables,
-  layoutsOperarCatalogRailProposalItemClass,
-  layoutsOperarCatalogRailProposalItemDiscountSelectedClass,
-  layoutsOperarCatalogRailProposalItemPromoSelectedClass,
-  layoutsOperarCatalogRailProposalItemSelectedClass,
-  layoutsOperarCatalogRailProposalItemWithIconClass,
-  layoutsOperarCatalogRailProposalListClass,
-  layoutsOperarCatalogRailProposalListItemClass,
-  layoutsOperarCatalogRailProposalNavClass,
-  layoutsOperarCatalogRailProposalSectionLabelClass,
-  type LayoutsOperarCatalogRailProposalId,
-} from "@/app/[siteId]/[popId]/library/layouts/layoutsOperarHardcodedSpec"
+import { getLayoutsOperarGridCssVariables } from "@/app/[siteId]/[popId]/library/layouts/layoutsOperarHardcodedSpec"
 import {
   layoutsOperarBodyScopeClass,
+  layoutsOperarCatalogRailItemClass,
+  layoutsOperarCatalogRailItemDiscountSelectedClass,
+  layoutsOperarCatalogRailItemPromoSelectedClass,
+  layoutsOperarCatalogRailItemSelectedClass,
+  layoutsOperarCatalogRailItemWithIconClass,
+  layoutsOperarCatalogRailListClass,
+  layoutsOperarCatalogRailListItemClass,
+  layoutsOperarCatalogRailNavClass,
+  layoutsOperarCatalogRailSectionLabelClass,
   layoutsOperarCatalogSidebarClass,
   layoutsOperarCatalogSidebarOpenClass,
 } from "@/app/[siteId]/[popId]/library/layouts/layoutsOperarStyles"
-import { LAYOUTS_OPERAR_DEFAULT_CATALOG_RAIL_PROPOSAL } from "@/app/[siteId]/[popId]/library/layouts/rootsyLayoutsOperarSystem"
 import { cn } from "@/lib/utils"
 import { Percent, Tag } from "lucide-react"
 import { useState } from "react"
@@ -82,22 +78,16 @@ export function LayoutsOperarCatalogRailDemoShell({
   )
 }
 
-export function LayoutsOperarCatalogRailProposal({
-  proposalId = LAYOUTS_OPERAR_DEFAULT_CATALOG_RAIL_PROPOSAL,
-}: {
-  proposalId?: LayoutsOperarCatalogRailProposalId
-}) {
+/** Rail categorías — lista clara canónica. */
+export function LayoutsOperarCatalogRailProposal() {
   const [vistaCatalogo, setVistaCatalogo] = useState<DemoCatalogView>(DEMO_CATALOG_VIEW_DEFAULT)
 
   return (
-    <nav
-      className={layoutsOperarCatalogRailProposalNavClass(proposalId)}
-      aria-label="Filtros del catálogo"
-    >
+    <nav className={layoutsOperarCatalogRailNavClass} aria-label="Filtros del catálogo">
       <div>
-        <p className={layoutsOperarCatalogRailProposalSectionLabelClass(proposalId)}>Categorías</p>
-        <ul className={layoutsOperarCatalogRailProposalListClass(proposalId)} role="list">
-          <li className={layoutsOperarCatalogRailProposalListItemClass(proposalId)}>
+        <p className={layoutsOperarCatalogRailSectionLabelClass}>Categorías</p>
+        <ul className={layoutsOperarCatalogRailListClass} role="list">
+          <li className={layoutsOperarCatalogRailListItemClass}>
             <button
               type="button"
               tabIndex={-1}
@@ -107,10 +97,10 @@ export function LayoutsOperarCatalogRailProposal({
               }
               onClick={() => setVistaCatalogo({ modo: "categoria", categoria: "Todos" })}
               className={cn(
-                layoutsOperarCatalogRailProposalItemClass(proposalId),
+                layoutsOperarCatalogRailItemClass,
                 vistaCatalogo.modo === "categoria" &&
                   vistaCatalogo.categoria === "Todos" &&
-                  layoutsOperarCatalogRailProposalItemSelectedClass(proposalId),
+                  layoutsOperarCatalogRailItemSelectedClass,
               )}
             >
               Todos
@@ -120,7 +110,7 @@ export function LayoutsOperarCatalogRailProposal({
             const seleccionado =
               vistaCatalogo.modo === "categoria" && vistaCatalogo.categoria === name
             return (
-              <li key={name} className={layoutsOperarCatalogRailProposalListItemClass(proposalId)}>
+              <li key={name} className={layoutsOperarCatalogRailListItemClass}>
                 <button
                   type="button"
                   tabIndex={-1}
@@ -128,8 +118,8 @@ export function LayoutsOperarCatalogRailProposal({
                   aria-pressed={seleccionado}
                   onClick={() => setVistaCatalogo({ modo: "categoria", categoria: name })}
                   className={cn(
-                    layoutsOperarCatalogRailProposalItemClass(proposalId),
-                    seleccionado && layoutsOperarCatalogRailProposalItemSelectedClass(proposalId),
+                    layoutsOperarCatalogRailItemClass,
+                    seleccionado && layoutsOperarCatalogRailItemSelectedClass,
                   )}
                 >
                   {name}
@@ -141,11 +131,9 @@ export function LayoutsOperarCatalogRailProposal({
       </div>
 
       <div>
-        <p className={layoutsOperarCatalogRailProposalSectionLabelClass(proposalId)}>
-          Listados rápidos
-        </p>
-        <ul className={layoutsOperarCatalogRailProposalListClass(proposalId)} role="list">
-          <li className={layoutsOperarCatalogRailProposalListItemClass(proposalId)}>
+        <p className={layoutsOperarCatalogRailSectionLabelClass}>Listados rápidos</p>
+        <ul className={layoutsOperarCatalogRailListClass} role="list">
+          <li className={layoutsOperarCatalogRailListItemClass}>
             <button
               type="button"
               tabIndex={-1}
@@ -153,17 +141,17 @@ export function LayoutsOperarCatalogRailProposal({
               aria-pressed={vistaCatalogo.modo === "promociones"}
               onClick={() => setVistaCatalogo({ modo: "promociones" })}
               className={cn(
-                layoutsOperarCatalogRailProposalItemClass(proposalId),
-                layoutsOperarCatalogRailProposalItemWithIconClass(proposalId),
+                layoutsOperarCatalogRailItemClass,
+                layoutsOperarCatalogRailItemWithIconClass,
                 vistaCatalogo.modo === "promociones" &&
-                  layoutsOperarCatalogRailProposalItemPromoSelectedClass(proposalId),
+                  layoutsOperarCatalogRailItemPromoSelectedClass,
               )}
             >
               <Tag className="size-4 shrink-0 opacity-80" aria-hidden />
               Promociones
             </button>
           </li>
-          <li className={layoutsOperarCatalogRailProposalListItemClass(proposalId)}>
+          <li className={layoutsOperarCatalogRailListItemClass}>
             <button
               type="button"
               tabIndex={-1}
@@ -171,10 +159,10 @@ export function LayoutsOperarCatalogRailProposal({
               aria-pressed={vistaCatalogo.modo === "con_descuento"}
               onClick={() => setVistaCatalogo({ modo: "con_descuento" })}
               className={cn(
-                layoutsOperarCatalogRailProposalItemClass(proposalId),
-                layoutsOperarCatalogRailProposalItemWithIconClass(proposalId),
+                layoutsOperarCatalogRailItemClass,
+                layoutsOperarCatalogRailItemWithIconClass,
                 vistaCatalogo.modo === "con_descuento" &&
-                  layoutsOperarCatalogRailProposalItemDiscountSelectedClass(proposalId),
+                  layoutsOperarCatalogRailItemDiscountSelectedClass,
               )}
             >
               <Percent className="size-4 shrink-0 opacity-80" aria-hidden />

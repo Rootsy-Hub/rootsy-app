@@ -1000,7 +1000,7 @@ export function useMostradorSaleCheckout(
   )
 
   const agregarAlCarrito = useCallback(
-    (productoId: string, kindHint?: MenuCartItemKind) => {
+    (productoId: string, kindHint?: MenuCartItemKind, quantity = 1) => {
       const product =
         (kindHint
           ? productosByKey.get(`${kindHint}:${productoId}`)
@@ -1027,6 +1027,7 @@ export function useMostradorSaleCheckout(
           productoId,
           kindHint: kind,
           productosByKey,
+          quantity,
           overrides: {
             itemDescuentoModo,
             itemDescuentoDraft,
