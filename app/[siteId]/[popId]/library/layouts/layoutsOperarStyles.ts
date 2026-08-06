@@ -445,18 +445,22 @@ export const layoutsOperarSummaryCartHeadingClass =
 export const layoutsOperarSummaryCartMetaClass =
   "shrink-0 text-[11px] font-medium tabular-nums text-[var(--layouts-operar-light-cart-meta)]"
 
+/** @deprecated Usar DataWorkspaceDetailEmptyState (layout.blocks.empty.detail). */
 export const layoutsOperarSummaryEmptyStateClass =
   "flex min-h-0 flex-1 flex-col items-center justify-center px-6 py-12 text-center"
 
+/** @deprecated Usar DataWorkspaceDetailEmptyState. */
 export const layoutsOperarSummaryEmptyStateContentClass =
   "flex max-w-[260px] flex-col items-center gap-3"
 
+/** @deprecated Usar dataWorkspaceDetailEmptyStateIconWrapClass. */
 export const layoutsOperarSummaryEmptyIconWrapClass = cn(
   "flex size-14 items-center justify-center rounded-2xl bg-white",
   "text-[var(--layouts-operar-light-empty-icon-text)]",
   "ring-1 ring-[var(--layouts-operar-light-empty-icon-ring)] shadow-sm",
 )
 
+/** @deprecated Usar dataWorkspaceDetailEmptyStateTitleClass. */
 export const layoutsOperarSummaryEmptyTitleClass =
   "text-sm font-semibold text-[var(--layouts-operar-light-empty-title)]"
 

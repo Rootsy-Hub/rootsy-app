@@ -28,10 +28,6 @@ import {
   layoutsOperarSummaryActionConfirmColClass,
   layoutsOperarSummaryHeaderRowClass,
   layoutsOperarSummaryTotalRowClass,
-  layoutsOperarSummaryEmptyIconWrapClass,
-  layoutsOperarSummaryEmptyStateClass,
-  layoutsOperarSummaryEmptyStateContentClass,
-  layoutsOperarSummaryEmptyTitleClass,
   layoutsOperarSummaryTotalsAmountClass,
   layoutsOperarSummaryTotalsLabelClass,
   layoutsOperarSummaryPanelClass,
@@ -78,6 +74,7 @@ import {
 import { LAYOUTS_OPERAR_DEFAULT_TOOLBOX_PROPOSAL } from "@/app/[siteId]/[popId]/library/layouts/rootsyLayoutsOperarSystem"
 import { LayoutsModuleShellWithContent } from "@/app/[siteId]/[popId]/library/layouts/LayoutsModuleDocPrimitives"
 import { ROOTSY_LAYOUTS_MODULE_HEADER } from "@/app/[siteId]/[popId]/library/layouts/rootsyLayoutsModuleSystem"
+import { DataWorkspaceDetailEmptyState } from "@/components/data-workspace/DataWorkspaceDetailEmptyState"
 import { DataWorkspaceHeaderTitle } from "@/components/layouts/DataWorkspaceHeaderTitle"
 import {
   dataWorkspaceHeaderChromeButtonClass,
@@ -404,16 +401,7 @@ function LayoutsOperarSummaryCartHeader() {
 }
 
 function LayoutsOperarSummaryEmptyOrder() {
-  return (
-    <div className={layoutsOperarSummaryEmptyStateClass}>
-      <div className={layoutsOperarSummaryEmptyStateContentClass}>
-        <div className={layoutsOperarSummaryEmptyIconWrapClass} aria-hidden>
-          <Receipt className="size-7 stroke-[1.75]" />
-        </div>
-        <p className={layoutsOperarSummaryEmptyTitleClass}>Pedido vacío</p>
-      </div>
-    </div>
-  )
+  return <DataWorkspaceDetailEmptyState icon={Receipt} title="Pedido vacío" />
 }
 
 function LayoutsOperarAnatomyScope({

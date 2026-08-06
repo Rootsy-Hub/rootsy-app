@@ -10,12 +10,9 @@ import {
   layoutsOperarSummaryCartHeadingClass,
   layoutsOperarSummaryCartListSurfaceClass,
   layoutsOperarSummaryCartMetaClass,
-  layoutsOperarSummaryEmptyStateClass,
-  layoutsOperarSummaryEmptyStateContentClass,
-  layoutsOperarSummaryEmptyIconWrapClass,
-  layoutsOperarSummaryEmptyTitleClass,
   layoutsOperarSummaryTotalsPlacementClass,
 } from "@/app/[siteId]/[popId]/library/layouts/layoutsOperarStyles"
+import { DataWorkspaceDetailEmptyState } from "@/components/data-workspace/DataWorkspaceDetailEmptyState"
 import {
   layoutsOperarTicketProposalActionsClass,
   layoutsOperarTicketProposalCartListClass,
@@ -115,13 +112,8 @@ export function SaleOperationTicketOrderPanel({
         aria-label="Ítems agregados"
       >
         {ticketLineCount === 0 ? (
-          <div className={layoutsOperarSummaryEmptyStateClass} data-ticket-empty="true">
-            <div className={layoutsOperarSummaryEmptyStateContentClass}>
-              <div className={layoutsOperarSummaryEmptyIconWrapClass} aria-hidden>
-                <Receipt className="size-7 stroke-[1.75]" />
-              </div>
-              <p className={layoutsOperarSummaryEmptyTitleClass}>{emptyTitle}</p>
-            </div>
+          <div className="flex min-h-0 flex-1 flex-col" data-ticket-empty="true">
+            <DataWorkspaceDetailEmptyState icon={Receipt} title={emptyTitle} />
           </div>
         ) : (
           <div
