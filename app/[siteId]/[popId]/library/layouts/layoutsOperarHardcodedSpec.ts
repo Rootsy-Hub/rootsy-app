@@ -13,6 +13,16 @@ import {
   layoutsOperarProductCardOfferClass,
   layoutsOperarProductCardPriceClass,
   layoutsOperarProductCardTitleClass,
+  layoutsOperarCatalogRailItemClass,
+  layoutsOperarCatalogRailItemDiscountSelectedClass,
+  layoutsOperarCatalogRailItemPromoSelectedClass,
+  layoutsOperarCatalogRailItemSelectedClass,
+  layoutsOperarCatalogRailItemWithIconClass,
+  layoutsOperarCatalogRailListClass,
+  layoutsOperarCatalogRailListItemClass,
+  layoutsOperarCatalogRailNavClass,
+  layoutsOperarCatalogRailScrollClass,
+  layoutsOperarCatalogRailSectionLabelClass,
 } from "@/app/[siteId]/[popId]/library/layouts/layoutsOperarStyles"
 import {
   getLayoutsOperarBorderCss,
@@ -21,11 +31,14 @@ import {
   getLayoutsOperarWireframeHeaderStyle,
   LAYOUTS_OPERAR_DEFAULT_TOOLBOX_PROPOSAL,
   ROOTSY_LAYOUTS_OPERAR_ANATOMY,
+  ROOTSY_LAYOUTS_OPERAR_CATALOG_RAIL_PROPOSALS,
   ROOTSY_LAYOUTS_OPERAR_PRODUCT_CARD_PROPOSALS,
   ROOTSY_LAYOUTS_OPERAR_SURFACES,
   ROOTSY_LAYOUTS_OPERAR_TOOLBOX_PROPOSALS,
   type LayoutsOperarProductCardProposal,
   type LayoutsOperarProductCardProposalId,
+  type LayoutsOperarCatalogRailProposal,
+  type LayoutsOperarCatalogRailProposalId,
   type LayoutsOperarSurfaceId,
   type LayoutsOperarToolboxProposal,
   type LayoutsOperarToolboxProposalId,
@@ -673,4 +686,121 @@ export function layoutsOperarProductCardProposalAddClass(id: LayoutsOperarProduc
   )
 }
 
+export function getLayoutsOperarCatalogRailProposal(
+  id: LayoutsOperarCatalogRailProposalId,
+): LayoutsOperarCatalogRailProposal {
+  const proposal = ROOTSY_LAYOUTS_OPERAR_CATALOG_RAIL_PROPOSALS.find((p) => p.id === id)
+  if (!proposal) throw new Error(`Unknown catalog rail proposal: ${id}`)
+  return proposal
+}
+
+export function layoutsOperarCatalogRailProposalNavClass(id: LayoutsOperarCatalogRailProposalId) {
+  if (id === "lista-dosel") return layoutsOperarCatalogRailNavClass
+
+  return cn(
+    layoutsOperarCatalogRailScrollClass,
+    "flex h-full w-[var(--layouts-operar-catalog-sidebar-w)] min-w-[var(--layouts-operar-catalog-sidebar-w)] flex-col gap-6 overflow-y-auto px-3 py-4",
+  )
+}
+
+export function layoutsOperarCatalogRailProposalSectionLabelClass(id: LayoutsOperarCatalogRailProposalId) {
+  if (id === "lista-dosel") return layoutsOperarCatalogRailSectionLabelClass
+
+  if (id === "pastillas-sombra") {
+    return "mb-2 px-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-[color-mix(in_srgb,var(--rootsy-sombra-400)_82%,transparent)]"
+  }
+
+  return "mb-2.5 px-2 text-[10px] font-semibold uppercase tracking-[0.16em] text-[color-mix(in_srgb,var(--rootsy-savia-400)_55%,var(--rootsy-sombra-400))]"
+}
+
+export function layoutsOperarCatalogRailProposalListClass(id: LayoutsOperarCatalogRailProposalId) {
+  if (id === "lista-dosel") return layoutsOperarCatalogRailListClass
+  return "flex w-full flex-col gap-1 p-0"
+}
+
+export function layoutsOperarCatalogRailProposalListItemClass(id: LayoutsOperarCatalogRailProposalId) {
+  if (id === "lista-dosel") return layoutsOperarCatalogRailListItemClass
+  return "w-full"
+}
+
+export function layoutsOperarCatalogRailProposalItemClass(id: LayoutsOperarCatalogRailProposalId) {
+  if (id === "lista-dosel") return layoutsOperarCatalogRailItemClass
+
+  if (id === "pastillas-sombra") {
+    return cn(
+      "relative flex min-h-11 w-full items-center rounded-lg px-3 py-2.5 text-left text-sm font-medium transition-colors duration-150",
+      "text-[color-mix(in_srgb,var(--rootsy-sombra-300)_72%,transparent)]",
+      "hover:bg-[color-mix(in_srgb,var(--rootsy-sombra-900)_55%,transparent)] hover:text-[color-mix(in_srgb,var(--rootsy-bruma-100)_92%,#ffffff)]",
+      "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[color-mix(in_srgb,var(--rootsy-savia-400)_45%,transparent)]",
+    )
+  }
+
+  return cn(
+    "relative flex min-h-11 w-full items-center rounded-lg px-3 py-2.5 text-left text-sm font-semibold transition-[background-color,box-shadow,color] duration-150",
+    "text-[color-mix(in_srgb,var(--rootsy-sombra-300)_68%,transparent)]",
+    "hover:bg-[color-mix(in_srgb,var(--rootsy-sombra-900)_38%,transparent)] hover:text-[color-mix(in_srgb,var(--rootsy-bruma-100)_94%,white)]",
+    "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color-mix(in_srgb,var(--rootsy-savia-400)_40%,transparent)]",
+  )
+}
+
+export function layoutsOperarCatalogRailProposalItemSelectedClass(id: LayoutsOperarCatalogRailProposalId) {
+  if (id === "lista-dosel") return layoutsOperarCatalogRailItemSelectedClass
+
+  if (id === "pastillas-sombra") {
+    return cn(
+      "bg-[color-mix(in_srgb,var(--rootsy-sombra-800)_72%,transparent)] text-[#f4f8f6]",
+      "shadow-[inset_0_1px_0_color-mix(in_srgb,#ffffff_6%,transparent)]",
+      "before:absolute before:top-1/2 before:left-1.5 before:h-5 before:w-0.5 before:-translate-y-1/2 before:rounded-full before:bg-[var(--rootsy-savia-400)] before:content-['']",
+    )
+  }
+
+  return cn(
+    "bg-[color-mix(in_srgb,var(--rootsy-sombra-800)_55%,var(--rootsy-sombra-900))] text-[#f4f8f6]",
+    "ring-1 ring-[color-mix(in_srgb,var(--rootsy-savia-400)_28%,transparent)]",
+    "shadow-[inset_3px_0_0_0_var(--rootsy-savia-400),inset_0_1px_0_color-mix(in_srgb,#ffffff_8%,transparent)]",
+  )
+}
+
+export function layoutsOperarCatalogRailProposalItemWithIconClass(id: LayoutsOperarCatalogRailProposalId) {
+  if (id === "lista-dosel") return layoutsOperarCatalogRailItemWithIconClass
+  return "gap-2.5"
+}
+
+export function layoutsOperarCatalogRailProposalItemPromoSelectedClass(id: LayoutsOperarCatalogRailProposalId) {
+  if (id === "lista-dosel") return layoutsOperarCatalogRailItemPromoSelectedClass
+
+  if (id === "pastillas-sombra") {
+    return cn(
+      "bg-[color-mix(in_srgb,var(--rootsy-savia-600)_18%,var(--rootsy-sombra-900))] text-[color-mix(in_srgb,var(--rootsy-savia-200)_92%,white)]",
+      "before:absolute before:top-1/2 before:left-1.5 before:h-5 before:w-0.5 before:-translate-y-1/2 before:rounded-full before:bg-[var(--rootsy-savia-400)] before:content-['']",
+    )
+  }
+
+  return cn(
+    "bg-[color-mix(in_srgb,var(--rootsy-savia-600)_22%,var(--rootsy-sombra-900))] text-[color-mix(in_srgb,var(--rootsy-savia-100)_94%,white)]",
+    "ring-1 ring-[color-mix(in_srgb,var(--rootsy-savia-400)_35%,transparent)]",
+    "shadow-[inset_3px_0_0_0_var(--rootsy-savia-400)]",
+  )
+}
+
+export function layoutsOperarCatalogRailProposalItemDiscountSelectedClass(
+  id: LayoutsOperarCatalogRailProposalId,
+) {
+  if (id === "lista-dosel") return layoutsOperarCatalogRailItemDiscountSelectedClass
+
+  if (id === "pastillas-sombra") {
+    return cn(
+      "bg-[color-mix(in_srgb,#f59e0b_16%,var(--rootsy-sombra-900))] text-[color-mix(in_srgb,#fde68a_90%,white)]",
+      "before:absolute before:top-1/2 before:left-1.5 before:h-5 before:w-0.5 before:-translate-y-1/2 before:rounded-full before:bg-[#fbbf24] before:content-['']",
+    )
+  }
+
+  return cn(
+    "bg-[color-mix(in_srgb,#f59e0b_20%,var(--rootsy-sombra-900))] text-[color-mix(in_srgb,#fde68a_92%,white)]",
+    "ring-1 ring-[color-mix(in_srgb,#fbbf24_35%,transparent)]",
+    "shadow-[inset_3px_0_0_0_#fbbf24]",
+  )
+}
+
+export type { LayoutsOperarCatalogRailProposal, LayoutsOperarCatalogRailProposalId }
 export type { LayoutsOperarProductCardProposal, LayoutsOperarProductCardProposalId }

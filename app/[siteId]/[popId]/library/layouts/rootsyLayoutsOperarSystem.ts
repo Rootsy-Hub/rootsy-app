@@ -332,6 +332,74 @@ export const ROOTSY_LAYOUTS_OPERAR_PRODUCT_CARD_PROPOSALS: LayoutsOperarProductC
 export const LAYOUTS_OPERAR_DEFAULT_PRODUCT_CARD_PROPOSAL: LayoutsOperarProductCardProposalId =
   "plano-dosel"
 
+export type LayoutsOperarCatalogRailProposalId = "lista-dosel" | "pastillas-sombra" | "surco-savia"
+
+export type LayoutsOperarCatalogRailProposalItemLayout = "lista" | "pastilla" | "surco"
+
+export type LayoutsOperarCatalogRailProposal = {
+  id: LayoutsOperarCatalogRailProposalId
+  letter: "A" | "B" | "C"
+  title: string
+  pairingId: "pos-core" | "pos-split" | "pos-focus"
+  pairingLabel: string
+  summary: string
+  uxNote: string
+  recommended?: boolean
+  itemLayout: LayoutsOperarCatalogRailProposalItemLayout
+  sidebarWidthPx: number
+  itemMinHeightPx: number
+}
+
+/** Propuestas rail categorías §2.3 — sidebar 288px · listados rápidos. */
+export const ROOTSY_LAYOUTS_OPERAR_CATALOG_RAIL_PROPOSALS: LayoutsOperarCatalogRailProposal[] = [
+  {
+    id: "lista-dosel",
+    letter: "A",
+    title: "Lista dosel",
+    pairingId: "pos-core",
+    pairingLabel: "Sombra 950 + Savia 400 barra",
+    summary:
+      "Ítems full-bleed · hairlines sombra-border · selección sombra-800 + barra inset savia 3px (actual lib).",
+    uxNote:
+      "Lista continua bajo el dosel — escaneo vertical denso. Alineada al rail del grid y tokens --layouts-operar-rail-*.",
+    recommended: true,
+    itemLayout: "lista",
+    sidebarWidthPx: ROOTSY_LAYOUTS_OPERAR_ANATOMY.catalogSidebarWidthPx,
+    itemMinHeightPx: 44,
+  },
+  {
+    id: "pastillas-sombra",
+    letter: "B",
+    title: "Pastillas sombra",
+    pairingId: "pos-split",
+    pairingLabel: "Sombra 900/800 + Savia 400 tick",
+    summary:
+      "Ítems rounded-lg con gap · sin hairlines · hover sombra-900 · selección losa sombra-800 + tick savia.",
+    uxNote:
+      "Bloques separados — menos ruido visual entre categorías. Mejor en listas cortas y dedo grueso.",
+    itemLayout: "pastilla",
+    sidebarWidthPx: ROOTSY_LAYOUTS_OPERAR_ANATOMY.catalogSidebarWidthPx,
+    itemMinHeightPx: 44,
+  },
+  {
+    id: "surco-savia",
+    letter: "C",
+    title: "Surco savia",
+    pairingId: "pos-focus",
+    pairingLabel: "Sombra 800 + Savia 400 ring",
+    summary:
+      "Ítems rounded-lg · ring savia en selección · barra inset 3px + highlight bruma · labels savia.",
+    uxNote:
+      "La savia marca la categoría activa antes del canvas — útil cuando el rail compite con muchos filtros.",
+    itemLayout: "surco",
+    sidebarWidthPx: ROOTSY_LAYOUTS_OPERAR_ANATOMY.catalogSidebarWidthPx,
+    itemMinHeightPx: 44,
+  },
+]
+
+export const LAYOUTS_OPERAR_DEFAULT_CATALOG_RAIL_PROPOSAL: LayoutsOperarCatalogRailProposalId =
+  "lista-dosel"
+
 export const ROOTSY_LAYOUTS_OPERAR_PRODUCTION = {
   page: "app/[siteId]/[popId]/sale/page.tsx",
   layout: "components/layouts-module/DataWorkspaceOperationsLayout.tsx",

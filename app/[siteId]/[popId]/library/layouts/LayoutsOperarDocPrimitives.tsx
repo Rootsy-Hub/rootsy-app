@@ -14,15 +14,6 @@ import {
   layoutsOperarCatalogColumnClass,
   layoutsOperarCatalogColumnInMainGridClass,
   layoutsOperarCatalogGridClass,
-  layoutsOperarCatalogRailItemClass,
-  layoutsOperarCatalogRailItemDiscountSelectedClass,
-  layoutsOperarCatalogRailItemPromoSelectedClass,
-  layoutsOperarCatalogRailItemSelectedClass,
-  layoutsOperarCatalogRailItemWithIconClass,
-  layoutsOperarCatalogRailListClass,
-  layoutsOperarCatalogRailListItemClass,
-  layoutsOperarCatalogRailNavClass,
-  layoutsOperarCatalogRailSectionLabelClass,
   layoutsOperarCatalogSidebarClass,
   layoutsOperarCatalogSidebarOpenClass,
   layoutsOperarCatalogSectionShellClass,
@@ -64,6 +55,10 @@ import {
   type LayoutsOperarWireframeZone,
 } from "@/app/[siteId]/[popId]/library/layouts/layoutsOperarHardcodedSpec"
 import {
+  LayoutsOperarCatalogRailProposal,
+  LayoutsOperarCatalogRailProposalsDemo,
+} from "@/app/[siteId]/[popId]/library/layouts/LayoutsOperarCatalogRailProposalPrimitives"
+import {
   LayoutsOperarProductCardDemoCanvas,
   LayoutsOperarProductCardProposalGrid,
   LayoutsOperarProductCardProposalList,
@@ -97,14 +92,11 @@ import {
   LayoutGrid,
   Maximize2,
   PanelLeftOpen,
-  Percent,
   Receipt,
   Store,
   Rows3,
   Search,
-  Tag,
 } from "lucide-react"
-import { useState } from "react"
 
 const HEADER_VARIANT = "dark" as const
 const DEMO_PAGE_TITLE = "Vender"
@@ -116,25 +108,6 @@ const DEMO_USER_ROLE = "Dueño"
 const DEMO_USER_AVATAR =
   "https://api.dicebear.com/7.x/avataaars/svg?seed=arian-fernandez"
 const DEMO_USER_INITIALS = "AF"
-
-const DEMO_CATALOG_CATEGORIES = [
-  "Bebidas",
-  "Panadería",
-  "Lácteos",
-  "Fiambres",
-  "Verdulería",
-  "Almacén",
-] as const
-
-type DemoCatalogView =
-  | { modo: "categoria"; categoria: string }
-  | { modo: "promociones" }
-  | { modo: "con_descuento" }
-
-const DEMO_CATALOG_VIEW_DEFAULT: DemoCatalogView = {
-  modo: "categoria",
-  categoria: "Todos",
-}
 
 const DEMO_PRODUCTS: LayoutsOperarDemoProduct[] = [
   LAYOUTS_OPERAR_DEMO_ARTICLE,
@@ -339,94 +312,6 @@ function LayoutsOperarHeaderDemo({
   )
 }
 
-function LayoutsOperarCatalogRail() {
-  const [vistaCatalogo, setVistaCatalogo] = useState<DemoCatalogView>(DEMO_CATALOG_VIEW_DEFAULT)
-
-  return (
-    <nav className={layoutsOperarCatalogRailNavClass} aria-label="Filtros del catálogo">
-      <div>
-        <p className={layoutsOperarCatalogRailSectionLabelClass}>Categorías</p>
-        <ul className={layoutsOperarCatalogRailListClass} role="list">
-          <li className={layoutsOperarCatalogRailListItemClass}>
-            <button
-              type="button"
-              aria-pressed={
-                vistaCatalogo.modo === "categoria" && vistaCatalogo.categoria === "Todos"
-              }
-              onClick={() => setVistaCatalogo({ modo: "categoria", categoria: "Todos" })}
-              className={cn(
-                layoutsOperarCatalogRailItemClass,
-                vistaCatalogo.modo === "categoria" &&
-                  vistaCatalogo.categoria === "Todos" &&
-                  layoutsOperarCatalogRailItemSelectedClass,
-              )}
-            >
-              Todos
-            </button>
-          </li>
-          {DEMO_CATALOG_CATEGORIES.map((name) => {
-            const seleccionado =
-              vistaCatalogo.modo === "categoria" && vistaCatalogo.categoria === name
-            return (
-              <li key={name} className={layoutsOperarCatalogRailListItemClass}>
-                <button
-                  type="button"
-                  aria-pressed={seleccionado}
-                  onClick={() => setVistaCatalogo({ modo: "categoria", categoria: name })}
-                  className={cn(
-                    layoutsOperarCatalogRailItemClass,
-                    seleccionado && layoutsOperarCatalogRailItemSelectedClass,
-                  )}
-                >
-                  {name}
-                </button>
-              </li>
-            )
-          })}
-        </ul>
-      </div>
-
-      <div>
-        <p className={layoutsOperarCatalogRailSectionLabelClass}>Listados rápidos</p>
-        <ul className={layoutsOperarCatalogRailListClass} role="list">
-          <li className={layoutsOperarCatalogRailListItemClass}>
-            <button
-              type="button"
-              aria-pressed={vistaCatalogo.modo === "promociones"}
-              onClick={() => setVistaCatalogo({ modo: "promociones" })}
-              className={cn(
-                layoutsOperarCatalogRailItemClass,
-                layoutsOperarCatalogRailItemWithIconClass,
-                vistaCatalogo.modo === "promociones" &&
-                  layoutsOperarCatalogRailItemPromoSelectedClass,
-              )}
-            >
-              <Tag className="size-4 shrink-0 opacity-80" aria-hidden />
-              Promociones
-            </button>
-          </li>
-          <li className={layoutsOperarCatalogRailListItemClass}>
-            <button
-              type="button"
-              aria-pressed={vistaCatalogo.modo === "con_descuento"}
-              onClick={() => setVistaCatalogo({ modo: "con_descuento" })}
-              className={cn(
-                layoutsOperarCatalogRailItemClass,
-                layoutsOperarCatalogRailItemWithIconClass,
-                vistaCatalogo.modo === "con_descuento" &&
-                  layoutsOperarCatalogRailItemDiscountSelectedClass,
-              )}
-            >
-              <Percent className="size-4 shrink-0 opacity-80" aria-hidden />
-              Con descuento
-            </button>
-          </li>
-        </ul>
-      </div>
-    </nav>
-  )
-}
-
 function LayoutsOperarCatalogArticleCanvas({ children }: { children: React.ReactNode }) {
   return <LayoutsOperarProductCardDemoCanvas>{children}</LayoutsOperarProductCardDemoCanvas>
 }
@@ -550,7 +435,7 @@ function LayoutsOperarCatalogColumn({
         {wireframe ? (
           <LayoutHeightBadge label={`${LAYOUTS_OPERAR_CATALOG_SIDEBAR_WIDTH_PX}px · sombra-950`} onDark />
         ) : composed ? (
-          <LayoutsOperarCatalogRail />
+          <LayoutsOperarCatalogRailProposal />
         ) : null}
       </aside>
       <section className={cn(layoutsOperarCatalogCanvasClass, wireframe && "relative")}>
@@ -713,7 +598,7 @@ function LayoutsOperarFrame({
 export function LayoutsOperarFullPageDraft({ composed = false }: { composed?: boolean } = {}) {
   if (composed) {
     return (
-      <div className="rootsy-theme-pos rootsy-radius-system flex min-h-0 flex-1 flex-col">
+      <div className="flex min-h-0 flex-1 flex-col">
         <LayoutsOperarHeaderDemo composed />
         <LayoutsOperarBody composed />
       </div>
@@ -932,7 +817,7 @@ export function LayoutsOperarCatalogSectionDemo() {
         >
             <div className={cn(layoutsOperarCatalogColumnClass, "min-h-0 flex-1")}>
               <aside className={cn(layoutsOperarCatalogSidebarClass, layoutsOperarCatalogSidebarOpenClass)}>
-                <LayoutsOperarCatalogRail />
+                <LayoutsOperarCatalogRailProposal />
               </aside>
               <section className={layoutsOperarCatalogCanvasClass}>
                 <LayoutsOperarCatalogToolbar />
@@ -994,6 +879,19 @@ export function LayoutsOperarCatalogSectionDemo() {
           {LAYOUTS_OPERAR_ANATOMY.productCardMediaHeightPx}px · media 192px.
         </p>
         <LayoutsOperarProductCardProposalsDemo />
+      </LayoutsOperarDocSubsection>
+
+      <LayoutsOperarDocSubsection title="2.3 · Propuestas · Categorías">
+        <p className="mb-4 text-sm text-muted-foreground">
+          Tres composiciones rail sobre sombra-950 — ancho{" "}
+          {LAYOUTS_OPERAR_ANATOMY.catalogSidebarWidthPx}px (
+          <code className="text-[11px]">{LAYOUTS_OPERAR_ANATOMY.catalogSidebarWidthToken}</code>
+          ) · pairing <code className="text-[11px]">pos-core</code>,{" "}
+          <code className="text-[11px]">pos-split</code> y{" "}
+          <code className="text-[11px]">pos-focus</code>. Incluye listados rápidos (promo /
+          descuento).
+        </p>
+        <LayoutsOperarCatalogRailProposalsDemo />
       </LayoutsOperarDocSubsection>
 
       <LayoutsOperarComponentsTable
