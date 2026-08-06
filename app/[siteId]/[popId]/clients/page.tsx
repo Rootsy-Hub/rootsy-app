@@ -1015,25 +1015,23 @@ function ClientsPage() {
                         >
                           {r.taxId || "—"}
                         </TableCell>
-                        <TableCell className={workspaceTableLayoutBodyCellClass}>
-                          {r.ivaCondition ? (
-                            <Badge
-                              variant="secondary"
-                              className="max-w-full truncate font-normal"
-                              title={
-                                IVA_LABEL_BY_VALUE[r.ivaCondition] ??
-                                r.ivaCondition
-                              }
-                            >
-                              <span className="truncate">
-                                {IVA_LABEL_BY_VALUE[r.ivaCondition] ?? "—"}
-                              </span>
-                            </Badge>
-                          ) : (
-                            <span className={workspaceTableNatureTextSecondaryClass}>
-                              —
-                            </span>
+                        <TableCell
+                          className={cn(
+                            workspaceTableLayoutBodyCellClass,
+                            "min-w-0 max-w-[11rem] overflow-hidden",
+                            workspaceTableNatureTextSecondaryClass,
                           )}
+                          title={
+                            r.ivaCondition
+                              ? (IVA_LABEL_BY_VALUE[r.ivaCondition] ?? r.ivaCondition)
+                              : undefined
+                          }
+                        >
+                          <p className="truncate">
+                            {r.ivaCondition
+                              ? (IVA_LABEL_BY_VALUE[r.ivaCondition] ?? "—")
+                              : "—"}
+                          </p>
                         </TableCell>
                         <TableCell
                           className={cn(

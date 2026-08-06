@@ -774,12 +774,25 @@ function LayoutsTablesSortHeadCell({
       }
     >
       <div style={getLayoutsTablesSortHeadInnerStyle(align)}>
-        <span style={getLayoutsTablesSortHeadLabelStyle(direction)}>{label}</span>
-        <LayoutsTablesSortButton
-          direction={direction}
-          label={label}
-          interaction={interaction}
-        />
+        {align === "right" ? (
+          <>
+            <LayoutsTablesSortButton
+              direction={direction}
+              label={label}
+              interaction={interaction}
+            />
+            <span style={getLayoutsTablesSortHeadLabelStyle(direction)}>{label}</span>
+          </>
+        ) : (
+          <>
+            <span style={getLayoutsTablesSortHeadLabelStyle(direction)}>{label}</span>
+            <LayoutsTablesSortButton
+              direction={direction}
+              label={label}
+              interaction={interaction}
+            />
+          </>
+        )}
       </div>
     </th>
   )

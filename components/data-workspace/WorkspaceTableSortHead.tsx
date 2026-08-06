@@ -75,6 +75,18 @@ export function WorkspaceTableSortHead({
         ? `${label}, orden descendente`
         : `Ordenar ${label}`
 
+  const sortButton = onSort ? (
+    <button
+      type="button"
+      className={sortButtonClass(direction)}
+      aria-label={sortLabel}
+      disabled={disabled}
+      onClick={onSort}
+    >
+      <SortIcon className="size-4" aria-hidden />
+    </button>
+  ) : null
+
   return (
     <TableHead
       className={cn(
@@ -92,23 +104,21 @@ export function WorkspaceTableSortHead({
     >
       <div
         className={cn(
-          "flex min-w-0 items-center gap-1",
+          "flex w-full min-w-0 items-center gap-1",
           sortHeadInnerAlignClass[align],
-          align === "right" && "flex-row-reverse",
         )}
       >
-        <span className={sortLabelClass(direction)}>{label}</span>
-        {onSort ? (
-          <button
-            type="button"
-            className={sortButtonClass(direction)}
-            aria-label={sortLabel}
-            disabled={disabled}
-            onClick={onSort}
-          >
-            <SortIcon className="size-4" aria-hidden />
-          </button>
-        ) : null}
+        {align === "right" ? (
+          <>
+            {sortButton}
+            <span className={sortLabelClass(direction)}>{label}</span>
+          </>
+        ) : (
+          <>
+            <span className={sortLabelClass(direction)}>{label}</span>
+            {sortButton}
+          </>
+        )}
       </div>
     </TableHead>
   )
