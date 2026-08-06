@@ -7,11 +7,12 @@ import {
 } from "@/components/rootsy-dialog/rootsDialogProductStyles"
 import { cn } from "@/lib/utils"
 
-/** Shell — overlay + radius.xxlarge · sin header/footer genéricos de workspace. */
+/** Shell — shadow.overlay + scrim · sin borde exterior (cabecera pos-totals oscura). */
 export const saleFinalizeDialogShellClass = cn(
   rootsDialogPrimitiveResetClass,
   rootsDialogPanelShellClass,
   rootsDialogContentZClass,
+  "border-0",
   "fixed top-1/2 left-1/2 w-full max-w-[calc(100%-2rem)] -translate-x-1/2 -translate-y-1/2 sm:max-w-[22.5rem]",
   "data-[state=open]:animate-in data-[state=closed]:animate-out",
   "data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0",
