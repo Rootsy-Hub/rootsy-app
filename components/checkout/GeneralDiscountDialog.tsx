@@ -2,26 +2,34 @@
 
 import { CheckoutDialogFooter } from "@/components/checkout/CheckoutDialogFooter"
 import {
+  CheckoutMoneyValueField,
+  CheckoutNumericValueField,
+  CheckoutSectionLabel,
+  CheckoutSectionPanel,
+  type CheckoutDiscountMode,
+} from "@/components/checkout/CheckoutFormFields"
+import {
   RootsDialogBody,
   RootsDialogContent,
   RootsDialogHeader,
 } from "@/components/rootsy-dialog"
-import {
-  RootsFormDiscountField,
-  type RootsFormDiscountMode,
-} from "@/components/rootsy-form"
+import { RootsFormSegmentField } from "@/components/rootsy-form"
 import { Dialog } from "@/components/ui/dialog"
 import { discountDialogTitle } from "@/lib/operationPartyPicker"
-import { parseMoneyInput } from "@/lib/moneyInput"
-import { saleOpFmt } from "@/components/sale-operation/saleOperationStyles"
+import { formatMoneyInputForField, parseMoneyInput } from "@/lib/moneyInput"
+import { saleOpFmt, saleOpImporteBaseClass } from "@/components/sale-operation/saleOperationStyles"
+import { Percent } from "lucide-react"
+import { useId } from "react"
+
+type DiscountMode = CheckoutDiscountMode
 
 type Props = {
   open: boolean
   onOpenChange: (open: boolean) => void
   context?: "venta" | "mesa" | "pedido" | "compra"
   subtotal: number
-  draftMode: RootsFormDiscountMode
-  onDraftModeChange: (mode: RootsFormDiscountMode) => void
+  draftMode: DiscountMode
+  onDraftModeChange: (mode: DiscountMode) => void
   draftText: string
   onDraftTextChange: (value: string) => void
   onApply: () => void
@@ -44,10 +52,22 @@ export function GeneralDiscountDialog({
   disabled = false,
   disabledReason,
 }: Props) {
+  const valueFieldId = useId()
   const fixedAmountDisabled = disabled || subtotal === 0
+  const valueDisabled =
+    disabled || (draftMode === "fijo" && subtotal === 0)
 
-  const handleValueChange = (raw: string) => {
-    if (draftMode === "fijo" && subtotal > 0) {
+  const handlePercentChange = (raw: string) => {
+    if (!/^\d*$/.test(raw)) return
+    if (raw === "") {
+      onDraftTextChange("")
+      return
+    }
+    onDraftTextChange(String(Math.min(100, Number(raw))))
+  }
+
+  const handleFixedAmountChange = (raw: string) => {
+    if (subtotal > 0) {
       const parsed = parseMoneyInput(raw, Number.NaN)
       if (Number.isFinite(parsed) && parsed > subtotal) {
         onDraftModeChange("porcentaje")
@@ -55,16 +75,24 @@ export function GeneralDiscountDialog({
         return
       }
     }
-
     onDraftTextChange(raw)
   }
 
-  const discountHint =
-    draftMode === "fijo" && subtotal === 0
-      ? "Agregá ítems al carrito para usar monto fijo."
-      : draftMode === "fijo" && subtotal > 0
-        ? `Máximo sobre el subtotal: ${saleOpFmt.format(subtotal)}`
-        : undefined
+  const handleModeChange = (value: string) => {
+    const mode = value as DiscountMode
+    if (mode === "fijo" && draftText.trim()) {
+      const parsed = parseMoneyInput(draftText, Number.NaN)
+      if (Number.isFinite(parsed)) {
+        onDraftTextChange(formatMoneyInputForField(parsed))
+      }
+    } else if (mode === "porcentaje" && draftText.trim()) {
+      const parsed = parseMoneyInput(draftText, Number.NaN)
+      if (Number.isFinite(parsed)) {
+        onDraftTextChange(String(Math.min(100, Math.round(parsed))))
+      }
+    }
+    onDraftModeChange(mode)
+  }
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -81,17 +109,76 @@ export function GeneralDiscountDialog({
             </p>
           ) : null}
 
-          <RootsFormDiscountField
-            label="Descuento"
-            mode={draftMode}
-            onModeChange={onDraftModeChange}
-            value={draftText}
-            onChange={handleValueChange}
-            onClear={() => onDraftTextChange("")}
-            disabled={disabled}
-            fixedAmountDisabled={fixedAmountDisabled}
-            hint={discountHint}
-          />
+          <CheckoutSectionPanel>
+            <RootsFormSegmentField
+              label="Tipo"
+              value={draftMode}
+              onValueChange={handleModeChange}
+              disabled={disabled}
+              options={[
+                {
+                  value: "porcentaje",
+                  label: (
+                    <>
+                      <Percent className="size-4" aria-hidden />
+                      Porcentaje
+                    </>
+                  ),
+                },
+                {
+                  value: "fijo",
+                  label: (
+                    <>
+                      <span
+                        className="text-sm font-semibold tabular-nums"
+                        aria-hidden
+                      >
+                        $
+                      </span>
+                      Monto fijo
+                    </>
+                  ),
+                  disabled: fixedAmountDisabled,
+                },
+              ]}
+            />
+
+            <div className="space-y-2.5">
+              <CheckoutSectionLabel htmlFor={valueFieldId}>Valor</CheckoutSectionLabel>
+              {draftMode === "porcentaje" ? (
+                <CheckoutNumericValueField
+                  id={valueFieldId}
+                  icon={Percent}
+                  value={draftText}
+                  disabled={valueDisabled}
+                  onChange={handlePercentChange}
+                  suffix="%"
+                  ariaLabel="Porcentaje de descuento"
+                />
+              ) : (
+                <CheckoutMoneyValueField
+                  id={valueFieldId}
+                  value={draftText}
+                  disabled={valueDisabled}
+                  onChange={handleFixedAmountChange}
+                  ariaLabel="Monto fijo de descuento"
+                />
+              )}
+              {draftMode === "fijo" && subtotal > 0 ? (
+                <p className="px-0.5 text-xs text-[var(--rootsy-bruma-500)]">
+                  Máximo sobre el subtotal:{" "}
+                  <span className={saleOpImporteBaseClass}>
+                    {saleOpFmt.format(subtotal)}
+                  </span>
+                </p>
+              ) : null}
+              {draftMode === "fijo" && subtotal === 0 ? (
+                <p className="px-0.5 text-xs text-[var(--rootsy-bruma-500)]">
+                  Agregá ítems al carrito para usar monto fijo.
+                </p>
+              ) : null}
+            </div>
+          </CheckoutSectionPanel>
         </RootsDialogBody>
 
         <CheckoutDialogFooter

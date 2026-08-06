@@ -1,0 +1,103 @@
+import { getLayoutsOperarPosTotalsGradient } from "@/app/[siteId]/[popId]/library/layouts/rootsyLayoutsOperarSystem"
+import {
+  rootsDialogContentZClass,
+  rootsDialogOverlayClass,
+  rootsDialogPanelShellClass,
+  rootsDialogPrimitiveResetClass,
+} from "@/components/rootsy-dialog/rootsDialogProductStyles"
+import { cn } from "@/lib/utils"
+
+/** Shell — overlay + radius.xxlarge · sin header/footer genéricos de workspace. */
+export const saleFinalizeDialogShellClass = cn(
+  rootsDialogPrimitiveResetClass,
+  rootsDialogPanelShellClass,
+  rootsDialogContentZClass,
+  "fixed top-1/2 left-1/2 w-full max-w-[calc(100%-2rem)] -translate-x-1/2 -translate-y-1/2 sm:max-w-[22.5rem]",
+  "data-[state=open]:animate-in data-[state=closed]:animate-out",
+  "data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0",
+  "data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 duration-200",
+)
+
+export const saleFinalizeDialogOverlayClass = rootsDialogOverlayClass
+
+export const saleFinalizeDialogTotalsGradientStyle = {
+  background: getLayoutsOperarPosTotalsGradient(),
+} as const
+
+export const saleFinalizeDialogTotalsZoneClass = cn(
+  "relative overflow-hidden px-[var(--rootsy-space-400)] pt-[var(--rootsy-space-400)] pb-[var(--rootsy-space-300)]",
+)
+
+export const saleFinalizeDialogTotalsGlowClass =
+  "pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_120%_80%_at_50%_-15%,color-mix(in_srgb,var(--rootsy-savia-400)_34%,transparent),transparent_58%)]"
+
+export const saleFinalizeDialogTitleClass = cn(
+  "font-canopy text-[length:var(--rootsy-text-heading-small-size)] leading-[var(--rootsy-text-heading-small-lh)]",
+  "font-bold tracking-[-0.01em] text-[var(--rootsy-savia-50)]",
+)
+
+export const saleFinalizeDialogCloseClass = cn(
+  "inline-flex size-8 shrink-0 items-center justify-center rounded-full",
+  "text-[color-mix(in_srgb,var(--rootsy-savia-50)_72%,transparent)] transition-colors",
+  "hover:text-[var(--rootsy-savia-50)] hover:bg-[color-mix(in_srgb,var(--rootsy-savia-50)_10%,transparent)]",
+  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color-mix(in_srgb,var(--rootsy-savia-400)_45%,transparent)]",
+)
+
+export const saleFinalizeDialogAmountClass =
+  "font-numeric text-[2.375rem] font-bold tabular-nums tracking-tight text-[var(--rootsy-savia-50)]"
+
+export const saleFinalizeDialogAmountLabelClass =
+  "mt-1 font-canopy text-[10px] font-semibold uppercase tracking-[0.18em] text-[color-mix(in_srgb,var(--rootsy-savia-100)_78%,white)]"
+
+export const saleFinalizeDialogBreakdownClass =
+  "mb-4 space-y-1 border-b border-[color-mix(in_srgb,var(--rootsy-savia-50)_14%,transparent)] pb-3"
+
+export const saleFinalizeDialogBreakdownRowClass =
+  "flex items-center justify-between gap-3 font-canopy text-[11px] leading-snug"
+
+export const saleFinalizeDialogBreakdownLabelClass =
+  "font-medium uppercase tracking-[0.1em] text-[color-mix(in_srgb,var(--rootsy-savia-50)_48%,transparent)]"
+
+export const saleFinalizeDialogBreakdownAmountClass =
+  "font-numeric font-medium tabular-nums text-[color-mix(in_srgb,var(--rootsy-savia-50)_82%,transparent)]"
+
+export const saleFinalizeDialogBreakdownDiscountClass =
+  "font-numeric font-medium tabular-nums text-[color-mix(in_srgb,var(--rootsy-savia-200)_88%,white)]"
+
+export const saleFinalizeDialogFactsZoneClass =
+  "bg-[var(--rootsy-bruma-50)] px-[var(--rootsy-space-400)] py-[var(--rootsy-space-150)]"
+
+export const saleFinalizeDialogFactRowClass =
+  "flex min-h-11 items-center justify-between gap-4 py-[var(--rootsy-space-100)]"
+
+export const saleFinalizeDialogFactLabelClass =
+  "shrink-0 font-canopy text-[10px] font-semibold uppercase tracking-[0.14em] text-[var(--rootsy-bruma-500)]"
+
+export const saleFinalizeDialogFactValueClass =
+  "min-w-0 truncate text-right font-canopy text-sm font-semibold text-[var(--rootsy-bruma-900)]"
+
+export const saleFinalizeDialogFactValueMutedClass =
+  "min-w-0 truncate text-right font-canopy text-sm font-medium text-[var(--rootsy-bruma-400)]"
+
+export const saleFinalizeDialogErrorClass =
+  "mx-[var(--rootsy-space-400)] mb-[var(--rootsy-space-150)] rounded-lg border border-[#dc2626]/30 bg-[#dc2626]/5 px-3 py-2.5 font-canopy text-sm text-[#dc2626]"
+
+/** Misma gramática que la barra Descartar | Vender del ticket operar §1.2.3. */
+export const saleFinalizeDialogActionsClass =
+  "grid min-h-[3.25rem] grid-cols-2 border-t border-[var(--rootsy-bruma-200)]"
+
+export const saleFinalizeDialogCancelActionClass = cn(
+  "flex items-center justify-center border-r border-[var(--rootsy-bruma-200)] bg-white",
+  "font-canopy text-sm font-semibold text-[var(--rootsy-bruma-600)] transition-colors",
+  "hover:bg-[var(--rootsy-bruma-50)] hover:text-[var(--rootsy-bruma-900)]",
+  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[color-mix(in_srgb,var(--rootsy-savia-400)_35%,transparent)]",
+  "disabled:pointer-events-none disabled:opacity-45",
+)
+
+export const saleFinalizeDialogConfirmActionClass = cn(
+  "flex items-center justify-center gap-2 bg-[var(--rootsy-savia-600)]",
+  "font-canopy text-sm font-semibold text-white transition-colors",
+  "hover:bg-[var(--rootsy-savia-700)] active:bg-[var(--rootsy-savia-800)]",
+  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[color-mix(in_srgb,var(--rootsy-savia-400)_55%,transparent)]",
+  "disabled:pointer-events-none disabled:bg-[var(--rootsy-bruma-300)] disabled:text-[var(--rootsy-bruma-50)]",
+)

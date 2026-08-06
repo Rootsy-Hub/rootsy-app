@@ -1,7 +1,7 @@
 "use client"
 
 import type { PartialPaymentSelection, PartialPaymentUnit } from "@/lib/partialCheckoutSelection"
-import { CheckoutConfirmSummary } from "@/components/checkout/CheckoutConfirmSummary"
+import { SaleFinalizeSummary } from "@/components/checkout/SaleFinalizeSummary"
 import { CheckoutDialogFooter } from "@/components/checkout/CheckoutDialogFooter"
 import {
   CheckoutSectionLabel,
@@ -242,15 +242,6 @@ export function SaleOperationCheckoutConfirmDialog({
 
   const canConfirm = !partialPayment || selectedCount > 0
 
-  const totalHint =
-    partialPayment && (hayDescuento || descuentoMonto > 0)
-      ? `Subtotal ${saleOpFmt.format(subtotal)}${
-          descuentoMonto > 0
-            ? ` · Descuento general −${saleOpFmt.format(descuentoMonto)}`
-            : ""
-        }`
-      : null
-
   const setUnitQty = (unit: PartialPaymentUnit, nextQty: number) => {
     const clamped = unit.isAtomic
       ? nextQty >= 1
@@ -321,15 +312,15 @@ export function SaleOperationCheckoutConfirmDialog({
                 "md:w-1/2 md:max-w-[50%] md:shrink-0 md:px-6 md:py-4",
             )}
           >
-            <CheckoutSectionPanel>
-              <CheckoutConfirmSummary
-                total={total}
-                hint={totalHint}
-                partyValue={clientLabel}
-                comprobanteLabel={comprobanteLabel}
-                paymentLabel={paymentLabel}
-              />
-            </CheckoutSectionPanel>
+            <SaleFinalizeSummary
+              total={total}
+              subtotal={subtotal}
+              descuentoMonto={descuentoMonto}
+              hayDescuento={hayDescuento}
+              partyValue={clientLabel}
+              comprobanteLabel={comprobanteLabel}
+              paymentLabel={paymentLabel}
+            />
 
             <CheckoutSectionPanel className="space-y-2.5">
               <CheckoutSectionLabel>Opciones</CheckoutSectionLabel>

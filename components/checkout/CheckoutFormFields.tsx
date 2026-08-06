@@ -1,9 +1,7 @@
 "use client"
 
-import {
-  isValidMoneyInput,
-  MONEY_INPUT_MAX_LEN,
-} from "@/lib/moneyInput"
+import { MONEY_INPUT_DISPLAY_MAX_LEN } from "@/lib/moneyInput"
+import { useMoneyInputField } from "@/components/rootsy-form/useMoneyInputField"
 import {
   rootsFormFieldLabelClass,
   rootsFormSegmentGroupClass,
@@ -256,7 +254,7 @@ export function CheckoutMoneyValueField({
   id,
   value,
   onChange,
-  placeholder = "0",
+  placeholder = "0,00",
   disabled,
   ariaLabel,
   autoFocus,
@@ -275,26 +273,73 @@ export function CheckoutMoneyValueField({
   hideIcon?: boolean
   className?: string
 }) {
+  const isCompact = size === "compact"
+  const {
+    inputRef,
+    inputValue,
+    handleMouseDown,
+    handleFocus,
+    handleChange,
+    handleKeyDown,
+    handlePaste,
+    handleBlur,
+  } = useMoneyInputField({ value, onChange })
+
   return (
-    <CheckoutNumericValueField
-      id={id}
-      icon={Banknote}
-      value={value}
-      onChange={(raw) => {
-        if (!isValidMoneyInput(raw)) return
-        onChange(raw)
-      }}
-      placeholder={placeholder}
-      suffix="$"
-      inputMode="decimal"
-      maxLength={MONEY_INPUT_MAX_LEN}
-      ariaLabel={ariaLabel}
-      autoFocus={autoFocus}
-      size={size}
-      hideIcon={hideIcon}
-      disabled={disabled}
-      className={className}
-    />
+    <div
+      className={cn(
+        "rounded-xl border border-[var(--rootsy-bruma-200)] bg-white transition-all duration-150",
+        "focus-within:border-[var(--rootsy-savia-400)] focus-within:shadow-[0_0_0_2px_color-mix(in_srgb,var(--rootsy-savia-400)_20%,transparent)]",
+        disabled && "opacity-50",
+        className,
+      )}
+    >
+      <label htmlFor={id} className="sr-only">
+        {ariaLabel}
+      </label>
+      <div
+        className={cn(
+          "flex items-center gap-3",
+          isCompact ? "px-2.5 py-2" : "px-3.5 py-3",
+        )}
+      >
+        {!hideIcon ? (
+          <span
+            className={cn(
+              "flex shrink-0 items-center justify-center rounded-lg bg-[var(--rootsy-bruma-50)] font-semibold tabular-nums text-[var(--rootsy-bruma-500)]",
+              isCompact ? "size-8 text-base" : "size-10 text-lg",
+            )}
+            aria-hidden
+          >
+            $
+          </span>
+        ) : null}
+        <input
+          ref={inputRef}
+          id={id}
+          type="text"
+          inputMode="decimal"
+          autoComplete="off"
+          autoFocus={autoFocus}
+          disabled={disabled}
+          value={inputValue}
+          maxLength={MONEY_INPUT_DISPLAY_MAX_LEN}
+          onMouseDown={handleMouseDown}
+          onFocus={handleFocus}
+          onChange={handleChange}
+          onKeyDown={handleKeyDown}
+          onPaste={handlePaste}
+          onBlur={handleBlur}
+          placeholder={placeholder}
+          aria-label={ariaLabel}
+          className={cn(
+            "min-w-0 flex-1 bg-transparent font-semibold leading-none tabular-nums tracking-tight text-[var(--rootsy-bruma-900)] outline-none",
+            isCompact ? "text-lg" : "text-2xl",
+            "placeholder:text-[var(--rootsy-bruma-400)]",
+          )}
+        />
+      </div>
+    </div>
   )
 }
 
