@@ -31,8 +31,11 @@ export const saleFinalizeDialogTotalsZoneClass = cn(
 export const saleFinalizeDialogTotalsGlowClass =
   "pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_120%_80%_at_50%_-15%,color-mix(in_srgb,var(--rootsy-savia-400)_34%,transparent),transparent_58%)]"
 
+export const saleFinalizeDialogHeaderRowClass =
+  "mb-[var(--rootsy-space-200)] flex min-h-8 items-center justify-between gap-3"
+
 export const saleFinalizeDialogTitleClass = cn(
-  "font-canopy text-[length:var(--rootsy-text-heading-small-size)] leading-[var(--rootsy-text-heading-small-lh)]",
+  "min-w-0 flex-1 font-canopy text-[length:var(--rootsy-text-heading-small-size)] leading-[var(--rootsy-text-heading-small-lh)]",
   "font-bold tracking-[-0.01em] text-[var(--rootsy-savia-50)]",
 )
 

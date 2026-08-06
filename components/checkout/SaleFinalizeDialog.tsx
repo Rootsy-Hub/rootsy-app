@@ -11,6 +11,7 @@ import {
   saleFinalizeDialogConfirmActionClass,
   saleFinalizeDialogErrorClass,
   saleFinalizeDialogOverlayClass,
+  saleFinalizeDialogHeaderRowClass,
   saleFinalizeDialogShellClass,
   saleFinalizeDialogTitleClass,
   saleFinalizeDialogTotalsGlowClass,
@@ -81,7 +82,7 @@ export function SaleFinalizeDialog({
           <div className={saleFinalizeDialogTotalsGlowClass} aria-hidden />
 
           <div className="relative z-10">
-            <div className="mb-[var(--rootsy-space-200)] flex items-start justify-between gap-3">
+            <div className={saleFinalizeDialogHeaderRowClass}>
               <DialogTitle className={saleFinalizeDialogTitleClass}>
                 {title}
               </DialogTitle>
