@@ -5,6 +5,7 @@ import type { MenuCatalogCategorySection } from "@/app/[siteId]/[popId]/menu-cat
 import type { SaleCatalogProduct } from "@/components/sale-operation/saleCatalogProduct"
 import type { MenuCartItemKind } from "@/lib/menuCart"
 import type { MenuCatalogProduct } from "@/lib/menuCatalogProduct"
+import { SaleCatalogEmptyMascot } from "@/components/sale-operation/SaleCatalogEmptyMascot"
 import { SaleCatalogBrowserSkeleton } from "@/components/sale-operation/SaleCatalogBrowserSkeleton"
 import { SaleCatalogProductCard } from "@/components/sale-operation/SaleCatalogProductCard"
 import { SaleCatalogSidebarNav } from "@/components/sale-operation/SaleCatalogSidebarNav"
@@ -29,7 +30,6 @@ import {
   layoutsOperarCatalogSidebarOpenClass,
 } from "@/app/[siteId]/[popId]/library/layouts/layoutsOperarStyles"
 import { cn } from "@/lib/utils"
-import Image from "next/image"
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 
 const CATEGORIA_TODOS = "Todos"
@@ -312,18 +312,7 @@ export function SaleCatalogBrowser({
               <p className="max-w-md text-sm text-rose-300">{error}</p>
             </div>
           ) : productosFiltrados.length === 0 ? (
-            <div
-              aria-live="polite"
-              className="rootsy-hero-slide-in-right pointer-events-none absolute right-[-50px] bottom-[-25px] z-10"
-            >
-              <Image
-                src="/empty-products-mascot.png"
-                alt=""
-                width={260}
-                height={260}
-                className="h-auto w-full max-w-[260px] object-contain opacity-95"
-              />
-            </div>
+            <SaleCatalogEmptyMascot hasSearch={busqueda.trim().length > 0} />
           ) : (
             <div
               className={

@@ -192,6 +192,26 @@ export const layoutsOperarCatalogCanvasScrollClass = cn(
 /** Grilla demo — sale usa grid-cols-3 en desktop. */
 export const layoutsOperarCatalogGridClass = "grid grid-cols-2 gap-3 xl:grid-cols-3"
 
+/** Empty catálogo — mascota + burbuja de diálogo (bruma sobre dosel). */
+export const layoutsOperarCatalogEmptyMascotShellClass =
+  "rootsy-hero-slide-in-right pointer-events-none absolute right-[-50px] bottom-[-25px] z-10"
+
+export const layoutsOperarCatalogEmptySpeechBubbleClass = cn(
+  "relative w-max max-w-[11.75rem] rounded-2xl border border-[var(--rootsy-bruma-200)] bg-white",
+  "px-3.5 py-2.5 shadow-[0_10px_28px_-12px_color-mix(in_srgb,var(--rootsy-sombra-950)_42%,transparent)]",
+  "after:pointer-events-none after:absolute after:-bottom-1.5 after:right-5 after:size-2.5 after:rotate-45",
+  "after:border-r after:border-b after:border-[var(--rootsy-bruma-200)] after:bg-white",
+)
+
+export const layoutsOperarCatalogEmptySpeechTitleClass =
+  "font-canopy text-sm font-semibold leading-snug text-[var(--rootsy-bruma-900)]"
+
+export const layoutsOperarCatalogEmptySpeechHintClass =
+  "mt-0.5 font-canopy text-xs leading-snug text-[var(--rootsy-bruma-600)]"
+
+export const layoutsOperarCatalogEmptyMascotImageClass =
+  "h-auto w-full max-w-[260px] shrink-0 object-contain opacity-95"
+
 /** Skeleton catálogo — 2 tonos sombra muy cercanos (700 base · bloque apenas más oscuro). */
 export const layoutsOperarCatalogSkeletonSurfaceClass = "bg-[var(--rootsy-sombra-700)]"
 
