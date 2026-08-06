@@ -64,6 +64,13 @@ import {
   operationsTableHeaderClass,
   operationsTableMoneyColumnClass,
 } from "@/app/[siteId]/[popId]/operations/operationsTableLayout"
+import {
+  OperationTableActionsCell,
+  OperationTableActionsHead,
+  OperationTableRowOptionsMenu,
+  type OperationTableRowOptionItem,
+} from "@/app/[siteId]/[popId]/operations/operationsTableRowOptions"
+import { PanelRightOpen, Receipt } from "lucide-react"
 
 export function formatOperationShortId(id: string | null | undefined) {
   if (!id) return "—"
@@ -381,6 +388,32 @@ function ChannelSalesTableRow({
   )
 }
 
+function buildSaleRowOptions(
+  sale: OperationSaleRow,
+  onOpenDetail: (sale: OperationSaleRow) => void,
+  onOpenComprobante: (sale: OperationSaleRow) => void,
+): OperationTableRowOptionItem[] {
+  const items: OperationTableRowOptionItem[] = [
+    {
+      id: "detail",
+      label: "Ver detalle",
+      icon: PanelRightOpen,
+      onSelect: () => onOpenDetail(sale),
+    },
+  ]
+
+  if (saleHasComprobante(sale)) {
+    items.push({
+      id: "comprobante",
+      label: "Ver comprobante",
+      icon: Receipt,
+      onSelect: () => onOpenComprobante(sale),
+    })
+  }
+
+  return items
+}
+
 export function OperationsSalesTable({
   siteId,
   popId,
@@ -511,6 +544,7 @@ export function OperationsSalesTable({
                   </WorkspaceTableHead>
                 </>
               ) : null}
+              <OperationTableActionsHead />
             </WorkspaceTableHeaderRow>
           </WorkspaceTableHeader>
           <TableBody>
@@ -554,6 +588,16 @@ export function OperationsSalesTable({
                       showTableColumn={showTableColumn}
                     />
                   )}
+                  <OperationTableActionsCell>
+                    <OperationTableRowOptionsMenu
+                      rowLabel={`venta ${sale.id}`}
+                      items={buildSaleRowOptions(
+                        sale,
+                        setDetailSale,
+                        setInvoiceSale,
+                      )}
+                    />
+                  </OperationTableActionsCell>
                 </WorkspaceTableBodyRow>
               ))
             )}

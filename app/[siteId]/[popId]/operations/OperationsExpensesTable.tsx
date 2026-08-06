@@ -17,6 +17,11 @@ import {
   operationsTableHeaderClass,
   operationsTableMoneyColumnClass,
 } from "@/app/[siteId]/[popId]/operations/operationsTableLayout"
+import {
+  OperationTableActionsCell,
+  OperationTableActionsHead,
+  OperationTableRowOptionsMenu,
+} from "@/app/[siteId]/[popId]/operations/operationsTableRowOptions"
 import { formatOperationSaleDateInline } from "@/app/[siteId]/[popId]/operations/OperationsSalesTable"
 import { OperationsExpensesSkeletonRows } from "@/app/[siteId]/[popId]/operations/OperationsTableSkeleton"
 import { usePopTimeZone } from "@/hooks/usePopTimeZone"
@@ -38,6 +43,7 @@ import {
   WorkspaceTableSelectHead,
 } from "@/components/data-workspace/WorkspaceTableHeader"
 import { cn } from "@/lib/utils"
+import { PanelRightOpen } from "lucide-react"
 import { useMemo, useState, type Dispatch, type SetStateAction } from "react"
 import { Checkbox } from "@/components/ui/checkbox"
 import { TableBody, TableCell, TableRow } from "@/components/ui/table"
@@ -125,6 +131,19 @@ function ExpensesTableRow({
         amount={expense.amount}
         showDashWhenZero={false}
       />
+      <OperationTableActionsCell>
+        <OperationTableRowOptionsMenu
+          rowLabel={`gasto ${expense.entryId}`}
+          items={[
+            {
+              id: "detail",
+              label: "Ver detalle",
+              icon: PanelRightOpen,
+              onSelect: () => onOpenDetail(expense),
+            },
+          ]}
+        />
+      </OperationTableActionsCell>
     </>
   )
 }
@@ -227,6 +246,7 @@ export function OperationsExpensesTable({
               >
                 Total
               </WorkspaceTableHead>
+              <OperationTableActionsHead />
             </WorkspaceTableHeaderRow>
           </WorkspaceTableHeader>
           <TableBody>

@@ -1,6 +1,6 @@
 "use client"
 
-import { TreasuryAccountDetailContentSkeleton, TreasuryAccountDetailSkeleton } from "@/app/[siteId]/[popId]/accounts/TreasuryAccountDetailSkeleton"
+import { TreasuryAccountDetailContentSkeleton, TreasuryAccountDetailSkeleton, resolveTreasuryDetailSkeletonProfile } from "@/app/[siteId]/[popId]/accounts/TreasuryAccountDetailSkeleton"
 import {
   getTreasuryAccountPageData,
   type TreasuryAccountTableRow,
@@ -98,10 +98,26 @@ import {
 } from "react"
 import type { DateRange } from "react-day-picker"
 import Link from "next/link"
+import { useSearchParams } from "next/navigation"
 
 const shellCard = dataWorkspaceDetailPanelClass
 
 type DetailSection = "resumen" | "movimientos" | "conciliacion"
+
+function parseAccountKindHint(
+  value: string | null | undefined,
+): TreasuryAccountKind | undefined {
+  if (
+    value === "cash" ||
+    value === "bank" ||
+    value === "wallet" ||
+    value === "other" ||
+    value === "card_payable"
+  ) {
+    return value
+  }
+  return undefined
+}
 
 function moneyOrDash(amount: number | null | undefined): string {
   if (amount == null) return "—"
@@ -225,6 +241,9 @@ export function TreasuryAccountDetailView({
   accountId: string
   accountKindHint?: TreasuryAccountKind
 }) {
+  const searchParams = useSearchParams()
+  const kindFromQuery = parseAccountKindHint(searchParams.get("kind"))
+  const resolvedKindHint = accountKindHint ?? kindFromQuery
   const accountsBasePath = `/${siteId}/${popId}/accounts`
   const [account, setAccount] = useState<TreasuryAccountTableRow | null>(null)
   const [children, setChildren] = useState<TreasuryChildAccountRow[]>([])
@@ -579,13 +598,12 @@ export function TreasuryAccountDetailView({
   const isMotherBankWallet =
     isMother &&
     (account?.kind === "bank" || account?.kind === "wallet")
-  const skeletonVariant =
-    isMovementsOnlyView ||
-    accountKindHint === "cash" ||
-    accountKindHint === "bank" ||
-    accountKindHint === "wallet"
-      ? "cash"
-      : "default"
+  const skeletonProfile = resolveTreasuryDetailSkeletonProfile(
+    account?.kind ?? resolvedKindHint,
+  )
+  const periodContentSkeleton = (
+    <TreasuryAccountDetailContentSkeleton bodyOnly />
+  )
 
   const integrationChildren = [...posChildren, ...cardChildren]
   const tabItems: { id: DetailSection; label: string }[] = [
@@ -672,7 +690,7 @@ export function TreasuryAccountDetailView({
   ) : null
 
   const periodMovementsBody = detailLoading ? (
-    <TreasuryAccountDetailContentSkeleton variant={skeletonVariant} bodyOnly />
+    <TreasuryAccountDetailContentSkeleton bodyOnly />
   ) : detailData ? (
     isMovementsOnlyView ? (
       <TreasuryCashMovementsTable
@@ -695,7 +713,7 @@ export function TreasuryAccountDetailView({
   ) : null
 
   const resumenContent = detailLoading ? (
-    <TreasuryAccountDetailContentSkeleton variant={skeletonVariant} />
+    <TreasuryAccountDetailContentSkeleton />
   ) : detailData ? (
     isMovementsOnlyView ? (
       <>
@@ -748,10 +766,7 @@ export function TreasuryAccountDetailView({
             </div>
           ) : null}
           {detailLoading ? (
-            <TreasuryAccountDetailContentSkeleton
-              variant={skeletonVariant}
-              chromeOnly
-            />
+            <TreasuryAccountDetailContentSkeleton chromeOnly />
           ) : (
             periodBalanceStrip
           )}
@@ -778,7 +793,7 @@ export function TreasuryAccountDetailView({
     )
 
   const useFlushMovementsLayout =
-    skeletonVariant === "cash" ||
+    skeletonProfile.layout === "movements" ||
     (!loading && account != null && isMovementsOnlyView)
 
   return (
@@ -793,7 +808,7 @@ export function TreasuryAccountDetailView({
           )}
         >
           {loading ? (
-            <TreasuryAccountDetailSkeleton variant={skeletonVariant} />
+            <TreasuryAccountDetailSkeleton profile={skeletonProfile} />
           ) : error ? (
             <div className="rounded-2xl border border-destructive/25 bg-destructive/5 px-4 py-3 text-sm text-destructive">
               {error}

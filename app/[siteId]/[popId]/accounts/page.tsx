@@ -318,7 +318,7 @@ function AccountsPage() {
                   canCreate={canCreate}
                   canUpdate={canUpdate}
                   canDelete={canDelete}
-                  detailHref={`${accountsBasePath}/${r.id}`}
+                  detailHref={`${accountsBasePath}/${r.id}?kind=${r.kind}`}
                   onMenuAction={(actionId) => handleAccountMenuAction(r, actionId)}
                 />
               ))}

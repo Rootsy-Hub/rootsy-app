@@ -23,6 +23,11 @@ import {
   operationsTableHeaderClass,
   operationsTableMoneyColumnClass,
 } from "@/app/[siteId]/[popId]/operations/operationsTableLayout"
+import {
+  OperationTableActionsCell,
+  OperationTableActionsHead,
+  OperationTableRowOptionsMenu,
+} from "@/app/[siteId]/[popId]/operations/operationsTableRowOptions"
 import { formatOperationSaleDateInline } from "@/app/[siteId]/[popId]/operations/OperationsSalesTable"
 import { OperationsPurchasesSkeletonRows } from "@/app/[siteId]/[popId]/operations/OperationsTableSkeleton"
 import { usePopTimeZone } from "@/hooks/usePopTimeZone"
@@ -45,6 +50,7 @@ import {
 } from "@/components/data-workspace/WorkspaceTableHeader"
 import { popScopedHref } from "@/lib/popRoutes"
 import { cn } from "@/lib/utils"
+import { PanelRightOpen } from "lucide-react"
 import { useMemo, useState, type Dispatch, type SetStateAction } from "react"
 import { Checkbox } from "@/components/ui/checkbox"
 import { TableBody, TableCell, TableRow } from "@/components/ui/table"
@@ -168,6 +174,19 @@ function PurchasesTableRow({
       <OperationTableMoneyCell amount={purchase.discountTotal} />
       <OperationTableMoneyCell amount={ivaAmount ?? 0} />
       <OperationTableMoneyCell amount={purchase.total} showDashWhenZero={false} />
+      <OperationTableActionsCell>
+        <OperationTableRowOptionsMenu
+          rowLabel={`compra ${purchase.id}`}
+          items={[
+            {
+              id: "detail",
+              label: "Ver detalle",
+              icon: PanelRightOpen,
+              onSelect: () => onOpenDetail(purchase),
+            },
+          ]}
+        />
+      </OperationTableActionsCell>
     </>
   )
 }
@@ -274,6 +293,7 @@ export function OperationsPurchasesTable({
               >
                 Total
               </WorkspaceTableHead>
+              <OperationTableActionsHead />
             </WorkspaceTableHeaderRow>
           </WorkspaceTableHeader>
           <TableBody>

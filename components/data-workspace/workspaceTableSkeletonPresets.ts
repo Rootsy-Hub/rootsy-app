@@ -1,5 +1,11 @@
 import type { WorkspaceTableSkeletonColumn } from "@/components/data-workspace/WorkspaceTableSkeleton"
 
+function withOperationsActionsColumn(
+  columns: WorkspaceTableSkeletonColumn[],
+): WorkspaceTableSkeletonColumn[] {
+  return [...columns, { kind: "actions", className: "w-10", actionCount: 1 }]
+}
+
 export function operationsSalesSkeletonColumns(options?: {
   showTableColumn?: boolean
   showOrderColumn?: boolean
@@ -25,7 +31,7 @@ export function operationsSalesSkeletonColumns(options?: {
       { kind: "money" },
       { kind: "money" },
     )
-    return columns
+    return withOperationsActionsColumn(columns)
   }
 
   const columns: WorkspaceTableSkeletonColumn[] = [
@@ -44,11 +50,11 @@ export function operationsSalesSkeletonColumns(options?: {
     { kind: "money" },
     { kind: "money" },
   )
-  return columns
+  return withOperationsActionsColumn(columns)
 }
 
 export function operationsPurchasesSkeletonColumns(): WorkspaceTableSkeletonColumn[] {
-  return [
+  return withOperationsActionsColumn([
     { kind: "select" },
     { kind: "text", className: "min-w-[10rem]", lines: 2 },
     { kind: "text", className: "min-w-[14rem]", lines: 3 },
@@ -56,11 +62,11 @@ export function operationsPurchasesSkeletonColumns(): WorkspaceTableSkeletonColu
     { kind: "money" },
     { kind: "money" },
     { kind: "money" },
-  ]
+  ])
 }
 
 export function operationsExpensesSkeletonColumns(): WorkspaceTableSkeletonColumn[] {
-  return [
+  return withOperationsActionsColumn([
     { kind: "select" },
     { kind: "text", className: "min-w-[10rem]", lines: 2 },
     { kind: "text", className: "min-w-[14rem]", lines: 3 },
@@ -68,7 +74,7 @@ export function operationsExpensesSkeletonColumns(): WorkspaceTableSkeletonColum
     { kind: "money" },
     { kind: "money" },
     { kind: "money" },
-  ]
+  ])
 }
 
 export function clientsSkeletonColumns(options?: {

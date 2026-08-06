@@ -42,12 +42,14 @@ export function DataWorkspaceViewFilter({
       value={activeId}
       onValueChange={onSelect}
       prefix={<LayoutGrid className="size-4" aria-hidden />}
+      prefixVariant="inline"
       className={cn(
         variant === "layout"
           ? dataWorkspaceListFiltersFieldClass()
           : lightToolbarPanelClass,
         className,
       )}
+      triggerClassName="w-full max-w-full [&_[data-slot=select-value]]:truncate"
     >
       {viewItems.map((item) => (
         <RootsFormSelectItem key={item.id} value={item.id}>
