@@ -1,7 +1,7 @@
 import { getLayoutsOperarPosTotalsGradient } from "@/app/[siteId]/[popId]/library/layouts/rootsyLayoutsOperarSystem"
 import {
   rootsDialogContentZClass,
-  rootsDialogOverlayClass,
+  rootsDialogOverlayZClass,
   rootsDialogPanelShellClass,
   rootsDialogPrimitiveResetClass,
 } from "@/components/rootsy-dialog/rootsDialogProductStyles"
@@ -13,13 +13,22 @@ export const saleFinalizeDialogShellClass = cn(
   rootsDialogPanelShellClass,
   rootsDialogContentZClass,
   "border-0",
+  "[--elevation-shadow-overlay:0_28px_84px_-14px_rgb(5_8_7/0.38)]",
   "fixed top-1/2 left-1/2 w-full max-w-[calc(100%-2rem)] -translate-x-1/2 -translate-y-1/2 sm:max-w-[22.5rem]",
   "data-[state=open]:animate-in data-[state=closed]:animate-out",
   "data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0",
   "data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 duration-200",
 )
 
-export const saleFinalizeDialogOverlayClass = rootsDialogOverlayClass
+/**
+ * Scrim POS — sombra-950 sin backdrop-blur (modalsUiOverlaySpec).
+ * Más denso que el 40% workspace: catálogo operar tiene alto contraste.
+ * Viñeta radial concentra foco en el terminal de cobro.
+ */
+export const saleFinalizeDialogOverlayClass = cn(
+  rootsDialogOverlayZClass,
+  "bg-[radial-gradient(ellipse_92%_88%_at_50%_44%,color-mix(in_srgb,var(--rootsy-sombra-950)_46%,transparent),color-mix(in_srgb,var(--rootsy-sombra-950)_74%,transparent))]",
+)
 
 export const saleFinalizeDialogTotalsGradientStyle = {
   background: getLayoutsOperarPosTotalsGradient(),
