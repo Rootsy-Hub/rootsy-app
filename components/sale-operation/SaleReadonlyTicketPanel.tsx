@@ -12,11 +12,12 @@ import {
   saleOpCartListSurfaceClass,
 } from "@/components/sale-operation/saleOperationStyles"
 import type { MostradorCartDisplayGroup } from "@/lib/mostradorCartDisplay"
+import { layoutsOperarSummaryPanelMaxWidthClass } from "@/app/[siteId]/[popId]/library/layouts/layoutsOperarStyles"
 import { cn } from "@/lib/utils"
 import type { ReactNode } from "react"
 
 /** Ancho del panel de pedido en ventas / mesas / mostrador */
-export const SALE_TICKET_PANEL_WIDTH_CLASS = "w-full max-w-[380px]"
+export const SALE_TICKET_PANEL_WIDTH_CLASS = cn("w-full", layoutsOperarSummaryPanelMaxWidthClass)
 
 type Props = {
   groups: MostradorCartDisplayGroup[]

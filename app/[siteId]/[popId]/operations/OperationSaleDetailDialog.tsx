@@ -30,6 +30,10 @@ import {
   opsDialogSectionTitle,
   opsDialogSurfaceMd,
 } from "@/app/[siteId]/[popId]/operations/operationDialogStyles"
+import {
+  LAYOUTS_OPERAR_SUMMARY_PANEL_WIDTH_PX,
+  layoutsOperarSummaryPanelMaxWidthClass,
+} from "@/app/[siteId]/[popId]/library/layouts/layoutsOperarStyles"
 import { useEffect, useState } from "react"
 
 type Props = {
@@ -173,7 +177,7 @@ export function OperationSaleDetailDialog({
               </p>
             </div>
           ) : sale ? (
-            <div className="grid min-h-0 flex-1 items-start lg:grid-cols-[minmax(17rem,21rem)_minmax(380px,1fr)]">
+            <div className={`grid min-h-0 flex-1 items-start lg:grid-cols-[minmax(17rem,21rem)_minmax(${LAYOUTS_OPERAR_SUMMARY_PANEL_WIDTH_PX}px,1fr)]`}>
               <div className="min-h-0 overflow-y-auto overscroll-contain border-b border-border/50 bg-muted/20 px-5 py-4 lg:border-b-0 lg:border-r">
                 <section>
                   <h3 className={opsDialogSectionTitle}>Detalles</h3>
@@ -216,7 +220,7 @@ export function OperationSaleDetailDialog({
               </div>
 
               <div className="px-5 py-4 lg:pl-4">
-                <div className="mx-auto w-full max-w-[380px]">
+                <div className={`mx-auto w-full ${layoutsOperarSummaryPanelMaxWidthClass}`}>
                   {isChannelOperation ? (
                     <ChannelOperationCheckoutTicket
                       popId={popId}

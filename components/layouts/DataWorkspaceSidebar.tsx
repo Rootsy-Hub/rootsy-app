@@ -1,5 +1,6 @@
 "use client"
 
+import { layoutsOperarCatalogSidebarOpenWidthClass } from "@/app/[siteId]/[popId]/library/layouts/layoutsOperarStyles"
 import { cn } from "@/lib/utils"
 import type { LucideIcon } from "lucide-react"
 import { Sparkles } from "lucide-react"
@@ -133,7 +134,10 @@ export function DataWorkspaceSidebar({
     <nav
       className={cn(
         isDark
-          ? "game-scroll flex h-full min-h-0 w-[280px] shrink-0 flex-col self-stretch gap-6 overflow-y-auto border-r border-white/10 bg-[#1a2027] px-3 py-4"
+          ? cn(
+              "game-scroll flex h-full min-h-0 shrink-0 flex-col self-stretch gap-6 overflow-y-auto border-r border-white/10 bg-[#1a2027] px-3 py-4",
+              layoutsOperarCatalogSidebarOpenWidthClass,
+            )
           : "flex h-full min-h-0 w-[min(100%,15.5rem)] shrink-0 flex-col self-stretch overflow-y-auto border-r border-border/80 bg-linear-to-b from-card/90 via-card/70 to-muted/30 py-5 pl-4 pr-3 backdrop-blur-sm",
         className,
       )}

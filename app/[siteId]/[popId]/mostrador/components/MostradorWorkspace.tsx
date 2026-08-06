@@ -11,8 +11,10 @@ import type { MostradorRightPanelView } from "@/app/[siteId]/[popId]/mostrador/m
 import { useMostradorSaleCheckout } from "@/app/[siteId]/[popId]/mostrador/useMostradorSaleCheckout"
 import { useMostradorState } from "@/app/[siteId]/[popId]/mostrador/useMostradorState"
 import { OperationsModuleBackdrop } from "@/components/layouts-module/DataWorkspaceOperationsLayout"
+import { getLayoutsOperarMainGridClass } from "@/app/[siteId]/[popId]/library/layouts/layoutsOperarHardcodedSpec"
 import { SaleOperationToolbox } from "@/components/sale-operation/SaleOperationToolbox"
 import { useCartListScrollHighlight } from "@/hooks/useCartListScrollHighlight"
+import { cn } from "@/lib/utils"
 import { useEffect, useState, useCallback } from "react"
 
 type Props = {
@@ -114,7 +116,7 @@ export function MostradorWorkspace({
         </div>
       ) : null}
 
-      <main className="relative z-10 grid min-h-0 flex-1 grid-cols-[minmax(0,1fr)_380px] grid-rows-[minmax(0,1fr)_calc(4.5rem+1rem)] sm:grid-rows-[minmax(0,1fr)_calc(4.75rem+1.25rem)]">
+      <main className={cn("relative z-10 grid min-h-0 flex-1", getLayoutsOperarMainGridClass())}>
         <section className="col-start-1 row-start-1 flex min-h-0 min-w-0 flex-col overflow-hidden bg-[#20262e]">
           {!showCatalog ? (
             <MostradorBoard

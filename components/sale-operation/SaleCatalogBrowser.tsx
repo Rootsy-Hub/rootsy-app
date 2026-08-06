@@ -16,6 +16,11 @@ import {
   writeSavedSaleCatalogView,
   type SaleCatalogViewPersisted,
 } from "@/lib/saleCatalogPreference"
+import {
+  LAYOUTS_OPERAR_CATALOG_SIDEBAR_WIDTH_PX,
+  layoutsOperarCatalogSidebarAsideWidthClass,
+  layoutsOperarCatalogSidebarInnerClass,
+} from "@/app/[siteId]/[popId]/library/layouts/layoutsOperarStyles"
 import { cn } from "@/lib/utils"
 import {
   LayoutGrid,
@@ -312,13 +317,13 @@ export function SaleCatalogBrowser({
         id="data-workspace-sidebar"
         className={cn(
           "relative shrink-0 overflow-hidden border-r border-white/10 bg-[#1a2027] transition-[width,border-color] duration-300 ease-in-out motion-reduce:transition-none",
-          sidebarOpen ? "w-[280px]" : "w-0 border-r-0",
+          layoutsOperarCatalogSidebarAsideWidthClass(sidebarOpen),
         )}
         aria-hidden={!sidebarOpen}
         {...(!sidebarOpen ? { inert: true } : {})}
         aria-label="Filtros del catálogo"
       >
-        <div className="flex h-full w-[280px] min-w-[280px] flex-col">
+        <div className={layoutsOperarCatalogSidebarInnerClass}>
           {sidebarNav}
         </div>
       </aside>
@@ -478,7 +483,7 @@ export function SaleCatalogBrowser({
                         fill
                         className="h-full w-full transition-transform duration-300 ease-out group-hover:scale-[1.03]"
                         unoptimized
-                        sizes={modoVista === "grid" ? "33vw" : "280px"}
+                        sizes={modoVista === "grid" ? "33vw" : `${LAYOUTS_OPERAR_CATALOG_SIDEBAR_WIDTH_PX}px`}
                         style={{
                           objectFit: "cover",
                           objectPosition: "center",

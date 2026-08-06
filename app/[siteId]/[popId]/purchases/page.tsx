@@ -64,6 +64,12 @@ import {
 import { usePadronAutofillRazonSocial } from "@/hooks/usePadronAutofillRazonSocial"
 import { useCartListScrollHighlight } from "@/hooks/useCartListScrollHighlight"
 import { cn } from "@/lib/utils"
+import { getLayoutsOperarMainGridClass } from "@/app/[siteId]/[popId]/library/layouts/layoutsOperarHardcodedSpec"
+import {
+  LAYOUTS_OPERAR_CATALOG_SIDEBAR_WIDTH_PX,
+  layoutsOperarCatalogSidebarAsideWidthClass,
+  layoutsOperarCatalogSidebarInnerClass,
+} from "@/app/[siteId]/[popId]/library/layouts/layoutsOperarStyles"
 import {
   AlertDialog,
   AlertDialogAction,
@@ -1015,19 +1021,19 @@ function PurchasesPage() {
         <div className="relative flex h-full min-h-0 w-full flex-col overflow-hidden">
           <OperationsModuleBackdrop />
 
-          <main className="relative z-10 grid min-h-0 flex-1 grid-cols-[minmax(0,1fr)_380px] grid-rows-[minmax(0,1fr)_calc(4.5rem+1rem)] sm:grid-rows-[minmax(0,1fr)_calc(4.75rem+1.25rem)]">
+          <main className={cn("relative z-10 grid min-h-0 flex-1", getLayoutsOperarMainGridClass())}>
             <div className="col-start-1 row-start-1 flex min-h-0 min-w-0 overflow-hidden">
               <aside
                 id="data-workspace-sidebar"
                 className={cn(
                   "relative shrink-0 overflow-hidden border-r border-white/10 bg-[#1a2027] transition-[width,border-color] duration-300 ease-in-out motion-reduce:transition-none",
-                  catalogSidebarOpen ? "w-[280px]" : "w-0 border-r-0",
+                  layoutsOperarCatalogSidebarAsideWidthClass(catalogSidebarOpen),
                 )}
                 aria-hidden={!catalogSidebarOpen}
                 {...(!catalogSidebarOpen ? { inert: true } : {})}
                 aria-label="Filtros del catálogo"
               >
-                <div className="flex h-full w-[280px] min-w-[280px] flex-col">
+                <div className={layoutsOperarCatalogSidebarInnerClass}>
                   {catalogSidebar}
                 </div>
               </aside>
@@ -1174,7 +1180,7 @@ function PurchasesPage() {
                               fill
                               className="h-full w-full transition-transform duration-300 ease-out group-hover:scale-[1.03]"
                               unoptimized
-                              sizes={modoVista === "grid" ? "33vw" : "280px"}
+                              sizes={modoVista === "grid" ? "33vw" : `${LAYOUTS_OPERAR_CATALOG_SIDEBAR_WIDTH_PX}px`}
                               style={{ objectFit: "cover", objectPosition: "center" }}
                             />
                             <span

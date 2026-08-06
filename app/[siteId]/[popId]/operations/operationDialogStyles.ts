@@ -1,11 +1,12 @@
 import { tdMoneyClass } from "@/components/data-workspace/dataWorkspaceListStyles"
+import { LAYOUTS_OPERAR_SUMMARY_PANEL_WIDTH_PX } from "@/app/[siteId]/[popId]/library/layouts/layoutsOperarStyles"
 import { cn } from "@/lib/utils"
 
 export const opsDialogLight = "rootsy-app-light text-foreground"
 
 export const opsDialogSurfaceMd = cn(
   opsDialogLight,
-  "gap-0 overflow-hidden rounded-2xl border border-border/60 bg-card p-0 shadow-2xl ring-1 ring-black/[0.04] sm:max-w-[calc(21rem+380px+3rem)]",
+  `gap-0 overflow-hidden rounded-2xl border border-border/60 bg-card p-0 shadow-2xl ring-1 ring-black/[0.04] sm:max-w-[calc(21rem+${LAYOUTS_OPERAR_SUMMARY_PANEL_WIDTH_PX}px+3rem)]`,
   "max-h-[min(90vh,820px)] flex flex-col overflow-hidden",
 )
 

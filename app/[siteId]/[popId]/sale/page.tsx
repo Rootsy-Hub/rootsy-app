@@ -116,7 +116,13 @@ import {
   SaleCatalogProductOfferOverlay,
   saleCatalogDiscountPercent,
 } from "@/components/sale-operation/SaleCatalogProductOfferOverlay"
-import { saleOpImporteBaseClass } from "@/components/sale-operation/saleOperationStyles"
+import { saleOpImporteBaseClass, saleOpFooterBandHeightClass, saleOpFooterBarPaddingClass, saleOpToolboxIconWrap, saleOpToolboxSlotClass } from "@/components/sale-operation/saleOperationStyles"
+import { getLayoutsOperarMainGridClass } from "@/app/[siteId]/[popId]/library/layouts/layoutsOperarHardcodedSpec"
+import {
+  LAYOUTS_OPERAR_CATALOG_SIDEBAR_WIDTH_PX,
+  layoutsOperarCatalogSidebarAsideWidthClass,
+  layoutsOperarCatalogSidebarInnerClass,
+} from "@/app/[siteId]/[popId]/library/layouts/layoutsOperarStyles"
 
 type Producto = MenuCatalogProduct
 
@@ -946,25 +952,6 @@ function SalePage() {
 
   const toolboxBarClass =
     "box-border border-t border-white/10 bg-[#0b100e]/92 backdrop-blur-xl"
-  /** Altura mínima compartida en toolbox (izq.) y total (der.); el total crece si hay más líneas. */
-  const ventaFooterBandHeightClass =
-    "min-h-[calc(4.5rem+1rem)] sm:min-h-[calc(4.75rem+1.25rem)]"
-  const ventaFooterBarPaddingClass = "p-2 sm:p-2.5"
-  const toolboxSlotClass = (configurado: boolean) =>
-    cn(
-      "group flex h-full min-h-[4.5rem] w-full items-center gap-2.5 rounded-xl border-0 px-2.5 py-2 text-left transition-[background-color,box-shadow] duration-150 sm:min-h-[4.75rem] sm:gap-3 sm:px-3",
-      "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/45 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0b100e]",
-      configurado
-        ? "bg-emerald-500/[0.09] shadow-[inset_0_1px_0_rgba(167,243,208,0.08)] hover:bg-emerald-500/12"
-        : "bg-white/[0.02] hover:bg-white/[0.05]",
-    )
-  const toolboxIconWrap = (configurado: boolean) =>
-    cn(
-      "flex size-9 shrink-0 items-center justify-center rounded-lg transition-colors duration-150 sm:size-10",
-      configurado
-        ? "bg-emerald-500/20 text-emerald-200"
-        : "bg-white/[0.06] text-foreground/45 group-hover:bg-white/10 group-hover:text-foreground/75",
-    )
 
   const ventaDialogOptionClass = (seleccionado: boolean, disabled = false) =>
     cn(
@@ -1150,19 +1137,19 @@ function SalePage() {
             <OpenCashSessionBanner siteId={siteId} popId={popId} variant="dark" />
           ) : null}
 
-          <main className="relative z-10 grid min-h-0 flex-1 grid-cols-[minmax(0,1fr)_380px] grid-rows-[minmax(0,1fr)_calc(4.5rem+1rem)] sm:grid-rows-[minmax(0,1fr)_calc(4.75rem+1.25rem)]">
+          <main className={cn("relative z-10 grid min-h-0 flex-1", getLayoutsOperarMainGridClass())}>
             <div className="col-start-1 row-start-1 flex min-h-0 min-w-0 overflow-hidden">
               <aside
                 id="data-workspace-sidebar"
                 className={cn(
                   "relative shrink-0 overflow-hidden border-r border-white/10 bg-[#1a2027] transition-[width,border-color] duration-300 ease-in-out motion-reduce:transition-none",
-                  catalogSidebarOpen ? "w-[280px]" : "w-0 border-r-0",
+                  layoutsOperarCatalogSidebarAsideWidthClass(catalogSidebarOpen),
                 )}
                 aria-hidden={!catalogSidebarOpen}
                 {...(!catalogSidebarOpen ? { inert: true } : {})}
                 aria-label="Filtros del catálogo"
               >
-                <div className="flex h-full w-[280px] min-w-[280px] flex-col">
+                <div className={layoutsOperarCatalogSidebarInnerClass}>
                   {catalogSidebar}
                 </div>
               </aside>
@@ -1326,7 +1313,7 @@ function SalePage() {
                               fill
                               className="h-full w-full transition-transform duration-300 ease-out group-hover:scale-[1.03]"
                               unoptimized
-                              sizes={modoVista === "grid" ? "33vw" : "280px"}
+                              sizes={modoVista === "grid" ? "33vw" : `${LAYOUTS_OPERAR_CATALOG_SIDEBAR_WIDTH_PX}px`}
                               style={{
                                 objectFit: "cover",
                                 objectPosition: "center",
@@ -1387,8 +1374,8 @@ function SalePage() {
               className={cn(
                 "col-start-1 row-start-2 grid h-full min-h-0 grid-cols-2 gap-2 lg:grid-cols-4",
                 toolboxBarClass,
-                ventaFooterBarPaddingClass,
-                ventaFooterBandHeightClass,
+                saleOpFooterBarPaddingClass,
+                saleOpFooterBandHeightClass,
               )}
             >
               <button
@@ -1396,7 +1383,7 @@ function SalePage() {
                 disabled={!canReadClients}
                 onClick={onClienteToolbarClick}
                 className={cn(
-                  toolboxSlotClass(Boolean(clienteSeleccionado)),
+                  saleOpToolboxSlotClass(Boolean(clienteSeleccionado)),
                   !canReadClients && "opacity-45",
                 )}
                 aria-label={
@@ -1407,7 +1394,7 @@ function SalePage() {
                       : "Cliente sin elegir. Abrir para seleccionar."
                 }
               >
-                <span className={toolboxIconWrap(Boolean(clienteSeleccionado))}>
+                <span className={saleOpToolboxIconWrap(Boolean(clienteSeleccionado))}>
                   <User className="size-4.5 sm:size-5" aria-hidden />
                 </span>
                 <span className="min-w-0 flex-1">
@@ -1436,10 +1423,10 @@ function SalePage() {
               <button
                 type="button"
                 onClick={() => setComprobanteModalAbierto(true)}
-                className={toolboxSlotClass(comprobante !== null)}
+                className={saleOpToolboxSlotClass(comprobante !== null)}
                 aria-label={`Comprobante: ${comprobanteDisplayLabel}. Abrir para cambiar.`}
               >
-                <span className={toolboxIconWrap(comprobante !== null)}>
+                <span className={saleOpToolboxIconWrap(comprobante !== null)}>
                   <Receipt className="size-4.5 sm:size-5" aria-hidden />
                 </span>
                 <span className="min-w-0 flex-1">
@@ -1465,14 +1452,14 @@ function SalePage() {
                   setPagoModalAbierto(true)
                 }}
                 disabled={!openCashSession}
-                className={toolboxSlotClass(pagoConfigurado)}
+                className={saleOpToolboxSlotClass(pagoConfigurado)}
                 aria-label={
                   pagoConfigurado
                     ? `Pago: ${pagoResumenLabel}. Abrir para cambiar.`
                     : "Forma de pago sin elegir. Abrir para seleccionar."
                 }
               >
-                <span className={toolboxIconWrap(pagoConfigurado)}>
+                <span className={saleOpToolboxIconWrap(pagoConfigurado)}>
                   <Banknote className="size-4.5 sm:size-5" aria-hidden />
                 </span>
                 <span className="min-w-0 flex-1">
@@ -1496,7 +1483,7 @@ function SalePage() {
               <button
                 type="button"
                 onClick={abrirModalDescuento}
-                className={toolboxSlotClass(hayDescuento)}
+                className={saleOpToolboxSlotClass(hayDescuento)}
                 aria-label={
                   hayDescuento
                     ? `Descuento aplicado: ${
@@ -1507,7 +1494,7 @@ function SalePage() {
                     : "Sin descuento en la venta. Abrir para configurar."
                 }
               >
-                <span className={toolboxIconWrap(hayDescuento)}>
+                <span className={saleOpToolboxIconWrap(hayDescuento)}>
                   <Percent className="size-4.5 sm:size-5" aria-hidden />
                 </span>
                 <span className="min-w-0 flex-1">

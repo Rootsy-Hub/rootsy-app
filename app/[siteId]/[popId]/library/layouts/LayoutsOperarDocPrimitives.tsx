@@ -1,6 +1,6 @@
 "use client"
 
-import "@/app/[siteId]/[popId]/library/color/rootsyNaturePalette.css"
+import "@/app/[siteId]/[popId]/library/layouts/layoutsOperarTheme.css"
 import "@/app/[siteId]/[popId]/library/radius/rootsyRadiusSystem.css"
 import {
   LAYOUTS_OPERAR_CATALOG_SIDEBAR_WIDTH_PX,
@@ -12,6 +12,7 @@ import {
   layoutsOperarCatalogCanvasClass,
   layoutsOperarCatalogCanvasScrollClass,
   layoutsOperarCatalogColumnClass,
+  layoutsOperarCatalogColumnInMainGridClass,
   layoutsOperarCatalogGridClass,
   layoutsOperarCatalogRailItemClass,
   layoutsOperarCatalogRailItemDiscountSelectedClass,
@@ -25,24 +26,9 @@ import {
   layoutsOperarCatalogSidebarClass,
   layoutsOperarCatalogSidebarOpenClass,
   layoutsOperarCatalogSectionShellClass,
-  layoutsOperarCatalogArticleCanvasClass,
   layoutsOperarCatalogToolbarClass,
   layoutsOperarHeaderGridClass,
   layoutsOperarHeaderScopeClass,
-  layoutsOperarProductCardAddClass,
-  layoutsOperarProductCardClass,
-  layoutsOperarProductCardGridBodyClass,
-  layoutsOperarProductCardListBodyClass,
-  layoutsOperarProductCardListClass,
-  layoutsOperarProductCardListMediaClass,
-  layoutsOperarProductCardDescClass,
-  layoutsOperarProductCardMediaClass,
-  layoutsOperarProductCardMediaPlaceholderClass,
-  layoutsOperarProductCardMediaPlaceholderIconClass,
-  layoutsOperarProductCardMediaPlaceholderLabelClass,
-  layoutsOperarProductCardOfferClass,
-  layoutsOperarProductCardPriceClass,
-  layoutsOperarProductCardTitleClass,
   layoutsOperarSummaryCartHeadingClass,
   layoutsOperarSummaryCartMetaClass,
   layoutsOperarSummaryCartRowClass,
@@ -53,13 +39,12 @@ import {
   layoutsOperarSummaryEmptyStateClass,
   layoutsOperarSummaryEmptyStateContentClass,
   layoutsOperarSummaryEmptyTitleClass,
+  layoutsOperarSummaryTotalsAmountClass,
+  layoutsOperarSummaryTotalsLabelClass,
   layoutsOperarSummaryPanelClass,
   layoutsOperarSummaryPanelStandaloneClass,
-  layoutsOperarToolboxBandClass,
-  layoutsOperarToolboxBarClass,
-  layoutsOperarToolboxIconWrapClass,
+  layoutsOperarToolboxDemoShellClass,
   layoutsOperarToolboxRowClass,
-  layoutsOperarToolboxSlotClass,
   layoutsOperarWireframeCatalogCanvasClass,
   layoutsOperarWireframeCatalogSidebarClass,
   layoutsOperarWireframeCatalogToolbarClass,
@@ -74,13 +59,31 @@ import {
   getLayoutsOperarWireframeZoneLabel,
   getLayoutsOperarWireframeSurfaceToken,
   getLayoutsOperarWireframeZoneStyle,
-  type LayoutsOperarWireframeZone,
   LAYOUTS_OPERAR_ANATOMY,
+  type LayoutsOperarToolboxProposalId,
+  type LayoutsOperarWireframeZone,
 } from "@/app/[siteId]/[popId]/library/layouts/layoutsOperarHardcodedSpec"
+import {
+  LayoutsOperarProductCardDemoCanvas,
+  LayoutsOperarProductCardProposalGrid,
+  LayoutsOperarProductCardProposalList,
+  LayoutsOperarProductCardProposalsDemo,
+  LAYOUTS_OPERAR_DEMO_ARTICLE,
+  LAYOUTS_OPERAR_DEMO_ARTICLE_OFFER,
+  type LayoutsOperarDemoProduct,
+} from "@/app/[siteId]/[popId]/library/layouts/LayoutsOperarProductCardProposalPrimitives"
+import {
+  LayoutsOperarToolboxProposalBand,
+  LayoutsOperarToolboxProposalGridCell,
+  LayoutsOperarToolboxProposalStrip,
+} from "@/app/[siteId]/[popId]/library/layouts/LayoutsOperarToolboxProposalPrimitives"
+import {
+  LAYOUTS_OPERAR_DEFAULT_TOOLBOX_PROPOSAL,
+  ROOTSY_LAYOUTS_OPERAR_TOOLBOX_PROPOSALS,
+} from "@/app/[siteId]/[popId]/library/layouts/rootsyLayoutsOperarSystem"
 import { LayoutsModuleShellWithContent } from "@/app/[siteId]/[popId]/library/layouts/LayoutsModuleDocPrimitives"
 import { ROOTSY_LAYOUTS_MODULE_HEADER } from "@/app/[siteId]/[popId]/library/layouts/rootsyLayoutsModuleSystem"
 import { DataWorkspaceHeaderTitle } from "@/components/layouts/DataWorkspaceHeaderTitle"
-import { SaleCatalogProductOfferOverlay } from "@/components/sale-operation/SaleCatalogProductOfferOverlay"
 import {
   dataWorkspaceHeaderChromeButtonClass,
   dataWorkspaceHeaderDividerClass,
@@ -91,19 +94,15 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { cn } from "@/lib/utils"
 import {
   ArrowLeft,
-  Banknote,
-  ImageOff,
   LayoutGrid,
   Maximize2,
   PanelLeftOpen,
   Percent,
-  Plus,
   Receipt,
   Store,
   Rows3,
   Search,
   Tag,
-  User,
 } from "lucide-react"
 import { useState } from "react"
 
@@ -137,76 +136,9 @@ const DEMO_CATALOG_VIEW_DEFAULT: DemoCatalogView = {
   categoria: "Todos",
 }
 
-type DemoToolboxSlot = {
-  id: string
-  label: string
-  value: string
-  configured: boolean
-  icon: React.ReactNode
-}
-
-const DEMO_TOOLBOX_SLOTS: DemoToolboxSlot[] = [
-  {
-    id: "cliente",
-    label: "Cliente",
-    value: "Elegir cliente",
-    configured: false,
-    icon: <User className="size-4" aria-hidden />,
-  },
-  {
-    id: "comprobante",
-    label: "Comprobante",
-    value: "Ticket",
-    configured: true,
-    icon: <Receipt className="size-4" aria-hidden />,
-  },
-  {
-    id: "pago",
-    label: "Pago",
-    value: "Efectivo",
-    configured: true,
-    icon: <Banknote className="size-4" aria-hidden />,
-  },
-  {
-    id: "descuento",
-    label: "Descuento",
-    value: "Sin descuento",
-    configured: false,
-    icon: <Percent className="size-4" aria-hidden />,
-  },
-]
-
-type DemoProduct = {
-  id: string
-  name: string
-  description: string
-  price: number
-  image: string
-  originalPrice?: number
-  offerLabel?: string
-}
-
-const DEMO_ARTICLE: DemoProduct = {
-  id: "cafe",
-  name: "Café en grano",
-  description: "Tostado medio · origen Colombia · 250 g",
-  price: 4500,
-  image: "https://images.unsplash.com/photo-1559056199-641a0ac8b55e?w=400&h=300&fit=crop",
-}
-
-const DEMO_ARTICLE_OFFER: DemoProduct = {
-  id: "medialunas",
-  name: "Medialunas x6",
-  description: "Manteca · recién horneadas",
-  price: 3200,
-  originalPrice: 3760,
-  image: "https://images.unsplash.com/photo-1555507036-ab1f4038808a?w=400&h=300&fit=crop",
-  offerLabel: "15% off",
-}
-
-const DEMO_PRODUCTS: DemoProduct[] = [
-  DEMO_ARTICLE,
-  { ...DEMO_ARTICLE_OFFER },
+const DEMO_PRODUCTS: LayoutsOperarDemoProduct[] = [
+  LAYOUTS_OPERAR_DEMO_ARTICLE,
+  LAYOUTS_OPERAR_DEMO_ARTICLE_OFFER,
   {
     id: "leche",
     name: "Leche entera 1 L",
@@ -236,10 +168,6 @@ const DEMO_PRODUCTS: DemoProduct[] = [
     image: "https://images.unsplash.com/photo-1586201375761-83865001e31c?w=400&h=300&fit=crop",
   },
 ]
-
-function formatDemoPrice(amount: number) {
-  return `$ ${amount.toLocaleString("es-AR")},00`
-}
 
 function useOperationsHeaderChromeButtonClass() {
   return dataWorkspaceHeaderChromeButtonClass(HEADER_VARIANT)
@@ -391,7 +319,7 @@ function LayoutsOperarHeaderDemo({
         !composed && !wireframe && "h-17",
       )}
     >
-      {wireframe ? <LayoutHeightBadge label="h-17 · sombra-950→800" onDark /> : null}
+      {wireframe ? <LayoutHeightBadge label="h-17 · sombra-950→900" onDark /> : null}
       <div className={layoutsOperarHeaderGridClass}>
         {wireframe ? (
           <>
@@ -499,89 +427,8 @@ function LayoutsOperarCatalogRail() {
   )
 }
 
-function LayoutsOperarProductCardMedia({
-  product,
-  variant,
-}: {
-  product: DemoProduct
-  variant: "grid" | "list"
-}) {
-  const [imageFailed, setImageFailed] = useState(false)
-  const mediaClass =
-    variant === "grid" ? layoutsOperarProductCardMediaClass : layoutsOperarProductCardListMediaClass
-  const showOfferOverlay = product.originalPrice != null && product.originalPrice > product.price
-
-  return (
-    <div className={mediaClass}>
-      {imageFailed ? (
-        <div className={layoutsOperarProductCardMediaPlaceholderClass} aria-hidden>
-          <div className={layoutsOperarProductCardMediaPlaceholderIconClass}>
-            <ImageOff className="size-7 stroke-[1.5]" />
-          </div>
-          <span className={layoutsOperarProductCardMediaPlaceholderLabelClass}>Sin imagen</span>
-        </div>
-      ) : (
-        <img
-          src={product.image}
-          alt=""
-          onError={() => setImageFailed(true)}
-          className="size-full object-cover transition-transform duration-300 ease-out group-hover:scale-[1.03]"
-        />
-      )}
-      {showOfferOverlay ? (
-        <SaleCatalogProductOfferOverlay
-          precioOriginal={product.originalPrice}
-          precio={product.price}
-          promo={product.offerLabel}
-        />
-      ) : product.offerLabel ? (
-        <span className={layoutsOperarProductCardOfferClass}>{product.offerLabel}</span>
-      ) : null}
-      <span className={layoutsOperarProductCardAddClass} aria-hidden>
-        <Plus className="size-4" strokeWidth={2.5} aria-hidden />
-      </span>
-    </div>
-  )
-}
-
-function LayoutsOperarProductCardBody({ product, variant }: { product: DemoProduct; variant: "grid" | "list" }) {
-  return (
-    <div
-      className={
-        variant === "grid" ? layoutsOperarProductCardGridBodyClass : layoutsOperarProductCardListBodyClass
-      }
-    >
-      <div className="min-h-0 self-start">
-        <h3 className={layoutsOperarProductCardTitleClass}>{product.name}</h3>
-        <p className={layoutsOperarProductCardDescClass}>{product.description}</p>
-      </div>
-      <div className={variant === "grid" ? "self-end" : "shrink-0"}>
-        <span className={layoutsOperarProductCardPriceClass}>{formatDemoPrice(product.price)}</span>
-      </div>
-    </div>
-  )
-}
-
-function LayoutsOperarProductCardGrid({ product }: { product: DemoProduct }) {
-  return (
-    <button type="button" tabIndex={-1} aria-hidden className={layoutsOperarProductCardClass}>
-      <LayoutsOperarProductCardMedia product={product} variant="grid" />
-      <LayoutsOperarProductCardBody product={product} variant="grid" />
-    </button>
-  )
-}
-
-function LayoutsOperarProductCardList({ product }: { product: DemoProduct }) {
-  return (
-    <button type="button" tabIndex={-1} aria-hidden className={layoutsOperarProductCardListClass}>
-      <LayoutsOperarProductCardMedia product={product} variant="list" />
-      <LayoutsOperarProductCardBody product={product} variant="list" />
-    </button>
-  )
-}
-
 function LayoutsOperarCatalogArticleCanvas({ children }: { children: React.ReactNode }) {
-  return <div className={layoutsOperarCatalogArticleCanvasClass}>{children}</div>
+  return <LayoutsOperarProductCardDemoCanvas>{children}</LayoutsOperarProductCardDemoCanvas>
 }
 
 function LayoutsOperarProductCatalog() {
@@ -589,7 +436,7 @@ function LayoutsOperarProductCatalog() {
     <div className={layoutsOperarCatalogCanvasScrollClass}>
       <div className={layoutsOperarCatalogGridClass}>
         {DEMO_PRODUCTS.map((product) => (
-          <LayoutsOperarProductCardGrid key={product.id} product={product} />
+          <LayoutsOperarProductCardProposalGrid key={product.id} product={product} />
         ))}
       </div>
     </div>
@@ -599,55 +446,87 @@ function LayoutsOperarProductCatalog() {
 function LayoutsOperarCatalogToolbar() {
   return (
     <div className={layoutsOperarCatalogToolbarClass}>
-      <div className="relative flex h-10 shrink-0 items-center rounded-lg border border-white/12 bg-black/25 p-1">
+      <div className="relative flex h-10 shrink-0 items-center rounded-lg border border-[color-mix(in_srgb,var(--rootsy-sombra-border)_45%,transparent)] bg-[color-mix(in_srgb,var(--rootsy-sombra-950)_55%,transparent)] p-1">
         <span
           aria-hidden
-          className="pointer-events-none absolute inset-y-1 left-1 w-10 rounded-md border border-emerald-300/35 bg-emerald-400/15"
+          className="pointer-events-none absolute inset-y-1 left-1 w-10 rounded-md border border-[color-mix(in_srgb,var(--rootsy-savia-400)_35%,transparent)] bg-[color-mix(in_srgb,var(--rootsy-savia-400)_15%,transparent)]"
         />
-        <button type="button" className="relative z-10 flex h-8 w-10 items-center justify-center text-white" tabIndex={-1} aria-hidden>
+        <button type="button" className="relative z-10 flex h-8 w-10 items-center justify-center text-[#f4f8f6]" tabIndex={-1} aria-hidden>
           <LayoutGrid className="size-4.5" />
         </button>
-        <button type="button" className="relative z-10 flex h-8 w-10 items-center justify-center text-white/50" tabIndex={-1} aria-hidden>
+        <button type="button" className="relative z-10 flex h-8 w-10 items-center justify-center text-[color-mix(in_srgb,var(--rootsy-sombra-300)_72%,transparent)]" tabIndex={-1} aria-hidden>
           <Rows3 className="size-4.5" />
         </button>
       </div>
       <div className="relative min-w-0 flex-1 max-w-md">
-        <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-white/40" />
-        <div className="flex h-10 items-center rounded-md border border-white/10 bg-black/20 pl-9 pr-3 text-sm text-white/35">
+        <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-[color-mix(in_srgb,var(--rootsy-sombra-300)_55%,transparent)]" />
+        <div className="flex h-10 items-center rounded-md border border-[color-mix(in_srgb,var(--rootsy-sombra-border)_45%,transparent)] bg-[color-mix(in_srgb,var(--rootsy-sombra-950)_45%,transparent)] pl-9 pr-3 text-sm text-[color-mix(in_srgb,var(--rootsy-sombra-300)_55%,transparent)]">
           Buscar o escanear producto…
         </div>
       </div>
-      <span className="shrink-0 text-sm font-medium text-white/60">6 productos mostrados</span>
+      <span className="shrink-0 text-sm font-medium text-[color-mix(in_srgb,var(--rootsy-sombra-300)_78%,transparent)]">
+        6 productos mostrados
+      </span>
     </div>
   )
 }
 
-function LayoutsOperarToolboxBar() {
+function LayoutsOperarToolboxProposalDemo({
+  proposalId,
+}: {
+  proposalId: LayoutsOperarToolboxProposalId
+}) {
+  const proposal = ROOTSY_LAYOUTS_OPERAR_TOOLBOX_PROPOSALS.find((p) => p.id === proposalId)!
+
   return (
-    <div role="toolbar" aria-label="Configuración de la venta" className={layoutsOperarToolboxBarClass}>
-      {DEMO_TOOLBOX_SLOTS.map((slot) => (
-        <button
-          key={slot.id}
-          type="button"
-          tabIndex={-1}
-          aria-hidden
-          className={layoutsOperarToolboxSlotClass(slot.configured)}
-        >
-          <span className={layoutsOperarToolboxIconWrapClass(slot.configured)}>{slot.icon}</span>
-          <span className="min-w-0 flex-1">
-            <span className="mb-0.5 block text-[10px] font-semibold uppercase tracking-[0.12em] text-foreground/45">
-              {slot.label}
+    <div className="space-y-2">
+      <div className="space-y-1">
+        <p className="text-sm font-semibold text-foreground">
+          Propuesta {proposal.letter} · {proposal.title}
+          {proposal.recommended ? (
+            <span className="ml-2 font-normal text-[color-mix(in_srgb,var(--rootsy-savia-600)_88%,transparent)]">
+              · recomendada
             </span>
-            <span
-              className={cn(
-                "block truncate text-sm font-semibold leading-snug",
-                slot.configured ? "text-foreground" : "text-foreground/55",
-              )}
-            >
-              {slot.value}
-            </span>
-          </span>
-        </button>
+          ) : null}
+        </p>
+        <p className="text-sm text-muted-foreground">
+          <span className="font-mono text-[11px] text-foreground/80">{proposal.pairingId}</span>
+          {" · "}
+          {proposal.pairingLabel}
+          {" — "}
+          {proposal.summary}
+        </p>
+        <p className="text-xs leading-relaxed text-muted-foreground">{proposal.uxNote}</p>
+        <p className="font-mono text-[10px] text-muted-foreground/90">
+          banda {proposal.bandMinHeightPx}px ({proposal.bandLayout}) · slot{" "}
+          {proposal.slotMinHeightPx}px
+        </p>
+      </div>
+      <LayoutsOperarAnatomyScope
+        className={cn(
+          "rootsy-theme-pos rootsy-radius-system max-w-5xl rounded-2xl border border-border/70",
+          layoutsOperarToolboxDemoShellClass,
+        )}
+      >
+        <LayoutsOperarToolboxProposalStrip
+          proposalId={proposalId}
+          measureBadge={
+            <LayoutHeightBadge
+              label={`${proposal.bandMinHeightPx}px · ${proposal.title}`}
+              onDark
+            />
+          }
+        />
+      </LayoutsOperarAnatomyScope>
+    </div>
+  )
+}
+
+export function LayoutsOperarToolboxColorProposalsDemo() {
+  return (
+    <div className="space-y-10">
+      {ROOTSY_LAYOUTS_OPERAR_TOOLBOX_PROPOSALS.map((proposal) => (
+        <LayoutsOperarToolboxProposalDemo key={proposal.id} proposalId={proposal.id} />
       ))}
     </div>
   )
@@ -656,18 +535,20 @@ function LayoutsOperarToolboxBar() {
 function LayoutsOperarCatalogColumn({
   wireframe = false,
   composed = false,
+  inMainGrid = false,
 }: {
   wireframe?: boolean
   composed?: boolean
+  inMainGrid?: boolean
 }) {
   return (
-    <div className={layoutsOperarCatalogColumnClass}>
+    <div className={inMainGrid ? layoutsOperarCatalogColumnInMainGridClass : layoutsOperarCatalogColumnClass}>
       <aside
         className={cn(layoutsOperarCatalogSidebarClass, layoutsOperarCatalogSidebarOpenClass, wireframe && "relative")}
         aria-label="Filtros del catálogo"
       >
         {wireframe ? (
-          <LayoutHeightBadge label={`${LAYOUTS_OPERAR_CATALOG_SIDEBAR_WIDTH_PX}px · sombra-700`} onDark />
+          <LayoutHeightBadge label={`${LAYOUTS_OPERAR_CATALOG_SIDEBAR_WIDTH_PX}px · sombra-950`} onDark />
         ) : composed ? (
           <LayoutsOperarCatalogRail />
         ) : null}
@@ -675,7 +556,7 @@ function LayoutsOperarCatalogColumn({
       <section className={cn(layoutsOperarCatalogCanvasClass, wireframe && "relative")}>
         {composed ? <LayoutsOperarCatalogToolbar /> : null}
         {wireframe ? (
-          <LayoutHeightBadge label="canvas · sombra-600 · scroll" onDark />
+          <LayoutHeightBadge label="canvas · sombra-800 · scroll" onDark />
         ) : composed ? (
           <LayoutsOperarProductCatalog />
         ) : null}
@@ -751,15 +632,13 @@ function LayoutsOperarSummaryPanel({
             <div className="flex items-center justify-center text-sm font-semibold text-rose-700">
               Descartar
             </div>
-            <div className="flex items-center justify-center bg-emerald-600 text-sm font-semibold text-white">
+            <div className="flex items-center justify-center bg-[var(--rootsy-savia-600)] text-sm font-semibold text-white">
               Vender
             </div>
           </div>
           <div className={layoutsOperarSummaryTotalRowClass}>
-            <span className="text-[10px] font-semibold uppercase tracking-[0.16em] text-white/60">
-              Total a cobrar
-            </span>
-            <span className="text-lg font-semibold tabular-nums">$ 0,00</span>
+            <span className={layoutsOperarSummaryTotalsLabelClass}>Total a cobrar</span>
+            <span className={layoutsOperarSummaryTotalsAmountClass}>$ 0,00</span>
           </div>
         </>
       ) : null}
@@ -777,6 +656,7 @@ export function LayoutsOperarBody({
   return (
     <div
       className={cn(
+        "rootsy-theme-pos",
         layoutsOperarBodyScopeClass,
         layoutsOperarBodyShellClass,
         wireframe && layoutsOperarBodyWireframeClass,
@@ -784,24 +664,23 @@ export function LayoutsOperarBody({
       style={getLayoutsOperarGridCssVariables()}
     >
       <main className={cn(layoutsOperarBodyMainGridClass, "relative z-10 h-full min-h-0")}>
-        <LayoutsOperarCatalogColumn wireframe={wireframe} composed={composed} />
-        <div
-          className={cn(
-            layoutsOperarToolboxRowClass,
-            layoutsOperarToolboxBandClass,
-            wireframe && "relative",
-          )}
-          style={composed ? getLayoutsOperarWireframeZoneStyle("toolbox") : undefined}
-        >
-          {wireframe ? (
-            <LayoutHeightBadge
-              label={`toolbox · min ${LAYOUTS_OPERAR_ANATOMY.toolboxRowMinHeightPx}px`}
-              onDark
-            />
-          ) : composed ? (
-            <LayoutsOperarToolboxBar />
-          ) : null}
-        </div>
+        <LayoutsOperarCatalogColumn wireframe={wireframe} composed={composed} inMainGrid />
+        {wireframe ? (
+          <LayoutsOperarToolboxProposalBand
+            proposalId={LAYOUTS_OPERAR_DEFAULT_TOOLBOX_PROPOSAL}
+            className={layoutsOperarToolboxRowClass}
+            measureBadge={
+              <LayoutHeightBadge
+                label={`toolbox · min ${LAYOUTS_OPERAR_ANATOMY.toolboxRowMinHeightPx}px`}
+                onDark
+              />
+            }
+          />
+        ) : composed ? (
+          <LayoutsOperarToolboxProposalGridCell
+            proposalId={LAYOUTS_OPERAR_DEFAULT_TOOLBOX_PROPOSAL}
+          />
+        ) : null}
         <LayoutsOperarSummaryPanel wireframe={wireframe} composed={composed} />
       </main>
     </div>
@@ -820,7 +699,7 @@ function LayoutsOperarFrame({
   return (
     <div
       className={cn(
-        "rootsy-nature-palette rootsy-radius-system mx-auto flex flex-col overflow-hidden rounded-2xl border border-border/80",
+        "rootsy-theme-pos rootsy-radius-system mx-auto flex flex-col overflow-hidden rounded-2xl border border-border/80",
         maxWidthClass,
         "shadow-[0_24px_48px_-28px_rgba(41,37,36,0.38)] ring-1 ring-black/[0.04]",
         heightClass,
@@ -834,7 +713,8 @@ function LayoutsOperarFrame({
 export function LayoutsOperarFullPageDraft({ composed = false }: { composed?: boolean } = {}) {
   if (composed) {
     return (
-      <div className="flex min-h-0 flex-1 flex-col">
+      <div className="rootsy-theme-pos rootsy-radius-system flex min-h-0 flex-1 flex-col">
+        <LayoutsOperarHeaderDemo composed />
         <LayoutsOperarBody composed />
       </div>
     )
@@ -851,6 +731,7 @@ export function LayoutsOperarFullPageDraft({ composed = false }: { composed?: bo
 function LayoutsOperarContentGridWireframeBody() {
   const a = LAYOUTS_OPERAR_ANATOMY
   const headerPx = ROOTSY_LAYOUTS_MODULE_HEADER.heightPx
+  const zoneStyle = getLayoutsOperarWireframeZoneStyle
 
   return (
     <div
@@ -859,7 +740,7 @@ function LayoutsOperarContentGridWireframeBody() {
         layoutsOperarBodyWireframeClass,
       )}
       style={{
-        ...getLayoutsOperarWireframeZoneStyle("shell"),
+        ...zoneStyle("shell"),
         ...getLayoutsOperarGridCssVariables(),
       }}
     >
@@ -867,7 +748,7 @@ function LayoutsOperarContentGridWireframeBody() {
         className="relative shrink-0"
         style={{
           height: headerPx,
-          ...getLayoutsOperarWireframeZoneStyle("header"),
+          ...zoneStyle("header"),
         }}
       >
         <LayoutsOperarWireframeZoneLabel
@@ -879,12 +760,10 @@ function LayoutsOperarContentGridWireframeBody() {
       </div>
 
       <main className={cn(layoutsOperarBodyMainGridClass, "relative z-10 h-full min-h-0")}>
-        <div
-          className={cn(layoutsOperarCatalogColumnClass, "border-b border-[var(--rootsy-sombra-border)]")}
-        >
+        <div className={layoutsOperarCatalogColumnInMainGridClass}>
           <div
             className={cn(layoutsOperarWireframeCatalogSidebarClass, "relative")}
-            style={getLayoutsOperarWireframeZoneStyle("sidebar")}
+            style={zoneStyle("sidebar")}
           >
             <LayoutsOperarWireframeZoneLabel
               zone="sidebar"
@@ -896,7 +775,7 @@ function LayoutsOperarContentGridWireframeBody() {
           <section className={layoutsOperarWireframeCatalogCanvasClass}>
             <div
               className={layoutsOperarWireframeCatalogToolbarClass}
-              style={getLayoutsOperarWireframeZoneStyle("toolbar")}
+              style={zoneStyle("toolbar")}
             >
               <LayoutsOperarWireframeZoneLabel
                 zone="toolbar"
@@ -905,10 +784,7 @@ function LayoutsOperarContentGridWireframeBody() {
                 onDark
               />
             </div>
-            <div
-              className="relative min-h-0"
-              style={getLayoutsOperarWireframeZoneStyle("canvas")}
-            >
+            <div className="relative min-h-0" style={zoneStyle("canvas")}>
               <LayoutsOperarWireframeZoneLabel
                 zone="canvas"
                 mode="fluido"
@@ -919,40 +795,42 @@ function LayoutsOperarContentGridWireframeBody() {
           </section>
         </div>
 
-        <div
-          className={cn(layoutsOperarToolboxRowClass, layoutsOperarToolboxBandClass, "relative")}
-          style={getLayoutsOperarWireframeZoneStyle("toolbox")}
-        >
-          <LayoutsOperarWireframeZoneLabel
-            zone="toolbox"
-            mode="min"
-            measure={`${a.toolboxRowMinHeightPx}px`}
-            onDark
-          />
-        </div>
+        <LayoutsOperarToolboxProposalBand
+          proposalId={LAYOUTS_OPERAR_DEFAULT_TOOLBOX_PROPOSAL}
+          className={layoutsOperarToolboxRowClass}
+          measureBadge={
+            <LayoutsOperarWireframeZoneLabel
+              zone="toolbox"
+              mode="min"
+              measure={`${a.toolboxRowMinHeightPx}px`}
+              onDark
+            />
+          }
+        />
 
         <aside className={cn(layoutsOperarWireframeSummaryPanelClass, "relative")}>
-          <div
-            className="relative"
-            style={getLayoutsOperarWireframeZoneStyle("ticket-header")}
-          >
+          <div className="relative" style={zoneStyle("ticket-header")}>
             <LayoutsOperarWireframeZoneLabel
               zone="ticket-header"
               mode="fijo"
               measure={`${a.ticketHeaderHeightPx}px`}
             />
           </div>
-          <div className="relative" style={getLayoutsOperarWireframeZoneStyle("ticket-cart")}>
-            <LayoutsOperarWireframeZoneLabel zone="ticket-cart" mode="fluido" measure="1fr" />
+          <div className="relative" style={zoneStyle("ticket-cart")}>
+            <LayoutsOperarWireframeZoneLabel
+              zone="ticket-cart"
+              mode="fluido"
+              measure="1fr"
+            />
           </div>
-          <div className="relative" style={getLayoutsOperarWireframeZoneStyle("ticket-actions")}>
+          <div className="relative" style={zoneStyle("ticket-actions")}>
             <LayoutsOperarWireframeZoneLabel
               zone="ticket-actions"
               mode="fijo"
               measure={`${a.ticketActionsHeightPx}px`}
             />
           </div>
-          <div className="relative" style={getLayoutsOperarWireframeZoneStyle("ticket-total")}>
+          <div className="relative" style={zoneStyle("ticket-total")}>
             <LayoutsOperarWireframeZoneLabel
               zone="ticket-total"
               mode="min"
@@ -1049,7 +927,9 @@ export function LayoutsOperarCatalogSectionDemo() {
     <div className="space-y-6">
       <LayoutsOperarDocSubsection title="Catálogo · sidebar + toolbar + cards">
         <LayoutsOperarFrame heightClass="h-[24rem]" maxWidthClass="max-w-5xl">
-          <LayoutsOperarAnatomyScope className={layoutsOperarCatalogSectionShellClass}>
+          <LayoutsOperarAnatomyScope
+          className={cn("rootsy-theme-pos rootsy-radius-system", layoutsOperarCatalogSectionShellClass)}
+        >
             <div className={cn(layoutsOperarCatalogColumnClass, "min-h-0 flex-1")}>
               <aside className={cn(layoutsOperarCatalogSidebarClass, layoutsOperarCatalogSidebarOpenClass)}>
                 <LayoutsOperarCatalogRail />
@@ -1071,7 +951,7 @@ export function LayoutsOperarCatalogSectionDemo() {
             </p>
             <LayoutsOperarCatalogArticleCanvas>
               <div className="max-w-xs">
-                <LayoutsOperarProductCardGrid product={DEMO_ARTICLE} />
+                <LayoutsOperarProductCardProposalGrid product={LAYOUTS_OPERAR_DEMO_ARTICLE} />
               </div>
             </LayoutsOperarCatalogArticleCanvas>
           </LayoutsOperarDocSubsection>
@@ -1081,7 +961,7 @@ export function LayoutsOperarCatalogSectionDemo() {
               Vista lista (<code className="text-[11px]">modoVista lista</code>) — fila min 152px · imagen 192px.
             </p>
             <LayoutsOperarCatalogArticleCanvas>
-              <LayoutsOperarProductCardList product={DEMO_ARTICLE} />
+              <LayoutsOperarProductCardProposalList product={LAYOUTS_OPERAR_DEMO_ARTICLE} />
             </LayoutsOperarCatalogArticleCanvas>
           </LayoutsOperarDocSubsection>
 
@@ -1092,15 +972,28 @@ export function LayoutsOperarCatalogSectionDemo() {
             <div className="grid gap-4 lg:grid-cols-2">
               <LayoutsOperarCatalogArticleCanvas>
                 <div className="max-w-xs">
-                  <LayoutsOperarProductCardGrid product={DEMO_ARTICLE_OFFER} />
+                  <LayoutsOperarProductCardProposalGrid product={LAYOUTS_OPERAR_DEMO_ARTICLE_OFFER} />
                 </div>
               </LayoutsOperarCatalogArticleCanvas>
               <LayoutsOperarCatalogArticleCanvas>
-                <LayoutsOperarProductCardList product={DEMO_ARTICLE_OFFER} />
+                <LayoutsOperarProductCardProposalList product={LAYOUTS_OPERAR_DEMO_ARTICLE_OFFER} />
               </LayoutsOperarCatalogArticleCanvas>
             </div>
           </LayoutsOperarDocSubsection>
         </div>
+      </LayoutsOperarDocSubsection>
+
+      <LayoutsOperarDocSubsection title="2.2 · Propuestas">
+        <p className="mb-4 text-sm text-muted-foreground">
+          Tres composiciones tarjeta sobre canvas sombra-800 — pairing{" "}
+          <code className="text-[11px]">pos-core</code>,{" "}
+          <code className="text-[11px]">pos-split</code> y{" "}
+          <code className="text-[11px]">pos-focus</code>. Grilla{" "}
+          {LAYOUTS_OPERAR_ANATOMY.productCardHeightPx}px (media{" "}
+          {LAYOUTS_OPERAR_ANATOMY.productCardMediaHeightPx}px) · lista min{" "}
+          {LAYOUTS_OPERAR_ANATOMY.productCardMediaHeightPx}px · media 192px.
+        </p>
+        <LayoutsOperarProductCardProposalsDemo />
       </LayoutsOperarDocSubsection>
 
       <LayoutsOperarComponentsTable
@@ -1115,15 +1008,37 @@ export function LayoutsOperarToolboxSectionDemo() {
   return (
     <div className="space-y-6">
       <LayoutsOperarDocSubsection title="Toolbox · Cliente · Comprobante · Pago · Descuento">
-        <LayoutsOperarAnatomyScope className="max-w-5xl overflow-hidden rounded-2xl border border-border/70">
-          <div
-            className={layoutsOperarToolboxBandClass}
-            style={getLayoutsOperarWireframeZoneStyle("toolbox")}
-          >
-            <LayoutsOperarToolboxBar />
-          </div>
+        <LayoutsOperarAnatomyScope
+        className={cn(
+          "rootsy-theme-pos rootsy-radius-system max-w-5xl rounded-2xl border border-border/70",
+          layoutsOperarToolboxDemoShellClass,
+        )}
+      >
+          <LayoutsOperarToolboxProposalStrip
+            proposalId={LAYOUTS_OPERAR_DEFAULT_TOOLBOX_PROPOSAL}
+            canvasLabel="canvas · sombra-800 · referencia dosel denso"
+            measureBadge={
+              <LayoutHeightBadge
+                label={`${LAYOUTS_OPERAR_ANATOMY.toolboxRowMinHeightPx}px · dosel continuo`}
+                onDark
+              />
+            }
+          />
         </LayoutsOperarAnatomyScope>
       </LayoutsOperarDocSubsection>
+
+      <LayoutsOperarDocSubsection title="3.1 · Propuestas">
+        <p className="mb-4 text-sm text-muted-foreground">
+          Tres composiciones toolbox sobre banda{" "}
+          {LAYOUTS_OPERAR_ANATOMY.toolboxRowMinHeightPx}px (slot{" "}
+          {LAYOUTS_OPERAR_ANATOMY.toolboxSlotMinHeightToken}) — pairing{" "}
+          <code className="text-[11px]">pos-core</code>,{" "}
+          <code className="text-[11px]">pos-split</code> y{" "}
+          <code className="text-[11px]">pos-focus</code>. Solo fundamentos sombra · bruma · savia.
+        </p>
+        <LayoutsOperarToolboxColorProposalsDemo />
+      </LayoutsOperarDocSubsection>
+
       <LayoutsOperarComponentsTable
         rows={getLayoutsOperarScreenComponentsByLayer("Toolbox")}
         caption="Inventario · toolbox"
@@ -1136,7 +1051,7 @@ export function LayoutsOperarTicketSectionDemo() {
   return (
     <div className="space-y-6">
       <LayoutsOperarDocSubsection title="Ticket · pedido + acciones + total">
-        <LayoutsOperarAnatomyScope className="mx-auto h-[24rem] w-[var(--layouts-operar-ticket-w)] max-w-[var(--layouts-operar-ticket-w)] overflow-hidden rounded-2xl border border-border/70">
+        <LayoutsOperarAnatomyScope className="rootsy-theme-pos rootsy-radius-system mx-auto h-[24rem] w-[var(--layouts-operar-ticket-w)] max-w-[var(--layouts-operar-ticket-w)] overflow-hidden rounded-2xl border border-border/70">
           <LayoutsOperarSummaryPanel composed standalone />
         </LayoutsOperarAnatomyScope>
       </LayoutsOperarDocSubsection>

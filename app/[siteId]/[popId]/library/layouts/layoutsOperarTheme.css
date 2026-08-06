@@ -1,0 +1,176 @@
+/**
+ * Layout operar — dosel denso · colors-new (sombra · bruma · savia).
+ * Scope: .rootsy-theme-pos · reemplaza --op-* Nature en demos y preview.
+ *
+ * Dos formas válidas de scope body:
+ * - mismo nodo: .rootsy-theme-pos.layouts-operar-body (demos §2 canvas aislado)
+ * - anidado:   .rootsy-theme-pos … .layouts-operar-body (grid / preview)
+ */
+
+.rootsy-theme-pos.layouts-operar-body,
+.rootsy-theme-pos .layouts-operar-body {
+  /* Rail catálogo — sombra-950 */
+  --layouts-operar-rail-section-label: color-mix(
+    in srgb,
+    var(--rootsy-sombra-400) 88%,
+    var(--rootsy-savia-400)
+  );
+  --layouts-operar-rail-item-text: color-mix(in srgb, var(--rootsy-sombra-300) 72%, transparent);
+  --layouts-operar-rail-item-text-hover: color-mix(in srgb, var(--rootsy-bruma-100) 92%, #ffffff);
+  --layouts-operar-rail-item-text-selected: #f4f8f6;
+  --layouts-operar-rail-item-hover: color-mix(in srgb, var(--rootsy-sombra-900) 42%, transparent);
+  --layouts-operar-rail-item-selected: color-mix(in srgb, var(--rootsy-sombra-800) 48%, transparent);
+  --layouts-operar-rail-item-border: color-mix(in srgb, var(--rootsy-sombra-border) 55%, transparent);
+  --layouts-operar-rail-accent: var(--rootsy-savia-400);
+  --layouts-operar-rail-focus-ring: color-mix(in srgb, var(--rootsy-savia-400) 45%, transparent);
+  --layouts-operar-rail-promo-selected: color-mix(
+    in srgb,
+    var(--rootsy-savia-600) 18%,
+    var(--rootsy-sombra-900)
+  );
+  --layouts-operar-rail-promo-text: color-mix(in srgb, var(--rootsy-savia-200) 92%, white);
+  --layouts-operar-rail-promo-accent: var(--rootsy-savia-400);
+  --layouts-operar-rail-discount-selected: color-mix(
+    in srgb,
+    #f59e0b 16%,
+    var(--rootsy-sombra-900)
+  );
+  --layouts-operar-rail-discount-text: color-mix(in srgb, #fde68a 90%, white);
+  --layouts-operar-rail-discount-accent: #fbbf24;
+
+  /* Toolbox slots — sombra-950 */
+  --layouts-operar-footer-slot-hover: color-mix(in srgb, var(--rootsy-sombra-900) 32%, transparent);
+  --layouts-operar-footer-slot-configured: color-mix(
+    in srgb,
+    var(--rootsy-savia-600) 14%,
+    var(--rootsy-sombra-950)
+  );
+  --layouts-operar-footer-slot-highlight: color-mix(in srgb, var(--rootsy-savia-400) 14%, transparent);
+  --layouts-operar-footer-icon-bg: color-mix(in srgb, var(--rootsy-sombra-900) 38%, transparent);
+  --layouts-operar-footer-icon-text: color-mix(in srgb, var(--rootsy-sombra-300) 88%, #ffffff);
+  --layouts-operar-footer-icon-hover-bg: color-mix(in srgb, var(--rootsy-sombra-900) 52%, transparent);
+  --layouts-operar-footer-icon-hover-text: color-mix(in srgb, var(--rootsy-bruma-100) 92%, #ffffff);
+  --layouts-operar-footer-icon-configured-bg: color-mix(in srgb, var(--rootsy-savia-600) 32%, transparent);
+  --layouts-operar-footer-icon-configured-text: color-mix(in srgb, var(--rootsy-savia-200) 92%, white);
+
+  /* Product cards — sombra-600 sobre canvas sombra-800 */
+  --layouts-operar-product-card-shadow:
+    inset 0 1px 0 color-mix(in srgb, #ffffff 7%, transparent),
+    0 6px 16px color-mix(in srgb, var(--rootsy-sombra-950) 28%, transparent);
+  --layouts-operar-product-card-shadow-hover:
+    inset 0 1px 0 color-mix(in srgb, #ffffff 9%, transparent),
+    0 8px 22px color-mix(in srgb, var(--rootsy-sombra-950) 36%, transparent),
+    0 0 0 1px color-mix(in srgb, var(--rootsy-savia-400) 18%, transparent);
+  --layouts-operar-product-card-title: #f4f8f6;
+  --layouts-operar-product-card-desc: color-mix(in srgb, var(--rootsy-sombra-300) 72%, transparent);
+  --layouts-operar-product-card-price: color-mix(in srgb, var(--rootsy-savia-300) 88%, #ffffff);
+  --layouts-operar-product-card-media-bg: var(--rootsy-sombra-900);
+  --layouts-operar-product-card-placeholder-icon-bg: color-mix(
+    in srgb,
+    var(--rootsy-sombra-800) 52%,
+    transparent
+  );
+  --layouts-operar-product-card-placeholder-icon-ring: color-mix(
+    in srgb,
+    var(--rootsy-sombra-border) 46%,
+    transparent
+  );
+  --layouts-operar-product-card-placeholder-icon-text: color-mix(
+    in srgb,
+    var(--rootsy-sombra-400) 62%,
+    var(--rootsy-savia-400)
+  );
+  --layouts-operar-product-card-placeholder-label: color-mix(
+    in srgb,
+    var(--rootsy-sombra-400) 58%,
+    #ffffff
+  );
+
+  /* Ticket — bruma + savia */
+  --layouts-operar-light-cart-heading: var(--rootsy-bruma-600);
+  --layouts-operar-light-cart-meta: var(--rootsy-bruma-500);
+  --layouts-operar-light-empty-icon-ring: color-mix(in srgb, var(--rootsy-bruma-300) 90%, transparent);
+  --layouts-operar-light-empty-icon-text: var(--rootsy-bruma-600);
+  --layouts-operar-light-empty-title: var(--rootsy-bruma-700);
+  --layouts-operar-light-totals: linear-gradient(
+    165deg,
+    var(--rootsy-savia-975) 0%,
+    var(--rootsy-savia-960) 48%,
+    var(--rootsy-savia-990) 100%
+  );
+  --layouts-operar-light-totals-label: var(--rootsy-savia-200);
+  --layouts-operar-light-totals-amount: var(--rootsy-savia-50);
+}
+
+.rootsy-theme-pos.layouts-operar-header,
+.rootsy-theme-pos .layouts-operar-header {
+  background: linear-gradient(
+    180deg,
+    var(--rootsy-sombra-950) 0%,
+    var(--rootsy-sombra-900) 100%
+  );
+  border-bottom: 1px solid color-mix(in srgb, var(--rootsy-sombra-border) 80%, transparent);
+  color: #f4f8f6;
+}
+
+.rootsy-theme-pos.layouts-operar-body .layouts-operar-summary-totals,
+.rootsy-theme-pos .layouts-operar-body .layouts-operar-summary-totals {
+  background: var(--layouts-operar-light-totals);
+  color: var(--layouts-operar-light-totals-amount);
+}
+
+.rootsy-theme-pos.layouts-operar-body .layouts-operar-catalog-rail-scroll,
+.rootsy-theme-pos.layouts-operar-body .layouts-operar-scroll-minimal,
+.rootsy-theme-pos .layouts-operar-body .layouts-operar-catalog-rail-scroll,
+.rootsy-theme-pos .layouts-operar-body .layouts-operar-scroll-minimal {
+  scrollbar-width: thin;
+  scrollbar-color: color-mix(in srgb, var(--rootsy-sombra-400) 28%, transparent) transparent;
+}
+
+.rootsy-theme-pos.layouts-operar-body .layouts-operar-catalog-rail-scroll::-webkit-scrollbar,
+.rootsy-theme-pos.layouts-operar-body .layouts-operar-scroll-minimal::-webkit-scrollbar,
+.rootsy-theme-pos .layouts-operar-body .layouts-operar-catalog-rail-scroll::-webkit-scrollbar,
+.rootsy-theme-pos .layouts-operar-body .layouts-operar-scroll-minimal::-webkit-scrollbar {
+  width: 3px;
+  height: 3px;
+}
+
+.rootsy-theme-pos.layouts-operar-body .layouts-operar-catalog-rail-scroll::-webkit-scrollbar-track,
+.rootsy-theme-pos.layouts-operar-body .layouts-operar-scroll-minimal::-webkit-scrollbar-track,
+.rootsy-theme-pos .layouts-operar-body .layouts-operar-catalog-rail-scroll::-webkit-scrollbar-track,
+.rootsy-theme-pos .layouts-operar-body .layouts-operar-scroll-minimal::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.rootsy-theme-pos.layouts-operar-body .layouts-operar-catalog-rail-scroll::-webkit-scrollbar-thumb,
+.rootsy-theme-pos.layouts-operar-body .layouts-operar-scroll-minimal::-webkit-scrollbar-thumb,
+.rootsy-theme-pos .layouts-operar-body .layouts-operar-catalog-rail-scroll::-webkit-scrollbar-thumb,
+.rootsy-theme-pos .layouts-operar-body .layouts-operar-scroll-minimal::-webkit-scrollbar-thumb {
+  border-radius: 9999px;
+  background: color-mix(in srgb, var(--rootsy-sombra-400) 26%, transparent);
+  border: none;
+}
+
+.rootsy-theme-pos.layouts-operar-body .layouts-operar-catalog-rail-scroll:hover::-webkit-scrollbar-thumb,
+.rootsy-theme-pos.layouts-operar-body .layouts-operar-scroll-minimal:hover::-webkit-scrollbar-thumb,
+.rootsy-theme-pos .layouts-operar-body .layouts-operar-catalog-rail-scroll:hover::-webkit-scrollbar-thumb,
+.rootsy-theme-pos .layouts-operar-body .layouts-operar-scroll-minimal:hover::-webkit-scrollbar-thumb {
+  background: color-mix(in srgb, var(--rootsy-sombra-400) 42%, transparent);
+}
+
+.rootsy-theme-pos.rootsy-radius-system.layouts-operar-body .layouts-operar-product-card[data-proposal="plano-dosel"],
+.rootsy-theme-pos.rootsy-radius-system .layouts-operar-body .layouts-operar-product-card[data-proposal="plano-dosel"],
+.rootsy-theme-pos.rootsy-radius-system.layouts-operar-body .layouts-operar-product-card:not([data-proposal]),
+.rootsy-theme-pos.rootsy-radius-system .layouts-operar-body .layouts-operar-product-card:not([data-proposal]) {
+  border-radius: var(--radius-xlarge);
+  box-shadow: var(--layouts-operar-product-card-shadow);
+  background: var(--rootsy-sombra-600);
+  border-color: var(--layouts-operar-border-dark-card);
+}
+
+.rootsy-theme-pos.rootsy-radius-system.layouts-operar-body .layouts-operar-product-card[data-proposal="plano-dosel"]:hover,
+.rootsy-theme-pos.rootsy-radius-system .layouts-operar-body .layouts-operar-product-card[data-proposal="plano-dosel"]:hover,
+.rootsy-theme-pos.rootsy-radius-system.layouts-operar-body .layouts-operar-product-card:not([data-proposal]):hover,
+.rootsy-theme-pos.rootsy-radius-system .layouts-operar-body .layouts-operar-product-card:not([data-proposal]):hover {
+  box-shadow: var(--layouts-operar-product-card-shadow-hover);
+}

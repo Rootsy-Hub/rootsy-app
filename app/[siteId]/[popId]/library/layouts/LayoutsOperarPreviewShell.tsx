@@ -1,6 +1,6 @@
 "use client"
 
-import "@/app/[siteId]/[popId]/library/color/rootsyNaturePalette.css"
+import "@/app/[siteId]/[popId]/library/layouts/layoutsOperarTheme.css"
 import "@/app/[siteId]/[popId]/library/radius/rootsyRadiusSystem.css"
 import { DataWorkspaceModuleLayout } from "@/components/layouts-module/DataWorkspaceModuleLayout"
 import { usePopWorkspace } from "@/context/PopWorkspaceContext"
@@ -37,7 +37,7 @@ export function LayoutsOperarPreviewShell({ children }: Props) {
       userName={bootstrap?.userFullName || undefined}
       userAvatarSrc={bootstrap?.userImageUrl ?? undefined}
       userRoleLabel={bootstrap?.roleLabel || undefined}
-      mainClassName="rootsy-nature-palette rootsy-radius-system min-h-0 flex-1 bg-[var(--op-dark-shell)]"
+      mainClassName="rootsy-theme-pos rootsy-radius-system min-h-0 flex-1 bg-[var(--rootsy-sombra-950)]"
     >
       <div className="relative flex min-h-0 w-full flex-1 flex-col">
         {bootstrapError ? (

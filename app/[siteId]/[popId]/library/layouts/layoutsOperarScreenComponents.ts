@@ -33,13 +33,13 @@ export const LAYOUTS_OPERAR_SCREEN_COMPONENTS: LayoutsOperarScreenComponentRow[]
   {
     layer: "Grid",
     component: "Main split",
-    token: "grid-cols-[1fr_380px] · rows catálogo+toolbox",
+    token: "grid-cols-[1fr_400px] · rows catálogo+toolbox",
     source: "sale/page.tsx · main",
   },
   {
     layer: "Catálogo",
     component: "Sidebar filtros",
-    token: "w-280 · sombra-700 · collapsible",
+    token: "w-288 (6× space.600) · sombra-950 · collapsible",
     source: "sale/page.tsx · data-workspace-sidebar",
   },
   {
@@ -57,13 +57,13 @@ export const LAYOUTS_OPERAR_SCREEN_COMPONENTS: LayoutsOperarScreenComponentRow[]
   {
     layer: "Toolbox",
     component: "Barra configuración",
-    token: "saleOpToolboxBarClass · 4 slots",
+    token: "banda 104px · space.1000 slot · 4 cols",
     source: "saleOperationStyles · SaleOperationToolbox",
   },
   {
     layer: "Toolbox",
     component: "Slots Cliente / Comprobante / Pago / Descuento",
-    token: "saleOpToolboxSlotClass(configurado)",
+    token: "min-h space.1000 · gap-2.5 sm:gap-3",
     source: "sale/page.tsx · row-start-2",
   },
   {

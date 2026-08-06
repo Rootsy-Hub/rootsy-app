@@ -2,6 +2,7 @@ import {
   rootsButtonDestructiveClass,
   rootsButtonPrimaryClass,
 } from "@/components/rootsy-button/rootsButtonStyles"
+import { ROOTSY_LAYOUTS_OPERAR_ANATOMY } from "@/app/[siteId]/[popId]/library/layouts/rootsyLayoutsOperarSystem"
 import { cn } from "@/lib/utils"
 import { importeBaseClass } from "@/lib/typography"
 
@@ -100,14 +101,14 @@ export const saleOpImporteTotalDiscountClass = cn(
 export const saleOpToolboxBarClass =
   "box-border border-t border-white/10 bg-[#0b100e]/92 backdrop-blur-xl"
 
-export const saleOpFooterBandHeightClass =
-  "min-h-[calc(4.5rem+1rem)] sm:min-h-[calc(4.75rem+1.25rem)]"
+export const saleOpFooterBandHeightClass = ROOTSY_LAYOUTS_OPERAR_ANATOMY.toolboxMinHeightClass
 
-export const saleOpFooterBarPaddingClass = "p-2 sm:p-2.5"
+export const saleOpFooterBarPaddingClass = "p-3 sm:p-4"
 
 export function saleOpToolboxSlotClass(configurado: boolean) {
+  const a = ROOTSY_LAYOUTS_OPERAR_ANATOMY
   return cn(
-    "group flex h-full min-h-[4.5rem] w-full items-center gap-2.5 rounded-xl border-0 px-2.5 py-2 text-left transition-[background-color,box-shadow] duration-150 sm:min-h-[4.75rem] sm:gap-3 sm:px-3",
+    `group flex h-full min-h-[${a.toolboxSlotMinHeightPx}px] w-full items-center gap-2.5 rounded-xl border-0 px-2.5 py-2 text-left transition-[background-color,box-shadow] duration-150 sm:min-h-[${a.toolboxSlotMinHeightSmPx}px] sm:gap-3 sm:px-3`,
     "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/45 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0b100e]",
     configurado
       ? "bg-emerald-500/[0.09] shadow-[inset_0_1px_0_rgba(167,243,208,0.08)] hover:bg-emerald-500/12"
@@ -117,7 +118,7 @@ export function saleOpToolboxSlotClass(configurado: boolean) {
 
 export function saleOpToolboxIconWrap(configurado: boolean) {
   return cn(
-    "flex size-9 shrink-0 items-center justify-center rounded-lg transition-colors duration-150 sm:size-10",
+    "flex size-10 shrink-0 items-center justify-center rounded-lg transition-colors duration-150",
     configurado
       ? "bg-emerald-500/20 text-emerald-200"
       : "bg-white/[0.06] text-foreground/45 group-hover:bg-white/10 group-hover:text-foreground/75",

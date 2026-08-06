@@ -18,10 +18,12 @@ import type {
 import { useMesasSaleCheckout } from "@/app/[siteId]/[popId]/mesas/useMesasSaleCheckout"
 import { useMesasState } from "@/app/[siteId]/[popId]/mesas/useMesasState"
 import { OperationsModuleBackdrop } from "@/components/layouts-module/DataWorkspaceOperationsLayout"
+import { getLayoutsOperarMainGridClass } from "@/app/[siteId]/[popId]/library/layouts/layoutsOperarHardcodedSpec"
 import { OpenCashSessionBanner } from "@/components/sale-operation/OpenCashSessionBanner"
 import { SaleOperationToolbox } from "@/components/sale-operation/SaleOperationToolbox"
 import { useCartListScrollHighlight } from "@/hooks/useCartListScrollHighlight"
 import { useMemo, useState, useEffect, useCallback } from "react"
+import { cn } from "@/lib/utils"
 
 type Props = {
   siteId: string
@@ -266,7 +268,7 @@ export function MesasWorkspace({
         </div>
       ) : null}
 
-      <main className="relative z-10 grid min-h-0 flex-1 grid-cols-[minmax(0,1fr)_380px] grid-rows-[minmax(0,1fr)_calc(4.5rem+1rem)] sm:grid-rows-[minmax(0,1fr)_calc(4.75rem+1.25rem)]">
+      <main className={cn("relative z-10 grid min-h-0 flex-1", getLayoutsOperarMainGridClass())}>
         <section className="col-start-1 row-start-1 flex min-h-0 min-w-0 flex-col overflow-hidden bg-[#20262e]">
           {!showCatalog ? (
             <>

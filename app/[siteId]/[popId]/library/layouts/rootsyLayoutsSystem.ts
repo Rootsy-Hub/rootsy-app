@@ -90,10 +90,10 @@ export const ROOTSY_LAYOUTS_VARIANT_CONCEPT: Record<LayoutsHeroVariant, LayoutsC
   operar: {
     eyebrow: "Rootsy · Layouts · Operar",
     title: "Contenido · operar",
-    lead: "Split POS — catálogo oscuro + toolbox + ticket ~380px.",
+    lead: "Split POS — catálogo oscuro + toolbox + ticket 400px.",
     why: [
       "Vender · Comprar · Mesas · Mostrador.",
-      "Sidebar 280px colapsable.",
+      "Sidebar 288px (6× space.600) colapsable.",
       "Ticket claro con acciones.",
     ],
     closing: "Flujo en vivo bajo el módulo.",

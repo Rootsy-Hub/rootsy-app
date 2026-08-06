@@ -20,6 +20,7 @@ import {
 import { ModuleWorkspaceHeader } from "@/components/layouts-module/ModuleWorkspaceHeader"
 import { layoutsModuleContentShellClass } from "@/components/layouts-module/rootsLayoutsModuleProductStyles"
 import { usePopWorkspaceOptional } from "@/context/PopWorkspaceContext"
+import { LAYOUTS_OPERAR_CATALOG_SIDEBAR_WIDTH_PX } from "@/app/[siteId]/[popId]/library/layouts/layoutsOperarStyles"
 import { cn } from "@/lib/utils"
 import { popMenuHref } from "@/lib/popRoutes"
 import {
@@ -448,7 +449,7 @@ export function DataWorkspaceLayout({
               id="data-workspace-sidebar"
               className={cn(
                 "relative shrink-0 overflow-hidden transition-[width] duration-300 ease-in-out motion-reduce:transition-none",
-                sidebarOpen ? "w-[min(100%,280px)]" : "w-0",
+                sidebarOpen ? `w-[min(100%,${LAYOUTS_OPERAR_CATALOG_SIDEBAR_WIDTH_PX}px)]` : "w-0",
               )}
               aria-hidden={canCollapseSidebar ? !sidebarOpen : undefined}
               {...(!sidebarOpen && canCollapseSidebar ? { inert: true } : {})}
