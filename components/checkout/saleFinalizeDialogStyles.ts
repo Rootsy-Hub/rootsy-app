@@ -116,3 +116,18 @@ export const saleFinalizeDialogConfirmActionClass = cn(
   "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[color-mix(in_srgb,var(--rootsy-savia-400)_55%,transparent)]",
   "disabled:pointer-events-none disabled:bg-[var(--rootsy-bruma-300)] disabled:text-[var(--rootsy-bruma-50)]",
 )
+
+export const saleFinalizeDialogActionShortcutClass = cn(
+  "inline-flex h-5 min-w-5 shrink-0 items-center justify-center rounded px-1",
+  "font-sans text-[10px] font-semibold leading-none",
+)
+
+export const saleFinalizeDialogCancelShortcutClass = cn(
+  saleFinalizeDialogActionShortcutClass,
+  "bg-[var(--rootsy-bruma-100)] text-[var(--rootsy-bruma-500)]",
+)
+
+export const saleFinalizeDialogConfirmShortcutClass = cn(
+  saleFinalizeDialogActionShortcutClass,
+  "bg-[color-mix(in_srgb,var(--rootsy-white)_16%,transparent)] text-[color-mix(in_srgb,var(--rootsy-white)_90%,transparent)]",
+)

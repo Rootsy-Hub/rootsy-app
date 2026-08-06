@@ -9,6 +9,7 @@ import { SaleCatalogEmptyMascot } from "@/components/sale-operation/SaleCatalogE
 import { SaleCatalogBrowserSkeleton } from "@/components/sale-operation/SaleCatalogBrowserSkeleton"
 import { SaleCatalogProductCard } from "@/components/sale-operation/SaleCatalogProductCard"
 import { SaleCatalogSidebarNav } from "@/components/sale-operation/SaleCatalogSidebarNav"
+import { SaleCatalogSidebarNavSkeleton } from "@/components/sale-operation/SaleCatalogSidebarNavSkeleton"
 import { useDataWorkspaceSidebar } from "@/components/layouts/useDataWorkspaceSidebar"
 import { SaleCatalogToolbar } from "@/components/sale-operation/SaleCatalogToolbar"
 import { useSaleScanInputFocus } from "@/components/sale-operation/SaleScanInputFocusContext"
@@ -262,12 +263,16 @@ export function SaleCatalogBrowser({
         aria-label="Filtros del catálogo"
       >
         <div className={layoutsOperarCatalogSidebarInnerClass}>
-          <SaleCatalogSidebarNav
-            categories={categories}
-            categorySections={categorySections}
-            vistaCatalogo={vistaCatalogo}
-            onVistaChange={persistVistaCatalogo}
-          />
+          {loading && !error ? (
+            <SaleCatalogSidebarNavSkeleton />
+          ) : (
+            <SaleCatalogSidebarNav
+              categories={categories}
+              categorySections={categorySections}
+              vistaCatalogo={vistaCatalogo}
+              onVistaChange={persistVistaCatalogo}
+            />
+          )}
         </div>
       </aside>
 

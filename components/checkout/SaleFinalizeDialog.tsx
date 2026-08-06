@@ -7,8 +7,10 @@ import {
 import {
   saleFinalizeDialogActionsClass,
   saleFinalizeDialogCancelActionClass,
+  saleFinalizeDialogCancelShortcutClass,
   saleFinalizeDialogCloseClass,
   saleFinalizeDialogConfirmActionClass,
+  saleFinalizeDialogConfirmShortcutClass,
   saleFinalizeDialogErrorClass,
   saleFinalizeDialogOverlayClass,
   saleFinalizeDialogHeaderRowClass,
@@ -19,9 +21,10 @@ import {
   saleFinalizeDialogTotalsZoneClass,
 } from "@/components/checkout/saleFinalizeDialogStyles"
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog"
-import { Loader2, X } from "lucide-react"
+import { CornerDownLeft, Loader2, X } from "lucide-react"
 import type { LucideIcon } from "lucide-react"
 import * as DialogPrimitive from "@radix-ui/react-dialog"
+import { useEffect } from "react"
 
 export type SaleFinalizeDialogProps = {
   open: boolean
@@ -66,6 +69,30 @@ export function SaleFinalizeDialog({
 }: SaleFinalizeDialogProps) {
   void _partyIcon
 
+  useEffect(() => {
+    if (!open) return
+
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Enter") {
+        if (submitting) return
+        event.preventDefault()
+        void onConfirm()
+        return
+      }
+
+      if (event.key === "Escape") {
+        if (submitting) {
+          event.preventDefault()
+          return
+        }
+        onOpenChange(false)
+      }
+    }
+
+    window.addEventListener("keydown", onKeyDown, true)
+    return () => window.removeEventListener("keydown", onKeyDown, true)
+  }, [open, submitting, onConfirm, onOpenChange])
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
@@ -73,6 +100,9 @@ export function SaleFinalizeDialog({
         overlayClassName={saleFinalizeDialogOverlayClass}
         className={saleFinalizeDialogShellClass}
         aria-describedby={undefined}
+        onEscapeKeyDown={(event) => {
+          if (submitting) event.preventDefault()
+        }}
       >
         <section
           aria-label={title}
@@ -120,14 +150,17 @@ export function SaleFinalizeDialog({
             disabled={submitting}
             onClick={() => onOpenChange(false)}
             className={saleFinalizeDialogCancelActionClass}
+            aria-keyshortcuts="Escape"
           >
-            Cancelar
+            <span>Cancelar</span>
+            <span className={saleFinalizeDialogCancelShortcutClass}>Esc</span>
           </button>
           <button
             type="button"
             disabled={submitting}
             onClick={() => void onConfirm()}
             className={saleFinalizeDialogConfirmActionClass}
+            aria-keyshortcuts="Enter"
           >
             {submitting ? (
               <>
@@ -135,7 +168,12 @@ export function SaleFinalizeDialog({
                 Procesando…
               </>
             ) : (
-              confirmLabel
+              <>
+                <span>{confirmLabel}</span>
+                <span className={saleFinalizeDialogConfirmShortcutClass} aria-hidden>
+                  <CornerDownLeft className="size-3.5" strokeWidth={2.25} />
+                </span>
+              </>
             )}
           </button>
         </div>
