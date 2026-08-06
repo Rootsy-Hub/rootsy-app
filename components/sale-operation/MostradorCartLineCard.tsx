@@ -27,21 +27,18 @@ import {
   cartLineRowGridNoPriceClass,
 } from "@/components/sale-operation/CartLineQuantityLabel"
 import {
-  saleOpDialogBody,
-  saleOpDialogContentMd,
   saleOpCartLineDividerTopClass,
-  saleOpDialogHeader,
   saleOpFmt,
   saleOpImporteBaseClass,
   saleOpImporteCartClass,
 } from "@/components/sale-operation/saleOperationStyles"
-import { Field, FieldGroup, FieldLabel } from "@/components/ui/field"
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog"
+  RootsDialogBody,
+  RootsDialogContent,
+  RootsDialogHeader,
+} from "@/components/rootsy-dialog"
+import { Field, FieldGroup, FieldLabel } from "@/components/ui/field"
+import { Dialog } from "@/components/ui/dialog"
 import { Textarea } from "@/components/ui/textarea"
 import {
   mostradorCartRowCommentKey,
@@ -445,24 +442,15 @@ export function MostradorCartLineCard({
           if (!next) closeModal()
         }}
       >
-        <DialogContent className={saleOpDialogContentMd}>
-          <DialogHeader className={cn(saleOpDialogHeader, "shrink-0")}>
-            <DialogTitle className="text-base font-semibold tracking-tight">
-              {row.nombre}
-            </DialogTitle>
-          </DialogHeader>
+        <RootsDialogContent className="flex flex-col">
+          <RootsDialogHeader title={row.nombre} />
 
-          <div
-            className={cn(
-              saleOpDialogBody,
-              "min-h-0 flex-1 space-y-4 overflow-y-auto overscroll-contain",
-            )}
-          >
+          <RootsDialogBody className="space-y-4">
             <CheckoutSectionPanel>
               <div className="space-y-2.5">
                 <CheckoutSectionLabel>Cantidad</CheckoutSectionLabel>
                 {!canChangeQuantity ? (
-                  <p className="rounded-xl border border-dashed border-border/70 bg-muted/10 px-3.5 py-2.5 text-xs leading-snug text-muted-foreground">
+                  <p className="rounded-xl border border-dashed border-[var(--rootsy-bruma-200)] bg-white px-3.5 py-2.5 text-xs leading-snug text-[var(--rootsy-bruma-500)]">
                     {quantityDisabledHint}
                   </p>
                 ) : (
@@ -496,7 +484,7 @@ export function MostradorCartLineCard({
 
             <CheckoutSectionPanel>
               {!canComment ? (
-                <p className="rounded-xl border border-dashed border-border/70 bg-muted/10 px-3.5 py-2.5 text-xs leading-snug text-muted-foreground">
+                <p className="rounded-xl border border-dashed border-[var(--rootsy-bruma-200)] bg-white px-3.5 py-2.5 text-xs leading-snug text-[var(--rootsy-bruma-500)]">
                   Este ítem no admite comentario.
                 </p>
               ) : (
@@ -518,7 +506,7 @@ export function MostradorCartLineCard({
 
             <CheckoutSectionPanel>
               {!canDiscount ? (
-                <p className="rounded-xl border border-dashed border-border/70 bg-muted/10 px-3.5 py-2.5 text-xs leading-snug text-muted-foreground">
+                <p className="rounded-xl border border-dashed border-[var(--rootsy-bruma-200)] bg-white px-3.5 py-2.5 text-xs leading-snug text-[var(--rootsy-bruma-500)]">
                   El descuento está incluido en la promoción aplicada.
                 </p>
               ) : (
@@ -563,7 +551,7 @@ export function MostradorCartLineCard({
                 </>
               )}
             </CheckoutSectionPanel>
-          </div>
+          </RootsDialogBody>
 
           <CheckoutDialogFooter
             secondaryAction={{
@@ -574,7 +562,7 @@ export function MostradorCartLineCard({
             }}
             primary={{ label: "Listo", onClick: handleDone }}
           />
-        </DialogContent>
+        </RootsDialogContent>
       </Dialog>
     </>
   )

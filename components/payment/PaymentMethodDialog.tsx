@@ -1,12 +1,17 @@
 "use client"
 
-import { Button } from "@/components/ui/button"
+import { CheckoutOptionCard } from "@/components/checkout/CheckoutOptionCard"
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog"
+  RootsDialogBody,
+  RootsDialogContent,
+  RootsDialogErrorBanner,
+  RootsDialogHeader,
+  rootsDialogHeaderClass,
+  rootsDialogHeaderCompactClass,
+  rootsDialogTitleClass,
+} from "@/components/rootsy-dialog"
+import { RootsIconButton } from "@/components/rootsy-button/RootsIconButton"
+import { Dialog, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Separator } from "@/components/ui/separator"
@@ -29,18 +34,11 @@ import {
   ArrowLeftRight,
   Banknote,
   BookOpen,
-  Check,
   ChevronLeft,
-  ChevronRight,
   CreditCard,
   Landmark,
 } from "lucide-react"
-import { useCallback, useEffect, useMemo, useState, type ComponentType } from "react"
-import {
-  saleOpDialogBody,
-  saleOpDialogContentMd,
-  saleOpDialogHeader,
-} from "@/components/sale-operation/saleOperationStyles"
+import { useCallback, useEffect, useMemo, useState } from "react"
 
 type Props = {
   flow: PaymentFlow
@@ -88,66 +86,6 @@ function destinationIcon(kind: OperationPaymentKind) {
   }
 }
 
-function PaymentOptionCard({
-  title,
-  selected,
-  onClick,
-  icon: Icon,
-  trailing = "chevron",
-}: {
-  title: string
-  selected: boolean
-  onClick: () => void
-  icon: ComponentType<{ className?: string }>
-  trailing?: "chevron" | "check" | "none"
-}) {
-  return (
-    <button
-      type="button"
-      role="option"
-      aria-selected={selected}
-      onClick={onClick}
-      className={cn(
-        "group flex w-full items-center gap-3 rounded-xl border px-3.5 py-3 text-left transition-all duration-150",
-        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 focus-visible:ring-offset-2 focus-visible:ring-offset-background",
-        selected
-          ? "border-primary/45 bg-primary/8 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]"
-          : "border-border/70 bg-muted/15 hover:border-border hover:bg-muted/30 active:scale-[0.995]",
-      )}
-    >
-      <span
-        className={cn(
-          "flex size-10 shrink-0 items-center justify-center rounded-lg transition-colors",
-          selected
-            ? "bg-primary/15 text-primary"
-            : "bg-muted/50 text-muted-foreground group-hover:bg-muted/70 group-hover:text-foreground",
-        )}
-      >
-        <Icon className="size-[18px]" aria-hidden />
-      </span>
-      <span className="min-w-0 flex-1">
-        <span className="block text-sm font-semibold leading-snug text-foreground">
-          {title}
-        </span>
-      </span>
-      {trailing === "check" && selected ? (
-        <span className="flex size-6 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground">
-          <Check className="size-3.5" strokeWidth={2.5} aria-hidden />
-        </span>
-      ) : null}
-      {trailing === "chevron" ? (
-        <ChevronRight
-          className={cn(
-            "size-4 shrink-0 transition-transform",
-            selected ? "text-primary" : "text-muted-foreground/70",
-          )}
-          aria-hidden
-        />
-      ) : null}
-    </button>
-  )
-}
-
 function AccountOptionCard({
   title,
   description,
@@ -161,61 +99,28 @@ function AccountOptionCard({
 }) {
   return (
     <div className="space-y-2">
-      <PaymentOptionCard
+      <CheckoutOptionCard
         title={title}
         selected={selected}
         onClick={onClick}
         icon={BookOpen}
         trailing={selected ? "check" : "none"}
       />
-      <p className="px-1 text-xs leading-relaxed text-muted-foreground">
+      <p className="px-1 text-xs leading-relaxed text-[var(--rootsy-bruma-500)]">
         {description}
       </p>
     </div>
   )
 }
 
-function StepHeader({
-  step,
-  pendingKind,
-  flow,
-  onBack,
-}: {
-  step: PaymentCheckoutStep
-  pendingKind: OperationPaymentKind | null
-  flow: PaymentFlow
-  onBack: () => void
-}) {
-  if (step === "menu") {
-    return (
-      <DialogTitle className="text-base font-semibold tracking-tight">
-        Formas de pago
-      </DialogTitle>
-    )
-  }
-
-  const title =
-    step === "installments"
-      ? "Cuotas de la tarjeta"
-      : paymentCheckoutKindLabel(flow, pendingKind!)
-
-  return (
-    <div className="flex items-start gap-2">
-      <Button
-        type="button"
-        variant="ghost-neutral"
-        size="icon"
-        className="-ml-2 size-8 shrink-0 rounded-lg"
-        onClick={onBack}
-        aria-label="Volver"
-      >
-        <ChevronLeft className="size-4" />
-      </Button>
-      <DialogTitle className="min-w-0 flex-1 pt-0.5 text-base font-semibold tracking-tight">
-        {title}
-      </DialogTitle>
-    </div>
-  )
+function paymentStepTitle(
+  step: PaymentCheckoutStep,
+  flow: PaymentFlow,
+  pendingKind: OperationPaymentKind | null,
+): string {
+  if (step === "menu") return "Formas de pago"
+  if (step === "installments") return "Cuotas de la tarjeta"
+  return paymentCheckoutKindLabel(flow, pendingKind!)
 }
 
 export function PaymentMethodDialog({
@@ -231,7 +136,6 @@ export function PaymentMethodDialog({
   accountDescription,
   immediateSectionTitle,
   cashTreasuryAccountId = null,
-  cashRegisterName = null,
   cardInstallments = "1",
   onCardInstallmentsChange,
 }: Props) {
@@ -346,39 +250,49 @@ export function PaymentMethodDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className={saleOpDialogContentMd}>
-        <DialogHeader className={cn(saleOpDialogHeader, "shrink-0")}>
-          <StepHeader
-            step={step}
-            pendingKind={pendingKind}
-            flow={flow}
-            onBack={handleBack}
-          />
-        </DialogHeader>
+      <RootsDialogContent className="flex flex-col">
+        {step === "menu" ? (
+          <RootsDialogHeader title="Formas de pago" />
+        ) : (
+          <DialogHeader
+            className={cn(
+              rootsDialogHeaderClass,
+              rootsDialogHeaderCompactClass,
+              "shrink-0",
+            )}
+          >
+            <div className="flex items-center gap-2">
+              <RootsIconButton
+                type="button"
+                label="Volver"
+                theme="workspace"
+                emphasis="ghost"
+                size="default"
+                className="-ml-2 shrink-0"
+                onClick={handleBack}
+              >
+                <ChevronLeft aria-hidden />
+              </RootsIconButton>
+              <DialogTitle className={cn(rootsDialogTitleClass, "min-w-0 flex-1")}>
+                {paymentStepTitle(step, flow, pendingKind)}
+              </DialogTitle>
+            </div>
+          </DialogHeader>
+        )}
 
-        <div
-          className={cn(
-            saleOpDialogBody,
-            "min-h-0 flex-1 space-y-4 overflow-y-auto overscroll-contain",
-          )}
-        >
+        <RootsDialogBody className="space-y-4">
           {stepError ? (
-            <p
-              role="alert"
-              className="rounded-xl border border-destructive/25 bg-destructive/10 px-3.5 py-2.5 text-sm text-destructive"
-            >
-              {stepError}
-            </p>
+            <RootsDialogErrorBanner>{stepError}</RootsDialogErrorBanner>
           ) : null}
 
           {step === "menu" ? (
             <>
               <div>
-                <p className="mb-2.5 px-0.5 text-[10px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
+                <p className="mb-2.5 px-0.5 text-[10px] font-semibold uppercase tracking-[0.12em] text-[var(--rootsy-bruma-500)]">
                   {sectionTitle}
                 </p>
                 {!treasuryContext ? (
-                  <p className="rounded-xl border border-dashed border-border/60 bg-muted/15 px-4 py-5 text-center text-sm text-muted-foreground">
+                  <p className="rounded-xl border border-dashed border-[var(--rootsy-bruma-200)] bg-white px-4 py-5 text-center text-sm text-[var(--rootsy-bruma-500)]">
                     Cargando medios de pago…
                   </p>
                 ) : (
@@ -399,7 +313,7 @@ export function PaymentMethodDialog({
 
                       return (
                         <li key={kind}>
-                          <PaymentOptionCard
+                          <CheckoutOptionCard
                             title={paymentCheckoutKindLabel(flow, kind)}
                             selected={isSelected}
                             onClick={() => handleKindPick(kind)}
@@ -415,7 +329,7 @@ export function PaymentMethodDialog({
                 )}
               </div>
 
-              <Separator className="bg-border/60" />
+              <Separator className="bg-[var(--rootsy-bruma-200)]" />
 
               <AccountOptionCard
                 title={accountOptionLabel}
@@ -440,7 +354,7 @@ export function PaymentMethodDialog({
                   selected.treasuryAccountId === dest.id
                 return (
                   <li key={dest.id}>
-                    <PaymentOptionCard
+                    <CheckoutOptionCard
                       title={dest.name}
                       selected={isSelected}
                       onClick={() => handleDestinationPick(dest.id, dest.name)}
@@ -476,8 +390,8 @@ export function PaymentMethodDialog({
               />
             </div>
           ) : null}
-        </div>
-      </DialogContent>
+        </RootsDialogBody>
+      </RootsDialogContent>
     </Dialog>
   )
 }

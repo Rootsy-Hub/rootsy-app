@@ -10,23 +10,24 @@ import {
 } from "@/app/[siteId]/[popId]/clients/clientIvaConstants"
 import { CheckoutOptionCard } from "@/components/checkout/CheckoutOptionCard"
 import { CheckoutDialogFooter } from "@/components/checkout/CheckoutDialogFooter"
-import { Button } from "@/components/ui/button"
+import { RootsIconButton } from "@/components/rootsy-button/RootsIconButton"
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog"
-import { Field, FieldGroup, FieldLabel } from "@/components/ui/field"
-import { Input } from "@/components/ui/input"
+  RootsDialogBody,
+  RootsDialogContent,
+  RootsDialogHeader,
+  rootsDialogHeaderClass,
+  rootsDialogHeaderCompactClass,
+  rootsDialogTitleClass,
+} from "@/components/rootsy-dialog"
+import {
+  RootsFormSearchField,
+  RootsFormSelectField,
+  RootsFormSelectItem,
+  RootsFormTextField,
+} from "@/components/rootsy-form"
+import { RootsSpinner } from "@/components/rootsy-spinner"
+import { Dialog, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Separator } from "@/components/ui/separator"
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
 import {
   partyPickerTitle,
   type OperationPartyCatalogItem,
@@ -35,19 +36,7 @@ import {
 import { sanitizeTaxDocumentInput } from "@/lib/argentinaTaxDocumentInput"
 import { formatPadronErrorForUser } from "@/lib/padronUserFacingError"
 import { cn } from "@/lib/utils"
-import {
-  saleOpDialogBody,
-  saleOpDialogContentMd,
-  saleOpDialogHeader,
-} from "@/components/sale-operation/saleOperationStyles"
-import {
-  Building2,
-  ChevronLeft,
-  Loader2,
-  Search,
-  User,
-  X,
-} from "lucide-react"
+import { Building2, ChevronLeft, User } from "lucide-react"
 import { useEffect, useRef, useState } from "react"
 
 export type OperationPadronState = {
@@ -80,101 +69,6 @@ type Props = {
   onSelectManual: () => void
   onClearSelection: () => void
   onIvaConditionApplied?: (iva: ClientIvaConditionValue) => void
-}
-
-function SearchClearButton({ onClick }: { onClick: () => void }) {
-  return (
-    <button
-      type="button"
-      aria-label="Limpiar búsqueda"
-      className="absolute right-2 top-1/2 flex size-7 -translate-y-1/2 items-center justify-center rounded-full text-muted-foreground transition-[color,background-color] duration-150 hover:bg-muted/70 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background active:bg-muted"
-      onClick={onClick}
-    >
-      <X className="size-3.5" aria-hidden />
-    </button>
-  )
-}
-
-function CheckoutSearchField({
-  value,
-  onChange,
-  placeholder,
-  disabled,
-}: {
-  value: string
-  onChange: (value: string) => void
-  placeholder: string
-  disabled?: boolean
-}) {
-  return (
-    <div
-      className={cn(
-        "relative rounded-xl border border-border/70 bg-muted/15 transition-all duration-150",
-        "focus-within:border-primary/45 focus-within:ring-2 focus-within:ring-primary/20",
-        disabled && "opacity-60",
-      )}
-    >
-      <Search
-        className="pointer-events-none absolute left-3.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground"
-        aria-hidden
-      />
-      <input
-        type="text"
-        inputMode="search"
-        enterKeyHint="search"
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        placeholder={placeholder}
-        disabled={disabled}
-        autoComplete="off"
-        className={cn(
-          "h-11 w-full bg-transparent pl-10 text-sm text-foreground outline-none placeholder:text-muted-foreground/70",
-          value.length > 0 && !disabled && "pr-10",
-        )}
-      />
-      {value.length > 0 && !disabled ? (
-        <SearchClearButton onClick={() => onChange("")} />
-      ) : null}
-    </div>
-  )
-}
-
-function StepHeader({
-  step,
-  flow,
-  context,
-  onBack,
-}: {
-  step: PartyPickerStep
-  flow: "sale" | "purchase"
-  context: "venta" | "mesa" | "pedido" | "compra"
-  onBack: () => void
-}) {
-  if (step === "catalog") {
-    return (
-      <DialogTitle className="text-base font-semibold tracking-tight">
-        {partyPickerTitle(flow, context)}
-      </DialogTitle>
-    )
-  }
-
-  return (
-    <div className="flex items-start gap-2">
-      <Button
-        type="button"
-        variant="ghost-neutral"
-        size="icon"
-        className="-ml-2 size-8 shrink-0 rounded-lg"
-        onClick={onBack}
-        aria-label="Volver"
-      >
-        <ChevronLeft className="size-4" />
-      </Button>
-      <DialogTitle className="min-w-0 flex-1 pt-0.5 text-base font-semibold tracking-tight">
-        Carga manual
-      </DialogTitle>
-    </div>
-  )
 }
 
 function ManualEntryForm({
@@ -270,80 +164,70 @@ function ManualEntryForm({
     : null
 
   return (
-    <FieldGroup className="gap-4">
-      <Field>
-        <FieldLabel htmlFor="party-tax-id">{taxLabel}</FieldLabel>
-        <Input
-          id="party-tax-id"
-          type="text"
-          inputMode="numeric"
-          value={taxId}
-          onChange={(e) =>
-            onTaxIdChange(sanitizeTaxDocumentInput(e.target.value, taxInputMode))
-          }
-          placeholder={taxPlaceholder}
-          className="h-11 rounded-xl"
-          autoComplete="off"
-          disabled={readOnly}
-          readOnly={readOnly}
-          autoFocus={!readOnly}
-        />
-        {padron.busy ? (
-          <p className="flex items-center gap-2 text-sm text-muted-foreground">
-            <Loader2 className="size-4 animate-spin" aria-hidden />
-            Consultando ARCA…
-          </p>
-        ) : null}
-        {padronErrorMessage ? (
-          <p className="text-sm text-destructive">{padronErrorMessage}</p>
-        ) : null}
-      </Field>
+    <div className="space-y-4">
+      <RootsFormTextField
+        label={taxLabel}
+        id="party-tax-id"
+        type="text"
+        inputMode="numeric"
+        value={taxId}
+        onChange={(e) =>
+          onTaxIdChange(sanitizeTaxDocumentInput(e.target.value, taxInputMode))
+        }
+        placeholder={taxPlaceholder}
+        autoComplete="off"
+        disabled={readOnly}
+        readOnly={readOnly}
+        autoFocus={!readOnly}
+        error={padronErrorMessage ?? undefined}
+        hint={
+          padron.busy ? (
+            <span className="inline-flex items-center gap-2">
+              <RootsSpinner size="sm" aria-hidden />
+              Consultando ARCA…
+            </span>
+          ) : undefined
+        }
+      />
 
-      <Field>
-        <FieldLabel htmlFor="party-manual-name">Nombre o razón social</FieldLabel>
-        <Input
-          id="party-manual-name"
-          value={manualName}
-          onChange={(e) => onManualNameChange(e.target.value)}
-          placeholder={
-            padron.busy
-              ? "Consultando ARCA…"
-              : "Se completa al consultar ARCA"
-          }
-          className="h-11 rounded-xl"
-          autoComplete="off"
-          disabled
-          readOnly
-        />
-      </Field>
+      <RootsFormTextField
+        label="Nombre o razón social"
+        id="party-manual-name"
+        value={manualName}
+        onChange={(e) => onManualNameChange(e.target.value)}
+        placeholder={
+          padron.busy
+            ? "Consultando ARCA…"
+            : "Se completa al consultar ARCA"
+        }
+        autoComplete="off"
+        disabled
+        readOnly
+      />
 
-      <Field>
-        <FieldLabel htmlFor="party-iva-condition">Condición IVA</FieldLabel>
-        <Select
-          value={ivaCondition || "__none__"}
-          disabled={readOnly || !arcaLookupOk || ivaFromArca}
-          onValueChange={(v) => {
-            const next = v === "__none__" ? "" : v
-            onIvaConditionChange(next)
-            if (next && onIvaConditionApplied) {
-              onIvaConditionApplied(next as ClientIvaConditionValue)
-            }
-          }}
-        >
-          <SelectTrigger id="party-iva-condition" className="h-11 w-full rounded-xl">
-            <SelectValue placeholder="Sin definir" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="__none__">Sin definir</SelectItem>
-            {CLIENT_IVA_CONDITION_OPTIONS.map((o) => (
-              <SelectItem key={o.value} value={o.value}>
-                {o.label}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </Field>
-    </FieldGroup>
+      <RootsFormSelectField
+        label="Condición IVA"
+        id="party-iva-condition"
+        value={ivaCondition || "__none__"}
+        placeholder="Sin definir"
+        disabled={readOnly || !arcaLookupOk || ivaFromArca}
+        readOnly={readOnly || ivaFromArca}
+        onValueChange={(v) => {
+          const next = v === "__none__" ? "" : v
+          onIvaConditionChange(next)
+          if (next && onIvaConditionApplied) {
+            onIvaConditionApplied(next as ClientIvaConditionValue)
+          }
+        }}
+      >
+        <RootsFormSelectItem value="__none__">Sin definir</RootsFormSelectItem>
+        {CLIENT_IVA_CONDITION_OPTIONS.map((o) => (
+          <RootsFormSelectItem key={o.value} value={o.value}>
+            {o.label}
+          </RootsFormSelectItem>
+        ))}
+      </RootsFormSelectField>
+    </div>
   )
 }
 
@@ -445,29 +329,51 @@ export function OperationPartyPickerDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className={saleOpDialogContentMd}>
-        <DialogHeader className={cn(saleOpDialogHeader, "shrink-0")}>
-          <StepHeader
-            step={step}
-            flow={flow}
-            context={context}
-            onBack={() => setStep("catalog")}
-          />
-        </DialogHeader>
+      <RootsDialogContent className="flex flex-col">
+        {step === "catalog" ? (
+          <RootsDialogHeader title={partyPickerTitle(flow, context)} />
+        ) : (
+          <DialogHeader
+            className={cn(
+              rootsDialogHeaderClass,
+              rootsDialogHeaderCompactClass,
+              "shrink-0",
+            )}
+          >
+            <div className="flex items-center gap-2">
+              <RootsIconButton
+                type="button"
+                label="Volver"
+                theme="workspace"
+                emphasis="ghost"
+                size="default"
+                className="-ml-2 shrink-0"
+                onClick={() => setStep("catalog")}
+              >
+                <ChevronLeft aria-hidden />
+              </RootsIconButton>
+              <DialogTitle className={cn(rootsDialogTitleClass, "min-w-0 flex-1")}>
+                Carga manual
+              </DialogTitle>
+            </div>
+          </DialogHeader>
+        )}
 
-        <div
-          className={cn(
-            saleOpDialogBody,
-            "min-h-0 flex-1 space-y-4 overflow-y-auto overscroll-contain",
-          )}
-        >
+        <RootsDialogBody className="space-y-4">
           {step === "catalog" ? (
             <>
               {!catalogBlocked && canSearchCatalog ? (
                 <>
-                  <CheckoutSearchField
+                  <RootsFormSearchField
+                    hideLabel
+                    label={
+                      flow === "purchase"
+                        ? "Buscar proveedor"
+                        : "Buscar cliente"
+                    }
                     value={searchQuery}
-                    onChange={setSearchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    onClear={() => setSearchQuery("")}
                     placeholder={searchPlaceholder}
                   />
 
@@ -479,12 +385,12 @@ export function OperationPartyPickerDialog({
                       aria-busy={searchLoading}
                     >
                       {searchLoading ? (
-                        <li className="flex items-center justify-center gap-2 rounded-xl border border-dashed border-border/60 bg-muted/10 px-4 py-8 text-sm text-muted-foreground">
-                          <Loader2 className="size-4 animate-spin" aria-hidden />
+                        <li className="flex items-center justify-center gap-2 rounded-xl border border-dashed border-[var(--rootsy-bruma-200)] bg-white px-4 py-8 text-sm text-[var(--rootsy-bruma-500)]">
+                          <RootsSpinner size="sm" aria-hidden />
                           Buscando…
                         </li>
                       ) : catalogResults.length === 0 ? (
-                        <li className="rounded-xl border border-dashed border-border/60 bg-muted/10 px-4 py-8 text-center text-sm text-muted-foreground">
+                        <li className="rounded-xl border border-dashed border-[var(--rootsy-bruma-200)] bg-white px-4 py-8 text-center text-sm text-[var(--rootsy-bruma-500)]">
                           Sin resultados
                         </li>
                       ) : (
@@ -512,7 +418,7 @@ export function OperationPartyPickerDialog({
               {showAlternateOptions ? (
                 <>
                   {!catalogBlocked && canSearchCatalog ? (
-                    <Separator className="bg-border/60" />
+                    <Separator className="bg-[var(--rootsy-bruma-200)]" />
                   ) : null}
 
                   <div className="space-y-2">
@@ -545,7 +451,7 @@ export function OperationPartyPickerDialog({
               onIvaConditionApplied={onIvaConditionApplied}
             />
           )}
-        </div>
+        </RootsDialogBody>
 
         <CheckoutDialogFooter
           secondaryAction={
@@ -573,7 +479,7 @@ export function OperationPartyPickerDialog({
               : undefined
           }
         />
-      </DialogContent>
+      </RootsDialogContent>
     </Dialog>
   )
 }

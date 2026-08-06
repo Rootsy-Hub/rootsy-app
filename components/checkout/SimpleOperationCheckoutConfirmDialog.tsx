@@ -1,21 +1,16 @@
 "use client"
 
 import { CheckoutConfirmSummary } from "@/components/checkout/CheckoutConfirmSummary"
-import { CheckoutDialogFooter } from "@/components/checkout/CheckoutDialogFooter"
 import { CheckoutSectionPanel } from "@/components/checkout/CheckoutFormFields"
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog"
-import {
-  saleOpDialogBody,
-  saleOpDialogContentMd,
-  saleOpDialogHeader,
-  saleOpFmt,
-} from "@/components/sale-operation/saleOperationStyles"
-import { cn } from "@/lib/utils"
+  RootsDialogBody,
+  RootsDialogContent,
+  RootsDialogDualActionFooter,
+  RootsDialogErrorBanner,
+  RootsDialogHeader,
+} from "@/components/rootsy-dialog"
+import { Dialog } from "@/components/ui/dialog"
+import { saleOpFmt } from "@/components/sale-operation/saleOperationStyles"
 import type { LucideIcon } from "lucide-react"
 
 type Props = {
@@ -66,19 +61,10 @@ export function SimpleOperationCheckoutConfirmDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className={saleOpDialogContentMd}>
-        <DialogHeader className={cn(saleOpDialogHeader, "shrink-0")}>
-          <DialogTitle className="text-base font-semibold tracking-tight">
-            {title}
-          </DialogTitle>
-        </DialogHeader>
+      <RootsDialogContent className="flex flex-col">
+        <RootsDialogHeader title={title} />
 
-        <div
-          className={cn(
-            saleOpDialogBody,
-            "min-h-0 flex-1 space-y-4 overflow-y-auto overscroll-contain",
-          )}
-        >
+        <RootsDialogBody className="space-y-4">
           <CheckoutSectionPanel>
             <CheckoutConfirmSummary
               total={total}
@@ -92,28 +78,20 @@ export function SimpleOperationCheckoutConfirmDialog({
           </CheckoutSectionPanel>
 
           {submitError ? (
-            <p
-              role="alert"
-              className="rounded-xl border border-destructive/30 bg-destructive/5 px-3.5 py-2.5 text-sm text-destructive"
-            >
-              {submitError}
-            </p>
+            <RootsDialogErrorBanner>{submitError}</RootsDialogErrorBanner>
           ) : null}
-        </div>
+        </RootsDialogBody>
 
-        <CheckoutDialogFooter
-          className="shrink-0"
+        <RootsDialogDualActionFooter
           onCancel={() => onOpenChange(false)}
-          cancelDisabled={submitting}
-          primary={{
-            label: confirmLabel,
-            onClick: () => void onConfirm(),
-            disabled: submitting,
-            loading: submitting,
-            loadingLabel: "Procesando…",
-          }}
+          cancelLabel="Cancelar"
+          onConfirm={() => void onConfirm()}
+          confirmLabel={confirmLabel}
+          confirmDisabled={submitting}
+          confirmLoading={submitting}
+          confirmLoadingLabel="Procesando…"
         />
-      </DialogContent>
+      </RootsDialogContent>
     </Dialog>
   )
 }

@@ -69,34 +69,12 @@ import {
 } from "lucide-react"
 import { usePadronAutofillRazonSocial } from "@/hooks/usePadronAutofillRazonSocial"
 import { cn } from "@/lib/utils"
-import { Button } from "@/components/ui/button"
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog"
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog"
-import { Input } from "@/components/ui/input"
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
-import { Separator } from "@/components/ui/separator"
+  RootsAlertDialogContent,
+  RootsAlertDialogFooter,
+  RootsAlertDialogPanel,
+} from "@/components/rootsy-dialog"
+import { AlertDialog } from "@/components/ui/alert-dialog"
 import { SimpleOperationCheckoutConfirmDialog } from "@/components/checkout/SimpleOperationCheckoutConfirmDialog"
 import { SaleOperationTicketOrderPanel } from "@/components/sale-operation/SaleOperationTicketOrderPanel"
 import {
@@ -894,42 +872,6 @@ function SalePage() {
     setDescuentoModalAbierto(false)
   }
 
-  const ventaDialogOptionClass = (seleccionado: boolean, disabled = false) =>
-    cn(
-      "flex w-full items-center justify-between gap-3 rounded-lg border px-3 py-2.5 text-left transition-colors",
-      disabled &&
-        (seleccionado
-          ? "cursor-default"
-          : "pointer-events-none opacity-45"),
-      seleccionado
-        ? "border-primary/40 bg-primary/10 ring-1 ring-primary/15"
-        : "border-border/70 bg-muted/20 hover:bg-muted/35",
-    )
-
-  const ventaDialogLight = "rootsy-app-light text-foreground"
-  const ventaDialogSurface =
-    "gap-0 overflow-hidden rounded-2xl border border-border/60 bg-card p-0 shadow-2xl ring-1 ring-black/[0.04]"
-  const ventaDialogMaxViewport =
-    "max-h-[calc(100vh-100px)] flex flex-col overflow-hidden"
-  const ventaDialogSurfaceMd = cn(
-    ventaDialogSurface,
-    ventaDialogMaxViewport,
-    "sm:max-w-md",
-  )
-  const ventaDialogContentMd = cn(ventaDialogSurfaceMd, ventaDialogLight)
-  const ventaDialogHeader =
-    "space-y-1.5 border-b border-border/50 bg-muted/25 px-6 pb-4 pt-5 text-left"
-  const ventaDialogBody = "px-6 py-4"
-  const ventaDialogFooter =
-    "border-t border-border/50 bg-muted/15 px-6 py-3.5 sm:justify-between"
-  const ventaDialogPrimaryBtn =
-    "h-10 bg-emerald-600 font-semibold text-white shadow-sm hover:bg-emerald-500 active:bg-emerald-700"
-  const ventaDialogGhostBtn = "h-10 text-muted-foreground hover:text-foreground"
-  const ventaAlertDialogContent = cn(
-    ventaDialogLight,
-    "rounded-2xl border border-border/60 bg-card shadow-2xl sm:max-w-md",
-  )
-
   const headerUserName =
     bootstrap?.userFullName?.trim() ||
     user?.email?.split("@")[0] ||
@@ -1172,25 +1114,19 @@ function SalePage() {
       />
 
       <AlertDialog open={descartarConfirmOpen} onOpenChange={setDescartarConfirmOpen}>
-        <AlertDialogContent className={ventaAlertDialogContent}>
-          <AlertDialogHeader>
-            <AlertDialogTitle>¿Descartar la venta?</AlertDialogTitle>
-            <AlertDialogDescription className="text-muted-foreground">
-              Se quitarán los productos del pedido, el cliente, el tipo de comprobante, los
-              descuentos y los comentarios de línea. Esta acción no se puede deshacer.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel className="border-border">Cancelar</AlertDialogCancel>
-            <AlertDialogAction
-              type="button"
-              onClick={limpiarVenta}
-              className="border-0 bg-rose-600 text-white hover:bg-rose-500 focus-visible:ring-2 focus-visible:ring-rose-500 focus-visible:ring-offset-2"
-            >
-              Descartar
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
+        <RootsAlertDialogContent>
+          <RootsAlertDialogPanel
+            title="¿Descartar la venta?"
+            description="Se quitarán los productos del pedido, el cliente, el tipo de comprobante, los descuentos y los comentarios de línea. Esta acción no se puede deshacer."
+          />
+          <RootsAlertDialogFooter
+            cancelLabel="Cancelar"
+            confirmLabel="Descartar"
+            destructive
+            onCancel={() => setDescartarConfirmOpen(false)}
+            onConfirm={limpiarVenta}
+          />
+        </RootsAlertDialogContent>
       </AlertDialog>
 
       <SimpleOperationCheckoutConfirmDialog

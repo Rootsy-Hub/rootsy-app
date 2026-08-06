@@ -8,11 +8,11 @@ import {
   CheckoutSectionPanel,
 } from "@/components/checkout/CheckoutFormFields"
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog"
+  RootsDialogBody,
+  RootsDialogContent,
+  RootsDialogHeader,
+} from "@/components/rootsy-dialog"
+import { Dialog } from "@/components/ui/dialog"
 import {
   Select,
   SelectContent,
@@ -26,9 +26,6 @@ import type { PromotionCartSelection } from "@/lib/promotionPricing"
 import { cn } from "@/lib/utils"
 import {
   saleOpChannelFormField,
-  saleOpDialogBody,
-  saleOpDialogContentMd,
-  saleOpDialogHeader,
   saleOpFmt,
 } from "@/components/sale-operation/saleOperationStyles"
 import { useEffect, useId, useMemo, useState } from "react"
@@ -108,19 +105,10 @@ export function PromotionComboWizard({
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent className={saleOpDialogContentMd}>
-        <DialogHeader className={cn(saleOpDialogHeader, "shrink-0")}>
-          <DialogTitle className="text-base font-semibold tracking-tight">
-            {promotion?.name ?? "Promoción"}
-          </DialogTitle>
-        </DialogHeader>
+      <RootsDialogContent className="flex flex-col">
+        <RootsDialogHeader title={promotion?.name ?? "Promoción"} />
 
-        <div
-          className={cn(
-            saleOpDialogBody,
-            "min-h-0 flex-1 space-y-4 overflow-y-auto overscroll-contain",
-          )}
-        >
+        <RootsDialogBody className="space-y-4">
           <CheckoutFieldHint>
             Elegí qué producto o receta va en cada ítem del combo.
           </CheckoutFieldHint>
@@ -189,7 +177,7 @@ export function PromotionComboWizard({
               )
             })}
           </CheckoutSectionPanel>
-        </div>
+        </RootsDialogBody>
 
         <CheckoutDialogFooter
           onCancel={() => handleOpenChange(false)}
@@ -199,7 +187,7 @@ export function PromotionComboWizard({
             disabled: !canConfirm,
           }}
         />
-      </DialogContent>
+      </RootsDialogContent>
     </Dialog>
   )
 }

@@ -6,8 +6,14 @@ import {
 } from "@/lib/moneyInput"
 import {
   rootsFormFieldLabelClass,
+  rootsFormSegmentGroupClass,
+  rootsFormSegmentOptionClass,
 } from "@/components/rootsy-form/rootsFormStyles"
 import { cn } from "@/lib/utils"
+import {
+  checkoutOptionCardIconClass,
+  checkoutOptionCardShellClass,
+} from "@/components/checkout/CheckoutOptionCard"
 import { Banknote, Minus, Percent, Plus, type LucideIcon } from "lucide-react"
 import type { ComponentType, ReactNode } from "react"
 
@@ -23,7 +29,7 @@ export function CheckoutSectionPanel({
   return (
     <div
       className={cn(
-        "space-y-4 rounded-xl border border-border/50 bg-muted/10 p-3.5",
+        "space-y-4 rounded-xl border border-[var(--rootsy-bruma-200)] bg-white p-3.5",
         className,
       )}
     >
@@ -61,27 +67,20 @@ export function CheckoutDiscountModeSegment({
   fixedAmountDisabled?: boolean
   onChange: (mode: CheckoutDiscountMode) => void
 }) {
-  const segmentClass = (selected: boolean, optionDisabled: boolean) =>
-    cn(
-      "inline-flex flex-1 items-center justify-center gap-2 rounded-lg px-3 py-2.5 text-sm font-semibold transition-all duration-150",
-      "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 focus-visible:ring-offset-2 focus-visible:ring-offset-background",
-      optionDisabled && "pointer-events-none opacity-45",
-      selected
-        ? "bg-primary/10 text-primary shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]"
-        : "text-muted-foreground hover:bg-muted/40 hover:text-foreground",
-    )
-
   return (
     <div
       role="group"
       aria-label="Tipo de descuento"
-      className="grid grid-cols-2 gap-1 rounded-xl border border-border/70 bg-muted/15 p-1"
+      className={cn(rootsFormSegmentGroupClass, "grid-cols-2")}
     >
       <button
         type="button"
         disabled={disabled}
         aria-pressed={mode === "porcentaje"}
-        className={segmentClass(mode === "porcentaje", Boolean(disabled))}
+        className={rootsFormSegmentOptionClass(
+          mode === "porcentaje",
+          Boolean(disabled),
+        )}
         onClick={() => onChange("porcentaje")}
       >
         <Percent className="size-4" aria-hidden />
@@ -91,7 +90,10 @@ export function CheckoutDiscountModeSegment({
         type="button"
         disabled={fixedAmountDisabled}
         aria-pressed={mode === "fijo"}
-        className={segmentClass(mode === "fijo", Boolean(fixedAmountDisabled))}
+        className={rootsFormSegmentOptionClass(
+          mode === "fijo",
+          Boolean(fixedAmountDisabled),
+        )}
         onClick={() => onChange("fijo")}
       >
         <Banknote className="size-4" aria-hidden />
@@ -150,8 +152,8 @@ export function CheckoutNumericValueField({
   return (
     <div
       className={cn(
-        "rounded-xl border border-border/70 bg-muted/15 transition-all duration-150",
-        "focus-within:border-primary/45 focus-within:ring-2 focus-within:ring-primary/20",
+        "rounded-xl border border-[var(--rootsy-bruma-200)] bg-white transition-all duration-150",
+        "focus-within:border-[var(--rootsy-savia-400)] focus-within:shadow-[0_0_0_2px_color-mix(in_srgb,var(--rootsy-savia-400)_20%,transparent)]",
         disabled && "opacity-50",
         className,
       )}
@@ -168,7 +170,7 @@ export function CheckoutNumericValueField({
         {!hideIcon ? (
           <span
             className={cn(
-              "flex shrink-0 items-center justify-center rounded-lg bg-muted/50 text-muted-foreground",
+              "flex shrink-0 items-center justify-center rounded-lg bg-[var(--rootsy-bruma-50)] text-[var(--rootsy-bruma-500)]",
               isCompact ? "size-8" : "size-10",
             )}
           >
@@ -188,9 +190,9 @@ export function CheckoutNumericValueField({
               aria-label={`Disminuir ${ariaLabel.toLowerCase()}`}
               onClick={onDecrease}
               className={cn(
-                "inline-flex size-9 shrink-0 items-center justify-center rounded-lg border border-border/70 bg-background text-muted-foreground shadow-sm transition-colors",
-                "hover:bg-muted/40 hover:text-foreground",
-                "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30",
+                "inline-flex size-9 shrink-0 items-center justify-center rounded-lg border border-[var(--rootsy-bruma-200)] bg-white text-[var(--rootsy-bruma-500)] shadow-sm transition-colors",
+                "hover:bg-[var(--rootsy-bruma-50)] hover:text-[var(--rootsy-bruma-900)]",
+                "focus-visible:outline-none focus-visible:shadow-[0_0_0_2px_color-mix(in_srgb,var(--rootsy-savia-400)_45%,transparent)]",
                 "disabled:pointer-events-none disabled:opacity-40",
               )}
             >
@@ -211,9 +213,9 @@ export function CheckoutNumericValueField({
             onChange={(e) => onChange(e.target.value)}
             placeholder={placeholder}
             className={cn(
-              "min-w-0 flex-1 bg-transparent font-semibold leading-none tabular-nums tracking-tight text-foreground outline-none",
+              "min-w-0 flex-1 bg-transparent font-semibold leading-none tabular-nums tracking-tight text-[var(--rootsy-bruma-900)] outline-none",
               isCompact ? "text-lg" : "text-2xl",
-              "placeholder:text-muted-foreground/40",
+              "placeholder:text-[var(--rootsy-bruma-400)]",
               showStepper && "text-center",
             )}
           />
@@ -224,9 +226,9 @@ export function CheckoutNumericValueField({
               aria-label={`Aumentar ${ariaLabel.toLowerCase()}`}
               onClick={onIncrease}
               className={cn(
-                "inline-flex size-9 shrink-0 items-center justify-center rounded-lg border border-border/70 bg-background text-muted-foreground shadow-sm transition-colors",
-                "hover:bg-muted/40 hover:text-foreground",
-                "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30",
+                "inline-flex size-9 shrink-0 items-center justify-center rounded-lg border border-[var(--rootsy-bruma-200)] bg-white text-[var(--rootsy-bruma-500)] shadow-sm transition-colors",
+                "hover:bg-[var(--rootsy-bruma-50)] hover:text-[var(--rootsy-bruma-900)]",
+                "focus-visible:outline-none focus-visible:shadow-[0_0_0_2px_color-mix(in_srgb,var(--rootsy-savia-400)_45%,transparent)]",
                 "disabled:pointer-events-none disabled:opacity-40",
               )}
             >
@@ -317,7 +319,7 @@ export function CheckoutQuantityPanel({
 
 export function CheckoutFieldHint({ children }: { children: ReactNode }) {
   return (
-    <p className="px-0.5 text-xs leading-snug text-muted-foreground">{children}</p>
+    <p className="px-0.5 text-xs leading-snug text-[var(--rootsy-bruma-500)]">{children}</p>
   )
 }
 
@@ -343,31 +345,17 @@ export function CheckoutToggleCard({
       aria-checked={selected}
       disabled={disabled}
       onClick={onClick}
-      className={cn(
-        "group flex w-full items-center gap-3 rounded-xl border px-3.5 py-3 text-left transition-all duration-150",
-        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 focus-visible:ring-offset-2 focus-visible:ring-offset-background",
-        disabled && "pointer-events-none opacity-45",
-        selected
-          ? "border-primary/45 bg-primary/8 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]"
-          : "border-border/70 bg-muted/15 hover:border-border hover:bg-muted/30 active:scale-[0.995]",
-      )}
+      className={checkoutOptionCardShellClass(selected, disabled)}
     >
-      <span
-        className={cn(
-          "flex size-10 shrink-0 items-center justify-center rounded-lg transition-colors",
-          selected
-            ? "bg-primary/15 text-primary"
-            : "bg-muted/50 text-muted-foreground group-hover:bg-muted/70 group-hover:text-foreground",
-        )}
-      >
+      <span className={checkoutOptionCardIconClass(selected)}>
         <Icon className="size-[18px]" aria-hidden />
       </span>
       <span className="min-w-0 flex-1">
-        <span className="block text-sm font-semibold leading-snug text-foreground">
+        <span className="block text-sm font-semibold leading-snug text-[var(--rootsy-bruma-900)]">
           {title}
         </span>
         {subtitle ? (
-          <span className="mt-0.5 block text-xs leading-snug text-muted-foreground">
+          <span className="mt-0.5 block text-xs leading-snug text-[var(--rootsy-bruma-500)]">
             {subtitle}
           </span>
         ) : null}
@@ -376,13 +364,13 @@ export function CheckoutToggleCard({
         className={cn(
           "flex size-5 shrink-0 items-center justify-center rounded-full border-2 transition-colors",
           selected
-            ? "border-primary bg-primary"
-            : "border-muted-foreground/30 bg-background",
+            ? "border-[var(--rootsy-savia-600)] bg-[var(--rootsy-savia-600)]"
+            : "border-[var(--rootsy-bruma-300)] bg-white",
         )}
         aria-hidden
       >
         {selected ? (
-          <span className="size-2 rounded-full bg-primary-foreground" />
+          <span className="size-2 rounded-full bg-white" />
         ) : null}
       </span>
     </button>

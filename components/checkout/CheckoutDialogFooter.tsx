@@ -1,13 +1,11 @@
 "use client"
 
-import { RootsProgressButton } from "@/components/rootsy-button"
-import { Button } from "@/components/ui/button"
-import { DialogFooter } from "@/components/ui/dialog"
+import { RootsDialogFooter } from "@/components/rootsy-dialog"
 import {
-  saleOpDialogFooter,
-  saleOpDialogPrimaryBtn,
-  saleOpDialogSecondaryBtn,
-} from "@/components/sale-operation/saleOperationStyles"
+  RootsProgressButton,
+  RootsPrimaryButton,
+  RootsSubtleButton,
+} from "@/components/rootsy-button"
 import { type LucideIcon } from "lucide-react"
 import { cn } from "@/lib/utils"
 
@@ -44,15 +42,13 @@ export function CheckoutDialogFooter({
   }
 
   return (
-    <DialogFooter className={cn(saleOpDialogFooter, "shrink-0", className)}>
+    <RootsDialogFooter className={className}>
       <div className="flex w-full items-center justify-between gap-3">
         <div className="flex min-w-0 flex-wrap items-center gap-2">
           {secondaryAction ? (
-            <Button
+            <RootsSubtleButton
               type="button"
-              variant="ghost-neutral"
               className={cn(
-                saleOpDialogSecondaryBtn,
                 secondaryAction.tone === "destructive" &&
                   "text-rose-600 hover:bg-rose-50 hover:text-rose-700",
               )}
@@ -63,34 +59,47 @@ export function CheckoutDialogFooter({
                 <secondaryAction.icon className="size-4" aria-hidden />
               ) : null}
               {secondaryAction.label}
-            </Button>
+            </RootsSubtleButton>
           ) : null}
           {onCancel ? (
-            <Button
+            <RootsSubtleButton
               type="button"
-              variant="ghost-neutral"
-              className={saleOpDialogSecondaryBtn}
               disabled={cancelDisabled}
               onClick={onCancel}
             >
               Cancelar
-            </Button>
+            </RootsSubtleButton>
           ) : null}
         </div>
         {primary ? (
-          <RootsProgressButton
-            type="button"
-            className={cn(saleOpDialogPrimaryBtn, "shrink-0")}
-            disabled={primary.disabled}
-            loading={primary.loading}
-            loadingLabel={primary.loadingLabel ?? primary.label}
-            icon={primary.icon}
-            onClick={primary.onClick}
-          >
-            {primary.label}
-          </RootsProgressButton>
+          primary.loading ? (
+            <RootsProgressButton
+              type="button"
+              semantic="primary"
+              className="shrink-0"
+              disabled={primary.disabled}
+              loading={primary.loading}
+              loadingLabel={primary.loadingLabel ?? primary.label}
+              icon={primary.icon}
+              onClick={primary.onClick}
+            >
+              {primary.label}
+            </RootsProgressButton>
+          ) : (
+            <RootsPrimaryButton
+              type="button"
+              className="shrink-0"
+              disabled={primary.disabled}
+              onClick={primary.onClick}
+            >
+              {primary.icon ? (
+                <primary.icon className="size-4" aria-hidden />
+              ) : null}
+              {primary.label}
+            </RootsPrimaryButton>
+          )
         ) : null}
       </div>
-    </DialogFooter>
+    </RootsDialogFooter>
   )
 }

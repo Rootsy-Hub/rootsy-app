@@ -5,30 +5,21 @@ import {
   SaleComprobanteTicketPreview,
   type SaleComprobantePreviewInput,
 } from "@/components/checkout/SaleComprobanteTicketPreview"
-import { Button } from "@/components/ui/button"
 import {
-  Dialog,
-  DialogContent,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog"
+  RootsDialogBody,
+  RootsDialogContent,
+  RootsDialogDualActionFooter,
+  RootsDialogHeader,
+} from "@/components/rootsy-dialog"
+import { RootsSpinner } from "@/components/rootsy-spinner"
+import { Dialog } from "@/components/ui/dialog"
 import { useSaleComprobanteEmitterContext } from "@/hooks/useSaleComprobanteEmitterContext"
 import {
   getSaleComprobantePickerOptions,
   type SaleComprobantePickerOption,
 } from "@/lib/saleComprobantePicker"
 import { isSaleComprobanteAllowed } from "@/lib/saleComprobanteRules"
-import { cn } from "@/lib/utils"
-import {
-  saleOpDialogBody,
-  saleOpDialogContentComprobante,
-  saleOpDialogFooter,
-  saleOpDialogHeader,
-  saleOpDialogPrimaryBtn,
-  saleOpDialogSecondaryBtn,
-} from "@/components/sale-operation/saleOperationStyles"
-import { FileText, Loader2, Receipt, ShieldCheck } from "lucide-react"
+import { FileText, Receipt, ShieldCheck } from "lucide-react"
 import { useEffect, useMemo, useState } from "react"
 
 type Props = {
@@ -141,28 +132,21 @@ export function SaleComprobantePickerDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className={saleOpDialogContentComprobante}>
-        <DialogHeader className={cn(saleOpDialogHeader, "shrink-0")}>
-          <DialogTitle className="text-base font-semibold tracking-tight">
-            Comprobante
-          </DialogTitle>
-        </DialogHeader>
+      <RootsDialogContent size="twoCol" className="flex flex-col sm:!max-w-2xl">
+        <RootsDialogHeader title="Comprobante" />
 
-        <div
-          className={cn(
-            saleOpDialogBody,
-            "grid min-h-0 flex-1 gap-4 overflow-hidden lg:grid-cols-2",
-          )}
-        >
+        <RootsDialogBody className="!overflow-hidden grid min-h-0 flex-1 gap-4 lg:min-h-[420px] lg:grid-cols-2">
           <div className="relative min-h-0 min-w-0 overflow-y-auto overscroll-contain">
             {isLoadingFiscal ? (
               <div
-                className="flex min-h-[120px] flex-col items-center justify-center gap-2 py-6 text-sm text-muted-foreground"
+                className="flex min-h-[200px] flex-col items-center justify-center gap-3 py-8"
                 aria-live="polite"
                 aria-busy="true"
               >
-                <Loader2 className="h-5 w-5 animate-spin" aria-hidden />
-                <span>Cargando comprobantes…</span>
+                <RootsSpinner size="default" label="Cargando comprobantes" />
+                <span className="text-sm text-[var(--rootsy-bruma-500)]">
+                  Cargando comprobantes…
+                </span>
               </div>
             ) : (
               <ul
@@ -194,11 +178,11 @@ export function SaleComprobantePickerDialog({
             previewComprobanteLabel={draft}
             loading={loading}
             error={error}
-            className="hidden min-w-0 lg:flex"
+            className="hidden min-h-0 min-w-0 lg:flex lg:flex-col"
           />
-        </div>
+        </RootsDialogBody>
 
-        <div className="px-6 pb-4 lg:hidden">
+        <div className="border-t border-[var(--rootsy-bruma-200)] px-[var(--rootsy-space-400)] pb-[var(--rootsy-space-200)] pt-[var(--rootsy-space-200)] lg:hidden">
           <SaleComprobanteTicketPreview
             previewInput={previewInput}
             emitter={emitter}
@@ -209,24 +193,13 @@ export function SaleComprobantePickerDialog({
           />
         </div>
 
-        <DialogFooter className={saleOpDialogFooter}>
-          <Button
-            type="button"
-            variant="ghost-neutral"
-            className={saleOpDialogSecondaryBtn}
-            onClick={() => onOpenChange(false)}
-          >
-            Cancelar
-          </Button>
-          <Button
-            type="button"
-            className={saleOpDialogPrimaryBtn}
-            onClick={handleConfirm}
-          >
-            Confirmar
-          </Button>
-        </DialogFooter>
-      </DialogContent>
+        <RootsDialogDualActionFooter
+          onCancel={() => onOpenChange(false)}
+          cancelLabel="Cancelar"
+          onConfirm={handleConfirm}
+          confirmLabel="Confirmar"
+        />
+      </RootsDialogContent>
     </Dialog>
   )
 }

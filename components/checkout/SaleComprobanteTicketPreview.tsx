@@ -16,7 +16,8 @@ import { SALE_COMPROBANTE_SIN_LABEL } from "@/lib/saleComprobantePicker"
 import { isLegalSaleComprobanteLabel } from "@/lib/saleComprobanteRules"
 import { cn } from "@/lib/utils"
 import { saleComprobanteTicketPaperWidthClass } from "@/components/sale-operation/saleOperationStyles"
-import { Loader2, QrCode, Receipt } from "lucide-react"
+import { RootsSpinner } from "@/components/rootsy-spinner"
+import { QrCode, Receipt } from "lucide-react"
 import { useMemo } from "react"
 
 type Props = {
@@ -119,17 +120,17 @@ function TicketMissingFiscalCuitPlaceholder() {
   return (
     <div
       className={cn(
-        "mx-auto flex w-full flex-col items-center justify-center gap-2 bg-white px-4 py-10 text-center shadow-inner ring-1 ring-zinc-200/80",
+        "mx-auto flex w-full flex-col items-center justify-center gap-2 bg-white px-4 py-10 text-center shadow-sm ring-1 ring-[var(--rootsy-bruma-200)]",
         saleComprobanteTicketPaperWidthClass,
       )}
     >
-      <div className="flex h-12 w-12 items-center justify-center rounded-full bg-zinc-100 text-zinc-400">
+      <div className="flex h-12 w-12 items-center justify-center rounded-full bg-[var(--rootsy-bruma-50)] text-[var(--rootsy-bruma-400)]">
         <Receipt className="h-6 w-6" aria-hidden />
       </div>
-      <p className="font-mono text-[11px] font-bold uppercase tracking-wide text-zinc-700">
+      <p className="font-mono text-[11px] font-bold uppercase tracking-wide text-[var(--rootsy-bruma-900)]">
         CUIT no configurado
       </p>
-      <p className="max-w-[220px] font-mono text-[9px] leading-snug text-zinc-500">
+      <p className="max-w-[220px] font-mono text-[9px] leading-snug text-[var(--rootsy-bruma-500)]">
         Configurá un CUIT válido del punto de venta en Ajustes para emitir
         comprobantes fiscales.
       </p>
@@ -141,17 +142,17 @@ function TicketNoComprobantePlaceholder() {
   return (
     <div
       className={cn(
-        "mx-auto flex w-full flex-col items-center justify-center gap-2 bg-white px-4 py-10 text-center shadow-inner ring-1 ring-zinc-200/80",
+        "mx-auto flex w-full flex-col items-center justify-center gap-2 bg-white px-4 py-10 text-center shadow-sm ring-1 ring-[var(--rootsy-bruma-200)]",
         saleComprobanteTicketPaperWidthClass,
       )}
     >
-      <div className="flex h-12 w-12 items-center justify-center rounded-full bg-zinc-100 text-zinc-400">
+      <div className="flex h-12 w-12 items-center justify-center rounded-full bg-[var(--rootsy-bruma-50)] text-[var(--rootsy-bruma-400)]">
         <Receipt className="h-6 w-6" aria-hidden />
       </div>
-      <p className="font-mono text-[11px] font-bold uppercase tracking-wide text-zinc-700">
+      <p className="font-mono text-[11px] font-bold uppercase tracking-wide text-[var(--rootsy-bruma-900)]">
         {SALE_COMPROBANTE_SIN_LABEL}
       </p>
-      <p className="max-w-[220px] font-mono text-[9px] leading-snug text-zinc-500">
+      <p className="max-w-[220px] font-mono text-[9px] leading-snug text-[var(--rootsy-bruma-500)]">
         No se emitirá comprobante fiscal para esta operación.
       </p>
     </div>
@@ -164,7 +165,7 @@ function TicketPreviewBody({ model }: { model: SaleComprobantePreviewModel }) {
   return (
     <div
       className={cn(
-        "mx-auto w-full bg-white px-2.5 py-3 font-mono text-zinc-900 shadow-inner ring-1 ring-zinc-200/80",
+        "mx-auto w-full bg-white px-2.5 py-3 font-mono text-[var(--rootsy-bruma-900)] shadow-sm ring-1 ring-[var(--rootsy-bruma-200)]",
         saleComprobanteTicketPaperWidthClass,
       )}
     >
@@ -477,22 +478,24 @@ export function SaleComprobanteTicketPreview({
   return (
     <div
       className={cn(
-        "flex min-h-0 flex-1 flex-col rounded-xl border border-border/60 bg-zinc-100/70 p-3",
+        "flex min-h-0 flex-col overflow-hidden rounded-xl border border-[var(--rootsy-bruma-200)] bg-white",
         className,
       )}
     >
-      <p className="mb-2 shrink-0 text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
+      <p className="shrink-0 border-b border-[var(--rootsy-bruma-200)] px-3.5 py-2.5 text-[10px] font-semibold uppercase tracking-[0.12em] text-[var(--rootsy-bruma-500)]">
         Vista previa
       </p>
 
-      <div className="flex min-h-0 flex-1 items-start justify-center overflow-y-auto overscroll-contain">
+      <div className="flex min-h-0 flex-1 items-start justify-center overflow-y-auto overscroll-contain bg-[var(--rootsy-bruma-50)] p-3">
         {loading && !isSinComprobante ? (
-          <div className="flex h-full min-h-[320px] items-center justify-center gap-2 text-sm text-muted-foreground">
-            <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
-            Cargando datos fiscales…
+          <div className="flex min-h-[280px] w-full flex-col items-center justify-center gap-3 py-8">
+            <RootsSpinner size="default" label="Cargando datos fiscales" />
+            <span className="text-sm text-[var(--rootsy-bruma-500)]">
+              Cargando datos fiscales…
+            </span>
           </div>
         ) : error && !isSinComprobante ? (
-          <div className="flex h-full min-h-[320px] items-center justify-center px-4 text-center text-sm text-muted-foreground">
+          <div className="flex min-h-[280px] w-full items-center justify-center px-4 text-center text-sm text-[var(--rootsy-bruma-500)]">
             {error}
           </div>
         ) : isSinComprobante ? (
@@ -502,7 +505,7 @@ export function SaleComprobanteTicketPreview({
         ) : model ? (
           <TicketPreviewBody model={model} />
         ) : (
-          <div className="flex h-full min-h-[320px] items-center justify-center px-4 text-center text-sm text-muted-foreground">
+          <div className="flex min-h-[280px] w-full items-center justify-center px-4 text-center text-sm text-[var(--rootsy-bruma-500)]">
             Configurá los datos fiscales del local para ver la vista previa.
           </div>
         )}
