@@ -7,6 +7,9 @@ import {
 } from "@/app/[siteId]/[popId]/accounts/treasuryInfiniteScroll"
 import { TreasuryYearGroupedMovementsView } from "@/app/[siteId]/[popId]/accounts/TreasuryYearGroupedMovementsView"
 import {
+  treasuryMovementListEmptyClass,
+} from "@/app/[siteId]/[popId]/accounts/treasuryMovementListStyles"
+import {
   formatTreasuryInlineMovementDescription,
   formatTreasuryMovementTime,
   groupItemsByYearAndDate,
@@ -127,7 +130,7 @@ export function CashRegisterSessionOperationsTable({
   if (operations.length === 0) {
     return (
       <>
-        <div className="flex min-h-48 items-center justify-center px-4 py-10 text-center font-canopy text-sm text-[var(--rootsy-bruma-500)] lg:px-5">
+        <div className={treasuryMovementListEmptyClass("bruma", fullWidth)}>
           No hay operaciones en este arqueo.
         </div>
         <OperationSaleDetailDialog

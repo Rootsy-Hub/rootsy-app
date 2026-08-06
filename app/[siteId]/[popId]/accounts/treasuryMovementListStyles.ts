@@ -2,6 +2,38 @@ import { cn } from "@/lib/utils"
 
 export type TreasuryMovementListTokensVariant = "default" | "bruma"
 
+/** font.heading.small · UI */
+const rootsyMovementListHeadingSmallClass = cn(
+  "font-canopy text-[length:var(--rootsy-text-heading-small-size)] leading-[var(--rootsy-text-heading-small-lh)]",
+  "font-bold tracking-[-0.01em]",
+)
+
+/** font.heading.xsmall · UI */
+const rootsyMovementListHeadingXsmallClass = cn(
+  "font-canopy text-[length:var(--rootsy-text-heading-xsmall-size)] leading-[var(--rootsy-text-heading-xsmall-lh)]",
+  "font-bold tracking-[-0.01em]",
+)
+
+/** font.body · UI */
+const rootsyMovementListBodyClass = cn(
+  "font-canopy text-[length:var(--rootsy-text-body-size)] leading-[var(--rootsy-text-body-lh)] font-normal",
+)
+
+/** font.body medium · fila principal (paridad layout tablas). */
+const rootsyMovementListBodyMediumClass = cn(
+  "font-canopy text-[length:var(--rootsy-text-body-size)] leading-[var(--rootsy-text-body-lh)] font-medium",
+)
+
+/** font.body.small · metadata */
+const rootsyMovementListBodySmallClass = cn(
+  "font-canopy text-[length:var(--rootsy-text-body-small-size)] leading-[var(--rootsy-text-body-small-lh)] font-normal",
+)
+
+/** font.body · numeric · montos en fila */
+const rootsyMovementListNumericBodyClass = cn(
+  "font-numeric text-[length:var(--rootsy-text-body-size)] leading-[var(--rootsy-text-body-lh)] font-normal tabular-nums tracking-[-0.01em]",
+)
+
 const treasuryMovementListTokens: Record<
   TreasuryMovementListTokensVariant,
   {
@@ -37,21 +69,38 @@ const treasuryMovementListTokens: Record<
     footerLoadingBorder: "border-border/50",
   },
   bruma: {
-    empty:
-      "font-canopy text-sm text-[var(--rootsy-bruma-500)] border-[var(--rootsy-bruma-200)]",
+    empty: cn(
+      rootsyMovementListBodyClass,
+      "text-[var(--rootsy-bruma-500)] border-[var(--rootsy-bruma-200)]",
+    ),
     containerBorder: "border-[var(--rootsy-bruma-200)]",
     sectionBorder: "border-[var(--rootsy-bruma-200)]",
     rowBorder: "border-[var(--rootsy-bruma-200)]",
     rowHover: "hover:bg-[var(--rootsy-bruma-50)]",
-    yearHeading:
-      "font-canopy text-base font-bold text-[var(--rootsy-bruma-900)]",
-    dateHeading: "font-canopy text-sm font-bold text-[var(--rootsy-bruma-900)]",
-    description:
-      "font-canopy text-sm leading-snug text-[var(--rootsy-bruma-900)]",
-    subtitle: "font-canopy text-xs text-[var(--rootsy-bruma-500)]",
-    amount:
-      "whitespace-nowrap font-numeric text-sm tabular-nums tracking-tight text-[var(--rootsy-bruma-900)]",
-    footer: "font-canopy text-xs text-[var(--rootsy-bruma-500)]",
+    yearHeading: cn(
+      rootsyMovementListHeadingSmallClass,
+      "text-[var(--rootsy-bruma-900)]",
+    ),
+    dateHeading: cn(
+      rootsyMovementListHeadingXsmallClass,
+      "text-[var(--rootsy-bruma-900)]",
+    ),
+    description: cn(
+      rootsyMovementListBodyMediumClass,
+      "text-[var(--rootsy-bruma-900)]",
+    ),
+    subtitle: cn(
+      rootsyMovementListBodySmallClass,
+      "text-[var(--rootsy-bruma-500)]",
+    ),
+    amount: cn(
+      rootsyMovementListNumericBodyClass,
+      "whitespace-nowrap text-[var(--rootsy-bruma-900)]",
+    ),
+    footer: cn(
+      rootsyMovementListBodySmallClass,
+      "text-[var(--rootsy-bruma-500)]",
+    ),
     footerDivider: "bg-[var(--rootsy-bruma-200)]",
     footerLoadingBorder: "border-[var(--rootsy-bruma-200)]",
   },
