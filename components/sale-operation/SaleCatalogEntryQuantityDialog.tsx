@@ -3,6 +3,7 @@
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
@@ -85,6 +86,9 @@ export function SaleCatalogEntryQuantityDialog({
             <DialogTitle className="text-base font-semibold tracking-tight">
               Cantidad a ingresar
             </DialogTitle>
+            <DialogDescription className="sr-only">
+              Ingresá la cantidad de unidades a agregar al pedido. Enter confirma.
+            </DialogDescription>
           </DialogHeader>
 
           <input
