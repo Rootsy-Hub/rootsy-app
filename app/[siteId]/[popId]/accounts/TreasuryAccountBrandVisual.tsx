@@ -9,11 +9,11 @@ import { cn } from "@/lib/utils"
 
 export function treasuryPickerTileClass(selected: boolean) {
   return cn(
-    "flex min-h-[3.625rem] w-full items-center gap-2.5 rounded-xl border px-2.5 py-2 text-left transition-all",
-    "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/30",
+    "flex min-h-[3.625rem] w-full items-center gap-2.5 rounded-xl border px-2.5 py-2 text-left transition-[border-color,background-color,box-shadow] duration-150",
+    "focus-visible:outline-none focus-visible:shadow-[0_0_0_2px_color-mix(in_srgb,var(--rootsy-savia-400)_45%,transparent)]",
     selected
-      ? "border-border bg-muted/25 shadow-sm ring-2 ring-ring/15 ring-offset-2 ring-offset-background"
-      : "border-border/60 bg-background hover:border-border hover:bg-muted/15",
+      ? "border-[var(--rootsy-savia-400)] bg-[var(--rootsy-white)] shadow-sm"
+      : "border-[var(--rootsy-bruma-200)] bg-[var(--rootsy-white)] hover:border-[var(--rootsy-bruma-300)] hover:bg-[var(--rootsy-bruma-50)]",
   )
 }
 
@@ -48,12 +48,12 @@ export function TreasuryAccountBrandVisual({
               preset={preset}
               name={name}
               compact
-              textClass="text-foreground"
+              textClass="text-[var(--rootsy-bruma-900)]"
               className="min-w-0 flex-1"
             />
           </>
         ) : (
-          <span className="w-full text-center text-sm font-semibold text-foreground">
+          <span className="w-full text-center text-sm font-semibold text-[var(--rootsy-bruma-900)]">
             Otro
           </span>
         )}
@@ -64,12 +64,12 @@ export function TreasuryAccountBrandVisual({
   return (
     <div
       className={cn(
-        "overflow-hidden rounded-2xl border border-border/60 bg-card shadow-sm",
+        "overflow-hidden rounded-2xl border border-[var(--rootsy-bruma-200)] bg-[var(--rootsy-white)] shadow-sm",
         className,
       )}
     >
-      <div className="border-b border-border/60 px-4 py-4">
-        <p className="text-[11px] font-medium uppercase tracking-[0.12em] text-muted-foreground">
+      <div className="border-b border-[var(--rootsy-bruma-200)] px-4 py-4">
+        <p className="text-[11px] font-medium uppercase tracking-[0.12em] text-[var(--rootsy-bruma-500)]">
           {kindLabel}
         </p>
         <div className="mt-0.5 flex min-w-0 items-center gap-3">
@@ -83,22 +83,22 @@ export function TreasuryAccountBrandVisual({
               <TreasuryBrandName
                 preset={preset}
                 name={name}
-                textClass="text-foreground"
+                textClass="text-[var(--rootsy-bruma-900)]"
                 className="min-w-0 flex-1"
               />
             </>
           ) : (
-            <p className="truncate text-base font-semibold text-foreground">
+            <p className="truncate text-base font-semibold text-[var(--rootsy-bruma-900)]">
               {name}
             </p>
           )}
         </div>
       </div>
-      <div className="bg-muted/20 px-4 py-4">
-        <p className="text-[11px] font-medium uppercase tracking-[0.14em] text-muted-foreground">
+      <div className="bg-[var(--rootsy-bruma-50)] px-4 py-4">
+        <p className="text-[11px] font-medium uppercase tracking-[0.14em] text-[var(--rootsy-bruma-500)]">
           Saldo real
         </p>
-        <p className="mt-1 font-numeric text-xl font-bold tabular-nums text-foreground">
+        <p className="mt-1 font-numeric text-xl font-bold tabular-nums text-[var(--rootsy-bruma-900)]">
           —
         </p>
       </div>

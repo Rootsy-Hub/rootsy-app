@@ -4,7 +4,7 @@ import {
   treasuryPickerTileClass,
   TreasuryAccountBrandVisual,
 } from "@/app/[siteId]/[popId]/accounts/TreasuryAccountBrandVisual"
-import { FieldLabel } from "@/components/ui/field"
+import { RootsFormField } from "@/components/rootsy-form"
 import {
   getTreasuryBrandPresets,
   TREASURY_BRAND_OTHER_KEY,
@@ -28,20 +28,14 @@ export function TreasuryInstitutionPicker({
 }: Props) {
   const presets = getTreasuryBrandPresets(category)
   const isOtherSelected = value === TREASURY_BRAND_OTHER_KEY
+  const label = category === "bank" ? "Banco" : "Billetera"
 
   return (
-    <div className="space-y-2">
-      <FieldLabel>
-        {category === "bank" ? "Banco" : "Billetera"}
-      </FieldLabel>
+    <RootsFormField label={label}>
       <div
         className="grid grid-cols-2 gap-2 sm:grid-cols-3"
         role="listbox"
-        aria-label={
-          category === "bank"
-            ? "Seleccionar banco"
-            : "Seleccionar billetera"
-        }
+        aria-label={category === "bank" ? "Seleccionar banco" : "Seleccionar billetera"}
       >
         {presets.map((preset) => (
           <button
@@ -55,7 +49,7 @@ export function TreasuryInstitutionPicker({
             <TreasuryAccountBrandVisual
               preset={preset}
               name={preset.label}
-              kindLabel={category === "bank" ? "Banco" : "Billetera"}
+              kindLabel={label}
               compact
               selected={value === preset.key}
             />
@@ -71,19 +65,20 @@ export function TreasuryInstitutionPicker({
           <div className={cn(treasuryPickerTileClass(isOtherSelected), "border-dashed")}>
             <span
               className={cn(
-                "flex size-9 shrink-0 items-center justify-center rounded-xl border border-dashed border-border/70 bg-muted/20 text-muted-foreground",
-                isOtherSelected && "border-border bg-background text-foreground",
+                "flex size-9 shrink-0 items-center justify-center rounded-xl border border-dashed border-[var(--rootsy-bruma-300)] bg-[var(--rootsy-bruma-50)] text-[var(--rootsy-bruma-500)]",
+                isOtherSelected &&
+                  "border-[var(--rootsy-savia-400)] bg-[var(--rootsy-white)] text-[var(--rootsy-bruma-900)]",
               )}
               aria-hidden
             >
               <Plus className="size-4 shrink-0" />
             </span>
-            <span className="min-w-0 flex-1 truncate text-sm font-semibold leading-tight text-foreground">
+            <span className="min-w-0 flex-1 truncate text-sm font-semibold leading-tight text-[var(--rootsy-bruma-900)]">
               {otherLabel}
             </span>
           </div>
         </button>
       </div>
-    </div>
+    </RootsFormField>
   )
 }

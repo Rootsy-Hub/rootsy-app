@@ -15,6 +15,7 @@ import { TreasuryAccountsGridSkeleton } from "@/app/[siteId]/[popId]/accounts/Tr
 import { TreasuryAccountCreateDialog } from "@/app/[siteId]/[popId]/accounts/TreasuryAccountCreateDialog"
 import { TreasuryAccountDeleteDialog } from "@/app/[siteId]/[popId]/accounts/TreasuryAccountDeleteDialog"
 import { TreasuryAccountEditDialog } from "@/app/[siteId]/[popId]/accounts/TreasuryAccountEditDialog"
+import type { TreasuryAccountEditFormState } from "@/app/[siteId]/[popId]/accounts/TreasuryAccountFormFields"
 import { TreasuryChildAccountCreateDialog } from "@/app/[siteId]/[popId]/accounts/TreasuryChildAccountCreateDialog"
 import {
   DataWorkspaceModuleLayout,
@@ -42,11 +43,10 @@ import {
   type FormEvent,
 } from "react"
 
-function defaultForm(): UpsertTreasuryAccountInput {
+function defaultEditForm(): TreasuryAccountEditFormState {
   return {
     name: "",
     kind: "bank",
-    sortOrder: 0,
   }
 }
 
@@ -75,7 +75,7 @@ function AccountsPage() {
   const [editRow, setEditRow] = useState<TreasuryAccountTableRow | null>(null)
   const [editSaving, setEditSaving] = useState(false)
   const [editBanner, setEditBanner] = useState<string | null>(null)
-  const [editForm, setEditForm] = useState(defaultForm)
+  const [editForm, setEditForm] = useState(defaultEditForm)
 
   const [deleteRow, setDeleteRow] = useState<TreasuryAccountTableRow | null>(
     null,
@@ -165,7 +165,6 @@ function AccountsPage() {
     setEditForm({
       name: row.name,
       kind: row.kind,
-      sortOrder: row.sortOrder,
     })
   }
 
@@ -174,7 +173,9 @@ function AccountsPage() {
     if (!popId || !editRow) return
     setEditSaving(true)
     setEditBanner(null)
-    const res = await updateTreasuryAccount(popId, editRow.id, editForm)
+    const res = await updateTreasuryAccount(popId, editRow.id, {
+      name: editForm.name,
+    })
     setEditSaving(false)
     if (!res.success) {
       setEditBanner(res.error)

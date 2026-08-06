@@ -1,6 +1,6 @@
 "use client"
 
-import type { UpsertTreasuryAccountInput } from "@/app/[siteId]/[popId]/accounts/actions"
+import type { TreasuryAccountKind } from "@/lib/treasuryAccountKinds"
 import {
   RootsFormSelectField,
   RootsFormSelectItem,
@@ -18,9 +18,14 @@ const KIND_OPTIONS = TREASURY_ACCOUNT_KINDS.filter(
   label: k.label,
 }))
 
+export type TreasuryAccountEditFormState = {
+  name: string
+  kind: TreasuryAccountKind
+}
+
 type Props = {
-  form: UpsertTreasuryAccountInput
-  setForm: Dispatch<SetStateAction<UpsertTreasuryAccountInput>>
+  form: TreasuryAccountEditFormState
+  setForm: Dispatch<SetStateAction<TreasuryAccountEditFormState>>
   idPrefix: string
 }
 
@@ -45,7 +50,7 @@ export function TreasuryAccountFormFields({
         id={`${idPrefix}-kind`}
         value={form.kind}
         onValueChange={() => {}}
-        disabled
+        readOnly
       >
         {KIND_OPTIONS.map((o) => (
           <RootsFormSelectItem key={o.value} value={o.value}>

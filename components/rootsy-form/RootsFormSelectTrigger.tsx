@@ -20,6 +20,7 @@ type Props = ComponentProps<typeof SelectPrimitive.Trigger> & {
   prefixVariant?: "sunken" | "inline"
   leadingPrefix?: ReactNode
   invalid?: boolean
+  readOnly?: boolean
   tone?: RootsFormSelectTone
 }
 
@@ -40,6 +41,7 @@ export const RootsFormSelectTrigger = forwardRef<
     prefixVariant = "sunken",
     leadingPrefix,
     invalid,
+    readOnly,
     tone = "light",
     disabled,
     onMouseEnter,
@@ -52,7 +54,12 @@ export const RootsFormSelectTrigger = forwardRef<
 ) {
   const inlineIcon = prefixed && prefixVariant === "inline"
   const sunkenPrefix = prefixed && prefixVariant === "sunken"
-  const { state, interactionHandlers } = useRootsFormControlInteraction({ disabled, invalid })
+  const isLocked = Boolean(disabled || readOnly)
+  const { state, interactionHandlers } = useRootsFormControlInteraction({
+    disabled: disabled && !readOnly,
+    readonly: readOnly,
+    invalid,
+  })
 
   const useSpecStyles = tone === "light"
   const triggerStyle = useSpecStyles
@@ -75,10 +82,14 @@ export const RootsFormSelectTrigger = forwardRef<
       ref={ref}
       data-slot="roots-form-select-trigger"
       translate="no"
-      disabled={disabled}
+      disabled={isLocked}
+      aria-readonly={readOnly || undefined}
       className={cn(
         useSpecStyles
-          ? "w-full font-canopy text-sm font-normal leading-5 disabled:pointer-events-none disabled:cursor-not-allowed"
+          ? cn(
+              "w-full font-canopy text-sm font-normal leading-5 disabled:pointer-events-none disabled:cursor-not-allowed",
+              readOnly && "disabled:opacity-100",
+            )
           : rootsFormSelectTriggerClassForTone(tone, prefixed, prefixVariant),
         useSpecStyles && sunkenPrefix && cn("gap-0 p-0", selectValueLayoutClass, "[&_[data-slot=select-value]]:px-3"),
         useSpecStyles && inlineIcon && cn("gap-2 p-0 pl-3", selectValueLayoutClass),

@@ -124,13 +124,13 @@ export function TreasuryAccountCreateDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <RootsDialogContent size="default">
+      <RootsDialogContent size="wide">
         <RootsDialogHeader
           title="Nueva cuenta"
           description="Elegí el tipo de cuenta y, si es banco o billetera, la institución."
         />
         <RootsDialogForm onSubmit={handleSubmit}>
-          <RootsDialogBody className="space-y-5">
+          <RootsDialogBody className="space-y-4">
             <RootsFormField label="Tipo de cuenta">
               <div
                 className="grid w-full grid-cols-2 gap-2"
@@ -158,27 +158,31 @@ export function TreasuryAccountCreateDialog({
                       }
                       className={cn(
                         treasuryPickerTileClass(selected),
-                        "min-h-14 flex-col items-start gap-1 py-2.5",
+                        "min-h-[4.25rem] flex-col items-start gap-1 py-2.5",
                       )}
                     >
                       <span className="flex items-center gap-2">
                         <Icon
                           className={cn(
                             "size-4 shrink-0",
-                            selected ? "text-foreground" : "text-muted-foreground",
+                            selected
+                              ? "text-[var(--rootsy-bruma-900)]"
+                              : "text-[var(--rootsy-bruma-500)]",
                           )}
                           aria-hidden
                         />
                         <span
                           className={cn(
                             "text-sm font-semibold",
-                            selected ? "text-foreground" : "text-foreground/80",
+                            selected
+                              ? "text-[var(--rootsy-bruma-900)]"
+                              : "text-[var(--rootsy-bruma-700)]",
                           )}
                         >
                           {opt.label}
                         </span>
                       </span>
-                      <span className="text-[11px] font-normal leading-snug text-muted-foreground">
+                      <span className="text-[11px] font-normal leading-snug text-[var(--rootsy-bruma-500)]">
                         {opt.description}
                       </span>
                     </button>

@@ -125,6 +125,18 @@ export const ROOTSY_FORM_LIVE_FAMILIES: RootsFormLiveFamily[] = [
         component: "RootsFormSelectField",
         description: "Más de 4 opciones · hint debajo.",
       },
+      {
+        code: "form.select.disabled",
+        label: "Disabled",
+        component: "RootsFormSelectField",
+        description: "Sin interacción · opacidad reducida · placeholder visible.",
+      },
+      {
+        code: "form.select.readonly",
+        label: "Readonly",
+        component: "RootsFormSelectField",
+        description: "Valor visible · fondo sunken · no editable (p. ej. tipo de cuenta).",
+      },
     ],
   },
   {

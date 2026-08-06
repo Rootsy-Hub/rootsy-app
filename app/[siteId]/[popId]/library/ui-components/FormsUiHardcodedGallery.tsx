@@ -605,7 +605,13 @@ function SelectControlStatesBlock() {
             <FieldStack label={FORM_UI_DEMO_COPY.select.label}>
               <HardcodedSelect
                 state={state.id}
-                value={state.id === "default" ? FORM_UI_DEMO_COPY.select.value : undefined}
+                value={
+                  state.id === "default" ||
+                  state.id === "readonly" ||
+                  state.id === "disabled"
+                    ? FORM_UI_DEMO_COPY.select.value
+                    : undefined
+                }
                 placeholder={FORM_UI_DEMO_COPY.select.placeholder}
               />
             </FieldStack>

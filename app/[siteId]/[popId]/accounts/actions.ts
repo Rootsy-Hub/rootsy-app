@@ -43,6 +43,10 @@ export type TreasuryAccountTableRow = {
   hasCardIntegration: boolean
 }
 
+export type UpdateTreasuryAccountInput = {
+  name: string
+}
+
 export type UpsertTreasuryAccountInput = {
   name: string
   kind: TreasuryAccountKind
@@ -639,7 +643,7 @@ export async function createTreasuryChildAccount(
 export async function updateTreasuryAccount(
   popId: string,
   rowId: string,
-  input: UpsertTreasuryAccountInput,
+  input: UpdateTreasuryAccountInput,
 ): Promise<{ success: true } | { success: false; error: string }> {
   try {
     const access = await validatePopAccess(popId)
@@ -658,10 +662,6 @@ export async function updateTreasuryAccount(
     }
     const name = input.name.trim()
     if (!name) return { success: false, error: "El nombre es obligatorio." }
-    const sortOrder = Number(input.sortOrder)
-    if (!Number.isFinite(sortOrder)) {
-      return { success: false, error: "Orden inválido." }
-    }
 
     const supabase = await createClient()
     const { data: existing } = await supabase
@@ -678,7 +678,6 @@ export async function updateTreasuryAccount(
       .from("treasury_accounts")
       .update({
         name,
-        sort_order: Math.trunc(sortOrder),
       })
       .eq("id", rowId)
       .eq("pop_id", popId)

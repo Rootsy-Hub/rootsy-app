@@ -16,6 +16,7 @@ type Props = {
   onValueChange: (value: string) => void
   placeholder?: string
   disabled?: boolean
+  readOnly?: boolean
   invalid?: boolean
   prefix?: ReactNode
   prefixVariant?: "sunken" | "inline"
@@ -36,6 +37,7 @@ export function RootsFormSelectField({
   onValueChange,
   placeholder,
   disabled,
+  readOnly,
   invalid,
   hint,
   error,
@@ -57,6 +59,7 @@ export function RootsFormSelectField({
   const controlProps = useRootsFormFieldControlProps({ invalid })
 
   const handleValueChange = (next: string) => {
+    if (readOnly) return
     // Deferir navegación/re-render del padre hasta que Radix cierre el portal.
     window.setTimeout(() => onValueChange(next), 0)
   }
@@ -75,12 +78,16 @@ export function RootsFormSelectField({
       <Select
         value={value || undefined}
         onValueChange={handleValueChange}
-        onOpenChange={onOpenChange}
+        onOpenChange={(open) => {
+          if (readOnly && open) return
+          onOpenChange?.(open)
+        }}
         disabled={disabled}
       >
         <RootsFormSelectTrigger
           id={fieldId}
           tone={tone}
+          readOnly={readOnly}
           invalid={controlProps.isInvalid}
           aria-invalid={controlProps.isInvalid}
           aria-describedby={controlProps.describedBy}

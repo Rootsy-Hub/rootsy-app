@@ -204,6 +204,31 @@ export function FormsLiveVariantRenderer({
           <RootsFormSelectItem value="factura-c">Factura C</RootsFormSelectItem>
         </RootsFormSelectField>
       )
+    case "form.select.disabled":
+      return (
+        <RootsFormSelectField
+          label={copy.select.label}
+          value=""
+          onValueChange={() => undefined}
+          placeholder={copy.select.placeholder}
+          disabled
+        >
+          <RootsFormSelectItem value="bebidas">Bebidas</RootsFormSelectItem>
+          <RootsFormSelectItem value="verduras">Verduras</RootsFormSelectItem>
+        </RootsFormSelectField>
+      )
+    case "form.select.readonly":
+      return (
+        <RootsFormSelectField
+          label={copy.select.label}
+          value="bebidas"
+          onValueChange={() => undefined}
+          readOnly
+        >
+          <RootsFormSelectItem value="bebidas">Bebidas</RootsFormSelectItem>
+          <RootsFormSelectItem value="verduras">Verduras</RootsFormSelectItem>
+        </RootsFormSelectField>
+      )
     case "form.date.default":
       return (
         <RootsFormDateField

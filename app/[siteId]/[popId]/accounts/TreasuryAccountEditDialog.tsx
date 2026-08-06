@@ -1,7 +1,9 @@
 "use client"
 
-import type { UpsertTreasuryAccountInput } from "@/app/[siteId]/[popId]/accounts/actions"
-import { TreasuryAccountFormFields } from "@/app/[siteId]/[popId]/accounts/TreasuryAccountFormFields"
+import {
+  TreasuryAccountFormFields,
+  type TreasuryAccountEditFormState,
+} from "@/app/[siteId]/[popId]/accounts/TreasuryAccountFormFields"
 import {
   RootsDialogBody,
   RootsDialogContent,
@@ -16,8 +18,8 @@ import type { Dispatch, FormEvent, SetStateAction } from "react"
 type Props = {
   open: boolean
   onOpenChange: (open: boolean) => void
-  form: UpsertTreasuryAccountInput
-  setForm: Dispatch<SetStateAction<UpsertTreasuryAccountInput>>
+  form: TreasuryAccountEditFormState
+  setForm: Dispatch<SetStateAction<TreasuryAccountEditFormState>>
   saving: boolean
   banner: string | null
   onSubmit: (e: FormEvent) => void | Promise<void>
