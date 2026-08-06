@@ -77,6 +77,7 @@ export {
   rootsFormDiscountModeButtonClass,
   rootsFormImageUploadShellClass,
   rootsFormImageUploadThumbClass,
+  rootsFormPortalZClass,
 } from "@/components/rootsy-form/rootsFormStyles"
 export {
   ROOTSY_FORM_EARTH,

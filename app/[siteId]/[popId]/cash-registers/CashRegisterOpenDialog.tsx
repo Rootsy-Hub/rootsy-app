@@ -1,11 +1,6 @@
 "use client"
 
 import {
-  CheckoutMoneyValueField,
-  CheckoutSectionLabel,
-  CheckoutSectionPanel,
-} from "@/components/checkout/CheckoutFormFields"
-import {
   RootsDialogBody,
   RootsDialogContent,
   RootsDialogDualActionFooter,
@@ -13,11 +8,12 @@ import {
   RootsDialogForm,
   RootsDialogHeader,
 } from "@/components/rootsy-dialog"
+import {
+  RootsFormMoneyField,
+  RootsFormTextareaField,
+} from "@/components/rootsy-form"
 import { Dialog } from "@/components/ui/dialog"
-import { Textarea } from "@/components/ui/textarea"
-import { rootsFormTextareaFieldClass } from "@/components/rootsy-form/rootsFormStyles"
 import { isMoneyInputComplete } from "@/lib/moneyInput"
-import { cn } from "@/lib/utils"
 import type { FormEvent } from "react"
 
 type Props = {
@@ -46,42 +42,35 @@ export function CashRegisterOpenDialog({
   onSubmit,
 }: Props) {
   const canSubmit = isMoneyInputComplete(openingCash)
+  const dialogTitle = registerName
+    ? `Abrir turno en ${registerName}`
+    : "Abrir turno"
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <RootsDialogContent size="default">
-        <RootsDialogHeader
-          title={registerName ? `Abrir turno en ${registerName}` : "Abrir turno"}
-          description="Efectivo inicial y nota opcional al abrir el turno."
-          descriptionHidden
-        />
+        <RootsDialogHeader title={dialogTitle} />
         <RootsDialogForm onSubmit={onSubmit}>
           <RootsDialogBody className="space-y-4">
             {banner ? <RootsDialogErrorBanner>{banner}</RootsDialogErrorBanner> : null}
-            <CheckoutSectionPanel>
-              <div className="space-y-2.5">
-                <CheckoutSectionLabel>Efectivo contado al abrir</CheckoutSectionLabel>
-                <CheckoutMoneyValueField
-                  id="cr-open-cash"
-                  value={openingCash}
-                  onChange={onOpeningCashChange}
-                  autoFocus
-                  ariaLabel="Efectivo contado al abrir"
-                />
-              </div>
 
-              <div className="space-y-2.5">
-                <CheckoutSectionLabel>Nota (opcional)</CheckoutSectionLabel>
-                <Textarea
-                  id="cr-open-note"
-                  value={note}
-                  onChange={(e) => onNoteChange(e.target.value)}
-                  placeholder="Ej. vales del turno anterior, diferencias al contar…"
-                  rows={3}
-                  className={cn(rootsFormTextareaFieldClass, "min-h-[88px] resize-y")}
-                />
-              </div>
-            </CheckoutSectionPanel>
+            <RootsFormMoneyField
+              label="Efectivo contado al abrir"
+              id="cr-open-cash"
+              value={openingCash}
+              onChange={onOpeningCashChange}
+              autoFocus
+            />
+
+            <RootsFormTextareaField
+              label="Nota (opcional)"
+              id="cr-open-note"
+              value={note}
+              onChange={(e) => onNoteChange(e.target.value)}
+              placeholder="Ej. vales del turno anterior, diferencias al contar…"
+              rows={3}
+              textareaClassName="min-h-[88px] resize-y"
+            />
           </RootsDialogBody>
 
           <RootsDialogDualActionFooter

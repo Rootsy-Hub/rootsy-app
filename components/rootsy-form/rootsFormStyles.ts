@@ -135,8 +135,12 @@ export const rootsFormSelectTriggerClass = rootsFormUiSelectTriggerClass
 /** Select con prefijo sunken. */
 export const rootsFormPrefixedSelectTriggerClass = rootsFormUiPrefixedSelectTriggerClass
 
+/** Portales Radix (select, date) — sobre modal z-510 · bajo toast z-600. */
+export const rootsFormPortalZClass = "z-[520]"
+
 export const rootsFormSelectContentClass = cn(
-  "z-[120] w-(--radix-select-trigger-width) min-w-(--radix-select-trigger-width) max-w-(--radix-select-trigger-width) rounded-[12px] border border-[var(--rootsy-bruma-200)] bg-[var(--rootsy-white)] shadow-md",
+  rootsFormPortalZClass,
+  "w-(--radix-select-trigger-width) min-w-(--radix-select-trigger-width) max-w-(--radix-select-trigger-width) rounded-[12px] border border-[var(--rootsy-bruma-200)] bg-[var(--rootsy-white)] shadow-md",
 )
 
 /** Ítem del listado — hover bruma-50 · sin radio propio. */
@@ -168,7 +172,8 @@ export const rootsFormSelectDarkTriggerClass = cn(
 )
 
 export const rootsFormSelectDarkContentClass = cn(
-  "z-[120] overflow-x-hidden overflow-y-auto rounded-lg border p-0",
+  rootsFormPortalZClass,
+  "overflow-x-hidden overflow-y-auto rounded-lg border p-0",
   nightForestBorderClass,
   "bg-[#0c1210]",
   nightForestSurfaceClass,
@@ -211,7 +216,8 @@ export const rootsFormDateTriggerClass = rootsFormUiDateTriggerClass
 export const rootsFormPrefixedDateTriggerClass = rootsFormUiPrefixedDateTriggerClass
 
 export const rootsFormDatePopoverContentClass = cn(
-  "z-[120] w-auto !max-w-none rounded-[12px]",
+  rootsFormPortalZClass,
+  "w-auto !max-w-none rounded-[12px]",
   rootsyDatePopoverContentClass,
 )
 

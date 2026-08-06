@@ -22,6 +22,7 @@ import {
   type CashRegisterEditSubmitPayload,
 } from "@/app/[siteId]/[popId]/cash-registers/CashRegisterEditDialog"
 import { CashRegisterCloseDialog } from "@/app/[siteId]/[popId]/cash-registers/CashRegisterCloseDialog"
+import { CashRegisterDeleteBlockedDialog } from "@/app/[siteId]/[popId]/cash-registers/CashRegisterDeleteBlockedDialog"
 import { CashRegisterDeleteDialog } from "@/app/[siteId]/[popId]/cash-registers/CashRegisterDeleteDialog"
 import { CashRegisterMoveDialog } from "@/app/[siteId]/[popId]/cash-registers/CashRegisterMoveDialog"
 import { CashRegisterOpenDialog } from "@/app/[siteId]/[popId]/cash-registers/CashRegisterOpenDialog"
@@ -110,6 +111,10 @@ function CashRegistersPage() {
   const [editBanner, setEditBanner] = useState<string | null>(null)
 
   const [deleteRow, setDeleteRow] = useState<CashRegisterRow | null>(null)
+  const [deleteBlockedRow, setDeleteBlockedRow] = useState<CashRegisterRow | null>(
+    null,
+  )
+  const [deleteConfirmValue, setDeleteConfirmValue] = useState("")
   const [deleteBusy, setDeleteBusy] = useState(false)
   const [deleteBanner, setDeleteBanner] = useState<string | null>(null)
 
@@ -271,6 +276,16 @@ function CashRegistersPage() {
     await load()
   }
 
+  const startDelete = (r: CashRegisterRow) => {
+    if (r.openSessionId) {
+      setDeleteBlockedRow(r)
+      return
+    }
+    setDeleteBanner(null)
+    setDeleteConfirmValue("")
+    setDeleteRow(r)
+  }
+
   const submitDelete = async () => {
     if (!popId || !siteId || !deleteRow) return
     setDeleteBusy(true)
@@ -282,6 +297,7 @@ function CashRegistersPage() {
       return
     }
     setDeleteRow(null)
+    setDeleteConfirmValue("")
     await load()
   }
 
@@ -463,7 +479,7 @@ function CashRegistersPage() {
                     canDelete={canDelete}
                     detailHref={`${cashRegistersBasePath}/${r.id}${r.openSessionId ? "?v=arqueo" : ""}`}
                     onEdit={() => startEdit(r)}
-                    onDelete={() => setDeleteRow(r)}
+                    onDelete={() => startDelete(r)}
                     onOpen={() => startOpen(r)}
                     onClose={() => startClose(r)}
                     onDeposit={() => startMove(r, "deposit")}
@@ -503,9 +519,19 @@ function CashRegistersPage() {
         onSubmit={submitEdit}
       />
 
+      <CashRegisterDeleteBlockedDialog
+        open={deleteBlockedRow !== null}
+        registerName={deleteBlockedRow?.name ?? null}
+        onOpenChange={(open) => {
+          if (!open) setDeleteBlockedRow(null)
+        }}
+        onClose={() => setDeleteBlockedRow(null)}
+      />
+
       <CashRegisterDeleteDialog
         open={deleteRow !== null}
         registerName={deleteRow?.name ?? null}
+        confirmValue={deleteConfirmValue}
         banner={deleteBanner}
         busy={deleteBusy}
         onOpenChange={(open) => {
@@ -514,8 +540,13 @@ function CashRegistersPage() {
             setDeleteBanner(null)
           }
         }}
-        onCancel={() => setDeleteRow(null)}
-        onConfirm={() => void submitDelete()}
+        onClose={() => {
+          setDeleteRow(null)
+          setDeleteBanner(null)
+        }}
+        onConfirmValueChange={setDeleteConfirmValue}
+        onAfterClose={() => setDeleteConfirmValue("")}
+        onConfirmDelete={() => void submitDelete()}
       />
 
       <CashRegisterOpenDialog

@@ -2,6 +2,7 @@
 
 import {
   rootsFormControlTypographyClass,
+  rootsFormPortalZClass,
   rootsFormSelectContentClassForTone,
   type RootsFormSelectTone,
 } from "@/components/rootsy-form/rootsFormStyles"
@@ -60,7 +61,8 @@ export function RootsFormSelectContent({
         data-slot="roots-form-select-content"
         translate="no"
         className={cn(
-          "relative z-50 max-h-(--radix-select-content-available-height) overflow-x-hidden overflow-y-auto",
+          "relative max-h-(--radix-select-content-available-height) overflow-x-hidden overflow-y-auto",
+          rootsFormPortalZClass,
           !isDark && "bg-white dark:bg-white",
           position === "popper" && "data-[side=bottom]:translate-y-1",
           !isDark && rootsFormControlTypographyClass,

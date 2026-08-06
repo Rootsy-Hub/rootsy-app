@@ -13,17 +13,9 @@ import {
 import { TreasuryAccountCard } from "@/app/[siteId]/[popId]/accounts/TreasuryAccountCard"
 import { TreasuryAccountsGridSkeleton } from "@/app/[siteId]/[popId]/accounts/TreasuryAccountsGridSkeleton"
 import { TreasuryAccountCreateDialog } from "@/app/[siteId]/[popId]/accounts/TreasuryAccountCreateDialog"
-import { Button } from "@/components/ui/button"
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
+import { TreasuryAccountDeleteDialog } from "@/app/[siteId]/[popId]/accounts/TreasuryAccountDeleteDialog"
+import { TreasuryAccountEditDialog } from "@/app/[siteId]/[popId]/accounts/TreasuryAccountEditDialog"
+import { TreasuryChildAccountCreateDialog } from "@/app/[siteId]/[popId]/accounts/TreasuryChildAccountCreateDialog"
 import {
   DataWorkspaceModuleLayout,
   dataWorkspaceModuleHeaderVariant,
@@ -36,15 +28,8 @@ import {
   dataWorkspaceEntityCardsGridClass,
 } from "@/components/data-workspace/dataWorkspaceListStyles"
 import withAuth from "@/hoc/withAuth"
-import {
-  TREASURY_ACCOUNT_KINDS,
-  type TreasuryAccountKind,
-} from "@/lib/treasuryAccountKinds"
 import { usePopWorkspace } from "@/context/PopWorkspaceContext"
-import {
-  treasuryChildCreateDialogCopy,
-  type TreasuryAccountMenuActionId,
-} from "@/lib/treasuryAccountMenuActions"
+import { type TreasuryAccountMenuActionId } from "@/lib/treasuryAccountMenuActions"
 import {
   Plus,
 } from "lucide-react"
@@ -54,17 +39,8 @@ import {
   useEffect,
   useRef,
   useState,
-  type Dispatch,
   type FormEvent,
-  type SetStateAction,
 } from "react"
-
-const KIND_OPTIONS = TREASURY_ACCOUNT_KINDS.filter(
-  (k) => k.value !== "card_payable",
-).map((k) => ({
-  value: k.value,
-  label: k.label,
-}))
 
 function defaultForm(): UpsertTreasuryAccountInput {
   return {
@@ -72,76 +48,6 @@ function defaultForm(): UpsertTreasuryAccountInput {
     kind: "bank",
     sortOrder: 0,
   }
-}
-
-function TreasuryAccountFormFields({
-  form,
-  setForm,
-  idPrefix,
-  kindDisabled,
-}: {
-  form: UpsertTreasuryAccountInput
-  setForm: Dispatch<SetStateAction<UpsertTreasuryAccountInput>>
-  idPrefix: string
-  kindDisabled?: boolean
-}) {
-  return (
-    <>
-      <div className="space-y-2">
-        <Label htmlFor={`${idPrefix}-name`}>Nombre</Label>
-        <Input
-          id={`${idPrefix}-name`}
-          value={form.name}
-          onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
-          required
-          placeholder="Ej. Banco Galicia, Caja chica, Mercado Pago"
-          className="bg-background"
-        />
-      </div>
-      <div className="space-y-2">
-        <Label htmlFor={`${idPrefix}-kind`}>Tipo de cuenta</Label>
-        <select
-          id={`${idPrefix}-kind`}
-          value={form.kind}
-          disabled={kindDisabled}
-          onChange={(e) =>
-            setForm((f) => ({
-              ...f,
-              kind: e.target.value as TreasuryAccountKind,
-            }))
-          }
-          className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-60"
-        >
-          {KIND_OPTIONS.map((o) => (
-            <option key={o.value} value={o.value}>
-              {o.label}
-            </option>
-          ))}
-        </select>
-        {!kindDisabled ? (
-          <p className="text-xs text-muted-foreground">
-            Al crear la cuenta se genera automáticamente la subcuenta en el plan
-            contable.
-          </p>
-        ) : null}
-      </div>
-      <div className="space-y-2">
-        <Label htmlFor={`${idPrefix}-sort`}>Orden en listas</Label>
-        <Input
-          id={`${idPrefix}-sort`}
-          type="number"
-          value={form.sortOrder}
-          onChange={(e) =>
-            setForm((f) => ({
-              ...f,
-              sortOrder: Number(e.target.value),
-            }))
-          }
-          className="bg-background"
-        />
-      </div>
-    </>
-  )
 }
 
 function AccountsPage() {
@@ -422,133 +328,36 @@ function AccountsPage() {
       onSubmit={submitCreate}
     />
 
-    <Dialog open={editRow !== null} onOpenChange={(o) => !o && setEditRow(null)}>
-        <DialogContent
-          data-rootsy-light-shell="true"
-          showCloseButton
-          className="border-border bg-card text-foreground sm:max-w-md"
-        >
-          <DialogHeader>
-            <DialogTitle>Editar cuenta</DialogTitle>
-            <DialogDescription className="sr-only">
-              Modificá nombre, tipo, uso o cuenta contable del medio seleccionado.
-            </DialogDescription>
-          </DialogHeader>
-          {editBanner ? (
-            <p className="rounded-lg border border-destructive/25 bg-destructive/5 px-3 py-2 text-sm text-destructive">
-              {editBanner}
-            </p>
-          ) : null}
-          <form className="space-y-4" onSubmit={(e) => void submitEdit(e)}>
-            <TreasuryAccountFormFields
-              form={editForm}
-              kindDisabled={false}
-              setForm={setEditForm}
-              idPrefix="e"
-            />
-            <DialogFooter className="gap-2 sm:gap-0">
-              <Button type="button" variant="outline" onClick={() => setEditRow(null)}>
-                Cancelar
-              </Button>
-              <Button type="submit" disabled={editSaving}>
-                {editSaving ? "Guardando…" : "Guardar"}
-              </Button>
-            </DialogFooter>
-          </form>
-        </DialogContent>
-      </Dialog>
+    <TreasuryAccountEditDialog
+      open={editRow !== null}
+      onOpenChange={(open) => !open && setEditRow(null)}
+      form={editForm}
+      setForm={setEditForm}
+      saving={editSaving}
+      banner={editBanner}
+      onSubmit={submitEdit}
+    />
 
-      <Dialog open={deleteRow !== null} onOpenChange={(o) => !o && setDeleteRow(null)}>
-        <DialogContent
-          data-rootsy-light-shell="true"
-          showCloseButton
-          className="border-border bg-card text-foreground sm:max-w-md"
-        >
-          <DialogHeader>
-            <DialogTitle>¿Eliminar esta cuenta?</DialogTitle>
-            <DialogDescription>
-              Se quitará{" "}
-              <strong className="text-foreground">
-                {deleteRow?.name || "este medio"}
-              </strong>{" "}
-              de tesorería. No se borran movimientos ya registrados.
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter className="gap-2 sm:gap-0">
-            <Button type="button" variant="outline" onClick={() => setDeleteRow(null)}>
-              Cancelar
-            </Button>
-            <Button
-              type="button"
-              variant="destructive"
-              disabled={deleteBusy}
-              onClick={() => void submitDelete()}
-            >
-              {deleteBusy ? "Eliminando…" : "Eliminar"}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+    <TreasuryAccountDeleteDialog
+      open={deleteRow !== null}
+      row={deleteRow}
+      busy={deleteBusy}
+      onOpenChange={(open) => !open && setDeleteRow(null)}
+      onCancel={() => setDeleteRow(null)}
+      onConfirm={() => void submitDelete()}
+    />
 
-      <Dialog
-        open={childCreate !== null}
-        onOpenChange={(o) => !o && setChildCreate(null)}
-      >
-        <DialogContent
-          data-rootsy-light-shell="true"
-          showCloseButton
-          className="border-border bg-card text-foreground sm:max-w-md"
-        >
-          {childCreate ? (() => {
-            const copy = treasuryChildCreateDialogCopy(
-              childCreate.kind,
-              childCreate.parent.name,
-            )
-            return (
-              <>
-                <DialogHeader>
-                  <DialogTitle>{copy.title}</DialogTitle>
-                  <DialogDescription>{copy.description}</DialogDescription>
-                </DialogHeader>
-                {childBanner ? (
-                  <p className="rounded-lg border border-destructive/25 bg-destructive/5 px-3 py-2 text-sm text-destructive">
-                    {childBanner}
-                  </p>
-                ) : null}
-                <form
-                  className="space-y-4"
-                  onSubmit={(e) => void submitChildCreate(e)}
-                >
-                  <div className="space-y-2">
-                    <Label htmlFor="child-name">{copy.nameLabel}</Label>
-                    <Input
-                      id="child-name"
-                      value={childName}
-                      onChange={(e) => setChildName(e.target.value)}
-                      required
-                      autoFocus
-                      placeholder={copy.namePlaceholder}
-                      className="bg-background"
-                    />
-                  </div>
-                  <DialogFooter className="gap-2 sm:gap-0">
-                    <Button
-                      type="button"
-                      variant="outline"
-                      onClick={() => setChildCreate(null)}
-                    >
-                      Cancelar
-                    </Button>
-                    <Button type="submit" disabled={childSaving}>
-                      {childSaving ? "Guardando…" : copy.submitLabel}
-                    </Button>
-                  </DialogFooter>
-                </form>
-              </>
-            )
-          })() : null}
-        </DialogContent>
-      </Dialog>
+    <TreasuryChildAccountCreateDialog
+      open={childCreate !== null}
+      onOpenChange={(open) => !open && setChildCreate(null)}
+      parent={childCreate?.parent ?? null}
+      kind={childCreate?.kind ?? null}
+      name={childName}
+      onNameChange={setChildName}
+      saving={childSaving}
+      banner={childBanner}
+      onSubmit={submitChildCreate}
+    />
 
     </>
   )

@@ -267,6 +267,12 @@ export const ROOTSY_ELEVATION_Z_INDEX: ElevationZIndexRow[] = [
   { zIndex: 400, usage: "Popup / dropdown", level: "Overlay", rootsyExample: "SelectContent" },
   { zIndex: 500, usage: "Blanket / backdrop", level: "—", rootsyExample: "Dialog overlay" },
   { zIndex: 510, usage: "Modal", level: "Overlay", rootsyExample: "RootsDialogContent" },
+  {
+    zIndex: 520,
+    usage: "Popover / dropdown sobre modal",
+    level: "Overlay",
+    rootsyExample: "RootsFormSelectContent · RootsFormDateField",
+  },
   { zIndex: 600, usage: "Flag / toast", level: "Overlay", rootsyExample: "Notificaciones" },
   { zIndex: 800, usage: "Tooltip", level: "—", rootsyExample: "TooltipContent" },
 ]

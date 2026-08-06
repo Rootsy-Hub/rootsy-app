@@ -1,11 +1,6 @@
 "use client"
 
 import {
-  CheckoutMoneyValueField,
-  CheckoutSectionLabel,
-  CheckoutSectionPanel,
-} from "@/components/checkout/CheckoutFormFields"
-import {
   RootsDialogBody,
   RootsDialogContent,
   RootsDialogDualActionFooter,
@@ -13,12 +8,12 @@ import {
   RootsDialogForm,
   RootsDialogHeader,
 } from "@/components/rootsy-dialog"
+import {
+  RootsFormMoneyField,
+  RootsFormTextareaField,
+} from "@/components/rootsy-form"
 import { Dialog } from "@/components/ui/dialog"
-import { Textarea } from "@/components/ui/textarea"
-import { RootsBanner } from "@/components/rootsy-banner"
-import { rootsFormTextareaFieldClass } from "@/components/rootsy-form/rootsFormStyles"
 import { isMoneyInputComplete } from "@/lib/moneyInput"
-import { cn } from "@/lib/utils"
 import type { FormEvent } from "react"
 
 export type CashRegisterMoveKind = "deposit" | "withdrawal"
@@ -85,39 +80,29 @@ export function CashRegisterMoveDialog({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <RootsDialogContent size="default">
-        <RootsDialogHeader
-          title={dialogTitle}
-          description={labels.hint}
-          descriptionHidden
-        />
+        <RootsDialogHeader title={dialogTitle} />
         <RootsDialogForm onSubmit={onSubmit}>
           <RootsDialogBody className="space-y-4">
             {banner ? <RootsDialogErrorBanner>{banner}</RootsDialogErrorBanner> : null}
-            <CheckoutSectionPanel>
-              <div className="space-y-2.5">
-                <CheckoutSectionLabel>{labels.amountLabel}</CheckoutSectionLabel>
-                <CheckoutMoneyValueField
-                  id="cr-move-amount"
-                  value={amount}
-                  onChange={onAmountChange}
-                  autoFocus
-                  ariaLabel={labels.amountLabel}
-                />
-                <RootsBanner intent="neutral" layout="message" density="compact" message={labels.hint} />
-              </div>
 
-              <div className="space-y-2.5">
-                <CheckoutSectionLabel>Nota (opcional)</CheckoutSectionLabel>
-                <Textarea
-                  id="cr-move-note"
-                  value={note}
-                  onChange={(e) => onNoteChange(e.target.value)}
-                  placeholder="Ej. cambio para vuelto, retiro a caja fuerte…"
-                  rows={3}
-                  className={cn(rootsFormTextareaFieldClass, "min-h-[88px] resize-y")}
-                />
-              </div>
-            </CheckoutSectionPanel>
+            <RootsFormMoneyField
+              label={labels.amountLabel}
+              id="cr-move-amount"
+              value={amount}
+              onChange={onAmountChange}
+              hint={labels.hint}
+              autoFocus
+            />
+
+            <RootsFormTextareaField
+              label="Nota (opcional)"
+              id="cr-move-note"
+              value={note}
+              onChange={(e) => onNoteChange(e.target.value)}
+              placeholder="Ej. cambio para vuelto, retiro a caja fuerte…"
+              rows={3}
+              textareaClassName="min-h-[88px] resize-y"
+            />
           </RootsDialogBody>
 
           <RootsDialogDualActionFooter
