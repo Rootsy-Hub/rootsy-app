@@ -107,7 +107,7 @@ export function TreasuryBrandName({
   className,
   textClass = "text-white",
 }: NameProps) {
-  const label = preset?.label ?? name
+  const label = name.trim() || preset?.label || "—"
 
   return (
     <p
@@ -118,7 +118,7 @@ export function TreasuryBrandName({
         className,
       )}
     >
-      {label || "—"}
+      {label}
     </p>
   )
 }

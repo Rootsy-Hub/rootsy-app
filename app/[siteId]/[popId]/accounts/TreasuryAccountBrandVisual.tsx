@@ -12,7 +12,7 @@ export function treasuryPickerTileClass(selected: boolean) {
     "flex min-h-[3.625rem] w-full items-center gap-2.5 rounded-xl border px-2.5 py-2 text-left transition-[border-color,background-color,box-shadow] duration-150",
     "focus-visible:outline-none focus-visible:shadow-[0_0_0_2px_color-mix(in_srgb,var(--rootsy-savia-400)_45%,transparent)]",
     selected
-      ? "border-[var(--rootsy-savia-400)] bg-[var(--rootsy-white)] shadow-sm"
+      ? "border-[var(--rootsy-savia-500)] bg-[var(--rootsy-white)] shadow-[0_0_0_1px_var(--rootsy-savia-500),0_4px_12px_-2px_color-mix(in_srgb,var(--rootsy-savia-600)_18%,transparent)] ring-2 ring-[color-mix(in_srgb,var(--rootsy-savia-400)_28%,transparent)]"
       : "border-[var(--rootsy-bruma-200)] bg-[var(--rootsy-white)] hover:border-[var(--rootsy-bruma-300)] hover:bg-[var(--rootsy-bruma-50)]",
   )
 }

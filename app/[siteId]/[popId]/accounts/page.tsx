@@ -80,7 +80,9 @@ function AccountsPage() {
   const [deleteRow, setDeleteRow] = useState<TreasuryAccountTableRow | null>(
     null,
   )
+  const [deleteConfirmValue, setDeleteConfirmValue] = useState("")
   const [deleteBusy, setDeleteBusy] = useState(false)
+  const [deleteBanner, setDeleteBanner] = useState<string | null>(null)
 
   const [childCreate, setChildCreate] = useState<{
     parent: TreasuryAccountTableRow
@@ -188,13 +190,15 @@ function AccountsPage() {
   const submitDelete = async () => {
     if (!popId || !deleteRow) return
     setDeleteBusy(true)
+    setDeleteBanner(null)
     const res = await deleteTreasuryAccount(popId, deleteRow.id)
     setDeleteBusy(false)
     if (!res.success) {
-      setDeleteRow(null)
+      setDeleteBanner(res.error)
       return
     }
     setDeleteRow(null)
+    setDeleteConfirmValue("")
     await load()
   }
 
@@ -236,6 +240,8 @@ function AccountsPage() {
         openEdit(row)
         break
       case "delete":
+        setDeleteConfirmValue("")
+        setDeleteBanner(null)
         setDeleteRow(row)
         break
       case "add_pos":
@@ -341,11 +347,23 @@ function AccountsPage() {
 
     <TreasuryAccountDeleteDialog
       open={deleteRow !== null}
-      row={deleteRow}
+      accountName={deleteRow?.name ?? null}
+      confirmValue={deleteConfirmValue}
+      banner={deleteBanner}
       busy={deleteBusy}
-      onOpenChange={(open) => !open && setDeleteRow(null)}
-      onCancel={() => setDeleteRow(null)}
-      onConfirm={() => void submitDelete()}
+      onOpenChange={(open) => {
+        if (!open) {
+          setDeleteRow(null)
+          setDeleteBanner(null)
+        }
+      }}
+      onClose={() => {
+        setDeleteRow(null)
+        setDeleteBanner(null)
+      }}
+      onConfirmValueChange={setDeleteConfirmValue}
+      onAfterClose={() => setDeleteConfirmValue("")}
+      onConfirmDelete={() => void submitDelete()}
     />
 
     <TreasuryChildAccountCreateDialog

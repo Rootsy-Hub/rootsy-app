@@ -438,6 +438,9 @@ export async function createTreasuryAccount(
     const name = input.name.trim()
     if (!name) return { success: false, error: "El nombre es obligatorio." }
     const kind = input.kind
+    if (kind !== "cash" && kind !== "bank" && kind !== "wallet") {
+      return { success: false, error: "Tipo de cuenta inválido." }
+    }
     const sortOrder = Number(input.sortOrder)
     if (!Number.isFinite(sortOrder)) {
       return { success: false, error: "Orden inválido." }

@@ -231,14 +231,23 @@ export function resolveTreasuryAccountBrand(args: {
   )
 }
 
+export const TREASURY_MOTHER_CREATE_KIND_OPTIONS = [
+  { value: "cash" as const, label: "Efectivo" },
+  { value: "bank" as const, label: "Banco" },
+  { value: "wallet" as const, label: "Billetera" },
+] as const
+
+/** @deprecated Usar TREASURY_MOTHER_CREATE_KIND_OPTIONS en el modal de alta. */
 export const CREATE_ACCOUNT_KIND_OPTIONS = [
-  { value: "cash" as const, label: "Efectivo", description: "Caja o caja chica" },
-  { value: "bank" as const, label: "Banco", description: "Cuenta bancaria" },
-  {
-    value: "wallet" as const,
-    label: "Billetera",
-    description: "PSP o billetera virtual",
-  },
+  ...TREASURY_MOTHER_CREATE_KIND_OPTIONS.map((opt) => ({
+    ...opt,
+    description:
+      opt.value === "cash"
+        ? "Caja o caja chica"
+        : opt.value === "bank"
+          ? "Cuenta bancaria"
+          : "PSP o billetera virtual",
+  })),
   { value: "other" as const, label: "Otro", description: "Otra cuenta" },
 ]
 
@@ -251,17 +260,7 @@ export function defaultBrandKeyForKind(
 }
 
 export function accountNameFromCreateSelection(args: {
-  kind: TreasuryAccountKind
-  brandKey: string
-  customName: string
+  name: string
 }): string {
-  if (args.kind === "cash" || args.kind === "other") {
-    return args.customName.trim()
-  }
-  if (args.brandKey === TREASURY_BRAND_OTHER_KEY) {
-    return args.customName.trim()
-  }
-  const preset = getTreasuryBrandPreset(args.brandKey)
-  if (preset) return preset.defaultName
-  return args.customName.trim()
+  return args.name.trim()
 }
