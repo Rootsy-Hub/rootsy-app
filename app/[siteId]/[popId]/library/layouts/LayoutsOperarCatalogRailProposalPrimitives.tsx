@@ -20,10 +20,7 @@ import {
   layoutsOperarCatalogSidebarClass,
   layoutsOperarCatalogSidebarOpenClass,
 } from "@/app/[siteId]/[popId]/library/layouts/layoutsOperarStyles"
-import {
-  LAYOUTS_OPERAR_DEFAULT_CATALOG_RAIL_PROPOSAL,
-  ROOTSY_LAYOUTS_OPERAR_CATALOG_RAIL_PROPOSALS,
-} from "@/app/[siteId]/[popId]/library/layouts/rootsyLayoutsOperarSystem"
+import { LAYOUTS_OPERAR_DEFAULT_CATALOG_RAIL_PROPOSAL } from "@/app/[siteId]/[popId]/library/layouts/rootsyLayoutsOperarSystem"
 import { cn } from "@/lib/utils"
 import { Percent, Tag } from "lucide-react"
 import { useState } from "react"
@@ -187,53 +184,5 @@ export function LayoutsOperarCatalogRailProposal({
         </ul>
       </div>
     </nav>
-  )
-}
-
-function LayoutsOperarCatalogRailProposalDemo({
-  proposalId,
-}: {
-  proposalId: LayoutsOperarCatalogRailProposalId
-}) {
-  const proposal = ROOTSY_LAYOUTS_OPERAR_CATALOG_RAIL_PROPOSALS.find((p) => p.id === proposalId)!
-
-  return (
-    <div className="space-y-2">
-      <div className="space-y-1">
-        <p className="text-sm font-semibold text-foreground">
-          Propuesta {proposal.letter} · {proposal.title}
-          {proposal.recommended ? (
-            <span className="ml-2 font-normal text-[color-mix(in_srgb,var(--rootsy-savia-600)_88%,transparent)]">
-              · recomendada
-            </span>
-          ) : null}
-        </p>
-        <p className="text-sm text-muted-foreground">
-          <span className="font-mono text-[11px] text-foreground/80">{proposal.pairingId}</span>
-          {" · "}
-          {proposal.pairingLabel}
-          {" — "}
-          {proposal.summary}
-        </p>
-        <p className="text-xs leading-relaxed text-muted-foreground">{proposal.uxNote}</p>
-        <p className="font-mono text-[10px] text-muted-foreground/90">
-          rail {proposal.sidebarWidthPx}px · ítem min {proposal.itemMinHeightPx}px · layout{" "}
-          {proposal.itemLayout}
-        </p>
-      </div>
-      <LayoutsOperarCatalogRailDemoShell>
-        <LayoutsOperarCatalogRailProposal proposalId={proposalId} />
-      </LayoutsOperarCatalogRailDemoShell>
-    </div>
-  )
-}
-
-export function LayoutsOperarCatalogRailProposalsDemo() {
-  return (
-    <div className="space-y-10">
-      {ROOTSY_LAYOUTS_OPERAR_CATALOG_RAIL_PROPOSALS.map((proposal) => (
-        <LayoutsOperarCatalogRailProposalDemo key={proposal.id} proposalId={proposal.id} />
-      ))}
-    </div>
   )
 }

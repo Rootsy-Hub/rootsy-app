@@ -60,9 +60,7 @@ export function LayoutsOperarFoundationView({ sectionId, siteId, popId }: Props)
       <LibraryDocSection id="layouts-operar-grid" title="1 · Grid">
         <LayoutsOperarDocSubsection title="Catálogo · toolbox · ticket">
           <p className="mb-3 text-sm text-muted-foreground">
-            Toolbox canónico:{" "}
-            <span className="font-mono text-[11px] text-foreground/85">dosel continuo</span>{" "}
-            (propuesta A) — misma banda en grid, vista previa y producción.
+            Anatomía del grid — solo zonas y medidas (sin contenido compuesto).
           </p>
           <LayoutsOperarContentGridWireframeDemo />
         </LayoutsOperarDocSubsection>

@@ -20,10 +20,7 @@ import {
   type LayoutsOperarProductCardProposalId,
 } from "@/app/[siteId]/[popId]/library/layouts/layoutsOperarHardcodedSpec"
 import { layoutsOperarCatalogArticleDemoScopeClass } from "@/app/[siteId]/[popId]/library/layouts/layoutsOperarStyles"
-import {
-  LAYOUTS_OPERAR_DEFAULT_PRODUCT_CARD_PROPOSAL,
-  ROOTSY_LAYOUTS_OPERAR_PRODUCT_CARD_PROPOSALS,
-} from "@/app/[siteId]/[popId]/library/layouts/rootsyLayoutsOperarSystem"
+import { LAYOUTS_OPERAR_DEFAULT_PRODUCT_CARD_PROPOSAL } from "@/app/[siteId]/[popId]/library/layouts/rootsyLayoutsOperarSystem"
 import { SaleCatalogProductOfferOverlay } from "@/components/sale-operation/SaleCatalogProductOfferOverlay"
 import { cn } from "@/lib/utils"
 import { ImageOff, Plus } from "lucide-react"
@@ -197,61 +194,3 @@ export function LayoutsOperarProductCardProposalList({
   )
 }
 
-function LayoutsOperarProductCardProposalDemo({
-  proposalId,
-}: {
-  proposalId: LayoutsOperarProductCardProposalId
-}) {
-  const proposal = ROOTSY_LAYOUTS_OPERAR_PRODUCT_CARD_PROPOSALS.find((p) => p.id === proposalId)!
-
-  return (
-    <div className="space-y-2">
-      <div className="space-y-1">
-        <p className="text-sm font-semibold text-foreground">
-          Propuesta {proposal.letter} · {proposal.title}
-          {proposal.recommended ? (
-            <span className="ml-2 font-normal text-[color-mix(in_srgb,var(--rootsy-savia-600)_88%,transparent)]">
-              · recomendada
-            </span>
-          ) : null}
-        </p>
-        <p className="text-sm text-muted-foreground">
-          <span className="font-mono text-[11px] text-foreground/80">{proposal.pairingId}</span>
-          {" · "}
-          {proposal.pairingLabel}
-          {" — "}
-          {proposal.summary}
-        </p>
-        <p className="text-xs leading-relaxed text-muted-foreground">{proposal.uxNote}</p>
-        <p className="font-mono text-[10px] text-muted-foreground/90">
-          grilla {proposal.gridHeightPx}px (media {proposal.gridMediaHeightPx}px) · lista min{" "}
-          {proposal.listMinHeightPx}px · media {proposal.listMediaWidthPx}px
-        </p>
-      </div>
-      <div className="grid gap-4 lg:grid-cols-2">
-        <LayoutsOperarProductCardDemoCanvas className="max-w-xs">
-          <p className="mb-3 font-mono text-[10px] uppercase tracking-widest text-[color-mix(in_srgb,var(--rootsy-sombra-300)_72%,transparent)]">
-            2.2.a · Grilla · vertical
-          </p>
-          <LayoutsOperarProductCardProposalGrid product={LAYOUTS_OPERAR_DEMO_ARTICLE} proposalId={proposalId} />
-        </LayoutsOperarProductCardDemoCanvas>
-        <LayoutsOperarProductCardDemoCanvas>
-          <p className="mb-3 font-mono text-[10px] uppercase tracking-widest text-[color-mix(in_srgb,var(--rootsy-sombra-300)_72%,transparent)]">
-            2.2.b · Lista · horizontal
-          </p>
-          <LayoutsOperarProductCardProposalList product={LAYOUTS_OPERAR_DEMO_ARTICLE} proposalId={proposalId} />
-        </LayoutsOperarProductCardDemoCanvas>
-      </div>
-    </div>
-  )
-}
-
-export function LayoutsOperarProductCardProposalsDemo() {
-  return (
-    <div className="space-y-10">
-      {ROOTSY_LAYOUTS_OPERAR_PRODUCT_CARD_PROPOSALS.map((proposal) => (
-        <LayoutsOperarProductCardProposalDemo key={proposal.id} proposalId={proposal.id} />
-      ))}
-    </div>
-  )
-}

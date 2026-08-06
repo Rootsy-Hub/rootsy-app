@@ -173,7 +173,10 @@ export function getLayoutsOperarWireframeZoneStyle(zone: LayoutsOperarWireframeZ
         borderRadius: 16,
       }
     case "toolbox":
-      return getLayoutsOperarToolboxProposalBandStyle(LAYOUTS_OPERAR_DEFAULT_TOOLBOX_PROPOSAL)
+      return {
+        backgroundColor: surfaces.footer.css,
+        borderTop: `1px solid ${border("darkDefault")}`,
+      }
     case "toolbox-slot":
       return {
         backgroundColor: `color-mix(in srgb, ${surfaces.footer.css} 32%, transparent)`,

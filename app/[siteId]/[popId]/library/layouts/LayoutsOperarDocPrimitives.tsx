@@ -51,31 +51,22 @@ import {
   getLayoutsOperarWireframeSurfaceToken,
   getLayoutsOperarWireframeZoneStyle,
   LAYOUTS_OPERAR_ANATOMY,
-  type LayoutsOperarToolboxProposalId,
   type LayoutsOperarWireframeZone,
 } from "@/app/[siteId]/[popId]/library/layouts/layoutsOperarHardcodedSpec"
-import {
-  LayoutsOperarCatalogRailProposal,
-  LayoutsOperarCatalogRailProposalsDemo,
-} from "@/app/[siteId]/[popId]/library/layouts/LayoutsOperarCatalogRailProposalPrimitives"
+import { LayoutsOperarCatalogRailProposal } from "@/app/[siteId]/[popId]/library/layouts/LayoutsOperarCatalogRailProposalPrimitives"
 import {
   LayoutsOperarProductCardDemoCanvas,
   LayoutsOperarProductCardProposalGrid,
   LayoutsOperarProductCardProposalList,
-  LayoutsOperarProductCardProposalsDemo,
   LAYOUTS_OPERAR_DEMO_ARTICLE,
   LAYOUTS_OPERAR_DEMO_ARTICLE_OFFER,
   type LayoutsOperarDemoProduct,
 } from "@/app/[siteId]/[popId]/library/layouts/LayoutsOperarProductCardProposalPrimitives"
 import {
-  LayoutsOperarToolboxProposalBand,
   LayoutsOperarToolboxProposalGridCell,
   LayoutsOperarToolboxProposalStrip,
 } from "@/app/[siteId]/[popId]/library/layouts/LayoutsOperarToolboxProposalPrimitives"
-import {
-  LAYOUTS_OPERAR_DEFAULT_TOOLBOX_PROPOSAL,
-  ROOTSY_LAYOUTS_OPERAR_TOOLBOX_PROPOSALS,
-} from "@/app/[siteId]/[popId]/library/layouts/rootsyLayoutsOperarSystem"
+import { LAYOUTS_OPERAR_DEFAULT_TOOLBOX_PROPOSAL } from "@/app/[siteId]/[popId]/library/layouts/rootsyLayoutsOperarSystem"
 import { LayoutsModuleShellWithContent } from "@/app/[siteId]/[popId]/library/layouts/LayoutsModuleDocPrimitives"
 import { ROOTSY_LAYOUTS_MODULE_HEADER } from "@/app/[siteId]/[popId]/library/layouts/rootsyLayoutsModuleSystem"
 import { DataWorkspaceHeaderTitle } from "@/components/layouts/DataWorkspaceHeaderTitle"
@@ -356,63 +347,20 @@ function LayoutsOperarCatalogToolbar() {
   )
 }
 
-function LayoutsOperarToolboxProposalDemo({
-  proposalId,
+function LayoutsOperarWireframeToolboxZone({
+  measureBadge,
 }: {
-  proposalId: LayoutsOperarToolboxProposalId
+  measureBadge?: React.ReactNode
 }) {
-  const proposal = ROOTSY_LAYOUTS_OPERAR_TOOLBOX_PROPOSALS.find((p) => p.id === proposalId)!
-
   return (
-    <div className="space-y-2">
-      <div className="space-y-1">
-        <p className="text-sm font-semibold text-foreground">
-          Propuesta {proposal.letter} · {proposal.title}
-          {proposal.recommended ? (
-            <span className="ml-2 font-normal text-[color-mix(in_srgb,var(--rootsy-savia-600)_88%,transparent)]">
-              · recomendada
-            </span>
-          ) : null}
-        </p>
-        <p className="text-sm text-muted-foreground">
-          <span className="font-mono text-[11px] text-foreground/80">{proposal.pairingId}</span>
-          {" · "}
-          {proposal.pairingLabel}
-          {" — "}
-          {proposal.summary}
-        </p>
-        <p className="text-xs leading-relaxed text-muted-foreground">{proposal.uxNote}</p>
-        <p className="font-mono text-[10px] text-muted-foreground/90">
-          banda {proposal.bandMinHeightPx}px ({proposal.bandLayout}) · slot{" "}
-          {proposal.slotMinHeightPx}px
-        </p>
-      </div>
-      <LayoutsOperarAnatomyScope
-        className={cn(
-          "rootsy-theme-pos rootsy-radius-system max-w-5xl rounded-2xl border border-border/70",
-          layoutsOperarToolboxDemoShellClass,
-        )}
-      >
-        <LayoutsOperarToolboxProposalStrip
-          proposalId={proposalId}
-          measureBadge={
-            <LayoutHeightBadge
-              label={`${proposal.bandMinHeightPx}px · ${proposal.title}`}
-              onDark
-            />
-          }
-        />
-      </LayoutsOperarAnatomyScope>
-    </div>
-  )
-}
-
-export function LayoutsOperarToolboxColorProposalsDemo() {
-  return (
-    <div className="space-y-10">
-      {ROOTSY_LAYOUTS_OPERAR_TOOLBOX_PROPOSALS.map((proposal) => (
-        <LayoutsOperarToolboxProposalDemo key={proposal.id} proposalId={proposal.id} />
-      ))}
+    <div
+      className={cn(
+        layoutsOperarToolboxRowClass,
+        "relative min-h-[var(--layouts-operar-toolbox-min-h)] sm:min-h-[var(--layouts-operar-toolbox-min-h-sm)]",
+      )}
+      style={getLayoutsOperarWireframeZoneStyle("toolbox")}
+    >
+      {measureBadge}
     </div>
   )
 }
@@ -551,9 +499,7 @@ export function LayoutsOperarBody({
       <main className={cn(layoutsOperarBodyMainGridClass, "relative z-10 h-full min-h-0")}>
         <LayoutsOperarCatalogColumn wireframe={wireframe} composed={composed} inMainGrid />
         {wireframe ? (
-          <LayoutsOperarToolboxProposalBand
-            proposalId={LAYOUTS_OPERAR_DEFAULT_TOOLBOX_PROPOSAL}
-            className={layoutsOperarToolboxRowClass}
+          <LayoutsOperarWireframeToolboxZone
             measureBadge={
               <LayoutHeightBadge
                 label={`toolbox · min ${LAYOUTS_OPERAR_ANATOMY.toolboxRowMinHeightPx}px`}
@@ -680,9 +626,7 @@ function LayoutsOperarContentGridWireframeBody() {
           </section>
         </div>
 
-        <LayoutsOperarToolboxProposalBand
-          proposalId={LAYOUTS_OPERAR_DEFAULT_TOOLBOX_PROPOSAL}
-          className={layoutsOperarToolboxRowClass}
+        <LayoutsOperarWireframeToolboxZone
           measureBadge={
             <LayoutsOperarWireframeZoneLabel
               zone="toolbox"
@@ -868,32 +812,6 @@ export function LayoutsOperarCatalogSectionDemo() {
         </div>
       </LayoutsOperarDocSubsection>
 
-      <LayoutsOperarDocSubsection title="2.2 · Propuestas">
-        <p className="mb-4 text-sm text-muted-foreground">
-          Tres composiciones tarjeta sobre canvas sombra-800 — pairing{" "}
-          <code className="text-[11px]">pos-core</code>,{" "}
-          <code className="text-[11px]">pos-split</code> y{" "}
-          <code className="text-[11px]">pos-focus</code>. Grilla{" "}
-          {LAYOUTS_OPERAR_ANATOMY.productCardHeightPx}px (media{" "}
-          {LAYOUTS_OPERAR_ANATOMY.productCardMediaHeightPx}px) · lista min{" "}
-          {LAYOUTS_OPERAR_ANATOMY.productCardMediaHeightPx}px · media 192px.
-        </p>
-        <LayoutsOperarProductCardProposalsDemo />
-      </LayoutsOperarDocSubsection>
-
-      <LayoutsOperarDocSubsection title="2.3 · Propuestas · Categorías">
-        <p className="mb-4 text-sm text-muted-foreground">
-          Tres composiciones rail sobre sombra-950 — ancho{" "}
-          {LAYOUTS_OPERAR_ANATOMY.catalogSidebarWidthPx}px (
-          <code className="text-[11px]">{LAYOUTS_OPERAR_ANATOMY.catalogSidebarWidthToken}</code>
-          ) · pairing <code className="text-[11px]">pos-core</code>,{" "}
-          <code className="text-[11px]">pos-split</code> y{" "}
-          <code className="text-[11px]">pos-focus</code>. Incluye listados rápidos (promo /
-          descuento).
-        </p>
-        <LayoutsOperarCatalogRailProposalsDemo />
-      </LayoutsOperarDocSubsection>
-
       <LayoutsOperarComponentsTable
         rows={getLayoutsOperarScreenComponentsByLayer("Catálogo")}
         caption="Inventario · catálogo"
@@ -923,18 +841,6 @@ export function LayoutsOperarToolboxSectionDemo() {
             }
           />
         </LayoutsOperarAnatomyScope>
-      </LayoutsOperarDocSubsection>
-
-      <LayoutsOperarDocSubsection title="3.1 · Propuestas">
-        <p className="mb-4 text-sm text-muted-foreground">
-          Tres composiciones toolbox sobre banda{" "}
-          {LAYOUTS_OPERAR_ANATOMY.toolboxRowMinHeightPx}px (slot{" "}
-          {LAYOUTS_OPERAR_ANATOMY.toolboxSlotMinHeightToken}) — pairing{" "}
-          <code className="text-[11px]">pos-core</code>,{" "}
-          <code className="text-[11px]">pos-split</code> y{" "}
-          <code className="text-[11px]">pos-focus</code>. Solo fundamentos sombra · bruma · savia.
-        </p>
-        <LayoutsOperarToolboxColorProposalsDemo />
       </LayoutsOperarDocSubsection>
 
       <LayoutsOperarComponentsTable
