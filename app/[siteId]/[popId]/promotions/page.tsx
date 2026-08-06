@@ -53,6 +53,7 @@ import {
 import {
   mergePromotionsWorkspaceUrl,
   parsePromotionsWorkspaceUrl,
+  type PromotionTableSortKey,
 } from "@/app/[siteId]/[popId]/promotions/workspaceUrl"
 import { buildPaginationItems } from "@/app/[siteId]/[popId]/layout/layoutPreviewPagination"
 import { DataWorkspaceListActiveFiltersBar } from "@/components/data-workspace/DataWorkspaceListActiveFiltersBar"
@@ -92,6 +93,7 @@ import {
   WorkspaceTableHeaderRow,
   WorkspaceTableSelectHead,
 } from "@/components/data-workspace/WorkspaceTableHeader"
+import { WorkspaceTableSortHead } from "@/components/data-workspace/WorkspaceTableSortHead"
 import { WorkspaceTableSkeletonRows } from "@/components/data-workspace/WorkspaceTableSkeleton"
 import { promotionsSkeletonColumns } from "@/components/data-workspace/workspaceTableSkeletonPresets"
 import { DataWorkspaceHeaderIconButton } from "@/components/layouts/DataWorkspaceHeaderIconButton"
@@ -115,6 +117,10 @@ import {
   PROMOTION_TYPE_LABEL,
 } from "@/lib/promotionTypes"
 import { cn } from "@/lib/utils"
+import {
+  nextWorkspaceTableSortState,
+  workspaceTableSortDisplayDirection,
+} from "@/lib/workspaceTableSort"
 import { Pencil, Plus, Trash2 } from "lucide-react"
 import {
   useParams,
@@ -171,6 +177,29 @@ function PromotionsPage() {
     [pathname, router, searchParams],
   )
 
+  const handleSortColumn = useCallback(
+    (column: PromotionTableSortKey) => {
+      const next = nextWorkspaceTableSortState(
+        { sort: ws.sort, ord: ws.ord },
+        column,
+      )
+      pushWs({
+        sort: next.sort as PromotionTableSortKey | null,
+        ord: next.ord,
+      })
+    },
+    [pushWs, ws.ord, ws.sort],
+  )
+
+  const sortDirection = useCallback(
+    (column: PromotionTableSortKey) =>
+      workspaceTableSortDisplayDirection(
+        { sort: ws.sort, ord: ws.ord },
+        column,
+      ),
+    [ws.ord, ws.sort],
+  )
+
   const activePromotionTypeFilterId = useMemo(
     () => resolvePromotionTypeFilterId(ws.promotionType),
     [ws.promotionType],
@@ -204,6 +233,8 @@ function PromotionsPage() {
       pageSize: ws.pageSize,
       soloActivos: ws.soloActivos,
       promotionType: ws.promotionType,
+      sort: ws.sort,
+      ord: ws.ord,
     })
     setLoading(false)
     if (!res.success) {
@@ -579,26 +610,28 @@ function PromotionsPage() {
                   >
                     Imagen
                   </WorkspaceTableHead>
-                  <WorkspaceTableHead
+                  <WorkspaceTableSortHead
                     tone="nature"
+                    label="Promoción"
+                    direction={sortDirection("name")}
+                    onSort={() => handleSortColumn("name")}
                     className={cn(
                       promotionTableNameColumnClass,
                       "px-3",
                       workspaceTableLayoutHeaderHeadClass,
                     )}
-                  >
-                    Promoción
-                  </WorkspaceTableHead>
-                  <WorkspaceTableHead
+                  />
+                  <WorkspaceTableSortHead
                     tone="nature"
+                    label="Tipo"
+                    direction={sortDirection("promotion_type")}
+                    onSort={() => handleSortColumn("promotion_type")}
                     className={cn(
                       promotionTableTypeColumnClass,
                       "px-3",
                       workspaceTableLayoutHeaderHeadClass,
                     )}
-                  >
-                    Tipo
-                  </WorkspaceTableHead>
+                  />
                   <WorkspaceTableHead
                     tone="nature"
                     className={cn(
@@ -609,16 +642,17 @@ function PromotionsPage() {
                   >
                     Precio / regla
                   </WorkspaceTableHead>
-                  <WorkspaceTableHead
+                  <WorkspaceTableSortHead
                     tone="nature"
+                    label="Vigencia"
+                    direction={sortDirection("valid_from")}
+                    onSort={() => handleSortColumn("valid_from")}
                     className={cn(
                       promotionTableScheduleColumnClass,
                       "px-3",
                       workspaceTableLayoutHeaderHeadClass,
                     )}
-                  >
-                    Vigencia
-                  </WorkspaceTableHead>
+                  />
                   <WorkspaceTableHead
                     tone="nature"
                     className={cn(

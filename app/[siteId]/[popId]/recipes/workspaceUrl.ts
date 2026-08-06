@@ -2,10 +2,25 @@ import {
   DEFAULT_RECIPE_TABLE_PAGE_SIZE,
   RECIPE_TABLE_PAGE_SIZES,
 } from "@/app/[siteId]/[popId]/recipes/recipeConstants"
+import {
+  appendWorkspaceTableSortParams,
+  parseWorkspaceTableSortUrl,
+  type WorkspaceTableSortDirection,
+} from "@/lib/workspaceTableSort"
 
 export type RecipeWorkspaceView = "list"
 
 export type RecipeTablePageSize = (typeof RECIPE_TABLE_PAGE_SIZES)[number]
+
+export const RECIPE_TABLE_SORT_KEYS = [
+  "name",
+  "sale_price",
+  "cost_price",
+] as const
+
+export type RecipeTableSortKey = (typeof RECIPE_TABLE_SORT_KEYS)[number]
+
+export const DEFAULT_RECIPE_TABLE_SORT: RecipeTableSortKey = "name"
 
 export type RecipesWorkspaceUrlState = {
   view: RecipeWorkspaceView
@@ -14,6 +29,8 @@ export type RecipesWorkspaceUrlState = {
   pageSize: RecipeTablePageSize
   soloActivos: boolean
   categoryId: string
+  sort: RecipeTableSortKey | null
+  ord: WorkspaceTableSortDirection
 }
 
 const DEFAULTS: RecipesWorkspaceUrlState = {
@@ -23,6 +40,8 @@ const DEFAULTS: RecipesWorkspaceUrlState = {
   pageSize: DEFAULT_RECIPE_TABLE_PAGE_SIZE,
   soloActivos: false,
   categoryId: "",
+  sort: null,
+  ord: "asc",
 }
 
 function parsePageSize(raw: string | null): RecipeTablePageSize {
@@ -39,6 +58,10 @@ export function parseRecipesWorkspaceUrl(
   params: URLSearchParams,
 ): RecipesWorkspaceUrlState {
   const pageRaw = Number(params.get("page"))
+  const { sort, ord } = parseWorkspaceTableSortUrl(
+    params,
+    RECIPE_TABLE_SORT_KEYS,
+  )
   return {
     view: "list",
     q: params.get("q")?.trim() ?? "",
@@ -46,6 +69,8 @@ export function parseRecipesWorkspaceUrl(
     pageSize: parsePageSize(params.get("ps")),
     soloActivos: params.get("solo") === "1",
     categoryId: params.get("cat")?.trim() ?? "",
+    sort: sort as RecipeTableSortKey | null,
+    ord,
   }
 }
 
@@ -73,6 +98,23 @@ export function mergeRecipesWorkspaceUrl(
 
   if (merged.categoryId) next.set("cat", merged.categoryId)
   else next.delete("cat")
+
+  appendWorkspaceTableSortParams(next, {
+    sort: merged.sort,
+    ord: merged.ord,
+  })
+
+  if (
+    patch.page === undefined &&
+    (patch.q !== undefined ||
+      patch.soloActivos !== undefined ||
+      patch.categoryId !== undefined ||
+      patch.sort !== undefined ||
+      patch.ord !== undefined)
+  ) {
+    if (merged.page !== 1) next.set("page", "1")
+    else next.delete("page")
+  }
 
   return next
 }

@@ -12,6 +12,7 @@ import {
 import { getPopSiteId, validatePopAccess } from "@/lib/popHelpers"
 import { popMenuHref } from "@/lib/popRoutes"
 import { loadPopPermissionsSnapshot } from "@/lib/popPermissionsServer"
+import { resolveWorkspaceTableListOrder } from "@/lib/workspaceTableSort"
 import {
   isPromotionBenefitTarget,
   isPromotionOptionKind,
@@ -132,6 +133,19 @@ export type GetPopPromotionsTableInput = {
   pageSize?: number
   soloActivos?: boolean
   promotionType?: PromotionType | ""
+  sort?: string | null
+  ord?: "asc" | "desc"
+}
+
+const PROMOTION_LIST_SORT = {
+  allowed: {
+    name: "name",
+    promotion_type: "promotion_type",
+    valid_from: "valid_from",
+    valid_until: "valid_until",
+  },
+  defaultColumn: "name" as const,
+  defaultAscending: true,
 }
 
 const PROMOTION_SELECT = `
@@ -843,10 +857,27 @@ export async function getPopPromotionsTable(
     }
 
     const from = (page - 1) * pageSize
-    const { data, error, count } = await query
-      .order("sort_order", { ascending: true })
-      .order("name", { ascending: true })
-      .range(from, from + pageSize - 1)
+    const sortState = { sort: input.sort ?? null, ord: input.ord ?? "asc" }
+    const hasUserSort =
+      sortState.sort != null && sortState.sort in PROMOTION_LIST_SORT.allowed
+    let orderedQuery = query
+    if (hasUserSort) {
+      const listOrder = resolveWorkspaceTableListOrder(
+        sortState,
+        PROMOTION_LIST_SORT,
+      )
+      orderedQuery = orderedQuery.order(listOrder.column, {
+        ascending: listOrder.ascending,
+      })
+    } else {
+      orderedQuery = orderedQuery
+        .order("sort_order", { ascending: true })
+        .order("name", { ascending: true })
+    }
+    const { data, error, count } = await orderedQuery.range(
+      from,
+      from + pageSize - 1,
+    )
 
     if (error) {
       return {

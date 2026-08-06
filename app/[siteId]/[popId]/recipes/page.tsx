@@ -54,6 +54,7 @@ import {
   RECIPE_TABLE_PAGE_SIZES,
   mergeRecipesWorkspaceUrl,
   parseRecipesWorkspaceUrl,
+  type RecipeTableSortKey,
 } from "@/app/[siteId]/[popId]/recipes/workspaceUrl"
 import { buildPaginationItems } from "@/app/[siteId]/[popId]/layout/layoutPreviewPagination"
 import { DataWorkspaceListActiveFiltersBar } from "@/components/data-workspace/DataWorkspaceListActiveFiltersBar"
@@ -93,6 +94,7 @@ import {
   WorkspaceTableHeaderRow,
   WorkspaceTableSelectHead,
 } from "@/components/data-workspace/WorkspaceTableHeader"
+import { WorkspaceTableSortHead } from "@/components/data-workspace/WorkspaceTableSortHead"
 import { WorkspaceTableSkeletonRows } from "@/components/data-workspace/WorkspaceTableSkeleton"
 import { recipesSkeletonColumns } from "@/components/data-workspace/workspaceTableSkeletonPresets"
 import { DataWorkspaceHeaderIconButton } from "@/components/layouts/DataWorkspaceHeaderIconButton"
@@ -100,6 +102,10 @@ import { TableBody, TableCell, TableRow } from "@/components/ui/table"
 import withAuth from "@/hoc/withAuth"
 import { usePopWorkspace } from "@/context/PopWorkspaceContext"
 import { cn } from "@/lib/utils"
+import {
+  nextWorkspaceTableSortState,
+  workspaceTableSortDisplayDirection,
+} from "@/lib/workspaceTableSort"
 import { FolderTree, Pencil, Plus, Trash2 } from "lucide-react"
 import {
   useParams,
@@ -183,6 +189,29 @@ function RecipesPage() {
     [pathname, router, searchParams],
   )
 
+  const handleSortColumn = useCallback(
+    (column: RecipeTableSortKey) => {
+      const next = nextWorkspaceTableSortState(
+        { sort: ws.sort, ord: ws.ord },
+        column,
+      )
+      pushWs({
+        sort: next.sort as RecipeTableSortKey | null,
+        ord: next.ord,
+      })
+    },
+    [pushWs, ws.ord, ws.sort],
+  )
+
+  const sortDirection = useCallback(
+    (column: RecipeTableSortKey) =>
+      workspaceTableSortDisplayDirection(
+        { sort: ws.sort, ord: ws.ord },
+        column,
+      ),
+    [ws.ord, ws.sort],
+  )
+
   const loadTable = useCallback(async () => {
     if (!popId) return
     setLoading(true)
@@ -193,6 +222,8 @@ function RecipesPage() {
       pageSize: ws.pageSize,
       soloActivos: ws.soloActivos,
       categoryId: ws.categoryId,
+      sort: ws.sort,
+      ord: ws.ord,
     })
     if (!res.success) {
       setError(res.error)
@@ -635,12 +666,13 @@ function RecipesPage() {
                     >
                       Foto
                     </WorkspaceTableHead>
-                    <WorkspaceTableHead
+                    <WorkspaceTableSortHead
                       tone="nature"
+                      label="Receta"
+                      direction={sortDirection("name")}
+                      onSort={() => handleSortColumn("name")}
                       className={recipeTableHeaderClass(recipeTableNameColumnClass)}
-                    >
-                      Receta
-                    </WorkspaceTableHead>
+                    />
                     <WorkspaceTableHead
                       tone="nature"
                       className={recipeTableHeaderClass(
@@ -649,24 +681,26 @@ function RecipesPage() {
                     >
                       Categoría
                     </WorkspaceTableHead>
-                    <WorkspaceTableHead
+                    <WorkspaceTableSortHead
                       tone="nature"
+                      label="Venta"
+                      align="right"
+                      direction={sortDirection("sale_price")}
+                      onSort={() => handleSortColumn("sale_price")}
                       className={recipeTableHeaderClass(
                         recipeTableSaleColumnClass,
-                        "text-right",
                       )}
-                    >
-                      Venta
-                    </WorkspaceTableHead>
-                    <WorkspaceTableHead
+                    />
+                    <WorkspaceTableSortHead
                       tone="nature"
+                      label="Costo"
+                      align="right"
+                      direction={sortDirection("cost_price")}
+                      onSort={() => handleSortColumn("cost_price")}
                       className={recipeTableHeaderClass(
                         recipeTableCostColumnClass,
-                        "text-right",
                       )}
-                    >
-                      Costo
-                    </WorkspaceTableHead>
+                    />
                     <WorkspaceTableHead
                       tone="nature"
                       className={recipeTableHeaderClass(

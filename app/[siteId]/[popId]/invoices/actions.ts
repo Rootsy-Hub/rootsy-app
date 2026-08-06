@@ -13,6 +13,7 @@ import {
 import { emitArcaFacturaBConsumidorFinal } from "@/lib/arcaWsfeEmit"
 import { getPopById, getPopSiteId, validatePopAccess } from "@/lib/popHelpers"
 import { loadPopPermissionsSnapshot } from "@/lib/popPermissionsServer"
+import { resolveWorkspaceTableListOrder } from "@/lib/workspaceTableSort"
 import {
   DEFAULT_SALE_SITE_ID,
   findSaleInvoiceTypeByArcaCbteTipo,
@@ -140,6 +141,19 @@ export type GetPopInvoicesArcaTableInput = {
   pageSize?: number
   status?: string
   regimen?: string
+  sort?: string | null
+  ord?: "asc" | "desc"
+}
+
+const INVOICE_LIST_SORT = {
+  allowed: {
+    cbte_fch: "cbte_fch",
+    imp_total: "imp_total",
+    receptor: "receptor_razon_social",
+    status: "status",
+  },
+  defaultColumn: "cbte_fch" as const,
+  defaultAscending: false,
 }
 
 function normalizeCuitDigits(s: string): string {
@@ -715,10 +729,27 @@ export async function getPopInvoicesArcaTable(
     }
 
     const from = (page - 1) * pageSize
-    const { data, error, count } = await query
-      .order("cbte_fch", { ascending: false })
-      .order("created_at", { ascending: false })
-      .range(from, from + pageSize - 1)
+    const sortState = { sort: input.sort ?? null, ord: input.ord ?? "asc" }
+    const hasUserSort =
+      sortState.sort != null && sortState.sort in INVOICE_LIST_SORT.allowed
+    let orderedQuery = query
+    if (hasUserSort) {
+      const listOrder = resolveWorkspaceTableListOrder(
+        sortState,
+        INVOICE_LIST_SORT,
+      )
+      orderedQuery = orderedQuery.order(listOrder.column, {
+        ascending: listOrder.ascending,
+      })
+    } else {
+      orderedQuery = orderedQuery
+        .order("cbte_fch", { ascending: false })
+        .order("created_at", { ascending: false })
+    }
+    const { data, error, count } = await orderedQuery.range(
+      from,
+      from + pageSize - 1,
+    )
 
     if (error) {
       return {

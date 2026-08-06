@@ -1,6 +1,24 @@
+import {
+  appendWorkspaceTableSortParams,
+  parseWorkspaceTableSortUrl,
+  type WorkspaceTableSortDirection,
+} from "@/lib/workspaceTableSort"
+
 export const CLIENT_TABLE_PAGE_SIZES = [10, 25, 50, 100] as const
 
 export const DEFAULT_CLIENT_TABLE_PAGE_SIZE = 25
+
+export const CLIENT_TABLE_SORT_KEYS = [
+  "name",
+  "email",
+  "phone",
+  "tax_id",
+  "iva",
+] as const
+
+export type ClientTableSortKey = (typeof CLIENT_TABLE_SORT_KEYS)[number]
+
+export const DEFAULT_CLIENT_TABLE_SORT: ClientTableSortKey = "name"
 
 const K = {
   view: "v",
@@ -20,6 +38,8 @@ export type ClientsWorkspaceUrlState = {
   withEmail: boolean
   withTaxId: boolean
   soloActivos: boolean
+  sort: ClientTableSortKey | null
+  ord: WorkspaceTableSortDirection
 }
 
 const ALLOWED_VIEWS = new Set(["list", "new-client"])
@@ -47,6 +67,12 @@ export function parseClientsWorkspaceUrl(
     Number.isFinite(psRaw) && psRaw >= 1 ? Math.floor(psRaw) : DEFAULT_CLIENT_TABLE_PAGE_SIZE,
   )
 
+  const soloActivos = searchParams.get(K.solo) === "1"
+  const { sort, ord } = parseWorkspaceTableSortUrl(
+    searchParams,
+    CLIENT_TABLE_SORT_KEYS,
+  )
+
   return {
     view,
     q,
@@ -54,7 +80,9 @@ export function parseClientsWorkspaceUrl(
     pageSize,
     withEmail: searchParams.get(K.mail) === "1",
     withTaxId: searchParams.get(K.tax) === "1",
-    soloActivos: searchParams.get(K.solo) === "1",
+    soloActivos,
+    sort: sort as ClientTableSortKey | null,
+    ord,
   }
 }
 
@@ -72,6 +100,10 @@ export function buildClientsWorkspaceQuery(
   if (state.withEmail) n.set(K.mail, "1")
   if (state.withTaxId) n.set(K.tax, "1")
   if (state.soloActivos) n.set(K.solo, "1")
+  appendWorkspaceTableSortParams(n, {
+    sort: state.sort,
+    ord: state.ord,
+  })
   return n.toString()
 }
 
@@ -83,7 +115,15 @@ export function mergeClientsWorkspaceUrl(
     ...parseClientsWorkspaceUrl(current),
     ...patch,
   }
-  if (patch.page === undefined && (patch.q !== undefined || patch.withEmail !== undefined || patch.withTaxId !== undefined || patch.soloActivos !== undefined)) {
+  if (
+    patch.page === undefined &&
+    (patch.q !== undefined ||
+      patch.withEmail !== undefined ||
+      patch.withTaxId !== undefined ||
+      patch.soloActivos !== undefined ||
+      patch.sort !== undefined ||
+      patch.ord !== undefined)
+  ) {
     merged.page = 1
   }
   return buildClientsWorkspaceQuery(merged)

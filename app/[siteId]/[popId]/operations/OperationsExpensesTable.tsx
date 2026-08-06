@@ -42,6 +42,8 @@ import {
   WorkspaceTableHeaderRow,
   WorkspaceTableSelectHead,
 } from "@/components/data-workspace/WorkspaceTableHeader"
+import { WorkspaceTableSortHead } from "@/components/data-workspace/WorkspaceTableSortHead"
+import type { WorkspaceTableSortDisplayDirection } from "@/lib/workspaceTableSort"
 import { cn } from "@/lib/utils"
 import { PanelRightOpen } from "lucide-react"
 import { useMemo, useState, type Dispatch, type SetStateAction } from "react"
@@ -155,6 +157,9 @@ export function OperationsExpensesTable({
   skeletonRowCount,
   selected,
   onSelectedChange,
+  sortable = true,
+  sortDirection,
+  onSortColumn,
 }: {
   rows: OperationExpenseLedgerRow[]
   listFetching: boolean
@@ -162,6 +167,11 @@ export function OperationsExpensesTable({
   skeletonRowCount: number
   selected: Set<string>
   onSelectedChange: Dispatch<SetStateAction<Set<string>>>
+  sortable?: boolean
+  sortDirection?: (
+    column: "entry_date",
+  ) => WorkspaceTableSortDisplayDirection
+  onSortColumn?: (column: "entry_date") => void
 }) {
   const timeZone = usePopTimeZone()
   const [detailExpense, setDetailExpense] =
@@ -207,12 +217,24 @@ export function OperationsExpensesTable({
                 }
                 ariaLabel="Seleccionar filas visibles"
               />
-              <WorkspaceTableHead
-                tone="nature"
-                className={operationsTableHeaderClass(operationsTableDateColumnClass)}
-              >
-                Fecha
-              </WorkspaceTableHead>
+              {sortable ? (
+                <WorkspaceTableSortHead
+                  tone="nature"
+                  label="Fecha"
+                  direction={sortDirection?.("entry_date") ?? "none"}
+                  onSort={
+                    onSortColumn ? () => onSortColumn("entry_date") : undefined
+                  }
+                  className={operationsTableHeaderClass(operationsTableDateColumnClass)}
+                />
+              ) : (
+                <WorkspaceTableHead
+                  tone="nature"
+                  className={operationsTableHeaderClass(operationsTableDateColumnClass)}
+                >
+                  Fecha
+                </WorkspaceTableHead>
+              )}
               <WorkspaceTableHead
                 tone="nature"
                 className={operationsTableHeaderClass(operationsTableDetailColumnClass)}

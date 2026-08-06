@@ -55,6 +55,7 @@ import {
   INVOICE_TABLE_PAGE_SIZES,
   mergeInvoicesWorkspaceUrl,
   parseInvoicesWorkspaceUrl,
+  type InvoiceTableSortKey,
 } from "@/app/[siteId]/[popId]/invoices/workspaceUrl"
 import { buildPaginationItems } from "@/app/[siteId]/[popId]/layout/layoutPreviewPagination"
 import { DataWorkspaceListActiveFiltersBar } from "@/components/data-workspace/DataWorkspaceListActiveFiltersBar"
@@ -90,6 +91,7 @@ import {
   WorkspaceTableHeader,
   WorkspaceTableHeaderRow,
 } from "@/components/data-workspace/WorkspaceTableHeader"
+import { WorkspaceTableSortHead } from "@/components/data-workspace/WorkspaceTableSortHead"
 import { WorkspaceTableSkeletonRows } from "@/components/data-workspace/WorkspaceTableSkeleton"
 import { invoicesSkeletonColumns } from "@/components/data-workspace/workspaceTableSkeletonPresets"
 import { DataWorkspaceHeaderIconButton } from "@/components/layouts/DataWorkspaceHeaderIconButton"
@@ -105,6 +107,10 @@ import { TableBody, TableRow } from "@/components/ui/table"
 import { usePopWorkspace } from "@/context/PopWorkspaceContext"
 import withAuth from "@/hoc/withAuth"
 import { cn } from "@/lib/utils"
+import {
+  nextWorkspaceTableSortState,
+  workspaceTableSortDisplayDirection,
+} from "@/lib/workspaceTableSort"
 import {
   CheckCircle2,
   Plus,
@@ -197,6 +203,29 @@ function InvoicesPage() {
     [pathname, router, searchParams],
   )
 
+  const handleSortColumn = useCallback(
+    (column: InvoiceTableSortKey) => {
+      const next = nextWorkspaceTableSortState(
+        { sort: ws.sort, ord: ws.ord },
+        column,
+      )
+      pushWs({
+        sort: next.sort as InvoiceTableSortKey | null,
+        ord: next.ord,
+      })
+    },
+    [pushWs, ws.ord, ws.sort],
+  )
+
+  const sortDirection = useCallback(
+    (column: InvoiceTableSortKey) =>
+      workspaceTableSortDisplayDirection(
+        { sort: ws.sort, ord: ws.ord },
+        column,
+      ),
+    [ws.ord, ws.sort],
+  )
+
   const activeStatusFilterId = useMemo(
     () => resolveInvoiceStatusFilterId(ws.status),
     [ws.status],
@@ -212,6 +241,8 @@ function InvoicesPage() {
         pageSize: ws.pageSize,
         status: ws.status,
         regimen: ws.regimen,
+        sort: ws.sort,
+        ord: ws.ord,
       }),
       getInvoiceFormContext(popId),
     ])
@@ -565,14 +596,15 @@ function InvoicesPage() {
                       >
                         Tipo
                       </WorkspaceTableHead>
-                      <WorkspaceTableHead
+                      <WorkspaceTableSortHead
                         tone="nature"
+                        label="Fecha"
+                        direction={sortDirection("cbte_fch")}
+                        onSort={() => handleSortColumn("cbte_fch")}
                         className={invoiceTableHeaderClass(
                           invoiceTableDateColumnClass,
                         )}
-                      >
-                        Fecha
-                      </WorkspaceTableHead>
+                      />
                       <WorkspaceTableHead
                         tone="nature"
                         className={invoiceTableHeaderClass(
@@ -581,23 +613,25 @@ function InvoicesPage() {
                       >
                         Pto. / Nº
                       </WorkspaceTableHead>
-                      <WorkspaceTableHead
+                      <WorkspaceTableSortHead
                         tone="nature"
+                        label="Receptor"
+                        direction={sortDirection("receptor")}
+                        onSort={() => handleSortColumn("receptor")}
                         className={invoiceTableHeaderClass(
                           invoiceTableReceptorColumnClass,
                         )}
-                      >
-                        Receptor
-                      </WorkspaceTableHead>
-                      <WorkspaceTableHead
+                      />
+                      <WorkspaceTableSortHead
                         tone="nature"
+                        label="Total"
+                        align="right"
+                        direction={sortDirection("imp_total")}
+                        onSort={() => handleSortColumn("imp_total")}
                         className={invoiceTableHeaderClass(
                           invoiceTableTotalColumnClass,
-                          "text-right",
                         )}
-                      >
-                        Total
-                      </WorkspaceTableHead>
+                      />
                       <WorkspaceTableHead
                         tone="nature"
                         className={invoiceTableHeaderClass(
@@ -606,14 +640,15 @@ function InvoicesPage() {
                       >
                         CAE
                       </WorkspaceTableHead>
-                      <WorkspaceTableHead
+                      <WorkspaceTableSortHead
                         tone="nature"
+                        label="Estado"
+                        direction={sortDirection("status")}
+                        onSort={() => handleSortColumn("status")}
                         className={invoiceTableHeaderClass(
                           invoiceTableStatusColumnClass,
                         )}
-                      >
-                        Estado
-                      </WorkspaceTableHead>
+                      />
                     </WorkspaceTableHeaderRow>
                   </WorkspaceTableHeader>
                   <TableBody>

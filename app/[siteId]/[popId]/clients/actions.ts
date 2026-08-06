@@ -11,6 +11,7 @@ import {
 } from "@/lib/popHelpers"
 import { popMenuHref } from "@/lib/popRoutes"
 import { loadPopPermissionsSnapshot } from "@/lib/popPermissionsServer"
+import { resolveWorkspaceTableListOrder } from "@/lib/workspaceTableSort"
 import { createClient } from "@/utils/supabase/server"
 import { clientDeleteConfirmPhrase } from "@/app/[siteId]/[popId]/clients/clientConstants"
 import { CLIENT_IVA_CONDITION_VALUES } from "@/app/[siteId]/[popId]/clients/clientIvaConstants"
@@ -293,6 +294,18 @@ export async function deletePopClient(
   }
 }
 
+const CLIENT_LIST_SORT = {
+  allowed: {
+    name: "name",
+    email: "email",
+    phone: "phone",
+    tax_id: "tax_id",
+    iva: "iva_condition",
+  },
+  defaultColumn: "name" as const,
+  defaultAscending: true,
+}
+
 export type GetPopClientsTableInput = {
   page: number
   pageSize: number
@@ -300,6 +313,8 @@ export type GetPopClientsTableInput = {
   soloActivos: boolean
   withEmail: boolean
   withTaxId: boolean
+  sort?: string | null
+  ord?: "asc" | "desc"
 }
 
 function normalizeClientsListPaging(page: number, pageSize: number) {
@@ -470,7 +485,13 @@ export async function getPopClientsTable(
       .select(CLIENT_LIST_SELECT)
       .eq("pop_id", popId)
     dataQuery = appendClientListFilters(dataQuery, input)
-    dataQuery = dataQuery.order("name", { ascending: true }).range(from, to)
+    const listOrder = resolveWorkspaceTableListOrder(
+      { sort: input.sort ?? null, ord: input.ord ?? "asc" },
+      CLIENT_LIST_SORT,
+    )
+    dataQuery = dataQuery
+      .order(listOrder.column, { ascending: listOrder.ascending })
+      .range(from, to)
 
     const { data, error } = await dataQuery
     if (error) {

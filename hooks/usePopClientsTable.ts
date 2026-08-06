@@ -28,6 +28,8 @@ export function usePopClientsTable(
     soloActivos: params.soloActivos,
     withEmail: params.withEmail,
     withTaxId: params.withTaxId,
+    sort: params.sort,
+    ord: params.ord,
   }
 
   return useQuery({

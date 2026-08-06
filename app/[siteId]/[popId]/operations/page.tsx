@@ -45,6 +45,11 @@ import {
   type OperationsViewId,
 } from "@/lib/operationsViewPreference"
 import {
+  nextWorkspaceTableSortState,
+  workspaceTableSortDisplayDirection,
+  type WorkspaceTableSortDirection,
+} from "@/lib/workspaceTableSort"
+import {
   Receipt,
   ShoppingCart,
   Monitor,
@@ -108,6 +113,8 @@ function OperationsPage() {
   const hydratedViewPopRef = useRef<string | null>(null)
   const [page, setPage] = useState(1)
   const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE)
+  const [sort, setSort] = useState<string | null>(null)
+  const [ord, setOrd] = useState<WorkspaceTableSortDirection>("asc")
   const [selected, setSelected] = useState<Set<string>>(() => new Set())
 
   const dateBounds = useMemo(
@@ -126,6 +133,8 @@ function OperationsPage() {
         search: debouncedSearch,
         page,
         pageSize,
+        sort,
+        ord,
       })
       if (!res.success) {
         setError(res.error || "Error")
@@ -155,6 +164,8 @@ function OperationsPage() {
     debouncedSearch,
     page,
     pageSize,
+    sort,
+    ord,
   ])
 
   useEffect(() => {
@@ -182,7 +193,7 @@ function OperationsPage() {
 
   useEffect(() => {
     setPage(1)
-  }, [debouncedSearch, activeView, datePreset, customDateRange])
+  }, [debouncedSearch, activeView, datePreset, customDateRange, sort, ord])
 
   useEffect(() => {
     setSelected(new Set())
@@ -223,9 +234,24 @@ function OperationsPage() {
       if (popId) writeSavedOperationsView(popId, id)
       setSearchInput("")
       setDebouncedSearch("")
+      setSort(null)
+      setOrd("asc")
       setPage(1)
     },
     [popId],
+  )
+
+  const handleSortColumn = useCallback((column: string) => {
+    const next = nextWorkspaceTableSortState({ sort, ord }, column)
+    setSort(next.sort)
+    setOrd(next.ord)
+    setPage(1)
+  }, [ord, sort])
+
+  const sortDirection = useCallback(
+    (column: string) =>
+      workspaceTableSortDisplayDirection({ sort, ord }, column),
+    [ord, sort],
   )
 
   const pageSales = sales
@@ -463,6 +489,9 @@ function OperationsPage() {
                 onSelectedChange={setSelected}
                 showTableColumn={activeView === "tables"}
                 showOrderColumn={activeView === "counter"}
+                sortable={activeView === "sales"}
+                sortDirection={sortDirection}
+                onSortColumn={handleSortColumn}
               />
             ) : activeView === "purchases" ? (
               <OperationsPurchasesTable
@@ -474,6 +503,8 @@ function OperationsPage() {
                 skeletonRowCount={skeletonRowCount}
                 selected={selected}
                 onSelectedChange={setSelected}
+                sortDirection={sortDirection}
+                onSortColumn={handleSortColumn}
               />
             ) : (
               <OperationsExpensesTable
@@ -483,6 +514,8 @@ function OperationsPage() {
                 skeletonRowCount={skeletonRowCount}
                 selected={selected}
                 onSelectedChange={setSelected}
+                sortDirection={sortDirection}
+                onSortColumn={handleSortColumn}
               />
             )}
           </DataWorkspaceTableListShell>

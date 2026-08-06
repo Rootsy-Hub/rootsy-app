@@ -12,6 +12,7 @@ import {
 import { getPopSiteId, validatePopAccess } from "@/lib/popHelpers"
 import { popMenuHref } from "@/lib/popRoutes"
 import { loadPopPermissionsSnapshot } from "@/lib/popPermissionsServer"
+import { resolveWorkspaceTableListOrder } from "@/lib/workspaceTableSort"
 import { computeRecipeCostPrice } from "@/lib/recipeCost"
 import { createClient } from "@/utils/supabase/server"
 import type { ArticleItemKind } from "@/lib/articleItemKind"
@@ -99,6 +100,18 @@ export type GetPopRecipesTableInput = {
   pageSize?: number
   soloActivos?: boolean
   categoryId?: string
+  sort?: string | null
+  ord?: "asc" | "desc"
+}
+
+const RECIPE_LIST_SORT = {
+  allowed: {
+    name: "name",
+    sale_price: "sale_price",
+    cost_price: "cost_price",
+  },
+  defaultColumn: "name" as const,
+  defaultAscending: true,
 }
 
 const RECIPE_SELECT = `
@@ -734,8 +747,12 @@ export async function getPopRecipesTable(
     }
 
     const from = (page - 1) * pageSize
+    const listOrder = resolveWorkspaceTableListOrder(
+      { sort: input.sort ?? null, ord: input.ord ?? "asc" },
+      RECIPE_LIST_SORT,
+    )
     const { data, error, count } = await query
-      .order("name", { ascending: true })
+      .order(listOrder.column, { ascending: listOrder.ascending })
       .range(from, from + pageSize - 1)
 
     if (error) {

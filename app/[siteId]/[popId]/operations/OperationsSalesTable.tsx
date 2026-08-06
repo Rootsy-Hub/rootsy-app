@@ -27,6 +27,8 @@ import {
   WorkspaceTableHeaderRow,
   WorkspaceTableSelectHead,
 } from "@/components/data-workspace/WorkspaceTableHeader"
+import { WorkspaceTableSortHead } from "@/components/data-workspace/WorkspaceTableSortHead"
+import type { WorkspaceTableSortDisplayDirection } from "@/lib/workspaceTableSort"
 import { displayOperationSaleTotal } from "@/lib/channelOperationSales"
 import {
   saleComprobanteLabel,
@@ -425,6 +427,9 @@ export function OperationsSalesTable({
   onSelectedChange,
   showTableColumn = false,
   showOrderColumn = false,
+  sortable = false,
+  sortDirection,
+  onSortColumn,
 }: {
   siteId: string
   popId: string
@@ -436,6 +441,9 @@ export function OperationsSalesTable({
   onSelectedChange: Dispatch<SetStateAction<Set<string>>>
   showTableColumn?: boolean
   showOrderColumn?: boolean
+  sortable?: boolean
+  sortDirection?: (column: "sold_at" | "total") => WorkspaceTableSortDisplayDirection
+  onSortColumn?: (column: "sold_at" | "total") => void
 }) {
   const timeZone = usePopTimeZone()
   const [detailSale, setDetailSale] = useState<OperationSaleRow | null>(null)
@@ -499,6 +507,16 @@ export function OperationsSalesTable({
                     Cierre
                   </WorkspaceTableHead>
                 </>
+              ) : sortable && !showOrderColumn ? (
+                <WorkspaceTableSortHead
+                  tone="nature"
+                  label="Fecha"
+                  direction={sortDirection?.("sold_at") ?? "none"}
+                  onSort={
+                    onSortColumn ? () => onSortColumn("sold_at") : undefined
+                  }
+                  className={operationsTableHeaderClass(operationsTableDateColumnClass)}
+                />
               ) : (
                 <WorkspaceTableHead
                   tone="nature"
@@ -535,13 +553,28 @@ export function OperationsSalesTable({
                   >
                     IVA
                   </WorkspaceTableHead>
-                  <WorkspaceTableHead
-                    tone="nature"
-                    align="right"
-                    className={operationsTableHeaderClass(operationsTableMoneyColumnClass)}
-                  >
-                    Total
-                  </WorkspaceTableHead>
+                  {sortable ? (
+                    <WorkspaceTableSortHead
+                      tone="nature"
+                      label="Total"
+                      align="right"
+                      direction={sortDirection?.("total") ?? "none"}
+                      onSort={
+                        onSortColumn ? () => onSortColumn("total") : undefined
+                      }
+                      className={operationsTableHeaderClass(
+                        operationsTableMoneyColumnClass,
+                      )}
+                    />
+                  ) : (
+                    <WorkspaceTableHead
+                      tone="nature"
+                      align="right"
+                      className={operationsTableHeaderClass(operationsTableMoneyColumnClass)}
+                    >
+                      Total
+                    </WorkspaceTableHead>
+                  )}
                 </>
               ) : null}
               <OperationTableActionsHead />

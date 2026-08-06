@@ -71,6 +71,7 @@ import {
   WorkspaceTableHeaderRow,
   WorkspaceTableSelectHead,
 } from "@/components/data-workspace/WorkspaceTableHeader"
+import { WorkspaceTableSortHead } from "@/components/data-workspace/WorkspaceTableSortHead"
 import { DataWorkspaceHeaderIconButton } from "@/components/layouts/DataWorkspaceHeaderIconButton"
 import {
   TableBody,
@@ -80,7 +81,12 @@ import {
   CLIENT_TABLE_PAGE_SIZES,
   mergeClientsWorkspaceUrl,
   parseClientsWorkspaceUrl,
+  type ClientTableSortKey,
 } from "@/app/[siteId]/[popId]/clients/workspaceUrl"
+import {
+  nextWorkspaceTableSortState,
+  workspaceTableSortDisplayDirection,
+} from "@/lib/workspaceTableSort"
 import { usePopWorkspace } from "@/context/PopWorkspaceContext"
 import { usePopClientsTable } from "@/hooks/usePopClientsTable"
 import { popClientsQueryRoot } from "@/lib/queryKeys"
@@ -186,6 +192,8 @@ function ClientsPage() {
       soloActivos: workspaceParsed.soloActivos,
       withEmail: workspaceParsed.withEmail,
       withTaxId: workspaceParsed.withTaxId,
+      sort: workspaceParsed.sort,
+      ord: workspaceParsed.ord,
     }),
     [
       workspaceParsed.page,
@@ -194,7 +202,32 @@ function ClientsPage() {
       workspaceParsed.soloActivos,
       workspaceParsed.withEmail,
       workspaceParsed.withTaxId,
+      workspaceParsed.sort,
+      workspaceParsed.ord,
     ],
+  )
+
+  const handleSortColumn = useCallback(
+    (column: ClientTableSortKey) => {
+      const next = nextWorkspaceTableSortState(
+        { sort: workspaceParsed.sort, ord: workspaceParsed.ord },
+        column,
+      )
+      replaceWorkspaceQuery({
+        sort: next.sort as ClientTableSortKey | null,
+        ord: next.ord,
+      })
+    },
+    [replaceWorkspaceQuery, workspaceParsed.ord, workspaceParsed.sort],
+  )
+
+  const sortDirection = useCallback(
+    (column: ClientTableSortKey) =>
+      workspaceTableSortDisplayDirection(
+        { sort: workspaceParsed.sort, ord: workspaceParsed.ord },
+        column,
+      ),
+    [workspaceParsed.ord, workspaceParsed.sort],
   )
 
   const clientsTableQuery = usePopClientsTable(popId, listQueryParams, {
@@ -813,51 +846,56 @@ function ClientsPage() {
                       }
                       ariaLabel="Seleccionar filas visibles"
                     />
-                    <WorkspaceTableHead
+                    <WorkspaceTableSortHead
                       tone="nature"
+                      label="Nombre"
+                      direction={sortDirection("name")}
+                      onSort={() => handleSortColumn("name")}
                       className={cn(
                         "min-w-[10rem] px-3",
                         workspaceTableLayoutHeaderHeadClass,
                       )}
-                    >
-                      Nombre
-                    </WorkspaceTableHead>
-                    <WorkspaceTableHead
+                    />
+                    <WorkspaceTableSortHead
                       tone="nature"
+                      label="E-mail"
+                      direction={sortDirection("email")}
+                      onSort={() => handleSortColumn("email")}
                       className={cn(
                         "w-[12rem] min-w-0 max-w-[12rem] px-3",
                         workspaceTableLayoutHeaderHeadClass,
                       )}
-                    >
-                      E-mail
-                    </WorkspaceTableHead>
-                    <WorkspaceTableHead
+                    />
+                    <WorkspaceTableSortHead
                       tone="nature"
+                      label="Teléfono"
+                      direction={sortDirection("phone")}
+                      onSort={() => handleSortColumn("phone")}
                       className={cn(
                         "w-[9rem] min-w-0 max-w-[9rem] px-3",
                         workspaceTableLayoutHeaderHeadClass,
                       )}
-                    >
-                      Teléfono
-                    </WorkspaceTableHead>
-                    <WorkspaceTableHead
+                    />
+                    <WorkspaceTableSortHead
                       tone="nature"
+                      label="CUIT / DNI"
+                      direction={sortDirection("tax_id")}
+                      onSort={() => handleSortColumn("tax_id")}
                       className={cn(
                         "w-[7.5rem] px-3",
                         workspaceTableLayoutHeaderHeadClass,
                       )}
-                    >
-                      CUIT / DNI
-                    </WorkspaceTableHead>
-                    <WorkspaceTableHead
+                    />
+                    <WorkspaceTableSortHead
                       tone="nature"
+                      label="IVA"
+                      direction={sortDirection("iva")}
+                      onSort={() => handleSortColumn("iva")}
                       className={cn(
                         "min-w-[8.5rem] px-3",
                         workspaceTableLayoutHeaderHeadClass,
                       )}
-                    >
-                      IVA
-                    </WorkspaceTableHead>
+                    />
                     <WorkspaceTableHead
                       tone="nature"
                       className={cn(

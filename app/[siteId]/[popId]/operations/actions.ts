@@ -7,6 +7,7 @@ import {
 import { getPopById, getPopSiteId, validatePopAccess } from "@/lib/popHelpers"
 import { popMenuHref, siteIdFromPopRow } from "@/lib/popRoutes"
 import { loadPopPermissionsSnapshot } from "@/lib/popPermissionsServer"
+import { resolveWorkspaceTableListOrder } from "@/lib/workspaceTableSort"
 import {
   CLIENT_IVA_CONDITION_OPTIONS,
 } from "@/app/[siteId]/[popId]/clients/clientIvaConstants"
@@ -593,6 +594,55 @@ export type GetOperationsListInput = {
   search: string
   page: number
   pageSize: number
+  sort?: string | null
+  ord?: "asc" | "desc"
+}
+
+const OPERATIONS_SALES_LIST_SORT = {
+  allowed: {
+    sold_at: "sold_at",
+    total: "total",
+  },
+  defaultColumn: "sold_at" as const,
+  defaultAscending: false,
+}
+
+const OPERATIONS_PURCHASES_LIST_SORT = {
+  allowed: {
+    created_at: "created_at",
+    total: "total",
+  },
+  defaultColumn: "created_at" as const,
+  defaultAscending: false,
+}
+
+const OPERATIONS_EXPENSES_LIST_SORT = {
+  allowed: {
+    entry_date: "entry_date",
+  },
+  defaultColumn: "entry_date" as const,
+  defaultAscending: false,
+}
+
+function resolveOperationsSalesListOrder(input: GetOperationsListInput) {
+  return resolveWorkspaceTableListOrder(
+    { sort: input.sort ?? null, ord: input.ord ?? "asc" },
+    OPERATIONS_SALES_LIST_SORT,
+  )
+}
+
+function resolveOperationsPurchasesListOrder(input: GetOperationsListInput) {
+  return resolveWorkspaceTableListOrder(
+    { sort: input.sort ?? null, ord: input.ord ?? "asc" },
+    OPERATIONS_PURCHASES_LIST_SORT,
+  )
+}
+
+function resolveOperationsExpensesListOrder(input: GetOperationsListInput) {
+  return resolveWorkspaceTableListOrder(
+    { sort: input.sort ?? null, ord: input.ord ?? "asc" },
+    OPERATIONS_EXPENSES_LIST_SORT,
+  )
 }
 
 const OPERATIONS_LIST_PAGE_SIZES = [10, 25, 50, 100] as const
@@ -1974,7 +2024,10 @@ export async function getOperationsList(
         const orClause = buildSalesSearchOrClause(search)
         if (orClause) dataQuery = dataQuery.or(orClause)
       }
-      dataQuery = dataQuery.order("sold_at", { ascending: false })
+      const salesListOrder = resolveOperationsSalesListOrder(input)
+      dataQuery = dataQuery.order(salesListOrder.column, {
+        ascending: salesListOrder.ascending,
+      })
       if (!isChannelGroupedView) {
         dataQuery = dataQuery.range(from, to)
       }
@@ -2133,8 +2186,11 @@ export async function getOperationsList(
         ledgerTimeZone,
       )
       if (orClause) dataQuery = dataQuery.or(orClause)
+      const purchasesListOrder = resolveOperationsPurchasesListOrder(input)
       dataQuery = dataQuery
-        .order("created_at", { ascending: false })
+        .order(purchasesListOrder.column, {
+          ascending: purchasesListOrder.ascending,
+        })
         .range(from, to)
 
       const { data: purchaseRows, error: purchaseErr } = await dataQuery
@@ -2221,8 +2277,11 @@ export async function getOperationsList(
       .eq("status", "posted")
     dataQuery = appendExpensesDateFilter(dataQuery, dateFrom, dateTo)
     if (expenseOrClause) dataQuery = dataQuery.or(expenseOrClause)
+    const expensesListOrder = resolveOperationsExpensesListOrder(input)
     dataQuery = dataQuery
-      .order("entry_date", { ascending: false })
+      .order(expensesListOrder.column, {
+        ascending: expensesListOrder.ascending,
+      })
       .range(from, to)
 
     const { data: aeRows, error: aeErr } = await dataQuery

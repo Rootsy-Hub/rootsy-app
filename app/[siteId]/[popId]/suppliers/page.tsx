@@ -64,6 +64,7 @@ import {
   WorkspaceTableSelectCell,
   WorkspaceTableSelectHead,
 } from "@/components/data-workspace/WorkspaceTableHeader"
+import { WorkspaceTableSortHead } from "@/components/data-workspace/WorkspaceTableSortHead"
 import { DataWorkspaceHeaderIconButton } from "@/components/layouts/DataWorkspaceHeaderIconButton"
 import { Badge } from "@/components/ui/badge"
 import { Checkbox } from "@/components/ui/checkbox"
@@ -75,6 +76,12 @@ import withAuth from "@/hoc/withAuth"
 import { usePadronAutofillRazonSocial } from "@/hooks/usePadronAutofillRazonSocial"
 import { usePopWorkspace } from "@/context/PopWorkspaceContext"
 import { cn } from "@/lib/utils"
+import {
+  nextWorkspaceTableSortState,
+  sortRowsInMemory,
+  workspaceTableSortDisplayDirection,
+  type WorkspaceTableSortDirection,
+} from "@/lib/workspaceTableSort"
 import {
   Pencil,
   Plus,
@@ -111,6 +118,28 @@ const IVA_LABEL_BY_VALUE = Object.fromEntries(
   CLIENT_IVA_CONDITION_OPTIONS.map((o) => [o.value, o.label]),
 ) as Record<string, string>
 
+const SUPPLIER_TABLE_SORT_KEYS = [
+  "name",
+  "email",
+  "phone",
+  "tax_id",
+  "iva",
+] as const
+
+type SupplierTableSortKey = (typeof SUPPLIER_TABLE_SORT_KEYS)[number]
+
+const SUPPLIER_LIST_SORT = {
+  allowed: {
+    name: (row: SupplierTableRow) => row.name,
+    email: (row: SupplierTableRow) => row.email,
+    phone: (row: SupplierTableRow) => row.phone,
+    tax_id: (row: SupplierTableRow) => row.taxId,
+    iva: (row: SupplierTableRow) => row.ivaCondition,
+  },
+  defaultColumn: "name",
+  defaultAscending: true,
+}
+
 type SuppliersAppliedFilters = SuppliersModalFilters
 
 const defaultSupplierFilters = defaultSuppliersModalFilters
@@ -138,6 +167,8 @@ function SuppliersPage() {
   const createTaxInputRef = useRef<HTMLInputElement>(null)
   const [page, setPage] = useState(1)
   const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE)
+  const [sort, setSort] = useState<SupplierTableSortKey | null>(null)
+  const [ord, setOrd] = useState<WorkspaceTableSortDirection>("asc")
 
   const [appliedFilters, setAppliedFilters] = useState<SuppliersAppliedFilters>(
     defaultSupplierFilters,
@@ -223,7 +254,20 @@ function SuppliersPage() {
   useEffect(() => {
     setPage(1)
     setSelected(new Set())
-  }, [searchInput, appliedFilters])
+  }, [searchInput, appliedFilters, sort, ord])
+
+  const handleSortColumn = useCallback((column: SupplierTableSortKey) => {
+    const next = nextWorkspaceTableSortState({ sort, ord }, column)
+    setSort(next.sort as SupplierTableSortKey | null)
+    setOrd(next.ord)
+    setPage(1)
+  }, [sort, ord])
+
+  const sortDirection = useCallback(
+    (column: SupplierTableSortKey) =>
+      workspaceTableSortDisplayDirection({ sort, ord }, column),
+    [ord, sort],
+  )
 
   useEffect(() => {
     if (!createOpenEffective) return
@@ -416,21 +460,23 @@ function SuppliersPage() {
       list = list.filter((r) => r.taxId.trim().length > 0)
     }
     const q = searchInput.trim().toLowerCase()
-    if (!q) return list
-    return list.filter(
-      (r) =>
-        r.name.toLowerCase().includes(q) ||
-        r.email.toLowerCase().includes(q) ||
-        r.phone.toLowerCase().includes(q) ||
-        r.taxId.toLowerCase().includes(q) ||
-        r.addressLine.toLowerCase().includes(q) ||
-        (r.ivaCondition &&
-          (IVA_LABEL_BY_VALUE[r.ivaCondition] ?? r.ivaCondition)
-            .toLowerCase()
-            .includes(q)) ||
-        r.notes.toLowerCase().includes(q),
-    )
-  }, [rows, searchInput, appliedFilters])
+    if (q) {
+      list = list.filter(
+        (r) =>
+          r.name.toLowerCase().includes(q) ||
+          r.email.toLowerCase().includes(q) ||
+          r.phone.toLowerCase().includes(q) ||
+          r.taxId.toLowerCase().includes(q) ||
+          r.addressLine.toLowerCase().includes(q) ||
+          (r.ivaCondition &&
+            (IVA_LABEL_BY_VALUE[r.ivaCondition] ?? r.ivaCondition)
+              .toLowerCase()
+              .includes(q)) ||
+          r.notes.toLowerCase().includes(q),
+      )
+    }
+    return sortRowsInMemory(list, { sort, ord }, SUPPLIER_LIST_SORT)
+  }, [rows, searchInput, appliedFilters, sort, ord])
 
   const totalCount = filteredRows.length
   const totalPages = useMemo(
@@ -709,51 +755,56 @@ function SuppliersPage() {
                     }
                     ariaLabel="Seleccionar filas visibles"
                   />
-                  <WorkspaceTableHead
+                  <WorkspaceTableSortHead
                     tone="nature"
+                    label="Nombre"
+                    direction={sortDirection("name")}
+                    onSort={() => handleSortColumn("name")}
                     className={cn(
                       "min-w-[10rem] px-3",
                       workspaceTableLayoutHeaderHeadClass,
                     )}
-                  >
-                    Nombre
-                  </WorkspaceTableHead>
-                  <WorkspaceTableHead
+                  />
+                  <WorkspaceTableSortHead
                     tone="nature"
+                    label="E-mail"
+                    direction={sortDirection("email")}
+                    onSort={() => handleSortColumn("email")}
                     className={cn(
                       "w-[12rem] min-w-0 max-w-[12rem] px-3",
                       workspaceTableLayoutHeaderHeadClass,
                     )}
-                  >
-                    E-mail
-                  </WorkspaceTableHead>
-                  <WorkspaceTableHead
+                  />
+                  <WorkspaceTableSortHead
                     tone="nature"
+                    label="Teléfono"
+                    direction={sortDirection("phone")}
+                    onSort={() => handleSortColumn("phone")}
                     className={cn(
                       "w-[9rem] min-w-0 max-w-[9rem] px-3",
                       workspaceTableLayoutHeaderHeadClass,
                     )}
-                  >
-                    Teléfono
-                  </WorkspaceTableHead>
-                  <WorkspaceTableHead
+                  />
+                  <WorkspaceTableSortHead
                     tone="nature"
+                    label="CUIT / ID fiscal"
+                    direction={sortDirection("tax_id")}
+                    onSort={() => handleSortColumn("tax_id")}
                     className={cn(
                       "w-[7.5rem] px-3",
                       workspaceTableLayoutHeaderHeadClass,
                     )}
-                  >
-                    CUIT / ID fiscal
-                  </WorkspaceTableHead>
-                  <WorkspaceTableHead
+                  />
+                  <WorkspaceTableSortHead
                     tone="nature"
+                    label="IVA"
+                    direction={sortDirection("iva")}
+                    onSort={() => handleSortColumn("iva")}
                     className={cn(
                       "min-w-[8.5rem] px-3",
                       workspaceTableLayoutHeaderHeadClass,
                     )}
-                  >
-                    IVA
-                  </WorkspaceTableHead>
+                  />
                   {canUpdate || canDelete ? (
                     <WorkspaceTableHead
                       tone="nature"

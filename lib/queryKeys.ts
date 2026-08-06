@@ -49,6 +49,8 @@ export type PopClientsQueryParams = {
   soloActivos: boolean
   withEmail: boolean
   withTaxId: boolean
+  sort: string | null
+  ord: "asc" | "desc"
 }
 
 /** @deprecated Usar PopClientsQueryParams */
@@ -67,6 +69,8 @@ export function popClientsQueryKey(
     params.soloActivos,
     params.withEmail,
     params.withTaxId,
+    params.sort,
+    params.ord,
   ] as const
 }
 

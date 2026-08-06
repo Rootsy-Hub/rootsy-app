@@ -3,8 +3,22 @@ import {
   PROMOTION_TABLE_PAGE_SIZES,
 } from "@/app/[siteId]/[popId]/promotions/promotionConstants"
 import type { PromotionType } from "@/lib/promotionTypes"
+import {
+  appendWorkspaceTableSortParams,
+  parseWorkspaceTableSortUrl,
+  type WorkspaceTableSortDirection,
+} from "@/lib/workspaceTableSort"
 
 export type PromotionTablePageSize = (typeof PROMOTION_TABLE_PAGE_SIZES)[number]
+
+export const PROMOTION_TABLE_SORT_KEYS = [
+  "name",
+  "promotion_type",
+  "valid_from",
+  "valid_until",
+] as const
+
+export type PromotionTableSortKey = (typeof PROMOTION_TABLE_SORT_KEYS)[number]
 
 export type PromotionsWorkspaceUrlState = {
   q: string
@@ -13,6 +27,8 @@ export type PromotionsWorkspaceUrlState = {
   soloActivos: boolean
   /** Vacío = todos los tipos. */
   promotionType: PromotionType | ""
+  sort: PromotionTableSortKey | null
+  ord: WorkspaceTableSortDirection
 }
 
 function parsePageSize(raw: string | null): PromotionTablePageSize {
@@ -32,12 +48,18 @@ export function parsePromotionsWorkspaceUrl(
   params: URLSearchParams,
 ): PromotionsWorkspaceUrlState {
   const pageRaw = Number(params.get("page"))
+  const { sort, ord } = parseWorkspaceTableSortUrl(
+    params,
+    PROMOTION_TABLE_SORT_KEYS,
+  )
   return {
     q: params.get("q")?.trim() ?? "",
     page: Number.isFinite(pageRaw) && pageRaw >= 1 ? Math.floor(pageRaw) : 1,
     pageSize: parsePageSize(params.get("ps")),
     soloActivos: params.get("solo") === "1",
     promotionType: parsePromotionType(params.get("type")),
+    sort: sort as PromotionTableSortKey | null,
+    ord,
   }
 }
 
@@ -66,11 +88,18 @@ export function mergePromotionsWorkspaceUrl(
   if (merged.promotionType) next.set("type", merged.promotionType)
   else next.delete("type")
 
+  appendWorkspaceTableSortParams(next, {
+    sort: merged.sort,
+    ord: merged.ord,
+  })
+
   if (
     patch.page === undefined &&
     (patch.q !== undefined ||
       patch.soloActivos !== undefined ||
-      patch.promotionType !== undefined)
+      patch.promotionType !== undefined ||
+      patch.sort !== undefined ||
+      patch.ord !== undefined)
   ) {
     if (merged.page !== 1) next.set("page", "1")
     else next.delete("page")

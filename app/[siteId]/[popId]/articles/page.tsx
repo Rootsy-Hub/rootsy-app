@@ -48,6 +48,7 @@ import {
   defaultArticlesModalFilters,
   mergeArticlesWorkspaceUrl,
   parseArticlesWorkspaceUrl,
+  type ArticleTableSortKey,
   type ArticlesModalFilters,
 } from "@/app/[siteId]/[popId]/articles/workspaceUrl"
 import { buildPaginationItems } from "@/app/[siteId]/[popId]/layout/layoutPreviewPagination"
@@ -94,6 +95,7 @@ import {
   WorkspaceTableSelectCell,
   WorkspaceTableSelectHead,
 } from "@/components/data-workspace/WorkspaceTableHeader"
+import { WorkspaceTableSortHead } from "@/components/data-workspace/WorkspaceTableSortHead"
 import { WorkspaceTableSkeletonRows } from "@/components/data-workspace/WorkspaceTableSkeleton"
 import { articlesSkeletonColumns } from "@/components/data-workspace/workspaceTableSkeletonPresets"
 import { DataWorkspaceHeaderIconButton } from "@/components/layouts/DataWorkspaceHeaderIconButton"
@@ -109,6 +111,10 @@ import {
   resolveArticleIvaSelectValue,
 } from "@/lib/articleIva"
 import { cn } from "@/lib/utils"
+import {
+  nextWorkspaceTableSortState,
+  workspaceTableSortDisplayDirection,
+} from "@/lib/workspaceTableSort"
 import {
   formatMoneyInputForField,
   parseMoneyInput,
@@ -247,6 +253,29 @@ function ArticlesPage() {
     [pathname, router, searchParams],
   )
 
+  const handleSortColumn = useCallback(
+    (column: ArticleTableSortKey) => {
+      const next = nextWorkspaceTableSortState(
+        { sort: workspaceParsed.sort, ord: workspaceParsed.ord },
+        column,
+      )
+      replaceWorkspaceQuery({
+        sort: next.sort as ArticleTableSortKey | null,
+        ord: next.ord,
+      })
+    },
+    [replaceWorkspaceQuery, workspaceParsed.ord, workspaceParsed.sort],
+  )
+
+  const sortDirection = useCallback(
+    (column: ArticleTableSortKey) =>
+      workspaceTableSortDisplayDirection(
+        { sort: workspaceParsed.sort, ord: workspaceParsed.ord },
+        column,
+      ),
+    [workspaceParsed.ord, workspaceParsed.sort],
+  )
+
   const [articles, setArticles] = useState<ArticleTableRow[]>([])
   const [selected, setSelected] = useState<Set<string>>(new Set())
   const [totalCount, setTotalCount] = useState(0)
@@ -356,6 +385,8 @@ function ArticlesPage() {
       ...articlesModalFiltersFromWorkspace(workspaceParsed),
       categoryId: workspaceParsed.categoryId,
       itemKinds: workspaceParsed.itemKinds,
+      sort: workspaceParsed.sort,
+      ord: workspaceParsed.ord,
     }),
     [
       workspaceParsed.page,
@@ -371,6 +402,8 @@ function ArticlesPage() {
       workspaceParsed.ventaSinStock,
       workspaceParsed.categoryId,
       workspaceParsed.itemKinds.join(","),
+      workspaceParsed.sort,
+      workspaceParsed.ord,
     ],
   )
 
@@ -1340,16 +1373,17 @@ function ArticlesPage() {
                     >
                       Imagen
                     </WorkspaceTableHead>
-                    <WorkspaceTableHead
+                    <WorkspaceTableSortHead
                       tone="nature"
+                      label="Artículo"
+                      direction={sortDirection("name")}
+                      onSort={() => handleSortColumn("name")}
                       className={cn(
                         articleTableArticleColumnClass,
                         "px-3",
                         workspaceTableLayoutHeaderHeadClass,
                       )}
-                    >
-                      Artículo
-                    </WorkspaceTableHead>
+                    />
                     <WorkspaceTableHead
                       tone="nature"
                       className={cn(
@@ -1369,20 +1403,22 @@ function ArticlesPage() {
                     >
                       Categoría
                     </WorkspaceTableHead>
-                    <WorkspaceTableHead
+                    <WorkspaceTableSortHead
                       tone="nature"
+                      label="Venta"
                       align="right"
+                      direction={sortDirection("sale_price")}
+                      onSort={() => handleSortColumn("sale_price")}
                       className={cn("w-28 px-3", workspaceTableLayoutHeaderHeadClass)}
-                    >
-                      Venta
-                    </WorkspaceTableHead>
-                    <WorkspaceTableHead
+                    />
+                    <WorkspaceTableSortHead
                       tone="nature"
+                      label="Costo"
                       align="right"
+                      direction={sortDirection("cost_price")}
+                      onSort={() => handleSortColumn("cost_price")}
                       className={cn("w-28 px-3", workspaceTableLayoutHeaderHeadClass)}
-                    >
-                      Costo
-                    </WorkspaceTableHead>
+                    />
                     <WorkspaceTableHead
                       tone="nature"
                       align="right"

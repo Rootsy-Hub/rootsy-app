@@ -48,6 +48,8 @@ import {
   WorkspaceTableHeaderRow,
   WorkspaceTableSelectHead,
 } from "@/components/data-workspace/WorkspaceTableHeader"
+import { WorkspaceTableSortHead } from "@/components/data-workspace/WorkspaceTableSortHead"
+import type { WorkspaceTableSortDisplayDirection } from "@/lib/workspaceTableSort"
 import { popScopedHref } from "@/lib/popRoutes"
 import { cn } from "@/lib/utils"
 import { PanelRightOpen } from "lucide-react"
@@ -200,6 +202,9 @@ export function OperationsPurchasesTable({
   skeletonRowCount,
   selected,
   onSelectedChange,
+  sortable = true,
+  sortDirection,
+  onSortColumn,
 }: {
   siteId: string
   popId: string
@@ -209,6 +214,11 @@ export function OperationsPurchasesTable({
   skeletonRowCount: number
   selected: Set<string>
   onSelectedChange: Dispatch<SetStateAction<Set<string>>>
+  sortable?: boolean
+  sortDirection?: (
+    column: "created_at" | "total",
+  ) => WorkspaceTableSortDisplayDirection
+  onSortColumn?: (column: "created_at" | "total") => void
 }) {
   const timeZone = usePopTimeZone()
   const [detailPurchase, setDetailPurchase] =
@@ -254,12 +264,24 @@ export function OperationsPurchasesTable({
                 }
                 ariaLabel="Seleccionar filas visibles"
               />
-              <WorkspaceTableHead
-                tone="nature"
-                className={operationsTableHeaderClass(operationsTableDateColumnClass)}
-              >
-                Fecha
-              </WorkspaceTableHead>
+              {sortable ? (
+                <WorkspaceTableSortHead
+                  tone="nature"
+                  label="Fecha"
+                  direction={sortDirection?.("created_at") ?? "none"}
+                  onSort={
+                    onSortColumn ? () => onSortColumn("created_at") : undefined
+                  }
+                  className={operationsTableHeaderClass(operationsTableDateColumnClass)}
+                />
+              ) : (
+                <WorkspaceTableHead
+                  tone="nature"
+                  className={operationsTableHeaderClass(operationsTableDateColumnClass)}
+                >
+                  Fecha
+                </WorkspaceTableHead>
+              )}
               <WorkspaceTableHead
                 tone="nature"
                 className={operationsTableHeaderClass(operationsTableDetailColumnClass)}
@@ -286,13 +308,28 @@ export function OperationsPurchasesTable({
               >
                 IVA
               </WorkspaceTableHead>
-              <WorkspaceTableHead
-                tone="nature"
-                align="right"
-                className={operationsTableHeaderClass(operationsTableMoneyColumnClass)}
-              >
-                Total
-              </WorkspaceTableHead>
+              {sortable ? (
+                <WorkspaceTableSortHead
+                  tone="nature"
+                  label="Total"
+                  align="right"
+                  direction={sortDirection?.("total") ?? "none"}
+                  onSort={
+                    onSortColumn ? () => onSortColumn("total") : undefined
+                  }
+                  className={operationsTableHeaderClass(
+                    operationsTableMoneyColumnClass,
+                  )}
+                />
+              ) : (
+                <WorkspaceTableHead
+                  tone="nature"
+                  align="right"
+                  className={operationsTableHeaderClass(operationsTableMoneyColumnClass)}
+                >
+                  Total
+                </WorkspaceTableHead>
+              )}
               <OperationTableActionsHead />
             </WorkspaceTableHeaderRow>
           </WorkspaceTableHeader>

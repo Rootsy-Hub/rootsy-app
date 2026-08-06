@@ -13,6 +13,7 @@ import {
 } from "@/lib/popHelpers"
 import { popMenuHref } from "@/lib/popRoutes"
 import { loadPopPermissionsSnapshot } from "@/lib/popPermissionsServer"
+import { resolveWorkspaceTableListOrder } from "@/lib/workspaceTableSort"
 import { isAllowedArticleIvaRate } from "@/lib/articleIva"
 import {
   ARTICLE_IMAGE_STORAGE_BUCKET,
@@ -1085,6 +1086,18 @@ export type GetPopArticlesTableInput = {
   categoryId: string
   /** Vacío o los tres tipos = sin filtrar por tipo. */
   itemKinds: ArticleItemKind[]
+  sort?: string | null
+  ord?: "asc" | "desc"
+}
+
+const ARTICLE_LIST_SORT = {
+  allowed: {
+    name: "name",
+    sale_price: "sale_price",
+    cost_price: "cost_price",
+  },
+  defaultColumn: "name" as const,
+  defaultAscending: true,
 }
 
 function articleMatchesStockFilter(
@@ -1385,7 +1398,13 @@ export async function getPopArticlesTable(
     if (stockArticleIds) {
       dataQuery = dataQuery.in("id", stockArticleIds)
     }
-    dataQuery = dataQuery.order("name", { ascending: true }).range(from, to)
+    const listOrder = resolveWorkspaceTableListOrder(
+      { sort: input.sort ?? null, ord: input.ord ?? "asc" },
+      ARTICLE_LIST_SORT,
+    )
+    dataQuery = dataQuery
+      .order(listOrder.column, { ascending: listOrder.ascending })
+      .range(from, to)
 
     const { data, error } = await dataQuery
     if (error) {

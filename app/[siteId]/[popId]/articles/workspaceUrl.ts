@@ -3,10 +3,25 @@ import {
   parseItemKindsCsv,
   type ArticleItemKind,
 } from "@/lib/articleItemKind"
+import {
+  appendWorkspaceTableSortParams,
+  parseWorkspaceTableSortUrl,
+  type WorkspaceTableSortDirection,
+} from "@/lib/workspaceTableSort"
 
 export const ARTICLE_TABLE_PAGE_SIZES = [10, 25, 50, 100] as const
 
 export const DEFAULT_ARTICLE_TABLE_PAGE_SIZE = 25
+
+export const ARTICLE_TABLE_SORT_KEYS = [
+  "name",
+  "sale_price",
+  "cost_price",
+] as const
+
+export type ArticleTableSortKey = (typeof ARTICLE_TABLE_SORT_KEYS)[number]
+
+export const DEFAULT_ARTICLE_TABLE_SORT: ArticleTableSortKey = "name"
 
 const K = {
   view: "v",
@@ -44,6 +59,8 @@ export type ArticlesWorkspaceUrlState = ArticlesModalFilters & {
   categoryId: string
   /** Vacío = todos los tipos visibles. */
   itemKinds: ArticleItemKind[]
+  sort: ArticleTableSortKey | null
+  ord: WorkspaceTableSortDirection
 }
 
 export function defaultArticlesModalFilters(): ArticlesModalFilters {
@@ -110,6 +127,11 @@ export function parseArticlesWorkspaceUrl(
     searchParams.get(K.kinds) ?? searchParams.get("kind"),
   )
 
+  const { sort, ord } = parseWorkspaceTableSortUrl(
+    searchParams,
+    ARTICLE_TABLE_SORT_KEYS,
+  )
+
   return {
     view,
     q,
@@ -125,6 +147,8 @@ export function parseArticlesWorkspaceUrl(
     ventaSinStock: searchParams.get(K.negsale) === "1",
     categoryId,
     itemKinds,
+    sort: sort as ArticleTableSortKey | null,
+    ord,
   }
 }
 
@@ -152,6 +176,10 @@ export function buildArticlesWorkspaceQuery(state: ArticlesWorkspaceUrlState): s
   ) {
     n.set(K.kinds, state.itemKinds.join(","))
   }
+  appendWorkspaceTableSortParams(n, {
+    sort: state.sort,
+    ord: state.ord,
+  })
   return n.toString()
 }
 
@@ -175,7 +203,9 @@ export function mergeArticlesWorkspaceUrl(
       patch.stockNegativo !== undefined ||
       patch.ventaSinStock !== undefined ||
       patch.categoryId !== undefined ||
-      patch.itemKinds !== undefined)
+      patch.itemKinds !== undefined ||
+      patch.sort !== undefined ||
+      patch.ord !== undefined)
   ) {
     merged.page = 1
   }
