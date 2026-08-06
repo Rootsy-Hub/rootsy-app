@@ -173,6 +173,12 @@ export const dataWorkspaceEntityCardSettlementFooterClass = cn(
   dataWorkspaceEntityCardFooterClass,
 )
 
+/** Pie acción caja — efectivo + CTA · altura fija (paridad loseta). */
+export const dataWorkspaceEntityCardActionFooterClass = cn(
+  "flex h-[4.75rem] shrink-0 items-center justify-between gap-3 px-4",
+  dataWorkspaceEntityCardFooterClass,
+)
+
 /** Grid interno tarjeta loseta — cabecera · saldo · pie fijo. */
 export const dataWorkspaceEntityCardLosetaGridClass =
   "grid h-full min-h-0 flex-1 grid-rows-[auto_minmax(0,1fr)_4.75rem]"

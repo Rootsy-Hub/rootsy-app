@@ -28,13 +28,13 @@ export const LAYOUTS_BLOCKS_GRID_SPEC = {
 } as const
 
 export const LAYOUTS_BLOCKS_CARD_SPEC = {
-  surfaceToken: "elevation.surface.overlay",
+  surfaceToken: "elevation.surface.raised",
   radiusToken: "radius.xxlarge",
-  radiusClass: "rounded-2xl",
-  borderToken: "color.border",
+  radiusClass: "rounded-[1.375rem]",
+  borderToken: "color.border · bruma-200",
   shadowToken: "elevation.shadow.raised",
-  shadowRest: "shadow-sm",
-  shadowHover: "hover:shadow-md",
+  shadowRest: "rootsyElevationRaisedRestClass",
+  shadowHover: "rootsyElevationRaisedHoverClass",
 } as const
 
 export const LAYOUTS_BLOCKS_LAYOUT_SPEC_ROWS = [
@@ -66,6 +66,6 @@ export const LAYOUTS_BLOCKS_LAYOUT_SPEC_ROWS = [
     role: "Tarjeta · superficie",
     token: LAYOUTS_BLOCKS_CARD_SPEC.surfaceToken,
     value: "#FFFFFF",
-    product: "dataWorkspaceEntityCardClass",
+    product: "dataWorkspaceEntityCardLosetaClass",
   },
 ] as const

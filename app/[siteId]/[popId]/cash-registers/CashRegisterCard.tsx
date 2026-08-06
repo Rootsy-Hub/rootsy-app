@@ -13,13 +13,13 @@ import {
   RootsDropdownTrigger,
 } from "@/components/rootsy-dropdown"
 import {
-  dataWorkspaceEntityCardBodyClass,
-  dataWorkspaceEntityCardClass,
+  dataWorkspaceEntityCardActionFooterClass,
   dataWorkspaceEntityCardEyebrowClass,
-  dataWorkspaceEntityCardFooterClass,
   dataWorkspaceEntityCardHeaderClass,
   dataWorkspaceEntityCardIsotypeClass,
+  dataWorkspaceEntityCardLosetaClass,
   dataWorkspaceEntityCardMenuTriggerClass,
+  dataWorkspaceEntityCardSaldoSectionClass,
   dataWorkspaceEntityCardStatLabelClass,
   dataWorkspaceEntityCardStatValueClass,
   dataWorkspaceEntityCardStatValueLargeClass,
@@ -60,50 +60,18 @@ function formatOpenedAt(iso: string | null): string | null {
   return formatted === "—" ? null : formatted
 }
 
-function CashRegisterPrimaryStat({
-  label,
-  value,
-}: {
-  label: string
-  value: string
-}) {
-  return (
-    <div>
-      <p className={dataWorkspaceEntityCardStatLabelClass}>{label}</p>
-      <p className={cn("mt-1.5", dataWorkspaceEntityCardStatValueLargeClass)}>
-        {value}
-      </p>
-    </div>
-  )
-}
-
-function CashRegisterSecondaryStat({
-  label,
-  value,
-}: {
-  label: string
-  value: string
-}) {
-  return (
-    <div className="min-w-0">
-      <p className={dataWorkspaceEntityCardStatLabelClass}>{label}</p>
-      <p className={cn("mt-1 truncate text-base sm:text-lg", dataWorkspaceEntityCardStatValueClass)}>
-        {value}
-      </p>
-    </div>
-  )
-}
-
 function CashRegisterStatusPill({
   isOpen,
   isActive,
+  className,
 }: {
   isOpen: boolean
   isActive: boolean
+  className?: string
 }) {
   if (!isActive) {
     return (
-      <span className={dataWorkspaceEntityCardStatusInactiveClass}>
+      <span className={cn(dataWorkspaceEntityCardStatusInactiveClass, className)}>
         Inactiva
       </span>
     )
@@ -111,11 +79,10 @@ function CashRegisterStatusPill({
 
   return (
     <span
-      className={
-        isOpen
-          ? dataWorkspaceEntityCardStatusOpenClass
-          : dataWorkspaceEntityCardStatusClosedClass
-      }
+      className={cn(
+        isOpen ? dataWorkspaceEntityCardStatusOpenClass : dataWorkspaceEntityCardStatusClosedClass,
+        className,
+      )}
     >
       {isOpen ? (
         <span
@@ -240,130 +207,154 @@ export function CashRegisterCard({
     adminActions.length > 0 ? adminActions : null,
   ].filter((section): section is MenuItem[] => section != null)
 
+  const showCloseAction = isOpen && row.canCloseOpenSession
+
   return (
-    <article className={dataWorkspaceEntityCardClass}>
-      {menuSections.length > 0 ? (
-        <div
-          className="absolute right-3 top-3 z-20"
-          onPointerDown={(event) => event.stopPropagation()}
-          onClick={(event) => event.stopPropagation()}
-        >
-          <RootsDropdownMenu>
-            <RootsDropdownTrigger asChild>
-              <CashRegisterCardMenuTrigger
-                label={`Opciones de ${row.name}`}
+    <article className={dataWorkspaceEntityCardLosetaClass}>
+      <div className="flex min-h-0 flex-1 flex-col">
+        <div className={cn(dataWorkspaceEntityCardHeaderClass, "pr-4")}>
+          <div className="flex min-w-0 items-start gap-3">
+            <span className={dataWorkspaceEntityCardIsotypeClass} aria-hidden>
+              <Calculator className="size-5" strokeWidth={1.75} />
+            </span>
+            <div className="relative min-w-0 flex-1">
+              <CashRegisterStatusPill
+                isOpen={isOpen}
+                isActive={row.isActive}
+                className="absolute right-0 top-0"
               />
-            </RootsDropdownTrigger>
-            <RootsDropdownContent
-              theme="light"
-              align="end"
-              side="bottom"
-              sideOffset={8}
-              collisionPadding={{ right: 16 }}
-              className={cn(dataWorkspaceLightDropdownContentClass, "z-[120]")}
-            >
-              {menuSections.map((section, sectionIndex) => (
-                <div key={section[0]?.id ?? sectionIndex}>
-                  {sectionIndex > 0 ? (
-                    <RootsDropdownSeparator
-                      theme="light"
-                      className={dataWorkspaceLightDropdownSeparatorClass}
-                    />
-                  ) : null}
-                  {section.map((action) => {
-                    const Icon = action.icon
-                    return (
-                      <RootsDropdownItem
-                        key={action.id}
-                        theme="light"
-                        variant={action.destructive ? "destructive" : "default"}
-                        onSelect={action.onSelect}
-                      >
-                        <Icon className="size-4 shrink-0 opacity-70" aria-hidden />
-                        <span className="min-w-0 flex-1 truncate">
-                          {action.label}
-                        </span>
-                      </RootsDropdownItem>
-                    )
-                  })}
-                </div>
-              ))}
-            </RootsDropdownContent>
-          </RootsDropdownMenu>
-        </div>
-      ) : null}
-
-      <div className="flex h-full min-h-0 flex-1 flex-col">
-        <Link
-          href={detailHref}
-          className="flex min-h-0 flex-1 flex-col text-left"
-        >
-          <div className={dataWorkspaceEntityCardHeaderClass}>
-            <div className="flex items-start gap-3">
-              <span className={dataWorkspaceEntityCardIsotypeClass} aria-hidden>
-                <Calculator className="size-5" strokeWidth={1.75} />
-              </span>
-              <div className="min-w-0 flex-1">
-                <div className="flex items-start justify-between gap-2">
-                  <p className={dataWorkspaceEntityCardEyebrowClass}>
-                    Caja registradora
-                  </p>
-                  <CashRegisterStatusPill
-                    isOpen={isOpen}
-                    isActive={row.isActive}
-                  />
-                </div>
-                <h3 className={cn("mt-1 truncate", dataWorkspaceEntityCardTitleClass)}>
-                  {row.name}
-                </h3>
-                {isOpen && openedLabel ? (
-                  <p className="mt-0.5 truncate font-canopy text-xs text-[var(--rootsy-bruma-500)]">
-                    Desde {openedLabel}
-                  </p>
-                ) : (
-                  <p className="mt-0.5 text-xs text-transparent" aria-hidden>
-                    &nbsp;
-                  </p>
-                )}
-              </div>
+              <p className={cn(dataWorkspaceEntityCardEyebrowClass, "pr-24")}>
+                Caja registradora
+              </p>
+              <h3 className={cn("mt-0.5 truncate pr-24", dataWorkspaceEntityCardTitleClass)}>
+                {row.name}
+              </h3>
+              {isOpen && openedLabel ? (
+                <p className="mt-0.5 truncate font-canopy text-xs text-[var(--rootsy-bruma-500)]">
+                  Desde {openedLabel}
+                </p>
+              ) : (
+                <p className="mt-0.5 text-xs text-transparent" aria-hidden>
+                  &nbsp;
+                </p>
+              )}
             </div>
-          </div>
-
-          <div className={dataWorkspaceEntityCardBodyClass}>
-            <CashRegisterPrimaryStat
-              label="Cobrado en el turno"
-              value={moneyOrDash(isOpen ? totalTurno : null)}
-            />
-
-            {isOpen ? (
-              <div className={cn("mt-auto min-h-[4.75rem] pt-4", dataWorkspaceEntityCardFooterClass)}>
-                <CashRegisterSecondaryStat
-                  label="Efectivo en caja"
-                  value={moneyOrDash(efectivoEnCajon)}
-                />
+            {menuSections.length > 0 ? (
+              <div
+                className="-mr-1 shrink-0"
+                onPointerDown={(event) => event.stopPropagation()}
+                onClick={(event) => event.stopPropagation()}
+              >
+                <RootsDropdownMenu modal={false}>
+                  <RootsDropdownTrigger asChild>
+                    <CashRegisterCardMenuTrigger
+                      label={`Opciones de ${row.name}`}
+                    />
+                  </RootsDropdownTrigger>
+                  <RootsDropdownContent
+                    theme="light"
+                    align="end"
+                    side="bottom"
+                    sideOffset={8}
+                    collisionPadding={{ right: 16 }}
+                    className={cn(dataWorkspaceLightDropdownContentClass, "z-[120]")}
+                  >
+                    {menuSections.map((section, sectionIndex) => (
+                      <div key={section[0]?.id ?? sectionIndex}>
+                        {sectionIndex > 0 ? (
+                          <RootsDropdownSeparator
+                            theme="light"
+                            className={dataWorkspaceLightDropdownSeparatorClass}
+                          />
+                        ) : null}
+                        {section.map((action) => {
+                          const Icon = action.icon
+                          return (
+                            <RootsDropdownItem
+                              key={action.id}
+                              theme="light"
+                              variant={action.destructive ? "destructive" : "default"}
+                              onSelect={action.onSelect}
+                            >
+                              <Icon className="size-4 shrink-0 opacity-70" aria-hidden />
+                              <span className="min-w-0 flex-1 truncate">
+                                {action.label}
+                              </span>
+                            </RootsDropdownItem>
+                          )
+                        })}
+                      </div>
+                    ))}
+                  </RootsDropdownContent>
+                </RootsDropdownMenu>
               </div>
             ) : null}
+          </div>
+        </div>
+
+        <Link
+          href={detailHref}
+          className={cn(
+            "text-left outline-none",
+            "focus-visible:ring-2 focus-visible:ring-[color-mix(in_srgb,var(--rootsy-savia-600)_35%,transparent)] focus-visible:ring-offset-2",
+          )}
+        >
+          <div className={dataWorkspaceEntityCardSaldoSectionClass}>
+            <p className={dataWorkspaceEntityCardStatLabelClass}>Cobrado en el turno</p>
+            <p className={cn("mt-1.5", dataWorkspaceEntityCardStatValueLargeClass)}>
+              {moneyOrDash(isOpen ? totalTurno : null)}
+            </p>
           </div>
         </Link>
 
-        {!isOpen ? (
-          <div className={cn("flex min-h-[4.75rem] items-center justify-between gap-3 px-4 py-4", dataWorkspaceEntityCardFooterClass)}>
-            <p className="font-canopy text-xs leading-snug text-[var(--rootsy-bruma-500)]">
-              {row.isActive ? "Sin turno abierto" : "Caja desactivada"}
-            </p>
-            {canCreate && row.isActive ? (
-              <RootsDefaultButton
-                type="button"
-                size="sm"
-                className={cn(rootsButtonCompactSizeClass, "shrink-0 gap-1.5 px-3 text-xs")}
-                onClick={onOpen}
-              >
-                <DoorOpen className="size-3.5" aria-hidden />
-                Abrir turno
-              </RootsDefaultButton>
-            ) : null}
-          </div>
-        ) : null}
+        <div className="mt-auto">
+          {!row.isActive ? (
+            <div className={dataWorkspaceEntityCardActionFooterClass}>
+              <p className="font-canopy text-xs leading-snug text-[var(--rootsy-bruma-500)]">
+                Caja desactivada
+              </p>
+            </div>
+          ) : isOpen ? (
+            <div className={dataWorkspaceEntityCardActionFooterClass}>
+              <div className="min-w-0">
+                <p className={dataWorkspaceEntityCardStatLabelClass}>Efectivo en caja</p>
+                <p className={cn("mt-1 text-base sm:text-lg", dataWorkspaceEntityCardStatValueClass)}>
+                  {moneyOrDash(efectivoEnCajon)}
+                </p>
+              </div>
+              {showCloseAction ? (
+                <RootsDefaultButton
+                  type="button"
+                  size="sm"
+                  className={cn(rootsButtonCompactSizeClass, "shrink-0 px-3 text-xs")}
+                  onClick={onClose}
+                >
+                  Cerrar
+                </RootsDefaultButton>
+              ) : null}
+            </div>
+          ) : (
+            <div className={dataWorkspaceEntityCardActionFooterClass}>
+              <div className="min-w-0">
+                <p className={dataWorkspaceEntityCardStatLabelClass}>Efectivo en caja</p>
+                <p className={cn("mt-1 text-base sm:text-lg", dataWorkspaceEntityCardStatValueClass)}>
+                  —
+                </p>
+              </div>
+              {canCreate ? (
+                <RootsDefaultButton
+                  type="button"
+                  size="sm"
+                  className={cn(rootsButtonCompactSizeClass, "shrink-0 gap-1.5 px-3 text-xs")}
+                  onClick={onOpen}
+                >
+                  <DoorOpen className="size-3.5" aria-hidden />
+                  Abrir turno
+                </RootsDefaultButton>
+              ) : null}
+            </div>
+          )}
+        </div>
       </div>
     </article>
   )

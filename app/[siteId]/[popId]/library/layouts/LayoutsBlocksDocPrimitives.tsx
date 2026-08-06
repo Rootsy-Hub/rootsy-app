@@ -300,7 +300,7 @@ export function LayoutsBlocksEntityDesignSectionDemo() {
     <div className="space-y-8">
       <LayoutsBlocksDocSubsection
         title="Cuentas · treasury"
-        description="Banco · billetera · efectivo — elevation.surface.overlay · radius.xxlarge · shadow-sm → hover:shadow-md."
+        description="Loseta interactiva — elevation.shadow.raised · hover raised · cabecera · saldo · liquidaciones."
       >
         <div
           className={cn(
@@ -317,7 +317,7 @@ export function LayoutsBlocksEntityDesignSectionDemo() {
 
       <LayoutsBlocksDocSubsection
         title="Cajas · POS"
-        description="Sesión abierta · cerrada · inactiva — mismas tokens de tarjeta; footer con CTA según estado."
+        description="Misma loseta que cuentas — cobrado hero · pie efectivo + CTA · menú ⋮ · pill de sesión."
       >
         <div
           className={cn(

@@ -5,7 +5,6 @@ import {
   LayoutsBlocksLayoutSectionDemo,
   LayoutsBlocksModulePreviewDemo,
 } from "@/app/[siteId]/[popId]/library/layouts/LayoutsBlocksDocPrimitives"
-import { LayoutsBlocksProposalsSectionDemo } from "@/app/[siteId]/[popId]/library/layouts/LayoutsBlocksProposalCards"
 import {
   LAYOUTS_RELATED_LINKS,
   getLayoutsPageMeta,
@@ -41,10 +40,6 @@ export function LayoutsBlocksFoundationView({ sectionId, siteId, popId }: Props)
 
       <LibraryDocSection id="layouts-blocks-design" title="2 · Diseño de caja y cuentas">
         <LayoutsBlocksEntityDesignSectionDemo />
-      </LibraryDocSection>
-
-      <LibraryDocSection id="layouts-blocks-proposals" title="3 · Nuevas propuestas">
-        <LayoutsBlocksProposalsSectionDemo />
       </LibraryDocSection>
 
       <p className="text-center text-xs text-muted-foreground">
