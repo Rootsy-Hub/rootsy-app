@@ -1,17 +1,16 @@
 "use client"
 
 import {
-  LayoutsModuleContentRowFrame,
-} from "@/app/[siteId]/[popId]/library/layouts/LayoutsModuleDocPrimitives"
+  LayoutsBlocksEntityDesignSectionDemo,
+  LayoutsBlocksLayoutSectionDemo,
+  LayoutsBlocksModulePreviewDemo,
+} from "@/app/[siteId]/[popId]/library/layouts/LayoutsBlocksDocPrimitives"
+import { LayoutsBlocksProposalsSectionDemo } from "@/app/[siteId]/[popId]/library/layouts/LayoutsBlocksProposalCards"
 import {
   LAYOUTS_RELATED_LINKS,
   getLayoutsPageMeta,
 } from "@/app/[siteId]/[popId]/library/layouts/layoutsLibraryNav"
 import { LayoutsSystemHero } from "@/app/[siteId]/[popId]/library/layouts/LayoutsDocShared"
-import {
-  LayoutsBlocksFullPageDraft,
-  LayoutsBlocksLayoutGridDemo,
-} from "@/app/[siteId]/[popId]/library/layouts/LayoutsBlocksDocPrimitives"
 import {
   LibraryDocSection,
   LibraryRelatedLinks,
@@ -29,17 +28,23 @@ export function LayoutsBlocksFoundationView({ sectionId, siteId, popId }: Props)
   if (sectionId !== "layouts-blocks") return null
 
   return (
-    <div className="space-y-10 rootsy-nature-palette">
+    <div className="space-y-10">
       <LayoutsSystemHero variant="blocks" />
 
-      <LibraryDocSection id="layouts-blocks-full" title="Vista completa">
-        <LayoutsModuleContentRowFrame>
-          <LayoutsBlocksFullPageDraft composed />
-        </LayoutsModuleContentRowFrame>
+      <LibraryDocSection id="layouts-blocks-preview" title="Vista previa">
+        <LayoutsBlocksModulePreviewDemo />
       </LibraryDocSection>
 
-      <LibraryDocSection id="layouts-blocks-wireframe" title="Wireframe">
-        <LayoutsBlocksLayoutGridDemo contentOnly />
+      <LibraryDocSection id="layouts-blocks-layout" title="1 · Layout">
+        <LayoutsBlocksLayoutSectionDemo />
+      </LibraryDocSection>
+
+      <LibraryDocSection id="layouts-blocks-design" title="2 · Diseño de caja y cuentas">
+        <LayoutsBlocksEntityDesignSectionDemo />
+      </LibraryDocSection>
+
+      <LibraryDocSection id="layouts-blocks-proposals" title="3 · Nuevas propuestas">
+        <LayoutsBlocksProposalsSectionDemo />
       </LibraryDocSection>
 
       <p className="text-center text-xs text-muted-foreground">

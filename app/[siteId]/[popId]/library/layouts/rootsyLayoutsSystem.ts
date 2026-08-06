@@ -79,11 +79,11 @@ export const ROOTSY_LAYOUTS_VARIANT_CONCEPT: Record<LayoutsHeroVariant, LayoutsC
   blocks: {
     eyebrow: "Rootsy · Layouts · Bloques",
     title: "Contenido · bloques",
-    lead: "Grid de tarjetas — cuentas, cajas. Sin toolbar ni paginación.",
+    lead: "Grid de tarjetas en bruma-50 — cuentas, cajas. Columnas auto-fill entre 18rem y 22rem.",
     why: [
-      "Grid auto-fill.",
-      "Cards elevación interactiva.",
-      "Superficie blanca.",
+      "Fondo layout.module.content.",
+      "Cards elevation.overlay · radius.xxlarge.",
+      "Sin toolbar ni paginación.",
     ],
     closing: "Entidades con cara propia.",
   },

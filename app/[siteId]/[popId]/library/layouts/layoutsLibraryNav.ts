@@ -37,7 +37,7 @@ export const LAYOUTS_PAGE_META: Record<string, LayoutsPageMeta> = {
   "layouts-blocks": {
     id: "layouts-blocks",
     title: "Bloques",
-    description: "Contenido — grid de tarjetas.",
+    description: "Grid de tarjetas · bruma-50 · min/max 18–22rem.",
   },
   "layouts-operations": {
     id: "layouts-operations",

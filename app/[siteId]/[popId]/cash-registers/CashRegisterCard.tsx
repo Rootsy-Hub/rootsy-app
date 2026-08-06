@@ -3,25 +3,32 @@
 import type { CashRegisterRow } from "@/app/[siteId]/[popId]/cash-registers/actions"
 import {
   dataWorkspaceLightDropdownContentClass,
-  dataWorkspaceLightDropdownItemClass,
-  dataWorkspaceLightDropdownLogoutItemClass,
   dataWorkspaceLightDropdownSeparatorClass,
 } from "@/components/layouts/dataWorkspaceHeaderStyles"
 import {
+  RootsDropdownContent,
+  RootsDropdownItem,
+  RootsDropdownMenu,
+  RootsDropdownSeparator,
+  RootsDropdownTrigger,
+} from "@/components/rootsy-dropdown"
+import {
   dataWorkspaceEntityCardBodyClass,
   dataWorkspaceEntityCardClass,
+  dataWorkspaceEntityCardEyebrowClass,
   dataWorkspaceEntityCardFooterClass,
   dataWorkspaceEntityCardHeaderClass,
   dataWorkspaceEntityCardIsotypeClass,
+  dataWorkspaceEntityCardMenuTriggerClass,
+  dataWorkspaceEntityCardStatLabelClass,
+  dataWorkspaceEntityCardStatValueClass,
+  dataWorkspaceEntityCardStatValueLargeClass,
+  dataWorkspaceEntityCardStatusClosedClass,
+  dataWorkspaceEntityCardStatusInactiveClass,
+  dataWorkspaceEntityCardStatusOpenClass,
+  dataWorkspaceEntityCardTitleClass,
 } from "@/components/data-workspace/dataWorkspaceListStyles"
-import { Button } from "@/components/ui/button"
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
+import { RootsDefaultButton, rootsButtonCompactSizeClass } from "@/components/rootsy-button"
 import { cn } from "@/lib/utils"
 import {
   Calculator,
@@ -62,10 +69,8 @@ function CashRegisterPrimaryStat({
 }) {
   return (
     <div>
-      <p className="text-[11px] font-medium uppercase tracking-[0.14em] text-muted-foreground">
-        {label}
-      </p>
-      <p className="mt-1.5 font-numeric text-2xl font-bold tabular-nums tracking-tight text-foreground">
+      <p className={dataWorkspaceEntityCardStatLabelClass}>{label}</p>
+      <p className={cn("mt-1.5", dataWorkspaceEntityCardStatValueLargeClass)}>
         {value}
       </p>
     </div>
@@ -81,10 +86,8 @@ function CashRegisterSecondaryStat({
 }) {
   return (
     <div className="min-w-0">
-      <p className="text-[11px] font-medium uppercase tracking-[0.14em] text-muted-foreground">
-        {label}
-      </p>
-      <p className="mt-1 truncate font-numeric text-base font-bold tabular-nums tracking-tight text-foreground sm:text-lg">
+      <p className={dataWorkspaceEntityCardStatLabelClass}>{label}</p>
+      <p className={cn("mt-1 truncate text-base sm:text-lg", dataWorkspaceEntityCardStatValueClass)}>
         {value}
       </p>
     </div>
@@ -100,7 +103,7 @@ function CashRegisterStatusPill({
 }) {
   if (!isActive) {
     return (
-      <span className="inline-flex shrink-0 items-center rounded-full border border-border/70 bg-muted/30 px-2.5 py-1 text-[10px] font-medium uppercase tracking-[0.08em] text-muted-foreground">
+      <span className={dataWorkspaceEntityCardStatusInactiveClass}>
         Inactiva
       </span>
     )
@@ -108,20 +111,18 @@ function CashRegisterStatusPill({
 
   return (
     <span
-      className={cn(
-        "inline-flex shrink-0 items-center gap-1.5 rounded-full border px-2.5 py-1 text-[10px] font-medium uppercase tracking-[0.08em]",
+      className={
         isOpen
-          ? "border-emerald-200/90 bg-emerald-50/80 text-emerald-800"
-          : "border-border/70 bg-background text-muted-foreground",
-      )}
+          ? dataWorkspaceEntityCardStatusOpenClass
+          : dataWorkspaceEntityCardStatusClosedClass
+      }
     >
-      <span
-        className={cn(
-          "size-1.5 rounded-full",
-          isOpen ? "bg-emerald-500" : "bg-muted-foreground/35",
-        )}
-        aria-hidden
-      />
+      {isOpen ? (
+        <span
+          className="size-1.5 rounded-full bg-[var(--rootsy-savia-600)]"
+          aria-hidden
+        />
+      ) : null}
       {isOpen ? "Abierta" : "Cerrada"}
     </span>
   )
@@ -137,13 +138,7 @@ function CashRegisterCardMenuTrigger({
   return (
     <button
       type="button"
-      className={cn(
-        "inline-flex size-8 items-center justify-center rounded-lg text-muted-foreground transition-colors outline-none",
-        "hover:bg-muted/60 hover:text-foreground",
-        "data-[state=open]:bg-muted/60 data-[state=open]:text-foreground",
-        "focus-visible:ring-2 focus-visible:ring-ring/30",
-        className,
-      )}
+      className={cn(dataWorkspaceEntityCardMenuTriggerClass, className)}
       aria-label={label}
       {...props}
     >
@@ -253,13 +248,14 @@ export function CashRegisterCard({
           onPointerDown={(event) => event.stopPropagation()}
           onClick={(event) => event.stopPropagation()}
         >
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
+          <RootsDropdownMenu>
+            <RootsDropdownTrigger asChild>
               <CashRegisterCardMenuTrigger
                 label={`Opciones de ${row.name}`}
               />
-            </DropdownMenuTrigger>
-            <DropdownMenuContent
+            </RootsDropdownTrigger>
+            <RootsDropdownContent
+              theme="light"
               align="end"
               side="bottom"
               sideOffset={8}
@@ -269,35 +265,31 @@ export function CashRegisterCard({
               {menuSections.map((section, sectionIndex) => (
                 <div key={section[0]?.id ?? sectionIndex}>
                   {sectionIndex > 0 ? (
-                    <DropdownMenuSeparator
+                    <RootsDropdownSeparator
+                      theme="light"
                       className={dataWorkspaceLightDropdownSeparatorClass}
                     />
                   ) : null}
                   {section.map((action) => {
                     const Icon = action.icon
                     return (
-                      <DropdownMenuItem
+                      <RootsDropdownItem
                         key={action.id}
-                        variant={action.destructive ? "destructive" : undefined}
-                        className={cn(
-                          "gap-2",
-                          action.destructive
-                            ? dataWorkspaceLightDropdownLogoutItemClass
-                            : dataWorkspaceLightDropdownItemClass,
-                        )}
+                        theme="light"
+                        variant={action.destructive ? "destructive" : "default"}
                         onSelect={action.onSelect}
                       >
                         <Icon className="size-4 shrink-0 opacity-70" aria-hidden />
                         <span className="min-w-0 flex-1 truncate">
                           {action.label}
                         </span>
-                      </DropdownMenuItem>
+                      </RootsDropdownItem>
                     )
                   })}
                 </div>
               ))}
-            </DropdownMenuContent>
-          </DropdownMenu>
+            </RootsDropdownContent>
+          </RootsDropdownMenu>
         </div>
       ) : null}
 
@@ -313,7 +305,7 @@ export function CashRegisterCard({
               </span>
               <div className="min-w-0 flex-1">
                 <div className="flex items-start justify-between gap-2">
-                  <p className="text-[11px] font-medium uppercase tracking-[0.12em] text-muted-foreground">
+                  <p className={dataWorkspaceEntityCardEyebrowClass}>
                     Caja registradora
                   </p>
                   <CashRegisterStatusPill
@@ -321,11 +313,11 @@ export function CashRegisterCard({
                     isActive={row.isActive}
                   />
                 </div>
-                <h3 className="mt-1 truncate text-base font-semibold text-foreground">
+                <h3 className={cn("mt-1 truncate", dataWorkspaceEntityCardTitleClass)}>
                   {row.name}
                 </h3>
                 {isOpen && openedLabel ? (
-                  <p className="mt-0.5 truncate text-xs text-muted-foreground">
+                  <p className="mt-0.5 truncate font-canopy text-xs text-[var(--rootsy-bruma-500)]">
                     Desde {openedLabel}
                   </p>
                 ) : (
@@ -356,20 +348,19 @@ export function CashRegisterCard({
 
         {!isOpen ? (
           <div className={cn("flex min-h-[4.75rem] items-center justify-between gap-3 px-4 py-4", dataWorkspaceEntityCardFooterClass)}>
-            <p className="text-xs leading-snug text-muted-foreground">
+            <p className="font-canopy text-xs leading-snug text-[var(--rootsy-bruma-500)]">
               {row.isActive ? "Sin turno abierto" : "Caja desactivada"}
             </p>
             {canCreate && row.isActive ? (
-              <Button
+              <RootsDefaultButton
                 type="button"
-                variant="outline"
                 size="sm"
-                className="h-8 shrink-0 gap-1.5 px-3 text-xs shadow-xs"
+                className={cn(rootsButtonCompactSizeClass, "shrink-0 gap-1.5 px-3 text-xs")}
                 onClick={onOpen}
               >
                 <DoorOpen className="size-3.5" aria-hidden />
                 Abrir turno
-              </Button>
+              </RootsDefaultButton>
             ) : null}
           </div>
         ) : null}

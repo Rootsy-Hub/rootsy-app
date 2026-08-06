@@ -1,52 +1,40 @@
 "use client"
 
-import "@/app/[siteId]/[popId]/library/color/rootsyNaturePalette.css"
 import { TreasuryAccountCard } from "@/app/[siteId]/[popId]/accounts/TreasuryAccountCard"
 import { TreasuryAccountsGridSkeleton } from "@/app/[siteId]/[popId]/accounts/TreasuryAccountsGridSkeleton"
 import { CashRegisterCard } from "@/app/[siteId]/[popId]/cash-registers/CashRegisterCard"
 import { CashRegistersGridSkeleton } from "@/app/[siteId]/[popId]/cash-registers/CashRegistersGridSkeleton"
-import { LayoutsTablesNightForestSurface } from "@/app/[siteId]/[popId]/library/layouts/LayoutsTablesNightForestSurface"
-import {
-  LayoutsTablesHeaderLeftZone,
-  LayoutsTablesHeaderRightZone,
-} from "@/app/[siteId]/[popId]/library/layouts/LayoutsTablesDocPrimitives"
 import {
   DEMO_CASH_REGISTERS,
   DEMO_TREASURY_ACCOUNTS,
 } from "@/app/[siteId]/[popId]/library/layouts/layoutsBlocksMockData"
+import {
+  LAYOUTS_BLOCKS_LAYOUT_SPEC_ROWS,
+} from "@/app/[siteId]/[popId]/library/layouts/layoutsBlocksHardcodedSpec"
+import { LayoutsModuleShellWithContent } from "@/app/[siteId]/[popId]/library/layouts/LayoutsModuleDocPrimitives"
+import {
+  LayoutsTablesHeaderLeftZone,
+  LayoutsTablesHeaderRightZone,
+} from "@/app/[siteId]/[popId]/library/layouts/LayoutsTablesDocPrimitives"
+import { LayoutsTablesNightForestSurface } from "@/app/[siteId]/[popId]/library/layouts/LayoutsTablesNightForestSurface"
+import "@/app/[siteId]/[popId]/library/color/rootsyNaturePalette.css"
+import { FoundationSpecCard } from "@/app/[siteId]/[popId]/library/libraryFoundationDocShared"
 import { DataWorkspaceHeaderTitle } from "@/components/layouts/DataWorkspaceHeaderTitle"
+import { layoutsModuleContentShellClass } from "@/components/layouts-module/rootsLayoutsModuleProductStyles"
 import {
   dataWorkspaceBlocksContentInnerClass,
-  dataWorkspaceBlocksPageContentClass,
-  dataWorkspaceBlocksPageMainClass,
-  dataWorkspaceBlocksContentScopeClass,
   dataWorkspaceBlocksEmptyStateClass,
+  dataWorkspaceBlocksSkeletonTone,
   dataWorkspaceEntityCardBodyClass,
   dataWorkspaceEntityCardClass,
   dataWorkspaceEntityCardFooterClass,
   dataWorkspaceEntityCardHeaderClass,
   dataWorkspaceEntityCardsGridClass,
-  workspaceTableNatureSkeletonTone,
 } from "@/components/data-workspace/dataWorkspaceListStyles"
 import { cn } from "@/lib/utils"
-import { LayoutGrid } from "lucide-react"
+import type { ReactNode } from "react"
 
-const sk = workspaceTableNatureSkeletonTone
-
-function LayoutsBlocksEarthScope({
-  children,
-  className,
-}: {
-  children: React.ReactNode
-  className?: string
-}) {
-  return (
-    <div className={cn("rootsy-app-light rootsy-nature-palette bg-background", className)}>
-      <div className={dataWorkspaceBlocksContentScopeClass}>{children}</div>
-    </div>
-  )
-}
-
+const sk = dataWorkspaceBlocksSkeletonTone
 const HEADER_VARIANT = "dark" as const
 const noop = () => {}
 
@@ -58,20 +46,59 @@ function LayoutHeightBadge({ label }: { label: string }) {
   )
 }
 
+export function LayoutsBlocksDocSubsection({
+  title,
+  description,
+  children,
+}: {
+  title: string
+  description?: string
+  children: ReactNode
+}) {
+  return (
+    <div className="space-y-3">
+      <div className="space-y-1">
+        <h4 className="font-canopy text-sm font-semibold text-foreground">{title}</h4>
+        {description ? (
+          <p className="font-canopy text-xs leading-relaxed text-muted-foreground">{description}</p>
+        ) : null}
+      </div>
+      {children}
+    </div>
+  )
+}
+
+/** Fondo layout.module.content · bruma-50 — tokens light como en producto (cuentas/cajas). */
+function LayoutsBlocksModuleContentScope({
+  children,
+  className,
+  badge,
+}: {
+  children: ReactNode
+  className?: string
+  badge?: string
+}) {
+  return (
+    <div
+      className={cn(
+        "relative min-h-0 flex-1 rootsy-app-light rootsy-nature-palette text-foreground",
+        layoutsModuleContentShellClass,
+        className,
+      )}
+    >
+      {badge ? <LayoutHeightBadge label={badge} /> : null}
+      <div className={dataWorkspaceBlocksContentInnerClass}>{children}</div>
+    </div>
+  )
+}
+
 function LayoutsBlocksHeaderDemo({ composed = false }: { composed?: boolean }) {
   return (
     <LayoutsTablesNightForestSurface
-      className={cn(
-        composed ? "h-17 shrink-0" : "overflow-hidden rounded-xl",
-      )}
+      className={cn(composed ? "h-17 shrink-0" : "overflow-hidden rounded-xl")}
       contentClassName={composed ? "h-full" : undefined}
     >
-      <div
-        className={cn(
-          "grid h-full grid-cols-3 items-center gap-4 px-4",
-          !composed && "h-18",
-        )}
-      >
+      <div className={cn("grid h-full grid-cols-3 items-center gap-4 px-4", !composed && "h-18")}>
         <LayoutsTablesHeaderLeftZone />
         <div className="flex flex-wrap items-center justify-center gap-2">
           <DataWorkspaceHeaderTitle title="Cuentas" headerVariant={HEADER_VARIANT} />
@@ -82,79 +109,147 @@ function LayoutsBlocksHeaderDemo({ composed = false }: { composed?: boolean }) {
   )
 }
 
-/** Grid del layout — header + área de contenido con tarjetas. */
-export function LayoutsBlocksLayoutGridDemo({ contentOnly = false }: { contentOnly?: boolean }) {
-  const content = (
-    <LayoutsBlocksEarthScope className={cn("relative min-h-0 flex-1 overflow-auto", contentOnly && "rounded-none")}>
-      <LayoutHeightBadge label="grid · scroll" />
-      <div className={cn(dataWorkspaceBlocksContentInnerClass, "gap-0 py-6 sm:py-6")}>
-        <div className={dataWorkspaceEntityCardsGridClass}>
-          {Array.from({ length: contentOnly ? 4 : 6 }, (_, index) => (
-            <div
-              key={index}
-              className={cn(
-                dataWorkspaceEntityCardClass,
-                "pointer-events-none min-h-56 shadow-sm hover:shadow-sm",
-              )}
-            >
-              <div className={dataWorkspaceEntityCardHeaderClass}>
-                <div className="flex items-start gap-3">
-                  <div className={cn("size-11 shrink-0 rounded-xl", sk.box)} />
-                  <div className="min-w-0 flex-1 space-y-2">
-                    <div className={cn("h-2.5 w-16 rounded-full", sk.pill)} />
-                    <div className={cn("h-5 w-28", sk.bar)} />
-                  </div>
-                </div>
-              </div>
-              <div className={dataWorkspaceEntityCardBodyClass}>
-                <div className={cn("h-2.5 w-20 rounded-full", sk.pill)} />
-                <div className={cn("mt-2 h-8 w-32", sk.bar)} />
-              </div>
-              <div className={cn("min-h-19 px-4 py-4", dataWorkspaceEntityCardFooterClass)}>
-                <div className="grid grid-cols-2 gap-3">
-                  <div className={cn("h-6", sk.barSm)} />
-                  <div className={cn("h-6", sk.barSm)} />
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-    </LayoutsBlocksEarthScope>
-  )
-
-  if (contentOnly) {
-    return <div className="h-64 overflow-hidden">{content}</div>
-  }
-
+function LayoutsBlocksWireframeCard({ index }: { index: number }) {
   return (
     <div
       className={cn(
-        "mx-auto flex h-[28rem] max-w-4xl flex-col overflow-hidden rounded-2xl border border-neutral-300",
-        "shadow-[0_24px_48px_-28px_rgba(41,37,36,0.38)]",
-        "ring-1 ring-black/[0.04]",
+        dataWorkspaceEntityCardClass,
+        "pointer-events-none min-h-52 shadow-sm hover:shadow-sm",
       )}
     >
-      <div className="relative shrink-0">
-        <LayoutHeightBadge label="h-17" />
-        <LayoutsTablesNightForestSurface className="h-17" contentClassName="h-full">
-          <div className="grid h-full grid-cols-3 divide-x divide-[#263530]/60">
-            <div className="min-w-0" />
-            <div className="min-w-0" />
-            <div className="min-w-0" />
+      <div className={dataWorkspaceEntityCardHeaderClass}>
+        <div className="flex items-start gap-3">
+          <div className={cn("size-11 shrink-0 rounded-xl", sk.box)} />
+          <div className="min-w-0 flex-1 space-y-2">
+            <div className={cn("h-2.5 w-16 rounded-full", sk.pill)} />
+            <div className={cn("h-5 w-28", sk.bar)} />
           </div>
-        </LayoutsTablesNightForestSurface>
+        </div>
       </div>
-      {content}
+      <div className={dataWorkspaceEntityCardBodyClass}>
+        <div className={cn("h-2.5 w-20 rounded-full", sk.pill)} />
+        <div className={cn("mt-2 h-8 w-32", sk.bar)} />
+      </div>
+      <div className={cn("min-h-16 px-4 py-4", dataWorkspaceEntityCardFooterClass)}>
+        <div className="grid grid-cols-2 gap-3">
+          <div className={cn("h-6", sk.barSm)} />
+          <div className={cn("h-6", sk.barSm)} />
+        </div>
+      </div>
+      <span className="sr-only">Bloque {index + 1}</span>
     </div>
   )
 }
 
-export function LayoutsBlocksTreasuryCardsDemo() {
+export function LayoutsBlocksLayoutSpecTable() {
   return (
-    <LayoutsBlocksEarthScope className="rounded-xl p-4 sm:p-6">
-      <LayoutsBlocksTreasuryCardsGrid />
-    </LayoutsBlocksEarthScope>
+    <FoundationSpecCard className="space-y-4">
+      <p className="font-canopy text-xs leading-relaxed text-muted-foreground">
+        Grid auto-fill al 100% de ancho: mínimo 18rem por bloque, columnas fluidas en{" "}
+        <span className="font-mono">1fr</span> según el espacio disponible.
+      </p>
+      <div className="overflow-x-auto">
+        <table className="w-full min-w-[36rem] border-collapse text-left">
+          <thead>
+            <tr className="border-b border-border/70">
+              {["Rol", "Token", "Valor", "Producto"].map((heading) => (
+                <th
+                  key={heading}
+                  className="px-2 py-2 font-mono text-[10px] font-medium uppercase tracking-[0.1em] text-muted-foreground first:pl-0"
+                >
+                  {heading}
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {LAYOUTS_BLOCKS_LAYOUT_SPEC_ROWS.map((row) => (
+              <tr key={`${row.role}-${row.token}`} className="border-b border-border/40 align-top">
+                <td className="py-2.5 pr-3 font-canopy text-xs font-medium text-foreground">{row.role}</td>
+                <td className="py-2.5 pr-3 font-mono text-[11px] text-muted-foreground">{row.token}</td>
+                <td className="max-w-[14rem] py-2.5 pr-3 font-mono text-[10px] leading-relaxed break-all text-foreground">
+                  {row.value}
+                </td>
+                <td className="py-2.5 font-canopy text-[11px] leading-relaxed text-muted-foreground">
+                  {row.product}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </FoundationSpecCard>
+  )
+}
+
+function LayoutsBlocksPreviewCardsGrid() {
+  return (
+    <div className={dataWorkspaceEntityCardsGridClass}>
+      {DEMO_TREASURY_ACCOUNTS.map((row) => (
+        <TreasuryAccountCard
+          key={row.id}
+          row={row}
+          canCreate
+          canUpdate
+          canDelete
+          detailHref="#"
+          onMenuAction={noop}
+        />
+      ))}
+      {DEMO_CASH_REGISTERS.slice(0, 2).map((row) => (
+        <CashRegisterCard
+          key={row.id}
+          row={row}
+          canCreate
+          canUpdate
+          canDelete
+          detailHref="#"
+          onEdit={noop}
+          onDelete={noop}
+          onOpen={noop}
+          onClose={noop}
+          onDeposit={noop}
+          onWithdraw={noop}
+        />
+      ))}
+    </div>
+  )
+}
+
+/** Vista previa — bloques dentro del shell módulo completo. */
+export function LayoutsBlocksModulePreviewDemo() {
+  return (
+    <LayoutsModuleShellWithContent
+      height="34rem"
+      contentLabel="layout.module.content · bloques"
+    >
+      <LayoutsBlocksFullPageDraft composed />
+    </LayoutsModuleShellWithContent>
+  )
+}
+
+/** 1 · Layout — fondo bruma-50 + grid responsivo con bloques wireframe. */
+export function LayoutsBlocksLayoutSectionDemo() {
+  return (
+    <div className="space-y-6">
+      <LayoutsBlocksLayoutSpecTable />
+      <div
+        className={cn(
+          "mx-auto flex max-w-5xl flex-col overflow-hidden rounded-2xl border border-[var(--rootsy-bruma-200)]",
+          "rootsy-app-light rootsy-nature-palette",
+          layoutsModuleContentShellClass,
+        )}
+        style={{ minHeight: "20rem" }}
+      >
+        <LayoutsBlocksModuleContentScope badge="grid · auto-fill · min 18rem · max 22rem">
+          <div className={dataWorkspaceEntityCardsGridClass}>
+            {Array.from({ length: 8 }, (_, index) => (
+              <LayoutsBlocksWireframeCard key={index} index={index} />
+            ))}
+          </div>
+        </LayoutsBlocksModuleContentScope>
+      </div>
+    </div>
   )
 }
 
@@ -173,14 +268,6 @@ function LayoutsBlocksTreasuryCardsGrid() {
         />
       ))}
     </div>
-  )
-}
-
-export function LayoutsBlocksCashRegisterCardsDemo() {
-  return (
-    <LayoutsBlocksEarthScope className="rounded-xl p-4 sm:p-6">
-      <LayoutsBlocksCashRegisterCardsGrid />
-    </LayoutsBlocksEarthScope>
   )
 }
 
@@ -207,93 +294,83 @@ function LayoutsBlocksCashRegisterCardsGrid() {
   )
 }
 
-export function LayoutsBlocksSkeletonDemo() {
+/** 2 · Diseño de caja y cuentas — variantes en bruma-50. */
+export function LayoutsBlocksEntityDesignSectionDemo() {
   return (
-    <LayoutsBlocksEarthScope className="space-y-8 rounded-xl p-4 sm:p-6">
-      <div>
-        <p className="mb-3 text-xs font-medium uppercase tracking-[0.12em] text-muted-foreground">
-          Cuentas
-        </p>
-        <TreasuryAccountsGridSkeleton count={4} />
-      </div>
-      <div>
-        <p className="mb-3 text-xs font-medium uppercase tracking-[0.12em] text-muted-foreground">
-          Cajas
-        </p>
-        <CashRegistersGridSkeleton count={3} />
-      </div>
-    </LayoutsBlocksEarthScope>
-  )
-}
+    <div className="space-y-8">
+      <LayoutsBlocksDocSubsection
+        title="Cuentas · treasury"
+        description="Banco · billetera · efectivo — elevation.surface.overlay · radius.xxlarge · shadow-sm → hover:shadow-md."
+      >
+        <div
+          className={cn(
+            "overflow-hidden rounded-2xl border border-[var(--rootsy-bruma-200)]",
+            "rootsy-app-light rootsy-nature-palette text-foreground",
+            layoutsModuleContentShellClass,
+          )}
+        >
+          <LayoutsBlocksModuleContentScope>
+            <LayoutsBlocksTreasuryCardsGrid />
+          </LayoutsBlocksModuleContentScope>
+        </div>
+      </LayoutsBlocksDocSubsection>
 
-export function LayoutsBlocksEmptyStateDemo() {
-  return (
-    <LayoutsBlocksEarthScope className="rounded-xl p-4 sm:p-6">
-      <p className={dataWorkspaceBlocksEmptyStateClass}>
-        No hay cuentas configuradas.
-      </p>
-    </LayoutsBlocksEarthScope>
-  )
-}
+      <LayoutsBlocksDocSubsection
+        title="Cajas · POS"
+        description="Sesión abierta · cerrada · inactiva — mismas tokens de tarjeta; footer con CTA según estado."
+      >
+        <div
+          className={cn(
+            "overflow-hidden rounded-2xl border border-[var(--rootsy-bruma-200)]",
+            "rootsy-app-light rootsy-nature-palette text-foreground",
+            layoutsModuleContentShellClass,
+          )}
+        >
+          <LayoutsBlocksModuleContentScope>
+            <LayoutsBlocksCashRegisterCardsGrid />
+          </LayoutsBlocksModuleContentScope>
+        </div>
+      </LayoutsBlocksDocSubsection>
 
-export function LayoutsBlocksCardSurfaceDemo() {
-  return (
-    <LayoutsBlocksEarthScope className="max-w-md space-y-3 rounded-xl p-4 sm:p-6">
-      <article className={cn(dataWorkspaceEntityCardClass, "shadow-sm hover:shadow-sm")}>
-        <div className="absolute right-3 top-3 z-10 size-8 rounded-lg border border-dashed border-[var(--wt-border)] bg-white" />
-        <div className={dataWorkspaceEntityCardHeaderClass}>
-          <p className="text-[11px] font-medium uppercase tracking-[0.12em] text-[var(--wt-text-secondary)]">
-            Cabecera · isotipo + meta + menú
-          </p>
+      <LayoutsBlocksDocSubsection
+        title="Estados de carga y vacío"
+        description="Skeleton alineado al grid · empty state dashed sobre bruma-50."
+      >
+        <div
+          className={cn(
+            "space-y-8 overflow-hidden rounded-2xl border border-[var(--rootsy-bruma-200)] p-0",
+            "rootsy-app-light rootsy-nature-palette text-foreground",
+            layoutsModuleContentShellClass,
+          )}
+        >
+          <LayoutsBlocksModuleContentScope>
+            <div className="space-y-8">
+              <div>
+                <p className="mb-3 font-mono text-[10px] uppercase tracking-[0.1em] text-muted-foreground">
+                  Skeleton · cuentas
+                </p>
+                <TreasuryAccountsGridSkeleton count={4} />
+              </div>
+              <div>
+                <p className="mb-3 font-mono text-[10px] uppercase tracking-[0.1em] text-muted-foreground">
+                  Skeleton · cajas
+                </p>
+                <CashRegistersGridSkeleton count={3} />
+              </div>
+              <p className={dataWorkspaceBlocksEmptyStateClass}>No hay cuentas configuradas.</p>
+            </div>
+          </LayoutsBlocksModuleContentScope>
         </div>
-        <div className={dataWorkspaceEntityCardBodyClass}>
-          <p className="text-[11px] font-medium uppercase tracking-[0.12em] text-[var(--wt-text-secondary)]">
-            Cuerpo · saldo principal
-          </p>
-        </div>
-        <div className={cn("min-h-19 px-4 py-4", dataWorkspaceEntityCardFooterClass)}>
-          <p className="text-[11px] font-medium uppercase tracking-[0.12em] text-[var(--wt-text-secondary)]">
-            Pie · stats secundarios o CTA
-          </p>
-        </div>
-      </article>
-      <p className="text-xs text-muted-foreground">
-        Fondo tierra:{" "}
-        <code className="rounded bg-muted px-1 py-0.5 text-[11px]">
-          dataWorkspaceBlocksContentScopeClass
-        </code>
-        {" · "}
-        tarjeta:{" "}
-        <code className="rounded bg-muted px-1 py-0.5 text-[11px]">
-          dataWorkspaceEntityCardClass
-        </code>
-        {" · "}
-        superficie interna:{" "}
-        <code className="rounded bg-muted px-1 py-0.5 text-[11px]">
-          dataWorkspaceBlocksCardSurfaceClass
-        </code>
-        {" · "}
-        radio:{" "}
-        <code className="rounded bg-muted px-1 py-0.5 text-[11px]">
-          rounded-2xl
-        </code>
-        {" · "}
-        elevación:{" "}
-        <code className="rounded bg-muted px-1 py-0.5 text-[11px]">
-          shadow-sm → hover:shadow-md
-        </code>
-      </p>
-    </LayoutsBlocksEarthScope>
+      </LayoutsBlocksDocSubsection>
+    </div>
   )
 }
 
 export function LayoutsBlocksFullPageDraft({ composed = false }: { composed?: boolean }) {
   const grid = (
-    <div className={cn("rootsy-app-light rootsy-nature-palette min-h-0 flex-1 overflow-y-auto bg-background")}>
-      <div className={dataWorkspaceBlocksPageContentClass}>
-        <LayoutsBlocksTreasuryCardsGrid />
-      </div>
-    </div>
+    <LayoutsBlocksModuleContentScope className="overflow-y-auto">
+      <LayoutsBlocksPreviewCardsGrid />
+    </LayoutsBlocksModuleContentScope>
   )
 
   if (composed) {
@@ -314,29 +391,70 @@ export function LayoutsBlocksFullPageDraft({ composed = false }: { composed?: bo
   )
 }
 
-export function LayoutsBlocksOverviewIntro() {
+/** @deprecated Usar LayoutsBlocksLayoutSectionDemo */
+export function LayoutsBlocksLayoutGridDemo({ contentOnly = false }: { contentOnly?: boolean }) {
   return (
-    <div className="rounded-2xl border border-border/70 bg-card p-6 shadow-sm">
-      <div className="flex items-start gap-3">
-        <span className="inline-flex size-10 items-center justify-center rounded-xl bg-primary/10 text-primary">
-          <LayoutGrid className="size-5" aria-hidden />
-        </span>
-        <div className="min-w-0 space-y-2">
-          <h2 className="text-lg font-semibold tracking-tight text-foreground">
-            Grid de tarjetas
-          </h2>
-          <p className="max-w-2xl text-sm leading-relaxed text-muted-foreground">
-            Mismo shell workspace (header nocturno + cuerpo tierra orgánica) pero sin toolbar ni
-            paginación: grid responsivo de tarjetas con elevación interactiva (
-            <code className="text-[11px]">elevation.card.interactive</code>
-            ), radio <code className="text-[11px]">rounded-2xl</code> y superficie blanca uniforme (
-            <code className="text-[11px]">dataWorkspaceBlocksCardSurfaceClass</code>
-            ). Referencia en producción:{" "}
-            <span className="font-medium text-foreground">Cuentas</span> y{" "}
-            <span className="font-medium text-foreground">Cajas</span>.
+    <div className={contentOnly ? "h-64 overflow-hidden" : undefined}>
+      <LayoutsBlocksLayoutSectionDemo />
+    </div>
+  )
+}
+
+/** @deprecated Usar LayoutsBlocksEntityDesignSectionDemo */
+export function LayoutsBlocksTreasuryCardsDemo() {
+  return (
+    <div className={cn("rounded-xl", layoutsModuleContentShellClass, "p-4 sm:p-6")}>
+      <LayoutsBlocksTreasuryCardsGrid />
+    </div>
+  )
+}
+
+/** @deprecated Usar LayoutsBlocksEntityDesignSectionDemo */
+export function LayoutsBlocksCashRegisterCardsDemo() {
+  return (
+    <div className={cn("rounded-xl", layoutsModuleContentShellClass, "p-4 sm:p-6")}>
+      <LayoutsBlocksCashRegisterCardsGrid />
+    </div>
+  )
+}
+
+export function LayoutsBlocksSkeletonDemo() {
+  return (
+    <div className={cn("space-y-8 rounded-xl p-4 sm:p-6", layoutsModuleContentShellClass)}>
+      <TreasuryAccountsGridSkeleton count={4} />
+      <CashRegistersGridSkeleton count={3} />
+    </div>
+  )
+}
+
+export function LayoutsBlocksEmptyStateDemo() {
+  return (
+    <div className={cn("rounded-xl p-4 sm:p-6", layoutsModuleContentShellClass)}>
+      <p className={dataWorkspaceBlocksEmptyStateClass}>No hay cuentas configuradas.</p>
+    </div>
+  )
+}
+
+export function LayoutsBlocksCardSurfaceDemo() {
+  return (
+    <div className={cn("max-w-md space-y-3 rounded-xl p-4 sm:p-6", layoutsModuleContentShellClass)}>
+      <article className={cn(dataWorkspaceEntityCardClass, "shadow-sm hover:shadow-sm")}>
+        <div className={dataWorkspaceEntityCardHeaderClass}>
+          <p className="text-[11px] font-medium uppercase tracking-[0.12em] text-muted-foreground">
+            Cabecera · isotipo + meta + menú
           </p>
         </div>
-      </div>
+        <div className={dataWorkspaceEntityCardBodyClass}>
+          <p className="text-[11px] font-medium uppercase tracking-[0.12em] text-muted-foreground">
+            Cuerpo · saldo principal
+          </p>
+        </div>
+        <div className={cn("min-h-16 px-4 py-4", dataWorkspaceEntityCardFooterClass)}>
+          <p className="text-[11px] font-medium uppercase tracking-[0.12em] text-muted-foreground">
+            Pie · stats secundarios o CTA
+          </p>
+        </div>
+      </article>
     </div>
   )
 }

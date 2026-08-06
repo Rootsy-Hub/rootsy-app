@@ -2,18 +2,18 @@
 
 import { cn } from "@/lib/utils"
 import {
+  dataWorkspaceBlocksSkeletonTone,
   dataWorkspaceEntityCardBodyClass,
   dataWorkspaceEntityCardFooterClass,
   dataWorkspaceEntityCardHeaderClass,
   dataWorkspaceEntityCardSkeletonShellClass,
   dataWorkspaceEntityCardsGridClass,
-  workspaceTableNatureSkeletonTone,
 } from "@/components/data-workspace/dataWorkspaceListStyles"
 
 const NAME_WIDTHS = ["w-24", "w-32", "w-28", "w-20"] as const
 const BALANCE_WIDTHS = ["w-36", "w-32", "w-40", "w-28"] as const
 
-const sk = workspaceTableNatureSkeletonTone
+const sk = dataWorkspaceBlocksSkeletonTone
 
 function CashRegisterCardSkeleton({ index }: { index: number }) {
   const nameWidth = NAME_WIDTHS[index % NAME_WIDTHS.length]

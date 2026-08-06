@@ -7,23 +7,28 @@ import {
 } from "@/app/[siteId]/[popId]/accounts/TreasuryBrandMark"
 import {
   dataWorkspaceLightDropdownContentClass,
-  dataWorkspaceLightDropdownItemClass,
-  dataWorkspaceLightDropdownLogoutItemClass,
   dataWorkspaceLightDropdownSeparatorClass,
 } from "@/components/layouts/dataWorkspaceHeaderStyles"
 import {
-  dataWorkspaceEntityCardBodyClass,
-  dataWorkspaceEntityCardClass,
-  dataWorkspaceEntityCardFooterClass,
-  dataWorkspaceEntityCardHeaderClass,
-} from "@/components/data-workspace/dataWorkspaceListStyles"
+  RootsDropdownContent,
+  RootsDropdownItem,
+  RootsDropdownMenu,
+  RootsDropdownSeparator,
+  RootsDropdownTrigger,
+} from "@/components/rootsy-dropdown"
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
+  dataWorkspaceEntityCardEyebrowClass,
+  dataWorkspaceEntityCardHeaderClass,
+  dataWorkspaceEntityCardLosetaClass,
+  dataWorkspaceEntityCardLosetaGridClass,
+  dataWorkspaceEntityCardMenuTriggerClass,
+  dataWorkspaceEntityCardSaldoSectionClass,
+  dataWorkspaceEntityCardSettlementFooterClass,
+  dataWorkspaceEntityCardStatLabelClass,
+  dataWorkspaceEntityCardStatValueClass,
+  dataWorkspaceEntityCardStatValueLargeClass,
+  dataWorkspaceEntityCardTitleClass,
+} from "@/components/data-workspace/dataWorkspaceListStyles"
 import {
   getTreasuryAccountMenuActions,
   type TreasuryAccountMenuActionId,
@@ -62,57 +67,16 @@ function TreasuryStat({
 }) {
   return (
     <div>
-      <p className="text-[11px] font-medium uppercase tracking-[0.14em] text-muted-foreground">
-        {label}
-      </p>
+      <p className={dataWorkspaceEntityCardStatLabelClass}>{label}</p>
       <p
         className={cn(
-          "mt-1 font-numeric font-bold tabular-nums tracking-tight text-foreground",
-          large ? "mt-1.5 text-2xl" : "text-base sm:text-lg",
+          large ? dataWorkspaceEntityCardStatValueLargeClass : dataWorkspaceEntityCardStatValueClass,
+          !large && "text-base sm:text-lg",
+          large ? "mt-1.5" : "mt-1",
         )}
       >
         {value}
       </p>
-    </div>
-  )
-}
-
-function TreasuryIntegrationBadges({
-  hasPos,
-  hasCard,
-}: {
-  hasPos: boolean
-  hasCard: boolean
-}) {
-  if (!hasPos && !hasCard) return null
-
-  const badgeClass =
-    "inline-flex items-center gap-1.5 rounded-lg border border-border/70 bg-white px-2.5 py-1.5 text-[10px] font-medium uppercase tracking-[0.08em] text-muted-foreground shadow-xs [&_svg]:size-3.5 [&_svg]:text-muted-foreground"
-
-  return (
-    <div
-      className="flex flex-wrap items-center gap-1.5"
-      aria-label={
-        [
-          hasPos ? "Terminal POS" : null,
-          hasCard ? "Tarjeta corporativa" : null,
-        ]
-          .filter(Boolean)
-          .join(" y ")
-      }
-    >
-      {hasPos ? (
-        <span className={badgeClass}>
-          <ScanLine aria-hidden />
-          POS
-        </span>
-      ) : null}
-      {hasCard ? (
-        <span className={badgeClass}>
-          <CreditCard aria-hidden />
-          Tarjeta
-        </span>
-      ) : null}
     </div>
   )
 }
@@ -140,12 +104,7 @@ function TreasuryAccountCardMenuTrigger({
   return (
     <button
       type="button"
-      className={cn(
-        "inline-flex size-8 items-center justify-center rounded-lg text-muted-foreground transition-colors",
-        "hover:bg-muted/50 hover:text-foreground",
-        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/35 focus-visible:ring-offset-1",
-        className,
-      )}
+      className={cn(dataWorkspaceEntityCardMenuTriggerClass, className)}
       aria-label={label}
       {...props}
     >
@@ -189,130 +148,124 @@ export function TreasuryAccountCard({
   })
 
   const showSettlementStats = row.kind === "bank" || row.kind === "wallet"
-  const showIntegrationBadges =
-    row.kind !== "cash" &&
-    (row.hasPosIntegration || row.hasCardIntegration)
 
   return (
-    <article className={dataWorkspaceEntityCardClass}>
-      {menuActions.length > 0 ? (
-        <div
-          className="absolute right-3 top-3 z-20"
-          onPointerDown={(event) => event.stopPropagation()}
-          onClick={(event) => event.stopPropagation()}
-        >
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <TreasuryAccountCardMenuTrigger
-                label={`Opciones de ${row.name || "cuenta"}`}
+    <article className={dataWorkspaceEntityCardLosetaClass}>
+      <Link
+        href={detailHref}
+        className={cn(
+          dataWorkspaceEntityCardLosetaGridClass,
+          "text-left outline-none focus-visible:ring-2 focus-visible:ring-[color-mix(in_srgb,var(--rootsy-savia-600)_35%,transparent)] focus-visible:ring-offset-2",
+        )}
+      >
+        <div className={cn(dataWorkspaceEntityCardHeaderClass, "pr-4")}>
+          <div className="flex min-w-0 items-start gap-2">
+            <TreasuryBrandIsotype
+              brandKey={brand?.key}
+              monogram={
+                brand?.monogram ??
+                (row.name.slice(0, 2).toUpperCase() || "—")
+              }
+              size="md"
+            />
+            <div className="min-w-0 flex-1">
+              <p className={dataWorkspaceEntityCardEyebrowClass}>
+                {treasuryKindLabel(row.kind)}
+                {!row.isActive ? " · Inactiva" : ""}
+              </p>
+              <TreasuryBrandName
+                preset={brand}
+                name={row.name}
+                textClass="text-[var(--rootsy-bruma-900)]"
+                className={cn("mt-0.5", dataWorkspaceEntityCardTitleClass)}
               />
-            </DropdownMenuTrigger>
-            <DropdownMenuContent
-              align="end"
-              side="bottom"
-              sideOffset={8}
-              collisionPadding={{ right: 16 }}
-              className={cn(dataWorkspaceLightDropdownContentClass, "z-[120]")}
-            >
-              {menuActions.map((action) => {
-                const Icon = treasuryAccountMenuActionIcon(action.id)
-                const isDelete = action.variant === "destructive"
+            </div>
+            {menuActions.length > 0 ? (
+              <div
+                className="-mr-1 shrink-0"
+                onPointerDown={(event) => event.stopPropagation()}
+                onClick={(event) => {
+                  event.preventDefault()
+                  event.stopPropagation()
+                }}
+              >
+                <RootsDropdownMenu modal={false}>
+                  <RootsDropdownTrigger asChild>
+                    <TreasuryAccountCardMenuTrigger
+                      label={`Opciones de ${row.name || "cuenta"}`}
+                    />
+                  </RootsDropdownTrigger>
+                  <RootsDropdownContent
+                    theme="light"
+                    align="start"
+                    side="left"
+                    sideOffset={6}
+                    collisionPadding={12}
+                    className={cn(dataWorkspaceLightDropdownContentClass, "z-[500]")}
+                  >
+                    {menuActions.map((action) => {
+                      const Icon = treasuryAccountMenuActionIcon(action.id)
+                      const isDelete = action.variant === "destructive"
 
-                return (
-                  <div key={action.id}>
-                    {action.separatorBefore ? (
-                      <DropdownMenuSeparator
-                        className={dataWorkspaceLightDropdownSeparatorClass}
-                      />
-                    ) : null}
-                    <DropdownMenuItem
-                      variant={isDelete ? "destructive" : undefined}
-                      className={cn(
-                        "gap-2",
-                        isDelete
-                          ? dataWorkspaceLightDropdownLogoutItemClass
-                          : dataWorkspaceLightDropdownItemClass,
-                      )}
-                      onSelect={() => onMenuAction(action.id)}
-                    >
-                      <Icon className="size-4 shrink-0 opacity-70" aria-hidden />
-                      <span className="min-w-0 flex-1 truncate">
-                        {action.label}
-                      </span>
-                    </DropdownMenuItem>
-                  </div>
-                )
-              })}
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </div>
-      ) : null}
-
-      <Link href={detailHref} className="flex h-full min-h-0 flex-1 flex-col text-left">
-        <div className={dataWorkspaceEntityCardHeaderClass}>
-          <div className="flex flex-col gap-2.5">
-            <div className="flex min-w-0 items-center gap-3">
-              <TreasuryBrandIsotype
-                brandKey={brand?.key}
-                monogram={
-                  brand?.monogram ??
-                  (row.name.slice(0, 2).toUpperCase() || "—")
-                }
-                size="md"
-              />
-              <div className="min-w-0 flex-1">
-                <p className="text-[11px] font-medium uppercase tracking-[0.12em] text-muted-foreground">
-                  {treasuryKindLabel(row.kind)}
-                  {!row.isActive ? " · Inactiva" : ""}
-                </p>
-                <TreasuryBrandName
-                  preset={brand}
-                  name={row.name}
-                  textClass="text-foreground"
-                  className="mt-0.5 text-base font-semibold"
-                />
+                      return (
+                        <div key={action.id}>
+                          {action.separatorBefore ? (
+                            <RootsDropdownSeparator
+                              theme="light"
+                              className={dataWorkspaceLightDropdownSeparatorClass}
+                            />
+                          ) : null}
+                          <RootsDropdownItem
+                            theme="light"
+                            variant={isDelete ? "destructive" : "default"}
+                            onSelect={() => onMenuAction(action.id)}
+                          >
+                            <Icon className="size-4 shrink-0 opacity-70" aria-hidden />
+                            <span className="min-w-0 flex-1 truncate">
+                              {action.label}
+                            </span>
+                          </RootsDropdownItem>
+                        </div>
+                      )
+                    })}
+                  </RootsDropdownContent>
+                </RootsDropdownMenu>
               </div>
-            </div>
-
-            <div className="min-h-7">
-              {showIntegrationBadges ? (
-                <TreasuryIntegrationBadges
-                  hasPos={row.hasPosIntegration}
-                  hasCard={row.hasCardIntegration}
-                />
-              ) : null}
-            </div>
+            ) : null}
           </div>
         </div>
 
-        <div className={dataWorkspaceEntityCardBodyClass}>
+        <div className={dataWorkspaceEntityCardSaldoSectionClass}>
           <TreasuryStat
             label="Saldo real"
             value={moneyOrDash(row.ledgerBalance)}
             large
           />
-          <div className={cn("mt-auto min-h-[4.75rem] pt-4", dataWorkspaceEntityCardFooterClass)}>
-            {showSettlementStats ? (
-              <div className="grid grid-cols-2 gap-4">
-                <TreasuryStat
-                  label="A liquidar"
-                  value={moneyOrDash(row.toLiquidateBalance)}
-                />
-                <TreasuryStat
-                  label="A pagar"
-                  value={moneyOrDash(row.toPayBalance)}
-                />
-              </div>
-            ) : row.kind === "cash" ? (
-              <p className="text-[11px] font-medium leading-snug text-muted-foreground">
-                Efectivo directo
-                <span className="mt-0.5 block text-[10px] font-normal normal-case tracking-normal opacity-80">
-                  Sin liquidaciones ni tarjetas vinculadas
-                </span>
-              </p>
-            ) : null}
-          </div>
         </div>
+
+        {showSettlementStats ? (
+          <div className={dataWorkspaceEntityCardSettlementFooterClass}>
+            <TreasuryStat
+              label="A liquidar"
+              value={moneyOrDash(row.toLiquidateBalance)}
+            />
+            <TreasuryStat
+              label="A pagar"
+              value={moneyOrDash(row.toPayBalance)}
+            />
+          </div>
+        ) : row.kind === "cash" ? (
+          <div className={cn(dataWorkspaceEntityCardSettlementFooterClass, "grid-cols-1")}>
+            <p className={cn(dataWorkspaceEntityCardStatLabelClass, "normal-case leading-snug")}>
+              Efectivo directo
+              <span className="mt-0.5 block text-[10px] font-normal normal-case tracking-normal text-[var(--rootsy-bruma-500)] opacity-90">
+                Sin liquidaciones ni tarjetas vinculadas
+              </span>
+            </p>
+          </div>
+        ) : (
+          <div className={dataWorkspaceEntityCardSettlementFooterClass} aria-hidden />
+        )}
       </Link>
     </article>
   )

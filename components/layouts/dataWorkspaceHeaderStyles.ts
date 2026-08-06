@@ -285,7 +285,11 @@ export const dataWorkspaceLightDropdownItemClass = rootsDropdownItemLightClass
 
 export const dataWorkspaceLightDropdownSeparatorClass = rootsDropdownSeparatorLightClass
 
-export const dataWorkspaceLightDropdownLogoutItemClass = rootsDropdownDestructiveItemClass
+/** Base ítem + tint destructivo — no usar solo rootsDropdownDestructiveItemClass. */
+export const dataWorkspaceLightDropdownLogoutItemClass = cn(
+  rootsDropdownItemLightClass,
+  rootsDropdownDestructiveItemClass,
+)
 
 export const dataWorkspaceNightHeaderDropdownLabelClass = rootsDropdownLabelDarkClass
 

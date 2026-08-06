@@ -1,6 +1,5 @@
 "use client"
 
-import "@/app/[siteId]/[popId]/library/color/rootsyNaturePalette.css"
 import {
   createTreasuryAccount,
   createTreasuryChildAccount,
