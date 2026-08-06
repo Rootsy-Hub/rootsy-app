@@ -42,6 +42,7 @@ import {
 } from "lucide-react"
 import { formatLocaleDateTime } from "@/lib/popTimezone"
 import Link from "next/link"
+import { cashRegisterEntityEyebrowLabel } from "@/app/[siteId]/[popId]/cash-registers/cashRegisterFormatters"
 
 const fmt = new Intl.NumberFormat("es-AR", {
   style: "currency",
@@ -223,8 +224,13 @@ export function CashRegisterCard({
                 isActive={row.isActive}
                 className="absolute right-0 top-0"
               />
-              <p className={cn(dataWorkspaceEntityCardEyebrowClass, "pr-24")}>
-                Caja registradora
+              <p
+                className={cn(
+                  dataWorkspaceEntityCardEyebrowClass,
+                  "truncate pr-24",
+                )}
+              >
+                {cashRegisterEntityEyebrowLabel}
               </p>
               <h3 className={cn("mt-0.5 truncate pr-24", dataWorkspaceEntityCardTitleClass)}>
                 {row.name}

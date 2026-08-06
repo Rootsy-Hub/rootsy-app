@@ -3,6 +3,7 @@
 import type { CashRegisterSummarySession } from "@/app/[siteId]/[popId]/cash-registers/actions"
 import {
   arqueoDifferenceToneClass,
+  cashRegisterEntityEyebrowLabel,
   formatArqueoDifferenceDisplay,
   formatCashRegisterMoney,
 } from "@/app/[siteId]/[popId]/cash-registers/cashRegisterFormatters"
@@ -165,8 +166,8 @@ export function CashRegisterDetailHeaderCard({
           <div className="min-w-0 flex-1">
             <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
               <div className="min-w-0">
-                <p className={dataWorkspaceEntityCardEyebrowClass}>
-                  Caja registradora
+                <p className={cn(dataWorkspaceEntityCardEyebrowClass, "truncate")}>
+                  {cashRegisterEntityEyebrowLabel}
                 </p>
                 <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1.5">
                   <h2 className={cn(dataWorkspaceEntityCardTitleClass, "truncate text-lg sm:text-xl")}>

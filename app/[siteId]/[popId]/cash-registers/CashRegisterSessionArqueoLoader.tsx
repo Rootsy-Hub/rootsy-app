@@ -5,8 +5,7 @@ import {
   type CashRegisterSessionArqueoDetail,
 } from "@/app/[siteId]/[popId]/cash-registers/actions"
 import { CashRegisterSessionArqueoView } from "@/app/[siteId]/[popId]/cash-registers/CashRegisterSessionArqueoView"
-import { dataWorkspaceDetailPanelClass } from "@/components/data-workspace/dataWorkspaceListStyles"
-import { Spinner } from "@/components/ui/spinner"
+import { CashRegisterSessionArqueoSkeleton } from "@/app/[siteId]/[popId]/cash-registers/CashRegisterDetailSkeleton"
 import { cn } from "@/lib/utils"
 import { useCallback, useEffect, useState } from "react"
 
@@ -50,21 +49,9 @@ export function CashRegisterSessionArqueoLoader({
 
   if (loading) {
     return (
-      <div
-        className={cn("flex flex-1 flex-col gap-6", className)}
-        role="status"
-        aria-live="polite"
-        aria-busy="true"
-      >
-        <div
-          className={cn(
-            dataWorkspaceDetailPanelClass,
-            "flex min-h-48 flex-col items-center justify-center gap-3 px-4 py-10 font-canopy text-sm text-[var(--rootsy-bruma-500)]",
-          )}
-        >
-          <Spinner className="size-6 text-[var(--rootsy-bruma-400)]" />
-          Cargando arqueo…
-        </div>
+      <div role="status" aria-live="polite" aria-busy="true">
+        <CashRegisterSessionArqueoSkeleton className={className} />
+        <span className="sr-only">Cargando arqueo…</span>
       </div>
     )
   }

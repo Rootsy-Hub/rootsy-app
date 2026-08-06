@@ -28,9 +28,18 @@ import {
   dataWorkspaceDetailKpiStripClass,
   dataWorkspaceDetailKpiStripTwoColClass,
   dataWorkspaceDetailToolbarClass,
+  dataWorkspaceEntityCardEyebrowClass,
+  dataWorkspaceEntityCardTitleClass,
   dataWorkspaceFlushBottomPanelBodyClass,
   dataWorkspaceFlushBottomPanelChromeClass,
   dataWorkspaceFlushBottomPanelClass,
+  dataWorkspaceIntegrationChipBaseClass,
+  dataWorkspaceIntegrationChipEyebrowClass,
+  dataWorkspaceIntegrationChipIsotypeClass,
+  dataWorkspaceIntegrationChipIsotypeSelectedClass,
+  dataWorkspaceIntegrationChipSelectedClass,
+  dataWorkspaceIntegrationChipSurfaceClass,
+  dataWorkspaceIntegrationChipTitleClass,
 } from "@/components/data-workspace/dataWorkspaceListStyles"
 import { RootsFormSegmentField } from "@/components/rootsy-form"
 import { RootsPrimaryButton, rootsButtonCompactSizeClass } from "@/components/rootsy-button"
@@ -316,8 +325,8 @@ export function TreasuryChildReconciliationPanel({
       value={panelTab}
       onValueChange={setPanelTab}
       options={panelSegmentOptions}
-      className="w-full sm:w-auto sm:min-w-[21rem] [&>p:first-child]:sr-only"
-      groupClassName="w-full"
+      className="!w-auto shrink-0 [&>span:first-child]:sr-only"
+      groupClassName="!w-auto"
     />
   )
 
@@ -391,8 +400,10 @@ export function TreasuryChildReconciliationPanel({
     <div className={dataWorkspaceFlushBottomPanelClass}>
       <div className={dataWorkspaceFlushBottomPanelChromeClass}>
         <div className={dataWorkspaceDetailToolbarClass}>
-          <div className="flex min-w-0 flex-1 flex-col gap-3 sm:flex-row sm:items-center sm:gap-3">
-            <div className="min-w-0 sm:max-w-xs lg:max-w-sm">{periodFilterControl}</div>
+          <div className="flex min-w-0 flex-wrap items-center gap-3">
+            <div className="min-w-0 w-full shrink-0 sm:w-auto sm:max-w-xs lg:max-w-sm">
+              {periodFilterControl}
+            </div>
             {panelSegmentField}
           </div>
           {conciliarButton}
@@ -450,72 +461,53 @@ export function ChildIntegrationChip({
       aria-pressed={selected}
       onClick={() => onToggle(child)}
       className={cn(
-        "group flex items-center text-left transition-all",
+        dataWorkspaceIntegrationChipBaseClass,
         compact ? "shrink-0" : "min-w-0",
         compact
           ? "w-auto shrink-0 gap-3 rounded-xl px-4 py-2.5"
           : "w-full min-w-0 gap-3 rounded-xl px-3 py-3",
-        "cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
         compact
           ? cn(
-              "border shadow-xs hover:shadow-sm",
-              selected
-                ? "border-primary/40 bg-primary/[0.04] ring-1 ring-primary/20"
-                : "border-border/70 bg-white hover:border-border hover:bg-muted/20",
+              dataWorkspaceIntegrationChipSurfaceClass,
+              selected && dataWorkspaceIntegrationChipSelectedClass,
             )
           : cn(
-              "rounded-xl border hover:border-primary/35 hover:bg-muted/25 hover:shadow-sm",
+              "rounded-xl border hover:shadow-[0_2px_4px_rgb(5_8_7/0.1),0_8px_20px_rgb(5_8_7/0.12)]",
+              dataWorkspaceIntegrationChipSurfaceClass,
               selected
-                ? "border-primary bg-primary/5 shadow-sm ring-1 ring-primary/25"
-                : "border-border/60 bg-white",
+                ? dataWorkspaceIntegrationChipSelectedClass
+                : "hover:border-[var(--rootsy-bruma-300)]",
             ),
         className,
       )}
     >
       <div
         className={cn(
-          "flex shrink-0 items-center justify-center rounded-lg transition-colors",
-          compact ? "size-9 ring-1 ring-border/40" : "size-9",
-          selected
-            ? "bg-primary/10 ring-primary/15"
-            : compact
-              ? "bg-white ring-1 ring-border/40 group-hover:bg-muted/20"
-              : "bg-white group-hover:bg-muted/20",
+          dataWorkspaceIntegrationChipIsotypeClass,
+          selected && dataWorkspaceIntegrationChipIsotypeSelectedClass,
         )}
       >
         {isPos ? (
-          <Wifi
-            className={cn(
-              "size-4",
-              selected ? "text-primary" : "text-muted-foreground",
-            )}
-            aria-hidden
-          />
+          <Wifi className="size-4" aria-hidden />
         ) : (
-          <CreditCard
-            className={cn(
-              "size-4",
-              selected ? "text-primary" : "text-muted-foreground",
-            )}
-            aria-hidden
-          />
+          <CreditCard className="size-4" aria-hidden />
         )}
       </div>
       <div className={cn(compact ? "pr-0.5" : "min-w-0 flex-1")}>
         <p
           className={cn(
-            "font-medium uppercase text-muted-foreground",
             compact
-              ? "whitespace-nowrap text-[10px] tracking-[0.1em]"
-              : "text-[10px] font-semibold tracking-wide",
+              ? dataWorkspaceIntegrationChipEyebrowClass
+              : cn(dataWorkspaceEntityCardEyebrowClass, "text-[10px] font-semibold tracking-wide"),
           )}
         >
           {isPos ? "Terminal POS" : "Tarjeta corporativa"}
         </p>
         <p
           className={cn(
-            "truncate font-semibold text-foreground",
-            compact ? "mt-1 text-[13px] leading-snug" : "mt-0.5 text-sm",
+            compact
+              ? dataWorkspaceIntegrationChipTitleClass
+              : cn(dataWorkspaceEntityCardTitleClass, "mt-0.5 truncate text-sm"),
           )}
         >
           {child.name}

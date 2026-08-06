@@ -108,6 +108,14 @@ function moneyOrDash(amount: number | null | undefined): string {
   return fmt.format(amount)
 }
 
+function integrationBalanceOrDash(
+  hasIntegration: boolean,
+  amount: number | null | undefined,
+): string {
+  if (!hasIntegration) return "—"
+  return moneyOrDash(amount)
+}
+
 function DashboardKpi({
   label,
   value,
@@ -875,12 +883,18 @@ export function TreasuryAccountDetailView({
                     <>
                       <TreasuryStat
                         label="A liquidar"
-                        value={fmt.format(account.toLiquidateBalance)}
+                        value={integrationBalanceOrDash(
+                          account.hasPosIntegration,
+                          account.toLiquidateBalance,
+                        )}
                         className="lg:min-w-28"
                       />
                       <TreasuryStat
                         label="A pagar"
-                        value={fmt.format(account.toPayBalance)}
+                        value={integrationBalanceOrDash(
+                          account.hasCardIntegration,
+                          account.toPayBalance,
+                        )}
                         className="lg:min-w-28"
                       />
                     </>

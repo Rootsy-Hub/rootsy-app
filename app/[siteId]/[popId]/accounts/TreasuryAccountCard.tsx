@@ -56,6 +56,14 @@ function moneyOrDash(amount: number | null | undefined): string {
   return fmt.format(amount)
 }
 
+function integrationBalanceOrDash(
+  hasIntegration: boolean,
+  amount: number | null | undefined,
+): string {
+  if (!hasIntegration) return "—"
+  return moneyOrDash(amount)
+}
+
 function TreasuryStat({
   label,
   value,
@@ -66,7 +74,7 @@ function TreasuryStat({
   large?: boolean
 }) {
   return (
-    <div>
+    <div className="min-w-0">
       <p className={dataWorkspaceEntityCardStatLabelClass}>{label}</p>
       <p
         className={cn(
@@ -74,6 +82,7 @@ function TreasuryStat({
           !large && "text-base sm:text-lg",
           large ? "mt-1.5" : "mt-1",
         )}
+        title={value}
       >
         {value}
       </p>
@@ -247,11 +256,17 @@ export function TreasuryAccountCard({
           <div className={dataWorkspaceEntityCardSettlementFooterClass}>
             <TreasuryStat
               label="A liquidar"
-              value={moneyOrDash(row.toLiquidateBalance)}
+              value={integrationBalanceOrDash(
+                row.hasPosIntegration,
+                row.toLiquidateBalance,
+              )}
             />
             <TreasuryStat
               label="A pagar"
-              value={moneyOrDash(row.toPayBalance)}
+              value={integrationBalanceOrDash(
+                row.hasCardIntegration,
+                row.toPayBalance,
+              )}
             />
           </div>
         ) : row.kind === "cash" ? (

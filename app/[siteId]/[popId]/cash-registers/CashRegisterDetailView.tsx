@@ -10,6 +10,7 @@ import { CashRegisterClosedSessionsPanel } from "@/app/[siteId]/[popId]/cash-reg
 import {
   CashRegisterDetailContentSkeleton,
   CashRegisterDetailSkeleton,
+  resolveCashRegisterDetailSkeletonVariant,
 } from "@/app/[siteId]/[popId]/cash-registers/CashRegisterDetailSkeleton"
 import { CashRegisterSessionArqueoPanel } from "@/app/[siteId]/[popId]/cash-registers/CashRegisterSessionArqueoPanel"
 import { findOpenSession } from "@/app/[siteId]/[popId]/cash-registers/cashRegisterDetailUtils"
@@ -19,6 +20,7 @@ import {
 } from "@/lib/dataWorkspaceDateFilter"
 import { cn } from "@/lib/utils"
 import { useCallback, useEffect, useMemo, useState } from "react"
+import { useSearchParams } from "next/navigation"
 import type { DateRange } from "react-day-picker"
 
 type Props = {
@@ -38,6 +40,13 @@ export function CashRegisterDetailView({
   register,
   refreshToken = 0,
 }: Props) {
+  const searchParams = useSearchParams()
+  const entryHint =
+    searchParams.get("v") === "arqueo"
+      ? ("arqueo" as const)
+      : searchParams.get("v") === "history"
+        ? ("history" as const)
+        : null
   const cashRegistersBasePath = `/${siteId}/${popId}/cash-registers`
   const [data, setData] = useState<CashRegisterSummaryData | null>(null)
   const [loading, setLoading] = useState(true)
@@ -120,6 +129,11 @@ export function CashRegisterDetailView({
   const isArqueoView = Boolean(activeSessionId)
   const isHistoryListView = !activeSessionId
   const useFlushBottomLayout = isArqueoView || isHistoryListView
+  const skeletonVariant = resolveCashRegisterDetailSkeletonVariant({
+    isArqueoView,
+    entryHint,
+    hasSummaryData: data != null,
+  })
 
   if (showInitialSkeleton) {
     return (
@@ -131,7 +145,7 @@ export function CashRegisterDetailView({
             : "gap-6 px-4 py-6 sm:px-6 lg:px-8",
         )}
       >
-        <CashRegisterDetailSkeleton variant={isOpen ? "open" : "closed"} />
+        <CashRegisterDetailSkeleton variant={skeletonVariant} />
       </div>
     )
   }
@@ -176,7 +190,7 @@ export function CashRegisterDetailView({
         </div>
 
       {loading ? (
-        <CashRegisterDetailContentSkeleton />
+        <CashRegisterDetailContentSkeleton variant={skeletonVariant} />
       ) : error ? (
         <div className="rounded-[1.375rem] border border-[color-mix(in_srgb,var(--color-status-danger)_25%,var(--rootsy-bruma-200))] bg-[color-mix(in_srgb,var(--color-status-danger)_6%,white)] px-4 py-3 font-canopy text-sm text-[var(--color-status-danger)]">
           {error}

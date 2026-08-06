@@ -116,10 +116,10 @@ export const dataWorkspaceEntityCardStatLabelClass =
   "font-canopy text-[11px] font-medium uppercase tracking-[0.14em] text-[var(--rootsy-bruma-500)]"
 
 export const dataWorkspaceEntityCardStatValueClass =
-  "font-numeric font-bold tabular-nums tracking-tight text-[var(--rootsy-bruma-900)]"
+  "block min-w-0 truncate font-numeric font-bold tabular-nums tracking-tight text-[var(--rootsy-bruma-900)]"
 
 export const dataWorkspaceEntityCardStatValueLargeClass =
-  "font-numeric text-2xl font-bold tabular-nums tracking-tight text-[var(--rootsy-bruma-900)]"
+  "block min-w-0 truncate font-numeric text-2xl font-bold tabular-nums tracking-tight text-[var(--rootsy-bruma-900)]"
 
 export const dataWorkspaceEntityCardBadgeClass =
   "inline-flex items-center gap-1.5 rounded-lg border border-[var(--rootsy-bruma-200)] bg-white px-2.5 py-1.5 font-canopy text-[10px] font-medium uppercase tracking-[0.08em] text-[var(--rootsy-bruma-500)] shadow-xs [&_svg]:size-3.5 [&_svg]:text-[var(--rootsy-bruma-500)]"
@@ -162,14 +162,14 @@ export const dataWorkspaceEntityCardLosetaClass = cn(
 )
 
 /** Cuerpo saldo — fila flexible del grid de tarjeta. */
-export const dataWorkspaceEntityCardSaldoSectionClass = "min-h-0 px-4 py-4"
+export const dataWorkspaceEntityCardSaldoSectionClass = "min-w-0 px-4 py-4"
 
 export const dataWorkspaceEntityCardFooterClass =
   "border-t border-[var(--rootsy-bruma-200)]"
 
 /** Pie liquidaciones — altura fija para alinear el borde en toda la grilla. */
 export const dataWorkspaceEntityCardSettlementFooterClass = cn(
-  "grid h-[4.75rem] shrink-0 grid-cols-2 gap-4 px-4 py-4",
+  "grid h-[4.75rem] shrink-0 grid-cols-2 gap-4 px-4 py-4 [&>*]:min-w-0",
   dataWorkspaceEntityCardFooterClass,
 )
 
@@ -206,6 +206,42 @@ export const dataWorkspaceEntityCardBodyClass = cn(
 
 export const dataWorkspaceEntityCardIsotypeClass =
   "flex size-11 shrink-0 items-center justify-center rounded-xl border border-[var(--rootsy-bruma-200)] bg-white text-[var(--rootsy-bruma-500)] shadow-xs"
+
+/** Loseta compacta — terminal POS / tarjeta en cabecera de detalle cuenta. */
+export const dataWorkspaceIntegrationChipBaseClass = cn(
+  "group flex items-center text-left outline-none",
+  rootsyElevationInteractiveMotionClass,
+  "cursor-pointer focus-visible:ring-2 focus-visible:ring-[color-mix(in_srgb,var(--rootsy-savia-600)_35%,transparent)] focus-visible:ring-offset-2",
+)
+
+export const dataWorkspaceIntegrationChipSurfaceClass = cn(
+  "border border-[var(--rootsy-bruma-200)] bg-white",
+  rootsyElevationRaisedRestClass,
+  "hover:border-[var(--rootsy-bruma-300)]",
+  rootsyElevationRaisedHoverClass,
+)
+
+export const dataWorkspaceIntegrationChipSelectedClass = cn(
+  "border-[color-mix(in_srgb,var(--rootsy-savia-600)_25%,var(--rootsy-bruma-200))]",
+  "bg-[color-mix(in_srgb,var(--rootsy-savia-600)_6%,white)]",
+  "ring-1 ring-[color-mix(in_srgb,var(--rootsy-savia-600)_18%,transparent)]",
+  "hover:border-[color-mix(in_srgb,var(--rootsy-savia-600)_35%,var(--rootsy-bruma-200))]",
+  "hover:shadow-[0_2px_4px_rgb(5_8_7/0.1),0_8px_20px_rgb(5_8_7/0.12)]",
+)
+
+export const dataWorkspaceIntegrationChipIsotypeClass =
+  "flex size-9 shrink-0 items-center justify-center rounded-lg border border-[var(--rootsy-bruma-200)] bg-white text-[var(--rootsy-bruma-500)] transition-colors group-hover:bg-[var(--rootsy-bruma-50)]"
+
+export const dataWorkspaceIntegrationChipIsotypeSelectedClass =
+  "border-[color-mix(in_srgb,var(--rootsy-savia-600)_20%,var(--rootsy-bruma-200))] bg-[color-mix(in_srgb,var(--rootsy-savia-600)_10%,white)] text-[var(--rootsy-savia-700)] group-hover:bg-[color-mix(in_srgb,var(--rootsy-savia-600)_12%,white)]"
+
+export const dataWorkspaceIntegrationChipEyebrowClass = cn(
+  dataWorkspaceEntityCardEyebrowClass,
+  "whitespace-nowrap text-[10px] tracking-[0.1em]",
+)
+
+export const dataWorkspaceIntegrationChipTitleClass =
+  "mt-1 truncate font-canopy text-[13px] font-semibold leading-snug text-[var(--rootsy-bruma-900)]"
 
 /** Shell skeleton — misma superficie que la tarjeta final, sin hover. */
 export const dataWorkspaceEntityCardSkeletonShellClass = cn(

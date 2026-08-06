@@ -7,6 +7,9 @@ const moneyFmt = new Intl.NumberFormat("es-AR", {
   minimumFractionDigits: 2,
 })
 
+/** Eyebrow de loseta / detalle — corto para una línea junto al badge de estado. */
+export const cashRegisterEntityEyebrowLabel = "Caja"
+
 export function formatCashRegisterMoney(n: number) {
   return moneyFmt.format(n)
 }

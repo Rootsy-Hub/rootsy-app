@@ -468,7 +468,7 @@ function CashRegistersPage() {
                     canCreate={canCreate}
                     canUpdate={canUpdate}
                     canDelete={canDelete}
-                    detailHref={`${cashRegistersBasePath}/${r.id}`}
+                    detailHref={`${cashRegistersBasePath}/${r.id}${r.openSessionId ? "?v=arqueo" : ""}`}
                     onEdit={() => startEdit(r)}
                     onDelete={() => setDeleteRow(r)}
                     onOpen={() => startOpen(r)}
