@@ -6,20 +6,24 @@ import {
   RootsProgressButton,
   RootsSubtleButton,
   rootsButtonClassForVariant,
-  rootsButtonVariant,
 } from "@/components/rootsy-button"
-import { RootsDialogErrorBanner } from "@/components/rootsy-dialog"
+import {
+  RootsAlertDialogContent,
+  RootsDialogErrorBanner,
+  rootsAlertDialogContentClass,
+  rootsAlertDialogDescriptionClass,
+  rootsAlertDialogFooterClass,
+  rootsAlertDialogTitleClass,
+} from "@/components/rootsy-dialog"
 import { rootsFormTextFieldClass } from "@/components/rootsy-form/rootsFormStyles"
-import { saleOpAlertDialogContent } from "@/components/sale-operation/saleOperationStyles"
 import {
   AlertDialog,
-  AlertDialogContent,
   AlertDialogDescription,
   AlertDialogFooter,
-  AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
 import { Input } from "@/components/ui/input"
+import { cn } from "@/lib/utils"
 import { useEffect, useRef } from "react"
 
 type Props = {
@@ -68,35 +72,41 @@ export function ArticleDeleteDialog({
 
   return (
     <AlertDialog open={open} onOpenChange={onOpenChange}>
-      <AlertDialogContent className={saleOpAlertDialogContent}>
-        <AlertDialogHeader>
-          <AlertDialogTitle>Eliminar {name}</AlertDialogTitle>
-          <AlertDialogDescription>
-            Esta acción no se puede deshacer. Para confirmar, escribí (
-            {confirmPhrase}) abajo.
-          </AlertDialogDescription>
-        </AlertDialogHeader>
+      <RootsAlertDialogContent>
+        <div className={rootsAlertDialogContentClass}>
+          <div className="flex flex-col gap-1">
+            <AlertDialogTitle className={rootsAlertDialogTitleClass}>
+              Eliminar {name}
+            </AlertDialogTitle>
+            <AlertDialogDescription className={rootsAlertDialogDescriptionClass}>
+              Esta acción no se puede deshacer. Para confirmar, escribí (
+              {confirmPhrase}) abajo.
+            </AlertDialogDescription>
+          </div>
 
-        <Input
-          autoComplete="off"
-          value={confirmValue}
-          onChange={(event) => onConfirmValueChange(event.target.value)}
-          placeholder={confirmPhrase}
-          disabled={busy}
-          className={rootsFormTextFieldClass}
-          aria-label={`Confirmación: ${confirmPhrase}`}
-        />
+          <Input
+            autoComplete="off"
+            value={confirmValue}
+            onChange={(event) => onConfirmValueChange(event.target.value)}
+            placeholder={confirmPhrase}
+            disabled={busy}
+            className={rootsFormTextFieldClass}
+            aria-label={`Confirmación: ${confirmPhrase}`}
+          />
 
-        {banner ? <RootsDialogErrorBanner className="mb-0">{banner}</RootsDialogErrorBanner> : null}
+          {banner ? (
+            <RootsDialogErrorBanner className="mb-0">{banner}</RootsDialogErrorBanner>
+          ) : null}
+        </div>
 
-        <AlertDialogFooter>
+        <AlertDialogFooter className={cn(rootsAlertDialogFooterClass, "sm:justify-between")}>
           <RootsSubtleButton type="button" onClick={onClose} disabled={busy}>
             Cancelar
           </RootsSubtleButton>
           {busy ? (
             <RootsProgressButton
               type="button"
-              variant={rootsButtonVariant.destructive}
+              semantic="destructive"
               className={rootsButtonClassForVariant("destructive", "shrink-0")}
               loading
               loadingLabel="Eliminando…"
@@ -115,7 +125,7 @@ export function ArticleDeleteDialog({
             </RootsDangerButton>
           )}
         </AlertDialogFooter>
-      </AlertDialogContent>
+      </RootsAlertDialogContent>
     </AlertDialog>
   )
 }

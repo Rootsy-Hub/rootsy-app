@@ -15,10 +15,15 @@ type Props = {
 
 export function LibrarySidebar({ siteId, popId, activeSectionId }: Props) {
   return (
-    <aside className={cn("hidden w-64 shrink-0 border-r lg:block", librarySidebarClass)}>
+    <aside
+      className={cn(
+        "hidden min-h-0 w-64 shrink-0 flex-col overflow-hidden border-r lg:flex",
+        librarySidebarClass,
+      )}
+    >
       <div
         className={cn(
-          "sticky top-0 flex max-h-[calc(100dvh-4rem)] flex-col overflow-y-auto p-4",
+          "min-h-0 flex-1 overflow-y-auto overflow-x-hidden p-4",
           libraryScrollDarkClass,
         )}
       >

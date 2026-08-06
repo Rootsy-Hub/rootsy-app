@@ -1,9 +1,10 @@
 "use client"
 
-import { menuHeaderBorderClass, menuHeaderChromeClass } from "@/app/[siteId]/[popId]/menu/menuFloatingPillStyles"
 import { menuNatureShellClass } from "@/app/[siteId]/[popId]/menu/menuNatureStyles"
 import "@/app/[siteId]/[popId]/menu/menuNaturePalette.css"
 import { PopWorkspaceBackdrop } from "@/components/layouts/PopWorkspaceBackdrop"
+import { DataWorkspaceHeaderTitle } from "@/components/layouts/DataWorkspaceHeaderTitle"
+import { DataWorkspaceHeaderUserMenu } from "@/components/layouts/DataWorkspaceHeaderUserMenu"
 import {
   dataWorkspaceHeaderChromeButtonClass,
   dataWorkspaceHeaderDividerClass,
@@ -15,8 +16,8 @@ import {
   isDataWorkspaceTintedHeader,
   type DataWorkspaceHeaderVariant,
 } from "@/components/layouts/dataWorkspaceHeaderStyles"
-import { DataWorkspaceHeaderTitle } from "@/components/layouts/DataWorkspaceHeaderTitle"
-import { DataWorkspaceHeaderUserMenu } from "@/components/layouts/DataWorkspaceHeaderUserMenu"
+import { ModuleWorkspaceHeader } from "@/components/layouts-module/ModuleWorkspaceHeader"
+import { layoutsModuleContentShellClass } from "@/components/layouts-module/rootsLayoutsModuleProductStyles"
 import { usePopWorkspaceOptional } from "@/context/PopWorkspaceContext"
 import { cn } from "@/lib/utils"
 import { popMenuHref } from "@/lib/popRoutes"
@@ -201,14 +202,13 @@ export function DataWorkspaceLayout({
 
   const chromeButtonClass = dataWorkspaceHeaderChromeButtonClass(headerVariant)
   const popBackdropUrl = backgroundImageUrl?.trim() || null
-  const hasPopBackdrop =
-    usePopBackdrop && isTintedHeader && Boolean(popBackdropUrl)
+  const hasModuleShell = usePopBackdrop && isTintedHeader
 
   return (
     <div
       className={cn(
-        "text-foreground select-none",
-                hasPopBackdrop
+        "text-foreground",
+        hasModuleShell
           ? cn(
               menuNatureShellClass,
               "fixed inset-0 flex flex-col overflow-hidden bg-background",
@@ -218,7 +218,7 @@ export function DataWorkspaceLayout({
             ),
       )}
     >
-      {hasPopBackdrop ? (
+      {hasModuleShell ? (
         <PopWorkspaceBackdrop backgroundImageUrl={popBackdropUrl} />
       ) : (
         <div
@@ -233,15 +233,38 @@ export function DataWorkspaceLayout({
       <div
         className={cn(
           "relative z-10 flex min-h-0 flex-col overflow-hidden",
-                hasPopBackdrop ? "min-h-0 flex-1" : "h-svh",
+          hasModuleShell ? "min-h-0 flex-1" : "h-svh",
         )}
       >
+        {hasModuleShell ? (
+          <ModuleWorkspaceHeader
+            backHref={backHref}
+            popLogoSrc={popLogoSrc}
+            popName={popName}
+            title={title}
+            loading={loading}
+            headerVariant={headerVariant}
+            titleAdornment={titleAdornment}
+            headerActions={headerActions}
+            sectionMenu={sectionMenu}
+            toolbar={toolbar}
+            mainMaxWidthClass={mainMaxWidthClass}
+            userName={userName}
+            userAvatarSrc={userAvatarSrc}
+            isOnline={isOnline}
+            subline={subline}
+            hasResolvedRole={Boolean(resolvedUserRoleLabel)}
+            isFullscreen={isFullscreen}
+            onToggleFullscreen={() => void toggleFullscreen()}
+            canCollapseSidebar={canCollapseSidebar}
+            sidebarOpen={sidebarOpen}
+            onToggleSidebar={toggleSidebar}
+          />
+        ) : (
         <header
           className={cn(
             "relative z-20 shrink-0 border-b",
-                hasPopBackdrop
-              ? cn("text-zinc-100", menuHeaderBorderClass, menuHeaderChromeClass)
-              : isTintedHeader
+              isTintedHeader
                 ? cn("text-zinc-100", dataWorkspaceHeaderSurfaceClass(headerVariant))
                 : cn(
                     "shadow-sm backdrop-blur-xl",
@@ -407,9 +430,7 @@ export function DataWorkspaceLayout({
             <div
               className={cn(
                 "relative z-10 border-t px-4 py-2 sm:px-6",
-                hasPopBackdrop
-                  ? menuHeaderBorderClass
-                  : dataWorkspaceHeaderToolbarClass(headerVariant),
+                dataWorkspaceHeaderToolbarClass(headerVariant),
               )}
             >
               <div className={cn("mx-auto w-full", mainMaxWidthClass)}>
@@ -418,6 +439,7 @@ export function DataWorkspaceLayout({
             </div>
           ) : null}
         </header>
+        )}
 
         {renderLayoutSidebar ? (
           <div className="relative z-10 flex min-h-0 flex-1 flex-row items-stretch">
@@ -451,12 +473,12 @@ export function DataWorkspaceLayout({
             <main
               className={cn(
                 "relative z-10 flex min-h-0 min-w-0 flex-1 flex-col",
-                hasPopBackdrop && "bg-transparent",
+                hasModuleShell && contentFlush && layoutsModuleContentShellClass,
                 mainClassName,
                 contentFlush
                   ? cn(
                       "min-h-0 p-0",
-                      hasPopBackdrop ? "overflow-y-auto" : "overflow-hidden",
+                      hasModuleShell ? "overflow-y-auto" : "overflow-hidden",
                     )
                   : cn(
                       "overflow-y-auto px-4 py-8 sm:pl-5 sm:pr-8",
@@ -472,12 +494,12 @@ export function DataWorkspaceLayout({
           <main
             className={cn(
               "relative z-10 flex min-h-0 w-full flex-1 flex-col",
-              hasPopBackdrop && "bg-transparent",
+              hasModuleShell && contentFlush && layoutsModuleContentShellClass,
               mainClassName,
               contentFlush
                 ? cn(
                     "min-h-0 p-0",
-                    hasPopBackdrop ? "overflow-y-auto" : "overflow-hidden",
+                    hasModuleShell ? "overflow-y-auto" : "overflow-hidden",
                   )
                 : cn(
                     "mx-auto overflow-y-auto px-4 py-8 sm:px-6",

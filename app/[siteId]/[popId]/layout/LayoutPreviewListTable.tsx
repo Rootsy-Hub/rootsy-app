@@ -21,7 +21,6 @@ import { Label } from "@/components/ui/label"
 import {
   TableBody,
   TableCell,
-  TableRow,
 } from "@/components/ui/table"
 import {
   DataWorkspaceListFiltersDialogTrigger,
@@ -46,7 +45,6 @@ import {
   dataWorkspaceListFiltersPanelClass,
   dataWorkspaceListFiltersPanelLastClass,
   workspaceTableLayoutBodyCellClass,
-  workspaceTableLayoutBodyRowClass,
   workspaceTableLayoutCellPrimaryTextClass,
   workspaceTableLayoutCellSecondaryTextClass,
   workspaceTableLayoutCellStackClass,
@@ -56,16 +54,17 @@ import {
   workspaceTableLayoutActionsBodyCellClass,
 } from "@/components/data-workspace/dataWorkspaceTablesLayout"
 import {
+  WorkspaceTableBodyRow,
   WorkspaceTableHead,
   WorkspaceTableHeader,
   WorkspaceTableHeaderRow,
+  WorkspaceTableSelectCell,
   WorkspaceTableSelectHead,
 } from "@/components/data-workspace/WorkspaceTableHeader"
 import {
   lightToolbarDropdownContentClass,
   lightToolbarDropdownItemClass,
   selectColumnInnerClass,
-  workspaceTableNatureBodyRowClassNames,
   workspaceTableNatureCheckboxClass,
   workspaceTableNatureLinkClass,
   workspaceTableNatureMoneyClass,
@@ -642,33 +641,24 @@ export function LayoutPreviewListTable({
               />
             ) : (
               pageRows.map((row: LayoutPreviewListRow, i) => (
-              <TableRow
-                key={row.id}
-                className={cn(
-                  workspaceTableLayoutBodyRowClass,
-                  workspaceTableNatureBodyRowClassNames(i, {
-                    selected: selected.has(row.id),
-                    noHover: true,
-                  }),
-                )}
-              >
-                <TableCell className={workspaceTableLayoutSelectBodyCellClass}>
-                  <div className={selectColumnInnerClass}>
-                    <Checkbox
-                      className={workspaceTableNatureCheckboxClass}
-                      checked={selected.has(row.id)}
-                      onCheckedChange={(c) => {
-                        setSelected((prev) => {
-                          const next = new Set(prev)
-                          if (c === true) next.add(row.id)
-                          else next.delete(row.id)
-                          return next
-                        })
-                      }}
-                      aria-label={`Seleccionar ${row.title}`}
-                    />
-                  </div>
-                </TableCell>
+              <WorkspaceTableBodyRow
+                        key={row.id}
+                        index={i}
+                        selected={selected.has(row.id)}
+                      >
+                <WorkspaceTableSelectCell
+                          tone="nature"
+                          checked={selected.has(row.id)}
+                          onCheckedChange={(c) => {
+                            setSelected((prev) => {
+                              const next = new Set(prev)
+                              if (c === true) next.add(row.id)
+                              else next.delete(row.id)
+                              return next
+                            })
+                          }}
+                          ariaLabel={`Seleccionar ${row.title}`}
+                        />
                 <TableCell
                   className={cn(
                     workspaceTableLayoutImageColumnClass,
@@ -793,7 +783,7 @@ export function LayoutPreviewListTable({
                     <RowMoreMenu rowId={row.id} />
                   </div>
                 </TableCell>
-              </TableRow>
+              </WorkspaceTableBodyRow>
             ))
             )}
           </TableBody>

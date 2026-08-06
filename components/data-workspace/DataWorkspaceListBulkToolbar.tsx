@@ -75,7 +75,7 @@ export function DataWorkspaceListBulkToolbar({
           ))}
         <RootsSubtleButton
           type="button"
-          size="sm"
+          size="compact"
           className={listBulkToolbarClearButtonClass}
           onClick={onClear}
         >
@@ -89,7 +89,7 @@ export function DataWorkspaceListBulkToolbar({
 function BulkToolbarActionButton({ action }: { action: DataWorkspaceListBulkAction }) {
   const shared = {
     type: "button" as const,
-    size: "sm" as const,
+    size: "compact" as const,
     className: listBulkToolbarActionButtonClass,
     onClick: action.onClick,
     children: action.label,

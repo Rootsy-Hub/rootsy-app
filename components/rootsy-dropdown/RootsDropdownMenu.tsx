@@ -81,14 +81,16 @@ export function RootsDropdownItem({
   className,
   style,
   itemStyle,
+  asChild,
   children,
   ...props
 }: RootsDropdownItemProps) {
   const destructive = variant === "destructive"
-  const shouldShowCheck = showCheck ?? selected
+  const shouldShowCheck = !asChild && (showCheck ?? selected)
 
   return (
     <DropdownMenuItem
+      asChild={asChild}
       variant={variant}
       className={cn(
         rootsDropdownItemClassForTheme(theme, density, { selected }),
@@ -105,10 +107,16 @@ export function RootsDropdownItem({
       }}
       {...props}
     >
-      {children}
-      {shouldShowCheck ? (
-        <CheckIcon className={rootsDropdownCheckIconClassForTheme(theme)} aria-hidden />
-      ) : null}
+      {asChild ? (
+        children
+      ) : (
+        <>
+          {children}
+          {shouldShowCheck ? (
+            <CheckIcon className={rootsDropdownCheckIconClassForTheme(theme)} aria-hidden />
+          ) : null}
+        </>
+      )}
     </DropdownMenuItem>
   )
 }

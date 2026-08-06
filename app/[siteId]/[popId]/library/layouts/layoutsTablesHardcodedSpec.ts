@@ -74,16 +74,17 @@ export function getLayoutsTablesChromeIconButtonStyle(kind: "ghost" | "outlined"
   const sizePx = rootsySpacePx("500")
 
   if (kind === "primary") {
+    const surface = getIconButtonUiSurface("pos", "primary")
     return {
       display: "inline-flex" as const,
       alignItems: "center" as const,
       justifyContent: "center" as const,
       width: sizePx,
       height: sizePx,
-      backgroundColor: hx("savia", "600"),
-      color: ROOTSY_COLOR_SEMANTIC.white,
-      border: `1px solid ${hx("savia", "700")}`,
-      borderRadius: ICON_BUTTON_UI_RADIUS_PX,
+      backgroundColor: surface.backgroundColor,
+      color: surface.iconColor,
+      border: surface.border,
+      borderRadius: surface.borderRadiusPx,
       padding: 0,
       cursor: "default" as const,
       flexShrink: 0,
@@ -280,12 +281,13 @@ export function getLayoutsTablesLinkCellStyle() {
 
 export function getLayoutsTablesMoneyCellStyle() {
   return {
-    fontFamily: "var(--rootsy-font-ui)",
+    fontFamily: "var(--rootsy-font-numeric)",
     fontSize: ROOTSY_TEXT_STYLES.body.fontSize,
     lineHeight: ROOTSY_TEXT_STYLES.body.lineHeight,
-    fontWeight: ROOTSY_FONT_WEIGHTS.semibold.value,
+    fontWeight: ROOTSY_FONT_WEIGHTS.regular.value,
     color: ROOTSY_LAYOUTS_TABLES_BODY.moneyColor,
     fontVariantNumeric: "tabular-nums" as const,
+    letterSpacing: "-0.01em",
     textAlign: "right" as const,
   }
 }

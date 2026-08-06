@@ -77,19 +77,18 @@ import {
 } from "@/components/data-workspace/DataWorkspaceListTablePrimitives"
 import {
   workspaceTableLayoutClassName,
-  workspaceTableNatureBodyRowClassNames,
 } from "@/components/data-workspace/dataWorkspaceListStyles"
 import {
   dataWorkspaceListFiltersGridClass,
   dataWorkspaceListFiltersPanelClass,
   dataWorkspaceListFiltersPanelLastClass,
   workspaceTableLayoutActionsBodyCellClass,
-  workspaceTableLayoutBodyRowClass,
   workspaceTableLayoutHeaderHeadClass,
   workspaceTableLayoutImageColumnClass,
 } from "@/components/data-workspace/dataWorkspaceTablesLayout"
 import {
   WorkspaceTableHead,
+  WorkspaceTableBodyRow,
   WorkspaceTableHeader,
   WorkspaceTableHeaderRow,
   WorkspaceTableSelectHead,
@@ -711,16 +710,11 @@ function RecipesPage() {
                     />
                   ) : totalCount === 0 ? null : (
                     recipes.map((row, index) => (
-                      <TableRow
+                      <WorkspaceTableBodyRow
                         key={row.id}
-                        className={cn(
-                          workspaceTableLayoutBodyRowClass,
-                          workspaceTableNatureBodyRowClassNames(index, {
-                            selected: selected.has(row.id),
-                            noHover: true,
-                            inactive: !row.isActive,
-                          }),
-                        )}
+                        index={index}
+                        selected={selected.has(row.id)}
+                        inactive={!row.isActive}
                       >
                         <RecipeTableSelectCell
                           checked={selected.has(row.id)}
@@ -764,7 +758,7 @@ function RecipesPage() {
                             </div>
                           </TableCell>
                         ) : null}
-                      </TableRow>
+                      </WorkspaceTableBodyRow>
                     ))
                   )}
                 </TableBody>

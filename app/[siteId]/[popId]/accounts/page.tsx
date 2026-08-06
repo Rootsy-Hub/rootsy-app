@@ -25,7 +25,10 @@ import {
 } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { DataWorkspaceLayout } from "@/components/layouts/DataWorkspaceLayout"
+import {
+  DataWorkspaceModuleLayout,
+  dataWorkspaceModuleHeaderVariant,
+} from "@/components/layouts-module/DataWorkspaceModuleLayout"
 import { DataWorkspaceHeaderIconButton } from "@/components/layouts/DataWorkspaceHeaderIconButton"
 import {
   dataWorkspaceBlocksEmptyStateClass,
@@ -348,12 +351,12 @@ function AccountsPage() {
 
   return (
     <>
-    <DataWorkspaceLayout
+    <DataWorkspaceModuleLayout
       siteId={siteId}
       popId={popId}
       popName={popName}
       title="Cuentas"
-      headerVariant="dark"
+      headerVariant={dataWorkspaceModuleHeaderVariant}
       loading={pageLoading}
       userName={bootstrap?.userFullName}
       userAvatarSrc={bootstrap?.userImageUrl ?? undefined}
@@ -365,7 +368,7 @@ function AccountsPage() {
         canCreate ? (
           <DataWorkspaceHeaderIconButton
             label="Nueva cuenta"
-            headerVariant="dark"
+            headerVariant={dataWorkspaceModuleHeaderVariant}
             primary
             onClick={() => openCreate()}
           >
@@ -410,7 +413,7 @@ function AccountsPage() {
             </div>
           )}
       </div>
-    </DataWorkspaceLayout>
+    </DataWorkspaceModuleLayout>
 
     <TreasuryAccountCreateDialog
       open={createOpen}

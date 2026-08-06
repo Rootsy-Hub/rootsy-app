@@ -60,7 +60,6 @@ export type DialogPanelUiSurface = {
 
 export type DialogScrimUiStyle = {
   backgroundColor: string
-  backdropFilter?: string
   minHeightPx: number
   paddingPx: number
   borderRadiusPx: number
@@ -122,7 +121,6 @@ export const MODAL_UI_TITLE_STYLE = getModalTitleUiStyle("modal")
 export function getDialogScrimUiStyle(kind: DialogKindId = "modal"): DialogScrimUiStyle {
   return {
     backgroundColor: `color-mix(in srgb, ${hx("sombra", "950")} 40%, transparent)`,
-    backdropFilter: `blur(${ROOTSY_MODAL_ANATOMY.scrimBlurPx}px)`,
     minHeightPx:
       kind === "modal"
         ? ROOTSY_MODAL_ANATOMY.previewMinHeightModalPx
@@ -149,6 +147,30 @@ export function getDialogPanelUiSurface(
     borderRadiusPx: spec.radiusPx,
     maxWidthPx: sizeSpec.maxWidthPx,
   }
+}
+
+/** Shell CSS — radius.xxlarge modal · radius.xlarge alert · overflow recorta regiones. */
+export function getDialogPanelShellUiStyle(
+  kind: DialogKindId = "modal",
+  size: ModalSurfaceSizeId = "default",
+) {
+  const panel = getDialogPanelUiSurface(kind, size)
+
+  return {
+    width: "100%" as const,
+    maxWidth: panel.maxWidthPx,
+    backgroundColor: panel.backgroundColor,
+    border: panel.border,
+    boxShadow: panel.boxShadow,
+    borderRadius: `${panel.borderRadiusPx}px`,
+    overflow: "hidden" as const,
+    flexShrink: 0,
+    boxSizing: "border-box" as const,
+  }
+}
+
+export function getDialogPanelShellRadiusClass(kind: DialogKindId = "modal") {
+  return kind === "modal" ? "rounded-[1.375rem]" : "rounded-xl"
 }
 
 export function getDialogHeaderUiStyle(kind: DialogKindId = "modal"): DialogRegionUiStyle {
@@ -303,3 +325,12 @@ export function getModalSurfaceSizeSpec(size: ModalSurfaceSizeId) {
 export function getDialogPreviewWidthPx(panelMaxWidthPx: number, scale = 1): number {
   return panelMaxWidthPx * scale
 }
+
+export {
+  MODAL_UI_OVERLAY_SPEC,
+  MODAL_UI_PANEL_SURFACE_SPEC,
+  MODAL_UI_SCRIM_SPEC,
+  getDialogPreviewMinHeightPx,
+  getModalUiOverlaySpecRows,
+} from "@/app/[siteId]/[popId]/library/ui-components/modalsUiOverlaySpec"
+export type { OverlaySurfaceSpecRow } from "@/app/[siteId]/[popId]/library/ui-components/modalsUiOverlaySpec"

@@ -1,7 +1,34 @@
 export { RootsDialogContent, type RootsDialogSize } from "./RootsDialogContent"
 export { RootsDialogHeader } from "./RootsDialogHeader"
 export { RootsDialogBody } from "./RootsDialogBody"
-export { rootsDialogBodyClass, rootsDialogBodyCompactClass, rootsDialogLoadingBodyClass } from "./rootsDialogStyles"
+export {
+  RootsAlertDialogBodyText,
+  RootsAlertDialogContent,
+  RootsAlertDialogFooter,
+  RootsAlertDialogPanel,
+} from "./RootsAlertDialog"
+export {
+  rootsAlertDialogBodyTextClass,
+  rootsAlertDialogContentClass,
+  rootsAlertDialogDescriptionClass,
+  rootsAlertDialogFooterClass,
+  rootsAlertDialogSurfaceClass,
+  rootsAlertDialogTitleClass,
+  rootsDialogBodyClass,
+  rootsDialogBodyCompactClass,
+  rootsDialogDescriptionClass,
+  rootsDialogFooterClass,
+  rootsDialogHeaderClass,
+  rootsDialogLoadingBodyClass,
+  rootsDialogOverlayClass,
+  rootsDialogPanelPaddingXClass,
+  rootsDialogPrimitiveResetClass,
+  rootsDialogSurfaceDefaultClass,
+  rootsDialogSurfaceTwoColClass,
+  rootsDialogSurfaceWideClass,
+  rootsDialogTitleClass,
+} from "./rootsDialogProductStyles"
+export { rootsDialogBodyClass as rootsDialogBodyClassLegacy } from "./rootsDialogStyles"
 export {
   rootsDialogDetailFieldStackClass,
   rootsDialogDetailLabelClass,

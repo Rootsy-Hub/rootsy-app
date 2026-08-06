@@ -72,10 +72,7 @@ import {
   DataWorkspaceTableIconAction,
 } from "@/components/data-workspace/DataWorkspaceListTablePrimitives"
 import {
-  selectColumnInnerClass,
   workspaceTableLayoutClassName,
-  workspaceTableNatureBodyRowClassNames,
-  workspaceTableNatureCheckboxClass,
   workspaceTableNatureMoneyClass,
   workspaceTableNatureTextSecondaryClass,
 } from "@/components/data-workspace/dataWorkspaceListStyles"
@@ -85,26 +82,24 @@ import {
   dataWorkspaceListFiltersPanelLastClass,
   workspaceTableLayoutActionsBodyCellClass,
   workspaceTableLayoutBodyCellClass,
-  workspaceTableLayoutBodyRowClass,
   workspaceTableLayoutCellStackClass,
   workspaceTableLayoutHeaderHeadClass,
   workspaceTableLayoutImageColumnClass,
-  workspaceTableLayoutSelectBodyCellClass,
 } from "@/components/data-workspace/dataWorkspaceTablesLayout"
 import {
+  WorkspaceTableBodyRow,
   WorkspaceTableHead,
   WorkspaceTableHeader,
   WorkspaceTableHeaderRow,
+  WorkspaceTableSelectCell,
   WorkspaceTableSelectHead,
 } from "@/components/data-workspace/WorkspaceTableHeader"
 import { WorkspaceTableSkeletonRows } from "@/components/data-workspace/WorkspaceTableSkeleton"
 import { articlesSkeletonColumns } from "@/components/data-workspace/workspaceTableSkeletonPresets"
 import { DataWorkspaceHeaderIconButton } from "@/components/layouts/DataWorkspaceHeaderIconButton"
-import { Checkbox } from "@/components/ui/checkbox"
 import {
   TableBody,
   TableCell,
-  TableRow,
 } from "@/components/ui/table"
 import withAuth from "@/hoc/withAuth"
 import { usePopWorkspace } from "@/context/PopWorkspaceContext"
@@ -401,7 +396,6 @@ function ArticlesPage() {
         return
       }
       setArticles(res.articles)
-      setSelected(new Set())
       setTotalCount(res.totalCount)
       setCanCreate(res.canCreate)
       setCanPostInitialStock(res.canPostInitialStock)
@@ -487,6 +481,15 @@ function ArticlesPage() {
     pendingLegacyCreateRef.current = false
     setCreateOpen(true)
   }, [canCreate])
+
+  const articlesListQueryKey = useMemo(
+    () => JSON.stringify(articlesListParams),
+    [articlesListParams],
+  )
+
+  useEffect(() => {
+    setSelected(new Set())
+  }, [articlesListQueryKey])
 
   useEffect(() => {
     if (!popId || !siteId) {
@@ -1431,34 +1434,25 @@ function ArticlesPage() {
                       )
 
                       return (
-                      <TableRow
+                      <WorkspaceTableBodyRow
                         key={a.id}
-                        className={cn(
-                          workspaceTableLayoutBodyRowClass,
-                          workspaceTableNatureBodyRowClassNames(i, {
-                            selected: selected.has(a.id),
-                            noHover: true,
-                            inactive: !a.isActive,
-                          }),
-                        )}
+                        index={i}
+                        selected={selected.has(a.id)}
+                        inactive={!a.isActive}
                       >
-                        <TableCell className={workspaceTableLayoutSelectBodyCellClass}>
-                          <div className={selectColumnInnerClass}>
-                            <Checkbox
-                              className={workspaceTableNatureCheckboxClass}
-                              checked={selected.has(a.id)}
-                              onCheckedChange={(c) => {
-                                setSelected((prev) => {
-                                  const next = new Set(prev)
-                                  if (c === true) next.add(a.id)
-                                  else next.delete(a.id)
-                                  return next
-                                })
-                              }}
-                              aria-label={`Seleccionar ${a.name || "ítem"}`}
-                            />
-                          </div>
-                        </TableCell>
+                        <WorkspaceTableSelectCell
+                          tone="nature"
+                          checked={selected.has(a.id)}
+                          onCheckedChange={(c) => {
+                            setSelected((prev) => {
+                              const next = new Set(prev)
+                              if (c === true) next.add(a.id)
+                              else next.delete(a.id)
+                              return next
+                            })
+                          }}
+                          ariaLabel={`Seleccionar ${a.name || "ítem"}`}
+                        />
                         <ArticleTableImageCell
                           row={a}
                           onPreview={(url) =>
@@ -1493,7 +1487,7 @@ function ArticlesPage() {
                                 </span>
                                 <span
                                   className={cn(
-                                    "truncate text-sm font-medium leading-4 tabular-nums",
+                                    "block truncate tabular-nums",
                                     workspaceTableNatureMoneyClass,
                                   )}
                                 >
@@ -1558,7 +1552,7 @@ function ArticlesPage() {
                             </div>
                           </TableCell>
                         ) : null}
-                      </TableRow>
+                      </WorkspaceTableBodyRow>
                     )})
                   )}
                 </TableBody>

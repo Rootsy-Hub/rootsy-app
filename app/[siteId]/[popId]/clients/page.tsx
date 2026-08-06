@@ -48,7 +48,6 @@ import { clientsSkeletonColumns } from "@/components/data-workspace/workspaceTab
 import {
   selectColumnInnerClass,
   workspaceTableLayoutClassName,
-  workspaceTableNatureBodyRowClassNames,
   workspaceTableNatureCheckboxClass,
   workspaceTableNatureMoneyClass,
   workspaceTableNatureTextPrimaryClass,
@@ -60,12 +59,13 @@ import {
   dataWorkspaceListFiltersPanelLastClass,
   workspaceTableLayoutActionsBodyCellClass,
   workspaceTableLayoutBodyCellClass,
-  workspaceTableLayoutBodyRowClass,
   workspaceTableLayoutCellStackClass,
   workspaceTableLayoutHeaderHeadClass,
   workspaceTableLayoutSelectBodyCellClass,
 } from "@/components/data-workspace/dataWorkspaceTablesLayout"
 import {
+  WorkspaceTableBodyRow,
+  WorkspaceTableSelectCell,
   WorkspaceTableHead,
   WorkspaceTableHeader,
   WorkspaceTableHeaderRow,
@@ -75,7 +75,6 @@ import { DataWorkspaceHeaderIconButton } from "@/components/layouts/DataWorkspac
 import {
   TableBody,
   TableCell,
-  TableRow,
 } from "@/components/ui/table"
 import {
   CLIENT_TABLE_PAGE_SIZES,
@@ -907,34 +906,25 @@ function ClientsPage() {
                     null
                   ) : (
                     pageRows.map((r, i) => (
-                      <TableRow
+                      <WorkspaceTableBodyRow
                         key={r.id}
-                        className={cn(
-                          workspaceTableLayoutBodyRowClass,
-                          workspaceTableNatureBodyRowClassNames(i, {
-                            selected: selected.has(r.id),
-                            noHover: true,
-                            inactive: !r.isActive,
-                          }),
-                        )}
+                        index={i}
+                        selected={selected.has(r.id)}
+                        inactive={!r.isActive}
                       >
-                        <TableCell className={workspaceTableLayoutSelectBodyCellClass}>
-                          <div className={selectColumnInnerClass}>
-                            <Checkbox
-                              className={workspaceTableNatureCheckboxClass}
-                              checked={selected.has(r.id)}
-                              onCheckedChange={(c) => {
-                                setSelected((prev) => {
-                                  const next = new Set(prev)
-                                  if (c === true) next.add(r.id)
-                                  else next.delete(r.id)
-                                  return next
-                                })
-                              }}
-                              aria-label={`Seleccionar ${r.name || "cliente"}`}
-                            />
-                          </div>
-                        </TableCell>
+                        <WorkspaceTableSelectCell
+                          tone="nature"
+                          checked={selected.has(r.id)}
+                          onCheckedChange={(c) => {
+                            setSelected((prev) => {
+                              const next = new Set(prev)
+                              if (c === true) next.add(r.id)
+                              else next.delete(r.id)
+                              return next
+                            })
+                          }}
+                          ariaLabel={`Seleccionar ${r.name || "cliente"}`}
+                        />
                         <TableCell className={cn(workspaceTableLayoutBodyCellClass, "min-w-[10rem]")}>
                           <p className={cn("truncate font-medium", workspaceTableNatureTextPrimaryClass)}>
                             {r.name || "—"}
@@ -1066,7 +1056,7 @@ function ClientsPage() {
                             </div>
                           </TableCell>
                         ) : null}
-                      </TableRow>
+                      </WorkspaceTableBodyRow>
                     ))
                   )}
                 </TableBody>

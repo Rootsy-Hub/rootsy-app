@@ -5,7 +5,7 @@ import {
   RootsFormSelectField,
   RootsFormSelectItem,
 } from "@/components/rootsy-form"
-import { lightToolbarPanelClass } from "@/components/data-workspace/dataWorkspaceListStyles"
+import { lightToolbarPanelClass, listToolbarFilterTriggerActiveClass } from "@/components/data-workspace/dataWorkspaceListStyles"
 import { PROMOTION_TYPE_LABEL, type PromotionType } from "@/lib/promotionTypes"
 import { cn } from "@/lib/utils"
 import { Tags } from "lucide-react"
@@ -17,8 +17,6 @@ const FILTER_ITEMS: { id: PromotionTypeFilterId; label: string }[] = [
   { id: "combo", label: PROMOTION_TYPE_LABEL.combo },
   { id: "quantity_deal", label: PROMOTION_TYPE_LABEL.quantity_deal },
 ]
-
-const filterTriggerActiveClass = "!border-[#16704a] ring-2 ring-[#16704a]/20"
 
 export function resolvePromotionTypeFilterId(
   type: PromotionType | "",
@@ -49,13 +47,14 @@ export function PromotionTypeToolbarFilter({
       value={value}
       onValueChange={(next) => onChange(next as PromotionTypeFilterId)}
       prefix={<Tags className="size-4" aria-hidden />}
+      prefixVariant="inline"
       className={cn(
         variant === "layout"
           ? dataWorkspaceListFiltersFieldClass()
           : lightToolbarPanelClass,
         className,
       )}
-      triggerClassName={value !== "all" ? filterTriggerActiveClass : undefined}
+      triggerClassName={value !== "all" ? listToolbarFilterTriggerActiveClass : undefined}
     >
       {FILTER_ITEMS.map((item) => (
         <RootsFormSelectItem key={item.id} value={item.id}>

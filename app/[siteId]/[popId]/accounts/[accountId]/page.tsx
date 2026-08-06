@@ -2,7 +2,10 @@
 
 import "@/app/[siteId]/[popId]/library/color/rootsyNaturePalette.css"
 import { TreasuryAccountDetailView } from "@/app/[siteId]/[popId]/accounts/TreasuryAccountDetailView"
-import { DataWorkspaceLayout } from "@/components/layouts/DataWorkspaceLayout"
+import {
+  DataWorkspaceModuleLayout,
+  dataWorkspaceModuleHeaderVariant,
+} from "@/components/layouts-module/DataWorkspaceModuleLayout"
 import {
   dataWorkspaceBlocksPageMainClass,
   dataWorkspaceBlocksPageScopeClass,
@@ -30,12 +33,12 @@ function TreasuryAccountDetailPage() {
   }
 
   return (
-    <DataWorkspaceLayout
+    <DataWorkspaceModuleLayout
       siteId={siteId}
       popId={popId}
       popName={bootstrap?.popName ?? ""}
       title="Cuentas"
-      headerVariant="dark"
+      headerVariant={dataWorkspaceModuleHeaderVariant}
       loading={bootstrapLoading}
       userName={bootstrap?.userFullName}
       userAvatarSrc={bootstrap?.userImageUrl ?? undefined}
@@ -59,7 +62,7 @@ function TreasuryAccountDetailPage() {
           accountId={accountId}
         />
       </div>
-    </DataWorkspaceLayout>
+    </DataWorkspaceModuleLayout>
   )
 }
 

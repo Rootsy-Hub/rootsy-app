@@ -5,8 +5,9 @@ import type { RootsFormFieldAssistProps } from "@/components/rootsy-form/rootsFo
 import { useRootsFormFieldControlProps } from "@/components/rootsy-form/rootsFormFieldContext"
 import { RootsFormSelectContent } from "@/components/rootsy-form/RootsFormSelectContent"
 import { RootsFormSelectTrigger } from "@/components/rootsy-form/RootsFormSelectTrigger"
-import { Select, SelectValue } from "@/components/ui/select"
-import { useId, useRef, type ReactNode } from "react"
+import { RootsFormSelectValue } from "@/components/rootsy-form/RootsFormSelectValue"
+import { Select } from "@/components/ui/select"
+import { useId, type ReactNode } from "react"
 
 type Props = {
   label: string
@@ -48,8 +49,12 @@ export function RootsFormSelectField({
   const autoId = useId()
   const fieldId = id ?? autoId
   const hasPrefix = prefix != null
-  const triggerRef = useRef<HTMLButtonElement>(null)
   const controlProps = useRootsFormFieldControlProps({ invalid })
+
+  const handleValueChange = (next: string) => {
+    // Deferir navegación/re-render del padre hasta que Radix cierre el portal.
+    window.setTimeout(() => onValueChange(next), 0)
+  }
 
   return (
     <RootsFormField
@@ -64,16 +69,10 @@ export function RootsFormSelectField({
     >
       <Select
         value={value || undefined}
-        onValueChange={onValueChange}
+        onValueChange={handleValueChange}
         disabled={disabled}
-        onOpenChange={(open) => {
-          if (!open) {
-            requestAnimationFrame(() => triggerRef.current?.blur())
-          }
-        }}
       >
         <RootsFormSelectTrigger
-          ref={triggerRef}
           id={fieldId}
           tone={tone}
           invalid={controlProps.isInvalid}
@@ -84,7 +83,7 @@ export function RootsFormSelectField({
           leadingPrefix={hasPrefix ? prefix : undefined}
           className={triggerClassName}
         >
-          <SelectValue placeholder={placeholder} />
+          <RootsFormSelectValue placeholder={placeholder} />
         </RootsFormSelectTrigger>
         <RootsFormSelectContent tone={tone} className={contentClassName}>
           {children}

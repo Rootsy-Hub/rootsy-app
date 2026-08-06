@@ -1,6 +1,10 @@
 "use client"
 
-import { DataWorkspaceLayout, type DataWorkspaceLayoutProps } from "@/components/layouts/DataWorkspaceLayout"
+import {
+  DataWorkspaceModuleLayout,
+  dataWorkspaceModuleHeaderVariant,
+  type DataWorkspaceModuleLayoutProps,
+} from "@/components/layouts-module/DataWorkspaceModuleLayout"
 import { RootsBanner } from "@/components/rootsy-banner"
 import {
   DataWorkspaceListPaginationFooter,
@@ -22,9 +26,9 @@ import { cn } from "@/lib/utils"
 import type { ReactNode } from "react"
 import type { DataWorkspaceHeaderVariant } from "@/components/layouts/dataWorkspaceHeaderStyles"
 
-/** Variante de header para listados tabla — chrome sombra DS. */
+/** Variante de header para listados tabla — chrome módulo sombra · savia. */
 export const dataWorkspaceTableListHeaderVariant =
-  "tables" satisfies DataWorkspaceHeaderVariant
+  dataWorkspaceModuleHeaderVariant satisfies DataWorkspaceHeaderVariant
 
 /** Clases del scope layout tablas — filtros + tabla. */
 export const dataWorkspaceTableListNatureShellClass = workspaceLayoutsTablesShellClass
@@ -38,7 +42,7 @@ export const dataWorkspaceTableListErrorBannerClass = "relative shrink-0"
 export type DataWorkspaceTableListPageProps = {
   /** Props passthrough al shell operativo. */
   layout: Pick<
-    DataWorkspaceLayoutProps,
+    DataWorkspaceModuleLayoutProps,
     | "siteId"
     | "popId"
     | "popName"
@@ -66,9 +70,8 @@ export function DataWorkspaceTableListPage({
   children,
 }: DataWorkspaceTableListPageProps) {
   return (
-    <DataWorkspaceLayout
+    <DataWorkspaceModuleLayout
       {...layout}
-      headerVariant="tables"
       contentFlush
       sidebarCollapsible={false}
       mainClassName="min-h-0"
@@ -86,7 +89,7 @@ export function DataWorkspaceTableListPage({
         ) : null}
         {children}
       </div>
-    </DataWorkspaceLayout>
+    </DataWorkspaceModuleLayout>
   )
 }
 

@@ -13,17 +13,16 @@ import { Checkbox } from "@/components/ui/checkbox"
 import {
   selectColumnInnerClass,
   workspaceTableLayoutClassName,
-  workspaceTableNatureBodyRowClassNames,
   workspaceTableNatureCheckboxClass,
 } from "@/components/data-workspace/dataWorkspaceListStyles"
 import {
-  workspaceTableLayoutBodyRowClass,
   workspaceTableLayoutListSurfaceClass,
   workspaceTableLayoutSelectBodyCellClass,
 } from "@/components/data-workspace/dataWorkspaceTablesLayout"
 import { DataWorkspaceListTableFrame } from "@/components/data-workspace/DataWorkspaceListTablePrimitives"
 import {
   WorkspaceTableHead,
+  WorkspaceTableBodyRow,
   WorkspaceTableHeader,
   WorkspaceTableHeaderRow,
   WorkspaceTableSelectHead,
@@ -46,7 +45,6 @@ import { useMemo, useState, type Dispatch, type SetStateAction } from "react"
 import {
   TableBody,
   TableCell,
-  TableRow,
 } from "@/components/ui/table"
 
 import {
@@ -527,16 +525,11 @@ export function OperationsSalesTable({
               null
             ) : (
               rows.map((sale, i) => (
-                <TableRow
-                  key={sale.id}
-                  className={cn(
-                    workspaceTableLayoutBodyRowClass,
-                    workspaceTableNatureBodyRowClassNames(i, {
-                      selected: selected.has(sale.id),
-                      noHover: true,
-                    }),
-                  )}
-                >
+                <WorkspaceTableBodyRow
+                        key={sale.id}
+                        index={i}
+                        selected={selected.has(sale.id)}
+                      >
                   {isVentasLayout ? (
                     <VentasSalesTableRow
                       sale={sale}
@@ -561,7 +554,7 @@ export function OperationsSalesTable({
                       showTableColumn={showTableColumn}
                     />
                   )}
-                </TableRow>
+                </WorkspaceTableBodyRow>
               ))
             )}
           </TableBody>

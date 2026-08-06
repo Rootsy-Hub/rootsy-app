@@ -12,6 +12,7 @@ import {
   RootsFormSelectContent,
   RootsFormSelectItem,
   RootsFormSelectTrigger,
+  RootsFormSelectValue,
 } from "@/components/rootsy-form"
 import {
   darkTableFooterCenterClass,
@@ -209,7 +210,7 @@ export function DataWorkspaceListPaginationFooter({
                 aria-label="Resultados por página"
                 className={layoutsTablesFooterSelectTriggerClass}
               >
-                <SelectValue />
+                <RootsFormSelectValue />
               </RootsFormSelectTrigger>
               <RootsFormSelectContent tone="light" align="end">
                 {pageSizeOptions.map((n) => (
@@ -296,7 +297,7 @@ export function DataWorkspaceListPaginationFooter({
                     aria-label="Página"
                     className={earthTableFooterSelectTriggerClass}
                   >
-                    <SelectValue />
+                    <RootsFormSelectValue />
                   </RootsFormSelectTrigger>
                   <RootsFormSelectContent tone="light" align="center">
                     {pageOptions.map((p) => (
@@ -326,7 +327,7 @@ export function DataWorkspaceListPaginationFooter({
                     aria-label="Cantidad por página"
                     className={earthTableFooterSelectTriggerClass}
                   >
-                    <SelectValue />
+                    <RootsFormSelectValue />
                   </RootsFormSelectTrigger>
                   <RootsFormSelectContent tone="light" align="center">
                     {pageSizeOptions.map((n) => (
@@ -350,7 +351,7 @@ export function DataWorkspaceListPaginationFooter({
                   onValueChange={(v) => onPageChange(Number(v))}
                 >
                   <RootsFormSelectTrigger tone={selectTone} aria-label="Página">
-                    <SelectValue />
+                    <RootsFormSelectValue />
                   </RootsFormSelectTrigger>
                   <RootsFormSelectContent tone={selectTone} align="center">
                     {pageOptions.map((p) => (
@@ -375,7 +376,7 @@ export function DataWorkspaceListPaginationFooter({
                     aria-labelledby={pageSizeLabelId}
                     aria-label="Resultados por página"
                   >
-                    <SelectValue />
+                    <RootsFormSelectValue />
                   </RootsFormSelectTrigger>
                   <RootsFormSelectContent tone={selectTone} align="center">
                     {pageSizeOptions.map((n) => (

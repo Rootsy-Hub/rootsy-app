@@ -2,7 +2,6 @@
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import {
-  dataWorkspaceHeaderChromeButtonClass,
   dataWorkspaceHeaderDropdownLogoutItemClass,
   dataWorkspaceHeaderDropdownSeparatorClassForVariant,
   dataWorkspaceHeaderUserDropdownContentClassForVariant,
@@ -11,6 +10,7 @@ import {
   isLayoutsTablesHeader,
   type DataWorkspaceHeaderVariant,
 } from "@/components/layouts/dataWorkspaceHeaderStyles"
+import { RootsIconButton } from "@/components/rootsy-button/RootsIconButton"
 import {
   RootsDropdownContent,
   RootsDropdownItem,
@@ -60,13 +60,13 @@ export function DataWorkspaceHeaderUserMenu({
   return (
     <RootsDropdownMenu>
       <RootsDropdownTrigger asChild>
-        <button
-          type="button"
-          className={cn(
-            dataWorkspaceHeaderChromeButtonClass(headerVariant),
-            "relative overflow-hidden p-0",
-          )}
-          aria-label={`Menú de ${userName}`}
+        <RootsIconButton
+          label={`Menú de ${userName}`}
+          theme={isTables || isTinted ? "pos" : "workspace"}
+          emphasis="ghost"
+          size="default"
+          sizeChildren={false}
+          className="relative overflow-hidden p-0"
           aria-haspopup="menu"
         >
           <Avatar className="size-full rounded-[inherit]">
@@ -89,7 +89,7 @@ export function DataWorkspaceHeaderUserMenu({
             aria-label={isOnline ? "En línea" : "Sin conexión"}
             title={isOnline ? "En línea" : "Sin conexión"}
             className={cn(
-              "absolute bottom-1 right-1 size-2.5 rounded-full ring-2",
+              "pointer-events-none absolute bottom-1 right-1 size-2.5 rounded-full ring-2",
               isTables
                 ? "ring-[var(--rootsy-sombra-950)]"
                 : isTinted
@@ -98,7 +98,7 @@ export function DataWorkspaceHeaderUserMenu({
               isOnline ? "bg-emerald-500" : "bg-red-500",
             )}
           />
-        </button>
+        </RootsIconButton>
       </RootsDropdownTrigger>
       <RootsDropdownContent
         theme={theme}

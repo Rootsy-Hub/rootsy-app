@@ -22,6 +22,7 @@ export function RootsFormSelectItem({
   return (
     <SelectPrimitive.Item
       data-slot="roots-form-select-item"
+      translate="no"
       className={cn(rootsFormSelectItemClassForTone(tone), className)}
       {...props}
     >

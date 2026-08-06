@@ -1,9 +1,16 @@
 "use client"
 
-import { rootsIconButtonActionClass } from "@/components/rootsy-button/rootsButtonStyles"
-import { cn } from "@/lib/utils"
+import {
+  workspaceTableLayoutThumbnailClass,
+  workspaceTableLayoutThumbnailLgClass,
+  workspaceTableLayoutThumbnailPlaceholderClass,
+  workspaceTableLayoutThumbnailSmClass,
+} from "@/components/data-workspace/dataWorkspaceTablesLayout"
 import { tdMoneyClass, tdMoneyMutedClass, workspaceTableFrameSelectableScopeClass } from "@/components/data-workspace/dataWorkspaceListStyles"
-import { Package } from "lucide-react"
+import { RootsIconButton } from "@/components/rootsy-button"
+import type { RootsIconButtonActionIntent } from "@/components/rootsy-button/rootsButtonStyles"
+import { cn } from "@/lib/utils"
+import { ImagePlus } from "lucide-react"
 import Image from "next/image"
 import type { LucideIcon } from "lucide-react"
 import type { ReactNode } from "react"
@@ -81,21 +88,13 @@ export function DataWorkspaceTableThumbnail({
   className?: string
 }) {
   const box =
-    size === "sm"
-      ? "size-9"
-      : size === "lg"
-        ? "size-20"
-        : "size-10"
+    size === "lg"
+      ? workspaceTableLayoutThumbnailLgClass
+      : workspaceTableLayoutThumbnailSmClass
   const trimmed = typeof src === "string" ? src.trim() : ""
   if (trimmed) {
     return (
-      <div
-        className={cn(
-          "relative shrink-0 overflow-hidden rounded-lg border border-border/80 bg-muted",
-          box,
-          className,
-        )}
-      >
+      <div className={cn(workspaceTableLayoutThumbnailClass, box, className)}>
         <img
           src={trimmed}
           alt={alt}
@@ -107,18 +106,12 @@ export function DataWorkspaceTableThumbnail({
   }
   return (
     <div
-      className={cn(
-        "flex shrink-0 items-center justify-center rounded-lg border border-dashed border-border/80 bg-muted/50 text-muted-foreground",
-        box,
-        className,
-      )}
+      className={cn(workspaceTableLayoutThumbnailPlaceholderClass, box, className)}
       aria-hidden
     >
-      <Package
-        className={cn(
-          "opacity-45",
-          size === "lg" ? "size-5" : "size-[1.125rem]",
-        )}
+      <ImagePlus
+        className={cn(size === "lg" ? "size-5" : "size-3.5")}
+        strokeWidth={1.75}
       />
     </div>
   )
@@ -138,25 +131,24 @@ export function DataWorkspaceTableIconAction({
   /** @deprecated Preferí `variant="destructive"`. */
   destructive?: boolean
   /** neutral = ver/abrir; edit = modificar; destructive = eliminar. */
-  variant?: "neutral" | "edit" | "destructive"
+  variant?: RootsIconButtonActionIntent
   disabled?: boolean
 }) {
-  const resolvedVariant = destructive
+  const intent: RootsIconButtonActionIntent = destructive
     ? "destructive"
     : (variant ?? "edit")
 
   return (
-    <button
+    <RootsIconButton
       type="button"
+      label={label}
+      tone="action"
+      intent={intent}
+      size="compact"
       disabled={disabled}
-      className={rootsIconButtonActionClass({
-        intent: resolvedVariant,
-        size: "compact",
-      })}
-      aria-label={label}
       onClick={onClick}
     >
-      <Icon className="size-4" />
-    </button>
+      <Icon />
+    </RootsIconButton>
   )
 }

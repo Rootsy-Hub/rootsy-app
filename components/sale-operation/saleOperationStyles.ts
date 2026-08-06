@@ -168,10 +168,10 @@ export const saleOpDialogSecondaryBtn = "h-10 rounded-lg"
 
 /** @deprecated Usar variant="ghost-neutral" + saleOpDialogSecondaryBtn */
 export const saleOpDialogGhostBtn = saleOpDialogSecondaryBtn
-export const saleOpAlertDialogContent = cn(
-  saleOpDialogLight,
-  "rounded-2xl border border-border/60 bg-card shadow-2xl sm:max-w-md",
-)
+import { rootsAlertDialogSurfaceClass } from "@/components/rootsy-dialog/rootsDialogProductStyles"
+
+/** @deprecated Alias — preferir RootsAlertDialogContent. */
+export const saleOpAlertDialogContent = rootsAlertDialogSurfaceClass
 
 export function saleOpDialogOptionClass(seleccionado: boolean, disabled = false) {
   return cn(

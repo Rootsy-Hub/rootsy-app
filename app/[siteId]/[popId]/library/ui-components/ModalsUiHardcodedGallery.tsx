@@ -15,6 +15,9 @@ import {
   MODAL_UI_BODY_TONES,
   MODAL_UI_DEMO_COPY,
   MODAL_UI_FOOTER_VARIANTS,
+  MODAL_UI_OVERLAY_SPEC,
+  MODAL_UI_PANEL_SURFACE_SPEC,
+  MODAL_UI_SCRIM_SPEC,
   MODAL_UI_SURFACE_SIZES,
   MODAL_UI_DESCRIPTION_STYLE,
   MODAL_UI_BODY_TEXT_STYLE,
@@ -26,72 +29,27 @@ import {
   getDialogFooterUiStyle,
   getDialogHeaderUiStyle,
   getDialogLoadingUiStyle,
-  getDialogPanelUiSurface,
-  getDialogPreviewWidthPx,
-  getDialogScrimUiStyle,
+  getDialogPanelShellRadiusClass,
+  getDialogPanelShellUiStyle,
+  getDialogPreviewMinHeightPx,
+  getModalUiOverlaySpecRows,
   type AlertDialogVariantId,
   type ModalBodyToneId,
   type ModalFooterVariantId,
   type ModalSurfaceSizeId,
 } from "@/app/[siteId]/[popId]/library/ui-components/modalsUiHardcodedSpec"
-import { COLOR_TOKENS } from "@/app/[siteId]/[popId]/library/color/rootsyColorSystem"
+import {
+  DialogGallerySectionHeading,
+  DialogGallerySpecBlock,
+  DialogPreviewViewport,
+  DialogVariantRow,
+  DialogVariantSpecCell,
+  OverlaySurfaceSpecTable,
+} from "@/app/[siteId]/[popId]/library/ui-components/dialogUiDocShared"
 import { FoundationBrumaStage } from "@/app/[siteId]/[popId]/library/libraryFoundationDocShared"
+import { cn } from "@/lib/utils"
 import { rootsySpacePx } from "@/lib/design-system"
-import type { CSSProperties, ReactNode } from "react"
-
-function SectionHeading({ title, description }: { title: string; description?: string }) {
-  return (
-    <div className="space-y-1">
-      <h2 className="font-canopy text-base font-semibold" style={{ color: COLOR_TOKENS.bruma900 }}>
-        {title}
-      </h2>
-      {description ? (
-        <p className="font-canopy text-xs leading-relaxed" style={{ color: COLOR_TOKENS.bruma500 }}>
-          {description}
-        </p>
-      ) : null}
-    </div>
-  )
-}
-
-function SpecBlock({ title, hint, children }: { title: string; hint?: string; children: ReactNode }) {
-  return (
-    <section className="space-y-3">
-      <div>
-        <h3
-          className="font-mono text-[11px] font-medium uppercase tracking-[0.12em]"
-          style={{ color: COLOR_TOKENS.bruma500 }}
-        >
-          {title}
-        </h3>
-        {hint ? (
-          <p className="mt-1 font-canopy text-xs leading-relaxed" style={{ color: COLOR_TOKENS.bruma500 }}>
-            {hint}
-          </p>
-        ) : null}
-      </div>
-      {children}
-    </section>
-  )
-}
-
-function VariantSpecCell({ label, children }: { label: string; children: ReactNode }) {
-  return (
-    <div className="flex min-w-[14rem] max-w-[20rem] flex-col gap-1.5">
-      {children}
-      <span
-        className="font-mono text-[10px] uppercase tracking-[0.08em]"
-        style={{ color: COLOR_TOKENS.bruma500 }}
-      >
-        {label}
-      </span>
-    </div>
-  )
-}
-
-function VariantRow({ children }: { children: ReactNode }) {
-  return <div className="flex flex-wrap items-start gap-4">{children}</div>
-}
+import type { CSSProperties } from "react"
 
 function HardcodedFooterButton({
   appearance,
@@ -237,44 +195,18 @@ function HardcodedModalPanel({
   footerVariant = "dual",
   bodyTone = "default",
   showClose = true,
-  scale = 0.92,
 }: {
   size?: ModalSurfaceSizeId
   footerVariant?: ModalFooterVariantId
   bodyTone?: ModalBodyToneId
   showClose?: boolean
-  scale?: number
 }) {
-  const scrim = getDialogScrimUiStyle("modal")
-  const panel = getDialogPanelUiSurface("modal", size)
   const header = getDialogHeaderUiStyle("modal")
   const body = getDialogBodyUiStyle(bodyTone, "modal")
   const close = getDialogCloseButtonUiStyle()
   const copy = MODAL_UI_DEMO_COPY.modal
-  const panelWidthPx = getDialogPreviewWidthPx(panel.maxWidthPx, scale)
-
-  const scrimStyle: CSSProperties = {
-    position: "relative",
-    overflow: "hidden",
-    borderRadius: scrim.borderRadiusPx,
-    backgroundColor: scrim.backgroundColor,
-    backdropFilter: scrim.backdropFilter,
-    minHeight: scrim.minHeightPx,
-    padding: scrim.paddingPx,
-    display: "flex",
-    alignItems: "flex-start",
-    justifyContent: "center",
-  }
-
-  const panelStyle: CSSProperties = {
-    width: "100%",
-    maxWidth: panelWidthPx,
-    backgroundColor: panel.backgroundColor,
-    border: panel.border,
-    boxShadow: panel.boxShadow,
-    borderRadius: panel.borderRadiusPx,
-    overflow: "hidden",
-  }
+  const scrim = MODAL_UI_OVERLAY_SPEC.scrim
+  const panelStyle = getDialogPanelShellUiStyle("modal", size)
 
   const headerStyle: CSSProperties = {
     ...header,
@@ -299,8 +231,11 @@ function HardcodedModalPanel({
   }
 
   return (
-    <div aria-hidden style={scrimStyle}>
-      <div style={panelStyle}>
+    <DialogPreviewViewport
+      scrimBackground={scrim.background}
+      minHeightPx={getDialogPreviewMinHeightPx("modal", { size, bodyTone })}
+    >
+      <div className={cn("shrink-0", getDialogPanelShellRadiusClass("modal"))} style={panelStyle}>
         <div style={headerStyle}>
           {showClose ? (
             <span style={closeStyle}>
@@ -335,7 +270,7 @@ function HardcodedModalPanel({
         </div>
         <HardcodedModalFooter variant={footerVariant} />
       </div>
-    </div>
+    </DialogPreviewViewport>
   )
 }
 
@@ -346,9 +281,7 @@ function HardcodedAlertPanel({
   variant: AlertDialogVariantId
   typedMatch?: boolean
 }) {
-  const scrim = getDialogScrimUiStyle("alert")
-  const panel = getDialogPanelUiSurface("alert")
-  const actions = getAlertActionUiStyle(variant)
+  const scrim = MODAL_UI_OVERLAY_SPEC.scrim
   const copy =
     variant === "confirm"
       ? MODAL_UI_DEMO_COPY.alert.confirm
@@ -356,35 +289,18 @@ function HardcodedAlertPanel({
         ? MODAL_UI_DEMO_COPY.alert.destructive
         : MODAL_UI_DEMO_COPY.alert.typed
 
-  const scrimStyle: CSSProperties = {
-    position: "relative",
-    overflow: "hidden",
-    borderRadius: scrim.borderRadiusPx,
-    backgroundColor: scrim.backgroundColor,
-    backdropFilter: scrim.backdropFilter,
-    minHeight: scrim.minHeightPx,
-    padding: scrim.paddingPx,
-    display: "flex",
-    alignItems: "flex-start",
-    justifyContent: "center",
-  }
-
-  const panelStyle: CSSProperties = {
-    width: "100%",
-    maxWidth: getDialogPreviewWidthPx(panel.maxWidthPx, 0.92),
-    backgroundColor: panel.backgroundColor,
-    border: panel.border,
-    boxShadow: panel.boxShadow,
-    borderRadius: panel.borderRadiusPx,
-    overflow: "hidden",
-  }
+  const actions = getAlertActionUiStyle(variant)
+  const panelStyle = getDialogPanelShellUiStyle("alert")
 
   const contentStyle = getAlertContentUiStyle()
   const footerStyle = getDialogFooterUiStyle("alert")
 
   return (
-    <div aria-hidden style={scrimStyle}>
-      <div style={panelStyle}>
+    <DialogPreviewViewport
+      scrimBackground={scrim.background}
+      minHeightPx={getDialogPreviewMinHeightPx("alert", { alertVariant: variant })}
+    >
+      <div className={cn("shrink-0", getDialogPanelShellRadiusClass("alert"))} style={panelStyle}>
         <div
           style={{
             ...contentStyle,
@@ -436,92 +352,103 @@ function HardcodedAlertPanel({
           />
         </div>
       </div>
-    </div>
+    </DialogPreviewViewport>
   )
 }
 
 function ModalSizeVariantsBlock() {
   return (
-    <SpecBlock title="dialog.width · tamaños" hint="default · wide · two-column — shadow.overlay · radius.xxlarge.">
-      <VariantRow>
-        {MODAL_UI_SURFACE_SIZES.map((size) => (
-          <VariantSpecCell key={size.id} label={size.token}>
-            <HardcodedModalPanel size={size.id} footerVariant="dual" scale={size.id === "two-column" ? 0.55 : 0.82} />
-          </VariantSpecCell>
+    <DialogGallerySpecBlock title="dialog.width · tamaños" hint="default · wide · two-column — shadow.overlay · radius.xxlarge.">
+      <DialogVariantRow>
+        {MODAL_UI_SURFACE_SIZES.filter((size) => size.id !== "two-column").map((size) => (
+          <DialogVariantSpecCell key={size.id} label={size.token}>
+            <HardcodedModalPanel size={size.id} footerVariant="dual" />
+          </DialogVariantSpecCell>
         ))}
-      </VariantRow>
-    </SpecBlock>
+      </DialogVariantRow>
+      <DialogVariantSpecCell label="dialog.width.two-column" className="min-w-full basis-full">
+        <div className="overflow-x-auto pb-1">
+          <HardcodedModalPanel size="two-column" footerVariant="dual" />
+        </div>
+      </DialogVariantSpecCell>
+    </DialogGallerySpecBlock>
   )
 }
 
 function ModalFooterVariantsBlock() {
   return (
-    <SpecBlock title="dialog.footer · variantes" hint="none · single · dual · destructive-dual.">
-      <VariantRow>
+    <DialogGallerySpecBlock title="dialog.footer · variantes" hint="none · single · dual · destructive-dual.">
+      <DialogVariantRow>
         {MODAL_UI_FOOTER_VARIANTS.map((variant) => (
-          <VariantSpecCell key={variant.id} label={variant.token}>
-            <HardcodedModalPanel footerVariant={variant.id} bodyTone="compact" scale={0.82} />
-          </VariantSpecCell>
+          <DialogVariantSpecCell key={variant.id} label={variant.token}>
+            <HardcodedModalPanel footerVariant={variant.id} bodyTone="compact" />
+          </DialogVariantSpecCell>
         ))}
-      </VariantRow>
-    </SpecBlock>
+      </DialogVariantRow>
+    </DialogGallerySpecBlock>
   )
 }
 
 function ModalBodyTonesBlock() {
   return (
-    <SpecBlock title="dialog.body · tonos" hint="default sunken · compact · loading spinner.">
-      <VariantRow>
+    <DialogGallerySpecBlock title="dialog.body · tonos" hint="default sunken · compact · loading spinner.">
+      <DialogVariantRow>
         {MODAL_UI_BODY_TONES.map((tone) => (
-          <VariantSpecCell key={tone.id} label={tone.token}>
+          <DialogVariantSpecCell key={tone.id} label={tone.token}>
             <HardcodedModalPanel
               footerVariant={tone.id === "loading" ? "none" : "dual"}
               bodyTone={tone.id}
-              scale={0.82}
             />
-          </VariantSpecCell>
+          </DialogVariantSpecCell>
         ))}
-      </VariantRow>
-    </SpecBlock>
+      </DialogVariantRow>
+    </DialogGallerySpecBlock>
   )
 }
 
 function AlertDialogVariantsBlock() {
   return (
-    <SpecBlock title="dialog.alert · variantes" hint="confirm · destructive · typed-confirmation.">
-      <VariantRow>
+    <DialogGallerySpecBlock title="dialog.alert · variantes" hint="confirm · destructive · typed-confirmation.">
+      <DialogVariantRow>
         {MODAL_UI_ALERT_VARIANTS.map((variant) => (
-          <VariantSpecCell key={variant.id} label={variant.token}>
+          <DialogVariantSpecCell key={variant.id} label={variant.token} className="min-w-[20rem]">
             <HardcodedAlertPanel
               variant={variant.id}
               typedMatch={variant.id === "typed-confirmation"}
             />
-          </VariantSpecCell>
+          </DialogVariantSpecCell>
         ))}
-        <VariantSpecCell label="alert.typed-confirmation · disabled">
+        <DialogVariantSpecCell label="alert.typed-confirmation · disabled" className="min-w-[20rem]">
           <HardcodedAlertPanel variant="typed-confirmation" typedMatch={false} />
-        </VariantSpecCell>
-      </VariantRow>
-    </SpecBlock>
+        </DialogVariantSpecCell>
+      </DialogVariantRow>
+    </DialogGallerySpecBlock>
   )
 }
 
 export function ModalsUiHardcodedGallery() {
   return (
     <div className="space-y-10">
-      <FoundationBrumaStage caption="panel-padding space.400 · font.heading.medium · color.border · elevation.shadow.overlay.">
+      <OverlaySurfaceSpecTable
+        title="Superficie overlay · modal"
+        description={MODAL_UI_SCRIM_SPEC.note}
+        rows={getModalUiOverlaySpecRows("modal")}
+        pairNote={MODAL_UI_PANEL_SURFACE_SPEC.pairRule}
+      />
+
+      <FoundationBrumaStage clip={false} caption="panel-padding space.400 · font.heading.medium · color.border · elevation.shadow.overlay.">
         <div className="space-y-8">
-          <SectionHeading
+          <DialogGallerySectionHeading
             title="Anatomía"
             description="Scrim sombra-950 · panel overlay · body sunken · footer dual — close space.400."
           />
-          <HardcodedModalPanel size="default" footerVariant="dual" scale={1} />
+          <HardcodedModalPanel size="default" footerVariant="dual" />
         </div>
       </FoundationBrumaStage>
 
-      <FoundationBrumaStage caption="dialog.modal · dialog.width · dialog.footer · panel-padding space.400.">
+      <FoundationBrumaStage clip={false} caption="dialog.modal · dialog.width · dialog.footer · panel-padding space.400.">
         <div className="space-y-8">
-          <SectionHeading
+          <DialogGallerySectionHeading
             title="Modal"
             description="Tres anchos · cuatro footers · tres tonos de body — tokens elevation + border."
           />
@@ -531,9 +458,16 @@ export function ModalsUiHardcodedGallery() {
         </div>
       </FoundationBrumaStage>
 
-      <FoundationBrumaStage caption="dialog.alert · font.heading.small · status-danger solo en botón · justify-between.">
+      <OverlaySurfaceSpecTable
+        title="Superficie overlay · alert dialog"
+        description="Mismo scrim y par surface+shadow que modal. Radio radius.xlarge · sin body sunken."
+        rows={getModalUiOverlaySpecRows("alert")}
+        pairNote={MODAL_UI_PANEL_SURFACE_SPEC.pairRule}
+      />
+
+      <FoundationBrumaStage clip={false} caption="dialog.alert · font.heading.small · status-danger solo en botón · justify-between.">
         <div className="space-y-8">
-          <SectionHeading
+          <DialogGallerySectionHeading
             title="Alert dialog"
             description="Confirmación · destructivo · confirmación escrita — shell compacto sin body sunken."
           />

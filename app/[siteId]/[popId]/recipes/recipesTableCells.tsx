@@ -12,9 +12,8 @@ import {
 } from "@/app/[siteId]/[popId]/recipes/recipesTableLayout"
 import { ArticleCatalogImagePlaceholder } from "@/app/[siteId]/[popId]/articles/ArticleCatalogImagePlaceholder"
 import { DataWorkspaceTableThumbnail } from "@/components/data-workspace/DataWorkspaceListTablePrimitives"
+import { WorkspaceTableSelectCell } from "@/components/data-workspace/WorkspaceTableHeader"
 import {
-  selectColumnInnerClass,
-  workspaceTableNatureCheckboxClass,
   workspaceTableNatureMoneyClass,
   workspaceTableNatureTextPrimaryClass,
   workspaceTableNatureTextSecondaryClass,
@@ -25,10 +24,8 @@ import {
   workspaceTableLayoutCellSecondaryTextClass,
   workspaceTableLayoutCellStackClass,
   workspaceTableLayoutImageColumnClass,
-  workspaceTableLayoutSelectBodyCellClass,
 } from "@/components/data-workspace/dataWorkspaceTablesLayout"
 import { RootsNaturePill } from "@/components/rootsy-pill"
-import { Checkbox } from "@/components/ui/checkbox"
 import { cn } from "@/lib/utils"
 import { TableCell } from "@/components/ui/table"
 
@@ -60,16 +57,12 @@ export function RecipeTableSelectCell({
   label: string
 }) {
   return (
-    <TableCell className={workspaceTableLayoutSelectBodyCellClass}>
-      <div className={selectColumnInnerClass}>
-        <Checkbox
-          className={workspaceTableNatureCheckboxClass}
-          checked={checked}
-          onCheckedChange={(c) => onCheckedChange(c === true)}
-          aria-label={label}
-        />
-      </div>
-    </TableCell>
+    <WorkspaceTableSelectCell
+      tone="nature"
+      checked={checked}
+      onCheckedChange={(c) => onCheckedChange(c === true)}
+      ariaLabel={label}
+    />
   )
 }
 

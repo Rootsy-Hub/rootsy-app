@@ -1,10 +1,10 @@
 "use client"
 
 import {
-  articleDialogDescriptionClass,
-  articleDialogHeaderClass,
-  articleDialogTitleClass,
-} from "@/app/[siteId]/[popId]/articles/articleConstants"
+  rootsDialogDescriptionClass,
+  rootsDialogHeaderClass,
+  rootsDialogTitleClass,
+} from "@/components/rootsy-dialog/rootsDialogProductStyles"
 import {
   DialogDescription,
   DialogHeader,
@@ -27,12 +27,12 @@ export function RootsDialogHeader({
   className,
 }: Props) {
   return (
-    <DialogHeader className={cn(articleDialogHeaderClass, className)}>
-      <DialogTitle className={articleDialogTitleClass}>{title}</DialogTitle>
+    <DialogHeader className={cn(rootsDialogHeaderClass, className)}>
+      <DialogTitle className={rootsDialogTitleClass}>{title}</DialogTitle>
       {description != null ? (
         <DialogDescription
           className={cn(
-            articleDialogDescriptionClass,
+            rootsDialogDescriptionClass,
             descriptionHidden && "sr-only",
           )}
         >

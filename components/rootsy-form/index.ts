@@ -12,6 +12,7 @@ export {
 export { RootsFormSelectContent } from "@/components/rootsy-form/RootsFormSelectContent"
 export { RootsFormSelectField } from "@/components/rootsy-form/RootsFormSelectField"
 export { RootsFormSelectItem } from "@/components/rootsy-form/RootsFormSelectItem"
+export { RootsFormSelectValue } from "@/components/rootsy-form/RootsFormSelectValue"
 export { RootsFormDateField } from "@/components/rootsy-form/RootsFormDateField"
 export { RootsFormSegmentField } from "@/components/rootsy-form/RootsFormSegmentField"
 export type { RootsFormSegmentOption } from "@/components/rootsy-form/RootsFormSegmentField"

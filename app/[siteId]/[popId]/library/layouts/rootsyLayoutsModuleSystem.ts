@@ -37,7 +37,7 @@ export const ROOTSY_LAYOUTS_MODULE_BACKDROP_FALLBACK = {
   vignette: `radial-gradient(ellipse at center, transparent 0%, color-mix(in srgb, ${hx("sombra", "950")} 55%, transparent) 100%)`,
 } as const
 
-/** Header módulo — cristal oscuro como menú (blur sobre capa 1). */
+/** Header módulo — cristal sobre capa POP. */
 export const ROOTSY_LAYOUTS_MODULE_HEADER = {
   /** space.800 + space.050 = 64 + 4 = 68px · Tailwind h-17 */
   heightPx: rootsySpacePx("800") + rootsySpacePx("050"),
@@ -45,8 +45,13 @@ export const ROOTSY_LAYOUTS_MODULE_HEADER = {
   heightToken: "space.800 + space.050",
   innerGridClass:
     "grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-4 px-4",
-  chromeClass: "menuHeaderChromeClass · bg-card/55 · backdrop-blur-2xl",
-  borderClass: "menuHeaderBorderClass · border-b · border-rootsy-hairline/80",
+  /** Cristal sombra · savia (sin Nature --card). */
+  chromeFundamentalsClass: "layoutsModuleHeaderGlassClass",
+  chromeFundamentalsToken: "sombra-900 / 55% · backdrop-blur-2xl · saturate 150%",
+  chromeFundamentalsSupportsToken: "sombra-900 / 45% (supports backdrop-filter)",
+  borderFundamentalsToken: "sombra-border / 80%",
+  controlsFundamentalsVariant: "pos · RootsIconButton ghost | primary",
+  typographyFundamentalsToken: "text-on-dark · sombra-400 meta · savia-400 rol",
 } as const
 
 /** Grid de 2 filas — header fijo + contenido scrollable. */

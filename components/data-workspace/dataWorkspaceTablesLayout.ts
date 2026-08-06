@@ -70,6 +70,8 @@ export const workspaceTableLayoutListBodyScopeClass = cn(
   "[&_[data-slot=table-body]_[data-slot=table-row]]:!h-14 [&_[data-slot=table-body]_[data-slot=table-row]]:!max-h-14",
   "[&_[data-slot=table-body]_[data-slot=table-cell]]:!h-14 [&_[data-slot=table-body]_[data-slot=table-cell]]:!max-h-14 [&_[data-slot=table-body]_[data-slot=table-cell]]:box-border [&_[data-slot=table-body]_[data-slot=table-cell]]:!py-0",
   "[&_[data-slot=table-body]_[data-slot=table-cell]:has([role=checkbox])]:!py-0",
+  "[&_[data-slot=table-body]_[role=checkbox]]:pointer-events-auto [&_[data-slot=table-head]_[role=checkbox]]:pointer-events-auto",
+  "[&_[data-slot=table-row][data-state=selected]]:!bg-[var(--wt-surface-selected)]",
 )
 
 /** Operaciones — header compacto layout; filas flexibles (celdas multilínea). */
@@ -82,6 +84,22 @@ export const workspaceTableOperationsListHeaderScopeClass = cn(
 )
 
 export const workspaceTableLayoutImageColumnClass = "w-14"
+
+/** Miniatura fila — space.500 · radius.medium · bruma-300. */
+export const workspaceTableLayoutThumbnailSmClass = "size-10"
+export const workspaceTableLayoutThumbnailLgClass = "size-20"
+
+export const workspaceTableLayoutThumbnailClass = cn(
+  "relative shrink-0 overflow-hidden rounded-lg border border-[var(--rootsy-bruma-300)] bg-[var(--rootsy-white)]",
+)
+
+export const workspaceTableLayoutThumbnailPlaceholderClass = cn(
+  workspaceTableLayoutThumbnailClass,
+  "flex items-center justify-center bg-[var(--rootsy-bruma-50)] text-[var(--rootsy-bruma-500)]",
+)
+
+export const workspaceTableLayoutThumbnailInteractiveClass =
+  "rounded-lg outline-none transition-opacity hover:opacity-90 focus-visible:ring-2 focus-visible:ring-[color-mix(in_srgb,var(--rootsy-savia-400)_45%,transparent)]"
 
 export const workspaceTableLayoutCellStackClass =
   "flex h-full min-h-0 min-w-0 flex-col justify-center gap-0 overflow-hidden"
@@ -98,7 +116,7 @@ export const workspaceTableLayoutListSurfaceClass = "bg-[var(--rootsy-bruma-50)]
 
 /** Barra de filtros — h-23 · toolbar elevation.overlay. */
 export const dataWorkspaceListFiltersBarClass = cn(
-  "shrink-0 border-b border-[var(--rootsy-bruma-200)] bg-white",
+  "shrink-0 bg-white",
 )
 
 /** Fila principal de filtros (PERÍODO / FILTROS / BUSCAR). */

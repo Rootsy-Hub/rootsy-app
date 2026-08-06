@@ -2,7 +2,10 @@
 
 import { MostradorWorkspace } from "@/app/[siteId]/[popId]/mostrador/components/MostradorWorkspace"
 import { DataWorkspaceHeaderIconButton } from "@/components/layouts/DataWorkspaceHeaderIconButton"
-import { DataWorkspaceLayout } from "@/components/layouts/DataWorkspaceLayout"
+import {
+  DataWorkspaceOperationsLayout,
+} from "@/components/layouts-module/DataWorkspaceOperationsLayout"
+import { dataWorkspaceModuleHeaderVariant } from "@/components/layouts-module/DataWorkspaceModuleLayout"
 import { useDataWorkspaceSidebar } from "@/components/layouts/useDataWorkspaceSidebar"
 import { usePopWorkspace } from "@/context/PopWorkspaceContext"
 import { useAuth } from "@/context/AuthContextSupabase"
@@ -66,13 +69,11 @@ function MostradorPage() {
   }
 
   return (
-    <DataWorkspaceLayout
+    <DataWorkspaceOperationsLayout
       siteId={siteId}
       popId={popId}
       popName={bootstrap?.popName ?? ""}
       title="Mostrador"
-      headerVariant="dark"
-      contentFlush
       loading={bootstrapLoading}
       userName={bootstrap?.userFullName || user?.email || ""}
       userAvatarSrc={bootstrap?.userImageUrl ?? undefined}
@@ -80,12 +81,11 @@ function MostradorPage() {
       sidebarEdgeToggle={false}
       sidebarOpen={catalogSidebarOpen}
       onSidebarOpenChange={setCatalogSidebarOpen}
-      mainClassName="bg-[#070a09] text-white min-h-0 overflow-hidden"
       headerActions={
         access.canCreate ? (
           <DataWorkspaceHeaderIconButton
             label="Nuevo pedido"
-            headerVariant="dark"
+            headerVariant={dataWorkspaceModuleHeaderVariant}
             primary
             onClick={() => startCreateOrderRef.current?.()}
           >
@@ -100,7 +100,7 @@ function MostradorPage() {
         catalogSidebarOpen={catalogSidebarOpen}
         onRegisterStartCreateOrder={registerStartCreateOrder}
       />
-    </DataWorkspaceLayout>
+    </DataWorkspaceOperationsLayout>
   )
 }
 

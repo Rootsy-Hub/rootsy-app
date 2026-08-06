@@ -384,7 +384,7 @@ export const BUTTON_RELATED_LINKS = [
 
 export type IconButtonThemeId = "workspace" | "pos"
 
-export type IconButtonEmphasisId = "outlined" | "filled" | "ghost"
+export type IconButtonEmphasisId = "outlined" | "filled" | "ghost" | "primary"
 
 export type IconButtonRowIntentId = "neutral" | "edit" | "destructive"
 
@@ -472,6 +472,12 @@ export const ROOTSY_ICON_BUTTON_VARIANTS: {
     theme: "pos",
     emphasis: "ghost",
     usage: "Sin borde — utilidades sobre tema POS.",
+  },
+  {
+    id: "pos-primary",
+    theme: "pos",
+    emphasis: "primary",
+    usage: "Acción principal del header módulo — savia-600 sobre chrome POS.",
   },
 ]
 

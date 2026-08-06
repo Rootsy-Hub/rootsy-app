@@ -21,6 +21,10 @@ function LibrarySectionPage() {
 
   useEffect(() => {
     if (!popId || !siteId) return
+    if (sectionId === "layouts") {
+      router.replace(librarySectionHref(siteId, popId, "layouts-module"))
+      return
+    }
     if (!isValidLibrarySection(sectionId)) {
       router.replace(librarySectionHref(siteId, popId, DEFAULT_LIBRARY_SECTION))
     }

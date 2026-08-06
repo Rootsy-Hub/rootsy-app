@@ -1,6 +1,4 @@
-/** Raíz y subsecciones de layouts operativos. */
-export const LAYOUTS_LIBRARY_ROOT = { id: "layouts", label: "Layouts" } as const
-
+/** Subsecciones de layouts operativos (sin página hub). */
 export const LAYOUTS_LIBRARY_SUBITEMS = [
   { id: "layouts-module", label: "Módulo" },
   { id: "layouts-tables", label: "Tablas" },
@@ -8,12 +6,12 @@ export const LAYOUTS_LIBRARY_SUBITEMS = [
   { id: "layouts-operations", label: "Operaciones" },
 ] as const
 
-export const LAYOUTS_LIBRARY_ITEMS = [
-  LAYOUTS_LIBRARY_ROOT,
-  ...LAYOUTS_LIBRARY_SUBITEMS,
-] as const
+export const LAYOUTS_LIBRARY_ITEMS = [...LAYOUTS_LIBRARY_SUBITEMS] as const
 
 export const LAYOUTS_SECTION_IDS = LAYOUTS_LIBRARY_ITEMS.map((item) => item.id)
+
+/** @deprecated Hub eliminado — redirigir a layouts-module. */
+export const LAYOUTS_LIBRARY_ROOT = { id: "layouts", label: "Layouts" } as const
 
 export function isLayoutsLibrarySection(sectionId: string): boolean {
   return (LAYOUTS_SECTION_IDS as readonly string[]).includes(sectionId)
@@ -26,11 +24,6 @@ export type LayoutsPageMeta = {
 }
 
 export const LAYOUTS_PAGE_META: Record<string, LayoutsPageMeta> = {
-  layouts: {
-    id: "layouts",
-    title: "Layouts",
-    description: "Jerarquía — módulos POP y tipos de contenido.",
-  },
   "layouts-module": {
     id: "layouts-module",
     title: "Módulo",

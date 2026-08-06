@@ -7,7 +7,9 @@ import {
   type MesasLayoutData,
 } from "@/app/[siteId]/[popId]/mesas/actions"
 import type { MesaSalon } from "@/app/[siteId]/[popId]/mesas/mesasTypes"
-import { DataWorkspaceLayout } from "@/components/layouts/DataWorkspaceLayout"
+import {
+  DataWorkspaceOperationsLayout,
+} from "@/components/layouts-module/DataWorkspaceOperationsLayout"
 import { useDataWorkspaceSidebar } from "@/components/layouts/useDataWorkspaceSidebar"
 import { usePopWorkspace } from "@/context/PopWorkspaceContext"
 import { useAuth } from "@/context/AuthContextSupabase"
@@ -102,13 +104,11 @@ function MesasPage() {
   }
 
   return (
-    <DataWorkspaceLayout
+    <DataWorkspaceOperationsLayout
       siteId={siteId}
       popId={popId}
       popName={popName}
       title="Mesas"
-      headerVariant="dark"
-      contentFlush
       loading={loading}
       userName={bootstrap?.userFullName || user?.email || ""}
       userAvatarSrc={bootstrap?.userImageUrl}
@@ -126,7 +126,6 @@ function MesasPage() {
       sidebarEdgeToggle={false}
       sidebarOpen={catalogSidebarOpen}
       onSidebarOpenChange={setCatalogSidebarOpen}
-      mainClassName="bg-[#070a09] text-white"
     >
       <MesasWorkspace
         siteId={siteId}
@@ -140,7 +139,7 @@ function MesasPage() {
           layoutDataRef.current = getter
         }}
       />
-    </DataWorkspaceLayout>
+    </DataWorkspaceOperationsLayout>
   )
 }
 

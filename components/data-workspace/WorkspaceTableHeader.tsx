@@ -2,14 +2,20 @@
 
 import { Checkbox } from "@/components/ui/checkbox"
 import {
+  TableCell,
   TableHead,
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
 import {
+  workspaceTableLayoutBodyRowClass,
+  workspaceTableLayoutSelectBodyCellClass,
+} from "@/components/data-workspace/dataWorkspaceTablesLayout"
+import {
   lightTableThClass,
   selectColumnInnerClass,
   tableRowSelectCheckboxClass,
+  workspaceTableNatureBodyRowClassNames,
   workspaceTableNatureCheckboxClass,
   workspaceTableNatureHeaderCellClass,
   workspaceTableHeaderRowClass,
@@ -17,7 +23,7 @@ import {
 } from "@/components/data-workspace/dataWorkspaceListStyles"
 import { cn } from "@/lib/utils"
 import type { CheckedState } from "@radix-ui/react-checkbox"
-import type { ReactNode } from "react"
+import type { ComponentProps, ReactNode } from "react"
 
 const headAlignClass = {
   left: "text-left",
@@ -120,5 +126,72 @@ export function WorkspaceTableSelectHead({
         />
       </div>
     </TableHead>
+  )
+}
+
+export function WorkspaceTableSelectCell({
+  checked,
+  onCheckedChange,
+  disabled,
+  ariaLabel,
+  tone = "default",
+  className,
+}: {
+  checked: CheckedState
+  onCheckedChange: (checked: CheckedState) => void
+  disabled?: boolean
+  ariaLabel: string
+  tone?: WorkspaceTableTone
+  className?: string
+}) {
+  return (
+    <TableCell className={cn(workspaceTableLayoutSelectBodyCellClass, className)}>
+      <div className={cn(selectColumnInnerClass, "relative z-[1]")}>
+        <Checkbox
+          className={workspaceTableCheckboxClass(tone)}
+          checked={checked}
+          onCheckedChange={onCheckedChange}
+          disabled={disabled}
+          aria-label={ariaLabel}
+          onClick={(event) => event.stopPropagation()}
+        />
+      </div>
+    </TableCell>
+  )
+}
+
+export function WorkspaceTableBodyRow({
+  index,
+  selected,
+  inactive,
+  noHover = true,
+  className,
+  children,
+  ...props
+}: Omit<ComponentProps<typeof TableRow>, "className"> & {
+  index: number
+  selected?: boolean
+  inactive?: boolean
+  noHover?: boolean
+  className?: string
+}) {
+  return (
+    <TableRow
+      data-state={selected ? "selected" : undefined}
+      className={cn(
+        workspaceTableLayoutBodyRowClass,
+        workspaceTableNatureBodyRowClassNames(index, {
+          selected,
+          noHover,
+          inactive,
+        }),
+        selected &&
+          "data-[state=selected]:!bg-[var(--wt-surface-selected)] hover:data-[state=selected]:!bg-[var(--wt-surface-selected)]",
+        className,
+      )}
+      {...props}
+    >
+      {children}
+    </TableRow>
   )
 }

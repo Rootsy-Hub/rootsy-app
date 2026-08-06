@@ -42,7 +42,7 @@ export function DataWorkspaceListActiveFiltersBar({
         {children}
         <RootsSubtleButton
           type="button"
-          size="sm"
+          size="compact"
           className={listBulkToolbarClearButtonClass}
           onClick={onClearAll}
         >

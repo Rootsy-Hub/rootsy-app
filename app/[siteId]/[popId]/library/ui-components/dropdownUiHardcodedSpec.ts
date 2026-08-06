@@ -246,3 +246,8 @@ export function getDropdownChevronUiStyle(theme: DropdownThemeId = "light") {
     flexShrink: 0,
   }
 }
+
+export {
+  DROPDOWN_UI_PANEL_SPEC,
+  getDropdownUiPanelSpecRows,
+} from "@/app/[siteId]/[popId]/library/ui-components/dropdownUiOverlaySpec"

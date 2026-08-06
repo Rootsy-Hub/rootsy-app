@@ -272,7 +272,6 @@ export const ROOTSY_DIALOG_KINDS: {
 
 export const ROOTSY_MODAL_ANATOMY = {
   scrimToken: "scrim.sombra.950",
-  scrimBlurPx: rootsySpacePx("050"),
   panelPaddingRole: "panel-padding",
   panelPaddingXToken: "space.400",
   panelPaddingXPx: ROOTSY_MODAL_PANEL_PADDING_X_PX,

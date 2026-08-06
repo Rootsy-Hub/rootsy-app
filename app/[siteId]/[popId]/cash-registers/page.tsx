@@ -30,7 +30,10 @@ import {
   hasCashRegisterArcaInput,
   saveCashRegisterArcaConfig,
 } from "@/app/[siteId]/[popId]/cash-registers/cashRegisterArcaClient"
-import { DataWorkspaceLayout } from "@/components/layouts/DataWorkspaceLayout"
+import {
+  DataWorkspaceModuleLayout,
+  dataWorkspaceModuleHeaderVariant,
+} from "@/components/layouts-module/DataWorkspaceModuleLayout"
 import { DataWorkspaceHeaderIconButton } from "@/components/layouts/DataWorkspaceHeaderIconButton"
 import {
   dataWorkspaceBlocksEmptyStateClass,
@@ -410,12 +413,12 @@ function CashRegistersPage() {
 
   return (
     <>
-      <DataWorkspaceLayout
+      <DataWorkspaceModuleLayout
         siteId={siteId}
         popId={popId}
         popName={popName}
         title="Cajas"
-        headerVariant="dark"
+        headerVariant={dataWorkspaceModuleHeaderVariant}
         loading={pageLoading}
         userName={bootstrap?.userFullName}
         userAvatarSrc={bootstrap?.userImageUrl ?? undefined}
@@ -427,7 +430,7 @@ function CashRegistersPage() {
           canCreate ? (
             <DataWorkspaceHeaderIconButton
               label="Nueva caja"
-              headerVariant="dark"
+              headerVariant={dataWorkspaceModuleHeaderVariant}
               primary
               onClick={() => openCreate()}
             >
@@ -478,7 +481,7 @@ function CashRegistersPage() {
               </div>
             )}
         </div>
-      </DataWorkspaceLayout>
+      </DataWorkspaceModuleLayout>
 
       <CashRegisterCreateDialog
         open={createOpen}

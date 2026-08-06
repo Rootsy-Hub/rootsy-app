@@ -1,12 +1,12 @@
 "use client"
 
 import {
-  articleDialogOverlayClass,
-  articleDialogSurfaceClass,
-  articleDialogSurfaceTwoColClass,
-  articleDialogSurfaceWideClass,
-} from "@/app/[siteId]/[popId]/articles/articleConstants"
-import "@/app/[siteId]/[popId]/library/color/rootsyNaturePalette.css"
+  rootsDialogOverlayClass,
+  rootsDialogContentZClass,
+  rootsDialogSurfaceDefaultClass,
+  rootsDialogSurfaceTwoColClass,
+  rootsDialogSurfaceWideClass,
+} from "@/components/rootsy-dialog/rootsDialogProductStyles"
 import { DialogContent } from "@/components/ui/dialog"
 import { cn } from "@/lib/utils"
 import type { ComponentProps } from "react"
@@ -14,9 +14,9 @@ import type { ComponentProps } from "react"
 export type RootsDialogSize = "default" | "wide" | "twoCol"
 
 const surfaceClassBySize: Record<RootsDialogSize, string> = {
-  default: articleDialogSurfaceClass,
-  wide: articleDialogSurfaceWideClass,
-  twoCol: articleDialogSurfaceTwoColClass,
+  default: rootsDialogSurfaceDefaultClass,
+  wide: rootsDialogSurfaceWideClass,
+  twoCol: rootsDialogSurfaceTwoColClass,
 }
 
 type Props = Omit<ComponentProps<typeof DialogContent>, "overlayClassName"> & {
@@ -32,9 +32,8 @@ export function RootsDialogContent({
 }: Props) {
   return (
     <DialogContent
-      className={cn(surfaceClassBySize[size], className)}
-      overlayClassName={articleDialogOverlayClass}
-      data-rootsy-light-shell="true"
+      className={cn(surfaceClassBySize[size], rootsDialogContentZClass, "min-h-0", className)}
+      overlayClassName={rootsDialogOverlayClass}
       showCloseButton={showCloseButton}
       {...props}
     >

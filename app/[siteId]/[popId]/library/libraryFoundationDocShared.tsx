@@ -24,14 +24,17 @@ export function FoundationBrumaStage({
   caption,
   children,
   className,
+  clip = true,
 }: {
   caption?: string
   children: ReactNode
   className?: string
+  /** false = no recortar sombras de overlays (modales, dropdowns). */
+  clip?: boolean
 }) {
   return (
     <div
-      className="overflow-hidden rounded-2xl border"
+      className={cn(clip ? "overflow-hidden" : "overflow-visible", "rounded-2xl border")}
       style={{
         backgroundColor: CONCEPT_TOKENS.bruma100,
         borderColor: CONCEPT_TOKENS.bruma200,

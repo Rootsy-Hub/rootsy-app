@@ -19,7 +19,10 @@ import { treasuryPaymentOptionKey } from "@/lib/treasuryPaymentOptions"
 import { ExpenseKindCardsPanel } from "@/app/[siteId]/[popId]/expenses/ExpenseKindCards"
 import { ExpensePeriodToolbar } from "@/app/[siteId]/[popId]/expenses/ExpensePeriodToolbar"
 import { ExpenseSummaryDashboard } from "@/app/[siteId]/[popId]/expenses/ExpenseSummaryDashboard"
-import { DataWorkspaceLayout } from "@/components/layouts/DataWorkspaceLayout"
+import {
+  DataWorkspaceModuleLayout,
+  dataWorkspaceModuleHeaderVariant,
+} from "@/components/layouts-module/DataWorkspaceModuleLayout"
 import { DataWorkspaceHeaderIconButton } from "@/components/layouts/DataWorkspaceHeaderIconButton"
 import { monthBoundsISO } from "@/lib/expenseMonth"
 import { usePopWorkspace } from "@/context/PopWorkspaceContext"
@@ -390,12 +393,12 @@ function ExpensesPage() {
 
   return (
     <>
-      <DataWorkspaceLayout
+      <DataWorkspaceModuleLayout
         siteId={siteId}
         popId={popId}
         popName={popName}
         title="Gastos"
-        headerVariant="dark"
+        headerVariant={dataWorkspaceModuleHeaderVariant}
         loading={pageLoading}
         userName={bootstrap?.userFullName}
         userAvatarSrc={bootstrap?.userImageUrl ?? undefined}
@@ -408,7 +411,7 @@ function ExpensesPage() {
             {canCreate ? (
               <DataWorkspaceHeaderIconButton
                 label="Nuevo gasto"
-                headerVariant="dark"
+                headerVariant={dataWorkspaceModuleHeaderVariant}
                 primary
                 onClick={() => openCreate()}
               >
@@ -418,7 +421,7 @@ function ExpensesPage() {
             {canUpdate ? (
               <DataWorkspaceHeaderIconButton
                 label="Categorías"
-                headerVariant="dark"
+                headerVariant={dataWorkspaceModuleHeaderVariant}
                 onClick={() => setCatOpen(true)}
               >
                 <Tags className="size-5" aria-hidden />
@@ -482,7 +485,7 @@ function ExpensesPage() {
             )}
           </div>
         </div>
-      </DataWorkspaceLayout>
+      </DataWorkspaceModuleLayout>
 
       <Dialog open={createOpen} onOpenChange={setCreateOpen}>
         <DialogContent

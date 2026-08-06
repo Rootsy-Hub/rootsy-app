@@ -2,7 +2,10 @@
 
 import "@/app/[siteId]/[popId]/library/color/rootsyNaturePalette.css"
 import { CashRegisterDetailView } from "@/app/[siteId]/[popId]/cash-registers/CashRegisterDetailView"
-import { DataWorkspaceLayout } from "@/components/layouts/DataWorkspaceLayout"
+import {
+  DataWorkspaceModuleLayout,
+  dataWorkspaceModuleHeaderVariant,
+} from "@/components/layouts-module/DataWorkspaceModuleLayout"
 import {
   dataWorkspaceBlocksPageMainClass,
   dataWorkspaceBlocksPageScopeClass,
@@ -30,12 +33,12 @@ function CashRegisterDetailPage() {
   }
 
   return (
-    <DataWorkspaceLayout
+    <DataWorkspaceModuleLayout
       siteId={siteId}
       popId={popId}
       popName={bootstrap?.popName ?? ""}
       title="Cajas"
-      headerVariant="dark"
+      headerVariant={dataWorkspaceModuleHeaderVariant}
       loading={bootstrapLoading}
       userName={bootstrap?.userFullName}
       userAvatarSrc={bootstrap?.userImageUrl ?? undefined}
@@ -59,7 +62,7 @@ function CashRegisterDetailPage() {
           registerId={registerId}
         />
       </div>
-    </DataWorkspaceLayout>
+    </DataWorkspaceModuleLayout>
   )
 }
 

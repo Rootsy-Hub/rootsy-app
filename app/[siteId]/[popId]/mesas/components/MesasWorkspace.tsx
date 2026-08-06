@@ -17,6 +17,7 @@ import type {
 } from "@/app/[siteId]/[popId]/mesas/mesasTypes"
 import { useMesasSaleCheckout } from "@/app/[siteId]/[popId]/mesas/useMesasSaleCheckout"
 import { useMesasState } from "@/app/[siteId]/[popId]/mesas/useMesasState"
+import { OperationsModuleBackdrop } from "@/components/layouts-module/DataWorkspaceOperationsLayout"
 import { OpenCashSessionBanner } from "@/components/sale-operation/OpenCashSessionBanner"
 import { SaleOperationToolbox } from "@/components/sale-operation/SaleOperationToolbox"
 import { useCartListScrollHighlight } from "@/hooks/useCartListScrollHighlight"
@@ -249,11 +250,8 @@ export function MesasWorkspace({
   )
 
   return (
-    <div className="dark relative flex h-full min-h-0 w-full flex-col overflow-hidden bg-[#070a09] text-white">
-      <div className="pointer-events-none absolute inset-0">
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_20%,rgba(52,211,153,0.14),transparent_40%),radial-gradient(circle_at_80%_10%,rgba(99,102,241,0.1),transparent_36%)]" />
-        <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.03)_1px,transparent_1px)] bg-size-[38px_38px] opacity-20" />
-      </div>
+    <div className="relative flex h-full min-h-0 w-full flex-col overflow-hidden">
+      <OperationsModuleBackdrop />
 
       {checkout.catalogLoadAttempted &&
       !checkout.catalogLoading &&

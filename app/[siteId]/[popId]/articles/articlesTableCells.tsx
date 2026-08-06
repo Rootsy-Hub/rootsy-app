@@ -10,6 +10,7 @@ import {
   workspaceTableLayoutCellSecondaryTextClass,
   workspaceTableLayoutCellStackClass,
   workspaceTableLayoutImageColumnClass,
+  workspaceTableLayoutThumbnailInteractiveClass,
 } from "@/components/data-workspace/dataWorkspaceTablesLayout"
 import {
   workspaceTableNatureLinkClass,
@@ -49,7 +50,7 @@ export function ArticleTableImageCell({
       {src ? (
         <button
           type="button"
-          className="rounded-lg outline-none transition-opacity hover:opacity-90 focus-visible:ring-2 focus-visible:ring-primary/30"
+          className={workspaceTableLayoutThumbnailInteractiveClass}
           onClick={() => onPreview(src)}
           aria-label={`Ver imagen de ${row.name || "artículo"}`}
         >
@@ -261,12 +262,7 @@ export function ArticleTableStockCell({ stockOnHand }: { stockOnHand: number }) 
         "w-[5.5rem] text-right",
       )}
     >
-      <span
-        className={cn(
-          "block text-sm font-semibold tabular-nums leading-4",
-          workspaceTableNatureMoneyClass,
-        )}
-      >
+      <span className={cn("block leading-4", workspaceTableNatureMoneyClass)}>
         {formatArticleStockOnHand(stockOnHand)}
       </span>
     </TableCell>

@@ -8,16 +8,14 @@ import {
   RootsPrimaryButton,
   RootsSubtleButton,
 } from "@/components/rootsy-button"
-import { rootsFormTextFieldClass } from "@/components/rootsy-form/rootsFormStyles"
-import { saleOpAlertDialogContent } from "@/components/sale-operation/saleOperationStyles"
 import {
-  AlertDialog,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog"
+  rootsAlertDialogContentClass,
+  rootsAlertDialogDescriptionClass,
+  rootsAlertDialogFooterClass,
+  rootsAlertDialogSurfaceClass,
+  rootsAlertDialogTitleClass,
+} from "@/components/rootsy-dialog"
+import { rootsFormTextFieldClass } from "@/components/rootsy-form/rootsFormStyles"
 import { Input } from "@/components/ui/input"
 import { cn } from "@/lib/utils"
 import { useState } from "react"
@@ -39,7 +37,7 @@ export function ArticleDeleteAlertLibraryDemo() {
       title="Eliminar artículo"
       source="app/[siteId]/[popId]/articles/ArticleDeleteDialog.tsx"
       tokens={[
-        "saleOpAlertDialogContent",
+        "RootsAlertDialogContent",
         "rootsFormTextFieldClass",
         "RootsSubtleButton",
         "RootsDangerButton",
@@ -67,53 +65,25 @@ export function ArticleDeleteAlertLibraryDemo() {
         onConfirmDelete={handleClose}
       />
 
-      <AlertDialog open={false}>
-        <AlertDialogContent className={saleOpAlertDialogContent}>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Eliminar {DEMO_ARTICLE_NAME}</AlertDialogTitle>
-            <AlertDialogDescription>
-              Esta acción no se puede deshacer. Para confirmar, escribí (
-              {confirmPhrase}) abajo.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <Input
-            readOnly
-            value=""
-            placeholder={confirmPhrase}
-            className={rootsFormTextFieldClass}
-            aria-label={`Confirmación: ${confirmPhrase}`}
-          />
-          <AlertDialogFooter>
-            <RootsSubtleButton type="button">Cancelar</RootsSubtleButton>
-            <RootsDangerButton type="button" disabled>
-              Eliminar definitivamente
-            </RootsDangerButton>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-
-      <div
-        className={cn(
-          "mt-3 overflow-hidden rounded-2xl border border-dashed border-border/70 p-4",
-          saleOpAlertDialogContent,
-        )}
-      >
-        <div className="space-y-4 px-1 py-1">
-          <div className="space-y-2">
-            <p className="text-base font-semibold">Eliminar {DEMO_ARTICLE_NAME}</p>
-            <p className="text-sm text-muted-foreground">
-              Esta acción no se puede deshacer. Para confirmar, escribí (
-              {confirmPhrase}) abajo.
-            </p>
+      <div className="mt-3 overflow-hidden rounded-2xl border border-dashed border-border/70 p-4">
+        <div className={cn("pointer-events-none shadow-md", rootsAlertDialogSurfaceClass)}>
+          <div className={rootsAlertDialogContentClass}>
+            <div className="space-y-2">
+              <p className={rootsAlertDialogTitleClass}>Eliminar {DEMO_ARTICLE_NAME}</p>
+              <p className={rootsAlertDialogDescriptionClass}>
+                Esta acción no se puede deshacer. Para confirmar, escribí (
+                {confirmPhrase}) abajo.
+              </p>
+            </div>
+            <Input
+              readOnly
+              value=""
+              placeholder={confirmPhrase}
+              className={rootsFormTextFieldClass}
+              aria-label={`Confirmación: ${confirmPhrase}`}
+            />
           </div>
-          <Input
-            readOnly
-            value=""
-            placeholder={confirmPhrase}
-            className={rootsFormTextFieldClass}
-            aria-label={`Confirmación: ${confirmPhrase}`}
-          />
-          <div className="flex justify-end gap-2 pt-1">
+          <div className={cn(rootsAlertDialogFooterClass, "flex items-center justify-between")}>
             <RootsSubtleButton type="button">Cancelar</RootsSubtleButton>
             <RootsDangerButton type="button" disabled>
               Eliminar definitivamente

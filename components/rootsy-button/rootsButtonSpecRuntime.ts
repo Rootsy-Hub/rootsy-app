@@ -71,7 +71,7 @@ export function getButtonAppearanceStyle(
   sizeId: ButtonsUiSizeId = "default",
   options?: { withIcon?: boolean },
 ): CSSProperties {
-  const size = BUTTONS_UI_SIZE_SPECS[sizeId]
+  const size = BUTTONS_UI_SIZE_SPECS[sizeId] ?? BUTTONS_UI_SIZE_SPECS.compact
   const surface = getButtonsUiAppearanceSurface(appearance, state)
 
   return {

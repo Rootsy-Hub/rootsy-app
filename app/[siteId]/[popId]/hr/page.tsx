@@ -19,7 +19,10 @@ import {
   hrCreateRolePermissionCatalog,
 } from "@/app/[siteId]/[popId]/hr/HrRolePermissionsDialog"
 import { dataWorkspaceShellCard } from "@/components/data-workspace/dataWorkspaceListStyles"
-import { DataWorkspaceLayout } from "@/components/layouts/DataWorkspaceLayout"
+import {
+  DataWorkspaceModuleLayout,
+  dataWorkspaceModuleHeaderVariant,
+} from "@/components/layouts-module/DataWorkspaceModuleLayout"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -376,12 +379,12 @@ function HrPage() {
 
   return (
     <>
-      <DataWorkspaceLayout
+      <DataWorkspaceModuleLayout
         siteId={siteId}
         popId={popId}
         popName={popName}
         title="RRHH"
-        headerVariant="dark"
+        headerVariant={dataWorkspaceModuleHeaderVariant}
         contentFlush
         loading={pageLoading}
         userName={bootstrap?.userFullName}
@@ -751,7 +754,7 @@ function HrPage() {
             </>
           )}
         </div>
-      </DataWorkspaceLayout>
+      </DataWorkspaceModuleLayout>
 
       <HrRolePermissionsDialog
         open={permModalOpen}

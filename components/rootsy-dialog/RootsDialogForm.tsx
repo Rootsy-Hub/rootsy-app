@@ -55,7 +55,7 @@ export function RootsDialogLoadingState({
       aria-busy="true"
       aria-live="polite"
     >
-      <Spinner className="size-10 text-[#78716c]" />
+      <Spinner className="size-10 text-[var(--rootsy-savia-600)]" />
       <span className="sr-only">{message ?? "Cargando"}</span>
     </div>
   )

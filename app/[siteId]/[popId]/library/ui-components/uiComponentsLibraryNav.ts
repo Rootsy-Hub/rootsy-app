@@ -53,7 +53,7 @@ export const UI_COMPONENTS_PAGE_META: Record<string, UiComponentsPageMeta> = {
     id: "ui-components-modals",
     title: "Modales UI",
     description:
-      "Diálogos y alertas — scrim sombra · overlay + shadow · panel-padding · tipografía heading · footers desde Botones UI.",
+      "Scrim viewport · panel overlay + shadow.overlay + color.border · body sunken · alert compacto — specs tabuladas + previews completos.",
   },
   "ui-components-banners": {
     id: "ui-components-banners",
@@ -65,7 +65,7 @@ export const UI_COMPONENTS_PAGE_META: Record<string, UiComponentsPageMeta> = {
     id: "ui-components-dropdown",
     title: "Dropdown UI",
     description:
-      "Menú de acciones — overlay + shadow.overlay · radius.xlarge · ítems space.500 · triggers Botones UI · destructive aislado.",
+      "Panel overlay + shadow.overlay · color.border · radius.xlarge — anclado al trigger, sin scrim. Ítems · triggers · destructive aislado.",
   },
 }
 

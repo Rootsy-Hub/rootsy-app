@@ -1,12 +1,12 @@
 "use client"
 
 import {
-  dataWorkspaceHeaderChromeButtonClass,
-  dataWorkspaceHeaderIconButtonClass,
   isDarkChromeHeader,
+  isLayoutsTablesHeader,
+  isNightForestHeader,
   type DataWorkspaceHeaderVariant,
 } from "@/components/layouts/dataWorkspaceHeaderStyles"
-import { cn } from "@/lib/utils"
+import { RootsIconButton } from "@/components/rootsy-button/RootsIconButton"
 import type { ButtonHTMLAttributes, ReactNode } from "react"
 
 export type DataWorkspaceHeaderIconButtonProps = {
@@ -22,29 +22,51 @@ export function DataWorkspaceHeaderIconButton({
   label,
   headerVariant = "default",
   primary = false,
-  className,
-  type = "button",
-  children,
   ...rest
 }: DataWorkspaceHeaderIconButtonProps) {
-  const useDarkIconButton = isDarkChromeHeader(headerVariant)
+  if (isLayoutsTablesHeader(headerVariant)) {
+    return (
+      <RootsIconButton
+        label={label}
+        theme="pos"
+        emphasis={primary ? "primary" : "ghost"}
+        size="default"
+        {...rest}
+      />
+    )
+  }
+
+  if (isNightForestHeader(headerVariant)) {
+    return (
+      <RootsIconButton
+        label={label}
+        theme="pos"
+        emphasis="outlined"
+        size="default"
+        {...rest}
+      />
+    )
+  }
+
+  if (isDarkChromeHeader(headerVariant)) {
+    return (
+      <RootsIconButton
+        label={label}
+        theme="pos"
+        emphasis="ghost"
+        size="default"
+        {...rest}
+      />
+    )
+  }
 
   return (
-    <button
-      type={type}
-      aria-label={label}
-      className={cn(
-        useDarkIconButton
-          ? cn(
-              dataWorkspaceHeaderChromeButtonClass(headerVariant),
-              "[&_svg:not([class*='size-'])]:size-5",
-            )
-          : dataWorkspaceHeaderIconButtonClass(headerVariant, { primary }),
-        className,
-      )}
+    <RootsIconButton
+      label={label}
+      theme="workspace"
+      emphasis={primary ? "filled" : "ghost"}
+      size="default"
       {...rest}
-    >
-      {children}
-    </button>
+    />
   )
 }

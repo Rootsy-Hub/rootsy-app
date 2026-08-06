@@ -1,44 +1,15 @@
 /**
  * Librería — dosel sombra en nav, bruma en contenido, savia en foco activo.
  * Tokens: --rootsy-* (styles/rootsy/) · tema: .rootsy-theme-library
+ *
+ * El shell exterior es layout · módulo (fondo POP + header cristal reutilizable).
+ * Los estilos de abajo aplican solo al área de documentación (.rootsy-library-shell).
  */
-
-.rootsy-app-light:has(.rootsy-library-shell) {
-  background-color: var(--rootsy-sombra-950);
-  color: var(--foreground);
-}
-
-.rootsy-app-light:has(.rootsy-library-shell) > .pointer-events-none {
-  display: none;
-}
-
-.rootsy-app-light:has(.rootsy-library-shell) header.h-17 {
-  background-color: var(--rootsy-sombra-900) !important;
-  border-color: rgb(51 65 85 / 0.45) !important;
-  color: #f8fafc !important;
-}
-
-.rootsy-app-light:has(.rootsy-library-shell) header.h-17 a.rounded-xl,
-.rootsy-app-light:has(.rootsy-library-shell) header.h-17 button.rounded-xl {
-  border-color: rgb(51 65 85 / 0.6) !important;
-  background-color: transparent !important;
-  color: var(--rootsy-sombra-300) !important;
-}
-
-.rootsy-app-light:has(.rootsy-library-shell) header.h-17 a.rounded-xl:hover,
-.rootsy-app-light:has(.rootsy-library-shell) header.h-17 button.rounded-xl:hover {
-  border-color: rgb(100 116 139 / 0.5) !important;
-  background-color: rgb(255 255 255 / 0.04) !important;
-  color: #f8fafc !important;
-}
-
-.rootsy-app-light:has(.rootsy-library-shell) header.h-17 .h-6.w-px {
-  background-color: rgb(51 65 85 / 0.7) !important;
-}
 
 .rootsy-library-shell {
   background-color: var(--rootsy-bruma-100) !important;
   color: var(--rootsy-bruma-900);
+  overflow: hidden !important;
 }
 
 .rootsy-library-shell > .relative.flex {

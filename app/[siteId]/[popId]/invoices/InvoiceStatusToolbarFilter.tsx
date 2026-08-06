@@ -6,7 +6,7 @@ import {
   type InvoiceStatusValue,
 } from "@/app/[siteId]/[popId]/invoices/invoiceConstants"
 import { dataWorkspaceListFiltersFieldClass } from "@/components/data-workspace/dataWorkspaceTablesLayout"
-import { lightToolbarPanelClass } from "@/components/data-workspace/dataWorkspaceListStyles"
+import { lightToolbarPanelClass, listToolbarFilterTriggerActiveClass } from "@/components/data-workspace/dataWorkspaceListStyles"
 import {
   RootsFormSelectField,
   RootsFormSelectItem,
@@ -23,8 +23,6 @@ const FILTER_ITEMS: { id: InvoiceStatusFilterId; label: string }[] = [
     label: INVOICE_STATUS_LABEL[value],
   })),
 ]
-
-const filterTriggerActiveClass = "!border-[#16704a] ring-2 ring-[#16704a]/20"
 
 export function resolveInvoiceStatusFilterId(
   status: InvoiceStatusValue | "",
@@ -55,13 +53,14 @@ export function InvoiceStatusToolbarFilter({
       value={value}
       onValueChange={(next) => onChange(next as InvoiceStatusFilterId)}
       prefix={<CircleDot className="size-4" aria-hidden />}
+      prefixVariant="inline"
       className={cn(
         variant === "layout"
           ? dataWorkspaceListFiltersFieldClass()
           : lightToolbarPanelClass,
         className,
       )}
-      triggerClassName={value !== "all" ? filterTriggerActiveClass : undefined}
+      triggerClassName={value !== "all" ? listToolbarFilterTriggerActiveClass : undefined}
     >
       {FILTER_ITEMS.map((item) => (
         <RootsFormSelectItem key={item.id} value={item.id}>

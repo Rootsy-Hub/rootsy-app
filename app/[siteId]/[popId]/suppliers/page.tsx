@@ -43,7 +43,6 @@ import { suppliersSkeletonColumns } from "@/components/data-workspace/workspaceT
 import {
   selectColumnInnerClass,
   workspaceTableLayoutClassName,
-  workspaceTableNatureBodyRowClassNames,
   workspaceTableNatureCheckboxClass,
   workspaceTableNatureTextPrimaryClass,
   workspaceTableNatureTextSecondaryClass,
@@ -54,14 +53,15 @@ import {
   dataWorkspaceListFiltersPanelLastClass,
   workspaceTableLayoutActionsBodyCellClass,
   workspaceTableLayoutBodyCellClass,
-  workspaceTableLayoutBodyRowClass,
   workspaceTableLayoutHeaderHeadClass,
   workspaceTableLayoutSelectBodyCellClass,
 } from "@/components/data-workspace/dataWorkspaceTablesLayout"
 import {
+  WorkspaceTableBodyRow,
   WorkspaceTableHead,
   WorkspaceTableHeader,
   WorkspaceTableHeaderRow,
+  WorkspaceTableSelectCell,
   WorkspaceTableSelectHead,
 } from "@/components/data-workspace/WorkspaceTableHeader"
 import { DataWorkspaceHeaderIconButton } from "@/components/layouts/DataWorkspaceHeaderIconButton"
@@ -70,7 +70,6 @@ import { Checkbox } from "@/components/ui/checkbox"
 import {
   TableBody,
   TableCell,
-  TableRow,
 } from "@/components/ui/table"
 import withAuth from "@/hoc/withAuth"
 import { usePadronAutofillRazonSocial } from "@/hooks/usePadronAutofillRazonSocial"
@@ -784,34 +783,25 @@ function SuppliersPage() {
                   null
                 ) : (
                   pageRows.map((r, i) => (
-                    <TableRow
-                      key={r.id}
-                      className={cn(
-                        workspaceTableLayoutBodyRowClass,
-                        workspaceTableNatureBodyRowClassNames(i, {
-                          selected: selected.has(r.id),
-                          noHover: true,
-                          inactive: !r.isActive,
-                        }),
-                      )}
-                    >
-                      <TableCell className={workspaceTableLayoutSelectBodyCellClass}>
-                        <div className={selectColumnInnerClass}>
-                          <Checkbox
-                            className={workspaceTableNatureCheckboxClass}
-                            checked={selected.has(r.id)}
-                            onCheckedChange={(c) => {
-                              setSelected((prev) => {
-                                const next = new Set(prev)
-                                if (c === true) next.add(r.id)
-                                else next.delete(r.id)
-                                return next
-                              })
-                            }}
-                            aria-label={`Seleccionar ${r.name || "proveedor"}`}
-                          />
-                        </div>
-                      </TableCell>
+                    <WorkspaceTableBodyRow
+                        key={r.id}
+                        index={i}
+                        selected={selected.has(r.id)}
+                        inactive={!r.isActive}
+                      >
+                      <WorkspaceTableSelectCell
+                          tone="nature"
+                          checked={selected.has(r.id)}
+                          onCheckedChange={(c) => {
+                            setSelected((prev) => {
+                              const next = new Set(prev)
+                              if (c === true) next.add(r.id)
+                              else next.delete(r.id)
+                              return next
+                            })
+                          }}
+                          ariaLabel={`Seleccionar ${r.name || "proveedor"}`}
+                        />
                       <TableCell className={cn(workspaceTableLayoutBodyCellClass, "min-w-[10rem]")}>
                         <p className={cn("truncate font-medium", workspaceTableNatureTextPrimaryClass)}>
                           {r.name || "—"}
@@ -905,7 +895,7 @@ function SuppliersPage() {
                           </div>
                         </TableCell>
                       ) : null}
-                    </TableRow>
+                    </WorkspaceTableBodyRow>
                   ))
                 )}
               </TableBody>

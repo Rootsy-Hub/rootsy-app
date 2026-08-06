@@ -184,11 +184,8 @@ export type WorkspaceTableTone = "default" | "nature" | "earth"
 
 export const workspaceTableNatureSurfaceClass = "bg-[var(--wt-surface)]"
 
-/** Labels meta — header de tabla layout, toolbar y total del footer oscuro. */
-export const workspaceTableLayoutMetaLabelClass = cn(
-  rootsFormFieldLabelTypographyClass,
-  "font-bold",
-)
+/** Labels meta — tipografía base (medium); footer oscuro añade bold explícito. */
+export const workspaceTableLayoutMetaLabelClass = rootsFormFieldLabelTypographyClass
 
 /** Encabezado — bruma sunken (layout tablas). */
 export const workspaceTableNatureHeaderCellClass = cn(
@@ -208,21 +205,22 @@ export function workspaceTableNatureBodyRowClassNames(
   },
 ): string {
   const isEven = index % 2 === 0
+  /** Par con spec layout · tablas — even blanco · odd bruma-50. */
   const rowSurface = isEven
-    ? "bg-[var(--wt-surface-stripe)]"
-    : "bg-[var(--wt-surface)]"
+    ? "bg-[var(--wt-surface)]"
+    : "bg-[var(--wt-surface-stripe)]"
   const rowSurfaceHover = isEven
-    ? "hover:!bg-[var(--wt-surface-stripe)]"
-    : "hover:!bg-[var(--wt-surface)]"
+    ? "hover:!bg-[var(--wt-surface)]"
+    : "hover:!bg-[var(--wt-surface-stripe)]"
 
   return cn(
     "border-b border-[var(--wt-border)] transition-colors duration-150",
     rowSurface,
-    options?.noHover
-      ? rowSurfaceHover
-      : "hover:bg-[var(--wt-surface-hover)]",
-    options?.selected &&
-      "bg-[var(--wt-surface-selected)] hover:bg-[var(--wt-surface-selected)] ring-1 ring-inset ring-[var(--wt-surface-selected-ring)]",
+    options?.selected
+      ? "!bg-[var(--wt-surface-selected)] hover:!bg-[var(--wt-surface-selected)] ring-1 ring-inset ring-[var(--wt-surface-selected-ring)]"
+      : options?.noHover
+        ? rowSurfaceHover
+        : "hover:!bg-[var(--wt-surface-hover)]",
     options?.inactive && workspaceTableNatureBodyRowInactiveClass,
   )
 }
@@ -240,11 +238,11 @@ export const workspaceTableNatureLinkClass =
   "font-medium text-[var(--wt-link)] underline-offset-2 hover:text-[var(--wt-link-hover)] hover:underline"
 
 export const workspaceTableNatureMoneyClass = cn(
-  "font-numeric text-[13px] tabular-nums tracking-tight text-[var(--wt-money)]",
+  "font-numeric text-sm font-normal tabular-nums tracking-tight text-[var(--wt-money)]",
 )
 
 export const workspaceTableNatureMoneyNegativeClass = cn(
-  "font-numeric text-[13px] tabular-nums tracking-tight text-[var(--wt-money-negative)]",
+  "font-numeric text-sm tabular-nums tracking-tight text-[var(--wt-money-negative)]",
 )
 
 /** Barra de acciones bulk — altura fija h-11 alineada al header layout. */
@@ -314,12 +312,15 @@ export const workspaceTableNatureSkeletonTone = {
   pill: "animate-pulse rounded-md bg-[var(--wt-skeleton)]",
 } as const
 
-/** Checkbox — borde bruma, marca savia al marcar. */
+/** Checkbox — borde bruma, marca savia al marcar. Aísla estilos del shell Nature (.dark). */
 export const workspaceTableNatureCheckboxClass = cn(
-  "size-4 rounded border shadow-none [&_[data-slot=checkbox-indicator]_svg]:size-3.5",
-  "border-[var(--rootsy-bruma-300)] bg-white",
+  "relative z-[1] shrink-0 cursor-pointer select-auto pointer-events-auto",
+  "size-4 rounded border bg-white shadow-none",
+  "[&_[data-slot=checkbox-indicator]_svg]:size-3.5",
+  "border-[var(--rootsy-bruma-300)]",
   "data-[state=checked]:border-[var(--rootsy-savia-600)] data-[state=checked]:bg-[var(--rootsy-savia-600)] data-[state=checked]:text-white",
   "data-[state=indeterminate]:border-[color-mix(in_srgb,var(--rootsy-savia-600)_50%,var(--rootsy-bruma-300))] data-[state=indeterminate]:bg-[var(--rootsy-savia-100)] data-[state=indeterminate]:text-[var(--rootsy-savia-700)]",
+  "dark:bg-white dark:data-[state=checked]:border-[var(--rootsy-savia-600)] dark:data-[state=checked]:bg-[var(--rootsy-savia-600)] dark:data-[state=checked]:text-white",
 )
 
 /** @deprecated Usar workspaceTableNatureCheckboxClass */
@@ -355,7 +356,7 @@ export const thBase = cn(
 /** Encabezado sticky compartido (layout preview + listados workspace). */
 export const workspaceTableHeaderCellClass = cn(
   thBase,
-  "font-bold text-foreground",
+  "text-foreground",
 )
 
 /** Alias histórico — preferir `WorkspaceTableHead`. */
@@ -420,23 +421,35 @@ export const lightDateCalendarClass = rootsyDateCalendarPanelClass
 export const lightFilterChipClass =
   "max-w-full gap-1 rounded-md border-border/50 py-0 pr-0.5 font-normal"
 
+/** Control toolbar con filtro aplicado — paridad form.control focus (savia-400 · ring 45%). */
+export const listToolbarFilterTriggerActiveClass =
+  "!border-[var(--rootsy-savia-400)] !shadow-[0_0_0_2px_color-mix(in_srgb,var(--rootsy-savia-400)_45%,transparent)] !ring-0"
+
+/** Badge de cantidad en trigger «Filtros» — círculo fijo 20×20 · acento savia-400. */
+export const listToolbarFilterCountBadgeClass =
+  "inline-flex size-5 shrink-0 items-center justify-center rounded-full bg-[color-mix(in_srgb,var(--rootsy-savia-400)_12%,transparent)] text-[10px] font-semibold tabular-nums leading-none text-[var(--rootsy-savia-400)]"
+
 /** Barra filtros activos — h-11 · una fila con chips (fondo lo aporta el stack). */
 export const listActiveFiltersBarClass = cn(
   listTableChromeBarStackedSurfaceClass,
   "gap-x-3 gap-y-1",
 )
 
-export const listActiveFiltersCountBadgeClass =
-  "inline-flex min-w-5 shrink-0 items-center justify-center rounded-full bg-[#f5f5f0] px-1.5 py-0.5 text-[10px] font-semibold tabular-nums normal-case tracking-normal text-[#78716c]"
+/** Contador junto a «Filtros activos» — pill si supera un dígito. */
+export const listActiveFiltersCountBadgeClass = cn(
+  listToolbarFilterCountBadgeClass,
+  "size-auto h-5 w-auto min-w-5 px-1",
+)
 
-/** Chip de filtro activo — escala tierra, altura compacta para h-11. */
-export const listActiveFilterChipClass =
-  "inline-flex h-7 max-w-full shrink-0 items-center gap-0.5 rounded-md border border-[#e7e5e4] bg-[#fafaf7] pl-2 pr-0.5 text-xs text-[#292524]"
+/** Chip de filtro activo — pill bruma · botón × circular concéntrico. */
+export const listActiveFilterChipClass = cn(
+  "inline-flex h-7 max-w-full shrink-0 items-center gap-1 rounded-full border border-[var(--rootsy-bruma-200)] bg-[var(--rootsy-white)] py-0 pl-2.5 pr-1 text-xs text-[var(--rootsy-bruma-900)]",
+)
 
 export const listActiveFilterChipDismissClass = cn(
-  "inline-flex size-6 shrink-0 items-center justify-center rounded-md text-[#78716c] transition-colors",
-  "hover:bg-[#f5f5f0] hover:text-[#292524]",
-  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#16704a]/25",
+  "inline-flex size-5 shrink-0 items-center justify-center rounded-full text-[var(--rootsy-bruma-500)] transition-colors",
+  "hover:bg-[var(--rootsy-bruma-50)] hover:text-[var(--rootsy-bruma-900)]",
+  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color-mix(in_srgb,var(--rootsy-savia-600)_25%,transparent)]",
 )
 
 /** Acción terciaria «Limpiar» en barra de selección múltiple (hover neutro, sin accent). */
@@ -489,6 +502,7 @@ export const darkTableFooterCenterClass =
 
 export const darkTableFooterTotalLabelClass = cn(
   workspaceTableLayoutMetaLabelClass,
+  "font-bold",
   nightForestMutedTextClass,
 )
 
@@ -537,6 +551,7 @@ export const earthTableFooterSelectItemClass = "py-1.5 text-xs"
 
 export const earthTableFooterTotalLabelClass = cn(
   workspaceTableLayoutMetaLabelClass,
+  "font-bold",
   "text-[var(--nature-earth-500)]",
 )
 
@@ -567,6 +582,7 @@ export const workspaceTableListBodyScopeClass = cn(
 
 export const workspaceTableFrameSelectableScopeClass = cn(
   "[&_table]:select-text [&_table_th]:select-text [&_table_td]:select-text",
+  "[&_[role=checkbox]]:pointer-events-auto [&_[role=checkbox]]:cursor-pointer [&_[role=checkbox]]:select-auto",
   workspaceTableListBodyScopeClass,
 )
 
@@ -593,22 +609,22 @@ export const workspaceDataTableClassName = cn(
 
 /** Precios e importes: Inter + alineación numérica estable. */
 export const tdMoneyClass =
-  "font-numeric text-[13px] tabular-nums tracking-tight text-foreground"
+  "font-numeric text-sm tabular-nums tracking-tight text-foreground"
 
 export const tdMoneyMutedClass =
-  "font-numeric text-[13px] tabular-nums tracking-tight text-muted-foreground"
+  "font-numeric text-sm tabular-nums tracking-tight text-muted-foreground"
 
 /** Total cobrado / importe principal. */
 export const tdMoneyTotalClass =
-  "font-numeric text-[13px] font-semibold tabular-nums tracking-tight text-emerald-700"
+  "font-numeric text-sm font-semibold tabular-nums tracking-tight text-emerald-700"
 
 /** Descuentos aplicados. */
 export const tdMoneyDiscountClass =
-  "font-numeric text-[13px] font-medium tabular-nums tracking-tight text-amber-700"
+  "font-numeric text-sm font-medium tabular-nums tracking-tight text-amber-700"
 
 /** IVA u otros impuestos. */
 export const tdMoneyVatClass =
-  "font-numeric text-[13px] font-medium tabular-nums tracking-tight text-sky-700"
+  "font-numeric text-sm font-medium tabular-nums tracking-tight text-sky-700"
 
 /** Cliente registrado (enlace a ficha). */
 export const tdClientLinkedClass =

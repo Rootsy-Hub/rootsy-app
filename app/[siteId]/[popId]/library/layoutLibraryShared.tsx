@@ -33,7 +33,6 @@ import { isBorderLibrarySection } from "@/app/[siteId]/[popId]/library/border/bo
 import { RADIUS_LIBRARY_ROOT } from "@/app/[siteId]/[popId]/library/radius/radiusLibraryNav"
 import { isRadiusLibrarySection } from "@/app/[siteId]/[popId]/library/radius/radiusLibraryNav"
 import {
-  LAYOUTS_LIBRARY_ROOT,
   LAYOUTS_LIBRARY_SUBITEMS,
 } from "@/app/[siteId]/[popId]/library/layouts/layoutsLibraryNav"
 import { isLayoutsLibrarySection } from "@/app/[siteId]/[popId]/library/layouts/layoutsLibraryNav"
@@ -123,22 +122,6 @@ export const LIBRARY_NAV_GROUPS: LibraryNavGroup[] = [
     ],
   },
   {
-    id: "forms",
-    label: "Formulario",
-    items: [
-      { id: "labels", label: "Labels" },
-      { id: "text", label: "Texto" },
-      { id: "multiline", label: "Multilínea" },
-      { id: "numeric", label: "Montos y cantidades" },
-      { id: "select", label: "Select" },
-      { id: "date", label: "Fecha" },
-      { id: "boolean", label: "Booleanos" },
-      { id: "field-help", label: "Ayuda de campo" },
-      { id: "layout", label: "Layout" },
-      { id: "composite", label: "Compuestos" },
-    ],
-  },
-  {
     id: "components",
     label: "Componentes",
     items: [
@@ -164,12 +147,7 @@ export const LIBRARY_NAV_GROUPS: LibraryNavGroup[] = [
   {
     id: "layouts",
     label: "Layouts",
-    items: [
-      {
-        ...LAYOUTS_LIBRARY_ROOT,
-        children: [...LAYOUTS_LIBRARY_SUBITEMS],
-      },
-    ],
+    items: [...LAYOUTS_LIBRARY_SUBITEMS],
   },
 ]
 

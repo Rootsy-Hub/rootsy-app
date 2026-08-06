@@ -71,6 +71,12 @@ export function LayoutsModuleFoundationView({ sectionId, siteId, popId }: Props)
             <LayoutsModuleHeaderSpecs />
           </LayoutsModuleDocSubsection>
           <LayoutsModuleDocSubsection title="2.2 · Componente">
+            <p className="mb-4 text-sm text-muted-foreground">
+              Header reutilizable del producto — cristal sombra · savia con{" "}
+              <code className="text-xs">RootsIconButton</code> tema{" "}
+              <code className="text-xs">pos</code>. El scope{" "}
+              <code className="text-xs">menu-nature-shell</code> queda solo para el fondo POP.
+            </p>
             <LayoutsModuleHeaderComponentDemo />
           </LayoutsModuleDocSubsection>
         </div>

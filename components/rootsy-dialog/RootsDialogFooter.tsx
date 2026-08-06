@@ -1,24 +1,27 @@
 "use client"
 
-import { articleDialogFooterClass } from "@/app/[siteId]/[popId]/articles/articleConstants"
+import { rootsDialogFooterClass } from "@/components/rootsy-dialog/rootsDialogProductStyles"
 import {
+  RootsDangerButton,
+  RootsPrimaryButton,
   RootsProgressButton,
-  rootsButtonClassForVariant,
-  rootsButtonVariant,
+  RootsSubtleButton,
 } from "@/components/rootsy-button"
-import { saleOpDialogPrimaryBtn } from "@/components/sale-operation/saleOperationStyles"
-import { Button } from "@/components/ui/button"
 import { DialogFooter } from "@/components/ui/dialog"
 import { cn } from "@/lib/utils"
 import type { ComponentProps } from "react"
 
-export type RootsDialogFooterVariant = "none" | "single" | "dual"
+export type RootsDialogFooterVariant =
+  | "none"
+  | "single"
+  | "dual"
+  | "destructive-dual"
 
 type RootsDialogFooterProps = ComponentProps<typeof DialogFooter>
 
 export function RootsDialogFooter({ className, ...props }: RootsDialogFooterProps) {
   return (
-    <DialogFooter className={cn(articleDialogFooterClass, className)} {...props} />
+    <DialogFooter className={cn(rootsDialogFooterClass, className)} {...props} />
   )
 }
 
@@ -43,15 +46,13 @@ export function RootsDialogSingleActionFooter({
     <RootsDialogFooter
       className={cn(align === "end" && "sm:justify-end", className)}
     >
-      <Button
+      <RootsPrimaryButton
         type={actionType}
-        variant={rootsButtonVariant.primary}
-        className={cn(saleOpDialogPrimaryBtn, rootsButtonClassForVariant("primary"))}
-        onClick={onAction}
+        onClick={actionType === "button" ? onAction : undefined}
         disabled={disabled}
       >
         {label}
-      </Button>
+      </RootsPrimaryButton>
     </RootsDialogFooter>
   )
 }
@@ -65,6 +66,7 @@ type RootsDialogDualActionFooterProps = {
   confirmDisabled?: boolean
   confirmLoading?: boolean
   confirmLoadingLabel?: string
+  destructive?: boolean
   className?: string
 }
 
@@ -77,30 +79,46 @@ export function RootsDialogDualActionFooter({
   confirmDisabled,
   confirmLoading,
   confirmLoadingLabel,
+  destructive = false,
   className,
 }: RootsDialogDualActionFooterProps) {
   return (
     <RootsDialogFooter className={className}>
       <div className="flex w-full items-center justify-between gap-3">
-        <Button
-          type="button"
-          variant={rootsButtonVariant.tertiary}
-          className={rootsButtonClassForVariant("tertiary")}
-          onClick={onCancel}
-        >
+        <RootsSubtleButton type="button" onClick={onCancel}>
           {cancelLabel}
-        </Button>
-        <RootsProgressButton
-          type={confirmType}
-          variant={rootsButtonVariant.primary}
-          className={cn(saleOpDialogPrimaryBtn, rootsButtonClassForVariant("primary"), "shrink-0")}
-          disabled={confirmDisabled}
-          loading={confirmLoading}
-          loadingLabel={confirmLoadingLabel}
-          onClick={confirmType === "button" ? onConfirm : undefined}
-        >
-          {confirmLabel}
-        </RootsProgressButton>
+        </RootsSubtleButton>
+        {confirmLoading ? (
+          <RootsProgressButton
+            type={confirmType}
+            semantic={destructive ? "destructive" : "primary"}
+            disabled={confirmDisabled}
+            loading={confirmLoading}
+            loadingLabel={confirmLoadingLabel}
+            onClick={confirmType === "button" ? onConfirm : undefined}
+            className="shrink-0"
+          >
+            {confirmLabel}
+          </RootsProgressButton>
+        ) : destructive ? (
+          <RootsDangerButton
+            type={confirmType}
+            disabled={confirmDisabled}
+            onClick={confirmType === "button" ? onConfirm : undefined}
+            className="shrink-0"
+          >
+            {confirmLabel}
+          </RootsDangerButton>
+        ) : (
+          <RootsPrimaryButton
+            type={confirmType}
+            disabled={confirmDisabled}
+            onClick={confirmType === "button" ? onConfirm : undefined}
+            className="shrink-0"
+          >
+            {confirmLabel}
+          </RootsPrimaryButton>
+        )}
       </div>
     </RootsDialogFooter>
   )
@@ -109,17 +127,35 @@ export function RootsDialogDualActionFooter({
 type RootsDialogFooterByVariantProps = {
   variant: RootsDialogFooterVariant
   onClose: () => void
+  confirmLabel?: string
 }
 
 export function RootsDialogFooterByVariant({
   variant,
   onClose,
+  confirmLabel,
 }: RootsDialogFooterByVariantProps) {
   if (variant === "none") return null
 
   if (variant === "single") {
     return (
-      <RootsDialogSingleActionFooter onAction={onClose} align="end" />
+      <RootsDialogSingleActionFooter
+        label={confirmLabel ?? "Confirmar"}
+        onAction={onClose}
+        align="end"
+      />
+    )
+  }
+
+  if (variant === "destructive-dual") {
+    return (
+      <RootsDialogDualActionFooter
+        onCancel={onClose}
+        onConfirm={onClose}
+        confirmType="button"
+        confirmLabel={confirmLabel ?? "Eliminar"}
+        destructive
+      />
     )
   }
 
@@ -128,6 +164,7 @@ export function RootsDialogFooterByVariant({
       onCancel={onClose}
       onConfirm={onClose}
       confirmType="button"
+      confirmLabel={confirmLabel ?? "Guardar"}
     />
   )
 }

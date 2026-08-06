@@ -29,17 +29,16 @@ import { usePopTimeZone } from "@/hooks/usePopTimeZone"
 import {
   selectColumnInnerClass,
   workspaceTableLayoutClassName,
-  workspaceTableNatureBodyRowClassNames,
   workspaceTableNatureCheckboxClass,
 } from "@/components/data-workspace/dataWorkspaceListStyles"
 import {
-  workspaceTableLayoutBodyRowClass,
   workspaceTableLayoutListSurfaceClass,
   workspaceTableLayoutSelectBodyCellClass,
 } from "@/components/data-workspace/dataWorkspaceTablesLayout"
 import { DataWorkspaceListTableFrame } from "@/components/data-workspace/DataWorkspaceListTablePrimitives"
 import {
   WorkspaceTableHead,
+  WorkspaceTableBodyRow,
   WorkspaceTableHeader,
   WorkspaceTableHeaderRow,
   WorkspaceTableSelectHead,
@@ -284,16 +283,11 @@ export function OperationsPurchasesTable({
               null
             ) : (
               rows.map((purchase, i) => (
-                <TableRow
-                  key={purchase.id}
-                  className={cn(
-                    workspaceTableLayoutBodyRowClass,
-                    workspaceTableNatureBodyRowClassNames(i, {
-                      selected: selected.has(purchase.id),
-                      noHover: true,
-                    }),
-                  )}
-                >
+                <WorkspaceTableBodyRow
+                        key={purchase.id}
+                        index={i}
+                        selected={selected.has(purchase.id)}
+                      >
                   <PurchasesTableRow
                     purchase={purchase}
                     siteId={siteId}
@@ -303,7 +297,7 @@ export function OperationsPurchasesTable({
                     onSelectedChange={onSelectedChange}
                     onOpenDetail={setDetailPurchase}
                   />
-                </TableRow>
+                </WorkspaceTableBodyRow>
               ))
             )}
           </TableBody>

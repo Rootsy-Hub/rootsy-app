@@ -116,8 +116,24 @@ export const LAYOUTS_MODULE_HEADER_SPEC_ROWS = [
     value: `${ROOTSY_LAYOUTS_MODULE_HEADER.heightPx}px · ${ROOTSY_LAYOUTS_MODULE_HEADER.heightClass} · ${ROOTSY_LAYOUTS_MODULE_HEADER.heightToken}`,
   },
   { token: "header.inner", value: ROOTSY_LAYOUTS_MODULE_HEADER.innerGridClass },
-  { token: "header.glass", value: ROOTSY_LAYOUTS_MODULE_HEADER.chromeClass },
-  { token: "header.border", value: ROOTSY_LAYOUTS_MODULE_HEADER.borderClass },
+  { token: "header.glass", value: ROOTSY_LAYOUTS_MODULE_HEADER.chromeFundamentalsToken },
+  {
+    token: "header.glass.supports",
+    value: ROOTSY_LAYOUTS_MODULE_HEADER.chromeFundamentalsSupportsToken,
+  },
+  { token: "header.border", value: ROOTSY_LAYOUTS_MODULE_HEADER.borderFundamentalsToken },
+  {
+    token: "header.controls",
+    value: ROOTSY_LAYOUTS_MODULE_HEADER.controlsFundamentalsVariant,
+  },
+  {
+    token: "header.controls.component",
+    value: "RootsIconButton · theme pos · ghost | primary",
+  },
+  {
+    token: "header.typography",
+    value: ROOTSY_LAYOUTS_MODULE_HEADER.typographyFundamentalsToken,
+  },
 ] as const
 
 export const LAYOUTS_MODULE_SHELL_SPEC_ROWS = [

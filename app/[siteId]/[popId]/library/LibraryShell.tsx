@@ -4,7 +4,10 @@ import "@/app/[siteId]/[popId]/library/color/rootsyNaturePalette.css"
 import "@/app/[siteId]/[popId]/library/libraryColorTheme.css"
 import { libraryShellMainClass, libraryThemeClass } from "@/app/[siteId]/[popId]/library/libraryColorTheme"
 import { LayoutFinalComponentsModal } from "@/app/[siteId]/[popId]/library/LayoutFinalComponentsModal"
-import { DataWorkspaceLayout } from "@/components/layouts/DataWorkspaceLayout"
+import {
+  DataWorkspaceModuleLayout,
+  dataWorkspaceModuleHeaderVariant,
+} from "@/components/layouts-module/DataWorkspaceModuleLayout"
 import { DataWorkspaceHeaderIconButton } from "@/components/layouts/DataWorkspaceHeaderIconButton"
 import { usePopWorkspace } from "@/context/PopWorkspaceContext"
 import { Layers3 } from "lucide-react"
@@ -24,30 +27,28 @@ export function LibraryShell({ siteId, popId, sectionId, children }: Props) {
 
   return (
     <>
-      <DataWorkspaceLayout
+      <DataWorkspaceModuleLayout
         siteId={siteId}
         popId={popId}
         popName={bootstrap?.popName ?? ""}
         title="Librería"
-        headerVariant="dark"
-        usePopBackdrop={false}
         contentFlush
         loading={bootstrapLoading}
         userName={bootstrap?.userFullName || undefined}
         userAvatarSrc={bootstrap?.userImageUrl ?? undefined}
         userRoleLabel={bootstrap?.roleLabel || undefined}
-        mainClassName={`${libraryShellMainClass} ${libraryThemeClass} rootsy-nature-palette min-h-0 flex-1 flex-col`}
+        mainClassName={`${libraryShellMainClass} ${libraryThemeClass} rootsy-nature-palette min-h-0 flex-1 flex-col overflow-hidden`}
         headerActions={
           <DataWorkspaceHeaderIconButton
             label="Componentes finales"
-            headerVariant="dark"
+            headerVariant={dataWorkspaceModuleHeaderVariant}
             onClick={() => setFinalComponentsOpen(true)}
           >
-            <Layers3 className="size-5" aria-hidden />
+            <Layers3 aria-hidden />
           </DataWorkspaceHeaderIconButton>
         }
       >
-        <div className="relative flex min-h-0 w-full flex-1 flex-col">
+        <div className="relative flex min-h-0 w-full flex-1 flex-col overflow-hidden">
           {bootstrapError ? (
             <div
               role="alert"
@@ -58,7 +59,7 @@ export function LibraryShell({ siteId, popId, sectionId, children }: Props) {
           ) : null}
           {children}
         </div>
-      </DataWorkspaceLayout>
+      </DataWorkspaceModuleLayout>
 
       <LayoutFinalComponentsModal
         open={finalComponentsOpen}

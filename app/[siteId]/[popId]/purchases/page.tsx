@@ -35,7 +35,10 @@ import {
   getPurchaseComprobanteDisplayLabel,
   getPurchaseComprobantePickerOptions,
 } from "@/lib/purchaseComprobantePicker"
-import { DataWorkspaceLayout } from "@/components/layouts/DataWorkspaceLayout"
+import {
+  DataWorkspaceOperationsLayout,
+  OperationsModuleBackdrop,
+} from "@/components/layouts-module/DataWorkspaceOperationsLayout"
 import { saleOpImporteBaseClass } from "@/components/sale-operation/saleOperationStyles"
 import { useDataWorkspaceSidebar } from "@/components/layouts/useDataWorkspaceSidebar"
 import { useAuth } from "@/context/AuthContextSupabase"
@@ -996,13 +999,11 @@ function PurchasesPage() {
 
   return (
     <>
-      <DataWorkspaceLayout
+      <DataWorkspaceOperationsLayout
         siteId={siteId}
         popId={popId}
         popName={popName}
         title="Comprar"
-        headerVariant="dark"
-        contentFlush
         loading={catalogLoading}
         userName={headerUserName}
         userAvatarSrc={userAvatarSrc}
@@ -1010,13 +1011,9 @@ function PurchasesPage() {
         sidebarEdgeToggle={false}
         sidebarOpen={catalogSidebarOpen}
         onSidebarOpenChange={setCatalogSidebarOpen}
-        mainClassName="bg-[#070a09] text-white"
       >
-        <div className="dark relative flex h-full min-h-0 w-full flex-col overflow-hidden bg-[#070a09] text-white">
-          <div className="pointer-events-none absolute inset-0">
-            <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_20%,rgba(52,211,153,0.14),transparent_40%),radial-gradient(circle_at_80%_10%,rgba(99,102,241,0.1),transparent_36%)]" />
-            <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.03)_1px,transparent_1px)] bg-size-[38px_38px] opacity-20" />
-          </div>
+        <div className="relative flex h-full min-h-0 w-full flex-col overflow-hidden">
+          <OperationsModuleBackdrop />
 
           <main className="relative z-10 grid min-h-0 flex-1 grid-cols-[minmax(0,1fr)_380px] grid-rows-[minmax(0,1fr)_calc(4.5rem+1rem)] sm:grid-rows-[minmax(0,1fr)_calc(4.75rem+1.25rem)]">
             <div className="col-start-1 row-start-1 flex min-h-0 min-w-0 overflow-hidden">
@@ -1409,7 +1406,7 @@ function PurchasesPage() {
           </aside>
         </main>
         </div>
-      </DataWorkspaceLayout>
+      </DataWorkspaceOperationsLayout>
 
       <OperationPartyPickerDialog
         popId={popId ?? ""}

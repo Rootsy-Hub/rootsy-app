@@ -1,22 +1,23 @@
 "use client"
 
 import { RootsFormField } from "@/components/rootsy-form/RootsFormField"
-import { RootsFormPrefixedInput } from "@/components/rootsy-form/RootsFormPrefixedInput"
 import {
-  rootsFormAffixPrefixClass,
   rootsFormControlTypographyClass,
-  rootsFormPrefixedSelectTriggerClass,
+  rootsFormInlineIconPrefixedSelectTriggerClass,
+  rootsFormInlineIconPrefixClass,
 } from "@/components/rootsy-form/rootsFormStyles"
+import {
+  getFormInlineIconSearchInputStyle,
+  getFormInlineIconSearchShellStyle,
+} from "@/components/rootsy-form/rootsFormSpecRuntime"
+import { useRootsFormControlInteraction } from "@/components/rootsy-form/useRootsFormControlInteraction"
+import { rootsFormControlSelectionClass } from "@/components/rootsy-form/rootsFormStyles"
 import { dataWorkspaceListFiltersFieldClass } from "@/components/data-workspace/dataWorkspaceTablesLayout"
-import { lightToolbarClearButtonClass } from "@/components/data-workspace/dataWorkspaceListStyles"
+import { lightToolbarClearButtonClass, listToolbarFilterCountBadgeClass, listToolbarFilterTriggerActiveClass } from "@/components/data-workspace/dataWorkspaceListStyles"
 import { cn } from "@/lib/utils"
 import { Filter, Search } from "lucide-react"
 import type { ComponentProps, ReactNode, RefObject } from "react"
 
-const rootsFormFilterTriggerActiveClass =
-  "!border-[#16704a] ring-2 ring-[#16704a]/20"
-
-/** Oculta la cruz nativa de `type="search"` — usamos botón custom de limpiar. */
 const searchInputWithoutNativeClearClass =
   "[&::-webkit-search-cancel-button]:hidden [&::-webkit-search-decoration]:hidden [&::-webkit-search-results-button]:hidden [&::-moz-search-clear-button]:hidden"
 
@@ -64,32 +65,29 @@ export function DataWorkspaceListFiltersDialogTrigger({
         id={id}
         type="button"
         className={cn(
-          rootsFormPrefixedSelectTriggerClass,
+          rootsFormInlineIconPrefixedSelectTriggerClass,
           "cursor-pointer text-left",
-          active && rootsFormFilterTriggerActiveClass,
+          active && listToolbarFilterTriggerActiveClass,
         )}
         aria-haspopup="dialog"
         aria-expanded={expanded}
         onClick={onClick}
       >
-        <span className={rootsFormAffixPrefixClass} aria-hidden>
+        <span className={rootsFormInlineIconPrefixClass} aria-hidden>
           <Filter className="size-4" />
         </span>
         <span
           data-slot="select-value"
           className={cn(
             rootsFormControlTypographyClass,
-            "flex min-w-0 flex-1 items-center gap-2",
+            "flex min-w-0 flex-1 items-center gap-2 pr-3",
           )}
         >
           <span className="min-w-0 flex-1 truncate">
             {active ? activeLabel : placeholder}
           </span>
           {active ? (
-            <span
-              className="inline-flex size-5 shrink-0 items-center justify-center rounded-full bg-[#16704a]/12 text-[10px] font-semibold tabular-nums text-[#16704a]"
-              aria-hidden
-            >
+            <span className={listToolbarFilterCountBadgeClass} aria-hidden>
               {activeCount}
             </span>
           ) : null}
@@ -121,11 +119,14 @@ export function DataWorkspaceListSearchField({
   label?: string
   className?: string
   inputProps?: Omit<
-    ComponentProps<typeof RootsFormPrefixedInput>,
-    "id" | "prefix" | "value" | "onChange" | "placeholder" | "ref"
+    ComponentProps<"input">,
+    "id" | "value" | "onChange" | "placeholder" | "ref" | "type"
   >
 }) {
   const hasValue = value.length > 0
+  const { state, interactionHandlers } = useRootsFormControlInteraction()
+  const searchShellStyle = getFormInlineIconSearchShellStyle(state)
+  const searchInputStyle = getFormInlineIconSearchInputStyle(state)
 
   return (
     <RootsFormField
@@ -139,23 +140,36 @@ export function DataWorkspaceListSearchField({
         </span>
       ) : null}
       <div className="relative min-w-0 w-full">
-        <RootsFormPrefixedInput
-          ref={inputRef}
-          id={id}
-          type="search"
-          prefix={<Search className="size-4" aria-hidden />}
-          placeholder={placeholder}
-          value={value}
-          onChange={onChange}
-          autoComplete="off"
-          spellCheck={false}
-          aria-label="Buscar en el listado"
-          inputClassName={cn(
-            searchInputWithoutNativeClearClass,
-            hasValue && onClear && "pr-10",
-          )}
-          {...inputProps}
-        />
+        <div
+          style={searchShellStyle}
+          onMouseEnter={interactionHandlers.onMouseEnter}
+          onMouseLeave={interactionHandlers.onMouseLeave}
+        >
+          <span className={rootsFormInlineIconPrefixClass} aria-hidden>
+            <Search className="size-4" />
+          </span>
+          <input
+            ref={inputRef}
+            id={id}
+            type="search"
+            placeholder={placeholder}
+            value={value}
+            onChange={onChange}
+            autoComplete="off"
+            spellCheck={false}
+            aria-label="Buscar en el listado"
+            className={cn(
+              "min-w-0 flex-1 bg-transparent font-canopy placeholder:text-[var(--rootsy-bruma-500)] outline-none",
+              rootsFormControlSelectionClass,
+              searchInputWithoutNativeClearClass,
+              hasValue && onClear && "pr-8",
+            )}
+            style={searchInputStyle}
+            onFocus={interactionHandlers.onFocus}
+            onBlur={interactionHandlers.onBlur}
+            {...inputProps}
+          />
+        </div>
         {hasValue && onClear ? (
           <button
             type="button"

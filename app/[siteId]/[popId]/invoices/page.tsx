@@ -77,17 +77,16 @@ import {
 } from "@/components/data-workspace/DataWorkspaceListTablePrimitives"
 import {
   workspaceTableLayoutClassName,
-  workspaceTableNatureBodyRowClassNames,
   workspaceTableStaticRowClass,
 } from "@/components/data-workspace/dataWorkspaceListStyles"
 import {
   dataWorkspaceListFiltersGridClass,
   dataWorkspaceListFiltersPanelClass,
   dataWorkspaceListFiltersPanelLastClass,
-  workspaceTableLayoutBodyRowClass,
 } from "@/components/data-workspace/dataWorkspaceTablesLayout"
 import {
   WorkspaceTableHead,
+  WorkspaceTableBodyRow,
   WorkspaceTableHeader,
   WorkspaceTableHeaderRow,
 } from "@/components/data-workspace/WorkspaceTableHeader"
@@ -631,16 +630,13 @@ function InvoicesPage() {
                         const justIssued = issuedHighlight?.invoiceId === inv.id
                         return (
                           <Fragment key={inv.id}>
-                            <TableRow
+                            <WorkspaceTableBodyRow
+                              index={index}
+                              selected={justIssued}
                               className={cn(
-                                workspaceTableLayoutBodyRowClass,
-                                workspaceTableNatureBodyRowClassNames(index, {
-                                  noHover: true,
-                                  selected: justIssued,
-                                }),
                                 open &&
                                   !justIssued &&
-                                  "bg-[var(--wt-surface-hover)] hover:bg-[var(--wt-surface-hover)]",
+                                  "bg-[var(--wt-surface-hover)] hover:!bg-[var(--wt-surface-hover)]",
                               )}
                             >
                               <InvoiceTableExpandCell
@@ -658,7 +654,7 @@ function InvoicesPage() {
                               <InvoiceTableTotalCell row={inv} />
                               <InvoiceTableCaeCell row={inv} />
                               <InvoiceTableStatusCell row={inv} />
-                            </TableRow>
+                            </WorkspaceTableBodyRow>
                             {open ? (
                               <TableRow className={workspaceTableStaticRowClass}>
                                 <InvoiceTableExpandedDetailRow row={inv} />

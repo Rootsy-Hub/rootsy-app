@@ -13,12 +13,14 @@ import {
   lightToolbarPanelClass,
   lightDateCalendarClass,
   lightDatePopoverContentClass,
+  listToolbarFilterTriggerActiveClass,
 } from "@/components/data-workspace/dataWorkspaceListStyles"
 import {
   rootsFormAffixPrefixClass,
   rootsFormControlTypographyClass,
+  rootsFormInlineIconPrefixedSelectTriggerClass,
   rootsFormPrefixedDateTriggerClass,
-  rootsFormPrefixedSelectTriggerClass,
+  rootsFormInlineIconPrefixClass,
 } from "@/components/rootsy-form/rootsFormStyles"
 import { RootsFormField } from "@/components/rootsy-form/RootsFormField"
 import { dataWorkspaceListFiltersFieldClass } from "@/components/data-workspace/dataWorkspaceTablesLayout"
@@ -51,9 +53,6 @@ const dateShortcutButtonClass = cn(
 
 const dateShortcutButtonActiveClass =
   "bg-[var(--rootsy-bruma-50)] font-medium text-[var(--rootsy-bruma-900)]"
-
-const rootsFormFilterTriggerActiveClass =
-  "!border-[var(--rootsy-savia-600)] ring-2 ring-[color-mix(in_srgb,var(--rootsy-savia-600)_20%,transparent)]"
 
 export function DataWorkspacePeriodFilter({
   preset,
@@ -135,9 +134,17 @@ export function DataWorkspacePeriodFilter({
   const triggerClass = cn(
     useRootsFormTrigger
       ? cn(
-          rootsFormPrefixedDateTriggerClass,
-          "cursor-pointer",
-          active && rootsFormFilterTriggerActiveClass,
+          isLayout
+            ? cn(
+                rootsFormInlineIconPrefixedSelectTriggerClass,
+                "cursor-pointer",
+                active && listToolbarFilterTriggerActiveClass,
+              )
+            : cn(
+                rootsFormPrefixedDateTriggerClass,
+                "cursor-pointer",
+                active && listToolbarFilterTriggerActiveClass,
+              ),
         )
       : dateFilterTriggerClass,
     isCompact && "min-w-[12rem] max-w-[18rem] w-full sm:w-auto",
@@ -155,18 +162,19 @@ export function DataWorkspacePeriodFilter({
       aria-haspopup="dialog"
       title={summary}
     >
-      <span className={rootsFormAffixPrefixClass} aria-hidden>
+      <span className={isLayout ? rootsFormInlineIconPrefixClass : rootsFormAffixPrefixClass} aria-hidden>
         <CalendarRange className="size-4" />
       </span>
       <span
         data-slot="date-value"
-        className={cn(rootsFormControlTypographyClass, "truncate")}
+        className={cn(rootsFormControlTypographyClass, "truncate", isLayout ? "min-w-0 flex-1" : undefined)}
       >
         {summary}
       </span>
       <ChevronDown
         className={cn(
-          "my-auto mr-3 size-4 shrink-0 text-[#78716c] transition-transform duration-200",
+          "size-4 shrink-0 text-[#78716c] transition-transform duration-200",
+          isLayout ? "my-auto mr-3" : "my-auto mr-3",
           popoverOpen && "rotate-180",
         )}
         aria-hidden

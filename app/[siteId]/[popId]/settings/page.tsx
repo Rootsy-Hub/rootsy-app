@@ -12,7 +12,10 @@ import {
   dataWorkspaceBlocksContentInnerClass,
   dataWorkspaceBlocksContentScopeClass,
 } from "@/components/data-workspace/dataWorkspaceListStyles"
-import { DataWorkspaceLayout } from "@/components/layouts/DataWorkspaceLayout"
+import {
+  DataWorkspaceModuleLayout,
+  dataWorkspaceModuleHeaderVariant,
+} from "@/components/layouts-module/DataWorkspaceModuleLayout"
 import { RootsPrimaryButton } from "@/components/rootsy-button"
 import withAuth from "@/hoc/withAuth"
 import { usePopWorkspace } from "@/context/PopWorkspaceContext"
@@ -297,13 +300,13 @@ function SettingsPage() {
   }
 
   return (
-    <DataWorkspaceLayout
+    <DataWorkspaceModuleLayout
       siteId={siteId}
       popId={popId}
       popName={popName}
       title="Ajustes"
       pillLabel="Configuración"
-      headerVariant="dark"
+      headerVariant={dataWorkspaceModuleHeaderVariant}
       loading={pageLoading}
       userName={bootstrap?.userFullName}
       userAvatarSrc={bootstrap?.userImageUrl ?? undefined}
@@ -375,7 +378,7 @@ function SettingsPage() {
           </footer>
         ) : null}
       </div>
-    </DataWorkspaceLayout>
+    </DataWorkspaceModuleLayout>
   )
 }
 

@@ -10,7 +10,10 @@ import {
   type InventoryLayerAllocationRow,
   type InventoryMovementRow,
 } from "@/app/[siteId]/[popId]/inventory/actions"
-import { DataWorkspaceLayout } from "@/components/layouts/DataWorkspaceLayout"
+import {
+  DataWorkspaceModuleLayout,
+  dataWorkspaceModuleHeaderVariant,
+} from "@/components/layouts-module/DataWorkspaceModuleLayout"
 import { DataWorkspaceHeaderIconButton } from "@/components/layouts/DataWorkspaceHeaderIconButton"
 import { Button } from "@/components/ui/button"
 import {
@@ -335,12 +338,12 @@ function InventoryPage() {
 
   return (
     <>
-      <DataWorkspaceLayout
+      <DataWorkspaceModuleLayout
         siteId={siteId}
         popId={popId}
         popName={popName}
         title="Inventario"
-        headerVariant="dark"
+        headerVariant={dataWorkspaceModuleHeaderVariant}
         loading={pageLoading}
         userName={bootstrap?.userFullName}
         userAvatarSrc={bootstrap?.userImageUrl ?? undefined}
@@ -352,7 +355,7 @@ function InventoryPage() {
           canCreate ? (
             <DataWorkspaceHeaderIconButton
               label="Nuevo ajuste"
-              headerVariant="dark"
+              headerVariant={dataWorkspaceModuleHeaderVariant}
               primary
               disabled={
                 articleOptions.length === 0 || !canPostAdjustmentAccounting
@@ -694,7 +697,7 @@ function InventoryPage() {
             </>
           )}
         </div>
-      </DataWorkspaceLayout>
+      </DataWorkspaceModuleLayout>
 
       <Dialog open={createOpen} onOpenChange={(o) => !o && setCreateOpen(false)}>
         <DialogContent

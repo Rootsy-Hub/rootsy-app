@@ -8,6 +8,7 @@ import {
   workspaceTableListBodyScopeClass,
   workspaceTableSurfaceClass,
 } from "./dataWorkspaceListStyles"
+import { workspaceTableLayoutListBodyScopeClass } from "./dataWorkspaceTablesLayout"
 import type { ReactNode } from "react"
 
 export type DataWorkspaceListTableShellProps = {
@@ -74,6 +75,7 @@ export function DataWorkspaceListTableShell({
             className={cn(
               "rootsy-scroll-minimal absolute inset-0 overflow-auto",
               workspaceTableListBodyScopeClass,
+              workspaceTableLayoutListBodyScopeClass,
             )}
           >
             <div className="flex min-h-full min-w-0 flex-1 flex-col">

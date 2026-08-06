@@ -23,17 +23,16 @@ import { usePopTimeZone } from "@/hooks/usePopTimeZone"
 import {
   selectColumnInnerClass,
   workspaceTableLayoutClassName,
-  workspaceTableNatureBodyRowClassNames,
   workspaceTableNatureCheckboxClass,
 } from "@/components/data-workspace/dataWorkspaceListStyles"
 import {
-  workspaceTableLayoutBodyRowClass,
   workspaceTableLayoutListSurfaceClass,
   workspaceTableLayoutSelectBodyCellClass,
 } from "@/components/data-workspace/dataWorkspaceTablesLayout"
 import { DataWorkspaceListTableFrame } from "@/components/data-workspace/DataWorkspaceListTablePrimitives"
 import {
   WorkspaceTableHead,
+  WorkspaceTableBodyRow,
   WorkspaceTableHeader,
   WorkspaceTableHeaderRow,
   WorkspaceTableSelectHead,
@@ -237,17 +236,12 @@ export function OperationsExpensesTable({
               null
             ) : (
               rows.map((expense, i) => (
-                <TableRow
-                  key={expense.entryId}
-                  className={cn(
-                    workspaceTableLayoutBodyRowClass,
-                    workspaceTableNatureBodyRowClassNames(i, {
-                      selected: selected.has(expense.entryId),
-                      noHover: true,
-                      inactive: expense.sourceType === "expense_void",
-                    }),
-                  )}
-                >
+                <WorkspaceTableBodyRow
+                        key={expense.entryId}
+                        index={i}
+                        selected={selected.has(expense.entryId)}
+                        inactive={expense.sourceType === "expense_void"}
+                      >
                   <ExpensesTableRow
                     expense={expense}
                     timeZone={timeZone}
@@ -255,7 +249,7 @@ export function OperationsExpensesTable({
                     onSelectedChange={onSelectedChange}
                     onOpenDetail={setDetailExpense}
                   />
-                </TableRow>
+                </WorkspaceTableBodyRow>
               ))
             )}
           </TableBody>

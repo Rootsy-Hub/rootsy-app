@@ -30,6 +30,7 @@ import {
 } from "@/app/[siteId]/[popId]/clients/ClientUpsertFormFields"
 import { DataWorkspaceTableIconAction } from "@/components/data-workspace/DataWorkspaceListTablePrimitives"
 import { DataWorkspaceHeaderIconButton } from "@/components/layouts/DataWorkspaceHeaderIconButton"
+import { dataWorkspaceModuleHeaderVariant } from "@/components/layouts-module/DataWorkspaceModuleLayout"
 import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
 import {
@@ -176,7 +177,7 @@ function MesasHeaderTooltipButton({
       <TooltipTrigger asChild>
         <DataWorkspaceHeaderIconButton
           label={label}
-          headerVariant="dark"
+          headerVariant={dataWorkspaceModuleHeaderVariant}
           onClick={onClick}
         >
           <Icon className="size-5" aria-hidden />

@@ -76,19 +76,18 @@ import {
 } from "@/components/data-workspace/DataWorkspaceListTablePrimitives"
 import {
   workspaceTableLayoutClassName,
-  workspaceTableNatureBodyRowClassNames,
 } from "@/components/data-workspace/dataWorkspaceListStyles"
 import {
   dataWorkspaceListFiltersGridClass,
   dataWorkspaceListFiltersPanelClass,
   dataWorkspaceListFiltersPanelLastClass,
   workspaceTableLayoutActionsBodyCellClass,
-  workspaceTableLayoutBodyRowClass,
   workspaceTableLayoutHeaderHeadClass,
   workspaceTableLayoutImageColumnClass,
 } from "@/components/data-workspace/dataWorkspaceTablesLayout"
 import {
   WorkspaceTableHead,
+  WorkspaceTableBodyRow,
   WorkspaceTableHeader,
   WorkspaceTableHeaderRow,
   WorkspaceTableSelectHead,
@@ -109,7 +108,6 @@ import {
 import {
   TableBody,
   TableCell,
-  TableRow,
 } from "@/components/ui/table"
 import withAuth from "@/hoc/withAuth"
 import { usePopWorkspace } from "@/context/PopWorkspaceContext"
@@ -668,17 +666,12 @@ function PromotionsPage() {
                   />
                 ) : totalCount === 0 ? null : (
                   promotions.map((row, index) => (
-                    <TableRow
-                      key={row.id}
-                      className={cn(
-                        workspaceTableLayoutBodyRowClass,
-                        workspaceTableNatureBodyRowClassNames(index, {
-                          selected: selected.has(row.id),
-                          noHover: true,
-                          inactive: !row.isActive,
-                        }),
-                      )}
-                    >
+                    <WorkspaceTableBodyRow
+                        key={row.id}
+                        index={index}
+                        selected={selected.has(row.id)}
+                        inactive={!row.isActive}
+                      >
                       <PromotionTableSelectCell
                         checked={selected.has(row.id)}
                         onCheckedChange={(checked) => {
@@ -719,7 +712,7 @@ function PromotionsPage() {
                           </div>
                         </TableCell>
                       ) : null}
-                    </TableRow>
+                    </WorkspaceTableBodyRow>
                   ))
                 )}
               </TableBody>

@@ -12,9 +12,8 @@ import {
   promotionTableTypeColumnClass,
 } from "@/app/[siteId]/[popId]/promotions/promotionsTableLayout"
 import { DataWorkspaceTableThumbnail } from "@/components/data-workspace/DataWorkspaceListTablePrimitives"
+import { WorkspaceTableSelectCell } from "@/components/data-workspace/WorkspaceTableHeader"
 import {
-  selectColumnInnerClass,
-  workspaceTableNatureCheckboxClass,
   workspaceTableNatureTextPrimaryClass,
   workspaceTableNatureTextSecondaryClass,
 } from "@/components/data-workspace/dataWorkspaceListStyles"
@@ -24,10 +23,8 @@ import {
   workspaceTableLayoutCellSecondaryTextClass,
   workspaceTableLayoutCellStackClass,
   workspaceTableLayoutImageColumnClass,
-  workspaceTableLayoutSelectBodyCellClass,
 } from "@/components/data-workspace/dataWorkspaceTablesLayout"
 import { RootsNaturePill } from "@/components/rootsy-pill"
-import { Checkbox } from "@/components/ui/checkbox"
 import { PROMOTION_TYPE_LABEL } from "@/lib/promotionTypes"
 import { cn } from "@/lib/utils"
 import { TableCell } from "@/components/ui/table"
@@ -59,16 +56,12 @@ export function PromotionTableSelectCell({
   label: string
 }) {
   return (
-    <TableCell className={workspaceTableLayoutSelectBodyCellClass}>
-      <div className={selectColumnInnerClass}>
-        <Checkbox
-          className={workspaceTableNatureCheckboxClass}
-          checked={checked}
-          onCheckedChange={(c) => onCheckedChange(c === true)}
-          aria-label={label}
-        />
-      </div>
-    </TableCell>
+    <WorkspaceTableSelectCell
+      tone="nature"
+      checked={checked}
+      onCheckedChange={(c) => onCheckedChange(c === true)}
+      ariaLabel={label}
+    />
   )
 }
 

@@ -2,7 +2,12 @@
 
 import { forwardRef } from "react"
 import type { ButtonHTMLAttributes, ReactNode } from "react"
-import { DROPDOWN_UI_DEMO_COPY } from "@/app/[siteId]/[popId]/library/ui-components/dropdownUiHardcodedSpec"
+import {
+  DROPDOWN_UI_DEMO_COPY,
+  DROPDOWN_UI_PANEL_SPEC,
+  getDropdownUiPanelSpecRows,
+} from "@/app/[siteId]/[popId]/library/ui-components/dropdownUiHardcodedSpec"
+import { OverlaySurfaceSpecTable } from "@/app/[siteId]/[popId]/library/ui-components/dialogUiDocShared"
 import { COLOR_TOKENS } from "@/app/[siteId]/[popId]/library/color/rootsyColorSystem"
 import { rootsySpacePx } from "@/lib/design-system"
 import {
@@ -265,6 +270,13 @@ function ItemStatesMenu() {
 export function DropdownLiveGallery() {
   return (
     <div className="space-y-8">
+      <OverlaySurfaceSpecTable
+        title="Superficie panel · dropdown (producto)"
+        description={DROPDOWN_UI_PANEL_SPEC.pairRule}
+        rows={getDropdownUiPanelSpecRows("light")}
+        pairNote="Sin scrim de viewport — panel anclado al trigger con gap space.100."
+      />
+
       <VariantRow>
         <DropdownVariant label="Light · default" theme="light" density="default" panel="grouped" />
         <DropdownVariant

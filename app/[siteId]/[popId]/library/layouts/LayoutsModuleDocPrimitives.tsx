@@ -1,10 +1,8 @@
 "use client"
 
 import {
-  menuHeaderBorderClass,
-  menuHeaderChromeClass,
-} from "@/app/[siteId]/[popId]/menu/menuFloatingPillStyles"
-import { menuNatureShellClass } from "@/app/[siteId]/[popId]/menu/menuNatureStyles"
+  menuNatureShellClass,
+} from "@/app/[siteId]/[popId]/menu/menuNatureStyles"
 import "@/app/[siteId]/[popId]/menu/menuNaturePalette.css"
 import {
   getLayoutsModuleBackdropLayerStyles,
@@ -17,12 +15,17 @@ import {
   LAYOUTS_MODULE_HEADER_SPEC_ROWS,
   type LayoutsModuleBackdropMode,
 } from "@/app/[siteId]/[popId]/library/layouts/layoutsModuleHardcodedSpec"
+import {
+  layoutsModuleHeaderGlassClass,
+  layoutsModuleHeaderPopNameClass,
+  layoutsModuleHeaderUserNameClass,
+} from "@/components/layouts-module/rootsLayoutsModuleProductStyles"
 import { PopWorkspaceBackdrop } from "@/components/layouts/PopWorkspaceBackdrop"
 import { DataWorkspaceHeaderIconButton } from "@/components/layouts/DataWorkspaceHeaderIconButton"
+import { RootsIconButton } from "@/components/rootsy-button/RootsIconButton"
 import { DataWorkspaceHeaderTitle } from "@/components/layouts/DataWorkspaceHeaderTitle"
 import { DataWorkspaceHeaderUserMenu } from "@/components/layouts/DataWorkspaceHeaderUserMenu"
 import {
-  dataWorkspaceHeaderChromeButtonClass,
   dataWorkspaceHeaderDividerClass,
   dataWorkspaceHeaderPopRingClass,
   dataWorkspaceHeaderRoleLabelClass,
@@ -59,8 +62,103 @@ const MODULE_HEADER_DEMO = {
   pillLabel: "Listados",
 } as const
 
-/** Variante oscura — par con usePopBackdrop + menuHeaderChromeClass en DataWorkspaceLayout. */
-const MODULE_POP_HEADER_VARIANT = "dark" satisfies DataWorkspaceHeaderVariant
+const MODULE_POP_HEADER_VARIANT = "tables" satisfies DataWorkspaceHeaderVariant
+
+function ModulePopWorkspaceHeaderDemo() {
+  const headerVariant = MODULE_POP_HEADER_VARIANT
+
+  return (
+    <header className={cn("relative z-20 shrink-0", layoutsModuleHeaderGlassClass)}>
+      <div
+        className={cn("relative z-10 grid h-17 items-center gap-4 px-4", "grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)]")}
+        style={getLayoutsModuleHeaderInnerStyle()}
+      >
+        <div className="flex min-w-0 items-center gap-2">
+          <RootsIconButton theme="pos" emphasis="ghost" label="Volver al menú" tabIndex={-1}>
+            <ArrowLeft aria-hidden />
+          </RootsIconButton>
+          <RootsIconButton theme="pos" emphasis="ghost" label="Pantalla completa" tabIndex={-1}>
+            <Maximize2 aria-hidden />
+          </RootsIconButton>
+          <div
+            className={cn("h-6 w-px", dataWorkspaceHeaderDividerClass(headerVariant))}
+            aria-hidden
+          />
+          <div className="flex min-w-0 items-center gap-2.5">
+            <div
+              className={cn(
+                "size-8 overflow-hidden rounded-lg ring-1",
+                dataWorkspaceHeaderPopRingClass(headerVariant),
+              )}
+            >
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={MODULE_HEADER_DEMO.popLogo}
+                alt=""
+                className="size-full object-cover"
+              />
+            </div>
+            <span className={layoutsModuleHeaderPopNameClass}>
+              {MODULE_HEADER_DEMO.popName}
+            </span>
+          </div>
+        </div>
+
+        <div className="flex flex-wrap items-center justify-center gap-2">
+          <DataWorkspaceHeaderTitle
+            title={MODULE_HEADER_DEMO.title}
+            headerVariant={headerVariant}
+          />
+        </div>
+
+        <div className="flex shrink-0 items-center justify-end gap-2">
+          <div className="pointer-events-none flex items-center gap-1.5" aria-hidden>
+            <DataWorkspaceHeaderIconButton
+              label="Nuevo"
+              headerVariant={headerVariant}
+              primary
+              tabIndex={-1}
+            >
+              <Plus aria-hidden />
+            </DataWorkspaceHeaderIconButton>
+            <DataWorkspaceHeaderIconButton
+              label="Categorías"
+              headerVariant={headerVariant}
+              tabIndex={-1}
+            >
+              <FolderTree aria-hidden />
+            </DataWorkspaceHeaderIconButton>
+          </div>
+          <div
+            className={cn("h-6 w-px", dataWorkspaceHeaderDividerClass(headerVariant))}
+            aria-hidden
+          />
+          <div className="flex min-w-0 items-center gap-3">
+            <div className="hidden min-w-0 flex-col leading-tight sm:flex">
+              <span className={layoutsModuleHeaderUserNameClass}>
+                {MODULE_HEADER_DEMO.userName}
+              </span>
+              <span
+                className={cn(
+                  "truncate text-[10px] font-semibold uppercase tracking-wider",
+                  dataWorkspaceHeaderRoleLabelClass(headerVariant, true),
+                )}
+              >
+                {MODULE_HEADER_DEMO.roleLabel}
+              </span>
+            </div>
+            <DataWorkspaceHeaderUserMenu
+              userName={MODULE_HEADER_DEMO.userName}
+              userAvatarSrc={MODULE_HEADER_DEMO.userAvatar}
+              isOnline
+              headerVariant={headerVariant}
+            />
+          </div>
+        </div>
+      </div>
+    </header>
+  )
+}
 
 function SpecTable({ rows }: { rows: readonly { token: string; value: string }[] }) {
   return (
@@ -223,119 +321,6 @@ function ModuleHeaderBackdropFrame({
   )
 }
 
-/** Header reutilizable — espejo de DataWorkspaceLayout · usePopBackdrop. */
-function ModulePopWorkspaceHeader() {
-  const chromeButtonClass = dataWorkspaceHeaderChromeButtonClass(MODULE_POP_HEADER_VARIANT)
-
-  return (
-    <header
-      className={cn(
-        "relative z-20 shrink-0 border-b text-zinc-100",
-        menuHeaderBorderClass,
-        menuHeaderChromeClass,
-      )}
-    >
-      <div
-        className={cn("relative z-10 grid h-17 items-center gap-4 px-4", "grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)]")}
-        style={getLayoutsModuleHeaderInnerStyle()}
-      >
-        <div className="flex min-w-0 items-center gap-2">
-          <button
-            type="button"
-            className={cn(chromeButtonClass, "text-zinc-300")}
-            aria-label="Volver al menú"
-            tabIndex={-1}
-          >
-            <ArrowLeft className="size-5" aria-hidden />
-          </button>
-          <button
-            type="button"
-            className={chromeButtonClass}
-            aria-label="Pantalla completa"
-            tabIndex={-1}
-          >
-            <Maximize2 className="size-5" aria-hidden />
-          </button>
-          <div
-            className={cn("h-6 w-px", dataWorkspaceHeaderDividerClass(MODULE_POP_HEADER_VARIANT))}
-            aria-hidden
-          />
-          <div className="flex min-w-0 items-center gap-2.5">
-            <div
-              className={cn(
-                "size-8 overflow-hidden rounded-lg ring-1",
-                dataWorkspaceHeaderPopRingClass(MODULE_POP_HEADER_VARIANT),
-              )}
-            >
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={MODULE_HEADER_DEMO.popLogo}
-                alt=""
-                className="size-full object-cover"
-              />
-            </div>
-            <span className="truncate text-sm font-semibold text-zinc-100">
-              {MODULE_HEADER_DEMO.popName}
-            </span>
-          </div>
-        </div>
-
-        <div className="flex flex-wrap items-center justify-center gap-2">
-          <DataWorkspaceHeaderTitle
-            title={MODULE_HEADER_DEMO.title}
-            headerVariant={MODULE_POP_HEADER_VARIANT}
-          />
-        </div>
-
-        <div className="flex shrink-0 items-center justify-end gap-2">
-          <div className="pointer-events-none flex items-center gap-1.5" aria-hidden>
-            <DataWorkspaceHeaderIconButton
-              label="Nuevo"
-              headerVariant={MODULE_POP_HEADER_VARIANT}
-              primary
-              tabIndex={-1}
-            >
-              <Plus className="size-5" aria-hidden />
-            </DataWorkspaceHeaderIconButton>
-            <DataWorkspaceHeaderIconButton
-              label="Categorías"
-              headerVariant={MODULE_POP_HEADER_VARIANT}
-              tabIndex={-1}
-            >
-              <FolderTree className="size-5" aria-hidden />
-            </DataWorkspaceHeaderIconButton>
-          </div>
-          <div
-            className={cn("h-6 w-px", dataWorkspaceHeaderDividerClass(MODULE_POP_HEADER_VARIANT))}
-            aria-hidden
-          />
-          <div className="flex min-w-0 items-center gap-3">
-            <div className="hidden min-w-0 flex-col leading-tight sm:flex">
-              <span className="truncate text-sm font-semibold text-zinc-100">
-                {MODULE_HEADER_DEMO.userName}
-              </span>
-              <span
-                className={cn(
-                  "truncate text-[10px] font-semibold uppercase tracking-wider",
-                  dataWorkspaceHeaderRoleLabelClass(MODULE_POP_HEADER_VARIANT, true),
-                )}
-              >
-                {MODULE_HEADER_DEMO.roleLabel}
-              </span>
-            </div>
-            <DataWorkspaceHeaderUserMenu
-              userName={MODULE_HEADER_DEMO.userName}
-              userAvatarSrc={MODULE_HEADER_DEMO.userAvatar}
-              isOnline
-              headerVariant={MODULE_POP_HEADER_VARIANT}
-            />
-          </div>
-        </div>
-      </div>
-    </header>
-  )
-}
-
 function ModuleHeaderWireframe({
   annotate = "full",
 }: {
@@ -345,13 +330,7 @@ function ModuleHeaderWireframe({
   const heightPx = ROOTSY_LAYOUTS_MODULE_HEADER.heightPx
 
   return (
-    <header
-      className={cn(
-        "relative z-20 shrink-0 border-b",
-        menuHeaderBorderClass,
-        menuHeaderChromeClass,
-      )}
-    >
+    <header className={cn("relative z-20 shrink-0", layoutsModuleHeaderGlassClass)}>
       <div
         className={cn("relative z-10", ROOTSY_LAYOUTS_MODULE_HEADER.innerGridClass)}
         style={getLayoutsModuleHeaderInnerStyle()}
@@ -375,7 +354,7 @@ function ModuleHeaderWireframe({
       ) : null}
       {annotate === "full" ? (
         <WireframeBadge
-          label="border-b · rootsy-hairline/80"
+          label="border-b · sombra-border/80"
           className="bottom-1.5 left-2"
           dark
         />
@@ -504,9 +483,9 @@ export function LayoutsModuleHeaderGlassDemo() {
   )
 }
 
-/** 2.2 — componente reutilizable (DataWorkspaceLayout · glass). */
+/** 2.2 — componente reutilizable (ModuleWorkspaceHeader). */
 export function LayoutsModuleHeaderComponentDemo() {
-  return <ModuleHeaderBackdropFrame header={<ModulePopWorkspaceHeader />} />
+  return <ModuleHeaderBackdropFrame header={<ModulePopWorkspaceHeaderDemo />} />
 }
 
 export function LayoutsModuleHeaderSpecs() {

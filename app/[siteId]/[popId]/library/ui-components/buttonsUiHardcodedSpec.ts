@@ -343,11 +343,13 @@ export const ICON_BUTTON_UI_POS_VARIANTS = ROOTSY_ICON_BUTTON_VARIANTS.filter(
   (item) => item.theme === "pos",
 ).map((item) => ({
   ...item,
-  icon: (item.emphasis === "outlined"
-    ? "arrowLeft"
-    : item.emphasis === "filled"
-      ? "home"
-      : "bell") as "arrowLeft" | "home" | "bell",
+  icon: (item.emphasis === "primary"
+    ? "plus"
+    : item.emphasis === "outlined"
+      ? "arrowLeft"
+      : item.emphasis === "filled"
+        ? "home"
+        : "bell") as "plus" | "arrowLeft" | "home" | "bell",
 }))
 
 export const ICON_BUTTON_UI_ROW_INTENTS = ROOTSY_ICON_BUTTON_ROW_INTENTS.map((item) => ({
@@ -405,10 +407,19 @@ function getIconButtonDefaultSurface(
           border: "1px solid transparent",
           borderRadiusPx,
         }
+      case "primary":
+        throw new Error("icon-button emphasis primary is POS-only")
     }
   }
 
   switch (emphasis) {
+    case "primary":
+      return {
+        backgroundColor: hx("savia", "600"),
+        iconColor: WHITE,
+        border: `1px solid ${hx("savia", "700")}`,
+        borderRadiusPx,
+      }
     case "outlined":
       return {
         backgroundColor: elevationSurfaceDark("elevation.surface"),
@@ -446,6 +457,14 @@ export function getIconButtonUiSurface(
     case "default":
       return base
     case "hover":
+      if (emphasis === "primary") {
+        return {
+          ...base,
+          backgroundColor: hx("savia", "500"),
+          iconColor: WHITE,
+          border: `1px solid color-mix(in srgb, ${WHITE} 14%, ${hx("savia", "500")})`,
+        }
+      }
       if (theme === "workspace") {
         if (emphasis === "ghost") {
           return {
@@ -474,6 +493,14 @@ export function getIconButtonUiSurface(
         border: `1px solid color-mix(in srgb, ${TEXT_ON_DARK} 12%, ${pos.border} 88%)`,
       }
     case "active":
+      if (emphasis === "primary") {
+        return {
+          ...base,
+          backgroundColor: hx("savia", "700"),
+          iconColor: WHITE,
+          border: `1px solid ${hx("savia", "800")}`,
+        }
+      }
       if (theme === "workspace") {
         return {
           ...base,
@@ -503,7 +530,11 @@ export function getIconButtonUiSurface(
         ...base,
         boxShadow: mergeShadow(
           base.boxShadow,
-          theme === "workspace" ? FOCUS_RING_NEUTRAL : FOCUS_RING_DARK,
+          emphasis === "primary"
+            ? FOCUS_RING_SAVIA
+            : theme === "workspace"
+              ? FOCUS_RING_NEUTRAL
+              : FOCUS_RING_DARK,
         ),
       }
     case "disabled":

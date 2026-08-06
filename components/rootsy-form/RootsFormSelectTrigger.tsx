@@ -74,6 +74,7 @@ export const RootsFormSelectTrigger = forwardRef<
     <SelectPrimitive.Trigger
       ref={ref}
       data-slot="roots-form-select-trigger"
+      translate="no"
       disabled={disabled}
       className={cn(
         useSpecStyles

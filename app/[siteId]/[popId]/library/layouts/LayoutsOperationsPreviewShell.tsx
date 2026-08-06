@@ -2,7 +2,9 @@
 
 import "@/app/[siteId]/[popId]/library/color/rootsyNaturePalette.css"
 import "@/app/[siteId]/[popId]/library/radius/rootsyRadiusSystem.css"
-import { DataWorkspaceLayout } from "@/components/layouts/DataWorkspaceLayout"
+import {
+  DataWorkspaceModuleLayout,
+} from "@/components/layouts-module/DataWorkspaceModuleLayout"
 import { usePopWorkspace } from "@/context/PopWorkspaceContext"
 import { useParams } from "next/navigation"
 import type { ReactNode } from "react"
@@ -11,7 +13,7 @@ type Props = {
   children: ReactNode
 }
 
-/** Mismo shell de cabecera que LibraryShell — DataWorkspaceLayout dark + bootstrap POP. */
+/** Mismo shell de cabecera que LibraryShell — layout · módulo + bootstrap POP. */
 export function LayoutsOperationsPreviewShell({ children }: Props) {
   const params = useParams()
   const siteId = typeof params?.siteId === "string" ? params.siteId : ""
@@ -27,12 +29,11 @@ export function LayoutsOperationsPreviewShell({ children }: Props) {
   }
 
   return (
-    <DataWorkspaceLayout
+    <DataWorkspaceModuleLayout
       siteId={siteId}
       popId={popId}
       popName={bootstrap?.popName ?? ""}
       title="Vender"
-      headerVariant="dark"
       contentFlush
       loading={bootstrapLoading}
       userName={bootstrap?.userFullName || undefined}
@@ -51,6 +52,6 @@ export function LayoutsOperationsPreviewShell({ children }: Props) {
         ) : null}
         {children}
       </div>
-    </DataWorkspaceLayout>
+    </DataWorkspaceModuleLayout>
   )
 }

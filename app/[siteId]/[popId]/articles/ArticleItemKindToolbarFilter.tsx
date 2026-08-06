@@ -1,6 +1,7 @@
 "use client"
 
 import { dataWorkspaceListFiltersFieldClass } from "@/components/data-workspace/dataWorkspaceTablesLayout"
+import { listToolbarFilterTriggerActiveClass } from "@/components/data-workspace/dataWorkspaceListStyles"
 import {
   RootsFormSelectField,
   RootsFormSelectItem,
@@ -22,8 +23,6 @@ const FILTER_ITEMS: { id: ArticleItemKindFilterId; label: string }[] = [
     label: ARTICLE_ITEM_KIND_STOCK_LABEL[kind],
   })),
 ]
-
-const filterTriggerActiveClass = "!border-[#16704a] ring-2 ring-[#16704a]/20"
 
 export function resolveArticleItemKindFilterId(
   kinds: readonly ArticleItemKind[],
@@ -56,8 +55,9 @@ export function ArticleItemKindToolbarFilter({
       value={value}
       onValueChange={(next) => onChange(next as ArticleItemKindFilterId)}
       prefix={<LayoutGrid className="size-4" aria-hidden />}
+      prefixVariant="inline"
       className={cn(dataWorkspaceListFiltersFieldClass(), className)}
-      triggerClassName={value !== "all" ? filterTriggerActiveClass : undefined}
+      triggerClassName={value !== "all" ? listToolbarFilterTriggerActiveClass : undefined}
     >
       {FILTER_ITEMS.map((item) => (
         <RootsFormSelectItem key={item.id} value={item.id}>

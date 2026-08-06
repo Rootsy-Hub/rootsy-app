@@ -8,6 +8,7 @@ import {
 import {
   DROPDOWN_UI_DEMO_COPY,
   DROPDOWN_UI_DENSITIES,
+  DROPDOWN_UI_PANEL_SPEC,
   DROPDOWN_UI_THEMES,
   DROPDOWN_UI_TRIGGERS,
   getDropdownCheckUiStyle,
@@ -17,11 +18,13 @@ import {
   getDropdownLabelUiStyle,
   getDropdownPanelShellUiStyle,
   getDropdownSeparatorUiStyle,
+  getDropdownUiPanelSpecRows,
   type DropdownDensityId,
   type DropdownItemStateId,
   type DropdownThemeId,
   type DropdownTriggerId,
 } from "@/app/[siteId]/[popId]/library/ui-components/dropdownUiHardcodedSpec"
+import { OverlaySurfaceSpecTable } from "@/app/[siteId]/[popId]/library/ui-components/dialogUiDocShared"
 import { ROOTSY_DROPDOWN_ANATOMY } from "@/app/[siteId]/[popId]/library/dropdown/rootsyDropdownSystem"
 import { COLOR_TOKENS } from "@/app/[siteId]/[popId]/library/color/rootsyColorSystem"
 import { FoundationBrumaStage } from "@/app/[siteId]/[popId]/library/libraryFoundationDocShared"
@@ -427,7 +430,14 @@ function DropdownInContextBlock() {
 export function DropdownUiHardcodedGallery() {
   return (
     <div className="space-y-10">
-      <FoundationBrumaStage caption="elevation.surface.overlay · elevation.shadow.overlay · radius.xlarge · color.border.">
+      <OverlaySurfaceSpecTable
+        title="Superficie panel · dropdown (light)"
+        description={DROPDOWN_UI_PANEL_SPEC.pairRule}
+        rows={getDropdownUiPanelSpecRows("light")}
+        pairNote="Tema dark: elevation.surface.overlay → sombra-500 · mismos borde y sombra."
+      />
+
+      <FoundationBrumaStage clip={false} caption="elevation.surface.overlay · elevation.shadow.overlay · radius.xlarge · color.border.">
         <div className="space-y-8">
           <SectionHeading
             title="Anatomía"
@@ -437,7 +447,7 @@ export function DropdownUiHardcodedGallery() {
         </div>
       </FoundationBrumaStage>
 
-      <FoundationBrumaStage caption="dropdown.theme · bruma claro · sombra oscuro · savia en selección.">
+      <FoundationBrumaStage clip={false} caption="dropdown.theme · bruma claro · sombra oscuro · savia en selección.">
         <div className="space-y-8">
           <SectionHeading
             title="Temas"
@@ -447,7 +457,7 @@ export function DropdownUiHardcodedGallery() {
         </div>
       </FoundationBrumaStage>
 
-      <FoundationBrumaStage caption="dropdown.item · hover bruma-50 · selected savia-100 · status-danger.">
+      <FoundationBrumaStage clip={false} caption="dropdown.item · hover bruma-50 · selected savia-100 · status-danger.">
         <div className="space-y-8">
           <SectionHeading
             title="Estados de ítem"
@@ -457,7 +467,7 @@ export function DropdownUiHardcodedGallery() {
         </div>
       </FoundationBrumaStage>
 
-      <FoundationBrumaStage caption="dropdown.density · dropdown.trigger · anchor gap space.100.">
+      <FoundationBrumaStage clip={false} caption="dropdown.density · dropdown.trigger · anchor gap space.100.">
         <div className="space-y-8">
           <SectionHeading
             title="Densidad y triggers"
@@ -468,7 +478,7 @@ export function DropdownUiHardcodedGallery() {
         </div>
       </FoundationBrumaStage>
 
-      <FoundationBrumaStage caption="dropdown.in-context · icon-button.row.neutral · align end.">
+      <FoundationBrumaStage clip={false} caption="dropdown.in-context · icon-button.row.neutral · align end.">
         <div className="space-y-8">
           <SectionHeading
             title="En contexto"
