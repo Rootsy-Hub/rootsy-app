@@ -604,7 +604,6 @@ export function TreasuryAccountDetailView({
   const periodFilter = (
     <DataWorkspacePeriodFilter
       variant="compact"
-      hideAllPreset
       showActiveState={false}
       preset={datePreset}
       customRange={customDateRange}

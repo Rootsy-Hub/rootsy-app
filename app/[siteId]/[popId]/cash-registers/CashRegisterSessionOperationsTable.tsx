@@ -128,12 +128,7 @@ export function CashRegisterSessionOperationsTable({
   if (operations.length === 0) {
     return (
       <>
-        <div
-          className={cn(
-            "flex min-h-48 items-center justify-center px-4 py-10 text-center text-sm text-muted-foreground lg:px-5",
-            !fullWidth && "rounded-lg border border-border/60",
-          )}
-        >
+        <div className="flex min-h-48 items-center justify-center px-4 py-10 text-center font-canopy text-sm text-[var(--rootsy-bruma-500)] lg:px-5">
           No hay operaciones en este arqueo.
         </div>
         <OperationSaleDetailDialog
@@ -156,7 +151,7 @@ export function CashRegisterSessionOperationsTable({
       <div
         className={cn(
           "relative w-full",
-          !fullWidth && "rounded-lg border border-border/60",
+          !fullWidth && "rounded-[1.375rem] border border-[var(--rootsy-bruma-200)]",
         )}
       >
         <TreasuryYearGroupedMovementsView

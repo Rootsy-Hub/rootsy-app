@@ -1,5 +1,6 @@
 "use client"
 
+import { DataWorkspacePeriodFilter } from "@/components/data-workspace/DataWorkspacePeriodFilter"
 import { RootsFormField } from "@/components/rootsy-form/RootsFormField"
 import { RootsFormSelectField } from "@/components/rootsy-form/RootsFormSelectField"
 import { RootsFormSelectItem } from "@/components/rootsy-form/RootsFormSelectItem"
@@ -9,9 +10,14 @@ import {
 } from "@/components/rootsy-form/rootsFormSpecRuntime"
 import { useRootsFormControlInteraction } from "@/components/rootsy-form/useRootsFormControlInteraction"
 import { rootsFormControlSelectionClass } from "@/components/rootsy-form/rootsFormStyles"
+import {
+  computeDataWorkspaceDateBounds,
+  type DataWorkspaceDatePreset,
+} from "@/lib/dataWorkspaceDateFilter"
 import { cn } from "@/lib/utils"
-import { CalendarRange, Filter, Search } from "lucide-react"
-import { useId, useState } from "react"
+import { Filter, Search } from "lucide-react"
+import { useId, useMemo, useState } from "react"
+import type { DateRange } from "react-day-picker"
 
 type Props = {
   hideLabels?: boolean
@@ -19,7 +25,12 @@ type Props = {
 }
 
 export function RootsFormToolbarListFilters({ hideLabels = false, className }: Props) {
-  const [period, setPeriod] = useState("")
+  const [datePreset, setDatePreset] = useState<DataWorkspaceDatePreset>("this_month")
+  const [customDateRange, setCustomDateRange] = useState<DateRange | undefined>()
+  const dateBounds = useMemo(
+    () => computeDataWorkspaceDateBounds(datePreset, customDateRange),
+    [datePreset, customDateRange],
+  )
   const [filters, setFilters] = useState("")
   const searchId = useId()
   const [search, setSearch] = useState("")
@@ -30,19 +41,15 @@ export function RootsFormToolbarListFilters({ hideLabels = false, className }: P
   return (
     <div className={cn("grid h-full w-full grid-cols-3", className)}>
       <div className="flex items-center border-r border-[var(--rootsy-bruma-200)] px-4 py-4">
-        <RootsFormSelectField
-          label="Período"
+        <DataWorkspacePeriodFilter
+          variant="layout"
+          preset={datePreset}
+          customRange={customDateRange}
+          onPresetChange={setDatePreset}
+          onCustomRangeChange={setCustomDateRange}
+          bounds={dateBounds}
           className={hideLabels ? "[&_label]:sr-only" : undefined}
-          value={period}
-          onValueChange={setPeriod}
-          placeholder="Todas las fechas"
-          prefix={<CalendarRange aria-hidden />}
-          prefixVariant="inline"
-        >
-          <RootsFormSelectItem value="all">Todas las fechas</RootsFormSelectItem>
-          <RootsFormSelectItem value="month">Este mes</RootsFormSelectItem>
-          <RootsFormSelectItem value="week">Esta semana</RootsFormSelectItem>
-        </RootsFormSelectField>
+        />
       </div>
       <div className="flex items-center border-r border-[var(--rootsy-bruma-200)] px-4 py-4">
         <RootsFormSelectField

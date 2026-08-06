@@ -13,9 +13,11 @@ export function formatCashRegisterMoney(n: number) {
 
 const MONEY_EPS = 0.005
 
+export type ArqueoDifferenceTone = "muted" | "positive" | "negative" | "neutral"
+
 export function formatArqueoDifferenceDisplay(diff: number | null): {
   text: string
-  tone: "muted" | "positive" | "negative" | "neutral"
+  tone: ArqueoDifferenceTone
 } {
   if (diff == null) {
     return { text: "—", tone: "muted" }
@@ -26,6 +28,21 @@ export function formatArqueoDifferenceDisplay(diff: number | null): {
   return {
     text: formatCashRegisterMoney(diff),
     tone: diff > 0 ? "positive" : "negative",
+  }
+}
+
+export function arqueoDifferenceToneClass(
+  tone: ArqueoDifferenceTone,
+): string {
+  switch (tone) {
+    case "positive":
+      return "text-[var(--rootsy-savia-800)]"
+    case "negative":
+      return "text-[var(--color-status-danger)]"
+    case "neutral":
+    case "muted":
+    default:
+      return "text-[var(--rootsy-bruma-500)]"
   }
 }
 

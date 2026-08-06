@@ -204,7 +204,7 @@ export function LayoutPreviewListTable({
   const [selected, setSelected] = useState<Set<string>>(() => new Set())
 
   const [searchQuery, setSearchQuery] = useState("")
-  const [datePreset, setDatePreset] = useState<DataWorkspaceDatePreset>("all")
+  const [datePreset, setDatePreset] = useState<DataWorkspaceDatePreset>("this_month")
   const [customDateRange, setCustomDateRange] = useState<
     DateRange | undefined
   >(undefined)
@@ -304,9 +304,9 @@ export function LayoutPreviewListTable({
     searchQuery.trim().length > 0 ||
     statusFilterNarrow ||
     refFilterNarrow ||
-    datePreset !== "all"
+    datePreset !== "this_month"
 
-  const dateFilterActive = datePreset !== "all"
+  const dateFilterActive = datePreset !== "this_month"
 
   const modalFiltersActiveCount = useMemo(() => {
     let count = 0
@@ -393,7 +393,7 @@ export function LayoutPreviewListTable({
   }
 
   const clearDateFilter = () => {
-    setDatePreset("all")
+    setDatePreset("this_month")
     setCustomDateRange(undefined)
   }
 
@@ -506,7 +506,7 @@ export function LayoutPreviewListTable({
                       />
                     ))
                   : null}
-                {datePreset !== "all" ? (
+                {datePreset !== "this_month" ? (
                   <DataWorkspaceListFilterChip
                     label={`Fecha: ${dateFilterSummary}`}
                     onRemove={clearDateFilter}

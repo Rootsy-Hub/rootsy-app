@@ -3,20 +3,48 @@
 import type { CashRegisterSummarySession } from "@/app/[siteId]/[popId]/cash-registers/actions"
 import { filterSessionsForArqueoTable } from "@/app/[siteId]/[popId]/cash-registers/cashRegisterDetailUtils"
 import {
+  arqueoDifferenceToneClass,
+  formatArqueoDifferenceDisplay,
   formatCashRegisterDateTime,
   formatCashRegisterMoney,
+  type ArqueoDifferenceTone,
 } from "@/app/[siteId]/[popId]/cash-registers/cashRegisterFormatters"
 import { DataWorkspacePeriodFilter } from "@/components/data-workspace/DataWorkspacePeriodFilter"
+import { DataWorkspaceDetailEmptyState } from "@/components/data-workspace/DataWorkspaceDetailEmptyState"
 import {
-  dataWorkspaceDetailCardClass,
+  dataWorkspaceDetailFlushBottomCardClass,
   dataWorkspaceDetailToolbarClass,
-  tdMoneyClass,
+  dataWorkspaceEntityCardStatusOpenClass,
+  workspaceTableLayoutClassName,
+  workspaceTableNatureMoneyClass,
+  workspaceTableNatureMoneyNegativeClass,
+  workspaceTableNatureTextPrimaryClass,
+  workspaceTableNatureTextSecondaryClass,
 } from "@/components/data-workspace/dataWorkspaceListStyles"
+import {
+  workspaceTableLayoutBodyCellClass,
+  workspaceTableLayoutCellPrimaryTextClass,
+  workspaceTableLayoutCellSecondaryTextClass,
+  workspaceTableLayoutCellStackClass,
+  workspaceTableLayoutHeaderHeadClass,
+  workspaceTableLayoutListBodyScopeClass,
+  workspaceTableLayoutListSurfaceClass,
+} from "@/components/data-workspace/dataWorkspaceTablesLayout"
+import { workspaceLayoutsTablesScopeClass } from "@/components/layouts-tables/rootsLayoutsTablesProductStyles"
+import {
+  WorkspaceTableBodyRow,
+  WorkspaceTableHead,
+  WorkspaceTableHeader,
+  WorkspaceTableHeaderRow,
+} from "@/components/data-workspace/WorkspaceTableHeader"
+import { Table, TableBody, TableCell } from "@/components/ui/table"
 import type { DataWorkspaceDatePreset } from "@/lib/dataWorkspaceDateFilter"
 import { cn } from "@/lib/utils"
 import { usePopTimeZone } from "@/hooks/usePopTimeZone"
+import { History } from "lucide-react"
 import { useMemo, type ReactNode } from "react"
 import type { DateRange } from "react-day-picker"
+import "@/components/layouts-tables/rootsLayoutsTablesScope.css"
 
 type Props = {
   sessions: CashRegisterSummarySession[]
@@ -28,20 +56,42 @@ type Props = {
   onViewArqueo: (sessionId: string) => void
 }
 
-function formatArqueoDifferenceDisplay(diff: number | null): {
-  text: string
-  tone: "muted" | "positive" | "negative" | "neutral"
-} {
-  if (diff == null) {
-    return { text: "—", tone: "muted" }
+const arqueoTableTotalColumnClass = "w-32 min-w-32 max-w-32"
+const arqueoTableDifferenceColumnClass = "w-28 min-w-28 max-w-28"
+
+function arqueoTableMoneyValueClass(tone?: ArqueoDifferenceTone) {
+  if (tone === "negative") return workspaceTableNatureMoneyNegativeClass
+  if (tone === "positive") {
+    return cn(workspaceTableNatureMoneyClass, arqueoDifferenceToneClass("positive"))
   }
-  if (Math.abs(diff) < 0.005) {
-    return { text: formatCashRegisterMoney(0), tone: "neutral" }
+  if (tone === "muted" || tone === "neutral") {
+    return cn("text-sm leading-4", workspaceTableNatureTextSecondaryClass)
   }
-  return {
-    text: formatCashRegisterMoney(diff),
-    tone: diff > 0 ? "positive" : "negative",
-  }
+  return workspaceTableNatureMoneyClass
+}
+
+function ArqueoTableMoneyCell({
+  children,
+  columnClass,
+  tone,
+}: {
+  children: ReactNode
+  columnClass: string
+  tone?: ArqueoDifferenceTone
+}) {
+  return (
+    <TableCell
+      className={cn(
+        workspaceTableLayoutBodyCellClass,
+        columnClass,
+        "text-right",
+      )}
+    >
+      <span className={cn("block tabular-nums", arqueoTableMoneyValueClass(tone))}>
+        {children}
+      </span>
+    </TableCell>
+  )
 }
 
 function SessionMomentCell({
@@ -52,10 +102,16 @@ function SessionMomentCell({
   secondary: ReactNode
 }) {
   return (
-    <div className="min-w-0 py-0.5">
-      <div className="text-sm leading-snug text-foreground">{primary}</div>
-      <div className="mt-0.5 truncate text-xs text-muted-foreground">
-        {secondary}
+    <div className={workspaceTableLayoutCellStackClass}>
+      <div className={workspaceTableLayoutCellPrimaryTextClass}>
+        <span className={cn("truncate", workspaceTableNatureTextPrimaryClass)}>
+          {primary}
+        </span>
+      </div>
+      <div className={workspaceTableLayoutCellSecondaryTextClass}>
+        <span className={cn("truncate", workspaceTableNatureTextSecondaryClass)}>
+          {secondary}
+        </span>
       </div>
     </div>
   )
@@ -83,11 +139,10 @@ export function CashRegisterClosedSessionsPanel({
   )
 
   return (
-    <article className={dataWorkspaceDetailCardClass}>
+    <article className={dataWorkspaceDetailFlushBottomCardClass}>
       <div className={dataWorkspaceDetailToolbarClass}>
         <DataWorkspacePeriodFilter
           variant="compact"
-          hideAllPreset
           showActiveState={false}
           preset={datePreset}
           customRange={customDateRange}
@@ -95,117 +150,163 @@ export function CashRegisterClosedSessionsPanel({
           onCustomRangeChange={onCustomRangeChange}
           bounds={dateBounds}
         />
-        <p className="text-xs text-muted-foreground lg:text-right">
+        <p className={cn("text-xs lg:text-right", workspaceTableNatureTextSecondaryClass)}>
           {filteredSessions.length}{" "}
           {filteredSessions.length === 1 ? "arqueo" : "arqueos"} en el período
         </p>
       </div>
 
       {filteredSessions.length === 0 ? (
-        <div className="flex min-h-48 items-center justify-center px-4 py-10 text-center text-sm text-muted-foreground lg:px-5">
-          No hay arqueos en el período seleccionado.
-        </div>
+        <DataWorkspaceDetailEmptyState
+          icon={History}
+          title="Sin arqueos en este período"
+        />
       ) : (
-        <div className="overflow-x-auto">
-          <table className="w-full min-w-[720px] border-collapse text-sm">
-            <thead>
-              <tr className="border-b border-[color:var(--wt-border)] bg-white text-left text-[10px] uppercase tracking-widest text-muted-foreground">
-                <th className="w-16 px-4 py-2.5 lg:px-5">#</th>
-                <th className="px-4 py-2.5 lg:px-5">Apertura</th>
-                <th className="px-4 py-2.5 lg:px-5">Cierre</th>
-                <th className="px-4 py-2.5 text-right lg:px-5">Total cobrado</th>
-                <th className="px-4 py-2.5 text-right lg:px-5">Diferencia</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filteredSessions.map((session) => {
-                const isOpenSession = session.status === "open"
-                const difference = formatArqueoDifferenceDisplay(
-                  session.cashArqueoDifference,
-                )
-                const arqueoLabel =
-                  session.arqueoNumber > 0
-                    ? `#${session.arqueoNumber}`
-                    : "—"
+        <div
+          className={cn(
+            "min-h-0 flex-1 overflow-x-auto",
+            workspaceLayoutsTablesScopeClass,
+            workspaceTableLayoutListSurfaceClass,
+            workspaceTableLayoutListBodyScopeClass,
+          )}
+        >
+          <Table className={cn(workspaceTableLayoutClassName, "min-w-[45rem]")}>
+                <WorkspaceTableHeader>
+                  <WorkspaceTableHeaderRow>
+                    <WorkspaceTableHead
+                      tone="nature"
+                      className={cn("w-16", workspaceTableLayoutHeaderHeadClass)}
+                    >
+                      #
+                    </WorkspaceTableHead>
+                    <WorkspaceTableHead
+                      tone="nature"
+                      className={cn("min-w-44", workspaceTableLayoutHeaderHeadClass)}
+                    >
+                      Apertura
+                    </WorkspaceTableHead>
+                    <WorkspaceTableHead
+                      tone="nature"
+                      className={cn("min-w-44", workspaceTableLayoutHeaderHeadClass)}
+                    >
+                      Cierre
+                    </WorkspaceTableHead>
+                    <WorkspaceTableHead
+                      tone="nature"
+                      align="right"
+                      className={cn(
+                        arqueoTableTotalColumnClass,
+                        workspaceTableLayoutHeaderHeadClass,
+                      )}
+                    >
+                      Total cobrado
+                    </WorkspaceTableHead>
+                    <WorkspaceTableHead
+                      tone="nature"
+                      align="right"
+                      className={cn(
+                        arqueoTableDifferenceColumnClass,
+                        workspaceTableLayoutHeaderHeadClass,
+                      )}
+                    >
+                      Diferencia
+                    </WorkspaceTableHead>
+                  </WorkspaceTableHeaderRow>
+                </WorkspaceTableHeader>
+                <TableBody>
+                  {filteredSessions.map((session, index) => {
+                    const isOpenSession = session.status === "open"
+                    const difference = formatArqueoDifferenceDisplay(
+                      session.cashArqueoDifference,
+                    )
+                    const arqueoLabel =
+                      session.arqueoNumber > 0
+                        ? `#${session.arqueoNumber}`
+                        : "—"
 
-                return (
-                  <tr
-                    key={session.id}
-                    role="button"
-                    tabIndex={0}
-                    aria-label={`Ver arqueo ${arqueoLabel}`}
-                    onClick={() => onViewArqueo(session.id)}
-                    onKeyDown={(event) => {
-                      if (event.key === "Enter" || event.key === " ") {
-                        event.preventDefault()
-                        onViewArqueo(session.id)
-                      }
-                    }}
-                    className={cn(
-                      "cursor-pointer border-b border-[color:var(--wt-border)] text-foreground transition-colors duration-150 last:border-b-0",
-                      isOpenSession
-                        ? "sticky top-0 z-10 bg-emerald-50/90 shadow-[0_1px_0_0_var(--border)] hover:bg-emerald-50/75"
-                        : "hover:bg-muted/20",
-                    )}
-                  >
-                    <td className="whitespace-nowrap px-4 py-2.5 text-sm font-medium tabular-nums text-muted-foreground lg:px-5">
-                      {arqueoLabel}
-                    </td>
-                    <td className="px-4 py-2.5 lg:px-5">
-                      <SessionMomentCell
-                        primary={formatCashRegisterDateTime(
-                          session.openedAt,
-                          timeZone,
+                    return (
+                      <WorkspaceTableBodyRow
+                        key={session.id}
+                        index={index}
+                        noHover={false}
+                        role="button"
+                        tabIndex={0}
+                        aria-label={`Ver arqueo ${arqueoLabel}`}
+                        onClick={() => onViewArqueo(session.id)}
+                        onKeyDown={(event) => {
+                          if (event.key === "Enter" || event.key === " ") {
+                            event.preventDefault()
+                            onViewArqueo(session.id)
+                          }
+                        }}
+                        className={cn(
+                          "cursor-pointer",
+                          isOpenSession &&
+                            "sticky top-0 z-10 !bg-[color-mix(in_srgb,var(--rootsy-savia-600)_10%,white)] shadow-[0_1px_0_0_var(--wt-border)] hover:!bg-[color-mix(in_srgb,var(--rootsy-savia-600)_14%,white)]",
                         )}
-                        secondary={session.openedByName ?? "—"}
-                      />
-                    </td>
-                    <td className="px-4 py-2.5 lg:px-5">
-                      <SessionMomentCell
-                        primary={
-                          isOpenSession ? (
-                            <span className="inline-flex items-center rounded-full border border-emerald-200/90 bg-emerald-50/80 px-2 py-0.5 text-[10px] font-medium uppercase tracking-[0.08em] text-emerald-800">
-                              En curso
-                            </span>
-                          ) : session.closedAt ? (
-                            formatCashRegisterDateTime(
-                              session.closedAt,
+                      >
+                        <TableCell
+                          className={cn(
+                            workspaceTableLayoutBodyCellClass,
+                            "font-medium tabular-nums",
+                            workspaceTableNatureTextSecondaryClass,
+                          )}
+                        >
+                          {arqueoLabel}
+                        </TableCell>
+                        <TableCell className={workspaceTableLayoutBodyCellClass}>
+                          <SessionMomentCell
+                            primary={formatCashRegisterDateTime(
+                              session.openedAt,
                               timeZone,
-                            )
-                          ) : (
-                            "—"
-                          )
-                        }
-                        secondary={
-                          isOpenSession ? "—" : (session.closedByName ?? "—")
-                        }
-                      />
-                    </td>
-                    <td
-                      className={cn(
-                        "px-4 py-2.5 text-right font-bold lg:px-5",
-                        tdMoneyClass,
-                      )}
-                    >
-                      {formatCashRegisterMoney(session.totalCobrado)}
-                    </td>
-                    <td
-                      className={cn(
-                        "px-4 py-2.5 text-right lg:px-5",
-                        tdMoneyClass,
-                        difference.tone === "positive" && "text-emerald-700",
-                        difference.tone === "negative" && "text-destructive",
-                        difference.tone === "neutral" && "text-muted-foreground",
-                        difference.tone === "muted" && "text-muted-foreground",
-                      )}
-                    >
-                      {difference.text}
-                    </td>
-                  </tr>
-                )
-              })}
-            </tbody>
-          </table>
+                            )}
+                            secondary={session.openedByName ?? "—"}
+                          />
+                        </TableCell>
+                        <TableCell className={workspaceTableLayoutBodyCellClass}>
+                          <SessionMomentCell
+                            primary={
+                              isOpenSession ? (
+                                <span
+                                  className={cn(
+                                    dataWorkspaceEntityCardStatusOpenClass,
+                                    "px-2 py-0.5",
+                                  )}
+                                >
+                                  <span
+                                    className="size-1.5 rounded-full bg-[var(--rootsy-savia-600)]"
+                                    aria-hidden
+                                  />
+                                  En curso
+                                </span>
+                              ) : session.closedAt ? (
+                                formatCashRegisterDateTime(
+                                  session.closedAt,
+                                  timeZone,
+                                )
+                              ) : (
+                                "—"
+                              )
+                            }
+                            secondary={
+                              isOpenSession ? "—" : (session.closedByName ?? "—")
+                            }
+                          />
+                        </TableCell>
+                        <ArqueoTableMoneyCell columnClass={arqueoTableTotalColumnClass}>
+                          {formatCashRegisterMoney(session.totalCobrado)}
+                        </ArqueoTableMoneyCell>
+                        <ArqueoTableMoneyCell
+                          columnClass={arqueoTableDifferenceColumnClass}
+                          tone={difference.tone}
+                        >
+                          {difference.text}
+                        </ArqueoTableMoneyCell>
+                      </WorkspaceTableBodyRow>
+                    )
+                  })}
+                </TableBody>
+              </Table>
         </div>
       )}
     </article>

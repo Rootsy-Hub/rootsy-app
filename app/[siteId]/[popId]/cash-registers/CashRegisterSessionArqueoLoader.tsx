@@ -5,6 +5,7 @@ import {
   type CashRegisterSessionArqueoDetail,
 } from "@/app/[siteId]/[popId]/cash-registers/actions"
 import { CashRegisterSessionArqueoView } from "@/app/[siteId]/[popId]/cash-registers/CashRegisterSessionArqueoView"
+import { dataWorkspaceDetailPanelClass } from "@/components/data-workspace/dataWorkspaceListStyles"
 import { Spinner } from "@/components/ui/spinner"
 import { cn } from "@/lib/utils"
 import { useCallback, useEffect, useState } from "react"
@@ -55,8 +56,13 @@ export function CashRegisterSessionArqueoLoader({
         aria-live="polite"
         aria-busy="true"
       >
-        <div className="flex min-h-48 flex-col items-center justify-center gap-3 rounded-2xl border border-border/60 bg-card px-4 py-10 text-sm text-muted-foreground">
-          <Spinner className="size-6 text-muted-foreground" />
+        <div
+          className={cn(
+            dataWorkspaceDetailPanelClass,
+            "flex min-h-48 flex-col items-center justify-center gap-3 px-4 py-10 font-canopy text-sm text-[var(--rootsy-bruma-500)]",
+          )}
+        >
+          <Spinner className="size-6 text-[var(--rootsy-bruma-400)]" />
           Cargando arqueo…
         </div>
       </div>
@@ -67,7 +73,7 @@ export function CashRegisterSessionArqueoLoader({
     return (
       <div
         className={cn(
-          "rounded-2xl border border-destructive/25 bg-destructive/5 px-4 py-3 text-sm text-destructive",
+          "rounded-[1.375rem] border border-[color-mix(in_srgb,var(--color-status-danger)_25%,var(--rootsy-bruma-200))] bg-[color-mix(in_srgb,var(--color-status-danger)_6%,white)] px-4 py-3 font-canopy text-sm text-[var(--color-status-danger)]",
           className,
         )}
       >

@@ -265,7 +265,6 @@ export function TreasuryChildReconciliationPanel({
   const periodFilterControl = (
     <DataWorkspacePeriodFilter
       variant="compact"
-      hideAllPreset
       showActiveState={false}
       preset={datePreset}
       customRange={customDateRange}

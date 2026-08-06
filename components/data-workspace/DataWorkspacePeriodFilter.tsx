@@ -1,58 +1,43 @@
 "use client"
 
-import { Calendar } from "@/components/ui/calendar"
-import { Button } from "@/components/ui/button"
 import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover"
-import {
-  lightToolbarControlActiveClass,
-  lightToolbarFocusClass,
   lightToolbarPanelClass,
-  lightDateCalendarClass,
-  lightDatePopoverContentClass,
-  listToolbarFilterTriggerActiveClass,
 } from "@/components/data-workspace/dataWorkspaceListStyles"
-import {
-  rootsFormAffixPrefixClass,
-  rootsFormControlTypographyClass,
-  rootsFormInlineIconPrefixedSelectTriggerClass,
-  rootsFormPrefixedDateTriggerClass,
-  rootsFormInlineIconPrefixClass,
-} from "@/components/rootsy-form/rootsFormStyles"
-import { RootsFormField } from "@/components/rootsy-form/RootsFormField"
 import { dataWorkspaceListFiltersFieldClass } from "@/components/data-workspace/dataWorkspaceTablesLayout"
 import { DataWorkspaceToolbarFieldLabel } from "@/components/data-workspace/DataWorkspaceToolbarFieldLabel"
 import {
+  RootsFormSelectField,
+  RootsFormSelectItem,
+} from "@/components/rootsy-form"
+import {
+  rootsFormDateCalendarClassNames,
+  rootsFormDateCalendarShellClass,
+  rootsFormDatePopoverContentClass,
+} from "@/components/rootsy-form/rootsFormStyles"
+import { Calendar } from "@/components/ui/calendar"
+import {
+  Popover,
+  PopoverAnchor,
+  PopoverContent,
+} from "@/components/ui/popover"
+import {
   DATA_WORKSPACE_DATE_QUICK_PRESETS,
   dataWorkspaceDateFilterSummary,
-  isCompleteDateRange,
   type DataWorkspaceDatePreset,
 } from "@/lib/dataWorkspaceDateFilter"
 import { cn } from "@/lib/utils"
+import { format } from "date-fns"
 import { es as esLocale } from "date-fns/locale"
-import { CalendarRange, ChevronDown } from "lucide-react"
+import { CalendarRange } from "lucide-react"
 import type { DateRange } from "react-day-picker"
-import { useEffect, useId, useMemo, useState } from "react"
+import { useEffect, useId, useMemo, useRef, useState } from "react"
 
-const lightToolbarControlClass =
-  "h-11 w-full max-w-full rounded-md border-border/60 bg-muted/25 text-sm text-foreground shadow-sm transition-[color,background-color,border-color,box-shadow] duration-150 hover:bg-muted/40"
+const periodSelectContentClass =
+  "!min-w-[14.5rem] !w-max !max-w-[min(22rem,calc(100vw-1.5rem))] [&>div:nth-child(2)]:!min-w-[14.5rem]"
 
-const dateFilterTriggerClass = cn(
-  lightToolbarControlClass,
-  "justify-between gap-2 px-3 font-normal",
-  lightToolbarFocusClass,
-)
+const periodSelectTriggerShellClass = "w-[14.5rem] max-w-[14.5rem] shrink-0"
 
-const dateShortcutButtonClass = cn(
-  "rounded-lg px-2.5 py-2 text-left text-sm text-[var(--rootsy-bruma-700)] transition-colors",
-  "hover:bg-[var(--rootsy-bruma-50)] focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-[color-mix(in_srgb,var(--rootsy-savia-600)_40%,transparent)]",
-)
-
-const dateShortcutButtonActiveClass =
-  "bg-[var(--rootsy-bruma-50)] font-medium text-[var(--rootsy-bruma-900)]"
+const periodSelectItemClass = "whitespace-nowrap"
 
 export function DataWorkspacePeriodFilter({
   preset,
@@ -63,7 +48,6 @@ export function DataWorkspacePeriodFilter({
   labelId: labelIdProp,
   triggerId: triggerIdProp,
   showActiveState = true,
-  hideAllPreset = false,
   variant = "panel",
   className,
 }: {
@@ -76,8 +60,6 @@ export function DataWorkspacePeriodFilter({
   triggerId?: string
   /** Si es false, el período no se resalta como filtro activo (p. ej. siempre hay uno elegido). */
   showActiveState?: boolean
-  /** Oculta la opción «Todas las fechas». */
-  hideAllPreset?: boolean
   /** `compact` toolbar inline; `layout` barra flush h-23 con RootsForm. */
   variant?: "panel" | "compact" | "layout"
   className?: string
@@ -88,286 +70,223 @@ export function DataWorkspacePeriodFilter({
   const triggerId = triggerIdProp ?? autoTriggerId
   const isCompact = variant === "compact"
   const isLayout = variant === "layout"
-  /** Trigger RootsForm (prefijo calendario) — barra de filtros o toolbar inline. */
-  const useRootsFormTrigger = isLayout || isCompact
-  const [popoverOpen, setPopoverOpen] = useState(false)
-  const [pickerView, setPickerView] = useState<"shortcuts" | "calendar">(
-    "shortcuts",
-  )
-  /** Rango en curso mientras el usuario elige inicio y fin en el calendario. */
+  const isPanel = variant === "panel"
+  const hideSelectLabel = isCompact || isPanel
+
+  const [calendarOpen, setCalendarOpen] = useState(false)
+  const [pendingCustomCalendar, setPendingCustomCalendar] = useState(false)
   const [draftRange, setDraftRange] = useState<DateRange | undefined>(
     undefined,
   )
+  const suppressCalendarDismissRef = useRef(false)
+  const awaitingRangeEndRef = useRef(false)
 
-  const resetDraftRange = () => {
-    setDraftRange(preset === "custom" ? customRange : undefined)
+  const blurTrigger = () => {
+    window.requestAnimationFrame(() => {
+      document.getElementById(triggerId)?.blur()
+    })
   }
 
-  const handlePopoverOpenChange = (open: boolean) => {
-    setPopoverOpen(open)
-    if (open) {
-      resetDraftRange()
-      return
-    }
-    setPickerView("shortcuts")
-    setDraftRange(undefined)
-  }
-
-  useEffect(() => {
-    if (!popoverOpen) return
-    if (preset === "custom") {
-      setPickerView("calendar")
-    }
-  }, [popoverOpen, preset])
-
-  const active = showActiveState && preset !== "all"
+  const active = showActiveState && preset !== "this_month"
   const summary = useMemo(
     () => dataWorkspaceDateFilterSummary(preset, bounds),
     [preset, bounds],
   )
 
-  const clear = () => {
-    onPresetChange("all")
-    onCustomRangeChange(undefined)
+  const customRangeLabel =
+    preset === "custom" && bounds.from && bounds.to
+      ? summary
+      : "Rango personalizado…"
+
+  const queueCustomRangePicker = () => {
+    setPendingCustomCalendar(true)
   }
 
-  const triggerClass = cn(
-    useRootsFormTrigger
-      ? cn(
-          isLayout
-            ? cn(
-                rootsFormInlineIconPrefixedSelectTriggerClass,
-                "cursor-pointer",
-                active && listToolbarFilterTriggerActiveClass,
-              )
-            : cn(
-                rootsFormPrefixedDateTriggerClass,
-                "cursor-pointer",
-                active && listToolbarFilterTriggerActiveClass,
-              ),
-        )
-      : dateFilterTriggerClass,
-    isCompact && "min-w-[12rem] max-w-[18rem] w-full sm:w-auto",
-    !useRootsFormTrigger && "min-w-0 shadow-xs",
-    !useRootsFormTrigger && active && lightToolbarControlActiveClass,
-  )
+  useEffect(() => {
+    if (!pendingCustomCalendar) return
 
-  const periodTrigger = useRootsFormTrigger ? (
-    <button
-      id={triggerId}
-      type="button"
-      className={triggerClass}
-      data-state={popoverOpen ? "open" : "closed"}
-      aria-expanded={popoverOpen}
-      aria-haspopup="dialog"
-      title={summary}
-    >
-      <span className={isLayout ? rootsFormInlineIconPrefixClass : rootsFormAffixPrefixClass} aria-hidden>
-        <CalendarRange className="size-4" />
-      </span>
-      <span
-        data-slot="date-value"
-        className={cn(rootsFormControlTypographyClass, "truncate", isLayout ? "min-w-0 flex-1" : undefined)}
-      >
-        {summary}
-      </span>
-      <ChevronDown
-        className={cn(
-          "size-4 shrink-0 text-[#78716c] transition-transform duration-200",
-          isLayout ? "my-auto mr-3" : "my-auto mr-3",
-          popoverOpen && "rotate-180",
-        )}
-        aria-hidden
-      />
-    </button>
-  ) : (
-    <Button
-      id={triggerId}
-      type="button"
-      variant="outline"
-      size={isCompact ? "sm" : "default"}
-      className={triggerClass}
-      aria-expanded={popoverOpen}
-      aria-haspopup="dialog"
-      aria-labelledby={isCompact ? undefined : labelId}
-      title={summary}
-    >
-      <span className="flex min-w-0 flex-1 items-center gap-2 overflow-hidden">
-        <CalendarRange
-          className="size-4 shrink-0 text-muted-foreground"
-          aria-hidden
-        />
-        <span className="min-w-0 flex-1 truncate text-left text-foreground">
-          {summary}
-        </span>
-      </span>
-      <ChevronDown
-        className={cn(
-          "size-4 shrink-0 text-muted-foreground transition-transform duration-200",
-          popoverOpen && "rotate-180",
-        )}
-      />
-    </Button>
-  )
+    const timer = window.setTimeout(() => {
+      awaitingRangeEndRef.current = false
+      setDraftRange(preset === "custom" ? customRange : undefined)
+      suppressCalendarDismissRef.current = true
+      setCalendarOpen(true)
+      setPendingCustomCalendar(false)
+      window.setTimeout(() => {
+        suppressCalendarDismissRef.current = false
+      }, 300)
+    }, 120)
+
+    return () => window.clearTimeout(timer)
+  }, [pendingCustomCalendar, preset, customRange])
+
+  const handlePresetChange = (value: string) => {
+    if (value === "custom") {
+      queueCustomRangePicker()
+      return
+    }
+
+    onPresetChange(value as DataWorkspaceDatePreset)
+    onCustomRangeChange(undefined)
+    setCalendarOpen(false)
+    blurTrigger()
+  }
 
   const handleCustomRangeSelect = (range: DateRange | undefined) => {
     if (!range?.from) {
       setDraftRange(undefined)
+      awaitingRangeEndRef.current = false
       return
     }
 
-    setDraftRange(range)
+    if (!awaitingRangeEndRef.current) {
+      setDraftRange({ from: range.from, to: undefined })
+      awaitingRangeEndRef.current = true
+      return
+    }
 
-    if (!isCompleteDateRange(range)) return
+    const start = draftRange?.from ?? range.from
+    const end = range.to ?? range.from
+    const from = start <= end ? start : end
+    const to = start <= end ? end : start
 
     onPresetChange("custom")
-    onCustomRangeChange(range)
-    setPopoverOpen(false)
+    onCustomRangeChange({ from, to })
+    setCalendarOpen(false)
+    awaitingRangeEndRef.current = false
+    blurTrigger()
   }
 
-  const calendarSelected = popoverOpen
-    ? draftRange
-    : preset === "custom"
-      ? customRange
-      : undefined
+  const handleCalendarOpenChange = (open: boolean) => {
+    if (!open && suppressCalendarDismissRef.current) return
+    setCalendarOpen(open)
+    if (!open) {
+      setDraftRange(undefined)
+      setPendingCustomCalendar(false)
+      awaitingRangeEndRef.current = false
+      blurTrigger()
+    }
+  }
 
-  const filterControl = (
-    <Popover open={popoverOpen} onOpenChange={handlePopoverOpenChange}>
-      <PopoverTrigger asChild>{periodTrigger}</PopoverTrigger>
-      <PopoverContent
-        align={isCompact ? "end" : "start"}
-        side="bottom"
-        sideOffset={useRootsFormTrigger ? 6 : 8}
-        collisionPadding={20}
-        className={cn(
-          useRootsFormTrigger ? "z-50" : "z-[100]",
-          "rounded-xl p-0",
-          "w-[min(21.5rem,calc(100vw-1.5rem))] max-w-[calc(100vw-1.5rem)]",
-          lightDatePopoverContentClass,
-        )}
-      >
-        {pickerView === "calendar" ? (
-          <div className="min-w-0 px-2.5 pb-3 pt-2">
-            <div className={lightDateCalendarClass}>
-              <Calendar
-                locale={esLocale}
-                mode="range"
-                min={1}
-                numberOfMonths={1}
-                className={cn(
-                  "w-full min-w-0 bg-transparent p-0",
-                  isCompact ? "[--cell-size:2rem]" : "[--cell-size:2.125rem]",
-                )}
-                selected={calendarSelected}
-                onSelect={handleCustomRangeSelect}
-                defaultMonth={
-                  draftRange?.from ??
-                  customRange?.from ??
-                  customRange?.to ??
-                  new Date()
-                }
-              />
-            </div>
-          </div>
-        ) : (
-          <div>
-            <div
-              className={cn(
-                "px-2 py-2",
-                !isCompact && "border-b border-[var(--rootsy-bruma-100)]",
-              )}
+  const handleSelectOpenChange = (open: boolean) => {
+    if (!open) blurTrigger()
+  }
+
+  const isSelectingRangeEnd = Boolean(draftRange?.from && !draftRange?.to)
+
+  const selectValue = preset
+  const triggerLabel = summary
+
+  const selectField = (
+    <Popover open={calendarOpen} onOpenChange={handleCalendarOpenChange}>
+      <PopoverAnchor asChild>
+        <div
+          className={cn(
+            isCompact && periodSelectTriggerShellClass,
+            !isCompact && "w-full min-w-0",
+          )}
+        >
+          <RootsFormSelectField
+            label="Período"
+            id={triggerId}
+            value={selectValue}
+            onValueChange={handlePresetChange}
+            onOpenChange={handleSelectOpenChange}
+            placeholder="Este mes"
+            valueLabel={triggerLabel}
+            prefix={<CalendarRange className="size-4" aria-hidden />}
+            prefixVariant="inline"
+            className={cn(
+              isLayout && dataWorkspaceListFiltersFieldClass(),
+              hideSelectLabel && dataWorkspaceListFiltersFieldClass(true),
+              isCompact && periodSelectTriggerShellClass,
+              className,
+            )}
+            triggerClassName={cn(
+              isCompact &&
+                "w-full max-w-full [&_[data-slot=select-value]]:truncate",
+            )}
+            contentClassName={periodSelectContentClass}
+          >
+            {DATA_WORKSPACE_DATE_QUICK_PRESETS.map((item) => (
+              <RootsFormSelectItem
+                key={item.id}
+                value={item.id}
+                className={periodSelectItemClass}
+              >
+                {item.label}
+              </RootsFormSelectItem>
+            ))}
+            <RootsFormSelectItem
+              value="custom"
+              className={periodSelectItemClass}
+              onSelect={() => queueCustomRangePicker()}
             >
-              <p className="px-2 pb-1.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-[#a8a29e]">
-                Atajos
-              </p>
-              <div
-                className={cn(
-                  "gap-0.5",
-                  isCompact ? "grid grid-cols-2" : "flex flex-col",
-                )}
-              >
-                {!hideAllPreset ? (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      clear()
-                      setPopoverOpen(false)
-                    }}
-                    className={cn(
-                      dateShortcutButtonClass,
-                      preset === "all" && dateShortcutButtonActiveClass,
-                      isCompact && "col-span-2",
-                    )}
-                  >
-                    Todas las fechas
-                  </button>
-                ) : null}
-                {DATA_WORKSPACE_DATE_QUICK_PRESETS.map((p) => (
-                  <button
-                    key={p.id}
-                    type="button"
-                    onClick={() => {
-                      onPresetChange(p.id)
-                      onCustomRangeChange(undefined)
-                      setPopoverOpen(false)
-                    }}
-                    className={cn(
-                      dateShortcutButtonClass,
-                      preset === p.id && dateShortcutButtonActiveClass,
-                    )}
-                  >
-                    {p.label}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            <div className="border-t border-[var(--rootsy-bruma-100)] px-2 py-2">
-              <button
-                type="button"
-                onClick={() => {
-                  resetDraftRange()
-                  setPickerView("calendar")
-                }}
-                className={cn(
-                  "w-full",
-                  dateShortcutButtonClass,
-                  preset === "custom" && dateShortcutButtonActiveClass,
-                )}
-              >
-                Rango personalizado…
-              </button>
-            </div>
-          </div>
-        )}
+              {customRangeLabel}
+            </RootsFormSelectItem>
+          </RootsFormSelectField>
+        </div>
+      </PopoverAnchor>
+      <PopoverContent
+        align="center"
+        side="bottom"
+        sideOffset={4}
+        collisionPadding={16}
+        onOpenAutoFocus={(event) => event.preventDefault()}
+        onInteractOutside={(event) => {
+          if (suppressCalendarDismissRef.current || isSelectingRangeEnd) {
+            event.preventDefault()
+          }
+        }}
+        onPointerDownOutside={(event) => {
+          if (suppressCalendarDismissRef.current || isSelectingRangeEnd) {
+            event.preventDefault()
+          }
+        }}
+        onFocusOutside={(event) => {
+          if (isSelectingRangeEnd) {
+            event.preventDefault()
+          }
+        }}
+        className={cn(rootsFormDatePopoverContentClass, "p-0")}
+      >
+        <Calendar
+          locale={esLocale}
+          mode="range"
+          numberOfMonths={1}
+          selected={draftRange}
+          onSelect={handleCustomRangeSelect}
+          defaultMonth={
+            draftRange?.from ??
+            customRange?.from ??
+            customRange?.to ??
+            new Date()
+          }
+          className={rootsFormDateCalendarShellClass}
+          classNames={rootsFormDateCalendarClassNames}
+          formatters={{
+            formatCaption: (date) => {
+              const label = format(date, "LLLL yyyy", { locale: esLocale })
+              return label.charAt(0).toUpperCase() + label.slice(1)
+            },
+          }}
+        />
       </PopoverContent>
     </Popover>
   )
 
-  if (isCompact) {
-    return <div className={className}>{filterControl}</div>
-  }
-
-  if (isLayout) {
-    return (
-      <RootsFormField
-        label="Período"
-        htmlFor={triggerId}
-        className={cn(dataWorkspaceListFiltersFieldClass(), className)}
-      >
-        {filterControl}
-      </RootsFormField>
-    )
+  if (isCompact || isLayout) {
+    return selectField
   }
 
   return (
     <div className={cn(lightToolbarPanelClass, className)}>
       <DataWorkspaceToolbarFieldLabel
+        htmlFor={triggerId}
         id={labelId}
         label="Período"
         meta={active ? "Activo" : undefined}
       />
-      {filterControl}
+      {selectField}
     </div>
   )
 }

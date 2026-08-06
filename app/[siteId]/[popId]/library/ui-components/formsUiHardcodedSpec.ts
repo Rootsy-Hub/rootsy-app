@@ -474,7 +474,7 @@ export const FORM_UI_DEMO_COPY = {
   hint: "Texto de ayuda neutral debajo del control.",
   error: "Este campo es obligatorio.",
   toolbar: {
-    period: { label: "Período", placeholder: "Todas las fechas" },
+    period: { label: "Período", placeholder: "Este mes" },
     filters: { label: "Filtros", placeholder: "Estado y tipo" },
     search: { label: "Buscar", placeholder: "Título o referencia…" },
   },

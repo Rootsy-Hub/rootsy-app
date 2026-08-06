@@ -216,15 +216,38 @@ export const dataWorkspaceEntityCardSkeletonShellClass = cn(
 export const dataWorkspaceBlocksEmptyStateClass =
   "rounded-xl border border-dashed border-[var(--rootsy-bruma-300)] bg-white px-4 py-10 text-center font-canopy text-sm text-[var(--rootsy-bruma-500)]"
 
+/** Empty state embebido en paneles de detalle — icon tile + título + descripción. */
+export const dataWorkspaceDetailEmptyStateClass =
+  "flex min-h-0 flex-1 flex-col items-center justify-center px-6 py-16 text-center"
+
+export const dataWorkspaceDetailEmptyStateContentClass =
+  "flex max-w-[16rem] flex-col items-center gap-3"
+
+export const dataWorkspaceDetailEmptyStateIconWrapClass =
+  "flex size-12 items-center justify-center rounded-full bg-[var(--rootsy-bruma-50)] text-[var(--rootsy-bruma-500)]"
+
+export const dataWorkspaceDetailEmptyStateTitleClass =
+  "font-canopy text-sm font-medium text-[var(--rootsy-bruma-900)]"
+
+export const dataWorkspaceDetailEmptyStateDescriptionClass =
+  "font-canopy text-xs leading-relaxed text-[var(--rootsy-bruma-500)]"
+
 /** Scope sin padding — detalle cuenta / caja. */
 export const dataWorkspaceBlocksPageScopeClass = cn(
   dataWorkspaceBlocksContentScopeClass,
   "min-h-full flex-1",
 )
 
-/** Tarjeta / panel de detalle — misma elevación y radio que bloques, sin hover. */
+/** Tarjeta / panel de detalle — radius.xxlarge · elevation.shadow.raised (paridad loseta, sin hover). */
 export const dataWorkspaceDetailCardClass = cn(
-  "overflow-hidden rounded-[1.375rem] border border-[var(--rootsy-bruma-200)] bg-white shadow-sm",
+  "overflow-hidden rounded-[1.375rem] border border-[var(--rootsy-bruma-200)] bg-white",
+  rootsyElevationRaisedRestClass,
+)
+
+/** Panel de detalle pegado al piso — sin borde ni radio inferior. */
+export const dataWorkspaceDetailFlushBottomCardClass = cn(
+  dataWorkspaceDetailCardClass,
+  "flex min-h-0 flex-1 flex-col rounded-b-none border-b-0",
 )
 
 export const dataWorkspaceDetailCardHeaderClass =

@@ -2,6 +2,7 @@
 
 import type { CashRegisterSummarySession } from "@/app/[siteId]/[popId]/cash-registers/actions"
 import {
+  arqueoDifferenceToneClass,
   formatArqueoDifferenceDisplay,
   formatCashRegisterMoney,
 } from "@/app/[siteId]/[popId]/cash-registers/cashRegisterFormatters"
@@ -9,28 +10,34 @@ import {
   dataWorkspaceDetailCardClass,
   dataWorkspaceDetailCardHeaderClass,
   dataWorkspaceDetailCardStatsClass,
+  dataWorkspaceEntityCardEyebrowClass,
   dataWorkspaceEntityCardIsotypeClass,
+  dataWorkspaceEntityCardStatLabelClass,
+  dataWorkspaceEntityCardStatValueLargeClass,
+  dataWorkspaceEntityCardStatusClosedClass,
+  dataWorkspaceEntityCardStatusInactiveClass,
+  dataWorkspaceEntityCardStatusOpenClass,
+  dataWorkspaceEntityCardTitleClass,
 } from "@/components/data-workspace/dataWorkspaceListStyles"
-import { Button } from "@/components/ui/button"
+import { RootsDefaultButton, RootsIconButton, rootsButtonCompactSizeClass } from "@/components/rootsy-button"
 import { cn } from "@/lib/utils"
 import { ArrowLeft, Calculator, History } from "lucide-react"
-import Link from "next/link"
-
-const eyebrowClass =
-  "text-[11px] font-medium uppercase tracking-[0.12em] text-muted-foreground"
 
 function SessionStatusPill({ isOpen }: { isOpen: boolean }) {
   if (isOpen) {
     return (
-      <span className="inline-flex shrink-0 items-center gap-1.5 rounded-full border border-emerald-200/90 bg-emerald-50/80 px-2.5 py-1 text-[10px] font-medium uppercase tracking-[0.08em] text-emerald-800">
-        <span className="size-1.5 rounded-full bg-emerald-500" aria-hidden />
+      <span className={dataWorkspaceEntityCardStatusOpenClass}>
+        <span
+          className="size-1.5 rounded-full bg-[var(--rootsy-savia-600)]"
+          aria-hidden
+        />
         Turno abierto
       </span>
     )
   }
 
   return (
-    <span className="inline-flex shrink-0 items-center rounded-full border border-border/70 bg-muted/30 px-2.5 py-1 text-[10px] font-medium uppercase tracking-[0.08em] text-muted-foreground">
+    <span className={dataWorkspaceEntityCardStatusClosedClass}>
       Arqueo cerrado
     </span>
   )
@@ -45,30 +52,26 @@ function RegisterStatusPill({
 }) {
   if (!isActive) {
     return (
-      <span className="inline-flex shrink-0 items-center rounded-full border border-border/70 bg-muted/30 px-2.5 py-1 text-[10px] font-medium uppercase tracking-[0.08em] text-muted-foreground">
+      <span className={dataWorkspaceEntityCardStatusInactiveClass}>
         Inactiva
       </span>
     )
   }
 
+  if (isOpen) {
+    return (
+      <span className={dataWorkspaceEntityCardStatusOpenClass}>
+        <span
+          className="size-1.5 rounded-full bg-[var(--rootsy-savia-600)]"
+          aria-hidden
+        />
+        Abierta
+      </span>
+    )
+  }
+
   return (
-    <span
-      className={cn(
-        "inline-flex shrink-0 items-center gap-1.5 rounded-full border px-2.5 py-1 text-[10px] font-medium uppercase tracking-[0.08em]",
-        isOpen
-          ? "border-emerald-200/90 bg-emerald-50/80 text-emerald-800"
-          : "border-border/70 bg-background text-muted-foreground",
-      )}
-    >
-      <span
-        className={cn(
-          "size-1.5 rounded-full",
-          isOpen ? "bg-emerald-500" : "bg-muted-foreground/35",
-        )}
-        aria-hidden
-      />
-      {isOpen ? "Abierta" : "Cerrada"}
-    </span>
+    <span className={dataWorkspaceEntityCardStatusClosedClass}>Cerrada</span>
   )
 }
 
@@ -81,17 +84,23 @@ function HeaderKpiStat({
   value: string
   tone?: "default" | "positive" | "negative" | "neutral" | "muted"
 }) {
+  const differenceTone =
+    tone === "positive" || tone === "negative" || tone === "neutral" || tone === "muted"
+      ? tone
+      : null
+
   return (
     <div className="min-w-[8.5rem]">
-      <p className={eyebrowClass}>{label}</p>
+      <p className={dataWorkspaceEntityCardStatLabelClass}>{label}</p>
       <p
         className={cn(
-          "mt-1.5 font-numeric text-2xl font-bold tabular-nums tracking-tight",
-          tone === "positive" && "text-emerald-700",
-          tone === "negative" && "text-destructive",
-          tone === "neutral" && "text-muted-foreground",
-          tone === "muted" && "text-muted-foreground",
-          tone === "default" && "text-foreground",
+          "mt-1.5",
+          tone === "default"
+            ? dataWorkspaceEntityCardStatValueLargeClass
+            : cn(
+                dataWorkspaceEntityCardStatValueLargeClass,
+                differenceTone && arqueoDifferenceToneClass(differenceTone),
+              ),
         )}
       >
         {value}
@@ -138,16 +147,16 @@ export function CashRegisterDetailHeaderCard({
     <article className={dataWorkspaceDetailCardClass}>
       <div className={dataWorkspaceDetailCardHeaderClass}>
         <div className="flex min-w-0 items-center gap-3 sm:gap-4">
-          <Button
-            asChild
-            variant="ghost-neutral"
-            size="icon"
-            className="size-9 shrink-0"
+          <RootsIconButton
+            theme="workspace"
+            emphasis="ghost"
+            size="default"
+            label="Volver a cajas"
+            href={cashRegistersBasePath}
+            className="shrink-0"
           >
-            <Link href={cashRegistersBasePath} aria-label="Volver a cajas">
-              <ArrowLeft className="size-5" aria-hidden />
-            </Link>
-          </Button>
+            <ArrowLeft aria-hidden />
+          </RootsIconButton>
 
           <span className={dataWorkspaceEntityCardIsotypeClass} aria-hidden>
             <Calculator className="size-5" strokeWidth={1.75} />
@@ -156,17 +165,19 @@ export function CashRegisterDetailHeaderCard({
           <div className="min-w-0 flex-1">
             <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
               <div className="min-w-0">
-                <p className={eyebrowClass}>Caja registradora</p>
+                <p className={dataWorkspaceEntityCardEyebrowClass}>
+                  Caja registradora
+                </p>
                 <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1.5">
-                  <h2 className="truncate text-lg font-semibold text-foreground sm:text-xl">
+                  <h2 className={cn(dataWorkspaceEntityCardTitleClass, "truncate text-lg sm:text-xl")}>
                     {registerName}
                   </h2>
                   {viewingArqueo ? (
                     <>
-                      <span className="hidden text-muted-foreground/60 sm:inline">
+                      <span className="hidden text-[var(--rootsy-bruma-400)] sm:inline">
                         ·
                       </span>
-                      <span className="text-sm font-medium text-muted-foreground">
+                      <span className="font-canopy text-sm font-medium text-[var(--rootsy-bruma-500)]">
                         Arqueo #{activeSession.arqueoNumber || "—"}
                       </span>
                       <SessionStatusPill
@@ -185,28 +196,24 @@ export function CashRegisterDetailHeaderCard({
               {viewingArqueo && (showHistorialAction || showBack) ? (
                 <div className="flex shrink-0 items-center gap-2">
                   {showBack ? (
-                    <Button
+                    <RootsDefaultButton
                       type="button"
-                      variant="outline"
-                      size="sm"
-                      className="gap-1.5 border-border/80 bg-background font-medium shadow-sm"
+                      className={cn(rootsButtonCompactSizeClass, "gap-1.5 px-3 text-xs")}
                       onClick={onBack}
                     >
                       <ArrowLeft className="size-3.5" aria-hidden />
                       Volver al historial
-                    </Button>
+                    </RootsDefaultButton>
                   ) : null}
                   {showHistorialAction && onShowHistory ? (
-                    <Button
+                    <RootsDefaultButton
                       type="button"
-                      variant="outline"
-                      size="sm"
-                      className="gap-1.5 border-border/80 bg-background font-medium shadow-sm"
+                      className={cn(rootsButtonCompactSizeClass, "gap-1.5 px-3 text-xs")}
                       onClick={onShowHistory}
                     >
                       <History className="size-3.5" aria-hidden />
                       Historial de arqueos
-                    </Button>
+                    </RootsDefaultButton>
                   ) : null}
                 </div>
               ) : null}

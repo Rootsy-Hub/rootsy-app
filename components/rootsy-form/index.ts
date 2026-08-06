@@ -32,6 +32,7 @@ export type {
 } from "@/components/rootsy-form/rootsFormFieldAssist"
 export { resolveRootsFormFieldMessage } from "@/components/rootsy-form/rootsFormFieldAssist"
 export { RootsFormToolbarListFilters } from "@/components/rootsy-form/RootsFormToolbarListFilters"
+export { DataWorkspacePeriodFilter as RootsFormPeriodFilterField } from "@/components/data-workspace/DataWorkspacePeriodFilter"
 export {
   rootsFormFieldLabelClass,
   rootsFormFieldLabelTypographyClass,

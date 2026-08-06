@@ -55,6 +55,7 @@ export type FormControlTypeId =
   | "leading-unit"
   | "date"
   | "date-leading"
+  | "period-filter"
   | "image-upload"
 
 export type FormImageUploadModeId = "empty" | "filled"
@@ -263,6 +264,13 @@ export const ROOTSY_FORM_CONTROL_TYPES: {
     usage: "Shell compuesta · ícono en leading space.500.",
   },
   {
+    id: "period-filter",
+    token: "form.control.period-filter",
+    label: "Filtro de período",
+    usage:
+      "RootsFormSelectField inline-icon · presets rápidos · rango custom en popover calendario · formato compacto dd/mm/yy.",
+  },
+  {
     id: "image-upload",
     token: "form.control.image-upload",
     label: "Carga de imagen",
@@ -439,7 +447,8 @@ export const ROOTSY_FORM_TOOLBAR_FIELDS: {
     token: "form.context.toolbar-list.period",
     label: "Período",
     controlToken: "form.control.shell.inline-icon",
-    usage: "Ícono calendario inline · chevron · placeholder de rango.",
+    usage:
+      "DataWorkspacePeriodFilter · presets · rango personalizado en popover · default Este mes · activo cuando ≠ este mes.",
   },
   {
     id: "filters",

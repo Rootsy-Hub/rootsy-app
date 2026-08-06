@@ -95,6 +95,23 @@ export function formatIsoDateShort(iso: string): string {
   })
 }
 
+/** Fecha compacta para triggers — dd/MM/yy (p. ej. 01/07/26). */
+export function formatIsoDateCompact(iso: string): string {
+  const y = Number(iso.slice(0, 4))
+  const m = Number(iso.slice(5, 7))
+  const d = Number(iso.slice(8, 10))
+  if (!y || !m || !d) return iso
+  const yy = String(y % 100).padStart(2, "0")
+  return `${String(d).padStart(2, "0")}/${String(m).padStart(2, "0")}/${yy}`
+}
+
+export function formatIsoDateRangeCompact(
+  from: string,
+  to: string,
+): string {
+  return `${formatIsoDateCompact(from)} - ${formatIsoDateCompact(to)}`
+}
+
 export function dataWorkspaceDateFilterSummary(
   preset: DataWorkspaceDatePreset,
   bounds: { from: string | null; to: string | null },
@@ -106,7 +123,7 @@ export function dataWorkspaceDateFilterSummary(
   if (preset === "last_7") return "Últimos 7 días"
   if (preset === "last_30") return "Últimos 30 días"
   if (preset === "custom" && bounds.from && bounds.to) {
-    return `${formatIsoDateShort(bounds.from)} – ${formatIsoDateShort(bounds.to)}`
+    return formatIsoDateRangeCompact(bounds.from, bounds.to)
   }
   return "Rango personalizado (elegí inicio y fin)"
 }

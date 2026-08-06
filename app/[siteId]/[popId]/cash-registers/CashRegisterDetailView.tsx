@@ -118,13 +118,15 @@ export function CashRegisterDetailView({
 
   const showInitialSkeleton = loading && !data
   const isArqueoView = Boolean(activeSessionId)
+  const isHistoryListView = !activeSessionId
+  const useFlushBottomLayout = isArqueoView || isHistoryListView
 
   if (showInitialSkeleton) {
     return (
       <div
         className={cn(
           "relative flex w-full flex-1 flex-col",
-          isArqueoView
+          useFlushBottomLayout
             ? "min-h-full gap-6 px-4 pt-6 pb-0 sm:px-6 lg:px-8"
             : "gap-6 px-4 py-6 sm:px-6 lg:px-8",
         )}
@@ -138,13 +140,13 @@ export function CashRegisterDetailView({
     <div
       className={cn(
         "relative flex w-full flex-col",
-        isArqueoView && "min-h-full flex-1",
+        useFlushBottomLayout && "min-h-full flex-1",
       )}
     >
       <div
         className={cn(
           "relative flex w-full flex-col",
-          isArqueoView
+          useFlushBottomLayout
             ? "min-h-full flex-1 gap-6 px-4 pt-6 pb-0 sm:px-6 lg:px-8"
             : "gap-6 px-4 py-6 sm:px-6 lg:px-8",
         )}
@@ -176,7 +178,7 @@ export function CashRegisterDetailView({
       {loading ? (
         <CashRegisterDetailContentSkeleton />
       ) : error ? (
-        <div className="rounded-2xl border border-destructive/25 bg-destructive/5 px-4 py-3 text-sm text-destructive">
+        <div className="rounded-[1.375rem] border border-[color-mix(in_srgb,var(--color-status-danger)_25%,var(--rootsy-bruma-200))] bg-[color-mix(in_srgb,var(--color-status-danger)_6%,white)] px-4 py-3 font-canopy text-sm text-[var(--color-status-danger)]">
           {error}
         </div>
       ) : data ? (

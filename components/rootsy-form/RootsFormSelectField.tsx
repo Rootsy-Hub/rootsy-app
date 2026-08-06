@@ -23,6 +23,9 @@ type Props = {
   triggerClassName?: string
   contentClassName?: string
   tone?: "light" | "dark"
+  /** Texto forzado en el trigger (p. ej. rango custom dinámico). */
+  valueLabel?: ReactNode
+  onOpenChange?: (open: boolean) => void
   children: ReactNode
 } & RootsFormFieldAssistProps
 
@@ -44,6 +47,8 @@ export function RootsFormSelectField({
   triggerClassName,
   contentClassName,
   tone = "light",
+  valueLabel,
+  onOpenChange,
   children,
 }: Props) {
   const autoId = useId()
@@ -70,6 +75,7 @@ export function RootsFormSelectField({
       <Select
         value={value || undefined}
         onValueChange={handleValueChange}
+        onOpenChange={onOpenChange}
         disabled={disabled}
       >
         <RootsFormSelectTrigger
@@ -83,7 +89,9 @@ export function RootsFormSelectField({
           leadingPrefix={hasPrefix ? prefix : undefined}
           className={triggerClassName}
         >
-          <RootsFormSelectValue placeholder={placeholder} />
+          <RootsFormSelectValue placeholder={placeholder}>
+            {valueLabel}
+          </RootsFormSelectValue>
         </RootsFormSelectTrigger>
         <RootsFormSelectContent tone={tone} className={contentClassName}>
           {children}
