@@ -40,6 +40,29 @@ export const layoutsOperarCatalogSidebarOpenClass =
   "w-[var(--layouts-operar-catalog-sidebar-w)] min-w-[var(--layouts-operar-catalog-sidebar-w)]"
 export const layoutsOperarCatalogSidebarClosedClass = "w-0 border-r-0"
 
+/** Estructura catálogo wireframe — sin hex de producción; color vía getLayoutsOperarWireframeZoneStyle. */
+export const layoutsOperarWireframeCatalogSidebarClass = cn(
+  "relative shrink-0 overflow-hidden",
+  layoutsOperarCatalogSidebarOpenClass,
+)
+
+export const layoutsOperarWireframeCatalogCanvasClass = cn(
+  "grid min-h-0 min-w-0 flex-1",
+  "[grid-template-rows:var(--layouts-operar-catalog-rows)]",
+)
+
+export const layoutsOperarWireframeCatalogToolbarClass = cn(
+  "relative flex min-w-0 shrink-0 items-center gap-3 px-4",
+  "[height:var(--layouts-operar-catalog-toolbar-h)]",
+)
+
+export const layoutsOperarWireframeSummaryPanelClass = cn(
+  "col-start-2 row-span-2 grid min-h-0 overflow-hidden",
+  "[grid-template-rows:var(--layouts-operar-ticket-rows)]",
+  "w-[var(--layouts-operar-ticket-w)] max-w-[var(--layouts-operar-ticket-w)]",
+  "border-l border-[var(--rootsy-sombra-border)]",
+)
+
 /** Canvas productos — #20262e en producción. */
 export const layoutsOperarCatalogCanvasClass = cn(
   "grid min-h-0 min-w-0 flex-1 bg-[#20262e]",

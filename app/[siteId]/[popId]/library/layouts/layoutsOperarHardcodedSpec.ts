@@ -1,4 +1,11 @@
-import { ROOTSY_LAYOUTS_OPERAR_ANATOMY } from "@/app/[siteId]/[popId]/library/layouts/rootsyLayoutsOperarSystem"
+import {
+  getLayoutsOperarPosTotalsGradient,
+  getLayoutsOperarWireframeHeaderStyle,
+  ROOTSY_LAYOUTS_OPERAR_ANATOMY,
+  ROOTSY_LAYOUTS_OPERAR_SURFACES,
+  type LayoutsOperarSurfaceId,
+} from "@/app/[siteId]/[popId]/library/layouts/rootsyLayoutsOperarSystem"
+import { ROOTSY_COLOR_SEMANTIC } from "@/lib/design-system"
 import type { CSSProperties } from "react"
 
 export const LAYOUTS_OPERAR_ANATOMY = ROOTSY_LAYOUTS_OPERAR_ANATOMY
@@ -23,68 +30,99 @@ export function getLayoutsOperarGridCssVariables(): CSSProperties {
 
 export type LayoutsOperarWireframeZone =
   | "shell"
+  | "header"
   | "sidebar"
   | "canvas"
   | "toolbar"
   | "card"
   | "toolbox"
   | "toolbox-slot"
+  | "ticket-header"
   | "ticket"
   | "ticket-cart"
   | "ticket-actions"
   | "ticket-total"
 
+const WIREFRAME_ZONE_SURFACE: Record<LayoutsOperarWireframeZone, LayoutsOperarSurfaceId> = {
+  shell: "shell",
+  header: "header",
+  sidebar: "rail",
+  canvas: "canvas",
+  toolbar: "canvas",
+  card: "productCard",
+  toolbox: "footer",
+  "toolbox-slot": "footer",
+  "ticket-header": "lightPanel",
+  ticket: "lightPanel",
+  "ticket-cart": "lightContent",
+  "ticket-actions": "lightActions",
+  "ticket-total": "lightTotals",
+}
+
+export function getLayoutsOperarWireframeSurfaceToken(zone: LayoutsOperarWireframeZone) {
+  return ROOTSY_LAYOUTS_OPERAR_SURFACES[WIREFRAME_ZONE_SURFACE[zone]].token
+}
+
 export function getLayoutsOperarWireframeZoneStyle(zone: LayoutsOperarWireframeZone) {
-  const a = ROOTSY_LAYOUTS_OPERAR_ANATOMY
+  const darkBorder = ROOTSY_LAYOUTS_OPERAR_SURFACES.dividerDark.css
+  const lightBorder = ROOTSY_LAYOUTS_OPERAR_SURFACES.lightBorder.css
 
   switch (zone) {
     case "shell":
-      return { backgroundColor: "var(--op-dark-shell, #0c1210)" }
+      return { backgroundColor: ROOTSY_LAYOUTS_OPERAR_SURFACES.shell.css }
+    case "header":
+      return getLayoutsOperarWireframeHeaderStyle()
     case "sidebar":
       return {
-        backgroundColor: a.catalogSidebarBackground,
-        borderRight: `1px solid ${a.catalogDivider}`,
+        backgroundColor: ROOTSY_LAYOUTS_OPERAR_SURFACES.rail.css,
+        borderRight: `1px solid ${darkBorder}`,
       }
     case "canvas":
-      return { backgroundColor: a.catalogCanvasBackground }
+      return { backgroundColor: ROOTSY_LAYOUTS_OPERAR_SURFACES.canvas.css }
     case "toolbar":
       return {
-        backgroundColor: a.catalogCanvasBackground,
-        borderBottom: `1px solid ${a.catalogDivider}`,
+        backgroundColor: ROOTSY_LAYOUTS_OPERAR_SURFACES.canvas.css,
+        borderBottom: `1px solid ${darkBorder}`,
       }
     case "card":
       return {
-        backgroundColor: a.productCardBackground,
-        border: `1px solid ${a.catalogDivider}`,
+        backgroundColor: ROOTSY_LAYOUTS_OPERAR_SURFACES.productCard.css,
+        border: `1px solid ${darkBorder}`,
         borderRadius: 16,
       }
     case "toolbox":
       return {
-        backgroundColor: a.toolboxBackgroundAlpha,
-        borderTop: `1px solid ${a.catalogDivider}`,
+        backgroundColor: `color-mix(in srgb, ${ROOTSY_LAYOUTS_OPERAR_SURFACES.footer.css} 92%, transparent)`,
+        borderTop: `1px solid ${darkBorder}`,
+        backdropFilter: "blur(24px)",
       }
     case "toolbox-slot":
       return {
-        backgroundColor: "rgba(255, 255, 255, 0.03)",
-        borderRight: `1px solid ${a.catalogDivider}`,
+        backgroundColor: `color-mix(in srgb, ${ROOTSY_LAYOUTS_OPERAR_SURFACES.footer.css} 32%, transparent)`,
+        borderRight: `1px solid ${darkBorder}`,
+      }
+    case "ticket-header":
+      return {
+        backgroundColor: ROOTSY_LAYOUTS_OPERAR_SURFACES.lightPanel.css,
+        borderBottom: `1px solid ${lightBorder}`,
       }
     case "ticket":
       return {
-        backgroundColor: a.summaryBackground,
-        borderLeft: `1px solid ${a.catalogDivider}`,
+        backgroundColor: ROOTSY_LAYOUTS_OPERAR_SURFACES.lightPanel.css,
+        borderLeft: `1px solid ${darkBorder}`,
       }
     case "ticket-cart":
-      return { backgroundColor: a.ticketCartBackground }
+      return { backgroundColor: ROOTSY_LAYOUTS_OPERAR_SURFACES.lightContent.css }
     case "ticket-actions":
       return {
-        backgroundColor: "#ffffff",
-        borderTop: `1px solid ${a.ticketDivider}`,
-        borderBottom: `1px solid ${a.ticketDivider}`,
+        backgroundColor: ROOTSY_COLOR_SEMANTIC.white,
+        borderTop: `1px solid ${lightBorder}`,
+        borderBottom: `1px solid ${lightBorder}`,
       }
     case "ticket-total":
       return {
-        backgroundColor: a.ticketTotalBackground,
-        borderTop: `1px solid ${a.ticketDivider}`,
+        background: getLayoutsOperarPosTotalsGradient(),
+        borderTop: "1px solid color-mix(in srgb, var(--rootsy-savia-990) 28%, transparent)",
       }
   }
 }

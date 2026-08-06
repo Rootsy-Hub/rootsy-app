@@ -15,7 +15,7 @@ export const LAYOUTS_OPERAR_SCREEN_COMPONENTS: LayoutsOperarScreenComponentRow[]
   {
     layer: "Shell",
     component: "OperationsModuleBody",
-    token: "layouts-operar-body · --op-dark-shell",
+    token: "layouts-operar-body · .rootsy-theme-pos · sombra-950",
     source: "DataWorkspaceOperationsLayout",
   },
   {
@@ -39,7 +39,7 @@ export const LAYOUTS_OPERAR_SCREEN_COMPONENTS: LayoutsOperarScreenComponentRow[]
   {
     layer: "Catálogo",
     component: "Sidebar filtros",
-    token: "w-280 · #1a2027 · collapsible",
+    token: "w-280 · sombra-700 · collapsible",
     source: "sale/page.tsx · data-workspace-sidebar",
   },
   {
@@ -69,7 +69,7 @@ export const LAYOUTS_OPERAR_SCREEN_COMPONENTS: LayoutsOperarScreenComponentRow[]
   {
     layer: "Ticket",
     component: "SaleOperationTicketOrderPanel",
-    token: "bg #eef1f5 · row-span-2",
+    token: "bg bruma-100 · row-span-2",
     source: "sale/page.tsx · aside carrito",
   },
   {

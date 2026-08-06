@@ -60,6 +60,10 @@ import {
   layoutsOperarToolboxIconWrapClass,
   layoutsOperarToolboxRowClass,
   layoutsOperarToolboxSlotClass,
+  layoutsOperarWireframeCatalogCanvasClass,
+  layoutsOperarWireframeCatalogSidebarClass,
+  layoutsOperarWireframeCatalogToolbarClass,
+  layoutsOperarWireframeSummaryPanelClass,
 } from "@/app/[siteId]/[popId]/library/layouts/layoutsOperarStyles"
 import {
   getLayoutsOperarScreenComponentsByLayer,
@@ -68,7 +72,9 @@ import {
 import {
   getLayoutsOperarGridCssVariables,
   getLayoutsOperarWireframeZoneLabel,
+  getLayoutsOperarWireframeSurfaceToken,
   getLayoutsOperarWireframeZoneStyle,
+  type LayoutsOperarWireframeZone,
   LAYOUTS_OPERAR_ANATOMY,
 } from "@/app/[siteId]/[popId]/library/layouts/layoutsOperarHardcodedSpec"
 import { LayoutsModuleShellWithContent } from "@/app/[siteId]/[popId]/library/layouts/LayoutsModuleDocPrimitives"
@@ -245,7 +251,7 @@ function LayoutHeightBadge({ label, onDark = false }: { label: string; onDark?: 
       className={cn(
         "pointer-events-none absolute right-2 top-1.5 z-20 rounded-md px-1.5 py-0.5 font-mono text-[10px] ring-1",
         onDark
-          ? "bg-[color-mix(in_srgb,var(--nature-night-800)_88%,#ffffff_12%)] text-[color-mix(in_srgb,var(--nature-canopy-300)_72%,#ffffff)] ring-[color-mix(in_srgb,var(--nature-night-600)_50%,transparent)]"
+          ? "bg-[color-mix(in_srgb,var(--rootsy-sombra-800)_88%,#ffffff_12%)] text-[color-mix(in_srgb,var(--rootsy-savia-300)_72%,#ffffff)] ring-[color-mix(in_srgb,var(--rootsy-sombra-border)_55%,transparent)]"
           : "bg-background/95 text-muted-foreground ring-border/60",
       )}
     >
@@ -255,21 +261,25 @@ function LayoutHeightBadge({ label, onDark = false }: { label: string; onDark?: 
 }
 
 function LayoutsOperarWireframeZoneLabel({
-  token,
+  zone,
   mode,
   measure,
   onDark = false,
 }: {
-  token: string
+  zone: LayoutsOperarWireframeZone
   mode: "fijo" | "fluido" | "min"
   measure: string
   onDark?: boolean
 }) {
+  const token = getLayoutsOperarWireframeSurfaceToken(zone)
+
   return (
     <span
       className={cn(
         "pointer-events-none absolute inset-0 flex items-center justify-center px-2 text-center font-mono text-[10px] leading-snug",
-        onDark ? "text-white/45" : "text-slate-500",
+        onDark
+          ? "text-[color-mix(in_srgb,var(--rootsy-sombra-300)_72%,transparent)]"
+          : "text-[color-mix(in_srgb,var(--rootsy-bruma-500)_82%,transparent)]",
       )}
     >
       {getLayoutsOperarWireframeZoneLabel(token, mode, measure)}
@@ -381,7 +391,7 @@ function LayoutsOperarHeaderDemo({
         !composed && !wireframe && "h-17",
       )}
     >
-      {wireframe ? <LayoutHeightBadge label="h-17 · noche 950→800" onDark /> : null}
+      {wireframe ? <LayoutHeightBadge label="h-17 · sombra-950→800" onDark /> : null}
       <div className={layoutsOperarHeaderGridClass}>
         {wireframe ? (
           <>
@@ -657,7 +667,7 @@ function LayoutsOperarCatalogColumn({
         aria-label="Filtros del catálogo"
       >
         {wireframe ? (
-          <LayoutHeightBadge label={`${LAYOUTS_OPERAR_CATALOG_SIDEBAR_WIDTH_PX}px · #1a2027`} onDark />
+          <LayoutHeightBadge label={`${LAYOUTS_OPERAR_CATALOG_SIDEBAR_WIDTH_PX}px · sombra-700`} onDark />
         ) : composed ? (
           <LayoutsOperarCatalogRail />
         ) : null}
@@ -665,7 +675,7 @@ function LayoutsOperarCatalogColumn({
       <section className={cn(layoutsOperarCatalogCanvasClass, wireframe && "relative")}>
         {composed ? <LayoutsOperarCatalogToolbar /> : null}
         {wireframe ? (
-          <LayoutHeightBadge label="canvas · #20262e · scroll" onDark />
+          <LayoutHeightBadge label="canvas · sombra-600 · scroll" onDark />
         ) : composed ? (
           <LayoutsOperarProductCatalog />
         ) : null}
@@ -727,7 +737,7 @@ function LayoutsOperarSummaryPanel({
       aria-label="Carrito de la venta"
     >
       {wireframe ? (
-        <LayoutHeightBadge label={`${LAYOUTS_OPERAR_SUMMARY_PANEL_WIDTH_PX}px · #eef1f5`} />
+        <LayoutHeightBadge label={`${LAYOUTS_OPERAR_SUMMARY_PANEL_WIDTH_PX}px · bruma-100`} />
       ) : null}
       {showDraftCart ? (
         <>
@@ -845,8 +855,8 @@ function LayoutsOperarContentGridWireframeBody() {
   return (
     <div
       className={cn(
-        "rootsy-nature-palette relative flex min-h-0 flex-1 flex-col overflow-hidden",
-        layoutsOperarBodyScopeClass,
+        "rootsy-theme-pos relative flex min-h-0 flex-1 flex-col overflow-hidden",
+        layoutsOperarBodyWireframeClass,
       )}
       style={{
         ...getLayoutsOperarWireframeZoneStyle("shell"),
@@ -857,12 +867,11 @@ function LayoutsOperarContentGridWireframeBody() {
         className="relative shrink-0"
         style={{
           height: headerPx,
-          background: "linear-gradient(180deg, #0c1210 0%, #1a2027 100%)",
-          borderBottom: "1px solid rgba(255,255,255,0.08)",
+          ...getLayoutsOperarWireframeZoneStyle("header"),
         }}
       >
         <LayoutsOperarWireframeZoneLabel
-          token="layout.module.header"
+          zone="header"
           mode="fijo"
           measure={`${headerPx}px`}
           onDark
@@ -871,26 +880,26 @@ function LayoutsOperarContentGridWireframeBody() {
 
       <main className={cn(layoutsOperarBodyMainGridClass, "relative z-10 h-full min-h-0")}>
         <div
-          className={cn(layoutsOperarCatalogColumnClass, "border-b border-white/10")}
+          className={cn(layoutsOperarCatalogColumnClass, "border-b border-[var(--rootsy-sombra-border)]")}
         >
           <div
-            className={cn(layoutsOperarCatalogSidebarClass, layoutsOperarCatalogSidebarOpenClass, "relative")}
+            className={cn(layoutsOperarWireframeCatalogSidebarClass, "relative")}
             style={getLayoutsOperarWireframeZoneStyle("sidebar")}
           >
             <LayoutsOperarWireframeZoneLabel
-              token={a.catalogSidebarBackground}
+              zone="sidebar"
               mode="fijo"
               measure={`${a.catalogSidebarWidthPx}px`}
               onDark
             />
           </div>
-          <section className={layoutsOperarCatalogCanvasClass}>
+          <section className={layoutsOperarWireframeCatalogCanvasClass}>
             <div
-              className={cn(layoutsOperarCatalogToolbarClass, "relative")}
+              className={layoutsOperarWireframeCatalogToolbarClass}
               style={getLayoutsOperarWireframeZoneStyle("toolbar")}
             >
               <LayoutsOperarWireframeZoneLabel
-                token={a.catalogCanvasBackground}
+                zone="toolbar"
                 mode="fijo"
                 measure={`${a.catalogToolbarHeightPx}px`}
                 onDark
@@ -901,7 +910,7 @@ function LayoutsOperarContentGridWireframeBody() {
               style={getLayoutsOperarWireframeZoneStyle("canvas")}
             >
               <LayoutsOperarWireframeZoneLabel
-                token={a.catalogCanvasBackground}
+                zone="canvas"
                 mode="fluido"
                 measure="1fr"
                 onDark
@@ -915,44 +924,37 @@ function LayoutsOperarContentGridWireframeBody() {
           style={getLayoutsOperarWireframeZoneStyle("toolbox")}
         >
           <LayoutsOperarWireframeZoneLabel
-            token={a.toolboxBackgroundAlpha}
+            zone="toolbox"
             mode="min"
             measure={`${a.toolboxRowMinHeightPx}px`}
             onDark
           />
         </div>
 
-        <aside className={cn(layoutsOperarSummaryPanelClass, "relative")}>
+        <aside className={cn(layoutsOperarWireframeSummaryPanelClass, "relative")}>
           <div
             className="relative"
-            style={{
-              backgroundColor: a.summaryBackground,
-              borderBottom: `1px solid ${a.ticketDivider}`,
-            }}
+            style={getLayoutsOperarWireframeZoneStyle("ticket-header")}
           >
             <LayoutsOperarWireframeZoneLabel
-              token={a.summaryBackground}
+              zone="ticket-header"
               mode="fijo"
               measure={`${a.ticketHeaderHeightPx}px`}
             />
           </div>
           <div className="relative" style={getLayoutsOperarWireframeZoneStyle("ticket-cart")}>
-            <LayoutsOperarWireframeZoneLabel
-              token={a.ticketCartBackground}
-              mode="fluido"
-              measure="1fr"
-            />
+            <LayoutsOperarWireframeZoneLabel zone="ticket-cart" mode="fluido" measure="1fr" />
           </div>
           <div className="relative" style={getLayoutsOperarWireframeZoneStyle("ticket-actions")}>
             <LayoutsOperarWireframeZoneLabel
-              token="#ffffff"
+              zone="ticket-actions"
               mode="fijo"
               measure={`${a.ticketActionsHeightPx}px`}
             />
           </div>
           <div className="relative" style={getLayoutsOperarWireframeZoneStyle("ticket-total")}>
             <LayoutsOperarWireframeZoneLabel
-              token={a.ticketTotalBackground}
+              zone="ticket-total"
               mode="min"
               measure={`${a.ticketTotalMinHeightPx}px`}
               onDark
@@ -1007,12 +1009,11 @@ export function LayoutsOperarOverviewIntro() {
           </h2>
           <p className="max-w-2xl text-sm leading-relaxed text-muted-foreground">
             Referencia de producción en{" "}
-            <code className="text-[11px]">sale/page.tsx</code> — catálogo oscuro (sidebar 280px +
-            canvas #20262e), toolbox inferior con{" "}
-            <code className="text-[11px]">saleOperationStyles</code>, y ticket claro{" "}
-            <code className="text-[11px]">#eef1f5</code> con{" "}
-            <code className="text-[11px]">SaleOperationTicketOrderPanel</code>. Mismo patrón en
-            Comprar, Mesas y Mostrador.
+            <code className="text-[11px]">sale/page.tsx</code> — split POS sombra + bruma. En la
+            lib: pila <code className="text-[11px]">ROOTSY_SURFACE_STACKS.pos</code> y tema{" "}
+            <code className="text-[11px]">.rootsy-theme-pos</code> (
+            <code className="text-[11px]">colors-new</code>). Mismo patrón en Comprar, Mesas y
+            Mostrador.
           </p>
         </div>
       </div>
@@ -1086,7 +1087,7 @@ export function LayoutsOperarCatalogSectionDemo() {
 
           <LayoutsOperarDocSubsection title="Con descuento">
             <p className="text-sm text-muted-foreground">
-              Mismos formatos con overlay de oferta (<code className="text-[11px]">SaleCatalogProductOfferOverlay</code>).
+                Mismos formatos con overlay de oferta (<code className="text-[11px]">SaleCatalogProductOfferOverlay</code>).
             </p>
             <div className="grid gap-4 lg:grid-cols-2">
               <LayoutsOperarCatalogArticleCanvas>
