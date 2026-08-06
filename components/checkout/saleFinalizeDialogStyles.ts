@@ -2,18 +2,17 @@ import { getLayoutsOperarPosTotalsGradient } from "@/app/[siteId]/[popId]/librar
 import {
   rootsDialogContentZClass,
   rootsDialogOverlayZClass,
-  rootsDialogPanelShellClass,
-  rootsDialogPrimitiveResetClass,
 } from "@/components/rootsy-dialog/rootsDialogProductStyles"
 import { cn } from "@/lib/utils"
 
-/** Shell — shadow.overlay + scrim · sin borde exterior (cabecera pos-totals oscura). */
+/** Shell — shadow.overlay · radius.xxlarge · sin borde ni fondo blanco (evita halo en esquinas). */
 export const saleFinalizeDialogShellClass = cn(
-  rootsDialogPrimitiveResetClass,
-  rootsDialogPanelShellClass,
   rootsDialogContentZClass,
-  "border-0",
+  "flex flex-col gap-0 overflow-hidden p-0",
+  "border-0 bg-transparent ring-0 outline-none",
+  "rounded-[1.375rem]",
   "[--elevation-shadow-overlay:0_28px_84px_-14px_rgb(5_8_7/0.38)]",
+  "shadow-[var(--elevation-shadow-overlay)]",
   "fixed top-1/2 left-1/2 w-full max-w-[calc(100%-2rem)] -translate-x-1/2 -translate-y-1/2 sm:max-w-[22.5rem]",
   "data-[state=open]:animate-in data-[state=closed]:animate-out",
   "data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0",
@@ -35,7 +34,8 @@ export const saleFinalizeDialogTotalsGradientStyle = {
 } as const
 
 export const saleFinalizeDialogTotalsZoneClass = cn(
-  "relative overflow-hidden px-[var(--rootsy-space-400)] pt-[var(--rootsy-space-400)] pb-[var(--rootsy-space-300)]",
+  "relative overflow-hidden rounded-t-[1.375rem]",
+  "px-[var(--rootsy-space-400)] pt-[var(--rootsy-space-400)] pb-[var(--rootsy-space-300)]",
 )
 
 export const saleFinalizeDialogTotalsGlowClass =
@@ -96,8 +96,10 @@ export const saleFinalizeDialogErrorClass =
   "mx-[var(--rootsy-space-400)] mb-[var(--rootsy-space-150)] rounded-lg border border-[#dc2626]/30 bg-[#dc2626]/5 px-3 py-2.5 font-canopy text-sm text-[#dc2626]"
 
 /** Misma gramática que la barra Descartar | Vender del ticket operar §1.2.3. */
-export const saleFinalizeDialogActionsClass =
-  "grid min-h-[3.25rem] grid-cols-2 border-t border-[var(--rootsy-bruma-200)]"
+export const saleFinalizeDialogActionsClass = cn(
+  "grid min-h-[3.25rem] grid-cols-2 overflow-hidden rounded-b-[1.375rem]",
+  "border-t border-[var(--rootsy-bruma-200)]",
+)
 
 export const saleFinalizeDialogCancelActionClass = cn(
   "flex items-center justify-center border-r border-[var(--rootsy-bruma-200)] bg-white",
