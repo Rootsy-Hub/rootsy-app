@@ -37,7 +37,7 @@ import { RadiusFoundationView } from "@/app/[siteId]/[popId]/library/radius/Radi
 import { isRadiusLibrarySection } from "@/app/[siteId]/[popId]/library/radius/radiusLibraryNav"
 import { LayoutsBlocksFoundationView } from "@/app/[siteId]/[popId]/library/layouts/LayoutsBlocksFoundationView"
 import { LayoutsModuleFoundationView } from "@/app/[siteId]/[popId]/library/layouts/LayoutsModuleFoundationView"
-import { LayoutsOperationsFoundationView } from "@/app/[siteId]/[popId]/library/layouts/LayoutsOperationsFoundationView"
+import { LayoutsOperarFoundationView } from "@/app/[siteId]/[popId]/library/layouts/LayoutsOperarFoundationView"
 import { LayoutsTablesFoundationView } from "@/app/[siteId]/[popId]/library/layouts/LayoutsTablesFoundationView"
 import { isLayoutsLibrarySection } from "@/app/[siteId]/[popId]/library/layouts/layoutsLibraryNav"
 import {
@@ -203,9 +203,9 @@ export function LibrarySectionView({
       )
     }
 
-    if (sectionId === "layouts-operations") {
+    if (sectionId === "layouts-operar") {
       return (
-        <LayoutsOperationsFoundationView
+        <LayoutsOperarFoundationView
           sectionId={sectionId}
           siteId={siteId}
           popId={popId}

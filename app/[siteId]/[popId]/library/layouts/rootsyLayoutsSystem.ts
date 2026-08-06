@@ -3,7 +3,7 @@
  * Alineado al concepto de diseño: pocos datos, bien presentados.
  */
 
-export type LayoutsHeroVariant = "hub" | "module" | "tables" | "blocks" | "operations"
+export type LayoutsHeroVariant = "hub" | "module" | "tables" | "blocks" | "operar"
 
 export type LayoutsConceptBlock = {
   title: string
@@ -87,15 +87,15 @@ export const ROOTSY_LAYOUTS_VARIANT_CONCEPT: Record<LayoutsHeroVariant, LayoutsC
     ],
     closing: "Entidades con cara propia.",
   },
-  operations: {
-    eyebrow: "Rootsy · Layouts · Operaciones",
-    title: "Contenido · operaciones",
-    lead: "Split POS — canvas fluido + panel resumen ~380px.",
+  operar: {
+    eyebrow: "Rootsy · Layouts · Operar",
+    title: "Contenido · operar",
+    lead: "Split POS — catálogo oscuro + toolbox + ticket ~380px.",
     why: [
-      "Acción izquierda.",
-      "Ticket derecha fijo.",
-      "Ventas · mesas · compras.",
+      "Vender · Comprar · Mesas · Mostrador.",
+      "Sidebar 280px colapsable.",
+      "Ticket claro con acciones.",
     ],
-    closing: "Flujo en vivo.",
+    closing: "Flujo en vivo bajo el módulo.",
   },
 }

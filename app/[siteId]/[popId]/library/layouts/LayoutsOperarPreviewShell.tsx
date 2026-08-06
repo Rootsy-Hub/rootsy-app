@@ -2,9 +2,7 @@
 
 import "@/app/[siteId]/[popId]/library/color/rootsyNaturePalette.css"
 import "@/app/[siteId]/[popId]/library/radius/rootsyRadiusSystem.css"
-import {
-  DataWorkspaceModuleLayout,
-} from "@/components/layouts-module/DataWorkspaceModuleLayout"
+import { DataWorkspaceModuleLayout } from "@/components/layouts-module/DataWorkspaceModuleLayout"
 import { usePopWorkspace } from "@/context/PopWorkspaceContext"
 import { useParams } from "next/navigation"
 import type { ReactNode } from "react"
@@ -13,8 +11,8 @@ type Props = {
   children: ReactNode
 }
 
-/** Mismo shell de cabecera que LibraryShell — layout · módulo + bootstrap POP. */
-export function LayoutsOperationsPreviewShell({ children }: Props) {
+/** Shell de cabecera — preview layout Operar · Vender. */
+export function LayoutsOperarPreviewShell({ children }: Props) {
   const params = useParams()
   const siteId = typeof params?.siteId === "string" ? params.siteId : ""
   const popId = typeof params?.popId === "string" ? params.popId : ""

@@ -329,11 +329,11 @@
 }
 
 /**
- * Layout operaciones — composición colorista dark / light.
+ * Layout operar — composición colorista dark / light.
  * Izquierda: bosque nocturno (catálogo + configuración).
  * Derecha: ticket claro + totales en gradiente tierra oscuro.
  */
-.rootsy-nature-palette .layouts-operations-body {
+.rootsy-nature-palette .layouts-operar-body {
   /* Dark · noche 950 (rail) → 900 (canvas) → 800 (toolbox) */
   --op-dark-shell: var(--nature-night-950);
   --op-dark-rail: var(--nature-night-950);
@@ -430,59 +430,59 @@
 }
 
 /** Totales — bg con gradiente (Tailwind bg-[var] solo setea background-color). */
-.rootsy-nature-palette .layouts-operations-body .layouts-operations-summary-totals {
+.rootsy-nature-palette .layouts-operar-body .layouts-operar-summary-totals {
   background: var(--op-light-totals);
 }
 
 /** Scroll minimalista del rail catálogo — thumb fino noche. */
-.rootsy-nature-palette .layouts-operations-body .layouts-operations-catalog-rail-scroll,
-.rootsy-nature-palette .layouts-operations-body .layouts-operations-scroll-minimal {
+.rootsy-nature-palette .layouts-operar-body .layouts-operar-catalog-rail-scroll,
+.rootsy-nature-palette .layouts-operar-body .layouts-operar-scroll-minimal {
   scrollbar-width: thin;
   scrollbar-color: color-mix(in srgb, var(--nature-night-500) 28%, transparent) transparent;
 }
 
-.rootsy-nature-palette .layouts-operations-body .layouts-operations-catalog-rail-scroll::-webkit-scrollbar,
-.rootsy-nature-palette .layouts-operations-body .layouts-operations-scroll-minimal::-webkit-scrollbar {
+.rootsy-nature-palette .layouts-operar-body .layouts-operar-catalog-rail-scroll::-webkit-scrollbar,
+.rootsy-nature-palette .layouts-operar-body .layouts-operar-scroll-minimal::-webkit-scrollbar {
   width: 3px;
   height: 3px;
 }
 
-.rootsy-nature-palette .layouts-operations-body .layouts-operations-catalog-rail-scroll::-webkit-scrollbar-track,
-.rootsy-nature-palette .layouts-operations-body .layouts-operations-scroll-minimal::-webkit-scrollbar-track {
+.rootsy-nature-palette .layouts-operar-body .layouts-operar-catalog-rail-scroll::-webkit-scrollbar-track,
+.rootsy-nature-palette .layouts-operar-body .layouts-operar-scroll-minimal::-webkit-scrollbar-track {
   background: transparent;
 }
 
-.rootsy-nature-palette .layouts-operations-body .layouts-operations-catalog-rail-scroll::-webkit-scrollbar-thumb,
-.rootsy-nature-palette .layouts-operations-body .layouts-operations-scroll-minimal::-webkit-scrollbar-thumb {
+.rootsy-nature-palette .layouts-operar-body .layouts-operar-catalog-rail-scroll::-webkit-scrollbar-thumb,
+.rootsy-nature-palette .layouts-operar-body .layouts-operar-scroll-minimal::-webkit-scrollbar-thumb {
   border-radius: 9999px;
   background: color-mix(in srgb, var(--nature-night-500) 26%, transparent);
   border: none;
 }
 
-.rootsy-nature-palette .layouts-operations-body .layouts-operations-catalog-rail-scroll:hover::-webkit-scrollbar-thumb,
-.rootsy-nature-palette .layouts-operations-body .layouts-operations-scroll-minimal:hover::-webkit-scrollbar-thumb {
+.rootsy-nature-palette .layouts-operar-body .layouts-operar-catalog-rail-scroll:hover::-webkit-scrollbar-thumb,
+.rootsy-nature-palette .layouts-operar-body .layouts-operar-scroll-minimal:hover::-webkit-scrollbar-thumb {
   background: color-mix(in srgb, var(--nature-night-500) 42%, transparent);
 }
 
-.rootsy-nature-palette .layouts-operations-body .layouts-operations-catalog-rail-scroll::-webkit-scrollbar-thumb:hover,
-.rootsy-nature-palette .layouts-operations-body .layouts-operations-scroll-minimal::-webkit-scrollbar-thumb:hover {
+.rootsy-nature-palette .layouts-operar-body .layouts-operar-catalog-rail-scroll::-webkit-scrollbar-thumb:hover,
+.rootsy-nature-palette .layouts-operar-body .layouts-operar-scroll-minimal::-webkit-scrollbar-thumb:hover {
   background: color-mix(in srgb, var(--nature-night-600) 55%, var(--nature-night-500));
 }
 
 /** Product card — radius.xlarge + elevation.raised (noche 800 sobre canvas 900). */
-.rootsy-nature-palette.rootsy-radius-system .layouts-operations-body .layouts-operations-product-card {
+.rootsy-nature-palette.rootsy-radius-system .layouts-operar-body .layouts-operar-product-card {
   border-radius: var(--radius-xlarge);
   background: var(--op-product-card-surface);
   border: 1px solid var(--op-product-card-border);
   box-shadow: var(--op-product-card-shadow);
 }
 
-.rootsy-nature-palette.rootsy-radius-system .layouts-operations-body .layouts-operations-product-card:hover {
+.rootsy-nature-palette.rootsy-radius-system .layouts-operar-body .layouts-operar-product-card:hover {
   box-shadow: var(--op-product-card-shadow-hover);
 }
 
 /** Header operaciones — misma noche que el cuerpo (sin cristal POP de producción). */
-.rootsy-nature-palette .layouts-operations-header {
+.rootsy-nature-palette .layouts-operar-header {
   --op-header-border: color-mix(in srgb, var(--nature-night-700) 28%, transparent);
   background: linear-gradient(
     165deg,

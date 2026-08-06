@@ -64,7 +64,7 @@ export const ROOTSY_LAYOUTS_MODULE_SHELL = {
   contentBackgroundToken: "elevation.surface.sunken · bruma-50",
 } as const
 
-export type LayoutsModuleContentTypeId = "tables" | "blocks" | "operations"
+export type LayoutsModuleContentTypeId = "tables" | "blocks" | "operar"
 
 export const ROOTSY_LAYOUTS_MODULE_CONTENT_TYPES: Record<
   LayoutsModuleContentTypeId,
@@ -80,9 +80,9 @@ export const ROOTSY_LAYOUTS_MODULE_CONTENT_TYPES: Record<
     summary: "Grid de tarjetas — cuentas, cajas",
     librarySectionId: "layouts-blocks",
   },
-  operations: {
-    label: "Operaciones",
-    summary: "Split canvas + resumen — ventas, mesas, compras",
-    librarySectionId: "layouts-operations",
+  operar: {
+    label: "Operar",
+    summary: "Catálogo + toolbox + ticket — Vender, Mesas, Mostrador, Comprar",
+    librarySectionId: "layouts-operar",
   },
 }

@@ -3,7 +3,7 @@ export const LAYOUTS_LIBRARY_SUBITEMS = [
   { id: "layouts-module", label: "Módulo" },
   { id: "layouts-tables", label: "Tablas" },
   { id: "layouts-blocks", label: "Bloques" },
-  { id: "layouts-operations", label: "Operaciones" },
+  { id: "layouts-operar", label: "Operar" },
 ] as const
 
 export const LAYOUTS_LIBRARY_ITEMS = [...LAYOUTS_LIBRARY_SUBITEMS] as const
@@ -39,10 +39,10 @@ export const LAYOUTS_PAGE_META: Record<string, LayoutsPageMeta> = {
     title: "Bloques",
     description: "Grid de tarjetas · bruma-50 · min/max 18–22rem.",
   },
-  "layouts-operations": {
-    id: "layouts-operations",
-    title: "Operaciones",
-    description: "Contenido — split canvas + resumen.",
+  "layouts-operar": {
+    id: "layouts-operar",
+    title: "Operar",
+    description: "Vender · catálogo + toolbox + ticket.",
   },
 }
 
@@ -50,8 +50,8 @@ export function getLayoutsPageMeta(sectionId: string): LayoutsPageMeta | undefin
   return LAYOUTS_PAGE_META[sectionId]
 }
 
-export function layoutsOperationsPreviewHref(siteId: string, popId: string): string {
-  return `/${siteId}/${popId}/library/layouts-operations-preview`
+export function layoutsOperarPreviewHref(siteId: string, popId: string): string {
+  return `/${siteId}/${popId}/library/layouts-operar-preview`
 }
 
 export const LAYOUTS_RELATED_LINKS = [

@@ -52,7 +52,7 @@ const LIBRARY_NAV_ICONS: Record<string, LucideIcon> = {
   "layouts-module": Layers,
   "layouts-tables": PanelLeft,
   "layouts-blocks": LayoutGrid,
-  "layouts-operations": Layers,
+  "layouts-operar": Layers,
   buttons: MousePointerClick,
   "component-text": Type,
   "component-text-headings": Heading,

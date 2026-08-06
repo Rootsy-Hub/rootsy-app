@@ -1,6 +1,7 @@
 "use client"
 
 import { menuNatureShellClass } from "@/app/[siteId]/[popId]/menu/menuNatureStyles"
+import "@/app/[siteId]/[popId]/library/color/rootsyNaturePalette.css"
 import "@/app/[siteId]/[popId]/menu/menuNaturePalette.css"
 import { PopWorkspaceBackdrop } from "@/components/layouts/PopWorkspaceBackdrop"
 import { DataWorkspaceHeaderTitle } from "@/components/layouts/DataWorkspaceHeaderTitle"

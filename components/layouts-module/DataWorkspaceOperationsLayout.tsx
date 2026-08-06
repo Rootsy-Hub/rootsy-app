@@ -4,7 +4,7 @@ import "@/app/[siteId]/[popId]/library/color/rootsyNaturePalette.css"
 import {
   layoutsOperationsBodyScopeClass,
   layoutsOperationsBodyShellClass,
-} from "@/app/[siteId]/[popId]/library/layouts/layoutsOperationsStyles"
+} from "@/app/[siteId]/[popId]/library/layouts/layoutsOperarStyles"
 import {
   DataWorkspaceModuleLayout,
   type DataWorkspaceModuleLayoutProps,
