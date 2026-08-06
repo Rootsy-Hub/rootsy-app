@@ -1,11 +1,7 @@
 "use client"
 
-import { CheckoutSectionLabel } from "@/components/checkout/CheckoutFormFields"
 import { RootsBanner } from "@/components/rootsy-banner"
-import {
-  saleOpLightInsetPanel,
-} from "@/components/sale-operation/saleOperationStyles"
-import { cn } from "@/lib/utils"
+import { RootsFormField } from "@/components/rootsy-form"
 import { Building2, ExternalLink } from "lucide-react"
 import Link from "next/link"
 
@@ -30,35 +26,22 @@ export function CashRegisterArcaPopFiscalPanel({
   const razonSocial = fiscalRazonSocial?.trim() || null
 
   return (
-    <div className="space-y-3">
-      <CheckoutSectionLabel>Facturación electrónica (ARCA)</CheckoutSectionLabel>
-
+    <RootsFormField label="Facturación electrónica (ARCA)">
       {cuitFormatted ? (
-        <div
-          className={cn(
-            saleOpLightInsetPanel,
-            "flex items-start gap-3 px-3.5 py-3",
-          )}
-        >
-          <div className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-white/80 text-zinc-500">
-            <Building2 className="size-4" aria-hidden />
-          </div>
-          <div className="min-w-0 flex-1 space-y-1">
-            <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
-              CUIT del punto de venta
-            </p>
-            <p className="text-base font-semibold tracking-tight text-foreground">
-              {cuitFormatted}
-            </p>
-            {razonSocial ? (
-              <p className="text-sm text-muted-foreground">{razonSocial}</p>
-            ) : null}
-            <p className="text-xs leading-relaxed text-muted-foreground">
-              Los archivos .crt / .key y el número de punto de venta de esta caja
-              deben estar emitidos para este CUIT.
-            </p>
-          </div>
-        </div>
+        <RootsBanner
+          intent="neutral"
+          title={cuitFormatted}
+          message={
+            <>
+              {razonSocial ? <span className="block">{razonSocial}</span> : null}
+              <span className="block">
+                Los archivos .crt / .key y el número de punto de venta de esta caja
+                deben estar emitidos para este CUIT.
+              </span>
+            </>
+          }
+          icon={<Building2 className="size-4 shrink-0" aria-hidden />}
+        />
       ) : (
         <RootsBanner
           intent="warning"
@@ -83,6 +66,6 @@ export function CashRegisterArcaPopFiscalPanel({
           }
         />
       )}
-    </div>
+    </RootsFormField>
   )
 }

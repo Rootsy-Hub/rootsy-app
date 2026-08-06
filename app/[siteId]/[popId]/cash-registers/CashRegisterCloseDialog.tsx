@@ -2,39 +2,40 @@
 
 import type { CashRegisterRow } from "@/app/[siteId]/[popId]/cash-registers/actions"
 import {
-  cashRegisterCloseDialogContentClass,
-  CashRegisterDialogTwoColumnBody,
-} from "@/app/[siteId]/[popId]/cash-registers/CashRegisterDialogLayout"
-import {
   formatCashRegisterDateTime,
   formatCashRegisterMoney,
 } from "@/app/[siteId]/[popId]/cash-registers/cashRegisterFormatters"
-import { CheckoutDialogFooter } from "@/components/checkout/CheckoutDialogFooter"
 import {
   CheckoutMoneyValueField,
   CheckoutSectionLabel,
 } from "@/components/checkout/CheckoutFormFields"
-import { tdMoneyClass } from "@/components/data-workspace/dataWorkspaceListStyles"
+import {
+  dataWorkspaceEntityCardStatLabelClass,
+  tdMoneyClass,
+} from "@/components/data-workspace/dataWorkspaceListStyles"
+import {
+  RootsDialogBody,
+  RootsDialogContent,
+  RootsDialogDualActionFooter,
+  RootsDialogErrorBanner,
+  RootsDialogForm,
+  RootsDialogHeader,
+} from "@/components/rootsy-dialog"
+import {
+  RootsFormGrid,
+  rootsFormColumnClass,
+} from "@/components/rootsy-form"
+import { Dialog } from "@/components/ui/dialog"
+import { Textarea } from "@/components/ui/textarea"
 import {
   closingPaymentDifference,
   closingVarianceLabel,
 } from "@/lib/cashRegisterCloseSettlement"
 import { isMoneyInputComplete, parseMoneyInput } from "@/lib/moneyInput"
+import { rootsFormTextareaFieldClass } from "@/components/rootsy-form/rootsFormStyles"
 import { cn } from "@/lib/utils"
-import {
-  saleOpChannelFormField,
-  saleOpDialogHeader,
-} from "@/components/sale-operation/saleOperationStyles"
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog"
-import { Textarea } from "@/components/ui/textarea"
 import { CheckCircle2 } from "lucide-react"
-import { useMemo, useRef, type FormEvent } from "react"
+import { useMemo, type FormEvent } from "react"
 
 type Props = {
   open: boolean
@@ -61,9 +62,6 @@ type CloseRowDef = {
   autoFocus?: boolean
 }
 
-const sectionLabel =
-  "text-[11px] font-medium uppercase tracking-[0.12em] text-muted-foreground"
-
 function SummaryMetric({
   label,
   value,
@@ -73,8 +71,8 @@ function SummaryMetric({
 }) {
   return (
     <div className="min-w-0">
-      <p className={sectionLabel}>{label}</p>
-      <p className="mt-1.5 truncate text-sm font-medium text-foreground">
+      <p className={dataWorkspaceEntityCardStatLabelClass}>{label}</p>
+      <p className="mt-1.5 truncate font-canopy text-sm font-medium text-[var(--rootsy-bruma-900)]">
         {value}
       </p>
     </div>
@@ -119,20 +117,20 @@ function CloseVarianceBadge({
 
 function ClosePaymentMethodsTable({ rows }: { rows: CloseRowDef[] }) {
   return (
-    <div className="overflow-hidden rounded-xl border border-border/60 bg-card">
-      <div className="grid grid-cols-[minmax(0,1fr)_5.5rem_7.5rem] items-center gap-x-3 border-b border-border/60 bg-muted/25 px-3 py-2 text-[10px] font-semibold uppercase tracking-[0.12em] text-muted-foreground sm:grid-cols-[minmax(0,1fr)_6.5rem_8rem] sm:px-4">
+    <div className="overflow-hidden rounded-xl border border-[var(--rootsy-bruma-200)] bg-white">
+      <div className="grid grid-cols-[minmax(0,1fr)_5.5rem_7.5rem] items-center gap-x-3 border-b border-[var(--rootsy-bruma-200)] bg-[var(--rootsy-bruma-50)] px-3 py-2 text-[10px] font-semibold uppercase tracking-[0.12em] text-[var(--rootsy-bruma-500)] sm:grid-cols-[minmax(0,1fr)_6.5rem_8rem] sm:px-4">
         <span>Cuenta</span>
         <span className="text-right">Esperado</span>
         <span className="text-right">Contado</span>
       </div>
-      <ul className="divide-y divide-border/50">
+      <ul className="divide-y divide-[var(--rootsy-bruma-200)]">
         {rows.map((line) => (
           <li
             key={line.kind}
             className="grid grid-cols-[minmax(0,1fr)_5.5rem_7.5rem] items-center gap-x-3 px-3 py-3 sm:grid-cols-[minmax(0,1fr)_6.5rem_8rem] sm:px-4"
           >
             <div className="min-w-0">
-              <p className="truncate text-sm font-medium text-foreground">
+              <p className="truncate font-canopy text-sm font-medium text-[var(--rootsy-bruma-900)]">
                 {line.label}
               </p>
               <div className="mt-1">
@@ -144,7 +142,7 @@ function ClosePaymentMethodsTable({ rows }: { rows: CloseRowDef[] }) {
             </div>
             <p
               className={cn(
-                "text-right text-[13px] text-muted-foreground",
+                "text-right text-[13px] text-[var(--rootsy-bruma-500)]",
                 tdMoneyClass,
               )}
             >
@@ -183,7 +181,6 @@ export function CashRegisterCloseDialog({
   onCloseNoteChange,
   onSubmit,
 }: Props) {
-  const formRef = useRef<HTMLFormElement>(null)
   const efectivoTeorico = row?.openSessionTotals?.efectivoTeoricoEnCajon ?? 0
   const cobrosParaCierre = row?.openSessionTotals?.cobrosParaCierre ?? []
   const meta = row?.openSessionMeta
@@ -243,31 +240,23 @@ export function CashRegisterCloseDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className={cashRegisterCloseDialogContentClass}>
-        <DialogHeader className={cn(saleOpDialogHeader, "shrink-0")}>
-          <DialogTitle className="text-base font-semibold tracking-tight">
-            {registerName ? `Cerrar caja · ${registerName}` : "Cerrar caja"}
-          </DialogTitle>
-          <DialogDescription className="sr-only">
-            Resumen del arqueo y conteo por cuenta al cerrar el turno.
-          </DialogDescription>
-        </DialogHeader>
-
-        <form
-          ref={formRef}
-          onSubmit={onSubmit}
-          className="flex min-h-0 flex-1 flex-col overflow-hidden"
-        >
-          <CashRegisterDialogTwoColumnBody
-            banner={banner}
-            left={
-              <>
-                <div className="overflow-hidden rounded-xl border border-border/60 bg-muted/10 px-4 py-4">
+      <RootsDialogContent size="twoCol">
+        <RootsDialogHeader
+          title={registerName ? `Cerrar caja · ${registerName}` : "Cerrar caja"}
+          description="Resumen del arqueo y conteo por cuenta al cerrar el turno."
+          descriptionHidden
+        />
+        <RootsDialogForm onSubmit={onSubmit}>
+          <RootsDialogBody>
+            {banner ? <RootsDialogErrorBanner>{banner}</RootsDialogErrorBanner> : null}
+            <RootsFormGrid>
+              <div className={rootsFormColumnClass}>
+                <div className="overflow-hidden rounded-xl border border-[var(--rootsy-bruma-200)] bg-[var(--rootsy-bruma-50)] px-4 py-4">
                   <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
-                    <h3 className="text-base font-semibold tracking-tight text-foreground">
+                    <h3 className="font-canopy text-base font-semibold tracking-tight text-[var(--rootsy-bruma-900)]">
                       Arqueo #{arqueoNumber || "—"}
                     </h3>
-                    <span className="rounded-full bg-emerald-600/15 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-emerald-800">
+                    <span className="rounded-full border border-[color-mix(in_srgb,var(--rootsy-savia-600)_25%,var(--rootsy-bruma-200))] bg-[color-mix(in_srgb,var(--rootsy-savia-600)_10%,white)] px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-[var(--rootsy-savia-800)]">
                       Turno abierto
                     </span>
                   </div>
@@ -293,9 +282,9 @@ export function CashRegisterCloseDialog({
                   </div>
 
                   {meta?.openingNote ? (
-                    <div className="mt-4 border-t border-border/60 pt-3">
-                      <p className={sectionLabel}>Nota de apertura</p>
-                      <p className="mt-1.5 text-sm text-foreground">
+                    <div className="mt-4 border-t border-[var(--rootsy-bruma-200)] pt-3">
+                      <p className={dataWorkspaceEntityCardStatLabelClass}>Nota de apertura</p>
+                      <p className="mt-1.5 font-canopy text-sm text-[var(--rootsy-bruma-900)]">
                         {meta.openingNote}
                       </p>
                     </div>
@@ -311,40 +300,38 @@ export function CashRegisterCloseDialog({
                     placeholder="Ej. diferencia con liquidación…"
                     rows={4}
                     className={cn(
-                      saleOpChannelFormField,
+                      rootsFormTextareaFieldClass,
                       "min-h-[96px] resize-y",
                     )}
                   />
                 </div>
-              </>
-            }
-            right={
-              <div className="space-y-2.5">
-                <CheckoutSectionLabel>Conteo para cerrar</CheckoutSectionLabel>
-                <ClosePaymentMethodsTable rows={closeRows} />
-                {hasAdjustments ? (
-                  <p className="text-xs leading-relaxed text-muted-foreground">
-                    Las diferencias se registrarán en contabilidad al confirmar,
-                    imputadas a la cuenta correspondiente.
-                  </p>
-                ) : null}
               </div>
-            }
-          />
 
-          <CheckoutDialogFooter
+              <div className={rootsFormColumnClass}>
+                <div className="space-y-2.5">
+                  <CheckoutSectionLabel>Conteo para cerrar</CheckoutSectionLabel>
+                  <ClosePaymentMethodsTable rows={closeRows} />
+                  {hasAdjustments ? (
+                    <p className="font-canopy text-xs leading-relaxed text-[var(--rootsy-bruma-500)]">
+                      Las diferencias se registrarán en contabilidad al confirmar,
+                      imputadas a la cuenta correspondiente.
+                    </p>
+                  ) : null}
+                </div>
+              </div>
+            </RootsFormGrid>
+          </RootsDialogBody>
+
+          <RootsDialogDualActionFooter
             onCancel={() => onOpenChange(false)}
-            cancelDisabled={saving}
-            primary={{
-              label: "Cerrar caja",
-              onClick: () => formRef.current?.requestSubmit(),
-              disabled: !canSubmit,
-              loading: saving,
-              loadingLabel: "Cerrando…",
-            }}
+            confirmLabel="Cerrar caja"
+            confirmLoadingLabel="Cerrando…"
+            confirmType="submit"
+            confirmDisabled={!canSubmit}
+            confirmLoading={saving}
           />
-        </form>
-      </DialogContent>
+        </RootsDialogForm>
+      </RootsDialogContent>
     </Dialog>
   )
 }

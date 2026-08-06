@@ -17,7 +17,7 @@ import {
 import { RootsFormImageUploadIcon } from "@/components/rootsy-form/RootsFormImageUploadIcon"
 import type { FormImageUploadDisplayStateId } from "@/app/[siteId]/[popId]/library/ui-components/formsUiHardcodedSpec"
 import { cn } from "@/lib/utils"
-import { ImagePlus, Loader2, Trash2 } from "lucide-react"
+import { ImagePlus, Loader2, Trash2, type LucideIcon } from "lucide-react"
 import { useId, useRef, useState, type DragEvent } from "react"
 
 const DEFAULT_ACCEPT =
@@ -34,6 +34,12 @@ type Props = {
   previewCaption?: string
   statusHint?: string
   accept?: string
+  /** Estado filled sin preview (p. ej. archivo guardado o pendiente). */
+  filled?: boolean
+  /** Ícono del thumb cuando no hay imagen de preview. */
+  documentIcon?: LucideIcon
+  changeAriaLabel?: string
+  removeAriaLabel?: string
   onFileSelect: (file: File) => void
   onRemove?: () => void
   className?: string
@@ -50,6 +56,10 @@ export function RootsFormImageUploadField({
   previewCaption = "Imagen cargada",
   statusHint,
   accept = DEFAULT_ACCEPT,
+  filled = false,
+  documentIcon: DocumentIcon,
+  changeAriaLabel = "Cambiar imagen",
+  removeAriaLabel = "Quitar imagen",
   onFileSelect,
   onRemove,
   hint,
@@ -70,9 +80,11 @@ export function RootsFormImageUploadField({
   })
   const [dragOver, setDragOver] = useState(false)
 
-  const hasPreview = Boolean(previewSrc?.trim())
+  const hasPreviewImage = Boolean(previewSrc?.trim())
+  const hasFile = filled || hasPreviewImage
   const isDisabled = disabled || busy
-  const uploadMode = hasPreview ? "filled" : "empty"
+  const uploadMode = hasFile ? "filled" : "empty"
+  const showDocumentThumb = hasFile && !hasPreviewImage && DocumentIcon
   const displayState: FormImageUploadDisplayStateId = dragOver ? "drag" : interactionState
   const shellStyle = getFormImageUploadShellStyle(uploadMode, displayState)
   const thumbStyle = getFormImageUploadThumbStyle(uploadMode, displayState)
@@ -129,7 +141,7 @@ export function RootsFormImageUploadField({
   return (
     <RootsFormField
       label={label}
-      htmlFor={hasPreview ? undefined : fieldId}
+      htmlFor={hasFile ? undefined : fieldId}
       className={className}
       hint={hint}
       error={error}
@@ -151,7 +163,7 @@ export function RootsFormImageUploadField({
         }}
       />
 
-      {hasPreview ? (
+      {hasFile ? (
         <div
           className={cn(isDisabled && "pointer-events-none opacity-50")}
           style={shellStyle}
@@ -161,18 +173,24 @@ export function RootsFormImageUploadField({
             type="button"
             id={fieldId}
             disabled={isDisabled}
-            aria-label="Cambiar imagen"
-            className="cursor-pointer border-0 bg-transparent p-0"
+            aria-label={changeAriaLabel}
+            className="relative cursor-pointer border-0 bg-transparent p-0"
             style={thumbStyle}
             onClick={openPicker}
             {...focusProps}
           >
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src={previewSrc ?? undefined}
-              alt=""
-              className="size-full object-cover"
-            />
+            {hasPreviewImage ? (
+              /* eslint-disable-next-line @next/next/no-img-element */
+              <img
+                src={previewSrc ?? undefined}
+                alt=""
+                className="size-full object-cover"
+              />
+            ) : showDocumentThumb ? (
+              <span className="flex size-full items-center justify-center">
+                <DocumentIcon className="size-5 text-[var(--rootsy-bruma-500)]" aria-hidden />
+              </span>
+            ) : null}
             {busy ? (
               <span className="absolute inset-0 flex items-center justify-center bg-white/70 backdrop-blur-[1px]">
                 <Loader2 className="size-5 animate-spin text-[#57534e]" aria-hidden />
@@ -182,7 +200,7 @@ export function RootsFormImageUploadField({
 
           <div className="min-w-0 flex-1">
             <p className={rootsFormImageUploadTitleClass}>
-              {busy ? "Subiendo imagen…" : previewCaption}
+              {busy ? "Subiendo…" : previewCaption}
             </p>
             <p className={rootsFormImageUploadMetaClass}>
               {statusHint ?? emptySubtitle}
@@ -193,7 +211,7 @@ export function RootsFormImageUploadField({
             <button
               type="button"
               disabled={isDisabled}
-              aria-label="Cambiar imagen"
+              aria-label={changeAriaLabel}
               className={rootsFormImageUploadActionClass}
               onClick={openPicker}
             >
@@ -203,7 +221,7 @@ export function RootsFormImageUploadField({
               <button
                 type="button"
                 disabled={isDisabled}
-                aria-label="Quitar imagen"
+                aria-label={removeAriaLabel}
                 className={rootsFormImageUploadActionDestructiveClass}
                 onClick={onRemove}
               >
@@ -230,6 +248,8 @@ export function RootsFormImageUploadField({
           <span style={thumbStyle}>
             {busy ? (
               <Loader2 className="size-5 animate-spin text-[#57534e]" aria-hidden />
+            ) : DocumentIcon ? (
+              <DocumentIcon className="size-5 text-[var(--rootsy-bruma-500)]" aria-hidden />
             ) : (
               <RootsFormImageUploadIcon className="size-5 text-[var(--rootsy-bruma-500)]" />
             )}

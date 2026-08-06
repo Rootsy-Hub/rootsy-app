@@ -1,29 +1,24 @@
 "use client"
 
 import {
-  cashRegisterSessionDialogContentClass,
-  CashRegisterDialogSingleColumnBody,
-} from "@/app/[siteId]/[popId]/cash-registers/CashRegisterDialogLayout"
-import { CheckoutDialogFooter } from "@/components/checkout/CheckoutDialogFooter"
-import {
   CheckoutMoneyValueField,
   CheckoutSectionLabel,
   CheckoutSectionPanel,
 } from "@/components/checkout/CheckoutFormFields"
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog"
+  RootsDialogBody,
+  RootsDialogContent,
+  RootsDialogDualActionFooter,
+  RootsDialogErrorBanner,
+  RootsDialogForm,
+  RootsDialogHeader,
+} from "@/components/rootsy-dialog"
+import { Dialog } from "@/components/ui/dialog"
 import { Textarea } from "@/components/ui/textarea"
+import { rootsFormTextareaFieldClass } from "@/components/rootsy-form/rootsFormStyles"
 import { isMoneyInputComplete } from "@/lib/moneyInput"
 import { cn } from "@/lib/utils"
-import {
-  saleOpChannelFormField,
-  saleOpDialogHeader,
-} from "@/components/sale-operation/saleOperationStyles"
-import { useRef, type FormEvent } from "react"
+import type { FormEvent } from "react"
 
 type Props = {
   open: boolean
@@ -50,24 +45,19 @@ export function CashRegisterOpenDialog({
   onNoteChange,
   onSubmit,
 }: Props) {
-  const formRef = useRef<HTMLFormElement>(null)
   const canSubmit = isMoneyInputComplete(openingCash)
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className={cashRegisterSessionDialogContentClass}>
-        <DialogHeader className={cn(saleOpDialogHeader, "shrink-0")}>
-          <DialogTitle className="text-base font-semibold tracking-tight">
-            {registerName ? `Abrir turno en ${registerName}` : "Abrir turno"}
-          </DialogTitle>
-        </DialogHeader>
-
-        <form
-          ref={formRef}
-          onSubmit={onSubmit}
-          className="flex min-h-0 flex-1 flex-col overflow-hidden"
-        >
-          <CashRegisterDialogSingleColumnBody banner={banner}>
+      <RootsDialogContent size="default">
+        <RootsDialogHeader
+          title={registerName ? `Abrir turno en ${registerName}` : "Abrir turno"}
+          description="Efectivo inicial y nota opcional al abrir el turno."
+          descriptionHidden
+        />
+        <RootsDialogForm onSubmit={onSubmit}>
+          <RootsDialogBody className="space-y-4">
+            {banner ? <RootsDialogErrorBanner>{banner}</RootsDialogErrorBanner> : null}
             <CheckoutSectionPanel>
               <div className="space-y-2.5">
                 <CheckoutSectionLabel>Efectivo contado al abrir</CheckoutSectionLabel>
@@ -88,25 +78,22 @@ export function CashRegisterOpenDialog({
                   onChange={(e) => onNoteChange(e.target.value)}
                   placeholder="Ej. vales del turno anterior, diferencias al contar…"
                   rows={3}
-                  className={cn(saleOpChannelFormField, "min-h-[88px] resize-y")}
+                  className={cn(rootsFormTextareaFieldClass, "min-h-[88px] resize-y")}
                 />
               </div>
             </CheckoutSectionPanel>
-          </CashRegisterDialogSingleColumnBody>
+          </RootsDialogBody>
 
-          <CheckoutDialogFooter
+          <RootsDialogDualActionFooter
             onCancel={() => onOpenChange(false)}
-            cancelDisabled={saving}
-            primary={{
-              label: "Abrir turno",
-              onClick: () => formRef.current?.requestSubmit(),
-              disabled: !canSubmit,
-              loading: saving,
-              loadingLabel: "Abriendo…",
-            }}
+            confirmLabel="Abrir turno"
+            confirmLoadingLabel="Abriendo…"
+            confirmType="submit"
+            confirmDisabled={!canSubmit}
+            confirmLoading={saving}
           />
-        </form>
-      </DialogContent>
+        </RootsDialogForm>
+      </RootsDialogContent>
     </Dialog>
   )
 }

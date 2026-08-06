@@ -19,6 +19,8 @@ export {
   rootsDialogDescriptionClass,
   rootsDialogFooterClass,
   rootsDialogHeaderClass,
+  rootsDialogHeaderCompactClass,
+  rootsDialogHeaderWithDescriptionClass,
   rootsDialogLoadingBodyClass,
   rootsDialogOverlayClass,
   rootsDialogPanelPaddingXClass,

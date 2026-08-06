@@ -1,14 +1,10 @@
 "use client"
 
 import type { CashTreasuryAccountOption } from "@/app/[siteId]/[popId]/cash-registers/actions"
-import { FieldSelect } from "@/components/ui/field-select"
-import { SelectItem } from "@/components/ui/select"
 import {
-  saleOpLightFormPrefix,
-  saleOpLightFormSurface,
-  saleOpLightSelectContent,
-  saleOpLightSelectItem,
-} from "@/components/sale-operation/saleOperationStyles"
+  RootsFormSelectField,
+  RootsFormSelectItem,
+} from "@/components/rootsy-form"
 import { Banknote, Hash } from "lucide-react"
 import { useMemo } from "react"
 
@@ -33,6 +29,7 @@ export function buildArcaPtoVtaOptions(currentRaw: string): number[] {
 
 type TreasurySelectProps = {
   id: string
+  label: string
   value: string
   onValueChange: (value: string) => void
   accounts: CashTreasuryAccountOption[]
@@ -41,6 +38,7 @@ type TreasurySelectProps = {
 
 export function CashRegisterTreasuryAccountSelect({
   id,
+  label,
   value,
   onValueChange,
   accounts,
@@ -50,7 +48,8 @@ export function CashRegisterTreasuryAccountSelect({
   const selectValue = value || accounts[0]?.id || ""
 
   return (
-    <FieldSelect
+    <RootsFormSelectField
+      label={label}
       id={id}
       value={hasAccounts ? selectValue : ""}
       onValueChange={onValueChange}
@@ -58,31 +57,20 @@ export function CashRegisterTreasuryAccountSelect({
       placeholder={
         hasAccounts ? "Elegí una cuenta de efectivo" : "Sin cuentas de efectivo"
       }
-      className={saleOpLightFormSurface}
-      prefixClassName={saleOpLightFormPrefix}
-      prefixIcon={
-        <Banknote
-          className="size-4 shrink-0 text-zinc-600 dark:text-zinc-600"
-          aria-hidden
-        />
-      }
-      contentClassName={saleOpLightSelectContent}
+      prefix={<Banknote className="size-4 shrink-0" aria-hidden />}
     >
       {accounts.map((account) => (
-        <SelectItem
-          key={account.id}
-          value={account.id}
-          className={saleOpLightSelectItem}
-        >
+        <RootsFormSelectItem key={account.id} value={account.id}>
           {account.name}
-        </SelectItem>
+        </RootsFormSelectItem>
       ))}
-    </FieldSelect>
+    </RootsFormSelectField>
   )
 }
 
 type PtoVtaSelectProps = {
   id: string
+  label?: string
   value: string
   onValueChange: (value: string) => void
   disabled?: boolean
@@ -90,6 +78,7 @@ type PtoVtaSelectProps = {
 
 export function CashRegisterArcaPtoVtaSelect({
   id,
+  label = "Punto de venta",
   value,
   onValueChange,
   disabled = false,
@@ -98,7 +87,8 @@ export function CashRegisterArcaPtoVtaSelect({
   const selectValue = value.trim() === "" ? ARCA_PTO_VTA_UNSET : value
 
   return (
-    <FieldSelect
+    <RootsFormSelectField
+      label={label}
       id={id}
       value={selectValue}
       onValueChange={(next) => {
@@ -106,28 +96,16 @@ export function CashRegisterArcaPtoVtaSelect({
       }}
       disabled={disabled}
       placeholder="Elegí el punto de venta"
-      className={saleOpLightFormSurface}
-      prefixClassName={saleOpLightFormPrefix}
-      prefixIcon={
-        <Hash
-          className="size-4 shrink-0 text-zinc-600 dark:text-zinc-600"
-          aria-hidden
-        />
-      }
-      contentClassName={saleOpLightSelectContent}
+      prefix={<Hash className="size-4 shrink-0" aria-hidden />}
     >
-      <SelectItem value={ARCA_PTO_VTA_UNSET} className={saleOpLightSelectItem}>
+      <RootsFormSelectItem value={ARCA_PTO_VTA_UNSET}>
         Sin configurar
-      </SelectItem>
+      </RootsFormSelectItem>
       {options.map((pto) => (
-        <SelectItem
-          key={pto}
-          value={String(pto)}
-          className={saleOpLightSelectItem}
-        >
+        <RootsFormSelectItem key={pto} value={String(pto)}>
           {formatArcaPtoVtaLabel(pto)}
-        </SelectItem>
+        </RootsFormSelectItem>
       ))}
-    </FieldSelect>
+    </RootsFormSelectField>
   )
 }

@@ -22,6 +22,7 @@ import {
   type CashRegisterEditSubmitPayload,
 } from "@/app/[siteId]/[popId]/cash-registers/CashRegisterEditDialog"
 import { CashRegisterCloseDialog } from "@/app/[siteId]/[popId]/cash-registers/CashRegisterCloseDialog"
+import { CashRegisterDeleteDialog } from "@/app/[siteId]/[popId]/cash-registers/CashRegisterDeleteDialog"
 import { CashRegisterMoveDialog } from "@/app/[siteId]/[popId]/cash-registers/CashRegisterMoveDialog"
 import { CashRegisterOpenDialog } from "@/app/[siteId]/[popId]/cash-registers/CashRegisterOpenDialog"
 import { CashRegistersGridSkeleton } from "@/app/[siteId]/[popId]/cash-registers/CashRegistersGridSkeleton"
@@ -45,14 +46,6 @@ import {
   parseMoneyInput,
 } from "@/lib/moneyInput"
 import { formatLocaleDateTime } from "@/lib/popTimezone"
-import { Button } from "@/components/ui/button"
-import {
-  Dialog,
-  DialogContent,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog"
 import withAuth from "@/hoc/withAuth"
 import { usePopWorkspace } from "@/context/PopWorkspaceContext"
 import {
@@ -510,57 +503,20 @@ function CashRegistersPage() {
         onSubmit={submitEdit}
       />
 
-      <Dialog
+      <CashRegisterDeleteDialog
         open={deleteRow !== null}
-        onOpenChange={(o) => {
-          if (!o) {
+        registerName={deleteRow?.name ?? null}
+        banner={deleteBanner}
+        busy={deleteBusy}
+        onOpenChange={(open) => {
+          if (!open) {
             setDeleteRow(null)
             setDeleteBanner(null)
           }
         }}
-      >
-        <DialogContent
-          data-rootsy-light-shell="true"
-          showCloseButton
-          className="border-border bg-card text-foreground sm:max-w-md"
-        >
-          <DialogHeader>
-            <DialogTitle className="text-lg font-semibold text-foreground">
-              Delete cash register?
-            </DialogTitle>
-          </DialogHeader>
-          {deleteBanner ? (
-            <p className="rounded-lg border border-destructive/25 bg-destructive/5 px-3 py-2 text-sm text-destructive">
-              {deleteBanner}
-            </p>
-          ) : null}
-          <p className="text-sm text-zinc-400">
-            This will remove{" "}
-            <strong className="text-cyan-200">
-              {deleteRow?.name || "this register"}
-            </strong>{" "}
-            and its history. The register must be closed.
-          </p>
-          <DialogFooter className="gap-2 sm:gap-0">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => setDeleteRow(null)}
-            >
-              Cancel
-            </Button>
-            <Button
-              type="button"
-              variant="destructive"
-              disabled={deleteBusy}
-              className="border border-red-500/50 bg-red-950/80 font-semibold text-red-100 hover:bg-red-900"
-              onClick={() => void submitDelete()}
-            >
-              {deleteBusy ? "Deleting…" : "Delete"}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+        onCancel={() => setDeleteRow(null)}
+        onConfirm={() => void submitDelete()}
+      />
 
       <CashRegisterOpenDialog
         open={openRow !== null}

@@ -1,30 +1,25 @@
 "use client"
 
 import {
-  cashRegisterSessionDialogContentClass,
-  CashRegisterDialogSingleColumnBody,
-} from "@/app/[siteId]/[popId]/cash-registers/CashRegisterDialogLayout"
-import { CheckoutDialogFooter } from "@/components/checkout/CheckoutDialogFooter"
-import {
   CheckoutMoneyValueField,
   CheckoutSectionLabel,
   CheckoutSectionPanel,
 } from "@/components/checkout/CheckoutFormFields"
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog"
+  RootsDialogBody,
+  RootsDialogContent,
+  RootsDialogDualActionFooter,
+  RootsDialogErrorBanner,
+  RootsDialogForm,
+  RootsDialogHeader,
+} from "@/components/rootsy-dialog"
+import { Dialog } from "@/components/ui/dialog"
 import { Textarea } from "@/components/ui/textarea"
+import { RootsBanner } from "@/components/rootsy-banner"
+import { rootsFormTextareaFieldClass } from "@/components/rootsy-form/rootsFormStyles"
 import { isMoneyInputComplete } from "@/lib/moneyInput"
 import { cn } from "@/lib/utils"
-import { RootsBanner } from "@/components/rootsy-banner"
-import {
-  saleOpChannelFormField,
-  saleOpDialogHeader,
-} from "@/components/sale-operation/saleOperationStyles"
-import { useRef, type FormEvent } from "react"
+import type { FormEvent } from "react"
 
 export type CashRegisterMoveKind = "deposit" | "withdrawal"
 
@@ -81,7 +76,6 @@ export function CashRegisterMoveDialog({
   onNoteChange,
   onSubmit,
 }: Props) {
-  const formRef = useRef<HTMLFormElement>(null)
   const labels = copy[kind]
   const canSubmit = isMoneyInputComplete(amount)
   const dialogTitle = registerName
@@ -90,19 +84,15 @@ export function CashRegisterMoveDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className={cashRegisterSessionDialogContentClass}>
-        <DialogHeader className={cn(saleOpDialogHeader, "shrink-0")}>
-          <DialogTitle className="text-base font-semibold tracking-tight">
-            {dialogTitle}
-          </DialogTitle>
-        </DialogHeader>
-
-        <form
-          ref={formRef}
-          onSubmit={onSubmit}
-          className="flex min-h-0 flex-1 flex-col overflow-hidden"
-        >
-          <CashRegisterDialogSingleColumnBody banner={banner}>
+      <RootsDialogContent size="default">
+        <RootsDialogHeader
+          title={dialogTitle}
+          description={labels.hint}
+          descriptionHidden
+        />
+        <RootsDialogForm onSubmit={onSubmit}>
+          <RootsDialogBody className="space-y-4">
+            {banner ? <RootsDialogErrorBanner>{banner}</RootsDialogErrorBanner> : null}
             <CheckoutSectionPanel>
               <div className="space-y-2.5">
                 <CheckoutSectionLabel>{labels.amountLabel}</CheckoutSectionLabel>
@@ -124,25 +114,22 @@ export function CashRegisterMoveDialog({
                   onChange={(e) => onNoteChange(e.target.value)}
                   placeholder="Ej. cambio para vuelto, retiro a caja fuerte…"
                   rows={3}
-                  className={cn(saleOpChannelFormField, "min-h-[88px] resize-y")}
+                  className={cn(rootsFormTextareaFieldClass, "min-h-[88px] resize-y")}
                 />
               </div>
             </CheckoutSectionPanel>
-          </CashRegisterDialogSingleColumnBody>
+          </RootsDialogBody>
 
-          <CheckoutDialogFooter
+          <RootsDialogDualActionFooter
             onCancel={() => onOpenChange(false)}
-            cancelDisabled={saving}
-            primary={{
-              label: labels.primary,
-              onClick: () => formRef.current?.requestSubmit(),
-              disabled: !canSubmit,
-              loading: saving,
-              loadingLabel: labels.loading,
-            }}
+            confirmLabel={labels.primary}
+            confirmLoadingLabel={labels.loading}
+            confirmType="submit"
+            confirmDisabled={!canSubmit}
+            confirmLoading={saving}
           />
-        </form>
-      </DialogContent>
+        </RootsDialogForm>
+      </RootsDialogContent>
     </Dialog>
   )
 }

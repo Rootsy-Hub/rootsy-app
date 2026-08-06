@@ -71,13 +71,21 @@ export const rootsDialogSurfaceTwoColClass = cn(
 export const rootsDialogHeaderClass = cn(
   "flex shrink-0 flex-col gap-[var(--rootsy-space-100)] border-b border-[var(--rootsy-bruma-200)] bg-white",
   rootsDialogPanelPaddingXClass,
-  "pb-[var(--rootsy-space-200)] pt-[var(--rootsy-space-400)] text-left sm:text-left",
+  "pt-[var(--rootsy-space-400)] text-left sm:text-left",
 )
 
-/** font.heading.medium · bruma-900 */
+/** Header con subtítulo visible — pb space.200 (spec modal). */
+export const rootsDialogHeaderWithDescriptionClass =
+  "pb-[var(--rootsy-space-200)]"
+
+/** Header solo título — pb simétrico space.400; alinea banda título + close. */
+export const rootsDialogHeaderCompactClass = "pb-[var(--rootsy-space-400)]"
+
+/** font.heading.medium · bruma-900 · reserva horizontal para close space.400. */
 export const rootsDialogTitleClass = cn(
   "font-canopy text-[length:var(--rootsy-text-heading-medium-size)] leading-[var(--rootsy-text-heading-medium-lh)]",
   "font-bold tracking-[-0.01em] text-[var(--rootsy-bruma-900)]",
+  "pr-[calc(var(--rootsy-space-400)+var(--rootsy-space-400)+var(--rootsy-space-100))]",
 )
 
 /** body.small · bruma-500 */

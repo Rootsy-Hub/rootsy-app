@@ -2,31 +2,27 @@
 
 import type { CashTreasuryAccountOption } from "@/app/[siteId]/[popId]/cash-registers/actions"
 import { CashRegisterTreasuryAccountSelect } from "@/app/[siteId]/[popId]/cash-registers/CashRegisterDialogSelects"
-import {
-  cashRegisterDialogContentClass,
-  CashRegisterDialogTwoColumnBody,
-} from "@/app/[siteId]/[popId]/cash-registers/CashRegisterDialogLayout"
 import { CashRegisterArcaPopFiscalPanel } from "@/app/[siteId]/[popId]/cash-registers/CashRegisterArcaPopFiscalPanel"
 import {
   CashRegisterArcaConfigFields,
   type CashRegisterArcaFormPayload,
 } from "@/app/[siteId]/[popId]/cash-registers/CashRegisterArcaConfigFields"
-import { CheckoutDialogFooter } from "@/components/checkout/CheckoutDialogFooter"
-import { CheckoutSectionLabel } from "@/components/checkout/CheckoutFormFields"
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog"
-import { Input } from "@/components/ui/input"
-import { cn } from "@/lib/utils"
+  RootsDialogBody,
+  RootsDialogContent,
+  RootsDialogDualActionFooter,
+  RootsDialogErrorBanner,
+  RootsDialogForm,
+  RootsDialogHeader,
+} from "@/components/rootsy-dialog"
+import {
+  RootsFormGrid,
+  RootsFormTextField,
+  rootsFormColumnClass,
+} from "@/components/rootsy-form"
+import { Dialog } from "@/components/ui/dialog"
 import { RootsBanner } from "@/components/rootsy-banner"
-import {
-  saleOpDialogHeader,
-  saleOpLightFormInput,
-} from "@/components/sale-operation/saleOperationStyles"
-import { useEffect, useRef, useState, type FormEvent } from "react"
+import { useEffect, useState, type FormEvent } from "react"
 
 export type CashRegisterCreateInput = {
   name: string
@@ -56,9 +52,6 @@ export function CashRegisterCreateDialog({
   settingsHref,
   onSubmit,
 }: Props) {
-  const formRef = useRef<HTMLFormElement>(null)
-  const crtRef = useRef<HTMLInputElement>(null)
-  const keyRef = useRef<HTMLInputElement>(null)
   const [name, setName] = useState("")
   const [cashTreasuryAccountId, setCashTreasuryAccountId] = useState("")
   const [arcaPtoVta, setArcaPtoVta] = useState("")
@@ -74,8 +67,6 @@ export function CashRegisterCreateDialog({
       setArcaExpiresAt("")
       setCrtFile(null)
       setKeyFile(null)
-      if (crtRef.current) crtRef.current.value = ""
-      if (keyRef.current) keyRef.current.value = ""
       return
     }
     setCashTreasuryAccountId(cashTreasuryAccounts[0]?.id ?? "")
@@ -101,90 +92,73 @@ export function CashRegisterCreateDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className={cashRegisterDialogContentClass}>
-        <DialogHeader className={cn(saleOpDialogHeader, "shrink-0")}>
-          <DialogTitle className="text-base font-semibold tracking-tight">
-            Nueva caja
-          </DialogTitle>
-        </DialogHeader>
+      <RootsDialogContent size="twoCol">
+        <RootsDialogHeader
+          title="Nueva caja"
+          description="Nombre, cuenta de efectivo y facturación electrónica."
+          descriptionHidden
+        />
+        <RootsDialogForm onSubmit={handleSubmit}>
+          <RootsDialogBody>
+            {banner ? <RootsDialogErrorBanner>{banner}</RootsDialogErrorBanner> : null}
+            <RootsFormGrid>
+              <div className={rootsFormColumnClass}>
+                <RootsFormTextField
+                  label="Nombre"
+                  id="cr-create-name"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  required
+                  placeholder="Ej. Caja mostrador, Caja 1"
+                />
 
-        <form
-          ref={formRef}
-          onSubmit={handleSubmit}
-          className="flex min-h-0 flex-1 flex-col overflow-hidden"
-        >
-          <CashRegisterDialogTwoColumnBody
-            banner={banner}
-            left={
-              <>
-                <div className="space-y-5">
-                  <div className="space-y-2.5">
-                    <CheckoutSectionLabel>Nombre</CheckoutSectionLabel>
-                    <Input
-                      id="cr-create-name"
-                      value={name}
-                      onChange={(e) => setName(e.target.value)}
-                      required
-                      placeholder="Ej. Caja mostrador, Caja 1"
-                      className={saleOpLightFormInput}
-                    />
-                  </div>
-
-                  <div className="space-y-2.5">
-                    <CheckoutSectionLabel>Cuenta de efectivo destino</CheckoutSectionLabel>
-                    <CashRegisterTreasuryAccountSelect
-                      id="cr-create-treasury"
-                      value={cashTreasuryAccountId}
-                      onValueChange={setCashTreasuryAccountId}
-                      accounts={cashTreasuryAccounts}
-                    />
-                    <RootsBanner
-                      intent="neutral"
-                      layout="message"
-                      density="compact"
-                      message="Los cobros en efectivo del turno se imputan a esta cuenta de tesorería."
-                    />
-                  </div>
-                </div>
+                <CashRegisterTreasuryAccountSelect
+                  id="cr-create-treasury"
+                  label="Cuenta de efectivo destino"
+                  value={cashTreasuryAccountId}
+                  onValueChange={setCashTreasuryAccountId}
+                  accounts={cashTreasuryAccounts}
+                />
+                <RootsBanner
+                  intent="neutral"
+                  layout="message"
+                  density="compact"
+                  message="Los cobros en efectivo del turno se imputan a esta cuenta de tesorería."
+                />
 
                 <CashRegisterArcaPopFiscalPanel
                   fiscalCuit={popFiscalCuit}
                   fiscalRazonSocial={popFiscalRazonSocial}
                   settingsHref={settingsHref}
                 />
-              </>
-            }
-            right={
-              <CashRegisterArcaConfigFields
-                idPrefix="cr-create"
-                arcaPtoVta={arcaPtoVta}
-                onArcaPtoVtaChange={setArcaPtoVta}
-                arcaExpiresAt={arcaExpiresAt}
-                onArcaExpiresAtChange={setArcaExpiresAt}
-                crtRef={crtRef}
-                keyRef={keyRef}
-                crtFile={crtFile}
-                onCrtFileChange={setCrtFile}
-                keyFile={keyFile}
-                onKeyFileChange={setKeyFile}
-                filesHint="Subí ambos archivos (.crt y .key) juntos, o dejalos vacíos si los cargás después."
-              />
-            }
-          />
+              </div>
 
-          <CheckoutDialogFooter
+              <div className={rootsFormColumnClass}>
+                <CashRegisterArcaConfigFields
+                  idPrefix="cr-create"
+                  arcaPtoVta={arcaPtoVta}
+                  onArcaPtoVtaChange={setArcaPtoVta}
+                  arcaExpiresAt={arcaExpiresAt}
+                  onArcaExpiresAtChange={setArcaExpiresAt}
+                  crtFile={crtFile}
+                  onCrtFileChange={setCrtFile}
+                  keyFile={keyFile}
+                  onKeyFileChange={setKeyFile}
+                  filesHint="Subí ambos archivos (.crt y .key) juntos, o dejalos vacíos si los cargás después."
+                />
+              </div>
+            </RootsFormGrid>
+          </RootsDialogBody>
+          <RootsDialogDualActionFooter
             onCancel={() => onOpenChange(false)}
-            cancelDisabled={saving}
-            primary={{
-              label: "Crear caja",
-              onClick: () => formRef.current?.requestSubmit(),
-              disabled: !canSubmit,
-              loading: saving,
-              loadingLabel: "Creando…",
-            }}
+            confirmLabel="Crear caja"
+            confirmLoadingLabel="Creando…"
+            confirmType="submit"
+            confirmDisabled={!canSubmit}
+            confirmLoading={saving}
           />
-        </form>
-      </DialogContent>
+        </RootsDialogForm>
+      </RootsDialogContent>
     </Dialog>
   )
 }

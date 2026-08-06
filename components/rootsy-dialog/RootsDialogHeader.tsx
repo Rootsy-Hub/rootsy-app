@@ -3,6 +3,8 @@
 import {
   rootsDialogDescriptionClass,
   rootsDialogHeaderClass,
+  rootsDialogHeaderCompactClass,
+  rootsDialogHeaderWithDescriptionClass,
   rootsDialogTitleClass,
 } from "@/components/rootsy-dialog/rootsDialogProductStyles"
 import {
@@ -26,18 +28,26 @@ export function RootsDialogHeader({
   descriptionHidden = false,
   className,
 }: Props) {
+  const showVisibleDescription = description != null && !descriptionHidden
+  const showAssistiveDescription = description != null && descriptionHidden
+
   return (
-    <DialogHeader className={cn(rootsDialogHeaderClass, className)}>
+    <DialogHeader
+      className={cn(
+        rootsDialogHeaderClass,
+        showVisibleDescription
+          ? rootsDialogHeaderWithDescriptionClass
+          : rootsDialogHeaderCompactClass,
+        className,
+      )}
+    >
       <DialogTitle className={rootsDialogTitleClass}>{title}</DialogTitle>
-      {description != null ? (
-        <DialogDescription
-          className={cn(
-            rootsDialogDescriptionClass,
-            descriptionHidden && "sr-only",
-          )}
-        >
+      {showVisibleDescription ? (
+        <DialogDescription className={rootsDialogDescriptionClass}>
           {description}
         </DialogDescription>
+      ) : showAssistiveDescription ? (
+        <DialogDescription className="sr-only">{description}</DialogDescription>
       ) : null}
     </DialogHeader>
   )

@@ -1,19 +1,14 @@
 "use client"
 
 import { CashRegisterArcaPtoVtaSelect } from "@/app/[siteId]/[popId]/cash-registers/CashRegisterDialogSelects"
-import { CheckoutSectionLabel } from "@/components/checkout/CheckoutFormFields"
-import { Button } from "@/components/ui/button"
-import { DatePicker } from "@/components/ui/date-picker"
-import { cn } from "@/lib/utils"
 import {
-  saleOpLightFormPrefix,
-  saleOpLightFormSurface,
-  saleOpLightUploadZone,
-} from "@/components/sale-operation/saleOperationStyles"
+  RootsFormDateField,
+  RootsFormImageUploadField,
+  rootsFormFieldLabelClass,
+} from "@/components/rootsy-form"
 import { format, parseISO } from "date-fns"
 import { es as esLocale } from "date-fns/locale"
-import { FileKey, FileText, Upload, X, type LucideIcon } from "lucide-react"
-import type { RefObject } from "react"
+import { FileKey, FileText } from "lucide-react"
 
 export type CashRegisterArcaFormPayload = {
   arcaPtoVta: string
@@ -29,119 +24,21 @@ export function formatArcaExpiryLabel(iso: string | null | undefined): string | 
   return format(d, "d MMM yyyy", { locale: esLocale })
 }
 
-export function ArcaPemFileField({
-  inputId,
-  inputRef,
-  label,
-  storedFileName,
+function buildFileStatusHint({
+  pendingFile,
   storedUploadedAt,
   storedMeta,
-  pendingFile,
-  onPendingFileChange,
-  accept,
-  extensionsHint,
-  emptyHint,
-  icon: Icon,
 }: {
-  inputId: string
-  inputRef: RefObject<HTMLInputElement | null>
-  label: string
-  storedFileName: string | null
+  pendingFile: File | null
   storedUploadedAt: string | null
   storedMeta?: string | null
-  pendingFile: File | null
-  onPendingFileChange: (file: File | null) => void
-  accept: string
-  extensionsHint: string
-  emptyHint: string
-  icon: LucideIcon
-}) {
-  const displayName = pendingFile?.name ?? storedFileName
-  const uploadedLabel = pendingFile
-    ? "Archivo seleccionado para subir"
-    : storedUploadedAt
-      ? `Subido el ${storedUploadedAt}`
-      : null
-
-  const clearSelection = () => {
-    onPendingFileChange(null)
-    if (inputRef.current) inputRef.current.value = ""
-  }
-
-  return (
-    <div className="space-y-2.5">
-      <CheckoutSectionLabel>{label}</CheckoutSectionLabel>
-      <input
-        ref={inputRef}
-        id={inputId}
-        type="file"
-        accept={accept}
-        className="sr-only"
-        onChange={(e) => {
-          onPendingFileChange(e.target.files?.[0] ?? null)
-        }}
-      />
-
-      {displayName ? (
-        <div
-          className={cn(
-            saleOpLightFormSurface,
-            "flex items-center gap-3 rounded-xl px-3.5 py-3",
-          )}
-        >
-          <div className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-zinc-50 text-zinc-500">
-            <Icon className="size-4" aria-hidden />
-          </div>
-          <div className="min-w-0 flex-1">
-            <p className="truncate text-sm font-medium text-foreground">
-              {displayName}
-            </p>
-            {uploadedLabel ? (
-              <p className="text-xs text-muted-foreground">{uploadedLabel}</p>
-            ) : null}
-            {storedMeta ? (
-              <p className="text-xs text-muted-foreground">{storedMeta}</p>
-            ) : null}
-          </div>
-          {pendingFile ? (
-            <Button
-              type="button"
-              variant="ghost-neutral"
-              size="icon"
-              className="size-8 shrink-0 rounded-lg"
-              aria-label={`Quitar ${label.toLowerCase()}`}
-              onClick={clearSelection}
-            >
-              <X className="size-4" aria-hidden />
-            </Button>
-          ) : storedFileName ? (
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              className="shrink-0 rounded-lg"
-              onClick={() => inputRef.current?.click()}
-            >
-              Reemplazar
-            </Button>
-          ) : null}
-        </div>
-      ) : (
-        <button
-          type="button"
-          onClick={() => inputRef.current?.click()}
-          className={cn(
-            saleOpLightUploadZone,
-            "flex w-full flex-col items-center gap-1.5 px-4 py-5 text-sm",
-          )}
-        >
-          <Upload className="size-5 text-zinc-400" aria-hidden />
-          <span className="font-medium text-foreground">{emptyHint}</span>
-          <span className="text-xs text-muted-foreground">{extensionsHint}</span>
-        </button>
-      )}
-    </div>
-  )
+}): string | undefined {
+  if (pendingFile) return "Archivo seleccionado para subir"
+  const parts = [
+    storedUploadedAt ? `Subido el ${storedUploadedAt}` : null,
+    storedMeta ?? null,
+  ].filter(Boolean)
+  return parts.length > 0 ? parts.join(" · ") : undefined
 }
 
 type ArcaConfigFieldsProps = {
@@ -150,8 +47,6 @@ type ArcaConfigFieldsProps = {
   onArcaPtoVtaChange: (value: string) => void
   arcaExpiresAt: string
   onArcaExpiresAtChange: (value: string) => void
-  crtRef: RefObject<HTMLInputElement | null>
-  keyRef: RefObject<HTMLInputElement | null>
   crtFile: File | null
   onCrtFileChange: (file: File | null) => void
   keyFile: File | null
@@ -170,8 +65,6 @@ export function CashRegisterArcaConfigFields({
   onArcaPtoVtaChange,
   arcaExpiresAt,
   onArcaExpiresAtChange,
-  crtRef,
-  keyRef,
   crtFile,
   onCrtFileChange,
   keyFile,
@@ -183,63 +76,64 @@ export function CashRegisterArcaConfigFields({
   certExpiryLabel = null,
   filesHint = "Subí ambos archivos juntos para reemplazar el par guardado, o dejalos vacíos para conservarlo.",
 }: ArcaConfigFieldsProps) {
+  const crtDisplayName = crtFile?.name ?? storedCrtName
+  const keyDisplayName = keyFile?.name ?? storedKeyName
+
   return (
     <div className="space-y-5">
-      <CheckoutSectionLabel>Configuración ARCA de esta caja</CheckoutSectionLabel>
+      <p className={rootsFormFieldLabelClass}>Configuración ARCA de esta caja</p>
 
-      <div className="space-y-2.5">
-        <CheckoutSectionLabel>Punto de venta</CheckoutSectionLabel>
-        <CashRegisterArcaPtoVtaSelect
-          id={`${idPrefix}-arca-pto`}
-          value={arcaPtoVta}
-          onValueChange={onArcaPtoVtaChange}
-        />
-      </div>
-
-      <div className="space-y-2.5">
-        <CheckoutSectionLabel>Vencimiento del certificado (opcional)</CheckoutSectionLabel>
-        <DatePicker
-          id={`${idPrefix}-arca-exp`}
-          value={arcaExpiresAt}
-          onChange={onArcaExpiresAtChange}
-          placeholder="Elegí el vencimiento"
-          light
-          variant="field"
-          className={cn(
-            saleOpLightFormSurface,
-            "h-11 w-full overflow-hidden rounded-xl p-0 shadow-none",
-          )}
-          prefixClassName={saleOpLightFormPrefix}
-        />
-      </div>
-
-      <ArcaPemFileField
-        inputId={`${idPrefix}-arca-crt`}
-        inputRef={crtRef}
-        label="Certificado (.crt)"
-        storedFileName={storedCrtName}
-        storedUploadedAt={storedCrtUploadedAt}
-        storedMeta={certExpiryLabel ? `Vence el ${certExpiryLabel}` : null}
-        pendingFile={crtFile}
-        onPendingFileChange={onCrtFileChange}
-        accept=".crt"
-        extensionsHint="Solo archivo .crt"
-        emptyHint="Subir certificado"
-        icon={FileText}
+      <CashRegisterArcaPtoVtaSelect
+        id={`${idPrefix}-arca-pto`}
+        value={arcaPtoVta}
+        onValueChange={onArcaPtoVtaChange}
       />
 
-      <ArcaPemFileField
-        inputId={`${idPrefix}-arca-key`}
-        inputRef={keyRef}
+      <RootsFormDateField
+        label="Vencimiento del certificado (opcional)"
+        id={`${idPrefix}-arca-exp`}
+        value={arcaExpiresAt}
+        onChange={onArcaExpiresAtChange}
+        placeholder="Elegí el vencimiento"
+      />
+
+      <RootsFormImageUploadField
+        label="Certificado (.crt)"
+        id={`${idPrefix}-arca-crt`}
+        filled={Boolean(crtDisplayName)}
+        documentIcon={FileText}
+        previewCaption={crtDisplayName ?? "Certificado"}
+        statusHint={buildFileStatusHint({
+          pendingFile: crtFile,
+          storedUploadedAt: storedCrtUploadedAt,
+          storedMeta: certExpiryLabel ? `Vence el ${certExpiryLabel}` : null,
+        })}
+        emptyTitle="Subir certificado"
+        emptySubtitle="Solo archivo .crt"
+        accept=".crt"
+        changeAriaLabel="Cambiar certificado"
+        removeAriaLabel="Quitar certificado"
+        onFileSelect={onCrtFileChange}
+        onRemove={crtFile ? () => onCrtFileChange(null) : undefined}
+      />
+
+      <RootsFormImageUploadField
         label="Clave privada (.key)"
-        storedFileName={storedKeyName}
-        storedUploadedAt={storedKeyUploadedAt}
-        pendingFile={keyFile}
-        onPendingFileChange={onKeyFileChange}
+        id={`${idPrefix}-arca-key`}
+        filled={Boolean(keyDisplayName)}
+        documentIcon={FileKey}
+        previewCaption={keyDisplayName ?? "Clave privada"}
+        statusHint={buildFileStatusHint({
+          pendingFile: keyFile,
+          storedUploadedAt: storedKeyUploadedAt,
+        })}
+        emptyTitle="Subir clave privada"
+        emptySubtitle="Solo archivo .key"
         accept=".key"
-        extensionsHint="Solo archivo .key"
-        emptyHint="Subir clave privada"
-        icon={FileKey}
+        changeAriaLabel="Cambiar clave privada"
+        removeAriaLabel="Quitar clave privada"
+        onFileSelect={onKeyFileChange}
+        onRemove={keyFile ? () => onKeyFileChange(null) : undefined}
       />
 
       <p className="text-xs leading-relaxed text-muted-foreground">{filesHint}</p>

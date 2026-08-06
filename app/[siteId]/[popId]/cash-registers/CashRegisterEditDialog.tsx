@@ -6,33 +6,27 @@ import type {
 } from "@/app/[siteId]/[popId]/cash-registers/actions"
 import { CashRegisterTreasuryAccountSelect } from "@/app/[siteId]/[popId]/cash-registers/CashRegisterDialogSelects"
 import type { CashRegisterArcaFormPayload } from "@/app/[siteId]/[popId]/cash-registers/CashRegisterArcaConfigFields"
-import {
-  cashRegisterDialogContentClass,
-  CashRegisterDialogTwoColumnBody,
-} from "@/app/[siteId]/[popId]/cash-registers/CashRegisterDialogLayout"
 import { CashRegisterArcaPopFiscalPanel } from "@/app/[siteId]/[popId]/cash-registers/CashRegisterArcaPopFiscalPanel"
 import {
   CashRegisterArcaConfigFields,
   formatArcaExpiryLabel,
 } from "@/app/[siteId]/[popId]/cash-registers/CashRegisterArcaConfigFields"
-import { CheckoutDialogFooter } from "@/components/checkout/CheckoutDialogFooter"
-import { CheckoutSectionLabel } from "@/components/checkout/CheckoutFormFields"
-import { Checkbox } from "@/components/ui/checkbox"
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { cn } from "@/lib/utils"
+  RootsDialogBody,
+  RootsDialogContent,
+  RootsDialogDualActionFooter,
+  RootsDialogErrorBanner,
+  RootsDialogForm,
+  RootsDialogHeader,
+} from "@/components/rootsy-dialog"
 import {
-  saleOpDialogHeader,
-  saleOpLightFormInput,
-} from "@/components/sale-operation/saleOperationStyles"
-import { useEffect, useRef, useState, type FormEvent } from "react"
+  RootsFormCheckboxField,
+  RootsFormGrid,
+  RootsFormTextField,
+  rootsFormColumnClass,
+} from "@/components/rootsy-form"
+import { Dialog } from "@/components/ui/dialog"
+import { useEffect, useState, type FormEvent } from "react"
 
 export type CashRegisterEditSubmitPayload = {
   name: string
@@ -76,10 +70,6 @@ export function CashRegisterEditDialog({
   formatDateTime,
   onSubmit,
 }: Props) {
-  const crtRef = useRef<HTMLInputElement>(null)
-  const keyRef = useRef<HTMLInputElement>(null)
-  const formRef = useRef<HTMLFormElement>(null)
-
   const [name, setName] = useState("")
   const [isActive, setIsActive] = useState(true)
   const [cashTreasuryAccountId, setCashTreasuryAccountId] = useState("")
@@ -99,8 +89,6 @@ export function CashRegisterEditDialog({
     setArcaExpiresAt(row.arcaCertificateExpiresAt ?? "")
     setCrtFile(null)
     setKeyFile(null)
-    if (crtRef.current) crtRef.current.value = ""
-    if (keyRef.current) keyRef.current.value = ""
   }, [open, row, cashTreasuryAccounts])
 
   const canSubmit =
@@ -136,106 +124,81 @@ export function CashRegisterEditDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className={cashRegisterDialogContentClass}>
-        <DialogHeader className={cn(saleOpDialogHeader, "shrink-0")}>
-          <DialogTitle className="text-base font-semibold tracking-tight">
-            Editar caja
-          </DialogTitle>
-          <DialogDescription className="sr-only">
-            {row?.name
+      <RootsDialogContent size="twoCol">
+        <RootsDialogHeader
+          title="Editar caja"
+          description={
+            row?.name
               ? `Configuración de ${row.name}`
-              : "Nombre, cuenta de efectivo y facturación electrónica."}
-          </DialogDescription>
-        </DialogHeader>
+              : "Nombre, cuenta de efectivo y facturación electrónica."
+          }
+          descriptionHidden
+        />
+        <RootsDialogForm onSubmit={handleSubmit}>
+          <RootsDialogBody>
+            {banner ? <RootsDialogErrorBanner>{banner}</RootsDialogErrorBanner> : null}
+            <RootsFormGrid>
+              <div className={rootsFormColumnClass}>
+                <RootsFormTextField
+                  label="Nombre"
+                  id="cr-edit-name"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  required
+                />
 
-        <form
-          ref={formRef}
-          onSubmit={handleSubmit}
-          className="flex min-h-0 flex-1 flex-col overflow-hidden"
-        >
-          <CashRegisterDialogTwoColumnBody
-            banner={banner}
-            left={
-              <>
-                <div className="space-y-5">
-                  <div className="space-y-2.5">
-                    <CheckoutSectionLabel>Nombre</CheckoutSectionLabel>
-                    <Input
-                      id="cr-edit-name"
-                      value={name}
-                      onChange={(e) => setName(e.target.value)}
-                      required
-                      className={saleOpLightFormInput}
-                    />
-                  </div>
+                <RootsFormCheckboxField
+                  id="cr-edit-active"
+                  label="Caja activa"
+                  checked={isActive}
+                  onCheckedChange={setIsActive}
+                />
 
-                  <div className="flex items-center gap-2.5">
-                    <Checkbox
-                      id="cr-edit-active"
-                      checked={isActive}
-                      onCheckedChange={(checked) => setIsActive(checked === true)}
-                    />
-                    <Label
-                      htmlFor="cr-edit-active"
-                      className="cursor-pointer text-sm font-normal text-foreground"
-                    >
-                      Caja activa
-                    </Label>
-                  </div>
-
-                  <div className="space-y-2.5">
-                    <CheckoutSectionLabel>Cuenta de efectivo destino</CheckoutSectionLabel>
-                    <CashRegisterTreasuryAccountSelect
-                      id="cr-edit-treasury"
-                      value={cashTreasuryAccountId}
-                      onValueChange={setCashTreasuryAccountId}
-                      accounts={cashTreasuryAccounts}
-                    />
-                  </div>
-                </div>
+                <CashRegisterTreasuryAccountSelect
+                  id="cr-edit-treasury"
+                  label="Cuenta de efectivo destino"
+                  value={cashTreasuryAccountId}
+                  onValueChange={setCashTreasuryAccountId}
+                  accounts={cashTreasuryAccounts}
+                />
 
                 <CashRegisterArcaPopFiscalPanel
                   fiscalCuit={popFiscalCuit}
                   fiscalRazonSocial={popFiscalRazonSocial}
                   settingsHref={settingsHref}
                 />
-              </>
-            }
-            right={
-              <CashRegisterArcaConfigFields
-                idPrefix="cr-edit"
-                arcaPtoVta={arcaPtoVta}
-                onArcaPtoVtaChange={setArcaPtoVta}
-                arcaExpiresAt={arcaExpiresAt}
-                onArcaExpiresAtChange={setArcaExpiresAt}
-                crtRef={crtRef}
-                keyRef={keyRef}
-                crtFile={crtFile}
-                onCrtFileChange={setCrtFile}
-                keyFile={keyFile}
-                onKeyFileChange={setKeyFile}
-                storedCrtName={storedCrtName}
-                storedKeyName={storedKeyName}
-                storedCrtUploadedAt={storedCrtUploadedAt}
-                storedKeyUploadedAt={storedKeyUploadedAt}
-                certExpiryLabel={certExpiryLabel}
-              />
-            }
-          />
+              </div>
 
-          <CheckoutDialogFooter
+              <div className={rootsFormColumnClass}>
+                <CashRegisterArcaConfigFields
+                  idPrefix="cr-edit"
+                  arcaPtoVta={arcaPtoVta}
+                  onArcaPtoVtaChange={setArcaPtoVta}
+                  arcaExpiresAt={arcaExpiresAt}
+                  onArcaExpiresAtChange={setArcaExpiresAt}
+                  crtFile={crtFile}
+                  onCrtFileChange={setCrtFile}
+                  keyFile={keyFile}
+                  onKeyFileChange={setKeyFile}
+                  storedCrtName={storedCrtName}
+                  storedKeyName={storedKeyName}
+                  storedCrtUploadedAt={storedCrtUploadedAt}
+                  storedKeyUploadedAt={storedKeyUploadedAt}
+                  certExpiryLabel={certExpiryLabel}
+                />
+              </div>
+            </RootsFormGrid>
+          </RootsDialogBody>
+          <RootsDialogDualActionFooter
             onCancel={() => onOpenChange(false)}
-            cancelDisabled={saving}
-            primary={{
-              label: "Guardar",
-              onClick: () => formRef.current?.requestSubmit(),
-              disabled: !canSubmit,
-              loading: saving,
-              loadingLabel: "Guardando…",
-            }}
+            confirmLabel="Guardar"
+            confirmLoadingLabel="Guardando…"
+            confirmType="submit"
+            confirmDisabled={!canSubmit}
+            confirmLoading={saving}
           />
-        </form>
-      </DialogContent>
+        </RootsDialogForm>
+      </RootsDialogContent>
     </Dialog>
   )
 }
