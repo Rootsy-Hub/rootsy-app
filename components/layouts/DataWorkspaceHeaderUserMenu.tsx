@@ -23,6 +23,7 @@ import { cn } from "@/lib/utils"
 import { LogOut, UserCog } from "lucide-react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
+import { useEffect, useMemo, useState } from "react"
 
 export type DataWorkspaceHeaderUserMenuProps = {
   userName: string
@@ -43,9 +44,20 @@ export function DataWorkspaceHeaderUserMenu({
   const { logOut } = useAuth()
   const router = useRouter()
 
+  const dicebearAvatarSrc = useMemo(
+    () =>
+      `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(userName || "u")}`,
+    [userName],
+  )
+  const profileAvatarSrc = userAvatarSrc?.trim() || null
+  const [profileImageFailed, setProfileImageFailed] = useState(false)
+
+  useEffect(() => {
+    setProfileImageFailed(false)
+  }, [profileAvatarSrc])
+
   const avatarSrc =
-    userAvatarSrc?.trim() ||
-    `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(userName || "u")}`
+    profileAvatarSrc && !profileImageFailed ? profileAvatarSrc : dicebearAvatarSrc
 
   const initials = userName.trim().slice(0, 2).toUpperCase() || "·"
 
@@ -70,7 +82,16 @@ export function DataWorkspaceHeaderUserMenu({
           aria-haspopup="menu"
         >
           <Avatar className="size-full rounded-[inherit]">
-            <AvatarImage src={avatarSrc} alt="" className="object-cover" />
+            <AvatarImage
+              src={avatarSrc}
+              alt=""
+              className="object-cover"
+              onLoadingStatusChange={(status) => {
+                if (status === "error" && profileAvatarSrc && !profileImageFailed) {
+                  setProfileImageFailed(true)
+                }
+              }}
+            />
             <AvatarFallback
               className={cn(
                 "rounded-[inherit] text-[11px] font-semibold",

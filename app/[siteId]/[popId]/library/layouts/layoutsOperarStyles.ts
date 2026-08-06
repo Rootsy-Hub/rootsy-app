@@ -192,6 +192,10 @@ export const layoutsOperarCatalogCanvasScrollClass = cn(
 /** Grilla demo — sale usa grid-cols-3 en desktop. */
 export const layoutsOperarCatalogGridClass = "grid grid-cols-2 gap-3 xl:grid-cols-3"
 
+/** Skeleton catálogo — 2 colores: sombra-600 (card) + sombra-800 (bloques). */
+export const layoutsOperarCatalogSkeletonGhostClass =
+  "animate-pulse bg-[var(--rootsy-sombra-800)]"
+
 export const layoutsOperarProductCardClass = cn(
   "layouts-operar-product-card group relative grid h-[318px] w-full grid-rows-[152px_1fr] overflow-hidden rounded-2xl text-left",
   "border border-[var(--layouts-operar-border-dark-card)] bg-[var(--rootsy-sombra-600)]",
@@ -203,6 +207,16 @@ export const layoutsOperarProductCardListClass = cn(
   "layouts-operar-product-card group relative flex min-h-[152px] w-full items-stretch overflow-hidden rounded-2xl text-left",
   "border border-[var(--layouts-operar-border-dark-card)] bg-[var(--rootsy-sombra-600)]",
   "transition-[box-shadow,transform] duration-200 ease-out hover:-translate-y-0.5",
+)
+
+export const layoutsOperarProductCardSkeletonShellClass = cn(
+  layoutsOperarProductCardClass,
+  "pointer-events-none shadow-none hover:translate-y-0",
+)
+
+export const layoutsOperarProductCardListSkeletonShellClass = cn(
+  layoutsOperarProductCardListClass,
+  "pointer-events-none shadow-none hover:translate-y-0",
 )
 
 export const layoutsOperarProductCardListMediaClass =

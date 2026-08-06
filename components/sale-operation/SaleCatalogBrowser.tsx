@@ -5,6 +5,7 @@ import type { MenuCatalogCategorySection } from "@/app/[siteId]/[popId]/menu-cat
 import type { SaleCatalogProduct } from "@/components/sale-operation/saleCatalogProduct"
 import type { MenuCartItemKind } from "@/lib/menuCart"
 import type { MenuCatalogProduct } from "@/lib/menuCatalogProduct"
+import { SaleCatalogBrowserSkeleton } from "@/components/sale-operation/SaleCatalogBrowserSkeleton"
 import { SaleCatalogProductCard } from "@/components/sale-operation/SaleCatalogProductCard"
 import { SaleCatalogSidebarNav } from "@/components/sale-operation/SaleCatalogSidebarNav"
 import { useDataWorkspaceSidebar } from "@/components/layouts/useDataWorkspaceSidebar"
@@ -298,7 +299,7 @@ export function SaleCatalogBrowser({
           className={cn(
             "min-h-0",
             loading && !error
-              ? "flex flex-1 flex-col p-6"
+              ? cn(layoutsOperarCatalogCanvasScrollClass)
               : error
                 ? "flex flex-1 flex-col p-6"
                 : productosFiltrados.length === 0
@@ -307,9 +308,7 @@ export function SaleCatalogBrowser({
           )}
         >
           {loading && !error ? (
-            <div className="flex min-h-[200px] flex-1 items-center justify-center">
-              <p className="text-sm text-white/55">Cargando productos…</p>
-            </div>
+            <SaleCatalogBrowserSkeleton variant={modoVista} />
           ) : error ? (
             <div className="flex min-h-[200px] flex-1 flex-col items-center justify-center gap-2 text-center">
               <p className="max-w-md text-sm text-rose-300">{error}</p>

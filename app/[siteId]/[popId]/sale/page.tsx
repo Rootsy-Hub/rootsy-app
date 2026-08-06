@@ -48,6 +48,7 @@ import {
 import { LayoutsOperarMainGrid } from "@/components/layouts-module/LayoutsOperarMainGrid"
 import { useDataWorkspaceSidebar } from "@/components/layouts/useDataWorkspaceSidebar"
 import { useAuth } from "@/context/AuthContextSupabase"
+import { usePopWorkspace } from "@/context/PopWorkspaceContext"
 import { usePopSaleComprobanteFiscalContext } from "@/hooks/usePopSaleComprobanteFiscalContext"
 import { useParams } from "next/navigation"
 import {
@@ -196,6 +197,7 @@ function SalePage() {
     setOpen: setCatalogSidebarOpen,
   } = useDataWorkspaceSidebar(siteId, popId ?? "", Boolean(popId))
   const { user } = useAuth()
+  const { bootstrap, loading: bootstrapLoading } = usePopWorkspace()
 
   const [catalogArticles, setCatalogArticles] = useState<SaleCatalogArticle[]>(
     [],
@@ -216,7 +218,6 @@ function SalePage() {
   const [saleCategories, setSaleCategories] = useState<SaleCatalogCategory[]>(
     [],
   )
-  const [popName, setPopName] = useState("")
   const [catalogLoading, setCatalogLoading] = useState(true)
   const [catalogError, setCatalogError] = useState<string | null>(null)
 
@@ -240,7 +241,6 @@ function SalePage() {
       setCanReadCashRegisters(false)
       setOpenCashSession(null)
       setSaleCategories([])
-      setPopName("")
       setCatalogError(res.error)
       setCatalogLoading(false)
       return
@@ -256,7 +256,6 @@ function SalePage() {
     setOpenCashSession(res.openCashSession)
     setInvoiceTypeSiteId(res.invoiceTypeSiteId)
     setSaleCategories(res.categories)
-    setPopName(res.popName)
     setCatalogError(null)
     setCatalogLoading(false)
   }, [popId, siteId])
@@ -931,15 +930,12 @@ function SalePage() {
     "rounded-2xl border border-border/60 bg-card shadow-2xl sm:max-w-md",
   )
 
-  const headerUserName = useMemo(() => {
-    const meta = user?.user_metadata?.full_name
-    if (typeof meta === "string" && meta.trim()) return meta.trim()
-    return user?.email?.split("@")[0] || "Usuario"
-  }, [user?.email, user?.user_metadata?.full_name])
+  const headerUserName =
+    bootstrap?.userFullName?.trim() ||
+    user?.email?.split("@")[0] ||
+    "Usuario"
 
-  const userAvatarSrc =
-    user?.user_metadata?.avatar_url ||
-    `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(user?.email || "u")}`
+  const userAvatarSrc = bootstrap?.userImageUrl ?? undefined
 
   const descuentoToolboxLabel = hayDescuento
     ? modoDescuento === "porcentaje"
@@ -965,9 +961,9 @@ function SalePage() {
       <DataWorkspaceOperationsLayout
         siteId={siteId}
         popId={popId}
-        popName={popName}
+        popName={bootstrap?.popName ?? ""}
         title="Vender"
-        loading={catalogLoading}
+        loading={bootstrapLoading}
         userName={headerUserName}
         userAvatarSrc={userAvatarSrc}
         sidebarCollapsible
