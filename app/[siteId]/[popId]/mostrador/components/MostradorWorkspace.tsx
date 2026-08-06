@@ -11,7 +11,12 @@ import type { MostradorRightPanelView } from "@/app/[siteId]/[popId]/mostrador/m
 import { useMostradorSaleCheckout } from "@/app/[siteId]/[popId]/mostrador/useMostradorSaleCheckout"
 import { useMostradorState } from "@/app/[siteId]/[popId]/mostrador/useMostradorState"
 import { OperationsModuleBackdrop } from "@/components/layouts-module/DataWorkspaceOperationsLayout"
-import { getLayoutsOperarMainGridClass } from "@/app/[siteId]/[popId]/library/layouts/layoutsOperarHardcodedSpec"
+import { LayoutsOperarMainGrid } from "@/components/layouts-module/LayoutsOperarMainGrid"
+import {
+  layoutsOperarCatalogColumnClass,
+  layoutsOperarSummaryPanelClass,
+  layoutsOperarSummaryPanelInnerGridClass,
+} from "@/app/[siteId]/[popId]/library/layouts/layoutsOperarStyles"
 import { SaleOperationToolbox } from "@/components/sale-operation/SaleOperationToolbox"
 import { useCartListScrollHighlight } from "@/hooks/useCartListScrollHighlight"
 import { cn } from "@/lib/utils"
@@ -116,21 +121,23 @@ export function MostradorWorkspace({
         </div>
       ) : null}
 
-      <main className={cn("relative z-10 grid min-h-0 flex-1", getLayoutsOperarMainGridClass())}>
-        <section className="col-start-1 row-start-1 flex min-h-0 min-w-0 flex-col overflow-hidden bg-[#20262e]">
-          {!showCatalog ? (
-            <MostradorBoard
-              orders={orders}
-              loading={loading}
-              orderError={orderError}
-              selectedOrderId={selectedOrderId}
-              onSelectOrder={(id) => {
-                selectOrder(id)
-                setCreating(false)
-                setRightView("detail")
-              }}
-              onMoveOrder={moveOrderStatus}
-            />
+      <LayoutsOperarMainGrid
+        catalog={
+          !showCatalog ? (
+            <section className={layoutsOperarCatalogColumnClass}>
+              <MostradorBoard
+                orders={orders}
+                loading={loading}
+                orderError={orderError}
+                selectedOrderId={selectedOrderId}
+                onSelectOrder={(id) => {
+                  selectOrder(id)
+                  setCreating(false)
+                  setRightView("detail")
+                }}
+                onMoveOrder={moveOrderStatus}
+              />
+            </section>
           ) : (
             <MostradorCatalogPanel
               siteId={siteId}
@@ -138,56 +145,57 @@ export function MostradorWorkspace({
               checkout={checkout}
               catalogSidebarOpen={catalogSidebarOpen}
             />
-          )}
-        </section>
-
-        <div className="col-start-1 row-start-2 min-h-0">
-          <SaleOperationToolbox {...checkout.toolbox} />
-        </div>
-
-        <aside
-          className="rootsy-app-light col-start-2 row-span-2 grid min-h-0 grid-rows-[auto_minmax(0,1fr)] overflow-hidden bg-[#eef1f5] text-[#121417]"
-          aria-label="Panel de pedido"
-        >
-          <MostradorRightPanelTabs
-            value={rightView}
-            onChange={setRightView}
-            cartDisabled={!selectedOrder}
-          />
-
-          <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
-            {rightView === "detail" ? (
-              <CounterOrderPanel
-                order={selectedOrder}
-                orderError={orderError}
-                creating={creating}
-                onCancelCreate={() => setCreating(false)}
-                onCreateOrder={async (input) => {
-                  const ok = await createOrder(input)
-                  if (ok) setCreating(false)
-                  return ok
-                }}
-                onUpdateOrder={patchOrder}
-                onMoveOrder={moveOrderStatus}
-                onCancelOrder={cancelOrder}
-                canCancelOrder={checkout.puedeCancelarPedido}
-                canCloseOrder={checkout.puedeCerrarPedido}
-                closeOrderBlockReason={checkout.cerrarPedidoBlockReason}
-                closeOrderMode={checkout.cerrarPedidoMode}
-                closeOrderLoading={checkout.submitting}
-                onCloseOrder={async () => checkout.cerrarPedido()}
-                clientLabel={checkout.sessionClientLabel}
-              />
-            ) : (
-              <MostradorOrderPanel
-                checkout={checkout}
-                orderLabel={orderLabel}
-                cartScrollHighlight={cartScrollHighlight}
-              />
+          )
+        }
+        toolbox={<SaleOperationToolbox {...checkout.toolbox} />}
+        ticket={
+          <aside
+            className={cn(
+              layoutsOperarSummaryPanelClass,
+              "[grid-template-rows:auto_minmax(0,1fr)]",
             )}
-          </div>
-        </aside>
-      </main>
+            aria-label="Panel de pedido"
+          >
+            <MostradorRightPanelTabs
+              value={rightView}
+              onChange={setRightView}
+              cartDisabled={!selectedOrder}
+            />
+
+            <div className={layoutsOperarSummaryPanelInnerGridClass}>
+              {rightView === "detail" ? (
+                <CounterOrderPanel
+                  order={selectedOrder}
+                  orderError={orderError}
+                  creating={creating}
+                  onCancelCreate={() => setCreating(false)}
+                  onCreateOrder={async (input) => {
+                    const ok = await createOrder(input)
+                    if (ok) setCreating(false)
+                    return ok
+                  }}
+                  onUpdateOrder={patchOrder}
+                  onMoveOrder={moveOrderStatus}
+                  onCancelOrder={cancelOrder}
+                  canCancelOrder={checkout.puedeCancelarPedido}
+                  canCloseOrder={checkout.puedeCerrarPedido}
+                  closeOrderBlockReason={checkout.cerrarPedidoBlockReason}
+                  closeOrderMode={checkout.cerrarPedidoMode}
+                  closeOrderLoading={checkout.submitting}
+                  onCloseOrder={async () => checkout.cerrarPedido()}
+                  clientLabel={checkout.sessionClientLabel}
+                />
+              ) : (
+                <MostradorOrderPanel
+                  checkout={checkout}
+                  orderLabel={orderLabel}
+                  cartScrollHighlight={cartScrollHighlight}
+                />
+              )}
+            </div>
+          </aside>
+        }
+      />
 
       <MesasCheckoutModals checkout={checkout} confirmLabel="Cobrar pedido" contextLabel="pedido" />
     </div>

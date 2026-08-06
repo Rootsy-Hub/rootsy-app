@@ -1,6 +1,16 @@
 "use client"
 
 import {
+  layoutsOperarTicketProposalTotalsBreakdownAmountClass,
+  layoutsOperarTicketProposalTotalsBreakdownLabelClass,
+  layoutsOperarTicketProposalTotalsDividerClass,
+  layoutsOperarTicketProposalTotalsGridClass,
+  layoutsOperarTicketProposalTotalsMainAmountClass,
+  layoutsOperarTicketProposalTotalsMainLabelClass,
+  layoutsOperarTicketProposalTotalsShellClass,
+} from "@/app/[siteId]/[popId]/library/layouts/layoutsOperarHardcodedSpec"
+import { LAYOUTS_OPERAR_DEFAULT_TICKET_PROPOSAL } from "@/app/[siteId]/[popId]/library/layouts/rootsyLayoutsOperarSystem"
+import {
   saleOpFooterBandHeightClass,
   saleOpFooterBarPaddingClass,
   saleOpFmt,
@@ -34,8 +44,8 @@ export type SaleOperationTotalBarProps = {
   flush?: boolean
   totalLabel?: string
   totalAriaLabel?: string
-  /** `pos` = footer verde de ventas/mesas; `modal` = paleta clara para detalle en modal */
-  tone?: "pos" | "modal"
+  /** `pos` = footer verde de ventas/mesas; `modal` = paleta clara para detalle en modal; `operar` = bruma-savia del layout operar */
+  tone?: "pos" | "modal" | "operar"
 }
 
 const breakdownLabelPosClass =
@@ -75,9 +85,13 @@ export function SaleOperationTotalBar({
   tone = "pos",
 }: SaleOperationTotalBarProps) {
   const isModal = tone === "modal"
+  const isOperar = tone === "operar"
+  const ticketProposalId = LAYOUTS_OPERAR_DEFAULT_TICKET_PROPOSAL
   const breakdownLabelClass = isModal
     ? breakdownLabelModalClass
-    : breakdownLabelPosClass
+    : isOperar
+      ? layoutsOperarTicketProposalTotalsBreakdownLabelClass(ticketProposalId)
+      : breakdownLabelPosClass
   const itemsDiscountAmount =
     descuentoItemsMonto ?? descuentoCatalogoMonto ?? 0
   const showItemsDiscount =
@@ -96,23 +110,31 @@ export function SaleOperationTotalBar({
 
   const subtotalAmountClass = isModal
     ? modalAmountCellClass
-    : cn(
-        saleOpImporteBaseClass,
-        amountColumnClass,
-        "text-sm font-semibold text-white/78",
-      )
+    : isOperar
+      ? layoutsOperarTicketProposalTotalsBreakdownAmountClass(ticketProposalId)
+      : cn(
+          saleOpImporteBaseClass,
+          amountColumnClass,
+          "text-sm font-semibold text-white/78",
+        )
   const discountAmountClass = isModal
     ? modalAmountCellClass
-    : cn(saleOpImporteTotalDiscountClass, amountColumnClass)
+    : isOperar
+      ? layoutsOperarTicketProposalTotalsBreakdownAmountClass(ticketProposalId, "discount")
+      : cn(saleOpImporteTotalDiscountClass, amountColumnClass)
   const totalLabelClass = isModal
     ? "self-center text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground"
-    : "self-center text-[10px] font-semibold uppercase tracking-[0.16em] text-emerald-200/80"
+    : isOperar
+      ? layoutsOperarTicketProposalTotalsMainLabelClass(ticketProposalId)
+      : "self-center text-[10px] font-semibold uppercase tracking-[0.16em] text-emerald-200/80"
   const totalAmountClass = isModal
     ? cn(
         saleOpImporteCartClass,
         "justify-self-end pt-0.5 text-right text-base font-semibold",
       )
-    : cn(saleOpImporteTotalClass, amountColumnClass, "self-center")
+    : isOperar
+      ? layoutsOperarTicketProposalTotalsMainAmountClass(ticketProposalId)
+      : cn(saleOpImporteTotalClass, amountColumnClass, "self-center")
 
   return (
     <div
@@ -120,24 +142,26 @@ export function SaleOperationTotalBar({
       aria-label={totalAriaLabel ?? totalLabel}
       className={cn(
         "relative box-border flex w-full shrink-0 flex-col justify-center",
-        isModal
-          ? cn(
-              "border-t border-slate-200/90 bg-white",
-              flush ? "py-2.5" : saleOpFooterBarPaddingClass,
-            )
-          : cn(
-              "backdrop-blur-xl",
-              flush
-                ? "border-t-0 px-3 py-2 sm:px-3 sm:py-2.5"
-                : cn("border-t border-emerald-500/35", saleOpFooterBarPaddingClass),
-              showSubtotalBreakdown
-                ? "min-h-[calc(5.75rem+1.5rem)] sm:min-h-[calc(6rem+2rem)]"
-                : saleOpFooterBandHeightClass,
-            ),
+        isOperar
+          ? layoutsOperarTicketProposalTotalsShellClass(ticketProposalId)
+          : isModal
+            ? cn(
+                "border-t border-slate-200/90 bg-white",
+                flush ? "py-2.5" : saleOpFooterBarPaddingClass,
+              )
+            : cn(
+                "backdrop-blur-xl",
+                flush
+                  ? "border-t-0 px-3 py-2 sm:px-3 sm:py-2.5"
+                  : cn("border-t border-emerald-500/35", saleOpFooterBarPaddingClass),
+                showSubtotalBreakdown
+                  ? "min-h-[calc(5.75rem+1.5rem)] sm:min-h-[calc(6rem+2rem)]"
+                  : saleOpFooterBandHeightClass,
+              ),
         className,
       )}
     >
-      {!isModal ? (
+      {!isModal && !isOperar ? (
         <>
           <div
             className="pointer-events-none absolute inset-0 bg-[linear-gradient(145deg,#07120e_0%,#0c1f17_42%,#061009_100%)]"
@@ -159,7 +183,9 @@ export function SaleOperationTotalBar({
           "relative z-10 w-full",
           isModal
             ? modalSummaryGridClass
-            : "grid grid-cols-[minmax(0,1fr)_auto] gap-x-4 gap-y-0.5",
+            : isOperar
+              ? layoutsOperarTicketProposalTotalsGridClass(ticketProposalId)
+              : "grid grid-cols-[minmax(0,1fr)_auto] gap-x-4 gap-y-0.5",
         )}
       >
         {showSubtotalBreakdown ? (
@@ -235,6 +261,12 @@ export function SaleOperationTotalBar({
                 </p>
               </>
             ) : null}
+            {isOperar ? (
+              <div
+                className={layoutsOperarTicketProposalTotalsDividerClass(ticketProposalId)}
+                aria-hidden
+              />
+            ) : null}
           </>
         ) : null}
         <p className={cn(totalLabelClass, isModal && modalSummaryLabelClass)}>
@@ -247,7 +279,7 @@ export function SaleOperationTotalBar({
         >
           {saleOpFmt.format(total)}
         </p>
-        {!isModal ? (
+        {!isModal && !isOperar ? (
           <>
             <span aria-hidden className="min-h-0" />
             <span

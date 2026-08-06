@@ -12,7 +12,8 @@ import {
   layoutsOperarCatalogCanvasClass,
   layoutsOperarCatalogCanvasScrollClass,
   layoutsOperarCatalogColumnClass,
-  layoutsOperarCatalogColumnInMainGridClass,
+  layoutsOperarCatalogRowClass,
+  layoutsOperarOperationColumnClass,
   layoutsOperarCatalogGridClass,
   layoutsOperarCatalogSidebarClass,
   layoutsOperarCatalogSidebarOpenClass,
@@ -23,6 +24,8 @@ import {
   layoutsOperarSummaryCartMetaClass,
   layoutsOperarSummaryCartRowClass,
   layoutsOperarSummaryActionsRowClass,
+  layoutsOperarSummaryActionDiscardColClass,
+  layoutsOperarSummaryActionConfirmColClass,
   layoutsOperarSummaryHeaderRowClass,
   layoutsOperarSummaryTotalRowClass,
   layoutsOperarSummaryEmptyIconWrapClass,
@@ -368,7 +371,7 @@ function LayoutsOperarCatalogColumn({
   inMainGrid?: boolean
 }) {
   return (
-    <div className={inMainGrid ? layoutsOperarCatalogColumnInMainGridClass : layoutsOperarCatalogColumnClass}>
+    <div className={inMainGrid ? layoutsOperarCatalogColumnClass : layoutsOperarCatalogColumnClass}>
       <aside
         className={cn(layoutsOperarCatalogSidebarClass, layoutsOperarCatalogSidebarOpenClass, wireframe && "relative")}
         aria-label="Filtros del catálogo"
@@ -455,11 +458,15 @@ function LayoutsOperarSummaryPanel({
             <LayoutsOperarSummaryEmptyOrder />
           </div>
           <div className={layoutsOperarSummaryActionsRowClass}>
-            <div className="flex items-center justify-center text-sm font-semibold text-rose-700">
-              Descartar
+            <div className={layoutsOperarSummaryActionDiscardColClass}>
+              <div className="flex h-full w-full items-center justify-center text-sm font-semibold text-rose-700">
+                Descartar
+              </div>
             </div>
-            <div className="flex items-center justify-center bg-[var(--rootsy-savia-600)] text-sm font-semibold text-white">
-              Vender
+            <div className={layoutsOperarSummaryActionConfirmColClass}>
+              <div className="flex h-full w-full items-center justify-center bg-[var(--rootsy-savia-600)] text-sm font-semibold text-white">
+                Vender
+              </div>
             </div>
           </div>
           <div className={layoutsOperarSummaryTotalRowClass}>
@@ -490,21 +497,25 @@ export function LayoutsOperarBody({
       style={getLayoutsOperarGridCssVariables()}
     >
       <main className={cn(layoutsOperarBodyMainGridClass, "relative z-10 h-full min-h-0")}>
-        <LayoutsOperarCatalogColumn wireframe={wireframe} composed={composed} inMainGrid />
-        {wireframe ? (
-          <LayoutsOperarWireframeToolboxZone
-            measureBadge={
-              <LayoutHeightBadge
-                label={`toolbox · min ${LAYOUTS_OPERAR_ANATOMY.toolboxRowMinHeightPx}px`}
-                onDark
-              />
-            }
-          />
-        ) : composed ? (
-          <LayoutsOperarToolboxProposalGridCell
-            proposalId={LAYOUTS_OPERAR_DEFAULT_TOOLBOX_PROPOSAL}
-          />
-        ) : null}
+        <div className={layoutsOperarOperationColumnClass}>
+          <div className={layoutsOperarCatalogRowClass}>
+            <LayoutsOperarCatalogColumn wireframe={wireframe} composed={composed} inMainGrid />
+          </div>
+          {wireframe ? (
+            <LayoutsOperarWireframeToolboxZone
+              measureBadge={
+                <LayoutHeightBadge
+                  label={`toolbox · min ${LAYOUTS_OPERAR_ANATOMY.toolboxRowMinHeightPx}px`}
+                  onDark
+                />
+              }
+            />
+          ) : composed ? (
+            <LayoutsOperarToolboxProposalGridCell
+              proposalId={LAYOUTS_OPERAR_DEFAULT_TOOLBOX_PROPOSAL}
+            />
+          ) : null}
+        </div>
         {wireframe ? (
           <LayoutsOperarSummaryPanel wireframe={wireframe} composed={composed} />
         ) : composed ? (
@@ -591,51 +602,55 @@ function LayoutsOperarContentGridWireframeBody() {
       </div>
 
       <main className={cn(layoutsOperarBodyMainGridClass, "relative z-10 h-full min-h-0")}>
-        <div className={layoutsOperarCatalogColumnInMainGridClass}>
-          <div
-            className={cn(layoutsOperarWireframeCatalogSidebarClass, "relative")}
-            style={zoneStyle("sidebar")}
-          >
-            <LayoutsOperarWireframeZoneLabel
-              zone="sidebar"
-              mode="fijo"
-              measure={`${a.catalogSidebarWidthPx}px`}
-              onDark
-            />
+        <div className={layoutsOperarOperationColumnClass}>
+          <div className={layoutsOperarCatalogRowClass}>
+            <div className={layoutsOperarCatalogColumnClass}>
+              <div
+                className={cn(layoutsOperarWireframeCatalogSidebarClass, "relative")}
+                style={zoneStyle("sidebar")}
+              >
+                <LayoutsOperarWireframeZoneLabel
+                  zone="sidebar"
+                  mode="fijo"
+                  measure={`${a.catalogSidebarWidthPx}px`}
+                  onDark
+                />
+              </div>
+              <section className={layoutsOperarWireframeCatalogCanvasClass}>
+                <div
+                  className={layoutsOperarWireframeCatalogToolbarClass}
+                  style={zoneStyle("toolbar")}
+                >
+                  <LayoutsOperarWireframeZoneLabel
+                    zone="toolbar"
+                    mode="fijo"
+                    measure={`${a.catalogToolbarHeightPx}px`}
+                    onDark
+                  />
+                </div>
+                <div className="relative min-h-0" style={zoneStyle("canvas")}>
+                  <LayoutsOperarWireframeZoneLabel
+                    zone="canvas"
+                    mode="fluido"
+                    measure="1fr"
+                    onDark
+                  />
+                </div>
+              </section>
+            </div>
           </div>
-          <section className={layoutsOperarWireframeCatalogCanvasClass}>
-            <div
-              className={layoutsOperarWireframeCatalogToolbarClass}
-              style={zoneStyle("toolbar")}
-            >
-              <LayoutsOperarWireframeZoneLabel
-                zone="toolbar"
-                mode="fijo"
-                measure={`${a.catalogToolbarHeightPx}px`}
-                onDark
-              />
-            </div>
-            <div className="relative min-h-0" style={zoneStyle("canvas")}>
-              <LayoutsOperarWireframeZoneLabel
-                zone="canvas"
-                mode="fluido"
-                measure="1fr"
-                onDark
-              />
-            </div>
-          </section>
-        </div>
 
-        <LayoutsOperarWireframeToolboxZone
-          measureBadge={
-            <LayoutsOperarWireframeZoneLabel
-              zone="toolbox"
-              mode="min"
-              measure={`${a.toolboxRowMinHeightPx}px`}
-              onDark
-            />
-          }
-        />
+          <LayoutsOperarWireframeToolboxZone
+            measureBadge={
+              <LayoutsOperarWireframeZoneLabel
+                zone="toolbox"
+                mode="min"
+                measure={`${a.toolboxRowMinHeightPx}px`}
+                onDark
+              />
+            }
+          />
+        </div>
 
         <aside className={cn(layoutsOperarWireframeSummaryPanelClass, "relative")}>
           <div className="relative" style={zoneStyle("ticket-header")}>

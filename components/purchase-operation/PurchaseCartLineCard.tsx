@@ -300,7 +300,7 @@ export function PurchaseCartLineCard({
         {tieneDescuentoItem && descuentoBannerLabel ? (
           <MostradorCartPromoBanner
             label={descuentoBannerLabel}
-            variant="discount"
+            promoVariant="discount"
             discountMode={modoItemDescuento}
             discountAmount={linePricing.itemDiscountAmount}
             finalTotal={lineTotal}

@@ -11,6 +11,7 @@ type Props = {
   compactLayout?: boolean
   importeClassName?: string
   discountBadgeClassName?: string
+  variant?: "legacy" | "operar"
 }
 
 export function MostradorCartTicketGroup({
@@ -19,10 +20,11 @@ export function MostradorCartTicketGroup({
   compactLayout = false,
   importeClassName,
   discountBadgeClassName,
+  variant: lineVariant = "operar",
 }: Props) {
   const hasPromoHeader = Boolean(group.promoLabel?.trim())
-  const variant = group.promoVariant ?? "promotion"
-  const isDiscount = variant === "discount"
+  const promoVariant = group.promoVariant ?? "promotion"
+  const isDiscount = promoVariant === "discount"
 
   if (!hasPromoHeader) {
     return (
@@ -37,20 +39,22 @@ export function MostradorCartTicketGroup({
   return (
     <section
       className={cn(
-        isDiscount
-          ? "border-l-[3px] border-l-emerald-400"
-          : "border-l-[3px] border-l-violet-400",
+        lineVariant === "legacy" &&
+          (isDiscount
+            ? "border-l-[3px] border-l-emerald-400"
+            : "border-l-[3px] border-l-violet-400"),
       )}
       aria-label={`Grupo: ${group.promoLabel}`}
     >
       <MostradorCartPromoBanner
         label={group.promoLabel!}
-        variant={variant}
+        promoVariant={promoVariant}
         discountMode={group.promoDiscountMode}
         pricing={group.groupPricing}
         compactLayout={compactLayout}
         importeClassName={importeClassName}
         discountBadgeClassName={discountBadgeClassName}
+        lineVariant={lineVariant}
       />
       {group.rows.map((row) => (
         <div key={row.rowKey}>{renderRow(row)}</div>

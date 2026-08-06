@@ -1,6 +1,15 @@
 "use client"
 
 import { CartLineScrollTarget } from "@/components/sale-operation/CartLineScrollTarget"
+import { useSaleScanInputFocus } from "@/components/sale-operation/SaleScanInputFocusContext"
+import {
+  layoutsOperarTicketProposalLineAmountClass,
+  layoutsOperarTicketProposalLineCommentClass,
+  layoutsOperarTicketProposalLineGridClass,
+  layoutsOperarTicketProposalLineNameClass,
+  layoutsOperarTicketProposalQtyClass,
+} from "@/app/[siteId]/[popId]/library/layouts/layoutsOperarHardcodedSpec"
+import { LAYOUTS_OPERAR_DEFAULT_TICKET_PROPOSAL } from "@/app/[siteId]/[popId]/library/layouts/rootsyLayoutsOperarSystem"
 import type { OperationCartLineOverrideState } from "@/components/sale-operation/OperationCartLineRow"
 import { CheckoutDialogFooter } from "@/components/checkout/CheckoutDialogFooter"
 import {
@@ -60,7 +69,10 @@ type Props = {
   onApplyEdits: (input: MostradorCartLineEditInput) => void
   onRemove: () => void
   grouped?: boolean
+  variant?: "legacy" | "operar"
 }
+
+const TICKET_PROPOSAL = LAYOUTS_OPERAR_DEFAULT_TICKET_PROPOSAL
 
 const QUANTITY_INPUT_MAX_LEN = 11
 
@@ -112,6 +124,7 @@ export function MostradorCartLineCard({
   paidPartialUnits = {},
   onApplyEdits,
   onRemove,
+  variant = "operar",
 }: Props) {
   const paymentStatus = getRowPaymentStatus(row, paidPartialUnits)
   const {
@@ -196,7 +209,12 @@ export function MostradorCartLineCard({
     setOpen(true)
   }
 
-  const closeModal = () => setOpen(false)
+  const scanFocus = useSaleScanInputFocus()
+
+  const closeModal = () => {
+    setOpen(false)
+    scanFocus?.focusScanInput()
+  }
 
   const handleDone = () => {
     const parsedQuantity = parseQuantityDraft(
@@ -274,19 +292,30 @@ export function MostradorCartLineCard({
     setDiscountDraft(nextValue)
   }
 
+  const isOperar = variant === "operar"
   const showLinePrice = showPrice && row.promoGroupVariant !== "discount"
-  const rowGridLayoutClass =
-    showLinePrice || !showPrice ? cartLineRowGridClass : cartLineRowGridNoPriceClass
+  const rowGridLayoutClass = isOperar
+    ? layoutsOperarTicketProposalLineGridClass(TICKET_PROPOSAL)
+    : showLinePrice || !showPrice
+      ? cartLineRowGridClass
+      : cartLineRowGridNoPriceClass
 
   const rowContent = (
     <>
-      <CartLineQuantityLabel cantidad={row.cantidad} />
+      <CartLineQuantityLabel
+        cantidad={row.cantidad}
+        className={
+          isOperar ? layoutsOperarTicketProposalQtyClass(TICKET_PROPOSAL) : undefined
+        }
+      />
 
       <span className="min-w-0">
         <span className="flex items-center gap-1.5">
           <span
             className={cn(
-              "block text-sm font-semibold leading-snug text-slate-900",
+              isOperar
+                ? layoutsOperarTicketProposalLineNameClass(TICKET_PROPOSAL)
+                : "block text-sm font-semibold leading-snug text-slate-900",
               paymentStatus.isFullyPaid && "line-through decoration-emerald-600/50",
             )}
           >
@@ -306,13 +335,24 @@ export function MostradorCartLineCard({
         <CartLineSubtitleRow
           descripcion={productoDescripcion}
           showDescripcion={showDescripcion}
+          className={
+            isOperar
+              ? "mt-0.5 line-clamp-1 text-xs leading-snug text-[var(--layouts-operar-light-cart-line-meta)]"
+              : undefined
+          }
         />
       </span>
 
       {showLinePrice || !showPrice ? (
         <span className="pt-0.5 text-right">
           {showLinePrice ? (
-            <span className={saleOpImporteCartClass}>
+            <span
+              className={
+                isOperar
+                  ? layoutsOperarTicketProposalLineAmountClass(TICKET_PROPOSAL)
+                  : saleOpImporteCartClass
+              }
+            >
               {saleOpFmt.format(pricing.precioFinal)}
             </span>
           ) : (
@@ -329,8 +369,15 @@ export function MostradorCartLineCard({
       <div
         className={cn(
           "w-full",
-          paymentStatus.isFullyPaid && "bg-emerald-50/70",
-          paymentStatus.isPartiallyPaid && "bg-emerald-50/35",
+          isOperar
+            ? paymentStatus.isFullyPaid && "bg-[color-mix(in_srgb,var(--rootsy-savia-400)_10%,var(--rootsy-bruma-100))]"
+            : cn(
+                paymentStatus.isFullyPaid && "bg-emerald-50/70",
+                paymentStatus.isPartiallyPaid && "bg-emerald-50/35",
+              ),
+          isOperar &&
+            paymentStatus.isPartiallyPaid &&
+            "bg-[color-mix(in_srgb,var(--rootsy-savia-400)_6%,var(--rootsy-bruma-100))]",
         )}
       >
         {isCartLineLocked ? (
@@ -349,7 +396,10 @@ export function MostradorCartLineCard({
             onClick={openModal}
             className={cn(
               rowGridLayoutClass,
-              "bg-transparent transition-colors hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-slate-300/80",
+              !isOperar &&
+                "bg-transparent transition-colors hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-slate-300/80",
+              isOperar &&
+                "bg-transparent transition-colors hover:bg-[color-mix(in_srgb,var(--rootsy-bruma-200)_35%,transparent)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[color-mix(in_srgb,var(--rootsy-savia-400)_35%,transparent)]",
             )}
             aria-label={`Editar ${row.nombre}`}
           >
@@ -358,10 +408,25 @@ export function MostradorCartLineCard({
         )}
 
         {tieneComentario ? (
-          <div className={cn(saleOpCartLineDividerTopClass, "bg-slate-50/80 px-3 py-2")}>
-            <p className="text-[11px] leading-snug text-slate-600">
+          <div
+            className={
+              isOperar
+                ? layoutsOperarTicketProposalLineCommentClass(TICKET_PROPOSAL)
+                : cn(saleOpCartLineDividerTopClass, "bg-slate-50/80 px-3 py-2")
+            }
+          >
+            <p
+              className={
+                isOperar
+                  ? undefined
+                  : "text-[11px] leading-snug text-slate-600"
+              }
+            >
               <MessageSquare
-                className="mr-1 inline size-3 -translate-y-px text-slate-400"
+                className={cn(
+                  "mr-1 inline size-3 -translate-y-px",
+                  isOperar ? "text-[var(--layouts-operar-light-cart-line-meta)]" : "text-slate-400",
+                )}
                 aria-hidden
               />
               {comentario.trim()}

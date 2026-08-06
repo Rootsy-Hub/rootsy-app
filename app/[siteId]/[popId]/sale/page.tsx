@@ -1,7 +1,6 @@
 "use client"
 
 import withAuth from "@/hoc/withAuth"
-import Image from "next/image"
 import { completeSale } from "@/app/[siteId]/[popId]/sale/completeSale"
 import {
   getSaleCatalog,
@@ -33,14 +32,11 @@ import {
   CLIENT_IVA_CONDITION_OPTIONS,
   type ClientIvaConditionValue,
 } from "@/app/[siteId]/[popId]/clients/clientIvaConstants"
-import {
-  readSavedSaleCatalogView,
-  writeSavedSaleCatalogView,
-  type SaleCatalogViewPersisted,
-} from "@/lib/saleCatalogPreference"
 import { CLIENT_ACCOUNT_PAYMENT_LABEL } from "@/lib/operationPaymentLabels"
 import { OpenCashSessionBanner } from "@/components/sale-operation/OpenCashSessionBanner"
 import { SalePaymentMethodDialog } from "@/components/sale-operation/SalePaymentMethodDialog"
+import { SaleCatalogBrowser } from "@/components/sale-operation/SaleCatalogBrowser"
+import { SaleOperationToolbox } from "@/components/sale-operation/SaleOperationToolbox"
 import { OperationPartyPickerDialog } from "@/components/checkout/OperationPartyPickerDialog"
 import { SaleComprobantePickerDialog } from "@/components/checkout/SaleComprobantePickerDialog"
 import type { SaleComprobantePreviewInput } from "@/components/checkout/SaleComprobanteTicketPreview"
@@ -49,6 +45,7 @@ import {
   DataWorkspaceOperationsLayout,
   OperationsModuleBackdrop,
 } from "@/components/layouts-module/DataWorkspaceOperationsLayout"
+import { LayoutsOperarMainGrid } from "@/components/layouts-module/LayoutsOperarMainGrid"
 import { useDataWorkspaceSidebar } from "@/components/layouts/useDataWorkspaceSidebar"
 import { useAuth } from "@/context/AuthContextSupabase"
 import { usePopSaleComprobanteFiscalContext } from "@/hooks/usePopSaleComprobanteFiscalContext"
@@ -66,10 +63,7 @@ import {
   CircleX,
   Loader2,
   MessageSquare,
-  Percent,
-  Plus,
   Receipt,
-  Tag,
   User,
 } from "lucide-react"
 import { usePadronAutofillRazonSocial } from "@/hooks/usePadronAutofillRazonSocial"
@@ -104,25 +98,17 @@ import {
 import { Separator } from "@/components/ui/separator"
 import { SimpleOperationCheckoutConfirmDialog } from "@/components/checkout/SimpleOperationCheckoutConfirmDialog"
 import { SaleOperationTicketOrderPanel } from "@/components/sale-operation/SaleOperationTicketOrderPanel"
+import {
+  SaleScanInputFocusProvider,
+  useSaleScanInputFocus,
+} from "@/components/sale-operation/SaleScanInputFocusContext"
 import { PromotionComboWizard } from "@/components/sale-operation/PromotionComboWizard"
-import { SaleCatalogToolbar } from "@/components/sale-operation/SaleCatalogToolbar"
-import { SALE_CATALOG_DEFAULT_PRICE_LIST_ID } from "@/components/sale-operation/saleCatalogPriceLists"
-import { findCatalogProductByScanQuery } from "@/lib/saleCatalogScan"
 import { useSaleTicketCart } from "@/hooks/useSaleTicketCart"
 import { useCartListScrollHighlight } from "@/hooks/useCartListScrollHighlight"
 import { buildCompleteSaleLinesFromCart } from "@/lib/saleCompleteLines"
 import type { MenuCatalogProduct } from "@/lib/menuCatalogProduct"
-import {
-  SaleCatalogProductOfferOverlay,
-  saleCatalogDiscountPercent,
-} from "@/components/sale-operation/SaleCatalogProductOfferOverlay"
-import { saleOpImporteBaseClass, saleOpFooterBandHeightClass, saleOpFooterBarPaddingClass, saleOpToolboxIconWrap, saleOpToolboxSlotClass } from "@/components/sale-operation/saleOperationStyles"
-import { getLayoutsOperarMainGridClass } from "@/app/[siteId]/[popId]/library/layouts/layoutsOperarHardcodedSpec"
-import {
-  LAYOUTS_OPERAR_CATALOG_SIDEBAR_WIDTH_PX,
-  layoutsOperarCatalogSidebarAsideWidthClass,
-  layoutsOperarCatalogSidebarInnerClass,
-} from "@/app/[siteId]/[popId]/library/layouts/layoutsOperarStyles"
+import { saleOpImporteBaseClass } from "@/components/sale-operation/saleOperationStyles"
+import { layoutsOperarSummaryPanelClass } from "@/app/[siteId]/[popId]/library/layouts/layoutsOperarStyles"
 
 type Producto = MenuCatalogProduct
 
@@ -135,10 +121,6 @@ type ClienteVentaSeleccionado = {
   defaultInvoiceTypeLabel: string | null
 }
 
-type VistaCatalogo = SaleCatalogViewPersisted
-
-const CATEGORIA_TODOS = "Todos"
-
 const fmt = new Intl.NumberFormat("es-AR", {
   style: "currency",
   currency: "ARS",
@@ -150,10 +132,6 @@ const ventaImporteBaseClass = saleOpImporteBaseClass
 const ventaImporteTotalClass = cn(
   ventaImporteBaseClass,
   "whitespace-nowrap text-[clamp(1.05rem,1.75vw,1.4375rem)] font-semibold text-white/90",
-)
-const ventaImporteCardClass = cn(
-  ventaImporteBaseClass,
-  "block text-[clamp(1.05rem,1.65vw,1.3125rem)] leading-none font-semibold text-white/90",
 )
 const ventaImporteTotalMutedClass = cn(
   ventaImporteBaseClass,
@@ -178,6 +156,30 @@ function normalizarBusqueda(s: string) {
     .normalize("NFD")
     .replace(/\p{M}/gu, "")
     .toLowerCase()
+}
+
+function SaleScanFocusBridge({
+  modalOpen,
+  onFocusReady,
+}: {
+  modalOpen: boolean
+  onFocusReady: (focus: () => void) => void
+}) {
+  const { focusScanInput } = useSaleScanInputFocus()!
+  const modalWasOpenRef = useRef(false)
+
+  useEffect(() => {
+    onFocusReady(focusScanInput)
+  }, [focusScanInput, onFocusReady])
+
+  useEffect(() => {
+    if (modalWasOpenRef.current && !modalOpen) {
+      focusScanInput()
+    }
+    modalWasOpenRef.current = modalOpen
+  }, [focusScanInput, modalOpen])
+
+  return null
 }
 
 function SalePage() {
@@ -217,11 +219,6 @@ function SalePage() {
   const [popName, setPopName] = useState("")
   const [catalogLoading, setCatalogLoading] = useState(true)
   const [catalogError, setCatalogError] = useState<string | null>(null)
-
-  const categoriasNav = useMemo(
-    () => [CATEGORIA_TODOS, ...saleCategories.map((c) => c.name)],
-    [saleCategories],
-  )
 
   const loadCatalog = useCallback(async () => {
     if (!popId || !siteId) {
@@ -298,21 +295,6 @@ function SalePage() {
     onCartLineAdded: cartScrollHighlight.notifyLineAdded,
   })
 
-  const [vistaCatalogo, setVistaCatalogo] = useState<VistaCatalogo>(() => {
-    if (!popId) {
-      return { modo: "categoria", categoria: CATEGORIA_TODOS }
-    }
-    return (
-      readSavedSaleCatalogView(popId) ?? {
-        modo: "categoria",
-        categoria: CATEGORIA_TODOS,
-      }
-    )
-  })
-  const [modoVista, setModoVista] = useState<"grid" | "lista">("grid")
-  const [busqueda, setBusqueda] = useState("")
-  const [cantidadIngreso, setCantidadIngreso] = useState(1)
-  const [priceListId, setPriceListId] = useState(SALE_CATALOG_DEFAULT_PRICE_LIST_ID)
   const [clienteSeleccionado, setClienteSeleccionado] =
     useState<ClienteVentaSeleccionado | null>(null)
   const [ventaIvaCondition, setVentaIvaCondition] = useState("")
@@ -327,7 +309,6 @@ function SalePage() {
   const [comprobante, setComprobante] = useState<string | null>(null)
   const [comprobanteModalAbierto, setComprobanteModalAbierto] = useState(false)
   const comprobanteInitRef = useRef(false)
-  const catalogViewInitRef = useRef(false)
   const [metodoPagoSeleccionado, setMetodoPagoSeleccionado] =
     useState<SaleCatalogPaymentOption | null>(null)
   const [payOnClientAccount, setPayOnClientAccount] = useState(false)
@@ -365,81 +346,54 @@ function SalePage() {
   }, [openCashSession])
 
   const [descuentoDraftTexto, setDescuentoDraftTexto] = useState("")
-  const busquedaProductosInputRef = useRef<HTMLInputElement>(null)
+  const focusScanRef = useRef<(() => void) | null>(null)
+  const focusScan = useCallback(() => {
+    focusScanRef.current?.()
+  }, [])
+  const registerFocusScan = useCallback((focus: () => void) => {
+    focusScanRef.current = focus
+  }, [])
   const busquedaClienteInputRef = useRef<HTMLInputElement>(null)
-  const vistaAntesBusquedaRef = useRef<VistaCatalogo | null>(null)
-  const busquedaTrimPrevRef = useRef("")
 
   const handleAddProduct = useCallback(
-    (productId: string, kind?: Producto["kind"], quantity = cantidadIngreso) => {
+    (productId: string, kind?: Producto["kind"], quantity?: number) => {
       agregarAlCarrito(productId, kind, quantity)
     },
-    [agregarAlCarrito, cantidadIngreso],
+    [agregarAlCarrito],
   )
 
-  const handleScanKeyDown = useCallback(
-    (event: React.KeyboardEvent<HTMLInputElement>) => {
-      if (event.key !== "Enter") return
-      event.preventDefault()
-      const match = findCatalogProductByScanQuery(productosCatalogo, busqueda)
-      if (!match) return
-      handleAddProduct(match.id, match.kind)
-      setBusqueda("")
+  const aplicarEdicionLineaTicketConFoco = useCallback(
+    (input: Parameters<typeof aplicarEdicionLineaTicket>[0]) => {
+      aplicarEdicionLineaTicket(input)
+      focusScan()
     },
-    [busqueda, handleAddProduct, productosCatalogo],
+    [aplicarEdicionLineaTicket, focusScan],
   )
 
-  const productosFiltrados = useMemo(() => {
-    const q = busqueda.trim().toLowerCase()
-    const hayBusqueda = q.length > 0
-    return productosCatalogo.filter((p) => {
-      const matchVista = hayBusqueda
-        ? true
-        : vistaCatalogo.modo === "categoria"
-          ? p.kind === "article" &&
-            (vistaCatalogo.categoria === CATEGORIA_TODOS ||
-              p.categoria === vistaCatalogo.categoria)
-          : vistaCatalogo.modo === "promociones"
-            ? p.kind === "promotion" || Boolean(p.promo?.trim())
-            : p.precioOriginal != null && p.precioOriginal > p.precio
-      const matchQ =
-        !q ||
-        p.nombre.toLowerCase().includes(q) ||
-        p.descripcion.toLowerCase().includes(q) ||
-        (p.barcode != null && String(p.barcode).toLowerCase().includes(q))
-      return matchVista && matchQ
-    })
-  }, [busqueda, vistaCatalogo, productosCatalogo])
+  const cambiarCantidadPorLineaConFoco = useCallback(
+    (lineId: string, delta: number) => {
+      cambiarCantidadPorLinea(lineId, delta)
+      focusScan()
+    },
+    [cambiarCantidadPorLinea, focusScan],
+  )
 
-  useEffect(() => {
-    const trimmed = busqueda.trim()
-    const prevTrimmed = busquedaTrimPrevRef.current
-    const wasEmpty = prevTrimmed.length === 0
-    const isEmpty = trimmed.length === 0
+  const quitarQuantityDealApplicationConFoco = useCallback(
+    (applicationId: string) => {
+      quitarQuantityDealApplication(applicationId)
+      focusScan()
+    },
+    [quitarQuantityDealApplication, focusScan],
+  )
 
-    if (!isEmpty && wasEmpty) {
-      vistaAntesBusquedaRef.current = vistaCatalogo
-    }
-
-    if (isEmpty && !wasEmpty) {
-      const saved = vistaAntesBusquedaRef.current
-      if (saved != null) {
-        setVistaCatalogo(saved)
-        vistaAntesBusquedaRef.current = null
-      }
-    }
-
-    if (!isEmpty) {
-      setVistaCatalogo((prev) => {
-        if (prev.modo === "categoria" && prev.categoria === CATEGORIA_TODOS) {
-          return prev
-        }
-        return { modo: "categoria", categoria: CATEGORIA_TODOS }
-      })
-    }
-
-    busquedaTrimPrevRef.current = trimmed
-  }, [busqueda, vistaCatalogo])
+  const saleModalOpen =
+    clienteModalAbierto ||
+    comprobanteModalAbierto ||
+    pagoModalAbierto ||
+    descuentoModalAbierto ||
+    descartarConfirmOpen ||
+    venderConfirmOpen ||
+    promoWizardOpen
 
   const descuentoItemsMonto = useMemo(
     () =>
@@ -534,7 +488,8 @@ function SalePage() {
     setDescartarConfirmOpen(false)
     setVenderConfirmOpen(false)
     setVentaError(null)
-  }, [openCashSession?.cashTreasuryAccountId, popId, limpiarCarrito])
+    focusScan()
+  }, [focusScan, openCashSession?.cashTreasuryAccountId, popId, limpiarCarrito])
 
   const confirmarVenta = useCallback(async () => {
     if (!popId || !siteId || !pagoConfigurado) return
@@ -629,14 +584,6 @@ function SalePage() {
       setValorDescuentoFijo(Math.max(0, subtotal))
     }
   }, [modoDescuento, subtotal, valorDescuentoFijo])
-
-  const persistVistaCatalogo = useCallback(
-    (view: VistaCatalogo) => {
-      setVistaCatalogo(view)
-      if (popId) writeSavedSaleCatalogView(popId, view)
-    },
-    [popId],
-  )
 
   const elegirComprobante = useCallback(
     (value: string | null) => {
@@ -848,17 +795,6 @@ function SalePage() {
     hasValidPopFiscalCuit,
   ])
 
-  useEffect(() => {
-    if (!popId || catalogLoading || catalogViewInitRef.current) return
-    catalogViewInitRef.current = true
-    const saved = readSavedSaleCatalogView(popId)
-    if (!saved) return
-    if (saved.modo === "categoria" && !categoriasNav.includes(saved.categoria)) {
-      return
-    }
-    setVistaCatalogo(saved)
-  }, [popId, catalogLoading, categoriasNav])
-
   const onClienteToolbarClick = () => {
     if (!canReadClients) return
     setClienteModalAbierto(true)
@@ -959,9 +895,6 @@ function SalePage() {
     setDescuentoModalAbierto(false)
   }
 
-  const toolboxBarClass =
-    "box-border border-t border-white/10 bg-[#0b100e]/92 backdrop-blur-xl"
-
   const ventaDialogOptionClass = (seleccionado: boolean, disabled = false) =>
     cn(
       "flex w-full items-center justify-between gap-3 rounded-lg border px-3 py-2.5 text-left transition-colors",
@@ -1008,113 +941,11 @@ function SalePage() {
     user?.user_metadata?.avatar_url ||
     `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(user?.email || "u")}`
 
-  const catalogSidebar = useMemo(
-    () => (
-      <nav
-        className="game-scroll flex min-h-0 flex-1 flex-col gap-6 overflow-y-auto px-3 py-4"
-        aria-label="Filtros del catálogo"
-      >
-          <div>
-            <p className="mb-2.5 px-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-500">
-              Categorías
-            </p>
-            <ul className="flex flex-col gap-0.5 p-0" role="list">
-              <li>
-                <button
-                  type="button"
-                  onClick={() =>
-                    persistVistaCatalogo({
-                      modo: "categoria",
-                      categoria: CATEGORIA_TODOS,
-                    })
-                  }
-                  className={cn(
-                    "relative flex min-h-11 w-full items-center rounded-md px-3 py-2.5 text-left text-sm font-medium transition-colors duration-150",
-                    "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/45 focus-visible:ring-offset-2 focus-visible:ring-offset-[#1a2027]",
-                    vistaCatalogo.modo === "categoria" &&
-                      vistaCatalogo.categoria === CATEGORIA_TODOS
-                      ? "bg-white/10 text-white before:absolute before:top-1/2 before:left-0 before:h-5 before:w-0.5 before:-translate-y-1/2 before:rounded-full before:bg-emerald-400 before:content-['']"
-                      : "text-slate-400 hover:bg-white/6 hover:text-slate-100",
-                  )}
-                >
-                  {CATEGORIA_TODOS}
-                </button>
-              </li>
-              {saleCategories.map((cat) => {
-                const seleccionado =
-                  vistaCatalogo.modo === "categoria" &&
-                  vistaCatalogo.categoria === cat.name
-                return (
-                  <li key={cat.id}>
-                    <button
-                      type="button"
-                      onClick={() =>
-                        persistVistaCatalogo({
-                          modo: "categoria",
-                          categoria: cat.name,
-                        })
-                      }
-                      className={cn(
-                        "relative flex min-h-11 w-full items-center rounded-md px-3 py-2.5 text-left text-sm font-medium transition-colors duration-150",
-                        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/45 focus-visible:ring-offset-2 focus-visible:ring-offset-[#1a2027]",
-                        seleccionado
-                          ? "bg-white/10 text-white before:absolute before:top-1/2 before:left-0 before:h-5 before:w-0.5 before:-translate-y-1/2 before:rounded-full before:bg-emerald-400 before:content-['']"
-                          : "text-slate-400 hover:bg-white/6 hover:text-slate-100",
-                      )}
-                    >
-                      {cat.name}
-                    </button>
-                  </li>
-                )
-              })}
-            </ul>
-          </div>
-
-          <div>
-            <p className="mb-2.5 px-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-500">
-              Listados rápidos
-            </p>
-            <ul className="flex flex-col gap-0.5 p-0" role="list">
-              <li>
-                <button
-                  type="button"
-                  aria-pressed={vistaCatalogo.modo === "promociones"}
-                  onClick={() => persistVistaCatalogo({ modo: "promociones" })}
-                  className={cn(
-                    "relative flex min-h-11 w-full items-center gap-2.5 rounded-md px-3 py-2.5 text-left text-sm font-medium transition-colors duration-150",
-                    "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/45 focus-visible:ring-offset-2 focus-visible:ring-offset-[#1a2027]",
-                    vistaCatalogo.modo === "promociones"
-                      ? "bg-emerald-500/12 text-emerald-100 before:absolute before:top-1/2 before:left-0 before:h-5 before:w-0.5 before:-translate-y-1/2 before:rounded-full before:bg-emerald-400 before:content-['']"
-                      : "text-slate-400 hover:bg-white/6 hover:text-slate-100",
-                  )}
-                >
-                  <Tag className="size-4 shrink-0 opacity-80" aria-hidden />
-                  Promociones
-                </button>
-              </li>
-              <li>
-                <button
-                  type="button"
-                  aria-pressed={vistaCatalogo.modo === "con_descuento"}
-                  onClick={() => persistVistaCatalogo({ modo: "con_descuento" })}
-                  className={cn(
-                    "relative flex min-h-11 w-full items-center gap-2.5 rounded-md px-3 py-2.5 text-left text-sm font-medium transition-colors duration-150",
-                    "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400/45 focus-visible:ring-offset-2 focus-visible:ring-offset-[#1a2027]",
-                    vistaCatalogo.modo === "con_descuento"
-                      ? "bg-amber-500/12 text-amber-100 before:absolute before:top-1/2 before:left-0 before:h-5 before:w-0.5 before:-translate-y-1/2 before:rounded-full before:bg-amber-400 before:content-['']"
-                      : "text-slate-400 hover:bg-white/6 hover:text-slate-100",
-                  )}
-                >
-                  <Percent className="size-4 shrink-0 opacity-80" aria-hidden />
-                  Con descuento
-                </button>
-              </li>
-            </ul>
-          </div>
-      </nav>
-    ),
-    [saleCategories, vistaCatalogo, persistVistaCatalogo],
-  )
+  const descuentoToolboxLabel = hayDescuento
+    ? modoDescuento === "porcentaje"
+      ? `${valorDescuentoPorcentaje}%`
+      : `Fijo ${fmt.format(valorDescuentoFijo)}`
+    : "Sin descuento"
 
   if (!popId || !siteId) {
     return (
@@ -1125,7 +956,12 @@ function SalePage() {
   }
 
   return (
-    <>
+    <SaleScanInputFocusProvider>
+      <SaleScanFocusBridge
+        modalOpen={saleModalOpen}
+        onFocusReady={registerFocusScan}
+      />
+      <>
       <DataWorkspaceOperationsLayout
         siteId={siteId}
         popId={popId}
@@ -1146,376 +982,101 @@ function SalePage() {
             <OpenCashSessionBanner siteId={siteId} popId={popId} variant="dark" />
           ) : null}
 
-          <main className={cn("relative z-10 grid min-h-0 flex-1", getLayoutsOperarMainGridClass())}>
-            <div className="col-start-1 row-start-1 flex min-h-0 min-w-0 overflow-hidden">
-              <aside
-                id="data-workspace-sidebar"
-                className={cn(
-                  "relative shrink-0 overflow-hidden border-r border-white/10 bg-[#1a2027] transition-[width,border-color] duration-300 ease-in-out motion-reduce:transition-none",
-                  layoutsOperarCatalogSidebarAsideWidthClass(catalogSidebarOpen),
-                )}
-                aria-hidden={!catalogSidebarOpen}
-                {...(!catalogSidebarOpen ? { inert: true } : {})}
-                aria-label="Filtros del catálogo"
-              >
-                <div className={layoutsOperarCatalogSidebarInnerClass}>
-                  {catalogSidebar}
-                </div>
-              </aside>
-
-              <section className="grid min-h-0 min-w-0 flex-1 grid-rows-[auto_minmax(0,1fr)] bg-[#20262e]">
-                <SaleCatalogToolbar
-                  modoVista={modoVista}
-                  onModoVistaChange={setModoVista}
-                  busqueda={busqueda}
-                  onBusquedaChange={setBusqueda}
-                  onBusquedaKeyDown={handleScanKeyDown}
-                  scanInputRef={busquedaProductosInputRef}
-                  cantidadIngreso={cantidadIngreso}
-                  onCantidadIngresoChange={setCantidadIngreso}
-                  priceListId={priceListId}
-                  onPriceListChange={setPriceListId}
-                />
-
-                <div
-                  className={cn(
-                    "min-h-0",
-                    catalogLoading && !catalogError
-                      ? "flex flex-1 flex-col p-6"
-                      : catalogError
-                        ? "flex flex-1 flex-col p-6"
-                        : productosFiltrados.length === 0
-                          ? "relative overflow-hidden p-0"
-                          : "game-scroll overflow-y-auto p-3",
-                  )}
-                >
-                  {catalogLoading && !catalogError ? (
-                    <div className="flex min-h-[200px] flex-1 items-center justify-center">
-                      <p className="text-sm text-slate-400">
-                        Cargando productos…
-                      </p>
-                    </div>
-                  ) : catalogError ? (
-                    <div className="flex min-h-[200px] flex-1 flex-col items-center justify-center gap-2 text-center">
-                      <p className="max-w-md text-sm text-rose-300">
-                        {catalogError}
-                      </p>
-                    </div>
-                  ) : productosFiltrados.length === 0 ? (
-                    <div
-                      aria-live="polite"
-                      className="rootsy-hero-slide-in-right pointer-events-none absolute right-[-50px] bottom-[-25px] z-10"
-                    >
-                      <Image
-                        src="/empty-products-mascot.png"
-                        alt=""
-                        width={260}
-                        height={260}
-                        className="h-auto w-full max-w-[260px] object-contain opacity-95"
-                      />
-                    </div>
-                  ) : (
-                    <div
-                      className={
-                        modoVista === "grid"
-                          ? "grid grid-cols-3 gap-3"
-                          : "flex flex-col gap-2"
-                      }
-                    >
-                      {productosFiltrados.map((p) => {
-                        const descuentoPct = saleCatalogDiscountPercent(
-                          p.precioOriginal,
-                          p.precio,
-                        )
-                        const promoTrim = p.promo?.trim() ?? ""
-                        const mostrarBadgeOferta =
-                          descuentoPct != null || promoTrim.length > 0
-
-                        return (
-                        <button
-                          key={`${p.kind}:${p.id}`}
-                          type="button"
-                          onClick={() => handleAddProduct(p.id, p.kind)}
-                          className={cn(
-                            "group relative w-full overflow-hidden rounded-2xl border border-white/10 bg-[#252b34] text-left",
-                            "shadow-[inset_0_1px_0_rgba(255,255,255,0.07),0_0_0_1px_rgba(0,0,0,0.45),0_1px_2px_rgba(0,0,0,0.22),0_6px_16px_rgba(0,0,0,0.28),0_16px_40px_rgba(0,0,0,0.38)]",
-                            "before:pointer-events-none before:absolute before:inset-y-4 before:left-0 before:z-10 before:w-0.5 before:rounded-full before:bg-emerald-400 before:opacity-0 before:transition-opacity before:duration-300 group-hover:before:opacity-90",
-                            modoVista === "lista"
-                              ? "flex min-h-[152px] items-stretch"
-                              : "grid h-[318px] grid-rows-[152px_1fr]",
-                          )}
-                        >
-                          <div
-                            className={cn(
-                              "relative overflow-hidden bg-[#0f1416]",
-                              modoVista === "grid"
-                                ? "h-full w-full"
-                                : "h-[152px] w-48 shrink-0",
-                            )}
-                          >
-                            <Image
-                              src={p.imagen}
-                              alt={p.nombre}
-                              fill
-                              className="h-full w-full transition-transform duration-300 ease-out group-hover:scale-[1.03]"
-                              unoptimized
-                              sizes={modoVista === "grid" ? "33vw" : `${LAYOUTS_OPERAR_CATALOG_SIDEBAR_WIDTH_PX}px`}
-                              style={{
-                                objectFit: "cover",
-                                objectPosition: "center",
-                              }}
-                            />
-                            {mostrarBadgeOferta ? (
-                              <SaleCatalogProductOfferOverlay
-                                precioOriginal={p.precioOriginal}
-                                precio={p.precio}
-                                promo={p.promo}
-                              />
-                            ) : null}
-                            <span
-                              className="pointer-events-none absolute right-2 bottom-2 z-20 flex size-9 items-center justify-center rounded-full border border-emerald-300/45 bg-emerald-500 text-emerald-950 opacity-0 shadow-[0_4px_20px_rgba(16,185,129,0.5)] transition-[opacity,transform] duration-200 translate-y-1 scale-95 group-hover:translate-y-0 group-hover:scale-100 group-hover:opacity-100"
-                              aria-hidden
-                            >
-                              <Plus className="size-4.5" strokeWidth={2.5} aria-hidden />
-                            </span>
-                          </div>
-                          <div
-                            className={
-                              modoVista === "grid"
-                                ? "grid h-full min-h-0 gap-2 p-5 grid-rows-[minmax(0,1fr)_auto]"
-                                : "flex min-h-0 min-w-0 flex-1 flex-col justify-between gap-2 p-5"
-                            }
-                          >
-                            <div className="min-h-0 self-start">
-                              <h3 className="line-clamp-2 text-lg font-bold leading-tight text-foreground">
-                                {p.nombre}
-                              </h3>
-                              <p className="mt-1 line-clamp-2 text-sm leading-relaxed text-muted-foreground">
-                                {p.descripcion}
-                              </p>
-                            </div>
-
-                            <div
-                              className={
-                                modoVista === "grid" ? "self-end" : "shrink-0"
-                              }
-                            >
-                              <span className={ventaImporteCardClass}>
-                                {fmt.format(p.precio)}
-                              </span>
-                            </div>
-                          </div>
-                        </button>
-                        )
-                      })}
-                    </div>
-                  )}
-                </div>
-              </section>
-            </div>
-
-            <div
-              role="toolbar"
-              aria-label="Configuración de la venta"
-              className={cn(
-                "col-start-1 row-start-2 grid h-full min-h-0 grid-cols-2 gap-2 lg:grid-cols-4",
-                toolboxBarClass,
-                saleOpFooterBarPaddingClass,
-                saleOpFooterBandHeightClass,
-              )}
-            >
-              <button
-                type="button"
-                disabled={!canReadClients}
-                onClick={onClienteToolbarClick}
-                className={cn(
-                  saleOpToolboxSlotClass(Boolean(clienteSeleccionado)),
-                  !canReadClients && "opacity-45",
-                )}
-                aria-label={
+          <LayoutsOperarMainGrid
+            catalog={
+              <SaleCatalogBrowser
+                siteId={siteId}
+                popId={popId}
+                categories={saleCategories}
+                products={productosCatalogo}
+                loading={catalogLoading}
+                error={catalogError}
+                onAddProduct={handleAddProduct}
+                catalogSidebarOpen={catalogSidebarOpen}
+                catalogScope="sale"
+                keepScanFocused
+              />
+            }
+            toolbox={
+              <SaleOperationToolbox
+                clienteLabel={
                   !canReadClients
-                    ? "No tenés permiso para ver clientes. Pedí acceso de lectura en tu rol."
-                    : clienteSeleccionado
-                      ? `Cliente: ${clienteSeleccionado.name}. Abrir para cambiar.`
-                      : "Cliente sin elegir. Abrir para seleccionar."
+                    ? "Sin permiso"
+                    : (clienteSeleccionado?.name ?? "Elegir cliente")
                 }
-              >
-                <span className={saleOpToolboxIconWrap(Boolean(clienteSeleccionado))}>
-                  <User className="size-4.5 sm:size-5" aria-hidden />
-                </span>
-                <span className="min-w-0 flex-1">
-                  <span className="mb-0.5 block text-[10px] font-semibold uppercase tracking-[0.12em] text-foreground/45">
-                    Cliente
-                  </span>
-                  <span
-                    className={cn(
-                      "block truncate text-sm font-semibold leading-snug",
-                      clienteSeleccionado
-                        ? "text-foreground"
-                        : "text-foreground/55",
-                    )}
-                  >
-                    {!canReadClients
-                      ? "Sin permiso"
-                      : (clienteSeleccionado?.name ?? "Elegir cliente")}
-                  </span>
-                  {ventaIvaLabel ? (
-                    <span className="mt-0.5 block truncate text-[11px] font-medium text-muted-foreground">
-                      {ventaIvaLabel}
-                    </span>
-                  ) : null}
-                </span>
-              </button>
-              <button
-                type="button"
-                onClick={() => setComprobanteModalAbierto(true)}
-                className={saleOpToolboxSlotClass(comprobante !== null)}
-                aria-label={`Comprobante: ${comprobanteDisplayLabel}. Abrir para cambiar.`}
-              >
-                <span className={saleOpToolboxIconWrap(comprobante !== null)}>
-                  <Receipt className="size-4.5 sm:size-5" aria-hidden />
-                </span>
-                <span className="min-w-0 flex-1">
-                  <span className="mb-0.5 block text-[10px] font-semibold uppercase tracking-[0.12em] text-foreground/45">
-                    Comprobante
-                  </span>
-                  <span
-                    className={cn(
-                      "block truncate text-sm font-semibold leading-snug",
-                      comprobante !== null
-                        ? "text-foreground"
-                        : "text-foreground/70",
-                    )}
-                  >
-                    {comprobanteDisplayLabel}
-                  </span>
-                </span>
-              </button>
-              <button
-                type="button"
-                onClick={() => {
+                clienteIvaLabel={ventaIvaLabel}
+                clienteDisabled={!canReadClients}
+                clienteConfigurado={Boolean(clienteSeleccionado)}
+                comprobanteLabel={comprobanteDisplayLabel}
+                pagoLabel={
+                  openCashSession ? pagoResumenLabel : "Requiere caja abierta"
+                }
+                pagoConfigurado={pagoConfigurado}
+                pagoDisabled={!openCashSession}
+                descuentoLabel={descuentoToolboxLabel}
+                hayDescuento={hayDescuento}
+                onClienteClick={onClienteToolbarClick}
+                onComprobanteClick={() => setComprobanteModalAbierto(true)}
+                onPagoClick={() => {
                   if (!openCashSession) return
                   setPagoModalAbierto(true)
                 }}
-                disabled={!openCashSession}
-                className={saleOpToolboxSlotClass(pagoConfigurado)}
-                aria-label={
-                  pagoConfigurado
-                    ? `Pago: ${pagoResumenLabel}. Abrir para cambiar.`
-                    : "Forma de pago sin elegir. Abrir para seleccionar."
-                }
+                onDescuentoClick={abrirModalDescuento}
+              />
+            }
+            ticket={
+              <aside
+                className={layoutsOperarSummaryPanelClass}
+                aria-label="Carrito de la venta"
               >
-                <span className={saleOpToolboxIconWrap(pagoConfigurado)}>
-                  <Banknote className="size-4.5 sm:size-5" aria-hidden />
-                </span>
-                <span className="min-w-0 flex-1">
-                  <span className="mb-0.5 block text-[10px] font-semibold uppercase tracking-[0.12em] text-foreground/45">
-                    Pago
-                  </span>
-                  <span
-                    className={cn(
-                      "block truncate text-sm font-semibold leading-snug",
-                      pagoConfigurado
-                        ? "text-foreground"
-                        : "text-foreground/55",
-                    )}
-                  >
-                    {openCashSession
-                      ? pagoResumenLabel
-                      : "Requiere caja abierta"}
-                  </span>
-                </span>
-              </button>
-              <button
-                type="button"
-                onClick={abrirModalDescuento}
-                className={saleOpToolboxSlotClass(hayDescuento)}
-                aria-label={
-                  hayDescuento
-                    ? `Descuento aplicado: ${
-                        modoDescuento === "porcentaje"
-                          ? `${valorDescuentoPorcentaje} por ciento`
-                          : `${fmt.format(valorDescuentoFijo)} fijo`
-                      }. Abrir para editar.`
-                    : "Sin descuento en la venta. Abrir para configurar."
-                }
-              >
-                <span className={saleOpToolboxIconWrap(hayDescuento)}>
-                  <Percent className="size-4.5 sm:size-5" aria-hidden />
-                </span>
-                <span className="min-w-0 flex-1">
-                  <span className="mb-0.5 block text-[10px] font-semibold uppercase tracking-[0.12em] text-foreground/45">
-                    Descuento
-                  </span>
-                  <span
-                    className={cn(
-                      "block truncate text-sm font-semibold leading-snug",
-                      hayDescuento
-                        ? cn("text-foreground", ventaImporteBaseClass)
-                        : "text-foreground/55",
-                    )}
-                  >
-                    {hayDescuento
-                      ? modoDescuento === "porcentaje"
-                        ? `${valorDescuentoPorcentaje}%`
-                        : `Fijo ${fmt.format(valorDescuentoFijo)}`
-                      : "Sin descuento"}
-                  </span>
-                </span>
-              </button>
-            </div>
-
-          <aside
-            className="rootsy-app-light col-start-2 row-span-2 grid min-h-0 overflow-hidden grid-rows-[minmax(0,1fr)] bg-[#eef1f5] text-[#121417]"
-            aria-label="Carrito de la venta"
-          >
-            <SaleOperationTicketOrderPanel
-              cartDisplayRows={cartDisplayRows}
-              cartLineOverrides={cartLineOverrides}
-              aplicarEdicionLineaTicket={aplicarEdicionLineaTicket}
-              cambiarCantidadPorLinea={cambiarCantidadPorLinea}
-              quitarQuantityDealApplication={quitarQuantityDealApplication}
-              listTitle="Tu pedido"
-              emptyTitle="Pedido vacío"
-              cartScrollHighlight={cartScrollHighlight}
-              actions={{
-                discardDisabled: !hayItemsEnPedido,
-                confirmDisabled: !puedeRegistrarVenta || ventaSubmitting,
-                confirmLoading: ventaSubmitting,
-                onDiscard: () => setDescartarConfirmOpen(true),
-                onConfirm: () => {
-                  setVentaError(null)
-                  setVenderConfirmOpen(true)
-                },
-                confirmLabel: "Vender",
-                confirmTitle: !hayItemsEnPedido
-                  ? "Agregá productos al pedido."
-                  : !pagoConfigurado
-                    ? "Elegí una forma de pago o usá cuenta corriente del cliente."
-                    : payOnClientAccount && !clienteSeleccionado?.id
-                      ? "Elegí un cliente del catálogo para vender a cuenta corriente."
-                      : !canCreateSale
-                        ? "No tenés permiso para registrar ventas."
-                        : !canReadCashRegisters
-                          ? "Se requiere permiso para ver cajas y asociar la venta a una sesión."
-                          : !openCashSession
-                            ? "Abrí una sesión de caja en Cajas antes de vender."
-                            : undefined,
-              }}
-              totalBar={{
-                total,
-                subtotal,
-                descuentoMonto,
-                hayDescuento,
-                subtotalOriginal: catalogTotals.subtotalOriginal,
-                descuentoItemsMonto,
-                hayDescuentoItems,
-                promocionesAplicadasMonto,
-                promocionesAplicadasCount,
-              }}
-            />
-          </aside>
-        </main>
+                <SaleOperationTicketOrderPanel
+                  cartDisplayRows={cartDisplayRows}
+                  cartLineOverrides={cartLineOverrides}
+                  aplicarEdicionLineaTicket={aplicarEdicionLineaTicketConFoco}
+                  cambiarCantidadPorLinea={cambiarCantidadPorLineaConFoco}
+                  quitarQuantityDealApplication={quitarQuantityDealApplicationConFoco}
+                  listTitle="Tu pedido"
+                  emptyTitle="Pedido vacío"
+                  cartScrollHighlight={cartScrollHighlight}
+                  actions={{
+                    discardDisabled: !hayItemsEnPedido,
+                    confirmDisabled: !puedeRegistrarVenta || ventaSubmitting,
+                    confirmLoading: ventaSubmitting,
+                    onDiscard: () => setDescartarConfirmOpen(true),
+                    onConfirm: () => {
+                      setVentaError(null)
+                      setVenderConfirmOpen(true)
+                    },
+                    confirmLabel: "Vender",
+                    confirmTitle: !hayItemsEnPedido
+                      ? "Agregá productos al pedido."
+                      : !pagoConfigurado
+                        ? "Elegí una forma de pago o usá cuenta corriente del cliente."
+                        : payOnClientAccount && !clienteSeleccionado?.id
+                          ? "Elegí un cliente del catálogo para vender a cuenta corriente."
+                          : !canCreateSale
+                            ? "No tenés permiso para registrar ventas."
+                            : !canReadCashRegisters
+                              ? "Se requiere permiso para ver cajas y asociar la venta a una sesión."
+                              : !openCashSession
+                                ? "Abrí una sesión de caja en Cajas antes de vender."
+                                : undefined,
+                  }}
+                  totalBar={{
+                    total,
+                    subtotal,
+                    descuentoMonto,
+                    hayDescuento,
+                    subtotalOriginal: catalogTotals.subtotalOriginal,
+                    descuentoItemsMonto,
+                    hayDescuentoItems,
+                    promocionesAplicadasMonto,
+                    promocionesAplicadasCount,
+                  }}
+                />
+              </aside>
+            }
+          />
         </div>
       </DataWorkspaceOperationsLayout>
 
@@ -1528,6 +1089,7 @@ function SalePage() {
             confirmarPromoWizard(promoWizardTarget.id, selections)
           }
           setPromoWizardOpen(false)
+          focusScan()
         }}
       />
 
@@ -1654,7 +1216,8 @@ function SalePage() {
         paymentLabel={pagoResumenLabel}
         onConfirm={confirmarVenta}
       />
-    </>
+      </>
+    </SaleScanInputFocusProvider>
   )
 }
 

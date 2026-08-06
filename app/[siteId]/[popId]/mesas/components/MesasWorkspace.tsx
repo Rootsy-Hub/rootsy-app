@@ -18,7 +18,12 @@ import type {
 import { useMesasSaleCheckout } from "@/app/[siteId]/[popId]/mesas/useMesasSaleCheckout"
 import { useMesasState } from "@/app/[siteId]/[popId]/mesas/useMesasState"
 import { OperationsModuleBackdrop } from "@/components/layouts-module/DataWorkspaceOperationsLayout"
-import { getLayoutsOperarMainGridClass } from "@/app/[siteId]/[popId]/library/layouts/layoutsOperarHardcodedSpec"
+import { LayoutsOperarMainGrid } from "@/components/layouts-module/LayoutsOperarMainGrid"
+import {
+  layoutsOperarCatalogColumnClass,
+  layoutsOperarSummaryPanelClass,
+  layoutsOperarSummaryPanelInnerGridClass,
+} from "@/app/[siteId]/[popId]/library/layouts/layoutsOperarStyles"
 import { OpenCashSessionBanner } from "@/components/sale-operation/OpenCashSessionBanner"
 import { SaleOperationToolbox } from "@/components/sale-operation/SaleOperationToolbox"
 import { useCartListScrollHighlight } from "@/hooks/useCartListScrollHighlight"
@@ -268,10 +273,10 @@ export function MesasWorkspace({
         </div>
       ) : null}
 
-      <main className={cn("relative z-10 grid min-h-0 flex-1", getLayoutsOperarMainGridClass())}>
-        <section className="col-start-1 row-start-1 flex min-h-0 min-w-0 flex-col overflow-hidden bg-[#20262e]">
-          {!showCatalog ? (
-            <>
+      <LayoutsOperarMainGrid
+        catalog={
+          !showCatalog ? (
+            <section className={cn(layoutsOperarCatalogColumnClass, "flex-col")}>
               <MesasSalonTabs
                 salons={salons}
                 activeSalonId={activeSalonId}
@@ -314,7 +319,7 @@ export function MesasWorkspace({
                   tableOpenedAt={tableOpenedAt}
                 />
               )}
-            </>
+            </section>
           ) : (
             <MesasCatalogPanel
               siteId={siteId}
@@ -322,58 +327,61 @@ export function MesasWorkspace({
               checkout={checkout}
               catalogSidebarOpen={catalogSidebarOpen}
             />
-          )}
-        </section>
-
-        <div className="col-start-1 row-start-2 min-h-0">
-          <SaleOperationToolbox {...checkout.toolbox} />
-        </div>
-
-        <aside
-          className="rootsy-app-light col-start-2 row-span-2 grid min-h-0 overflow-hidden grid-rows-[auto_minmax(0,1fr)] bg-[#eef1f5] text-[#121417]"
-          aria-label="Panel de mesa y pedido"
-        >
-          <MesasRightPanelTabs
-            value={rightView}
-            onChange={setRightView}
-            pedidoDisabled={!selectedSession}
-          />
-
-          {rightView === "session" ? (
-            <MesaSessionPanel
-              table={selectedTable}
-              session={selectedSession}
-              sessionTables={sessionTables}
-              waiters={waiters}
-              mergeCandidates={mergeCandidates}
-              sessionError={sessionError ?? checkout.submitError}
-              onOpenSession={openSession}
-              onUpdateSession={updateSession}
-              onCloseSession={() => checkout.cerrarMesa()}
-              canCloseSession={checkout.puedeCerrarMesa}
-              closeSessionBlockReason={checkout.cerrarMesaBlockReason}
-              closeSessionMode={checkout.cerrarMesaMode}
-              closeSessionLoading={checkout.submitting}
-              clientLabel={checkout.sessionClientLabel}
+          )
+        }
+        toolbox={<SaleOperationToolbox {...checkout.toolbox} />}
+        ticket={
+          <aside
+            className={cn(
+              layoutsOperarSummaryPanelClass,
+              "[grid-template-rows:auto_minmax(0,1fr)]",
+            )}
+            aria-label="Panel de mesa y pedido"
+          >
+            <MesasRightPanelTabs
+              value={rightView}
+              onChange={setRightView}
+              pedidoDisabled={!selectedSession}
             />
-          ) : (
-            <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
-              {checkout.submitError ? (
-                <div className="shrink-0 px-3 pt-3 sm:px-3.5">
-                  <p className="rounded-xl border border-destructive/25 bg-destructive/10 px-3.5 py-2.5 text-sm text-destructive">
-                    {checkout.submitError}
-                  </p>
+
+            <div className={layoutsOperarSummaryPanelInnerGridClass}>
+              {rightView === "session" ? (
+                <MesaSessionPanel
+                  table={selectedTable}
+                  session={selectedSession}
+                  sessionTables={sessionTables}
+                  waiters={waiters}
+                  mergeCandidates={mergeCandidates}
+                  sessionError={sessionError ?? checkout.submitError}
+                  onOpenSession={openSession}
+                  onUpdateSession={updateSession}
+                  onCloseSession={() => checkout.cerrarMesa()}
+                  canCloseSession={checkout.puedeCerrarMesa}
+                  closeSessionBlockReason={checkout.cerrarMesaBlockReason}
+                  closeSessionMode={checkout.cerrarMesaMode}
+                  closeSessionLoading={checkout.submitting}
+                  clientLabel={checkout.sessionClientLabel}
+                />
+              ) : (
+                <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
+                  {checkout.submitError ? (
+                    <div className="shrink-0 px-3 pt-3 sm:px-3.5">
+                      <p className="rounded-xl border border-destructive/25 bg-destructive/10 px-3.5 py-2.5 text-sm text-destructive">
+                        {checkout.submitError}
+                      </p>
+                    </div>
+                  ) : null}
+                  <MesasOrderPanel
+                    checkout={checkout}
+                    tableLabel={mesaLabel}
+                    cartScrollHighlight={cartScrollHighlight}
+                  />
                 </div>
-              ) : null}
-              <MesasOrderPanel
-                checkout={checkout}
-                tableLabel={mesaLabel}
-                cartScrollHighlight={cartScrollHighlight}
-              />
+              )}
             </div>
-          )}
-        </aside>
-      </main>
+          </aside>
+        }
+      />
 
       <MesasCheckoutModals checkout={checkout} />
     </div>

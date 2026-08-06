@@ -1,6 +1,8 @@
 "use client"
 
 import "@/app/[siteId]/[popId]/library/color/rootsyNaturePalette.css"
+import "@/app/[siteId]/[popId]/library/layouts/layoutsOperarTheme.css"
+import { getLayoutsOperarGridCssVariables } from "@/app/[siteId]/[popId]/library/layouts/layoutsOperarHardcodedSpec"
 import {
   layoutsOperationsBodyScopeClass,
   layoutsOperationsBodyShellClass,
@@ -51,11 +53,13 @@ export function OperationsModuleBody({
   return (
     <div
       className={cn(
+        "rootsy-theme-pos rootsy-radius-system",
         layoutsOperationsBodyScopeClass,
         layoutsOperationsBodyShellClass,
         "dark relative flex min-h-0 flex-1 flex-col overflow-hidden text-white",
         className,
       )}
+      style={getLayoutsOperarGridCssVariables()}
     >
       {children}
     </div>

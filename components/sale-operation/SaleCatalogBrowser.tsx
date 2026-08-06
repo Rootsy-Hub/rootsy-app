@@ -4,16 +4,13 @@ import type { SaleCatalogCategory } from "@/app/[siteId]/[popId]/sale/actions"
 import type { MenuCatalogCategorySection } from "@/app/[siteId]/[popId]/menu-catalog/actions"
 import type { SaleCatalogProduct } from "@/components/sale-operation/saleCatalogProduct"
 import type { MenuCartItemKind } from "@/lib/menuCart"
-import {
-  SaleCatalogProductOfferOverlay,
-  saleCatalogDiscountPercent,
-} from "@/components/sale-operation/SaleCatalogProductOfferOverlay"
-import { saleOpFmt, saleOpImporteBaseClass } from "@/components/sale-operation/saleOperationStyles"
+import type { MenuCatalogProduct } from "@/lib/menuCatalogProduct"
+import { SaleCatalogProductCard } from "@/components/sale-operation/SaleCatalogProductCard"
+import { SaleCatalogSidebarNav } from "@/components/sale-operation/SaleCatalogSidebarNav"
 import { useDataWorkspaceSidebar } from "@/components/layouts/useDataWorkspaceSidebar"
 import { SaleCatalogToolbar } from "@/components/sale-operation/SaleCatalogToolbar"
-import {
-  SALE_CATALOG_DEFAULT_PRICE_LIST_ID,
-} from "@/components/sale-operation/saleCatalogPriceLists"
+import { useSaleScanInputFocus } from "@/components/sale-operation/SaleScanInputFocusContext"
+import { SALE_CATALOG_DEFAULT_PRICE_LIST_ID } from "@/components/sale-operation/saleCatalogPriceLists"
 import { findCatalogProductByScanQuery } from "@/lib/saleCatalogScan"
 import {
   readSavedSaleCatalogView,
@@ -21,25 +18,22 @@ import {
   type SaleCatalogViewPersisted,
 } from "@/lib/saleCatalogPreference"
 import {
-  LAYOUTS_OPERAR_CATALOG_SIDEBAR_WIDTH_PX,
-  layoutsOperarCatalogSidebarAsideWidthClass,
+  layoutsOperarCatalogCanvasClass,
+  layoutsOperarCatalogCanvasScrollClass,
+  layoutsOperarCatalogColumnClass,
+  layoutsOperarCatalogGridClass,
+  layoutsOperarCatalogSidebarClass,
+  layoutsOperarCatalogSidebarClosedClass,
   layoutsOperarCatalogSidebarInnerClass,
+  layoutsOperarCatalogSidebarOpenClass,
 } from "@/app/[siteId]/[popId]/library/layouts/layoutsOperarStyles"
 import { cn } from "@/lib/utils"
-import {
-  Percent,
-  Plus,
-  Tag,
-} from "lucide-react"
 import Image from "next/image"
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 
 const CATEGORIA_TODOS = "Todos"
 
-const importeCardClass = cn(
-  saleOpImporteBaseClass,
-  "block text-[clamp(1.05rem,1.65vw,1.3125rem)] leading-none font-semibold text-white/90",
-)
+type CatalogScope = "sale" | "menu"
 
 type Props = {
   siteId: string
@@ -54,6 +48,59 @@ type Props = {
   addDisabled?: boolean
   /** Control externo del panel de categorías (p. ej. botón del header). */
   catalogSidebarOpen?: boolean
+  /** Filtros del rail: venta directa vs catálogo menú (mesas/mostrador). */
+  catalogScope?: CatalogScope
+  /** Devuelve foco al input escaneo tras acciones (p. ej. Vender). */
+  keepScanFocused?: boolean
+  className?: string
+}
+
+function productMatchesCatalogView(
+  product: SaleCatalogProduct,
+  vistaCatalogo: SaleCatalogViewPersisted,
+  hayBusqueda: boolean,
+  catalogScope: CatalogScope,
+) {
+  if (hayBusqueda) return true
+
+  const menuProduct = product as MenuCatalogProduct
+  const kind = "kind" in menuProduct ? menuProduct.kind : undefined
+
+  if (vistaCatalogo.modo === "categoria") {
+    if (catalogScope === "sale") {
+      return (
+        kind === "article" &&
+        (vistaCatalogo.categoria === CATEGORIA_TODOS ||
+          product.categoria === vistaCatalogo.categoria)
+      )
+    }
+
+    const categoriaFiltro =
+      "categoriaFiltro" in menuProduct && typeof menuProduct.categoriaFiltro === "string"
+        ? menuProduct.categoriaFiltro
+        : null
+
+    return (
+      vistaCatalogo.categoria === CATEGORIA_TODOS ||
+      (categoriaFiltro
+        ? categoriaFiltro === vistaCatalogo.categoria
+        : product.categoria === vistaCatalogo.categoria)
+    )
+  }
+
+  if (vistaCatalogo.modo === "promociones") {
+    if (catalogScope === "sale") {
+      return kind === "promotion" || Boolean(product.promo?.trim())
+    }
+
+    return (
+      ("section" in menuProduct && menuProduct.section === "promotions") ||
+      Boolean(product.promo?.trim()) ||
+      (product.precioOriginal != null && product.precioOriginal > product.precio)
+    )
+  }
+
+  return product.precioOriginal != null && product.precioOriginal > product.precio
 }
 
 export function SaleCatalogBrowser({
@@ -67,7 +114,11 @@ export function SaleCatalogBrowser({
   onAddProduct,
   addDisabled = false,
   catalogSidebarOpen: catalogSidebarOpenProp,
+  catalogScope = "menu",
+  keepScanFocused = false,
+  className,
 }: Props) {
+  const scanFocus = useSaleScanInputFocus()
   const internalSidebar = useDataWorkspaceSidebar(
     siteId,
     popId,
@@ -91,12 +142,28 @@ export function SaleCatalogBrowser({
   const vistaAntesBusquedaRef = useRef<SaleCatalogViewPersisted | null>(null)
   const busquedaTrimPrevRef = useRef("")
 
+  const registerScanInputRef = useCallback(
+    (element: HTMLInputElement | null) => {
+      busquedaInputRef.current = element
+      if (keepScanFocused) {
+        scanFocus?.registerScanInput(element)
+      }
+    },
+    [keepScanFocused, scanFocus],
+  )
+
+  const refocusScan = useCallback(() => {
+    if (!keepScanFocused) return
+    scanFocus?.focusScanInput()
+  }, [keepScanFocused, scanFocus])
+
   const handleAddProduct = useCallback(
     (productId: string, kind?: MenuCartItemKind, quantity = cantidadIngreso) => {
       if (addDisabled) return
       onAddProduct(productId, kind, quantity)
+      refocusScan()
     },
-    [addDisabled, cantidadIngreso, onAddProduct],
+    [addDisabled, cantidadIngreso, onAddProduct, refocusScan],
   )
 
   const handleScanKeyDown = useCallback(
@@ -119,38 +186,30 @@ export function SaleCatalogBrowser({
     (view: SaleCatalogViewPersisted) => {
       setVistaCatalogo(view)
       writeSavedSaleCatalogView(popId, view)
+      refocusScan()
     },
-    [popId],
+    [popId, refocusScan],
   )
 
   const productosFiltrados = useMemo(() => {
     const q = busqueda.trim().toLowerCase()
     const hayBusqueda = q.length > 0
-    return products.filter((p) => {
-      const categoriaFiltro =
-        "categoriaFiltro" in p && typeof p.categoriaFiltro === "string"
-          ? p.categoriaFiltro
-          : null
-      const matchVista = hayBusqueda
-        ? true
-        : vistaCatalogo.modo === "categoria"
-          ? vistaCatalogo.categoria === CATEGORIA_TODOS ||
-            (categoriaFiltro
-              ? categoriaFiltro === vistaCatalogo.categoria
-              : p.categoria === vistaCatalogo.categoria)
-          : vistaCatalogo.modo === "promociones"
-            ? ("section" in p && p.section === "promotions") ||
-              Boolean(p.promo?.trim()) ||
-              (p.precioOriginal != null && p.precioOriginal > p.precio)
-            : p.precioOriginal != null && p.precioOriginal > p.precio
+
+    return products.filter((product) => {
+      const matchVista = productMatchesCatalogView(
+        product,
+        vistaCatalogo,
+        hayBusqueda,
+        catalogScope,
+      )
       const matchQ =
         !q ||
-        p.nombre.toLowerCase().includes(q) ||
-        p.descripcion.toLowerCase().includes(q) ||
-        (p.barcode != null && String(p.barcode).toLowerCase().includes(q))
+        product.nombre.toLowerCase().includes(q) ||
+        product.descripcion.toLowerCase().includes(q) ||
+        (product.barcode != null && String(product.barcode).toLowerCase().includes(q))
       return matchVista && matchQ
     })
-  }, [busqueda, vistaCatalogo, products])
+  }, [busqueda, catalogScope, products, vistaCatalogo])
 
   useEffect(() => {
     const trimmed = busqueda.trim()
@@ -182,179 +241,57 @@ export function SaleCatalogBrowser({
     busquedaTrimPrevRef.current = trimmed
   }, [busqueda, vistaCatalogo])
 
-  const sidebarNav = (
-    <nav
-      className="game-scroll flex min-h-0 flex-1 flex-col gap-6 overflow-y-auto px-3 py-4"
-      aria-label="Filtros del catálogo"
-    >
-      <div>
-        <p className="mb-2.5 px-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-500">
-          Categorías
-        </p>
-        <ul className="flex flex-col gap-0.5 p-0" role="list">
-          <li>
-            <button
-              type="button"
-              onClick={() =>
-                persistVistaCatalogo({
-                  modo: "categoria",
-                  categoria: CATEGORIA_TODOS,
-                })
-              }
-              className={cn(
-                "relative flex min-h-11 w-full items-center rounded-md px-3 py-2.5 text-left text-sm font-medium transition-colors duration-150",
-                "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/45 focus-visible:ring-offset-2 focus-visible:ring-offset-[#1a2027]",
-                vistaCatalogo.modo === "categoria" &&
-                  vistaCatalogo.categoria === CATEGORIA_TODOS
-                  ? "bg-white/10 text-white before:absolute before:top-1/2 before:left-0 before:h-5 before:w-0.5 before:-translate-y-1/2 before:rounded-full before:bg-emerald-400 before:content-['']"
-                  : "text-slate-400 hover:bg-white/6 hover:text-slate-100",
-              )}
-            >
-              {CATEGORIA_TODOS}
-            </button>
-          </li>
-          {!categorySections?.length
-            ? categories.map((cat) => {
-                const seleccionado =
-                  vistaCatalogo.modo === "categoria" &&
-                  vistaCatalogo.categoria === cat.name
-                return (
-                  <li key={cat.id}>
-                    <button
-                      type="button"
-                      onClick={() =>
-                        persistVistaCatalogo({
-                          modo: "categoria",
-                          categoria: cat.name,
-                        })
-                      }
-                      className={cn(
-                        "relative flex min-h-11 w-full items-center rounded-md px-3 py-2.5 text-left text-sm font-medium transition-colors duration-150",
-                        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/45 focus-visible:ring-offset-2 focus-visible:ring-offset-[#1a2027]",
-                        seleccionado
-                          ? "bg-white/10 text-white before:absolute before:top-1/2 before:left-0 before:h-5 before:w-0.5 before:-translate-y-1/2 before:rounded-full before:bg-emerald-400 before:content-['']"
-                          : "text-slate-400 hover:bg-white/6 hover:text-slate-100",
-                      )}
-                    >
-                      {cat.name}
-                    </button>
-                  </li>
-                )
-              })
-            : null}
-        </ul>
-        {categorySections?.map((section) => (
-          <div key={section.id} className="mt-4">
-            <p className="mb-2.5 px-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-500">
-              {section.label}
-            </p>
-            <ul className="flex flex-col gap-0.5 p-0" role="list">
-              {section.categories.map((cat) => {
-                const filtroKey = `${section.id}:${cat.id}`
-                const seleccionado =
-                  vistaCatalogo.modo === "categoria" &&
-                  vistaCatalogo.categoria === filtroKey
-                return (
-                  <li key={filtroKey}>
-                    <button
-                      type="button"
-                      onClick={() =>
-                        persistVistaCatalogo({
-                          modo: "categoria",
-                          categoria: filtroKey,
-                        })
-                      }
-                      className={cn(
-                        "relative flex min-h-11 w-full items-center rounded-md px-3 py-2.5 text-left text-sm font-medium transition-colors duration-150",
-                        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/45 focus-visible:ring-offset-2 focus-visible:ring-offset-[#1a2027]",
-                        seleccionado
-                          ? "bg-white/10 text-white before:absolute before:top-1/2 before:left-0 before:h-5 before:w-0.5 before:-translate-y-1/2 before:rounded-full before:bg-emerald-400 before:content-['']"
-                          : "text-slate-400 hover:bg-white/6 hover:text-slate-100",
-                      )}
-                    >
-                      {cat.name}
-                    </button>
-                  </li>
-                )
-              })}
-            </ul>
-          </div>
-        ))}
-      </div>
-
-      <div>
-        <p className="mb-2.5 px-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-500">
-          Listados rápidos
-        </p>
-        <ul className="flex flex-col gap-0.5 p-0" role="list">
-          <li>
-            <button
-              type="button"
-              aria-pressed={vistaCatalogo.modo === "promociones"}
-              onClick={() => persistVistaCatalogo({ modo: "promociones" })}
-              className={cn(
-                "relative flex min-h-11 w-full items-center gap-2.5 rounded-md px-3 py-2.5 text-left text-sm font-medium transition-colors duration-150",
-                "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/45 focus-visible:ring-offset-2 focus-visible:ring-offset-[#1a2027]",
-                vistaCatalogo.modo === "promociones"
-                  ? "bg-emerald-500/12 text-emerald-100 before:absolute before:top-1/2 before:left-0 before:h-5 before:w-0.5 before:-translate-y-1/2 before:rounded-full before:bg-emerald-400 before:content-['']"
-                  : "text-slate-400 hover:bg-white/6 hover:text-slate-100",
-              )}
-            >
-              <Tag className="size-4 shrink-0 opacity-80" aria-hidden />
-              Promociones
-            </button>
-          </li>
-          <li>
-            <button
-              type="button"
-              aria-pressed={vistaCatalogo.modo === "con_descuento"}
-              onClick={() => persistVistaCatalogo({ modo: "con_descuento" })}
-              className={cn(
-                "relative flex min-h-11 w-full items-center gap-2.5 rounded-md px-3 py-2.5 text-left text-sm font-medium transition-colors duration-150",
-                "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400/45 focus-visible:ring-offset-2 focus-visible:ring-offset-[#1a2027]",
-                vistaCatalogo.modo === "con_descuento"
-                  ? "bg-amber-500/12 text-amber-100 before:absolute before:top-1/2 before:left-0 before:h-5 before:w-0.5 before:-translate-y-1/2 before:rounded-full before:bg-amber-400 before:content-['']"
-                  : "text-slate-400 hover:bg-white/6 hover:text-slate-100",
-              )}
-            >
-              <Percent className="size-4 shrink-0 opacity-80" aria-hidden />
-              Con descuento
-            </button>
-          </li>
-        </ul>
-      </div>
-    </nav>
-  )
+  useEffect(() => {
+    if (!keepScanFocused || loading) return
+    refocusScan()
+  }, [keepScanFocused, loading, refocusScan])
 
   return (
-    <div className="flex min-h-0 min-w-0 flex-1 overflow-hidden">
+    <div className={cn(layoutsOperarCatalogColumnClass, className)}>
       <aside
         id="data-workspace-sidebar"
         className={cn(
-          "relative shrink-0 overflow-hidden border-r border-white/10 bg-[#1a2027] transition-[width,border-color] duration-300 ease-in-out motion-reduce:transition-none",
-          layoutsOperarCatalogSidebarAsideWidthClass(sidebarOpen),
+          layoutsOperarCatalogSidebarClass,
+          sidebarOpen
+            ? layoutsOperarCatalogSidebarOpenClass
+            : layoutsOperarCatalogSidebarClosedClass,
         )}
         aria-hidden={!sidebarOpen}
         {...(!sidebarOpen ? { inert: true } : {})}
         aria-label="Filtros del catálogo"
       >
         <div className={layoutsOperarCatalogSidebarInnerClass}>
-          {sidebarNav}
+          <SaleCatalogSidebarNav
+            categories={categories}
+            categorySections={categorySections}
+            vistaCatalogo={vistaCatalogo}
+            onVistaChange={persistVistaCatalogo}
+          />
         </div>
       </aside>
 
-      <section className="grid min-h-0 min-w-0 flex-1 grid-rows-[auto_minmax(0,1fr)] bg-[#20262e]">
+      <section className={layoutsOperarCatalogCanvasClass}>
         <SaleCatalogToolbar
+          variant="operar"
           modoVista={modoVista}
-          onModoVistaChange={setModoVista}
+          onModoVistaChange={(modo) => {
+            setModoVista(modo)
+            refocusScan()
+          }}
           busqueda={busqueda}
           onBusquedaChange={setBusqueda}
           onBusquedaKeyDown={handleScanKeyDown}
-          scanInputRef={busquedaInputRef}
+          scanInputRef={registerScanInputRef}
           cantidadIngreso={cantidadIngreso}
-          onCantidadIngresoChange={setCantidadIngreso}
+          onCantidadIngresoChange={(cantidad) => {
+            setCantidadIngreso(cantidad)
+            refocusScan()
+          }}
           priceListId={priceListId}
-          onPriceListChange={setPriceListId}
+          onPriceListChange={(id) => {
+            setPriceListId(id)
+            refocusScan()
+          }}
         />
 
         <div
@@ -366,12 +303,12 @@ export function SaleCatalogBrowser({
                 ? "flex flex-1 flex-col p-6"
                 : productosFiltrados.length === 0
                   ? "relative overflow-hidden p-0"
-                  : "game-scroll overflow-y-auto p-3",
+                  : cn(layoutsOperarCatalogCanvasScrollClass),
           )}
         >
           {loading && !error ? (
             <div className="flex min-h-[200px] flex-1 items-center justify-center">
-              <p className="text-sm text-slate-400">Cargando productos…</p>
+              <p className="text-sm text-white/55">Cargando productos…</p>
             </div>
           ) : error ? (
             <div className="flex min-h-[200px] flex-1 flex-col items-center justify-center gap-2 text-center">
@@ -394,97 +331,24 @@ export function SaleCatalogBrowser({
             <div
               className={
                 modoVista === "grid"
-                  ? "grid grid-cols-3 gap-3"
+                  ? layoutsOperarCatalogGridClass
                   : "flex flex-col gap-2"
               }
             >
-              {productosFiltrados.map((p) => {
+              {productosFiltrados.map((product) => {
                 const productKind =
-                  "kind" in p && typeof p.kind === "string"
-                    ? (p.kind as MenuCartItemKind)
+                  "kind" in product && typeof product.kind === "string"
+                    ? (product.kind as MenuCartItemKind)
                     : undefined
-                const descuentoPct = saleCatalogDiscountPercent(
-                  p.precioOriginal,
-                  p.precio,
-                )
-                const promoTrim = p.promo?.trim() ?? ""
-                const mostrarBadgeOferta =
-                  descuentoPct != null || promoTrim.length > 0
 
                 return (
-                  <button
-                    key={`${productKind ?? "article"}:${p.id}`}
-                    type="button"
+                  <SaleCatalogProductCard
+                    key={`${productKind ?? "article"}:${product.id}`}
+                    product={product}
+                    variant={modoVista}
                     disabled={addDisabled}
-                    onClick={() => handleAddProduct(p.id, productKind)}
-                    className={cn(
-                      "group relative w-full overflow-hidden rounded-2xl border border-white/10 bg-[#252b34] text-left",
-                      "shadow-[inset_0_1px_0_rgba(255,255,255,0.07),0_0_0_1px_rgba(0,0,0,0.45),0_1px_2px_rgba(0,0,0,0.22),0_6px_16px_rgba(0,0,0,0.28),0_16px_40px_rgba(0,0,0,0.38)]",
-                      "before:pointer-events-none before:absolute before:inset-y-4 before:left-0 before:z-10 before:w-0.5 before:rounded-full before:bg-emerald-400 before:opacity-0 before:transition-opacity before:duration-300 group-hover:before:opacity-90",
-                      addDisabled && "cursor-not-allowed opacity-50",
-                      modoVista === "lista"
-                        ? "flex min-h-[152px] items-stretch"
-                        : "grid h-[318px] grid-rows-[152px_1fr]",
-                    )}
-                  >
-                    <div
-                      className={cn(
-                        "relative overflow-hidden bg-[#0f1416]",
-                        modoVista === "grid"
-                          ? "h-full w-full"
-                          : "h-[152px] w-48 shrink-0",
-                      )}
-                    >
-                      <Image
-                        src={p.imagen}
-                        alt={p.nombre}
-                        fill
-                        className="h-full w-full transition-transform duration-300 ease-out group-hover:scale-[1.03]"
-                        unoptimized
-                        sizes={modoVista === "grid" ? "33vw" : `${LAYOUTS_OPERAR_CATALOG_SIDEBAR_WIDTH_PX}px`}
-                        style={{
-                          objectFit: "cover",
-                          objectPosition: "center",
-                        }}
-                      />
-                      {mostrarBadgeOferta ? (
-                        <SaleCatalogProductOfferOverlay
-                          precioOriginal={p.precioOriginal}
-                          precio={p.precio}
-                          promo={p.promo}
-                        />
-                      ) : null}
-                      {!addDisabled ? (
-                        <span
-                          className="pointer-events-none absolute right-2 bottom-2 z-20 flex size-9 translate-y-1 scale-95 items-center justify-center rounded-full border border-emerald-300/45 bg-emerald-500 text-emerald-950 opacity-0 shadow-[0_4px_20px_rgba(16,185,129,0.5)] transition-[opacity,transform] duration-200 group-hover:translate-y-0 group-hover:scale-100 group-hover:opacity-100"
-                          aria-hidden
-                        >
-                          <Plus className="size-4.5" strokeWidth={2.5} />
-                        </span>
-                      ) : null}
-                    </div>
-                    <div
-                      className={
-                        modoVista === "grid"
-                          ? "grid h-full min-h-0 grid-rows-[minmax(0,1fr)_auto] gap-2 p-5"
-                          : "flex min-h-0 min-w-0 flex-1 flex-col justify-between gap-2 p-5"
-                      }
-                    >
-                      <div className="min-h-0 self-start">
-                        <h3 className="line-clamp-2 text-lg leading-tight font-bold text-foreground">
-                          {p.nombre}
-                        </h3>
-                        <p className="mt-1 line-clamp-2 text-sm leading-relaxed text-muted-foreground">
-                          {p.descripcion}
-                        </p>
-                      </div>
-                      <div className={modoVista === "grid" ? "self-end" : "shrink-0"}>
-                        <span className={importeCardClass}>
-                          {saleOpFmt.format(p.precio)}
-                        </span>
-                      </div>
-                    </div>
-                  </button>
+                    onClick={() => handleAddProduct(product.id, productKind)}
+                  />
                 )
               })}
             </div>

@@ -12,6 +12,7 @@ import {
   saleOpDialogHeader,
 } from "@/components/sale-operation/saleOperationStyles"
 import { cn } from "@/lib/utils"
+import { useSaleScanInputFocus } from "@/components/sale-operation/SaleScanInputFocusContext"
 import { useEffect, useRef, useState } from "react"
 
 export const SALE_CATALOG_ENTRY_QTY_MIN = 1
@@ -38,6 +39,7 @@ export function SaleCatalogEntryQuantityDialog({
   valueClassName,
   valueHoverClassName,
 }: Props) {
+  const scanFocus = useSaleScanInputFocus()
   const [open, setOpen] = useState(false)
   const [draft, setDraft] = useState(String(cantidadIngreso))
   const inputRef = useRef<HTMLInputElement>(null)
@@ -62,7 +64,10 @@ export function SaleCatalogEntryQuantityDialog({
   }
 
   const handleOpenChange = (next: boolean) => {
-    if (!next && open) commitDraft()
+    if (!next && open) {
+      commitDraft()
+      scanFocus?.focusScanInput()
+    }
     setOpen(next)
   }
 

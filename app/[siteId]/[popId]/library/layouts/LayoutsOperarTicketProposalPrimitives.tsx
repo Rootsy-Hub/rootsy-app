@@ -3,6 +3,10 @@
 import "@/app/[siteId]/[popId]/library/layouts/layoutsOperarTheme.css"
 import "@/app/[siteId]/[popId]/library/radius/rootsyRadiusSystem.css"
 import {
+  layoutsOperarSummaryActionConfirmColClass,
+  layoutsOperarSummaryActionDiscardColClass,
+} from "@/app/[siteId]/[popId]/library/layouts/layoutsOperarStyles"
+import {
   getLayoutsOperarGridCssVariables,
   getLayoutsOperarTicketProposal,
   layoutsOperarTicketProposalActionDiscardClass,
@@ -463,8 +467,26 @@ export function LayoutsOperarTicketProposalPanel({
       </div>
 
       <div className={layoutsOperarTicketProposalActionsClass(proposalId)}>
-        <div className={layoutsOperarTicketProposalActionDiscardClass(proposalId)}>Descartar</div>
-        <div className={layoutsOperarTicketProposalActionSellClass(proposalId)}>Vender</div>
+        <div className={layoutsOperarSummaryActionDiscardColClass}>
+          <div
+            className={cn(
+              layoutsOperarTicketProposalActionDiscardClass(proposalId),
+              "h-full w-full",
+            )}
+          >
+            Descartar
+          </div>
+        </div>
+        <div className={layoutsOperarSummaryActionConfirmColClass}>
+          <div
+            className={cn(
+              layoutsOperarTicketProposalActionSellClass(proposalId),
+              "h-full w-full",
+            )}
+          >
+            Vender
+          </div>
+        </div>
       </div>
 
       <LayoutsOperarTicketProposalTotalsBar proposalId={proposalId} />

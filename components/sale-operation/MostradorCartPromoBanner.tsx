@@ -1,6 +1,12 @@
 "use client"
 
 import {
+  layoutsOperarTicketProposalLineAmountClass,
+  layoutsOperarTicketProposalPromoBadgeClass,
+  layoutsOperarTicketProposalPromoBannerClass,
+} from "@/app/[siteId]/[popId]/library/layouts/layoutsOperarHardcodedSpec"
+import { LAYOUTS_OPERAR_DEFAULT_TICKET_PROPOSAL } from "@/app/[siteId]/[popId]/library/layouts/rootsyLayoutsOperarSystem"
+import {
   saleOpFmt,
   saleOpImporteCartClass,
 } from "@/components/sale-operation/saleOperationStyles"
@@ -11,7 +17,7 @@ import { Banknote, Percent, Tag } from "lucide-react"
 
 type Props = {
   label: string
-  variant?: "promotion" | "discount"
+  promoVariant?: "promotion" | "discount"
   discountMode?: "porcentaje" | "fijo"
   pricing?: MostradorCartGroupPricing
   discountAmount?: number
@@ -19,7 +25,10 @@ type Props = {
   compactLayout?: boolean
   importeClassName?: string
   discountBadgeClassName?: string
+  lineVariant?: "legacy" | "operar"
 }
+
+const TICKET_PROPOSAL = LAYOUTS_OPERAR_DEFAULT_TICKET_PROPOSAL
 
 function roundMoney(n: number): number {
   return Math.round(n * 100) / 100
@@ -53,7 +62,7 @@ function PromoDiscountBadge({
 
 export function MostradorCartPromoBanner({
   label,
-  variant = "promotion",
+  promoVariant = "promotion",
   discountMode = "porcentaje",
   pricing,
   discountAmount,
@@ -61,8 +70,10 @@ export function MostradorCartPromoBanner({
   compactLayout = false,
   importeClassName = saleOpImporteCartClass,
   discountBadgeClassName,
+  lineVariant = "operar",
 }: Props) {
-  const isDiscount = variant === "discount"
+  const isDiscount = promoVariant === "discount"
+  const isOperar = lineVariant === "operar"
   const isFixedDiscount = isDiscount && discountMode === "fijo"
 
   const savingsFromPricing =
@@ -86,11 +97,15 @@ export function MostradorCartPromoBanner({
   return (
     <div
       className={cn(
-        compactLayout ? cartLineRowGridCompactClass : cartLineRowGridClass,
-        "items-center py-2",
-        isDiscount
-          ? "bg-gradient-to-r from-emerald-200/80 via-emerald-100/45 to-transparent text-emerald-950"
-          : "bg-gradient-to-r from-violet-200/80 via-violet-100/45 to-transparent text-violet-950",
+        isOperar
+          ? layoutsOperarTicketProposalPromoBannerClass(TICKET_PROPOSAL, promoVariant)
+          : cn(
+              compactLayout ? cartLineRowGridCompactClass : cartLineRowGridClass,
+              "items-center py-2",
+              isDiscount
+                ? "bg-gradient-to-r from-emerald-200/80 via-emerald-100/45 to-transparent text-emerald-950"
+                : "bg-gradient-to-r from-violet-200/80 via-violet-100/45 to-transparent text-violet-950",
+            ),
       )}
     >
       <div
@@ -112,16 +127,34 @@ export function MostradorCartPromoBanner({
           {label}
         </span>
         {savings > 0 ? (
-          <PromoDiscountBadge
-            amount={savings}
-            variant={variant}
-            className={discountBadgeClassName}
-          />
+          isOperar ? (
+            <span
+              className={layoutsOperarTicketProposalPromoBadgeClass(
+                TICKET_PROPOSAL,
+                promoVariant,
+              )}
+            >
+              −{saleOpFmt.format(Math.abs(savings))}
+            </span>
+          ) : (
+            <PromoDiscountBadge
+              amount={savings}
+              variant={promoVariant}
+              className={discountBadgeClassName}
+            />
+          )
         ) : null}
       </div>
 
       {resolvedFinalTotal != null ? (
-        <span className={cn(importeClassName, "pt-0.5 text-right")}>
+        <span
+          className={cn(
+            isOperar
+              ? layoutsOperarTicketProposalLineAmountClass(TICKET_PROPOSAL)
+              : importeClassName,
+            "pt-0.5 text-right",
+          )}
+        >
           {saleOpFmt.format(resolvedFinalTotal)}
         </span>
       ) : (

@@ -8,6 +8,19 @@ import {
   clampSaleCatalogEntryQty,
   SaleCatalogEntryQuantityDialog,
 } from "@/components/sale-operation/SaleCatalogEntryQuantityDialog"
+import {
+  layoutsOperarCatalogToolbarClass,
+  layoutsOperarCatalogToolbarIconAccentClass,
+  layoutsOperarCatalogToolbarIconMutedClass,
+  layoutsOperarCatalogToolbarPriceListClass,
+  layoutsOperarCatalogToolbarQtyButtonClass,
+  layoutsOperarCatalogToolbarQtyShellClass,
+  layoutsOperarCatalogToolbarQtyValueClass,
+  layoutsOperarCatalogToolbarQtyValueHoverClass,
+  layoutsOperarCatalogToolbarScanInputClass,
+  layoutsOperarCatalogToolbarViewToggleActiveSurfaceClass,
+  layoutsOperarCatalogToolbarViewToggleShellClass,
+} from "@/app/[siteId]/[popId]/library/layouts/layoutsOperarStyles"
 import { Input } from "@/components/ui/input"
 import {
   Select,
@@ -33,7 +46,7 @@ function IconoLimpiarBusqueda({ className }: { className?: string }) {
     <svg
       viewBox="0 0 24 24"
       fill="currentColor"
-      className={cn("size-[14px] shrink-0", className)}
+      className={cn("size-3.5 shrink-0", className)}
       aria-hidden
     >
       <path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z" />
@@ -49,7 +62,7 @@ type Props = {
   busqueda: string
   onBusquedaChange: (value: string) => void
   onBusquedaKeyDown?: (event: React.KeyboardEvent<HTMLInputElement>) => void
-  scanInputRef?: RefObject<HTMLInputElement | null>
+  scanInputRef?: RefObject<HTMLInputElement | null> | ((element: HTMLInputElement | null) => void)
   cantidadIngreso: number
   onCantidadIngresoChange: (cantidad: number) => void
   priceListId: string
@@ -66,71 +79,71 @@ function clampEntryQty(value: number) {
 
 function variantShellClass(variant: ToolbarVariant) {
   if (variant === "operar") {
-    return "border-b border-[var(--layouts-operar-border-dark-hairline)] px-4 [height:var(--layouts-operar-catalog-toolbar-h)]"
+    return layoutsOperarCatalogToolbarClass
   }
-  return "border-b border-white/10 px-4 py-3"
+  return "flex min-w-0 shrink-0 items-center gap-3 border-b border-white/10 px-4 py-3"
 }
 
 function viewToggleShellClass(variant: ToolbarVariant) {
   if (variant === "operar") {
-    return "relative flex h-10 shrink-0 items-center rounded-lg border border-[color-mix(in_srgb,var(--rootsy-sombra-border)_45%,transparent)] bg-[color-mix(in_srgb,var(--rootsy-sombra-950)_55%,transparent)] p-1"
+    return layoutsOperarCatalogToolbarViewToggleShellClass
   }
   return "relative flex h-10 shrink-0 items-center rounded-lg border border-white/12 bg-black/25 p-1 shadow-[inset_0_1px_0_rgba(255,255,255,0.08),0_0_0_1px_rgba(16,185,129,0.06)]"
 }
 
 function viewToggleActivePillClass(variant: ToolbarVariant) {
   if (variant === "operar") {
-    return "pointer-events-none absolute inset-y-1 left-1 w-10 rounded-md border border-[color-mix(in_srgb,var(--rootsy-savia-400)_35%,transparent)] bg-[color-mix(in_srgb,var(--rootsy-savia-400)_15%,transparent)] transition-transform duration-300 ease-out"
+    return cn(
+      "pointer-events-none absolute inset-y-1 left-1 w-10 rounded-md border transition-transform duration-300 ease-out",
+      layoutsOperarCatalogToolbarViewToggleActiveSurfaceClass,
+    )
   }
   return "pointer-events-none absolute inset-y-1 left-1 w-10 rounded-md border border-emerald-300/35 bg-linear-to-b from-emerald-300/22 via-emerald-400/16 to-emerald-500/12 shadow-[0_0_18px_rgba(16,185,129,0.45),inset_0_1px_0_rgba(255,255,255,0.25)] transition-transform duration-300 ease-out"
 }
 
 function scanInputClass(variant: ToolbarVariant, hasValue: boolean) {
   if (variant === "operar") {
-    return cn(
-      "h-10 border-[color-mix(in_srgb,var(--rootsy-sombra-border)_45%,transparent)] bg-[color-mix(in_srgb,var(--rootsy-sombra-950)_45%,transparent)] pl-10 pr-10 text-sm text-[#f4f8f6] placeholder:text-[color-mix(in_srgb,var(--rootsy-sombra-300)_55%,transparent)]",
-      hasValue && "pr-16",
-    )
+    return cn(layoutsOperarCatalogToolbarScanInputClass, hasValue && "pr-16")
   }
   return cn(
-    "h-10 border-white/10 bg-black/20 pl-10 pr-10 text-white placeholder:text-white/35",
+    "h-10 rounded-md border-white/10 bg-black/20 pl-10 pr-10 text-white placeholder:text-white/35",
     hasValue && "pr-16",
   )
 }
 
 function qtyStepperShellClass(variant: ToolbarVariant) {
   if (variant === "operar") {
-    return "flex h-10 shrink-0 items-center gap-0.5 rounded-lg border border-[color-mix(in_srgb,var(--rootsy-sombra-border)_45%,transparent)] bg-[color-mix(in_srgb,var(--rootsy-sombra-950)_45%,transparent)] px-1"
+    return layoutsOperarCatalogToolbarQtyShellClass
   }
   return "flex h-10 shrink-0 items-center gap-0.5 rounded-lg border border-white/10 bg-black/20 px-1"
 }
 
 function qtyButtonClass(variant: ToolbarVariant) {
   if (variant === "operar") {
-    return "inline-flex size-8 items-center justify-center rounded-md text-[color-mix(in_srgb,var(--rootsy-bruma-100)_88%,white)] transition-colors hover:bg-[color-mix(in_srgb,var(--rootsy-sombra-900)_48%,transparent)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color-mix(in_srgb,var(--rootsy-savia-400)_45%,transparent)]"
+    return layoutsOperarCatalogToolbarQtyButtonClass
   }
   return "inline-flex size-8 items-center justify-center rounded-md text-white/75 transition-colors hover:bg-white/8 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-300/70"
 }
 
 function qtyValueClass(variant: ToolbarVariant) {
   if (variant === "operar") {
-    return "min-w-8 px-1 text-center text-sm font-semibold tabular-nums text-[#f4f8f6]"
+    return layoutsOperarCatalogToolbarQtyValueClass
   }
   return "min-w-8 px-1 text-center text-sm font-semibold tabular-nums text-white"
 }
 
 function priceListIconClass(variant: ToolbarVariant) {
   if (variant === "operar") {
-    return "size-4 shrink-0 text-[color-mix(in_srgb,var(--rootsy-savia-400)_82%,white)]"
+    return cn("size-4 shrink-0", layoutsOperarCatalogToolbarIconAccentClass)
   }
   return "size-4 shrink-0 text-emerald-300/85"
 }
 
 function priceListTriggerClass(variant: ToolbarVariant) {
   if (variant === "operar") {
-    return "h-10 min-w-[9.5rem] gap-2 border-[color-mix(in_srgb,var(--rootsy-sombra-border)_45%,transparent)] bg-[color-mix(in_srgb,var(--rootsy-sombra-950)_45%,transparent)] text-sm text-[#f4f8f6]"
+    return layoutsOperarCatalogToolbarPriceListClass
   }
-  return "h-10 min-w-[9.5rem] gap-2 border-white/10 bg-black/20 text-sm text-white"
+  return "h-10 min-w-[9.5rem] gap-2 rounded-md border-white/10 bg-black/20 text-sm text-white"
 }
 
 export function SaleCatalogToolbar({
@@ -157,7 +170,7 @@ export function SaleCatalogToolbar({
   }
 
   return (
-    <div className={cn("flex min-w-0 shrink-0 items-center gap-3", variantShellClass(variant), className)}>
+    <div className={cn(variantShellClass(variant), className)}>
       <div className={viewToggleShellClass(variant)}>
         <span
           aria-hidden
@@ -213,7 +226,7 @@ export function SaleCatalogToolbar({
           className={cn(
             "pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2",
             variant === "operar"
-              ? "text-[color-mix(in_srgb,var(--rootsy-savia-400)_82%,white)]"
+              ? layoutsOperarCatalogToolbarIconAccentClass
               : "text-emerald-300/85",
           )}
           aria-hidden
@@ -221,12 +234,25 @@ export function SaleCatalogToolbar({
         {demo ? (
           <div
             className={cn(
-              "flex h-10 items-center rounded-md border pr-10 pl-10 text-sm",
+              "flex items-center text-sm",
               scanInputClass(variant, false),
             )}
           >
-            Escanear producto o buscar…
+            <span className="truncate text-[color-mix(in_srgb,var(--rootsy-sombra-300)_55%,transparent)]">
+              Escanear producto o buscar…
+            </span>
           </div>
+        ) : variant === "operar" ? (
+          <input
+            ref={scanInputRef}
+            type="text"
+            value={busqueda}
+            onChange={(e) => onBusquedaChange(e.target.value)}
+            onKeyDown={onBusquedaKeyDown}
+            placeholder="Escanear producto o buscar…"
+            aria-label="Escanear producto o buscar"
+            className={scanInputClass(variant, busqueda.length > 0)}
+          />
         ) : (
           <Input
             ref={scanInputRef}
@@ -243,7 +269,7 @@ export function SaleCatalogToolbar({
             "pointer-events-none absolute top-1/2 size-4 -translate-y-1/2",
             busqueda.length > 0 ? "right-9" : "right-3",
             variant === "operar"
-              ? "text-[color-mix(in_srgb,var(--rootsy-sombra-300)_55%,transparent)]"
+              ? layoutsOperarCatalogToolbarIconMutedClass
               : "text-white/35",
           )}
           aria-hidden
@@ -255,7 +281,10 @@ export function SaleCatalogToolbar({
             className={cn(
               "absolute top-1/2 right-1.5 flex size-7 -translate-y-1/2 items-center justify-center rounded-full transition-colors focus-visible:outline-none focus-visible:ring-2",
               variant === "operar"
-                ? "text-[color-mix(in_srgb,var(--rootsy-sombra-300)_65%,transparent)] hover:bg-[color-mix(in_srgb,var(--rootsy-sombra-900)_48%,transparent)] hover:text-[#f4f8f6]"
+                ? cn(
+                    layoutsOperarCatalogToolbarIconMutedClass,
+                    "hover:bg-[color-mix(in_srgb,var(--rootsy-sombra-900)_48%,transparent)] hover:text-[#f4f8f6]",
+                  )
                 : "text-white/50 hover:bg-white/[0.07] hover:text-white/90 focus-visible:ring-emerald-300/70",
             )}
             onClick={() => onBusquedaChange("")}
@@ -289,7 +318,7 @@ export function SaleCatalogToolbar({
           valueClassName={qtyValueClass(variant)}
           valueHoverClassName={
             variant === "operar"
-              ? "hover:bg-[color-mix(in_srgb,var(--rootsy-sombra-900)_48%,transparent)]"
+              ? layoutsOperarCatalogToolbarQtyValueHoverClass
               : "hover:bg-white/8"
           }
         />
@@ -311,23 +340,21 @@ export function SaleCatalogToolbar({
         </label>
         {demo ? (
           <div
-            className={cn(
-              "flex h-10 min-w-[9.5rem] items-center gap-2 rounded-md border px-3 text-sm",
-              priceListTriggerClass(variant),
-            )}
+            className={cn("flex items-center", priceListTriggerClass(variant))}
             aria-labelledby={priceListLabelId}
           >
             <Tags className={priceListIconClass(variant)} aria-hidden />
             {priceLists.find((p) => p.id === priceListId)?.label ?? "Mostrador"}
           </div>
         ) : (
-          <Select
-            value={priceListId}
-            onValueChange={onPriceListChange}
-          >
+          <Select value={priceListId} onValueChange={onPriceListChange}>
             <SelectTrigger
               aria-labelledby={priceListLabelId}
-              className={priceListTriggerClass(variant)}
+              className={cn(
+                priceListTriggerClass(variant),
+                variant === "operar" &&
+                  "h-10 w-fit data-[size=default]:h-10 dark:bg-[color-mix(in_srgb,var(--rootsy-sombra-950)_55%,transparent)] dark:hover:bg-[color-mix(in_srgb,var(--rootsy-sombra-950)_55%,transparent)]",
+              )}
             >
               <Tags className={priceListIconClass(variant)} aria-hidden />
               <SelectValue placeholder="Lista de precio" />
@@ -335,10 +362,7 @@ export function SaleCatalogToolbar({
             <SelectContent align="end">
               {priceLists.map((list) => (
                 <SelectItem key={list.id} value={list.id}>
-                  <span className="flex items-center gap-2">
-                    <Tags className="size-4 shrink-0 opacity-70" aria-hidden />
-                    {list.label}
-                  </span>
+                  {list.label}
                 </SelectItem>
               ))}
             </SelectContent>

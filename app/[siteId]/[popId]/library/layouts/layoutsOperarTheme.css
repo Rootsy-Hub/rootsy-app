@@ -129,6 +129,45 @@
   --layouts-operar-light-cart-line-text: var(--rootsy-bruma-900);
 }
 
+.rootsy-theme-pos.layouts-operar-body .layouts-operar-catalog-toolbar-control,
+.rootsy-theme-pos .layouts-operar-body .layouts-operar-catalog-toolbar-control {
+  height: 2.5rem;
+  min-height: 2.5rem;
+  border-radius: 0.5rem;
+  border: 1px solid color-mix(in srgb, var(--rootsy-sombra-border) 45%, transparent);
+  background-color: color-mix(in srgb, var(--rootsy-sombra-950) 55%, transparent);
+  box-shadow: none;
+}
+
+.rootsy-theme-pos.layouts-operar-body input.layouts-operar-catalog-toolbar-control,
+.rootsy-theme-pos .layouts-operar-body input.layouts-operar-catalog-toolbar-control,
+.rootsy-theme-pos.layouts-operar-body button.layouts-operar-catalog-toolbar-control,
+.rootsy-theme-pos .layouts-operar-body button.layouts-operar-catalog-toolbar-control,
+.rootsy-theme-pos.layouts-operar-body [data-slot="select-trigger"].layouts-operar-catalog-toolbar-control,
+.rootsy-theme-pos .layouts-operar-body [data-slot="select-trigger"].layouts-operar-catalog-toolbar-control {
+  appearance: none;
+}
+
+.rootsy-theme-pos.layouts-operar-body [data-slot="select-trigger"].layouts-operar-catalog-toolbar-control:hover,
+.rootsy-theme-pos .layouts-operar-body [data-slot="select-trigger"].layouts-operar-catalog-toolbar-control:hover,
+.rootsy-theme-pos.layouts-operar-body [data-slot="select-trigger"].layouts-operar-catalog-toolbar-control[data-state="open"],
+.rootsy-theme-pos .layouts-operar-body [data-slot="select-trigger"].layouts-operar-catalog-toolbar-control[data-state="open"] {
+  background-color: color-mix(in srgb, var(--rootsy-sombra-950) 55%, transparent);
+}
+
+.rootsy-theme-pos.layouts-operar-body .layouts-operar-catalog-toolbar-control:focus-visible,
+.rootsy-theme-pos .layouts-operar-body .layouts-operar-catalog-toolbar-control:focus-visible {
+  outline: none;
+  border-color: color-mix(in srgb, var(--rootsy-savia-400) 45%, transparent);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--rootsy-savia-400) 22%, transparent);
+}
+
+.rootsy-theme-pos.layouts-operar-body input.layouts-operar-catalog-toolbar-scan-input:focus-visible,
+.rootsy-theme-pos .layouts-operar-body input.layouts-operar-catalog-toolbar-scan-input:focus-visible {
+  border-color: color-mix(in srgb, var(--rootsy-savia-400) 35%, transparent);
+  box-shadow: none;
+}
+
 .rootsy-theme-pos.layouts-operar-header,
 .rootsy-theme-pos .layouts-operar-header {
   background: linear-gradient(

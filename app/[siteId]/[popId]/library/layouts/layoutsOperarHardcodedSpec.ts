@@ -57,7 +57,8 @@ export function getLayoutsOperarGridCssVariables(): CSSProperties {
 
   return {
     ["--layouts-operar-grid-cols" as string]: `minmax(0, 1fr) ${a.summaryPanelWidthPx}px`,
-    ["--layouts-operar-grid-rows" as string]: `minmax(0, 1fr) minmax(${a.toolboxRowMinHeightPx}px, auto)`,
+    ["--layouts-operar-grid-rows" as string]: `minmax(0, 1fr)`,
+    ["--layouts-operar-operation-rows" as string]: `minmax(0, 1fr) minmax(${a.toolboxRowMinHeightPx}px, auto)`,
     ["--layouts-operar-catalog-rows" as string]: `${a.catalogToolbarHeightPx}px minmax(0, 1fr)`,
     ["--layouts-operar-catalog-toolbar-h" as string]: `${a.catalogToolbarHeightPx}px`,
     ["--layouts-operar-catalog-sidebar-w" as string]: `${a.catalogSidebarWidthPx}px`,
@@ -216,16 +217,8 @@ export function getLayoutsOperarWireframeZoneLabel(
   return `${token} · ${mode} · ${measure}`
 }
 
-export function getLayoutsOperarMainGridRowsStyle(): CSSProperties {
-  const a = ROOTSY_LAYOUTS_OPERAR_ANATOMY
-  return {
-    gridTemplateRows: `minmax(0, 1fr) minmax(${a.toolboxRowMinHeightPx}px, auto)`,
-  }
-}
-
 export function getLayoutsOperarMainGridRowsClass() {
-  const a = ROOTSY_LAYOUTS_OPERAR_ANATOMY
-  return `grid-rows-[minmax(0,1fr)_minmax(${a.toolboxRowMinHeightPx}px,auto)] sm:grid-rows-[minmax(0,1fr)_minmax(${a.toolboxRowMinHeightSmPx}px,auto)]`
+  return "grid-rows-[minmax(0,1fr)]"
 }
 
 export function getLayoutsOperarMainGridColsClass() {
