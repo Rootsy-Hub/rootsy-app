@@ -5,12 +5,10 @@ import {
   RootsFormSelectField,
   RootsFormSelectItem,
   RootsFormTextField,
-  rootsFormFieldStackClass,
 } from "@/components/rootsy-form"
 import type { ArticleItemKind } from "@/lib/articleItemKind"
 import {
   ARTICLE_ITEM_KIND_HINT,
-  CUSTOM_UNIT_OF_MEASURE_SELECT,
   UNIT_OF_MEASURE_OPTIONS,
 } from "@/lib/articleItemKind"
 
@@ -31,12 +29,11 @@ export function ArticleUnitOfMeasureField({
 }: Props) {
   const showWaste = itemKind === "raw_material"
   const showMinStock = itemKind !== "merchandise"
-  const showCustomUnit = value.unitOfMeasure === CUSTOM_UNIT_OF_MEASURE_SELECT
 
   return (
     <div className="flex w-full min-w-0 flex-col gap-3.5">
       <RootsFormSelectField
-        label="Unidad de medida"
+        label="Unidad de medida de venta"
         id={`${idPrefix}-uom`}
         value={value.unitOfMeasure || "unidad"}
         onValueChange={(next) => onChange({ unitOfMeasure: next })}
@@ -48,21 +45,7 @@ export function ArticleUnitOfMeasureField({
             {option.label}
           </RootsFormSelectItem>
         ))}
-        <RootsFormSelectItem value={CUSTOM_UNIT_OF_MEASURE_SELECT}>
-          Personalizado
-        </RootsFormSelectItem>
       </RootsFormSelectField>
-
-      {showCustomUnit ? (
-        <RootsFormTextField
-          label="Unidad personalizada"
-          id={`${idPrefix}-uom-custom`}
-          value={value.customUnitOfMeasure}
-          onChange={(e) => onChange({ customUnitOfMeasure: e.target.value })}
-          placeholder="Ej. maple de 12"
-          disabled={disabled}
-        />
-      ) : null}
 
       {showWaste ? (
         <RootsFormTextField

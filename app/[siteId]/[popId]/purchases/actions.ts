@@ -15,10 +15,11 @@ import { requireAuthenticatedUser } from "@/lib/authHelpers"
 import { createClient } from "@/utils/supabase/server"
 import { purchaseComprobanteAccruesInputVat } from "@/lib/purchaseComprobantePicker"
 import { isArticleItemKind } from "@/lib/articleItemKind"
+import { activeArticleCostsByArticleIdForPop } from "@/lib/articleCostQueries"
 import {
-  buildPurchaseLineFromInput,
   finalizePurchaseCheckout,
 } from "@/lib/purchaseCheckoutLines"
+import { resolvePurchaseCheckoutLine } from "@/app/[siteId]/[popId]/purchases/purchaseLineResolve"
 
 export type PurchaseKind = "merchandise" | "raw_material" | "supply"
 
@@ -39,8 +40,16 @@ export type SupplierOption = {
 export type PurchaseArticleOption = {
   id: string
   name: string
-  costPrice: number
   iva: number
+}
+
+export type PurchaseCatalogArticleCost = {
+  id: string
+  name: string
+  costUnitLabel: string
+  saleUnitsPerCostUnit: number
+  unitPrice: number
+  supplierId: string | null
 }
 
 export type PurchaseListRow = {
@@ -63,9 +72,12 @@ export type PurchaseListRow = {
 
 export type CreatePurchaseLineInput = {
   articleId: string
-  quantity: number
+  articleCostId: string
+  /** Cantidad de unidades de costo (ej. maples). */
+  costQuantity: number
+  /** Precio por unidad de costo. */
   unitCost: number
-  /** Si true, persiste el costo en la ficha del artículo. */
+  /** Si true, actualiza article_costs.unit_price al confirmar. */
   updateArticleCost?: boolean
   itemDiscountMode?: "porcentaje" | "fijo"
   itemDiscountDraft?: string
@@ -189,13 +201,13 @@ export type PurchaseCatalogArticle = {
   id: string
   name: string
   description: string
-  costPrice: number
   iva: number
   categoryId: string
   categoryName: string
   itemKind: import("@/lib/articleItemKind").ArticleItemKind
   unitOfMeasure: string
   imageUrl: string | null
+  costs: PurchaseCatalogArticleCost[]
 }
 
 export async function getPurchaseCatalog(popId: string): Promise<
@@ -246,7 +258,6 @@ export async function getPurchaseCatalog(popId: string): Promise<
         id,
         name,
         description,
-        cost_price,
         iva,
         category_id,
         item_kind,
@@ -261,14 +272,28 @@ export async function getPurchaseCatalog(popId: string): Promise<
     if (artErr) {
       return { success: false, error: artErr.message }
     }
+    const costsByArticleId = await activeArticleCostsByArticleIdForPop(
+      supabase,
+      popId,
+    )
     const articles: PurchaseCatalogArticle[] = (artRows || []).map((row) => {
       const cat = row.categories as unknown as { name?: string } | null
       const rawKind = String(row.item_kind ?? "merchandise")
+      const articleId = String(row.id)
+      const costs: PurchaseCatalogArticleCost[] = (
+        costsByArticleId.get(articleId) ?? []
+      ).map((entry) => ({
+        id: entry.id,
+        name: entry.name,
+        costUnitLabel: entry.costUnitLabel,
+        saleUnitsPerCostUnit: entry.saleUnitsPerCostUnit,
+        unitPrice: entry.unitPrice,
+        supplierId: entry.supplierId,
+      }))
       return {
         id: String(row.id),
         name: String(row.name ?? ""),
         description: String(row.description ?? ""),
-        costPrice: parseMoney(row.cost_price),
         iva: parseMoney(row.iva),
         categoryId: String(row.category_id ?? ""),
         categoryName: cat?.name ? String(cat.name) : "—",
@@ -278,6 +303,7 @@ export async function getPurchaseCatalog(popId: string): Promise<
           typeof row.image_url === "string" && row.image_url.trim()
             ? row.image_url.trim()
             : null,
+        costs,
       }
     })
 
@@ -352,7 +378,7 @@ export async function getPurchasesPageData(popId: string): Promise<
 
     const { data: artRows, error: artErr } = await supabase
       .from("articles")
-      .select("id, name, cost_price, iva")
+      .select("id, name, iva")
       .eq("pop_id", popId)
       .eq("is_active", true)
       .order("name", { ascending: true })
@@ -365,7 +391,6 @@ export async function getPurchasesPageData(popId: string): Promise<
     const articles: PurchaseArticleOption[] = (artRows || []).map((r) => ({
       id: String(r.id),
       name: String(r.name ?? ""),
-      costPrice: parseMoney(r.cost_price),
       iva: parseMoney(r.iva),
     }))
 
@@ -505,7 +530,10 @@ export async function createPurchase(
     }
 
     const lines = input.lines.filter(
-      (l) => l.articleId?.trim() && parseQty(l.quantity) > 0,
+      (l) =>
+        l.articleId?.trim() &&
+        l.articleCostId?.trim() &&
+        parseQty(l.costQuantity) > 0,
     )
     if (lines.length === 0) {
       return {
@@ -545,23 +573,20 @@ export async function createPurchase(
 
     const built = []
     for (const l of lines) {
-      const articleId = l.articleId.trim()
-      const unitCost = parseMoney(l.unitCost)
-      if (parseQty(l.quantity) <= 0) continue
-      if (unitCost < 0) {
-        return { success: false, error: "El costo unitario no puede ser negativo." }
+      const resolved = await resolvePurchaseCheckoutLine(supabase, popId, {
+        articleId: l.articleId,
+        articleCostId: l.articleCostId,
+        costQuantity: l.costQuantity,
+        unitCost: l.unitCost,
+        itemDiscountMode: l.itemDiscountMode,
+        itemDiscountDraft: l.itemDiscountDraft,
+        comment: l.comment,
+        updateArticleCost: l.updateArticleCost,
+      })
+      if ("error" in resolved) {
+        return { success: false, error: resolved.error }
       }
-      const { data: artRow, error: artErr } = await supabase
-        .from("articles")
-        .select("id, name, iva")
-        .eq("id", articleId)
-        .eq("pop_id", popId)
-        .maybeSingle()
-      if (artErr || !artRow) {
-        return { success: false, error: "Artículo inválido o inactivo." }
-      }
-      const builtLine = buildPurchaseLineFromInput(l, artRow)
-      if (builtLine) built.push(builtLine)
+      built.push(resolved.line)
     }
     if (built.length === 0) {
       return { success: false, error: "No hay ítems válidos en la compra." }

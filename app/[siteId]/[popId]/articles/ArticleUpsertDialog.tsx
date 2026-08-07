@@ -5,6 +5,7 @@ import {
   ArticleUpsertFormFields,
   type ArticleUpsertFormState,
 } from "@/app/[siteId]/[popId]/articles/ArticleUpsertFormFields"
+import type { ArticleCostFormLine } from "@/app/[siteId]/[popId]/articles/components/ArticleCostEditor"
 import type { ArticleItemKind } from "@/lib/articleItemKind"
 import {
   RootsDialogBody,
@@ -27,6 +28,8 @@ type FormFieldsProps = {
   onItemKindChange: (kind: ArticleItemKind) => void
   categories: ArticleCategoryOption[]
   supplierOptions: { id: string; name: string }[]
+  costLines: ArticleCostFormLine[]
+  onCostLinesChange: (lines: ArticleCostFormLine[]) => void
   suppliersLoading?: boolean
   canPostInitialStock?: boolean
   disabled?: boolean

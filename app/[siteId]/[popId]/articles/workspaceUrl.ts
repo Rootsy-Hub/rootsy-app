@@ -16,7 +16,6 @@ export const DEFAULT_ARTICLE_TABLE_PAGE_SIZE = 25
 export const ARTICLE_TABLE_SORT_KEYS = [
   "name",
   "sale_price",
-  "cost_price",
 ] as const
 
 export type ArticleTableSortKey = (typeof ARTICLE_TABLE_SORT_KEYS)[number]

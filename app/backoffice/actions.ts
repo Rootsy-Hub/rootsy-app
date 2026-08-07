@@ -1,6 +1,10 @@
 "use server"
 
 import { requireBackofficeAccess } from "@/app/backoffice/backofficeAuth"
+import {
+  BACKOFFICE_POPS_PAGE_SIZE_OPTIONS,
+  DEFAULT_BACKOFFICE_POPS_PAGE_SIZE,
+} from "@/app/backoffice/backofficePopsConstants"
 import { createServiceRoleClient } from "@/utils/supabase/service-role"
 
 async function backofficeDb() {
@@ -60,18 +64,41 @@ export type BackofficeSubscriptionCatalog = {
   planLimits: BackofficePlanLimitRow[]
 }
 
+export type BackofficePopExtraModuleSummary = {
+  key: string
+  label: string
+}
+
 export type BackofficePopRow = {
   id: string
   name: string
   siteId: string
+  country: string | null
   imageUrl: string | null
   isActive: boolean
   ownerUserId: string
   ownerName: string
+  organizationId: string | null
+  organizationName: string | null
+  organizationOwnerName: string | null
   businessTypeName: string | null
+  businessTypeDisplayName: string | null
   subscriptionStatus: string | null
   planName: string | null
+  planDisplayName: string | null
+  billingCycle: "monthly" | "yearly" | null
+  priceMonthly: number
+  priceYearly: number
+  extraModules: BackofficePopExtraModuleSummary[]
   createdAt: string
+}
+
+export type BackofficePopsPageResult = {
+  rows: BackofficePopRow[]
+  totalCount: number
+  page: number
+  pageSize: number
+  totalPages: number
 }
 
 export type BackofficePopExtraModule = {
@@ -393,61 +420,193 @@ export async function listBackofficeBusinessTypes(): Promise<
   }))
 }
 
-export async function listBackofficePops(): Promise<BackofficePopRow[]> {
-  const supabase = await backofficeDb()
-  const { data, error } = await supabase
-    .from("pops")
-    .select(
-      `
-      id,
-      name,
-      site_id,
-      image_url,
-      is_active,
-      owner_user_id,
-      created_at,
-      _business_types:business_type_id ( name ),
-      _pop_subscriptions:subscription_id ( status, _subscription_plans:plan_id ( name ) ),
-      owner:owner_user_id ( first_name, last_name )
-    `,
-    )
-    .order("created_at", { ascending: false })
+function mapBackofficeUserName(
+  user:
+    | { first_name?: string | null; last_name?: string | null }
+    | null
+    | undefined,
+  fallback = "",
+): string {
+  const first = String(user?.first_name ?? "").trim()
+  const last = String(user?.last_name ?? "").trim()
+  return `${first} ${last}`.trim() || fallback
+}
 
-  if (error || !data) return []
+function normalizeBillingCycle(
+  value: unknown,
+): "monthly" | "yearly" | null {
+  if (value === "monthly" || value === "yearly") return value
+  return null
+}
 
-  return data.map((row) => {
-    const owner = Array.isArray(row.owner) ? row.owner[0] : row.owner
-    const businessType = Array.isArray(row._business_types)
-      ? row._business_types[0]
-      : row._business_types
-    const subscription = Array.isArray(row._pop_subscriptions)
-      ? row._pop_subscriptions[0]
-      : row._pop_subscriptions
-    const planRaw = subscription?._subscription_plans
-    const plan = Array.isArray(planRaw) ? planRaw[0] : planRaw
-    const ownerFirst = String(owner?.first_name ?? "").trim()
-    const ownerLast = String(owner?.last_name ?? "").trim()
-    const ownerName =
-      `${ownerFirst} ${ownerLast}`.trim() || String(row.owner_user_id ?? "")
+function mapBackofficePopListRow(row: Record<string, unknown>): BackofficePopRow {
+  const owner = Array.isArray(row.owner) ? row.owner[0] : row.owner
+  const organization = Array.isArray(row.organization)
+    ? row.organization[0]
+    : row.organization
+  const businessType = Array.isArray(row._business_types)
+    ? row._business_types[0]
+    : row._business_types
+  const subscription = Array.isArray(row._pop_subscriptions)
+    ? row._pop_subscriptions[0]
+    : row._pop_subscriptions
+  const planRaw = subscription?._subscription_plans
+  const plan = Array.isArray(planRaw) ? planRaw[0] : planRaw
+  const billingCycle =
+    normalizeBillingCycle(subscription?.scheduled_billing_cycle) ??
+    normalizeBillingCycle(subscription?.billing_cycle)
+  const extraModules = parseBackofficeExtraModules(subscription?.extra_modules).map(
+    (mod) => ({
+      key: mod.key,
+      label: mod.label,
+    }),
+  )
 
-    return {
-      id: String(row.id),
-      name: String(row.name ?? ""),
-      siteId: String(row.site_id ?? ""),
-      imageUrl: row.image_url != null ? String(row.image_url) : null,
-      isActive: Boolean(row.is_active),
-      ownerUserId: String(row.owner_user_id ?? ""),
-      ownerName,
-      businessTypeName: businessType?.name
+  return {
+    id: String(row.id),
+    name: String(row.name ?? ""),
+    siteId: String(row.site_id ?? ""),
+    country: row.country != null ? String(row.country) : null,
+    imageUrl: row.image_url != null ? String(row.image_url) : null,
+    isActive: Boolean(row.is_active),
+    ownerUserId: String(row.owner_user_id ?? ""),
+    ownerName: mapBackofficeUserName(
+      owner as { first_name?: string | null; last_name?: string | null },
+      String(row.owner_user_id ?? ""),
+    ),
+    organizationId:
+      organization?.id != null ? String(organization.id) : null,
+    organizationName:
+      organization?.name != null ? String(organization.name) : null,
+    organizationOwnerName: mapBackofficeUserName(
+      owner as { first_name?: string | null; last_name?: string | null },
+    ) || null,
+    businessTypeName: businessType?.name
+      ? String(businessType.name)
+      : null,
+    businessTypeDisplayName: businessType?.display_name
+      ? String(businessType.display_name)
+      : businessType?.name
         ? String(businessType.name)
         : null,
-      subscriptionStatus: subscription?.status
-        ? String(subscription.status)
+    subscriptionStatus: subscription?.status
+      ? String(subscription.status)
+      : null,
+    planName: plan?.name ? String(plan.name) : null,
+    planDisplayName: plan?.display_name
+      ? String(plan.display_name)
+      : plan?.name
+        ? String(plan.name)
         : null,
-      planName: plan?.name ? String(plan.name) : null,
-      createdAt: String(row.created_at ?? ""),
+    billingCycle,
+    priceMonthly: Number(subscription?.price_monthly ?? 0),
+    priceYearly: Number(subscription?.price_yearly ?? 0),
+    extraModules,
+    createdAt: String(row.created_at ?? ""),
+  }
+}
+
+const BACKOFFICE_POPS_LIST_SELECT = `
+  id,
+  name,
+  site_id,
+  country,
+  image_url,
+  is_active,
+  owner_user_id,
+  created_at,
+  organization:organization_id (
+    id,
+    name
+  ),
+  _business_types:business_type_id ( name, display_name ),
+  _pop_subscriptions:subscription_id (
+    status,
+    billing_cycle,
+    scheduled_billing_cycle,
+    price_monthly,
+    price_yearly,
+    extra_modules,
+    _subscription_plans:plan_id ( name, display_name )
+  ),
+  owner:owner_user_id ( first_name, last_name )
+`
+
+function normalizeBackofficePopsPaging(page: number, pageSize: number) {
+  const sizes = new Set<number>(BACKOFFICE_POPS_PAGE_SIZE_OPTIONS)
+  const ps = sizes.has(pageSize) ? pageSize : DEFAULT_BACKOFFICE_POPS_PAGE_SIZE
+  const p = Number.isFinite(page) && page >= 1 ? Math.floor(page) : 1
+  return { page: p, pageSize: ps }
+}
+
+export async function listBackofficePopsPage(input: {
+  page: number
+  pageSize: number
+}): Promise<BackofficePopsPageResult> {
+  const supabase = await backofficeDb()
+  const { page: reqPage, pageSize } = normalizeBackofficePopsPaging(
+    input.page,
+    input.pageSize,
+  )
+
+  const { count, error: countError } = await supabase
+    .from("pops")
+    .select("id", { count: "exact", head: true })
+
+  if (countError) {
+    return {
+      rows: [],
+      totalCount: 0,
+      page: 1,
+      pageSize,
+      totalPages: 1,
     }
-  })
+  }
+
+  const totalCount = count ?? 0
+  const totalPages = Math.max(1, Math.ceil(totalCount / pageSize))
+  const safePage = Math.min(reqPage, totalPages)
+  const from = (safePage - 1) * pageSize
+  const to = from + pageSize - 1
+
+  const { data, error } = await supabase
+    .from("pops")
+    .select(BACKOFFICE_POPS_LIST_SELECT)
+    .order("created_at", { ascending: false })
+    .range(from, to)
+
+  if (error || !data) {
+    throw new Error(
+      error?.message ?? "No se pudieron cargar los puntos de venta.",
+    )
+  }
+
+  return {
+    rows: data.map((row) => mapBackofficePopListRow(row as Record<string, unknown>)),
+    totalCount,
+    page: safePage,
+    pageSize,
+    totalPages,
+  }
+}
+
+export async function deactivateBackofficePop(
+  popId: string,
+): Promise<{ success: true } | { success: false; error: string }> {
+  const supabase = await backofficeDb()
+  const { error } = await supabase
+    .from("pops")
+    .update({ is_active: false })
+    .eq("id", popId)
+
+  if (error) {
+    return {
+      success: false,
+      error: "No se pudo desactivar el punto de venta.",
+    }
+  }
+
+  return { success: true }
 }
 
 export async function getBackofficePopDetail(
@@ -789,4 +948,102 @@ export async function listBackofficeUsers(): Promise<BackofficeUserRow[]> {
       createdAt: String(row.created_at ?? ""),
     }
   })
+}
+
+export type BackofficeDashboardStats = {
+  usersCount: number
+  popsCount: number
+  organizationsCount: number
+  activeSubscriptionsCount: number
+  trialSubscriptionsCount: number
+}
+
+export async function getBackofficeDashboardStats(): Promise<BackofficeDashboardStats> {
+  const supabase = await backofficeDb()
+
+  const [
+    { count: usersCount },
+    { count: popsCount },
+    { count: organizationsCount },
+    { count: activeSubscriptionsCount },
+    { count: trialSubscriptionsCount },
+  ] = await Promise.all([
+    supabase.from("users").select("id", { count: "exact", head: true }),
+    supabase.from("pops").select("id", { count: "exact", head: true }),
+    supabase.from("organizations").select("id", { count: "exact", head: true }),
+    supabase
+      .from("_pop_subscriptions")
+      .select("id", { count: "exact", head: true })
+      .eq("status", "active"),
+    supabase
+      .from("_pop_subscriptions")
+      .select("id", { count: "exact", head: true })
+      .eq("status", "trial"),
+  ])
+
+  return {
+    usersCount: usersCount ?? 0,
+    popsCount: popsCount ?? 0,
+    organizationsCount: organizationsCount ?? 0,
+    activeSubscriptionsCount: activeSubscriptionsCount ?? 0,
+    trialSubscriptionsCount: trialSubscriptionsCount ?? 0,
+  }
+}
+
+export type BackofficeOrganizationRow = {
+  id: string
+  name: string
+  popsCount: number
+  membersCount: number
+  trialConsumed: boolean
+  trialConsumedAt: string | null
+  mpPayerId: string | null
+  createdAt: string
+}
+
+export async function listBackofficeOrganizations(): Promise<
+  BackofficeOrganizationRow[]
+> {
+  const supabase = await backofficeDb()
+  const { data, error } = await supabase
+    .from("organizations")
+    .select("id, name, trial_consumed_at, mp_payer_id, created_at")
+    .order("created_at", { ascending: false })
+
+  if (error || !data) return []
+
+  const orgIds = data.map((row) => String(row.id))
+  if (orgIds.length === 0) return []
+
+  const [{ data: pops }, { data: members }] = await Promise.all([
+    supabase.from("pops").select("organization_id").in("organization_id", orgIds),
+    supabase
+      .from("organization_members")
+      .select("organization_id")
+      .in("organization_id", orgIds),
+  ])
+
+  const popsByOrg = new Map<string, number>()
+  for (const row of pops ?? []) {
+    const orgId = String(row.organization_id ?? "")
+    popsByOrg.set(orgId, (popsByOrg.get(orgId) ?? 0) + 1)
+  }
+
+  const membersByOrg = new Map<string, number>()
+  for (const row of members ?? []) {
+    const orgId = String(row.organization_id ?? "")
+    membersByOrg.set(orgId, (membersByOrg.get(orgId) ?? 0) + 1)
+  }
+
+  return data.map((row) => ({
+    id: String(row.id),
+    name: String(row.name ?? "Organización"),
+    popsCount: popsByOrg.get(String(row.id)) ?? 0,
+    membersCount: membersByOrg.get(String(row.id)) ?? 0,
+    trialConsumed: row.trial_consumed_at != null,
+    trialConsumedAt:
+      row.trial_consumed_at != null ? String(row.trial_consumed_at) : null,
+    mpPayerId: row.mp_payer_id != null ? String(row.mp_payer_id) : null,
+    createdAt: String(row.created_at ?? ""),
+  }))
 }

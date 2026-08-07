@@ -1,6 +1,9 @@
 import {
+  Building2,
   CreditCard,
+  LayoutDashboard,
   Store,
+  UserCircle,
   Users,
   type LucideIcon,
 } from "lucide-react"
@@ -14,10 +17,28 @@ export type BackofficeNavItem = {
 
 export const BACKOFFICE_NAV: BackofficeNavItem[] = [
   {
-    id: "tipos",
-    href: "/backoffice/tipos",
-    label: "Planes de subscripción",
-    icon: CreditCard,
+    id: "dashboard",
+    href: "/backoffice/dashboard",
+    label: "Dashboard",
+    icon: LayoutDashboard,
+  },
+  {
+    id: "clientes",
+    href: "/backoffice/clientes",
+    label: "Clientes",
+    icon: UserCircle,
+  },
+  {
+    id: "usuarios",
+    href: "/backoffice/usuarios",
+    label: "Usuarios",
+    icon: Users,
+  },
+  {
+    id: "organizaciones",
+    href: "/backoffice/organizaciones",
+    label: "Organizaciones",
+    icon: Building2,
   },
   {
     id: "pops",
@@ -26,10 +47,10 @@ export const BACKOFFICE_NAV: BackofficeNavItem[] = [
     icon: Store,
   },
   {
-    id: "usuarios",
-    href: "/backoffice/usuarios",
-    label: "Usuarios",
-    icon: Users,
+    id: "planes",
+    href: "/backoffice/planes",
+    label: "Planes",
+    icon: CreditCard,
   },
 ]
 

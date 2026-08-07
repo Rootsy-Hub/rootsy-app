@@ -29,11 +29,15 @@ import {
   normalizeStoredUnitOfMeasure,
 } from "@/lib/articleItemKind"
 import type { ArticleDiscountMode } from "@/lib/articleDiscount"
+import type { ArticleCostLineInput } from "@/lib/articleCosts"
+import { primarySaleUnitCostFromCosts } from "@/lib/articleCosts"
+import { activeCostCountByArticleIds } from "@/lib/articleCostQueries"
 import {
   normalizeArticleBarcode,
   normalizeArticleSku,
   validateArticleBarcodeInput,
 } from "@/lib/articleIdentifiers"
+import { syncArticleCosts } from "@/app/[siteId]/[popId]/articles/articleCostsActions"
 import {
   ARTICLE_TABLE_PAGE_SIZES,
   DEFAULT_ARTICLE_TABLE_PAGE_SIZE,
@@ -60,7 +64,6 @@ export type ArticleTableRow = {
   defaultWastePct: number | null
   minStockLevel: number | null
   salePrice: number
-  costPrice: number
   iva: number
   discountMode: ArticleDiscountMode | null
   discountValue: number | null
@@ -70,6 +73,7 @@ export type ArticleTableRow = {
   isActive: boolean
   allowNegativeStock: boolean
   stockOnHand: number
+  activeCostCount: number
 }
 
 export type ArticleSupplierOption = {
@@ -107,7 +111,6 @@ export type UpdatePopArticleInput = {
   sku: string
   barcode: string
   salePrice: number
-  costPrice: number
   iva: number
   categoryId: string
   isActive: boolean
@@ -115,11 +118,13 @@ export type UpdatePopArticleInput = {
   discountValue: number | null
   supplierIds: string[]
   allowNegativeStock: boolean
+  costs?: ArticleCostLineInput[]
 } & ArticleItemFieldsInput
 
 export type CreatePopArticleInput = UpdatePopArticleInput & {
   siteId?: string
   initialStockQuantity?: number | null
+  costs?: ArticleCostLineInput[]
 }
 
 function parseOptionalPct(v: unknown): number | null {
@@ -242,7 +247,6 @@ function articleRowFromDb(row: Record<string, unknown>): ArticleTableRow {
     minStockLevel:
       minRaw != null && Number.isFinite(Number(minRaw)) ? Number(minRaw) : null,
     salePrice: Number(row.sale_price ?? 0) || 0,
-    costPrice: Number(row.cost_price ?? 0) || 0,
     iva: Number(row.iva ?? 0) || 0,
     discountMode,
     discountValue,
@@ -252,6 +256,7 @@ function articleRowFromDb(row: Record<string, unknown>): ArticleTableRow {
     isActive: Boolean(row.is_active),
     allowNegativeStock: Boolean(row.allow_negative_stock),
     stockOnHand: 0,
+    activeCostCount: 0,
   }
 }
 
@@ -543,10 +548,6 @@ export async function updatePopArticle(
     if (catErr || !catRow?.id) {
       return { success: false, error: "Categoría inválida." }
     }
-    const costPrice = Number(input.costPrice)
-    if (!Number.isFinite(costPrice) || costPrice < 0) {
-      return { success: false, error: "Precio de costo inválido." }
-    }
     const imageUrl = input.imageUrl.trim()
     const catalogNorm = normalizeCatalogFields(input)
     if (!catalogNorm.ok) {
@@ -565,7 +566,6 @@ export async function updatePopArticle(
         description: input.description.trim(),
         image_url: imageUrl ? imageUrl : null,
         sale_price: input.itemKind === "merchandise" ? salePrice : 0,
-        cost_price: costPrice,
         iva,
         category_id: categoryId,
         is_active: input.isActive,
@@ -589,6 +589,18 @@ export async function updatePopArticle(
     const syncSup = await syncArticleSuppliers(supabase, popId, articleId, supplierIds)
     if (!syncSup.ok) {
       return { success: false, error: syncSup.error }
+    }
+
+    if (input.costs != null) {
+      const syncCosts = await syncArticleCosts(
+        supabase,
+        popId,
+        articleId,
+        input.costs,
+      )
+      if (!syncCosts.ok) {
+        return { success: false, error: syncCosts.error }
+      }
     }
 
     return { success: true }
@@ -661,10 +673,7 @@ export async function createPopArticle(
     if (catErr || !catRow?.id) {
       return { success: false, error: "Categoría inválida." }
     }
-    const costPrice = Number(input.costPrice)
-    if (!Number.isFinite(costPrice) || costPrice < 0) {
-      return { success: false, error: "Precio de costo inválido." }
-    }
+    const costLines = input.costs ?? []
     const rawInitial = input.initialStockQuantity
     const initialQty = rawInitial == null ? 0 : Number(rawInitial)
     const wantsInitial =
@@ -672,6 +681,7 @@ export async function createPopArticle(
       Number.isInteger(initialQty) &&
       initialQty > 0
     let siteIdForStock = ""
+    let initialUnitCostSaleUom: number | null = null
     if (wantsInitial) {
       if (initialQty < 1 || initialQty > 10000) {
         return {
@@ -679,11 +689,12 @@ export async function createPopArticle(
           error: "El stock inicial debe ser un entero entre 1 y 10000.",
         }
       }
-      if (costPrice <= 0) {
+      initialUnitCostSaleUom = primarySaleUnitCostFromCosts(costLines)
+      if (initialUnitCostSaleUom == null || initialUnitCostSaleUom <= 0) {
         return {
           success: false,
           error:
-            "Para registrar stock inicial se requiere un precio de costo mayor que cero.",
+            "Para registrar stock inicial agregá al menos un costo activo con precio mayor que cero.",
         }
       }
       siteIdForStock = typeof input.siteId === "string" ? input.siteId.trim() : ""
@@ -711,7 +722,6 @@ export async function createPopArticle(
         description: input.description.trim(),
         image_url: imageUrlInsert ? imageUrlInsert : null,
         sale_price: input.itemKind === "merchandise" ? salePrice : 0,
-        cost_price: costPrice,
         iva,
         category_id: categoryId,
         is_active: input.isActive,
@@ -739,11 +749,18 @@ export async function createPopArticle(
       return { success: false, error: syncSup.error }
     }
 
-    if (wantsInitial) {
+    const syncCosts = await syncArticleCosts(supabase, popId, articleId, costLines)
+    if (!syncCosts.ok) {
+      await supabase.from("articles").delete().eq("id", articleId).eq("pop_id", popId)
+      return { success: false, error: syncCosts.error }
+    }
+
+    if (wantsInitial && initialUnitCostSaleUom != null) {
       const stockRes = await createInitialStockLedgerForArticle(popId, {
         articleId,
         quantity: initialQty,
         siteId: siteIdForStock,
+        unitCostSaleUom: initialUnitCostSaleUom,
       })
       if (!stockRes.success) {
         await supabase.from("articles").delete().eq("id", articleId).eq("pop_id", popId)
@@ -1094,7 +1111,6 @@ const ARTICLE_LIST_SORT = {
   allowed: {
     name: "name",
     sale_price: "sale_price",
-    cost_price: "cost_price",
   },
   defaultColumn: "name" as const,
   defaultAscending: true,
@@ -1216,7 +1232,6 @@ const ARTICLE_LIST_SELECT = `
   default_waste_pct,
   min_stock_level,
   sale_price,
-  cost_price,
   iva,
   discount_mode,
   discount_value,
@@ -1418,14 +1433,15 @@ export async function getPopArticlesTable(
 
     const rows = (data || []) as Record<string, unknown>[]
     const articlesBase: ArticleTableRow[] = rows.map((row) => articleRowFromDb(row))
-    const stockById = await stockOnHandByArticleIds(
-      supabase,
-      popId,
-      articlesBase.map((row) => row.id),
-    )
+    const articleIds = articlesBase.map((row) => row.id)
+    const [stockById, costCountById] = await Promise.all([
+      stockOnHandByArticleIds(supabase, popId, articleIds),
+      activeCostCountByArticleIds(supabase, popId, articleIds),
+    ])
     const articles = articlesBase.map((row) => ({
       ...row,
       stockOnHand: stockById.get(row.id) ?? 0,
+      activeCostCount: costCountById.get(row.id) ?? 0,
     }))
 
     return {

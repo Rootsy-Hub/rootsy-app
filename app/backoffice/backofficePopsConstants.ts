@@ -1,0 +1,2 @@
+export const BACKOFFICE_POPS_PAGE_SIZE_OPTIONS = [10, 20, 50] as const
+export const DEFAULT_BACKOFFICE_POPS_PAGE_SIZE = 20

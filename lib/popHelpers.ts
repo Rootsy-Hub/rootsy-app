@@ -35,24 +35,11 @@ export async function createPop(data: {
     }
 
     if (!canCreate) {
-      const { data: existingPops } = await supabase
-        .from("pops")
-        .select("id")
-        .eq("owner_user_id", user.uid)
-
-      if (existingPops && existingPops.length >= 1) {
-        return {
-          success: false,
-          error: "Límite alcanzado",
-          details:
-            "Ya tenés un punto de venta activo. Solo podés tener uno por cuenta.",
-        }
-      }
-
       return {
         success: false,
         error: "No podés crear más puntos de venta",
-        details: "Solo podés tener un punto de venta por cuenta.",
+        details:
+          "Verificá que tengas permisos de administración en la organización.",
       }
     }
 

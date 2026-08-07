@@ -2,21 +2,30 @@ import {
   resolveSaleLineDiscount,
   roundSaleMoney,
 } from "@/lib/saleLineDiscount"
+import { saleQuantityFromCostPurchase } from "@/lib/articleCosts"
 
 export type PurchaseCheckoutLineInput = {
   articleId: string
-  quantity: number
+  articleCostId: string
+  /** Cantidad de unidades de costo (ej. maples). */
+  costQuantity: number
+  /** Precio por 1 unidad de costo. */
   unitCost: number
   itemDiscountMode?: "porcentaje" | "fijo"
   itemDiscountDraft?: string
   comment?: string
+  /** Si true, actualiza article_costs.unit_price al confirmar. */
   updateArticleCost?: boolean
 }
 
 export type PurchaseLineBuilt = {
   articleId: string
+  articleCostId: string
   name: string
-  qty: number
+  costUnitLabel: string
+  costQty: number
+  saleQty: number
+  saleUnitsPerCostUnit: number
   unitCost: number
   ivaPct: number
   listLineGross: number
@@ -32,7 +41,10 @@ export type PurchaseFiscalLine = PurchaseLineBuilt & {
   lineFinal: number
   taxPart: number
   netPart: number
+  /** Costo neto por unidad de costo (post descuentos). */
   netUnitCost: number
+  /** Costo por unidad de venta (post descuentos). */
+  unitCostSaleUom: number
 }
 
 export type FinalizePurchaseCheckoutResult = {
@@ -62,18 +74,28 @@ function parseMoney(v: unknown): number {
 export function buildPurchaseLineFromInput(
   input: PurchaseCheckoutLineInput,
   article: { name?: unknown; iva?: unknown },
+  cost: {
+    costUnitLabel: string
+    saleUnitsPerCostUnit: number
+  },
 ): PurchaseLineBuilt | null {
   const articleId = input.articleId.trim()
-  const qty = parseQty(input.quantity)
+  const articleCostId = input.articleCostId.trim()
+  const costQty = parseQty(input.costQuantity)
   const unitCost = parseMoney(input.unitCost)
-  if (qty <= 0 || !articleId) return null
+  const saleUnitsPerCostUnit = parseQty(cost.saleUnitsPerCostUnit)
+  if (costQty <= 0 || !articleId || !articleCostId) return null
   if (unitCost < 0) return null
+  if (saleUnitsPerCostUnit <= 0) return null
+
+  const saleQty = saleQuantityFromCostPurchase(costQty, saleUnitsPerCostUnit)
+  if (saleQty <= 0) return null
 
   const ivaPct = parseMoney(article.iva)
   const draft = input.itemDiscountDraft?.trim() ?? ""
   const lineDiscount = resolveSaleLineDiscount({
     listUnitPrice: unitCost,
-    quantity: qty,
+    quantity: costQty,
     manualDiscount:
       draft !== ""
         ? {
@@ -84,11 +106,16 @@ export function buildPurchaseLineFromInput(
   })
 
   const comment = input.comment?.trim()
+  const costUnitLabel = cost.costUnitLabel.trim() || "unidad de costo"
 
   return {
     articleId,
+    articleCostId,
     name: String(article.name ?? "Artículo"),
-    qty,
+    costUnitLabel,
+    costQty,
+    saleQty,
+    saleUnitsPerCostUnit,
     unitCost,
     ivaPct,
     listLineGross: lineDiscount.listLineSubtotal,
@@ -147,19 +174,30 @@ export function finalizePurchaseCheckout(
     }
     sumTax = roundSaleMoney(sumTax + taxPart)
     sumNet = roundSaleMoney(sumNet + netPart)
+    const netUnitCost =
+      line.costQty > 0 ? roundSaleMoney(netPart / line.costQty) : 0
+    const unitCostSaleUom =
+      line.saleQty > 0 ? roundSaleMoney(lineFinal / line.saleQty) : 0
     fiscalLines.push({
       ...line,
       lineFinal,
       taxPart,
       netPart,
-      netUnitCost: line.qty > 0 ? roundSaleMoney(netPart / line.qty) : 0,
+      netUnitCost,
+      unitCostSaleUom,
     })
   }
 
   const lineItemsJson = fiscalLines.map((line) => ({
     article_id: line.articleId,
-    quantity: line.qty,
+    article_cost_id: line.articleCostId,
+    cost_quantity: line.costQty,
+    cost_unit_label: line.costUnitLabel,
+    sale_units_per_cost_unit: line.saleUnitsPerCostUnit,
+    sale_quantity: line.saleQty,
+    quantity: line.costQty,
     unit_cost: line.unitCost,
+    unit_cost_sale_uom: line.unitCostSaleUom,
     iva: line.ivaPct,
     item_discount_mode: line.itemDiscountMode,
     item_discount_value: line.itemDiscountValue,

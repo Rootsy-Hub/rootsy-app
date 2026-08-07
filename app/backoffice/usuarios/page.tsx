@@ -10,6 +10,7 @@ import {
 import { BackofficeUserDetailView } from "@/app/backoffice/components/BackofficeUserDetailView"
 import {
   BackofficeEmptyState,
+  BackofficePanel,
   BackofficeSection,
   formatBackofficeDate,
 } from "@/app/backoffice/components/BackofficeSection"
@@ -92,6 +93,7 @@ export default function BackofficeUsersPage() {
 
   return (
     <BackofficeSection
+      eyebrow="Identidad"
       title={showingDetail ? "Detalle del usuario" : "Usuarios"}
       description={
         showingDetail
@@ -114,7 +116,8 @@ export default function BackofficeUsersPage() {
       ) : null}
 
       {!showingDetail && rows.length > 0 ? (
-        <Table>
+        <BackofficePanel>
+          <Table>
           <TableHeader>
             <TableRow>
               <TableHead>Usuario</TableHead>
@@ -157,6 +160,7 @@ export default function BackofficeUsersPage() {
             ))}
           </TableBody>
         </Table>
+        </BackofficePanel>
       ) : null}
     </BackofficeSection>
   )

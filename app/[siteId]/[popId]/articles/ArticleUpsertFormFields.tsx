@@ -10,6 +10,10 @@ import { ArticleItemKindSelector } from "@/app/[siteId]/[popId]/articles/Article
 import { ArticleSupplierPickerField } from "@/app/[siteId]/[popId]/articles/ArticleSupplierPickerField"
 import { ArticleUnitOfMeasureField } from "@/app/[siteId]/[popId]/articles/ArticleUnitOfMeasureField"
 import {
+  ArticleCostEditor,
+  type ArticleCostFormLine,
+} from "@/app/[siteId]/[popId]/articles/components/ArticleCostEditor"
+import {
   RootsFormGrid,
   RootsFormMoneyField,
   RootsFormQuantityField,
@@ -20,7 +24,7 @@ import {
   rootsFormColumnClass,
   rootsFormTwoColRowClass,
 } from "@/components/rootsy-form"
-import type { ArticleItemKind } from "@/lib/articleItemKind"
+import { labelUnitOfMeasure, type ArticleItemKind } from "@/lib/articleItemKind"
 import { parseMoneyInput } from "@/lib/moneyInput"
 import { cn } from "@/lib/utils"
 
@@ -32,7 +36,6 @@ export type ArticleUpsertFormState = ArticleItemFormState &
     sku: string
     barcode: string
     salePrice: string
-    costPrice: string
     iva: string
     categoryId: string
     isActive: boolean
@@ -50,6 +53,8 @@ type Props = {
   onItemKindChange: (kind: ArticleItemKind) => void
   categories: ArticleCategoryOption[]
   supplierOptions: { id: string; name: string }[]
+  costLines: ArticleCostFormLine[]
+  onCostLinesChange: (lines: ArticleCostFormLine[]) => void
   suppliersLoading?: boolean
   canPostInitialStock?: boolean
   mode: "create" | "edit"
@@ -65,14 +70,18 @@ export function ArticleUpsertFormFields({
   onItemKindChange,
   categories,
   supplierOptions,
+  costLines,
+  onCostLinesChange,
   canPostInitialStock = false,
   mode,
   disabled = false,
 }: Props) {
   const isMerchandise = form.itemKind === "merchandise"
   const parsedSalePrice = parseMoneyInput(form.salePrice, 0)
+  const saleUomLabel = labelUnitOfMeasure(form.unitOfMeasure)
 
   return (
+    <>
     <RootsFormGrid>
       <div className={rootsFormColumnClass}>
         <ArticleItemKindSelector
@@ -178,20 +187,13 @@ export function ArticleUpsertFormFields({
         >
           {isMerchandise ? (
             <RootsFormMoneyField
-              label="Precio venta"
+              label={`Precio por ${saleUomLabel.toLowerCase()}`}
               id={`${idPrefix}-price`}
               value={form.salePrice}
               onChange={(value) => onChange({ salePrice: value })}
               disabled={disabled}
             />
           ) : null}
-          <RootsFormMoneyField
-            label="Precio de compra"
-            id={`${idPrefix}-cost`}
-            value={form.costPrice}
-            onChange={(value) => onChange({ costPrice: value })}
-            disabled={disabled}
-          />
         </div>
 
         <ArticleIvaSelect
@@ -258,5 +260,15 @@ export function ArticleUpsertFormFields({
         />
       </div>
     </RootsFormGrid>
+
+    <ArticleCostEditor
+      idPrefix={idPrefix}
+      lines={costLines}
+      onChange={onCostLinesChange}
+      supplierOptions={supplierOptions}
+      saleUnitOfMeasure={form.unitOfMeasure}
+      disabled={disabled}
+    />
+    </>
   )
 }

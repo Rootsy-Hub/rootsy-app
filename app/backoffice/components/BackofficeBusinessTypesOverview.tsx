@@ -122,7 +122,7 @@ function PlanLimitCard({
   const planMeta = ROOTS_PLAN_DEFINITIONS[plan.name as keyof typeof ROOTS_PLAN_DEFINITIONS]
 
   return (
-    <article className="rounded-xl border border-border/80 bg-card/40 p-4">
+    <article className="library-spec-card rounded-2xl p-4">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <h4 className="font-semibold">{plan.displayName}</h4>
@@ -201,9 +201,9 @@ function BusinessTypeSection({
   )
 
   return (
-    <section className="space-y-6 border-t border-border/80 pt-10 first:border-t-0 first:pt-0">
+    <section className="library-spec-card space-y-6 rounded-2xl p-6 sm:p-8">
       <div>
-        <h2 className="text-xl font-bold tracking-tight">
+        <h2 className="font-canopy text-xl font-semibold tracking-tight text-[var(--rootsy-bruma-900)]">
           {businessType.displayName}
         </h2>
         {businessType.description ? (
@@ -282,8 +282,10 @@ export function BackofficeBusinessTypesOverview({
 
   return (
     <div className="space-y-12">
-      <section className="space-y-6 rounded-2xl border border-border/80 bg-muted/10 p-6">
-        <h2 className="text-lg font-semibold">Módulos generales</h2>
+      <section className="library-spec-card space-y-6 rounded-2xl p-6">
+        <h2 className="font-canopy text-lg font-semibold text-[var(--rootsy-bruma-900)]">
+          Módulos generales
+        </h2>
         <div className="space-y-8">
           {SHARED_MODULE_SECTIONS.map((section) => (
             <ModuleCategoryBlock

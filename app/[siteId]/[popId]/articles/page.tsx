@@ -24,6 +24,12 @@ import {
   type CategoryLayoutUpdate,
   type ArticleTableRow,
 } from "@/app/[siteId]/[popId]/articles/actions"
+import { getPopArticleCosts } from "@/app/[siteId]/[popId]/articles/articleCostsActions"
+import {
+  articleCostLinesFromRows,
+  articleCostLinesToInput,
+  type ArticleCostFormLine,
+} from "@/app/[siteId]/[popId]/articles/components/ArticleCostEditor"
 import {
   parseArticleItemFormState,
   type ArticleItemFormState,
@@ -171,7 +177,6 @@ function defaultCreateFormState(): ArticleFormState {
     sku: "",
     barcode: "",
     salePrice: formatMoneyInputForField(0),
-    costPrice: formatMoneyInputForField(0),
     iva: String(DEFAULT_ARTICLE_IVA_ALICUOTA_ID),
     categoryId: "",
     isActive: true,
@@ -314,7 +319,6 @@ function ArticlesPage() {
     sku: "",
     barcode: "",
     salePrice: "",
-    costPrice: "",
     iva: "",
     categoryId: "",
     isActive: true,
@@ -324,6 +328,7 @@ function ArticlesPage() {
     ...defaultArticleCatalogExtraFormState(),
   }))
   const [editBanner, setEditBanner] = useState<string | null>(null)
+  const [editCostLines, setEditCostLines] = useState<ArticleCostFormLine[]>([])
 
   const [deleteTarget, setDeleteTarget] = useState<ArticleTableRow | null>(null)
   const [deleteOpen, setDeleteOpen] = useState(false)
@@ -338,6 +343,7 @@ function ArticlesPage() {
   const [createSaving, setCreateSaving] = useState(false)
   const [createBanner, setCreateBanner] = useState<string | null>(null)
   const [createForm, setCreateForm] = useState<ArticleFormState>(defaultCreateFormState)
+  const [createCostLines, setCreateCostLines] = useState<ArticleCostFormLine[]>([])
   const [supplierOptions, setSupplierOptions] = useState<
     { id: string; name: string }[]
   >([])
@@ -589,7 +595,6 @@ function ArticlesPage() {
       sku: row.sku ?? "",
       barcode: row.barcode ?? "",
       salePrice: formatMoneyInputForField(row.salePrice),
-      costPrice: formatMoneyInputForField(row.costPrice),
       iva: resolveArticleIvaSelectValue(siteId, row.iva),
       categoryId: row.categoryId,
       isActive: row.isActive,
@@ -603,7 +608,10 @@ function ArticlesPage() {
       ...catalogFieldsFromRow(row),
     })
     setEditLoading(true)
-    const catRes = await getPopArticleCategories(popId)
+    const [catRes, costsRes] = await Promise.all([
+      getPopArticleCategories(popId),
+      getPopArticleCosts(popId, row.id),
+    ])
     setEditLoading(false)
     if (catRes.success) {
       setEditCategories(catRes.categories)
@@ -611,11 +619,18 @@ function ArticlesPage() {
       setEditBanner(catRes.error)
       setEditCategories([])
     }
+    if (costsRes.success) {
+      setEditCostLines(articleCostLinesFromRows(costsRes.costs))
+    } else {
+      setEditBanner((prev) => prev ?? costsRes.error)
+      setEditCostLines([])
+    }
   }
 
   const closeEdit = () => {
     setEditRow(null)
     setEditBanner(null)
+    setEditCostLines([])
   }
 
   const loadModalCategories = useCallback(
@@ -647,6 +662,7 @@ function ArticlesPage() {
   const closeCreate = useCallback(() => {
     setCreateOpen(false)
     setCreateBanner(null)
+    setCreateCostLines([])
   }, [])
 
   const submitCreate = async (e: FormEvent) => {
@@ -682,7 +698,6 @@ function ArticlesPage() {
       sku: createForm.sku,
       barcode: createForm.barcode,
       salePrice: parseMoneyInput(createForm.salePrice),
-      costPrice: parseMoneyInput(createForm.costPrice),
       iva: ivaParsed.ratePercent,
       categoryId: createForm.categoryId,
       isActive: createForm.isActive,
@@ -691,6 +706,7 @@ function ArticlesPage() {
       ...itemFields,
       ...catalogFields,
       siteId,
+      costs: articleCostLinesToInput(createCostLines),
       initialStockQuantity:
         initialNum != null && Number.isFinite(initialNum) && initialNum > 0
           ? initialNum
@@ -862,7 +878,6 @@ function ArticlesPage() {
       sku: editForm.sku,
       barcode: editForm.barcode,
       salePrice: parseMoneyInput(editForm.salePrice),
-      costPrice: parseMoneyInput(editForm.costPrice),
       iva: ivaParsed.ratePercent,
       categoryId: editForm.categoryId,
       isActive: editForm.isActive,
@@ -870,6 +885,7 @@ function ArticlesPage() {
       itemKind: editForm.itemKind,
       ...itemFields,
       ...catalogFields,
+      costs: articleCostLinesToInput(editCostLines),
     })
     setEditSaving(false)
     if (!res.success) {
@@ -1411,14 +1427,13 @@ function ArticlesPage() {
                       onSort={() => handleSortColumn("sale_price")}
                       className={cn("w-28 px-3", workspaceTableLayoutHeaderHeadClass)}
                     />
-                    <WorkspaceTableSortHead
+                    <WorkspaceTableHead
                       tone="nature"
-                      label="Costo"
                       align="right"
-                      direction={sortDirection("cost_price")}
-                      onSort={() => handleSortColumn("cost_price")}
                       className={cn("w-28 px-3", workspaceTableLayoutHeaderHeadClass)}
-                    />
+                    >
+                      Costos
+                    </WorkspaceTableHead>
                     <WorkspaceTableHead
                       tone="nature"
                       align="right"
@@ -1560,10 +1575,12 @@ function ArticlesPage() {
                           <span
                             className={cn(
                               "block truncate tabular-nums",
-                              workspaceTableNatureMoneyClass,
+                              workspaceTableNatureTextSecondaryClass,
                             )}
                           >
-                            {formatMoney(a.costPrice)}
+                            {a.activeCostCount > 0
+                              ? `${a.activeCostCount} forma${a.activeCostCount === 1 ? "" : "s"}`
+                              : "—"}
                           </span>
                         </TableCell>
                         <ArticleTableStockCell
@@ -1642,6 +1659,8 @@ function ArticlesPage() {
         onItemKindChange={handleEditItemKindChange}
         categories={editCategories}
         supplierOptions={supplierPickerOptions}
+        costLines={editCostLines}
+        onCostLinesChange={setEditCostLines}
         suppliersLoading={suppliersLoading}
         disabled={editSaving}
       />
@@ -1679,6 +1698,8 @@ function ArticlesPage() {
         onItemKindChange={handleCreateItemKindChange}
         categories={createCategories}
         supplierOptions={supplierPickerOptions}
+        costLines={createCostLines}
+        onCostLinesChange={setCreateCostLines}
         suppliersLoading={suppliersLoading}
         canPostInitialStock={canPostInitialStock}
         disabled={createSaving}
@@ -1738,6 +1759,7 @@ function ArticlesPage() {
 
       <ArticlesTableDetailDialog
         row={detailRow}
+        popId={popId ?? ""}
         siteId={siteId}
         open={detailRow !== null}
         onOpenChange={(open) => {

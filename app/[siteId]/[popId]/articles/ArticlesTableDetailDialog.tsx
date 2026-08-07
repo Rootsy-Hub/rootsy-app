@@ -1,6 +1,7 @@
 "use client"
 
 import type { ArticleTableRow } from "@/app/[siteId]/[popId]/articles/actions"
+import { getPopArticleCosts } from "@/app/[siteId]/[popId]/articles/articleCostsActions"
 import {
   ArticleTableRowPills,
   formatArticleStockOnHand,
@@ -38,13 +39,15 @@ import {
   effectiveArticleSalePrice,
   formatArticleDiscountBadge,
 } from "@/lib/articleDiscount"
+import { unitCostInSaleUom, type ArticleCostRow } from "@/lib/articleCosts"
 import {
   ARTICLE_ITEM_KIND_STOCK_LABEL,
   labelUnitOfMeasure,
+  shortUnitOfMeasure,
 } from "@/lib/articleItemKind"
 import { labelArticleIvaRate } from "@/lib/articleIva"
 import { cn } from "@/lib/utils"
-import type { ReactNode } from "react"
+import { useEffect, useState, type ReactNode } from "react"
 
 const fmt = new Intl.NumberFormat("es-AR", {
   style: "currency",
@@ -109,15 +112,38 @@ function emptyValue(value: string | null | undefined) {
 
 export function ArticlesTableDetailDialog({
   row,
+  popId,
   siteId,
   open,
   onOpenChange,
 }: {
   row: ArticleTableRow | null
+  popId: string
   siteId: string
   open: boolean
   onOpenChange: (open: boolean) => void
 }) {
+  const [costs, setCosts] = useState<ArticleCostRow[]>([])
+  const [costsLoading, setCostsLoading] = useState(false)
+
+  useEffect(() => {
+    if (!open || !row || !popId) {
+      setCosts([])
+      return
+    }
+    let cancelled = false
+    ;(async () => {
+      setCostsLoading(true)
+      const res = await getPopArticleCosts(popId, row.id)
+      if (cancelled) return
+      setCostsLoading(false)
+      setCosts(res.success ? res.costs : [])
+    })()
+    return () => {
+      cancelled = true
+    }
+  }, [open, row, popId])
+
   if (!row) return null
 
   const isMerchandise = row.itemKind === "merchandise"
@@ -134,6 +160,8 @@ export function ArticlesTableDetailDialog({
     row.suppliers.length > 0
       ? row.suppliers.map((s) => s.name).join(", ")
       : "—"
+  const saleUomShort = shortUnitOfMeasure(row.unitOfMeasure)
+  const activeCosts = costs.filter((cost) => cost.isActive)
 
   const headerMeta = [
     ARTICLE_ITEM_KIND_STOCK_LABEL[row.itemKind],
@@ -202,7 +230,7 @@ export function ArticlesTableDetailDialog({
             </div>
 
             <div className={rootsFormColumnClass}>
-              <DetailField label="Unidad de medida">
+              <DetailField label="Unidad de medida de venta">
                 {labelUnitOfMeasure(row.unitOfMeasure)}
               </DetailField>
 
@@ -239,12 +267,38 @@ export function ArticlesTableDetailDialog({
                 </>
               ) : null}
 
-              <DetailField label="Precio de compra">
-                <DetailMoney value={row.costPrice} muted />
+              <DetailField label="Costos de compra" multiline>
+                {costsLoading ? (
+                  "Cargando…"
+                ) : activeCosts.length === 0 ? (
+                  "—"
+                ) : (
+                  <ul className="space-y-2">
+                    {activeCosts.map((cost) => {
+                      const label = cost.name.trim() || cost.costUnitLabel
+                      const unitCost = unitCostInSaleUom(cost)
+                      return (
+                        <li key={cost.id} className="text-sm leading-snug">
+                          <span className="font-medium text-foreground">{label}</span>
+                          <span className="text-muted-foreground">
+                            {" "}
+                            · {fmt.format(cost.unitPrice)} / {cost.costUnitLabel} ·{" "}
+                            {cost.saleUnitsPerCostUnit}{" "}
+                            {saleUomShort || labelUnitOfMeasure(row.unitOfMeasure)}
+                            {unitCost > 0
+                              ? ` · ≈ ${fmt.format(unitCost)}/${saleUomShort || "u."}`
+                              : null}
+                          </span>
+                        </li>
+                      )
+                    })}
+                  </ul>
+                )}
               </DetailField>
 
               <DetailField label="Stock actual">
-                {formatArticleStockOnHand(row.stockOnHand)}
+                {formatArticleStockOnHand(row.stockOnHand)}{" "}
+                {saleUomShort || labelUnitOfMeasure(row.unitOfMeasure)}
               </DetailField>
 
               {row.itemKind === "raw_material" ? (

@@ -19,6 +19,10 @@ import {
 } from "@/lib/entryDateTimezone"
 import { resolveOpenCashSession, assertCashSessionStillOpen } from "@/lib/cashRegisterSession"
 import { createClient } from "@/utils/supabase/server"
+import {
+  articleReferenceCostError,
+  resolveArticleReferenceUnitCost,
+} from "@/lib/articleReferenceUnitCost"
 import { resolveLedgerAccountForTreasuryPayment } from "@/lib/treasuryPaymentLedger"
 import { isValidOperationPaymentKind } from "@/lib/operationPaymentKinds"
 import { SALE_COMPROBANTE_RECIBO_X_LABEL, saleComprobanteAccruesOutputVat } from "@/lib/saleComprobantePicker"
@@ -317,12 +321,14 @@ async function deductArticleStockForSale(
   const delta = -qtyAbs
   const { data: artRow } = await supabase
     .from("articles")
-    .select("id, name, cost_price")
+    .select("id, name")
     .eq("id", need.articleId)
     .eq("pop_id", popId)
     .maybeSingle()
   const articleName = String(artRow?.name ?? need.label ?? "")
-  const articleCostRef = roundMoney(Number(artRow?.cost_price ?? 0))
+  const articleCostRef = roundMoney(
+    await resolveArticleReferenceUnitCost(supabase, popId, need.articleId),
+  )
 
   const { data: layerRows, error: lrErr } = await supabase
     .from("inventory_cost_layers")
@@ -343,7 +349,7 @@ async function deductArticleStockForSale(
     if (u == null || u <= 0) {
       return {
         success: false,
-        error: `Configurá precio de costo en «${articleName}» para valorar la salida de stock.`,
+        error: articleReferenceCostError(articleName),
       }
     }
     amount = roundMoney(qtyAbs * u)
@@ -371,7 +377,7 @@ async function deductArticleStockForSale(
       if (u == null || u <= 0) {
         return {
           success: false,
-          error: `Configurá precio de costo en «${articleName}» para el remanente FIFO.`,
+          error: articleReferenceCostError(articleName),
         }
       }
       totalCost += roundMoney(needQty * u)

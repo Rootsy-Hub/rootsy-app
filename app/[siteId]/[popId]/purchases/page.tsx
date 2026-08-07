@@ -6,6 +6,7 @@ import {
   getPurchaseCatalog,
   type PurchaseCatalogArticle,
   type PurchaseCatalogCategory,
+  type PurchaseCatalogArticleCost,
   type PurchaseCatalogPaymentOption,
   type PurchaseCatalogSupplier,
   type PurchaseKind,
@@ -15,6 +16,7 @@ import { SimpleOperationCheckoutConfirmDialog } from "@/components/checkout/Simp
 import {
   PurchaseOperationTicketOrderPanel,
 } from "@/components/purchase-operation/PurchaseOperationTicketOrderPanel"
+import { PurchaseArticleCostPickerDialog } from "@/components/purchase-operation/PurchaseArticleCostPickerDialog"
 import type { PurchaseLineEditInput } from "@/components/purchase-operation/PurchaseCartLineCard"
 import { OperationPartyPickerDialog } from "@/components/checkout/OperationPartyPickerDialog"
 import { PurchaseComprobantePickerDialog } from "@/components/checkout/PurchaseComprobantePickerDialog"
@@ -64,6 +66,8 @@ import {
 import { usePadronAutofillRazonSocial } from "@/hooks/usePadronAutofillRazonSocial"
 import { useCartListScrollHighlight } from "@/hooks/useCartListScrollHighlight"
 import { cn } from "@/lib/utils"
+import { purchaseCartLineId } from "@/lib/purchaseCartLine"
+import { saleQuantityFromCostPurchase } from "@/lib/articleCosts"
 import { getLayoutsOperarMainGridClass } from "@/app/[siteId]/[popId]/library/layouts/layoutsOperarHardcodedSpec"
 import {
   LAYOUTS_OPERAR_CATALOG_SIDEBAR_WIDTH_PX,
@@ -85,15 +89,17 @@ type Producto = {
   id: string
   nombre: string
   descripcion: string
-  precio: number
   iva: number
   categoria: string
   imagen: string
   unitOfMeasure: string
+  costs: PurchaseCatalogArticleCost[]
 }
 
 type ItemCarrito = {
+  lineId: string
   productoId: string
+  articleCostId: string
   cantidad: number
 }
 
@@ -125,10 +131,15 @@ function derivePurchaseKindFromCart(
   const counts = new Map<PurchaseKind, number>()
   for (const item of cart) {
     const article = articles.find((a) => a.id === item.productoId)
-    if (!article) continue
+    const cost = article?.costs.find((c) => c.id === item.articleCostId)
+    if (!article || !cost) continue
+    const saleQty = saleQuantityFromCostPurchase(
+      item.cantidad,
+      cost.saleUnitsPerCostUnit,
+    )
     counts.set(
       article.itemKind,
-      (counts.get(article.itemKind) ?? 0) + item.cantidad,
+      (counts.get(article.itemKind) ?? 0) + saleQty,
     )
   }
   if (counts.size === 0) return "merchandise"
@@ -148,11 +159,11 @@ function articleToProducto(a: PurchaseCatalogArticle): Producto {
     id: a.id,
     nombre: a.name,
     descripcion: a.description.trim() ? a.description : "—",
-    precio: a.costPrice,
     iva: a.iva,
     categoria: a.categoryName.trim() ? a.categoryName : "—",
     imagen: resolveCatalogProductImage(a.id, a.imageUrl),
     unitOfMeasure: a.unitOfMeasure,
+    costs: a.costs,
   }
 }
 
@@ -161,6 +172,20 @@ const fmt = new Intl.NumberFormat("es-AR", {
   currency: "ARS",
   minimumFractionDigits: 2,
 })
+
+function catalogArticleCostHint(producto: Producto): string {
+  const active = producto.costs.filter((c) => c.unitPrice > 0)
+  if (producto.costs.length === 0) return "Sin costos"
+  if (active.length === 0) {
+    return `${producto.costs.length} costo${producto.costs.length === 1 ? "" : "s"}`
+  }
+  const min = Math.min(...active.map((c) => c.unitPrice))
+  if (producto.costs.length === 1) {
+    const cost = producto.costs[0]
+    return `${fmt.format(min)} / ${cost.costUnitLabel}`
+  }
+  return `Desde ${fmt.format(min)}`
+}
 
 const compraImporteBaseClass = saleOpImporteBaseClass
 const compraImporteCardClass = cn(
@@ -284,6 +309,10 @@ function PurchasesPage() {
   const [modoVista, setModoVista] = useState<"grid" | "lista">("grid")
   const [busqueda, setBusqueda] = useState("")
   const [carrito, setCarrito] = useState<ItemCarrito[]>([])
+  const [costPickerArticleId, setCostPickerArticleId] = useState<string | null>(
+    null,
+  )
+  const [costPickerOpen, setCostPickerOpen] = useState(false)
   const cartScrollHighlight = useCartListScrollHighlight()
   const [itemUnitCosts, setItemUnitCosts] = useState<Record<string, string>>({})
   const [itemUpdateArticleCost, setItemUpdateArticleCost] = useState<
@@ -422,18 +451,23 @@ function PurchasesPage() {
 
   const itemsDetallados = useMemo(() => {
     return carrito
-      .map((i) => ({
-        ...i,
-        producto: productosCatalogo.find((p) => p.id === i.productoId),
-      }))
-      .filter((i) => i.producto)
+      .map((i) => {
+        const producto = productosCatalogo.find((p) => p.id === i.productoId)
+        const cost = producto?.costs.find((c) => c.id === i.articleCostId)
+        return {
+          ...i,
+          producto,
+          cost,
+        }
+      })
+      .filter((i) => i.producto && i.cost)
   }, [carrito, productosCatalogo])
 
   const subtotalOriginal = useMemo(() => {
     return itemsDetallados.reduce((acc, item) => {
-      const fallback = item.producto?.precio ?? 0
+      const fallback = item.cost?.unitPrice ?? 0
       const unitCost = parseUnitCost(
-        itemUnitCosts[item.productoId] ?? "",
+        itemUnitCosts[item.lineId] ?? "",
         fallback,
       )
       return acc + unitCost * item.cantidad
@@ -442,8 +476,8 @@ function PurchasesPage() {
 
   const subtotal = useMemo(() => {
     return itemsDetallados.reduce((acc, item) => {
-      const itemId = item.productoId
-      const fallback = item.producto?.precio ?? 0
+      const itemId = item.lineId
+      const fallback = item.cost?.unitPrice ?? 0
       const unitCost = parseUnitCost(
         itemUnitCosts[itemId] ?? "",
         fallback,
@@ -610,16 +644,17 @@ function PurchasesPage() {
           ? null
           : metodoPagoSeleccionado?.treasuryAccountId ?? null,
         lines: carrito.map((i) => {
-          const producto = productosCatalogo.find((p) => p.id === i.productoId)
-          const fallback = producto?.precio ?? 0
+          const detalle = itemsDetallados.find((d) => d.lineId === i.lineId)
+          const fallback = detalle?.cost?.unitPrice ?? 0
           return {
             articleId: i.productoId,
-            quantity: i.cantidad,
-            unitCost: parseUnitCost(itemUnitCosts[i.productoId] ?? "", fallback),
-            updateArticleCost: itemUpdateArticleCost[i.productoId] === true,
-            itemDiscountMode: itemDescuentoModo[i.productoId] ?? "porcentaje",
-            itemDiscountDraft: itemDescuentoDraft[i.productoId] ?? "",
-            comment: itemComentarios[i.productoId] ?? "",
+            articleCostId: i.articleCostId,
+            costQuantity: i.cantidad,
+            unitCost: parseUnitCost(itemUnitCosts[i.lineId] ?? "", fallback),
+            updateArticleCost: itemUpdateArticleCost[i.lineId] === true,
+            itemDiscountMode: itemDescuentoModo[i.lineId] ?? "porcentaje",
+            itemDiscountDraft: itemDescuentoDraft[i.lineId] ?? "",
+            comment: itemComentarios[i.lineId] ?? "",
           }
         }),
       })
@@ -649,7 +684,7 @@ function PurchasesPage() {
     valorDescuentoPorcentaje,
     valorDescuentoFijo,
     carrito,
-    productosCatalogo,
+    itemsDetallados,
     itemUnitCosts,
     itemUpdateArticleCost,
     itemDescuentoModo,
@@ -770,42 +805,69 @@ function PurchasesPage() {
     }
   }, [modoDescuento, subtotal, valorDescuentoFijo])
 
+  const agregarCostoAlCarrito = useCallback(
+    (productoId: string, cost: PurchaseCatalogArticleCost) => {
+      const lineId = purchaseCartLineId(productoId, cost.id)
+      setCarrito((prev) => {
+        const existe = prev.find((i) => i.lineId === lineId)
+        if (existe) {
+          return prev.map((i) =>
+            i.lineId === lineId ? { ...i, cantidad: i.cantidad + 1 } : i,
+          )
+        }
+        return [
+          ...prev,
+          {
+            lineId,
+            productoId,
+            articleCostId: cost.id,
+            cantidad: 1,
+          },
+        ]
+      })
+      cartScrollHighlight.notifyLineAdded(lineId)
+      setItemUnitCosts((prev) => {
+        if (prev[lineId]?.trim()) return prev
+        return {
+          ...prev,
+          [lineId]:
+            cost.unitPrice > 0 ? String(cost.unitPrice) : prev[lineId] ?? "",
+        }
+      })
+    },
+    [cartScrollHighlight],
+  )
+
   const agregarAlCarrito = (productoId: string) => {
     const producto = productosCatalogo.find((p) => p.id === productoId)
-    setCarrito((prev) => {
-      const existe = prev.find((i) => i.productoId === productoId)
-      if (existe) {
-        return prev.map((i) =>
-          i.productoId === productoId ? { ...i, cantidad: i.cantidad + 1 } : i,
-        )
-      }
-      return [...prev, { productoId, cantidad: 1 }]
-    })
-    cartScrollHighlight.notifyLineAdded(productoId)
-    if (producto && !itemUnitCosts[productoId]?.trim()) {
-      setItemUnitCosts((prev) => ({
-        ...prev,
-        [productoId]:
-          producto.precio > 0 ? String(producto.precio) : prev[productoId] ?? "",
-      }))
+    if (!producto) return
+    if (producto.costs.length === 0) {
+      setCompraError(
+        "Este artículo no tiene costos de compra. Configuralos en Stock.",
+      )
+      return
     }
+    if (producto.costs.length === 1) {
+      agregarCostoAlCarrito(productoId, producto.costs[0])
+      return
+    }
+    setCostPickerArticleId(productoId)
+    setCostPickerOpen(true)
   }
 
-  const establecerCantidad = (productoId: string, cantidad: number) => {
+  const establecerCantidad = (lineId: string, cantidad: number) => {
     setCarrito((prev) =>
       prev
-        .map((i) =>
-          i.productoId === productoId ? { ...i, cantidad } : i,
-        )
+        .map((i) => (i.lineId === lineId ? { ...i, cantidad } : i))
         .filter((i) => i.cantidad > 0),
     )
   }
 
-  const cambiarCantidad = (productoId: string, delta: number) => {
+  const cambiarCantidad = (lineId: string, delta: number) => {
     setCarrito((prev) =>
       prev
         .map((i) => {
-          if (i.productoId !== productoId) return i
+          if (i.lineId !== lineId) return i
           const next = Math.round((i.cantidad + delta) * 1e6) / 1e6
           return { ...i, cantidad: next }
         })
@@ -813,38 +875,38 @@ function PurchasesPage() {
     )
   }
 
-  const quitarDelCarrito = (productoId: string) => {
-    setCarrito((prev) => prev.filter((i) => i.productoId !== productoId))
+  const quitarDelCarrito = (lineId: string) => {
+    setCarrito((prev) => prev.filter((i) => i.lineId !== lineId))
     setItemUnitCosts((prev) => {
       const next = { ...prev }
-      delete next[productoId]
+      delete next[lineId]
       return next
     })
     setItemUpdateArticleCost((prev) => {
       const next = { ...prev }
-      delete next[productoId]
+      delete next[lineId]
       return next
     })
     setItemDescuentoModo((prev) => {
       const next = { ...prev }
-      delete next[productoId]
+      delete next[lineId]
       return next
     })
     setItemDescuentoDraft((prev) => {
       const next = { ...prev }
-      delete next[productoId]
+      delete next[lineId]
       return next
     })
     setItemComentarios((prev) => {
       const next = { ...prev }
-      delete next[productoId]
+      delete next[lineId]
       return next
     })
   }
 
   const aplicarEdicionLineaCompra = useCallback((input: PurchaseLineEditInput) => {
     const {
-      productoId,
+      lineId,
       quantity,
       unitCost,
       updateArticleCost,
@@ -859,43 +921,52 @@ function PurchasesPage() {
     } = input
 
     if (hasQuantityEdit) {
-      establecerCantidad(productoId, quantity)
+      establecerCantidad(lineId, quantity)
     }
     if (hasCostEdit) {
-      setItemUnitCosts((prev) => ({ ...prev, [productoId]: unitCost }))
+      setItemUnitCosts((prev) => ({ ...prev, [lineId]: unitCost }))
     }
     if (hasUpdateCostEdit) {
       setItemUpdateArticleCost((prev) => ({
         ...prev,
-        [productoId]: updateArticleCost,
+        [lineId]: updateArticleCost,
       }))
     }
     if (hasDiscountEdit) {
       setItemDescuentoModo((prev) => ({
         ...prev,
-        [productoId]: discountMode,
+        [lineId]: discountMode,
       }))
       setItemDescuentoDraft((prev) => ({
         ...prev,
-        [productoId]: discountDraft,
+        [lineId]: discountDraft,
       }))
     }
     if (hasCommentEdit) {
-      setItemComentarios((prev) => ({ ...prev, [productoId]: comment }))
+      setItemComentarios((prev) => ({ ...prev, [lineId]: comment }))
     }
   }, [])
 
   const purchaseCartLines = useMemo(
     () =>
-      itemsDetallados.map((item) => ({
-        productoId: item.productoId,
-        cantidad: item.cantidad,
-        nombre: item.producto?.nombre ?? "Artículo",
-        descripcion: item.producto?.descripcion,
-        fallbackCost: item.producto?.precio ?? 0,
-        iva: item.producto?.iva,
-        unitOfMeasure: item.producto?.unitOfMeasure ?? "",
-      })),
+      itemsDetallados.map((item) => {
+        const cost = item.cost!
+        const costLabel = cost.name.trim() || cost.costUnitLabel
+        return {
+          lineId: item.lineId,
+          productoId: item.productoId,
+          articleCostId: item.articleCostId,
+          cantidad: item.cantidad,
+          nombre: item.producto?.nombre ?? "Artículo",
+          costLabel,
+          costUnitLabel: cost.costUnitLabel,
+          saleUnitsPerCostUnit: cost.saleUnitsPerCostUnit,
+          descripcion: item.producto?.descripcion,
+          fallbackCost: cost.unitPrice,
+          iva: item.producto?.iva,
+          unitOfMeasure: item.producto?.unitOfMeasure ?? "",
+        }
+      }),
     [itemsDetallados],
   )
 
@@ -1210,8 +1281,8 @@ function PurchasesPage() {
                                 modoVista === "grid" ? "self-end" : "shrink-0"
                               }
                             >
-                              <span className={compraImporteCardClass}>
-                                {fmt.format(p.precio)}
+                              <span className={cn(compraImporteCardClass, "text-base")}>
+                                {catalogArticleCostHint(p)}
                               </span>
                             </div>
                           </div>
@@ -1542,6 +1613,31 @@ function PurchasesPage() {
         comprobanteLabel={confirmComprobanteLabel}
         paymentLabel={pagoResumenLabel}
         onConfirm={confirmarCompra}
+      />
+
+      <PurchaseArticleCostPickerDialog
+        open={costPickerOpen}
+        onOpenChange={(open) => {
+          setCostPickerOpen(open)
+          if (!open) setCostPickerArticleId(null)
+        }}
+        articleName={
+          productosCatalogo.find((p) => p.id === costPickerArticleId)?.nombre ??
+          "Artículo"
+        }
+        saleUnitOfMeasure={
+          productosCatalogo.find((p) => p.id === costPickerArticleId)
+            ?.unitOfMeasure ?? "unidad"
+        }
+        costs={
+          productosCatalogo.find((p) => p.id === costPickerArticleId)?.costs ?? []
+        }
+        onSelect={(cost) => {
+          if (!costPickerArticleId) return
+          setCompraError(null)
+          agregarCostoAlCarrito(costPickerArticleId, cost)
+          setCostPickerArticleId(null)
+        }}
       />
     </>
   )

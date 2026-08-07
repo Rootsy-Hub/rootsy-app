@@ -22,7 +22,7 @@ type Props = {
   overrides: PurchaseCartLineOverrides
   canUpdateArticles: boolean
   onApplyLineEdits: (input: PurchaseLineEditInput) => void
-  onRemoveLine: (productoId: string) => void
+  onRemoveLine: (lineId: string) => void
   actions: ActionsProps
   totalBar: TotalProps
   listTitle?: string
@@ -55,12 +55,12 @@ export function PurchaseOperationTicketOrderPanel({
         <div className={cn("border-b border-slate-200/90", saleOpCartListSurfaceClass)}>
           {lines.map((line) => (
             <PurchaseCartLineCard
-              key={line.productoId}
+              key={line.lineId}
               line={line}
               overrides={overrides}
               canUpdateArticles={canUpdateArticles}
               onApplyEdits={onApplyLineEdits}
-              onRemove={() => onRemoveLine(line.productoId)}
+              onRemove={() => onRemoveLine(line.lineId)}
             />
           ))}
         </div>

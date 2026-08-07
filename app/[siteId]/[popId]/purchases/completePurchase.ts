@@ -25,10 +25,10 @@ import type {
 } from "@/app/[siteId]/[popId]/purchases/actions"
 import { purchaseComprobanteAccruesInputVat } from "@/lib/purchaseComprobantePicker"
 import {
-  buildPurchaseLineFromInput,
   finalizePurchaseCheckout,
   type PurchaseLineBuilt,
 } from "@/lib/purchaseCheckoutLines"
+import { resolvePurchaseCheckoutLine } from "@/app/[siteId]/[popId]/purchases/purchaseLineResolve"
 
 export type CompletePurchaseInput = CreatePurchaseInput & {
   /** Sin pago inmediato: queda deuda en Proveedores. */
@@ -118,7 +118,10 @@ export async function completePurchase(
     }
 
     const lines = input.lines.filter(
-      (l) => l.articleId?.trim() && parseQty(l.quantity) > 0,
+      (l) =>
+        l.articleId?.trim() &&
+        l.articleCostId?.trim() &&
+        parseQty(l.costQuantity) > 0,
     )
     if (lines.length === 0) {
       return {
@@ -135,7 +138,7 @@ export async function completePurchase(
     if (lines.some((l) => l.updateArticleCost) && !canUpdateArticles) {
       return {
         success: false,
-        error: "Sin permiso para actualizar costos de artículos.",
+        error: "Sin permiso para actualizar precios de costos de artículos.",
       }
     }
 
@@ -196,23 +199,20 @@ export async function completePurchase(
 
     const built: BuiltLine[] = []
     for (const l of lines) {
-      const articleId = l.articleId.trim()
-      const unitCost = parseMoney(l.unitCost)
-      if (parseQty(l.quantity) <= 0) continue
-      if (unitCost < 0) {
-        return { success: false, error: "El costo unitario no puede ser negativo." }
+      const resolved = await resolvePurchaseCheckoutLine(supabase, popId, {
+        articleId: l.articleId,
+        articleCostId: l.articleCostId,
+        costQuantity: l.costQuantity,
+        unitCost: l.unitCost,
+        itemDiscountMode: l.itemDiscountMode,
+        itemDiscountDraft: l.itemDiscountDraft,
+        comment: l.comment,
+        updateArticleCost: l.updateArticleCost,
+      })
+      if ("error" in resolved) {
+        return { success: false, error: resolved.error }
       }
-      const { data: artRow, error: artErr } = await supabase
-        .from("articles")
-        .select("id, name, iva")
-        .eq("id", articleId)
-        .eq("pop_id", popId)
-        .maybeSingle()
-      if (artErr || !artRow) {
-        return { success: false, error: "Artículo inválido o inactivo." }
-      }
-      const builtLine = buildPurchaseLineFromInput(l, artRow)
-      if (builtLine) built.push(builtLine)
+      built.push(resolved.line)
     }
     if (built.length === 0) {
       return { success: false, error: "No hay ítems válidos en la compra." }
@@ -326,13 +326,13 @@ export async function completePurchase(
     }
 
     for (const l of fiscalLines) {
-      const note = `Compra — ${l.name}`
+      const note = `Compra — ${l.name} (${l.costUnitLabel})`
       const { data: movIns, error: movErr } = await supabase
         .from("inventory_movements")
         .insert({
           pop_id: popId,
           article_id: l.articleId,
-          quantity_delta: l.qty,
+          quantity_delta: l.saleQty,
           movement_type: "purchase_receipt",
           purchase_id: purchaseId,
           note,
@@ -350,19 +350,20 @@ export async function completePurchase(
       const movementId = String(movIns.id)
       movementIds.push(movementId)
 
-      const effectiveGrossUnit =
-        l.qty > 0 ? roundMoney(l.lineFinal / l.qty) : l.unitCost
-      const layerUnitCost = accrueInputVat
-        ? l.netUnitCost > 0
-          ? l.netUnitCost
-          : effectiveGrossUnit
-        : effectiveGrossUnit
+      const layerUnitCost =
+        l.saleQty > 0
+          ? accrueInputVat
+            ? l.netPart > 0
+              ? roundMoney(l.netPart / l.saleQty)
+              : roundMoney(l.unitCostSaleUom)
+            : roundMoney(l.unitCostSaleUom)
+          : 0
       const { error: layerErr } = await supabase.from("inventory_cost_layers").insert({
         pop_id: popId,
         article_id: l.articleId,
         source_movement_id: movementId,
-        quantity_received: l.qty,
-        quantity_remaining: l.qty,
+        quantity_received: l.saleQty,
+        quantity_remaining: l.saleQty,
         unit_cost: layerUnitCost,
       })
       if (layerErr) {
@@ -431,27 +432,27 @@ export async function completePurchase(
     for (const l of fiscalLines) {
       if (!l.updateArticleCost) continue
       const effectiveUnit =
-        l.qty > 0
+        l.costQty > 0
           ? accrueInputVat
             ? l.netUnitCost > 0
               ? l.netUnitCost
-              : roundMoney(l.lineFinal / l.qty)
-            : roundMoney(l.lineFinal / l.qty)
+              : roundMoney(l.lineFinal / l.costQty)
+            : roundMoney(l.lineFinal / l.costQty)
           : 0
       if (effectiveUnit < 0) continue
-      costUpdates.set(l.articleId, effectiveUnit)
+      costUpdates.set(l.articleCostId, effectiveUnit)
     }
-    for (const [articleId, unitCost] of costUpdates) {
+    for (const [articleCostId, unitPrice] of costUpdates) {
       const { error: costErr } = await supabase
-        .from("articles")
-        .update({ cost_price: unitCost })
-        .eq("id", articleId)
+        .from("article_costs")
+        .update({ unit_price: unitPrice })
+        .eq("id", articleCostId)
         .eq("pop_id", popId)
       if (costErr) {
         await rollbackCompletePurchase(supabase, purchaseId, movementIds)
         return {
           success: false,
-          error: costErr.message || "No se pudo actualizar el costo del artículo.",
+          error: costErr.message || "No se pudo actualizar el precio del costo.",
         }
       }
     }

@@ -21,6 +21,11 @@ import {
   timezoneForPopLedger,
 } from "@/lib/entryDateTimezone"
 import { createClient } from "@/utils/supabase/server"
+import {
+  articleReferenceCostError,
+  resolveArticleReferenceUnitCost,
+  resolveArticleReferenceUnitCostsByArticleId,
+} from "@/lib/articleReferenceUnitCost"
 
 export type InventoryMovementType =
   | "sale"
@@ -193,7 +198,7 @@ export async function createInventoryAdjustment(
 
     const { data: artRow, error: artErr } = await supabase
       .from("articles")
-      .select("id, name, cost_price")
+      .select("id, name")
       .eq("id", input.articleId)
       .eq("pop_id", popId)
       .maybeSingle()
@@ -201,7 +206,9 @@ export async function createInventoryAdjustment(
       return { success: false, error: "Artículo no encontrado en este punto." }
     }
     const articleName = String(artRow.name ?? "")
-    const articleCostRef = roundMoney(Number(artRow.cost_price ?? 0))
+    const articleCostRef = roundMoney(
+      await resolveArticleReferenceUnitCost(supabase, popId, input.articleId),
+    )
 
     const isIncrease = delta > 0
 
@@ -227,8 +234,7 @@ export async function createInventoryAdjustment(
       if (u == null || u <= 0) {
         return {
           success: false,
-          error:
-            "Configurá un precio de costo mayor que cero en el artículo para valorar el ajuste.",
+          error: articleReferenceCostError(articleName),
         }
       }
       valuationUnitForLayer = u
@@ -250,8 +256,7 @@ export async function createInventoryAdjustment(
         if (u == null || u <= 0) {
           return {
             success: false,
-            error:
-              "Sin capas de costo: configurá precio de costo en el artículo para valorar la salida.",
+            error: articleReferenceCostError(articleName),
           }
         }
         amount = roundMoney(qtyAbs * u)
@@ -279,8 +284,7 @@ export async function createInventoryAdjustment(
           if (u == null || u <= 0) {
             return {
               success: false,
-              error:
-                "Configurá precio de costo en el artículo para valorar el remanente que no cubren las capas FIFO.",
+              error: articleReferenceCostError(articleName),
             }
           }
           total += roundMoney(need * u)
@@ -519,6 +523,7 @@ export type CreateInitialStockLedgerInput = {
   articleId: string
   quantity: number
   siteId: string
+  unitCostSaleUom: number
 }
 
 export async function createInitialStockLedgerForArticle(
@@ -572,7 +577,7 @@ export async function createInitialStockLedgerForArticle(
 
     const { data: artRow, error: artErr } = await supabase
       .from("articles")
-      .select("id, name, cost_price")
+      .select("id, name")
       .eq("id", input.articleId)
       .eq("pop_id", popId)
       .maybeSingle()
@@ -580,12 +585,12 @@ export async function createInitialStockLedgerForArticle(
       return { success: false, error: "Artículo no encontrado en este punto." }
     }
     const articleName = String(artRow.name ?? "")
-    const articleCostRef = roundMoney(Number(artRow.cost_price ?? 0))
+    const articleCostRef = roundMoney(Number(input.unitCostSaleUom))
     if (articleCostRef <= 0) {
       return {
         success: false,
         error:
-          "Configurá un precio de costo mayor que cero en el artículo para valorar el stock inicial.",
+          "Indicá un costo de compra con precio mayor que cero para valorar el stock inicial.",
       }
     }
     const amount = roundMoney(delta * articleCostRef)
@@ -920,7 +925,7 @@ export async function getPopInventoryPageData(popId: string): Promise<
 
     const { data: artRows, error: artErr } = await supabase
       .from("articles")
-      .select("id, name, cost_price")
+      .select("id, name")
       .eq("pop_id", popId)
       .eq("is_active", true)
       .order("name", { ascending: true })
@@ -933,11 +938,20 @@ export async function getPopInventoryPageData(popId: string): Promise<
         ledgerTimeZone,
       }
     }
-    const articles: InventoryArticleOption[] = (artRows || []).map((r) => ({
-      id: String(r.id),
-      name: String(r.name ?? ""),
-      costPrice: roundMoney(Number(r.cost_price ?? 0)),
-    }))
+    const articleIds = (artRows || []).map((r) => String(r.id))
+    const referenceUnitCosts = await resolveArticleReferenceUnitCostsByArticleId(
+      supabase,
+      popId,
+      articleIds,
+    )
+    const articles: InventoryArticleOption[] = (artRows || []).map((r) => {
+      const id = String(r.id)
+      return {
+        id,
+        name: String(r.name ?? ""),
+        costPrice: referenceUnitCosts.get(id) ?? 0,
+      }
+    })
     const nameByArticle = new Map(articles.map((a) => [a.id, a.name]))
 
     const { data: movRows, error: movErr } = await supabase

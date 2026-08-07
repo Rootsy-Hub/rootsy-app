@@ -34,6 +34,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog"
 import { Textarea } from "@/components/ui/textarea"
+import { saleQuantityFromCostPurchase } from "@/lib/articleCosts"
 import { resolveSaleLineDiscount } from "@/lib/saleLineDiscount"
 import { discountGroupBannerLabelFromPricing } from "@/lib/cartLineDiscountBadge"
 import {
@@ -53,9 +54,14 @@ import {
 import { useId, useRef, useState } from "react"
 
 export type PurchaseCartLine = {
+  lineId: string
   productoId: string
+  articleCostId: string
   cantidad: number
   nombre: string
+  costLabel: string
+  costUnitLabel: string
+  saleUnitsPerCostUnit: number
   descripcion?: string | null
   fallbackCost: number
   iva?: number
@@ -71,7 +77,7 @@ export type PurchaseCartLineOverrides = {
 }
 
 export type PurchaseLineEditInput = {
-  productoId: string
+  lineId: string
   quantity: number
   unitCost: string
   updateArticleCost: boolean
@@ -128,7 +134,7 @@ export function PurchaseCartLineCard({
   onApplyEdits,
   onRemove,
 }: Props) {
-  const itemId = line.productoId
+  const itemId = line.lineId
   const quantityFieldId = useId()
   const costFieldId = useId()
   const discountFieldId = useId()
@@ -178,6 +184,10 @@ export function PurchaseCartLineCard({
   })
 
   const lineTotal = linePricing.lineSubtotal
+  const saleQty = saleQuantityFromCostPurchase(
+    line.cantidad,
+    line.saleUnitsPerCostUnit,
+  )
   const tieneDescuentoItem = linePricing.itemDiscountAmount > 0
   const descuentoBannerLabel = discountGroupBannerLabelFromPricing(linePricing)
   const tieneComentario = comentario.trim().length > 0
@@ -189,8 +199,9 @@ export function PurchaseCartLineCard({
   const draftUnitCost = parseUnitCost(unitCostDraft, line.fallbackCost)
   const parsedQuantityDraft = parseQuantityDraft(quantityDraft, line.cantidad)
   const maxDiscountLine = draftUnitCost * parsedQuantityDraft
-  const unitOfMeasureSuffix = shortUnitOfMeasure(line.unitOfMeasure)
-  const unitOfMeasureLabel = labelUnitOfMeasure(line.unitOfMeasure)
+  const saleUomShort = shortUnitOfMeasure(line.unitOfMeasure)
+  const saleUomLabel = labelUnitOfMeasure(line.unitOfMeasure)
+  const costSubtitle = `${line.costLabel} · ${saleQty} ${saleUomShort || saleUomLabel}`
 
   const openModal = () => {
     baselineCantidadRef.current = line.cantidad
@@ -232,7 +243,7 @@ export function PurchaseCartLineCard({
       hasDiscountEdit
     ) {
       onApplyEdits({
-        productoId: itemId,
+        lineId: itemId,
         quantity: parsedQuantity,
         unitCost: unitCostDraft,
         updateArticleCost: updateCostDraft,
@@ -285,12 +296,9 @@ export function PurchaseCartLineCard({
   const canDecreaseQuantity =
     parseQuantityDraft(quantityDraft, line.cantidad) - 1 > 0
 
-  const rowGridClass = cartLineRowGridClass
-  const rowGridNoPriceClass = cartLineRowGridNoPriceClass
-
   return (
     <>
-      <CartLineScrollTarget lineId={line.productoId}>
+      <CartLineScrollTarget lineId={line.lineId}>
       <section
         className={cn(
           "w-full border-b border-slate-200/90",
@@ -316,7 +324,7 @@ export function PurchaseCartLineCard({
           type="button"
           onClick={openModal}
           className={cn(
-            tieneDescuentoItem ? rowGridNoPriceClass : rowGridClass,
+            tieneDescuentoItem ? cartLineRowGridNoPriceClass : cartLineRowGridClass,
             "transition-colors hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-slate-300/80",
           )}
           aria-label={`Editar ${line.nombre}`}
@@ -328,9 +336,14 @@ export function PurchaseCartLineCard({
               {line.nombre}
             </span>
             <CartLineSubtitleRow
-              descripcion={descripcionProducto}
-              showDescripcion={showDescripcion}
+              descripcion={costSubtitle}
+              showDescripcion
             />
+            {showDescripcion ? (
+              <span className="mt-0.5 block text-[11px] leading-snug text-slate-500">
+                {descripcionProducto}
+              </span>
+            ) : null}
           </span>
 
           {!tieneDescuentoItem ? (
@@ -369,7 +382,8 @@ export function PurchaseCartLineCard({
               {line.nombre}
             </DialogTitle>
             <p className="text-sm text-muted-foreground">
-              Cantidad, costo, comentario o descuento de la línea.
+              {line.costLabel} · equivalencia {line.saleUnitsPerCostUnit}{" "}
+              {saleUomShort || saleUomLabel}
             </p>
           </DialogHeader>
 
@@ -381,7 +395,9 @@ export function PurchaseCartLineCard({
           >
             <CheckoutSectionPanel>
               <div className="space-y-2.5">
-                <CheckoutSectionLabel>Cantidad</CheckoutSectionLabel>
+                <CheckoutSectionLabel>
+                  Cantidad ({line.costUnitLabel})
+                </CheckoutSectionLabel>
                 <CheckoutNumericValueField
                   id={quantityFieldId}
                   icon={Hash}
@@ -394,20 +410,24 @@ export function PurchaseCartLineCard({
                   onIncrease={() => adjustQuantityDraft(1)}
                   decreaseDisabled={!canDecreaseQuantity}
                   placeholder={formatQuantityForInput(line.cantidad)}
-                  suffix={unitOfMeasureSuffix || undefined}
                   inputMode="decimal"
                   maxLength={QUANTITY_INPUT_MAX_LEN}
-                  ariaLabel={`Cantidad en ${unitOfMeasureLabel}`}
+                  ariaLabel={`Cantidad en ${line.costUnitLabel}`}
                 />
-                {unitOfMeasureLabel !== "—" ? (
-                  <CheckoutFieldHint>
-                    Cantidad en {unitOfMeasureLabel}.
-                  </CheckoutFieldHint>
-                ) : null}
+                <CheckoutFieldHint>
+                  Stock:{" "}
+                  {saleQuantityFromCostPurchase(
+                    parsedQuantityDraft,
+                    line.saleUnitsPerCostUnit,
+                  )}{" "}
+                  {saleUomShort || saleUomLabel}
+                </CheckoutFieldHint>
               </div>
 
               <div className="space-y-2.5">
-                <CheckoutSectionLabel>Costo unitario</CheckoutSectionLabel>
+                <CheckoutSectionLabel>
+                  Precio por {line.costUnitLabel}
+                </CheckoutSectionLabel>
                 <CheckoutNumericValueField
                   id={costFieldId}
                   icon={DollarSign}
@@ -420,19 +440,19 @@ export function PurchaseCartLineCard({
                     line.fallbackCost > 0 ? String(line.fallbackCost) : "0"
                   }
                   inputMode="decimal"
-                  ariaLabel="Costo unitario"
+                  ariaLabel={`Precio por ${line.costUnitLabel}`}
                 />
                 {line.iva != null && line.iva > 0 ? (
                   <CheckoutFieldHint>
-                    IVA {line.iva}% incluido en el costo ingresado.
+                    IVA {line.iva}% incluido en el importe ingresado.
                   </CheckoutFieldHint>
                 ) : null}
               </div>
 
               {canUpdateArticles ? (
                 <CheckoutToggleCard
-                  title="Actualizar costo en el artículo"
-                  subtitle="Guarda este costo en la ficha del artículo al confirmar la compra."
+                  title="Actualizar precio del costo"
+                  subtitle="Guarda este precio en el catálogo de costos del artículo."
                   selected={updateCostDraft}
                   onClick={() => setUpdateCostDraft((prev) => !prev)}
                   icon={RefreshCw}

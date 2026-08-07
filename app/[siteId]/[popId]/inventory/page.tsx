@@ -820,8 +820,9 @@ function InventoryPage() {
               ) : null}
               <p className="text-xs text-muted-foreground">
                 El importe del asiento se calcula al confirmar: primero capas FIFO (si existen);
-                si no hay o falta cubrir cantidad, se usa el precio de costo del artículo. La fecha
-                del asiento es la fecha calendario actual en la zona horaria del punto de venta
+                si no hay o falta cubrir cantidad, se usa el costo de referencia (última compra o
+                costos de compra configurados). La fecha del asiento es la fecha calendario actual en
+                la zona horaria del punto de venta
                 {ledgerTimeZone ? ` (${ledgerTimeZone}).` : "."}
               </p>
             </div>

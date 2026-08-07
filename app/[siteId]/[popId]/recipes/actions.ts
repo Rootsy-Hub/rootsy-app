@@ -14,6 +14,7 @@ import { popMenuHref } from "@/lib/popRoutes"
 import { loadPopPermissionsSnapshot } from "@/lib/popPermissionsServer"
 import { resolveWorkspaceTableListOrder } from "@/lib/workspaceTableSort"
 import { computeRecipeCostPrice } from "@/lib/recipeCost"
+import { resolveArticleReferenceUnitCostsByArticleId } from "@/lib/articleReferenceUnitCost"
 import { createClient } from "@/utils/supabase/server"
 import type { ArticleItemKind } from "@/lib/articleItemKind"
 import {
@@ -139,7 +140,6 @@ const INGREDIENT_SELECT = `
     name,
     item_kind,
     unit_of_measure,
-    cost_price,
     default_waste_pct
   )
 `
@@ -194,9 +194,13 @@ async function recipePermissionFlags(popId: string) {
   }
 }
 
-function mapIngredientRow(row: Record<string, unknown>): RecipeIngredientRow | null {
+function mapIngredientRow(
+  row: Record<string, unknown>,
+  referenceUnitCostByArticleId: Map<string, number>,
+): RecipeIngredientRow | null {
   const art = row.articles as Record<string, unknown> | null
   if (!art?.id) return null
+  const articleId = String(art.id)
   const rawKind = String(art.item_kind ?? "raw_material")
   const itemKind = isArticleItemKind(rawKind) ? rawKind : "raw_material"
   const rawUom = String(art.unit_of_measure ?? "kg")
@@ -207,7 +211,7 @@ function mapIngredientRow(row: Record<string, unknown>): RecipeIngredientRow | n
     wasteRaw != null && Number.isFinite(Number(wasteRaw))
       ? Number(wasteRaw)
       : null
-  const articleCostPrice = Number(art.cost_price ?? 0) || 0
+  const articleCostPrice = referenceUnitCostByArticleId.get(articleId) ?? 0
   const wasteDefaultRaw = art.default_waste_pct
   const articleDefaultWastePct =
     wasteDefaultRaw != null && Number.isFinite(Number(wasteDefaultRaw))
@@ -223,7 +227,7 @@ function mapIngredientRow(row: Record<string, unknown>): RecipeIngredientRow | n
   ])
   return {
     id: String(row.id),
-    articleId: String(art.id),
+    articleId,
     articleName: String(art.name ?? ""),
     itemKind,
     unitOfMeasure,
@@ -324,12 +328,17 @@ async function loadIngredientArticles(
   const ids = ingredients.map((i) => i.articleId.trim())
   const { data, error } = await supabase
     .from("articles")
-    .select("id, item_kind, cost_price, default_waste_pct, is_active")
+    .select("id, item_kind, default_waste_pct, is_active")
     .eq("pop_id", popId)
     .in("id", ids)
   if (error) {
     return { ok: false, error: error.message || "No se pudieron validar ingredientes." }
   }
+  const referenceUnitCosts = await resolveArticleReferenceUnitCostsByArticleId(
+    supabase,
+    popId,
+    ids,
+  )
   const byId = new Map(
     (data ?? []).map((r) => [String(r.id), r as Record<string, unknown>]),
   )
@@ -364,7 +373,7 @@ async function loadIngredientArticles(
       articleId: line.articleId.trim(),
       quantity: qty,
       wastePct,
-      costPrice: Number(row.cost_price ?? 0) || 0,
+      costPrice: referenceUnitCosts.get(line.articleId.trim()) ?? 0,
       defaultWastePct:
         row.default_waste_pct != null && Number.isFinite(Number(row.default_waste_pct))
           ? Number(row.default_waste_pct)
@@ -619,26 +628,33 @@ export async function getRecipeIngredientOptions(popId: string): Promise<
     const supabase = await createClient()
     const { data, error } = await supabase
       .from("articles")
-      .select("id, name, item_kind, unit_of_measure, cost_price, default_waste_pct")
+      .select("id, name, item_kind, unit_of_measure, default_waste_pct")
       .eq("pop_id", popId)
       .eq("is_active", true)
       .in("item_kind", ["raw_material", "supply"])
       .order("name", { ascending: true })
     if (error) return { success: false, error: error.message }
+    const articleIds = (data ?? []).map((r) => String(r.id))
+    const referenceUnitCosts = await resolveArticleReferenceUnitCostsByArticleId(
+      supabase,
+      popId,
+      articleIds,
+    )
     return {
       success: true,
       ingredients: (data ?? []).map((r) => {
+        const id = String(r.id)
         const rawKind = String(r.item_kind ?? "raw_material")
         const itemKind = isArticleItemKind(rawKind) ? rawKind : "raw_material"
         const rawUom = String(r.unit_of_measure ?? "kg")
         const unitOfMeasure = normalizeStoredUnitOfMeasure(rawUom, "kg")
         const wasteRaw = r.default_waste_pct
         return {
-          id: String(r.id),
+          id,
           name: String(r.name ?? ""),
           itemKind,
           unitOfMeasure,
-          costPrice: Number(r.cost_price ?? 0) || 0,
+          costPrice: referenceUnitCosts.get(id) ?? 0,
           defaultWastePct:
             wasteRaw != null && Number.isFinite(Number(wasteRaw))
               ? Number(wasteRaw)
@@ -845,8 +861,23 @@ export async function getPopRecipeDetail(
       .order("sort_order", { ascending: true })
     if (ingErr) return { success: false, error: ingErr.message }
 
+    const ingredientArticleIds = (ingData ?? [])
+      .map((r) => {
+        const art = (r as Record<string, unknown>).articles as
+          | Record<string, unknown>
+          | null
+        return art?.id ? String(art.id) : null
+      })
+      .filter((id): id is string => id != null)
+    const referenceUnitCosts = await resolveArticleReferenceUnitCostsByArticleId(
+      supabase,
+      popId,
+      ingredientArticleIds,
+    )
     const ingredients = (ingData ?? [])
-      .map((r) => mapIngredientRow(r as Record<string, unknown>))
+      .map((r) =>
+        mapIngredientRow(r as Record<string, unknown>, referenceUnitCosts),
+      )
       .filter((r): r is RecipeIngredientRow => r != null)
 
     return {
