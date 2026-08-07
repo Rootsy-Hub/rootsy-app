@@ -163,6 +163,48 @@ export function shortUnitOfMeasure(value: string | null | undefined): string {
   return UOM_SHORT[value] ?? value
 }
 
+/** Unidad vendida por entero (unidad, caja). */
+export function quantityAllowsDecimalsForUnitOfMeasure(
+  value: string | null | undefined,
+): boolean {
+  const unit = normalizeStoredUnitOfMeasure(String(value ?? "").trim() || "unidad")
+  return unit !== "unidad" && unit !== "caja"
+}
+
+/** Paso del stepper +/- según unidad. */
+export function quantityStepForUnitOfMeasure(
+  value: string | null | undefined,
+): number {
+  const unit = normalizeStoredUnitOfMeasure(String(value ?? "").trim() || "unidad")
+  switch (unit) {
+    case "unidad":
+    case "caja":
+      return 1
+    case "g":
+    case "ml":
+    case "cm":
+      return 1
+    case "kg":
+    case "lt":
+    case "m":
+      return 0.1
+    default:
+      return 0.1
+  }
+}
+
+export function isValidQuantityInputForUnitOfMeasure(
+  raw: string,
+  unit: string | null | undefined,
+  maxLength = 11,
+): boolean {
+  if (raw.length > maxLength) return false
+  if (quantityAllowsDecimalsForUnitOfMeasure(unit)) {
+    return /^\d*[.,]?\d{0,3}$/.test(raw)
+  }
+  return /^\d*$/.test(raw)
+}
+
 export function isCustomUnitOfMeasure(
   value: string | null | undefined,
 ): boolean {

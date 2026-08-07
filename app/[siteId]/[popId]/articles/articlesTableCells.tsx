@@ -14,13 +14,13 @@ import {
 } from "@/components/data-workspace/dataWorkspaceTablesLayout"
 import {
   workspaceTableNatureLinkClass,
-  workspaceTableNatureMoneyClass,
   workspaceTableNatureTextPrimaryClass,
   workspaceTableNatureTextSecondaryClass,
   workspaceTableNatureTextTertiaryClass,
 } from "@/components/data-workspace/dataWorkspaceListStyles"
 import { RootsNaturePill } from "@/components/rootsy-pill"
 import { articleHasCatalogDiscount, formatArticleDiscountBadge } from "@/lib/articleDiscount"
+import { shortUnitOfMeasure } from "@/lib/articleItemKind"
 import { cn } from "@/lib/utils"
 import { TableCell } from "@/components/ui/table"
 
@@ -254,16 +254,41 @@ export function ArticleTableSuppliersCell({
   )
 }
 
-export function ArticleTableStockCell({ stockOnHand }: { stockOnHand: number }) {
+export function ArticleTableStockCell({
+  stockOnHand,
+  unitOfMeasure,
+}: {
+  stockOnHand: number
+  unitOfMeasure: string
+}) {
+  const unitSuffix = shortUnitOfMeasure(unitOfMeasure)
+
   return (
     <TableCell
       className={cn(
         workspaceTableLayoutBodyCellClass,
-        "w-[5.5rem] text-right",
+        "w-28 min-w-28 text-right",
       )}
     >
-      <span className={cn("block leading-4", workspaceTableNatureMoneyClass)}>
-        {formatArticleStockOnHand(stockOnHand)}
+      <span className="inline-flex items-baseline justify-end gap-1 leading-4">
+        <span
+          className={cn(
+            "font-numeric text-sm font-semibold tabular-nums tracking-tight",
+            workspaceTableNatureTextPrimaryClass,
+          )}
+        >
+          {formatArticleStockOnHand(stockOnHand)}
+        </span>
+        {unitSuffix ? (
+          <span
+            className={cn(
+              "text-xs font-normal",
+              workspaceTableNatureTextSecondaryClass,
+            )}
+          >
+            {unitSuffix}
+          </span>
+        ) : null}
       </span>
     </TableCell>
   )

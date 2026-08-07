@@ -1566,7 +1566,10 @@ function ArticlesPage() {
                             {formatMoney(a.costPrice)}
                           </span>
                         </TableCell>
-                        <ArticleTableStockCell stockOnHand={a.stockOnHand} />
+                        <ArticleTableStockCell
+                          stockOnHand={a.stockOnHand}
+                          unitOfMeasure={a.unitOfMeasure}
+                        />
                         {canUpdate || canDelete ? (
                           <TableCell className={workspaceTableLayoutActionsBodyCellClass}>
                             <div className="flex items-center justify-end gap-0.5">
