@@ -22,6 +22,7 @@ export type BackofficeSubscriptionPlanRow = {
   trialDays: number
   sortOrder: number
   isActive: boolean
+  isPublic: boolean
 }
 
 export type BackofficeBusinessTypeModules = {
@@ -39,6 +40,7 @@ export type BackofficeBusinessTypeRow = {
   addonPriceYearly: number
   modulesStructured: BackofficeBusinessTypeModules
   isActive: boolean
+  isPublic: boolean
 }
 
 export type BackofficePlanLimitRow = {
@@ -328,7 +330,7 @@ export async function listBackofficeSubscriptionPlans(): Promise<
   const { data, error } = await supabase
     .from("_subscription_plans")
     .select(
-      "id, name, display_name, description, base_price_monthly, base_price_yearly, trial_days, sort_order, is_active",
+      "id, name, display_name, description, base_price_monthly, base_price_yearly, trial_days, sort_order, is_active, is_public",
     )
     .order("sort_order", { ascending: true })
 
@@ -344,6 +346,7 @@ export async function listBackofficeSubscriptionPlans(): Promise<
     trialDays: Number(row.trial_days ?? 0),
     sortOrder: Number(row.sort_order ?? 0),
     isActive: Boolean(row.is_active),
+    isPublic: Boolean(row.is_public ?? true),
   }))
 }
 
@@ -402,7 +405,7 @@ export async function listBackofficeBusinessTypes(): Promise<
   const { data, error } = await supabase
     .from("_business_types")
     .select(
-      "id, name, display_name, description, addon_price_monthly, addon_price_yearly, modules, is_active",
+      "id, name, display_name, description, addon_price_monthly, addon_price_yearly, modules, is_active, is_public",
     )
     .order("display_name", { ascending: true })
 
@@ -417,6 +420,7 @@ export async function listBackofficeBusinessTypes(): Promise<
     addonPriceYearly: Number(row.addon_price_yearly ?? 0),
     modulesStructured: (row.modules as BackofficeBusinessTypeModules) ?? {},
     isActive: Boolean(row.is_active),
+    isPublic: Boolean(row.is_public ?? true),
   }))
 }
 

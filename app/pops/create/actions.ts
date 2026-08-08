@@ -56,6 +56,7 @@ export async function getActiveBusinessTypes(): Promise<BusinessTypeOption[]> {
       .from("_business_types")
       .select("id, name, display_name, description")
       .eq("is_active", true)
+      .eq("is_public", true)
       .order("display_name", { ascending: true })
 
     if (error || !data) return []
@@ -101,7 +102,8 @@ export async function getPopCreatePlanOptions(
         display_name,
         description,
         sort_order,
-        is_active
+        is_active,
+        is_public
       )
     `,
     )
@@ -114,7 +116,7 @@ export async function getPopCreatePlanOptions(
 
   for (const row of data) {
     const planRaw = Array.isArray(row.plan) ? row.plan[0] : row.plan
-    if (!planRaw || planRaw.is_active !== true) continue
+    if (!planRaw || planRaw.is_active !== true || planRaw.is_public !== true) continue
     if (planRaw.name === "free_trial") continue
 
     const planId = String(planRaw.id)
