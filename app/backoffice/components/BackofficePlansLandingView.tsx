@@ -16,8 +16,8 @@ import {
   ROOTS_PLAN_DEFINITIONS,
   formatPlanLimitValue,
   listSpecificModulesFlat,
-  type RootsBusinessTypeKey,
-  type RootsPlanKey,
+  type RootsPublicBusinessTypeKey,
+  type RootsPublicPaidPlanKey,
 } from "@/lib/rootsySubscriptionCatalog"
 import { getRootsModuleIcon } from "@/lib/rootsyModuleIcons"
 import { cn } from "@/lib/utils"
@@ -32,16 +32,19 @@ import { useMemo, useState } from "react"
 
 type BillingCycle = "monthly" | "yearly"
 
-const FEATURED_PLAN: Exclude<RootsPlanKey, "free_trial"> = "professional"
+const FEATURED_PLAN: RootsPublicPaidPlanKey = "professional"
 
 const BUSINESS_TYPE_ICONS = {
   comercio: Store,
   restaurant: UtensilsCrossed,
   fabrica: Factory,
-} as const
+} as const satisfies Record<
+  RootsPublicBusinessTypeKey,
+  typeof Store
+>
 
 const PLAN_LANDING_COPY: Record<
-  Exclude<RootsPlanKey, "free_trial">,
+  RootsPublicPaidPlanKey,
   { tagline: string; cta: string }
 > = {
   starter: {
@@ -179,7 +182,7 @@ function BusinessTypeTabs({
     <div className="flex flex-wrap justify-center gap-2">
       {businessTypes.map((bt) => {
         const Icon =
-          BUSINESS_TYPE_ICONS[bt.name as RootsBusinessTypeKey] ?? Store
+          BUSINESS_TYPE_ICONS[bt.name as RootsPublicBusinessTypeKey] ?? Store
         const selected = value === bt.id
         return (
           <button
@@ -215,7 +218,7 @@ function LandingPricingCard({
   specificModulesCount: number
   featured: boolean
 }) {
-  const planKey = plan.name as Exclude<RootsPlanKey, "free_trial">
+  const planKey = plan.name as RootsPublicPaidPlanKey
   const planMeta = ROOTS_PLAN_DEFINITIONS[planKey]
   const copy = PLAN_LANDING_COPY[planKey]
   const monthly = limit.priceMonthly
@@ -313,9 +316,15 @@ function ModulesIncludedPanel({
 }: {
   businessType: BackofficeBusinessTypeRow
 }) {
-  const typeKey = businessType.name as RootsBusinessTypeKey
-  const catalogConfig = ROOTS_BUSINESS_TYPE_MODULES[typeKey]
-  const specificModules = listSpecificModulesFlat(typeKey)
+  const typeKey = businessType.name as RootsPublicBusinessTypeKey | "platform_full"
+  const catalogConfig =
+    typeKey in ROOTS_BUSINESS_TYPE_MODULES
+      ? ROOTS_BUSINESS_TYPE_MODULES[typeKey]
+      : null
+  const specificModules =
+    typeKey in ROOTS_BUSINESS_TYPE_MODULES
+      ? listSpecificModulesFlat(typeKey)
+      : []
   const extras = catalogConfig?.extras ?? []
 
   return (
@@ -496,7 +505,7 @@ export function BackofficePlansLandingView({
     businessTypes.find((bt) => bt.id === businessTypeId) ?? businessTypes[0]
 
   const selectedTypeKey = selectedBusinessType?.name as
-    | RootsBusinessTypeKey
+    | RootsPublicBusinessTypeKey
     | undefined
 
   const specificModulesCount = selectedTypeKey

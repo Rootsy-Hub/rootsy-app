@@ -9,13 +9,17 @@ export type RootsModuleDefinition = {
   label: string
 }
 
-export type RootsBusinessTypeKey = "comercio" | "restaurant" | "fabrica"
+export type RootsPublicBusinessTypeKey = "comercio" | "restaurant" | "fabrica"
+
+/** Rubros visibles al público + rubro interno `platform_full`. */
+export type RootsBusinessTypeKey = RootsPublicBusinessTypeKey | "platform_full"
 
 export type RootsPlanKey =
   | "free_trial"
   | "starter"
   | "enterprise"
   | "professional"
+  | "rootsy_internal"
 
 /** Precio mensual de add-on por módulo extra (ARS). */
 export const ROOTS_EXTRA_MODULE_PRICES: Record<string, number> = {
@@ -25,13 +29,18 @@ export const ROOTS_EXTRA_MODULE_PRICES: Record<string, number> = {
   chat: 12,
 }
 
-export const ROOTS_BUSINESS_TYPE_ORDER: RootsBusinessTypeKey[] = [
+export const ROOTS_BUSINESS_TYPE_ORDER: RootsPublicBusinessTypeKey[] = [
   "comercio",
   "restaurant",
   "fabrica",
 ]
 
-export const ROOTS_PAID_PLAN_ORDER: Exclude<RootsPlanKey, "free_trial">[] = [
+export type RootsPublicPaidPlanKey = Exclude<
+  RootsPlanKey,
+  "free_trial" | "rootsy_internal"
+>
+
+export const ROOTS_PAID_PLAN_ORDER: RootsPublicPaidPlanKey[] = [
   "starter",
   "professional",
   "enterprise",
@@ -61,14 +70,29 @@ export const ROOTS_SHARED_MODULES: Record<
   ],
 }
 
-export const ROOTS_BUSINESS_TYPE_MODULES: Record<
-  RootsBusinessTypeKey,
-  {
-    displayName: string
-    description: string
-    specific: Record<Exclude<RootsModuleSectionKey, "extras">, RootsModuleDefinition[]>
-    extras: RootsModuleDefinition[]
+function dedupeModulesByKey(
+  modules: RootsModuleDefinition[],
+): RootsModuleDefinition[] {
+  const seen = new Set<string>()
+  const out: RootsModuleDefinition[] = []
+  for (const mod of modules) {
+    if (seen.has(mod.key)) continue
+    seen.add(mod.key)
+    out.push(mod)
   }
+  return out
+}
+
+type RootsBusinessTypeModulesConfig = {
+  displayName: string
+  description: string
+  specific: Record<Exclude<RootsModuleSectionKey, "extras">, RootsModuleDefinition[]>
+  extras: RootsModuleDefinition[]
+}
+
+const ROOTS_PUBLIC_BUSINESS_TYPE_MODULES: Record<
+  RootsPublicBusinessTypeKey,
+  RootsBusinessTypeModulesConfig
 > = {
   comercio: {
     displayName: "Comercio",
@@ -148,8 +172,46 @@ export const ROOTS_BUSINESS_TYPE_MODULES: Record<
   },
 }
 
+function buildPlatformFullBusinessTypeModules(): RootsBusinessTypeModulesConfig {
+  return {
+    displayName: "Plataforma completa",
+    description: "Uso interno Rootsy: todos los módulos de todos los rubros.",
+    specific: {
+      operar: dedupeModulesByKey(
+        ROOTS_BUSINESS_TYPE_ORDER.flatMap(
+          (key) => ROOTS_PUBLIC_BUSINESS_TYPE_MODULES[key].specific.operar,
+        ),
+      ),
+      administrar: dedupeModulesByKey(
+        ROOTS_BUSINESS_TYPE_ORDER.flatMap(
+          (key) => ROOTS_PUBLIC_BUSINESS_TYPE_MODULES[key].specific.administrar,
+        ),
+      ),
+      configurar: dedupeModulesByKey([
+        ...ROOTS_BUSINESS_TYPE_ORDER.flatMap(
+          (key) => ROOTS_PUBLIC_BUSINESS_TYPE_MODULES[key].specific.configurar,
+        ),
+        { key: "accounting", label: "Contabilidad" },
+      ]),
+    },
+    extras: dedupeModulesByKey(
+      ROOTS_BUSINESS_TYPE_ORDER.flatMap(
+        (key) => ROOTS_PUBLIC_BUSINESS_TYPE_MODULES[key].extras,
+      ),
+    ),
+  }
+}
+
+export const ROOTS_BUSINESS_TYPE_MODULES: Record<
+  RootsBusinessTypeKey,
+  RootsBusinessTypeModulesConfig
+> = {
+  ...ROOTS_PUBLIC_BUSINESS_TYPE_MODULES,
+  platform_full: buildPlatformFullBusinessTypeModules(),
+}
+
 export const ROOTS_PLAN_DEFINITIONS: Record<
-  RootsPlanKey,
+  Exclude<RootsPlanKey, "rootsy_internal">,
   {
     displayName: string
     description: string
@@ -183,11 +245,11 @@ export const ROOTS_PLAN_DEFINITIONS: Record<
   },
 }
 
-/** Límites por plan × tipo de negocio. -1 = ilimitado. */
+/** Límites por plan × tipo de negocio públicos. -1 = ilimitado. */
 export const ROOTS_PLAN_LIMITS: Record<
-  Exclude<RootsPlanKey, "free_trial">,
+  Exclude<RootsPlanKey, "free_trial" | "rootsy_internal">,
   Record<
-    RootsBusinessTypeKey,
+    RootsPublicBusinessTypeKey,
     {
       maxUsers: number
       maxArticles: number
@@ -279,9 +341,9 @@ export const ROOTS_PLAN_LIMITS: Record<
 }
 
 export function buildBusinessTypeModulesJson(
-  businessTypeKey: RootsBusinessTypeKey,
+  businessTypeKey: RootsPublicBusinessTypeKey,
 ): Record<string, unknown> {
-  const config = ROOTS_BUSINESS_TYPE_MODULES[businessTypeKey]
+  const config = ROOTS_PUBLIC_BUSINESS_TYPE_MODULES[businessTypeKey]
   return {
     shared: ROOTS_SHARED_MODULES,
     specific: config.specific,
