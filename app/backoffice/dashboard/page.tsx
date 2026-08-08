@@ -68,14 +68,7 @@ export default function BackofficeDashboardPage() {
   }, [load])
 
   return (
-    <BackofficeSection
-      eyebrow="Resumen"
-      title="Dashboard"
-      description="Vista general de usuarios, organizaciones, puntos de venta y subscripciones activas."
-      loading={loading}
-      error={error}
-      onRefresh={() => void load()}
-    >
+    <BackofficeSection title="Dashboard" loading={loading} error={error}>
       {!stats ? (
         <BackofficeEmptyState message="Sin datos disponibles." />
       ) : (

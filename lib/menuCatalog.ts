@@ -65,6 +65,8 @@ export type MenuItemDef = {
   icon: LucideIcon
   badge?: string
   link: MenuItemLink
+  /** Key del módulo en el catálogo de suscripción (estable para React keys). */
+  moduleKey?: string
 }
 
 export type MenuSectionDef = {

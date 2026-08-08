@@ -43,14 +43,7 @@ export default function BackofficeOrganizacionesPage() {
   }, [load])
 
   return (
-    <BackofficeSection
-      eyebrow="Billing"
-      title="Organizaciones"
-      description="Contenedores de billing, trial y medios de pago compartidos entre POPs."
-      loading={loading}
-      error={error}
-      onRefresh={() => void load()}
-    >
+    <BackofficeSection title="Organizaciones" loading={loading} error={error}>
       {rows.length === 0 ? (
         <BackofficeEmptyState message="No hay organizaciones registradas." />
       ) : (

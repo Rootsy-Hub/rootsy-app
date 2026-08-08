@@ -36,7 +36,9 @@ function resolveModulePermissions(
   isOwner: boolean,
 ): PopAccessModulePermissions | null {
   const pageKey = POP_ACCESS_MODULE_TO_PAGE_KEY[moduleKey]
-  if (!pageKey || !(pageKey in POP_PAGES)) return null
+  if (!pageKey || !(pageKey in POP_PAGES)) {
+    return { read: true, create: false, update: false, delete: false }
+  }
   const perms = POP_PAGES[pageKey].permissions
   if (isOwner) {
     return { read: true, create: true, update: true, delete: true }

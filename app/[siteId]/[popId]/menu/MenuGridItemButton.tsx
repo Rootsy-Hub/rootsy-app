@@ -80,7 +80,7 @@ export function MenuGridItemButton({ item, sectionKey, disabled, onActivate }: P
         className={cn(
           "group flex w-24 flex-col items-center gap-2.5 transition-all duration-200",
           !editing && !disabled && "hover:scale-[1.02] active:scale-[0.98]",
-          disabled && "pointer-events-none opacity-40",
+          disabled && "cursor-default opacity-70",
         )}
       >
         <div className="relative">

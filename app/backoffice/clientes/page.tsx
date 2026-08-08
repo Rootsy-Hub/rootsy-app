@@ -7,14 +7,7 @@ import { FoundationBrumaStage } from "@/app/[siteId]/[popId]/library/libraryFoun
 
 export default function BackofficeClientesPage() {
   return (
-    <BackofficeSection
-      eyebrow="Próximamente"
-      title="Clientes"
-      description="Vista agregada de clientes finales de la plataforma entre todos los puntos de venta."
-      loading={false}
-      error={null}
-      onRefresh={() => undefined}
-    >
+    <BackofficeSection title="Clientes" loading={false} error={null}>
       <FoundationBrumaStage
         caption="Roadmap · analytics cross-POP"
         className="space-y-4"

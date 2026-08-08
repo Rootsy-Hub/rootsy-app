@@ -86,11 +86,6 @@ export default function BackofficePopsPage() {
     void loadDetail(selectedPopId)
   }, [selectedPopId, loadDetail])
 
-  const handleRefresh = () => {
-    void loadList()
-    if (selectedPopId) void loadDetail(selectedPopId)
-  }
-
   const handleDeleteConfirm = async () => {
     if (!deleteTarget) return
     setDeleteBusy(true)
@@ -114,16 +109,9 @@ export default function BackofficePopsPage() {
   return (
     <>
       <BackofficeSection
-        eyebrow="Operaciones"
         title={showingDetail ? "Detalle del POP" : "Puntos de venta"}
-        description={
-          showingDetail
-            ? "Subscripción, pagos e historial completo."
-            : "Todos los POPs registrados en la plataforma."
-        }
         loading={initialLoading || (showingDetail && detailLoading && !detail)}
         error={error ?? detailError}
-        onRefresh={handleRefresh}
       >
         {showingDetail && detail ? (
           <BackofficePopDetailView

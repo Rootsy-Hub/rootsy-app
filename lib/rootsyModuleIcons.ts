@@ -58,6 +58,7 @@ const ROOTS_MODULE_ICON_MAP: Record<string, LucideIcon> = {
   invoices: FileBarChart,
   printers: Printer,
   chat: MessageSquare,
+  accounting: Landmark,
 }
 
 export function getRootsModuleIcon(key: string): LucideIcon {

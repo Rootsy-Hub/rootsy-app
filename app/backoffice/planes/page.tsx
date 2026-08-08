@@ -35,14 +35,7 @@ export default function BackofficePlanesPage() {
   }, [load])
 
   return (
-    <BackofficeSection
-      eyebrow="Catálogo"
-      title="Planes"
-      description="Vista previa del bloque de precios para la landing pública de Rootsy."
-      loading={loading}
-      error={error}
-      onRefresh={() => void load()}
-    >
+    <BackofficeSection title="Planes" loading={loading} error={error}>
       {!catalog || catalog.businessTypes.filter((row) => row.isActive).length === 0 ? (
         <BackofficeEmptyState message="No hay tipos de POP activos." />
       ) : (

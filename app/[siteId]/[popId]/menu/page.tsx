@@ -33,9 +33,11 @@ import {
 } from "@/app/[siteId]/[popId]/menu/menuSearchFieldStyles"
 import "@/app/[siteId]/[popId]/library/color/rootsyNaturePalette.css"
 import "@/app/[siteId]/[popId]/menu/menuNaturePalette.css"
-import { canAccessMenuItemFromPopAccess } from "@/lib/menuPopAccess"
 import {
-  menuSectionsRaw,
+  buildMenuSectionsFromEnabledModules,
+  menuStyleSectionForModuleSection,
+} from "@/lib/menuPopAccess"
+import {
   type MenuItemDef,
   type MenuItemLink,
 } from "@/lib/menuCatalog"
@@ -141,18 +143,10 @@ function MenuPage() {
     enabledModules,
   } = usePopMenuCache(popId)
 
-  const filteredMenuSections = useMemo(() => {
-    const out: Record<string, MenuSectionDef> = {}
-    for (const [key, section] of Object.entries(menuSectionsRaw)) {
-      const items = section.items.filter((item) =>
-        canAccessMenuItemFromPopAccess(enabledModules, item.link),
-      )
-      if (items.length > 0) {
-        out[key] = { ...section, items }
-      }
-    }
-    return out
-  }, [enabledModules])
+  const filteredMenuSections = useMemo(
+    () => buildMenuSectionsFromEnabledModules(enabledModules),
+    [enabledModules],
+  )
 
   const sections = useMemo(
     () => Object.keys(filteredMenuSections) as (keyof typeof filteredMenuSections)[],
@@ -602,12 +596,20 @@ function MenuPage() {
                     <div className="grid grid-cols-6 gap-x-0 gap-y-8 max-w-4xl mx-auto min-h-[280px] py-6 px-6 select-none">
                       {items.map((item) => {
                         const target = routeForMenuLink(siteId, popId, item.link)
+                        const styleSectionKey =
+                          menuStyleSectionForModuleSection(
+                            sectionKey as
+                              | "operar"
+                              | "administrar"
+                              | "configurar"
+                              | "extras",
+                          )
 
                         return (
                           <MenuGridItemButton
-                            key={item.name}
+                            key={item.moduleKey ?? item.name}
                             item={item}
-                            sectionKey={sectionKey}
+                            sectionKey={styleSectionKey}
                             disabled={!target}
                             onActivate={() => {
                               if (target) router.push(target)

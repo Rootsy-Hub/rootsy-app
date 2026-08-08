@@ -84,25 +84,13 @@ export default function BackofficeUsersPage() {
     void loadDetail(selectedUserId)
   }, [selectedUserId, loadDetail])
 
-  const handleRefresh = () => {
-    void load()
-    if (selectedUserId) void loadDetail(selectedUserId)
-  }
-
   const showingDetail = Boolean(selectedUserId)
 
   return (
     <BackofficeSection
-      eyebrow="Identidad"
       title={showingDetail ? "Detalle del usuario" : "Usuarios"}
-      description={
-        showingDetail
-          ? "Perfil, POPs como titular y membresías."
-          : "Perfiles registrados en la plataforma."
-      }
       loading={loading || (showingDetail && detailLoading && !detail)}
       error={error ?? detailError}
-      onRefresh={handleRefresh}
     >
       {showingDetail && detail ? (
         <BackofficeUserDetailView

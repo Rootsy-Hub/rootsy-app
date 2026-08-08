@@ -1,69 +1,28 @@
 "use client"
 
-import {
-  libraryContentEyebrowClass,
-  libraryPageHeaderClass,
-} from "@/app/[siteId]/[popId]/library/libraryColorTheme"
 import { FoundationSpecCard } from "@/app/[siteId]/[popId]/library/libraryFoundationDocShared"
-import { Button } from "@/components/ui/button"
 import { Spinner } from "@/components/ui/spinner"
 import { cn } from "@/lib/utils"
-import { RefreshCw } from "lucide-react"
 import type { ReactNode } from "react"
 
 type BackofficeSectionProps = {
   title: string
-  description?: string
-  eyebrow?: string
   loading: boolean
   error: string | null
-  onRefresh: () => void
   children: ReactNode
 }
 
 export function BackofficeSection({
   title,
-  description,
-  eyebrow = "Backoffice",
   loading,
   error,
-  onRefresh,
   children,
 }: BackofficeSectionProps) {
   return (
-    <section className="space-y-8">
-      <header
-        className={cn(
-          "flex flex-wrap items-start justify-between gap-4 rounded-2xl border p-6 sm:p-8",
-          libraryPageHeaderClass,
-        )}
-      >
-        <div className="min-w-0 space-y-2">
-          <p className={libraryContentEyebrowClass}>{eyebrow}</p>
-          <h1 className="font-canopy text-2xl font-semibold tracking-tight text-[var(--rootsy-bruma-900)] sm:text-3xl">
-            {title}
-          </h1>
-          {description ? (
-            <p className="max-w-2xl text-sm leading-relaxed text-[var(--rootsy-bruma-600)]">
-              {description}
-            </p>
-          ) : null}
-        </div>
-        <Button
-          type="button"
-          variant="outline"
-          size="sm"
-          className="gap-2 border-[var(--rootsy-bruma-200)] bg-white"
-          onClick={onRefresh}
-          disabled={loading}
-        >
-          <RefreshCw
-            className={loading ? "size-4 animate-spin" : "size-4"}
-            aria-hidden
-          />
-          Actualizar
-        </Button>
-      </header>
+    <section className="space-y-6">
+      <h1 className="font-canopy text-2xl font-semibold tracking-tight text-[var(--rootsy-bruma-900)] sm:text-3xl">
+        {title}
+      </h1>
 
       {error ? (
         <p className="rounded-xl border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive">
