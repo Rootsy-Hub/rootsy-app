@@ -1,0 +1,33 @@
+import type { PopPageKey } from "@/lib/popPageCrudConstants"
+
+/** Módulo de suscripción → pantalla POP (permisos CRUD). */
+export const POP_ACCESS_MODULE_TO_PAGE_KEY: Record<string, PopPageKey | null> = {
+  sale: "sale",
+  mesas: "mesas",
+  mostrador: "mostrador",
+  purchases: "purchases",
+  expenses: "expenses",
+  stock: "articles",
+  clients: "clients",
+  suppliers: "suppliers",
+  promotions: "promotions",
+  recipes: "recipes",
+  inventory: "inventory",
+  operations: "operations",
+  invoices: "invoices",
+  accounts: "accounts",
+  hr: "hr",
+  settings: "settings",
+  printers: "printers",
+  cash_registers: "cash-registers",
+  current_accounts: null,
+  checks: null,
+  summary: null,
+  statistics: null,
+  reports: null,
+  alerts: null,
+  quotes: null,
+  purchase_orders: null,
+  manufacturing: null,
+  chat: null,
+}

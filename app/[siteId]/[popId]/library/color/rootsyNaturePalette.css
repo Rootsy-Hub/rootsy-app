@@ -1,0 +1,498 @@
+/**
+ * Paleta Nature Rootsy — extensiones scoped (tablas, layouts demo, canopy legacy).
+ * Primitivos ceniza/bruma/savia/landing: styles/rootsy/tokens/colors.css
+ * TS: lib/design-system/tokens/colors.ts
+ */
+.rootsy-nature-palette {
+  /* Ceniza — neutros oscuros POS (azul-ceniza) */
+  --nature-ceniza-950: var(--rootsy-ceniza-950);
+  --nature-ceniza-900: var(--rootsy-ceniza-900);
+  --nature-ceniza-800: var(--rootsy-ceniza-800);
+  --nature-ceniza-700: var(--rootsy-ceniza-700);
+  --nature-ceniza-600: var(--rootsy-ceniza-600);
+  --nature-ceniza-500: var(--rootsy-ceniza-500);
+  --nature-ceniza-400: var(--rootsy-ceniza-400);
+  --nature-ceniza-300: var(--rootsy-ceniza-300);
+
+  /* Bruma — neutros claros ticket y listados (ceniza azulado) */
+  --nature-bruma-50: var(--rootsy-bruma-50);
+  --nature-bruma-100: var(--rootsy-bruma-100);
+  --nature-bruma-200: var(--rootsy-bruma-200);
+  --nature-bruma-300: var(--rootsy-bruma-300);
+  --nature-bruma-400: var(--rootsy-bruma-400);
+  --nature-bruma-500: var(--rootsy-bruma-500);
+  --nature-bruma-600: var(--rootsy-bruma-600);
+  --nature-bruma-700: var(--rootsy-bruma-700);
+  --nature-bruma-900: var(--rootsy-bruma-900);
+
+  /* Savia — verde operativo POS (emerald Vender) */
+  --nature-savia-990: var(--rootsy-savia-990);
+  --nature-savia-975: var(--rootsy-savia-975);
+  --nature-savia-960: var(--rootsy-savia-960);
+  --nature-savia-950: var(--rootsy-savia-950);
+  --nature-savia-900: var(--rootsy-savia-900);
+  --nature-savia-800: var(--rootsy-savia-800);
+  --nature-savia-700: var(--rootsy-savia-700);
+  --nature-savia-600: var(--rootsy-savia-600);
+  --nature-savia-500: var(--rootsy-savia-500);
+  --nature-savia-400: var(--rootsy-savia-400);
+  --nature-savia-300: var(--rootsy-savia-300);
+  --nature-savia-200: var(--rootsy-savia-200);
+  --nature-savia-100: var(--rootsy-savia-100);
+  --nature-savia-50: var(--rootsy-savia-50);
+
+  /* Landing — hero promocional */
+  --nature-landing-950: var(--rootsy-landing-950);
+  --nature-landing-900: var(--rootsy-landing-900);
+  --nature-landing-800: var(--rootsy-landing-800);
+  --nature-landing-500: var(--rootsy-landing-500);
+  --nature-landing-400: var(--rootsy-landing-400);
+  --nature-landing-300: var(--rootsy-landing-300);
+  --nature-landing-200: var(--rootsy-landing-200);
+  --nature-landing-teal: var(--rootsy-landing-teal);
+  --nature-landing-neon: var(--rootsy-landing-neon);
+  --nature-landing-neon-2: var(--rootsy-landing-neon-2);
+
+  /* Canopy — verde planta en esplendor */
+  --nature-canopy-950: #052e1f;
+  --nature-canopy-900: #0a4030;
+  --nature-canopy-800: #0f5739;
+  --nature-canopy-700: #16704a;
+  --nature-canopy-600: #1e8f5a;
+  --nature-canopy-500: #24ad6a;
+  --nature-canopy-400: #3fc87e;
+  --nature-canopy-300: #6dd99e;
+  --nature-canopy-200: #a8ebc4;
+  --nature-canopy-100: #ddf5e8;
+  --nature-canopy-50: #f0fbf4;
+
+  /* Otoño — hojas doradas */
+  --nature-autumn-800: #92400e;
+  --nature-autumn-700: #b45309;
+  --nature-autumn-600: #d97706;
+  --nature-autumn-500: #f59e0b;
+  --nature-autumn-400: #fbbf24;
+  --nature-autumn-300: #fcd34d;
+  --nature-autumn-200: #fde68a;
+  --nature-autumn-100: #fef3c7;
+
+  /* Fuego — lava y brasa */
+  --nature-fire-800: #9a3412;
+  --nature-fire-700: #c2410c;
+  --nature-fire-600: #ea580c;
+  --nature-fire-500: #f97316;
+  --nature-fire-400: #fb923c;
+  --nature-fire-300: #fdba74;
+  --nature-ember-700: #b91c1c;
+  --nature-ember-600: #dc2626;
+  --nature-ember-500: #ef4444;
+
+  /* Cielo */
+  --nature-sky-700: #0369a1;
+  --nature-sky-600: #0284c7;
+  --nature-sky-500: #0ea5e9;
+  --nature-sky-400: #38bdf8;
+  --nature-sky-300: #7dd3fc;
+  --nature-sky-200: #bae6fd;
+  --nature-sky-100: #e0f2fe;
+
+  /* Mar */
+  --nature-sea-800: #155e75;
+  --nature-sea-700: #0e7490;
+  --nature-sea-600: #0891b2;
+  --nature-sea-500: #06b6d4;
+  --nature-sea-400: #22d3ee;
+  --nature-sea-300: #67e8f9;
+  --nature-sea-900: #164e63;
+
+  /* Crepúsculo — violeta del atardecer */
+  --nature-dusk-700: #6d28d9;
+  --nature-dusk-600: #7c3aed;
+  --nature-dusk-500: #8b5cf6;
+  --nature-dusk-400: #a78bfa;
+  --nature-dusk-300: #c4b5fd;
+  --nature-dusk-200: #ddd6fe;
+
+  /* Tierra */
+  --nature-earth-900: #292524;
+  --nature-earth-800: #44403c;
+  --nature-earth-700: #57534e;
+  --nature-earth-600: #78716c;
+  --nature-earth-500: #a8a29e;
+  --nature-earth-400: #d6d3d1;
+  --nature-earth-200: #e7e5e4;
+  --nature-earth-100: #f5f5f0;
+  --nature-earth-50: #fafaf7;
+
+  /* Noche — carbón y bosque nocturno */
+  --nature-night-950: #060908;
+  --nature-night-900: #0c1210;
+  --nature-night-800: #141c19;
+  --nature-night-700: #1c2824;
+  --nature-night-600: #263530;
+  --nature-night-500: #33443d;
+
+  /* IconButton · gama noche */
+  --nature-icon-night-fill: color-mix(in srgb, var(--nature-night-900) 52%, transparent);
+  --nature-icon-night-fill-hover: color-mix(in srgb, var(--nature-night-800) 66%, transparent);
+  --nature-icon-night-border: color-mix(in srgb, #ffffff 8%, var(--nature-night-600) 26%);
+  --nature-icon-night-border-hover: color-mix(in srgb, #ffffff 12%, var(--nature-night-500) 20%);
+  --nature-icon-night-ghost-hover: color-mix(in srgb, var(--nature-night-700) 48%, transparent);
+
+  /* Semánticos derivados */
+  --nature-brand: var(--nature-canopy-600);
+  --nature-brand-bold: var(--nature-canopy-700);
+  --nature-brand-soft: var(--nature-canopy-400);
+  --nature-brand-mist: var(--nature-canopy-100);
+  --nature-surface-light: var(--nature-earth-50);
+  --nature-surface-card: #ffffff;
+  --nature-text-primary: var(--nature-night-800);
+  --nature-text-secondary: var(--nature-earth-600);
+  --nature-danger: var(--nature-ember-600);
+  --nature-warning: var(--nature-autumn-600);
+  --nature-success: var(--nature-canopy-600);
+}
+
+/**
+ * Puente shadcn → Nature en toda la shell de librería.
+ * Nav activo, badges, text-primary y rings usan canopy real (#1e8f5a).
+ */
+.rootsy-app-light.rootsy-nature-palette {
+  --background: var(--nature-earth-50);
+  --foreground: var(--nature-earth-900);
+  --card: var(--nature-surface-card);
+  --card-foreground: var(--nature-earth-900);
+  --popover: var(--nature-surface-card);
+  --popover-foreground: var(--nature-earth-900);
+  --secondary: var(--nature-earth-100);
+  --secondary-foreground: var(--nature-earth-800);
+  --muted: var(--nature-earth-100);
+  --muted-foreground: var(--nature-earth-600);
+  --border: color-mix(in srgb, var(--nature-earth-400) 72%, transparent);
+  --input: var(--nature-earth-200);
+  --primary: var(--nature-canopy-600);
+  --primary-foreground: #ffffff;
+  --ring: var(--nature-canopy-700);
+  --destructive: var(--nature-ember-600);
+  --destructive-foreground: #ffffff;
+  --accent: var(--nature-autumn-200);
+  --accent-foreground: var(--nature-autumn-800);
+  --forest: var(--nature-canopy-600);
+  --meadow: var(--nature-canopy-400);
+  --rootsy-particle: var(--nature-canopy-600);
+  --chart-1: var(--nature-canopy-600);
+  --chart-2: var(--nature-autumn-500);
+  --chart-3: var(--nature-sea-500);
+  --chart-4: var(--nature-earth-600);
+  --chart-5: var(--nature-canopy-400);
+}
+
+/**
+ * Tabla workspace — composición Nature (colorista).
+ * Tierra estructura · canopy interacción · otoño/ember semántica.
+ */
+.rootsy-nature-palette .workspace-table-nature {
+  --wt-surface: var(--nature-earth-50);
+  --wt-surface-stripe: color-mix(
+    in srgb,
+    var(--nature-earth-100) 92%,
+    var(--nature-canopy-50)
+  );
+  --wt-surface-hover: color-mix(
+    in srgb,
+    var(--nature-earth-200) 38%,
+    var(--nature-earth-50)
+  );
+  --wt-surface-selected: var(--nature-canopy-50);
+  --wt-surface-selected-ring: color-mix(
+    in srgb,
+    var(--nature-canopy-600) 16%,
+    transparent
+  );
+  --wt-header-bg: color-mix(
+    in srgb,
+    var(--nature-earth-100) 84%,
+    var(--nature-canopy-50)
+  );
+  --wt-header-text: var(--nature-earth-700);
+  --wt-border: color-mix(in srgb, var(--nature-earth-400) 55%, transparent);
+  --wt-border-strong: var(--nature-earth-400);
+  --wt-text-primary: var(--nature-earth-900);
+  --wt-text-secondary: var(--nature-earth-600);
+  --wt-text-tertiary: var(--nature-earth-500);
+  --wt-link: var(--nature-canopy-700);
+  --wt-link-hover: var(--nature-canopy-800);
+  --wt-money: var(--nature-earth-900);
+  --wt-money-negative: var(--nature-autumn-800);
+  --wt-bulk-bg: color-mix(
+    in srgb,
+    var(--nature-canopy-50) 65%,
+    var(--nature-earth-100)
+  );
+  --wt-skeleton: color-mix(in srgb, var(--nature-earth-400) 26%, transparent);
+  --wt-skeleton-soft: color-mix(in srgb, var(--nature-earth-400) 16%, transparent);
+}
+
+/** Variante bosque — canopy como superficie de la tabla (claro del bosque). */
+.rootsy-nature-palette .workspace-table-nature.workspace-table-nature--forest {
+  --wt-surface: var(--nature-canopy-50);
+  --wt-surface-stripe: color-mix(
+    in srgb,
+    var(--nature-canopy-100) 74%,
+    var(--nature-canopy-200)
+  );
+  --wt-surface-hover: color-mix(
+    in srgb,
+    var(--nature-canopy-100) 58%,
+    var(--nature-canopy-50)
+  );
+  --wt-surface-selected: color-mix(
+    in srgb,
+    var(--nature-canopy-100) 82%,
+    var(--nature-canopy-300)
+  );
+  --wt-header-bg: color-mix(
+    in srgb,
+    var(--nature-canopy-100) 62%,
+    var(--nature-canopy-200)
+  );
+  --wt-header-text: var(--nature-canopy-800);
+  --wt-border: color-mix(in srgb, var(--nature-canopy-300) 48%, transparent);
+  --wt-border-strong: color-mix(
+    in srgb,
+    var(--nature-canopy-400) 58%,
+    var(--nature-canopy-300)
+  );
+  --wt-text-primary: var(--nature-canopy-950);
+  --wt-text-secondary: var(--nature-canopy-800);
+  --wt-text-tertiary: var(--nature-canopy-700);
+  --wt-link: var(--nature-canopy-700);
+  --wt-link-hover: var(--nature-canopy-900);
+  --wt-money: var(--nature-canopy-950);
+  --wt-bulk-bg: color-mix(
+    in srgb,
+    var(--nature-canopy-100) 70%,
+    var(--nature-canopy-50)
+  );
+  --wt-skeleton: color-mix(in srgb, var(--nature-canopy-300) 32%, transparent);
+  --wt-skeleton-soft: color-mix(in srgb, var(--nature-canopy-300) 20%, transparent);
+}
+
+/** Anclaje orgánico — tierra pura para tablas de layout (50/100/200/400/600). */
+.rootsy-nature-palette .workspace-table-nature.workspace-table-nature--earth-organic {
+  --wt-surface: var(--nature-earth-50);
+  --wt-surface-stripe: var(--nature-earth-100);
+  --wt-surface-hover: var(--nature-earth-200);
+  --wt-surface-selected: var(--nature-earth-200);
+  --wt-surface-selected-ring: color-mix(
+    in srgb,
+    var(--nature-earth-500) 22%,
+    transparent
+  );
+  --wt-header-bg: #ffffff;
+  --wt-header-text: var(--nature-earth-700);
+  --wt-border: color-mix(in srgb, var(--nature-earth-400) 48%, transparent);
+  --wt-border-strong: var(--nature-earth-400);
+  --wt-text-primary: var(--nature-earth-900);
+  --wt-text-secondary: var(--nature-earth-600);
+  --wt-text-tertiary: var(--nature-earth-500);
+  --wt-link: var(--nature-earth-800);
+  --wt-link-hover: var(--nature-earth-900);
+  --wt-money: var(--nature-earth-900);
+  --wt-money-negative: var(--nature-autumn-800);
+  --wt-bulk-bg: var(--nature-earth-100);
+  --wt-skeleton: color-mix(in srgb, var(--nature-earth-400) 26%, transparent);
+  --wt-skeleton-soft: color-mix(in srgb, var(--nature-earth-400) 16%, transparent);
+}
+
+/** Variante más marcada — documentación layout y previews donde la tierra debe leerse claro. */
+.rootsy-nature-palette .workspace-table-nature.workspace-table-nature--earth-marked {
+  --wt-surface: var(--nature-earth-100);
+  --wt-surface-stripe: color-mix(
+    in srgb,
+    var(--nature-earth-200) 82%,
+    var(--nature-autumn-100)
+  );
+  --wt-surface-hover: color-mix(
+    in srgb,
+    var(--nature-earth-200) 55%,
+    var(--nature-earth-100)
+  );
+  --wt-header-bg: color-mix(
+    in srgb,
+    var(--nature-earth-200) 68%,
+    var(--nature-autumn-100)
+  );
+  --wt-header-text: var(--nature-earth-800);
+  --wt-border: color-mix(in srgb, var(--nature-earth-500) 42%, transparent);
+  --wt-border-strong: var(--nature-earth-500);
+}
+
+/**
+ * Layout operar — composición colorista dark / light.
+ * Izquierda: bosque nocturno (catálogo + configuración).
+ * Derecha: ticket claro + totales en gradiente tierra oscuro.
+ */
+.rootsy-nature-palette .layouts-operar-body {
+  /* Dark · noche 950 (rail) → 900 (canvas) → 800 (toolbox) */
+  --op-dark-shell: var(--nature-night-950);
+  --op-dark-rail: var(--nature-night-950);
+  --op-dark-canvas: var(--nature-night-900);
+  --op-dark-footer: var(--nature-night-800);
+  --op-dark-divider: color-mix(in srgb, var(--nature-night-600) 38%, transparent);
+
+  /* Rail catálogo — categorías sobre noche 950 */
+  --op-rail-section-label: color-mix(in srgb, var(--nature-night-500) 88%, var(--nature-canopy-400));
+  --op-rail-item-text: color-mix(in srgb, var(--nature-night-500) 72%, #ffffff);
+  --op-rail-item-text-hover: color-mix(in srgb, var(--nature-earth-100) 92%, #ffffff);
+  --op-rail-item-text-selected: #fafaf9;
+  --op-rail-item-hover: color-mix(in srgb, var(--nature-night-800) 42%, transparent);
+  --op-rail-item-selected: color-mix(in srgb, var(--nature-night-700) 48%, transparent);
+  --op-rail-item-border: color-mix(in srgb, var(--nature-night-700) 42%, transparent);
+  --op-rail-accent: var(--nature-canopy-400);
+  --op-rail-focus-ring: color-mix(in srgb, var(--nature-canopy-400) 45%, transparent);
+  --op-rail-promo-selected: color-mix(in srgb, var(--nature-canopy-600) 20%, var(--nature-night-900));
+  --op-rail-promo-text: color-mix(in srgb, var(--nature-canopy-200) 92%, white);
+  --op-rail-promo-accent: var(--nature-canopy-400);
+  --op-rail-discount-selected: color-mix(in srgb, var(--nature-autumn-500) 18%, var(--nature-night-900));
+  --op-rail-discount-text: color-mix(in srgb, var(--nature-autumn-200) 90%, white);
+  --op-rail-discount-accent: var(--nature-autumn-400);
+
+  /* Footer toolbox — h-20 sobre noche 800 */
+  --op-footer-slot-border: color-mix(in srgb, var(--nature-night-900) 52%, transparent);
+  --op-footer-slot-hover: color-mix(in srgb, var(--nature-night-900) 32%, transparent);
+  --op-footer-slot-configured: color-mix(
+    in srgb,
+    var(--nature-canopy-600) 16%,
+    var(--nature-night-800)
+  );
+  --op-footer-slot-highlight: color-mix(in srgb, var(--nature-canopy-400) 16%, transparent);
+  --op-footer-slot-label: color-mix(in srgb, var(--nature-night-500) 82%, transparent);
+  --op-footer-slot-value: color-mix(in srgb, var(--nature-earth-100) 94%, #ffffff);
+  --op-footer-slot-value-muted: color-mix(in srgb, var(--nature-night-500) 78%, var(--nature-night-600));
+  --op-footer-icon-bg: color-mix(in srgb, var(--nature-night-900) 38%, transparent);
+  --op-footer-icon-text: color-mix(in srgb, var(--nature-night-500) 88%, #ffffff);
+  --op-footer-icon-hover-bg: color-mix(in srgb, var(--nature-night-900) 52%, transparent);
+  --op-footer-icon-hover-text: color-mix(in srgb, var(--nature-earth-200) 92%, #ffffff);
+  --op-footer-icon-configured-bg: color-mix(in srgb, var(--nature-canopy-600) 32%, transparent);
+  --op-footer-icon-configured-text: color-mix(in srgb, var(--nature-canopy-200) 92%, white);
+
+  /* Product cards — noche 800 elevada sobre canvas noche 900 */
+  --op-product-card-surface: var(--nature-night-800);
+  --op-product-card-media-bg: color-mix(in srgb, var(--nature-night-900) 72%, var(--nature-night-950));
+  --op-product-card-border: color-mix(in srgb, var(--nature-night-600) 42%, transparent);
+  --op-product-card-shadow:
+    0 1px 2px color-mix(in srgb, var(--nature-night-950) 55%, transparent),
+    0 4px 14px color-mix(in srgb, var(--nature-night-950) 42%, transparent),
+    0 0 0 1px color-mix(in srgb, var(--nature-night-600) 28%, transparent);
+  --op-product-card-shadow-hover:
+    0 2px 4px color-mix(in srgb, var(--nature-night-950) 62%, transparent),
+    0 8px 22px color-mix(in srgb, var(--nature-night-950) 48%, transparent),
+    0 0 0 1px color-mix(in srgb, var(--nature-canopy-500) 22%, transparent);
+  --op-product-card-title: #fafaf9;
+  --op-product-card-desc: color-mix(in srgb, var(--nature-night-500) 58%, #ffffff);
+  --op-product-card-price: color-mix(in srgb, var(--nature-canopy-300) 88%, #ffffff);
+  --op-product-card-offer-bg: color-mix(in srgb, var(--nature-autumn-500) 88%, var(--nature-autumn-600));
+  --op-product-card-offer-text: var(--nature-earth-50);
+  --op-product-card-placeholder-icon-bg: color-mix(in srgb, var(--nature-night-700) 52%, transparent);
+  --op-product-card-placeholder-icon-ring: color-mix(in srgb, var(--nature-night-600) 46%, transparent);
+  --op-product-card-placeholder-icon-text: color-mix(
+    in srgb,
+    var(--nature-night-500) 62%,
+    var(--nature-canopy-400)
+  );
+  --op-product-card-placeholder-label: color-mix(in srgb, var(--nature-night-500) 58%, #ffffff);
+
+  --op-light-panel: var(--nature-earth-50);
+  --op-light-tabs: var(--nature-earth-50);
+  --op-light-content: var(--nature-earth-100);
+  --op-light-cart-heading: var(--nature-earth-600);
+  --op-light-cart-meta: color-mix(in srgb, var(--nature-earth-500) 78%, var(--nature-earth-400));
+  --op-light-empty-icon-bg: var(--nature-earth-50);
+  --op-light-empty-icon-ring: color-mix(in srgb, var(--nature-earth-400) 62%, transparent);
+  --op-light-empty-icon-text: var(--nature-earth-600);
+  --op-light-empty-title: var(--nature-earth-700);
+  --op-light-empty-shadow: 0 1px 2px color-mix(in srgb, var(--nature-earth-900) 10%, transparent);
+  --op-light-totals: linear-gradient(
+    165deg,
+    var(--nature-earth-700) 0%,
+    var(--nature-earth-800) 48%,
+    var(--nature-earth-900) 100%
+  );
+  --op-light-totals-border: color-mix(in srgb, var(--nature-earth-900) 32%, transparent);
+  --op-light-border: color-mix(in srgb, var(--nature-earth-400) 48%, transparent);
+  --op-light-border-panel: var(--nature-night-700);
+  --op-light-text-muted: var(--nature-earth-600);
+  --op-light-text-strong: var(--nature-earth-900);
+  --op-light-text-totals-label: var(--nature-earth-200);
+  --op-light-text-totals-amount: var(--nature-earth-50);
+  --op-light-edge-glow: color-mix(in srgb, var(--nature-earth-400) 55%, transparent);
+}
+
+/**
+ * Totales — gradiente earth (demos legacy sin rootsy-theme-pos).
+ * Producción operar: layoutsOperarTheme.css gana con mayor especificidad.
+ */
+.rootsy-nature-palette .layouts-operar-body .layouts-operar-summary-totals {
+  background: var(--op-light-totals);
+}
+
+/** Scroll minimalista del rail catálogo — thumb fino noche. */
+.rootsy-nature-palette .layouts-operar-body .layouts-operar-catalog-rail-scroll,
+.rootsy-nature-palette .layouts-operar-body .layouts-operar-scroll-minimal {
+  scrollbar-width: thin;
+  scrollbar-color: color-mix(in srgb, var(--nature-night-500) 28%, transparent) transparent;
+}
+
+.rootsy-nature-palette .layouts-operar-body .layouts-operar-catalog-rail-scroll::-webkit-scrollbar,
+.rootsy-nature-palette .layouts-operar-body .layouts-operar-scroll-minimal::-webkit-scrollbar {
+  width: 3px;
+  height: 3px;
+}
+
+.rootsy-nature-palette .layouts-operar-body .layouts-operar-catalog-rail-scroll::-webkit-scrollbar-track,
+.rootsy-nature-palette .layouts-operar-body .layouts-operar-scroll-minimal::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.rootsy-nature-palette .layouts-operar-body .layouts-operar-catalog-rail-scroll::-webkit-scrollbar-thumb,
+.rootsy-nature-palette .layouts-operar-body .layouts-operar-scroll-minimal::-webkit-scrollbar-thumb {
+  border-radius: 9999px;
+  background: color-mix(in srgb, var(--nature-night-500) 26%, transparent);
+  border: none;
+}
+
+.rootsy-nature-palette .layouts-operar-body .layouts-operar-catalog-rail-scroll:hover::-webkit-scrollbar-thumb,
+.rootsy-nature-palette .layouts-operar-body .layouts-operar-scroll-minimal:hover::-webkit-scrollbar-thumb {
+  background: color-mix(in srgb, var(--nature-night-500) 42%, transparent);
+}
+
+.rootsy-nature-palette .layouts-operar-body .layouts-operar-catalog-rail-scroll::-webkit-scrollbar-thumb:hover,
+.rootsy-nature-palette .layouts-operar-body .layouts-operar-scroll-minimal::-webkit-scrollbar-thumb:hover {
+  background: color-mix(in srgb, var(--nature-night-600) 55%, var(--nature-night-500));
+}
+
+/** Product card — radius.xlarge + elevation.raised (noche 800 sobre canvas 900). */
+.rootsy-nature-palette.rootsy-radius-system .layouts-operar-body .layouts-operar-product-card {
+  border-radius: var(--radius-xlarge);
+  background: var(--op-product-card-surface);
+  border: 1px solid var(--op-product-card-border);
+  box-shadow: var(--op-product-card-shadow);
+}
+
+.rootsy-nature-palette.rootsy-radius-system .layouts-operar-body .layouts-operar-product-card:hover {
+  box-shadow: var(--op-product-card-shadow-hover);
+}
+
+/** Header operaciones — misma noche que el cuerpo (sin cristal POP de producción). */
+.rootsy-nature-palette .layouts-operar-header {
+  --op-header-border: color-mix(in srgb, var(--nature-night-700) 28%, transparent);
+  background: linear-gradient(
+    165deg,
+    var(--nature-night-950) 0%,
+    var(--nature-night-900) 52%,
+    var(--nature-night-800) 100%
+  );
+  border-bottom: 1px solid var(--op-header-border);
+  color: #f4f4f5;
+}

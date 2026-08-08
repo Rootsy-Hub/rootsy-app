@@ -1,0 +1,115 @@
+import type { ClientIvaConditionValue } from "@/app/[siteId]/[popId]/clients/clientIvaConstants"
+import {
+  isInternalSaleComprobante,
+  SALE_COMPROBANTE_SIN_LABEL,
+} from "@/lib/saleComprobantePicker"
+
+/** Condición IVA del emisor (POP). Por ahora asumimos RI hasta persistirla en ajustes. */
+export type PopEmisorIvaCondition = "responsable_inscripto" | "monotributo"
+
+export function clientIvaToPopEmisorIva(
+  iva: ClientIvaConditionValue | null | undefined,
+): PopEmisorIvaCondition {
+  if (iva === "monotributo" || iva === "monotributo_social") {
+    return "monotributo"
+  }
+  return "responsable_inscripto"
+}
+
+export function popEmisorIvaConditionLabel(
+  emisorIva: PopEmisorIvaCondition,
+): string {
+  return emisorIva === "monotributo"
+    ? "Monotributo"
+    : "IVA Responsable Inscripto"
+}
+
+export function isSaleComprobanteAllowedForEmisor(
+  label: string | null,
+  emisorIva: PopEmisorIvaCondition,
+): boolean {
+  if (label == null || label === SALE_COMPROBANTE_SIN_LABEL) return true
+  if (isInternalSaleComprobante(label)) return true
+  if (label === "Factura C") return emisorIva === "monotributo"
+  if (label === "Factura A" || label === "Factura B") {
+    return emisorIva === "responsable_inscripto"
+  }
+  return true
+}
+
+/** Comprobante fiscal ARCA (facturas, NC, ND, etc.). */
+export function isLegalSaleComprobanteLabel(
+  label: string | null | undefined,
+): boolean {
+  if (label == null || label === SALE_COMPROBANTE_SIN_LABEL) return false
+  if (isInternalSaleComprobante(label)) return false
+  return true
+}
+
+export function isSaleComprobanteAllowed(
+  label: string | null,
+  emisorIva: PopEmisorIvaCondition,
+  hasValidFiscalCuit: boolean,
+): boolean {
+  if (label == null || label === SALE_COMPROBANTE_SIN_LABEL) return true
+  if (isInternalSaleComprobante(label)) return true
+  if (!hasValidFiscalCuit) return false
+  return isSaleComprobanteAllowedForEmisor(label, emisorIva)
+}
+
+/**
+ * Reglas Argentina (simplificadas) emisor → receptor → comprobante.
+ *
+ * - RI → RI: Factura A (IVA discriminado; impacta débito fiscal en contabilidad).
+ * - RI → CF / monotributo / exento / sin categorizar: Factura B.
+ * - Monotributo → cualquier receptor: Factura C.
+ *
+ * El IVA contable en `completeSale` depende del **tipo de comprobante elegido**
+ * (`saleComprobanteAccruesOutputVat`), no de la condición IVA del cliente directamente.
+ * Elegir el comprobante correcto es lo que alinea facturación y asiento.
+ */
+export function suggestSaleComprobanteForClientIva(
+  clientIva: ClientIvaConditionValue | null | undefined,
+  emisorIva: PopEmisorIvaCondition = "responsable_inscripto",
+): string | null {
+  if (emisorIva === "monotributo") {
+    return "Factura C"
+  }
+
+  switch (clientIva) {
+    case "responsable_inscripto":
+      return "Factura A"
+    case "monotributo":
+    case "monotributo_social":
+    case "consumidor_final":
+    case "exento":
+    case "no_categorizado":
+      return "Factura B"
+    default:
+      return "Factura B"
+  }
+}
+
+/**
+ * Resuelve el comprobante a usar en una venta:
+ * 1. Override explícito del cliente (`defaultInvoiceTypeLabel`)
+ * 2. Regla según condición IVA
+ * 3. null = sin comprobante (el POS puede aplicar default del POP en localStorage)
+ */
+export function resolveSaleComprobanteForClient(input: {
+  clientIvaCondition: ClientIvaConditionValue | null | undefined
+  defaultInvoiceTypeLabel: string | null | undefined
+  emisorIva?: PopEmisorIvaCondition
+}): string | null {
+  const explicit = input.defaultInvoiceTypeLabel?.trim()
+  if (explicit && explicit !== SALE_COMPROBANTE_SIN_LABEL) {
+    return explicit
+  }
+  if (input.clientIvaCondition) {
+    return suggestSaleComprobanteForClientIva(
+      input.clientIvaCondition,
+      input.emisorIva,
+    )
+  }
+  return null
+}

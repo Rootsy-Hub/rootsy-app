@@ -1,20 +1,38 @@
-import path from 'path'
-import { fileURLToPath } from 'url'
+import path from "path"
+import { fileURLToPath } from "url"
 
-const __dirname = path.dirname(fileURLToPath(import.meta.url))
+const projectRoot = path.dirname(fileURLToPath(import.meta.url))
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  // Evita que Turbopack use otro lockfile aguas arriba (p. ej. ~/package-lock.json)
+  reactStrictMode: false,
   turbopack: {
-    root: __dirname,
+    root: projectRoot,
   },
+  outputFileTracingRoot: projectRoot,
+  allowedDevOrigins: [
+    '192.168.1.56',
+    // IP del otro equipo que abre el dev (cambiá si no coincide):
+    '192.168.1.72'
+  ],
   typescript: {
-    ignoreBuildErrors: true,
+    ignoreBuildErrors: true
   },
   images: {
     unoptimized: true,
-  },
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: 'londonmanager.com',
+        pathname: '/static/media/**'
+      },
+      {
+        protocol: 'https',
+        hostname: 'images.unsplash.com',
+        pathname: '/**'
+      }
+    ]
+  }
 }
 
 export default nextConfig

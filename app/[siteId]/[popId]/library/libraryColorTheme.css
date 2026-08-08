@@ -1,0 +1,287 @@
+/**
+ * Librería — dosel sombra en nav, bruma en contenido, savia en foco activo.
+ * Tokens: --rootsy-* (styles/rootsy/) · tema: .rootsy-theme-library
+ *
+ * El shell exterior es layout · módulo (fondo POP + header cristal reutilizable).
+ * Los estilos de abajo aplican solo al área de documentación (.rootsy-library-shell).
+ */
+
+.rootsy-library-shell {
+  background-color: var(--rootsy-bruma-100) !important;
+  color: var(--rootsy-bruma-900);
+  overflow: hidden !important;
+}
+
+.rootsy-library-shell > .relative.flex {
+  background-color: var(--rootsy-bruma-100);
+}
+
+.library-sidebar {
+  /* Rail oscuro — espejo de ColorExampleSideNav */
+  --library-nav-text: var(--rootsy-sombra-300);
+  --library-nav-text-hover: #f4f8f6;
+  --library-nav-text-active: #f4f8f6;
+  --library-nav-label: var(--rootsy-sombra-300);
+  background-color: var(--rootsy-sombra-700) !important;
+  border-color: var(--rootsy-sombra-border);
+}
+
+/* ── Sidebar header ── */
+.library-sidebar-header {
+  /* Sin bloque de marca — misma voz que labels de grupo */
+}
+
+.library-sidebar-eyebrow,
+.library-nav-group-label {
+  color: var(--library-nav-label);
+  font-family: var(--rootsy-font-ui, inherit);
+  font-size: var(--rootsy-text-heading-xxsmall-size, 0.75rem);
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.library-nav-group-label {
+  margin-bottom: 0.75rem;
+  padding: 0 0.5rem;
+}
+
+/* ── Nav structure ── */
+.library-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 0.125rem;
+}
+
+.library-nav-group {
+  padding: 0;
+}
+
+.library-nav-group--separated {
+  margin-top: 1.5rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid rgb(255 255 255 / 0.06);
+}
+
+.library-nav-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.0625rem;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.library-nav-accordion-row {
+  display: flex;
+  align-items: stretch;
+  gap: 0;
+}
+
+/* ── Nav items — font.body + contraste AA sobre sombra ── */
+.library-nav-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-height: 2.25rem;
+  padding: 0.375rem 0.5rem;
+  border-radius: 0.5rem;
+  font-family: var(--rootsy-font-ui, inherit);
+  font-size: var(--rootsy-text-body-size, 0.875rem);
+  font-weight: 400;
+  line-height: var(--rootsy-text-body-lh, 1.25rem);
+  color: var(--library-nav-text);
+  background: transparent;
+  text-decoration: none;
+  transition: color 0.12s ease, background-color 0.12s ease;
+}
+
+.library-nav-item:hover {
+  color: var(--library-nav-text-hover);
+}
+
+.library-nav-item:focus {
+  outline: none;
+}
+
+.library-nav-item:focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--rootsy-savia-500) 45%, transparent);
+  outline-offset: 1px;
+}
+
+.library-nav-item--active {
+  color: var(--library-nav-text-active);
+  font-weight: 500;
+}
+
+.library-nav-item-icon {
+  width: 1rem;
+  height: 1rem;
+  flex-shrink: 0;
+  color: inherit;
+  opacity: 0.8;
+}
+
+.library-nav-item-label {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ── Nested — misma escala body, solo indentación ── */
+.library-nav-nested-list {
+  margin: 0.125rem 0 0.25rem 1rem;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 0.0625rem;
+}
+
+.library-nav-item--nested {
+  min-height: 2.25rem;
+  padding: 0.375rem 0.5rem 0.375rem 1rem;
+  font-size: var(--rootsy-text-body-size, 0.875rem);
+  line-height: var(--rootsy-text-body-lh, 1.25rem);
+  color: var(--library-nav-text);
+}
+
+.library-nav-item--nested:hover {
+  color: var(--library-nav-text-hover);
+  background: transparent;
+}
+
+.library-nav-item--nested.library-nav-item--active {
+  color: var(--library-nav-text-active);
+  font-weight: 500;
+}
+
+/* ── Accordion toggle ── */
+.library-nav-toggle {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  min-height: 2.25rem;
+  border-radius: 0.375rem;
+  border: none;
+  color: var(--library-nav-label);
+  background: transparent;
+  cursor: pointer;
+  transition: color 0.12s ease;
+}
+
+.library-nav-toggle:hover {
+  color: var(--library-nav-text-hover);
+}
+
+.library-nav-toggle:focus {
+  outline: none;
+}
+
+.library-nav-toggle:focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--rootsy-savia-500) 45%, transparent);
+  outline-offset: 1px;
+}
+
+.library-nav-chevron {
+  transition: transform 0.18s ease;
+}
+
+.library-nav-chevron--open {
+  transform: rotate(90deg);
+}
+
+.library-content-area {
+  background-color: var(--rootsy-bruma-100) !important;
+}
+
+.library-content-eyebrow {
+  color: var(--rootsy-bruma-500);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.library-page-header {
+  border-color: var(--rootsy-bruma-200);
+  background-color: var(--rootsy-white);
+  box-shadow: none;
+}
+
+.library-page-header-badge {
+  background-color: var(--rootsy-bruma-50);
+  color: var(--rootsy-bruma-600);
+}
+
+.library-page-header-mono {
+  background-color: var(--rootsy-bruma-50);
+  color: var(--rootsy-bruma-500);
+}
+
+.rootsy-library-shell .library-doc-section {
+  border-color: var(--rootsy-bruma-200);
+}
+
+.rootsy-library-shell .library-spec-card {
+  border-color: var(--rootsy-bruma-200);
+  background-color: var(--rootsy-white);
+  box-shadow: none;
+}
+
+.rootsy-library-shell .library-related-links {
+  border-color: var(--rootsy-bruma-200);
+}
+
+/* Scroll minimal — thumb pill, track invisible */
+.library-scroll {
+  scrollbar-gutter: stable;
+  scrollbar-width: thin;
+}
+
+.library-scroll--dark {
+  scrollbar-color: rgb(148 163 184 / 0.42) transparent;
+}
+
+.library-scroll--dark::-webkit-scrollbar {
+  width: 6px;
+}
+
+.library-scroll--dark::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.library-scroll--dark::-webkit-scrollbar-thumb {
+  background-color: rgb(148 163 184 / 0.38);
+  border: 1px solid rgb(255 255 255 / 0.1);
+  border-radius: 999px;
+}
+
+.library-scroll--dark::-webkit-scrollbar-thumb:hover {
+  background-color: rgb(148 163 184 / 0.52);
+}
+
+.library-scroll--light {
+  scrollbar-color: rgb(100 116 139 / 0.32) transparent;
+}
+
+.library-scroll--light::-webkit-scrollbar {
+  width: 6px;
+}
+
+.library-scroll--light::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.library-scroll--light::-webkit-scrollbar-thumb {
+  background-color: rgb(100 116 139 / 0.28);
+  border: 1px solid rgb(255 255 255 / 0.6);
+  border-radius: 999px;
+}
+
+.library-scroll--light::-webkit-scrollbar-thumb:hover {
+  background-color: rgb(100 116 139 / 0.42);
+}

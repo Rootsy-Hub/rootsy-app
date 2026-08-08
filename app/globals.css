@@ -1,7 +1,59 @@
 @import 'tailwindcss';
 @import 'tw-animate-css';
+@import '../styles/rootsy/rootsy.css';
 
 @custom-variant dark (&:is(.dark *));
+
+@keyframes mesa-floor-edit-ring {
+  0% {
+    transform: scale(1);
+    opacity: 0.55;
+  }
+  75%,
+  100% {
+    transform: scale(2.15);
+    opacity: 0;
+  }
+}
+
+.mesa-floor-edit-ring {
+  pointer-events: none;
+  animation: mesa-floor-edit-ring 1.4s cubic-bezier(0, 0, 0.2, 1) infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mesa-floor-edit-ring {
+    animation: none;
+    opacity: 0.35;
+    transform: scale(1.15);
+  }
+}
+
+@keyframes cart-line-added-pulse {
+  0% {
+    background-color: rgb(110 231 183 / 0.72);
+    box-shadow: inset 0 0 0 1px rgb(52 211 153 / 0.45);
+  }
+  55% {
+    background-color: rgb(167 243 208 / 0.42);
+    box-shadow: inset 0 0 0 1px rgb(52 211 153 / 0.2);
+  }
+  100% {
+    background-color: transparent;
+    box-shadow: none;
+  }
+}
+
+.cart-line-added-pulse {
+  animation: cart-line-added-pulse 1.15s ease-out forwards;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cart-line-added-pulse {
+    animation: none;
+    background-color: rgb(167 243 208 / 0.35);
+  }
+}
 
 :root {
   /* Paradise Park Theme - Inspired by forest mascot */
@@ -49,51 +101,114 @@
 }
 
 .dark {
-  /* Dark Paradise - Night in the park */
-  --background: oklch(0.18 0.025 150);
-  --foreground: oklch(0.92 0.015 110);
-  --card: oklch(0.22 0.03 150);
-  --card-foreground: oklch(0.92 0.015 110);
-  --popover: oklch(0.22 0.03 150);
-  --popover-foreground: oklch(0.92 0.015 110);
-  --primary: oklch(0.65 0.12 155);
-  --primary-foreground: oklch(0.15 0.02 150);
-  --secondary: oklch(0.28 0.03 150);
-  --secondary-foreground: oklch(0.90 0.01 110);
-  --muted: oklch(0.28 0.03 150);
-  --muted-foreground: oklch(0.65 0.02 110);
-  --accent: oklch(0.70 0.10 75);
-  --accent-foreground: oklch(0.15 0.03 75);
-  --destructive: oklch(0.50 0.18 25);
+  /* App shell — valores tomados de app/[pop]/menu/page.tsx (fuente de verdad visual) */
+  --background: #070a09;
+  --foreground: #ffffff;
+  --card: #0c0f0e;
+  --card-foreground: #ffffff;
+  --popover: #0c0f0e;
+  --popover-foreground: #ffffff;
+  --primary: #10b981;
+  --primary-foreground: #ffffff;
+  --secondary: rgb(255 255 255 / 0.04);
+  --secondary-foreground: #ffffff;
+  --muted: rgb(255 255 255 / 0.06);
+  --muted-foreground: rgb(255 255 255 / 0.45);
+  --accent: rgb(255 255 255 / 0.06);
+  --accent-foreground: #ffffff;
+  --destructive: oklch(0.5 0.18 25);
   --destructive-foreground: oklch(0.95 0.01 25);
-  --border: oklch(0.32 0.035 150);
-  --input: oklch(0.26 0.03 150);
-  --ring: oklch(0.65 0.12 155);
-  --chart-1: oklch(0.65 0.12 155);
-  --chart-2: oklch(0.75 0.10 75);
-  --chart-3: oklch(0.55 0.10 180);
-  --chart-4: oklch(0.55 0.08 50);
-  --chart-5: oklch(0.70 0.10 140);
-  --sidebar: oklch(0.15 0.02 150);
-  --sidebar-foreground: oklch(0.92 0.015 110);
+  --border: rgb(255 255 255 / 0.08);
+  --input: rgb(255 255 255 / 0.08);
+  --ring: rgb(16 185 129 / 0.45);
+  --rootsy-hairline: rgb(255 255 255 / 0.04);
+  --rootsy-particle: #34d399;
+  --rootsy-section-alt: rgb(8 12 11 / 0.8);
+  --rootsy-footer: rgb(5 8 7 / 0.9);
+  --chart-1: #34d399;
+  --chart-2: #fbbf24;
+  --chart-3: #2dd4bf;
+  --chart-4: #f97316;
+  --chart-5: #6ee7b7;
+  --sidebar: #0c0f0e;
+  --sidebar-foreground: #ffffff;
+  --sidebar-primary: #10b981;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: rgb(255 255 255 / 0.06);
+  --sidebar-accent-foreground: #ffffff;
+  --sidebar-border: rgb(255 255 255 / 0.08);
+  --sidebar-ring: rgb(16 185 129 / 0.45);
+  --forest: #10b981;
+  --meadow: #34d399;
+  --amber: #fbbf24;
+  --bark: #78716c;
+  --cream: rgb(255 255 255 / 0.92);
+}
+
+.rootsy-app-light,
+[data-rootsy-light-shell="true"] {
+  --background: oklch(0.98 0.005 110);
+  --foreground: oklch(0.25 0.03 150);
+  --card: oklch(0.995 0.002 110);
+  --card-foreground: oklch(0.25 0.03 150);
+  --popover: oklch(0.995 0.002 110);
+  --popover-foreground: oklch(0.25 0.03 150);
+  --primary: oklch(0.55 0.14 155);
+  --primary-foreground: oklch(0.99 0.005 110);
+  --secondary: oklch(0.94 0.02 110);
+  --secondary-foreground: oklch(0.30 0.05 150);
+  --muted: oklch(0.95 0.015 110);
+  --muted-foreground: oklch(0.50 0.03 150);
+  --accent: oklch(0.75 0.12 75);
+  --accent-foreground: oklch(0.25 0.05 75);
+  --destructive: oklch(0.55 0.2 25);
+  --destructive-foreground: oklch(0.98 0.01 25);
+  --border: oklch(0.88 0.025 130);
+  --input: oklch(0.92 0.015 110);
+  --ring: oklch(0.60 0.12 155);
+  --chart-1: oklch(0.55 0.14 155);
+  --chart-2: oklch(0.70 0.10 75);
+  --chart-3: oklch(0.60 0.08 180);
+  --chart-4: oklch(0.45 0.06 50);
+  --chart-5: oklch(0.65 0.12 140);
+  --sidebar: oklch(0.30 0.05 150);
+  --sidebar-foreground: oklch(0.95 0.01 110);
   --sidebar-primary: oklch(0.65 0.12 155);
-  --sidebar-primary-foreground: oklch(0.15 0.02 150);
-  --sidebar-accent: oklch(0.25 0.03 150);
-  --sidebar-accent-foreground: oklch(0.92 0.015 110);
-  --sidebar-border: oklch(0.28 0.03 150);
+  --sidebar-primary-foreground: oklch(0.99 0.005 110);
+  --sidebar-accent: oklch(0.38 0.06 150);
+  --sidebar-accent-foreground: oklch(0.95 0.01 110);
+  --sidebar-border: oklch(0.40 0.05 150);
   --sidebar-ring: oklch(0.65 0.12 155);
-  /* Custom game tokens - dark */
-  --forest: oklch(0.65 0.12 155);
-  --meadow: oklch(0.60 0.10 140);
-  --amber: oklch(0.70 0.10 75);
-  --bark: oklch(0.55 0.06 50);
-  --cream: oklch(0.88 0.02 90);
+  --forest: oklch(0.55 0.14 155);
+  --meadow: oklch(0.70 0.10 140);
+  --amber: oklch(0.75 0.12 75);
+  --bark: oklch(0.45 0.06 50);
+  --cream: oklch(0.96 0.02 90);
+  --rootsy-hairline: oklch(0.90 0.02 130);
+  --rootsy-particle: oklch(0.55 0.14 155);
+  --rootsy-section-alt: oklch(0.96 0.018 110);
+  --rootsy-footer: oklch(0.94 0.02 110);
 }
 
 @theme inline {
-  --font-sans: var(--font-nunito), 'Nunito', sans-serif;
-  --font-mono: 'Geist Mono', 'Geist Mono Fallback';
-  /* Game/Nature custom colors */
+  --font-sans: var(--rootsy-font-ui);
+  --font-secondary: var(--rootsy-font-reading);
+  --font-numeric: var(--rootsy-font-numeric);
+  --font-mono: var(--rootsy-font-code);
+  --color-rootsy-ceniza-700: var(--rootsy-ceniza-700);
+  --color-rootsy-ceniza-600: var(--rootsy-ceniza-600);
+  --color-rootsy-bruma-100: var(--rootsy-bruma-100);
+  --color-rootsy-bruma-200: var(--rootsy-bruma-200);
+  --color-rootsy-bruma-500: var(--rootsy-bruma-500);
+  --color-rootsy-bruma-900: var(--rootsy-bruma-900);
+  --color-rootsy-savia-600: var(--rootsy-savia-600);
+  --color-rootsy-savia-400: var(--rootsy-savia-400);
+  --color-rootsy-savia-50: var(--rootsy-savia-50);
+  --color-rootsy-savia-800: var(--rootsy-savia-800);
+  --color-rootsy-hairline: var(--rootsy-hairline);
+  --color-rootsy-particle: var(--rootsy-particle);
+  --color-rootsy-section-alt: var(--rootsy-section-alt);
+  --color-rootsy-footer: var(--rootsy-footer);
   --color-forest: var(--forest);
   --color-meadow: var(--meadow);
   --color-amber: var(--amber);
@@ -175,8 +290,14 @@
   }
   
   /* Scrollbar styling */
+  .game-scroll {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(148, 163, 184, 0.38) transparent;
+  }
+
   .game-scroll::-webkit-scrollbar {
-    width: 6px;
+    width: 7px;
+    height: 7px;
   }
   
   .game-scroll::-webkit-scrollbar-track {
@@ -184,11 +305,42 @@
   }
   
   .game-scroll::-webkit-scrollbar-thumb {
-    @apply rounded-full bg-border;
+    border-radius: 9999px;
+    background: rgba(148, 163, 184, 0.38);
+    border: 1px solid transparent;
+    background-clip: padding-box;
   }
   
   .game-scroll::-webkit-scrollbar-thumb:hover {
-    @apply bg-muted-foreground/30;
+    background: rgba(148, 163, 184, 0.55);
+    border: 1px solid transparent;
+    background-clip: padding-box;
+  }
+
+  /** Scroll casi invisible; thumb fino, track transparente (tablas / paneles densos). */
+  .rootsy-scroll-minimal {
+    scrollbar-width: thin;
+    scrollbar-color: color-mix(in oklch, var(--foreground) 11%, transparent) transparent;
+  }
+
+  .rootsy-scroll-minimal::-webkit-scrollbar {
+    width: 5px;
+    height: 5px;
+  }
+
+  .rootsy-scroll-minimal::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .rootsy-scroll-minimal::-webkit-scrollbar-thumb {
+    border-radius: 9999px;
+    background: color-mix(in oklch, var(--foreground) 12%, transparent);
+    border: 2px solid transparent;
+    background-clip: padding-box;
+  }
+
+  .rootsy-scroll-minimal::-webkit-scrollbar-thumb:hover {
+    background: color-mix(in oklch, var(--foreground) 20%, transparent);
   }
 
   /* Partículas / landing (alineado con /menu; la duración viene del style inline) */
@@ -196,6 +348,23 @@
     animation-name: rootsy-float;
     animation-timing-function: ease-in-out;
     animation-iteration-count: infinite;
+  }
+
+  .animate-dock-wiggle {
+    animation-name: dock-wiggle;
+    animation-duration: 0.32s;
+    animation-timing-function: ease-in-out;
+    animation-iteration-count: infinite;
+  }
+
+  @keyframes dock-wiggle {
+    0%,
+    100% {
+      transform: rotate(-1deg);
+    }
+    50% {
+      transform: rotate(1deg);
+    }
   }
 
   @keyframes rootsy-float {
@@ -215,6 +384,261 @@
     }
     50% {
       transform: translateY(-14px);
+    }
+  }
+
+  @keyframes rootsy-ambient-pulse {
+    0%,
+    100% {
+      opacity: 0.42;
+    }
+    50% {
+      opacity: 0.68;
+    }
+  }
+
+  .rootsy-ambient-pulse {
+    animation: rootsy-ambient-pulse 12s ease-in-out infinite;
+  }
+
+  @keyframes rootsy-hero-rise {
+    from {
+      opacity: 0;
+      filter: blur(12px);
+      transform: translate3d(0, 28px, 0);
+    }
+    to {
+      opacity: 1;
+      filter: blur(0);
+      transform: translate3d(0, 0, 0);
+    }
+  }
+
+  .rootsy-hero-rise {
+    animation: rootsy-hero-rise 1.05s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    opacity: 0;
+  }
+
+  @keyframes rootsy-hero-slide-in-right {
+    from {
+      opacity: 0;
+      filter: blur(12px);
+      transform: translate3d(36px, 0, 0);
+    }
+    to {
+      opacity: 1;
+      filter: blur(0);
+      transform: translate3d(0, 0, 0);
+    }
+  }
+
+  .rootsy-hero-slide-in-right {
+    animation: rootsy-hero-slide-in-right 1.05s cubic-bezier(0.16, 1, 0.3, 1)
+      forwards;
+    opacity: 0;
+  }
+
+  .rootsy-hero-rise-d1 {
+    animation-delay: 0.1s;
+  }
+  .rootsy-hero-rise-d2 {
+    animation-delay: 0.22s;
+  }
+  .rootsy-hero-rise-d3 {
+    animation-delay: 0.34s;
+  }
+  .rootsy-hero-rise-d4 {
+    animation-delay: 0.46s;
+  }
+  .rootsy-hero-rise-d5 {
+    animation-delay: 0.58s;
+  }
+
+  @keyframes rootsy-lens-rotate {
+    to {
+      transform: rotate(360deg);
+    }
+  }
+
+  .rootsy-lens-flare {
+    animation: rootsy-lens-rotate 160s linear infinite;
+  }
+
+  @keyframes rootsy-chrome-shift {
+    0%,
+    100% {
+      background-position: 0% 50%;
+    }
+    50% {
+      background-position: 100% 50%;
+    }
+  }
+
+  .rootsy-chrome-accent {
+    background: linear-gradient(
+      100deg,
+      #047857 0%,
+      #34d399 30%,
+      #5eead4 50%,
+      #34d399 70%,
+      #047857 100%
+    );
+    background-size: 220% 100%;
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    animation: rootsy-chrome-shift 9s ease-in-out infinite;
+  }
+
+  @keyframes rootsy-orb-pulse {
+    0%,
+    100% {
+      opacity: 0.35;
+      transform: translate(-50%, -50%) scale(1);
+    }
+    50% {
+      opacity: 0.55;
+      transform: translate(-50%, -50%) scale(1.06);
+    }
+  }
+
+  .rootsy-mascot-orb {
+    animation: rootsy-orb-pulse 6s ease-in-out infinite;
+  }
+
+  .rootsy-card-tilt {
+    --rx: 0deg;
+    --ry: 0deg;
+    transform: perspective(900px) rotateX(var(--rx)) rotateY(var(--ry))
+      translateZ(0);
+    transition: transform 0.2s ease-out, box-shadow 0.3s ease;
+  }
+
+  @keyframes rootsy-marquee-x {
+    from {
+      transform: translateX(0);
+    }
+    to {
+      transform: translateX(-50%);
+    }
+  }
+
+  .rootsy-marquee-logos {
+    animation: rootsy-marquee-x 42s linear infinite;
+    width: max-content;
+  }
+
+  .rootsy-marquee-fade {
+    mask-image: linear-gradient(
+      to right,
+      transparent,
+      black 6%,
+      black 94%,
+      transparent
+    );
+    -webkit-mask-image: linear-gradient(
+      to right,
+      transparent,
+      black 6%,
+      black 94%,
+      transparent
+    );
+  }
+
+  .rootsy-cart-title-marquee-track {
+    display: inline-flex;
+    width: max-content;
+    animation: rootsy-marquee-x var(--rootsy-cart-marquee-duration, 16s) linear
+      infinite;
+  }
+
+  .rootsy-cart-item-marquee-fade {
+    mask-image: linear-gradient(
+      to right,
+      transparent,
+      black 4%,
+      black 96%,
+      transparent
+    );
+    -webkit-mask-image: linear-gradient(
+      to right,
+      transparent,
+      black 4%,
+      black 96%,
+      transparent
+    );
+  }
+
+  @keyframes rootsy-landing-scene-in {
+    from {
+      opacity: 0;
+      filter: blur(10px);
+      transform: translate3d(0, 12px, 0) scale(0.985);
+    }
+    to {
+      opacity: 1;
+      filter: blur(0);
+      transform: translate3d(0, 0, 0) scale(1);
+    }
+  }
+
+  .rootsy-landing-scene-in {
+    animation: rootsy-landing-scene-in 0.45s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  }
+
+  .rootsy-landing-title-glow {
+    text-shadow: 0 0 40px rgba(52, 211, 153, 0.12);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .rootsy-landing-scene-in {
+      animation: none;
+    }
+    .rootsy-ambient-pulse {
+      animation: none;
+    }
+    .rootsy-hero-rise,
+    .rootsy-hero-rise-d1,
+    .rootsy-hero-rise-d2,
+    .rootsy-hero-rise-d3,
+    .rootsy-hero-rise-d4,
+    .rootsy-hero-rise-d5 {
+      animation: none;
+      opacity: 1;
+      filter: none;
+      transform: none;
+    }
+    .rootsy-hero-slide-in-right {
+      animation: none;
+      opacity: 1;
+      filter: none;
+      transform: none;
+    }
+    .rootsy-lens-flare {
+      animation: none;
+    }
+    .rootsy-chrome-accent {
+      animation: none;
+      background-position: 50% 50%;
+    }
+    .rootsy-mascot-orb {
+      animation: none;
+    }
+    .rootsy-cart-title-marquee-track {
+      animation: none;
+      transform: none;
+    }
+    .rootsy-card-tilt {
+      transform: none;
+      transition: box-shadow 0.3s ease;
+    }
+    .rootsy-marquee-logos {
+      animation: none;
+    }
+    .rootsy-landing-scene-in {
+      opacity: 1;
+      filter: none;
+      transform: none;
     }
   }
 }

@@ -1,16 +1,9 @@
-import { Loader2Icon } from 'lucide-react'
+import { RootsSpinner } from "@/components/rootsy-spinner"
+import { cn } from "@/lib/utils"
+import type { ComponentProps } from "react"
 
-import { cn } from '@/lib/utils'
-
-function Spinner({ className, ...props }: React.ComponentProps<'svg'>) {
-  return (
-    <Loader2Icon
-      role="status"
-      aria-label="Loading"
-      className={cn('size-4 animate-spin', className)}
-      {...props}
-    />
-  )
+function Spinner({ className, ...props }: ComponentProps<typeof RootsSpinner>) {
+  return <RootsSpinner size="sm" className={cn(className)} {...props} />
 }
 
 export { Spinner }

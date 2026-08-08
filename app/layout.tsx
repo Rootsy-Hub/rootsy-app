@@ -1,16 +1,27 @@
 import type { Metadata } from 'next'
-import { Nunito, Geist_Mono } from 'next/font/google'
+import { Inter, Nunito_Sans, Source_Sans_3 } from 'next/font/google'
 import { Analytics } from '@vercel/analytics/next'
+import { AuthProvider } from '@/context/AuthContextSupabase'
+import { QueryProvider } from '@/components/providers/QueryProvider'
 import './globals.css'
 
-const nunito = Nunito({ 
+// Fuente principal del proyecto
+const nunitoSans = Nunito_Sans({
   subsets: ["latin"],
-  variable: '--font-nunito',
-  weight: ['400', '500', '600', '700', '800']
+  variable: '--font-nunito-sans',
+  weight: ['400', '500', '600', '700', '800', '900']
 });
-const geistMono = Geist_Mono({ 
+// Fuente secundaria del proyecto
+const sourceSans = Source_Sans_3({
   subsets: ["latin"],
-  variable: '--font-geist-mono'
+  variable: '--font-source-sans',
+  weight: ['400', '500', '600', '700']
+});
+/** Importes, totales y columnas numéricas */
+const inter = Inter({
+  subsets: ["latin"],
+  variable: '--font-inter',
+  weight: ['400', '500', '600', '700'],
 });
 
 export const metadata: Metadata = {
@@ -43,9 +54,13 @@ export default function RootLayout({
   children: React.ReactNode
 }>) {
   return (
-    <html lang="es" className="dark scroll-smooth">
-      <body className={`${nunito.variable} ${geistMono.variable} font-sans antialiased`}>
-        {children}
+    <html lang="es" className="dark scroll-smooth" data-scroll-behavior="smooth">
+      <body className={`${nunitoSans.variable} ${sourceSans.variable} ${inter.variable} font-sans antialiased`}>
+        <AuthProvider>
+          <QueryProvider>
+            {children}
+          </QueryProvider>
+        </AuthProvider>
         <Analytics />
       </body>
     </html>

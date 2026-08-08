@@ -1,0 +1,26 @@
+/**
+ * Tema POS — sombra bajo el dosel + bruma en ticket + acciones savia.
+ */
+
+.rootsy-theme-pos {
+  --color-shell: var(--rootsy-sombra-950);
+  --color-surface: var(--rootsy-sombra-600);
+  --color-elevated: var(--rootsy-sombra-500);
+  --color-border: var(--rootsy-sombra-border);
+  --color-text-primary: #f4f8f6;
+  --color-text-secondary: var(--rootsy-sombra-300);
+  --color-action: var(--rootsy-savia-600);
+  --color-action-text: var(--rootsy-white);
+  --color-accent: var(--rootsy-savia-400);
+
+  --background: var(--color-shell);
+  --foreground: var(--color-text-primary);
+  --card: var(--color-elevated);
+  --card-foreground: var(--color-text-primary);
+  --primary: var(--color-action);
+  --primary-foreground: var(--color-action-text);
+  --muted: var(--rootsy-sombra-500);
+  --muted-foreground: var(--color-text-secondary);
+  --border: var(--color-border);
+  --ring: var(--rootsy-savia-400);
+}

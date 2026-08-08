@@ -1,0 +1,150 @@
+import {
+  operationPaymentKindLabel,
+  type OperationPaymentKind,
+} from "@/lib/operationPaymentKinds"
+import type { TreasuryPaymentContext } from "@/lib/treasuryPaymentOptions"
+
+export type PurchaseCheckoutPaymentSelection = {
+  kind: OperationPaymentKind
+  treasuryAccountId: string
+  label: string
+}
+
+/** Tipos visibles en el paso 1 del checkout de compra. */
+export const PURCHASE_CHECKOUT_KINDS: OperationPaymentKind[] = [
+  "cash",
+  "transfer",
+  "card_credit",
+]
+
+export function purchaseCheckoutKindLabel(kind: OperationPaymentKind): string {
+  return operationPaymentKindLabel(kind)
+}
+
+export function purchaseCheckoutKindHasDestinationStep(
+  kind: OperationPaymentKind,
+  context: TreasuryPaymentContext,
+): boolean {
+  if (kind === "cash") {
+    return context.cashTreasuryAccounts.length > 1
+  }
+  if (kind === "card_credit") {
+    return context.payTreasuryAccounts.length > 1
+  }
+  if (kind === "transfer") {
+    return context.bankTreasuryAccounts.length > 1
+  }
+  return false
+}
+
+export function getPurchaseCheckoutDestinations(
+  kind: OperationPaymentKind,
+  context: TreasuryPaymentContext,
+): { id: string; name: string }[] {
+  if (kind === "cash") {
+    return context.cashTreasuryAccounts
+  }
+  if (kind === "card_credit") {
+    return context.payTreasuryAccounts
+  }
+  if (kind === "transfer") {
+    return context.bankTreasuryAccounts
+  }
+  return []
+}
+
+function findTreasuryName(
+  context: TreasuryPaymentContext,
+  treasuryAccountId: string,
+): string | null {
+  const all = [
+    ...context.cashTreasuryAccounts,
+    ...context.bankTreasuryAccounts,
+    ...context.payTreasuryAccounts,
+  ]
+  return all.find((a) => a.id === treasuryAccountId)?.name ?? null
+}
+
+export function buildPurchaseCheckoutPaymentSelection(
+  kind: OperationPaymentKind,
+  treasuryAccountId: string,
+  context: TreasuryPaymentContext,
+  destinationName?: string,
+): PurchaseCheckoutPaymentSelection {
+  if (kind === "cash") {
+    const cashCount = context.cashTreasuryAccounts.length
+    const name =
+      destinationName?.trim() ||
+      findTreasuryName(context, treasuryAccountId) ||
+      operationPaymentKindLabel("cash")
+    return {
+      kind: "cash",
+      treasuryAccountId,
+      label: cashCount > 1 ? name : operationPaymentKindLabel("cash"),
+    }
+  }
+  const name =
+    destinationName?.trim() ||
+    findTreasuryName(context, treasuryAccountId) ||
+    "—"
+  if (kind === "card_credit") {
+    return {
+      kind,
+      treasuryAccountId,
+      label: `${name} · Crédito`,
+    }
+  }
+  if (kind === "transfer") {
+    return {
+      kind,
+      treasuryAccountId,
+      label: name,
+    }
+  }
+  return {
+    kind,
+    treasuryAccountId,
+    label: operationPaymentKindLabel(kind),
+  }
+}
+
+export function defaultPurchaseCheckoutPaymentSelection(
+  context: TreasuryPaymentContext,
+): PurchaseCheckoutPaymentSelection | null {
+  if (context.cashTreasuryAccounts.length !== 1) return null
+  const cash = context.cashTreasuryAccounts[0]!
+  return buildPurchaseCheckoutPaymentSelection("cash", cash.id, context, cash.name)
+}
+
+export function purchaseCheckoutKindAvailabilityError(
+  kind: OperationPaymentKind,
+  context: TreasuryPaymentContext,
+): string | null {
+  if (kind === "cash") {
+    if (context.cashTreasuryAccounts.length === 0) {
+      return "Configurá una caja de efectivo en Cuentas."
+    }
+    return null
+  }
+  if (kind === "card_credit") {
+    if (context.payTreasuryAccounts.length === 0) {
+      return "Agregá una tarjeta corporativa desde Cuentas para pagar con crédito."
+    }
+    return null
+  }
+  if (kind === "transfer") {
+    if (context.bankTreasuryAccounts.length === 0) {
+      return "Configurá una cuenta banco o billetera en Cuentas."
+    }
+    return null
+  }
+  return null
+}
+
+export function isPurchasePaymentSelectionValid(
+  selection: PurchaseCheckoutPaymentSelection,
+  context: TreasuryPaymentContext,
+): boolean {
+  const destinations = getPurchaseCheckoutDestinations(selection.kind, context)
+  return destinations.some((d) => d.id === selection.treasuryAccountId)
+}

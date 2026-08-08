@@ -1,0 +1,27 @@
+/**
+ * Tema marketing (hero) — composición sombra + savia + atmósfera.
+ * No es una familia de color; es un contexto de pantalla.
+ */
+
+.rootsy-theme-landing {
+  --color-shell: var(--rootsy-sombra-900);
+  --color-surface: var(--rootsy-sombra-800);
+  --color-elevated: #141c19;
+  --color-border: var(--rootsy-sombra-border);
+  --color-text-primary: var(--rootsy-white);
+  --color-text-secondary: var(--rootsy-sombra-300);
+  --color-action: var(--rootsy-savia-500);
+  --color-action-text: var(--rootsy-white);
+  --color-accent: var(--rootsy-savia-400);
+
+  --background: var(--color-shell);
+  --foreground: var(--color-text-primary);
+  --card: var(--color-surface);
+  --card-foreground: var(--color-text-primary);
+  --primary: var(--color-action);
+  --primary-foreground: var(--color-action-text);
+  --muted: var(--color-elevated);
+  --muted-foreground: var(--color-text-secondary);
+  --border: var(--color-border);
+  --ring: var(--rootsy-savia-400);
+}

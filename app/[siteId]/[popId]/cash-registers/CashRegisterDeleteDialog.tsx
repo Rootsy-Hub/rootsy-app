@@ -1,0 +1,133 @@
+"use client"
+
+import { cashRegisterDeleteConfirmPhrase } from "@/app/[siteId]/[popId]/cash-registers/cashRegisterConstants"
+import {
+  RootsDangerButton,
+  RootsProgressButton,
+  RootsSubtleButton,
+  rootsButtonClassForVariant,
+} from "@/components/rootsy-button"
+import {
+  RootsAlertDialogContent,
+  RootsDialogErrorBanner,
+  rootsAlertDialogContentClass,
+  rootsAlertDialogDescriptionClass,
+  rootsAlertDialogFooterClass,
+  rootsAlertDialogTitleClass,
+} from "@/components/rootsy-dialog"
+import { rootsFormTextFieldClass } from "@/components/rootsy-form/rootsFormStyles"
+import {
+  AlertDialog,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
+import { Input } from "@/components/ui/input"
+import { cn } from "@/lib/utils"
+import { useEffect, useRef } from "react"
+
+type Props = {
+  open: boolean
+  registerName: string | null
+  confirmValue: string
+  banner: string | null
+  busy: boolean
+  onOpenChange: (open: boolean) => void
+  onClose: () => void
+  onConfirmValueChange: (value: string) => void
+  onConfirmDelete: () => void
+  onAfterClose?: () => void
+}
+
+export function CashRegisterDeleteDialog({
+  open,
+  registerName,
+  confirmValue,
+  banner,
+  busy,
+  onOpenChange,
+  onClose,
+  onConfirmValueChange,
+  onConfirmDelete,
+  onAfterClose,
+}: Props) {
+  const wasOpenRef = useRef(false)
+  const name = registerName?.trim() || "esta caja"
+  const confirmPhrase = cashRegisterDeleteConfirmPhrase(name)
+  const confirmReady = confirmValue.trim() === confirmPhrase
+
+  useEffect(() => {
+    if (open) {
+      wasOpenRef.current = true
+      return
+    }
+    if (!wasOpenRef.current) return
+    const timer = window.setTimeout(() => {
+      wasOpenRef.current = false
+      onAfterClose?.()
+    }, 220)
+    return () => window.clearTimeout(timer)
+  }, [open, onAfterClose])
+
+  return (
+    <AlertDialog open={open} onOpenChange={onOpenChange}>
+      <RootsAlertDialogContent>
+        <div className={rootsAlertDialogContentClass}>
+          <div className="flex flex-col gap-1">
+            <AlertDialogTitle className={rootsAlertDialogTitleClass}>
+              Eliminar {name}
+            </AlertDialogTitle>
+            <AlertDialogDescription className={rootsAlertDialogDescriptionClass}>
+              Esta acción no se puede deshacer. Para confirmar, escribí &quot;
+              <span className="select-all font-medium text-[var(--rootsy-bruma-900)]">
+                {confirmPhrase}
+              </span>
+              &quot;.
+            </AlertDialogDescription>
+          </div>
+
+          <Input
+            autoComplete="off"
+            value={confirmValue}
+            onChange={(event) => onConfirmValueChange(event.target.value)}
+            placeholder={confirmPhrase}
+            disabled={busy}
+            className={rootsFormTextFieldClass}
+            aria-label={`Confirmación: ${confirmPhrase}`}
+          />
+
+          {banner ? (
+            <RootsDialogErrorBanner className="mb-0">{banner}</RootsDialogErrorBanner>
+          ) : null}
+        </div>
+
+        <AlertDialogFooter className={cn(rootsAlertDialogFooterClass, "sm:justify-between")}>
+          <RootsSubtleButton type="button" onClick={onClose} disabled={busy}>
+            Cancelar
+          </RootsSubtleButton>
+          {busy ? (
+            <RootsProgressButton
+              type="button"
+              semantic="destructive"
+              className={rootsButtonClassForVariant("destructive", "shrink-0")}
+              loading
+              loadingLabel="Eliminando…"
+              disabled
+            >
+              Eliminar definitivamente
+            </RootsProgressButton>
+          ) : (
+            <RootsDangerButton
+              type="button"
+              className="shrink-0"
+              disabled={!confirmReady}
+              onClick={onConfirmDelete}
+            >
+              Eliminar definitivamente
+            </RootsDangerButton>
+          )}
+        </AlertDialogFooter>
+      </RootsAlertDialogContent>
+    </AlertDialog>
+  )
+}

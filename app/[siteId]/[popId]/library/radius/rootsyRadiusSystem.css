@@ -1,0 +1,109 @@
+.rootsy-radius-system {
+  --radius-xsmall: 2px;
+  --radius-small: 4px;
+  --radius-medium: 8px;
+  --radius-large: 12px;
+  --radius-xlarge: 16px;
+  --radius-xxlarge: 22px;
+  --radius-full: 9999px;
+  --radius-tile: 34%;
+  --radius-focus-color: var(--rootsy-savia-400, #34d399);
+}
+
+.rootsy-radius-preview {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 4.5rem;
+  height: 3rem;
+  background: var(--rootsy-savia-50, #ecfdf5);
+  border: 1px solid rgb(5 150 105 / 0.25);
+  color: var(--rootsy-savia-800, #065f46);
+  font-size: 0.625rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.rootsy-radius-xsmall { border-radius: var(--radius-xsmall); }
+.rootsy-radius-small { border-radius: var(--radius-small); }
+.rootsy-radius-medium { border-radius: var(--radius-medium); }
+.rootsy-radius-large { border-radius: var(--radius-large); }
+.rootsy-radius-xlarge { border-radius: var(--radius-xlarge); }
+.rootsy-radius-xxlarge { border-radius: var(--radius-xxlarge); }
+.rootsy-radius-full {
+  border-radius: var(--radius-full);
+  width: 3rem;
+  height: 3rem;
+}
+.rootsy-radius-tile {
+  border-radius: var(--radius-tile);
+  width: 3rem;
+  height: 3rem;
+}
+
+.rootsy-radius-focus-demo {
+  position: relative;
+  display: inline-flex;
+}
+
+.rootsy-radius-focus-demo__ring {
+  position: absolute;
+  inset: -4px;
+  border: 2px solid rgb(52 211 153 / 0.55);
+  pointer-events: none;
+}
+
+.rootsy-radius-focus-demo__ring--large {
+  border-radius: calc(var(--radius-large) + 2px);
+}
+
+.rootsy-radius-focus-demo__ring--xlarge {
+  border-radius: calc(var(--radius-xlarge) + 2px);
+}
+
+.rootsy-radius-scale-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  gap: 1rem;
+}
+
+.rootsy-radius-form-demo {
+  display: flex;
+  max-width: 16rem;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.rootsy-radius-form-demo input {
+  height: 2.75rem;
+  padding: 0 0.75rem;
+  border: 1px solid var(--rootsy-bruma-200, #dfe4ea);
+  border-radius: var(--radius-large);
+  font-size: 0.875rem;
+  outline: none;
+}
+
+.rootsy-radius-form-demo input:focus-visible {
+  border-color: var(--radius-focus-color);
+  box-shadow: 0 0 0 2px rgb(52 211 153 / 0.45);
+}
+
+.rootsy-radius-modal-demo {
+  max-width: 14rem;
+  padding: 1rem 1.25rem;
+  border: 1px solid rgb(0 0 0 / 0.04);
+  border-radius: var(--radius-xxlarge);
+  background: white;
+  box-shadow: 0 22px 70px -18px rgb(5 8 7 / 0.28);
+}
+
+.rootsy-radius-avatar-demo {
+  width: 3.5rem;
+  height: 3.5rem;
+  overflow: hidden;
+  border-radius: var(--radius-full);
+  box-shadow: 0 0 0 2px rgb(255 255 255 / 0.14);
+  background: var(--rootsy-savia-100, #d1fae5);
+}
