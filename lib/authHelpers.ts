@@ -1,8 +1,9 @@
 "use server"
 
+import { cache } from "react"
 import { createClient } from "@/utils/supabase/server"
 
-export async function requireAuthenticatedUser() {
+const fetchAuthenticatedUser = cache(async () => {
   const supabase = await createClient()
 
   const {
@@ -18,6 +19,10 @@ export async function requireAuthenticatedUser() {
     uid: user.id,
     email: user.email,
   }
+})
+
+export async function requireAuthenticatedUser() {
+  return fetchAuthenticatedUser()
 }
 
 export async function getAuthenticatedUserOrNull(): Promise<{
