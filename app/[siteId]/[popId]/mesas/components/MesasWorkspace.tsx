@@ -21,9 +21,18 @@ import { OperationsModuleBackdrop } from "@/components/layouts-module/DataWorksp
 import { LayoutsOperarMainGrid } from "@/components/layouts-module/LayoutsOperarMainGrid"
 import {
   layoutsOperarCatalogColumnClass,
+  layoutsOperarCatalogCanvasClass,
   layoutsOperarSummaryPanelClass,
   layoutsOperarSummaryPanelInnerGridClass,
+  layoutsOperarSummaryPanelTabBodyClass,
 } from "@/app/library/layouts/layoutsOperarStyles"
+import {
+  mesasFloorEmptyHintClass,
+  mesasFloorEmptyStrongClass,
+  mesasFloorEmptyTextClass,
+  mesasLayoutErrorBannerClass,
+  mesasRealtimeBannerClass,
+} from "@/app/[siteId]/[popId]/mesas/mesasOperarStyles"
 import { OpenCashSessionBanner } from "@/components/sale-operation/OpenCashSessionBanner"
 import { SaleOperationToolbox } from "@/components/sale-operation/SaleOperationToolbox"
 import { useCartListScrollHighlight } from "@/hooks/useCartListScrollHighlight"
@@ -267,7 +276,7 @@ export function MesasWorkspace({
       ) : null}
 
       {realtimeStatus === "disconnected" ? (
-        <div className="relative z-20 border-b border-amber-500/35 bg-amber-950/50 px-4 py-2 text-sm text-amber-100">
+        <div className={mesasRealtimeBannerClass}>
           Conexión en vivo interrumpida. Reconectando… los cambios pueden demorar
           unos segundos.
         </div>
@@ -277,48 +286,50 @@ export function MesasWorkspace({
         catalog={
           !showCatalog ? (
             <section className={cn(layoutsOperarCatalogColumnClass, "flex-col")}>
-              <MesasSalonTabs
-                salons={salons}
-                activeSalonId={activeSalonId}
-                onChange={setActiveSalonId}
-                tableCounts={tableCounts}
-              />
-              {layoutError ? (
-                <div className="border-b border-red-500/30 bg-red-950/40 px-4 py-2 text-sm text-red-200">
-                  {layoutError}
-                </div>
-              ) : null}
-              {layoutLoading ? (
-                <div className="flex flex-1 items-center justify-center text-sm text-white/60">
-                  Cargando plano…
-                </div>
-              ) : salons.length === 0 ? (
-                <div className="flex flex-1 flex-col items-center justify-center gap-2 px-6 text-center text-sm text-white/65">
-                  <p>Todavía no hay salones configurados.</p>
-                  {canUpdateLayout ? (
-                    <p className="text-white/45">
-                      Usá el botón <strong className="text-white/70">Salones</strong>{" "}
-                      arriba a la derecha para empezar.
-                    </p>
-                  ) : null}
-                </div>
-              ) : (
-                <MesasFloorPlan
-                  tables={salonTables}
-                  decors={salonDecors}
-                  selectedTableIds={selectedTableIds}
-                  layoutEditMode={layoutEditMode}
-                  layoutSelection={layoutSelection}
-                  canEditLayout={canUpdateLayout}
-                  onToggleLayoutEdit={() => setLayoutEditMode((v) => !v)}
-                  onSelectTable={handleSelectTable}
-                  onSelectLayoutItem={selectLayoutItem}
-                  onRotateLayoutItem={rotateLayoutItem}
-                  onMoveTable={handleMoveTable}
-                  onMoveDecor={handleMoveDecor}
-                  tableOpenedAt={tableOpenedAt}
+              <div className={layoutsOperarCatalogCanvasClass}>
+                <MesasSalonTabs
+                  salons={salons}
+                  activeSalonId={activeSalonId}
+                  onChange={setActiveSalonId}
+                  tableCounts={tableCounts}
                 />
-              )}
+                <div className="row-start-2 flex min-h-0 flex-1 flex-col overflow-hidden">
+                  {layoutError ? (
+                    <div className={mesasLayoutErrorBannerClass}>{layoutError}</div>
+                  ) : null}
+                  {layoutLoading ? (
+                    <div className={cn("flex flex-1 items-center justify-center text-sm", mesasFloorEmptyTextClass)}>
+                      Cargando plano…
+                    </div>
+                  ) : salons.length === 0 ? (
+                    <div className={cn("flex flex-1 flex-col items-center justify-center gap-2 px-6 text-center text-sm", mesasFloorEmptyTextClass)}>
+                      <p>Todavía no hay salones configurados.</p>
+                      {canUpdateLayout ? (
+                        <p className={mesasFloorEmptyHintClass}>
+                          Usá el botón <strong className={mesasFloorEmptyStrongClass}>Salones</strong>{" "}
+                          arriba a la derecha para empezar.
+                        </p>
+                      ) : null}
+                    </div>
+                  ) : (
+                    <MesasFloorPlan
+                      tables={salonTables}
+                      decors={salonDecors}
+                      selectedTableIds={selectedTableIds}
+                      layoutEditMode={layoutEditMode}
+                      layoutSelection={layoutSelection}
+                      canEditLayout={canUpdateLayout}
+                      onToggleLayoutEdit={() => setLayoutEditMode((v) => !v)}
+                      onSelectTable={handleSelectTable}
+                      onSelectLayoutItem={selectLayoutItem}
+                      onRotateLayoutItem={rotateLayoutItem}
+                      onMoveTable={handleMoveTable}
+                      onMoveDecor={handleMoveDecor}
+                      tableOpenedAt={tableOpenedAt}
+                    />
+                  )}
+                </div>
+              </div>
             </section>
           ) : (
             <MesasCatalogPanel
@@ -344,8 +355,8 @@ export function MesasWorkspace({
               pedidoDisabled={!selectedSession}
             />
 
-            <div className={layoutsOperarSummaryPanelInnerGridClass}>
-              {rightView === "session" ? (
+            {rightView === "session" ? (
+              <div className={layoutsOperarSummaryPanelTabBodyClass}>
                 <MesaSessionPanel
                   table={selectedTable}
                   session={selectedSession}
@@ -362,23 +373,25 @@ export function MesasWorkspace({
                   closeSessionLoading={checkout.submitting}
                   clientLabel={checkout.sessionClientLabel}
                 />
-              ) : (
-                <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
-                  {checkout.submitError ? (
-                    <div className="shrink-0 px-3 pt-3 sm:px-3.5">
-                      <p className="rounded-xl border border-destructive/25 bg-destructive/10 px-3.5 py-2.5 text-sm text-destructive">
-                        {checkout.submitError}
-                      </p>
-                    </div>
-                  ) : null}
+              </div>
+            ) : (
+              <div className={layoutsOperarSummaryPanelTabBodyClass}>
+                {checkout.submitError ? (
+                  <div className="shrink-0 px-3 pt-3 sm:px-3.5">
+                    <p className="rounded-xl border border-destructive/25 bg-destructive/10 px-3.5 py-2.5 text-sm text-destructive">
+                      {checkout.submitError}
+                    </p>
+                  </div>
+                ) : null}
+                <div className={cn(layoutsOperarSummaryPanelInnerGridClass, "min-h-0 flex-1")}>
                   <MesasOrderPanel
                     checkout={checkout}
                     tableLabel={mesaLabel}
                     cartScrollHighlight={cartScrollHighlight}
                   />
                 </div>
-              )}
-            </div>
+              </div>
+            )}
           </aside>
         }
       />

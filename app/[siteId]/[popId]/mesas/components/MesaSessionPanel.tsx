@@ -188,7 +188,7 @@ export function MesaSessionPanel({
                     {sessionTables.map((t) => (
                       <span
                         key={t.id}
-                        className="rounded-full bg-primary/10 px-2 py-0.5 text-xs font-semibold text-primary ring-1 ring-primary/15"
+                        className="rounded-full px-2 py-0.5 text-xs font-semibold ring-1 ring-[color-mix(in_srgb,var(--rootsy-savia-500)_28%,transparent)] bg-[color-mix(in_srgb,var(--rootsy-savia-400)_12%,var(--rootsy-bruma-100))] text-[var(--rootsy-savia-800)]"
                       >
                         {t.label}
                       </span>

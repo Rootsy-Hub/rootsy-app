@@ -7,6 +7,11 @@ import {
   mesaTableHighlightClass,
   mesaStatusClass,
 } from "@/app/[siteId]/[popId]/mesas/mesasTableStyles"
+import {
+  mesasTableDurationClass,
+  mesasTableLabelClass,
+  mesasTableMetaClass,
+} from "@/app/[siteId]/[popId]/mesas/mesasOperarStyles"
 import { cn } from "@/lib/utils"
 
 type Props = {
@@ -57,15 +62,15 @@ export function MesaTableShapeView({
             : undefined
         }
       >
-        <span className="text-sm font-bold tabular-nums text-white">{label}</span>
+        <span className={cn("text-sm font-bold tabular-nums", mesasTableLabelClass)}>{label}</span>
         {!compact ? (
           showOpenDuration ? (
             <MesaOpenDurationLabel
               openedAt={openedAt}
-              className="mt-0.5 text-[10px] text-amber-200/90"
+              className={cn("mt-0.5 text-[10px]", mesasTableDurationClass)}
             />
           ) : (
-            <span className="mt-0.5 text-[10px] font-medium text-white/55">
+            <span className={cn("mt-0.5 text-[10px] font-medium", mesasTableMetaClass)}>
               {seats} pax
             </span>
           )

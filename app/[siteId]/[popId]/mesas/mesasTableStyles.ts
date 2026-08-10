@@ -47,7 +47,8 @@ export function mesaItemSelectionClass(options?: { active?: boolean }): string {
   return cn(
     "relative",
     "before:pointer-events-none before:absolute before:rounded-[inherit] before:content-['']",
-    "before:-inset-[3px] before:border-2 before:border-sky-400/50",
+    "before:-inset-[3px] before:border-2",
+    "before:border-[color-mix(in_srgb,var(--rootsy-savia-400)_55%,transparent)]",
     "transition-[transform] duration-200",
     options?.active && "scale-[1.01] z-10",
   )
@@ -73,13 +74,29 @@ export function mesaDecorHighlightClass(layoutSelected: boolean): string {
 
 export function mesaStatusClass(status: MesaTableStatus): string {
   const base =
-    "border-2 shadow-[inset_0_1px_0_rgba(255,255,255,0.08),0_4px_12px_rgba(0,0,0,0.35)] transition-[border-color,box-shadow,transform] duration-200"
+    "border-2 shadow-[inset_0_1px_0_rgba(255,255,255,0.06),0_4px_12px_rgba(0,0,0,0.35)] transition-[border-color,background-color,box-shadow,transform] duration-200"
 
   const statusMap: Record<MesaTableStatus, string> = {
-    free: "border-emerald-500/45 bg-[#1a221c] hover:border-emerald-400/70",
-    open: "border-amber-400/65 bg-[#2a2218] shadow-[0_0_20px_rgba(251,191,36,0.12)]",
-    paying: "border-sky-400/60 bg-[#182028] shadow-[0_0_18px_rgba(56,189,248,0.1)]",
-    reserved: "border-violet-400/55 bg-[#221a28] shadow-[0_0_16px_rgba(167,139,250,0.1)]",
+    free: cn(
+      "border-[color-mix(in_srgb,var(--rootsy-sombra-300)_38%,transparent)]",
+      "bg-[color-mix(in_srgb,var(--rootsy-sombra-600)_90%,var(--rootsy-sombra-700))]",
+      "hover:border-[color-mix(in_srgb,var(--rootsy-sombra-300)_52%,transparent)]",
+    ),
+    open: cn(
+      "border-[color-mix(in_srgb,var(--rootsy-savia-400)_90%,transparent)]",
+      "bg-[color-mix(in_srgb,var(--rootsy-savia-600)_55%,var(--rootsy-sombra-800))]",
+      "shadow-[inset_0_1px_0_color-mix(in_srgb,var(--rootsy-savia-300)_28%,transparent),0_0_0_1px_color-mix(in_srgb,var(--rootsy-savia-500)_32%,transparent),0_8px_26px_color-mix(in_srgb,var(--rootsy-savia-600)_32%,transparent)]",
+    ),
+    paying: cn(
+      "border-[color-mix(in_srgb,var(--rootsy-savia-teal)_78%,transparent)]",
+      "bg-[color-mix(in_srgb,var(--rootsy-savia-teal)_42%,var(--rootsy-sombra-800))]",
+      "shadow-[inset_0_1px_0_color-mix(in_srgb,var(--rootsy-savia-teal)_24%,transparent),0_8px_24px_color-mix(in_srgb,var(--rootsy-savia-teal)_26%,transparent)]",
+    ),
+    reserved: cn(
+      "border-[color-mix(in_srgb,var(--rootsy-bruma-400)_55%,transparent)]",
+      "bg-[color-mix(in_srgb,var(--rootsy-sombra-600)_88%,var(--rootsy-bruma-900))]",
+      "shadow-[0_0_16px_color-mix(in_srgb,var(--rootsy-bruma-400)_10%,transparent)]",
+    ),
   }
 
   return cn(base, statusMap[status])

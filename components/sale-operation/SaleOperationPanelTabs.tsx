@@ -19,6 +19,8 @@ type Props<T extends string> = {
   onChange: (view: T) => void
   tabs: SaleOperationPanelTab<T>[]
   ariaLabel: string
+  /** Ticket operar (bruma) vs legacy slate/white. */
+  variant?: "default" | "operar"
 }
 
 export function SaleOperationPanelTabs<T extends string>({
@@ -26,6 +28,7 @@ export function SaleOperationPanelTabs<T extends string>({
   onChange,
   tabs,
   ariaLabel,
+  variant = "default",
 }: Props<T>) {
   const containerRef = useRef<HTMLDivElement>(null)
   const tabRefs = useRef<Partial<Record<T, HTMLButtonElement | null>>>({})
@@ -53,21 +56,29 @@ export function SaleOperationPanelTabs<T extends string>({
     return () => ro.disconnect()
   }, [updateIndicator, tabs])
 
+  const isOperar = variant === "operar"
+
   return (
     <div
       ref={containerRef}
       className={cn(
-        "relative flex w-full min-w-0 shrink-0 overflow-hidden border-b border-slate-200/90 bg-white",
+        "relative flex w-full min-w-0 shrink-0 overflow-hidden border-b",
         SALE_OPERATION_TAB_BAR_HEIGHT_CLASS,
+        isOperar
+          ? "border-[var(--layouts-operar-border-light)] bg-[var(--rootsy-bruma-100)]"
+          : "border-slate-200/90 bg-white",
       )}
       role="tablist"
       aria-label={ariaLabel}
     >
       <span
         className={cn(
-          "pointer-events-none absolute bottom-0 left-0 h-0.5 bg-slate-900",
+          "pointer-events-none absolute bottom-0 left-0 h-0.5",
           "transition-[transform,width,opacity] duration-300 ease-[cubic-bezier(0.34,1.56,0.64,1)] motion-reduce:transition-none",
           indicator.ready ? "opacity-100" : "opacity-0",
+          isOperar
+            ? "bg-[var(--rootsy-savia-600)]"
+            : "bg-slate-900",
         )}
         style={{
           width: indicator.width,
@@ -91,9 +102,19 @@ export function SaleOperationPanelTabs<T extends string>({
             className={cn(
               "relative z-10 flex h-full min-w-0 flex-1 items-center justify-center gap-1.5 px-4 text-sm font-semibold leading-none",
               "transition-colors duration-200",
-              "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-slate-300",
+              "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset",
               disabled && "cursor-not-allowed opacity-40",
-              active ? "text-slate-900" : "text-slate-500 hover:text-slate-700",
+              isOperar
+                ? cn(
+                    "focus-visible:ring-[color-mix(in_srgb,var(--rootsy-savia-400)_35%,transparent)]",
+                    active
+                      ? "text-[var(--rootsy-bruma-900)]"
+                      : "text-[var(--rootsy-bruma-500)] hover:text-[var(--rootsy-bruma-700)]",
+                  )
+                : cn(
+                    "focus-visible:ring-slate-300",
+                    active ? "text-slate-900" : "text-slate-500 hover:text-slate-700",
+                  ),
             )}
           >
             <Icon className="size-3.5 shrink-0" aria-hidden />

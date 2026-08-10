@@ -361,6 +361,13 @@ export const layoutsOperarSummaryPanelInnerGridClass = cn(
   "h-full min-h-0 w-full",
 )
 
+/** Cuerpo bajo tabs Mesa/Datos — flex, sin grid 1.2.x (sesión / formulario channel). */
+export const layoutsOperarSummaryPanelTabBodyClass = cn(
+  "row-start-2 flex min-h-0 flex-col overflow-hidden",
+  "bg-[var(--rootsy-bruma-100)] text-[var(--rootsy-bruma-900)]",
+  "rootsy-app-light layouts-operar-ticket-shell h-full min-h-0 w-full",
+)
+
 /** Panel ticket 1.2 — col derecha del grid principal. */
 export const layoutsOperarSummaryPanelClass = cn(
   layoutsOperarSummaryPanelSurfaceClass,

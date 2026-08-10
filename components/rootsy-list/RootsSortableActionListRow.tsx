@@ -85,7 +85,7 @@ export function RootsSortableActionListRow({
         />
       ) : null}
 
-      <div className="min-w-0 flex-1">
+      <div className="min-w-0 flex-1 basis-0 overflow-hidden">
         {isEditing ? (
           <Input
             value={editingValue}

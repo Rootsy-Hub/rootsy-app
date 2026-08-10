@@ -1,7 +1,18 @@
 "use client"
 
 import type { MesaSalon } from "@/app/[siteId]/[popId]/mesas/mesasTypes"
-import { SALE_OPERATION_TAB_BAR_HEIGHT_CLASS } from "@/components/sale-operation/SaleOperationPanelTabs"
+import {
+  mesasSalonCountPillOpenClass,
+  mesasSalonCountPillTotalActiveClass,
+  mesasSalonCountPillTotalIdleClass,
+  mesasSalonTabActiveClass,
+  mesasSalonTabIdleClass,
+  mesasSalonTabIndicatorClass,
+  mesasSalonTabsShellClass,
+} from "@/app/[siteId]/[popId]/mesas/mesasOperarStyles"
+import {
+  layoutsOperarCatalogToolbarControlFocusClass,
+} from "@/app/library/layouts/layoutsOperarStyles"
 import { cn } from "@/lib/utils"
 import { useCallback, useLayoutEffect, useRef, useState } from "react"
 
@@ -28,10 +39,10 @@ function CountPill({
       className={cn(
         "inline-flex min-w-[1.25rem] items-center justify-center rounded-full px-1 py-px text-[10px] font-semibold tabular-nums leading-none",
         variant === "open"
-          ? "bg-amber-400/20 text-amber-200 ring-1 ring-amber-400/25"
+          ? mesasSalonCountPillOpenClass
           : active
-            ? "bg-white/12 text-white/70 ring-1 ring-white/10"
-            : "bg-white/[0.06] text-white/45 ring-1 ring-white/[0.08]",
+            ? mesasSalonCountPillTotalActiveClass
+            : mesasSalonCountPillTotalIdleClass,
       )}
       aria-label={label}
       title={label}
@@ -75,24 +86,17 @@ export function MesasSalonTabs({
   }, [updateIndicator, sorted.length, activeSalonId])
 
   return (
-    <div
-      className={cn(
-        "relative shrink-0 overflow-hidden border-b border-white/10",
-        SALE_OPERATION_TAB_BAR_HEIGHT_CLASS,
-      )}
-    >
+    <div className={cn("relative shrink-0 overflow-hidden", mesasSalonTabsShellClass)}>
       <div
         ref={containerRef}
-        className={cn(
-          "relative flex h-full w-full min-w-0",
-          SALE_OPERATION_TAB_BAR_HEIGHT_CLASS,
-        )}
+        className="relative flex h-full w-full min-w-0"
         role="tablist"
         aria-label="Salones"
       >
         <span
           className={cn(
-            "pointer-events-none absolute bottom-0 left-0 h-0.5 bg-white",
+            "pointer-events-none absolute bottom-0 left-0 h-0.5",
+            mesasSalonTabIndicatorClass,
             "transition-[transform,width,opacity] duration-300 ease-[cubic-bezier(0.34,1.56,0.64,1)] motion-reduce:transition-none",
             indicator.ready ? "opacity-100" : "opacity-0",
           )}
@@ -123,27 +127,28 @@ export function MesasSalonTabs({
               className={cn(
                 "relative z-10 flex h-full min-w-0 flex-1 items-center justify-center px-4 text-sm font-semibold leading-none",
                 "transition-colors duration-200",
-                "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-white/20",
-                active ? "text-white" : "text-white/45 hover:text-white/75",
+                layoutsOperarCatalogToolbarControlFocusClass,
+                "focus-visible:ring-inset",
+                active ? mesasSalonTabActiveClass : mesasSalonTabIdleClass,
               )}
             >
               <span className="flex min-w-0 max-w-full items-center justify-center gap-1.5">
                 <span className="truncate">{salon.name}</span>
                 <span className="flex shrink-0 items-center gap-1" aria-hidden>
-                {counts.open > 0 ? (
+                  {counts.open > 0 ? (
+                    <CountPill
+                      value={counts.open}
+                      variant="open"
+                      active={active}
+                      label={openLabel}
+                    />
+                  ) : null}
                   <CountPill
-                    value={counts.open}
-                    variant="open"
+                    value={counts.total}
+                    variant="total"
                     active={active}
-                    label={openLabel}
+                    label={totalLabel}
                   />
-                ) : null}
-                <CountPill
-                  value={counts.total}
-                  variant="total"
-                  active={active}
-                  label={totalLabel}
-                />
                 </span>
               </span>
             </button>

@@ -30,7 +30,7 @@ export const rootsSortableListBodyClass = "p-2"
 
 /** Fila — overlay blanco · borde bruma · hover bruma-300. */
 export const rootsSortableListRowClass = cn(
-  "flex h-11 items-center gap-2 rounded-[12px] border border-[var(--rootsy-bruma-200)] bg-[var(--rootsy-white)] px-2 shadow-none transition-[border-color,background-color]",
+  "flex h-11 w-full min-w-0 items-center gap-2 rounded-[12px] border border-[var(--rootsy-bruma-200)] bg-[var(--rootsy-white)] px-2 shadow-none transition-[border-color,background-color]",
   "hover:border-[var(--rootsy-bruma-300)]",
 )
 

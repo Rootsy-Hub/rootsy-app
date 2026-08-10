@@ -5,14 +5,18 @@ import type {
   MesaFloorDecor,
   MesaFloorDecorKind,
 } from "@/app/[siteId]/[popId]/mesas/mesasTypes"
+import {
+  MESAS_FLOOR_PLAN_SURFACE_BG,
+  mesasFloorGridPatternStyle,
+} from "@/app/[siteId]/[popId]/mesas/mesasOperarStyles"
 import { useDraggable } from "@dnd-kit/core"
 import { CSS } from "@dnd-kit/utilities"
 import { mesaDecorHighlightClass } from "@/app/[siteId]/[popId]/mesas/mesasTableStyles"
 import { cn } from "@/lib/utils"
 import { DoorOpen, Leaf, TreePine, Wine } from "lucide-react"
 
-/** Un poco más oscuro que el panel lateral genérico (#20262e). */
-export const MESAS_FLOOR_PLAN_BG = "#181c22"
+/** Superficie interior del plano — sombra-700. */
+export const MESAS_FLOOR_PLAN_BG = MESAS_FLOOR_PLAN_SURFACE_BG
 
 const decorAriaLabel: Record<MesaFloorDecorKind, string> = {
   wall_h: "Pared divisoria",
@@ -36,16 +40,17 @@ function WallBlock({
     <div
       className={cn(
         "relative size-full rounded-sm",
-        "border border-zinc-600/50 bg-linear-to-br from-zinc-700/90 via-zinc-800/95 to-zinc-900/95",
-        "shadow-[inset_0_1px_0_rgba(255,255,255,0.08),0_2px_8px_rgba(0,0,0,0.35)]",
+        "border border-[color-mix(in_srgb,var(--rootsy-sombra-border)_55%,transparent)]",
+        "bg-linear-to-br from-[color-mix(in_srgb,var(--rootsy-sombra-500)_88%,transparent)] via-[color-mix(in_srgb,var(--rootsy-sombra-600)_95%,transparent)] to-[color-mix(in_srgb,var(--rootsy-sombra-700)_95%,transparent)]",
+        "shadow-[inset_0_1px_0_color-mix(in_srgb,var(--rootsy-bruma-50)_8%,transparent),0_2px_8px_color-mix(in_srgb,var(--rootsy-sombra-950)_35%,transparent)]",
         selected && mesaDecorHighlightClass(true),
       )}
       aria-hidden
     >
       {isVertical ? (
-        <div className="absolute inset-y-2 left-1/2 w-px -translate-x-1/2 bg-white/10" />
+        <div className="absolute inset-y-2 left-1/2 w-px -translate-x-1/2 bg-[color-mix(in_srgb,var(--rootsy-sombra-300)_12%,transparent)]" />
       ) : (
-        <div className="absolute inset-x-2 top-1/2 h-px -translate-y-1/2 bg-white/10" />
+        <div className="absolute inset-x-2 top-1/2 h-px -translate-y-1/2 bg-[color-mix(in_srgb,var(--rootsy-sombra-300)_12%,transparent)]" />
       )}
     </div>
   )
@@ -65,16 +70,16 @@ function PlantBlock({
         className={cn(
           "flex size-full items-center justify-center border",
           large
-            ? "rounded-2xl border-emerald-600/35 bg-linear-to-b from-emerald-900/50 to-emerald-950/70"
-            : "rounded-full border-emerald-500/30 bg-linear-to-b from-emerald-800/55 to-emerald-950/80",
-          "shadow-[inset_0_1px_0_rgba(167,243,208,0.12),0_4px_12px_rgba(0,0,0,0.25)]",
+            ? "rounded-2xl border-[color-mix(in_srgb,var(--rootsy-savia-600)_35%,transparent)] bg-linear-to-b from-[color-mix(in_srgb,var(--rootsy-savia-900)_50%,transparent)] to-[color-mix(in_srgb,var(--rootsy-savia-950)_70%,transparent)]"
+            : "rounded-full border-[color-mix(in_srgb,var(--rootsy-savia-500)_30%,transparent)] bg-linear-to-b from-[color-mix(in_srgb,var(--rootsy-savia-800)_55%,transparent)] to-[color-mix(in_srgb,var(--rootsy-savia-950)_80%,transparent)]",
+          "shadow-[inset_0_1px_0_color-mix(in_srgb,var(--rootsy-savia-200)_12%,transparent),0_4px_12px_color-mix(in_srgb,var(--rootsy-sombra-950)_25%,transparent)]",
           selected && mesaDecorHighlightClass(true),
         )}
       >
         {large ? (
-          <TreePine className="size-[55%] text-emerald-400/85" strokeWidth={1.5} />
+          <TreePine className="size-[55%] text-[color-mix(in_srgb,var(--rootsy-savia-400)_85%,transparent)]" strokeWidth={1.5} />
         ) : (
-          <Leaf className="size-[50%] text-emerald-300/90" strokeWidth={1.75} />
+          <Leaf className="size-[50%] text-[color-mix(in_srgb,var(--rootsy-savia-300)_90%,transparent)]" strokeWidth={1.75} />
         )}
       </div>
     </div>
@@ -85,9 +90,9 @@ function PillarBlock({ selected = false }: { selected?: boolean }) {
   return (
     <div
       className={cn(
-        "size-full rounded-md border border-zinc-500/40",
-        "bg-linear-to-br from-zinc-600/80 to-zinc-800/90",
-        "shadow-[inset_0_1px_0_rgba(255,255,255,0.1),0_3px_10px_rgba(0,0,0,0.3)]",
+        "size-full rounded-md border border-[color-mix(in_srgb,var(--rootsy-sombra-border)_40%,transparent)]",
+        "bg-linear-to-br from-[color-mix(in_srgb,var(--rootsy-sombra-500)_80%,transparent)] to-[color-mix(in_srgb,var(--rootsy-sombra-700)_90%,transparent)]",
+        "shadow-[inset_0_1px_0_color-mix(in_srgb,var(--rootsy-bruma-50)_10%,transparent),0_3px_10px_color-mix(in_srgb,var(--rootsy-sombra-950)_30%,transparent)]",
         selected && mesaDecorHighlightClass(true),
       )}
       aria-hidden
@@ -107,12 +112,12 @@ function BarBlock({
   return (
     <div
       className={cn(
-        "size-full rounded-xl border border-amber-900/45",
+        "size-full rounded-xl border border-[color-mix(in_srgb,var(--rootsy-savia-700)_45%,transparent)]",
         selected && mesaDecorHighlightClass(true),
       )}
       aria-hidden
     >
-      <div className="flex size-full flex-col items-center justify-center overflow-hidden rounded-[inherit] bg-linear-to-b from-amber-950/70 via-amber-900/55 to-amber-950/80 px-2">
+      <div className="flex size-full flex-col items-center justify-center overflow-hidden rounded-[inherit] bg-linear-to-b from-[color-mix(in_srgb,var(--rootsy-savia-950)_70%,transparent)] via-[color-mix(in_srgb,var(--rootsy-savia-900)_55%,transparent)] to-[color-mix(in_srgb,var(--rootsy-savia-950)_80%,transparent)] px-2">
         <div
           className="flex flex-col items-center"
           style={
@@ -121,8 +126,8 @@ function BarBlock({
               : undefined
           }
         >
-          <Wine className="mb-1 size-5 text-amber-200/70" strokeWidth={1.5} />
-          <span className="text-[10px] font-bold uppercase tracking-wider text-amber-100/75">
+          <Wine className="mb-1 size-5 text-[color-mix(in_srgb,var(--rootsy-savia-200)_70%,transparent)]" strokeWidth={1.5} />
+          <span className="text-[10px] font-bold uppercase tracking-wider text-[color-mix(in_srgb,var(--rootsy-savia-100)_75%,transparent)]">
             {decor.label ?? "Barra"}
           </span>
         </div>
@@ -144,13 +149,13 @@ function EntranceBlock({
     <div
       className={cn(
         "flex size-full items-center justify-center rounded-lg",
-        "border border-dashed border-sky-400/35 bg-sky-950/25",
+        "border border-dashed border-[color-mix(in_srgb,var(--rootsy-savia-teal)_35%,transparent)] bg-[color-mix(in_srgb,var(--rootsy-savia-950)_25%,transparent)]",
         selected && mesaDecorHighlightClass(true),
       )}
       aria-hidden
     >
       <div
-        className="flex flex-col items-center gap-1 text-sky-300/65"
+        className="flex flex-col items-center gap-1 text-[color-mix(in_srgb,var(--rootsy-savia-teal)_65%,transparent)]"
         style={
           uprightRotation
             ? { transform: `rotate(${-uprightRotation}deg)` }
@@ -240,24 +245,21 @@ export function MesaFloorDecorPreview({
 
   return (
     <div className="flex flex-col gap-2">
-      <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+      <p className="font-canopy text-xs font-medium uppercase tracking-wider text-[var(--rootsy-bruma-500)]">
         Vista previa
       </p>
       <div
-        className="relative flex items-center justify-center overflow-hidden rounded-xl border border-border/70"
+        className="relative flex items-center justify-center overflow-hidden rounded-xl border border-[var(--rootsy-bruma-200)]"
         style={{
-          backgroundColor: MESAS_FLOOR_PLAN_BG,
+          backgroundColor: MESAS_FLOOR_PLAN_SURFACE_BG,
           minHeight: PREVIEW_CANVAS_H,
         }}
         aria-hidden
       >
         <div
           className="pointer-events-none absolute inset-0 opacity-20"
-          style={{
-            backgroundImage:
-              "linear-gradient(rgba(255,255,255,0.04) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.04) 1px, transparent 1px)",
-            backgroundSize: "24px 24px",
-          }}
+          style={mesasFloorGridPatternStyle}
+          aria-hidden
         />
         <div
           style={{
@@ -270,9 +272,9 @@ export function MesaFloorDecorPreview({
           <DecorContent decor={decor} />
         </div>
       </div>
-      <p className="text-center text-xs leading-relaxed text-muted-foreground">
+      <p className="text-center font-canopy text-xs leading-relaxed text-[var(--rootsy-bruma-500)]">
         {kindLabel}
-        <span className="mx-1.5 text-border">·</span>
+        <span className="mx-1.5 text-[var(--rootsy-bruma-300)]">·</span>
         {safeW}×{safeH} px
       </p>
     </div>
@@ -349,5 +351,5 @@ export function MesaFloorDecorNode({
 }
 
 export const floorPlanSurfaceStyle: CSSProperties = {
-  backgroundColor: MESAS_FLOOR_PLAN_BG,
+  backgroundColor: MESAS_FLOOR_PLAN_SURFACE_BG,
 }

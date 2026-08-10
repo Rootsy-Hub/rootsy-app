@@ -6,6 +6,7 @@ export { RootsFormPrefixedInput } from "@/components/rootsy-form/RootsFormPrefix
 export { RootsFormPhoneField } from "@/components/rootsy-form/RootsFormPhoneField"
 export { RootsFormMoneyField } from "@/components/rootsy-form/RootsFormMoneyField"
 export { RootsFormQuantityField } from "@/components/rootsy-form/RootsFormQuantityField"
+export { RootsFormIntegerField } from "@/components/rootsy-form/RootsFormIntegerField"
 export {
   unitOfMeasureAffix,
   type UnitOfMeasureAffix,

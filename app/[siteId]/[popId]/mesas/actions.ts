@@ -637,6 +637,132 @@ export async function deleteMesasSalon(
   return { success: true }
 }
 
+export type MesasSortOrderUpdate = {
+  id: string
+  sortOrder: number
+}
+
+async function applyMesasSortOrderUpdates(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  table: "dining_salons" | "dining_tables" | "dining_floor_decors",
+  popId: string,
+  updates: MesasSortOrderUpdate[],
+): Promise<{ success: true } | { success: false; error: string }> {
+  if (updates.length === 0) return { success: true }
+
+  for (const update of updates) {
+    const { error } = await supabase
+      .from(table)
+      .update({ sort_order: Math.max(0, Math.trunc(update.sortOrder)) })
+      .eq("id", update.id)
+      .eq("pop_id", popId)
+      .is("deleted_at", null)
+
+    if (error) {
+      return { success: false, error: error.message }
+    }
+  }
+
+  return { success: true }
+}
+
+export async function reorderMesasSalons(
+  popId: string,
+  routeSiteId: string,
+  updates: MesasSortOrderUpdate[],
+): Promise<{ success: true } | { success: false; error: string; redirect?: string }> {
+  const gate = await requireMesasAccess(popId, routeSiteId, "update")
+  if (!gate.ok) {
+    return { success: false, error: gate.error, redirect: gate.redirect }
+  }
+
+  return applyMesasSortOrderUpdates(gate.supabase, "dining_salons", popId, updates)
+}
+
+export async function reorderMesasTables(
+  popId: string,
+  routeSiteId: string,
+  salonId: string,
+  updates: MesasSortOrderUpdate[],
+): Promise<{ success: true } | { success: false; error: string; redirect?: string }> {
+  const gate = await requireMesasAccess(popId, routeSiteId, "update")
+  if (!gate.ok) {
+    return { success: false, error: gate.error, redirect: gate.redirect }
+  }
+
+  if (!salonId) {
+    return { success: false, error: "Elegí un salón para reordenar mesas." }
+  }
+
+  const ids = updates.map((u) => u.id)
+  if (ids.length > 0) {
+    const { data: validRows, error: validErr } = await gate.supabase
+      .from("dining_tables")
+      .select("id")
+      .eq("pop_id", popId)
+      .eq("salon_id", salonId)
+      .in("id", ids)
+      .is("deleted_at", null)
+
+    if (validErr) {
+      return { success: false, error: validErr.message }
+    }
+
+    const validIds = new Set((validRows ?? []).map((r) => String(r.id)))
+    if (ids.some((id) => !validIds.has(id))) {
+      return { success: false, error: "Hay mesas que no pertenecen a este salón." }
+    }
+  }
+
+  return applyMesasSortOrderUpdates(gate.supabase, "dining_tables", popId, updates)
+}
+
+export async function reorderMesasDecors(
+  popId: string,
+  routeSiteId: string,
+  salonId: string,
+  updates: MesasSortOrderUpdate[],
+): Promise<{ success: true } | { success: false; error: string; redirect?: string }> {
+  const gate = await requireMesasAccess(popId, routeSiteId, "update")
+  if (!gate.ok) {
+    return { success: false, error: gate.error, redirect: gate.redirect }
+  }
+
+  if (!salonId) {
+    return { success: false, error: "Elegí un salón para reordenar elementos." }
+  }
+
+  const ids = updates.map((u) => u.id)
+  if (ids.length > 0) {
+    const { data: validRows, error: validErr } = await gate.supabase
+      .from("dining_floor_decors")
+      .select("id")
+      .eq("pop_id", popId)
+      .eq("salon_id", salonId)
+      .in("id", ids)
+      .is("deleted_at", null)
+
+    if (validErr) {
+      return { success: false, error: validErr.message }
+    }
+
+    const validIds = new Set((validRows ?? []).map((r) => String(r.id)))
+    if (ids.some((id) => !validIds.has(id))) {
+      return {
+        success: false,
+        error: "Hay elementos que no pertenecen a este salón.",
+      }
+    }
+  }
+
+  return applyMesasSortOrderUpdates(
+    gate.supabase,
+    "dining_floor_decors",
+    popId,
+    updates,
+  )
+}
+
 export async function upsertMesasTable(
   popId: string,
   routeSiteId: string,

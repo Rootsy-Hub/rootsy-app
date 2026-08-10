@@ -16,6 +16,7 @@ import {
   layoutsOperarCatalogColumnClass,
   layoutsOperarSummaryPanelClass,
   layoutsOperarSummaryPanelInnerGridClass,
+  layoutsOperarSummaryPanelTabBodyClass,
 } from "@/app/library/layouts/layoutsOperarStyles"
 import { SaleOperationToolbox } from "@/components/sale-operation/SaleOperationToolbox"
 import { useCartListScrollHighlight } from "@/hooks/useCartListScrollHighlight"
@@ -162,8 +163,8 @@ export function MostradorWorkspace({
               cartDisabled={!selectedOrder}
             />
 
-            <div className={layoutsOperarSummaryPanelInnerGridClass}>
-              {rightView === "detail" ? (
+            {rightView === "detail" ? (
+              <div className={layoutsOperarSummaryPanelTabBodyClass}>
                 <CounterOrderPanel
                   order={selectedOrder}
                   orderError={orderError}
@@ -185,14 +186,18 @@ export function MostradorWorkspace({
                   onCloseOrder={async () => checkout.cerrarPedido()}
                   clientLabel={checkout.sessionClientLabel}
                 />
-              ) : (
-                <MostradorOrderPanel
-                  checkout={checkout}
-                  orderLabel={orderLabel}
-                  cartScrollHighlight={cartScrollHighlight}
-                />
-              )}
-            </div>
+              </div>
+            ) : (
+              <div className={layoutsOperarSummaryPanelTabBodyClass}>
+                <div className={cn(layoutsOperarSummaryPanelInnerGridClass, "min-h-0 flex-1")}>
+                  <MostradorOrderPanel
+                    checkout={checkout}
+                    orderLabel={orderLabel}
+                    cartScrollHighlight={cartScrollHighlight}
+                  />
+                </div>
+              </div>
+            )}
           </aside>
         }
       />

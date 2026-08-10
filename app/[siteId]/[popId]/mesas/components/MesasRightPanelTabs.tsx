@@ -20,6 +20,7 @@ export function MesasRightPanelTabs({
       value={value}
       onChange={onChange}
       ariaLabel="Mesa y pedido"
+      variant="operar"
       tabs={[
         { id: "session", label: "Mesa", icon: UtensilsCrossed },
         {
