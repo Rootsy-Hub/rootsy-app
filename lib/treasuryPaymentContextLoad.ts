@@ -1,0 +1,92 @@
+import type { SupabaseClient } from "@supabase/supabase-js"
+import {
+  isMotherTreasuryAccount,
+  isSettlementReceivableChartCode,
+} from "@/lib/treasuryAccountKinds"
+import type { TreasuryPaymentContext } from "@/lib/treasuryPaymentOptions"
+
+/**
+ * Loads treasury payment options for a POP.
+ * Caller must already have validated pop access (validatePopAccess).
+ */
+export async function fetchTreasuryPaymentContext(
+  supabase: SupabaseClient,
+  popId: string,
+): Promise<
+  | { success: true; context: TreasuryPaymentContext }
+  | { success: false; error: string }
+> {
+  const { data, error } = await supabase
+    .from("treasury_accounts")
+    .select(
+      `
+        id,
+        name,
+        kind,
+        is_active,
+        sort_order,
+        accounting_chart_of_accounts ( code )
+      `,
+    )
+    .eq("pop_id", popId)
+    .eq("is_active", true)
+    .order("sort_order", { ascending: true })
+    .order("name", { ascending: true })
+
+  if (error) {
+    return {
+      success: false,
+      error: error.message || "No se pudieron cargar cuentas.",
+    }
+  }
+
+  let defaultCashTreasuryAccountId: string | null = null
+  const cashTreasuryAccounts: TreasuryPaymentContext["cashTreasuryAccounts"] =
+    []
+  const bankTreasuryAccounts: TreasuryPaymentContext["bankTreasuryAccounts"] =
+    []
+  const posTreasuryAccounts: TreasuryPaymentContext["posTreasuryAccounts"] = []
+  const payTreasuryAccounts: TreasuryPaymentContext["payTreasuryAccounts"] = []
+
+  for (const row of data || []) {
+    const id = String(row.id)
+    const name = String(row.name ?? "")
+    const kind = String(row.kind ?? "")
+    const chart = row.accounting_chart_of_accounts as unknown as {
+      code?: string
+    } | null
+    const code = String(chart?.code ?? "")
+
+    if (kind === "card_payable") {
+      payTreasuryAccounts.push({ id, name })
+      continue
+    }
+
+    if (isSettlementReceivableChartCode(code)) {
+      posTreasuryAccounts.push({ id, name })
+      continue
+    }
+
+    if (!isMotherTreasuryAccount(code)) continue
+
+    if (kind === "cash") {
+      cashTreasuryAccounts.push({ id, name })
+      if (!defaultCashTreasuryAccountId) {
+        defaultCashTreasuryAccountId = id
+      }
+    } else if (kind === "bank" || kind === "wallet") {
+      bankTreasuryAccounts.push({ id, name })
+    }
+  }
+
+  return {
+    success: true,
+    context: {
+      defaultCashTreasuryAccountId,
+      cashTreasuryAccounts,
+      bankTreasuryAccounts,
+      posTreasuryAccounts,
+      payTreasuryAccounts,
+    },
+  }
+}
