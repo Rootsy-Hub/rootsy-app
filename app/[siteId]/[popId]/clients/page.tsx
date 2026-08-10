@@ -1,6 +1,6 @@
 "use client"
 
-import "@/app/[siteId]/[popId]/library/color/rootsyNaturePalette.css"
+import "@/app/library/color/rootsyNaturePalette.css"
 import {
   createPopClient,
   deletePopClient,

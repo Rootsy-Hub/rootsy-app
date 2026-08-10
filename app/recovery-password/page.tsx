@@ -14,6 +14,10 @@ import {
   validateEmailField,
   validateSignupPassword,
 } from "@/lib/authValidation"
+import {
+  getAuthCallbackUrl,
+  setAuthNextPath,
+} from "@/lib/authCallbackRedirect"
 import { cn } from "@/lib/utils"
 import { createClient } from "@/utils/supabase/client"
 
@@ -133,11 +137,11 @@ function RecoverPasswordPage() {
     try {
       const cleanEmail = email.trim().toLowerCase()
       const origin = typeof window !== "undefined" ? window.location.origin : ""
-      const next = encodeURIComponent(RECOVERY_NEXT)
+      setAuthNextPath(RECOVERY_NEXT)
       const { error: resetError } = await supabase.auth.resetPasswordForEmail(
         cleanEmail,
         {
-          redirectTo: `${origin}/auth/callback?next=${next}`,
+          redirectTo: getAuthCallbackUrl(origin),
         },
       )
       if (resetError) throw resetError

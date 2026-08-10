@@ -23,7 +23,7 @@ import {
   layoutsOperarCatalogColumnClass,
   layoutsOperarSummaryPanelClass,
   layoutsOperarSummaryPanelInnerGridClass,
-} from "@/app/[siteId]/[popId]/library/layouts/layoutsOperarStyles"
+} from "@/app/library/layouts/layoutsOperarStyles"
 import { OpenCashSessionBanner } from "@/components/sale-operation/OpenCashSessionBanner"
 import { SaleOperationToolbox } from "@/components/sale-operation/SaleOperationToolbox"
 import { useCartListScrollHighlight } from "@/hooks/useCartListScrollHighlight"

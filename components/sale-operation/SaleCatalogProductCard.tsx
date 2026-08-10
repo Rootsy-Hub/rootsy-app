@@ -12,9 +12,9 @@ import {
   layoutsOperarProductCardProposalPriceClass,
   layoutsOperarProductCardProposalTitleClass,
   type LayoutsOperarProductCardProposalId,
-} from "@/app/[siteId]/[popId]/library/layouts/layoutsOperarHardcodedSpec"
-import { LayoutsOperarProductCardMediaEmptyState } from "@/app/[siteId]/[popId]/library/layouts/LayoutsOperarProductCardProposalPrimitives"
-import { LAYOUTS_OPERAR_DEFAULT_PRODUCT_CARD_PROPOSAL } from "@/app/[siteId]/[popId]/library/layouts/rootsyLayoutsOperarSystem"
+} from "@/app/library/layouts/layoutsOperarHardcodedSpec"
+import { LayoutsOperarProductCardMediaEmptyState } from "@/app/library/layouts/LayoutsOperarProductCardProposalPrimitives"
+import { LAYOUTS_OPERAR_DEFAULT_PRODUCT_CARD_PROPOSAL } from "@/app/library/layouts/rootsyLayoutsOperarSystem"
 import type { SaleCatalogProduct } from "@/components/sale-operation/saleCatalogProduct"
 import {
   SaleCatalogProductOfferOverlay,

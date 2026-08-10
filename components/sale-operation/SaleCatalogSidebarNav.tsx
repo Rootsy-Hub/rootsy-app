@@ -13,7 +13,7 @@ import {
   layoutsOperarCatalogRailListItemClass,
   layoutsOperarCatalogRailNavClass,
   layoutsOperarCatalogRailSectionLabelClass,
-} from "@/app/[siteId]/[popId]/library/layouts/layoutsOperarStyles"
+} from "@/app/library/layouts/layoutsOperarStyles"
 import { cn } from "@/lib/utils"
 import { Percent, Tag } from "lucide-react"
 

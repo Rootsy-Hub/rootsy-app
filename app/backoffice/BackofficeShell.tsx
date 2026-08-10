@@ -1,14 +1,14 @@
 "use client"
 
 import { BackofficeSidebar } from "@/app/backoffice/BackofficeSidebar"
-import "@/app/[siteId]/[popId]/library/color/rootsyNaturePalette.css"
-import "@/app/[siteId]/[popId]/library/libraryColorTheme.css"
+import "@/app/library/color/rootsyNaturePalette.css"
+import "@/app/library/libraryColorTheme.css"
 import {
   libraryContentAreaClass,
   libraryScrollLightClass,
   libraryShellMainClass,
   libraryThemeClass,
-} from "@/app/[siteId]/[popId]/library/libraryColorTheme"
+} from "@/app/library/libraryColorTheme"
 import { DataWorkspaceHeaderUserMenu } from "@/components/layouts/DataWorkspaceHeaderUserMenu"
 import {
   dataWorkspaceHeaderChromeButtonClass,

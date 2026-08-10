@@ -10,7 +10,7 @@ import {
   libraryScrollDarkClass,
   librarySidebarClass,
   librarySidebarEyebrowClass,
-} from "@/app/[siteId]/[popId]/library/libraryColorTheme"
+} from "@/app/library/libraryColorTheme"
 import { cn } from "@/lib/utils"
 import Link from "next/link"
 import { usePathname } from "next/navigation"

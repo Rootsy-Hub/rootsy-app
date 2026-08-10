@@ -4,7 +4,7 @@ import {
   resolveFormControlState,
   type RootsFormInteractionFlags,
 } from "@/components/rootsy-form/rootsFormSpecRuntime"
-import type { FormControlStateId } from "@/app/[siteId]/[popId]/library/ui-components/formsUiHardcodedSpec"
+import type { FormControlStateId } from "@/app/library/ui-components/formsUiHardcodedSpec"
 import { useCallback, useState } from "react"
 
 export function useRootsFormControlInteraction(

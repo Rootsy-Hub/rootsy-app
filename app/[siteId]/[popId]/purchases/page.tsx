@@ -68,12 +68,12 @@ import { useCartListScrollHighlight } from "@/hooks/useCartListScrollHighlight"
 import { cn } from "@/lib/utils"
 import { purchaseCartLineId } from "@/lib/purchaseCartLine"
 import { saleQuantityFromCostPurchase } from "@/lib/articleCosts"
-import { getLayoutsOperarMainGridClass } from "@/app/[siteId]/[popId]/library/layouts/layoutsOperarHardcodedSpec"
+import { getLayoutsOperarMainGridClass } from "@/app/library/layouts/layoutsOperarHardcodedSpec"
 import {
   LAYOUTS_OPERAR_CATALOG_SIDEBAR_WIDTH_PX,
   layoutsOperarCatalogSidebarAsideWidthClass,
   layoutsOperarCatalogSidebarInnerClass,
-} from "@/app/[siteId]/[popId]/library/layouts/layoutsOperarStyles"
+} from "@/app/library/layouts/layoutsOperarStyles"
 import {
   AlertDialog,
   AlertDialogAction,

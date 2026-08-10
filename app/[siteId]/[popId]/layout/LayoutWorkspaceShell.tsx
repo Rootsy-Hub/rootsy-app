@@ -4,7 +4,7 @@ import {
   LAYOUT_VIEW_ITEMS,
   type LayoutViewId,
 } from "@/app/[siteId]/[popId]/layout/layoutWorkspaceNav"
-import "@/app/[siteId]/[popId]/library/color/rootsyNaturePalette.css"
+import "@/app/library/color/rootsyNaturePalette.css"
 import { DataWorkspaceLayout } from "@/components/layouts/DataWorkspaceLayout"
 import { DataWorkspaceSectionMenu } from "@/components/layouts/DataWorkspaceSectionMenu"
 import { usePopWorkspace } from "@/context/PopWorkspaceContext"

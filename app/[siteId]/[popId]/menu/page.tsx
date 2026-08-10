@@ -31,7 +31,7 @@ import {
   menuSearchShellClass,
   menuSearchShortcutClass,
 } from "@/app/[siteId]/[popId]/menu/menuSearchFieldStyles"
-import "@/app/[siteId]/[popId]/library/color/rootsyNaturePalette.css"
+import "@/app/library/color/rootsyNaturePalette.css"
 import "@/app/[siteId]/[popId]/menu/menuNaturePalette.css"
 import {
   buildMenuSectionsFromEnabledModules,

@@ -11,14 +11,14 @@ import {
   layoutsOperarSummaryCartListSurfaceClass,
   layoutsOperarSummaryCartMetaClass,
   layoutsOperarSummaryTotalsPlacementClass,
-} from "@/app/[siteId]/[popId]/library/layouts/layoutsOperarStyles"
+} from "@/app/library/layouts/layoutsOperarStyles"
 import { DataWorkspaceDetailEmptyState } from "@/components/data-workspace/DataWorkspaceDetailEmptyState"
 import {
   layoutsOperarTicketProposalActionsClass,
   layoutsOperarTicketProposalCartListClass,
   layoutsOperarTicketProposalHeaderClass,
-} from "@/app/[siteId]/[popId]/library/layouts/layoutsOperarHardcodedSpec"
-import { LAYOUTS_OPERAR_DEFAULT_TICKET_PROPOSAL } from "@/app/[siteId]/[popId]/library/layouts/rootsyLayoutsOperarSystem"
+} from "@/app/library/layouts/layoutsOperarHardcodedSpec"
+import { LAYOUTS_OPERAR_DEFAULT_TICKET_PROPOSAL } from "@/app/library/layouts/rootsyLayoutsOperarSystem"
 import {
   groupMostradorCartDisplayRows,
   type MostradorCartDisplayRow,

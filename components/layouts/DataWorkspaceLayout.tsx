@@ -1,7 +1,7 @@
 "use client"
 
 import { menuNatureShellClass } from "@/app/[siteId]/[popId]/menu/menuNatureStyles"
-import "@/app/[siteId]/[popId]/library/color/rootsyNaturePalette.css"
+import "@/app/library/color/rootsyNaturePalette.css"
 import "@/app/[siteId]/[popId]/menu/menuNaturePalette.css"
 import { PopWorkspaceBackdrop } from "@/components/layouts/PopWorkspaceBackdrop"
 import { DataWorkspaceHeaderTitle } from "@/components/layouts/DataWorkspaceHeaderTitle"
@@ -20,7 +20,7 @@ import {
 import { ModuleWorkspaceHeader } from "@/components/layouts-module/ModuleWorkspaceHeader"
 import { layoutsModuleContentShellClass } from "@/components/layouts-module/rootsLayoutsModuleProductStyles"
 import { usePopWorkspaceOptional } from "@/context/PopWorkspaceContext"
-import { LAYOUTS_OPERAR_CATALOG_SIDEBAR_WIDTH_PX } from "@/app/[siteId]/[popId]/library/layouts/layoutsOperarStyles"
+import { LAYOUTS_OPERAR_CATALOG_SIDEBAR_WIDTH_PX } from "@/app/library/layouts/layoutsOperarStyles"
 import { cn } from "@/lib/utils"
 import { popMenuHref } from "@/lib/popRoutes"
 import {
@@ -81,6 +81,8 @@ export type DataWorkspaceLayoutProps = {
   /** Sesión actual (opcional: si no se pasa, se oculta el bloque usuario a la derecha). */
   userName?: string
   userAvatarSrc?: string | null
+  /** Destino del botón volver. Por defecto menú del POP. */
+  backHref?: string
 }
 
 export function DataWorkspaceLayout({
@@ -108,6 +110,7 @@ export function DataWorkspaceLayout({
   usePopBackdrop = true,
   userName,
   userAvatarSrc,
+  backHref: backHrefProp,
 }: DataWorkspaceLayoutProps) {
   const popWorkspace = usePopWorkspaceOptional()
   const backgroundImageUrl =
@@ -196,7 +199,7 @@ export function DataWorkspaceLayout({
     [popId],
   )
 
-  const backHref = popMenuHref(siteId, popId)
+  const backHref = backHrefProp ?? popMenuHref(siteId, popId)
 
   const resolvedUserRoleLabel =
     popWorkspace?.bootstrap?.roleLabel?.trim() || userRoleLabel?.trim() || ""

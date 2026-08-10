@@ -10,8 +10,8 @@ import {
   type DropdownDensityId,
   type DropdownItemStateId,
   type DropdownThemeId,
-} from "@/app/[siteId]/[popId]/library/ui-components/dropdownUiHardcodedSpec"
-import { ROOTSY_DROPDOWN_ANATOMY } from "@/app/[siteId]/[popId]/library/dropdown/rootsyDropdownSystem"
+} from "@/app/library/ui-components/dropdownUiHardcodedSpec"
+import { ROOTSY_DROPDOWN_ANATOMY } from "@/app/library/dropdown/rootsyDropdownSystem"
 import { getDropdownCheckStyle } from "@/components/rootsy-dropdown/rootsDropdownSpecRuntime"
 import { rootsDropdownPanelRadiusClass } from "@/components/rootsy-dropdown/rootsDropdownStyles"
 import { cn } from "@/lib/utils"

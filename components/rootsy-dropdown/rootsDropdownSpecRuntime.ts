@@ -12,8 +12,8 @@ import {
   type DropdownDensityId,
   type DropdownItemStateId,
   type DropdownThemeId,
-} from "@/app/[siteId]/[popId]/library/ui-components/dropdownUiHardcodedSpec"
-import { ROOTSY_DROPDOWN_ANATOMY } from "@/app/[siteId]/[popId]/library/dropdown/rootsyDropdownSystem"
+} from "@/app/library/ui-components/dropdownUiHardcodedSpec"
+import { ROOTSY_DROPDOWN_ANATOMY } from "@/app/library/dropdown/rootsyDropdownSystem"
 import type { CSSProperties } from "react"
 
 export type {
@@ -21,12 +21,12 @@ export type {
   DropdownItemStateId,
   DropdownThemeId,
   DropdownTriggerId,
-} from "@/app/[siteId]/[popId]/library/ui-components/dropdownUiHardcodedSpec"
+} from "@/app/library/ui-components/dropdownUiHardcodedSpec"
 
 export {
   getDropdownItemShellUiStyle,
   getDropdownPanelShellUiStyle,
-} from "@/app/[siteId]/[popId]/library/ui-components/dropdownUiHardcodedSpec"
+} from "@/app/library/ui-components/dropdownUiHardcodedSpec"
 
 export { ROOTSY_DROPDOWN_ANATOMY }
 

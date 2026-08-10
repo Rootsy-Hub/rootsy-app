@@ -3,7 +3,7 @@
 import {
   BackofficeSection,
 } from "@/app/backoffice/components/BackofficeSection"
-import { FoundationBrumaStage } from "@/app/[siteId]/[popId]/library/libraryFoundationDocShared"
+import { FoundationBrumaStage } from "@/app/library/libraryFoundationDocShared"
 
 export default function BackofficeClientesPage() {
   return (

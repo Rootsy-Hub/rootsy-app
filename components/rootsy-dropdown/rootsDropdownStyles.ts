@@ -3,7 +3,7 @@
  * Hover/selección: bruma-50 · savia-100 · motion.duration.short (150ms).
  */
 
-import { ROOTSY_SEMANTIC_TOKENS } from "@/app/[siteId]/[popId]/library/color/rootsyColorSystem"
+import { ROOTSY_SEMANTIC_TOKENS } from "@/app/library/color/rootsyColorSystem"
 import { cn } from "@/lib/utils"
 
 const statusDangerHex =

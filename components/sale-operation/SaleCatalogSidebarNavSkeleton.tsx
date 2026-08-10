@@ -7,7 +7,7 @@ import {
   layoutsOperarCatalogRailNavClass,
   layoutsOperarCatalogRailSectionLabelClass,
   layoutsOperarCatalogSkeletonGhostClass,
-} from "@/app/[siteId]/[popId]/library/layouts/layoutsOperarStyles"
+} from "@/app/library/layouts/layoutsOperarStyles"
 import { cn } from "@/lib/utils"
 
 const CATEGORY_ITEM_WIDTHS = ["w-[42%]", "w-[68%]", "w-[54%]", "w-[61%]", "w-[48%]", "w-[72%]", "w-[56%]"]
