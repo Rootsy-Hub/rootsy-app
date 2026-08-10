@@ -1,16 +1,13 @@
 "use client"
 
 import type { ReactNode } from "react"
+import { DataWorkspaceDetailEmptyState } from "@/components/data-workspace/DataWorkspaceDetailEmptyState"
 import { cn } from "@/lib/utils"
 import { useCartListScrollContainerRef } from "@/hooks/useCartListScrollHighlight"
 import {
   cartListHeaderRowClass,
   saleOpCartLineDividerBottomClass,
   saleOpCartListSurfaceClass,
-  saleOpEmptyStateContainerClass,
-  saleOpEmptyStateContentClass,
-  saleOpEmptyStateIconWrapClass,
-  saleOpEmptyStateTitleClass,
 } from "@/components/sale-operation/saleOperationStyles"
 import { Receipt } from "lucide-react"
 
@@ -35,19 +32,12 @@ function CartListEmptyState({
   return (
     <div
       className={cn(
-        saleOpEmptyStateContainerClass,
-        flush
-          ? cn("min-h-[min(420px,50vh)]", saleOpCartListSurfaceClass)
-          : "mt-6 px-4",
+        "flex min-h-0 flex-1 flex-col",
+        flush && cn("min-h-[min(420px,50vh)]", saleOpCartListSurfaceClass),
+        !flush && "mt-6 px-4",
       )}
     >
-      <div className={saleOpEmptyStateContentClass}>
-        <div className={saleOpEmptyStateIconWrapClass} aria-hidden>
-          <Receipt className="size-7 stroke-[1.75]" />
-        </div>
-
-        <p className={saleOpEmptyStateTitleClass}>{emptyTitle}</p>
-      </div>
+      <DataWorkspaceDetailEmptyState icon={Receipt} title={emptyTitle} />
     </div>
   )
 }

@@ -119,7 +119,7 @@ function SortableSlot({
   return (
     <div
       ref={setNodeRef}
-      className="absolute left-0 right-0 z-20"
+      className="absolute inset-x-0 z-20 w-full"
       style={{
         top: index * ROOTS_SORTABLE_SLOT_SHIFT_PX,
         height: ROOTS_SORTABLE_ROW_HEIGHT_PX,
@@ -127,7 +127,7 @@ function SortableSlot({
         transition: dragAnimating ? ROOTS_SORTABLE_LAYOUT_TRANSITION : undefined,
       }}
     >
-      <div className={cn(isDragging && "opacity-0")}>
+      <div className={cn("w-full", isDragging && "opacity-0")}>
         <RootsSortableActionListRow
           item={item}
           isEditing={isEditing}
@@ -291,7 +291,7 @@ export function RootsSortableActionList({
 
   if (!canReorder) {
     return (
-      <div className={className}>
+      <div className={cn("w-full", className)}>
         <StaticActionList items={items} {...rowProps} />
       </div>
     )
@@ -307,7 +307,7 @@ export function RootsSortableActionList({
       onDragCancel={clearDrag}
     >
       <div
-        className={cn("relative overflow-visible", className)}
+        className={cn("relative w-full overflow-visible", className)}
         style={{ height: rootsSortableListTrackHeight(items.length) }}
       >
         {Array.from({ length: items.length + 1 }, (_, index) => (

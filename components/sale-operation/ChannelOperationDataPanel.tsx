@@ -1,6 +1,17 @@
 "use client"
 
+import {
+  layoutsOperarTicketProposalActionDiscardClass,
+  layoutsOperarTicketProposalActionSellClass,
+} from "@/app/library/layouts/layoutsOperarHardcodedSpec"
+import {
+  layoutsOperarSummaryActionConfirmColClass,
+  layoutsOperarSummaryActionDiscardColClass,
+  layoutsOperarSummaryActionsRowClass,
+} from "@/app/library/layouts/layoutsOperarStyles"
+import { LAYOUTS_OPERAR_DEFAULT_TICKET_PROPOSAL } from "@/app/library/layouts/rootsyLayoutsOperarSystem"
 import { Button } from "@/components/ui/button"
+import { DataWorkspaceDetailEmptyState } from "@/components/data-workspace/DataWorkspaceDetailEmptyState"
 import { RootsBanner } from "@/components/rootsy-banner"
 import { getBannerIconStyle } from "@/components/rootsy-banner/rootsBannerSpecRuntime"
 import {
@@ -13,20 +24,178 @@ import {
   saleOpChannelStatusBadge,
   saleOpDialogPrimaryBtn,
   saleOpDialogSecondaryBtn,
-  saleOpEmptyStateContainerClass,
-  saleOpEmptyStateContentClass,
-  saleOpEmptyStateIconWrapClass,
-  saleOpEmptyStateTitleClass,
 } from "@/components/sale-operation/saleOperationStyles"
 import { cn } from "@/lib/utils"
 import { Loader2, type LucideIcon } from "lucide-react"
 import type { ReactNode } from "react"
 
-const channelFormActionBtnBase = cn(
-  "h-14 w-full gap-2.5 border-0 px-4 text-[15px] font-semibold tracking-tight shadow-none transition-colors",
-  "focus-visible:ring-2 focus-visible:ring-offset-0",
+const TICKET_PROPOSAL = LAYOUTS_OPERAR_DEFAULT_TICKET_PROPOSAL
+
+const channelOperarFooterShellClass = cn(
+  "mt-auto w-full shrink-0 border-t border-[var(--layouts-operar-border-light)] bg-white",
+)
+
+const channelOperarFooterBtnBase = cn(
+  "inline-flex h-full w-full items-center justify-center gap-2 border-0 px-4 text-sm font-semibold tracking-tight shadow-none transition-[background-color,color,opacity] duration-150",
+  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-offset-0",
   "disabled:pointer-events-auto disabled:cursor-not-allowed disabled:opacity-40",
 )
+
+const channelOperarFooterPrimaryClass = cn(
+  channelOperarFooterBtnBase,
+  layoutsOperarTicketProposalActionSellClass(TICKET_PROPOSAL),
+  "hover:bg-[var(--rootsy-savia-500)] active:bg-[var(--rootsy-savia-700)]",
+  "focus-visible:ring-[color-mix(in_srgb,var(--rootsy-savia-300)_55%,transparent)]",
+  "disabled:hover:bg-[var(--rootsy-savia-600)] disabled:active:bg-[var(--rootsy-savia-600)]",
+)
+
+const channelOperarFooterDiscardClass = cn(
+  channelOperarFooterBtnBase,
+  layoutsOperarTicketProposalActionDiscardClass(TICKET_PROPOSAL),
+  "bg-transparent hover:text-rose-800 active:text-rose-900",
+  "focus-visible:ring-rose-400/35",
+  "disabled:text-slate-400 disabled:hover:text-slate-400",
+)
+
+const channelOperarFooterSecondaryClass = cn(
+  channelOperarFooterBtnBase,
+  "bg-transparent text-slate-700 hover:bg-slate-50 hover:text-slate-900 active:bg-slate-100",
+  "focus-visible:ring-slate-300/50",
+  "disabled:text-slate-400 disabled:hover:bg-transparent disabled:hover:text-slate-400",
+)
+
+export type ChannelOperarFooterAction = {
+  label: string
+  onClick: () => void
+  disabled?: boolean
+  loading?: boolean
+  loadingLabel?: string
+  title?: string
+  variant: "primary" | "discard" | "secondary"
+}
+
+function ChannelOperarFooterButton({
+  action,
+  className,
+}: {
+  action: ChannelOperarFooterAction
+  className?: string
+}) {
+  const variantClass =
+    action.variant === "primary"
+      ? channelOperarFooterPrimaryClass
+      : action.variant === "discard"
+        ? channelOperarFooterDiscardClass
+        : channelOperarFooterSecondaryClass
+
+  return (
+    <button
+      type="button"
+      disabled={action.disabled || action.loading}
+      title={action.title}
+      onClick={action.onClick}
+      className={cn(variantClass, className)}
+    >
+      {action.loading ? (
+        <>
+          <Loader2 className="size-4 shrink-0 animate-spin" aria-hidden />
+          {action.loadingLabel ?? action.label}
+        </>
+      ) : (
+        action.label
+      )}
+    </button>
+  )
+}
+
+function buildOperarFooterRows(
+  actions: ChannelOperarFooterAction[],
+): Array<
+  | { type: "single"; action: ChannelOperarFooterAction }
+  | { type: "dual"; left: ChannelOperarFooterAction; right: ChannelOperarFooterAction }
+> {
+  const primary = actions.find((action) => action.variant === "primary")
+  const discard = actions.find((action) => action.variant === "discard")
+  const secondaries = actions.filter((action) => action.variant === "secondary")
+  const rows: Array<
+    | { type: "single"; action: ChannelOperarFooterAction }
+    | { type: "dual"; left: ChannelOperarFooterAction; right: ChannelOperarFooterAction }
+  > = []
+
+  const pairedSecondary =
+    secondaries.length === 1 && primary && !discard ? secondaries[0] : null
+  const stackedSecondaries = pairedSecondary ? [] : secondaries
+
+  for (const secondary of stackedSecondaries) {
+    rows.push({ type: "single", action: secondary })
+  }
+
+  if (primary && discard) {
+    rows.push({ type: "dual", left: discard, right: primary })
+  } else if (primary && pairedSecondary) {
+    rows.push({ type: "dual", left: pairedSecondary, right: primary })
+  } else if (primary) {
+    rows.push({ type: "single", action: primary })
+  } else if (discard) {
+    rows.push({ type: "single", action: discard })
+  } else if (secondaries.length === 2) {
+    rows.push({ type: "dual", left: secondaries[0], right: secondaries[1] })
+  } else if (secondaries.length === 1) {
+    rows.push({ type: "single", action: secondaries[0] })
+  }
+
+  return rows
+}
+
+/** Footer operar — mismo estilo que Descartar / Cobrar del ticket. */
+export function ChannelDataOperarFooterBar({
+  actions,
+  className,
+}: {
+  actions: ChannelOperarFooterAction[]
+  className?: string
+}) {
+  const rows = buildOperarFooterRows(actions)
+  if (rows.length === 0) return null
+
+  return (
+    <div className={cn(channelOperarFooterShellClass, className)}>
+      {rows.map((row, index) => {
+        if (row.type === "single") {
+          return (
+            <div
+              key={`${row.action.label}-${index}`}
+              className={cn(
+                layoutsOperarSummaryActionsRowClass,
+                "grid-cols-1 border-t-0 first:border-t-0",
+                index > 0 && "border-t border-[var(--layouts-operar-border-light)]",
+              )}
+            >
+              <ChannelOperarFooterButton action={row.action} />
+            </div>
+          )
+        }
+
+        return (
+          <div
+            key={`${row.left.label}-${row.right.label}-${index}`}
+            className={cn(
+              layoutsOperarSummaryActionsRowClass,
+              index > 0 && "border-t border-[var(--layouts-operar-border-light)]",
+            )}
+          >
+            <div className={layoutsOperarSummaryActionDiscardColClass}>
+              <ChannelOperarFooterButton action={row.left} />
+            </div>
+            <div className={layoutsOperarSummaryActionConfirmColClass}>
+              <ChannelOperarFooterButton action={row.right} />
+            </div>
+          </div>
+        )
+      })}
+    </div>
+  )
+}
 
 export function ChannelDataPanel({
   children,
@@ -67,15 +236,19 @@ export function ChannelDataHeader({
 }) {
   return (
     <div className="flex items-start justify-between gap-3">
-      <div className="min-w-0">
-        <p className={saleOpChannelPanelHeaderTitle}>{title}</p>
-        {meta ? <p className={cn(saleOpChannelPanelHeaderMeta, "mt-0.5")}>{meta}</p> : null}
-      </div>
-      {badge || actions ? (
-        <div className="flex shrink-0 items-center gap-2">
-          {badge}
-          {actions}
+      <div className="min-w-0 flex-1">
+        <div className="flex items-center justify-between gap-2">
+          <p className={cn(saleOpChannelPanelHeaderTitle, "min-w-0 truncate")}>
+            {title}
+          </p>
+          {badge ? <div className="shrink-0">{badge}</div> : null}
         </div>
+        {meta ? (
+          <p className={cn(saleOpChannelPanelHeaderMeta, "mt-0.5")}>{meta}</p>
+        ) : null}
+      </div>
+      {actions ? (
+        <div className="flex shrink-0 items-center self-start">{actions}</div>
       ) : null}
     </div>
   )
@@ -152,7 +325,7 @@ export function ChannelDataHint({
 }
 
 export function ChannelDataEmptyState({
-  icon: Icon,
+  icon,
   title,
   description,
 }: {
@@ -161,17 +334,12 @@ export function ChannelDataEmptyState({
   description?: string
 }) {
   return (
-    <div className={cn(saleOpEmptyStateContainerClass, "min-h-0")}>
-      <div className={saleOpEmptyStateContentClass}>
-        <div className={saleOpEmptyStateIconWrapClass} aria-hidden>
-          <Icon className="size-7 stroke-[1.75]" />
-        </div>
-        <p className={saleOpEmptyStateTitleClass}>{title}</p>
-        {description ? (
-          <p className="text-xs leading-relaxed text-slate-500">{description}</p>
-        ) : null}
-      </div>
-    </div>
+    <DataWorkspaceDetailEmptyState
+      icon={icon}
+      title={title}
+      description={description}
+      className="min-h-0"
+    />
   )
 }
 
@@ -250,48 +418,49 @@ export function ChannelDataFormActionsBar({
   const hasCancel = Boolean(onCancel)
 
   return (
-    <div
-      className={cn(
-        "mt-auto grid w-full shrink-0 border-t border-slate-200/90 bg-white",
-        hasCancel ? "grid-cols-2" : "grid-cols-1",
-      )}
-    >
-      {hasCancel ? (
-        <button
-          type="button"
-          disabled={cancelDisabled}
-          onClick={onCancel}
-          className={cn(
-            channelFormActionBtnBase,
-            "inline-flex items-center justify-center rounded-none",
-            "bg-white text-rose-700 hover:bg-rose-500/10 hover:text-rose-700 active:bg-rose-500/15",
-            "disabled:bg-white disabled:text-slate-400 disabled:hover:bg-white disabled:active:bg-white",
-            "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-400/40",
-          )}
-        >
-          Cancelar
-        </button>
-      ) : null}
-      <Button
-        type={primary.type ?? "button"}
-        disabled={primary.disabled || primary.loading}
-        onClick={primary.onClick}
+    <div className={channelOperarFooterShellClass}>
+      <div
         className={cn(
-          channelFormActionBtnBase,
-          "rounded-none",
-          saleOpDialogPrimaryBtn,
-          "h-14 text-[15px] tracking-tight",
+          layoutsOperarSummaryActionsRowClass,
+          !hasCancel && "grid-cols-1",
         )}
       >
-        {primary.loading ? (
-          <>
-            <Loader2 className="size-[18px] shrink-0 animate-spin" aria-hidden />
-            {primary.loadingLabel ?? primary.label}
-          </>
-        ) : (
-          primary.label
-        )}
-      </Button>
+        {hasCancel ? (
+          <div className={layoutsOperarSummaryActionDiscardColClass}>
+            <button
+              type="button"
+              disabled={cancelDisabled}
+              onClick={onCancel}
+              className={channelOperarFooterDiscardClass}
+            >
+              Cancelar
+            </button>
+          </div>
+        ) : null}
+        <div
+          className={
+            hasCancel
+              ? layoutsOperarSummaryActionConfirmColClass
+              : "col-span-full flex h-full min-h-0 min-w-0"
+          }
+        >
+          <button
+            type={primary.type ?? "button"}
+            disabled={primary.disabled || primary.loading}
+            onClick={primary.onClick}
+            className={channelOperarFooterPrimaryClass}
+          >
+            {primary.loading ? (
+              <>
+                <Loader2 className="size-4 shrink-0 animate-spin" aria-hidden />
+                {primary.loadingLabel ?? primary.label}
+              </>
+            ) : (
+              primary.label
+            )}
+          </button>
+        </div>
+      </div>
     </div>
   )
 }

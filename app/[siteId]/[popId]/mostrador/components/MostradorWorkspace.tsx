@@ -14,9 +14,12 @@ import { OperationsModuleBackdrop } from "@/components/layouts-module/DataWorksp
 import { LayoutsOperarMainGrid } from "@/components/layouts-module/LayoutsOperarMainGrid"
 import {
   layoutsOperarCatalogColumnClass,
+  layoutsOperarCatalogCanvasClass,
   layoutsOperarSummaryPanelClass,
   layoutsOperarSummaryPanelInnerGridClass,
+  layoutsOperarSummaryPanelTabBodyClass,
 } from "@/app/library/layouts/layoutsOperarStyles"
+import { mostradorRealtimeBannerClass } from "@/app/[siteId]/[popId]/mostrador/mostradorOperarStyles"
 import { SaleOperationToolbox } from "@/components/sale-operation/SaleOperationToolbox"
 import { useCartListScrollHighlight } from "@/hooks/useCartListScrollHighlight"
 import { cn } from "@/lib/utils"
@@ -89,8 +92,12 @@ export function MostradorWorkspace({
   useEffect(() => {
     if (!selectedOrder) {
       setRightView("detail")
+      return
     }
-  }, [selectedOrder])
+    if (!creating) {
+      setRightView("cart")
+    }
+  }, [selectedOrder?.id, creating])
 
   useEffect(() => {
     if (!onRegisterStartCreateOrder) return
@@ -115,7 +122,7 @@ export function MostradorWorkspace({
       ) : null}
 
       {realtimeStatus === "disconnected" ? (
-        <div className="relative z-20 border-b border-amber-500/35 bg-amber-950/50 px-4 py-2 text-sm text-amber-100">
+        <div className={mostradorRealtimeBannerClass}>
           Conexión en vivo interrumpida. Reconectando… los cambios pueden demorar
           unos segundos.
         </div>
@@ -124,19 +131,25 @@ export function MostradorWorkspace({
       <LayoutsOperarMainGrid
         catalog={
           !showCatalog ? (
-            <section className={layoutsOperarCatalogColumnClass}>
-              <MostradorBoard
-                orders={orders}
-                loading={loading}
-                orderError={orderError}
-                selectedOrderId={selectedOrderId}
-                onSelectOrder={(id) => {
-                  selectOrder(id)
-                  setCreating(false)
-                  setRightView("detail")
-                }}
-                onMoveOrder={moveOrderStatus}
-              />
+            <section className={cn(layoutsOperarCatalogColumnClass, "flex-col")}>
+              <div
+                className={cn(
+                  layoutsOperarCatalogCanvasClass,
+                  "[grid-template-rows:minmax(0,1fr)]",
+                )}
+              >
+                <MostradorBoard
+                  orders={orders}
+                  loading={loading}
+                  orderError={orderError}
+                  selectedOrderId={selectedOrderId}
+                  onSelectOrder={(id) => {
+                    selectOrder(id)
+                    setCreating(false)
+                  }}
+                  onMoveOrder={moveOrderStatus}
+                />
+              </div>
             </section>
           ) : (
             <MostradorCatalogPanel
@@ -162,8 +175,8 @@ export function MostradorWorkspace({
               cartDisabled={!selectedOrder}
             />
 
-            <div className={layoutsOperarSummaryPanelInnerGridClass}>
-              {rightView === "detail" ? (
+            {rightView === "detail" ? (
+              <div className={layoutsOperarSummaryPanelTabBodyClass}>
                 <CounterOrderPanel
                   order={selectedOrder}
                   orderError={orderError}
@@ -185,14 +198,18 @@ export function MostradorWorkspace({
                   onCloseOrder={async () => checkout.cerrarPedido()}
                   clientLabel={checkout.sessionClientLabel}
                 />
-              ) : (
-                <MostradorOrderPanel
-                  checkout={checkout}
-                  orderLabel={orderLabel}
-                  cartScrollHighlight={cartScrollHighlight}
-                />
-              )}
-            </div>
+              </div>
+            ) : (
+              <div className={layoutsOperarSummaryPanelTabBodyClass}>
+                <div className={cn(layoutsOperarSummaryPanelInnerGridClass, "min-h-0 flex-1")}>
+                  <MostradorOrderPanel
+                    checkout={checkout}
+                    orderLabel={orderLabel}
+                    cartScrollHighlight={cartScrollHighlight}
+                  />
+                </div>
+              </div>
+            )}
           </aside>
         }
       />

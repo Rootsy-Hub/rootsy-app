@@ -79,9 +79,13 @@ function strokeForStatus(
   highlighted: boolean,
 ): string {
   if (status === "paying") {
-    return highlighted ? "rgba(125, 211, 252, 0.95)" : "rgba(56, 189, 248, 0.55)"
+    return highlighted
+      ? "color-mix(in srgb, var(--rootsy-savia-teal) 95%, white)"
+      : "color-mix(in srgb, var(--rootsy-savia-teal) 55%, transparent)"
   }
-  return highlighted ? "rgba(252, 211, 77, 0.95)" : "rgba(251, 191, 36, 0.5)"
+  return highlighted
+    ? "color-mix(in srgb, var(--rootsy-savia-400) 95%, white)"
+    : "color-mix(in srgb, var(--rootsy-savia-400) 50%, transparent)"
 }
 
 type Props = {

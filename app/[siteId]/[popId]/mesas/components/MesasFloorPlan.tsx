@@ -1,13 +1,19 @@
 "use client"
 
-import {
-  floorPlanSurfaceStyle,
-  MESAS_FLOOR_PLAN_BG,
-  MesaFloorDecorNode,
-} from "@/app/[siteId]/[popId]/mesas/components/MesaFloorDecorNode"
+import { MesaFloorDecorNode } from "@/app/[siteId]/[popId]/mesas/components/MesaFloorDecorNode"
 import { MesaSessionConnectors } from "@/app/[siteId]/[popId]/mesas/components/MesaSessionConnectors"
 import { MesaTableNode } from "@/app/[siteId]/[popId]/mesas/components/MesaTableNode"
 import type { MesaFloorDecor, MesaTable } from "@/app/[siteId]/[popId]/mesas/mesasTypes"
+import {
+  MESAS_FLOOR_PLAN_CANVAS_BG,
+  mesasFloorEditRingClass,
+  mesasFloorEditRingDelayClass,
+  mesasFloorEmptyTextClass,
+  mesasFloorFloatingBtnActiveClass,
+  mesasFloorFloatingBtnClass,
+  mesasFloorFloatingBtnIdleClass,
+  mesasFloorGridPatternStyle,
+} from "@/app/[siteId]/[popId]/mesas/mesasOperarStyles"
 import {
   DndContext,
   PointerSensor,
@@ -24,8 +30,8 @@ import { cn } from "@/lib/utils"
 import { Minus, Pencil, Plus, RotateCw } from "lucide-react"
 import { useCallback, useState } from "react"
 
-/** Fondo del canvas del plano (más oscuro que la barra superior y tabs). */
-const floorPlanCanvasStyle = { backgroundColor: MESAS_FLOOR_PLAN_BG }
+/** Fondo del canvas del plano — sombra-800, alineado con catálogo operar. */
+const floorPlanCanvasStyle = { backgroundColor: MESAS_FLOOR_PLAN_CANVAS_BG }
 
 const CANVAS_WIDTH = 720
 const CANVAS_HEIGHT = 520
@@ -34,11 +40,15 @@ const ZOOM_MAX = 1.8
 const ZOOM_STEP = 0.15
 const ZOOM_DEFAULT = 1
 
-const floatingBtnClass =
-  "relative z-10 flex size-10 items-center justify-center rounded-full border focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/50 focus-visible:ring-offset-2 focus-visible:ring-offset-[#181c22]"
+const floatingBtnClass = mesasFloorFloatingBtnClass
 
-const floatingBtnIdleClass =
-  "border-white/15 bg-[#252b34]/95 text-white/80 shadow-lg backdrop-blur-sm transition-colors hover:border-white/25 hover:bg-[#2a323c] hover:text-white disabled:cursor-not-allowed disabled:opacity-40"
+const floatingBtnIdleClass = cn(
+  mesasFloorFloatingBtnIdleClass,
+  "shadow-[0_8px_24px_-10px_color-mix(in_srgb,var(--rootsy-sombra-950)_65%,transparent)]",
+  "backdrop-blur-sm transition-colors",
+  "hover:text-[color-mix(in_srgb,var(--rootsy-bruma-50)_88%,white)]",
+  "disabled:cursor-not-allowed disabled:opacity-40",
+)
 
 type Props = {
   tables: MesaTable[]
@@ -109,7 +119,7 @@ export function MesasFloorPlan({
   )
 
   return (
-    <div className="relative flex min-h-0 flex-1 flex-col">
+    <div className="relative flex h-full min-h-0 flex-1 flex-col">
       <div className="absolute top-3 right-3 z-30 flex flex-col items-center gap-2 overflow-visible">
         <button
           type="button"
@@ -153,11 +163,14 @@ export function MesasFloorPlan({
           {layoutEditMode ? (
             <>
               <span
-                className="mesa-floor-edit-ring absolute inset-0 rounded-full bg-emerald-400/55"
+                className={cn("mesa-floor-edit-ring absolute inset-0 rounded-full", mesasFloorEditRingClass)}
                 aria-hidden
               />
               <span
-                className="mesa-floor-edit-ring absolute inset-0 rounded-full bg-emerald-300/40 [animation-delay:700ms]"
+                className={cn(
+                  "mesa-floor-edit-ring absolute inset-0 rounded-full [animation-delay:700ms]",
+                  mesasFloorEditRingDelayClass,
+                )}
                 aria-hidden
               />
             </>
@@ -169,7 +182,7 @@ export function MesasFloorPlan({
               className={cn(
                 floatingBtnClass,
                 layoutEditMode
-                  ? "border-emerald-400/60 bg-emerald-500 text-emerald-950"
+                  ? cn(mesasFloorFloatingBtnActiveClass, "text-[var(--rootsy-savia-900)]")
                   : floatingBtnIdleClass,
               )}
               aria-label={
@@ -185,29 +198,42 @@ export function MesasFloorPlan({
 
       <DndContext sensors={sensors} onDragEnd={handleDragEnd}>
         <div
-          className="game-scroll relative min-h-0 flex-1 overflow-auto"
+          className="game-scroll relative h-full min-h-0 flex-1 overflow-auto"
           style={floorPlanCanvasStyle}
           role="presentation"
           aria-label="Plano del salón"
         >
+          {layoutEditMode ? (
+            <div
+              className="pointer-events-none absolute inset-0 z-0 opacity-25"
+              style={mesasFloorGridPatternStyle}
+              aria-hidden
+            />
+          ) : null}
           <div
+            className="relative z-[1] min-h-full min-w-full"
             style={{
-              width: CANVAS_WIDTH * zoom,
-              height: CANVAS_HEIGHT * zoom,
+              minHeight: "100%",
+              minWidth: "100%",
             }}
           >
             <div
-              className="relative"
               style={{
-                ...floorPlanSurfaceStyle,
-                width: CANVAS_WIDTH,
-                height: CANVAS_HEIGHT,
-                minWidth: CANVAS_WIDTH,
-                minHeight: CANVAS_HEIGHT,
-                transform: `scale(${zoom})`,
-                transformOrigin: "top left",
+                width: CANVAS_WIDTH * zoom,
+                height: CANVAS_HEIGHT * zoom,
               }}
             >
+              <div
+                className="relative"
+                style={{
+                  width: CANVAS_WIDTH,
+                  height: CANVAS_HEIGHT,
+                  minWidth: CANVAS_WIDTH,
+                  minHeight: CANVAS_HEIGHT,
+                  transform: `scale(${zoom})`,
+                  transformOrigin: "top left",
+                }}
+              >
             {decors.map((decor) => (
               <MesaFloorDecorNode
                 key={decor.id}
@@ -245,10 +271,11 @@ export function MesasFloorPlan({
             ))}
 
             {tables.length === 0 ? (
-              <div className="pointer-events-none absolute inset-0 flex items-center justify-center text-sm text-white/40">
+              <div className={cn("pointer-events-none absolute inset-0 flex items-center justify-center text-sm", mesasFloorEmptyTextClass)}>
                 No hay mesas en este salón
               </div>
             ) : null}
+              </div>
             </div>
           </div>
         </div>

@@ -1,7 +1,6 @@
 "use client"
 
 import withAuth from "@/hoc/withAuth"
-import Image from "next/image"
 import {
   getPurchaseCatalog,
   type PurchaseCatalogArticle,
@@ -11,11 +10,13 @@ import {
   type PurchaseCatalogSupplier,
   type PurchaseKind,
 } from "@/app/[siteId]/[popId]/purchases/actions"
+import { PurchaseCatalogBrowser } from "@/components/purchase-operation/PurchaseCatalogBrowser"
+import { PurchaseOperationToolbox } from "@/components/purchase-operation/PurchaseOperationToolbox"
 import { PurchasePaymentMethodDialog } from "@/components/purchase-operation/PurchasePaymentMethodDialog"
 import { SimpleOperationCheckoutConfirmDialog } from "@/components/checkout/SimpleOperationCheckoutConfirmDialog"
-import {
-  PurchaseOperationTicketOrderPanel,
-} from "@/components/purchase-operation/PurchaseOperationTicketOrderPanel"
+import { PurchaseOperationTicketOrderPanel } from "@/components/purchase-operation/PurchaseOperationTicketOrderPanel"
+import type { PurchaseCatalogProduct } from "@/components/purchase-operation/purchaseCatalogTypes"
+import { PURCHASE_CATEGORIA_TODOS } from "@/components/purchase-operation/purchaseCatalogTypes"
 import { PurchaseArticleCostPickerDialog } from "@/components/purchase-operation/PurchaseArticleCostPickerDialog"
 import type { PurchaseLineEditInput } from "@/components/purchase-operation/PurchaseCartLineCard"
 import { OperationPartyPickerDialog } from "@/components/checkout/OperationPartyPickerDialog"
@@ -41,7 +42,8 @@ import {
   DataWorkspaceOperationsLayout,
   OperationsModuleBackdrop,
 } from "@/components/layouts-module/DataWorkspaceOperationsLayout"
-import { saleOpImporteBaseClass } from "@/components/sale-operation/saleOperationStyles"
+import { LayoutsOperarMainGrid } from "@/components/layouts-module/LayoutsOperarMainGrid"
+import { layoutsOperarSummaryPanelClass } from "@/app/library/layouts/layoutsOperarStyles"
 import { useDataWorkspaceSidebar } from "@/components/layouts/useDataWorkspaceSidebar"
 import { useAuth } from "@/context/AuthContextSupabase"
 import { useParams } from "next/navigation"
@@ -52,28 +54,12 @@ import {
   useRef,
   useState,
 } from "react"
-import {
-  Banknote,
-  LayoutGrid,
-  Loader2,
-  Percent,
-  Plus,
-  Receipt,
-  Rows3,
-  Search,
-  Truck,
-} from "lucide-react"
+import { Loader2, Truck } from "lucide-react"
 import { usePadronAutofillRazonSocial } from "@/hooks/usePadronAutofillRazonSocial"
 import { useCartListScrollHighlight } from "@/hooks/useCartListScrollHighlight"
 import { cn } from "@/lib/utils"
 import { purchaseCartLineId } from "@/lib/purchaseCartLine"
 import { saleQuantityFromCostPurchase } from "@/lib/articleCosts"
-import { getLayoutsOperarMainGridClass } from "@/app/library/layouts/layoutsOperarHardcodedSpec"
-import {
-  LAYOUTS_OPERAR_CATALOG_SIDEBAR_WIDTH_PX,
-  layoutsOperarCatalogSidebarAsideWidthClass,
-  layoutsOperarCatalogSidebarInnerClass,
-} from "@/app/library/layouts/layoutsOperarStyles"
 import {
   AlertDialog,
   AlertDialogAction,
@@ -84,18 +70,6 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
-import { Input } from "@/components/ui/input"
-type Producto = {
-  id: string
-  nombre: string
-  descripcion: string
-  iva: number
-  categoria: string
-  imagen: string
-  unitOfMeasure: string
-  costs: PurchaseCatalogArticleCost[]
-}
-
 type ItemCarrito = {
   lineId: string
   productoId: string
@@ -119,10 +93,6 @@ function labelCondicionIva(value: string | null | undefined) {
   if (!value?.trim()) return null
   return IVA_LABEL_BY_VALUE[value] ?? value
 }
-
-type VistaCatalogo = { modo: "categoria"; categoria: string }
-
-const CATEGORIA_TODOS = "Todos"
 
 function derivePurchaseKindFromCart(
   cart: ItemCarrito[],
@@ -154,7 +124,7 @@ function derivePurchaseKindFromCart(
   return best
 }
 
-function articleToProducto(a: PurchaseCatalogArticle): Producto {
+function articleToProducto(a: PurchaseCatalogArticle): PurchaseCatalogProduct {
   return {
     id: a.id,
     nombre: a.name,
@@ -172,46 +142,6 @@ const fmt = new Intl.NumberFormat("es-AR", {
   currency: "ARS",
   minimumFractionDigits: 2,
 })
-
-function catalogArticleCostHint(producto: Producto): string {
-  const active = producto.costs.filter((c) => c.unitPrice > 0)
-  if (producto.costs.length === 0) return "Sin costos"
-  if (active.length === 0) {
-    return `${producto.costs.length} costo${producto.costs.length === 1 ? "" : "s"}`
-  }
-  const min = Math.min(...active.map((c) => c.unitPrice))
-  if (producto.costs.length === 1) {
-    const cost = producto.costs[0]
-    return `${fmt.format(min)} / ${cost.costUnitLabel}`
-  }
-  return `Desde ${fmt.format(min)}`
-}
-
-const compraImporteBaseClass = saleOpImporteBaseClass
-const compraImporteCardClass = cn(
-  compraImporteBaseClass,
-  "block text-[clamp(1.05rem,1.65vw,1.3125rem)] leading-none font-semibold text-white/90",
-)
-
-function normalizarBusqueda(s: string) {
-  return s
-    .normalize("NFD")
-    .replace(/\p{M}/gu, "")
-    .toLowerCase()
-}
-
-function IconoLimpiarBusqueda({ className }: { className?: string }) {
-  return (
-    <svg
-      viewBox="0 0 24 24"
-      fill="currentColor"
-      className={cn("size-[14px] shrink-0", className)}
-      aria-hidden
-    >
-      <path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z" />
-    </svg>
-  )
-}
 
 function parseUnitCost(raw: string, fallback: number): number {
   const n = Number.parseFloat(raw.trim().replace(",", "."))
@@ -248,7 +178,7 @@ function PurchasesPage() {
     const names = [
       ...new Set(catalogCategories.map((c) => c.name).filter(Boolean)),
     ]
-    return [CATEGORIA_TODOS, ...names]
+    return [PURCHASE_CATEGORIA_TODOS, ...names]
   }, [catalogCategories])
 
   const productosCatalogo = useMemo(
@@ -302,12 +232,6 @@ function PurchasesPage() {
     })
   }, [canReadPaymentMethods, treasuryPaymentContext])
 
-  const [vistaCatalogo, setVistaCatalogo] = useState<VistaCatalogo>({
-    modo: "categoria",
-    categoria: CATEGORIA_TODOS,
-  })
-  const [modoVista, setModoVista] = useState<"grid" | "lista">("grid")
-  const [busqueda, setBusqueda] = useState("")
   const [carrito, setCarrito] = useState<ItemCarrito[]>([])
   const [costPickerArticleId, setCostPickerArticleId] = useState<string | null>(
     null,
@@ -394,60 +318,11 @@ function PurchasesPage() {
   const [compraSubmitting, setCompraSubmitting] = useState(false)
   const [compraError, setCompraError] = useState<string | null>(null)
 
-  const busquedaProductosInputRef = useRef<HTMLInputElement>(null)
-  const busquedaProveedorInputRef = useRef<HTMLInputElement>(null)
-  const vistaAntesBusquedaRef = useRef<VistaCatalogo | null>(null)
-  const busquedaTrimPrevRef = useRef("")
-
   useEffect(() => {
     const today = new Date()
     const iso = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`
     setDocumentDate(iso)
   }, [])
-
-  const productosFiltrados = useMemo(() => {
-    const q = busqueda.trim().toLowerCase()
-    const hayBusqueda = q.length > 0
-    return productosCatalogo.filter((p) => {
-      const matchVista =
-        hayBusqueda ||
-        vistaCatalogo.categoria === CATEGORIA_TODOS ||
-        p.categoria === vistaCatalogo.categoria
-      const matchQ =
-        !q ||
-        p.nombre.toLowerCase().includes(q) ||
-        p.descripcion.toLowerCase().includes(q)
-      return matchVista && matchQ
-    })
-  }, [busqueda, vistaCatalogo, productosCatalogo])
-
-  useEffect(() => {
-    const trimmed = busqueda.trim()
-    const prevTrimmed = busquedaTrimPrevRef.current
-    const wasEmpty = prevTrimmed.length === 0
-    const isEmpty = trimmed.length === 0
-
-    if (!isEmpty && wasEmpty) {
-      vistaAntesBusquedaRef.current = vistaCatalogo
-    }
-
-    if (isEmpty && !wasEmpty) {
-      const saved = vistaAntesBusquedaRef.current
-      if (saved != null) {
-        setVistaCatalogo(saved)
-        vistaAntesBusquedaRef.current = null
-      }
-    }
-
-    if (!isEmpty) {
-      setVistaCatalogo((prev) => {
-        if (prev.categoria === CATEGORIA_TODOS) return prev
-        return { modo: "categoria", categoria: CATEGORIA_TODOS }
-      })
-    }
-
-    busquedaTrimPrevRef.current = trimmed
-  }, [busqueda, vistaCatalogo])
 
   const itemsDetallados = useMemo(() => {
     return carrito
@@ -571,6 +446,23 @@ function PurchasesPage() {
     if (payOnSupplierAccount) return SUPPLIER_ACCOUNT_PAYMENT_LABEL
     return metodoPagoSeleccionado?.label ?? "Elegir forma de pago"
   }, [payOnSupplierAccount, metodoPagoSeleccionado])
+
+  const comprobanteToolboxLabel = useMemo(() => {
+    if (comprobanteTipo != null) return comprobanteTipo
+    if (documentNumber.trim()) return documentNumber.trim()
+    if (comprobanteAdjunto) return comprobanteAdjunto.name
+    return comprobanteDisplayLabel
+  }, [comprobanteTipo, documentNumber, comprobanteAdjunto, comprobanteDisplayLabel])
+
+  const descuentoToolboxLabel = useMemo(
+    () =>
+      hayDescuento
+        ? modoDescuento === "porcentaje"
+          ? `${valorDescuentoPorcentaje}%`
+          : `Fijo ${fmt.format(valorDescuentoFijo)}`
+        : "Sin descuento",
+    [hayDescuento, modoDescuento, valorDescuentoPorcentaje, valorDescuentoFijo],
+  )
 
   const limpiarCompra = useCallback(() => {
     setCarrito([])
@@ -987,27 +879,6 @@ function PurchasesPage() {
     ],
   )
 
-  const toolboxBarClass =
-    "box-border border-t border-white/10 bg-[#0b100e]/92 backdrop-blur-xl"
-  const compraFooterBandHeightClass =
-    "min-h-[calc(4.5rem+1rem)] sm:min-h-[calc(4.75rem+1.25rem)]"
-  const compraFooterBarPaddingClass = "p-2 sm:p-2.5"
-  const toolboxSlotClass = (configurado: boolean) =>
-    cn(
-      "group flex h-full min-h-[4.5rem] w-full items-center gap-2.5 rounded-xl border-0 px-2.5 py-2 text-left transition-[background-color,box-shadow] duration-150 sm:min-h-[4.75rem] sm:gap-3 sm:px-3",
-      "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/45 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0b100e]",
-      configurado
-        ? "bg-emerald-500/[0.09] shadow-[inset_0_1px_0_rgba(167,243,208,0.08)] hover:bg-emerald-500/12"
-        : "bg-white/[0.02] hover:bg-white/[0.05]",
-    )
-  const toolboxIconWrap = (configurado: boolean) =>
-    cn(
-      "flex size-9 shrink-0 items-center justify-center rounded-lg transition-colors duration-150 sm:size-10",
-      configurado
-        ? "bg-emerald-500/20 text-emerald-200"
-        : "bg-white/[0.06] text-foreground/45 group-hover:bg-white/10 group-hover:text-foreground/75",
-    )
-
   const compraAlertDialogContent = cn(
     "rootsy-app-light text-foreground",
     "rounded-2xl border border-border/60 bg-card shadow-2xl sm:max-w-md",
@@ -1022,49 +893,6 @@ function PurchasesPage() {
   const userAvatarSrc =
     user?.user_metadata?.avatar_url ||
     `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(user?.email || "u")}`
-
-  const catalogSidebar = useMemo(
-    () => (
-      <nav
-        className="game-scroll flex min-h-0 flex-1 flex-col gap-6 overflow-y-auto px-3 py-4"
-        aria-label="Filtros del catálogo"
-      >
-        <div>
-          <p className="mb-2.5 px-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-500">
-            Categorías
-          </p>
-          <ul className="flex flex-col gap-0.5 p-0" role="list">
-            {categoriasNav.map((cat) => {
-              const seleccionado = vistaCatalogo.categoria === cat
-              return (
-                <li key={cat}>
-                  <button
-                    type="button"
-                    onClick={() =>
-                      setVistaCatalogo({
-                        modo: "categoria",
-                        categoria: cat,
-                      })
-                    }
-                    className={cn(
-                      "relative flex min-h-11 w-full items-center rounded-md px-3 py-2.5 text-left text-sm font-medium transition-colors duration-150",
-                      "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/45 focus-visible:ring-offset-2 focus-visible:ring-offset-[#1a2027]",
-                      seleccionado
-                        ? "bg-white/10 text-white before:absolute before:top-1/2 before:left-0 before:h-5 before:w-0.5 before:-translate-y-1/2 before:rounded-full before:bg-emerald-400 before:content-['']"
-                        : "text-slate-400 hover:bg-white/6 hover:text-slate-100",
-                    )}
-                  >
-                    {cat}
-                  </button>
-                </li>
-              )
-            })}
-          </ul>
-        </div>
-      </nav>
-    ),
-    [categoriasNav, vistaCatalogo.categoria],
-  )
 
   if (!popId || !siteId) {
     return (
@@ -1092,396 +920,83 @@ function PurchasesPage() {
         <div className="relative flex h-full min-h-0 w-full flex-col overflow-hidden">
           <OperationsModuleBackdrop />
 
-          <main className={cn("relative z-10 grid min-h-0 flex-1", getLayoutsOperarMainGridClass())}>
-            <div className="col-start-1 row-start-1 flex min-h-0 min-w-0 overflow-hidden">
+          <LayoutsOperarMainGrid
+            catalog={
+              <PurchaseCatalogBrowser
+                categories={categoriasNav}
+                products={productosCatalogo}
+                loading={catalogLoading}
+                error={catalogError}
+                onAddProduct={agregarAlCarrito}
+                catalogSidebarOpen={catalogSidebarOpen}
+              />
+            }
+            toolbox={
+              <PurchaseOperationToolbox
+                proveedorLabel={proveedorSeleccionado?.name ?? "Elegir proveedor"}
+                proveedorIvaLabel={compraIvaLabel}
+                proveedorConfigurado={Boolean(proveedorSeleccionado)}
+                comprobanteLabel={comprobanteToolboxLabel}
+                comprobanteConfigurado={comprobanteConfigurado}
+                pagoLabel={pagoResumenLabel}
+                pagoConfigurado={pagoConfigurado}
+                descuentoLabel={descuentoToolboxLabel}
+                hayDescuento={hayDescuento}
+                onProveedorClick={() => setProveedorModalAbierto(true)}
+                onComprobanteClick={() => setComprobanteModalAbierto(true)}
+                onPagoClick={() => setPagoModalAbierto(true)}
+                onDescuentoClick={abrirModalDescuento}
+              />
+            }
+            ticket={
               <aside
-                id="data-workspace-sidebar"
-                className={cn(
-                  "relative shrink-0 overflow-hidden border-r border-white/10 bg-[#1a2027] transition-[width,border-color] duration-300 ease-in-out motion-reduce:transition-none",
-                  layoutsOperarCatalogSidebarAsideWidthClass(catalogSidebarOpen),
-                )}
-                aria-hidden={!catalogSidebarOpen}
-                {...(!catalogSidebarOpen ? { inert: true } : {})}
-                aria-label="Filtros del catálogo"
+                className={layoutsOperarSummaryPanelClass}
+                aria-label="Carrito de la compra"
               >
-                <div className={layoutsOperarCatalogSidebarInnerClass}>
-                  {catalogSidebar}
-                </div>
+                <PurchaseOperationTicketOrderPanel
+                  lines={purchaseCartLines}
+                  overrides={purchaseCartOverrides}
+                  canUpdateArticles={canUpdateArticles}
+                  onApplyLineEdits={aplicarEdicionLineaCompra}
+                  onRemoveLine={quitarDelCarrito}
+                  listTitle="Tu compra"
+                  emptyTitle="Compra vacía"
+                  cartScrollHighlight={cartScrollHighlight}
+                  actions={{
+                    discardDisabled: !hayItemsEnPedido,
+                    confirmDisabled: !puedeComprar || compraSubmitting,
+                    confirmLoading: compraSubmitting,
+                    onDiscard: () => setDescartarConfirmOpen(true),
+                    onConfirm: () => {
+                      setCompraError(null)
+                      setComprarConfirmOpen(true)
+                    },
+                    confirmLabel: "Comprar",
+                    confirmTitle: !hayItemsEnPedido
+                      ? "Agregá artículos a la compra."
+                      : !payOnSupplierAccount && !metodoPagoSeleccionado
+                        ? "Elegí cómo vas a pagar o usá cuenta corriente."
+                        : payOnSupplierAccount && !proveedorSeleccionado?.id
+                          ? "Elegí un proveedor del catálogo para comprar a cuenta corriente."
+                          : !canCreate
+                            ? "No tenés permiso para registrar compras."
+                            : undefined,
+                  }}
+                  totalBar={{
+                    total,
+                    subtotal,
+                    descuentoMonto,
+                    hayDescuento,
+                    subtotalOriginal,
+                    descuentoItemsMonto,
+                    hayDescuentoItems,
+                    totalLabel: "Total a pagar",
+                    totalAriaLabel: "Total a pagar",
+                  }}
+                />
               </aside>
-
-              <section className="grid min-h-0 min-w-0 flex-1 grid-rows-[auto_minmax(0,1fr)] bg-[#20262e]">
-                <div className="flex min-w-0 items-center gap-3 border-b border-white/10 px-4 py-3">
-                  <div className="relative flex h-10 shrink-0 items-center rounded-lg border border-white/12 bg-black/25 p-1 shadow-[inset_0_1px_0_rgba(255,255,255,0.08),0_0_0_1px_rgba(16,185,129,0.06)]">
-                    <span
-                      aria-hidden
-                      className="pointer-events-none absolute inset-y-1 left-1 w-10 rounded-md border border-emerald-300/35 bg-linear-to-b from-emerald-300/22 via-emerald-400/16 to-emerald-500/12 shadow-[0_0_18px_rgba(16,185,129,0.45),inset_0_1px_0_rgba(255,255,255,0.25)] transition-transform duration-300 ease-out"
-                      style={{
-                        transform:
-                          modoVista === "lista"
-                            ? "translateX(2.5rem)"
-                            : "translateX(0)",
-                      }}
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setModoVista("grid")}
-                      className={cn(
-                        "relative z-10 flex h-8 w-10 items-center justify-center rounded-md transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-300/70",
-                        modoVista === "grid"
-                          ? "text-white drop-shadow-[0_0_10px_rgba(110,231,183,0.6)]"
-                          : "text-slate-300/80 hover:text-white/95",
-                      )}
-                      aria-label="Vista en grilla"
-                      aria-pressed={modoVista === "grid"}
-                    >
-                      <LayoutGrid className="size-4.5" />
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setModoVista("lista")}
-                      className={cn(
-                        "relative z-10 flex h-8 w-10 items-center justify-center rounded-md transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-300/70",
-                        modoVista === "lista"
-                          ? "text-white drop-shadow-[0_0_10px_rgba(110,231,183,0.6)]"
-                          : "text-slate-300/80 hover:text-white/95",
-                      )}
-                      aria-label="Vista en columna"
-                      aria-pressed={modoVista === "lista"}
-                    >
-                      <Rows3 className="size-4.5" />
-                    </button>
-                  </div>
-                  <div className="relative min-w-0 flex-1 max-w-md">
-                    <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-white/40" />
-                    <Input
-                      ref={busquedaProductosInputRef}
-                      value={busqueda}
-                      onChange={(e) => setBusqueda(e.target.value)}
-                      placeholder="Buscar artículo..."
-                      className={cn(
-                        "h-10 border-white/10 bg-black/20 pl-9 text-white placeholder:text-white/35",
-                        busqueda.length > 0 && "pr-9",
-                      )}
-                    />
-                    {busqueda.length > 0 ? (
-                      <button
-                        type="button"
-                        aria-label="Limpiar búsqueda"
-                        className="absolute right-1.5 top-1/2 flex size-7 -translate-y-1/2 items-center justify-center rounded-full text-white/50 transition-colors hover:bg-white/[0.07] hover:text-white/90"
-                        onClick={() => {
-                          setBusqueda("")
-                          busquedaProductosInputRef.current?.focus()
-                        }}
-                      >
-                        <IconoLimpiarBusqueda />
-                      </button>
-                    ) : null}
-                  </div>
-                  <span className="shrink-0 text-sm font-medium text-white/60">
-                    {productosFiltrados.length} artículos
-                  </span>
-                </div>
-
-                <div
-                  className={cn(
-                    "min-h-0",
-                    catalogLoading && !catalogError
-                      ? "flex flex-1 flex-col p-6"
-                      : catalogError
-                        ? "flex flex-1 flex-col p-6"
-                        : productosFiltrados.length === 0
-                          ? "relative overflow-hidden p-0"
-                          : "game-scroll overflow-y-auto p-3",
-                  )}
-                >
-                  {catalogLoading && !catalogError ? (
-                    <div className="flex min-h-[200px] flex-1 items-center justify-center">
-                      <p className="text-sm text-slate-400">Cargando artículos…</p>
-                    </div>
-                  ) : catalogError ? (
-                    <div className="flex min-h-[200px] flex-1 flex-col items-center justify-center gap-2 text-center">
-                      <p className="max-w-md text-sm text-rose-300">{catalogError}</p>
-                    </div>
-                  ) : productosFiltrados.length === 0 ? (
-                    <div
-                      aria-live="polite"
-                      className="rootsy-hero-slide-in-right pointer-events-none absolute right-[-50px] bottom-[-25px] z-10"
-                    >
-                      <Image
-                        src="/empty-products-mascot.png"
-                        alt=""
-                        width={260}
-                        height={260}
-                        className="h-auto w-full max-w-[260px] object-contain opacity-95"
-                      />
-                    </div>
-                  ) : (
-                    <div
-                      className={
-                        modoVista === "grid"
-                          ? "grid grid-cols-3 gap-3"
-                          : "flex flex-col gap-2"
-                      }
-                    >
-                      {productosFiltrados.map((p) => (
-                        <button
-                          key={p.id}
-                          type="button"
-                          onClick={() => agregarAlCarrito(p.id)}
-                          className={cn(
-                            "group relative w-full overflow-hidden rounded-2xl border border-white/10 bg-[#252b34] text-left",
-                            "shadow-[inset_0_1px_0_rgba(255,255,255,0.07),0_0_0_1px_rgba(0,0,0,0.45),0_1px_2px_rgba(0,0,0,0.22),0_6px_16px_rgba(0,0,0,0.28),0_16px_40px_rgba(0,0,0,0.38)]",
-                            "before:pointer-events-none before:absolute before:inset-y-4 before:left-0 before:z-10 before:w-0.5 before:rounded-full before:bg-emerald-400 before:opacity-0 before:transition-opacity before:duration-300 group-hover:before:opacity-90",
-                            modoVista === "lista"
-                              ? "flex min-h-[152px] items-stretch"
-                              : "grid h-[318px] grid-rows-[152px_1fr]",
-                          )}
-                        >
-                          <div
-                            className={cn(
-                              "relative overflow-hidden bg-[#0f1416]",
-                              modoVista === "grid"
-                                ? "h-full w-full"
-                                : "h-[152px] w-48 shrink-0",
-                            )}
-                          >
-                            <Image
-                              src={p.imagen}
-                              alt={p.nombre}
-                              fill
-                              className="h-full w-full transition-transform duration-300 ease-out group-hover:scale-[1.03]"
-                              unoptimized
-                              sizes={modoVista === "grid" ? "33vw" : `${LAYOUTS_OPERAR_CATALOG_SIDEBAR_WIDTH_PX}px`}
-                              style={{ objectFit: "cover", objectPosition: "center" }}
-                            />
-                            <span
-                              className="pointer-events-none absolute right-2 bottom-2 z-20 flex size-9 items-center justify-center rounded-full border border-emerald-300/45 bg-emerald-500 text-emerald-950 opacity-0 shadow-[0_4px_20px_rgba(16,185,129,0.5)] transition-[opacity,transform] duration-200 translate-y-1 scale-95 group-hover:translate-y-0 group-hover:scale-100 group-hover:opacity-100"
-                              aria-hidden
-                            >
-                              <Plus className="size-4.5" strokeWidth={2.5} />
-                            </span>
-                          </div>
-                          <div
-                            className={
-                              modoVista === "grid"
-                                ? "grid h-full min-h-0 gap-2 p-5 grid-rows-[minmax(0,1fr)_auto]"
-                                : "flex min-h-0 min-w-0 flex-1 flex-col justify-between gap-2 p-5"
-                            }
-                          >
-                            <div className="min-h-0 self-start">
-                              <h3 className="line-clamp-2 text-lg font-bold leading-tight text-foreground">
-                                {p.nombre}
-                              </h3>
-                              <p className="mt-1 line-clamp-2 text-sm leading-relaxed text-muted-foreground">
-                                {p.descripcion}
-                              </p>
-                            </div>
-                            <div
-                              className={
-                                modoVista === "grid" ? "self-end" : "shrink-0"
-                              }
-                            >
-                              <span className={cn(compraImporteCardClass, "text-base")}>
-                                {catalogArticleCostHint(p)}
-                              </span>
-                            </div>
-                          </div>
-                        </button>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              </section>
-            </div>
-
-            <div
-              role="toolbar"
-              aria-label="Configuración de la compra"
-              className={cn(
-                "col-start-1 row-start-2 grid h-full min-h-0 grid-cols-2 gap-2 lg:grid-cols-4",
-                toolboxBarClass,
-                compraFooterBarPaddingClass,
-                compraFooterBandHeightClass,
-              )}
-            >
-              <button
-                type="button"
-                onClick={() => setProveedorModalAbierto(true)}
-                className={toolboxSlotClass(Boolean(proveedorSeleccionado))}
-                aria-label={
-                  proveedorSeleccionado
-                    ? `Proveedor: ${proveedorSeleccionado.name}. Abrir para cambiar.`
-                    : "Proveedor sin elegir. Abrir para seleccionar."
-                }
-              >
-                <span className={toolboxIconWrap(Boolean(proveedorSeleccionado))}>
-                  <Truck className="size-4.5 sm:size-5" aria-hidden />
-                </span>
-                <span className="min-w-0 flex-1">
-                  <span className="mb-0.5 block text-[10px] font-semibold uppercase tracking-[0.12em] text-foreground/45">
-                    Proveedor
-                  </span>
-                  <span
-                    className={cn(
-                      "block truncate text-sm font-semibold leading-snug",
-                      proveedorSeleccionado
-                        ? "text-foreground"
-                        : "text-foreground/55",
-                    )}
-                  >
-                    {proveedorSeleccionado?.name ?? "Elegir proveedor"}
-                  </span>
-                  {compraIvaLabel ? (
-                    <span className="mt-0.5 block truncate text-[11px] font-medium text-muted-foreground">
-                      {compraIvaLabel}
-                    </span>
-                  ) : null}
-                </span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => setComprobanteModalAbierto(true)}
-                className={toolboxSlotClass(comprobanteConfigurado)}
-                aria-label={
-                  comprobanteConfigurado
-                    ? "Comprobante configurado. Abrir para editar."
-                    : "Comprobante sin datos. Abrir para completar."
-                }
-              >
-                <span className={toolboxIconWrap(comprobanteConfigurado)}>
-                  <Receipt className="size-4.5 sm:size-5" aria-hidden />
-                </span>
-                <span className="min-w-0 flex-1">
-                  <span className="mb-0.5 block text-[10px] font-semibold uppercase tracking-[0.12em] text-foreground/45">
-                    Comprobante
-                  </span>
-                  <span
-                    className={cn(
-                      "block truncate text-sm font-semibold leading-snug",
-                      comprobanteConfigurado
-                        ? "text-foreground"
-                        : "text-foreground/55",
-                    )}
-                  >
-                    {comprobanteTipo != null
-                      ? comprobanteTipo
-                      : documentNumber.trim() ||
-                        (comprobanteAdjunto
-                          ? comprobanteAdjunto.name
-                          : comprobanteDisplayLabel)}
-                  </span>
-                </span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => setPagoModalAbierto(true)}
-                className={toolboxSlotClass(pagoConfigurado)}
-                aria-label={
-                  pagoConfigurado
-                    ? `Pago: ${pagoResumenLabel}. Abrir para cambiar.`
-                    : "Forma de pago sin elegir. Abrir para seleccionar."
-                }
-              >
-                <span className={toolboxIconWrap(pagoConfigurado)}>
-                  <Banknote className="size-4.5 sm:size-5" aria-hidden />
-                </span>
-                <span className="min-w-0 flex-1">
-                  <span className="mb-0.5 block text-[10px] font-semibold uppercase tracking-[0.12em] text-foreground/45">
-                    Pago
-                  </span>
-                  <span
-                    className={cn(
-                      "block truncate text-sm font-semibold leading-snug",
-                      pagoConfigurado ? "text-foreground" : "text-foreground/55",
-                    )}
-                  >
-                    {pagoResumenLabel}
-                  </span>
-                </span>
-              </button>
-
-              <button
-                type="button"
-                onClick={abrirModalDescuento}
-                className={toolboxSlotClass(hayDescuento)}
-                aria-label={
-                  hayDescuento
-                    ? `Descuento aplicado. Abrir para editar.`
-                    : "Sin descuento. Abrir para configurar."
-                }
-              >
-                <span className={toolboxIconWrap(hayDescuento)}>
-                  <Percent className="size-4.5 sm:size-5" aria-hidden />
-                </span>
-                <span className="min-w-0 flex-1">
-                  <span className="mb-0.5 block text-[10px] font-semibold uppercase tracking-[0.12em] text-foreground/45">
-                    Descuento
-                  </span>
-                  <span
-                    className={cn(
-                      "block truncate text-sm font-semibold leading-snug",
-                      hayDescuento ? "text-foreground" : "text-foreground/55",
-                    )}
-                  >
-                    {hayDescuento
-                      ? modoDescuento === "porcentaje"
-                        ? `${valorDescuentoPorcentaje}%`
-                        : `Fijo ${fmt.format(valorDescuentoFijo)}`
-                      : "Sin descuento"}
-                  </span>
-                </span>
-              </button>
-            </div>
-
-          <aside
-            className="rootsy-app-light col-start-2 row-span-2 grid min-h-0 overflow-hidden grid-rows-[minmax(0,1fr)] bg-[#eef1f5] text-[#121417]"
-            aria-label="Carrito de la compra"
-          >
-            <PurchaseOperationTicketOrderPanel
-              lines={purchaseCartLines}
-              overrides={purchaseCartOverrides}
-              canUpdateArticles={canUpdateArticles}
-              onApplyLineEdits={aplicarEdicionLineaCompra}
-              onRemoveLine={quitarDelCarrito}
-              listTitle="Tu compra"
-              emptyTitle="Compra vacía"
-              cartScrollHighlight={cartScrollHighlight}
-              actions={{
-                discardDisabled: !hayItemsEnPedido,
-                confirmDisabled: !puedeComprar || compraSubmitting,
-                confirmLoading: compraSubmitting,
-                onDiscard: () => setDescartarConfirmOpen(true),
-                onConfirm: () => {
-                  setCompraError(null)
-                  setComprarConfirmOpen(true)
-                },
-                confirmLabel: "Comprar",
-                confirmTitle: !hayItemsEnPedido
-                  ? "Agregá artículos a la compra."
-                  : !payOnSupplierAccount && !metodoPagoSeleccionado
-                    ? "Elegí cómo vas a pagar o usá cuenta corriente."
-                    : payOnSupplierAccount && !proveedorSeleccionado?.id
-                      ? "Elegí un proveedor del catálogo para comprar a cuenta corriente."
-                      : !canCreate
-                        ? "No tenés permiso para registrar compras."
-                        : undefined,
-              }}
-              totalBar={{
-                total,
-                subtotal,
-                descuentoMonto,
-                hayDescuento,
-                subtotalOriginal,
-                descuentoItemsMonto,
-                hayDescuentoItems,
-                totalLabel: "Total a pagar",
-                totalAriaLabel: "Total a pagar",
-              }}
-            />
-          </aside>
-        </main>
+            }
+          />
         </div>
       </DataWorkspaceOperationsLayout>
 

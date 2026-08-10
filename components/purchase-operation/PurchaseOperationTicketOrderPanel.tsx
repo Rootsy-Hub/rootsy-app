@@ -1,21 +1,36 @@
 "use client"
 
 import {
+  layoutsOperarSummaryCartCellClass,
+  layoutsOperarSummaryCartHeadingClass,
+  layoutsOperarSummaryCartListSurfaceClass,
+  layoutsOperarSummaryCartMetaClass,
+  layoutsOperarSummaryTotalsPlacementClass,
+} from "@/app/library/layouts/layoutsOperarStyles"
+import {
+  layoutsOperarTicketProposalActionsClass,
+  layoutsOperarTicketProposalCartListClass,
+  layoutsOperarTicketProposalHeaderClass,
+} from "@/app/library/layouts/layoutsOperarHardcodedSpec"
+import { LAYOUTS_OPERAR_DEFAULT_TICKET_PROPOSAL } from "@/app/library/layouts/rootsyLayoutsOperarSystem"
+import {
   PurchaseCartLineCard,
   type PurchaseCartLine,
   type PurchaseCartLineOverrides,
   type PurchaseLineEditInput,
 } from "@/components/purchase-operation/PurchaseCartLineCard"
+import { DataWorkspaceDetailEmptyState } from "@/components/data-workspace/DataWorkspaceDetailEmptyState"
 import { SaleOperationActionsBar } from "@/components/sale-operation/SaleOperationActionsBar"
-import { SaleOperationCartList } from "@/components/sale-operation/SaleOperationCartList"
 import { SaleOperationTotalBar } from "@/components/sale-operation/SaleOperationTotalBar"
-import { saleOpCartListSurfaceClass } from "@/components/sale-operation/saleOperationStyles"
-import { cn } from "@/lib/utils"
 import type { CartListScrollHighlightValue } from "@/hooks/useCartListScrollHighlight"
 import { CartListScrollHighlightProvider } from "@/hooks/useCartListScrollHighlight"
+import { cn } from "@/lib/utils"
+import { Receipt } from "lucide-react"
 
 type ActionsProps = React.ComponentProps<typeof SaleOperationActionsBar>
 type TotalProps = React.ComponentProps<typeof SaleOperationTotalBar>
+
+const TICKET_PROPOSAL = LAYOUTS_OPERAR_DEFAULT_TICKET_PROPOSAL
 
 type Props = {
   lines: PurchaseCartLine[]
@@ -27,7 +42,6 @@ type Props = {
   totalBar: TotalProps
   listTitle?: string
   emptyTitle?: string
-  flush?: boolean
   cartScrollHighlight?: CartListScrollHighlightValue
 }
 
@@ -41,36 +55,72 @@ export function PurchaseOperationTicketOrderPanel({
   totalBar,
   listTitle = "Tu compra",
   emptyTitle = "Compra vacía",
-  flush = true,
   cartScrollHighlight,
 }: Props) {
-  const panel = (
-    <div className="flex min-h-0 flex-1 flex-col">
-      <SaleOperationCartList
-        title={listTitle}
-        lineCount={lines.length}
-        emptyTitle={emptyTitle}
-        flush={flush}
-      >
-        <div className={cn("border-b border-slate-200/90", saleOpCartListSurfaceClass)}>
-          {lines.map((line) => (
-            <PurchaseCartLineCard
-              key={line.lineId}
-              line={line}
-              overrides={overrides}
-              canUpdateArticles={canUpdateArticles}
-              onApplyEdits={onApplyLineEdits}
-              onRemove={() => onRemoveLine(line.lineId)}
-            />
-          ))}
-        </div>
-      </SaleOperationCartList>
+  const cartScrollContainerRef = cartScrollHighlight?.scrollRef
+  const ticketLineCount = lines.length
+  const hasTicketItems = ticketLineCount > 0
 
-      <div className="relative z-10 mt-auto shrink-0 bg-white">
-        <SaleOperationActionsBar {...actions} flush={flush} />
-        <SaleOperationTotalBar {...totalBar} flush={flush} />
+  const panel = (
+    <>
+      <div
+        className={cn(
+          layoutsOperarTicketProposalHeaderClass(TICKET_PROPOSAL),
+          "row-start-1 min-h-0 shrink-0",
+        )}
+      >
+        <div className="min-w-0">
+          <h2 className={layoutsOperarSummaryCartHeadingClass}>{listTitle}</h2>
+        </div>
+        <span className={layoutsOperarSummaryCartMetaClass}>
+          {ticketLineCount} {ticketLineCount === 1 ? "línea" : "líneas"}
+        </span>
       </div>
-    </div>
+
+      <div
+        ref={cartScrollContainerRef}
+        className={cn(
+          layoutsOperarSummaryCartCellClass,
+          "layouts-operar-scroll-minimal overflow-y-auto",
+        )}
+        role="region"
+        aria-label="Ítems agregados"
+      >
+        {ticketLineCount === 0 ? (
+          <div className="flex min-h-0 flex-1 flex-col" data-ticket-empty="true">
+            <DataWorkspaceDetailEmptyState icon={Receipt} title={emptyTitle} />
+          </div>
+        ) : (
+          <div
+            className={cn(
+              layoutsOperarSummaryCartListSurfaceClass,
+              layoutsOperarTicketProposalCartListClass(TICKET_PROPOSAL),
+            )}
+          >
+            {lines.map((line) => (
+              <PurchaseCartLineCard
+                key={line.lineId}
+                line={line}
+                overrides={overrides}
+                canUpdateArticles={canUpdateArticles}
+                onApplyEdits={onApplyLineEdits}
+                onRemove={() => onRemoveLine(line.lineId)}
+              />
+            ))}
+          </div>
+        )}
+      </div>
+
+      {hasTicketItems ? (
+        <div className={layoutsOperarTicketProposalActionsClass(TICKET_PROPOSAL)}>
+          <SaleOperationActionsBar {...actions} variant="operar" />
+        </div>
+      ) : null}
+
+      <div className={layoutsOperarSummaryTotalsPlacementClass} data-ticket-totals>
+        <SaleOperationTotalBar {...totalBar} tone="operar" className="h-full w-full" />
+      </div>
+    </>
   )
 
   if (cartScrollHighlight) {
