@@ -19,12 +19,13 @@ export function MostradorRightPanelTabs({
     <SaleOperationPanelTabs
       value={value}
       onChange={onChange}
-      ariaLabel="Datos y carrito"
+      ariaLabel="Datos y pedido"
+      variant="operar"
       tabs={[
         { id: "detail", label: "Datos", icon: ClipboardList },
         {
           id: "cart",
-          label: "Carrito",
+          label: "Pedido",
           icon: ShoppingBag,
           disabled: cartDisabled,
         },

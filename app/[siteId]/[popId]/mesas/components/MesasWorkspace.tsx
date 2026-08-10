@@ -34,6 +34,7 @@ import {
   mesasRealtimeBannerClass,
 } from "@/app/[siteId]/[popId]/mesas/mesasOperarStyles"
 import { OpenCashSessionBanner } from "@/components/sale-operation/OpenCashSessionBanner"
+import { MesasFloorPlanSkeleton } from "@/components/sale-operation/OperarChannelCanvasSkeletons"
 import { SaleOperationToolbox } from "@/components/sale-operation/SaleOperationToolbox"
 import { useCartListScrollHighlight } from "@/hooks/useCartListScrollHighlight"
 import { useMemo, useState, useEffect, useCallback } from "react"
@@ -156,8 +157,10 @@ export function MesasWorkspace({
   useEffect(() => {
     if (!selectedSession) {
       setRightView("session")
+      return
     }
-  }, [selectedSession])
+    setRightView("cart")
+  }, [selectedSession?.id])
 
   useEffect(() => {
     if (!canUpdateLayout && layoutEditMode) {
@@ -228,7 +231,12 @@ export function MesasWorkspace({
   const handleSelectTable = (tableId: string) => {
     if (!tableId) return
     selectTable(tableId)
-    setRightView("session")
+    const table = tables.find((t) => t.id === tableId)
+    const isOpen =
+      table != null &&
+      table.sessionId != null &&
+      (table.status === "open" || table.status === "paying")
+    setRightView(isOpen ? "cart" : "session")
   }
 
   const handleMoveTable = useCallback(
@@ -298,9 +306,7 @@ export function MesasWorkspace({
                     <div className={mesasLayoutErrorBannerClass}>{layoutError}</div>
                   ) : null}
                   {layoutLoading ? (
-                    <div className={cn("flex flex-1 items-center justify-center text-sm", mesasFloorEmptyTextClass)}>
-                      Cargando plano…
-                    </div>
+                    <MesasFloorPlanSkeleton />
                   ) : salons.length === 0 ? (
                     <div className={cn("flex flex-1 flex-col items-center justify-center gap-2 px-6 text-center text-sm", mesasFloorEmptyTextClass)}>
                       <p>Todavía no hay salones configurados.</p>

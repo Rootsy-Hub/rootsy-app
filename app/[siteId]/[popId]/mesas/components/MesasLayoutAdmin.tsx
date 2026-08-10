@@ -5,13 +5,8 @@ import { MesasSalonsDialog } from "@/app/[siteId]/[popId]/mesas/components/Mesas
 import { MesasTablesDialog } from "@/app/[siteId]/[popId]/mesas/components/MesasTablesDialog"
 import type { MesasLayoutData } from "@/app/[siteId]/[popId]/mesas/actions"
 import type { MesaSalon } from "@/app/[siteId]/[popId]/mesas/mesasTypes"
-import { DataWorkspaceHeaderIconButton } from "@/components/layouts/DataWorkspaceHeaderIconButton"
+import { DataWorkspaceHeaderTooltipIconButton } from "@/components/layouts/DataWorkspaceHeaderTooltipIconButton"
 import { dataWorkspaceModuleHeaderVariant } from "@/components/layouts-module/DataWorkspaceModuleLayout"
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "@/components/ui/tooltip"
 import { LayoutGrid, MapPin, Shapes, type LucideIcon } from "lucide-react"
 import { useState } from "react"
 
@@ -25,20 +20,13 @@ function MesasHeaderTooltipButton({
   onClick: () => void
 }) {
   return (
-    <Tooltip>
-      <TooltipTrigger asChild>
-        <DataWorkspaceHeaderIconButton
-          label={label}
-          headerVariant={dataWorkspaceModuleHeaderVariant}
-          onClick={onClick}
-        >
-          <Icon className="size-5" aria-hidden />
-        </DataWorkspaceHeaderIconButton>
-      </TooltipTrigger>
-      <TooltipContent variant="dark" side="bottom" sideOffset={6}>
-        {label}
-      </TooltipContent>
-    </Tooltip>
+    <DataWorkspaceHeaderTooltipIconButton
+      label={label}
+      headerVariant={dataWorkspaceModuleHeaderVariant}
+      onClick={onClick}
+    >
+      <Icon className="size-5" aria-hidden />
+    </DataWorkspaceHeaderTooltipIconButton>
   )
 }
 

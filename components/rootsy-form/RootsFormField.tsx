@@ -1,6 +1,7 @@
 "use client"
 
 import { RootsFormFieldMessage } from "@/components/rootsy-form/RootsFormFieldMessage"
+import { RootsFormLabelInfo } from "@/components/rootsy-form/RootsFormLabelInfo"
 import {
   resolveRootsFormFieldMessage,
   type RootsFormFieldAssistProps,
@@ -24,6 +25,7 @@ type Props = {
 export function RootsFormField({
   label,
   htmlFor,
+  labelInfo,
   hint,
   error,
   warning,
@@ -37,6 +39,18 @@ export function RootsFormField({
   const message = resolveRootsFormFieldMessage({ hint, error, warning, success })
   const isInvalid = invalid ?? Boolean(error)
 
+  const labelNode = (
+    <>
+      {label}
+      {labelInfo ? (
+        <RootsFormLabelInfo
+          content={labelInfo}
+          ariaLabel={`Información sobre ${label}`}
+        />
+      ) : null}
+    </>
+  )
+
   return (
     <RootsFormFieldContext.Provider
       value={{
@@ -46,11 +60,20 @@ export function RootsFormField({
     >
       <div className={cn(className)} style={{ ...getFormFieldStackStyle(), ...style }}>
         {htmlFor ? (
-          <label htmlFor={htmlFor} style={FORM_UI_LABEL_STYLE}>
-            {label}
+          <label
+            htmlFor={htmlFor}
+            className="inline-flex items-center gap-1.5"
+            style={FORM_UI_LABEL_STYLE}
+          >
+            {labelNode}
           </label>
         ) : (
-          <span style={FORM_UI_LABEL_STYLE}>{label}</span>
+          <span
+            className="inline-flex items-center gap-1.5"
+            style={FORM_UI_LABEL_STYLE}
+          >
+            {labelNode}
+          </span>
         )}
         {children}
         {message ? (

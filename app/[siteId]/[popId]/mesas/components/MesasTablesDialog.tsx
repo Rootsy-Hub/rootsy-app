@@ -43,6 +43,7 @@ import {
   RootsDialogErrorBanner,
   RootsDialogHeader,
   RootsDialogLoadingState,
+  useDeferredDialogReset,
 } from "@/components/rootsy-dialog"
 import {
   RootsFormIntegerField,
@@ -141,14 +142,15 @@ export function MesasTablesDialog({
     applyLayout(res.data)
   }, [applyLayout, popId, siteId])
 
+  useDeferredDialogReset(open, () => {
+    setError(null)
+    setFilterSalonId("all")
+    setForm(defaultTableForm("", 0))
+    setDeleteTarget(null)
+  })
+
   useEffect(() => {
-    if (!open) {
-      setError(null)
-      setFilterSalonId("all")
-      setForm(defaultTableForm("", 0))
-      setDeleteTarget(null)
-      return
-    }
+    if (!open) return
 
     setFilterSalonId("all")
     const snapshot = getLayoutData?.()
@@ -279,6 +281,7 @@ export function MesasTablesDialog({
           className={mesasLayoutDialogContentClass}
         >
           <RootsDialogHeader
+            open={open}
             title="Mesas"
             description="Número, forma y capacidad. La posición en el plano se ajusta con el lápiz de edición."
           />

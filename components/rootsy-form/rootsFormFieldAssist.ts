@@ -3,6 +3,8 @@ import type { ReactNode } from "react"
 export type RootsFormFieldMessageVariant = "hint" | "error" | "warning" | "success"
 
 export type RootsFormFieldAssistProps = {
+  /** Ayuda en tooltip junto al label (ícono ⓘ). */
+  labelInfo?: ReactNode
   /** Ayuda neutral debajo del control. */
   hint?: ReactNode
   /** Error de validación — prioridad sobre hint y warning. */

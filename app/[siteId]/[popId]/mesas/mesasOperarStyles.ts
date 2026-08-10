@@ -1,11 +1,19 @@
 import {
-  layoutsOperarCatalogToolbarClass,
   layoutsOperarCatalogToolbarControlFocusClass,
   layoutsOperarCatalogToolbarControlShellClass,
   layoutsOperarCatalogToolbarIconAccentClass,
   layoutsOperarCatalogToolbarIconMutedClass,
   layoutsOperarCatalogToolbarViewToggleActiveSurfaceClass,
 } from "@/app/library/layouts/layoutsOperarStyles"
+import {
+  operarCanvasToolbarCountPillOpenClass,
+  operarCanvasToolbarCountPillTotalActiveClass,
+  operarCanvasToolbarCountPillTotalIdleClass,
+  operarCanvasToolbarIndicatorClass,
+  operarCanvasToolbarShellClass,
+  operarCanvasToolbarTabActiveClass,
+  operarCanvasToolbarTabIdleClass,
+} from "@/components/sale-operation/operarCanvasToolbarStyles"
 import { cn } from "@/lib/utils"
 import type { CSSProperties } from "react"
 
@@ -18,36 +26,19 @@ export const MESAS_FLOOR_PLAN_SURFACE_BG = "var(--rootsy-sombra-700)"
 /** @deprecated Usar MESAS_FLOOR_PLAN_SURFACE_BG — compat con MostradorBoard. */
 export const MESAS_FLOOR_PLAN_BG = MESAS_FLOOR_PLAN_SURFACE_BG
 
-export const mesasSalonTabsShellClass = layoutsOperarCatalogToolbarClass
+export const mesasSalonTabsShellClass = operarCanvasToolbarShellClass
 
-export const mesasSalonTabActiveClass =
-  "text-[color-mix(in_srgb,var(--rootsy-bruma-50)_92%,white)]"
+export const mesasSalonTabActiveClass = operarCanvasToolbarTabActiveClass
 
-export const mesasSalonTabIdleClass = cn(
-  "text-[color-mix(in_srgb,var(--rootsy-sombra-300)_55%,transparent)]",
-  "hover:text-[color-mix(in_srgb,var(--rootsy-sombra-300)_82%,transparent)]",
-)
+export const mesasSalonTabIdleClass = operarCanvasToolbarTabIdleClass
 
-export const mesasSalonTabIndicatorClass =
-  "bg-[color-mix(in_srgb,var(--rootsy-savia-400)_88%,white)]"
+export const mesasSalonTabIndicatorClass = operarCanvasToolbarIndicatorClass
 
-export const mesasSalonCountPillOpenClass = cn(
-  "bg-[color-mix(in_srgb,var(--rootsy-savia-400)_18%,transparent)]",
-  "text-[color-mix(in_srgb,var(--rootsy-savia-300)_92%,white)]",
-  "ring-1 ring-[color-mix(in_srgb,var(--rootsy-savia-400)_28%,transparent)]",
-)
+export const mesasSalonCountPillOpenClass = operarCanvasToolbarCountPillOpenClass
 
-export const mesasSalonCountPillTotalActiveClass = cn(
-  "bg-[color-mix(in_srgb,var(--rootsy-sombra-950)_55%,transparent)]",
-  "text-[color-mix(in_srgb,var(--rootsy-sombra-300)_75%,transparent)]",
-  "ring-1 ring-[color-mix(in_srgb,var(--rootsy-sombra-border)_45%,transparent)]",
-)
+export const mesasSalonCountPillTotalActiveClass = operarCanvasToolbarCountPillTotalActiveClass
 
-export const mesasSalonCountPillTotalIdleClass = cn(
-  "bg-[color-mix(in_srgb,var(--rootsy-sombra-950)_40%,transparent)]",
-  "text-[color-mix(in_srgb,var(--rootsy-sombra-300)_50%,transparent)]",
-  "ring-1 ring-[color-mix(in_srgb,var(--rootsy-sombra-border)_35%,transparent)]",
-)
+export const mesasSalonCountPillTotalIdleClass = operarCanvasToolbarCountPillTotalIdleClass
 
 export const mesasFloorFloatingBtnClass = cn(
   "relative z-10 flex size-10 items-center justify-center rounded-full",

@@ -2,54 +2,16 @@
 
 import type { MesaSalon } from "@/app/[siteId]/[popId]/mesas/mesasTypes"
 import {
-  mesasSalonCountPillOpenClass,
-  mesasSalonCountPillTotalActiveClass,
-  mesasSalonCountPillTotalIdleClass,
-  mesasSalonTabActiveClass,
-  mesasSalonTabIdleClass,
-  mesasSalonTabIndicatorClass,
-  mesasSalonTabsShellClass,
-} from "@/app/[siteId]/[popId]/mesas/mesasOperarStyles"
-import {
-  layoutsOperarCatalogToolbarControlFocusClass,
-} from "@/app/library/layouts/layoutsOperarStyles"
-import { cn } from "@/lib/utils"
-import { useCallback, useLayoutEffect, useRef, useState } from "react"
+  OperarCanvasToolbarCountPill,
+  OperarCanvasToolbarTab,
+  OperarCanvasToolbarTabs,
+} from "@/components/sale-operation/OperarCanvasToolbar"
 
 type Props = {
   salons: MesaSalon[]
   activeSalonId: string
   onChange: (salonId: string) => void
   tableCounts: Record<string, { total: number; open: number }>
-}
-
-function CountPill({
-  value,
-  variant,
-  active,
-  label,
-}: {
-  value: number
-  variant: "open" | "total"
-  active: boolean
-  label: string
-}) {
-  return (
-    <span
-      className={cn(
-        "inline-flex min-w-[1.25rem] items-center justify-center rounded-full px-1 py-px text-[10px] font-semibold tabular-nums leading-none",
-        variant === "open"
-          ? mesasSalonCountPillOpenClass
-          : active
-            ? mesasSalonCountPillTotalActiveClass
-            : mesasSalonCountPillTotalIdleClass,
-      )}
-      aria-label={label}
-      title={label}
-    >
-      {value}
-    </span>
-  )
 }
 
 export function MesasSalonTabs({
@@ -59,102 +21,48 @@ export function MesasSalonTabs({
   tableCounts,
 }: Props) {
   const sorted = [...salons].sort((a, b) => a.sortOrder - b.sortOrder)
-  const containerRef = useRef<HTMLDivElement>(null)
-  const tabRefs = useRef<Partial<Record<string, HTMLButtonElement | null>>>({})
-  const [indicator, setIndicator] = useState({ left: 0, width: 0, ready: false })
-
-  const updateIndicator = useCallback(() => {
-    const container = containerRef.current
-    const tab = tabRefs.current[activeSalonId]
-    if (!container || !tab) return
-    const cRect = container.getBoundingClientRect()
-    const tRect = tab.getBoundingClientRect()
-    setIndicator({
-      left: tRect.left - cRect.left,
-      width: tRect.width,
-      ready: true,
-    })
-  }, [activeSalonId])
-
-  useLayoutEffect(() => {
-    updateIndicator()
-    const container = containerRef.current
-    if (!container) return
-    const ro = new ResizeObserver(updateIndicator)
-    ro.observe(container)
-    return () => ro.disconnect()
-  }, [updateIndicator, sorted.length, activeSalonId])
 
   return (
-    <div className={cn("relative shrink-0 overflow-hidden", mesasSalonTabsShellClass)}>
-      <div
-        ref={containerRef}
-        className="relative flex h-full w-full min-w-0"
-        role="tablist"
-        aria-label="Salones"
-      >
-        <span
-          className={cn(
-            "pointer-events-none absolute bottom-0 left-0 h-0.5",
-            mesasSalonTabIndicatorClass,
-            "transition-[transform,width,opacity] duration-300 ease-[cubic-bezier(0.34,1.56,0.64,1)] motion-reduce:transition-none",
-            indicator.ready ? "opacity-100" : "opacity-0",
-          )}
-          style={{
-            width: indicator.width,
-            transform: `translateX(${indicator.left}px)`,
-          }}
-          aria-hidden
-        />
+    <OperarCanvasToolbarTabs
+      value={activeSalonId}
+      ariaLabel="Salones"
+    >
+      {sorted.map((salon) => {
+        const active = salon.id === activeSalonId
+        const counts = tableCounts[salon.id] ?? { total: 0, open: 0 }
+        const openLabel = `${counts.open} mesa${counts.open === 1 ? "" : "s"} abierta${counts.open === 1 ? "" : "s"}`
+        const totalLabel = `${counts.total} mesa${counts.total === 1 ? "" : "s"} en total`
 
-        {sorted.map((salon) => {
-          const active = salon.id === activeSalonId
-          const counts = tableCounts[salon.id] ?? { total: 0, open: 0 }
-          const openLabel = `${counts.open} mesa${counts.open === 1 ? "" : "s"} abierta${counts.open === 1 ? "" : "s"}`
-          const totalLabel = `${counts.total} mesa${counts.total === 1 ? "" : "s"} en total`
-
-          return (
-            <button
-              key={salon.id}
-              ref={(el) => {
-                tabRefs.current[salon.id] = el
-              }}
-              type="button"
-              role="tab"
-              aria-selected={active}
-              aria-label={`${salon.name}. ${counts.open > 0 ? `${openLabel}. ` : ""}${totalLabel}`}
-              onClick={() => onChange(salon.id)}
-              className={cn(
-                "relative z-10 flex h-full min-w-0 flex-1 items-center justify-center px-4 text-sm font-semibold leading-none",
-                "transition-colors duration-200",
-                layoutsOperarCatalogToolbarControlFocusClass,
-                "focus-visible:ring-inset",
-                active ? mesasSalonTabActiveClass : mesasSalonTabIdleClass,
-              )}
-            >
-              <span className="flex min-w-0 max-w-full items-center justify-center gap-1.5">
-                <span className="truncate">{salon.name}</span>
-                <span className="flex shrink-0 items-center gap-1" aria-hidden>
-                  {counts.open > 0 ? (
-                    <CountPill
-                      value={counts.open}
-                      variant="open"
-                      active={active}
-                      label={openLabel}
-                    />
-                  ) : null}
-                  <CountPill
-                    value={counts.total}
-                    variant="total"
+        return (
+          <OperarCanvasToolbarTab
+            key={salon.id}
+            tabId={salon.id}
+            active={active}
+            onClick={() => onChange(salon.id)}
+            ariaLabel={`${salon.name}. ${counts.open > 0 ? `${openLabel}. ` : ""}${totalLabel}`}
+          >
+            <span className="flex min-w-0 max-w-full items-center justify-center gap-1.5">
+              <span className="truncate">{salon.name}</span>
+              <span className="flex shrink-0 items-center gap-1" aria-hidden>
+                {counts.open > 0 ? (
+                  <OperarCanvasToolbarCountPill
+                    value={counts.open}
+                    variant="open"
                     active={active}
-                    label={totalLabel}
+                    label={openLabel}
                   />
-                </span>
+                ) : null}
+                <OperarCanvasToolbarCountPill
+                  value={counts.total}
+                  variant="total"
+                  active={active}
+                  label={totalLabel}
+                />
               </span>
-            </button>
-          )
-        })}
-      </div>
-    </div>
+            </span>
+          </OperarCanvasToolbarTab>
+        )
+      })}
+    </OperarCanvasToolbarTabs>
   )
 }

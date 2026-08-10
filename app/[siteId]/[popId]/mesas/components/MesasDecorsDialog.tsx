@@ -41,6 +41,7 @@ import {
   RootsDialogErrorBanner,
   RootsDialogHeader,
   RootsDialogLoadingState,
+  useDeferredDialogReset,
 } from "@/components/rootsy-dialog"
 import {
   RootsFormIntegerField,
@@ -142,14 +143,15 @@ export function MesasDecorsDialog({
     applyLayout(res.data)
   }, [applyLayout, popId, siteId])
 
+  useDeferredDialogReset(open, () => {
+    setError(null)
+    setFilterSalonId("all")
+    setForm(defaultDecorForm("", 0))
+    setDeleteTarget(null)
+  })
+
   useEffect(() => {
-    if (!open) {
-      setError(null)
-      setFilterSalonId("all")
-      setForm(defaultDecorForm("", 0))
-      setDeleteTarget(null)
-      return
-    }
+    if (!open) return
 
     setFilterSalonId("all")
     const snapshot = getLayoutData?.()
@@ -275,6 +277,7 @@ export function MesasDecorsDialog({
           className={mesasLayoutDialogContentClass}
         >
           <RootsDialogHeader
+            open={open}
             title="Elementos del plano"
             description='Paredes, barra, ingresos y decoración. El texto es libre (ej. "Salida emergencia", "Barra tragos").'
           />

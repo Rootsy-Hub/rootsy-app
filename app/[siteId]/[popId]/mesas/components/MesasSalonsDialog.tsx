@@ -28,6 +28,7 @@ import {
   RootsDialogErrorBanner,
   RootsDialogHeader,
   RootsDialogLoadingState,
+  useDeferredDialogReset,
 } from "@/components/rootsy-dialog"
 import { RootsFormTextField } from "@/components/rootsy-form"
 import type { RootsSortableActionListItem } from "@/components/rootsy-list"
@@ -93,13 +94,14 @@ export function MesasSalonsDialog({
     setForm(defaultSalonForm(res.data.salons.length))
   }, [popId, siteId])
 
+  useDeferredDialogReset(open, () => {
+    setError(null)
+    setForm(defaultSalonForm(0))
+    setDeleteTarget(null)
+  })
+
   useEffect(() => {
-    if (!open) {
-      setError(null)
-      setForm(defaultSalonForm(0))
-      setDeleteTarget(null)
-      return
-    }
+    if (!open) return
     void loadRows()
   }, [open, loadRows])
 
@@ -190,6 +192,7 @@ export function MesasSalonsDialog({
           className={mesasLayoutDialogContentClass}
         >
           <RootsDialogHeader
+            open={open}
             title="Salones"
             description="Sectores del local que aparecen como pestañas en el plano."
           />

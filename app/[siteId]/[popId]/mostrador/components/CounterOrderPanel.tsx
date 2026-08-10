@@ -6,27 +6,30 @@ import type {
   CreateCounterOrderInput,
   UpdateCounterOrderInput,
 } from "@/app/[siteId]/[popId]/mostrador/mostradorTypes"
+import { DataWorkspaceTableIconAction } from "@/components/data-workspace/DataWorkspaceListTablePrimitives"
 import {
-  ChannelDataActions,
   ChannelDataEmptyState,
   ChannelDataErrorBanner,
   ChannelDataField,
   ChannelDataFields,
   ChannelDataHeader,
   ChannelDataHint,
+  ChannelDataOperarFooterBar,
   ChannelDataPanel,
-  ChannelDataPrimaryAction,
-  ChannelDataSecondaryAction,
   ChannelDataSection,
   ChannelDataStatusBadge,
   ChannelDataWarningBanner,
+  type ChannelOperarFooterAction,
 } from "@/components/sale-operation/ChannelOperationDataPanel"
-import { cn } from "@/lib/utils"
+import {
+  mostradorPaymentPaidTextClass,
+  mostradorPaymentUnpaidTextClass,
+} from "@/app/[siteId]/[popId]/mostrador/mostradorOperarStyles"
 import { formatDistanceToNow } from "date-fns"
 import { es } from "date-fns/locale"
 import type { ChannelCloseMode } from "@/lib/channelCheckoutClose"
-import { Monitor, Package } from "lucide-react"
-import { useState } from "react"
+import { Monitor, Package, Pencil } from "lucide-react"
+import { useEffect, useState } from "react"
 
 type Props = {
   order: CounterOrder | null
@@ -52,12 +55,24 @@ type Props = {
   clientLabel?: string | null
 }
 
+function orderToFormInitial(order: CounterOrder): Partial<CreateCounterOrderInput> {
+  return {
+    fulfillmentType: order.fulfillmentType,
+    deliveryAddress: order.deliveryAddress,
+    phone: order.phone,
+    driverName: order.driverName,
+    estimatedMinutes: order.estimatedMinutes,
+    notes: order.notes,
+  }
+}
+
 export function CounterOrderPanel({
   order,
   orderError,
   creating,
   onCancelCreate,
   onCreateOrder,
+  onUpdateOrder,
   onMoveOrder,
   onCancelOrder,
   canCancelOrder = true,
@@ -69,6 +84,11 @@ export function CounterOrderPanel({
   clientLabel,
 }: Props) {
   const [busy, setBusy] = useState(false)
+  const [editing, setEditing] = useState(false)
+
+  useEffect(() => {
+    setEditing(false)
+  }, [order?.id])
 
   if (creating) {
     return (
@@ -85,6 +105,25 @@ export function CounterOrderPanel({
       <ChannelDataEmptyState
         icon={Monitor}
         title="Seleccioná un pedido o creá uno nuevo"
+      />
+    )
+  }
+
+  const canEdit = !order.isPaid && order.status !== "cancelled"
+
+  if (editing) {
+    return (
+      <CounterOrderForm
+        key={order.id}
+        initial={orderToFormInitial(order)}
+        showImmediateFulfillment={false}
+        submitLabel="Guardar cambios"
+        onCancel={() => setEditing(false)}
+        onSubmit={async (input) => {
+          const ok = await onUpdateOrder(order.id, input)
+          if (ok) setEditing(false)
+          return ok
+        }}
       />
     )
   }
@@ -106,9 +145,54 @@ export function CounterOrderPanel({
   const closeButtonLabel =
     closeOrderMode === "release" ? "Liberar pedido" : "Cerrar pedido"
 
+  const footerActions: ChannelOperarFooterAction[] = []
+
+  if (!order.isPaid && order.status !== "cancelled") {
+    footerActions.push({
+      variant: "discard",
+      label: "Cancelar pedido",
+      disabled: busy || !canCancelOrder,
+      title: !canCancelOrder
+        ? "No se puede cancelar un pedido con cobros registrados."
+        : undefined,
+      onClick: () => void run(() => onCancelOrder(order.id)),
+    })
+  }
+
+  if (onCloseOrder) {
+    footerActions.push({
+      variant: "primary",
+      label: closeOrderLoading ? "Cerrando…" : closeButtonLabel,
+      disabled: !canCloseOrder || busy || closeOrderLoading || order.isPaid,
+      loading: closeOrderLoading,
+      loadingLabel: "Cerrando…",
+      title: closeOrderBlockReason ?? undefined,
+      onClick: () => void run(onCloseOrder),
+    })
+  } else if (
+    order.status === "preparing" &&
+    order.fulfillmentType === "delivery"
+  ) {
+    footerActions.push({
+      variant: "primary",
+      label: "Marcar enviado",
+      disabled: busy || order.isPaid,
+      onClick: () => void run(() => onMoveOrder(order.id, "dispatched")),
+    })
+  }
+
+  if (order.status === "preparing" || order.status === "dispatched") {
+    footerActions.push({
+      variant: "secondary",
+      label: "Marcar entregado",
+      disabled: busy,
+      onClick: () => void run(() => onMoveOrder(order.id, "delivered")),
+    })
+  }
+
   return (
     <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
-      <ChannelDataPanel>
+      <ChannelDataPanel className="flex-1">
         {orderError ? (
           <ChannelDataErrorBanner>{orderError}</ChannelDataErrorBanner>
         ) : null}
@@ -121,6 +205,16 @@ export function CounterOrderPanel({
               <ChannelDataStatusBadge>
                 {order.fulfillmentType === "delivery" ? "Delivery" : "Mostrador"}
               </ChannelDataStatusBadge>
+            }
+            actions={
+              canEdit ? (
+                <DataWorkspaceTableIconAction
+                  label="Editar pedido"
+                  icon={Pencil}
+                  variant="edit"
+                  onClick={() => setEditing(true)}
+                />
+              ) : null
             }
           />
 
@@ -150,70 +244,32 @@ export function CounterOrderPanel({
               <ChannelDataField label="Notas">{order.notes}</ChannelDataField>
             ) : null}
             <ChannelDataField label="Pago">
-              <span className={order.isPaid ? "text-emerald-700" : "text-amber-700"}>
+              <span
+                className={
+                  order.isPaid
+                    ? mostradorPaymentPaidTextClass
+                    : mostradorPaymentUnpaidTextClass
+                }
+              >
                 {order.isPaid ? "Pagado" : "Sin pagar"}
               </span>
             </ChannelDataField>
           </ChannelDataFields>
         </ChannelDataSection>
 
-        <ChannelDataActions>
-          {onCloseOrder ? (
-            <>
-              <ChannelDataPrimaryAction
-                disabled={!canCloseOrder || busy || closeOrderLoading || order.isPaid}
-                title={closeOrderBlockReason ?? undefined}
-                onClick={() => void run(onCloseOrder)}
-                className={cn(
-                  (!canCloseOrder || order.isPaid) &&
-                    "cursor-not-allowed bg-muted text-muted-foreground opacity-70 hover:bg-muted",
-                )}
-              >
-                {closeOrderLoading ? "Cerrando…" : closeButtonLabel}
-              </ChannelDataPrimaryAction>
-              {!canCloseOrder && closeOrderBlockReason && !order.isPaid ? (
-                <ChannelDataWarningBanner>
-                  {closeOrderBlockReason}
-                </ChannelDataWarningBanner>
-              ) : null}
-            </>
-          ) : null}
-          {order.status === "preparing" && order.fulfillmentType === "delivery" ? (
-            <ChannelDataPrimaryAction
-              disabled={busy || order.isPaid}
-              onClick={() => void run(() => onMoveOrder(order.id, "dispatched"))}
-            >
-              Marcar enviado
-            </ChannelDataPrimaryAction>
-          ) : null}
-          {order.status === "preparing" || order.status === "dispatched" ? (
-            <ChannelDataSecondaryAction
-              disabled={busy}
-              onClick={() => void run(() => onMoveOrder(order.id, "delivered"))}
-            >
-              Marcar entregado
-            </ChannelDataSecondaryAction>
-          ) : null}
-          {!order.isPaid && order.status !== "cancelled" ? (
-            <ChannelDataSecondaryAction
-              tone="destructive"
-              disabled={busy || !canCancelOrder}
-              title={
-                !canCancelOrder
-                  ? "No se puede cancelar un pedido con cobros registrados."
-                  : undefined
-              }
-              onClick={() => void run(() => onCancelOrder(order.id))}
-            >
-              Cancelar pedido
-            </ChannelDataSecondaryAction>
-          ) : null}
-        </ChannelDataActions>
+        {onCloseOrder &&
+        !canCloseOrder &&
+        closeOrderBlockReason &&
+        !order.isPaid ? (
+          <ChannelDataWarningBanner>{closeOrderBlockReason}</ChannelDataWarningBanner>
+        ) : null}
 
         <ChannelDataHint icon={Package}>
-          Usá la pestaña Carrito para cargar productos y cobrar.
+          Usá la pestaña Pedido para cargar productos y cobrar.
         </ChannelDataHint>
       </ChannelDataPanel>
+
+      <ChannelDataOperarFooterBar actions={footerActions} />
     </div>
   )
 }

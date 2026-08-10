@@ -15,18 +15,18 @@ import {
   clientDialogSurface,
 } from "@/app/[siteId]/[popId]/clients/ClientUpsertFormFields"
 import {
-  ChannelDataActions,
   ChannelDataEmptyState,
   ChannelDataErrorBanner,
   ChannelDataField,
   ChannelDataFields,
   ChannelDataHeader,
   ChannelDataHint,
+  ChannelDataOperarFooterBar,
   ChannelDataPanel,
-  ChannelDataPrimaryAction,
   ChannelDataSection,
   ChannelDataStatusBadge,
   ChannelDataWarningBanner,
+  type ChannelOperarFooterAction,
 } from "@/components/sale-operation/ChannelOperationDataPanel"
 import { DataWorkspaceTableIconAction } from "@/components/data-workspace/DataWorkspaceListTablePrimitives"
 import { saleOpDialogPrimaryBtn } from "@/components/sale-operation/saleOperationStyles"
@@ -133,96 +133,99 @@ export function MesaSessionPanel({
   return (
     <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
       {isOpen && !editing ? (
-        <ChannelDataPanel>
-          {sessionError ? (
-            <ChannelDataErrorBanner>{sessionError}</ChannelDataErrorBanner>
-          ) : null}
+        <>
+          <ChannelDataPanel className="flex-1">
+            {sessionError ? (
+              <ChannelDataErrorBanner>{sessionError}</ChannelDataErrorBanner>
+            ) : null}
 
-          <ChannelDataSection>
-            <ChannelDataHeader
-              title={title}
-              meta={
-                <>
-                  {mesaStatusLabel(table.status)}
-                  {session ? (
-                    <>
-                      {" · "}
-                      <Clock
-                        className="mr-0.5 inline size-3 -translate-y-px"
-                        aria-hidden
-                      />
-                      {formatDistanceToNow(new Date(session.openedAt), {
-                        addSuffix: true,
-                        locale: es,
-                      })}
-                    </>
-                  ) : null}
-                </>
-              }
-              badge={
-                <ChannelDataStatusBadge>
-                  {sessionTables.length > 1 ? "Mesas unidas" : "Abierta"}
-                </ChannelDataStatusBadge>
-              }
-              actions={
-                <DataWorkspaceTableIconAction
-                  label="Editar mesa"
-                  icon={Pencil}
-                  variant="edit"
-                  onClick={() => setEditing(true)}
-                />
-              }
-            />
+            <ChannelDataSection>
+              <ChannelDataHeader
+                title={title}
+                meta={
+                  <>
+                    {mesaStatusLabel(table.status)}
+                    {session ? (
+                      <>
+                        {" · "}
+                        <Clock
+                          className="mr-0.5 inline size-3 -translate-y-px"
+                          aria-hidden
+                        />
+                        {formatDistanceToNow(new Date(session.openedAt), {
+                          addSuffix: true,
+                          locale: es,
+                        })}
+                      </>
+                    ) : null}
+                  </>
+                }
+                badge={
+                  <ChannelDataStatusBadge>
+                    {sessionTables.length > 1 ? "Mesas unidas" : "Abierta"}
+                  </ChannelDataStatusBadge>
+                }
+                actions={
+                  <DataWorkspaceTableIconAction
+                    label="Editar mesa"
+                    icon={Pencil}
+                    variant="edit"
+                    onClick={() => setEditing(true)}
+                  />
+                }
+              />
 
-            <ChannelDataFields>
-              <ChannelDataField label="Mozo">{waiter?.name ?? "—"}</ChannelDataField>
-              <ChannelDataField label="Cliente">
-                {clientLabel?.trim() || "Sin asignar"}
-              </ChannelDataField>
-              <ChannelDataField label="Comensales">
-                {session?.guestCount ?? "Sin indicar"}
-              </ChannelDataField>
-              {sessionTables.length > 1 ? (
-                <ChannelDataField label="Mesas incluidas">
-                  <span className="mt-1 flex flex-wrap gap-1.5">
-                    {sessionTables.map((t) => (
-                      <span
-                        key={t.id}
-                        className="rounded-full px-2 py-0.5 text-xs font-semibold ring-1 ring-[color-mix(in_srgb,var(--rootsy-savia-500)_28%,transparent)] bg-[color-mix(in_srgb,var(--rootsy-savia-400)_12%,var(--rootsy-bruma-100))] text-[var(--rootsy-savia-800)]"
-                      >
-                        {t.label}
-                      </span>
-                    ))}
-                  </span>
+              <ChannelDataFields>
+                <ChannelDataField label="Mozo">{waiter?.name ?? "—"}</ChannelDataField>
+                <ChannelDataField label="Cliente">
+                  {clientLabel?.trim() || "Sin asignar"}
                 </ChannelDataField>
-              ) : null}
-              {session?.note ? (
-                <ChannelDataField label="Notas">{session.note}</ChannelDataField>
-              ) : null}
-            </ChannelDataFields>
-          </ChannelDataSection>
+                <ChannelDataField label="Comensales">
+                  {session?.guestCount ?? "Sin indicar"}
+                </ChannelDataField>
+                {sessionTables.length > 1 ? (
+                  <ChannelDataField label="Mesas incluidas">
+                    <span className="mt-1 flex flex-wrap gap-1.5">
+                      {sessionTables.map((t) => (
+                        <span
+                          key={t.id}
+                          className="rounded-full px-2 py-0.5 text-xs font-semibold ring-1 ring-[color-mix(in_srgb,var(--rootsy-savia-500)_28%,transparent)] bg-[color-mix(in_srgb,var(--rootsy-savia-400)_12%,var(--rootsy-bruma-100))] text-[var(--rootsy-savia-800)]"
+                        >
+                          {t.label}
+                        </span>
+                      ))}
+                    </span>
+                  </ChannelDataField>
+                ) : null}
+                {session?.note ? (
+                  <ChannelDataField label="Notas">{session.note}</ChannelDataField>
+                ) : null}
+              </ChannelDataFields>
+            </ChannelDataSection>
 
-          <ChannelDataActions>
-            <ChannelDataPrimaryAction
-              disabled={!canCloseSession || closeSessionLoading}
-              title={closeSessionBlockReason ?? undefined}
-              onClick={() => setCloseDialogOpen(true)}
-              className={cn(
-                !canCloseSession &&
-                  "cursor-not-allowed bg-muted text-muted-foreground opacity-70 hover:bg-muted",
-              )}
-            >
-              {closeSessionLoading ? "Liberando…" : closeButtonLabel}
-            </ChannelDataPrimaryAction>
             {!canCloseSession && closeSessionBlockReason ? (
               <ChannelDataWarningBanner>{closeSessionBlockReason}</ChannelDataWarningBanner>
             ) : null}
-          </ChannelDataActions>
 
-          <ChannelDataHint icon={Package}>
-            Usá la pestaña Pedido para cargar productos y cobrar.
-          </ChannelDataHint>
-        </ChannelDataPanel>
+            <ChannelDataHint icon={Package}>
+              Usá la pestaña Pedido para cargar productos y cobrar.
+            </ChannelDataHint>
+          </ChannelDataPanel>
+
+          <ChannelDataOperarFooterBar
+            actions={[
+              {
+                variant: "primary",
+                label: closeSessionLoading ? "Liberando…" : closeButtonLabel,
+                disabled: !canCloseSession || closeSessionLoading,
+                loading: closeSessionLoading,
+                loadingLabel: "Liberando…",
+                title: closeSessionBlockReason ?? undefined,
+                onClick: () => setCloseDialogOpen(true),
+              },
+            ]}
+          />
+        </>
       ) : (
         <>
           {sessionError ? (

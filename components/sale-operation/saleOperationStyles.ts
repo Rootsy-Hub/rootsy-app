@@ -44,15 +44,13 @@ export const saleOpCartLineDivideYClass = cn(
   "divide-y divide-[#dfe4ea]",
 )
 
-/** Empty state del ticket / paneles laterales (icono + título). */
-export const saleOpEmptyStateContainerClass =
-  "flex flex-1 flex-col items-center justify-center px-6 py-12 text-center"
-export const saleOpEmptyStateContentClass =
-  "flex max-w-[260px] flex-col items-center gap-3"
-export const saleOpEmptyStateIconWrapClass =
-  "flex size-14 items-center justify-center rounded-2xl bg-white text-slate-600 ring-1 ring-slate-300/90 shadow-[0_1px_2px_rgba(15,23,42,0.05)]"
-export const saleOpEmptyStateTitleClass =
-  "text-sm font-semibold text-slate-700"
+/** @deprecated Usar tokens de DataWorkspaceDetailEmptyState (layout.blocks.empty.detail). */
+export {
+  dataWorkspaceDetailEmptyStateClass as saleOpEmptyStateContainerClass,
+  dataWorkspaceDetailEmptyStateContentClass as saleOpEmptyStateContentClass,
+  dataWorkspaceDetailEmptyStateIconWrapClass as saleOpEmptyStateIconWrapClass,
+  dataWorkspaceDetailEmptyStateTitleClass as saleOpEmptyStateTitleClass,
+} from "@/components/data-workspace/dataWorkspaceListStyles"
 
 /** Barra de acciones del ticket (Descartar / Vender). */
 export const saleOpActionsBarShellClass = cn(
@@ -201,8 +199,12 @@ export const saleOpChannelDataLabel =
 
 export const saleOpChannelDataValue = "text-sm text-foreground"
 
-export const saleOpChannelStatusBadge =
-  "rounded-full bg-muted px-2.5 py-1 text-xs font-semibold text-foreground"
+export const saleOpChannelStatusBadge = cn(
+  "inline-flex shrink-0 items-center rounded-full px-2.5 py-1 text-xs font-semibold leading-none",
+  "bg-[color-mix(in_srgb,var(--rootsy-savia-400)_12%,var(--rootsy-bruma-100))]",
+  "text-[var(--rootsy-savia-800)]",
+  "ring-1 ring-[color-mix(in_srgb,var(--rootsy-savia-500)_28%,transparent)]",
+)
 
 export const saleOpChannelFormField =
   "rounded-xl border border-border/70 bg-muted/15 shadow-none ring-0 outline-none transition-colors hover:border-border focus-visible:border-primary/45 focus-visible:ring-2 focus-visible:ring-primary/20 placeholder:text-muted-foreground/70"
@@ -254,9 +256,17 @@ export function saleOpChannelSegmentOption(selected: boolean) {
 
 export function saleOpChannelSelectableRow(selected: boolean) {
   return cn(
-    "flex cursor-pointer items-center gap-3 rounded-xl border px-3 py-2.5 transition-colors",
+    "flex cursor-pointer items-center gap-3 rounded-[12px] border px-3 py-2.5 transition-[border-color,background-color,box-shadow] duration-150",
+    "focus-within:border-[var(--rootsy-savia-400)] focus-within:shadow-[0_0_0_2px_color-mix(in_srgb,var(--rootsy-savia-400)_45%,transparent)]",
     selected
-      ? "border-primary/40 bg-primary/10 ring-1 ring-primary/15"
-      : "border-border/70 bg-muted/15 hover:bg-muted/30",
+      ? cn(
+          "border-[color-mix(in_srgb,var(--rootsy-savia-400)_45%,transparent)]",
+          "bg-[color-mix(in_srgb,var(--rootsy-savia-400)_10%,var(--rootsy-white))]",
+          "ring-1 ring-[color-mix(in_srgb,var(--rootsy-savia-400)_18%,transparent)]",
+        )
+      : cn(
+          "border-[var(--rootsy-bruma-200)] bg-[var(--rootsy-white)]",
+          "hover:border-[var(--rootsy-bruma-300)] hover:bg-[var(--rootsy-bruma-50)]",
+        ),
   )
 }

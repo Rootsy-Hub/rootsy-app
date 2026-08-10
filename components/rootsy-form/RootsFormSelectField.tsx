@@ -40,6 +40,7 @@ export function RootsFormSelectField({
   readOnly,
   invalid,
   hint,
+  labelInfo,
   error,
   warning,
   success,
@@ -69,6 +70,7 @@ export function RootsFormSelectField({
       label={label}
       htmlFor={fieldId}
       className={className}
+      labelInfo={labelInfo}
       hint={hint}
       error={error}
       warning={warning}

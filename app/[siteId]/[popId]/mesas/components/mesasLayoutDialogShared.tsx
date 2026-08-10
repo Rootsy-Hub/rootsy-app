@@ -7,18 +7,12 @@ import {
   RootsProgressButton,
   RootsSubtleButton,
 } from "@/components/rootsy-button"
-import {
-  RootsAlertDialogContent,
-  RootsAlertDialogFooter,
-  RootsAlertDialogPanel,
-  RootsDialogErrorBanner,
-} from "@/components/rootsy-dialog"
+import { RootsConfirmDialog } from "@/components/rootsy-dialog"
 import {
   RootsFormSelectField,
   RootsFormSelectItem,
 } from "@/components/rootsy-form"
 import { rootsFormUiLabelClass } from "@/components/rootsy-form/rootsFormUiStyles"
-import { AlertDialog } from "@/components/ui/alert-dialog"
 import {
   TableCell,
   TableRow,
@@ -363,24 +357,18 @@ export function MesasLayoutDeleteConfirmDialog({
   onConfirm: () => void
 }) {
   return (
-    <AlertDialog open={open} onOpenChange={onOpenChange}>
-      <RootsAlertDialogContent>
-        <RootsAlertDialogPanel title={title} description={description} />
-        {error ? (
-          <RootsDialogErrorBanner className="mx-[var(--rootsy-space-400)] mb-0 mt-0">
-            {error}
-          </RootsDialogErrorBanner>
-        ) : null}
-        <RootsAlertDialogFooter
-          cancelLabel="Cancelar"
-          confirmLabel={busy ? "Eliminando…" : confirmLabel}
-          destructive
-          confirmDisabled={busy}
-          onCancel={() => onOpenChange(false)}
-          onConfirm={onConfirm}
-        />
-      </RootsAlertDialogContent>
-    </AlertDialog>
+    <RootsConfirmDialog
+      open={open}
+      onOpenChange={onOpenChange}
+      title={title}
+      description={description}
+      confirmLabel={confirmLabel}
+      busyConfirmLabel="Eliminando…"
+      busy={busy}
+      error={error}
+      destructive
+      onConfirm={onConfirm}
+    />
   )
 }
 

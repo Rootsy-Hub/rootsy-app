@@ -1,4 +1,5 @@
 export { RootsFormField } from "@/components/rootsy-form/RootsFormField"
+export { RootsFormLabelInfo } from "@/components/rootsy-form/RootsFormLabelInfo"
 export { RootsFormTextField } from "@/components/rootsy-form/RootsFormTextField"
 export { RootsFormSearchField } from "@/components/rootsy-form/RootsFormSearchField"
 export { RootsFormTextareaField } from "@/components/rootsy-form/RootsFormTextareaField"

@@ -50,3 +50,10 @@ export {
   RootsDialogErrorBanner,
   RootsDialogLoadingState,
 } from "./RootsDialogForm"
+export { RootsConfirmDialog } from "./RootsConfirmDialog"
+export {
+  ROOTS_DIALOG_EXIT_ANIMATION_MS,
+  deferAfterDialogClose,
+} from "./rootsDialogMotion"
+export { useFrozenWhileClosing } from "./useFrozenWhileClosing"
+export { useDeferredDialogReset } from "./useDeferredDialogReset"
