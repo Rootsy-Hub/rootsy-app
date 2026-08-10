@@ -16,6 +16,10 @@ import {
   validateNameField,
   validateSignupPassword,
 } from "@/lib/authValidation"
+import {
+  getAuthCallbackUrl,
+  setAuthNextPath,
+} from "@/lib/authCallbackRedirect"
 import { cn } from "@/lib/utils"
 import { createClient } from "@/utils/supabase/client"
 
@@ -194,10 +198,11 @@ function RegisterPage() {
     setError("")
     try {
       const origin = typeof window !== "undefined" ? window.location.origin : ""
+      setAuthNextPath("/pops/create")
       const { error: oauthError } = await supabase.auth.signInWithOAuth({
         provider: "google",
         options: {
-          redirectTo: `${origin}/auth/callback?next=/pops/create`,
+          redirectTo: getAuthCallbackUrl(origin),
         },
       })
       if (oauthError) throw oauthError

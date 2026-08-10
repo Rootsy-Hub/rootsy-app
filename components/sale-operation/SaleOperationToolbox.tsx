@@ -3,14 +3,14 @@
 import {
   layoutsOperarToolboxProposalSlotLabelClass,
   layoutsOperarToolboxProposalSlotValueClass,
-} from "@/app/[siteId]/[popId]/library/layouts/layoutsOperarHardcodedSpec"
-import { LAYOUTS_OPERAR_DEFAULT_TOOLBOX_PROPOSAL } from "@/app/[siteId]/[popId]/library/layouts/rootsyLayoutsOperarSystem"
+} from "@/app/library/layouts/layoutsOperarHardcodedSpec"
+import { LAYOUTS_OPERAR_DEFAULT_TOOLBOX_PROPOSAL } from "@/app/library/layouts/rootsyLayoutsOperarSystem"
 import {
   layoutsOperarToolboxBandClass,
   layoutsOperarToolboxBarClass,
   layoutsOperarToolboxIconWrapClass,
   layoutsOperarToolboxSlotClass,
-} from "@/app/[siteId]/[popId]/library/layouts/layoutsOperarStyles"
+} from "@/app/library/layouts/layoutsOperarStyles"
 import { saleOpImporteBaseClass } from "@/components/sale-operation/saleOperationStyles"
 import { cn } from "@/lib/utils"
 import { Banknote, Percent, Receipt, User } from "lucide-react"

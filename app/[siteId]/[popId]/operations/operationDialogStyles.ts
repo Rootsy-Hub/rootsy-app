@@ -1,5 +1,5 @@
 import { tdMoneyClass } from "@/components/data-workspace/dataWorkspaceListStyles"
-import { LAYOUTS_OPERAR_SUMMARY_PANEL_WIDTH_PX } from "@/app/[siteId]/[popId]/library/layouts/layoutsOperarStyles"
+import { LAYOUTS_OPERAR_SUMMARY_PANEL_WIDTH_PX } from "@/app/library/layouts/layoutsOperarStyles"
 import { cn } from "@/lib/utils"
 
 export const opsDialogLight = "rootsy-app-light text-foreground"

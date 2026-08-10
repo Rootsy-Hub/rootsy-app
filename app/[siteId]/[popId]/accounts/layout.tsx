@@ -1,4 +1,4 @@
-import "@/app/[siteId]/[popId]/library/color/rootsyNaturePalette.css"
+import "@/app/library/color/rootsyNaturePalette.css"
 import { Suspense, type ReactNode } from "react"
 
 export default function AccountsLayout({ children }: { children: ReactNode }) {

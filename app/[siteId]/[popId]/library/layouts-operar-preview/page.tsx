@@ -1,15 +1,14 @@
 "use client"
 
-import { LayoutsOperarFullPageDraft } from "@/app/[siteId]/[popId]/library/layouts/LayoutsOperarDocPrimitives"
-import { LayoutsOperarPreviewShell } from "@/app/[siteId]/[popId]/library/layouts/LayoutsOperarPreviewShell"
-import withAuth from "@/hoc/withAuth"
+import { useRouter } from "next/navigation"
+import { useEffect } from "react"
 
-function LayoutsOperarPreviewPage() {
-  return (
-    <LayoutsOperarPreviewShell>
-      <LayoutsOperarFullPageDraft composed />
-    </LayoutsOperarPreviewShell>
-  )
+export default function LegacyLayoutsOperarPreviewRedirect() {
+  const router = useRouter()
+
+  useEffect(() => {
+    router.replace("/library/layouts-operar-preview")
+  }, [router])
+
+  return null
 }
-
-export default withAuth(LayoutsOperarPreviewPage)

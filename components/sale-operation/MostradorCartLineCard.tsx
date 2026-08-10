@@ -8,8 +8,8 @@ import {
   layoutsOperarTicketProposalLineGridClass,
   layoutsOperarTicketProposalLineNameClass,
   layoutsOperarTicketProposalQtyClass,
-} from "@/app/[siteId]/[popId]/library/layouts/layoutsOperarHardcodedSpec"
-import { LAYOUTS_OPERAR_DEFAULT_TICKET_PROPOSAL } from "@/app/[siteId]/[popId]/library/layouts/rootsyLayoutsOperarSystem"
+} from "@/app/library/layouts/layoutsOperarHardcodedSpec"
+import { LAYOUTS_OPERAR_DEFAULT_TICKET_PROPOSAL } from "@/app/library/layouts/rootsyLayoutsOperarSystem"
 import type { OperationCartLineOverrideState } from "@/components/sale-operation/OperationCartLineRow"
 import { CheckoutDialogFooter } from "@/components/checkout/CheckoutDialogFooter"
 import {

@@ -1,6 +1,6 @@
 "use client"
 
-import { layoutsOperarCatalogSidebarOpenWidthClass } from "@/app/[siteId]/[popId]/library/layouts/layoutsOperarStyles"
+import { layoutsOperarCatalogSidebarOpenWidthClass } from "@/app/library/layouts/layoutsOperarStyles"
 import { cn } from "@/lib/utils"
 import type { LucideIcon } from "lucide-react"
 import { Sparkles } from "lucide-react"

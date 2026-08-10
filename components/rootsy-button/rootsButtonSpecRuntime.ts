@@ -17,7 +17,7 @@ import {
   type IconButtonRowIntentId,
   type IconButtonSizeId,
   type IconButtonThemeId,
-} from "@/app/[siteId]/[popId]/library/ui-components/buttonsUiHardcodedSpec"
+} from "@/app/library/ui-components/buttonsUiHardcodedSpec"
 import type { CSSProperties } from "react"
 import type {
   RootsButtonSemanticVariant,

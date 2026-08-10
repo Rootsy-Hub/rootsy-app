@@ -1,31 +1,66 @@
-import { NextResponse } from "next/server"
+import { AUTH_NEXT_COOKIE } from "@/lib/authCallbackRedirect"
 import { createClient } from "@/utils/supabase/server"
+import { NextResponse } from "next/server"
 
-function safeNextPath(raw: string | null): string {
+function safeNextPath(raw: string | null | undefined): string {
   if (!raw || !raw.startsWith("/") || raw.startsWith("//")) return "/home"
   return raw
+}
+
+function resolveNextPath(
+  searchParams: URLSearchParams,
+  cookieHeader: string | null,
+): string {
+  const fromQuery = searchParams.get("next")
+  if (fromQuery) return safeNextPath(fromQuery)
+
+  if (cookieHeader) {
+    const match = cookieHeader.match(
+      new RegExp(`(?:^|;\\s*)${AUTH_NEXT_COOKIE}=([^;]*)`),
+    )
+    if (match?.[1]) {
+      try {
+        return safeNextPath(decodeURIComponent(match[1]))
+      } catch {
+        return safeNextPath(match[1])
+      }
+    }
+  }
+
+  return "/home"
+}
+
+function redirectAfterAuth(request: Request, origin: string, next: string) {
+  const forwardedHost = request.headers.get("x-forwarded-host")
+  const isLocalEnv = process.env.NODE_ENV === "development"
+  const target = isLocalEnv
+    ? `${origin}${next}`
+    : forwardedHost
+      ? `https://${forwardedHost}${next}`
+      : `${origin}${next}`
+
+  const response = NextResponse.redirect(target)
+  response.cookies.set(AUTH_NEXT_COOKIE, "", { path: "/", maxAge: 0 })
+  return response
 }
 
 export async function GET(request: Request) {
   const { searchParams, origin } = new URL(request.url)
   const code = searchParams.get("code")
-  const next = safeNextPath(searchParams.get("next"))
+  const next = resolveNextPath(
+    searchParams,
+    request.headers.get("cookie"),
+  )
 
   if (code) {
     const supabase = await createClient()
     const { error } = await supabase.auth.exchangeCodeForSession(code)
     if (!error) {
-      const forwardedHost = request.headers.get("x-forwarded-host")
-      const isLocalEnv = process.env.NODE_ENV === "development"
-      if (isLocalEnv) {
-        return NextResponse.redirect(`${origin}${next}`)
-      }
-      if (forwardedHost) {
-        return NextResponse.redirect(`https://${forwardedHost}${next}`)
-      }
-      return NextResponse.redirect(`${origin}${next}`)
+      return redirectAfterAuth(request, origin, next)
     }
   }
 
-  return NextResponse.redirect(`${origin}/login?error=callback`)
+  const response = NextResponse.redirect(`${origin}/login?error=callback`)
+  response.cookies.set(AUTH_NEXT_COOKIE, "", { path: "/", maxAge: 0 })
+  return response
 }

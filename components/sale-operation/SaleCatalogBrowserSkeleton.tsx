@@ -9,7 +9,7 @@ import {
   layoutsOperarProductCardListSkeletonShellClass,
   layoutsOperarProductCardMediaClass,
   layoutsOperarProductCardSkeletonShellClass,
-} from "@/app/[siteId]/[popId]/library/layouts/layoutsOperarStyles"
+} from "@/app/library/layouts/layoutsOperarStyles"
 import { cn } from "@/lib/utils"
 
 const GRID_CARD_COUNT = 6

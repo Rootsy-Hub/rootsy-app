@@ -10,7 +10,7 @@ import {
   BackofficePanel,
   BackofficeSection,
 } from "@/app/backoffice/components/BackofficeSection"
-import { FoundationSpecCard } from "@/app/[siteId]/[popId]/library/libraryFoundationDocShared"
+import { FoundationSpecCard } from "@/app/library/libraryFoundationDocShared"
 import { Building2, CreditCard, Store, Users } from "lucide-react"
 import Link from "next/link"
 

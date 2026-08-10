@@ -21,7 +21,7 @@ import {
   layoutsOperarCatalogToolbarScanInputClass,
   layoutsOperarCatalogToolbarViewToggleActiveSurfaceClass,
   layoutsOperarCatalogToolbarViewToggleShellClass,
-} from "@/app/[siteId]/[popId]/library/layouts/layoutsOperarStyles"
+} from "@/app/library/layouts/layoutsOperarStyles"
 import { Input } from "@/components/ui/input"
 import {
   Select,

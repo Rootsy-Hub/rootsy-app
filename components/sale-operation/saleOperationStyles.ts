@@ -2,7 +2,7 @@ import {
   rootsButtonDestructiveClass,
   rootsButtonPrimaryClass,
 } from "@/components/rootsy-button/rootsButtonStyles"
-import { ROOTSY_LAYOUTS_OPERAR_ANATOMY } from "@/app/[siteId]/[popId]/library/layouts/rootsyLayoutsOperarSystem"
+import { ROOTSY_LAYOUTS_OPERAR_ANATOMY } from "@/app/library/layouts/rootsyLayoutsOperarSystem"
 import { cn } from "@/lib/utils"
 import { importeBaseClass } from "@/lib/typography"
 

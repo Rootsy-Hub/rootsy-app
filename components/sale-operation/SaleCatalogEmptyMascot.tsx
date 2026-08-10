@@ -6,7 +6,7 @@ import {
   layoutsOperarCatalogEmptySpeechBubbleClass,
   layoutsOperarCatalogEmptySpeechHintClass,
   layoutsOperarCatalogEmptySpeechTitleClass,
-} from "@/app/[siteId]/[popId]/library/layouts/layoutsOperarStyles"
+} from "@/app/library/layouts/layoutsOperarStyles"
 import { cn } from "@/lib/utils"
 import Image from "next/image"
 

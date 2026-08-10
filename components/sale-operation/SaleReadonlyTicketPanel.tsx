@@ -12,7 +12,7 @@ import {
   saleOpCartListSurfaceClass,
 } from "@/components/sale-operation/saleOperationStyles"
 import type { MostradorCartDisplayGroup } from "@/lib/mostradorCartDisplay"
-import { layoutsOperarSummaryPanelMaxWidthClass } from "@/app/[siteId]/[popId]/library/layouts/layoutsOperarStyles"
+import { layoutsOperarSummaryPanelMaxWidthClass } from "@/app/library/layouts/layoutsOperarStyles"
 import { cn } from "@/lib/utils"
 import type { ReactNode } from "react"
 

@@ -3,9 +3,9 @@
  * Fuentes: border · elevation · color semántico · spacing · radius · typography.
  */
 
-import { ROOTSY_BORDER_COLOR_TOKENS } from "@/app/[siteId]/[popId]/library/border/rootsyBorderSystem"
-import { ROOTSY_ELEVATION_SURFACES_LIGHT } from "@/app/[siteId]/[popId]/library/elevation/rootsyElevationSystem"
-import { ROOTSY_SEMANTIC_TOKENS } from "@/app/[siteId]/[popId]/library/color/rootsyColorSystem"
+import { ROOTSY_BORDER_COLOR_TOKENS } from "@/app/library/border/rootsyBorderSystem"
+import { ROOTSY_ELEVATION_SURFACES_LIGHT } from "@/app/library/elevation/rootsyElevationSystem"
+import { ROOTSY_SEMANTIC_TOKENS } from "@/app/library/color/rootsyColorSystem"
 import { rootsyColorHex } from "@/lib/design-system"
 
 function borderHex(token: string): string {

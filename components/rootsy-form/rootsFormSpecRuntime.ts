@@ -22,7 +22,7 @@ import {
   type FormControlStateId,
   type FormImageUploadDisplayStateId,
   type FormImageUploadModeId,
-} from "@/app/[siteId]/[popId]/library/ui-components/formsUiHardcodedSpec"
+} from "@/app/library/ui-components/formsUiHardcodedSpec"
 import { ROOTSY_TEXT_STYLES } from "@/lib/design-system/tokens/typography"
 import { rootsySpacePx } from "@/lib/design-system"
 import type { CSSProperties } from "react"

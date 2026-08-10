@@ -15,7 +15,7 @@ import {
   rootsFormImageUploadTitleClass,
 } from "@/components/rootsy-form/rootsFormStyles"
 import { RootsFormImageUploadIcon } from "@/components/rootsy-form/RootsFormImageUploadIcon"
-import type { FormImageUploadDisplayStateId } from "@/app/[siteId]/[popId]/library/ui-components/formsUiHardcodedSpec"
+import type { FormImageUploadDisplayStateId } from "@/app/library/ui-components/formsUiHardcodedSpec"
 import { cn } from "@/lib/utils"
 import { ImagePlus, Loader2, Trash2, type LucideIcon } from "lucide-react"
 import { useId, useRef, useState, type DragEvent } from "react"

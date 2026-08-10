@@ -7,7 +7,7 @@ import {
 } from "@/components/rootsy-button/rootsButtonSpecRuntime"
 import type { RootsButtonSemanticVariant } from "@/components/rootsy-button/rootsButtonStyles"
 import { useRootsButtonInteraction } from "@/components/rootsy-button/useRootsButtonInteraction"
-import { getButtonsUiAppearanceSurface } from "@/app/[siteId]/[popId]/library/ui-components/buttonsUiHardcodedSpec"
+import { getButtonsUiAppearanceSurface } from "@/app/library/ui-components/buttonsUiHardcodedSpec"
 import { cn } from "@/lib/utils"
 import { Loader2 } from "lucide-react"
 import { forwardRef, type ButtonHTMLAttributes, type ReactNode } from "react"

@@ -7,7 +7,7 @@ import type {
   BackofficeSubscriptionPlanRow,
 } from "@/app/backoffice/actions"
 import { formatBackofficeMoney } from "@/app/backoffice/components/BackofficeSection"
-import { FoundationSpecCard } from "@/app/[siteId]/[popId]/library/libraryFoundationDocShared"
+import { FoundationSpecCard } from "@/app/library/libraryFoundationDocShared"
 import {
   ROOTS_BUSINESS_TYPE_MODULES,
   ROOTS_BUSINESS_TYPE_ORDER,

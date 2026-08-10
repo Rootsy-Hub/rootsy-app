@@ -33,7 +33,7 @@ import {
 import {
   LAYOUTS_OPERAR_SUMMARY_PANEL_WIDTH_PX,
   layoutsOperarSummaryPanelMaxWidthClass,
-} from "@/app/[siteId]/[popId]/library/layouts/layoutsOperarStyles"
+} from "@/app/library/layouts/layoutsOperarStyles"
 import { useEffect, useState } from "react"
 
 type Props = {

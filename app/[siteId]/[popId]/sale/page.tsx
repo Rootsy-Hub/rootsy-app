@@ -87,7 +87,7 @@ import { useCartListScrollHighlight } from "@/hooks/useCartListScrollHighlight"
 import { buildCompleteSaleLinesFromCart } from "@/lib/saleCompleteLines"
 import type { MenuCatalogProduct } from "@/lib/menuCatalogProduct"
 import { saleOpImporteBaseClass } from "@/components/sale-operation/saleOperationStyles"
-import { layoutsOperarSummaryPanelClass } from "@/app/[siteId]/[popId]/library/layouts/layoutsOperarStyles"
+import { layoutsOperarSummaryPanelClass } from "@/app/library/layouts/layoutsOperarStyles"
 
 type Producto = MenuCatalogProduct
 

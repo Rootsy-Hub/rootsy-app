@@ -19,7 +19,7 @@ import {
   menuNatureShellClass,
   menuVignetteSoftClass,
 } from "@/app/[siteId]/[popId]/menu/menuNatureStyles"
-import "@/app/[siteId]/[popId]/library/color/rootsyNaturePalette.css"
+import "@/app/library/color/rootsyNaturePalette.css"
 import "@/app/[siteId]/[popId]/menu/menuNaturePalette.css"
 import { Skeleton } from "@/components/ui/skeleton"
 import { DEFAULT_MENU_DOCK_IDS } from "@/lib/menuCatalog"

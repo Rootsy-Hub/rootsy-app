@@ -5,7 +5,7 @@ import {
   resolveButtonInteractionState,
   type RootsButtonInteractionFlags,
 } from "@/components/rootsy-button/rootsButtonSpecRuntime"
-import type { ButtonsUiInteractionState } from "@/app/[siteId]/[popId]/library/ui-components/buttonsUiHardcodedSpec"
+import type { ButtonsUiInteractionState } from "@/app/library/ui-components/buttonsUiHardcodedSpec"
 import { useCallback, useState, type FocusEvent, type KeyboardEvent } from "react"
 
 export function useRootsButtonInteraction(

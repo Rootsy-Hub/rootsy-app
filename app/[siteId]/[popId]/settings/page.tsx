@@ -7,7 +7,7 @@ import {
   type PopSettingsFormInput,
 } from "@/app/[siteId]/[popId]/settings/actions"
 import { PopSettingsFormFields } from "@/app/[siteId]/[popId]/settings/PopSettingsFormFields"
-import "@/app/[siteId]/[popId]/library/color/rootsyNaturePalette.css"
+import "@/app/library/color/rootsyNaturePalette.css"
 import {
   dataWorkspaceBlocksContentInnerClass,
   dataWorkspaceBlocksContentScopeClass,

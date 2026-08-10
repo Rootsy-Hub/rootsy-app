@@ -1,6 +1,6 @@
 "use client"
 
-import { FoundationSpecCard } from "@/app/[siteId]/[popId]/library/libraryFoundationDocShared"
+import { FoundationSpecCard } from "@/app/library/libraryFoundationDocShared"
 import { Spinner } from "@/components/ui/spinner"
 import { cn } from "@/lib/utils"
 import type { ReactNode } from "react"

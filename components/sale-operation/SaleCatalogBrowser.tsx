@@ -29,7 +29,7 @@ import {
   layoutsOperarCatalogSidebarClosedClass,
   layoutsOperarCatalogSidebarInnerClass,
   layoutsOperarCatalogSidebarOpenClass,
-} from "@/app/[siteId]/[popId]/library/layouts/layoutsOperarStyles"
+} from "@/app/library/layouts/layoutsOperarStyles"
 import { cn } from "@/lib/utils"
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 

@@ -1,12 +1,12 @@
 "use client"
 
-import "@/app/[siteId]/[popId]/library/color/rootsyNaturePalette.css"
-import "@/app/[siteId]/[popId]/library/layouts/layoutsOperarTheme.css"
-import { getLayoutsOperarGridCssVariables } from "@/app/[siteId]/[popId]/library/layouts/layoutsOperarHardcodedSpec"
+import "@/app/library/color/rootsyNaturePalette.css"
+import "@/app/library/layouts/layoutsOperarTheme.css"
+import { getLayoutsOperarGridCssVariables } from "@/app/library/layouts/layoutsOperarHardcodedSpec"
 import {
   layoutsOperationsBodyScopeClass,
   layoutsOperationsBodyShellClass,
-} from "@/app/[siteId]/[popId]/library/layouts/layoutsOperarStyles"
+} from "@/app/library/layouts/layoutsOperarStyles"
 import {
   DataWorkspaceModuleLayout,
   type DataWorkspaceModuleLayoutProps,

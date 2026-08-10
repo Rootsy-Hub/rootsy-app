@@ -3,12 +3,12 @@
 import {
   layoutsOperarTicketProposalActionDiscardClass,
   layoutsOperarTicketProposalActionSellClass,
-} from "@/app/[siteId]/[popId]/library/layouts/layoutsOperarHardcodedSpec"
+} from "@/app/library/layouts/layoutsOperarHardcodedSpec"
 import {
   layoutsOperarSummaryActionConfirmColClass,
   layoutsOperarSummaryActionDiscardColClass,
-} from "@/app/[siteId]/[popId]/library/layouts/layoutsOperarStyles"
-import { LAYOUTS_OPERAR_DEFAULT_TICKET_PROPOSAL } from "@/app/[siteId]/[popId]/library/layouts/rootsyLayoutsOperarSystem"
+} from "@/app/library/layouts/layoutsOperarStyles"
+import { LAYOUTS_OPERAR_DEFAULT_TICKET_PROPOSAL } from "@/app/library/layouts/rootsyLayoutsOperarSystem"
 import {
   saleOpActionConfirmClass,
   saleOpActionDiscardClass,

@@ -10,6 +10,10 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Separator } from "@/components/ui/separator"
 import { withGuestAuth } from "@/hoc/withGuestAuth"
+import {
+  getAuthCallbackUrl,
+  setAuthNextPath,
+} from "@/lib/authCallbackRedirect"
 import { createClient } from "@/utils/supabase/client"
 import { cn } from "@/lib/utils"
 
@@ -92,10 +96,11 @@ function LoginPage() {
     setError("")
     try {
       const origin = typeof window !== "undefined" ? window.location.origin : ""
+      setAuthNextPath("/home")
       const { error: oauthError } = await supabase.auth.signInWithOAuth({
         provider: "google",
         options: {
-          redirectTo: `${origin}/auth/callback?next=/home`,
+          redirectTo: getAuthCallbackUrl(origin),
         },
       })
       if (oauthError) throw oauthError

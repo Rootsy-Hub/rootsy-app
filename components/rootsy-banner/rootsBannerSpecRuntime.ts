@@ -14,22 +14,22 @@ import {
   type BannerDensityId,
   type BannerIntentId,
   type BannerLayoutId,
-} from "@/app/[siteId]/[popId]/library/ui-components/bannersUiHardcodedSpec"
-import { ROOTSY_BANNER_ANATOMY } from "@/app/[siteId]/[popId]/library/banner/rootsyBannerSystem"
+} from "@/app/library/ui-components/bannersUiHardcodedSpec"
+import { ROOTSY_BANNER_ANATOMY } from "@/app/library/banner/rootsyBannerSystem"
 import type { CSSProperties } from "react"
 
 export type {
   BannerDensityId,
   BannerIntentId,
   BannerLayoutId,
-} from "@/app/[siteId]/[popId]/library/ui-components/bannersUiHardcodedSpec"
+} from "@/app/library/ui-components/bannersUiHardcodedSpec"
 
 export {
   BANNERS_UI_DEMO_COPY,
   BANNERS_UI_DENSITIES,
   BANNERS_UI_INTENTS,
   BANNERS_UI_LAYOUTS,
-} from "@/app/[siteId]/[popId]/library/ui-components/bannersUiHardcodedSpec"
+} from "@/app/library/ui-components/bannersUiHardcodedSpec"
 
 export function getBannerShellStyle(
   intent: BannerIntentId = "neutral",

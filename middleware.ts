@@ -5,6 +5,13 @@ import { NextResponse, type NextRequest } from "next/server"
  * Refresca la sesión de Supabase y escribe cookies en la respuesta antes del RSC.
  */
 export async function middleware(request: NextRequest) {
+  const pathname = request.nextUrl.pathname
+  if (pathname === "/" && request.nextUrl.searchParams.has("code")) {
+    const url = request.nextUrl.clone()
+    url.pathname = "/auth/callback"
+    return NextResponse.redirect(url)
+  }
+
   let response = NextResponse.next({ request })
 
   const supabase = createServerClient(

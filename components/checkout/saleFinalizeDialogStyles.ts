@@ -1,4 +1,4 @@
-import { getLayoutsOperarPosTotalsGradient } from "@/app/[siteId]/[popId]/library/layouts/rootsyLayoutsOperarSystem"
+import { getLayoutsOperarPosTotalsGradient } from "@/app/library/layouts/rootsyLayoutsOperarSystem"
 import {
   rootsDialogContentZClass,
   rootsDialogOverlayZClass,
