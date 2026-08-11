@@ -472,10 +472,10 @@ export const layoutsOperarSummaryEmptyTitleClass =
   "text-sm font-semibold text-[var(--layouts-operar-light-empty-title)]"
 
 export const layoutsOperarSummaryTotalsLabelClass =
-  "text-[10px] font-semibold uppercase tracking-[0.16em] text-[var(--layouts-operar-light-totals-label)]"
+  "m-0 text-[10px] font-semibold uppercase tracking-[0.16em] text-[var(--layouts-operar-light-totals-label)]"
 
 export const layoutsOperarSummaryTotalsAmountClass =
-  "text-xl font-bold tabular-nums tracking-tight text-[var(--layouts-operar-light-totals-amount)] sm:text-2xl"
+  "m-0 text-xl font-bold tabular-nums tracking-tight text-[var(--layouts-operar-light-totals-amount)] sm:text-2xl"
 
 /** Nav rail catálogo — categorías. */
 export const layoutsOperarCatalogRailNavClass = cn(

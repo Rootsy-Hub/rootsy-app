@@ -267,7 +267,7 @@ export function ArticlesTableDetailDialog({
                 </>
               ) : null}
 
-              <DetailField label="Costos de compra" multiline>
+              <DetailField label="Costo de compra" multiline>
                 {costsLoading ? (
                   "Cargando…"
                 ) : activeCosts.length === 0 ? (
@@ -275,16 +275,20 @@ export function ArticlesTableDetailDialog({
                 ) : (
                   <ul className="space-y-2">
                     {activeCosts.map((cost) => {
-                      const label = cost.name.trim() || cost.costUnitLabel
                       const unitCost = unitCostInSaleUom(cost)
                       return (
                         <li key={cost.id} className="text-sm leading-snug">
-                          <span className="font-medium text-foreground">{label}</span>
+                          <span className="font-medium text-foreground">
+                            {fmt.format(cost.unitPrice)} / {cost.costUnitLabel}
+                          </span>
                           <span className="text-muted-foreground">
-                            {" "}
-                            · {fmt.format(cost.unitPrice)} / {cost.costUnitLabel} ·{" "}
-                            {cost.saleUnitsPerCostUnit}{" "}
-                            {saleUomShort || labelUnitOfMeasure(row.unitOfMeasure)}
+                            {cost.saleUnitsPerCostUnit !== 1 ? (
+                              <>
+                                {" "}
+                                · {cost.saleUnitsPerCostUnit}{" "}
+                                {saleUomShort || labelUnitOfMeasure(row.unitOfMeasure)}
+                              </>
+                            ) : null}
                             {unitCost > 0
                               ? ` · ≈ ${fmt.format(unitCost)}/${saleUomShort || "u."}`
                               : null}

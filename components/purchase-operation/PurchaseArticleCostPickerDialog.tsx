@@ -53,7 +53,6 @@ export function PurchaseArticleCostPickerDialog({
           ) : (
             <ul className="flex flex-col gap-2">
               {costs.map((cost) => {
-                const title = cost.name.trim() || cost.costUnitLabel
                 const unitCost = unitCostInSaleUom(cost)
                 return (
                   <li key={cost.id}>
@@ -69,7 +68,7 @@ export function PurchaseArticleCostPickerDialog({
                       }}
                     >
                       <span className="text-sm font-semibold text-foreground">
-                        {title}
+                        {cost.costUnitLabel}
                       </span>
                       <span className="text-xs text-muted-foreground">
                         {fmt.format(cost.unitPrice)} / {cost.costUnitLabel} ·{" "}

@@ -543,7 +543,7 @@ function PurchasesPage() {
             articleCostId: i.articleCostId,
             costQuantity: i.cantidad,
             unitCost: parseUnitCost(itemUnitCosts[i.lineId] ?? "", fallback),
-            updateArticleCost: itemUpdateArticleCost[i.lineId] === true,
+            updateArticleCost: itemUpdateArticleCost[i.lineId] !== false,
             itemDiscountMode: itemDescuentoModo[i.lineId] ?? "porcentaje",
             itemDiscountDraft: itemDescuentoDraft[i.lineId] ?? "",
             comment: itemComentarios[i.lineId] ?? "",
@@ -726,6 +726,10 @@ function PurchasesPage() {
             cost.unitPrice > 0 ? String(cost.unitPrice) : prev[lineId] ?? "",
         }
       })
+      setItemUpdateArticleCost((prev) => ({
+        ...prev,
+        [lineId]: prev[lineId] ?? true,
+      }))
     },
     [cartScrollHighlight],
   )
@@ -843,7 +847,7 @@ function PurchasesPage() {
     () =>
       itemsDetallados.map((item) => {
         const cost = item.cost!
-        const costLabel = cost.name.trim() || cost.costUnitLabel
+        const costLabel = cost.costUnitLabel
         return {
           lineId: item.lineId,
           productoId: item.productoId,

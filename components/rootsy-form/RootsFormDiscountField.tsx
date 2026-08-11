@@ -125,6 +125,7 @@ export function RootsFormDiscountField({
   const moneyHandlers = useMoneyInputField({
     value,
     onChange,
+    enabled: !isPercent,
   })
 
   const percentHandlers = usePatternInputHandlers({
@@ -211,7 +212,7 @@ export function RootsFormDiscountField({
             type="text"
             inputMode={isPercent ? "numeric" : "decimal"}
             autoComplete="off"
-            value={value}
+            value={isPercent ? value : moneyHandlers.inputValue}
             maxLength={isPercent ? PERCENT_INPUT_MAX_LEN : MONEY_INPUT_DISPLAY_MAX_LEN}
             disabled={valueDisabled}
             aria-invalid={controlProps.isInvalid}

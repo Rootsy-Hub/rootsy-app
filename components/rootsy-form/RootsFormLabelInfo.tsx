@@ -23,6 +23,7 @@ export function RootsFormLabelInfo({ content, ariaLabel = "Más información" }:
           type="button"
           className="inline-flex size-4 shrink-0 items-center justify-center rounded-full text-[var(--rootsy-bruma-500)] transition-colors hover:text-[var(--rootsy-bruma-700)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color-mix(in_srgb,var(--rootsy-savia-400)_45%,transparent)]"
           aria-label={ariaLabel}
+          onPointerDown={(event) => event.preventDefault()}
         >
           <CircleHelp className="size-3.5" aria-hidden />
         </button>

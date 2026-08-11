@@ -8,6 +8,7 @@ import {
   formatArticleIvaOptionLabel,
   getArticleIvaOptions,
 } from "@/lib/articleIva"
+import type { ReactNode } from "react"
 
 type Props = {
   id: string
@@ -15,6 +16,8 @@ type Props = {
   value: string
   onChange: (value: string) => void
   disabled?: boolean
+  labelInfo?: ReactNode
+  error?: string
 }
 
 export function ArticleIvaSelect({
@@ -23,6 +26,8 @@ export function ArticleIvaSelect({
   value,
   onChange,
   disabled = false,
+  labelInfo,
+  error,
 }: Props) {
   const options = getArticleIvaOptions(siteId)
 
@@ -34,6 +39,9 @@ export function ArticleIvaSelect({
       onValueChange={onChange}
       placeholder="Elegir tipo de IVA…"
       disabled={disabled}
+      labelInfo={labelInfo}
+      error={error}
+      invalid={Boolean(error)}
     >
       {options.map((option) => (
         <RootsFormSelectItem

@@ -23,6 +23,7 @@ export const RootsFormTextField = forwardRef<HTMLInputElement, Props>(
       className,
       inputClassName,
       hint,
+      labelInfo,
       error,
       warning,
       success,
@@ -41,6 +42,7 @@ export const RootsFormTextField = forwardRef<HTMLInputElement, Props>(
         htmlFor={fieldId}
         className={className}
         hint={hint}
+        labelInfo={labelInfo}
         error={error}
         warning={warning}
         success={success}

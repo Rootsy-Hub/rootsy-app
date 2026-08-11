@@ -38,6 +38,7 @@ export function RootsFormMoneyField({
   disabled,
   invalid,
   hint,
+  labelInfo,
   error,
   warning,
   success,
@@ -73,6 +74,7 @@ export function RootsFormMoneyField({
       htmlFor={fieldId}
       className={className}
       hint={hint}
+      labelInfo={labelInfo}
       error={error}
       warning={warning}
       success={success}
