@@ -5,13 +5,13 @@ import type {
   ServiceTypeChargeOption,
 } from "@/app/[siteId]/[popId]/active-services/actions"
 import { ServiceChargeClientField } from "@/app/[siteId]/[popId]/active-services/components/ServiceChargeClientField"
+import { ServiceChargeAddonFields } from "@/app/[siteId]/[popId]/active-services/components/ServiceChargeAddonFields"
 import { ServiceChargeBillingFields } from "@/app/[siteId]/[popId]/active-services/components/ServiceChargeBillingFields"
 import type {
   ServiceChargeCreateFieldErrors,
   ServiceChargeCreateWizardForm,
   ServiceChargeCreateWizardStep,
 } from "@/app/[siteId]/[popId]/active-services/serviceChargeCreateFormState"
-import { ArticleCatalogDiscountField } from "@/app/[siteId]/[popId]/articles/ArticleCatalogDiscountField"
 import {
   RootsFormDateField,
   RootsFormIntegerField,
@@ -22,7 +22,6 @@ import {
   rootsFormColumnClass,
   rootsFormTwoColRowClass,
 } from "@/components/rootsy-form"
-import type { ArticleDiscountMode } from "@/lib/articleDiscount"
 import { parseMoneyInput } from "@/lib/moneyInput"
 import {
   SERVICE_CHARGE_PERIOD_END_AUTO_LABEL_INFO,
@@ -78,8 +77,6 @@ function ChargeConfigFields({
     [selectedService],
   )
 
-  const parsedUnitPrice = parseMoneyInput(form.unitPrice, 0)
-
   const manualPeriodEnd = selectedService
     ? billingPeriodRequiresManualPeriodEnd(selectedService.billingPeriod)
     : false
@@ -112,9 +109,13 @@ function ChargeConfigFields({
         label="Alcance"
         id="charge-scope"
         value={form.billingScope}
-        onValueChange={(value) =>
-          onChange({ billingScope: value as ServiceChargeBillingScope })
-        }
+        onValueChange={(value) => {
+          const billingScope = value as ServiceChargeBillingScope
+          onChange({
+            billingScope,
+            ...(billingScope !== "subscription" ? { oneTimeAddonIds: [] } : {}),
+          })
+        }}
         disabled={disabled || !selectedService}
         error={fieldErrors.billingScope}
         invalid={Boolean(fieldErrors.billingScope)}
@@ -201,27 +202,13 @@ function ChargeConfigFields({
         invalid={Boolean(fieldErrors.unitPrice)}
       />
 
-      <ArticleCatalogDiscountField
-        idPrefix="charge-discount"
-        discountMode={form.discountMode}
-        discountValue={form.discountValue}
-        onChange={(patch) => {
-          const next: Partial<ServiceChargeCreateWizardForm> = {}
-          if (patch.discountMode !== undefined) {
-            next.discountMode = patch.discountMode as "" | ArticleDiscountMode
-          }
-          if (patch.discountValue !== undefined) {
-            next.discountValue = patch.discountValue
-          }
-          onChange(next)
-        }}
-        salePrice={parsedUnitPrice}
-        disabled={disabled || !selectedService}
-      />
-      {fieldErrors.discountValue ? (
-        <p className="text-sm text-destructive" role="alert">
-          {fieldErrors.discountValue}
-        </p>
+      {selectedService ? (
+        <ServiceChargeAddonFields
+          form={form}
+          selectedService={selectedService}
+          disabled={disabled}
+          onChange={onChange}
+        />
       ) : null}
 
       <RootsFormTextareaField

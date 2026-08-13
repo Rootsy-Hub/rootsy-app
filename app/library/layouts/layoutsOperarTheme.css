@@ -219,12 +219,25 @@
   grid-row-start: 3;
 }
 
-/** Cobrar servicio — panel derecho sin fila de totales separada. */
+/** Vender servicio — panel derecho con totales como Vender. */
 .rootsy-theme-pos.layouts-operar-body .service-operate-snapshot-panel,
 .rootsy-theme-pos .layouts-operar-body .service-operate-snapshot-panel,
 .service-operate-snapshot-panel {
   --layouts-operar-ticket-rows: var(--layouts-operar-ticket-header-h) minmax(0, 1fr)
-    var(--layouts-operar-ticket-actions-h);
+    var(--layouts-operar-ticket-actions-h)
+    minmax(var(--layouts-operar-toolbox-min-h), auto);
+}
+
+/** Cargo vacío — sin fila de acciones (Descartar / Crear cargo). */
+.rootsy-theme-pos.layouts-operar-body .service-operate-snapshot-panel:has([data-ticket-empty="true"]),
+.rootsy-theme-pos .layouts-operar-body .service-operate-snapshot-panel:has([data-ticket-empty="true"]),
+.service-operate-snapshot-panel:has([data-ticket-empty="true"]) {
+  --layouts-operar-ticket-rows: var(--layouts-operar-ticket-header-h) minmax(0, 1fr)
+    minmax(var(--layouts-operar-toolbox-min-h), auto);
+}
+
+.service-operate-snapshot-panel:has([data-ticket-empty="true"]) [data-ticket-totals] {
+  grid-row-start: 3;
 }
 
 .rootsy-theme-pos.layouts-operar-body .layouts-operar-catalog-rail-scroll,

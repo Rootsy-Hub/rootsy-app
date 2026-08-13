@@ -25,9 +25,8 @@ type Props = {
 
 type CellCoord = { row: number; col: number }
 
-const STARTER_COLUMNS = 3
-const STARTER_ROWS = 10
-const MIN_VISIBLE_ROWS = 8
+const STARTER_COLUMNS = 2
+const STARTER_ROWS = 3
 
 function columnLetter(index: number): string {
   return String.fromCharCode(65 + index)
@@ -67,12 +66,7 @@ export function ServiceSpreadsheetEditor({
 
   const displayRows = useMemo(() => {
     if (colCount === 0) return []
-    const minRows = Math.max(grid.rows.length, MIN_VISIBLE_ROWS)
-    const rows = resizeRows(grid.rows, colCount)
-    while (rows.length < minRows) {
-      rows.push(emptyRow(colCount))
-    }
-    return rows.slice(0, SERVICE_DETAILS_GRID_MAX_ROWS)
+    return resizeRows(grid.rows, colCount).slice(0, SERVICE_DETAILS_GRID_MAX_ROWS)
   }, [colCount, grid.rows])
 
   const registerCell = useCallback(
@@ -215,32 +209,21 @@ export function ServiceSpreadsheetEditor({
 
   if (colCount === 0) {
     return (
-      <div className="flex flex-col gap-3">
-        <p className="text-xs leading-relaxed text-[var(--rootsy-bruma-500)]">
-          Hasta {SERVICE_DETAILS_GRID_MAX_COLUMNS} columnas y{" "}
-          {SERVICE_DETAILS_GRID_MAX_ROWS} filas. Se guarda como JSON.
-        </p>
-        <button
-          type="button"
-          onClick={startGrid}
-          disabled={disabled}
-          className={cn(
-            "flex flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed",
-            "border-[var(--rootsy-bruma-200)] bg-[var(--rootsy-bruma-50)] px-6 py-10",
-            "text-sm text-[var(--rootsy-bruma-600)] transition-colors",
-            "hover:border-[var(--rootsy-savia-400)] hover:bg-[color-mix(in_srgb,var(--rootsy-savia-500)_6%,white)]",
-            "disabled:cursor-not-allowed disabled:opacity-50",
-          )}
-        >
-          <Columns3 className="size-8 text-[var(--rootsy-savia-600)]" aria-hidden />
-          <span className="font-medium text-[var(--rootsy-bruma-800)]">
-            Iniciar grilla
-          </span>
-          <span className="text-xs text-[var(--rootsy-bruma-500)]">
-            {STARTER_COLUMNS} columnas · {STARTER_ROWS} filas para empezar
-          </span>
-        </button>
-      </div>
+      <button
+        type="button"
+        onClick={startGrid}
+        disabled={disabled}
+        className={cn(
+          "flex flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed",
+          "border-[var(--rootsy-bruma-200)] bg-[var(--rootsy-bruma-50)] px-6 py-10",
+          "text-sm text-[var(--rootsy-bruma-600)] transition-colors",
+          "hover:border-[var(--rootsy-savia-400)] hover:bg-[color-mix(in_srgb,var(--rootsy-savia-500)_6%,white)]",
+          "disabled:cursor-not-allowed disabled:opacity-50",
+        )}
+      >
+        <Columns3 className="size-8 text-[var(--rootsy-savia-600)]" aria-hidden />
+        <span className="font-medium text-[var(--rootsy-bruma-800)]">Iniciar grilla</span>
+      </button>
     )
   }
 
@@ -417,11 +400,6 @@ export function ServiceSpreadsheetEditor({
           </table>
         </div>
       </div>
-
-      <p className="text-[11px] leading-relaxed text-[var(--rootsy-bruma-400)]">
-        Tab / Enter para moverte entre celdas · hasta {SERVICE_DETAILS_GRID_MAX_COLUMNS}{" "}
-        columnas y {SERVICE_DETAILS_GRID_MAX_ROWS} filas
-      </p>
     </div>
   )
 }

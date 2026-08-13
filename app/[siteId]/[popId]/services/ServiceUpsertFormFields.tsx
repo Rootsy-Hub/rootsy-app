@@ -1,7 +1,7 @@
 "use client"
 
-import type { ServiceArticleOption, ServiceCategoryOption } from "@/app/[siteId]/[popId]/services/actions"
-import { ServiceArticlesEditor } from "@/app/[siteId]/[popId]/services/components/ServiceArticlesEditor"
+import type { ServiceCategoryOption } from "@/app/[siteId]/[popId]/services/actions"
+import { ServiceAddonsEditor } from "@/app/[siteId]/[popId]/services/components/ServiceAddonsEditor"
 import { ServiceImageUploadField } from "@/app/[siteId]/[popId]/services/components/ServiceImageUploadField"
 import { ServiceSpreadsheetEditor } from "@/app/[siteId]/[popId]/services/components/ServiceSpreadsheetEditor"
 import {
@@ -47,7 +47,6 @@ type Props = {
   form: ServiceFormState
   onChange: (patch: Partial<ServiceFormState>) => void
   categories: ServiceCategoryOption[]
-  articleOptions: ServiceArticleOption[]
   step: ServiceUpsertWizardStep
   fieldErrors?: ServiceUpsertFieldErrors
   disabled?: boolean
@@ -81,7 +80,6 @@ export function ServiceUpsertFormFields({
   form,
   onChange,
   categories,
-  articleOptions,
   step,
   fieldErrors = {},
   disabled = false,
@@ -152,28 +150,8 @@ export function ServiceUpsertFormFields({
     return (
       <div className={cn(rootsFormColumnClass, "gap-6")}>
         <WizardSection
-          title="Artículos de stock"
-          description="Opcional — insumos o productos consumidos por período al prestar este servicio."
-        >
-          <ServiceArticlesEditor
-            idPrefix={idPrefix}
-            lines={form.articleLines}
-            options={articleOptions}
-            onChange={(articleLines) => onChange({ articleLines })}
-            disabled={disabled}
-            error={fieldErrors.articleLines}
-          />
-        </WizardSection>
-      </div>
-    )
-  }
-
-  if (step === 3) {
-    return (
-      <div className={cn(rootsFormColumnClass, "gap-6")}>
-        <WizardSection
-          title="Detalles"
-          description="Armá una guía en formato planilla. Opcional — podés omitirla si no la necesitás."
+          title="Detalles (opcional)"
+          description="Armá una guía en formato planilla."
         >
           <ServiceSpreadsheetEditor
             idPrefix={idPrefix}
@@ -183,20 +161,33 @@ export function ServiceUpsertFormFields({
           />
         </WizardSection>
 
-        <WizardSection
-          title="Contrato"
-          description="Opcional — texto plano de la plantilla de contrato."
-        >
-          <RootsFormTextareaField
-            label="Texto del contrato"
-            id={`${idPrefix}-contract`}
-            value={form.contractText}
-            onChange={(e) => onChange({ contractText: e.target.value })}
-            placeholder="Cláusulas, condiciones, alcance del servicio…"
-            disabled={disabled}
-            rows={8}
-          />
-        </WizardSection>
+        <RootsFormTextareaField
+          label="Contrato (opcional)"
+          id={`${idPrefix}-contract`}
+          value={form.contractText}
+          onChange={(e) => onChange({ contractText: e.target.value })}
+          placeholder="Cláusulas, condiciones, alcance del servicio…"
+          disabled={disabled}
+          rows={8}
+        />
+      </div>
+    )
+  }
+
+  if (step === 3) {
+    return (
+      <div className={cn(rootsFormColumnClass, "gap-6")}>
+        <ServiceAddonsEditor
+          idPrefix={idPrefix}
+          popId={popId}
+          addonLines={form.addonLines}
+          baseArticleLines={form.articleLines}
+          onAddonLinesChange={(addonLines) => onChange({ addonLines })}
+          onBaseArticleLinesChange={(articleLines) => onChange({ articleLines })}
+          disabled={disabled}
+          addonError={fieldErrors.addonLines}
+          baseArticleError={fieldErrors.articleLines}
+        />
       </div>
     )
   }

@@ -7,13 +7,15 @@ import {
 import { LAYOUTS_OPERAR_DEFAULT_TOOLBOX_PROPOSAL } from "@/app/library/layouts/rootsyLayoutsOperarSystem"
 import {
   layoutsOperarToolboxBandClass,
-  layoutsOperarToolboxBar3Class,
+  layoutsOperarToolboxBarClass,
   layoutsOperarToolboxIconWrapClass,
   layoutsOperarToolboxSlotClass,
 } from "@/app/library/layouts/layoutsOperarStyles"
+import { saleOpImporteBaseClass } from "@/components/sale-operation/saleOperationStyles"
 import { SERVICE_OPERATE_STEP_LIST } from "@/components/service-operation/serviceOperateStepMeta"
 import type { ServiceOperateStep } from "@/lib/serviceOperateSteps"
 import { cn } from "@/lib/utils"
+import { Percent } from "lucide-react"
 
 const TOOLBOX_PROPOSAL = LAYOUTS_OPERAR_DEFAULT_TOOLBOX_PROPOSAL
 
@@ -28,6 +30,10 @@ type Props = {
   activeStep: ServiceOperateStep
   onStepChange: (step: ServiceOperateStep) => void
   slots: StepSlot[]
+  descuentoLabel: string
+  hayDescuento: boolean
+  descuentoDisabled?: boolean
+  onDescuentoClick: () => void
   /** Borde de separación hacia el contenido — arriba cuando la banda va al tope. */
   edge?: "top" | "bottom"
   className?: string
@@ -37,16 +43,20 @@ export function ServiceOperateStepToolbox({
   activeStep,
   onStepChange,
   slots,
+  descuentoLabel,
+  hayDescuento,
+  descuentoDisabled = false,
+  onDescuentoClick,
   edge = "bottom",
   className,
 }: Props) {
   return (
     <div className={cn(layoutsOperarToolboxBandClass, className)}>
       <div
-        role="tablist"
-        aria-label="Pasos del cargo"
+        role="toolbar"
+        aria-label="Pasos y descuento del cargo"
         className={cn(
-          layoutsOperarToolboxBar3Class,
+          layoutsOperarToolboxBarClass,
           edge === "top" &&
             "border-t-0 border-b border-[var(--layouts-operar-border-dark-default)]",
         )}
@@ -99,6 +109,34 @@ export function ServiceOperateStepToolbox({
             </button>
           )
         })}
+
+        <button
+          type="button"
+          disabled={descuentoDisabled}
+          onClick={onDescuentoClick}
+          className={cn(
+            layoutsOperarToolboxSlotClass(hayDescuento),
+            descuentoDisabled && "opacity-45",
+          )}
+          aria-label={`Descuento: ${descuentoLabel}${descuentoDisabled ? " (bloqueado)" : ""}`}
+        >
+          <span className={layoutsOperarToolboxIconWrapClass(hayDescuento)}>
+            <Percent className="size-4.5 sm:size-5" aria-hidden />
+          </span>
+          <span className="min-w-0 flex-1">
+            <span className={layoutsOperarToolboxProposalSlotLabelClass(TOOLBOX_PROPOSAL)}>
+              Descuento
+            </span>
+            <span
+              className={cn(
+                layoutsOperarToolboxProposalSlotValueClass(TOOLBOX_PROPOSAL, hayDescuento),
+                hayDescuento && saleOpImporteBaseClass,
+              )}
+            >
+              {descuentoLabel}
+            </span>
+          </span>
+        </button>
       </div>
     </div>
   )

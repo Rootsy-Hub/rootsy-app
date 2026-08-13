@@ -2,7 +2,15 @@
 
 import type { ServiceTypeChargeOption } from "@/app/[siteId]/[popId]/active-services/actions"
 import { LayoutsOperarProductCardMediaEmptyState } from "@/app/library/layouts/LayoutsOperarProductCardProposalPrimitives"
+import { serviceOperateSnapshotCardDividerClass } from "@/components/service-operation/serviceOperateSnapshotStyles"
+import { ServiceOperatePlanDetailDialog } from "@/components/service-operation/ServiceOperatePlanDetailDialog"
+import {
+  billingPeriodDisplayLabel,
+  isServiceBillingPeriod,
+} from "@/lib/serviceCatalogTypes"
 import { cn } from "@/lib/utils"
+import { Info } from "lucide-react"
+import { useState } from "react"
 
 const priceFmt = new Intl.NumberFormat("es-AR", {
   style: "currency",
@@ -16,6 +24,8 @@ type Props = {
   clientName?: string | null
   tone?: "operar" | "ticket"
   className?: string
+  popId?: string
+  showPlanDetails?: boolean
 }
 
 function ServiceShowcaseMedia({
@@ -77,13 +87,19 @@ export function ServiceOperateServiceShowcase({
   clientName = null,
   tone = "operar",
   className,
+  popId,
+  showPlanDetails = false,
 }: Props) {
+  const [detailsOpen, setDetailsOpen] = useState(false)
   const isOperar = tone === "operar"
+  const canShowPlanDetails = showPlanDetails && !isOperar && Boolean(popId?.trim())
   const displayPrice = price ?? service.defaultPrice
   const category = service.categoryName?.trim() || "Sin categoría"
   const name = service.name.trim() || "Sin nombre"
   const description = service.description?.trim() || null
-  const billingLabel = service.billingPeriodDisplay
+  const billingLabel = isServiceBillingPeriod(service.billingPeriod)
+    ? billingPeriodDisplayLabel(service.billingPeriod, service.billingPeriodLabel)
+    : service.billingPeriodDisplay
   const imageUrl = service.imageUrl?.trim() || null
   const displayClient = clientName?.trim() || "Sin cliente"
   const hasClient = Boolean(clientName?.trim())
@@ -191,8 +207,22 @@ export function ServiceOperateServiceShowcase({
         <>
           <div className="flex min-w-0 items-start gap-2.5">{mainRow}</div>
 
+          {canShowPlanDetails ? (
+            <div className="flex justify-end">
+              <button
+                type="button"
+                onClick={() => setDetailsOpen(true)}
+                className="inline-flex items-center gap-1 rounded-md px-1 py-0.5 text-[10px] font-medium text-[var(--rootsy-bruma-500)] transition-colors hover:bg-[color-mix(in_srgb,var(--rootsy-savia-400)_6%,white)] hover:text-[var(--rootsy-savia-700)]"
+                aria-label={`Ver detalles de ${name}`}
+              >
+                <Info className="size-3 shrink-0 opacity-80" aria-hidden />
+                Ver detalles
+              </button>
+            </div>
+          ) : null}
+
           <div
-            className="border-t border-[color-mix(in_srgb,var(--rootsy-bruma-300)_55%,transparent)]"
+            className={serviceOperateSnapshotCardDividerClass}
             role="separator"
             aria-hidden
           />
@@ -213,6 +243,15 @@ export function ServiceOperateServiceShowcase({
           </div>
         </>
       )}
+
+      {canShowPlanDetails && popId ? (
+        <ServiceOperatePlanDetailDialog
+          open={detailsOpen}
+          onOpenChange={setDetailsOpen}
+          popId={popId}
+          service={service}
+        />
+      ) : null}
     </div>
   )
 }

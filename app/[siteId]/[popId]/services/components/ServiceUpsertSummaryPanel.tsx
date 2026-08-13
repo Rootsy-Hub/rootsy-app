@@ -61,6 +61,7 @@ export function ServiceUpsertSummaryPanel({ form, categories }: Props) {
     categories.find((c) => c.id === form.categoryId)?.name ?? PLACEHOLDER
   const price = parseMoneyInput(form.defaultPrice, 0)
   const articleCount = form.articleLines.filter((l) => l.articleId.trim()).length
+  const addonCount = form.addonLines.filter((l) => l.name.trim()).length
   const hasGrid = serviceDetailsGridHasContent(form.detailsGrid)
   const hasContract = Boolean(form.contractText.trim())
 
@@ -110,7 +111,12 @@ export function ServiceUpsertSummaryPanel({ form, categories }: Props) {
           value={Number.isFinite(price) ? fmt.format(price) : PLACEHOLDER}
         />
         <SummaryRow
-          label="Artículos"
+          label="Adicionales"
+          value={addonCount > 0 ? String(addonCount) : PLACEHOLDER}
+          empty={addonCount === 0}
+        />
+        <SummaryRow
+          label="Artículos base"
           value={articleCount > 0 ? String(articleCount) : PLACEHOLDER}
           empty={articleCount === 0}
         />

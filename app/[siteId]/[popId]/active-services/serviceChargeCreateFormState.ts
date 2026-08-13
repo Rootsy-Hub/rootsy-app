@@ -66,6 +66,18 @@ export function resolveServiceChargeComprobanteEffectiveLabel(
   return trimmed || null
 }
 
+export function serviceChargeHasComprobante(
+  comprobanteLabel: string,
+  suggestedComprobante: string | null,
+): boolean {
+  return (
+    resolveServiceChargeComprobanteEffectiveLabel(
+      comprobanteLabel,
+      suggestedComprobante,
+    ) != null
+  )
+}
+
 export type ServiceChargeCreateWizardStep = 1 | 2 | 3
 
 export const SERVICE_CHARGE_CREATE_WIZARD_STEPS: {
@@ -113,6 +125,8 @@ export type ServiceChargeCreateWizardForm = {
   printInvoiceOnCreate: boolean
   emailInvoiceToClient: boolean
   notes: string
+  selectedAddonIds: string[]
+  oneTimeAddonIds: string[]
 }
 
 export function hasServiceChargeCreateFieldErrors(

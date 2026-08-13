@@ -1,7 +1,5 @@
 "use client"
 
-import type { ServiceTypeChargeOption } from "@/app/[siteId]/[popId]/active-services/actions"
-import { ServiceOperateServiceShowcase } from "@/components/service-operation/ServiceOperateServiceShowcase"
 import { SERVICE_OPERATE_STEP_META } from "@/components/service-operation/serviceOperateStepMeta"
 import {
   layoutsOperarStepContextBarClass,
@@ -17,7 +15,6 @@ import { ChevronLeft, ChevronRight } from "lucide-react"
 type Props = {
   step: ServiceOperateStep
   summary: string
-  selectedService?: ServiceTypeChargeOption | null
   className?: string
   onBack?: () => void
   onNext?: () => void
@@ -72,34 +69,22 @@ function CompactStepContext({
 export function ServiceOperateStepHeader({
   step,
   summary,
-  selectedService = null,
   className,
   onBack,
   onNext,
 }: Props) {
   const canGoBack = step > 1 && Boolean(onBack)
   const canGoNext = step < 3 && Boolean(onNext)
-  const showServiceShowcase = step === 1 && selectedService != null
 
   return (
-    <div
-      className={cn(
-        layoutsOperarStepContextBarClass,
-        showServiceShowcase && "h-auto min-h-[var(--layouts-operar-catalog-toolbar-h)] py-3.5",
-        className,
-      )}
-    >
+    <div className={cn(layoutsOperarStepContextBarClass, className)}>
       <StepContextNavButton
         direction="back"
         disabled={!canGoBack}
         onClick={canGoBack ? onBack : undefined}
       />
 
-      {showServiceShowcase ? (
-        <ServiceOperateServiceShowcase service={selectedService} tone="operar" />
-      ) : (
-        <CompactStepContext step={step} summary={summary} />
-      )}
+      <CompactStepContext step={step} summary={summary} />
 
       <StepContextNavButton
         direction="forward"

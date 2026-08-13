@@ -116,7 +116,7 @@ export const menuSectionsRaw: Record<string, MenuSectionDef> = {
       { name: "Promociones", icon: Sparkles, link: "promotions" },
       { name: "Recetas", icon: BookOpen, link: "recipes" },
       { name: "Servicios", icon: Briefcase, link: "services" },
-      { name: "Cobrar servicio", icon: Banknote, badge: "NUEVO", link: "cobrar-servicios" },
+      { name: "Vender servicio", icon: Banknote, badge: "NUEVO", link: "cobrar-servicios" },
       { name: "Servicios activos", icon: Activity, link: "active-services" },
     ],
   },

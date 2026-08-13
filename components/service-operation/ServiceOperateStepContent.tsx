@@ -2,12 +2,11 @@
 
 import type { ServiceTypeChargeOption } from "@/app/[siteId]/[popId]/active-services/actions"
 import { ServiceChargeClientField } from "@/app/[siteId]/[popId]/active-services/components/ServiceChargeClientField"
+import { ServiceChargeAddonFields } from "@/app/[siteId]/[popId]/active-services/components/ServiceChargeAddonFields"
 import { ServiceChargeBillingFields } from "@/app/[siteId]/[popId]/active-services/components/ServiceChargeBillingFields"
-import {
-  serviceChargeStep2ErrorMessages,
-  serviceChargeStep3ErrorMessages,
-  type ServiceChargeCreateFieldErrors,
-  type ServiceChargeCreateWizardForm,
+import type {
+  ServiceChargeCreateFieldErrors,
+  ServiceChargeCreateWizardForm,
 } from "@/app/[siteId]/[popId]/active-services/serviceChargeCreateFormState"
 import { ServiceOperatePaymentFields } from "@/components/service-operation/ServiceOperatePaymentFields"
 import { ServiceOperateCatalogBrowser } from "@/components/service-operation/ServiceOperateCatalogBrowser"
@@ -25,14 +24,10 @@ import type { SaleComprobantePickerOption } from "@/lib/saleComprobantePicker"
 import type { TreasuryPaymentContext } from "@/lib/treasuryPaymentOptions"
 import {
   layoutsOperarCatalogColumnClass,
-  layoutsOperarFormCanvasScrollClass,
-  layoutsOperarFormCanvasScrollEndClass,
-  layoutsOperarFormDarkErrorBannerClass,
   layoutsOperarFormDarkMutedTextClass,
+  layoutsOperarScrollMinimalClass,
 } from "@/app/library/layouts/layoutsOperarStyles"
-import { OperarReveal } from "@/components/layouts-module/OperarReveal"
 import { cn } from "@/lib/utils"
-import { CircleAlert } from "lucide-react"
 
 type Props = {
   step: ServiceOperateStep
@@ -56,80 +51,56 @@ type Props = {
   onSelectService: (serviceId: string) => void
 }
 
-/** Canvas formularios — fondo sombra-800 + scroll con padding simétrico. */
-function ClientStepCanvas({ children }: { children: React.ReactNode }) {
+/** Canvas pasos 2 y 3 — grid 2 columnas a altura completa, scroll por columna. */
+function OperateTwoColumnStep({
+  left,
+  right,
+}: {
+  left: React.ReactNode
+  right: React.ReactNode
+}) {
   return (
     <section
       className={cn(
         layoutsOperarCatalogColumnClass,
-        "min-h-0 min-w-0 flex-1 flex-col bg-[var(--rootsy-sombra-800)]",
+        "flex min-h-0 flex-1 flex-col bg-[var(--rootsy-sombra-800)]",
       )}
     >
       <div
         className={cn(
-          layoutsOperarFormCanvasScrollClass,
-          "flex min-h-0 flex-1 flex-col",
+          "grid min-h-0 flex-1",
+          "grid-cols-1 gap-6 overflow-y-auto",
+          layoutsOperarScrollMinimalClass,
+          "px-4 py-4 sm:px-5 sm:py-5",
+          "lg:grid-cols-[minmax(0,1fr)_1px_minmax(0,1fr)] lg:gap-0 lg:overflow-hidden lg:px-0 lg:py-0",
         )}
       >
-        <div className={cn("min-h-0 w-full", layoutsOperarFormCanvasScrollEndClass)}>
-          {children}
-        </div>
+        <OperateTwoColumnPane>{left}</OperateTwoColumnPane>
+
+        <div
+          className="hidden min-h-full bg-[var(--layouts-operar-border-dark-hairline)] lg:block"
+          aria-hidden
+        />
+
+        <OperateTwoColumnPane>{right}</OperateTwoColumnPane>
       </div>
     </section>
   )
 }
 
-/** Grid 2 columnas con línea divisoria (pasos configuración / pago). */
-function OperateTwoColumnStep({
-  children,
-  errors,
-}: {
-  children: React.ReactNode
-  errors: string[]
-}) {
+function OperateTwoColumnPane({ children }: { children: React.ReactNode }) {
   return (
-    <ClientStepCanvas>
-      <div className="mx-auto w-full max-w-5xl">
+    <div className="flex min-h-0 min-w-0 flex-col lg:overflow-hidden">
+      <div
+        className={cn(
+          layoutsOperarScrollMinimalClass,
+          "min-w-0 lg:min-h-0 lg:flex-1 lg:overflow-y-auto lg:overscroll-contain",
+          "lg:px-6 lg:py-6",
+        )}
+      >
         {children}
-        <OperarReveal open={errors.length > 0} className="shrink-0 pt-6">
-          <div
-            className={layoutsOperarFormDarkErrorBannerClass}
-            role="alert"
-          >
-            <CircleAlert
-              className="size-5 shrink-0 self-center text-[#fca5a5]"
-              aria-hidden
-            />
-            {errors.length === 1 ? (
-              <span className="min-w-0 flex-1">{errors[0]}</span>
-            ) : (
-              <ul className="min-w-0 flex-1 space-y-1">
-                {errors.map((message) => (
-                  <li key={message}>{message}</li>
-                ))}
-              </ul>
-            )}
-          </div>
-        </OperarReveal>
       </div>
-    </ClientStepCanvas>
-  )
-}
-
-function OperateTwoColumnGrid({ children }: { children: React.ReactNode }) {
-  return (
-    <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_1px_minmax(0,1fr)] lg:items-stretch lg:gap-x-10 lg:gap-y-0">
-      {children}
     </div>
-  )
-}
-
-function OperateTwoColumnDivider() {
-  return (
-    <div
-      className="hidden bg-[var(--layouts-operar-border-dark-hairline)] lg:block"
-      aria-hidden
-    />
   )
 }
 
@@ -172,30 +143,25 @@ export function ServiceOperateStepContent({
   }
 
   if (step === 2) {
-    const stepErrors = serviceChargeStep2ErrorMessages(fieldErrors)
-
     return (
-      <OperateTwoColumnStep errors={stepErrors}>
-        <OperateTwoColumnGrid>
-          <div className={cn(rootsFormColumnClass, "min-w-0")}>
-            <ServiceChargeClientField
-              popId={popId}
-              disabled={disabled || !canReadClients}
-              canSearchClients={canReadClients}
-              canCreateClient={canCreateClient}
-              canUpdateClient={canUpdateClient}
-              draft={form.clientDraft}
-              manualNameError={fieldErrors.clientManualName}
-              emailError={fieldErrors.clientEmail}
-              onDraftChange={(patch) =>
-                onFormChange({ clientDraft: { ...form.clientDraft, ...patch } })
-              }
-            />
-          </div>
-
-          <OperateTwoColumnDivider />
-
-          <div className={cn(rootsFormColumnClass, "min-w-0")}>
+      <OperateTwoColumnStep
+        left={
+          <ServiceChargeClientField
+            popId={popId}
+            disabled={disabled || !canReadClients}
+            canSearchClients={canReadClients}
+            canCreateClient={canCreateClient}
+            canUpdateClient={canUpdateClient}
+            draft={form.clientDraft}
+            manualNameError={fieldErrors.clientManualName}
+            emailError={fieldErrors.clientEmail}
+            onDraftChange={(patch) =>
+              onFormChange({ clientDraft: { ...form.clientDraft, ...patch } })
+            }
+          />
+        }
+        right={
+          <div className={rootsFormColumnClass}>
             {fieldErrors.serviceTypeId ? (
               <p className="text-sm text-destructive" role="alert">
                 {fieldErrors.serviceTypeId}
@@ -207,6 +173,12 @@ export function ServiceOperateStepContent({
                   form={form}
                   selectedService={selectedService}
                   fieldErrors={fieldErrors}
+                  disabled={disabled}
+                  onChange={onFormChange}
+                />
+                <ServiceChargeAddonFields
+                  form={form}
+                  selectedService={selectedService}
                   disabled={disabled}
                   onChange={onFormChange}
                 />
@@ -226,29 +198,24 @@ export function ServiceOperateStepContent({
               </p>
             )}
           </div>
-        </OperateTwoColumnGrid>
-      </OperateTwoColumnStep>
+        }
+      />
     )
   }
 
   if (step === 3) {
-    const stepErrors = serviceChargeStep3ErrorMessages(fieldErrors)
-
     return (
-      <OperateTwoColumnStep errors={stepErrors}>
-        <OperateTwoColumnGrid>
-          <div className={cn(rootsFormColumnClass, "min-w-0")}>
-            <ServiceOperatePaymentFields
-              paymentMethodKey={form.paymentMethodKey}
-              onChange={(paymentMethodKey) => onFormChange({ paymentMethodKey })}
-              treasuryContext={treasuryPaymentContext}
-              disabled={disabled}
-            />
-          </div>
-
-          <OperateTwoColumnDivider />
-
-          <div className={cn(rootsFormColumnClass, "min-w-0")}>
+      <OperateTwoColumnStep
+        left={
+          <ServiceOperatePaymentFields
+            paymentMethodKey={form.paymentMethodKey}
+            onChange={(paymentMethodKey) => onFormChange({ paymentMethodKey })}
+            treasuryContext={treasuryPaymentContext}
+            disabled={disabled}
+          />
+        }
+        right={
+          <div className={rootsFormColumnClass}>
             <p
               className={cn(
                 "text-xs font-medium uppercase tracking-wide",
@@ -269,8 +236,8 @@ export function ServiceOperateStepContent({
               onChange={onFormChange}
             />
           </div>
-        </OperateTwoColumnGrid>
-      </OperateTwoColumnStep>
+        }
+      />
     )
   }
 

@@ -3,7 +3,6 @@
 import { ServiceUpsertFormFields } from "@/app/[siteId]/[popId]/services/ServiceUpsertFormFields"
 import { ServiceUpsertSummaryPanel } from "@/app/[siteId]/[popId]/services/components/ServiceUpsertSummaryPanel"
 import type {
-  ServiceArticleOption,
   ServiceCategoryOption,
 } from "@/app/[siteId]/[popId]/services/actions"
 import {
@@ -54,7 +53,6 @@ type Props = {
   form: ServiceFormState
   setForm: Dispatch<SetStateAction<ServiceFormState>>
   categories: ServiceCategoryOption[]
-  articleOptions: ServiceArticleOption[]
   popId: string
   onSubmit: FormEventHandler<HTMLFormElement>
   onCancel: () => void
@@ -102,6 +100,10 @@ function clearErrorsForPatch(
     delete next.articleLines
     changed = true
   }
+  if ("addonLines" in patch && next.addonLines) {
+    delete next.addonLines
+    changed = true
+  }
 
   return changed ? next : errors
 }
@@ -118,7 +120,6 @@ export function ServiceUpsertDialog({
   form,
   setForm,
   categories,
-  articleOptions,
   popId,
   onSubmit,
   onCancel,
@@ -231,7 +232,6 @@ export function ServiceUpsertDialog({
                         form={form}
                         onChange={handleFormChange}
                         categories={categories}
-                        articleOptions={articleOptions}
                         step={step}
                         fieldErrors={fieldErrors}
                         disabled={saving}

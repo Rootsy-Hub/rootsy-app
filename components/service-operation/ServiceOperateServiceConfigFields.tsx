@@ -5,7 +5,6 @@ import type {
   ServiceChargeCreateFieldErrors,
   ServiceChargeCreateWizardForm,
 } from "@/app/[siteId]/[popId]/active-services/serviceChargeCreateFormState"
-import { ArticleCatalogDiscountField } from "@/app/[siteId]/[popId]/articles/ArticleCatalogDiscountField"
 import {
   RootsFormDateField,
   RootsFormIntegerField,
@@ -15,7 +14,6 @@ import {
   rootsFormColumnClass,
   rootsFormTwoColRowClass,
 } from "@/components/rootsy-form"
-import type { ArticleDiscountMode } from "@/lib/articleDiscount"
 import { parseMoneyInput } from "@/lib/moneyInput"
 import {
   SERVICE_CHARGE_PERIOD_END_AUTO_LABEL_INFO,
@@ -68,8 +66,6 @@ export function ServiceOperateServiceConfigFields({
     )
   }, [selectedService, form.periodStartDate, form.periodEndDate, manualPeriodEnd])
 
-  const unitPrice = parseMoneyInput(form.unitPrice, 0)
-
   return (
     <div
       className={cn(rootsFormColumnClass, "gap-4")}
@@ -82,9 +78,13 @@ export function ServiceOperateServiceConfigFields({
         label="Alcance"
         id="operate-charge-scope"
         value={form.billingScope}
-        onValueChange={(value) =>
-          onChange({ billingScope: value as ServiceChargeBillingScope })
-        }
+        onValueChange={(value) => {
+          const billingScope = value as ServiceChargeBillingScope
+          onChange({
+            billingScope,
+            ...(billingScope !== "subscription" ? { oneTimeAddonIds: [] } : {}),
+          })
+        }}
         disabled={disabled}
         error={fieldErrors.billingScope}
         invalid={Boolean(fieldErrors.billingScope)}
@@ -165,29 +165,6 @@ export function ServiceOperateServiceConfigFields({
         error={fieldErrors.unitPrice}
         invalid={Boolean(fieldErrors.unitPrice)}
       />
-
-      <ArticleCatalogDiscountField
-        idPrefix="operate-charge-discount"
-        discountMode={form.discountMode}
-        discountValue={form.discountValue}
-        onChange={(patch) => {
-          const next: Partial<ServiceChargeCreateWizardForm> = {}
-          if (patch.discountMode !== undefined) {
-            next.discountMode = patch.discountMode as "" | ArticleDiscountMode
-          }
-          if (patch.discountValue !== undefined) {
-            next.discountValue = patch.discountValue
-          }
-          onChange(next)
-        }}
-        salePrice={unitPrice}
-        disabled={disabled}
-      />
-      {fieldErrors.discountValue ? (
-        <p className="text-sm text-destructive" role="alert">
-          {fieldErrors.discountValue}
-        </p>
-      ) : null}
     </div>
   )
 }

@@ -2,17 +2,25 @@
 
 import type { ServiceTypeChargeOption } from "@/app/[siteId]/[popId]/active-services/actions"
 import type { ServiceChargeCreateWizardForm } from "@/app/[siteId]/[popId]/active-services/serviceChargeCreateFormState"
-import { ServiceOperateChargeConfigShowcase, formatSnapshotDateLabel, formatSnapshotDiscountLabel, snapshotMoneyFmt, snapshotPlaceholder } from "@/components/service-operation/ServiceOperateChargeConfigShowcase"
+import {
+  layoutsOperarTicketProposalCartListClass,
+} from "@/app/library/layouts/layoutsOperarHardcodedSpec"
+import { LAYOUTS_OPERAR_DEFAULT_TICKET_PROPOSAL } from "@/app/library/layouts/rootsyLayoutsOperarSystem"
+import { layoutsOperarSummaryCartListSurfaceClass } from "@/app/library/layouts/layoutsOperarStyles"
+import {
+  ServiceOperateChargeConfigShowcase,
+  formatSnapshotDateLabel,
+} from "@/components/service-operation/ServiceOperateChargeConfigShowcase"
 import { ServiceOperateServiceShowcase } from "@/components/service-operation/ServiceOperateServiceShowcase"
+import { ServiceOperateSnapshotCartRow } from "@/components/service-operation/ServiceOperateSnapshotCartRow"
 import { serviceOperateSnapshotTicketCardClass } from "@/components/service-operation/serviceOperateSnapshotStyles"
-import type { ServiceDiscountMode } from "@/lib/serviceCatalogTypes"
+import { serviceChargeHasComprobante } from "@/app/[siteId]/[popId]/active-services/serviceChargeCreateFormState"
 import { SERVICE_PAYMENT_TIMING_LABELS } from "@/lib/serviceCatalogTypes"
 import { operationPaymentKindLabel } from "@/lib/operationPaymentKinds"
 import {
   getServiceChargeCheckoutDestinations,
 } from "@/lib/serviceChargeCheckoutPayment"
 import {
-  computeChargeAmount,
   computeChargeDueDate,
   billingPeriodRequiresManualPeriodEnd,
   resolveChargePeriodEnd,
@@ -27,74 +35,17 @@ import {
 import { cn } from "@/lib/utils"
 import { useMemo } from "react"
 
-const PLACEHOLDER = snapshotPlaceholder
+const TICKET_PROPOSAL = LAYOUTS_OPERAR_DEFAULT_TICKET_PROPOSAL
 
-const fmt = snapshotMoneyFmt
-
-const sectionTitleClass =
-  "text-[10px] font-semibold uppercase tracking-[0.12em] text-[var(--rootsy-bruma-500)]"
-
-const rowLabelClass =
-  "shrink-0 text-[11px] leading-snug text-[var(--rootsy-bruma-500)]"
-
-const rowValueClass =
-  "min-w-0 text-right text-xs leading-snug text-[var(--rootsy-bruma-700)]"
-
-const rowValueEmptyClass = "text-[var(--rootsy-bruma-400)]"
-
-const separatorClass = "border-t border-[var(--rootsy-bruma-200)]"
+const PLACEHOLDER = "—"
 
 type Props = {
   form: ServiceChargeCreateWizardForm
+  popId: string
   selectedService: ServiceTypeChargeOption | null
   treasuryPaymentContext: TreasuryPaymentContext | null
   comprobanteLabel: string
-}
-
-function SnapshotSeparator() {
-  return <div className={separatorClass} role="separator" aria-hidden />
-}
-
-function SnapshotSection({
-  title,
-  children,
-  className,
-}: {
-  title?: string
-  children: React.ReactNode
-  className?: string
-}) {
-  return (
-    <section className={cn("flex flex-col gap-2", className)}>
-      {title ? <h3 className={sectionTitleClass}>{title}</h3> : null}
-      {children}
-    </section>
-  )
-}
-
-function SnapshotRow({
-  label,
-  value,
-  empty = false,
-}: {
-  label: string
-  value: string
-  empty?: boolean
-}) {
-  return (
-    <div className="flex items-baseline justify-between gap-3 py-0.5">
-      <span className={rowLabelClass}>{label}</span>
-      <span
-        className={cn(
-          rowValueClass,
-          (empty || value === PLACEHOLDER) && rowValueEmptyClass,
-        )}
-        title={value === PLACEHOLDER ? undefined : value}
-      >
-        {value}
-      </span>
-    </div>
-  )
+  suggestedComprobante: string | null
 }
 
 function formatSummaryDate(iso: string | null | undefined): string {
@@ -131,9 +82,11 @@ function resolvePaymentSnapshot(
 
 export function ServiceOperateChargeSnapshotContent({
   form,
+  popId,
   selectedService,
   treasuryPaymentContext,
   comprobanteLabel,
+  suggestedComprobante,
 }: Props) {
   const clientName =
     form.clientDraft.catalogClient?.name.trim() ||
@@ -145,32 +98,7 @@ export function ServiceOperateChargeSnapshotContent({
       ? 1
       : Math.max(1, Number(form.periodCount.replace(/\D/g, "")) || 1)
 
-  const discountMode: ServiceDiscountMode =
-    form.discountMode === "porcentaje" || form.discountMode === "fijo"
-      ? form.discountMode
-      : "none"
-
-  const discountValue =
-    discountMode === "none"
-      ? null
-      : discountMode === "porcentaje"
-        ? Number(form.discountValue.replace(/\D/g, "")) || null
-        : parseMoneyInput(form.discountValue, Number.NaN)
-
   const dueDaysAfterParsed = parseNonNegativeIntegerInput(form.dueDaysAfter, 0)
-  const unitPrice = parseMoneyInput(form.unitPrice, 0)
-
-  const amount = useMemo(
-    () =>
-      computeChargeAmount(
-        unitPrice,
-        discountMode,
-        discountValue != null && Number.isFinite(discountValue)
-          ? discountValue
-          : null,
-      ),
-    [unitPrice, discountMode, discountValue],
-  )
 
   const manualPeriodEnd = selectedService
     ? billingPeriodRequiresManualPeriodEnd(selectedService.billingPeriod)
@@ -208,36 +136,44 @@ export function ServiceOperateChargeSnapshotContent({
     dueDaysAfterParsed,
   ])
 
-  const discountParts = formatSnapshotDiscountLabel(discountMode, form.discountValue)
-  const discountLabel = discountParts.label
-
   const paymentSnapshot = resolvePaymentSnapshot(
     form.paymentMethodKey,
     treasuryPaymentContext,
   )
 
+  const hasComprobante = serviceChargeHasComprobante(
+    form.comprobanteLabel,
+    suggestedComprobante,
+  )
+
   const snapshotPrice = parseMoneyInput(form.unitPrice, selectedService?.defaultPrice ?? 0)
 
+  if (!selectedService) {
+    return null
+  }
+
   return (
-    <div className="flex flex-col gap-4">
-      <SnapshotSection>
-        {selectedService ? (
-          <div className={serviceOperateSnapshotTicketCardClass}>
-            <ServiceOperateServiceShowcase
-              service={selectedService}
-              price={snapshotPrice > 0 ? snapshotPrice : selectedService.defaultPrice}
-              clientName={clientName}
-              tone="ticket"
-            />
-          </div>
-        ) : (
-          <p className="text-sm text-[var(--rootsy-bruma-400)]">Sin servicio</p>
+    <div className="flex min-h-0 flex-col">
+      <div className="shrink-0 p-3">
+        <div className={serviceOperateSnapshotTicketCardClass}>
+          <ServiceOperateServiceShowcase
+            service={selectedService}
+            price={snapshotPrice > 0 ? snapshotPrice : selectedService.defaultPrice}
+            clientName={clientName}
+            tone="ticket"
+            popId={popId}
+            showPlanDetails
+          />
+        </div>
+      </div>
+
+      <div
+        className={cn(
+          layoutsOperarSummaryCartListSurfaceClass,
+          layoutsOperarTicketProposalCartListClass(TICKET_PROPOSAL),
+          "min-h-0 flex-1",
         )}
-      </SnapshotSection>
-
-      <SnapshotSeparator />
-
-      <SnapshotSection>
+      >
         <ServiceOperateChargeConfigShowcase
           form={form}
           scopeLabel={SERVICE_CHARGE_BILLING_SCOPE_LABELS[form.billingScope]}
@@ -249,54 +185,58 @@ export function ServiceOperateChargeSnapshotContent({
           paymentTimingLabel={SERVICE_PAYMENT_TIMING_LABELS[form.paymentTiming]}
           dueDateLabel={formatSummaryDate(previewDueDate)}
           dueDateEmpty={!previewDueDate}
-          unitPriceLabel={unitPrice > 0 ? fmt.format(unitPrice) : PLACEHOLDER}
-          unitPriceEmpty={unitPrice <= 0}
-          discountLabel={discountLabel}
-          discountEmpty={discountParts.empty}
-          amountLabel={amount > 0 ? fmt.format(amount) : PLACEHOLDER}
-          amountEmpty={amount <= 0}
           notes={form.notes ?? ""}
+          addons={selectedService.addons}
+          selectedAddonIds={form.selectedAddonIds}
+          oneTimeAddonIds={form.oneTimeAddonIds}
         />
-      </SnapshotSection>
 
-      <SnapshotSeparator />
-
-      <SnapshotSection title="Medio de pago">
         {paymentSnapshot ? (
-          <div className="flex flex-col gap-0.5">
-            <SnapshotRow label="Forma" value={paymentSnapshot.kind} />
+          <>
+            <ServiceOperateSnapshotCartRow
+              label="Medio de pago"
+              value={paymentSnapshot.kind}
+            />
             {paymentSnapshot.destination ? (
-              <SnapshotRow label="Cuenta" value={paymentSnapshot.destination} />
+              <ServiceOperateSnapshotCartRow
+                label="Cuenta destino"
+                value={paymentSnapshot.destination}
+              />
             ) : null}
-          </div>
+          </>
         ) : (
-          <p className="text-sm text-[var(--rootsy-bruma-400)]">Sin definir</p>
-        )}
-      </SnapshotSection>
-
-      <SnapshotSeparator />
-
-      <SnapshotSection title="Facturación">
-        <div className="flex flex-col gap-0.5">
-          <SnapshotRow label="Comprobante" value={comprobanteLabel} />
-          <SnapshotRow
-            label="Se emite ahora"
-            value={yesNo(form.issueInvoiceOnCreate)}
+          <ServiceOperateSnapshotCartRow
+            label="Medio de pago"
+            value={PLACEHOLDER}
+            empty
           />
-          {form.issueInvoiceOnCreate ? (
-            <>
-              <SnapshotRow
-                label="Imprimir"
-                value={yesNo(form.printInvoiceOnCreate)}
-              />
-              <SnapshotRow
-                label="Enviar por email"
-                value={yesNo(form.emailInvoiceToClient)}
-              />
-            </>
-          ) : null}
-        </div>
-      </SnapshotSection>
+        )}
+
+        <ServiceOperateSnapshotCartRow
+          label="Comprobante"
+          value={comprobanteLabel}
+        />
+        {hasComprobante ? (
+          <>
+            <ServiceOperateSnapshotCartRow
+              label="Se emite ahora"
+              value={yesNo(form.issueInvoiceOnCreate)}
+            />
+            {form.issueInvoiceOnCreate ? (
+              <>
+                <ServiceOperateSnapshotCartRow
+                  label="Imprimir"
+                  value={yesNo(form.printInvoiceOnCreate)}
+                />
+                <ServiceOperateSnapshotCartRow
+                  label="Enviar por email"
+                  value={yesNo(form.emailInvoiceToClient)}
+                />
+              </>
+            ) : null}
+          </>
+        ) : null}
+      </div>
     </div>
   )
 }

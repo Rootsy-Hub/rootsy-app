@@ -20,6 +20,8 @@ import {
   SERVICE_CHARGE_COMPROBANTE_AUTO,
   validateServiceChargeCreateWizardStep,
   validateServiceChargeOperateForm,
+  serviceChargeStep2ErrorMessages,
+  serviceChargeStep3ErrorMessages,
   type ServiceChargeCreateFieldErrors,
   type ServiceChargeCreateWizardForm,
 } from "@/app/[siteId]/[popId]/active-services/serviceChargeCreateFormState"
@@ -30,7 +32,11 @@ import { useDataWorkspaceSidebar } from "@/components/layouts/useDataWorkspaceSi
 import { ServiceOperateSnapshotPanel } from "@/components/service-operation/ServiceOperateSnapshotPanel"
 import { ServiceOperateStepContent } from "@/components/service-operation/ServiceOperateStepContent"
 import { ServiceOperateStepHeader } from "@/components/service-operation/ServiceOperateStepHeader"
+import { ServiceOperateStepErrorBanner } from "@/components/service-operation/ServiceOperateStepErrorBanner"
 import { ServiceOperateStepToolbox } from "@/components/service-operation/ServiceOperateStepToolbox"
+import { GeneralDiscountDialog } from "@/components/checkout/GeneralDiscountDialog"
+import { SaleFinalizeDialog } from "@/components/checkout/SaleFinalizeDialog"
+import { saleOpFmt } from "@/components/sale-operation/saleOperationStyles"
 import { RootsFormToneProvider } from "@/components/rootsy-form"
 import { serviceOperateSnapshotPanelClass, layoutsOperarStepEnterClass } from "@/app/library/layouts/layoutsOperarStyles"
 import {
@@ -54,8 +60,15 @@ import {
   type ServiceDiscountMode,
 } from "@/lib/serviceCatalogTypes"
 import {
+  resolveChargeAddonSelections,
+  computeSelectedAddonsTotal,
+  computeChargeAddonTotals,
+  formatChargeConfigPriceSummary,
+} from "@/lib/serviceChargeAddonSelection"
+import {
   availableBillingScopesForService,
   billingPeriodRequiresManualPeriodEnd,
+  computeChargeAmount,
   SERVICE_CHARGE_BILLING_SCOPE_LABELS,
 } from "@/lib/serviceChargeTypes"
 import {
@@ -86,8 +99,7 @@ function isOperateStepConfigured(
   },
   maxReachedStep: ServiceOperateStep,
 ): boolean {
-  if (step === 3 && maxReachedStep < 3) return false
-  if (step === 3) return Boolean(form.paymentMethodKey)
+  if (step === 3) return maxReachedStep >= 3
   const errors = validateServiceChargeCreateWizardStep(step, form, options)
   return !hasServiceChargeCreateFieldErrors(errors)
 }
@@ -121,6 +133,8 @@ function defaultFormState(): ServiceChargeCreateWizardForm {
     printInvoiceOnCreate: false,
     emailInvoiceToClient: true,
     notes: "",
+    selectedAddonIds: [],
+    oneTimeAddonIds: [],
   }
 }
 
@@ -163,6 +177,14 @@ function buildCreatePayload(
     discountMode,
     discountValue,
     notes: form.notes,
+    addons:
+      form.selectedAddonIds.length > 0
+        ? resolveChargeAddonSelections(
+            form.billingScope,
+            form.selectedAddonIds,
+            form.oneTimeAddonIds,
+          )
+        : undefined,
   }
 }
 
@@ -215,6 +237,13 @@ export function CobrarServiciosWorkspace({ siteId, popId }: Props) {
   const [saving, setSaving] = useState(false)
   const [submitError, setSubmitError] = useState<string | null>(null)
   const [successOpen, setSuccessOpen] = useState(false)
+  const [createChargeConfirmOpen, setCreateChargeConfirmOpen] = useState(false)
+  const [descartarConfirmOpen, setDescartarConfirmOpen] = useState(false)
+  const [descuentoModalAbierto, setDescuentoModalAbierto] = useState(false)
+  const [descuentoDraftModo, setDescuentoDraftModo] = useState<"porcentaje" | "fijo">(
+    "porcentaje",
+  )
+  const [descuentoDraftTexto, setDescuentoDraftTexto] = useState("")
 
   const loadGenRef = useRef(0)
   const isMountedRef = useRef(false)
@@ -337,6 +366,8 @@ export function CobrarServiciosWorkspace({ siteId, popId }: Props) {
         periodEndDate: manualEnd
           ? form.periodEndDate || form.periodStartDate
           : form.periodEndDate,
+        selectedAddonIds: [],
+        oneTimeAddonIds: [],
       })
       setFieldErrors({})
       setActiveStep(2)
@@ -350,7 +381,87 @@ export function CobrarServiciosWorkspace({ siteId, popId }: Props) {
     setSubmitError(null)
     setActiveStep(1)
     setMaxReachedStep(1)
+    setDescuentoModalAbierto(false)
+    setDescartarConfirmOpen(false)
+    setCreateChargeConfirmOpen(false)
   }, [])
+
+  const subtotalForDiscount = useMemo(() => {
+    const unitPrice = parseMoneyInput(form.unitPrice, 0)
+    const addonsTotal = selectedService
+      ? computeSelectedAddonsTotal(selectedService.addons, form.selectedAddonIds)
+      : 0
+    return unitPrice + addonsTotal
+  }, [form.unitPrice, form.selectedAddonIds, selectedService])
+
+  const discountPct =
+    form.discountMode === "porcentaje"
+      ? Number(form.discountValue.replace(/\D/g, "")) || 0
+      : 0
+  const discountFixed =
+    form.discountMode === "fijo" ? parseMoneyInput(form.discountValue, 0) : 0
+
+  const hayDescuento =
+    form.discountMode === "porcentaje"
+      ? discountPct > 0
+      : form.discountMode === "fijo"
+        ? discountFixed > 0
+        : false
+
+  const descuentoToolboxLabel = hayDescuento
+    ? form.discountMode === "porcentaje"
+      ? `${discountPct}%`
+      : `Fijo ${saleOpFmt.format(discountFixed)}`
+    : "Sin descuento"
+
+  const descuentoDisabled = !selectedService || subtotalForDiscount <= 0 || saving
+
+  const abrirModalDescuento = () => {
+    if (hayDescuento) {
+      if (form.discountMode === "porcentaje") {
+        setDescuentoDraftModo("porcentaje")
+        setDescuentoDraftTexto(discountPct > 0 ? String(discountPct) : "")
+      } else {
+        setDescuentoDraftModo("fijo")
+        setDescuentoDraftTexto(discountFixed > 0 ? String(discountFixed) : "")
+      }
+    } else {
+      setDescuentoDraftModo("porcentaje")
+      setDescuentoDraftTexto("")
+    }
+    setDescuentoModalAbierto(true)
+  }
+
+  const aplicarDescuentoModal = () => {
+    const raw = descuentoDraftTexto.trim().replace(",", ".")
+    const n = Number.parseFloat(raw)
+    if (!Number.isFinite(n) || n < 0) {
+      patchForm({ discountMode: "", discountValue: "" })
+      setDescuentoModalAbierto(false)
+      return
+    }
+    if (descuentoDraftModo === "porcentaje") {
+      const pct = Math.min(100, Math.max(0, n))
+      patchForm({
+        discountMode: pct > 0 ? "porcentaje" : "",
+        discountValue: pct > 0 ? String(pct) : "",
+      })
+    } else if (subtotalForDiscount > 0 && n > subtotalForDiscount) {
+      patchForm({ discountMode: "porcentaje", discountValue: "100" })
+    } else {
+      const tope = Math.min(n, subtotalForDiscount)
+      patchForm({
+        discountMode: tope > 0 ? "fijo" : "",
+        discountValue: tope > 0 ? formatMoneyInputForField(tope) : "",
+      })
+    }
+    setDescuentoModalAbierto(false)
+  }
+
+  const quitarDescuento = () => {
+    patchForm({ discountMode: "", discountValue: "" })
+    setDescuentoModalAbierto(false)
+  }
 
   const clientName =
     form.clientDraft.catalogClient?.name.trim() ||
@@ -395,7 +506,33 @@ export function CobrarServiciosWorkspace({ siteId, popId }: Props) {
     return undefined
   }, [selectedService, clientName, canCreate])
 
-  const handleSubmit = async () => {
+  const chargeDiscountMode: ServiceDiscountMode =
+    form.discountMode === "porcentaje" || form.discountMode === "fijo"
+      ? form.discountMode
+      : "none"
+
+  const chargeDiscountValue =
+    chargeDiscountMode === "none"
+      ? null
+      : chargeDiscountMode === "porcentaje"
+        ? Number(form.discountValue.replace(/\D/g, "")) || null
+        : parseMoneyInput(form.discountValue, Number.NaN)
+
+  const chargeTotal = useMemo(
+    () =>
+      computeChargeAmount(
+        subtotalForDiscount,
+        chargeDiscountMode,
+        chargeDiscountValue != null && Number.isFinite(chargeDiscountValue)
+          ? chargeDiscountValue
+          : null,
+      ),
+    [subtotalForDiscount, chargeDiscountMode, chargeDiscountValue],
+  )
+
+  const chargeDescuentoMonto = Math.max(0, subtotalForDiscount - chargeTotal)
+
+  const handleOpenCreateChargeConfirm = () => {
     if (!selectedService) {
       setActiveStep(1)
       return
@@ -406,6 +543,26 @@ export function CobrarServiciosWorkspace({ siteId, popId }: Props) {
       setFieldErrors(errors)
       const stepWithError = firstOperateStepWithErrors(errors)
       if (stepWithError) setActiveStep(stepWithError)
+      return
+    }
+
+    setSubmitError(null)
+    setCreateChargeConfirmOpen(true)
+  }
+
+  const handleSubmit = async () => {
+    if (!selectedService) {
+      setActiveStep(1)
+      setCreateChargeConfirmOpen(false)
+      return
+    }
+
+    const errors = validateServiceChargeOperateForm(form, validationOptions)
+    if (hasServiceChargeCreateFieldErrors(errors)) {
+      setFieldErrors(errors)
+      const stepWithError = firstOperateStepWithErrors(errors)
+      if (stepWithError) setActiveStep(stepWithError)
+      setCreateChargeConfirmOpen(false)
       return
     }
 
@@ -421,6 +578,7 @@ export function CobrarServiciosWorkspace({ siteId, popId }: Props) {
       return
     }
 
+    setCreateChargeConfirmOpen(false)
     setSuccessOpen(true)
     resetCharge()
     void loadPage()
@@ -445,15 +603,53 @@ export function CobrarServiciosWorkspace({ siteId, popId }: Props) {
     }
     setFieldErrors({})
     setActiveStep(step)
+    setMaxReachedStep((current) => (step > current ? step : current))
   }
 
   const configSummary = useMemo(() => {
     if (!selectedService) return "Configurar cargo"
     const scopeLabel = SERVICE_CHARGE_BILLING_SCOPE_LABELS[form.billingScope]
-    const price = parseMoneyInput(form.unitPrice, Number.NaN)
-    if (!Number.isFinite(price)) return scopeLabel
-    return `${scopeLabel} · ${formatMoneyInputForField(price)}`
-  }, [selectedService, form.billingScope, form.unitPrice])
+    const unitPrice = parseMoneyInput(form.unitPrice, Number.NaN)
+    if (!Number.isFinite(unitPrice)) return scopeLabel
+
+    const discountMode: ServiceDiscountMode =
+      form.discountMode === "porcentaje" || form.discountMode === "fijo"
+        ? form.discountMode
+        : "none"
+    const discountValue =
+      discountMode === "none"
+        ? null
+        : discountMode === "porcentaje"
+          ? Number(form.discountValue.replace(/\D/g, "")) || null
+          : parseMoneyInput(form.discountValue, Number.NaN)
+
+    const addonTotals = computeChargeAddonTotals(
+      selectedService.addons,
+      form.billingScope,
+      form.selectedAddonIds,
+      form.oneTimeAddonIds,
+    )
+    const priceSummary = formatChargeConfigPriceSummary({
+      unitPrice,
+      billingScope: form.billingScope,
+      addonTotals,
+      discountMode,
+      discountValue:
+        discountValue != null && Number.isFinite(discountValue)
+          ? discountValue
+          : null,
+    })
+
+    return `${scopeLabel} · ${priceSummary}`
+  }, [
+    selectedService,
+    form.billingScope,
+    form.unitPrice,
+    form.selectedAddonIds,
+    form.oneTimeAddonIds,
+    form.discountMode,
+    form.discountValue,
+  ])
 
   const paymentStepSummary = useMemo(() => {
     const parts = [paymentLabel, comprobanteDisplayLabel].filter(Boolean)
@@ -542,6 +738,12 @@ export function CobrarServiciosWorkspace({ siteId, popId }: Props) {
     ],
   )
 
+  const activeStepErrors = useMemo(() => {
+    if (activeStep === 2) return serviceChargeStep2ErrorMessages(fieldErrors)
+    if (activeStep === 3) return serviceChargeStep3ErrorMessages(fieldErrors)
+    return []
+  }, [activeStep, fieldErrors])
+
   const headerUserName =
     bootstrap?.userFullName?.trim() ||
     user?.user_metadata?.full_name?.trim() ||
@@ -555,7 +757,7 @@ export function CobrarServiciosWorkspace({ siteId, popId }: Props) {
         siteId={siteId}
         popId={popId}
         popName={bootstrap?.popName ?? ""}
-        title="Cobrar servicio"
+        title="Vender servicio"
         loading={bootstrapLoading}
         userName={headerUserName}
         userAvatarSrc={userAvatarSrc}
@@ -571,7 +773,6 @@ export function CobrarServiciosWorkspace({ siteId, popId }: Props) {
                 <ServiceOperateStepHeader
                   step={activeStep}
                   summary={activeStepSummary}
-                  selectedService={activeStep === 1 ? selectedService : null}
                   onBack={() =>
                     handleStepChange((activeStep - 1) as ServiceOperateStep)
                   }
@@ -579,6 +780,7 @@ export function CobrarServiciosWorkspace({ siteId, popId }: Props) {
                     handleStepChange((activeStep + 1) as ServiceOperateStep)
                   }
                 />
+                <ServiceOperateStepErrorBanner messages={activeStepErrors} />
                 <div className="min-h-0 flex-1 overflow-hidden bg-[var(--rootsy-sombra-800)]">
                   <RootsFormToneProvider tone="dark">
                     <div
@@ -616,6 +818,10 @@ export function CobrarServiciosWorkspace({ siteId, popId }: Props) {
                 activeStep={activeStep}
                 onStepChange={handleStepChange}
                 slots={stepToolboxSlots}
+                descuentoLabel={descuentoToolboxLabel}
+                hayDescuento={hayDescuento}
+                descuentoDisabled={descuentoDisabled}
+                onDescuentoClick={abrirModalDescuento}
               />
             }
             ticket={
@@ -624,24 +830,76 @@ export function CobrarServiciosWorkspace({ siteId, popId }: Props) {
                 aria-label="Resumen del cargo"
               >
                 <ServiceOperateSnapshotPanel
+                  popId={popId}
                   form={form}
                   selectedService={selectedService}
                   treasuryPaymentContext={treasuryPaymentContext}
                   comprobanteLabel={comprobanteDisplayLabel}
+                  suggestedComprobante={suggestedComprobante}
                   disabled={saving}
                   saving={saving}
                   canCreate={canCreate}
-                  confirmTitle={confirmTitle ?? submitError ?? undefined}
-                  onDiscard={resetCharge}
-                  onConfirm={() => {
-                    void handleSubmit()
-                  }}
+                  confirmTitle={confirmTitle}
+                  onDiscard={() => setDescartarConfirmOpen(true)}
+                  onConfirm={handleOpenCreateChargeConfirm}
                 />
               </aside>
             }
           />
         </div>
       </DataWorkspaceOperationsLayout>
+
+      <GeneralDiscountDialog
+        open={descuentoModalAbierto}
+        onOpenChange={setDescuentoModalAbierto}
+        context="cargo"
+        subtotal={subtotalForDiscount}
+        draftMode={descuentoDraftModo}
+        onDraftModeChange={setDescuentoDraftModo}
+        draftText={descuentoDraftTexto}
+        onDraftTextChange={setDescuentoDraftTexto}
+        onApply={aplicarDescuentoModal}
+        onClear={quitarDescuento}
+        disabled={descuentoDisabled}
+      />
+
+      <SaleFinalizeDialog
+        open={createChargeConfirmOpen}
+        onOpenChange={(open) => {
+          setCreateChargeConfirmOpen(open)
+          if (!open) setSubmitError(null)
+        }}
+        title="Confirmar cargo"
+        confirmLabel="Confirmar cargo"
+        submitting={saving}
+        submitError={submitError}
+        total={chargeTotal}
+        subtotal={subtotalForDiscount}
+        descuentoMonto={chargeDescuentoMonto}
+        hayDescuento={hayDescuento}
+        partyValue={clientName.trim() || "Sin definir"}
+        comprobanteLabel={comprobanteDisplayLabel}
+        paymentLabel={paymentLabel}
+        onConfirm={() => {
+          void handleSubmit()
+        }}
+      />
+
+      <AlertDialog open={descartarConfirmOpen} onOpenChange={setDescartarConfirmOpen}>
+        <RootsAlertDialogContent>
+          <RootsAlertDialogPanel
+            title="¿Descartar el cargo?"
+            description="Se quitarán el servicio, el cliente, la configuración, el medio de pago, el comprobante y los descuentos. Esta acción no se puede deshacer."
+          />
+          <RootsAlertDialogFooter
+            cancelLabel="Cancelar"
+            confirmLabel="Descartar"
+            destructive
+            onCancel={() => setDescartarConfirmOpen(false)}
+            onConfirm={resetCharge}
+          />
+        </RootsAlertDialogContent>
+      </AlertDialog>
 
       <AlertDialog open={successOpen} onOpenChange={setSuccessOpen}>
         <RootsAlertDialogContent>
@@ -652,19 +910,6 @@ export function CobrarServiciosWorkspace({ siteId, popId }: Props) {
           <RootsAlertDialogFooter
             confirmLabel="Seguir cobrando"
             onConfirm={() => setSuccessOpen(false)}
-          />
-        </RootsAlertDialogContent>
-      </AlertDialog>
-
-      <AlertDialog open={Boolean(submitError)} onOpenChange={() => setSubmitError(null)}>
-        <RootsAlertDialogContent>
-          <RootsAlertDialogPanel
-            title="No se pudo crear el cargo"
-            description={submitError ?? ""}
-          />
-          <RootsAlertDialogFooter
-            confirmLabel="Entendido"
-            onConfirm={() => setSubmitError(null)}
           />
         </RootsAlertDialogContent>
       </AlertDialog>

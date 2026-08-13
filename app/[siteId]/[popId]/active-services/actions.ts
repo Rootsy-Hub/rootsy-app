@@ -10,9 +10,14 @@ import { loadPopPermissionsSnapshot } from "@/lib/popPermissionsServer"
 import {
   isServiceBillingPeriod,
   isServiceDiscountMode,
+  isServiceLateInterestType,
   isServicePaymentTiming,
+  billingPeriodDisplayLabel,
+  parseServiceDetailsGrid,
   type ServiceBillingPeriod,
+  type ServiceDetailsGrid,
   type ServiceDiscountMode,
+  type ServiceLateInterestType,
   type ServicePaymentTiming,
 } from "@/lib/serviceCatalogTypes"
 import {
@@ -81,6 +86,12 @@ export type ActiveServicesStats = {
   cancelledCharges: number
 }
 
+export type ServiceTypeChargeAddonOption = {
+  id: string
+  name: string
+  price: number
+}
+
 export type ServiceTypeChargeOption = {
   id: string
   name: string
@@ -94,6 +105,23 @@ export type ServiceTypeChargeOption = {
   dueDaysAfter: number
   categoryId: string | null
   categoryName: string | null
+  addons: ServiceTypeChargeAddonOption[]
+}
+
+export type ServiceTypeChargeDetailArticle = {
+  articleName: string
+  quantity: number
+  unitOfMeasure: string
+}
+
+export type ServiceTypeChargeDetail = ServiceTypeChargeOption & {
+  detailsGrid: ServiceDetailsGrid
+  contractText: string
+  lateInterestType: ServiceLateInterestType
+  lateInterestValue: number | null
+  discountMode: ServiceDiscountMode
+  discountValue: number | null
+  articles: ServiceTypeChargeDetailArticle[]
 }
 
 export type ServiceChargePaymentMethodOption = TreasuryPaymentOption
@@ -108,6 +136,11 @@ export type CreateServiceChargeNewClientInput = {
   taxId: string
   email: string
   ivaCondition: string
+}
+
+export type CreateServiceChargeAddonInput = {
+  addonId: string
+  chargeFrequency: "once" | "each_period"
 }
 
 export type CreateServiceChargeInput = {
@@ -126,6 +159,7 @@ export type CreateServiceChargeInput = {
   unitPrice: number
   discountMode: ServiceDiscountMode
   discountValue: number | null
+  addons?: CreateServiceChargeAddonInput[]
   notes?: string
 }
 
@@ -614,6 +648,37 @@ export async function getActiveServicesPageData(
   }
 }
 
+async function loadServiceTypeChargeAddonsByServiceIds(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  popId: string,
+  serviceIds: string[],
+): Promise<Map<string, ServiceTypeChargeAddonOption[]>> {
+  const byService = new Map<string, ServiceTypeChargeAddonOption[]>()
+  if (serviceIds.length === 0) return byService
+
+  const { data, error } = await supabase
+    .from("service_type_addons")
+    .select("id, service_type_id, name, price, sort_order")
+    .eq("pop_id", popId)
+    .in("service_type_id", serviceIds)
+    .order("sort_order", { ascending: true })
+
+  if (error) return byService
+
+  for (const row of data ?? []) {
+    const serviceId = String(row.service_type_id)
+    const current = byService.get(serviceId) ?? []
+    current.push({
+      id: String(row.id),
+      name: String(row.name ?? ""),
+      price: parseMoney(row.price),
+    })
+    byService.set(serviceId, current)
+  }
+
+  return byService
+}
+
 export async function getServiceTypeChargeOptions(popId: string): Promise<
   | { success: true; services: ServiceTypeChargeOption[] }
   | { success: false; error: string }
@@ -638,6 +703,13 @@ export async function getServiceTypeChargeOptions(popId: string): Promise<
       .is("deleted_at", null)
       .order("name", { ascending: true })
     if (error) return { success: false, error: error.message }
+
+    const serviceIds = (data ?? []).map((row) => String(row.id))
+    const addonsByService = await loadServiceTypeChargeAddonsByServiceIds(
+      supabase,
+      popId,
+      serviceIds,
+    )
 
     return {
       success: true,
@@ -682,14 +754,15 @@ export async function getServiceTypeChargeOptions(popId: string): Promise<
           defaultPrice: parseMoney(row.default_price),
           billingPeriod,
           billingPeriodLabel,
-          billingPeriodDisplay:
-            billingPeriod === "custom" && billingPeriodLabel
-              ? billingPeriodLabel
-              : billingPeriod,
+          billingPeriodDisplay: billingPeriodDisplayLabel(
+            billingPeriod,
+            billingPeriodLabel,
+          ),
           paymentTiming,
           dueDaysAfter,
           categoryId,
           categoryName,
+          addons: addonsByService.get(String(row.id)) ?? [],
         }
       }),
     }
@@ -1114,6 +1187,198 @@ export async function cancelServiceCharge(
       .eq("pop_id", popId)
     if (error) return { success: false, error: error.message }
     return { success: true }
+  } catch (e: unknown) {
+    return {
+      success: false,
+      error: e instanceof Error ? e.message : "Error desconocido",
+    }
+  }
+}
+
+const CHARGE_SERVICE_DETAIL_SELECT = `
+  id,
+  name,
+  description,
+  image_url,
+  default_price,
+  billing_period,
+  billing_period_label,
+  payment_timing,
+  due_days_after,
+  details_grid,
+  contract_text,
+  late_interest_type,
+  late_interest_value,
+  discount_mode,
+  discount_value,
+  category_id,
+  service_categories ( name )
+`
+
+function mapServiceTypeChargeDetail(
+  row: Record<string, unknown>,
+  articles: ServiceTypeChargeDetailArticle[],
+  addons: ServiceTypeChargeAddonOption[] = [],
+): ServiceTypeChargeDetail {
+  const billingPeriodRaw = String(row.billing_period ?? "monthly")
+  const billingPeriod: ServiceBillingPeriod = isServiceBillingPeriod(
+    billingPeriodRaw,
+  )
+    ? billingPeriodRaw
+    : "monthly"
+  const billingPeriodLabel =
+    typeof row.billing_period_label === "string" &&
+    row.billing_period_label.trim()
+      ? row.billing_period_label.trim()
+      : null
+  const paymentTimingRaw = String(row.payment_timing ?? "end_of_period")
+  const paymentTiming: ServicePaymentTiming = isServicePaymentTiming(
+    paymentTimingRaw,
+  )
+    ? paymentTimingRaw
+    : "end_of_period"
+  const dueDaysAfterRaw = Number(row.due_days_after ?? 0)
+  const dueDaysAfter =
+    Number.isFinite(dueDaysAfterRaw) && dueDaysAfterRaw >= 0
+      ? Math.min(365, Math.floor(dueDaysAfterRaw))
+      : 0
+  const lateInterestRaw = String(row.late_interest_type ?? "none")
+  const lateInterestType: ServiceLateInterestType = isServiceLateInterestType(
+    lateInterestRaw,
+  )
+    ? lateInterestRaw
+    : "none"
+  const discountModeRaw = String(row.discount_mode ?? "none")
+  const discountMode: ServiceDiscountMode = isServiceDiscountMode(discountModeRaw)
+    ? discountModeRaw
+    : "none"
+  const lateInterestValueRaw = row.late_interest_value
+  const lateInterestValue =
+    lateInterestValueRaw == null || lateInterestValueRaw === ""
+      ? null
+      : Number(lateInterestValueRaw)
+  const discountValueRaw = row.discount_value
+  const discountValue =
+    discountValueRaw == null || discountValueRaw === ""
+      ? null
+      : Number(discountValueRaw)
+  const categoryRow = row.service_categories as { name?: string } | null
+  const categoryId =
+    row.category_id != null ? String(row.category_id) : null
+  const categoryName =
+    categoryRow?.name && String(categoryRow.name).trim()
+      ? String(categoryRow.name).trim()
+      : null
+
+  return {
+    id: String(row.id),
+    name: String(row.name ?? ""),
+    description: String(row.description ?? ""),
+    imageUrl:
+      typeof row.image_url === "string" && row.image_url.trim()
+        ? row.image_url.trim()
+        : null,
+    defaultPrice: parseMoney(row.default_price),
+    billingPeriod,
+    billingPeriodLabel,
+    billingPeriodDisplay: billingPeriodDisplayLabel(
+      billingPeriod,
+      billingPeriodLabel,
+    ),
+    paymentTiming,
+    dueDaysAfter,
+    categoryId,
+    categoryName,
+    detailsGrid: parseServiceDetailsGrid(row.details_grid),
+    contractText:
+      typeof row.contract_text === "string" ? row.contract_text : "",
+    lateInterestType,
+    lateInterestValue:
+      lateInterestValue != null && Number.isFinite(lateInterestValue)
+        ? lateInterestValue
+        : null,
+    discountMode,
+    discountValue:
+      discountValue != null && Number.isFinite(discountValue)
+        ? discountValue
+        : null,
+    articles,
+    addons,
+  }
+}
+
+export async function getServiceTypeChargeDetail(
+  popId: string,
+  serviceTypeId: string,
+): Promise<
+  | { success: true; service: ServiceTypeChargeDetail }
+  | { success: false; error: string }
+> {
+  try {
+    const access = await validatePopAccess(popId)
+    if (!access.hasAccess || !access.isActive) {
+      return { success: false, error: access.error || "Sin acceso" }
+    }
+    const perms = await chargePermissionFlags(popId)
+    if (!perms.canRead) {
+      return { success: false, error: "Sin permiso para ver servicios." }
+    }
+    if (!isUuid(serviceTypeId)) {
+      return { success: false, error: "Servicio inválido." }
+    }
+
+    const supabase = await createClient()
+    const { data, error } = await supabase
+      .from("service_types")
+      .select(CHARGE_SERVICE_DETAIL_SELECT)
+      .eq("id", serviceTypeId)
+      .eq("pop_id", popId)
+      .eq("is_active", true)
+      .is("deleted_at", null)
+      .maybeSingle()
+    if (error) return { success: false, error: error.message }
+    if (!data) return { success: false, error: "No se encontró el servicio." }
+
+    const { data: articleRows } = await supabase
+      .from("service_type_articles")
+      .select(
+        `
+        quantity,
+        articles ( name, unit_of_measure )
+      `,
+      )
+      .eq("pop_id", popId)
+      .eq("service_type_id", serviceTypeId)
+      .order("sort_order", { ascending: true })
+
+    const articles: ServiceTypeChargeDetailArticle[] = (articleRows ?? []).map(
+      (row) => {
+        const article = row.articles as {
+          name?: string
+          unit_of_measure?: string
+        } | null
+        return {
+          articleName: String(article?.name ?? "—"),
+          quantity: Number(row.quantity ?? 0) || 0,
+          unitOfMeasure: String(article?.unit_of_measure ?? "u").trim() || "u",
+        }
+      },
+    )
+
+    const addonsByService = await loadServiceTypeChargeAddonsByServiceIds(
+      supabase,
+      popId,
+      [serviceTypeId],
+    )
+
+    return {
+      success: true,
+      service: mapServiceTypeChargeDetail(
+        data as Record<string, unknown>,
+        articles,
+        addonsByService.get(serviceTypeId) ?? [],
+      ),
+    }
   } catch (e: unknown) {
     return {
       success: false,

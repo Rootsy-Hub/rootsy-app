@@ -239,3 +239,11 @@ export const rootsFormUiAffixClearButtonClass = cn(
   "hover:bg-[var(--rootsy-bruma-50)] hover:text-[var(--rootsy-bruma-900)]",
   "focus-visible:outline-none focus-visible:shadow-[0_0_0_2px_color-mix(in_srgb,var(--rootsy-savia-400)_45%,transparent)]",
 )
+
+/** Divider horizontal — color.border · hairline 1px. */
+export const rootsFormUiSectionDividerClass =
+  "h-px w-full shrink-0 bg-[var(--rootsy-bruma-200)]"
+
+/** Divider entre filas repetibles — color.border. */
+export const rootsFormUiItemDividerClass =
+  "my-2.5 h-px w-full shrink-0 bg-[var(--rootsy-bruma-200)]"

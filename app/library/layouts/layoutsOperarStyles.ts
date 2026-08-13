@@ -189,6 +189,14 @@ export const layoutsOperarFormDarkErrorBannerClass = cn(
   "text-[#fecaca]",
 )
 
+/** Franja de error bajo el header del paso — dark operar, full-bleed. */
+export const layoutsOperarStepErrorBannerClass = cn(
+  "relative z-10 flex shrink-0 items-start gap-3 border-b px-4 py-2.5 text-sm font-medium leading-snug sm:px-5",
+  "border-[color-mix(in_srgb,#f87171_32%,transparent)]",
+  "bg-[color-mix(in_srgb,#f87171_10%,var(--rootsy-sombra-950))]",
+  "text-[color-mix(in_srgb,#fecaca_92%,white)]",
+)
+
 /** Dropdown / panel flotante — entrada suave desde arriba. */
 export const layoutsOperarDropdownRevealClass = cn(
   "animate-in fade-in-0 slide-in-from-top-1 duration-150 motion-reduce:animate-none",
@@ -521,7 +529,7 @@ export const layoutsOperarSummaryPanelClass = cn(
   "w-[var(--layouts-operar-ticket-w)] max-w-[var(--layouts-operar-ticket-w)]",
 )
 
-/** Panel ticket Cobrar servicio — snapshot directo sin fila de totales. */
+/** Vender servicio — panel derecho con fila de totales operar. */
 export const serviceOperateSnapshotPanelClass = cn(
   layoutsOperarSummaryPanelClass,
   "service-operate-snapshot-panel",

@@ -607,7 +607,11 @@ function MenuPage() {
 
                         return (
                           <MenuGridItemButton
-                            key={item.moduleKey ?? item.name}
+                            key={
+                              item.link !== "section"
+                                ? item.link
+                                : (item.moduleKey ?? item.name)
+                            }
                             item={item}
                             sectionKey={styleSectionKey}
                             disabled={!target}

@@ -23,6 +23,7 @@ import {
   SERVICE_CHARGE_COMPROBANTE_AUTO,
   serviceChargeComprobanteFromSelectValue,
   serviceChargeComprobanteSelectValue,
+  serviceChargeHasComprobante,
 } from "@/app/[siteId]/[popId]/active-services/serviceChargeCreateFormState"
 import {
   SALE_COMPROBANTE_SIN_LABEL,
@@ -56,6 +57,10 @@ export function ServiceChargeBillingFields({
   onChange,
 }: Props) {
   const isDark = tone === "dark"
+  const hasComprobante = serviceChargeHasComprobante(
+    form.comprobanteLabel,
+    suggestedComprobante,
+  )
 
   return (
     <div className={rootsFormColumnClass}>
@@ -76,11 +81,23 @@ export function ServiceChargeBillingFields({
         label="Comprobante"
         id="charge-comprobante"
         value={serviceChargeComprobanteSelectValue(form.comprobanteLabel)}
-        onValueChange={(value) =>
+        onValueChange={(value) => {
+          const comprobanteLabel = serviceChargeComprobanteFromSelectValue(value)
+          const nextHasComprobante = serviceChargeHasComprobante(
+            comprobanteLabel,
+            suggestedComprobante,
+          )
           onChange({
-            comprobanteLabel: serviceChargeComprobanteFromSelectValue(value),
+            comprobanteLabel,
+            ...(nextHasComprobante
+              ? {}
+              : {
+                  issueInvoiceOnCreate: false,
+                  printInvoiceOnCreate: false,
+                  emailInvoiceToClient: false,
+                }),
           })
-        }
+        }}
         placeholder={SALE_COMPROBANTE_SIN_LABEL}
         disabled={disabled}
       >
@@ -133,51 +150,53 @@ export function ServiceChargeBillingFields({
         />
       </div>
 
-      <div className={rootsFormCheckboxChoiceListClass}>
-        <RootsFormCheckboxChoiceRow
-          id="charge-issue-invoice"
-          label="Emitir comprobante fiscal"
-          description="Al crear el cargo"
-          checked={form.issueInvoiceOnCreate}
-          disabled={disabled}
-          onCheckedChange={(checked) =>
-            onChange({
-              issueInvoiceOnCreate: checked,
-              ...(checked
-                ? { emailInvoiceToClient: true }
-                : {
-                    printInvoiceOnCreate: false,
-                    emailInvoiceToClient: false,
-                  }),
-            })
-          }
-        />
+      {hasComprobante ? (
+        <div className={rootsFormCheckboxChoiceListClass}>
+          <RootsFormCheckboxChoiceRow
+            id="charge-issue-invoice"
+            label="Emitir comprobante fiscal"
+            description="Al crear el cargo"
+            checked={form.issueInvoiceOnCreate}
+            disabled={disabled}
+            onCheckedChange={(checked) =>
+              onChange({
+                issueInvoiceOnCreate: checked,
+                ...(checked
+                  ? { emailInvoiceToClient: true }
+                  : {
+                      printInvoiceOnCreate: false,
+                      emailInvoiceToClient: false,
+                    }),
+              })
+            }
+          />
 
-        {form.issueInvoiceOnCreate ? (
-          <>
-            <RootsFormCheckboxChoiceRow
-              id="charge-print-invoice"
-              label="Imprimir comprobante"
-              checked={form.printInvoiceOnCreate}
-              disabled={disabled}
-              className="motion-safe:animate-in motion-safe:fade-in-0 motion-safe:duration-150"
-              onCheckedChange={(checked) =>
-                onChange({ printInvoiceOnCreate: checked })
-              }
-            />
-            <RootsFormCheckboxChoiceRow
-              id="charge-email-invoice"
-              label="Enviar comprobante por email"
-              checked={form.emailInvoiceToClient}
-              disabled={disabled}
-              className="motion-safe:animate-in motion-safe:fade-in-0 motion-safe:duration-150"
-              onCheckedChange={(checked) =>
-                onChange({ emailInvoiceToClient: checked })
-              }
-            />
-          </>
-        ) : null}
-      </div>
+          {form.issueInvoiceOnCreate ? (
+            <>
+              <RootsFormCheckboxChoiceRow
+                id="charge-print-invoice"
+                label="Imprimir comprobante"
+                checked={form.printInvoiceOnCreate}
+                disabled={disabled}
+                className="motion-safe:animate-in motion-safe:fade-in-0 motion-safe:duration-150"
+                onCheckedChange={(checked) =>
+                  onChange({ printInvoiceOnCreate: checked })
+                }
+              />
+              <RootsFormCheckboxChoiceRow
+                id="charge-email-invoice"
+                label="Enviar comprobante por email"
+                checked={form.emailInvoiceToClient}
+                disabled={disabled}
+                className="motion-safe:animate-in motion-safe:fade-in-0 motion-safe:duration-150"
+                onCheckedChange={(checked) =>
+                  onChange({ emailInvoiceToClient: checked })
+                }
+              />
+            </>
+          ) : null}
+        </div>
+      ) : null}
 
       {!canReadClients ? (
         <p

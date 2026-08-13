@@ -2,6 +2,7 @@
 
 import { CheckoutOptionCard } from "@/components/checkout/CheckoutOptionCard"
 import { SalePaymentDestinationDialog } from "@/components/sale-operation/SalePaymentDestinationDialog"
+import { rootsFormColumnClass } from "@/components/rootsy-form"
 import {
   layoutsOperarFormDarkErrorBannerClass,
   layoutsOperarFormDarkMutedTextClass,
@@ -149,7 +150,7 @@ export function ServiceOperatePaymentFields({
   const paymentKinds = getPaymentCheckoutKinds(SERVICE_PAYMENT_FLOW)
 
   return (
-    <>
+    <div className={rootsFormColumnClass}>
       <p
         className={cn(
           "text-xs font-medium uppercase tracking-wide",
@@ -248,6 +249,6 @@ export function ServiceOperatePaymentFields({
           onSelect={applySelection}
         />
       ) : null}
-    </>
+    </div>
   )
 }

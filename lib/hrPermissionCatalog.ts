@@ -29,7 +29,7 @@ const SECTION_LABELS: Record<PopPageKey, string> = {
   recipes: "Recetas",
   services: "Servicios",
   "active-services": "Servicios activos",
-  "cobrar-servicios": "Cobrar servicio",
+  "cobrar-servicios": "Vender servicio",
   promotions: "Promociones",
   inventory: "Inventario",
   clients: "Clientes",

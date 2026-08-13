@@ -8,10 +8,8 @@ import {
   getPopServiceCategories,
   getPopServiceDetail,
   getPopServicesTable,
-  getServiceArticleOptions,
   updatePopService,
   updateServiceCategory,
-  type ServiceArticleOption,
   type ServiceCategoryOption,
   type ServiceTableRow,
 } from "@/app/[siteId]/[popId]/services/actions"
@@ -142,7 +140,6 @@ function ServicesPage() {
   const [formError, setFormError] = useState<string | null>(null)
   const [editingId, setEditingId] = useState<string | null>(null)
   const [form, setForm] = useState(defaultServiceFormState())
-  const [articleOptions, setArticleOptions] = useState<ServiceArticleOption[]>([])
 
   const [deleteOpen, setDeleteOpen] = useState(false)
   const [deleteTarget, setDeleteTarget] = useState<ServiceTableRow | null>(null)
@@ -226,12 +223,6 @@ function ServicesPage() {
     if (!popId) return
     const res = await getPopServiceCategories(popId)
     if (res.success) setCategories(res.categories)
-  }, [popId])
-
-  const loadArticleOptions = useCallback(async () => {
-    if (!popId) return
-    const res = await getServiceArticleOptions(popId)
-    if (res.success) setArticleOptions(res.articles)
   }, [popId])
 
   useEffect(() => {
@@ -336,7 +327,6 @@ function ServicesPage() {
     setForm(defaultServiceFormState())
     setFormError(null)
     setFormOpen(true)
-    void loadArticleOptions()
   }
 
   const openEdit = async (row: ServiceTableRow) => {
@@ -345,7 +335,6 @@ function ServicesPage() {
     setFormDetailLoading(true)
     setFormOpen(true)
     setEditingId(row.id)
-    void loadArticleOptions()
     const res = await getPopServiceDetail(popId, row.id)
     setFormDetailLoading(false)
     if (!res.success) {
@@ -373,6 +362,18 @@ function ServicesPage() {
         articles: res.service.articles.map((line) => ({
           articleId: line.articleId,
           quantity: line.quantity,
+          articleName: line.articleName,
+          unitOfMeasure: line.unitOfMeasure,
+        })),
+        addons: res.service.addons.map((addon) => ({
+          name: addon.name,
+          price: addon.price,
+          articles: addon.articles.map((line) => ({
+            articleId: line.articleId,
+            quantity: line.quantity,
+            articleName: line.articleName,
+            unitOfMeasure: line.unitOfMeasure,
+          })),
         })),
       }),
     )
@@ -825,7 +826,6 @@ function ServicesPage() {
         form={form}
         setForm={setForm}
         categories={categories}
-        articleOptions={articleOptions}
         popId={popId ?? ""}
         onSubmit={submitForm}
         onCancel={closeForm}

@@ -61,6 +61,18 @@ export type ServiceArticleInput = {
   quantity: number
 }
 
+export type ServiceAddonInput = {
+  name: string
+  price: number
+  articles: ServiceArticleInput[]
+}
+
+export type ServiceAddonRow = Omit<ServiceAddonInput, "articles"> & {
+  id: string
+  sortOrder: number
+  articles: ServiceArticleRow[]
+}
+
 export type ServiceArticleRow = ServiceArticleInput & {
   id: string
   articleName: string
@@ -95,6 +107,7 @@ export type ServiceDetail = ServiceTableRow & {
   discountMode: ServiceDiscountMode
   discountValue: number | null
   articles: ServiceArticleRow[]
+  addons: ServiceAddonRow[]
 }
 
 export type UpsertServiceInput = {
@@ -114,6 +127,7 @@ export type UpsertServiceInput = {
   discountMode: ServiceDiscountMode
   discountValue: number | null
   articles: ServiceArticleInput[]
+  addons: ServiceAddonInput[]
   isActive: boolean
 }
 
@@ -333,6 +347,7 @@ function mapServiceDetail(
         ? discountValue
         : null,
     articles,
+    addons: [],
   }
 }
 
@@ -364,6 +379,151 @@ async function syncServiceTypeArticles(
     .from("service_type_articles")
     .insert(rows)
   if (insertError) return { ok: false, error: insertError.message }
+  return { ok: true }
+}
+
+async function loadServiceTypeAddonArticles(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  popId: string,
+  addonIds: string[],
+): Promise<Map<string, ServiceArticleRow[]>> {
+  const byAddon = new Map<string, ServiceArticleRow[]>()
+  if (addonIds.length === 0) return byAddon
+
+  const { data, error } = await supabase
+    .from("service_type_addon_articles")
+    .select(
+      `
+      id,
+      addon_id,
+      article_id,
+      quantity,
+      sort_order,
+      articles ( name, item_kind, unit_of_measure )
+    `,
+    )
+    .eq("pop_id", popId)
+    .in("addon_id", addonIds)
+    .order("sort_order", { ascending: true })
+  if (error) return byAddon
+
+  for (const row of data ?? []) {
+    const addonId = String(row.addon_id)
+    const article = row.articles as {
+      name?: string
+      item_kind?: string
+      unit_of_measure?: string
+    } | null
+    const rawKind = String(article?.item_kind ?? "raw_material")
+    const itemKind = isArticleItemKind(rawKind) ? rawKind : "raw_material"
+    const unitOfMeasure = normalizeStoredUnitOfMeasure(
+      String(article?.unit_of_measure ?? "u"),
+      "u",
+    )
+    const line: ServiceArticleRow = {
+      id: String(row.id),
+      articleId: String(row.article_id),
+      articleName: String(article?.name ?? "—"),
+      quantity: Number(row.quantity ?? 0) || 0,
+      unitOfMeasure,
+      itemKind,
+    }
+    const current = byAddon.get(addonId) ?? []
+    current.push(line)
+    byAddon.set(addonId, current)
+  }
+  return byAddon
+}
+
+async function loadServiceTypeAddons(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  popId: string,
+  serviceTypeId: string,
+): Promise<ServiceAddonRow[]> {
+  const { data, error } = await supabase
+    .from("service_type_addons")
+    .select("id, name, price, sort_order")
+    .eq("pop_id", popId)
+    .eq("service_type_id", serviceTypeId)
+    .order("sort_order", { ascending: true })
+  if (error || !data?.length) return []
+
+  const addonIds = data.map((row) => String(row.id))
+  const articlesByAddon = await loadServiceTypeAddonArticles(
+    supabase,
+    popId,
+    addonIds,
+  )
+
+  return data.map((row) => ({
+    id: String(row.id),
+    name: String(row.name ?? ""),
+    price: Number(row.price ?? 0) || 0,
+    sortOrder: Number(row.sort_order ?? 0) || 0,
+    articles: articlesByAddon.get(String(row.id)) ?? [],
+  }))
+}
+
+async function syncServiceTypeAddons(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  popId: string,
+  serviceTypeId: string,
+  addons: ServiceAddonInput[],
+): Promise<{ ok: true } | { ok: false; error: string }> {
+  const { error: deleteError } = await supabase
+    .from("service_type_addons")
+    .delete()
+    .eq("service_type_id", serviceTypeId)
+    .eq("pop_id", popId)
+  if (deleteError) return { ok: false, error: deleteError.message }
+
+  const rows = addons
+    .map((addon) => ({
+      name: addon.name.trim(),
+      price: addon.price,
+      articles: addon.articles.filter(
+        (line) => line.articleId.trim() && line.quantity > 0,
+      ),
+    }))
+    .filter((addon) => addon.name.length > 0)
+
+  for (let index = 0; index < rows.length; index += 1) {
+    const addon = rows[index]
+    const { data, error } = await supabase
+      .from("service_type_addons")
+      .insert({
+        pop_id: popId,
+        service_type_id: serviceTypeId,
+        name: addon.name,
+        price: addon.price,
+        sort_order: index,
+      })
+      .select("id")
+      .single()
+    if (error || !data?.id) {
+      return {
+        ok: false,
+        error: error?.message || "No se pudieron guardar los adicionales.",
+      }
+    }
+
+    const articleRows = addon.articles.map((line, articleIndex) => ({
+      pop_id: popId,
+      addon_id: String(data.id),
+      article_id: line.articleId.trim(),
+      quantity: line.quantity,
+      sort_order: articleIndex,
+    }))
+    if (articleRows.length === 0) continue
+
+    const { error: insertArticlesError } = await supabase
+      .from("service_type_addon_articles")
+      .insert(articleRows)
+    if (insertArticlesError) {
+      return { ok: false, error: insertArticlesError.message }
+    }
+  }
+
   return { ok: true }
 }
 
@@ -435,6 +595,22 @@ function validateServiceInput(
     }
     if (!Number.isFinite(line.quantity) || line.quantity <= 0) {
       return { ok: false, error: "Cantidad inválida en artículos del servicio." }
+    }
+  }
+  for (const addon of input.addons) {
+    if (!addon.name.trim()) {
+      return { ok: false, error: "Indicá el nombre de cada adicional." }
+    }
+    if (!Number.isFinite(addon.price) || addon.price < 0) {
+      return { ok: false, error: "Precio inválido en un adicional." }
+    }
+    for (const line of addon.articles) {
+      if (!isUuid(line.articleId)) {
+        return { ok: false, error: "Artículo inválido en un adicional." }
+      }
+      if (!Number.isFinite(line.quantity) || line.quantity <= 0) {
+        return { ok: false, error: "Cantidad inválida en artículos de un adicional." }
+      }
     }
   }
   return { ok: true }
@@ -792,9 +968,13 @@ export async function getPopServiceDetail(
     if (error) return { success: false, error: error.message }
     if (!data) return { success: false, error: "No se encontró el servicio." }
     const articles = await loadServiceTypeArticles(supabase, popId, serviceId)
+    const addons = await loadServiceTypeAddons(supabase, popId, serviceId)
     return {
       success: true,
-      service: mapServiceDetail(data as Record<string, unknown>, articles),
+      service: {
+        ...mapServiceDetail(data as Record<string, unknown>, articles),
+        addons,
+      },
     }
   } catch (e: unknown) {
     return {
@@ -877,6 +1057,15 @@ export async function createPopService(
     if (!articlesSync.ok) {
       return { success: false, error: articlesSync.error }
     }
+    const addonsSync = await syncServiceTypeAddons(
+      supabase,
+      popId,
+      serviceId,
+      input.addons,
+    )
+    if (!addonsSync.ok) {
+      return { success: false, error: addonsSync.error }
+    }
     return { success: true, id: serviceId }
   } catch (e: unknown) {
     return {
@@ -953,6 +1142,13 @@ export async function updatePopService(
       input.articles,
     )
     if (!articlesSync.ok) return { success: false, error: articlesSync.error }
+    const addonsSync = await syncServiceTypeAddons(
+      supabase,
+      popId,
+      serviceId,
+      input.addons,
+    )
+    if (!addonsSync.ok) return { success: false, error: addonsSync.error }
     return { success: true }
   } catch (e: unknown) {
     return {
@@ -1019,7 +1215,14 @@ export async function deletePopService(
   }
 }
 
-export async function getServiceArticleOptions(popId: string): Promise<
+export async function getServiceArticleOptions(
+  popId: string,
+  input: {
+    query?: string
+    limit?: number
+    excludeIds?: string[]
+  } = {},
+): Promise<
   | { success: true; articles: ServiceArticleOption[] }
   | { success: false; error: string }
 > {
@@ -1032,6 +1235,16 @@ export async function getServiceArticleOptions(popId: string): Promise<
     if (!perms.canRead) {
       return { success: false, error: "Sin permiso para ver artículos." }
     }
+
+    const query = input.query?.trim() ?? ""
+    if (!query) {
+      return { success: true, articles: [] }
+    }
+
+    const limit = Math.min(Math.max(1, input.limit ?? 5), 20)
+    const excludeIds = new Set(input.excludeIds ?? [])
+    const pattern = `%${query.replace(/\\/g, "\\\\").replace(/%/g, "\\%").replace(/_/g, "\\_")}%`
+
     const supabase = await createClient()
     const { data, error } = await supabase
       .from("articles")
@@ -1039,11 +1252,13 @@ export async function getServiceArticleOptions(popId: string): Promise<
       .eq("pop_id", popId)
       .eq("is_active", true)
       .in("item_kind", ["raw_material", "supply", "merchandise"])
+      .ilike("name", pattern)
       .order("name", { ascending: true })
+      .limit(limit + excludeIds.size)
     if (error) return { success: false, error: error.message }
-    return {
-      success: true,
-      articles: (data ?? []).map((row) => {
+
+    const articles = (data ?? [])
+      .map((row) => {
         const rawKind = String(row.item_kind ?? "raw_material")
         const itemKind = isArticleItemKind(rawKind) ? rawKind : "raw_material"
         const unitOfMeasure = normalizeStoredUnitOfMeasure(
@@ -1056,8 +1271,11 @@ export async function getServiceArticleOptions(popId: string): Promise<
           itemKind,
           unitOfMeasure,
         }
-      }),
-    }
+      })
+      .filter((row) => !excludeIds.has(row.id))
+      .slice(0, limit)
+
+    return { success: true, articles }
   } catch (e: unknown) {
     return {
       success: false,

@@ -3,6 +3,7 @@ import type {
   UpsertServiceInput,
 } from "@/app/[siteId]/[popId]/services/actions"
 import type { ServiceArticleFormLine } from "@/app/[siteId]/[popId]/services/components/ServiceArticlesEditor"
+import type { ServiceAddonFormLine } from "@/app/[siteId]/[popId]/services/components/ServiceAddonsEditor"
 import {
   emptyServiceDetailsGrid,
   isServiceBillingPeriod,
@@ -26,8 +27,8 @@ export const SERVICE_UPSERT_WIZARD_STEPS: {
   label: string
 }[] = [
   { step: 1, label: "Datos" },
-  { step: 2, label: "Artículos" },
-  { step: 3, label: "Detalles" },
+  { step: 2, label: "Detalles" },
+  { step: 3, label: "Artículos y adicionales" },
   { step: 4, label: "Precio" },
 ]
 
@@ -37,6 +38,7 @@ export type ServiceFormState = {
   description: string
   imageUrl: string
   articleLines: ServiceArticleFormLine[]
+  addonLines: ServiceAddonFormLine[]
   detailsGrid: ServiceDetailsGrid
   contractText: string
   billingPeriod: ServiceBillingPeriod
@@ -60,7 +62,8 @@ export type ServiceUpsertFieldErrors = Partial<
     | "dueDaysAfter"
     | "lateInterestValue"
     | "discountValue"
-    | "articleLines",
+    | "articleLines"
+    | "addonLines",
     string
   >
 >
@@ -72,6 +75,7 @@ export function defaultServiceFormState(): ServiceFormState {
     description: "",
     imageUrl: "",
     articleLines: [],
+    addonLines: [],
     detailsGrid: emptyServiceDetailsGrid(),
     contractText: "",
     billingPeriod: "monthly",
@@ -104,7 +108,18 @@ export function serviceFormFromDetail(input: {
   discountMode: ServiceDiscountMode
   discountValue: number | null
   isActive: boolean
-  articles: ServiceArticleInput[]
+  articles: (ServiceArticleInput & {
+    articleName?: string
+    unitOfMeasure?: string
+  })[]
+  addons: {
+    name: string
+    price: number
+    articles: (ServiceArticleInput & {
+      articleName?: string
+      unitOfMeasure?: string
+    })[]
+  }[]
 }): ServiceFormState {
   return {
     categoryId: input.categoryId ?? "",
@@ -115,6 +130,20 @@ export function serviceFormFromDetail(input: {
       key: `article-${index}-${line.articleId}`,
       articleId: line.articleId,
       quantity: String(line.quantity),
+      articleName: line.articleName,
+      unitOfMeasure: line.unitOfMeasure,
+    })),
+    addonLines: input.addons.map((addon, index) => ({
+      key: `addon-${index}`,
+      name: addon.name,
+      price: formatMoneyInputForField(addon.price),
+      articleLines: addon.articles.map((line, articleIndex) => ({
+        key: `addon-${index}-article-${articleIndex}-${line.articleId}`,
+        articleId: line.articleId,
+        quantity: String(line.quantity),
+        articleName: line.articleName,
+        unitOfMeasure: line.unitOfMeasure,
+      })),
     })),
     detailsGrid: input.detailsGrid,
     contractText: input.contractText,
@@ -139,6 +168,15 @@ export function serviceFormFromDetail(input: {
   }
 }
 
+function isServiceArticleQuantityValid(quantity: string): boolean {
+  const qty = Number(quantity.replace(",", "."))
+  return Number.isFinite(qty) && qty > 0
+}
+
+export function isServiceArticleLineComplete(line: ServiceArticleFormLine): boolean {
+  return line.articleId.trim().length > 0 && isServiceArticleQuantityValid(line.quantity)
+}
+
 function parseArticleLines(
   lines: ServiceArticleFormLine[],
 ): ServiceArticleInput[] {
@@ -149,6 +187,19 @@ function parseArticleLines(
       quantity: Number(line.quantity.replace(",", ".")),
     }))
     .filter((line) => Number.isFinite(line.quantity) && line.quantity > 0)
+}
+
+function parseAddonLines(
+  lines: ServiceAddonFormLine[],
+): UpsertServiceInput["addons"] {
+  return lines
+    .filter((line) => line.name.trim())
+    .map((line) => ({
+      name: line.name.trim(),
+      price: parseMoneyInput(line.price, 0),
+      articles: parseArticleLines(line.articleLines),
+    }))
+    .filter((line) => line.name.length > 0)
 }
 
 export function serviceFormToPayload(form: ServiceFormState): UpsertServiceInput {
@@ -202,6 +253,7 @@ export function serviceFormToPayload(form: ServiceFormState): UpsertServiceInput
     discountMode: discountValue != null ? discountMode : "none",
     discountValue,
     articles: parseArticleLines(form.articleLines),
+    addons: parseAddonLines(form.addonLines),
     isActive: form.isActive,
   }
 }
@@ -223,12 +275,35 @@ export function validateServiceUpsertWizardStep(
     if (!form.name.trim()) errors.name = "Indicá el nombre del servicio."
   }
 
-  if (step === 2) {
-    for (const line of form.articleLines) {
-      if (!line.articleId.trim()) continue
-      const qty = Number(line.quantity.replace(",", "."))
-      if (!Number.isFinite(qty) || qty <= 0) {
-        errors.articleLines = "Indicá cantidades válidas para los artículos."
+  if (step === 3) {
+    const hasIncompleteBaseArticle = form.articleLines.some(
+      (line) => !isServiceArticleLineComplete(line),
+    )
+    if (hasIncompleteBaseArticle) {
+      errors.articleLines = form.articleLines.some((line) => !line.articleId.trim())
+        ? "Seleccioná un artículo para cada línea agregada."
+        : "Indicá cantidades válidas para los artículos base."
+    }
+
+    for (const addon of form.addonLines) {
+      if (!addon.name.trim()) {
+        errors.addonLines = "Completá el nombre de cada adicional."
+        break
+      }
+
+      const price = parseMoneyInput(addon.price, Number.NaN)
+      if (!Number.isFinite(price) || price < 0) {
+        errors.addonLines = "Indicá un precio válido para cada adicional."
+        break
+      }
+
+      const hasIncompleteAddonArticle = addon.articleLines.some(
+        (line) => !isServiceArticleLineComplete(line),
+      )
+      if (hasIncompleteAddonArticle) {
+        errors.addonLines = addon.articleLines.some((line) => !line.articleId.trim())
+          ? "Seleccioná un artículo para cada línea agregada en los adicionales."
+          : "Indicá cantidades válidas en los artículos de los adicionales."
         break
       }
     }

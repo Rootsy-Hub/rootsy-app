@@ -49,6 +49,7 @@ import {
   availableBillingScopesForService,
   billingPeriodRequiresManualPeriodEnd,
 } from "@/lib/serviceChargeTypes"
+import { resolveChargeAddonSelections } from "@/lib/serviceChargeAddonSelection"
 import { cn } from "@/lib/utils"
 import {
   useCallback,
@@ -99,6 +100,8 @@ function defaultFormState(): ServiceChargeCreateWizardForm {
     printInvoiceOnCreate: false,
     emailInvoiceToClient: true,
     notes: "",
+    selectedAddonIds: [],
+    oneTimeAddonIds: [],
   }
 }
 
@@ -267,6 +270,8 @@ export function ServiceChargeCreateDialog({
         periodEndDate: manualEnd
           ? current.periodEndDate || current.periodStartDate
           : current.periodEndDate,
+        selectedAddonIds: [],
+        oneTimeAddonIds: [],
       }
     })
   }, [selectedService])
@@ -355,6 +360,14 @@ export function ServiceChargeCreateDialog({
       discountMode,
       discountValue,
       notes: form.notes,
+      addons:
+        form.selectedAddonIds.length > 0
+          ? resolveChargeAddonSelections(
+              form.billingScope,
+              form.selectedAddonIds,
+              form.oneTimeAddonIds,
+            )
+          : undefined,
     }
   }, [form, canCreateClient, services.length, selectedService])
 

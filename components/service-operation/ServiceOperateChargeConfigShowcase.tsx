@@ -1,15 +1,15 @@
 "use client"
 
+import type { ServiceTypeChargeAddonOption } from "@/app/[siteId]/[popId]/active-services/actions"
 import type { ServiceChargeCreateWizardForm } from "@/app/[siteId]/[popId]/active-services/serviceChargeCreateFormState"
 import {
-  serviceOperateSnapshotCardDividerClass,
-  serviceOperateSnapshotMicroLabelClass,
-  serviceOperateSnapshotPillClass,
-  serviceOperateSnapshotRowLabelClass,
-  serviceOperateSnapshotRowValueClass,
-  serviceOperateSnapshotRowValueMutedClass,
-  serviceOperateSnapshotTicketCardClass,
-} from "@/components/service-operation/serviceOperateSnapshotStyles"
+  selectedAddonsForDisplay,
+} from "@/lib/serviceChargeAddonSelection"
+import {
+  layoutsOperarTicketProposalLineAmountClass,
+} from "@/app/library/layouts/layoutsOperarHardcodedSpec"
+import { LAYOUTS_OPERAR_DEFAULT_TICKET_PROPOSAL } from "@/app/library/layouts/rootsyLayoutsOperarSystem"
+import { ServiceOperateSnapshotCartRow } from "@/components/service-operation/ServiceOperateSnapshotCartRow"
 import type { ServiceDiscountMode } from "@/lib/serviceCatalogTypes"
 import { parseMoneyInput } from "@/lib/moneyInput"
 import {
@@ -27,6 +27,8 @@ const fmt = new Intl.NumberFormat("es-AR", {
   minimumFractionDigits: 2,
 })
 
+const TICKET_PROPOSAL = LAYOUTS_OPERAR_DEFAULT_TICKET_PROPOSAL
+
 type Props = {
   form: ServiceChargeCreateWizardForm
   scopeLabel: string
@@ -38,40 +40,44 @@ type Props = {
   paymentTimingLabel: string
   dueDateLabel: string
   dueDateEmpty: boolean
-  unitPriceLabel: string
-  unitPriceEmpty: boolean
-  discountLabel: string
-  discountEmpty: boolean
-  amountLabel: string
-  amountEmpty: boolean
   notes: string
+  addons?: ServiceTypeChargeAddonOption[]
+  selectedAddonIds?: string[]
+  oneTimeAddonIds?: string[]
 }
 
-function ConfigRow({
-  label,
-  value,
-  empty = false,
-  emphasis = false,
-}: {
-  label: string
-  value: string
-  empty?: boolean
-  emphasis?: boolean
-}) {
-  return (
-    <div className="flex items-baseline justify-between gap-2">
-      <span className={serviceOperateSnapshotRowLabelClass}>{label}</span>
+function periodRangeValue(
+  hasPeriod: boolean,
+  periodStartLabel: string,
+  periodEndLabel: string,
+) {
+  if (!hasPeriod) {
+    return (
       <span
         className={cn(
-          serviceOperateSnapshotRowValueClass,
-          empty && serviceOperateSnapshotRowValueMutedClass,
-          emphasis &&
-            "font-canopy text-sm font-bold tabular-nums tracking-tight text-[var(--rootsy-savia-700)]",
+          layoutsOperarTicketProposalLineAmountClass(TICKET_PROPOSAL),
+          "self-center pt-0 font-normal text-[var(--layouts-operar-light-cart-line-meta)]",
         )}
       >
-        {value}
+        {PLACEHOLDER}
       </span>
-    </div>
+    )
+  }
+
+  return (
+    <span
+      className={cn(
+        layoutsOperarTicketProposalLineAmountClass(TICKET_PROPOSAL),
+        "flex min-w-0 items-center justify-end gap-1 self-center pt-0",
+      )}
+    >
+      <span className="truncate">{periodStartLabel}</span>
+      <ArrowRight
+        className="size-3 shrink-0 text-[var(--rootsy-savia-600)]"
+        aria-hidden
+      />
+      <span className="truncate">{periodEndLabel}</span>
+    </span>
   )
 }
 
@@ -86,121 +92,62 @@ export function ServiceOperateChargeConfigShowcase({
   paymentTimingLabel,
   dueDateLabel,
   dueDateEmpty,
-  unitPriceLabel,
-  unitPriceEmpty,
-  discountLabel,
-  discountEmpty,
-  amountLabel,
-  amountEmpty,
   notes,
+  addons = [],
+  selectedAddonIds = [],
+  oneTimeAddonIds = [],
 }: Props) {
   const notesTrimmed = notes.trim()
   const hasPeriod =
     !periodStartEmpty && !periodEndEmpty && periodEndLabel !== PLACEHOLDER
+  const selectedAddons = selectedAddonsForDisplay(addons, selectedAddonIds)
+  const oneTimeSet = new Set(oneTimeAddonIds)
 
   return (
-    <div className={serviceOperateSnapshotTicketCardClass}>
-      <div className="flex flex-wrap items-center gap-1.5">
-        <span className={serviceOperateSnapshotPillClass}>
-          <span className="truncate">{scopeLabel}</span>
-        </span>
-        {form.billingScope === "multi_period" ? (
-          <span
-            className={cn(
-              serviceOperateSnapshotPillClass,
-              "border-[color-mix(in_srgb,var(--rootsy-bruma-300)_80%,transparent)] bg-[color-mix(in_srgb,var(--rootsy-bruma-100)_80%,white)] text-[var(--rootsy-bruma-600)]",
-            )}
-          >
-            {chargeCount} cargos
-          </span>
-        ) : null}
-        <span
-          className={cn(
-            serviceOperateSnapshotPillClass,
-            "border-[color-mix(in_srgb,var(--rootsy-bruma-300)_80%,transparent)] bg-[color-mix(in_srgb,var(--rootsy-bruma-100)_80%,white)] text-[var(--rootsy-bruma-600)]",
-          )}
-        >
-          {paymentTimingLabel}
-        </span>
-      </div>
+    <>
+      <ServiceOperateSnapshotCartRow label="Alcance" value={scopeLabel} />
 
-      <div className="mt-2.5 space-y-1">
-        {hasPeriod ? (
-          <div className="flex min-w-0 items-center gap-1.5 text-xs font-medium text-[var(--rootsy-bruma-800)]">
-            <span className="truncate">{periodStartLabel}</span>
-            <ArrowRight
-              className="size-3 shrink-0 text-[var(--rootsy-savia-600)]"
-              aria-hidden
-            />
-            <span className="truncate">{periodEndLabel}</span>
-          </div>
-        ) : (
-          <p className="text-xs text-[var(--rootsy-bruma-400)]">Período sin definir</p>
-        )}
-
-        <p
-          className={cn(
-            "text-[11px] leading-snug",
-            dueDateEmpty
-              ? "text-[var(--rootsy-bruma-400)]"
-              : "text-[var(--rootsy-bruma-600)]",
-          )}
-        >
-          {dueDateEmpty ? "Vencimiento pendiente" : `Vence ${dueDateLabel}`}
-        </p>
-      </div>
-
-      <div
-        className={cn(serviceOperateSnapshotCardDividerClass, "my-2.5")}
-        role="separator"
-        aria-hidden
-      />
-
-      <div className="space-y-1">
-        <p className={cn(serviceOperateSnapshotMicroLabelClass, "mb-1")}>
-          Importes
-        </p>
-        <ConfigRow
-          label="Precio unitario"
-          value={unitPriceLabel}
-          empty={unitPriceEmpty}
+      {form.billingScope === "multi_period" ? (
+        <ServiceOperateSnapshotCartRow
+          label="Cantidad de cargos"
+          value={String(chargeCount)}
         />
-        <ConfigRow
-          label="Descuento"
-          value={discountLabel}
-          empty={discountEmpty}
-        />
-      </div>
+      ) : null}
 
-      <div
-        className={cn(serviceOperateSnapshotCardDividerClass, "my-2.5")}
-        role="separator"
-        aria-hidden
+      <ServiceOperateSnapshotCartRow
+        label="Cuándo se paga"
+        value={paymentTimingLabel}
       />
 
-      <ConfigRow
-        label={chargeCount > 1 ? "Monto c/u" : "Total del cargo"}
-        value={amountLabel}
-        empty={amountEmpty}
-        emphasis
+      <ServiceOperateSnapshotCartRow
+        label="Período"
+        valueContent={periodRangeValue(hasPeriod, periodStartLabel, periodEndLabel)}
       />
+
+      <ServiceOperateSnapshotCartRow
+        label="Vencimiento"
+        value={dueDateEmpty ? PLACEHOLDER : dueDateLabel}
+        empty={dueDateEmpty}
+      />
+
+      {selectedAddons.map((addon) => {
+        const suffix =
+          form.billingScope === "subscription" && oneTimeSet.has(addon.id)
+            ? " · única vez"
+            : ""
+        return (
+          <ServiceOperateSnapshotCartRow
+            key={addon.id}
+            label="Adicional"
+            value={`${addon.name}${suffix}`}
+          />
+        )
+      })}
 
       {notesTrimmed ? (
-        <>
-          <div
-            className={cn(serviceOperateSnapshotCardDividerClass, "my-2.5")}
-            role="separator"
-            aria-hidden
-          />
-          <div className="space-y-0.5">
-            <p className={serviceOperateSnapshotMicroLabelClass}>Notas</p>
-            <p className="line-clamp-3 text-[11px] leading-relaxed text-[var(--rootsy-bruma-600)]">
-              {notesTrimmed}
-            </p>
-          </div>
-        </>
+        <ServiceOperateSnapshotCartRow label="Notas" value={notesTrimmed} />
       ) : null}
-    </div>
+    </>
   )
 }
 

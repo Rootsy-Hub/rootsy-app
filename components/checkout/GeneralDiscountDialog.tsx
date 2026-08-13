@@ -26,7 +26,7 @@ type DiscountMode = CheckoutDiscountMode
 type Props = {
   open: boolean
   onOpenChange: (open: boolean) => void
-  context?: "venta" | "mesa" | "pedido" | "compra"
+  context?: "venta" | "mesa" | "pedido" | "compra" | "cargo"
   subtotal: number
   draftMode: DiscountMode
   onDraftModeChange: (mode: DiscountMode) => void

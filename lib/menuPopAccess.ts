@@ -30,11 +30,11 @@ export const MENU_LINK_TO_MODULE_KEY: Partial<Record<MenuItemLink, string>> = {
   settings: "settings",
 }
 
+/** Módulo de suscripción → link principal del menú (sin alias como cobrar-servicios). */
 const MODULE_KEY_TO_MENU_LINK = Object.fromEntries(
-  Object.entries(MENU_LINK_TO_MODULE_KEY).map(([link, key]) => [
-    key,
-    link as MenuItemLink,
-  ]),
+  Object.entries(MENU_LINK_TO_MODULE_KEY)
+    .filter(([link]) => link !== "cobrar-servicios")
+    .map(([link, key]) => [key, link as MenuItemLink]),
 ) as Partial<Record<string, MenuItemLink>>
 
 const MENU_MODULE_SECTION_ORDER = [
@@ -94,7 +94,7 @@ export function buildMenuSectionsFromEnabledModules(
     )
     const cobrarItem: MenuItemDef = {
       moduleKey: "active_services",
-      name: "Cobrar servicio",
+      name: "Vender servicio",
       icon: Banknote,
       link: "cobrar-servicios",
       badge: "NUEVO",
