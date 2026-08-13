@@ -16,7 +16,6 @@ import { PurchasePaymentMethodDialog } from "@/components/purchase-operation/Pur
 import { SimpleOperationCheckoutConfirmDialog } from "@/components/checkout/SimpleOperationCheckoutConfirmDialog"
 import { PurchaseOperationTicketOrderPanel } from "@/components/purchase-operation/PurchaseOperationTicketOrderPanel"
 import type { PurchaseCatalogProduct } from "@/components/purchase-operation/purchaseCatalogTypes"
-import { PURCHASE_CATEGORIA_TODOS } from "@/components/purchase-operation/purchaseCatalogTypes"
 import { PurchaseArticleCostPickerDialog } from "@/components/purchase-operation/PurchaseArticleCostPickerDialog"
 import type { PurchaseLineEditInput } from "@/components/purchase-operation/PurchaseCartLineCard"
 import { OperationPartyPickerDialog } from "@/components/checkout/OperationPartyPickerDialog"
@@ -175,10 +174,9 @@ function PurchasesPage() {
   const [canReadPaymentMethods, setCanReadPaymentMethods] = useState(false)
 
   const categoriasNav = useMemo(() => {
-    const names = [
+    return [
       ...new Set(catalogCategories.map((c) => c.name).filter(Boolean)),
     ]
-    return [PURCHASE_CATEGORIA_TODOS, ...names]
   }, [catalogCategories])
 
   const productosCatalogo = useMemo(

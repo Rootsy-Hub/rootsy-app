@@ -2,7 +2,7 @@
 
 import { RootsFormField } from "@/components/rootsy-form/RootsFormField"
 import type { RootsFormFieldAssistProps } from "@/components/rootsy-form/rootsFormFieldAssist"
-import { useRootsFormFieldControlProps } from "@/components/rootsy-form/rootsFormFieldContext"
+import { useRootsFormFieldControlProps, useRootsFormControlTone } from "@/components/rootsy-form/rootsFormFieldContext"
 import {
   getFormDateTriggerStyle,
   getFormDateValueStyle,
@@ -23,6 +23,7 @@ import {
 import { toISODateLocal } from "@/lib/dataWorkspaceDateFilter"
 import {
   formatRootsFormDisplayDate,
+  formatRootsFormDisplayDateCompact,
   parseRootsFormIsoDate,
 } from "@/lib/rootsFormDateFormat"
 import { cn } from "@/lib/utils"
@@ -42,6 +43,8 @@ type Props = {
   className?: string
   triggerClassName?: string
   popoverClassName?: string
+  /** `compact` → "11 ago 2026" para espacios angostos. */
+  displayFormat?: "long" | "compact"
 } & RootsFormFieldAssistProps
 
 export function RootsFormDateField({
@@ -53,6 +56,7 @@ export function RootsFormDateField({
   disabled,
   invalid,
   hint,
+  labelInfo,
   error,
   warning,
   success,
@@ -60,24 +64,31 @@ export function RootsFormDateField({
   className,
   triggerClassName,
   popoverClassName,
+  displayFormat = "long",
 }: Props) {
   const autoId = useId()
   const fieldId = id ?? autoId
   const hasPrefix = prefix != null
   const triggerRef = useRef<HTMLButtonElement>(null)
   const controlProps = useRootsFormFieldControlProps({ invalid })
+  const tone = useRootsFormControlTone()
   const { state, interactionHandlers } = useRootsFormControlInteraction({
     disabled,
     invalid: controlProps.isInvalid,
   })
   const [open, setOpen] = useState(false)
   const selected = useMemo(() => parseRootsFormIsoDate(value), [value])
-  const displayValue = selected ? formatRootsFormDisplayDate(selected) : null
-  const triggerStyle = getFormDateTriggerStyle(state, { prefixed: hasPrefix })
-  const prefixStyle = hasPrefix ? getFormLeadingPrefixStyle(state) : undefined
+  const displayValue = selected
+    ? displayFormat === "compact"
+      ? formatRootsFormDisplayDateCompact(selected)
+      : formatRootsFormDisplayDate(selected)
+    : null
+  const triggerStyle = getFormDateTriggerStyle(state, { prefixed: hasPrefix, tone })
+  const prefixStyle = hasPrefix ? getFormLeadingPrefixStyle(state, { tone }) : undefined
   const valueStyle = getFormDateValueStyle(state, {
     prefixed: hasPrefix,
     placeholder: !displayValue,
+    tone,
   })
 
   return (
@@ -86,6 +97,7 @@ export function RootsFormDateField({
       htmlFor={fieldId}
       className={className}
       hint={hint}
+      labelInfo={labelInfo}
       error={error}
       warning={warning}
       success={success}

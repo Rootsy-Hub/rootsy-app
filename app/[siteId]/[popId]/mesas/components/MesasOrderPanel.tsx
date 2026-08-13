@@ -37,6 +37,7 @@ export function MesasOrderPanel({
     cerrarMesa,
     cerrarMesaMode,
     puedeRegistrar,
+    orderPanelLoading,
   } = checkout
 
   const confirmLabel = puedeCerrarMesa ? "Liberar mesa" : "Cobrar mesa"
@@ -78,6 +79,7 @@ export function MesasOrderPanel({
       }}
       listTitle="Pedido"
       listSubtitle={tableLabel ? `Mesa ${tableLabel}` : undefined}
+      loading={orderPanelLoading}
       cartScrollHighlight={cartScrollHighlight}
     />
   )

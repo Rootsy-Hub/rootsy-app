@@ -10,6 +10,7 @@ import {
   rootsFormSelectTriggerClassForTone,
   type RootsFormSelectTone,
 } from "@/components/rootsy-form/rootsFormStyles"
+import { layoutsOperarFormDarkIconClass } from "@/app/library/layouts/layoutsOperarStyles"
 import { cn } from "@/lib/utils"
 import * as SelectPrimitive from "@radix-ui/react-select"
 import { ChevronDownIcon } from "lucide-react"
@@ -62,6 +63,10 @@ export const RootsFormSelectTrigger = forwardRef<
   })
 
   const useSpecStyles = tone === "light"
+  const isDark = tone === "dark"
+  const iconClass = isDark
+    ? layoutsOperarFormDarkIconClass
+    : "text-[var(--rootsy-bruma-500)]"
   const triggerStyle = useSpecStyles
     ? getFormSelectTriggerStyle(state, {
         prefixed: sunkenPrefix,
@@ -120,7 +125,7 @@ export const RootsFormSelectTrigger = forwardRef<
           {leadingPrefix}
         </span>
       ) : leadingPrefix ? (
-        <span className="inline-flex shrink-0 items-center text-[var(--rootsy-bruma-500)] [&_svg]:size-4" aria-hidden>
+        <span className={cn("inline-flex shrink-0 items-center [&_svg]:size-4", iconClass)} aria-hidden>
           {leadingPrefix}
         </span>
       ) : null}
@@ -133,7 +138,8 @@ export const RootsFormSelectTrigger = forwardRef<
         ) : (
           <ChevronDownIcon
             className={cn(
-              "size-4 shrink-0 text-[var(--rootsy-bruma-500)]",
+              "size-4 shrink-0",
+              iconClass,
               inlineIcon ? "mr-0" : sunkenPrefix && "my-auto mr-3",
             )}
             aria-hidden

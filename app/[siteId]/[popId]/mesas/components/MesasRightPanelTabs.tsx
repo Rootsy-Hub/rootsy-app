@@ -2,7 +2,7 @@
 
 import type { MesasRightPanelView } from "@/app/[siteId]/[popId]/mesas/mesasTypes"
 import { SaleOperationPanelTabs } from "@/components/sale-operation/SaleOperationPanelTabs"
-import { ShoppingBag, UtensilsCrossed } from "lucide-react"
+import { CalendarDays, ShoppingBag, UtensilsCrossed } from "lucide-react"
 
 type Props = {
   value: MesasRightPanelView
@@ -23,6 +23,7 @@ export function MesasRightPanelTabs({
       variant="operar"
       tabs={[
         { id: "session", label: "Mesa", icon: UtensilsCrossed },
+        { id: "agenda", label: "Agenda", icon: CalendarDays },
         {
           id: "cart",
           label: "Pedido",

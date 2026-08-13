@@ -27,8 +27,9 @@ export const layoutsModuleHeaderUserNameClass = cn(
   layoutsModuleHeaderChromeTextClass,
 )
 
-/** Row de contenido del módulo — bruma-50 (layout.module.content). */
-export const layoutsModuleContentShellClass = "bg-[var(--rootsy-bruma-50)]"
+/** Row de contenido del módulo — bruma-50 + tokens light (layout.module.content). */
+export const layoutsModuleContentShellClass =
+  "rootsy-app-light bg-[var(--rootsy-bruma-50)] text-foreground"
 
 /** Variante de header para módulos POP — chrome sombra · savia. */
 export const layoutsModuleHeaderVariant = "tables" as const

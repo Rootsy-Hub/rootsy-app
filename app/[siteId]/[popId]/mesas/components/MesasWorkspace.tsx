@@ -1,5 +1,6 @@
 "use client"
 
+import { MesaAgendaPanel } from "@/app/[siteId]/[popId]/mesas/components/MesaAgendaPanel"
 import { MesasCatalogPanel } from "@/app/[siteId]/[popId]/mesas/components/MesasCatalogPanel"
 import { MesasCheckoutModals } from "@/app/[siteId]/[popId]/mesas/components/MesasCheckoutModals"
 import { MesaSessionPanel } from "@/app/[siteId]/[popId]/mesas/components/MesaSessionPanel"
@@ -12,6 +13,8 @@ import {
   type MesasLayoutData,
 } from "@/app/[siteId]/[popId]/mesas/actions"
 import type {
+  MesaOpenSessionInput,
+  MesaReservation,
   MesaWaiter,
   MesasRightPanelView,
 } from "@/app/[siteId]/[popId]/mesas/mesasTypes"
@@ -37,8 +40,10 @@ import { OpenCashSessionBanner } from "@/components/sale-operation/OpenCashSessi
 import { MesasFloorPlanSkeleton } from "@/components/sale-operation/OperarChannelCanvasSkeletons"
 import { SaleOperationToolbox } from "@/components/sale-operation/SaleOperationToolbox"
 import { useCartListScrollHighlight } from "@/hooks/useCartListScrollHighlight"
-import { useMemo, useState, useEffect, useCallback } from "react"
+import { clientsAccessFromKeys } from "@/lib/popWorkspaceAccess"
+import { usePopWorkspace } from "@/context/PopWorkspaceContext"
 import { cn } from "@/lib/utils"
+import { useMemo, useState, useEffect, useCallback } from "react"
 
 type Props = {
   siteId: string
@@ -65,6 +70,12 @@ export function MesasWorkspace({
   onRegisterReload,
   onRegisterLayoutData,
 }: Props) {
+  const { bootstrap } = usePopWorkspace()
+  const canReadClients = useMemo(
+    () => clientsAccessFromKeys(bootstrap?.permissionKeys ?? []).canRead,
+    [bootstrap?.permissionKeys],
+  )
+
   const {
     salons,
     tables,
@@ -76,6 +87,11 @@ export function MesasWorkspace({
     selectTable,
     selectedTable,
     selectedSession,
+    selectedReservation,
+    selectedTableReservationWarning,
+    reservationSettings,
+    saveReservationSettings,
+    todayAgenda,
     salonTables,
     salonDecors,
     layoutEditMode,
@@ -95,6 +111,11 @@ export function MesasWorkspace({
     openSession,
     updateSession,
     reloadSessions,
+    setSessionFloorStatus,
+    saveReservation,
+    removeReservation,
+    markReservationNoShow,
+    checkInReservation,
     freeTablesInSalon,
   } = useMesasState(popId, siteId)
 
@@ -228,6 +249,29 @@ export function MesasWorkspace({
     sessionTables.map((t) => t.label),
   )
 
+  const handleSelectAgendaReservation = useCallback((reservation: MesaReservation) => {
+    if (reservation.tableId) {
+      selectTable(reservation.tableId)
+    }
+  }, [selectTable])
+
+  const handleOpenSession = useCallback(
+    async (input: MesaOpenSessionInput) => {
+      if (selectedReservation && selectedTable?.status === "reserved") {
+        checkout.applyClientFromReservation(selectedReservation)
+        return checkInReservation(selectedReservation, input)
+      }
+      return openSession(input)
+    },
+    [
+      selectedReservation,
+      selectedTable?.status,
+      checkout,
+      checkInReservation,
+      openSession,
+    ],
+  )
+
   const handleSelectTable = (tableId: string) => {
     if (!tableId) return
     selectTable(tableId)
@@ -301,7 +345,7 @@ export function MesasWorkspace({
                   onChange={setActiveSalonId}
                   tableCounts={tableCounts}
                 />
-                <div className="row-start-2 flex min-h-0 flex-1 flex-col overflow-hidden">
+                <div className="row-start-2 flex h-full min-h-0 flex-col overflow-hidden">
                   {layoutError ? (
                     <div className={mesasLayoutErrorBannerClass}>{layoutError}</div>
                   ) : null}
@@ -366,18 +410,48 @@ export function MesasWorkspace({
                 <MesaSessionPanel
                   table={selectedTable}
                   session={selectedSession}
+                  floorReservation={
+                    selectedTable?.status === "reserved" ? selectedReservation : null
+                  }
+                  reservationWarning={selectedTableReservationWarning}
                   sessionTables={sessionTables}
                   waiters={waiters}
                   mergeCandidates={mergeCandidates}
                   sessionError={sessionError ?? checkout.submitError}
-                  onOpenSession={openSession}
+                  onOpenSession={handleOpenSession}
                   onUpdateSession={updateSession}
                   onCloseSession={() => checkout.cerrarMesa()}
+                  onSetFloorStatus={(floorStatus) =>
+                    selectedSession
+                      ? setSessionFloorStatus(selectedSession.id, floorStatus)
+                      : Promise.resolve(false)
+                  }
                   canCloseSession={checkout.puedeCerrarMesa}
                   closeSessionBlockReason={checkout.cerrarMesaBlockReason}
                   closeSessionMode={checkout.cerrarMesaMode}
                   closeSessionLoading={checkout.submitting}
                   clientLabel={checkout.sessionClientLabel}
+                />
+              </div>
+            ) : rightView === "agenda" ? (
+              <div className={layoutsOperarSummaryPanelTabBodyClass}>
+                <MesaAgendaPanel
+                  agenda={todayAgenda}
+                  tables={tables}
+                  popId={popId}
+                  canReadClients={canReadClients}
+                  reservationSettings={reservationSettings}
+                  onSaveReservationSettings={saveReservationSettings}
+                  waiters={waiters}
+                  sessionError={sessionError}
+                  onSaveReservation={saveReservation}
+                  onCancelReservation={removeReservation}
+                  onMarkReservationNoShow={markReservationNoShow}
+                  onCheckInReservation={async (reservation, input) => {
+                    checkout.applyClientFromReservation(reservation)
+                    return checkInReservation(reservation, input)
+                  }}
+                  onSelectReservation={handleSelectAgendaReservation}
                 />
               </div>
             ) : (

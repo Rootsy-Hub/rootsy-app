@@ -2,6 +2,7 @@ import type { PopAccessModule } from "@/app/home/homeUserDataTypes"
 import type { MenuItemDef, MenuItemLink, MenuSectionKey } from "@/lib/menuCatalog"
 import { getRootsModuleIcon } from "@/lib/rootsyModuleIcons"
 import { ROOTS_MODULE_SECTION_LABELS } from "@/lib/rootsySubscriptionCatalog"
+import { Banknote } from "lucide-react"
 
 /** Link del menú → key de módulo en `_pop-access` / catálogo de suscripción. */
 export const MENU_LINK_TO_MODULE_KEY: Partial<Record<MenuItemLink, string>> = {
@@ -15,6 +16,9 @@ export const MENU_LINK_TO_MODULE_KEY: Partial<Record<MenuItemLink, string>> = {
   suppliers: "suppliers",
   promotions: "promotions",
   recipes: "recipes",
+  services: "services",
+  "active-services": "active_services",
+  "cobrar-servicios": "active_services",
   operations: "operations",
   inventory: "inventory",
   invoices: "invoices",
@@ -74,6 +78,32 @@ export function buildMenuSectionsFromEnabledModules(
       badge: link === "section" ? "Pronto" : mod.isExtra ? "Extra" : undefined,
     })
     grouped.set(mod.section, items)
+  }
+
+  const operarItems = grouped.get("operar")
+  if (
+    operarItems?.some(
+      (item) =>
+        item.moduleKey === "active_services" || item.link === "active-services",
+    ) &&
+    !operarItems.some((item) => item.link === "cobrar-servicios")
+  ) {
+    const anchorIndex = operarItems.findIndex(
+      (item) =>
+        item.link === "active-services" || item.moduleKey === "active_services",
+    )
+    const cobrarItem: MenuItemDef = {
+      moduleKey: "active_services",
+      name: "Cobrar servicio",
+      icon: Banknote,
+      link: "cobrar-servicios",
+      badge: "NUEVO",
+    }
+    if (anchorIndex >= 0) {
+      operarItems.splice(anchorIndex, 0, cobrarItem)
+    } else {
+      operarItems.push(cobrarItem)
+    }
   }
 
   const out: Record<string, MenuSectionFromModules> = {}

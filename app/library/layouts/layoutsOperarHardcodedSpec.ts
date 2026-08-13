@@ -23,6 +23,7 @@ import {
   layoutsOperarSummaryTotalRowClass,
   layoutsOperarSummaryTotalsAmountClass,
   layoutsOperarSummaryTotalsLabelClass,
+  layoutsOperarSummaryTotalsSurfaceClass,
 } from "@/app/library/layouts/layoutsOperarStyles"
 import {
   getLayoutsOperarBorderCss,
@@ -949,6 +950,7 @@ export function layoutsOperarTicketProposalTotalsShellClass(id: LayoutsOperarTic
   if (proposal.totalsLayout === "ring") {
     return cn(
       layoutsOperarSummaryTotalRowClass,
+      layoutsOperarSummaryTotalsSurfaceClass,
       "layouts-operar-summary-totals relative box-border flex w-full shrink-0 flex-col justify-center px-4 py-3",
       "ring-1 ring-inset ring-[color-mix(in_srgb,var(--rootsy-savia-400)_38%,transparent)]",
     )
@@ -956,6 +958,7 @@ export function layoutsOperarTicketProposalTotalsShellClass(id: LayoutsOperarTic
 
   return cn(
     layoutsOperarSummaryTotalRowClass,
+    layoutsOperarSummaryTotalsSurfaceClass,
     "layouts-operar-summary-totals relative box-border flex w-full shrink-0 flex-col justify-center px-4 py-3",
   )
 }

@@ -4,12 +4,6 @@ import {
   rootsyDatePopoverContentClass,
 } from "@/components/ui/rootsyDateCalendarStyles"
 import {
-  nightForestBorderClass,
-  nightForestFocusRingClass,
-  nightForestPanelHoverClass,
-  nightForestSurfaceClass,
-} from "@/components/layouts/dataWorkspaceHeaderStyles"
-import {
   rootsFormUiAffixClearButtonClass,
   rootsFormUiAffixInputClass,
   rootsFormUiAffixPrefixSunkenClass,
@@ -78,6 +72,20 @@ export const rootsFormFieldStackClass = rootsFormUiFieldStackClass
 /** Columna dentro de un formulario de modal (stack vertical con ritmo entre campos). */
 export const rootsFormColumnClass = "flex w-full min-w-0 flex-col gap-4"
 
+/** Grupo de checks relacionados — ritmo compacto dentro de un bloque de campos. */
+export const rootsFormCheckboxGroupClass = "flex w-full min-w-0 flex-col gap-3"
+
+/** Lista de opciones checkbox — 8px entre filas (Material compact). */
+export const rootsFormCheckboxChoiceListClass = "flex w-full min-w-0 flex-col gap-2"
+
+/** Fila checkbox en lista — 48px mínimo, gap 12px control↔texto, fila clickeable. */
+export const rootsFormCheckboxChoiceRowClass = cn(
+  "flex min-h-12 w-full min-w-0 cursor-pointer select-none gap-3 rounded-lg px-1",
+)
+
+/** Contenido auxiliar pegado a un control (hint, ayuda contextual). */
+export const rootsFormFieldAuxiliaryStackClass = "flex w-full min-w-0 flex-col gap-2"
+
 /** Grilla principal de upsert — dos columnas + separador central en desktop. */
 export const rootsFormGridClass =
   "grid w-full min-w-0 gap-5 lg:grid-cols-[minmax(0,1fr)_1px_minmax(0,1fr)] lg:gap-x-6 lg:gap-y-5"
@@ -90,7 +98,10 @@ export const rootsFormGridDividerClass = cn(
 
 /** Fila de dos campos dentro de una columna (p. ej. SKU + código de barras). */
 export const rootsFormTwoColRowClass =
-  "grid w-full min-w-0 grid-cols-1 gap-3 sm:grid-cols-2"
+  "grid w-full min-w-0 grid-cols-1 gap-4 sm:grid-cols-2"
+
+/** Agrupa campos auxiliares como un solo ítem en la columna (sin gap interno). */
+export const rootsFormFieldGroupClass = "flex w-full min-w-0 flex-col"
 
 /** Mensaje debajo del control — ayuda neutral. */
 export const rootsFormFieldHintClass = rootsFormUiFieldHintClass
@@ -153,39 +164,64 @@ export const rootsFormSelectItemClass = cn(
 
 export type RootsFormSelectTone = "light" | "dark"
 
-/** Select compacto — bosque nocturno (footer paginación, toolbar oscuro). */
+/** Select compacto — operar dark (paridad catalog-toolbar-control). */
 export const rootsFormSelectDarkTriggerClass = cn(
   "flex h-11 min-h-11 w-auto min-w-[4.25rem] items-center justify-between gap-2 rounded-lg border px-3 shadow-none outline-none transition-[color,box-shadow,border-color]",
-  "font-sans text-sm font-medium leading-normal text-[#d6d3d1]",
-  nightForestBorderClass,
-  "bg-[#141c19]",
-  nightForestPanelHoverClass,
-  "hover:text-[#fffbeb]",
-  "data-[state=open]:border-[#33443d]",
-  "data-[state=closed]:focus:!border-[#263530] data-[state=closed]:focus:!ring-0",
-  "focus-visible:border-[#33443d] focus-visible:outline-none",
-  nightForestFocusRingClass,
+  "font-sans text-sm font-medium leading-normal text-[#f4f8f6]",
+  "border-[color-mix(in_srgb,var(--rootsy-sombra-border)_45%,transparent)]",
+  "bg-[color-mix(in_srgb,var(--rootsy-sombra-950)_55%,transparent)]",
+  "hover:border-[color-mix(in_srgb,var(--rootsy-sombra-border)_65%,transparent)]",
+  "data-[state=open]:border-[color-mix(in_srgb,var(--rootsy-savia-400)_45%,transparent)]",
+  "data-[state=closed]:focus:!border-[color-mix(in_srgb,var(--rootsy-savia-400)_45%,transparent)] data-[state=closed]:focus:!ring-0",
+  "focus-visible:border-[color-mix(in_srgb,var(--rootsy-savia-400)_45%,transparent)] focus-visible:outline-none",
+  "focus-visible:ring-2 focus-visible:ring-[color-mix(in_srgb,var(--rootsy-savia-400)_22%,transparent)]",
   "focus-visible:ring-offset-0",
   "disabled:pointer-events-none disabled:opacity-40",
   "[&_[data-slot=select-value]]:min-w-0 [&_[data-slot=select-value]]:flex-1 [&_[data-slot=select-value]]:truncate [&_[data-slot=select-value]]:text-left",
-  "[&_[data-slot=select-value][data-placeholder]]:text-[#78716c]",
+  "[&_[data-slot=select-value][data-placeholder]]:text-[color-mix(in_srgb,var(--rootsy-sombra-300)_55%,transparent)]",
 )
 
 export const rootsFormSelectDarkContentClass = cn(
   rootsFormPortalZClass,
   "overflow-x-hidden overflow-y-auto rounded-lg border p-0",
-  nightForestBorderClass,
-  "bg-[#0c1210]",
-  nightForestSurfaceClass,
-  "shadow-[0_18px_40px_-18px_rgba(0,0,0,0.78)]",
+  "border-[color-mix(in_srgb,var(--rootsy-sombra-border)_45%,transparent)]",
+  "bg-[var(--rootsy-sombra-950)]",
+  "shadow-[0_18px_40px_-18px_color-mix(in_srgb,var(--rootsy-sombra-950)_65%,transparent)]",
   "w-(--radix-select-trigger-width) min-w-(--radix-select-trigger-width) max-w-(--radix-select-trigger-width)",
 )
 
 export const rootsFormSelectDarkItemClass = cn(
-  "relative flex w-full cursor-default select-none items-center py-2.5 pl-3 pr-10 text-sm text-[#d6d3d1] outline-none",
-  "data-[highlighted]:bg-emerald-500/12 data-[highlighted]:text-emerald-100",
+  "relative flex w-full cursor-default select-none items-center py-2.5 pl-3 pr-10 text-sm text-[#f4f8f6] outline-none",
+  "data-[highlighted]:bg-[color-mix(in_srgb,var(--rootsy-savia-400)_18%,var(--rootsy-sombra-950))] data-[highlighted]:text-[color-mix(in_srgb,var(--rootsy-savia-200)_92%,white)]",
+  "data-[state=checked]:bg-[color-mix(in_srgb,var(--rootsy-savia-600)_24%,var(--rootsy-sombra-950))] data-[state=checked]:text-[#f4f8f6]",
   "data-[disabled]:pointer-events-none data-[disabled]:opacity-50",
 )
+
+/** Listado dentro de dropdown redondeado — sin padding interno; el hover lo recorta el shell. */
+export const rootsFormDropdownListClass = "p-0"
+
+export function rootsFormDropdownHighlightItemClassForTone(
+  tone: RootsFormSelectTone = "light",
+  state: "default" | "highlighted" | "selected" = "default",
+) {
+  if (tone === "dark") {
+    return cn(
+      state === "selected"
+        ? "bg-[color-mix(in_srgb,var(--rootsy-savia-600)_24%,var(--rootsy-sombra-950))] text-[#f4f8f6]"
+        : state === "highlighted"
+          ? "bg-[color-mix(in_srgb,var(--rootsy-savia-400)_18%,var(--rootsy-sombra-950))] text-[color-mix(in_srgb,var(--rootsy-savia-200)_92%,white)]"
+          : "text-[#f4f8f6]",
+    )
+  }
+
+  return cn(
+    state === "selected"
+      ? "bg-[color-mix(in_srgb,var(--rootsy-savia-400)_8%,white)] text-[var(--rootsy-bruma-900)]"
+      : state === "highlighted"
+        ? "bg-[var(--rootsy-bruma-50)] text-[var(--rootsy-bruma-900)]"
+        : "text-[var(--rootsy-bruma-900)]",
+  )
+}
 
 export function rootsFormSelectTriggerClassForTone(
   tone: RootsFormSelectTone = "light",
@@ -262,6 +298,20 @@ export function rootsFormDiscountModeButtonClass(
 
 /** Botón borrar dentro de shells affix (descuento, búsqueda en form). */
 export const rootsFormAffixClearButtonClass = rootsFormUiAffixClearButtonClass
+
+export function rootsFormAffixClearButtonClassForTone(
+  tone: RootsFormSelectTone = "light",
+) {
+  if (tone === "dark") {
+    return cn(
+      "flex size-8 items-center justify-center rounded-md transition-[color,background-color] duration-150",
+      "text-[color-mix(in_srgb,var(--rootsy-sombra-300)_70%,transparent)]",
+      "hover:bg-[color-mix(in_srgb,var(--rootsy-sombra-950)_72%,transparent)] hover:text-[#f4f8f6]",
+      "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color-mix(in_srgb,var(--rootsy-savia-400)_22%,transparent)]",
+    )
+  }
+  return rootsFormAffixClearButtonClass
+}
 
 /** Imagen en formularios — fila compacta con miniatura (≈ altura de input h-11). */
 export const rootsFormImageUploadShellClass = rootsFormUiImageUploadShellClass

@@ -6,6 +6,7 @@ import {
   rootsFormSelectContentClassForTone,
   type RootsFormSelectTone,
 } from "@/components/rootsy-form/rootsFormStyles"
+import { layoutsOperarFormDarkIconClass } from "@/app/library/layouts/layoutsOperarStyles"
 import { cn } from "@/lib/utils"
 import * as SelectPrimitive from "@radix-ui/react-select"
 import { ChevronDownIcon, ChevronUpIcon } from "lucide-react"
@@ -21,7 +22,7 @@ function RootsFormSelectScrollUpButton({ tone = "light" }: { tone?: RootsFormSel
     <SelectPrimitive.ScrollUpButton
       className={cn(
         "flex cursor-default items-center justify-center py-1",
-        isDark ? "text-[#78716c]" : "text-[var(--rootsy-bruma-500)]",
+        isDark ? layoutsOperarFormDarkIconClass : "text-[var(--rootsy-bruma-500)]",
       )}
     >
       <ChevronUpIcon className="size-4" aria-hidden />
@@ -35,7 +36,7 @@ function RootsFormSelectScrollDownButton({ tone = "light" }: { tone?: RootsFormS
     <SelectPrimitive.ScrollDownButton
       className={cn(
         "flex cursor-default items-center justify-center py-1",
-        isDark ? "text-[#78716c]" : "text-[var(--rootsy-bruma-500)]",
+        isDark ? layoutsOperarFormDarkIconClass : "text-[var(--rootsy-bruma-500)]",
       )}
     >
       <ChevronDownIcon className="size-4" aria-hidden />
@@ -64,6 +65,7 @@ export function RootsFormSelectContent({
           "relative max-h-(--radix-select-content-available-height) overflow-x-hidden overflow-y-auto",
           rootsFormPortalZClass,
           !isDark && "bg-white dark:bg-white",
+          isDark && "text-[#f4f8f6]",
           position === "popper" && "data-[side=bottom]:translate-y-1",
           !isDark && rootsFormControlTypographyClass,
           rootsFormSelectContentClassForTone(tone),

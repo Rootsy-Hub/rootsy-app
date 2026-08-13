@@ -44,9 +44,10 @@ function TooltipContent({
   children,
   ...props
 }: React.ComponentProps<typeof TooltipPrimitive.Content> & {
-  variant?: 'default' | 'dark'
+  variant?: 'default' | 'dark' | 'operar'
 }) {
-  const isDark = variant === 'dark'
+  const isOperar = variant === 'operar'
+  const isDark = variant === 'dark' || isOperar
 
   return (
     <TooltipPrimitive.Portal>
@@ -55,9 +56,11 @@ function TooltipContent({
         sideOffset={sideOffset}
         className={cn(
           'animate-in fade-in-0 zoom-in-95 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 z-[520] w-fit origin-(--radix-tooltip-content-transform-origin) rounded-md px-3 py-1.5 text-xs text-balance',
-          isDark
-            ? 'border border-white/[0.06] bg-[#0c1014] text-zinc-100 shadow-lg shadow-black/45'
-            : 'bg-foreground text-background',
+          isOperar
+            ? 'border border-[color-mix(in_srgb,var(--rootsy-sombra-border)_45%,transparent)] bg-[color-mix(in_srgb,var(--rootsy-sombra-950)_92%,transparent)] text-[color-mix(in_srgb,var(--rootsy-bruma-100)_88%,transparent)] shadow-[0_12px_32px_-12px_color-mix(in_srgb,var(--rootsy-sombra-950)_75%,transparent)]'
+            : isDark
+              ? 'border border-white/[0.06] bg-[#0c1014] text-zinc-100 shadow-lg shadow-black/45'
+              : 'bg-foreground text-background',
           className,
         )}
         {...props}
@@ -66,9 +69,11 @@ function TooltipContent({
         <TooltipPrimitive.Arrow
           className={cn(
             'z-[520] size-2.5 translate-y-[calc(-50%_-_2px)] rotate-45 rounded-[2px]',
-            isDark
-              ? 'fill-[#0c1014] bg-[#0c1014]'
-              : 'bg-foreground fill-foreground',
+            isOperar
+              ? 'fill-[color-mix(in_srgb,var(--rootsy-sombra-950)_92%,transparent)] bg-[color-mix(in_srgb,var(--rootsy-sombra-950)_92%,transparent)]'
+              : isDark
+                ? 'fill-[#0c1014] bg-[#0c1014]'
+                : 'bg-foreground fill-foreground',
           )}
         />
       </TooltipPrimitive.Content>

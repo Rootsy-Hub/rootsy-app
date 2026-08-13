@@ -78,24 +78,25 @@ export function mesaStatusClass(status: MesaTableStatus): string {
 
   const statusMap: Record<MesaTableStatus, string> = {
     free: cn(
-      "border-[color-mix(in_srgb,var(--rootsy-sombra-300)_38%,transparent)]",
-      "bg-[color-mix(in_srgb,var(--rootsy-sombra-600)_90%,var(--rootsy-sombra-700))]",
-      "hover:border-[color-mix(in_srgb,var(--rootsy-sombra-300)_52%,transparent)]",
+      "border-[color-mix(in_srgb,var(--rootsy-savia-400)_72%,transparent)]",
+      "bg-[color-mix(in_srgb,var(--rootsy-savia-700)_52%,var(--rootsy-sombra-800))]",
+      "hover:border-[color-mix(in_srgb,var(--rootsy-savia-400)_92%,transparent)]",
+      "shadow-[inset_0_1px_0_color-mix(in_srgb,var(--rootsy-savia-300)_22%,transparent),0_4px_14px_color-mix(in_srgb,var(--rootsy-savia-700)_26%,transparent)]",
     ),
     open: cn(
-      "border-[color-mix(in_srgb,var(--rootsy-savia-400)_90%,transparent)]",
-      "bg-[color-mix(in_srgb,var(--rootsy-savia-600)_55%,var(--rootsy-sombra-800))]",
-      "shadow-[inset_0_1px_0_color-mix(in_srgb,var(--rootsy-savia-300)_28%,transparent),0_0_0_1px_color-mix(in_srgb,var(--rootsy-savia-500)_32%,transparent),0_8px_26px_color-mix(in_srgb,var(--rootsy-savia-600)_32%,transparent)]",
+      "border-[color-mix(in_srgb,var(--destructive)_88%,transparent)]",
+      "bg-[color-mix(in_srgb,var(--destructive)_40%,var(--rootsy-sombra-800))]",
+      "shadow-[inset_0_1px_0_color-mix(in_srgb,var(--destructive)_24%,transparent),0_0_0_1px_color-mix(in_srgb,var(--destructive)_30%,transparent),0_8px_26px_color-mix(in_srgb,var(--destructive)_30%,transparent)]",
     ),
     paying: cn(
-      "border-[color-mix(in_srgb,var(--rootsy-savia-teal)_78%,transparent)]",
-      "bg-[color-mix(in_srgb,var(--rootsy-savia-teal)_42%,var(--rootsy-sombra-800))]",
-      "shadow-[inset_0_1px_0_color-mix(in_srgb,var(--rootsy-savia-teal)_24%,transparent),0_8px_24px_color-mix(in_srgb,var(--rootsy-savia-teal)_26%,transparent)]",
+      "border-[color-mix(in_srgb,#f59e0b_88%,transparent)]",
+      "bg-[color-mix(in_srgb,#d97706_40%,var(--rootsy-sombra-800))]",
+      "shadow-[inset_0_1px_0_color-mix(in_srgb,#fbbf24_24%,transparent),0_0_0_1px_color-mix(in_srgb,#f59e0b_32%,transparent),0_8px_26px_color-mix(in_srgb,#d97706_28%,transparent)]",
     ),
     reserved: cn(
-      "border-[color-mix(in_srgb,var(--rootsy-bruma-400)_55%,transparent)]",
-      "bg-[color-mix(in_srgb,var(--rootsy-sombra-600)_88%,var(--rootsy-bruma-900))]",
-      "shadow-[0_0_16px_color-mix(in_srgb,var(--rootsy-bruma-400)_10%,transparent)]",
+      "border-[color-mix(in_srgb,#7c3aed_88%,transparent)]",
+      "bg-[color-mix(in_srgb,#5b21b6_42%,var(--rootsy-sombra-800))]",
+      "shadow-[inset_0_1px_0_color-mix(in_srgb,#a78bfa_24%,transparent),0_0_0_1px_color-mix(in_srgb,#7c3aed_32%,transparent),0_8px_26px_color-mix(in_srgb,#6d28d9_28%,transparent)]",
     ),
   }
 

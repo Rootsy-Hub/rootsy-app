@@ -59,9 +59,9 @@ const channelOperarFooterDiscardClass = cn(
 
 const channelOperarFooterSecondaryClass = cn(
   channelOperarFooterBtnBase,
-  "bg-transparent text-slate-700 hover:bg-slate-50 hover:text-slate-900 active:bg-slate-100",
-  "focus-visible:ring-slate-300/50",
-  "disabled:text-slate-400 disabled:hover:bg-transparent disabled:hover:text-slate-400",
+  "bg-transparent text-[var(--rootsy-bruma-700)] hover:bg-[var(--rootsy-bruma-50)] hover:text-[var(--rootsy-bruma-900)] active:bg-[var(--rootsy-bruma-100)]",
+  "focus-visible:ring-[color-mix(in_srgb,var(--rootsy-savia-400)_35%,transparent)]",
+  "disabled:text-[var(--rootsy-bruma-400)] disabled:hover:bg-transparent disabled:hover:text-[var(--rootsy-bruma-400)]",
 )
 
 export type ChannelOperarFooterAction = {

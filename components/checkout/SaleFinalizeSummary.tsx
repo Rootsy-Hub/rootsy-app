@@ -23,6 +23,8 @@ export type SaleFinalizeFactsProps = {
   comprobanteLabel: string
   paymentLabel: string
   className?: string
+  /** Sin shell propio — para integrar opciones en la misma zona bruma. */
+  embedded?: boolean
 }
 
 export type SaleFinalizeTotalsProps = {
@@ -92,6 +94,7 @@ export function SaleFinalizeFacts({
   comprobanteLabel,
   paymentLabel,
   className,
+  embedded = false,
 }: SaleFinalizeFactsProps) {
   const facts = [
     { key: "party", label: partyLabel, value: partyValue },
@@ -99,10 +102,12 @@ export function SaleFinalizeFacts({
     { key: "payment", label: "Pago", value: paymentLabel },
   ] as const
 
+  const Tag = embedded ? "div" : "section"
+
   return (
-    <section
-      aria-label="Datos del cobro"
-      className={cn(saleFinalizeDialogFactsZoneClass, className)}
+    <Tag
+      aria-label={embedded ? undefined : "Datos del cobro"}
+      className={cn(!embedded && saleFinalizeDialogFactsZoneClass, className)}
     >
       {facts.map((fact) => (
         <div key={fact.key} className={saleFinalizeDialogFactRowClass}>
@@ -119,7 +124,7 @@ export function SaleFinalizeFacts({
           </span>
         </div>
       ))}
-    </section>
+    </Tag>
   )
 }
 

@@ -4,6 +4,7 @@ import {
   rootsFormSelectItemClassForTone,
   type RootsFormSelectTone,
 } from "@/components/rootsy-form/rootsFormStyles"
+import { useRootsFormControlTone } from "@/components/rootsy-form/rootsFormFieldContext"
 import { cn } from "@/lib/utils"
 import * as SelectPrimitive from "@radix-ui/react-select"
 import { CheckIcon } from "lucide-react"
@@ -16,14 +17,17 @@ type Props = ComponentProps<typeof SelectPrimitive.Item> & {
 export function RootsFormSelectItem({
   className,
   children,
-  tone = "light",
+  tone,
   ...props
 }: Props) {
+  const resolvedTone = useRootsFormControlTone(tone)
+  const isDark = resolvedTone === "dark"
+
   return (
     <SelectPrimitive.Item
       data-slot="roots-form-select-item"
       translate="no"
-      className={cn(rootsFormSelectItemClassForTone(tone), className)}
+      className={cn(rootsFormSelectItemClassForTone(resolvedTone), className)}
       {...props}
     >
       <SelectPrimitive.ItemText className="min-w-0 truncate">
@@ -32,7 +36,9 @@ export function RootsFormSelectItem({
       <span
         className={cn(
           "pointer-events-none absolute inset-y-0 right-3 flex w-4 items-center justify-center",
-          tone === "dark" ? "text-emerald-300/90" : "text-[#78716c]",
+          isDark
+            ? "text-[var(--rootsy-savia-400)]"
+            : "text-[#78716c]",
         )}
       >
         <SelectPrimitive.ItemIndicator>

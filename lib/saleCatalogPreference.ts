@@ -5,6 +5,57 @@ export type SaleCatalogViewPersisted =
 
 const STORAGE_PREFIX = "rootsy:sale-catalog-view:"
 
+export const SALE_CATALOG_TODOS = "Todos"
+
+type CategoryRef = { name: string }
+type CategorySectionRef = { id: string; label: string; categories: { id: string; name: string }[] }
+
+export function defaultSaleCatalogView(
+  categories: CategoryRef[],
+  categorySections?: CategorySectionRef[],
+): SaleCatalogViewPersisted {
+  if (categorySections?.length) {
+    for (const section of categorySections) {
+      const first = section.categories[0]
+      if (first) {
+        return { modo: "categoria", categoria: `${section.id}:${first.id}` }
+      }
+    }
+  }
+  if (categories.length > 0) {
+    return { modo: "categoria", categoria: categories[0].name }
+  }
+  return { modo: "categoria", categoria: "" }
+}
+
+function isValidSaleCatalogCategoryView(
+  categoria: string,
+  categories: CategoryRef[],
+  categorySections?: CategorySectionRef[],
+): boolean {
+  if (!categoria || categoria === SALE_CATALOG_TODOS) return false
+  if (categorySections?.length) {
+    return categorySections.some((section) =>
+      section.categories.some((cat) => `${section.id}:${cat.id}` === categoria),
+    )
+  }
+  return categories.some((cat) => cat.name === categoria)
+}
+
+/** Restaura vista guardada o cae a la primera categoría del catálogo. */
+export function resolveSaleCatalogView(
+  saved: SaleCatalogViewPersisted | undefined,
+  categories: CategoryRef[],
+  categorySections?: CategorySectionRef[],
+): SaleCatalogViewPersisted {
+  const fallback = defaultSaleCatalogView(categories, categorySections)
+  if (!saved || saved.modo !== "categoria") return fallback
+  if (!isValidSaleCatalogCategoryView(saved.categoria, categories, categorySections)) {
+    return fallback
+  }
+  return saved
+}
+
 function isSaleCatalogViewPersisted(v: unknown): v is SaleCatalogViewPersisted {
   if (v == null || typeof v !== "object") return false
   const o = v as Record<string, unknown>

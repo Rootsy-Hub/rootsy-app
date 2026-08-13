@@ -52,6 +52,8 @@ export const ROOTS_SHARED_MODULES: Record<
 > = {
   operar: [
     { key: "clients", label: "Clientes" },
+    { key: "services", label: "Servicios" },
+    { key: "active_services", label: "Servicios activos" },
     { key: "current_accounts", label: "Cuentas corrientes" },
     { key: "checks", label: "Cheques" },
     { key: "expenses", label: "Gastos" },

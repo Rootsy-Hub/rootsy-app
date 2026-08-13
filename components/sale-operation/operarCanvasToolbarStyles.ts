@@ -1,8 +1,15 @@
 import { layoutsOperarCatalogToolbarClass } from "@/app/library/layouts/layoutsOperarStyles"
 import { cn } from "@/lib/utils"
 
-/** Shell toolbar oscuro — salones, columnas Kanban, etc. */
-export const operarCanvasToolbarShellClass = layoutsOperarCatalogToolbarClass
+/** Shell toolbar oscuro — salones, columnas Kanban, etc. Dosel sombra-950 sobre canvas sombra-800. */
+export const operarCanvasToolbarShellClass = cn(
+  layoutsOperarCatalogToolbarClass,
+  "bg-[var(--rootsy-sombra-950)]",
+)
+
+/** Tipografía unificada — tabs de salón y headers de columnas Kanban. */
+export const operarCanvasToolbarLabelClass =
+  "text-sm font-semibold leading-none tracking-tight"
 
 export const operarCanvasToolbarTabActiveClass =
   "text-[color-mix(in_srgb,var(--rootsy-bruma-50)_92%,white)]"
@@ -48,7 +55,8 @@ export const operarCanvasToolbarCountPillWideClass =
 
 export const operarCanvasToolbarTabButtonClass = cn(
   "relative z-10 flex h-full min-w-0 flex-1 items-center justify-center px-4",
-  "text-sm font-semibold leading-none transition-colors duration-200",
+  operarCanvasToolbarLabelClass,
+  "transition-colors duration-200",
 )
 
 export const operarCanvasToolbarColumnHeaderClass = cn(

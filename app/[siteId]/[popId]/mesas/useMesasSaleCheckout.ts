@@ -8,6 +8,7 @@ import {
   type TableSessionCheckoutSnapshot,
 } from "@/app/[siteId]/[popId]/mesas/mesasCheckoutState"
 import type { MenuCatalogPromotion } from "@/app/[siteId]/[popId]/menu-catalog/actions"
+import type { MesaReservation } from "@/app/[siteId]/[popId]/mesas/mesasTypes"
 import type { SaleCatalogClient, SaleCatalogPaymentOption, SaleOpenCashSession } from "@/app/[siteId]/[popId]/sale/actions"
 import { useMenuCatalogLoader } from "@/hooks/useMenuCatalogLoader"
 import { usePopSaleComprobanteFiscalContext } from "@/hooks/usePopSaleComprobanteFiscalContext"
@@ -81,7 +82,7 @@ import {
   hasAnyPartialPayment,
   type PartialPaymentSelection,
 } from "@/lib/partialCheckoutSelection"
-import type { SaleOperationCheckoutConfirmOptions } from "@/components/sale-operation/SaleOperationCheckoutConfirmDialog"
+import type { SaleChannelCheckoutConfirmOptions } from "@/components/checkout/saleChannelCheckoutTypes"
 import { evaluateChannelCloseEligibility } from "@/lib/channelCheckoutClose"
 import { CLIENT_IVA_CONDITION_OPTIONS, type ClientIvaConditionValue } from "@/app/[siteId]/[popId]/clients/clientIvaConstants"
 import { usePadronAutofillRazonSocial } from "@/hooks/usePadronAutofillRazonSocial"
@@ -159,8 +160,8 @@ export function useMesasSaleCheckout(
 ) {
   const onSessionClose = options?.onSessionClose
   const onCartLineAdded = options?.onCartLineAdded
-  const catalogEnabled =
-    Boolean(tableSessionId) && Boolean(options?.catalogSidebarOpen)
+  // Precarga el catálogo al entrar a Mesas para que el ticket no renderice ítems parciales.
+  const catalogEnabled = Boolean(popId)
 
   const {
     menuCategorySections,
@@ -622,6 +623,8 @@ export function useMesasSaleCheckout(
     [itemsDetallados, quantityDealApplications, overrideSnapshot, productosByKey],
   )
 
+  const orderPanelLoading = catalogLoading && carrito.length > 0
+
   const comboPromoLineCount = useMemo(
     () =>
       carrito.reduce(
@@ -900,6 +903,38 @@ export function useMesasSaleCheckout(
     ventaPadron.mappedIvaCondition,
     ventaPadron.razonSocial,
   ])
+
+  const applyClientFromReservation = useCallback((reservation: MesaReservation) => {
+    const name = reservation.clientName.trim()
+    if (!name && !reservation.clientId) return
+
+    if (reservation.clientId) {
+      setClienteSeleccionado({
+        id: reservation.clientId,
+        manual: false,
+        name: name || "Cliente",
+        taxId: null,
+        ivaCondition: null,
+        defaultInvoiceTypeLabel: null,
+      })
+      setManualNombreCliente(name)
+      setFiscalDocVenta("")
+      setVentaIvaCondition("")
+      return
+    }
+
+    setClienteSeleccionado({
+      id: null,
+      manual: true,
+      name,
+      taxId: null,
+      ivaCondition: null,
+      defaultInvoiceTypeLabel: null,
+    })
+    setManualNombreCliente(name)
+    setFiscalDocVenta("")
+    setVentaIvaCondition("")
+  }, [])
 
   const cartLineOverrideActions: OperationCartLineOverrideActions & {
     setItemDetalleAbiertoId: typeof setItemDetalleAbiertoId
@@ -1220,7 +1255,7 @@ export function useMesasSaleCheckout(
   ])
 
   const confirmarMesa = useCallback(
-    async (options?: SaleOperationCheckoutConfirmOptions) => {
+    async (options?: SaleChannelCheckoutConfirmOptions) => {
       if (!popId || !siteId || !pagoConfigurado || !tableSessionId) return false
       const isPartial = options?.partialPayment === true
       const selection = options?.partialSelection ?? {}
@@ -1562,6 +1597,7 @@ export function useMesasSaleCheckout(
     catalogLoading,
     catalogError,
     catalogLoadAttempted,
+    orderPanelLoading,
     openCashSession,
     treasuryPaymentContext,
     menuCategorySections,
@@ -1598,6 +1634,7 @@ export function useMesasSaleCheckout(
     submitting,
     submitError,
     sessionClientLabel,
+    applyClientFromReservation,
     promoWizardOpen,
     setPromoWizardOpen,
     promoWizardTarget,

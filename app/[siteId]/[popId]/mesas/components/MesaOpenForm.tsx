@@ -149,8 +149,8 @@ export function MesaOpenForm({
           <ChannelDataFormSection
             className="space-y-3"
             title={
-              <span className="inline-flex items-center gap-1.5">
-                <Link2 className="size-3.5 text-primary" aria-hidden />
+              <span className="inline-flex items-center gap-1.5 font-canopy text-sm font-medium text-[var(--rootsy-bruma-700)]">
+                <Link2 className="size-3.5 text-[var(--rootsy-savia-600)]" aria-hidden />
                 Juntar mesas libres
               </span>
             }

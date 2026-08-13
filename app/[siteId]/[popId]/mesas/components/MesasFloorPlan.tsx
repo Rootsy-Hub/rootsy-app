@@ -1,9 +1,11 @@
 "use client"
 
 import { MesaFloorDecorNode } from "@/app/[siteId]/[popId]/mesas/components/MesaFloorDecorNode"
+import { MesasFloorGoToTable } from "@/app/[siteId]/[popId]/mesas/components/MesasFloorGoToTable"
 import { MesaSessionConnectors } from "@/app/[siteId]/[popId]/mesas/components/MesaSessionConnectors"
 import { MesaTableNode } from "@/app/[siteId]/[popId]/mesas/components/MesaTableNode"
 import type { MesaFloorDecor, MesaTable } from "@/app/[siteId]/[popId]/mesas/mesasTypes"
+import { mesaTableDimensions } from "@/app/[siteId]/[popId]/mesas/mesasTableStyles"
 import {
   MESAS_FLOOR_PLAN_CANVAS_BG,
   mesasFloorEditRingClass,
@@ -28,7 +30,7 @@ import {
 } from "@/components/ui/tooltip"
 import { cn } from "@/lib/utils"
 import { Minus, Pencil, Plus, RotateCw } from "lucide-react"
-import { useCallback, useState } from "react"
+import { useCallback, useRef, useState } from "react"
 
 /** Fondo del canvas del plano — sombra-800, alineado con catálogo operar. */
 const floorPlanCanvasStyle = { backgroundColor: MESAS_FLOOR_PLAN_CANVAS_BG }
@@ -82,6 +84,40 @@ export function MesasFloorPlan({
   tableOpenedAt,
 }: Props) {
   const [zoom, setZoom] = useState(ZOOM_DEFAULT)
+  const scrollContainerRef = useRef<HTMLDivElement>(null)
+
+  const scrollToTable = useCallback(
+    (tableId: string) => {
+      const container = scrollContainerRef.current
+      const table = tables.find((item) => item.id === tableId)
+      if (!container || !table) return
+
+      const { width, height } = mesaTableDimensions(table.shape)
+      const centerX = (table.x + width / 2) * zoom
+      const centerY = (table.y + height / 2) * zoom
+      const maxScrollLeft = Math.max(0, container.scrollWidth - container.clientWidth)
+      const maxScrollTop = Math.max(0, container.scrollHeight - container.clientHeight)
+
+      container.scrollTo({
+        left: Math.min(maxScrollLeft, Math.max(0, centerX - container.clientWidth / 2)),
+        top: Math.min(maxScrollTop, Math.max(0, centerY - container.clientHeight / 2)),
+        behavior: "smooth",
+      })
+    },
+    [tables, zoom],
+  )
+
+  const handleGoToTable = useCallback(
+    (tableId: string) => {
+      if (layoutEditMode) {
+        onSelectLayoutItem("table", tableId)
+      } else {
+        onSelectTable(tableId)
+      }
+      scrollToTable(tableId)
+    },
+    [layoutEditMode, onSelectLayoutItem, onSelectTable, scrollToTable],
+  )
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
@@ -196,8 +232,13 @@ export function MesasFloorPlan({
         </div>
       </div>
 
+      <div className="absolute bottom-3 left-3 z-30 overflow-visible">
+        <MesasFloorGoToTable tables={tables} onGoTo={handleGoToTable} />
+      </div>
+
       <DndContext sensors={sensors} onDragEnd={handleDragEnd}>
         <div
+          ref={scrollContainerRef}
           className="game-scroll relative h-full min-h-0 flex-1 overflow-auto"
           style={floorPlanCanvasStyle}
           role="presentation"

@@ -6,6 +6,7 @@
 import {
   FORM_UI_CONTROL_TYPOGRAPHY,
   FORM_UI_LABEL_STYLE,
+  FORM_UI_LABEL_STYLE_DARK,
   FORM_UI_LEADING_SLOT_TYPOGRAPHY,
   getCompositeShellUiSurface,
   getCompositeValueUiStyle,
@@ -22,9 +23,11 @@ import {
   type FormControlStateId,
   type FormImageUploadDisplayStateId,
   type FormImageUploadModeId,
+  type RootsFormStyleOptions,
+  type RootsFormTone,
 } from "@/app/library/ui-components/formsUiHardcodedSpec"
-import { ROOTSY_TEXT_STYLES } from "@/lib/design-system/tokens/typography"
-import { rootsySpacePx } from "@/lib/design-system"
+import { LAYOUTS_OPERAR_FORM_DARK } from "@/app/library/layouts/layoutsOperarFormTokens"
+import { rootsySpacePx, ROOTSY_TEXT_STYLES } from "@/lib/design-system"
 import type { CSSProperties } from "react"
 
 /** Altura de línea body — selección debe abrazar el texto, no el control completo. */
@@ -34,7 +37,8 @@ function getFormSingleLinePaddingY(heightPx: number, borderPx = 2): number {
   return Math.max(0, (heightPx - borderPx - FORM_CONTROL_LINE_HEIGHT_PX) / 2)
 }
 
-export { FORM_UI_LABEL_STYLE, FORM_UI_CONTROL_TYPOGRAPHY, FORM_UI_LEADING_SLOT_TYPOGRAPHY }
+export { FORM_UI_LABEL_STYLE, FORM_UI_LABEL_STYLE_DARK, FORM_UI_CONTROL_TYPOGRAPHY, FORM_UI_LEADING_SLOT_TYPOGRAPHY }
+export type { RootsFormStyleOptions, RootsFormTone }
 
 export type RootsFormInteractionFlags = {
   disabled?: boolean
@@ -56,9 +60,10 @@ export function resolveFormControlState(flags: RootsFormInteractionFlags): FormC
 
 export function getFormTextControlStyle(
   state: FormControlStateId,
-  options?: { multiline?: boolean },
+  options?: { multiline?: boolean; tone?: RootsFormTone },
 ): CSSProperties {
-  const surface = getFormControlUiSurface(state)
+  const styleOptions: RootsFormStyleOptions = { tone: options?.tone }
+  const surface = getFormControlUiSurface(state, styleOptions)
 
   if (options?.multiline) {
     const spec = getFormControlSpec("textarea")
@@ -105,9 +110,12 @@ export function getFormTextControlStyle(
   }
 }
 
-export function getFormCompositeShellStyle(state: FormControlStateId): CSSProperties {
+export function getFormCompositeShellStyle(
+  state: FormControlStateId,
+  options?: RootsFormStyleOptions,
+): CSSProperties {
   const spec = getFormControlSpec("leading-currency")
-  const surface = getCompositeShellUiSurface(state)
+  const surface = getCompositeShellUiSurface(state, options)
 
   return {
     display: "flex",
@@ -128,10 +136,11 @@ export function getFormCompositeShellStyle(state: FormControlStateId): CSSProper
 
 export function getFormLeadingPrefixStyle(
   state: FormControlStateId,
-  options?: { numeric?: boolean },
+  options?: { numeric?: boolean; tone?: RootsFormTone },
 ): CSSProperties {
   const spec = getFormControlSpec("leading-currency")
-  const leading = getLeadingSlotUiStyle(state)
+  const styleOptions: RootsFormStyleOptions = { tone: options?.tone }
+  const leading = getLeadingSlotUiStyle(state, styleOptions)
 
   return {
     ...leading,
@@ -147,11 +156,13 @@ export function getFormLeadingPrefixStyle(
 
 export function getFormCompositeInputStyle(
   state: FormControlStateId,
-  options?: { numeric?: boolean; hasTrailing?: boolean },
+  options?: { numeric?: boolean; hasTrailing?: boolean; tone?: RootsFormTone },
 ): CSSProperties {
   const spec = getFormControlSpec("leading-currency")
-  const shell = getCompositeShellUiSurface(state)
-  const valueStyle = getCompositeValueUiStyle(state)
+  const tone = options?.tone ?? "light"
+  const styleOptions: RootsFormStyleOptions = { tone }
+  const shell = getCompositeShellUiSurface(state, styleOptions)
+  const valueStyle = getCompositeValueUiStyle(state, styleOptions)
 
   return {
     ...FORM_UI_CONTROL_TYPOGRAPHY,
@@ -166,7 +177,7 @@ export function getFormCompositeInputStyle(
     paddingRight: options?.hasTrailing ? rootsySpacePx("050") : spec.inputPaddingXPx,
     border: "none",
     backgroundColor: valueStyle.backgroundColor,
-    color: shell.color,
+    color: tone === "dark" ? LAYOUTS_OPERAR_FORM_DARK.text : shell.color,
     opacity: valueStyle.opacity,
     outline: "none",
     boxShadow: "none",
@@ -175,9 +186,12 @@ export function getFormCompositeInputStyle(
   }
 }
 
-/** Grupo %/$ en RootsFormDiscountField — slot leading ancho. */
-export function getFormDiscountModeGroupStyle(state: FormControlStateId): CSSProperties {
-  const leading = getLeadingSlotUiStyle(state)
+export function getFormDiscountModeGroupStyle(
+  state: FormControlStateId,
+  options?: RootsFormStyleOptions,
+): CSSProperties {
+  const tone = options?.tone ?? "light"
+  const leading = getLeadingSlotUiStyle(state, options)
 
   return {
     display: "flex",
@@ -186,7 +200,8 @@ export function getFormDiscountModeGroupStyle(state: FormControlStateId): CSSPro
     alignSelf: "stretch",
     overflow: "hidden",
     borderRight: leading.borderRight,
-    backgroundColor: "var(--rootsy-white)",
+    backgroundColor:
+      tone === "dark" ? LAYOUTS_OPERAR_FORM_DARK.surface : "var(--rootsy-white)",
     opacity: leading.opacity,
   }
 }
@@ -195,8 +210,10 @@ export function getFormDiscountModeGroupStyle(state: FormControlStateId): CSSPro
 export function getFormDiscountModeButtonStyle(
   state: FormControlStateId,
   selected: boolean,
+  options?: RootsFormStyleOptions,
 ): CSSProperties {
-  const leading = getLeadingSlotUiStyle(state)
+  const tone = options?.tone ?? "light"
+  const leading = getLeadingSlotUiStyle(state, options)
 
   return {
     ...FORM_UI_LEADING_SLOT_TYPOGRAPHY,
@@ -206,16 +223,30 @@ export function getFormDiscountModeButtonStyle(
     justifyContent: "center",
     alignSelf: "stretch",
     fontWeight: selected ? 600 : 400,
-    backgroundColor: selected ? leading.backgroundColor : "var(--rootsy-white)",
-    color: selected ? "var(--rootsy-bruma-600)" : "var(--rootsy-bruma-400)",
+    backgroundColor: selected
+      ? leading.backgroundColor
+      : tone === "dark"
+        ? LAYOUTS_OPERAR_FORM_DARK.surface
+        : "var(--rootsy-white)",
+    color:
+      tone === "dark"
+        ? selected
+          ? LAYOUTS_OPERAR_FORM_DARK.text
+          : LAYOUTS_OPERAR_FORM_DARK.textMuted
+        : selected
+          ? "var(--rootsy-bruma-600)"
+          : "var(--rootsy-bruma-400)",
     border: "none",
     cursor: "pointer",
     opacity: leading.opacity,
   }
 }
 
-export function getFormAssistStyle(variant: FormAssistVariantId): CSSProperties {
-  return getFormAssistUiStyle(variant)
+export function getFormAssistStyle(
+  variant: FormAssistVariantId,
+  options?: RootsFormStyleOptions,
+): CSSProperties {
+  return getFormAssistUiStyle(variant, options)
 }
 
 export function getFormFieldStackStyle(): CSSProperties {
@@ -230,11 +261,12 @@ export function getFormFieldStackStyle(): CSSProperties {
 
 export function getFormCompositeValueAreaStyle(
   state: FormControlStateId,
-  options?: { hasTrailing?: boolean; placeholder?: boolean },
+  options?: { hasTrailing?: boolean; placeholder?: boolean; tone?: RootsFormTone },
 ): CSSProperties {
   const spec = getFormControlSpec("leading-currency")
-  const shell = getCompositeShellUiSurface(state)
-  const valueStyle = getCompositeValueUiStyle(state)
+  const styleOptions: RootsFormStyleOptions = { tone: options?.tone }
+  const shell = getCompositeShellUiSurface(state, styleOptions)
+  const valueStyle = getCompositeValueUiStyle(state, styleOptions)
 
   return {
     ...FORM_UI_CONTROL_TYPOGRAPHY,
@@ -333,14 +365,16 @@ export function getFormSelectChevronWrapStyle(state: FormControlStateId): CSSPro
 
 export function getFormDateTriggerStyle(
   state: FormControlStateId,
-  options?: { prefixed?: boolean },
+  options?: { prefixed?: boolean; tone?: RootsFormTone },
 ): CSSProperties {
+  const styleOptions: RootsFormStyleOptions = { tone: options?.tone }
+
   if (options?.prefixed) {
-    const surface = getCompositeShellUiSurface(state)
+    const surface = getCompositeShellUiSurface(state, styleOptions)
 
     return {
       ...FORM_UI_CONTROL_TYPOGRAPHY,
-      ...getFormCompositeShellStyle(state),
+      ...getFormCompositeShellStyle(state, styleOptions),
       color: surface.color,
       width: "100%",
       cursor: "pointer",
@@ -348,7 +382,7 @@ export function getFormDateTriggerStyle(
   }
 
   const spec = getFormControlSpec("date")
-  const surface = getFormControlUiSurface(state)
+  const surface = getFormControlUiSurface(state, styleOptions)
 
   return {
     ...FORM_UI_CONTROL_TYPOGRAPHY,
@@ -374,13 +408,14 @@ export function getFormDateTriggerStyle(
 
 export function getFormDateValueStyle(
   state: FormControlStateId,
-  options?: { prefixed?: boolean; placeholder?: boolean },
+  options?: { prefixed?: boolean; placeholder?: boolean; tone?: RootsFormTone },
 ): CSSProperties {
   if (options?.prefixed) {
-    return getFormCompositeValueAreaStyle(state, { placeholder: options.placeholder })
+    return getFormCompositeValueAreaStyle(state, options)
   }
 
-  const surface = getFormControlUiSurface(state)
+  const styleOptions: RootsFormStyleOptions = { tone: options?.tone }
+  const surface = getFormControlUiSurface(state, styleOptions)
 
   return {
     ...FORM_UI_CONTROL_TYPOGRAPHY,
@@ -393,8 +428,11 @@ export function getFormDateValueStyle(
   }
 }
 
-export function getFormInlineIconSearchShellStyle(state: FormControlStateId): CSSProperties {
-  const { spec, shell, gapPx, paddingXPx } = getFormUiInlineIconShellStyle(state)
+export function getFormInlineIconSearchShellStyle(
+  state: FormControlStateId,
+  options?: RootsFormStyleOptions,
+): CSSProperties {
+  const { spec, shell, gapPx, paddingXPx } = getFormUiInlineIconShellStyle(state, options)
 
   return {
     display: "flex",
@@ -415,8 +453,11 @@ export function getFormInlineIconSearchShellStyle(state: FormControlStateId): CS
   }
 }
 
-export function getFormInlineIconSearchInputStyle(state: FormControlStateId): CSSProperties {
-  const shell = getFormControlUiSurface(state)
+export function getFormInlineIconSearchInputStyle(
+  state: FormControlStateId,
+  options?: RootsFormStyleOptions,
+): CSSProperties {
+  const shell = getFormControlUiSurface(state, options)
 
   return {
     ...FORM_UI_CONTROL_TYPOGRAPHY,
@@ -433,6 +474,7 @@ export function getFormInlineIconSearchInputStyle(state: FormControlStateId): CS
 
 export function getFormChoiceLabelStyle(
   control: "checkbox" | "switch" = "switch",
+  options?: RootsFormStyleOptions,
 ): CSSProperties {
   const lineHeightPx =
     control === "checkbox"
@@ -442,11 +484,11 @@ export function getFormChoiceLabelStyle(
   return {
     ...FORM_UI_CONTROL_TYPOGRAPHY,
     lineHeight: `${lineHeightPx}px`,
-    color: getFormControlUiSurface("default").color,
+    color: getFormControlUiSurface("default", options).color,
   }
 }
 
-export function getFormChoiceDescriptionStyle(): CSSProperties {
+export function getFormChoiceDescriptionStyle(options?: RootsFormStyleOptions): CSSProperties {
   return {
     display: "block",
     marginTop: 2,
@@ -454,16 +496,17 @@ export function getFormChoiceDescriptionStyle(): CSSProperties {
     fontSize: ROOTSY_TEXT_STYLES["body.small"].fontSize,
     lineHeight: ROOTSY_TEXT_STYLES["body.small"].lineHeight,
     fontWeight: 400,
-    color: getFormControlUiSurface("default").placeholderColor,
+    color: getFormControlUiSurface("default", options).placeholderColor,
   }
 }
 
 export function getFormCheckboxStyle(
   state: FormControlStateId,
   checked: boolean,
+  options?: RootsFormStyleOptions,
 ): CSSProperties {
   const spec = getFormControlSpec("checkbox")
-  const surface = getCheckboxUiSurface(checked, state)
+  const surface = getCheckboxUiSurface(checked, state, options)
 
   return {
     display: "inline-flex",

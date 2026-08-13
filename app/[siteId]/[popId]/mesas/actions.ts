@@ -2,10 +2,12 @@
 
 import type {
   MesaFloorDecorKind,
+  MesaReservationInput,
+  MesaReservationStatus,
   MesaTableShape,
 } from "@/app/[siteId]/[popId]/mesas/mesasTypes"
 import type { TableSessionCheckoutSnapshot } from "@/app/[siteId]/[popId]/mesas/mesasCheckoutState"
-import { readCheckoutFromSessionMetadata } from "@/app/[siteId]/[popId]/mesas/mesasCheckoutState"
+import { readCheckoutFromSessionMetadata, readFloorStatusFromSessionMetadata, floorStatusToSessionMetadataValue, type MesaSessionFloorStatus } from "@/app/[siteId]/[popId]/mesas/mesasCheckoutState"
 import { buildUnpaidCarrito } from "@/lib/partialCheckoutSelection"
 import { requireAuthenticatedUser } from "@/lib/authHelpers"
 import {
@@ -18,6 +20,7 @@ import {
 } from "@/lib/popHelpers"
 import { popMenuHref } from "@/lib/popRoutes"
 import { loadPopPermissionsSnapshot } from "@/lib/popPermissionsServer"
+import { readMesasReservationSettings, type MesasReservationSettings } from "@/app/[siteId]/[popId]/mesas/mesasReservationLogic"
 import { createClient } from "@/utils/supabase/server"
 
 export type MesasSalonRow = {
@@ -1073,6 +1076,7 @@ function mapTableSessionRow(row: {
     openedAt: row.opened_at,
     updatedAt: row.updated_at,
     checkout: readCheckoutFromSessionMetadata(row.metadata),
+    floorStatus: readFloorStatusFromSessionMetadata(row.metadata),
   }
 }
 
@@ -1085,6 +1089,7 @@ export type MesaSessionRow = {
   openedAt: string
   updatedAt: string
   checkout: TableSessionCheckoutSnapshot | null
+  floorStatus: MesaSessionFloorStatus
 }
 
 export type TableSessionMutationInput = {
@@ -1218,6 +1223,17 @@ export async function openTableSession(
   const { supabase, userId } = gate
   const primaryTableId = tableIds[0]
   const mergedTableIds = tableIds.slice(1)
+
+  const { error: reservationSeatErr } = await supabase
+    .from("table_reservations")
+    .update({ status: "seated" })
+    .eq("pop_id", popId)
+    .in("dining_table_id", tableIds)
+    .in("status", ["pending", "confirmed"])
+
+  if (reservationSeatErr) {
+    return { success: false, error: reservationSeatErr.message }
+  }
 
   const { data: inserted, error: insertErr } = await supabase
     .from("table_sessions")
@@ -1631,4 +1647,490 @@ export async function saveTableSessionCheckout(
   }
 
   return { success: true, updatedAt: data.updated_at as string }
+}
+
+export async function setTableSessionFloorStatus(
+  popId: string,
+  routeSiteId: string,
+  sessionId: string,
+  floorStatus: MesaSessionFloorStatus,
+): Promise<
+  | { success: true; floorStatus: MesaSessionFloorStatus; updatedAt: string }
+  | { success: false; error: string; redirect?: string }
+> {
+  const gate = await requireMesasAccess(popId, routeSiteId, "update")
+  if (!gate.ok) {
+    return { success: false, error: gate.error, redirect: gate.redirect }
+  }
+  if (!isUuid(sessionId)) {
+    return { success: false, error: "Sesión inválida." }
+  }
+
+  const { supabase } = gate
+
+  const { data: existing, error: existingErr } = await supabase
+    .from("table_sessions")
+    .select("id, metadata")
+    .eq("id", sessionId)
+    .eq("pop_id", popId)
+    .eq("status", "open")
+    .maybeSingle()
+
+  if (existingErr) {
+    return { success: false, error: existingErr.message }
+  }
+  if (!existing) {
+    return { success: false, error: "La sesión no está abierta o no existe." }
+  }
+
+  const metadata =
+    existing.metadata && typeof existing.metadata === "object" && !Array.isArray(existing.metadata)
+      ? { ...(existing.metadata as Record<string, unknown>) }
+      : {}
+
+  const floorStatusValue = floorStatusToSessionMetadataValue(floorStatus)
+  if (floorStatusValue) {
+    metadata.floor_status = floorStatusValue
+  } else {
+    delete metadata.floor_status
+  }
+
+  const { data, error } = await supabase
+    .from("table_sessions")
+    .update({ metadata })
+    .eq("id", sessionId)
+    .eq("pop_id", popId)
+    .eq("status", "open")
+    .select("updated_at")
+    .single()
+
+  if (error || !data?.updated_at) {
+    return {
+      success: false,
+      error: error?.message || "No se pudo actualizar el estado de la mesa.",
+    }
+  }
+
+  return {
+    success: true,
+    floorStatus,
+    updatedAt: data.updated_at as string,
+  }
+}
+
+export type MesaReservationRow = {
+  id: string
+  tableId: string | null
+  clientId: string | null
+  clientName: string
+  guestCount: number | null
+  arrivalAt: string
+  status: MesaReservationStatus
+  note: string
+  updatedAt: string
+}
+
+const TABLE_RESERVATION_SELECT = `
+  id,
+  dining_table_id,
+  client_id,
+  client_name,
+  guest_count,
+  arrival_at,
+  status,
+  notes,
+  updated_at
+`
+
+function parseReservationStatus(raw: unknown): MesaReservationStatus {
+  const value = typeof raw === "string" ? raw.trim() : ""
+  if (
+    value === "pending" ||
+    value === "confirmed" ||
+    value === "seated" ||
+    value === "completed" ||
+    value === "no_show" ||
+    value === "cancelled"
+  ) {
+    return value
+  }
+  return "confirmed"
+}
+
+function mapTableReservationRow(row: {
+  id: string
+  dining_table_id: string | null
+  client_id: string | null
+  client_name: string | null
+  guest_count: number | null
+  arrival_at: string
+  status: string | null
+  notes: string | null
+  updated_at: string
+}): MesaReservationRow {
+  const guestCount =
+    row.guest_count != null && Number.isFinite(row.guest_count)
+      ? Math.max(1, Math.min(50, Math.round(row.guest_count)))
+      : null
+
+  return {
+    id: row.id,
+    tableId: row.dining_table_id,
+    clientId: row.client_id,
+    clientName: row.client_name?.trim() ?? "",
+    guestCount,
+    arrivalAt: row.arrival_at,
+    status: parseReservationStatus(row.status),
+    note: row.notes?.trim() ?? "",
+    updatedAt: row.updated_at,
+  }
+}
+
+export async function getTableReservations(
+  popId: string,
+  routeSiteId: string,
+): Promise<
+  | { success: true; reservations: MesaReservationRow[] }
+  | { success: false; error: string; redirect?: string }
+> {
+  const gate = await requireMesasAccess(popId, routeSiteId, "read")
+  if (!gate.ok) {
+    return { success: false, error: gate.error, redirect: gate.redirect }
+  }
+
+  const { supabase } = gate
+  const { data, error } = await supabase
+    .from("table_reservations")
+    .select(TABLE_RESERVATION_SELECT)
+    .eq("pop_id", popId)
+    .order("arrival_at")
+
+  if (error) {
+    return { success: false, error: error.message }
+  }
+
+  return {
+    success: true,
+    reservations: (data ?? []).map((row) =>
+      mapTableReservationRow(
+        row as unknown as Parameters<typeof mapTableReservationRow>[0],
+      ),
+    ),
+  }
+}
+
+export async function upsertTableReservation(
+  popId: string,
+  routeSiteId: string,
+  input: MesaReservationInput,
+): Promise<
+  | { success: true; reservation: MesaReservationRow }
+  | { success: false; error: string; redirect?: string }
+> {
+  const gate = await requireMesasAccess(popId, routeSiteId, "update")
+  if (!gate.ok) {
+    return { success: false, error: gate.error, redirect: gate.redirect }
+  }
+
+  const tableIdRaw = input.tableId?.trim() ?? ""
+  const tableId = tableIdRaw && isUuid(tableIdRaw) ? tableIdRaw : null
+  if (tableIdRaw && !tableId) {
+    return { success: false, error: "Mesa inválida." }
+  }
+
+  const clientId = input.clientId?.trim() ?? ""
+  if (clientId && !isUuid(clientId)) {
+    return { success: false, error: "Cliente inválido." }
+  }
+
+  const clientName = input.clientName?.trim() ?? ""
+  if (!clientId && !clientName) {
+    return { success: false, error: "Indicá un cliente para la reserva." }
+  }
+
+  const arrivalAt = input.arrivalAt?.trim() ?? ""
+  if (!arrivalAt || Number.isNaN(Date.parse(arrivalAt))) {
+    return { success: false, error: "Indicá una hora de llegada válida." }
+  }
+
+  const reservationId = input.reservationId?.trim() ?? ""
+  if (reservationId && !isUuid(reservationId)) {
+    return { success: false, error: "Reserva inválida." }
+  }
+
+  const guestCount =
+    input.guestCount != null && Number.isFinite(input.guestCount)
+      ? Math.max(1, Math.min(50, Math.round(input.guestCount)))
+      : null
+
+  const status = input.status ? parseReservationStatus(input.status) : "confirmed"
+
+  const { supabase } = gate
+  const payload = {
+    pop_id: popId,
+    dining_table_id: tableId,
+    client_id: clientId || null,
+    client_name: clientName,
+    guest_count: guestCount,
+    arrival_at: arrivalAt,
+    status,
+    notes: input.note?.trim() ?? "",
+  }
+
+  if (reservationId) {
+    const { data: existing, error: existingErr } = await supabase
+      .from("table_reservations")
+      .select("status")
+      .eq("id", reservationId)
+      .eq("pop_id", popId)
+      .maybeSingle()
+
+    if (existingErr) {
+      return { success: false, error: existingErr.message }
+    }
+    if (!existing) {
+      return { success: false, error: "La reserva no existe." }
+    }
+    if (
+      existing.status === "seated" ||
+      existing.status === "completed" ||
+      existing.status === "cancelled"
+    ) {
+      return {
+        success: false,
+        error: "No se puede editar una reserva cerrada o cancelada.",
+      }
+    }
+
+    const { data, error } = await supabase
+      .from("table_reservations")
+      .update(payload)
+      .eq("id", reservationId)
+      .eq("pop_id", popId)
+      .select(TABLE_RESERVATION_SELECT)
+      .single()
+
+    if (error || !data) {
+      return {
+        success: false,
+        error: error?.message || "No se pudo actualizar la reserva.",
+      }
+    }
+
+    return {
+      success: true,
+      reservation: mapTableReservationRow(
+        data as unknown as Parameters<typeof mapTableReservationRow>[0],
+      ),
+    }
+  }
+
+  const { data, error } = await supabase
+    .from("table_reservations")
+    .insert(payload)
+    .select(TABLE_RESERVATION_SELECT)
+    .single()
+
+  if (error || !data) {
+    return {
+      success: false,
+      error: error?.message || "No se pudo guardar la reserva.",
+    }
+  }
+
+  return {
+    success: true,
+    reservation: mapTableReservationRow(
+      data as unknown as Parameters<typeof mapTableReservationRow>[0],
+    ),
+  }
+}
+
+export async function cancelTableReservation(
+  popId: string,
+  routeSiteId: string,
+  reservationId: string,
+): Promise<
+  | { success: true }
+  | { success: false; error: string; redirect?: string }
+> {
+  const gate = await requireMesasAccess(popId, routeSiteId, "update")
+  if (!gate.ok) {
+    return { success: false, error: gate.error, redirect: gate.redirect }
+  }
+  if (!isUuid(reservationId)) {
+    return { success: false, error: "Reserva inválida." }
+  }
+
+  const { supabase } = gate
+  const { data, error } = await supabase
+    .from("table_reservations")
+    .update({ status: "cancelled" })
+    .eq("id", reservationId)
+    .eq("pop_id", popId)
+    .in("status", ["pending", "confirmed"])
+    .select("id")
+    .maybeSingle()
+
+  if (error) {
+    return { success: false, error: error.message }
+  }
+  if (!data) {
+    return { success: false, error: "La reserva no existe o ya fue cerrada." }
+  }
+
+  return { success: true }
+}
+
+export async function updateTableReservationStatus(
+  popId: string,
+  routeSiteId: string,
+  reservationId: string,
+  status: MesaReservationStatus,
+): Promise<
+  | { success: true; reservation: MesaReservationRow }
+  | { success: false; error: string; redirect?: string }
+> {
+  const gate = await requireMesasAccess(popId, routeSiteId, "update")
+  if (!gate.ok) {
+    return { success: false, error: gate.error, redirect: gate.redirect }
+  }
+  if (!isUuid(reservationId)) {
+    return { success: false, error: "Reserva inválida." }
+  }
+
+  const allowed: MesaReservationStatus[] = [
+    "pending",
+    "confirmed",
+    "seated",
+    "completed",
+    "no_show",
+    "cancelled",
+  ]
+  if (!allowed.includes(status)) {
+    return { success: false, error: "Estado de reserva inválido." }
+  }
+
+  const { supabase } = gate
+  const { data, error } = await supabase
+    .from("table_reservations")
+    .update({ status })
+    .eq("id", reservationId)
+    .eq("pop_id", popId)
+    .select(TABLE_RESERVATION_SELECT)
+    .single()
+
+  if (error || !data) {
+    return {
+      success: false,
+      error: error?.message || "No se pudo actualizar la reserva.",
+    }
+  }
+
+  return {
+    success: true,
+    reservation: mapTableReservationRow(
+      data as unknown as Parameters<typeof mapTableReservationRow>[0],
+    ),
+  }
+}
+
+export async function getMesasReservationSettings(
+  popId: string,
+  routeSiteId: string,
+): Promise<
+  | { success: true; settings: MesasReservationSettings }
+  | { success: false; error: string; redirect?: string }
+> {
+  const gate = await requireMesasAccess(popId, routeSiteId, "read")
+  if (!gate.ok) {
+    return { success: false, error: gate.error, redirect: gate.redirect }
+  }
+
+  const { supabase } = gate
+  const { data, error } = await supabase
+    .from("pops")
+    .select("settings")
+    .eq("id", popId)
+    .maybeSingle()
+
+  if (error) {
+    return { success: false, error: error.message }
+  }
+
+  const popSettings =
+    data?.settings && typeof data.settings === "object"
+      ? (data.settings as Record<string, unknown>)
+      : null
+
+  return {
+    success: true,
+    settings: readMesasReservationSettings(popSettings),
+  }
+}
+
+export type MesasReservationSettingsInput = {
+  floorBufferMinutes: number
+  graceMinutes: number
+}
+
+export async function updateMesasReservationSettings(
+  popId: string,
+  routeSiteId: string,
+  input: MesasReservationSettingsInput,
+): Promise<{ success: true } | { success: false; error: string; redirect?: string }> {
+  const gate = await requireMesasAccess(popId, routeSiteId, "update")
+  if (!gate.ok) {
+    return { success: false, error: gate.error, redirect: gate.redirect }
+  }
+
+  const settings = readMesasReservationSettings({
+    mesas: {
+      reservationFloorBufferMinutes: input.floorBufferMinutes,
+      reservationGraceMinutes: input.graceMinutes,
+    },
+  })
+
+  const { supabase } = gate
+  const { data: popRow, error: readError } = await supabase
+    .from("pops")
+    .select("settings")
+    .eq("id", popId)
+    .maybeSingle()
+
+  if (readError) {
+    return { success: false, error: readError.message }
+  }
+
+  const currentSettings =
+    popRow?.settings && typeof popRow.settings === "object"
+      ? { ...(popRow.settings as Record<string, unknown>) }
+      : {}
+
+  const currentMesas =
+    currentSettings.mesas &&
+    typeof currentSettings.mesas === "object" &&
+    !Array.isArray(currentSettings.mesas)
+      ? { ...(currentSettings.mesas as Record<string, unknown>) }
+      : {}
+
+  currentSettings.mesas = {
+    ...currentMesas,
+    reservationFloorBufferMinutes: settings.floorBufferMinutes,
+    reservationGraceMinutes: settings.graceMinutes,
+  }
+
+  const { error: updateError } = await supabase
+    .from("pops")
+    .update({
+      settings: currentSettings,
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", popId)
+
+  if (updateError) {
+    return { success: false, error: updateError.message }
+  }
+
+  return { success: true }
 }

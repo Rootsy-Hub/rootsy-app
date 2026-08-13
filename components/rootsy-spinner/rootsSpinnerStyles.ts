@@ -4,6 +4,10 @@ import { cn } from "@/lib/utils"
 export const rootsSpinnerRingClass =
   "animate-spin rounded-full border-solid border-[var(--rootsy-bruma-200)] border-t-[var(--rootsy-savia-600)]"
 
+/** Operar dark — track sombra · arco savia. */
+export const rootsSpinnerDarkRingClass =
+  "animate-spin rounded-full border-solid border-[color-mix(in_srgb,var(--rootsy-sombra-300)_35%,transparent)] border-t-[color-mix(in_srgb,var(--rootsy-savia-400)_85%,transparent)]"
+
 export const rootsSpinnerSizeClass = {
   /** Footer infinite scroll · controles compactos. */
   xs: "size-3.5 border-[1.5px]",
@@ -17,9 +21,16 @@ export const rootsSpinnerSizeClass = {
 
 export type RootsSpinnerSize = keyof typeof rootsSpinnerSizeClass
 
+export type RootsSpinnerTone = "light" | "dark"
+
 export function rootsSpinnerClassName(
   size: RootsSpinnerSize = "default",
   className?: string,
+  tone: RootsSpinnerTone = "light",
 ) {
-  return cn(rootsSpinnerRingClass, rootsSpinnerSizeClass[size], className)
+  return cn(
+    tone === "dark" ? rootsSpinnerDarkRingClass : rootsSpinnerRingClass,
+    rootsSpinnerSizeClass[size],
+    className,
+  )
 }

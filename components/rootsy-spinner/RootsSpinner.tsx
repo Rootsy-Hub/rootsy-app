@@ -3,17 +3,20 @@
 import {
   rootsSpinnerClassName,
   type RootsSpinnerSize,
+  type RootsSpinnerTone,
 } from "@/components/rootsy-spinner/rootsSpinnerStyles"
 import type { ComponentPropsWithoutRef } from "react"
 
 type Props = Omit<ComponentPropsWithoutRef<"div">, "children"> & {
   size?: RootsSpinnerSize
+  tone?: RootsSpinnerTone
   /** Solo lectores de pantalla cuando el spinner es el único indicador visible. */
   label?: string
 }
 
 export function RootsSpinner({
   size = "default",
+  tone = "light",
   className,
   label = "Cargando",
   "aria-hidden": ariaHidden,
@@ -25,7 +28,7 @@ export function RootsSpinner({
       aria-label={ariaHidden ? undefined : label}
       aria-hidden={ariaHidden}
       aria-live={ariaHidden ? undefined : "polite"}
-      className={rootsSpinnerClassName(size, className)}
+      className={rootsSpinnerClassName(size, className, tone)}
       {...props}
     />
   )

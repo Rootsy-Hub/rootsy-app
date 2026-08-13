@@ -56,6 +56,10 @@ type Props = {
   cashRegisterName?: string | null
   cardInstallments?: string
   onCardInstallmentsChange?: (value: string) => void
+  /** Oculta «Cuenta corriente» / cuenta por pagar del menú principal. */
+  hideAccountOption?: boolean
+  /** Abre directamente el paso de destino (p. ej. elegir terminal POS). */
+  initialDestinationKind?: OperationPaymentKind | null
 }
 
 function kindIcon(kind: OperationPaymentKind) {
@@ -138,24 +142,33 @@ export function PaymentMethodDialog({
   cashTreasuryAccountId = null,
   cardInstallments = "1",
   onCardInstallmentsChange,
+  hideAccountOption = false,
+  initialDestinationKind = null,
 }: Props) {
-  const [step, setStep] = useState<PaymentCheckoutStep>("menu")
+  const [step, setStep] = useState<PaymentCheckoutStep>(() =>
+    initialDestinationKind ? "destination" : "menu",
+  )
   const [pendingKind, setPendingKind] = useState<OperationPaymentKind | null>(
-    null,
+    () => initialDestinationKind ?? null,
   )
   const [stepError, setStepError] = useState<string | null>(null)
 
   useEffect(() => {
     if (!open) {
-      setStep("menu")
-      setPendingKind(null)
+      setStep(initialDestinationKind ? "destination" : "menu")
+      setPendingKind(initialDestinationKind ?? null)
       setStepError(null)
+      return
     }
-  }, [open])
 
-  useEffect(() => {
+    if (initialDestinationKind) {
+      setStep("destination")
+      setPendingKind(initialDestinationKind)
+      setStepError(null)
+      return
+    }
+
     if (
-      open &&
       flow === "purchase" &&
       selected?.kind === "card_credit" &&
       !payOnAccount
@@ -163,7 +176,7 @@ export function PaymentMethodDialog({
       setStep("installments")
       setPendingKind("card_credit")
     }
-  }, [flow, open, payOnAccount, selected?.kind])
+  }, [flow, initialDestinationKind, open, payOnAccount, selected?.kind])
 
   const finishSelection = useCallback(
     (option: PaymentMethodSelection) => {
@@ -220,6 +233,12 @@ export function PaymentMethodDialog({
   )
 
   const handleBack = useCallback(() => {
+    if (initialDestinationKind) {
+      onOpenChange(false)
+      setStepError(null)
+      return
+    }
+
     if (step === "installments") {
       if (
         treasuryContext &&
@@ -237,7 +256,7 @@ export function PaymentMethodDialog({
     setStep("menu")
     setPendingKind(null)
     setStepError(null)
-  }, [flow, pendingKind, step, treasuryContext])
+  }, [flow, initialDestinationKind, onOpenChange, pendingKind, step, treasuryContext])
 
   const destinationItems = useMemo(() => {
     if (!treasuryContext || !pendingKind || step !== "destination") return []
@@ -331,15 +350,17 @@ export function PaymentMethodDialog({
 
               <Separator className="bg-[var(--rootsy-bruma-200)]" />
 
-              <AccountOptionCard
-                title={accountOptionLabel}
-                description={accountDescription}
-                selected={payOnAccount}
-                onClick={() => {
-                  onSelectAccount()
-                  onOpenChange(false)
-                }}
-              />
+              {!hideAccountOption ? (
+                <AccountOptionCard
+                  title={accountOptionLabel}
+                  description={accountDescription}
+                  selected={payOnAccount}
+                  onClick={() => {
+                    onSelectAccount()
+                    onOpenChange(false)
+                  }}
+                />
+              ) : null}
             </>
           ) : null}
 

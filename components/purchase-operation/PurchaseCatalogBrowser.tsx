@@ -1,7 +1,6 @@
 "use client"
 
 import {
-  PURCHASE_CATEGORIA_TODOS,
   type PurchaseCatalogProduct,
   type PurchaseCatalogView,
 } from "@/components/purchase-operation/purchaseCatalogTypes"
@@ -45,7 +44,7 @@ export function PurchaseCatalogBrowser({
 }: Props) {
   const [vistaCatalogo, setVistaCatalogo] = useState<PurchaseCatalogView>({
     modo: "categoria",
-    categoria: PURCHASE_CATEGORIA_TODOS,
+    categoria: categories[0] ?? "",
   })
   const [modoVista, setModoVista] = useState<"grid" | "lista">("grid")
   const [busqueda, setBusqueda] = useState("")
@@ -57,9 +56,7 @@ export function PurchaseCatalogBrowser({
     const hayBusqueda = q.length > 0
     return products.filter((p) => {
       const matchVista =
-        hayBusqueda ||
-        vistaCatalogo.categoria === PURCHASE_CATEGORIA_TODOS ||
-        p.categoria === vistaCatalogo.categoria
+        hayBusqueda || p.categoria === vistaCatalogo.categoria
       const matchQ =
         !q ||
         p.nombre.toLowerCase().includes(q) ||
@@ -67,6 +64,13 @@ export function PurchaseCatalogBrowser({
       return matchVista && matchQ
     })
   }, [busqueda, products, vistaCatalogo])
+
+  useEffect(() => {
+    setVistaCatalogo((prev) => {
+      if (categories.includes(prev.categoria)) return prev
+      return { modo: "categoria", categoria: categories[0] ?? "" }
+    })
+  }, [categories])
 
   useEffect(() => {
     const trimmed = busqueda.trim()
@@ -84,13 +88,6 @@ export function PurchaseCatalogBrowser({
         setVistaCatalogo(saved)
         vistaAntesBusquedaRef.current = null
       }
-    }
-
-    if (!isEmpty) {
-      setVistaCatalogo((prev) => {
-        if (prev.categoria === PURCHASE_CATEGORIA_TODOS) return prev
-        return { modo: "categoria", categoria: PURCHASE_CATEGORIA_TODOS }
-      })
     }
 
     busquedaTrimPrevRef.current = trimmed

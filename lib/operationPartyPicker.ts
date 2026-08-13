@@ -2,6 +2,7 @@ export type OperationPartyCatalogItem = {
   id: string
   name: string
   taxId?: string | null
+  email?: string | null
   ivaCondition?: string | null
   defaultInvoiceTypeLabel?: string | null
 }

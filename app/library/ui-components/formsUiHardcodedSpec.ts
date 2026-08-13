@@ -31,6 +31,7 @@ import { ROOTSY_RADIUS_TOKENS } from "@/app/library/radius/rootsyRadiusSystem"
 import { ROOTSY_ELEVATION_SURFACES_LIGHT } from "@/app/library/elevation/rootsyElevationSystem"
 import { ROOTSY_SEMANTIC_TOKENS } from "@/app/library/color/rootsyColorSystem"
 import { getRootsyTheme, rootsyColorHex, rootsySpacePx } from "@/lib/design-system"
+import { LAYOUTS_OPERAR_FORM_DARK } from "@/app/library/layouts/layoutsOperarFormTokens"
 import { ROOTSY_FONT_WEIGHTS, ROOTSY_TEXT_STYLES } from "@/lib/design-system/tokens/typography"
 
 const hx = rootsyColorHex
@@ -55,6 +56,17 @@ function semanticTextHex(id: string): string {
 
 const FOCUS_RING = `0 0 0 2px color-mix(in srgb, ${borderHex("color.border.focused")} 45%, transparent)`
 const ERROR_RING = `0 0 0 2px color-mix(in srgb, ${semanticHex("status-danger")} 25%, transparent)`
+
+export type RootsFormTone = "light" | "dark"
+
+export type RootsFormStyleOptions = {
+  tone?: RootsFormTone
+}
+
+const FORM_DARK_BORDER = LAYOUTS_OPERAR_FORM_DARK.border
+const FORM_DARK_BORDER_HOVER = LAYOUTS_OPERAR_FORM_DARK.borderHover
+const FORM_DARK_BORDER_FOCUS = LAYOUTS_OPERAR_FORM_DARK.borderFocus
+const FORM_DARK_FOCUS_RING = LAYOUTS_OPERAR_FORM_DARK.focusRing
 
 export type FormControlUiSurface = {
   backgroundColor: string
@@ -83,6 +95,11 @@ export const FORM_UI_LABEL_STYLE = {
   color: hx("bruma", "700"),
 }
 
+export const FORM_UI_LABEL_STYLE_DARK = {
+  ...FORM_UI_LABEL_STYLE,
+  color: LAYOUTS_OPERAR_FORM_DARK.label,
+}
+
 export const FORM_UI_CONTROL_TYPOGRAPHY = {
   fontFamily: "var(--rootsy-font-ui)",
   fontSize: ROOTSY_TEXT_STYLES.body.fontSize,
@@ -105,10 +122,22 @@ function getDefaultControlSurface(): FormControlUiSurface {
   }
 }
 
+function getDarkDefaultControlSurface(): FormControlUiSurface {
+  return {
+    backgroundColor: LAYOUTS_OPERAR_FORM_DARK.surface,
+    color: LAYOUTS_OPERAR_FORM_DARK.text,
+    border: `1px solid ${FORM_DARK_BORDER}`,
+    placeholderColor: LAYOUTS_OPERAR_FORM_DARK.textMuted,
+  }
+}
+
 export function getFormControlUiSurface(
   state: FormControlStateId = "default",
+  options?: RootsFormStyleOptions,
 ): FormControlUiSurface {
-  const base = getDefaultControlSurface()
+  const tone = options?.tone ?? "light"
+  const base =
+    tone === "dark" ? getDarkDefaultControlSurface() : getDefaultControlSurface()
 
   switch (state) {
     case "default":
@@ -116,13 +145,19 @@ export function getFormControlUiSurface(
     case "hover":
       return {
         ...base,
-        border: `1px solid ${hx("bruma", "300")}`,
+        border:
+          tone === "dark"
+            ? `1px solid ${FORM_DARK_BORDER_HOVER}`
+            : `1px solid ${hx("bruma", "300")}`,
       }
     case "focus":
       return {
         ...base,
-        border: `1px solid ${borderHex("color.border.focused")}`,
-        boxShadow: FOCUS_RING,
+        border:
+          tone === "dark"
+            ? `1px solid ${FORM_DARK_BORDER_FOCUS}`
+            : `1px solid ${borderHex("color.border.focused")}`,
+        boxShadow: tone === "dark" ? FORM_DARK_FOCUS_RING : FOCUS_RING,
       }
     case "disabled":
       return { ...base, opacity: 0.5 }
@@ -135,13 +170,20 @@ export function getFormControlUiSurface(
     case "readonly":
       return {
         ...base,
-        backgroundColor: elevationHex("elevation.surface.sunken"),
-        color: workspace.textPrimary,
+        backgroundColor:
+          tone === "dark"
+            ? LAYOUTS_OPERAR_FORM_DARK.surfaceSunken
+            : elevationHex("elevation.surface.sunken"),
+        color: tone === "dark" ? LAYOUTS_OPERAR_FORM_DARK.text : workspace.textPrimary,
       }
   }
 }
 
-export function getFormAssistUiStyle(variant: FormAssistVariantId): CSSPropertiesLike {
+export function getFormAssistUiStyle(
+  variant: FormAssistVariantId,
+  options?: RootsFormStyleOptions,
+): CSSPropertiesLike {
+  const tone = options?.tone ?? "light"
   const base = {
     fontFamily: "var(--rootsy-font-ui)",
     fontSize: ROOTSY_TEXT_STYLES["body.small"].fontSize,
@@ -151,13 +193,23 @@ export function getFormAssistUiStyle(variant: FormAssistVariantId): CSSPropertie
 
   switch (variant) {
     case "hint":
-      return { ...base, color: hx("bruma", "500") }
+      return {
+        ...base,
+        color:
+          tone === "dark" ? LAYOUTS_OPERAR_FORM_DARK.textMuted : hx("bruma", "500"),
+      }
     case "error":
       return { ...base, color: semanticHex("status-danger") }
     case "warning":
       return { ...base, color: semanticTextHex("status-warning") }
     case "success":
-      return { ...base, color: semanticTextHex("status-success") }
+      return {
+        ...base,
+        color:
+          tone === "dark"
+            ? "color-mix(in srgb, var(--rootsy-savia-300) 88%, white)"
+            : semanticTextHex("status-success"),
+      }
   }
 }
 
@@ -172,8 +224,10 @@ type CSSPropertiesLike = {
 export function getCheckboxUiSurface(
   checked: boolean,
   state: FormControlStateId = "default",
+  options?: RootsFormStyleOptions,
 ): FormControlUiSurface {
-  const base = getFormControlUiSurface(state)
+  const tone = options?.tone ?? "light"
+  const base = getFormControlUiSurface(state, options)
 
   if (checked) {
     return {
@@ -187,7 +241,10 @@ export function getCheckboxUiSurface(
 
   return {
     ...base,
-    backgroundColor: elevationHex("elevation.surface.overlay"),
+    backgroundColor:
+      tone === "dark"
+        ? LAYOUTS_OPERAR_FORM_DARK.surface
+        : elevationHex("elevation.surface.overlay"),
   }
 }
 
@@ -221,38 +278,64 @@ export type LeadingSlotUiStyle = {
   opacity?: number
 }
 
-export function getCompositeShellUiSurface(state: FormControlStateId = "default"): FormControlUiSurface {
-  return getFormControlUiSurface(state)
+export function getCompositeShellUiSurface(
+  state: FormControlStateId = "default",
+  options?: RootsFormStyleOptions,
+): FormControlUiSurface {
+  return getFormControlUiSurface(state, options)
 }
 
-export function getLeadingSlotUiStyle(state: FormControlStateId = "default"): LeadingSlotUiStyle {
-  const shell = getCompositeShellUiSurface(state)
+export function getLeadingSlotUiStyle(
+  state: FormControlStateId = "default",
+  options?: RootsFormStyleOptions,
+): LeadingSlotUiStyle {
+  const tone = options?.tone ?? "light"
+  const shell = getCompositeShellUiSurface(state, options)
   const dividerColor =
-    state === "hover"
-      ? hx("bruma", "300")
-      : state === "error"
-        ? semanticHex("status-danger")
-        : state === "focus"
-          ? borderHex("color.border.focused")
-          : borderHex("color.border")
+    tone === "dark"
+      ? state === "hover"
+        ? FORM_DARK_BORDER_HOVER
+        : state === "error"
+          ? semanticHex("status-danger")
+          : state === "focus"
+            ? FORM_DARK_BORDER_FOCUS
+            : FORM_DARK_BORDER
+      : state === "hover"
+        ? hx("bruma", "300")
+        : state === "error"
+          ? semanticHex("status-danger")
+          : state === "focus"
+            ? borderHex("color.border.focused")
+            : borderHex("color.border")
 
   return {
     ...FORM_UI_LEADING_SLOT_TYPOGRAPHY,
-    backgroundColor: elevationHex("elevation.surface.sunken"),
+    color: tone === "dark" ? LAYOUTS_OPERAR_FORM_DARK.icon : FORM_UI_LEADING_SLOT_TYPOGRAPHY.color,
+    backgroundColor:
+      tone === "dark"
+        ? LAYOUTS_OPERAR_FORM_DARK.surfaceSunken
+        : elevationHex("elevation.surface.sunken"),
     borderRight: `1px solid ${dividerColor}`,
     opacity: shell.opacity,
   }
 }
 
-export function getCompositeValueUiStyle(state: FormControlStateId = "default"): {
+export function getCompositeValueUiStyle(
+  state: FormControlStateId = "default",
+  options?: RootsFormStyleOptions,
+): {
   backgroundColor: string
   opacity?: number
 } {
-  const shell = getCompositeShellUiSurface(state)
+  const tone = options?.tone ?? "light"
+  const shell = getCompositeShellUiSurface(state, options)
 
   if (state === "readonly") {
     return {
-      backgroundColor: elevationHex("elevation.surface.sunken"),
+      backgroundColor:
+        tone === "dark"
+          ? LAYOUTS_OPERAR_FORM_DARK.surfaceSunken
+          : elevationHex("elevation.surface.sunken"),
       opacity: shell.opacity,
     }
   }
@@ -266,8 +349,11 @@ export function getCompositeValueUiStyle(state: FormControlStateId = "default"):
 export function getDateControlUiSurface(
   state: FormControlStateId = "default",
   withLeading = false,
+  options?: RootsFormStyleOptions,
 ): FormControlUiSurface {
-  return withLeading ? getCompositeShellUiSurface(state) : getFormControlUiSurface(state)
+  return withLeading
+    ? getCompositeShellUiSurface(state, options)
+    : getFormControlUiSurface(state, options)
 }
 
 export type ImageUploadUiSurface = Omit<FormControlUiSurface, "border"> & {
@@ -610,14 +696,18 @@ export function getFormUiToolbarContextCellStyle(isLast = false) {
   }
 }
 
-export function getFormUiInlineIconShellStyle(state: FormControlStateId = "default") {
+export function getFormUiInlineIconShellStyle(
+  state: FormControlStateId = "default",
+  options?: RootsFormStyleOptions,
+) {
+  const tone = options?.tone ?? "light"
   const spec = getFormControlSpec("text")
-  const shell = getFormControlUiSurface(state)
+  const shell = getFormControlUiSurface(state, options)
 
   return {
     spec,
     shell,
-    iconColor: hx("bruma", "500"),
+    iconColor: tone === "dark" ? LAYOUTS_OPERAR_FORM_DARK.icon : hx("bruma", "500"),
     gapPx: rootsySpacePx("100"),
     paddingXPx: spec.paddingXPx,
     typography: FORM_UI_CONTROL_TYPOGRAPHY,

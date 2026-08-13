@@ -149,6 +149,57 @@ export const layoutsOperarCatalogToolbarScanInputClass = cn(
   "placeholder:text-[color-mix(in_srgb,var(--rootsy-sombra-300)_55%,transparent)]",
 )
 
+/** Placeholder e ícono — form controls dark operar (paridad toolbar). */
+export const layoutsOperarFormDarkPlaceholderClass =
+  "placeholder:text-[color-mix(in_srgb,var(--rootsy-sombra-300)_55%,transparent)]"
+
+export const layoutsOperarFormDarkIconClass =
+  "text-[color-mix(in_srgb,var(--rootsy-sombra-300)_70%,transparent)]"
+
+export const layoutsOperarFormDarkMutedTextClass =
+  "text-[color-mix(in_srgb,var(--rootsy-sombra-300)_55%,transparent)]"
+
+export const layoutsOperarFormDarkSurfaceClass =
+  "bg-[color-mix(in_srgb,var(--rootsy-sombra-950)_55%,transparent)]"
+
+export const layoutsOperarFormDarkBorderClass =
+  "border-[color-mix(in_srgb,var(--rootsy-sombra-border)_45%,transparent)]"
+
+/** Botón secundario sobre canvas/form dark operar — paridad controls toolbar. */
+export const layoutsOperarFormDarkSecondaryButtonClass = cn(
+  "inline-flex h-9 shrink-0 items-center justify-center gap-1.5 rounded-[10px] border px-3",
+  "font-canopy text-sm font-semibold leading-none whitespace-nowrap",
+  "transition-[color,background-color,border-color,box-shadow,transform,opacity] duration-150",
+  layoutsOperarFormDarkBorderClass,
+  layoutsOperarFormDarkSurfaceClass,
+  "text-[#f4f8f6]",
+  "hover:border-[color-mix(in_srgb,var(--rootsy-sombra-border)_65%,transparent)]",
+  "hover:bg-[color-mix(in_srgb,var(--rootsy-sombra-950)_72%,transparent)]",
+  "active:scale-[0.995]",
+  "focus-visible:outline-none focus-visible:border-[color-mix(in_srgb,var(--rootsy-savia-400)_45%,transparent)]",
+  "focus-visible:ring-2 focus-visible:ring-[color-mix(in_srgb,var(--rootsy-savia-400)_22%,transparent)]",
+  "disabled:pointer-events-none disabled:opacity-45",
+)
+
+/** Banner de error — formularios dark operar (pie de paso wizard). */
+export const layoutsOperarFormDarkErrorBannerClass = cn(
+  "flex min-h-12 items-center justify-start gap-3 rounded-lg border px-4 py-3 text-left text-base font-medium leading-normal",
+  "border-[color-mix(in_srgb,#f87171_48%,transparent)]",
+  "bg-[color-mix(in_srgb,#f87171_16%,var(--rootsy-sombra-900))]",
+  "text-[#fecaca]",
+)
+
+/** Dropdown / panel flotante — entrada suave desde arriba. */
+export const layoutsOperarDropdownRevealClass = cn(
+  "animate-in fade-in-0 slide-in-from-top-1 duration-150 motion-reduce:animate-none",
+)
+
+/** Contenido de paso wizard — entrada suave al cambiar de paso. */
+export const layoutsOperarStepEnterClass = cn(
+  "animate-in fade-in-0 duration-200 motion-reduce:animate-none",
+  "bg-[var(--rootsy-sombra-800)]",
+)
+
 export const layoutsOperarCatalogToolbarQtyShellClass = cn(
   layoutsOperarCatalogToolbarControlShellClass,
   "flex items-center gap-0.5 px-1",
@@ -188,6 +239,17 @@ export const layoutsOperarCatalogCanvasScrollClass = cn(
   layoutsOperarScrollMinimalClass,
   "min-h-0 flex-1 overflow-y-auto p-3",
 )
+
+/** Canvas formularios operar (pasos wizard) — scroll horizontal + top; el aire final va en el wrapper interno. */
+export const layoutsOperarFormCanvasScrollClass = cn(
+  layoutsOperarScrollMinimalClass,
+  "min-h-0 flex-1 overflow-y-auto",
+  "px-4 pt-4 sm:px-5 sm:pt-5 lg:px-6 lg:pt-6",
+)
+
+/** Aire al final del contenido scrolleable del wizard (dentro del flujo, no solo padding del contenedor). */
+export const layoutsOperarFormCanvasScrollEndClass =
+  "pb-10 sm:pb-12 lg:pb-14"
 
 /** Grilla demo — sale usa grid-cols-3 en desktop. */
 export const layoutsOperarCatalogGridClass = "grid grid-cols-2 gap-3 xl:grid-cols-3"
@@ -300,6 +362,70 @@ export const layoutsOperarProductCardAddClass = cn(
   "translate-y-1 scale-95 group-hover:translate-y-0 group-hover:scale-100 group-hover:opacity-100",
 )
 
+/** Tarjeta catálogo seleccionada — paridad CheckoutOptionCard dark + hover savia de product card. */
+export const layoutsOperarProductCardSelectedClass = cn(
+  "border-[color-mix(in_srgb,var(--rootsy-savia-400)_45%,transparent)]",
+  "bg-[color-mix(in_srgb,var(--rootsy-savia-400)_10%,var(--rootsy-sombra-600))]",
+  "ring-2 ring-[color-mix(in_srgb,var(--rootsy-savia-400)_28%,transparent)] ring-offset-2 ring-offset-[var(--rootsy-sombra-800)]",
+  "shadow-[inset_0_1px_0_color-mix(in_srgb,var(--rootsy-savia-300)_14%,transparent),0_0_0_1px_color-mix(in_srgb,var(--rootsy-savia-400)_24%,transparent),0_8px_22px_color-mix(in_srgb,var(--rootsy-sombra-950)_36%,transparent)]",
+)
+
+export const layoutsOperarProductCardSelectedAddClass = cn(
+  "pointer-events-none absolute right-2 bottom-2 z-10 flex size-8 items-center justify-center rounded-full",
+  "border border-[color-mix(in_srgb,var(--rootsy-savia-200)_55%,transparent)]",
+  "bg-[var(--rootsy-savia-500)] text-[var(--rootsy-savia-950)]",
+  "opacity-100 translate-y-0 scale-100",
+  "shadow-[0_2px_8px_color-mix(in_srgb,var(--rootsy-savia-600)_35%,transparent)]",
+)
+
+/** Barra de contexto del paso activo — título + resumen en una línea. */
+export const layoutsOperarStepContextBarClass = cn(
+  "relative flex shrink-0 items-center gap-3 overflow-hidden",
+  "border-b border-[var(--layouts-operar-border-dark-hairline)]",
+  "bg-[var(--rootsy-sombra-950)] px-4 sm:px-5",
+  "[height:var(--layouts-operar-catalog-toolbar-h)]",
+  "shadow-[inset_0_1px_0_rgba(255,255,255,0.05)]",
+)
+
+/** Ícono del paso — acento savia sobre dosel sombra. */
+export const layoutsOperarStepContextIconWrapClass = cn(
+  "flex size-10 shrink-0 items-center justify-center rounded-xl",
+  "border border-[color-mix(in_srgb,var(--rootsy-savia-400)_28%,transparent)]",
+  "bg-[color-mix(in_srgb,var(--rootsy-savia-700)_22%,var(--rootsy-sombra-950))]",
+  "text-[color-mix(in_srgb,var(--rootsy-savia-300)_88%,white)]",
+  "shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]",
+)
+
+export const layoutsOperarStepContextLabelClass =
+  "shrink-0 font-canopy text-base font-semibold leading-none tracking-tight text-[#f4f8f6]"
+
+export const layoutsOperarStepContextSummaryClass = cn(
+  "min-w-0 truncate font-canopy text-sm font-normal leading-snug",
+  layoutsOperarFormDarkMutedTextClass,
+)
+
+export const layoutsOperarStepContextSeparatorClass =
+  "shrink-0 text-base leading-none text-[color-mix(in_srgb,var(--rootsy-sombra-300)_40%,transparent)]"
+
+/** Botón navegación — barra de contexto wizard operar (atrás / siguiente). */
+export const layoutsOperarStepContextNavButtonClass = cn(
+  "inline-flex size-10 shrink-0 items-center justify-center rounded-xl",
+  layoutsOperarFormDarkBorderClass,
+  layoutsOperarFormDarkSurfaceClass,
+  layoutsOperarFormDarkMutedTextClass,
+  "transition-[color,background-color,border-color,transform,opacity] duration-150",
+  "hover:border-[color-mix(in_srgb,var(--rootsy-sombra-border)_65%,transparent)]",
+  "hover:bg-[color-mix(in_srgb,var(--rootsy-sombra-950)_72%,transparent)]",
+  "hover:text-[#f4f8f6] active:scale-[0.98]",
+  "focus-visible:outline-none focus-visible:border-[color-mix(in_srgb,var(--rootsy-savia-400)_45%,transparent)]",
+  "focus-visible:ring-2 focus-visible:ring-[color-mix(in_srgb,var(--rootsy-savia-400)_22%,transparent)]",
+  "disabled:pointer-events-none disabled:opacity-30",
+)
+
+/** @deprecated Usar layoutsOperarStepContextNavButtonClass */
+export const layoutsOperarStepContextBackButtonClass =
+  layoutsOperarStepContextNavButtonClass
+
 /** Toolbox — fila 1.1.2 dentro de la columna operación. */
 export const layoutsOperarToolboxRowClass = "row-start-2 min-h-0 shrink-0"
 
@@ -312,6 +438,12 @@ export const layoutsOperarToolboxBandClass = cn(
 /** Grid interno toolbox — superficie en banda padre (zone style o bar surface). */
 export const layoutsOperarToolboxBarGridClass = cn(
   "box-border grid h-full min-h-0 grid-cols-2 gap-2 lg:grid-cols-4",
+  "p-[var(--layouts-operar-toolbox-band-py)] sm:gap-2.5 sm:p-[var(--layouts-operar-toolbox-band-py-sm)]",
+)
+
+/** Grid toolbox wizard de 3 pasos (servicio · configuración · pago). */
+export const layoutsOperarToolboxBarGrid3Class = cn(
+  "box-border grid h-full min-h-0 grid-cols-3 gap-2",
   "p-[var(--layouts-operar-toolbox-band-py)] sm:gap-2.5 sm:p-[var(--layouts-operar-toolbox-band-py-sm)]",
 )
 
@@ -328,11 +460,24 @@ export const layoutsOperarToolboxBarClass = cn(
   "bg-[var(--rootsy-sombra-950)]",
 )
 
-export function layoutsOperarToolboxSlotClass(configured: boolean) {
+/** Barra toolbox wizard de 3 pasos. */
+export const layoutsOperarToolboxBar3Class = cn(
+  layoutsOperarToolboxBarGrid3Class,
+  "border-t border-[var(--layouts-operar-border-dark-default)]",
+  "bg-[var(--rootsy-sombra-950)]",
+)
+
+/** Anillo savia — focus teclado y paso activo en toolbox wizard. */
+export const layoutsOperarToolboxSlotFocusRingClass =
+  "ring-2 ring-[color-mix(in_srgb,var(--rootsy-savia-400)_45%,transparent)] ring-offset-2 ring-offset-[var(--rootsy-sombra-950)]"
+
+export function layoutsOperarToolboxSlotClass(configured: boolean, active = false) {
   return cn(
     "group flex h-full min-h-[var(--layouts-operar-toolbox-slot-min-h)] w-full items-center gap-2.5 rounded-xl border-0 px-2.5 py-2 text-left transition-[background-color,box-shadow] duration-150 sm:min-h-[var(--layouts-operar-toolbox-slot-min-h-sm)] sm:gap-3 sm:px-3",
-    "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--rootsy-savia-400)]/45",
-    "focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--rootsy-sombra-950)]",
+    "focus-visible:outline-none",
+    active
+      ? layoutsOperarToolboxSlotFocusRingClass
+      : "focus-visible:ring-2 focus-visible:ring-[var(--rootsy-savia-400)]/45 focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--rootsy-sombra-950)]",
     configured
       ? "bg-[var(--layouts-operar-footer-slot-configured)] shadow-[inset_0_1px_0_var(--layouts-operar-footer-slot-highlight)] hover:bg-[color-mix(in_srgb,var(--rootsy-savia-600)_18%,var(--rootsy-sombra-950))]"
       : "bg-white/[0.02] hover:bg-[var(--layouts-operar-footer-slot-hover)]",
@@ -374,6 +519,12 @@ export const layoutsOperarSummaryPanelClass = cn(
   "col-start-2 row-start-1 min-h-0",
   "border-l border-[var(--layouts-operar-border-split)]",
   "w-[var(--layouts-operar-ticket-w)] max-w-[var(--layouts-operar-ticket-w)]",
+)
+
+/** Panel ticket Cobrar servicio — snapshot directo sin fila de totales. */
+export const serviceOperateSnapshotPanelClass = cn(
+  layoutsOperarSummaryPanelClass,
+  "service-operate-snapshot-panel",
 )
 
 /** Panel ticket aislado — sección 4 · demo sin grid padre. */
@@ -419,6 +570,12 @@ export const layoutsOperarSummaryTotalRowClass = cn(
   "layouts-operar-summary-totals flex items-center justify-between px-4 py-3",
   "border-t border-[var(--layouts-operar-border-totals)]",
   "min-h-[var(--layouts-operar-toolbox-min-h)] sm:min-h-[var(--layouts-operar-toolbox-min-h-sm)]",
+)
+
+/** Fondo y texto del total — tokens globales savia (no dependen del scope operar). */
+export const layoutsOperarSummaryTotalsSurfaceClass = cn(
+  "[background:linear-gradient(165deg,var(--rootsy-savia-975)_0%,var(--rootsy-savia-960)_48%,var(--rootsy-savia-990)_100%)]",
+  "text-[var(--rootsy-savia-50)]",
 )
 
 /** Celdas ticket — placement explícito en grid 1.2.x. */
@@ -480,11 +637,20 @@ export const layoutsOperarSummaryTotalsAmountClass =
 /** Nav rail catálogo — categorías. */
 export const layoutsOperarCatalogRailNavClass = cn(
   layoutsOperarCatalogRailScrollClass,
-  "flex h-full min-h-0 w-full flex-col gap-6 overflow-y-auto py-4",
+  "flex h-full min-h-0 w-full flex-col gap-0 overflow-y-auto py-4",
 )
 
-export const layoutsOperarCatalogRailSectionLabelClass =
-  "mb-2 px-4 text-[11px] font-semibold uppercase tracking-[0.13em] text-[color-mix(in_srgb,var(--rootsy-sombra-400)_88%,var(--rootsy-bruma-100))]"
+/** Bloque de un tipo de categoría (p. ej. Recetas / Productos). */
+export const layoutsOperarCatalogRailSectionGroupClass = "flex flex-col"
+
+/** Separador compacto entre tipos de categoría — solo aire, sin línea extra (evita doble borde con el ítem anterior). */
+export const layoutsOperarCatalogRailSectionGroupDividerClass = "mt-1.5 pt-1"
+
+export const layoutsOperarCatalogRailSectionLabelClass = cn(
+  "mb-0.5 px-4 py-1 text-[10px] font-semibold uppercase tracking-[0.12em]",
+  "text-[var(--layouts-operar-rail-section-label)]",
+  "bg-[color-mix(in_srgb,var(--rootsy-sombra-800)_38%,transparent)]",
+)
 
 export const layoutsOperarCatalogRailListClass = "flex w-full flex-col gap-0 p-0"
 export const layoutsOperarCatalogRailListItemClass = "w-full"

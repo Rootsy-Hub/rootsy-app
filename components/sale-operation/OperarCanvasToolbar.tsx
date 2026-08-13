@@ -5,6 +5,7 @@ import {
 } from "@/app/library/layouts/layoutsOperarStyles"
 import {
   operarCanvasToolbarColumnHeaderClass,
+  operarCanvasToolbarLabelClass,
   operarCanvasToolbarCountPillBaseClass,
   operarCanvasToolbarCountPillWideClass,
   operarCanvasToolbarCountPillOpenClass,
@@ -85,7 +86,13 @@ export function OperarCanvasToolbarColumnHeader({
         className={cn("size-3.5 shrink-0", operarCanvasToolbarColumnIconClass)}
         aria-hidden
       />
-      <span className={cn("min-w-0 flex-1 truncate", operarCanvasToolbarTabActiveClass)}>
+      <span
+        className={cn(
+          "min-w-0 flex-1 truncate",
+          operarCanvasToolbarLabelClass,
+          operarCanvasToolbarTabActiveClass,
+        )}
+      >
         {label}
       </span>
       <span className="ml-auto shrink-0">

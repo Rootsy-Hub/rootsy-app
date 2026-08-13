@@ -30,16 +30,20 @@ const operarCanvasSkeletonShapeClass = cn(
 )
 
 const MESA_TABLE_SKELETONS = [
-  { left: "8%", top: "14%", width: 68, height: 68, round: true },
-  { left: "34%", top: "10%", width: 96, height: 68, round: false },
-  { left: "62%", top: "18%", width: 84, height: 84, round: true },
-  { left: "18%", top: "46%", width: 76, height: 52, round: false },
-  { left: "48%", top: "42%", width: 68, height: 68, round: true },
-  { left: "72%", top: "50%", width: 120, height: 84, round: false },
-  { left: "12%", top: "72%", width: 52, height: 52, round: true },
-  { left: "40%", top: "68%", width: 96, height: 68, round: false },
-  { left: "66%", top: "74%", width: 68, height: 68, round: true },
+  { x: 58, y: 73, width: 68, height: 68, round: true },
+  { x: 245, y: 52, width: 96, height: 68, round: false },
+  { x: 446, y: 94, width: 84, height: 84, round: true },
+  { x: 130, y: 239, width: 76, height: 52, round: false },
+  { x: 346, y: 218, width: 68, height: 68, round: true },
+  { x: 518, y: 260, width: 120, height: 84, round: false },
+  { x: 86, y: 374, width: 52, height: 52, round: true },
+  { x: 288, y: 354, width: 96, height: 68, round: false },
+  { x: 475, y: 385, width: 68, height: 68, round: true },
 ] as const
+
+/** Mismas dimensiones que MesasFloorPlan — canvas lógico del plano. */
+const MESAS_FLOOR_PLAN_CANVAS_WIDTH = 720
+const MESAS_FLOOR_PLAN_CANVAS_HEIGHT = 520
 
 const BOARD_COLUMN_CARD_COUNTS = [2, 1, 2] as const
 
@@ -78,30 +82,56 @@ export function MesasFloorPlanSkeleton({ className }: { className?: string }) {
       role="status"
       aria-busy="true"
       aria-label="Cargando plano"
-      className={cn("relative min-h-0 flex-1 overflow-hidden", className)}
+      className={cn(
+        "relative h-full min-h-0 w-full flex-1 overflow-hidden",
+        className,
+      )}
       style={{ backgroundColor: MESAS_FLOOR_PLAN_CANVAS_BG }}
     >
       <div
-        className="pointer-events-none absolute inset-0"
+        className="pointer-events-none absolute inset-0 opacity-25"
         style={mesasFloorGridPatternStyle}
         aria-hidden
       />
-      {MESA_TABLE_SKELETONS.map((table, index) => (
-        <div
-          key={index}
-          aria-hidden
-          className={cn(
-            operarCanvasSkeletonShapeClass,
-            table.round ? "rounded-full" : "rounded-xl",
-          )}
-          style={{
-            left: table.left,
-            top: table.top,
-            width: table.width,
-            height: table.height,
-          }}
-        />
-      ))}
+
+      <div
+        className="absolute top-3 right-3 z-30 flex flex-col items-center gap-2"
+        aria-hidden
+      >
+        {Array.from({ length: 3 }, (_, index) => (
+          <div
+            key={index}
+            className={cn("size-10 rounded-full", operarCanvasSkeletonShapeClass)}
+          />
+        ))}
+      </div>
+
+      <div
+        className="absolute left-0 top-0"
+        style={{
+          width: MESAS_FLOOR_PLAN_CANVAS_WIDTH,
+          height: MESAS_FLOOR_PLAN_CANVAS_HEIGHT,
+        }}
+      >
+        {MESA_TABLE_SKELETONS.map((table, index) => (
+          <div
+            key={index}
+            aria-hidden
+            className={cn(
+              "absolute",
+              operarCanvasSkeletonShapeClass,
+              table.round ? "rounded-full" : "rounded-xl",
+            )}
+            style={{
+              left: table.x,
+              top: table.y,
+              width: table.width,
+              height: table.height,
+            }}
+          />
+        ))}
+      </div>
+
       <span className="sr-only">Cargando plano…</span>
     </div>
   )

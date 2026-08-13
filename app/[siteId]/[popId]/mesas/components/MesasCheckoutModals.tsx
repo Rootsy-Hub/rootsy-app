@@ -5,8 +5,8 @@ import { GeneralDiscountDialog } from "@/components/checkout/GeneralDiscountDial
 import { OperationPartyPickerDialog } from "@/components/checkout/OperationPartyPickerDialog"
 import { SaleComprobantePickerDialog } from "@/components/checkout/SaleComprobantePickerDialog"
 import type { SaleComprobantePreviewInput } from "@/components/checkout/SaleComprobanteTicketPreview"
+import { SaleFinalizeDialog } from "@/components/checkout/SaleFinalizeDialog"
 import { SalePaymentMethodDialog } from "@/components/sale-operation/SalePaymentMethodDialog"
-import { SaleOperationCheckoutConfirmDialog } from "@/components/sale-operation/SaleOperationCheckoutConfirmDialog"
 import {
   AlertDialog,
   AlertDialogAction,
@@ -19,7 +19,6 @@ import {
 } from "@/components/ui/alert-dialog"
 import { getSaleComprobanteDisplayLabel, hasConfiguredSaleComprobante } from "@/lib/saleComprobantePicker"
 import { saleOpAlertDialogContent } from "@/components/sale-operation/saleOperationStyles"
-import { CLIENT_ACCOUNT_PAYMENT_LABEL } from "@/lib/operationPaymentLabels"
 import { useMemo } from "react"
 
 type Props = {
@@ -46,6 +45,9 @@ export function MesasCheckoutModals({
   const confirmPaymentLabel = m.payOnClientAccount
     ? m.payOnClientAccountLabel
     : m.metodoPagoSeleccionado?.label ?? "Sin forma de pago"
+
+  const closeOnCompleteLabel =
+    contextLabel === "mesa" ? "Liberar mesa al cobrar" : "Cerrar pedido al cobrar"
 
   const comprobantePreviewInput = useMemo((): SaleComprobantePreviewInput | null => {
     if (!m.popId) return null
@@ -192,31 +194,41 @@ export function MesasCheckoutModals({
         </AlertDialogContent>
       </AlertDialog>
 
-      <SaleOperationCheckoutConfirmDialog
+      <SaleFinalizeDialog
         open={m.confirmOpen}
         onOpenChange={m.setConfirmOpen}
-        contextLabel={contextLabel}
+        title={`Confirmar cobro de ${contextLabel}`}
         confirmLabel={confirmLabel}
         submitting={checkout.submitting}
         submitError={m.submitError}
-        clientLabel={confirmClientLabel}
-        comprobanteLabel={confirmComprobanteLabel}
-        paymentLabel={confirmPaymentLabel}
-        hasComprobante={confirmHasComprobante}
-        imprimirComprobante={m.imprimirComprobante}
-        onImprimirComprobanteChange={m.setImprimirComprobante}
         total={m.total}
         subtotal={m.confirmSubtotal}
         descuentoMonto={m.confirmDescuentoMonto}
         hayDescuento={m.confirmHayDescuento}
-        partialPayment={m.partialPayment}
-        onPartialPaymentChange={m.setPartialPayment}
-        closeOnComplete={m.closeOnComplete}
-        onCloseOnCompleteChange={m.setCloseOnComplete}
-        partialUnits={m.partialPaymentUnits}
-        partialSelection={m.partialSelection}
-        onPartialSelectionChange={m.setPartialSelection}
-        onConfirm={m.confirmarMesa}
+        partyValue={confirmClientLabel}
+        comprobanteLabel={confirmComprobanteLabel}
+        paymentLabel={confirmPaymentLabel}
+        channelCheckout={{
+          closeOnCompleteLabel,
+          partialPayment: m.partialPayment,
+          onPartialPaymentChange: m.setPartialPayment,
+          closeOnComplete: m.closeOnComplete,
+          onCloseOnCompleteChange: m.setCloseOnComplete,
+          imprimirComprobante: m.imprimirComprobante,
+          onImprimirComprobanteChange: m.setImprimirComprobante,
+          hasComprobante: confirmHasComprobante,
+          partialUnits: m.partialPaymentUnits,
+          partialSelection: m.partialSelection,
+          onPartialSelectionChange: m.setPartialSelection,
+        }}
+        onConfirm={() =>
+          void m.confirmarMesa({
+            partialPayment: m.partialPayment,
+            partialSelection: m.partialSelection,
+            closeOnComplete: m.partialPayment ? false : m.closeOnComplete,
+            imprimirComprobante: confirmHasComprobante && m.imprimirComprobante,
+          })
+        }
       />
     </>
   )

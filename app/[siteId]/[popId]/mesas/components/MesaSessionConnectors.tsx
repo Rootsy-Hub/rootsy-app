@@ -78,14 +78,24 @@ function strokeForStatus(
   status: MesaTable["status"],
   highlighted: boolean,
 ): string {
+  if (status === "free") {
+    return highlighted
+      ? "color-mix(in srgb, var(--rootsy-savia-400) 95%, white)"
+      : "color-mix(in srgb, var(--rootsy-savia-400) 50%, transparent)"
+  }
+  if (status === "reserved") {
+    return highlighted
+      ? "color-mix(in srgb, #a78bfa 95%, white)"
+      : "color-mix(in srgb, #7c3aed 58%, transparent)"
+  }
   if (status === "paying") {
     return highlighted
-      ? "color-mix(in srgb, var(--rootsy-savia-teal) 95%, white)"
-      : "color-mix(in srgb, var(--rootsy-savia-teal) 55%, transparent)"
+      ? "color-mix(in srgb, #fbbf24 95%, white)"
+      : "color-mix(in srgb, #f59e0b 58%, transparent)"
   }
   return highlighted
-    ? "color-mix(in srgb, var(--rootsy-savia-400) 95%, white)"
-    : "color-mix(in srgb, var(--rootsy-savia-400) 50%, transparent)"
+    ? "color-mix(in srgb, var(--destructive) 95%, white)"
+    : "color-mix(in srgb, var(--destructive) 52%, transparent)"
 }
 
 type Props = {
