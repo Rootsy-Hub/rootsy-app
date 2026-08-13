@@ -11,3 +11,8 @@ export function parseRootsFormIsoDate(iso: string): Date | undefined {
 export function formatRootsFormDisplayDate(date: Date): string {
   return format(date, "d 'de' MMMM 'de' yyyy", { locale: esLocale })
 }
+
+/** Ej.: 11 ago 2026 — para paneles angostos. */
+export function formatRootsFormDisplayDateCompact(date: Date): string {
+  return format(date, "d MMM yyyy", { locale: esLocale })
+}

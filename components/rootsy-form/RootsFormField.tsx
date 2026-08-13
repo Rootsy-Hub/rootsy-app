@@ -9,10 +9,13 @@ import {
 import { RootsFormFieldContext } from "@/components/rootsy-form/rootsFormFieldContext"
 import {
   FORM_UI_LABEL_STYLE,
+  FORM_UI_LABEL_STYLE_DARK,
   getFormFieldStackStyle,
 } from "@/components/rootsy-form/rootsFormSpecRuntime"
+import { useAmbientRootsFormTone } from "@/components/rootsy-form/rootsFormToneContext"
 import { cn } from "@/lib/utils"
 import { useId, type CSSProperties, type ReactNode } from "react"
+import type { RootsFormTone } from "@/app/library/ui-components/formsUiHardcodedSpec"
 
 type Props = {
   label: string
@@ -20,6 +23,7 @@ type Props = {
   children: ReactNode
   className?: string
   style?: CSSProperties
+  tone?: RootsFormTone
 } & RootsFormFieldAssistProps
 
 export function RootsFormField({
@@ -34,10 +38,15 @@ export function RootsFormField({
   children,
   className,
   style,
+  tone,
 }: Props) {
   const messageId = useId()
   const message = resolveRootsFormFieldMessage({ hint, error, warning, success })
   const isInvalid = invalid ?? Boolean(error)
+  const inheritedTone = useAmbientRootsFormTone()
+  const resolvedTone = tone ?? inheritedTone
+  const labelStyle =
+    resolvedTone === "dark" ? FORM_UI_LABEL_STYLE_DARK : FORM_UI_LABEL_STYLE
 
   const labelNode = (
     <>
@@ -45,6 +54,7 @@ export function RootsFormField({
       {labelInfo ? (
         <RootsFormLabelInfo
           content={labelInfo}
+          tone={resolvedTone}
           ariaLabel={`Información sobre ${label}`}
         />
       ) : null}
@@ -56,6 +66,7 @@ export function RootsFormField({
       value={{
         describedBy: message ? messageId : undefined,
         invalid: isInvalid || undefined,
+        tone: resolvedTone,
       }}
     >
       <div className={cn(className)} style={{ ...getFormFieldStackStyle(), ...style }}>
@@ -63,14 +74,14 @@ export function RootsFormField({
           <label
             htmlFor={htmlFor}
             className="inline-flex items-center gap-1.5"
-            style={FORM_UI_LABEL_STYLE}
+            style={labelStyle}
           >
             {labelNode}
           </label>
         ) : (
           <span
             className="inline-flex items-center gap-1.5"
-            style={FORM_UI_LABEL_STYLE}
+            style={labelStyle}
           >
             {labelNode}
           </span>

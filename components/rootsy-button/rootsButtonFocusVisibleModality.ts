@@ -13,11 +13,13 @@ function attachFocusModalityListeners() {
     "keydown",
     (event) => {
       if (event.metaKey || event.altKey || event.ctrlKey) return
+      const key = event.key
+      if (!key) return
       if (
-        event.key === "Tab" ||
-        event.key.startsWith("Arrow") ||
-        event.key === "Enter" ||
-        event.key === " "
+        key === "Tab" ||
+        key.startsWith("Arrow") ||
+        key === "Enter" ||
+        key === " "
       ) {
         keyboardFocusModality = true
       }

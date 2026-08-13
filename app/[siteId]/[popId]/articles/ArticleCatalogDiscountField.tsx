@@ -5,7 +5,11 @@ import {
   RootsFormDiscountField,
   type RootsFormDiscountMode,
 } from "@/components/rootsy-form"
-import { parseMoneyInput } from "@/lib/moneyInput"
+import { parseNonNegativeIntegerInput } from "@/lib/integerInput"
+import {
+  formatMoneyInputForField,
+  parseMoneyInput,
+} from "@/lib/moneyInput"
 
 type Props = {
   idPrefix: string
@@ -19,6 +23,27 @@ type Props = {
   disabled?: boolean
 }
 
+function normalizePercentDiscountValue(raw: string): string {
+  const whole = raw.includes(",")
+    ? (raw.split(",")[0] ?? "")
+    : raw.includes(".")
+      ? (raw.split(".")[0] ?? "")
+      : raw
+  const sanitized = whole.replace(/\D/g, "").slice(0, 3)
+  if (!sanitized) return ""
+  const parsed = parseNonNegativeIntegerInput(sanitized, Number.NaN)
+  if (!Number.isFinite(parsed)) return ""
+  return String(Math.min(100, parsed))
+}
+
+function normalizeFixedDiscountValue(raw: string): string {
+  const trimmed = raw.trim()
+  if (!trimmed) return ""
+  const parsed = parseMoneyInput(trimmed, Number.NaN)
+  if (!Number.isFinite(parsed) || parsed < 0) return trimmed
+  return formatMoneyInputForField(parsed)
+}
+
 export function ArticleCatalogDiscountField({
   idPrefix,
   discountMode,
@@ -30,14 +55,28 @@ export function ArticleCatalogDiscountField({
   const uiMode: RootsFormDiscountMode =
     discountMode === "fijo" ? "fijo" : "porcentaje"
   const fixedAmountDisabled = disabled || salePrice <= 0
+  const displayValue =
+    uiMode === "porcentaje"
+      ? normalizePercentDiscountValue(discountValue)
+      : discountValue
 
   const handleModeChange = (mode: RootsFormDiscountMode) => {
-    onChange({ discountMode: mode })
+    const nextValue =
+      mode === "porcentaje"
+        ? normalizePercentDiscountValue(discountValue)
+        : normalizeFixedDiscountValue(discountValue)
+    onChange({ discountMode: mode, discountValue: nextValue })
   }
 
   const handleValueChange = (raw: string) => {
-    if (uiMode === "fijo" && salePrice > 0) {
-      const parsed = parseMoneyInput(raw, Number.NaN)
+    const nextMode = discountMode || uiMode
+    const nextValue =
+      nextMode === "porcentaje"
+        ? normalizePercentDiscountValue(raw)
+        : raw
+
+    if (nextMode === "fijo" && salePrice > 0) {
+      const parsed = parseMoneyInput(nextValue, Number.NaN)
       if (Number.isFinite(parsed) && parsed > salePrice) {
         onChange({ discountMode: "porcentaje", discountValue: "100" })
         return
@@ -45,8 +84,8 @@ export function ArticleCatalogDiscountField({
     }
 
     onChange({
-      discountMode: discountMode || uiMode,
-      discountValue: raw,
+      discountMode: nextMode,
+      discountValue: nextValue,
     })
   }
 
@@ -60,7 +99,7 @@ export function ArticleCatalogDiscountField({
       id={`${idPrefix}-discount`}
       mode={uiMode}
       onModeChange={handleModeChange}
-      value={discountValue}
+      value={displayValue}
       onChange={handleValueChange}
       onClear={handleClear}
       disabled={disabled}

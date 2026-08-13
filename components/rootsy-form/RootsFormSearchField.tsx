@@ -5,11 +5,14 @@ import {
   getFormInlineIconSearchInputStyle,
   getFormInlineIconSearchShellStyle,
 } from "@/components/rootsy-form/rootsFormSpecRuntime"
+import { getFormUiInlineIconShellStyle } from "@/app/library/ui-components/formsUiHardcodedSpec"
+import { useRootsFormControlTone } from "@/components/rootsy-form/rootsFormFieldContext"
 import {
-  rootsFormAffixClearButtonClass,
+  rootsFormAffixClearButtonClassForTone,
   rootsFormControlSelectionClass,
   rootsFormInlineIconPrefixClass,
 } from "@/components/rootsy-form/rootsFormStyles"
+import { layoutsOperarFormDarkPlaceholderClass } from "@/app/library/layouts/layoutsOperarStyles"
 import { useRootsFormControlInteraction } from "@/components/rootsy-form/useRootsFormControlInteraction"
 import { cn } from "@/lib/utils"
 import { Search, X } from "lucide-react"
@@ -56,8 +59,11 @@ export function RootsFormSearchField({
   const { state, interactionHandlers } = useRootsFormControlInteraction({
     disabled,
   })
-  const searchShellStyle = getFormInlineIconSearchShellStyle(state)
-  const searchInputStyle = getFormInlineIconSearchInputStyle(state)
+  const tone = useRootsFormControlTone()
+  const styleOptions = { tone }
+  const searchShellStyle = getFormInlineIconSearchShellStyle(state, styleOptions)
+  const searchInputStyle = getFormInlineIconSearchInputStyle(state, styleOptions)
+  const { iconColor } = getFormUiInlineIconShellStyle(state, styleOptions)
 
   return (
     <RootsFormField
@@ -76,7 +82,11 @@ export function RootsFormSearchField({
           onMouseEnter={interactionHandlers.onMouseEnter}
           onMouseLeave={interactionHandlers.onMouseLeave}
         >
-          <span className={rootsFormInlineIconPrefixClass} aria-hidden>
+          <span
+            className={rootsFormInlineIconPrefixClass}
+            style={{ color: iconColor }}
+            aria-hidden
+          >
             <Search className="size-4" />
           </span>
           <input
@@ -93,7 +103,10 @@ export function RootsFormSearchField({
             spellCheck={false}
             aria-label={hideLabel ? label : undefined}
             className={cn(
-              "min-w-0 flex-1 bg-transparent font-canopy placeholder:text-[var(--rootsy-bruma-500)] outline-none",
+              "min-w-0 flex-1 bg-transparent font-canopy outline-none",
+              tone === "dark"
+                ? layoutsOperarFormDarkPlaceholderClass
+                : "placeholder:text-[var(--rootsy-bruma-500)]",
               rootsFormControlSelectionClass,
               searchInputWithoutNativeClearClass,
               hasValue && onClear && "pr-8",
@@ -109,7 +122,7 @@ export function RootsFormSearchField({
             type="button"
             aria-label="Limpiar búsqueda"
             className={cn(
-              rootsFormAffixClearButtonClass,
+              rootsFormAffixClearButtonClassForTone(tone),
               "absolute right-1 top-1/2 -translate-y-1/2",
             )}
             onClick={onClear}

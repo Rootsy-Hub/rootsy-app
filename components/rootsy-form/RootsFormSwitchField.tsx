@@ -11,12 +11,14 @@ import {
   rootsFormUiChoiceRowClass,
   rootsFormUiChoiceTextWrapClass,
 } from "@/components/rootsy-form/rootsFormUiStyles"
+import { RootsFormLabelInfo } from "@/components/rootsy-form/RootsFormLabelInfo"
 import { cn } from "@/lib/utils"
-import { useId, useRef } from "react"
+import { useId, useRef, type ReactNode } from "react"
 
 type Props = {
   label: string
   description?: string
+  labelInfo?: ReactNode
   id?: string
   checked: boolean
   onCheckedChange: (checked: boolean) => void
@@ -28,6 +30,7 @@ type Props = {
 export function RootsFormSwitchField({
   label,
   description,
+  labelInfo,
   id,
   checked,
   onCheckedChange,
@@ -70,8 +73,14 @@ export function RootsFormSwitchField({
           description && "flex-col items-start",
         )}
       >
-        <span className={rootsFormUiChoiceLabelClass} style={labelStyle}>
+        <span className={cn(rootsFormUiChoiceLabelClass, "inline-flex items-center gap-1.5")} style={labelStyle}>
           {label}
+          {labelInfo ? (
+            <RootsFormLabelInfo
+              content={labelInfo}
+              ariaLabel={`Información sobre ${label}`}
+            />
+          ) : null}
         </span>
         {description ? (
           <span className={rootsFormUiChoiceDescriptionClass} style={descriptionStyle}>

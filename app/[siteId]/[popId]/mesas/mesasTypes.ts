@@ -1,4 +1,5 @@
 import type { TableSessionCheckoutSnapshot } from "@/app/[siteId]/[popId]/mesas/mesasCheckoutState"
+import type { MesaSessionFloorStatus } from "@/app/[siteId]/[popId]/mesas/mesasCheckoutState"
 
 export type MesaTableStatus = "free" | "open" | "paying" | "reserved"
 
@@ -29,6 +30,38 @@ export type MesaTable = {
   seats: number
   status: MesaTableStatus
   sessionId: string | null
+  reservationId: string | null
+}
+
+export type MesaReservationStatus =
+  | "pending"
+  | "confirmed"
+  | "seated"
+  | "completed"
+  | "no_show"
+  | "cancelled"
+
+export type MesaReservation = {
+  id: string
+  tableId: string | null
+  clientId: string | null
+  clientName: string
+  guestCount: number | null
+  arrivalAt: string
+  status: MesaReservationStatus
+  note: string
+  updatedAt: string
+}
+
+export type MesaReservationInput = {
+  tableId: string | null
+  clientId: string | null
+  clientName: string
+  guestCount?: number | null
+  arrivalAt: string
+  status?: MesaReservationStatus
+  note?: string
+  reservationId?: string
 }
 
 export type MesaWaiter = {
@@ -46,6 +79,7 @@ export type MesaSession = {
   openedAt: string
   updatedAt: string
   checkout: TableSessionCheckoutSnapshot | null
+  floorStatus: MesaSessionFloorStatus
 }
 
 export type MesaOpenSessionInput = {
@@ -56,7 +90,7 @@ export type MesaOpenSessionInput = {
 }
 
 export type MesasLeftPanelView = "floor" | "catalog"
-export type MesasRightPanelView = "session" | "cart"
+export type MesasRightPanelView = "session" | "cart" | "agenda"
 
 /** Elementos fijos del plano (no mesas): paredes, plantas, barra, etc. */
 export type MesaFloorDecorKind =

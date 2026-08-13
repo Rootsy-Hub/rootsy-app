@@ -1,8 +1,10 @@
 import type { LucideIcon } from "lucide-react"
 import {
   Activity,
+  Banknote,
   BarChart3,
   Bell,
+  Briefcase,
   BookOpen,
   Calculator,
   ClipboardList,
@@ -54,6 +56,9 @@ const ROOTS_MODULE_ICON_MAP: Record<string, LucideIcon> = {
   mesas: UtensilsCrossed,
   mostrador: Monitor,
   recipes: BookOpen,
+  services: Briefcase,
+  active_services: Activity,
+  cobrar_servicios: Banknote,
   manufacturing: Factory,
   invoices: FileBarChart,
   printers: Printer,

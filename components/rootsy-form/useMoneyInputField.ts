@@ -23,6 +23,8 @@ type Options = {
   onChange: (value: string) => void
   formatOnBlur?: boolean
   formatValue?: (amount: number) => string
+  /** Desactiva autoformato (p. ej. descuento % que comparte el hook en modo inactivo). */
+  enabled?: boolean
 }
 
 export function useMoneyInputField({
@@ -30,22 +32,25 @@ export function useMoneyInputField({
   onChange,
   formatOnBlur = true,
   formatValue = formatMoneyInputForField,
+  enabled = true,
 }: Options) {
   const inputRef = useRef<HTMLInputElement>(null)
   const pendingSelection = useRef<{ start: number; end: number } | null>(null)
   const isFocusedRef = useRef(false)
   const repositionClickRef = useRef(false)
   const [isFocused, setIsFocused] = useState(false)
+  const onChangeRef = useRef(onChange)
+  onChangeRef.current = onChange
 
   const inputValue = useMemo(() => {
-    if (!value.trim()) return ""
+    if (!enabled || !value.trim()) return value
     if (!formatOnBlur) return value
     const parsed = parseMoneyInput(value, Number.NaN)
     const formatted = Number.isFinite(parsed) ? formatValue(parsed) : null
     if (!isFocused) return formatted ?? value
     if (formatted && formatted !== value) return formatted
     return value
-  }, [formatOnBlur, formatValue, isFocused, value])
+  }, [enabled, formatOnBlur, formatValue, isFocused, value])
 
   useLayoutEffect(() => {
     const input = inputRef.current
@@ -56,12 +61,12 @@ export function useMoneyInputField({
   }, [value])
 
   useLayoutEffect(() => {
-    if (isFocused || !formatOnBlur || !value.trim()) return
+    if (!enabled || isFocused || !formatOnBlur || !value.trim()) return
     const parsed = parseMoneyInput(value, Number.NaN)
     if (!Number.isFinite(parsed)) return
     const formatted = formatValue(parsed)
-    if (formatted !== value) onChange(formatted)
-  }, [formatOnBlur, formatValue, isFocused, onChange, value])
+    if (formatted !== value) onChangeRef.current(formatted)
+  }, [enabled, formatOnBlur, formatValue, isFocused, value])
 
   const applyEdit = (result: {
     value: string

@@ -16,6 +16,8 @@ type Props = {
   toolbox: ReactNode
   /** 1.2 — panel ticket (4 filas) */
   ticket: ReactNode
+  /** Ubicación de la banda toolbox dentro de la columna operación. */
+  toolboxPosition?: "top" | "bottom"
   className?: string
 }
 
@@ -25,14 +27,36 @@ type Props = {
  * 1.1 col izquierda: catálogo + toolbox
  * 1.2 col derecha: ticket
  */
-export function LayoutsOperarMainGrid({ catalog, toolbox, ticket, className }: Props) {
+export function LayoutsOperarMainGrid({
+  catalog,
+  toolbox,
+  ticket,
+  toolboxPosition = "bottom",
+  className,
+}: Props) {
+  const toolboxOnTop = toolboxPosition === "top"
+
   return (
     <main
       className={cn("relative z-10 min-h-0 flex-1", layoutsOperarBodyMainGridClass, className)}
     >
-      <div className={layoutsOperarOperationColumnClass}>
-        <div className={layoutsOperarCatalogRowClass}>{catalog}</div>
-        <div className={layoutsOperarToolboxRowClass}>{toolbox}</div>
+      <div
+        className={cn(
+          layoutsOperarOperationColumnClass,
+          toolboxOnTop &&
+            "sm:[grid-template-rows:minmax(var(--layouts-operar-toolbox-min-h-sm),auto)_minmax(0,1fr)] [grid-template-rows:minmax(var(--layouts-operar-toolbox-min-h),auto)_minmax(0,1fr)]",
+        )}
+      >
+        <div
+          className={cn(layoutsOperarCatalogRowClass, toolboxOnTop && "row-start-2")}
+        >
+          {catalog}
+        </div>
+        <div
+          className={cn(layoutsOperarToolboxRowClass, toolboxOnTop && "row-start-1")}
+        >
+          {toolbox}
+        </div>
       </div>
       {ticket}
     </main>

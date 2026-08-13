@@ -1,6 +1,8 @@
 const NAME_PATTERN =
   /^[a-zA-ZÀ-ÖØ-öø-ÿÁÉÍÓÚáéíóúÑñ]+(?:\s[a-zA-ZÀ-ÖØ-öø-ÿÁÉÍÓÚáéíóúÑñ]+)*$/
 
+const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+
 export function validateNameField(label: string, value: string): string {
   const v = value.trim()
   if (!v) return `${label} es requerido`
@@ -13,8 +15,18 @@ export function validateNameField(label: string, value: string): string {
 export function validateEmailField(value: string): string {
   const v = value.trim()
   if (!v) return "El correo electrónico es requerido"
-  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v)) {
+  if (!EMAIL_PATTERN.test(v)) {
     return "Por favor ingresa un correo electrónico válido"
+  }
+  return ""
+}
+
+/** Email opcional — vacío es válido; con texto exige formato de correo. */
+export function validateOptionalEmailField(value: string): string {
+  const v = value.trim()
+  if (!v) return ""
+  if (!EMAIL_PATTERN.test(v)) {
+    return "Ingresá un correo electrónico válido"
   }
   return ""
 }

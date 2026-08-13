@@ -170,6 +170,24 @@ export function promotionsSkeletonColumns(options?: {
   return columns
 }
 
+export function servicesSkeletonColumns(options?: {
+  hasActionsColumn?: boolean
+}): WorkspaceTableSkeletonColumn[] {
+  const columns: WorkspaceTableSkeletonColumn[] = [
+    { kind: "select" },
+    { kind: "text", className: "w-56 min-w-56 max-w-64", lines: 2 },
+    { kind: "text", className: "w-40" },
+    { kind: "money", className: "w-32" },
+    { kind: "pill", className: "w-28" },
+    { kind: "text", className: "w-32 text-center" },
+    { kind: "pill", className: "w-32" },
+  ]
+  if (options?.hasActionsColumn) {
+    columns.push({ kind: "actions", className: "w-[7.25rem]", actionCount: 2 })
+  }
+  return columns
+}
+
 export function invoicesSkeletonColumns(): WorkspaceTableSkeletonColumn[] {
   return [
     { kind: "actions", className: "w-12", actionCount: 1 },

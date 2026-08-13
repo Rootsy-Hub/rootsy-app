@@ -208,8 +208,8 @@ export function PurchaseCartLineCard({
     setQuantityDraft(formatQuantityForInput(line.cantidad))
     initialUnitCostRef.current = unitCostRaw
     setUnitCostDraft(unitCostRaw)
-    initialUpdateCostRef.current = itemUpdateArticleCost[itemId] === true
-    setUpdateCostDraft(itemUpdateArticleCost[itemId] === true)
+    initialUpdateCostRef.current = itemUpdateArticleCost[itemId] !== false
+    setUpdateCostDraft(itemUpdateArticleCost[itemId] !== false)
     initialCommentRef.current = comentario
     setCommentDraft(comentario)
     const mode = itemDescuentoModo[itemId] ?? "porcentaje"
@@ -451,8 +451,8 @@ export function PurchaseCartLineCard({
 
               {canUpdateArticles ? (
                 <CheckoutToggleCard
-                  title="Actualizar precio del costo"
-                  subtitle="Guarda este precio en el catálogo de costos del artículo."
+                  title="Actualizar referencia en Stock"
+                  subtitle="Guarda el precio que pagaste en la forma de compra usada."
                   selected={updateCostDraft}
                   onClick={() => setUpdateCostDraft((prev) => !prev)}
                   icon={RefreshCw}

@@ -16,7 +16,6 @@ import { PurchasePaymentMethodDialog } from "@/components/purchase-operation/Pur
 import { SimpleOperationCheckoutConfirmDialog } from "@/components/checkout/SimpleOperationCheckoutConfirmDialog"
 import { PurchaseOperationTicketOrderPanel } from "@/components/purchase-operation/PurchaseOperationTicketOrderPanel"
 import type { PurchaseCatalogProduct } from "@/components/purchase-operation/purchaseCatalogTypes"
-import { PURCHASE_CATEGORIA_TODOS } from "@/components/purchase-operation/purchaseCatalogTypes"
 import { PurchaseArticleCostPickerDialog } from "@/components/purchase-operation/PurchaseArticleCostPickerDialog"
 import type { PurchaseLineEditInput } from "@/components/purchase-operation/PurchaseCartLineCard"
 import { OperationPartyPickerDialog } from "@/components/checkout/OperationPartyPickerDialog"
@@ -175,10 +174,9 @@ function PurchasesPage() {
   const [canReadPaymentMethods, setCanReadPaymentMethods] = useState(false)
 
   const categoriasNav = useMemo(() => {
-    const names = [
+    return [
       ...new Set(catalogCategories.map((c) => c.name).filter(Boolean)),
     ]
-    return [PURCHASE_CATEGORIA_TODOS, ...names]
   }, [catalogCategories])
 
   const productosCatalogo = useMemo(
@@ -543,7 +541,7 @@ function PurchasesPage() {
             articleCostId: i.articleCostId,
             costQuantity: i.cantidad,
             unitCost: parseUnitCost(itemUnitCosts[i.lineId] ?? "", fallback),
-            updateArticleCost: itemUpdateArticleCost[i.lineId] === true,
+            updateArticleCost: itemUpdateArticleCost[i.lineId] !== false,
             itemDiscountMode: itemDescuentoModo[i.lineId] ?? "porcentaje",
             itemDiscountDraft: itemDescuentoDraft[i.lineId] ?? "",
             comment: itemComentarios[i.lineId] ?? "",
@@ -726,6 +724,10 @@ function PurchasesPage() {
             cost.unitPrice > 0 ? String(cost.unitPrice) : prev[lineId] ?? "",
         }
       })
+      setItemUpdateArticleCost((prev) => ({
+        ...prev,
+        [lineId]: prev[lineId] ?? true,
+      }))
     },
     [cartScrollHighlight],
   )
@@ -843,7 +845,7 @@ function PurchasesPage() {
     () =>
       itemsDetallados.map((item) => {
         const cost = item.cost!
-        const costLabel = cost.name.trim() || cost.costUnitLabel
+        const costLabel = cost.costUnitLabel
         return {
           lineId: item.lineId,
           productoId: item.productoId,

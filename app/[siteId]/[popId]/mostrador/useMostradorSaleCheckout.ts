@@ -81,7 +81,7 @@ import {
   isQuantityDealApplicationPaid,
   type PartialPaymentSelection,
 } from "@/lib/partialCheckoutSelection"
-import type { SaleOperationCheckoutConfirmOptions } from "@/components/sale-operation/SaleOperationCheckoutConfirmDialog"
+import type { SaleChannelCheckoutConfirmOptions } from "@/components/checkout/saleChannelCheckoutTypes"
 import { evaluateChannelCloseEligibility } from "@/lib/channelCheckoutClose"
 import { CLIENT_IVA_CONDITION_OPTIONS, type ClientIvaConditionValue } from "@/app/[siteId]/[popId]/clients/clientIvaConstants"
 import { usePadronAutofillRazonSocial } from "@/hooks/usePadronAutofillRazonSocial"
@@ -1235,7 +1235,7 @@ export function useMostradorSaleCheckout(
   ])
 
   const confirmarPedido = useCallback(
-    async (options?: SaleOperationCheckoutConfirmOptions) => {
+    async (options?: SaleChannelCheckoutConfirmOptions) => {
       if (!popId || !siteId || !pagoConfigurado || !counterOrderId) return false
       const isPartial = options?.partialPayment === true
       const selection = options?.partialSelection ?? {}

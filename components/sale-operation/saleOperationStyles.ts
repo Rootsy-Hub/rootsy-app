@@ -3,6 +3,10 @@ import {
   rootsButtonPrimaryClass,
 } from "@/components/rootsy-button/rootsButtonStyles"
 import { ROOTSY_LAYOUTS_OPERAR_ANATOMY } from "@/app/library/layouts/rootsyLayoutsOperarSystem"
+import {
+  rootsFormUiFieldHintClass,
+  rootsFormUiLabelClass,
+} from "@/components/rootsy-form/rootsFormUiStyles"
 import { cn } from "@/lib/utils"
 import { importeBaseClass } from "@/lib/typography"
 
@@ -187,17 +191,17 @@ export const saleOpChannelPanelScroll =
   "flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto p-3 sm:p-3.5"
 
 export const saleOpChannelPanelSection =
-  "rounded-xl border border-slate-200/90 bg-white p-3.5 shadow-sm"
+  "rounded-[12px] border border-[var(--rootsy-bruma-200)] bg-[var(--rootsy-white)] p-3.5 shadow-none"
 
 export const saleOpChannelPanelHeaderTitle =
-  "text-base font-semibold tracking-tight text-foreground"
+  "font-canopy text-base font-semibold tracking-tight text-[var(--rootsy-bruma-900)]"
 
-export const saleOpChannelPanelHeaderMeta = "text-xs text-muted-foreground"
+export const saleOpChannelPanelHeaderMeta = rootsFormUiFieldHintClass
 
-export const saleOpChannelDataLabel =
-  "text-[10px] font-semibold uppercase tracking-[0.12em] text-muted-foreground"
+export const saleOpChannelDataLabel = rootsFormUiLabelClass
 
-export const saleOpChannelDataValue = "text-sm text-foreground"
+export const saleOpChannelDataValue =
+  "font-canopy text-sm font-normal leading-5 text-[var(--rootsy-bruma-900)]"
 
 export const saleOpChannelStatusBadge = cn(
   "inline-flex shrink-0 items-center rounded-full px-2.5 py-1 text-xs font-semibold leading-none",

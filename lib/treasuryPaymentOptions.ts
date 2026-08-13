@@ -1,4 +1,5 @@
 import {
+  isValidOperationPaymentKind,
   operationPaymentKindLabel,
   type OperationPaymentKind,
 } from "@/lib/operationPaymentKinds"
@@ -26,6 +27,21 @@ export function treasuryPaymentOptionKey(
   o: Pick<TreasuryPaymentOption, "kind" | "treasuryAccountId">,
 ): string {
   return `${o.kind}:${o.treasuryAccountId}`
+}
+
+export function parseTreasuryPaymentOptionKey(key: string): {
+  kind: OperationPaymentKind
+  treasuryAccountId: string
+} | null {
+  const trimmed = key.trim()
+  if (!trimmed) return null
+  const idx = trimmed.indexOf(":")
+  if (idx <= 0) return null
+  const kind = trimmed.slice(0, idx)
+  if (!isValidOperationPaymentKind(kind)) return null
+  const treasuryAccountId = trimmed.slice(idx + 1).trim()
+  if (!treasuryAccountId) return null
+  return { kind, treasuryAccountId }
 }
 
 export function buildSalePaymentOptions(

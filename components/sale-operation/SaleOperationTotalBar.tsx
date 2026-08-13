@@ -185,7 +185,7 @@ export function SaleOperationTotalBar({
             ? modalSummaryGridClass
             : isOperar
               ? layoutsOperarTicketProposalTotalsGridClass(ticketProposalId)
-              : "grid grid-cols-[minmax(0,1fr)_auto] gap-x-4 gap-y-0.5",
+              : "grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-4 gap-y-0.5",
         )}
       >
         {showSubtotalBreakdown ? (
@@ -269,11 +269,11 @@ export function SaleOperationTotalBar({
             ) : null}
           </>
         ) : null}
-        <p className={cn(totalLabelClass, isModal && modalSummaryLabelClass)}>
+        <p className={cn(totalLabelClass, "m-0", isModal && modalSummaryLabelClass)}>
           {totalLabel}
         </p>
         <p
-          className={totalAmountClass}
+          className={cn(totalAmountClass, "m-0")}
           aria-live="polite"
           aria-atomic="true"
         >

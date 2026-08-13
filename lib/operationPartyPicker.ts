@@ -2,6 +2,7 @@ export type OperationPartyCatalogItem = {
   id: string
   name: string
   taxId?: string | null
+  email?: string | null
   ivaCondition?: string | null
   defaultInvoiceTypeLabel?: string | null
 }
@@ -39,7 +40,7 @@ export function partyPickerTitle(
 }
 
 export function discountDialogTitle(
-  context: "venta" | "mesa" | "pedido" | "compra",
+  context: "venta" | "mesa" | "pedido" | "compra" | "cargo",
 ): string {
   switch (context) {
     case "mesa":
@@ -48,6 +49,8 @@ export function discountDialogTitle(
       return "Descuento en el pedido"
     case "compra":
       return "Descuento en la compra"
+    case "cargo":
+      return "Descuento en el cargo"
     default:
       return "Descuento en la venta"
   }

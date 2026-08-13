@@ -1,19 +1,37 @@
 "use client"
 
 import {
+  cancelTableReservation,
   closeTableSession,
   getMesasLayout,
+  getMesasReservationSettings,
   getOpenTableSessionById,
   getOpenTableSessions,
+  getTableReservations,
   openTableSession,
   saveMesasLayoutPositions,
+  setTableSessionFloorStatus,
+  updateTableReservationStatus,
   updateTableSession,
+  updateMesasReservationSettings,
+  upsertTableReservation,
   type MesasLayoutData,
+  type MesaReservationRow,
   type MesaSessionRow,
 } from "@/app/[siteId]/[popId]/mesas/actions"
+import {
+  pickFloorReservation,
+  readMesasReservationSettings,
+  reservationsForAgendaDay,
+  upcomingReservationWarning,
+  type MesaReservationWarning,
+  type MesasReservationSettings,
+} from "@/app/[siteId]/[popId]/mesas/mesasReservationLogic"
 import type {
   MesaFloorDecor,
   MesaOpenSessionInput,
+  MesaReservation,
+  MesaReservationInput,
   MesaSalon,
   MesaSession,
   MesaTable,
@@ -28,21 +46,17 @@ import {
 import { createClient } from "@/utils/supabase/client"
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 
-function firstTableIdInSalon(
-  tables: MesaTable[],
-  salonId: string,
-): string | null {
-  return tables.find((t) => t.salonId === salonId)?.id ?? null
-}
-
 function firstActiveSalonId(salons: MesaSalon[]): string {
   const active = salons.filter((s) => s.isActive !== false)
   return active[0]?.id ?? salons[0]?.id ?? ""
 }
 
-function applySessionsToTables(
+function applyTableOccupancy(
   tables: MesaTable[],
   sessions: MesaSession[],
+  reservations: MesaReservation[],
+  settings: MesasReservationSettings,
+  now: Date,
 ): MesaTable[] {
   const sessionByTable = new Map<string, MesaSession>()
   for (const session of sessions) {
@@ -54,15 +68,37 @@ function applySessionsToTables(
   return tables.map((table) => {
     const session = sessionByTable.get(table.id)
     if (session) {
-      if (table.status === "open" && table.sessionId === session.id) {
-        return table
+      const visualStatus =
+        session.floorStatus === "paying" ? ("paying" as const) : ("open" as const)
+      return {
+        ...table,
+        status: visualStatus,
+        sessionId: session.id,
+        reservationId: null,
       }
-      return { ...table, status: "open" as const, sessionId: session.id }
     }
-    if (table.status === "free" && table.sessionId == null) {
-      return table
+
+    const reservation = pickFloorReservation(
+      table.id,
+      reservations,
+      settings,
+      now,
+    )
+    if (reservation) {
+      return {
+        ...table,
+        status: "reserved" as const,
+        sessionId: null,
+        reservationId: reservation.id,
+      }
     }
-    return { ...table, status: "free" as const, sessionId: null }
+
+    return {
+      ...table,
+      status: "free" as const,
+      sessionId: null,
+      reservationId: null,
+    }
   })
 }
 
@@ -76,6 +112,21 @@ function mapSessionRow(row: MesaSessionRow): MesaSession {
     openedAt: row.openedAt,
     updatedAt: row.updatedAt,
     checkout: row.checkout,
+    floorStatus: row.floorStatus,
+  }
+}
+
+function mapReservationRow(row: MesaReservationRow): MesaReservation {
+  return {
+    id: row.id,
+    tableId: row.tableId,
+    clientId: row.clientId,
+    clientName: row.clientName,
+    guestCount: row.guestCount,
+    arrivalAt: row.arrivalAt,
+    status: row.status,
+    note: row.note,
+    updatedAt: row.updatedAt,
   }
 }
 
@@ -106,6 +157,7 @@ function mapLayoutToState(data: MesasLayoutData): {
       seats: t.seats,
       status: "free" as const,
       sessionId: null,
+      reservationId: null,
     }))
 
   const decors: MesaFloorDecor[] = data.decors
@@ -139,6 +191,7 @@ export function useMesasState(popId: string, siteId: string) {
   const [layoutTables, setLayoutTables] = useState<MesaTable[]>([])
   const [decors, setDecors] = useState<MesaFloorDecor[]>([])
   const [sessions, setSessions] = useState<MesaSession[]>([])
+  const [reservations, setReservations] = useState<MesaReservation[]>([])
   const [activeSalonId, setActiveSalonId] = useState("")
   const [selectedTableId, setSelectedTableId] = useState<string | null>(null)
   const [layoutEditMode, setLayoutEditMode] = useState(false)
@@ -152,6 +205,16 @@ export function useMesasState(popId: string, siteId: string) {
   const [realtimeStatus, setRealtimeStatus] =
     useState<RealtimeConnectionStatus>("connecting")
   const [layoutData, setLayoutData] = useState<MesasLayoutData | null>(null)
+  const [floorNow, setFloorNow] = useState(() => new Date())
+  const [reservationSettings, setReservationSettings] =
+    useState<MesasReservationSettings>(() =>
+      readMesasReservationSettings(null),
+    )
+
+  useEffect(() => {
+    const id = window.setInterval(() => setFloorNow(new Date()), 60_000)
+    return () => window.clearInterval(id)
+  }, [])
 
   const sessionSyncDebouncerRef = useRef(createKeyedDebouncer())
   const wasDisconnectedRef = useRef(false)
@@ -162,8 +225,20 @@ export function useMesasState(popId: string, siteId: string) {
   }, [sessions])
 
   const tables = useMemo(
-    () => applySessionsToTables(layoutTables, sessions),
-    [layoutTables, sessions],
+    () =>
+      applyTableOccupancy(
+        layoutTables,
+        sessions,
+        reservations,
+        reservationSettings,
+        floorNow,
+      ),
+    [layoutTables, sessions, reservations, reservationSettings, floorNow],
+  )
+
+  const todayAgenda = useMemo(
+    () => reservationsForAgendaDay(reservations, floorNow),
+    [reservations, floorNow],
   )
 
   const removeSession = useCallback((sessionId: string) => {
@@ -227,6 +302,52 @@ export function useMesasState(popId: string, siteId: string) {
     setSessions(res.sessions.map(mapSessionRow))
   }, [popId, siteId])
 
+  const reloadReservations = useCallback(async () => {
+    if (!popId || !siteId) return
+
+    const res = await getTableReservations(popId, siteId)
+    if (!res.success) {
+      setSessionError(res.error)
+      return
+    }
+
+    setSessionError(null)
+    setReservations(res.reservations.map(mapReservationRow))
+  }, [popId, siteId])
+
+  const reloadReservationSettings = useCallback(async () => {
+    if (!popId || !siteId) return
+
+    const res = await getMesasReservationSettings(popId, siteId)
+    if (!res.success) {
+      setSessionError(res.error)
+      return
+    }
+
+    setSessionError(null)
+    setReservationSettings(res.settings)
+  }, [popId, siteId])
+
+  const saveReservationSettings = useCallback(
+    async (input: MesasReservationSettings): Promise<boolean> => {
+      if (!popId || !siteId) return false
+
+      const res = await updateMesasReservationSettings(popId, siteId, {
+        floorBufferMinutes: input.floorBufferMinutes,
+        graceMinutes: input.graceMinutes,
+      })
+      if (!res.success) {
+        setSessionError(res.error)
+        return false
+      }
+
+      setSessionError(null)
+      setReservationSettings(input)
+      return true
+    },
+    [popId, siteId],
+  )
+
   const reloadLayout = useCallback(async () => {
     if (!popId || !siteId) {
       setLayoutLoading(false)
@@ -260,7 +381,9 @@ export function useMesasState(popId: string, siteId: string) {
   useEffect(() => {
     void reloadLayout()
     void reloadSessions()
-  }, [reloadLayout, reloadSessions])
+    void reloadReservations()
+    void reloadReservationSettings()
+  }, [reloadLayout, reloadSessions, reloadReservations, reloadReservationSettings])
 
   useEffect(() => {
     if (!popId) return
@@ -273,6 +396,7 @@ export function useMesasState(popId: string, siteId: string) {
         if (wasDisconnectedRef.current) {
           wasDisconnectedRef.current = false
           void reloadSessions()
+          void reloadReservations()
         }
         setRealtimeStatus("connected")
         return
@@ -317,12 +441,23 @@ export function useMesasState(popId: string, siteId: string) {
       },
     })
 
+    const reservationChannel = subscribePostgresChanges({
+      supabase,
+      channelName: `mesas-table-reservations:${popId}`,
+      table: "table_reservations",
+      filter: `pop_id=eq.${popId}`,
+      onChange: () => {
+        void reloadReservations()
+      },
+    })
+
     return () => {
       debouncer.clear()
       void supabase.removeChannel(sessionChannel)
       void supabase.removeChannel(mergeChannel)
+      void supabase.removeChannel(reservationChannel)
     }
-  }, [popId, reloadSessions, removeSession, scheduleSessionSync])
+  }, [popId, reloadSessions, reloadReservations, removeSession, scheduleSessionSync])
 
   useEffect(() => {
     if (!activeSalonId) {
@@ -333,10 +468,7 @@ export function useMesasState(popId: string, siteId: string) {
       if (prev && tables.some((t) => t.id === prev && t.salonId === activeSalonId)) {
         return prev
       }
-      return firstTableIdInSalon(
-        tables.filter((t) => t.salonId === activeSalonId),
-        activeSalonId,
-      )
+      return null
     })
   }, [activeSalonId, tables])
 
@@ -365,6 +497,30 @@ export function useMesasState(popId: string, siteId: string) {
     return sessions.find((s) => s.id === selectedTable.sessionId) ?? null
   }, [selectedTable, sessions])
 
+  const selectedReservation = useMemo(() => {
+    if (!selectedTable?.reservationId) return null
+    return reservations.find((r) => r.id === selectedTable.reservationId) ?? null
+  }, [selectedTable, reservations])
+
+  const selectedTableReservationWarning = useMemo((): MesaReservationWarning | null => {
+    if (!selectedTableId) return null
+    if (selectedTable?.status !== "open" && selectedTable?.status !== "paying") {
+      return null
+    }
+    return upcomingReservationWarning(
+      selectedTableId,
+      reservations,
+      reservationSettings,
+      floorNow,
+    )
+  }, [
+    selectedTableId,
+    selectedTable?.status,
+    reservations,
+    reservationSettings,
+    floorNow,
+  ])
+
   const selectedTableIds = useMemo(() => {
     if (!selectedTableId) return new Set<string>()
     if (!selectedSession || selectedSession.tableIds.length <= 1) {
@@ -374,106 +530,99 @@ export function useMesasState(popId: string, siteId: string) {
   }, [selectedTableId, selectedSession])
 
   useEffect(() => {
-    if (!layoutEditMode) {
-      setLayoutSelection(null)
-    }
+    if (!layoutEditMode) setLayoutSelection(null)
   }, [layoutEditMode])
+
+  const selectLayoutItem = useCallback(
+    (kind: "table" | "decor", id: string) => {
+      if (!layoutEditMode) return
+      setLayoutSelection({ kind, id })
+    },
+    [layoutEditMode],
+  )
+
+  const moveTable = useCallback(
+    (tableId: string, dx: number, dy: number) => {
+      let result: { x: number; y: number } | null = null
+      setLayoutTables((prev) =>
+        prev.map((t) => {
+          if (t.id !== tableId) return t
+          const x = Math.max(8, t.x + dx)
+          const y = Math.max(8, t.y + dy)
+          result = { x, y }
+          return { ...t, x, y }
+        }),
+      )
+      return result
+    },
+    [],
+  )
+
+  const moveDecor = useCallback((decorId: string, dx: number, dy: number) => {
+    let result: { x: number; y: number } | null = null
+    setDecors((prev) =>
+      prev.map((d) => {
+        if (d.id !== decorId) return d
+        const x = Math.max(8, d.x + dx)
+        const y = Math.max(8, d.y + dy)
+        result = { x, y }
+        return { ...d, x, y }
+      }),
+    )
+    return result
+  }, [])
 
   const persistLayoutItem = useCallback(
     async (
       kind: "table" | "decor",
       id: string,
-      fields: { x: number; y: number; rotation: number },
+      pos: { x: number; y: number },
     ) => {
       if (!popId || !siteId) return
-      const payload =
-        kind === "table"
-          ? { tables: [{ id, ...fields }] }
-          : { decors: [{ id, ...fields }] }
-      await saveMesasLayoutPositions(popId, siteId, payload)
-    },
-    [popId, siteId],
-  )
 
-  const selectLayoutItem = useCallback(
-    (kind: "table" | "decor", id: string) => {
-      setLayoutSelection({ kind, id })
+      const res = await saveMesasLayoutPositions(
+        popId,
+        siteId,
+        kind === "table"
+          ? { tables: [{ id, x: pos.x, y: pos.y }] }
+          : { decors: [{ id, x: pos.x, y: pos.y }] },
+      )
+
+      if (!res.success) {
+        setLayoutError(res.error)
+        void reloadLayout()
+      }
     },
-    [],
+    [popId, siteId, reloadLayout],
   )
 
   const rotateLayoutItem = useCallback(() => {
-    if (!layoutSelection) return
+    if (!layoutSelection || !popId || !siteId) return
 
-    if (layoutSelection.kind === "table") {
+    const { kind, id } = layoutSelection
+    if (kind === "table") {
       setLayoutTables((prev) => {
-        const current = prev.find((t) => t.id === layoutSelection.id)
-        if (!current) return prev
-        const rotation = (current.rotation + 45) % 360
-        void persistLayoutItem("table", current.id, {
-          x: current.x,
-          y: current.y,
-          rotation,
+        const table = prev.find((t) => t.id === id)
+        if (!table) return prev
+        const rotation = (table.rotation + 45) % 360
+        void saveMesasLayoutPositions(popId, siteId, {
+          tables: [{ id, x: table.x, y: table.y, rotation }],
         })
-        return prev.map((t) =>
-          t.id === layoutSelection.id ? { ...t, rotation } : t,
-        )
+        return prev.map((t) => (t.id === id ? { ...t, rotation } : t))
       })
       return
     }
 
     setDecors((prev) => {
-      const current = prev.find((d) => d.id === layoutSelection.id)
-      if (!current) return prev
-      const rotation = (current.rotation + 45) % 360
-      void persistLayoutItem("decor", current.id, {
-        x: current.x,
-        y: current.y,
-        rotation,
+      const decor = prev.find((d) => d.id === id)
+      if (!decor) return prev
+      const rotation = (decor.rotation + 45) % 360
+      void saveMesasLayoutPositions(popId, siteId, {
+        decors: [{ id, x: decor.x, y: decor.y, rotation }],
       })
-      return prev.map((d) =>
-        d.id === layoutSelection.id ? { ...d, rotation } : d,
-      )
+      return prev.map((d) => (d.id === id ? { ...d, rotation } : d))
     })
-  }, [layoutSelection, persistLayoutItem])
-
-  const moveTable = useCallback(
-    (tableId: string, dx: number, dy: number): { x: number; y: number; rotation: number } | null => {
-      let next: { x: number; y: number; rotation: number } | null = null
-      setLayoutTables((prev) =>
-        prev.map((t) => {
-          if (t.id !== tableId) return t
-          next = {
-            x: Math.max(8, t.x + dx),
-            y: Math.max(8, t.y + dy),
-            rotation: t.rotation,
-          }
-          return { ...t, x: next.x, y: next.y }
-        }),
-      )
-      return next
-    },
-    [],
-  )
-
-  const moveDecor = useCallback(
-    (decorId: string, dx: number, dy: number): { x: number; y: number; rotation: number } | null => {
-      let next: { x: number; y: number; rotation: number } | null = null
-      setDecors((prev) =>
-        prev.map((d) => {
-          if (d.id !== decorId) return d
-          next = {
-            x: Math.max(8, d.x + dx),
-            y: Math.max(8, d.y + dy),
-            rotation: d.rotation,
-          }
-          return { ...d, x: next.x, y: next.y }
-        }),
-      )
-      return next
-    },
-    [],
-  )
+  }, [layoutSelection, popId, siteId])
 
   const openSession = useCallback(
     async (input: MesaOpenSessionInput) => {
@@ -487,6 +636,15 @@ export function useMesasState(popId: string, siteId: string) {
       }
 
       upsertSession(res.session)
+      setReservations((prev) =>
+        prev.map((r) =>
+          r.tableId != null &&
+          input.tableIds.includes(r.tableId) &&
+          (r.status === "pending" || r.status === "confirmed")
+            ? { ...r, status: "seated" as const }
+            : r,
+        ),
+      )
       setSelectedTableId(input.tableIds[0] ?? null)
       return true
     },
@@ -520,7 +678,7 @@ export function useMesasState(popId: string, siteId: string) {
       if (!popId || !siteId) return false
 
       setSessionError(null)
-      const res = await closeTableSession(popId, siteId, sessionId, "cancelled")
+      const res = await closeTableSession(popId, siteId, sessionId)
       if (!res.success) {
         setSessionError(res.error)
         return false
@@ -530,6 +688,74 @@ export function useMesasState(popId: string, siteId: string) {
       return true
     },
     [popId, siteId, removeSession],
+  )
+
+  const setSessionFloorStatus = useCallback(
+    async (sessionId: string, floorStatus: MesaSession["floorStatus"]) => {
+      if (!popId || !siteId) return false
+
+      setSessionError(null)
+      const res = await setTableSessionFloorStatus(popId, siteId, sessionId, floorStatus)
+      if (!res.success) {
+        setSessionError(res.error)
+        return false
+      }
+
+      setSessions((prev) =>
+        prev.map((session) =>
+          session.id === sessionId
+            ? { ...session, floorStatus: res.floorStatus, updatedAt: res.updatedAt }
+            : session,
+        ),
+      )
+      return true
+    },
+    [popId, siteId],
+  )
+
+  const saveReservation = useCallback(
+    async (input: MesaReservationInput) => {
+      if (!popId || !siteId) return false
+
+      setSessionError(null)
+      const res = await upsertTableReservation(popId, siteId, input)
+      if (!res.success) {
+        setSessionError(res.error)
+        return false
+      }
+
+      const mapped = mapReservationRow(res.reservation)
+      setReservations((prev) => {
+        const index = prev.findIndex((r) => r.id === mapped.id)
+        if (index < 0) return [...prev, mapped]
+        const next = [...prev]
+        next[index] = mapped
+        return next
+      })
+      return true
+    },
+    [popId, siteId],
+  )
+
+  const removeReservation = useCallback(
+    async (reservationId: string) => {
+      if (!popId || !siteId) return false
+
+      setSessionError(null)
+      const res = await cancelTableReservation(popId, siteId, reservationId)
+      if (!res.success) {
+        setSessionError(res.error)
+        return false
+      }
+
+      setReservations((prev) =>
+        prev.map((r) =>
+          r.id === reservationId ? { ...r, status: "cancelled" as const } : r,
+        ),
+      )
+      return true
+    },
+    [popId, siteId],
   )
 
   const freeTablesInSalon = useCallback(
@@ -545,10 +771,76 @@ export function useMesasState(popId: string, siteId: string) {
     [tables],
   )
 
+  const markReservationNoShow = useCallback(
+    async (reservationId: string) => {
+      if (!popId || !siteId) return false
+
+      setSessionError(null)
+      const res = await updateTableReservationStatus(
+        popId,
+        siteId,
+        reservationId,
+        "no_show",
+      )
+      if (!res.success) {
+        setSessionError(res.error)
+        return false
+      }
+
+      const mapped = mapReservationRow(res.reservation)
+      setReservations((prev) => {
+        const index = prev.findIndex((r) => r.id === mapped.id)
+        if (index < 0) return [...prev, mapped]
+        const next = [...prev]
+        next[index] = mapped
+        return next
+      })
+      return true
+    },
+    [popId, siteId],
+  )
+
+  const checkInReservation = useCallback(
+    async (
+      reservation: MesaReservation,
+      input: MesaOpenSessionInput,
+    ) => {
+      const tableIds =
+        input.tableIds.length > 0
+          ? input.tableIds
+          : reservation.tableId
+            ? [reservation.tableId]
+            : []
+      if (tableIds.length === 0) return false
+
+      if (!reservation.tableId) {
+        const assigned = await saveReservation({
+          reservationId: reservation.id,
+          tableId: tableIds[0],
+          clientId: reservation.clientId,
+          clientName: reservation.clientName,
+          guestCount: input.guestCount ?? reservation.guestCount ?? null,
+          arrivalAt: reservation.arrivalAt,
+          note: reservation.note,
+        })
+        if (!assigned) return false
+      }
+
+      const ok = await openSession({
+        ...input,
+        tableIds,
+        guestCount: input.guestCount ?? reservation.guestCount ?? null,
+      })
+      return ok
+    },
+    [openSession, saveReservation],
+  )
+
   return {
     salons,
     tables,
     sessions,
+    reservations,
     decors,
     activeSalonId,
     setActiveSalonId,
@@ -557,6 +849,12 @@ export function useMesasState(popId: string, siteId: string) {
     selectTable,
     selectedTable,
     selectedSession,
+    selectedReservation,
+    selectedTableReservationWarning,
+    reservationSettings,
+    saveReservationSettings,
+    todayAgenda,
+    floorNow,
     salonTables,
     salonDecors,
     layoutEditMode,
@@ -571,12 +869,18 @@ export function useMesasState(popId: string, siteId: string) {
     layoutData,
     reloadLayout,
     reloadSessions,
+    reloadReservations,
     moveTable,
     moveDecor,
     persistLayoutItem,
     openSession,
     updateSession,
     closeSession,
+    setSessionFloorStatus,
+    saveReservation,
+    removeReservation,
+    markReservationNoShow,
+    checkInReservation,
     freeTablesInSalon,
   }
 }

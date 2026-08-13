@@ -23,6 +23,7 @@ import {
   layoutsOperarSummaryTotalRowClass,
   layoutsOperarSummaryTotalsAmountClass,
   layoutsOperarSummaryTotalsLabelClass,
+  layoutsOperarSummaryTotalsSurfaceClass,
 } from "@/app/library/layouts/layoutsOperarStyles"
 import {
   getLayoutsOperarBorderCss,
@@ -949,6 +950,7 @@ export function layoutsOperarTicketProposalTotalsShellClass(id: LayoutsOperarTic
   if (proposal.totalsLayout === "ring") {
     return cn(
       layoutsOperarSummaryTotalRowClass,
+      layoutsOperarSummaryTotalsSurfaceClass,
       "layouts-operar-summary-totals relative box-border flex w-full shrink-0 flex-col justify-center px-4 py-3",
       "ring-1 ring-inset ring-[color-mix(in_srgb,var(--rootsy-savia-400)_38%,transparent)]",
     )
@@ -956,16 +958,13 @@ export function layoutsOperarTicketProposalTotalsShellClass(id: LayoutsOperarTic
 
   return cn(
     layoutsOperarSummaryTotalRowClass,
+    layoutsOperarSummaryTotalsSurfaceClass,
     "layouts-operar-summary-totals relative box-border flex w-full shrink-0 flex-col justify-center px-4 py-3",
   )
 }
 
 export function layoutsOperarTicketProposalTotalsGridClass(id: LayoutsOperarTicketProposalId) {
-  if (id === "bruma-savia") {
-    return "relative z-10 grid w-full grid-cols-[minmax(0,1fr)_auto] gap-x-4 gap-y-0.5"
-  }
-
-  return "relative z-10 grid w-full grid-cols-[minmax(0,1fr)_auto] gap-x-4 gap-y-0.5"
+  return "relative z-10 grid w-full grid-cols-[minmax(0,1fr)_auto] items-center gap-x-4 gap-y-0.5"
 }
 
 export function layoutsOperarTicketProposalTotalsDividerClass(id: LayoutsOperarTicketProposalId) {
@@ -999,7 +998,7 @@ export function layoutsOperarTicketProposalTotalsBreakdownAmountClass(
   kind: "normal" | "discount" = "normal",
 ) {
   if (id === "bruma-savia") {
-    const base = "min-w-[6.5rem] text-right text-xs font-medium tabular-nums"
+    const base = "m-0 min-w-[6.5rem] text-right text-xs font-medium tabular-nums"
 
     if (kind === "discount") {
       return cn(base, "text-[var(--layouts-operar-light-totals-breakdown-discount)]")
@@ -1008,7 +1007,7 @@ export function layoutsOperarTicketProposalTotalsBreakdownAmountClass(
     return cn(base, "text-[var(--layouts-operar-light-totals-breakdown-amount)]")
   }
 
-  const base = "min-w-[6.5rem] text-right text-sm font-semibold tabular-nums"
+  const base = "m-0 min-w-[6.5rem] text-right text-sm font-semibold tabular-nums"
 
   if (kind === "discount") {
     if (id === "bruma-plana") {
@@ -1029,19 +1028,18 @@ export function layoutsOperarTicketProposalTotalsMainLabelClass(id: LayoutsOpera
   if (id === "bruma-savia") {
     return cn(
       layoutsOperarSummaryTotalsLabelClass,
-      "text-[11px] font-bold tracking-[0.18em] text-[var(--rootsy-savia-100)]",
+      "m-0 self-center text-[11px] font-bold tracking-[0.18em] text-[var(--rootsy-savia-100)]",
     )
   }
 
-  return layoutsOperarSummaryTotalsLabelClass
+  return cn(layoutsOperarSummaryTotalsLabelClass, "m-0 self-center")
 }
 
 export function layoutsOperarTicketProposalTotalsMainAmountClass(id: LayoutsOperarTicketProposalId) {
-  if (id === "bruma-savia") {
-    return layoutsOperarSummaryTotalsAmountClass
-  }
-
-  return layoutsOperarSummaryTotalsAmountClass
+  return cn(
+    layoutsOperarSummaryTotalsAmountClass,
+    "m-0 self-center min-w-[6.5rem] text-right leading-none",
+  )
 }
 
 export type { LayoutsOperarProductCardProposal, LayoutsOperarProductCardProposalId }

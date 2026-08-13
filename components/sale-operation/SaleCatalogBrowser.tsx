@@ -17,6 +17,7 @@ import { SALE_CATALOG_DEFAULT_PRICE_LIST_ID } from "@/components/sale-operation/
 import { findCatalogProductByScanQuery } from "@/lib/saleCatalogScan"
 import {
   readSavedSaleCatalogView,
+  resolveSaleCatalogView,
   writeSavedSaleCatalogView,
   type SaleCatalogViewPersisted,
 } from "@/lib/saleCatalogPreference"
@@ -32,8 +33,6 @@ import {
 } from "@/app/library/layouts/layoutsOperarStyles"
 import { cn } from "@/lib/utils"
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
-
-const CATEGORIA_TODOS = "Todos"
 
 type CatalogScope = "sale" | "menu"
 
@@ -70,11 +69,7 @@ function productMatchesCatalogView(
 
   if (vistaCatalogo.modo === "categoria") {
     if (catalogScope === "sale") {
-      return (
-        kind === "article" &&
-        (vistaCatalogo.categoria === CATEGORIA_TODOS ||
-          product.categoria === vistaCatalogo.categoria)
-      )
+      return kind === "article" && product.categoria === vistaCatalogo.categoria
     }
 
     const categoriaFiltro =
@@ -82,12 +77,9 @@ function productMatchesCatalogView(
         ? menuProduct.categoriaFiltro
         : null
 
-    return (
-      vistaCatalogo.categoria === CATEGORIA_TODOS ||
-      (categoriaFiltro
-        ? categoriaFiltro === vistaCatalogo.categoria
-        : product.categoria === vistaCatalogo.categoria)
-    )
+    return categoriaFiltro
+      ? categoriaFiltro === vistaCatalogo.categoria
+      : product.categoria === vistaCatalogo.categoria
   }
 
   if (vistaCatalogo.modo === "promociones") {
@@ -128,14 +120,13 @@ export function SaleCatalogBrowser({
   )
   const sidebarOpen = catalogSidebarOpenProp ?? internalSidebar.open
 
-  const [vistaCatalogo, setVistaCatalogo] = useState<SaleCatalogViewPersisted>(() => {
-    return (
-      readSavedSaleCatalogView(popId) ?? {
-        modo: "categoria",
-        categoria: CATEGORIA_TODOS,
-      }
-    )
-  })
+  const [vistaCatalogo, setVistaCatalogo] = useState<SaleCatalogViewPersisted>(() =>
+    resolveSaleCatalogView(
+      readSavedSaleCatalogView(popId),
+      categories,
+      categorySections,
+    ),
+  )
   const [modoVista, setModoVista] = useState<"grid" | "lista">("grid")
   const [busqueda, setBusqueda] = useState("")
   const [cantidadIngreso, setCantidadIngreso] = useState(1)
@@ -214,6 +205,12 @@ export function SaleCatalogBrowser({
   }, [busqueda, catalogScope, products, vistaCatalogo])
 
   useEffect(() => {
+    setVistaCatalogo((prev) =>
+      resolveSaleCatalogView(prev, categories, categorySections),
+    )
+  }, [categories, categorySections])
+
+  useEffect(() => {
     const trimmed = busqueda.trim()
     const prevTrimmed = busquedaTrimPrevRef.current
     const wasEmpty = prevTrimmed.length === 0
@@ -229,15 +226,6 @@ export function SaleCatalogBrowser({
         setVistaCatalogo(saved)
         vistaAntesBusquedaRef.current = null
       }
-    }
-
-    if (!isEmpty) {
-      setVistaCatalogo((prev) => {
-        if (prev.modo === "categoria" && prev.categoria === CATEGORIA_TODOS) {
-          return prev
-        }
-        return { modo: "categoria", categoria: CATEGORIA_TODOS }
-      })
     }
 
     busquedaTrimPrevRef.current = trimmed

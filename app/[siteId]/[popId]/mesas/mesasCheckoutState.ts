@@ -260,3 +260,21 @@ export function readCheckoutFromSessionMetadata(
   if (!isRecord(metadata)) return null
   return parseTableSessionCheckout(metadata.checkout)
 }
+
+/** Estado visual en el plano — persistido en table_sessions.metadata.floor_status */
+export type MesaSessionFloorStatus = "open" | "paying"
+
+const MESA_FLOOR_STATUS_PAYING = "paying" as const
+
+export function readFloorStatusFromSessionMetadata(
+  metadata: unknown,
+): MesaSessionFloorStatus {
+  if (!isRecord(metadata)) return "open"
+  return metadata.floor_status === MESA_FLOOR_STATUS_PAYING ? "paying" : "open"
+}
+
+export function floorStatusToSessionMetadataValue(
+  floorStatus: MesaSessionFloorStatus,
+): typeof MESA_FLOOR_STATUS_PAYING | null {
+  return floorStatus === "paying" ? MESA_FLOOR_STATUS_PAYING : null
+}

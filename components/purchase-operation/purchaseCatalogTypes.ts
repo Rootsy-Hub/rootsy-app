@@ -13,8 +13,6 @@ export type PurchaseCatalogProduct = {
 
 export type PurchaseCatalogView = { modo: "categoria"; categoria: string }
 
-export const PURCHASE_CATEGORIA_TODOS = "Todos"
-
 const fmt = new Intl.NumberFormat("es-AR", {
   style: "currency",
   currency: "ARS",

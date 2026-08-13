@@ -3,8 +3,10 @@
 import {
   getFormTextControlStyle,
 } from "@/components/rootsy-form/rootsFormSpecRuntime"
+import { useRootsFormControlTone } from "@/components/rootsy-form/rootsFormFieldContext"
 import { useRootsFormControlInteraction } from "@/components/rootsy-form/useRootsFormControlInteraction"
 import { rootsFormControlSelectionClass } from "@/components/rootsy-form/rootsFormStyles"
+import { layoutsOperarFormDarkPlaceholderClass } from "@/app/library/layouts/layoutsOperarStyles"
 import { cn } from "@/lib/utils"
 import { forwardRef, type ComponentProps } from "react"
 
@@ -30,7 +32,8 @@ export const RootsFormControlTextarea = forwardRef<HTMLTextAreaElement, Props>(
     ref,
   ) {
     const { state, interactionHandlers } = useRootsFormControlInteraction({ disabled, invalid })
-    const controlStyle = getFormTextControlStyle(state, { multiline: true })
+    const tone = useRootsFormControlTone()
+    const controlStyle = getFormTextControlStyle(state, { multiline: true, tone })
 
     return (
       <textarea
@@ -39,7 +42,10 @@ export const RootsFormControlTextarea = forwardRef<HTMLTextAreaElement, Props>(
         disabled={disabled}
         aria-invalid={invalid || undefined}
         className={cn(
-          "resize-y font-canopy leading-relaxed placeholder:text-[var(--rootsy-bruma-500)] disabled:pointer-events-none disabled:cursor-not-allowed",
+          "resize-y font-canopy leading-relaxed disabled:pointer-events-none disabled:cursor-not-allowed",
+          tone === "dark"
+            ? layoutsOperarFormDarkPlaceholderClass
+            : "placeholder:text-[var(--rootsy-bruma-500)]",
           rootsFormControlSelectionClass,
           className,
           textareaClassName,

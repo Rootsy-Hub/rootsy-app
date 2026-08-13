@@ -28,6 +28,7 @@ import { getPopArticleCosts } from "@/app/[siteId]/[popId]/articles/articleCosts
 import {
   articleCostLinesFromRows,
   articleCostLinesToInput,
+  createEmptyArticleCostLine,
   type ArticleCostFormLine,
 } from "@/app/[siteId]/[popId]/articles/components/ArticleCostEditor"
 import {
@@ -104,7 +105,7 @@ import {
 import { WorkspaceTableSortHead } from "@/components/data-workspace/WorkspaceTableSortHead"
 import { WorkspaceTableSkeletonRows } from "@/components/data-workspace/WorkspaceTableSkeleton"
 import { articlesSkeletonColumns } from "@/components/data-workspace/workspaceTableSkeletonPresets"
-import { DataWorkspaceHeaderIconButton } from "@/components/layouts/DataWorkspaceHeaderIconButton"
+import { DataWorkspaceHeaderTooltipIconButton } from "@/components/layouts/DataWorkspaceHeaderTooltipIconButton"
 import {
   TableBody,
   TableCell,
@@ -620,10 +621,16 @@ function ArticlesPage() {
       setEditCategories([])
     }
     if (costsRes.success) {
-      setEditCostLines(articleCostLinesFromRows(costsRes.costs))
+      const loaded = articleCostLinesFromRows(
+        costsRes.costs,
+        row.unitOfMeasure,
+      )
+      setEditCostLines(
+        loaded.length > 0 ? loaded : [createEmptyArticleCostLine()],
+      )
     } else {
       setEditBanner((prev) => prev ?? costsRes.error)
-      setEditCostLines([])
+      setEditCostLines([createEmptyArticleCostLine()])
     }
   }
 
@@ -656,6 +663,7 @@ function ArticlesPage() {
   const openCreate = useCallback(() => {
     if (!canCreate) return
     setCreateBanner(null)
+    setCreateCostLines([createEmptyArticleCostLine()])
     setCreateOpen(true)
   }, [canCreate])
 
@@ -706,7 +714,7 @@ function ArticlesPage() {
       ...itemFields,
       ...catalogFields,
       siteId,
-      costs: articleCostLinesToInput(createCostLines),
+      costs: articleCostLinesToInput(createCostLines, createForm.unitOfMeasure),
       initialStockQuantity:
         initialNum != null && Number.isFinite(initialNum) && initialNum > 0
           ? initialNum
@@ -885,7 +893,7 @@ function ArticlesPage() {
       itemKind: editForm.itemKind,
       ...itemFields,
       ...catalogFields,
-      costs: articleCostLinesToInput(editCostLines),
+      costs: articleCostLinesToInput(editCostLines, editForm.unitOfMeasure),
     })
     setEditSaving(false)
     if (!res.success) {
@@ -1089,16 +1097,16 @@ function ArticlesPage() {
         headerActions: (
           <>
             {canCreate ? (
-              <DataWorkspaceHeaderIconButton
+              <DataWorkspaceHeaderTooltipIconButton
                 label="Nuevo artículo"
                 headerVariant={dataWorkspaceTableListHeaderVariant}
                 primary
                 onClick={openCreate}
               >
                 <Plus className="size-5" aria-hidden />
-              </DataWorkspaceHeaderIconButton>
+              </DataWorkspaceHeaderTooltipIconButton>
             ) : null}
-            <DataWorkspaceHeaderIconButton
+            <DataWorkspaceHeaderTooltipIconButton
               label="Gestionar categorías"
               headerVariant={dataWorkspaceTableListHeaderVariant}
               onClick={() => {
@@ -1109,7 +1117,7 @@ function ArticlesPage() {
               }}
             >
               <FolderTree className="size-5" aria-hidden />
-            </DataWorkspaceHeaderIconButton>
+            </DataWorkspaceHeaderTooltipIconButton>
           </>
         ),
       }}
@@ -1649,6 +1657,7 @@ function ArticlesPage() {
         loading={editLoading}
         saving={editSaving}
         banner={editBanner}
+        onBannerChange={setEditBanner}
         onSubmit={(e) => void submitEdit(e)}
         onCancel={closeEdit}
         idPrefix="edit-art"
@@ -1688,6 +1697,7 @@ function ArticlesPage() {
         loading={createCatLoading}
         saving={createSaving}
         banner={createBanner}
+        onBannerChange={setCreateBanner}
         onSubmit={(e) => void submitCreate(e)}
         onCancel={closeCreate}
         idPrefix="create-art"

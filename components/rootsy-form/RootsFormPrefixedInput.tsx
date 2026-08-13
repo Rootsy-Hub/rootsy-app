@@ -5,8 +5,10 @@ import {
   getFormCompositeShellStyle,
   getFormLeadingPrefixStyle,
 } from "@/components/rootsy-form/rootsFormSpecRuntime"
+import { useRootsFormControlTone } from "@/components/rootsy-form/rootsFormFieldContext"
 import { useRootsFormControlInteraction } from "@/components/rootsy-form/useRootsFormControlInteraction"
 import { rootsFormControlSelectionClass } from "@/components/rootsy-form/rootsFormStyles"
+import { layoutsOperarFormDarkPlaceholderClass } from "@/app/library/layouts/layoutsOperarStyles"
 import { cn } from "@/lib/utils"
 import { forwardRef, type ComponentProps, type ReactNode } from "react"
 
@@ -40,9 +42,10 @@ export const RootsFormPrefixedInput = forwardRef<HTMLInputElement, Props>(
     ref,
   ) {
     const { state, interactionHandlers } = useRootsFormControlInteraction({ disabled, invalid })
-    const shellStyle = getFormCompositeShellStyle(state)
-    const prefixStyle = getFormLeadingPrefixStyle(state, { numeric })
-    const inputStyle = getFormCompositeInputStyle(state, { numeric })
+    const tone = useRootsFormControlTone()
+    const shellStyle = getFormCompositeShellStyle(state, { tone })
+    const prefixStyle = getFormLeadingPrefixStyle(state, { numeric, tone })
+    const inputStyle = getFormCompositeInputStyle(state, { numeric, tone })
 
     return (
       <div
@@ -61,7 +64,10 @@ export const RootsFormPrefixedInput = forwardRef<HTMLInputElement, Props>(
           disabled={disabled}
           aria-invalid={invalid || undefined}
           className={cn(
-            "font-canopy placeholder:text-[var(--rootsy-bruma-500)] disabled:cursor-not-allowed",
+            "font-canopy disabled:cursor-not-allowed",
+            tone === "dark"
+              ? layoutsOperarFormDarkPlaceholderClass
+              : "placeholder:text-[var(--rootsy-bruma-500)]",
             rootsFormControlSelectionClass,
             inputClassName,
           )}

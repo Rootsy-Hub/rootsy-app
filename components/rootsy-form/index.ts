@@ -1,4 +1,5 @@
 export { RootsFormField } from "@/components/rootsy-form/RootsFormField"
+export { RootsFormToneProvider } from "@/components/rootsy-form/rootsFormToneContext"
 export { RootsFormLabelInfo } from "@/components/rootsy-form/RootsFormLabelInfo"
 export { RootsFormTextField } from "@/components/rootsy-form/RootsFormTextField"
 export { RootsFormSearchField } from "@/components/rootsy-form/RootsFormSearchField"
@@ -26,6 +27,7 @@ export { RootsFormGrid, RootsFormGridDivider } from "@/components/rootsy-form/Ro
 export { RootsFormSwitchField } from "@/components/rootsy-form/RootsFormSwitchField"
 export { RootsFormCheckbox } from "@/components/rootsy-form/RootsFormCheckbox"
 export { RootsFormCheckboxField } from "@/components/rootsy-form/RootsFormCheckboxField"
+export { RootsFormCheckboxChoiceRow } from "@/components/rootsy-form/RootsFormCheckboxChoiceRow"
 export { RootsFormSwitch } from "@/components/rootsy-form/RootsFormSwitch"
 export { RootsFormSelectTrigger } from "@/components/rootsy-form/RootsFormSelectTrigger"
 export { RootsFormFieldMessage } from "@/components/rootsy-form/RootsFormFieldMessage"
@@ -41,6 +43,11 @@ export {
   rootsFormFieldLabelTypographyClass,
   rootsFormFieldStackClass,
   rootsFormColumnClass,
+  rootsFormCheckboxChoiceListClass,
+  rootsFormCheckboxChoiceRowClass,
+  rootsFormCheckboxGroupClass,
+  rootsFormFieldAuxiliaryStackClass,
+  rootsFormFieldGroupClass,
   rootsFormGridClass,
   rootsFormGridDividerClass,
   rootsFormTwoColRowClass,

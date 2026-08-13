@@ -14,19 +14,20 @@ import {
   type ArticleCostFormLine,
 } from "@/app/[siteId]/[popId]/articles/components/ArticleCostEditor"
 import {
-  RootsFormGrid,
   RootsFormMoneyField,
   RootsFormQuantityField,
   RootsFormSelectField,
   RootsFormSelectItem,
   RootsFormSwitchField,
   RootsFormTextField,
-  rootsFormColumnClass,
+  RootsFormLabelInfo,
+  rootsFormFieldLabelClass,
   rootsFormTwoColRowClass,
 } from "@/components/rootsy-form"
 import { labelUnitOfMeasure, type ArticleItemKind } from "@/lib/articleItemKind"
 import { parseMoneyInput } from "@/lib/moneyInput"
 import { cn } from "@/lib/utils"
+import type { ReactNode } from "react"
 
 export type ArticleUpsertFormState = ArticleItemFormState &
   ArticleCatalogExtraFormState & {
@@ -44,6 +45,26 @@ export type ArticleUpsertFormState = ArticleItemFormState &
     initialStock?: string
   }
 
+export type ArticleUpsertWizardStep = 1 | 2 | 3
+
+export const ARTICLE_UPSERT_WIZARD_STEPS: {
+  step: ArticleUpsertWizardStep
+  label: string
+}[] = [
+  { step: 1, label: "Datos" },
+  { step: 2, label: "Precios" },
+  { step: 3, label: "Detalles" },
+]
+
+const SKU_LABEL_INFO =
+  "Código propio para identificar el artículo en stock e inventario."
+const BARCODE_LABEL_INFO =
+  "Se imprime en el ticket de venta. Solo para productos de venta."
+const IVA_LABEL_INFO =
+  "El tipo de IVA seleccionado está incluido en el precio de venta."
+const COMPRA_SECTION_INFO =
+  "Referencia para cargar compras. El costo real se registra al confirmar cada compra."
+
 type Props = {
   idPrefix: string
   siteId: string
@@ -58,7 +79,86 @@ type Props = {
   suppliersLoading?: boolean
   canPostInitialStock?: boolean
   mode: "create" | "edit"
+  step: ArticleUpsertWizardStep
+  fieldErrors?: ArticleUpsertFieldErrors
   disabled?: boolean
+}
+
+function WizardSection({
+  title,
+  labelInfo,
+  children,
+  className,
+}: {
+  title: string
+  labelInfo?: ReactNode
+  children: ReactNode
+  className?: string
+}) {
+  return (
+    <section className={cn("flex flex-col gap-4", className)}>
+      <h3
+        className={cn(
+          rootsFormFieldLabelClass,
+          "inline-flex items-center gap-1.5",
+        )}
+      >
+        {title}
+        {labelInfo ? (
+          <RootsFormLabelInfo
+            content={labelInfo}
+            ariaLabel={`Información sobre ${title}`}
+          />
+        ) : null}
+      </h3>
+      {children}
+    </section>
+  )
+}
+
+export type ArticleUpsertFieldErrors = {
+  categoryId?: string
+  name?: string
+  iva?: string
+  salePrice?: string
+}
+
+export function hasArticleUpsertFieldErrors(
+  errors: ArticleUpsertFieldErrors,
+): boolean {
+  return Object.values(errors).some(Boolean)
+}
+
+export function validateArticleUpsertWizardStep(
+  step: ArticleUpsertWizardStep,
+  form: ArticleUpsertFormState,
+): ArticleUpsertFieldErrors {
+  const errors: ArticleUpsertFieldErrors = {}
+
+  if (step === 1) {
+    if (!form.categoryId.trim()) {
+      errors.categoryId = "Elegí una categoría."
+    }
+    if (!form.name.trim()) {
+      errors.name = "Indicá el nombre del artículo."
+    }
+    return errors
+  }
+
+  if (step === 2) {
+    if (!form.iva.trim()) {
+      errors.iva = "Elegí el tipo de IVA."
+    }
+    if (form.itemKind === "merchandise") {
+      const price = parseMoneyInput(form.salePrice, -1)
+      if (!Number.isFinite(price) || price < 0) {
+        errors.salePrice = "Indicá un precio de venta válido."
+      }
+    }
+    return errors
+  }
+
+  return errors
 }
 
 export function ArticleUpsertFormFields({
@@ -74,16 +174,18 @@ export function ArticleUpsertFormFields({
   onCostLinesChange,
   canPostInitialStock = false,
   mode,
+  step,
+  fieldErrors = {},
   disabled = false,
 }: Props) {
   const isMerchandise = form.itemKind === "merchandise"
   const parsedSalePrice = parseMoneyInput(form.salePrice, 0)
   const saleUomLabel = labelUnitOfMeasure(form.unitOfMeasure)
+  const showInitialStock = mode === "create" && canPostInitialStock
 
-  return (
-    <>
-    <RootsFormGrid>
-      <div className={rootsFormColumnClass}>
+  if (step === 1) {
+    return (
+      <div className="flex flex-col gap-4">
         <ArticleItemKindSelector
           value={form.itemKind}
           onChange={onItemKindChange}
@@ -91,14 +193,42 @@ export function ArticleUpsertFormFields({
           disabled={disabled}
         />
 
-        <RootsFormTextField
-          label="Nombre"
-          id={`${idPrefix}-name`}
-          value={form.name}
-          onChange={(e) => onChange({ name: e.target.value })}
-          required
+        <RootsFormSelectField
+          label="Categoría"
+          id={`${idPrefix}-cat`}
+          value={form.categoryId}
+          onValueChange={(value) => onChange({ categoryId: value })}
           disabled={disabled}
-        />
+          placeholder="Elegir categoría…"
+          error={fieldErrors.categoryId}
+          invalid={Boolean(fieldErrors.categoryId)}
+        >
+          {categories.map((category) => (
+            <RootsFormSelectItem key={category.id} value={category.id}>
+              {category.name}
+            </RootsFormSelectItem>
+          ))}
+        </RootsFormSelectField>
+
+        <div className={rootsFormTwoColRowClass}>
+          <RootsFormTextField
+            label="Nombre"
+            id={`${idPrefix}-name`}
+            value={form.name}
+            onChange={(e) => onChange({ name: e.target.value })}
+            disabled={disabled}
+            error={fieldErrors.name}
+            invalid={Boolean(fieldErrors.name)}
+          />
+          <RootsFormTextField
+            label="Marca"
+            id={`${idPrefix}-brand`}
+            value={form.brand}
+            onChange={(e) => onChange({ brand: e.target.value })}
+            placeholder="Opcional"
+            disabled={disabled}
+          />
+        </div>
 
         <RootsFormTextField
           label="Descripción"
@@ -109,58 +239,6 @@ export function ArticleUpsertFormFields({
           disabled={disabled}
         />
 
-        <RootsFormTextField
-          label="Marca"
-          id={`${idPrefix}-brand`}
-          value={form.brand}
-          onChange={(e) => onChange({ brand: e.target.value })}
-          placeholder="Opcional"
-          disabled={disabled}
-        />
-
-        <RootsFormTextField
-          label="SKU"
-          id={`${idPrefix}-sku`}
-          value={form.sku}
-          onChange={(e) => onChange({ sku: e.target.value })}
-          placeholder="Código interno (opcional)"
-          disabled={disabled}
-          autoComplete="off"
-          hint="Código propio para identificar el artículo en stock e inventario."
-        />
-
-        {isMerchandise ? (
-          <RootsFormTextField
-            label="Código de barras"
-            id={`${idPrefix}-barcode`}
-            value={form.barcode}
-            onChange={(e) =>
-              onChange({ barcode: e.target.value.replace(/\D/g, "") })
-            }
-            placeholder="EAN / UPC (8 a 14 dígitos)"
-            disabled={disabled}
-            inputClassName="tabular-nums"
-            inputMode="numeric"
-            autoComplete="off"
-            hint="Se imprime en el ticket de venta. Solo para productos de venta."
-          />
-        ) : null}
-
-        <RootsFormSelectField
-          label="Categoría"
-          id={`${idPrefix}-cat`}
-          value={form.categoryId}
-          onValueChange={(value) => onChange({ categoryId: value })}
-          disabled={disabled}
-          placeholder="Elegir categoría…"
-        >
-          {categories.map((category) => (
-            <RootsFormSelectItem key={category.id} value={category.id}>
-              {category.name}
-            </RootsFormSelectItem>
-          ))}
-        </RootsFormSelectField>
-
         <ArticleImageUploadField
           id={`${idPrefix}-image`}
           popId={popId}
@@ -169,106 +247,157 @@ export function ArticleUpsertFormFields({
           disabled={disabled}
         />
       </div>
+    )
+  }
 
-      <div className={rootsFormColumnClass}>
-        <ArticleUnitOfMeasureField
-          itemKind={form.itemKind}
-          idPrefix={idPrefix}
-          value={form}
-          onChange={onChange}
-          disabled={disabled}
-        />
-
-        <div
-          className={cn(
-            rootsFormTwoColRowClass,
-            !isMerchandise && "sm:grid-cols-1",
-          )}
-        >
-          {isMerchandise ? (
-            <RootsFormMoneyField
-              label={`Precio por ${saleUomLabel.toLowerCase()}`}
-              id={`${idPrefix}-price`}
-              value={form.salePrice}
-              onChange={(value) => onChange({ salePrice: value })}
-              disabled={disabled}
-            />
-          ) : null}
-        </div>
-
+  if (step === 2) {
+    return (
+      <div className="flex flex-col gap-4">
         <ArticleIvaSelect
           id={`${idPrefix}-iva`}
           siteId={siteId}
           value={form.iva}
           onChange={(value) => onChange({ iva: value })}
           disabled={disabled}
+          labelInfo={IVA_LABEL_INFO}
+          error={fieldErrors.iva}
         />
 
-        {isMerchandise ? (
-          <ArticleCatalogDiscountField
-            idPrefix={idPrefix}
-            discountMode={form.discountMode}
-            discountValue={form.discountValue}
-            salePrice={parsedSalePrice}
-            onChange={onChange}
-            disabled={disabled}
-          />
-        ) : null}
+        <WizardSection title="Venta">
+          {isMerchandise ? (
+            <div className={rootsFormTwoColRowClass}>
+              <ArticleUnitOfMeasureField
+                itemKind={form.itemKind}
+                idPrefix={idPrefix}
+                value={form}
+                onChange={onChange}
+                disabled={disabled}
+                part="select"
+              />
+              <RootsFormMoneyField
+                label={`Precio por ${saleUomLabel.toLowerCase()}`}
+                id={`${idPrefix}-price`}
+                value={form.salePrice}
+                onChange={(value) => onChange({ salePrice: value })}
+                disabled={disabled}
+                error={fieldErrors.salePrice}
+                invalid={Boolean(fieldErrors.salePrice)}
+              />
+            </div>
+          ) : (
+            <>
+              <ArticleUnitOfMeasureField
+                itemKind={form.itemKind}
+                idPrefix={idPrefix}
+                value={form}
+                onChange={onChange}
+                disabled={disabled}
+                part="select"
+              />
+              <ArticleUnitOfMeasureField
+                itemKind={form.itemKind}
+                idPrefix={idPrefix}
+                value={form}
+                onChange={onChange}
+                disabled={disabled}
+                part="auxiliary"
+              />
+            </>
+          )}
 
-        <ArticleSupplierPickerField
-          popId={popId}
-          value={form.supplierIds}
-          onChange={(supplierIds) => onChange({ supplierIds })}
-          knownSuppliers={supplierOptions}
-          disabled={disabled}
-        />
-
-        {mode === "create" && canPostInitialStock ? (
-          <div className={cn("border-t border-border/50 pt-1")}>
-            <RootsFormQuantityField
-              label="Stock inicial (opcional)"
-              id={`${idPrefix}-initial-stock`}
-              value={form.initialStock ?? ""}
-              onChange={(value) => onChange({ initialStock: value })}
+          {isMerchandise ? (
+            <ArticleCatalogDiscountField
+              idPrefix={idPrefix}
+              discountMode={form.discountMode}
+              discountValue={form.discountValue}
+              salePrice={parsedSalePrice}
+              onChange={onChange}
               disabled={disabled}
-              max={10000}
-              placeholder="Vacío = sin movimiento"
             />
-          </div>
-        ) : null}
+          ) : null}
+        </WizardSection>
 
-        {isMerchandise ? (
-          <RootsFormSwitchField
-            label="Vender con stock negativo"
-            description="Permite vender aunque el stock quede por debajo de cero."
-            id={`${idPrefix}-allow-negative-stock`}
-            checked={form.allowNegativeStock}
-            onCheckedChange={(checked) =>
-              onChange({ allowNegativeStock: checked })
-            }
+        <WizardSection title="Compra" labelInfo={COMPRA_SECTION_INFO} className="border-t border-[var(--rootsy-bruma-200)] pt-4">
+          <ArticleCostEditor
+            idPrefix={idPrefix}
+            lines={costLines}
+            onChange={onCostLinesChange}
+            saleUnitOfMeasure={form.unitOfMeasure}
             disabled={disabled}
+            embedded
           />
-        ) : null}
+        </WizardSection>
+      </div>
+    )
+  }
 
+  return (
+    <div className="flex flex-col gap-4">
+      {showInitialStock ? (
+        <RootsFormQuantityField
+          label="Stock inicial"
+          id={`${idPrefix}-initial-stock`}
+          value={form.initialStock ?? ""}
+          onChange={(value) => onChange({ initialStock: value })}
+          disabled={disabled}
+          max={10000}
+          placeholder="Opcional"
+        />
+      ) : null}
+
+      {isMerchandise ? (
         <RootsFormSwitchField
-          label="Artículo activo"
-          description="Los inactivos no aparecen en ventas ni catálogo."
-          id={`${idPrefix}-active`}
-          checked={form.isActive}
-          onCheckedChange={(checked) => onChange({ isActive: checked })}
+          label="Vender con stock negativo"
+          description="Permite vender aunque el stock quede por debajo de cero."
+          id={`${idPrefix}-allow-negative-stock`}
+          checked={form.allowNegativeStock}
+          onCheckedChange={(checked) => onChange({ allowNegativeStock: checked })}
           disabled={disabled}
         />
-      </div>
-    </RootsFormGrid>
+      ) : null}
 
-    <ArticleCostEditor
-      idPrefix={idPrefix}
-      lines={costLines}
-      onChange={onCostLinesChange}
-      supplierOptions={supplierOptions}
-      saleUnitOfMeasure={form.unitOfMeasure}
-      disabled={disabled}
-    />
-    </>
+      {isMerchandise ? (
+        <RootsFormTextField
+          label="Código de barras"
+          id={`${idPrefix}-barcode`}
+          value={form.barcode}
+          onChange={(e) => onChange({ barcode: e.target.value.replace(/\D/g, "") })}
+          placeholder="EAN / UPC (8 a 14 dígitos)"
+          disabled={disabled}
+          inputClassName="tabular-nums"
+          inputMode="numeric"
+          autoComplete="off"
+          labelInfo={BARCODE_LABEL_INFO}
+        />
+      ) : null}
+
+      <RootsFormTextField
+        label="SKU"
+        id={`${idPrefix}-sku`}
+        value={form.sku}
+        onChange={(e) => onChange({ sku: e.target.value })}
+        placeholder="Código interno (opcional)"
+        disabled={disabled}
+        autoComplete="off"
+        labelInfo={SKU_LABEL_INFO}
+      />
+
+      <ArticleSupplierPickerField
+        popId={popId}
+        value={form.supplierIds}
+        onChange={(supplierIds) => onChange({ supplierIds })}
+        knownSuppliers={supplierOptions}
+        disabled={disabled}
+      />
+
+      <RootsFormSwitchField
+        label="Artículo activo"
+        description="Los inactivos no aparecen en ventas ni catálogo."
+        id={`${idPrefix}-active`}
+        checked={form.isActive}
+        onCheckedChange={(checked) => onChange({ isActive: checked })}
+        disabled={disabled}
+      />
+    </div>
   )
 }

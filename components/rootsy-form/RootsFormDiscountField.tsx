@@ -2,7 +2,7 @@
 
 import { RootsFormField } from "@/components/rootsy-form/RootsFormField"
 import type { RootsFormFieldAssistProps } from "@/components/rootsy-form/rootsFormFieldAssist"
-import { useRootsFormFieldControlProps } from "@/components/rootsy-form/rootsFormFieldContext"
+import { useRootsFormFieldControlProps, useRootsFormControlTone } from "@/components/rootsy-form/rootsFormFieldContext"
 import {
   getFormCompositeInputStyle,
   getFormCompositeShellStyle,
@@ -11,9 +11,10 @@ import {
 } from "@/components/rootsy-form/rootsFormSpecRuntime"
 import { useRootsFormControlInteraction } from "@/components/rootsy-form/useRootsFormControlInteraction"
 import {
-  rootsFormAffixClearButtonClass,
+  rootsFormAffixClearButtonClassForTone,
   rootsFormControlSelectionClass,
 } from "@/components/rootsy-form/rootsFormStyles"
+import { layoutsOperarFormDarkPlaceholderClass } from "@/app/library/layouts/layoutsOperarStyles"
 import { useMoneyInputField } from "@/components/rootsy-form/useMoneyInputField"
 import { usePatternInputHandlers } from "@/components/rootsy-form/usePatternInputHandlers"
 import {
@@ -113,9 +114,11 @@ export function RootsFormDiscountField({
   const autoId = useId()
   const fieldId = id ?? autoId
   const controlProps = useRootsFormFieldControlProps({ invalid })
+  const tone = useRootsFormControlTone()
+  const styleOptions = { tone }
   const { state, interactionHandlers } = useRootsFormControlInteraction({ disabled, invalid })
-  const shellStyle = getFormCompositeShellStyle(state)
-  const modeGroupStyle = getFormDiscountModeGroupStyle(state)
+  const shellStyle = getFormCompositeShellStyle(state, styleOptions)
+  const modeGroupStyle = getFormDiscountModeGroupStyle(state, styleOptions)
   const isPercent = mode === "porcentaje"
   const valueDisabled =
     disabled || (!isPercent && Boolean(fixedAmountDisabled))
@@ -125,6 +128,7 @@ export function RootsFormDiscountField({
   const moneyHandlers = useMoneyInputField({
     value,
     onChange,
+    enabled: !isPercent,
   })
 
   const percentHandlers = usePatternInputHandlers({
@@ -186,7 +190,7 @@ export function RootsFormDiscountField({
             disabled={disabled}
             aria-pressed={isPercent}
             aria-label="Porcentaje"
-            style={getFormDiscountModeButtonStyle(state, isPercent)}
+            style={getFormDiscountModeButtonStyle(state, isPercent, styleOptions)}
             className="focus-visible:outline-none"
             onClick={handlePercentModeSelect}
           >
@@ -197,7 +201,7 @@ export function RootsFormDiscountField({
             disabled={disabled}
             aria-pressed={!isPercent}
             aria-label="Monto fijo"
-            style={getFormDiscountModeButtonStyle(state, !isPercent)}
+            style={getFormDiscountModeButtonStyle(state, !isPercent, styleOptions)}
             className="focus-visible:outline-none"
             onClick={handleFixedModeSelect}
           >
@@ -211,7 +215,7 @@ export function RootsFormDiscountField({
             type="text"
             inputMode={isPercent ? "numeric" : "decimal"}
             autoComplete="off"
-            value={value}
+            value={isPercent ? value : moneyHandlers.inputValue}
             maxLength={isPercent ? PERCENT_INPUT_MAX_LEN : MONEY_INPUT_DISPLAY_MAX_LEN}
             disabled={valueDisabled}
             aria-invalid={controlProps.isInvalid}
@@ -221,7 +225,10 @@ export function RootsFormDiscountField({
             }
             placeholder={isPercent ? "0" : "0,00"}
             className={cn(
-              "font-canopy placeholder:text-[var(--rootsy-bruma-500)] disabled:cursor-not-allowed",
+              "font-canopy disabled:cursor-not-allowed",
+              tone === "dark"
+                ? layoutsOperarFormDarkPlaceholderClass
+                : "placeholder:text-[var(--rootsy-bruma-500)]",
               rootsFormControlSelectionClass,
               showClear && "pr-10",
               inputClassName,
@@ -229,6 +236,7 @@ export function RootsFormDiscountField({
             style={getFormCompositeInputStyle(state, {
               numeric: true,
               hasTrailing: showClear,
+              tone,
             })}
             onMouseDown={isPercent ? undefined : moneyHandlers.handleMouseDown}
             onChange={
@@ -259,7 +267,7 @@ export function RootsFormDiscountField({
             <button
               type="button"
               aria-label="Borrar descuento"
-              className={rootsFormAffixClearButtonClass}
+              className={rootsFormAffixClearButtonClassForTone(tone)}
               onClick={onClear}
             >
               <XIcon className="size-4" aria-hidden />

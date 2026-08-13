@@ -13,6 +13,7 @@ import {
   layoutsOperarSummaryTotalsPlacementClass,
 } from "@/app/library/layouts/layoutsOperarStyles"
 import { DataWorkspaceDetailEmptyState } from "@/components/data-workspace/DataWorkspaceDetailEmptyState"
+import { dataWorkspaceBlocksSkeletonTone } from "@/components/data-workspace/dataWorkspaceListStyles"
 import {
   layoutsOperarTicketProposalActionsClass,
   layoutsOperarTicketProposalCartListClass,
@@ -49,7 +50,35 @@ type Props = {
   listSubtitle?: string
   emptyTitle?: string
   flush?: boolean
+  loading?: boolean
   cartScrollHighlight?: CartListScrollHighlightValue
+}
+
+const ticketSkeleton = dataWorkspaceBlocksSkeletonTone
+
+function SaleOperationTicketOrderPanelSkeleton() {
+  return (
+    <div
+      className={cn(
+        layoutsOperarSummaryCartListSurfaceClass,
+        layoutsOperarTicketProposalCartListClass(TICKET_PROPOSAL),
+        "gap-3 p-3",
+      )}
+      aria-hidden
+    >
+      {Array.from({ length: 3 }, (_, index) => (
+        <div key={index} className="space-y-2 rounded-xl border border-[var(--rootsy-bruma-200)] p-3">
+          <div className="flex items-start justify-between gap-3">
+            <div className={cn(ticketSkeleton.bar, "h-4 w-[58%]")} />
+            <div className={cn(ticketSkeleton.barSm, "h-4 w-16")} />
+          </div>
+          {index === 0 ? (
+            <div className={cn(ticketSkeleton.barSm, "h-3 w-[42%]")} />
+          ) : null}
+        </div>
+      ))}
+    </div>
+  )
 }
 
 export function SaleOperationTicketOrderPanel({
@@ -64,6 +93,7 @@ export function SaleOperationTicketOrderPanel({
   listTitle = "Pedido",
   listSubtitle,
   emptyTitle = "Pedido vacío",
+  loading = false,
   cartScrollHighlight,
 }: Props) {
   const cartScrollContainerRef = cartScrollHighlight?.scrollRef
@@ -97,7 +127,7 @@ export function SaleOperationTicketOrderPanel({
           ) : null}
         </div>
         <span className={layoutsOperarSummaryCartMetaClass}>
-          {ticketLineCount} {ticketLineCount === 1 ? "línea" : "líneas"}
+          {loading ? "Cargando…" : `${ticketLineCount} ${ticketLineCount === 1 ? "línea" : "líneas"}`}
         </span>
       </div>
 
@@ -110,8 +140,11 @@ export function SaleOperationTicketOrderPanel({
         )}
         role="region"
         aria-label="Ítems agregados"
+        aria-busy={loading || undefined}
       >
-        {ticketLineCount === 0 ? (
+        {loading ? (
+          <SaleOperationTicketOrderPanelSkeleton />
+        ) : ticketLineCount === 0 ? (
           <div className="flex min-h-0 flex-1 flex-col" data-ticket-empty="true">
             <DataWorkspaceDetailEmptyState icon={Receipt} title={emptyTitle} />
           </div>
@@ -162,7 +195,7 @@ export function SaleOperationTicketOrderPanel({
         )}
       </div>
 
-      {hasTicketItems ? (
+      {!loading && hasTicketItems ? (
         <div className={layoutsOperarTicketProposalActionsClass(TICKET_PROPOSAL)}>
           <SaleOperationActionsBar {...actions} variant="operar" />
         </div>
@@ -170,7 +203,14 @@ export function SaleOperationTicketOrderPanel({
 
       {/* 1.2.4 — totales */}
       <div className={layoutsOperarSummaryTotalsPlacementClass} data-ticket-totals>
-        <SaleOperationTotalBar {...totalBar} tone="operar" className="h-full w-full" />
+        {loading ? (
+          <div className="flex h-full flex-col justify-end gap-2 p-3" aria-hidden>
+            <div className={cn(ticketSkeleton.barSm, "ml-auto h-4 w-24")} />
+            <div className={cn(ticketSkeleton.bar, "ml-auto h-6 w-32")} />
+          </div>
+        ) : (
+          <SaleOperationTotalBar {...totalBar} tone="operar" className="h-full w-full" />
+        )}
       </div>
     </>
   )

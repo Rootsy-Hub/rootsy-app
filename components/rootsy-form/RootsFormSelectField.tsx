@@ -2,7 +2,7 @@
 
 import { RootsFormField } from "@/components/rootsy-form/RootsFormField"
 import type { RootsFormFieldAssistProps } from "@/components/rootsy-form/rootsFormFieldAssist"
-import { useRootsFormFieldControlProps } from "@/components/rootsy-form/rootsFormFieldContext"
+import { useRootsFormFieldControlProps, useRootsFormControlTone } from "@/components/rootsy-form/rootsFormFieldContext"
 import { RootsFormSelectContent } from "@/components/rootsy-form/RootsFormSelectContent"
 import { RootsFormSelectTrigger } from "@/components/rootsy-form/RootsFormSelectTrigger"
 import { RootsFormSelectValue } from "@/components/rootsy-form/RootsFormSelectValue"
@@ -49,7 +49,7 @@ export function RootsFormSelectField({
   className,
   triggerClassName,
   contentClassName,
-  tone = "light",
+  tone,
   valueLabel,
   onOpenChange,
   children,
@@ -57,6 +57,7 @@ export function RootsFormSelectField({
   const autoId = useId()
   const fieldId = id ?? autoId
   const hasPrefix = prefix != null
+  const resolvedTone = useRootsFormControlTone(tone)
   const controlProps = useRootsFormFieldControlProps({ invalid })
 
   const handleValueChange = (next: string) => {
@@ -76,6 +77,7 @@ export function RootsFormSelectField({
       warning={warning}
       success={success}
       invalid={invalid}
+      tone={resolvedTone}
     >
       <Select
         value={value || undefined}
@@ -88,7 +90,7 @@ export function RootsFormSelectField({
       >
         <RootsFormSelectTrigger
           id={fieldId}
-          tone={tone}
+          tone={resolvedTone}
           readOnly={readOnly}
           invalid={controlProps.isInvalid}
           aria-invalid={controlProps.isInvalid}
@@ -102,7 +104,7 @@ export function RootsFormSelectField({
             {valueLabel}
           </RootsFormSelectValue>
         </RootsFormSelectTrigger>
-        <RootsFormSelectContent tone={tone} className={contentClassName}>
+        <RootsFormSelectContent tone={resolvedTone} className={contentClassName}>
           {children}
         </RootsFormSelectContent>
       </Select>

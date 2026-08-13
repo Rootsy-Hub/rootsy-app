@@ -24,5 +24,11 @@ export function popAccessCacheNeedsRefresh(
   access: PopAccessCache | null | undefined,
 ): boolean {
   if (!access) return false
-  return access.fiscal == null || access.pop.backgroundImageUrl === undefined
+  if (access.fiscal == null || access.pop.backgroundImageUrl === undefined) {
+    return true
+  }
+  const moduleKeys = new Set(access.enabledModules.map((mod) => mod.key))
+  if (!moduleKeys.has("services")) return true
+  if (!moduleKeys.has("active_services")) return true
+  return false
 }

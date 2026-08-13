@@ -93,7 +93,7 @@ export const mesasTableLabelClass =
   "text-[color-mix(in_srgb,var(--rootsy-bruma-50)_92%,white)]"
 
 export const mesasTableMetaClass =
-  "text-[color-mix(in_srgb,var(--rootsy-sombra-300)_55%,transparent)]"
+  "text-[color-mix(in_srgb,var(--rootsy-savia-300)_72%,transparent)]"
 
 export const mesasTableDurationClass =
-  "text-[color-mix(in_srgb,var(--rootsy-savia-300)_90%,white)]"
+  "text-[color-mix(in_srgb,var(--rootsy-bruma-50)_88%,white)]"

@@ -6,6 +6,7 @@ import {
   BarChart3,
   Bell,
   BookOpen,
+  Briefcase,
   Calculator,
   ClipboardList,
   Cog,
@@ -54,6 +55,9 @@ export type MenuItemLink =
   | "cash-registers"
   | "inventory"
   | "recipes"
+  | "services"
+  | "active-services"
+  | "cobrar-servicios"
   | "promotions"
   | "section"
 
@@ -111,6 +115,9 @@ export const menuSectionsRaw: Record<string, MenuSectionDef> = {
       { name: "Cuentas Ctes", icon: CreditCard, link: "section" },
       { name: "Promociones", icon: Sparkles, link: "promotions" },
       { name: "Recetas", icon: BookOpen, link: "recipes" },
+      { name: "Servicios", icon: Briefcase, link: "services" },
+      { name: "Vender servicio", icon: Banknote, badge: "NUEVO", link: "cobrar-servicios" },
+      { name: "Servicios activos", icon: Activity, link: "active-services" },
     ],
   },
   administrar: {

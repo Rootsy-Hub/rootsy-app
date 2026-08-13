@@ -80,6 +80,38 @@ export const saleFinalizeDialogBreakdownDiscountClass =
 export const saleFinalizeDialogFactsZoneClass =
   "bg-[var(--rootsy-bruma-50)] px-[var(--rootsy-space-400)] py-[var(--rootsy-space-150)]"
 
+/** Bloque de opciones dentro de la zona bruma — separador suave, sin caja extra. */
+export const saleFinalizeDialogOptionsBlockClass = cn(
+  "mt-[var(--rootsy-space-150)] space-y-2",
+  "border-t border-[color-mix(in_srgb,var(--rootsy-bruma-300)_38%,transparent)]",
+  "pt-[var(--rootsy-space-200)]",
+)
+
+export const saleFinalizeDialogShellWideClass =
+  "sm:max-w-[min(92vw,56rem)]"
+
+/** Cuerpo en dos columnas cuando hay cobro parcial (md+). */
+export const saleFinalizeDialogSplitBodyClass = cn(
+  "min-h-0 md:grid md:grid-cols-2 md:items-stretch",
+  "md:max-h-[min(52vh,26rem)]",
+)
+
+export const saleFinalizeDialogSplitMainColumnClass = "min-w-0"
+
+/** Columna derecha — ítems a cobrar en cobro parcial. */
+export const saleFinalizeDialogPartialColumnClass = cn(
+  "hidden min-h-0 flex-col overflow-hidden md:flex",
+  "border-t border-[color-mix(in_srgb,var(--rootsy-bruma-300)_38%,transparent)] md:border-t-0",
+  "md:border-l md:border-[color-mix(in_srgb,var(--rootsy-bruma-300)_38%,transparent)]",
+  "bg-[var(--rootsy-bruma-100)] px-[var(--rootsy-space-400)] py-[var(--rootsy-space-200)]",
+)
+
+export const saleFinalizeDialogPartialListClass =
+  "min-h-0 flex-1 overflow-y-auto overscroll-contain md:max-h-none"
+
+export const saleFinalizeDialogPartialListMobileClass =
+  "max-h-[min(40vh,18rem)] overflow-y-auto overscroll-contain md:hidden"
+
 export const saleFinalizeDialogFactRowClass =
   "flex min-h-11 items-center justify-between gap-4 py-[var(--rootsy-space-100)]"
 

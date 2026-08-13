@@ -40,6 +40,7 @@ export function RootsFormQuantityField({
   disabled,
   invalid,
   hint,
+  labelInfo,
   error,
   warning,
   success,
@@ -69,6 +70,7 @@ export function RootsFormQuantityField({
       htmlFor={fieldId}
       className={className}
       hint={hint}
+      labelInfo={labelInfo}
       error={error}
       warning={warning}
       success={success}

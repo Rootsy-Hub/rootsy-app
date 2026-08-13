@@ -1,5 +1,10 @@
 "use client"
 
+import {
+  layoutsOperarFormDarkBorderClass,
+  layoutsOperarFormDarkMutedTextClass,
+  layoutsOperarFormDarkSurfaceClass,
+} from "@/app/library/layouts/layoutsOperarStyles"
 import { cn } from "@/lib/utils"
 import { Check, ChevronRight } from "lucide-react"
 import type { ComponentType, FocusEvent, MouseEvent } from "react"
@@ -7,10 +12,34 @@ import type { ComponentType, FocusEvent, MouseEvent } from "react"
 const checkoutOptionCardFocusClass =
   "focus-visible:outline-none focus-visible:shadow-[0_0_0_2px_color-mix(in_srgb,var(--rootsy-savia-400)_45%,transparent)]"
 
+export type CheckoutOptionCardTone = "light" | "dark"
+
 export function checkoutOptionCardShellClass(
   selected: boolean,
   disabled = false,
+  tone: CheckoutOptionCardTone = "light",
 ) {
+  if (tone === "dark") {
+    return cn(
+      "group flex w-full items-center gap-3 rounded-xl border px-3.5 py-3 text-left transition-all duration-150",
+      checkoutOptionCardFocusClass,
+      disabled && !selected && "pointer-events-none opacity-45",
+      selected
+        ? cn(
+            "border-[color-mix(in_srgb,var(--rootsy-savia-400)_45%,transparent)]",
+            "bg-[color-mix(in_srgb,var(--rootsy-savia-400)_12%,transparent)]",
+            "ring-2 ring-[color-mix(in_srgb,var(--rootsy-savia-400)_22%,transparent)]",
+          )
+        : cn(
+            layoutsOperarFormDarkBorderClass,
+            layoutsOperarFormDarkSurfaceClass,
+            "hover:border-[color-mix(in_srgb,var(--rootsy-sombra-border)_65%,transparent)]",
+            "hover:bg-[color-mix(in_srgb,var(--rootsy-sombra-950)_72%,transparent)]",
+            "active:scale-[0.995]",
+          ),
+    )
+  }
+
   return cn(
     "group flex w-full items-center gap-3 rounded-xl border px-3.5 py-3 text-left transition-all duration-150",
     checkoutOptionCardFocusClass,
@@ -21,7 +50,24 @@ export function checkoutOptionCardShellClass(
   )
 }
 
-export function checkoutOptionCardIconClass(selected: boolean) {
+export function checkoutOptionCardIconClass(
+  selected: boolean,
+  tone: CheckoutOptionCardTone = "light",
+) {
+  if (tone === "dark") {
+    return cn(
+      "flex size-10 shrink-0 items-center justify-center rounded-lg transition-colors",
+      selected
+        ? "bg-[color-mix(in_srgb,var(--rootsy-savia-400)_18%,transparent)] text-[color-mix(in_srgb,var(--rootsy-savia-200)_92%,white)]"
+        : cn(
+            "bg-[color-mix(in_srgb,var(--rootsy-sombra-950)_72%,transparent)]",
+            "text-[color-mix(in_srgb,var(--rootsy-sombra-300)_70%,transparent)]",
+            "group-hover:bg-[color-mix(in_srgb,var(--rootsy-sombra-950)_88%,transparent)]",
+            "group-hover:text-[color-mix(in_srgb,var(--rootsy-sombra-200)_82%,white)]",
+          ),
+    )
+  }
+
   return cn(
     "flex size-10 shrink-0 items-center justify-center rounded-lg transition-colors",
     selected
@@ -35,6 +81,7 @@ type Props = {
   subtitle?: string
   selected: boolean
   disabled?: boolean
+  tone?: CheckoutOptionCardTone
   onClick: () => void
   onMouseEnter?: (event: MouseEvent<HTMLButtonElement>) => void
   onMouseLeave?: (event: MouseEvent<HTMLButtonElement>) => void
@@ -49,6 +96,7 @@ export function CheckoutOptionCard({
   subtitle,
   selected,
   disabled = false,
+  tone = "light",
   onClick,
   onMouseEnter,
   onMouseLeave,
@@ -57,6 +105,8 @@ export function CheckoutOptionCard({
   icon: Icon,
   trailing = "none",
 }: Props) {
+  const isDark = tone === "dark"
+
   return (
     <button
       type="button"
@@ -69,19 +119,29 @@ export function CheckoutOptionCard({
       onMouseLeave={onMouseLeave}
       onFocus={onFocus}
       onBlur={onBlur}
-      className={checkoutOptionCardShellClass(selected, disabled)}
+      className={checkoutOptionCardShellClass(selected, disabled, tone)}
     >
       {Icon ? (
-        <span className={checkoutOptionCardIconClass(selected)}>
+        <span className={checkoutOptionCardIconClass(selected, tone)}>
           <Icon className="size-[18px]" aria-hidden />
         </span>
       ) : null}
       <span className="min-w-0 flex-1">
-        <span className="block text-sm font-semibold leading-snug text-[var(--rootsy-bruma-900)]">
+        <span
+          className={cn(
+            "block text-sm font-semibold leading-snug",
+            isDark ? "text-[#f4f8f6]" : "text-[var(--rootsy-bruma-900)]",
+          )}
+        >
           {title}
         </span>
         {subtitle ? (
-          <span className="mt-0.5 block text-xs leading-snug text-[var(--rootsy-bruma-500)]">
+          <span
+            className={cn(
+              "mt-0.5 block text-xs leading-snug",
+              isDark ? layoutsOperarFormDarkMutedTextClass : "text-[var(--rootsy-bruma-500)]",
+            )}
+          >
             {subtitle}
           </span>
         ) : null}
@@ -96,8 +156,12 @@ export function CheckoutOptionCard({
           className={cn(
             "size-4 shrink-0",
             selected
-              ? "text-[var(--rootsy-savia-600)]"
-              : "text-[var(--rootsy-bruma-400)]",
+              ? isDark
+                ? "text-[color-mix(in_srgb,var(--rootsy-savia-300)_90%,white)]"
+                : "text-[var(--rootsy-savia-600)]"
+              : isDark
+                ? "text-[color-mix(in_srgb,var(--rootsy-sombra-300)_55%,transparent)]"
+                : "text-[var(--rootsy-bruma-400)]",
           )}
           aria-hidden
         />

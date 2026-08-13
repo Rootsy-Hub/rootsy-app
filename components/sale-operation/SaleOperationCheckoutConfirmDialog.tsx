@@ -31,12 +31,9 @@ import {
   Split,
 } from "lucide-react"
 
-export type SaleOperationCheckoutConfirmOptions = {
-  partialPayment: boolean
-  partialSelection: PartialPaymentSelection
-  closeOnComplete: boolean
-  imprimirComprobante: boolean
-}
+import type { SaleChannelCheckoutConfirmOptions } from "@/components/checkout/saleChannelCheckoutTypes"
+
+export type { SaleOperationCheckoutConfirmOptions, SaleChannelCheckoutConfirmOptions } from "@/components/checkout/saleChannelCheckoutTypes"
 
 type Props = {
   open: boolean
@@ -62,7 +59,7 @@ type Props = {
   partialUnits: PartialPaymentUnit[]
   partialSelection: PartialPaymentSelection
   onPartialSelectionChange: (next: PartialPaymentSelection) => void
-  onConfirm: (options: SaleOperationCheckoutConfirmOptions) => void | Promise<void | boolean>
+  onConfirm: (options: SaleChannelCheckoutConfirmOptions) => void | Promise<void | boolean>
 }
 
 function selectionQty(

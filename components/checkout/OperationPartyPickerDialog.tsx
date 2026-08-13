@@ -94,6 +94,7 @@ function ManualEntryForm({
   readOnly: boolean
   onIvaConditionApplied?: (iva: ClientIvaConditionValue) => void
 }) {
+  const allowManualNameEntry = flow === "sale"
   const taxInputMode = flow === "purchase" ? "cuit_only" : "cuit_or_dni"
   const lastPadronApplyRef = useRef<string>("")
   const lastIvaApplyRef = useRef<string>("")
@@ -106,17 +107,27 @@ function ManualEntryForm({
     if (readOnly) return
     lastPadronApplyRef.current = ""
     lastIvaApplyRef.current = ""
-    onManualNameChange("")
+    if (!allowManualNameEntry) {
+      onManualNameChange("")
+    }
     onIvaConditionChange("")
-  }, [taxId, readOnly, onManualNameChange, onIvaConditionChange])
+  }, [taxId, readOnly, allowManualNameEntry, onManualNameChange, onIvaConditionChange])
 
   useEffect(() => {
     if (readOnly || !padron.error) return
     lastPadronApplyRef.current = ""
     lastIvaApplyRef.current = ""
-    onManualNameChange("")
+    if (!allowManualNameEntry) {
+      onManualNameChange("")
+    }
     onIvaConditionChange("")
-  }, [readOnly, padron.error, onManualNameChange, onIvaConditionChange])
+  }, [
+    readOnly,
+    padron.error,
+    allowManualNameEntry,
+    onManualNameChange,
+    onIvaConditionChange,
+  ])
 
   useEffect(() => {
     if (readOnly || padron.busy || padron.error) return
@@ -196,13 +207,15 @@ function ManualEntryForm({
         value={manualName}
         onChange={(e) => onManualNameChange(e.target.value)}
         placeholder={
-          padron.busy
-            ? "Consultando ARCA…"
-            : "Se completa al consultar ARCA"
+          allowManualNameEntry
+            ? "Nombre o razón social"
+            : padron.busy
+              ? "Consultando ARCA…"
+              : "Se completa al consultar ARCA"
         }
         autoComplete="off"
-        disabled
-        readOnly
+        disabled={readOnly || padron.busy || !allowManualNameEntry}
+        readOnly={readOnly || !allowManualNameEntry}
       />
 
       <RootsFormSelectField
@@ -266,9 +279,10 @@ export function OperationPartyPickerDialog({
   const manualReadOnly = selected != null
   const canConfirmManual =
     !selected &&
-    Boolean(manualName.trim()) &&
     !padron.busy &&
-    !padron.error
+    (flow === "sale"
+      ? Boolean(manualName.trim()) || Boolean(taxId.trim())
+      : Boolean(manualName.trim()) && !padron.error)
 
   useEffect(() => {
     if (!open) {
@@ -472,7 +486,7 @@ export function OperationPartyPickerDialog({
                   label:
                     flow === "purchase"
                       ? "Usar para esta compra"
-                      : "Usar para esta operación",
+                      : "Aplicar",
                   onClick: onSelectManual,
                   disabled: !canConfirmManual,
                 }

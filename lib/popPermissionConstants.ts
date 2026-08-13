@@ -81,6 +81,16 @@ export const POP_PERMS = {
   RECIPE_UPDATE: { resource: "recipes", action: "update" },
   RECIPE_DELETE: { resource: "recipes", action: "delete" },
 
+  SERVICE_READ: { resource: "services", action: "read" },
+  SERVICE_CREATE: { resource: "services", action: "create" },
+  SERVICE_UPDATE: { resource: "services", action: "update" },
+  SERVICE_DELETE: { resource: "services", action: "delete" },
+
+  SERVICE_CHARGE_READ: { resource: "service_charges", action: "read" },
+  SERVICE_CHARGE_CREATE: { resource: "service_charges", action: "create" },
+  SERVICE_CHARGE_UPDATE: { resource: "service_charges", action: "update" },
+  SERVICE_CHARGE_DELETE: { resource: "service_charges", action: "delete" },
+
   PROMOTION_READ: { resource: "promotions", action: "read" },
   PROMOTION_CREATE: { resource: "promotions", action: "create" },
   PROMOTION_UPDATE: { resource: "promotions", action: "update" },

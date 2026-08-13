@@ -1,6 +1,7 @@
 "use client"
 
 import { getFormCheckboxStyle } from "@/components/rootsy-form/rootsFormSpecRuntime"
+import { useRootsFormControlTone } from "@/components/rootsy-form/rootsFormFieldContext"
 import { useRootsFormControlInteraction } from "@/components/rootsy-form/useRootsFormControlInteraction"
 import { Checkbox } from "@/components/ui/checkbox"
 import { cn } from "@/lib/utils"
@@ -30,8 +31,9 @@ export const RootsFormCheckbox = forwardRef<ElementRef<typeof Checkbox>, Props>(
       disabled,
       invalid,
     })
+    const tone = useRootsFormControlTone()
     const isChecked = checked === true
-    const controlStyle = getFormCheckboxStyle(state, isChecked)
+    const controlStyle = getFormCheckboxStyle(state, isChecked, { tone })
 
     return (
       <Checkbox
