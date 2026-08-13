@@ -2,7 +2,9 @@
 
 import type { ServiceTypeChargeOption } from "@/app/[siteId]/[popId]/active-services/actions"
 import type { ServiceChargeCreateWizardForm } from "@/app/[siteId]/[popId]/active-services/serviceChargeCreateFormState"
+import { ServiceOperateChargeConfigShowcase, formatSnapshotDateLabel, formatSnapshotDiscountLabel, snapshotMoneyFmt, snapshotPlaceholder } from "@/components/service-operation/ServiceOperateChargeConfigShowcase"
 import { ServiceOperateServiceShowcase } from "@/components/service-operation/ServiceOperateServiceShowcase"
+import { serviceOperateSnapshotTicketCardClass } from "@/components/service-operation/serviceOperateSnapshotStyles"
 import type { ServiceDiscountMode } from "@/lib/serviceCatalogTypes"
 import { SERVICE_PAYMENT_TIMING_LABELS } from "@/lib/serviceCatalogTypes"
 import { operationPaymentKindLabel } from "@/lib/operationPaymentKinds"
@@ -19,23 +21,15 @@ import {
 import { parseNonNegativeIntegerInput } from "@/lib/integerInput"
 import { parseMoneyInput } from "@/lib/moneyInput"
 import {
-  formatRootsFormDisplayDateCompact,
-  parseRootsFormIsoDate,
-} from "@/lib/rootsFormDateFormat"
-import {
   parseTreasuryPaymentOptionKey,
   type TreasuryPaymentContext,
 } from "@/lib/treasuryPaymentOptions"
 import { cn } from "@/lib/utils"
 import { useMemo } from "react"
 
-const PLACEHOLDER = "—"
+const PLACEHOLDER = snapshotPlaceholder
 
-const fmt = new Intl.NumberFormat("es-AR", {
-  style: "currency",
-  currency: "ARS",
-  minimumFractionDigits: 2,
-})
+const fmt = snapshotMoneyFmt
 
 const sectionTitleClass =
   "text-[10px] font-semibold uppercase tracking-[0.12em] text-[var(--rootsy-bruma-500)]"
@@ -104,16 +98,7 @@ function SnapshotRow({
 }
 
 function formatSummaryDate(iso: string | null | undefined): string {
-  if (!iso?.trim()) return PLACEHOLDER
-  const parsed = parseRootsFormIsoDate(iso.trim())
-  return parsed ? formatRootsFormDisplayDateCompact(parsed) : iso.trim()
-}
-
-function rowValue(value: string | null | undefined): { value: string; empty: boolean } {
-  const trimmed = value?.trim() ?? ""
-  return trimmed
-    ? { value: trimmed, empty: false }
-    : { value: PLACEHOLDER, empty: true }
+  return formatSnapshotDateLabel(iso)
 }
 
 function yesNo(value: boolean): string {
@@ -223,12 +208,8 @@ export function ServiceOperateChargeSnapshotContent({
     dueDaysAfterParsed,
   ])
 
-  const discountLabel =
-    discountMode === "porcentaje"
-      ? `${form.discountValue.trim() || "0"} %`
-      : discountMode === "fijo"
-        ? fmt.format(parseMoneyInput(form.discountValue, 0))
-        : PLACEHOLDER
+  const discountParts = formatSnapshotDiscountLabel(discountMode, form.discountValue)
+  const discountLabel = discountParts.label
 
   const paymentSnapshot = resolvePaymentSnapshot(
     form.paymentMethodKey,
@@ -241,7 +222,7 @@ export function ServiceOperateChargeSnapshotContent({
     <div className="flex flex-col gap-4">
       <SnapshotSection>
         {selectedService ? (
-          <div className="overflow-hidden rounded-xl border border-[var(--rootsy-bruma-200)] bg-[linear-gradient(165deg,color-mix(in_srgb,var(--rootsy-savia-400)_5%,white),white)] p-2.5 shadow-[0_8px_28px_-24px_color-mix(in_srgb,var(--rootsy-savia-600)_40%,transparent)]">
+          <div className={serviceOperateSnapshotTicketCardClass}>
             <ServiceOperateServiceShowcase
               service={selectedService}
               price={snapshotPrice > 0 ? snapshotPrice : selectedService.defaultPrice}
@@ -256,54 +237,26 @@ export function ServiceOperateChargeSnapshotContent({
 
       <SnapshotSeparator />
 
-      <SnapshotSection title="Configuración del cargo">
-        <div className="flex flex-col gap-0.5">
-          <SnapshotRow
-            label="Alcance"
-            value={SERVICE_CHARGE_BILLING_SCOPE_LABELS[form.billingScope]}
-          />
-          {form.billingScope === "multi_period" ? (
-            <SnapshotRow label="Períodos" value={String(chargeCount)} />
-          ) : null}
-          <SnapshotRow
-            label="Desde"
-            value={formatSummaryDate(form.periodStartDate)}
-            empty={!form.periodStartDate.trim()}
-          />
-          <SnapshotRow
-            label="Hasta"
-            value={formatSummaryDate(effectivePeriodEnd)}
-            empty={!effectivePeriodEnd}
-          />
-          <SnapshotRow
-            label="Cuándo se paga"
-            value={SERVICE_PAYMENT_TIMING_LABELS[form.paymentTiming]}
-          />
-          <SnapshotRow
-            label="Vencimiento"
-            value={formatSummaryDate(previewDueDate)}
-            empty={!previewDueDate}
-          />
-          <SnapshotRow
-            label="Precio unitario"
-            value={unitPrice > 0 ? fmt.format(unitPrice) : PLACEHOLDER}
-            empty={unitPrice <= 0}
-          />
-          <SnapshotRow
-            label="Descuento"
-            value={discountLabel}
-            empty={discountMode === "none"}
-          />
-          <SnapshotRow
-            label={chargeCount > 1 ? "Monto c/u" : "Monto"}
-            value={amount > 0 ? fmt.format(amount) : PLACEHOLDER}
-            empty={amount <= 0}
-          />
-          {chargeCount > 1 ? (
-            <SnapshotRow label="Cantidad de cargos" value={String(chargeCount)} />
-          ) : null}
-          <SnapshotRow label="Notas" {...rowValue(form.notes)} />
-        </div>
+      <SnapshotSection>
+        <ServiceOperateChargeConfigShowcase
+          form={form}
+          scopeLabel={SERVICE_CHARGE_BILLING_SCOPE_LABELS[form.billingScope]}
+          chargeCount={chargeCount}
+          periodStartLabel={formatSummaryDate(form.periodStartDate)}
+          periodEndLabel={formatSummaryDate(effectivePeriodEnd)}
+          periodStartEmpty={!form.periodStartDate.trim()}
+          periodEndEmpty={!effectivePeriodEnd}
+          paymentTimingLabel={SERVICE_PAYMENT_TIMING_LABELS[form.paymentTiming]}
+          dueDateLabel={formatSummaryDate(previewDueDate)}
+          dueDateEmpty={!previewDueDate}
+          unitPriceLabel={unitPrice > 0 ? fmt.format(unitPrice) : PLACEHOLDER}
+          unitPriceEmpty={unitPrice <= 0}
+          discountLabel={discountLabel}
+          discountEmpty={discountParts.empty}
+          amountLabel={amount > 0 ? fmt.format(amount) : PLACEHOLDER}
+          amountEmpty={amount <= 0}
+          notes={form.notes ?? ""}
+        />
       </SnapshotSection>
 
       <SnapshotSeparator />
