@@ -12,7 +12,10 @@ import {
   type SaleCatalogPaymentOption,
   type SaleOpenCashSession,
 } from "@/app/[siteId]/[popId]/sale/actions"
-import { defaultCheckoutPaymentSelection } from "@/lib/saleCheckoutPayment"
+import {
+  defaultCheckoutPaymentSelection,
+  resolveSaleToolboxPaymentDisplay,
+} from "@/lib/saleCheckoutPayment"
 import type { TreasuryPaymentContext } from "@/lib/treasuryPaymentOptions"
 import { treasuryPaymentOptionKey } from "@/lib/treasuryPaymentOptions"
 import type {
@@ -478,6 +481,16 @@ function SalePage() {
     if (payOnClientAccount) return CLIENT_ACCOUNT_PAYMENT_LABEL
     return metodoPagoSeleccionado?.label ?? "Elegir forma de pago"
   }, [payOnClientAccount, metodoPagoSeleccionado])
+
+  const toolboxPaymentDisplay = useMemo(
+    () =>
+      resolveSaleToolboxPaymentDisplay({
+        payOnClientAccount,
+        metodoPagoSeleccionado,
+        treasuryPaymentContext,
+      }),
+    [payOnClientAccount, metodoPagoSeleccionado, treasuryPaymentContext],
+  )
 
   const puedeRegistrarVenta = useMemo(
     () =>
@@ -1198,7 +1211,15 @@ function SalePage() {
                 clienteConfigurado={Boolean(clienteSeleccionado)}
                 comprobanteLabel={comprobanteDisplayLabel}
                 pagoLabel={
-                  openCashSession ? pagoResumenLabel : "Requiere caja abierta"
+                  openCashSession
+                    ? toolboxPaymentDisplay.pagoLabel
+                    : "Requiere caja abierta"
+                }
+                pagoSubLabel={
+                  openCashSession ? toolboxPaymentDisplay.pagoSubLabel : null
+                }
+                pagoIcon={
+                  openCashSession ? toolboxPaymentDisplay.pagoIcon : undefined
                 }
                 pagoConfigurado={pagoConfigurado}
                 pagoDisabled={!openCashSession}

@@ -6,7 +6,12 @@ import {
   localDateStartTimestamp,
   timezoneForPopLedger,
 } from "@/lib/entryDateTimezone"
-import { loadPopLedgerTimeZone } from "@/lib/popTimezoneServer"
+import { loadPopOperationalContext } from "@/lib/popTimezoneServer"
+import {
+  expandCalendarBoundsForOperationalFetch,
+  filterCashRegisterSessionsByOperationalPeriod,
+  usesOperationalDayFilter,
+} from "@/lib/popOperationalDay"
 import {
   POP_PERMS,
   permissionKeysInclude,
@@ -253,6 +258,7 @@ export type CashRegisterArqueoSesionAbierta = {
 
 export type CashRegisterSummaryData = {
   registerName: string
+  operationalDayCloseTime: string
   sessions: CashRegisterSummarySession[]
   movements: CashRegisterSummaryMovement[]
   /** false si el usuario no tiene permiso `sale:read` (no se listan ventas). */
@@ -1717,6 +1723,10 @@ export async function getCashRegisterSummary(
       return { success: false, error: "No permission to view cash registers." }
     }
     const supabase = await createClient()
+    const { operationalDayCloseTime } = await loadPopOperationalContext(
+      supabase,
+      popId,
+    )
     const { data: reg, error: regErr } = await supabase
       .from("cash_registers")
       .select("id, name")
@@ -2012,6 +2022,7 @@ export async function getCashRegisterSummary(
     }
     const data: CashRegisterSummaryData = {
       registerName,
+      operationalDayCloseTime,
       sessions,
       movements,
       salesIncluded,
@@ -2353,7 +2364,16 @@ export async function getCashRegistersPeriodReport(
     }
 
     const supabase = await createClient()
-    const timeZone = await loadPopLedgerTimeZone(supabase, popId)
+    const { timeZone, operationalDayCloseTime } =
+      await loadPopOperationalContext(supabase, popId)
+    const useOperationalDayFilter = usesOperationalDayFilter(
+      operationalDayCloseTime,
+      options.from,
+      options.to,
+    )
+    const sessionFetchBounds = useOperationalDayFilter
+      ? expandCalendarBoundsForOperationalFetch(options.from, options.to)
+      : { from: options.from, to: options.to }
     const { data: regs, error: regErr } = await supabase
       .from("cash_registers")
       .select("id, name")
@@ -2403,8 +2423,8 @@ export async function getCashRegistersPeriodReport(
       .eq("pop_id", popId)
       .eq("status", "closed")
     const periodOrFilter = buildClosedCashRegisterSessionPeriodOrFilter(
-      options.from,
-      options.to,
+      sessionFetchBounds.from,
+      sessionFetchBounds.to,
       timeZone,
     )
     if (periodOrFilter) {
@@ -2415,7 +2435,20 @@ export async function getCashRegistersPeriodReport(
       return { success: false, error: sessErr.message || "Could not load sessions." }
     }
 
-    const sessRows = periodSessRows || []
+    let sessRows = periodSessRows || []
+    if (useOperationalDayFilter) {
+      sessRows = filterCashRegisterSessionsByOperationalPeriod(
+        sessRows.map((row) => ({
+          ...row,
+          closedAt: row.closed_at != null ? String(row.closed_at) : null,
+          openedAt: String(row.opened_at ?? ""),
+        })),
+        options.from,
+        options.to,
+        timeZone,
+        operationalDayCloseTime,
+      )
+    }
     if (sessRows.length === 0) {
       return {
         success: true,

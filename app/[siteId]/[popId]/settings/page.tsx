@@ -21,6 +21,10 @@ import withAuth from "@/hoc/withAuth"
 import { usePopWorkspace } from "@/context/PopWorkspaceContext"
 import { usePadronAutofillRazonSocial } from "@/hooks/usePadronAutofillRazonSocial"
 import {
+  DEFAULT_OPERATIONAL_DAY_CLOSE_TIME,
+  normalizeOperationalDayCloseTime,
+} from "@/lib/popOperationalDay"
+import {
   ARGENTINA_COUNTRY_CODE,
   resolveArgentinaCountryCode,
 } from "@/lib/argentinaLocalities"
@@ -55,6 +59,9 @@ function buildPersistedSnapshot(
     imageUrl: form.imageUrl ?? "",
     invoiceLogoUrl: form.invoiceLogoUrl ?? "",
     backgroundImageUrl: form.backgroundImageUrl ?? "",
+    operationalDayCloseTime: normalizeOperationalDayCloseTime(
+      form.operationalDayCloseTime,
+    ),
   }
 
   if (!isOwner) return base
@@ -121,6 +128,7 @@ function SettingsPage() {
     fiscalPadronActividadesJson: "",
     fiscalActividadSeleccionadaId: "",
     fiscalPadronSyncedAt: null,
+    operationalDayCloseTime: DEFAULT_OPERATIONAL_DAY_CLOSE_TIME,
   })
 
   const padron = usePadronAutofillRazonSocial(popId, form.fiscalCuit ?? "", {
@@ -254,6 +262,7 @@ function SettingsPage() {
       fiscalActividadSeleccionadaId: isOwner
         ? form.fiscalActividadSeleccionadaId
         : undefined,
+      operationalDayCloseTime: form.operationalDayCloseTime,
     })
     setSaving(false)
     if (!res.success) {

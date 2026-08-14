@@ -114,6 +114,15 @@ export const POP_PAGES = {
       delete: "operations:delete",
     },
   },
+  purchase_orders: {
+    path: "purchase-orders",
+    permissions: {
+      read: "operations:read",
+      create: "operations:create",
+      update: "operations:update",
+      delete: "operations:delete",
+    },
+  },
   accounts: {
     path: "accounts",
     permissions: {

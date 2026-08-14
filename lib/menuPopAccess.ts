@@ -8,6 +8,7 @@ import { Banknote } from "lucide-react"
 export const MENU_LINK_TO_MODULE_KEY: Partial<Record<MenuItemLink, string>> = {
   sale: "sale",
   quotes: "quotes",
+  "purchase-orders": "purchase_orders",
   mostrador: "mostrador",
   mesas: "mesas",
   purchases: "purchases",

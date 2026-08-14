@@ -37,14 +37,14 @@ export function StatisticsSectionFilters({
   return (
     <div
       className={cn(
-        "flex shrink-0 flex-wrap items-start justify-end gap-2",
+        "flex shrink-0 flex-wrap items-end justify-end gap-3",
         className,
       )}
     >
       {showChannel ? (
         <div className="w-42 shrink-0">
           <RootsFormSelectField
-            label="Canal de venta"
+            label="Canal"
             value={filters.channel ?? "all"}
             onValueChange={(value) =>
               onFiltersChange({
@@ -52,7 +52,7 @@ export function StatisticsSectionFilters({
                 channel: value === "all" ? null : value,
               })
             }
-            className={dataWorkspaceListFiltersFieldClass(true)}
+            className={dataWorkspaceListFiltersFieldClass()}
           >
             <RootsFormSelectItem value="all">Todos</RootsFormSelectItem>
             {CHANNEL_OPTIONS.map((option) => (
@@ -66,6 +66,7 @@ export function StatisticsSectionFilters({
 
       <SummaryPeriodToolbar
         embedded
+        showLabel
         preset={preset}
         customRange={customRange}
         bounds={bounds}

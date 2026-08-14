@@ -22,7 +22,16 @@ import {
   sumExpensesReportAmount,
   sumPurchasesReportPaid,
 } from "@/lib/purchasesExpensesReportExportData"
+import {
+  expandCalendarBoundsForOperationalFetch,
+  filterSalesByOperationalPeriod,
+  operationalDayKey,
+  operationalHourSlotIndex,
+  operationalHourSlotLabel,
+} from "@/lib/popOperationalDay"
+import { addCalendarDays } from "@/lib/entryDateTimezone"
 import { createClient } from "@/utils/supabase/server"
+import { loadPopOperationalContext } from "@/lib/popTimezoneServer"
 
 export type StatisticsCompareMetric = {
   id: string
@@ -37,6 +46,29 @@ export type StatisticsCompareMetric = {
 export type StatisticsEvolutionPoint = {
   label: string
   value: number
+}
+
+export type StatisticsHourlyHeatmapDay = {
+  key: string
+  label: string
+}
+
+export type StatisticsHourlyHeatmapHour = {
+  slot: number
+  label: string
+}
+
+export type StatisticsHourlyHeatmapCell = {
+  dayKey: string
+  hourSlot: number
+  value: number
+}
+
+export type StatisticsHourlyHeatmap = {
+  days: StatisticsHourlyHeatmapDay[]
+  hours: StatisticsHourlyHeatmapHour[]
+  cells: StatisticsHourlyHeatmapCell[]
+  maxValue: number
 }
 
 export type StatisticsSegment = {
@@ -59,6 +91,8 @@ export type StatisticsSectionData = {
   description: string
   comparison: StatisticsCompareMetric[]
   evolution: StatisticsEvolutionPoint[]
+  hourlyEvolution: StatisticsEvolutionPoint[]
+  hourlyHeatmap: StatisticsHourlyHeatmap
   segments: StatisticsSegment[]
   rankings: StatisticsRankRow[]
   unavailable: string[]
@@ -174,10 +208,12 @@ function buildDailyEvolution(
   from: string | null,
   to: string | null,
   valueFn: (daySales: OperationSaleRow[]) => number,
+  timeZone: string,
+  operationalDayCloseTime: string,
 ): StatisticsEvolutionPoint[] {
   const buckets = new Map<string, OperationSaleRow[]>()
   for (const sale of sales) {
-    const day = sale.soldAt.slice(0, 10)
+    const day = operationalDayKey(sale.soldAt, timeZone, operationalDayCloseTime)
     const list = buckets.get(day) ?? []
     list.push(sale)
     buckets.set(day, list)
@@ -192,27 +228,139 @@ function buildDailyEvolution(
       }))
   }
 
-  const start = new Date(
-    Number(from.slice(0, 4)),
-    Number(from.slice(5, 7)) - 1,
-    Number(from.slice(8, 10)),
-  )
-  const end = new Date(
-    Number(to.slice(0, 4)),
-    Number(to.slice(5, 7)) - 1,
-    Number(to.slice(8, 10)),
-  )
   const points: StatisticsEvolutionPoint[] = []
-  const cursor = new Date(start)
-  while (cursor <= end) {
-    const iso = `${cursor.getFullYear()}-${String(cursor.getMonth() + 1).padStart(2, "0")}-${String(cursor.getDate()).padStart(2, "0")}`
+  let cursor = from
+  while (cursor <= to) {
     points.push({
-      label: `${String(cursor.getDate()).padStart(2, "0")}/${String(cursor.getMonth() + 1).padStart(2, "0")}`,
-      value: roundMoney(valueFn(buckets.get(iso) ?? [])),
+      label: `${cursor.slice(8, 10)}/${cursor.slice(5, 7)}`,
+      value: roundMoney(valueFn(buckets.get(cursor) ?? [])),
     })
-    cursor.setDate(cursor.getDate() + 1)
+    cursor = addCalendarDays(cursor, 1)
   }
   return points
+}
+
+function buildHourlyEvolution(
+  sales: OperationSaleRow[],
+  timeZone: string,
+  operationalDayCloseTime: string,
+  valueFn: (hourSales: OperationSaleRow[]) => number,
+): StatisticsEvolutionPoint[] {
+  const buckets = new Map<number, OperationSaleRow[]>()
+  for (const sale of sales) {
+    const slot = operationalHourSlotIndex(
+      sale.soldAt,
+      timeZone,
+      operationalDayCloseTime,
+    )
+    const list = buckets.get(slot) ?? []
+    list.push(sale)
+    buckets.set(slot, list)
+  }
+
+  return Array.from({ length: 24 }, (_, slot) => ({
+    label: operationalHourSlotLabel(slot, operationalDayCloseTime),
+    value: roundMoney(valueFn(buckets.get(slot) ?? [])),
+  }))
+}
+
+function emptyHourlyHeatmap(): StatisticsHourlyHeatmap {
+  return { days: [], hours: [], cells: [], maxValue: 0 }
+}
+
+function buildHourlyHeatmap(
+  sales: OperationSaleRow[],
+  from: string | null,
+  to: string | null,
+  timeZone: string,
+  operationalDayCloseTime: string,
+  valueFn: (hourSales: OperationSaleRow[]) => number,
+): StatisticsHourlyHeatmap {
+  const buckets = new Map<string, OperationSaleRow[]>()
+  for (const sale of sales) {
+    const day = operationalDayKey(sale.soldAt, timeZone, operationalDayCloseTime)
+    const slot = operationalHourSlotIndex(
+      sale.soldAt,
+      timeZone,
+      operationalDayCloseTime,
+    )
+    const key = `${day}|${slot}`
+    const list = buckets.get(key) ?? []
+    list.push(sale)
+    buckets.set(key, list)
+  }
+
+  const days: StatisticsHourlyHeatmapDay[] = []
+  if (from && to) {
+    let cursor = from
+    while (cursor <= to) {
+      days.push({
+        key: cursor,
+        label: `${cursor.slice(8, 10)}/${cursor.slice(5, 7)}`,
+      })
+      cursor = addCalendarDays(cursor, 1)
+    }
+  } else {
+    const dayKeys = new Set<string>()
+    for (const sale of sales) {
+      dayKeys.add(operationalDayKey(sale.soldAt, timeZone, operationalDayCloseTime))
+    }
+    for (const day of [...dayKeys].sort()) {
+      days.push({
+        key: day,
+        label: `${day.slice(8, 10)}/${day.slice(5, 7)}`,
+      })
+    }
+  }
+
+  const hours = Array.from({ length: 24 }, (_, slot) => ({
+    slot,
+    label: operationalHourSlotLabel(slot, operationalDayCloseTime),
+  }))
+
+  const cells: StatisticsHourlyHeatmapCell[] = []
+  let maxValue = 0
+  for (const day of days) {
+    for (const hour of hours) {
+      const value = roundMoney(
+        valueFn(buckets.get(`${day.key}|${hour.slot}`) ?? []),
+      )
+      maxValue = Math.max(maxValue, value)
+      cells.push({
+        dayKey: day.key,
+        hourSlot: hour.slot,
+        value,
+      })
+    }
+  }
+
+  return { days, hours, cells, maxValue }
+}
+
+function buildHourlySalesViews(
+  sales: OperationSaleRow[],
+  from: string | null,
+  to: string | null,
+  timeZone: string,
+  operationalDayCloseTime: string,
+  valueFn: (hourSales: OperationSaleRow[]) => number,
+): Pick<StatisticsSectionData, "hourlyEvolution" | "hourlyHeatmap"> {
+  return {
+    hourlyEvolution: buildHourlyEvolution(
+      sales,
+      timeZone,
+      operationalDayCloseTime,
+      valueFn,
+    ),
+    hourlyHeatmap: buildHourlyHeatmap(
+      sales,
+      from,
+      to,
+      timeZone,
+      operationalDayCloseTime,
+      valueFn,
+    ),
+  }
 }
 
 function buildSegments(
@@ -355,6 +503,8 @@ function buildSalesSection(
   from: string | null,
   to: string | null,
   compareEnabled: boolean,
+  timeZone: string,
+  operationalDayCloseTime: string,
 ): StatisticsSectionData {
   const total = salesTotal(sales)
   const prevTotal = compareEnabled ? salesTotal(prevSales) : 0
@@ -400,7 +550,22 @@ function buildSalesSection(
       compareMetric("count", "Cantidad", count, prevCount, "number"),
       compareMetric("ticket", "Ticket promedio", ticket, prevTicket, "money"),
     ],
-    evolution: buildDailyEvolution(sales, from, to, salesTotal),
+    evolution: buildDailyEvolution(
+      sales,
+      from,
+      to,
+      salesTotal,
+      timeZone,
+      operationalDayCloseTime,
+    ),
+    ...buildHourlySalesViews(
+      sales,
+      from,
+      to,
+      timeZone,
+      operationalDayCloseTime,
+      salesTotal,
+    ),
     segments: buildSegments(channelTotals),
     rankings: buildRankings(sellerTotals),
     unavailable: ["Facturación fiscal detallada"],
@@ -437,6 +602,8 @@ function buildProfitabilitySection(
       compareMetric("result", "Resultado", current.resultado, prev.resultado, "money"),
     ],
     evolution: [],
+    hourlyEvolution: [],
+    hourlyHeatmap: emptyHourlyHeatmap(),
     segments: [
       { label: "Ingresos", value: current.ingresos, percent: 100 },
       { label: "Costos", value: current.costos, percent: current.ingresos > 0 ? roundMoney((current.costos / current.ingresos) * 100) : 0 },
@@ -479,6 +646,8 @@ function buildProductsSection(sales: OperationSaleRow[]): StatisticsSectionData 
       ),
     ],
     evolution: [],
+    hourlyEvolution: [],
+    hourlyHeatmap: emptyHourlyHeatmap(),
     segments: buildSegments(productTotals, 6),
     rankings: buildRankings(productTotals, productQty),
     unavailable: ["Rubros / categorías", "Rentabilidad por producto"],
@@ -491,6 +660,8 @@ function buildChannelsSection(
   from: string | null,
   to: string | null,
   compareEnabled: boolean,
+  timeZone: string,
+  operationalDayCloseTime: string,
 ): StatisticsSectionData {
   const channelTotals = new Map<string, number>()
   const prevChannelTotals = new Map<string, number>()
@@ -528,7 +699,22 @@ function buildChannelsSection(
     title: "Canales de venta",
     description: "Participación y evolución por canal",
     comparison,
-    evolution: buildDailyEvolution(sales, from, to, salesTotal),
+    evolution: buildDailyEvolution(
+      sales,
+      from,
+      to,
+      salesTotal,
+      timeZone,
+      operationalDayCloseTime,
+    ),
+    ...buildHourlySalesViews(
+      sales,
+      from,
+      to,
+      timeZone,
+      operationalDayCloseTime,
+      salesTotal,
+    ),
     segments,
     rankings: buildRankings(channelTotals),
     unavailable: ["Servicios como canal"],
@@ -608,6 +794,8 @@ function buildPurchasesSection(
       compareMetric("count", "Operaciones", purchases.length, compareEnabled ? prevPurchases.length : 0, "number"),
     ],
     evolution: buildPurchasesEvolution(purchases, from, to),
+    hourlyEvolution: [],
+    hourlyHeatmap: emptyHourlyHeatmap(),
     segments: buildSegments(supplierTotals, 6),
     rankings: buildRankings(supplierTotals),
     unavailable: ["Compras por categoría / producto"],
@@ -618,6 +806,10 @@ function buildClientsSection(
   sales: OperationSaleRow[],
   prevSales: OperationSaleRow[],
   compareEnabled: boolean,
+  from: string | null,
+  to: string | null,
+  timeZone: string,
+  operationalDayCloseTime: string,
 ): StatisticsSectionData {
   const clientTotals = new Map<string, number>()
   const clientIds = new Set<string>()
@@ -661,6 +853,14 @@ function buildClientsSection(
       ),
     ],
     evolution: [],
+    ...buildHourlySalesViews(
+      sales,
+      from,
+      to,
+      timeZone,
+      operationalDayCloseTime,
+      salesTotal,
+    ),
     segments: buildSegments(clientTotals, 6),
     rankings: buildRankings(clientTotals),
     unavailable: ["Frecuencia de compra detallada"],
@@ -673,6 +873,8 @@ function buildFinanceSection(
   expenses: OperationExpenseLedgerRow[],
   from: string | null,
   to: string | null,
+  timeZone: string,
+  operationalDayCloseTime: string,
 ): StatisticsSectionData {
   const ingresos = salesTotal(sales)
   const egresos = roundMoney(
@@ -689,7 +891,14 @@ function buildFinanceSection(
     }
   }
 
-  const dailyIn = buildDailyEvolution(sales, from, to, salesTotal)
+  const dailyIn = buildDailyEvolution(
+    sales,
+    from,
+    to,
+    salesTotal,
+    timeZone,
+    operationalDayCloseTime,
+  )
   const purchaseByDay = new Map<string, number>()
   for (const p of purchases) {
     const day = p.operationDate.slice(0, 10)
@@ -729,6 +938,14 @@ function buildFinanceSection(
       compareMetric("net", "Neto", roundMoney(ingresos - egresos), 0, "money"),
     ],
     evolution,
+    ...buildHourlySalesViews(
+      sales,
+      from,
+      to,
+      timeZone,
+      operationalDayCloseTime,
+      salesTotal,
+    ),
     segments: buildSegments(paymentTotals, 8),
     rankings: buildRankings(paymentTotals),
     unavailable: [
@@ -780,6 +997,8 @@ async function buildInventorySection(
       compareMetric("articles", "Artículos movidos", rankMap.size, 0, "number"),
     ],
     evolution: [],
+    hourlyEvolution: [],
+    hourlyHeatmap: emptyHourlyHeatmap(),
     segments: buildSegments(rankMap, 6),
     rankings: buildRankings(rankMap),
     unavailable: [
@@ -815,6 +1034,8 @@ function buildPlaceholderSection(
     description: meta?.description ?? "",
     comparison: [],
     evolution: [],
+    hourlyEvolution: [],
+    hourlyHeatmap: emptyHourlyHeatmap(),
     segments: [],
     rankings: [],
     unavailable: unavailableBySection[sectionId] ?? ["Datos no disponibles"],
@@ -840,11 +1061,25 @@ export async function getStatisticsSectionData(
       return { success: true, data: buildPlaceholderSection(sectionId) }
     }
 
+    const supabase = await createClient()
+    const { timeZone, operationalDayCloseTime } =
+      await loadPopOperationalContext(supabase, popId)
+
+    const salesFetchBounds = expandCalendarBoundsForOperationalFetch(from, to)
+    const prevSalesFetchBounds = expandCalendarBoundsForOperationalFetch(
+      prevBounds.from,
+      prevBounds.to,
+    )
+
     const [sales, prevSales, purchases, prevPurchases, expenses, income, prevIncome] =
       await Promise.all([
-        fetchAllSales(popId, from, to),
+        fetchAllSales(popId, salesFetchBounds.from, salesFetchBounds.to),
         compareEnabled
-          ? fetchAllSales(popId, prevBounds.from, prevBounds.to)
+          ? fetchAllSales(
+              popId,
+              prevSalesFetchBounds.from,
+              prevSalesFetchBounds.to,
+            )
           : Promise.resolve([] as OperationSaleRow[]),
         sectionId === "purchases" ||
         sectionId === "finance" ||
@@ -866,8 +1101,20 @@ export async function getStatisticsSectionData(
           : Promise.resolve({ ingresos: 0, costos: 0, gastos: 0, resultado: 0, margen: 0 }),
       ])
 
-    const filteredSales = filterSales(sales, filters)
-    const filteredPrevSales = filterSales(prevSales, filters)
+    const filteredSales = filterSalesByOperationalPeriod(
+      filterSales(sales, filters),
+      from,
+      to,
+      timeZone,
+      operationalDayCloseTime,
+    )
+    const filteredPrevSales = filterSalesByOperationalPeriod(
+      filterSales(prevSales, filters),
+      prevBounds.from,
+      prevBounds.to,
+      timeZone,
+      operationalDayCloseTime,
+    )
     const filteredPurchases = filterPurchases(purchases, filters)
 
     let data: StatisticsSectionData
@@ -879,6 +1126,8 @@ export async function getStatisticsSectionData(
           from,
           to,
           compareEnabled,
+          timeZone,
+          operationalDayCloseTime,
         )
         break
       case "profitability":
@@ -891,7 +1140,15 @@ export async function getStatisticsSectionData(
         )
         break
       case "products":
-        data = buildProductsSection(filteredSales)
+        data = buildProductsSection(
+          filterSalesByOperationalPeriod(
+            filterSales(sales, filters),
+            from,
+            to,
+            timeZone,
+            operationalDayCloseTime,
+          ),
+        )
         break
       case "channels":
         data = buildChannelsSection(
@@ -900,6 +1157,8 @@ export async function getStatisticsSectionData(
           from,
           to,
           compareEnabled,
+          timeZone,
+          operationalDayCloseTime,
         )
         break
       case "purchases":
@@ -916,6 +1175,10 @@ export async function getStatisticsSectionData(
           filteredSales,
           filteredPrevSales,
           compareEnabled,
+          from,
+          to,
+          timeZone,
+          operationalDayCloseTime,
         )
         break
       case "finance":
@@ -925,6 +1188,8 @@ export async function getStatisticsSectionData(
           expenses,
           from,
           to,
+          timeZone,
+          operationalDayCloseTime,
         )
         break
       case "inventory":

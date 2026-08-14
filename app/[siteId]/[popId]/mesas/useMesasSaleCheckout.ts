@@ -24,7 +24,10 @@ import {
   healLegacyLockedGeneralDiscount,
   isGeneralDiscountEditBlocked,
 } from "@/lib/generalDiscountLock"
-import { defaultCheckoutPaymentSelection } from "@/lib/saleCheckoutPayment"
+import {
+  defaultCheckoutPaymentSelection,
+  resolveSaleToolboxPaymentDisplay,
+} from "@/lib/saleCheckoutPayment"
 import { treasuryPaymentOptionKey } from "@/lib/treasuryPaymentOptions"
 import { completeSale } from "@/app/[siteId]/[popId]/sale/completeSale"
 import {
@@ -803,6 +806,16 @@ export function useMesasSaleCheckout(
     if (payOnClientAccount) return CLIENT_ACCOUNT_PAYMENT_LABEL
     return metodoPagoSeleccionado?.label ?? "Elegir forma de pago"
   }, [payOnClientAccount, metodoPagoSeleccionado])
+
+  const toolboxPaymentDisplay = useMemo(
+    () =>
+      resolveSaleToolboxPaymentDisplay({
+        payOnClientAccount,
+        metodoPagoSeleccionado,
+        treasuryPaymentContext,
+      }),
+    [payOnClientAccount, metodoPagoSeleccionado, treasuryPaymentContext],
+  )
 
   const comprobanteDisplayLabel = useMemo(
     () => getSaleComprobanteDisplayLabel(comprobante),
@@ -1669,7 +1682,15 @@ export function useMesasSaleCheckout(
         ? "Elegir forma de pago"
         : !openCashSession
           ? "Requiere caja abierta"
-          : pagoResumenLabel,
+          : toolboxPaymentDisplay.pagoLabel,
+      pagoSubLabel:
+        mesaToolbarDisabled || !openCashSession
+          ? null
+          : toolboxPaymentDisplay.pagoSubLabel,
+      pagoIcon:
+        mesaToolbarDisabled || !openCashSession
+          ? undefined
+          : toolboxPaymentDisplay.pagoIcon,
       pagoConfigurado: pagoConfigurado && !mesaToolbarDisabled && openCashSession != null,
       descuentoLabel: mesaToolbarDisabled ? "Sin descuento" : descuentoToolbarLabel,
       hayDescuento: hayDescuento && !mesaToolbarDisabled,

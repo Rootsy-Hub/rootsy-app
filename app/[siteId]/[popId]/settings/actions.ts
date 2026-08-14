@@ -25,6 +25,11 @@ import {
   type PopSettingsImageKind,
 } from "@/lib/popImageStorage"
 import { createClient } from "@/utils/supabase/server"
+import {
+  operationalDayCloseTimeFromSettings,
+  POP_SETTINGS_OPERATIONAL_DAY_CLOSE_TIME_KEY,
+  normalizeOperationalDayCloseTime,
+} from "@/lib/popOperationalDay"
 
 export type PopSettingsFormInput = {
   name: string
@@ -45,6 +50,8 @@ export type PopSettingsFormInput = {
   /** JSON stringificado de PadronActividadItem[] */
   fiscalPadronActividadesJson?: string | null
   fiscalActividadSeleccionadaId?: string | null
+  /** HH:mm — cierre del día operativo (default 00:00). */
+  operationalDayCloseTime?: string | null
 }
 
 export async function getPopSettingsPageData(popId: string): Promise<
@@ -121,6 +128,7 @@ export async function getPopSettingsPageData(popId: string): Promise<
         fiscalPadronActividadesJson: p.fiscalPadronActividadesJson ?? "",
         fiscalActividadSeleccionadaId: p.fiscalActividadSeleccionadaId ?? "",
         fiscalPadronSyncedAt: p.fiscalPadronSyncedAt ?? null,
+        operationalDayCloseTime: operationalDayCloseTimeFromSettings(p.settings),
       },
     }
   } catch (e: unknown) {
@@ -206,6 +214,14 @@ export async function updatePopSettings(
       patch.fiscal_actividad_seleccionada_id =
         fiscalSelId.length > 0 ? fiscalSelId : null
     }
+
+    const currentSettings =
+      popRes.pop.settings && typeof popRes.pop.settings === "object"
+        ? { ...(popRes.pop.settings as Record<string, unknown>) }
+        : {}
+    currentSettings[POP_SETTINGS_OPERATIONAL_DAY_CLOSE_TIME_KEY] =
+      normalizeOperationalDayCloseTime(input.operationalDayCloseTime)
+    patch.settings = currentSettings
 
     const { error } = await supabase.from("pops").update(patch).eq("id", popId)
     if (error) {

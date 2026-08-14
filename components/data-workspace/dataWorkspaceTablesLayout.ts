@@ -161,10 +161,25 @@ export const workspaceTableLayoutListEndFooterClass = cn(
 export const workspaceTableLayoutListEndFooterDividerClass =
   "h-px flex-1 bg-[var(--wt-border)]"
 
+/** Encabezado layout en tablas inset (modal) — sin sticky; el borde va en thead. */
+export const workspaceTableLayoutInsetHeaderHeadClass = cn(
+  workspaceTableLayoutMetaLabelClass,
+  workspaceTableLayoutHeaderHeightClass,
+  workspaceTableLayoutStickyHeaderGlassClass,
+  "static top-auto z-auto !py-0 px-3 align-middle",
+  "!border-b-0 !shadow-none",
+  "text-[var(--wt-header-text)]",
+)
+
 /** Tabla inset en modal/panel — borde exterior + clip; sin fondo en shell (evita artefactos). */
 export const workspaceTableLayoutInsetTableShellClass = cn(
-  "relative overflow-hidden rounded-lg border border-[var(--wt-border)] bg-transparent",
-  "[&_[data-slot=table-head]]:!static",
+  "relative isolate overflow-hidden rounded-lg border border-[var(--wt-border)] bg-transparent",
+  "[&_[data-slot=table-head]]:!static [&_[data-slot=table-head]]:!top-auto",
+  "[&_[data-slot=table-header]_[data-slot=table-row]]:!border-b-0",
+  "[&_[data-slot=table-head]]:!border-b-0",
+  "[&_[data-slot=table-header]]:border-b [&_[data-slot=table-header]]:border-[var(--wt-border)]",
+  "[&_[data-slot=table-head]:first-child]:rounded-tl-lg",
+  "[&_[data-slot=table-head]:last-child]:rounded-tr-lg",
   "[&_table]:bg-transparent",
   "[&_[data-slot=table-body]_[data-slot=table-row]]:!border-b",
   "[&_[data-slot=table-body]_[data-slot=table-row]]:!border-[var(--wt-border)]",
@@ -173,7 +188,7 @@ export const workspaceTableLayoutInsetTableShellClass = cn(
 
 export const workspaceTableLayoutInsetTableClass = cn(
   workspaceTableLayoutClassName,
-  "border-collapse",
+  "border-separate border-spacing-0",
 )
 
 /** Barra de filtros — h-23 · toolbar elevation.overlay. */

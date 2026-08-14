@@ -4,6 +4,7 @@ import type { StatisticsSectionData } from "@/app/[siteId]/[popId]/statistics/ac
 import { DataWorkspaceDetailEmptyState } from "@/components/data-workspace/DataWorkspaceDetailEmptyState"
 import { StatisticsCompareKpiRow } from "@/components/statistics/StatisticsCompareKpiRow"
 import { StatisticsEvolutionChart } from "@/components/statistics/StatisticsEvolutionChart"
+import { StatisticsHourlyHeatmap } from "@/components/statistics/StatisticsHourlyHeatmap"
 import { StatisticsRankTable } from "@/components/statistics/StatisticsRankTable"
 import { StatisticsSegmentList } from "@/components/statistics/StatisticsSegmentList"
 import {
@@ -21,6 +22,13 @@ import { cn } from "@/lib/utils"
 import { Clock, Info } from "lucide-react"
 import type { DateRange } from "react-day-picker"
 import type { ReactNode } from "react"
+
+const STATISTICS_HOURLY_SECTIONS = new Set<StatisticsSectionData["sectionId"]>([
+  "sales",
+  "channels",
+  "clients",
+  "finance",
+])
 
 function StatisticsSectionHeading({
   title,
@@ -164,6 +172,8 @@ export function StatisticsSectionPanel({
     data?.sectionId === "inventory" ? ("number" as const) : ("money" as const)
 
   const comingSoon = isComingSoonSection(data, section)
+  const showHourlyChart =
+    section?.id != null && STATISTICS_HOURLY_SECTIONS.has(section.id)
 
   const sectionFilters = (
     <StatisticsSectionFilters
@@ -209,8 +219,8 @@ export function StatisticsSectionPanel({
         />
       </section>
 
-      <div className="grid gap-6 lg:grid-cols-2">
-        <section>
+      <div className="grid items-stretch gap-6 lg:grid-cols-2">
+        <section className="min-h-0">
           <StatisticsEvolutionChart
             title="Evolución diaria"
             description="Comportamiento en el tiempo dentro del período"
@@ -219,7 +229,7 @@ export function StatisticsSectionPanel({
             valueFormat={rankFormat}
           />
         </section>
-        <section>
+        <section className="min-h-0">
           <StatisticsSegmentList
             title="Participación"
             description="Distribución por segmento dentro del total"
@@ -229,6 +239,26 @@ export function StatisticsSectionPanel({
           />
         </section>
       </div>
+
+      {showHourlyChart ? (
+        <section>
+          <StatisticsHourlyHeatmap
+            title="Mapa horario"
+            description="Intensidad de ventas por día y hora del día operativo"
+            heatmap={
+              data?.hourlyHeatmap ?? {
+                days: [],
+                hours: [],
+                cells: [],
+                maxValue: 0,
+              }
+            }
+            loading={loading}
+            valueFormat={rankFormat}
+            emptyMessage="Sin ventas por hora en este período"
+          />
+        </section>
+      ) : null}
 
       <section>
         <StatisticsRankTable

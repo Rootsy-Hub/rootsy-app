@@ -106,6 +106,10 @@ export function quotesSkeletonColumns(): WorkspaceTableSkeletonColumn[] {
   ]
 }
 
+export function purchaseOrdersSkeletonColumns(): WorkspaceTableSkeletonColumn[] {
+  return quotesSkeletonColumns()
+}
+
 export function suppliersSkeletonColumns(options?: {
   hasActionsColumn?: boolean
 }): WorkspaceTableSkeletonColumn[] {

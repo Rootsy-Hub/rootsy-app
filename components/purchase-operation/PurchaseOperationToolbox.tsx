@@ -13,6 +13,7 @@ import {
 } from "@/app/library/layouts/layoutsOperarStyles"
 import { saleOpImporteBaseClass } from "@/components/sale-operation/saleOperationStyles"
 import { cn } from "@/lib/utils"
+import type { LucideIcon } from "lucide-react"
 import { Banknote, Percent, Receipt, Truck } from "lucide-react"
 
 const TOOLBOX_PROPOSAL = LAYOUTS_OPERAR_DEFAULT_TOOLBOX_PROPOSAL
@@ -24,7 +25,9 @@ export type PurchaseOperationToolboxProps = {
   comprobanteLabel: string
   comprobanteConfigurado: boolean
   pagoLabel: string
+  pagoSubLabel?: string | null
   pagoConfigurado: boolean
+  pagoIcon?: LucideIcon
   descuentoLabel: string
   hayDescuento: boolean
   onProveedorClick: () => void
@@ -41,7 +44,9 @@ export function PurchaseOperationToolbox({
   comprobanteLabel,
   comprobanteConfigurado,
   pagoLabel,
+  pagoSubLabel,
   pagoConfigurado,
+  pagoIcon: PagoIconProp,
   descuentoLabel,
   hayDescuento,
   onProveedorClick,
@@ -50,6 +55,8 @@ export function PurchaseOperationToolbox({
   onDescuentoClick,
   className,
 }: PurchaseOperationToolboxProps) {
+  const PagoIcon = PagoIconProp ?? Banknote
+
   return (
     <div className={cn(layoutsOperarToolboxBandClass, className)}>
       <div
@@ -114,10 +121,14 @@ export function PurchaseOperationToolbox({
           type="button"
           onClick={onPagoClick}
           className={layoutsOperarToolboxSlotClass(pagoConfigurado)}
-          aria-label={`Pago: ${pagoLabel}`}
+          aria-label={
+            pagoSubLabel
+              ? `Pago: ${pagoLabel}, ${pagoSubLabel}`
+              : `Pago: ${pagoLabel}`
+          }
         >
           <span className={layoutsOperarToolboxIconWrapClass(pagoConfigurado)}>
-            <Banknote className="size-4.5 sm:size-5" aria-hidden />
+            <PagoIcon className="size-4.5 sm:size-5" aria-hidden />
           </span>
           <span className="min-w-0 flex-1">
             <span className={layoutsOperarToolboxProposalSlotLabelClass(TOOLBOX_PROPOSAL)}>
@@ -131,6 +142,11 @@ export function PurchaseOperationToolbox({
             >
               {pagoLabel}
             </span>
+            {pagoSubLabel ? (
+              <span className="mt-0.5 block truncate text-[11px] font-medium text-[color-mix(in_srgb,var(--rootsy-sombra-300)_68%,transparent)]">
+                {pagoSubLabel}
+              </span>
+            ) : null}
           </span>
         </button>
 

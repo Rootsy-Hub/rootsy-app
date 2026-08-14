@@ -26,6 +26,7 @@ import {
   workspaceTableLayoutBodyCellClass,
   workspaceTableLayoutCellPrimaryTextClass,
   workspaceTableLayoutHeaderHeadClass,
+  workspaceTableLayoutInsetHeaderHeadClass,
   workspaceTableLayoutInsetTableShellClass,
   workspaceTableLayoutInsetTableClass,
   workspaceTableLayoutListBodyScopeClass,
@@ -372,12 +373,12 @@ export function JournalReportView({
                         Origen
                       </WorkspaceTableHead>
                       <WorkspaceTableHead
-                        className={cn(workspaceTableLayoutHeaderHeadClass, "text-right")}
+                        className={cn(workspaceTableLayoutInsetHeaderHeadClass, "text-right")}
                       >
                         Debe
                       </WorkspaceTableHead>
                       <WorkspaceTableHead
-                        className={cn(workspaceTableLayoutHeaderHeadClass, "text-right")}
+                        className={cn(workspaceTableLayoutInsetHeaderHeadClass, "text-right")}
                       >
                         Haber
                       </WorkspaceTableHead>
@@ -539,19 +540,19 @@ export function JournalReportView({
                     <WorkspaceTableHeaderRow>
                       <WorkspaceTableHead
                         tone="nature"
-                        className={workspaceTableLayoutHeaderHeadClass}
+                        className={workspaceTableLayoutInsetHeaderHeadClass}
                       >
                         Cuenta
                       </WorkspaceTableHead>
                       <WorkspaceTableHead
                         tone="nature"
-                        className={cn(workspaceTableLayoutHeaderHeadClass, "text-right")}
+                        className={cn(workspaceTableLayoutInsetHeaderHeadClass, "text-right")}
                       >
                         Debe
                       </WorkspaceTableHead>
                       <WorkspaceTableHead
                         tone="nature"
-                        className={cn(workspaceTableLayoutHeaderHeadClass, "text-right")}
+                        className={cn(workspaceTableLayoutInsetHeaderHeadClass, "text-right")}
                       >
                         Haber
                       </WorkspaceTableHead>

@@ -46,6 +46,7 @@ export function SummaryPeriodToolbar({
   onCustomRangeChange,
   bounds,
   embedded = false,
+  showLabel = false,
   className,
 }: {
   preset: SummaryDatePreset
@@ -55,6 +56,8 @@ export function SummaryPeriodToolbar({
   bounds: { from: string | null; to: string | null }
   /** Solo el selector, sin loseta ni resumen del período. */
   embedded?: boolean
+  /** Muestra la etiqueta sobre el selector en modo embedded. */
+  showLabel?: boolean
   className?: string
 }) {
   const labelId = useId()
@@ -179,7 +182,8 @@ export function SummaryPeriodToolbar({
             prefix={<CalendarRange className="size-4" aria-hidden />}
             prefixVariant="inline"
             className={cn(
-              embedded && dataWorkspaceListFiltersFieldClass(true),
+              embedded &&
+                dataWorkspaceListFiltersFieldClass(!showLabel),
               embedded && periodSelectTriggerShellClass,
               className,
             )}

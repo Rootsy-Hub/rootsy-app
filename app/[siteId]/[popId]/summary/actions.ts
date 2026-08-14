@@ -25,6 +25,9 @@ import {
   sumExpensesReportAmount,
   sumPurchasesReportPaid,
 } from "@/lib/purchasesExpensesReportExportData"
+import { addCalendarDays } from "@/lib/entryDateTimezone"
+import { operationalDayKey } from "@/lib/popOperationalDay"
+import { loadPopOperationalContext } from "@/lib/popTimezoneServer"
 import { createClient } from "@/utils/supabase/server"
 
 export type SummaryMetricDelta = {
@@ -209,11 +212,16 @@ function buildSalesChart(
   sales: OperationSaleRow[],
   from: string | null,
   to: string | null,
+  timeZone: string,
+  operationalDayCloseTime: string,
 ): SummaryChartPoint[] {
   const buckets = new Map<string, number>()
   for (const sale of sales) {
-    const day = sale.soldAt.slice(0, 10)
-    buckets.set(day, (buckets.get(day) ?? 0) + displayOperationSaleCollected(sale))
+    const day = operationalDayKey(sale.soldAt, timeZone, operationalDayCloseTime)
+    buckets.set(
+      day,
+      (buckets.get(day) ?? 0) + displayOperationSaleCollected(sale),
+    )
   }
 
   if (!from || !to) {
@@ -227,27 +235,16 @@ function buildSalesChart(
       }))
   }
 
-  const start = new Date(
-    Number(from.slice(0, 4)),
-    Number(from.slice(5, 7)) - 1,
-    Number(from.slice(8, 10)),
-  )
-  const end = new Date(
-    Number(to.slice(0, 4)),
-    Number(to.slice(5, 7)) - 1,
-    Number(to.slice(8, 10)),
-  )
   const points: SummaryChartPoint[] = []
-  const cursor = new Date(start)
-  while (cursor <= end) {
-    const iso = `${cursor.getFullYear()}-${String(cursor.getMonth() + 1).padStart(2, "0")}-${String(cursor.getDate()).padStart(2, "0")}`
+  let cursor = from
+  while (cursor <= to) {
     points.push({
-      label: `${String(cursor.getDate()).padStart(2, "0")}/${String(cursor.getMonth() + 1).padStart(2, "0")}`,
-      ventas: roundMoney(buckets.get(iso) ?? 0),
+      label: `${cursor.slice(8, 10)}/${cursor.slice(5, 7)}`,
+      ventas: roundMoney(buckets.get(cursor) ?? 0),
       ingresos: 0,
       egresos: 0,
     })
-    cursor.setDate(cursor.getDate() + 1)
+    cursor = addCalendarDays(cursor, 1)
   }
   return points
 }
@@ -528,6 +525,10 @@ export async function getSummaryDashboardData(
       to,
     })
 
+    const supabase = await createClient()
+    const { timeZone, operationalDayCloseTime } =
+      await loadPopOperationalContext(supabase, popId)
+
     const [
       currentFinancials,
       previousFinancials,
@@ -615,7 +616,13 @@ export async function getSummaryDashboardData(
       })
     }
 
-    const salesChartRaw = buildSalesChart(sales, from, to)
+    const salesChartRaw = buildSalesChart(
+      sales,
+      from,
+      to,
+      timeZone,
+      operationalDayCloseTime,
+    )
     const dayCount = salesChartRaw.length || 1
     const dailyOutflow = roundMoney((purchasesTotal + expensesTotal) / dayCount)
     const salesChart = salesChartRaw.map((point) => ({

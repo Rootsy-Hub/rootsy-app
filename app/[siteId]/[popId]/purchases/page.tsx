@@ -23,12 +23,17 @@ import { GeneralDiscountDialog } from "@/components/checkout/GeneralDiscountDial
 import {
   defaultPurchaseCheckoutPaymentSelection,
   isPurchasePaymentSelectionValid,
+  resolvePurchaseToolboxPaymentDisplay,
 } from "@/lib/purchaseCheckoutPayment"
 import type { TreasuryPaymentContext } from "@/lib/treasuryPaymentOptions"
 import {
   CLIENT_IVA_CONDITION_OPTIONS,
 } from "@/app/[siteId]/[popId]/clients/clientIvaConstants"
 import { completePurchase } from "@/app/[siteId]/[popId]/purchases/completePurchase"
+import {
+  createPurchaseOrder,
+  getPurchaseOrderDetail,
+} from "@/app/[siteId]/[popId]/purchase-orders/actions"
 import { resolveCatalogProductImage } from "@/lib/menuCatalogProduct"
 import { resolveSaleLineDiscount } from "@/lib/saleLineDiscount"
 import { SUPPLIER_ACCOUNT_PAYMENT_LABEL } from "@/lib/operationPaymentLabels"
@@ -40,11 +45,14 @@ import {
   DataWorkspaceOperationsLayout,
   OperationsModuleBackdrop,
 } from "@/components/layouts-module/DataWorkspaceOperationsLayout"
+import { dataWorkspaceModuleHeaderVariant } from "@/components/layouts-module/DataWorkspaceModuleLayout"
+import { DataWorkspaceHeaderTooltipIconButton } from "@/components/layouts/DataWorkspaceHeaderTooltipIconButton"
+import { RootsSpinner } from "@/components/rootsy-spinner"
 import { LayoutsOperarMainGrid } from "@/components/layouts-module/LayoutsOperarMainGrid"
 import { layoutsOperarSummaryPanelClass } from "@/app/library/layouts/layoutsOperarStyles"
 import { useDataWorkspaceSidebar } from "@/components/layouts/useDataWorkspaceSidebar"
 import { useAuth } from "@/context/AuthContextSupabase"
-import { useParams } from "next/navigation"
+import { useParams, useRouter, useSearchParams } from "next/navigation"
 import {
   useCallback,
   useEffect,
@@ -52,12 +60,19 @@ import {
   useRef,
   useState,
 } from "react"
-import { Loader2, Truck } from "lucide-react"
+import { Loader2, Truck, FileText } from "lucide-react"
 import { usePadronAutofillRazonSocial } from "@/hooks/usePadronAutofillRazonSocial"
 import { useCartListScrollHighlight } from "@/hooks/useCartListScrollHighlight"
 import { cn } from "@/lib/utils"
 import { derivePurchaseKindFromCartItems } from "@/lib/purchaseKind"
 import { purchaseCartLineId } from "@/lib/purchaseCartLine"
+import {
+  buildPurchaseOrderCheckoutSnapshot,
+  buildPurchaseOrderLineSummariesFromCart,
+  formatPurchaseOrderDiscountLabel,
+  formatPurchaseOrderPaymentLabel,
+} from "@/lib/purchaseOrderCheckout"
+import type { PurchaseCheckoutSnapshot } from "@/lib/purchaseOrderCheckoutState"
 import {
   AlertDialog,
   AlertDialogAction,
@@ -121,6 +136,9 @@ function parseUnitCost(raw: string, fallback: number): number {
 
 function PurchasesPage() {
   const params = useParams()
+  const router = useRouter()
+  const searchParams = useSearchParams()
+  const orderIdFromUrl = searchParams.get("orderId")
   const siteId = typeof params?.siteId === "string" ? params.siteId : ""
   const popId = typeof params?.popId === "string" ? params.popId : undefined
   const {
@@ -186,14 +204,14 @@ function PurchasesPage() {
   }, [loadCatalog])
 
   useEffect(() => {
-    if (!canReadPaymentMethods || !treasuryPaymentContext) return
+    if (!canReadPaymentMethods || !treasuryPaymentContext || orderIdFromUrl) return
     setMetodoPagoSeleccionado((prev) => {
       if (prev && isPurchasePaymentSelectionValid(prev, treasuryPaymentContext)) {
         return prev
       }
       return defaultPurchaseCheckoutPaymentSelection(treasuryPaymentContext)
     })
-  }, [canReadPaymentMethods, treasuryPaymentContext])
+  }, [canReadPaymentMethods, treasuryPaymentContext, orderIdFromUrl])
 
   const [carrito, setCarrito] = useState<ItemCarrito[]>([])
   const [costPickerArticleId, setCostPickerArticleId] = useState<string | null>(
@@ -281,6 +299,25 @@ function PurchasesPage() {
   const [comprarConfirmOpen, setComprarConfirmOpen] = useState(false)
   const [compraSubmitting, setCompraSubmitting] = useState(false)
   const [compraError, setCompraError] = useState<string | null>(null)
+  const [ordenConfirmOpen, setOrdenConfirmOpen] = useState(false)
+  const [ordenSubmitting, setOrdenSubmitting] = useState(false)
+  const [ordenError, setOrdenError] = useState<string | null>(null)
+
+  const orderLoadRef = useRef<string | null>(null)
+  const orderLoadingRef = useRef<string | null>(null)
+  const [orderRestorePending, setOrderRestorePending] = useState(
+    () => Boolean(orderIdFromUrl),
+  )
+
+  useEffect(() => {
+    if (!orderIdFromUrl) {
+      setOrderRestorePending(false)
+      return
+    }
+    if (orderLoadRef.current !== orderIdFromUrl) {
+      setOrderRestorePending(true)
+    }
+  }, [orderIdFromUrl])
 
   useEffect(() => {
     const today = new Date()
@@ -410,6 +447,16 @@ function PurchasesPage() {
     if (payOnSupplierAccount) return SUPPLIER_ACCOUNT_PAYMENT_LABEL
     return metodoPagoSeleccionado?.label ?? "Elegir forma de pago"
   }, [payOnSupplierAccount, metodoPagoSeleccionado])
+
+  const toolboxPaymentDisplay = useMemo(
+    () =>
+      resolvePurchaseToolboxPaymentDisplay({
+        payOnSupplierAccount,
+        metodoPagoSeleccionado,
+        treasuryPaymentContext,
+      }),
+    [payOnSupplierAccount, metodoPagoSeleccionado, treasuryPaymentContext],
+  )
 
   const comprobanteToolboxLabel = useMemo(() => {
     if (comprobanteTipo != null) return comprobanteTipo
@@ -548,6 +595,201 @@ function PurchasesPage() {
     itemComentarios,
     limpiarCompra,
     loadCatalog,
+  ])
+
+  const ordenComprobanteLabel = confirmComprobanteLabel || "Sin comprobante"
+  const ordenPaymentLabel = pagoConfigurado
+    ? pagoResumenLabel
+    : "Sin medio de pago"
+  const ordenDiscountLabel = formatPurchaseOrderDiscountLabel({
+    modoDescuento,
+    valorDescuentoPorcentaje,
+    valorDescuentoFijo,
+    descuentoMonto,
+  })
+
+  const aplicarOrdenEnCompra = useCallback(
+    (snapshot: PurchaseCheckoutSnapshot) => {
+      setCarrito(snapshot.carrito.map((item) => ({ ...item })))
+      setProveedorSeleccionado(snapshot.proveedorSeleccionado)
+      setManualNombreProveedor(snapshot.manualNombreProveedor)
+      setProveedorTaxId(snapshot.proveedorTaxId)
+      setCompraIvaCondition(snapshot.compraIvaCondition)
+      setDocumentNumber(snapshot.documentNumber)
+      setDocumentDate(snapshot.documentDate)
+      setDueDate(snapshot.dueDate)
+      setComprobanteTipo(snapshot.comprobanteTipo)
+      setComprobanteAdjunto(null)
+      if (comprobanteAdjuntoInputRef.current) {
+        comprobanteAdjuntoInputRef.current.value = ""
+      }
+      setPayOnSupplierAccount(snapshot.payOnSupplierAccount)
+      setMetodoPagoSeleccionado(
+        snapshot.metodoPagoSeleccionado &&
+          treasuryPaymentContext &&
+          isPurchasePaymentSelectionValid(
+            snapshot.metodoPagoSeleccionado,
+            treasuryPaymentContext,
+          )
+          ? snapshot.metodoPagoSeleccionado
+          : snapshot.payOnSupplierAccount
+            ? null
+            : snapshot.metodoPagoSeleccionado,
+      )
+      setCardInstallments(snapshot.cardInstallments)
+      setModoDescuento(snapshot.modoDescuento)
+      setValorDescuentoPorcentaje(snapshot.valorDescuentoPorcentaje)
+      setValorDescuentoFijo(snapshot.valorDescuentoFijo)
+      setItemUnitCosts({ ...snapshot.itemUnitCosts })
+      setItemUpdateArticleCost({ ...snapshot.itemUpdateArticleCost })
+      setItemDescuentoModo({ ...snapshot.itemDescuentoModo })
+      setItemDescuentoDraft({ ...snapshot.itemDescuentoDraft })
+      setItemComentarios({ ...snapshot.itemComentarios })
+      setCompraError(null)
+      setOrdenError(null)
+    },
+    [treasuryPaymentContext],
+  )
+
+  const confirmarOrden = useCallback(async () => {
+    if (!popId || !hayItemsEnPedido) return
+    setOrdenError(null)
+    setOrdenSubmitting(true)
+    try {
+      const checkoutSnapshot = buildPurchaseOrderCheckoutSnapshot({
+        carrito,
+        proveedorSeleccionado,
+        manualNombreProveedor,
+        proveedorTaxId,
+        compraIvaCondition,
+        documentNumber,
+        documentDate,
+        dueDate,
+        comprobanteTipo,
+        attachmentFileName: comprobanteAdjunto?.name ?? null,
+        payOnSupplierAccount,
+        metodoPagoSeleccionado,
+        cardInstallments,
+        modoDescuento,
+        valorDescuentoPorcentaje,
+        valorDescuentoFijo,
+        itemUnitCosts,
+        itemUpdateArticleCost,
+        itemDescuentoModo,
+        itemDescuentoDraft,
+        itemComentarios,
+      })
+      const res = await createPurchaseOrder(popId, {
+        checkoutSnapshot,
+        subtotal,
+        discountTotal: descuentoMonto,
+        total,
+        supplierId:
+          proveedorSeleccionado?.id && !proveedorSeleccionado.manual
+            ? proveedorSeleccionado.id
+            : null,
+        supplierName: confirmSupplierLabel,
+        supplierTaxId:
+          proveedorTaxId.trim() || proveedorSeleccionado?.taxId || null,
+        metadata: {
+          comprobanteLabel: ordenComprobanteLabel,
+          paymentLabel: formatPurchaseOrderPaymentLabel({
+            payOnSupplierAccount,
+            metodoPagoSeleccionado,
+          }),
+          discountLabel: ordenDiscountLabel,
+          lineSummaries: buildPurchaseOrderLineSummariesFromCart({
+            items: itemsDetallados.map((item) => ({
+              lineId: item.lineId,
+              cantidad: item.cantidad,
+              productName: item.producto?.nombre ?? "Artículo",
+              costLabel: item.cost?.name ?? "",
+              unitCost: parseUnitCost(
+                itemUnitCosts[item.lineId] ?? "",
+                item.cost?.unitPrice ?? 0,
+              ),
+            })),
+            itemDescuentoModo,
+            itemDescuentoDraft,
+          }),
+        },
+      })
+      if (!res.success) {
+        setOrdenError(res.error)
+        return
+      }
+      setOrdenConfirmOpen(false)
+      limpiarCompra()
+      router.push(`/${siteId}/${popId}/purchase-orders`)
+    } finally {
+      setOrdenSubmitting(false)
+    }
+  }, [
+    popId,
+    hayItemsEnPedido,
+    carrito,
+    proveedorSeleccionado,
+    manualNombreProveedor,
+    proveedorTaxId,
+    compraIvaCondition,
+    documentNumber,
+    documentDate,
+    dueDate,
+    comprobanteTipo,
+    comprobanteAdjunto,
+    payOnSupplierAccount,
+    metodoPagoSeleccionado,
+    cardInstallments,
+    modoDescuento,
+    valorDescuentoPorcentaje,
+    valorDescuentoFijo,
+    itemUnitCosts,
+    itemUpdateArticleCost,
+    itemDescuentoModo,
+    itemDescuentoDraft,
+    itemComentarios,
+    subtotal,
+    descuentoMonto,
+    total,
+    confirmSupplierLabel,
+    ordenComprobanteLabel,
+    ordenDiscountLabel,
+    itemsDetallados,
+    limpiarCompra,
+    router,
+    siteId,
+  ])
+
+  useEffect(() => {
+    if (!orderIdFromUrl || !popId || catalogLoading) return
+    if (orderLoadRef.current === orderIdFromUrl) return
+    if (orderLoadingRef.current === orderIdFromUrl) return
+
+    orderLoadingRef.current = orderIdFromUrl
+
+    void (async () => {
+      try {
+        const res = await getPurchaseOrderDetail(popId, orderIdFromUrl)
+        if (!res.success) {
+          setCompraError(res.error)
+          setOrderRestorePending(false)
+          return
+        }
+        orderLoadRef.current = orderIdFromUrl
+        aplicarOrdenEnCompra(res.order.checkoutSnapshot)
+        router.replace(`/${siteId}/${popId}/purchases`, { scroll: false })
+      } finally {
+        orderLoadingRef.current = null
+        setOrderRestorePending(false)
+      }
+    })()
+  }, [
+    aplicarOrdenEnCompra,
+    catalogLoading,
+    orderIdFromUrl,
+    popId,
+    router,
+    siteId,
   ])
 
   const proveedorCatalogoBloqueado =
@@ -885,16 +1127,46 @@ function PurchasesPage() {
         popId={popId}
         popName={popName}
         title="Comprar"
-        loading={catalogLoading}
+        loading={catalogLoading || orderRestorePending}
         userName={headerUserName}
         userAvatarSrc={userAvatarSrc}
         sidebarCollapsible
         sidebarEdgeToggle={false}
         sidebarOpen={catalogSidebarOpen}
         onSidebarOpenChange={setCatalogSidebarOpen}
+        headerActions={
+          <DataWorkspaceHeaderTooltipIconButton
+            label="Crear orden de compra"
+            headerVariant={dataWorkspaceModuleHeaderVariant}
+            disabled={!hayItemsEnPedido || ordenSubmitting}
+            onClick={() => {
+              setOrdenError(null)
+              setOrdenConfirmOpen(true)
+            }}
+          >
+            <FileText className="size-5" aria-hidden />
+          </DataWorkspaceHeaderTooltipIconButton>
+        }
       >
         <div className="relative flex h-full min-h-0 w-full flex-col overflow-hidden">
           <OperationsModuleBackdrop />
+
+          {orderRestorePending ? (
+            <div
+              className="absolute inset-0 z-50 flex flex-col items-center justify-center gap-3 bg-[#070a09]/90 backdrop-blur-[2px]"
+              role="status"
+              aria-live="polite"
+              aria-busy="true"
+            >
+              <RootsSpinner size="default" tone="dark" label="Cargando orden de compra" />
+              <p className="text-sm font-medium text-white/90">
+                Cargando orden de compra…
+              </p>
+              <p className="max-w-xs text-center text-xs text-white/50">
+                Preparando ítems, proveedor y condiciones de la compra
+              </p>
+            </div>
+          ) : null}
 
           <LayoutsOperarMainGrid
             catalog={
@@ -914,7 +1186,9 @@ function PurchasesPage() {
                 proveedorConfigurado={Boolean(proveedorSeleccionado)}
                 comprobanteLabel={comprobanteToolboxLabel}
                 comprobanteConfigurado={comprobanteConfigurado}
-                pagoLabel={pagoResumenLabel}
+                pagoLabel={toolboxPaymentDisplay.pagoLabel}
+                pagoSubLabel={toolboxPaymentDisplay.pagoSubLabel}
+                pagoIcon={toolboxPaymentDisplay.pagoIcon}
                 pagoConfigurado={pagoConfigurado}
                 descuentoLabel={descuentoToolboxLabel}
                 hayDescuento={hayDescuento}
@@ -1105,6 +1379,28 @@ function PurchasesPage() {
         comprobanteLabel={confirmComprobanteLabel}
         paymentLabel={pagoResumenLabel}
         onConfirm={confirmarCompra}
+      />
+
+      <SimpleOperationCheckoutConfirmDialog
+        open={ordenConfirmOpen}
+        onOpenChange={(open) => {
+          setOrdenConfirmOpen(open)
+          if (!open) setOrdenError(null)
+        }}
+        title="Generar orden de compra"
+        confirmLabel="Generar orden de compra"
+        submitting={ordenSubmitting}
+        submitError={ordenError}
+        total={total}
+        subtotal={subtotal}
+        descuentoMonto={descuentoMonto}
+        hayDescuento={hayDescuento}
+        partyLabel="Proveedor"
+        partyValue={confirmSupplierLabel}
+        partyIcon={Truck}
+        comprobanteLabel={ordenComprobanteLabel}
+        paymentLabel={ordenPaymentLabel}
+        onConfirm={confirmarOrden}
       />
 
       <PurchaseArticleCostPickerDialog

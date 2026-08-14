@@ -1,6 +1,25 @@
 "use client"
 
 import {
+  dataWorkspaceEntityCardStatLabelClass,
+  workspaceTableNatureMoneyClass,
+  workspaceTableNatureTextPrimaryClass,
+  workspaceTableNatureTextSecondaryClass,
+} from "@/components/data-workspace/dataWorkspaceListStyles"
+import {
+  workspaceTableLayoutBodyCellClass,
+  workspaceTableLayoutInsetHeaderHeadClass,
+  workspaceTableLayoutInsetTableClass,
+  workspaceTableLayoutInsetTableShellClass,
+} from "@/components/data-workspace/dataWorkspaceTablesLayout"
+import {
+  WorkspaceTableBodyRow,
+  WorkspaceTableHead,
+  WorkspaceTableHeader,
+  WorkspaceTableHeaderRow,
+} from "@/components/data-workspace/WorkspaceTableHeader"
+import { workspaceLayoutsTablesScopeClass } from "@/components/layouts-tables/rootsLayoutsTablesProductStyles"
+import {
   quoteHasInlineDiscounts,
   quoteSubtotalSinDescuentos,
   resolveQuoteLineGroups,
@@ -8,6 +27,7 @@ import {
 import type { SaleQuoteMetadata } from "@/lib/saleQuoteTypes"
 import { formatReportMoneyAr } from "@/lib/reportFormatters"
 import { cn } from "@/lib/utils"
+import { TableBody, TableCell } from "@/components/ui/table"
 
 type Props = {
   metadata: SaleQuoteMetadata
@@ -35,57 +55,102 @@ export function SaleQuoteLinesBreakdown({
 
   return (
     <div className={cn("space-y-4", className)}>
-      <div className="overflow-hidden rounded-lg border">
-        <table className="w-full text-sm">
-          <thead className="bg-muted/50 text-left">
-            <tr>
-              <th className="px-3 py-2 font-medium">Producto</th>
-              <th className="px-3 py-2 text-right font-medium">Cant.</th>
-              <th className="px-3 py-2 text-right font-medium">Precio unit.</th>
-              <th className="px-3 py-2 text-right font-medium">Subtotal</th>
-            </tr>
-          </thead>
-          <tbody>
+      <div
+        className={cn(
+          workspaceLayoutsTablesScopeClass,
+          workspaceTableLayoutInsetTableShellClass,
+        )}
+      >
+        <table className={workspaceTableLayoutInsetTableClass}>
+          <WorkspaceTableHeader>
+            <WorkspaceTableHeaderRow>
+              <WorkspaceTableHead
+                tone="nature"
+                className={workspaceTableLayoutInsetHeaderHeadClass}
+              >
+                Producto
+              </WorkspaceTableHead>
+              <WorkspaceTableHead
+                tone="nature"
+                className={cn(workspaceTableLayoutInsetHeaderHeadClass, "text-right")}
+              >
+                Cant.
+              </WorkspaceTableHead>
+              <WorkspaceTableHead
+                tone="nature"
+                className={cn(workspaceTableLayoutInsetHeaderHeadClass, "text-right")}
+              >
+                Precio unit.
+              </WorkspaceTableHead>
+              <WorkspaceTableHead
+                tone="nature"
+                className={cn(workspaceTableLayoutInsetHeaderHeadClass, "text-right")}
+              >
+                Subtotal
+              </WorkspaceTableHead>
+            </WorkspaceTableHeaderRow>
+          </WorkspaceTableHeader>
+          <TableBody>
             {lineGroups.length === 0 ? (
-              <tr>
-                <td
+              <WorkspaceTableBodyRow index={0} noHover>
+                <TableCell
                   colSpan={4}
-                  className="px-3 py-6 text-center text-muted-foreground"
+                  className={cn(
+                    workspaceTableLayoutBodyCellClass,
+                    workspaceTableNatureTextSecondaryClass,
+                    "py-6 text-center",
+                  )}
                 >
                   Sin ítems
-                </td>
-              </tr>
+                </TableCell>
+              </WorkspaceTableBodyRow>
             ) : (
               lineGroups.map((group) => (
                 <GroupRows key={group.id} group={group} />
               ))
             )}
-          </tbody>
+          </TableBody>
         </table>
       </div>
 
-      <div className="space-y-1 border-t pt-3">
+      <div className="space-y-2 border-t border-[var(--rootsy-bruma-200)] pt-3">
         {showListSubtotal ? (
-          <div className="flex justify-between text-sm">
-            <span className="text-muted-foreground">Subtotal sin descuentos</span>
-            <span>{formatReportMoneyAr(subtotalSinDescuentos)}</span>
+          <div className="flex justify-between gap-4 text-sm">
+            <span className={dataWorkspaceEntityCardStatLabelClass}>
+              Subtotal sin descuentos
+            </span>
+            <span className={workspaceTableNatureMoneyClass}>
+              {formatReportMoneyAr(subtotalSinDescuentos)}
+            </span>
           </div>
         ) : null}
-        <div className="flex justify-between">
-          <span className="text-muted-foreground">Subtotal</span>
-          <span>{formatReportMoneyAr(subtotal)}</span>
+        <div className="flex justify-between gap-4 text-sm">
+          <span className={dataWorkspaceEntityCardStatLabelClass}>Subtotal</span>
+          <span className={workspaceTableNatureMoneyClass}>
+            {formatReportMoneyAr(subtotal)}
+          </span>
         </div>
         {discountTotal > 0 ? (
-          <div className="flex justify-between">
-            <span className="text-muted-foreground">
-              Descuento{metadata.discountLabel ? ` (${metadata.discountLabel})` : ""}
+          <div className="flex justify-between gap-4 text-sm">
+            <span className={dataWorkspaceEntityCardStatLabelClass}>
+              Descuento
+              {metadata.discountLabel ? ` (${metadata.discountLabel})` : ""}
             </span>
-            <span>-{formatReportMoneyAr(discountTotal)}</span>
+            <span className={workspaceTableNatureMoneyClass}>
+              -{formatReportMoneyAr(discountTotal)}
+            </span>
           </div>
         ) : null}
-        <div className="flex justify-between text-base font-semibold">
-          <span>Total</span>
-          <span>{formatReportMoneyAr(total)}</span>
+        <div className="flex justify-between gap-4">
+          <span className={dataWorkspaceEntityCardStatLabelClass}>Total</span>
+          <span
+            className={cn(
+              workspaceTableNatureMoneyClass,
+              "font-canopy text-base font-semibold",
+            )}
+          >
+            {formatReportMoneyAr(total)}
+          </span>
         </div>
       </div>
     </div>
@@ -102,17 +167,23 @@ function GroupRows({
   return (
     <>
       {showHeader ? (
-        <tr className="border-t bg-muted/30">
-          <td colSpan={4} className="px-3 py-2 text-xs font-semibold uppercase tracking-wide">
+        <WorkspaceTableBodyRow index={0} noHover>
+          <TableCell
+            colSpan={4}
+            className={cn(
+              workspaceTableLayoutBodyCellClass,
+              "bg-[var(--rootsy-bruma-50)] py-2 text-xs font-semibold uppercase tracking-wide text-[var(--rootsy-bruma-700)]",
+            )}
+          >
             {group.category}
-          </td>
-        </tr>
+          </TableCell>
+        </WorkspaceTableBodyRow>
       ) : null}
       {group.lines.map((line, index) => (
         <LineRows
           key={`${group.id}-${line.name}-${index}`}
           line={line}
-          withBorder={!showHeader || index > 0}
+          rowIndex={index}
         />
       ))}
       {group.promotionDiscount ? (
@@ -127,23 +198,51 @@ function GroupRows({
 
 function LineRows({
   line,
-  withBorder,
+  rowIndex,
 }: {
   line: ReturnType<typeof resolveQuoteLineGroups>[number]["lines"][number]
-  withBorder: boolean
+  rowIndex: number
 }) {
   return (
     <>
-      <tr className={withBorder ? "border-t" : undefined}>
-        <td className="px-3 py-2">{line.name}</td>
-        <td className="px-3 py-2 text-right tabular-nums">{line.quantity}</td>
-        <td className="px-3 py-2 text-right tabular-nums">
+      <WorkspaceTableBodyRow index={rowIndex}>
+        <TableCell
+          className={cn(
+            workspaceTableLayoutBodyCellClass,
+            workspaceTableNatureTextPrimaryClass,
+            "!h-auto !max-h-none whitespace-normal py-3",
+          )}
+        >
+          {line.name}
+        </TableCell>
+        <TableCell
+          className={cn(
+            workspaceTableLayoutBodyCellClass,
+            workspaceTableNatureTextPrimaryClass,
+            "text-right tabular-nums",
+          )}
+        >
+          {line.quantity}
+        </TableCell>
+        <TableCell
+          className={cn(
+            workspaceTableLayoutBodyCellClass,
+            workspaceTableNatureMoneyClass,
+            "text-right tabular-nums",
+          )}
+        >
           {formatReportMoneyAr(line.unitListPrice)}
-        </td>
-        <td className="px-3 py-2 text-right tabular-nums">
+        </TableCell>
+        <TableCell
+          className={cn(
+            workspaceTableLayoutBodyCellClass,
+            workspaceTableNatureMoneyClass,
+            "text-right tabular-nums",
+          )}
+        >
           {formatReportMoneyAr(line.listLineTotal)}
-        </td>
-      </tr>
+        </TableCell>
+      </WorkspaceTableBodyRow>
       {line.discounts.map((discount, index) => (
         <DiscountRow
           key={`${line.name}-discount-${index}`}
@@ -157,12 +256,32 @@ function LineRows({
 
 function DiscountRow({ label, amount }: { label: string; amount: number }) {
   return (
-    <tr className="border-t bg-muted/10 text-muted-foreground">
-      <td className="px-3 py-1.5 pl-6 text-xs">{label}</td>
-      <td className="px-3 py-1.5" colSpan={2} />
-      <td className="px-3 py-1.5 text-right tabular-nums text-xs">
+    <WorkspaceTableBodyRow index={0} noHover>
+      <TableCell
+        className={cn(
+          workspaceTableLayoutBodyCellClass,
+          workspaceTableNatureTextSecondaryClass,
+          "bg-[var(--rootsy-bruma-50)] py-1.5 pl-6 text-xs",
+        )}
+      >
+        {label}
+      </TableCell>
+      <TableCell
+        colSpan={2}
+        className={cn(
+          workspaceTableLayoutBodyCellClass,
+          "bg-[var(--rootsy-bruma-50)] py-1.5",
+        )}
+      />
+      <TableCell
+        className={cn(
+          workspaceTableLayoutBodyCellClass,
+          workspaceTableNatureMoneyClass,
+          "bg-[var(--rootsy-bruma-50)] py-1.5 text-right text-xs tabular-nums",
+        )}
+      >
         -{formatReportMoneyAr(amount)}
-      </td>
-    </tr>
+      </TableCell>
+    </WorkspaceTableBodyRow>
   )
 }

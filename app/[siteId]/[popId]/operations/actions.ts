@@ -38,6 +38,13 @@ import {
   timezoneForPopLedger,
 } from "@/lib/entryDateTimezone"
 import { createClient } from "@/utils/supabase/server"
+import { loadPopOperationalContext } from "@/lib/popTimezoneServer"
+import {
+  DEFAULT_OPERATIONAL_DAY_CLOSE_TIME,
+  expandCalendarBoundsForOperationalFetch,
+  filterSalesByOperationalPeriod,
+  usesOperationalDayFilter,
+} from "@/lib/popOperationalDay"
 import {
   saleComprobanteLabel,
   saleHasComprobante,
@@ -1991,13 +1998,37 @@ export async function getOperationsList(
     ) {
       const isChannelGroupedView = view === "tables" || view === "counter"
       const isAllChannelsSalesView = view === "sales-report"
+      const isSalesDateFilteredView =
+        view === "sales" ||
+        view === "sales-report" ||
+        view === "tables" ||
+        view === "counter"
+
+      let operationalDayCloseTime = DEFAULT_OPERATIONAL_DAY_CLOSE_TIME
+      let salesTimeZone = ledgerTimeZone
+      if (isSalesDateFilteredView && (dateFrom || dateTo)) {
+        const operationalContext = await loadPopOperationalContext(
+          supabase,
+          popId,
+        )
+        operationalDayCloseTime = operationalContext.operationalDayCloseTime
+        salesTimeZone = operationalContext.timeZone
+      }
+
+      const useOperationalDayFilter =
+        isSalesDateFilteredView &&
+        usesOperationalDayFilter(operationalDayCloseTime, dateFrom, dateTo)
+
+      const salesFetchBounds = useOperationalDayFilter
+        ? expandCalendarBoundsForOperationalFetch(dateFrom, dateTo)
+        : { from: dateFrom, to: dateTo }
 
       let totalCount = 0
       let safePage = Math.max(1, reqPage)
       let from = (safePage - 1) * pageSize
       let to = from + pageSize - 1
 
-      if (!isChannelGroupedView) {
+      if (!isChannelGroupedView && !useOperationalDayFilter) {
         let countQuery = supabase
           .from("sales")
           .select("id", { count: "exact", head: true })
@@ -2009,9 +2040,9 @@ export async function getOperationsList(
         }
         countQuery = appendSalesDateFilter(
           countQuery,
-          dateFrom,
-          dateTo,
-          ledgerTimeZone,
+          salesFetchBounds.from,
+          salesFetchBounds.to,
+          salesTimeZone,
         )
         if (uuidSearch) {
           countQuery = countQuery.eq("id", searchTerm)
@@ -2056,9 +2087,9 @@ export async function getOperationsList(
       }
       dataQuery = appendSalesDateFilter(
         dataQuery,
-        dateFrom,
-        dateTo,
-        ledgerTimeZone,
+        salesFetchBounds.from,
+        salesFetchBounds.to,
+        salesTimeZone,
       )
       if (uuidSearch) {
         dataQuery = dataQuery.eq("id", searchTerm)
@@ -2070,7 +2101,7 @@ export async function getOperationsList(
       dataQuery = dataQuery.order(salesListOrder.column, {
         ascending: salesListOrder.ascending,
       })
-      if (!isChannelGroupedView) {
+      if (!isChannelGroupedView && !useOperationalDayFilter) {
         dataQuery = dataQuery.range(from, to)
       }
 
@@ -2151,6 +2182,23 @@ export async function getOperationsList(
         counterOrderLabelByOrderId,
         userNames,
       )
+      if (useOperationalDayFilter) {
+        sales = filterSalesByOperationalPeriod(
+          sales,
+          dateFrom,
+          dateTo,
+          salesTimeZone,
+          operationalDayCloseTime,
+        )
+      }
+      if (useOperationalDayFilter && !isChannelGroupedView) {
+        totalCount = sales.length
+        const totalPages = Math.max(1, Math.ceil(totalCount / pageSize))
+        safePage = Math.min(Math.max(1, reqPage), totalPages)
+        from = (safePage - 1) * pageSize
+        to = from + pageSize - 1
+        sales = sales.slice(from, to + 1)
+      }
       if (isChannelGroupedView) {
         sales = applyChannelListFieldsToSaleRows(sales, {
           view: view === "tables" ? "table" : "counter",

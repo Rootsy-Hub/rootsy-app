@@ -18,6 +18,7 @@ import {
 import type { StatisticsEvolutionPoint } from "@/app/[siteId]/[popId]/statistics/actions"
 import { formatReportMoneyAr } from "@/lib/reportFormatters"
 import { cn } from "@/lib/utils"
+import { useId } from "react"
 import {
   Area,
   AreaChart,
@@ -30,8 +31,36 @@ const chartConfig = {
   value: { label: "Valor", color: "var(--chart-1)" },
 } satisfies ChartConfig
 
-const chartAxisMono =
-  "[&_.recharts-cartesian-axis-tick_text]:font-numeric [&_.recharts-cartesian-axis-tick_text]:tabular-nums"
+const chartShellClass = cn(
+  "mt-4 aspect-21/9 min-h-[220px] w-full",
+  "[&_.recharts-cartesian-axis-tick_text]:fill-[var(--rootsy-bruma-500)]",
+  "[&_.recharts-cartesian-axis-tick_text]:font-numeric",
+  "[&_.recharts-cartesian-axis-tick_text]:tabular-nums",
+)
+
+function formatChartTick(
+  value: number,
+  valueFormat: "money" | "number",
+): string {
+  if (valueFormat === "money") {
+    if (Math.abs(value) >= 1_000_000) {
+      return `$${(value / 1_000_000).toLocaleString("es-AR", { maximumFractionDigits: 1 })}M`
+    }
+    if (Math.abs(value) >= 1_000) {
+      return `$${(value / 1_000).toLocaleString("es-AR", { maximumFractionDigits: 0 })}k`
+    }
+    return formatReportMoneyAr(value)
+  }
+  return value.toLocaleString("es-AR")
+}
+
+function formatChartValue(
+  value: number,
+  valueFormat: "money" | "number",
+): string {
+  if (valueFormat === "money") return formatReportMoneyAr(value)
+  return value.toLocaleString("es-AR")
+}
 
 export function StatisticsEvolutionChart({
   title = "Evolución",
@@ -39,32 +68,30 @@ export function StatisticsEvolutionChart({
   points,
   loading,
   valueFormat = "money",
+  axisLabelInterval,
+  emptyMessage = "Sin datos de evolución en este período",
 }: {
   title?: string
   description?: string
   points: StatisticsEvolutionPoint[]
   loading?: boolean
   valueFormat?: "money" | "number"
+  axisLabelInterval?: number
+  emptyMessage?: string
 }) {
+  const gradientId = useId().replace(/:/g, "")
   const hasData = points.some((p) => p.value !== 0)
   const { title: titleClass, description: descriptionClass } =
     statisticsSectionHeadingClassNames()
 
-  const formatTick = (value: number) => {
-    if (valueFormat === "money") {
-      if (Math.abs(value) >= 1_000_000) {
-        return `$${(value / 1_000_000).toLocaleString("es-AR", { maximumFractionDigits: 1 })}M`
-      }
-      if (Math.abs(value) >= 1_000) {
-        return `$${(value / 1_000).toLocaleString("es-AR", { maximumFractionDigits: 0 })}k`
-      }
-      return formatReportMoneyAr(value)
-    }
-    return value.toLocaleString("es-AR")
-  }
-
   return (
-    <div className={cn(statisticsLosetaCardClass, statisticsLosetaCardBodyClass)}>
+    <div
+      className={cn(
+        statisticsLosetaCardClass,
+        statisticsLosetaCardBodyClass,
+        "flex h-full flex-col overflow-visible",
+      )}
+    >
       <div>
         <h3 className={titleClass}>{title}</h3>
         {description ? <p className={descriptionClass}>{description}</p> : null}
@@ -77,32 +104,39 @@ export function StatisticsEvolutionChart({
           )}
         />
       ) : hasData ? (
-        <ChartContainer
-          config={chartConfig}
-          className={cn("mt-4 aspect-21/9 min-h-[220px] w-full", chartAxisMono)}
-        >
-          <AreaChart data={points} margin={{ left: 0, right: 8, top: 8 }}>
+        <ChartContainer config={chartConfig} className={chartShellClass}>
+          <AreaChart
+            data={points}
+            margin={{ top: 8, right: 12, bottom: 4, left: 4 }}
+          >
             <defs>
-              <linearGradient id="fillStatsEvolution" x1="0" y1="0" x2="0" y2="1">
+              <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
                 <stop offset="0%" stopColor="var(--chart-1)" stopOpacity={0.35} />
                 <stop offset="100%" stopColor="var(--chart-1)" stopOpacity={0} />
               </linearGradient>
             </defs>
             <CartesianGrid vertical={false} strokeDasharray="3 3" />
-            <XAxis dataKey="label" tickLine={false} axisLine={false} />
+            <XAxis
+              dataKey="label"
+              tickLine={false}
+              axisLine={false}
+              interval={axisLabelInterval}
+              tick={{ fontSize: 11 }}
+              tickMargin={8}
+            />
             <YAxis
               tickLine={false}
               axisLine={false}
-              width={52}
-              tickFormatter={formatTick}
+              width={56}
+              tickFormatter={(value) => formatChartTick(value, valueFormat)}
+              tick={{ fontSize: 11 }}
             />
             <ChartTooltip
               content={
                 <ChartTooltipContent
+                  labelFormatter={(label) => String(label)}
                   formatter={(value) =>
-                    valueFormat === "money"
-                      ? formatReportMoneyAr(Number(value))
-                      : Number(value).toLocaleString("es-AR")
+                    formatChartValue(Number(value), valueFormat)
                   }
                 />
               }
@@ -111,8 +145,10 @@ export function StatisticsEvolutionChart({
               type="monotone"
               dataKey="value"
               stroke="var(--color-value)"
-              fill="url(#fillStatsEvolution)"
+              fill={`url(#${gradientId})`}
               strokeWidth={2}
+              dot={false}
+              activeDot={{ r: 4, fill: "var(--color-value)" }}
             />
           </AreaChart>
         </ChartContainer>
@@ -123,7 +159,7 @@ export function StatisticsEvolutionChart({
             "mt-4 flex min-h-[220px] items-center justify-center text-center",
           )}
         >
-          Sin datos de evolución en este período
+          {emptyMessage}
         </p>
       )}
     </div>

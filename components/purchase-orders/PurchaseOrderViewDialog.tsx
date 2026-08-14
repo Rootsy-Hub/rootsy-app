@@ -2,14 +2,14 @@
 
 import { dataWorkspaceEntityCardStatLabelClass } from "@/components/data-workspace/dataWorkspaceListStyles"
 import { PopIdentityHorizontalAddress } from "@/components/pop-identity/PopIdentityHorizontalAddress"
-import { SaleQuoteLinesBreakdown } from "@/components/quotes/SaleQuoteLinesBreakdown"
+import { PurchaseOrderLinesBreakdown } from "@/components/purchase-orders/PurchaseOrderLinesBreakdown"
 import {
   RootsDialogBody,
   RootsDialogContent,
   RootsDialogHeader,
 } from "@/components/rootsy-dialog"
 import { Dialog } from "@/components/ui/dialog"
-import type { SaleQuoteDetail } from "@/lib/saleQuoteTypes"
+import type { PurchaseOrderDetail } from "@/lib/purchaseOrderTypes"
 import { cn } from "@/lib/utils"
 
 type PopBrandProps = {
@@ -23,7 +23,7 @@ type PopBrandProps = {
 type Props = {
   open: boolean
   onOpenChange: (open: boolean) => void
-  quote: SaleQuoteDetail | null
+  order: PurchaseOrderDetail | null
   formatCreatedAt: (iso: string) => string
   popBrand?: PopBrandProps | null
 }
@@ -41,21 +41,21 @@ function MetaField({ label, value }: { label: string; value: string }) {
   )
 }
 
-export function SaleQuoteViewDialog({
+export function PurchaseOrderViewDialog({
   open,
   onOpenChange,
-  quote,
+  order,
   formatCreatedAt,
   popBrand,
 }: Props) {
-  if (!quote) return null
+  if (!order) return null
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <RootsDialogContent size="wide" className="flex flex-col sm:max-w-lg">
         <RootsDialogHeader
           open={open}
-          title={`Presupuesto N.º ${quote.quoteNumber}`}
+          title={`Orden de compra N.º ${order.orderNumber}`}
         />
 
         <RootsDialogBody className="space-y-4">
@@ -71,38 +71,38 @@ export function SaleQuoteViewDialog({
 
           <dl className="grid gap-3">
             <MetaField
-              label="Cliente"
-              value={quote.customerName || "Sin cliente"}
+              label="Proveedor"
+              value={order.supplierName || "Sin proveedor"}
             />
-            {quote.customerTaxId ? (
-              <MetaField label="Documento" value={quote.customerTaxId} />
+            {order.supplierTaxId ? (
+              <MetaField label="Documento" value={order.supplierTaxId} />
             ) : null}
-            {quote.metadata.comprobanteLabel ? (
+            {order.metadata.comprobanteLabel ? (
               <MetaField
                 label="Comprobante"
-                value={quote.metadata.comprobanteLabel}
+                value={order.metadata.comprobanteLabel}
               />
             ) : null}
-            {quote.metadata.paymentLabel ? (
+            {order.metadata.paymentLabel ? (
               <MetaField
                 label="Medio de pago"
-                value={quote.metadata.paymentLabel}
+                value={order.metadata.paymentLabel}
               />
             ) : null}
-            {quote.metadata.discountLabel ? (
+            {order.metadata.discountLabel ? (
               <MetaField
                 label="Descuento general"
-                value={quote.metadata.discountLabel}
+                value={order.metadata.discountLabel}
               />
             ) : null}
-            <MetaField label="Fecha" value={formatCreatedAt(quote.createdAt)} />
+            <MetaField label="Fecha" value={formatCreatedAt(order.createdAt)} />
           </dl>
 
-          <SaleQuoteLinesBreakdown
-            metadata={quote.metadata}
-            subtotal={quote.subtotal}
-            discountTotal={quote.discountTotal}
-            total={quote.total}
+          <PurchaseOrderLinesBreakdown
+            metadata={order.metadata}
+            subtotal={order.subtotal}
+            discountTotal={order.discountTotal}
+            total={order.total}
           />
         </RootsDialogBody>
       </RootsDialogContent>

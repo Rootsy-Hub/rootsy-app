@@ -287,6 +287,26 @@ export function PopSettingsFormFields({
               }
               disabled={!canUpdate}
             />
+
+            <RootsFormField
+              label="Hora de cierre del día operativo"
+              htmlFor="pop-operational-day-close"
+              hint="Ventas hasta esta hora del día siguiente cuentan en el día operativo anterior. Ej.: con 05:00, lo vendido entre 00:00 y 04:59 pertenece al día previo."
+            >
+              <Input
+                id="pop-operational-day-close"
+                type="time"
+                value={form.operationalDayCloseTime ?? "00:00"}
+                onChange={(e) =>
+                  setForm((f) => ({
+                    ...f,
+                    operationalDayCloseTime: e.target.value || "00:00",
+                  }))
+                }
+                disabled={!canUpdate}
+                className={cn(rootsFormTextFieldClass, "max-w-[8.5rem]")}
+              />
+            </RootsFormField>
           </div>
         </SettingsSectionCard>
 

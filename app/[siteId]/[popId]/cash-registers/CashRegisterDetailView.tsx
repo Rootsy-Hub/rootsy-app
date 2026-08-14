@@ -210,6 +210,7 @@ export function CashRegisterDetailView({
             datePreset={datePreset}
             customDateRange={customDateRange}
             dateBounds={dateBounds}
+            operationalDayCloseTime={data.operationalDayCloseTime}
             onPresetChange={setDatePreset}
             onCustomRangeChange={setCustomDateRange}
             onViewArqueo={(sessionId) => {

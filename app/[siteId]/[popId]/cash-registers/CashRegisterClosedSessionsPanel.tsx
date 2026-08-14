@@ -51,6 +51,7 @@ type Props = {
   datePreset: DataWorkspaceDatePreset
   customDateRange: DateRange | undefined
   dateBounds: { from: string | null; to: string | null }
+  operationalDayCloseTime?: string
   onPresetChange: (preset: DataWorkspaceDatePreset) => void
   onCustomRangeChange: (range: DateRange | undefined) => void
   onViewArqueo: (sessionId: string) => void
@@ -122,6 +123,7 @@ export function CashRegisterClosedSessionsPanel({
   datePreset,
   customDateRange,
   dateBounds,
+  operationalDayCloseTime,
   onPresetChange,
   onCustomRangeChange,
   onViewArqueo,
@@ -134,8 +136,15 @@ export function CashRegisterClosedSessionsPanel({
         dateBounds.from,
         dateBounds.to,
         timeZone,
+        operationalDayCloseTime,
       ),
-    [sessions, dateBounds.from, dateBounds.to, timeZone],
+    [
+      sessions,
+      dateBounds.from,
+      dateBounds.to,
+      timeZone,
+      operationalDayCloseTime,
+    ],
   )
 
   return (

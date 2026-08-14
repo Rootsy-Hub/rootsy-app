@@ -85,6 +85,9 @@ export const statisticsDeltaPositiveClass =
 export const statisticsDeltaNegativeClass =
   "font-numeric font-medium tabular-nums text-amber-700"
 
+export const statisticsDeltaNeutralClass =
+  "font-numeric font-medium tabular-nums text-rootsy-bruma-500"
+
 export const statisticsUpcomingItemClass = cn(
   "flex items-center gap-2 rounded-xl border border-rootsy-bruma-200 bg-rootsy-bruma-100 px-3 py-2.5",
   dataWorkspaceDetailEmptyStateDescriptionClass,
