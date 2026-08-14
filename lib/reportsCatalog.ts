@@ -173,7 +173,6 @@ export const REPORT_CATALOG: ReportCatalogCategory[] = [
         icon: BookOpen,
         path: "accounting",
         query: { focus: "ledger" },
-        planned: true,
       },
       {
         id: "cash-registers",
@@ -243,6 +242,7 @@ export const REPORT_INLINE_DETAIL_IDS = new Set<string>([
   "summaries",
   "trial-balance",
   "journal",
+  "ledger",
 ])
 
 export function supportsInlineReportDetail(reportId: string): boolean {

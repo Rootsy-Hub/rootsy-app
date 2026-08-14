@@ -99,7 +99,7 @@ export function MesasWorkspace({
     layoutSelection,
     selectLayoutItem,
     rotateLayoutItem,
-    layoutLoading,
+    floorLoading,
     layoutError,
     sessionError,
     realtimeStatus,
@@ -273,7 +273,7 @@ export function MesasWorkspace({
   )
 
   const handleSelectTable = (tableId: string) => {
-    if (!tableId) return
+    if (!tableId || floorLoading) return
     selectTable(tableId)
     const table = tables.find((t) => t.id === tableId)
     const isOpen =
@@ -344,12 +344,13 @@ export function MesasWorkspace({
                   activeSalonId={activeSalonId}
                   onChange={setActiveSalonId}
                   tableCounts={tableCounts}
+                  loading={floorLoading}
                 />
                 <div className="row-start-2 flex h-full min-h-0 flex-col overflow-hidden">
                   {layoutError ? (
                     <div className={mesasLayoutErrorBannerClass}>{layoutError}</div>
                   ) : null}
-                  {layoutLoading ? (
+                  {floorLoading ? (
                     <MesasFloorPlanSkeleton />
                   ) : salons.length === 0 ? (
                     <div className={cn("flex flex-1 flex-col items-center justify-center gap-2 px-6 text-center text-sm", mesasFloorEmptyTextClass)}>

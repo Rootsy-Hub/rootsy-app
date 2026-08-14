@@ -29,7 +29,7 @@ type Props = {
   products: PurchaseCatalogProduct[]
   loading: boolean
   error: string | null
-  onAddProduct: (productId: string) => void
+  onAddProduct: (productId: string, quantity?: number) => void
   catalogSidebarOpen?: boolean
   className?: string
 }
@@ -70,6 +70,7 @@ export function PurchaseCatalogBrowser({
   )
   const [modoVista, setModoVista] = useState<"grid" | "lista">("grid")
   const [busqueda, setBusqueda] = useState("")
+  const [cantidadIngreso, setCantidadIngreso] = useState(1)
   const vistaAntesBusquedaRef = useRef<PurchaseCatalogView | null>(null)
   const busquedaTrimPrevRef = useRef("")
 
@@ -150,6 +151,8 @@ export function PurchaseCatalogBrowser({
           onModoVistaChange={setModoVista}
           busqueda={busqueda}
           onBusquedaChange={setBusqueda}
+          cantidadIngreso={cantidadIngreso}
+          onCantidadIngresoChange={setCantidadIngreso}
           resultCount={productosFiltrados.length}
         />
 
@@ -186,7 +189,10 @@ export function PurchaseCatalogBrowser({
                   key={product.id}
                   product={product}
                   variant={modoVista}
-                  onClick={() => onAddProduct(product.id)}
+                  onClick={() => {
+                    onAddProduct(product.id, cantidadIngreso)
+                    setCantidadIngreso(1)
+                  }}
                 />
               ))}
             </div>

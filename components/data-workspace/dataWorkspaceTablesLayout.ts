@@ -2,6 +2,7 @@ import {
   lightToolbarPanelClass,
   lightToolbarPanelLastClass,
   lightToolbarShellClass,
+  workspaceTableLayoutClassName,
   workspaceTableLayoutMetaLabelClass,
   workspaceTableNatureTextSecondaryClass,
   workspaceTableNatureTextTertiaryClass,
@@ -130,6 +131,21 @@ export const workspaceTableLayoutListEndFooterClass = cn(
 
 export const workspaceTableLayoutListEndFooterDividerClass =
   "h-px flex-1 bg-[var(--wt-border)]"
+
+/** Tabla inset en modal/panel — borde exterior + clip; sin fondo en shell (evita artefactos). */
+export const workspaceTableLayoutInsetTableShellClass = cn(
+  "relative overflow-hidden rounded-lg border border-[var(--wt-border)] bg-transparent",
+  "[&_[data-slot=table-head]]:!static",
+  "[&_table]:bg-transparent",
+  "[&_[data-slot=table-body]_[data-slot=table-row]]:!border-b",
+  "[&_[data-slot=table-body]_[data-slot=table-row]]:!border-[var(--wt-border)]",
+  "[&_[data-slot=table-body]_[data-slot=table-row]:last-child]:!border-b-0",
+)
+
+export const workspaceTableLayoutInsetTableClass = cn(
+  workspaceTableLayoutClassName,
+  "border-collapse",
+)
 
 /** Barra de filtros — h-23 · toolbar elevation.overlay. */
 export const dataWorkspaceListFiltersBarClass = cn(

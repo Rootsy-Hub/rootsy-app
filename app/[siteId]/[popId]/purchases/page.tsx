@@ -200,6 +200,7 @@ function PurchasesPage() {
     null,
   )
   const [costPickerOpen, setCostPickerOpen] = useState(false)
+  const [costPickerPendingQty, setCostPickerPendingQty] = useState(1)
   const cartScrollHighlight = useCartListScrollHighlight()
   const [itemUnitCosts, setItemUnitCosts] = useState<Record<string, string>>({})
   const [itemUpdateArticleCost, setItemUpdateArticleCost] = useState<
@@ -663,13 +664,18 @@ function PurchasesPage() {
   }, [modoDescuento, subtotal, valorDescuentoFijo])
 
   const agregarCostoAlCarrito = useCallback(
-    (productoId: string, cost: PurchaseCatalogArticleCost) => {
+    (
+      productoId: string,
+      cost: PurchaseCatalogArticleCost,
+      cantidad = 1,
+    ) => {
+      const qty = Math.max(1, Math.round(cantidad * 1e6) / 1e6)
       const lineId = purchaseCartLineId(productoId, cost.id)
       setCarrito((prev) => {
         const existe = prev.find((i) => i.lineId === lineId)
         if (existe) {
           return prev.map((i) =>
-            i.lineId === lineId ? { ...i, cantidad: i.cantidad + 1 } : i,
+            i.lineId === lineId ? { ...i, cantidad: i.cantidad + qty } : i,
           )
         }
         return [
@@ -678,7 +684,7 @@ function PurchasesPage() {
             lineId,
             productoId,
             articleCostId: cost.id,
-            cantidad: 1,
+            cantidad: qty,
           },
         ]
       })
@@ -699,7 +705,7 @@ function PurchasesPage() {
     [cartScrollHighlight],
   )
 
-  const agregarAlCarrito = (productoId: string) => {
+  const agregarAlCarrito = (productoId: string, cantidad = 1) => {
     const producto = productosCatalogo.find((p) => p.id === productoId)
     if (!producto) return
     if (producto.costs.length === 0) {
@@ -709,10 +715,11 @@ function PurchasesPage() {
       return
     }
     if (producto.costs.length === 1) {
-      agregarCostoAlCarrito(productoId, producto.costs[0])
+      agregarCostoAlCarrito(productoId, producto.costs[0], cantidad)
       return
     }
     setCostPickerArticleId(productoId)
+    setCostPickerPendingQty(cantidad)
     setCostPickerOpen(true)
   }
 
@@ -1104,7 +1111,10 @@ function PurchasesPage() {
         open={costPickerOpen}
         onOpenChange={(open) => {
           setCostPickerOpen(open)
-          if (!open) setCostPickerArticleId(null)
+          if (!open) {
+            setCostPickerArticleId(null)
+            setCostPickerPendingQty(1)
+          }
         }}
         articleName={
           productosCatalogo.find((p) => p.id === costPickerArticleId)?.nombre ??
@@ -1120,8 +1130,13 @@ function PurchasesPage() {
         onSelect={(cost) => {
           if (!costPickerArticleId) return
           setCompraError(null)
-          agregarCostoAlCarrito(costPickerArticleId, cost)
+          agregarCostoAlCarrito(
+            costPickerArticleId,
+            cost,
+            costPickerPendingQty,
+          )
           setCostPickerArticleId(null)
+          setCostPickerPendingQty(1)
         }}
       />
     </>

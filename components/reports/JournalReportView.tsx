@@ -16,6 +16,7 @@ import {
   workspaceTableNatureMoneyClass,
   workspaceTableNatureTextPrimaryClass,
   workspaceTableNatureTextSecondaryClass,
+  workspaceTableNatureTextTertiaryClass,
   workspaceTableLayoutClassName,
 } from "@/components/data-workspace/dataWorkspaceListStyles"
 import {
@@ -23,6 +24,8 @@ import {
   workspaceTableLayoutBodyCellClass,
   workspaceTableLayoutCellPrimaryTextClass,
   workspaceTableLayoutHeaderHeadClass,
+  workspaceTableLayoutInsetTableShellClass,
+  workspaceTableLayoutInsetTableClass,
   workspaceTableLayoutListBodyScopeClass,
   workspaceTableLayoutListEndFooterClass,
   workspaceTableLayoutListEndFooterDividerClass,
@@ -38,14 +41,20 @@ import {
 } from "@/components/data-workspace/WorkspaceTableHeader"
 import { RootsLinkButton } from "@/components/rootsy-button"
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+  RootsDialogBody,
+  RootsDialogContent,
+  RootsDialogErrorBanner,
+  RootsDialogHeader,
+  RootsDialogLoadingState,
+} from "@/components/rootsy-dialog"
+import { Dialog } from "@/components/ui/dialog"
+import { Table, TableBody, TableCell } from "@/components/ui/table"
 import { formatAccountingSourceType } from "@/lib/accountingSourceTypeLabels"
-import { formatIsoDateShort, type DataWorkspaceDatePreset } from "@/lib/dataWorkspaceDateFilter"
+import { type DataWorkspaceDatePreset } from "@/lib/dataWorkspaceDateFilter"
+import {
+  formatRootsFormDisplayDateCompact,
+  parseRootsFormIsoDate,
+} from "@/lib/rootsFormDateFormat"
 import {
   formatReportMoneyAr,
   formatReportPeriodSummary,
@@ -70,6 +79,11 @@ type Props = {
 }
 
 const JOURNAL_PAGE_SIZE = 40
+
+function formatJournalEntryDate(iso: string): string {
+  const date = parseRootsFormIsoDate(iso)
+  return date ? formatRootsFormDisplayDateCompact(date) : iso
+}
 
 function sumJournalTotals(entries: JournalEntrySummaryRow[]) {
   return entries.reduce(
@@ -185,7 +199,7 @@ export function JournalReportView({
     async (entry: JournalEntrySummaryRow) => {
       setDetailOpen(true)
       setDetailTitle(
-        `Asiento n.º ${entry.entryNumber} · ${formatIsoDateShort(entry.entryDate)}`,
+        `Asiento n.º ${entry.entryNumber} · ${formatJournalEntryDate(entry.entryDate)}`,
       )
       setDetailLoading(true)
       setDetailLines([])
@@ -327,7 +341,7 @@ export function JournalReportView({
                               "whitespace-nowrap",
                             )}
                           >
-                            {formatIsoDateShort(entry.entryDate)}
+                            {formatJournalEntryDate(entry.entryDate)}
                           </span>
                         </TableCell>
                         <TableCell className={workspaceTableLayoutBodyCellClass}>
@@ -387,7 +401,12 @@ export function JournalReportView({
                             {formatReportMoneyAr(entry.totalCredit)}
                           </span>
                         </TableCell>
-                        <TableCell className={workspaceTableLayoutActionsBodyCellClass}>
+                        <TableCell
+                          className={cn(
+                            workspaceTableLayoutActionsBodyCellClass,
+                            "!pr-3",
+                          )}
+                        >
                           <div className="flex items-center justify-end">
                             <RootsLinkButton
                               type="button"
@@ -440,77 +459,146 @@ export function JournalReportView({
           }
         }}
       >
-        <DialogContent
-          data-rootsy-light-shell="true"
-          showCloseButton
-          className="max-h-[min(90vh,560px)] overflow-y-auto border-[var(--rootsy-bruma-200)] bg-white text-[var(--rootsy-bruma-900)] sm:max-w-lg"
-        >
-          <DialogHeader>
-            <DialogTitle>Líneas del asiento</DialogTitle>
-          </DialogHeader>
-          <p className={dataWorkspaceDetailEmptyStateDescriptionClass}>{detailTitle}</p>
-          {detailError ? (
-            <div
-              role="alert"
-              className="rounded-lg border border-destructive/25 bg-destructive/10 px-3 py-2 text-sm text-destructive"
-            >
-              {detailError}
-            </div>
-          ) : null}
-          {detailLoading ? (
-            <div className="flex items-center gap-2 py-4 text-sm text-rootsy-bruma-500">
-              <RootsSpinner size="sm" label="Cargando líneas" />
-              Cargando líneas…
-            </div>
-          ) : (
-            <div className="overflow-x-auto rounded-xl border border-[var(--rootsy-bruma-200)]">
-              <Table>
-                <TableHeader>
-                  <TableRow className="border-[var(--rootsy-bruma-200)] hover:bg-transparent">
-                    <TableHead>Cuenta</TableHead>
-                    <TableHead className="text-right">Debe</TableHead>
-                    <TableHead className="text-right">Haber</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {detailLines.length === 0 && !detailError ? (
-                    <TableRow>
-                      <TableCell colSpan={3} className="text-rootsy-bruma-500">
-                        Sin líneas.
-                      </TableCell>
-                    </TableRow>
-                  ) : (
-                    detailLines.map((line) => (
-                      <TableRow key={line.id} className="border-[var(--rootsy-bruma-100)]">
-                        <TableCell>
-                          <span className="font-mono text-[11px] text-[var(--rootsy-bruma-500)]">
-                            {line.accountCode}
-                          </span>{" "}
-                          <span className="text-sm">{line.accountName}</span>
-                          {line.lineDescription ? (
-                            <span className="mt-0.5 block text-xs text-rootsy-bruma-500">
-                              {line.lineDescription}
+        <RootsDialogContent size="default" className="sm:max-w-lg">
+          <RootsDialogHeader
+            open={detailOpen}
+            title="Líneas del asiento"
+            description={detailTitle}
+          />
+          <RootsDialogBody>
+            {detailError ? (
+              <RootsDialogErrorBanner>{detailError}</RootsDialogErrorBanner>
+            ) : null}
+            {detailLoading ? (
+              <RootsDialogLoadingState message="Cargando líneas del asiento" />
+            ) : (
+              <div
+                className={cn(
+                  workspaceLayoutsTablesScopeClass,
+                  workspaceTableLayoutListBodyScopeClass,
+                  workspaceTableLayoutInsetTableShellClass,
+                )}
+              >
+                <table className={workspaceTableLayoutInsetTableClass}>
+                  <WorkspaceTableHeader>
+                    <WorkspaceTableHeaderRow>
+                      <WorkspaceTableHead
+                        tone="nature"
+                        className={workspaceTableLayoutHeaderHeadClass}
+                      >
+                        Cuenta
+                      </WorkspaceTableHead>
+                      <WorkspaceTableHead
+                        tone="nature"
+                        className={cn(workspaceTableLayoutHeaderHeadClass, "text-right")}
+                      >
+                        Debe
+                      </WorkspaceTableHead>
+                      <WorkspaceTableHead
+                        tone="nature"
+                        className={cn(workspaceTableLayoutHeaderHeadClass, "text-right")}
+                      >
+                        Haber
+                      </WorkspaceTableHead>
+                    </WorkspaceTableHeaderRow>
+                  </WorkspaceTableHeader>
+                  <TableBody>
+                    {detailLines.length === 0 && !detailError ? (
+                      <WorkspaceTableBodyRow index={0} noHover>
+                        <TableCell
+                          colSpan={3}
+                          className={cn(
+                            workspaceTableLayoutBodyCellClass,
+                            workspaceTableNatureTextSecondaryClass,
+                          )}
+                        >
+                          Sin líneas.
+                        </TableCell>
+                      </WorkspaceTableBodyRow>
+                    ) : (
+                      detailLines.map((line, index) => (
+                        <WorkspaceTableBodyRow
+                          key={line.id}
+                          index={index}
+                          noHover={false}
+                          className="!h-auto !max-h-none"
+                        >
+                          <TableCell
+                            className={cn(
+                              workspaceTableLayoutBodyCellClass,
+                              "!h-auto !max-h-none whitespace-normal py-3",
+                            )}
+                          >
+                            <span
+                              className={cn(
+                                "font-mono text-[11px]",
+                                workspaceTableNatureTextTertiaryClass,
+                              )}
+                            >
+                              {line.accountCode}
+                            </span>{" "}
+                            <span
+                              className={cn(
+                                workspaceTableLayoutCellPrimaryTextClass,
+                                workspaceTableNatureTextPrimaryClass,
+                              )}
+                            >
+                              {line.accountName}
                             </span>
-                          ) : null}
-                        </TableCell>
-                        <TableCell className="text-right tabular-nums">
-                          {line.debitAmount > 0
-                            ? formatReportMoneyAr(line.debitAmount)
-                            : "—"}
-                        </TableCell>
-                        <TableCell className="text-right tabular-nums">
-                          {line.creditAmount > 0
-                            ? formatReportMoneyAr(line.creditAmount)
-                            : "—"}
-                        </TableCell>
-                      </TableRow>
-                    ))
-                  )}
-                </TableBody>
-              </Table>
-            </div>
-          )}
-        </DialogContent>
+                            {line.lineDescription ? (
+                              <span
+                                className={cn(
+                                  "mt-0.5 block text-xs",
+                                  workspaceTableNatureTextSecondaryClass,
+                                )}
+                              >
+                                {line.lineDescription}
+                              </span>
+                            ) : null}
+                          </TableCell>
+                          <TableCell
+                            className={cn(
+                              workspaceTableLayoutBodyCellClass,
+                              "!h-auto !max-h-none whitespace-normal py-3 text-right",
+                            )}
+                          >
+                            <span
+                              className={cn(
+                                workspaceTableLayoutCellPrimaryTextClass,
+                                workspaceTableNatureMoneyClass,
+                              )}
+                            >
+                              {line.debitAmount > 0
+                                ? formatReportMoneyAr(line.debitAmount)
+                                : "—"}
+                            </span>
+                          </TableCell>
+                          <TableCell
+                            className={cn(
+                              workspaceTableLayoutBodyCellClass,
+                              "!h-auto !max-h-none whitespace-normal py-3 text-right",
+                            )}
+                          >
+                            <span
+                              className={cn(
+                                workspaceTableLayoutCellPrimaryTextClass,
+                                workspaceTableNatureMoneyClass,
+                              )}
+                            >
+                              {line.creditAmount > 0
+                                ? formatReportMoneyAr(line.creditAmount)
+                                : "—"}
+                            </span>
+                          </TableCell>
+                        </WorkspaceTableBodyRow>
+                      ))
+                    )}
+                  </TableBody>
+                </table>
+              </div>
+            )}
+          </RootsDialogBody>
+        </RootsDialogContent>
       </Dialog>
     </div>
   )

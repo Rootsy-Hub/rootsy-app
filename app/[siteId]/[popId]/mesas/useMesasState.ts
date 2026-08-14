@@ -200,6 +200,8 @@ export function useMesasState(popId: string, siteId: string) {
     id: string
   } | null>(null)
   const [layoutLoading, setLayoutLoading] = useState(true)
+  const [occupancyLoading, setOccupancyLoading] = useState(true)
+  const initialOccupancyLoadedRef = useRef(false)
   const [layoutError, setLayoutError] = useState<string | null>(null)
   const [sessionError, setSessionError] = useState<string | null>(null)
   const [realtimeStatus, setRealtimeStatus] =
@@ -328,6 +330,37 @@ export function useMesasState(popId: string, siteId: string) {
     setReservationSettings(res.settings)
   }, [popId, siteId])
 
+  const reloadOccupancy = useCallback(async () => {
+    if (!popId || !siteId) {
+      setOccupancyLoading(false)
+      return
+    }
+
+    if (!initialOccupancyLoadedRef.current) {
+      setOccupancyLoading(true)
+    }
+
+    await Promise.all([
+      reloadSessions(),
+      reloadReservations(),
+      reloadReservationSettings(),
+    ])
+
+    initialOccupancyLoadedRef.current = true
+    setOccupancyLoading(false)
+  }, [
+    popId,
+    siteId,
+    reloadSessions,
+    reloadReservations,
+    reloadReservationSettings,
+  ])
+
+  useEffect(() => {
+    initialOccupancyLoadedRef.current = false
+    setOccupancyLoading(true)
+  }, [popId, siteId])
+
   const saveReservationSettings = useCallback(
     async (input: MesasReservationSettings): Promise<boolean> => {
       if (!popId || !siteId) return false
@@ -380,10 +413,8 @@ export function useMesasState(popId: string, siteId: string) {
 
   useEffect(() => {
     void reloadLayout()
-    void reloadSessions()
-    void reloadReservations()
-    void reloadReservationSettings()
-  }, [reloadLayout, reloadSessions, reloadReservations, reloadReservationSettings])
+    void reloadOccupancy()
+  }, [reloadLayout, reloadOccupancy])
 
   useEffect(() => {
     if (!popId) return
@@ -863,6 +894,8 @@ export function useMesasState(popId: string, siteId: string) {
     selectLayoutItem,
     rotateLayoutItem,
     layoutLoading,
+    occupancyLoading,
+    floorLoading: layoutLoading || occupancyLoading,
     layoutError,
     sessionError,
     realtimeStatus,

@@ -154,6 +154,7 @@ export function SaleCatalogBrowser({
     (productId: string, kind?: MenuCartItemKind, quantity = cantidadIngreso) => {
       if (addDisabled) return
       onAddProduct(productId, kind, quantity)
+      setCantidadIngreso(1)
       refocusScan()
     },
     [addDisabled, cantidadIngreso, onAddProduct, refocusScan],
