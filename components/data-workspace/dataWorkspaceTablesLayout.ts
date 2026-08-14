@@ -3,6 +3,8 @@ import {
   lightToolbarPanelLastClass,
   lightToolbarShellClass,
   workspaceTableLayoutMetaLabelClass,
+  workspaceTableNatureTextSecondaryClass,
+  workspaceTableNatureTextTertiaryClass,
 } from "@/components/data-workspace/dataWorkspaceListStyles"
 import {
   workspaceLayoutsTablesScopeClass,
@@ -113,6 +115,21 @@ export const workspaceTableLayoutCellSecondaryTextClass =
 
 /** Superficie listado layout — canvas bruma. */
 export const workspaceTableLayoutListSurfaceClass = "bg-[var(--rootsy-bruma-50)]"
+
+/** Footer scroll infinito — estado cargando. */
+export const workspaceTableLayoutListLoadingMoreClass = cn(
+  "flex items-center justify-center gap-2 border-t border-[var(--wt-border)] px-4 py-3 text-sm",
+  workspaceTableNatureTextSecondaryClass,
+)
+
+/** Footer scroll infinito — fin del listado. */
+export const workspaceTableLayoutListEndFooterClass = cn(
+  "flex items-center gap-3 px-4 py-6 text-sm",
+  workspaceTableNatureTextTertiaryClass,
+)
+
+export const workspaceTableLayoutListEndFooterDividerClass =
+  "h-px flex-1 bg-[var(--wt-border)]"
 
 /** Barra de filtros — h-23 · toolbar elevation.overlay. */
 export const dataWorkspaceListFiltersBarClass = cn(

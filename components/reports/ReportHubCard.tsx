@@ -12,6 +12,7 @@ import { cn } from "@/lib/utils"
 import type { LucideIcon } from "lucide-react"
 import { ArrowRight } from "lucide-react"
 import Link from "next/link"
+import "./reportHubCard.css"
 
 type SharedProps = {
   title: string
@@ -67,8 +68,6 @@ function ReportHubCardShell({
           className={cn(
             dataWorkspaceEntityCardIsotypeClass,
             "size-9 sm:size-10",
-            isInteractive &&
-              "transition-colors group-hover:bg-[var(--rootsy-bruma-50)]",
           )}
           aria-hidden
         >
@@ -79,14 +78,13 @@ function ReportHubCardShell({
             Próximamente
           </span>
         ) : (
-          <ArrowRight
-            className={cn(
-              "size-3.5 shrink-0 text-[var(--rootsy-bruma-500)] sm:size-4",
-              isInteractive &&
-                "transition-[color,transform] duration-200 group-hover:translate-x-0.5 group-hover:text-[var(--rootsy-bruma-700)]",
-            )}
-            aria-hidden
-          />
+          <span className={cn("report-hub-card__arrow", !isInteractive && "opacity-70")}>
+            <ArrowRight
+              className="report-hub-card__arrow-icon size-3.5 sm:size-4"
+              strokeWidth={1.75}
+              aria-hidden
+            />
+          </span>
         )}
       </div>
 

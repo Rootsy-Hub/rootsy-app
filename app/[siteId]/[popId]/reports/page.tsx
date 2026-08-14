@@ -180,6 +180,44 @@ const AccountSummariesReportView = dynamic(
   },
 )
 
+const TrialBalanceReportView = dynamic(
+  () =>
+    import("@/components/reports/TrialBalanceReportView").then(
+      (mod) => mod.TrialBalanceReportView,
+    ),
+  {
+    ssr: false,
+    loading: () => (
+      <div
+        className="flex min-h-52 flex-col items-center justify-center gap-3 px-4 py-10"
+        aria-busy="true"
+      >
+        <RootsSpinner size="default" label="Cargando reporte" />
+        <p className="text-sm text-rootsy-bruma-500">Cargando reporte…</p>
+      </div>
+    ),
+  },
+)
+
+const JournalReportView = dynamic(
+  () =>
+    import("@/components/reports/JournalReportView").then(
+      (mod) => mod.JournalReportView,
+    ),
+  {
+    ssr: false,
+    loading: () => (
+      <div
+        className="flex min-h-52 flex-col items-center justify-center gap-3 px-4 py-10"
+        aria-busy="true"
+      >
+        <RootsSpinner size="default" label="Cargando reporte" />
+        <p className="text-sm text-rootsy-bruma-500">Cargando reporte…</p>
+      </div>
+    ),
+  },
+)
+
 function ReportsPage() {
   const params = useParams()
   const siteId = typeof params?.siteId === "string" ? params.siteId : ""
@@ -316,6 +354,22 @@ function ReportsPage() {
           />
         ) : selectedReportId === "summaries" ? (
           <AccountSummariesReportView
+            popId={popId}
+            from={bounds.from}
+            to={bounds.to}
+            onBack={() => setSelectedReportId(null)}
+            {...periodProps}
+          />
+        ) : selectedReportId === "trial-balance" ? (
+          <TrialBalanceReportView
+            popId={popId}
+            from={bounds.from}
+            to={bounds.to}
+            onBack={() => setSelectedReportId(null)}
+            {...periodProps}
+          />
+        ) : selectedReportId === "journal" ? (
+          <JournalReportView
             popId={popId}
             from={bounds.from}
             to={bounds.to}

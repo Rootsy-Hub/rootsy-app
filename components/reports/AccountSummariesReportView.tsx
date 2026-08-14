@@ -19,7 +19,7 @@ import {
 } from "@/lib/reportFormatters"
 import type { DataWorkspaceDatePreset } from "@/lib/dataWorkspaceDateFilter"
 import { cn } from "@/lib/utils"
-import { PieChart } from "lucide-react"
+import { Equal, PieChart } from "lucide-react"
 import { RootsSpinner } from "@/components/rootsy-spinner"
 import { useCallback, useEffect, useMemo, useState } from "react"
 import type { DateRange } from "react-day-picker"
@@ -39,15 +39,23 @@ type Props = {
 
 const SUMMARY_SECTIONS: Array<{
   title: string
-  labels: string[]
+  items: Array<{ label: string; sign?: "+" | "−" }>
 }> = [
   {
     title: "Estructura patrimonial",
-    labels: ["Activo (total)", "Pasivo (total)", "Patrimonio neto (total)"],
+    items: [
+      { label: "Activo (total)" },
+      { label: "Pasivo (total)" },
+      { label: "Patrimonio neto (total)" },
+    ],
   },
   {
     title: "Cuentas de resultado",
-    labels: ["Ingresos (total)", "Costos (total)", "Gastos (total)"],
+    items: [
+      { label: "Ingresos (total)", sign: "+" },
+      { label: "Costos (total)", sign: "−" },
+      { label: "Gastos (total)", sign: "−" },
+    ],
   },
 ]
 
@@ -69,19 +77,34 @@ function hasSummaryMovement(summaries: FinancialSummaryRow[]): boolean {
 function SummaryAmount({
   amount,
   className,
+  prefix,
 }: {
   amount: number
   className?: string
+  prefix?: "+" | "−" | "="
 }) {
   return (
     <span
       className={cn(
-        "shrink-0 text-right text-sm tabular-nums",
+        "inline-flex shrink-0 items-baseline justify-end gap-1.5 text-right text-sm tabular-nums",
         workspaceTableNatureMoneyClass,
         className,
       )}
     >
-      {formatReportMoneyAr(amount)}
+      {prefix ? (
+        <span
+          className={cn(
+            "w-4 shrink-0 text-center font-bold",
+            prefix === "+" && "text-[var(--rootsy-savia-700)]",
+            prefix === "−" && "text-amber-700",
+            prefix === "=" && "text-[var(--rootsy-bruma-600)]",
+          )}
+          aria-hidden
+        >
+          {prefix}
+        </span>
+      ) : null}
+      <span>{formatReportMoneyAr(amount)}</span>
     </span>
   )
 }
@@ -230,12 +253,12 @@ export function AccountSummariesReportView({
                         {section.title}
                       </p>
                     </div>
-                    {section.labels.map((label) => {
-                      const row = summaryByLabel(summaries, label)
-                      const displayLabel = label.replace(" (total)", "")
+                    {section.items.map((item) => {
+                      const row = summaryByLabel(summaries, item.label)
+                      const displayLabel = item.label.replace(" (total)", "")
                       return (
                         <div
-                          key={label}
+                          key={item.label}
                           className="flex items-center justify-between gap-4 border-b border-[var(--rootsy-bruma-100)] px-4 py-2.5 sm:px-6 lg:px-8"
                         >
                           <p className="text-sm font-medium text-[var(--rootsy-bruma-900)]">
@@ -243,6 +266,7 @@ export function AccountSummariesReportView({
                           </p>
                           <SummaryAmount
                             amount={row?.total ?? 0}
+                            prefix={item.sign}
                             className="font-semibold"
                           />
                         </div>
@@ -256,19 +280,55 @@ export function AccountSummariesReportView({
                     <p className="text-sm font-semibold text-[var(--rootsy-bruma-900)]">
                       Resultado neto del período
                     </p>
-                    <SummaryAmount amount={resultadoNeto} className="text-base font-bold" />
+                    <SummaryAmount
+                      amount={resultadoNeto}
+                      prefix="="
+                      className="text-base font-bold"
+                    />
                   </div>
                 </div>
 
-                <p
-                  className={cn(
-                    dataWorkspaceDetailEmptyStateDescriptionClass,
-                    "mx-4 mt-3 text-center sm:mx-6 lg:mx-8",
-                  )}
-                >
-                  Totales del período agrupados por tipo de cuenta. Saldo = debe − haber
-                  ajustado por naturaleza contable.
-                </p>
+                <div className="mx-4 mt-4 rounded-xl border border-[color-mix(in_srgb,var(--rootsy-savia-600)_25%,var(--rootsy-bruma-200))] bg-[color-mix(in_srgb,var(--rootsy-savia-600)_6%,white)] px-4 py-4 sm:mx-6 lg:mx-8">
+                  <div className="flex items-center justify-between gap-4">
+                    <p className="text-sm font-semibold text-[var(--rootsy-bruma-900)]">
+                      Activo
+                    </p>
+                    <SummaryAmount amount={totals.activo} className="font-bold" />
+                  </div>
+                  <div className="flex justify-center py-2 text-[var(--rootsy-bruma-500)]">
+                    <Equal className="size-4" strokeWidth={2.25} aria-hidden />
+                  </div>
+                  <div className="space-y-2 pl-4 sm:pl-6">
+                    <div className="flex items-center justify-between gap-4">
+                      <p className="text-sm text-[var(--rootsy-bruma-900)]">Pasivo</p>
+                      <SummaryAmount
+                        amount={totals.pasivo}
+                        prefix="+"
+                        className="font-semibold"
+                      />
+                    </div>
+                    <div className="flex items-center justify-between gap-4">
+                      <p className="text-sm text-[var(--rootsy-bruma-900)]">
+                        Patrimonio neto
+                      </p>
+                      <SummaryAmount
+                        amount={totals.patrimonio}
+                        prefix="+"
+                        className="font-semibold"
+                      />
+                    </div>
+                    <div className="flex items-center justify-between gap-4">
+                      <p className="text-sm text-[var(--rootsy-bruma-900)]">
+                        Resultado neto del período
+                      </p>
+                      <SummaryAmount
+                        amount={resultadoNeto}
+                        prefix="+"
+                        className="font-semibold"
+                      />
+                    </div>
+                  </div>
+                </div>
               </div>
             )}
           </div>

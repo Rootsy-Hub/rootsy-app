@@ -2,12 +2,12 @@
 
 import { RootsDialogFooter } from "@/components/rootsy-dialog"
 import {
+  RootsDangerSubtleButton,
   RootsProgressButton,
   RootsPrimaryButton,
   RootsSubtleButton,
 } from "@/components/rootsy-button"
 import { type LucideIcon } from "lucide-react"
-import { cn } from "@/lib/utils"
 
 export type CheckoutDialogFooterAction = {
   label: string
@@ -42,17 +42,17 @@ export function CheckoutDialogFooter({
     return null
   }
 
+  const SecondaryButton =
+    secondaryAction?.tone === "destructive" ? RootsDangerSubtleButton : RootsSubtleButton
+
   return (
     <RootsDialogFooter className={className}>
       <div className="flex w-full items-center justify-between gap-3">
         <div className="flex min-w-0 flex-wrap items-center gap-2">
           {secondaryAction ? (
-            <RootsSubtleButton
+            <SecondaryButton
               type="button"
-              className={cn(
-                secondaryAction.tone === "destructive" &&
-                  "text-rose-600 hover:bg-rose-50 hover:text-rose-700",
-              )}
+              withIcon={Boolean(secondaryAction.icon)}
               disabled={secondaryAction.disabled}
               title={secondaryAction.title}
               onClick={secondaryAction.onClick}
@@ -61,7 +61,7 @@ export function CheckoutDialogFooter({
                 <secondaryAction.icon className="size-4" aria-hidden />
               ) : null}
               {secondaryAction.label}
-            </RootsSubtleButton>
+            </SecondaryButton>
           ) : null}
           {onCancel ? (
             <RootsSubtleButton
@@ -92,6 +92,7 @@ export function CheckoutDialogFooter({
             <RootsPrimaryButton
               type="button"
               className="shrink-0"
+              withIcon={Boolean(primary.icon)}
               disabled={primary.disabled}
               title={primary.title}
               onClick={primary.onClick}

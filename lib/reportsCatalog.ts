@@ -157,7 +157,6 @@ export const REPORT_CATALOG: ReportCatalogCategory[] = [
         icon: Calculator,
         path: "accounting",
         query: { focus: "trial_balance" },
-        planned: true,
       },
       {
         id: "journal",
@@ -166,7 +165,6 @@ export const REPORT_CATALOG: ReportCatalogCategory[] = [
         icon: ScrollText,
         path: "accounting",
         query: { focus: "journal" },
-        planned: true,
       },
       {
         id: "ledger",
@@ -243,6 +241,8 @@ export const REPORT_INLINE_DETAIL_IDS = new Set<string>([
   "balance-sheet",
   "cash-flow",
   "summaries",
+  "trial-balance",
+  "journal",
 ])
 
 export function supportsInlineReportDetail(reportId: string): boolean {

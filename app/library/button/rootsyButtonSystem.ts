@@ -165,6 +165,15 @@ export const ROOTSY_BUTTON_APPEARANCES: ButtonAppearance[] = [
     atlassianRule: "Solo acciones irreversibles — nunca Save en rojo.",
   },
   {
+    id: "danger-subtle",
+    appearance: "danger-subtle",
+    natureName: "Destructivo sutil",
+    rootsyVariant: "destructive-subtle",
+    rootsyClass: "texto danger · hover danger/10",
+    usage: "Quitar ítem del carrito, eliminar de la operación — footer izquierdo del modal.",
+    atlassianRule: "Par con primary a la derecha — menos peso que danger filled.",
+  },
+  {
     id: "link",
     appearance: "link",
     natureName: "Enlace",

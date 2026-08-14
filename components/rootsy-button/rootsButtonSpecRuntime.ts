@@ -60,6 +60,8 @@ export function resolveSemanticAppearance(
       return "subtle"
     case "destructive":
       return "danger"
+    case "destructiveSubtle":
+      return "danger-subtle"
     case "link":
       return "link"
   }

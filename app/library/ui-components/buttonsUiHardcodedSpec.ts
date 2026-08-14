@@ -73,7 +73,13 @@ function iconButtonVariant(theme: IconButtonThemeId, emphasis: IconButtonEmphasi
 
 // ─── Text buttons ────────────────────────────────────────────────────────────
 
-export type ButtonsUiAppearanceId = "primary" | "default" | "subtle" | "danger" | "link"
+export type ButtonsUiAppearanceId =
+  | "primary"
+  | "default"
+  | "subtle"
+  | "danger"
+  | "danger-subtle"
+  | "link"
 export type ButtonsUiSizeId = "compact" | "default" | "large"
 
 export const BUTTONS_UI_APPEARANCE_LABELS: Record<ButtonsUiAppearanceId, string> = {
@@ -81,6 +87,7 @@ export const BUTTONS_UI_APPEARANCE_LABELS: Record<ButtonsUiAppearanceId, string>
   default: "Exportar",
   subtle: "Cancelar",
   danger: "Eliminar",
+  "danger-subtle": "Eliminar de la compra",
   link: "Ver detalle",
 }
 
@@ -212,6 +219,13 @@ function getButtonsUiDefaultSurface(appearance: ButtonsUiAppearanceId): Hardcode
         boxShadow: raisedShadow,
         fontWeight: ROOTSY_FONT_WEIGHTS.semibold.value,
       }
+    case "danger-subtle":
+      return {
+        backgroundColor: "transparent",
+        color: colorTokenHex("danger", "Fondo"),
+        border: "1px solid transparent",
+        fontWeight: ROOTSY_FONT_WEIGHTS.medium.value,
+      }
     case "link":
       return {
         backgroundColor: "transparent",
@@ -241,6 +255,12 @@ export function getButtonsUiAppearanceSurface(
           return { ...base, backgroundColor: colorTokenHex("default", "Hover") }
         case "danger":
           return { ...base, backgroundColor: colorTokenHex("danger", "Hover") }
+        case "danger-subtle":
+          return {
+            ...base,
+            backgroundColor: `color-mix(in srgb, ${colorTokenHex("danger", "Fondo")} 10%, transparent)`,
+            color: colorTokenHex("danger", "Hover"),
+          }
         case "link":
           return {
             ...base,
@@ -261,6 +281,12 @@ export function getButtonsUiAppearanceSurface(
           }
         case "danger":
           return { ...base, backgroundColor: colorTokenHex("danger", "Active") }
+        case "danger-subtle":
+          return {
+            ...base,
+            backgroundColor: `color-mix(in srgb, ${colorTokenHex("danger", "Fondo")} 15%, transparent)`,
+            color: colorTokenHex("danger", "Active"),
+          }
         case "link":
           return {
             ...base,
@@ -277,6 +303,8 @@ export function getButtonsUiAppearanceSurface(
           return { ...base, boxShadow: FOCUS_RING_NEUTRAL }
         case "danger":
           return { ...base, boxShadow: mergeShadow(base.boxShadow, FOCUS_RING_DANGER) }
+        case "danger-subtle":
+          return { ...base, boxShadow: FOCUS_RING_DANGER }
         case "link":
           return { ...base, boxShadow: FOCUS_RING_NEUTRAL }
       }
@@ -292,6 +320,8 @@ export function getButtonsUiAppearanceSurface(
           case "subtle":
             return "Cancelando…"
           case "danger":
+            return "Eliminando…"
+          case "danger-subtle":
             return "Eliminando…"
           case "link":
             return "Cargando…"

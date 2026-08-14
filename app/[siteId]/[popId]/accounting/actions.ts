@@ -393,12 +393,22 @@ async function trialBalanceRowsForPopDateRange(
   return { success: false, error: raw.error }
 }
 
+const JOURNAL_ENTRIES_DEFAULT_LIMIT = 200
+const JOURNAL_ENTRIES_PAGE_SIZE_DEFAULT = 40
+const JOURNAL_ENTRIES_PAGE_SIZE_MAX = 100
+
 export async function getAccountingJournalEntries(
   popId: string,
   fromDate: string | null,
   toDate: string | null,
+  options?: { limit?: number; offset?: number },
 ): Promise<
-  | { success: true; entries: JournalEntrySummaryRow[] }
+  | {
+      success: true
+      entries: JournalEntrySummaryRow[]
+      hasMore: boolean
+      totalCount?: number
+    }
   | { success: false; error: string }
 > {
   try {
@@ -417,6 +427,51 @@ export async function getAccountingJournalEntries(
       return { success: false, error: "Sin permiso para ver el libro diario." }
     }
     const supabase = await createClient()
+    const paginated = options != null
+    const offset = paginated ? Math.max(options.offset ?? 0, 0) : 0
+    const pageSize = paginated
+      ? Math.min(
+          Math.max(options.limit ?? JOURNAL_ENTRIES_PAGE_SIZE_DEFAULT, 1),
+          JOURNAL_ENTRIES_PAGE_SIZE_MAX,
+        )
+      : JOURNAL_ENTRIES_DEFAULT_LIMIT
+
+    const applyDateFilters = <
+      T extends {
+        gte: (column: string, value: string) => T
+        lte: (column: string, value: string) => T
+      },
+    >(
+      query: T,
+    ) => {
+      let next = query
+      if (fromDate && fromDate.trim()) {
+        next = next.gte("entry_date", fromDate.trim())
+      }
+      if (toDate && toDate.trim()) {
+        next = next.lte("entry_date", toDate.trim())
+      }
+      return next
+    }
+
+    let totalCount: number | undefined
+    if (paginated && offset === 0) {
+      let countQuery = supabase
+        .from("accounting_entries")
+        .select("id", { count: "exact", head: true })
+        .eq("pop_id", popId)
+        .eq("status", "posted")
+      countQuery = applyDateFilters(countQuery)
+      const { count, error: countErr } = await countQuery
+      if (countErr) {
+        return {
+          success: false,
+          error: countErr.message || "No se pudieron cargar los asientos.",
+        }
+      }
+      totalCount = count ?? 0
+    }
+
     let q = supabase
       .from("accounting_entries")
       .select("id, entry_number, entry_date, description, source_type, status")
@@ -424,20 +479,29 @@ export async function getAccountingJournalEntries(
       .eq("status", "posted")
       .order("entry_date", { ascending: false })
       .order("entry_number", { ascending: false })
-      .limit(200)
-    if (fromDate && fromDate.trim()) {
-      q = q.gte("entry_date", fromDate.trim())
+
+    q = applyDateFilters(q)
+
+    if (paginated) {
+      q = q.range(offset, offset + pageSize)
+    } else {
+      q = q.limit(pageSize)
     }
-    if (toDate && toDate.trim()) {
-      q = q.lte("entry_date", toDate.trim())
-    }
+
     const { data: entries, error: eErr } = await q
     if (eErr) {
       return { success: false, error: eErr.message || "No se pudieron cargar los asientos." }
     }
-    const list = entries || []
+    const rawList = entries || []
+    const hasMore = paginated ? rawList.length > pageSize : false
+    const list = paginated ? rawList.slice(0, pageSize) : rawList
     if (list.length === 0) {
-      return { success: true, entries: [] }
+      return {
+        success: true,
+        entries: [],
+        hasMore: false,
+        totalCount: paginated ? (totalCount ?? 0) : 0,
+      }
     }
     const ids = list.map((e) => String(e.id))
     const { data: lines, error: lErr } = await supabase
@@ -468,7 +532,12 @@ export async function getAccountingJournalEntries(
         totalCredit: roundMoney(creditByEntry.get(id) ?? 0),
       }
     })
-    return { success: true, entries: rows }
+    return {
+      success: true,
+      entries: rows,
+      hasMore,
+      ...(paginated && offset === 0 ? { totalCount: totalCount ?? rows.length } : {}),
+    }
   } catch (e: unknown) {
     const message = e instanceof Error ? e.message : "Error desconocido"
     return { success: false, error: message }

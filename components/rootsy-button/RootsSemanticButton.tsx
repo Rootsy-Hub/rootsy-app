@@ -139,6 +139,12 @@ export const RootsDangerButton = forwardRef<HTMLButtonElement, Omit<Props, "sema
   },
 )
 
+export const RootsDangerSubtleButton = forwardRef<HTMLButtonElement, Omit<Props, "semantic">>(
+  function RootsDangerSubtleButton(props, ref) {
+    return <RootsSemanticButton ref={ref} semantic="destructiveSubtle" {...props} />
+  },
+)
+
 export const RootsLinkButton = forwardRef<HTMLButtonElement, Omit<Props, "semantic">>(
   function RootsLinkButton(props, ref) {
     return <RootsSemanticButton ref={ref} semantic="link" {...props} />
