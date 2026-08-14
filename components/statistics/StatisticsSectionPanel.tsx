@@ -174,6 +174,7 @@ export function StatisticsSectionPanel({
   const comingSoon = isComingSoonSection(data, section)
   const showHourlyChart =
     section?.id != null && STATISTICS_HOURLY_SECTIONS.has(section.id)
+  const showParticipation = !filters.channel
 
   const sectionFilters = (
     <StatisticsSectionFilters
@@ -219,8 +220,13 @@ export function StatisticsSectionPanel({
         />
       </section>
 
-      <div className="grid items-stretch gap-6 lg:grid-cols-2">
-        <section className="min-h-0">
+      <div className="grid items-stretch gap-6 lg:grid-cols-12">
+        <section
+          className={cn(
+            "flex min-h-0 h-full",
+            showParticipation ? "lg:col-span-8" : "lg:col-span-12",
+          )}
+        >
           <StatisticsEvolutionChart
             title="Evolución diaria"
             description="Comportamiento en el tiempo dentro del período"
@@ -229,22 +235,24 @@ export function StatisticsSectionPanel({
             valueFormat={rankFormat}
           />
         </section>
-        <section className="min-h-0">
-          <StatisticsSegmentList
-            title="Participación"
-            description="Distribución por segmento dentro del total"
-            segments={data?.segments ?? []}
-            loading={loading}
-            valueFormat={rankFormat}
-          />
-        </section>
+        {showParticipation ? (
+          <section className="flex min-h-0 h-full lg:col-span-4">
+            <StatisticsSegmentList
+              title="Participación"
+              description="Distribución por segmento dentro del total"
+              segments={data?.segments ?? []}
+              loading={loading}
+              valueFormat={rankFormat}
+            />
+          </section>
+        ) : null}
       </div>
 
       {showHourlyChart ? (
         <section>
           <StatisticsHourlyHeatmap
             title="Mapa horario"
-            description="Intensidad de ventas por día y hora del día operativo"
+            description="Promedio de ventas por día de la semana y hora del día operativo"
             heatmap={
               data?.hourlyHeatmap ?? {
                 days: [],
@@ -262,8 +270,16 @@ export function StatisticsSectionPanel({
 
       <section>
         <StatisticsRankTable
-          title="Ranking"
-          description="Top 10 del período"
+          title={
+            data?.sectionId === "sales"
+              ? "Ranking de vendedores"
+              : "Ranking"
+          }
+          description={
+            data?.sectionId === "sales"
+              ? "Top vendedores del período"
+              : "Top 10 del período"
+          }
           rows={data?.rankings ?? []}
           loading={loading}
           valueFormat={rankFormat}

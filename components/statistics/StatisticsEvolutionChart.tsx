@@ -32,7 +32,8 @@ const chartConfig = {
 } satisfies ChartConfig
 
 const chartShellClass = cn(
-  "mt-4 aspect-21/9 min-h-[220px] w-full",
+  "mt-4 h-[220px] w-full !aspect-auto",
+  "[&_.recharts-responsive-container]:!h-full",
   "[&_.recharts-cartesian-axis-tick_text]:fill-[var(--rootsy-bruma-500)]",
   "[&_.recharts-cartesian-axis-tick_text]:font-numeric",
   "[&_.recharts-cartesian-axis-tick_text]:tabular-nums",
@@ -89,7 +90,7 @@ export function StatisticsEvolutionChart({
       className={cn(
         statisticsLosetaCardClass,
         statisticsLosetaCardBodyClass,
-        "flex h-full flex-col overflow-visible",
+        "flex h-full w-full flex-col overflow-visible",
       )}
     >
       <div>
@@ -99,7 +100,7 @@ export function StatisticsEvolutionChart({
       {loading ? (
         <div
           className={cn(
-            "mt-4 min-h-[220px] rounded-xl",
+            "mt-4 h-[220px] rounded-xl",
             dataWorkspaceBlocksSkeletonTone.box,
           )}
         />
@@ -156,7 +157,7 @@ export function StatisticsEvolutionChart({
         <p
           className={cn(
             statisticsEmptyTextClass,
-            "mt-4 flex min-h-[220px] items-center justify-center text-center",
+            "mt-4 flex h-[220px] items-center justify-center text-center",
           )}
         >
           {emptyMessage}

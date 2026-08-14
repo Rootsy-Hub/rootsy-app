@@ -39,19 +39,25 @@ export function StatisticsSegmentList({
     statisticsSectionHeadingClassNames()
 
   return (
-    <div className={cn(statisticsLosetaCardClass, statisticsLosetaCardBodyClass)}>
+    <div
+      className={cn(
+        statisticsLosetaCardClass,
+        statisticsLosetaCardBodyClass,
+        "flex h-full w-full flex-col",
+      )}
+    >
       <div>
         <h3 className={titleClass}>{title}</h3>
         {description ? <p className={descriptionClass}>{description}</p> : null}
       </div>
       {loading ? (
-        <ul className="mt-4 space-y-3">
+        <ul className="mt-4 flex min-h-[220px] flex-1 flex-col justify-center space-y-3">
           {Array.from({ length: 4 }).map((_, i) => (
             <li key={i} className={cn("h-8 rounded-lg", dataWorkspaceBlocksSkeletonTone.bar)} />
           ))}
         </ul>
       ) : segments.length > 0 ? (
-        <ul className="mt-4 space-y-3">
+        <ul className="mt-4 flex min-h-[220px] flex-1 flex-col justify-center space-y-3 overflow-y-auto">
           {segments.map((seg, i) => {
             const color = segmentColors[i % segmentColors.length]
             return (
@@ -93,7 +99,12 @@ export function StatisticsSegmentList({
           })}
         </ul>
       ) : (
-        <p className={cn(statisticsEmptyTextClass, "mt-4")}>
+        <p
+          className={cn(
+            statisticsEmptyTextClass,
+            "mt-4 flex min-h-[220px] flex-1 items-center justify-center text-center",
+          )}
+        >
           Sin segmentos para mostrar en este período
         </p>
       )}

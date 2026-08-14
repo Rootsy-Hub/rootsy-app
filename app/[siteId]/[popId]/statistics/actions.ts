@@ -268,6 +268,24 @@ function emptyHourlyHeatmap(): StatisticsHourlyHeatmap {
   return { days: [], hours: [], cells: [], maxValue: 0 }
 }
 
+const HEATMAP_WEEKDAYS: StatisticsHourlyHeatmapDay[] = [
+  { key: "1", label: "Lun" },
+  { key: "2", label: "Mar" },
+  { key: "3", label: "Mié" },
+  { key: "4", label: "Jue" },
+  { key: "5", label: "Vie" },
+  { key: "6", label: "Sáb" },
+  { key: "7", label: "Dom" },
+]
+
+/** ISO weekday 1 = lunes … 7 = domingo, desde YYYY-MM-DD. */
+function isoWeekdayFromOperationalDate(isoDate: string): number {
+  const [year, month, day] = isoDate.split("-").map(Number)
+  const utc = new Date(Date.UTC(year, month - 1, day))
+  const jsDay = utc.getUTCDay()
+  return jsDay === 0 ? 7 : jsDay
+}
+
 function buildHourlyHeatmap(
   sales: OperationSaleRow[],
   from: string | null,
@@ -277,42 +295,47 @@ function buildHourlyHeatmap(
   valueFn: (hourSales: OperationSaleRow[]) => number,
 ): StatisticsHourlyHeatmap {
   const buckets = new Map<string, OperationSaleRow[]>()
+  const weekdayOccurrences = new Map<string, number>()
+
   for (const sale of sales) {
     const day = operationalDayKey(sale.soldAt, timeZone, operationalDayCloseTime)
+    const weekday = isoWeekdayFromOperationalDate(day)
     const slot = operationalHourSlotIndex(
       sale.soldAt,
       timeZone,
       operationalDayCloseTime,
     )
-    const key = `${day}|${slot}`
+    const key = `${weekday}|${slot}`
     const list = buckets.get(key) ?? []
     list.push(sale)
     buckets.set(key, list)
   }
 
-  const days: StatisticsHourlyHeatmapDay[] = []
   if (from && to) {
     let cursor = from
     while (cursor <= to) {
-      days.push({
-        key: cursor,
-        label: `${cursor.slice(8, 10)}/${cursor.slice(5, 7)}`,
-      })
+      const weekday = String(isoWeekdayFromOperationalDate(cursor))
+      weekdayOccurrences.set(
+        weekday,
+        (weekdayOccurrences.get(weekday) ?? 0) + 1,
+      )
       cursor = addCalendarDays(cursor, 1)
     }
   } else {
-    const dayKeys = new Set<string>()
+    const seenDays = new Set<string>()
     for (const sale of sales) {
-      dayKeys.add(operationalDayKey(sale.soldAt, timeZone, operationalDayCloseTime))
-    }
-    for (const day of [...dayKeys].sort()) {
-      days.push({
-        key: day,
-        label: `${day.slice(8, 10)}/${day.slice(5, 7)}`,
-      })
+      const day = operationalDayKey(sale.soldAt, timeZone, operationalDayCloseTime)
+      if (seenDays.has(day)) continue
+      seenDays.add(day)
+      const weekday = String(isoWeekdayFromOperationalDate(day))
+      weekdayOccurrences.set(
+        weekday,
+        (weekdayOccurrences.get(weekday) ?? 0) + 1,
+      )
     }
   }
 
+  const days = HEATMAP_WEEKDAYS
   const hours = Array.from({ length: 24 }, (_, slot) => ({
     slot,
     label: operationalHourSlotLabel(slot, operationalDayCloseTime),
@@ -321,10 +344,13 @@ function buildHourlyHeatmap(
   const cells: StatisticsHourlyHeatmapCell[] = []
   let maxValue = 0
   for (const day of days) {
+    const dayCount = weekdayOccurrences.get(day.key) ?? 0
     for (const hour of hours) {
-      const value = roundMoney(
+      const total = roundMoney(
         valueFn(buckets.get(`${day.key}|${hour.slot}`) ?? []),
       )
+      const value =
+        dayCount > 0 ? roundMoney(total / dayCount) : 0
       maxValue = Math.max(maxValue, value)
       cells.push({
         dayKey: day.key,
@@ -568,7 +594,7 @@ function buildSalesSection(
     ),
     segments: buildSegments(channelTotals),
     rankings: buildRankings(sellerTotals),
-    unavailable: ["Facturación fiscal detallada"],
+    unavailable: [],
   }
 }
 

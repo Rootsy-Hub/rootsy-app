@@ -22,6 +22,7 @@ export type SummaryDatePreset =
   | "yesterday"
   | "this_week"
   | "this_month"
+  | "last_month"
   | "this_year"
   | "custom"
 
@@ -33,6 +34,7 @@ export const SUMMARY_DATE_PRESETS: {
   { id: "yesterday", label: "Ayer" },
   { id: "this_week", label: "Esta semana" },
   { id: "this_month", label: "Este mes" },
+  { id: "last_month", label: "Mes anterior" },
   { id: "this_year", label: "Este año" },
   { id: "custom", label: "Personalizado" },
 ]
@@ -61,6 +63,12 @@ export function computeSummaryDateBounds(
     case "this_month": {
       const from = startOfMonth(today)
       const to = endOfMonth(today)
+      return { from: toISODateLocal(from), to: toISODateLocal(to) }
+    }
+    case "last_month": {
+      const prev = subMonths(today, 1)
+      const from = startOfMonth(prev)
+      const to = endOfMonth(prev)
       return { from: toISODateLocal(from), to: toISODateLocal(to) }
     }
     case "this_year": {
@@ -103,6 +111,12 @@ export function computePreviousSummaryDateBounds(
     }
     case "this_month": {
       const prev = subMonths(today, 1)
+      const from = startOfMonth(prev)
+      const to = endOfMonth(prev)
+      return { from: toISODateLocal(from), to: toISODateLocal(to) }
+    }
+    case "last_month": {
+      const prev = subMonths(today, 2)
       const from = startOfMonth(prev)
       const to = endOfMonth(prev)
       return { from: toISODateLocal(from), to: toISODateLocal(to) }

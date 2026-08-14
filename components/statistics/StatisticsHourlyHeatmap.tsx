@@ -12,9 +12,9 @@ import {
 import type { StatisticsHourlyHeatmap } from "@/app/[siteId]/[popId]/statistics/actions"
 import { formatReportMoneyAr } from "@/lib/reportFormatters"
 import { cn } from "@/lib/utils"
-import { useMemo, useState } from "react"
+import { useMemo, useRef, useState } from "react"
 
-const CELL_HEIGHT_PX = 8
+const CELL_HEIGHT_PX = 10
 const CELL_GAP_PX = 2
 const GRID_HEIGHT_PX = 24 * CELL_HEIGHT_PX + 23 * CELL_GAP_PX
 
@@ -39,6 +39,21 @@ type HoveredCell = {
   dayLabel: string
   hourLabel: string
   value: number
+  x: number
+  y: number
+  placement: "above" | "below"
+}
+
+function positionTooltip(
+  container: HTMLDivElement,
+  target: HTMLElement,
+): Pick<HoveredCell, "x" | "y" | "placement"> {
+  const containerRect = container.getBoundingClientRect()
+  const cellRect = target.getBoundingClientRect()
+  const x = cellRect.left + cellRect.width / 2 - containerRect.left
+  const y = cellRect.top - containerRect.top
+  const placement = y < 48 ? "below" : "above"
+  return { x, y: placement === "above" ? y : y + cellRect.height, placement }
 }
 
 export function StatisticsHourlyHeatmap({
@@ -59,8 +74,21 @@ export function StatisticsHourlyHeatmap({
   emptyMessage?: string
 }) {
   const [hovered, setHovered] = useState<HoveredCell | null>(null)
+  const chartRef = useRef<HTMLDivElement>(null)
   const { title: titleClass, description: descriptionClass } =
     statisticsSectionHeadingClassNames()
+
+  function setHoveredCell(
+    target: HTMLElement,
+    cell: { dayLabel: string; hourLabel: string; value: number },
+  ) {
+    const container = chartRef.current
+    if (!container) return
+    setHovered({
+      ...cell,
+      ...positionTooltip(container, target),
+    })
+  }
 
   const cellValues = useMemo(() => {
     const map = new Map<string, number>()
@@ -71,12 +99,7 @@ export function StatisticsHourlyHeatmap({
   }, [heatmap.cells])
 
   const hasData = heatmap.cells.some((cell) => cell.value > 0)
-  const dayLabelEvery = Math.max(
-    1,
-    Math.ceil(heatmap.days.length / 10),
-  )
   const hourLabelEvery = hourLabelInterval + 1
-  const minGridWidth = Math.max(heatmap.days.length * 12, 120)
 
   return (
     <div
@@ -99,10 +122,10 @@ export function StatisticsHourlyHeatmap({
           )}
         />
       ) : hasData ? (
-        <div className="relative mt-4 min-h-[220px]">
-          <div className="flex gap-2">
+        <div className="relative mt-4" ref={chartRef}>
+          <div className="flex gap-3">
             <div
-              className="grid w-9 shrink-0 gap-[2px] font-numeric tabular-nums"
+              className="grid w-9 shrink-0 gap-0.5 font-numeric tabular-nums"
               style={{
                 gridTemplateRows: `repeat(24, ${CELL_HEIGHT_PX}px)`,
                 height: GRID_HEIGHT_PX,
@@ -122,17 +145,16 @@ export function StatisticsHourlyHeatmap({
               ))}
             </div>
 
-            <div className="min-w-0 flex-1 overflow-x-auto pb-1">
+            <div className="min-w-0 flex-1">
               <div
-                className="grid gap-[2px]"
+                className="grid gap-0.5"
                 style={{
-                  gridTemplateColumns: `repeat(${heatmap.days.length}, minmax(10px, 1fr))`,
+                  gridTemplateColumns: `repeat(${heatmap.days.length}, minmax(0, 1fr))`,
                   gridTemplateRows: `repeat(24, ${CELL_HEIGHT_PX}px)`,
-                  minWidth: minGridWidth,
                   height: GRID_HEIGHT_PX,
                 }}
                 role="grid"
-                aria-label="Mapa de calor de ventas por día y hora"
+                aria-label="Mapa de calor de ventas por día de la semana y hora"
               >
                 {heatmap.hours.map((hour) =>
                   heatmap.days.map((day) => {
@@ -144,7 +166,7 @@ export function StatisticsHourlyHeatmap({
                         type="button"
                         role="gridcell"
                         className={cn(
-                          "rounded-[2px] border-0 p-0 transition-shadow",
+                          "min-h-0 rounded-[3px] border-0 p-0 transition-shadow",
                           "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rootsy-savia-600",
                           hovered?.dayLabel === day.label &&
                             hovered?.hourLabel === hour.label &&
@@ -157,16 +179,16 @@ export function StatisticsHourlyHeatmap({
                           ),
                         }}
                         aria-label={`${day.label} ${hour.label}: ${formatHeatmapValue(value, valueFormat)}`}
-                        onMouseEnter={() =>
-                          setHovered({
+                        onMouseEnter={(event) =>
+                          setHoveredCell(event.currentTarget, {
                             dayLabel: day.label,
                             hourLabel: hour.label,
                             value,
                           })
                         }
                         onMouseLeave={() => setHovered(null)}
-                        onFocus={() =>
-                          setHovered({
+                        onFocus={(event) =>
+                          setHoveredCell(event.currentTarget, {
                             dayLabel: day.label,
                             hourLabel: hour.label,
                             value,
@@ -180,22 +202,18 @@ export function StatisticsHourlyHeatmap({
               </div>
 
               <div
-                className="mt-1.5 grid gap-[2px] font-numeric tabular-nums"
+                className="mt-2 grid gap-0.5 font-numeric tabular-nums"
                 style={{
-                  gridTemplateColumns: `repeat(${heatmap.days.length}, minmax(10px, 1fr))`,
-                  minWidth: minGridWidth,
+                  gridTemplateColumns: `repeat(${heatmap.days.length}, minmax(0, 1fr))`,
                 }}
                 aria-hidden
               >
-                {heatmap.days.map((day, index) => (
+                {heatmap.days.map((day) => (
                   <span
                     key={day.key}
-                    className={cn(
-                      "text-center text-[10px] text-rootsy-bruma-500",
-                      index % dayLabelEvery !== 0 && "opacity-0",
-                    )}
+                    className="text-center text-xs text-rootsy-bruma-600"
                   >
-                    {day.label.slice(0, 2)}
+                    {day.label}
                   </span>
                 ))}
               </div>
@@ -204,7 +222,15 @@ export function StatisticsHourlyHeatmap({
 
           {hovered ? (
             <div
-              className="pointer-events-none absolute left-1/2 top-0 z-10 -translate-x-1/2 rounded-lg border border-rootsy-bruma-100 bg-white px-2.5 py-1.5 text-xs shadow-sm"
+              className="pointer-events-none absolute z-10 rounded-lg border border-rootsy-bruma-100 bg-white px-2.5 py-1.5 text-xs shadow-sm"
+              style={{
+                left: hovered.x,
+                top: hovered.y,
+                transform:
+                  hovered.placement === "above"
+                    ? "translate(-50%, calc(-100% - 8px))"
+                    : "translate(-50%, 8px)",
+              }}
               role="status"
             >
               <p className="font-medium text-rootsy-bruma-900">
