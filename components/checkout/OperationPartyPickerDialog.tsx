@@ -1,15 +1,14 @@
 "use client"
 
+import type { ClientIvaConditionValue } from "@/app/[siteId]/[popId]/clients/clientIvaConstants"
 import {
+  createCheckoutClient,
   searchCheckoutClients,
   searchCheckoutSuppliers,
 } from "@/app/[siteId]/[popId]/checkout/partySearchActions"
-import {
-  CLIENT_IVA_CONDITION_OPTIONS,
-  type ClientIvaConditionValue,
-} from "@/app/[siteId]/[popId]/clients/clientIvaConstants"
 import { CheckoutOptionCard } from "@/components/checkout/CheckoutOptionCard"
 import { CheckoutDialogFooter } from "@/components/checkout/CheckoutDialogFooter"
+import { OperationPartyManualEntryForm } from "@/components/checkout/OperationPartyManualEntryForm"
 import { RootsIconButton } from "@/components/rootsy-button/RootsIconButton"
 import {
   RootsDialogBody,
@@ -19,32 +18,37 @@ import {
   rootsDialogHeaderCompactClass,
   rootsDialogTitleClass,
 } from "@/components/rootsy-dialog"
+import { RootsFormSearchField, rootsFormSelectContentClass } from "@/components/rootsy-form"
 import {
-  RootsFormSearchField,
-  RootsFormSelectField,
-  RootsFormSelectItem,
-  RootsFormTextField,
-} from "@/components/rootsy-form"
+  rootsFormDropdownHighlightItemClassForTone,
+  rootsFormDropdownListClass,
+} from "@/components/rootsy-form/rootsFormStyles"
 import { RootsSpinner } from "@/components/rootsy-spinner"
 import { Dialog, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Separator } from "@/components/ui/separator"
+import { validateOptionalEmailField } from "@/lib/authValidation"
 import {
   partyPickerTitle,
   type OperationPartyCatalogItem,
+  type OperationPartyManualConfirmOptions,
+  type OperationPartyManualConfirmPayload,
   type OperationPartySelection,
 } from "@/lib/operationPartyPicker"
-import { sanitizeTaxDocumentInput } from "@/lib/argentinaTaxDocumentInput"
-import { formatPadronErrorForUser } from "@/lib/padronUserFacingError"
 import { cn } from "@/lib/utils"
 import { Building2, ChevronLeft, User } from "lucide-react"
-import { useEffect, useRef, useState } from "react"
+import { useEffect, useMemo, useRef, useState } from "react"
 
-export type OperationPadronState = {
-  busy: boolean
-  error: string | null
-  razonSocial: string
-  condicionIvaNombre?: string | null
-  mappedIvaCondition?: ClientIvaConditionValue | null
+function selectedPartySubtitle(selected: OperationPartySelection): string | undefined {
+  if (selected.taxId?.trim()) return selected.taxId.trim()
+  return selected.manual ? "Carga manual" : "Del catálogo"
+}
+
+function partySearchDropdownItemClass(active: boolean, selected: boolean) {
+  const state = selected ? "selected" : active ? "highlighted" : "default"
+  return cn(
+    "flex w-full cursor-pointer items-center px-3 py-2.5 text-left text-sm transition-colors",
+    rootsFormDropdownHighlightItemClassForTone("light", state),
+  )
 }
 
 type PartyPickerStep = "catalog" | "manual"
@@ -56,192 +60,52 @@ type Props = {
   open: boolean
   onOpenChange: (open: boolean) => void
   canSearchCatalog: boolean
+  canCreateClient?: boolean
+  /** Si es "deferred", "Guardar cliente" delega en onConfirmManual con persistInCatalog. */
+  manualRegisterMode?: "immediate" | "deferred"
   manualName: string
   onManualNameChange: (value: string) => void
   taxId: string
   onTaxIdChange: (value: string) => void
+  email: string
+  onEmailChange: (value: string) => void
   ivaCondition: string
   onIvaConditionChange: (value: string) => void
   selected: OperationPartySelection | null
-  padron: OperationPadronState
   catalogBlocked: boolean
   onSelectCatalogParty: (party: OperationPartyCatalogItem) => void
-  onSelectManual: () => void
+  onConfirmManual: (
+    payload: OperationPartyManualConfirmPayload,
+    options: OperationPartyManualConfirmOptions,
+  ) => void | Promise<void>
   onClearSelection: () => void
   onIvaConditionApplied?: (iva: ClientIvaConditionValue) => void
 }
 
-function ManualEntryForm({
-  flow,
-  manualName,
-  onManualNameChange,
-  taxId,
-  onTaxIdChange,
-  ivaCondition,
-  onIvaConditionChange,
-  padron,
-  readOnly,
-  onIvaConditionApplied,
-}: {
-  flow: "sale" | "purchase"
-  manualName: string
-  onManualNameChange: (value: string) => void
-  taxId: string
-  onTaxIdChange: (value: string) => void
-  ivaCondition: string
-  onIvaConditionChange: (value: string) => void
-  padron: OperationPadronState
-  readOnly: boolean
-  onIvaConditionApplied?: (iva: ClientIvaConditionValue) => void
-}) {
-  const allowManualNameEntry = flow === "sale"
-  const taxInputMode = flow === "purchase" ? "cuit_only" : "cuit_or_dni"
-  const lastPadronApplyRef = useRef<string>("")
-  const lastIvaApplyRef = useRef<string>("")
+function buildManualPayload(
+  manualName: string,
+  taxId: string,
+  email: string,
+  ivaCondition: string,
+): OperationPartyManualConfirmPayload {
+  return {
+    name: manualName.trim(),
+    taxId: taxId.trim(),
+    email: email.trim(),
+    ivaCondition: ivaCondition.trim(),
+  }
+}
 
-  const taxLabel = flow === "purchase" ? "CUIT" : "CUIT / DNI"
-  const taxPlaceholder =
-    flow === "purchase" ? "30-12345678-9" : "20-12345678-9"
-
-  useEffect(() => {
-    if (readOnly) return
-    lastPadronApplyRef.current = ""
-    lastIvaApplyRef.current = ""
-    if (!allowManualNameEntry) {
-      onManualNameChange("")
-    }
-    onIvaConditionChange("")
-  }, [taxId, readOnly, allowManualNameEntry, onManualNameChange, onIvaConditionChange])
-
-  useEffect(() => {
-    if (readOnly || !padron.error) return
-    lastPadronApplyRef.current = ""
-    lastIvaApplyRef.current = ""
-    if (!allowManualNameEntry) {
-      onManualNameChange("")
-    }
-    onIvaConditionChange("")
-  }, [
-    readOnly,
-    padron.error,
-    allowManualNameEntry,
-    onManualNameChange,
-    onIvaConditionChange,
-  ])
-
-  useEffect(() => {
-    if (readOnly || padron.busy || padron.error) return
-    const razon = padron.razonSocial.trim()
-    if (!razon) return
-    const token = `${taxId.trim()}::${razon}`
-    if (token === lastPadronApplyRef.current) return
-    lastPadronApplyRef.current = token
-    onManualNameChange(razon)
-  }, [
-    readOnly,
-    padron.busy,
-    padron.error,
-    padron.razonSocial,
-    taxId,
-    onManualNameChange,
-  ])
-
-  useEffect(() => {
-    if (readOnly || padron.busy || padron.error) return
-    if (!padron.mappedIvaCondition) return
-    const token = `${taxId.trim()}::${padron.mappedIvaCondition}`
-    if (token === lastIvaApplyRef.current) return
-    lastIvaApplyRef.current = token
-    onIvaConditionChange(padron.mappedIvaCondition)
-    onIvaConditionApplied?.(padron.mappedIvaCondition)
-  }, [
-    readOnly,
-    padron.busy,
-    padron.error,
-    padron.mappedIvaCondition,
-    taxId,
-    onIvaConditionChange,
-    onIvaConditionApplied,
-  ])
-
-  const arcaLookupOk =
-    !readOnly &&
-    !padron.busy &&
-    !padron.error &&
-    Boolean(padron.razonSocial.trim())
-  const ivaFromArca = Boolean(padron.mappedIvaCondition)
-  const padronErrorMessage = padron.error
-    ? formatPadronErrorForUser(padron.error)
-    : null
-
-  return (
-    <div className="space-y-4">
-      <RootsFormTextField
-        label={taxLabel}
-        id="party-tax-id"
-        type="text"
-        inputMode="numeric"
-        value={taxId}
-        onChange={(e) =>
-          onTaxIdChange(sanitizeTaxDocumentInput(e.target.value, taxInputMode))
-        }
-        placeholder={taxPlaceholder}
-        autoComplete="off"
-        disabled={readOnly}
-        readOnly={readOnly}
-        autoFocus={!readOnly}
-        error={padronErrorMessage ?? undefined}
-        hint={
-          padron.busy ? (
-            <span className="inline-flex items-center gap-2">
-              <RootsSpinner size="sm" aria-hidden />
-              Consultando ARCA…
-            </span>
-          ) : undefined
-        }
-      />
-
-      <RootsFormTextField
-        label="Nombre o razón social"
-        id="party-manual-name"
-        value={manualName}
-        onChange={(e) => onManualNameChange(e.target.value)}
-        placeholder={
-          allowManualNameEntry
-            ? "Nombre o razón social"
-            : padron.busy
-              ? "Consultando ARCA…"
-              : "Se completa al consultar ARCA"
-        }
-        autoComplete="off"
-        disabled={readOnly || padron.busy || !allowManualNameEntry}
-        readOnly={readOnly || !allowManualNameEntry}
-      />
-
-      <RootsFormSelectField
-        label="Condición IVA"
-        id="party-iva-condition"
-        value={ivaCondition || "__none__"}
-        placeholder="Sin definir"
-        disabled={readOnly || !arcaLookupOk || ivaFromArca}
-        readOnly={readOnly || ivaFromArca}
-        onValueChange={(v) => {
-          const next = v === "__none__" ? "" : v
-          onIvaConditionChange(next)
-          if (next && onIvaConditionApplied) {
-            onIvaConditionApplied(next as ClientIvaConditionValue)
-          }
-        }}
-      >
-        <RootsFormSelectItem value="__none__">Sin definir</RootsFormSelectItem>
-        {CLIENT_IVA_CONDITION_OPTIONS.map((o) => (
-          <RootsFormSelectItem key={o.value} value={o.value}>
-            {o.label}
-          </RootsFormSelectItem>
-        ))}
-      </RootsFormSelectField>
-    </div>
-  )
+function isManualPayloadValid(
+  flow: "sale" | "purchase",
+  payload: OperationPartyManualConfirmPayload,
+): boolean {
+  if (flow === "sale") {
+    if (!payload.name) return false
+    if (payload.email && validateOptionalEmailField(payload.email)) return false
+    return true
+  }
+  return Boolean(payload.name)
 }
 
 export function OperationPartyPickerDialog({
@@ -251,17 +115,20 @@ export function OperationPartyPickerDialog({
   open,
   onOpenChange,
   canSearchCatalog,
+  canCreateClient = false,
+  manualRegisterMode = "immediate",
   manualName,
   onManualNameChange,
   taxId,
   onTaxIdChange,
+  email,
+  onEmailChange,
   ivaCondition,
   onIvaConditionChange,
   selected,
-  padron,
-  catalogBlocked,
+  catalogBlocked: _catalogBlocked,
   onSelectCatalogParty,
-  onSelectManual,
+  onConfirmManual,
   onClearSelection,
   onIvaConditionApplied,
 }: Props) {
@@ -271,18 +138,22 @@ export function OperationPartyPickerDialog({
     [],
   )
   const [searchLoading, setSearchLoading] = useState(false)
+  const [confirming, setConfirming] = useState(false)
+  const [confirmError, setConfirmError] = useState<string | null>(null)
+  const [highlightedPartyId, setHighlightedPartyId] = useState<string | null>(null)
   const searchGenRef = useRef(0)
 
   const searchTrim = searchQuery.trim()
+  const showSearchDropdown = Boolean(searchTrim) && step === "catalog"
   const manualSelected = selected?.manual === true
-  const catalogSelected = selected != null && !manualSelected
-  const manualReadOnly = selected != null
-  const canConfirmManual =
-    !selected &&
-    !padron.busy &&
-    (flow === "sale"
-      ? Boolean(manualName.trim()) || Boolean(taxId.trim())
-      : Boolean(manualName.trim()) && !padron.error)
+  const manualReadOnly = false
+
+  const manualPayload = useMemo(
+    () => buildManualPayload(manualName, taxId, email, ivaCondition),
+    [manualName, taxId, email, ivaCondition],
+  )
+
+  const canConfirmManual = isManualPayloadValid(flow, manualPayload) && !confirming
 
   useEffect(() => {
     if (!open) {
@@ -290,15 +161,15 @@ export function OperationPartyPickerDialog({
       setSearchQuery("")
       setCatalogResults([])
       setSearchLoading(false)
+      setConfirming(false)
+      setConfirmError(null)
       return
     }
-    if (catalogBlocked) {
-      setStep("manual")
-    }
-  }, [open, catalogBlocked])
+    setHighlightedPartyId(null)
+  }, [open])
 
   useEffect(() => {
-    if (!open || !canSearchCatalog || catalogBlocked || step !== "catalog") {
+    if (!open || !canSearchCatalog || step !== "catalog") {
       return
     }
 
@@ -328,18 +199,86 @@ export function OperationPartyPickerDialog({
   }, [
     open,
     canSearchCatalog,
-    catalogBlocked,
     step,
     searchTrim,
     popId,
     flow,
   ])
 
-  const showAlternateOptions = !catalogSelected
+  const handleConfirmManual = async (options: OperationPartyManualConfirmOptions) => {
+    if (!canConfirmManual) return
+    setConfirmError(null)
+    setConfirming(true)
+
+    try {
+      if (
+        flow === "sale" &&
+        options.persistInCatalog &&
+        canCreateClient &&
+        manualRegisterMode === "immediate"
+      ) {
+        const res = await createCheckoutClient(popId, manualPayload)
+        if (!res.success) {
+          setConfirmError(res.error)
+          return
+        }
+        onSelectCatalogParty(res.party)
+        onOpenChange(false)
+        return
+      }
+
+      await onConfirmManual(manualPayload, options)
+      onOpenChange(false)
+    } finally {
+      setConfirming(false)
+    }
+  }
+
   const searchPlaceholder =
     flow === "purchase"
       ? "Buscar proveedor por nombre o CUIT…"
-      : "Buscar cliente por nombre…"
+      : selected
+        ? "Buscar otro cliente…"
+        : "Buscar cliente por nombre…"
+
+  const manualFooter =
+    step === "manual"
+      ? flow === "sale"
+        ? canCreateClient
+          ? {
+              secondary: {
+                label: "Solo ahora",
+                title: "Usar solo en esta operación, sin guardar en cartera",
+                onClick: () => void handleConfirmManual({ persistInCatalog: false }),
+                disabled: !canConfirmManual,
+              },
+              primary: {
+                label: "Guardar cliente",
+                title: "Dar de alta en clientes y usar en esta operación",
+                onClick: () => void handleConfirmManual({ persistInCatalog: true }),
+                disabled: !canConfirmManual,
+                loading: confirming,
+                loadingLabel: "Guardando…",
+              },
+            }
+          : {
+              primary: {
+                label: "Solo ahora",
+                title: "Usar solo en esta operación",
+                onClick: () => void handleConfirmManual({ persistInCatalog: false }),
+                disabled: !canConfirmManual,
+                loading: confirming,
+              },
+            }
+        : {
+            primary: {
+              label: "Usar en esta compra",
+              onClick: () => void handleConfirmManual({ persistInCatalog: false }),
+              disabled: !canConfirmManual,
+              loading: confirming,
+            },
+          }
+      : null
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -376,8 +315,8 @@ export function OperationPartyPickerDialog({
         <RootsDialogBody className="space-y-4">
           {step === "catalog" ? (
             <>
-              {!catalogBlocked && canSearchCatalog ? (
-                <>
+              {canSearchCatalog ? (
+                <div className="flex min-w-0 flex-col gap-1">
                   <RootsFormSearchField
                     hideLabel
                     label={
@@ -391,79 +330,122 @@ export function OperationPartyPickerDialog({
                     placeholder={searchPlaceholder}
                   />
 
-                  {searchTrim ? (
-                    <ul
-                      className="flex flex-col gap-2"
-                      role="listbox"
-                      aria-label={flow === "purchase" ? "Proveedores" : "Clientes"}
-                      aria-busy={searchLoading}
-                    >
-                      {searchLoading ? (
-                        <li className="flex items-center justify-center gap-2 rounded-xl border border-dashed border-[var(--rootsy-bruma-200)] bg-white px-4 py-8 text-sm text-[var(--rootsy-bruma-500)]">
-                          <RootsSpinner size="sm" aria-hidden />
-                          Buscando…
-                        </li>
-                      ) : catalogResults.length === 0 ? (
-                        <li className="rounded-xl border border-dashed border-[var(--rootsy-bruma-200)] bg-white px-4 py-8 text-center text-sm text-[var(--rootsy-bruma-500)]">
-                          Sin resultados
-                        </li>
-                      ) : (
-                        catalogResults.map((party) => {
-                          const isSelected = selected?.id === party.id
-                          return (
-                            <li key={party.id}>
-                              <CheckoutOptionCard
-                                title={party.name}
-                                selected={isSelected}
-                                disabled={selected != null}
-                                onClick={() => onSelectCatalogParty(party)}
-                                icon={Building2}
-                                trailing={isSelected ? "check" : "none"}
-                              />
-                            </li>
-                          )
-                        })
+                  {showSearchDropdown ? (
+                    <div
+                      className={cn(
+                        "max-h-60 overflow-x-hidden overflow-y-auto overscroll-contain",
+                        rootsFormSelectContentClass,
+                        "w-full min-w-0 max-w-none",
                       )}
-                    </ul>
+                    >
+                      <ul
+                        className={rootsFormDropdownListClass}
+                        role="listbox"
+                        aria-label={flow === "purchase" ? "Proveedores" : "Clientes"}
+                        aria-busy={searchLoading}
+                      >
+                        {searchLoading ? (
+                          <li className="flex items-center justify-center gap-2 px-3 py-4 text-sm text-[var(--rootsy-bruma-500)]">
+                            <RootsSpinner size="sm" aria-hidden />
+                            Buscando…
+                          </li>
+                        ) : catalogResults.length === 0 ? (
+                          <li className="px-3 py-4 text-center text-sm text-[var(--rootsy-bruma-500)]">
+                            Sin resultados
+                          </li>
+                        ) : (
+                          catalogResults.map((party) => {
+                            const isSelected = selected?.id === party.id
+                            const isHighlighted =
+                              highlightedPartyId === party.id || isSelected
+
+                            return (
+                              <li key={party.id}>
+                                <button
+                                  type="button"
+                                  role="option"
+                                  aria-selected={isSelected}
+                                  className={partySearchDropdownItemClass(
+                                    isHighlighted,
+                                    isSelected,
+                                  )}
+                                  onMouseEnter={() =>
+                                    setHighlightedPartyId(party.id)
+                                  }
+                                  onMouseLeave={() =>
+                                    setHighlightedPartyId((current) =>
+                                      current === party.id ? null : current,
+                                    )
+                                  }
+                                  onMouseDown={(event) => event.preventDefault()}
+                                  onClick={() => onSelectCatalogParty(party)}
+                                >
+                                  <span className="w-full truncate font-medium">
+                                    {party.name}
+                                  </span>
+                                </button>
+                              </li>
+                            )
+                          })
+                        )}
+                      </ul>
+                    </div>
                   ) : null}
-                </>
+                </div>
               ) : null}
 
-              {showAlternateOptions ? (
-                <>
-                  {!catalogBlocked && canSearchCatalog ? (
-                    <Separator className="bg-[var(--rootsy-bruma-200)]" />
-                  ) : null}
-
-                  <div className="space-y-2">
-                    <CheckoutOptionCard
-                      title={
-                        manualSelected && selected
-                          ? `${selected.name} (manual)`
-                          : "Carga manual"
-                      }
-                      selected={manualSelected}
-                      onClick={() => setStep("manual")}
-                      icon={User}
-                      trailing={manualSelected ? "check" : "chevron"}
-                    />
-                  </div>
-                </>
+              {selected ? (
+                <CheckoutOptionCard
+                  title={selected.name}
+                  subtitle={selectedPartySubtitle(selected)}
+                  selected
+                  onClick={() => {}}
+                  icon={flow === "purchase" ? Building2 : User}
+                  trailing="check"
+                />
               ) : null}
+
+              {canSearchCatalog || selected ? (
+                <Separator className="bg-[var(--rootsy-bruma-200)]" />
+              ) : null}
+
+              <div className="space-y-2">
+                <CheckoutOptionCard
+                  title="Carga manual"
+                  subtitle={
+                    selected && manualSelected
+                      ? "Editar datos del cliente manual"
+                      : "Completar datos sin buscar en el catálogo"
+                  }
+                  selected={false}
+                  onClick={() => setStep("manual")}
+                  icon={User}
+                  trailing="chevron"
+                />
+              </div>
             </>
           ) : (
-            <ManualEntryForm
-              flow={flow}
-              manualName={manualName}
-              onManualNameChange={onManualNameChange}
-              taxId={taxId}
-              onTaxIdChange={onTaxIdChange}
-              ivaCondition={ivaCondition}
-              onIvaConditionChange={onIvaConditionChange}
-              padron={padron}
-              readOnly={manualReadOnly}
-              onIvaConditionApplied={onIvaConditionApplied}
-            />
+            <>
+              <OperationPartyManualEntryForm
+                popId={popId}
+                flow={flow}
+                manualName={manualName}
+                onManualNameChange={onManualNameChange}
+                taxId={taxId}
+                onTaxIdChange={onTaxIdChange}
+                email={email}
+                onEmailChange={onEmailChange}
+                ivaCondition={ivaCondition}
+                onIvaConditionChange={onIvaConditionChange}
+                readOnly={manualReadOnly}
+                onIvaConditionApplied={onIvaConditionApplied}
+              />
+              {confirmError ? (
+                <p className="text-sm text-rose-600" role="alert">
+                  {confirmError}
+                </p>
+              ) : null}
+            </>
           )}
         </RootsDialogBody>
 
@@ -478,17 +460,24 @@ export function OperationPartyPickerDialog({
                     onOpenChange(false)
                   },
                 }
-              : undefined
+              : manualFooter?.secondary
+                ? {
+                    label: manualFooter.secondary.label,
+                    title: manualFooter.secondary.title,
+                    onClick: manualFooter.secondary.onClick,
+                    disabled: manualFooter.secondary.disabled,
+                  }
+                : undefined
           }
           primary={
-            step === "manual" && !selected
+            manualFooter?.primary
               ? {
-                  label:
-                    flow === "purchase"
-                      ? "Usar para esta compra"
-                      : "Aplicar",
-                  onClick: onSelectManual,
-                  disabled: !canConfirmManual,
+                  label: manualFooter.primary.label,
+                  title: manualFooter.primary.title,
+                  onClick: manualFooter.primary.onClick,
+                  disabled: manualFooter.primary.disabled,
+                  loading: manualFooter.primary.loading,
+                  loadingLabel: manualFooter.primary.loadingLabel,
                 }
               : undefined
           }

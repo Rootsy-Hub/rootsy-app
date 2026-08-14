@@ -10,6 +10,7 @@ type Props = {
   form: ServiceChargeCreateWizardForm
   selectedService: ServiceTypeChargeOption
   disabled?: boolean
+  fieldIdPrefix?: string
   onChange: (patch: Partial<ServiceChargeCreateWizardForm>) => void
 }
 
@@ -17,6 +18,7 @@ export function ServiceChargeAddonFields({
   form,
   selectedService,
   disabled = false,
+  fieldIdPrefix = "",
   onChange,
 }: Props) {
   const addons = selectedService.addons
@@ -37,11 +39,13 @@ export function ServiceChargeAddonFields({
     })
   }
 
+  const id = (suffix: string) => (fieldIdPrefix ? `${fieldIdPrefix}-${suffix}` : suffix)
+
   return (
     <div className={rootsFormColumnClass}>
       <ServiceChargeAddonMultiSelectField
         label={isSubscription ? "Adicionales" : "Adicionales"}
-        id="operate-charge-addons"
+        id={id("operate-charge-addons")}
         addons={addons}
         selectedIds={form.selectedAddonIds}
         onSelectedIdsChange={updateSelectedAddonIds}
@@ -51,7 +55,7 @@ export function ServiceChargeAddonFields({
       {isSubscription && form.selectedAddonIds.length > 0 ? (
         <ServiceChargeAddonMultiSelectField
           label="Adicionales por única vez"
-          id="operate-charge-addons-once"
+          id={id("operate-charge-addons-once")}
           addons={oneTimeOptions}
           selectedIds={form.oneTimeAddonIds}
           onSelectedIdsChange={(oneTimeAddonIds) =>

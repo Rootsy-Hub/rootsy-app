@@ -1,25 +1,30 @@
 "use client"
 
 import type { ServiceTypeChargeOption } from "@/app/[siteId]/[popId]/active-services/actions"
-import type { ServiceChargeCreateWizardForm } from "@/app/[siteId]/[popId]/active-services/serviceChargeCreateFormState"
+import type {
+  ServiceChargeCreateFieldErrors,
+  ServiceChargeCreateWizardForm,
+} from "@/app/[siteId]/[popId]/active-services/serviceChargeCreateFormState"
 import {
   layoutsOperarTicketProposalCartListClass,
 } from "@/app/library/layouts/layoutsOperarHardcodedSpec"
 import { LAYOUTS_OPERAR_DEFAULT_TICKET_PROPOSAL } from "@/app/library/layouts/rootsyLayoutsOperarSystem"
 import { layoutsOperarSummaryCartListSurfaceClass } from "@/app/library/layouts/layoutsOperarStyles"
 import {
-  ServiceOperateChargeConfigShowcase,
   formatSnapshotDateLabel,
+  ServiceOperateChargeConfigShowcase,
 } from "@/components/service-operation/ServiceOperateChargeConfigShowcase"
+import { ServiceOperateChargeConfigFormPanel } from "@/components/service-operation/ServiceOperateChargeConfigFormPanel"
 import { ServiceOperateServiceShowcase } from "@/components/service-operation/ServiceOperateServiceShowcase"
 import { ServiceOperateSnapshotCartRow } from "@/components/service-operation/ServiceOperateSnapshotCartRow"
+import type { ServiceOperateSnapshotPanelView } from "@/components/service-operation/ServiceOperateSnapshotPanelTabs"
 import { serviceOperateSnapshotTicketCardClass } from "@/components/service-operation/serviceOperateSnapshotStyles"
 import { serviceChargeHasComprobante } from "@/app/[siteId]/[popId]/active-services/serviceChargeCreateFormState"
-import { SERVICE_PAYMENT_TIMING_LABELS } from "@/lib/serviceCatalogTypes"
 import { operationPaymentKindLabel } from "@/lib/operationPaymentKinds"
 import {
   getServiceChargeCheckoutDestinations,
 } from "@/lib/serviceChargeCheckoutPayment"
+import { SERVICE_PAYMENT_TIMING_LABELS } from "@/lib/serviceCatalogTypes"
 import {
   computeChargeDueDate,
   billingPeriodRequiresManualPeriodEnd,
@@ -40,16 +45,16 @@ const TICKET_PROPOSAL = LAYOUTS_OPERAR_DEFAULT_TICKET_PROPOSAL
 const PLACEHOLDER = "—"
 
 type Props = {
+  view: ServiceOperateSnapshotPanelView
   form: ServiceChargeCreateWizardForm
+  fieldErrors: ServiceChargeCreateFieldErrors
   popId: string
   selectedService: ServiceTypeChargeOption | null
   treasuryPaymentContext: TreasuryPaymentContext | null
   comprobanteLabel: string
   suggestedComprobante: string | null
-}
-
-function formatSummaryDate(iso: string | null | undefined): string {
-  return formatSnapshotDateLabel(iso)
+  disabled?: boolean
+  onFormChange: (patch: Partial<ServiceChargeCreateWizardForm>) => void
 }
 
 function yesNo(value: boolean): string {
@@ -81,12 +86,16 @@ function resolvePaymentSnapshot(
 }
 
 export function ServiceOperateChargeSnapshotContent({
+  view,
   form,
+  fieldErrors,
   popId,
   selectedService,
   treasuryPaymentContext,
   comprobanteLabel,
   suggestedComprobante,
+  disabled = false,
+  onFormChange,
 }: Props) {
   const clientName =
     form.clientDraft.catalogClient?.name.trim() ||
@@ -152,8 +161,25 @@ export function ServiceOperateChargeSnapshotContent({
     return null
   }
 
+  if (view === "config") {
+    return (
+      <div
+        className="flex min-h-0 flex-1 flex-col overflow-hidden"
+        data-snapshot-tab="config"
+      >
+        <ServiceOperateChargeConfigFormPanel
+          form={form}
+          selectedService={selectedService}
+          fieldErrors={fieldErrors}
+          disabled={disabled}
+          onChange={onFormChange}
+        />
+      </div>
+    )
+  }
+
   return (
-    <div className="flex min-h-0 flex-col">
+    <div className="flex min-h-0 flex-col" data-snapshot-tab="cargo">
       <div className="shrink-0 p-3">
         <div className={serviceOperateSnapshotTicketCardClass}>
           <ServiceOperateServiceShowcase
@@ -178,12 +204,12 @@ export function ServiceOperateChargeSnapshotContent({
           form={form}
           scopeLabel={SERVICE_CHARGE_BILLING_SCOPE_LABELS[form.billingScope]}
           chargeCount={chargeCount}
-          periodStartLabel={formatSummaryDate(form.periodStartDate)}
-          periodEndLabel={formatSummaryDate(effectivePeriodEnd)}
+          periodStartLabel={formatSnapshotDateLabel(form.periodStartDate)}
+          periodEndLabel={formatSnapshotDateLabel(effectivePeriodEnd)}
           periodStartEmpty={!form.periodStartDate.trim()}
           periodEndEmpty={!effectivePeriodEnd}
           paymentTimingLabel={SERVICE_PAYMENT_TIMING_LABELS[form.paymentTiming]}
-          dueDateLabel={formatSummaryDate(previewDueDate)}
+          dueDateLabel={formatSnapshotDateLabel(previewDueDate)}
           dueDateEmpty={!previewDueDate}
           notes={form.notes ?? ""}
           addons={selectedService.addons}
@@ -240,3 +266,5 @@ export function ServiceOperateChargeSnapshotContent({
     </div>
   )
 }
+
+export { formatSnapshotDateLabel }

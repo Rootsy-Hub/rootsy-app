@@ -102,14 +102,16 @@ export function MesasCheckoutModals({
         open={m.clienteModalAbierto}
         onOpenChange={m.setClienteModalAbierto}
         canSearchCatalog={m.canReadClients}
+        canCreateClient={m.canCreateClient}
         manualName={m.manualNombreCliente}
         onManualNameChange={m.setManualNombreCliente}
         taxId={m.fiscalDocVenta}
         onTaxIdChange={m.setFiscalDocVenta}
+        email={m.ventaEmail}
+        onEmailChange={m.setVentaEmail}
         ivaCondition={m.ventaIvaCondition}
         onIvaConditionChange={m.setVentaIvaCondition}
         selected={m.clienteSeleccionado}
-        padron={m.ventaPadron}
         catalogBlocked={m.clienteCatalogoBloqueado}
         onSelectCatalogParty={(party) =>
           m.seleccionarCliente({
@@ -120,7 +122,7 @@ export function MesasCheckoutModals({
             defaultInvoiceTypeLabel: party.defaultInvoiceTypeLabel ?? null,
           })
         }
-        onSelectManual={m.seleccionarClienteManual}
+        onConfirmManual={m.confirmarClienteManual}
         onClearSelection={m.quitarCliente}
         onIvaConditionApplied={m.aplicarComprobanteDesdeIva}
       />

@@ -6,6 +6,7 @@ import {
   subDays,
   subMonths,
 } from "date-fns"
+import { toPopCalendarDate } from "@/lib/popTimezone"
 import type { DateRange } from "react-day-picker"
 
 export type DataWorkspaceDatePreset =
@@ -128,7 +129,28 @@ export function dataWorkspaceDateFilterSummary(
   return "Rango personalizado (elegí inicio y fin)"
 }
 
-import { toPopCalendarDate } from "@/lib/popTimezone"
+export function dataWorkspacePresetLabel(
+  preset: DataWorkspaceDatePreset,
+): string {
+  if (preset === "all") return "Todas las fechas"
+  if (preset === "custom") return "Rango personalizado"
+  const match = DATA_WORKSPACE_DATE_QUICK_PRESETS.find((item) => item.id === preset)
+  return match?.label ?? "Período"
+}
+
+/** Rango legible para UI (siempre con fechas cuando hay from/to). */
+export function formatDataWorkspaceDateRangeLabel(bounds: {
+  from: string | null
+  to: string | null
+}): string {
+  if (!bounds.from && !bounds.to) return "Sin límite de fechas"
+  if (bounds.from && bounds.to) {
+    return `${formatIsoDateShort(bounds.from)} – ${formatIsoDateShort(bounds.to)}`
+  }
+  if (bounds.from) return `Desde ${formatIsoDateShort(bounds.from)}`
+  if (bounds.to) return `Hasta ${formatIsoDateShort(bounds.to)}`
+  return "—"
+}
 
 export function isoDateInBounds(
   isoOrDate: string,

@@ -17,6 +17,7 @@ export type CheckoutDialogFooterAction = {
   loadingLabel?: string
   icon?: LucideIcon
   tone?: "neutral" | "destructive"
+  title?: string
 }
 
 type Props = {
@@ -53,6 +54,7 @@ export function CheckoutDialogFooter({
                   "text-rose-600 hover:bg-rose-50 hover:text-rose-700",
               )}
               disabled={secondaryAction.disabled}
+              title={secondaryAction.title}
               onClick={secondaryAction.onClick}
             >
               {secondaryAction.icon ? (
@@ -81,6 +83,7 @@ export function CheckoutDialogFooter({
               loading={primary.loading}
               loadingLabel={primary.loadingLabel ?? primary.label}
               icon={primary.icon}
+              title={primary.title}
               onClick={primary.onClick}
             >
               {primary.label}
@@ -90,6 +93,7 @@ export function CheckoutDialogFooter({
               type="button"
               className="shrink-0"
               disabled={primary.disabled}
+              title={primary.title}
               onClick={primary.onClick}
             >
               {primary.icon ? (

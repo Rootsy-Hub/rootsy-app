@@ -10,6 +10,7 @@ import {
 import {
   buildServiceChargeClientPayload,
   emptyServiceChargeClientDraft,
+  isServiceChargeClientReady,
   normalizeServiceChargeClientDraft,
   serviceChargeEffectiveClientIva,
 } from "@/app/[siteId]/[popId]/active-services/components/ServiceChargeClientField"
@@ -17,6 +18,7 @@ import {
   hasServiceChargeCreateFieldErrors,
   resolveServiceChargeComprobanteDisplayLabel,
   resolveServiceChargeComprobanteEffectiveLabel,
+  resolveServiceChargeComprobanteToolboxLabel,
   SERVICE_CHARGE_COMPROBANTE_AUTO,
   validateServiceChargeCreateWizardStep,
   validateServiceChargeOperateForm,
@@ -26,6 +28,8 @@ import {
   type ServiceChargeCreateWizardForm,
 } from "@/app/[siteId]/[popId]/active-services/serviceChargeCreateFormState"
 import type { ClientIvaConditionValue } from "@/app/[siteId]/[popId]/clients/clientIvaConstants"
+import { CLIENT_IVA_CONDITION_OPTIONS } from "@/app/[siteId]/[popId]/clients/clientIvaConstants"
+import { OperationPartyPickerDialog } from "@/components/checkout/OperationPartyPickerDialog"
 import { DataWorkspaceOperationsLayout } from "@/components/layouts-module/DataWorkspaceOperationsLayout"
 import { LayoutsOperarMainGrid } from "@/components/layouts-module/LayoutsOperarMainGrid"
 import { useDataWorkspaceSidebar } from "@/components/layouts/useDataWorkspaceSidebar"
@@ -33,9 +37,11 @@ import { ServiceOperateSnapshotPanel } from "@/components/service-operation/Serv
 import { ServiceOperateStepContent } from "@/components/service-operation/ServiceOperateStepContent"
 import { ServiceOperateStepHeader } from "@/components/service-operation/ServiceOperateStepHeader"
 import { ServiceOperateStepErrorBanner } from "@/components/service-operation/ServiceOperateStepErrorBanner"
-import { ServiceOperateStepToolbox } from "@/components/service-operation/ServiceOperateStepToolbox"
+import { ServiceOperateComprobanteDialog } from "@/components/service-operation/ServiceOperateComprobanteDialog"
+import { ServiceOperatePaymentDialog } from "@/components/service-operation/ServiceOperatePaymentDialog"
 import { GeneralDiscountDialog } from "@/components/checkout/GeneralDiscountDialog"
 import { SaleFinalizeDialog } from "@/components/checkout/SaleFinalizeDialog"
+import { SaleOperationToolbox } from "@/components/sale-operation/SaleOperationToolbox"
 import { saleOpFmt } from "@/components/sale-operation/saleOperationStyles"
 import { RootsFormToneProvider } from "@/components/rootsy-form"
 import { serviceOperateSnapshotPanelClass, layoutsOperarStepEnterClass } from "@/app/library/layouts/layoutsOperarStyles"
@@ -48,6 +54,12 @@ import { AlertDialog } from "@/components/ui/alert-dialog"
 import { useAuth } from "@/context/AuthContextSupabase"
 import { usePopWorkspace } from "@/context/PopWorkspaceContext"
 import { formatMoneyInputForField, parseMoneyInput } from "@/lib/moneyInput"
+import type {
+  OperationPartyCatalogItem,
+  OperationPartyManualConfirmOptions,
+  OperationPartyManualConfirmPayload,
+  OperationPartySelection,
+} from "@/lib/operationPartyPicker"
 import { cn } from "@/lib/utils"
 import { parseNonNegativeIntegerInput } from "@/lib/integerInput"
 import {
@@ -88,20 +100,13 @@ import {
 } from "@/lib/treasuryPaymentOptions"
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 
-function isOperateStepConfigured(
-  step: ServiceOperateStep,
-  form: ServiceChargeCreateWizardForm,
-  options: {
-    canReadClients: boolean
-    canCreateClient: boolean
-    hasServices: boolean
-    selectedService: ServiceTypeChargeOption | null
-  },
-  maxReachedStep: ServiceOperateStep,
-): boolean {
-  if (step === 3) return maxReachedStep >= 3
-  const errors = validateServiceChargeCreateWizardStep(step, form, options)
-  return !hasServiceChargeCreateFieldErrors(errors)
+const IVA_LABELS = Object.fromEntries(
+  CLIENT_IVA_CONDITION_OPTIONS.map((option) => [option.value, option.label]),
+) as Record<string, string>
+
+function labelCondicionIva(value: string | null | undefined): string | null {
+  if (!value?.trim()) return null
+  return IVA_LABELS[value.trim()] ?? value.trim()
 }
 
 type Props = {
@@ -231,7 +236,6 @@ export function CobrarServiciosWorkspace({ siteId, popId }: Props) {
   const [canUpdateClient, setCanUpdateClient] = useState(false)
 
   const [activeStep, setActiveStep] = useState<ServiceOperateStep>(1)
-  const [maxReachedStep, setMaxReachedStep] = useState<ServiceOperateStep>(1)
   const [form, setForm] = useState<ServiceChargeCreateWizardForm>(defaultFormState)
   const [fieldErrors, setFieldErrors] = useState<ServiceChargeCreateFieldErrors>({})
   const [saving, setSaving] = useState(false)
@@ -239,6 +243,12 @@ export function CobrarServiciosWorkspace({ siteId, popId }: Props) {
   const [successOpen, setSuccessOpen] = useState(false)
   const [createChargeConfirmOpen, setCreateChargeConfirmOpen] = useState(false)
   const [descartarConfirmOpen, setDescartarConfirmOpen] = useState(false)
+  const [clienteModalAbierto, setClienteModalAbierto] = useState(false)
+  const [comprobanteModalAbierto, setComprobanteModalAbierto] = useState(false)
+  const [pagoModalAbierto, setPagoModalAbierto] = useState(false)
+  const [chargeManualName, setChargeManualName] = useState("")
+  const [chargeFiscalDoc, setChargeFiscalDoc] = useState("")
+  const [chargeIvaCondition, setChargeIvaCondition] = useState("")
   const [descuentoModalAbierto, setDescuentoModalAbierto] = useState(false)
   const [descuentoDraftModo, setDescuentoDraftModo] = useState<"porcentaje" | "fijo">(
     "porcentaje",
@@ -330,10 +340,6 @@ export function CobrarServiciosWorkspace({ siteId, popId }: Props) {
     void loadPage()
   }, [loadPage])
 
-  useEffect(() => {
-    setMaxReachedStep((current) => (activeStep > current ? activeStep : current))
-  }, [activeStep])
-
   const patchForm = useCallback((patch: Partial<ServiceChargeCreateWizardForm>) => {
     setForm((current) => {
       const next: ServiceChargeCreateWizardForm = { ...current, ...patch }
@@ -380,7 +386,6 @@ export function CobrarServiciosWorkspace({ siteId, popId }: Props) {
     setFieldErrors({})
     setSubmitError(null)
     setActiveStep(1)
-    setMaxReachedStep(1)
     setDescuentoModalAbierto(false)
     setDescartarConfirmOpen(false)
     setCreateChargeConfirmOpen(false)
@@ -488,6 +493,123 @@ export function CobrarServiciosWorkspace({ siteId, popId }: Props) {
       ),
     [form.comprobanteLabel, suggestedComprobante],
   )
+
+  const comprobanteToolboxLabel = useMemo(
+    () =>
+      resolveServiceChargeComprobanteToolboxLabel(
+        form.comprobanteLabel,
+        suggestedComprobante,
+      ),
+    [form.comprobanteLabel, suggestedComprobante],
+  )
+
+  const clienteSeleccionado = useMemo((): OperationPartySelection | null => {
+    const draft = form.clientDraft
+    if (draft.catalogClient?.id) {
+      return {
+        id: draft.catalogClient.id,
+        manual: false,
+        name: draft.catalogClient.name,
+        taxId: draft.catalogClient.taxId ?? null,
+        ivaCondition: serviceChargeEffectiveClientIva(draft) || null,
+        defaultInvoiceTypeLabel: draft.catalogClient.defaultInvoiceTypeLabel ?? null,
+      }
+    }
+    if (draft.manualName.trim()) {
+      return {
+        id: null,
+        manual: true,
+        name: draft.manualName.trim(),
+        taxId: draft.taxId.trim() || null,
+        email: draft.email.trim() || null,
+        ivaCondition: draft.ivaCondition.trim() || null,
+        defaultInvoiceTypeLabel: null,
+      }
+    }
+    return null
+  }, [form.clientDraft])
+
+  const clienteIvaLabel = useMemo(
+    () => labelCondicionIva(serviceChargeEffectiveClientIva(form.clientDraft)),
+    [form.clientDraft],
+  )
+
+  const pagoConfigurado = Boolean(form.paymentMethodKey.trim())
+  const toolbarDisabled = !selectedService || saving
+
+  const aplicarComprobanteDesdeIva = useCallback(
+    (iva: ClientIvaConditionValue) => {
+      if (!bootstrap?.hasValidPopFiscalCuit) return
+      const suggested = suggestSaleComprobanteForClientIva(
+        iva,
+        bootstrap.popEmisorIvaCondition,
+      )
+      if (suggested) {
+        patchForm({ comprobanteLabel: SERVICE_CHARGE_COMPROBANTE_AUTO })
+      }
+    },
+    [bootstrap?.hasValidPopFiscalCuit, bootstrap?.popEmisorIvaCondition, patchForm],
+  )
+
+  const seleccionarClienteCatalogo = useCallback(
+    (party: OperationPartyCatalogItem) => {
+      patchForm({
+        clientDraft: normalizeServiceChargeClientDraft({
+          ...form.clientDraft,
+          catalogClient: party,
+          manualName: "",
+          taxId: "",
+          ivaCondition: party.ivaCondition?.trim() ?? form.clientDraft.ivaCondition,
+        }),
+      })
+      if (party.ivaCondition) {
+        aplicarComprobanteDesdeIva(party.ivaCondition as ClientIvaConditionValue)
+      }
+      setClienteModalAbierto(false)
+    },
+    [form.clientDraft, patchForm, aplicarComprobanteDesdeIva],
+  )
+
+  const seleccionarClienteManual = useCallback(
+    (
+      payload: OperationPartyManualConfirmPayload,
+      options: OperationPartyManualConfirmOptions,
+    ) => {
+      patchForm({
+        clientDraft: normalizeServiceChargeClientDraft({
+          catalogClient: null,
+          manualName: payload.name,
+          taxId: payload.taxId,
+          email: payload.email,
+          ivaCondition: payload.ivaCondition,
+          persistInCatalog: options.persistInCatalog,
+        }),
+      })
+      if (payload.ivaCondition) {
+        aplicarComprobanteDesdeIva(payload.ivaCondition as ClientIvaConditionValue)
+      }
+    },
+    [patchForm, aplicarComprobanteDesdeIva],
+  )
+
+  const quitarCliente = useCallback(() => {
+    patchForm({ clientDraft: emptyServiceChargeClientDraft() })
+    setClienteModalAbierto(false)
+  }, [patchForm])
+
+  const abrirClienteModal = useCallback(() => {
+    const draft = form.clientDraft
+    if (draft.catalogClient?.id) {
+      setChargeManualName("")
+      setChargeFiscalDoc("")
+      setChargeIvaCondition("")
+    } else {
+      setChargeManualName(draft.manualName)
+      setChargeFiscalDoc(draft.taxId)
+      setChargeIvaCondition(draft.ivaCondition)
+    }
+    setClienteModalAbierto(true)
+  }, [form.clientDraft])
 
   const validationOptions = useMemo(
     () => ({
@@ -603,7 +725,6 @@ export function CobrarServiciosWorkspace({ siteId, popId }: Props) {
     }
     setFieldErrors({})
     setActiveStep(step)
-    setMaxReachedStep((current) => (step > current ? step : current))
   }
 
   const configSummary = useMemo(() => {
@@ -651,11 +772,6 @@ export function CobrarServiciosWorkspace({ siteId, popId }: Props) {
     form.discountValue,
   ])
 
-  const paymentStepSummary = useMemo(() => {
-    const parts = [paymentLabel, comprobanteDisplayLabel].filter(Boolean)
-    return parts.join(" · ")
-  }, [paymentLabel, comprobanteDisplayLabel])
-
   const activeStepSummary = useMemo(() => {
     switch (activeStep) {
       case 1:
@@ -702,41 +818,6 @@ export function CobrarServiciosWorkspace({ siteId, popId }: Props) {
     configSummary,
     paymentLabel,
   ])
-
-  const stepToolboxSlots = useMemo(
-    () => [
-      {
-        step: 1 as const,
-        value: selectedService?.name.trim() || "Elegir servicio",
-        configured: isOperateStepConfigured(1, form, validationOptions, maxReachedStep),
-      },
-      {
-        step: 2 as const,
-        value: !canReadClients
-          ? "Sin permiso"
-          : clientName.trim()
-            ? `${clientName.trim()} · ${configSummary}`
-            : configSummary,
-        configured: isOperateStepConfigured(2, form, validationOptions, maxReachedStep),
-        disabled: !canReadClients,
-      },
-      {
-        step: 3 as const,
-        value: paymentStepSummary,
-        configured: isOperateStepConfigured(3, form, validationOptions, maxReachedStep),
-      },
-    ],
-    [
-      form,
-      validationOptions,
-      maxReachedStep,
-      selectedService,
-      configSummary,
-      canReadClients,
-      clientName,
-      paymentStepSummary,
-    ],
-  )
 
   const activeStepErrors = useMemo(() => {
     if (activeStep === 2) return serviceChargeStep2ErrorMessages(fieldErrors)
@@ -814,13 +895,25 @@ export function CobrarServiciosWorkspace({ siteId, popId }: Props) {
               </div>
             }
             toolbox={
-              <ServiceOperateStepToolbox
-                activeStep={activeStep}
-                onStepChange={handleStepChange}
-                slots={stepToolboxSlots}
+              <SaleOperationToolbox
+                clienteLabel={
+                  !canReadClients
+                    ? "Sin permiso"
+                    : clientName.trim() || "Elegir cliente"
+                }
+                clienteIvaLabel={clienteIvaLabel}
+                clienteDisabled={!canReadClients}
+                clienteConfigurado={isServiceChargeClientReady(form.clientDraft)}
+                toolbarDisabled={toolbarDisabled}
+                comprobanteLabel={comprobanteToolboxLabel}
+                pagoLabel={paymentLabel}
+                pagoConfigurado={pagoConfigurado}
                 descuentoLabel={descuentoToolboxLabel}
                 hayDescuento={hayDescuento}
-                descuentoDisabled={descuentoDisabled}
+                descuentoDisabled={descuentoDisabled || toolbarDisabled}
+                onClienteClick={abrirClienteModal}
+                onComprobanteClick={() => setComprobanteModalAbierto(true)}
+                onPagoClick={() => setPagoModalAbierto(true)}
                 onDescuentoClick={abrirModalDescuento}
               />
             }
@@ -832,6 +925,7 @@ export function CobrarServiciosWorkspace({ siteId, popId }: Props) {
                 <ServiceOperateSnapshotPanel
                   popId={popId}
                   form={form}
+                  fieldErrors={fieldErrors}
                   selectedService={selectedService}
                   treasuryPaymentContext={treasuryPaymentContext}
                   comprobanteLabel={comprobanteDisplayLabel}
@@ -840,6 +934,7 @@ export function CobrarServiciosWorkspace({ siteId, popId }: Props) {
                   saving={saving}
                   canCreate={canCreate}
                   confirmTitle={confirmTitle}
+                  onFormChange={patchForm}
                   onDiscard={() => setDescartarConfirmOpen(true)}
                   onConfirm={handleOpenCreateChargeConfirm}
                 />
@@ -848,6 +943,79 @@ export function CobrarServiciosWorkspace({ siteId, popId }: Props) {
           />
         </div>
       </DataWorkspaceOperationsLayout>
+
+      <OperationPartyPickerDialog
+        popId={popId}
+        flow="sale"
+        context="venta"
+        open={clienteModalAbierto}
+        onOpenChange={(open) => {
+          setClienteModalAbierto(open)
+          if (open && clienteSeleccionado?.manual) {
+            setChargeManualName(clienteSeleccionado.name)
+            setChargeFiscalDoc(clienteSeleccionado.taxId ?? "")
+            setChargeIvaCondition(clienteSeleccionado.ivaCondition ?? "")
+          }
+        }}
+        canSearchCatalog={canReadClients}
+        canCreateClient={canCreateClient}
+        manualRegisterMode="deferred"
+        manualName={chargeManualName}
+        onManualNameChange={setChargeManualName}
+        taxId={chargeFiscalDoc}
+        onTaxIdChange={setChargeFiscalDoc}
+        email={form.clientDraft.email}
+        onEmailChange={(value) =>
+          patchForm({
+            clientDraft: normalizeServiceChargeClientDraft({
+              ...form.clientDraft,
+              email: value,
+            }),
+          })
+        }
+        ivaCondition={chargeIvaCondition}
+        onIvaConditionChange={setChargeIvaCondition}
+        selected={clienteSeleccionado}
+        catalogBlocked={!canReadClients}
+        onSelectCatalogParty={seleccionarClienteCatalogo}
+        onConfirmManual={seleccionarClienteManual}
+        onClearSelection={quitarCliente}
+        onIvaConditionApplied={aplicarComprobanteDesdeIva}
+      />
+
+      <ServiceOperateComprobanteDialog
+        open={comprobanteModalAbierto}
+        onOpenChange={setComprobanteModalAbierto}
+        options={comprobanteFormOptions}
+        suggestedComprobante={suggestedComprobante}
+        value={form.comprobanteLabel}
+        onChange={(comprobanteLabel) => {
+          const hasComprobante = Boolean(
+            resolveServiceChargeComprobanteEffectiveLabel(
+              comprobanteLabel,
+              suggestedComprobante,
+            ),
+          )
+          patchForm({
+            comprobanteLabel,
+            ...(hasComprobante
+              ? {}
+              : {
+                  issueInvoiceOnCreate: false,
+                  printInvoiceOnCreate: false,
+                  emailInvoiceToClient: false,
+                }),
+          })
+        }}
+      />
+
+      <ServiceOperatePaymentDialog
+        open={pagoModalAbierto}
+        onOpenChange={setPagoModalAbierto}
+        treasuryContext={treasuryPaymentContext}
+        value={form.paymentMethodKey}
+        onChange={(paymentMethodKey) => patchForm({ paymentMethodKey })}
+      />
 
       <GeneralDiscountDialog
         open={descuentoModalAbierto}

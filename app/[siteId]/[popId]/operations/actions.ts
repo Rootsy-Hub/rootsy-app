@@ -585,7 +585,13 @@ function parsePurchaseLineItems(raw: unknown): OperationPurchaseLineItem[] {
   return out
 }
 
-export type OperationsListView = "sales" | "tables" | "counter" | "purchases" | "expenses"
+export type OperationsListView =
+  | "sales"
+  | "sales-report"
+  | "tables"
+  | "counter"
+  | "purchases"
+  | "expenses"
 
 export type GetOperationsListInput = {
   view: OperationsListView
@@ -1950,8 +1956,14 @@ export async function getOperationsList(
         searchTerm,
       )
 
-    if (view === "sales" || view === "tables" || view === "counter") {
+    if (
+      view === "sales" ||
+      view === "sales-report" ||
+      view === "tables" ||
+      view === "counter"
+    ) {
       const isChannelGroupedView = view === "tables" || view === "counter"
+      const isAllChannelsSalesView = view === "sales-report"
 
       let totalCount = 0
       let safePage = Math.max(1, reqPage)
@@ -1963,8 +1975,11 @@ export async function getOperationsList(
           .from("sales")
           .select("id", { count: "exact", head: true })
           .eq("pop_id", popId)
-          .neq("sale_channel", "table")
-          .neq("sale_channel", "counter")
+        if (!isAllChannelsSalesView) {
+          countQuery = countQuery
+            .neq("sale_channel", "table")
+            .neq("sale_channel", "counter")
+        }
         countQuery = appendSalesDateFilter(
           countQuery,
           dateFrom,
@@ -2007,7 +2022,7 @@ export async function getOperationsList(
         dataQuery = dataQuery.eq("sale_channel", "table")
       } else if (view === "counter") {
         dataQuery = dataQuery.eq("sale_channel", "counter")
-      } else {
+      } else if (!isAllChannelsSalesView) {
         dataQuery = dataQuery
           .neq("sale_channel", "table")
           .neq("sale_channel", "counter")
@@ -2054,7 +2069,7 @@ export async function getOperationsList(
         saleIds,
       )
       const tableLabelBySessionId =
-        view === "tables"
+        view === "tables" || isAllChannelsSalesView
           ? await loadTableLabelsBySaleIds(
               supabase,
               popId,
@@ -2062,7 +2077,7 @@ export async function getOperationsList(
             )
           : new Map<string, string>()
       const counterOrderLabelByOrderId =
-        view === "counter"
+        view === "counter" || isAllChannelsSalesView
           ? await loadCounterOrderLabelsBySaleIds(
               supabase,
               popId,

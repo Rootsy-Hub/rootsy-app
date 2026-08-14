@@ -114,10 +114,30 @@ export const ARG_V3_DEFAULT_CHART_ACCOUNTS: readonly ArgV3DefaultChartRow[] = [
     nature: "acreedora",
     level: 4,
   },
-  { code: "4.1.1.01", name: "Ventas", accountType: "ingresos", nature: "acreedora", level: 4 },
+  {
+    code: "4.1.1.01",
+    name: "Ventas — comercio",
+    accountType: "ingresos",
+    nature: "acreedora",
+    level: 4,
+  },
   {
     code: "4.1.1.02",
-    name: "Ventas de servicios",
+    name: "Ventas — servicios",
+    accountType: "ingresos",
+    nature: "acreedora",
+    level: 4,
+  },
+  {
+    code: "4.1.1.03",
+    name: "Ventas — mesas",
+    accountType: "ingresos",
+    nature: "acreedora",
+    level: 4,
+  },
+  {
+    code: "4.1.1.04",
+    name: "Ventas — mostrador",
     accountType: "ingresos",
     nature: "acreedora",
     level: 4,
@@ -213,8 +233,11 @@ export const CHART_IVA_PAGAR_CODES: readonly string[] = ["2.1.2.01"]
 
 export const CHART_COSTO_VENTAS_CODES: readonly string[] = ["5.1.1.01"]
 
+/** Fallback genérico cuando no hay cuenta por canal (POPs viejos). */
 export const CHART_VENTAS_GRAVADAS_CODES: readonly string[] = [
   ARG_V3_CHART_CODE.ventas,
+  "4.1.1.03",
+  "4.1.1.04",
   "4.1.1.02",
 ]
 

@@ -12,8 +12,34 @@ export type OperationPartySelection = {
   manual: boolean
   name: string
   taxId: string | null
+  email?: string | null
   ivaCondition: string | null
-  defaultInvoiceTypeLabel?: string | null
+  defaultInvoiceTypeLabel: string | null
+}
+
+export type OperationPartyManualConfirmPayload = {
+  name: string
+  taxId: string
+  email: string
+  ivaCondition: string
+}
+
+export type OperationPartyManualConfirmOptions = {
+  persistInCatalog: boolean
+}
+
+export function buildOperationPartyManualSelection(
+  payload: OperationPartyManualConfirmPayload,
+): OperationPartySelection {
+  return {
+    id: null,
+    manual: true,
+    name: payload.name || "Cliente sin nombre",
+    taxId: payload.taxId || null,
+    email: payload.email || null,
+    ivaCondition: payload.ivaCondition || null,
+    defaultInvoiceTypeLabel: null,
+  }
 }
 
 export function normalizarBusquedaParty(s: string): string {

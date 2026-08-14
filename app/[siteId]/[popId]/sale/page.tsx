@@ -49,6 +49,12 @@ import { LayoutsOperarMainGrid } from "@/components/layouts-module/LayoutsOperar
 import { useDataWorkspaceSidebar } from "@/components/layouts/useDataWorkspaceSidebar"
 import { useAuth } from "@/context/AuthContextSupabase"
 import { usePopWorkspace } from "@/context/PopWorkspaceContext"
+import { clientsAccessFromKeys } from "@/lib/popWorkspaceAccess"
+import type {
+  OperationPartyManualConfirmOptions,
+  OperationPartyManualConfirmPayload,
+} from "@/lib/operationPartyPicker"
+import { buildOperationPartyManualSelection } from "@/lib/operationPartyPicker"
 import { usePopSaleComprobanteFiscalContext } from "@/hooks/usePopSaleComprobanteFiscalContext"
 import { useParams } from "next/navigation"
 import {
@@ -96,6 +102,7 @@ type ClienteVentaSeleccionado = {
   manual: boolean
   name: string
   taxId: string | null
+  email?: string | null
   ivaCondition: string | null
   defaultInvoiceTypeLabel: string | null
 }
@@ -176,6 +183,10 @@ function SalePage() {
   } = useDataWorkspaceSidebar(siteId, popId ?? "", Boolean(popId))
   const { user } = useAuth()
   const { bootstrap, loading: bootstrapLoading } = usePopWorkspace()
+  const canCreateClient = useMemo(
+    () => clientsAccessFromKeys(bootstrap?.permissionKeys ?? []).canCreate,
+    [bootstrap?.permissionKeys],
+  )
 
   const [catalogArticles, setCatalogArticles] = useState<SaleCatalogArticle[]>(
     [],
@@ -277,10 +288,12 @@ function SalePage() {
   const [ventaIvaCondition, setVentaIvaCondition] = useState("")
   const [manualNombreCliente, setManualNombreCliente] = useState("")
   const [fiscalDocVenta, setFiscalDocVenta] = useState("")
+  const [ventaEmail, setVentaEmail] = useState("")
   const ventaPadron = usePadronAutofillRazonSocial(popId, fiscalDocVenta, {
     enabled:
       Boolean(popId) &&
       (clienteSeleccionado == null || clienteSeleccionado.manual),
+    manual: true,
   })
   const [clienteModalAbierto, setClienteModalAbierto] = useState(false)
   const [comprobante, setComprobante] = useState<string | null>(null)
@@ -625,6 +638,7 @@ function SalePage() {
     setClienteSeleccionado(null)
     setManualNombreCliente("")
     setFiscalDocVenta("")
+    setVentaEmail("")
     setVentaIvaCondition("")
     if (popId) {
       const saved = readSavedSaleComprobante(popId)
@@ -793,24 +807,18 @@ function SalePage() {
     setClienteModalAbierto(false)
   }
 
-  const seleccionarClienteManual = () => {
-    const name =
-      manualNombreCliente.trim() || ventaPadron.razonSocial.trim()
-    if (!name && !fiscalDocVenta.trim()) return
-    const iva =
-      ventaIvaCondition.trim() || ventaPadron.mappedIvaCondition || null
-    setClienteSeleccionado({
-      id: null,
-      manual: true,
-      name: name || "Cliente sin nombre",
-      taxId: fiscalDocVenta.trim() || null,
-      ivaCondition: iva,
-      defaultInvoiceTypeLabel: null,
-    })
-    if (iva) {
-      aplicarComprobanteDesdeIva(iva as ClientIvaConditionValue)
+  const confirmarClienteManual = (
+    payload: OperationPartyManualConfirmPayload,
+    _options: OperationPartyManualConfirmOptions,
+  ) => {
+    setManualNombreCliente(payload.name)
+    setFiscalDocVenta(payload.taxId)
+    setVentaEmail(payload.email)
+    setVentaIvaCondition(payload.ivaCondition)
+    setClienteSeleccionado(buildOperationPartyManualSelection(payload))
+    if (payload.ivaCondition) {
+      aplicarComprobanteDesdeIva(payload.ivaCondition as ClientIvaConditionValue)
     }
-    setClienteModalAbierto(false)
   }
 
   const abrirModalDescuento = () => {
@@ -1041,18 +1049,21 @@ function SalePage() {
           if (open && clienteSeleccionado?.manual) {
             setManualNombreCliente(clienteSeleccionado.name)
             setFiscalDocVenta(clienteSeleccionado.taxId ?? "")
+            setVentaEmail(clienteSeleccionado.email ?? "")
             setVentaIvaCondition(clienteSeleccionado.ivaCondition ?? "")
           }
         }}
         canSearchCatalog={canReadClients}
+        canCreateClient={canCreateClient}
         manualName={manualNombreCliente}
         onManualNameChange={setManualNombreCliente}
         taxId={fiscalDocVenta}
         onTaxIdChange={setFiscalDocVenta}
+        email={ventaEmail}
+        onEmailChange={setVentaEmail}
         ivaCondition={ventaIvaCondition}
         onIvaConditionChange={setVentaIvaCondition}
         selected={clienteSeleccionado}
-        padron={ventaPadron}
         catalogBlocked={clienteCatalogoBloqueado}
         onSelectCatalogParty={(party) =>
           seleccionarCliente({
@@ -1063,7 +1074,7 @@ function SalePage() {
             defaultInvoiceTypeLabel: party.defaultInvoiceTypeLabel ?? null,
           })
         }
-        onSelectManual={seleccionarClienteManual}
+        onConfirmManual={confirmarClienteManual}
         onClearSelection={quitarClienteVenta}
         onIvaConditionApplied={aplicarComprobanteDesdeIva}
       />

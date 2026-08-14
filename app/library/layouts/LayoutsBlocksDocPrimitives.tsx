@@ -29,6 +29,8 @@ import { layoutsModuleContentShellClass } from "@/components/layouts-module/root
 import {
   dataWorkspaceBlocksContentInnerClass,
   dataWorkspaceBlocksEmptyStateClass,
+  dataWorkspaceBlocksSectionDescriptionClass,
+  dataWorkspaceBlocksSectionTitleClass,
   dataWorkspaceBlocksSkeletonTone,
   dataWorkspaceEntityCardBodyClass,
   dataWorkspaceEntityCardClass,
@@ -64,9 +66,9 @@ export function LayoutsBlocksDocSubsection({
   return (
     <div className="space-y-3">
       <div className="space-y-1">
-        <h4 className="font-canopy text-sm font-semibold text-foreground">{title}</h4>
+        <h4 className={dataWorkspaceBlocksSectionTitleClass}>{title}</h4>
         {description ? (
-          <p className="font-canopy text-xs leading-relaxed text-muted-foreground">{description}</p>
+          <p className={dataWorkspaceBlocksSectionDescriptionClass}>{description}</p>
         ) : null}
       </div>
       {children}

@@ -82,6 +82,7 @@ type ProveedorCompraSeleccionado = {
   name: string
   taxId: string
   ivaCondition: string | null
+  defaultInvoiceTypeLabel: string | null
 }
 
 const IVA_LABEL_BY_VALUE = Object.fromEntries(
@@ -601,25 +602,27 @@ function PurchasesPage() {
       name: s.name,
       taxId: s.taxId,
       ivaCondition: null,
+      defaultInvoiceTypeLabel: null,
     })
     setManualNombreProveedor(s.name)
     setProveedorTaxId(s.taxId ?? "")
     setProveedorModalAbierto(false)
   }
 
-  const seleccionarProveedorManual = () => {
-    const name =
-      manualNombreProveedor.trim() || compraPadron.razonSocial.trim()
-    if (!name && !proveedorTaxId.trim()) return
+  const confirmarProveedorManual = (
+    payload: import("@/lib/operationPartyPicker").OperationPartyManualConfirmPayload,
+  ) => {
+    setManualNombreProveedor(payload.name)
+    setProveedorTaxId(payload.taxId)
+    setCompraIvaCondition(payload.ivaCondition)
     setProveedorSeleccionado({
       id: null,
       manual: true,
-      name: name || "Proveedor sin nombre",
-      taxId: proveedorTaxId.trim(),
-      ivaCondition:
-        compraIvaCondition.trim() || compraPadron.mappedIvaCondition || null,
+      name: payload.name || "Proveedor sin nombre",
+      taxId: payload.taxId || "",
+      ivaCondition: payload.ivaCondition || null,
+      defaultInvoiceTypeLabel: null,
     })
-    setProveedorModalAbierto(false)
   }
 
   const compraIvaLabel = useMemo(
@@ -1020,10 +1023,11 @@ function PurchasesPage() {
         onManualNameChange={setManualNombreProveedor}
         taxId={proveedorTaxId}
         onTaxIdChange={setProveedorTaxId}
+        email=""
+        onEmailChange={() => {}}
         ivaCondition={compraIvaCondition}
         onIvaConditionChange={setCompraIvaCondition}
         selected={proveedorSeleccionado}
-        padron={compraPadron}
         catalogBlocked={proveedorCatalogoBloqueado}
         onSelectCatalogParty={(party) =>
           seleccionarProveedorCatalogo({
@@ -1032,7 +1036,7 @@ function PurchasesPage() {
             taxId: party.taxId ?? "",
           })
         }
-        onSelectManual={seleccionarProveedorManual}
+        onConfirmManual={(payload) => confirmarProveedorManual(payload)}
         onClearSelection={quitarProveedorCompra}
       />
 

@@ -17,6 +17,7 @@ export const POP_ACCESS_MODULE_TO_PAGE_KEY: Record<string, PopPageKey | null> = 
   inventory: "inventory",
   operations: "operations",
   invoices: "invoices",
+  reports: null,
   accounts: "accounts",
   accounting: "accounting",
   hr: "hr",

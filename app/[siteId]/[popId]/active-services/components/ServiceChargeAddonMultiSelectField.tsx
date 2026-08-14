@@ -144,7 +144,7 @@ export function ServiceChargeAddonMultiSelectField({
           sideOffset={4}
           className={cn(
             rootsFormSelectContentClassForTone(tone),
-            "w-(--radix-popover-trigger-width) min-w-(--radix-popover-trigger-width) max-w-(--radix-popover-trigger-width)",
+            "w-(--radix-popover-trigger-width) min-w-(--radix-popover-trigger-width) max-w-(--radix-popover-trigger-width) p-0",
           )}
         >
           <ul className={rootsFormDropdownListClass} role="listbox" aria-label={label}>

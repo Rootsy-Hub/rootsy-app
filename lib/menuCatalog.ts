@@ -59,6 +59,7 @@ export type MenuItemLink =
   | "active-services"
   | "cobrar-servicios"
   | "promotions"
+  | "reports"
   | "section"
 
 /** Identificador de un acceso directo del dock (solo rutas navegables). */
@@ -130,7 +131,7 @@ export const menuSectionsRaw: Record<string, MenuSectionDef> = {
       { name: "Movimientos", icon: ArrowLeftRight, link: "section" },
       { name: "Inventario", icon: ClipboardList, link: "inventory" },
       { name: "Facturas", icon: FileBarChart, link: "invoices" },
-      { name: "Reportes", icon: FileCheck, link: "section" },
+      { name: "Reportes", icon: FileCheck, link: "reports" },
       { name: "Cheques", icon: Wallet, link: "section" },
       { name: "Órdenes", icon: FileText, link: "section" },
     ],

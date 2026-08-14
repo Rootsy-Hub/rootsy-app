@@ -26,11 +26,13 @@ import {
   ChannelDataFormTextField,
   ChannelDataFormTextareaField,
 } from "@/components/sale-operation/ChannelDataFormFields"
-import {
-  OperationPartyPickerDialog,
-  type OperationPadronState,
-} from "@/components/checkout/OperationPartyPickerDialog"
+import { OperationPartyPickerDialog } from "@/components/checkout/OperationPartyPickerDialog"
 import { rootsFormColumnClass, rootsFormTwoColRowClass } from "@/components/rootsy-form"
+import type {
+  OperationPartyManualConfirmOptions,
+  OperationPartyManualConfirmPayload,
+} from "@/lib/operationPartyPicker"
+import { buildOperationPartyManualSelection } from "@/lib/operationPartyPicker"
 import {
   Collapsible,
   CollapsibleContent,
@@ -130,10 +132,14 @@ export function MesaReservationForm({
           name: initial.clientName,
           taxId: null,
           ivaCondition: null,
+          defaultInvoiceTypeLabel: null,
         }
       : null,
   )
   const [manualName, setManualName] = useState(initial?.clientName ?? "")
+  const [manualTaxId, setManualTaxId] = useState("")
+  const [manualEmail, setManualEmail] = useState("")
+  const [manualIvaCondition, setManualIvaCondition] = useState("")
   const [arrivalDate, setArrivalDate] = useState(arrivalDefaults.date)
   const [arrivalTime, setArrivalTime] = useState(arrivalDefaults.time)
   const [note, setNote] = useState(initial?.note ?? "")
@@ -185,15 +191,6 @@ export function MesaReservationForm({
     draftSettings.floorBufferMinutes !==
       reservationSettings.floorBufferMinutes ||
     draftSettings.graceMinutes !== reservationSettings.graceMinutes
-
-  const padron: OperationPadronState = useMemo(
-    () => ({
-      busy: false,
-      error: null,
-      razonSocial: "",
-    }),
-    [],
-  )
 
   const clientLabel = client?.name?.trim() || manualName.trim()
   const arrivalAt = combineLocalDateTime(arrivalDate, arrivalTime)
@@ -410,12 +407,13 @@ export function MesaReservationForm({
         canSearchCatalog={canReadClients}
         manualName={manualName}
         onManualNameChange={setManualName}
-        taxId=""
-        onTaxIdChange={() => {}}
-        ivaCondition=""
-        onIvaConditionChange={() => {}}
+        taxId={manualTaxId}
+        onTaxIdChange={setManualTaxId}
+        email={manualEmail}
+        onEmailChange={setManualEmail}
+        ivaCondition={manualIvaCondition}
+        onIvaConditionChange={setManualIvaCondition}
         selected={client}
-        padron={padron}
         catalogBlocked={false}
         onSelectCatalogParty={(party) => {
           setClient({
@@ -427,23 +425,27 @@ export function MesaReservationForm({
             defaultInvoiceTypeLabel: party.defaultInvoiceTypeLabel ?? null,
           })
           setManualName(party.name)
+          setManualTaxId(party.taxId ?? "")
+          setManualEmail(party.email ?? "")
+          setManualIvaCondition(party.ivaCondition ?? "")
           setClientModalOpen(false)
         }}
-        onSelectManual={() => {
-          const name = manualName.trim()
-          if (!name) return
-          setClient({
-            id: null,
-            manual: true,
-            name,
-            taxId: null,
-            ivaCondition: null,
-          })
-          setClientModalOpen(false)
+        onConfirmManual={(
+          payload: OperationPartyManualConfirmPayload,
+          _options: OperationPartyManualConfirmOptions,
+        ) => {
+          setManualName(payload.name)
+          setManualTaxId(payload.taxId)
+          setManualEmail(payload.email)
+          setManualIvaCondition(payload.ivaCondition)
+          setClient(buildOperationPartyManualSelection(payload))
         }}
         onClearSelection={() => {
           setClient(null)
           setManualName("")
+          setManualTaxId("")
+          setManualEmail("")
+          setManualIvaCondition("")
         }}
       />
     </>

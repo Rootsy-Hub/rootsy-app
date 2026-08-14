@@ -1,21 +1,28 @@
 "use client"
 
-import type { ServiceChargePaymentMethodOption } from "@/app/[siteId]/[popId]/active-services/actions"
-import { CheckoutOptionCard } from "@/components/checkout/CheckoutOptionCard"
 import {
   RootsDialogBody,
   RootsDialogContent,
   RootsDialogHeader,
+  rootsDialogHeaderClass,
+  rootsDialogHeaderCompactClass,
+  rootsDialogTitleClass,
 } from "@/components/rootsy-dialog"
-import { Dialog } from "@/components/ui/dialog"
-import { paymentKindLabel } from "@/lib/paymentMethodLabels"
-import { treasuryPaymentOptionKey } from "@/lib/treasuryPaymentOptions"
-import { Banknote } from "lucide-react"
+import {
+  ServiceOperatePaymentFields,
+  type ServiceOperatePaymentInlineNavigation,
+} from "@/components/service-operation/ServiceOperatePaymentFields"
+import { RootsIconButton } from "@/components/rootsy-button/RootsIconButton"
+import { Dialog, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import type { TreasuryPaymentContext } from "@/lib/treasuryPaymentOptions"
+import { cn } from "@/lib/utils"
+import { ChevronLeft } from "lucide-react"
+import { useCallback, useState } from "react"
 
 type Props = {
   open: boolean
   onOpenChange: (open: boolean) => void
-  paymentMethods: ServiceChargePaymentMethodOption[]
+  treasuryContext: TreasuryPaymentContext | null
   value: string
   onChange: (paymentMethodKey: string) => void
 }
@@ -23,51 +30,70 @@ type Props = {
 export function ServiceOperatePaymentDialog({
   open,
   onOpenChange,
-  paymentMethods,
+  treasuryContext,
   value,
   onChange,
 }: Props) {
+  const [inlineNavigation, setInlineNavigation] =
+    useState<ServiceOperatePaymentInlineNavigation | null>(null)
+
+  const handleOpenChange = useCallback(
+    (nextOpen: boolean) => {
+      if (!nextOpen) {
+        setInlineNavigation(null)
+      }
+      onOpenChange(nextOpen)
+    },
+    [onOpenChange],
+  )
+
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <RootsDialogContent size="default">
-        <RootsDialogHeader
-          title="Medio de pago"
-          description="Opcional — cómo esperás cobrar este cargo."
-        />
+    <Dialog open={open} onOpenChange={handleOpenChange}>
+      <RootsDialogContent size="default" className="flex flex-col">
+        {inlineNavigation ? (
+          <DialogHeader
+            className={cn(
+              rootsDialogHeaderClass,
+              rootsDialogHeaderCompactClass,
+              "shrink-0",
+            )}
+          >
+            <div className="flex items-center gap-2">
+              <RootsIconButton
+                type="button"
+                label="Volver"
+                theme="workspace"
+                emphasis="ghost"
+                size="default"
+                className="-ml-2 shrink-0"
+                onClick={inlineNavigation.onBack}
+              >
+                <ChevronLeft aria-hidden />
+              </RootsIconButton>
+              <DialogTitle className={cn(rootsDialogTitleClass, "min-w-0 flex-1")}>
+                {inlineNavigation.title}
+              </DialogTitle>
+            </div>
+          </DialogHeader>
+        ) : (
+          <RootsDialogHeader
+            title="Medio de pago"
+            description="Opcional — cómo esperás cobrar este cargo."
+          />
+        )}
+
         <RootsDialogBody>
-          <ul className="flex max-h-80 flex-col gap-2" role="listbox" aria-label="Medios de pago">
-            <li>
-              <CheckoutOptionCard
-                title="Sin definir"
-                subtitle="Podés cobrarlo más adelante"
-                selected={!value}
-                onClick={() => {
-                  onChange("")
-                  onOpenChange(false)
-                }}
-                icon={Banknote}
-                trailing="none"
-              />
-            </li>
-            {paymentMethods.map((method) => {
-              const key = treasuryPaymentOptionKey(method)
-              return (
-                <li key={key}>
-                  <CheckoutOptionCard
-                    title={method.label}
-                    subtitle={paymentKindLabel(method.kind)}
-                    selected={value === key}
-                    onClick={() => {
-                      onChange(key)
-                      onOpenChange(false)
-                    }}
-                    icon={Banknote}
-                    trailing="none"
-                  />
-                </li>
-              )
-            })}
-          </ul>
+          <ServiceOperatePaymentFields
+            paymentMethodKey={value}
+            onChange={onChange}
+            treasuryContext={treasuryContext}
+            tone="light"
+            showTitle={false}
+            inlineNavigation
+            navigationSessionActive={open}
+            onInlineNavigationChange={setInlineNavigation}
+            onSelectionComplete={() => handleOpenChange(false)}
+          />
         </RootsDialogBody>
       </RootsDialogContent>
     </Dialog>

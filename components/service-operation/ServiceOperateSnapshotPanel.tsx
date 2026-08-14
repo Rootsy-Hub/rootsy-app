@@ -1,18 +1,23 @@
 "use client"
 
 import type { ServiceTypeChargeOption } from "@/app/[siteId]/[popId]/active-services/actions"
-import type { ServiceChargeCreateWizardForm } from "@/app/[siteId]/[popId]/active-services/serviceChargeCreateFormState"
+import type {
+  ServiceChargeCreateFieldErrors,
+  ServiceChargeCreateWizardForm,
+} from "@/app/[siteId]/[popId]/active-services/serviceChargeCreateFormState"
 import {
-  layoutsOperarSummaryCartCellClass,
-  layoutsOperarSummaryCartHeadingClass,
+  layoutsOperarSummaryPanelTabBodyClass,
   layoutsOperarSummaryTotalsPlacementClass,
 } from "@/app/library/layouts/layoutsOperarStyles"
 import {
   layoutsOperarTicketProposalActionsClass,
-  layoutsOperarTicketProposalHeaderClass,
 } from "@/app/library/layouts/layoutsOperarHardcodedSpec"
 import { LAYOUTS_OPERAR_DEFAULT_TICKET_PROPOSAL } from "@/app/library/layouts/rootsyLayoutsOperarSystem"
 import { ServiceOperateChargeSnapshotContent } from "@/components/service-operation/ServiceOperateChargeSnapshotContent"
+import {
+  ServiceOperateSnapshotPanelTabs,
+  type ServiceOperateSnapshotPanelView,
+} from "@/components/service-operation/ServiceOperateSnapshotPanelTabs"
 import { DataWorkspaceDetailEmptyState } from "@/components/data-workspace/DataWorkspaceDetailEmptyState"
 import { SaleOperationActionsBar } from "@/components/sale-operation/SaleOperationActionsBar"
 import { SaleOperationTotalBar } from "@/components/sale-operation/SaleOperationTotalBar"
@@ -25,12 +30,13 @@ import { parseMoneyInput } from "@/lib/moneyInput"
 import type { TreasuryPaymentContext } from "@/lib/treasuryPaymentOptions"
 import { cn } from "@/lib/utils"
 import { Receipt } from "lucide-react"
-import { useMemo } from "react"
+import { useMemo, useState } from "react"
 
 const TICKET_PROPOSAL = LAYOUTS_OPERAR_DEFAULT_TICKET_PROPOSAL
 
 type Props = {
   form: ServiceChargeCreateWizardForm
+  fieldErrors: ServiceChargeCreateFieldErrors
   popId: string
   selectedService: ServiceTypeChargeOption | null
   treasuryPaymentContext: TreasuryPaymentContext | null
@@ -40,12 +46,14 @@ type Props = {
   saving?: boolean
   canCreate?: boolean
   confirmTitle?: string
+  onFormChange: (patch: Partial<ServiceChargeCreateWizardForm>) => void
   onDiscard: () => void
   onConfirm: () => void
 }
 
 export function ServiceOperateSnapshotPanel({
   form,
+  fieldErrors,
   popId,
   selectedService,
   treasuryPaymentContext,
@@ -55,9 +63,13 @@ export function ServiceOperateSnapshotPanel({
   saving = false,
   canCreate = true,
   confirmTitle,
+  onFormChange,
   onDiscard,
   onConfirm,
 }: Props) {
+  const [snapshotView, setSnapshotView] =
+    useState<ServiceOperateSnapshotPanelView>("config")
+
   const discountMode: ServiceDiscountMode =
     form.discountMode === "porcentaje" || form.discountMode === "fijo"
       ? form.discountMode
@@ -98,23 +110,24 @@ export function ServiceOperateSnapshotPanel({
   )
 
   const hayDescuento = discountMode !== "none" && amount < subtotalWithAddons
+  const showCargoFooter = Boolean(selectedService) && snapshotView === "cargo"
 
   return (
     <>
-      <div
-        className={cn(
-          layoutsOperarTicketProposalHeaderClass(TICKET_PROPOSAL),
-          "row-start-1 min-h-0 shrink-0",
-        )}
-      >
-        <h2 className={layoutsOperarSummaryCartHeadingClass}>Resumen del cargo</h2>
+      <div className="row-start-1 min-h-0 shrink-0">
+        <ServiceOperateSnapshotPanelTabs
+          value={snapshotView}
+          onChange={setSnapshotView}
+          cargoDisabled={!selectedService}
+        />
       </div>
 
       <div
         className={cn(
-          layoutsOperarSummaryCartCellClass,
-          "layouts-operar-scroll-minimal overflow-y-auto overscroll-contain",
+          layoutsOperarSummaryPanelTabBodyClass,
+          "row-start-2 min-h-0 *:min-h-0 *:flex-1",
         )}
+        data-snapshot-tab-body
         role="region"
         aria-label="Resumen del cargo"
       >
@@ -124,17 +137,21 @@ export function ServiceOperateSnapshotPanel({
           </div>
         ) : (
           <ServiceOperateChargeSnapshotContent
+            view={snapshotView}
             form={form}
+            fieldErrors={fieldErrors}
             popId={popId}
             selectedService={selectedService}
             treasuryPaymentContext={treasuryPaymentContext}
             comprobanteLabel={comprobanteLabel}
             suggestedComprobante={suggestedComprobante}
+            disabled={disabled || saving}
+            onFormChange={onFormChange}
           />
         )}
       </div>
 
-      {selectedService ? (
+      {showCargoFooter ? (
         <div className={layoutsOperarTicketProposalActionsClass(TICKET_PROPOSAL)}>
           <SaleOperationActionsBar
             variant="operar"
@@ -149,17 +166,19 @@ export function ServiceOperateSnapshotPanel({
         </div>
       ) : null}
 
-      <div className={layoutsOperarSummaryTotalsPlacementClass} data-ticket-totals>
-        <SaleOperationTotalBar
-          tone="operar"
-          className="h-full w-full"
-          total={amount}
-          subtotal={subtotalWithAddons}
-          descuentoMonto={Math.max(0, subtotalWithAddons - amount)}
-          hayDescuento={hayDescuento}
-          totalLabel="Total del cargo"
-        />
-      </div>
+      {showCargoFooter ? (
+        <div className={layoutsOperarSummaryTotalsPlacementClass} data-ticket-totals>
+          <SaleOperationTotalBar
+            tone="operar"
+            className="h-full w-full"
+            total={amount}
+            subtotal={subtotalWithAddons}
+            descuentoMonto={Math.max(0, subtotalWithAddons - amount)}
+            hayDescuento={hayDescuento}
+            totalLabel="Total del cargo"
+          />
+        </div>
+      ) : null}
     </>
   )
 }

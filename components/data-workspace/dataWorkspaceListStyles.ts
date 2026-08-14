@@ -252,6 +252,14 @@ export const dataWorkspaceEntityCardSkeletonShellClass = cn(
 export const dataWorkspaceBlocksEmptyStateClass =
   "rounded-xl border border-dashed border-[var(--rootsy-bruma-300)] bg-white px-4 py-10 text-center font-canopy text-sm text-[var(--rootsy-bruma-500)]"
 
+/** Título de sección en layout · bloques — espejo LayoutsBlocksDocSubsection · font.heading.xsmall semibold. */
+export const dataWorkspaceBlocksSectionTitleClass =
+  "font-canopy text-sm font-semibold text-[var(--rootsy-bruma-900)]"
+
+/** Descripción bajo sección — font.body.small · bruma-500. */
+export const dataWorkspaceBlocksSectionDescriptionClass =
+  "max-w-2xl font-canopy text-xs leading-relaxed text-[var(--rootsy-bruma-500)]"
+
 /** Empty state embebido en paneles de detalle — icon tile + título + descripción. */
 export const dataWorkspaceDetailEmptyStateClass =
   "flex min-h-0 flex-1 flex-col items-center justify-center px-6 py-16 text-center"

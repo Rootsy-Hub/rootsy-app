@@ -55,6 +55,19 @@ export function resolveServiceChargeComprobanteDisplayLabel(
   return SALE_COMPROBANTE_SIN_LABEL
 }
 
+/** Etiqueta compacta para toolbox — tipo resuelto, sin «Según condición IVA». */
+export function resolveServiceChargeComprobanteToolboxLabel(
+  comprobanteLabel: string,
+  suggestedComprobante: string | null,
+): string {
+  return (
+    resolveServiceChargeComprobanteEffectiveLabel(
+      comprobanteLabel,
+      suggestedComprobante,
+    ) ?? SALE_COMPROBANTE_SIN_LABEL
+  )
+}
+
 export function resolveServiceChargeComprobanteEffectiveLabel(
   comprobanteLabel: string,
   suggestedComprobante: string | null,
