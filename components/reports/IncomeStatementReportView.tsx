@@ -129,12 +129,15 @@ function IncomeStatementRowView({
   }
 
   return (
-    <div className="mx-4 mt-4 rounded-xl border border-[color-mix(in_srgb,var(--rootsy-savia-600)_25%,var(--rootsy-bruma-200))] bg-[color-mix(in_srgb,var(--rootsy-savia-600)_6%,white)] px-4 py-3 sm:mx-6 lg:mx-8">
-      <div className="flex items-center justify-between gap-4">
+    <div className="mx-4 mt-4 rounded-xl border border-[color-mix(in_srgb,var(--rootsy-savia-600)_25%,var(--rootsy-bruma-200))] bg-[color-mix(in_srgb,var(--rootsy-savia-600)_6%,white)] px-4 py-4 sm:mx-6 lg:mx-8">
+      <div className="flex flex-wrap items-baseline justify-center gap-x-2 gap-y-1 text-center">
         <p className="text-sm font-semibold text-[var(--rootsy-bruma-900)]">
           {row.label}
         </p>
-        <IncomeStatementAmount amount={row.total} className="text-base font-bold" />
+        <IncomeStatementAmount
+          amount={row.total}
+          className="text-base font-bold"
+        />
       </div>
     </div>
   )

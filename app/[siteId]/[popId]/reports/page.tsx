@@ -142,6 +142,44 @@ const BalanceSheetReportView = dynamic(
   },
 )
 
+const CashFlowReportView = dynamic(
+  () =>
+    import("@/components/reports/CashFlowReportView").then(
+      (mod) => mod.CashFlowReportView,
+    ),
+  {
+    ssr: false,
+    loading: () => (
+      <div
+        className="flex min-h-52 flex-col items-center justify-center gap-3 px-4 py-10"
+        aria-busy="true"
+      >
+        <RootsSpinner size="default" label="Cargando reporte" />
+        <p className="text-sm text-rootsy-bruma-500">Cargando reporte…</p>
+      </div>
+    ),
+  },
+)
+
+const AccountSummariesReportView = dynamic(
+  () =>
+    import("@/components/reports/AccountSummariesReportView").then(
+      (mod) => mod.AccountSummariesReportView,
+    ),
+  {
+    ssr: false,
+    loading: () => (
+      <div
+        className="flex min-h-52 flex-col items-center justify-center gap-3 px-4 py-10"
+        aria-busy="true"
+      >
+        <RootsSpinner size="default" label="Cargando reporte" />
+        <p className="text-sm text-rootsy-bruma-500">Cargando reporte…</p>
+      </div>
+    ),
+  },
+)
+
 function ReportsPage() {
   const params = useParams()
   const siteId = typeof params?.siteId === "string" ? params.siteId : ""
@@ -265,6 +303,22 @@ function ReportsPage() {
         ) : selectedReportId === "balance-sheet" ? (
           <BalanceSheetReportView
             popId={popId}
+            onBack={() => setSelectedReportId(null)}
+            {...periodProps}
+          />
+        ) : selectedReportId === "cash-flow" ? (
+          <CashFlowReportView
+            popId={popId}
+            from={bounds.from}
+            to={bounds.to}
+            onBack={() => setSelectedReportId(null)}
+            {...periodProps}
+          />
+        ) : selectedReportId === "summaries" ? (
+          <AccountSummariesReportView
+            popId={popId}
+            from={bounds.from}
+            to={bounds.to}
             onBack={() => setSelectedReportId(null)}
             {...periodProps}
           />

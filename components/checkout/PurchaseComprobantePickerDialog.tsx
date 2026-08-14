@@ -1,26 +1,27 @@
 "use client"
 
 import { CheckoutOptionCard } from "@/components/checkout/CheckoutOptionCard"
-import { CheckoutDialogFooter } from "@/components/checkout/CheckoutDialogFooter"
-import { Button } from "@/components/ui/button"
+import {
+  CheckoutSectionLabel,
+  CheckoutSectionPanel,
+} from "@/components/checkout/CheckoutFormFields"
+import {
+  RootsDialogBody,
+  RootsDialogContent,
+  RootsDialogDualActionFooter,
+  RootsDialogHeader,
+} from "@/components/rootsy-dialog"
+import { RootsIconButton } from "@/components/rootsy-button/RootsIconButton"
+import { RootsFormField } from "@/components/rootsy-form"
 import { DatePicker } from "@/components/ui/date-picker"
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog"
-import { Field, FieldGroup, FieldLabel } from "@/components/ui/field"
+import { Dialog } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
-import type { PurchaseComprobantePickerOption } from "@/lib/purchaseComprobantePicker"
-import { cn } from "@/lib/utils"
 import {
-  saleOpDialogBody,
-  saleOpDialogContentMd,
-  saleOpDialogHeader,
-} from "@/components/sale-operation/saleOperationStyles"
+  type PurchaseComprobantePickerOption,
+} from "@/lib/purchaseComprobantePicker"
+import { cn } from "@/lib/utils"
 import { FileText, Paperclip, Receipt, ShieldCheck, Truck, X } from "lucide-react"
-import type { RefObject } from "react"
+import { useEffect, useState, type RefObject } from "react"
 
 type Props = {
   open: boolean
@@ -72,6 +73,17 @@ function clearAttachment(
   }
 }
 
+function isOptionSelected(
+  opt: PurchaseComprobantePickerOption,
+  draft: string | null,
+): boolean {
+  return opt.kind === "none" ? draft == null : draft === opt.label
+}
+
+function optionDraftValue(opt: PurchaseComprobantePickerOption): string | null {
+  return opt.kind === "none" ? null : opt.label
+}
+
 function PurchaseDocumentDetailForm({
   documentNumber,
   onDocumentNumberChange,
@@ -94,99 +106,106 @@ function PurchaseDocumentDetailForm({
   attachmentInputRef: RefObject<HTMLInputElement | null>
 }) {
   return (
-    <div className="rounded-xl border border-border/60 bg-muted/10 p-3.5">
-      <FieldGroup className="gap-4">
-        <Field>
-          <FieldLabel htmlFor="purchase-doc-number">Nº comprobante</FieldLabel>
-          <Input
-            id="purchase-doc-number"
-            type="text"
-            inputMode="numeric"
-            value={documentNumber}
-            onChange={(e) =>
-              onDocumentNumberChange(sanitizeDocumentNumber(e.target.value))
-            }
-            placeholder="Ej. 00001234"
-            className="h-11 rounded-xl"
-            autoComplete="off"
-          />
-        </Field>
+    <CheckoutSectionPanel className="space-y-4">
+      <RootsFormField label="Nº comprobante" htmlFor="purchase-doc-number">
+        <Input
+          id="purchase-doc-number"
+          type="text"
+          inputMode="numeric"
+          value={documentNumber}
+          onChange={(e) =>
+            onDocumentNumberChange(sanitizeDocumentNumber(e.target.value))
+          }
+          placeholder="Ej. 00001234"
+          className="h-11 rounded-xl"
+          autoComplete="off"
+        />
+      </RootsFormField>
 
-        <Field>
-          <FieldLabel htmlFor="purchase-doc-date">Fecha comprobante</FieldLabel>
-          <DatePicker
-            id="purchase-doc-date"
-            value={documentDate}
-            onChange={onDocumentDateChange}
-            placeholder="Elegí la fecha del comprobante"
-            className="h-11 w-full rounded-xl"
-          />
-        </Field>
+      <RootsFormField label="Fecha comprobante" htmlFor="purchase-doc-date">
+        <DatePicker
+          id="purchase-doc-date"
+          value={documentDate}
+          onChange={onDocumentDateChange}
+          placeholder="Elegí la fecha del comprobante"
+          className="h-11 w-full rounded-xl"
+        />
+      </RootsFormField>
 
-        <Field>
-          <FieldLabel htmlFor="purchase-due-date">Vencimiento pago</FieldLabel>
-          <DatePicker
-            id="purchase-due-date"
-            value={dueDate}
-            onChange={onDueDateChange}
-            placeholder="Elegí el vencimiento"
-            className="h-11 w-full rounded-xl"
-          />
-        </Field>
+      <RootsFormField label="Vencimiento pago" htmlFor="purchase-due-date">
+        <DatePicker
+          id="purchase-due-date"
+          value={dueDate}
+          onChange={onDueDateChange}
+          placeholder="Elegí el vencimiento"
+          className="h-11 w-full rounded-xl"
+        />
+      </RootsFormField>
 
-        <Field>
-          <FieldLabel htmlFor="purchase-doc-attachment">Adjunto</FieldLabel>
-          <input
-            ref={attachmentInputRef}
-            id="purchase-doc-attachment"
-            type="file"
-            accept=".pdf,.png,.jpg,.jpeg,.webp,image/*,application/pdf"
-            className="sr-only"
-            onChange={(e) => {
-              onAttachmentChange(e.target.files?.[0] ?? null)
-            }}
-          />
-          {attachment ? (
-            <div className="flex items-center gap-3 rounded-xl border border-border/60 bg-background px-3 py-2.5">
-              <div className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
-                <Paperclip className="size-4" aria-hidden />
-              </div>
-              <div className="min-w-0 flex-1">
-                <p className="truncate text-sm font-medium">{attachment.name}</p>
-                <p className="text-xs text-muted-foreground">
-                  {formatFileSize(attachment.size)}
-                </p>
-              </div>
-              <Button
-                type="button"
-                variant="ghost-neutral"
-                size="icon"
-                className="size-8 shrink-0 rounded-lg"
-                aria-label="Quitar adjunto"
-                onClick={() => clearAttachment(attachmentInputRef, onAttachmentChange)}
-              >
-                <X className="size-4" />
-              </Button>
+      <div className="space-y-2">
+        <CheckoutSectionLabel htmlFor="purchase-doc-attachment">
+          Adjunto
+        </CheckoutSectionLabel>
+        <input
+          ref={attachmentInputRef}
+          id="purchase-doc-attachment"
+          type="file"
+          accept=".pdf,.png,.jpg,.jpeg,.webp,image/*,application/pdf"
+          className="sr-only"
+          onChange={(e) => {
+            onAttachmentChange(e.target.files?.[0] ?? null)
+          }}
+        />
+        {attachment ? (
+          <div className="flex items-center gap-3 rounded-xl border border-[var(--rootsy-bruma-200)] bg-white px-3 py-2.5">
+            <div className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-[color-mix(in_srgb,var(--rootsy-savia-400)_10%,white)] text-[var(--rootsy-savia-700)]">
+              <Paperclip className="size-4" aria-hidden />
             </div>
-          ) : (
-            <button
+            <div className="min-w-0 flex-1">
+              <p className="truncate text-sm font-semibold text-[var(--rootsy-bruma-900)]">
+                {attachment.name}
+              </p>
+              <p className="text-xs text-[var(--rootsy-bruma-500)]">
+                {formatFileSize(attachment.size)}
+              </p>
+            </div>
+            <RootsIconButton
               type="button"
-              onClick={() => attachmentInputRef.current?.click()}
-              className={cn(
-                "flex w-full flex-col items-center gap-1.5 rounded-xl border border-dashed border-border/70",
-                "bg-background px-4 py-5 text-sm transition-colors",
-                "hover:border-primary/35 hover:bg-primary/3",
-                "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/25",
-              )}
+              label="Quitar adjunto"
+              theme="workspace"
+              emphasis="ghost"
+              size="default"
+              className="shrink-0"
+              onClick={() => clearAttachment(attachmentInputRef, onAttachmentChange)}
             >
-              <Paperclip className="size-5 text-muted-foreground" aria-hidden />
-              <span className="font-medium text-foreground">Adjuntar PDF o imagen</span>
-              <span className="text-xs text-muted-foreground">PDF, JPG o PNG</span>
-            </button>
-          )}
-        </Field>
-      </FieldGroup>
-    </div>
+              <X aria-hidden />
+            </RootsIconButton>
+          </div>
+        ) : (
+          <button
+            type="button"
+            onClick={() => attachmentInputRef.current?.click()}
+            className={cn(
+              "flex w-full flex-col items-center gap-1.5 rounded-xl border border-dashed border-[var(--rootsy-bruma-200)]",
+              "bg-white px-4 py-5 text-sm transition-colors",
+              "hover:border-[color-mix(in_srgb,var(--rootsy-savia-400)_35%,var(--rootsy-bruma-200))] hover:bg-[var(--rootsy-bruma-50)]",
+              "focus-visible:outline-none focus-visible:shadow-[0_0_0_2px_color-mix(in_srgb,var(--rootsy-savia-400)_25%,transparent)]",
+            )}
+          >
+            <Paperclip
+              className="size-5 text-[var(--rootsy-bruma-500)]"
+              aria-hidden
+            />
+            <span className="font-semibold text-[var(--rootsy-bruma-900)]">
+              Adjuntar PDF o imagen
+            </span>
+            <span className="text-xs text-[var(--rootsy-bruma-500)]">
+              PDF, JPG o PNG
+            </span>
+          </button>
+        )}
+      </div>
+    </CheckoutSectionPanel>
   )
 }
 
@@ -206,6 +225,13 @@ export function PurchaseComprobantePickerDialog({
   onAttachmentChange,
   attachmentInputRef,
 }: Props) {
+  const [draftTipo, setDraftTipo] = useState<string | null>(comprobanteTipo)
+
+  useEffect(() => {
+    if (!open) return
+    setDraftTipo(comprobanteTipo)
+  }, [open, comprobanteTipo])
+
   const clearDocumentFields = () => {
     onDocumentNumberChange("")
     onDocumentDateChange("")
@@ -213,47 +239,39 @@ export function PurchaseComprobantePickerDialog({
     clearAttachment(attachmentInputRef, onAttachmentChange)
   }
 
+  const handleConfirm = () => {
+    if (draftTipo == null) {
+      onComprobanteTipoChange(null)
+      clearDocumentFields()
+    } else {
+      onComprobanteTipoChange(draftTipo)
+    }
+    onOpenChange(false)
+  }
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className={saleOpDialogContentMd}>
-        <DialogHeader className={cn(saleOpDialogHeader, "shrink-0")}>
-          <DialogTitle className="text-base font-semibold tracking-tight">
-            Comprobante del proveedor
-          </DialogTitle>
-        </DialogHeader>
+      <RootsDialogContent size="default" className="flex flex-col">
+        <RootsDialogHeader
+          title="Comprobante"
+          description="Documento del proveedor para esta compra."
+        />
 
-        <div
-          className={cn(
-            saleOpDialogBody,
-            "min-h-0 flex-1 overflow-y-auto overscroll-contain",
-          )}
-        >
+        <RootsDialogBody className="space-y-4">
           <ul className="flex flex-col gap-2" role="listbox" aria-label="Tipos de comprobante">
             {options.map((opt) => {
-              const selected =
-                opt.kind === "none"
-                  ? comprobanteTipo == null
-                  : comprobanteTipo === opt.label
-              const showDetailForm = selected && opt.kind !== "none"
-
+              const selected = isOptionSelected(opt, draftTipo)
               return (
                 <li key={opt.label} className="flex flex-col gap-2">
                   <CheckoutOptionCard
                     title={opt.label}
+                    subtitle={opt.hint}
                     selected={selected}
-                    onClick={() => {
-                      if (opt.kind === "none") {
-                        onComprobanteTipoChange(null)
-                        clearDocumentFields()
-                        onOpenChange(false)
-                        return
-                      }
-                      onComprobanteTipoChange(opt.label)
-                    }}
+                    onClick={() => setDraftTipo(optionDraftValue(opt))}
                     icon={purchaseComprobanteIcon(opt.kind)}
                     trailing={selected ? "check" : "none"}
                   />
-                  {showDetailForm ? (
+                  {selected && opt.kind !== "none" ? (
                     <PurchaseDocumentDetailForm
                       documentNumber={documentNumber}
                       onDocumentNumberChange={onDocumentNumberChange}
@@ -270,19 +288,15 @@ export function PurchaseComprobantePickerDialog({
               )
             })}
           </ul>
-        </div>
+        </RootsDialogBody>
 
-        <CheckoutDialogFooter
-          secondaryAction={{
-            label: "Quitar selección",
-            onClick: () => {
-              onComprobanteTipoChange(null)
-              clearDocumentFields()
-              onOpenChange(false)
-            },
-          }}
+        <RootsDialogDualActionFooter
+          onCancel={() => onOpenChange(false)}
+          cancelLabel="Cancelar"
+          onConfirm={handleConfirm}
+          confirmLabel={draftTipo == null ? "Continuar sin comprobante" : "Confirmar"}
         />
-      </DialogContent>
+      </RootsDialogContent>
     </Dialog>
   )
 }

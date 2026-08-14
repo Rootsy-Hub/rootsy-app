@@ -134,7 +134,6 @@ export const REPORT_CATALOG: ReportCatalogCategory[] = [
         icon: Waves,
         path: "accounting",
         query: { focus: "cash_flow" },
-        planned: true,
       },
       {
         id: "summaries",
@@ -143,7 +142,6 @@ export const REPORT_CATALOG: ReportCatalogCategory[] = [
         icon: PieChart,
         path: "accounting",
         query: { focus: "summaries" },
-        planned: true,
       },
     ],
   },
@@ -243,6 +241,8 @@ export const REPORT_INLINE_DETAIL_IDS = new Set<string>([
   "received-invoices",
   "income-statement",
   "balance-sheet",
+  "cash-flow",
+  "summaries",
 ])
 
 export function supportsInlineReportDetail(reportId: string): boolean {

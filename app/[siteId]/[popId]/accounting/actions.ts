@@ -237,6 +237,7 @@ export type IncomeStatementResult = {
 export type CashFlowRow = {
   accountCode: string
   accountName: string
+  entityName: string | null
   entradas: number
   salidas: number
   neto: number
@@ -842,6 +843,68 @@ function isCashEquivalentAccountCode(code: string): boolean {
   return c.startsWith("1.1.1.")
 }
 
+async function treasuryEntityNameByChartCode(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  popId: string,
+): Promise<Map<string, string>> {
+  const { data, error } = await supabase
+    .from("treasury_accounts")
+    .select(
+      `
+      parent_treasury_account_id,
+      accounting_chart_of_accounts ( code )
+    `,
+    )
+    .eq("pop_id", popId)
+    .not("parent_treasury_account_id", "is", null)
+
+  if (error || !data?.length) {
+    return new Map()
+  }
+
+  const parentIds = [
+    ...new Set(
+      data
+        .map((row) =>
+          row.parent_treasury_account_id != null
+            ? String(row.parent_treasury_account_id)
+            : null,
+        )
+        .filter((id): id is string => Boolean(id)),
+    ),
+  ]
+
+  const parentNames = new Map<string, string>()
+  if (parentIds.length > 0) {
+    const { data: parents } = await supabase
+      .from("treasury_accounts")
+      .select("id, name")
+      .eq("pop_id", popId)
+      .in("id", parentIds)
+    for (const parent of parents || []) {
+      if (parent.id) {
+        parentNames.set(String(parent.id), String(parent.name ?? "").trim())
+      }
+    }
+  }
+
+  const out = new Map<string, string>()
+  for (const row of data) {
+    const chart = row.accounting_chart_of_accounts as unknown as {
+      code?: string
+    } | null
+    const code = chart?.code?.trim()
+    const parentId =
+      row.parent_treasury_account_id != null
+        ? String(row.parent_treasury_account_id)
+        : null
+    if (!code || !parentId) continue
+    const entityName = parentNames.get(parentId)
+    if (entityName) out.set(code, entityName)
+  }
+  return out
+}
+
 function isVatRelatedAccountCode(code: string): boolean {
   const c = code.trim()
   return c.startsWith("1.1.2.") || c.startsWith("2.1.2.")
@@ -860,11 +923,14 @@ export async function getAccountingCashFlow(
     if (!tb.success) {
       return { success: false, error: tb.error }
     }
+    const supabase = await createClient()
+    const entityByChartCode = await treasuryEntityNameByChartCode(supabase, popId)
     const rows: CashFlowRow[] = tb.rows
       .filter((r) => isCashEquivalentAccountCode(r.accountCode))
       .map((r) => ({
         accountCode: r.accountCode,
         accountName: r.accountName,
+        entityName: entityByChartCode.get(r.accountCode.trim()) ?? null,
         entradas: r.sumDebit,
         salidas: r.sumCredit,
         neto: r.balance,
