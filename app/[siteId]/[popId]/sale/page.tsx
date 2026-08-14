@@ -97,6 +97,7 @@ import {
 } from "@/components/sale-operation/SaleScanInputFocusContext"
 import { PromotionComboWizard } from "@/components/sale-operation/PromotionComboWizard"
 import { useSaleTicketCart } from "@/hooks/useSaleTicketCart"
+import { RootsSpinner } from "@/components/rootsy-spinner"
 import { useCartListScrollHighlight } from "@/hooks/useCartListScrollHighlight"
 import { buildCompleteSaleLinesFromCart } from "@/lib/saleCompleteLines"
 import {
@@ -405,6 +406,19 @@ function SalePage() {
 
   const quoteLoadRef = useRef<string | null>(null)
   const quoteLoadingRef = useRef<string | null>(null)
+  const [quoteRestorePending, setQuoteRestorePending] = useState(
+    () => Boolean(quoteIdFromUrl),
+  )
+
+  useEffect(() => {
+    if (!quoteIdFromUrl) {
+      setQuoteRestorePending(false)
+      return
+    }
+    if (quoteLoadRef.current !== quoteIdFromUrl) {
+      setQuoteRestorePending(true)
+    }
+  }, [quoteIdFromUrl])
 
   const saleModalOpen =
     clienteModalAbierto ||
@@ -878,6 +892,7 @@ function SalePage() {
         if (!res.success) {
           setVentaError(res.error)
           comprobanteInitRef.current = false
+          setQuoteRestorePending(false)
           return
         }
         quoteLoadRef.current = quoteIdFromUrl
@@ -1111,7 +1126,7 @@ function SalePage() {
         popId={popId}
         popName={bootstrap?.popName ?? ""}
         title="Vender"
-        loading={bootstrapLoading}
+        loading={bootstrapLoading || quoteRestorePending}
         userName={headerUserName}
         userAvatarSrc={userAvatarSrc}
         sidebarCollapsible
@@ -1134,6 +1149,23 @@ function SalePage() {
       >
         <div className="relative flex h-full min-h-0 w-full flex-col overflow-hidden">
           <OperationsModuleBackdrop />
+
+          {quoteRestorePending ? (
+            <div
+              className="absolute inset-0 z-50 flex flex-col items-center justify-center gap-3 bg-[#070a09]/90 backdrop-blur-[2px]"
+              role="status"
+              aria-live="polite"
+              aria-busy="true"
+            >
+              <RootsSpinner size="default" tone="dark" label="Cargando presupuesto" />
+              <p className="text-sm font-medium text-white/90">
+                Cargando presupuesto…
+              </p>
+              <p className="max-w-xs text-center text-xs text-white/50">
+                Preparando ítems, cliente y condiciones de la venta
+              </p>
+            </div>
+          ) : null}
 
           {!catalogLoading && !openCashSession ? (
             <OpenCashSessionBanner siteId={siteId} popId={popId} variant="dark" />

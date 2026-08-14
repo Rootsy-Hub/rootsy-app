@@ -41,15 +41,6 @@ export function StatisticsSectionFilters({
         className,
       )}
     >
-      <SummaryPeriodToolbar
-        embedded
-        preset={preset}
-        customRange={customRange}
-        bounds={bounds}
-        onPresetChange={onPresetChange}
-        onCustomRangeChange={onCustomRangeChange}
-      />
-
       {showChannel ? (
         <div className="w-42 shrink-0">
           <RootsFormSelectField
@@ -72,6 +63,15 @@ export function StatisticsSectionFilters({
           </RootsFormSelectField>
         </div>
       ) : null}
+
+      <SummaryPeriodToolbar
+        embedded
+        preset={preset}
+        customRange={customRange}
+        bounds={bounds}
+        onPresetChange={onPresetChange}
+        onCustomRangeChange={onCustomRangeChange}
+      />
     </div>
   )
 }
