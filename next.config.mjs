@@ -8,6 +8,9 @@ const nextConfig = {
   reactStrictMode: false,
   turbopack: {
     root: projectRoot,
+    resolveAlias: {
+      jspdf: "./node_modules/jspdf/dist/jspdf.es.min.js",
+    },
   },
   outputFileTracingRoot: projectRoot,
   allowedDevOrigins: [

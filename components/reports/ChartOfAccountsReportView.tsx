@@ -7,6 +7,7 @@ import {
   type ChartOfAccountsReportRow,
 } from "@/app/[siteId]/[popId]/accounting/actions"
 import { DataWorkspaceDetailEmptyState } from "@/components/data-workspace/DataWorkspaceDetailEmptyState"
+import { ReportDownloadToolbar } from "@/components/reports/ReportDownloadToolbar"
 import { ReportDetailHeaderCard } from "@/components/reports/ReportDetailHeaderCard"
 import { ReportStatValue } from "@/components/reports/ReportStatValue"
 import { ReportTableScrollArea } from "@/components/reports/ReportTableScrollArea"
@@ -40,8 +41,13 @@ import {
   toISODateLocal,
   type DataWorkspaceDatePreset,
 } from "@/lib/dataWorkspaceDateFilter"
+import { useReportDocumentExport } from "@/hooks/useReportDocumentExport"
+import { usePopTimeZone } from "@/hooks/usePopTimeZone"
+import { exportChartOfAccountsReportDocument } from "@/lib/inlineReportsExport"
+import type { ReportExportContext } from "@/lib/reportExportContext"
 import {
   formatReportAsOfSummary,
+  formatReportExportPeriodLabel,
   formatReportMoneyAr,
 } from "@/lib/reportFormatters"
 import { cn } from "@/lib/utils"
@@ -120,6 +126,7 @@ export function ChartOfAccountsReportView({
   onCustomRangeChange,
   onBack,
 }: Props) {
+  const timeZone = usePopTimeZone()
   const [rows, setRows] = useState<ChartOfAccountsReportRow[]>([])
   const [asOf, setAsOf] = useState<string>(() => resolveChartOfAccountsAsOf(bounds))
   const [loading, setLoading] = useState(true)
@@ -130,6 +137,11 @@ export function ChartOfAccountsReportView({
   const periodSummary = useMemo(
     () => formatReportAsOfSummary(preset, bounds, asOf),
     [asOf, bounds, preset],
+  )
+
+  const exportPeriodLabel = useMemo(
+    () => formatReportExportPeriodLabel({ from: null, to: asOfDate }),
+    [asOfDate],
   )
 
   const summary = useMemo(() => computeChartOfAccountsSummary(rows), [rows])
@@ -156,6 +168,24 @@ export function ChartOfAccountsReportView({
     const count = rows.length
     return count === 1 ? "1 cuenta" : `${count.toLocaleString("es-AR")} cuentas`
   }, [rows.length])
+
+  const exportDocument = useCallback(
+    async (format: "csv" | "pdf", context: ReportExportContext) => {
+      await exportChartOfAccountsReportDocument(rows, format, {
+        periodLabel: exportPeriodLabel,
+        exportContext: context,
+        timeZone,
+      })
+    },
+    [exportPeriodLabel, rows, timeZone],
+  )
+
+  const { exportBusy, exportError, handleExport } = useReportDocumentExport({
+    popId,
+    disabled: loading || rows.length === 0,
+    emptyMessage: "No hay cuentas para exportar.",
+    exportFn: exportDocument,
+  })
 
   return (
     <div className="relative flex min-h-full flex-1 flex-col">
@@ -200,11 +230,13 @@ export function ChartOfAccountsReportView({
             "flex min-h-0 flex-1 flex-col",
           )}
         >
-          <div className="border-b border-rootsy-bruma-200 px-4 py-3 sm:px-6 lg:px-8">
-            <p className={dataWorkspaceDetailEmptyStateDescriptionClass}>
-              {periodSummary}
-            </p>
-          </div>
+          <ReportDownloadToolbar
+            periodSummary={periodSummary}
+            disabled={loading || rows.length === 0}
+            exportBusy={exportBusy}
+            exportError={exportError}
+            onExport={handleExport}
+          />
 
           <ReportTableScrollArea>
             {loading ? (
@@ -225,7 +257,6 @@ export function ChartOfAccountsReportView({
               <DataWorkspaceDetailEmptyState
                 icon={ShieldCheck}
                 title="Sin cuentas contables"
-                description="Configurá el plan de cuentas en el módulo de contabilidad."
                 className="min-h-52"
               />
             ) : (

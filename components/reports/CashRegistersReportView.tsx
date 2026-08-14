@@ -344,7 +344,6 @@ export function CashRegistersReportView({
               <DataWorkspaceDetailEmptyState
                 icon={Landmark}
                 title="Sin cajas registradas"
-                description="Creá una caja en el módulo de cajas para ver arqueos aquí."
                 className="min-h-52"
               />
             ) : rows.length === 0 ? (

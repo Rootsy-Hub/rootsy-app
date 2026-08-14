@@ -5,6 +5,7 @@ import {
   type VatPositionRow,
 } from "@/app/[siteId]/[popId]/accounting/actions"
 import { DataWorkspaceDetailEmptyState } from "@/components/data-workspace/DataWorkspaceDetailEmptyState"
+import { ReportDownloadToolbar } from "@/components/reports/ReportDownloadToolbar"
 import { ReportStatValue } from "@/components/reports/ReportStatValue"
 import { ReportDetailHeaderCard } from "@/components/reports/ReportDetailHeaderCard"
 import { ReportTableScrollArea } from "@/components/reports/ReportTableScrollArea"
@@ -31,8 +32,16 @@ import {
   WorkspaceTableHeader,
   WorkspaceTableHeaderRow,
 } from "@/components/data-workspace/WorkspaceTableHeader"
-import { formatReportMoneyAr } from "@/lib/reportFormatters"
+import { useReportDocumentExport } from "@/hooks/useReportDocumentExport"
+import { usePopTimeZone } from "@/hooks/usePopTimeZone"
+import { exportVatPositionReportDocument } from "@/lib/inlineReportsExport"
+import type { ReportExportContext } from "@/lib/reportExportContext"
 import type { DataWorkspaceDatePreset } from "@/lib/dataWorkspaceDateFilter"
+import {
+  formatReportExportPeriodLabel,
+  formatReportMoneyAr,
+  formatReportPeriodSummary,
+} from "@/lib/reportFormatters"
 import { cn } from "@/lib/utils"
 import { Receipt } from "lucide-react"
 import { RootsSpinner } from "@/components/rootsy-spinner"
@@ -75,9 +84,20 @@ export function VatPositionReportView({
   onCustomRangeChange,
   onBack,
 }: Props) {
+  const timeZone = usePopTimeZone()
   const [rows, setRows] = useState<VatPositionRow[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+
+  const periodSummary = useMemo(
+    () => formatReportPeriodSummary(preset, { from, to }),
+    [preset, from, to],
+  )
+
+  const exportPeriodLabel = useMemo(
+    () => formatReportExportPeriodLabel({ from, to }),
+    [from, to],
+  )
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -97,6 +117,24 @@ export function VatPositionReportView({
   }, [load])
 
   const totals = useMemo(() => sumVatTotals(rows), [rows])
+
+  const exportDocument = useCallback(
+    async (format: "csv" | "pdf", context: ReportExportContext) => {
+      await exportVatPositionReportDocument(rows, format, {
+        periodLabel: exportPeriodLabel,
+        exportContext: context,
+        timeZone,
+      })
+    },
+    [exportPeriodLabel, rows, timeZone],
+  )
+
+  const { exportBusy, exportError, handleExport } = useReportDocumentExport({
+    popId,
+    disabled: loading || rows.length === 0,
+    emptyMessage: "No hay cuentas IVA para exportar en este período.",
+    exportFn: exportDocument,
+  })
 
   return (
     <div className="relative flex min-h-full flex-1 flex-col">
@@ -136,14 +174,20 @@ export function VatPositionReportView({
         />
 
         <section className={cn(dataWorkspaceDetailFlushBottomCardClass, "flex min-h-0 flex-1 flex-col")}>
-          <div className="border-b border-[var(--rootsy-bruma-200)] px-4 py-3 sm:px-6 lg:px-8">
+          <ReportDownloadToolbar
+            periodSummary={periodSummary}
+            disabled={loading || rows.length === 0}
+            exportBusy={exportBusy}
+            exportError={exportError}
+            onExport={handleExport}
+          >
             <p className={dataWorkspaceDetailEmptyStateDescriptionClass}>
               Movimientos del período en cuentas{" "}
               <span className="font-mono text-[11px]">1.1.2.*</span> y{" "}
               <span className="font-mono text-[11px]">2.1.2.*</span>. Validá la
               liquidación con tu asesor fiscal.
             </p>
-          </div>
+          </ReportDownloadToolbar>
 
           {error ? (
             <div
@@ -167,7 +211,6 @@ export function VatPositionReportView({
               <DataWorkspaceDetailEmptyState
                 icon={Receipt}
                 title="Sin cuentas IVA en el período"
-                description="No hay movimientos publicados en cuentas fiscales para este rango."
                 className="min-h-52"
               />
             ) : (

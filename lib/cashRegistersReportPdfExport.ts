@@ -14,6 +14,7 @@ import {
   drawReportPdfIssuerBlock,
   type ReportExportContext,
 } from "@/lib/reportExportBranding"
+import { loadReportPdfRuntime } from "@/lib/reportPdfRuntime"
 
 type ExportPdfOptions = {
   timeZone?: string
@@ -24,23 +25,11 @@ type ExportPdfOptions = {
   exportContext: ReportExportContext
 }
 
-async function createPdfDocument() {
-  const [{ jsPDF }, autoTableModule] = await Promise.all([
-    import("jspdf"),
-    import("jspdf-autotable"),
-  ])
-
-  return {
-    jsPDF,
-    autoTable: autoTableModule.default,
-  }
-}
-
 export async function exportCashRegistersReportPdf(
   rows: CashRegistersPeriodReportRow[],
   options: ExportPdfOptions,
 ): Promise<void> {
-  const { jsPDF, autoTable } = await createPdfDocument()
+  const { jsPDF, autoTable } = await loadReportPdfRuntime()
 
   const periodSummary = options.periodSummary ?? "Arqueo de caja"
   const arqueoCount = options.arqueoCount ?? rows.length

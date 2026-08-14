@@ -8,6 +8,8 @@ import {
   salesReportExportFilename,
   sumSalesReportTotal,
 } from "@/lib/salesReportExportData"
+import { loadReportPdfRuntime } from "@/lib/reportPdfRuntime"
+import { applyReportPdfBrandingFooters } from "@/lib/reportExportBranding"
 
 type ExportPdfOptions = {
   timeZone?: string
@@ -16,23 +18,11 @@ type ExportPdfOptions = {
   periodTotal?: number
 }
 
-async function createPdfDocument() {
-  const [{ jsPDF }, autoTableModule] = await Promise.all([
-    import("jspdf"),
-    import("jspdf-autotable"),
-  ])
-
-  return {
-    jsPDF,
-    autoTable: autoTableModule.default,
-  }
-}
-
 export async function exportSalesDetailReportPdf(
   rows: OperationSaleRow[],
   options?: ExportPdfOptions,
 ): Promise<void> {
-  const { jsPDF, autoTable } = await createPdfDocument()
+  const { jsPDF, autoTable } = await loadReportPdfRuntime()
 
   const periodSummary = options?.periodSummary ?? "Detalle de ventas"
   const salesCount = options?.salesCount ?? rows.length
@@ -92,20 +82,10 @@ export async function exportSalesDetailReportPdf(
       6: { halign: "right", cellWidth: 20 },
       7: { halign: "right", cellWidth: 24 },
     },
-    margin: { left: 14, right: 14 },
-    didDrawPage: (data) => {
-      const pageCount = doc.getNumberOfPages()
-      doc.setFontSize(8)
-      doc.setTextColor(120, 120, 120)
-      doc.text(
-        `Página ${data.pageNumber} de ${pageCount}`,
-        doc.internal.pageSize.getWidth() - 14,
-        doc.internal.pageSize.getHeight() - 8,
-        { align: "right" },
-      )
-      doc.setTextColor(0, 0, 0)
-    },
+    margin: { left: 14, right: 14, bottom: 16 },
   })
+
+  await applyReportPdfBrandingFooters(doc)
 
   doc.save(salesReportExportFilename("pdf", periodSummary))
 }

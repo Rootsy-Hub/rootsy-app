@@ -9,6 +9,7 @@ import {
   TreasuryBrandName,
 } from "@/app/[siteId]/[popId]/accounts/TreasuryBrandMark"
 import { DataWorkspaceDetailEmptyState } from "@/components/data-workspace/DataWorkspaceDetailEmptyState"
+import { ReportDownloadToolbar } from "@/components/reports/ReportDownloadToolbar"
 import { ReportDetailHeaderCard } from "@/components/reports/ReportDetailHeaderCard"
 import { ReportStatValue } from "@/components/reports/ReportStatValue"
 import { ReportTableScrollArea } from "@/components/reports/ReportTableScrollArea"
@@ -40,7 +41,12 @@ import {
 } from "@/components/data-workspace/WorkspaceTableHeader"
 import { RootsSpinner } from "@/components/rootsy-spinner"
 import type { DataWorkspaceDatePreset } from "@/lib/dataWorkspaceDateFilter"
+import { useReportDocumentExport } from "@/hooks/useReportDocumentExport"
+import { usePopTimeZone } from "@/hooks/usePopTimeZone"
+import { exportTreasuryReportDocument } from "@/lib/inlineReportsExport"
+import type { ReportExportContext } from "@/lib/reportExportContext"
 import {
+  formatReportExportPeriodLabel,
   formatReportMoneyAr,
   formatReportPeriodSummary,
 } from "@/lib/reportFormatters"
@@ -130,6 +136,7 @@ export function TreasuryReportView({
   onCustomRangeChange,
   onBack,
 }: Props) {
+  const timeZone = usePopTimeZone()
   const [rows, setRows] = useState<TreasuryPeriodReportRow[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -137,6 +144,11 @@ export function TreasuryReportView({
   const periodSummary = useMemo(
     () => formatReportPeriodSummary(preset, { from, to }),
     [preset, from, to],
+  )
+
+  const exportPeriodLabel = useMemo(
+    () => formatReportExportPeriodLabel({ from, to }),
+    [from, to],
   )
 
   const summary = useMemo(() => computeTreasuryReportSummary(rows), [rows])
@@ -170,6 +182,24 @@ export function TreasuryReportView({
       ),
     [rows],
   )
+
+  const exportDocument = useCallback(
+    async (format: "csv" | "pdf", context: ReportExportContext) => {
+      await exportTreasuryReportDocument(rows, format, {
+        periodLabel: exportPeriodLabel,
+        exportContext: context,
+        timeZone,
+      })
+    },
+    [exportPeriodLabel, rows, timeZone],
+  )
+
+  const { exportBusy, exportError, handleExport } = useReportDocumentExport({
+    popId,
+    disabled: loading || rows.length === 0,
+    emptyMessage: "No hay cuentas de tesorería para exportar.",
+    exportFn: exportDocument,
+  })
 
   return (
     <div className="relative flex min-h-full flex-1 flex-col">
@@ -222,11 +252,13 @@ export function TreasuryReportView({
             "flex min-h-0 flex-1 flex-col",
           )}
         >
-          <div className="border-b border-rootsy-bruma-200 px-4 py-3 sm:px-6 lg:px-8">
-            <p className={dataWorkspaceDetailEmptyStateDescriptionClass}>
-              {periodSummary}
-            </p>
-          </div>
+          <ReportDownloadToolbar
+            periodSummary={periodSummary}
+            disabled={loading || rows.length === 0}
+            exportBusy={exportBusy}
+            exportError={exportError}
+            onExport={handleExport}
+          />
 
           <ReportTableScrollArea>
             {loading ? (
@@ -245,7 +277,6 @@ export function TreasuryReportView({
               <DataWorkspaceDetailEmptyState
                 icon={ArrowLeftRight}
                 title="Sin cuentas de tesorería"
-                description="Creá cuentas en el módulo de tesorería para ver saldos aquí."
                 className="min-h-52"
               />
             ) : (

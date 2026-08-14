@@ -14,6 +14,9 @@ import {
   sumExpensesReportAmount,
   sumPurchasesReportPaid,
 } from "@/lib/purchasesExpensesReportExportData"
+import type { jsPDF } from "jspdf"
+import { loadReportPdfRuntime } from "@/lib/reportPdfRuntime"
+import { applyReportPdfBrandingFooters } from "@/lib/reportExportBranding"
 
 type PdfExportOptions = {
   timeZone?: string
@@ -22,20 +25,8 @@ type PdfExportOptions = {
   periodTotal?: number
 }
 
-async function createPdfDocument() {
-  const [{ jsPDF }, autoTableModule] = await Promise.all([
-    import("jspdf"),
-    import("jspdf-autotable"),
-  ])
-
-  return {
-    jsPDF,
-    autoTable: autoTableModule.default,
-  }
-}
-
 function writePdfHeader(
-  doc: InstanceType<Awaited<ReturnType<typeof createPdfDocument>>["jsPDF"]>,
+  doc: jsPDF,
   title: string,
   periodSummary: string,
   summaryLine: string,
@@ -55,27 +46,11 @@ function writePdfHeader(
   doc.setTextColor(0, 0, 0)
 }
 
-function appendPdfFooter(
-  doc: InstanceType<Awaited<ReturnType<typeof createPdfDocument>>["jsPDF"]>,
-  data: { pageNumber: number },
-) {
-  const pageCount = doc.getNumberOfPages()
-  doc.setFontSize(8)
-  doc.setTextColor(120, 120, 120)
-  doc.text(
-    `Página ${data.pageNumber} de ${pageCount}`,
-    doc.internal.pageSize.getWidth() - 14,
-    doc.internal.pageSize.getHeight() - 8,
-    { align: "right" },
-  )
-  doc.setTextColor(0, 0, 0)
-}
-
 export async function exportPurchasesReportPdf(
   rows: OperationPurchaseRow[],
   options?: PdfExportOptions,
 ): Promise<void> {
-  const { jsPDF, autoTable } = await createPdfDocument()
+  const { jsPDF, autoTable } = await loadReportPdfRuntime()
   const periodSummary = options?.periodSummary ?? "Compras del período"
   const rowCount = options?.rowCount ?? rows.length
   const periodTotal = options?.periodTotal ?? sumPurchasesReportPaid(rows)
@@ -110,9 +85,10 @@ export async function exportPurchasesReportPdf(
       textColor: [255, 255, 255],
       fontStyle: "bold",
     },
-    margin: { left: 14, right: 14 },
-    didDrawPage: (data) => appendPdfFooter(doc, data),
+    margin: { left: 14, right: 14, bottom: 16 },
   })
+
+  await applyReportPdfBrandingFooters(doc)
 
   doc.save(purchasesExpensesExportFilename("purchases", "pdf", periodSummary))
 }
@@ -121,7 +97,7 @@ export async function exportExpensesReportPdf(
   rows: OperationExpenseLedgerRow[],
   options?: PdfExportOptions,
 ): Promise<void> {
-  const { jsPDF, autoTable } = await createPdfDocument()
+  const { jsPDF, autoTable } = await loadReportPdfRuntime()
   const periodSummary = options?.periodSummary ?? "Gastos del período"
   const rowCount = options?.rowCount ?? rows.length
   const periodTotal = options?.periodTotal ?? sumExpensesReportAmount(rows)
@@ -156,9 +132,10 @@ export async function exportExpensesReportPdf(
       textColor: [255, 255, 255],
       fontStyle: "bold",
     },
-    margin: { left: 14, right: 14 },
-    didDrawPage: (data) => appendPdfFooter(doc, data),
+    margin: { left: 14, right: 14, bottom: 16 },
   })
+
+  await applyReportPdfBrandingFooters(doc)
 
   doc.save(purchasesExpensesExportFilename("expenses", "pdf", periodSummary))
 }

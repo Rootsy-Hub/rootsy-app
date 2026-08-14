@@ -22,6 +22,7 @@ export const MENU_LINK_TO_MODULE_KEY: Partial<Record<MenuItemLink, string>> = {
   operations: "operations",
   reports: "reports",
   summary: "summary",
+  statistics: "statistics",
   inventory: "inventory",
   invoices: "invoices",
   accounts: "accounts",

@@ -5,6 +5,7 @@ import {
   type BalanceSheetResult,
 } from "@/app/[siteId]/[popId]/accounting/actions"
 import { DataWorkspaceDetailEmptyState } from "@/components/data-workspace/DataWorkspaceDetailEmptyState"
+import { ReportDownloadToolbar } from "@/components/reports/ReportDownloadToolbar"
 import { ReportStatValue } from "@/components/reports/ReportStatValue"
 import { ReportDetailHeaderCard } from "@/components/reports/ReportDetailHeaderCard"
 import {
@@ -14,8 +15,13 @@ import {
   workspaceTableNatureMoneyClass,
   workspaceTableNatureTextSecondaryClass,
 } from "@/components/data-workspace/dataWorkspaceListStyles"
+import { useReportDocumentExport } from "@/hooks/useReportDocumentExport"
+import { usePopTimeZone } from "@/hooks/usePopTimeZone"
+import { exportBalanceSheetReportDocument } from "@/lib/inlineReportsExport"
+import type { ReportExportContext } from "@/lib/reportExportContext"
 import {
   formatReportAsOfSummary,
+  formatReportExportPeriodLabel,
   formatReportMoneyAr,
 } from "@/lib/reportFormatters"
 import {
@@ -196,6 +202,7 @@ export function BalanceSheetReportView({
   onCustomRangeChange,
   onBack,
 }: Props) {
+  const timeZone = usePopTimeZone()
   const [data, setData] = useState<BalanceSheetResult | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -205,6 +212,11 @@ export function BalanceSheetReportView({
   const asOfSummary = useMemo(
     () => formatReportAsOfSummary(preset, bounds, asOf),
     [preset, bounds, asOf],
+  )
+
+  const exportPeriodLabel = useMemo(
+    () => formatReportExportPeriodLabel({ from: null, to: asOf }),
+    [asOf],
   )
 
   const load = useCallback(async () => {
@@ -236,6 +248,24 @@ export function BalanceSheetReportView({
       ) && displayRows.some((row) => row.kind === "account"),
     [displayRows],
   )
+
+  const exportDocument = useCallback(
+    async (format: "csv" | "pdf", context: ReportExportContext) => {
+      await exportBalanceSheetReportDocument(displayRows, format, {
+        periodLabel: exportPeriodLabel,
+        exportContext: context,
+        timeZone,
+      })
+    },
+    [displayRows, exportPeriodLabel, timeZone],
+  )
+
+  const { exportBusy, exportError, handleExport } = useReportDocumentExport({
+    popId,
+    disabled: loading || !data || !hasBalanceSheetMovement(data),
+    emptyMessage: "No hay saldos para exportar a esta fecha.",
+    exportFn: exportDocument,
+  })
 
   return (
     <div className="relative flex min-h-full flex-1 flex-col">
@@ -302,11 +332,13 @@ export function BalanceSheetReportView({
             "flex min-h-0 flex-1 flex-col",
           )}
         >
-          <div className="border-b border-[var(--rootsy-bruma-200)] px-4 py-3 sm:px-6 lg:px-8">
-            <p className={dataWorkspaceDetailEmptyStateDescriptionClass}>
-              {asOfSummary}
-            </p>
-          </div>
+          <ReportDownloadToolbar
+            periodSummary={asOfSummary}
+            disabled={loading || !data || !hasBalanceSheetMovement(data)}
+            exportBusy={exportBusy}
+            exportError={exportError}
+            onExport={handleExport}
+          />
 
           {error ? (
             <div

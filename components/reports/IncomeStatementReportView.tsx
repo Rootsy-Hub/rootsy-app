@@ -5,6 +5,7 @@ import {
   type IncomeStatementResult,
 } from "@/app/[siteId]/[popId]/accounting/actions"
 import { DataWorkspaceDetailEmptyState } from "@/components/data-workspace/DataWorkspaceDetailEmptyState"
+import { ReportDownloadToolbar } from "@/components/reports/ReportDownloadToolbar"
 import { ReportStatValue } from "@/components/reports/ReportStatValue"
 import { ReportDetailHeaderCard } from "@/components/reports/ReportDetailHeaderCard"
 import {
@@ -15,7 +16,15 @@ import {
   workspaceTableNatureTextPrimaryClass,
   workspaceTableNatureTextSecondaryClass,
 } from "@/components/data-workspace/dataWorkspaceListStyles"
-import { formatReportMoneyAr, formatReportPeriodSummary } from "@/lib/reportFormatters"
+import { useReportDocumentExport } from "@/hooks/useReportDocumentExport"
+import { usePopTimeZone } from "@/hooks/usePopTimeZone"
+import { exportIncomeStatementReportDocument } from "@/lib/inlineReportsExport"
+import type { ReportExportContext } from "@/lib/reportExportContext"
+import {
+  formatReportExportPeriodLabel,
+  formatReportMoneyAr,
+  formatReportPeriodSummary,
+} from "@/lib/reportFormatters"
 import type { DataWorkspaceDatePreset } from "@/lib/dataWorkspaceDateFilter"
 import {
   buildIncomeStatementDisplayRows,
@@ -154,6 +163,7 @@ export function IncomeStatementReportView({
   onCustomRangeChange,
   onBack,
 }: Props) {
+  const timeZone = usePopTimeZone()
   const [data, setData] = useState<IncomeStatementResult | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -161,6 +171,11 @@ export function IncomeStatementReportView({
   const periodSummary = useMemo(
     () => formatReportPeriodSummary(preset, { from, to }),
     [preset, from, to],
+  )
+
+  const exportPeriodLabel = useMemo(
+    () => formatReportExportPeriodLabel({ from, to }),
+    [from, to],
   )
 
   const load = useCallback(async () => {
@@ -193,6 +208,25 @@ export function IncomeStatementReportView({
       displayRows.some((row) => row.kind === "account"),
     [displayRows],
   )
+
+  const exportDocument = useCallback(
+    async (format: "csv" | "pdf", context: ReportExportContext) => {
+      await exportIncomeStatementReportDocument(displayRows, format, {
+        periodLabel: exportPeriodLabel,
+        exportContext: context,
+        timeZone,
+        resultadoNeto: data?.resultadoNeto ?? 0,
+      })
+    },
+    [data?.resultadoNeto, displayRows, exportPeriodLabel, timeZone],
+  )
+
+  const { exportBusy, exportError, handleExport } = useReportDocumentExport({
+    popId,
+    disabled: loading || !data || !hasIncomeStatementMovement(data),
+    emptyMessage: "No hay movimientos para exportar en este período.",
+    exportFn: exportDocument,
+  })
 
   return (
     <div className="relative flex min-h-full flex-1 flex-col">
@@ -243,11 +277,13 @@ export function IncomeStatementReportView({
             "flex min-h-0 flex-1 flex-col",
           )}
         >
-          <div className="border-b border-[var(--rootsy-bruma-200)] px-4 py-3 sm:px-6 lg:px-8">
-            <p className={dataWorkspaceDetailEmptyStateDescriptionClass}>
-              {periodSummary}
-            </p>
-          </div>
+          <ReportDownloadToolbar
+            periodSummary={periodSummary}
+            disabled={loading || !data || !hasIncomeStatementMovement(data)}
+            exportBusy={exportBusy}
+            exportError={exportError}
+            onExport={handleExport}
+          />
 
           {error ? (
             <div

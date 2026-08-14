@@ -9,6 +9,8 @@ import {
   sumReceivedInvoicesReportIva,
   sumReceivedInvoicesReportTotal,
 } from "@/lib/receivedInvoicesReportExportData"
+import { loadReportPdfRuntime } from "@/lib/reportPdfRuntime"
+import { applyReportPdfBrandingFooters } from "@/lib/reportExportBranding"
 
 type ExportPdfOptions = {
   timeZone?: string
@@ -18,23 +20,11 @@ type ExportPdfOptions = {
   periodIva?: number
 }
 
-async function createPdfDocument() {
-  const [{ jsPDF }, autoTableModule] = await Promise.all([
-    import("jspdf"),
-    import("jspdf-autotable"),
-  ])
-
-  return {
-    jsPDF,
-    autoTable: autoTableModule.default,
-  }
-}
-
 export async function exportReceivedInvoicesReportPdf(
   rows: OperationPurchaseRow[],
   options?: ExportPdfOptions,
 ): Promise<void> {
-  const { jsPDF, autoTable } = await createPdfDocument()
+  const { jsPDF, autoTable } = await loadReportPdfRuntime()
 
   const periodSummary = options?.periodSummary ?? "Facturas recibidas"
   const invoiceCount = options?.invoiceCount ?? rows.length
@@ -81,8 +71,10 @@ export async function exportReceivedInvoicesReportPdf(
       textColor: [30, 35, 42],
       fontStyle: "bold",
     },
-    margin: { left: 14, right: 14 },
+    margin: { left: 14, right: 14, bottom: 16 },
   })
+
+  await applyReportPdfBrandingFooters(doc)
 
   doc.save(receivedInvoicesReportExportFilename("pdf", periodSummary))
 }

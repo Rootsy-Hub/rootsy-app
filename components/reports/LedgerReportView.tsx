@@ -9,6 +9,10 @@ import { useTreasuryInfiniteScroll } from "@/app/[siteId]/[popId]/accounts/treas
 import { DataWorkspaceDetailEmptyState } from "@/components/data-workspace/DataWorkspaceDetailEmptyState"
 import { ReportStatValue } from "@/components/reports/ReportStatValue"
 import { ReportDetailHeaderCard } from "@/components/reports/ReportDetailHeaderCard"
+import {
+  SalesReportDownloadMenu,
+  type SalesReportExportFormat,
+} from "@/components/reports/SalesReportDownloadMenu"
 import { LedgerAccountSearchField } from "@/components/reports/LedgerAccountSearchField"
 import { ReportTableScrollArea } from "@/components/reports/ReportTableScrollArea"
 import {
@@ -43,7 +47,12 @@ import {
   formatRootsFormDisplayDateCompact,
   parseRootsFormIsoDate,
 } from "@/lib/rootsFormDateFormat"
+import { useReportDocumentExport } from "@/hooks/useReportDocumentExport"
+import { usePopTimeZone } from "@/hooks/usePopTimeZone"
+import { exportLedgerReportDocument } from "@/lib/inlineReportsExport"
+import type { ReportExportContext } from "@/lib/reportExportContext"
 import {
+  formatReportExportPeriodLabel,
   formatReportMoneyAr,
   formatReportPeriodSummary,
 } from "@/lib/reportFormatters"
@@ -98,6 +107,7 @@ export function LedgerReportView({
   onCustomRangeChange,
   onBack,
 }: Props) {
+  const timeZone = usePopTimeZone()
   const [accountCode, setAccountCode] = useState("")
   const [rows, setRows] = useState<LedgerMovementRow[]>([])
   const [accountName, setAccountName] = useState("")
@@ -110,6 +120,11 @@ export function LedgerReportView({
   const periodSummary = useMemo(
     () => formatReportPeriodSummary(preset, { from, to }),
     [preset, from, to],
+  )
+
+  const exportPeriodLabel = useMemo(
+    () => formatReportExportPeriodLabel({ from, to }),
+    [from, to],
   )
 
   const trimmedCode = accountCode.trim()
@@ -167,6 +182,26 @@ export function LedgerReportView({
     const count = rows.length
     return count === 1 ? "1 movimiento" : `${count.toLocaleString("es-AR")} movimientos`
   }, [rows.length])
+
+  const exportDocument = useCallback(
+    async (format: SalesReportExportFormat, context: ReportExportContext) => {
+      await exportLedgerReportDocument(rows, format, {
+        periodLabel: exportPeriodLabel,
+        exportContext: context,
+        timeZone,
+        accountCode: trimmedCode,
+        accountName,
+      })
+    },
+    [accountName, exportPeriodLabel, rows, timeZone, trimmedCode],
+  )
+
+  const { exportBusy, exportError, handleExport } = useReportDocumentExport({
+    popId,
+    disabled: loading || !hasAccountQuery || rows.length === 0,
+    emptyMessage: "Seleccioná una cuenta con movimientos para exportar.",
+    exportFn: exportDocument,
+  })
 
   return (
     <div className="relative flex min-h-full flex-1 flex-col">
@@ -231,19 +266,35 @@ export function LedgerReportView({
                   </p>
                 ) : null}
               </div>
-              <LedgerAccountSearchField
-                popId={popId}
-                accountCode={accountCode}
-                onAccountCodeChange={setAccountCode}
-                selectedAccountLabel={
-                  accountName && trimmedCode
-                    ? `${trimmedCode} · ${accountName}`
-                    : null
-                }
-                className="w-full min-w-0 sm:max-w-[20rem]"
-              />
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
+                <LedgerAccountSearchField
+                  popId={popId}
+                  accountCode={accountCode}
+                  onAccountCodeChange={setAccountCode}
+                  selectedAccountLabel={
+                    accountName && trimmedCode
+                      ? `${trimmedCode} · ${accountName}`
+                      : null
+                  }
+                  className="w-full min-w-0 sm:max-w-[20rem]"
+                />
+                <SalesReportDownloadMenu
+                  disabled={loading || !hasAccountQuery || rows.length === 0}
+                  busy={exportBusy}
+                  onExport={handleExport}
+                />
+              </div>
             </div>
           </div>
+
+          {exportError ? (
+            <div
+              role="alert"
+              className="mx-4 mt-4 rounded-lg border border-destructive/25 bg-destructive/10 px-4 py-3 text-sm text-destructive sm:mx-6 lg:mx-8"
+            >
+              {exportError}
+            </div>
+          ) : null}
 
           {error ? (
             <div

@@ -1,11 +1,11 @@
 "use client"
 
 import type { jsPDF } from "jspdf"
-import "svg2pdf.js"
 import {
   finalizeReportCsv,
   type ReportExportContext,
 } from "@/lib/reportExportContext"
+import { loadSvg2PdfPlugin } from "@/lib/reportPdfRuntime"
 
 export const ROOTSY_REPORT_BRANDING_LABEL = "Generado por Rootsy"
 
@@ -120,7 +120,16 @@ async function drawReportPdfBrandingFooterPage(
   doc.setTextColor(0, 0, 0)
 }
 
+let svg2PdfLoaded = false
+
+async function ensureSvg2PdfLoaded(): Promise<void> {
+  if (svg2PdfLoaded) return
+  await loadSvg2PdfPlugin()
+  svg2PdfLoaded = true
+}
+
 export async function applyReportPdfBrandingFooters(doc: jsPDF): Promise<void> {
+  await ensureSvg2PdfLoaded()
   const pdf = doc as JsPdfWithSvg
   const logoMarkup = await loadReportExportLogoSvgMarkup()
   const pageCount = pdf.getNumberOfPages()

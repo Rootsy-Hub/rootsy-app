@@ -7,6 +7,7 @@ import {
   type JournalEntrySummaryRow,
 } from "@/app/[siteId]/[popId]/accounting/actions"
 import { DataWorkspaceDetailEmptyState } from "@/components/data-workspace/DataWorkspaceDetailEmptyState"
+import { ReportDownloadToolbar } from "@/components/reports/ReportDownloadToolbar"
 import { ReportStatValue } from "@/components/reports/ReportStatValue"
 import { ReportDetailHeaderCard } from "@/components/reports/ReportDetailHeaderCard"
 import { ReportTableScrollArea } from "@/components/reports/ReportTableScrollArea"
@@ -56,7 +57,13 @@ import {
   formatRootsFormDisplayDateCompact,
   parseRootsFormIsoDate,
 } from "@/lib/rootsFormDateFormat"
+import { useReportDocumentExport } from "@/hooks/useReportDocumentExport"
+import { usePopTimeZone } from "@/hooks/usePopTimeZone"
+import { fetchAllJournalEntriesForExport } from "@/lib/fetchAllJournalEntriesForExport"
+import { exportJournalReportDocument } from "@/lib/inlineReportsExport"
+import type { ReportExportContext } from "@/lib/reportExportContext"
 import {
+  formatReportExportPeriodLabel,
   formatReportMoneyAr,
   formatReportPeriodSummary,
 } from "@/lib/reportFormatters"
@@ -97,6 +104,7 @@ export function JournalReportView({
   onCustomRangeChange,
   onBack,
 }: Props) {
+  const timeZone = usePopTimeZone()
   const [entries, setEntries] = useState<JournalEntrySummaryRow[]>([])
   const [loading, setLoading] = useState(true)
   const [loadingMore, setLoadingMore] = useState(false)
@@ -120,6 +128,11 @@ export function JournalReportView({
   const periodSummary = useMemo(
     () => formatReportPeriodSummary(preset, { from, to }),
     [preset, from, to],
+  )
+
+  const exportPeriodLabel = useMemo(
+    () => formatReportExportPeriodLabel({ from, to }),
+    [from, to],
   )
 
   const load = useCallback(async () => {
@@ -195,6 +208,30 @@ export function JournalReportView({
     return count === 1 ? "1 asiento" : `${count.toLocaleString("es-AR")} asientos`
   }, [entries.length])
 
+  const exportDocument = useCallback(
+    async (format: "csv" | "pdf", context: ReportExportContext) => {
+      const res = await fetchAllJournalEntriesForExport(popId, from, to)
+      if (!res.success) {
+        throw new Error(res.error)
+      }
+      await exportJournalReportDocument(res.entries, format, {
+        periodLabel: exportPeriodLabel,
+        exportContext: context,
+        timeZone,
+        totalDebit: res.totalDebit,
+        totalCredit: res.totalCredit,
+      })
+    },
+    [exportPeriodLabel, from, popId, timeZone, to],
+  )
+
+  const { exportBusy, exportError, handleExport } = useReportDocumentExport({
+    popId,
+    disabled: loading || entries.length === 0,
+    emptyMessage: "No hay asientos para exportar en este período.",
+    exportFn: exportDocument,
+  })
+
   const openEntryDetail = useCallback(
     async (entry: JournalEntrySummaryRow) => {
       setDetailOpen(true)
@@ -260,11 +297,13 @@ export function JournalReportView({
             "flex min-h-0 flex-1 flex-col",
           )}
         >
-          <div className="border-b border-[var(--rootsy-bruma-200)] px-4 py-3 sm:px-6 lg:px-8">
-            <p className={dataWorkspaceDetailEmptyStateDescriptionClass}>
-              {periodSummary}
-            </p>
-          </div>
+          <ReportDownloadToolbar
+            periodSummary={periodSummary}
+            disabled={loading || entries.length === 0}
+            exportBusy={exportBusy}
+            exportError={exportError}
+            onExport={handleExport}
+          />
 
           {error ? (
             <div

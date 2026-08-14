@@ -352,7 +352,6 @@ export function SalesDetailReportView({
               <DataWorkspaceDetailEmptyState
                 icon={FileBarChart}
                 title="Sin ventas en el período"
-                description="No hay operaciones de venta para el rango de fechas elegido."
                 className="min-h-52"
               />
             ) : (

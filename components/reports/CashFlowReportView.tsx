@@ -5,6 +5,7 @@ import {
   type CashFlowRow,
 } from "@/app/[siteId]/[popId]/accounting/actions"
 import { DataWorkspaceDetailEmptyState } from "@/components/data-workspace/DataWorkspaceDetailEmptyState"
+import { ReportDownloadToolbar } from "@/components/reports/ReportDownloadToolbar"
 import { ReportStatValue } from "@/components/reports/ReportStatValue"
 import { ReportDetailHeaderCard } from "@/components/reports/ReportDetailHeaderCard"
 import { ReportTableScrollArea } from "@/components/reports/ReportTableScrollArea"
@@ -31,7 +32,12 @@ import {
   WorkspaceTableHeader,
   WorkspaceTableHeaderRow,
 } from "@/components/data-workspace/WorkspaceTableHeader"
+import { useReportDocumentExport } from "@/hooks/useReportDocumentExport"
+import { usePopTimeZone } from "@/hooks/usePopTimeZone"
+import { exportCashFlowReportDocument } from "@/lib/inlineReportsExport"
+import type { ReportExportContext } from "@/lib/reportExportContext"
 import {
+  formatReportExportPeriodLabel,
   formatReportMoneyAr,
   formatReportPeriodSummary,
 } from "@/lib/reportFormatters"
@@ -78,6 +84,7 @@ export function CashFlowReportView({
   onCustomRangeChange,
   onBack,
 }: Props) {
+  const timeZone = usePopTimeZone()
   const [rows, setRows] = useState<CashFlowRow[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -85,6 +92,11 @@ export function CashFlowReportView({
   const periodSummary = useMemo(
     () => formatReportPeriodSummary(preset, { from, to }),
     [preset, from, to],
+  )
+
+  const exportPeriodLabel = useMemo(
+    () => formatReportExportPeriodLabel({ from, to }),
+    [from, to],
   )
 
   const load = useCallback(async () => {
@@ -105,6 +117,24 @@ export function CashFlowReportView({
   }, [load])
 
   const totals = useMemo(() => sumCashFlowTotals(rows), [rows])
+
+  const exportDocument = useCallback(
+    async (format: "csv" | "pdf", context: ReportExportContext) => {
+      await exportCashFlowReportDocument(rows, format, {
+        periodLabel: exportPeriodLabel,
+        exportContext: context,
+        timeZone,
+      })
+    },
+    [exportPeriodLabel, rows, timeZone],
+  )
+
+  const { exportBusy, exportError, handleExport } = useReportDocumentExport({
+    popId,
+    disabled: loading || rows.length === 0,
+    emptyMessage: "No hay movimientos de caja para exportar en este período.",
+    exportFn: exportDocument,
+  })
 
   return (
     <div className="relative flex min-h-full flex-1 flex-col">
@@ -149,11 +179,13 @@ export function CashFlowReportView({
             "flex min-h-0 flex-1 flex-col",
           )}
         >
-          <div className="border-b border-[var(--rootsy-bruma-200)] px-4 py-3 sm:px-6 lg:px-8">
-            <p className={dataWorkspaceDetailEmptyStateDescriptionClass}>
-              {periodSummary}
-            </p>
-          </div>
+          <ReportDownloadToolbar
+            periodSummary={periodSummary}
+            disabled={loading || rows.length === 0}
+            exportBusy={exportBusy}
+            exportError={exportError}
+            onExport={handleExport}
+          />
 
           {error ? (
             <div
