@@ -9,6 +9,7 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Spinner } from "@/components/ui/spinner"
 import { DataWorkspaceHeaderUserMenu } from "@/components/layouts/DataWorkspaceHeaderUserMenu"
+import { PopGlassChrome } from "@/components/layouts/PopGlassChrome"
 import { useAuth } from "@/context/AuthContextSupabase"
 import withAuth from "@/hoc/withAuth"
 import { useHomePageData } from "@/hooks/useHomePageData"
@@ -90,7 +91,7 @@ function HomePage() {
   const isLoading = authLoading || homeLoading
 
   return (
-    <div className="relative h-screen overflow-hidden bg-[#070a09] text-white">
+    <div className="relative flex h-screen flex-col overflow-hidden bg-[#070a09] text-white">
       <div className="pointer-events-none absolute inset-0">
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_20%,rgba(52,211,153,0.14),transparent_35%),radial-gradient(circle_at_82%_46%,rgba(99,102,241,0.12),transparent_34%),radial-gradient(circle_at_45%_88%,rgba(34,211,238,0.1),transparent_30%)]" />
         <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.03)_1px,transparent_1px)] bg-size-[42px_42px] opacity-25" />
@@ -101,8 +102,8 @@ function HomePage() {
         <div className="absolute -bottom-44 -left-28 h-136 w-136 rounded-full bg-[conic-gradient(from_0deg,rgba(34,211,238,0.12),rgba(52,211,153,0.08),rgba(34,211,238,0.12))] blur-3xl motion-safe:animate-[spin_50s_linear_infinite_reverse]" />
       </div>
 
-      <header className="relative z-20 border-b border-white/10 bg-black/20 backdrop-blur-xl">
-        <div className="mx-auto flex h-18 max-w-7xl items-center justify-between px-5 sm:px-8 lg:px-10">
+      <PopGlassChrome borderBottom className="relative z-20 shrink-0">
+        <div className="flex items-center justify-between px-6 py-5 sm:px-8">
           <Link
             href="/home"
             aria-label="Rootsy — inicio"
@@ -132,9 +133,9 @@ function HomePage() {
             />
           </div>
         </div>
-      </header>
+      </PopGlassChrome>
 
-      <main className="relative z-10 mx-auto flex h-[calc(100svh-4.5rem)] w-full max-w-7xl flex-col items-center justify-center overflow-y-auto overflow-x-hidden px-5 pb-24 pt-14 sm:px-8 lg:px-10">
+      <main className="relative z-10 mx-auto flex min-h-0 flex-1 w-full max-w-7xl flex-col items-center justify-center overflow-y-auto overflow-x-hidden px-5 pb-24 pt-14 sm:px-8 lg:px-10">
         <section className="w-full max-w-4xl text-center">
           <h1 className="text-balance text-4xl font-extrabold tracking-tight text-white sm:text-5xl">
             Bienvenid@ {displayName}!{" "}

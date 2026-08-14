@@ -8,6 +8,7 @@ import {
 import { useTreasuryInfiniteScroll } from "@/app/[siteId]/[popId]/accounts/treasuryInfiniteScroll"
 import { DataWorkspaceDetailEmptyState } from "@/components/data-workspace/DataWorkspaceDetailEmptyState"
 import { ReportDetailHeaderCard } from "@/components/reports/ReportDetailHeaderCard"
+import { LedgerAccountSearchField } from "@/components/reports/LedgerAccountSearchField"
 import { ReportTableScrollArea } from "@/components/reports/ReportTableScrollArea"
 import {
   dataWorkspaceDetailEmptyStateDescriptionClass,
@@ -36,19 +37,18 @@ import {
   WorkspaceTableHeader,
   WorkspaceTableHeaderRow,
 } from "@/components/data-workspace/WorkspaceTableHeader"
-import { RootsFormTextField } from "@/components/rootsy-form"
-import {
-  formatReportMoneyAr,
-  formatReportPeriodSummary,
-} from "@/lib/reportFormatters"
+import { RootsSpinner } from "@/components/rootsy-spinner"
 import { type DataWorkspaceDatePreset } from "@/lib/dataWorkspaceDateFilter"
 import {
   formatRootsFormDisplayDateCompact,
   parseRootsFormIsoDate,
 } from "@/lib/rootsFormDateFormat"
+import {
+  formatReportMoneyAr,
+  formatReportPeriodSummary,
+} from "@/lib/reportFormatters"
 import { cn } from "@/lib/utils"
 import { BookOpen } from "lucide-react"
-import { RootsSpinner } from "@/components/rootsy-spinner"
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react"
 import type { DateRange } from "react-day-picker"
 import { Table, TableBody, TableCell } from "@/components/ui/table"
@@ -229,13 +229,16 @@ export function LedgerReportView({
                   </p>
                 ) : null}
               </div>
-              <RootsFormTextField
-                label="Código de cuenta"
-                id="ledger-account-code"
-                value={accountCode}
-                onChange={(event) => setAccountCode(event.target.value)}
-                placeholder="Ej. 1.1.1.01"
-                className="w-full min-w-0 sm:max-w-[14rem]"
+              <LedgerAccountSearchField
+                popId={popId}
+                accountCode={accountCode}
+                onAccountCodeChange={setAccountCode}
+                selectedAccountLabel={
+                  accountName && trimmedCode
+                    ? `${trimmedCode} · ${accountName}`
+                    : null
+                }
+                className="w-full min-w-0 sm:max-w-[20rem]"
               />
             </div>
           </div>

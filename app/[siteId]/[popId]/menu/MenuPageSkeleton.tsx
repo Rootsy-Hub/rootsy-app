@@ -92,7 +92,6 @@ function MenuPageSkeletonHeader() {
       <div className="grid grid-cols-[minmax(0,1fr)_minmax(0,280px)_minmax(0,1fr)] items-center gap-4 px-6 py-5 sm:gap-6 sm:px-8">
         <div className="flex min-w-0 items-center gap-6">
           <Skeleton className="size-12 shrink-0 rounded-xl bg-muted-foreground/10" />
-          <div className="hidden h-6 w-px shrink-0 bg-border sm:block" />
           <div className="flex min-w-0 items-center gap-4">
             <Skeleton className="size-12 shrink-0 rounded-2xl bg-muted-foreground/12" />
             <div className="flex min-w-0 flex-col gap-1.5">

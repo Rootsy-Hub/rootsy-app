@@ -425,8 +425,6 @@ function MenuPage() {
               <Home aria-hidden />
             </RootsIconButton>
 
-            <div className="hidden h-6 w-px shrink-0 bg-border sm:block" />
-
             <div className="flex min-w-0 items-center gap-4">
               <div className="size-12 shrink-0 overflow-hidden rounded-2xl ring-1 ring-border">
                 <img

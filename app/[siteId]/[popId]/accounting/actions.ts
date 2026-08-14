@@ -36,6 +36,91 @@ export type ChartAccountRow = {
   isMovementAccount: boolean
 }
 
+export type ChartAccountSearchRow = {
+  id: string
+  code: string
+  name: string
+}
+
+const CHART_ACCOUNT_SEARCH_LIMIT = 12
+
+function escapeChartAccountIlikeToken(raw: string): string {
+  return raw.replace(/\\/g, "\\\\").replace(/%/g, "\\%").replace(/_/g, "\\_")
+}
+
+function buildChartAccountSearchOrClause(raw: string): string | null {
+  const term = raw.trim().replace(/,/g, " ").trim()
+  if (!term) return null
+  const pattern = `%${escapeChartAccountIlikeToken(term)}%`
+  return [`code.ilike.${pattern}`, `name.ilike.${pattern}`].join(",")
+}
+
+export async function searchAccountingChartAccounts(
+  popId: string,
+  query: string,
+): Promise<
+  | { success: true; accounts: ChartAccountSearchRow[] }
+  | { success: false; error: string }
+> {
+  const trimmed = query.trim()
+  if (!trimmed) {
+    return { success: true, accounts: [] }
+  }
+
+  const orClause = buildChartAccountSearchOrClause(trimmed)
+  if (!orClause) {
+    return { success: true, accounts: [] }
+  }
+
+  try {
+    const access = await validatePopAccess(popId)
+    if (!access.hasAccess || !access.isActive) {
+      return { success: false, error: access.error || "Sin acceso" }
+    }
+    const snap = await loadPopPermissionsSnapshot(popId)
+    if (
+      !permissionKeysInclude(
+        snap.keys,
+        POP_PERMS.ACCOUNTING_READ.resource,
+        POP_PERMS.ACCOUNTING_READ.action,
+      )
+    ) {
+      return {
+        success: false,
+        error: "Sin permiso para consultar el plan de cuentas.",
+      }
+    }
+
+    const supabase = await createClient()
+    const { data, error } = await supabase
+      .from("accounting_chart_of_accounts")
+      .select("id, code, name")
+      .eq("pop_id", popId)
+      .or(orClause)
+      .order("code", { ascending: true })
+      .limit(CHART_ACCOUNT_SEARCH_LIMIT)
+
+    if (error) {
+      return {
+        success: false,
+        error: error.message || "No se pudieron buscar cuentas.",
+      }
+    }
+
+    return {
+      success: true,
+      accounts: (data || []).map((row) => ({
+        id: String(row.id),
+        code: String(row.code ?? ""),
+        name: String(row.name ?? ""),
+      })),
+    }
+  } catch (e: unknown) {
+    const message = e instanceof Error ? e.message : "Error desconocido"
+    return { success: false, error: message }
+  }
+}
+
 export type CreateChartAccountInput = {
   code: string
   name: string
