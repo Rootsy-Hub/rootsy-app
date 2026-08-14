@@ -2,8 +2,11 @@
 
 import {
   entryDateIsoInTimezone,
+  localDateExclusiveEndTimestamp,
+  localDateStartTimestamp,
   timezoneForPopLedger,
 } from "@/lib/entryDateTimezone"
+import { loadPopLedgerTimeZone } from "@/lib/popTimezoneServer"
 import {
   POP_PERMS,
   permissionKeysInclude,
@@ -172,6 +175,24 @@ export type CashRegisterSummarySession = {
   efectivoTeorico: number
   /** Neto de diferencias del cierre (efectivo + medios informados vs cobrado). */
   cashArqueoDifference: number | null
+}
+
+export type CashRegistersPeriodReportRow = CashRegisterSummarySession & {
+  registerId: string
+  registerName: string
+}
+
+export type CashRegistersPeriodReportPopInfo = {
+  popName: string
+  popStreetAddress: string | null
+  popFiscalCuit: string | null
+  popFiscalRazonSocial: string | null
+}
+
+export type CashRegistersPeriodReportData = {
+  rows: CashRegistersPeriodReportRow[]
+  registerCount: number
+  popInfo: CashRegistersPeriodReportPopInfo
 }
 
 export type CashRegisterSessionOperationRow = {
@@ -2306,4 +2327,283 @@ export async function getCashRegisterSessionArqueoDetail(
     const message = e instanceof Error ? e.message : "Unknown error"
     return { success: false, error: message }
   }
+}
+
+export async function getCashRegistersPeriodReport(
+  popId: string,
+  options: { from: string | null; to: string | null },
+): Promise<
+  | { success: true; data: CashRegistersPeriodReportData }
+  | { success: false; error: string }
+> {
+  try {
+    const access = await validatePopAccess(popId)
+    if (!access.hasAccess || !access.isActive) {
+      return { success: false, error: access.error || "Sin acceso" }
+    }
+    const snap = await loadPopPermissionsSnapshot(popId)
+    if (
+      !permissionKeysInclude(
+        snap.keys,
+        POP_PERMS.CASH_REGISTER_READ.resource,
+        POP_PERMS.CASH_REGISTER_READ.action,
+      )
+    ) {
+      return { success: false, error: "No permission to view cash registers." }
+    }
+
+    const supabase = await createClient()
+    const timeZone = await loadPopLedgerTimeZone(supabase, popId)
+    const { data: regs, error: regErr } = await supabase
+      .from("cash_registers")
+      .select("id, name")
+      .eq("pop_id", popId)
+      .order("sort_order", { ascending: true })
+      .order("name", { ascending: true })
+    if (regErr) {
+      return { success: false, error: regErr.message || "Could not load registers." }
+    }
+
+    const registerRows = regs || []
+    const registerNameById = new Map(
+      registerRows.map((reg) => [String(reg.id), String(reg.name ?? "")]),
+    )
+    const popRes = await getPopById(popId)
+    const popInfo: CashRegistersPeriodReportPopInfo = {
+      popName:
+        popRes.success && popRes.pop
+          ? String(popRes.pop.name ?? "").trim()
+          : "",
+      popStreetAddress:
+        popRes.success && popRes.pop?.streetAddress
+          ? String(popRes.pop.streetAddress).trim()
+          : null,
+      popFiscalCuit:
+        popRes.success && popRes.pop?.fiscalCuit
+          ? String(popRes.pop.fiscalCuit).trim()
+          : null,
+      popFiscalRazonSocial:
+        popRes.success && popRes.pop?.fiscalRazonSocial
+          ? String(popRes.pop.fiscalRazonSocial).trim()
+          : null,
+    }
+
+    if (registerRows.length === 0) {
+      return {
+        success: true,
+        data: { rows: [], registerCount: 0, popInfo },
+      }
+    }
+
+    let sessQuery = supabase
+      .from("cash_register_sessions")
+      .select(
+        "id, cash_register_id, status, opened_at, closed_at, opening_cash, note, closing_snapshot, opened_by, closed_by",
+      )
+      .eq("pop_id", popId)
+      .eq("status", "closed")
+    const periodOrFilter = buildClosedCashRegisterSessionPeriodOrFilter(
+      options.from,
+      options.to,
+      timeZone,
+    )
+    if (periodOrFilter) {
+      sessQuery = sessQuery.or(periodOrFilter)
+    }
+    const { data: periodSessRows, error: sessErr } = await sessQuery
+    if (sessErr) {
+      return { success: false, error: sessErr.message || "Could not load sessions." }
+    }
+
+    const sessRows = periodSessRows || []
+    if (sessRows.length === 0) {
+      return {
+        success: true,
+        data: { rows: [], registerCount: registerRows.length, popInfo },
+      }
+    }
+
+    const sessionIds = sessRows.map((row) => String(row.id))
+    const involvedRegisterIds = [
+      ...new Set(sessRows.map((row) => String(row.cash_register_id))),
+    ]
+
+    const [{ data: moveRows, error: moveErr }, { data: saleRows, error: saleErr }] =
+      await Promise.all([
+        supabase
+          .from("cash_register_movements")
+          .select("session_id, kind, amount")
+          .eq("pop_id", popId)
+          .in("session_id", sessionIds),
+        supabase
+          .from("sales")
+          .select("cash_register_session_id, total, status")
+          .eq("pop_id", popId)
+          .in("cash_register_session_id", sessionIds)
+          .eq("status", "completed"),
+      ])
+    if (moveErr) {
+      return { success: false, error: moveErr.message || "Could not load movements." }
+    }
+    if (saleErr) {
+      return { success: false, error: saleErr.message || "Could not load sales." }
+    }
+
+    const depWit = new Map<string, { dep: number; wit: number }>()
+    for (const sessionId of sessionIds) {
+      depWit.set(sessionId, { dep: 0, wit: 0 })
+    }
+    for (const movement of moveRows || []) {
+      const bucket = depWit.get(String(movement.session_id))
+      if (!bucket) continue
+      const amount = parseAmount(movement.amount)
+      if (String(movement.kind) === "deposit") {
+        bucket.dep += amount
+      } else if (String(movement.kind) === "withdrawal") {
+        bucket.wit += amount
+      }
+    }
+
+    const sessionSaleTotals = new Map<string, number>()
+    for (const sale of saleRows || []) {
+      const sessionId = String(sale.cash_register_session_id ?? "")
+      if (!sessionId) continue
+      sessionSaleTotals.set(
+        sessionId,
+        (sessionSaleTotals.get(sessionId) ?? 0) + parseAmount(sale.total),
+      )
+    }
+
+    const { data: numberingRows, error: numberingErr } = await supabase
+      .from("cash_register_sessions")
+      .select("id, cash_register_id, opened_at, opened_by, closed_by")
+      .eq("pop_id", popId)
+      .in("cash_register_id", involvedRegisterIds)
+      .order("opened_at", { ascending: true })
+    if (numberingErr) {
+      return {
+        success: false,
+        error: numberingErr.message || "Could not load session numbers.",
+      }
+    }
+
+    const userIds: string[] = []
+    for (const row of sessRows) {
+      if (row.opened_by) userIds.push(String(row.opened_by))
+      if (row.closed_by) userIds.push(String(row.closed_by))
+    }
+    const userNames = await loadUserDisplayNames(supabase, userIds)
+
+    const periodSessByRegister = new Map<string, typeof sessRows>()
+    for (const row of sessRows) {
+      const registerId = String(row.cash_register_id)
+      const bucket = periodSessByRegister.get(registerId) ?? []
+      bucket.push(row)
+      periodSessByRegister.set(registerId, bucket)
+    }
+
+    const numberingByRegister = new Map<string, NonNullable<typeof numberingRows>>()
+    for (const row of numberingRows || []) {
+      const registerId = String(row.cash_register_id)
+      const bucket = numberingByRegister.get(registerId) ?? []
+      bucket.push(row)
+      numberingByRegister.set(registerId, bucket)
+    }
+
+    const rows: CashRegistersPeriodReportRow[] = []
+    for (const [registerId, registerSessRows] of periodSessByRegister) {
+      const sessions: CashRegisterSummarySession[] = registerSessRows.map((row) => {
+        const sessionId = String(row.id)
+        const dw = depWit.get(sessionId) ?? { dep: 0, wit: 0 }
+        return {
+          id: sessionId,
+          status: "closed" as const,
+          openedAt: String(row.opened_at ?? ""),
+          closedAt: row.closed_at != null ? String(row.closed_at) : null,
+          openingCash: parseAmount(row.opening_cash),
+          openingNote: row.note != null ? String(row.note) : null,
+          closingSnapshot: parseClosingSnapshot(row.closing_snapshot),
+          movementDeposits: Math.round(dw.dep * 100) / 100,
+          movementWithdrawals: Math.round(dw.wit * 100) / 100,
+          totalCobrado:
+            Math.round((sessionSaleTotals.get(sessionId) ?? 0) * 100) / 100,
+          ventasPorMedio: [],
+          ventasPorCuenta: [],
+          ventasParaCierre: [],
+          arqueoNumber: 0,
+          openedByUserId: null,
+          openedByName: null,
+          closedByUserId: null,
+          closedByName: null,
+          efectivoTeorico: 0,
+          cashArqueoDifference: null,
+        }
+      })
+
+      enrichCashRegisterSessions(
+        numberingByRegister.get(registerId) ?? [],
+        sessions,
+        userNames,
+      )
+
+      for (const session of sessions) {
+        rows.push({
+          ...session,
+          registerId,
+          registerName: registerNameById.get(registerId) ?? "",
+        })
+      }
+    }
+
+    rows.sort(
+      (a, b) =>
+        new Date(b.closedAt ?? b.openedAt).getTime() -
+        new Date(a.closedAt ?? a.openedAt).getTime(),
+    )
+
+    return {
+      success: true,
+      data: {
+        rows,
+        registerCount: registerRows.length,
+        popInfo,
+      },
+    }
+  } catch (e: unknown) {
+    const message = e instanceof Error ? e.message : "Unknown error"
+    return { success: false, error: message }
+  }
+}
+
+function buildClosedCashRegisterSessionPeriodOrFilter(
+  from: string | null,
+  to: string | null,
+  timeZone: string,
+): string | null {
+  if (!from && !to) return null
+
+  const start = from ? localDateStartTimestamp(timeZone, from) : null
+  const endExclusive = to ? localDateExclusiveEndTimestamp(timeZone, to) : null
+  const openedParts: string[] = []
+  const closedParts: string[] = []
+
+  if (start) {
+    openedParts.push(`opened_at.gte.${start}`)
+    closedParts.push(`closed_at.gte.${start}`)
+  }
+  if (endExclusive) {
+    openedParts.push(`opened_at.lt.${endExclusive}`)
+    closedParts.push(`closed_at.lt.${endExclusive}`)
+  }
+
+  const clauses: string[] = []
+  if (openedParts.length > 0) {
+    clauses.push(`and(${openedParts.join(",")})`)
+  }
+  if (closedParts.length > 0) {
+    clauses.push(`and(${closedParts.join(",")})`)
+  }
+  if (clauses.length === 0) return null
+
+  return clauses.join(",")
 }

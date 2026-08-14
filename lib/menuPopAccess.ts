@@ -21,6 +21,7 @@ export const MENU_LINK_TO_MODULE_KEY: Partial<Record<MenuItemLink, string>> = {
   "cobrar-servicios": "active_services",
   operations: "operations",
   reports: "reports",
+  summary: "summary",
   inventory: "inventory",
   invoices: "invoices",
   accounts: "accounts",

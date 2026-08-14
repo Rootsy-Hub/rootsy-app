@@ -10,6 +10,10 @@ import { Button } from "@/components/ui/button"
 import { Spinner } from "@/components/ui/spinner"
 import { DataWorkspaceHeaderUserMenu } from "@/components/layouts/DataWorkspaceHeaderUserMenu"
 import { PopGlassChrome } from "@/components/layouts/PopGlassChrome"
+import {
+  menuHeaderFlexRowClass,
+  menuHeaderHeightClass,
+} from "@/app/[siteId]/[popId]/menu/menuFloatingPillStyles"
 import { useAuth } from "@/context/AuthContextSupabase"
 import withAuth from "@/hoc/withAuth"
 import { useHomePageData } from "@/hooks/useHomePageData"
@@ -102,8 +106,11 @@ function HomePage() {
         <div className="absolute -bottom-44 -left-28 h-136 w-136 rounded-full bg-[conic-gradient(from_0deg,rgba(34,211,238,0.12),rgba(52,211,153,0.08),rgba(34,211,238,0.12))] blur-3xl motion-safe:animate-[spin_50s_linear_infinite_reverse]" />
       </div>
 
-      <PopGlassChrome borderBottom className="relative z-20 shrink-0">
-        <div className="flex items-center justify-between px-6 py-5 sm:px-8">
+      <PopGlassChrome
+        borderBottom
+        className={cn("relative z-20", menuHeaderHeightClass)}
+      >
+        <div className={menuHeaderFlexRowClass}>
           <Link
             href="/home"
             aria-label="Rootsy — inicio"

@@ -237,6 +237,63 @@ const LedgerReportView = dynamic(
   },
 )
 
+const CashRegistersReportView = dynamic(
+  () =>
+    import("@/components/reports/CashRegistersReportView").then(
+      (mod) => mod.CashRegistersReportView,
+    ),
+  {
+    ssr: false,
+    loading: () => (
+      <div
+        className="flex min-h-52 flex-col items-center justify-center gap-3 px-4 py-10"
+        aria-busy="true"
+      >
+        <RootsSpinner size="default" label="Cargando reporte" />
+        <p className="text-sm text-rootsy-bruma-500">Cargando reporte…</p>
+      </div>
+    ),
+  },
+)
+
+const TreasuryReportView = dynamic(
+  () =>
+    import("@/components/reports/TreasuryReportView").then(
+      (mod) => mod.TreasuryReportView,
+    ),
+  {
+    ssr: false,
+    loading: () => (
+      <div
+        className="flex min-h-52 flex-col items-center justify-center gap-3 px-4 py-10"
+        aria-busy="true"
+      >
+        <RootsSpinner size="default" label="Cargando reporte" />
+        <p className="text-sm text-rootsy-bruma-500">Cargando reporte…</p>
+      </div>
+    ),
+  },
+)
+
+const ChartOfAccountsReportView = dynamic(
+  () =>
+    import("@/components/reports/ChartOfAccountsReportView").then(
+      (mod) => mod.ChartOfAccountsReportView,
+    ),
+  {
+    ssr: false,
+    loading: () => (
+      <div
+        className="flex min-h-52 flex-col items-center justify-center gap-3 px-4 py-10"
+        aria-busy="true"
+      >
+        <RootsSpinner size="default" label="Cargando reporte" />
+        <p className="text-sm text-rootsy-bruma-500">Cargando reporte…</p>
+      </div>
+    ),
+  },
+)
+
 function ReportsPage() {
   const params = useParams()
   const siteId = typeof params?.siteId === "string" ? params.siteId : ""
@@ -400,6 +457,28 @@ function ReportsPage() {
             popId={popId}
             from={bounds.from}
             to={bounds.to}
+            onBack={() => setSelectedReportId(null)}
+            {...periodProps}
+          />
+        ) : selectedReportId === "cash-registers" ? (
+          <CashRegistersReportView
+            popId={popId}
+            from={bounds.from}
+            to={bounds.to}
+            onBack={() => setSelectedReportId(null)}
+            {...periodProps}
+          />
+        ) : selectedReportId === "treasury" ? (
+          <TreasuryReportView
+            popId={popId}
+            from={bounds.from}
+            to={bounds.to}
+            onBack={() => setSelectedReportId(null)}
+            {...periodProps}
+          />
+        ) : selectedReportId === "chart-of-accounts" ? (
+          <ChartOfAccountsReportView
+            popId={popId}
             onBack={() => setSelectedReportId(null)}
             {...periodProps}
           />

@@ -417,7 +417,7 @@ export function DataWorkspaceLayout({
                     />
                   ) : null}
                   <div className="flex min-w-0 items-center gap-3">
-                    <div className="hidden min-w-0 flex-col leading-tight sm:flex">
+                    <div className="hidden min-w-0 flex-col items-end text-right leading-tight sm:flex">
                       <span
                         className={cn(
                           "truncate text-sm font-semibold",

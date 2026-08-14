@@ -5,12 +5,12 @@ import {
   type BalanceSheetResult,
 } from "@/app/[siteId]/[popId]/accounting/actions"
 import { DataWorkspaceDetailEmptyState } from "@/components/data-workspace/DataWorkspaceDetailEmptyState"
+import { ReportStatValue } from "@/components/reports/ReportStatValue"
 import { ReportDetailHeaderCard } from "@/components/reports/ReportDetailHeaderCard"
 import {
   dataWorkspaceDetailEmptyStateDescriptionClass,
   dataWorkspaceDetailFlushBottomCardClass,
   dataWorkspaceEntityCardStatLabelClass,
-  dataWorkspaceEntityCardStatValueLargeClass,
   workspaceTableNatureMoneyClass,
   workspaceTableNatureTextSecondaryClass,
 } from "@/components/data-workspace/dataWorkspaceListStyles"
@@ -254,45 +254,43 @@ export function BalanceSheetReportView({
             <>
               <div className="min-w-[8.5rem]">
                 <p className={dataWorkspaceEntityCardStatLabelClass}>Activo</p>
-                <p className={cn("mt-1.5", dataWorkspaceEntityCardStatValueLargeClass)}>
-                  {loading ? "…" : formatReportMoneyAr(data?.totalActivo ?? 0)}
-                </p>
+                <ReportStatValue loading={loading}>
+                  {formatReportMoneyAr(data?.totalActivo ?? 0)}
+                </ReportStatValue>
               </div>
               <div className="min-w-[8.5rem]">
                 <p className={dataWorkspaceEntityCardStatLabelClass}>Pasivo</p>
-                <p className={cn("mt-1.5", dataWorkspaceEntityCardStatValueLargeClass)}>
-                  {loading ? "…" : formatReportMoneyAr(data?.totalPasivo ?? 0)}
-                </p>
+                <ReportStatValue loading={loading}>
+                  {formatReportMoneyAr(data?.totalPasivo ?? 0)}
+                </ReportStatValue>
               </div>
               <div className="min-w-[8.5rem]">
                 <p className={dataWorkspaceEntityCardStatLabelClass}>
                   Patrimonio neto
                 </p>
-                <p className={cn("mt-1.5", dataWorkspaceEntityCardStatValueLargeClass)}>
-                  {loading
-                    ? "…"
-                    : formatReportMoneyAr(
-                        data?.sections.find((section) => section.key === "patrimonio")
-                          ?.sectionTotal ?? 0,
-                      )}
-                </p>
+                <ReportStatValue loading={loading}>
+                  {formatReportMoneyAr(
+                    data?.sections.find((section) => section.key === "patrimonio")
+                      ?.sectionTotal ?? 0,
+                  )}
+                </ReportStatValue>
               </div>
               <div className="min-w-[8.5rem]">
                 <p className={dataWorkspaceEntityCardStatLabelClass}>
                   Diferencia de cuadre
                 </p>
-                <p
-                  className={cn(
-                    "mt-1.5",
-                    dataWorkspaceEntityCardStatValueLargeClass,
+                <ReportStatValue
+                  loading={loading}
+                  className={
                     !loading &&
-                      data &&
-                      Math.abs(data.diferenciaCuadre) >= 0.02 &&
-                      "text-amber-700",
-                  )}
+                    data &&
+                    Math.abs(data.diferenciaCuadre) >= 0.02
+                      ? "text-amber-700"
+                      : undefined
+                  }
                 >
-                  {loading ? "…" : formatReportMoneyAr(data?.diferenciaCuadre ?? 0)}
-                </p>
+                  {formatReportMoneyAr(data?.diferenciaCuadre ?? 0)}
+                </ReportStatValue>
               </div>
             </>
           }

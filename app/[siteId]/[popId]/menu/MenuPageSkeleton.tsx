@@ -13,6 +13,8 @@ import {
   menuFloatingPillShellClass,
   menuHeaderBorderClass,
   menuHeaderChromeClass,
+  menuHeaderHeightClass,
+  menuHeaderRowClass,
 } from "@/app/[siteId]/[popId]/menu/menuFloatingPillStyles"
 import {
   menuAmbientTopGlowClass,
@@ -87,9 +89,10 @@ function MenuPageSkeletonHeader() {
         "relative z-20 border-b",
         menuHeaderBorderClass,
         menuHeaderChromeClass,
+        menuHeaderHeightClass,
       )}
     >
-      <div className="grid grid-cols-[minmax(0,1fr)_minmax(0,280px)_minmax(0,1fr)] items-center gap-4 px-6 py-5 sm:gap-6 sm:px-8">
+      <div className={menuHeaderRowClass}>
         <div className="flex min-w-0 items-center gap-6">
           <Skeleton className="size-12 shrink-0 rounded-xl bg-muted-foreground/10" />
           <div className="flex min-w-0 items-center gap-4">

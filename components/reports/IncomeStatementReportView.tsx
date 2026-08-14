@@ -5,12 +5,12 @@ import {
   type IncomeStatementResult,
 } from "@/app/[siteId]/[popId]/accounting/actions"
 import { DataWorkspaceDetailEmptyState } from "@/components/data-workspace/DataWorkspaceDetailEmptyState"
+import { ReportStatValue } from "@/components/reports/ReportStatValue"
 import { ReportDetailHeaderCard } from "@/components/reports/ReportDetailHeaderCard"
 import {
   dataWorkspaceDetailEmptyStateDescriptionClass,
   dataWorkspaceDetailFlushBottomCardClass,
   dataWorkspaceEntityCardStatLabelClass,
-  dataWorkspaceEntityCardStatValueLargeClass,
   workspaceTableNatureMoneyClass,
   workspaceTableNatureTextPrimaryClass,
   workspaceTableNatureTextSecondaryClass,
@@ -211,27 +211,27 @@ export function IncomeStatementReportView({
             <>
               <div className="min-w-[8.5rem]">
                 <p className={dataWorkspaceEntityCardStatLabelClass}>Ingresos</p>
-                <p className={cn("mt-1.5", dataWorkspaceEntityCardStatValueLargeClass)}>
-                  {loading ? "…" : formatReportMoneyAr(data?.totalIngresos ?? 0)}
-                </p>
+                <ReportStatValue loading={loading}>
+                  {formatReportMoneyAr(data?.totalIngresos ?? 0)}
+                </ReportStatValue>
               </div>
               <div className="min-w-[8.5rem]">
                 <p className={dataWorkspaceEntityCardStatLabelClass}>Costos</p>
-                <p className={cn("mt-1.5", dataWorkspaceEntityCardStatValueLargeClass)}>
-                  {loading ? "…" : formatReportMoneyAr(data?.totalCostos ?? 0)}
-                </p>
+                <ReportStatValue loading={loading}>
+                  {formatReportMoneyAr(data?.totalCostos ?? 0)}
+                </ReportStatValue>
               </div>
               <div className="min-w-[8.5rem]">
                 <p className={dataWorkspaceEntityCardStatLabelClass}>Gastos</p>
-                <p className={cn("mt-1.5", dataWorkspaceEntityCardStatValueLargeClass)}>
-                  {loading ? "…" : formatReportMoneyAr(data?.totalGastos ?? 0)}
-                </p>
+                <ReportStatValue loading={loading}>
+                  {formatReportMoneyAr(data?.totalGastos ?? 0)}
+                </ReportStatValue>
               </div>
               <div className="min-w-[8.5rem]">
                 <p className={dataWorkspaceEntityCardStatLabelClass}>Resultado neto</p>
-                <p className={cn("mt-1.5", dataWorkspaceEntityCardStatValueLargeClass)}>
-                  {loading ? "…" : formatReportMoneyAr(data?.resultadoNeto ?? 0)}
-                </p>
+                <ReportStatValue loading={loading}>
+                  {formatReportMoneyAr(data?.resultadoNeto ?? 0)}
+                </ReportStatValue>
               </div>
             </>
           }

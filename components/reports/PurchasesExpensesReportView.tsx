@@ -5,6 +5,7 @@ import {
   type OperationExpenseLedgerRow,
   type OperationPurchaseRow,
 } from "@/app/[siteId]/[popId]/operations/actions"
+import { ReportStatValue } from "@/components/reports/ReportStatValue"
 import { ReportDetailHeaderCard } from "@/components/reports/ReportDetailHeaderCard"
 import { ReportTableScrollArea } from "@/components/reports/ReportTableScrollArea"
 import { PurchasesReportTable } from "@/components/reports/PurchasesReportTable"
@@ -14,7 +15,6 @@ import {
   dataWorkspaceDetailEmptyStateDescriptionClass,
   dataWorkspaceDetailFlushBottomCardClass,
   dataWorkspaceEntityCardStatLabelClass,
-  dataWorkspaceEntityCardStatValueLargeClass,
 } from "@/components/data-workspace/dataWorkspaceListStyles"
 import { formatReportMoneyAr, formatReportPeriodSummary } from "@/lib/reportFormatters"
 import { exportPurchasesReportCsv, exportExpensesReportCsv } from "@/lib/purchasesExpensesReportCsvExport"
@@ -508,39 +508,31 @@ export function PurchasesExpensesReportView({
             <>
               <div className="min-w-[8.5rem]">
                 <p className={dataWorkspaceEntityCardStatLabelClass}>Compras</p>
-                <p className={cn("mt-1.5", dataWorkspaceEntityCardStatValueLargeClass)}>
-                  {purchaseLoading && purchaseCount === 0
-                    ? "…"
-                    : purchaseCount.toLocaleString("es-AR")}
-                </p>
+                <ReportStatValue loading={purchaseLoading && purchaseCount === 0}>
+                  {purchaseCount.toLocaleString("es-AR")}
+                </ReportStatValue>
               </div>
               <div className="min-w-[8.5rem]">
                 <p className={dataWorkspaceEntityCardStatLabelClass}>Total compras</p>
-                <p className={cn("mt-1.5", dataWorkspaceEntityCardStatValueLargeClass)}>
-                  {purchasePeriodTotalBusy
-                    ? "…"
-                    : purchasePeriodTotalError
-                      ? "—"
-                      : formatReportMoneyAr(purchasePeriodTotal ?? 0)}
-                </p>
+                <ReportStatValue loading={purchasePeriodTotalBusy}>
+                  {purchasePeriodTotalError
+                    ? "—"
+                    : formatReportMoneyAr(purchasePeriodTotal ?? 0)}
+                </ReportStatValue>
               </div>
               <div className="min-w-[8.5rem]">
                 <p className={dataWorkspaceEntityCardStatLabelClass}>Gastos</p>
-                <p className={cn("mt-1.5", dataWorkspaceEntityCardStatValueLargeClass)}>
-                  {expenseLoading && expenseCount === 0
-                    ? "…"
-                    : expenseCount.toLocaleString("es-AR")}
-                </p>
+                <ReportStatValue loading={expenseLoading && expenseCount === 0}>
+                  {expenseCount.toLocaleString("es-AR")}
+                </ReportStatValue>
               </div>
               <div className="min-w-[8.5rem]">
                 <p className={dataWorkspaceEntityCardStatLabelClass}>Total gastos</p>
-                <p className={cn("mt-1.5", dataWorkspaceEntityCardStatValueLargeClass)}>
-                  {expensePeriodTotalBusy
-                    ? "…"
-                    : expensePeriodTotalError
-                      ? "—"
-                      : formatReportMoneyAr(expensePeriodTotal ?? 0)}
-                </p>
+                <ReportStatValue loading={expensePeriodTotalBusy}>
+                  {expensePeriodTotalError
+                    ? "—"
+                    : formatReportMoneyAr(expensePeriodTotal ?? 0)}
+                </ReportStatValue>
               </div>
             </>
           }

@@ -1255,6 +1255,133 @@ export async function getAccountingFinancialSummaries(
   return { success: true, summaries }
 }
 
+export type ChartOfAccountsReportRow = ChartAccountRow & {
+  balance: number
+}
+
+export type ChartOfAccountsReportData = {
+  asOf: string
+  rows: ChartOfAccountsReportRow[]
+}
+
+function resolveChartOfAccountsAsOf(asOfDate: string | null): string {
+  const trimmed = asOfDate?.trim()
+  if (trimmed) return trimmed
+  return new Date().toISOString().slice(0, 10)
+}
+
+async function loadChartAccountRowsForPop(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  popId: string,
+): Promise<ChartAccountRow[] | { error: string }> {
+  const { data: accRows, error: accErr } = await supabase
+    .from("accounting_chart_of_accounts")
+    .select(
+      "id, parent_id, code, name, account_type, nature, level, is_movement_account",
+    )
+    .eq("pop_id", popId)
+    .order("code", { ascending: true })
+  if (accErr) {
+    return { error: accErr.message || "No se pudo cargar el plan de cuentas." }
+  }
+
+  const accountTypes: AccountType[] = [
+    "activo_corriente",
+    "activo_no_corriente",
+    "pasivo_corriente",
+    "pasivo_no_corriente",
+    "patrimonio_neto",
+    "ingresos",
+    "costos",
+    "gastos",
+  ]
+  const natures: AccountNature[] = ["deudora", "acreedora"]
+
+  return (accRows || []).map((row) => {
+    const accountTypeRaw = String(row.account_type ?? "")
+    const natureRaw = String(row.nature ?? "")
+    const parentId = row.parent_id
+    return {
+      id: String(row.id),
+      parentId:
+        parentId != null && String(parentId).length > 0
+          ? String(parentId)
+          : null,
+      code: String(row.code ?? ""),
+      name: String(row.name ?? ""),
+      accountType: accountTypes.includes(accountTypeRaw as AccountType)
+        ? (accountTypeRaw as AccountType)
+        : "gastos",
+      nature: natures.includes(natureRaw as AccountNature)
+        ? (natureRaw as AccountNature)
+        : "deudora",
+      level: Number(row.level ?? 1) || 1,
+      isMovementAccount: Boolean(row.is_movement_account),
+    }
+  })
+}
+
+export async function getChartOfAccountsReport(
+  popId: string,
+  asOfDate: string | null,
+): Promise<
+  | { success: true; data: ChartOfAccountsReportData }
+  | { success: false; error: string }
+> {
+  try {
+    const access = await validatePopAccess(popId)
+    if (!access.hasAccess || !access.isActive) {
+      return { success: false, error: access.error || "Sin acceso" }
+    }
+    const snap = await loadPopPermissionsSnapshot(popId)
+    if (
+      !permissionKeysInclude(
+        snap.keys,
+        POP_PERMS.ACCOUNTING_READ.resource,
+        POP_PERMS.ACCOUNTING_READ.action,
+      )
+    ) {
+      return {
+        success: false,
+        error: "No tenés permiso para consultar el plan de cuentas.",
+      }
+    }
+
+    const asOf = resolveChartOfAccountsAsOf(asOfDate)
+    const supabase = await createClient()
+    const accountsResult = await loadChartAccountRowsForPop(supabase, popId)
+    if ("error" in accountsResult) {
+      return { success: false, error: accountsResult.error }
+    }
+
+    const tb = await trialBalanceRowsForPopDateRange(popId, null, null, asOf)
+    if (!tb.success) {
+      return { success: false, error: tb.error }
+    }
+
+    const balanceByCode = new Map(
+      tb.rows.map((row) => [row.accountCode, row.balance]),
+    )
+
+    const rows: ChartOfAccountsReportRow[] = accountsResult.map((account) => ({
+      ...account,
+      balance: balanceByCode.get(account.code) ?? 0,
+    }))
+
+    rows.sort((a, b) =>
+      a.code.localeCompare(b.code, undefined, { numeric: true }),
+    )
+
+    return {
+      success: true,
+      data: { asOf, rows },
+    }
+  } catch (e: unknown) {
+    const message = e instanceof Error ? e.message : "Error desconocido"
+    return { success: false, error: message }
+  }
+}
+
 export async function createChartAccount(
   popId: string,
   input: CreateChartAccountInput,

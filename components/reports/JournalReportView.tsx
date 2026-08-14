@@ -7,13 +7,13 @@ import {
   type JournalEntrySummaryRow,
 } from "@/app/[siteId]/[popId]/accounting/actions"
 import { DataWorkspaceDetailEmptyState } from "@/components/data-workspace/DataWorkspaceDetailEmptyState"
+import { ReportStatValue } from "@/components/reports/ReportStatValue"
 import { ReportDetailHeaderCard } from "@/components/reports/ReportDetailHeaderCard"
 import { ReportTableScrollArea } from "@/components/reports/ReportTableScrollArea"
 import {
   dataWorkspaceDetailEmptyStateDescriptionClass,
   dataWorkspaceDetailFlushBottomCardClass,
   dataWorkspaceEntityCardStatLabelClass,
-  dataWorkspaceEntityCardStatValueLargeClass,
   workspaceTableNatureMoneyClass,
   workspaceTableNatureTextPrimaryClass,
   workspaceTableNatureTextSecondaryClass,
@@ -232,25 +232,23 @@ export function JournalReportView({
             <>
               <div className="min-w-[8.5rem]">
                 <p className={dataWorkspaceEntityCardStatLabelClass}>Asientos</p>
-                <p className={cn("mt-1.5", dataWorkspaceEntityCardStatValueLargeClass)}>
-                  {loading
-                    ? "…"
-                    : totalCount != null
-                      ? totalCount.toLocaleString("es-AR")
-                      : entries.length.toLocaleString("es-AR")}
-                </p>
+                <ReportStatValue loading={loading}>
+                  {totalCount != null
+                    ? totalCount.toLocaleString("es-AR")
+                    : entries.length.toLocaleString("es-AR")}
+                </ReportStatValue>
               </div>
               <div className="min-w-[8.5rem]">
                 <p className={dataWorkspaceEntityCardStatLabelClass}>Total debe</p>
-                <p className={cn("mt-1.5", dataWorkspaceEntityCardStatValueLargeClass)}>
-                  {loading ? "…" : formatReportMoneyAr(periodTotals?.debit ?? 0)}
-                </p>
+                <ReportStatValue loading={loading}>
+                  {formatReportMoneyAr(periodTotals?.debit ?? 0)}
+                </ReportStatValue>
               </div>
               <div className="min-w-[8.5rem]">
                 <p className={dataWorkspaceEntityCardStatLabelClass}>Total haber</p>
-                <p className={cn("mt-1.5", dataWorkspaceEntityCardStatValueLargeClass)}>
-                  {loading ? "…" : formatReportMoneyAr(periodTotals?.credit ?? 0)}
-                </p>
+                <ReportStatValue loading={loading}>
+                  {formatReportMoneyAr(periodTotals?.credit ?? 0)}
+                </ReportStatValue>
               </div>
             </>
           }

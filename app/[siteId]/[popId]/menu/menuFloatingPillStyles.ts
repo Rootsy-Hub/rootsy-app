@@ -6,6 +6,18 @@ export const menuHeaderChromeClass =
 
 export const menuHeaderBorderClass = "border-rootsy-hairline/80"
 
+/** Altura fija compartida — header home y menú POP (80px). */
+export const menuHeaderHeightClass = "h-20 shrink-0"
+
+export const menuHeaderRowClass = cn(
+  "grid h-full min-h-0 grid-cols-[minmax(0,1fr)_minmax(0,280px)_minmax(0,1fr)] items-center gap-4 px-6 sm:gap-6 sm:px-8",
+)
+
+/** Fila simple del header home — misma altura fija, layout de una sola banda. */
+export const menuHeaderFlexRowClass = cn(
+  "flex h-full min-h-0 items-center justify-between px-6 sm:px-8",
+)
+
 export const menuFloatingPillShellClass = cn(
   "menu-floating-pill rounded-xl border shadow-[0_8px_32px_rgba(0,0,0,0.16)]",
   menuHeaderBorderClass,

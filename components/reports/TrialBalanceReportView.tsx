@@ -6,13 +6,13 @@ import {
   type TrialBalanceRow,
 } from "@/app/[siteId]/[popId]/accounting/actions"
 import { DataWorkspaceDetailEmptyState } from "@/components/data-workspace/DataWorkspaceDetailEmptyState"
+import { ReportStatValue } from "@/components/reports/ReportStatValue"
 import { ReportDetailHeaderCard } from "@/components/reports/ReportDetailHeaderCard"
 import { ReportTableScrollArea } from "@/components/reports/ReportTableScrollArea"
 import {
   dataWorkspaceDetailEmptyStateDescriptionClass,
   dataWorkspaceDetailFlushBottomCardClass,
   dataWorkspaceEntityCardStatLabelClass,
-  dataWorkspaceEntityCardStatValueLargeClass,
   workspaceTableNatureMoneyClass,
   workspaceTableNatureTextPrimaryClass,
   workspaceTableNatureTextSecondaryClass,
@@ -143,27 +143,24 @@ export function TrialBalanceReportView({
             <>
               <div className="min-w-[8.5rem]">
                 <p className={dataWorkspaceEntityCardStatLabelClass}>Total debe</p>
-                <p className={cn("mt-1.5", dataWorkspaceEntityCardStatValueLargeClass)}>
-                  {loading ? "…" : formatReportMoneyAr(totals.debit)}
-                </p>
+                <ReportStatValue loading={loading}>
+                  {formatReportMoneyAr(totals.debit)}
+                </ReportStatValue>
               </div>
               <div className="min-w-[8.5rem]">
                 <p className={dataWorkspaceEntityCardStatLabelClass}>Total haber</p>
-                <p className={cn("mt-1.5", dataWorkspaceEntityCardStatValueLargeClass)}>
-                  {loading ? "…" : formatReportMoneyAr(totals.credit)}
-                </p>
+                <ReportStatValue loading={loading}>
+                  {formatReportMoneyAr(totals.credit)}
+                </ReportStatValue>
               </div>
               <div className="min-w-[8.5rem]">
                 <p className={dataWorkspaceEntityCardStatLabelClass}>Diferencia</p>
-                <p
-                  className={cn(
-                    "mt-1.5",
-                    dataWorkspaceEntityCardStatValueLargeClass,
-                    !loading && !cuadra && "text-amber-700",
-                  )}
+                <ReportStatValue
+                  loading={loading}
+                  className={!loading && !cuadra ? "text-amber-700" : undefined}
                 >
-                  {loading ? "…" : formatReportMoneyAr(diferenciaDebeHaber)}
-                </p>
+                  {formatReportMoneyAr(diferenciaDebeHaber)}
+                </ReportStatValue>
               </div>
             </>
           }

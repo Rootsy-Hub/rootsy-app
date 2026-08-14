@@ -7,6 +7,7 @@ import {
 } from "@/app/[siteId]/[popId]/accounting/actions"
 import { useTreasuryInfiniteScroll } from "@/app/[siteId]/[popId]/accounts/treasuryInfiniteScroll"
 import { DataWorkspaceDetailEmptyState } from "@/components/data-workspace/DataWorkspaceDetailEmptyState"
+import { ReportStatValue } from "@/components/reports/ReportStatValue"
 import { ReportDetailHeaderCard } from "@/components/reports/ReportDetailHeaderCard"
 import { LedgerAccountSearchField } from "@/components/reports/LedgerAccountSearchField"
 import { ReportTableScrollArea } from "@/components/reports/ReportTableScrollArea"
@@ -14,7 +15,6 @@ import {
   dataWorkspaceDetailEmptyStateDescriptionClass,
   dataWorkspaceDetailFlushBottomCardClass,
   dataWorkspaceEntityCardStatLabelClass,
-  dataWorkspaceEntityCardStatValueLargeClass,
   workspaceTableNatureMoneyClass,
   workspaceTableNatureTextPrimaryClass,
   workspaceTableNatureTextSecondaryClass,
@@ -185,27 +185,29 @@ export function LedgerReportView({
             <>
               <div className="min-w-[8.5rem]">
                 <p className={dataWorkspaceEntityCardStatLabelClass}>Movimientos</p>
-                <p className={cn("mt-1.5", dataWorkspaceEntityCardStatValueLargeClass)}>
-                  {!hasAccountQuery ? "—" : loading ? "…" : rows.length.toLocaleString("es-AR")}
-                </p>
+                <ReportStatValue loading={loading && hasAccountQuery}>
+                  {!hasAccountQuery
+                    ? "—"
+                    : rows.length.toLocaleString("es-AR")}
+                </ReportStatValue>
               </div>
               <div className="min-w-[8.5rem]">
                 <p className={dataWorkspaceEntityCardStatLabelClass}>Total debe</p>
-                <p className={cn("mt-1.5", dataWorkspaceEntityCardStatValueLargeClass)}>
-                  {!hasAccountQuery || loading ? "—" : formatReportMoneyAr(totals.debit)}
-                </p>
+                <ReportStatValue loading={loading && hasAccountQuery}>
+                  {!hasAccountQuery ? "—" : formatReportMoneyAr(totals.debit)}
+                </ReportStatValue>
               </div>
               <div className="min-w-[8.5rem]">
                 <p className={dataWorkspaceEntityCardStatLabelClass}>Total haber</p>
-                <p className={cn("mt-1.5", dataWorkspaceEntityCardStatValueLargeClass)}>
-                  {!hasAccountQuery || loading ? "—" : formatReportMoneyAr(totals.credit)}
-                </p>
+                <ReportStatValue loading={loading && hasAccountQuery}>
+                  {!hasAccountQuery ? "—" : formatReportMoneyAr(totals.credit)}
+                </ReportStatValue>
               </div>
               <div className="min-w-[8.5rem]">
                 <p className={dataWorkspaceEntityCardStatLabelClass}>Saldo</p>
-                <p className={cn("mt-1.5", dataWorkspaceEntityCardStatValueLargeClass)}>
-                  {!hasAccountQuery || loading ? "—" : formatReportMoneyAr(closingBalance)}
-                </p>
+                <ReportStatValue loading={loading && hasAccountQuery}>
+                  {!hasAccountQuery ? "—" : formatReportMoneyAr(closingBalance)}
+                </ReportStatValue>
               </div>
             </>
           }
@@ -214,10 +216,10 @@ export function LedgerReportView({
         <section
           className={cn(
             dataWorkspaceDetailFlushBottomCardClass,
-            "flex min-h-0 flex-1 flex-col",
+            "flex min-h-0 flex-1 flex-col overflow-visible",
           )}
         >
-          <div className="border-b border-[var(--rootsy-bruma-200)] px-4 py-3 sm:px-6 lg:px-8">
+          <div className="relative z-30 border-b border-[var(--rootsy-bruma-200)] px-4 py-3 sm:px-6 lg:px-8">
             <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
               <div className="min-w-0 space-y-1">
                 <p className={dataWorkspaceDetailEmptyStateDescriptionClass}>

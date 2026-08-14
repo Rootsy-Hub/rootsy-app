@@ -4,6 +4,7 @@ import {
   getOperationsList,
   type OperationSaleRow,
 } from "@/app/[siteId]/[popId]/operations/actions"
+import { ReportStatValue } from "@/components/reports/ReportStatValue"
 import { ReportDetailHeaderCard } from "@/components/reports/ReportDetailHeaderCard"
 import { ReportTableScrollArea } from "@/components/reports/ReportTableScrollArea"
 import { SalesReportTable } from "@/components/reports/SalesReportTable"
@@ -12,7 +13,6 @@ import {
   dataWorkspaceDetailEmptyStateDescriptionClass,
   dataWorkspaceDetailFlushBottomCardClass,
   dataWorkspaceEntityCardStatLabelClass,
-  dataWorkspaceEntityCardStatValueLargeClass,
 } from "@/components/data-workspace/dataWorkspaceListStyles"
 import { formatReportMoneyAr, formatReportPeriodSummary } from "@/lib/reportFormatters"
 import { exportSalesDetailReportCsv } from "@/lib/salesReportCsvExport"
@@ -290,21 +290,15 @@ export function SalesDetailReportView({
             <>
               <div className="min-w-[8.5rem]">
                 <p className={dataWorkspaceEntityCardStatLabelClass}>Ventas</p>
-                <p className={cn("mt-1.5", dataWorkspaceEntityCardStatValueLargeClass)}>
-                  {loading && totalCount === 0
-                    ? "…"
-                    : totalCount.toLocaleString("es-AR")}
-                </p>
+                <ReportStatValue loading={loading && totalCount === 0}>
+                  {totalCount.toLocaleString("es-AR")}
+                </ReportStatValue>
               </div>
               <div className="min-w-[8.5rem]">
                 <p className={dataWorkspaceEntityCardStatLabelClass}>Total vendido</p>
-                <p className={cn("mt-1.5", dataWorkspaceEntityCardStatValueLargeClass)}>
-                  {periodTotalBusy
-                    ? "…"
-                    : periodTotalError
-                      ? "—"
-                      : formatReportMoneyAr(periodTotal ?? 0)}
-                </p>
+                <ReportStatValue loading={periodTotalBusy}>
+                  {periodTotalError ? "—" : formatReportMoneyAr(periodTotal ?? 0)}
+                </ReportStatValue>
               </div>
             </>
           }

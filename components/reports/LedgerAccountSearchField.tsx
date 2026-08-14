@@ -11,7 +11,56 @@ import {
 } from "@/components/rootsy-form/rootsFormStyles"
 import { RootsSpinner } from "@/components/rootsy-spinner"
 import { cn } from "@/lib/utils"
-import { useEffect, useRef, useState, type KeyboardEvent } from "react"
+import {
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+  type KeyboardEvent,
+  type RefObject,
+} from "react"
+import { createPortal } from "react-dom"
+
+type DropdownRect = {
+  top: number
+  left: number
+  width: number
+}
+
+function useAnchoredDropdownRect(
+  anchorRef: RefObject<HTMLElement | null>,
+  open: boolean,
+) {
+  const [rect, setRect] = useState<DropdownRect | null>(null)
+
+  useLayoutEffect(() => {
+    if (!open) {
+      setRect(null)
+      return
+    }
+
+    const update = () => {
+      const anchor = anchorRef.current
+      if (!anchor) return
+      const box = anchor.getBoundingClientRect()
+      setRect({
+        top: box.bottom + 4,
+        left: box.left,
+        width: box.width,
+      })
+    }
+
+    update()
+    window.addEventListener("resize", update)
+    window.addEventListener("scroll", update, true)
+    return () => {
+      window.removeEventListener("resize", update)
+      window.removeEventListener("scroll", update, true)
+    }
+  }, [anchorRef, open])
+
+  return rect
+}
 
 function accountSearchDropdownItemClass(active: boolean, selected: boolean) {
   const state = selected ? "selected" : active ? "highlighted" : "default"
@@ -42,38 +91,59 @@ export function LedgerAccountSearchField({
 }: Props) {
   const [searchQuery, setSearchQuery] = useState("")
   const [results, setResults] = useState<ChartAccountSearchRow[]>([])
+  const [searchPending, setSearchPending] = useState(false)
   const [searchLoading, setSearchLoading] = useState(false)
   const [highlightedAccountId, setHighlightedAccountId] = useState<string | null>(
     null,
   )
   const [isFocused, setIsFocused] = useState(false)
+  const [isEditing, setIsEditing] = useState(false)
   const searchGenRef = useRef(0)
   const selectedCodeRef = useRef(accountCode)
+  const anchorRef = useRef<HTMLDivElement>(null)
+  const [mounted, setMounted] = useState(false)
 
   const searchTrim = searchQuery.trim()
-  const showDropdown = isFocused && searchTrim.length > 0
+  const isSearching = searchPending || searchLoading
+  const showDropdown = isFocused && isEditing && searchTrim.length > 0
+  const dropdownRect = useAnchoredDropdownRect(anchorRef, showDropdown)
+
+  useEffect(() => {
+    setMounted(true)
+  }, [])
 
   useEffect(() => {
     selectedCodeRef.current = accountCode
   }, [accountCode])
 
   useEffect(() => {
+    if (isEditing) return
     if (selectedAccountLabel && accountCode) {
       setSearchQuery(selectedAccountLabel)
     }
-  }, [accountCode, selectedAccountLabel])
+  }, [accountCode, isEditing, selectedAccountLabel])
 
   useEffect(() => {
-    if (!searchTrim) {
-      setResults([])
-      setSearchLoading(false)
-      setHighlightedAccountId(null)
+    if (!isEditing || !searchTrim) {
+      if (!searchTrim) {
+        setResults([])
+        setSearchPending(false)
+        setSearchLoading(false)
+        setHighlightedAccountId(null)
+      } else {
+        setSearchPending(false)
+        setSearchLoading(false)
+      }
       return
     }
+
+    setSearchPending(true)
+    setResults([])
 
     const gen = ++searchGenRef.current
     const timer = window.setTimeout(() => {
       void (async () => {
+        setSearchPending(false)
         setSearchLoading(true)
         const res = await searchAccountingChartAccounts(popId, searchTrim)
         if (gen !== searchGenRef.current) return
@@ -91,17 +161,19 @@ export function LedgerAccountSearchField({
     return () => {
       window.clearTimeout(timer)
     }
-  }, [popId, searchTrim])
+  }, [popId, searchTrim, isEditing])
 
   const selectAccount = (account: ChartAccountSearchRow) => {
+    setIsEditing(false)
     onAccountCodeChange(account.code)
     setSearchQuery(formatAccountOptionLabel(account))
     setResults([])
     setHighlightedAccountId(null)
-    setIsFocused(false)
+    setIsFocused(true)
   }
 
   const handleClear = () => {
+    setIsEditing(false)
     setSearchQuery("")
     setResults([])
     setHighlightedAccountId(null)
@@ -171,13 +243,70 @@ export function LedgerAccountSearchField({
     }
   }
 
+  const dropdownContent = (
+    <ul
+      className={cn(rootsFormDropdownListClass, "w-full")}
+      role="listbox"
+      aria-label="Cuentas contables"
+      aria-busy={isSearching}
+    >
+      {isSearching ? (
+        <li className="flex items-center justify-center gap-2 px-3 py-4 text-sm text-[var(--rootsy-bruma-500)]">
+          <RootsSpinner size="sm" aria-hidden />
+          Buscando…
+        </li>
+      ) : results.length === 0 ? (
+        <li className="px-3 py-4 text-center text-sm text-[var(--rootsy-bruma-500)]">
+          Sin cuentas para esa búsqueda
+        </li>
+      ) : (
+        results.map((account) => {
+          const isSelected = accountCode === account.code
+          const isHighlighted =
+            highlightedAccountId === account.id || isSelected
+
+          return (
+            <li key={account.id}>
+              <button
+                type="button"
+                role="option"
+                aria-selected={isSelected}
+                className={accountSearchDropdownItemClass(
+                  isHighlighted,
+                  isSelected,
+                )}
+                onMouseDown={(event) => event.preventDefault()}
+                onMouseEnter={() => setHighlightedAccountId(account.id)}
+                onMouseLeave={() =>
+                  setHighlightedAccountId((current) =>
+                    current === account.id ? null : current,
+                  )
+                }
+                onClick={() => selectAccount(account)}
+              >
+                <span className="shrink-0 font-mono text-xs tabular-nums text-[var(--rootsy-bruma-500)]">
+                  {account.code}
+                </span>
+                <span className="min-w-0 flex-1 truncate text-[var(--rootsy-bruma-900)]">
+                  {account.name}
+                </span>
+              </button>
+            </li>
+          )
+        })
+      )}
+    </ul>
+  )
+
   return (
-    <div className={cn("relative min-w-0", className)}>
+    <div ref={anchorRef} className={cn("relative min-w-0", className)}>
       <RootsFormSearchField
-        label="Buscar cuenta"
+        label="Buscar cuenta contable"
         id="ledger-account-search"
         value={searchQuery}
         onChange={(event) => {
+          setIsEditing(true)
+          setIsFocused(true)
           setSearchQuery(event.target.value)
           if (selectedCodeRef.current) {
             onAccountCodeChange("")
@@ -187,7 +316,7 @@ export function LedgerAccountSearchField({
         placeholder="Código o nombre de cuenta"
         resultsSummary={
           showDropdown
-            ? searchLoading
+            ? isSearching
               ? "Buscando cuentas…"
               : results.length === 0
                 ? "Sin cuentas para esa búsqueda"
@@ -205,68 +334,25 @@ export function LedgerAccountSearchField({
         }}
       />
 
-      {showDropdown ? (
-        <div
-          className={cn(
-            "absolute inset-x-0 top-[calc(100%+0.25rem)] z-[520] max-h-60 overflow-x-hidden overflow-y-auto overscroll-contain",
-            rootsFormSelectContentClass,
-            "w-full min-w-0 max-w-none",
-          )}
-        >
-          <ul
-            className={cn(rootsFormDropdownListClass, "w-full")}
-            role="listbox"
-            aria-label="Cuentas contables"
-            aria-busy={searchLoading}
-          >
-            {searchLoading ? (
-              <li className="flex items-center justify-center gap-2 px-3 py-4 text-sm text-[var(--rootsy-bruma-500)]">
-                <RootsSpinner size="sm" aria-hidden />
-                Buscando…
-              </li>
-            ) : results.length === 0 ? (
-              <li className="px-3 py-4 text-center text-sm text-[var(--rootsy-bruma-500)]">
-                Sin cuentas para esa búsqueda
-              </li>
-            ) : (
-              results.map((account) => {
-                const isSelected = accountCode === account.code
-                const isHighlighted =
-                  highlightedAccountId === account.id || isSelected
-
-                return (
-                  <li key={account.id}>
-                    <button
-                      type="button"
-                      role="option"
-                      aria-selected={isSelected}
-                      className={accountSearchDropdownItemClass(
-                        isHighlighted,
-                        isSelected,
-                      )}
-                      onMouseDown={(event) => event.preventDefault()}
-                      onMouseEnter={() => setHighlightedAccountId(account.id)}
-                      onMouseLeave={() =>
-                        setHighlightedAccountId((current) =>
-                          current === account.id ? null : current,
-                        )
-                      }
-                      onClick={() => selectAccount(account)}
-                    >
-                      <span className="shrink-0 font-mono text-xs tabular-nums text-[var(--rootsy-bruma-500)]">
-                        {account.code}
-                      </span>
-                      <span className="min-w-0 flex-1 truncate text-[var(--rootsy-bruma-900)]">
-                        {account.name}
-                      </span>
-                    </button>
-                  </li>
-                )
-              })
-            )}
-          </ul>
-        </div>
-      ) : null}
+      {mounted && showDropdown && dropdownRect
+        ? createPortal(
+            <div
+              className={cn(
+                "fixed z-[600] max-h-60 overflow-x-hidden overflow-y-auto overscroll-contain",
+                rootsFormSelectContentClass,
+                "max-w-none",
+              )}
+              style={{
+                top: dropdownRect.top,
+                left: dropdownRect.left,
+                width: dropdownRect.width,
+              }}
+            >
+              {dropdownContent}
+            </div>,
+            document.body,
+          )
+        : null}
     </div>
   )
 }

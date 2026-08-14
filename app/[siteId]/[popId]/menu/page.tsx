@@ -21,6 +21,8 @@ import {
 import {
   menuHeaderBorderClass,
   menuHeaderChromeClass,
+  menuHeaderHeightClass,
+  menuHeaderRowClass,
 } from "@/app/[siteId]/[popId]/menu/menuFloatingPillStyles"
 import {
   menuSearchClearButtonClass,
@@ -411,9 +413,10 @@ function MenuPage() {
           "relative z-20 border-b",
           menuHeaderBorderClass,
           menuHeaderChromeClass,
+          menuHeaderHeightClass,
         )}
       >
-        <div className="grid grid-cols-[minmax(0,1fr)_minmax(0,280px)_minmax(0,1fr)] items-center gap-4 px-6 py-5 sm:gap-6 sm:px-8">
+        <div className={menuHeaderRowClass}>
           <div className="flex min-w-0 items-center gap-6">
             <RootsIconButton
               href="/home"
@@ -544,7 +547,7 @@ function MenuPage() {
             <div className="h-6 w-px bg-border" />
 
             <div className="flex min-w-0 items-center gap-3">
-              <div className="hidden min-w-0 flex-col leading-tight sm:flex">
+              <div className="hidden min-w-0 flex-col items-end text-right leading-tight sm:flex">
                 <span className="truncate text-sm font-semibold text-foreground/90">
                   {userFullName || "Usuario"}
                 </span>

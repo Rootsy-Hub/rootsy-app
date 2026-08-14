@@ -4,6 +4,7 @@ import type {
   CashRegisterSummaryData,
   CashRegisterSummarySale,
   CashRegisterSummarySession,
+  CashRegistersPeriodReportRow,
 } from "@/app/[siteId]/[popId]/cash-registers/actions"
 import { isoDateInBounds } from "@/lib/dataWorkspaceDateFilter"
 
@@ -139,6 +140,59 @@ export function buildSessionArqueoView(
     closingBlock: findClosingBlock(session.id, data.closingBlocks),
     totalCobrado: session.totalCobrado,
     ventasPorMedio: session.ventasPorMedio,
+  }
+}
+
+const MONEY_EPS = 0.005
+
+export function filterRowsForPopArqueoReport(
+  rows: CashRegistersPeriodReportRow[],
+  from: string | null,
+  to: string | null,
+  timeZone?: string,
+): CashRegistersPeriodReportRow[] {
+  return rows
+    .filter((row) => row.status === "closed")
+    .filter((row) => sessionMatchesPeriod(row, from, to, timeZone))
+    .sort(
+      (a, b) =>
+        new Date(b.closedAt ?? b.openedAt).getTime() -
+        new Date(a.closedAt ?? a.openedAt).getTime(),
+    )
+}
+
+export function computePopArqueoPeriodSummary(
+  rows: CashRegistersPeriodReportRow[],
+): {
+  arqueoCount: number
+  closedCount: number
+  openCount: number
+  totalCobrado: number
+  netDifference: number
+  sessionsWithVariance: number
+} {
+  const closedRows = rows.filter((row) => row.status === "closed")
+  let totalCobrado = 0
+  let netDifference = 0
+  let sessionsWithVariance = 0
+
+  for (const row of closedRows) {
+    totalCobrado += row.totalCobrado
+    if (row.cashArqueoDifference != null) {
+      netDifference += row.cashArqueoDifference
+      if (Math.abs(row.cashArqueoDifference) >= MONEY_EPS) {
+        sessionsWithVariance += 1
+      }
+    }
+  }
+
+  return {
+    arqueoCount: rows.length,
+    closedCount: closedRows.length,
+    openCount: rows.length - closedRows.length,
+    totalCobrado: Math.round(totalCobrado * 100) / 100,
+    netDifference: Math.round(netDifference * 100) / 100,
+    sessionsWithVariance,
   }
 }
 

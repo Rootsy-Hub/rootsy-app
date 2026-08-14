@@ -29,6 +29,14 @@ export function formatReportPeriodSummary(
   return `${dataWorkspacePresetLabel(preset)} (${range})`
 }
 
+/** Etiqueta de período para archivos exportados — solo fechas, sin preset. */
+export function formatReportExportPeriodLabel(bounds: {
+  from: string | null
+  to: string | null
+}): string {
+  return formatDataWorkspaceDateRangeLabel(bounds)
+}
+
 export function formatReportAsOfSummary(
   preset: DataWorkspaceDatePreset,
   bounds: { from: string | null; to: string | null },
