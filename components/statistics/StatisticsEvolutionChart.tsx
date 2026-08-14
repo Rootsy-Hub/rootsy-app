@@ -6,8 +6,17 @@ import {
   ChartTooltipContent,
   type ChartConfig,
 } from "@/components/ui/chart"
-import { dataWorkspaceShellCard } from "@/components/data-workspace/dataWorkspaceListStyles"
+import {
+  dataWorkspaceBlocksSkeletonTone,
+} from "@/components/data-workspace/dataWorkspaceListStyles"
+import {
+  statisticsEmptyTextClass,
+  statisticsLosetaCardBodyClass,
+  statisticsLosetaCardClass,
+  statisticsSectionHeadingClassNames,
+} from "@/components/statistics/statisticsWorkspaceStyles"
 import type { StatisticsEvolutionPoint } from "@/app/[siteId]/[popId]/statistics/actions"
+import { formatReportMoneyAr } from "@/lib/reportFormatters"
 import { cn } from "@/lib/utils"
 import {
   Area,
@@ -26,22 +35,47 @@ const chartAxisMono =
 
 export function StatisticsEvolutionChart({
   title = "Evolución",
+  description,
   points,
   loading,
+  valueFormat = "money",
 }: {
   title?: string
+  description?: string
   points: StatisticsEvolutionPoint[]
   loading?: boolean
+  valueFormat?: "money" | "number"
 }) {
   const hasData = points.some((p) => p.value !== 0)
+  const { title: titleClass, description: descriptionClass } =
+    statisticsSectionHeadingClassNames()
+
+  const formatTick = (value: number) => {
+    if (valueFormat === "money") {
+      if (Math.abs(value) >= 1_000_000) {
+        return `$${(value / 1_000_000).toLocaleString("es-AR", { maximumFractionDigits: 1 })}M`
+      }
+      if (Math.abs(value) >= 1_000) {
+        return `$${(value / 1_000).toLocaleString("es-AR", { maximumFractionDigits: 0 })}k`
+      }
+      return formatReportMoneyAr(value)
+    }
+    return value.toLocaleString("es-AR")
+  }
 
   return (
-    <div className={cn(dataWorkspaceShellCard, "p-4 sm:p-5")}>
-      <h3 className="text-sm font-semibold text-[var(--rootsy-bruma-900)]">
-        {title}
-      </h3>
+    <div className={cn(statisticsLosetaCardClass, statisticsLosetaCardBodyClass)}>
+      <div>
+        <h3 className={titleClass}>{title}</h3>
+        {description ? <p className={descriptionClass}>{description}</p> : null}
+      </div>
       {loading ? (
-        <div className="mt-4 min-h-[220px] animate-pulse rounded-xl bg-[var(--rootsy-bruma-50)]" />
+        <div
+          className={cn(
+            "mt-4 min-h-[220px] rounded-xl",
+            dataWorkspaceBlocksSkeletonTone.box,
+          )}
+        />
       ) : hasData ? (
         <ChartContainer
           config={chartConfig}
@@ -56,8 +90,23 @@ export function StatisticsEvolutionChart({
             </defs>
             <CartesianGrid vertical={false} strokeDasharray="3 3" />
             <XAxis dataKey="label" tickLine={false} axisLine={false} />
-            <YAxis tickLine={false} axisLine={false} width={48} />
-            <ChartTooltip content={<ChartTooltipContent />} />
+            <YAxis
+              tickLine={false}
+              axisLine={false}
+              width={52}
+              tickFormatter={formatTick}
+            />
+            <ChartTooltip
+              content={
+                <ChartTooltipContent
+                  formatter={(value) =>
+                    valueFormat === "money"
+                      ? formatReportMoneyAr(Number(value))
+                      : Number(value).toLocaleString("es-AR")
+                  }
+                />
+              }
+            />
             <Area
               type="monotone"
               dataKey="value"
@@ -68,7 +117,12 @@ export function StatisticsEvolutionChart({
           </AreaChart>
         </ChartContainer>
       ) : (
-        <p className="mt-4 flex min-h-[220px] items-center justify-center text-sm text-[var(--rootsy-bruma-500)]">
+        <p
+          className={cn(
+            statisticsEmptyTextClass,
+            "mt-4 flex min-h-[220px] items-center justify-center text-center",
+          )}
+        >
           Sin datos de evolución en este período
         </p>
       )}

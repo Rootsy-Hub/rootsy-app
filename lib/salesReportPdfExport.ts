@@ -10,6 +10,8 @@ import {
 } from "@/lib/salesReportExportData"
 import { loadReportPdfRuntime } from "@/lib/reportPdfRuntime"
 import { applyReportPdfBrandingFooters } from "@/lib/reportExportBranding"
+import { printJsPdfDocument } from "@/lib/reportPdfPrint"
+import type { jsPDF } from "jspdf"
 
 type ExportPdfOptions = {
   timeZone?: string
@@ -18,10 +20,10 @@ type ExportPdfOptions = {
   periodTotal?: number
 }
 
-export async function exportSalesDetailReportPdf(
+export async function buildSalesDetailReportPdfDocument(
   rows: OperationSaleRow[],
   options?: ExportPdfOptions,
-): Promise<void> {
+): Promise<{ doc: jsPDF; filename: string }> {
   const { jsPDF, autoTable } = await loadReportPdfRuntime()
 
   const periodSummary = options?.periodSummary ?? "Detalle de ventas"
@@ -87,5 +89,24 @@ export async function exportSalesDetailReportPdf(
 
   await applyReportPdfBrandingFooters(doc)
 
-  doc.save(salesReportExportFilename("pdf", periodSummary))
+  return {
+    doc,
+    filename: salesReportExportFilename("pdf", periodSummary),
+  }
+}
+
+export async function exportSalesDetailReportPdf(
+  rows: OperationSaleRow[],
+  options?: ExportPdfOptions,
+): Promise<void> {
+  const { doc, filename } = await buildSalesDetailReportPdfDocument(rows, options)
+  doc.save(filename)
+}
+
+export async function printSalesDetailReportPdf(
+  rows: OperationSaleRow[],
+  options?: ExportPdfOptions,
+): Promise<void> {
+  const { doc } = await buildSalesDetailReportPdfDocument(rows, options)
+  await printJsPdfDocument(doc)
 }

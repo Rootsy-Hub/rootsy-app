@@ -10,7 +10,6 @@ import {
   RootsDropdownMenu,
   RootsDropdownTrigger,
 } from "@/components/rootsy-dropdown/RootsDropdownMenu"
-import { RootsSpinner } from "@/components/rootsy-spinner"
 import { cn } from "@/lib/utils"
 import { ChevronDown, Download, FileSpreadsheet, FileText } from "lucide-react"
 
@@ -35,15 +34,14 @@ export function SalesReportDownloadMenu({
         <RootsDefaultButton
           type="button"
           size="compact"
-          disabled={isDisabled}
+          disabled={disabled}
+          loading={busy}
+          loadingLabel="Descargar"
+          withIcon
           className={cn(rootsButtonCompactSizeClass, "shrink-0 self-end sm:self-auto")}
           aria-busy={busy}
         >
-          {busy ? (
-            <RootsSpinner size="xs" aria-hidden className="shrink-0" />
-          ) : (
-            <Download className="size-4 shrink-0" aria-hidden />
-          )}
+          <Download className="size-4 shrink-0" aria-hidden />
           Descargar
           <ChevronDown className="size-4 shrink-0 opacity-70" aria-hidden />
         </RootsDefaultButton>

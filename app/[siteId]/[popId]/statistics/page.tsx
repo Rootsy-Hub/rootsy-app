@@ -1,18 +1,9 @@
 "use client"
 
 import { StatisticsWorkspaceView } from "@/components/statistics/StatisticsWorkspaceView"
-import {
-  dataWorkspaceBlocksContentInnerClass,
-  dataWorkspaceBlocksPageMainClass,
-} from "@/components/data-workspace/dataWorkspaceListStyles"
-import {
-  DataWorkspaceModuleLayout,
-  dataWorkspaceModuleHeaderVariant,
-} from "@/components/layouts-module/DataWorkspaceModuleLayout"
 import { usePopWorkspace } from "@/context/PopWorkspaceContext"
 import { usePopMenuCache } from "@/hooks/usePopMenuCache"
 import withAuth from "@/hoc/withAuth"
-import { cn } from "@/lib/utils"
 import { useParams } from "next/navigation"
 import { useMemo } from "react"
 
@@ -38,37 +29,17 @@ function StatisticsPage() {
   }
 
   return (
-    <DataWorkspaceModuleLayout
+    <StatisticsWorkspaceView
       siteId={siteId}
       popId={popId}
       popName={bootstrap?.popName ?? ""}
-      title="Estadísticas"
-      headerVariant={dataWorkspaceModuleHeaderVariant}
+      enabledModuleKeys={enabledModuleKeys}
       loading={bootstrapLoading}
       userName={bootstrap?.userFullName}
       userAvatarSrc={bootstrap?.userImageUrl ?? undefined}
       userRoleLabel={bootstrap?.roleLabel}
-      contentFlush
-      mainMaxWidthClass="max-w-[92rem]"
-      mainClassName={dataWorkspaceBlocksPageMainClass}
-    >
-      <div className={dataWorkspaceBlocksContentInnerClass}>
-        {bootstrapError ? (
-          <div
-            role="alert"
-            className={cn(
-              "rounded-lg border border-destructive/25 bg-destructive/10 px-4 py-3 text-sm text-destructive",
-            )}
-          >
-            Cabecera: {bootstrapError}
-          </div>
-        ) : null}
-        <StatisticsWorkspaceView
-          popId={popId}
-          enabledModuleKeys={enabledModuleKeys}
-        />
-      </div>
-    </DataWorkspaceModuleLayout>
+      bootstrapError={bootstrapError}
+    />
   )
 }
 

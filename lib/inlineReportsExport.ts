@@ -101,7 +101,7 @@ type InlineExportBase = {
 }
 
 async function runExport(
-  format: "csv" | "pdf",
+  format: "csv" | "pdf" | "print",
   options: ReportTableDocumentExportOptions,
 ) {
   await exportInlineReportDocument(format, options)
@@ -109,7 +109,7 @@ async function runExport(
 
 export async function exportTrialBalanceReportDocument(
   rows: TrialBalanceRow[],
-  format: "csv" | "pdf",
+  format: "csv" | "pdf" | "print",
   options: InlineExportBase,
 ) {
   await runExport(format, {
@@ -134,7 +134,7 @@ export async function exportTrialBalanceReportDocument(
 
 export async function exportVatPositionReportDocument(
   rows: VatPositionRow[],
-  format: "csv" | "pdf",
+  format: "csv" | "pdf" | "print",
   options: InlineExportBase,
 ) {
   await runExport(format, {
@@ -159,7 +159,7 @@ export async function exportVatPositionReportDocument(
 
 export async function exportCashFlowReportDocument(
   rows: CashFlowRow[],
-  format: "csv" | "pdf",
+  format: "csv" | "pdf" | "print",
   options: InlineExportBase,
 ) {
   await runExport(format, {
@@ -184,7 +184,7 @@ export async function exportCashFlowReportDocument(
 
 export async function exportJournalReportDocument(
   entries: JournalEntrySummaryRow[],
-  format: "csv" | "pdf",
+  format: "csv" | "pdf" | "print",
   options: InlineExportBase & {
     totalDebit?: number
     totalCredit?: number
@@ -217,7 +217,7 @@ export async function exportJournalReportDocument(
 
 export async function exportLedgerReportDocument(
   rows: LedgerMovementRow[],
-  format: "csv" | "pdf",
+  format: "csv" | "pdf" | "print",
   options: InlineExportBase & {
     accountCode: string
     accountName: string
@@ -248,7 +248,7 @@ export async function exportLedgerReportDocument(
 
 export async function exportAccountSummariesReportDocument(
   rows: FinancialSummaryRow[],
-  format: "csv" | "pdf",
+  format: "csv" | "pdf" | "print",
   options: InlineExportBase,
 ) {
   await runExport(format, {
@@ -265,7 +265,7 @@ export async function exportAccountSummariesReportDocument(
 
 export async function exportIncomeStatementReportDocument(
   displayRows: IncomeStatementDisplayRow[],
-  format: "csv" | "pdf",
+  format: "csv" | "pdf" | "print",
   options: InlineExportBase & { resultadoNeto?: number },
 ) {
   await runExport(format, {
@@ -285,7 +285,7 @@ export async function exportIncomeStatementReportDocument(
 
 export async function exportBalanceSheetReportDocument(
   displayRows: BalanceSheetDisplayRow[],
-  format: "csv" | "pdf",
+  format: "csv" | "pdf" | "print",
   options: InlineExportBase,
 ) {
   await runExport(format, {
@@ -302,7 +302,7 @@ export async function exportBalanceSheetReportDocument(
 
 export async function exportTreasuryReportDocument(
   rows: TreasuryPeriodReportRow[],
-  format: "csv" | "pdf",
+  format: "csv" | "pdf" | "print",
   options: InlineExportBase,
 ) {
   await runExport(format, {
@@ -338,7 +338,7 @@ export async function exportTreasuryReportDocument(
 
 export async function exportChartOfAccountsReportDocument(
   rows: ChartOfAccountsReportRow[],
-  format: "csv" | "pdf",
+  format: "csv" | "pdf" | "print",
   options: InlineExportBase,
 ) {
   await runExport(format, {

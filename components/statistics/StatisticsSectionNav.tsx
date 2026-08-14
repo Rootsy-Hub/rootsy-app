@@ -1,7 +1,22 @@
 "use client"
 
+import "@/app/library/libraryColorTheme.css"
 import type { StatisticsSectionDef } from "@/lib/statisticsCatalog"
-import { dataWorkspaceShellCard } from "@/components/data-workspace/dataWorkspaceListStyles"
+import { getRootsModuleIcon } from "@/lib/rootsyModuleIcons"
+import {
+  statisticsLosetaCardClass,
+  statisticsNavIconWrapActiveClass,
+  statisticsNavIconWrapClass,
+  statisticsNavItemActiveClass,
+  statisticsNavItemClass,
+  statisticsNavLabelClass,
+  statisticsNavLabelActiveClass,
+  statisticsNavSurfaceClass,
+  statisticsPlannedBadgeClass,
+} from "@/components/statistics/statisticsWorkspaceStyles"
+import {
+  libraryNavItemIconClass,
+} from "@/app/library/libraryColorTheme"
 import { cn } from "@/lib/utils"
 
 export function StatisticsSectionNav({
@@ -16,34 +31,47 @@ export function StatisticsSectionNav({
   return (
     <nav
       className={cn(
-        dataWorkspaceShellCard,
-        "flex gap-1 overflow-x-auto p-2 lg:block lg:overflow-visible lg:p-3",
+        statisticsLosetaCardClass,
+        statisticsNavSurfaceClass,
+        "gap-1 overflow-x-auto p-2 lg:flex-col lg:overflow-visible lg:p-2.5",
       )}
       aria-label="Secciones de estadísticas"
     >
       {sections.map((section) => {
         const active = section.id === activeSectionId
+        const Icon = getRootsModuleIcon(section.iconModuleKey)
+
         return (
           <button
             key={section.id}
             type="button"
             onClick={() => onSelect(section.id)}
+            aria-current={active ? "true" : undefined}
+            aria-label={section.label}
             className={cn(
-              "min-w-[9.5rem] shrink-0 rounded-xl px-3 py-2.5 text-left transition-colors lg:min-w-0 lg:w-full",
-              active
-                ? "bg-[var(--rootsy-savia-600)] text-white"
-                : "text-[var(--rootsy-bruma-700)] hover:bg-[var(--rootsy-bruma-50)]",
+              statisticsNavItemClass,
+              active && statisticsNavItemActiveClass,
             )}
           >
-            <span className="block text-sm font-semibold">{section.label}</span>
             <span
               className={cn(
-                "mt-0.5 block text-[11px] leading-snug",
-                active ? "text-white/80" : "text-[var(--rootsy-bruma-500)]",
+                statisticsNavIconWrapClass,
+                active && statisticsNavIconWrapActiveClass,
               )}
             >
-              {section.description}
+              <Icon className={libraryNavItemIconClass} aria-hidden />
             </span>
+            <span
+              className={cn(
+                statisticsNavLabelClass,
+                active && statisticsNavLabelActiveClass,
+              )}
+            >
+              {section.label}
+            </span>
+            {section.comingSoon ? (
+              <span className={statisticsPlannedBadgeClass}>Próx.</span>
+            ) : null}
           </button>
         )
       })}

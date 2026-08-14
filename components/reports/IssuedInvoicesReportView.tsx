@@ -16,7 +16,10 @@ import {
 } from "@/components/data-workspace/dataWorkspaceListStyles"
 import { formatReportMoneyAr, formatReportPeriodSummary } from "@/lib/reportFormatters"
 import { exportIssuedInvoicesReportCsv } from "@/lib/issuedInvoicesReportCsvExport"
-import { exportIssuedInvoicesReportPdf } from "@/lib/issuedInvoicesReportPdfExport"
+import {
+  exportIssuedInvoicesReportPdf,
+  printIssuedInvoicesReportPdf,
+} from "@/lib/issuedInvoicesReportPdfExport"
 import {
   sumIssuedInvoicesReportIva,
   sumIssuedInvoicesReportTotal,
@@ -25,10 +28,8 @@ import type { DataWorkspaceDatePreset } from "@/lib/dataWorkspaceDateFilter"
 import { usePopTimeZone } from "@/hooks/usePopTimeZone"
 import { cn } from "@/lib/utils"
 import { FileBarChart } from "lucide-react"
-import {
-  SalesReportDownloadMenu,
-  type SalesReportExportFormat,
-} from "@/components/reports/SalesReportDownloadMenu"
+import { ReportExportActionButtons } from "@/components/reports/ReportExportActionButtons"
+import type { SalesReportExportFormat } from "@/components/reports/SalesReportDownloadMenu"
 import { RootsSpinner } from "@/components/rootsy-spinner"
 import {
   useCallback,
@@ -230,6 +231,32 @@ export function IssuedInvoicesReportView({
     [popId, from, to, timeZone, periodSummary, totalCount, periodTotal, periodIva],
   )
 
+  const handlePrint = useCallback(async () => {
+    setExportBusy(true)
+    setExportError(null)
+    try {
+      const result = await fetchAllIssuedInvoicesReportRows(popId, from, to)
+      if ("error" in result) {
+        setExportError(result.error)
+        return
+      }
+      if (result.rows.length === 0) {
+        setExportError("No hay facturas para exportar en este período.")
+        return
+      }
+
+      await printIssuedInvoicesReportPdf(result.rows, {
+        timeZone,
+        periodSummary,
+        invoiceCount: totalCount || result.rows.length,
+        periodTotal: periodTotal ?? sumIssuedInvoicesReportTotal(result.rows),
+        periodIva: periodIva ?? sumIssuedInvoicesReportIva(result.rows),
+      })
+    } finally {
+      setExportBusy(false)
+    }
+  }, [popId, from, to, timeZone, periodSummary, totalCount, periodTotal, periodIva])
+
   useEffect(() => {
     setExportError(null)
     setRows([])
@@ -325,10 +352,11 @@ export function IssuedInvoicesReportView({
             <p className={dataWorkspaceDetailEmptyStateDescriptionClass}>
               {periodSummary}
             </p>
-            <SalesReportDownloadMenu
+            <ReportExportActionButtons
               disabled={loading || totalCount === 0}
               busy={exportBusy}
               onExport={handleExport}
+              onPrint={handlePrint}
             />
           </div>
 

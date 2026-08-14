@@ -38,6 +38,7 @@ import { canAccessMenuItemFromPopAccess } from "@/lib/menuPopAccess"
 
 export type MenuItemLink =
   | "sale"
+  | "quotes"
   | "mesas"
   | "mostrador"
   | "operations"

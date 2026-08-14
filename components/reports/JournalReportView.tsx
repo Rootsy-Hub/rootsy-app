@@ -225,11 +225,29 @@ export function JournalReportView({
     [exportPeriodLabel, from, popId, timeZone, to],
   )
 
-  const { exportBusy, exportError, handleExport } = useReportDocumentExport({
+  const printDocument = useCallback(
+    async (context: ReportExportContext) => {
+      const res = await fetchAllJournalEntriesForExport(popId, from, to)
+      if (!res.success) {
+        throw new Error(res.error)
+      }
+      await exportJournalReportDocument(res.entries, "print", {
+        periodLabel: exportPeriodLabel,
+        exportContext: context,
+        timeZone,
+        totalDebit: res.totalDebit,
+        totalCredit: res.totalCredit,
+      })
+    },
+    [exportPeriodLabel, from, popId, timeZone, to],
+  )
+
+  const { exportBusy, exportError, handleExport, handlePrint } = useReportDocumentExport({
     popId,
     disabled: loading || entries.length === 0,
     emptyMessage: "No hay asientos para exportar en este período.",
     exportFn: exportDocument,
+    printFn: printDocument,
   })
 
   const openEntryDetail = useCallback(
@@ -303,6 +321,7 @@ export function JournalReportView({
             exportBusy={exportBusy}
             exportError={exportError}
             onExport={handleExport}
+            onPrint={handlePrint}
           />
 
           {error ? (

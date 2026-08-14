@@ -260,11 +260,23 @@ export function BalanceSheetReportView({
     [displayRows, exportPeriodLabel, timeZone],
   )
 
-  const { exportBusy, exportError, handleExport } = useReportDocumentExport({
+  const printDocument = useCallback(
+    async (context: ReportExportContext) => {
+      await exportBalanceSheetReportDocument(displayRows, "print", {
+        periodLabel: exportPeriodLabel,
+        exportContext: context,
+        timeZone,
+      })
+    },
+    [displayRows, exportPeriodLabel, timeZone],
+  )
+
+  const { exportBusy, exportError, handleExport, handlePrint } = useReportDocumentExport({
     popId,
     disabled: loading || !data || !hasBalanceSheetMovement(data),
     emptyMessage: "No hay saldos para exportar a esta fecha.",
     exportFn: exportDocument,
+    printFn: printDocument,
   })
 
   return (
@@ -338,6 +350,7 @@ export function BalanceSheetReportView({
             exportBusy={exportBusy}
             exportError={exportError}
             onExport={handleExport}
+            onPrint={handlePrint}
           />
 
           {error ? (

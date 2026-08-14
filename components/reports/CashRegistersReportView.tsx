@@ -19,10 +19,8 @@ import { DataWorkspaceDetailEmptyState } from "@/components/data-workspace/DataW
 import { ReportDetailHeaderCard } from "@/components/reports/ReportDetailHeaderCard"
 import { ReportStatValue } from "@/components/reports/ReportStatValue"
 import { ReportTableScrollArea } from "@/components/reports/ReportTableScrollArea"
-import {
-  SalesReportDownloadMenu,
-  type SalesReportExportFormat,
-} from "@/components/reports/SalesReportDownloadMenu"
+import { ReportExportActionButtons } from "@/components/reports/ReportExportActionButtons"
+import type { SalesReportExportFormat } from "@/components/reports/SalesReportDownloadMenu"
 import {
   dataWorkspaceDetailEmptyStateDescriptionClass,
   dataWorkspaceDetailFlushBottomCardClass,
@@ -53,7 +51,10 @@ import {
 } from "@/components/data-workspace/WorkspaceTableHeader"
 import { usePopTimeZone } from "@/hooks/usePopTimeZone"
 import { exportCashRegistersReportCsv } from "@/lib/cashRegistersReportCsvExport"
-import { exportCashRegistersReportPdf } from "@/lib/cashRegistersReportPdfExport"
+import {
+  exportCashRegistersReportPdf,
+  printCashRegistersReportPdf,
+} from "@/lib/cashRegistersReportPdfExport"
 import { type DataWorkspaceDatePreset } from "@/lib/dataWorkspaceDateFilter"
 import {
   formatReportMoneyAr,
@@ -248,6 +249,32 @@ export function CashRegistersReportView({
     [exportContext, exportPeriodLabel, rows, summary, timeZone],
   )
 
+  const handlePrint = useCallback(async () => {
+    if (rows.length === 0) {
+      setExportError("No hay arqueos cerrados para exportar en este período.")
+      return
+    }
+    if (!exportContext) {
+      setExportError("No se pudieron cargar los datos del punto de venta.")
+      return
+    }
+
+    setExportBusy(true)
+    setExportError(null)
+    try {
+      await printCashRegistersReportPdf(rows, {
+        timeZone,
+        periodSummary: exportPeriodLabel,
+        exportContext,
+        arqueoCount: summary.closedCount,
+        totalCobrado: summary.totalCobrado,
+        netDifference: summary.netDifference,
+      })
+    } finally {
+      setExportBusy(false)
+    }
+  }, [exportContext, exportPeriodLabel, rows, summary, timeZone])
+
   const loadedCountLabel = useMemo(() => {
     const count = rows.length
     return count === 1 ? "1 arqueo" : `${count.toLocaleString("es-AR")} arqueos`
@@ -306,10 +333,11 @@ export function CashRegistersReportView({
             <p className={dataWorkspaceDetailEmptyStateDescriptionClass}>
               {periodSummary}
             </p>
-            <SalesReportDownloadMenu
+            <ReportExportActionButtons
               disabled={loading || rows.length === 0}
               busy={exportBusy}
               onExport={handleExport}
+              onPrint={handlePrint}
             />
           </div>
 

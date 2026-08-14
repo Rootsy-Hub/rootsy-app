@@ -13,6 +13,7 @@ type Options = {
     format: SalesReportExportFormat,
     context: ReportExportContext,
   ) => Promise<void>
+  printFn: (context: ReportExportContext) => Promise<void>
 }
 
 export function useReportDocumentExport({
@@ -20,12 +21,13 @@ export function useReportDocumentExport({
   disabled = false,
   emptyMessage = "No hay datos para exportar.",
   exportFn,
+  printFn,
 }: Options) {
   const [exportBusy, setExportBusy] = useState(false)
   const [exportError, setExportError] = useState<string | null>(null)
 
-  const handleExport = useCallback(
-    async (format: SalesReportExportFormat) => {
+  const runWithContext = useCallback(
+    async (action: (context: ReportExportContext) => Promise<void>) => {
       if (disabled) {
         setExportError(emptyMessage)
         return
@@ -39,7 +41,7 @@ export function useReportDocumentExport({
           setExportError(res.error)
           return
         }
-        await exportFn(format, res.context)
+        await action(res.context)
       } catch (e: unknown) {
         setExportError(
           e instanceof Error ? e.message : "No se pudo exportar el reporte.",
@@ -48,8 +50,19 @@ export function useReportDocumentExport({
         setExportBusy(false)
       }
     },
-    [disabled, emptyMessage, exportFn, popId],
+    [disabled, emptyMessage, popId],
   )
 
-  return { exportBusy, exportError, handleExport, setExportError }
+  const handleExport = useCallback(
+    async (format: SalesReportExportFormat) => {
+      await runWithContext((context) => exportFn(format, context))
+    },
+    [exportFn, runWithContext],
+  )
+
+  const handlePrint = useCallback(async () => {
+    await runWithContext(printFn)
+  }, [printFn, runWithContext])
+
+  return { exportBusy, exportError, handleExport, handlePrint, setExportError }
 }

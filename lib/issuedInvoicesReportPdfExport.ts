@@ -11,6 +11,8 @@ import {
 } from "@/lib/issuedInvoicesReportExportData"
 import { loadReportPdfRuntime } from "@/lib/reportPdfRuntime"
 import { applyReportPdfBrandingFooters } from "@/lib/reportExportBranding"
+import { printJsPdfDocument } from "@/lib/reportPdfPrint"
+import type { jsPDF } from "jspdf"
 
 type ExportPdfOptions = {
   timeZone?: string
@@ -20,10 +22,10 @@ type ExportPdfOptions = {
   periodIva?: number
 }
 
-export async function exportIssuedInvoicesReportPdf(
+export async function buildIssuedInvoicesReportPdfDocument(
   rows: InvoiceArcaTableRow[],
   options?: ExportPdfOptions,
-): Promise<void> {
+): Promise<{ doc: jsPDF; filename: string }> {
   const { jsPDF, autoTable } = await loadReportPdfRuntime()
 
   const periodSummary = options?.periodSummary ?? "Facturas emitidas"
@@ -85,5 +87,24 @@ export async function exportIssuedInvoicesReportPdf(
 
   await applyReportPdfBrandingFooters(doc)
 
-  doc.save(issuedInvoicesReportExportFilename("pdf", periodSummary))
+  return {
+    doc,
+    filename: issuedInvoicesReportExportFilename("pdf", periodSummary),
+  }
+}
+
+export async function exportIssuedInvoicesReportPdf(
+  rows: InvoiceArcaTableRow[],
+  options?: ExportPdfOptions,
+): Promise<void> {
+  const { doc, filename } = await buildIssuedInvoicesReportPdfDocument(rows, options)
+  doc.save(filename)
+}
+
+export async function printIssuedInvoicesReportPdf(
+  rows: InvoiceArcaTableRow[],
+  options?: ExportPdfOptions,
+): Promise<void> {
+  const { doc } = await buildIssuedInvoicesReportPdfDocument(rows, options)
+  await printJsPdfDocument(doc)
 }

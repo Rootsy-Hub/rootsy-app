@@ -3,6 +3,7 @@ import { Inter, Nunito_Sans, Source_Sans_3 } from 'next/font/google'
 import { Analytics } from '@vercel/analytics/next'
 import { AuthProvider } from '@/context/AuthContextSupabase'
 import { QueryProvider } from '@/components/providers/QueryProvider'
+import { Toaster } from '@/components/ui/toaster'
 import './globals.css'
 
 // Fuente principal del proyecto
@@ -61,6 +62,7 @@ export default function RootLayout({
             {children}
           </QueryProvider>
         </AuthProvider>
+        <Toaster />
         <Analytics />
       </body>
     </html>

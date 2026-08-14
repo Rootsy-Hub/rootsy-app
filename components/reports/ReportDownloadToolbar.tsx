@@ -1,12 +1,10 @@
 "use client"
 
-import {
-  SalesReportDownloadMenu,
-  type SalesReportExportFormat,
-} from "@/components/reports/SalesReportDownloadMenu"
+import { ReportExportActionButtons } from "@/components/reports/ReportExportActionButtons"
+import type { SalesReportExportFormat } from "@/components/reports/SalesReportDownloadMenu"
 import { dataWorkspaceDetailEmptyStateDescriptionClass } from "@/components/data-workspace/dataWorkspaceListStyles"
 import { cn } from "@/lib/utils"
-import type { ReactNode } from "react"
+import { useCallback, type ReactNode } from "react"
 
 type Props = {
   periodSummary: string
@@ -14,6 +12,7 @@ type Props = {
   exportBusy?: boolean
   exportError?: string | null
   onExport: (format: SalesReportExportFormat) => void | Promise<void>
+  onPrint?: () => void | Promise<void>
   className?: string
   children?: ReactNode
 }
@@ -24,9 +23,15 @@ export function ReportDownloadToolbar({
   exportBusy = false,
   exportError = null,
   onExport,
+  onPrint,
   className,
   children,
 }: Props) {
+  const handlePrint = useCallback(() => {
+    if (typeof onPrint !== "function") return
+    void onPrint()
+  }, [onPrint])
+
   return (
     <>
       <div
@@ -41,10 +46,12 @@ export function ReportDownloadToolbar({
           </p>
           {children}
         </div>
-        <SalesReportDownloadMenu
+        <ReportExportActionButtons
           disabled={disabled}
           busy={exportBusy}
           onExport={onExport}
+          onPrint={handlePrint}
+          showPrint={typeof onPrint === "function"}
         />
       </div>
 

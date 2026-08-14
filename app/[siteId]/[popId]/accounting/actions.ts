@@ -590,8 +590,6 @@ export async function getAccountingJournalEntries(
         )
       : JOURNAL_ENTRIES_DEFAULT_LIMIT
 
-    const applyDateFilters = applyPostedEntryDateFilters
-
     let totalCount: number | undefined
     let periodTotalDebit: number | undefined
     let periodTotalCredit: number | undefined
@@ -601,7 +599,7 @@ export async function getAccountingJournalEntries(
         .select("id", { count: "exact", head: true })
         .eq("pop_id", popId)
         .eq("status", "posted")
-      countQuery = applyDateFilters(countQuery)
+      countQuery = applyPostedEntryDateFilters(countQuery, fromDate, toDate)
       const [countResult, totalsResult] = await Promise.all([
         countQuery,
         sumJournalPeriodTotals(supabase, popId, fromDate, toDate),
@@ -629,7 +627,7 @@ export async function getAccountingJournalEntries(
       .order("entry_date", { ascending: false })
       .order("entry_number", { ascending: false })
 
-    q = applyDateFilters(q)
+    q = applyPostedEntryDateFilters(q, fromDate, toDate)
 
     if (paginated) {
       q = q.range(offset, offset + pageSize)

@@ -21,6 +21,8 @@ import { exportPurchasesReportCsv, exportExpensesReportCsv } from "@/lib/purchas
 import {
   exportExpensesReportPdf,
   exportPurchasesReportPdf,
+  printExpensesReportPdf,
+  printPurchasesReportPdf,
 } from "@/lib/purchasesExpensesReportPdfExport"
 import {
   sumExpensesReportAmount,
@@ -30,10 +32,8 @@ import type { DataWorkspaceDatePreset } from "@/lib/dataWorkspaceDateFilter"
 import { usePopTimeZone } from "@/hooks/usePopTimeZone"
 import { cn } from "@/lib/utils"
 import { Wallet } from "lucide-react"
-import {
-  SalesReportDownloadMenu,
-  type SalesReportExportFormat,
-} from "@/components/reports/SalesReportDownloadMenu"
+import { ReportExportActionButtons } from "@/components/reports/ReportExportActionButtons"
+import type { SalesReportExportFormat } from "@/components/reports/SalesReportDownloadMenu"
 import { RootsFormSegmentField } from "@/components/rootsy-form"
 import { RootsSpinner } from "@/components/rootsy-spinner"
 import {
@@ -394,6 +394,59 @@ export function PurchasesExpensesReportView({
     ],
   )
 
+  const handlePrint = useCallback(async () => {
+    setExportBusy(true)
+    setExportError(null)
+    try {
+      if (activeTab === "purchases") {
+        const result = await fetchAllPurchasesReportRows(popId, from, to)
+        if ("error" in result) {
+          setExportError(result.error)
+          return
+        }
+        if (result.rows.length === 0) {
+          setExportError("No hay compras para exportar en este período.")
+          return
+        }
+        await printPurchasesReportPdf(result.rows, {
+          timeZone,
+          periodSummary,
+          rowCount: purchaseCount || result.rows.length,
+          periodTotal: purchasePeriodTotal ?? undefined,
+        })
+      } else {
+        const result = await fetchAllExpensesReportRows(popId, from, to)
+        if ("error" in result) {
+          setExportError(result.error)
+          return
+        }
+        if (result.rows.length === 0) {
+          setExportError("No hay gastos para exportar en este período.")
+          return
+        }
+        await printExpensesReportPdf(result.rows, {
+          timeZone,
+          periodSummary,
+          rowCount: expenseCount || result.rows.length,
+          periodTotal: expensePeriodTotal ?? undefined,
+        })
+      }
+    } finally {
+      setExportBusy(false)
+    }
+  }, [
+    activeTab,
+    popId,
+    from,
+    to,
+    timeZone,
+    periodSummary,
+    purchaseCount,
+    purchasePeriodTotal,
+    expenseCount,
+    expensePeriodTotal,
+  ])
+
   useEffect(() => {
     setExportError(null)
     setPurchaseRows([])
@@ -566,10 +619,11 @@ export function PurchasesExpensesReportView({
                 {periodSummary}
               </p>
             </div>
-            <SalesReportDownloadMenu
+            <ReportExportActionButtons
               disabled={activeLoading || activeCount === 0}
               busy={exportBusy}
               onExport={handleExport}
+              onPrint={handlePrint}
             />
           </div>
 

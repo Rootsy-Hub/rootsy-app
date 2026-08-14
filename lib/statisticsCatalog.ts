@@ -14,66 +14,90 @@ export type StatisticsSectionDef = {
   id: StatisticsSectionId
   label: string
   description: string
+  /** Clave para `getRootsModuleIcon`. */
+  iconModuleKey: string
   /** Si está definido, al menos uno de estos módulos debe estar habilitado. */
   requiresAnyModule?: string[]
+  /** Filtros contextuales que aplican a esta sección. */
+  filterKeys?: Array<"channel" | "supplier">
+  /** Sección aún sin datos reales en Rootsy. */
+  comingSoon?: boolean
 }
 
 export const STATISTICS_SECTIONS: StatisticsSectionDef[] = [
   {
     id: "sales",
     label: "Ventas",
-    description: "Evolución, facturación, cantidad y ticket promedio",
+    description: "Facturación, cantidad de operaciones y ticket promedio",
+    iconModuleKey: "sale",
+    filterKeys: ["channel"],
   },
   {
     id: "profitability",
     label: "Rentabilidad",
-    description: "Margen, costos, gastos y resultado",
+    description: "Margen, costos, gastos y resultado del período",
+    iconModuleKey: "accounting",
   },
   {
     id: "products",
-    label: "Productos / Rubros",
-    description: "Más vendidos, facturación por producto",
+    label: "Productos",
+    description: "Artículos más vendidos y participación en ventas",
+    iconModuleKey: "stock",
+    filterKeys: ["channel"],
   },
   {
     id: "channels",
-    label: "Canales de venta",
-    description: "Mostrador, mesas, POS y participación",
+    label: "Canales",
+    description: "Mostrador, mesas, POS y mix de ventas",
+    iconModuleKey: "mesas",
     requiresAnyModule: ["mesas", "mostrador", "services", "sale"],
+    filterKeys: ["channel"],
   },
   {
     id: "purchases",
     label: "Compras",
-    description: "Evolución, proveedores e importes",
+    description: "Importes, operaciones y principales proveedores",
+    iconModuleKey: "purchases",
     requiresAnyModule: ["purchases"],
+    filterKeys: ["supplier"],
   },
   {
     id: "inventory",
     label: "Inventario",
-    description: "Movimiento, rotación y valorización",
+    description: "Movimientos de stock y artículos con mayor rotación",
+    iconModuleKey: "inventory",
     requiresAnyModule: ["stock", "inventory"],
   },
   {
     id: "clients",
     label: "Clientes",
-    description: "Nuevos, recurrentes y facturación por cliente",
+    description: "Activos, nuevos, recurrentes y ticket por cliente",
+    iconModuleKey: "clients",
     requiresAnyModule: ["clients"],
+    filterKeys: ["channel"],
   },
   {
     id: "finance",
     label: "Finanzas",
-    description: "Ingresos, egresos y medios de pago",
+    description: "Ingresos, egresos, flujo neto y medios de pago",
+    iconModuleKey: "accounts",
+    filterKeys: ["channel"],
   },
   {
     id: "services",
     label: "Servicios",
-    description: "Servicios vendidos y evolución",
+    description: "Facturación y evolución de servicios vendidos",
+    iconModuleKey: "services",
     requiresAnyModule: ["services", "active_services"],
+    comingSoon: true,
   },
   {
     id: "manufacturing",
     label: "Fabricación",
-    description: "Producción, costos e insumos",
+    description: "Producción, costos e insumos consumidos",
+    iconModuleKey: "manufacturing",
     requiresAnyModule: ["manufacturing"],
+    comingSoon: true,
   },
 ]
 

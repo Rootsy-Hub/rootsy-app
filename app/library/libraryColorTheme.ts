@@ -20,6 +20,8 @@ export const libraryNavItemIconClass = "library-nav-item-icon"
 export const libraryNavItemLabelClass = "library-nav-item-label"
 export const libraryNavToggleClass = "library-nav-toggle"
 export const libraryNavNestedListClass = "library-nav-nested-list"
+/** Nav en superficie clara (módulo POP · bruma) — mismos items que library-nav. */
+export const libraryNavSurfaceLightClass = "library-nav-surface-light"
 /** @deprecated Use libraryNavItemClass */
 export const libraryNavLinkClass = "library-nav-item"
 /** @deprecated Use libraryNavItemActiveClass */

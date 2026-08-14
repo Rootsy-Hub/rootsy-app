@@ -129,11 +129,23 @@ export function CashFlowReportView({
     [exportPeriodLabel, rows, timeZone],
   )
 
-  const { exportBusy, exportError, handleExport } = useReportDocumentExport({
+  const printDocument = useCallback(
+    async (context: ReportExportContext) => {
+      await exportCashFlowReportDocument(rows, "print", {
+        periodLabel: exportPeriodLabel,
+        exportContext: context,
+        timeZone,
+      })
+    },
+    [exportPeriodLabel, rows, timeZone],
+  )
+
+  const { exportBusy, exportError, handleExport, handlePrint } = useReportDocumentExport({
     popId,
     disabled: loading || rows.length === 0,
     emptyMessage: "No hay movimientos de caja para exportar en este período.",
     exportFn: exportDocument,
+    printFn: printDocument,
   })
 
   return (
@@ -185,6 +197,7 @@ export function CashFlowReportView({
             exportBusy={exportBusy}
             exportError={exportError}
             onExport={handleExport}
+            onPrint={handlePrint}
           />
 
           {error ? (

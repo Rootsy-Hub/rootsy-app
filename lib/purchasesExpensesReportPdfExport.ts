@@ -17,6 +17,7 @@ import {
 import type { jsPDF } from "jspdf"
 import { loadReportPdfRuntime } from "@/lib/reportPdfRuntime"
 import { applyReportPdfBrandingFooters } from "@/lib/reportExportBranding"
+import { printJsPdfDocument } from "@/lib/reportPdfPrint"
 
 type PdfExportOptions = {
   timeZone?: string
@@ -46,10 +47,10 @@ function writePdfHeader(
   doc.setTextColor(0, 0, 0)
 }
 
-export async function exportPurchasesReportPdf(
+async function buildPurchasesReportPdfDocument(
   rows: OperationPurchaseRow[],
   options?: PdfExportOptions,
-): Promise<void> {
+): Promise<{ doc: jsPDF; filename: string }> {
   const { jsPDF, autoTable } = await loadReportPdfRuntime()
   const periodSummary = options?.periodSummary ?? "Compras del período"
   const rowCount = options?.rowCount ?? rows.length
@@ -90,13 +91,16 @@ export async function exportPurchasesReportPdf(
 
   await applyReportPdfBrandingFooters(doc)
 
-  doc.save(purchasesExpensesExportFilename("purchases", "pdf", periodSummary))
+  return {
+    doc,
+    filename: purchasesExpensesExportFilename("purchases", "pdf", periodSummary),
+  }
 }
 
-export async function exportExpensesReportPdf(
+async function buildExpensesReportPdfDocument(
   rows: OperationExpenseLedgerRow[],
   options?: PdfExportOptions,
-): Promise<void> {
+): Promise<{ doc: jsPDF; filename: string }> {
   const { jsPDF, autoTable } = await loadReportPdfRuntime()
   const periodSummary = options?.periodSummary ?? "Gastos del período"
   const rowCount = options?.rowCount ?? rows.length
@@ -137,5 +141,40 @@ export async function exportExpensesReportPdf(
 
   await applyReportPdfBrandingFooters(doc)
 
-  doc.save(purchasesExpensesExportFilename("expenses", "pdf", periodSummary))
+  return {
+    doc,
+    filename: purchasesExpensesExportFilename("expenses", "pdf", periodSummary),
+  }
+}
+
+export async function exportPurchasesReportPdf(
+  rows: OperationPurchaseRow[],
+  options?: PdfExportOptions,
+): Promise<void> {
+  const { doc, filename } = await buildPurchasesReportPdfDocument(rows, options)
+  doc.save(filename)
+}
+
+export async function printPurchasesReportPdf(
+  rows: OperationPurchaseRow[],
+  options?: PdfExportOptions,
+): Promise<void> {
+  const { doc } = await buildPurchasesReportPdfDocument(rows, options)
+  await printJsPdfDocument(doc)
+}
+
+export async function exportExpensesReportPdf(
+  rows: OperationExpenseLedgerRow[],
+  options?: PdfExportOptions,
+): Promise<void> {
+  const { doc, filename } = await buildExpensesReportPdfDocument(rows, options)
+  doc.save(filename)
+}
+
+export async function printExpensesReportPdf(
+  rows: OperationExpenseLedgerRow[],
+  options?: PdfExportOptions,
+): Promise<void> {
+  const { doc } = await buildExpensesReportPdfDocument(rows, options)
+  await printJsPdfDocument(doc)
 }

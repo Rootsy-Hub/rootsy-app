@@ -9,10 +9,8 @@ import { useTreasuryInfiniteScroll } from "@/app/[siteId]/[popId]/accounts/treas
 import { DataWorkspaceDetailEmptyState } from "@/components/data-workspace/DataWorkspaceDetailEmptyState"
 import { ReportStatValue } from "@/components/reports/ReportStatValue"
 import { ReportDetailHeaderCard } from "@/components/reports/ReportDetailHeaderCard"
-import {
-  SalesReportDownloadMenu,
-  type SalesReportExportFormat,
-} from "@/components/reports/SalesReportDownloadMenu"
+import { ReportExportActionButtons } from "@/components/reports/ReportExportActionButtons"
+import type { SalesReportExportFormat } from "@/components/reports/SalesReportDownloadMenu"
 import { LedgerAccountSearchField } from "@/components/reports/LedgerAccountSearchField"
 import { ReportTableScrollArea } from "@/components/reports/ReportTableScrollArea"
 import {
@@ -196,11 +194,25 @@ export function LedgerReportView({
     [accountName, exportPeriodLabel, rows, timeZone, trimmedCode],
   )
 
-  const { exportBusy, exportError, handleExport } = useReportDocumentExport({
+  const printDocument = useCallback(
+    async (context: ReportExportContext) => {
+      await exportLedgerReportDocument(rows, "print", {
+        periodLabel: exportPeriodLabel,
+        exportContext: context,
+        timeZone,
+        accountCode: trimmedCode,
+        accountName,
+      })
+    },
+    [accountName, exportPeriodLabel, rows, timeZone, trimmedCode],
+  )
+
+  const { exportBusy, exportError, handleExport, handlePrint } = useReportDocumentExport({
     popId,
     disabled: loading || !hasAccountQuery || rows.length === 0,
     emptyMessage: "Seleccioná una cuenta con movimientos para exportar.",
     exportFn: exportDocument,
+    printFn: printDocument,
   })
 
   return (
@@ -255,36 +267,39 @@ export function LedgerReportView({
           )}
         >
           <div className="relative z-30 border-b border-[var(--rootsy-bruma-200)] px-4 py-3 sm:px-6 lg:px-8">
-            <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
-              <div className="min-w-0 space-y-1">
+          <div className="flex flex-col gap-3 lg:flex-row lg:items-center">
+            <div className="min-w-0 flex-1 space-y-1">
+              <p className={dataWorkspaceDetailEmptyStateDescriptionClass}>
+                {periodSummary}
+              </p>
+              {accountSummary ? (
                 <p className={dataWorkspaceDetailEmptyStateDescriptionClass}>
-                  {periodSummary}
+                  {accountSummary}
                 </p>
-                {accountSummary ? (
-                  <p className={dataWorkspaceDetailEmptyStateDescriptionClass}>
-                    {accountSummary}
-                  </p>
-                ) : null}
-              </div>
-              <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
-                <LedgerAccountSearchField
-                  popId={popId}
-                  accountCode={accountCode}
-                  onAccountCodeChange={setAccountCode}
-                  selectedAccountLabel={
-                    accountName && trimmedCode
-                      ? `${trimmedCode} · ${accountName}`
-                      : null
-                  }
-                  className="w-full min-w-0 sm:max-w-[20rem]"
-                />
-                <SalesReportDownloadMenu
-                  disabled={loading || !hasAccountQuery || rows.length === 0}
-                  busy={exportBusy}
-                  onExport={handleExport}
-                />
-              </div>
+              ) : null}
             </div>
+            <div className="flex w-full justify-center lg:w-auto lg:shrink-0">
+              <LedgerAccountSearchField
+                popId={popId}
+                accountCode={accountCode}
+                onAccountCodeChange={setAccountCode}
+                selectedAccountLabel={
+                  accountName && trimmedCode
+                    ? `${trimmedCode} · ${accountName}`
+                    : null
+                }
+                className="w-full min-w-0 sm:max-w-[20rem]"
+              />
+            </div>
+            <div className="flex flex-1 justify-end">
+              <ReportExportActionButtons
+                disabled={loading || !hasAccountQuery || rows.length === 0}
+                busy={exportBusy}
+                onExport={handleExport}
+                onPrint={handlePrint}
+              />
+            </div>
+          </div>
           </div>
 
           {exportError ? (

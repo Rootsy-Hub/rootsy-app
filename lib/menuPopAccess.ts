@@ -7,6 +7,7 @@ import { Banknote } from "lucide-react"
 /** Link del menú → key de módulo en `_pop-access` / catálogo de suscripción. */
 export const MENU_LINK_TO_MODULE_KEY: Partial<Record<MenuItemLink, string>> = {
   sale: "sale",
+  quotes: "quotes",
   mostrador: "mostrador",
   mesas: "mesas",
   purchases: "purchases",

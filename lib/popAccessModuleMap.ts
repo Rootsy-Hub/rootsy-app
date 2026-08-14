@@ -30,7 +30,7 @@ export const POP_ACCESS_MODULE_TO_PAGE_KEY: Record<string, PopPageKey | null> = 
   statistics: null,
   reports: null,
   alerts: null,
-  quotes: null,
+  quotes: "quotes",
   purchase_orders: null,
   manufacturing: null,
   chat: null,

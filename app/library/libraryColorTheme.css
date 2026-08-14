@@ -157,6 +157,96 @@
   font-weight: 500;
 }
 
+/* ── Nav en superficie clara (Estadísticas, bloques bruma) ── */
+.library-nav-surface-light {
+  --library-nav-text: var(--rootsy-bruma-600);
+  --library-nav-text-hover: var(--rootsy-bruma-900);
+  --library-nav-text-active: var(--rootsy-bruma-900);
+}
+
+.library-nav-surface-light .library-nav-item {
+  width: 100%;
+  border: 1px solid transparent;
+}
+
+.library-nav-surface-light .library-nav-item:hover {
+  background-color: var(--rootsy-bruma-50);
+  border-color: var(--rootsy-bruma-200);
+}
+
+.library-nav-surface-light .library-nav-item--active {
+  font-weight: 600;
+  background-color: color-mix(in srgb, var(--rootsy-savia-600) 10%, white);
+  border-color: color-mix(in srgb, var(--rootsy-savia-600) 24%, var(--rootsy-bruma-200));
+  box-shadow:
+    0 0 0 1px color-mix(in srgb, var(--rootsy-savia-600) 14%, transparent),
+    0 1px 2px rgb(5 8 7 / 0.04);
+}
+
+.library-nav-surface-light .library-nav-item--active:hover {
+  background-color: color-mix(in srgb, var(--rootsy-savia-600) 13%, white);
+  border-color: color-mix(in srgb, var(--rootsy-savia-600) 30%, var(--rootsy-bruma-200));
+}
+
+.library-nav-surface-light .library-nav-item--active .library-nav-item-icon {
+  opacity: 1;
+  color: var(--rootsy-savia-700);
+}
+
+/* ── Estadísticas · nav lateral secciones ── */
+.statistics-section-nav.library-nav-surface-light {
+  gap: 0.125rem;
+}
+
+.statistics-section-nav.library-nav-surface-light .library-nav-item {
+  min-height: 2.5rem;
+  padding: 0.4375rem 0.625rem;
+  border: 1px solid transparent;
+  box-shadow: none;
+  transition:
+    color 0.12s ease,
+    background-color 0.12s ease,
+    border-color 0.12s ease,
+    box-shadow 0.12s ease;
+}
+
+.statistics-section-nav.library-nav-surface-light
+  .library-nav-item:not(.library-nav-item--active):hover {
+  background-color: var(--rootsy-bruma-50);
+  border-color: transparent;
+  box-shadow: none;
+}
+
+.statistics-section-nav.library-nav-surface-light .library-nav-item--active {
+  padding-left: 0.625rem;
+  font-weight: 600;
+  color: var(--rootsy-bruma-900);
+  background-color: color-mix(in srgb, var(--rootsy-savia-600) 14%, white);
+  border-color: color-mix(in srgb, var(--rootsy-savia-600) 30%, var(--rootsy-bruma-200));
+  box-shadow:
+    0 0 0 1px color-mix(in srgb, var(--rootsy-savia-600) 16%, transparent),
+    0 2px 6px rgb(5 8 7 / 0.06);
+}
+
+.statistics-section-nav.library-nav-surface-light
+  .library-nav-item--active:hover {
+  background-color: color-mix(in srgb, var(--rootsy-savia-600) 16%, white);
+  border-color: color-mix(in srgb, var(--rootsy-savia-600) 36%, var(--rootsy-bruma-200));
+}
+
+.statistics-section-nav.library-nav-surface-light
+  .library-nav-item:not(.library-nav-item--active)
+  .library-nav-item-icon {
+  opacity: 0.72;
+}
+
+.statistics-section-nav.library-nav-surface-light
+  .library-nav-item:not(.library-nav-item--active):hover
+  .library-nav-item-icon {
+  opacity: 0.92;
+  color: var(--rootsy-bruma-700);
+}
+
 /* ── Accordion toggle ── */
 .library-nav-toggle {
   display: inline-flex;

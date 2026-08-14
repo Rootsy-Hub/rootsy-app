@@ -2,6 +2,8 @@
 
 import withAuth from "@/hoc/withAuth"
 import { completeSale } from "@/app/[siteId]/[popId]/sale/completeSale"
+import { createSaleQuote } from "@/app/[siteId]/[popId]/quotes/actions"
+import { getSaleQuoteDetail } from "@/app/[siteId]/[popId]/quotes/actions"
 import {
   getSaleCatalog,
   type SaleCatalogArticle,
@@ -48,6 +50,8 @@ import {
   DataWorkspaceOperationsLayout,
   OperationsModuleBackdrop,
 } from "@/components/layouts-module/DataWorkspaceOperationsLayout"
+import { dataWorkspaceModuleHeaderVariant } from "@/components/layouts-module/DataWorkspaceModuleLayout"
+import { DataWorkspaceHeaderTooltipIconButton } from "@/components/layouts/DataWorkspaceHeaderTooltipIconButton"
 import { LayoutsOperarMainGrid } from "@/components/layouts-module/LayoutsOperarMainGrid"
 import { useDataWorkspaceSidebar } from "@/components/layouts/useDataWorkspaceSidebar"
 import { useAuth } from "@/context/AuthContextSupabase"
@@ -59,7 +63,7 @@ import type {
 } from "@/lib/operationPartyPicker"
 import { buildOperationPartyManualSelection } from "@/lib/operationPartyPicker"
 import { usePopSaleComprobanteFiscalContext } from "@/hooks/usePopSaleComprobanteFiscalContext"
-import { useParams } from "next/navigation"
+import { useParams, useRouter, useSearchParams } from "next/navigation"
 import {
   useCallback,
   useEffect,
@@ -71,6 +75,7 @@ import {
   Banknote,
   CircleCheck,
   CircleX,
+  FileText,
   Loader2,
   MessageSquare,
   Receipt,
@@ -94,6 +99,12 @@ import { PromotionComboWizard } from "@/components/sale-operation/PromotionCombo
 import { useSaleTicketCart } from "@/hooks/useSaleTicketCart"
 import { useCartListScrollHighlight } from "@/hooks/useCartListScrollHighlight"
 import { buildCompleteSaleLinesFromCart } from "@/lib/saleCompleteLines"
+import {
+  buildQuoteLineSummariesFromDisplayRows,
+  buildSaleQuoteCheckoutSnapshot,
+  formatSaleQuoteDiscountLabel,
+  formatSaleQuotePaymentLabel,
+} from "@/lib/saleQuoteCheckout"
 import type { MenuCatalogProduct } from "@/lib/menuCatalogProduct"
 import { saleOpImporteBaseClass } from "@/components/sale-operation/saleOperationStyles"
 import { layoutsOperarSummaryPanelClass } from "@/app/library/layouts/layoutsOperarStyles"
@@ -173,6 +184,8 @@ function SaleScanFocusBridge({
 
 function SalePage() {
   const params = useParams()
+  const router = useRouter()
+  const searchParams = useSearchParams()
   const siteId = typeof params?.siteId === "string" ? params.siteId : ""
   const popId = typeof params?.popId === "string" ? params.popId : undefined
   const {
@@ -284,6 +297,7 @@ function SalePage() {
     setPromoWizardOpen,
     promoWizardTarget,
     confirmarPromoWizard,
+    restaurarDesdeCheckout,
   } = useSaleTicketCart({
     menuArticles: catalogArticles,
     menuPromotions: catalogPromotions,
@@ -319,6 +333,9 @@ function SalePage() {
   const [descuentoModalAbierto, setDescuentoModalAbierto] = useState(false)
   const [descartarConfirmOpen, setDescartarConfirmOpen] = useState(false)
   const [venderConfirmOpen, setVenderConfirmOpen] = useState(false)
+  const [presupuestoConfirmOpen, setPresupuestoConfirmOpen] = useState(false)
+  const [presupuestoSubmitting, setPresupuestoSubmitting] = useState(false)
+  const [presupuestoError, setPresupuestoError] = useState<string | null>(null)
   const [ventaSubmitting, setVentaSubmitting] = useState(false)
   const [ventaError, setVentaError] = useState<string | null>(null)
   const [canCreateSale, setCanCreateSale] = useState(false)
@@ -384,6 +401,8 @@ function SalePage() {
     [quitarQuantityDealApplication, focusScan],
   )
 
+  const quoteLoadRef = useRef<string | null>(null)
+
   const saleModalOpen =
     clienteModalAbierto ||
     comprobanteModalAbierto ||
@@ -391,6 +410,7 @@ function SalePage() {
     descuentoModalAbierto ||
     descartarConfirmOpen ||
     venderConfirmOpen ||
+    presupuestoConfirmOpen ||
     promoWizardOpen
 
   const descuentoItemsMonto = useMemo(
@@ -710,6 +730,140 @@ function SalePage() {
     ],
   )
 
+  const presupuestoComprobanteLabel = comprobanteDisplayLabel || "Sin comprobante"
+  const presupuestoPaymentLabel = pagoConfigurado
+    ? pagoResumenLabel
+    : "Sin medio de pago"
+  const presupuestoDiscountLabel = formatSaleQuoteDiscountLabel({
+    modoDescuento,
+    valorDescuentoPorcentaje,
+    valorDescuentoFijo,
+    descuentoMonto,
+  })
+
+  const aplicarPresupuestoEnVenta = useCallback(
+    (snapshot: ReturnType<typeof buildSaleQuoteCheckoutSnapshot>) => {
+      restaurarDesdeCheckout(snapshot)
+      setClienteSeleccionado(snapshot.clienteSeleccionado)
+      setManualNombreCliente(snapshot.manualNombreCliente)
+      setFiscalDocVenta(snapshot.fiscalDocVenta)
+      setVentaIvaCondition(snapshot.ventaIvaCondition)
+      setComprobante(snapshot.comprobante)
+      setMetodoPagoSeleccionado(snapshot.metodoPagoSeleccionado)
+      setPayOnClientAccount(snapshot.payOnClientAccount)
+      setModoDescuento(snapshot.modoDescuento)
+      setValorDescuentoPorcentaje(snapshot.valorDescuentoPorcentaje)
+      setValorDescuentoFijo(snapshot.valorDescuentoFijo)
+      setVentaError(null)
+      setPresupuestoError(null)
+      focusScan()
+    },
+    [focusScan, restaurarDesdeCheckout],
+  )
+
+  const confirmarPresupuesto = useCallback(async () => {
+    if (!popId || !hayItemsEnPedido) return
+    setPresupuestoError(null)
+    setPresupuestoSubmitting(true)
+    try {
+      const checkoutSnapshot = buildSaleQuoteCheckoutSnapshot({
+        carrito,
+        clienteSeleccionado,
+        manualNombreCliente,
+        fiscalDocVenta,
+        ventaIvaCondition,
+        comprobante,
+        metodoPagoSeleccionado,
+        payOnClientAccount,
+        modoDescuento,
+        valorDescuentoPorcentaje,
+        valorDescuentoFijo,
+        cartLineOverrides,
+      })
+      const res = await createSaleQuote(popId, {
+        checkoutSnapshot,
+        subtotal,
+        discountTotal: descuentoMonto,
+        total,
+        clientId:
+          clienteSeleccionado?.id && !clienteSeleccionado.manual
+            ? clienteSeleccionado.id
+            : null,
+        customerName: confirmClientLabel,
+        customerTaxId:
+          fiscalDocVenta.trim() || clienteSeleccionado?.taxId || null,
+        metadata: {
+          comprobanteLabel: presupuestoComprobanteLabel,
+          paymentLabel: presupuestoPaymentLabel,
+          discountLabel: presupuestoDiscountLabel,
+          lineSummaries: buildQuoteLineSummariesFromDisplayRows(
+            cartDisplayRows,
+            cartLineOverrides,
+          ),
+        },
+      })
+      if (!res.success) {
+        setPresupuestoError(res.error)
+        return
+      }
+      setPresupuestoConfirmOpen(false)
+      limpiarVenta()
+      router.push(`/${siteId}/${popId}/quotes`)
+    } finally {
+      setPresupuestoSubmitting(false)
+    }
+  }, [
+    popId,
+    hayItemsEnPedido,
+    carrito,
+    clienteSeleccionado,
+    manualNombreCliente,
+    fiscalDocVenta,
+    ventaIvaCondition,
+    comprobante,
+    metodoPagoSeleccionado,
+    payOnClientAccount,
+    modoDescuento,
+    valorDescuentoPorcentaje,
+    valorDescuentoFijo,
+    cartLineOverrides,
+    subtotal,
+    descuentoMonto,
+    total,
+    confirmClientLabel,
+    presupuestoComprobanteLabel,
+    presupuestoPaymentLabel,
+    presupuestoDiscountLabel,
+    cartDisplayRows,
+    limpiarVenta,
+    router,
+    siteId,
+  ])
+
+  useEffect(() => {
+    const quoteId = searchParams.get("quoteId")
+    if (!quoteId || !popId || catalogLoading) return
+    if (quoteLoadRef.current === quoteId) return
+    quoteLoadRef.current = quoteId
+
+    void (async () => {
+      const res = await getSaleQuoteDetail(popId, quoteId)
+      if (!res.success) {
+        setVentaError(res.error)
+        return
+      }
+      aplicarPresupuestoEnVenta(res.quote.checkoutSnapshot)
+      router.replace(`/${siteId}/${popId}/sale`)
+    })()
+  }, [
+    aplicarPresupuestoEnVenta,
+    catalogLoading,
+    popId,
+    router,
+    searchParams,
+    siteId,
+  ])
+
   const comprobantePreviewInput = useMemo((): SaleComprobantePreviewInput | null => {
     if (!popId) return null
     return {
@@ -928,6 +1082,19 @@ function SalePage() {
         sidebarEdgeToggle={false}
         sidebarOpen={catalogSidebarOpen}
         onSidebarOpenChange={setCatalogSidebarOpen}
+        headerActions={
+          <DataWorkspaceHeaderTooltipIconButton
+            label="Crear presupuesto"
+            headerVariant={dataWorkspaceModuleHeaderVariant}
+            disabled={!hayItemsEnPedido || presupuestoSubmitting}
+            onClick={() => {
+              setPresupuestoError(null)
+              setPresupuestoConfirmOpen(true)
+            }}
+          >
+            <FileText className="size-5" aria-hidden />
+          </DataWorkspaceHeaderTooltipIconButton>
+        }
       >
         <div className="relative flex h-full min-h-0 w-full flex-col overflow-hidden">
           <OperationsModuleBackdrop />
@@ -1147,6 +1314,26 @@ function SalePage() {
           />
         </RootsAlertDialogContent>
       </AlertDialog>
+
+      <SimpleOperationCheckoutConfirmDialog
+        open={presupuestoConfirmOpen}
+        onOpenChange={(open) => {
+          setPresupuestoConfirmOpen(open)
+          if (!open) setPresupuestoError(null)
+        }}
+        title="Generar presupuesto"
+        confirmLabel="Generar presupuesto"
+        submitting={presupuestoSubmitting}
+        submitError={presupuestoError}
+        total={total}
+        subtotal={subtotal}
+        descuentoMonto={descuentoMonto}
+        hayDescuento={hayDescuento}
+        partyValue={confirmClientLabel}
+        comprobanteLabel={presupuestoComprobanteLabel}
+        paymentLabel={presupuestoPaymentLabel}
+        onConfirm={confirmarPresupuesto}
+      />
 
       <SimpleOperationCheckoutConfirmDialog
         open={venderConfirmOpen}

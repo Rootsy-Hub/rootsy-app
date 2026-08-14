@@ -15,6 +15,8 @@ import {
   type ReportExportContext,
 } from "@/lib/reportExportBranding"
 import { loadReportPdfRuntime } from "@/lib/reportPdfRuntime"
+import { printJsPdfDocument } from "@/lib/reportPdfPrint"
+import type { jsPDF } from "jspdf"
 
 type ExportPdfOptions = {
   timeZone?: string
@@ -25,10 +27,10 @@ type ExportPdfOptions = {
   exportContext: ReportExportContext
 }
 
-export async function exportCashRegistersReportPdf(
+export async function buildCashRegistersReportPdfDocument(
   rows: CashRegistersPeriodReportRow[],
   options: ExportPdfOptions,
-): Promise<void> {
+): Promise<{ doc: jsPDF; filename: string }> {
   const { jsPDF, autoTable } = await loadReportPdfRuntime()
 
   const periodSummary = options.periodSummary ?? "Arqueo de caja"
@@ -95,5 +97,24 @@ export async function exportCashRegistersReportPdf(
 
   await applyReportPdfBrandingFooters(doc)
 
-  doc.save(cashRegistersReportExportFilename("pdf", periodSummary))
+  return {
+    doc,
+    filename: cashRegistersReportExportFilename("pdf", periodSummary),
+  }
+}
+
+export async function exportCashRegistersReportPdf(
+  rows: CashRegistersPeriodReportRow[],
+  options: ExportPdfOptions,
+): Promise<void> {
+  const { doc, filename } = await buildCashRegistersReportPdfDocument(rows, options)
+  doc.save(filename)
+}
+
+export async function printCashRegistersReportPdf(
+  rows: CashRegistersPeriodReportRow[],
+  options: ExportPdfOptions,
+): Promise<void> {
+  const { doc } = await buildCashRegistersReportPdfDocument(rows, options)
+  await printJsPdfDocument(doc)
 }

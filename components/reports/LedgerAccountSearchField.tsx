@@ -302,6 +302,7 @@ export function LedgerAccountSearchField({
     <div ref={anchorRef} className={cn("relative min-w-0", className)}>
       <RootsFormSearchField
         label="Buscar cuenta contable"
+        hideLabel
         id="ledger-account-search"
         value={searchQuery}
         onChange={(event) => {
@@ -313,7 +314,7 @@ export function LedgerAccountSearchField({
           }
         }}
         onClear={handleClear}
-        placeholder="Código o nombre de cuenta"
+        placeholder="Código o nombre"
         resultsSummary={
           showDropdown
             ? isSearching

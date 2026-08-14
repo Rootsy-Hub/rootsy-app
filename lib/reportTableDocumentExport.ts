@@ -9,6 +9,8 @@ import {
   type ReportExportContext,
 } from "@/lib/reportExportBranding"
 import { loadReportPdfRuntime } from "@/lib/reportPdfRuntime"
+import { printJsPdfDocument } from "@/lib/reportPdfPrint"
+import type { jsPDF } from "jspdf"
 
 export type ReportTableDocumentExportOptions = {
   title: string
@@ -45,9 +47,9 @@ export function exportReportTableCsv(options: ReportTableDocumentExportOptions):
   )
 }
 
-export async function exportReportTablePdf(
+export async function buildReportTablePdfDocument(
   options: ReportTableDocumentExportOptions,
-): Promise<void> {
+): Promise<jsPDF> {
   const { jsPDF, autoTable } = await loadReportPdfRuntime()
 
   const doc = new jsPDF({
@@ -97,15 +99,33 @@ export async function exportReportTablePdf(
 
   await applyReportPdfBrandingFooters(doc)
 
+  return doc
+}
+
+export async function exportReportTablePdf(
+  options: ReportTableDocumentExportOptions,
+): Promise<void> {
+  const doc = await buildReportTablePdfDocument(options)
   doc.save(reportDocumentFilename(options.filenameBase, "pdf"))
 }
 
+export async function printReportTablePdf(
+  options: ReportTableDocumentExportOptions,
+): Promise<void> {
+  const doc = await buildReportTablePdfDocument(options)
+  await printJsPdfDocument(doc)
+}
+
 export async function exportInlineReportDocument(
-  format: "csv" | "pdf",
+  format: "csv" | "pdf" | "print",
   options: ReportTableDocumentExportOptions,
 ): Promise<void> {
   if (format === "csv") {
     exportReportTableCsv(options)
+    return
+  }
+  if (format === "print") {
+    await printReportTablePdf(options)
     return
   }
   await exportReportTablePdf(options)

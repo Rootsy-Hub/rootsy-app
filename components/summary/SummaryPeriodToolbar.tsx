@@ -15,7 +15,12 @@ import {
   PopoverAnchor,
   PopoverContent,
 } from "@/components/ui/popover"
-import { dataWorkspaceShellCard } from "@/components/data-workspace/dataWorkspaceListStyles"
+import {
+  dataWorkspaceEntityCardEyebrowClass,
+  dataWorkspaceEntityCardLosetaSurfaceClass,
+  dataWorkspaceEntityCardTitleClass,
+} from "@/components/data-workspace/dataWorkspaceListStyles"
+import { dataWorkspaceListFiltersFieldClass } from "@/components/data-workspace/dataWorkspaceTablesLayout"
 import {
   SUMMARY_DATE_PRESETS,
   summaryDateFilterSummary,
@@ -40,6 +45,7 @@ export function SummaryPeriodToolbar({
   onPresetChange,
   onCustomRangeChange,
   bounds,
+  embedded = false,
   className,
 }: {
   preset: SummaryDatePreset
@@ -47,6 +53,8 @@ export function SummaryPeriodToolbar({
   onPresetChange: (preset: SummaryDatePreset) => void
   onCustomRangeChange: (range: DateRange | undefined) => void
   bounds: { from: string | null; to: string | null }
+  /** Solo el selector, sin loseta ni resumen del período. */
+  embedded?: boolean
   className?: string
 }) {
   const labelId = useId()
@@ -150,111 +158,134 @@ export function SummaryPeriodToolbar({
 
   const isSelectingRangeEnd = Boolean(draftRange?.from && !draftRange?.to)
 
+  const selectField = (
+    <Popover open={calendarOpen} onOpenChange={handleCalendarOpenChange}>
+      <PopoverAnchor asChild>
+        <div
+          className={cn(
+            embedded && periodSelectTriggerShellClass,
+            !embedded && "w-full min-w-0",
+          )}
+        >
+          <RootsFormSelectField
+            label="Período"
+            id={triggerId}
+            aria-labelledby={embedded ? undefined : labelId}
+            value={preset}
+            onValueChange={handlePresetChange}
+            onOpenChange={handleSelectOpenChange}
+            placeholder="Este mes"
+            valueLabel={summary}
+            prefix={<CalendarRange className="size-4" aria-hidden />}
+            prefixVariant="inline"
+            className={cn(
+              embedded && dataWorkspaceListFiltersFieldClass(true),
+              embedded && periodSelectTriggerShellClass,
+              className,
+            )}
+            triggerClassName={cn(
+              embedded &&
+                "w-full max-w-full [&_[data-slot=select-value]]:truncate",
+            )}
+            contentClassName={periodSelectContentClass}
+          >
+            {SUMMARY_DATE_PRESETS.filter((item) => item.id !== "custom").map(
+              (item) => (
+                <RootsFormSelectItem
+                  key={item.id}
+                  value={item.id}
+                  className={periodSelectItemClass}
+                >
+                  {item.label}
+                </RootsFormSelectItem>
+              ),
+            )}
+            <RootsFormSelectItem
+              value="custom"
+              className={periodSelectItemClass}
+              onSelect={() => queueCustomRangePicker()}
+            >
+              {customRangeLabel}
+            </RootsFormSelectItem>
+          </RootsFormSelectField>
+        </div>
+      </PopoverAnchor>
+      <PopoverContent
+        align={embedded ? "center" : "end"}
+        side="bottom"
+        sideOffset={4}
+        collisionPadding={16}
+        onOpenAutoFocus={(event) => event.preventDefault()}
+        onInteractOutside={(event) => {
+          if (suppressCalendarDismissRef.current || isSelectingRangeEnd) {
+            event.preventDefault()
+          }
+        }}
+        onPointerDownOutside={(event) => {
+          if (suppressCalendarDismissRef.current || isSelectingRangeEnd) {
+            event.preventDefault()
+          }
+        }}
+        onFocusOutside={(event) => {
+          if (isSelectingRangeEnd) {
+            event.preventDefault()
+          }
+        }}
+        className={cn(rootsFormDatePopoverContentClass, "p-0")}
+      >
+        <Calendar
+          locale={esLocale}
+          mode="range"
+          numberOfMonths={embedded ? 1 : 2}
+          selected={draftRange}
+          onSelect={handleCustomRangeSelect}
+          defaultMonth={
+            draftRange?.from ??
+            customRange?.from ??
+            customRange?.to ??
+            new Date()
+          }
+          className={rootsFormDateCalendarShellClass}
+          classNames={rootsFormDateCalendarClassNames}
+          formatters={{
+            formatCaption: (date) => {
+              const label = format(date, "LLLL yyyy", { locale: esLocale })
+              return label.charAt(0).toUpperCase() + label.slice(1)
+            },
+          }}
+        />
+      </PopoverContent>
+    </Popover>
+  )
+
+  if (embedded) {
+    return selectField
+  }
+
   return (
     <div
       className={cn(
-        dataWorkspaceShellCard,
-        "flex flex-wrap items-center justify-between gap-3 px-4 py-3 sm:px-5",
+        dataWorkspaceEntityCardLosetaSurfaceClass,
+        "flex h-auto flex-wrap items-center justify-between gap-3 px-4 py-3 sm:px-5",
         className,
       )}
     >
       <div className="min-w-0">
-        <p
-          id={labelId}
-          className="text-[11px] font-medium uppercase tracking-[0.12em] text-[var(--rootsy-bruma-500)]"
-        >
+        <p id={labelId} className={dataWorkspaceEntityCardEyebrowClass}>
           Período
         </p>
-        <p className="mt-0.5 text-sm font-medium text-[var(--rootsy-bruma-900)]">
+        <p className={cn(dataWorkspaceEntityCardTitleClass, "mt-0.5 text-sm")}>
           {summary}
         </p>
       </div>
 
-      <div className={cn("relative flex shrink-0 items-center gap-2", periodSelectTriggerShellClass)}>
-        <Popover open={calendarOpen} onOpenChange={handleCalendarOpenChange}>
-          <PopoverAnchor asChild>
-            <div className="w-full min-w-0">
-              <RootsFormSelectField
-                label="Período"
-                id={triggerId}
-                aria-labelledby={labelId}
-                value={preset}
-                onValueChange={handlePresetChange}
-                onOpenChange={handleSelectOpenChange}
-                placeholder="Este mes"
-                valueLabel={summary}
-                prefix={<CalendarRange className="size-4" aria-hidden />}
-                prefixVariant="inline"
-                triggerClassName="w-full max-w-full [&_[data-slot=select-value]]:truncate"
-                contentClassName={periodSelectContentClass}
-              >
-                {SUMMARY_DATE_PRESETS.filter((item) => item.id !== "custom").map(
-                  (item) => (
-                    <RootsFormSelectItem
-                      key={item.id}
-                      value={item.id}
-                      className={periodSelectItemClass}
-                    >
-                      {item.label}
-                    </RootsFormSelectItem>
-                  ),
-                )}
-                <RootsFormSelectItem
-                  value="custom"
-                  className={periodSelectItemClass}
-                  onSelect={() => queueCustomRangePicker()}
-                >
-                  {customRangeLabel}
-                </RootsFormSelectItem>
-              </RootsFormSelectField>
-            </div>
-          </PopoverAnchor>
-          <PopoverContent
-            align="end"
-            side="bottom"
-            sideOffset={4}
-            collisionPadding={16}
-            onOpenAutoFocus={(event) => event.preventDefault()}
-            onInteractOutside={(event) => {
-              if (suppressCalendarDismissRef.current || isSelectingRangeEnd) {
-                event.preventDefault()
-              }
-            }}
-            onPointerDownOutside={(event) => {
-              if (suppressCalendarDismissRef.current || isSelectingRangeEnd) {
-                event.preventDefault()
-              }
-            }}
-            onFocusOutside={(event) => {
-              if (isSelectingRangeEnd) {
-                event.preventDefault()
-              }
-            }}
-            className={cn(rootsFormDatePopoverContentClass, "p-0")}
-          >
-            <Calendar
-              locale={esLocale}
-              mode="range"
-              numberOfMonths={2}
-              selected={draftRange}
-              onSelect={handleCustomRangeSelect}
-              defaultMonth={
-                draftRange?.from ??
-                customRange?.from ??
-                customRange?.to ??
-                new Date()
-              }
-              className={rootsFormDateCalendarShellClass}
-              classNames={rootsFormDateCalendarClassNames}
-              formatters={{
-                formatCaption: (date) => {
-                  const label = format(date, "LLLL yyyy", { locale: esLocale })
-                  return label.charAt(0).toUpperCase() + label.slice(1)
-                },
-              }}
-            />
-          </PopoverContent>
-        </Popover>
+      <div
+        className={cn(
+          "relative flex shrink-0 items-center gap-2",
+          periodSelectTriggerShellClass,
+        )}
+      >
+        {selectField}
       </div>
     </div>
   )

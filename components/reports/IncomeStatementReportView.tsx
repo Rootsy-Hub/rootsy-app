@@ -221,11 +221,24 @@ export function IncomeStatementReportView({
     [data?.resultadoNeto, displayRows, exportPeriodLabel, timeZone],
   )
 
-  const { exportBusy, exportError, handleExport } = useReportDocumentExport({
+  const printDocument = useCallback(
+    async (context: ReportExportContext) => {
+      await exportIncomeStatementReportDocument(displayRows, "print", {
+        periodLabel: exportPeriodLabel,
+        exportContext: context,
+        timeZone,
+        resultadoNeto: data?.resultadoNeto ?? 0,
+      })
+    },
+    [data?.resultadoNeto, displayRows, exportPeriodLabel, timeZone],
+  )
+
+  const { exportBusy, exportError, handleExport, handlePrint } = useReportDocumentExport({
     popId,
     disabled: loading || !data || !hasIncomeStatementMovement(data),
     emptyMessage: "No hay movimientos para exportar en este período.",
     exportFn: exportDocument,
+    printFn: printDocument,
   })
 
   return (
@@ -283,6 +296,7 @@ export function IncomeStatementReportView({
             exportBusy={exportBusy}
             exportError={exportError}
             onExport={handleExport}
+            onPrint={handlePrint}
           />
 
           {error ? (

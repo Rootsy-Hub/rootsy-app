@@ -96,6 +96,16 @@ export function clientsSkeletonColumns(options?: {
   return columns
 }
 
+export function quotesSkeletonColumns(): WorkspaceTableSkeletonColumn[] {
+  return [
+    { kind: "text", className: "w-16" },
+    { kind: "text", className: "min-w-[12rem]", lines: 2 },
+    { kind: "money" },
+    { kind: "text", className: "min-w-[9rem]" },
+    { kind: "actions", className: "w-[11rem]", actionCount: 5 },
+  ]
+}
+
 export function suppliersSkeletonColumns(options?: {
   hasActionsColumn?: boolean
 }): WorkspaceTableSkeletonColumn[] {

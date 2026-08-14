@@ -189,11 +189,26 @@ export function AccountSummariesReportView({
     [exportPeriodLabel, resultadoNeto, summaries, timeZone],
   )
 
-  const { exportBusy, exportError, handleExport } = useReportDocumentExport({
+  const printDocument = useCallback(
+    async (context: ReportExportContext) => {
+      await exportAccountSummariesReportDocument(summaries, "print", {
+        periodLabel: exportPeriodLabel,
+        exportContext: context,
+        timeZone,
+        subtitleLines: [
+          `Resultado neto: ${formatReportMoneyAr(resultadoNeto)}`,
+        ],
+      })
+    },
+    [exportPeriodLabel, resultadoNeto, summaries, timeZone],
+  )
+
+  const { exportBusy, exportError, handleExport, handlePrint } = useReportDocumentExport({
     popId,
     disabled: loading || summaries.length === 0,
     emptyMessage: "No hay resúmenes para exportar en este período.",
     exportFn: exportDocument,
+    printFn: printDocument,
   })
 
   return (
@@ -251,6 +266,7 @@ export function AccountSummariesReportView({
             exportBusy={exportBusy}
             exportError={exportError}
             onExport={handleExport}
+            onPrint={handlePrint}
           />
 
           {error ? (
