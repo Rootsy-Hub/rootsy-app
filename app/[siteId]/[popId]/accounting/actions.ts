@@ -396,6 +396,73 @@ async function trialBalanceRowsForPopDateRange(
 const JOURNAL_ENTRIES_DEFAULT_LIMIT = 200
 const JOURNAL_ENTRIES_PAGE_SIZE_DEFAULT = 40
 const JOURNAL_ENTRIES_PAGE_SIZE_MAX = 100
+const JOURNAL_ENTRY_ID_CHUNK = 400
+
+function applyPostedEntryDateFilters<
+  T extends {
+    gte: (column: string, value: string) => T
+    lte: (column: string, value: string) => T
+  },
+>(query: T, fromDate: string | null, toDate: string | null): T {
+  let next = query
+  if (fromDate && fromDate.trim()) {
+    next = next.gte("entry_date", fromDate.trim())
+  }
+  if (toDate && toDate.trim()) {
+    next = next.lte("entry_date", toDate.trim())
+  }
+  return next
+}
+
+async function sumJournalPeriodTotals(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  popId: string,
+  fromDate: string | null,
+  toDate: string | null,
+): Promise<
+  { totalDebit: number; totalCredit: number } | { error: string }
+> {
+  let entQ = supabase
+    .from("accounting_entries")
+    .select("id")
+    .eq("pop_id", popId)
+    .eq("status", "posted")
+  entQ = applyPostedEntryDateFilters(entQ, fromDate, toDate)
+  const { data: entries, error: eErr } = await entQ
+  if (eErr) {
+    return {
+      error: eErr.message || "No se pudieron calcular los totales del período.",
+    }
+  }
+  const ids = (entries || []).map((entry) => String(entry.id))
+  if (ids.length === 0) {
+    return { totalDebit: 0, totalCredit: 0 }
+  }
+
+  let totalDebit = 0
+  let totalCredit = 0
+  for (let i = 0; i < ids.length; i += JOURNAL_ENTRY_ID_CHUNK) {
+    const chunk = ids.slice(i, i + JOURNAL_ENTRY_ID_CHUNK)
+    const { data: lines, error: lErr } = await supabase
+      .from("accounting_entry_lines")
+      .select("debit_amount, credit_amount")
+      .in("entry_id", chunk)
+    if (lErr) {
+      return {
+        error: lErr.message || "No se pudieron calcular los totales del período.",
+      }
+    }
+    for (const line of lines || []) {
+      totalDebit += Number(line.debit_amount ?? 0)
+      totalCredit += Number(line.credit_amount ?? 0)
+    }
+  }
+
+  return {
+    totalDebit: roundMoney(totalDebit),
+    totalCredit: roundMoney(totalCredit),
+  }
+}
 
 export async function getAccountingJournalEntries(
   popId: string,
@@ -408,6 +475,8 @@ export async function getAccountingJournalEntries(
       entries: JournalEntrySummaryRow[]
       hasMore: boolean
       totalCount?: number
+      periodTotalDebit?: number
+      periodTotalCredit?: number
     }
   | { success: false; error: string }
 > {
@@ -436,25 +505,11 @@ export async function getAccountingJournalEntries(
         )
       : JOURNAL_ENTRIES_DEFAULT_LIMIT
 
-    const applyDateFilters = <
-      T extends {
-        gte: (column: string, value: string) => T
-        lte: (column: string, value: string) => T
-      },
-    >(
-      query: T,
-    ) => {
-      let next = query
-      if (fromDate && fromDate.trim()) {
-        next = next.gte("entry_date", fromDate.trim())
-      }
-      if (toDate && toDate.trim()) {
-        next = next.lte("entry_date", toDate.trim())
-      }
-      return next
-    }
+    const applyDateFilters = applyPostedEntryDateFilters
 
     let totalCount: number | undefined
+    let periodTotalDebit: number | undefined
+    let periodTotalCredit: number | undefined
     if (paginated && offset === 0) {
       let countQuery = supabase
         .from("accounting_entries")
@@ -462,14 +517,23 @@ export async function getAccountingJournalEntries(
         .eq("pop_id", popId)
         .eq("status", "posted")
       countQuery = applyDateFilters(countQuery)
-      const { count, error: countErr } = await countQuery
+      const [countResult, totalsResult] = await Promise.all([
+        countQuery,
+        sumJournalPeriodTotals(supabase, popId, fromDate, toDate),
+      ])
+      const { count, error: countErr } = countResult
       if (countErr) {
         return {
           success: false,
           error: countErr.message || "No se pudieron cargar los asientos.",
         }
       }
+      if ("error" in totalsResult) {
+        return { success: false, error: totalsResult.error }
+      }
       totalCount = count ?? 0
+      periodTotalDebit = totalsResult.totalDebit
+      periodTotalCredit = totalsResult.totalCredit
     }
 
     let q = supabase
@@ -501,6 +565,12 @@ export async function getAccountingJournalEntries(
         entries: [],
         hasMore: false,
         totalCount: paginated ? (totalCount ?? 0) : 0,
+        ...(paginated && offset === 0
+          ? {
+              periodTotalDebit: periodTotalDebit ?? 0,
+              periodTotalCredit: periodTotalCredit ?? 0,
+            }
+          : {}),
       }
     }
     const ids = list.map((e) => String(e.id))
@@ -536,7 +606,13 @@ export async function getAccountingJournalEntries(
       success: true,
       entries: rows,
       hasMore,
-      ...(paginated && offset === 0 ? { totalCount: totalCount ?? rows.length } : {}),
+      ...(paginated && offset === 0
+        ? {
+            totalCount: totalCount ?? rows.length,
+            periodTotalDebit: periodTotalDebit ?? 0,
+            periodTotalCredit: periodTotalCredit ?? 0,
+          }
+        : {}),
     }
   } catch (e: unknown) {
     const message = e instanceof Error ? e.message : "Error desconocido"

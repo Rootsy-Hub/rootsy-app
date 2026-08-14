@@ -86,16 +86,6 @@ function formatJournalEntryDate(iso: string): string {
   return date ? formatRootsFormDisplayDateCompact(date) : iso
 }
 
-function sumJournalTotals(entries: JournalEntrySummaryRow[]) {
-  return entries.reduce(
-    (acc, entry) => ({
-      debit: acc.debit + entry.totalDebit,
-      credit: acc.credit + entry.totalCredit,
-    }),
-    { debit: 0, credit: 0 },
-  )
-}
-
 export function JournalReportView({
   popId,
   from,
@@ -112,6 +102,10 @@ export function JournalReportView({
   const [loadingMore, setLoadingMore] = useState(false)
   const [hasMore, setHasMore] = useState(false)
   const [totalCount, setTotalCount] = useState<number | null>(null)
+  const [periodTotals, setPeriodTotals] = useState<{
+    debit: number
+    credit: number
+  } | null>(null)
   const [error, setError] = useState<string | null>(null)
   const scrollRootRef = useRef<HTMLDivElement | null>(null)
   const sentinelRef = useRef<HTMLDivElement | null>(null)
@@ -135,6 +129,7 @@ export function JournalReportView({
     setError(null)
     setHasMore(false)
     setTotalCount(null)
+    setPeriodTotals(null)
     const res = await getAccountingJournalEntries(popId, from, to, {
       limit: JOURNAL_PAGE_SIZE,
       offset: 0,
@@ -144,9 +139,15 @@ export function JournalReportView({
       setEntries(res.entries)
       setHasMore(res.hasMore)
       setTotalCount(res.totalCount ?? res.entries.length)
+      setPeriodTotals(
+        res.periodTotalDebit != null && res.periodTotalCredit != null
+          ? { debit: res.periodTotalDebit, credit: res.periodTotalCredit }
+          : null,
+      )
       return
     }
     setEntries([])
+    setPeriodTotals(null)
     setError(res.error)
   }, [popId, from, to])
 
@@ -188,8 +189,6 @@ export function JournalReportView({
     observer.observe(sentinel)
     return () => observer.disconnect()
   }, [hasMore, loadMore, loading, loadingMore])
-
-  const totals = useMemo(() => sumJournalTotals(entries), [entries])
 
   const loadedCountLabel = useMemo(() => {
     const count = entries.length
@@ -244,13 +243,13 @@ export function JournalReportView({
               <div className="min-w-[8.5rem]">
                 <p className={dataWorkspaceEntityCardStatLabelClass}>Total debe</p>
                 <p className={cn("mt-1.5", dataWorkspaceEntityCardStatValueLargeClass)}>
-                  {loading ? "…" : formatReportMoneyAr(totals.debit)}
+                  {loading ? "…" : formatReportMoneyAr(periodTotals?.debit ?? 0)}
                 </p>
               </div>
               <div className="min-w-[8.5rem]">
                 <p className={dataWorkspaceEntityCardStatLabelClass}>Total haber</p>
                 <p className={cn("mt-1.5", dataWorkspaceEntityCardStatValueLargeClass)}>
-                  {loading ? "…" : formatReportMoneyAr(totals.credit)}
+                  {loading ? "…" : formatReportMoneyAr(periodTotals?.credit ?? 0)}
                 </p>
               </div>
             </>

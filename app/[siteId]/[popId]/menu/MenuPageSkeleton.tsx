@@ -94,7 +94,7 @@ function MenuPageSkeletonHeader() {
           <Skeleton className="size-12 shrink-0 rounded-xl bg-muted-foreground/10" />
           <div className="hidden h-6 w-px shrink-0 bg-border sm:block" />
           <div className="flex min-w-0 items-center gap-4">
-            <Skeleton className="size-14 shrink-0 rounded-2xl bg-muted-foreground/12" />
+            <Skeleton className="size-12 shrink-0 rounded-2xl bg-muted-foreground/12" />
             <div className="flex min-w-0 flex-col gap-1.5">
               <Skeleton className="h-4 w-32 max-w-full rounded-md bg-muted-foreground/14" />
               <Skeleton className="h-3.5 w-44 max-w-full rounded-md bg-muted-foreground/10" />

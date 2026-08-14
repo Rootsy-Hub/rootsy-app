@@ -14,6 +14,7 @@
     transparent
   );
   --wt-header-bg: var(--rootsy-bruma-50);
+  --wt-header-bg-glass: color-mix(in srgb, var(--wt-header-bg) 68%, transparent);
   --wt-header-text: var(--rootsy-bruma-500);
   --wt-border: var(--rootsy-bruma-200);
   --wt-border-strong: var(--rootsy-bruma-200);

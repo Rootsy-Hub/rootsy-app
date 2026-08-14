@@ -32,13 +32,18 @@ export const workspaceTableLayoutRowHeightClass =
 export const workspaceTableLayoutHeaderHeightClass =
   "!h-10 !max-h-10 box-border"
 
-/** Encabezado layout — bruma sunken, sin blur. */
+/** Cristal en header sticky — blur del contenido al scrollear. */
+export const workspaceTableLayoutStickyHeaderGlassClass =
+  "backdrop-blur-md backdrop-saturate-150 bg-[var(--wt-header-bg-glass)]"
+
+/** Encabezado layout — cristal bruma sobre contenido scrolleable. */
 export const workspaceTableLayoutHeaderHeadClass = cn(
   workspaceTableLayoutMetaLabelClass,
   workspaceTableLayoutHeaderHeightClass,
+  workspaceTableLayoutStickyHeaderGlassClass,
   "sticky top-0 z-20 !py-0 px-3 align-middle",
   "!border-b border-[var(--wt-border)] !shadow-none",
-  "bg-[var(--wt-header-bg)] text-[var(--wt-header-text)]",
+  "text-[var(--wt-header-text)]",
 )
 
 export const workspaceTableLayoutBodyRowClass = cn(
@@ -70,7 +75,7 @@ export const workspaceTableLayoutListBodyScopeClass = cn(
   "[&_[data-slot=table-header]_[data-slot=table-row]]:!border-b-0",
   "[&_[data-slot=table-head]]:!h-10 [&_[data-slot=table-head]]:!max-h-10 [&_[data-slot=table-head]]:box-border [&_[data-slot=table-head]]:!py-0",
   "[&_[data-slot=table-head]]:!border-b [&_[data-slot=table-head]]:!border-[var(--wt-border)] [&_[data-slot=table-head]]:!shadow-none",
-  "[&_[data-slot=table-head]]:!bg-[var(--wt-header-bg)] [&_[data-slot=table-head]]:!text-[var(--wt-header-text)]",
+  "[&_[data-slot=table-head]]:!backdrop-blur-md [&_[data-slot=table-head]]:!backdrop-saturate-150 [&_[data-slot=table-head]]:!bg-[var(--wt-header-bg-glass)] [&_[data-slot=table-head]]:!text-[var(--wt-header-text)]",
   "[&_[data-slot=table-head]>div]:!h-full [&_[data-slot=table-head]>div]:!min-h-0",
   "[&_[data-slot=table-body]_[data-slot=table-row]]:!h-14 [&_[data-slot=table-body]_[data-slot=table-row]]:!max-h-14",
   "[&_[data-slot=table-body]_[data-slot=table-cell]]:!h-14 [&_[data-slot=table-body]_[data-slot=table-cell]]:!max-h-14 [&_[data-slot=table-body]_[data-slot=table-cell]]:box-border [&_[data-slot=table-body]_[data-slot=table-cell]]:!py-0",
@@ -106,7 +111,7 @@ export const workspaceTableOperationsListHeaderScopeClass = cn(
   "[&_[data-slot=table-header]_[data-slot=table-row]]:!border-b-0",
   "[&_[data-slot=table-head]]:!h-10 [&_[data-slot=table-head]]:!max-h-10 [&_[data-slot=table-head]]:box-border [&_[data-slot=table-head]]:!py-0",
   "[&_[data-slot=table-head]]:!border-b [&_[data-slot=table-head]]:!border-[var(--wt-border)] [&_[data-slot=table-head]]:!shadow-none",
-  "[&_[data-slot=table-head]]:!bg-[var(--wt-header-bg)] [&_[data-slot=table-head]]:!text-[var(--wt-header-text)]",
+  "[&_[data-slot=table-head]]:!backdrop-blur-md [&_[data-slot=table-head]]:!backdrop-saturate-150 [&_[data-slot=table-head]]:!bg-[var(--wt-header-bg-glass)] [&_[data-slot=table-head]]:!text-[var(--wt-header-text)]",
   "[&_[data-slot=table-head]>div]:!h-full [&_[data-slot=table-head]>div]:!min-h-0",
 )
 

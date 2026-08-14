@@ -337,11 +337,11 @@ export const workspaceTableNatureSurfaceClass = "bg-[var(--wt-surface)]"
 /** Labels meta — tipografía base (medium); footer oscuro añade bold explícito. */
 export const workspaceTableLayoutMetaLabelClass = rootsFormFieldLabelTypographyClass
 
-/** Encabezado — bruma sunken (layout tablas). */
+/** Encabezado — cristal bruma (layout tablas). */
 export const workspaceTableNatureHeaderCellClass = cn(
   "sticky top-0 z-20 h-10 border-b px-2 py-2",
   workspaceTableLayoutMetaLabelClass,
-  "border-[var(--wt-border)] bg-[var(--wt-header-bg)] text-[var(--wt-header-text)]",
+  "border-[var(--wt-border)] backdrop-blur-md backdrop-saturate-150 bg-[var(--wt-header-bg-glass)] text-[var(--wt-header-text)]",
 )
 
 export const workspaceTableNatureBodyRowInactiveClass = "opacity-[0.78]"

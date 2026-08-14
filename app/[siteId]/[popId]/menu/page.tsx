@@ -2,7 +2,7 @@
 
 import { DataWorkspaceHeaderUserMenu } from "@/components/layouts/DataWorkspaceHeaderUserMenu"
 import { dataWorkspaceHeaderRoleLabelClass } from "@/components/layouts/dataWorkspaceHeaderStyles"
-import { RootsIconButton, rootsIconButtonClass } from "@/components/rootsy-button"
+import { RootsIconButton } from "@/components/rootsy-button"
 import withAuth from "@/hoc/withAuth"
 import { usePopMenuCache } from "@/hooks/usePopMenuCache"
 import { MenuDock } from "@/app/[siteId]/[popId]/menu/MenuDock"
@@ -415,22 +415,20 @@ function MenuPage() {
       >
         <div className="grid grid-cols-[minmax(0,1fr)_minmax(0,280px)_minmax(0,1fr)] items-center gap-4 px-6 py-5 sm:gap-6 sm:px-8">
           <div className="flex min-w-0 items-center gap-6">
-            <Link
+            <RootsIconButton
               href="/home"
-              aria-label="Ir al inicio"
-              className={rootsIconButtonClass({
-                tone: "secondary",
-                surface: "dark",
-                size: "large",
-              })}
+              tone="ghost"
+              surface="dark"
+              size="large"
+              label="Ir al inicio"
             >
-              <Home className="size-5" aria-hidden />
-            </Link>
+              <Home aria-hidden />
+            </RootsIconButton>
 
             <div className="hidden h-6 w-px shrink-0 bg-border sm:block" />
 
             <div className="flex min-w-0 items-center gap-4">
-              <div className="h-14 w-14 shrink-0 overflow-hidden rounded-2xl ring-1 ring-border">
+              <div className="size-12 shrink-0 overflow-hidden rounded-2xl ring-1 ring-border">
                 <img
                   src={popLogoSrc}
                   alt=""
