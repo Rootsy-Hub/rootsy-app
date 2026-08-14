@@ -9,78 +9,52 @@ import { cn } from "@/lib/utils"
 
 const ghost = layoutsOperarCatalogSkeletonGhostClass
 
-function DetailFieldSkeleton({ multiline = false }: { multiline?: boolean }) {
-  return (
-    <div className="flex flex-col gap-1.5">
-      <div className={cn("h-2.5 w-24 rounded-sm", ghost)} />
-      <div
-        className={cn(
-          multiline ? "min-h-[4.5rem] rounded-lg px-3 py-2.5" : "h-11 rounded-lg px-3",
-          layoutsOperarFormDarkBorderClass,
-          layoutsOperarFormDarkSurfaceClass,
-          ghost,
-        )}
-      />
-    </div>
-  )
+function BlockSkeleton({ className }: { className?: string }) {
+  return <div className={cn("rounded-lg", ghost, className)} />
 }
 
+/** Placeholder mientras carga artículos, grilla y condiciones del detalle. */
 export function ServiceOperateSelectedServiceDetailSkeleton() {
   return (
     <div
       role="status"
       aria-busy="true"
       aria-label="Cargando detalle del servicio"
-      className="flex flex-col gap-5"
+      className="flex flex-col gap-4"
     >
-      <div className="grid gap-3 sm:grid-cols-2">
-        {Array.from({ length: 6 }, (_, index) => (
-          <DetailFieldSkeleton key={index} />
-        ))}
-      </div>
-
-      <div className="flex flex-col gap-1.5">
-        <div className={cn("h-3 w-36 rounded-sm", ghost)} />
-        <div
-          className={cn(
-            "flex flex-col gap-2 rounded-lg border px-3 py-3",
-            layoutsOperarFormDarkBorderClass,
-            layoutsOperarFormDarkSurfaceClass,
-          )}
-        >
-          {Array.from({ length: 3 }, (_, index) => (
-            <div key={index} className="flex items-center justify-between gap-3 py-0.5">
-              <div className={cn("h-3.5 flex-1 rounded-sm", ghost)} />
-              <div className={cn("h-3.5 w-16 shrink-0 rounded-sm", ghost)} />
-            </div>
-          ))}
+      <div className="flex flex-col gap-2">
+        <div className="flex items-center gap-2">
+          <BlockSkeleton className="size-3.5 rounded-sm" />
+          <BlockSkeleton className="h-3 w-24 rounded-sm" />
         </div>
-      </div>
-
-      <div className="flex flex-col gap-1.5">
-        <div className={cn("h-3 w-28 rounded-sm", ghost)} />
         <div
           className={cn(
-            "overflow-hidden rounded-lg border",
-            layoutsOperarFormDarkBorderClass,
+            "rounded-lg px-2.5 py-1 ring-1 ring-[color-mix(in_srgb,var(--rootsy-sombra-border)_55%,transparent)]",
             layoutsOperarFormDarkSurfaceClass,
           )}
         >
-          <div className={cn("h-9 border-b px-3", layoutsOperarFormDarkBorderClass, ghost)} />
           {Array.from({ length: 2 }, (_, index) => (
             <div
               key={index}
               className={cn(
-                "flex gap-3 border-b px-3 py-2.5 last:border-b-0",
-                layoutsOperarFormDarkBorderClass,
+                "flex items-center gap-2 py-1.5",
+                index > 0 && cn("border-t", layoutsOperarFormDarkBorderClass),
               )}
             >
-              <div className={cn("h-3.5 flex-1 rounded-sm", ghost)} />
-              <div className={cn("h-3.5 flex-1 rounded-sm", ghost)} />
-              <div className={cn("h-3.5 w-20 shrink-0 rounded-sm", ghost)} />
+              <BlockSkeleton className="size-3 shrink-0 rounded-sm" />
+              <BlockSkeleton className="h-3 flex-1 rounded-sm" />
+              <BlockSkeleton className="h-3 w-12 shrink-0 rounded-sm" />
             </div>
           ))}
         </div>
+      </div>
+
+      <div className="flex flex-col gap-2">
+        <div className="flex items-center gap-2">
+          <BlockSkeleton className="size-3.5 rounded-sm" />
+          <BlockSkeleton className="h-3 w-28 rounded-sm" />
+        </div>
+        <BlockSkeleton className="h-24 w-full" />
       </div>
 
       <span className="sr-only">Cargando detalle del servicio…</span>

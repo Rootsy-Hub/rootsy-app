@@ -5,19 +5,11 @@ import {
   type ServiceTypeChargeDetail,
   type ServiceTypeChargeOption,
 } from "@/app/[siteId]/[popId]/active-services/actions"
-import {
-  layoutsOperarFormDarkSecondaryButtonClass,
-  layoutsOperarScrollMinimalClass,
-} from "@/app/library/layouts/layoutsOperarStyles"
-import { ServiceOperateSelectedServiceDetailSkeleton } from "@/components/service-operation/ServiceOperateSelectedServiceDetailSkeleton"
+import { layoutsOperarScrollMinimalClass } from "@/app/library/layouts/layoutsOperarStyles"
 import { ServiceOperateContractDialog } from "@/components/service-operation/ServiceOperateContractDialog"
-import {
-  ServicePlanDetailContent,
-  servicePlanHasContract,
-} from "@/components/service-operation/ServicePlanDetailContent"
-import { ServiceOperateServiceShowcase } from "@/components/service-operation/ServiceOperateServiceShowcase"
+import { ServiceOperateSelectedServiceDetailSkeleton } from "@/components/service-operation/ServiceOperateSelectedServiceDetailSkeleton"
+import { ServiceOperateSelectedServiceMarketingDetail } from "@/components/service-operation/ServiceOperateSelectedServiceMarketingDetail"
 import { cn } from "@/lib/utils"
-import { FileText } from "lucide-react"
 import { useEffect, useState } from "react"
 
 type Props = {
@@ -61,45 +53,35 @@ export function ServiceOperateSelectedServiceDetail({
     <div className={cn("flex min-h-0 flex-1 flex-col", className)}>
       <div
         className={cn(
-          "min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 py-4 sm:px-5 sm:py-5",
+          "min-h-0 flex-1 overflow-y-auto overscroll-contain px-3 py-3 sm:px-4 sm:py-4",
           layoutsOperarScrollMinimalClass,
         )}
       >
-        <div className="mx-auto flex w-full max-w-3xl flex-col gap-6">
-          <ServiceOperateServiceShowcase service={service} />
-
-          {loading ? (
-            <ServiceOperateSelectedServiceDetailSkeleton />
-          ) : error ? (
+        <div className="mx-auto flex w-full max-w-3xl flex-col gap-4">
+          {error ? (
             <p className="text-sm text-rose-300">{error}</p>
-          ) : detail ? (
+          ) : (
             <>
-              <ServicePlanDetailContent
+              <ServiceOperateSelectedServiceMarketingDetail
+                service={service}
                 detail={detail}
-                tone="dark"
-                showHero={false}
-              />
-
-              {servicePlanHasContract(detail) ? (
-                <div>
-                  <button
-                    type="button"
-                    className={layoutsOperarFormDarkSecondaryButtonClass}
-                    onClick={() => setContractOpen(true)}
-                  >
-                    <FileText className="size-4 shrink-0 opacity-80" aria-hidden />
-                    Ver contrato
-                  </button>
-                </div>
-              ) : null}
-
-              <ServiceOperateContractDialog
-                open={contractOpen}
-                onOpenChange={setContractOpen}
-                serviceName={detail.name}
-                contractText={detail.contractText.trim()}
+                loadingDetail={loading}
+                onOpenContract={
+                  detail?.contractText.trim()
+                    ? () => setContractOpen(true)
+                    : undefined
+                }
               />
             </>
+          )}
+
+          {detail ? (
+            <ServiceOperateContractDialog
+              open={contractOpen}
+              onOpenChange={setContractOpen}
+              serviceName={detail.name}
+              contractText={detail.contractText.trim()}
+            />
           ) : null}
         </div>
       </div>
