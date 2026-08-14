@@ -5,6 +5,7 @@ import {
   dataWorkspaceEntityCardStatLabelClass,
 } from "@/components/data-workspace/dataWorkspaceListStyles"
 import type { StatisticsCompareMetric } from "@/app/[siteId]/[popId]/statistics/actions"
+import type { StatisticsSectionId } from "@/lib/statisticsCatalog"
 import {
   statisticsDeltaNegativeClass,
   statisticsDeltaNeutralClass,
@@ -15,6 +16,97 @@ import {
 import { formatReportMoneyAr } from "@/lib/reportFormatters"
 import { cn } from "@/lib/utils"
 import { ArrowDown, ArrowUp, Minus } from "lucide-react"
+
+type KpiSkeletonDef = {
+  id: string
+  label: string
+  format: StatisticsCompareMetric["format"]
+}
+
+const SECTION_KPI_SKELETONS: Partial<
+  Record<StatisticsSectionId, KpiSkeletonDef[]>
+> = {
+  sales: [
+    { id: "total", label: "Ventas", format: "money" },
+    { id: "count", label: "Cantidad", format: "number" },
+    { id: "ticket", label: "Ticket promedio", format: "money" },
+  ],
+  profitability: [
+    { id: "costs", label: "Costo de ventas", format: "money" },
+    { id: "gross", label: "Ganancia bruta", format: "money" },
+    { id: "expenses", label: "Gastos", format: "money" },
+    { id: "result", label: "Resultado neto", format: "money" },
+  ],
+  products: [
+    { id: "articles", label: "Artículos vendidos", format: "number" },
+    { id: "promotions", label: "Promociones vendidas", format: "number" },
+    { id: "recipes", label: "Recetas vendidas", format: "number" },
+  ],
+  purchases: [
+    { id: "total", label: "Compras", format: "money" },
+    { id: "count", label: "Cantidad", format: "number" },
+    { id: "ticket", label: "Ticket promedio", format: "money" },
+  ],
+  inventory: [
+    { id: "value", label: "Valor del inventario", format: "money" },
+    { id: "units", label: "Unidades en stock", format: "number" },
+    { id: "low", label: "Artículos con stock bajo", format: "number" },
+    { id: "empty", label: "Artículos sin stock", format: "number" },
+  ],
+  clients: [
+    { id: "clients", label: "Clientes activos", format: "number" },
+    { id: "new", label: "Clientes nuevos", format: "number" },
+    { id: "recurring", label: "Recurrentes", format: "number" },
+    { id: "ticket", label: "Ticket promedio", format: "money" },
+  ],
+  finance: [
+    { id: "in", label: "Ingresos", format: "money" },
+    { id: "out", label: "Egresos", format: "money" },
+    { id: "net", label: "Neto", format: "money" },
+  ],
+}
+
+function skeletonMetrics(defs: KpiSkeletonDef[]): StatisticsCompareMetric[] {
+  return defs.map((def) => ({
+    ...def,
+    value: 0,
+    previousValue: 0,
+    deltaPercent: null,
+    deltaPoints: null,
+  }))
+}
+
+function resolveDisplayMetrics({
+  metrics,
+  loading,
+  sectionId,
+  metricsSectionId,
+}: {
+  metrics: StatisticsCompareMetric[]
+  loading?: boolean
+  sectionId?: StatisticsSectionId
+  metricsSectionId?: StatisticsSectionId
+}): StatisticsCompareMetric[] {
+  if (!loading) return metrics
+
+  const metricsMatchSection =
+    metrics.length > 0 &&
+    (!sectionId || !metricsSectionId || metricsSectionId === sectionId)
+
+  if (metricsMatchSection) return metrics
+
+  if (sectionId && SECTION_KPI_SKELETONS[sectionId]) {
+    return skeletonMetrics(SECTION_KPI_SKELETONS[sectionId]!)
+  }
+
+  return skeletonMetrics(
+    Array.from({ length: Math.max(metrics.length, 3) }).map((_, i) => ({
+      id: `sk-${i}`,
+      label: "—",
+      format: "number" as const,
+    })),
+  )
+}
 
 type DeltaDirection = "up" | "down" | "flat" | "unknown"
 
@@ -30,22 +122,41 @@ function formatValue(
 }
 
 function formatDelta(metric: StatisticsCompareMetric): string | null {
-  if (metric.format === "percent" && metric.deltaPoints != null) {
-    const sign = metric.deltaPoints > 0 ? "+" : ""
-    return `${sign}${metric.deltaPoints.toLocaleString("es-AR", { minimumFractionDigits: 1, maximumFractionDigits: 1 })} pp`
+  if (metric.format === "percent") {
+    if (metric.deltaPoints != null) {
+      const sign = metric.deltaPoints > 0 ? "+" : ""
+      return `${sign}${metric.deltaPoints.toLocaleString("es-AR", { minimumFractionDigits: 1, maximumFractionDigits: 1 })} pp`
+    }
+    if (metric.previousValue === 0 && metric.value === 0) return "0,0 pp"
+    return null
   }
-  if (metric.deltaPercent == null) return null
-  const sign = metric.deltaPercent > 0 ? "+" : ""
-  return `${sign}${metric.deltaPercent.toLocaleString("es-AR", { minimumFractionDigits: 1, maximumFractionDigits: 1 })}%`
+
+  if (metric.deltaPercent != null) {
+    const sign = metric.deltaPercent > 0 ? "+" : ""
+    return `${sign}${metric.deltaPercent.toLocaleString("es-AR", { minimumFractionDigits: 1, maximumFractionDigits: 1 })}%`
+  }
+  if (metric.previousValue === 0 && metric.value === 0) return "0%"
+  return null
 }
 
 function getDeltaDirection(metric: StatisticsCompareMetric): DeltaDirection {
-  const delta =
-    metric.format === "percent" ? metric.deltaPoints : metric.deltaPercent
-  if (delta == null) return "unknown"
-  if (delta > 0) return "up"
-  if (delta < 0) return "down"
-  return "flat"
+  if (metric.format === "percent") {
+    if (metric.deltaPoints != null) {
+      if (metric.deltaPoints > 0) return "up"
+      if (metric.deltaPoints < 0) return "down"
+      return "flat"
+    }
+    return "unknown"
+  }
+
+  if (metric.deltaPercent != null) {
+    if (metric.deltaPercent > 0) return "up"
+    if (metric.deltaPercent < 0) return "down"
+    return "flat"
+  }
+
+  if (metric.previousValue === 0 && metric.value === 0) return "flat"
+  return "unknown"
 }
 
 function kpiGridClass(count: number) {
@@ -55,17 +166,14 @@ function kpiGridClass(count: number) {
   return "grid-cols-1 sm:grid-cols-2 xl:grid-cols-4"
 }
 
-function StatisticsDeltaIndicator({
+export function StatisticsKpiDeltaIndicator({
   metric,
 }: {
   metric: StatisticsCompareMetric
 }) {
   const deltaText = formatDelta(metric)
   const direction = getDeltaDirection(metric)
-
-  if (deltaText == null) {
-    return <p className="mt-2 text-xs text-rootsy-bruma-500">—</p>
-  }
+  const hasDelta = deltaText != null
 
   const Icon =
     direction === "up" ? ArrowUp : direction === "down" ? ArrowDown : Minus
@@ -94,43 +202,51 @@ function StatisticsDeltaIndicator({
         : "Sin cambio"
 
   return (
-    <p className="mt-2 flex flex-wrap items-center gap-x-1 gap-y-0.5 text-xs text-rootsy-bruma-500">
-      <span className="inline-flex items-center gap-1">
-        <Icon className={iconClass} aria-hidden />
-        <span className="sr-only">{trendLabel} </span>
-        <span className={deltaValueClass}>{deltaText}</span>
-      </span>
-      <span>vs. período anterior</span>
+    <p className="flex flex-nowrap items-center gap-x-1 text-xs text-rootsy-bruma-500">
+      {hasDelta ? (
+        <span className="inline-flex min-w-0 shrink items-center gap-1">
+          <Icon className={iconClass} aria-hidden />
+          <span className="sr-only">{trendLabel} </span>
+          <span className={cn(deltaValueClass, "truncate")}>{deltaText}</span>
+        </span>
+      ) : (
+        <span className="shrink-0">—</span>
+      )}
+      <span className="shrink-0">vs. período anterior</span>
     </p>
   )
 }
 
+/** Reserva altura de la fila de variación para que la card no salte al cargar. */
+export const statisticsKpiDeltaSlotClass = "mt-2 flex min-h-5 items-center"
+
 export function StatisticsCompareKpiRow({
   metrics,
   loading,
+  sectionId,
+  metricsSectionId,
 }: {
   metrics: StatisticsCompareMetric[]
   loading?: boolean
+  sectionId?: StatisticsSectionId
+  metricsSectionId?: StatisticsSectionId
 }) {
-  if (!metrics.length && !loading) return null
+  const displayMetrics = resolveDisplayMetrics({
+    metrics,
+    loading,
+    sectionId,
+    metricsSectionId,
+  })
 
-  const displayCount = loading ? Math.max(metrics.length, 3) : metrics.length
-  const displayMetrics = (
-    loading
-      ? Array.from({ length: displayCount }).map((_, i) => ({
-          id: `sk-${i}`,
-          label: "—",
-          value: 0,
-          previousValue: 0,
-          deltaPercent: null,
-          deltaPoints: null,
-          format: "number" as const,
-        }))
-      : metrics
-  ) as StatisticsCompareMetric[]
+  if (!displayMetrics.length && !loading) return null
 
   return (
-    <div className={cn("grid w-full gap-3", kpiGridClass(displayCount))}>
+    <div
+      className={cn(
+        "grid w-full gap-3",
+        kpiGridClass(displayMetrics.length),
+      )}
+    >
       {displayMetrics.map((metric) => (
         <div
           key={metric.id}
@@ -144,11 +260,9 @@ export function StatisticsCompareKpiRow({
           <ReportStatValue loading={loading}>
             {formatValue(metric.value, metric.format)}
           </ReportStatValue>
-          {!loading ? (
-            <StatisticsDeltaIndicator metric={metric} />
-          ) : (
-            <p className="mt-2 text-xs text-rootsy-bruma-500">—</p>
-          )}
+          <div className={statisticsKpiDeltaSlotClass}>
+            <StatisticsKpiDeltaIndicator metric={metric} />
+          </div>
         </div>
       ))}
     </div>

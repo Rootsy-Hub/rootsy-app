@@ -2,21 +2,21 @@
 
 import {
   getPopSettingsPageData,
-  syncPadronForPopFiscal,
   updatePopSettings,
   type PopSettingsFormInput,
 } from "@/app/[siteId]/[popId]/settings/actions"
 import { PopSettingsFormFields } from "@/app/[siteId]/[popId]/settings/PopSettingsFormFields"
-import "@/app/library/color/rootsyNaturePalette.css"
 import {
   dataWorkspaceBlocksContentInnerClass,
   dataWorkspaceBlocksContentScopeClass,
+  dataWorkspaceBlocksPageMainClass,
 } from "@/components/data-workspace/dataWorkspaceListStyles"
 import {
   DataWorkspaceModuleLayout,
   dataWorkspaceModuleHeaderVariant,
 } from "@/components/layouts-module/DataWorkspaceModuleLayout"
 import { RootsPrimaryButton } from "@/components/rootsy-button"
+import { RootsBanner } from "@/components/rootsy-banner"
 import withAuth from "@/hoc/withAuth"
 import { usePopWorkspace } from "@/context/PopWorkspaceContext"
 import { usePadronAutofillRazonSocial } from "@/hooks/usePadronAutofillRazonSocial"
@@ -106,8 +106,10 @@ function SettingsPage() {
   const [error, setError] = useState<string | null>(null)
   const pageLoading = bootstrapLoading || loading
   const [saving, setSaving] = useState(false)
-  const [banner, setBanner] = useState<string | null>(null)
-  const [padronBusy, setPadronBusy] = useState(false)
+  const [banner, setBanner] = useState<{
+    message: string
+    intent: "success" | "danger"
+  } | null>(null)
   const [savedSnapshot, setSavedSnapshot] = useState<string | null>(null)
 
   const [form, setForm] = useState<SettingsFormState>({
@@ -134,6 +136,7 @@ function SettingsPage() {
   const padron = usePadronAutofillRazonSocial(popId, form.fiscalCuit ?? "", {
     enabled: Boolean(popId) && isOwner && canUpdate && !pageLoading,
     suppressClear: pageLoading,
+    manual: true,
   })
 
   const load = useCallback(async () => {
@@ -266,38 +269,11 @@ function SettingsPage() {
     })
     setSaving(false)
     if (!res.success) {
-      setBanner(res.error)
+      setBanner({ message: res.error ?? "Error", intent: "danger" })
       return
     }
-    setBanner("Cambios guardados.")
+    setBanner({ message: "Cambios guardados.", intent: "success" })
     await Promise.all([load(), refreshBootstrap()])
-  }
-
-  const onSyncPadron = async () => {
-    if (!popId || !isOwner) return
-    setPadronBusy(true)
-    setBanner(null)
-    const res = await syncPadronForPopFiscal(popId)
-    setPadronBusy(false)
-    if (!res.success) {
-      setBanner(res.error)
-      return
-    }
-    setForm((f) => {
-      const acts = res.fiscalActividadesPadron ?? []
-      const json = acts.length ? JSON.stringify(acts) : ""
-      const sel = f.fiscalActividadSeleccionadaId?.trim() ?? ""
-      const selStillValid =
-        sel.length > 0 && acts.some((a) => a.idActividad === sel)
-      return {
-        ...f,
-        fiscalRazonSocial: res.razonSocial,
-        fiscalPadronActividadesJson: json,
-        ...(selStillValid ? {} : { fiscalActividadSeleccionadaId: "" }),
-        fiscalPadronSyncedAt: new Date().toISOString(),
-      }
-    })
-    setBanner("Datos fiscales actualizados desde el padrón.")
   }
 
   if (!popId || !siteId) {
@@ -322,7 +298,10 @@ function SettingsPage() {
       userRoleLabel={bootstrap?.roleLabel}
       contentFlush
       mainMaxWidthClass="max-w-none"
-      mainClassName="rootsy-app-light rootsy-nature-palette min-h-0 flex-1 flex-col overflow-hidden bg-background"
+      mainClassName={cn(
+        dataWorkspaceBlocksPageMainClass,
+        "flex min-h-0 flex-1 flex-col overflow-hidden",
+      )}
     >
       <div className="flex min-h-0 flex-1 flex-col">
         <div
@@ -332,14 +311,13 @@ function SettingsPage() {
             "min-h-0 flex-1 overflow-y-auto",
           )}
         >
-          <div className="mx-auto w-full max-w-[88rem]">
+          <div className="mx-auto w-full max-w-[88rem] space-y-4">
             {error || bootstrapError ? (
-              <div
-                role="alert"
-                className="mb-4 rounded-lg border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive"
-              >
-                {error ?? bootstrapError}
-              </div>
+              <RootsBanner
+                intent="danger"
+                layout="message"
+                message={error ?? bootstrapError ?? ""}
+              />
             ) : null}
 
             {!pageLoading && !error && !bootstrapError ? (
@@ -349,12 +327,11 @@ function SettingsPage() {
                 className="space-y-6"
               >
                 {banner ? (
-                  <p
-                    role="status"
-                    className="rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800"
-                  >
-                    {banner}
-                  </p>
+                  <RootsBanner
+                    intent={banner.intent}
+                    layout="message"
+                    message={banner.message}
+                  />
                 ) : null}
 
                 <PopSettingsFormFields
@@ -364,8 +341,6 @@ function SettingsPage() {
                   canUpdate={canUpdate}
                   isOwner={isOwner}
                   padron={padron}
-                  padronBusy={padronBusy}
-                  onSyncPadron={() => void onSyncPadron()}
                   actividadesPadronList={actividadesPadronList}
                 />
               </form>
@@ -374,7 +349,7 @@ function SettingsPage() {
         </div>
 
         {!pageLoading && !error && !bootstrapError ? (
-          <footer className="relative z-20 shrink-0 border-t border-border/60 bg-white">
+          <footer className="relative z-20 shrink-0 border-t border-[var(--rootsy-bruma-200)] bg-white">
             <div className="mx-auto flex h-18 w-full max-w-[88rem] items-center justify-end px-4 sm:px-6 lg:px-8">
               <RootsPrimaryButton
                 type="submit"

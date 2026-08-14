@@ -12,13 +12,19 @@ type Props = {
 }
 
 /** Altura fija alineada a `text-2xl` para evitar que la card crezca al terminar de cargar. */
-const reportStatValueShellClass = "mt-1.5 flex h-8 min-w-0 items-center"
+const reportStatValueShellClass =
+  "mt-1.5 flex h-8 min-w-0 items-center justify-start"
 
 export function ReportStatValue({ loading = false, className, children }: Props) {
   return (
     <div className={reportStatValueShellClass}>
       {loading ? (
-        <RootsSpinner size="sm" label="Cargando total" aria-hidden className="shrink-0" />
+        <RootsSpinner
+          size="default"
+          label="Cargando total"
+          aria-hidden
+          className="shrink-0"
+        />
       ) : (
         <span className={cn(dataWorkspaceEntityCardStatValueLargeClass, className)}>
           {children}

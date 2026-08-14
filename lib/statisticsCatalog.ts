@@ -2,7 +2,6 @@ export type StatisticsSectionId =
   | "sales"
   | "profitability"
   | "products"
-  | "channels"
   | "purchases"
   | "inventory"
   | "clients"
@@ -28,7 +27,7 @@ export const STATISTICS_SECTIONS: StatisticsSectionDef[] = [
   {
     id: "sales",
     label: "Ventas",
-    description: "Facturación, cantidad de operaciones y ticket promedio",
+    description: "",
     iconModuleKey: "sale",
     filterKeys: ["channel"],
   },
@@ -41,22 +40,14 @@ export const STATISTICS_SECTIONS: StatisticsSectionDef[] = [
   {
     id: "products",
     label: "Productos",
-    description: "Artículos más vendidos y participación en ventas",
+    description: "Rentabilidad, participación y ventas por categoría",
     iconModuleKey: "stock",
-    filterKeys: ["channel"],
-  },
-  {
-    id: "channels",
-    label: "Canales",
-    description: "Mostrador, mesas, POS y mix de ventas",
-    iconModuleKey: "mesas",
-    requiresAnyModule: ["mesas", "mostrador", "services", "sale"],
     filterKeys: ["channel"],
   },
   {
     id: "purchases",
     label: "Compras",
-    description: "Importes, operaciones y principales proveedores",
+    description: "Importes, operaciones y principales compradores",
     iconModuleKey: "purchases",
     requiresAnyModule: ["purchases"],
     filterKeys: ["supplier"],
@@ -64,7 +55,7 @@ export const STATISTICS_SECTIONS: StatisticsSectionDef[] = [
   {
     id: "inventory",
     label: "Inventario",
-    description: "Movimientos de stock y artículos con mayor rotación",
+    description: "Stock actual, alertas y rotación de artículos",
     iconModuleKey: "inventory",
     requiresAnyModule: ["stock", "inventory"],
   },

@@ -18,6 +18,13 @@ export { RootsFormSelectField } from "@/components/rootsy-form/RootsFormSelectFi
 export { RootsFormSelectItem } from "@/components/rootsy-form/RootsFormSelectItem"
 export { RootsFormSelectValue } from "@/components/rootsy-form/RootsFormSelectValue"
 export { RootsFormDateField } from "@/components/rootsy-form/RootsFormDateField"
+export { RootsFormTimeField } from "@/components/rootsy-form/RootsFormTimeField"
+export {
+  RootsFormTaxDocumentField,
+  rootsFormTaxDocumentActionButtonClass,
+  type RootsFormTaxDocumentFieldAction,
+  type RootsFormTaxDocumentValueMode,
+} from "@/components/rootsy-form/RootsFormTaxDocumentField"
 export { RootsFormSegmentField } from "@/components/rootsy-form/RootsFormSegmentField"
 export type { RootsFormSegmentOption } from "@/components/rootsy-form/RootsFormSegmentField"
 export { RootsFormDiscountField } from "@/components/rootsy-form/RootsFormDiscountField"

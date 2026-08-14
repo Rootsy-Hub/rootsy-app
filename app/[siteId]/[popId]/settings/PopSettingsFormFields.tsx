@@ -3,24 +3,22 @@
 import type { PopSettingsFormInput } from "@/app/[siteId]/[popId]/settings/actions"
 import { PopSettingsImageUploadField } from "@/app/[siteId]/[popId]/settings/PopSettingsImageUploadField"
 import {
-  dataWorkspaceDetailCardClass,
+  dataWorkspaceBlocksSectionDescriptionClass,
+  dataWorkspaceBlocksSectionTitleClass,
 } from "@/components/data-workspace/dataWorkspaceListStyles"
-import { RootsIconButton, RootsSubtleButton } from "@/components/rootsy-button"
 import {
   RootsFormDateField,
-  RootsFormField,
   RootsFormPhoneField,
   RootsFormSelectField,
   RootsFormSelectItem,
+  RootsFormTaxDocumentField,
   RootsFormTextField,
+  RootsFormTimeField,
 } from "@/components/rootsy-form"
 import {
   rootsFormColumnClass,
-  rootsFormFieldHintClass,
-  rootsFormTextFieldClass,
   rootsFormTwoColRowClass,
 } from "@/components/rootsy-form/rootsFormStyles"
-import { Input } from "@/components/ui/input"
 import type { usePadronAutofillRazonSocial } from "@/hooks/usePadronAutofillRazonSocial"
 import {
   ARGENTINA_COUNTRY_CODE,
@@ -31,8 +29,9 @@ import {
 } from "@/lib/argentinaLocalities"
 import { periodoAfipToYmdFirstDay } from "@/lib/afipDateParse"
 import type { PadronActividadItem } from "@/lib/argentinaPadronLookup"
+import { formatPadronErrorForUser } from "@/lib/padronUserFacingError"
+import { DEFAULT_OPERATIONAL_DAY_CLOSE_TIME } from "@/lib/popOperationalDay"
 import { cn } from "@/lib/utils"
-import { Loader2, RefreshCw } from "lucide-react"
 import { useMemo, type Dispatch, type ReactNode, type SetStateAction } from "react"
 
 const ACTIVIDAD_SELECT_NONE = "__none__"
@@ -48,41 +47,41 @@ type Props = {
   canUpdate: boolean
   isOwner: boolean
   padron: ReturnType<typeof usePadronAutofillRazonSocial>
-  padronBusy: boolean
-  onSyncPadron: () => void
   actividadesPadronList: PadronActividadItem[]
 }
 
-function SettingsSectionCard({
+function SettingsSectionColumn({
   title,
   description,
   children,
   className,
-  showHeaderDivider = true,
 }: {
   title: string
   description?: ReactNode
   children: ReactNode
   className?: string
-  showHeaderDivider?: boolean
 }) {
   return (
-    <article className={cn(dataWorkspaceDetailCardClass, className)}>
-      <div
-        className={cn(
-          "flex flex-col gap-1 px-5 pt-4 pb-2 sm:px-6",
-          showHeaderDivider && "border-b border-border/60 pb-3",
-        )}
-      >
-        <h2 className="text-base font-semibold text-foreground">{title}</h2>
+    <div className={cn("flex min-w-0 flex-col gap-5", className)}>
+      <div className="space-y-1">
+        <h2 className={dataWorkspaceBlocksSectionTitleClass}>{title}</h2>
         {description ? (
-          <div className={rootsFormFieldHintClass}>{description}</div>
+          <div className={dataWorkspaceBlocksSectionDescriptionClass}>
+            {description}
+          </div>
         ) : null}
       </div>
-      <div className="px-5 pb-5 pt-2 sm:px-6">{children}</div>
-    </article>
+      {children}
+    </div>
   )
 }
+
+const settingsColumnsGridClass = cn(
+  "grid lg:items-start",
+  "divide-y divide-[var(--rootsy-bruma-200)] lg:divide-x lg:divide-y-0",
+  "[&>*]:min-w-0 [&>*]:py-6 lg:[&>*]:py-0",
+  "lg:[&>*]:px-6 lg:[&>*:first-child]:pl-0 lg:[&>*:last-child]:pr-0",
+)
 
 export function PopSettingsFormFields({
   popId,
@@ -91,8 +90,6 @@ export function PopSettingsFormFields({
   canUpdate,
   isOwner,
   padron,
-  padronBusy,
-  onSyncPadron,
   actividadesPadronList,
 }: Props) {
   const localityOptions = useMemo(
@@ -114,6 +111,12 @@ export function PopSettingsFormFields({
 
   const provinceValue = form.state?.trim() || PROVINCE_SELECT_NONE
   const cityValue = form.city?.trim() || CITY_SELECT_NONE
+
+  const fiscalCuitDigits = (form.fiscalCuit ?? "").replace(/\D/g, "")
+
+  const handlePadronLookup = () => {
+    void padron.lookup(form.fiscalCuit ?? "")
+  }
 
   const imageFields = (
     <div className={rootsFormColumnClass}>
@@ -166,11 +169,11 @@ export function PopSettingsFormFields({
   return (
     <div
       className={cn(
-        "grid gap-6 lg:items-start",
+        settingsColumnsGridClass,
         isOwner ? "lg:grid-cols-3" : "lg:grid-cols-2",
       )}
     >
-        <SettingsSectionCard title="Datos del punto" showHeaderDivider={false}>
+        <SettingsSectionColumn title="Datos del punto">
           <div className={rootsFormColumnClass}>
             <RootsFormTextField
               label="Nombre comercial"
@@ -288,76 +291,62 @@ export function PopSettingsFormFields({
               disabled={!canUpdate}
             />
 
-            <RootsFormField
+            <RootsFormTimeField
               label="Hora de cierre del día operativo"
-              htmlFor="pop-operational-day-close"
-              hint="Ventas hasta esta hora del día siguiente cuentan en el día operativo anterior. Ej.: con 05:00, lo vendido entre 00:00 y 04:59 pertenece al día previo."
-            >
-              <Input
-                id="pop-operational-day-close"
-                type="time"
-                value={form.operationalDayCloseTime ?? "00:00"}
-                onChange={(e) =>
-                  setForm((f) => ({
-                    ...f,
-                    operationalDayCloseTime: e.target.value || "00:00",
-                  }))
-                }
-                disabled={!canUpdate}
-                className={cn(rootsFormTextFieldClass, "max-w-[8.5rem]")}
-              />
-            </RootsFormField>
+              id="pop-operational-day-close"
+              value={form.operationalDayCloseTime ?? DEFAULT_OPERATIONAL_DAY_CLOSE_TIME}
+              fallbackValue={DEFAULT_OPERATIONAL_DAY_CLOSE_TIME}
+              onChange={(operationalDayCloseTime) =>
+                setForm((f) => ({ ...f, operationalDayCloseTime }))
+              }
+              disabled={!canUpdate}
+              hint="Define la hora en que cierra el día operativo. Ej.: con 08:00, lo vendido entre las 08:00 y las 07:59 del día siguiente pertenece al mismo día operativo; una venta a las 03:00 del martes se imputa al lunes."
+            />
           </div>
-        </SettingsSectionCard>
+        </SettingsSectionColumn>
 
         {isOwner ? (
-          <SettingsSectionCard
+          <SettingsSectionColumn
             title="Datos fiscales"
-            showHeaderDivider={false}
             description="Estos datos se utilizan para facturar en este punto de venta."
           >
             <div className={rootsFormColumnClass}>
-              <RootsFormField
+              <RootsFormTaxDocumentField
                 label="CUIT"
-                htmlFor="pop-cuit"
-                error={padron.error ?? undefined}
-                hint={
-                  padron.busy ? (
-                    <span className="inline-flex items-center gap-2">
-                      <Loader2 className="size-3.5 animate-spin" aria-hidden />
-                      Consultando padrón…
-                    </span>
-                  ) : undefined
+                id="pop-cuit"
+                value={form.fiscalCuit ?? ""}
+                onChange={(fiscalCuit) => {
+                  const prevDigits = (form.fiscalCuit ?? "").replace(/\D/g, "")
+                  const nextDigits = fiscalCuit.replace(/\D/g, "")
+                  if (prevDigits === nextDigits) {
+                    setForm((f) => ({ ...f, fiscalCuit }))
+                    return
+                  }
+                  setForm((f) => ({
+                    ...f,
+                    fiscalCuit,
+                    fiscalRazonSocial: "",
+                    fiscalPadronActividadesJson: "",
+                    fiscalActividadSeleccionadaId: "",
+                    fiscalInicioActividadesDate: "",
+                  }))
+                }}
+                valueMode="cuit_only"
+                placeholder="30-12345678-9"
+                disabled={!canUpdate}
+                error={
+                  padron.error
+                    ? formatPadronErrorForUser(padron.error)
+                    : undefined
                 }
-              >
-                <div className="flex items-center gap-2">
-                  <Input
-                    id="pop-cuit"
-                    value={form.fiscalCuit ?? ""}
-                    onChange={(e) =>
-                      setForm((f) => ({ ...f, fiscalCuit: e.target.value }))
-                    }
-                    disabled={!canUpdate}
-                    placeholder="11 dígitos sin guiones"
-                    className={cn(rootsFormTextFieldClass, "min-w-0 flex-1")}
-                  />
-                  <RootsIconButton
-                    tone="secondary"
-                    surface="light"
-                    size="compact"
-                    label="Sincronizar padrón"
-                    disabled={!canUpdate || padronBusy}
-                    onClick={onSyncPadron}
-                    className="shrink-0"
-                  >
-                    {padronBusy ? (
-                      <Loader2 className="size-4 animate-spin" aria-hidden />
-                    ) : (
-                      <RefreshCw className="size-4" aria-hidden />
-                    )}
-                  </RootsIconButton>
-                </div>
-              </RootsFormField>
+                action={{
+                  label: "Consultar ARCA",
+                  loadingLabel: "Consultando",
+                  onClick: handlePadronLookup,
+                  disabled: !padron.canLookup,
+                  loading: padron.busy,
+                }}
+              />
 
               <RootsFormTextField
                 label="Razón social"
@@ -417,54 +406,33 @@ export function PopSettingsFormFields({
                 hint="Cargá la fecha según tu constancia."
               />
 
-              <RootsFormField label="Ingresos brutos" htmlFor="pop-fiscal-ib">
-                <div className="flex items-center gap-2">
-                  <Input
-                    id="pop-fiscal-ib"
-                    value={(form.fiscalIngresosBrutosText ?? "").replace(/\D/g, "")}
-                    onChange={(e) =>
-                      setForm((f) => ({
-                        ...f,
-                        fiscalIngresosBrutosText: e.target.value.replace(/\D/g, ""),
-                      }))
-                    }
-                    disabled={!canUpdate}
-                    inputMode="numeric"
-                    placeholder="30715581759"
-                    className={cn(rootsFormTextFieldClass, "min-w-0 flex-1")}
-                  />
-                  <RootsSubtleButton
-                    type="button"
-                    disabled={
-                      !canUpdate ||
-                      !(form.fiscalCuit ?? "").replace(/\D/g, "").length
-                    }
-                    onClick={() =>
-                      setForm((f) => ({
-                        ...f,
-                        fiscalIngresosBrutosText: (f.fiscalCuit ?? "").replace(
-                          /\D/g,
-                          "",
-                        ),
-                      }))
-                    }
-                    className="shrink-0"
-                  >
-                    Igual al CUIT
-                  </RootsSubtleButton>
-                </div>
-              </RootsFormField>
+              <RootsFormTaxDocumentField
+                label="Ingresos brutos"
+                id="pop-fiscal-ib"
+                value={form.fiscalIngresosBrutosText ?? ""}
+                onChange={(fiscalIngresosBrutosText) =>
+                  setForm((f) => ({ ...f, fiscalIngresosBrutosText }))
+                }
+                valueMode="digits_only"
+                placeholder="30715581759"
+                disabled={!canUpdate}
+                action={{
+                  label: "Igual al CUIT",
+                  onClick: () =>
+                    setForm((f) => ({
+                      ...f,
+                      fiscalIngresosBrutosText: fiscalCuitDigits,
+                    })),
+                  disabled: !canUpdate || !fiscalCuitDigits.length,
+                }}
+              />
             </div>
-          </SettingsSectionCard>
+          </SettingsSectionColumn>
         ) : null}
 
-      <SettingsSectionCard
-        title="Imágenes del POP"
-        showHeaderDivider={false}
-        className="min-w-0"
-      >
+      <SettingsSectionColumn title="Imágenes del POP">
         {imageFields}
-      </SettingsSectionCard>
+      </SettingsSectionColumn>
     </div>
   )
 }

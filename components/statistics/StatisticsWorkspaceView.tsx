@@ -25,10 +25,17 @@ import {
   type StatisticsSectionId,
 } from "@/lib/statisticsCatalog"
 import {
+  mergeStatisticsSectionQuery,
+  resolveStatisticsSectionId,
+  STATISTICS_SECTION_QUERY_PARAM,
+  statisticsSectionHref,
+} from "@/lib/statisticsUrl"
+import {
   computeSummaryDateBounds,
   type SummaryDatePreset,
 } from "@/lib/summaryDateFilter"
 import { cn } from "@/lib/utils"
+import { usePathname, useRouter, useSearchParams } from "next/navigation"
 import { useCallback, useEffect, useMemo, useState } from "react"
 import type { DateRange } from "react-day-picker"
 
@@ -65,14 +72,27 @@ export function StatisticsWorkspaceView({
   userRoleLabel,
   bootstrapError,
 }: Props) {
+  const router = useRouter()
+  const pathname = usePathname()
+  const searchParams = useSearchParams()
+
   const sections = useMemo(
     () => visibleStatisticsSections(enabledModuleKeys),
     [enabledModuleKeys],
   )
 
-  const [activeSectionId, setActiveSectionId] = useState<StatisticsSectionId>(
-    sections[0]?.id ?? "sales",
+  const visibleSectionIds = useMemo(
+    () => sections.map((section) => section.id),
+    [sections],
   )
+
+  const requestedSectionId = searchParams.get(STATISTICS_SECTION_QUERY_PARAM)
+
+  const activeSectionId = useMemo(
+    () => resolveStatisticsSectionId(requestedSectionId, visibleSectionIds),
+    [requestedSectionId, visibleSectionIds],
+  )
+
   const [preset, setPreset] = useState<SummaryDatePreset>("this_month")
   const [customRange, setCustomRange] = useState<DateRange | undefined>(
     undefined,
@@ -96,35 +116,70 @@ export function StatisticsWorkspaceView({
 
   const showChannel = activeSection?.filterKeys?.includes("channel") ?? false
 
+  const getSectionHref = useCallback(
+    (sectionId: StatisticsSectionId) =>
+      statisticsSectionHref(siteId, popId, sectionId),
+    [siteId, popId],
+  )
+
   useEffect(() => {
-    if (!sections.some((s) => s.id === activeSectionId) && sections[0]) {
-      setActiveSectionId(sections[0].id)
+    if (!visibleSectionIds.length) return
+    if (requestedSectionId !== activeSectionId) {
+      router.replace(
+        mergeStatisticsSectionQuery(pathname, searchParams, activeSectionId),
+        { scroll: false },
+      )
     }
-  }, [sections, activeSectionId])
+  }, [
+    activeSectionId,
+    pathname,
+    requestedSectionId,
+    router,
+    searchParams,
+    visibleSectionIds.length,
+  ])
 
   useEffect(() => {
     setFilters(EMPTY_FILTERS)
   }, [activeSectionId])
 
-  const load = useCallback(async () => {
-    setLoading(true)
-    setError(null)
-    const res = await getStatisticsSectionData({
-      popId,
-      sectionId: activeSectionId,
-      preset,
-      from: bounds.from,
-      to: bounds.to,
-      compareEnabled: true,
-      filters,
-    })
-    if (!res.success) {
-      setError(res.error)
-      setData(null)
-    } else {
-      setData(res.data)
+  useEffect(() => {
+    let cancelled = false
+    const requestedSectionId = activeSectionId
+
+    async function loadSection() {
+      setLoading(true)
+      setError(null)
+
+      const res = await getStatisticsSectionData({
+        popId,
+        sectionId: requestedSectionId,
+        preset,
+        from: bounds.from,
+        to: bounds.to,
+        compareEnabled: true,
+        filters,
+      })
+
+      if (cancelled) return
+
+      if (!res.success) {
+        setError(res.error)
+        setData(null)
+      } else if (res.data.sectionId !== requestedSectionId) {
+        return
+      } else {
+        setData(res.data)
+      }
+
+      setLoading(false)
     }
-    setLoading(false)
+
+    void loadSection()
+
+    return () => {
+      cancelled = true
+    }
   }, [
     popId,
     activeSectionId,
@@ -134,9 +189,15 @@ export function StatisticsWorkspaceView({
     filters,
   ])
 
-  useEffect(() => {
-    void load()
-  }, [load])
+  const handleSectionClick = useCallback(
+    (sectionId: StatisticsSectionId) => {
+      if (sectionId === activeSectionId) return
+      setLoading(true)
+      setData(null)
+      setError(null)
+    },
+    [activeSectionId],
+  )
 
   return (
     <DataWorkspaceModuleLayout
@@ -162,7 +223,8 @@ export function StatisticsWorkspaceView({
             <StatisticsSectionNav
               sections={sections}
               activeSectionId={activeSectionId}
-              onSelect={(id) => setActiveSectionId(id as StatisticsSectionId)}
+              getSectionHref={getSectionHref}
+              onSectionClick={handleSectionClick}
             />
           </div>
         </aside>

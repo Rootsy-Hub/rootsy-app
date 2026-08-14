@@ -1,7 +1,10 @@
 "use client"
 
 import "@/app/library/libraryColorTheme.css"
-import type { StatisticsSectionDef } from "@/lib/statisticsCatalog"
+import type {
+  StatisticsSectionDef,
+  StatisticsSectionId,
+} from "@/lib/statisticsCatalog"
 import { getRootsModuleIcon } from "@/lib/rootsyModuleIcons"
 import {
   statisticsNavItemMobileClass,
@@ -16,15 +19,18 @@ import {
   libraryNavItemLabelClass,
 } from "@/app/library/libraryColorTheme"
 import { cn } from "@/lib/utils"
+import Link from "next/link"
 
 export function StatisticsSectionNav({
   sections,
   activeSectionId,
-  onSelect,
+  getSectionHref,
+  onSectionClick,
 }: {
   sections: StatisticsSectionDef[]
   activeSectionId: string
-  onSelect: (id: string) => void
+  getSectionHref: (sectionId: StatisticsSectionId) => string
+  onSectionClick?: (sectionId: StatisticsSectionId) => void
 }) {
   return (
     <nav
@@ -38,11 +44,12 @@ export function StatisticsSectionNav({
 
           return (
             <li key={section.id} className="shrink-0 lg:shrink">
-              <button
-                type="button"
-                onClick={() => onSelect(section.id)}
-                aria-current={active ? "true" : undefined}
+              <Link
+                href={getSectionHref(section.id)}
+                scroll={false}
+                aria-current={active ? "page" : undefined}
                 aria-label={section.label}
+                onClick={() => onSectionClick?.(section.id)}
                 className={cn(
                   libraryNavItemClass,
                   statisticsNavItemMobileClass,
@@ -54,7 +61,7 @@ export function StatisticsSectionNav({
                 {section.comingSoon ? (
                   <span className={statisticsPlannedBadgeClass}>Próx.</span>
                 ) : null}
-              </button>
+              </Link>
             </li>
           )
         })}

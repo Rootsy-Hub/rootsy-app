@@ -55,6 +55,18 @@ export const statisticsLosetaCardBodyCompactClass = "px-5 py-4"
 export const statisticsSectionPageTitleClass =
   "font-canopy text-xl font-semibold tracking-tight text-[var(--rootsy-bruma-900)] sm:text-2xl"
 
+/** Subtítulo bajo el título principal de sección (Ventas, Rentabilidad…). */
+export const statisticsSectionPageSubtitleClass = cn(
+  dataWorkspaceBlocksSectionDescriptionClass,
+  "text-sm sm:text-[0.9375rem]",
+)
+
+/** Meta operativa bajo el título (p. ej. cierre del día operativo). */
+export const statisticsSectionOperationalDayMetaClass = cn(
+  statisticsSectionPageSubtitleClass,
+  "flex flex-wrap items-center gap-x-1 gap-y-0.5",
+)
+
 /** Encabezado de bloque — paridad LayoutsBlocksDocSubsection / reportes. */
 export function statisticsSectionHeadingClassNames() {
   return {
@@ -95,6 +107,10 @@ export const statisticsUpcomingItemClass = cn(
 )
 
 export const statisticsEmptyTextClass = "text-sm text-rootsy-bruma-500"
+
+/** Área de gráfico en losetas de estadísticas (evolución, torta, etc.). */
+export const statisticsChartAreaClass =
+  "mt-4 h-[220px] w-full shrink-0 !aspect-auto [&_.recharts-responsive-container]:!h-full"
 
 export const statisticsRankBadgeTopClass = cn(
   dataWorkspaceEntityCardEyebrowClass,

@@ -4,6 +4,11 @@ import type { StatisticsSectionData } from "@/app/[siteId]/[popId]/statistics/ac
 import { DataWorkspaceDetailEmptyState } from "@/components/data-workspace/DataWorkspaceDetailEmptyState"
 import { StatisticsCompareKpiRow } from "@/components/statistics/StatisticsCompareKpiRow"
 import { StatisticsEvolutionChart } from "@/components/statistics/StatisticsEvolutionChart"
+import { StatisticsCostDistributionChart } from "@/components/statistics/StatisticsCostDistributionChart"
+import { StatisticsInventorySectionBlock } from "@/components/statistics/StatisticsInventorySectionBlock"
+import { StatisticsProductsSectionBlock } from "@/components/statistics/StatisticsProductsSectionBlock"
+import { StatisticsEfficiencyIndicators } from "@/components/statistics/StatisticsEfficiencyIndicators"
+import { StatisticsProfitabilityFormulaSubtitle } from "@/components/statistics/StatisticsProfitabilityFormulaSubtitle"
 import { StatisticsHourlyHeatmap } from "@/components/statistics/StatisticsHourlyHeatmap"
 import { StatisticsRankTable } from "@/components/statistics/StatisticsRankTable"
 import { StatisticsSegmentList } from "@/components/statistics/StatisticsSegmentList"
@@ -11,10 +16,13 @@ import {
   statisticsLosetaCardBodyClass,
   statisticsLosetaCardClass,
   statisticsSectionHeadingClassNames,
+  statisticsSectionOperationalDayMetaClass,
+  statisticsSectionPageSubtitleClass,
   statisticsSectionPageTitleClass,
   statisticsUpcomingItemClass,
 } from "@/components/statistics/statisticsWorkspaceStyles"
 import { StatisticsSectionFilters } from "@/components/statistics/StatisticsSectionFilters"
+import { RootsSpinner } from "@/components/rootsy-spinner"
 import type { StatisticsFilters } from "@/app/[siteId]/[popId]/statistics/actions"
 import type { SummaryDatePreset } from "@/lib/summaryDateFilter"
 import type { StatisticsSectionDef } from "@/lib/statisticsCatalog"
@@ -25,7 +33,6 @@ import type { ReactNode } from "react"
 
 const STATISTICS_HOURLY_SECTIONS = new Set<StatisticsSectionData["sectionId"]>([
   "sales",
-  "channels",
   "clients",
   "finance",
 ])
@@ -33,16 +40,22 @@ const STATISTICS_HOURLY_SECTIONS = new Set<StatisticsSectionData["sectionId"]>([
 function StatisticsSectionHeading({
   title,
   description,
+  meta,
   className,
   prominent = false,
 }: {
   title: string
-  description?: string
+  description?: ReactNode
+  meta?: ReactNode
   className?: string
   prominent?: boolean
 }) {
   const { title: blockTitleClass, description: descriptionClass } =
     statisticsSectionHeadingClassNames()
+
+  const pageDescriptionClass = prominent
+    ? statisticsSectionPageSubtitleClass
+    : descriptionClass
 
   return (
     <div className={cn("mb-3 space-y-1", className)}>
@@ -51,7 +64,16 @@ function StatisticsSectionHeading({
       >
         {title}
       </h2>
-      {description ? <p className={descriptionClass}>{description}</p> : null}
+      {description ? (
+        typeof description === "string" ? (
+          <p className={pageDescriptionClass}>{description}</p>
+        ) : (
+          <div className={pageDescriptionClass}>{description}</div>
+        )
+      ) : null}
+      {meta ? (
+        <div className={statisticsSectionOperationalDayMetaClass}>{meta}</div>
+      ) : null}
     </div>
   )
 }
@@ -59,10 +81,12 @@ function StatisticsSectionHeading({
 function StatisticsSectionTitleRow({
   title,
   description,
+  meta,
   filters,
 }: {
   title: string
-  description?: string
+  description?: ReactNode
+  meta?: ReactNode
   filters?: ReactNode
 }) {
   return (
@@ -70,6 +94,7 @@ function StatisticsSectionTitleRow({
       <StatisticsSectionHeading
         title={title}
         description={description}
+        meta={meta}
         className="mb-0 min-w-0 flex-1"
         prominent
       />
@@ -171,10 +196,50 @@ export function StatisticsSectionPanel({
   const rankFormat =
     data?.sectionId === "inventory" ? ("number" as const) : ("money" as const)
 
+  const sectionDataReady =
+    Boolean(data) && data!.sectionId === section?.id && !loading
+
   const comingSoon = isComingSoonSection(data, section)
   const showHourlyChart =
     section?.id != null && STATISTICS_HOURLY_SECTIONS.has(section.id)
-  const showParticipation = !filters.channel
+  const isProfitabilitySection = section?.id === "profitability"
+  const isPurchasesSection = section?.id === "purchases"
+  const isProductsSection = section?.id === "products"
+  const isInventorySection = section?.id === "inventory"
+  const showSidePanel = !filters.channel
+  const isSalesSection = section?.id === "sales"
+  const salesOperationalDayTime =
+    data?.sectionId === "sales" ? data.operationalDayCloseTime : undefined
+
+  const operationalDayCloseMeta = isSalesSection ? (
+    <>
+      <span>Hora de cierre del día operativo:</span>
+      <span className="inline-flex items-center gap-1 font-numeric tabular-nums">
+        <Clock className="size-3.5 shrink-0" aria-hidden />
+        {salesOperationalDayTime ? (
+          salesOperationalDayTime
+        ) : (
+          <RootsSpinner
+            size="sm"
+            label="Cargando hora de cierre"
+            aria-hidden
+            className="shrink-0"
+          />
+        )}
+      </span>
+    </>
+  ) : sectionDataReady &&
+    data?.operationalDayCloseTime &&
+    section?.id != null &&
+    STATISTICS_HOURLY_SECTIONS.has(section.id) ? (
+      <>
+        <span>Hora de cierre del día operativo:</span>
+        <span className="inline-flex items-center gap-1 font-numeric tabular-nums">
+          <Clock className="size-3.5 shrink-0" aria-hidden />
+          {data.operationalDayCloseTime}
+        </span>
+      </>
+    ) : undefined
 
   const sectionFilters = (
     <StatisticsSectionFilters
@@ -208,8 +273,21 @@ export function StatisticsSectionPanel({
   return (
     <div className="flex flex-col gap-6">
       <StatisticsSectionTitleRow
-        title={data?.title ?? section?.label ?? "—"}
-        description={data?.description ?? section?.description}
+        title={
+          sectionDataReady && data?.title
+            ? data.title
+            : section?.label ?? "—"
+        }
+        description={
+          isProfitabilitySection ? (
+            <StatisticsProfitabilityFormulaSubtitle />
+          ) : sectionDataReady ? (
+            data?.description
+          ) : (
+            section?.description
+          )
+        }
+        meta={operationalDayCloseMeta}
         filters={sectionFilters}
       />
 
@@ -217,36 +295,111 @@ export function StatisticsSectionPanel({
         <StatisticsCompareKpiRow
           metrics={data?.comparison ?? []}
           loading={loading}
+          sectionId={section?.id}
+          metricsSectionId={data?.sectionId}
         />
       </section>
 
+      {isProductsSection ? (
+        <StatisticsProductsSectionBlock data={data} loading={loading} />
+      ) : isInventorySection ? (
+        <StatisticsInventorySectionBlock data={data} loading={loading} />
+      ) : (
+        <>
       <div className="grid items-stretch gap-6 lg:grid-cols-12">
         <section
           className={cn(
             "flex min-h-0 h-full",
-            showParticipation ? "lg:col-span-8" : "lg:col-span-12",
+            showSidePanel ? "lg:col-span-8" : "lg:col-span-12",
           )}
         >
           <StatisticsEvolutionChart
             title="Evolución diaria"
-            description="Comportamiento en el tiempo dentro del período"
+            description={
+              data?.sectionId === "sales"
+                ? "Ventas por día operativo"
+                : data?.sectionId === "purchases"
+                  ? "Importe y operaciones por día"
+                : data?.sectionId === "profitability"
+                  ? "Ganancia bruta y margen por día"
+                  : "Comportamiento en el tiempo dentro del período"
+            }
             points={data?.evolution ?? []}
             loading={loading}
             valueFormat={rankFormat}
+            dualSeries={
+              data?.sectionId === "sales"
+                ? {
+                    primaryLabel: "Total vendido",
+                    secondaryLabel: "Cantidad de ventas",
+                    secondaryFormat: "number",
+                  }
+                : data?.sectionId === "purchases"
+                  ? {
+                      primaryLabel: "Total comprado",
+                      secondaryLabel: "Cantidad de operaciones",
+                      secondaryFormat: "number",
+                    }
+                : data?.sectionId === "profitability"
+                  ? {
+                      primaryLabel: "Ganancia bruta",
+                      secondaryLabel: "Margen",
+                      secondaryFormat: "percent",
+                    }
+                  : undefined
+            }
           />
         </section>
-        {showParticipation ? (
+        {showSidePanel ? (
           <section className="flex min-h-0 h-full lg:col-span-4">
-            <StatisticsSegmentList
-              title="Participación"
-              description="Distribución por segmento dentro del total"
-              segments={data?.segments ?? []}
-              loading={loading}
-              valueFormat={rankFormat}
-            />
+            {isProfitabilitySection ? (
+              <StatisticsCostDistributionChart
+                title="Distribución de costos"
+                description="Costo de ventas agrupado por tipo de artículo"
+                segments={
+                  data?.sectionId === "profitability"
+                    ? data.costDistribution ?? []
+                    : []
+                }
+                loading={loading}
+              />
+            ) : isPurchasesSection ? (
+              <StatisticsCostDistributionChart
+                title="Distribución de compras"
+                description="Compras agrupadas por tipo de artículo"
+                segments={
+                  data?.sectionId === "purchases"
+                    ? data.purchaseDistribution ?? []
+                    : []
+                }
+                loading={loading}
+                emptyMessage="Sin compras clasificadas por tipo en este período"
+              />
+            ) : (
+              <StatisticsSegmentList
+                title="Participación"
+                description="Distribución por segmento dentro del total"
+                segments={data?.segments ?? []}
+                loading={loading}
+                valueFormat={rankFormat}
+              />
+            )}
           </section>
         ) : null}
       </div>
+        </>
+      )}
+
+      {isProfitabilitySection ? (
+        <StatisticsEfficiencyIndicators
+          metrics={
+            data?.sectionId === "profitability"
+              ? data.efficiencyRatios ?? []
+              : []
+          }
+          loading={loading}
+        />
+      ) : null}
 
       {showHourlyChart ? (
         <section>
@@ -268,23 +421,29 @@ export function StatisticsSectionPanel({
         </section>
       ) : null}
 
-      <section>
-        <StatisticsRankTable
-          title={
-            data?.sectionId === "sales"
-              ? "Ranking de vendedores"
-              : "Ranking"
-          }
-          description={
-            data?.sectionId === "sales"
-              ? "Top vendedores del período"
-              : "Top 10 del período"
-          }
-          rows={data?.rankings ?? []}
-          loading={loading}
-          valueFormat={rankFormat}
-        />
-      </section>
+      {!isProfitabilitySection && !isProductsSection && !isInventorySection ? (
+        <section>
+          <StatisticsRankTable
+            title={
+              data?.sectionId === "sales"
+                ? "Ranking de vendedores"
+                : data?.sectionId === "purchases"
+                  ? "Ranking de compradores"
+                  : "Ranking"
+            }
+            description={
+              data?.sectionId === "sales"
+                ? "Top vendedores del período"
+                : data?.sectionId === "purchases"
+                  ? "Usuarios que más compraron en el período"
+                  : "Top 10 del período"
+            }
+            rows={data?.rankings ?? []}
+            loading={loading}
+            valueFormat={rankFormat}
+          />
+        </section>
+      ) : null}
 
       <StatisticsUpcomingMetrics items={data?.unavailable ?? []} />
     </div>

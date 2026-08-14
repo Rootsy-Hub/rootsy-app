@@ -46,7 +46,7 @@ function useAnchoredDropdownRect(
       setRect({
         top: box.bottom + 4,
         left: box.left,
-        width: box.width,
+        width: Math.max(box.width, 480),
       })
     }
 
@@ -287,7 +287,7 @@ export function LedgerAccountSearchField({
                 <span className="shrink-0 font-mono text-xs tabular-nums text-[var(--rootsy-bruma-500)]">
                   {account.code}
                 </span>
-                <span className="min-w-0 flex-1 truncate text-[var(--rootsy-bruma-900)]">
+                <span className="min-w-0 flex-1 text-pretty text-[var(--rootsy-bruma-900)]">
                   {account.name}
                 </span>
               </button>
@@ -314,7 +314,7 @@ export function LedgerAccountSearchField({
           }
         }}
         onClear={handleClear}
-        placeholder="Código o nombre"
+        placeholder="Código o nombre de cuenta contable"
         resultsSummary={
           showDropdown
             ? isSearching

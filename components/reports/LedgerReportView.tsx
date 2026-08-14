@@ -278,7 +278,7 @@ export function LedgerReportView({
                 </p>
               ) : null}
             </div>
-            <div className="flex w-full justify-center lg:w-auto lg:shrink-0">
+            <div className="flex min-w-0 flex-[1.4] justify-center px-1 sm:px-2">
               <LedgerAccountSearchField
                 popId={popId}
                 accountCode={accountCode}
@@ -288,10 +288,10 @@ export function LedgerReportView({
                     ? `${trimmedCode} · ${accountName}`
                     : null
                 }
-                className="w-full min-w-0 sm:max-w-[20rem]"
+                className="w-full min-w-0 sm:max-w-[32rem] lg:max-w-[40rem]"
               />
             </div>
-            <div className="flex flex-1 justify-end">
+            <div className="flex min-w-0 flex-1 justify-end lg:shrink-0">
               <ReportExportActionButtons
                 disabled={loading || !hasAccountQuery || rows.length === 0}
                 busy={exportBusy}

@@ -4,7 +4,9 @@ import { getAccountingIncomeStatement } from "@/app/[siteId]/[popId]/accounting/
 import {
   getOperationsList,
   type OperationExpenseLedgerRow,
+  type OperationPurchaseLineItem,
   type OperationPurchaseRow,
+  type OperationSaleLineItem,
   type OperationSaleRow,
 } from "@/app/[siteId]/[popId]/operations/actions"
 import { validatePopAccess } from "@/lib/popHelpers"
@@ -30,6 +32,16 @@ import {
   operationalHourSlotLabel,
 } from "@/lib/popOperationalDay"
 import { addCalendarDays } from "@/lib/entryDateTimezone"
+import {
+  ARTICLE_ITEM_KINDS,
+  isArticleItemKind,
+  type ArticleItemKind,
+} from "@/lib/articleItemKind"
+import {
+  fetchCatalogReferenceUnitCostsByArticleId,
+  fetchLatestLayerUnitCostsByArticleId,
+  resolveArticleReferenceUnitCostsByArticleId,
+} from "@/lib/articleReferenceUnitCost"
 import { createClient } from "@/utils/supabase/server"
 import { loadPopOperationalContext } from "@/lib/popTimezoneServer"
 
@@ -46,6 +58,22 @@ export type StatisticsCompareMetric = {
 export type StatisticsEvolutionPoint = {
   label: string
   value: number
+  count?: number
+  profit?: number
+}
+
+export type StatisticsEvolutionDualSeries = {
+  primaryLabel: string
+  secondaryLabel: string
+  secondaryFormat: "number" | "percent"
+  tertiaryLabel?: string
+}
+
+export type StatisticsWaterfallStep = {
+  id: string
+  label: string
+  kind: "increase" | "decrease" | "subtotal" | "total"
+  amount: number
 }
 
 export type StatisticsHourlyHeatmapDay = {
@@ -75,26 +103,50 @@ export type StatisticsSegment = {
   label: string
   value: number
   percent: number
+  id?: string
 }
 
 export type StatisticsRankRow = {
   rank: number
+  id?: string
   label: string
   value: number
   secondaryLabel?: string
   secondaryValue?: number
+  secondaryFormat?: "money" | "number"
+}
+
+export type StatisticsProductTrendOption = {
+  key: string
+  label: string
 }
 
 export type StatisticsSectionData = {
   sectionId: StatisticsSectionId
   title: string
   description: string
+  operationalDayCloseTime?: string
   comparison: StatisticsCompareMetric[]
   evolution: StatisticsEvolutionPoint[]
   hourlyEvolution: StatisticsEvolutionPoint[]
   hourlyHeatmap: StatisticsHourlyHeatmap
   segments: StatisticsSegment[]
   rankings: StatisticsRankRow[]
+  productSalesRankings?: StatisticsRankRow[]
+  productTrendOptions?: StatisticsProductTrendOption[]
+  productTrendByKey?: Record<string, StatisticsEvolutionPoint[]>
+  defaultProductTrendKey?: string | null
+  resultWaterfall?: StatisticsWaterfallStep[]
+  costDistribution?: StatisticsSegment[]
+  purchaseDistribution?: StatisticsSegment[]
+  categoryProfitDistribution?: StatisticsSegment[]
+  categorySalesDistribution?: StatisticsSegment[]
+  categoryTrendOptions?: StatisticsProductTrendOption[]
+  categoryTrendByKey?: Record<string, StatisticsEvolutionPoint[]>
+  defaultCategoryTrendKey?: string | null
+  stockLevelDistribution?: StatisticsSegment[]
+  inventoryValueRankings?: StatisticsRankRow[]
+  efficiencyRatios?: StatisticsCompareMetric[]
   unavailable: string[]
 }
 
@@ -120,6 +172,36 @@ export type StatisticsQueryInput = {
 
 function roundMoney(n: number): number {
   return Math.round(n * 100) / 100
+}
+
+function ratioOverSales(value: number, ingresos: number): number {
+  return ingresos > 0 ? roundMoney((value / ingresos) * 100) : 0
+}
+
+function comparePercentMetric(
+  id: string,
+  label: string,
+  value: number,
+  previousValue: number,
+  compareEnabled: boolean,
+): StatisticsCompareMetric {
+  let deltaPoints: number | null = null
+  if (compareEnabled) {
+    if (previousValue !== 0) {
+      deltaPoints = roundMoney(value - previousValue)
+    } else if (value === 0) {
+      deltaPoints = 0
+    }
+  }
+
+  return compareMetric(
+    id,
+    label,
+    value,
+    previousValue,
+    "percent",
+    deltaPoints,
+  )
 }
 
 function compareMetric(
@@ -203,6 +285,11 @@ function avgTicket(sales: OperationSaleRow[]): number {
   return roundMoney(salesTotal(sales) / sales.length)
 }
 
+function avgPurchaseTicket(purchases: OperationPurchaseRow[]): number {
+  if (purchases.length === 0) return 0
+  return roundMoney(sumPurchasesReportPaid(purchases) / purchases.length)
+}
+
 function buildDailyEvolution(
   sales: OperationSaleRow[],
   from: string | null,
@@ -210,6 +297,7 @@ function buildDailyEvolution(
   valueFn: (daySales: OperationSaleRow[]) => number,
   timeZone: string,
   operationalDayCloseTime: string,
+  countFn?: (daySales: OperationSaleRow[]) => number,
 ): StatisticsEvolutionPoint[] {
   const buckets = new Map<string, OperationSaleRow[]>()
   for (const sale of sales) {
@@ -219,22 +307,22 @@ function buildDailyEvolution(
     buckets.set(day, list)
   }
 
+  const toPoint = (day: string, daySales: OperationSaleRow[]): StatisticsEvolutionPoint => ({
+    label: `${day.slice(8, 10)}/${day.slice(5, 7)}`,
+    value: roundMoney(valueFn(daySales)),
+    ...(countFn ? { count: countFn(daySales) } : {}),
+  })
+
   if (!from || !to) {
     return [...buckets.entries()]
       .sort(([a], [b]) => a.localeCompare(b))
-      .map(([day, daySales]) => ({
-        label: `${day.slice(8, 10)}/${day.slice(5, 7)}`,
-        value: roundMoney(valueFn(daySales)),
-      }))
+      .map(([day, daySales]) => toPoint(day, daySales))
   }
 
   const points: StatisticsEvolutionPoint[] = []
   let cursor = from
   while (cursor <= to) {
-    points.push({
-      label: `${cursor.slice(8, 10)}/${cursor.slice(5, 7)}`,
-      value: roundMoney(valueFn(buckets.get(cursor) ?? [])),
-    })
+    points.push(toPoint(cursor, buckets.get(cursor) ?? []))
     cursor = addCalendarDays(cursor, 1)
   }
   return points
@@ -523,6 +611,1073 @@ async function fetchIncomeTotals(
   }
 }
 
+const JOURNAL_ENTRY_ID_CHUNK = 400
+
+type DailyIncomeBucket = {
+  ingresos: number
+  costos: number
+}
+
+async function fetchDailyIncomeTotals(
+  popId: string,
+  from: string | null,
+  to: string | null,
+): Promise<Map<string, DailyIncomeBucket>> {
+  const buckets = new Map<string, DailyIncomeBucket>()
+  const supabase = await createClient()
+
+  let entQ = supabase
+    .from("accounting_entries")
+    .select("id, entry_date")
+    .eq("pop_id", popId)
+    .eq("status", "posted")
+  if (from?.trim()) entQ = entQ.gte("entry_date", from.trim())
+  if (to?.trim()) entQ = entQ.lte("entry_date", to.trim())
+
+  const { data: entries, error: eErr } = await entQ
+  if (eErr || !entries?.length) return buckets
+
+  const entryDateById = new Map<string, string>()
+  for (const entry of entries) {
+    const id = String(entry.id)
+    const date = String(entry.entry_date ?? "").slice(0, 10)
+    if (date) entryDateById.set(id, date)
+  }
+
+  const entryIds = [...entryDateById.keys()]
+  for (let i = 0; i < entryIds.length; i += JOURNAL_ENTRY_ID_CHUNK) {
+    const chunk = entryIds.slice(i, i + JOURNAL_ENTRY_ID_CHUNK)
+    const { data: lines, error: lErr } = await supabase
+      .from("accounting_entry_lines")
+      .select(
+        `
+        entry_id,
+        debit_amount,
+        credit_amount,
+        accounting_chart_of_accounts ( account_type, nature )
+      `,
+      )
+      .in("entry_id", chunk)
+    if (lErr) continue
+
+    for (const line of lines || []) {
+      const entryId = String(line.entry_id)
+      const day = entryDateById.get(entryId)
+      if (!day) continue
+
+      const account = line.accounting_chart_of_accounts as {
+        account_type?: string
+        nature?: string
+      } | null
+      const accountType = String(account?.account_type ?? "")
+      if (accountType !== "ingresos" && accountType !== "costos") continue
+
+      const debit = Number(line.debit_amount ?? 0)
+      const credit = Number(line.credit_amount ?? 0)
+      const nature = String(account?.nature ?? "deudora")
+      const contribution =
+        nature === "deudora"
+          ? roundMoney(debit - credit)
+          : roundMoney(credit - debit)
+
+      const bucket = buckets.get(day) ?? { ingresos: 0, costos: 0 }
+      if (accountType === "ingresos") {
+        bucket.ingresos = roundMoney(bucket.ingresos + contribution)
+      } else {
+        bucket.costos = roundMoney(bucket.costos + contribution)
+      }
+      buckets.set(day, bucket)
+    }
+  }
+
+  return buckets
+}
+
+function buildProfitabilityDailyEvolution(
+  daily: Map<string, DailyIncomeBucket>,
+  from: string | null,
+  to: string | null,
+): StatisticsEvolutionPoint[] {
+  const toPoint = (day: string): StatisticsEvolutionPoint => {
+    const bucket = daily.get(day) ?? { ingresos: 0, costos: 0 }
+    const ganancia = roundMoney(bucket.ingresos - bucket.costos)
+    const margen =
+      bucket.ingresos > 0
+        ? roundMoney((ganancia / bucket.ingresos) * 100)
+        : 0
+    return {
+      label: `${day.slice(8, 10)}/${day.slice(5, 7)}`,
+      value: ganancia,
+      count: margen,
+    }
+  }
+
+  if (!from || !to) {
+    return [...daily.keys()]
+      .sort((a, b) => a.localeCompare(b))
+      .map((day) => toPoint(day))
+  }
+
+  const points: StatisticsEvolutionPoint[] = []
+  let cursor = from
+  while (cursor <= to) {
+    points.push(toPoint(cursor))
+    cursor = addCalendarDays(cursor, 1)
+  }
+  return points
+}
+
+const COST_KIND_LABELS: Record<ArticleItemKind, string> = {
+  merchandise: "Mercaderías",
+  raw_material: "Materias primas",
+  supply: "Insumos",
+}
+
+function buildCostKindSegments(
+  totals: Map<ArticleItemKind, number>,
+): StatisticsSegment[] {
+  const grand = ARTICLE_ITEM_KINDS.reduce(
+    (acc, kind) => acc + (totals.get(kind) ?? 0),
+    0,
+  )
+  if (grand <= 0) return []
+
+  return ARTICLE_ITEM_KINDS.map((kind) => {
+    const value = roundMoney(totals.get(kind) ?? 0)
+    return {
+      label: COST_KIND_LABELS[kind],
+      value,
+      percent: roundMoney((value / grand) * 100),
+    }
+  }).filter((segment) => segment.value > 0)
+}
+
+const ARTICLE_ID_CHUNK = 400
+
+async function fetchArticleItemKindsById(
+  popId: string,
+  articleIds: string[],
+): Promise<Map<string, ArticleItemKind>> {
+  const kinds = new Map<string, ArticleItemKind>()
+  if (!articleIds.length) return kinds
+
+  const supabase = await createClient()
+  for (let i = 0; i < articleIds.length; i += ARTICLE_ID_CHUNK) {
+    const chunk = articleIds.slice(i, i + ARTICLE_ID_CHUNK)
+    const { data, error } = await supabase
+      .from("articles")
+      .select("id, item_kind")
+      .eq("pop_id", popId)
+      .in("id", chunk)
+    if (error) continue
+
+    for (const row of data ?? []) {
+      const kind = String(row.item_kind ?? "")
+      if (isArticleItemKind(kind)) {
+        kinds.set(String(row.id), kind)
+      }
+    }
+  }
+
+  return kinds
+}
+
+async function fetchArticleCategoriesById(
+  popId: string,
+  articleIds: string[],
+): Promise<Map<string, { categoryId: string; categoryName: string }>> {
+  const categories = new Map<string, { categoryId: string; categoryName: string }>()
+  if (!articleIds.length) return categories
+
+  const supabase = await createClient()
+  for (let i = 0; i < articleIds.length; i += ARTICLE_ID_CHUNK) {
+    const chunk = articleIds.slice(i, i + ARTICLE_ID_CHUNK)
+    const { data, error } = await supabase
+      .from("articles")
+      .select("id, category_id, categories ( name )")
+      .eq("pop_id", popId)
+      .in("id", chunk)
+    if (error) continue
+
+    for (const row of data ?? []) {
+      const cat = row.categories as { name?: string } | null
+      categories.set(String(row.id), {
+        categoryId: String(row.category_id ?? ""),
+        categoryName: cat?.name?.trim() || "Sin categoría",
+      })
+    }
+  }
+
+  return categories
+}
+
+async function fetchRecipeCategoriesById(
+  popId: string,
+  recipeIds: string[],
+): Promise<Map<string, { categoryId: string; categoryName: string }>> {
+  const categories = new Map<string, { categoryId: string; categoryName: string }>()
+  if (!recipeIds.length) return categories
+
+  const supabase = await createClient()
+  for (let i = 0; i < recipeIds.length; i += ARTICLE_ID_CHUNK) {
+    const chunk = recipeIds.slice(i, i + ARTICLE_ID_CHUNK)
+    const { data, error } = await supabase
+      .from("recipes")
+      .select("id, category_id, recipe_categories ( name )")
+      .eq("pop_id", popId)
+      .in("id", chunk)
+    if (error) continue
+
+    for (const row of data ?? []) {
+      const cat = row.recipe_categories as { name?: string } | null
+      categories.set(String(row.id), {
+        categoryId: String(row.category_id ?? ""),
+        categoryName: cat?.name?.trim() || "Sin categoría",
+      })
+    }
+  }
+
+  return categories
+}
+
+async function fetchRecipeUnitCostsById(
+  popId: string,
+  recipeIds: string[],
+): Promise<Map<string, number>> {
+  const costs = new Map<string, number>()
+  if (!recipeIds.length) return costs
+
+  const supabase = await createClient()
+  for (let i = 0; i < recipeIds.length; i += ARTICLE_ID_CHUNK) {
+    const chunk = recipeIds.slice(i, i + ARTICLE_ID_CHUNK)
+    const { data, error } = await supabase
+      .from("recipes")
+      .select("id, cost_price")
+      .eq("pop_id", popId)
+      .in("id", chunk)
+    if (error) continue
+
+    for (const row of data ?? []) {
+      const unitCost = Number(row.cost_price ?? 0)
+      if (Number.isFinite(unitCost) && unitCost > 0) {
+        costs.set(String(row.id), roundMoney(unitCost))
+      }
+    }
+  }
+
+  return costs
+}
+
+async function applyRecipeCostsToBuckets(
+  popId: string,
+  buckets: Map<string, ProductStatsBucket>,
+): Promise<void> {
+  const recipeIds = [
+    ...new Set(
+      [...buckets.values()]
+        .map((bucket) => bucket.recipeId)
+        .filter((id): id is string => Boolean(id)),
+    ),
+  ]
+  if (!recipeIds.length) return
+
+  const unitCosts = await fetchRecipeUnitCostsById(popId, recipeIds)
+  for (const bucket of buckets.values()) {
+    if (!bucket.recipeId || bucket.cost > 0) continue
+    const unitCost = unitCosts.get(bucket.recipeId) ?? 0
+    if (unitCost > 0) {
+      bucket.cost = roundMoney(unitCost * bucket.quantity)
+    }
+  }
+}
+
+const PROMOTION_CATEGORY_KEY = "promotion:all"
+const PROMOTION_CATEGORY_LABEL = "Promociones"
+
+type ProductStatsBucket = {
+  label: string
+  articleId: string | null
+  recipeId: string | null
+  promotionId: string | null
+  lineKind: OperationSaleLineItem["lineKind"]
+  revenue: number
+  cost: number
+  quantity: number
+}
+
+function saleLineProductKey(item: OperationSaleLineItem): string {
+  if (item.articleId) return `a:${item.articleId}`
+  if (item.recipeId) return `r:${item.recipeId}`
+  if (item.promotionId) return `p:${item.promotionId}`
+  const name = item.nameSnapshot.trim().toLowerCase() || "sin-nombre"
+  return `n:${name}`
+}
+
+type ProductLineKindCounts = {
+  articles: number
+  promotions: number
+  recipes: number
+}
+
+function sumProductQuantitiesByKind(sales: OperationSaleRow[]): ProductLineKindCounts {
+  const totals = { articles: 0, promotions: 0, recipes: 0 }
+
+  for (const sale of sales) {
+    for (const item of sale.lineItems) {
+      if (item.lineTotal <= 0 && item.quantity <= 0) continue
+
+      if (item.promotionId || item.lineKind === "promotion") {
+        totals.promotions += item.quantity
+      } else if (item.recipeId || item.lineKind === "recipe") {
+        totals.recipes += item.quantity
+      } else {
+        totals.articles += item.quantity
+      }
+    }
+  }
+
+  return {
+    articles: roundMoney(totals.articles),
+    promotions: roundMoney(totals.promotions),
+    recipes: roundMoney(totals.recipes),
+  }
+}
+
+function accumulateProductBucketsFromSales(
+  sales: OperationSaleRow[],
+  buckets: Map<string, ProductStatsBucket>,
+): void {
+  for (const sale of sales) {
+    for (const item of sale.lineItems) {
+      if (item.lineTotal <= 0 && item.quantity <= 0) continue
+      const key = saleLineProductKey(item)
+      const prev = buckets.get(key)
+      const label = item.nameSnapshot.trim() || "Sin nombre"
+      buckets.set(key, {
+        label: prev?.label ?? label,
+        articleId: item.articleId ?? prev?.articleId ?? null,
+        recipeId: item.recipeId ?? prev?.recipeId ?? null,
+        promotionId: item.promotionId ?? prev?.promotionId ?? null,
+        lineKind: item.lineKind ?? prev?.lineKind ?? null,
+        revenue: roundMoney((prev?.revenue ?? 0) + item.lineTotal),
+        cost: prev?.cost ?? 0,
+        quantity: roundMoney((prev?.quantity ?? 0) + item.quantity),
+      })
+    }
+  }
+}
+
+function applyArticleCostsToBuckets(
+  buckets: Map<string, ProductStatsBucket>,
+  articleCosts: Map<string, number>,
+): void {
+  for (const bucket of buckets.values()) {
+    if (!bucket.articleId) continue
+    const cost = articleCosts.get(bucket.articleId)
+    if (cost != null && cost > 0) {
+      bucket.cost = cost
+    }
+  }
+}
+
+async function estimateMissingProductCosts(
+  popId: string,
+  buckets: Map<string, ProductStatsBucket>,
+): Promise<void> {
+  const needsEstimate = [...buckets.values()].filter(
+    (b) => b.articleId && b.cost <= 0 && b.quantity > 0,
+  )
+  if (!needsEstimate.length) return
+
+  const supabase = await createClient()
+  const articleIds = [...new Set(needsEstimate.map((b) => b.articleId!))]
+  const layerCosts = await fetchLatestLayerUnitCostsByArticleId(
+    supabase,
+    popId,
+    articleIds,
+  )
+  const missingIds = articleIds.filter((id) => !layerCosts.has(id))
+  const catalogCosts =
+    missingIds.length > 0
+      ? await fetchCatalogReferenceUnitCostsByArticleId(
+          supabase,
+          popId,
+          missingIds,
+        )
+      : new Map<string, number>()
+
+  for (const bucket of needsEstimate) {
+    const unitCost =
+      layerCosts.get(bucket.articleId!) ??
+      catalogCosts.get(bucket.articleId!) ??
+      0
+    if (unitCost > 0) {
+      bucket.cost = roundMoney(unitCost * bucket.quantity)
+    }
+  }
+}
+
+async function fetchSaleArticleCostsForPeriod(
+  popId: string,
+  from: string | null,
+  to: string | null,
+): Promise<Map<string, number>> {
+  const supabase = await createClient()
+  const costs = new Map<string, number>()
+  const movementIdsWithAlloc = new Set<string>()
+
+  const { data: allocRows, error: allocErr } = await supabase
+    .from("inventory_layer_allocations")
+    .select(
+      `
+      quantity,
+      unit_cost,
+      inventory_movement_id,
+      inventory_movements (
+        movement_type,
+        article_id,
+        sale_id,
+        sales ( sold_at, status )
+      )
+    `,
+    )
+    .eq("pop_id", popId)
+
+  if (allocErr) return costs
+
+  for (const row of allocRows ?? []) {
+    const movement = row.inventory_movements as {
+      movement_type?: string
+      article_id?: string
+      sale_id?: string | null
+      sales?: { sold_at?: string; status?: string } | null
+    } | null
+    if (movement?.movement_type !== "sale" || !movement.sale_id) continue
+
+    const sale = movement.sales
+    if (!sale || sale.status === "cancelled") continue
+    const soldDay = String(sale.sold_at ?? "").slice(0, 10)
+    if (from && soldDay < from) continue
+    if (to && soldDay > to) continue
+
+    const articleId = String(movement.article_id ?? "")
+    if (!articleId) continue
+
+    movementIdsWithAlloc.add(String(row.inventory_movement_id))
+    const lineCost = roundMoney(
+      Math.abs(Number(row.quantity ?? 0)) * Math.abs(Number(row.unit_cost ?? 0)),
+    )
+    costs.set(articleId, roundMoney((costs.get(articleId) ?? 0) + lineCost))
+  }
+
+  const fallbackArticleIds = new Set<string>()
+  const fallbackRows: Array<{ articleId: string; qty: number }> = []
+
+  const { data: movementRows, error: movementErr } = await supabase
+    .from("inventory_movements")
+    .select(
+      `
+      id,
+      quantity_delta,
+      article_id,
+      sales ( sold_at, status )
+    `,
+    )
+    .eq("pop_id", popId)
+    .eq("movement_type", "sale")
+    .not("sale_id", "is", null)
+
+  if (!movementErr) {
+    for (const row of movementRows ?? []) {
+      const movementId = String(row.id)
+      if (movementIdsWithAlloc.has(movementId)) continue
+
+      const sale = row.sales as { sold_at?: string; status?: string } | null
+      if (!sale || sale.status === "cancelled") continue
+      const soldDay = String(sale.sold_at ?? "").slice(0, 10)
+      if (from && soldDay < from) continue
+      if (to && soldDay > to) continue
+
+      const articleId = String(row.article_id ?? "")
+      if (!articleId) continue
+
+      const qty = Math.abs(Number(row.quantity_delta ?? 0))
+      if (qty <= 0) continue
+
+      fallbackArticleIds.add(articleId)
+      fallbackRows.push({ articleId, qty })
+    }
+  }
+
+  if (fallbackRows.length > 0) {
+    const articleIds = [...fallbackArticleIds]
+    const layerCosts = await fetchLatestLayerUnitCostsByArticleId(
+      supabase,
+      popId,
+      articleIds,
+    )
+    const missingIds = articleIds.filter((id) => !layerCosts.has(id))
+    const catalogCosts =
+      missingIds.length > 0
+        ? await fetchCatalogReferenceUnitCostsByArticleId(
+            supabase,
+            popId,
+            missingIds,
+          )
+        : new Map<string, number>()
+
+    for (const row of fallbackRows) {
+      const unitCost =
+        layerCosts.get(row.articleId) ?? catalogCosts.get(row.articleId) ?? 0
+      if (unitCost <= 0) continue
+      costs.set(
+        row.articleId,
+        roundMoney((costs.get(row.articleId) ?? 0) + roundMoney(row.qty * unitCost)),
+      )
+    }
+  }
+
+  return costs
+}
+
+function sumProductBucketRevenue(buckets: Map<string, ProductStatsBucket>): number {
+  return roundMoney(
+    [...buckets.values()].reduce((acc, bucket) => acc + bucket.revenue, 0),
+  )
+}
+
+function buildProductProfitRankings(
+  buckets: Map<string, ProductStatsBucket>,
+  limit = 10,
+): StatisticsRankRow[] {
+  return [...buckets.entries()]
+    .map(([key, bucket]) => ({
+      key,
+      label: bucket.label,
+      value: roundMoney(bucket.revenue - bucket.cost),
+      quantity: bucket.quantity,
+    }))
+    .filter((row) => row.value !== 0 || row.quantity > 0)
+    .sort((a, b) => b.value - a.value)
+    .slice(0, limit)
+    .map((row, index) => ({
+      rank: index + 1,
+      id: row.key,
+      label: row.label,
+      value: row.value,
+      secondaryLabel: "Cantidad",
+      secondaryValue: row.quantity,
+    }))
+}
+
+function buildProductSalesShareRankings(
+  buckets: Map<string, ProductStatsBucket>,
+  limit = 10,
+): StatisticsRankRow[] {
+  const totalRevenue = sumProductBucketRevenue(buckets)
+  if (totalRevenue <= 0) return []
+
+  return [...buckets.entries()]
+    .map(([key, bucket]) => ({
+      key,
+      label: bucket.label,
+      percent: roundMoney((bucket.revenue / totalRevenue) * 100),
+      revenue: bucket.revenue,
+    }))
+    .filter((row) => row.percent > 0 || row.revenue > 0)
+    .sort((a, b) => b.percent - a.percent)
+    .slice(0, limit)
+    .map((row, index) => ({
+      rank: index + 1,
+      id: row.key,
+      label: row.label,
+      value: row.percent,
+      secondaryLabel: "Ventas",
+      secondaryValue: row.revenue,
+      secondaryFormat: "money" as const,
+    }))
+}
+
+function buildProductTrendOptions(
+  buckets: Map<string, ProductStatsBucket>,
+): StatisticsProductTrendOption[] {
+  return [...buckets.entries()]
+    .map(([key, bucket]) => ({ key, label: bucket.label }))
+    .sort((a, b) => a.label.localeCompare(b.label, "es"))
+}
+
+function buildProductDailyTrendPoints(
+  metricsByDay: Map<string, { quantity: number; revenue: number; cost: number }>,
+  from: string | null,
+  to: string | null,
+): StatisticsEvolutionPoint[] {
+  const toPoint = (day: string): StatisticsEvolutionPoint => {
+    const metrics = metricsByDay.get(day) ?? {
+      quantity: 0,
+      revenue: 0,
+      cost: 0,
+    }
+    const revenue = roundMoney(metrics.revenue)
+    const cost = roundMoney(metrics.cost)
+    return {
+      label: `${day.slice(8, 10)}/${day.slice(5, 7)}`,
+      value: revenue,
+      count: roundMoney(metrics.quantity),
+      profit: roundMoney(revenue - cost),
+    }
+  }
+
+  if (!from || !to) {
+    return [...metricsByDay.keys()]
+      .sort((a, b) => a.localeCompare(b))
+      .map(toPoint)
+  }
+
+  const points: StatisticsEvolutionPoint[] = []
+  let cursor = from
+  while (cursor <= to) {
+    points.push(toPoint(cursor))
+    cursor = addCalendarDays(cursor, 1)
+  }
+  return points
+}
+
+function buildProductCostRatioByKey(
+  buckets: Map<string, ProductStatsBucket>,
+): Map<string, number> {
+  const ratios = new Map<string, number>()
+  for (const [key, bucket] of buckets) {
+    ratios.set(key, bucket.revenue > 0 ? bucket.cost / bucket.revenue : 0)
+  }
+  return ratios
+}
+
+function buildAllProductDailyTrends(
+  sales: OperationSaleRow[],
+  buckets: Map<string, ProductStatsBucket>,
+  from: string | null,
+  to: string | null,
+  timeZone: string,
+  operationalDayCloseTime: string,
+): Record<string, StatisticsEvolutionPoint[]> {
+  const costRatioByKey = buildProductCostRatioByKey(buckets)
+  const metricsByProductDay = new Map<
+    string,
+    Map<string, { quantity: number; revenue: number; cost: number }>
+  >()
+
+  for (const sale of sales) {
+    const day = operationalDayKey(sale.soldAt, timeZone, operationalDayCloseTime)
+    for (const item of sale.lineItems) {
+      if (item.lineTotal <= 0 && item.quantity <= 0) continue
+      const key = saleLineProductKey(item)
+      const dayMap =
+        metricsByProductDay.get(key) ??
+        new Map<string, { quantity: number; revenue: number; cost: number }>()
+      const prev = dayMap.get(day) ?? { quantity: 0, revenue: 0, cost: 0 }
+      const lineRevenue = roundMoney(item.lineTotal)
+      const lineCost = roundMoney(lineRevenue * (costRatioByKey.get(key) ?? 0))
+      dayMap.set(day, {
+        quantity: roundMoney(prev.quantity + item.quantity),
+        revenue: roundMoney(prev.revenue + lineRevenue),
+        cost: roundMoney(prev.cost + lineCost),
+      })
+      metricsByProductDay.set(key, dayMap)
+    }
+  }
+
+  const result: Record<string, StatisticsEvolutionPoint[]> = {}
+  for (const [productKey, dayMap] of metricsByProductDay) {
+    result[productKey] = buildProductDailyTrendPoints(dayMap, from, to)
+  }
+  return result
+}
+
+function resolveLineItemCategory(
+  item: OperationSaleLineItem,
+  articleCategories: Map<string, { categoryId: string; categoryName: string }>,
+  recipeCategories: Map<string, { categoryId: string; categoryName: string }>,
+): { categoryKey: string; categoryLabel: string } {
+  if (item.promotionId || item.lineKind === "promotion") {
+    return {
+      categoryKey: PROMOTION_CATEGORY_KEY,
+      categoryLabel: PROMOTION_CATEGORY_LABEL,
+    }
+  }
+  if (item.recipeId || item.lineKind === "recipe") {
+    const category = item.recipeId ? recipeCategories.get(item.recipeId) : null
+    return {
+      categoryKey: `recipe:${category?.categoryId || "sin-categoria"}`,
+      categoryLabel: category?.categoryName || "Sin categoría",
+    }
+  }
+  if (item.articleId || item.lineKind === "article") {
+    const category = item.articleId ? articleCategories.get(item.articleId) : null
+    return {
+      categoryKey: `article:${category?.categoryId || "sin-categoria"}`,
+      categoryLabel: category?.categoryName || "Sin categoría",
+    }
+  }
+  return {
+    categoryKey: "other:sin-categoria",
+    categoryLabel: "Sin categoría",
+  }
+}
+
+function resolveBucketCategory(
+  bucket: ProductStatsBucket,
+  articleCategories: Map<string, { categoryId: string; categoryName: string }>,
+  recipeCategories: Map<string, { categoryId: string; categoryName: string }>,
+): { categoryKey: string; categoryLabel: string } {
+  if (bucket.promotionId || bucket.lineKind === "promotion") {
+    return {
+      categoryKey: PROMOTION_CATEGORY_KEY,
+      categoryLabel: PROMOTION_CATEGORY_LABEL,
+    }
+  }
+  if (bucket.recipeId || bucket.lineKind === "recipe") {
+    const category = bucket.recipeId ? recipeCategories.get(bucket.recipeId) : null
+    return {
+      categoryKey: `recipe:${category?.categoryId || "sin-categoria"}`,
+      categoryLabel: category?.categoryName || "Sin categoría",
+    }
+  }
+  if (bucket.articleId) {
+    const category = articleCategories.get(bucket.articleId)
+    return {
+      categoryKey: `article:${category?.categoryId || "sin-categoria"}`,
+      categoryLabel: category?.categoryName || "Sin categoría",
+    }
+  }
+  return {
+    categoryKey: "other:sin-categoria",
+    categoryLabel: "Sin categoría",
+  }
+}
+
+function buildAllCategoryDailyTrends(
+  sales: OperationSaleRow[],
+  buckets: Map<string, ProductStatsBucket>,
+  articleCategories: Map<string, { categoryId: string; categoryName: string }>,
+  recipeCategories: Map<string, { categoryId: string; categoryName: string }>,
+  from: string | null,
+  to: string | null,
+  timeZone: string,
+  operationalDayCloseTime: string,
+): Record<string, StatisticsEvolutionPoint[]> {
+  const costRatioByKey = buildProductCostRatioByKey(buckets)
+  const metricsByCategoryDay = new Map<
+    string,
+    Map<string, { quantity: number; revenue: number; cost: number }>
+  >()
+
+  for (const sale of sales) {
+    const day = operationalDayKey(sale.soldAt, timeZone, operationalDayCloseTime)
+    for (const item of sale.lineItems) {
+      if (item.lineTotal <= 0 && item.quantity <= 0) continue
+      const { categoryKey } = resolveLineItemCategory(
+        item,
+        articleCategories,
+        recipeCategories,
+      )
+      const productKey = saleLineProductKey(item)
+      const dayMap =
+        metricsByCategoryDay.get(categoryKey) ??
+        new Map<string, { quantity: number; revenue: number; cost: number }>()
+      const prev = dayMap.get(day) ?? { quantity: 0, revenue: 0, cost: 0 }
+      const lineRevenue = roundMoney(item.lineTotal)
+      const lineCost = roundMoney(lineRevenue * (costRatioByKey.get(productKey) ?? 0))
+      dayMap.set(day, {
+        quantity: roundMoney(prev.quantity + item.quantity),
+        revenue: roundMoney(prev.revenue + lineRevenue),
+        cost: roundMoney(prev.cost + lineCost),
+      })
+      metricsByCategoryDay.set(categoryKey, dayMap)
+    }
+  }
+
+  const result: Record<string, StatisticsEvolutionPoint[]> = {}
+  for (const [categoryKey, dayMap] of metricsByCategoryDay) {
+    result[categoryKey] = buildProductDailyTrendPoints(dayMap, from, to)
+  }
+  return result
+}
+
+function buildCategoryTrendOptions(
+  categoryTotals: Map<string, { label: string; revenue: number; cost: number }>,
+): StatisticsProductTrendOption[] {
+  return [...categoryTotals.entries()]
+    .filter(([, row]) => row.revenue > 0)
+    .sort((a, b) => b[1].revenue - a[1].revenue)
+    .map(([key, row]) => ({ key, label: row.label }))
+}
+
+function buildCategoryTotals(
+  buckets: Map<string, ProductStatsBucket>,
+  articleCategories: Map<string, { categoryId: string; categoryName: string }>,
+  recipeCategories: Map<string, { categoryId: string; categoryName: string }>,
+): Map<string, { label: string; revenue: number; cost: number }> {
+  const categoryTotals = new Map<
+    string,
+    { label: string; revenue: number; cost: number }
+  >()
+
+  for (const bucket of buckets.values()) {
+    const { categoryKey, categoryLabel } = resolveBucketCategory(
+      bucket,
+      articleCategories,
+      recipeCategories,
+    )
+
+    const prev = categoryTotals.get(categoryKey)
+    categoryTotals.set(categoryKey, {
+      label: categoryLabel,
+      revenue: roundMoney((prev?.revenue ?? 0) + bucket.revenue),
+      cost: roundMoney((prev?.cost ?? 0) + bucket.cost),
+    })
+  }
+
+  return categoryTotals
+}
+
+function buildCategorySalesSegments(
+  categoryTotals: Map<string, { label: string; revenue: number; cost: number }>,
+): StatisticsSegment[] {
+  const totalRevenue = roundMoney(
+    [...categoryTotals.values()].reduce((acc, row) => acc + row.revenue, 0),
+  )
+  if (totalRevenue <= 0) return []
+
+  return [...categoryTotals.entries()]
+    .filter(([, row]) => row.revenue > 0)
+    .sort((a, b) => b[1].revenue - a[1].revenue)
+    .map(([id, row]) => ({
+      id,
+      label: row.label,
+      value: row.revenue,
+      percent: roundMoney((row.revenue / totalRevenue) * 100),
+    }))
+}
+
+function buildCategoryProfitSegments(
+  categoryTotals: Map<string, { label: string; revenue: number; cost: number }>,
+): StatisticsSegment[] {
+  const rows = [...categoryTotals.entries()]
+    .map(([id, row]) => ({
+      id,
+      label: row.label,
+      profit: roundMoney(row.revenue - row.cost),
+    }))
+    .filter((row) => row.profit > 0)
+
+  const totalProfit = roundMoney(rows.reduce((acc, row) => acc + row.profit, 0))
+  if (totalProfit <= 0) return []
+
+  return rows
+    .sort((a, b) => b.profit - a.profit)
+    .map((row) => ({
+      id: row.id,
+      label: row.label,
+      value: row.profit,
+      percent: roundMoney((row.profit / totalProfit) * 100),
+    }))
+}
+
+async function hydrateProductBucketsCosts(
+  popId: string,
+  buckets: Map<string, ProductStatsBucket>,
+  from: string | null,
+  to: string | null,
+): Promise<void> {
+  const articleCosts = await fetchSaleArticleCostsForPeriod(popId, from, to)
+  applyArticleCostsToBuckets(buckets, articleCosts)
+  await estimateMissingProductCosts(popId, buckets)
+  await applyRecipeCostsToBuckets(popId, buckets)
+}
+
+function purchaseLineAmount(line: OperationPurchaseLineItem): number {
+  if (line.lineTotal > 0) return line.lineTotal
+  return roundMoney(line.quantity * line.unitCost)
+}
+
+function buildPurchaseDistributionByItemKind(
+  purchases: OperationPurchaseRow[],
+  articleKindById: Map<string, ArticleItemKind>,
+): StatisticsSegment[] {
+  const totals = new Map<ArticleItemKind, number>(
+    ARTICLE_ITEM_KINDS.map((kind) => [kind, 0]),
+  )
+
+  for (const purchase of purchases) {
+    for (const line of purchase.lineItems) {
+      if (!line.articleId) continue
+      const kind = articleKindById.get(line.articleId)
+      if (!kind) continue
+      totals.set(
+        kind,
+        roundMoney((totals.get(kind) ?? 0) + purchaseLineAmount(line)),
+      )
+    }
+  }
+
+  return buildCostKindSegments(totals)
+}
+
+async function fetchCostDistributionByItemKind(
+  popId: string,
+  from: string | null,
+  to: string | null,
+): Promise<StatisticsSegment[]> {
+  const supabase = await createClient()
+  const totals = new Map<ArticleItemKind, number>(
+    ARTICLE_ITEM_KINDS.map((kind) => [kind, 0]),
+  )
+
+  const { data: allocRows, error: allocErr } = await supabase
+    .from("inventory_layer_allocations")
+    .select(
+      `
+      quantity,
+      unit_cost,
+      inventory_movement_id,
+      articles ( item_kind ),
+      inventory_movements (
+        movement_type,
+        quantity_delta,
+        article_id,
+        sale_id,
+        sales ( sold_at, status )
+      )
+    `,
+    )
+    .eq("pop_id", popId)
+
+  if (allocErr) return []
+
+  const movementIdsWithAlloc = new Set<string>()
+
+  for (const row of allocRows ?? []) {
+    const movement = row.inventory_movements as {
+      movement_type?: string
+      quantity_delta?: number | string
+      article_id?: string
+      sale_id?: string | null
+      sales?: { sold_at?: string; status?: string } | null
+    } | null
+    if (movement?.movement_type !== "sale" || !movement.sale_id) continue
+
+    const sale = movement.sales
+    if (!sale || sale.status === "cancelled") continue
+    const soldDay = String(sale.sold_at ?? "").slice(0, 10)
+    if (from && soldDay < from) continue
+    if (to && soldDay > to) continue
+
+    const article = row.articles as { item_kind?: string } | null
+    const kind = article?.item_kind
+    if (!kind || !isArticleItemKind(kind)) continue
+
+    movementIdsWithAlloc.add(String(row.inventory_movement_id))
+    const lineCost = roundMoney(
+      Math.abs(Number(row.quantity ?? 0)) * Math.abs(Number(row.unit_cost ?? 0)),
+    )
+    totals.set(kind, roundMoney((totals.get(kind) ?? 0) + lineCost))
+  }
+
+  const fallbackArticleIds = new Set<string>()
+  const fallbackRows: Array<{
+    articleId: string
+    kind: ArticleItemKind
+    qty: number
+  }> = []
+
+  const { data: movementRows, error: movementErr } = await supabase
+    .from("inventory_movements")
+    .select(
+      `
+      id,
+      quantity_delta,
+      article_id,
+      articles ( item_kind ),
+      sales ( sold_at, status )
+    `,
+    )
+    .eq("pop_id", popId)
+    .eq("movement_type", "sale")
+    .not("sale_id", "is", null)
+
+  if (!movementErr) {
+    for (const row of movementRows ?? []) {
+      const movementId = String(row.id)
+      if (movementIdsWithAlloc.has(movementId)) continue
+
+      const sale = row.sales as { sold_at?: string; status?: string } | null
+      if (!sale || sale.status === "cancelled") continue
+      const soldDay = String(sale.sold_at ?? "").slice(0, 10)
+      if (from && soldDay < from) continue
+      if (to && soldDay > to) continue
+
+      const article = row.articles as { item_kind?: string } | null
+      const kind = article?.item_kind
+      if (!kind || !isArticleItemKind(kind)) continue
+
+      const articleId = String(row.article_id ?? "")
+      if (!articleId) continue
+
+      const qty = Math.abs(Number(row.quantity_delta ?? 0))
+      if (qty <= 0) continue
+
+      fallbackArticleIds.add(articleId)
+      fallbackRows.push({ articleId, kind, qty })
+    }
+  }
+
+  if (fallbackRows.length > 0) {
+    const articleIds = [...fallbackArticleIds]
+    const layerCosts = await fetchLatestLayerUnitCostsByArticleId(
+      supabase,
+      popId,
+      articleIds,
+    )
+    const missingIds = articleIds.filter((id) => !layerCosts.has(id))
+    const catalogCosts =
+      missingIds.length > 0
+        ? await fetchCatalogReferenceUnitCostsByArticleId(
+            supabase,
+            popId,
+            missingIds,
+          )
+        : new Map<string, number>()
+
+    for (const row of fallbackRows) {
+      const unitCost =
+        layerCosts.get(row.articleId) ?? catalogCosts.get(row.articleId) ?? 0
+      if (unitCost <= 0) continue
+      totals.set(
+        row.kind,
+        roundMoney((totals.get(row.kind) ?? 0) + roundMoney(row.qty * unitCost)),
+      )
+    }
+  }
+
+  return buildCostKindSegments(totals)
+}
+
+function buildResultWaterfall(
+  ingresos: number,
+  costos: number,
+  gastos: number,
+  resultado: number,
+): StatisticsWaterfallStep[] {
+  const ganancia = roundMoney(ingresos - costos)
+  return [
+    { id: "sales", label: "Ventas", kind: "increase", amount: ingresos },
+    { id: "costs", label: "Costos de ventas", kind: "decrease", amount: costos },
+    { id: "gross", label: "Ganancia bruta", kind: "subtotal", amount: ganancia },
+    { id: "expenses", label: "Gastos", kind: "decrease", amount: gastos },
+    { id: "net", label: "Resultado neto", kind: "total", amount: resultado },
+  ]
+}
+
 function buildSalesSection(
   sales: OperationSaleRow[],
   prevSales: OperationSaleRow[],
@@ -570,7 +1725,7 @@ function buildSalesSection(
   return {
     sectionId: "sales",
     title: "Ventas",
-    description: "Evolución de ventas, facturación y ticket promedio",
+    description: "",
     comparison: [
       compareMetric("total", "Ventas", total, prevTotal, "money"),
       compareMetric("count", "Cantidad", count, prevCount, "number"),
@@ -583,6 +1738,7 @@ function buildSalesSection(
       salesTotal,
       timeZone,
       operationalDayCloseTime,
+      (daySales) => daySales.length,
     ),
     ...buildHourlySalesViews(
       sales,
@@ -604,30 +1760,58 @@ function buildProfitabilitySection(
   compareEnabled: boolean,
   from: string | null,
   to: string | null,
+  dailyIncome: Map<string, DailyIncomeBucket>,
+  costDistribution: StatisticsSegment[],
 ): StatisticsSectionData {
   const prev = compareEnabled ? previous : { ingresos: 0, costos: 0, gastos: 0, resultado: 0, margen: 0 }
   const ganancia = roundMoney(current.ingresos - current.costos)
   const prevGanancia = roundMoney(prev.ingresos - prev.costos)
+  const marginOnSales = current.margen
+  const costsOnSales = ratioOverSales(current.costos, current.ingresos)
+  const expensesOnSales = ratioOverSales(current.gastos, current.ingresos)
+  const resultOnSales = ratioOverSales(current.resultado, current.ingresos)
 
   return {
     sectionId: "profitability",
     title: "Rentabilidad",
-    description: "Margen, costos, gastos y resultado del negocio",
+    description: "",
     comparison: [
-      compareMetric("gross", "Ganancia bruta", ganancia, prevGanancia, "money"),
-      compareMetric(
-        "margin",
-        "Margen",
-        current.margen,
-        prev.margen,
-        "percent",
-        compareEnabled ? roundMoney(current.margen - prev.margen) : null,
-      ),
       compareMetric("costs", "Costo de ventas", current.costos, prev.costos, "money"),
+      compareMetric("gross", "Ganancia bruta", ganancia, prevGanancia, "money"),
       compareMetric("expenses", "Gastos", current.gastos, prev.gastos, "money"),
-      compareMetric("result", "Resultado", current.resultado, prev.resultado, "money"),
+      compareMetric("result", "Resultado neto", current.resultado, prev.resultado, "money"),
     ],
-    evolution: [],
+    efficiencyRatios: [
+      comparePercentMetric(
+        "margin-on-sales",
+        "Margen sobre ventas",
+        marginOnSales,
+        prev.margen,
+        compareEnabled,
+      ),
+      comparePercentMetric(
+        "costs-on-sales",
+        "Costos sobre ventas",
+        costsOnSales,
+        ratioOverSales(prev.costos, prev.ingresos),
+        compareEnabled,
+      ),
+      comparePercentMetric(
+        "expenses-on-sales",
+        "Gastos sobre ventas",
+        expensesOnSales,
+        ratioOverSales(prev.gastos, prev.ingresos),
+        compareEnabled,
+      ),
+      comparePercentMetric(
+        "result-on-sales",
+        "Resultado sobre ventas",
+        resultOnSales,
+        ratioOverSales(prev.resultado, prev.ingresos),
+        compareEnabled,
+      ),
+    ],
+    evolution: buildProfitabilityDailyEvolution(dailyIncome, from, to),
     hourlyEvolution: [],
     hourlyHeatmap: emptyHourlyHeatmap(),
     segments: [
@@ -636,114 +1820,74 @@ function buildProfitabilitySection(
       { label: "Gastos", value: current.gastos, percent: current.ingresos > 0 ? roundMoney((current.gastos / current.ingresos) * 100) : 0 },
     ].filter((s) => s.value > 0),
     rankings: [],
-    unavailable: from && to ? ["Evolución diaria de rentabilidad"] : [],
+    resultWaterfall: buildResultWaterfall(
+      current.ingresos,
+      current.costos,
+      current.gastos,
+      current.resultado,
+    ),
+    costDistribution,
+    unavailable: [],
   }
 }
 
-function buildProductsSection(sales: OperationSaleRow[]): StatisticsSectionData {
-  const productTotals = new Map<string, number>()
-  const productQty = new Map<string, number>()
-  for (const sale of sales) {
-    for (const item of sale.lineItems) {
-      const name = item.nameSnapshot.trim() || "Sin nombre"
-      productTotals.set(name, (productTotals.get(name) ?? 0) + item.lineTotal)
-      productQty.set(name, (productQty.get(name) ?? 0) + item.quantity)
-    }
-  }
+function buildProductsSection(
+  buckets: Map<string, ProductStatsBucket>,
+  categoryTotals: Map<string, { label: string; revenue: number; cost: number }>,
+  currentCounts: ProductLineKindCounts,
+  prevCounts: ProductLineKindCounts,
+  compareEnabled: boolean,
+  productTrendOptions: StatisticsProductTrendOption[],
+  productTrendByKey: Record<string, StatisticsEvolutionPoint[]>,
+  defaultProductTrendKey: string | null,
+  categoryTrendOptions: StatisticsProductTrendOption[],
+  categoryTrendByKey: Record<string, StatisticsEvolutionPoint[]>,
+  defaultCategoryTrendKey: string | null,
+): StatisticsSectionData {
+  const rankings = buildProductProfitRankings(buckets)
 
   return {
     sectionId: "products",
-    title: "Productos / Rubros",
-    description: "Facturación y cantidad por producto",
+    title: "Productos",
+    description: "Rentabilidad y participación por producto y categoría",
     comparison: [
       compareMetric(
-        "products",
-        "Productos distintos",
-        productTotals.size,
-        0,
+        "articles",
+        "Artículos vendidos",
+        currentCounts.articles,
+        compareEnabled ? prevCounts.articles : 0,
         "number",
       ),
       compareMetric(
-        "revenue",
-        "Facturación productos",
-        roundMoney([...productTotals.values()].reduce((a, b) => a + b, 0)),
-        0,
-        "money",
+        "promotions",
+        "Promociones vendidas",
+        currentCounts.promotions,
+        compareEnabled ? prevCounts.promotions : 0,
+        "number",
+      ),
+      compareMetric(
+        "recipes",
+        "Recetas vendidas",
+        currentCounts.recipes,
+        compareEnabled ? prevCounts.recipes : 0,
+        "number",
       ),
     ],
     evolution: [],
     hourlyEvolution: [],
     hourlyHeatmap: emptyHourlyHeatmap(),
-    segments: buildSegments(productTotals, 6),
-    rankings: buildRankings(productTotals, productQty),
-    unavailable: ["Rubros / categorías", "Rentabilidad por producto"],
-  }
-}
-
-function buildChannelsSection(
-  sales: OperationSaleRow[],
-  prevSales: OperationSaleRow[],
-  from: string | null,
-  to: string | null,
-  compareEnabled: boolean,
-  timeZone: string,
-  operationalDayCloseTime: string,
-): StatisticsSectionData {
-  const channelTotals = new Map<string, number>()
-  const prevChannelTotals = new Map<string, number>()
-  for (const sale of sales) {
-    const label = saleChannelLabel(sale.saleChannel)
-    channelTotals.set(
-      label,
-      (channelTotals.get(label) ?? 0) + displayOperationSaleCollected(sale),
-    )
-  }
-  if (compareEnabled) {
-    for (const sale of prevSales) {
-      const label = saleChannelLabel(sale.saleChannel)
-      prevChannelTotals.set(
-        label,
-        (prevChannelTotals.get(label) ?? 0) + displayOperationSaleCollected(sale),
-      )
-    }
-  }
-
-  const total = salesTotal(sales)
-  const segments = buildSegments(channelTotals)
-  const comparison: StatisticsCompareMetric[] = segments.map((seg) =>
-    compareMetric(
-      seg.label,
-      seg.label,
-      seg.value,
-      prevChannelTotals.get(seg.label) ?? 0,
-      "money",
-    ),
-  )
-
-  return {
-    sectionId: "channels",
-    title: "Canales de venta",
-    description: "Participación y evolución por canal",
-    comparison,
-    evolution: buildDailyEvolution(
-      sales,
-      from,
-      to,
-      salesTotal,
-      timeZone,
-      operationalDayCloseTime,
-    ),
-    ...buildHourlySalesViews(
-      sales,
-      from,
-      to,
-      timeZone,
-      operationalDayCloseTime,
-      salesTotal,
-    ),
-    segments,
-    rankings: buildRankings(channelTotals),
-    unavailable: ["Servicios como canal"],
+    segments: [],
+    rankings,
+    productSalesRankings: buildProductSalesShareRankings(buckets),
+    productTrendOptions,
+    productTrendByKey,
+    defaultProductTrendKey,
+    categoryProfitDistribution: buildCategoryProfitSegments(categoryTotals),
+    categorySalesDistribution: buildCategorySalesSegments(categoryTotals),
+    categoryTrendOptions,
+    categoryTrendByKey,
+    defaultCategoryTrendKey,
+    unavailable: [],
   }
 }
 
@@ -752,43 +1896,35 @@ function buildPurchasesEvolution(
   from: string | null,
   to: string | null,
 ): StatisticsEvolutionPoint[] {
-  const buckets = new Map<string, number>()
+  const amountBuckets = new Map<string, number>()
+  const countBuckets = new Map<string, number>()
   for (const purchase of purchases) {
     const day = purchase.operationDate.slice(0, 10)
-    buckets.set(
+    amountBuckets.set(
       day,
-      (buckets.get(day) ?? 0) + sumPurchasesReportPaid([purchase]),
+      (amountBuckets.get(day) ?? 0) + sumPurchasesReportPaid([purchase]),
     )
+    countBuckets.set(day, (countBuckets.get(day) ?? 0) + 1)
   }
+
+  const toPoint = (day: string): StatisticsEvolutionPoint => ({
+    label: `${day.slice(8, 10)}/${day.slice(5, 7)}`,
+    value: roundMoney(amountBuckets.get(day) ?? 0),
+    count: countBuckets.get(day) ?? 0,
+  })
 
   if (!from || !to) {
-    return [...buckets.entries()]
-      .sort(([a], [b]) => a.localeCompare(b))
-      .map(([day, value]) => ({
-        label: `${day.slice(8, 10)}/${day.slice(5, 7)}`,
-        value: roundMoney(value),
-      }))
+    const days = new Set([...amountBuckets.keys(), ...countBuckets.keys()])
+    return [...days]
+      .sort((a, b) => a.localeCompare(b))
+      .map((day) => toPoint(day))
   }
 
-  const start = new Date(
-    Number(from.slice(0, 4)),
-    Number(from.slice(5, 7)) - 1,
-    Number(from.slice(8, 10)),
-  )
-  const end = new Date(
-    Number(to.slice(0, 4)),
-    Number(to.slice(5, 7)) - 1,
-    Number(to.slice(8, 10)),
-  )
   const points: StatisticsEvolutionPoint[] = []
-  const cursor = new Date(start)
-  while (cursor <= end) {
-    const iso = `${cursor.getFullYear()}-${String(cursor.getMonth() + 1).padStart(2, "0")}-${String(cursor.getDate()).padStart(2, "0")}`
-    points.push({
-      label: `${String(cursor.getDate()).padStart(2, "0")}/${String(cursor.getMonth() + 1).padStart(2, "0")}`,
-      value: roundMoney(buckets.get(iso) ?? 0),
-    })
-    cursor.setDate(cursor.getDate() + 1)
+  let cursor = from
+  while (cursor <= to) {
+    points.push(toPoint(cursor))
+    cursor = addCalendarDays(cursor, 1)
   }
   return points
 }
@@ -799,32 +1935,42 @@ function buildPurchasesSection(
   from: string | null,
   to: string | null,
   compareEnabled: boolean,
+  purchaseDistribution: StatisticsSegment[],
 ): StatisticsSectionData {
   const total = sumPurchasesReportPaid(purchases)
   const prevTotal = compareEnabled ? sumPurchasesReportPaid(prevPurchases) : 0
-  const supplierTotals = new Map<string, number>()
+  const count = purchases.length
+  const prevCount = compareEnabled ? prevPurchases.length : 0
+  const ticket = avgPurchaseTicket(purchases)
+  const prevTicket = compareEnabled ? avgPurchaseTicket(prevPurchases) : 0
+
+  const buyerTotals = new Map<string, number>()
+  const buyerCounts = new Map<string, number>()
   for (const purchase of purchases) {
-    supplierTotals.set(
-      purchase.supplierName,
-      (supplierTotals.get(purchase.supplierName) ?? 0) +
-        sumPurchasesReportPaid([purchase]),
+    const name = purchase.purchasedByName?.trim() || "Sin comprador"
+    buyerTotals.set(
+      name,
+      (buyerTotals.get(name) ?? 0) + sumPurchasesReportPaid([purchase]),
     )
+    buyerCounts.set(name, (buyerCounts.get(name) ?? 0) + 1)
   }
 
   return {
     sectionId: "purchases",
     title: "Compras",
-    description: "Evolución e importes por proveedor",
+    description: "Evolución e importes del período",
     comparison: [
       compareMetric("total", "Compras", total, prevTotal, "money"),
-      compareMetric("count", "Operaciones", purchases.length, compareEnabled ? prevPurchases.length : 0, "number"),
+      compareMetric("count", "Cantidad", count, prevCount, "number"),
+      compareMetric("ticket", "Ticket promedio", ticket, prevTicket, "money"),
     ],
     evolution: buildPurchasesEvolution(purchases, from, to),
     hourlyEvolution: [],
     hourlyHeatmap: emptyHourlyHeatmap(),
-    segments: buildSegments(supplierTotals, 6),
-    rankings: buildRankings(supplierTotals),
-    unavailable: ["Compras por categoría / producto"],
+    segments: buildSegments(buyerTotals, 6),
+    rankings: buildRankings(buyerTotals, buyerCounts),
+    purchaseDistribution,
+    unavailable: [],
   }
 }
 
@@ -981,57 +2127,311 @@ function buildFinanceSection(
   }
 }
 
+const INVENTORY_OVERSTOCK_MULTIPLIER = 2
+
+type InventoryArticleSnapshot = {
+  articleId: string
+  name: string
+  quantity: number
+  minLevel: number | null
+  unitCost: number
+  inventoryValue: number
+  stockLevel: "below_min" | "optimal" | "overstock" | "out_of_stock"
+}
+
+function classifyInventoryStockLevel(
+  quantity: number,
+  minLevel: number | null,
+): InventoryArticleSnapshot["stockLevel"] {
+  if (quantity <= 0) return "out_of_stock"
+  if (minLevel == null || minLevel <= 0) return "optimal"
+  if (quantity < minLevel) return "below_min"
+  if (quantity > minLevel * INVENTORY_OVERSTOCK_MULTIPLIER) return "overstock"
+  return "optimal"
+}
+
+async function fetchInventoryArticleSnapshots(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  popId: string,
+  asOfDate: string | null,
+): Promise<InventoryArticleSnapshot[]> {
+  const { data: articles } = await supabase
+    .from("articles")
+    .select("id, name, min_stock_level, track_stock")
+    .eq("pop_id", popId)
+    .eq("is_active", true)
+
+  const tracked = (articles ?? []).filter((article) => article.track_stock)
+  if (tracked.length === 0) return []
+
+  const articleIds = tracked.map((article) => String(article.id))
+  const { data: movements } = await supabase
+    .from("inventory_movements")
+    .select("article_id, quantity_delta, created_at")
+    .eq("pop_id", popId)
+    .in("article_id", articleIds)
+
+  const onHand = new Map<string, number>()
+  for (const movement of movements ?? []) {
+    const movementDate = String(movement.created_at ?? "").slice(0, 10)
+    if (asOfDate && movementDate > asOfDate) continue
+    const articleId = String(movement.article_id)
+    onHand.set(
+      articleId,
+      (onHand.get(articleId) ?? 0) + Number(movement.quantity_delta ?? 0),
+    )
+  }
+
+  const unitCosts = await resolveArticleReferenceUnitCostsByArticleId(
+    supabase,
+    popId,
+    articleIds,
+  )
+
+  return tracked.map((article) => {
+    const articleId = String(article.id)
+    const quantity = Math.round((onHand.get(articleId) ?? 0) * 1e6) / 1e6
+    const minLevel =
+      article.min_stock_level != null
+        ? Number(article.min_stock_level)
+        : null
+    const unitCost = unitCosts.get(articleId) ?? 0
+    const inventoryValue = roundMoney(Math.max(0, quantity) * unitCost)
+
+    return {
+      articleId,
+      name: String(article.name ?? "").trim() || "Artículo",
+      quantity,
+      minLevel,
+      unitCost,
+      inventoryValue,
+      stockLevel: classifyInventoryStockLevel(quantity, minLevel),
+    }
+  })
+}
+
+function buildInventorySnapshotMetrics(
+  snapshots: InventoryArticleSnapshot[],
+): {
+  inventoryValue: number
+  unitsInStock: number
+  lowStockArticles: number
+  outOfStockArticles: number
+} {
+  let inventoryValue = 0
+  let unitsInStock = 0
+  let lowStockArticles = 0
+  let outOfStockArticles = 0
+
+  for (const snapshot of snapshots) {
+    if (snapshot.stockLevel === "out_of_stock") {
+      outOfStockArticles += 1
+      continue
+    }
+
+    unitsInStock = roundMoney(unitsInStock + snapshot.quantity)
+    inventoryValue = roundMoney(inventoryValue + snapshot.inventoryValue)
+    if (snapshot.stockLevel === "below_min") {
+      lowStockArticles += 1
+    }
+  }
+
+  return {
+    inventoryValue,
+    unitsInStock,
+    lowStockArticles,
+    outOfStockArticles,
+  }
+}
+
+function buildStockLevelDistribution(
+  snapshots: InventoryArticleSnapshot[],
+): StatisticsSegment[] {
+  const counts = {
+    below_min: 0,
+    optimal: 0,
+    overstock: 0,
+  }
+
+  for (const snapshot of snapshots) {
+    if (snapshot.stockLevel === "out_of_stock") continue
+    counts[snapshot.stockLevel] += 1
+  }
+
+  const total = counts.below_min + counts.optimal + counts.overstock
+  if (total <= 0) return []
+
+  const segments: StatisticsSegment[] = [
+    {
+      id: "below_min",
+      label: "Bajo mínimo",
+      value: counts.below_min,
+      percent: roundMoney((counts.below_min / total) * 100),
+    },
+    {
+      id: "optimal",
+      label: "Óptimo",
+      value: counts.optimal,
+      percent: roundMoney((counts.optimal / total) * 100),
+    },
+    {
+      id: "overstock",
+      label: "Sobre-stock",
+      value: counts.overstock,
+      percent: roundMoney((counts.overstock / total) * 100),
+    },
+  ]
+
+  return segments.filter((segment) => segment.value > 0)
+}
+
+function buildInventoryValueRankings(
+  snapshots: InventoryArticleSnapshot[],
+): StatisticsRankRow[] {
+  return snapshots
+    .filter((snapshot) => snapshot.inventoryValue > 0)
+    .sort((a, b) => b.inventoryValue - a.inventoryValue)
+    .slice(0, 10)
+    .map((snapshot, index) => ({
+      rank: index + 1,
+      id: snapshot.articleId,
+      label: snapshot.name,
+      value: snapshot.inventoryValue,
+      secondaryLabel: "Unidades",
+      secondaryValue: snapshot.quantity,
+      secondaryFormat: "number" as const,
+    }))
+}
+
+function buildInventoryMovementEvolutionPoints(
+  metricsByDay: Map<string, { ingresos: number; egresos: number }>,
+  from: string | null,
+  to: string | null,
+): StatisticsEvolutionPoint[] {
+  const toPoint = (day: string): StatisticsEvolutionPoint => {
+    const metrics = metricsByDay.get(day) ?? { ingresos: 0, egresos: 0 }
+    return {
+      label: `${day.slice(8, 10)}/${day.slice(5, 7)}`,
+      value: roundMoney(metrics.ingresos),
+      count: roundMoney(metrics.egresos),
+    }
+  }
+
+  if (!from || !to) {
+    return [...metricsByDay.keys()]
+      .sort((a, b) => a.localeCompare(b))
+      .map(toPoint)
+  }
+
+  const points: StatisticsEvolutionPoint[] = []
+  let cursor = from
+  while (cursor <= to) {
+    points.push(toPoint(cursor))
+    cursor = addCalendarDays(cursor, 1)
+  }
+  return points
+}
+
+async function fetchInventoryMovementEvolution(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  popId: string,
+  from: string | null,
+  to: string | null,
+): Promise<StatisticsEvolutionPoint[]> {
+  const { data: movements } = await supabase
+    .from("inventory_movements")
+    .select("quantity_delta, created_at")
+    .eq("pop_id", popId)
+
+  const metricsByDay = new Map<string, { ingresos: number; egresos: number }>()
+
+  for (const movement of movements ?? []) {
+    const day = String(movement.created_at ?? "").slice(0, 10)
+    if (from && day < from) continue
+    if (to && day > to) continue
+
+    const delta = Number(movement.quantity_delta ?? 0)
+    if (delta === 0) continue
+
+    const prev = metricsByDay.get(day) ?? { ingresos: 0, egresos: 0 }
+    if (delta > 0) {
+      prev.ingresos = roundMoney(prev.ingresos + delta)
+    } else {
+      prev.egresos = roundMoney(prev.egresos + Math.abs(delta))
+    }
+    metricsByDay.set(day, prev)
+  }
+
+  return buildInventoryMovementEvolutionPoints(metricsByDay, from, to)
+}
+
 async function buildInventorySection(
   popId: string,
   from: string | null,
   to: string | null,
+  compareEnabled: boolean,
+  previousPeriodEnd: string | null,
 ): Promise<StatisticsSectionData> {
   const supabase = await createClient()
-  const { data: movements } = await supabase
-    .from("inventory_movements")
-    .select("article_id, quantity_delta, created_at, articles(name)")
-    .eq("pop_id", popId)
-
-  const articleMovement = new Map<string, { qty: number; name: string }>()
-  let movementCount = 0
-
-  for (const mv of movements ?? []) {
-    const createdAt = String(mv.created_at ?? "")
-    const day = createdAt.slice(0, 10)
-    if (from && day < from) continue
-    if (to && day > to) continue
-    movementCount += 1
-    const article = mv.articles as { name?: string } | null
-    const name = article?.name?.trim() || "Artículo"
-    const id = String(mv.article_id)
-    const prev = articleMovement.get(id) ?? { qty: 0, name }
-    prev.qty += Math.abs(Number(mv.quantity_delta ?? 0))
-    articleMovement.set(id, prev)
-  }
-
-  const rankMap = new Map<string, number>()
-  for (const { name, qty } of articleMovement.values()) {
-    rankMap.set(name, (rankMap.get(name) ?? 0) + qty)
-  }
+  const [currentSnapshots, previousSnapshots, evolution] = await Promise.all([
+    fetchInventoryArticleSnapshots(supabase, popId, to),
+    compareEnabled
+      ? fetchInventoryArticleSnapshots(supabase, popId, previousPeriodEnd)
+      : Promise.resolve([] as InventoryArticleSnapshot[]),
+    fetchInventoryMovementEvolution(supabase, popId, from, to),
+  ])
+  const currentSnapshot = buildInventorySnapshotMetrics(currentSnapshots)
+  const previousSnapshot = compareEnabled
+    ? buildInventorySnapshotMetrics(previousSnapshots)
+    : {
+        inventoryValue: 0,
+        unitsInStock: 0,
+        lowStockArticles: 0,
+        outOfStockArticles: 0,
+      }
 
   return {
     sectionId: "inventory",
     title: "Inventario",
-    description: "Movimiento y artículos con mayor rotación",
+    description: "Stock actual, alertas y concentración por artículo",
     comparison: [
-      compareMetric("movements", "Movimientos", movementCount, 0, "number"),
-      compareMetric("articles", "Artículos movidos", rankMap.size, 0, "number"),
+      compareMetric(
+        "value",
+        "Valor del inventario",
+        currentSnapshot.inventoryValue,
+        compareEnabled ? previousSnapshot.inventoryValue : 0,
+        "money",
+      ),
+      compareMetric(
+        "units",
+        "Unidades en stock",
+        currentSnapshot.unitsInStock,
+        compareEnabled ? previousSnapshot.unitsInStock : 0,
+        "number",
+      ),
+      compareMetric(
+        "low",
+        "Artículos con stock bajo",
+        currentSnapshot.lowStockArticles,
+        compareEnabled ? previousSnapshot.lowStockArticles : 0,
+        "number",
+      ),
+      compareMetric(
+        "empty",
+        "Artículos sin stock",
+        currentSnapshot.outOfStockArticles,
+        compareEnabled ? previousSnapshot.outOfStockArticles : 0,
+        "number",
+      ),
     ],
-    evolution: [],
+    evolution,
     hourlyEvolution: [],
     hourlyHeatmap: emptyHourlyHeatmap(),
-    segments: buildSegments(rankMap, 6),
-    rankings: buildRankings(rankMap),
-    unavailable: [
-      "Valorización histórica",
-      "Rotación en días",
-      "Stock al cierre del período",
-    ],
+    segments: [],
+    rankings: [],
+    stockLevelDistribution: buildStockLevelDistribution(currentSnapshots),
+    inventoryValueRankings: buildInventoryValueRankings(currentSnapshots),
+    unavailable: [],
   }
 }
 
@@ -1097,7 +2497,7 @@ export async function getStatisticsSectionData(
       prevBounds.to,
     )
 
-    const [sales, prevSales, purchases, prevPurchases, expenses, income, prevIncome] =
+    const [sales, prevSales, purchases, prevPurchases, expenses, income, prevIncome, dailyIncome, costDistribution] =
       await Promise.all([
         fetchAllSales(popId, salesFetchBounds.from, salesFetchBounds.to),
         compareEnabled
@@ -1125,6 +2525,12 @@ export async function getStatisticsSectionData(
         compareEnabled && sectionId === "profitability"
           ? fetchIncomeTotals(popId, prevBounds.from, prevBounds.to)
           : Promise.resolve({ ingresos: 0, costos: 0, gastos: 0, resultado: 0, margen: 0 }),
+        sectionId === "profitability"
+          ? fetchDailyIncomeTotals(popId, from, to)
+          : Promise.resolve(new Map<string, DailyIncomeBucket>()),
+        sectionId === "profitability"
+          ? fetchCostDistributionByItemKind(popId, from, to)
+          : Promise.resolve([] as StatisticsSegment[]),
       ])
 
     const filteredSales = filterSalesByOperationalPeriod(
@@ -1163,39 +2569,105 @@ export async function getStatisticsSectionData(
           compareEnabled,
           from,
           to,
+          dailyIncome,
+          costDistribution,
         )
         break
-      case "products":
-        data = buildProductsSection(
-          filterSalesByOperationalPeriod(
-            filterSales(sales, filters),
-            from,
-            to,
-            timeZone,
-            operationalDayCloseTime,
+      case "products": {
+        const buckets = new Map<string, ProductStatsBucket>()
+        accumulateProductBucketsFromSales(filteredSales, buckets)
+        await hydrateProductBucketsCosts(popId, buckets, from, to)
+
+        const articleIds = [
+          ...new Set(
+            [...buckets.values()]
+              .map((bucket) => bucket.articleId)
+              .filter((id): id is string => Boolean(id)),
           ),
+        ]
+        const recipeIds = [
+          ...new Set(
+            [...buckets.values()]
+              .map((bucket) => bucket.recipeId)
+              .filter((id): id is string => Boolean(id)),
+          ),
+        ]
+        const [articleCategories, recipeCategories] = await Promise.all([
+          fetchArticleCategoriesById(popId, articleIds),
+          fetchRecipeCategoriesById(popId, recipeIds),
+        ])
+        const categoryTotals = buildCategoryTotals(
+          buckets,
+          articleCategories,
+          recipeCategories,
         )
-        break
-      case "channels":
-        data = buildChannelsSection(
+        const currentCounts = sumProductQuantitiesByKind(filteredSales)
+        const prevCounts = compareEnabled
+          ? sumProductQuantitiesByKind(filteredPrevSales)
+          : { articles: 0, promotions: 0, recipes: 0 }
+
+        const productTrendByKey = buildAllProductDailyTrends(
           filteredSales,
-          filteredPrevSales,
+          buckets,
           from,
           to,
-          compareEnabled,
           timeZone,
           operationalDayCloseTime,
         )
+        const productTrendOptions = buildProductTrendOptions(buckets)
+        const profitRankings = buildProductProfitRankings(buckets)
+        const categoryTrendByKey = buildAllCategoryDailyTrends(
+          filteredSales,
+          buckets,
+          articleCategories,
+          recipeCategories,
+          from,
+          to,
+          timeZone,
+          operationalDayCloseTime,
+        )
+        const categoryTrendOptions = buildCategoryTrendOptions(categoryTotals)
+        const defaultCategoryTrendKey = categoryTrendOptions[0]?.key ?? null
+
+        data = buildProductsSection(
+          buckets,
+          categoryTotals,
+          currentCounts,
+          prevCounts,
+          compareEnabled,
+          productTrendOptions,
+          productTrendByKey,
+          profitRankings[0]?.id ?? null,
+          categoryTrendOptions,
+          categoryTrendByKey,
+          defaultCategoryTrendKey,
+        )
         break
-      case "purchases":
+      }
+      case "purchases": {
+        const articleIds = [
+          ...new Set(
+            filteredPurchases.flatMap((purchase) =>
+              purchase.lineItems
+                .map((line) => line.articleId)
+                .filter((id): id is string => Boolean(id)),
+            ),
+          ),
+        ]
+        const articleKindById = await fetchArticleItemKindsById(popId, articleIds)
         data = buildPurchasesSection(
           filteredPurchases,
           filterPurchases(prevPurchases, filters),
           from,
           to,
           compareEnabled,
+          buildPurchaseDistributionByItemKind(
+            filteredPurchases,
+            articleKindById,
+          ),
         )
         break
+      }
       case "clients":
         data = buildClientsSection(
           filteredSales,
@@ -1219,13 +2691,19 @@ export async function getStatisticsSectionData(
         )
         break
       case "inventory":
-        data = await buildInventorySection(popId, from, to)
+        data = await buildInventorySection(
+          popId,
+          from,
+          to,
+          compareEnabled,
+          prevBounds.to,
+        )
         break
       default:
         data = buildPlaceholderSection(sectionId)
     }
 
-    return { success: true, data }
+    return { success: true, data: { ...data, operationalDayCloseTime } }
   } catch (e: unknown) {
     const message = e instanceof Error ? e.message : "Error desconocido"
     return { success: false, error: message }
