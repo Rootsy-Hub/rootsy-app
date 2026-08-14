@@ -104,6 +104,7 @@ export function VatPositionReportView({
           eyebrow="Reporte fiscal"
           title="Posición IVA"
           icon={Receipt}
+          categoryId="fiscal"
           onBack={onBack}
           preset={preset}
           customRange={customRange}

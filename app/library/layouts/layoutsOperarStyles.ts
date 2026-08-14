@@ -159,6 +159,12 @@ export const layoutsOperarFormDarkIconClass =
 export const layoutsOperarFormDarkMutedTextClass =
   "text-[color-mix(in_srgb,var(--rootsy-sombra-300)_55%,transparent)]"
 
+/** Label uppercase — formularios dark operar (paridad --layouts-operar-form-dark-label). */
+export const layoutsOperarFormDarkSectionLabelClass = cn(
+  "text-xs font-semibold uppercase tracking-[0.1em]",
+  "text-[var(--layouts-operar-form-dark-label)]",
+)
+
 export const layoutsOperarFormDarkSurfaceClass =
   "bg-[color-mix(in_srgb,var(--rootsy-sombra-950)_55%,transparent)]"
 

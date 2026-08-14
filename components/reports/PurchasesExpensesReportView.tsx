@@ -494,9 +494,10 @@ export function PurchasesExpensesReportView({
     <div className="relative flex min-h-full flex-1 flex-col">
       <div className="flex min-h-full flex-1 flex-col gap-6 px-4 pt-6 pb-0 sm:px-6 lg:px-8">
         <ReportDetailHeaderCard
-          eyebrow="Reporte fiscal"
+          eyebrow="Reporte operativo"
           title="Compras y gastos"
           icon={Wallet}
+          categoryId="operativo"
           onBack={onBack}
           preset={preset}
           customRange={customRange}

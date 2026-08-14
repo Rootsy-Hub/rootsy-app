@@ -1,15 +1,13 @@
 "use client"
 
 import dynamic from "next/dynamic"
-import { ReportHubCard, reportHubGridClass } from "@/components/reports/ReportHubCard"
+import { ReportHubGrid } from "@/components/reports/ReportHubGrid"
 import { VatPositionReportView } from "@/components/reports/VatPositionReportView"
 import { RootsSpinner } from "@/components/rootsy-spinner"
 import {
-  dataWorkspaceBlocksPageContentClass,
+  dataWorkspaceBlocksContentInnerClass,
   dataWorkspaceBlocksPageMainClass,
   dataWorkspaceBlocksPageScopeClass,
-  dataWorkspaceBlocksSectionDescriptionClass,
-  dataWorkspaceBlocksSectionTitleClass,
 } from "@/components/data-workspace/dataWorkspaceListStyles"
 import {
   DataWorkspaceModuleLayout,
@@ -19,7 +17,6 @@ import withAuth from "@/hoc/withAuth"
 import { usePopWorkspace } from "@/context/PopWorkspaceContext"
 import {
   buildReportHref,
-  REPORT_CATALOG,
   supportsInlineReportDetail,
 } from "@/lib/reportsCatalog"
 import {
@@ -125,8 +122,8 @@ function ReportsPage() {
         className={cn(
           showingInlineDetail
             ? dataWorkspaceBlocksPageScopeClass
-            : dataWorkspaceBlocksPageContentClass,
-          showingInlineDetail ? "flex min-h-full flex-1 flex-col" : "space-y-8",
+            : dataWorkspaceBlocksContentInnerClass,
+          showingInlineDetail && "flex min-h-full flex-1 flex-col",
         )}
       >
         {bootstrapError ? (
@@ -166,39 +163,11 @@ function ReportsPage() {
             {...periodProps}
           />
         ) : (
-          <>
-            {REPORT_CATALOG.map((category) => (
-              <section key={category.id} className="space-y-3">
-                <div className="space-y-1 px-1">
-                  <h2 className={dataWorkspaceBlocksSectionTitleClass}>
-                    {category.title}
-                  </h2>
-                  <p className={dataWorkspaceBlocksSectionDescriptionClass}>
-                    {category.summary}
-                  </p>
-                </div>
-                <div className={reportHubGridClass}>
-                  {category.items.map((item) => {
-                    const inline = supportsInlineReportDetail(item.id)
-                    return (
-                      <ReportHubCard
-                        key={item.id}
-                        title={item.title}
-                        description={item.description}
-                        icon={item.icon}
-                        selected={selectedReportId === item.id}
-                        {...(inline
-                          ? { onSelect: () => setSelectedReportId(item.id) }
-                          : {
-                              href: buildReportHref(siteId, popId, item, bounds),
-                            })}
-                      />
-                    )
-                  })}
-                </div>
-              </section>
-            ))}
-          </>
+          <ReportHubGrid
+            selectedReportId={selectedReportId}
+            onSelectReport={setSelectedReportId}
+            buildItemHref={(item) => buildReportHref(siteId, popId, item, bounds)}
+          />
         )}
       </div>
     </DataWorkspaceModuleLayout>

@@ -5,6 +5,7 @@ import {
   BookOpen,
   Calculator,
   FileBarChart,
+  FileInput,
   Landmark,
   PieChart,
   Receipt,
@@ -17,10 +18,19 @@ import {
 } from "lucide-react"
 
 export type ReportCatalogCategoryId =
+  | "operativo"
   | "fiscal"
   | "gestion"
   | "control"
   | "config"
+
+export type ReportHubCategoryFilter = ReportCatalogCategoryId | "all"
+
+export function isReportHubCategoryFilterAll(
+  filter: ReportHubCategoryFilter,
+): filter is "all" {
+  return filter === "all"
+}
 
 export type ReportCatalogItem = {
   id: string
@@ -31,6 +41,8 @@ export type ReportCatalogItem = {
   path: string
   /** Query extra (p. ej. foco en contabilidad u operaciones). */
   query?: Record<string, string>
+  /** Solo visible en el hub; el reporte aún no está disponible. */
+  planned?: boolean
 }
 
 export type ReportCatalogCategory = {
@@ -42,9 +54,32 @@ export type ReportCatalogCategory = {
 
 export const REPORT_CATALOG: ReportCatalogCategory[] = [
   {
+    id: "operativo",
+    title: "Operativo",
+    summary: "Movimiento real del negocio: cobros, compras y gastos del período.",
+    items: [
+      {
+        id: "sales-detail",
+        title: "Detalle de ventas",
+        description: "Cobros y operaciones de venta por canal.",
+        icon: FileBarChart,
+        path: "operations",
+        query: { view: "sales" },
+      },
+      {
+        id: "purchases-expenses",
+        title: "Compras y gastos",
+        description: "Compras y gastos registrados en el período.",
+        icon: Wallet,
+        path: "operations",
+        query: { view: "purchases" },
+      },
+    ],
+  },
+  {
     id: "fiscal",
     title: "Fiscal",
-    summary: "Base para impuestos, IVA y declaraciones con tu contador.",
+    summary: "Comprobantes e IVA para declaraciones y tu contador.",
     items: [
       {
         id: "vat-position",
@@ -55,27 +90,20 @@ export const REPORT_CATALOG: ReportCatalogCategory[] = [
         query: { focus: "vat" },
       },
       {
-        id: "sales-detail",
-        title: "Detalle de ventas",
-        description: "Facturación y cobros por canal y comprobante.",
-        icon: FileBarChart,
-        path: "operations",
-        query: { view: "sales" },
-      },
-      {
-        id: "purchases-expenses",
-        title: "Compras y gastos",
-        description: "Egresos con impacto fiscal y crédito de IVA.",
-        icon: Wallet,
-        path: "operations",
-        query: { view: "purchases" },
-      },
-      {
         id: "invoices",
         title: "Facturas emitidas",
-        description: "Comprobantes fiscales registrados en el POP.",
+        description: "Comprobantes fiscales emitidos en el POP.",
         icon: FileBarChart,
         path: "invoices",
+      },
+      {
+        id: "received-invoices",
+        title: "Facturas recibidas",
+        description: "Comprobantes de compra con crédito fiscal del período.",
+        icon: FileInput,
+        path: "operations",
+        query: { view: "purchases", fiscal: "1" },
+        planned: true,
       },
     ],
   },
@@ -216,4 +244,38 @@ export function findReportCatalogItem(reportId: string): ReportCatalogItem | und
     if (match) return match
   }
   return undefined
+}
+
+export type ReportCatalogEntry = ReportCatalogItem & {
+  categoryId: ReportCatalogCategoryId
+}
+
+export function flattenReportCatalog(): ReportCatalogEntry[] {
+  return REPORT_CATALOG.flatMap((category) =>
+    category.items.map((item) => ({
+      ...item,
+      categoryId: category.id,
+    })),
+  )
+}
+
+export function findReportCatalogCategoryId(
+  reportId: string,
+): ReportCatalogCategoryId | undefined {
+  for (const category of REPORT_CATALOG) {
+    if (category.items.some((item) => item.id === reportId)) {
+      return category.id
+    }
+  }
+  return undefined
+}
+
+export const REPORT_HUB_ALL_SUMMARY =
+  "Desde ventas y compras hasta IVA, resultados y conciliación de caja."
+
+export function getReportHubCategorySummary(
+  filter: ReportHubCategoryFilter,
+): string {
+  if (filter === "all") return REPORT_HUB_ALL_SUMMARY
+  return REPORT_CATALOG.find((category) => category.id === filter)?.summary ?? ""
 }
