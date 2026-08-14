@@ -40,7 +40,6 @@ type Props = {
   popId: string
   selectedService: ServiceTypeChargeOption | null
   treasuryPaymentContext: TreasuryPaymentContext | null
-  comprobanteLabel: string
   suggestedComprobante: string | null
   disabled?: boolean
   saving?: boolean
@@ -57,7 +56,6 @@ export function ServiceOperateSnapshotPanel({
   popId,
   selectedService,
   treasuryPaymentContext,
-  comprobanteLabel,
   suggestedComprobante,
   disabled = false,
   saving = false,
@@ -143,7 +141,6 @@ export function ServiceOperateSnapshotPanel({
             popId={popId}
             selectedService={selectedService}
             treasuryPaymentContext={treasuryPaymentContext}
-            comprobanteLabel={comprobanteLabel}
             suggestedComprobante={suggestedComprobante}
             disabled={disabled || saving}
             onFormChange={onFormChange}

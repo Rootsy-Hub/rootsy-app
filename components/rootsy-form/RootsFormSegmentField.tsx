@@ -9,7 +9,7 @@ import {
   rootsFormSegmentOptionClass,
 } from "@/components/rootsy-form/rootsFormStyles"
 import { cn } from "@/lib/utils"
-import type { ReactNode } from "react"
+import type { CSSProperties, ReactNode } from "react"
 
 export type RootsFormSegmentOption = {
   value: string
@@ -27,6 +27,7 @@ type Props = {
   layout?: "grid" | "inline"
   className?: string
   groupClassName?: string
+  style?: CSSProperties
   "aria-label"?: string
 } & RootsFormFieldAssistProps
 
@@ -52,6 +53,7 @@ export function RootsFormSegmentField({
   layout = "grid",
   className,
   groupClassName,
+  style,
   "aria-label": ariaLabel,
   hint,
   error,
@@ -69,6 +71,7 @@ export function RootsFormSegmentField({
     <RootsFormField
       label={label}
       className={className}
+      style={style}
       hint={hint}
       error={error}
       warning={warning}

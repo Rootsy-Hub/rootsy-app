@@ -7,9 +7,9 @@ import {
 } from "@/app/[siteId]/[popId]/active-services/actions"
 import {
   layoutsOperarFormDarkSecondaryButtonClass,
-  layoutsOperarFormDarkMutedTextClass,
   layoutsOperarScrollMinimalClass,
 } from "@/app/library/layouts/layoutsOperarStyles"
+import { ServiceOperateSelectedServiceDetailSkeleton } from "@/components/service-operation/ServiceOperateSelectedServiceDetailSkeleton"
 import { ServiceOperateContractDialog } from "@/components/service-operation/ServiceOperateContractDialog"
 import {
   ServicePlanDetailContent,
@@ -69,9 +69,7 @@ export function ServiceOperateSelectedServiceDetail({
           <ServiceOperateServiceShowcase service={service} />
 
           {loading ? (
-            <p className={cn("text-sm", layoutsOperarFormDarkMutedTextClass)}>
-              Cargando detalle del servicio…
-            </p>
+            <ServiceOperateSelectedServiceDetailSkeleton />
           ) : error ? (
             <p className="text-sm text-rose-300">{error}</p>
           ) : detail ? (

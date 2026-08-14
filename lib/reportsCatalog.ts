@@ -203,6 +203,7 @@ export function buildReportHref(
 export const REPORT_INLINE_DETAIL_IDS = new Set<string>([
   "vat-position",
   "sales-detail",
+  "purchases-expenses",
 ])
 
 export function supportsInlineReportDetail(reportId: string): boolean {

@@ -17,7 +17,17 @@ import {
 import { ServiceOperateChargeConfigFormPanel } from "@/components/service-operation/ServiceOperateChargeConfigFormPanel"
 import { ServiceOperateSnapshotCartRow } from "@/components/service-operation/ServiceOperateSnapshotCartRow"
 import type { ServiceOperateSnapshotPanelView } from "@/components/service-operation/ServiceOperateSnapshotPanelTabs"
-import { serviceChargeHasComprobante } from "@/app/[siteId]/[popId]/active-services/serviceChargeCreateFormState"
+import {
+  isServiceChargeComprobanteChosen,
+  isServiceChargePaymentMethodChosen,
+  resolveServiceChargeComprobanteSnapshotLabel,
+  SERVICE_CHARGE_PAYMENT_PENDING,
+  SERVICE_CHARGE_PAYMENT_PENDING_LABEL,
+  SERVICE_CHARGE_SNAPSHOT_PLACEHOLDER,
+  serviceChargeHasComprobante,
+} from "@/app/[siteId]/[popId]/active-services/serviceChargeCreateFormState"
+import { isServiceChargeClientReady } from "@/app/[siteId]/[popId]/active-services/components/ServiceChargeClientField"
+import { layoutsOperarFormDarkMutedTextClass } from "@/app/library/layouts/layoutsOperarStyles"
 import { operationPaymentKindLabel } from "@/lib/operationPaymentKinds"
 import {
   getServiceChargeCheckoutDestinations,
@@ -39,7 +49,8 @@ import { useMemo } from "react"
 
 const TICKET_PROPOSAL = LAYOUTS_OPERAR_DEFAULT_TICKET_PROPOSAL
 
-const PLACEHOLDER = "—"
+const PLACEHOLDER = SERVICE_CHARGE_SNAPSHOT_PLACEHOLDER
+const REQUIRED_HINT = "Requerido"
 
 type Props = {
   view: ServiceOperateSnapshotPanelView
@@ -48,7 +59,6 @@ type Props = {
   popId: string
   selectedService: ServiceTypeChargeOption | null
   treasuryPaymentContext: TreasuryPaymentContext | null
-  comprobanteLabel: string
   suggestedComprobante: string | null
   disabled?: boolean
   onFormChange: (patch: Partial<ServiceChargeCreateWizardForm>) => void
@@ -62,7 +72,11 @@ function resolvePaymentSnapshot(
   paymentMethodKey: string,
   treasuryPaymentContext: TreasuryPaymentContext | null,
 ): { kind: string; destination: string | null } | null {
-  if (!paymentMethodKey.trim()) return null
+  if (!isServiceChargePaymentMethodChosen(paymentMethodKey)) return null
+
+  if (paymentMethodKey === SERVICE_CHARGE_PAYMENT_PENDING) {
+    return { kind: SERVICE_CHARGE_PAYMENT_PENDING_LABEL, destination: null }
+  }
 
   const parsed = parseTreasuryPaymentOptionKey(paymentMethodKey)
   if (!parsed) {
@@ -88,7 +102,6 @@ export function ServiceOperateChargeSnapshotContent({
   fieldErrors,
   selectedService,
   treasuryPaymentContext,
-  comprobanteLabel,
   suggestedComprobante,
   disabled = false,
   onFormChange,
@@ -141,10 +154,24 @@ export function ServiceOperateChargeSnapshotContent({
     treasuryPaymentContext,
   )
 
+  const comprobanteSnapshotLabel = resolveServiceChargeComprobanteSnapshotLabel(
+    form.comprobanteLabel,
+    suggestedComprobante,
+  )
+
   const hasComprobante = serviceChargeHasComprobante(
     form.comprobanteLabel,
     suggestedComprobante,
   )
+
+  const clientReady = isServiceChargeClientReady(form.clientDraft)
+  const paymentChosen = isServiceChargePaymentMethodChosen(form.paymentMethodKey)
+  const comprobanteChosen = isServiceChargeComprobanteChosen(form.comprobanteLabel)
+
+  const clientName =
+    form.clientDraft.catalogClient?.name.trim() ||
+    form.clientDraft.manualName.trim() ||
+    ""
 
   if (!selectedService) {
     return null
@@ -176,6 +203,13 @@ export function ServiceOperateChargeSnapshotContent({
           "min-h-0 flex-1",
         )}
       >
+        <ServiceOperateSnapshotCartRow
+          label="Cliente"
+          value={clientName.trim() || PLACEHOLDER}
+          empty={!clientReady}
+          subtitle={!clientReady ? REQUIRED_HINT : undefined}
+        />
+
         <ServiceOperateChargeConfigShowcase
           form={form}
           scopeLabel={SERVICE_CHARGE_BILLING_SCOPE_LABELS[form.billingScope]}
@@ -211,12 +245,15 @@ export function ServiceOperateChargeSnapshotContent({
             label="Medio de pago"
             value={PLACEHOLDER}
             empty
+            subtitle={REQUIRED_HINT}
           />
         )}
 
         <ServiceOperateSnapshotCartRow
           label="Comprobante"
-          value={comprobanteLabel}
+          value={comprobanteSnapshotLabel}
+          empty={!comprobanteChosen}
+          subtitle={!comprobanteChosen ? REQUIRED_HINT : undefined}
         />
         {hasComprobante ? (
           <>
@@ -239,6 +276,15 @@ export function ServiceOperateChargeSnapshotContent({
           </>
         ) : null}
       </div>
+
+      <p
+        className={cn(
+          "mt-3 shrink-0 px-1 text-xs leading-snug",
+          layoutsOperarFormDarkMutedTextClass,
+        )}
+      >
+        Cliente, medio de pago y comprobante son requeridos para crear el cargo.
+      </p>
     </div>
   )
 }

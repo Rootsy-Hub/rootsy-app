@@ -15,6 +15,12 @@ import {
   layoutsOperarFormDarkMutedTextClass,
   layoutsOperarFormDarkSecondaryButtonClass,
 } from "@/app/library/layouts/layoutsOperarStyles"
+import {
+  RootsAlertDialogContent,
+  RootsAlertDialogFooter,
+  RootsAlertDialogPanel,
+} from "@/components/rootsy-dialog"
+import { AlertDialog } from "@/components/ui/alert-dialog"
 import { SaleCatalogBrowserSkeleton } from "@/components/sale-operation/SaleCatalogBrowserSkeleton"
 import { SaleCatalogSidebarNav } from "@/components/sale-operation/SaleCatalogSidebarNav"
 import { SaleCatalogSidebarNavSkeleton } from "@/components/sale-operation/SaleCatalogSidebarNavSkeleton"
@@ -72,8 +78,14 @@ export function ServiceOperateCatalogBrowser({
     modo: "categoria",
     categoria: ALL_CATEGORY_NAME,
   })
+  const [clearServiceConfirmOpen, setClearServiceConfirmOpen] = useState(false)
 
   const showSelectedDetail = Boolean(selectedService && popId?.trim())
+
+  const handleConfirmClearService = () => {
+    setClearServiceConfirmOpen(false)
+    onClearSelectedService?.()
+  }
 
   const saleCategories = useMemo((): SaleCatalogCategory[] => {
     return [
@@ -102,19 +114,20 @@ export function ServiceOperateCatalogBrowser({
   }, [items, vistaCatalogo, searchNorm])
 
   return (
-    <div
-      className={cn(
-        layoutsOperarCatalogColumnClass,
-        showSelectedDetail && "flex-col",
-      )}
-    >
+    <>
+      <div
+        className={cn(
+          layoutsOperarCatalogColumnClass,
+          showSelectedDetail && "flex-col",
+        )}
+      >
       {showSelectedDetail ? (
         <>
           <div className={cn(layoutsOperarCatalogToolbarClass, "justify-start")}>
             <button
               type="button"
               disabled={disabled}
-              onClick={onClearSelectedService}
+              onClick={() => setClearServiceConfirmOpen(true)}
               className={layoutsOperarFormDarkSecondaryButtonClass}
             >
               <ChevronLeft className="size-4 shrink-0 opacity-80" aria-hidden />
@@ -211,6 +224,22 @@ export function ServiceOperateCatalogBrowser({
           </section>
         </>
       )}
-    </div>
+      </div>
+
+      <AlertDialog open={clearServiceConfirmOpen} onOpenChange={setClearServiceConfirmOpen}>
+        <RootsAlertDialogContent>
+          <RootsAlertDialogPanel
+            title="¿Elegir otro servicio?"
+            description="Volvés al catálogo. Se quitará el servicio seleccionado y la configuración asociada al cargo."
+          />
+          <RootsAlertDialogFooter
+            cancelLabel="Cancelar"
+            confirmLabel="Elegir otro"
+            onCancel={() => setClearServiceConfirmOpen(false)}
+            onConfirm={handleConfirmClearService}
+          />
+        </RootsAlertDialogContent>
+      </AlertDialog>
+    </>
   )
 }

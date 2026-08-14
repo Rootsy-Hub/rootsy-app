@@ -27,6 +27,7 @@ export type SaleOperationToolboxProps = {
   /** Override solo para pago (p. ej. vender sin caja abierta). */
   pagoDisabled?: boolean
   comprobanteLabel: string
+  comprobanteConfigurado?: boolean
   pagoLabel: string
   pagoConfigurado: boolean
   descuentoLabel: string
@@ -47,6 +48,7 @@ export function SaleOperationToolbox({
   toolbarDisabled = false,
   pagoDisabled,
   comprobanteLabel,
+  comprobanteConfigurado,
   pagoLabel,
   pagoConfigurado,
   descuentoLabel,
@@ -59,6 +61,7 @@ export function SaleOperationToolbox({
   className,
 }: SaleOperationToolboxProps) {
   const pagoButtonDisabled = pagoDisabled ?? toolbarDisabled
+  const comprobanteListo = comprobanteConfigurado ?? comprobanteLabel !== "Sin comprobante"
 
   return (
     <div className={cn(layoutsOperarToolboxBandClass, className)}>
@@ -105,13 +108,13 @@ export function SaleOperationToolbox({
           disabled={toolbarDisabled}
           onClick={onComprobanteClick}
           className={cn(
-            layoutsOperarToolboxSlotClass(comprobanteLabel !== "Sin comprobante"),
+            layoutsOperarToolboxSlotClass(comprobanteListo),
             toolbarDisabled && "opacity-45",
           )}
           aria-label={`Comprobante: ${comprobanteLabel}`}
         >
           <span
-            className={layoutsOperarToolboxIconWrapClass(comprobanteLabel !== "Sin comprobante")}
+            className={layoutsOperarToolboxIconWrapClass(comprobanteListo)}
           >
             <Receipt className="size-4.5 sm:size-5" aria-hidden />
           </span>
@@ -122,7 +125,7 @@ export function SaleOperationToolbox({
             <span
               className={layoutsOperarToolboxProposalSlotValueClass(
                 TOOLBOX_PROPOSAL,
-                comprobanteLabel !== "Sin comprobante",
+                comprobanteListo,
               )}
             >
               {comprobanteLabel}

@@ -16,10 +16,15 @@ import {
 } from "@/app/[siteId]/[popId]/active-services/components/ServiceChargeClientField"
 import {
   hasServiceChargeCreateFieldErrors,
+  isServiceChargeComprobanteChosen,
+  isServiceChargePaymentMethodChosen,
   resolveServiceChargeComprobanteDisplayLabel,
   resolveServiceChargeComprobanteEffectiveLabel,
   resolveServiceChargeComprobanteToolboxLabel,
   SERVICE_CHARGE_COMPROBANTE_AUTO,
+  SERVICE_CHARGE_PAYMENT_PENDING,
+  SERVICE_CHARGE_PAYMENT_PENDING_LABEL,
+  SERVICE_CHARGE_SNAPSHOT_PLACEHOLDER,
   validateServiceChargeOperateForm,
   type ServiceChargeCreateFieldErrors,
   type ServiceChargeCreateWizardForm,
@@ -440,7 +445,12 @@ export function CobrarServiciosWorkspace({ siteId, popId }: Props) {
     ""
 
   const paymentLabel = useMemo(() => {
-    if (!form.paymentMethodKey) return "Sin definir"
+    if (!isServiceChargePaymentMethodChosen(form.paymentMethodKey)) {
+      return "Elegir pago"
+    }
+    if (form.paymentMethodKey === SERVICE_CHARGE_PAYMENT_PENDING) {
+      return SERVICE_CHARGE_PAYMENT_PENDING_LABEL
+    }
     const parsed = parseTreasuryPaymentOptionKey(form.paymentMethodKey)
     if (!parsed || !treasuryPaymentContext) return "Medio elegido"
     return buildPaymentCheckoutSelection(
@@ -500,7 +510,8 @@ export function CobrarServiciosWorkspace({ siteId, popId }: Props) {
     [form.clientDraft],
   )
 
-  const pagoConfigurado = Boolean(form.paymentMethodKey.trim())
+  const pagoConfigurado = isServiceChargePaymentMethodChosen(form.paymentMethodKey)
+  const comprobanteConfigurado = isServiceChargeComprobanteChosen(form.comprobanteLabel)
   const toolbarDisabled = !selectedService || saving
 
   const aplicarComprobanteDesdeIva = useCallback(
@@ -587,12 +598,31 @@ export function CobrarServiciosWorkspace({ siteId, popId }: Props) {
     [canReadClients, canCreateClient, services.length, selectedService],
   )
 
+  const canSubmitCharge = useMemo(() => {
+    if (!canCreate || !selectedService) return false
+    if (!isServiceChargeClientReady(form.clientDraft)) return false
+    if (!isServiceChargePaymentMethodChosen(form.paymentMethodKey)) return false
+    if (!isServiceChargeComprobanteChosen(form.comprobanteLabel)) return false
+    const errors = validateServiceChargeOperateForm(form, validationOptions)
+    return !hasServiceChargeCreateFieldErrors(errors)
+  }, [canCreate, selectedService, form, validationOptions])
+
   const confirmTitle = useMemo(() => {
     if (!selectedService) return "Elegí un servicio del catálogo."
-    if (!clientName.trim()) return "Completá el cliente."
+    if (!isServiceChargeClientReady(form.clientDraft)) return "Completá el cliente."
+    if (!isServiceChargePaymentMethodChosen(form.paymentMethodKey)) {
+      return "Elegí el medio de pago."
+    }
+    if (!isServiceChargeComprobanteChosen(form.comprobanteLabel)) {
+      return "Elegí el comprobante."
+    }
     if (!canCreate) return "No tenés permiso para crear cargos."
+    const errors = validateServiceChargeOperateForm(form, validationOptions)
+    if (hasServiceChargeCreateFieldErrors(errors)) {
+      return "Revisá la configuración del cargo."
+    }
     return undefined
-  }, [selectedService, clientName, canCreate])
+  }, [selectedService, form, canCreate, validationOptions])
 
   const chargeDiscountMode: ServiceDiscountMode =
     form.discountMode === "porcentaje" || form.discountMode === "fijo"
@@ -719,6 +749,7 @@ export function CobrarServiciosWorkspace({ siteId, popId }: Props) {
                 clienteConfigurado={isServiceChargeClientReady(form.clientDraft)}
                 toolbarDisabled={toolbarDisabled}
                 comprobanteLabel={comprobanteToolboxLabel}
+                comprobanteConfigurado={comprobanteConfigurado}
                 pagoLabel={paymentLabel}
                 pagoConfigurado={pagoConfigurado}
                 descuentoLabel={descuentoToolboxLabel}
@@ -741,11 +772,10 @@ export function CobrarServiciosWorkspace({ siteId, popId }: Props) {
                   fieldErrors={fieldErrors}
                   selectedService={selectedService}
                   treasuryPaymentContext={treasuryPaymentContext}
-                  comprobanteLabel={comprobanteDisplayLabel}
                   suggestedComprobante={suggestedComprobante}
                   disabled={saving}
                   saving={saving}
-                  canCreate={canCreate}
+                  canCreate={canSubmitCharge}
                   confirmTitle={confirmTitle}
                   onFormChange={patchForm}
                   onDiscard={() => setDescartarConfirmOpen(true)}
@@ -858,7 +888,7 @@ export function CobrarServiciosWorkspace({ siteId, popId }: Props) {
         subtotal={subtotalForDiscount}
         descuentoMonto={chargeDescuentoMonto}
         hayDescuento={hayDescuento}
-        partyValue={clientName.trim() || "Sin definir"}
+        partyValue={clientName.trim() || SERVICE_CHARGE_SNAPSHOT_PLACEHOLDER}
         comprobanteLabel={comprobanteDisplayLabel}
         paymentLabel={paymentLabel}
         onConfirm={() => {

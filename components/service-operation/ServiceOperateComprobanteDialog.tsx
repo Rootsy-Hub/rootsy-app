@@ -2,6 +2,7 @@
 
 import {
   SERVICE_CHARGE_COMPROBANTE_AUTO,
+  SERVICE_CHARGE_COMPROBANTE_NONE,
 } from "@/app/[siteId]/[popId]/active-services/serviceChargeCreateFormState"
 import { CheckoutOptionCard } from "@/components/checkout/CheckoutOptionCard"
 import {
@@ -43,7 +44,7 @@ function isSelected(
   optionValue: string,
 ): boolean {
   if (optionValue === SALE_COMPROBANTE_SIN_LABEL) {
-    return !comprobanteLabel.trim()
+    return comprobanteLabel === SERVICE_CHARGE_COMPROBANTE_NONE
   }
   if (optionValue === SERVICE_CHARGE_COMPROBANTE_AUTO) {
     return comprobanteLabel === SERVICE_CHARGE_COMPROBANTE_AUTO
@@ -104,7 +105,7 @@ export function ServiceOperateComprobanteDialog({
                   selected={isSelected(value, option.value)}
                   onClick={() => {
                     if (option.value === SALE_COMPROBANTE_SIN_LABEL) {
-                      onChange("")
+                      onChange(SERVICE_CHARGE_COMPROBANTE_NONE)
                     } else if (option.value === SERVICE_CHARGE_COMPROBANTE_AUTO) {
                       onChange(SERVICE_CHARGE_COMPROBANTE_AUTO)
                     } else {

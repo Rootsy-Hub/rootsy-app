@@ -25,6 +25,10 @@ import {
   treasuryPaymentOptionKey,
   type TreasuryPaymentContext,
 } from "@/lib/treasuryPaymentOptions"
+import {
+  SERVICE_CHARGE_PAYMENT_PENDING,
+  SERVICE_CHARGE_PAYMENT_PENDING_LABEL,
+} from "@/app/[siteId]/[popId]/active-services/serviceChargeCreateFormState"
 import { cn } from "@/lib/utils"
 import {
   ArrowLeftRight,
@@ -290,13 +294,13 @@ export function ServiceOperatePaymentFields({
         >
           <li>
             <CheckoutOptionCard
-              title="Sin definir"
+              title={SERVICE_CHARGE_PAYMENT_PENDING_LABEL}
               subtitle="Podés cobrarlo más adelante desde Servicios activos"
-              selected={!paymentMethodKey}
+              selected={paymentMethodKey === SERVICE_CHARGE_PAYMENT_PENDING}
               tone={tone}
               disabled={disabled}
               onClick={() => {
-                onChange("")
+                onChange(SERVICE_CHARGE_PAYMENT_PENDING)
                 setPickError(null)
                 onSelectionComplete?.()
               }}
