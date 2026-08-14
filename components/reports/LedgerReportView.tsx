@@ -8,6 +8,7 @@ import {
 import { useTreasuryInfiniteScroll } from "@/app/[siteId]/[popId]/accounts/treasuryInfiniteScroll"
 import { DataWorkspaceDetailEmptyState } from "@/components/data-workspace/DataWorkspaceDetailEmptyState"
 import { ReportDetailHeaderCard } from "@/components/reports/ReportDetailHeaderCard"
+import { ReportTableScrollArea } from "@/components/reports/ReportTableScrollArea"
 import {
   dataWorkspaceDetailEmptyStateDescriptionClass,
   dataWorkspaceDetailFlushBottomCardClass,
@@ -248,7 +249,7 @@ export function LedgerReportView({
             </div>
           ) : null}
 
-          <div ref={scrollRootRef} className="min-h-0 flex-1 overflow-auto">
+          <ReportTableScrollArea scrollRef={scrollRootRef}>
             {!hasAccountQuery ? (
               <DataWorkspaceDetailEmptyState
                 icon={BookOpen}
@@ -410,7 +411,7 @@ export function LedgerReportView({
                 ) : null}
               </div>
             )}
-          </div>
+          </ReportTableScrollArea>
         </section>
       </div>
     </div>

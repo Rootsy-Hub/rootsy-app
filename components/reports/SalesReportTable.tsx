@@ -10,6 +10,7 @@ import {
   workspaceTableLayoutHeaderHeadClass,
   workspaceTableLayoutListBodyScopeClass,
   workspaceTableLayoutListSurfaceClass,
+  workspaceTableLayoutReportTableDesktopClass,
 } from "@/components/data-workspace/dataWorkspaceTablesLayout"
 import { workspaceLayoutsTablesScopeClass } from "@/components/layouts-tables/rootsLayoutsTablesProductStyles"
 import {
@@ -241,7 +242,7 @@ export function SalesReportTable({ rows }: Props) {
 
       <div
         className={cn(
-          "hidden overflow-x-auto md:block",
+          workspaceTableLayoutReportTableDesktopClass,
           salesReportTableBodyScopeClass,
         )}
       >

@@ -12,6 +12,7 @@ import {
 } from "@/components/layouts/dataWorkspaceHeaderStyles"
 import {
   layoutsModuleHeaderGlassClass,
+  layoutsModuleHeaderPopAddressClass,
   layoutsModuleHeaderPopNameClass,
   layoutsModuleHeaderUserNameClass,
 } from "@/components/layouts-module/rootsLayoutsModuleProductStyles"
@@ -30,6 +31,7 @@ export type ModuleWorkspaceHeaderProps = {
   backHref: string
   popLogoSrc: string
   popName: string
+  popStreetAddress?: string | null
   title: string
   loading?: boolean
   headerVariant?: DataWorkspaceHeaderVariant
@@ -54,6 +56,7 @@ export function ModuleWorkspaceHeader({
   backHref,
   popLogoSrc,
   popName,
+  popStreetAddress,
   title,
   loading = false,
   headerVariant = "tables",
@@ -75,6 +78,7 @@ export function ModuleWorkspaceHeader({
 }: ModuleWorkspaceHeaderProps) {
   const useModuleTypography = isLayoutsTablesHeader(headerVariant)
   const posChrome = { theme: "pos" as const, emphasis: "ghost" as const }
+  const resolvedPopStreetAddress = popStreetAddress?.trim() || null
 
   return (
     <header className={cn("relative z-20 shrink-0", layoutsModuleHeaderGlassClass)}>
@@ -135,21 +139,34 @@ export function ModuleWorkspaceHeader({
           <div className="flex min-w-0 items-center gap-2.5">
             <div
               className={cn(
-                "size-8 overflow-hidden rounded-lg ring-1",
+                "size-10 overflow-hidden rounded-lg ring-1",
                 dataWorkspaceHeaderPopRingClass(headerVariant),
               )}
             >
               <img src={popLogoSrc} alt="" className="size-full object-cover" />
             </div>
-            <span
-              className={
-                useModuleTypography
-                  ? layoutsModuleHeaderPopNameClass
-                  : "truncate text-sm font-semibold text-zinc-100"
-              }
-            >
-              {popName || (loading ? "…" : "—")}
-            </span>
+            <div className="flex min-w-0 flex-col leading-tight">
+              <span
+                className={
+                  useModuleTypography
+                    ? layoutsModuleHeaderPopNameClass
+                    : "truncate text-sm font-semibold text-zinc-100"
+                }
+              >
+                {popName || (loading ? "…" : "—")}
+              </span>
+              {resolvedPopStreetAddress ? (
+                <span
+                  className={
+                    useModuleTypography
+                      ? layoutsModuleHeaderPopAddressClass
+                      : "truncate text-[11px] leading-tight text-zinc-400"
+                  }
+                >
+                  {resolvedPopStreetAddress}
+                </span>
+              ) : null}
+            </div>
           </div>
         </div>
 

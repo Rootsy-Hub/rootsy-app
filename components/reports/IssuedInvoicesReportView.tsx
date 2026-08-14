@@ -5,6 +5,7 @@ import {
   type InvoiceArcaTableRow,
 } from "@/app/[siteId]/[popId]/invoices/actions"
 import { ReportDetailHeaderCard } from "@/components/reports/ReportDetailHeaderCard"
+import { ReportTableScrollArea } from "@/components/reports/ReportTableScrollArea"
 import { IssuedInvoicesReportTable } from "@/components/reports/IssuedInvoicesReportTable"
 import { DataWorkspaceDetailEmptyState } from "@/components/data-workspace/DataWorkspaceDetailEmptyState"
 import {
@@ -359,7 +360,7 @@ export function IssuedInvoicesReportView({
             </div>
           ) : null}
 
-          <div ref={scrollRef} className="min-h-0 flex-1 overflow-auto">
+          <ReportTableScrollArea scrollRef={scrollRef}>
             {loading ? (
               <div
                 className="flex min-h-52 flex-col items-center justify-center gap-3 px-4 py-10"
@@ -386,7 +387,7 @@ export function IssuedInvoicesReportView({
                 ) : null}
               </>
             )}
-          </div>
+          </ReportTableScrollArea>
         </section>
       </div>
     </div>

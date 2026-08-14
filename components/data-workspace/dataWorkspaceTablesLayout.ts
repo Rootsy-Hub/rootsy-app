@@ -63,8 +63,10 @@ export const workspaceTableLayoutActionsBodyCellClass = cn(
   "px-1 !py-0 align-middle",
 )
 
-/** Scope layout — h-10 header · h-14 filas. */
+/** Scope layout — h-10 header · h-14 filas · header sticky en contenedor scroll. */
 export const workspaceTableLayoutListBodyScopeClass = cn(
+  "[&_[data-slot=table-container]]:!overflow-visible",
+  "[&_[data-slot=table-head]]:!sticky [&_[data-slot=table-head]]:!top-0 [&_[data-slot=table-head]]:!z-30",
   "[&_[data-slot=table-header]_[data-slot=table-row]]:!border-b-0",
   "[&_[data-slot=table-head]]:!h-10 [&_[data-slot=table-head]]:!max-h-10 [&_[data-slot=table-head]]:box-border [&_[data-slot=table-head]]:!py-0",
   "[&_[data-slot=table-head]]:!border-b [&_[data-slot=table-head]]:!border-[var(--wt-border)] [&_[data-slot=table-head]]:!shadow-none",
@@ -77,8 +79,30 @@ export const workspaceTableLayoutListBodyScopeClass = cn(
   "[&_[data-slot=table-row][data-state=selected]]:!bg-[var(--wt-surface-selected)]",
 )
 
+/** Contenedor scroll de tablas en reportes. */
+export const workspaceTableLayoutReportScrollClass =
+  "min-h-0 flex-1 overflow-auto"
+
+/** Borde inferior en header sticky al scrollear (pseudo-elemento sobre celdas sticky). */
+export const workspaceTableLayoutReportScrollScrolledScopeClass = cn(
+  "[&[data-table-scrolled=true]_[data-slot=table-head]]:relative",
+  "[&[data-table-scrolled=true]_[data-slot=table-head]]:after:pointer-events-none",
+  "[&[data-table-scrolled=true]_[data-slot=table-head]]:after:absolute",
+  "[&[data-table-scrolled=true]_[data-slot=table-head]]:after:inset-x-0",
+  "[&[data-table-scrolled=true]_[data-slot=table-head]]:after:bottom-0",
+  "[&[data-table-scrolled=true]_[data-slot=table-head]]:after:z-[1]",
+  "[&[data-table-scrolled=true]_[data-slot=table-head]]:after:h-px",
+  "[&[data-table-scrolled=true]_[data-slot=table-head]]:after:bg-[var(--wt-border-strong)]",
+  "[&[data-table-scrolled=true]_[data-slot=table-head]]:after:content-['']",
+)
+
+/** Wrapper tabla desktop en reportes — scroll lo maneja el padre (sticky header). */
+export const workspaceTableLayoutReportTableDesktopClass = "hidden md:block"
+
 /** Operaciones — header compacto layout; filas flexibles (celdas multilínea). */
 export const workspaceTableOperationsListHeaderScopeClass = cn(
+  "[&_[data-slot=table-container]]:!overflow-visible",
+  "[&_[data-slot=table-head]]:!sticky [&_[data-slot=table-head]]:!top-0 [&_[data-slot=table-head]]:!z-30",
   "[&_[data-slot=table-header]_[data-slot=table-row]]:!border-b-0",
   "[&_[data-slot=table-head]]:!h-10 [&_[data-slot=table-head]]:!max-h-10 [&_[data-slot=table-head]]:box-border [&_[data-slot=table-head]]:!py-0",
   "[&_[data-slot=table-head]]:!border-b [&_[data-slot=table-head]]:!border-[var(--wt-border)] [&_[data-slot=table-head]]:!shadow-none",

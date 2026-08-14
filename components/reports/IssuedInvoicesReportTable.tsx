@@ -14,6 +14,7 @@ import {
   workspaceTableLayoutHeaderHeadClass,
   workspaceTableLayoutListBodyScopeClass,
   workspaceTableLayoutListSurfaceClass,
+  workspaceTableLayoutReportTableDesktopClass,
 } from "@/components/data-workspace/dataWorkspaceTablesLayout"
 import { workspaceLayoutsTablesScopeClass } from "@/components/layouts-tables/rootsLayoutsTablesProductStyles"
 import {
@@ -228,7 +229,7 @@ export function IssuedInvoicesReportTable({ rows }: Props) {
         )}
       </div>
 
-      <div className={cn("hidden overflow-x-auto md:block", tableBodyScopeClass)}>
+      <div className={cn(workspaceTableLayoutReportTableDesktopClass, tableBodyScopeClass)}>
         <Table className={cn(workspaceTableLayoutClassName, "min-w-[52rem]")}>
           <WorkspaceTableHeader>
             <WorkspaceTableHeaderRow>

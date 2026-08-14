@@ -193,10 +193,15 @@ export function DataWorkspaceLayout({
     }
   }, [])
 
+  const popImageUrl = popWorkspace?.popAccess?.pop.imageUrl?.trim() || null
+  const popStreetAddress =
+    popWorkspace?.popAccess?.pop.streetAddress?.trim() || null
+
   const popLogoSrc = useMemo(
     () =>
+      popImageUrl ||
       `https://api.dicebear.com/7.x/shapes/svg?seed=${encodeURIComponent(popId || "pop")}&backgroundColor=e8f5ef`,
-    [popId],
+    [popId, popImageUrl],
   )
 
   const backHref = backHrefProp ?? popMenuHref(siteId, popId)
@@ -246,6 +251,7 @@ export function DataWorkspaceLayout({
             backHref={backHref}
             popLogoSrc={popLogoSrc}
             popName={popName}
+            popStreetAddress={popStreetAddress}
             title={title}
             loading={loading}
             headerVariant={headerVariant}
@@ -350,7 +356,7 @@ export function DataWorkspaceLayout({
               <div className="flex min-w-0 items-center gap-2.5">
                 <div
                   className={cn(
-                    "size-8 overflow-hidden rounded-lg ring-1",
+                    "size-10 overflow-hidden rounded-lg ring-1",
                     dataWorkspaceHeaderPopRingClass(headerVariant),
                   )}
                 >
@@ -360,14 +366,28 @@ export function DataWorkspaceLayout({
                     className="size-full object-cover"
                   />
                 </div>
-                <span
-                  className={cn(
-                    "truncate text-sm font-semibold",
-                    isTintedHeader ? "text-zinc-100" : "text-foreground/90",
-                  )}
-                >
-                  {popName || (loading ? "…" : "—")}
-                </span>
+                <div className="flex min-w-0 flex-col leading-tight">
+                  <span
+                    className={cn(
+                      "truncate text-sm font-semibold",
+                      isTintedHeader ? "text-zinc-100" : "text-foreground/90",
+                    )}
+                  >
+                    {popName || (loading ? "…" : "—")}
+                  </span>
+                  {popStreetAddress ? (
+                    <span
+                      className={cn(
+                        "truncate text-[11px] leading-tight",
+                        isTintedHeader
+                          ? "text-zinc-400"
+                          : "text-muted-foreground",
+                      )}
+                    >
+                      {popStreetAddress}
+                    </span>
+                  ) : null}
+                </div>
               </div>
             </div>
 

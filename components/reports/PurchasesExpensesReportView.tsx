@@ -6,6 +6,7 @@ import {
   type OperationPurchaseRow,
 } from "@/app/[siteId]/[popId]/operations/actions"
 import { ReportDetailHeaderCard } from "@/components/reports/ReportDetailHeaderCard"
+import { ReportTableScrollArea } from "@/components/reports/ReportTableScrollArea"
 import { PurchasesReportTable } from "@/components/reports/PurchasesReportTable"
 import { ExpensesReportTable } from "@/components/reports/ExpensesReportTable"
 import { DataWorkspaceDetailEmptyState } from "@/components/data-workspace/DataWorkspaceDetailEmptyState"
@@ -598,7 +599,7 @@ export function PurchasesExpensesReportView({
             </div>
           ) : null}
 
-          <div ref={scrollRef} className="min-h-0 flex-1 overflow-auto">
+          <ReportTableScrollArea scrollRef={scrollRef}>
             {activeLoading ? (
               <div
                 className="flex min-h-52 flex-col items-center justify-center gap-3 px-4 py-10"
@@ -640,7 +641,7 @@ export function PurchasesExpensesReportView({
                 ) : null}
               </>
             )}
-          </div>
+          </ReportTableScrollArea>
         </section>
       </div>
     </div>

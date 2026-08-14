@@ -6,6 +6,7 @@ import {
 } from "@/app/[siteId]/[popId]/accounting/actions"
 import { DataWorkspaceDetailEmptyState } from "@/components/data-workspace/DataWorkspaceDetailEmptyState"
 import { ReportDetailHeaderCard } from "@/components/reports/ReportDetailHeaderCard"
+import { ReportTableScrollArea } from "@/components/reports/ReportTableScrollArea"
 import {
   dataWorkspaceDetailEmptyStateDescriptionClass,
   dataWorkspaceDetailFlushBottomCardClass,
@@ -153,7 +154,7 @@ export function VatPositionReportView({
             </div>
           ) : null}
 
-          <div className="min-h-0 flex-1 overflow-auto">
+          <ReportTableScrollArea>
             {loading ? (
               <div
                 className="flex min-h-52 flex-col items-center justify-center gap-3 px-4 py-10"
@@ -268,7 +269,7 @@ export function VatPositionReportView({
                 </Table>
               </div>
             )}
-          </div>
+          </ReportTableScrollArea>
         </section>
       </div>
     </div>

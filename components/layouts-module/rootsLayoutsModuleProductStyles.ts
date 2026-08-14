@@ -22,6 +22,11 @@ export const layoutsModuleHeaderPopNameClass = cn(
   layoutsModuleHeaderChromeTextClass,
 )
 
+export const layoutsModuleHeaderPopAddressClass = cn(
+  "truncate text-[11px] leading-tight",
+  "text-[color-mix(in_srgb,var(--rootsy-white)_58%,transparent)]",
+)
+
 export const layoutsModuleHeaderUserNameClass = cn(
   "truncate text-sm font-semibold",
   layoutsModuleHeaderChromeTextClass,
