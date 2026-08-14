@@ -19,6 +19,7 @@ import {
   SERVICE_CHARGE_PERIOD_END_AUTO_LABEL_INFO,
   SERVICE_CHARGE_PERIOD_END_LABEL_INFO,
   SERVICE_CHARGE_PERIOD_START_LABEL_INFO,
+  SERVICE_CHARGE_UNIT_PRICE_LABEL_INFO,
 } from "@/lib/serviceCatalogTypes"
 import {
   availableBillingScopesForService,
@@ -177,6 +178,7 @@ export function ServiceOperateServiceConfigFields({
         value={form.unitPrice}
         onChange={(value) => onChange({ unitPrice: value })}
         disabled={disabled}
+        labelInfo={SERVICE_CHARGE_UNIT_PRICE_LABEL_INFO}
         error={fieldErrors.unitPrice}
         invalid={Boolean(fieldErrors.unitPrice)}
       />

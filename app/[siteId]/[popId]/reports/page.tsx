@@ -1,8 +1,9 @@
 "use client"
 
+import dynamic from "next/dynamic"
 import { ReportHubCard, reportHubGridClass } from "@/components/reports/ReportHubCard"
-import { SalesDetailReportView } from "@/components/reports/SalesDetailReportView"
 import { VatPositionReportView } from "@/components/reports/VatPositionReportView"
+import { RootsSpinner } from "@/components/rootsy-spinner"
 import {
   dataWorkspaceBlocksPageContentClass,
   dataWorkspaceBlocksPageMainClass,
@@ -29,6 +30,25 @@ import { cn } from "@/lib/utils"
 import { useParams } from "next/navigation"
 import type { DateRange } from "react-day-picker"
 import { useMemo, useState } from "react"
+
+const SalesDetailReportView = dynamic(
+  () =>
+    import("@/components/reports/SalesDetailReportView").then(
+      (mod) => mod.SalesDetailReportView,
+    ),
+  {
+    ssr: false,
+    loading: () => (
+      <div
+        className="flex min-h-52 flex-col items-center justify-center gap-3 px-4 py-10"
+        aria-busy="true"
+      >
+        <RootsSpinner size="default" label="Cargando reporte" />
+        <p className="text-sm text-rootsy-bruma-500">Cargando reporte…</p>
+      </div>
+    ),
+  },
+)
 
 function ReportsPage() {
   const params = useParams()

@@ -24,7 +24,7 @@ import {
   workspaceTableNatureTextPrimaryClass,
   workspaceTableNatureTextSecondaryClass,
 } from "@/components/data-workspace/dataWorkspaceListStyles"
-import { displayOperationSaleTotal } from "@/lib/channelOperationSales"
+import { displayOperationSaleCollected } from "@/lib/channelOperationSales"
 import { formatReportMoneyAr } from "@/lib/reportFormatters"
 import {
   saleReportChannelLabel,
@@ -46,6 +46,15 @@ type Props = {
 
 const COLUMN_COUNT = 8
 
+const salesReportTableBodyScopeClass = cn(
+  workspaceTableLayoutListBodyScopeClass,
+  "[&_[data-slot=table-body]_[data-slot=table-row]]:!h-auto [&_[data-slot=table-body]_[data-slot=table-row]]:!max-h-none",
+  "[&_[data-slot=table-body]_[data-slot=table-cell]]:!h-auto [&_[data-slot=table-body]_[data-slot=table-cell]]:!max-h-none [&_[data-slot=table-body]_[data-slot=table-cell]]:align-top [&_[data-slot=table-body]_[data-slot=table-cell]]:!py-2",
+)
+
+const salesReportPaymentCellClass =
+  "min-w-[6.5rem] max-w-[9.5rem] whitespace-normal break-words text-sm font-medium leading-snug"
+
 function formatMoneyCell(amount: number, showDashWhenZero = true) {
   if (showDashWhenZero && amount === 0) return "—"
   return formatReportMoneyAr(amount)
@@ -63,7 +72,7 @@ function ReportStackCell({
   primaryClassName?: string
 }) {
   return (
-    <TableCell className={cn(workspaceTableLayoutBodyCellClass, className)}>
+    <TableCell className={cn(workspaceTableLayoutBodyCellClass, className, "!h-auto !max-h-none align-top !py-2")}>
       <div className={workspaceTableLayoutCellStackClass}>
         <span
           className={cn(
@@ -99,7 +108,7 @@ export function SalesReportTable({ rows }: Props) {
       className={cn(
         workspaceLayoutsTablesScopeClass,
         workspaceTableLayoutListSurfaceClass,
-        workspaceTableLayoutListBodyScopeClass,
+        salesReportTableBodyScopeClass,
       )}
     >
       <Table className={workspaceTableLayoutClassName}>
@@ -117,7 +126,9 @@ export function SalesReportTable({ rows }: Props) {
             <WorkspaceTableHead className={workspaceTableLayoutHeaderHeadClass}>
               Comprobante
             </WorkspaceTableHead>
-            <WorkspaceTableHead className={workspaceTableLayoutHeaderHeadClass}>
+            <WorkspaceTableHead
+              className={cn(workspaceTableLayoutHeaderHeadClass, "w-[9.5rem]")}
+            >
               Cobro
             </WorkspaceTableHead>
             <WorkspaceTableHead
@@ -175,10 +186,15 @@ export function SalesReportTable({ rows }: Props) {
                     primary={saleReportComprobantePrimary(sale)}
                     secondary={saleReportComprobanteSecondary(sale)}
                   />
-                  <TableCell className={workspaceTableLayoutBodyCellClass}>
+                  <TableCell
+                    className={cn(
+                      workspaceTableLayoutBodyCellClass,
+                      "!h-auto !max-h-none align-top !py-2",
+                    )}
+                  >
                     <span
                       className={cn(
-                        workspaceTableLayoutCellPrimaryTextClass,
+                        salesReportPaymentCellClass,
                         workspaceTableNatureTextSecondaryClass,
                       )}
                       title={saleReportPaymentLabel(sale)}
@@ -187,7 +203,10 @@ export function SalesReportTable({ rows }: Props) {
                     </span>
                   </TableCell>
                   <TableCell
-                    className={cn(workspaceTableLayoutBodyCellClass, "text-right")}
+                    className={cn(
+                      workspaceTableLayoutBodyCellClass,
+                      "text-right !h-auto !max-h-none align-top !py-2",
+                    )}
                   >
                     <span
                       className={cn(
@@ -199,7 +218,10 @@ export function SalesReportTable({ rows }: Props) {
                     </span>
                   </TableCell>
                   <TableCell
-                    className={cn(workspaceTableLayoutBodyCellClass, "text-right")}
+                    className={cn(
+                      workspaceTableLayoutBodyCellClass,
+                      "text-right !h-auto !max-h-none align-top !py-2",
+                    )}
                   >
                     <span
                       className={cn(
@@ -211,7 +233,10 @@ export function SalesReportTable({ rows }: Props) {
                     </span>
                   </TableCell>
                   <TableCell
-                    className={cn(workspaceTableLayoutBodyCellClass, "text-right")}
+                    className={cn(
+                      workspaceTableLayoutBodyCellClass,
+                      "text-right !h-auto !max-h-none align-top !py-2",
+                    )}
                   >
                     <span
                       className={cn(
@@ -219,7 +244,7 @@ export function SalesReportTable({ rows }: Props) {
                         workspaceTableNatureMoneyClass,
                       )}
                     >
-                      {formatReportMoneyAr(displayOperationSaleTotal(sale))}
+                      {formatReportMoneyAr(displayOperationSaleCollected(sale))}
                     </span>
                   </TableCell>
                 </WorkspaceTableBodyRow>

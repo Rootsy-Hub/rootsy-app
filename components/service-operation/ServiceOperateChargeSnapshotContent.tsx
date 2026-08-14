@@ -15,10 +15,8 @@ import {
   ServiceOperateChargeConfigShowcase,
 } from "@/components/service-operation/ServiceOperateChargeConfigShowcase"
 import { ServiceOperateChargeConfigFormPanel } from "@/components/service-operation/ServiceOperateChargeConfigFormPanel"
-import { ServiceOperateServiceShowcase } from "@/components/service-operation/ServiceOperateServiceShowcase"
 import { ServiceOperateSnapshotCartRow } from "@/components/service-operation/ServiceOperateSnapshotCartRow"
 import type { ServiceOperateSnapshotPanelView } from "@/components/service-operation/ServiceOperateSnapshotPanelTabs"
-import { serviceOperateSnapshotTicketCardClass } from "@/components/service-operation/serviceOperateSnapshotStyles"
 import { serviceChargeHasComprobante } from "@/app/[siteId]/[popId]/active-services/serviceChargeCreateFormState"
 import { operationPaymentKindLabel } from "@/lib/operationPaymentKinds"
 import {
@@ -32,7 +30,6 @@ import {
   SERVICE_CHARGE_BILLING_SCOPE_LABELS,
 } from "@/lib/serviceChargeTypes"
 import { parseNonNegativeIntegerInput } from "@/lib/integerInput"
-import { parseMoneyInput } from "@/lib/moneyInput"
 import {
   parseTreasuryPaymentOptionKey,
   type TreasuryPaymentContext,
@@ -89,7 +86,6 @@ export function ServiceOperateChargeSnapshotContent({
   view,
   form,
   fieldErrors,
-  popId,
   selectedService,
   treasuryPaymentContext,
   comprobanteLabel,
@@ -97,11 +93,6 @@ export function ServiceOperateChargeSnapshotContent({
   disabled = false,
   onFormChange,
 }: Props) {
-  const clientName =
-    form.clientDraft.catalogClient?.name.trim() ||
-    form.clientDraft.manualName.trim() ||
-    ""
-
   const chargeCount =
     form.billingScope === "one_period" || form.billingScope === "subscription"
       ? 1
@@ -155,8 +146,6 @@ export function ServiceOperateChargeSnapshotContent({
     suggestedComprobante,
   )
 
-  const snapshotPrice = parseMoneyInput(form.unitPrice, selectedService?.defaultPrice ?? 0)
-
   if (!selectedService) {
     return null
   }
@@ -180,19 +169,6 @@ export function ServiceOperateChargeSnapshotContent({
 
   return (
     <div className="flex min-h-0 flex-col" data-snapshot-tab="cargo">
-      <div className="shrink-0 p-3">
-        <div className={serviceOperateSnapshotTicketCardClass}>
-          <ServiceOperateServiceShowcase
-            service={selectedService}
-            price={snapshotPrice > 0 ? snapshotPrice : selectedService.defaultPrice}
-            clientName={clientName}
-            tone="ticket"
-            popId={popId}
-            showPlanDetails
-          />
-        </div>
-      </div>
-
       <div
         className={cn(
           layoutsOperarSummaryCartListSurfaceClass,

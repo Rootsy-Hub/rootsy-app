@@ -15,12 +15,16 @@ import {
 } from "@/components/data-workspace/dataWorkspaceListStyles"
 import { formatReportMoneyAr, formatReportPeriodSummary } from "@/lib/reportFormatters"
 import { exportSalesDetailReportCsv } from "@/lib/salesReportCsvExport"
-import { displayOperationSaleTotal } from "@/lib/channelOperationSales"
+import { exportSalesDetailReportPdf } from "@/lib/salesReportPdfExport"
+import { displayOperationSaleCollected } from "@/lib/channelOperationSales"
 import type { DataWorkspaceDatePreset } from "@/lib/dataWorkspaceDateFilter"
 import { usePopTimeZone } from "@/hooks/usePopTimeZone"
 import { cn } from "@/lib/utils"
-import { Download, FileBarChart } from "lucide-react"
-import { RootsDefaultButton, rootsButtonCompactSizeClass } from "@/components/rootsy-button"
+import { FileBarChart } from "lucide-react"
+import {
+  SalesReportDownloadMenu,
+  type SalesReportExportFormat,
+} from "@/components/reports/SalesReportDownloadMenu"
 import { RootsSpinner } from "@/components/rootsy-spinner"
 import {
   useCallback,
@@ -71,7 +75,7 @@ async function fetchSalesPeriodTotal(
     }
     count = res.totalCount
     for (const row of res.sales) {
-      total += displayOperationSaleTotal(row)
+      total += displayOperationSaleCollected(row)
     }
     if (page * 100 >= res.totalCount) break
     page += 1
@@ -188,27 +192,39 @@ export function SalesDetailReportView({
     [popId, from, to],
   )
 
-  const handleDownload = useCallback(async () => {
-    setExportBusy(true)
-    setExportError(null)
-    try {
-      const result = await fetchAllSalesReportRows(popId, from, to)
-      if ("error" in result) {
-        setExportError(result.error)
-        return
+  const handleExport = useCallback(
+    async (format: SalesReportExportFormat) => {
+      setExportBusy(true)
+      setExportError(null)
+      try {
+        const result = await fetchAllSalesReportRows(popId, from, to)
+        if ("error" in result) {
+          setExportError(result.error)
+          return
+        }
+        if (result.rows.length === 0) {
+          setExportError("No hay ventas para exportar en este período.")
+          return
+        }
+
+        const exportOptions = {
+          timeZone,
+          periodSummary,
+          salesCount: totalCount || result.rows.length,
+          periodTotal: periodTotal ?? undefined,
+        }
+
+        if (format === "csv") {
+          exportSalesDetailReportCsv(result.rows, exportOptions)
+        } else {
+          await exportSalesDetailReportPdf(result.rows, exportOptions)
+        }
+      } finally {
+        setExportBusy(false)
       }
-      if (result.rows.length === 0) {
-        setExportError("No hay ventas para exportar en este período.")
-        return
-      }
-      exportSalesDetailReportCsv(result.rows, {
-        timeZone,
-        periodSummary,
-      })
-    } finally {
-      setExportBusy(false)
-    }
-  }, [popId, from, to, timeZone, periodSummary])
+    },
+    [popId, from, to, timeZone, periodSummary, totalCount, periodTotal],
+  )
 
   useEffect(() => {
     setExportError(null)
@@ -280,7 +296,7 @@ export function SalesDetailReportView({
                 </p>
               </div>
               <div className="min-w-[8.5rem]">
-                <p className={dataWorkspaceEntityCardStatLabelClass}>Total facturado</p>
+                <p className={dataWorkspaceEntityCardStatLabelClass}>Total vendido</p>
                 <p className={cn("mt-1.5", dataWorkspaceEntityCardStatValueLargeClass)}>
                   {periodTotalBusy
                     ? "…"
@@ -303,20 +319,11 @@ export function SalesDetailReportView({
             <p className={dataWorkspaceDetailEmptyStateDescriptionClass}>
               {periodSummary}
             </p>
-            <RootsDefaultButton
-              type="button"
-              size="compact"
-              disabled={loading || exportBusy || totalCount === 0}
-              onClick={() => void handleDownload()}
-              className={cn(rootsButtonCompactSizeClass, "shrink-0 self-end sm:self-auto")}
-            >
-              {exportBusy ? (
-                <RootsSpinner size="xs" aria-hidden className="shrink-0" />
-              ) : (
-                <Download className="size-4 shrink-0" aria-hidden />
-              )}
-              Descargar
-            </RootsDefaultButton>
+            <SalesReportDownloadMenu
+              disabled={loading || totalCount === 0}
+              busy={exportBusy}
+              onExport={handleExport}
+            />
           </div>
 
           {exportError ? (

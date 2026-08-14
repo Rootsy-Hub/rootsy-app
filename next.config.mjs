@@ -32,7 +32,16 @@ const nextConfig = {
         pathname: '/**'
       }
     ]
-  }
+  },
+  webpack: (config, { isServer }) => {
+    if (!isServer) {
+      config.resolve.alias = {
+        ...config.resolve.alias,
+        jspdf: path.join(projectRoot, "node_modules/jspdf/dist/jspdf.es.min.js"),
+      }
+    }
+    return config
+  },
 }
 
 export default nextConfig

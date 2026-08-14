@@ -20,10 +20,7 @@ import {
   resolveServiceChargeComprobanteEffectiveLabel,
   resolveServiceChargeComprobanteToolboxLabel,
   SERVICE_CHARGE_COMPROBANTE_AUTO,
-  validateServiceChargeCreateWizardStep,
   validateServiceChargeOperateForm,
-  serviceChargeStep2ErrorMessages,
-  serviceChargeStep3ErrorMessages,
   type ServiceChargeCreateFieldErrors,
   type ServiceChargeCreateWizardForm,
 } from "@/app/[siteId]/[popId]/active-services/serviceChargeCreateFormState"
@@ -34,17 +31,14 @@ import { DataWorkspaceOperationsLayout } from "@/components/layouts-module/DataW
 import { LayoutsOperarMainGrid } from "@/components/layouts-module/LayoutsOperarMainGrid"
 import { useDataWorkspaceSidebar } from "@/components/layouts/useDataWorkspaceSidebar"
 import { ServiceOperateSnapshotPanel } from "@/components/service-operation/ServiceOperateSnapshotPanel"
-import { ServiceOperateStepContent } from "@/components/service-operation/ServiceOperateStepContent"
-import { ServiceOperateStepHeader } from "@/components/service-operation/ServiceOperateStepHeader"
-import { ServiceOperateStepErrorBanner } from "@/components/service-operation/ServiceOperateStepErrorBanner"
+import { ServiceOperateCatalogBrowser } from "@/components/service-operation/ServiceOperateCatalogBrowser"
 import { ServiceOperateComprobanteDialog } from "@/components/service-operation/ServiceOperateComprobanteDialog"
 import { ServiceOperatePaymentDialog } from "@/components/service-operation/ServiceOperatePaymentDialog"
 import { GeneralDiscountDialog } from "@/components/checkout/GeneralDiscountDialog"
 import { SaleFinalizeDialog } from "@/components/checkout/SaleFinalizeDialog"
 import { SaleOperationToolbox } from "@/components/sale-operation/SaleOperationToolbox"
 import { saleOpFmt } from "@/components/sale-operation/saleOperationStyles"
-import { RootsFormToneProvider } from "@/components/rootsy-form"
-import { serviceOperateSnapshotPanelClass, layoutsOperarStepEnterClass } from "@/app/library/layouts/layoutsOperarStyles"
+import { serviceOperateSnapshotPanelClass } from "@/app/library/layouts/layoutsOperarStyles"
 import {
   RootsAlertDialogContent,
   RootsAlertDialogFooter,
@@ -60,37 +54,26 @@ import type {
   OperationPartyManualConfirmPayload,
   OperationPartySelection,
 } from "@/lib/operationPartyPicker"
-import { cn } from "@/lib/utils"
 import { parseNonNegativeIntegerInput } from "@/lib/integerInput"
 import {
   getSaleComprobantePickerOptions,
   type SaleComprobantePickerOption,
 } from "@/lib/saleComprobantePicker"
 import { suggestSaleComprobanteForClientIva } from "@/lib/saleComprobanteRules"
-import {
-  SERVICE_PAYMENT_TIMING_LABELS,
-  type ServiceDiscountMode,
-} from "@/lib/serviceCatalogTypes"
+import { type ServiceDiscountMode } from "@/lib/serviceCatalogTypes"
 import {
   resolveChargeAddonSelections,
   computeSelectedAddonsTotal,
-  computeChargeAddonTotals,
-  formatChargeConfigPriceSummary,
 } from "@/lib/serviceChargeAddonSelection"
 import {
   availableBillingScopesForService,
   billingPeriodRequiresManualPeriodEnd,
   computeChargeAmount,
-  SERVICE_CHARGE_BILLING_SCOPE_LABELS,
 } from "@/lib/serviceChargeTypes"
 import {
   buildServiceOperateCategories,
   mapServiceTypeToCatalogItem,
 } from "@/lib/serviceOperateCatalog"
-import {
-  type ServiceOperateStep,
-  wizardStepForOperateStep,
-} from "@/lib/serviceOperateSteps"
 import {
   buildPaymentCheckoutSelection,
 } from "@/lib/paymentMethodCheckout"
@@ -193,30 +176,6 @@ function buildCreatePayload(
   }
 }
 
-function firstOperateStepWithErrors(
-  errors: ServiceChargeCreateFieldErrors,
-): ServiceOperateStep | null {
-  if (errors.serviceTypeId) return 1
-  if (
-    errors.client ||
-    errors.clientManualName ||
-    errors.clientEmail ||
-    errors.billingScope ||
-    errors.periodCount ||
-    errors.periodStartDate ||
-    errors.periodEndDate ||
-    errors.unitPrice ||
-    errors.discountValue
-  ) {
-    return 2
-  }
-  if (errors.paymentTiming || errors.dueDaysAfter || errors.comprobanteLabel) {
-    return 3
-  }
-  if (errors.paymentMethodKey) return 3
-  return null
-}
-
 export function CobrarServiciosWorkspace({ siteId, popId }: Props) {
   const { user } = useAuth()
   const { bootstrap, loading: bootstrapLoading } = usePopWorkspace()
@@ -235,7 +194,6 @@ export function CobrarServiciosWorkspace({ siteId, popId }: Props) {
   const [canCreateClient, setCanCreateClient] = useState(false)
   const [canUpdateClient, setCanUpdateClient] = useState(false)
 
-  const [activeStep, setActiveStep] = useState<ServiceOperateStep>(1)
   const [form, setForm] = useState<ServiceChargeCreateWizardForm>(defaultFormState)
   const [fieldErrors, setFieldErrors] = useState<ServiceChargeCreateFieldErrors>({})
   const [saving, setSaving] = useState(false)
@@ -376,16 +334,24 @@ export function CobrarServiciosWorkspace({ siteId, popId }: Props) {
         oneTimeAddonIds: [],
       })
       setFieldErrors({})
-      setActiveStep(2)
     },
     [services, form.billingScope, form.periodEndDate, form.periodStartDate, patchForm],
   )
+
+  const clearSelectedService = useCallback(() => {
+    patchForm({
+      serviceTypeId: "",
+      unitPrice: "",
+      selectedAddonIds: [],
+      oneTimeAddonIds: [],
+    })
+    setFieldErrors({})
+  }, [patchForm])
 
   const resetCharge = useCallback(() => {
     setForm(defaultFormState())
     setFieldErrors({})
     setSubmitError(null)
-    setActiveStep(1)
     setDescuentoModalAbierto(false)
     setDescartarConfirmOpen(false)
     setCreateChargeConfirmOpen(false)
@@ -622,8 +588,8 @@ export function CobrarServiciosWorkspace({ siteId, popId }: Props) {
   )
 
   const confirmTitle = useMemo(() => {
-    if (!selectedService) return "Elegí un servicio en el paso 1."
-    if (!clientName.trim()) return "Completá el cliente en el paso 2."
+    if (!selectedService) return "Elegí un servicio del catálogo."
+    if (!clientName.trim()) return "Completá el cliente."
     if (!canCreate) return "No tenés permiso para crear cargos."
     return undefined
   }, [selectedService, clientName, canCreate])
@@ -656,15 +622,12 @@ export function CobrarServiciosWorkspace({ siteId, popId }: Props) {
 
   const handleOpenCreateChargeConfirm = () => {
     if (!selectedService) {
-      setActiveStep(1)
       return
     }
 
     const errors = validateServiceChargeOperateForm(form, validationOptions)
     if (hasServiceChargeCreateFieldErrors(errors)) {
       setFieldErrors(errors)
-      const stepWithError = firstOperateStepWithErrors(errors)
-      if (stepWithError) setActiveStep(stepWithError)
       return
     }
 
@@ -674,7 +637,6 @@ export function CobrarServiciosWorkspace({ siteId, popId }: Props) {
 
   const handleSubmit = async () => {
     if (!selectedService) {
-      setActiveStep(1)
       setCreateChargeConfirmOpen(false)
       return
     }
@@ -682,8 +644,6 @@ export function CobrarServiciosWorkspace({ siteId, popId }: Props) {
     const errors = validateServiceChargeOperateForm(form, validationOptions)
     if (hasServiceChargeCreateFieldErrors(errors)) {
       setFieldErrors(errors)
-      const stepWithError = firstOperateStepWithErrors(errors)
-      if (stepWithError) setActiveStep(stepWithError)
       setCreateChargeConfirmOpen(false)
       return
     }
@@ -705,125 +665,6 @@ export function CobrarServiciosWorkspace({ siteId, popId }: Props) {
     resetCharge()
     void loadPage()
   }
-
-  const handleStepChange = (step: ServiceOperateStep) => {
-    if (step < activeStep) {
-      setFieldErrors({})
-      setActiveStep(step)
-      return
-    }
-
-    const wizardStep = wizardStepForOperateStep(activeStep)
-    const stepErrors = validateServiceChargeCreateWizardStep(
-      wizardStep,
-      form,
-      validationOptions,
-    )
-    if (hasServiceChargeCreateFieldErrors(stepErrors)) {
-      setFieldErrors(stepErrors)
-      return
-    }
-    setFieldErrors({})
-    setActiveStep(step)
-  }
-
-  const configSummary = useMemo(() => {
-    if (!selectedService) return "Configurar cargo"
-    const scopeLabel = SERVICE_CHARGE_BILLING_SCOPE_LABELS[form.billingScope]
-    const unitPrice = parseMoneyInput(form.unitPrice, Number.NaN)
-    if (!Number.isFinite(unitPrice)) return scopeLabel
-
-    const discountMode: ServiceDiscountMode =
-      form.discountMode === "porcentaje" || form.discountMode === "fijo"
-        ? form.discountMode
-        : "none"
-    const discountValue =
-      discountMode === "none"
-        ? null
-        : discountMode === "porcentaje"
-          ? Number(form.discountValue.replace(/\D/g, "")) || null
-          : parseMoneyInput(form.discountValue, Number.NaN)
-
-    const addonTotals = computeChargeAddonTotals(
-      selectedService.addons,
-      form.billingScope,
-      form.selectedAddonIds,
-      form.oneTimeAddonIds,
-    )
-    const priceSummary = formatChargeConfigPriceSummary({
-      unitPrice,
-      billingScope: form.billingScope,
-      addonTotals,
-      discountMode,
-      discountValue:
-        discountValue != null && Number.isFinite(discountValue)
-          ? discountValue
-          : null,
-    })
-
-    return `${scopeLabel} · ${priceSummary}`
-  }, [
-    selectedService,
-    form.billingScope,
-    form.unitPrice,
-    form.selectedAddonIds,
-    form.oneTimeAddonIds,
-    form.discountMode,
-    form.discountValue,
-  ])
-
-  const activeStepSummary = useMemo(() => {
-    switch (activeStep) {
-      case 1:
-        if (!selectedService) return "Elegí un servicio del catálogo"
-        return `${selectedService.name.trim()} · ${formatMoneyInputForField(selectedService.defaultPrice)}`
-      case 2: {
-        const parts: string[] = []
-        if (!canReadClients) {
-          parts.push("Sin permiso de clientes")
-        } else if (clientName.trim()) {
-          parts.push(clientName.trim())
-        } else {
-          parts.push("Completá cliente y configuración")
-        }
-        if (selectedService) parts.push(configSummary)
-        return parts.join(" · ")
-      }
-      case 3: {
-        const parts: string[] = [
-          form.paymentMethodKey ? paymentLabel : "Sin definir",
-        ]
-        const comprobante = resolveServiceChargeComprobanteEffectiveLabel(
-          form.comprobanteLabel,
-          suggestedComprobante,
-        )
-        if (comprobante) parts.push(comprobante)
-        parts.push(SERVICE_PAYMENT_TIMING_LABELS[form.paymentTiming])
-        parts.push(`vence ${form.dueDaysAfter}d`)
-        return parts.join(" · ")
-      }
-      default:
-        return ""
-    }
-  }, [
-    activeStep,
-    selectedService,
-    canReadClients,
-    clientName,
-    form.comprobanteLabel,
-    form.paymentTiming,
-    form.dueDaysAfter,
-    form.paymentMethodKey,
-    suggestedComprobante,
-    configSummary,
-    paymentLabel,
-  ])
-
-  const activeStepErrors = useMemo(() => {
-    if (activeStep === 2) return serviceChargeStep2ErrorMessages(fieldErrors)
-    if (activeStep === 3) return serviceChargeStep3ErrorMessages(fieldErrors)
-    return []
-  }, [activeStep, fieldErrors])
 
   const headerUserName =
     bootstrap?.userFullName?.trim() ||
@@ -851,47 +692,19 @@ export function CobrarServiciosWorkspace({ siteId, popId }: Props) {
           <LayoutsOperarMainGrid
             catalog={
               <div className="flex h-full min-h-0 flex-col overflow-hidden bg-[var(--rootsy-sombra-800)]">
-                <ServiceOperateStepHeader
-                  step={activeStep}
-                  summary={activeStepSummary}
-                  onBack={() =>
-                    handleStepChange((activeStep - 1) as ServiceOperateStep)
-                  }
-                  onNext={() =>
-                    handleStepChange((activeStep + 1) as ServiceOperateStep)
-                  }
+                <ServiceOperateCatalogBrowser
+                  items={catalogItems}
+                  categories={catalogCategories}
+                  loading={loading}
+                  error={catalogError}
+                  selectedServiceId={form.serviceTypeId || null}
+                  selectedService={selectedService}
+                  popId={popId}
+                  catalogSidebarOpen={catalogSidebarOpen}
+                  disabled={saving}
+                  onSelectService={selectService}
+                  onClearSelectedService={clearSelectedService}
                 />
-                <ServiceOperateStepErrorBanner messages={activeStepErrors} />
-                <div className="min-h-0 flex-1 overflow-hidden bg-[var(--rootsy-sombra-800)]">
-                  <RootsFormToneProvider tone="dark">
-                    <div
-                      key={activeStep}
-                      className={cn("h-full min-h-0", layoutsOperarStepEnterClass)}
-                    >
-                      <ServiceOperateStepContent
-                      step={activeStep}
-                      popId={popId}
-                      form={form}
-                      fieldErrors={fieldErrors}
-                      catalogItems={catalogItems}
-                      catalogCategories={catalogCategories}
-                      catalogLoading={loading}
-                      catalogError={catalogError}
-                      selectedService={selectedService}
-                      treasuryPaymentContext={treasuryPaymentContext}
-                      comprobanteFormOptions={comprobanteFormOptions}
-                      suggestedComprobante={suggestedComprobante}
-                      canReadClients={canReadClients}
-                      canCreateClient={canCreateClient}
-                      canUpdateClient={canUpdateClient}
-                      catalogSidebarOpen={catalogSidebarOpen}
-                      disabled={saving}
-                      onFormChange={patchForm}
-                      onSelectService={selectService}
-                    />
-                    </div>
-                  </RootsFormToneProvider>
-                </div>
               </div>
             }
             toolbox={
