@@ -6,10 +6,8 @@ import {
   dataWorkspaceEntityCardLosetaSurfaceClass,
 } from "@/components/data-workspace/dataWorkspaceListStyles"
 import {
-  libraryNavItemActiveClass,
-  libraryNavItemClass,
-  libraryNavItemLabelClass,
-  libraryNavSurfaceLightClass,
+  libraryScrollDarkClass,
+  librarySidebarClass,
 } from "@/app/library/libraryColorTheme"
 import { cn } from "@/lib/utils"
 
@@ -19,9 +17,43 @@ export const statisticsLosetaCardClass = cn(
   "h-auto w-full min-h-0",
 )
 
+/** Rail lateral — pegado a la izquierda como library-sidebar. */
+export const statisticsNavAsideClass = cn(
+  "flex shrink-0 flex-col overflow-hidden",
+  "border-b lg:min-h-0 lg:w-64 lg:shrink-0 lg:border-b-0 lg:border-r",
+  librarySidebarClass,
+)
+
+export const statisticsNavScrollClass = cn(
+  "min-h-0 flex-1 overflow-x-auto overflow-y-hidden p-2",
+  "lg:overflow-x-hidden lg:overflow-y-auto lg:p-4",
+  libraryScrollDarkClass,
+)
+
+/** Nav — paridad LibraryNav / BackofficeSidebar. */
+export const statisticsNavShellClass = cn(
+  "library-nav flex w-full min-w-0 flex-row lg:flex-col",
+)
+
+export const statisticsNavListClass = cn(
+  "library-nav-list flex-row lg:flex-col",
+)
+
+/** Ancho mínimo en scroll horizontal mobile. */
+export const statisticsNavItemMobileClass =
+  "min-w-[8.5rem] shrink-0 cursor-pointer border-0 lg:min-w-0 lg:w-full"
+
+/** Contenido principal — padding solo en el área de datos (sidebar flush izquierda). */
+export const statisticsMainContentClass =
+  "min-h-0 min-w-0 flex-1 overflow-y-auto px-4 py-6 sm:px-6 lg:px-8"
+
 export const statisticsLosetaCardBodyClass = "p-4 sm:p-5"
 
 export const statisticsLosetaCardBodyCompactClass = "px-5 py-4"
+
+/** Título principal de sección (Ventas, Compras…). */
+export const statisticsSectionPageTitleClass =
+  "font-canopy text-xl font-semibold tracking-tight text-[var(--rootsy-bruma-900)] sm:text-2xl"
 
 /** Encabezado de bloque — paridad LayoutsBlocksDocSubsection / reportes. */
 export function statisticsSectionHeadingClassNames() {
@@ -42,43 +74,10 @@ export const statisticsPanelNoteClass = cn(
   "lg:max-w-xs lg:text-right",
 )
 
-/** Nav lateral — tokens library-nav en superficie clara. */
-export const statisticsNavSurfaceClass = cn(
-  libraryNavSurfaceLightClass,
-  "library-nav statistics-section-nav",
+export const statisticsPlannedBadgeClass = cn(
+  "ml-auto shrink-0 text-[10px] font-semibold uppercase tracking-wide",
+  "text-[var(--library-nav-label,var(--rootsy-sombra-300))] opacity-80",
 )
-
-export const statisticsNavItemClass = cn(
-  libraryNavItemClass,
-  "group min-w-[8.5rem] shrink-0 lg:min-w-0",
-)
-
-export const statisticsNavItemActiveClass = libraryNavItemActiveClass
-
-export const statisticsNavIconWrapClass = cn(
-  "flex size-7 shrink-0 items-center justify-center rounded-lg border border-[var(--rootsy-bruma-200)] bg-white text-[var(--rootsy-bruma-500)] transition-colors",
-  "[&_svg]:size-3.5",
-  "group-hover:border-[var(--rootsy-bruma-300)] group-hover:bg-[var(--rootsy-bruma-50)] group-hover:text-[var(--rootsy-bruma-700)]",
-)
-
-export const statisticsNavIconWrapActiveClass = cn(
-  "border-[color-mix(in_srgb,var(--rootsy-savia-600)_28%,var(--rootsy-bruma-200))]",
-  "bg-[color-mix(in_srgb,var(--rootsy-savia-600)_14%,white)] text-[var(--rootsy-savia-700)]",
-  "group-hover:border-[color-mix(in_srgb,var(--rootsy-savia-600)_34%,var(--rootsy-bruma-200))]",
-  "group-hover:bg-[color-mix(in_srgb,var(--rootsy-savia-600)_16%,white)] group-hover:text-[var(--rootsy-savia-800)]",
-)
-
-export const statisticsNavLabelClass = cn(
-  libraryNavItemLabelClass,
-  "font-canopy text-[13px] font-medium leading-tight text-[var(--rootsy-bruma-600)] transition-colors",
-  "group-hover:text-[var(--rootsy-bruma-900)]",
-)
-
-export const statisticsNavLabelActiveClass =
-  "font-semibold text-[var(--rootsy-bruma-900)] group-hover:text-[var(--rootsy-bruma-900)]"
-
-export const statisticsPlannedBadgeClass =
-  "ml-auto shrink-0 rounded-full border border-rootsy-bruma-200 bg-rootsy-bruma-100 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-rootsy-bruma-500"
 
 export const statisticsDeltaPositiveClass =
   "font-numeric font-medium tabular-nums text-emerald-700"

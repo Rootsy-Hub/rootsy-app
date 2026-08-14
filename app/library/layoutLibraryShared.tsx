@@ -58,6 +58,11 @@ import {
   libraryPageHeaderBadgeClass,
   libraryPageHeaderClass,
   libraryPageHeaderMonoClass,
+  libraryDocMetaLabelClass,
+  libraryDocPageDescriptionClass,
+  libraryDocPageTitleClass,
+  libraryDocSectionDescriptionClass,
+  libraryDocSectionTitleClass,
 } from "@/app/library/libraryColorTheme"
 import { getLibraryNavIcon } from "@/app/library/libraryNavIcons"
 import { cn } from "@/lib/utils"
@@ -349,7 +354,7 @@ export function LibraryPageHeader({
   actions?: ReactNode
 }) {
   return (
-    <header className={cn("rounded-2xl border px-5 py-5 shadow-sm", libraryPageHeaderClass)}>
+    <header className={cn("rounded-2xl border px-5 py-5", libraryPageHeaderClass)}>
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div className="max-w-3xl space-y-2">
           <div className="flex flex-wrap items-center gap-2">
@@ -370,10 +375,10 @@ export function LibraryPageHeader({
               rootsy-library · sombra/bruma
             </span>
           </div>
-          <h1 className="text-2xl font-semibold tracking-tight text-foreground">
+          <h1 className={libraryDocPageTitleClass}>
             {title}
           </h1>
-          <p className="text-sm leading-relaxed text-muted-foreground">
+          <p className={libraryDocPageDescriptionClass}>
             {description}
           </p>
         </div>
@@ -397,11 +402,11 @@ export function LibrarySection({
   return (
     <section id={id} className="space-y-5">
       <div>
-        <h2 className="text-lg font-semibold tracking-tight text-foreground">
+        <h2 className={libraryDocPageTitleClass}>
           {title}
         </h2>
         {description ? (
-          <p className="mt-1 max-w-3xl text-sm leading-relaxed text-muted-foreground">
+          <p className={cn("mt-1", libraryDocSectionDescriptionClass)}>
             {description}
           </p>
         ) : null}
@@ -427,14 +432,14 @@ export function SpecCard({
   return (
     <div
       className={cn(
-        "rounded-2xl border p-4 shadow-sm library-spec-card",
+        "library-spec-card rounded-2xl border p-4",
         className,
       )}
     >
       <div className="mb-3 flex flex-wrap items-start justify-between gap-2">
         <div className="min-w-0">
-          <h3 className="text-sm font-semibold text-foreground">{title}</h3>
-          <p className="mt-0.5 truncate font-mono text-[11px] text-muted-foreground">
+          <h3 className="text-sm font-semibold text-[var(--rootsy-bruma-900)]">{title}</h3>
+          <p className="mt-0.5 truncate font-mono text-[11px] text-[var(--rootsy-bruma-500)]">
             {source}
           </p>
         </div>
@@ -443,7 +448,7 @@ export function SpecCard({
             {tokens.map((token) => (
               <span
                 key={token}
-                className="rounded-md bg-muted px-2 py-0.5 font-mono text-[10px] text-muted-foreground"
+                className="rounded-md bg-[var(--rootsy-bruma-50)] px-2 py-0.5 font-mono text-[10px] text-[var(--rootsy-bruma-500)]"
               >
                 {token}
               </span>
@@ -465,7 +470,7 @@ export function LibraryDemoRow({
 }) {
   return (
     <div className="space-y-2">
-      <p className="text-[11px] font-medium uppercase tracking-[0.12em] text-muted-foreground">
+      <p className={libraryDocMetaLabelClass}>
         {title}
       </p>
       <div className="flex flex-wrap items-center gap-2">{children}</div>
@@ -475,7 +480,7 @@ export function LibraryDemoRow({
 
 export function LibraryFootnote({ children }: { children: ReactNode }) {
   return (
-    <p className="font-mono text-[11px] leading-relaxed text-muted-foreground">
+    <p className="font-mono text-[11px] leading-relaxed text-[var(--rootsy-bruma-500)]">
       {children}
     </p>
   )

@@ -1,20 +1,29 @@
 "use client"
 
+import { PopIdentityHorizontalAddress } from "@/components/pop-identity/PopIdentityHorizontalAddress"
+import { SaleQuoteLinesBreakdown } from "@/components/quotes/SaleQuoteLinesBreakdown"
 import type { SaleQuoteDetail } from "@/lib/saleQuoteTypes"
-import { formatReportMoneyAr } from "@/lib/reportFormatters"
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
-import { cn } from "@/lib/utils"
+
+type PopBrandProps = {
+  name: string
+  imageUrl?: string | null
+  streetAddress?: string | null
+  city?: string | null
+  fallbackSeed?: string
+}
 
 type Props = {
   open: boolean
   onOpenChange: (open: boolean) => void
   quote: SaleQuoteDetail | null
   formatCreatedAt: (iso: string) => string
+  popBrand?: PopBrandProps | null
 }
 
 export function SaleQuoteViewDialog({
@@ -22,6 +31,7 @@ export function SaleQuoteViewDialog({
   onOpenChange,
   quote,
   formatCreatedAt,
+  popBrand,
 }: Props) {
   if (!quote) return null
 
@@ -33,6 +43,16 @@ export function SaleQuoteViewDialog({
         </DialogHeader>
 
         <div className="space-y-4 text-sm">
+          {popBrand ? (
+            <PopIdentityHorizontalAddress
+              name={popBrand.name}
+              imageUrl={popBrand.imageUrl}
+              streetAddress={popBrand.streetAddress}
+              city={popBrand.city}
+              fallbackSeed={popBrand.fallbackSeed}
+            />
+          ) : null}
+
           <dl className="grid gap-2">
             <div>
               <dt className="text-muted-foreground">Cliente</dt>
@@ -58,7 +78,7 @@ export function SaleQuoteViewDialog({
             ) : null}
             {quote.metadata.discountLabel ? (
               <div>
-                <dt className="text-muted-foreground">Descuento</dt>
+                <dt className="text-muted-foreground">Descuento general</dt>
                 <dd>{quote.metadata.discountLabel}</dd>
               </div>
             ) : null}
@@ -68,47 +88,12 @@ export function SaleQuoteViewDialog({
             </div>
           </dl>
 
-          <div className="overflow-hidden rounded-lg border">
-            <table className="w-full text-sm">
-              <thead className="bg-muted/50 text-left">
-                <tr>
-                  <th className="px-3 py-2 font-medium">Producto</th>
-                  <th className="px-3 py-2 text-right font-medium">Cant.</th>
-                  <th className="px-3 py-2 text-right font-medium">Total</th>
-                </tr>
-              </thead>
-              <tbody>
-                {(quote.metadata.lineSummaries ?? []).map((line, index) => (
-                  <tr key={`${line.name}-${index}`} className="border-t">
-                    <td className="px-3 py-2">{line.name}</td>
-                    <td className="px-3 py-2 text-right tabular-nums">
-                      {line.quantity}
-                    </td>
-                    <td className="px-3 py-2 text-right tabular-nums">
-                      {formatReportMoneyAr(line.lineTotal)}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-
-          <div className={cn("space-y-1 border-t pt-3")}>
-            <div className="flex justify-between">
-              <span className="text-muted-foreground">Subtotal</span>
-              <span>{formatReportMoneyAr(quote.subtotal)}</span>
-            </div>
-            {quote.discountTotal > 0 ? (
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Descuento</span>
-                <span>−{formatReportMoneyAr(quote.discountTotal)}</span>
-              </div>
-            ) : null}
-            <div className="flex justify-between text-base font-semibold">
-              <span>Total</span>
-              <span>{formatReportMoneyAr(quote.total)}</span>
-            </div>
-          </div>
+          <SaleQuoteLinesBreakdown
+            metadata={quote.metadata}
+            subtotal={quote.subtotal}
+            discountTotal={quote.discountTotal}
+            total={quote.total}
+          />
         </div>
       </DialogContent>
     </Dialog>

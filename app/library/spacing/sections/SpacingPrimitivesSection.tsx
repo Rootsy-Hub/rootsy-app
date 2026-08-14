@@ -75,7 +75,7 @@ export function SpacingPrimitivesSection() {
           description="Para diseñadores: mapeo directo entre primitivos y frames con auto layout."
         >
           <FigmaAutoLayoutComparison />
-          <p className="max-w-3xl text-sm text-muted-foreground">
+          <p className="max-w-3xl font-canopy text-sm leading-relaxed text-[var(--rootsy-bruma-700)]">
             Usá tokens de espacio en Figma donde sea posible. El handover mejora cuando
             el gap del diseño coincide con{" "}
             <code className="font-mono text-xs">space.200</code> en código — no 15px

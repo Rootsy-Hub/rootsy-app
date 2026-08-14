@@ -1,12 +1,11 @@
 "use client"
 
-import "./rootsyNaturePalette.css"
+import { LibraryRelatedLinksSection } from "@/app/library/libraryDocPrimitives"
 import {
   COLOR_NEW_RELATED_LINKS,
   resolveColorNewSectionId,
   getColorNewPageMeta,
 } from "@/app/library/color/colorNewLibraryNav"
-import { ColorRelatedLinks } from "@/app/library/color/ColorDocPrimitives"
 import { ColorNewAccentsSection } from "@/app/library/color/sections/ColorNewAccentsSection"
 import { ColorNewContrastSection } from "@/app/library/color/sections/ColorNewContrastSection"
 import { ColorNewDataVizSection } from "@/app/library/color/sections/ColorNewDataVizSection"
@@ -66,23 +65,13 @@ export function ColorNewFoundationView({ sectionId }: Props) {
   }
 
   return (
-    <div className="rootsy-nature-palette space-y-10">
+    <div className="space-y-10">
       {content}
-      <div className="space-y-3 border-t border-border/60 pt-8 library-related-links">
-        <p className="text-sm font-semibold text-foreground">Relacionado</p>
-        <ColorRelatedLinks
-          excludeId={sectionId}
-          links={COLOR_NEW_RELATED_LINKS}
-        />
-      </div>
+      <LibraryRelatedLinksSection excludeId={sectionId} links={COLOR_NEW_RELATED_LINKS} />
     </div>
   )
 }
 
 export function getColorNewFoundationHeading(sectionId: string) {
   return getColorNewPageMeta(sectionId)?.title ?? "Color"
-}
-
-export function getColorNewFoundationDescription(sectionId: string) {
-  return getColorNewPageMeta(sectionId)?.description ?? ""
 }

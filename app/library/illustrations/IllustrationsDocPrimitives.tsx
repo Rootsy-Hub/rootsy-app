@@ -75,14 +75,14 @@ export function IllustrationsSystemHero() {
 
 export function IllustrationsRoadmapPanel() {
   return (
-    <div className="rounded-2xl border border-dashed border-border/70 bg-muted/20 px-6 py-10 text-center">
-      <p className="font-canopy text-xs font-bold uppercase tracking-[0.16em] text-muted-foreground">
+    <div className="rounded-2xl border border-dashed border-[var(--rootsy-bruma-200)] bg-[var(--rootsy-bruma-50)] px-6 py-10 text-center">
+      <p className="font-canopy text-xs font-bold uppercase tracking-[0.16em] text-[var(--rootsy-bruma-500)]">
         Roadmap
       </p>
-      <p className="mt-3 font-canopy text-lg font-semibold tracking-tight text-foreground">
+      <p className="mt-3 font-canopy text-lg font-semibold tracking-tight text-[var(--rootsy-bruma-900)]">
         Assets en preparación
       </p>
-      <p className="mx-auto mt-2 max-w-md font-canopy text-sm text-muted-foreground">
+      <p className="mx-auto mt-2 max-w-md font-canopy text-sm text-[var(--rootsy-bruma-500)]">
         Los spots iniciales y la guía de mascota se publicarán en esta sección a medida que
         estén listos para producto.
       </p>

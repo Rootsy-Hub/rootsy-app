@@ -1,12 +1,12 @@
 "use client"
 
+import { LibraryRelatedLinksSection } from "@/app/library/libraryDocPrimitives"
 import "./rootsyLogoSystem.css"
 import {
   LOGOS_RELATED_LINKS,
   getLogosPageMeta,
 } from "@/app/library/logos/logosLibraryNav"
 import { LogosOverviewSection } from "@/app/library/logos/sections/LogosOverviewSection"
-import { LogosRelatedLinks } from "@/app/library/logos/LogosDocPrimitives"
 import type { ReactNode } from "react"
 
 type Props = {
@@ -26,13 +26,7 @@ export function LogosFoundationView({ sectionId }: Props) {
   return (
     <div className="rootsy-logos-system space-y-10">
       {content}
-      <div className="space-y-3 border-t border-border/60 pt-8">
-        <p className="text-sm font-semibold text-foreground">Relacionado</p>
-        <LogosRelatedLinks
-          excludeId={sectionId}
-          links={LOGOS_RELATED_LINKS}
-        />
-      </div>
+      <LibraryRelatedLinksSection excludeId={sectionId} links={LOGOS_RELATED_LINKS} />
     </div>
   )
 }

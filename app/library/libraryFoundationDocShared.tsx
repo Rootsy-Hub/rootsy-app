@@ -1,5 +1,6 @@
 "use client"
 
+import { libraryDocMetaLabelClass } from "@/app/library/libraryColorTheme"
 import { CONCEPT_TOKENS } from "@/app/library/concept/rootsyConceptSystem"
 import { cn } from "@/lib/utils"
 import type { ReactNode } from "react"
@@ -57,11 +58,7 @@ export function FoundationBrumaStage({
 }
 
 export function FoundationExampleLabel({ children }: { children: ReactNode }) {
-  return (
-    <p className="font-canopy text-[11px] font-medium uppercase tracking-[0.12em] text-muted-foreground">
-      {children}
-    </p>
-  )
+  return <p className={libraryDocMetaLabelClass}>{children}</p>
 }
 
 export function FoundationConceptHero({

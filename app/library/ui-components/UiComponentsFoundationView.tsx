@@ -1,5 +1,6 @@
 "use client"
 
+import { LibraryRelatedLinksSection } from "@/app/library/libraryDocPrimitives"
 import {
   UI_COMPONENTS_RELATED_LINKS,
   getUiComponentsPageMeta,
@@ -10,7 +11,6 @@ import { BannersUiSection } from "@/app/library/ui-components/sections/BannersUi
 import { DropdownUiSection } from "@/app/library/ui-components/sections/DropdownUiSection"
 import { ModalsUiSection } from "@/app/library/ui-components/sections/ModalsUiSection"
 import { UiComponentsOverviewSection } from "@/app/library/ui-components/sections/UiComponentsOverviewSection"
-import { LibraryRelatedLinks } from "@/app/library/libraryDocPrimitives"
 import type { ReactNode } from "react"
 
 type Props = {
@@ -46,13 +46,7 @@ export function UiComponentsFoundationView({ sectionId }: Props) {
   return (
     <div className="space-y-10">
       {content}
-      <div className="space-y-3 border-t border-border/60 pt-8">
-        <p className="text-sm font-semibold text-foreground">Relacionado</p>
-        <LibraryRelatedLinks
-          excludeId={sectionId}
-          links={UI_COMPONENTS_RELATED_LINKS}
-        />
-      </div>
+      <LibraryRelatedLinksSection excludeId={sectionId} links={UI_COMPONENTS_RELATED_LINKS} />
     </div>
   )
 }

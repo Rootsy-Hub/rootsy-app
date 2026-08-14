@@ -50,21 +50,21 @@ export function ColorNewContrastSection() {
           title="Reglas rápidas"
           description="Checklist para diseño y revisión de PR."
         >
-          <ul className="space-y-2 text-sm text-muted-foreground">
+          <ul className="space-y-2 text-sm text-[var(--rootsy-bruma-500)]">
             <li>
-              <strong className="text-foreground">Texto secundario POS:</strong> sombra 300
+              <strong className="text-[var(--rootsy-bruma-900)]">Texto secundario POS:</strong> sombra 300
               sobre sombra 600+ — nunca bruma 400 sobre bruma 100.
             </li>
             <li>
-              <strong className="text-foreground">CTA savia:</strong> blanco sobre savia 600, o
+              <strong className="text-[var(--rootsy-bruma-900)]">CTA savia:</strong> blanco sobre savia 600, o
               savia 950 sobre savia 400 para iconografía compacta.
             </li>
             <li>
-              <strong className="text-foreground">Ticket claro:</strong> bruma 900 sobre bruma
+              <strong className="text-[var(--rootsy-bruma-900)]">Ticket claro:</strong> bruma 900 sobre bruma
               100 — metadatos en bruma 500 mínimo.
             </li>
             <li>
-              <strong className="text-foreground">Marketing:</strong> blanco o savia 400 sobre
+              <strong className="text-[var(--rootsy-bruma-900)]">Marketing:</strong> blanco o savia 400 sobre
               sombra 900 — neón de atmósfera nunca como color de texto.
             </li>
           </ul>

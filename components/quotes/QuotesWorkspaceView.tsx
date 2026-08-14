@@ -96,7 +96,31 @@ type Props = {
 export function QuotesWorkspaceView({ siteId, popId }: Props) {
   const router = useRouter()
   const timeZone = usePopTimeZone()
-  const { bootstrap, loading: bootstrapLoading } = usePopWorkspace()
+  const { bootstrap, popAccess, loading: bootstrapLoading } = usePopWorkspace()
+
+  const popLogoUrl = useMemo(
+    () =>
+      popAccess?.pop.imageUrl?.trim() ||
+      `https://api.dicebear.com/7.x/shapes/svg?seed=${encodeURIComponent(popId)}&backgroundColor=e8f5ef`,
+    [popAccess?.pop.imageUrl, popId],
+  )
+
+  const popBrand = useMemo(
+    () => ({
+      name: bootstrap?.popName ?? popAccess?.pop.name ?? "",
+      imageUrl: popLogoUrl,
+      streetAddress: popAccess?.pop.streetAddress ?? null,
+      city: null as string | null,
+      fallbackSeed: popId,
+    }),
+    [
+      bootstrap?.popName,
+      popAccess?.pop.name,
+      popAccess?.pop.streetAddress,
+      popId,
+      popLogoUrl,
+    ],
+  )
 
   const [rows, setRows] = useState<SaleQuoteTableRow[]>([])
   const [listFetching, setListFetching] = useState(true)
@@ -236,29 +260,37 @@ export function QuotesWorkspaceView({ siteId, popId }: Props) {
     async (quoteId: string, action: "download" | "print") => {
       setActionBusyId(quoteId)
       setError(null)
-      const res = await getSaleQuoteDetail(popId, quoteId)
-      if (!res.success) {
-        setActionBusyId(null)
-        setError(res.error)
-        return
+      const dismissToast =
+        action === "download"
+          ? showReportExportInProgressToast({ title: "Generando presupuesto…" })
+          : null
+      if (dismissToast) {
+        await new Promise<void>((resolve) => {
+          requestAnimationFrame(() => {
+            requestAnimationFrame(() => resolve())
+          })
+        })
       }
       try {
-        const dismissToast =
-          action === "download" ? showReportExportInProgressToast() : null
-        try {
-          if (action === "download") {
-            await exportSaleQuotePdf(res.quote, {
-              popName: bootstrap?.popName,
-              timeZone,
-            })
-          } else {
-            await printSaleQuotePdf(res.quote, {
-              popName: bootstrap?.popName,
-              timeZone,
-            })
-          }
-        } finally {
-          dismissToast?.()
+        const res = await getSaleQuoteDetail(popId, quoteId)
+        if (!res.success) {
+          setError(res.error)
+          return
+        }
+        if (action === "download") {
+          await exportSaleQuotePdf(res.quote, {
+            popName: bootstrap?.popName,
+            popLogoUrl,
+            popStreetAddress: popAccess?.pop.streetAddress ?? null,
+            timeZone,
+          })
+        } else {
+          await printSaleQuotePdf(res.quote, {
+            popName: bootstrap?.popName,
+            popLogoUrl,
+            popStreetAddress: popAccess?.pop.streetAddress ?? null,
+            timeZone,
+          })
         }
       } catch (e: unknown) {
         setError(
@@ -266,9 +298,10 @@ export function QuotesWorkspaceView({ siteId, popId }: Props) {
         )
       } finally {
         setActionBusyId(null)
+        dismissToast?.()
       }
     },
-    [bootstrap?.popName, popId, timeZone],
+    [bootstrap?.popName, popAccess?.pop.streetAddress, popId, popLogoUrl, timeZone],
   )
 
   const confirmDelete = useCallback(async () => {
@@ -565,6 +598,7 @@ export function QuotesWorkspaceView({ siteId, popId }: Props) {
         onOpenChange={setViewOpen}
         quote={viewQuote}
         formatCreatedAt={formatCreatedAt}
+        popBrand={popBrand}
       />
 
       <SaleQuoteDeleteDialog

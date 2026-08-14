@@ -11,7 +11,7 @@ export function LayoutDropdownLibrarySection() {
       title="Dropdown"
       description="RootsDropdown* vivos — panel overlay + shadow.overlay · sin scrim · anclado al trigger."
     >
-      <p className="max-w-3xl font-canopy text-sm leading-relaxed text-muted-foreground">
+      <p className="max-w-3xl font-canopy text-sm leading-relaxed text-[var(--rootsy-bruma-500)]">
         {ROOTSY_DROPDOWN_MANIFESTO}
       </p>
       <DropdownLiveGallery />

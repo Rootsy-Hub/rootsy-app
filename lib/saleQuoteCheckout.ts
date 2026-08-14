@@ -14,10 +14,15 @@ import {
 } from "@/lib/mostradorCartDisplay"
 import { normalizeCartItemKind, resolveCartLineId, type MenuCartItem } from "@/lib/menuCart"
 import { buildSaleComprobantePreviewLineGroups } from "@/lib/saleComprobantePreview"
-import { roundSaleMoney } from "@/lib/saleLineDiscount"
 import type { MostradorCartDisplayRow } from "@/lib/mostradorCartDisplay"
 import { CLIENT_ACCOUNT_PAYMENT_LABEL } from "@/lib/operationPaymentLabels"
-import type { SaleQuoteLineSummary } from "@/lib/saleQuoteTypes"
+import type {
+  SaleQuoteLineGroup,
+  SaleQuoteLineSummary,
+} from "@/lib/saleQuoteTypes"
+import {
+  buildQuoteLineSummariesFromLineGroups,
+} from "@/lib/saleQuoteDocumentLines"
 
 type SaleQuoteClientSelection = {
   id: string | null
@@ -103,47 +108,56 @@ export function formatSaleQuoteDiscountLabel(input: {
   return null
 }
 
+export function buildQuoteLineGroupsFromDisplayRows(
+  rows: MostradorCartDisplayRow[],
+  overrides: Pick<
+    OperationCartLineOverrideState,
+    | "itemDescuentoModo"
+    | "itemDescuentoDraft"
+    | "itemDescuentoSuprimido"
+    | "itemComentarios"
+  >,
+): SaleQuoteLineGroup[] {
+  return buildSaleComprobantePreviewLineGroups(rows, overrides)
+    .map((group) => ({
+      id: group.id,
+      category: group.category,
+      promotionDiscount: group.promotionDiscount
+        ? {
+            label: group.promotionDiscount.label,
+            amount: group.promotionDiscount.amount,
+          }
+        : null,
+      lines: group.lines.map((line) => ({
+        name: quoteLineNameFromDescription(line.description),
+        quantity: line.quantity,
+        unitListPrice: line.unitListPrice,
+        listLineTotal: line.listLineTotal,
+        lineTotal: line.lineTotal,
+        discounts: line.discounts
+          .filter((discount) => discount.amount > 0)
+          .map((discount) => ({
+            label: discount.label,
+            amount: discount.amount,
+          })),
+      })),
+    }))
+    .filter((group) => group.lines.length > 0)
+}
+
 export function buildQuoteLineSummariesFromDisplayRows(
   rows: MostradorCartDisplayRow[],
   overrides: Pick<
     OperationCartLineOverrideState,
-    "itemDescuentoModo" | "itemDescuentoDraft" | "itemDescuentoSuprimido"
+    | "itemDescuentoModo"
+    | "itemDescuentoDraft"
+    | "itemDescuentoSuprimido"
+    | "itemComentarios"
   >,
 ): SaleQuoteLineSummary[] {
-  const groups = buildSaleComprobantePreviewLineGroups(rows, overrides)
-  const summaries: SaleQuoteLineSummary[] = []
-
-  for (const group of groups) {
-    const promoDiscount = group.promotionDiscount?.amount ?? 0
-    const groupListTotal = group.lines.reduce(
-      (sum, line) => sum + line.listLineTotal,
-      0,
-    )
-
-    for (const line of group.lines) {
-      let lineTotal = line.lineTotal
-      if (promoDiscount > 0 && groupListTotal > 0) {
-        const share = line.listLineTotal / groupListTotal
-        lineTotal = roundSaleMoney(
-          Math.max(0, line.lineTotal - promoDiscount * share),
-        )
-      }
-
-      if (line.quantity <= 0 || lineTotal <= 0) continue
-
-      summaries.push({
-        name: quoteLineNameFromDescription(line.description),
-        quantity: line.quantity,
-        unitPrice:
-          line.quantity > 0
-            ? roundSaleMoney(lineTotal / line.quantity)
-            : 0,
-        lineTotal,
-      })
-    }
-  }
-
-  return summaries
+  return buildQuoteLineSummariesFromLineGroups(
+    buildQuoteLineGroupsFromDisplayRows(rows, overrides),
+  )
 }
 
 function quoteLineNameFromDescription(description: string): string {
@@ -154,40 +168,57 @@ function quoteLineNameFromDescription(description: string): string {
     .replace(/(^|\s|\/)\S/g, (match) => match.toUpperCase())
 }
 
-export function buildQuoteLineSummariesFromCheckoutSnapshot(
+export function buildQuoteLineGroupsFromCheckoutSnapshot(
   snapshot: TableSessionCheckoutSnapshot,
   catalog: {
     articles: MenuCatalogArticle[]
     promotions: MenuCatalogPromotion[]
     quantityDeals: MenuCatalogPromotion[]
   },
-): SaleQuoteLineSummary[] {
+): SaleQuoteLineGroup[] {
+  const rows = buildQuoteDisplayRowsFromCheckoutSnapshot(snapshot, catalog)
+  const overrides = {
+    itemDescuentoModo: snapshot.itemDescuentoModo ?? {},
+    itemDescuentoDraft: snapshot.itemDescuentoDraft ?? {},
+    itemDescuentoSuprimido: snapshot.itemDescuentoSuprimido ?? {},
+    itemComentarios: snapshot.itemComentarios ?? {},
+  }
+  return buildQuoteLineGroupsFromDisplayRows(rows, overrides)
+}
+
+function buildQuoteDisplayRowsFromCheckoutSnapshot(
+  snapshot: TableSessionCheckoutSnapshot,
+  catalog: {
+    articles: MenuCatalogArticle[]
+    promotions: MenuCatalogPromotion[]
+    quantityDeals: MenuCatalogPromotion[]
+  },
+): MostradorCartDisplayRow[] {
   const productosCatalogo = [
     ...catalog.promotions.map(menuPromotionToProduct),
     ...catalog.articles.map(menuArticleToProduct),
   ]
   const productosByKey = buildMenuProductMap(productosCatalogo)
 
-  const carrito: MenuCartItem[] = snapshot.carrito
-    .map((item) => {
-      const kind = normalizeCartItemKind(item.kind)
-      const producto =
-        productosByKey.get(`${kind}:${item.productoId}`) ?? null
-      if (kind === "promotion" && !item.promotionSelections?.length) {
-        return null
-      }
-      if (kind !== "promotion" && !producto) return null
-      return {
+  const carrito: MenuCartItem[] = snapshot.carrito.flatMap((item) => {
+    const kind = normalizeCartItemKind(item.kind)
+    const producto =
+      productosByKey.get(`${kind}:${item.productoId}`) ?? null
+    if (kind === "promotion" && !item.promotionSelections?.length) {
+      return []
+    }
+    if (kind !== "promotion" && !producto) return []
+    return [
+      {
         lineId: item.lineId,
         productoId: item.productoId,
         cantidad: item.cantidad,
         kind,
         promotionSelections: item.promotionSelections,
         paidLocked: item.paidLocked,
-        producto,
-      }
-    })
-    .filter((item): item is MenuCartItem => item != null)
+      },
+    ]
+  })
 
   const overrides = {
     itemDescuentoModo: snapshot.itemDescuentoModo ?? {},
@@ -205,20 +236,38 @@ export function buildQuoteLineSummariesFromCheckoutSnapshot(
 
   const rows = buildMostradorCartDisplayRows({
     items: cartDetailItemsFromCarrito(
-      carrito.map((item) => ({
-        lineId: resolveCartLineId(item),
-        productoId: item.productoId,
-        kind: item.kind,
-        cantidad: item.cantidad,
-        producto: item.producto,
-        promotionSelections: item.promotionSelections,
-        paidLocked: item.paidLocked,
-      })),
+      carrito.map((item) => {
+        const kind = normalizeCartItemKind(item.kind)
+        const producto =
+          productosByKey.get(`${kind}:${item.productoId}`) ?? null
+        return {
+          lineId: resolveCartLineId(item),
+          productoId: item.productoId,
+          kind: item.kind,
+          cantidad: item.cantidad,
+          producto,
+          promotionSelections: item.promotionSelections,
+          paidLocked: item.paidLocked,
+        }
+      }),
     ),
     applications,
     overrides,
     productosByKey,
   })
 
-  return buildQuoteLineSummariesFromDisplayRows(rows, overrides)
+  return rows
+}
+
+export function buildQuoteLineSummariesFromCheckoutSnapshot(
+  snapshot: TableSessionCheckoutSnapshot,
+  catalog: {
+    articles: MenuCatalogArticle[]
+    promotions: MenuCatalogPromotion[]
+    quantityDeals: MenuCatalogPromotion[]
+  },
+): SaleQuoteLineSummary[] {
+  return buildQuoteLineSummariesFromLineGroups(
+    buildQuoteLineGroupsFromCheckoutSnapshot(snapshot, catalog),
+  )
 }

@@ -15,7 +15,7 @@ import {
   FoundationBrumaStage,
   FoundationSpecCard,
 } from "@/app/library/libraryFoundationDocShared"
-import { LibraryGuidelineCards } from "@/app/library/libraryDocPrimitives"
+import { LibraryDocMetaLabel, LibraryGuidelineCards } from "@/app/library/libraryDocPrimitives"
 import { useState } from "react"
 import type { ReactNode } from "react"
 
@@ -150,35 +150,28 @@ export function MotionSystemHero() {
 }
 
 function TechnicalSubheading({ children }: { children: ReactNode }) {
-  return (
-    <p
-      className="font-canopy text-xs font-semibold uppercase tracking-wide"
-      style={{ color: CONCEPT_TOKENS.bruma500 }}
-    >
-      {children}
-    </p>
-  )
+  return <LibraryDocMetaLabel>{children}</LibraryDocMetaLabel>
 }
 
 export function DurationTable() {
   return (
-    <div className="overflow-x-auto rounded-2xl border border-border/70">
+    <div className="library-doc-table-shell overflow-x-auto rounded-2xl">
       <table className="w-full min-w-[560px] text-left font-canopy text-sm">
         <thead>
-          <tr className="border-b border-border/60 bg-muted/30 text-[10px] font-bold uppercase tracking-[0.12em] text-muted-foreground">
+          <tr className="border-b border-[var(--rootsy-bruma-200)] bg-[var(--rootsy-bruma-50)] text-[10px] font-bold uppercase tracking-[0.12em] text-[var(--rootsy-bruma-500)]">
             <th className="px-4 py-2">Token</th>
             <th className="px-4 py-2">Nature</th>
             <th className="px-4 py-2 text-right">ms</th>
             <th className="px-4 py-2">Uso</th>
           </tr>
         </thead>
-        <tbody className="divide-y divide-border/50">
+        <tbody className="divide-y divide-[var(--rootsy-bruma-200)]">
           {ROOTSY_MOTION_DURATIONS.map((d) => (
-            <tr key={d.id} className="hover:bg-muted/20">
-              <td className="px-4 py-2.5 font-mono text-xs text-primary">{d.token}</td>
-              <td className="px-4 py-2.5 text-xs text-muted-foreground">{d.natureName}</td>
+            <tr key={d.id} className="hover:bg-[var(--rootsy-bruma-50)]">
+              <td className="px-4 py-2.5 font-mono text-xs text-[var(--rootsy-savia-600)]">{d.token}</td>
+              <td className="px-4 py-2.5 text-xs text-[var(--rootsy-bruma-500)]">{d.natureName}</td>
               <td className="px-4 py-2.5 text-right font-mono font-medium">{d.ms}</td>
-              <td className="px-4 py-2.5 text-xs text-muted-foreground">{d.usage}</td>
+              <td className="px-4 py-2.5 text-xs text-[var(--rootsy-bruma-500)]">{d.usage}</td>
             </tr>
           ))}
         </tbody>
@@ -195,9 +188,9 @@ export function DurationRangeOverview() {
         const meta = MOTION_DURATION_RANGES[tier]
         const items = ROOTSY_MOTION_DURATIONS.filter((d) => d.tier === tier)
         return (
-          <div key={tier} className="rounded-xl border border-border/70 bg-card p-4">
-            <p className="font-canopy text-sm font-semibold text-foreground">{meta.label}</p>
-            <p className="mt-1 font-canopy text-xs text-muted-foreground">{meta.description}</p>
+          <div key={tier} className="library-doc-card rounded-xl p-4">
+            <p className="font-canopy text-sm font-semibold text-[var(--rootsy-bruma-900)]">{meta.label}</p>
+            <p className="mt-1 font-canopy text-xs text-[var(--rootsy-bruma-500)]">{meta.description}</p>
             <div className="mt-3 flex flex-wrap gap-1">
               {items.map((d) => (
                 <span
@@ -229,12 +222,12 @@ function EasingDemo({ easing }: { easing: (typeof ROOTSY_MOTION_EASINGS)[number]
   }
 
   return (
-    <div className="rounded-xl border border-border/70 bg-card p-4">
+    <div className="library-doc-card rounded-xl p-4">
       <div className="flex items-start justify-between gap-2">
         <div>
-          <p className="font-mono text-xs text-primary">{easing.token}</p>
-          <p className="font-canopy text-sm font-semibold text-foreground">{easing.natureName}</p>
-          <p className="mt-1 font-mono text-[10px] text-muted-foreground">{easing.cubicBezier}</p>
+          <p className="font-mono text-xs text-[var(--rootsy-savia-600)]">{easing.token}</p>
+          <p className="font-canopy text-sm font-semibold text-[var(--rootsy-bruma-900)]">{easing.natureName}</p>
+          <p className="mt-1 font-mono text-[10px] text-[var(--rootsy-bruma-500)]">{easing.cubicBezier}</p>
         </div>
         <button
           type="button"
@@ -245,7 +238,7 @@ function EasingDemo({ easing }: { easing: (typeof ROOTSY_MOTION_EASINGS)[number]
           Play
         </button>
       </div>
-      <div className="relative mt-4 h-10 overflow-hidden rounded-lg bg-muted/50">
+      <div className="relative mt-4 h-10 overflow-hidden rounded-lg bg-[var(--rootsy-bruma-50)]">
         <div
           key={key}
           className="motion-demo-animated absolute top-1 h-8 w-8 rounded-md"
@@ -256,7 +249,7 @@ function EasingDemo({ easing }: { easing: (typeof ROOTSY_MOTION_EASINGS)[number]
           }}
         />
       </div>
-      <p className="mt-2 font-canopy text-xs text-muted-foreground">{easing.bestFor}</p>
+      <p className="mt-2 font-canopy text-xs text-[var(--rootsy-bruma-500)]">{easing.bestFor}</p>
     </div>
   )
 }
@@ -317,7 +310,7 @@ function PropertyDemo({ property }: { property: (typeof ROOTSY_MOTION_PROPERTIES
   }
 
   return (
-    <div className="rounded-xl border border-border/70 p-4">
+    <div className="rounded-xl border border-[var(--rootsy-bruma-200)] p-4">
       <div className="flex items-center justify-between">
         <div>
           <p className="font-canopy text-sm font-semibold">{property.title}</p>
@@ -334,10 +327,10 @@ function PropertyDemo({ property }: { property: (typeof ROOTSY_MOTION_PROPERTIES
           Toggle
         </button>
       </div>
-      <div className="mt-4 flex h-20 items-center overflow-hidden rounded-lg bg-muted/30 px-2">
+      <div className="mt-4 flex h-20 items-center overflow-hidden rounded-lg bg-[var(--rootsy-bruma-50)] px-2">
         {demos[property.id]}
       </div>
-      <p className="mt-2 font-canopy text-xs text-muted-foreground">{property.description}</p>
+      <p className="mt-2 font-canopy text-xs text-[var(--rootsy-bruma-500)]">{property.description}</p>
       {property.gpuSafe ? (
         <p className="mt-1 font-mono text-[10px]" style={{ color: CONCEPT_TOKENS.savia800 }}>
           GPU-safe ✓
@@ -378,7 +371,7 @@ function TransitionDemo({
   }
 
   return (
-    <div className="rounded-xl border border-border/70 p-4">
+    <div className="rounded-xl border border-[var(--rootsy-bruma-200)] p-4">
       <div className="flex items-center justify-between">
         <p className="font-canopy text-sm font-medium">{label}</p>
         <button
@@ -390,7 +383,7 @@ function TransitionDemo({
           Play · {durationMs}ms
         </button>
       </div>
-      <div className="relative mt-3 flex h-24 items-end justify-center overflow-hidden rounded-lg bg-muted/40 p-4">
+      <div className="relative mt-3 flex h-24 items-end justify-center overflow-hidden rounded-lg bg-[var(--rootsy-bruma-50)] p-4">
         <div
           key={key}
           className="motion-demo-animated w-full max-w-[200px] rounded-lg px-3 py-2 text-center font-canopy text-xs text-white"
@@ -435,10 +428,10 @@ export function InteractionVsTransitionDemo() {
 
 export function SemanticTokensTable() {
   return (
-    <div className="overflow-x-auto rounded-2xl border border-border/70">
+    <div className="library-doc-table-shell overflow-x-auto rounded-2xl">
       <table className="w-full min-w-[720px] text-left font-canopy text-sm">
         <thead>
-          <tr className="border-b border-border/60 bg-muted/30 text-[10px] font-bold uppercase tracking-[0.12em] text-muted-foreground">
+          <tr className="border-b border-[var(--rootsy-bruma-200)] bg-[var(--rootsy-bruma-50)] text-[10px] font-bold uppercase tracking-[0.12em] text-[var(--rootsy-bruma-500)]">
             <th className="px-4 py-2">Token</th>
             <th className="px-4 py-2">Componente</th>
             <th className="px-4 py-2">Duración</th>
@@ -446,18 +439,18 @@ export function SemanticTokensTable() {
             <th className="px-4 py-2">Props</th>
           </tr>
         </thead>
-        <tbody className="divide-y divide-border/50">
+        <tbody className="divide-y divide-[var(--rootsy-bruma-200)]">
           {ROOTSY_MOTION_SEMANTIC.map((row) => (
-            <tr key={row.token} className="hover:bg-muted/20">
-              <td className="px-4 py-2.5 font-mono text-[11px] text-primary">{row.token}</td>
+            <tr key={row.token} className="hover:bg-[var(--rootsy-bruma-50)]">
+              <td className="px-4 py-2.5 font-mono text-[11px] text-[var(--rootsy-savia-600)]">{row.token}</td>
               <td className="px-4 py-2.5 text-xs">{row.component}</td>
-              <td className="px-4 py-2.5 font-mono text-[10px] text-muted-foreground">
+              <td className="px-4 py-2.5 font-mono text-[10px] text-[var(--rootsy-bruma-500)]">
                 {row.durationToken.replace("motion.duration.", "")}
               </td>
-              <td className="px-4 py-2.5 font-mono text-[10px] text-muted-foreground">
+              <td className="px-4 py-2.5 font-mono text-[10px] text-[var(--rootsy-bruma-500)]">
                 {row.easingToken.replace("motion.easing.", "")}
               </td>
-              <td className="px-4 py-2.5 text-xs text-muted-foreground">
+              <td className="px-4 py-2.5 text-xs text-[var(--rootsy-bruma-500)]">
                 {row.properties.join(" + ")}
               </td>
             </tr>
@@ -474,11 +467,11 @@ export function KeyframesTable() {
       {MOTION_KEYFRAMES.map((k) => (
         <div
           key={k.token}
-          className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-border/60 px-4 py-2"
+          className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-[var(--rootsy-bruma-200)] px-4 py-2"
         >
-          <span className="font-mono text-xs text-primary">{k.token}</span>
-          <span className="font-mono text-[10px] text-muted-foreground">{k.value}</span>
-          <span className="font-canopy text-xs text-muted-foreground">{k.usage}</span>
+          <span className="font-mono text-xs text-[var(--rootsy-savia-600)]">{k.token}</span>
+          <span className="font-mono text-[10px] text-[var(--rootsy-bruma-500)]">{k.value}</span>
+          <span className="font-canopy text-xs text-[var(--rootsy-bruma-500)]">{k.usage}</span>
         </div>
       ))}
     </div>
@@ -498,7 +491,7 @@ export function ReducedMotionNote() {
       <p className="font-canopy text-sm font-semibold" style={{ color: CONCEPT_TOKENS.savia800 }}>
         prefers-reduced-motion: reduce
       </p>
-      <p className="mt-1 font-canopy text-sm text-muted-foreground">
+      <p className="mt-1 font-canopy text-sm text-[var(--rootsy-bruma-500)]">
         Cuando está activo, las animaciones de Rootsy se reducen a instant o se desactivan.
         La interfaz debe seguir siendo 100% usable sin motion.
       </p>
@@ -516,17 +509,17 @@ export function MotionTechnicalDetails() {
 
       <div className="space-y-3">
         <TechnicalSubheading>Easing</TechnicalSubheading>
-        <div className="overflow-x-auto rounded-2xl border border-border/70">
+        <div className="library-doc-table-shell overflow-x-auto rounded-2xl">
           <table className="w-full min-w-[560px] text-left font-canopy text-sm">
             <tbody>
               {ROOTSY_MOTION_EASINGS.map((row) => (
-                <tr key={row.id} className="border-b border-border/40 last:border-0">
-                  <td className="px-4 py-3 font-mono text-xs text-primary">{row.token}</td>
-                  <td className="px-4 py-3 text-foreground">{row.natureName}</td>
-                  <td className="px-4 py-3 font-mono text-[10px] text-muted-foreground">
+                <tr key={row.id} className="border-b border-[var(--rootsy-bruma-200)] last:border-0">
+                  <td className="px-4 py-3 font-mono text-xs text-[var(--rootsy-savia-600)]">{row.token}</td>
+                  <td className="px-4 py-3 text-[var(--rootsy-bruma-900)]">{row.natureName}</td>
+                  <td className="px-4 py-3 font-mono text-[10px] text-[var(--rootsy-bruma-500)]">
                     {row.cubicBezier}
                   </td>
-                  <td className="px-4 py-3 text-xs text-muted-foreground">{row.bestFor}</td>
+                  <td className="px-4 py-3 text-xs text-[var(--rootsy-bruma-500)]">{row.bestFor}</td>
                 </tr>
               ))}
             </tbody>

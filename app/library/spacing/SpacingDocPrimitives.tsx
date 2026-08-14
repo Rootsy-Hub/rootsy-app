@@ -17,7 +17,7 @@ import {
   FoundationBrumaStage,
   FoundationConceptHero,
 } from "@/app/library/libraryFoundationDocShared"
-import { LibraryGuidelineCards } from "@/app/library/libraryDocPrimitives"
+import { LibraryDocMetaLabel, LibraryGuidelineCards } from "@/app/library/libraryDocPrimitives"
 import type { CSSProperties, ReactNode } from "react"
 
 export {
@@ -28,14 +28,7 @@ export {
 } from "@/app/library/libraryDocPrimitives"
 
 function TechnicalSubheading({ children }: { children: ReactNode }) {
-  return (
-    <p
-      className="font-canopy text-xs font-semibold uppercase tracking-wide"
-      style={{ color: CONCEPT_TOKENS.bruma500 }}
-    >
-      {children}
-    </p>
-  )
+  return <LibraryDocMetaLabel>{children}</LibraryDocMetaLabel>
 }
 
 function SpacingRhythmBarsDemo() {
@@ -110,7 +103,7 @@ function SpacingBar({ token }: { token: SpacingToken }) {
           outline: isBase ? `2px solid ${CONCEPT_TOKENS.savia600}` : undefined,
         }}
       />
-      <span className="w-12 shrink-0 text-right font-mono text-xs text-muted-foreground">
+      <span className="w-12 shrink-0 text-right font-mono text-xs text-[var(--rootsy-bruma-500)]">
         {token.px}px
       </span>
     </div>
@@ -119,8 +112,8 @@ function SpacingBar({ token }: { token: SpacingToken }) {
 
 export function SpacingScaleTable() {
   return (
-    <div className="overflow-hidden rounded-2xl border border-border/70">
-      <div className="grid grid-cols-[1fr_auto_auto_auto_auto_auto] gap-x-3 border-b border-border/60 bg-muted/30 px-4 py-2 text-[10px] font-bold uppercase tracking-[0.12em] text-muted-foreground">
+    <div className="library-doc-table-shell overflow-hidden rounded-2xl">
+      <div className="grid grid-cols-[1fr_auto_auto_auto_auto_auto] gap-x-3 border-b border-[var(--rootsy-bruma-200)] bg-[var(--rootsy-bruma-50)] px-4 py-2 text-[10px] font-bold uppercase tracking-[0.12em] text-[var(--rootsy-bruma-500)]">
         <span>Token</span>
         <span>Nature</span>
         <span className="text-right">× base</span>
@@ -128,7 +121,7 @@ export function SpacingScaleTable() {
         <span className="text-right">px</span>
         <span className="min-w-[72px]">Visual</span>
       </div>
-      <div className="divide-y divide-border/50">
+      <div className="divide-y divide-[var(--rootsy-bruma-200)]">
         {ROOTSY_SPACING_TOKENS.map((token) => {
           const isBase = token.token === "space.100"
           return (
@@ -137,7 +130,7 @@ export function SpacingScaleTable() {
               className="grid grid-cols-[1fr_auto_auto_auto_auto_auto] items-center gap-x-3 px-4 py-2.5"
               style={isBase ? { backgroundColor: CONCEPT_TOKENS.bruma50 } : undefined}
             >
-              <span className="font-mono text-sm text-foreground">
+              <span className="font-mono text-sm text-[var(--rootsy-bruma-900)]">
                 {token.token}
                 {isBase ? (
                   <span
@@ -148,14 +141,14 @@ export function SpacingScaleTable() {
                   </span>
                 ) : null}
               </span>
-              <span className="text-xs text-muted-foreground">{token.natureName}</span>
-              <span className="text-right font-mono text-xs text-muted-foreground">
+              <span className="text-xs text-[var(--rootsy-bruma-500)]">{token.natureName}</span>
+              <span className="text-right font-mono text-xs text-[var(--rootsy-bruma-500)]">
                 {token.multiplier}
               </span>
-              <span className="text-right font-mono text-xs text-muted-foreground">
+              <span className="text-right font-mono text-xs text-[var(--rootsy-bruma-500)]">
                 {token.rem}
               </span>
-              <span className="text-right font-mono text-xs font-medium text-foreground">
+              <span className="text-right font-mono text-xs font-medium text-[var(--rootsy-bruma-900)]">
                 {token.px}px
               </span>
               <SpacingBar token={token} />
@@ -173,20 +166,20 @@ export function NatureRhythmTiersGrid() {
       {NATURE_RHYTHM_TIERS.map((tier, index) => (
         <div
           key={tier.id}
-          className="rounded-xl border border-border/70 bg-card p-4 shadow-sm"
+          className="library-doc-card rounded-xl p-4"
           style={{
             borderLeftWidth: 3,
             borderLeftColor: `color-mix(in srgb, ${CONCEPT_TOKENS.savia600} ${40 + index * 10}%, ${CONCEPT_TOKENS.savia100})`,
           }}
         >
-          <p className="text-sm font-semibold text-foreground">{tier.title}</p>
+          <p className="text-sm font-semibold text-[var(--rootsy-bruma-900)]">{tier.title}</p>
           <p className="text-xs font-medium" style={{ color: CONCEPT_TOKENS.savia800 }}>
             {tier.subtitle} · {tier.pxRange}
           </p>
-          <p className="mt-2 font-mono text-[10px] text-muted-foreground">
+          <p className="mt-2 font-mono text-[10px] text-[var(--rootsy-bruma-500)]">
             {tier.tokenRange}
           </p>
-          <p className="mt-2 text-sm text-muted-foreground">{tier.description}</p>
+          <p className="mt-2 text-sm text-[var(--rootsy-bruma-700)]">{tier.description}</p>
         </div>
       ))}
     </div>
@@ -195,8 +188,8 @@ export function NatureRhythmTiersGrid() {
 
 export function SpacingSemanticRolesTable() {
   return (
-    <div className="overflow-hidden rounded-2xl border border-border/70">
-      <div className="grid grid-cols-[1fr_auto_auto_1.5fr] gap-x-4 border-b border-border/60 bg-muted/30 px-4 py-2 text-[10px] font-bold uppercase tracking-[0.12em] text-muted-foreground">
+    <div className="library-doc-table-shell overflow-hidden rounded-2xl">
+      <div className="grid grid-cols-[1fr_auto_auto_1.5fr] gap-x-4 border-b border-[var(--rootsy-bruma-200)] bg-[var(--rootsy-bruma-50)] px-4 py-2 text-[10px] font-bold uppercase tracking-[0.12em] text-[var(--rootsy-bruma-500)]">
         <span>Rol</span>
         <span>Token</span>
         <span className="text-right">px</span>
@@ -205,14 +198,14 @@ export function SpacingSemanticRolesTable() {
       {ROOTSY_SPACING_SEMANTIC_ROLES.map((row) => (
         <div
           key={row.id}
-          className="grid grid-cols-[1fr_auto_auto_1.5fr] items-start gap-x-4 border-b border-border/40 px-4 py-3 last:border-b-0"
+          className="grid grid-cols-[1fr_auto_auto_1.5fr] items-start gap-x-4 border-b border-[var(--rootsy-bruma-200)] px-4 py-3 last:border-b-0"
         >
-          <span className="text-sm font-medium text-foreground">{row.role}</span>
-          <span className="font-mono text-xs text-primary">{row.token}</span>
-          <span className="text-right font-mono text-xs text-muted-foreground">
+          <span className="text-sm font-medium text-[var(--rootsy-bruma-900)]">{row.role}</span>
+          <span className="font-mono text-xs text-[var(--rootsy-savia-600)]">{row.token}</span>
+          <span className="text-right font-mono text-xs text-[var(--rootsy-bruma-500)]">
             {row.px}px
           </span>
-          <span className="text-sm text-muted-foreground">{row.usage}</span>
+          <span className="text-sm text-[var(--rootsy-bruma-500)]">{row.usage}</span>
         </div>
       ))}
     </div>
@@ -221,8 +214,8 @@ export function SpacingSemanticRolesTable() {
 
 export function NegativeSpacingTable() {
   return (
-    <div className="overflow-hidden rounded-2xl border border-border/70">
-      <div className="grid grid-cols-[1fr_auto_auto] gap-x-4 border-b border-border/60 bg-muted/30 px-4 py-2 text-[10px] font-bold uppercase tracking-[0.12em] text-muted-foreground">
+    <div className="library-doc-table-shell overflow-hidden rounded-2xl">
+      <div className="grid grid-cols-[1fr_auto_auto] gap-x-4 border-b border-[var(--rootsy-bruma-200)] bg-[var(--rootsy-bruma-50)] px-4 py-2 text-[10px] font-bold uppercase tracking-[0.12em] text-[var(--rootsy-bruma-500)]">
         <span>Token</span>
         <span className="text-right">rem</span>
         <span className="text-right">px</span>
@@ -230,13 +223,13 @@ export function NegativeSpacingTable() {
       {ROOTSY_NEGATIVE_SPACING_TOKENS.map((row) => (
         <div
           key={row.token}
-          className="grid grid-cols-[1fr_auto_auto] gap-x-4 border-b border-border/40 px-4 py-2.5 last:border-b-0"
+          className="grid grid-cols-[1fr_auto_auto] gap-x-4 border-b border-[var(--rootsy-bruma-200)] px-4 py-2.5 last:border-b-0"
         >
-          <span className="font-mono text-sm text-foreground">{row.token}</span>
-          <span className="text-right font-mono text-xs text-muted-foreground">
+          <span className="font-mono text-sm text-[var(--rootsy-bruma-900)]">{row.token}</span>
+          <span className="text-right font-mono text-xs text-[var(--rootsy-bruma-500)]">
             {row.rem}
           </span>
-          <span className="text-right font-mono text-xs font-medium text-foreground">
+          <span className="text-right font-mono text-xs font-medium text-[var(--rootsy-bruma-900)]">
             {row.px}px
           </span>
         </div>
@@ -247,10 +240,10 @@ export function NegativeSpacingTable() {
 
 export function BaseUnitDemo() {
   return (
-    <div className="rounded-2xl border border-border/70 bg-card p-6">
+    <div className="library-doc-card rounded-2xl p-6">
       <div className="flex flex-wrap items-end gap-6">
         <div className="space-y-2">
-          <p className="text-xs font-medium text-muted-foreground">Unidad base</p>
+          <p className="text-xs font-medium text-[var(--rootsy-bruma-500)]">Unidad base</p>
           <div
             className="rounded-md"
             style={{
@@ -259,11 +252,11 @@ export function BaseUnitDemo() {
               backgroundColor: CONCEPT_TOKENS.savia600,
             }}
           />
-          <p className="font-mono text-xs text-foreground">8 × 32px</p>
+          <p className="font-mono text-xs text-[var(--rootsy-bruma-900)]">8 × 32px</p>
         </div>
         <div className="space-y-2">
-          <p className="text-xs font-medium text-muted-foreground">space.100</p>
-          <p className="max-w-xs text-sm text-muted-foreground">
+          <p className="text-xs font-medium text-[var(--rootsy-bruma-500)]">space.100</p>
+          <p className="max-w-xs text-sm text-[var(--rootsy-bruma-500)]">
             Todo token es múltiplo de esta unidad. El sufijo numérico indica el
             porcentaje: <code className="font-mono text-xs">space.200</code> = 200%
             = 16px.
@@ -277,12 +270,12 @@ export function BaseUnitDemo() {
 export function SpacingRangeOverview() {
   return (
     <div className="space-y-6">
-      <div className="relative overflow-hidden rounded-2xl border border-border/70 p-6">
-        <div className="mb-4 flex justify-between text-[10px] font-bold uppercase tracking-[0.12em] text-muted-foreground">
+      <div className="relative library-doc-table-shell overflow-hidden rounded-2xl p-6">
+        <div className="mb-4 flex justify-between text-[10px] font-bold uppercase tracking-[0.12em] text-[var(--rootsy-bruma-500)]">
           <span>0px</span>
           <span>80px</span>
         </div>
-        <div className="relative h-8 overflow-hidden rounded-full bg-muted/50">
+        <div className="relative h-8 overflow-hidden rounded-full bg-[var(--rootsy-bruma-50)]">
           <div
             className="absolute inset-y-0 left-0 rounded-l-full"
             style={{ width: "10%", backgroundColor: CONCEPT_TOKENS.savia100 }}
@@ -307,10 +300,10 @@ export function SpacingRangeOverview() {
         <div className="mt-3 grid gap-2 sm:grid-cols-3">
           {(["small", "medium", "large"] as const).map((range) => (
             <div key={range} className="text-center">
-              <p className="text-xs font-semibold text-foreground">
+              <p className="text-xs font-semibold text-[var(--rootsy-bruma-900)]">
                 {SPACING_RANGE_META[range].label}
               </p>
-              <p className="font-mono text-[10px] text-muted-foreground">
+              <p className="font-mono text-[10px] text-[var(--rootsy-bruma-500)]">
                 {SPACING_RANGE_META[range].tokenRange}
               </p>
             </div>
@@ -324,13 +317,13 @@ export function SpacingRangeOverview() {
           return (
             <div
               key={range}
-              className="rounded-xl border border-border/70 bg-card p-4 shadow-sm"
+              className="library-doc-card rounded-xl p-4"
             >
-              <p className="text-sm font-semibold text-foreground">{meta.label}</p>
-              <p className="mt-1 text-sm text-muted-foreground">{meta.description}</p>
+              <p className="text-sm font-semibold text-[var(--rootsy-bruma-900)]">{meta.label}</p>
+              <p className="mt-1 text-sm text-[var(--rootsy-bruma-500)]">{meta.description}</p>
               <ul className="mt-3 space-y-1">
                 {meta.examples.map((ex) => (
-                  <li key={ex} className="text-xs text-muted-foreground">
+                  <li key={ex} className="text-xs text-[var(--rootsy-bruma-500)]">
                     · {ex}
                   </li>
                 ))}
@@ -351,7 +344,7 @@ export function SimilarityDemo() {
   return (
     <div className="grid gap-4 sm:grid-cols-2">
       <div className="rounded-xl border-2 p-4" style={{ borderColor: CONCEPT_TOKENS.savia600 }}>
-        <p className="mb-3 text-xs font-bold uppercase tracking-wider text-primary">
+        <p className="mb-3 text-xs font-bold uppercase tracking-wider text-[var(--rootsy-savia-600)]">
           ✓ Hacer
         </p>
         <div className="space-y-2">
@@ -367,14 +360,14 @@ export function SimilarityDemo() {
               />
               <div className="min-w-0 flex-1">
                 <p className="text-sm font-medium">Ítem {i}</p>
-                <p className="text-xs text-muted-foreground">gap 8px uniforme</p>
+                <p className="text-xs text-[var(--rootsy-bruma-500)]">gap 8px uniforme</p>
               </div>
             </div>
           ))}
         </div>
       </div>
-      <div className="rounded-xl border border-border/70 p-4 opacity-80">
-        <p className="mb-3 text-xs font-bold uppercase tracking-wider text-muted-foreground">
+      <div className="rounded-xl border border-[var(--rootsy-bruma-200)] p-4 opacity-80">
+        <p className="mb-3 text-xs font-bold uppercase tracking-wider text-[var(--rootsy-bruma-500)]">
           ✗ Evitar
         </p>
         <div>
@@ -402,10 +395,10 @@ export function SimilarityDemo() {
 
 export function ProximityDemo() {
   return (
-    <div className="rounded-2xl border border-border/70 bg-card p-6">
+    <div className="library-doc-card rounded-2xl p-6">
       <div className="max-w-md">
         <p className="text-lg font-semibold">Título de sección</p>
-        <p className="mt-1 text-sm text-muted-foreground">
+        <p className="mt-1 text-sm text-[var(--rootsy-bruma-500)]">
           Descripción cercana al título (8px)
         </p>
         <div className="mt-6 flex gap-2">
@@ -424,7 +417,7 @@ export function ProximityDemo() {
             Secundaria
           </button>
         </div>
-        <p className="mt-8 text-xs text-muted-foreground">
+        <p className="mt-8 text-xs text-[var(--rootsy-bruma-500)]">
           Bloque de acciones separado 24px — grupo distinto
         </p>
       </div>
@@ -449,13 +442,13 @@ export function BoxPrimitiveDemo() {
   return (
     <div className="space-y-4">
       <div
-        className="rounded-2xl border border-dashed border-border/70"
+        className="rounded-2xl border border-dashed border-[var(--rootsy-bruma-200)]"
         style={{
           padding: 24,
           backgroundColor: CONCEPT_TOKENS.bruma50,
         }}
       >
-        <p className="mb-4 text-xs font-mono text-muted-foreground">
+        <p className="mb-4 text-xs font-mono text-[var(--rootsy-bruma-500)]">
           Box · padding space.300 (24px) · bg bruma-50
         </p>
         <div className="flex flex-wrap gap-4">
@@ -464,7 +457,7 @@ export function BoxPrimitiveDemo() {
           <DemoCard label="Card C" />
         </div>
       </div>
-      <p className="text-sm text-muted-foreground">
+      <p className="text-sm text-[var(--rootsy-bruma-500)]">
         Box envuelve el grupo y aplica margen, padding y fondo. Cada card puede ser
         otro Box anidado.
       </p>
@@ -476,14 +469,14 @@ export function InlinePrimitiveDemo() {
   return (
     <div className="space-y-4">
       <div
-        className="flex flex-wrap rounded-2xl border border-border/70 bg-card p-4"
+        className="flex flex-wrap library-doc-card rounded-2xl p-4"
         style={{ gap: 16 }}
       >
         <DemoCard label="Chip 1" />
         <DemoCard label="Chip 2" />
         <DemoCard label="Chip 3" />
       </div>
-      <p className="font-mono text-xs text-muted-foreground">
+      <p className="font-mono text-xs text-[var(--rootsy-bruma-500)]">
         Inline · gap space.200 (16px)
       </p>
     </div>
@@ -494,14 +487,14 @@ export function StackPrimitiveDemo() {
   return (
     <div className="space-y-4">
       <div
-        className="flex flex-col rounded-2xl border border-border/70 bg-card p-4"
+        className="flex flex-col library-doc-card rounded-2xl p-4"
         style={{ gap: 24 }}
       >
         <p className="text-lg font-semibold">Encabezado</p>
         <DemoCard label="Contenido" />
         <DemoCard label="Contenido" />
       </div>
-      <p className="font-mono text-xs text-muted-foreground">
+      <p className="font-mono text-xs text-[var(--rootsy-bruma-500)]">
         Stack · gap space.300 (24px) entre bloques
       </p>
     </div>
@@ -511,13 +504,13 @@ export function StackPrimitiveDemo() {
 export function CombinedPrimitivesDemo() {
   return (
     <div
-      className="rounded-2xl border border-border/70 p-6"
+      className="rounded-2xl border border-[var(--rootsy-bruma-200)] p-6"
       style={{ backgroundColor: CONCEPT_TOKENS.bruma50 }}
     >
       <div className="flex flex-col" style={{ gap: 32 }}>
         <div>
           <p className="text-xl font-semibold">Página ejemplo</p>
-          <p className="mt-2 text-sm text-muted-foreground">
+          <p className="mt-2 text-sm text-[var(--rootsy-bruma-500)]">
             Stack externo · space.400 entre header y cuerpo
           </p>
         </div>
@@ -538,18 +531,18 @@ export function FigmaAutoLayoutComparison() {
   ]
 
   return (
-    <div className="overflow-hidden rounded-2xl border border-border/70">
-      <div className="grid grid-cols-2 border-b border-border/60 bg-muted/30 px-4 py-2 text-[10px] font-bold uppercase tracking-[0.12em] text-muted-foreground">
+    <div className="library-doc-table-shell overflow-hidden rounded-2xl">
+      <div className="grid grid-cols-2 border-b border-[var(--rootsy-bruma-200)] bg-[var(--rootsy-bruma-50)] px-4 py-2 text-[10px] font-bold uppercase tracking-[0.12em] text-[var(--rootsy-bruma-500)]">
         <span>Primitivo (código)</span>
         <span>Figma Auto Layout</span>
       </div>
       {rows.map((row) => (
         <div
           key={row.primitive}
-          className="grid grid-cols-2 border-b border-border/40 px-4 py-3 last:border-b-0"
+          className="grid grid-cols-2 border-b border-[var(--rootsy-bruma-200)] px-4 py-3 last:border-b-0"
         >
-          <span className="font-mono text-sm text-foreground">{row.primitive}</span>
-          <span className="text-sm text-muted-foreground">{row.figma}</span>
+          <span className="font-mono text-sm text-[var(--rootsy-bruma-900)]">{row.primitive}</span>
+          <span className="text-sm text-[var(--rootsy-bruma-500)]">{row.figma}</span>
         </div>
       ))}
     </div>
@@ -562,12 +555,12 @@ export function PrimitiveMetaCards() {
       {LAYOUT_PRIMITIVES.map((p) => (
         <div
           key={p.id}
-          className="rounded-xl border border-border/70 bg-card p-4 shadow-sm"
+          className="library-doc-card rounded-xl p-4"
         >
-          <p className="text-lg font-semibold text-foreground">{p.title}</p>
-          <p className="text-xs font-medium text-primary">{p.subtitle}</p>
-          <p className="mt-2 text-sm text-muted-foreground">{p.description}</p>
-          <p className="mt-3 rounded-lg bg-muted/50 px-2 py-1.5 font-mono text-[10px] text-muted-foreground">
+          <p className="text-lg font-semibold text-[var(--rootsy-bruma-900)]">{p.title}</p>
+          <p className="text-xs font-medium text-[var(--rootsy-savia-600)]">{p.subtitle}</p>
+          <p className="mt-2 text-sm text-[var(--rootsy-bruma-500)]">{p.description}</p>
+          <p className="mt-3 rounded-lg bg-[var(--rootsy-bruma-50)] px-2 py-1.5 font-mono text-[10px] text-[var(--rootsy-bruma-500)]">
             Figma: {p.figmaHint}
           </p>
         </div>
@@ -578,7 +571,7 @@ export function PrimitiveMetaCards() {
 
 export function NegativeSpacingDemo() {
   return (
-    <div className="relative overflow-hidden rounded-2xl border border-border/70 p-8">
+    <div className="relative library-doc-table-shell overflow-hidden rounded-2xl p-8">
       <div
         className="absolute inset-4 rounded-xl border-2 border-dashed"
         style={{ borderColor: CONCEPT_TOKENS.savia100 }}
@@ -588,13 +581,13 @@ export function NegativeSpacingDemo() {
         style={{
           backgroundColor: CONCEPT_TOKENS.white,
           margin: -8,
-          boxShadow: "0 4px 12px rgba(30, 143, 90, 0.12)",
+          boxShadow: "0 4px 12px color-mix(in srgb, var(--rootsy-savia-600) 12%, transparent)",
         }}
       >
         <p className="font-medium" style={{ color: CONCEPT_TOKENS.savia800 }}>
           Bleed / negative space.100 (−8px)
         </p>
-        <p className="mt-1 text-xs text-muted-foreground">
+        <p className="mt-1 text-xs text-[var(--rootsy-bruma-500)]">
           Rompe el padding del contenedor — útil para imágenes edge-to-edge o
           superposición controlada.
         </p>
@@ -607,7 +600,7 @@ export function TokenUsageStrip({ gapPx }: { gapPx: number }) {
   const style: CSSProperties = { gap: gapPx }
   return (
     <div className="flex items-center" style={style}>
-      <div className="size-6 rounded bg-primary/20" />
+      <div className="size-6 rounded bg-[color-mix(in_srgb,var(--rootsy-savia-600)_20%,transparent)]" />
       <span className="text-sm">Texto</span>
     </div>
   )

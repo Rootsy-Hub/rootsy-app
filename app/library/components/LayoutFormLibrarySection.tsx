@@ -11,7 +11,7 @@ export function LayoutFormLibrarySection() {
       title="Formulario"
       description="Componentes RootsForm vivos — mismas specs que Formulario UI, interactivos en default."
     >
-      <p className="max-w-3xl font-canopy text-sm leading-relaxed text-muted-foreground">
+      <p className="max-w-3xl font-canopy text-sm leading-relaxed text-[var(--rootsy-bruma-500)]">
         {ROOTSY_FORM_MANIFESTO}
       </p>
       <FormsLiveGallery />

@@ -9,7 +9,7 @@ import {
   ROOTSY_BORDER_WIDTHS,
 } from "@/app/library/border/rootsyBorderSystem"
 import { CONCEPT_TOKENS } from "@/app/library/concept/rootsyConceptSystem"
-import { LibraryDoDontPair } from "@/app/library/libraryDocPrimitives"
+import { LibraryDocMetaLabel, LibraryDoDontPair } from "@/app/library/libraryDocPrimitives"
 import { cn } from "@/lib/utils"
 import type { ReactNode } from "react"
 
@@ -31,7 +31,7 @@ function SpecCard({ children, className }: { children: ReactNode; className?: st
 
 function ExampleLabel({ children }: { children: ReactNode }) {
   return (
-    <p className="font-canopy text-[11px] font-medium uppercase tracking-[0.12em] text-muted-foreground">
+    <p className="font-canopy text-[11px] font-medium uppercase tracking-[0.12em] text-[var(--rootsy-bruma-500)]">
       {children}
     </p>
   )
@@ -168,7 +168,7 @@ export function BorderPairingGallery() {
           <div className={cn(demo.className, "px-4 py-6 text-center font-canopy text-sm")}>
             Preview
           </div>
-          <p className="text-center font-canopy text-[11px] text-muted-foreground">{demo.label}</p>
+          <p className="text-center font-canopy text-[11px] text-[var(--rootsy-bruma-500)]">{demo.label}</p>
         </div>
       ))}
     </div>
@@ -201,14 +201,7 @@ export function BorderSegmentDemo() {
 }
 
 function TechnicalSubheading({ children }: { children: ReactNode }) {
-  return (
-    <p
-      className="font-canopy text-xs font-semibold uppercase tracking-wide"
-      style={{ color: CONCEPT_TOKENS.bruma500 }}
-    >
-      {children}
-    </p>
-  )
+  return <LibraryDocMetaLabel>{children}</LibraryDocMetaLabel>
 }
 
 export function BorderTechnicalDetails() {
@@ -216,15 +209,15 @@ export function BorderTechnicalDetails() {
     <div className="space-y-8">
       <div className="space-y-3">
         <TechnicalSubheading>Ancho</TechnicalSubheading>
-        <div className="overflow-x-auto rounded-2xl border border-border/70">
+        <div className="library-doc-table-shell overflow-x-auto rounded-2xl">
           <table className="w-full min-w-[480px] text-left font-canopy text-sm">
             <tbody>
               {ROOTSY_BORDER_WIDTHS.map((row) => (
-                <tr key={row.id} className="border-b border-border/40 last:border-0">
-                  <td className="px-4 py-3 font-mono text-xs text-primary">{row.token}</td>
-                  <td className="px-4 py-3 text-foreground">{row.natureName}</td>
+                <tr key={row.id} className="border-b border-[var(--rootsy-bruma-200)] last:border-0">
+                  <td className="px-4 py-3 font-mono text-xs text-[var(--rootsy-savia-600)]">{row.token}</td>
+                  <td className="px-4 py-3 text-[var(--rootsy-bruma-900)]">{row.natureName}</td>
                   <td className="px-4 py-3 font-mono text-xs">{row.value}</td>
-                  <td className="px-4 py-3 font-mono text-[10px] text-muted-foreground">
+                  <td className="px-4 py-3 font-mono text-[10px] text-[var(--rootsy-bruma-500)]">
                     {row.pairWith}
                   </td>
                 </tr>
@@ -236,16 +229,16 @@ export function BorderTechnicalDetails() {
 
       <div className="space-y-3">
         <TechnicalSubheading>Color</TechnicalSubheading>
-        <div className="overflow-x-auto rounded-2xl border border-border/70">
+        <div className="library-doc-table-shell overflow-x-auto rounded-2xl">
           <table className="w-full min-w-[520px] text-left font-canopy text-sm">
             <tbody>
               {ROOTSY_BORDER_COLOR_TOKENS.map((row) => (
-                <tr key={row.token} className="border-b border-border/40 last:border-0">
-                  <td className="px-4 py-3 font-mono text-xs text-primary">{row.token}</td>
-                  <td className="px-4 py-3 font-mono text-[10px] text-muted-foreground">
+                <tr key={row.token} className="border-b border-[var(--rootsy-bruma-200)] last:border-0">
+                  <td className="px-4 py-3 font-mono text-xs text-[var(--rootsy-savia-600)]">{row.token}</td>
+                  <td className="px-4 py-3 font-mono text-[10px] text-[var(--rootsy-bruma-500)]">
                     {row.tailwind}
                   </td>
-                  <td className="px-4 py-3 text-xs text-muted-foreground">{row.usage}</td>
+                  <td className="px-4 py-3 text-xs text-[var(--rootsy-bruma-500)]">{row.usage}</td>
                 </tr>
               ))}
             </tbody>
@@ -255,14 +248,14 @@ export function BorderTechnicalDetails() {
 
       <div className="space-y-3">
         <TechnicalSubheading>Pairings</TechnicalSubheading>
-        <div className="overflow-x-auto rounded-2xl border border-border/70">
+        <div className="library-doc-table-shell overflow-x-auto rounded-2xl">
           <table className="w-full min-w-[520px] text-left font-canopy text-sm">
             <tbody>
               {ROOTSY_BORDER_PAIRINGS.map((row) => (
-                <tr key={row.id} className="border-b border-border/40 last:border-0">
-                  <td className="px-4 py-3 font-mono text-[10px] text-primary">{row.widthToken}</td>
-                  <td className="px-4 py-3 font-mono text-[10px] text-primary">{row.colorToken}</td>
-                  <td className="px-4 py-3 font-mono text-[10px] text-muted-foreground">
+                <tr key={row.id} className="border-b border-[var(--rootsy-bruma-200)] last:border-0">
+                  <td className="px-4 py-3 font-mono text-[10px] text-[var(--rootsy-savia-600)]">{row.widthToken}</td>
+                  <td className="px-4 py-3 font-mono text-[10px] text-[var(--rootsy-savia-600)]">{row.colorToken}</td>
+                  <td className="px-4 py-3 font-mono text-[10px] text-[var(--rootsy-bruma-500)]">
                     {row.cssExample}
                   </td>
                 </tr>
@@ -274,14 +267,14 @@ export function BorderTechnicalDetails() {
 
       <div className="space-y-3">
         <TechnicalSubheading>Semántica</TechnicalSubheading>
-        <div className="overflow-x-auto rounded-2xl border border-border/70">
+        <div className="library-doc-table-shell overflow-x-auto rounded-2xl">
           <table className="w-full min-w-[520px] text-left font-canopy text-sm">
             <tbody>
               {ROOTSY_BORDER_SEMANTIC.map((row) => (
-                <tr key={row.token} className="border-b border-border/40 last:border-0">
-                  <td className="px-4 py-3 font-mono text-xs text-primary">{row.token}</td>
-                  <td className="px-4 py-3 text-foreground">{row.component}</td>
-                  <td className="px-4 py-3 font-mono text-[10px] text-muted-foreground">
+                <tr key={row.token} className="border-b border-[var(--rootsy-bruma-200)] last:border-0">
+                  <td className="px-4 py-3 font-mono text-xs text-[var(--rootsy-savia-600)]">{row.token}</td>
+                  <td className="px-4 py-3 text-[var(--rootsy-bruma-900)]">{row.component}</td>
+                  <td className="px-4 py-3 font-mono text-[10px] text-[var(--rootsy-bruma-500)]">
                     {row.source}
                   </td>
                 </tr>

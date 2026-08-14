@@ -1,5 +1,6 @@
 "use client"
 
+import { LibraryRelatedLinksSection } from "@/app/library/libraryDocPrimitives"
 import "./rootsySpacingScale.css"
 import {
   SPACING_RELATED_LINKS,
@@ -7,7 +8,6 @@ import {
 } from "@/app/library/spacing/spacingLibraryNav"
 import { SpacingOverviewSection } from "@/app/library/spacing/sections/SpacingOverviewSection"
 import { SpacingPrimitivesSection } from "@/app/library/spacing/sections/SpacingPrimitivesSection"
-import { SpacingRelatedLinks } from "@/app/library/spacing/SpacingDocPrimitives"
 import type { ReactNode } from "react"
 
 type Props = {
@@ -30,13 +30,7 @@ export function SpacingFoundationView({ sectionId }: Props) {
   return (
     <div className="rootsy-spacing-system space-y-10">
       {content}
-      <div className="space-y-3 border-t border-border/60 pt-8">
-        <p className="text-sm font-semibold text-foreground">Relacionado</p>
-        <SpacingRelatedLinks
-          excludeId={sectionId}
-          links={SPACING_RELATED_LINKS}
-        />
-      </div>
+      <LibraryRelatedLinksSection excludeId={sectionId} links={SPACING_RELATED_LINKS} />
     </div>
   )
 }

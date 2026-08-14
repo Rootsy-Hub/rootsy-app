@@ -7,11 +7,33 @@ export type SaleQuoteLineSummary = {
   lineTotal: number
 }
 
+export type SaleQuoteLineDiscount = {
+  label: string
+  amount: number
+}
+
+export type SaleQuoteLineGroupLine = {
+  name: string
+  quantity: number
+  unitListPrice: number
+  listLineTotal: number
+  lineTotal: number
+  discounts: SaleQuoteLineDiscount[]
+}
+
+export type SaleQuoteLineGroup = {
+  id: string
+  category: string
+  lines: SaleQuoteLineGroupLine[]
+  promotionDiscount: SaleQuoteLineDiscount | null
+}
+
 export type SaleQuoteMetadata = {
   comprobanteLabel?: string | null
   paymentLabel?: string | null
   discountLabel?: string | null
   lineSummaries?: SaleQuoteLineSummary[]
+  lineGroups?: SaleQuoteLineGroup[]
 }
 
 export type SaleQuoteTableRow = {

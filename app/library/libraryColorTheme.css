@@ -13,15 +13,15 @@
 
   /* Puente shadcn → bruma/savia (sin nature-palette legacy). */
   --background: var(--color-surface, var(--rootsy-bruma-100));
-  --foreground: var(--color-text-primary, var(--rootsy-bruma-900));
+  --foreground: var(--rootsy-bruma-900);
   --card: var(--color-elevated, var(--rootsy-white));
-  --card-foreground: var(--color-text-primary, var(--rootsy-bruma-900));
+  --card-foreground: var(--rootsy-bruma-900);
   --popover: var(--color-elevated, var(--rootsy-white));
-  --popover-foreground: var(--color-text-primary, var(--rootsy-bruma-900));
+  --popover-foreground: var(--rootsy-bruma-900);
   --secondary: var(--rootsy-bruma-50);
-  --secondary-foreground: var(--color-text-primary, var(--rootsy-bruma-900));
+  --secondary-foreground: var(--rootsy-bruma-900);
   --muted: var(--rootsy-bruma-50);
-  --muted-foreground: var(--color-text-secondary, var(--rootsy-bruma-500));
+  --muted-foreground: var(--rootsy-bruma-500);
   --accent: var(--rootsy-savia-100);
   --accent-foreground: var(--rootsy-savia-900);
   --primary: var(--color-action, var(--rootsy-savia-600));
@@ -31,6 +31,17 @@
   --border: var(--color-border, var(--rootsy-bruma-200));
   --input: var(--rootsy-bruma-200);
   --ring: var(--rootsy-savia-700);
+}
+
+/* Fuerza bruma en utilidades shadcn — evita oklch Paradise Park residual. */
+.rootsy-theme-library.rootsy-app-light .text-foreground,
+.rootsy-library-shell .text-foreground {
+  color: var(--rootsy-bruma-900);
+}
+
+.rootsy-theme-library.rootsy-app-light .text-muted-foreground,
+.rootsy-library-shell .text-muted-foreground {
+  color: var(--rootsy-bruma-500);
 }
 
 .rootsy-library-shell > .relative.flex {
@@ -210,58 +221,39 @@
   color: var(--rootsy-savia-700);
 }
 
-/* ── Estadísticas · nav lateral secciones ── */
-.statistics-section-nav.library-nav-surface-light {
-  gap: 0.125rem;
+/* ── Nav en superficie sombra (Estadísticas · rail library) ── */
+.library-nav-surface-dark {
+  --library-nav-text: var(--rootsy-sombra-300);
+  --library-nav-text-hover: var(--rootsy-bruma-50);
+  --library-nav-text-active: var(--rootsy-bruma-50);
 }
 
-.statistics-section-nav.library-nav-surface-light .library-nav-item {
-  min-height: 2.5rem;
-  padding: 0.4375rem 0.625rem;
+.library-nav-surface-dark .library-nav-item {
+  width: 100%;
   border: 1px solid transparent;
-  box-shadow: none;
-  transition:
-    color 0.12s ease,
-    background-color 0.12s ease,
-    border-color 0.12s ease,
-    box-shadow 0.12s ease;
 }
 
-.statistics-section-nav.library-nav-surface-light
-  .library-nav-item:not(.library-nav-item--active):hover {
-  background-color: var(--rootsy-bruma-50);
-  border-color: transparent;
-  box-shadow: none;
+.library-nav-surface-dark .library-nav-item:hover {
+  background-color: color-mix(in srgb, var(--rootsy-white) 6%, transparent);
 }
 
-.statistics-section-nav.library-nav-surface-light .library-nav-item--active {
-  padding-left: 0.625rem;
+.library-nav-surface-dark .library-nav-item--active {
   font-weight: 600;
-  color: var(--rootsy-bruma-900);
-  background-color: color-mix(in srgb, var(--rootsy-savia-600) 14%, white);
-  border-color: color-mix(in srgb, var(--rootsy-savia-600) 30%, var(--rootsy-bruma-200));
+  background-color: color-mix(in srgb, var(--rootsy-savia-600) 18%, var(--rootsy-sombra-700));
+  border-color: color-mix(in srgb, var(--rootsy-savia-600) 30%, var(--rootsy-sombra-border));
   box-shadow:
-    0 0 0 1px color-mix(in srgb, var(--rootsy-savia-600) 16%, transparent),
-    0 2px 6px rgb(5 8 7 / 0.06);
+    0 0 0 1px color-mix(in srgb, var(--rootsy-savia-600) 20%, transparent),
+    0 2px 8px rgb(5 8 7 / 0.2);
 }
 
-.statistics-section-nav.library-nav-surface-light
-  .library-nav-item--active:hover {
-  background-color: color-mix(in srgb, var(--rootsy-savia-600) 16%, white);
-  border-color: color-mix(in srgb, var(--rootsy-savia-600) 36%, var(--rootsy-bruma-200));
+.library-nav-surface-dark .library-nav-item--active:hover {
+  background-color: color-mix(in srgb, var(--rootsy-savia-600) 22%, var(--rootsy-sombra-700));
+  border-color: color-mix(in srgb, var(--rootsy-savia-600) 36%, var(--rootsy-sombra-border));
 }
 
-.statistics-section-nav.library-nav-surface-light
-  .library-nav-item:not(.library-nav-item--active)
-  .library-nav-item-icon {
-  opacity: 0.72;
-}
-
-.statistics-section-nav.library-nav-surface-light
-  .library-nav-item:not(.library-nav-item--active):hover
-  .library-nav-item-icon {
-  opacity: 0.92;
-  color: var(--rootsy-bruma-700);
+.library-nav-surface-dark .library-nav-item--active .library-nav-item-icon {
+  opacity: 1;
+  color: var(--rootsy-savia-400);
 }
 
 /* ── Accordion toggle ── */
@@ -333,14 +325,44 @@
   border-color: var(--color-border, var(--rootsy-bruma-200));
 }
 
-.rootsy-library-shell .library-spec-card {
-  border-color: var(--color-border, var(--rootsy-bruma-200));
+.rootsy-library-shell .library-related-links {
+  border-top-color: var(--rootsy-bruma-200);
+}
+
+.rootsy-theme-library.rootsy-app-light .border-border,
+.rootsy-library-shell .border-border,
+.rootsy-theme-library.rootsy-app-light [class*="border-border"],
+.rootsy-library-shell [class*="border-border"] {
+  border-color: var(--rootsy-bruma-200);
+}
+
+.rootsy-theme-library.rootsy-app-light .divide-border,
+.rootsy-library-shell .divide-border,
+.rootsy-theme-library.rootsy-app-light [class*="divide-border"],
+.rootsy-library-shell [class*="divide-border"] {
+  border-color: var(--rootsy-bruma-200);
+}
+
+/* ── Superficies de documentación (bruma · loseta) ── */
+.rootsy-library-shell .library-spec-card,
+.rootsy-library-shell .library-doc-card,
+.rootsy-library-shell .library-doc-panel,
+.rootsy-library-shell .library-doc-table-shell {
+  border: 1px solid var(--color-border, var(--rootsy-bruma-200));
   background-color: var(--color-elevated, var(--rootsy-white));
   box-shadow: none;
 }
 
-.rootsy-library-shell .library-related-links {
-  border-color: var(--color-border, var(--rootsy-bruma-200));
+.rootsy-library-shell .library-doc-do-panel {
+  border: 1px solid color-mix(in srgb, var(--rootsy-savia-600) 25%, var(--rootsy-bruma-200));
+  background-color: color-mix(in srgb, var(--rootsy-savia-600) 6%, white);
+  color: var(--rootsy-savia-800);
+}
+
+.rootsy-library-shell .library-doc-dont-panel {
+  border: 1px solid #fecaca;
+  background-color: #fef2f2;
+  color: #b91c1c;
 }
 
 /* Scroll minimal — thumb pill, track invisible */

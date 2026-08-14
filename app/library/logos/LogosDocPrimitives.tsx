@@ -72,10 +72,10 @@ export function LogosAnatomyGrid() {
       {LOGO_ANATOMY.map((item) => (
         <div
           key={item.term}
-          className="rounded-xl border border-border/70 bg-card px-4 py-3 shadow-sm"
+          className="library-doc-card rounded-xl px-4 py-3"
         >
-          <p className="text-sm font-semibold text-foreground">{item.term}</p>
-          <p className="mt-1 text-sm leading-relaxed text-muted-foreground">
+          <p className="text-sm font-semibold text-[var(--rootsy-bruma-900)]">{item.term}</p>
+          <p className="mt-1 text-sm leading-relaxed text-[var(--rootsy-bruma-500)]">
             {item.definition}
           </p>
         </div>
@@ -118,23 +118,23 @@ function LogoAssetCard({
   variantTag?: string
 }) {
   return (
-    <div className="overflow-hidden rounded-2xl border border-border/70 bg-card shadow-sm">
+    <div className="library-doc-panel overflow-hidden rounded-2xl">
       <LogoPreviewSurface bg={previewBg}>
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img src={src} alt={alt} className="h-7 w-auto max-w-full object-contain" />
       </LogoPreviewSurface>
-      <div className="space-y-2 border-t border-border/60 px-4 py-3">
+      <div className="space-y-2 border-t border-[var(--rootsy-bruma-200)] px-4 py-3">
         <div className="flex flex-wrap items-center gap-2">
-          <p className="text-sm font-semibold text-foreground">{label}</p>
+          <p className="text-sm font-semibold text-[var(--rootsy-bruma-900)]">{label}</p>
           {variantTag ? (
-            <span className="rounded-md bg-primary/10 px-2 py-0.5 font-mono text-[10px] uppercase tracking-wide text-primary">
+            <span className="rounded-md bg-[color-mix(in_srgb,var(--rootsy-savia-600)_10%,transparent)] px-2 py-0.5 font-mono text-[10px] uppercase tracking-wide text-[var(--rootsy-savia-600)]">
               {variantTag}
             </span>
           ) : null}
         </div>
-        <p className="text-xs leading-relaxed text-muted-foreground">{usage}</p>
+        <p className="text-xs leading-relaxed text-[var(--rootsy-bruma-500)]">{usage}</p>
         {assetPath ? (
-          <p className="truncate font-mono text-[10px] text-muted-foreground">{assetPath}</p>
+          <p className="truncate font-mono text-[10px] text-[var(--rootsy-bruma-500)]">{assetPath}</p>
         ) : null}
       </div>
     </div>
@@ -217,27 +217,27 @@ function PopIdentityVariantCard({
     )
 
   return (
-    <div className="overflow-hidden rounded-2xl border border-border/70 bg-card shadow-sm">
+    <div className="library-doc-panel overflow-hidden rounded-2xl">
       {preview}
-      <div className="space-y-2 border-t border-border/60 px-4 py-3">
-        <p className="text-sm font-semibold text-foreground">{meta.label}</p>
-        <p className="text-xs leading-relaxed text-muted-foreground">{meta.usage}</p>
-        <p className="truncate font-mono text-[10px] text-muted-foreground">{meta.source}</p>
+      <div className="space-y-2 border-t border-[var(--rootsy-bruma-200)] px-4 py-3">
+        <p className="text-sm font-semibold text-[var(--rootsy-bruma-900)]">{meta.label}</p>
+        <p className="text-xs leading-relaxed text-[var(--rootsy-bruma-500)]">{meta.usage}</p>
+        <p className="truncate font-mono text-[10px] text-[var(--rootsy-bruma-500)]">{meta.source}</p>
         <div className="flex flex-wrap gap-1 pt-0.5">
           {meta.fields.map((field) => (
             <span
               key={field}
-              className="rounded-md bg-muted px-2 py-0.5 font-mono text-[10px] text-muted-foreground"
+              className="rounded-md bg-[var(--rootsy-bruma-50)] px-2 py-0.5 font-mono text-[10px] text-[var(--rootsy-bruma-500)]"
             >
               {field}
             </span>
           ))}
           {variantId === "ticket-logo" ? (
-            <span className="rounded-md bg-muted px-2 py-0.5 font-mono text-[10px] text-muted-foreground">
+            <span className="rounded-md bg-[var(--rootsy-bruma-50)] px-2 py-0.5 font-mono text-[10px] text-[var(--rootsy-bruma-500)]">
               {POP_IDENTITY_SPECIMEN.ticketLogoUrl}
             </span>
           ) : variantId !== "home-picker-initials" ? (
-            <span className="rounded-md bg-muted px-2 py-0.5 font-mono text-[10px] text-muted-foreground">
+            <span className="rounded-md bg-[var(--rootsy-bruma-50)] px-2 py-0.5 font-mono text-[10px] text-[var(--rootsy-bruma-500)]">
               {POP_IDENTITY_SPECIMEN.imageUrl}
             </span>
           ) : null}
@@ -343,7 +343,7 @@ function PopIdentityInlineDemo({ variantId }: { variantId: PopIdentityVariantId 
           size="sm"
           shape="rounded-square"
         />
-        <span className="truncate text-sm font-semibold text-foreground/90">
+        <span className="truncate text-sm font-semibold text-[var(--rootsy-bruma-900)]/90">
           {specimen.name}
         </span>
       </div>
@@ -360,8 +360,8 @@ function PopIdentityInlineDemo({ variantId }: { variantId: PopIdentityVariantId 
           shape="rounded-square"
         />
         <div className="min-w-0">
-          <p className="truncate text-sm font-semibold text-foreground">{specimen.name}</p>
-          <p className="truncate text-xs text-muted-foreground">{specimen.address}</p>
+          <p className="truncate text-sm font-semibold text-[var(--rootsy-bruma-900)]">{specimen.name}</p>
+          <p className="truncate text-xs text-[var(--rootsy-bruma-500)]">{specimen.address}</p>
         </div>
       </div>
     )
@@ -374,7 +374,7 @@ export function PopHomeScreenDemo() {
   const specimen = POP_IDENTITY_SPECIMEN
 
   return (
-    <div className="overflow-hidden rounded-2xl border border-border/70 shadow-sm">
+    <div className="library-doc-panel overflow-hidden rounded-2xl">
       <div className="logo-preview-surface logo-preview-surface--home-dark px-4 py-10">
         <p className="text-center text-sm text-white/70">
           A qué punto de venta querés ingresar?
@@ -416,7 +416,7 @@ export function PopHomeScreenDemo() {
           </li>
         </ul>
       </div>
-      <p className="border-t border-border/60 bg-card px-4 py-3 font-mono text-[11px] text-muted-foreground">
+      <p className="border-t border-[var(--rootsy-bruma-200)] bg-[var(--rootsy-white)] px-4 py-3 font-mono text-[11px] text-[var(--rootsy-bruma-500)]">
         app/home/page.tsx · espécimen Narciso — {POP_IDENTITY_SPECIMEN.imageUrl}
       </p>
     </div>
@@ -426,11 +426,11 @@ export function PopHomeScreenDemo() {
 export function PopHeaderLogoDemo() {
   return (
     <div className="space-y-3">
-      <p className="text-[11px] font-medium uppercase tracking-[0.12em] text-muted-foreground">
+      <p className="text-[11px] font-medium uppercase tracking-[0.12em] text-[var(--rootsy-bruma-500)]">
         Header workspace · avatar cuadrado + nombre
       </p>
       <PopIdentityInlineDemo variantId="header-compact" />
-      <p className="font-mono text-[11px] text-muted-foreground">
+      <p className="font-mono text-[11px] text-[var(--rootsy-bruma-500)]">
         size-8 · rounded-lg · ring-1 · truncate — DataWorkspaceLayout
       </p>
     </div>
@@ -440,22 +440,22 @@ export function PopHeaderLogoDemo() {
 export function LogoClearanceDemo() {
   return (
     <div className="grid gap-4 lg:grid-cols-2">
-      <div className="rounded-2xl border border-border/70 bg-card p-4 shadow-sm">
-        <p className="text-sm font-semibold text-foreground">Rootsy · clearance</p>
-        <p className="mt-1 text-xs text-muted-foreground">{LOGO_CLEARANCE.rootsy.ideal}</p>
+      <div className="library-doc-card rounded-2xl p-4">
+        <p className="text-sm font-semibold text-[var(--rootsy-bruma-900)]">Rootsy · clearance</p>
+        <p className="mt-1 text-xs text-[var(--rootsy-bruma-500)]">{LOGO_CLEARANCE.rootsy.ideal}</p>
         <div className="mt-4 flex justify-center rounded-xl bg-[#16704a] py-6">
           <div className="logo-clearance-demo">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src="/rootsy-logo.svg" alt="Rootsy" className="h-7 w-auto" />
           </div>
         </div>
-        <p className="mt-3 font-mono text-[10px] text-muted-foreground">
+        <p className="mt-3 font-mono text-[10px] text-[var(--rootsy-bruma-500)]">
           Mínimo: {LOGO_CLEARANCE.rootsy.minimum}
         </p>
       </div>
-      <div className="rounded-2xl border border-border/70 bg-card p-4 shadow-sm">
-        <p className="text-sm font-semibold text-foreground">POP · clearance</p>
-        <p className="mt-1 text-xs text-muted-foreground">{LOGO_CLEARANCE.pop.ideal}</p>
+      <div className="library-doc-card rounded-2xl p-4">
+        <p className="text-sm font-semibold text-[var(--rootsy-bruma-900)]">POP · clearance</p>
+        <p className="mt-1 text-xs text-[var(--rootsy-bruma-500)]">{LOGO_CLEARANCE.pop.ideal}</p>
         <div className="mt-4 flex justify-center rounded-xl bg-[#070a09] py-8">
           <div className="logo-clearance-demo rounded-full border-dashed p-3">
             <PopAvatar
@@ -467,7 +467,7 @@ export function LogoClearanceDemo() {
             />
           </div>
         </div>
-        <p className="mt-3 font-mono text-[10px] text-muted-foreground">
+        <p className="mt-3 font-mono text-[10px] text-[var(--rootsy-bruma-500)]">
           Mínimo: {LOGO_CLEARANCE.pop.minimum}
         </p>
       </div>
@@ -482,7 +482,7 @@ export function LogoGuidelinesGrid() {
         <p className="text-xs font-bold uppercase tracking-[0.14em] text-emerald-700">Do</p>
         <ul className="mt-3 space-y-2">
           {LOGO_GUIDELINES.do.map((item) => (
-            <li key={item} className="flex gap-2 text-sm text-foreground">
+            <li key={item} className="flex gap-2 text-sm text-[var(--rootsy-bruma-900)]">
               <span className="text-emerald-600" aria-hidden>
                 ✓
               </span>
@@ -495,7 +495,7 @@ export function LogoGuidelinesGrid() {
         <p className="text-xs font-bold uppercase tracking-[0.14em] text-red-700">Don&apos;t</p>
         <ul className="mt-3 space-y-2">
           {LOGO_GUIDELINES.dont.map((item) => (
-            <li key={item} className="flex gap-2 text-sm text-foreground">
+            <li key={item} className="flex gap-2 text-sm text-[var(--rootsy-bruma-900)]">
               <span className="text-red-600" aria-hidden>
                 ✕
               </span>
@@ -510,29 +510,29 @@ export function LogoGuidelinesGrid() {
 
 export function LogoAttributionDemo() {
   return (
-    <div className="rounded-2xl border border-border/70 bg-card p-5 shadow-sm">
-      <p className="text-[11px] font-medium uppercase tracking-[0.12em] text-muted-foreground">
+    <div className="library-doc-card rounded-2xl p-5">
+      <p className="text-[11px] font-medium uppercase tracking-[0.12em] text-[var(--rootsy-bruma-500)]">
         Attribution · marketing externo
       </p>
       <div className="mt-4 flex flex-col items-center gap-4 sm:flex-row sm:justify-center">
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img src="/rootsy-logo.svg" alt="Rootsy" className="h-6 w-auto opacity-90" />
-        <span className="hidden text-muted-foreground sm:inline" aria-hidden>
+        <span className="hidden text-[var(--rootsy-bruma-500)] sm:inline" aria-hidden>
           +
         </span>
-        <div className="flex items-center gap-2.5 rounded-xl border border-border/60 bg-muted/20 px-3 py-2">
+        <div className="flex items-center gap-2.5 rounded-xl border border-[var(--rootsy-bruma-200)] bg-[var(--rootsy-bruma-50)] px-3 py-2">
           <PopAvatar
             imageUrl={POP_IDENTITY_SPECIMEN.imageUrl}
             initials={POP_IDENTITY_SPECIMEN.initials}
             size="sm"
             shape="rounded-square"
           />
-          <span className="text-sm font-semibold text-foreground">
+          <span className="text-sm font-semibold text-[var(--rootsy-bruma-900)]">
             {POP_IDENTITY_SPECIMEN.name}
           </span>
         </div>
       </div>
-      <p className="mt-4 text-center text-xs text-muted-foreground">
+      <p className="mt-4 text-center text-xs text-[var(--rootsy-bruma-500)]">
         Usar cuando el contexto Rootsy no es obvio — p. ej. anuncios, partners o material impreso
         del negocio.
       </p>

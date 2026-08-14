@@ -1,5 +1,6 @@
 "use client"
 
+import { LibraryRelatedLinksSection } from "@/app/library/libraryDocPrimitives"
 import {
   LayoutsModuleBackdropFallbackDemo,
   LayoutsModuleBackdropFallbackSpecs,
@@ -19,10 +20,6 @@ import {
   getLayoutsPageMeta,
 } from "@/app/library/layouts/layoutsLibraryNav"
 import { LayoutsSystemHero } from "@/app/library/layouts/LayoutsDocShared"
-import {
-  LibraryDocSection,
-  LibraryRelatedLinks,
-} from "@/app/library/libraryDocPrimitives"
 
 type Props = {
   sectionId: string
@@ -69,7 +66,7 @@ export function LayoutsModuleFoundationView({ sectionId }: Props) {
             <LayoutsModuleHeaderSpecs />
           </LayoutsModuleDocSubsection>
           <LayoutsModuleDocSubsection title="2.2 · Componente">
-            <p className="mb-4 text-sm text-muted-foreground">
+            <p className="mb-4 text-sm text-[var(--rootsy-bruma-500)]">
               Header reutilizable del producto — cristal sombra · savia con{" "}
               <code className="text-xs">RootsIconButton</code> tema{" "}
               <code className="text-xs">pos</code>. El scope{" "}
@@ -91,13 +88,7 @@ export function LayoutsModuleFoundationView({ sectionId }: Props) {
         </div>
       </LibraryDocSection>
 
-      <div className="space-y-3 border-t border-border/60 pt-8">
-        <p className="text-sm font-semibold text-foreground">Relacionado</p>
-        <LibraryRelatedLinks
-          excludeId={sectionId}
-          links={LAYOUTS_RELATED_LINKS}
-        />
-      </div>
+      <LibraryRelatedLinksSection excludeId={sectionId} links={LAYOUTS_RELATED_LINKS} />
     </div>
   )
 }

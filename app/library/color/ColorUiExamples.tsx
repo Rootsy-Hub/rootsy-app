@@ -21,12 +21,12 @@ function ExampleWrap({
   return (
     <div className="space-y-3">
       <div>
-        <p className="font-canopy text-sm font-semibold text-foreground">{title}</p>
-        <p className="mt-0.5 font-mono text-[10px] text-muted-foreground">{foundations}</p>
+        <p className="font-canopy text-sm font-semibold text-[var(--rootsy-bruma-900)]">{title}</p>
+        <p className="mt-0.5 font-mono text-[10px] text-[var(--rootsy-bruma-500)]">{foundations}</p>
       </div>
       {children}
       {caption ? (
-        <p className="font-stream text-xs leading-relaxed text-muted-foreground">{caption}</p>
+        <p className="font-stream text-xs leading-relaxed text-[var(--rootsy-bruma-500)]">{caption}</p>
       ) : null}
     </div>
   )

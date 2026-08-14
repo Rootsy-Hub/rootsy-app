@@ -10,6 +10,7 @@ import {
   statisticsLosetaCardBodyClass,
   statisticsLosetaCardClass,
   statisticsSectionHeadingClassNames,
+  statisticsSectionPageTitleClass,
   statisticsUpcomingItemClass,
 } from "@/components/statistics/statisticsWorkspaceStyles"
 import { StatisticsSectionFilters } from "@/components/statistics/StatisticsSectionFilters"
@@ -25,17 +26,23 @@ function StatisticsSectionHeading({
   title,
   description,
   className,
+  prominent = false,
 }: {
   title: string
   description?: string
   className?: string
+  prominent?: boolean
 }) {
-  const { title: titleClass, description: descriptionClass } =
+  const { title: blockTitleClass, description: descriptionClass } =
     statisticsSectionHeadingClassNames()
 
   return (
     <div className={cn("mb-3 space-y-1", className)}>
-      <h2 className={titleClass}>{title}</h2>
+      <h2
+        className={prominent ? statisticsSectionPageTitleClass : blockTitleClass}
+      >
+        {title}
+      </h2>
       {description ? <p className={descriptionClass}>{description}</p> : null}
     </div>
   )
@@ -51,11 +58,12 @@ function StatisticsSectionTitleRow({
   filters?: ReactNode
 }) {
   return (
-    <div className="mb-3 flex flex-wrap items-end justify-between gap-3">
+    <div className="mb-3 flex flex-wrap items-start justify-between gap-3">
       <StatisticsSectionHeading
         title={title}
         description={description}
         className="mb-0 min-w-0 flex-1"
+        prominent
       />
       {filters}
     </div>
@@ -195,10 +203,6 @@ export function StatisticsSectionPanel({
       />
 
       <section>
-        <StatisticsSectionHeading
-          title="Indicadores del período"
-          description="Valores del período seleccionado y variación vs. el anterior"
-        />
         <StatisticsCompareKpiRow
           metrics={data?.comparison ?? []}
           loading={loading}

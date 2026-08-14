@@ -178,7 +178,7 @@ export function LayoutsOperarTicketDemoShell({
   return (
     <div
       className={cn(
-        "overflow-hidden rounded-2xl border border-border/70",
+        "library-doc-table-shell overflow-hidden rounded-2xl",
         heightClass,
         className,
       )}
@@ -199,23 +199,23 @@ export function LayoutsOperarTicketProposalMeta({
   proposal: LayoutsOperarTicketProposal
 }) {
   return (
-    <div className="space-y-2 rounded-xl border border-border/70 bg-muted/20 p-4">
+    <div className="space-y-2 rounded-xl border border-[var(--rootsy-bruma-200)] bg-[var(--rootsy-bruma-50)] p-4">
       <div className="flex flex-wrap items-center gap-2">
-        <span className="inline-flex size-7 items-center justify-center rounded-md bg-primary/10 font-mono text-xs font-bold text-primary">
+        <span className="inline-flex size-7 items-center justify-center rounded-md bg-[color-mix(in_srgb,var(--rootsy-savia-600)_10%,transparent)] font-mono text-xs font-bold text-[var(--rootsy-savia-600)]">
           {proposal.letter}
         </span>
-        <h5 className="text-sm font-semibold text-foreground">{proposal.title}</h5>
+        <h5 className="text-sm font-semibold text-[var(--rootsy-bruma-900)]">{proposal.title}</h5>
         {proposal.recommended ? (
-          <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-primary">
+          <span className="rounded-full bg-[color-mix(in_srgb,var(--rootsy-savia-600)_10%,transparent)] px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-[var(--rootsy-savia-600)]">
             Recomendada
           </span>
         ) : null}
       </div>
-      <p className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
+      <p className="font-mono text-[10px] uppercase tracking-widest text-[var(--rootsy-bruma-500)]">
         {proposal.pairingLabel}
       </p>
-      <p className="text-sm text-muted-foreground">{proposal.summary}</p>
-      <p className="text-xs leading-relaxed text-muted-foreground/90">{proposal.uxNote}</p>
+      <p className="text-sm text-[var(--rootsy-bruma-500)]">{proposal.summary}</p>
+      <p className="text-xs leading-relaxed text-[var(--rootsy-bruma-500)]/90">{proposal.uxNote}</p>
     </div>
   )
 }

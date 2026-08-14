@@ -37,7 +37,7 @@ export function StatisticsSectionFilters({
   return (
     <div
       className={cn(
-        "flex shrink-0 flex-wrap items-end justify-end gap-2",
+        "flex shrink-0 flex-wrap items-start justify-end gap-2",
         className,
       )}
     >

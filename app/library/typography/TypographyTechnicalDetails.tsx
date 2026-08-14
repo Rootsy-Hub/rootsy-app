@@ -1,5 +1,6 @@
 "use client"
 
+import { LibraryDocMetaLabel } from "@/app/library/libraryDocPrimitives"
 import { CONCEPT_TOKENS } from "@/app/library/concept/rootsyConceptSystem"
 import {
   ROOTSY_BODY_STYLES,
@@ -40,14 +41,7 @@ function TechnicalCard({
 }
 
 function TechnicalSubheading({ children }: { children: ReactNode }) {
-  return (
-    <p
-      className="mb-3 text-xs font-semibold uppercase tracking-wide"
-      style={{ color: CONCEPT_TOKENS.bruma500 }}
-    >
-      {children}
-    </p>
-  )
+  return <LibraryDocMetaLabel className="mb-3">{children}</LibraryDocMetaLabel>
 }
 
 function specFontClass(id: RootsyTypefaceSpec["id"]) {

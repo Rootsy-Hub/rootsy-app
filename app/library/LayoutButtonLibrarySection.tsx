@@ -11,7 +11,7 @@ export function LayoutButtonLibrarySection() {
       title="Botones"
       description="Componentes Roots*Button vivos — mismas specs que Botones UI, interactivos en default."
     >
-      <p className="max-w-3xl font-canopy text-sm leading-relaxed text-muted-foreground">
+      <p className="max-w-3xl font-canopy text-sm leading-relaxed text-[var(--rootsy-bruma-500)]">
         {ROOTSY_BUTTON_MANIFESTO}
       </p>
       <ButtonsLiveGallery />

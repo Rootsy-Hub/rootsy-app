@@ -65,7 +65,7 @@ export function ArticleDeleteAlertLibraryDemo() {
         onConfirmDelete={handleClose}
       />
 
-      <div className="mt-3 overflow-hidden rounded-2xl border border-dashed border-border/70 p-4">
+      <div className="mt-3 overflow-hidden rounded-2xl border border-dashed border-[var(--rootsy-bruma-200)] p-4">
         <div className={cn("pointer-events-none shadow-md", rootsAlertDialogSurfaceClass)}>
           <div className={rootsAlertDialogContentClass}>
             <div className="space-y-2">

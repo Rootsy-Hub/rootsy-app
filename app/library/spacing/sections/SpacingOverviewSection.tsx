@@ -61,16 +61,16 @@ export function SpacingOverviewSection() {
           description="Mismo token, distintas densidades."
         >
           <div className="grid gap-4 sm:grid-cols-3">
-            <div className="rounded-xl border border-border/70 bg-card p-4">
-              <p className="font-mono text-xs text-muted-foreground">space.050 · Rocío</p>
+            <div className="library-doc-card rounded-xl p-4">
+              <p className="font-mono text-xs text-[var(--rootsy-bruma-500)]">space.050 · Rocío</p>
               <TokenUsageStrip gapPx={4} />
             </div>
-            <div className="rounded-xl border border-border/70 bg-card p-4">
-              <p className="font-mono text-xs text-muted-foreground">space.100 · Hoja</p>
+            <div className="library-doc-card rounded-xl p-4">
+              <p className="font-mono text-xs text-[var(--rootsy-bruma-500)]">space.100 · Hoja</p>
               <TokenUsageStrip gapPx={8} />
             </div>
-            <div className="rounded-xl border border-border/70 bg-card p-4">
-              <p className="font-mono text-xs text-muted-foreground">space.200 · Rama</p>
+            <div className="library-doc-card rounded-xl p-4">
+              <p className="font-mono text-xs text-[var(--rootsy-bruma-500)]">space.200 · Rama</p>
               <TokenUsageStrip gapPx={16} />
             </div>
           </div>

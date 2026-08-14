@@ -162,13 +162,13 @@ function ModulePopWorkspaceHeaderDemo() {
 
 function SpecTable({ rows }: { rows: readonly { token: string; value: string }[] }) {
   return (
-    <div className="overflow-x-auto rounded-xl border border-border/70">
+    <div className="library-doc-table-shell overflow-x-auto rounded-xl">
       <table className="w-full min-w-[420px] text-left text-sm">
         <tbody>
           {rows.map((row) => (
-            <tr key={row.token} className="border-b border-border/40 last:border-0">
-              <td className="px-3 py-2 font-mono text-[11px] text-primary">{row.token}</td>
-              <td className="px-3 py-2 text-muted-foreground">{row.value}</td>
+            <tr key={row.token} className="border-b border-[var(--rootsy-bruma-200)] last:border-0">
+              <td className="px-3 py-2 font-mono text-[11px] text-[var(--rootsy-savia-600)]">{row.token}</td>
+              <td className="px-3 py-2 text-[var(--rootsy-bruma-500)]">{row.value}</td>
             </tr>
           ))}
         </tbody>
@@ -215,7 +215,7 @@ function DemoFrame({
   return (
     <div
       className={cn(
-        "relative mx-auto max-w-4xl overflow-hidden rounded-2xl border border-border/70 shadow-sm",
+        "relative mx-auto max-w-4xl library-doc-panel overflow-hidden rounded-2xl",
         className,
       )}
       style={{ height, ...style }}
@@ -234,7 +234,7 @@ export function LayoutsModuleDocSubsection({
 }) {
   return (
     <div className="space-y-3">
-      <h4 className="text-sm font-semibold text-foreground">{title}</h4>
+      <h4 className="text-sm font-semibold text-[var(--rootsy-bruma-900)]">{title}</h4>
       {children}
     </div>
   )
@@ -544,13 +544,13 @@ export function LayoutsModuleContentTypesGrid() {
         <Link
           key={id}
           href={librarySectionHref(meta.librarySectionId)}
-          className="group flex flex-col gap-2 rounded-xl border border-border/70 bg-card p-4 transition-colors hover:border-primary/30 hover:bg-muted/30"
+          className="group flex flex-col gap-2 library-doc-card rounded-xl p-4 transition-colors hover:border-primary/30 hover:bg-[var(--rootsy-bruma-50)]"
         >
           <div className="flex items-center justify-between gap-2">
-            <span className="text-sm font-semibold text-foreground">{meta.label}</span>
-            <ArrowRight className="size-4 text-muted-foreground transition-transform group-hover:translate-x-0.5 group-hover:text-primary" aria-hidden />
+            <span className="text-sm font-semibold text-[var(--rootsy-bruma-900)]">{meta.label}</span>
+            <ArrowRight className="size-4 text-[var(--rootsy-bruma-500)] transition-transform group-hover:translate-x-0.5 group-hover:text-[var(--rootsy-savia-600)]" aria-hidden />
           </div>
-          <p className="text-xs text-muted-foreground">{meta.summary}</p>
+          <p className="text-xs text-[var(--rootsy-bruma-500)]">{meta.summary}</p>
         </Link>
       ))}
     </div>
@@ -559,17 +559,17 @@ export function LayoutsModuleContentTypesGrid() {
 
 export function LayoutsModuleOverviewStrip() {
   return (
-    <div className="flex flex-wrap items-center gap-2 font-mono text-[10px] uppercase tracking-wider text-muted-foreground">
-      <span className="inline-flex items-center gap-1 rounded-md bg-muted px-2 py-1">
+    <div className="flex flex-wrap items-center gap-2 font-mono text-[10px] uppercase tracking-wider text-[var(--rootsy-bruma-500)]">
+      <span className="inline-flex items-center gap-1 rounded-md bg-[var(--rootsy-bruma-50)] px-2 py-1">
         <ImageIcon className="size-3" aria-hidden />
         fondo
       </span>
       <span aria-hidden>→</span>
-      <span className="rounded-md bg-muted px-2 py-1">header glass</span>
+      <span className="rounded-md bg-[var(--rootsy-bruma-50)] px-2 py-1">header glass</span>
       <span aria-hidden>→</span>
-      <span className="rounded-md bg-muted px-2 py-1">content bruma</span>
+      <span className="rounded-md bg-[var(--rootsy-bruma-50)] px-2 py-1">content bruma</span>
       <span aria-hidden>→</span>
-      <span className="rounded-md bg-primary/10 px-2 py-1 text-primary">tipo</span>
+      <span className="rounded-md bg-[color-mix(in_srgb,var(--rootsy-savia-600)_10%,transparent)] px-2 py-1 text-[var(--rootsy-savia-600)]">tipo</span>
     </div>
   )
 }

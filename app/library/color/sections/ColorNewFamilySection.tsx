@@ -96,8 +96,8 @@ export function ColorNewFamilySection({ sectionId }: Props) {
           >
             <div className="grid gap-3 lg:grid-cols-2">
               <div>
-                <p className="mb-2 font-canopy text-xs text-muted-foreground">Sombra · catálogo</p>
-                <div className="flex overflow-hidden rounded-xl border border-border/70">
+                <p className="mb-2 font-canopy text-xs text-[var(--rootsy-bruma-500)]">Sombra · catálogo</p>
+                <div className="library-doc-panel flex overflow-hidden rounded-xl">
                   {SOMBRA_FAMILY.steps.slice(0, 5).map((step) => (
                     <div
                       key={step.id}
@@ -108,8 +108,8 @@ export function ColorNewFamilySection({ sectionId }: Props) {
                 </div>
               </div>
               <div>
-                <p className="mb-2 font-canopy text-xs text-muted-foreground">Bruma · ticket</p>
-                <div className="flex overflow-hidden rounded-xl border border-border/70">
+                <p className="mb-2 font-canopy text-xs text-[var(--rootsy-bruma-500)]">Bruma · ticket</p>
+                <div className="library-doc-panel flex overflow-hidden rounded-xl">
                   {BRUMA_FAMILY.steps.slice(0, 5).map((step) => (
                     <div
                       key={step.id}

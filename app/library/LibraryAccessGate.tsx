@@ -17,13 +17,13 @@ function LibraryAccessGateInner({ children }: LibraryAccessGateProps) {
   if (loading) {
     return (
       <div
-        className="flex min-h-screen flex-col items-center justify-center gap-3 bg-background text-foreground"
+        className="flex min-h-screen flex-col items-center justify-center gap-3 bg-background text-[var(--rootsy-bruma-900)]"
         role="status"
         aria-live="polite"
         aria-busy="true"
       >
-        <Spinner className="size-8 text-muted-foreground" />
-        <span className="text-sm text-muted-foreground">Cargando sesión…</span>
+        <Spinner className="size-8 text-[var(--rootsy-bruma-500)]" />
+        <span className="text-sm text-[var(--rootsy-bruma-500)]">Cargando sesión…</span>
       </div>
     )
   }
@@ -33,14 +33,14 @@ function LibraryAccessGateInner({ children }: LibraryAccessGateProps) {
   if (!isBackofficeAllowedEmail(user.email)) {
     return (
       <div className="flex min-h-screen flex-col items-center justify-center gap-4 px-6 text-center">
-        <h1 className="text-lg font-medium text-foreground">No autorizado</h1>
-        <p className="max-w-md text-sm text-muted-foreground">
+        <h1 className="text-lg font-medium text-[var(--rootsy-bruma-900)]">No autorizado</h1>
+        <p className="max-w-md text-sm text-[var(--rootsy-bruma-500)]">
           La librería solo está disponible para cuentas autorizadas de la
           plataforma.
         </p>
         <Link
           href="/home"
-          className="text-sm font-semibold text-primary underline-offset-2 hover:underline"
+          className="text-sm font-semibold text-[var(--rootsy-savia-600)] underline-offset-2 hover:underline"
         >
           Volver al inicio
         </Link>

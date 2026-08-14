@@ -119,7 +119,7 @@ export function TextComponentOverviewScale() {
     { role: "Título de página", token: "font.heading.large", className: "text-2xl font-bold" },
     { role: "Sección", token: "font.heading.medium", className: "text-xl font-bold" },
     { role: "Cuerpo", token: "font.body", className: "text-sm" },
-    { role: "Metadato", token: "font.body.small", className: "text-xs text-muted-foreground" },
+    { role: "Metadato", token: "font.body.small", className: "text-xs text-[var(--rootsy-bruma-500)]" },
     { role: "Métrica", token: "font.metric.large", className: "font-ledger text-[1.75rem] font-bold tabular-nums" },
   ] as const
 
@@ -289,7 +289,7 @@ function LabelPreview({ roleId, preview }: { roleId: string; preview: string }) 
   }
   if (roleId === "eyebrow") {
     return (
-      <p className="font-canopy text-xs font-bold uppercase tracking-[0.12em] text-muted-foreground">
+      <p className="font-canopy text-xs font-bold uppercase tracking-[0.12em] text-[var(--rootsy-bruma-500)]">
         {preview}
       </p>
     )
@@ -318,7 +318,7 @@ export function TextComponentMetaDemo() {
               <p className="text-sm font-medium" style={{ color: CONCEPT_TOKENS.bruma900 }}>
                 {role.label}
               </p>
-              <p className="mt-1 font-canopy text-xs text-muted-foreground">{role.preview}</p>
+              <p className="mt-1 font-canopy text-xs text-[var(--rootsy-bruma-500)]">{role.preview}</p>
             </div>
             <span className="font-mono text-[10px]" style={{ color: CONCEPT_TOKENS.bruma500 }}>
               {role.token}
@@ -354,7 +354,7 @@ export function TextComponentMetricDemo() {
             >
               {tile.value}
             </p>
-            <p className="font-canopy text-xs text-muted-foreground">{tile.label}</p>
+            <p className="font-canopy text-xs text-[var(--rootsy-bruma-500)]">{tile.label}</p>
             <p className="font-mono text-[10px]" style={{ color: CONCEPT_TOKENS.bruma500 }}>
               {tile.token}
             </p>
@@ -377,7 +377,7 @@ export function TextComponentReadingDemo() {
           entra cuando hay párrafos largos — descripciones de artículos, ayuda extendida o copy
           explicativo en onboarding. En pantallas de trabajo, la UI lleva casi todo.
         </p>
-        <p className="mt-3 font-canopy text-xs text-muted-foreground">
+        <p className="mt-3 font-canopy text-xs text-[var(--rootsy-bruma-500)]">
           font.body.large · Source Sans 3 · 16px / 1.5
         </p>
       </FoundationSpecCard>
@@ -452,7 +452,7 @@ export function TextComponentSectionLabelNote() {
     <FoundationSpecCard>
       <p className="text-sm leading-relaxed" style={{ color: CONCEPT_TOKENS.bruma600 }}>
         El patrón de sección usa{" "}
-        <code className="rounded bg-muted px-1 py-0.5 font-code text-xs">
+        <code className="rounded bg-[var(--rootsy-bruma-50)] px-1 py-0.5 font-code text-xs">
           rootsFormFieldLabelClass
         </code>{" "}
         — 10px semibold uppercase. Ver Formulario → Labels para el control asociado.

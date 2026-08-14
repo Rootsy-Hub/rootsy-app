@@ -21,7 +21,16 @@ import {
   DEFAULT_QUOTE_TABLE_PAGE_SIZE,
   QUOTE_TABLE_PAGE_SIZES,
 } from "@/app/[siteId]/[popId]/quotes/quoteConstants"
-import { buildQuoteLineSummariesFromCheckoutSnapshot } from "@/lib/saleQuoteCheckout"
+import {
+  buildQuoteLineGroupsFromCheckoutSnapshot,
+  buildQuoteLineSummariesFromCheckoutSnapshot,
+} from "@/lib/saleQuoteCheckout"
+import { quoteLineGroupsItemCount } from "@/lib/saleQuoteDocumentLines"
+import type {
+  SaleQuoteLineDiscount,
+  SaleQuoteLineGroup,
+  SaleQuoteLineGroupLine,
+} from "@/lib/saleQuoteTypes"
 
 type QuotePermissionFlags = {
   canRead: boolean
@@ -53,6 +62,68 @@ async function quotePermissionFlags(popId: string): Promise<QuotePermissionFlags
   }
 }
 
+function parseQuoteLineDiscount(raw: unknown): SaleQuoteLineDiscount | null {
+  if (raw == null || typeof raw !== "object" || Array.isArray(raw)) return null
+  const item = raw as Record<string, unknown>
+  const label = typeof item.label === "string" ? item.label : ""
+  const amount = Number(item.amount)
+  if (!label.trim() || !Number.isFinite(amount) || amount <= 0) return null
+  return { label, amount }
+}
+
+function parseQuoteLineGroupLine(raw: unknown): SaleQuoteLineGroupLine | null {
+  if (raw == null || typeof raw !== "object" || Array.isArray(raw)) return null
+  const item = raw as Record<string, unknown>
+  const name = typeof item.name === "string" ? item.name : ""
+  const quantity = Number(item.quantity)
+  const unitListPrice = Number(item.unitListPrice ?? item.unitPrice)
+  const listLineTotal = Number(item.listLineTotal ?? item.lineTotal)
+  const lineTotal = Number(item.lineTotal)
+  if (!name.trim()) return null
+  const discounts = Array.isArray(item.discounts)
+    ? item.discounts
+        .map(parseQuoteLineDiscount)
+        .filter((discount): discount is SaleQuoteLineDiscount => discount != null)
+    : []
+
+  return {
+    name,
+    quantity: Number.isFinite(quantity) ? quantity : 0,
+    unitListPrice: Number.isFinite(unitListPrice) ? unitListPrice : 0,
+    listLineTotal: Number.isFinite(listLineTotal) ? listLineTotal : 0,
+    lineTotal: Number.isFinite(lineTotal) ? lineTotal : 0,
+    discounts,
+  }
+}
+
+function parseQuoteLineGroups(raw: unknown): SaleQuoteLineGroup[] | undefined {
+  if (!Array.isArray(raw)) return undefined
+  const groups = raw
+    .map((group) => {
+      if (group == null || typeof group !== "object" || Array.isArray(group)) {
+        return null
+      }
+      const row = group as Record<string, unknown>
+      const id = typeof row.id === "string" ? row.id : ""
+      const category = typeof row.category === "string" ? row.category : "General"
+      const lines = Array.isArray(row.lines)
+        ? row.lines
+            .map(parseQuoteLineGroupLine)
+            .filter((line): line is SaleQuoteLineGroupLine => line != null)
+        : []
+      if (lines.length === 0) return null
+      return {
+        id: id || `group:${category}`,
+        category,
+        lines,
+        promotionDiscount: parseQuoteLineDiscount(row.promotionDiscount) ?? null,
+      } satisfies SaleQuoteLineGroup
+    })
+    .filter((group): group is SaleQuoteLineGroup => group != null)
+
+  return groups.length > 0 ? groups : undefined
+}
+
 function parseQuoteMetadata(raw: unknown): SaleQuoteMetadata {
   if (raw == null || typeof raw !== "object" || Array.isArray(raw)) {
     return {}
@@ -79,6 +150,7 @@ function parseQuoteMetadata(raw: unknown): SaleQuoteMetadata {
         })
         .filter((line): line is NonNullable<typeof line> => line != null)
     : undefined
+  const lineGroups = parseQuoteLineGroups(row.lineGroups)
 
   return {
     comprobanteLabel:
@@ -87,15 +159,19 @@ function parseQuoteMetadata(raw: unknown): SaleQuoteMetadata {
     discountLabel:
       typeof row.discountLabel === "string" ? row.discountLabel : null,
     lineSummaries,
+    lineGroups,
   }
 }
 
 function mapQuoteRow(row: Record<string, unknown>): SaleQuoteTableRow {
   const metadata = parseQuoteMetadata(row.metadata)
-  const itemCount = metadata.lineSummaries?.reduce(
-    (sum, line) => sum + line.quantity,
-    0,
-  )
+  const itemCount =
+    metadata.lineGroups != null
+      ? quoteLineGroupsItemCount(metadata.lineGroups)
+      : metadata.lineSummaries?.reduce(
+          (sum, line) => sum + line.quantity,
+          0,
+        )
 
   return {
     id: String(row.id),
@@ -360,18 +436,23 @@ export async function getSaleQuoteDetail(
 
     const catalog = await getMenuCatalog(popId)
     if (catalog.success) {
-      const rebuilt = buildQuoteLineSummariesFromCheckoutSnapshot(
+      const catalogInput = {
+        articles: catalog.articles,
+        promotions: catalog.promotions,
+        quantityDeals: catalog.quantityDeals,
+      }
+      const rebuiltGroups = buildQuoteLineGroupsFromCheckoutSnapshot(
         quote.checkoutSnapshot,
-        {
-          articles: catalog.articles,
-          promotions: catalog.promotions,
-          quantityDeals: catalog.quantityDeals,
-        },
+        catalogInput,
       )
-      if (rebuilt.length > 0) {
+      if (rebuiltGroups.length > 0) {
         quote.metadata = {
           ...quote.metadata,
-          lineSummaries: rebuilt,
+          lineGroups: rebuiltGroups,
+          lineSummaries: buildQuoteLineSummariesFromCheckoutSnapshot(
+            quote.checkoutSnapshot,
+            catalogInput,
+          ),
         }
       }
     }

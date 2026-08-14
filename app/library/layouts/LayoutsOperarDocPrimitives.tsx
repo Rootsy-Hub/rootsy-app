@@ -144,7 +144,7 @@ function LayoutHeightBadge({ label, onDark = false }: { label: string; onDark?: 
         "pointer-events-none absolute right-2 top-1.5 z-20 rounded-md px-1.5 py-0.5 font-mono text-[10px] ring-1",
         onDark
           ? "bg-[color-mix(in_srgb,var(--rootsy-sombra-800)_88%,#ffffff_12%)] text-[color-mix(in_srgb,var(--rootsy-savia-300)_72%,#ffffff)] ring-[color-mix(in_srgb,var(--rootsy-sombra-border)_55%,transparent)]"
-          : "bg-background/95 text-muted-foreground ring-border/60",
+          : "bg-background/95 text-[var(--rootsy-bruma-500)] ring-border/60",
       )}
     >
       {label}
@@ -529,7 +529,7 @@ function LayoutsOperarFrame({
   return (
     <div
       className={cn(
-        "rootsy-theme-pos rootsy-radius-system mx-auto flex flex-col overflow-hidden rounded-2xl border border-border/80",
+        "rootsy-theme-pos rootsy-radius-system mx-auto flex flex-col overflow-hidden rounded-2xl border border-[var(--rootsy-bruma-200)]",
         maxWidthClass,
         "shadow-[0_24px_48px_-28px_rgba(41,37,36,0.38)] ring-1 ring-black/[0.04]",
         heightClass,
@@ -679,7 +679,7 @@ function LayoutsOperarContentGridWireframeBody() {
 export function LayoutsOperarContentGridWireframeDemo() {
   return (
     <div
-      className="mx-auto flex max-w-5xl flex-col overflow-hidden rounded-2xl border border-border/70"
+      className="mx-auto flex max-w-5xl flex-col library-doc-table-shell overflow-hidden rounded-2xl"
       style={{ height: "36rem" }}
     >
       <LayoutsOperarContentGridWireframeBody />
@@ -690,7 +690,7 @@ export function LayoutsOperarContentGridWireframeDemo() {
 export function LayoutsOperarLayoutGridDemo({ contentOnly = false }: { contentOnly?: boolean } = {}) {
   if (contentOnly) {
     return (
-      <div className="h-[36rem] overflow-hidden rounded-2xl border border-border/70">
+      <div className="h-[36rem] library-doc-table-shell overflow-hidden rounded-2xl">
         <LayoutsOperarContentGridWireframeBody />
       </div>
     )
@@ -698,7 +698,7 @@ export function LayoutsOperarLayoutGridDemo({ contentOnly = false }: { contentOn
 
   return (
     <div
-      className="mx-auto flex max-w-5xl flex-col overflow-hidden rounded-2xl border border-border/80 shadow-sm"
+      className="mx-auto flex max-w-5xl flex-col overflow-hidden rounded-2xl border border-[var(--rootsy-bruma-200)] "
       style={{ height: "40rem" }}
     >
       <LayoutsOperarContentGridWireframeBody />
@@ -708,16 +708,16 @@ export function LayoutsOperarLayoutGridDemo({ contentOnly = false }: { contentOn
 
 export function LayoutsOperarOverviewIntro() {
   return (
-    <div className="rounded-2xl border border-border/70 bg-card p-6 shadow-sm">
+    <div className="rounded-2xl border border-[var(--rootsy-bruma-200)] bg-[var(--rootsy-white)] p-6 ">
       <div className="flex items-start gap-3">
-        <span className="inline-flex size-10 items-center justify-center rounded-xl bg-primary/10 text-primary">
+        <span className="inline-flex size-10 items-center justify-center rounded-xl bg-[color-mix(in_srgb,var(--rootsy-savia-600)_10%,transparent)] text-[var(--rootsy-savia-600)]">
           <Store className="size-5" aria-hidden />
         </span>
         <div className="min-w-0 space-y-2">
-          <h2 className="text-lg font-semibold tracking-tight text-foreground">
+          <h2 className="text-lg font-semibold tracking-tight text-[var(--rootsy-bruma-900)]">
             Layout operar · Vender
           </h2>
-          <p className="max-w-2xl text-sm leading-relaxed text-muted-foreground">
+          <p className="max-w-2xl text-sm leading-relaxed text-[var(--rootsy-bruma-500)]">
             Referencia de producción en{" "}
             <code className="text-[11px]">sale/page.tsx</code> — split POS sombra + bruma. En la
             lib: pila <code className="text-[11px]">ROOTSY_SURFACE_STACKS.pos</code> y tema{" "}
@@ -740,7 +740,7 @@ export function LayoutsOperarDocSubsection({
 }) {
   return (
     <div className="space-y-3">
-      <h4 className="text-sm font-semibold text-foreground">{title}</h4>
+      <h4 className="text-sm font-semibold text-[var(--rootsy-bruma-900)]">{title}</h4>
       {children}
     </div>
   )
@@ -778,7 +778,7 @@ export function LayoutsOperarCatalogSectionDemo() {
       <LayoutsOperarDocSubsection title="2.1 · Artículo">
         <div className="space-y-6">
           <LayoutsOperarDocSubsection title="2.1.a · Grilla · tarjeta vertical">
-            <p className="text-sm text-muted-foreground">
+            <p className="text-sm text-[var(--rootsy-bruma-500)]">
               Vista grilla (<code className="text-[11px]">modoVista grid</code>) — mosaico 318×152+ cuerpo.
             </p>
             <LayoutsOperarCatalogArticleCanvas>
@@ -789,7 +789,7 @@ export function LayoutsOperarCatalogSectionDemo() {
           </LayoutsOperarDocSubsection>
 
           <LayoutsOperarDocSubsection title="2.1.b · Lista · fila horizontal">
-            <p className="text-sm text-muted-foreground">
+            <p className="text-sm text-[var(--rootsy-bruma-500)]">
               Vista lista (<code className="text-[11px]">modoVista lista</code>) — fila min 152px · imagen 192px.
             </p>
             <LayoutsOperarCatalogArticleCanvas>
@@ -798,7 +798,7 @@ export function LayoutsOperarCatalogSectionDemo() {
           </LayoutsOperarDocSubsection>
 
           <LayoutsOperarDocSubsection title="Con descuento">
-            <p className="text-sm text-muted-foreground">
+            <p className="text-sm text-[var(--rootsy-bruma-500)]">
                 Mismos formatos con overlay de oferta (<code className="text-[11px]">SaleCatalogProductOfferOverlay</code>).
             </p>
             <div className="grid gap-4 lg:grid-cols-2">
@@ -814,7 +814,7 @@ export function LayoutsOperarCatalogSectionDemo() {
           </LayoutsOperarDocSubsection>
 
           <LayoutsOperarDocSubsection title="Sin imagen">
-            <p className="text-sm text-muted-foreground">
+            <p className="text-sm text-[var(--rootsy-bruma-500)]">
               Superficie foto ausente — luz de estudio, pools de color y grano. Sin icono ni copy en
               el media; el nombre del producto va en el cuerpo de la tarjeta.
             </p>
@@ -846,7 +846,7 @@ export function LayoutsOperarToolboxSectionDemo() {
       <LayoutsOperarDocSubsection title="Toolbox · Cliente · Comprobante · Pago · Descuento">
         <LayoutsOperarAnatomyScope
         className={cn(
-          "rootsy-theme-pos rootsy-radius-system max-w-5xl rounded-2xl border border-border/70",
+          "rootsy-theme-pos rootsy-radius-system max-w-5xl rounded-2xl border border-[var(--rootsy-bruma-200)]",
           layoutsOperarToolboxDemoShellClass,
         )}
       >
@@ -875,7 +875,7 @@ export function LayoutsOperarTicketSectionDemo() {
   return (
     <div className="space-y-6">
       <LayoutsOperarDocSubsection title="Ticket · pedido + acciones + total">
-        <p className="text-sm text-muted-foreground">
+        <p className="text-sm text-[var(--rootsy-bruma-500)]">
           Ticket compuesto canónico (<code className="text-[11px]">bruma-savia</code>) — ítems sin
           descuento, con descuento de catálogo, promo combo y desglose de totales como en Vender.
         </p>
@@ -885,7 +885,7 @@ export function LayoutsOperarTicketSectionDemo() {
       </LayoutsOperarDocSubsection>
 
       <LayoutsOperarDocSubsection title="4.1 · Propuestas">
-        <p className="text-sm text-muted-foreground">
+        <p className="text-sm text-[var(--rootsy-bruma-500)]">
           Tres variantes oficiales sobre bruma + savia — mismos ítems demo y desglose de totales.
         </p>
         <LayoutsOperarTicketProposalsDemo />
@@ -909,14 +909,14 @@ export function LayoutsOperarComponentsTable({
   return (
     <div className="space-y-2">
       {caption ? (
-        <p className="font-mono text-[11px] uppercase tracking-widest text-muted-foreground">
+        <p className="font-mono text-[11px] uppercase tracking-widest text-[var(--rootsy-bruma-500)]">
           {caption}
         </p>
       ) : null}
-      <div className="overflow-x-auto rounded-2xl border border-border/70">
+      <div className="library-doc-table-shell overflow-x-auto rounded-2xl">
         <table className="w-full min-w-180 text-left text-sm">
           <thead>
-            <tr className="border-b border-border/60 bg-muted/30">
+            <tr className="border-b border-[var(--rootsy-bruma-200)] bg-[var(--rootsy-bruma-50)]">
               <th className="px-4 py-3 font-semibold">Capa</th>
               <th className="px-4 py-3 font-semibold">Componente</th>
               <th className="px-4 py-3 font-semibold">Token</th>
@@ -925,13 +925,13 @@ export function LayoutsOperarComponentsTable({
           </thead>
           <tbody>
             {rows.map((row) => (
-              <tr key={`${row.layer}-${row.component}`} className="border-b border-border/40 last:border-0">
-                <td className="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+              <tr key={`${row.layer}-${row.component}`} className="border-b border-[var(--rootsy-bruma-200)] last:border-0">
+                <td className="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-[var(--rootsy-bruma-500)]">
                   {row.layer}
                 </td>
                 <td className="px-4 py-3">{row.component}</td>
-                <td className="px-4 py-3 font-mono text-[11px] text-primary">{row.token}</td>
-                <td className="px-4 py-3 font-mono text-[10px] text-muted-foreground">{row.source}</td>
+                <td className="px-4 py-3 font-mono text-[11px] text-[var(--rootsy-savia-600)]">{row.token}</td>
+                <td className="px-4 py-3 font-mono text-[10px] text-[var(--rootsy-bruma-500)]">{row.source}</td>
               </tr>
             ))}
           </tbody>

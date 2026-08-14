@@ -52,7 +52,7 @@ export function LayoutsOperarCatalogRailDemoShell({
   return (
     <div
       className={cn(
-        "overflow-hidden rounded-2xl border border-border/70",
+        "library-doc-table-shell overflow-hidden rounded-2xl",
         heightClass,
         className,
       )}

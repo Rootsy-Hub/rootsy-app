@@ -100,6 +100,7 @@ import { useSaleTicketCart } from "@/hooks/useSaleTicketCart"
 import { useCartListScrollHighlight } from "@/hooks/useCartListScrollHighlight"
 import { buildCompleteSaleLinesFromCart } from "@/lib/saleCompleteLines"
 import {
+  buildQuoteLineGroupsFromDisplayRows,
   buildQuoteLineSummariesFromDisplayRows,
   buildSaleQuoteCheckoutSnapshot,
   formatSaleQuoteDiscountLabel,
@@ -188,6 +189,7 @@ function SalePage() {
   const searchParams = useSearchParams()
   const siteId = typeof params?.siteId === "string" ? params.siteId : ""
   const popId = typeof params?.popId === "string" ? params.popId : undefined
+  const quoteIdFromUrl = searchParams.get("quoteId")
   const {
     hasValidPopFiscalCuit,
     popEmisorIvaCondition,
@@ -347,7 +349,7 @@ function SalePage() {
   >("porcentaje")
 
   useEffect(() => {
-    if (!openCashSession?.cashTreasuryAccountId) return
+    if (!openCashSession?.cashTreasuryAccountId || quoteIdFromUrl) return
     setMetodoPagoSeleccionado((prev) => {
       if (
         prev &&
@@ -358,7 +360,7 @@ function SalePage() {
       }
       return defaultCheckoutPaymentSelection(openCashSession.cashTreasuryAccountId)
     })
-  }, [openCashSession])
+  }, [openCashSession, quoteIdFromUrl])
 
   const [descuentoDraftTexto, setDescuentoDraftTexto] = useState("")
   const focusScanRef = useRef<(() => void) | null>(null)
@@ -402,6 +404,7 @@ function SalePage() {
   )
 
   const quoteLoadRef = useRef<string | null>(null)
+  const quoteLoadingRef = useRef<string | null>(null)
 
   const saleModalOpen =
     clienteModalAbierto ||
@@ -748,7 +751,18 @@ function SalePage() {
       setManualNombreCliente(snapshot.manualNombreCliente)
       setFiscalDocVenta(snapshot.fiscalDocVenta)
       setVentaIvaCondition(snapshot.ventaIvaCondition)
-      setComprobante(snapshot.comprobante)
+      setVentaEmail(snapshot.clienteSeleccionado?.email ?? "")
+      setComprobante(
+        snapshot.comprobante &&
+          isAllowedSaleComprobanteLabel(
+            invoiceTypeSiteId,
+            snapshot.comprobante,
+            popEmisorIvaCondition,
+            hasValidPopFiscalCuit,
+          )
+          ? snapshot.comprobante
+          : null,
+      )
       setMetodoPagoSeleccionado(snapshot.metodoPagoSeleccionado)
       setPayOnClientAccount(snapshot.payOnClientAccount)
       setModoDescuento(snapshot.modoDescuento)
@@ -758,7 +772,13 @@ function SalePage() {
       setPresupuestoError(null)
       focusScan()
     },
-    [focusScan, restaurarDesdeCheckout],
+    [
+      focusScan,
+      hasValidPopFiscalCuit,
+      invoiceTypeSiteId,
+      popEmisorIvaCondition,
+      restaurarDesdeCheckout,
+    ],
   )
 
   const confirmarPresupuesto = useCallback(async () => {
@@ -796,6 +816,10 @@ function SalePage() {
           comprobanteLabel: presupuestoComprobanteLabel,
           paymentLabel: presupuestoPaymentLabel,
           discountLabel: presupuestoDiscountLabel,
+          lineGroups: buildQuoteLineGroupsFromDisplayRows(
+            cartDisplayRows,
+            cartLineOverrides,
+          ),
           lineSummaries: buildQuoteLineSummariesFromDisplayRows(
             cartDisplayRows,
             cartLineOverrides,
@@ -841,26 +865,35 @@ function SalePage() {
   ])
 
   useEffect(() => {
-    const quoteId = searchParams.get("quoteId")
-    if (!quoteId || !popId || catalogLoading) return
-    if (quoteLoadRef.current === quoteId) return
-    quoteLoadRef.current = quoteId
+    if (!quoteIdFromUrl || !popId || catalogLoading || !bootstrapLoaded) return
+    if (quoteLoadRef.current === quoteIdFromUrl) return
+    if (quoteLoadingRef.current === quoteIdFromUrl) return
+
+    quoteLoadingRef.current = quoteIdFromUrl
+    comprobanteInitRef.current = true
 
     void (async () => {
-      const res = await getSaleQuoteDetail(popId, quoteId)
-      if (!res.success) {
-        setVentaError(res.error)
-        return
+      try {
+        const res = await getSaleQuoteDetail(popId, quoteIdFromUrl)
+        if (!res.success) {
+          setVentaError(res.error)
+          comprobanteInitRef.current = false
+          return
+        }
+        quoteLoadRef.current = quoteIdFromUrl
+        aplicarPresupuestoEnVenta(res.quote.checkoutSnapshot)
+        router.replace(`/${siteId}/${popId}/sale`, { scroll: false })
+      } finally {
+        quoteLoadingRef.current = null
       }
-      aplicarPresupuestoEnVenta(res.quote.checkoutSnapshot)
-      router.replace(`/${siteId}/${popId}/sale`)
     })()
   }, [
     aplicarPresupuestoEnVenta,
+    bootstrapLoaded,
     catalogLoading,
     popId,
+    quoteIdFromUrl,
     router,
-    searchParams,
     siteId,
   ])
 
@@ -905,7 +938,9 @@ function SalePage() {
   ])
 
   useEffect(() => {
-    if (!popId || !bootstrapLoaded || comprobanteInitRef.current) return
+    if (!popId || !bootstrapLoaded || comprobanteInitRef.current || quoteIdFromUrl) {
+      return
+    }
     comprobanteInitRef.current = true
     const saved = readSavedSaleComprobante(popId)
     if (saved !== undefined) {
@@ -926,6 +961,7 @@ function SalePage() {
     bootstrapLoaded,
     popEmisorIvaCondition,
     hasValidPopFiscalCuit,
+    quoteIdFromUrl,
   ])
 
   useEffect(() => {

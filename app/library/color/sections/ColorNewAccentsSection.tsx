@@ -80,10 +80,10 @@ export function ColorNewAccentsSection() {
           title="Referencia de rampas"
           description="Pasos completos — ver Paletas para detalle."
         >
-          <ul className="space-y-2 text-sm text-muted-foreground">
+          <ul className="space-y-2 text-sm text-[var(--rootsy-bruma-500)]">
             {COLOR_NEW_FAMILIES.map((f) => (
               <li key={f.id}>
-                <strong className="text-foreground">{f.title}</strong> — {f.steps.length}{" "}
+                <strong className="text-[var(--rootsy-bruma-900)]">{f.title}</strong> — {f.steps.length}{" "}
                 pasos
               </li>
             ))}

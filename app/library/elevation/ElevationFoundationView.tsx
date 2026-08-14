@@ -1,5 +1,6 @@
 "use client"
 
+import { LibraryRelatedLinksSection } from "@/app/library/libraryDocPrimitives"
 import "./rootsyElevationSystem.css"
 import {
   ELEVATION_RELATED_LINKS,
@@ -7,7 +8,6 @@ import {
 } from "@/app/library/elevation/elevationLibraryNav"
 import { ElevationApplyingSection } from "@/app/library/elevation/sections/ElevationApplyingSection"
 import { ElevationOverviewSection } from "@/app/library/elevation/sections/ElevationOverviewSection"
-import { ElevationRelatedLinks } from "@/app/library/elevation/ElevationDocPrimitives"
 import type { ReactNode } from "react"
 
 type Props = {
@@ -30,13 +30,7 @@ export function ElevationFoundationView({ sectionId }: Props) {
   return (
     <div className="rootsy-elevation-system space-y-10">
       {content}
-      <div className="space-y-3 border-t border-border/60 pt-8">
-        <p className="text-sm font-semibold text-foreground">Relacionado</p>
-        <ElevationRelatedLinks
-          excludeId={sectionId}
-          links={ELEVATION_RELATED_LINKS}
-        />
-      </div>
+      <LibraryRelatedLinksSection excludeId={sectionId} links={ELEVATION_RELATED_LINKS} />
     </div>
   )
 }

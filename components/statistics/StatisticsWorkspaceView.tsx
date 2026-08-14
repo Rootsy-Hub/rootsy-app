@@ -6,9 +6,13 @@ import {
   type StatisticsSectionData,
 } from "@/app/[siteId]/[popId]/statistics/actions"
 import {
-  dataWorkspaceBlocksContentInnerClass,
   dataWorkspaceBlocksPageMainClass,
 } from "@/components/data-workspace/dataWorkspaceListStyles"
+import {
+  statisticsMainContentClass,
+  statisticsNavAsideClass,
+  statisticsNavScrollClass,
+} from "@/components/statistics/statisticsWorkspaceStyles"
 import {
   DataWorkspaceModuleLayout,
   dataWorkspaceModuleHeaderVariant,
@@ -147,32 +151,40 @@ export function StatisticsWorkspaceView({
       userRoleLabel={userRoleLabel}
       contentFlush
       mainMaxWidthClass="max-w-[88rem]"
-      mainClassName={dataWorkspaceBlocksPageMainClass}
+      mainClassName={cn(
+        dataWorkspaceBlocksPageMainClass,
+        "flex min-h-0 flex-1 flex-col overflow-hidden",
+      )}
     >
-      <div className={dataWorkspaceBlocksContentInnerClass}>
-        {bootstrapError ? (
-          <div
-            role="alert"
-            className={cn(
-              "rounded-lg border border-destructive/25 bg-destructive/10 px-4 py-3 text-sm text-destructive",
-            )}
-          >
-            Cabecera: {bootstrapError}
+      <div className="flex min-h-0 flex-1 flex-col lg:flex-row lg:overflow-hidden">
+        <aside className={statisticsNavAsideClass}>
+          <div className={statisticsNavScrollClass}>
+            <StatisticsSectionNav
+              sections={sections}
+              activeSectionId={activeSectionId}
+              onSelect={(id) => setActiveSectionId(id as StatisticsSectionId)}
+            />
           </div>
-        ) : null}
+        </aside>
 
-        {error ? (
-          <p className="rounded-2xl border border-amber-200/80 bg-amber-50 px-4 py-3 text-sm text-amber-900">
-            {error}
-          </p>
-        ) : null}
+        <div className={statisticsMainContentClass}>
+          {bootstrapError ? (
+            <div
+              role="alert"
+              className={cn(
+                "mb-6 rounded-lg border border-destructive/25 bg-destructive/10 px-4 py-3 text-sm text-destructive",
+              )}
+            >
+              Cabecera: {bootstrapError}
+            </div>
+          ) : null}
 
-        <div className="grid gap-6 lg:grid-cols-[13rem_minmax(0,1fr)]">
-          <StatisticsSectionNav
-            sections={sections}
-            activeSectionId={activeSectionId}
-            onSelect={(id) => setActiveSectionId(id as StatisticsSectionId)}
-          />
+          {error ? (
+            <p className="mb-6 rounded-2xl border border-amber-200/80 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+              {error}
+            </p>
+          ) : null}
+
           <StatisticsSectionPanel
             section={activeSection}
             data={data}

@@ -14,7 +14,7 @@ import {
   FoundationBrumaStage,
   FoundationConceptHero,
 } from "@/app/library/libraryFoundationDocShared"
-import { EARTH, LibraryGuidelineCards } from "@/app/library/libraryDocPrimitives"
+import { EARTH, LibraryDocMetaLabel, LibraryGuidelineCards } from "@/app/library/libraryDocPrimitives"
 import type { ReactNode } from "react"
 
 export {
@@ -25,14 +25,7 @@ export {
 } from "@/app/library/libraryDocPrimitives"
 
 function TechnicalSubheading({ children }: { children: ReactNode }) {
-  return (
-    <p
-      className="font-canopy text-xs font-semibold uppercase tracking-wide"
-      style={{ color: CONCEPT_TOKENS.bruma500 }}
-    >
-      {children}
-    </p>
-  )
+  return <LibraryDocMetaLabel>{children}</LibraryDocMetaLabel>
 }
 
 function GridTwelveColSketch() {
@@ -104,7 +97,7 @@ function GridColumn({
 export function GridAnatomyDiagram() {
   return (
     <div className="space-y-4">
-      <div className="overflow-hidden rounded-2xl border border-border/70">
+      <div className="library-doc-table-shell overflow-hidden rounded-2xl">
         <div
           className="px-4 py-3 text-xs font-bold uppercase tracking-wider"
           style={{ backgroundColor: CONCEPT_TOKENS.bruma50, color: CONCEPT_TOKENS.savia800 }}
@@ -132,7 +125,7 @@ export function GridAnatomyDiagram() {
               ))}
             </div>
           </div>
-          <div className="mt-3 flex flex-wrap gap-4 text-[10px] text-muted-foreground">
+          <div className="mt-3 flex flex-wrap gap-4 text-[10px] text-[var(--rootsy-bruma-500)]">
             <span className="flex items-center gap-1.5">
               <span className="size-3 rounded-sm opacity-40" style={{ backgroundColor: EARTH }} />
               Orilla (margin)
@@ -142,7 +135,7 @@ export function GridAnatomyDiagram() {
               Surco (columna)
             </span>
             <span className="flex items-center gap-1.5">
-              <span className="w-3 h-1 bg-muted-foreground/30" />
+              <span className="w-3 h-1 bg-[var(--rootsy-bruma-300)]/30" />
               Senda (gutter · gap)
             </span>
           </div>
@@ -152,13 +145,13 @@ export function GridAnatomyDiagram() {
         {GRID_ANATOMY_PARTS.map((part) => (
           <div
             key={part.id}
-            className="rounded-xl border border-border/70 bg-card p-4 shadow-sm"
+            className="library-doc-card rounded-xl p-4"
           >
-            <p className="text-sm font-semibold text-foreground">{part.term}</p>
+            <p className="text-sm font-semibold text-[var(--rootsy-bruma-900)]">{part.term}</p>
             <p className="text-xs font-medium" style={{ color: CONCEPT_TOKENS.savia800 }}>
               {part.natureMetaphor}
             </p>
-            <p className="mt-2 text-sm text-muted-foreground">{part.description}</p>
+            <p className="mt-2 text-sm text-[var(--rootsy-bruma-500)]">{part.description}</p>
           </div>
         ))}
       </div>
@@ -175,7 +168,7 @@ export function LayoutShellDiagram() {
   ]
 
   return (
-    <div className="overflow-hidden rounded-2xl border border-border/70 p-4">
+    <div className="library-doc-table-shell overflow-hidden rounded-2xl p-4">
       <div className="grid grid-cols-12 gap-2">
         {regions.map((r) => (
           <div
@@ -191,7 +184,7 @@ export function LayoutShellDiagram() {
           </div>
         ))}
       </div>
-      <p className="mt-3 text-xs text-muted-foreground">
+      <p className="mt-3 text-xs text-[var(--rootsy-bruma-500)]">
         La grilla vive solo en el claro (main) — nav y panel usan layout propio.
       </p>
     </div>
@@ -201,7 +194,7 @@ export function LayoutShellDiagram() {
 function SpanRow({ span, label }: { span: number; label: string }) {
   return (
     <div className="space-y-1">
-      <p className="font-mono text-[10px] text-muted-foreground">
+      <p className="font-mono text-[10px] text-[var(--rootsy-bruma-500)]">
         {span}/12 · {label}
       </p>
       <div className="grid grid-cols-12 gap-1.5">
@@ -221,7 +214,7 @@ function SpanRow({ span, label }: { span: number; label: string }) {
 
 export function GridSpanGallery() {
   return (
-    <div className="space-y-5 rounded-2xl border border-border/70 bg-card p-4">
+    <div className="space-y-5 library-doc-card rounded-2xl p-4">
       {GRID_SPAN_PRESETS.map((preset) => (
         <SpanRow key={preset.span} span={preset.span} label={preset.label} />
       ))}
@@ -236,7 +229,7 @@ export function GridCenteredSpanDemo() {
         const offset = Math.floor((12 - span) / 2)
         return (
           <div key={span} className="space-y-1">
-            <p className="font-mono text-[10px] text-muted-foreground">
+            <p className="font-mono text-[10px] text-[var(--rootsy-bruma-500)]">
               {span}/12 centrado
             </p>
             <div className="grid grid-cols-12 gap-1.5">
@@ -278,11 +271,11 @@ export function GridAlignmentDemo() {
           <button type="button" className="rounded-md px-3 py-1 text-xs" style={{ backgroundColor: CONCEPT_TOKENS.savia600, color: CONCEPT_TOKENS.white }}>
             Botón
           </button>
-          <span className="text-[10px] text-muted-foreground self-center">← space tokens, no surcos</span>
+          <span className="text-[10px] text-[var(--rootsy-bruma-500)] self-center">← space tokens, no surcos</span>
         </div>
       </div>
-      <div className="rounded-xl border border-border/70 p-4 opacity-75">
-        <p className="mb-3 text-xs font-bold uppercase tracking-wider text-muted-foreground">
+      <div className="rounded-xl border border-[var(--rootsy-bruma-200)] p-4 opacity-75">
+        <p className="mb-3 text-xs font-bold uppercase tracking-wider text-[var(--rootsy-bruma-500)]">
           ✗ Desborde en senda
         </p>
         <div className="grid grid-cols-12 gap-2">
@@ -303,9 +296,9 @@ export function GridAlignmentDemo() {
 
 export function NestedGridDemo() {
   return (
-    <div className="overflow-hidden rounded-2xl border border-border/70">
+    <div className="library-doc-table-shell overflow-hidden rounded-2xl">
       <div className="grid grid-cols-12 gap-3 p-4" style={{ backgroundColor: CONCEPT_TOKENS.bruma50 }}>
-        <div className="col-span-8 rounded-xl border border-border/70 bg-card p-4 shadow-sm">
+        <div className="col-span-8 library-doc-card rounded-xl p-4">
           <p className="text-sm font-semibold">Card · 8 surcos (grilla principal)</p>
           <div className="mt-3 grid grid-cols-6 gap-2 rounded-lg p-2" style={{ backgroundColor: CONCEPT_TOKENS.bruma50 }}>
             {Array.from({ length: 3 }).map((_, i) => (
@@ -318,13 +311,13 @@ export function NestedGridDemo() {
               </div>
             ))}
           </div>
-          <p className="mt-2 font-mono text-[10px] text-muted-foreground">
+          <p className="mt-2 font-mono text-[10px] text-[var(--rootsy-bruma-500)]">
             Adentro: space tokens · grilla interna opcional
           </p>
         </div>
-        <div className="col-span-4 rounded-xl border border-border/70 bg-card p-4 shadow-sm">
+        <div className="col-span-4 library-doc-card rounded-xl p-4">
           <p className="text-sm font-semibold">Panel · 4 surcos</p>
-          <p className="mt-2 text-xs text-muted-foreground">Stack + gap space.200</p>
+          <p className="mt-2 text-xs text-[var(--rootsy-bruma-500)]">Stack + gap space.200</p>
         </div>
       </div>
     </div>
@@ -337,10 +330,10 @@ export function GridGuidelineCards() {
 
 export function GridBreakpointTable() {
   return (
-    <div className="overflow-x-auto rounded-2xl border border-border/70">
+    <div className="library-doc-table-shell overflow-x-auto rounded-2xl">
       <table className="w-full min-w-[640px] text-left text-sm">
         <thead>
-          <tr className="border-b border-border/60 bg-muted/30 text-[10px] font-bold uppercase tracking-[0.12em] text-muted-foreground">
+          <tr className="border-b border-[var(--rootsy-bruma-200)] bg-[var(--rootsy-bruma-50)] text-[10px] font-bold uppercase tracking-[0.12em] text-[var(--rootsy-bruma-500)]">
             <th className="px-4 py-2">Breakpoint</th>
             <th className="px-4 py-2">Viewport</th>
             <th className="px-4 py-2 text-center">Surcos</th>
@@ -348,24 +341,24 @@ export function GridBreakpointTable() {
             <th className="px-4 py-2">Orilla</th>
           </tr>
         </thead>
-        <tbody className="divide-y divide-border/50">
+        <tbody className="divide-y divide-[var(--rootsy-bruma-200)]">
           {ROOTSY_GRID_BREAKPOINTS.map((bp) => (
-            <tr key={bp.id} className="hover:bg-muted/20">
+            <tr key={bp.id} className="hover:bg-[var(--rootsy-bruma-50)]">
               <td className="px-4 py-2.5">
-                <span className="font-mono font-medium text-foreground">{bp.id}</span>
-                <span className="ml-2 text-xs text-muted-foreground">{bp.device}</span>
+                <span className="font-mono font-medium text-[var(--rootsy-bruma-900)]">{bp.id}</span>
+                <span className="ml-2 text-xs text-[var(--rootsy-bruma-500)]">{bp.device}</span>
               </td>
-              <td className="px-4 py-2.5 font-mono text-xs text-muted-foreground">
+              <td className="px-4 py-2.5 font-mono text-xs text-[var(--rootsy-bruma-500)]">
                 {bp.viewport}
               </td>
               <td className="px-4 py-2.5 text-center font-mono font-medium">{bp.columns}</td>
               <td className="px-4 py-2.5 font-mono text-xs">
                 {bp.gutterToken}{" "}
-                <span className="text-muted-foreground">({bp.gutterPx}px)</span>
+                <span className="text-[var(--rootsy-bruma-500)]">({bp.gutterPx}px)</span>
               </td>
               <td className="px-4 py-2.5 font-mono text-xs">
                 {bp.marginToken}{" "}
-                <span className="text-muted-foreground">({bp.marginPx}px)</span>
+                <span className="text-[var(--rootsy-bruma-500)]">({bp.marginPx}px)</span>
               </td>
             </tr>
           ))}
@@ -385,8 +378,8 @@ export function GridBreakpointVisualizer() {
   return (
     <div className="grid gap-4 lg:grid-cols-3">
       {samples.map((sample) => (
-        <div key={sample.id} className="rounded-xl border border-border/70 bg-card p-4">
-          <p className="mb-2 text-xs font-semibold text-foreground">{sample.label}</p>
+        <div key={sample.id} className="library-doc-card rounded-xl p-4">
+          <p className="mb-2 text-xs font-semibold text-[var(--rootsy-bruma-900)]">{sample.label}</p>
           <div
             className="grid gap-1.5 rounded-lg p-3"
             style={{
@@ -402,7 +395,7 @@ export function GridBreakpointVisualizer() {
               />
             ))}
           </div>
-          <p className="mt-2 font-mono text-[10px] text-muted-foreground">breakpoint · {sample.id}</p>
+          <p className="mt-2 font-mono text-[10px] text-[var(--rootsy-bruma-500)]">breakpoint · {sample.id}</p>
         </div>
       ))}
     </div>
@@ -415,12 +408,12 @@ export function GridTypesComparison() {
       {ROOTSY_GRID_TYPES.map((type) => (
         <div
           key={type.id}
-          className="rounded-xl border border-border/70 bg-card p-5 shadow-sm"
+          className="library-doc-card rounded-xl p-5"
           style={type.isDefault ? { borderLeftWidth: 3, borderLeftColor: CONCEPT_TOKENS.savia600 } : undefined}
         >
           <div className="flex flex-wrap items-start justify-between gap-2">
             <div>
-              <p className="text-lg font-semibold text-foreground">
+              <p className="text-lg font-semibold text-[var(--rootsy-bruma-900)]">
                 {type.title}
                 {type.isDefault ? (
                   <span
@@ -437,10 +430,10 @@ export function GridTypesComparison() {
               </p>
             </div>
           </div>
-          <p className="mt-2 text-sm text-muted-foreground">{type.useWhen}</p>
+          <p className="mt-2 text-sm text-[var(--rootsy-bruma-500)]">{type.useWhen}</p>
           <div className="mt-3 grid gap-2 sm:grid-cols-2">
-            <p className="rounded-lg bg-muted/40 px-3 py-2 text-xs text-muted-foreground">
-              <span className="font-semibold text-foreground">Ejemplos: </span>
+            <p className="rounded-lg bg-[var(--rootsy-bruma-50)] px-3 py-2 text-xs text-[var(--rootsy-bruma-500)]">
+              <span className="font-semibold text-[var(--rootsy-bruma-900)]">Ejemplos: </span>
               {type.examples}
             </p>
             <p className="rounded-lg px-3 py-2 text-xs" style={{ backgroundColor: "#FEF3C7", color: "#92400E" }}>
@@ -471,7 +464,7 @@ export function GridTypesComparison() {
 export function FixedVsFluidDemo() {
   return (
     <div className="grid gap-4 lg:grid-cols-2">
-      <div className="rounded-xl border border-border/70 p-4">
+      <div className="rounded-xl border border-[var(--rootsy-bruma-200)] p-4">
         <p className="text-sm font-semibold">Fixed-wide · centrado</p>
         <div className="mt-3 rounded-lg p-2" style={{ backgroundColor: EARTH + "22" }}>
           <div
@@ -482,7 +475,7 @@ export function FixedVsFluidDemo() {
           </div>
         </div>
       </div>
-      <div className="rounded-xl border border-border/70 p-4">
+      <div className="rounded-xl border border-[var(--rootsy-bruma-200)] p-4">
         <p className="text-sm font-semibold">Fluid · llena el claro</p>
         <div className="mt-3 rounded-lg p-2" style={{ backgroundColor: EARTH + "22" }}>
           <div
@@ -502,14 +495,14 @@ export function GridTechnicalDetails() {
     <div className="space-y-8">
       <div className="space-y-3">
         <TechnicalSubheading>Anatomía</TechnicalSubheading>
-        <div className="overflow-x-auto rounded-2xl border border-border/70">
+        <div className="library-doc-table-shell overflow-x-auto rounded-2xl">
           <table className="w-full min-w-[480px] text-left font-canopy text-sm">
             <tbody>
               {GRID_ANATOMY_PARTS.map((part) => (
-                <tr key={part.id} className="border-b border-border/40 last:border-0">
-                  <td className="px-4 py-3 font-medium text-foreground">{part.term}</td>
-                  <td className="px-4 py-3 text-xs text-muted-foreground">{part.natureMetaphor}</td>
-                  <td className="px-4 py-3 text-xs text-muted-foreground">{part.description}</td>
+                <tr key={part.id} className="border-b border-[var(--rootsy-bruma-200)] last:border-0">
+                  <td className="px-4 py-3 font-medium text-[var(--rootsy-bruma-900)]">{part.term}</td>
+                  <td className="px-4 py-3 text-xs text-[var(--rootsy-bruma-500)]">{part.natureMetaphor}</td>
+                  <td className="px-4 py-3 text-xs text-[var(--rootsy-bruma-500)]">{part.description}</td>
                 </tr>
               ))}
             </tbody>
@@ -519,14 +512,14 @@ export function GridTechnicalDetails() {
 
       <div className="space-y-3">
         <TechnicalSubheading>Spans frecuentes</TechnicalSubheading>
-        <div className="overflow-x-auto rounded-2xl border border-border/70">
+        <div className="library-doc-table-shell overflow-x-auto rounded-2xl">
           <table className="w-full min-w-[480px] text-left font-canopy text-sm">
             <tbody>
               {GRID_SPAN_PRESETS.map((preset) => (
-                <tr key={preset.span} className="border-b border-border/40 last:border-0">
-                  <td className="px-4 py-3 font-mono text-xs text-primary">{preset.span}/12</td>
-                  <td className="px-4 py-3 text-foreground">{preset.label}</td>
-                  <td className="px-4 py-3 text-xs text-muted-foreground">{preset.usage}</td>
+                <tr key={preset.span} className="border-b border-[var(--rootsy-bruma-200)] last:border-0">
+                  <td className="px-4 py-3 font-mono text-xs text-[var(--rootsy-savia-600)]">{preset.span}/12</td>
+                  <td className="px-4 py-3 text-[var(--rootsy-bruma-900)]">{preset.label}</td>
+                  <td className="px-4 py-3 text-xs text-[var(--rootsy-bruma-500)]">{preset.usage}</td>
                 </tr>
               ))}
             </tbody>
