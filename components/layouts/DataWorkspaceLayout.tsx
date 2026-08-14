@@ -69,6 +69,8 @@ export type DataWorkspaceLayoutProps = {
   onSidebarOpenChange?: (open: boolean) => void
   /** Selector de vista de la sección (cambio de pestaña sin salir del path). */
   sectionMenu?: ReactNode
+  /** Clases extra en el contenedor raíz del layout. */
+  rootClassName?: string
   children: ReactNode
   /** Ancho máximo del área principal. */
   mainMaxWidthClass?: string
@@ -107,6 +109,7 @@ export function DataWorkspaceLayout({
   mainMaxWidthClass = "max-w-6xl",
   contentFlush = false,
   mainClassName,
+  rootClassName,
   usePopBackdrop = true,
   userName,
   userAvatarSrc,
@@ -218,6 +221,7 @@ export function DataWorkspaceLayout({
     <div
       className={cn(
         "text-foreground",
+        rootClassName,
         hasModuleShell
           ? cn(
               menuNatureShellClass,

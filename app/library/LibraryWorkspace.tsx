@@ -6,8 +6,10 @@ import {
   libraryContentAreaClass,
   libraryContentEyebrowClass,
   libraryScrollLightClass,
+  libraryThemeClass,
 } from "@/app/library/libraryColorTheme"
 import { getLibraryNavGroup } from "@/app/library/layoutLibraryShared"
+import { cn } from "@/lib/utils"
 import { useParams } from "next/navigation"
 
 export function LibraryWorkspace() {
@@ -17,7 +19,7 @@ export function LibraryWorkspace() {
   const activeGroup = getLibraryNavGroup(sectionId)
 
   return (
-    <div className="flex min-h-0 flex-1 overflow-hidden">
+    <div className={cn(libraryThemeClass, "rootsy-app-light flex min-h-0 flex-1 overflow-hidden")}>
       <LibrarySidebar />
 
       <div

@@ -15,7 +15,7 @@ export const layoutsModuleHeaderGlassClass = cn(
 )
 
 export const layoutsModuleHeaderChromeTextClass =
-  "text-[var(--rootsy-text-on-dark,#f4f8f6)]"
+  "text-[var(--color-text-on-dark,var(--rootsy-bruma-50))]"
 
 export const layoutsModuleHeaderPopNameClass = cn(
   "truncate text-sm font-semibold",

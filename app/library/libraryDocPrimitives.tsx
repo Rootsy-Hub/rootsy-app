@@ -119,7 +119,7 @@ export function LibraryManifestoHero({
   descriptionClassName?: string
 }) {
   return (
-    <div className="overflow-hidden rounded-2xl border border-border/70 shadow-sm">
+    <div className="library-spec-card overflow-hidden rounded-2xl">
       <div
         className="relative px-6 py-10 sm:px-8"
         style={{ background: HERO_GRADIENTS[tone] }}
@@ -170,10 +170,7 @@ export function LibraryPrinciplesGrid({
   return (
     <div className="grid gap-3 sm:grid-cols-2">
       {principles.map((item) => (
-        <div
-          key={item.title}
-          className="rounded-xl border border-border/70 bg-card p-4 shadow-sm"
-        >
+        <div key={item.title} className="library-spec-card rounded-xl border p-4">
           <p className={cn("text-sm font-semibold text-foreground", titleClassName)}>
             {item.title}
           </p>
@@ -204,7 +201,7 @@ export function LibraryGuidelineCards({
   return (
     <div className="grid gap-4 sm:grid-cols-2">
       {items.map((g) => (
-        <div key={g.id} className="rounded-xl border border-border/70 bg-card p-4">
+        <div key={g.id} className="library-spec-card rounded-xl border p-4">
           <p className={cn("text-sm font-semibold text-foreground", titleClassName)}>
             {g.title}
           </p>
@@ -289,7 +286,7 @@ export function LibraryRelatedLinks({
           <Link
             key={link.sectionId}
             href={librarySectionHref(link.sectionId)}
-            className="rounded-xl border border-border/70 bg-card p-4 shadow-sm transition-colors hover:border-[#A8EBC4] hover:bg-[#F0FBF4]"
+            className="library-spec-card rounded-xl border p-4 transition-colors hover:border-[color-mix(in_srgb,var(--rootsy-savia-600)_25%,var(--rootsy-bruma-200))] hover:bg-[color-mix(in_srgb,var(--rootsy-savia-600)_6%,white)]"
           >
             <p className="text-sm font-semibold text-foreground">{link.label}</p>
             <p className="mt-1 text-xs text-muted-foreground">{link.hint}</p>
