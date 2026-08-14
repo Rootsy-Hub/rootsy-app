@@ -81,12 +81,15 @@ import {
 } from "@/lib/serviceOperateCatalog"
 import {
   buildPaymentCheckoutSelection,
+  paymentCheckoutKindIcon,
 } from "@/lib/paymentMethodCheckout"
+import { operationPaymentKindLabel } from "@/lib/operationPaymentKinds"
 import {
   parseTreasuryPaymentOptionKey,
   type TreasuryPaymentContext,
 } from "@/lib/treasuryPaymentOptions"
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
+import { Clock3 } from "lucide-react"
 
 const IVA_LABELS = Object.fromEntries(
   CLIENT_IVA_CONDITION_OPTIONS.map((option) => [option.value, option.label]),
@@ -444,22 +447,56 @@ export function CobrarServiciosWorkspace({ siteId, popId }: Props) {
     form.clientDraft.manualName.trim() ||
     ""
 
-  const paymentLabel = useMemo(() => {
+  const { paymentLabel, pagoSubLabel } = useMemo(() => {
     if (!isServiceChargePaymentMethodChosen(form.paymentMethodKey)) {
-      return "Elegir pago"
+      return { paymentLabel: "Elegir pago", pagoSubLabel: null as string | null }
     }
     if (form.paymentMethodKey === SERVICE_CHARGE_PAYMENT_PENDING) {
-      return SERVICE_CHARGE_PAYMENT_PENDING_LABEL
+      return {
+        paymentLabel: SERVICE_CHARGE_PAYMENT_PENDING_LABEL,
+        pagoSubLabel: null,
+      }
     }
     const parsed = parseTreasuryPaymentOptionKey(form.paymentMethodKey)
-    if (!parsed || !treasuryPaymentContext) return "Medio elegido"
-    return buildPaymentCheckoutSelection(
+    if (!parsed || !treasuryPaymentContext) {
+      return { paymentLabel: "Medio elegido", pagoSubLabel: null }
+    }
+
+    const kindLabel = operationPaymentKindLabel(parsed.kind)
+    const selection = buildPaymentCheckoutSelection(
       "service_charge",
       parsed.kind,
       parsed.treasuryAccountId,
       treasuryPaymentContext,
-    ).label
+    )
+    const destinationName =
+      [...treasuryPaymentContext.cashTreasuryAccounts,
+        ...treasuryPaymentContext.bankTreasuryAccounts,
+        ...treasuryPaymentContext.posTreasuryAccounts,
+      ].find((account) => account.id === parsed.treasuryAccountId)?.name ?? null
+
+    if (parsed.kind === "cash" && treasuryPaymentContext.cashTreasuryAccounts.length <= 1) {
+      return { paymentLabel: kindLabel, pagoSubLabel: null }
+    }
+
+    if (destinationName) {
+      return { paymentLabel: destinationName, pagoSubLabel: kindLabel }
+    }
+
+    return { paymentLabel: selection.label, pagoSubLabel: kindLabel }
   }, [form.paymentMethodKey, treasuryPaymentContext])
+
+  const pagoIcon = useMemo(() => {
+    if (!isServiceChargePaymentMethodChosen(form.paymentMethodKey)) {
+      return undefined
+    }
+    if (form.paymentMethodKey === SERVICE_CHARGE_PAYMENT_PENDING) {
+      return Clock3
+    }
+    const parsed = parseTreasuryPaymentOptionKey(form.paymentMethodKey)
+    if (!parsed) return undefined
+    return paymentCheckoutKindIcon(parsed.kind)
+  }, [form.paymentMethodKey])
 
   const comprobanteDisplayLabel = useMemo(
     () =>
@@ -751,7 +788,9 @@ export function CobrarServiciosWorkspace({ siteId, popId }: Props) {
                 comprobanteLabel={comprobanteToolboxLabel}
                 comprobanteConfigurado={comprobanteConfigurado}
                 pagoLabel={paymentLabel}
+                pagoSubLabel={pagoSubLabel}
                 pagoConfigurado={pagoConfigurado}
+                pagoIcon={pagoIcon}
                 descuentoLabel={descuentoToolboxLabel}
                 hayDescuento={hayDescuento}
                 descuentoDisabled={descuentoDisabled || toolbarDisabled}

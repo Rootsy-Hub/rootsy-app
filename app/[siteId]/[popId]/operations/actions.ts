@@ -600,6 +600,8 @@ export type GetOperationsListInput = {
   search: string
   page: number
   pageSize: number
+  /** Compras con crédito fiscal (Factura A/B). */
+  fiscalOnly?: boolean
   sort?: string | null
   ord?: "asc" | "desc"
 }
@@ -820,6 +822,31 @@ const PURCHASE_LIST_SELECT = `
           treasury_accounts ( name )
         )
       `
+
+const FISCAL_RECEIVED_PURCHASE_DOC_KINDS = ["Factura A", "Factura B"] as const
+
+async function loadFiscalPurchaseIdsForPop(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  popId: string,
+): Promise<string[]> {
+  const { data, error } = await supabase
+    .from("purchase_documents")
+    .select("purchase_id")
+    .eq("pop_id", popId)
+    .in("doc_kind", [...FISCAL_RECEIVED_PURCHASE_DOC_KINDS])
+
+  if (error || !data?.length) return []
+
+  return [
+    ...new Set(
+      data
+        .map((row) =>
+          row.purchase_id != null ? String(row.purchase_id).trim() : "",
+        )
+        .filter(Boolean),
+    ),
+  ]
+}
 
 async function loadArcaBySaleIds(
   supabase: Awaited<ReturnType<typeof createClient>>,
@@ -2155,11 +2182,30 @@ export async function getOperationsList(
     }
 
     if (view === "purchases") {
+      let fiscalPurchaseIds: string[] | null = null
+      if (input.fiscalOnly) {
+        fiscalPurchaseIds = await loadFiscalPurchaseIdsForPop(supabase, popId)
+        if (fiscalPurchaseIds.length === 0) {
+          return {
+            success: true,
+            popName,
+            totalCount: 0,
+            page: 1,
+            sales: emptySales,
+            expenseLedger: emptyExpenseLedger,
+            purchases: emptyPurchases,
+          }
+        }
+      }
+
       let countQuery = supabase
         .from("purchases")
         .select("id", { count: "exact", head: true })
         .eq("pop_id", popId)
         .neq("status", "draft")
+      if (fiscalPurchaseIds) {
+        countQuery = countQuery.in("id", fiscalPurchaseIds)
+      }
       countQuery = appendPurchasesDateFilter(
         countQuery,
         dateFrom,
@@ -2194,6 +2240,9 @@ export async function getOperationsList(
         .select(PURCHASE_LIST_SELECT)
         .eq("pop_id", popId)
         .neq("status", "draft")
+      if (fiscalPurchaseIds) {
+        dataQuery = dataQuery.in("id", fiscalPurchaseIds)
+      }
       dataQuery = appendPurchasesDateFilter(
         dataQuery,
         dateFrom,
@@ -2239,7 +2288,7 @@ export async function getOperationsList(
         (purchaseRows || []) as Array<Record<string, unknown>>,
         purchaseUserNames,
         documentKindByPurchaseId,
-      )
+      ).filter((purchase) => !input.fiscalOnly || purchase.accruesInputVat)
 
       return {
         success: true,

@@ -2,13 +2,12 @@
 
 import {
   dataWorkspaceDetailEmptyStateDescriptionClass,
+  dataWorkspaceEntityCardIsotypeClass,
   dataWorkspaceEntityCardLosetaClass,
   dataWorkspaceEntityCardLosetaSurfaceClass,
   dataWorkspaceEntityCardTitleClass,
   dataWorkspaceIntegrationChipSelectedClass,
 } from "@/components/data-workspace/dataWorkspaceListStyles"
-import { ReportCategoryIsotype } from "@/components/reports/ReportCategoryIsotype"
-import type { ReportCatalogCategoryId } from "@/lib/reportsCatalog"
 import { cn } from "@/lib/utils"
 import type { LucideIcon } from "lucide-react"
 import { ArrowRight } from "lucide-react"
@@ -18,7 +17,6 @@ type SharedProps = {
   title: string
   description: string
   icon: LucideIcon
-  categoryId: ReportCatalogCategoryId
   categoryActive?: boolean
   selected?: boolean
   planned?: boolean
@@ -48,7 +46,6 @@ function ReportHubCardShell({
   title,
   description,
   icon: Icon,
-  categoryId,
   categoryActive = true,
   selected = false,
   planned = false,
@@ -66,14 +63,17 @@ function ReportHubCardShell({
   const body = (
     <>
       <div className="flex items-start justify-between gap-2">
-        <ReportCategoryIsotype
-          icon={Icon}
-          categoryId={categoryId}
+        <span
           className={cn(
+            dataWorkspaceEntityCardIsotypeClass,
             "size-9 sm:size-10",
-            isInteractive && "transition-opacity group-hover:opacity-90",
+            isInteractive &&
+              "transition-colors group-hover:bg-[var(--rootsy-bruma-50)]",
           )}
-        />
+          aria-hidden
+        >
+          <Icon className="size-4 sm:size-[1.125rem]" strokeWidth={1.75} />
+        </span>
         {planned ? (
           <span className="shrink-0 rounded-full border border-[var(--rootsy-bruma-200)] bg-[var(--rootsy-bruma-50)] px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.06em] text-[var(--rootsy-bruma-500)]">
             Próximamente
@@ -154,7 +154,6 @@ export function ReportHubCard(props: Props) {
         title={props.title}
         description={props.description}
         icon={props.icon}
-        categoryId={props.categoryId}
         categoryActive={props.categoryActive}
         selected={props.selected}
         planned
@@ -169,7 +168,6 @@ export function ReportHubCard(props: Props) {
         title={props.title}
         description={props.description}
         icon={props.icon}
-        categoryId={props.categoryId}
         categoryActive={props.categoryActive}
         selected={props.selected}
         type="button"
@@ -183,7 +181,6 @@ export function ReportHubCard(props: Props) {
       title={props.title}
       description={props.description}
       icon={props.icon}
-      categoryId={props.categoryId}
       categoryActive={props.categoryActive}
       selected={props.selected}
       type="link"

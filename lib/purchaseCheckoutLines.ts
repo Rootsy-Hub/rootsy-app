@@ -1,3 +1,4 @@
+import type { ArticleItemKind } from "@/lib/articleItemKind"
 import {
   resolveSaleLineDiscount,
   roundSaleMoney,
@@ -21,6 +22,7 @@ export type PurchaseCheckoutLineInput = {
 export type PurchaseLineBuilt = {
   articleId: string
   articleCostId: string
+  itemKind: ArticleItemKind
   name: string
   costUnitLabel: string
   costQty: number
@@ -73,7 +75,7 @@ function parseMoney(v: unknown): number {
 
 export function buildPurchaseLineFromInput(
   input: PurchaseCheckoutLineInput,
-  article: { name?: unknown; iva?: unknown },
+  article: { name?: unknown; iva?: unknown; itemKind: ArticleItemKind },
   cost: {
     costUnitLabel: string
     saleUnitsPerCostUnit: number
@@ -111,6 +113,7 @@ export function buildPurchaseLineFromInput(
   return {
     articleId,
     articleCostId,
+    itemKind: article.itemKind,
     name: String(article.name ?? "Artículo"),
     costUnitLabel,
     costQty,
@@ -191,6 +194,7 @@ export function finalizePurchaseCheckout(
   const lineItemsJson = fiscalLines.map((line) => ({
     article_id: line.articleId,
     article_cost_id: line.articleCostId,
+    item_kind: line.itemKind,
     cost_quantity: line.costQty,
     cost_unit_label: line.costUnitLabel,
     sale_units_per_cost_unit: line.saleUnitsPerCostUnit,

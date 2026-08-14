@@ -1,5 +1,6 @@
 "use client"
 
+import { dataWorkspaceEntityCardIsotypeClass } from "@/components/data-workspace/dataWorkspaceListStyles"
 import { getTreasuryBrandIsotype } from "@/lib/treasuryBrandLogos"
 import type { TreasuryAccountBrandPreset } from "@/lib/treasuryAccountBrands"
 import { cn } from "@/lib/utils"
@@ -10,6 +11,14 @@ const boxClass: Record<IsotypeSize, string> = {
   sm: "size-9 rounded-xl text-[10px]",
   md: "size-11 rounded-xl text-xs",
   lg: "size-11 rounded-xl text-xs",
+}
+
+function treasuryBrandIsotypeSurfaceClass(size: IsotypeSize) {
+  return cn(
+    dataWorkspaceEntityCardIsotypeClass,
+    size === "sm" && "size-9 text-[10px]",
+    size !== "sm" && "text-xs",
+  )
 }
 
 type IsotypeProps = {
@@ -42,10 +51,10 @@ export function TreasuryBrandIsotype({
 
     const box = cn(
       "relative shrink-0 overflow-hidden",
-      boxClass[size],
       fullBleed
-        ? "bg-transparent"
-        : "flex items-center justify-center bg-white/95 shadow-sm ring-1 ring-black/5",
+        ? boxClass[size]
+        : treasuryBrandIsotypeSurfaceClass(size),
+      fullBleed && "bg-transparent",
       className,
     )
 
@@ -73,14 +82,15 @@ export function TreasuryBrandIsotype({
   }
 
   const box = cn(
-    "flex shrink-0 items-center justify-center overflow-hidden font-bold tracking-tight",
-    boxClass[size],
+    "overflow-hidden font-bold tracking-tight",
     onColoredHeader
       ? cn(
+          "flex shrink-0 items-center justify-center",
+          boxClass[size],
           "bg-white/20 backdrop-blur-sm ring-1 ring-white/25",
           headerTextClass,
         )
-      : "bg-white text-foreground/80 shadow-sm ring-1 ring-black/10",
+      : treasuryBrandIsotypeSurfaceClass(size),
     className,
   )
 

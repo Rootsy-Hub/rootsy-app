@@ -1,9 +1,7 @@
 /**
  * Plan de cuentas modelo Argentina (`demo_seed` arg_v3) insertado por
- * `public.seed_pop_site_defaults` al crear un POP con sitio `arg`.
- * Fuente de verdad: `rootsy-core/docs/supabase/seed_pop_site_defaults.sql`.
- * Si cambiás el seed SQL, actualizá este arreglo para que el código y la doc
- * coincidan.
+ * `public.ensure_pop_arg_v3_chart_accounts` al crear un POP (trigger en `pops`).
+ * Mantener sincronizado con `supabase/migrations/*_pop_arg_v3_chart_seed.sql`.
  */
 export type ArgV3ChartAccountType =
   | "activo_corriente"
@@ -115,6 +113,13 @@ export const ARG_V3_DEFAULT_CHART_ACCOUNTS: readonly ArgV3DefaultChartRow[] = [
     level: 4,
   },
   {
+    code: "3.2.1.02",
+    name: "Ajuste por inventario inicial",
+    accountType: "patrimonio_neto",
+    nature: "acreedora",
+    level: 4,
+  },
+  {
     code: "4.1.1.01",
     name: "Ventas — comercio",
     accountType: "ingresos",
@@ -221,6 +226,12 @@ export const CHART_MERCADERIAS_CODES: readonly string[] = [
 export const CHART_INGRESO_AJUSTE_CODES: readonly string[] = [
   ARG_V3_CHART_CODE.otrosIngresos,
   ARG_V3_CHART_CODE.ventas,
+]
+
+/** Contrapartida de stock inicial (saldo de apertura, no ingreso del período). */
+export const CHART_INVENTARIO_INICIAL_PATRIMONIO_CODES: readonly string[] = [
+  "3.2.1.02",
+  "3.2.1.01",
 ]
 
 export const CHART_GASTO_MERMA_CODES: readonly string[] = [

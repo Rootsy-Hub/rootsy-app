@@ -25,6 +25,8 @@ import {
   SERVICE_CHARGE_CHECKOUT_KINDS,
 } from "@/lib/serviceChargeCheckoutPayment"
 import type { TreasuryPaymentContext } from "@/lib/treasuryPaymentOptions"
+import type { LucideIcon } from "lucide-react"
+import { ArrowLeftRight, Banknote, CreditCard } from "lucide-react"
 
 export type PaymentFlow = "sale" | "purchase" | "service_charge"
 
@@ -301,4 +303,18 @@ export function shouldStayOpenAfterSelection(
   selection: PaymentMethodSelection,
 ): boolean {
   return flow === "purchase" && selection.kind === "card_credit"
+}
+
+export function paymentCheckoutKindIcon(kind: OperationPaymentKind): LucideIcon {
+  switch (kind) {
+    case "cash":
+      return Banknote
+    case "card_debit":
+    case "card_credit":
+      return CreditCard
+    case "transfer":
+      return ArrowLeftRight
+    default:
+      return Banknote
+  }
 }

@@ -2,10 +2,10 @@
 
 import {
   getOperationsList,
-  type OperationSaleRow,
+  type OperationPurchaseRow,
 } from "@/app/[siteId]/[popId]/operations/actions"
 import { ReportDetailHeaderCard } from "@/components/reports/ReportDetailHeaderCard"
-import { SalesReportTable } from "@/components/reports/SalesReportTable"
+import { PurchasesReportTable } from "@/components/reports/PurchasesReportTable"
 import { DataWorkspaceDetailEmptyState } from "@/components/data-workspace/DataWorkspaceDetailEmptyState"
 import {
   dataWorkspaceDetailEmptyStateDescriptionClass,
@@ -14,13 +14,17 @@ import {
   dataWorkspaceEntityCardStatValueLargeClass,
 } from "@/components/data-workspace/dataWorkspaceListStyles"
 import { formatReportMoneyAr, formatReportPeriodSummary } from "@/lib/reportFormatters"
-import { exportSalesDetailReportCsv } from "@/lib/salesReportCsvExport"
-import { exportSalesDetailReportPdf } from "@/lib/salesReportPdfExport"
-import { displayOperationSaleCollected } from "@/lib/channelOperationSales"
+import { exportReceivedInvoicesReportCsv } from "@/lib/receivedInvoicesReportCsvExport"
+import { exportReceivedInvoicesReportPdf } from "@/lib/receivedInvoicesReportPdfExport"
+import { resolvePurchaseDisplayTaxTotal } from "@/app/[siteId]/[popId]/operations/operationPurchaseUi"
+import {
+  sumReceivedInvoicesReportIva,
+  sumReceivedInvoicesReportTotal,
+} from "@/lib/receivedInvoicesReportExportData"
 import type { DataWorkspaceDatePreset } from "@/lib/dataWorkspaceDateFilter"
 import { usePopTimeZone } from "@/hooks/usePopTimeZone"
 import { cn } from "@/lib/utils"
-import { FileBarChart } from "lucide-react"
+import { FileInput } from "lucide-react"
 import {
   SalesReportDownloadMenu,
   type SalesReportExportFormat,
@@ -50,63 +54,69 @@ type Props = {
   onBack: () => void
 }
 
-async function fetchSalesPeriodTotal(
+async function fetchReceivedInvoicesPeriodTotals(
   popId: string,
   from: string | null,
   to: string | null,
-): Promise<{ count: number; total: number } | { error: string }> {
+): Promise<
+  { count: number; total: number; iva: number } | { error: string }
+> {
   let page = 1
   let total = 0
+  let iva = 0
   let count = 0
 
   while (page <= 50) {
     const res = await getOperationsList(popId, {
-      view: "sales-report",
+      view: "purchases",
+      fiscalOnly: true,
       dateFrom: from,
       dateTo: to,
       search: "",
       page,
       pageSize: 100,
-      sort: "sold_at",
+      sort: "created_at",
       ord: "desc",
     })
     if (!res.success) {
-      return { error: res.error || "Error al cargar ventas" }
+      return { error: res.error || "Error al cargar facturas recibidas" }
     }
     count = res.totalCount
-    for (const row of res.sales) {
-      total += displayOperationSaleCollected(row)
+    for (const row of res.purchases) {
+      total += row.total
+      iva += resolvePurchaseDisplayTaxTotal(row) ?? 0
     }
     if (page * 100 >= res.totalCount) break
     page += 1
   }
 
-  return { count, total }
+  return { count, total, iva }
 }
 
-async function fetchAllSalesReportRows(
+async function fetchAllReceivedInvoicesReportRows(
   popId: string,
   from: string | null,
   to: string | null,
-): Promise<{ rows: OperationSaleRow[] } | { error: string }> {
-  const rows: OperationSaleRow[] = []
+): Promise<{ rows: OperationPurchaseRow[] } | { error: string }> {
+  const rows: OperationPurchaseRow[] = []
   let page = 1
 
   while (page <= 100) {
     const res = await getOperationsList(popId, {
-      view: "sales-report",
+      view: "purchases",
+      fiscalOnly: true,
       dateFrom: from,
       dateTo: to,
       search: "",
       page,
       pageSize: 100,
-      sort: "sold_at",
+      sort: "created_at",
       ord: "desc",
     })
     if (!res.success) {
-      return { error: res.error || "Error al cargar ventas" }
+      return { error: res.error || "Error al cargar facturas recibidas" }
     }
-    rows.push(...res.sales)
+    rows.push(...res.purchases)
     if (page * 100 >= res.totalCount) break
     page += 1
   }
@@ -114,7 +124,7 @@ async function fetchAllSalesReportRows(
   return { rows }
 }
 
-export function SalesDetailReportView({
+export function ReceivedInvoicesReportView({
   popId,
   from,
   to,
@@ -129,7 +139,7 @@ export function SalesDetailReportView({
   const scrollRef = useRef<HTMLDivElement>(null)
   const sentinelRef = useRef<HTMLDivElement>(null)
 
-  const [rows, setRows] = useState<OperationSaleRow[]>([])
+  const [rows, setRows] = useState<OperationPurchaseRow[]>([])
   const [totalCount, setTotalCount] = useState(0)
   const [page, setPage] = useState(1)
   const [hasMore, setHasMore] = useState(true)
@@ -138,6 +148,7 @@ export function SalesDetailReportView({
   const [listError, setListError] = useState<string | null>(null)
 
   const [periodTotal, setPeriodTotal] = useState<number | null>(null)
+  const [periodIva, setPeriodIva] = useState<number | null>(null)
   const [periodTotalBusy, setPeriodTotalBusy] = useState(true)
   const [periodTotalError, setPeriodTotalError] = useState<string | null>(null)
   const [exportBusy, setExportBusy] = useState(false)
@@ -158,13 +169,14 @@ export function SalesDetailReportView({
       }
 
       const res = await getOperationsList(popId, {
-        view: "sales-report",
+        view: "purchases",
+        fiscalOnly: true,
         dateFrom: from,
         dateTo: to,
         search: "",
         page: pageNum,
         pageSize: PAGE_SIZE,
-        sort: "sold_at",
+        sort: "created_at",
         ord: "desc",
       })
 
@@ -180,14 +192,14 @@ export function SalesDetailReportView({
           setTotalCount(0)
           setHasMore(false)
         }
-        setListError(res.error || "Error al cargar ventas")
+        setListError(res.error || "Error al cargar facturas recibidas")
         return
       }
 
       setTotalCount(res.totalCount)
       setPage(res.page)
       setHasMore(res.page * PAGE_SIZE < res.totalCount)
-      setRows((prev) => (append ? [...prev, ...res.sales] : res.sales))
+      setRows((prev) => (append ? [...prev, ...res.purchases] : res.purchases))
     },
     [popId, from, to],
   )
@@ -197,33 +209,34 @@ export function SalesDetailReportView({
       setExportBusy(true)
       setExportError(null)
       try {
-        const result = await fetchAllSalesReportRows(popId, from, to)
+        const result = await fetchAllReceivedInvoicesReportRows(popId, from, to)
         if ("error" in result) {
           setExportError(result.error)
           return
         }
         if (result.rows.length === 0) {
-          setExportError("No hay ventas para exportar en este período.")
+          setExportError("No hay facturas recibidas para exportar en este período.")
           return
         }
 
         const exportOptions = {
           timeZone,
           periodSummary,
-          salesCount: totalCount || result.rows.length,
-          periodTotal: periodTotal ?? undefined,
+          invoiceCount: totalCount || result.rows.length,
+          periodTotal: periodTotal ?? sumReceivedInvoicesReportTotal(result.rows),
+          periodIva: periodIva ?? sumReceivedInvoicesReportIva(result.rows),
         }
 
         if (format === "csv") {
-          exportSalesDetailReportCsv(result.rows, exportOptions)
+          exportReceivedInvoicesReportCsv(result.rows, exportOptions)
         } else {
-          await exportSalesDetailReportPdf(result.rows, exportOptions)
+          await exportReceivedInvoicesReportPdf(result.rows, exportOptions)
         }
       } finally {
         setExportBusy(false)
       }
     },
-    [popId, from, to, timeZone, periodSummary, totalCount, periodTotal],
+    [popId, from, to, timeZone, periodSummary, totalCount, periodTotal, periodIva],
   )
 
   useEffect(() => {
@@ -238,15 +251,17 @@ export function SalesDetailReportView({
     let cancelled = false
     setPeriodTotalBusy(true)
     setPeriodTotalError(null)
-    void fetchSalesPeriodTotal(popId, from, to).then((result) => {
+    void fetchReceivedInvoicesPeriodTotals(popId, from, to).then((result) => {
       if (cancelled) return
       setPeriodTotalBusy(false)
       if ("error" in result) {
         setPeriodTotal(null)
+        setPeriodIva(null)
         setPeriodTotalError(result.error)
         return
       }
       setPeriodTotal(result.total)
+      setPeriodIva(result.iva)
       setTotalCount((prev) => (prev === 0 ? result.count : prev))
     })
     return () => {
@@ -276,9 +291,9 @@ export function SalesDetailReportView({
     <div className="relative flex min-h-full flex-1 flex-col">
       <div className="flex min-h-full flex-1 flex-col gap-6 px-4 pt-6 pb-0 sm:px-6 lg:px-8">
         <ReportDetailHeaderCard
-          eyebrow="Reporte operativo"
-          title="Detalle de ventas"
-          icon={FileBarChart}
+          eyebrow="Reporte fiscal"
+          title="Facturas recibidas"
+          icon={FileInput}
           onBack={onBack}
           preset={preset}
           customRange={customRange}
@@ -288,7 +303,7 @@ export function SalesDetailReportView({
           stats={
             <>
               <div className="min-w-[8.5rem]">
-                <p className={dataWorkspaceEntityCardStatLabelClass}>Ventas</p>
+                <p className={dataWorkspaceEntityCardStatLabelClass}>Comprobantes</p>
                 <p className={cn("mt-1.5", dataWorkspaceEntityCardStatValueLargeClass)}>
                   {loading && totalCount === 0
                     ? "…"
@@ -296,13 +311,23 @@ export function SalesDetailReportView({
                 </p>
               </div>
               <div className="min-w-[8.5rem]">
-                <p className={dataWorkspaceEntityCardStatLabelClass}>Total vendido</p>
+                <p className={dataWorkspaceEntityCardStatLabelClass}>Total</p>
                 <p className={cn("mt-1.5", dataWorkspaceEntityCardStatValueLargeClass)}>
                   {periodTotalBusy
                     ? "…"
                     : periodTotalError
                       ? "—"
                       : formatReportMoneyAr(periodTotal ?? 0)}
+                </p>
+              </div>
+              <div className="min-w-[8.5rem]">
+                <p className={dataWorkspaceEntityCardStatLabelClass}>IVA crédito</p>
+                <p className={cn("mt-1.5", dataWorkspaceEntityCardStatValueLargeClass)}>
+                  {periodTotalBusy
+                    ? "…"
+                    : periodTotalError
+                      ? "—"
+                      : formatReportMoneyAr(periodIva ?? 0)}
                 </p>
               </div>
             </>
@@ -350,24 +375,25 @@ export function SalesDetailReportView({
                 className="flex min-h-52 flex-col items-center justify-center gap-3 px-4 py-10"
                 aria-busy="true"
               >
-                <RootsSpinner size="default" label="Cargando ventas" />
-                <p className="text-sm text-rootsy-bruma-500">Cargando ventas…</p>
+                <RootsSpinner size="default" label="Cargando facturas recibidas" />
+                <p className="text-sm text-rootsy-bruma-500">
+                  Cargando facturas recibidas…
+                </p>
               </div>
             ) : !rows.length && !listError ? (
               <DataWorkspaceDetailEmptyState
-                icon={FileBarChart}
-                title="Sin ventas en el período"
-                description="No hay operaciones de venta para el rango de fechas elegido."
+                icon={FileInput}
+                title="Sin facturas recibidas en el período"
                 className="min-h-52"
               />
             ) : (
               <>
-                <SalesReportTable rows={rows} />
+                <PurchasesReportTable rows={rows} />
                 <div ref={sentinelRef} className="h-px w-full" aria-hidden />
                 {loadingMore ? (
                   <div className="flex items-center justify-center gap-2 px-4 py-3 text-sm text-rootsy-bruma-500 sm:px-6 lg:px-8">
                     <RootsSpinner size="xs" aria-hidden className="shrink-0" />
-                    Cargando más ventas…
+                    Cargando más comprobantes…
                   </div>
                 ) : null}
               </>

@@ -4,11 +4,10 @@ import withAuth from "@/hoc/withAuth"
 import {
   getPurchaseCatalog,
   type PurchaseCatalogArticle,
-  type PurchaseCatalogCategory,
+  type PurchaseCatalogCategorySection,
   type PurchaseCatalogArticleCost,
   type PurchaseCatalogPaymentOption,
   type PurchaseCatalogSupplier,
-  type PurchaseKind,
 } from "@/app/[siteId]/[popId]/purchases/actions"
 import { PurchaseCatalogBrowser } from "@/components/purchase-operation/PurchaseCatalogBrowser"
 import { PurchaseOperationToolbox } from "@/components/purchase-operation/PurchaseOperationToolbox"
@@ -57,8 +56,8 @@ import { Loader2, Truck } from "lucide-react"
 import { usePadronAutofillRazonSocial } from "@/hooks/usePadronAutofillRazonSocial"
 import { useCartListScrollHighlight } from "@/hooks/useCartListScrollHighlight"
 import { cn } from "@/lib/utils"
+import { derivePurchaseKindFromCartItems } from "@/lib/purchaseKind"
 import { purchaseCartLineId } from "@/lib/purchaseCartLine"
-import { saleQuantityFromCostPurchase } from "@/lib/articleCosts"
 import {
   AlertDialog,
   AlertDialogAction,
@@ -94,36 +93,6 @@ function labelCondicionIva(value: string | null | undefined) {
   return IVA_LABEL_BY_VALUE[value] ?? value
 }
 
-function derivePurchaseKindFromCart(
-  cart: ItemCarrito[],
-  articles: PurchaseCatalogArticle[],
-): PurchaseKind {
-  const counts = new Map<PurchaseKind, number>()
-  for (const item of cart) {
-    const article = articles.find((a) => a.id === item.productoId)
-    const cost = article?.costs.find((c) => c.id === item.articleCostId)
-    if (!article || !cost) continue
-    const saleQty = saleQuantityFromCostPurchase(
-      item.cantidad,
-      cost.saleUnitsPerCostUnit,
-    )
-    counts.set(
-      article.itemKind,
-      (counts.get(article.itemKind) ?? 0) + saleQty,
-    )
-  }
-  if (counts.size === 0) return "merchandise"
-  let best: PurchaseKind = "merchandise"
-  let bestQty = -1
-  for (const [kind, qty] of counts) {
-    if (qty > bestQty) {
-      best = kind
-      bestQty = qty
-    }
-  }
-  return best
-}
-
 function articleToProducto(a: PurchaseCatalogArticle): PurchaseCatalogProduct {
   return {
     id: a.id,
@@ -131,6 +100,7 @@ function articleToProducto(a: PurchaseCatalogArticle): PurchaseCatalogProduct {
     descripcion: a.description.trim() ? a.description : "—",
     iva: a.iva,
     categoria: a.categoryName.trim() ? a.categoryName : "—",
+    categoriaFiltro: `${a.itemKind}:${a.categoryId}`,
     imagen: resolveCatalogProductImage(a.id, a.imageUrl),
     unitOfMeasure: a.unitOfMeasure,
     costs: a.costs,
@@ -162,8 +132,8 @@ function PurchasesPage() {
   const [catalogArticles, setCatalogArticles] = useState<PurchaseCatalogArticle[]>(
     [],
   )
-  const [catalogCategories, setCatalogCategories] = useState<
-    PurchaseCatalogCategory[]
+  const [catalogCategorySections, setCatalogCategorySections] = useState<
+    PurchaseCatalogCategorySection[]
   >([])
   const [popName, setPopName] = useState("")
   const [catalogLoading, setCatalogLoading] = useState(true)
@@ -173,12 +143,6 @@ function PurchasesPage() {
   const [treasuryPaymentContext, setTreasuryPaymentContext] =
     useState<TreasuryPaymentContext | null>(null)
   const [canReadPaymentMethods, setCanReadPaymentMethods] = useState(false)
-
-  const categoriasNav = useMemo(() => {
-    return [
-      ...new Set(catalogCategories.map((c) => c.name).filter(Boolean)),
-    ]
-  }, [catalogCategories])
 
   const productosCatalogo = useMemo(
     () => catalogArticles.map(articleToProducto),
@@ -196,7 +160,7 @@ function PurchasesPage() {
     const res = await getPurchaseCatalog(popId)
     if (!res.success) {
       setCatalogArticles([])
-      setCatalogCategories([])
+      setCatalogCategorySections([])
       setPopName("")
       setCanCreate(false)
       setCanUpdateArticles(false)
@@ -207,7 +171,7 @@ function PurchasesPage() {
       return
     }
     setCatalogArticles(res.articles)
-    setCatalogCategories(res.categories)
+    setCatalogCategorySections(res.categorySections)
     setPopName(res.popName)
     setCanCreate(res.canCreate)
     setCanUpdateArticles(res.canUpdateArticles)
@@ -505,7 +469,7 @@ function PurchasesPage() {
     setCompraError(null)
     setCompraSubmitting(true)
     try {
-      const purchaseKind = derivePurchaseKindFromCart(carrito, catalogArticles)
+      const purchaseKind = derivePurchaseKindFromCartItems(carrito, catalogArticles)
       const res = await completePurchase(popId, {
         supplierId:
           proveedorSeleccionado && !proveedorSeleccionado.manual
@@ -928,7 +892,7 @@ function PurchasesPage() {
           <LayoutsOperarMainGrid
             catalog={
               <PurchaseCatalogBrowser
-                categories={categoriasNav}
+                categorySections={catalogCategorySections}
                 products={productosCatalogo}
                 loading={catalogLoading}
                 error={catalogError}

@@ -19,6 +19,7 @@ const PURCHASE_KIND_LABEL: Record<string, string> = {
   merchandise: "Mercadería",
   raw_material: "Materia prima",
   supply: "Insumo",
+  mixed: "Mixta",
 }
 
 function saleComprobanteLabel(sale: OperationSaleRow): string {

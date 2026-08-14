@@ -497,7 +497,6 @@ export function PurchasesExpensesReportView({
           eyebrow="Reporte operativo"
           title="Compras y gastos"
           icon={Wallet}
-          categoryId="operativo"
           onBack={onBack}
           preset={preset}
           customRange={customRange}

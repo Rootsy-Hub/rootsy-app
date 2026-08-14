@@ -85,6 +85,7 @@
   --layouts-operar-form-dark-text-muted: color-mix(in srgb, var(--rootsy-sombra-300) 55%, transparent);
   --layouts-operar-form-dark-label: color-mix(in srgb, var(--rootsy-bruma-100) 84%, var(--rootsy-sombra-300));
   --layouts-operar-form-dark-icon: color-mix(in srgb, var(--rootsy-sombra-300) 70%, transparent);
+  --layouts-operar-form-dark-table-row: color-mix(in srgb, var(--rootsy-sombra-950) 34%, transparent);
 
   /* Ticket — bruma + savia */
   --layouts-operar-light-cart-heading: var(--rootsy-bruma-600);
@@ -143,6 +144,7 @@
   --layouts-operar-light-cart-discount-badge-bg: color-mix(in srgb, var(--rootsy-savia-600) 16%, transparent);
   --layouts-operar-light-cart-discount-badge-text: var(--rootsy-savia-950);
   --layouts-operar-light-cart-line-text: var(--rootsy-bruma-900);
+  --layouts-operar-light-cart-field-error: #dc2626;
 }
 
 .rootsy-theme-pos.layouts-operar-body .layouts-operar-catalog-toolbar-control,

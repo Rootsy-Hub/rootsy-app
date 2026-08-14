@@ -66,6 +66,82 @@ const PurchasesExpensesReportView = dynamic(
   },
 )
 
+const IssuedInvoicesReportView = dynamic(
+  () =>
+    import("@/components/reports/IssuedInvoicesReportView").then(
+      (mod) => mod.IssuedInvoicesReportView,
+    ),
+  {
+    ssr: false,
+    loading: () => (
+      <div
+        className="flex min-h-52 flex-col items-center justify-center gap-3 px-4 py-10"
+        aria-busy="true"
+      >
+        <RootsSpinner size="default" label="Cargando reporte" />
+        <p className="text-sm text-rootsy-bruma-500">Cargando reporte…</p>
+      </div>
+    ),
+  },
+)
+
+const ReceivedInvoicesReportView = dynamic(
+  () =>
+    import("@/components/reports/ReceivedInvoicesReportView").then(
+      (mod) => mod.ReceivedInvoicesReportView,
+    ),
+  {
+    ssr: false,
+    loading: () => (
+      <div
+        className="flex min-h-52 flex-col items-center justify-center gap-3 px-4 py-10"
+        aria-busy="true"
+      >
+        <RootsSpinner size="default" label="Cargando reporte" />
+        <p className="text-sm text-rootsy-bruma-500">Cargando reporte…</p>
+      </div>
+    ),
+  },
+)
+
+const IncomeStatementReportView = dynamic(
+  () =>
+    import("@/components/reports/IncomeStatementReportView").then(
+      (mod) => mod.IncomeStatementReportView,
+    ),
+  {
+    ssr: false,
+    loading: () => (
+      <div
+        className="flex min-h-52 flex-col items-center justify-center gap-3 px-4 py-10"
+        aria-busy="true"
+      >
+        <RootsSpinner size="default" label="Cargando reporte" />
+        <p className="text-sm text-rootsy-bruma-500">Cargando reporte…</p>
+      </div>
+    ),
+  },
+)
+
+const BalanceSheetReportView = dynamic(
+  () =>
+    import("@/components/reports/BalanceSheetReportView").then(
+      (mod) => mod.BalanceSheetReportView,
+    ),
+  {
+    ssr: false,
+    loading: () => (
+      <div
+        className="flex min-h-52 flex-col items-center justify-center gap-3 px-4 py-10"
+        aria-busy="true"
+      >
+        <RootsSpinner size="default" label="Cargando reporte" />
+        <p className="text-sm text-rootsy-bruma-500">Cargando reporte…</p>
+      </div>
+    ),
+  },
+)
+
 function ReportsPage() {
   const params = useParams()
   const siteId = typeof params?.siteId === "string" ? params.siteId : ""
@@ -159,6 +235,36 @@ function ReportsPage() {
             popId={popId}
             from={bounds.from}
             to={bounds.to}
+            onBack={() => setSelectedReportId(null)}
+            {...periodProps}
+          />
+        ) : selectedReportId === "invoices" ? (
+          <IssuedInvoicesReportView
+            popId={popId}
+            from={bounds.from}
+            to={bounds.to}
+            onBack={() => setSelectedReportId(null)}
+            {...periodProps}
+          />
+        ) : selectedReportId === "received-invoices" ? (
+          <ReceivedInvoicesReportView
+            popId={popId}
+            from={bounds.from}
+            to={bounds.to}
+            onBack={() => setSelectedReportId(null)}
+            {...periodProps}
+          />
+        ) : selectedReportId === "income-statement" ? (
+          <IncomeStatementReportView
+            popId={popId}
+            from={bounds.from}
+            to={bounds.to}
+            onBack={() => setSelectedReportId(null)}
+            {...periodProps}
+          />
+        ) : selectedReportId === "balance-sheet" ? (
+          <BalanceSheetReportView
+            popId={popId}
             onBack={() => setSelectedReportId(null)}
             {...periodProps}
           />

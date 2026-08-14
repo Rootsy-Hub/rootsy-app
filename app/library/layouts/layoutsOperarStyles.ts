@@ -187,6 +187,10 @@ export const layoutsOperarFormDarkSecondaryButtonClass = cn(
   "disabled:pointer-events-none disabled:opacity-45",
 )
 
+/** Texto inline de error / requerido — formularios dark operar. */
+export const layoutsOperarFormDarkFieldErrorClass =
+  "text-xs font-medium leading-snug text-[color-mix(in_srgb,#fecaca_92%,white)]"
+
 /** Banner de error — formularios dark operar (pie de paso wizard). */
 export const layoutsOperarFormDarkErrorBannerClass = cn(
   "flex min-h-12 items-center justify-start gap-3 rounded-lg border px-4 py-3 text-left text-base font-medium leading-normal",
@@ -622,6 +626,10 @@ export const layoutsOperarSummaryCartHeadingClass =
 
 export const layoutsOperarSummaryCartMetaClass =
   "shrink-0 text-[11px] font-medium tabular-nums text-[var(--layouts-operar-light-cart-meta)]"
+
+/** Error / requerido inline — ticket y resumen cargo (fondo bruma claro). */
+export const layoutsOperarLightCartFieldErrorClass =
+  "text-xs font-medium leading-snug text-[var(--layouts-operar-light-cart-field-error)]"
 
 /** @deprecated Usar DataWorkspaceDetailEmptyState (layout.blocks.empty.detail). */
 export const layoutsOperarSummaryEmptyStateClass =

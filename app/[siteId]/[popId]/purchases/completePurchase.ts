@@ -21,8 +21,11 @@ import {
 import { createClient } from "@/utils/supabase/server"
 import type {
   CreatePurchaseInput,
-  PurchaseKind,
 } from "@/app/[siteId]/[popId]/purchases/actions"
+import {
+  derivePurchaseKindFromItemKinds,
+  type PurchaseKind,
+} from "@/lib/purchaseKind"
 import { purchaseComprobanteAccruesInputVat } from "@/lib/purchaseComprobantePicker"
 import {
   finalizePurchaseCheckout,
@@ -92,11 +95,6 @@ export async function completePurchase(
     )
     if (!canCreate) {
       return { success: false, error: "Sin permiso para registrar compras." }
-    }
-
-    const kind = input.purchaseKind
-    if (!["merchandise", "raw_material", "supply"].includes(kind)) {
-      return { success: false, error: "Tipo de compra inválido." }
     }
 
     const payOnAccount = Boolean(input.payOnSupplierAccount)
@@ -218,6 +216,10 @@ export async function completePurchase(
       return { success: false, error: "No hay ítems válidos en la compra." }
     }
 
+    const kind: PurchaseKind = derivePurchaseKindFromItemKinds(
+      built.map((line) => line.itemKind),
+    )
+
     const checkout = finalizePurchaseCheckout(
       built,
       input.generalDiscountMode ?? "porcentaje",
@@ -278,7 +280,7 @@ export async function completePurchase(
         supplier_id: supplierId,
         supplier_name: supplierName,
         supplier_tax_id: supplierTaxId,
-        purchase_kind: kind as PurchaseKind,
+        purchase_kind: kind,
         document_number: input.documentNumber?.trim() || null,
         document_date: input.documentDate?.trim() || null,
         due_date: input.dueDate?.trim() || null,
@@ -382,9 +384,11 @@ export async function completePurchase(
       popId,
       userId: user.uid,
       purchaseId,
-      purchaseKind: kind as PurchaseKind,
       entryDate,
-      subtotalNet: persistedSubtotal,
+      lines: fiscalLines.map((line) => ({
+        itemKind: line.itemKind,
+        inventoryAmount: accrueInputVat ? line.netPart : line.lineFinal,
+      })),
       taxTotal: persistedTaxTotal,
       total,
       supplierName,

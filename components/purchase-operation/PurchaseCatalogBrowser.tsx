@@ -1,5 +1,6 @@
 "use client"
 
+import type { PurchaseCatalogCategorySection } from "@/app/[siteId]/[popId]/purchases/actions"
 import {
   type PurchaseCatalogProduct,
   type PurchaseCatalogView,
@@ -24,7 +25,7 @@ import { cn } from "@/lib/utils"
 import { useEffect, useMemo, useRef, useState } from "react"
 
 type Props = {
-  categories: readonly string[]
+  categorySections: readonly PurchaseCatalogCategorySection[]
   products: PurchaseCatalogProduct[]
   loading: boolean
   error: string | null
@@ -33,8 +34,30 @@ type Props = {
   className?: string
 }
 
+function defaultPurchaseCatalogView(
+  categorySections: readonly PurchaseCatalogCategorySection[],
+): PurchaseCatalogView {
+  for (const section of categorySections) {
+    const first = section.categories[0]
+    if (first) {
+      return { modo: "categoria", categoria: `${section.id}:${first.id}` }
+    }
+  }
+  return { modo: "categoria", categoria: "" }
+}
+
+function isValidPurchaseCatalogView(
+  categoria: string,
+  categorySections: readonly PurchaseCatalogCategorySection[],
+): boolean {
+  if (!categoria) return false
+  return categorySections.some((section) =>
+    section.categories.some((cat) => `${section.id}:${cat.id}` === categoria),
+  )
+}
+
 export function PurchaseCatalogBrowser({
-  categories,
+  categorySections,
   products,
   loading,
   error,
@@ -42,10 +65,9 @@ export function PurchaseCatalogBrowser({
   catalogSidebarOpen = true,
   className,
 }: Props) {
-  const [vistaCatalogo, setVistaCatalogo] = useState<PurchaseCatalogView>({
-    modo: "categoria",
-    categoria: categories[0] ?? "",
-  })
+  const [vistaCatalogo, setVistaCatalogo] = useState<PurchaseCatalogView>(() =>
+    defaultPurchaseCatalogView(categorySections),
+  )
   const [modoVista, setModoVista] = useState<"grid" | "lista">("grid")
   const [busqueda, setBusqueda] = useState("")
   const vistaAntesBusquedaRef = useRef<PurchaseCatalogView | null>(null)
@@ -56,7 +78,7 @@ export function PurchaseCatalogBrowser({
     const hayBusqueda = q.length > 0
     return products.filter((p) => {
       const matchVista =
-        hayBusqueda || p.categoria === vistaCatalogo.categoria
+        hayBusqueda || p.categoriaFiltro === vistaCatalogo.categoria
       const matchQ =
         !q ||
         p.nombre.toLowerCase().includes(q) ||
@@ -67,10 +89,12 @@ export function PurchaseCatalogBrowser({
 
   useEffect(() => {
     setVistaCatalogo((prev) => {
-      if (categories.includes(prev.categoria)) return prev
-      return { modo: "categoria", categoria: categories[0] ?? "" }
+      if (isValidPurchaseCatalogView(prev.categoria, categorySections)) {
+        return prev
+      }
+      return defaultPurchaseCatalogView(categorySections)
     })
-  }, [categories])
+  }, [categorySections])
 
   useEffect(() => {
     const trimmed = busqueda.trim()
@@ -112,7 +136,7 @@ export function PurchaseCatalogBrowser({
             <SaleCatalogSidebarNavSkeleton />
           ) : (
             <PurchaseCatalogSidebarNav
-              categories={categories}
+              categorySections={categorySections}
               vistaCatalogo={vistaCatalogo}
               onVistaChange={setVistaCatalogo}
             />

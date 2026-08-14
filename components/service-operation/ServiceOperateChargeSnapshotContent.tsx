@@ -27,7 +27,7 @@ import {
   serviceChargeHasComprobante,
 } from "@/app/[siteId]/[popId]/active-services/serviceChargeCreateFormState"
 import { isServiceChargeClientReady } from "@/app/[siteId]/[popId]/active-services/components/ServiceChargeClientField"
-import { layoutsOperarFormDarkMutedTextClass } from "@/app/library/layouts/layoutsOperarStyles"
+import { layoutsOperarLightCartFieldErrorClass } from "@/app/library/layouts/layoutsOperarStyles"
 import { operationPaymentKindLabel } from "@/lib/operationPaymentKinds"
 import {
   getServiceChargeCheckoutDestinations,
@@ -51,6 +51,7 @@ const TICKET_PROPOSAL = LAYOUTS_OPERAR_DEFAULT_TICKET_PROPOSAL
 
 const PLACEHOLDER = SERVICE_CHARGE_SNAPSHOT_PLACEHOLDER
 const REQUIRED_HINT = "Requerido"
+const requiredSubtitleClassName = layoutsOperarLightCartFieldErrorClass
 
 type Props = {
   view: ServiceOperateSnapshotPanelView
@@ -208,6 +209,7 @@ export function ServiceOperateChargeSnapshotContent({
           value={clientName.trim() || PLACEHOLDER}
           empty={!clientReady}
           subtitle={!clientReady ? REQUIRED_HINT : undefined}
+          subtitleClassName={requiredSubtitleClassName}
         />
 
         <ServiceOperateChargeConfigShowcase
@@ -246,6 +248,7 @@ export function ServiceOperateChargeSnapshotContent({
             value={PLACEHOLDER}
             empty
             subtitle={REQUIRED_HINT}
+            subtitleClassName={requiredSubtitleClassName}
           />
         )}
 
@@ -254,6 +257,7 @@ export function ServiceOperateChargeSnapshotContent({
           value={comprobanteSnapshotLabel}
           empty={!comprobanteChosen}
           subtitle={!comprobanteChosen ? REQUIRED_HINT : undefined}
+          subtitleClassName={requiredSubtitleClassName}
         />
         {hasComprobante ? (
           <>
@@ -276,15 +280,6 @@ export function ServiceOperateChargeSnapshotContent({
           </>
         ) : null}
       </div>
-
-      <p
-        className={cn(
-          "mt-3 shrink-0 px-1 text-xs leading-snug",
-          layoutsOperarFormDarkMutedTextClass,
-        )}
-      >
-        Cliente, medio de pago y comprobante son requeridos para crear el cargo.
-      </p>
     </div>
   )
 }

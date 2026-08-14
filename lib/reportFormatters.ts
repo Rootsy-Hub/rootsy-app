@@ -2,6 +2,7 @@ import {
   dataWorkspaceDateFilterSummary,
   dataWorkspacePresetLabel,
   formatDataWorkspaceDateRangeLabel,
+  formatIsoDateShort,
   type DataWorkspaceDatePreset,
 } from "@/lib/dataWorkspaceDateFilter"
 
@@ -26,4 +27,19 @@ export function formatReportPeriodSummary(
   if (preset === "all") return range
 
   return `${dataWorkspacePresetLabel(preset)} (${range})`
+}
+
+export function formatReportAsOfSummary(
+  preset: DataWorkspaceDatePreset,
+  bounds: { from: string | null; to: string | null },
+  asOf: string,
+): string {
+  const cutoff = formatIsoDateShort(asOf)
+  if (preset === "all") {
+    return `Fecha de corte: ${cutoff} (saldos acumulados al día de hoy)`
+  }
+  if (preset === "custom") {
+    return `Fecha de corte: ${cutoff} · ${dataWorkspaceDateFilterSummary(preset, bounds)}`
+  }
+  return `Fecha de corte: ${cutoff} · ${dataWorkspacePresetLabel(preset)}`
 }

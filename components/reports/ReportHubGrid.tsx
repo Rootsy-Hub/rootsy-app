@@ -44,7 +44,6 @@ export function ReportHubGrid({
                 title={entry.title}
                 description={entry.description}
                 icon={entry.icon}
-                categoryId={entry.categoryId}
                 categoryActive={categoryActive}
                 planned
               />
@@ -56,7 +55,6 @@ export function ReportHubGrid({
               title={entry.title}
               description={entry.description}
               icon={entry.icon}
-              categoryId={entry.categoryId}
               categoryActive={categoryActive}
               selected={selectedReportId === entry.id}
               {...(inline

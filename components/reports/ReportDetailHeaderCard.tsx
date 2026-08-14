@@ -1,16 +1,15 @@
 "use client"
 
 import { DataWorkspacePeriodFilter } from "@/components/data-workspace/DataWorkspacePeriodFilter"
-import { ReportCategoryIsotype } from "@/components/reports/ReportCategoryIsotype"
 import {
   dataWorkspaceDetailCardClass,
   dataWorkspaceDetailCardHeaderClass,
   dataWorkspaceDetailCardStatsClass,
   dataWorkspaceEntityCardEyebrowClass,
+  dataWorkspaceEntityCardIsotypeClass,
   dataWorkspaceEntityCardTitleClass,
 } from "@/components/data-workspace/dataWorkspaceListStyles"
 import { RootsIconButton } from "@/components/rootsy-button"
-import type { ReportCatalogCategoryId } from "@/lib/reportsCatalog"
 import type { DataWorkspaceDatePreset } from "@/lib/dataWorkspaceDateFilter"
 import { cn } from "@/lib/utils"
 import { ArrowLeft, type LucideIcon } from "lucide-react"
@@ -21,7 +20,6 @@ type Props = {
   eyebrow: string
   title: string
   icon: LucideIcon
-  categoryId: ReportCatalogCategoryId
   onBack: () => void
   preset: DataWorkspaceDatePreset
   customRange: DateRange | undefined
@@ -34,8 +32,7 @@ type Props = {
 export function ReportDetailHeaderCard({
   eyebrow,
   title,
-  icon,
-  categoryId,
+  icon: Icon,
   onBack,
   preset,
   customRange,
@@ -61,11 +58,9 @@ export function ReportDetailHeaderCard({
               <ArrowLeft aria-hidden />
             </RootsIconButton>
 
-            <ReportCategoryIsotype
-              icon={icon}
-              categoryId={categoryId}
-              iconClassName="size-5"
-            />
+            <span className={dataWorkspaceEntityCardIsotypeClass} aria-hidden>
+              <Icon className="size-5" strokeWidth={1.75} />
+            </span>
 
             <div className="min-w-0">
               <p className={dataWorkspaceEntityCardEyebrowClass}>{eyebrow}</p>

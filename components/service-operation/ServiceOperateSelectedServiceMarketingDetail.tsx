@@ -296,9 +296,14 @@ function PlanHeroPanel({
 
 function StatRow({ label, value }: { label: string; value: string }) {
   return (
-    <div className="flex flex-col items-end gap-0.5 text-right">
+    <div
+      className={cn(
+        "flex items-center justify-between gap-3 rounded-2xl px-3.5 py-3",
+        layoutsOperarFormDarkSurfaceClass,
+      )}
+    >
       <span className={layoutsOperarFormDarkSectionLabelClass}>{label}</span>
-      <p className="text-sm font-medium leading-snug text-[#f4f8f6]">{value}</p>
+      <span className="shrink-0 text-sm font-medium leading-snug text-[#f4f8f6]">{value}</span>
     </div>
   )
 }
@@ -348,10 +353,6 @@ function ArticleRow({ line }: { line: ServiceTypeChargeDetailArticle }) {
   )
 }
 
-const planDetailRowEvenClass = "bg-[var(--layouts-operar-form-dark-surface)]"
-const planDetailRowOddClass =
-  "bg-[color-mix(in_srgb,var(--rootsy-sombra-950)_82%,var(--rootsy-sombra-900))]"
-
 function PlanDetailTable({ detail }: { detail: ServiceTypeChargeDetail }) {
   const { columns, rows } = detail.detailsGrid
 
@@ -359,12 +360,12 @@ function PlanDetailTable({ detail }: { detail: ServiceTypeChargeDetail }) {
     <div className="overflow-hidden rounded-2xl">
       <table className="w-full border-separate border-spacing-0 text-left text-sm">
         <thead>
-          <tr>
+          <tr className={layoutsOperarFormDarkSurfaceClass}>
             {columns.map((column, index) => (
               <th
                 key={`${column}-${index}`}
                 className={cn(
-                  "bg-[var(--layouts-operar-form-dark-surface-sunken)] px-3.5 py-2.5 text-[11px] font-semibold uppercase tracking-[0.08em]",
+                  "px-3.5 py-2.5 text-[11px] font-semibold uppercase tracking-[0.08em]",
                   layoutsOperarFormDarkMutedTextClass,
                 )}
               >
@@ -380,8 +381,13 @@ function PlanDetailTable({ detail }: { detail: ServiceTypeChargeDetail }) {
                 <td
                   key={cellIndex}
                   className={cn(
-                    "px-3.5 py-2.5 text-[color-mix(in_srgb,var(--rootsy-sombra-100)_88%,white)]",
-                    rowIndex % 2 === 0 ? planDetailRowEvenClass : planDetailRowOddClass,
+                    "px-3.5 py-3",
+                    rowIndex % 2 === 0
+                      ? "bg-[var(--layouts-operar-form-dark-table-row)]"
+                      : layoutsOperarFormDarkSurfaceClass,
+                    cellIndex === 0
+                      ? "font-medium text-[var(--layouts-operar-form-dark-text)]"
+                      : layoutsOperarFormDarkMutedTextClass,
                   )}
                 >
                   {cell || "—"}
@@ -434,10 +440,10 @@ export function ServiceOperateSelectedServiceMarketingDetail({
 
   return (
     <div className={cn("flex flex-col gap-6", className)}>
-      {/* Row 1 — plan (3) | período / pago / vence (1) */}
-      <div className="grid grid-cols-1 gap-3 md:grid-cols-4 md:items-stretch">
+      {/* Row 1 — plan (8) | período / pago / vence (4) */}
+      <div className="grid grid-cols-1 gap-3 md:grid-cols-12 md:items-stretch">
         <PlanHeroPanel
-          className="h-full md:col-span-3"
+          className="h-full md:col-span-8"
           serviceId={service.id}
           name={name}
           category={category}
@@ -452,7 +458,7 @@ export function ServiceOperateSelectedServiceMarketingDetail({
           loadingDetail={loadingDetail}
         />
 
-        <div className="flex h-full flex-col items-end justify-center gap-3 md:col-span-1">
+        <div className="flex h-full flex-col justify-center gap-2.5 md:col-span-4">
           <StatRow label="Período" value={billingLabel} />
           <StatRow
             label="Pago"
@@ -470,12 +476,12 @@ export function ServiceOperateSelectedServiceMarketingDetail({
       ) : (
         <>
           {showRow2 ? (
-            <div className="grid grid-cols-1 gap-3 md:grid-cols-4">
+            <div className="grid grid-cols-1 gap-3 md:grid-cols-12">
               {hasAddons ? (
                 <LooseSection
                   title="Adicionales"
                   hint="En Configuración"
-                  className={row2TwoCols ? "md:col-span-2" : "md:col-span-4"}
+                  className={row2TwoCols ? "md:col-span-6" : "md:col-span-12"}
                 >
                   <ul className="flex flex-col gap-2.5">
                     {addons.map((addon) => (
@@ -488,7 +494,7 @@ export function ServiceOperateSelectedServiceMarketingDetail({
               {hasArticles ? (
                 <LooseSection
                   title="Qué incluye"
-                  className={row2TwoCols ? "md:col-span-2" : "md:col-span-4"}
+                  className={row2TwoCols ? "md:col-span-6" : "md:col-span-12"}
                 >
                   <ul className="flex flex-col gap-2.5">
                     {detail!.articles.map((line, index) => (
@@ -501,8 +507,8 @@ export function ServiceOperateSelectedServiceMarketingDetail({
           ) : null}
 
           {detail && hasGrid ? (
-            <div className="grid grid-cols-1 gap-3 md:grid-cols-4">
-              <LooseSection title="Detalle del plan" className="md:col-span-4">
+            <div className="grid grid-cols-1 gap-3 md:grid-cols-12">
+              <LooseSection title="Detalle del plan" className="md:col-span-12">
                 <PlanDetailTable detail={detail} />
               </LooseSection>
             </div>

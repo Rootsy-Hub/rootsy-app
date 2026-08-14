@@ -41,7 +41,7 @@ export type ReportCatalogItem = {
   path: string
   /** Query extra (p. ej. foco en contabilidad u operaciones). */
   query?: Record<string, string>
-  /** Solo visible en el hub; el reporte aún no está disponible. */
+  /** Solo visible en el hub; el reporte aún no está disponible. Quitar al implementar. */
   planned?: boolean
 }
 
@@ -103,7 +103,6 @@ export const REPORT_CATALOG: ReportCatalogCategory[] = [
         icon: FileInput,
         path: "operations",
         query: { view: "purchases", fiscal: "1" },
-        planned: true,
       },
     ],
   },
@@ -135,6 +134,7 @@ export const REPORT_CATALOG: ReportCatalogCategory[] = [
         icon: Waves,
         path: "accounting",
         query: { focus: "cash_flow" },
+        planned: true,
       },
       {
         id: "summaries",
@@ -143,6 +143,7 @@ export const REPORT_CATALOG: ReportCatalogCategory[] = [
         icon: PieChart,
         path: "accounting",
         query: { focus: "summaries" },
+        planned: true,
       },
     ],
   },
@@ -158,6 +159,7 @@ export const REPORT_CATALOG: ReportCatalogCategory[] = [
         icon: Calculator,
         path: "accounting",
         query: { focus: "trial_balance" },
+        planned: true,
       },
       {
         id: "journal",
@@ -166,6 +168,7 @@ export const REPORT_CATALOG: ReportCatalogCategory[] = [
         icon: ScrollText,
         path: "accounting",
         query: { focus: "journal" },
+        planned: true,
       },
       {
         id: "ledger",
@@ -174,6 +177,7 @@ export const REPORT_CATALOG: ReportCatalogCategory[] = [
         icon: BookOpen,
         path: "accounting",
         query: { focus: "ledger" },
+        planned: true,
       },
       {
         id: "cash-registers",
@@ -181,6 +185,7 @@ export const REPORT_CATALOG: ReportCatalogCategory[] = [
         description: "Conciliación de caja y cierres del período.",
         icon: Landmark,
         path: "cash-registers",
+        planned: true,
       },
       {
         id: "treasury",
@@ -188,6 +193,7 @@ export const REPORT_CATALOG: ReportCatalogCategory[] = [
         description: "Saldos operativos de caja, banco y medios de cobro.",
         icon: ArrowLeftRight,
         path: "accounts",
+        planned: true,
       },
     ],
   },
@@ -203,6 +209,7 @@ export const REPORT_CATALOG: ReportCatalogCategory[] = [
         icon: ShieldCheck,
         path: "accounting",
         query: { focus: "chart" },
+        planned: true,
       },
     ],
   },
@@ -232,6 +239,10 @@ export const REPORT_INLINE_DETAIL_IDS = new Set<string>([
   "vat-position",
   "sales-detail",
   "purchases-expenses",
+  "invoices",
+  "received-invoices",
+  "income-statement",
+  "balance-sheet",
 ])
 
 export function supportsInlineReportDetail(reportId: string): boolean {

@@ -13,7 +13,10 @@ import {
 import { defaultCheckoutPaymentSelection } from "@/lib/saleCheckoutPayment"
 import type { TreasuryPaymentContext } from "@/lib/treasuryPaymentOptions"
 import { treasuryPaymentOptionKey } from "@/lib/treasuryPaymentOptions"
-import type { MenuCatalogPromotion } from "@/app/[siteId]/[popId]/menu-catalog/actions"
+import type {
+  MenuCatalogCategorySection,
+  MenuCatalogPromotion,
+} from "@/app/[siteId]/[popId]/menu-catalog/actions"
 import {
   DEFAULT_SALE_SITE_ID,
 } from "@/lib/saleInvoiceTypes"
@@ -207,6 +210,9 @@ function SalePage() {
   const [saleCategories, setSaleCategories] = useState<SaleCatalogCategory[]>(
     [],
   )
+  const [saleCategorySections, setSaleCategorySections] = useState<
+    MenuCatalogCategorySection[]
+  >([])
   const [catalogLoading, setCatalogLoading] = useState(true)
   const [catalogError, setCatalogError] = useState<string | null>(null)
 
@@ -230,6 +236,7 @@ function SalePage() {
       setCanReadCashRegisters(false)
       setOpenCashSession(null)
       setSaleCategories([])
+      setSaleCategorySections([])
       setCatalogError(res.error)
       setCatalogLoading(false)
       return
@@ -245,6 +252,7 @@ function SalePage() {
     setOpenCashSession(res.openCashSession)
     setInvoiceTypeSiteId(res.invoiceTypeSiteId)
     setSaleCategories(res.categories)
+    setSaleCategorySections(res.categorySections)
     setCatalogError(null)
     setCatalogLoading(false)
   }, [popId, siteId])
@@ -934,12 +942,12 @@ function SalePage() {
                 siteId={siteId}
                 popId={popId}
                 categories={saleCategories}
+                categorySections={saleCategorySections}
                 products={productosCatalogo}
                 loading={catalogLoading}
                 error={catalogError}
                 onAddProduct={handleAddProduct}
                 catalogSidebarOpen={catalogSidebarOpen}
-                catalogScope="sale"
                 keepScanFocused
               />
             }

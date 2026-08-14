@@ -15,6 +15,7 @@ import {
   getPaymentCheckoutDestinations,
   getPaymentCheckoutKinds,
   paymentCheckoutKindHasDestinationStep,
+  paymentCheckoutKindIcon,
   paymentCheckoutKindLabel,
   paymentCheckoutKindSubtitle,
   resolvePaymentKindSelection,
@@ -31,9 +32,9 @@ import {
 } from "@/app/[siteId]/[popId]/active-services/serviceChargeCreateFormState"
 import { cn } from "@/lib/utils"
 import {
-  ArrowLeftRight,
   Banknote,
   CircleAlert,
+  Clock3,
   CreditCard,
   Landmark,
 } from "lucide-react"
@@ -66,17 +67,7 @@ type Props = {
 }
 
 function kindIcon(kind: OperationPaymentKind) {
-  switch (kind) {
-    case "cash":
-      return Banknote
-    case "card_debit":
-    case "card_credit":
-      return CreditCard
-    case "transfer":
-      return ArrowLeftRight
-    default:
-      return Banknote
-  }
+  return paymentCheckoutKindIcon(kind)
 }
 
 function destinationIcon(kind: OperationPaymentKind) {
@@ -295,7 +286,7 @@ export function ServiceOperatePaymentFields({
           <li>
             <CheckoutOptionCard
               title={SERVICE_CHARGE_PAYMENT_PENDING_LABEL}
-              subtitle="Podés cobrarlo más adelante desde Servicios activos"
+              subtitle="Podés cobrarlo más adelante"
               selected={paymentMethodKey === SERVICE_CHARGE_PAYMENT_PENDING}
               tone={tone}
               disabled={disabled}
@@ -304,7 +295,7 @@ export function ServiceOperatePaymentFields({
                 setPickError(null)
                 onSelectionComplete?.()
               }}
-              icon={Banknote}
+              icon={Clock3}
               trailing="none"
             />
           </li>
