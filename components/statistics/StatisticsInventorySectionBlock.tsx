@@ -3,7 +3,7 @@
 import type { StatisticsSectionData } from "@/app/[siteId]/[popId]/statistics/actions"
 import { StatisticsCostDistributionChart } from "@/components/statistics/StatisticsCostDistributionChart"
 import { StatisticsEvolutionChart } from "@/components/statistics/StatisticsEvolutionChart"
-import { StatisticsHorizontalRankBarChart } from "@/components/statistics/StatisticsHorizontalRankBarChart"
+import { StatisticsInventoryValueSunburstChart } from "@/components/statistics/StatisticsInventoryValueSunburstChart"
 
 type Props = {
   data: StatisticsSectionData | null
@@ -30,10 +30,10 @@ export function StatisticsInventorySectionBlock({ data, loading }: Props) {
           />
         </section>
         <section className="flex min-h-0 h-full">
-          <StatisticsHorizontalRankBarChart
-            title="Top artículos por valor"
-            description="Los 10 artículos con mayor valor de inventario"
-            rows={sectionData?.inventoryValueRankings ?? []}
+          <StatisticsInventoryValueSunburstChart
+            title="Valor del inventario"
+            description="Total, tipo de artículo, categoría y artículo"
+            root={sectionData?.inventoryValueSunburst}
             loading={loading}
             emptyMessage="Sin artículos valorizados en este período"
           />

@@ -151,6 +151,25 @@ export function filterSalesByOperationalPeriod<T extends { soldAt: string }>(
   )
 }
 
+export function filterPurchasesByOperationalPeriod<
+  T extends { operationAt: string },
+>(
+  rows: T[],
+  from: string | null,
+  to: string | null,
+  timeZone: string,
+  closeTime: string,
+): T[] {
+  if (!from && !to) return rows
+  return rows.filter((row) =>
+    isOperationalDayInRange(
+      operationalDayKey(row.operationAt, timeZone, closeTime),
+      from,
+      to,
+    ),
+  )
+}
+
 /** Instantánea de referencia para ubicar una sesión de caja en el día operativo. */
 export function cashRegisterSessionPeriodAnchor(session: {
   closedAt: string | null

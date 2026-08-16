@@ -295,6 +295,15 @@ export const CHART_PROVEEDORES_CODES: readonly string[] = [
   "2.1.1.02",
 ]
 
+/** Pasivo: saldo en cuenta corriente con proveedores (sin documentos ni tarjetas). */
+export const CHART_PROVEEDORES_CC_CODES: readonly string[] = ["2.1.1.01"]
+
+/** Activo: cheques y documentos de terceros pendientes de cobro. */
+export const CHART_DOCUMENTOS_POR_COBRAR_CODES: readonly string[] = ["1.1.2.02"]
+
+/** Pasivo: cheques y documentos emitidos pendientes de pago. */
+export const CHART_DOCUMENTOS_A_PAGAR_CODES: readonly string[] = ["2.1.1.02"]
+
 /** Pasivo: deuda con emisor de tarjeta corporativa (compras/gastos con crédito). */
 export const CHART_TARJETAS_CREDITO_A_PAGAR_CODES: readonly string[] = [
   "2.1.1.03",

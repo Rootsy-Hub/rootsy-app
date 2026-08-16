@@ -68,22 +68,30 @@ function formatChartValue(
   return value.toLocaleString("es-AR")
 }
 
-function formatSecondaryTick(value: number, format: "number" | "percent"): string {
+function formatSecondaryTick(
+  value: number,
+  format: "number" | "percent" | "money",
+): string {
   if (format === "percent") {
     return `${value.toLocaleString("es-AR", {
       maximumFractionDigits: 0,
     })}%`
   }
+  if (format === "money") return formatChartTick(value, "money")
   return Number(value).toLocaleString("es-AR")
 }
 
-function formatSecondaryValue(value: number, format: "number" | "percent"): string {
+function formatSecondaryValue(
+  value: number,
+  format: "number" | "percent" | "money",
+): string {
   if (format === "percent") {
     return `${value.toLocaleString("es-AR", {
       minimumFractionDigits: 1,
       maximumFractionDigits: 1,
     })} %`
   }
+  if (format === "money") return formatReportMoneyAr(value)
   return Number(value).toLocaleString("es-AR")
 }
 

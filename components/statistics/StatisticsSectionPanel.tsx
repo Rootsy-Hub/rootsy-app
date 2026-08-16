@@ -6,8 +6,11 @@ import { StatisticsCompareKpiRow } from "@/components/statistics/StatisticsCompa
 import { StatisticsEvolutionChart } from "@/components/statistics/StatisticsEvolutionChart"
 import { StatisticsCostDistributionChart } from "@/components/statistics/StatisticsCostDistributionChart"
 import { StatisticsInventorySectionBlock } from "@/components/statistics/StatisticsInventorySectionBlock"
+import { StatisticsClientsSectionBlock } from "@/components/statistics/StatisticsClientsSectionBlock"
+import { StatisticsSuppliersSectionBlock } from "@/components/statistics/StatisticsSuppliersSectionBlock"
 import { StatisticsProductsSectionBlock } from "@/components/statistics/StatisticsProductsSectionBlock"
 import { StatisticsEfficiencyIndicators } from "@/components/statistics/StatisticsEfficiencyIndicators"
+import { StatisticsCommitmentsSection } from "@/components/statistics/StatisticsCommitmentsSection"
 import { StatisticsProfitabilityFormulaSubtitle } from "@/components/statistics/StatisticsProfitabilityFormulaSubtitle"
 import { StatisticsHourlyHeatmap } from "@/components/statistics/StatisticsHourlyHeatmap"
 import { StatisticsRankTable } from "@/components/statistics/StatisticsRankTable"
@@ -33,9 +36,11 @@ import type { ReactNode } from "react"
 
 const STATISTICS_HOURLY_SECTIONS = new Set<StatisticsSectionData["sectionId"]>([
   "sales",
-  "clients",
-  "finance",
 ])
+
+const STATISTICS_OPERATIONAL_DAY_SECTIONS = new Set<
+  StatisticsSectionData["sectionId"]
+>(["sales", "products", "clients", "purchases", "suppliers", "finance"])
 
 function StatisticsSectionHeading({
   title,
@@ -204,20 +209,22 @@ export function StatisticsSectionPanel({
     section?.id != null && STATISTICS_HOURLY_SECTIONS.has(section.id)
   const isProfitabilitySection = section?.id === "profitability"
   const isPurchasesSection = section?.id === "purchases"
+  const isFinanceSection = section?.id === "finance"
   const isProductsSection = section?.id === "products"
   const isInventorySection = section?.id === "inventory"
+  const isClientsSection = section?.id === "clients"
+  const isSuppliersSection = section?.id === "suppliers"
   const showSidePanel = !filters.channel
-  const isSalesSection = section?.id === "sales"
-  const salesOperationalDayTime =
-    data?.sectionId === "sales" ? data.operationalDayCloseTime : undefined
+  const usesOperationalDay =
+    section?.id != null && STATISTICS_OPERATIONAL_DAY_SECTIONS.has(section.id)
 
-  const operationalDayCloseMeta = isSalesSection ? (
+  const operationalDayCloseMeta = usesOperationalDay ? (
     <>
       <span>Hora de cierre del día operativo:</span>
       <span className="inline-flex items-center gap-1 font-numeric tabular-nums">
         <Clock className="size-3.5 shrink-0" aria-hidden />
-        {salesOperationalDayTime ? (
-          salesOperationalDayTime
+        {data?.operationalDayCloseTime ? (
+          data.operationalDayCloseTime
         ) : (
           <RootsSpinner
             size="sm"
@@ -228,18 +235,7 @@ export function StatisticsSectionPanel({
         )}
       </span>
     </>
-  ) : sectionDataReady &&
-    data?.operationalDayCloseTime &&
-    section?.id != null &&
-    STATISTICS_HOURLY_SECTIONS.has(section.id) ? (
-      <>
-        <span>Hora de cierre del día operativo:</span>
-        <span className="inline-flex items-center gap-1 font-numeric tabular-nums">
-          <Clock className="size-3.5 shrink-0" aria-hidden />
-          {data.operationalDayCloseTime}
-        </span>
-      </>
-    ) : undefined
+  ) : undefined
 
   const sectionFilters = (
     <StatisticsSectionFilters
@@ -279,7 +275,7 @@ export function StatisticsSectionPanel({
             : section?.label ?? "—"
         }
         description={
-          isProfitabilitySection ? (
+          usesOperationalDay ? undefined : isProfitabilitySection ? (
             <StatisticsProfitabilityFormulaSubtitle />
           ) : sectionDataReady ? (
             data?.description
@@ -304,6 +300,10 @@ export function StatisticsSectionPanel({
         <StatisticsProductsSectionBlock data={data} loading={loading} />
       ) : isInventorySection ? (
         <StatisticsInventorySectionBlock data={data} loading={loading} />
+      ) : isClientsSection ? (
+        <StatisticsClientsSectionBlock data={data} loading={loading} />
+      ) : isSuppliersSection ? (
+        <StatisticsSuppliersSectionBlock data={data} loading={loading} />
       ) : (
         <>
       <div className="grid items-stretch gap-6 lg:grid-cols-12">
@@ -319,9 +319,11 @@ export function StatisticsSectionPanel({
               data?.sectionId === "sales"
                 ? "Ventas por día operativo"
                 : data?.sectionId === "purchases"
-                  ? "Importe y operaciones por día"
+                  ? "Importe y operaciones por día operativo"
                 : data?.sectionId === "profitability"
                   ? "Ganancia bruta y margen por día"
+                : data?.sectionId === "finance"
+                  ? "Ingresos y egresos por día operativo en tesorería"
                   : "Comportamiento en el tiempo dentro del período"
             }
             points={data?.evolution ?? []}
@@ -345,6 +347,12 @@ export function StatisticsSectionPanel({
                       primaryLabel: "Ganancia bruta",
                       secondaryLabel: "Margen",
                       secondaryFormat: "percent",
+                    }
+                : data?.sectionId === "finance"
+                  ? {
+                      primaryLabel: "Ingresos",
+                      secondaryLabel: "Egresos",
+                      secondaryFormat: "money",
                     }
                   : undefined
             }
@@ -377,8 +385,12 @@ export function StatisticsSectionPanel({
               />
             ) : (
               <StatisticsSegmentList
-                title="Participación"
-                description="Distribución por segmento dentro del total"
+                title={isFinanceSection ? "Participación por cuenta" : "Participación"}
+                description={
+                  isFinanceSection
+                    ? "Ingresos por cuenta de tesorería en el período"
+                    : "Distribución por segmento dentro del total"
+                }
                 segments={data?.segments ?? []}
                 loading={loading}
                 valueFormat={rankFormat}
@@ -396,6 +408,15 @@ export function StatisticsSectionPanel({
             data?.sectionId === "profitability"
               ? data.efficiencyRatios ?? []
               : []
+          }
+          loading={loading}
+        />
+      ) : null}
+
+      {isFinanceSection ? (
+        <StatisticsCommitmentsSection
+          metrics={
+            data?.sectionId === "finance" ? data.commitmentMetrics ?? [] : []
           }
           loading={loading}
         />
@@ -421,7 +442,12 @@ export function StatisticsSectionPanel({
         </section>
       ) : null}
 
-      {!isProfitabilitySection && !isProductsSection && !isInventorySection ? (
+      {!isProfitabilitySection &&
+      !isProductsSection &&
+      !isInventorySection &&
+      !isClientsSection &&
+      !isSuppliersSection &&
+      !isFinanceSection ? (
         <section>
           <StatisticsRankTable
             title={

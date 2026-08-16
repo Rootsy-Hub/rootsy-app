@@ -15,12 +15,18 @@ import {
 } from "@/components/statistics/statisticsWorkspaceStyles"
 import { formatReportMoneyAr } from "@/lib/reportFormatters"
 import { cn } from "@/lib/utils"
-import { ArrowDown, ArrowUp, Minus } from "lucide-react"
+import { ArrowDown, ArrowUp, Info, Minus } from "lucide-react"
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip"
 
 type KpiSkeletonDef = {
   id: string
   label: string
   format: StatisticsCompareMetric["format"]
+  hint?: string
 }
 
 const SECTION_KPI_SKELETONS: Partial<
@@ -54,8 +60,14 @@ const SECTION_KPI_SKELETONS: Partial<
     { id: "empty", label: "Artículos sin stock", format: "number" },
   ],
   clients: [
-    { id: "clients", label: "Clientes activos", format: "number" },
+    { id: "clients", label: "Clientes en ventas", format: "number" },
     { id: "new", label: "Clientes nuevos", format: "number" },
+    { id: "recurring", label: "Recurrentes", format: "number" },
+    { id: "ticket", label: "Ticket promedio", format: "money" },
+  ],
+  suppliers: [
+    { id: "suppliers", label: "Proveedores en compras", format: "number" },
+    { id: "new", label: "Proveedores nuevos", format: "number" },
     { id: "recurring", label: "Recurrentes", format: "number" },
     { id: "ticket", label: "Ticket promedio", format: "money" },
   ],
@@ -63,6 +75,7 @@ const SECTION_KPI_SKELETONS: Partial<
     { id: "in", label: "Ingresos", format: "money" },
     { id: "out", label: "Egresos", format: "money" },
     { id: "net", label: "Neto", format: "money" },
+    { id: "margin", label: "Margen neto", format: "percent" },
   ],
 }
 
@@ -74,6 +87,37 @@ function skeletonMetrics(defs: KpiSkeletonDef[]): StatisticsCompareMetric[] {
     deltaPercent: null,
     deltaPoints: null,
   }))
+}
+
+export function StatisticsKpiLabel({ metric }: { metric: StatisticsCompareMetric }) {
+  if (!metric.hint) {
+    return <p className={dataWorkspaceEntityCardStatLabelClass}>{metric.label}</p>
+  }
+
+  return (
+    <div className="flex items-center gap-1.5">
+      <p className={dataWorkspaceEntityCardStatLabelClass}>{metric.label}</p>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <button
+            type="button"
+            className="inline-flex shrink-0 rounded-md text-rootsy-bruma-500 transition-colors hover:text-rootsy-bruma-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color-mix(in_srgb,var(--rootsy-savia-600)_35%,white)]"
+            aria-label={`Información sobre ${metric.label}`}
+          >
+            <Info className="size-3.5" aria-hidden />
+          </button>
+        </TooltipTrigger>
+        <TooltipContent
+          side="top"
+          variant="dark"
+          sideOffset={6}
+          className="max-w-xs text-left leading-relaxed"
+        >
+          {metric.hint}
+        </TooltipContent>
+      </Tooltip>
+    </div>
+  )
 }
 
 function resolveDisplayMetrics({
@@ -256,7 +300,7 @@ export function StatisticsCompareKpiRow({
             "min-w-0",
           )}
         >
-          <p className={dataWorkspaceEntityCardStatLabelClass}>{metric.label}</p>
+          <StatisticsKpiLabel metric={metric} />
           <ReportStatValue loading={loading}>
             {formatValue(metric.value, metric.format)}
           </ReportStatValue>

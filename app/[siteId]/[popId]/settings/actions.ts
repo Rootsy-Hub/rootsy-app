@@ -54,6 +54,73 @@ export type PopSettingsFormInput = {
   operationalDayCloseTime?: string | null
 }
 
+export type PopSettingsBusinessInput = Pick<
+  PopSettingsFormInput,
+  | "name"
+  | "phone"
+  | "country"
+  | "state"
+  | "city"
+  | "streetAddress"
+  | "postalCode"
+  | "operationalDayCloseTime"
+>
+
+export type PopSettingsFiscalInput = Pick<
+  PopSettingsFormInput,
+  | "fiscalCuit"
+  | "fiscalRazonSocial"
+  | "fiscalInicioActividadesDate"
+  | "fiscalIngresosBrutosText"
+  | "fiscalPadronActividadesJson"
+  | "fiscalActividadSeleccionadaId"
+>
+
+export type PopSettingsImagesInput = Pick<
+  PopSettingsFormInput,
+  "imageUrl" | "invoiceLogoUrl" | "backgroundImageUrl"
+>
+
+type SettingsUpdateContext =
+  | {
+      success: true
+      isOwner: boolean
+      settings: Record<string, unknown>
+    }
+  | { success: false; error: string }
+
+async function loadSettingsUpdateContext(
+  popId: string,
+): Promise<SettingsUpdateContext> {
+  const access = await validatePopAccess(popId)
+  if (!access.hasAccess || !access.isActive) {
+    return { success: false, error: access.error || "Sin acceso" }
+  }
+  const snap = await loadPopPermissionsSnapshot(popId)
+  if (
+    !permissionKeysInclude(
+      snap.keys,
+      POP_PERMS.SETTINGS_UPDATE.resource,
+      POP_PERMS.SETTINGS_UPDATE.action,
+    )
+  ) {
+    return { success: false, error: "No tenés permiso para editar ajustes." }
+  }
+  const popRes = await getPopById(popId, { includeOwnerUserId: true })
+  if (!popRes.success || !popRes.pop || !("ownerUserId" in popRes.pop)) {
+    return { success: false, error: "No se pudo validar el punto." }
+  }
+  const user = await getAuthenticatedUserOrNull()
+  const isOwner =
+    popRes.pop.ownerUserId != null && user?.uid === popRes.pop.ownerUserId
+  const settings =
+    popRes.pop.settings && typeof popRes.pop.settings === "object"
+      ? { ...(popRes.pop.settings as Record<string, unknown>) }
+      : {}
+
+  return { success: true, isOwner, settings }
+}
+
 export async function getPopSettingsPageData(popId: string): Promise<
   | {
       success: true
@@ -137,6 +204,137 @@ export async function getPopSettingsPageData(popId: string): Promise<
   }
 }
 
+export async function updatePopSettingsBusiness(
+  popId: string,
+  input: PopSettingsBusinessInput,
+): Promise<{ success: true } | { success: false; error: string }> {
+  try {
+    const ctx = await loadSettingsUpdateContext(popId)
+    if (!ctx.success) return ctx
+
+    const name = input.name.trim()
+    if (!name) {
+      return { success: false, error: "El nombre del punto es obligatorio." }
+    }
+
+    const currentSettings = { ...ctx.settings }
+    currentSettings[POP_SETTINGS_OPERATIONAL_DAY_CLOSE_TIME_KEY] =
+      normalizeOperationalDayCloseTime(input.operationalDayCloseTime)
+
+    const supabase = await createClient()
+    const { error } = await supabase
+      .from("pops")
+      .update({
+        name,
+        phone: input.phone.trim() || null,
+        country: input.country.trim() || null,
+        state: input.state.trim() || null,
+        city: input.city.trim() || null,
+        street_address: input.streetAddress.trim() || null,
+        postal_code: input.postalCode.trim() || null,
+        settings: currentSettings,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", popId)
+
+    if (error) {
+      return { success: false, error: error.message || "No se pudo guardar." }
+    }
+    return { success: true }
+  } catch (e: unknown) {
+    const message = e instanceof Error ? e.message : "Error desconocido"
+    return { success: false, error: message }
+  }
+}
+
+export async function updatePopSettingsFiscal(
+  popId: string,
+  input: PopSettingsFiscalInput,
+): Promise<{ success: true } | { success: false; error: string }> {
+  try {
+    const ctx = await loadSettingsUpdateContext(popId)
+    if (!ctx.success) return ctx
+    if (!ctx.isOwner) {
+      return {
+        success: false,
+        error: "Solo el titular puede editar los datos fiscales.",
+      }
+    }
+
+    const fiscalCuitIn = input.fiscalCuit?.trim() ?? ""
+    const fiscalRsIn = input.fiscalRazonSocial?.trim() ?? ""
+    const fiscalIniIn = input.fiscalInicioActividadesDate?.trim() ?? ""
+    const fiscalIbIn = input.fiscalIngresosBrutosText?.trim() ?? ""
+    const fiscalActsRaw = input.fiscalPadronActividadesJson?.trim() ?? ""
+    const fiscalSelId = input.fiscalActividadSeleccionadaId?.trim() ?? ""
+
+    const patch: Record<string, unknown> = {
+      fiscal_cuit: fiscalCuitIn.length > 0 ? fiscalCuitIn : null,
+      fiscal_razon_social: fiscalRsIn.length > 0 ? fiscalRsIn : null,
+      fiscal_inicio_actividades_date:
+        fiscalIniIn.length > 0 ? fiscalIniIn.slice(0, 10) : null,
+      fiscal_ingresos_brutos_text: fiscalIbIn.length > 0 ? fiscalIbIn : null,
+      fiscal_actividad_seleccionada_id:
+        fiscalSelId.length > 0 ? fiscalSelId : null,
+      updated_at: new Date().toISOString(),
+    }
+
+    if (fiscalActsRaw.length > 0) {
+      try {
+        const parsed = JSON.parse(fiscalActsRaw) as unknown
+        if (!Array.isArray(parsed)) {
+          return { success: false, error: "Lista de actividades inválida." }
+        }
+        patch.fiscal_padron_actividades_json = parsed
+      } catch {
+        return { success: false, error: "Lista de actividades inválida." }
+      }
+    } else {
+      patch.fiscal_padron_actividades_json = null
+    }
+
+    const supabase = await createClient()
+    const { error } = await supabase.from("pops").update(patch).eq("id", popId)
+    if (error) {
+      return { success: false, error: error.message || "No se pudo guardar." }
+    }
+    return { success: true }
+  } catch (e: unknown) {
+    const message = e instanceof Error ? e.message : "Error desconocido"
+    return { success: false, error: message }
+  }
+}
+
+export async function updatePopSettingsImages(
+  popId: string,
+  input: PopSettingsImagesInput,
+): Promise<{ success: true } | { success: false; error: string }> {
+  try {
+    const ctx = await loadSettingsUpdateContext(popId)
+    if (!ctx.success) return ctx
+
+    const supabase = await createClient()
+    const { error } = await supabase
+      .from("pops")
+      .update({
+        image_url: input.imageUrl?.trim() || null,
+        invoice_logo_url: input.invoiceLogoUrl?.trim() || null,
+        background_image_url: input.backgroundImageUrl?.trim() || null,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", popId)
+
+    if (error) {
+      return { success: false, error: error.message || "No se pudo guardar." }
+    }
+    return { success: true }
+  } catch (e: unknown) {
+    const message = e instanceof Error ? e.message : "Error desconocido"
+    return { success: false, error: message }
+  }
+}
+
+/** @deprecated Preferir updatePopSettingsBusiness / Fiscal / Images por sección. */
 export async function updatePopSettings(
   popId: string,
   input: PopSettingsFormInput,

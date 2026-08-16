@@ -5,6 +5,7 @@ export type StatisticsSectionId =
   | "purchases"
   | "inventory"
   | "clients"
+  | "suppliers"
   | "finance"
   | "services"
   | "manufacturing"
@@ -65,12 +66,18 @@ export const STATISTICS_SECTIONS: StatisticsSectionDef[] = [
     description: "Activos, nuevos, recurrentes y ticket por cliente",
     iconModuleKey: "clients",
     requiresAnyModule: ["clients"],
-    filterKeys: ["channel"],
+  },
+  {
+    id: "suppliers",
+    label: "Proveedores",
+    description: "Compras, artículos y categorías por proveedor",
+    iconModuleKey: "suppliers",
+    requiresAnyModule: ["suppliers"],
   },
   {
     id: "finance",
     label: "Finanzas",
-    description: "Ingresos, egresos, flujo neto y medios de pago",
+    description: "Ingresos, egresos, neto y margen en cuentas de tesorería",
     iconModuleKey: "accounts",
     filterKeys: ["channel"],
   },

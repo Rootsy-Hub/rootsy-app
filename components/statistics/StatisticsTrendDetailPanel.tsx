@@ -1,6 +1,7 @@
 "use client"
 
 import type {
+  StatisticsEvolutionDualSeries,
   StatisticsEvolutionPoint,
   StatisticsProductTrendOption,
 } from "@/app/[siteId]/[popId]/statistics/actions"
@@ -40,7 +41,8 @@ type Props = {
   emptyMessage: string
   emptyNoSelectionMessage: string
   selectedKey?: string | null
-  onSelectedKeyChange?: (key: string, label: string) => void
+  onSelectedKeyChange?: (key: string | null, label: string) => void
+  dualSeries?: StatisticsEvolutionDualSeries
 }
 
 export function StatisticsTrendDetailPanel({
@@ -58,6 +60,12 @@ export function StatisticsTrendDetailPanel({
   emptyNoSelectionMessage,
   selectedKey: controlledKey,
   onSelectedKeyChange,
+  dualSeries = {
+    primaryLabel: "Importe vendido",
+    secondaryLabel: "Cantidad vendida",
+    secondaryFormat: "number",
+    tertiaryLabel: "Ganancia",
+  },
 }: Props) {
   const searchWrapRef = useRef<HTMLDivElement>(null)
   const [internalKey, setInternalKey] = useState<string | null>(null)
@@ -190,12 +198,19 @@ export function StatisticsTrendDetailPanel({
               placeholder={searchPlaceholder}
               value={searchQuery}
               onChange={(event) => {
-                setSearchQuery(event.target.value)
+                const value = event.target.value
+                setSearchQuery(value)
                 setSearchOpen(true)
+                if (!value.trim()) {
+                  if (controlledKey === undefined) setInternalKey(null)
+                  onSelectedKeyChange?.(null, "")
+                }
               }}
               onClear={() => {
                 setSearchQuery("")
                 setSearchOpen(true)
+                if (controlledKey === undefined) setInternalKey(null)
+                onSelectedKeyChange?.(null, "")
               }}
               disabled={loading || options.length === 0}
               inputProps={{
@@ -248,14 +263,9 @@ export function StatisticsTrendDetailPanel({
         </div>
         <StatisticsEvolutionChart
           points={trendPoints}
-          loading={loading}
+          loading={loading && Boolean(selectedOption)}
           valueFormat="money"
-          dualSeries={{
-            primaryLabel: "Importe vendido",
-            secondaryLabel: "Cantidad vendida",
-            secondaryFormat: "number",
-            tertiaryLabel: "Ganancia",
-          }}
+          dualSeries={dualSeries}
           hideHeader
           embedded
           emptyMessage={selectedOption ? emptyMessage : emptyNoSelectionMessage}
