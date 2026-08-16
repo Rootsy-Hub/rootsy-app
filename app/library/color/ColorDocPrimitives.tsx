@@ -140,7 +140,7 @@ export function NatureSwatchCard({
           {label}
         </span>
       </div>
-      <div className="border-t border-border/60 px-3 py-3">
+      <div className="border-t border-[var(--rootsy-bruma-200)] px-3 py-3">
         <p className="text-sm font-medium text-foreground">{label}</p>
         <p className="mt-1 text-xs leading-snug text-muted-foreground">
           {usage}
@@ -161,7 +161,7 @@ export function NatureRoleTable() {
     <div className="overflow-hidden rounded-2xl border border-border/70">
       <table className="w-full text-left text-sm">
         <thead>
-          <tr className="border-b border-border/60 bg-muted/40">
+          <tr className="border-b border-[var(--rootsy-bruma-200)] bg-muted/40">
             <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
               Rol
             </th>
@@ -381,7 +381,7 @@ export function NaturePillsDemo() {
       <div className="overflow-hidden rounded-2xl border border-border/70">
         <table className="w-full text-left text-sm">
           <thead>
-            <tr className="border-b border-border/60 bg-muted/40">
+            <tr className="border-b border-[var(--rootsy-bruma-200)] bg-muted/40">
               <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                 Variante
               </th>
@@ -742,7 +742,7 @@ export function ThemeComparison() {
             </p>
           </div>
         </div>
-        <div className="border-t border-border/60 bg-muted/20 px-4 py-3">
+        <div className="border-t border-[var(--rootsy-bruma-200)] bg-muted/20 px-4 py-3">
           <p className="text-sm font-semibold text-foreground">Mostrador oscuro</p>
         </div>
       </div>

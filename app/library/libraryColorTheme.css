@@ -2,27 +2,55 @@
  * Librería — dosel sombra en nav, bruma en contenido, savia en foco activo.
  * Tokens: --rootsy-* (styles/rootsy/) · tema: .rootsy-theme-library
  *
- * El shell exterior es layout · módulo (fondo POP + header cristal reutilizable).
+ * El shell exterior es layout · módulo (header cristal reutilizable).
  * Los estilos de abajo aplican solo al área de documentación (.rootsy-library-shell).
  */
 
 .rootsy-library-shell {
-  background-color: var(--rootsy-bruma-100) !important;
-  color: var(--rootsy-bruma-900);
+  background-color: var(--color-surface, var(--rootsy-bruma-100)) !important;
+  color: var(--color-text-primary, var(--rootsy-bruma-900));
   overflow: hidden !important;
+
+  /* Puente shadcn → bruma/savia (sin nature-palette legacy). */
+  --background: var(--color-surface, var(--rootsy-bruma-100));
+  --foreground: var(--rootsy-bruma-900);
+  --card: var(--color-elevated, var(--rootsy-white));
+  --card-foreground: var(--rootsy-bruma-900);
+  --popover: var(--color-elevated, var(--rootsy-white));
+  --popover-foreground: var(--rootsy-bruma-900);
+  --secondary: var(--rootsy-bruma-50);
+  --secondary-foreground: var(--rootsy-bruma-900);
+  --muted: var(--rootsy-bruma-50);
+  --muted-foreground: var(--rootsy-bruma-500);
+  --accent: var(--rootsy-savia-100);
+  --accent-foreground: var(--rootsy-savia-900);
+  --primary: var(--color-action, var(--rootsy-savia-600));
+  --primary-foreground: var(--color-action-text, var(--rootsy-white));
+  --destructive: #dc2626;
+  --destructive-foreground: var(--rootsy-white);
+  --border: var(--color-border, var(--rootsy-bruma-200));
+  --input: var(--rootsy-bruma-200);
+  --ring: var(--rootsy-savia-700);
+}
+
+/* Fuerza bruma en utilidades shadcn — evita oklch Paradise Park residual. */
+.rootsy-theme-library.rootsy-app-light .text-foreground,
+.rootsy-library-shell .text-foreground {
+  color: var(--rootsy-bruma-900);
+}
+
+.rootsy-theme-library.rootsy-app-light .text-muted-foreground,
+.rootsy-library-shell .text-muted-foreground {
+  color: var(--rootsy-bruma-500);
 }
 
 .rootsy-library-shell > .relative.flex {
-  background-color: var(--rootsy-bruma-100);
+  background-color: var(--color-surface, var(--rootsy-bruma-100));
 }
 
 .library-sidebar {
-  /* Rail oscuro — espejo de ColorExampleSideNav */
-  --library-nav-text: var(--rootsy-sombra-300);
-  --library-nav-text-hover: #f4f8f6;
-  --library-nav-text-active: #f4f8f6;
-  --library-nav-label: var(--rootsy-sombra-300);
-  background-color: var(--rootsy-sombra-700) !important;
+  /* Rail oscuro — tokens sombra + nav semántico del tema library */
+  background-color: var(--color-shell, var(--rootsy-sombra-700)) !important;
   border-color: var(--rootsy-sombra-border);
 }
 
@@ -33,7 +61,7 @@
 
 .library-sidebar-eyebrow,
 .library-nav-group-label {
-  color: var(--library-nav-label);
+  color: var(--library-nav-label, var(--rootsy-sombra-300));
   font-family: var(--rootsy-font-ui, inherit);
   font-size: var(--rootsy-text-heading-xxsmall-size, 0.75rem);
   font-weight: 600;
@@ -60,7 +88,7 @@
 .library-nav-group--separated {
   margin-top: 1.5rem;
   padding-top: 1.5rem;
-  border-top: 1px solid rgb(255 255 255 / 0.06);
+  border-top: 1px solid color-mix(in srgb, var(--rootsy-white) 6%, transparent);
 }
 
 .library-nav-list {
@@ -90,14 +118,14 @@
   font-size: var(--rootsy-text-body-size, 0.875rem);
   font-weight: 400;
   line-height: var(--rootsy-text-body-lh, 1.25rem);
-  color: var(--library-nav-text);
+  color: var(--library-nav-text, var(--rootsy-sombra-300));
   background: transparent;
   text-decoration: none;
   transition: color 0.12s ease, background-color 0.12s ease;
 }
 
 .library-nav-item:hover {
-  color: var(--library-nav-text-hover);
+  color: var(--library-nav-text-hover, var(--rootsy-bruma-50));
 }
 
 .library-nav-item:focus {
@@ -110,7 +138,7 @@
 }
 
 .library-nav-item--active {
-  color: var(--library-nav-text-active);
+  color: var(--library-nav-text-active, var(--rootsy-bruma-50));
   font-weight: 500;
 }
 
@@ -144,17 +172,88 @@
   padding: 0.375rem 0.5rem 0.375rem 1rem;
   font-size: var(--rootsy-text-body-size, 0.875rem);
   line-height: var(--rootsy-text-body-lh, 1.25rem);
-  color: var(--library-nav-text);
+  color: var(--library-nav-text, var(--rootsy-sombra-300));
 }
 
 .library-nav-item--nested:hover {
-  color: var(--library-nav-text-hover);
+  color: var(--library-nav-text-hover, var(--rootsy-bruma-50));
   background: transparent;
 }
 
 .library-nav-item--nested.library-nav-item--active {
-  color: var(--library-nav-text-active);
+  color: var(--library-nav-text-active, var(--rootsy-bruma-50));
   font-weight: 500;
+}
+
+/* ── Nav en superficie clara (Estadísticas, bloques bruma) ── */
+.library-nav-surface-light {
+  --library-nav-text: var(--rootsy-bruma-600);
+  --library-nav-text-hover: var(--rootsy-bruma-900);
+  --library-nav-text-active: var(--rootsy-bruma-900);
+}
+
+.library-nav-surface-light .library-nav-item {
+  width: 100%;
+  border: 1px solid transparent;
+}
+
+.library-nav-surface-light .library-nav-item:hover {
+  background-color: var(--rootsy-bruma-50);
+  border-color: var(--rootsy-bruma-200);
+}
+
+.library-nav-surface-light .library-nav-item--active {
+  font-weight: 600;
+  background-color: color-mix(in srgb, var(--rootsy-savia-600) 10%, white);
+  border-color: color-mix(in srgb, var(--rootsy-savia-600) 24%, var(--rootsy-bruma-200));
+  box-shadow:
+    0 0 0 1px color-mix(in srgb, var(--rootsy-savia-600) 14%, transparent),
+    0 1px 2px rgb(5 8 7 / 0.04);
+}
+
+.library-nav-surface-light .library-nav-item--active:hover {
+  background-color: color-mix(in srgb, var(--rootsy-savia-600) 13%, white);
+  border-color: color-mix(in srgb, var(--rootsy-savia-600) 30%, var(--rootsy-bruma-200));
+}
+
+.library-nav-surface-light .library-nav-item--active .library-nav-item-icon {
+  opacity: 1;
+  color: var(--rootsy-savia-700);
+}
+
+/* ── Nav en superficie sombra (Estadísticas · rail library) ── */
+.library-nav-surface-dark {
+  --library-nav-text: var(--rootsy-sombra-300);
+  --library-nav-text-hover: var(--rootsy-bruma-50);
+  --library-nav-text-active: var(--rootsy-bruma-50);
+}
+
+.library-nav-surface-dark .library-nav-item {
+  width: 100%;
+  border: 1px solid transparent;
+}
+
+.library-nav-surface-dark .library-nav-item:hover {
+  background-color: color-mix(in srgb, var(--rootsy-white) 6%, transparent);
+}
+
+.library-nav-surface-dark .library-nav-item--active {
+  font-weight: 600;
+  background-color: color-mix(in srgb, var(--rootsy-savia-600) 18%, var(--rootsy-sombra-700));
+  border-color: color-mix(in srgb, var(--rootsy-savia-600) 30%, var(--rootsy-sombra-border));
+  box-shadow:
+    0 0 0 1px color-mix(in srgb, var(--rootsy-savia-600) 20%, transparent),
+    0 2px 8px rgb(5 8 7 / 0.2);
+}
+
+.library-nav-surface-dark .library-nav-item--active:hover {
+  background-color: color-mix(in srgb, var(--rootsy-savia-600) 22%, var(--rootsy-sombra-700));
+  border-color: color-mix(in srgb, var(--rootsy-savia-600) 36%, var(--rootsy-sombra-border));
+}
+
+.library-nav-surface-dark .library-nav-item--active .library-nav-item-icon {
+  opacity: 1;
+  color: var(--rootsy-savia-400);
 }
 
 /* ── Accordion toggle ── */
@@ -167,14 +266,14 @@
   min-height: 2.25rem;
   border-radius: 0.375rem;
   border: none;
-  color: var(--library-nav-label);
+  color: var(--library-nav-label, var(--rootsy-sombra-300));
   background: transparent;
   cursor: pointer;
   transition: color 0.12s ease;
 }
 
 .library-nav-toggle:hover {
-  color: var(--library-nav-text-hover);
+  color: var(--library-nav-text-hover, var(--rootsy-bruma-50));
 }
 
 .library-nav-toggle:focus {
@@ -195,11 +294,11 @@
 }
 
 .library-content-area {
-  background-color: var(--rootsy-bruma-100) !important;
+  background-color: var(--color-surface, var(--rootsy-bruma-100)) !important;
 }
 
 .library-content-eyebrow {
-  color: var(--rootsy-bruma-500);
+  color: var(--color-text-secondary, var(--rootsy-bruma-500));
   font-size: 11px;
   font-weight: 600;
   letter-spacing: 0.1em;
@@ -207,8 +306,8 @@
 }
 
 .library-page-header {
-  border-color: var(--rootsy-bruma-200);
-  background-color: var(--rootsy-white);
+  border-color: var(--color-border, var(--rootsy-bruma-200));
+  background-color: var(--color-elevated, var(--rootsy-white));
   box-shadow: none;
 }
 
@@ -219,21 +318,51 @@
 
 .library-page-header-mono {
   background-color: var(--rootsy-bruma-50);
-  color: var(--rootsy-bruma-500);
+  color: var(--color-text-secondary, var(--rootsy-bruma-500));
 }
 
 .rootsy-library-shell .library-doc-section {
-  border-color: var(--rootsy-bruma-200);
-}
-
-.rootsy-library-shell .library-spec-card {
-  border-color: var(--rootsy-bruma-200);
-  background-color: var(--rootsy-white);
-  box-shadow: none;
+  border-color: var(--color-border, var(--rootsy-bruma-200));
 }
 
 .rootsy-library-shell .library-related-links {
+  border-top-color: var(--rootsy-bruma-200);
+}
+
+.rootsy-theme-library.rootsy-app-light .border-border,
+.rootsy-library-shell .border-border,
+.rootsy-theme-library.rootsy-app-light [class*="border-border"],
+.rootsy-library-shell [class*="border-border"] {
   border-color: var(--rootsy-bruma-200);
+}
+
+.rootsy-theme-library.rootsy-app-light .divide-border,
+.rootsy-library-shell .divide-border,
+.rootsy-theme-library.rootsy-app-light [class*="divide-border"],
+.rootsy-library-shell [class*="divide-border"] {
+  border-color: var(--rootsy-bruma-200);
+}
+
+/* ── Superficies de documentación (bruma · loseta) ── */
+.rootsy-library-shell .library-spec-card,
+.rootsy-library-shell .library-doc-card,
+.rootsy-library-shell .library-doc-panel,
+.rootsy-library-shell .library-doc-table-shell {
+  border: 1px solid var(--color-border, var(--rootsy-bruma-200));
+  background-color: var(--color-elevated, var(--rootsy-white));
+  box-shadow: none;
+}
+
+.rootsy-library-shell .library-doc-do-panel {
+  border: 1px solid color-mix(in srgb, var(--rootsy-savia-600) 25%, var(--rootsy-bruma-200));
+  background-color: color-mix(in srgb, var(--rootsy-savia-600) 6%, white);
+  color: var(--rootsy-savia-800);
+}
+
+.rootsy-library-shell .library-doc-dont-panel {
+  border: 1px solid #fecaca;
+  background-color: #fef2f2;
+  color: #b91c1c;
 }
 
 /* Scroll minimal — thumb pill, track invisible */
@@ -243,7 +372,8 @@
 }
 
 .library-scroll--dark {
-  scrollbar-color: rgb(148 163 184 / 0.42) transparent;
+  scrollbar-color: color-mix(in srgb, var(--rootsy-sombra-300) 42%, transparent)
+    transparent;
 }
 
 .library-scroll--dark::-webkit-scrollbar {
@@ -255,17 +385,18 @@
 }
 
 .library-scroll--dark::-webkit-scrollbar-thumb {
-  background-color: rgb(148 163 184 / 0.38);
-  border: 1px solid rgb(255 255 255 / 0.1);
+  background-color: color-mix(in srgb, var(--rootsy-sombra-300) 38%, transparent);
+  border: 1px solid color-mix(in srgb, var(--rootsy-white) 10%, transparent);
   border-radius: 999px;
 }
 
 .library-scroll--dark::-webkit-scrollbar-thumb:hover {
-  background-color: rgb(148 163 184 / 0.52);
+  background-color: color-mix(in srgb, var(--rootsy-sombra-300) 52%, transparent);
 }
 
 .library-scroll--light {
-  scrollbar-color: rgb(100 116 139 / 0.32) transparent;
+  scrollbar-color: color-mix(in srgb, var(--rootsy-bruma-400) 32%, transparent)
+    transparent;
 }
 
 .library-scroll--light::-webkit-scrollbar {
@@ -277,11 +408,11 @@
 }
 
 .library-scroll--light::-webkit-scrollbar-thumb {
-  background-color: rgb(100 116 139 / 0.28);
-  border: 1px solid rgb(255 255 255 / 0.6);
+  background-color: color-mix(in srgb, var(--rootsy-bruma-400) 28%, transparent);
+  border: 1px solid color-mix(in srgb, var(--rootsy-white) 60%, transparent);
   border-radius: 999px;
 }
 
 .library-scroll--light::-webkit-scrollbar-thumb:hover {
-  background-color: rgb(100 116 139 / 0.42);
+  background-color: color-mix(in srgb, var(--rootsy-bruma-400) 42%, transparent);
 }

@@ -15,11 +15,16 @@ export const layoutsModuleHeaderGlassClass = cn(
 )
 
 export const layoutsModuleHeaderChromeTextClass =
-  "text-[var(--rootsy-text-on-dark,#f4f8f6)]"
+  "text-[var(--color-text-on-dark,var(--rootsy-bruma-50))]"
 
 export const layoutsModuleHeaderPopNameClass = cn(
   "truncate text-sm font-semibold",
   layoutsModuleHeaderChromeTextClass,
+)
+
+export const layoutsModuleHeaderPopAddressClass = cn(
+  "truncate text-[11px] leading-tight",
+  "text-[color-mix(in_srgb,var(--rootsy-white)_58%,transparent)]",
 )
 
 export const layoutsModuleHeaderUserNameClass = cn(

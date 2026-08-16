@@ -38,6 +38,13 @@ import {
   timezoneForPopLedger,
 } from "@/lib/entryDateTimezone"
 import { createClient } from "@/utils/supabase/server"
+import { loadPopOperationalContext } from "@/lib/popTimezoneServer"
+import {
+  DEFAULT_OPERATIONAL_DAY_CLOSE_TIME,
+  expandCalendarBoundsForOperationalFetch,
+  filterSalesByOperationalPeriod,
+  usesOperationalDayFilter,
+} from "@/lib/popOperationalDay"
 import {
   saleComprobanteLabel,
   saleHasComprobante,
@@ -585,7 +592,13 @@ function parsePurchaseLineItems(raw: unknown): OperationPurchaseLineItem[] {
   return out
 }
 
-export type OperationsListView = "sales" | "tables" | "counter" | "purchases" | "expenses"
+export type OperationsListView =
+  | "sales"
+  | "sales-report"
+  | "tables"
+  | "counter"
+  | "purchases"
+  | "expenses"
 
 export type GetOperationsListInput = {
   view: OperationsListView
@@ -594,6 +607,8 @@ export type GetOperationsListInput = {
   search: string
   page: number
   pageSize: number
+  /** Compras con crédito fiscal (Factura A/B). */
+  fiscalOnly?: boolean
   sort?: string | null
   ord?: "asc" | "desc"
 }
@@ -814,6 +829,31 @@ const PURCHASE_LIST_SELECT = `
           treasury_accounts ( name )
         )
       `
+
+const FISCAL_RECEIVED_PURCHASE_DOC_KINDS = ["Factura A", "Factura B"] as const
+
+async function loadFiscalPurchaseIdsForPop(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  popId: string,
+): Promise<string[]> {
+  const { data, error } = await supabase
+    .from("purchase_documents")
+    .select("purchase_id")
+    .eq("pop_id", popId)
+    .in("doc_kind", [...FISCAL_RECEIVED_PURCHASE_DOC_KINDS])
+
+  if (error || !data?.length) return []
+
+  return [
+    ...new Set(
+      data
+        .map((row) =>
+          row.purchase_id != null ? String(row.purchase_id).trim() : "",
+        )
+        .filter(Boolean),
+    ),
+  ]
+}
 
 async function loadArcaBySaleIds(
   supabase: Awaited<ReturnType<typeof createClient>>,
@@ -1950,26 +1990,59 @@ export async function getOperationsList(
         searchTerm,
       )
 
-    if (view === "sales" || view === "tables" || view === "counter") {
+    if (
+      view === "sales" ||
+      view === "sales-report" ||
+      view === "tables" ||
+      view === "counter"
+    ) {
       const isChannelGroupedView = view === "tables" || view === "counter"
+      const isAllChannelsSalesView = view === "sales-report"
+      const isSalesDateFilteredView =
+        view === "sales" ||
+        view === "sales-report" ||
+        view === "tables" ||
+        view === "counter"
+
+      let operationalDayCloseTime = DEFAULT_OPERATIONAL_DAY_CLOSE_TIME
+      let salesTimeZone = ledgerTimeZone
+      if (isSalesDateFilteredView && (dateFrom || dateTo)) {
+        const operationalContext = await loadPopOperationalContext(
+          supabase,
+          popId,
+        )
+        operationalDayCloseTime = operationalContext.operationalDayCloseTime
+        salesTimeZone = operationalContext.timeZone
+      }
+
+      const useOperationalDayFilter =
+        isSalesDateFilteredView &&
+        usesOperationalDayFilter(operationalDayCloseTime, dateFrom, dateTo)
+
+      const salesFetchBounds = useOperationalDayFilter
+        ? expandCalendarBoundsForOperationalFetch(dateFrom, dateTo)
+        : { from: dateFrom, to: dateTo }
 
       let totalCount = 0
       let safePage = Math.max(1, reqPage)
       let from = (safePage - 1) * pageSize
       let to = from + pageSize - 1
 
-      if (!isChannelGroupedView) {
+      if (!isChannelGroupedView && !useOperationalDayFilter) {
         let countQuery = supabase
           .from("sales")
           .select("id", { count: "exact", head: true })
           .eq("pop_id", popId)
-          .neq("sale_channel", "table")
-          .neq("sale_channel", "counter")
+        if (!isAllChannelsSalesView) {
+          countQuery = countQuery
+            .neq("sale_channel", "table")
+            .neq("sale_channel", "counter")
+        }
         countQuery = appendSalesDateFilter(
           countQuery,
-          dateFrom,
-          dateTo,
-          ledgerTimeZone,
+          salesFetchBounds.from,
+          salesFetchBounds.to,
+          salesTimeZone,
         )
         if (uuidSearch) {
           countQuery = countQuery.eq("id", searchTerm)
@@ -2007,16 +2080,16 @@ export async function getOperationsList(
         dataQuery = dataQuery.eq("sale_channel", "table")
       } else if (view === "counter") {
         dataQuery = dataQuery.eq("sale_channel", "counter")
-      } else {
+      } else if (!isAllChannelsSalesView) {
         dataQuery = dataQuery
           .neq("sale_channel", "table")
           .neq("sale_channel", "counter")
       }
       dataQuery = appendSalesDateFilter(
         dataQuery,
-        dateFrom,
-        dateTo,
-        ledgerTimeZone,
+        salesFetchBounds.from,
+        salesFetchBounds.to,
+        salesTimeZone,
       )
       if (uuidSearch) {
         dataQuery = dataQuery.eq("id", searchTerm)
@@ -2028,7 +2101,7 @@ export async function getOperationsList(
       dataQuery = dataQuery.order(salesListOrder.column, {
         ascending: salesListOrder.ascending,
       })
-      if (!isChannelGroupedView) {
+      if (!isChannelGroupedView && !useOperationalDayFilter) {
         dataQuery = dataQuery.range(from, to)
       }
 
@@ -2054,7 +2127,7 @@ export async function getOperationsList(
         saleIds,
       )
       const tableLabelBySessionId =
-        view === "tables"
+        view === "tables" || isAllChannelsSalesView
           ? await loadTableLabelsBySaleIds(
               supabase,
               popId,
@@ -2062,7 +2135,7 @@ export async function getOperationsList(
             )
           : new Map<string, string>()
       const counterOrderLabelByOrderId =
-        view === "counter"
+        view === "counter" || isAllChannelsSalesView
           ? await loadCounterOrderLabelsBySaleIds(
               supabase,
               popId,
@@ -2109,6 +2182,23 @@ export async function getOperationsList(
         counterOrderLabelByOrderId,
         userNames,
       )
+      if (useOperationalDayFilter) {
+        sales = filterSalesByOperationalPeriod(
+          sales,
+          dateFrom,
+          dateTo,
+          salesTimeZone,
+          operationalDayCloseTime,
+        )
+      }
+      if (useOperationalDayFilter && !isChannelGroupedView) {
+        totalCount = sales.length
+        const totalPages = Math.max(1, Math.ceil(totalCount / pageSize))
+        safePage = Math.min(Math.max(1, reqPage), totalPages)
+        from = (safePage - 1) * pageSize
+        to = from + pageSize - 1
+        sales = sales.slice(from, to + 1)
+      }
       if (isChannelGroupedView) {
         sales = applyChannelListFieldsToSaleRows(sales, {
           view: view === "tables" ? "table" : "counter",
@@ -2140,11 +2230,30 @@ export async function getOperationsList(
     }
 
     if (view === "purchases") {
+      let fiscalPurchaseIds: string[] | null = null
+      if (input.fiscalOnly) {
+        fiscalPurchaseIds = await loadFiscalPurchaseIdsForPop(supabase, popId)
+        if (fiscalPurchaseIds.length === 0) {
+          return {
+            success: true,
+            popName,
+            totalCount: 0,
+            page: 1,
+            sales: emptySales,
+            expenseLedger: emptyExpenseLedger,
+            purchases: emptyPurchases,
+          }
+        }
+      }
+
       let countQuery = supabase
         .from("purchases")
         .select("id", { count: "exact", head: true })
         .eq("pop_id", popId)
         .neq("status", "draft")
+      if (fiscalPurchaseIds) {
+        countQuery = countQuery.in("id", fiscalPurchaseIds)
+      }
       countQuery = appendPurchasesDateFilter(
         countQuery,
         dateFrom,
@@ -2179,6 +2288,9 @@ export async function getOperationsList(
         .select(PURCHASE_LIST_SELECT)
         .eq("pop_id", popId)
         .neq("status", "draft")
+      if (fiscalPurchaseIds) {
+        dataQuery = dataQuery.in("id", fiscalPurchaseIds)
+      }
       dataQuery = appendPurchasesDateFilter(
         dataQuery,
         dateFrom,
@@ -2224,7 +2336,7 @@ export async function getOperationsList(
         (purchaseRows || []) as Array<Record<string, unknown>>,
         purchaseUserNames,
         documentKindByPurchaseId,
-      )
+      ).filter((purchase) => !input.fiscalOnly || purchase.accruesInputVat)
 
       return {
         success: true,

@@ -1,0 +1,38 @@
+.report-hub-card__arrow {
+  display: inline-flex;
+  flex-shrink: 0;
+  transform: translate3d(0, 0, 0);
+  transition: transform 0.55s cubic-bezier(0.16, 1, 0.3, 1);
+  will-change: transform;
+}
+
+.group:hover .report-hub-card__arrow,
+.group:focus-visible .report-hub-card__arrow {
+  transform: translate3d(0.375rem, 0, 0);
+}
+
+.report-hub-card__arrow-icon {
+  color: var(--rootsy-bruma-500);
+  transition: color 0.45s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.group:hover .report-hub-card__arrow-icon,
+.group:focus-visible .report-hub-card__arrow-icon {
+  color: var(--rootsy-bruma-700);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .report-hub-card__arrow {
+    transition: none;
+    will-change: auto;
+  }
+
+  .group:hover .report-hub-card__arrow,
+  .group:focus-visible .report-hub-card__arrow {
+    transform: none;
+  }
+
+  .report-hub-card__arrow-icon {
+    transition: none;
+  }
+}

@@ -4,8 +4,15 @@ import type {
   CashRegisterSummaryData,
   CashRegisterSummarySale,
   CashRegisterSummarySession,
+  CashRegistersPeriodReportRow,
 } from "@/app/[siteId]/[popId]/cash-registers/actions"
 import { isoDateInBounds } from "@/lib/dataWorkspaceDateFilter"
+import {
+  cashRegisterSessionPeriodAnchor,
+  isOperationalDayInRange,
+  operationalDayKey,
+  usesOperationalDayFilter,
+} from "@/lib/popOperationalDay"
 
 export function sessionTotalCobrado(
   sessionId: string,
@@ -25,8 +32,24 @@ export function sessionMatchesPeriod(
   from: string | null,
   to: string | null,
   timeZone?: string,
+  operationalDayCloseTime?: string,
 ): boolean {
   if (!from && !to) return true
+  if (
+    timeZone &&
+    operationalDayCloseTime &&
+    usesOperationalDayFilter(operationalDayCloseTime, from, to)
+  ) {
+    return isOperationalDayInRange(
+      operationalDayKey(
+        cashRegisterSessionPeriodAnchor(session),
+        timeZone,
+        operationalDayCloseTime,
+      ),
+      from,
+      to,
+    )
+  }
   if (isoDateInBounds(session.openedAt, from, to, timeZone)) return true
   if (
     session.closedAt &&
@@ -42,10 +65,17 @@ export function filterClosedSessionsInPeriod(
   from: string | null,
   to: string | null,
   timeZone?: string,
+  operationalDayCloseTime?: string,
 ): CashRegisterSummarySession[] {
   return sessions.filter((session) => {
     if (session.status !== "closed") return false
-    return sessionMatchesPeriod(session, from, to, timeZone)
+    return sessionMatchesPeriod(
+      session,
+      from,
+      to,
+      timeZone,
+      operationalDayCloseTime,
+    )
   })
 }
 
@@ -54,11 +84,20 @@ export function filterSessionsForArqueoTable(
   from: string | null,
   to: string | null,
   timeZone?: string,
+  operationalDayCloseTime?: string,
 ): CashRegisterSummarySession[] {
   const openSession = findOpenSession(sessions)
   const closedInPeriod = sessions
     .filter((session) => session.status === "closed")
-    .filter((session) => sessionMatchesPeriod(session, from, to, timeZone))
+    .filter((session) =>
+      sessionMatchesPeriod(
+        session,
+        from,
+        to,
+        timeZone,
+        operationalDayCloseTime,
+      ),
+    )
     .sort(
       (a, b) =>
         new Date(b.closedAt ?? b.openedAt).getTime() -
@@ -84,8 +123,15 @@ export function computePeriodHeaderTotals(
   from: string | null,
   to: string | null,
   timeZone?: string,
+  operationalDayCloseTime?: string,
 ): { totalCobrado: number; netIngresosRetiros: number } {
-  const filtered = filterClosedSessionsInPeriod(sessions, from, to, timeZone)
+  const filtered = filterClosedSessionsInPeriod(
+    sessions,
+    from,
+    to,
+    timeZone,
+    operationalDayCloseTime,
+  )
   let totalCobrado = 0
   let netIngresosRetiros = 0
   for (const session of filtered) {
@@ -139,6 +185,62 @@ export function buildSessionArqueoView(
     closingBlock: findClosingBlock(session.id, data.closingBlocks),
     totalCobrado: session.totalCobrado,
     ventasPorMedio: session.ventasPorMedio,
+  }
+}
+
+const MONEY_EPS = 0.005
+
+export function filterRowsForPopArqueoReport(
+  rows: CashRegistersPeriodReportRow[],
+  from: string | null,
+  to: string | null,
+  timeZone?: string,
+  operationalDayCloseTime?: string,
+): CashRegistersPeriodReportRow[] {
+  return rows
+    .filter((row) => row.status === "closed")
+    .filter((row) =>
+      sessionMatchesPeriod(row, from, to, timeZone, operationalDayCloseTime),
+    )
+    .sort(
+      (a, b) =>
+        new Date(b.closedAt ?? b.openedAt).getTime() -
+        new Date(a.closedAt ?? a.openedAt).getTime(),
+    )
+}
+
+export function computePopArqueoPeriodSummary(
+  rows: CashRegistersPeriodReportRow[],
+): {
+  arqueoCount: number
+  closedCount: number
+  openCount: number
+  totalCobrado: number
+  netDifference: number
+  sessionsWithVariance: number
+} {
+  const closedRows = rows.filter((row) => row.status === "closed")
+  let totalCobrado = 0
+  let netDifference = 0
+  let sessionsWithVariance = 0
+
+  for (const row of closedRows) {
+    totalCobrado += row.totalCobrado
+    if (row.cashArqueoDifference != null) {
+      netDifference += row.cashArqueoDifference
+      if (Math.abs(row.cashArqueoDifference) >= MONEY_EPS) {
+        sessionsWithVariance += 1
+      }
+    }
+  }
+
+  return {
+    arqueoCount: rows.length,
+    closedCount: closedRows.length,
+    openCount: rows.length - closedRows.length,
+    totalCobrado: Math.round(totalCobrado * 100) / 100,
+    netDifference: Math.round(netDifference * 100) / 100,
+    sessionsWithVariance,
   }
 }
 

@@ -12,6 +12,7 @@ type Props = {
   activeSalonId: string
   onChange: (salonId: string) => void
   tableCounts: Record<string, { total: number; open: number }>
+  loading?: boolean
 }
 
 export function MesasSalonTabs({
@@ -19,6 +20,7 @@ export function MesasSalonTabs({
   activeSalonId,
   onChange,
   tableCounts,
+  loading = false,
 }: Props) {
   const sorted = [...salons].sort((a, b) => a.sortOrder - b.sortOrder)
 
@@ -39,26 +41,32 @@ export function MesasSalonTabs({
             tabId={salon.id}
             active={active}
             onClick={() => onChange(salon.id)}
-            ariaLabel={`${salon.name}. ${counts.open > 0 ? `${openLabel}. ` : ""}${totalLabel}`}
+            ariaLabel={
+              loading
+                ? salon.name
+                : `${salon.name}. ${counts.open > 0 ? `${openLabel}. ` : ""}${totalLabel}`
+            }
           >
             <span className="flex min-w-0 max-w-full items-center justify-center gap-1.5">
               <span className="truncate">{salon.name}</span>
-              <span className="flex shrink-0 items-center gap-1" aria-hidden>
-                {counts.open > 0 ? (
+              {!loading ? (
+                <span className="flex shrink-0 items-center gap-1" aria-hidden>
+                  {counts.open > 0 ? (
+                    <OperarCanvasToolbarCountPill
+                      value={counts.open}
+                      variant="open"
+                      active={active}
+                      label={openLabel}
+                    />
+                  ) : null}
                   <OperarCanvasToolbarCountPill
-                    value={counts.open}
-                    variant="open"
+                    value={counts.total}
+                    variant="total"
                     active={active}
-                    label={openLabel}
+                    label={totalLabel}
                   />
-                ) : null}
-                <OperarCanvasToolbarCountPill
-                  value={counts.total}
-                  variant="total"
-                  active={active}
-                  label={totalLabel}
-                />
-              </span>
+                </span>
+              ) : null}
             </span>
           </OperarCanvasToolbarTab>
         )

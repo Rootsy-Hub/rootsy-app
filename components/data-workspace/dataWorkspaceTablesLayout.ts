@@ -2,7 +2,10 @@ import {
   lightToolbarPanelClass,
   lightToolbarPanelLastClass,
   lightToolbarShellClass,
+  workspaceTableLayoutClassName,
   workspaceTableLayoutMetaLabelClass,
+  workspaceTableNatureTextSecondaryClass,
+  workspaceTableNatureTextTertiaryClass,
 } from "@/components/data-workspace/dataWorkspaceListStyles"
 import {
   workspaceLayoutsTablesScopeClass,
@@ -29,13 +32,18 @@ export const workspaceTableLayoutRowHeightClass =
 export const workspaceTableLayoutHeaderHeightClass =
   "!h-10 !max-h-10 box-border"
 
-/** Encabezado layout — bruma sunken, sin blur. */
+/** Cristal en header sticky — blur del contenido al scrollear. */
+export const workspaceTableLayoutStickyHeaderGlassClass =
+  "backdrop-blur-md backdrop-saturate-150 bg-[var(--wt-header-bg-glass)]"
+
+/** Encabezado layout — cristal bruma sobre contenido scrolleable. */
 export const workspaceTableLayoutHeaderHeadClass = cn(
   workspaceTableLayoutMetaLabelClass,
   workspaceTableLayoutHeaderHeightClass,
+  workspaceTableLayoutStickyHeaderGlassClass,
   "sticky top-0 z-20 !py-0 px-3 align-middle",
   "!border-b border-[var(--wt-border)] !shadow-none",
-  "bg-[var(--wt-header-bg)] text-[var(--wt-header-text)]",
+  "text-[var(--wt-header-text)]",
 )
 
 export const workspaceTableLayoutBodyRowClass = cn(
@@ -60,12 +68,14 @@ export const workspaceTableLayoutActionsBodyCellClass = cn(
   "px-1 !py-0 align-middle",
 )
 
-/** Scope layout — h-10 header · h-14 filas. */
+/** Scope layout — h-10 header · h-14 filas · header sticky en contenedor scroll. */
 export const workspaceTableLayoutListBodyScopeClass = cn(
+  "[&_[data-slot=table-container]]:!overflow-visible",
+  "[&_[data-slot=table-head]]:!sticky [&_[data-slot=table-head]]:!top-0 [&_[data-slot=table-head]]:!z-30",
   "[&_[data-slot=table-header]_[data-slot=table-row]]:!border-b-0",
   "[&_[data-slot=table-head]]:!h-10 [&_[data-slot=table-head]]:!max-h-10 [&_[data-slot=table-head]]:box-border [&_[data-slot=table-head]]:!py-0",
   "[&_[data-slot=table-head]]:!border-b [&_[data-slot=table-head]]:!border-[var(--wt-border)] [&_[data-slot=table-head]]:!shadow-none",
-  "[&_[data-slot=table-head]]:!bg-[var(--wt-header-bg)] [&_[data-slot=table-head]]:!text-[var(--wt-header-text)]",
+  "[&_[data-slot=table-head]]:!backdrop-blur-md [&_[data-slot=table-head]]:!backdrop-saturate-150 [&_[data-slot=table-head]]:!bg-[var(--wt-header-bg-glass)] [&_[data-slot=table-head]]:!text-[var(--wt-header-text)]",
   "[&_[data-slot=table-head]>div]:!h-full [&_[data-slot=table-head]>div]:!min-h-0",
   "[&_[data-slot=table-body]_[data-slot=table-row]]:!h-14 [&_[data-slot=table-body]_[data-slot=table-row]]:!max-h-14",
   "[&_[data-slot=table-body]_[data-slot=table-cell]]:!h-14 [&_[data-slot=table-body]_[data-slot=table-cell]]:!max-h-14 [&_[data-slot=table-body]_[data-slot=table-cell]]:box-border [&_[data-slot=table-body]_[data-slot=table-cell]]:!py-0",
@@ -74,12 +84,34 @@ export const workspaceTableLayoutListBodyScopeClass = cn(
   "[&_[data-slot=table-row][data-state=selected]]:!bg-[var(--wt-surface-selected)]",
 )
 
+/** Contenedor scroll de tablas en reportes. */
+export const workspaceTableLayoutReportScrollClass =
+  "min-h-0 flex-1 overflow-auto"
+
+/** Borde inferior en header sticky al scrollear (pseudo-elemento sobre celdas sticky). */
+export const workspaceTableLayoutReportScrollScrolledScopeClass = cn(
+  "[&[data-table-scrolled=true]_[data-slot=table-head]]:relative",
+  "[&[data-table-scrolled=true]_[data-slot=table-head]]:after:pointer-events-none",
+  "[&[data-table-scrolled=true]_[data-slot=table-head]]:after:absolute",
+  "[&[data-table-scrolled=true]_[data-slot=table-head]]:after:inset-x-0",
+  "[&[data-table-scrolled=true]_[data-slot=table-head]]:after:bottom-0",
+  "[&[data-table-scrolled=true]_[data-slot=table-head]]:after:z-[1]",
+  "[&[data-table-scrolled=true]_[data-slot=table-head]]:after:h-px",
+  "[&[data-table-scrolled=true]_[data-slot=table-head]]:after:bg-[var(--wt-border-strong)]",
+  "[&[data-table-scrolled=true]_[data-slot=table-head]]:after:content-['']",
+)
+
+/** Wrapper tabla desktop en reportes — scroll lo maneja el padre (sticky header). */
+export const workspaceTableLayoutReportTableDesktopClass = "hidden md:block"
+
 /** Operaciones — header compacto layout; filas flexibles (celdas multilínea). */
 export const workspaceTableOperationsListHeaderScopeClass = cn(
+  "[&_[data-slot=table-container]]:!overflow-visible",
+  "[&_[data-slot=table-head]]:!sticky [&_[data-slot=table-head]]:!top-0 [&_[data-slot=table-head]]:!z-30",
   "[&_[data-slot=table-header]_[data-slot=table-row]]:!border-b-0",
   "[&_[data-slot=table-head]]:!h-10 [&_[data-slot=table-head]]:!max-h-10 [&_[data-slot=table-head]]:box-border [&_[data-slot=table-head]]:!py-0",
   "[&_[data-slot=table-head]]:!border-b [&_[data-slot=table-head]]:!border-[var(--wt-border)] [&_[data-slot=table-head]]:!shadow-none",
-  "[&_[data-slot=table-head]]:!bg-[var(--wt-header-bg)] [&_[data-slot=table-head]]:!text-[var(--wt-header-text)]",
+  "[&_[data-slot=table-head]]:!backdrop-blur-md [&_[data-slot=table-head]]:!backdrop-saturate-150 [&_[data-slot=table-head]]:!bg-[var(--wt-header-bg-glass)] [&_[data-slot=table-head]]:!text-[var(--wt-header-text)]",
   "[&_[data-slot=table-head]>div]:!h-full [&_[data-slot=table-head]>div]:!min-h-0",
 )
 
@@ -113,6 +145,51 @@ export const workspaceTableLayoutCellSecondaryTextClass =
 
 /** Superficie listado layout — canvas bruma. */
 export const workspaceTableLayoutListSurfaceClass = "bg-[var(--rootsy-bruma-50)]"
+
+/** Footer scroll infinito — estado cargando. */
+export const workspaceTableLayoutListLoadingMoreClass = cn(
+  "flex items-center justify-center gap-2 border-t border-[var(--wt-border)] px-4 py-3 text-sm",
+  workspaceTableNatureTextSecondaryClass,
+)
+
+/** Footer scroll infinito — fin del listado. */
+export const workspaceTableLayoutListEndFooterClass = cn(
+  "flex items-center gap-3 px-4 py-6 text-sm",
+  workspaceTableNatureTextTertiaryClass,
+)
+
+export const workspaceTableLayoutListEndFooterDividerClass =
+  "h-px flex-1 bg-[var(--wt-border)]"
+
+/** Encabezado layout en tablas inset (modal) — sin sticky; el borde va en thead. */
+export const workspaceTableLayoutInsetHeaderHeadClass = cn(
+  workspaceTableLayoutMetaLabelClass,
+  workspaceTableLayoutHeaderHeightClass,
+  workspaceTableLayoutStickyHeaderGlassClass,
+  "static top-auto z-auto !py-0 px-3 align-middle",
+  "!border-b-0 !shadow-none",
+  "text-[var(--wt-header-text)]",
+)
+
+/** Tabla inset en modal/panel — borde exterior + clip; sin fondo en shell (evita artefactos). */
+export const workspaceTableLayoutInsetTableShellClass = cn(
+  "relative isolate overflow-hidden rounded-lg border border-[var(--wt-border)] bg-transparent",
+  "[&_[data-slot=table-head]]:!static [&_[data-slot=table-head]]:!top-auto",
+  "[&_[data-slot=table-header]_[data-slot=table-row]]:!border-b-0",
+  "[&_[data-slot=table-head]]:!border-b-0",
+  "[&_[data-slot=table-header]]:border-b [&_[data-slot=table-header]]:border-[var(--wt-border)]",
+  "[&_[data-slot=table-head]:first-child]:rounded-tl-lg",
+  "[&_[data-slot=table-head]:last-child]:rounded-tr-lg",
+  "[&_table]:bg-transparent",
+  "[&_[data-slot=table-body]_[data-slot=table-row]]:!border-b",
+  "[&_[data-slot=table-body]_[data-slot=table-row]]:!border-[var(--wt-border)]",
+  "[&_[data-slot=table-body]_[data-slot=table-row]:last-child]:!border-b-0",
+)
+
+export const workspaceTableLayoutInsetTableClass = cn(
+  workspaceTableLayoutClassName,
+  "border-separate border-spacing-0",
+)
 
 /** Barra de filtros — h-23 · toolbar elevation.overlay. */
 export const dataWorkspaceListFiltersBarClass = cn(

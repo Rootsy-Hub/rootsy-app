@@ -29,6 +29,8 @@ import { layoutsModuleContentShellClass } from "@/components/layouts-module/root
 import {
   dataWorkspaceBlocksContentInnerClass,
   dataWorkspaceBlocksEmptyStateClass,
+  dataWorkspaceBlocksSectionDescriptionClass,
+  dataWorkspaceBlocksSectionTitleClass,
   dataWorkspaceBlocksSkeletonTone,
   dataWorkspaceEntityCardBodyClass,
   dataWorkspaceEntityCardClass,
@@ -46,7 +48,7 @@ const noop = () => {}
 
 function LayoutHeightBadge({ label }: { label: string }) {
   return (
-    <span className="pointer-events-none absolute right-2 top-1.5 z-20 rounded-md bg-background/95 px-1.5 py-0.5 font-mono text-[10px] text-muted-foreground ring-1 ring-border/60">
+    <span className="pointer-events-none absolute right-2 top-1.5 z-20 rounded-md bg-background/95 px-1.5 py-0.5 font-mono text-[10px] text-[var(--rootsy-bruma-500)] ring-1 ring-border/60">
       {label}
     </span>
   )
@@ -64,9 +66,9 @@ export function LayoutsBlocksDocSubsection({
   return (
     <div className="space-y-3">
       <div className="space-y-1">
-        <h4 className="font-canopy text-sm font-semibold text-foreground">{title}</h4>
+        <h4 className={dataWorkspaceBlocksSectionTitleClass}>{title}</h4>
         {description ? (
-          <p className="font-canopy text-xs leading-relaxed text-muted-foreground">{description}</p>
+          <p className={dataWorkspaceBlocksSectionDescriptionClass}>{description}</p>
         ) : null}
       </div>
       {children}
@@ -87,7 +89,7 @@ function LayoutsBlocksModuleContentScope({
   return (
     <div
       className={cn(
-        "relative min-h-0 flex-1 rootsy-app-light rootsy-nature-palette text-foreground",
+        "relative min-h-0 flex-1 rootsy-app-light rootsy-nature-palette text-[var(--rootsy-bruma-900)]",
         layoutsModuleContentShellClass,
         className,
       )}
@@ -120,7 +122,7 @@ function LayoutsBlocksWireframeCard({ index }: { index: number }) {
     <div
       className={cn(
         dataWorkspaceEntityCardClass,
-        "pointer-events-none min-h-52 shadow-sm hover:shadow-sm",
+        "pointer-events-none min-h-52  hover:",
       )}
     >
       <div className={dataWorkspaceEntityCardHeaderClass}>
@@ -150,18 +152,18 @@ function LayoutsBlocksWireframeCard({ index }: { index: number }) {
 export function LayoutsBlocksLayoutSpecTable() {
   return (
     <FoundationSpecCard className="space-y-4">
-      <p className="font-canopy text-xs leading-relaxed text-muted-foreground">
+      <p className="font-canopy text-xs leading-relaxed text-[var(--rootsy-bruma-500)]">
         Grid auto-fill al 100% de ancho: mínimo 18rem por bloque, columnas fluidas en{" "}
         <span className="font-mono">1fr</span> según el espacio disponible.
       </p>
       <div className="overflow-x-auto">
         <table className="w-full min-w-[36rem] border-collapse text-left">
           <thead>
-            <tr className="border-b border-border/70">
+            <tr className="border-b border-[var(--rootsy-bruma-200)]">
               {["Rol", "Token", "Valor", "Producto"].map((heading) => (
                 <th
                   key={heading}
-                  className="px-2 py-2 font-mono text-[10px] font-medium uppercase tracking-[0.1em] text-muted-foreground first:pl-0"
+                  className="px-2 py-2 font-mono text-[10px] font-medium uppercase tracking-[0.1em] text-[var(--rootsy-bruma-500)] first:pl-0"
                 >
                   {heading}
                 </th>
@@ -170,13 +172,13 @@ export function LayoutsBlocksLayoutSpecTable() {
           </thead>
           <tbody>
             {LAYOUTS_BLOCKS_LAYOUT_SPEC_ROWS.map((row) => (
-              <tr key={`${row.role}-${row.token}`} className="border-b border-border/40 align-top">
-                <td className="py-2.5 pr-3 font-canopy text-xs font-medium text-foreground">{row.role}</td>
-                <td className="py-2.5 pr-3 font-mono text-[11px] text-muted-foreground">{row.token}</td>
-                <td className="max-w-[14rem] py-2.5 pr-3 font-mono text-[10px] leading-relaxed break-all text-foreground">
+              <tr key={`${row.role}-${row.token}`} className="border-b border-[var(--rootsy-bruma-200)] align-top">
+                <td className="py-2.5 pr-3 font-canopy text-xs font-medium text-[var(--rootsy-bruma-900)]">{row.role}</td>
+                <td className="py-2.5 pr-3 font-mono text-[11px] text-[var(--rootsy-bruma-500)]">{row.token}</td>
+                <td className="max-w-[14rem] py-2.5 pr-3 font-mono text-[10px] leading-relaxed break-all text-[var(--rootsy-bruma-900)]">
                   {row.value}
                 </td>
-                <td className="py-2.5 font-canopy text-[11px] leading-relaxed text-muted-foreground">
+                <td className="py-2.5 font-canopy text-[11px] leading-relaxed text-[var(--rootsy-bruma-500)]">
                   {row.product}
                 </td>
               </tr>
@@ -241,7 +243,7 @@ export function LayoutsBlocksLayoutSectionDemo() {
       <LayoutsBlocksLayoutSpecTable />
       <div
         className={cn(
-          "mx-auto flex max-w-5xl flex-col overflow-hidden rounded-2xl border border-[var(--rootsy-bruma-200)]",
+          "mx-auto flex max-w-5xl flex-col library-doc-table-shell overflow-hidden rounded-2xl",
           "rootsy-app-light rootsy-nature-palette",
           layoutsModuleContentShellClass,
         )}
@@ -310,8 +312,8 @@ export function LayoutsBlocksEntityDesignSectionDemo() {
       >
         <div
           className={cn(
-            "overflow-hidden rounded-2xl border border-[var(--rootsy-bruma-200)]",
-            "rootsy-app-light rootsy-nature-palette text-foreground",
+            "library-doc-table-shell overflow-hidden rounded-2xl",
+            "rootsy-app-light rootsy-nature-palette text-[var(--rootsy-bruma-900)]",
             layoutsModuleContentShellClass,
           )}
         >
@@ -327,8 +329,8 @@ export function LayoutsBlocksEntityDesignSectionDemo() {
       >
         <div
           className={cn(
-            "overflow-hidden rounded-2xl border border-[var(--rootsy-bruma-200)]",
-            "rootsy-app-light rootsy-nature-palette text-foreground",
+            "library-doc-table-shell overflow-hidden rounded-2xl",
+            "rootsy-app-light rootsy-nature-palette text-[var(--rootsy-bruma-900)]",
             layoutsModuleContentShellClass,
           )}
         >
@@ -344,21 +346,21 @@ export function LayoutsBlocksEntityDesignSectionDemo() {
       >
         <div
           className={cn(
-            "space-y-8 overflow-hidden rounded-2xl border border-[var(--rootsy-bruma-200)] p-0",
-            "rootsy-app-light rootsy-nature-palette text-foreground",
+            "space-y-8 library-doc-table-shell overflow-hidden rounded-2xl p-0",
+            "rootsy-app-light rootsy-nature-palette text-[var(--rootsy-bruma-900)]",
             layoutsModuleContentShellClass,
           )}
         >
           <LayoutsBlocksModuleContentScope>
             <div className="space-y-8">
               <div>
-                <p className="mb-3 font-mono text-[10px] uppercase tracking-[0.1em] text-muted-foreground">
+                <p className="mb-3 font-mono text-[10px] uppercase tracking-[0.1em] text-[var(--rootsy-bruma-500)]">
                   Skeleton · cuentas
                 </p>
                 <TreasuryAccountsGridSkeleton count={4} />
               </div>
               <div>
-                <p className="mb-3 font-mono text-[10px] uppercase tracking-[0.1em] text-muted-foreground">
+                <p className="mb-3 font-mono text-[10px] uppercase tracking-[0.1em] text-[var(--rootsy-bruma-500)]">
                   Skeleton · cajas
                 </p>
                 <CashRegistersGridSkeleton count={3} />
@@ -385,7 +387,7 @@ export function LayoutsBlocksFullPageDraft({ composed = false }: { composed?: bo
   return (
     <div
       className={cn(
-        "mx-auto flex h-[32rem] max-w-5xl flex-col overflow-hidden rounded-2xl border border-border/80",
+        "mx-auto flex h-[32rem] max-w-5xl flex-col overflow-hidden rounded-2xl border border-[var(--rootsy-bruma-200)]",
         "shadow-[0_24px_48px_-28px_rgba(41,37,36,0.38)]",
         "ring-1 ring-black/[0.04]",
       )}
@@ -426,18 +428,18 @@ export function LayoutsBlocksCashRegisterCardsDemo() {
 export function LayoutsBlocksEmptyStateSpecTable() {
   return (
     <FoundationSpecCard className="space-y-4">
-      <p className="font-canopy text-xs leading-relaxed text-muted-foreground">
+      <p className="font-canopy text-xs leading-relaxed text-[var(--rootsy-bruma-500)]">
         Dos variantes: grid dashed para listados vacíos · detalle con icon tile para paneles flush
         (liquidaciones, arqueos, operaciones).
       </p>
       <div className="overflow-x-auto">
         <table className="w-full min-w-[36rem] border-collapse text-left">
           <thead>
-            <tr className="border-b border-border/70">
+            <tr className="border-b border-[var(--rootsy-bruma-200)]">
               {["Rol", "Token", "Valor", "Producto"].map((heading) => (
                 <th
                   key={heading}
-                  className="px-2 py-2 font-mono text-[10px] font-medium uppercase tracking-[0.1em] text-muted-foreground first:pl-0"
+                  className="px-2 py-2 font-mono text-[10px] font-medium uppercase tracking-[0.1em] text-[var(--rootsy-bruma-500)] first:pl-0"
                 >
                   {heading}
                 </th>
@@ -446,13 +448,13 @@ export function LayoutsBlocksEmptyStateSpecTable() {
           </thead>
           <tbody>
             {LAYOUTS_BLOCKS_EMPTY_STATE_SPEC_ROWS.map((row) => (
-              <tr key={`${row.role}-${row.token}`} className="border-b border-border/40 align-top">
-                <td className="py-2.5 pr-3 font-canopy text-xs font-medium text-foreground">{row.role}</td>
-                <td className="py-2.5 pr-3 font-mono text-[11px] text-muted-foreground">{row.token}</td>
-                <td className="max-w-[14rem] py-2.5 pr-3 font-mono text-[10px] leading-relaxed break-all text-foreground">
+              <tr key={`${row.role}-${row.token}`} className="border-b border-[var(--rootsy-bruma-200)] align-top">
+                <td className="py-2.5 pr-3 font-canopy text-xs font-medium text-[var(--rootsy-bruma-900)]">{row.role}</td>
+                <td className="py-2.5 pr-3 font-mono text-[11px] text-[var(--rootsy-bruma-500)]">{row.token}</td>
+                <td className="max-w-[14rem] py-2.5 pr-3 font-mono text-[10px] leading-relaxed break-all text-[var(--rootsy-bruma-900)]">
                   {row.value}
                 </td>
-                <td className="py-2.5 font-canopy text-[11px] leading-relaxed text-muted-foreground">
+                <td className="py-2.5 font-canopy text-[11px] leading-relaxed text-[var(--rootsy-bruma-500)]">
                   {row.product}
                 </td>
               </tr>
@@ -475,8 +477,8 @@ export function LayoutsBlocksEmptyStatesSectionDemo() {
       >
         <div
           className={cn(
-            "overflow-hidden rounded-2xl border border-[var(--rootsy-bruma-200)]",
-            "rootsy-app-light rootsy-nature-palette text-foreground",
+            "library-doc-table-shell overflow-hidden rounded-2xl",
+            "rootsy-app-light rootsy-nature-palette text-[var(--rootsy-bruma-900)]",
             layoutsModuleContentShellClass,
           )}
         >
@@ -494,13 +496,13 @@ export function LayoutsBlocksEmptyStatesSectionDemo() {
       >
         <div
           className={cn(
-            "overflow-hidden rounded-2xl border border-[var(--rootsy-bruma-200)] bg-white",
-            "rootsy-app-light rootsy-nature-palette text-foreground",
+            "library-doc-table-shell overflow-hidden rounded-2xl bg-white",
+            "rootsy-app-light rootsy-nature-palette text-[var(--rootsy-bruma-900)]",
           )}
         >
           <div className="grid gap-px bg-[var(--rootsy-bruma-200)] sm:grid-cols-3">
             <div className="bg-white">
-              <p className="border-b border-[var(--rootsy-bruma-200)] px-4 py-2 font-mono text-[10px] uppercase tracking-[0.1em] text-muted-foreground">
+              <p className="border-b border-[var(--rootsy-bruma-200)] px-4 py-2 font-mono text-[10px] uppercase tracking-[0.1em] text-[var(--rootsy-bruma-500)]">
                 Liquidaciones
               </p>
               <DataWorkspaceDetailEmptyState
@@ -510,7 +512,7 @@ export function LayoutsBlocksEmptyStatesSectionDemo() {
               />
             </div>
             <div className="bg-white">
-              <p className="border-b border-[var(--rootsy-bruma-200)] px-4 py-2 font-mono text-[10px] uppercase tracking-[0.1em] text-muted-foreground">
+              <p className="border-b border-[var(--rootsy-bruma-200)] px-4 py-2 font-mono text-[10px] uppercase tracking-[0.1em] text-[var(--rootsy-bruma-500)]">
                 Arqueos
               </p>
               <DataWorkspaceDetailEmptyState
@@ -520,7 +522,7 @@ export function LayoutsBlocksEmptyStatesSectionDemo() {
               />
             </div>
             <div className="bg-white">
-              <p className="border-b border-[var(--rootsy-bruma-200)] px-4 py-2 font-mono text-[10px] uppercase tracking-[0.1em] text-muted-foreground">
+              <p className="border-b border-[var(--rootsy-bruma-200)] px-4 py-2 font-mono text-[10px] uppercase tracking-[0.1em] text-[var(--rootsy-bruma-500)]">
                 Operaciones
               </p>
               <DataWorkspaceDetailEmptyState
@@ -558,19 +560,19 @@ export function LayoutsBlocksEmptyStateDemo() {
 export function LayoutsBlocksCardSurfaceDemo() {
   return (
     <div className={cn("max-w-md space-y-3 rounded-xl p-4 sm:p-6", layoutsModuleContentShellClass)}>
-      <article className={cn(dataWorkspaceEntityCardClass, "shadow-sm hover:shadow-sm")}>
+      <article className={cn(dataWorkspaceEntityCardClass, " hover:")}>
         <div className={dataWorkspaceEntityCardHeaderClass}>
-          <p className="text-[11px] font-medium uppercase tracking-[0.12em] text-muted-foreground">
+          <p className="text-[11px] font-medium uppercase tracking-[0.12em] text-[var(--rootsy-bruma-500)]">
             Cabecera · isotipo + meta + menú
           </p>
         </div>
         <div className={dataWorkspaceEntityCardBodyClass}>
-          <p className="text-[11px] font-medium uppercase tracking-[0.12em] text-muted-foreground">
+          <p className="text-[11px] font-medium uppercase tracking-[0.12em] text-[var(--rootsy-bruma-500)]">
             Cuerpo · saldo principal
           </p>
         </div>
         <div className={cn("min-h-16 px-4 py-4", dataWorkspaceEntityCardFooterClass)}>
-          <p className="text-[11px] font-medium uppercase tracking-[0.12em] text-muted-foreground">
+          <p className="text-[11px] font-medium uppercase tracking-[0.12em] text-[var(--rootsy-bruma-500)]">
             Pie · stats secundarios o CTA
           </p>
         </div>

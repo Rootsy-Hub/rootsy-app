@@ -2,7 +2,11 @@ import {
   operationPaymentKindLabel,
   type OperationPaymentKind,
 } from "@/lib/operationPaymentKinds"
+import { CLIENT_ACCOUNT_PAYMENT_LABEL } from "@/lib/operationPaymentLabels"
+import { paymentCheckoutKindIcon } from "@/lib/paymentMethodCheckout"
 import type { TreasuryPaymentContext } from "@/lib/treasuryPaymentOptions"
+import type { LucideIcon } from "lucide-react"
+import { BookOpen } from "lucide-react"
 
 export type SaleCheckoutPaymentSelection = {
   kind: OperationPaymentKind
@@ -140,4 +144,67 @@ export function checkoutKindAvailabilityError(
     return null
   }
   return null
+}
+
+export type SaleToolboxPaymentDisplay = {
+  pagoLabel: string
+  pagoSubLabel: string | null
+  pagoIcon?: LucideIcon
+}
+
+type SaleToolboxPaymentSelection = {
+  kind: OperationPaymentKind
+  treasuryAccountId: string
+  label: string
+}
+
+/** Etiquetas del slot Pago en toolbox operar — mismo criterio que Cobrar servicios. */
+export function resolveSaleToolboxPaymentDisplay(input: {
+  payOnClientAccount: boolean
+  metodoPagoSeleccionado: SaleToolboxPaymentSelection | null
+  treasuryPaymentContext: TreasuryPaymentContext | null
+  emptyLabel?: string
+}): SaleToolboxPaymentDisplay {
+  const emptyLabel = input.emptyLabel ?? "Elegir forma de pago"
+
+  if (input.payOnClientAccount) {
+    return {
+      pagoLabel: CLIENT_ACCOUNT_PAYMENT_LABEL,
+      pagoSubLabel: null,
+      pagoIcon: BookOpen,
+    }
+  }
+
+  const selection = input.metodoPagoSeleccionado
+  if (!selection) {
+    return { pagoLabel: emptyLabel, pagoSubLabel: null, pagoIcon: undefined }
+  }
+
+  const kindLabel = operationPaymentKindLabel(selection.kind)
+  const pagoIcon = paymentCheckoutKindIcon(selection.kind)
+  const context = input.treasuryPaymentContext
+
+  if (!context) {
+    return {
+      pagoLabel: selection.label,
+      pagoSubLabel: kindLabel,
+      pagoIcon,
+    }
+  }
+
+  const destinationName = [
+    ...context.cashTreasuryAccounts,
+    ...context.bankTreasuryAccounts,
+    ...context.posTreasuryAccounts,
+  ].find((account) => account.id === selection.treasuryAccountId)?.name ?? null
+
+  if (selection.kind === "cash" && context.cashTreasuryAccounts.length <= 1) {
+    return { pagoLabel: kindLabel, pagoSubLabel: null, pagoIcon }
+  }
+
+  if (destinationName) {
+    return { pagoLabel: destinationName, pagoSubLabel: kindLabel, pagoIcon }
+  }
+
+  return { pagoLabel: selection.label, pagoSubLabel: kindLabel, pagoIcon }
 }

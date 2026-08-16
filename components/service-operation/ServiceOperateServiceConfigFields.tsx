@@ -19,6 +19,7 @@ import {
   SERVICE_CHARGE_PERIOD_END_AUTO_LABEL_INFO,
   SERVICE_CHARGE_PERIOD_END_LABEL_INFO,
   SERVICE_CHARGE_PERIOD_START_LABEL_INFO,
+  SERVICE_CHARGE_UNIT_PRICE_LABEL_INFO,
 } from "@/lib/serviceCatalogTypes"
 import {
   availableBillingScopesForService,
@@ -38,6 +39,9 @@ type Props = {
   selectedService: ServiceTypeChargeOption
   fieldErrors: ServiceChargeCreateFieldErrors
   disabled?: boolean
+  tone?: "light" | "dark"
+  showSectionTitle?: boolean
+  fieldIdPrefix?: string
   onChange: (patch: Partial<ServiceChargeCreateWizardForm>) => void
 }
 
@@ -46,6 +50,9 @@ export function ServiceOperateServiceConfigFields({
   selectedService,
   fieldErrors,
   disabled = false,
+  tone = "dark",
+  showSectionTitle = true,
+  fieldIdPrefix = "",
   onChange,
 }: Props) {
   const scopeOptions = useMemo(
@@ -66,17 +73,26 @@ export function ServiceOperateServiceConfigFields({
     )
   }, [selectedService, form.periodStartDate, form.periodEndDate, manualPeriodEnd])
 
+  const isDark = tone === "dark"
+  const mutedTextClass = isDark
+    ? layoutsOperarFormDarkMutedTextClass
+    : "text-[var(--rootsy-bruma-500)]"
+  const id = (suffix: string) =>
+    fieldIdPrefix ? `${fieldIdPrefix}-${suffix}` : suffix
+
   return (
     <div
       className={cn(rootsFormColumnClass, "gap-4")}
     >
-      <p className={cn("text-xs font-medium uppercase tracking-wide", layoutsOperarFormDarkMutedTextClass)}>
-        Configuración del cargo
-      </p>
+      {showSectionTitle ? (
+        <p className={cn("text-xs font-medium uppercase tracking-wide", mutedTextClass)}>
+          Configuración del cargo
+        </p>
+      ) : null}
 
       <RootsFormSelectField
         label="Alcance"
-        id="operate-charge-scope"
+        id={id("operate-charge-scope")}
         value={form.billingScope}
         onValueChange={(value) => {
           const billingScope = value as ServiceChargeBillingScope
@@ -99,7 +115,7 @@ export function ServiceOperateServiceConfigFields({
       {form.billingScope === "multi_period" ? (
         <RootsFormIntegerField
           label="Cantidad de períodos"
-          id="operate-charge-period-count"
+          id={id("operate-charge-period-count")}
           value={form.periodCount}
           onChange={(value) => onChange({ periodCount: value })}
           disabled={disabled}
@@ -109,7 +125,7 @@ export function ServiceOperateServiceConfigFields({
       ) : null}
 
       {form.billingScope === "subscription" ? (
-        <p className={cn("text-xs", layoutsOperarFormDarkMutedTextClass)}>
+        <p className={cn("text-xs", mutedTextClass)}>
           Se creará la suscripción y el primer cargo. Los siguientes se generarán
           automáticamente hasta cancelar.
         </p>
@@ -118,7 +134,7 @@ export function ServiceOperateServiceConfigFields({
       <div className={rootsFormTwoColRowClass}>
         <RootsFormDateField
           label="Inicio del período"
-          id="operate-charge-period-start"
+          id={id("operate-charge-period-start")}
           value={form.periodStartDate}
           onChange={(value) => {
             const patch: Partial<ServiceChargeCreateWizardForm> = {
@@ -141,7 +157,7 @@ export function ServiceOperateServiceConfigFields({
         />
         <RootsFormDateField
           label="Fin del período"
-          id="operate-charge-period-end"
+          id={id("operate-charge-period-end")}
           value={manualPeriodEnd ? form.periodEndDate : effectivePeriodEnd}
           onChange={(value) => onChange({ periodEndDate: value })}
           disabled={disabled || !manualPeriodEnd}
@@ -158,10 +174,11 @@ export function ServiceOperateServiceConfigFields({
 
       <RootsFormMoneyField
         label="Precio unitario"
-        id="operate-charge-unit-price"
+        id={id("operate-charge-unit-price")}
         value={form.unitPrice}
         onChange={(value) => onChange({ unitPrice: value })}
         disabled={disabled}
+        labelInfo={SERVICE_CHARGE_UNIT_PRICE_LABEL_INFO}
         error={fieldErrors.unitPrice}
         invalid={Boolean(fieldErrors.unitPrice)}
       />

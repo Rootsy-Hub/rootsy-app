@@ -148,9 +148,9 @@ export function LayoutsTablesDocZone({
   return (
     <div className="space-y-4">
       <div>
-        <h4 className="text-sm font-semibold tracking-tight text-foreground">{title}</h4>
+        <h4 className="text-sm font-semibold tracking-tight text-[var(--rootsy-bruma-900)]">{title}</h4>
         {description ? (
-          <p className="mt-1 max-w-3xl text-xs leading-relaxed text-muted-foreground">
+          <p className="mt-1 max-w-3xl text-xs leading-relaxed text-[var(--rootsy-bruma-500)]">
             {description}
           </p>
         ) : null}
@@ -411,7 +411,7 @@ export function LayoutsTablesDocSubsection({
 }) {
   return (
     <div className="space-y-3">
-      <h4 className="text-sm font-semibold text-foreground">{title}</h4>
+      <h4 className="text-sm font-semibold text-[var(--rootsy-bruma-900)]">{title}</h4>
       {children}
     </div>
   )
@@ -433,7 +433,7 @@ export function LayoutsTablesModulePreviewDemo() {
 export function LayoutsTablesContentGridWireframeDemo() {
   return (
     <div
-      className="mx-auto flex max-w-4xl flex-col overflow-hidden rounded-2xl border border-border/70"
+      className="mx-auto flex max-w-4xl flex-col library-doc-table-shell overflow-hidden rounded-2xl"
       style={{ height: "22rem" }}
     >
       <LayoutsTablesContentGridBody scrollRows={10} />
@@ -633,27 +633,27 @@ export function LayoutsTablesComponentsTable({
   return (
     <div className="space-y-2">
       {caption ? (
-        <p className="font-mono text-[11px] uppercase tracking-[0.1em] text-muted-foreground">
+        <p className="font-mono text-[11px] uppercase tracking-[0.1em] text-[var(--rootsy-bruma-500)]">
           {caption}
         </p>
       ) : null}
-      <div className="overflow-x-auto rounded-2xl border border-border/70">
+      <div className="library-doc-table-shell overflow-x-auto rounded-2xl">
         <table className="w-full min-w-[720px] text-left text-sm">
           <thead>
-            <tr className="border-b border-border/60 bg-muted/30">
-              <th className="px-4 py-3 font-semibold text-foreground">Capa</th>
-              <th className="px-4 py-3 font-semibold text-foreground">Componente</th>
-              <th className="px-4 py-3 font-semibold text-foreground">Token</th>
-              <th className="px-4 py-3 font-semibold text-foreground">Fuente</th>
+            <tr className="border-b border-[var(--rootsy-bruma-200)] bg-[var(--rootsy-bruma-50)]">
+              <th className="px-4 py-3 font-semibold text-[var(--rootsy-bruma-900)]">Capa</th>
+              <th className="px-4 py-3 font-semibold text-[var(--rootsy-bruma-900)]">Componente</th>
+              <th className="px-4 py-3 font-semibold text-[var(--rootsy-bruma-900)]">Token</th>
+              <th className="px-4 py-3 font-semibold text-[var(--rootsy-bruma-900)]">Fuente</th>
             </tr>
           </thead>
           <tbody>
             {rows.map((row) => (
-              <tr key={`${row.layer}-${row.component}-${row.token}`} className="border-b border-border/40 last:border-0">
-                <td className="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-muted-foreground">{row.layer}</td>
-                <td className="px-4 py-3 text-foreground">{row.component}</td>
-                <td className="px-4 py-3 font-mono text-[11px] text-primary">{row.token}</td>
-                <td className="px-4 py-3 font-mono text-[10px] text-muted-foreground">{row.source}</td>
+              <tr key={`${row.layer}-${row.component}-${row.token}`} className="border-b border-[var(--rootsy-bruma-200)] last:border-0">
+                <td className="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-[var(--rootsy-bruma-500)]">{row.layer}</td>
+                <td className="px-4 py-3 text-[var(--rootsy-bruma-900)]">{row.component}</td>
+                <td className="px-4 py-3 font-mono text-[11px] text-[var(--rootsy-savia-600)]">{row.token}</td>
+                <td className="px-4 py-3 font-mono text-[10px] text-[var(--rootsy-bruma-500)]">{row.source}</td>
               </tr>
             ))}
           </tbody>
@@ -860,7 +860,7 @@ function LayoutsTablesTableContent({ rows, composed = false }: { rows: DemoRow[]
 export function LayoutsTablesFiltersSectionDemo() {
   return (
     <div
-      className="mx-auto max-w-4xl overflow-hidden rounded-2xl border border-border/70"
+      className="mx-auto max-w-4xl library-doc-table-shell overflow-hidden rounded-2xl"
       style={getLayoutsTablesShellStyle(false)}
     >
       <div className="relative">
@@ -875,7 +875,7 @@ export function LayoutsTablesFiltersSectionDemo() {
 export function LayoutsTablesTableHeadDemo() {
   return (
     <div
-      className="relative mx-auto max-w-4xl overflow-hidden rounded-2xl border border-border/70"
+      className="relative mx-auto max-w-4xl library-doc-table-shell overflow-hidden rounded-2xl"
       style={getLayoutsTablesShellStyle(false)}
     >
       <LayoutHeightBadge label={`table.head · ${LAYOUTS_TABLES_ANATOMY.tableHeadHeightPx}px`} />
@@ -923,7 +923,7 @@ export function LayoutsTablesSortHeadSectionDemo() {
         description="Label body.small medium + icon-button row · neutral (reposo) · edit (activo) · space.400."
       >
         <div
-          className="relative mx-auto max-w-4xl overflow-hidden rounded-2xl border border-border/70"
+          className="relative mx-auto max-w-4xl library-doc-table-shell overflow-hidden rounded-2xl"
           style={getLayoutsTablesShellStyle(false)}
         >
           <LayoutHeightBadge label={`table.head.sort · ${LAYOUTS_TABLES_ANATOMY.tableHeadHeightPx}px`} />
@@ -945,10 +945,10 @@ export function LayoutsTablesSortHeadSectionDemo() {
           {previewRows.map((row) => (
             <div
               key={row.caption}
-              className="overflow-hidden rounded-2xl border border-border/70"
+              className="library-doc-table-shell overflow-hidden rounded-2xl"
               style={getLayoutsTablesTableShellStyle(false)}
             >
-              <p className="border-b border-border/60 bg-muted/20 px-3 py-2 font-mono text-[10px] uppercase tracking-[0.08em] text-muted-foreground">
+              <p className="border-b border-[var(--rootsy-bruma-200)] bg-[var(--rootsy-bruma-50)] px-3 py-2 font-mono text-[10px] uppercase tracking-[0.08em] text-[var(--rootsy-bruma-500)]">
                 {row.caption}
               </p>
               <table style={getLayoutsTablesTableStyle()}>
@@ -981,7 +981,7 @@ export function LayoutsTablesSortHeadSectionDemo() {
 export function LayoutsTablesTableBodySectionDemo() {
   return (
     <div
-      className="relative mx-auto flex max-w-4xl flex-col overflow-hidden rounded-2xl border border-border/70"
+      className="relative mx-auto flex max-w-4xl flex-col library-doc-table-shell overflow-hidden rounded-2xl"
       style={{ height: "16rem", ...getLayoutsTablesShellStyle(false) }}
     >
       <LayoutHeightBadge
@@ -997,7 +997,7 @@ export function LayoutsTablesTableBodySectionDemo() {
 /** 5 · Footer de tabla — paginación. */
 export function LayoutsTablesTableFooterSectionDemo() {
   return (
-    <div className="relative mx-auto max-w-4xl overflow-hidden rounded-2xl border border-border/70">
+    <div className="relative mx-auto max-w-4xl library-doc-table-shell overflow-hidden rounded-2xl">
       <LayoutHeightBadge label={`layout.footer · ${LAYOUTS_TABLES_ANATOMY.footerHeightPx}px`} />
       <LayoutsTablesFooterDemo composed />
     </div>

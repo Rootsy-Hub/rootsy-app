@@ -1,5 +1,6 @@
 "use client"
 
+import { LibraryRelatedLinksSection } from "@/app/library/libraryDocPrimitives"
 import "./rootsyTypographySystem.css"
 import {
   TYPOGRAPHY_RELATED_LINKS,
@@ -8,7 +9,6 @@ import {
 import { TypographyOverviewSection } from "@/app/library/typography/sections/TypographyOverviewSection"
 import { TypographyApplyingSection } from "@/app/library/typography/sections/TypographyApplyingSection"
 import { TypographyTypefacesSection } from "@/app/library/typography/sections/TypographyTypefacesSection"
-import { TypographyRelatedLinks } from "@/app/library/typography/TypographyDocPrimitives"
 import type { ReactNode } from "react"
 
 type Props = {
@@ -34,13 +34,7 @@ export function TypographyFoundationView({ sectionId }: Props) {
   return (
     <div className="rootsy-typography-system space-y-10">
       {content}
-      <div className="space-y-3 border-t border-border/60 pt-8">
-        <p className="text-sm font-semibold text-foreground">Relacionado</p>
-        <TypographyRelatedLinks
-          excludeId={sectionId}
-          links={TYPOGRAPHY_RELATED_LINKS}
-        />
-      </div>
+      <LibraryRelatedLinksSection excludeId={sectionId} links={TYPOGRAPHY_RELATED_LINKS} />
     </div>
   )
 }

@@ -62,6 +62,10 @@ export const SERVICE_CHARGE_PERIOD_END_LABEL_INFO =
 export const SERVICE_CHARGE_PERIOD_END_AUTO_LABEL_INFO =
   "Se calcula automáticamente según la periodicidad del servicio."
 
+/** Tooltip — precio unitario al crear un cargo (no modifica el catálogo). */
+export const SERVICE_CHARGE_UNIT_PRICE_LABEL_INFO =
+  "Podés cambiar el precio unitario para este cargo; no se modifica el precio del servicio guardado."
+
 export const SERVICE_DETAILS_GRID_MAX_COLUMNS = 5
 export const SERVICE_DETAILS_GRID_MAX_ROWS = 44
 

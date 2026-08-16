@@ -2,19 +2,14 @@
 
 import { searchClientsForServiceCharge } from "@/app/[siteId]/[popId]/active-services/actions"
 import { SERVICE_CHARGE_CLIENT_SEARCH_LIMIT } from "@/app/[siteId]/[popId]/active-services/serviceChargeClientConstants"
-import { CLIENT_IVA_CONDITION_OPTIONS } from "@/app/[siteId]/[popId]/clients/clientIvaConstants"
-import { RootsProgressButton } from "@/components/rootsy-button"
+import type { CreateServiceChargeInput } from "@/app/[siteId]/[popId]/active-services/actions"
+import { OperationPartyManualEntryForm } from "@/components/checkout/OperationPartyManualEntryForm"
 import {
   RootsFormCheckboxChoiceRow,
-  RootsFormField,
   RootsFormSearchField,
-  RootsFormSelectField,
-  RootsFormSelectItem,
-  RootsFormTextField,
   rootsFormColumnClass,
   rootsFormFieldGroupClass,
 } from "@/components/rootsy-form"
-import type { CreateServiceChargeInput } from "@/app/[siteId]/[popId]/active-services/actions"
 import {
   rootsFormDropdownHighlightItemClassForTone,
   rootsFormDropdownListClass,
@@ -22,33 +17,17 @@ import {
   rootsFormSelectContentClass,
   rootsFormSelectDarkContentClass,
 } from "@/components/rootsy-form/rootsFormStyles"
-import {
-  useRootsFormControlTone,
-  useRootsFormFieldControlProps,
-} from "@/components/rootsy-form/rootsFormFieldContext"
-import { RootsFormControlInput } from "@/components/rootsy-form/RootsFormControlInput"
+import { useRootsFormControlTone } from "@/components/rootsy-form/rootsFormFieldContext"
 import { RootsSpinner } from "@/components/rootsy-spinner"
-import { usePadronAutofillRazonSocial } from "@/hooks/usePadronAutofillRazonSocial"
-import { sanitizeTaxDocumentInput } from "@/lib/argentinaTaxDocumentInput"
-import type { OperationPartyCatalogItem } from "@/lib/operationPartyPicker"
-import { formatPadronErrorForUser } from "@/lib/padronUserFacingError"
 import {
   layoutsOperarDropdownRevealClass,
   layoutsOperarFormDarkMutedTextClass,
-  layoutsOperarFormDarkSecondaryButtonClass,
   layoutsOperarScrollMinimalClass,
 } from "@/app/library/layouts/layoutsOperarStyles"
 import { OperarReveal } from "@/components/layouts-module/OperarReveal"
-import { validateOptionalEmailField } from "@/lib/authValidation"
+import type { OperationPartyCatalogItem } from "@/lib/operationPartyPicker"
 import { cn } from "@/lib/utils"
-import { Loader2 } from "lucide-react"
 import { useEffect, useRef, useState, type ChangeEvent } from "react"
-
-const CHARGE_CLIENT_TAX_ID_LABEL_INFO =
-  "Con DNI buscamos en AFIP probando los CUIT posibles de persona física."
-
-const CHARGE_CLIENT_TAX_ID_FIELD_ID = "charge-client-tax-id"
-const CHARGE_CLIENT_ARCA_BUTTON_CLASS = "w-[9.75rem] shrink-0"
 
 function clientSearchDropdownItemClass(
   isDark: boolean,
@@ -190,36 +169,6 @@ type Props = {
   onDraftChange: (patch: Partial<ServiceChargeClientDraft>) => void
 }
 
-function PadronFiscalHint({
-  padron,
-  isDark,
-}: {
-  padron: ReturnType<typeof usePadronAutofillRazonSocial>
-  isDark: boolean
-}) {
-  if (padron.busy || padron.error) return null
-  if (!padron.condicionIvaNombre && !padron.domicilioFiscal) return null
-
-  const lines: string[] = []
-  if (padron.condicionIvaNombre) {
-    lines.push(`Padrón AFIP: ${padron.condicionIvaNombre}`)
-  }
-  if (padron.domicilioFiscal) {
-    lines.push(`Domicilio fiscal: ${padron.domicilioFiscal}`)
-  }
-
-  return (
-    <p
-      className={cn(
-        "text-xs leading-relaxed",
-        isDark ? layoutsOperarFormDarkMutedTextClass : "text-[var(--rootsy-bruma-500)]",
-      )}
-    >
-      {lines.join(" · ")}
-    </p>
-  )
-}
-
 export function ServiceChargeClientField({
   popId,
   disabled = false,
@@ -233,7 +182,6 @@ export function ServiceChargeClientField({
 }: Props) {
   const draft = normalizeServiceChargeClientDraft(rawDraft)
   const [searchQuery, setSearchQuery] = useState("")
-  const [emailBlurred, setEmailBlurred] = useState(false)
   const [catalogResults, setCatalogResults] = useState<OperationPartyCatalogItem[]>(
     [],
   )
@@ -248,34 +196,12 @@ export function ServiceChargeClientField({
   const showSearchDropdown =
     canSearchClients && !fieldsLocked && Boolean(searchTrim)
 
-  const padron = usePadronAutofillRazonSocial(popId, draft.taxId, {
-    enabled: Boolean(popId) && !fieldsLocked && !disabled,
-    manual: true,
-  })
-
   useEffect(() => {
     if (catalogSelected) {
       setSearchQuery(catalogSelected.name)
       setCatalogResults([])
     }
   }, [catalogClientId, catalogSelected])
-
-  const handlePadronLookup = () => {
-    void (async () => {
-      const res = await padron.lookup(draft.taxId)
-      if (!res.success) return
-
-      const patch: Partial<ServiceChargeClientDraft> = {
-        catalogClient: null,
-      }
-      const name = res.razonSocial.trim()
-      if (name) patch.manualName = name
-      if (res.mappedIvaCondition) {
-        patch.ivaCondition = res.mappedIvaCondition
-      }
-      onDraftChange(patch)
-    })()
-  }
 
   useEffect(() => {
     if (!showSearchDropdown) {
@@ -314,7 +240,6 @@ export function ServiceChargeClientField({
     })
     setSearchQuery(party.name)
     setCatalogResults([])
-    setEmailBlurred(false)
   }
 
   const clearClientSelection = () => {
@@ -328,7 +253,6 @@ export function ServiceChargeClientField({
     })
     setSearchQuery("")
     setCatalogResults([])
-    setEmailBlurred(false)
   }
 
   const handleSearchChange = (event: ChangeEvent<HTMLInputElement>) => {
@@ -346,16 +270,8 @@ export function ServiceChargeClientField({
     }
   }
 
-  const taxFieldError = padron.error
-    ? formatPadronErrorForUser(padron.error)
-    : undefined
-  const taxControlProps = useRootsFormFieldControlProps({
-    invalid: Boolean(taxFieldError),
-  })
   const tone = useRootsFormControlTone()
   const isDark = tone === "dark"
-  const identityFieldsDisabled = disabled || fieldsLocked || padron.busy
-  const ivaFieldDisabled = disabled
   const catalogHasEdits = serviceChargeClientCatalogHasEdits(draft)
   const isManualEntry = serviceChargeClientIsManualEntry(draft)
   const showSaveExistingCheckbox =
@@ -364,15 +280,6 @@ export function ServiceChargeClientField({
   const searchResultsTruncated =
     !searchLoading &&
     catalogResults.length >= SERVICE_CHARGE_CLIENT_SEARCH_LIMIT
-  const showPadronHint =
-    !fieldsLocked &&
-    !padron.busy &&
-    !padron.error &&
-    Boolean(padron.condicionIvaNombre || padron.domicilioFiscal)
-
-  const inlineEmailError = validateOptionalEmailField(draft.email)
-  const displayedEmailError =
-    emailError ?? (emailBlurred ? inlineEmailError : undefined)
 
   return (
     <div className={rootsFormColumnClass}>
@@ -501,126 +408,32 @@ export function ServiceChargeClientField({
         </div>
       ) : null}
 
-      <div className={rootsFormFieldGroupClass}>
-        <RootsFormField
-          label="CUIT / DNI"
-          htmlFor={CHARGE_CLIENT_TAX_ID_FIELD_ID}
-          labelInfo={CHARGE_CLIENT_TAX_ID_LABEL_INFO}
-          error={taxFieldError}
-        >
-          <div className="flex items-center gap-2">
-            <RootsFormControlInput
-              id={CHARGE_CLIENT_TAX_ID_FIELD_ID}
-              type="text"
-              inputMode="numeric"
-              className="min-w-0 flex-1"
-              value={draft.taxId}
-              onChange={(e) =>
-                onDraftChange({
-                  catalogClient: null,
-                  taxId: sanitizeTaxDocumentInput(e.target.value, "cuit_or_dni"),
-                })
-              }
-              placeholder="20-12345678-9"
-              autoComplete="off"
-              disabled={identityFieldsDisabled}
-              readOnly={fieldsLocked}
-              invalid={taxControlProps.isInvalid}
-              aria-describedby={taxControlProps.describedBy}
-              aria-invalid={taxControlProps.isInvalid || undefined}
-            />
-            {isDark ? (
-              <button
-                type="button"
-                className={cn(
-                  layoutsOperarFormDarkSecondaryButtonClass,
-                  CHARGE_CLIENT_ARCA_BUTTON_CLASS,
-                )}
-                disabled={identityFieldsDisabled || !padron.canLookup}
-                onClick={handlePadronLookup}
-              >
-                {padron.busy ? (
-                  <>
-                    <Loader2 className="size-3.5 animate-spin" aria-hidden />
-                    Consultando
-                  </>
-                ) : (
-                  "Consultar ARCA"
-                )}
-              </button>
-            ) : (
-              <RootsProgressButton
-                type="button"
-                semantic="secondary"
-                className={CHARGE_CLIENT_ARCA_BUTTON_CLASS}
-                disabled={identityFieldsDisabled || !padron.canLookup}
-                loading={padron.busy}
-                loadingLabel="Consultando"
-                onClick={handlePadronLookup}
-              >
-                Consultar ARCA
-              </RootsProgressButton>
-            )}
-          </div>
-        </RootsFormField>
-
-        <OperarReveal open={showPadronHint}>
-          <div className="pt-2">
-            <PadronFiscalHint padron={padron} isDark={isDark} />
-          </div>
-        </OperarReveal>
-      </div>
-
-      <RootsFormTextField
-        label="Nombre o razón social"
-        id="charge-client-name"
-        value={draft.manualName}
-        onChange={(e) => {
-          const nextName = e.target.value
+      <OperationPartyManualEntryForm
+        popId={popId}
+        flow="sale"
+        manualName={draft.manualName}
+        onManualNameChange={(value) =>
           onDraftChange({
             catalogClient: null,
-            manualName: nextName,
+            manualName: value,
           })
-        }}
-        placeholder="Nombre visible en cargos y facturas"
-        autoComplete="off"
-        disabled={identityFieldsDisabled}
-        readOnly={fieldsLocked}
-        required
-        error={manualNameError}
-      />
-
-      <RootsFormTextField
-        label="Email"
-        id="charge-client-email"
-        type="email"
-        value={draft.email}
-        onChange={(e) => onDraftChange({ email: e.target.value })}
-        onBlur={() => setEmailBlurred(true)}
-        placeholder="opcional@ejemplo.com"
-        autoComplete="email"
-        disabled={disabled}
-        error={displayedEmailError}
-        invalid={Boolean(displayedEmailError)}
-      />
-
-      <RootsFormSelectField
-        label="Condición IVA"
-        id="charge-client-iva"
-        value={draft.ivaCondition || "__none__"}
-        placeholder="Sin definir"
-        disabled={ivaFieldDisabled}
-        onValueChange={(v) =>
-          onDraftChange({ ivaCondition: v === "__none__" ? "" : v })
         }
-      >
-        <RootsFormSelectItem value="__none__">Sin definir</RootsFormSelectItem>
-        {CLIENT_IVA_CONDITION_OPTIONS.map((o) => (
-          <RootsFormSelectItem key={o.value} value={o.value}>
-            {o.label}
-          </RootsFormSelectItem>
-        ))}
-      </RootsFormSelectField>
+        taxId={draft.taxId}
+        onTaxIdChange={(value) =>
+          onDraftChange({
+            catalogClient: null,
+            taxId: value,
+          })
+        }
+        email={draft.email}
+        onEmailChange={(value) => onDraftChange({ email: value })}
+        ivaCondition={draft.ivaCondition}
+        onIvaConditionChange={(value) => onDraftChange({ ivaCondition: value })}
+        disabled={disabled}
+        readOnly={fieldsLocked}
+        manualNameError={manualNameError}
+        emailError={emailError}
+      />
 
       <div className={rootsFormFieldGroupClass}>
         <OperarReveal open={showSaveExistingCheckbox}>

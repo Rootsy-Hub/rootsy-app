@@ -1,25 +1,38 @@
 "use client"
 
 import type { ServiceTypeChargeOption } from "@/app/[siteId]/[popId]/active-services/actions"
-import type { ServiceChargeCreateWizardForm } from "@/app/[siteId]/[popId]/active-services/serviceChargeCreateFormState"
+import type {
+  ServiceChargeCreateFieldErrors,
+  ServiceChargeCreateWizardForm,
+} from "@/app/[siteId]/[popId]/active-services/serviceChargeCreateFormState"
 import {
   layoutsOperarTicketProposalCartListClass,
 } from "@/app/library/layouts/layoutsOperarHardcodedSpec"
 import { LAYOUTS_OPERAR_DEFAULT_TICKET_PROPOSAL } from "@/app/library/layouts/rootsyLayoutsOperarSystem"
 import { layoutsOperarSummaryCartListSurfaceClass } from "@/app/library/layouts/layoutsOperarStyles"
 import {
-  ServiceOperateChargeConfigShowcase,
   formatSnapshotDateLabel,
+  ServiceOperateChargeConfigShowcase,
 } from "@/components/service-operation/ServiceOperateChargeConfigShowcase"
-import { ServiceOperateServiceShowcase } from "@/components/service-operation/ServiceOperateServiceShowcase"
+import { ServiceOperateChargeConfigFormPanel } from "@/components/service-operation/ServiceOperateChargeConfigFormPanel"
 import { ServiceOperateSnapshotCartRow } from "@/components/service-operation/ServiceOperateSnapshotCartRow"
-import { serviceOperateSnapshotTicketCardClass } from "@/components/service-operation/serviceOperateSnapshotStyles"
-import { serviceChargeHasComprobante } from "@/app/[siteId]/[popId]/active-services/serviceChargeCreateFormState"
-import { SERVICE_PAYMENT_TIMING_LABELS } from "@/lib/serviceCatalogTypes"
+import type { ServiceOperateSnapshotPanelView } from "@/components/service-operation/ServiceOperateSnapshotPanelTabs"
+import {
+  isServiceChargeComprobanteChosen,
+  isServiceChargePaymentMethodChosen,
+  resolveServiceChargeComprobanteSnapshotLabel,
+  SERVICE_CHARGE_PAYMENT_PENDING,
+  SERVICE_CHARGE_PAYMENT_PENDING_LABEL,
+  SERVICE_CHARGE_SNAPSHOT_PLACEHOLDER,
+  serviceChargeHasComprobante,
+} from "@/app/[siteId]/[popId]/active-services/serviceChargeCreateFormState"
+import { isServiceChargeClientReady } from "@/app/[siteId]/[popId]/active-services/components/ServiceChargeClientField"
+import { layoutsOperarLightCartFieldErrorClass } from "@/app/library/layouts/layoutsOperarStyles"
 import { operationPaymentKindLabel } from "@/lib/operationPaymentKinds"
 import {
   getServiceChargeCheckoutDestinations,
 } from "@/lib/serviceChargeCheckoutPayment"
+import { SERVICE_PAYMENT_TIMING_LABELS } from "@/lib/serviceCatalogTypes"
 import {
   computeChargeDueDate,
   billingPeriodRequiresManualPeriodEnd,
@@ -27,7 +40,6 @@ import {
   SERVICE_CHARGE_BILLING_SCOPE_LABELS,
 } from "@/lib/serviceChargeTypes"
 import { parseNonNegativeIntegerInput } from "@/lib/integerInput"
-import { parseMoneyInput } from "@/lib/moneyInput"
 import {
   parseTreasuryPaymentOptionKey,
   type TreasuryPaymentContext,
@@ -37,19 +49,20 @@ import { useMemo } from "react"
 
 const TICKET_PROPOSAL = LAYOUTS_OPERAR_DEFAULT_TICKET_PROPOSAL
 
-const PLACEHOLDER = "—"
+const PLACEHOLDER = SERVICE_CHARGE_SNAPSHOT_PLACEHOLDER
+const REQUIRED_HINT = "Requerido"
+const requiredSubtitleClassName = layoutsOperarLightCartFieldErrorClass
 
 type Props = {
+  view: ServiceOperateSnapshotPanelView
   form: ServiceChargeCreateWizardForm
+  fieldErrors: ServiceChargeCreateFieldErrors
   popId: string
   selectedService: ServiceTypeChargeOption | null
   treasuryPaymentContext: TreasuryPaymentContext | null
-  comprobanteLabel: string
   suggestedComprobante: string | null
-}
-
-function formatSummaryDate(iso: string | null | undefined): string {
-  return formatSnapshotDateLabel(iso)
+  disabled?: boolean
+  onFormChange: (patch: Partial<ServiceChargeCreateWizardForm>) => void
 }
 
 function yesNo(value: boolean): string {
@@ -60,7 +73,11 @@ function resolvePaymentSnapshot(
   paymentMethodKey: string,
   treasuryPaymentContext: TreasuryPaymentContext | null,
 ): { kind: string; destination: string | null } | null {
-  if (!paymentMethodKey.trim()) return null
+  if (!isServiceChargePaymentMethodChosen(paymentMethodKey)) return null
+
+  if (paymentMethodKey === SERVICE_CHARGE_PAYMENT_PENDING) {
+    return { kind: SERVICE_CHARGE_PAYMENT_PENDING_LABEL, destination: null }
+  }
 
   const parsed = parseTreasuryPaymentOptionKey(paymentMethodKey)
   if (!parsed) {
@@ -81,18 +98,15 @@ function resolvePaymentSnapshot(
 }
 
 export function ServiceOperateChargeSnapshotContent({
+  view,
   form,
-  popId,
+  fieldErrors,
   selectedService,
   treasuryPaymentContext,
-  comprobanteLabel,
   suggestedComprobante,
+  disabled = false,
+  onFormChange,
 }: Props) {
-  const clientName =
-    form.clientDraft.catalogClient?.name.trim() ||
-    form.clientDraft.manualName.trim() ||
-    ""
-
   const chargeCount =
     form.billingScope === "one_period" || form.billingScope === "subscription"
       ? 1
@@ -141,32 +155,48 @@ export function ServiceOperateChargeSnapshotContent({
     treasuryPaymentContext,
   )
 
+  const comprobanteSnapshotLabel = resolveServiceChargeComprobanteSnapshotLabel(
+    form.comprobanteLabel,
+    suggestedComprobante,
+  )
+
   const hasComprobante = serviceChargeHasComprobante(
     form.comprobanteLabel,
     suggestedComprobante,
   )
 
-  const snapshotPrice = parseMoneyInput(form.unitPrice, selectedService?.defaultPrice ?? 0)
+  const clientReady = isServiceChargeClientReady(form.clientDraft)
+  const paymentChosen = isServiceChargePaymentMethodChosen(form.paymentMethodKey)
+  const comprobanteChosen = isServiceChargeComprobanteChosen(form.comprobanteLabel)
+
+  const clientName =
+    form.clientDraft.catalogClient?.name.trim() ||
+    form.clientDraft.manualName.trim() ||
+    ""
 
   if (!selectedService) {
     return null
   }
 
-  return (
-    <div className="flex min-h-0 flex-col">
-      <div className="shrink-0 p-3">
-        <div className={serviceOperateSnapshotTicketCardClass}>
-          <ServiceOperateServiceShowcase
-            service={selectedService}
-            price={snapshotPrice > 0 ? snapshotPrice : selectedService.defaultPrice}
-            clientName={clientName}
-            tone="ticket"
-            popId={popId}
-            showPlanDetails
-          />
-        </div>
+  if (view === "config") {
+    return (
+      <div
+        className="flex min-h-0 flex-1 flex-col overflow-hidden"
+        data-snapshot-tab="config"
+      >
+        <ServiceOperateChargeConfigFormPanel
+          form={form}
+          selectedService={selectedService}
+          fieldErrors={fieldErrors}
+          disabled={disabled}
+          onChange={onFormChange}
+        />
       </div>
+    )
+  }
 
+  return (
+    <div className="flex min-h-0 flex-col" data-snapshot-tab="cargo">
       <div
         className={cn(
           layoutsOperarSummaryCartListSurfaceClass,
@@ -174,16 +204,24 @@ export function ServiceOperateChargeSnapshotContent({
           "min-h-0 flex-1",
         )}
       >
+        <ServiceOperateSnapshotCartRow
+          label="Cliente"
+          value={clientName.trim() || PLACEHOLDER}
+          empty={!clientReady}
+          subtitle={!clientReady ? REQUIRED_HINT : undefined}
+          subtitleClassName={requiredSubtitleClassName}
+        />
+
         <ServiceOperateChargeConfigShowcase
           form={form}
           scopeLabel={SERVICE_CHARGE_BILLING_SCOPE_LABELS[form.billingScope]}
           chargeCount={chargeCount}
-          periodStartLabel={formatSummaryDate(form.periodStartDate)}
-          periodEndLabel={formatSummaryDate(effectivePeriodEnd)}
+          periodStartLabel={formatSnapshotDateLabel(form.periodStartDate)}
+          periodEndLabel={formatSnapshotDateLabel(effectivePeriodEnd)}
           periodStartEmpty={!form.periodStartDate.trim()}
           periodEndEmpty={!effectivePeriodEnd}
           paymentTimingLabel={SERVICE_PAYMENT_TIMING_LABELS[form.paymentTiming]}
-          dueDateLabel={formatSummaryDate(previewDueDate)}
+          dueDateLabel={formatSnapshotDateLabel(previewDueDate)}
           dueDateEmpty={!previewDueDate}
           notes={form.notes ?? ""}
           addons={selectedService.addons}
@@ -209,12 +247,17 @@ export function ServiceOperateChargeSnapshotContent({
             label="Medio de pago"
             value={PLACEHOLDER}
             empty
+            subtitle={REQUIRED_HINT}
+            subtitleClassName={requiredSubtitleClassName}
           />
         )}
 
         <ServiceOperateSnapshotCartRow
           label="Comprobante"
-          value={comprobanteLabel}
+          value={comprobanteSnapshotLabel}
+          empty={!comprobanteChosen}
+          subtitle={!comprobanteChosen ? REQUIRED_HINT : undefined}
+          subtitleClassName={requiredSubtitleClassName}
         />
         {hasComprobante ? (
           <>
@@ -240,3 +283,5 @@ export function ServiceOperateChargeSnapshotContent({
     </div>
   )
 }
+
+export { formatSnapshotDateLabel }

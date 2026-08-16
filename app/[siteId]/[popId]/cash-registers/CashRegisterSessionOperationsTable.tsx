@@ -186,7 +186,6 @@ export function CashRegisterSessionOperationsTable({
           totalCount={totalCount}
           sentinelRef={sentinelRef}
           fullWidth={fullWidth}
-          tokensVariant="bruma"
           itemLabel="operación"
           itemLabelPlural="operaciones"
         />

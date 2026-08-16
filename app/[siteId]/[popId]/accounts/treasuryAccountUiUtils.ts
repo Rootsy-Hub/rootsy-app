@@ -75,14 +75,17 @@ export function formatTreasuryPosSaleLabel(options: {
   return parts.join(", ")
 }
 
+import { purchaseKindLabel as purchaseKindLabelFromLib } from "@/lib/purchaseKind"
+
 const TREASURY_PURCHASE_KIND_LABEL: Record<string, string> = {
   merchandise: "Mercadería",
   raw_material: "Materia prima",
   supply: "Insumo",
+  mixed: "Mixta",
 }
 
 export function treasuryPurchaseKindLabel(kind: string): string {
-  return TREASURY_PURCHASE_KIND_LABEL[kind] ?? kind
+  return TREASURY_PURCHASE_KIND_LABEL[kind] ?? purchaseKindLabelFromLib(kind)
 }
 
 export function formatTreasuryPurchasePaymentLabel(options: {

@@ -162,7 +162,7 @@ function ModalChromePreview({ config }: { config: ModalDemoConfig }) {
   const size = config.size ?? "default"
 
   return (
-    <div className="overflow-hidden rounded-2xl border border-dashed border-border/80 bg-muted/15 p-3">
+    <div className="overflow-hidden rounded-2xl border border-dashed border-[var(--rootsy-bruma-200)] bg-[color-mix(in_srgb,var(--rootsy-bruma-50)_85%,transparent)] p-3">
       <div
         className={cn(
           "pointer-events-none mx-auto w-full overflow-hidden max-h-none shadow-md",
@@ -271,7 +271,7 @@ function ModalVariantCell({
     <div className="space-y-3">
       <ModalChromePreview config={config} />
       <div className="space-y-2 px-1">
-        <p className="font-mono text-[10px] uppercase tracking-[0.08em] text-muted-foreground">
+        <p className="font-mono text-[10px] uppercase tracking-[0.08em] text-[var(--rootsy-bruma-500)]">
           {label}
         </p>
         <RootsDefaultButton type="button" onClick={() => onOpenLive(liveId)}>

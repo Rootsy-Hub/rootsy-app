@@ -17,6 +17,7 @@ export type MesasClienteSeleccionado = {
   manual: boolean
   name: string
   taxId: string | null
+  email?: string | null
   ivaCondition: string | null
   defaultInvoiceTypeLabel: string | null
 }
@@ -141,6 +142,7 @@ function parseCliente(v: unknown): MesasClienteSeleccionado | null {
     manual: Boolean(v.manual),
     name: typeof v.name === "string" ? v.name : "",
     taxId: typeof v.taxId === "string" ? v.taxId : null,
+    email: typeof v.email === "string" ? v.email : null,
     ivaCondition: typeof v.ivaCondition === "string" ? v.ivaCondition : null,
     defaultInvoiceTypeLabel:
       typeof v.defaultInvoiceTypeLabel === "string"

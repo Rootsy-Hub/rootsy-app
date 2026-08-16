@@ -159,6 +159,12 @@ export const layoutsOperarFormDarkIconClass =
 export const layoutsOperarFormDarkMutedTextClass =
   "text-[color-mix(in_srgb,var(--rootsy-sombra-300)_55%,transparent)]"
 
+/** Label uppercase — formularios dark operar (paridad --layouts-operar-form-dark-label). */
+export const layoutsOperarFormDarkSectionLabelClass = cn(
+  "text-xs font-semibold uppercase tracking-[0.1em]",
+  "text-[var(--layouts-operar-form-dark-label)]",
+)
+
 export const layoutsOperarFormDarkSurfaceClass =
   "bg-[color-mix(in_srgb,var(--rootsy-sombra-950)_55%,transparent)]"
 
@@ -180,6 +186,10 @@ export const layoutsOperarFormDarkSecondaryButtonClass = cn(
   "focus-visible:ring-2 focus-visible:ring-[color-mix(in_srgb,var(--rootsy-savia-400)_22%,transparent)]",
   "disabled:pointer-events-none disabled:opacity-45",
 )
+
+/** Texto inline de error / requerido — formularios dark operar. */
+export const layoutsOperarFormDarkFieldErrorClass =
+  "text-xs font-medium leading-snug text-[color-mix(in_srgb,#fecaca_92%,white)]"
 
 /** Banner de error — formularios dark operar (pie de paso wizard). */
 export const layoutsOperarFormDarkErrorBannerClass = cn(
@@ -481,23 +491,31 @@ export const layoutsOperarToolboxSlotFocusRingClass =
 
 export function layoutsOperarToolboxSlotClass(configured: boolean, active = false) {
   return cn(
-    "group flex h-full min-h-[var(--layouts-operar-toolbox-slot-min-h)] w-full items-center gap-2.5 rounded-xl border-0 px-2.5 py-2 text-left transition-[background-color,box-shadow] duration-150 sm:min-h-[var(--layouts-operar-toolbox-slot-min-h-sm)] sm:gap-3 sm:px-3",
+    "group flex h-full min-h-[var(--layouts-operar-toolbox-slot-min-h)] w-full items-center gap-2.5 rounded-xl border-0 px-2.5 py-2 text-left sm:min-h-[var(--layouts-operar-toolbox-slot-min-h-sm)] sm:gap-3 sm:px-3",
+    "transition-[background-color,box-shadow] duration-150 ease-out",
     "focus-visible:outline-none",
     active
       ? layoutsOperarToolboxSlotFocusRingClass
       : "focus-visible:ring-2 focus-visible:ring-[var(--rootsy-savia-400)]/45 focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--rootsy-sombra-950)]",
     configured
-      ? "bg-[var(--layouts-operar-footer-slot-configured)] shadow-[inset_0_1px_0_var(--layouts-operar-footer-slot-highlight)] hover:bg-[color-mix(in_srgb,var(--rootsy-savia-600)_18%,var(--rootsy-sombra-950))]"
-      : "bg-white/[0.02] hover:bg-[var(--layouts-operar-footer-slot-hover)]",
+      ? cn(
+          "bg-[var(--layouts-operar-footer-slot-configured)] shadow-[inset_0_1px_0_var(--layouts-operar-footer-slot-highlight)]",
+          "hover:bg-[var(--layouts-operar-footer-slot-configured-hover)]",
+          "enabled:active:bg-[var(--layouts-operar-footer-slot-configured-pressed-bg)] enabled:active:shadow-[var(--layouts-operar-footer-slot-configured-pressed-shadow)]",
+        )
+      : cn(
+          "bg-white/[0.02] hover:bg-[var(--layouts-operar-footer-slot-hover)]",
+          "enabled:active:bg-[var(--layouts-operar-footer-slot-pressed-bg)] enabled:active:shadow-[var(--layouts-operar-footer-slot-pressed-shadow)]",
+        ),
   )
 }
 
 export function layoutsOperarToolboxIconWrapClass(configured: boolean) {
   return cn(
-    "flex size-10 shrink-0 items-center justify-center rounded-lg transition-colors duration-150",
+    "flex size-10 shrink-0 items-center justify-center rounded-lg",
     configured
       ? "bg-[var(--layouts-operar-footer-icon-configured-bg)] text-[var(--layouts-operar-footer-icon-configured-text)]"
-      : "bg-[var(--layouts-operar-footer-icon-bg)] text-[var(--layouts-operar-footer-icon-text)] group-hover:bg-[var(--layouts-operar-footer-icon-hover-bg)] group-hover:text-[var(--layouts-operar-footer-icon-hover-text)]",
+      : "bg-[var(--layouts-operar-footer-icon-bg)] text-[var(--layouts-operar-footer-icon-text)]",
   )
 }
 
@@ -616,6 +634,10 @@ export const layoutsOperarSummaryCartHeadingClass =
 
 export const layoutsOperarSummaryCartMetaClass =
   "shrink-0 text-[11px] font-medium tabular-nums text-[var(--layouts-operar-light-cart-meta)]"
+
+/** Error / requerido inline — ticket y resumen cargo (fondo bruma claro). */
+export const layoutsOperarLightCartFieldErrorClass =
+  "text-xs font-medium leading-snug text-[var(--layouts-operar-light-cart-field-error)]"
 
 /** @deprecated Usar DataWorkspaceDetailEmptyState (layout.blocks.empty.detail). */
 export const layoutsOperarSummaryEmptyStateClass =

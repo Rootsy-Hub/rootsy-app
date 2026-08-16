@@ -114,6 +114,15 @@ export const POP_PAGES = {
       delete: "operations:delete",
     },
   },
+  purchase_orders: {
+    path: "purchase-orders",
+    permissions: {
+      read: "operations:read",
+      create: "operations:create",
+      update: "operations:update",
+      delete: "operations:delete",
+    },
+  },
   accounts: {
     path: "accounts",
     permissions: {
@@ -134,6 +143,15 @@ export const POP_PAGES = {
   },
   sale: {
     path: "sale",
+    permissions: {
+      read: "sale:read",
+      create: "sale:create",
+      update: "sale:update",
+      delete: "sale:delete",
+    },
+  },
+  quotes: {
+    path: "quotes",
     permissions: {
       read: "sale:read",
       create: "sale:create",

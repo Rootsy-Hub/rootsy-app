@@ -55,7 +55,7 @@ function TooltipContent({
         data-slot="tooltip-content"
         sideOffset={sideOffset}
         className={cn(
-          'animate-in fade-in-0 zoom-in-95 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 z-[520] w-fit origin-(--radix-tooltip-content-transform-origin) rounded-md px-3 py-1.5 text-xs text-balance',
+          'animate-in fade-in-0 zoom-in-95 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 z-[520] w-fit origin-(--radix-tooltip-content-transform-origin) rounded-md px-3 py-1.5 text-xs text-pretty',
           isOperar
             ? 'border border-[color-mix(in_srgb,var(--rootsy-sombra-border)_45%,transparent)] bg-[color-mix(in_srgb,var(--rootsy-sombra-950)_92%,transparent)] text-[color-mix(in_srgb,var(--rootsy-bruma-100)_88%,transparent)] shadow-[0_12px_32px_-12px_color-mix(in_srgb,var(--rootsy-sombra-950)_75%,transparent)]'
             : isDark

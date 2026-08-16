@@ -1,12 +1,12 @@
 "use client"
 
+import { LibraryRelatedLinksSection } from "@/app/library/libraryDocPrimitives"
 import "./rootsyBorderSystem.css"
 import {
   BORDER_RELATED_LINKS,
   getBorderPageMeta,
 } from "@/app/library/border/borderLibraryNav"
 import { BorderOverviewSection } from "@/app/library/border/sections/BorderOverviewSection"
-import { BorderRelatedLinks } from "@/app/library/border/BorderDocPrimitives"
 import type { ReactNode } from "react"
 
 type Props = {
@@ -24,13 +24,7 @@ export function BorderFoundationView({ sectionId }: Props) {
   return (
     <div className="rootsy-border-system space-y-10">
       {content}
-      <div className="space-y-3 border-t border-border/60 pt-8">
-        <p className="text-sm font-semibold text-foreground">Relacionado</p>
-        <BorderRelatedLinks
-          excludeId={sectionId}
-          links={BORDER_RELATED_LINKS}
-        />
-      </div>
+      <LibraryRelatedLinksSection excludeId={sectionId} links={BORDER_RELATED_LINKS} />
     </div>
   )
 }

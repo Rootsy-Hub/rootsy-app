@@ -34,7 +34,7 @@ function VariantCell({ label, children }: { label: string; children: ReactNode }
   return (
     <div className="flex min-h-72 min-w-56 flex-col justify-start gap-2">
       {children}
-      <span className="font-mono text-[10px] uppercase tracking-[0.08em] text-muted-foreground">
+      <span className="font-mono text-[10px] uppercase tracking-[0.08em] text-[var(--rootsy-bruma-500)]">
         {label}
       </span>
     </div>

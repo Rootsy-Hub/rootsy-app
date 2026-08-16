@@ -4,7 +4,7 @@ import {
   POP_PERMS,
   permissionKeysInclude,
 } from "@/lib/popPermissionConstants"
-import { validatePopAccess } from "@/lib/popHelpers"
+import { getPopById, validatePopAccess } from "@/lib/popHelpers"
 import { loadPopPermissionsSnapshot } from "@/lib/popPermissionsServer"
 import {
   postPosAcreditationLedger,
@@ -2633,6 +2633,317 @@ export async function getTreasuryReconciliationHistory(
       openingPendingBalance,
       periodToLiquidate,
       summaryMovements,
+    }
+  } catch (e: unknown) {
+    const message = e instanceof Error ? e.message : "Error desconocido"
+    return { success: false, error: message }
+  }
+}
+
+export type TreasuryPeriodReportRow = {
+  id: string
+  name: string
+  kind: TreasuryAccountKind
+  brandKey: string | null
+  isActive: boolean
+  chartAccountCode: string
+  openingBalance: number | null
+  closingBalance: number
+  periodIn: number
+  periodOut: number
+  toLiquidateBalance: number | null
+  toPayBalance: number | null
+  hasPosIntegration: boolean
+  hasCardIntegration: boolean
+}
+
+export type TreasuryPeriodReportPopInfo = {
+  popName: string
+  popStreetAddress: string | null
+  popFiscalCuit: string | null
+  popFiscalRazonSocial: string | null
+}
+
+export type TreasuryPeriodReportData = {
+  rows: TreasuryPeriodReportRow[]
+  popInfo: TreasuryPeriodReportPopInfo
+}
+
+function compareTreasuryChartAccountCodes(a: string, b: string): number {
+  return a.localeCompare(b, undefined, { numeric: true })
+}
+
+async function computeChartAccountPeriodFlow(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  popId: string,
+  chartAccountId: string,
+  dateFrom: string | null,
+  dateTo: string | null,
+): Promise<{ in: number; out: number }> {
+  if (!dateFrom && !dateTo) {
+    return { in: 0, out: 0 }
+  }
+
+  const { data: accRow } = await supabase
+    .from("accounting_chart_of_accounts")
+    .select("nature")
+    .eq("pop_id", popId)
+    .eq("id", chartAccountId)
+    .maybeSingle()
+  if (!accRow) return { in: 0, out: 0 }
+
+  const nature = String(accRow.nature ?? "deudora")
+  let entryQuery = supabase
+    .from("accounting_entries")
+    .select("id")
+    .eq("pop_id", popId)
+    .eq("status", "posted")
+  if (dateFrom) entryQuery = entryQuery.gte("entry_date", dateFrom)
+  if (dateTo) entryQuery = entryQuery.lte("entry_date", dateTo)
+
+  const { data: entryRows } = await entryQuery
+  const entryIds = (entryRows || []).map((row) => String(row.id))
+  if (entryIds.length === 0) return { in: 0, out: 0 }
+
+  const { data: lineRows } = await supabase
+    .from("accounting_entry_lines")
+    .select("debit_amount, credit_amount")
+    .eq("account_id", chartAccountId)
+    .in("entry_id", entryIds)
+
+  let debits = 0
+  let credits = 0
+  for (const line of lineRows || []) {
+    debits = roundMoney(debits + parseAmount(line.debit_amount))
+    credits = roundMoney(credits + parseAmount(line.credit_amount))
+  }
+
+  if (nature === "acreedora") {
+    return { in: credits, out: debits }
+  }
+  return { in: debits, out: credits }
+}
+
+export async function getTreasuryPeriodReport(
+  popId: string,
+  options: { from: string | null; to: string | null },
+): Promise<
+  | { success: true; data: TreasuryPeriodReportData }
+  | { success: false; error: string }
+> {
+  try {
+    const access = await validatePopAccess(popId)
+    if (!access.hasAccess || !access.isActive) {
+      return { success: false, error: access.error || "Sin acceso" }
+    }
+    const snap = await loadPopPermissionsSnapshot(popId)
+    if (
+      !permissionKeysInclude(
+        snap.keys,
+        POP_PERMS.PAYMENT_METHOD_READ.resource,
+        POP_PERMS.PAYMENT_METHOD_READ.action,
+      )
+    ) {
+      return {
+        success: false,
+        error: "No tenés permiso para ver cuentas de tesorería.",
+      }
+    }
+
+    const supabase = await createClient()
+    const popRes = await getPopById(popId)
+    const popInfo: TreasuryPeriodReportPopInfo = {
+      popName:
+        popRes.success && popRes.pop
+          ? String(popRes.pop.name ?? "").trim()
+          : "",
+      popStreetAddress:
+        popRes.success && popRes.pop?.streetAddress
+          ? String(popRes.pop.streetAddress).trim()
+          : null,
+      popFiscalCuit:
+        popRes.success && popRes.pop?.fiscalCuit
+          ? String(popRes.pop.fiscalCuit).trim()
+          : null,
+      popFiscalRazonSocial:
+        popRes.success && popRes.pop?.fiscalRazonSocial
+          ? String(popRes.pop.fiscalRazonSocial).trim()
+          : null,
+    }
+
+    const { data, error } = await supabase
+      .from("treasury_accounts")
+      .select(
+        `
+        id,
+        name,
+        kind,
+        is_active,
+        brand_key,
+        parent_treasury_account_id,
+        accounting_chart_account_id,
+        accounting_chart_of_accounts (
+          code
+        )
+      `,
+      )
+      .eq("pop_id", popId)
+      .order("name", { ascending: true })
+
+    if (error) {
+      return {
+        success: false,
+        error: error.message || "No se pudieron cargar las cuentas.",
+      }
+    }
+
+    type RawTreasuryRow = {
+      id: string
+      name: string
+      kind: TreasuryAccountKind
+      brandKey: string | null
+      isActive: boolean
+      chartAccountId: string
+      chartAccountCode: string
+      parentTreasuryAccountId: string | null
+    }
+
+    const allRows: RawTreasuryRow[] = (data || []).map((row) => {
+      const chart = row.accounting_chart_of_accounts as unknown as {
+        code?: string
+      } | null
+      return {
+        id: String(row.id),
+        name: String(row.name ?? ""),
+        kind: parseTreasuryKind(row.kind),
+        brandKey: row.brand_key != null ? String(row.brand_key) : null,
+        isActive: Boolean(row.is_active),
+        chartAccountId: String(row.accounting_chart_account_id),
+        chartAccountCode: String(chart?.code ?? ""),
+        parentTreasuryAccountId:
+          row.parent_treasury_account_id != null
+            ? String(row.parent_treasury_account_id)
+            : null,
+      }
+    })
+
+    const mothers = allRows.filter((row) =>
+      isMotherTreasuryAccount(row.chartAccountCode),
+    )
+    if (mothers.length === 0) {
+      return { success: true, data: { rows: [], popInfo } }
+    }
+
+    const childrenByMother = new Map<string, RawTreasuryRow[]>()
+    for (const row of allRows) {
+      if (!row.parentTreasuryAccountId) continue
+      const bucket = childrenByMother.get(row.parentTreasuryAccountId) ?? []
+      bucket.push(row)
+      childrenByMother.set(row.parentTreasuryAccountId, bucket)
+    }
+
+    const today = new Date()
+    const closingAsOf =
+      options.to?.trim() ||
+      `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`
+    const openingAsOf = options.from?.trim()
+      ? dayBeforeIso(options.from.trim())
+      : null
+
+    const reportRows = await Promise.all(
+      mothers.map(async (mother) => {
+        const childRows = childrenByMother.get(mother.id) ?? []
+        const childIds = childRows.map((child) => child.id)
+        const accountMeta = new Map<string, TreasuryAccountMeta>()
+        for (const child of childRows) {
+          accountMeta.set(child.id, {
+            name: child.name,
+            kind: child.kind,
+            chartCode: child.chartAccountCode,
+          })
+        }
+
+        const hasPosIntegration = childRows.some((child) =>
+          isSettlementReceivableChartCode(child.chartAccountCode),
+        )
+        const hasCardIntegration = childRows.some(
+          (child) =>
+            isCardPayableChartCode(child.chartAccountCode) ||
+            child.kind === "card_payable",
+        )
+
+        const [openingBalance, closingBalance, periodFlow, pendingTotals] =
+          await Promise.all([
+            openingAsOf
+              ? computeChartAccountBalanceAsOf(
+                  supabase,
+                  popId,
+                  mother.chartAccountId,
+                  openingAsOf,
+                )
+              : Promise.resolve(null),
+            computeChartAccountBalanceAsOf(
+              supabase,
+              popId,
+              mother.chartAccountId,
+              closingAsOf,
+            ),
+            computeChartAccountPeriodFlow(
+              supabase,
+              popId,
+              mother.chartAccountId,
+              options.from,
+              options.to,
+            ),
+            childIds.length > 0
+              ? computeMotherPendingTotalsAsOf(
+                  supabase,
+                  popId,
+                  childIds,
+                  accountMeta,
+                  closingAsOf,
+                )
+              : Promise.resolve({ toLiquidate: 0, toPay: 0 }),
+          ])
+
+        const showSettlementStats =
+          mother.kind === "bank" || mother.kind === "wallet"
+
+        return {
+          id: mother.id,
+          name: mother.name,
+          kind: mother.kind,
+          brandKey: mother.brandKey,
+          isActive: mother.isActive,
+          chartAccountCode: mother.chartAccountCode,
+          openingBalance,
+          closingBalance,
+          periodIn: periodFlow.in,
+          periodOut: periodFlow.out,
+          toLiquidateBalance:
+            showSettlementStats && hasPosIntegration
+              ? pendingTotals.toLiquidate
+              : null,
+          toPayBalance:
+            showSettlementStats && hasCardIntegration
+              ? pendingTotals.toPay
+              : null,
+          hasPosIntegration,
+          hasCardIntegration,
+        } satisfies TreasuryPeriodReportRow
+      }),
+    )
+
+    reportRows.sort((a, b) =>
+      compareTreasuryChartAccountCodes(a.chartAccountCode, b.chartAccountCode),
+    )
+
+    return {
+      success: true,
+      data: {
+        rows: reportRows,
+        popInfo,
+      },
     }
   } catch (e: unknown) {
     const message = e instanceof Error ? e.message : "Error desconocido"

@@ -2,6 +2,8 @@
 
 import withAuth from "@/hoc/withAuth"
 import { completeSale } from "@/app/[siteId]/[popId]/sale/completeSale"
+import { createSaleQuote } from "@/app/[siteId]/[popId]/quotes/actions"
+import { getSaleQuoteDetail } from "@/app/[siteId]/[popId]/quotes/actions"
 import {
   getSaleCatalog,
   type SaleCatalogArticle,
@@ -10,10 +12,16 @@ import {
   type SaleCatalogPaymentOption,
   type SaleOpenCashSession,
 } from "@/app/[siteId]/[popId]/sale/actions"
-import { defaultCheckoutPaymentSelection } from "@/lib/saleCheckoutPayment"
+import {
+  defaultCheckoutPaymentSelection,
+  resolveSaleToolboxPaymentDisplay,
+} from "@/lib/saleCheckoutPayment"
 import type { TreasuryPaymentContext } from "@/lib/treasuryPaymentOptions"
 import { treasuryPaymentOptionKey } from "@/lib/treasuryPaymentOptions"
-import type { MenuCatalogPromotion } from "@/app/[siteId]/[popId]/menu-catalog/actions"
+import type {
+  MenuCatalogCategorySection,
+  MenuCatalogPromotion,
+} from "@/app/[siteId]/[popId]/menu-catalog/actions"
 import {
   DEFAULT_SALE_SITE_ID,
 } from "@/lib/saleInvoiceTypes"
@@ -45,12 +53,20 @@ import {
   DataWorkspaceOperationsLayout,
   OperationsModuleBackdrop,
 } from "@/components/layouts-module/DataWorkspaceOperationsLayout"
+import { dataWorkspaceModuleHeaderVariant } from "@/components/layouts-module/DataWorkspaceModuleLayout"
+import { DataWorkspaceHeaderTooltipIconButton } from "@/components/layouts/DataWorkspaceHeaderTooltipIconButton"
 import { LayoutsOperarMainGrid } from "@/components/layouts-module/LayoutsOperarMainGrid"
 import { useDataWorkspaceSidebar } from "@/components/layouts/useDataWorkspaceSidebar"
 import { useAuth } from "@/context/AuthContextSupabase"
 import { usePopWorkspace } from "@/context/PopWorkspaceContext"
+import { clientsAccessFromKeys } from "@/lib/popWorkspaceAccess"
+import type {
+  OperationPartyManualConfirmOptions,
+  OperationPartyManualConfirmPayload,
+} from "@/lib/operationPartyPicker"
+import { buildOperationPartyManualSelection } from "@/lib/operationPartyPicker"
 import { usePopSaleComprobanteFiscalContext } from "@/hooks/usePopSaleComprobanteFiscalContext"
-import { useParams } from "next/navigation"
+import { useParams, useRouter, useSearchParams } from "next/navigation"
 import {
   useCallback,
   useEffect,
@@ -62,6 +78,7 @@ import {
   Banknote,
   CircleCheck,
   CircleX,
+  FileText,
   Loader2,
   MessageSquare,
   Receipt,
@@ -83,8 +100,16 @@ import {
 } from "@/components/sale-operation/SaleScanInputFocusContext"
 import { PromotionComboWizard } from "@/components/sale-operation/PromotionComboWizard"
 import { useSaleTicketCart } from "@/hooks/useSaleTicketCart"
+import { RootsSpinner } from "@/components/rootsy-spinner"
 import { useCartListScrollHighlight } from "@/hooks/useCartListScrollHighlight"
 import { buildCompleteSaleLinesFromCart } from "@/lib/saleCompleteLines"
+import {
+  buildQuoteLineGroupsFromDisplayRows,
+  buildQuoteLineSummariesFromDisplayRows,
+  buildSaleQuoteCheckoutSnapshot,
+  formatSaleQuoteDiscountLabel,
+  formatSaleQuotePaymentLabel,
+} from "@/lib/saleQuoteCheckout"
 import type { MenuCatalogProduct } from "@/lib/menuCatalogProduct"
 import { saleOpImporteBaseClass } from "@/components/sale-operation/saleOperationStyles"
 import { layoutsOperarSummaryPanelClass } from "@/app/library/layouts/layoutsOperarStyles"
@@ -96,6 +121,7 @@ type ClienteVentaSeleccionado = {
   manual: boolean
   name: string
   taxId: string | null
+  email?: string | null
   ivaCondition: string | null
   defaultInvoiceTypeLabel: string | null
 }
@@ -163,8 +189,11 @@ function SaleScanFocusBridge({
 
 function SalePage() {
   const params = useParams()
+  const router = useRouter()
+  const searchParams = useSearchParams()
   const siteId = typeof params?.siteId === "string" ? params.siteId : ""
   const popId = typeof params?.popId === "string" ? params.popId : undefined
+  const quoteIdFromUrl = searchParams.get("quoteId")
   const {
     hasValidPopFiscalCuit,
     popEmisorIvaCondition,
@@ -176,6 +205,10 @@ function SalePage() {
   } = useDataWorkspaceSidebar(siteId, popId ?? "", Boolean(popId))
   const { user } = useAuth()
   const { bootstrap, loading: bootstrapLoading } = usePopWorkspace()
+  const canCreateClient = useMemo(
+    () => clientsAccessFromKeys(bootstrap?.permissionKeys ?? []).canCreate,
+    [bootstrap?.permissionKeys],
+  )
 
   const [catalogArticles, setCatalogArticles] = useState<SaleCatalogArticle[]>(
     [],
@@ -196,6 +229,9 @@ function SalePage() {
   const [saleCategories, setSaleCategories] = useState<SaleCatalogCategory[]>(
     [],
   )
+  const [saleCategorySections, setSaleCategorySections] = useState<
+    MenuCatalogCategorySection[]
+  >([])
   const [catalogLoading, setCatalogLoading] = useState(true)
   const [catalogError, setCatalogError] = useState<string | null>(null)
 
@@ -219,6 +255,7 @@ function SalePage() {
       setCanReadCashRegisters(false)
       setOpenCashSession(null)
       setSaleCategories([])
+      setSaleCategorySections([])
       setCatalogError(res.error)
       setCatalogLoading(false)
       return
@@ -234,6 +271,7 @@ function SalePage() {
     setOpenCashSession(res.openCashSession)
     setInvoiceTypeSiteId(res.invoiceTypeSiteId)
     setSaleCategories(res.categories)
+    setSaleCategorySections(res.categorySections)
     setCatalogError(null)
     setCatalogLoading(false)
   }, [popId, siteId])
@@ -265,6 +303,7 @@ function SalePage() {
     setPromoWizardOpen,
     promoWizardTarget,
     confirmarPromoWizard,
+    restaurarDesdeCheckout,
   } = useSaleTicketCart({
     menuArticles: catalogArticles,
     menuPromotions: catalogPromotions,
@@ -277,10 +316,12 @@ function SalePage() {
   const [ventaIvaCondition, setVentaIvaCondition] = useState("")
   const [manualNombreCliente, setManualNombreCliente] = useState("")
   const [fiscalDocVenta, setFiscalDocVenta] = useState("")
+  const [ventaEmail, setVentaEmail] = useState("")
   const ventaPadron = usePadronAutofillRazonSocial(popId, fiscalDocVenta, {
     enabled:
       Boolean(popId) &&
       (clienteSeleccionado == null || clienteSeleccionado.manual),
+    manual: true,
   })
   const [clienteModalAbierto, setClienteModalAbierto] = useState(false)
   const [comprobante, setComprobante] = useState<string | null>(null)
@@ -298,6 +339,9 @@ function SalePage() {
   const [descuentoModalAbierto, setDescuentoModalAbierto] = useState(false)
   const [descartarConfirmOpen, setDescartarConfirmOpen] = useState(false)
   const [venderConfirmOpen, setVenderConfirmOpen] = useState(false)
+  const [presupuestoConfirmOpen, setPresupuestoConfirmOpen] = useState(false)
+  const [presupuestoSubmitting, setPresupuestoSubmitting] = useState(false)
+  const [presupuestoError, setPresupuestoError] = useState<string | null>(null)
   const [ventaSubmitting, setVentaSubmitting] = useState(false)
   const [ventaError, setVentaError] = useState<string | null>(null)
   const [canCreateSale, setCanCreateSale] = useState(false)
@@ -309,7 +353,7 @@ function SalePage() {
   >("porcentaje")
 
   useEffect(() => {
-    if (!openCashSession?.cashTreasuryAccountId) return
+    if (!openCashSession?.cashTreasuryAccountId || quoteIdFromUrl) return
     setMetodoPagoSeleccionado((prev) => {
       if (
         prev &&
@@ -320,7 +364,7 @@ function SalePage() {
       }
       return defaultCheckoutPaymentSelection(openCashSession.cashTreasuryAccountId)
     })
-  }, [openCashSession])
+  }, [openCashSession, quoteIdFromUrl])
 
   const [descuentoDraftTexto, setDescuentoDraftTexto] = useState("")
   const focusScanRef = useRef<(() => void) | null>(null)
@@ -363,6 +407,22 @@ function SalePage() {
     [quitarQuantityDealApplication, focusScan],
   )
 
+  const quoteLoadRef = useRef<string | null>(null)
+  const quoteLoadingRef = useRef<string | null>(null)
+  const [quoteRestorePending, setQuoteRestorePending] = useState(
+    () => Boolean(quoteIdFromUrl),
+  )
+
+  useEffect(() => {
+    if (!quoteIdFromUrl) {
+      setQuoteRestorePending(false)
+      return
+    }
+    if (quoteLoadRef.current !== quoteIdFromUrl) {
+      setQuoteRestorePending(true)
+    }
+  }, [quoteIdFromUrl])
+
   const saleModalOpen =
     clienteModalAbierto ||
     comprobanteModalAbierto ||
@@ -370,6 +430,7 @@ function SalePage() {
     descuentoModalAbierto ||
     descartarConfirmOpen ||
     venderConfirmOpen ||
+    presupuestoConfirmOpen ||
     promoWizardOpen
 
   const descuentoItemsMonto = useMemo(
@@ -420,6 +481,16 @@ function SalePage() {
     if (payOnClientAccount) return CLIENT_ACCOUNT_PAYMENT_LABEL
     return metodoPagoSeleccionado?.label ?? "Elegir forma de pago"
   }, [payOnClientAccount, metodoPagoSeleccionado])
+
+  const toolboxPaymentDisplay = useMemo(
+    () =>
+      resolveSaleToolboxPaymentDisplay({
+        payOnClientAccount,
+        metodoPagoSeleccionado,
+        treasuryPaymentContext,
+      }),
+    [payOnClientAccount, metodoPagoSeleccionado, treasuryPaymentContext],
+  )
 
   const puedeRegistrarVenta = useMemo(
     () =>
@@ -625,6 +696,7 @@ function SalePage() {
     setClienteSeleccionado(null)
     setManualNombreCliente("")
     setFiscalDocVenta("")
+    setVentaEmail("")
     setVentaIvaCondition("")
     if (popId) {
       const saved = readSavedSaleComprobante(popId)
@@ -688,6 +760,171 @@ function SalePage() {
     ],
   )
 
+  const presupuestoComprobanteLabel = comprobanteDisplayLabel || "Sin comprobante"
+  const presupuestoPaymentLabel = pagoConfigurado
+    ? pagoResumenLabel
+    : "Sin medio de pago"
+  const presupuestoDiscountLabel = formatSaleQuoteDiscountLabel({
+    modoDescuento,
+    valorDescuentoPorcentaje,
+    valorDescuentoFijo,
+    descuentoMonto,
+  })
+
+  const aplicarPresupuestoEnVenta = useCallback(
+    (snapshot: ReturnType<typeof buildSaleQuoteCheckoutSnapshot>) => {
+      restaurarDesdeCheckout(snapshot)
+      setClienteSeleccionado(snapshot.clienteSeleccionado)
+      setManualNombreCliente(snapshot.manualNombreCliente)
+      setFiscalDocVenta(snapshot.fiscalDocVenta)
+      setVentaIvaCondition(snapshot.ventaIvaCondition)
+      setVentaEmail(snapshot.clienteSeleccionado?.email ?? "")
+      setComprobante(
+        snapshot.comprobante &&
+          isAllowedSaleComprobanteLabel(
+            invoiceTypeSiteId,
+            snapshot.comprobante,
+            popEmisorIvaCondition,
+            hasValidPopFiscalCuit,
+          )
+          ? snapshot.comprobante
+          : null,
+      )
+      setMetodoPagoSeleccionado(snapshot.metodoPagoSeleccionado)
+      setPayOnClientAccount(snapshot.payOnClientAccount)
+      setModoDescuento(snapshot.modoDescuento)
+      setValorDescuentoPorcentaje(snapshot.valorDescuentoPorcentaje)
+      setValorDescuentoFijo(snapshot.valorDescuentoFijo)
+      setVentaError(null)
+      setPresupuestoError(null)
+      focusScan()
+    },
+    [
+      focusScan,
+      hasValidPopFiscalCuit,
+      invoiceTypeSiteId,
+      popEmisorIvaCondition,
+      restaurarDesdeCheckout,
+    ],
+  )
+
+  const confirmarPresupuesto = useCallback(async () => {
+    if (!popId || !hayItemsEnPedido) return
+    setPresupuestoError(null)
+    setPresupuestoSubmitting(true)
+    try {
+      const checkoutSnapshot = buildSaleQuoteCheckoutSnapshot({
+        carrito,
+        clienteSeleccionado,
+        manualNombreCliente,
+        fiscalDocVenta,
+        ventaIvaCondition,
+        comprobante,
+        metodoPagoSeleccionado,
+        payOnClientAccount,
+        modoDescuento,
+        valorDescuentoPorcentaje,
+        valorDescuentoFijo,
+        cartLineOverrides,
+      })
+      const res = await createSaleQuote(popId, {
+        checkoutSnapshot,
+        subtotal,
+        discountTotal: descuentoMonto,
+        total,
+        clientId:
+          clienteSeleccionado?.id && !clienteSeleccionado.manual
+            ? clienteSeleccionado.id
+            : null,
+        customerName: confirmClientLabel,
+        customerTaxId:
+          fiscalDocVenta.trim() || clienteSeleccionado?.taxId || null,
+        metadata: {
+          comprobanteLabel: presupuestoComprobanteLabel,
+          paymentLabel: presupuestoPaymentLabel,
+          discountLabel: presupuestoDiscountLabel,
+          lineGroups: buildQuoteLineGroupsFromDisplayRows(
+            cartDisplayRows,
+            cartLineOverrides,
+          ),
+          lineSummaries: buildQuoteLineSummariesFromDisplayRows(
+            cartDisplayRows,
+            cartLineOverrides,
+          ),
+        },
+      })
+      if (!res.success) {
+        setPresupuestoError(res.error)
+        return
+      }
+      setPresupuestoConfirmOpen(false)
+      limpiarVenta()
+      router.push(`/${siteId}/${popId}/quotes`)
+    } finally {
+      setPresupuestoSubmitting(false)
+    }
+  }, [
+    popId,
+    hayItemsEnPedido,
+    carrito,
+    clienteSeleccionado,
+    manualNombreCliente,
+    fiscalDocVenta,
+    ventaIvaCondition,
+    comprobante,
+    metodoPagoSeleccionado,
+    payOnClientAccount,
+    modoDescuento,
+    valorDescuentoPorcentaje,
+    valorDescuentoFijo,
+    cartLineOverrides,
+    subtotal,
+    descuentoMonto,
+    total,
+    confirmClientLabel,
+    presupuestoComprobanteLabel,
+    presupuestoPaymentLabel,
+    presupuestoDiscountLabel,
+    cartDisplayRows,
+    limpiarVenta,
+    router,
+    siteId,
+  ])
+
+  useEffect(() => {
+    if (!quoteIdFromUrl || !popId || catalogLoading || !bootstrapLoaded) return
+    if (quoteLoadRef.current === quoteIdFromUrl) return
+    if (quoteLoadingRef.current === quoteIdFromUrl) return
+
+    quoteLoadingRef.current = quoteIdFromUrl
+    comprobanteInitRef.current = true
+
+    void (async () => {
+      try {
+        const res = await getSaleQuoteDetail(popId, quoteIdFromUrl)
+        if (!res.success) {
+          setVentaError(res.error)
+          comprobanteInitRef.current = false
+          setQuoteRestorePending(false)
+          return
+        }
+        quoteLoadRef.current = quoteIdFromUrl
+        aplicarPresupuestoEnVenta(res.quote.checkoutSnapshot)
+        router.replace(`/${siteId}/${popId}/sale`, { scroll: false })
+      } finally {
+        quoteLoadingRef.current = null
+      }
+    })()
+  }, [
+    aplicarPresupuestoEnVenta,
+    bootstrapLoaded,
+    catalogLoading,
+    popId,
+    quoteIdFromUrl,
+    router,
+    siteId,
+  ])
+
   const comprobantePreviewInput = useMemo((): SaleComprobantePreviewInput | null => {
     if (!popId) return null
     return {
@@ -729,7 +966,9 @@ function SalePage() {
   ])
 
   useEffect(() => {
-    if (!popId || !bootstrapLoaded || comprobanteInitRef.current) return
+    if (!popId || !bootstrapLoaded || comprobanteInitRef.current || quoteIdFromUrl) {
+      return
+    }
     comprobanteInitRef.current = true
     const saved = readSavedSaleComprobante(popId)
     if (saved !== undefined) {
@@ -750,6 +989,7 @@ function SalePage() {
     bootstrapLoaded,
     popEmisorIvaCondition,
     hasValidPopFiscalCuit,
+    quoteIdFromUrl,
   ])
 
   useEffect(() => {
@@ -793,24 +1033,18 @@ function SalePage() {
     setClienteModalAbierto(false)
   }
 
-  const seleccionarClienteManual = () => {
-    const name =
-      manualNombreCliente.trim() || ventaPadron.razonSocial.trim()
-    if (!name && !fiscalDocVenta.trim()) return
-    const iva =
-      ventaIvaCondition.trim() || ventaPadron.mappedIvaCondition || null
-    setClienteSeleccionado({
-      id: null,
-      manual: true,
-      name: name || "Cliente sin nombre",
-      taxId: fiscalDocVenta.trim() || null,
-      ivaCondition: iva,
-      defaultInvoiceTypeLabel: null,
-    })
-    if (iva) {
-      aplicarComprobanteDesdeIva(iva as ClientIvaConditionValue)
+  const confirmarClienteManual = (
+    payload: OperationPartyManualConfirmPayload,
+    _options: OperationPartyManualConfirmOptions,
+  ) => {
+    setManualNombreCliente(payload.name)
+    setFiscalDocVenta(payload.taxId)
+    setVentaEmail(payload.email)
+    setVentaIvaCondition(payload.ivaCondition)
+    setClienteSeleccionado(buildOperationPartyManualSelection(payload))
+    if (payload.ivaCondition) {
+      aplicarComprobanteDesdeIva(payload.ivaCondition as ClientIvaConditionValue)
     }
-    setClienteModalAbierto(false)
   }
 
   const abrirModalDescuento = () => {
@@ -905,16 +1139,46 @@ function SalePage() {
         popId={popId}
         popName={bootstrap?.popName ?? ""}
         title="Vender"
-        loading={bootstrapLoading}
+        loading={bootstrapLoading || quoteRestorePending}
         userName={headerUserName}
         userAvatarSrc={userAvatarSrc}
         sidebarCollapsible
         sidebarEdgeToggle={false}
         sidebarOpen={catalogSidebarOpen}
         onSidebarOpenChange={setCatalogSidebarOpen}
+        headerActions={
+          <DataWorkspaceHeaderTooltipIconButton
+            label="Crear presupuesto"
+            headerVariant={dataWorkspaceModuleHeaderVariant}
+            disabled={!hayItemsEnPedido || presupuestoSubmitting}
+            onClick={() => {
+              setPresupuestoError(null)
+              setPresupuestoConfirmOpen(true)
+            }}
+          >
+            <FileText className="size-5" aria-hidden />
+          </DataWorkspaceHeaderTooltipIconButton>
+        }
       >
         <div className="relative flex h-full min-h-0 w-full flex-col overflow-hidden">
           <OperationsModuleBackdrop />
+
+          {quoteRestorePending ? (
+            <div
+              className="absolute inset-0 z-50 flex flex-col items-center justify-center gap-3 bg-[#070a09]/90 backdrop-blur-[2px]"
+              role="status"
+              aria-live="polite"
+              aria-busy="true"
+            >
+              <RootsSpinner size="default" tone="dark" label="Cargando presupuesto" />
+              <p className="text-sm font-medium text-white/90">
+                Cargando presupuesto…
+              </p>
+              <p className="max-w-xs text-center text-xs text-white/50">
+                Preparando ítems, cliente y condiciones de la venta
+              </p>
+            </div>
+          ) : null}
 
           {!catalogLoading && !openCashSession ? (
             <OpenCashSessionBanner siteId={siteId} popId={popId} variant="dark" />
@@ -926,12 +1190,12 @@ function SalePage() {
                 siteId={siteId}
                 popId={popId}
                 categories={saleCategories}
+                categorySections={saleCategorySections}
                 products={productosCatalogo}
                 loading={catalogLoading}
                 error={catalogError}
                 onAddProduct={handleAddProduct}
                 catalogSidebarOpen={catalogSidebarOpen}
-                catalogScope="sale"
                 keepScanFocused
               />
             }
@@ -947,7 +1211,15 @@ function SalePage() {
                 clienteConfigurado={Boolean(clienteSeleccionado)}
                 comprobanteLabel={comprobanteDisplayLabel}
                 pagoLabel={
-                  openCashSession ? pagoResumenLabel : "Requiere caja abierta"
+                  openCashSession
+                    ? toolboxPaymentDisplay.pagoLabel
+                    : "Requiere caja abierta"
+                }
+                pagoSubLabel={
+                  openCashSession ? toolboxPaymentDisplay.pagoSubLabel : null
+                }
+                pagoIcon={
+                  openCashSession ? toolboxPaymentDisplay.pagoIcon : undefined
                 }
                 pagoConfigurado={pagoConfigurado}
                 pagoDisabled={!openCashSession}
@@ -1041,18 +1313,21 @@ function SalePage() {
           if (open && clienteSeleccionado?.manual) {
             setManualNombreCliente(clienteSeleccionado.name)
             setFiscalDocVenta(clienteSeleccionado.taxId ?? "")
+            setVentaEmail(clienteSeleccionado.email ?? "")
             setVentaIvaCondition(clienteSeleccionado.ivaCondition ?? "")
           }
         }}
         canSearchCatalog={canReadClients}
+        canCreateClient={canCreateClient}
         manualName={manualNombreCliente}
         onManualNameChange={setManualNombreCliente}
         taxId={fiscalDocVenta}
         onTaxIdChange={setFiscalDocVenta}
+        email={ventaEmail}
+        onEmailChange={setVentaEmail}
         ivaCondition={ventaIvaCondition}
         onIvaConditionChange={setVentaIvaCondition}
         selected={clienteSeleccionado}
-        padron={ventaPadron}
         catalogBlocked={clienteCatalogoBloqueado}
         onSelectCatalogParty={(party) =>
           seleccionarCliente({
@@ -1063,7 +1338,7 @@ function SalePage() {
             defaultInvoiceTypeLabel: party.defaultInvoiceTypeLabel ?? null,
           })
         }
-        onSelectManual={seleccionarClienteManual}
+        onConfirmManual={confirmarClienteManual}
         onClearSelection={quitarClienteVenta}
         onIvaConditionApplied={aplicarComprobanteDesdeIva}
       />
@@ -1128,6 +1403,26 @@ function SalePage() {
           />
         </RootsAlertDialogContent>
       </AlertDialog>
+
+      <SimpleOperationCheckoutConfirmDialog
+        open={presupuestoConfirmOpen}
+        onOpenChange={(open) => {
+          setPresupuestoConfirmOpen(open)
+          if (!open) setPresupuestoError(null)
+        }}
+        title="Generar presupuesto"
+        confirmLabel="Generar presupuesto"
+        submitting={presupuestoSubmitting}
+        submitError={presupuestoError}
+        total={total}
+        subtotal={subtotal}
+        descuentoMonto={descuentoMonto}
+        hayDescuento={hayDescuento}
+        partyValue={confirmClientLabel}
+        comprobanteLabel={presupuestoComprobanteLabel}
+        paymentLabel={presupuestoPaymentLabel}
+        onConfirm={confirmarPresupuesto}
+      />
 
       <SimpleOperationCheckoutConfirmDialog
         open={venderConfirmOpen}

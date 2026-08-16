@@ -14,6 +14,7 @@ import { loadPopPermissionsSnapshot } from "@/lib/popPermissionsServer"
 import {
   CHART_GASTO_MERMA_CODES,
   CHART_INGRESO_AJUSTE_CODES,
+  CHART_INVENTARIO_INICIAL_PATRIMONIO_CODES,
   CHART_MERCADERIAS_CODES,
 } from "@/lib/argV3DefaultChartAccounts"
 import {
@@ -619,12 +620,12 @@ export async function createInitialStockLedgerForArticle(
           "No hay cuenta de inventario (p. ej. 1.1.3.01 Mercaderías) en el plan de cuentas de este punto.",
       }
     }
-    const offsetId = await resolveAccountId(CHART_INGRESO_AJUSTE_CODES)
+    const offsetId = await resolveAccountId(CHART_INVENTARIO_INICIAL_PATRIMONIO_CODES)
     if (!offsetId) {
       return {
         success: false,
         error:
-          "No hay cuenta de ingresos para ajustes (p. ej. 4.2.1.01 Otros ingresos).",
+          "No hay cuenta de patrimonio para stock inicial (p. ej. 3.2.1.02 Ajuste por inventario inicial).",
       }
     }
 

@@ -173,7 +173,7 @@ export function BannersLiveGallery() {
 
   return (
     <div className="space-y-10">
-      <p className="max-w-3xl font-canopy text-sm leading-relaxed text-muted-foreground">
+      <p className="max-w-3xl font-canopy text-sm leading-relaxed text-[var(--rootsy-bruma-500)]">
         {ROOTSY_BANNER_MANIFESTO}
       </p>
 

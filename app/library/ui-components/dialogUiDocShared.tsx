@@ -21,19 +21,19 @@ export function OverlaySurfaceSpecTable({
   return (
     <FoundationSpecCard className="space-y-4">
       <div className="space-y-1">
-        <h3 className="font-canopy text-sm font-semibold text-foreground">{title}</h3>
+        <h3 className="font-canopy text-sm font-semibold text-[var(--rootsy-bruma-900)]">{title}</h3>
         {description ? (
-          <p className="font-canopy text-xs leading-relaxed text-muted-foreground">{description}</p>
+          <p className="font-canopy text-xs leading-relaxed text-[var(--rootsy-bruma-500)]">{description}</p>
         ) : null}
       </div>
       <div className="overflow-x-auto">
         <table className="w-full min-w-[36rem] border-collapse text-left">
           <thead>
-            <tr className="border-b border-border/70">
+            <tr className="border-b border-[var(--rootsy-bruma-200)]">
               {["Rol", "Token", "Valor", "Producto"].map((heading) => (
                 <th
                   key={heading}
-                  className="px-2 py-2 font-mono text-[10px] font-medium uppercase tracking-[0.1em] text-muted-foreground first:pl-0"
+                  className="px-2 py-2 font-mono text-[10px] font-medium uppercase tracking-[0.1em] text-[var(--rootsy-bruma-500)] first:pl-0"
                 >
                   {heading}
                 </th>
@@ -42,13 +42,13 @@ export function OverlaySurfaceSpecTable({
           </thead>
           <tbody>
             {rows.map((row) => (
-              <tr key={`${row.role}-${row.token}`} className="border-b border-border/40 align-top">
-                <td className="py-2.5 pr-3 font-canopy text-xs font-medium text-foreground">{row.role}</td>
-                <td className="py-2.5 pr-3 font-mono text-[11px] text-muted-foreground">{row.token}</td>
-                <td className="max-w-[14rem] py-2.5 pr-3 font-mono text-[10px] leading-relaxed break-all text-foreground">
+              <tr key={`${row.role}-${row.token}`} className="border-b border-[var(--rootsy-bruma-200)] align-top">
+                <td className="py-2.5 pr-3 font-canopy text-xs font-medium text-[var(--rootsy-bruma-900)]">{row.role}</td>
+                <td className="py-2.5 pr-3 font-mono text-[11px] text-[var(--rootsy-bruma-500)]">{row.token}</td>
+                <td className="max-w-[14rem] py-2.5 pr-3 font-mono text-[10px] leading-relaxed break-all text-[var(--rootsy-bruma-900)]">
                   {row.value}
                 </td>
-                <td className="py-2.5 font-canopy text-[11px] leading-relaxed text-muted-foreground">
+                <td className="py-2.5 font-canopy text-[11px] leading-relaxed text-[var(--rootsy-bruma-500)]">
                   {row.product ?? "—"}
                 </td>
               </tr>
@@ -57,7 +57,7 @@ export function OverlaySurfaceSpecTable({
         </table>
       </div>
       {pairNote ? (
-        <p className="font-canopy text-xs leading-relaxed text-muted-foreground">{pairNote}</p>
+        <p className="font-canopy text-xs leading-relaxed text-[var(--rootsy-bruma-500)]">{pairNote}</p>
       ) : null}
     </FoundationSpecCard>
   )

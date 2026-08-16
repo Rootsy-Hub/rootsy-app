@@ -1,5 +1,6 @@
 import type { PurchaseCheckoutLineInput, PurchaseLineBuilt } from "@/lib/purchaseCheckoutLines"
 import { buildPurchaseLineFromInput } from "@/lib/purchaseCheckoutLines"
+import { isArticleItemKind } from "@/lib/articleItemKind"
 import type { createClient } from "@/utils/supabase/server"
 
 function parseQty(v: unknown): number {
@@ -36,12 +37,16 @@ export async function resolvePurchaseCheckoutLine(
 
   const { data: artRow, error: artErr } = await supabase
     .from("articles")
-    .select("id, name, iva")
+    .select("id, name, iva, item_kind")
     .eq("id", articleId)
     .eq("pop_id", popId)
     .maybeSingle()
   if (artErr || !artRow) {
     return { error: "Artículo inválido o inactivo." }
+  }
+  const rawKind = String(artRow.item_kind ?? "merchandise")
+  if (!isArticleItemKind(rawKind)) {
+    return { error: "Tipo de artículo inválido para compra." }
   }
 
   const { data: costRow, error: costErr } = await supabase
@@ -60,7 +65,11 @@ export async function resolvePurchaseCheckoutLine(
     return { error: "El costo de compra seleccionado está inactivo." }
   }
 
-  const builtLine = buildPurchaseLineFromInput(input, artRow, {
+  const builtLine = buildPurchaseLineFromInput(input, {
+    name: artRow.name,
+    iva: artRow.iva,
+    itemKind: rawKind,
+  }, {
     costUnitLabel: String(costRow.cost_unit_label ?? ""),
     saleUnitsPerCostUnit: Number(costRow.sale_units_per_cost_unit ?? 0) || 0,
   })

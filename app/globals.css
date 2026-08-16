@@ -190,6 +190,41 @@
   --rootsy-footer: oklch(0.94 0.02 110);
 }
 
+/* Librería — anula Paradise Park de .rootsy-app-light (mayor especificidad). */
+.rootsy-theme-library.rootsy-app-light,
+.rootsy-library-shell.rootsy-theme-library {
+  --background: var(--rootsy-bruma-100);
+  --foreground: var(--rootsy-bruma-900);
+  --card: var(--rootsy-white);
+  --card-foreground: var(--rootsy-bruma-900);
+  --popover: var(--rootsy-white);
+  --popover-foreground: var(--rootsy-bruma-900);
+  --secondary: var(--rootsy-bruma-50);
+  --secondary-foreground: var(--rootsy-bruma-900);
+  --muted: var(--rootsy-bruma-50);
+  --muted-foreground: var(--rootsy-bruma-500);
+  --accent: var(--rootsy-savia-100);
+  --accent-foreground: var(--rootsy-savia-900);
+  --primary: var(--rootsy-savia-600);
+  --primary-foreground: var(--rootsy-white);
+  --destructive: #dc2626;
+  --destructive-foreground: var(--rootsy-white);
+  --border: var(--rootsy-bruma-200);
+  --input: var(--rootsy-bruma-200);
+  --ring: var(--rootsy-savia-700);
+  --chart-1: var(--rootsy-savia-600);
+  --chart-2: var(--rootsy-savia-400);
+  --chart-3: var(--rootsy-savia-teal);
+  --chart-4: var(--rootsy-bruma-600);
+  --chart-5: var(--rootsy-savia-500);
+  --forest: var(--rootsy-savia-600);
+  --meadow: var(--rootsy-savia-400);
+  --rootsy-hairline: var(--rootsy-bruma-200);
+  --rootsy-particle: var(--rootsy-savia-600);
+  --rootsy-section-alt: var(--rootsy-bruma-50);
+  --rootsy-footer: var(--rootsy-bruma-100);
+}
+
 @theme inline {
   --font-sans: var(--rootsy-font-ui);
   --font-secondary: var(--rootsy-font-reading);

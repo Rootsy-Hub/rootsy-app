@@ -1,10 +1,12 @@
 "use client"
 
-import { cn } from "@/lib/utils"
 import {
-  treasuryMovementListTokensFor,
-  type TreasuryMovementListTokensVariant,
-} from "@/app/[siteId]/[popId]/accounts/treasuryMovementListStyles"
+  workspaceTableLayoutListEndFooterClass,
+  workspaceTableLayoutListEndFooterDividerClass,
+  workspaceTableLayoutListLoadingMoreClass,
+} from "@/components/data-workspace/dataWorkspaceTablesLayout"
+import { workspaceLayoutsTablesScopeClass } from "@/components/layouts-tables/rootsLayoutsTablesProductStyles"
+import { cn } from "@/lib/utils"
 import { RootsSpinner } from "@/components/rootsy-spinner"
 import { useEffect, useRef, useState, type RefObject } from "react"
 
@@ -53,19 +55,18 @@ export function TreasuryInfiniteScrollFooter({
   totalCount,
   sentinelRef,
   fullWidth = true,
-  tokensVariant = "default",
   itemLabel = "movimiento",
   itemLabelPlural = "movimientos",
+  loadingLabel = "Cargando más…",
 }: {
   hasMore: boolean
   totalCount: number
   sentinelRef: RefObject<HTMLDivElement | null>
   fullWidth?: boolean
-  tokensVariant?: TreasuryMovementListTokensVariant
   itemLabel?: string
   itemLabelPlural?: string
+  loadingLabel?: string
 }) {
-  const tokens = treasuryMovementListTokensFor(tokensVariant)
   const paddingClass = fullWidth ? "px-4 lg:px-5" : "px-3"
 
   if (hasMore) {
@@ -73,14 +74,14 @@ export function TreasuryInfiniteScrollFooter({
       <div
         ref={sentinelRef}
         className={cn(
-          "flex items-center justify-center gap-2 border-t py-4",
-          tokens.footer,
-          tokens.footerLoadingBorder,
+          workspaceLayoutsTablesScopeClass,
+          workspaceTableLayoutListLoadingMoreClass,
+          "py-4",
           paddingClass,
         )}
       >
         <RootsSpinner size="xs" aria-hidden className="shrink-0" />
-        Cargando más…
+        {loadingLabel}
       </div>
     )
   }
@@ -93,14 +94,14 @@ export function TreasuryInfiniteScrollFooter({
   return (
     <div
       className={cn(
-        "flex items-center gap-3 py-6",
-        tokens.footer,
+        workspaceLayoutsTablesScopeClass,
+        workspaceTableLayoutListEndFooterClass,
         paddingClass,
       )}
     >
-      <span className={cn("h-px flex-1", tokens.footerDivider)} aria-hidden />
+      <span className={workspaceTableLayoutListEndFooterDividerClass} aria-hidden />
       <span className="shrink-0 text-center">Fin del listado · {countLabel}</span>
-      <span className={cn("h-px flex-1", tokens.footerDivider)} aria-hidden />
+      <span className={workspaceTableLayoutListEndFooterDividerClass} aria-hidden />
     </div>
   )
 }

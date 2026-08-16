@@ -5,17 +5,15 @@ import {
   CHART_MERCADERIAS_CODES,
   CHART_PROVEEDORES_CODES,
 } from "@/lib/argV3DefaultChartAccounts"
+import type { ArticleItemKind } from "@/lib/articleItemKind"
 import { resolveLedgerAccountForTreasuryPayment } from "@/lib/treasuryPaymentLedger"
-import type { PurchaseKind } from "@/app/[siteId]/[popId]/purchases/actions"
 import type { SupabaseClient } from "@supabase/supabase-js"
 
-const PAYMENT_KIND_ACCOUNT_FALLBACK: Record<string, readonly string[]> = {
-  cash: ["1.1.1.01"],
-  transfer: ["1.1.1.02"],
-  card_debit: ["1.1.1.03"],
-  card_credit: ["1.1.1.03"],
-  other: ["1.1.1.04", "1.1.1.01"],
-}
+const INVENTORY_KIND_ORDER: readonly ArticleItemKind[] = [
+  "merchandise",
+  "raw_material",
+  "supply",
+]
 
 function roundMoney(n: number): number {
   return Math.round(n * 100) / 100
@@ -54,7 +52,7 @@ async function nextEntryNumber(
     : 1
 }
 
-function inventoryAccountCodes(kind: PurchaseKind): readonly string[] {
+function inventoryAccountCodes(kind: ArticleItemKind): readonly string[] {
   switch (kind) {
     case "raw_material":
       return CHART_MATERIAS_PRIMAS_CODES
@@ -65,44 +63,110 @@ function inventoryAccountCodes(kind: PurchaseKind): readonly string[] {
   }
 }
 
+function inventoryAccountError(kind: ArticleItemKind): string {
+  switch (kind) {
+    case "supply":
+      return "No hay cuenta de Insumos en el plan de cuentas (p. ej. 1.1.3.04)."
+    case "raw_material":
+      return "No hay cuenta de Materias primas en el plan de cuentas."
+    default:
+      return "No hay cuenta de Mercaderías en el plan de cuentas."
+  }
+}
+
+export type PurchaseReceiptLedgerLine = {
+  itemKind: ArticleItemKind
+  inventoryAmount: number
+}
+
+function groupInventoryAmountsByKind(
+  lines: PurchaseReceiptLedgerLine[],
+): Map<ArticleItemKind, number> {
+  const grouped = new Map<ArticleItemKind, number>()
+  for (const line of lines) {
+    const amount = roundMoney(line.inventoryAmount)
+    if (amount <= 0) continue
+    grouped.set(line.itemKind, roundMoney((grouped.get(line.itemKind) ?? 0) + amount))
+  }
+  return grouped
+}
+
+function rebalanceGroupedInventoryAmounts(
+  grouped: Map<ArticleItemKind, number>,
+  expectedTotal: number,
+): Map<ArticleItemKind, number> {
+  const out = new Map(grouped)
+  const currentTotal = roundMoney(
+    [...out.values()].reduce((sum, amount) => sum + amount, 0),
+  )
+  const delta = roundMoney(expectedTotal - currentTotal)
+  if (delta === 0 || out.size === 0) return out
+
+  let targetKind: ArticleItemKind | null = null
+  let targetAmount = -1
+  for (const kind of INVENTORY_KIND_ORDER) {
+    const amount = out.get(kind)
+    if (amount == null) continue
+    if (amount > targetAmount) {
+      targetKind = kind
+      targetAmount = amount
+    }
+  }
+  if (!targetKind) {
+    targetKind = [...out.entries()].sort((a, b) => b[1] - a[1])[0]?.[0] ?? null
+  }
+  if (!targetKind) return out
+  out.set(targetKind, roundMoney((out.get(targetKind) ?? 0) + delta))
+  return out
+}
+
 export async function postPurchaseReceiptLedger(
   supabase: SupabaseClient,
   args: {
     popId: string
     userId: string
     purchaseId: string
-    purchaseKind: PurchaseKind
     entryDate: string
-    subtotalNet: number
+    lines: PurchaseReceiptLedgerLine[]
     taxTotal: number
     total: number
     supplierName: string | null
   },
 ): Promise<{ success: true; entryId: string } | { success: false; error: string }> {
-  const { popId, userId, purchaseId, purchaseKind, entryDate } = args
-  const subtotalNet = roundMoney(args.subtotalNet)
+  const { popId, userId, purchaseId, entryDate } = args
   const taxTotal = roundMoney(args.taxTotal)
   const total = roundMoney(args.total)
+  const inventoryTotalExpected = roundMoney(total - taxTotal)
 
   if (total <= 0) {
     return { success: false, error: "El total de la compra debe ser mayor que cero." }
   }
+  if (inventoryTotalExpected < 0) {
+    return { success: false, error: "El neto de inventario de la compra es inválido." }
+  }
 
-  const inventoryId = await resolveAccountId(
-    supabase,
-    popId,
-    inventoryAccountCodes(purchaseKind),
+  const grouped = rebalanceGroupedInventoryAmounts(
+    groupInventoryAmountsByKind(args.lines),
+    inventoryTotalExpected,
   )
-  if (!inventoryId) {
+  if (grouped.size === 0) {
     return {
       success: false,
-      error:
-        purchaseKind === "supply"
-          ? "No hay cuenta de Insumos en el plan de cuentas (p. ej. 1.1.3.04)."
-          : purchaseKind === "raw_material"
-            ? "No hay cuenta de Materias primas en el plan de cuentas."
-            : "No hay cuenta de inventario en el plan de cuentas.",
+      error: "No hay importes de inventario para registrar en la compra.",
     }
+  }
+
+  const inventoryAccountIds = new Map<ArticleItemKind, string>()
+  for (const kind of grouped.keys()) {
+    const accountId = await resolveAccountId(
+      supabase,
+      popId,
+      inventoryAccountCodes(kind),
+    )
+    if (!accountId) {
+      return { success: false, error: inventoryAccountError(kind) }
+    }
+    inventoryAccountIds.set(kind, accountId)
   }
 
   const proveedoresId = await resolveAccountId(supabase, popId, CHART_PROVEEDORES_CODES)
@@ -157,15 +221,20 @@ export async function postPurchaseReceiptLedger(
   }[] = []
   let order = 1
 
-  if (subtotalNet > 0) {
+  for (const kind of INVENTORY_KIND_ORDER) {
+    const amount = grouped.get(kind)
+    if (amount == null || amount <= 0) continue
+    const accountId = inventoryAccountIds.get(kind)
+    if (!accountId) continue
     lines.push({
-      account_id: inventoryId,
-      debit_amount: subtotalNet,
+      account_id: accountId,
+      debit_amount: amount,
       credit_amount: 0,
       description: entryDescription,
       line_order: order++,
     })
   }
+
   if (taxTotal > 0 && ivaId) {
     lines.push({
       account_id: ivaId,
@@ -175,6 +244,7 @@ export async function postPurchaseReceiptLedger(
       line_order: order++,
     })
   }
+
   lines.push({
     account_id: proveedoresId,
     debit_amount: 0,

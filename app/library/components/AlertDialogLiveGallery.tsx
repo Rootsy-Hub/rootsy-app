@@ -55,7 +55,7 @@ function AlertChromePreview({
   const typed = MODAL_UI_DEMO_COPY.alert.typed
 
   return (
-    <div className="overflow-hidden rounded-2xl border border-dashed border-border/80 bg-muted/15 p-3">
+    <div className="overflow-hidden rounded-2xl border border-dashed border-[var(--rootsy-bruma-200)] bg-[color-mix(in_srgb,var(--rootsy-bruma-50)_85%,transparent)] p-3">
       <div className={cn("pointer-events-none mx-auto w-full overflow-hidden shadow-md", rootsAlertDialogSurfaceClass)}>
         <div className={rootsAlertDialogContentClass}>
           <div className="flex flex-col gap-1">

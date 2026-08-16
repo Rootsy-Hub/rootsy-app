@@ -1,5 +1,6 @@
 "use client"
 
+import { LibraryRelatedLinksSection } from "@/app/library/libraryDocPrimitives"
 import "./rootsyNaturePalette.css"
 import { COLOR_RELATED_LINKS } from "@/app/library/color/colorLibraryNav"
 import { getColorPageMeta } from "@/app/library/color/colorLibraryNav"
@@ -8,7 +9,6 @@ import { ColorAccentsSection } from "@/app/library/color/sections/ColorAccentsSe
 import { ColorPickerSection } from "@/app/library/color/sections/ColorPickerSection"
 import { ColorDataVizSection } from "@/app/library/color/sections/ColorDataVizSection"
 import { ColorPaletteSection } from "@/app/library/color/sections/ColorPaletteSection"
-import { ColorRelatedLinks } from "@/app/library/color/ColorDocPrimitives"
 import type { ReactNode } from "react"
 
 type Props = {
@@ -40,13 +40,7 @@ export function ColorFoundationView({ sectionId }: Props) {
   return (
     <div className="rootsy-nature-palette space-y-10">
       {content}
-      <div className="space-y-3 border-t border-border/60 pt-8">
-        <p className="text-sm font-semibold text-foreground">Relacionado</p>
-        <ColorRelatedLinks
-          excludeId={sectionId}
-          links={COLOR_RELATED_LINKS}
-        />
-      </div>
+      <LibraryRelatedLinksSection excludeId={sectionId} links={COLOR_RELATED_LINKS} />
     </div>
   )
 }

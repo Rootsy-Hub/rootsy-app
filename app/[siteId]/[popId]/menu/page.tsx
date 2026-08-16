@@ -2,7 +2,7 @@
 
 import { DataWorkspaceHeaderUserMenu } from "@/components/layouts/DataWorkspaceHeaderUserMenu"
 import { dataWorkspaceHeaderRoleLabelClass } from "@/components/layouts/dataWorkspaceHeaderStyles"
-import { RootsIconButton, rootsIconButtonClass } from "@/components/rootsy-button"
+import { RootsIconButton } from "@/components/rootsy-button"
 import withAuth from "@/hoc/withAuth"
 import { usePopMenuCache } from "@/hooks/usePopMenuCache"
 import { MenuDock } from "@/app/[siteId]/[popId]/menu/MenuDock"
@@ -21,6 +21,8 @@ import {
 import {
   menuHeaderBorderClass,
   menuHeaderChromeClass,
+  menuHeaderHeightClass,
+  menuHeaderRowClass,
 } from "@/app/[siteId]/[popId]/menu/menuFloatingPillStyles"
 import {
   menuSearchClearButtonClass,
@@ -411,26 +413,23 @@ function MenuPage() {
           "relative z-20 border-b",
           menuHeaderBorderClass,
           menuHeaderChromeClass,
+          menuHeaderHeightClass,
         )}
       >
-        <div className="grid grid-cols-[minmax(0,1fr)_minmax(0,280px)_minmax(0,1fr)] items-center gap-4 px-6 py-5 sm:gap-6 sm:px-8">
+        <div className={menuHeaderRowClass}>
           <div className="flex min-w-0 items-center gap-6">
-            <Link
+            <RootsIconButton
               href="/home"
-              aria-label="Ir al inicio"
-              className={rootsIconButtonClass({
-                tone: "secondary",
-                surface: "dark",
-                size: "large",
-              })}
+              tone="ghost"
+              surface="dark"
+              size="large"
+              label="Ir al inicio"
             >
-              <Home className="size-5" aria-hidden />
-            </Link>
-
-            <div className="hidden h-6 w-px shrink-0 bg-border sm:block" />
+              <Home aria-hidden />
+            </RootsIconButton>
 
             <div className="flex min-w-0 items-center gap-4">
-              <div className="h-14 w-14 shrink-0 overflow-hidden rounded-2xl ring-1 ring-border">
+              <div className="size-12 shrink-0 overflow-hidden rounded-2xl ring-1 ring-border">
                 <img
                   src={popLogoSrc}
                   alt=""
@@ -548,7 +547,7 @@ function MenuPage() {
             <div className="h-6 w-px bg-border" />
 
             <div className="flex min-w-0 items-center gap-3">
-              <div className="hidden min-w-0 flex-col leading-tight sm:flex">
+              <div className="hidden min-w-0 flex-col items-end text-right leading-tight sm:flex">
                 <span className="truncate text-sm font-semibold text-foreground/90">
                   {userFullName || "Usuario"}
                 </span>

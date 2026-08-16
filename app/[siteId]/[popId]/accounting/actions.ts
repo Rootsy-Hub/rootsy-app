@@ -36,6 +36,91 @@ export type ChartAccountRow = {
   isMovementAccount: boolean
 }
 
+export type ChartAccountSearchRow = {
+  id: string
+  code: string
+  name: string
+}
+
+const CHART_ACCOUNT_SEARCH_LIMIT = 12
+
+function escapeChartAccountIlikeToken(raw: string): string {
+  return raw.replace(/\\/g, "\\\\").replace(/%/g, "\\%").replace(/_/g, "\\_")
+}
+
+function buildChartAccountSearchOrClause(raw: string): string | null {
+  const term = raw.trim().replace(/,/g, " ").trim()
+  if (!term) return null
+  const pattern = `%${escapeChartAccountIlikeToken(term)}%`
+  return [`code.ilike.${pattern}`, `name.ilike.${pattern}`].join(",")
+}
+
+export async function searchAccountingChartAccounts(
+  popId: string,
+  query: string,
+): Promise<
+  | { success: true; accounts: ChartAccountSearchRow[] }
+  | { success: false; error: string }
+> {
+  const trimmed = query.trim()
+  if (!trimmed) {
+    return { success: true, accounts: [] }
+  }
+
+  const orClause = buildChartAccountSearchOrClause(trimmed)
+  if (!orClause) {
+    return { success: true, accounts: [] }
+  }
+
+  try {
+    const access = await validatePopAccess(popId)
+    if (!access.hasAccess || !access.isActive) {
+      return { success: false, error: access.error || "Sin acceso" }
+    }
+    const snap = await loadPopPermissionsSnapshot(popId)
+    if (
+      !permissionKeysInclude(
+        snap.keys,
+        POP_PERMS.ACCOUNTING_READ.resource,
+        POP_PERMS.ACCOUNTING_READ.action,
+      )
+    ) {
+      return {
+        success: false,
+        error: "Sin permiso para consultar el plan de cuentas.",
+      }
+    }
+
+    const supabase = await createClient()
+    const { data, error } = await supabase
+      .from("accounting_chart_of_accounts")
+      .select("id, code, name")
+      .eq("pop_id", popId)
+      .or(orClause)
+      .order("code", { ascending: true })
+      .limit(CHART_ACCOUNT_SEARCH_LIMIT)
+
+    if (error) {
+      return {
+        success: false,
+        error: error.message || "No se pudieron buscar cuentas.",
+      }
+    }
+
+    return {
+      success: true,
+      accounts: (data || []).map((row) => ({
+        id: String(row.id),
+        code: String(row.code ?? ""),
+        name: String(row.name ?? ""),
+      })),
+    }
+  } catch (e: unknown) {
+    const message = e instanceof Error ? e.message : "Error desconocido"
+    return { success: false, error: message }
+  }
+}
+
 export type CreateChartAccountInput = {
   code: string
   name: string
@@ -237,6 +322,7 @@ export type IncomeStatementResult = {
 export type CashFlowRow = {
   accountCode: string
   accountName: string
+  entityName: string | null
   entradas: number
   salidas: number
   neto: number
@@ -392,12 +478,91 @@ async function trialBalanceRowsForPopDateRange(
   return { success: false, error: raw.error }
 }
 
-export async function getAccountingJournalEntries(
+const JOURNAL_ENTRIES_DEFAULT_LIMIT = 200
+const JOURNAL_ENTRIES_PAGE_SIZE_DEFAULT = 40
+const JOURNAL_ENTRIES_PAGE_SIZE_MAX = 100
+const JOURNAL_ENTRY_ID_CHUNK = 400
+
+function applyPostedEntryDateFilters<
+  T extends {
+    gte: (column: string, value: string) => T
+    lte: (column: string, value: string) => T
+  },
+>(query: T, fromDate: string | null, toDate: string | null): T {
+  let next = query
+  if (fromDate && fromDate.trim()) {
+    next = next.gte("entry_date", fromDate.trim())
+  }
+  if (toDate && toDate.trim()) {
+    next = next.lte("entry_date", toDate.trim())
+  }
+  return next
+}
+
+async function sumJournalPeriodTotals(
+  supabase: Awaited<ReturnType<typeof createClient>>,
   popId: string,
   fromDate: string | null,
   toDate: string | null,
 ): Promise<
-  | { success: true; entries: JournalEntrySummaryRow[] }
+  { totalDebit: number; totalCredit: number } | { error: string }
+> {
+  let entQ = supabase
+    .from("accounting_entries")
+    .select("id")
+    .eq("pop_id", popId)
+    .eq("status", "posted")
+  entQ = applyPostedEntryDateFilters(entQ, fromDate, toDate)
+  const { data: entries, error: eErr } = await entQ
+  if (eErr) {
+    return {
+      error: eErr.message || "No se pudieron calcular los totales del período.",
+    }
+  }
+  const ids = (entries || []).map((entry) => String(entry.id))
+  if (ids.length === 0) {
+    return { totalDebit: 0, totalCredit: 0 }
+  }
+
+  let totalDebit = 0
+  let totalCredit = 0
+  for (let i = 0; i < ids.length; i += JOURNAL_ENTRY_ID_CHUNK) {
+    const chunk = ids.slice(i, i + JOURNAL_ENTRY_ID_CHUNK)
+    const { data: lines, error: lErr } = await supabase
+      .from("accounting_entry_lines")
+      .select("debit_amount, credit_amount")
+      .in("entry_id", chunk)
+    if (lErr) {
+      return {
+        error: lErr.message || "No se pudieron calcular los totales del período.",
+      }
+    }
+    for (const line of lines || []) {
+      totalDebit += Number(line.debit_amount ?? 0)
+      totalCredit += Number(line.credit_amount ?? 0)
+    }
+  }
+
+  return {
+    totalDebit: roundMoney(totalDebit),
+    totalCredit: roundMoney(totalCredit),
+  }
+}
+
+export async function getAccountingJournalEntries(
+  popId: string,
+  fromDate: string | null,
+  toDate: string | null,
+  options?: { limit?: number; offset?: number },
+): Promise<
+  | {
+      success: true
+      entries: JournalEntrySummaryRow[]
+      hasMore: boolean
+      totalCount?: number
+      periodTotalDebit?: number
+      periodTotalCredit?: number
+    }
   | { success: false; error: string }
 > {
   try {
@@ -416,6 +581,44 @@ export async function getAccountingJournalEntries(
       return { success: false, error: "Sin permiso para ver el libro diario." }
     }
     const supabase = await createClient()
+    const paginated = options != null
+    const offset = paginated ? Math.max(options.offset ?? 0, 0) : 0
+    const pageSize = paginated
+      ? Math.min(
+          Math.max(options.limit ?? JOURNAL_ENTRIES_PAGE_SIZE_DEFAULT, 1),
+          JOURNAL_ENTRIES_PAGE_SIZE_MAX,
+        )
+      : JOURNAL_ENTRIES_DEFAULT_LIMIT
+
+    let totalCount: number | undefined
+    let periodTotalDebit: number | undefined
+    let periodTotalCredit: number | undefined
+    if (paginated && offset === 0) {
+      let countQuery = supabase
+        .from("accounting_entries")
+        .select("id", { count: "exact", head: true })
+        .eq("pop_id", popId)
+        .eq("status", "posted")
+      countQuery = applyPostedEntryDateFilters(countQuery, fromDate, toDate)
+      const [countResult, totalsResult] = await Promise.all([
+        countQuery,
+        sumJournalPeriodTotals(supabase, popId, fromDate, toDate),
+      ])
+      const { count, error: countErr } = countResult
+      if (countErr) {
+        return {
+          success: false,
+          error: countErr.message || "No se pudieron cargar los asientos.",
+        }
+      }
+      if ("error" in totalsResult) {
+        return { success: false, error: totalsResult.error }
+      }
+      totalCount = count ?? 0
+      periodTotalDebit = totalsResult.totalDebit
+      periodTotalCredit = totalsResult.totalCredit
+    }
+
     let q = supabase
       .from("accounting_entries")
       .select("id, entry_number, entry_date, description, source_type, status")
@@ -423,20 +626,35 @@ export async function getAccountingJournalEntries(
       .eq("status", "posted")
       .order("entry_date", { ascending: false })
       .order("entry_number", { ascending: false })
-      .limit(200)
-    if (fromDate && fromDate.trim()) {
-      q = q.gte("entry_date", fromDate.trim())
+
+    q = applyPostedEntryDateFilters(q, fromDate, toDate)
+
+    if (paginated) {
+      q = q.range(offset, offset + pageSize)
+    } else {
+      q = q.limit(pageSize)
     }
-    if (toDate && toDate.trim()) {
-      q = q.lte("entry_date", toDate.trim())
-    }
+
     const { data: entries, error: eErr } = await q
     if (eErr) {
       return { success: false, error: eErr.message || "No se pudieron cargar los asientos." }
     }
-    const list = entries || []
+    const rawList = entries || []
+    const hasMore = paginated ? rawList.length > pageSize : false
+    const list = paginated ? rawList.slice(0, pageSize) : rawList
     if (list.length === 0) {
-      return { success: true, entries: [] }
+      return {
+        success: true,
+        entries: [],
+        hasMore: false,
+        totalCount: paginated ? (totalCount ?? 0) : 0,
+        ...(paginated && offset === 0
+          ? {
+              periodTotalDebit: periodTotalDebit ?? 0,
+              periodTotalCredit: periodTotalCredit ?? 0,
+            }
+          : {}),
+      }
     }
     const ids = list.map((e) => String(e.id))
     const { data: lines, error: lErr } = await supabase
@@ -467,7 +685,18 @@ export async function getAccountingJournalEntries(
         totalCredit: roundMoney(creditByEntry.get(id) ?? 0),
       }
     })
-    return { success: true, entries: rows }
+    return {
+      success: true,
+      entries: rows,
+      hasMore,
+      ...(paginated && offset === 0
+        ? {
+            totalCount: totalCount ?? rows.length,
+            periodTotalDebit: periodTotalDebit ?? 0,
+            periodTotalCredit: periodTotalCredit ?? 0,
+          }
+        : {}),
+    }
   } catch (e: unknown) {
     const message = e instanceof Error ? e.message : "Error desconocido"
     return { success: false, error: message }
@@ -842,6 +1071,68 @@ function isCashEquivalentAccountCode(code: string): boolean {
   return c.startsWith("1.1.1.")
 }
 
+async function treasuryEntityNameByChartCode(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  popId: string,
+): Promise<Map<string, string>> {
+  const { data, error } = await supabase
+    .from("treasury_accounts")
+    .select(
+      `
+      parent_treasury_account_id,
+      accounting_chart_of_accounts ( code )
+    `,
+    )
+    .eq("pop_id", popId)
+    .not("parent_treasury_account_id", "is", null)
+
+  if (error || !data?.length) {
+    return new Map()
+  }
+
+  const parentIds = [
+    ...new Set(
+      data
+        .map((row) =>
+          row.parent_treasury_account_id != null
+            ? String(row.parent_treasury_account_id)
+            : null,
+        )
+        .filter((id): id is string => Boolean(id)),
+    ),
+  ]
+
+  const parentNames = new Map<string, string>()
+  if (parentIds.length > 0) {
+    const { data: parents } = await supabase
+      .from("treasury_accounts")
+      .select("id, name")
+      .eq("pop_id", popId)
+      .in("id", parentIds)
+    for (const parent of parents || []) {
+      if (parent.id) {
+        parentNames.set(String(parent.id), String(parent.name ?? "").trim())
+      }
+    }
+  }
+
+  const out = new Map<string, string>()
+  for (const row of data) {
+    const chart = row.accounting_chart_of_accounts as unknown as {
+      code?: string
+    } | null
+    const code = chart?.code?.trim()
+    const parentId =
+      row.parent_treasury_account_id != null
+        ? String(row.parent_treasury_account_id)
+        : null
+    if (!code || !parentId) continue
+    const entityName = parentNames.get(parentId)
+    if (entityName) out.set(code, entityName)
+  }
+  return out
+}
+
 function isVatRelatedAccountCode(code: string): boolean {
   const c = code.trim()
   return c.startsWith("1.1.2.") || c.startsWith("2.1.2.")
@@ -860,11 +1151,14 @@ export async function getAccountingCashFlow(
     if (!tb.success) {
       return { success: false, error: tb.error }
     }
+    const supabase = await createClient()
+    const entityByChartCode = await treasuryEntityNameByChartCode(supabase, popId)
     const rows: CashFlowRow[] = tb.rows
       .filter((r) => isCashEquivalentAccountCode(r.accountCode))
       .map((r) => ({
         accountCode: r.accountCode,
         accountName: r.accountName,
+        entityName: entityByChartCode.get(r.accountCode.trim()) ?? null,
         entradas: r.sumDebit,
         salidas: r.sumCredit,
         neto: r.balance,
@@ -957,6 +1251,133 @@ export async function getAccountingFinancialSummaries(
     },
   ]
   return { success: true, summaries }
+}
+
+export type ChartOfAccountsReportRow = ChartAccountRow & {
+  balance: number
+}
+
+export type ChartOfAccountsReportData = {
+  asOf: string
+  rows: ChartOfAccountsReportRow[]
+}
+
+function resolveChartOfAccountsAsOf(asOfDate: string | null): string {
+  const trimmed = asOfDate?.trim()
+  if (trimmed) return trimmed
+  return new Date().toISOString().slice(0, 10)
+}
+
+async function loadChartAccountRowsForPop(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  popId: string,
+): Promise<ChartAccountRow[] | { error: string }> {
+  const { data: accRows, error: accErr } = await supabase
+    .from("accounting_chart_of_accounts")
+    .select(
+      "id, parent_id, code, name, account_type, nature, level, is_movement_account",
+    )
+    .eq("pop_id", popId)
+    .order("code", { ascending: true })
+  if (accErr) {
+    return { error: accErr.message || "No se pudo cargar el plan de cuentas." }
+  }
+
+  const accountTypes: AccountType[] = [
+    "activo_corriente",
+    "activo_no_corriente",
+    "pasivo_corriente",
+    "pasivo_no_corriente",
+    "patrimonio_neto",
+    "ingresos",
+    "costos",
+    "gastos",
+  ]
+  const natures: AccountNature[] = ["deudora", "acreedora"]
+
+  return (accRows || []).map((row) => {
+    const accountTypeRaw = String(row.account_type ?? "")
+    const natureRaw = String(row.nature ?? "")
+    const parentId = row.parent_id
+    return {
+      id: String(row.id),
+      parentId:
+        parentId != null && String(parentId).length > 0
+          ? String(parentId)
+          : null,
+      code: String(row.code ?? ""),
+      name: String(row.name ?? ""),
+      accountType: accountTypes.includes(accountTypeRaw as AccountType)
+        ? (accountTypeRaw as AccountType)
+        : "gastos",
+      nature: natures.includes(natureRaw as AccountNature)
+        ? (natureRaw as AccountNature)
+        : "deudora",
+      level: Number(row.level ?? 1) || 1,
+      isMovementAccount: Boolean(row.is_movement_account),
+    }
+  })
+}
+
+export async function getChartOfAccountsReport(
+  popId: string,
+  asOfDate: string | null,
+): Promise<
+  | { success: true; data: ChartOfAccountsReportData }
+  | { success: false; error: string }
+> {
+  try {
+    const access = await validatePopAccess(popId)
+    if (!access.hasAccess || !access.isActive) {
+      return { success: false, error: access.error || "Sin acceso" }
+    }
+    const snap = await loadPopPermissionsSnapshot(popId)
+    if (
+      !permissionKeysInclude(
+        snap.keys,
+        POP_PERMS.ACCOUNTING_READ.resource,
+        POP_PERMS.ACCOUNTING_READ.action,
+      )
+    ) {
+      return {
+        success: false,
+        error: "No tenés permiso para consultar el plan de cuentas.",
+      }
+    }
+
+    const asOf = resolveChartOfAccountsAsOf(asOfDate)
+    const supabase = await createClient()
+    const accountsResult = await loadChartAccountRowsForPop(supabase, popId)
+    if ("error" in accountsResult) {
+      return { success: false, error: accountsResult.error }
+    }
+
+    const tb = await trialBalanceRowsForPopDateRange(popId, null, null, asOf)
+    if (!tb.success) {
+      return { success: false, error: tb.error }
+    }
+
+    const balanceByCode = new Map(
+      tb.rows.map((row) => [row.accountCode, row.balance]),
+    )
+
+    const rows: ChartOfAccountsReportRow[] = accountsResult.map((account) => ({
+      ...account,
+      balance: balanceByCode.get(account.code) ?? 0,
+    }))
+
+    rows.sort((a, b) =>
+      a.code.localeCompare(b.code, undefined, { numeric: true }),
+    )
+
+    return {
+      success: true,
+      data: { asOf, rows },
+    }
+  } catch (e: unknown) {
+    const message = e instanceof Error ? e.message : "Error desconocido"
+    return { success: false, error: message }
+  }
 }
 
 export async function createChartAccount(

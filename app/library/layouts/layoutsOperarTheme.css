@@ -43,17 +43,34 @@
   --layouts-operar-rail-discount-accent: #fbbf24;
 
   /* Toolbox slots — sombra-950 */
-  --layouts-operar-footer-slot-hover: color-mix(in srgb, var(--rootsy-sombra-900) 32%, transparent);
+  --layouts-operar-footer-slot-hover: color-mix(in srgb, #ffffff 3.5%, transparent);
   --layouts-operar-footer-slot-configured: color-mix(
     in srgb,
     var(--rootsy-savia-600) 14%,
     var(--rootsy-sombra-950)
   );
+  --layouts-operar-footer-slot-configured-hover: color-mix(
+    in srgb,
+    var(--layouts-operar-footer-slot-configured) 96.5%,
+    #ffffff 3.5%
+  );
+  --layouts-operar-footer-slot-pressed-shadow: inset 0 3px 7px
+    color-mix(in srgb, var(--rootsy-sombra-950) 34%, transparent);
+  --layouts-operar-footer-slot-configured-pressed-shadow: inset 0 3px 8px
+    color-mix(in srgb, var(--rootsy-sombra-950) 40%, transparent);
+  --layouts-operar-footer-slot-pressed-bg: color-mix(
+    in srgb,
+    var(--layouts-operar-footer-slot-hover) 82%,
+    var(--rootsy-sombra-950) 18%
+  );
+  --layouts-operar-footer-slot-configured-pressed-bg: color-mix(
+    in srgb,
+    var(--layouts-operar-footer-slot-configured) 93%,
+    var(--rootsy-sombra-950) 7%
+  );
   --layouts-operar-footer-slot-highlight: color-mix(in srgb, var(--rootsy-savia-400) 14%, transparent);
   --layouts-operar-footer-icon-bg: color-mix(in srgb, var(--rootsy-sombra-900) 38%, transparent);
   --layouts-operar-footer-icon-text: color-mix(in srgb, var(--rootsy-sombra-300) 88%, #ffffff);
-  --layouts-operar-footer-icon-hover-bg: color-mix(in srgb, var(--rootsy-sombra-900) 52%, transparent);
-  --layouts-operar-footer-icon-hover-text: color-mix(in srgb, var(--rootsy-bruma-100) 92%, #ffffff);
   --layouts-operar-footer-icon-configured-bg: color-mix(in srgb, var(--rootsy-savia-600) 32%, transparent);
   --layouts-operar-footer-icon-configured-text: color-mix(in srgb, var(--rootsy-savia-200) 92%, white);
 
@@ -85,6 +102,7 @@
   --layouts-operar-form-dark-text-muted: color-mix(in srgb, var(--rootsy-sombra-300) 55%, transparent);
   --layouts-operar-form-dark-label: color-mix(in srgb, var(--rootsy-bruma-100) 84%, var(--rootsy-sombra-300));
   --layouts-operar-form-dark-icon: color-mix(in srgb, var(--rootsy-sombra-300) 70%, transparent);
+  --layouts-operar-form-dark-table-row: color-mix(in srgb, var(--rootsy-sombra-950) 34%, transparent);
 
   /* Ticket — bruma + savia */
   --layouts-operar-light-cart-heading: var(--rootsy-bruma-600);
@@ -143,6 +161,7 @@
   --layouts-operar-light-cart-discount-badge-bg: color-mix(in srgb, var(--rootsy-savia-600) 16%, transparent);
   --layouts-operar-light-cart-discount-badge-text: var(--rootsy-savia-950);
   --layouts-operar-light-cart-line-text: var(--rootsy-bruma-900);
+  --layouts-operar-light-cart-field-error: #dc2626;
 }
 
 .rootsy-theme-pos.layouts-operar-body .layouts-operar-catalog-toolbar-control,
@@ -234,6 +253,15 @@
 .service-operate-snapshot-panel:has([data-ticket-empty="true"]) {
   --layouts-operar-ticket-rows: var(--layouts-operar-ticket-header-h) minmax(0, 1fr)
     minmax(var(--layouts-operar-toolbox-min-h), auto);
+}
+
+.service-operate-snapshot-panel:has([data-snapshot-tab="config"]) {
+  --layouts-operar-ticket-rows: var(--layouts-operar-ticket-header-h) minmax(0, 1fr);
+  grid-template-rows: auto minmax(0, 1fr);
+}
+
+.service-operate-snapshot-panel:has([data-snapshot-tab="config"]) [data-snapshot-tab-body] {
+  min-height: 0;
 }
 
 .service-operate-snapshot-panel:has([data-ticket-empty="true"]) [data-ticket-totals] {

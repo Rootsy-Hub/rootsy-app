@@ -1,6 +1,5 @@
 "use client"
 
-import "@/app/library/color/rootsyNaturePalette.css"
 import "@/app/library/libraryColorTheme.css"
 import { LayoutFinalComponentsModal } from "@/app/library/LayoutFinalComponentsModal"
 import { useLibraryPopContext } from "@/app/library/useLibraryPopContext"
@@ -17,6 +16,7 @@ import { PopWorkspaceProvider } from "@/context/PopWorkspaceContext"
 import { usePopWorkspaceOptional } from "@/context/PopWorkspaceContext"
 import { useAuth } from "@/context/AuthContextSupabase"
 import { popMenuHref } from "@/lib/popRoutes"
+import { cn } from "@/lib/utils"
 import { Layers3 } from "lucide-react"
 import { useState, type ReactNode } from "react"
 
@@ -55,12 +55,18 @@ function LibraryShellChromeInner({ children }: LibraryShellChromeProps) {
         popName={popWorkspace?.bootstrap?.popName ?? popContext.popName}
         title="Librería"
         contentFlush
+        usePopBackdrop={false}
+        rootClassName={cn(libraryThemeClass, "rootsy-app-light bg-background")}
         loading={popContext.loading || Boolean(popWorkspace?.loading)}
         backHref={backHref}
         userName={displayName}
         userAvatarSrc={avatarUrl}
         userRoleLabel={popWorkspace?.bootstrap?.roleLabel || undefined}
-        mainClassName={`${libraryShellMainClass} ${libraryThemeClass} rootsy-nature-palette min-h-0 flex-1 flex-col overflow-hidden`}
+        mainClassName={cn(
+          libraryShellMainClass,
+          libraryThemeClass,
+          "rootsy-app-light min-h-0 flex-1 flex-col overflow-hidden",
+        )}
         headerActions={
           <DataWorkspaceHeaderIconButton
             label="Componentes finales"

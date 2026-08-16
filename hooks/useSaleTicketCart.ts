@@ -36,6 +36,7 @@ import {
   type MostradorCartLineEditInput,
 } from "@/lib/menuCartLineMerge"
 import { menuArticleToProduct } from "@/lib/menuCatalogProduct"
+import type { TableSessionCheckoutSnapshot } from "@/app/[siteId]/[popId]/mesas/mesasCheckoutState"
 import type { PromotionCartSelection } from "@/lib/promotionPricing"
 import {
   normalizeCartItemKind,
@@ -399,6 +400,20 @@ export function useSaleTicketCart(input: {
     setPromoWizardTarget(null)
   }, [])
 
+  const restaurarDesdeCheckout = useCallback(
+    (snapshot: TableSessionCheckoutSnapshot) => {
+      setCarrito(ensureCartLineIds(snapshot.carrito))
+      setItemDetalleAbiertoId(null)
+      setItemDescuentoModo({ ...(snapshot.itemDescuentoModo ?? {}) })
+      setItemDescuentoDraft({ ...(snapshot.itemDescuentoDraft ?? {}) })
+      setItemDescuentoSuprimido({ ...(snapshot.itemDescuentoSuprimido ?? {}) })
+      setItemComentarios({ ...(snapshot.itemComentarios ?? {}) })
+      setPromoWizardOpen(false)
+      setPromoWizardTarget(null)
+    },
+    [],
+  )
+
   return {
     carrito,
     productosCatalogo,
@@ -416,6 +431,7 @@ export function useSaleTicketCart(input: {
     cambiarCantidadPorLinea,
     quitarQuantityDealApplication,
     limpiarCarrito,
+    restaurarDesdeCheckout,
     promoWizardOpen,
     setPromoWizardOpen,
     promoWizardTarget,

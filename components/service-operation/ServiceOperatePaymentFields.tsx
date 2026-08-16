@@ -1,6 +1,8 @@
 "use client"
 
 import { CheckoutOptionCard } from "@/components/checkout/CheckoutOptionCard"
+import type { CheckoutOptionCardTone } from "@/components/checkout/CheckoutOptionCard"
+import { RootsDialogErrorBanner } from "@/components/rootsy-dialog"
 import { SalePaymentDestinationDialog } from "@/components/sale-operation/SalePaymentDestinationDialog"
 import { rootsFormColumnClass } from "@/components/rootsy-form"
 import {
@@ -10,8 +12,10 @@ import {
 import type { OperationPaymentKind } from "@/lib/operationPaymentKinds"
 import {
   buildPaymentCheckoutSelection,
+  getPaymentCheckoutDestinations,
   getPaymentCheckoutKinds,
   paymentCheckoutKindHasDestinationStep,
+  paymentCheckoutKindIcon,
   paymentCheckoutKindLabel,
   paymentCheckoutKindSubtitle,
   resolvePaymentKindSelection,
@@ -22,25 +26,51 @@ import {
   treasuryPaymentOptionKey,
   type TreasuryPaymentContext,
 } from "@/lib/treasuryPaymentOptions"
+import {
+  SERVICE_CHARGE_PAYMENT_PENDING,
+  SERVICE_CHARGE_PAYMENT_PENDING_LABEL,
+} from "@/app/[siteId]/[popId]/active-services/serviceChargeCreateFormState"
 import { cn } from "@/lib/utils"
 import {
-  ArrowLeftRight,
   Banknote,
   CircleAlert,
+  Clock3,
   CreditCard,
+  Landmark,
 } from "lucide-react"
-import { useCallback, useMemo, useState } from "react"
+import { useCallback, useEffect, useMemo, useState } from "react"
 
 const SERVICE_PAYMENT_FLOW = "service_charge" as const
+
+type PaymentPickerStep = "menu" | "destination"
+
+export type ServiceOperatePaymentInlineNavigation = {
+  title: string
+  onBack: () => void
+}
 
 type Props = {
   paymentMethodKey: string
   onChange: (paymentMethodKey: string) => void
   treasuryContext: TreasuryPaymentContext | null
   disabled?: boolean
+  tone?: CheckoutOptionCardTone
+  showTitle?: boolean
+  onSelectionComplete?: () => void
+  /** Navegación de destino dentro del contenedor (modal) en lugar de un diálogo anidado. */
+  inlineNavigation?: boolean
+  /** true mientras el contenedor padre está abierto — resetea el paso al cerrar. */
+  navigationSessionActive?: boolean
+  onInlineNavigationChange?: (
+    navigation: ServiceOperatePaymentInlineNavigation | null,
+  ) => void
 }
 
 function kindIcon(kind: OperationPaymentKind) {
+  return paymentCheckoutKindIcon(kind)
+}
+
+function destinationIcon(kind: OperationPaymentKind) {
   switch (kind) {
     case "cash":
       return Banknote
@@ -48,9 +78,9 @@ function kindIcon(kind: OperationPaymentKind) {
     case "card_credit":
       return CreditCard
     case "transfer":
-      return ArrowLeftRight
+      return Landmark
     default:
-      return Banknote
+      return Landmark
   }
 }
 
@@ -73,8 +103,15 @@ export function ServiceOperatePaymentFields({
   onChange,
   treasuryContext,
   disabled = false,
+  tone = "dark",
+  showTitle = true,
+  onSelectionComplete,
+  inlineNavigation = false,
+  navigationSessionActive = true,
+  onInlineNavigationChange,
 }: Props) {
   const [pickError, setPickError] = useState<string | null>(null)
+  const [step, setStep] = useState<PaymentPickerStep>("menu")
   const [destinationDialogOpen, setDestinationDialogOpen] = useState(false)
   const [pendingKind, setPendingKind] = useState<OperationPaymentKind | null>(
     null,
@@ -90,6 +127,19 @@ export function ServiceOperatePaymentFields({
 
   const selectedKind = selected?.kind ?? null
 
+  const resetNavigation = useCallback(() => {
+    setStep("menu")
+    setPendingKind(null)
+    setDestinationDialogOpen(false)
+    setPickError(null)
+  }, [])
+
+  useEffect(() => {
+    if (!navigationSessionActive) {
+      resetNavigation()
+    }
+  }, [navigationSessionActive, resetNavigation])
+
   const applySelection = useCallback(
     (selection: PaymentMethodSelection) => {
       onChange(
@@ -99,14 +149,49 @@ export function ServiceOperatePaymentFields({
         }),
       )
       setPickError(null)
+      onSelectionComplete?.()
     },
-    [onChange],
+    [onChange, onSelectionComplete],
   )
 
-  const openDestinationForKind = useCallback((kind: OperationPaymentKind) => {
-    setPendingKind(kind)
-    setDestinationDialogOpen(true)
+  const openDestinationForKind = useCallback(
+    (kind: OperationPaymentKind) => {
+      if (inlineNavigation) {
+        setPendingKind(kind)
+        setStep("destination")
+        return
+      }
+      setPendingKind(kind)
+      setDestinationDialogOpen(true)
+    },
+    [inlineNavigation],
+  )
+
+  const handleInlineBack = useCallback(() => {
+    setStep("menu")
+    setPendingKind(null)
+    setPickError(null)
   }, [])
+
+  useEffect(() => {
+    if (!inlineNavigation || !onInlineNavigationChange) return
+
+    if (step === "destination" && pendingKind) {
+      onInlineNavigationChange({
+        title: paymentCheckoutKindLabel(SERVICE_PAYMENT_FLOW, pendingKind),
+        onBack: handleInlineBack,
+      })
+      return
+    }
+
+    onInlineNavigationChange(null)
+  }, [
+    handleInlineBack,
+    inlineNavigation,
+    onInlineNavigationChange,
+    pendingKind,
+    step,
+  ])
 
   const handleKindPick = useCallback(
     (kind: OperationPaymentKind) => {
@@ -147,97 +232,166 @@ export function ServiceOperatePaymentFields({
     [applySelection, disabled, openDestinationForKind, selectedKind, treasuryContext],
   )
 
+  const handleDestinationPick = useCallback(
+    (destinationId: string, destinationName: string) => {
+      if (!treasuryContext || !pendingKind) return
+      applySelection(
+        buildPaymentCheckoutSelection(
+          SERVICE_PAYMENT_FLOW,
+          pendingKind,
+          destinationId,
+          treasuryContext,
+          destinationName,
+        ),
+      )
+    },
+    [applySelection, pendingKind, treasuryContext],
+  )
+
   const paymentKinds = getPaymentCheckoutKinds(SERVICE_PAYMENT_FLOW)
+
+  const destinationItems = useMemo(() => {
+    if (!treasuryContext || !pendingKind || step !== "destination") return []
+    return getPaymentCheckoutDestinations(
+      SERVICE_PAYMENT_FLOW,
+      pendingKind,
+      treasuryContext,
+    )
+  }, [pendingKind, step, treasuryContext])
+
+  const loadingTextClass =
+    tone === "dark"
+      ? layoutsOperarFormDarkMutedTextClass
+      : "text-[var(--rootsy-bruma-500)]"
 
   return (
     <div className={rootsFormColumnClass}>
-      <p
-        className={cn(
-          "text-xs font-medium uppercase tracking-wide",
-          layoutsOperarFormDarkMutedTextClass,
-        )}
-      >
-        Medio de pago
-      </p>
+      {showTitle && step === "menu" ? (
+        <p
+          className={cn(
+            "text-xs font-medium uppercase tracking-wide",
+            layoutsOperarFormDarkMutedTextClass,
+          )}
+        >
+          Medio de pago
+        </p>
+      ) : null}
 
-      <ul
-        className="flex flex-col gap-2"
-        role="listbox"
-        aria-label="Medios de pago"
-      >
-        <li>
-          <CheckoutOptionCard
-            title="Sin definir"
-            subtitle="Podés cobrarlo más adelante desde Servicios activos"
-            selected={!paymentMethodKey}
-            tone="dark"
-            disabled={disabled}
-            onClick={() => {
-              onChange("")
-              setPickError(null)
-            }}
-            icon={Banknote}
-            trailing="none"
-          />
-        </li>
-
-        {!treasuryContext ? (
+      {step === "menu" ? (
+        <ul
+          className="flex flex-col gap-2"
+          role="listbox"
+          aria-label="Medios de pago"
+        >
           <li>
-            <p className={cn("px-1 text-sm", layoutsOperarFormDarkMutedTextClass)}>
-              Cargando medios de pago…
-            </p>
+            <CheckoutOptionCard
+              title={SERVICE_CHARGE_PAYMENT_PENDING_LABEL}
+              subtitle="Podés cobrarlo más adelante"
+              selected={paymentMethodKey === SERVICE_CHARGE_PAYMENT_PENDING}
+              tone={tone}
+              disabled={disabled}
+              onClick={() => {
+                onChange(SERVICE_CHARGE_PAYMENT_PENDING)
+                setPickError(null)
+                onSelectionComplete?.()
+              }}
+              icon={Clock3}
+              trailing="none"
+            />
           </li>
-        ) : (
-          paymentKinds.map((kind) => {
-            const hasSubstep = paymentCheckoutKindHasDestinationStep(
-              SERVICE_PAYMENT_FLOW,
-              kind,
-              treasuryContext,
-            )
-            const isSelected = selectedKind === kind
-            const subtitle =
-              isSelected && selected
-                ? selected.label
-                : paymentCheckoutKindSubtitle(
-                    SERVICE_PAYMENT_FLOW,
-                    kind,
-                    treasuryContext,
-                  )
+
+          {!treasuryContext ? (
+            <li>
+              <p className={cn("px-1 text-sm", loadingTextClass)}>
+                Cargando medios de pago…
+              </p>
+            </li>
+          ) : (
+            paymentKinds.map((kind) => {
+              const hasSubstep = paymentCheckoutKindHasDestinationStep(
+                SERVICE_PAYMENT_FLOW,
+                kind,
+                treasuryContext,
+              )
+              const isSelected = selectedKind === kind
+              const subtitle =
+                isSelected && selected
+                  ? selected.label
+                  : paymentCheckoutKindSubtitle(
+                      SERVICE_PAYMENT_FLOW,
+                      kind,
+                      treasuryContext,
+                    )
+
+              return (
+                <li key={kind}>
+                  <CheckoutOptionCard
+                    title={paymentCheckoutKindLabel(SERVICE_PAYMENT_FLOW, kind)}
+                    subtitle={subtitle}
+                    selected={isSelected}
+                    tone={tone}
+                    disabled={disabled}
+                    onClick={() => handleKindPick(kind)}
+                    icon={kindIcon(kind)}
+                    trailing={
+                      hasSubstep ? "chevron" : isSelected ? "check" : "none"
+                    }
+                  />
+                </li>
+              )
+            })
+          )}
+        </ul>
+      ) : null}
+
+      {step === "destination" && pendingKind ? (
+        <ul
+          className="flex flex-col gap-2"
+          role="listbox"
+          aria-label={paymentCheckoutKindLabel(SERVICE_PAYMENT_FLOW, pendingKind)}
+        >
+          {destinationItems.map((dest) => {
+            const Icon = destinationIcon(pendingKind)
+            const isSelected =
+              selected != null &&
+              pendingKind === selected.kind &&
+              selected.treasuryAccountId === dest.id
 
             return (
-              <li key={kind}>
+              <li key={dest.id}>
                 <CheckoutOptionCard
-                  title={paymentCheckoutKindLabel(SERVICE_PAYMENT_FLOW, kind)}
-                  subtitle={subtitle}
+                  title={dest.name}
                   selected={isSelected}
-                  tone="dark"
+                  tone={tone}
                   disabled={disabled}
-                  onClick={() => handleKindPick(kind)}
-                  icon={kindIcon(kind)}
-                  trailing={
-                    hasSubstep ? "chevron" : isSelected ? "check" : "none"
-                  }
+                  onClick={() => handleDestinationPick(dest.id, dest.name)}
+                  icon={Icon}
+                  trailing={isSelected ? "check" : "none"}
                 />
               </li>
             )
-          })
-        )}
-      </ul>
-
-      {pickError ? (
-        <div
-          className={cn(layoutsOperarFormDarkErrorBannerClass, "mt-3")}
-          role="alert"
-        >
-          <CircleAlert
-            className="size-5 shrink-0 self-center text-[#fca5a5]"
-            aria-hidden
-          />
-          <span className="min-w-0 flex-1 text-sm">{pickError}</span>
-        </div>
+          })}
+        </ul>
       ) : null}
 
-      {pendingKind ? (
+      {pickError ? (
+        tone === "dark" ? (
+          <div
+            className={cn(layoutsOperarFormDarkErrorBannerClass, "mt-3")}
+            role="alert"
+          >
+            <CircleAlert
+              className="size-5 shrink-0 self-center text-[#fca5a5]"
+              aria-hidden
+            />
+            <span className="min-w-0 flex-1 text-sm">{pickError}</span>
+          </div>
+        ) : (
+          <RootsDialogErrorBanner className="mt-3">{pickError}</RootsDialogErrorBanner>
+        )
+      ) : null}
+
+      {!inlineNavigation && pendingKind ? (
         <SalePaymentDestinationDialog
           key={pendingKind}
           flow={SERVICE_PAYMENT_FLOW}

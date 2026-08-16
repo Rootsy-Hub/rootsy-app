@@ -1,9 +1,7 @@
 /**
  * Plan de cuentas modelo Argentina (`demo_seed` arg_v3) insertado por
- * `public.seed_pop_site_defaults` al crear un POP con sitio `arg`.
- * Fuente de verdad: `rootsy-core/docs/supabase/seed_pop_site_defaults.sql`.
- * Si cambiás el seed SQL, actualizá este arreglo para que el código y la doc
- * coincidan.
+ * `public.ensure_pop_arg_v3_chart_accounts` al crear un POP (trigger en `pops`).
+ * Mantener sincronizado con `supabase/migrations/*_pop_arg_v3_chart_seed.sql`.
  */
 export type ArgV3ChartAccountType =
   | "activo_corriente"
@@ -114,10 +112,37 @@ export const ARG_V3_DEFAULT_CHART_ACCOUNTS: readonly ArgV3DefaultChartRow[] = [
     nature: "acreedora",
     level: 4,
   },
-  { code: "4.1.1.01", name: "Ventas", accountType: "ingresos", nature: "acreedora", level: 4 },
+  {
+    code: "3.2.1.02",
+    name: "Ajuste por inventario inicial",
+    accountType: "patrimonio_neto",
+    nature: "acreedora",
+    level: 4,
+  },
+  {
+    code: "4.1.1.01",
+    name: "Ventas — comercio",
+    accountType: "ingresos",
+    nature: "acreedora",
+    level: 4,
+  },
   {
     code: "4.1.1.02",
-    name: "Ventas de servicios",
+    name: "Ventas — servicios",
+    accountType: "ingresos",
+    nature: "acreedora",
+    level: 4,
+  },
+  {
+    code: "4.1.1.03",
+    name: "Ventas — mesas",
+    accountType: "ingresos",
+    nature: "acreedora",
+    level: 4,
+  },
+  {
+    code: "4.1.1.04",
+    name: "Ventas — mostrador",
     accountType: "ingresos",
     nature: "acreedora",
     level: 4,
@@ -203,6 +228,12 @@ export const CHART_INGRESO_AJUSTE_CODES: readonly string[] = [
   ARG_V3_CHART_CODE.ventas,
 ]
 
+/** Contrapartida de stock inicial (saldo de apertura, no ingreso del período). */
+export const CHART_INVENTARIO_INICIAL_PATRIMONIO_CODES: readonly string[] = [
+  "3.2.1.02",
+  "3.2.1.01",
+]
+
 export const CHART_GASTO_MERMA_CODES: readonly string[] = [
   ARG_V3_CHART_CODE.mermasInventario,
   "6.2.1.02",
@@ -213,8 +244,11 @@ export const CHART_IVA_PAGAR_CODES: readonly string[] = ["2.1.2.01"]
 
 export const CHART_COSTO_VENTAS_CODES: readonly string[] = ["5.1.1.01"]
 
+/** Fallback genérico cuando no hay cuenta por canal (POPs viejos). */
 export const CHART_VENTAS_GRAVADAS_CODES: readonly string[] = [
   ARG_V3_CHART_CODE.ventas,
+  "4.1.1.03",
+  "4.1.1.04",
   "4.1.1.02",
 ]
 
@@ -260,6 +294,15 @@ export const CHART_PROVEEDORES_CODES: readonly string[] = [
   "2.1.1.01",
   "2.1.1.02",
 ]
+
+/** Pasivo: saldo en cuenta corriente con proveedores (sin documentos ni tarjetas). */
+export const CHART_PROVEEDORES_CC_CODES: readonly string[] = ["2.1.1.01"]
+
+/** Activo: cheques y documentos de terceros pendientes de cobro. */
+export const CHART_DOCUMENTOS_POR_COBRAR_CODES: readonly string[] = ["1.1.2.02"]
+
+/** Pasivo: cheques y documentos emitidos pendientes de pago. */
+export const CHART_DOCUMENTOS_A_PAGAR_CODES: readonly string[] = ["2.1.1.02"]
 
 /** Pasivo: deuda con emisor de tarjeta corporativa (compras/gastos con crédito). */
 export const CHART_TARJETAS_CREDITO_A_PAGAR_CODES: readonly string[] = [

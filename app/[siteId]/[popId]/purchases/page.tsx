@@ -4,11 +4,10 @@ import withAuth from "@/hoc/withAuth"
 import {
   getPurchaseCatalog,
   type PurchaseCatalogArticle,
-  type PurchaseCatalogCategory,
+  type PurchaseCatalogCategorySection,
   type PurchaseCatalogArticleCost,
   type PurchaseCatalogPaymentOption,
   type PurchaseCatalogSupplier,
-  type PurchaseKind,
 } from "@/app/[siteId]/[popId]/purchases/actions"
 import { PurchaseCatalogBrowser } from "@/components/purchase-operation/PurchaseCatalogBrowser"
 import { PurchaseOperationToolbox } from "@/components/purchase-operation/PurchaseOperationToolbox"
@@ -24,12 +23,17 @@ import { GeneralDiscountDialog } from "@/components/checkout/GeneralDiscountDial
 import {
   defaultPurchaseCheckoutPaymentSelection,
   isPurchasePaymentSelectionValid,
+  resolvePurchaseToolboxPaymentDisplay,
 } from "@/lib/purchaseCheckoutPayment"
 import type { TreasuryPaymentContext } from "@/lib/treasuryPaymentOptions"
 import {
   CLIENT_IVA_CONDITION_OPTIONS,
 } from "@/app/[siteId]/[popId]/clients/clientIvaConstants"
 import { completePurchase } from "@/app/[siteId]/[popId]/purchases/completePurchase"
+import {
+  createPurchaseOrder,
+  getPurchaseOrderDetail,
+} from "@/app/[siteId]/[popId]/purchase-orders/actions"
 import { resolveCatalogProductImage } from "@/lib/menuCatalogProduct"
 import { resolveSaleLineDiscount } from "@/lib/saleLineDiscount"
 import { SUPPLIER_ACCOUNT_PAYMENT_LABEL } from "@/lib/operationPaymentLabels"
@@ -41,11 +45,14 @@ import {
   DataWorkspaceOperationsLayout,
   OperationsModuleBackdrop,
 } from "@/components/layouts-module/DataWorkspaceOperationsLayout"
+import { dataWorkspaceModuleHeaderVariant } from "@/components/layouts-module/DataWorkspaceModuleLayout"
+import { DataWorkspaceHeaderTooltipIconButton } from "@/components/layouts/DataWorkspaceHeaderTooltipIconButton"
+import { RootsSpinner } from "@/components/rootsy-spinner"
 import { LayoutsOperarMainGrid } from "@/components/layouts-module/LayoutsOperarMainGrid"
 import { layoutsOperarSummaryPanelClass } from "@/app/library/layouts/layoutsOperarStyles"
 import { useDataWorkspaceSidebar } from "@/components/layouts/useDataWorkspaceSidebar"
 import { useAuth } from "@/context/AuthContextSupabase"
-import { useParams } from "next/navigation"
+import { useParams, useRouter, useSearchParams } from "next/navigation"
 import {
   useCallback,
   useEffect,
@@ -53,12 +60,19 @@ import {
   useRef,
   useState,
 } from "react"
-import { Loader2, Truck } from "lucide-react"
+import { Loader2, Truck, FileText } from "lucide-react"
 import { usePadronAutofillRazonSocial } from "@/hooks/usePadronAutofillRazonSocial"
 import { useCartListScrollHighlight } from "@/hooks/useCartListScrollHighlight"
 import { cn } from "@/lib/utils"
+import { derivePurchaseKindFromCartItems } from "@/lib/purchaseKind"
 import { purchaseCartLineId } from "@/lib/purchaseCartLine"
-import { saleQuantityFromCostPurchase } from "@/lib/articleCosts"
+import {
+  buildPurchaseOrderCheckoutSnapshot,
+  buildPurchaseOrderLineSummariesFromCart,
+  formatPurchaseOrderDiscountLabel,
+  formatPurchaseOrderPaymentLabel,
+} from "@/lib/purchaseOrderCheckout"
+import type { PurchaseCheckoutSnapshot } from "@/lib/purchaseOrderCheckoutState"
 import {
   AlertDialog,
   AlertDialogAction,
@@ -82,6 +96,7 @@ type ProveedorCompraSeleccionado = {
   name: string
   taxId: string
   ivaCondition: string | null
+  defaultInvoiceTypeLabel: string | null
 }
 
 const IVA_LABEL_BY_VALUE = Object.fromEntries(
@@ -93,36 +108,6 @@ function labelCondicionIva(value: string | null | undefined) {
   return IVA_LABEL_BY_VALUE[value] ?? value
 }
 
-function derivePurchaseKindFromCart(
-  cart: ItemCarrito[],
-  articles: PurchaseCatalogArticle[],
-): PurchaseKind {
-  const counts = new Map<PurchaseKind, number>()
-  for (const item of cart) {
-    const article = articles.find((a) => a.id === item.productoId)
-    const cost = article?.costs.find((c) => c.id === item.articleCostId)
-    if (!article || !cost) continue
-    const saleQty = saleQuantityFromCostPurchase(
-      item.cantidad,
-      cost.saleUnitsPerCostUnit,
-    )
-    counts.set(
-      article.itemKind,
-      (counts.get(article.itemKind) ?? 0) + saleQty,
-    )
-  }
-  if (counts.size === 0) return "merchandise"
-  let best: PurchaseKind = "merchandise"
-  let bestQty = -1
-  for (const [kind, qty] of counts) {
-    if (qty > bestQty) {
-      best = kind
-      bestQty = qty
-    }
-  }
-  return best
-}
-
 function articleToProducto(a: PurchaseCatalogArticle): PurchaseCatalogProduct {
   return {
     id: a.id,
@@ -130,6 +115,7 @@ function articleToProducto(a: PurchaseCatalogArticle): PurchaseCatalogProduct {
     descripcion: a.description.trim() ? a.description : "—",
     iva: a.iva,
     categoria: a.categoryName.trim() ? a.categoryName : "—",
+    categoriaFiltro: `${a.itemKind}:${a.categoryId}`,
     imagen: resolveCatalogProductImage(a.id, a.imageUrl),
     unitOfMeasure: a.unitOfMeasure,
     costs: a.costs,
@@ -150,6 +136,9 @@ function parseUnitCost(raw: string, fallback: number): number {
 
 function PurchasesPage() {
   const params = useParams()
+  const router = useRouter()
+  const searchParams = useSearchParams()
+  const orderIdFromUrl = searchParams.get("orderId")
   const siteId = typeof params?.siteId === "string" ? params.siteId : ""
   const popId = typeof params?.popId === "string" ? params.popId : undefined
   const {
@@ -161,8 +150,8 @@ function PurchasesPage() {
   const [catalogArticles, setCatalogArticles] = useState<PurchaseCatalogArticle[]>(
     [],
   )
-  const [catalogCategories, setCatalogCategories] = useState<
-    PurchaseCatalogCategory[]
+  const [catalogCategorySections, setCatalogCategorySections] = useState<
+    PurchaseCatalogCategorySection[]
   >([])
   const [popName, setPopName] = useState("")
   const [catalogLoading, setCatalogLoading] = useState(true)
@@ -172,12 +161,6 @@ function PurchasesPage() {
   const [treasuryPaymentContext, setTreasuryPaymentContext] =
     useState<TreasuryPaymentContext | null>(null)
   const [canReadPaymentMethods, setCanReadPaymentMethods] = useState(false)
-
-  const categoriasNav = useMemo(() => {
-    return [
-      ...new Set(catalogCategories.map((c) => c.name).filter(Boolean)),
-    ]
-  }, [catalogCategories])
 
   const productosCatalogo = useMemo(
     () => catalogArticles.map(articleToProducto),
@@ -195,7 +178,7 @@ function PurchasesPage() {
     const res = await getPurchaseCatalog(popId)
     if (!res.success) {
       setCatalogArticles([])
-      setCatalogCategories([])
+      setCatalogCategorySections([])
       setPopName("")
       setCanCreate(false)
       setCanUpdateArticles(false)
@@ -206,7 +189,7 @@ function PurchasesPage() {
       return
     }
     setCatalogArticles(res.articles)
-    setCatalogCategories(res.categories)
+    setCatalogCategorySections(res.categorySections)
     setPopName(res.popName)
     setCanCreate(res.canCreate)
     setCanUpdateArticles(res.canUpdateArticles)
@@ -221,20 +204,21 @@ function PurchasesPage() {
   }, [loadCatalog])
 
   useEffect(() => {
-    if (!canReadPaymentMethods || !treasuryPaymentContext) return
+    if (!canReadPaymentMethods || !treasuryPaymentContext || orderIdFromUrl) return
     setMetodoPagoSeleccionado((prev) => {
       if (prev && isPurchasePaymentSelectionValid(prev, treasuryPaymentContext)) {
         return prev
       }
       return defaultPurchaseCheckoutPaymentSelection(treasuryPaymentContext)
     })
-  }, [canReadPaymentMethods, treasuryPaymentContext])
+  }, [canReadPaymentMethods, treasuryPaymentContext, orderIdFromUrl])
 
   const [carrito, setCarrito] = useState<ItemCarrito[]>([])
   const [costPickerArticleId, setCostPickerArticleId] = useState<string | null>(
     null,
   )
   const [costPickerOpen, setCostPickerOpen] = useState(false)
+  const [costPickerPendingQty, setCostPickerPendingQty] = useState(1)
   const cartScrollHighlight = useCartListScrollHighlight()
   const [itemUnitCosts, setItemUnitCosts] = useState<Record<string, string>>({})
   const [itemUpdateArticleCost, setItemUpdateArticleCost] = useState<
@@ -315,6 +299,25 @@ function PurchasesPage() {
   const [comprarConfirmOpen, setComprarConfirmOpen] = useState(false)
   const [compraSubmitting, setCompraSubmitting] = useState(false)
   const [compraError, setCompraError] = useState<string | null>(null)
+  const [ordenConfirmOpen, setOrdenConfirmOpen] = useState(false)
+  const [ordenSubmitting, setOrdenSubmitting] = useState(false)
+  const [ordenError, setOrdenError] = useState<string | null>(null)
+
+  const orderLoadRef = useRef<string | null>(null)
+  const orderLoadingRef = useRef<string | null>(null)
+  const [orderRestorePending, setOrderRestorePending] = useState(
+    () => Boolean(orderIdFromUrl),
+  )
+
+  useEffect(() => {
+    if (!orderIdFromUrl) {
+      setOrderRestorePending(false)
+      return
+    }
+    if (orderLoadRef.current !== orderIdFromUrl) {
+      setOrderRestorePending(true)
+    }
+  }, [orderIdFromUrl])
 
   useEffect(() => {
     const today = new Date()
@@ -445,6 +448,16 @@ function PurchasesPage() {
     return metodoPagoSeleccionado?.label ?? "Elegir forma de pago"
   }, [payOnSupplierAccount, metodoPagoSeleccionado])
 
+  const toolboxPaymentDisplay = useMemo(
+    () =>
+      resolvePurchaseToolboxPaymentDisplay({
+        payOnSupplierAccount,
+        metodoPagoSeleccionado,
+        treasuryPaymentContext,
+      }),
+    [payOnSupplierAccount, metodoPagoSeleccionado, treasuryPaymentContext],
+  )
+
   const comprobanteToolboxLabel = useMemo(() => {
     if (comprobanteTipo != null) return comprobanteTipo
     if (documentNumber.trim()) return documentNumber.trim()
@@ -504,7 +517,7 @@ function PurchasesPage() {
     setCompraError(null)
     setCompraSubmitting(true)
     try {
-      const purchaseKind = derivePurchaseKindFromCart(carrito, catalogArticles)
+      const purchaseKind = derivePurchaseKindFromCartItems(carrito, catalogArticles)
       const res = await completePurchase(popId, {
         supplierId:
           proveedorSeleccionado && !proveedorSeleccionado.manual
@@ -584,6 +597,201 @@ function PurchasesPage() {
     loadCatalog,
   ])
 
+  const ordenComprobanteLabel = confirmComprobanteLabel || "Sin comprobante"
+  const ordenPaymentLabel = pagoConfigurado
+    ? pagoResumenLabel
+    : "Sin medio de pago"
+  const ordenDiscountLabel = formatPurchaseOrderDiscountLabel({
+    modoDescuento,
+    valorDescuentoPorcentaje,
+    valorDescuentoFijo,
+    descuentoMonto,
+  })
+
+  const aplicarOrdenEnCompra = useCallback(
+    (snapshot: PurchaseCheckoutSnapshot) => {
+      setCarrito(snapshot.carrito.map((item) => ({ ...item })))
+      setProveedorSeleccionado(snapshot.proveedorSeleccionado)
+      setManualNombreProveedor(snapshot.manualNombreProveedor)
+      setProveedorTaxId(snapshot.proveedorTaxId)
+      setCompraIvaCondition(snapshot.compraIvaCondition)
+      setDocumentNumber(snapshot.documentNumber)
+      setDocumentDate(snapshot.documentDate)
+      setDueDate(snapshot.dueDate)
+      setComprobanteTipo(snapshot.comprobanteTipo)
+      setComprobanteAdjunto(null)
+      if (comprobanteAdjuntoInputRef.current) {
+        comprobanteAdjuntoInputRef.current.value = ""
+      }
+      setPayOnSupplierAccount(snapshot.payOnSupplierAccount)
+      setMetodoPagoSeleccionado(
+        snapshot.metodoPagoSeleccionado &&
+          treasuryPaymentContext &&
+          isPurchasePaymentSelectionValid(
+            snapshot.metodoPagoSeleccionado,
+            treasuryPaymentContext,
+          )
+          ? snapshot.metodoPagoSeleccionado
+          : snapshot.payOnSupplierAccount
+            ? null
+            : snapshot.metodoPagoSeleccionado,
+      )
+      setCardInstallments(snapshot.cardInstallments)
+      setModoDescuento(snapshot.modoDescuento)
+      setValorDescuentoPorcentaje(snapshot.valorDescuentoPorcentaje)
+      setValorDescuentoFijo(snapshot.valorDescuentoFijo)
+      setItemUnitCosts({ ...snapshot.itemUnitCosts })
+      setItemUpdateArticleCost({ ...snapshot.itemUpdateArticleCost })
+      setItemDescuentoModo({ ...snapshot.itemDescuentoModo })
+      setItemDescuentoDraft({ ...snapshot.itemDescuentoDraft })
+      setItemComentarios({ ...snapshot.itemComentarios })
+      setCompraError(null)
+      setOrdenError(null)
+    },
+    [treasuryPaymentContext],
+  )
+
+  const confirmarOrden = useCallback(async () => {
+    if (!popId || !hayItemsEnPedido) return
+    setOrdenError(null)
+    setOrdenSubmitting(true)
+    try {
+      const checkoutSnapshot = buildPurchaseOrderCheckoutSnapshot({
+        carrito,
+        proveedorSeleccionado,
+        manualNombreProveedor,
+        proveedorTaxId,
+        compraIvaCondition,
+        documentNumber,
+        documentDate,
+        dueDate,
+        comprobanteTipo,
+        attachmentFileName: comprobanteAdjunto?.name ?? null,
+        payOnSupplierAccount,
+        metodoPagoSeleccionado,
+        cardInstallments,
+        modoDescuento,
+        valorDescuentoPorcentaje,
+        valorDescuentoFijo,
+        itemUnitCosts,
+        itemUpdateArticleCost,
+        itemDescuentoModo,
+        itemDescuentoDraft,
+        itemComentarios,
+      })
+      const res = await createPurchaseOrder(popId, {
+        checkoutSnapshot,
+        subtotal,
+        discountTotal: descuentoMonto,
+        total,
+        supplierId:
+          proveedorSeleccionado?.id && !proveedorSeleccionado.manual
+            ? proveedorSeleccionado.id
+            : null,
+        supplierName: confirmSupplierLabel,
+        supplierTaxId:
+          proveedorTaxId.trim() || proveedorSeleccionado?.taxId || null,
+        metadata: {
+          comprobanteLabel: ordenComprobanteLabel,
+          paymentLabel: formatPurchaseOrderPaymentLabel({
+            payOnSupplierAccount,
+            metodoPagoSeleccionado,
+          }),
+          discountLabel: ordenDiscountLabel,
+          lineSummaries: buildPurchaseOrderLineSummariesFromCart({
+            items: itemsDetallados.map((item) => ({
+              lineId: item.lineId,
+              cantidad: item.cantidad,
+              productName: item.producto?.nombre ?? "Artículo",
+              costLabel: item.cost?.name ?? "",
+              unitCost: parseUnitCost(
+                itemUnitCosts[item.lineId] ?? "",
+                item.cost?.unitPrice ?? 0,
+              ),
+            })),
+            itemDescuentoModo,
+            itemDescuentoDraft,
+          }),
+        },
+      })
+      if (!res.success) {
+        setOrdenError(res.error)
+        return
+      }
+      setOrdenConfirmOpen(false)
+      limpiarCompra()
+      router.push(`/${siteId}/${popId}/purchase-orders`)
+    } finally {
+      setOrdenSubmitting(false)
+    }
+  }, [
+    popId,
+    hayItemsEnPedido,
+    carrito,
+    proveedorSeleccionado,
+    manualNombreProveedor,
+    proveedorTaxId,
+    compraIvaCondition,
+    documentNumber,
+    documentDate,
+    dueDate,
+    comprobanteTipo,
+    comprobanteAdjunto,
+    payOnSupplierAccount,
+    metodoPagoSeleccionado,
+    cardInstallments,
+    modoDescuento,
+    valorDescuentoPorcentaje,
+    valorDescuentoFijo,
+    itemUnitCosts,
+    itemUpdateArticleCost,
+    itemDescuentoModo,
+    itemDescuentoDraft,
+    itemComentarios,
+    subtotal,
+    descuentoMonto,
+    total,
+    confirmSupplierLabel,
+    ordenComprobanteLabel,
+    ordenDiscountLabel,
+    itemsDetallados,
+    limpiarCompra,
+    router,
+    siteId,
+  ])
+
+  useEffect(() => {
+    if (!orderIdFromUrl || !popId || catalogLoading) return
+    if (orderLoadRef.current === orderIdFromUrl) return
+    if (orderLoadingRef.current === orderIdFromUrl) return
+
+    orderLoadingRef.current = orderIdFromUrl
+
+    void (async () => {
+      try {
+        const res = await getPurchaseOrderDetail(popId, orderIdFromUrl)
+        if (!res.success) {
+          setCompraError(res.error)
+          setOrderRestorePending(false)
+          return
+        }
+        orderLoadRef.current = orderIdFromUrl
+        aplicarOrdenEnCompra(res.order.checkoutSnapshot)
+        router.replace(`/${siteId}/${popId}/purchases`, { scroll: false })
+      } finally {
+        orderLoadingRef.current = null
+        setOrderRestorePending(false)
+      }
+    })()
+  }, [
+    aplicarOrdenEnCompra,
+    catalogLoading,
+    orderIdFromUrl,
+    popId,
+    router,
+    siteId,
+  ])
+
   const proveedorCatalogoBloqueado =
     proveedorSeleccionado != null && !proveedorSeleccionado.manual
 
@@ -601,25 +809,27 @@ function PurchasesPage() {
       name: s.name,
       taxId: s.taxId,
       ivaCondition: null,
+      defaultInvoiceTypeLabel: null,
     })
     setManualNombreProveedor(s.name)
     setProveedorTaxId(s.taxId ?? "")
     setProveedorModalAbierto(false)
   }
 
-  const seleccionarProveedorManual = () => {
-    const name =
-      manualNombreProveedor.trim() || compraPadron.razonSocial.trim()
-    if (!name && !proveedorTaxId.trim()) return
+  const confirmarProveedorManual = (
+    payload: import("@/lib/operationPartyPicker").OperationPartyManualConfirmPayload,
+  ) => {
+    setManualNombreProveedor(payload.name)
+    setProveedorTaxId(payload.taxId)
+    setCompraIvaCondition(payload.ivaCondition)
     setProveedorSeleccionado({
       id: null,
       manual: true,
-      name: name || "Proveedor sin nombre",
-      taxId: proveedorTaxId.trim(),
-      ivaCondition:
-        compraIvaCondition.trim() || compraPadron.mappedIvaCondition || null,
+      name: payload.name || "Proveedor sin nombre",
+      taxId: payload.taxId || "",
+      ivaCondition: payload.ivaCondition || null,
+      defaultInvoiceTypeLabel: null,
     })
-    setProveedorModalAbierto(false)
   }
 
   const compraIvaLabel = useMemo(
@@ -696,13 +906,18 @@ function PurchasesPage() {
   }, [modoDescuento, subtotal, valorDescuentoFijo])
 
   const agregarCostoAlCarrito = useCallback(
-    (productoId: string, cost: PurchaseCatalogArticleCost) => {
+    (
+      productoId: string,
+      cost: PurchaseCatalogArticleCost,
+      cantidad = 1,
+    ) => {
+      const qty = Math.max(1, Math.round(cantidad * 1e6) / 1e6)
       const lineId = purchaseCartLineId(productoId, cost.id)
       setCarrito((prev) => {
         const existe = prev.find((i) => i.lineId === lineId)
         if (existe) {
           return prev.map((i) =>
-            i.lineId === lineId ? { ...i, cantidad: i.cantidad + 1 } : i,
+            i.lineId === lineId ? { ...i, cantidad: i.cantidad + qty } : i,
           )
         }
         return [
@@ -711,7 +926,7 @@ function PurchasesPage() {
             lineId,
             productoId,
             articleCostId: cost.id,
-            cantidad: 1,
+            cantidad: qty,
           },
         ]
       })
@@ -732,7 +947,7 @@ function PurchasesPage() {
     [cartScrollHighlight],
   )
 
-  const agregarAlCarrito = (productoId: string) => {
+  const agregarAlCarrito = (productoId: string, cantidad = 1) => {
     const producto = productosCatalogo.find((p) => p.id === productoId)
     if (!producto) return
     if (producto.costs.length === 0) {
@@ -742,10 +957,11 @@ function PurchasesPage() {
       return
     }
     if (producto.costs.length === 1) {
-      agregarCostoAlCarrito(productoId, producto.costs[0])
+      agregarCostoAlCarrito(productoId, producto.costs[0], cantidad)
       return
     }
     setCostPickerArticleId(productoId)
+    setCostPickerPendingQty(cantidad)
     setCostPickerOpen(true)
   }
 
@@ -911,21 +1127,51 @@ function PurchasesPage() {
         popId={popId}
         popName={popName}
         title="Comprar"
-        loading={catalogLoading}
+        loading={catalogLoading || orderRestorePending}
         userName={headerUserName}
         userAvatarSrc={userAvatarSrc}
         sidebarCollapsible
         sidebarEdgeToggle={false}
         sidebarOpen={catalogSidebarOpen}
         onSidebarOpenChange={setCatalogSidebarOpen}
+        headerActions={
+          <DataWorkspaceHeaderTooltipIconButton
+            label="Crear orden de compra"
+            headerVariant={dataWorkspaceModuleHeaderVariant}
+            disabled={!hayItemsEnPedido || ordenSubmitting}
+            onClick={() => {
+              setOrdenError(null)
+              setOrdenConfirmOpen(true)
+            }}
+          >
+            <FileText className="size-5" aria-hidden />
+          </DataWorkspaceHeaderTooltipIconButton>
+        }
       >
         <div className="relative flex h-full min-h-0 w-full flex-col overflow-hidden">
           <OperationsModuleBackdrop />
 
+          {orderRestorePending ? (
+            <div
+              className="absolute inset-0 z-50 flex flex-col items-center justify-center gap-3 bg-[#070a09]/90 backdrop-blur-[2px]"
+              role="status"
+              aria-live="polite"
+              aria-busy="true"
+            >
+              <RootsSpinner size="default" tone="dark" label="Cargando orden de compra" />
+              <p className="text-sm font-medium text-white/90">
+                Cargando orden de compra…
+              </p>
+              <p className="max-w-xs text-center text-xs text-white/50">
+                Preparando ítems, proveedor y condiciones de la compra
+              </p>
+            </div>
+          ) : null}
+
           <LayoutsOperarMainGrid
             catalog={
               <PurchaseCatalogBrowser
-                categories={categoriasNav}
+                categorySections={catalogCategorySections}
                 products={productosCatalogo}
                 loading={catalogLoading}
                 error={catalogError}
@@ -940,7 +1186,9 @@ function PurchasesPage() {
                 proveedorConfigurado={Boolean(proveedorSeleccionado)}
                 comprobanteLabel={comprobanteToolboxLabel}
                 comprobanteConfigurado={comprobanteConfigurado}
-                pagoLabel={pagoResumenLabel}
+                pagoLabel={toolboxPaymentDisplay.pagoLabel}
+                pagoSubLabel={toolboxPaymentDisplay.pagoSubLabel}
+                pagoIcon={toolboxPaymentDisplay.pagoIcon}
                 pagoConfigurado={pagoConfigurado}
                 descuentoLabel={descuentoToolboxLabel}
                 hayDescuento={hayDescuento}
@@ -1020,10 +1268,11 @@ function PurchasesPage() {
         onManualNameChange={setManualNombreProveedor}
         taxId={proveedorTaxId}
         onTaxIdChange={setProveedorTaxId}
+        email=""
+        onEmailChange={() => {}}
         ivaCondition={compraIvaCondition}
         onIvaConditionChange={setCompraIvaCondition}
         selected={proveedorSeleccionado}
-        padron={compraPadron}
         catalogBlocked={proveedorCatalogoBloqueado}
         onSelectCatalogParty={(party) =>
           seleccionarProveedorCatalogo({
@@ -1032,7 +1281,7 @@ function PurchasesPage() {
             taxId: party.taxId ?? "",
           })
         }
-        onSelectManual={seleccionarProveedorManual}
+        onConfirmManual={(payload) => confirmarProveedorManual(payload)}
         onClearSelection={quitarProveedorCompra}
       />
 
@@ -1132,11 +1381,36 @@ function PurchasesPage() {
         onConfirm={confirmarCompra}
       />
 
+      <SimpleOperationCheckoutConfirmDialog
+        open={ordenConfirmOpen}
+        onOpenChange={(open) => {
+          setOrdenConfirmOpen(open)
+          if (!open) setOrdenError(null)
+        }}
+        title="Generar orden de compra"
+        confirmLabel="Generar orden de compra"
+        submitting={ordenSubmitting}
+        submitError={ordenError}
+        total={total}
+        subtotal={subtotal}
+        descuentoMonto={descuentoMonto}
+        hayDescuento={hayDescuento}
+        partyLabel="Proveedor"
+        partyValue={confirmSupplierLabel}
+        partyIcon={Truck}
+        comprobanteLabel={ordenComprobanteLabel}
+        paymentLabel={ordenPaymentLabel}
+        onConfirm={confirmarOrden}
+      />
+
       <PurchaseArticleCostPickerDialog
         open={costPickerOpen}
         onOpenChange={(open) => {
           setCostPickerOpen(open)
-          if (!open) setCostPickerArticleId(null)
+          if (!open) {
+            setCostPickerArticleId(null)
+            setCostPickerPendingQty(1)
+          }
         }}
         articleName={
           productosCatalogo.find((p) => p.id === costPickerArticleId)?.nombre ??
@@ -1152,8 +1426,13 @@ function PurchasesPage() {
         onSelect={(cost) => {
           if (!costPickerArticleId) return
           setCompraError(null)
-          agregarCostoAlCarrito(costPickerArticleId, cost)
+          agregarCostoAlCarrito(
+            costPickerArticleId,
+            cost,
+            costPickerPendingQty,
+          )
           setCostPickerArticleId(null)
+          setCostPickerPendingQty(1)
         }}
       />
     </>

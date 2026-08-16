@@ -38,6 +38,7 @@ import {
   type ServiceChargePaymentMode,
   type ServiceChargeStoredStatus,
 } from "@/lib/serviceChargeTypes"
+import { postServiceChargePaymentLedger } from "@/lib/serviceChargeAccountingPosting"
 import { getTreasuryPaymentContext } from "@/lib/treasuryPaymentContext"
 import {
   buildPayPaymentOptions,
@@ -1112,7 +1113,7 @@ export async function recordServiceChargePayment(
       }
     }
 
-    const { error: insertError } = await supabase
+    const { data: payIns, error: insertError } = await supabase
       .from("service_charge_payments")
       .insert({
         pop_id: popId,
@@ -1124,7 +1125,31 @@ export async function recordServiceChargePayment(
         notes: notes?.trim() ?? "",
         created_by: user.uid,
       })
-    if (insertError) return { success: false, error: insertError.message }
+      .select("id")
+      .maybeSingle()
+    if (insertError || !payIns?.id) {
+      return {
+        success: false,
+        error: insertError?.message || "No se pudo registrar el cobro.",
+      }
+    }
+    const paymentId = String(payIns.id)
+
+    if (kind && taId) {
+      const ledger = await postServiceChargePaymentLedger(supabase, {
+        popId,
+        userId: user.uid,
+        serviceChargePaymentId: paymentId,
+      })
+      if (!ledger.success) {
+        await supabase
+          .from("service_charge_payments")
+          .delete()
+          .eq("id", paymentId)
+          .eq("pop_id", popId)
+        return { success: false, error: ledger.error }
+      }
+    }
 
     const nextPaid = roundServiceChargeMoney(paidTotal + amt)
     const nextStatus = deriveStoredStatusFromPayments(

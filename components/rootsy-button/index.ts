@@ -8,6 +8,7 @@ export {
 } from "@/components/rootsy-button/rootsIconButtonNightStyles"
 export {
   RootsDangerButton,
+  RootsDangerSubtleButton,
   RootsDefaultButton,
   RootsLinkButton,
   RootsPrimaryButton,

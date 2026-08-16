@@ -69,7 +69,7 @@ function ColorBrumaStage({
 
 function ColorExampleLabel({ children }: { children: ReactNode }) {
   return (
-    <p className="font-canopy text-[11px] font-medium uppercase tracking-[0.12em] text-muted-foreground">
+    <p className="font-canopy text-[11px] font-medium uppercase tracking-[0.12em] text-[var(--rootsy-bruma-500)]">
       {children}
     </p>
   )

@@ -7,9 +7,48 @@ import {
 import { validatePopAccess } from "@/lib/popHelpers"
 import { loadPopPermissionsSnapshot } from "@/lib/popPermissionsServer"
 import type { OperationPartyCatalogItem } from "@/lib/operationPartyPicker"
+import { CLIENT_IVA_CONDITION_VALUES } from "@/app/[siteId]/[popId]/clients/clientIvaConstants"
 import { createClient } from "@/utils/supabase/server"
 
 const CHECKOUT_PARTY_SEARCH_LIMIT = 8
+
+export type CreateCheckoutClientInput = {
+  name: string
+  taxId: string
+  email: string
+  ivaCondition: string
+}
+
+function normalizeClientIvaCondition(raw: string): string | null {
+  const t = raw.trim()
+  if (!t) return null
+  return (CLIENT_IVA_CONDITION_VALUES as readonly string[]).includes(t) ? t : null
+}
+
+function mapCheckoutClientRow(c: {
+  id: string
+  name: string | null
+  tax_id: string | null
+  email?: string | null
+  iva_condition: string | null
+  default_invoice_type_label: string | null
+}): OperationPartyCatalogItem {
+  return {
+    id: String(c.id),
+    name: String(c.name ?? ""),
+    taxId: c.tax_id != null ? String(c.tax_id) : null,
+    email: c.email != null && String(c.email).trim() !== "" ? String(c.email).trim() : null,
+    ivaCondition:
+      c.iva_condition != null && String(c.iva_condition).trim() !== ""
+        ? String(c.iva_condition).trim()
+        : null,
+    defaultInvoiceTypeLabel:
+      c.default_invoice_type_label != null &&
+      String(c.default_invoice_type_label).trim() !== ""
+        ? String(c.default_invoice_type_label).trim()
+        : null,
+  }
+}
 
 function escapeIlikeToken(raw: string): string {
   return raw.replace(/\\/g, "\\\\").replace(/%/g, "\\%").replace(/_/g, "\\_")
@@ -62,7 +101,7 @@ export async function searchCheckoutClients(
     const { data, error } = await supabase
       .from("clients")
       .select(
-        "id, name, tax_id, iva_condition, default_invoice_type_label, is_active",
+        "id, name, tax_id, email, iva_condition, default_invoice_type_label, is_active",
       )
       .eq("pop_id", popId)
       .eq("is_active", true)
@@ -76,21 +115,70 @@ export async function searchCheckoutClients(
 
     return {
       success: true,
-      parties: (data ?? []).map((c) => ({
-        id: String(c.id),
-        name: String(c.name ?? ""),
-        taxId: c.tax_id != null ? String(c.tax_id) : null,
-        ivaCondition:
-          c.iva_condition != null && String(c.iva_condition).trim() !== ""
-            ? String(c.iva_condition).trim()
-            : null,
-        defaultInvoiceTypeLabel:
-          c.default_invoice_type_label != null &&
-          String(c.default_invoice_type_label).trim() !== ""
-            ? String(c.default_invoice_type_label).trim()
-            : null,
-      })),
+      parties: (data ?? []).map((c) => mapCheckoutClientRow(c)),
     }
+  } catch (e: unknown) {
+    const message = e instanceof Error ? e.message : "Error desconocido"
+    return { success: false, error: message }
+  }
+}
+
+export async function createCheckoutClient(
+  popId: string,
+  input: CreateCheckoutClientInput,
+): Promise<
+  | { success: true; party: OperationPartyCatalogItem }
+  | { success: false; error: string }
+> {
+  const name = input.name.trim()
+  if (!name) {
+    return { success: false, error: "Completá el nombre o razón social." }
+  }
+
+  try {
+    const access = await validatePopAccess(popId)
+    if (!access.hasAccess || !access.isActive) {
+      return {
+        success: false,
+        error: access.error ?? "No tienes acceso a este POP",
+      }
+    }
+
+    const snap = await loadPopPermissionsSnapshot(popId)
+    const canCreate = permissionKeysInclude(
+      snap.keys,
+      POP_PERMS.CLIENT_CREATE.resource,
+      POP_PERMS.CLIENT_CREATE.action,
+    )
+    if (!canCreate) {
+      return { success: false, error: "Sin permiso para crear clientes." }
+    }
+
+    const supabase = await createClient()
+    const { data, error } = await supabase
+      .from("clients")
+      .insert({
+        pop_id: popId,
+        name,
+        email: input.email.trim() || null,
+        tax_id: input.taxId.trim() || null,
+        iva_condition: normalizeClientIvaCondition(input.ivaCondition),
+        default_invoice_type_label: null,
+        is_active: true,
+      })
+      .select(
+        "id, name, tax_id, email, iva_condition, default_invoice_type_label",
+      )
+      .single()
+
+    if (error || !data) {
+      return {
+        success: false,
+        error: error?.message ?? "No se pudo crear el cliente.",
+      }
+    }
+
+    return { success: true, party: mapCheckoutClientRow(data) }
   } catch (e: unknown) {
     const message = e instanceof Error ? e.message : "Error desconocido"
     return { success: false, error: message }

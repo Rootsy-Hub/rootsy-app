@@ -47,9 +47,6 @@ const treasuryMovementListTokens: Record<
     description: string
     subtitle: string
     amount: string
-    footer: string
-    footerDivider: string
-    footerLoadingBorder: string
   }
 > = {
   default: {
@@ -64,9 +61,6 @@ const treasuryMovementListTokens: Record<
     subtitle: "text-xs text-muted-foreground",
     amount:
       "whitespace-nowrap font-numeric text-sm tabular-nums tracking-tight text-foreground",
-    footer: "text-xs text-muted-foreground",
-    footerDivider: "bg-border/60",
-    footerLoadingBorder: "border-border/50",
   },
   bruma: {
     empty: cn(
@@ -97,12 +91,6 @@ const treasuryMovementListTokens: Record<
       rootsyMovementListNumericBodyClass,
       "whitespace-nowrap text-[var(--rootsy-bruma-900)]",
     ),
-    footer: cn(
-      rootsyMovementListBodySmallClass,
-      "text-[var(--rootsy-bruma-500)]",
-    ),
-    footerDivider: "bg-[var(--rootsy-bruma-200)]",
-    footerLoadingBorder: "border-[var(--rootsy-bruma-200)]",
   },
 }
 

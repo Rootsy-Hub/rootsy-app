@@ -16,6 +16,7 @@ import {
 } from "@/lib/articleDiscount"
 import {
   loadMenuPromotions,
+  type MenuCatalogCategorySection,
   type MenuCatalogPromotion,
 } from "@/app/[siteId]/[popId]/menu-catalog/actions"
 import { filterComboPromotionsForSale } from "@/lib/saleMenuCatalog"
@@ -74,6 +75,7 @@ export async function getSaleCatalog(popId: string): Promise<
       success: true
       popName: string
       categories: SaleCatalogCategory[]
+      categorySections: MenuCatalogCategorySection[]
       articles: SaleCatalogArticle[]
       promotions: MenuCatalogPromotion[]
       quantityDeals: MenuCatalogPromotion[]
@@ -272,10 +274,22 @@ export async function getSaleCatalog(popId: string): Promise<
       (p) => p.promotionType === "quantity_deal" && p.autoApply,
     )
 
+    const categorySections: MenuCatalogCategorySection[] = [
+      { id: "products", label: "Productos", categories },
+    ]
+    if (promotions.length > 0) {
+      categorySections.unshift({
+        id: "promotions",
+        label: "Promociones",
+        categories: [{ id: "all", name: "Promociones", sortOrder: 0 }],
+      })
+    }
+
     return {
       success: true,
       popName,
       categories,
+      categorySections,
       articles,
       promotions,
       quantityDeals,

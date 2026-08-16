@@ -1,12 +1,4 @@
-const PURCHASE_KIND_LABEL: Record<string, string> = {
-  merchandise: "Mercadería",
-  raw_material: "Materia prima",
-  supply: "Insumo",
-}
-
-export function purchaseKindLabel(kind: string): string {
-  return PURCHASE_KIND_LABEL[kind] ?? kind
-}
+export { purchaseKindLabel } from "@/lib/purchaseKind"
 
 export function purchaseHasComprobante(purchase: {
   documentKindLabel?: string | null

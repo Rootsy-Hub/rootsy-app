@@ -21,6 +21,7 @@ import {
   getPaymentCheckoutDestinations,
   getPaymentCheckoutKinds,
   paymentCheckoutKindLabel,
+  paymentCheckoutKindSubtitle,
   resolvePaymentKindSelection,
   shouldStayOpenAfterSelection,
   paymentCheckoutKindHasDestinationStep,
@@ -140,6 +141,7 @@ export function PaymentMethodDialog({
   accountDescription,
   immediateSectionTitle,
   cashTreasuryAccountId = null,
+  cashRegisterName = null,
   cardInstallments = "1",
   onCardInstallmentsChange,
   hideAccountOption = false,
@@ -271,7 +273,16 @@ export function PaymentMethodDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <RootsDialogContent className="flex flex-col">
         {step === "menu" ? (
-          <RootsDialogHeader title="Formas de pago" />
+          <RootsDialogHeader
+            title="Formas de pago"
+            description={
+              flow === "purchase"
+                ? "Cómo vas a pagar esta compra."
+                : flow === "sale"
+                  ? "Cómo vas a cobrar esta venta."
+                  : undefined
+            }
+          />
         ) : (
           <DialogHeader
             className={cn(
@@ -329,11 +340,19 @@ export function PaymentMethodDialog({
                         (kind === "cash" ||
                           kind === "transfer" ||
                           selected.treasuryAccountId != null)
+                      const subtitle =
+                        isSelected && selected
+                          ? selected.label
+                          : paymentCheckoutKindSubtitle(flow, kind, treasuryContext, {
+                              cashTreasuryAccountId,
+                              cashRegisterName,
+                            })
 
                       return (
                         <li key={kind}>
                           <CheckoutOptionCard
                             title={paymentCheckoutKindLabel(flow, kind)}
+                            subtitle={subtitle}
                             selected={isSelected}
                             onClick={() => handleKindPick(kind)}
                             icon={kindIcon(kind)}
@@ -390,7 +409,12 @@ export function PaymentMethodDialog({
 
           {step === "installments" && onCardInstallmentsChange ? (
             <div className="space-y-2">
-              <Label htmlFor="payment-card-installments">Cantidad de cuotas</Label>
+              <Label
+                htmlFor="payment-card-installments"
+                className="text-[var(--rootsy-bruma-700)]"
+              >
+                Cantidad de cuotas
+              </Label>
               <Input
                 id="payment-card-installments"
                 inputMode="numeric"

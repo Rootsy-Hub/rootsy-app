@@ -16,6 +16,7 @@ import {
 import { CONCEPT_TOKENS } from "@/app/library/concept/rootsyConceptSystem"
 import {
   LibraryDoDontPair,
+  LibraryDocMetaLabel,
 } from "@/app/library/libraryDocPrimitives"
 import { cn } from "@/lib/utils"
 import type { ReactNode } from "react"
@@ -71,7 +72,7 @@ function BrumaStage({
 
 function ExampleLabel({ children }: { children: ReactNode }) {
   return (
-    <p className="font-canopy text-[11px] font-medium uppercase tracking-[0.12em] text-muted-foreground">
+    <p className="font-canopy text-[11px] font-medium uppercase tracking-[0.12em] text-[var(--rootsy-bruma-500)]">
       {children}
     </p>
   )
@@ -99,7 +100,7 @@ function LightStackDemo() {
           Sunken · bruma 50
         </div>
         <div
-          className="rounded-lg border px-3 py-2 font-canopy text-sm shadow-sm"
+          className="rounded-lg border px-3 py-2 font-canopy text-sm "
           style={{
             backgroundColor: CONCEPT_TOKENS.white,
             borderColor: CONCEPT_TOKENS.bruma200,
@@ -215,7 +216,7 @@ export function ElevationSystemHero() {
 function ElevationLevelTile({ level }: { level: ElevationLevel }) {
   return (
     <SpecCard className="space-y-3 p-0 overflow-hidden">
-      <div className="flex min-h-28 items-center justify-center bg-muted/20 p-5">
+      <div className="flex min-h-28 items-center justify-center bg-[var(--rootsy-bruma-50)] p-5">
         <div className={cn(level.cssClass, "w-full max-w-[200px] px-3 py-4")}>
           <p
             className="font-canopy text-[10px] font-bold uppercase tracking-wide"
@@ -232,10 +233,10 @@ function ElevationLevelTile({ level }: { level: ElevationLevel }) {
         </div>
       </div>
       <div className="space-y-2 px-4 pb-4">
-        <p className="font-canopy text-xs leading-relaxed text-muted-foreground">
+        <p className="font-canopy text-xs leading-relaxed text-[var(--rootsy-bruma-500)]">
           {level.description}
         </p>
-        <p className="font-mono text-[10px] text-primary">{level.token}</p>
+        <p className="font-mono text-[10px] text-[var(--rootsy-savia-600)]">{level.token}</p>
       </div>
     </SpecCard>
   )
@@ -256,21 +257,21 @@ export function ElevationStackDemo() {
     <BrumaStage caption="Suelo bruma → hondonada → brote raised · dosel overlay en esquina.">
       <div className="rootsy-elevation-stack-demo">
         <div className="rootsy-elevation-stack-demo__sunken space-y-3">
-          <p className="font-canopy text-xs font-semibold text-foreground">Columna · sunken</p>
+          <p className="font-canopy text-xs font-semibold text-[var(--rootsy-bruma-900)]">Columna · sunken</p>
           <div className="grid gap-2 sm:grid-cols-2">
-            <div className="rootsy-elevation-default-bordered px-3 py-2 font-canopy text-xs text-muted-foreground">
+            <div className="rootsy-elevation-default-bordered px-3 py-2 font-canopy text-xs text-[var(--rootsy-bruma-500)]">
               Loseta · borde
             </div>
-            <div className="rootsy-elevation-raised px-3 py-2 font-canopy text-xs text-foreground">
+            <div className="rootsy-elevation-raised px-3 py-2 font-canopy text-xs text-[var(--rootsy-bruma-900)]">
               Brote · raised
             </div>
           </div>
         </div>
         <div className="rootsy-elevation-overlay pointer-events-none absolute bottom-4 right-4 max-w-[160px] px-3 py-2">
-          <p className="font-canopy text-[10px] font-bold uppercase tracking-wide text-muted-foreground">
+          <p className="font-canopy text-[10px] font-bold uppercase tracking-wide text-[var(--rootsy-bruma-500)]">
             Dosel
           </p>
-          <p className="font-canopy text-xs font-medium text-foreground">Modal</p>
+          <p className="font-canopy text-xs font-medium text-[var(--rootsy-bruma-900)]">Modal</p>
         </div>
       </div>
     </BrumaStage>
@@ -282,8 +283,8 @@ export function ElevationModalPreview() {
     <BrumaStage caption="Overlay + shadow.overlay — rounded xxlarge como modales de producto.">
       <div className="relative py-10">
         <div className="rootsy-elevation-overlay mx-auto max-w-xs px-5 py-4">
-          <p className="font-canopy text-base font-semibold text-foreground">Confirmar venta</p>
-          <p className="mt-1 font-canopy text-xs text-muted-foreground">
+          <p className="font-canopy text-base font-semibold text-[var(--rootsy-bruma-900)]">Confirmar venta</p>
+          <p className="mt-1 font-canopy text-xs text-[var(--rootsy-bruma-500)]">
             elevation.surface.overlay
           </p>
         </div>
@@ -295,9 +296,9 @@ export function ElevationModalPreview() {
 export function ElevationOverflowDemo() {
   return (
     <div className="rootsy-elevation-default-bordered rootsy-elevation-overflow-demo px-4 py-3">
-      <div className="flex w-[140%] gap-2 font-mono text-[10px] text-muted-foreground">
+      <div className="flex w-[140%] gap-2 font-mono text-[10px] text-[var(--rootsy-bruma-500)]">
         {["SKU", "Nombre", "Precio", "Stock", "Categoría"].map((col) => (
-          <span key={col} className="shrink-0 rounded bg-muted/50 px-2 py-1">
+          <span key={col} className="shrink-0 rounded bg-[var(--rootsy-bruma-50)] px-2 py-1">
             {col}
           </span>
         ))}
@@ -310,7 +311,7 @@ export function ElevationSurfacesCompare() {
   return (
     <div className="grid gap-4 lg:grid-cols-2">
       <SpecCard>
-        <p className="font-canopy text-sm font-semibold text-foreground">Claro · workspace</p>
+        <p className="font-canopy text-sm font-semibold text-[var(--rootsy-bruma-900)]">Claro · workspace</p>
         <ul className="mt-3 space-y-2">
           {ROOTSY_ELEVATION_SURFACES_LIGHT.map((row) => (
             <li
@@ -318,8 +319,8 @@ export function ElevationSurfacesCompare() {
               className="flex items-center justify-between gap-3 rounded-lg border px-3 py-2"
               style={{ borderColor: CONCEPT_TOKENS.bruma200 }}
             >
-              <span className="font-mono text-[10px] text-muted-foreground">{row.token}</span>
-              <span className="font-mono text-[10px] text-foreground">{row.value}</span>
+              <span className="font-mono text-[10px] text-[var(--rootsy-bruma-500)]">{row.token}</span>
+              <span className="font-mono text-[10px] text-[var(--rootsy-bruma-900)]">{row.value}</span>
             </li>
           ))}
         </ul>
@@ -346,17 +347,17 @@ export function SunkenVsNeutralCard() {
   return (
     <div className="grid gap-4 lg:grid-cols-2">
       <SpecCard>
-        <p className="font-mono text-xs text-primary">elevation.surface.sunken</p>
-        <p className="mt-2 font-canopy text-sm text-muted-foreground">{SUNKEN_VS_NEUTRAL.sunken}</p>
-        <div className="rootsy-elevation-sunken mt-4 px-4 py-6 text-center font-canopy text-xs text-muted-foreground">
+        <p className="font-mono text-xs text-[var(--rootsy-savia-600)]">elevation.surface.sunken</p>
+        <p className="mt-2 font-canopy text-sm text-[var(--rootsy-bruma-500)]">{SUNKEN_VS_NEUTRAL.sunken}</p>
+        <div className="rootsy-elevation-sunken mt-4 px-4 py-6 text-center font-canopy text-xs text-[var(--rootsy-bruma-500)]">
           Agrupa columnas
         </div>
       </SpecCard>
       <SpecCard>
-        <p className="font-mono text-xs text-primary">transparente</p>
-        <p className="mt-2 font-canopy text-sm text-muted-foreground">{SUNKEN_VS_NEUTRAL.neutral}</p>
+        <p className="font-mono text-xs text-[var(--rootsy-savia-600)]">transparente</p>
+        <p className="mt-2 font-canopy text-sm text-[var(--rootsy-bruma-500)]">{SUNKEN_VS_NEUTRAL.neutral}</p>
         <div
-          className="mt-4 rounded-xl px-4 py-6 text-center font-canopy text-xs text-muted-foreground"
+          className="mt-4 rounded-xl px-4 py-6 text-center font-canopy text-xs text-[var(--rootsy-bruma-500)]"
           style={{ backgroundColor: `${CONCEPT_TOKENS.savia600}14` }}
         >
           Hereda del padre
@@ -373,33 +374,26 @@ export function ElevationInteractionDemo() {
         type="button"
         className="rootsy-elevation-default-bordered rootsy-elevation-interactive-demo px-4 py-6 text-left"
       >
-        <p className="font-canopy text-xs font-bold uppercase tracking-wide text-muted-foreground">
+        <p className="font-canopy text-xs font-bold uppercase tracking-wide text-[var(--rootsy-bruma-500)]">
           Loseta
         </p>
-        <p className="mt-1 font-canopy text-sm text-foreground">Hover · bruma 50</p>
+        <p className="mt-1 font-canopy text-sm text-[var(--rootsy-bruma-900)]">Hover · bruma 50</p>
       </button>
       <button
         type="button"
         className="rootsy-elevation-raised rootsy-elevation-interactive-demo px-4 py-6 text-left"
       >
-        <p className="font-canopy text-xs font-bold uppercase tracking-wide text-muted-foreground">
+        <p className="font-canopy text-xs font-bold uppercase tracking-wide text-[var(--rootsy-bruma-500)]">
           Raised
         </p>
-        <p className="mt-1 font-canopy text-sm text-foreground">Hover · sombra más amplia</p>
+        <p className="mt-1 font-canopy text-sm text-[var(--rootsy-bruma-900)]">Hover · sombra más amplia</p>
       </button>
     </div>
   )
 }
 
 function TechnicalSubheading({ children }: { children: ReactNode }) {
-  return (
-    <p
-      className="font-canopy text-xs font-semibold uppercase tracking-wide"
-      style={{ color: CONCEPT_TOKENS.bruma500 }}
-    >
-      {children}
-    </p>
-  )
+  return <LibraryDocMetaLabel>{children}</LibraryDocMetaLabel>
 }
 
 export function ElevationTechnicalDetails() {
@@ -407,19 +401,19 @@ export function ElevationTechnicalDetails() {
     <div className="space-y-8">
       <div className="space-y-3">
         <TechnicalSubheading>Sombras</TechnicalSubheading>
-        <div className="overflow-x-auto rounded-2xl border border-border/70">
+        <div className="library-doc-table-shell overflow-x-auto rounded-2xl">
           <table className="w-full min-w-[480px] text-left font-canopy text-sm">
             <thead>
-              <tr className="border-b border-border/60 bg-muted/30">
+              <tr className="border-b border-[var(--rootsy-bruma-200)] bg-[var(--rootsy-bruma-50)]">
                 <th className="px-4 py-3 font-semibold">Token</th>
                 <th className="px-4 py-3 font-semibold">Par</th>
               </tr>
             </thead>
             <tbody>
               {ROOTSY_ELEVATION_SHADOW_TOKENS.map((row) => (
-                <tr key={row.token} className="border-b border-border/40 last:border-0">
-                  <td className="px-4 py-3 font-mono text-xs text-primary">{row.token}</td>
-                  <td className="px-4 py-3 text-xs text-muted-foreground">{row.pairsWith}</td>
+                <tr key={row.token} className="border-b border-[var(--rootsy-bruma-200)] last:border-0">
+                  <td className="px-4 py-3 font-mono text-xs text-[var(--rootsy-savia-600)]">{row.token}</td>
+                  <td className="px-4 py-3 text-xs text-[var(--rootsy-bruma-500)]">{row.pairsWith}</td>
                 </tr>
               ))}
             </tbody>
@@ -429,14 +423,14 @@ export function ElevationTechnicalDetails() {
 
       <div className="space-y-3">
         <TechnicalSubheading>Estados hover / pressed</TechnicalSubheading>
-        <div className="overflow-x-auto rounded-2xl border border-border/70">
+        <div className="library-doc-table-shell overflow-x-auto rounded-2xl">
           <table className="w-full min-w-[480px] text-left font-canopy text-sm">
             <tbody>
               {ROOTSY_ELEVATION_INTERACTION.map((row) => (
-                <tr key={row.id} className="border-b border-border/40 last:border-0">
-                  <td className="px-4 py-3 capitalize text-foreground">{row.state}</td>
-                  <td className="px-4 py-3 font-mono text-xs text-primary">{row.surfaceToken}</td>
-                  <td className="px-4 py-3 text-xs text-muted-foreground">{row.notes}</td>
+                <tr key={row.id} className="border-b border-[var(--rootsy-bruma-200)] last:border-0">
+                  <td className="px-4 py-3 capitalize text-[var(--rootsy-bruma-900)]">{row.state}</td>
+                  <td className="px-4 py-3 font-mono text-xs text-[var(--rootsy-savia-600)]">{row.surfaceToken}</td>
+                  <td className="px-4 py-3 text-xs text-[var(--rootsy-bruma-500)]">{row.notes}</td>
                 </tr>
               ))}
             </tbody>
@@ -459,10 +453,10 @@ export function SemanticTokensTable() {
   return (
     <div className="space-y-3">
       <TechnicalSubheading>Tokens semánticos</TechnicalSubheading>
-      <div className="overflow-x-auto rounded-2xl border border-border/70">
+      <div className="library-doc-table-shell overflow-x-auto rounded-2xl">
         <table className="w-full min-w-[560px] text-left font-canopy text-sm">
           <thead>
-            <tr className="border-b border-border/60 bg-muted/30">
+            <tr className="border-b border-[var(--rootsy-bruma-200)] bg-[var(--rootsy-bruma-50)]">
               <th className="px-4 py-3 font-semibold">Token</th>
               <th className="px-4 py-3 font-semibold">Componente</th>
               <th className="px-4 py-3 font-semibold">Nivel</th>
@@ -470,10 +464,10 @@ export function SemanticTokensTable() {
           </thead>
           <tbody>
             {ROOTSY_ELEVATION_SEMANTIC.map((row) => (
-              <tr key={row.token} className="border-b border-border/40 last:border-0">
-                <td className="px-4 py-3 font-mono text-xs text-primary">{row.token}</td>
-                <td className="px-4 py-3 text-foreground">{row.component}</td>
-                <td className="px-4 py-3 font-mono text-xs text-muted-foreground">{row.levelId}</td>
+              <tr key={row.token} className="border-b border-[var(--rootsy-bruma-200)] last:border-0">
+                <td className="px-4 py-3 font-mono text-xs text-[var(--rootsy-savia-600)]">{row.token}</td>
+                <td className="px-4 py-3 text-[var(--rootsy-bruma-900)]">{row.component}</td>
+                <td className="px-4 py-3 font-mono text-xs text-[var(--rootsy-bruma-500)]">{row.levelId}</td>
               </tr>
             ))}
           </tbody>
@@ -487,14 +481,14 @@ export function ZIndexTable() {
   return (
     <div className="space-y-3">
       <TechnicalSubheading>Z-index</TechnicalSubheading>
-      <div className="overflow-x-auto rounded-2xl border border-border/70">
+      <div className="library-doc-table-shell overflow-x-auto rounded-2xl">
         <table className="w-full min-w-[480px] text-left font-canopy text-sm">
           <tbody>
             {ROOTSY_ELEVATION_Z_INDEX.map((row) => (
-              <tr key={row.zIndex} className="border-b border-border/40 last:border-0">
+              <tr key={row.zIndex} className="border-b border-[var(--rootsy-bruma-200)] last:border-0">
                 <td className="px-4 py-3 font-mono font-semibold">{row.zIndex}</td>
-                <td className="px-4 py-3 text-muted-foreground">{row.usage}</td>
-                <td className="px-4 py-3 text-xs text-foreground">{row.rootsyExample}</td>
+                <td className="px-4 py-3 text-[var(--rootsy-bruma-500)]">{row.usage}</td>
+                <td className="px-4 py-3 text-xs text-[var(--rootsy-bruma-900)]">{row.rootsyExample}</td>
               </tr>
             ))}
           </tbody>

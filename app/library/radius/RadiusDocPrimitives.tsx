@@ -125,7 +125,7 @@ export function RadiusSystemHero() {
               >
                 {item.label}
               </div>
-              <p className="font-canopy text-[10px] text-muted-foreground">{item.sub}</p>
+              <p className="font-canopy text-[10px] text-[var(--rootsy-bruma-500)]">{item.sub}</p>
             </div>
           ))}
         </div>
@@ -163,7 +163,7 @@ export function RadiusScaleGallery() {
           <div className={cn("rootsy-radius-preview font-canopy", cssMap[token.id])}>
             {token.natureName}
           </div>
-          <p className="font-mono text-[10px] text-primary">{token.value}</p>
+          <p className="font-mono text-[10px] text-[var(--rootsy-savia-600)]">{token.value}</p>
         </div>
       ))}
     </div>
@@ -174,7 +174,7 @@ export function RadiusFocusDemo() {
   return (
     <div className="grid gap-6 sm:grid-cols-2">
       <div className="space-y-2">
-        <p className="font-canopy text-[11px] font-medium uppercase tracking-[0.12em] text-muted-foreground">
+        <p className="font-canopy text-[11px] font-medium uppercase tracking-[0.12em] text-[var(--rootsy-bruma-500)]">
           Input · large + focus
         </p>
         <div className="rootsy-radius-focus-demo">
@@ -188,7 +188,7 @@ export function RadiusFocusDemo() {
         </div>
       </div>
       <div className="space-y-2">
-        <p className="font-canopy text-[11px] font-medium uppercase tracking-[0.12em] text-muted-foreground">
+        <p className="font-canopy text-[11px] font-medium uppercase tracking-[0.12em] text-[var(--rootsy-bruma-500)]">
           Card · xlarge + savia ring
         </p>
         <div className="rootsy-radius-focus-demo">
@@ -216,20 +216,20 @@ export function RadiusExamplesRow() {
   return (
     <div className="grid gap-4 lg:grid-cols-3">
       <SpecCard>
-        <p className="font-canopy text-xs font-semibold text-foreground">Form · large</p>
+        <p className="font-canopy text-xs font-semibold text-[var(--rootsy-bruma-900)]">Form · large</p>
         <div className="rootsy-radius-form-demo mt-3">
           <input type="text" placeholder="Nombre" aria-label="Demo input" />
         </div>
       </SpecCard>
       <SpecCard>
-        <p className="font-canopy text-xs font-semibold text-foreground">Modal · xxlarge</p>
+        <p className="font-canopy text-xs font-semibold text-[var(--rootsy-bruma-900)]">Modal · xxlarge</p>
         <div className="rootsy-radius-modal-demo mt-3">
           <p className="font-canopy text-sm font-semibold">Dosel</p>
-          <p className="mt-1 font-canopy text-xs text-muted-foreground">rounded-[1.375rem]</p>
+          <p className="mt-1 font-canopy text-xs text-[var(--rootsy-bruma-500)]">rounded-[1.375rem]</p>
         </div>
       </SpecCard>
       <SpecCard>
-        <p className="font-canopy text-xs font-semibold text-foreground">Avatar · full</p>
+        <p className="font-canopy text-xs font-semibold text-[var(--rootsy-bruma-900)]">Avatar · full</p>
         <div className="mt-3 flex justify-center">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
@@ -253,10 +253,10 @@ export function RadiusTechnicalDetails() {
         >
           Escala completa
         </p>
-        <div className="overflow-x-auto rounded-2xl border border-border/70">
+        <div className="library-doc-table-shell overflow-x-auto rounded-2xl">
           <table className="w-full min-w-[640px] text-left font-canopy text-sm">
             <thead>
-              <tr className="border-b border-border/60 bg-muted/30">
+              <tr className="border-b border-[var(--rootsy-bruma-200)] bg-[var(--rootsy-bruma-50)]">
                 <th className="px-4 py-3 font-semibold">Token</th>
                 <th className="px-4 py-3 font-semibold">Valor</th>
                 <th className="px-4 py-3 font-semibold">Focus</th>
@@ -265,13 +265,13 @@ export function RadiusTechnicalDetails() {
             </thead>
             <tbody>
               {ROOTSY_RADIUS_TOKENS.map((row) => (
-                <tr key={row.id} className="border-b border-border/40 last:border-0">
-                  <td className="px-4 py-3 font-mono text-xs text-primary">{row.token}</td>
+                <tr key={row.id} className="border-b border-[var(--rootsy-bruma-200)] last:border-0">
+                  <td className="px-4 py-3 font-mono text-xs text-[var(--rootsy-savia-600)]">{row.token}</td>
                   <td className="px-4 py-3 font-mono text-[10px]">{row.value}</td>
-                  <td className="px-4 py-3 font-mono text-[10px] text-muted-foreground">
+                  <td className="px-4 py-3 font-mono text-[10px] text-[var(--rootsy-bruma-500)]">
                     {row.focusValue ?? "—"}
                   </td>
-                  <td className="max-w-xs px-4 py-3 text-xs text-muted-foreground">{row.usage}</td>
+                  <td className="max-w-xs px-4 py-3 text-xs text-[var(--rootsy-bruma-500)]">{row.usage}</td>
                 </tr>
               ))}
             </tbody>
@@ -280,8 +280,8 @@ export function RadiusTechnicalDetails() {
       </div>
 
       <SpecCard>
-        <p className="font-canopy text-sm font-semibold text-foreground">Theme CSS</p>
-        <div className="mt-2 space-y-1 font-mono text-[11px] text-muted-foreground">
+        <p className="font-canopy text-sm font-semibold text-[var(--rootsy-bruma-900)]">Theme CSS</p>
+        <div className="mt-2 space-y-1 font-mono text-[11px] text-[var(--rootsy-bruma-500)]">
           <p>--radius: {ROOTSY_RADIUS_THEME.base}</p>
           <p>--radius-lg: {ROOTSY_RADIUS_THEME.lg}</p>
           <p>--radius-xl: {ROOTSY_RADIUS_THEME.xl}</p>
@@ -295,14 +295,14 @@ export function RadiusTechnicalDetails() {
         >
           Semántica
         </p>
-        <div className="overflow-x-auto rounded-2xl border border-border/70">
+        <div className="library-doc-table-shell overflow-x-auto rounded-2xl">
           <table className="w-full min-w-[480px] text-left font-canopy text-sm">
             <tbody>
               {ROOTSY_RADIUS_SEMANTIC.map((row) => (
-                <tr key={row.token} className="border-b border-border/40 last:border-0">
-                  <td className="px-4 py-3 font-mono text-xs text-primary">{row.token}</td>
-                  <td className="px-4 py-3 text-foreground">{row.component}</td>
-                  <td className="px-4 py-3 font-mono text-[10px] text-muted-foreground">
+                <tr key={row.token} className="border-b border-[var(--rootsy-bruma-200)] last:border-0">
+                  <td className="px-4 py-3 font-mono text-xs text-[var(--rootsy-savia-600)]">{row.token}</td>
+                  <td className="px-4 py-3 text-[var(--rootsy-bruma-900)]">{row.component}</td>
+                  <td className="px-4 py-3 font-mono text-[10px] text-[var(--rootsy-bruma-500)]">
                     {row.source}
                   </td>
                 </tr>

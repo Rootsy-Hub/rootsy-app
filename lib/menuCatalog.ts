@@ -38,6 +38,8 @@ import { canAccessMenuItemFromPopAccess } from "@/lib/menuPopAccess"
 
 export type MenuItemLink =
   | "sale"
+  | "quotes"
+  | "purchase-orders"
   | "mesas"
   | "mostrador"
   | "operations"
@@ -59,6 +61,9 @@ export type MenuItemLink =
   | "active-services"
   | "cobrar-servicios"
   | "promotions"
+  | "reports"
+  | "summary"
+  | "statistics"
   | "section"
 
 /** Identificador de un acceso directo del dock (solo rutas navegables). */
@@ -124,13 +129,13 @@ export const menuSectionsRaw: Record<string, MenuSectionDef> = {
     title: "Administrar",
     items: [
       { name: "Presupuestos", icon: FileText, link: "section" },
-      { name: "Resumen", icon: BarChart3, badge: "NEW", link: "section" },
-      { name: "Estadísticas", icon: PieChart, link: "section" },
+      { name: "Resumen", icon: BarChart3, badge: "NEW", link: "summary", moduleKey: "summary" },
+      { name: "Estadísticas", icon: PieChart, link: "statistics", moduleKey: "statistics" },
       { name: "Operaciones", icon: Activity, link: "operations" },
       { name: "Movimientos", icon: ArrowLeftRight, link: "section" },
       { name: "Inventario", icon: ClipboardList, link: "inventory" },
       { name: "Facturas", icon: FileBarChart, link: "invoices" },
-      { name: "Reportes", icon: FileCheck, link: "section" },
+      { name: "Reportes", icon: FileCheck, link: "reports" },
       { name: "Cheques", icon: Wallet, link: "section" },
       { name: "Órdenes", icon: FileText, link: "section" },
     ],

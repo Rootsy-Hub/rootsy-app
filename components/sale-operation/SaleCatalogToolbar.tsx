@@ -42,7 +42,7 @@ import {
   Rows3,
   Search,
 } from "lucide-react"
-import { useId, type RefObject } from "react"
+import { useId, type ReactNode, type RefObject } from "react"
 
 function IconoLimpiarBusqueda({ className }: { className?: string }) {
   return (
@@ -68,11 +68,14 @@ type Props = {
   scanInputRef?: RefObject<HTMLInputElement | null> | ((element: HTMLInputElement | null) => void)
   cantidadIngreso: number
   onCantidadIngresoChange: (cantidad: number) => void
-  priceListId: string
-  onPriceListChange: (priceListId: string) => void
+  showPriceList?: boolean
+  priceListId?: string
+  onPriceListChange?: (priceListId: string) => void
   /** Tras cerrar el select de lista (p. ej. devolver foco al escaneo). */
   onPriceListSelectClosed?: () => void
   priceLists?: SaleCatalogPriceListOption[]
+  searchPlaceholder?: string
+  trailing?: ReactNode
   variant?: ToolbarVariant
   demo?: boolean
   className?: string
@@ -197,10 +200,13 @@ export function SaleCatalogToolbar({
   scanInputRef,
   cantidadIngreso,
   onCantidadIngresoChange,
-  priceListId,
+  showPriceList = true,
+  priceListId = SALE_CATALOG_DEFAULT_PRICE_LISTS[0]?.id ?? "default",
   onPriceListChange,
   onPriceListSelectClosed,
   priceLists = SALE_CATALOG_DEFAULT_PRICE_LISTS,
+  searchPlaceholder = "Escanear producto o buscar…",
+  trailing,
   variant = "pos-dark",
   demo = false,
   className,
@@ -282,7 +288,7 @@ export function SaleCatalogToolbar({
             )}
           >
             <span className="truncate text-[color-mix(in_srgb,var(--rootsy-sombra-300)_55%,transparent)]">
-              Escanear producto o buscar…
+              {searchPlaceholder}
             </span>
           </div>
         ) : variant === "operar" ? (
@@ -292,8 +298,8 @@ export function SaleCatalogToolbar({
             value={busqueda}
             onChange={(e) => onBusquedaChange(e.target.value)}
             onKeyDown={onBusquedaKeyDown}
-            placeholder="Escanear producto o buscar…"
-            aria-label="Escanear producto o buscar"
+            placeholder={searchPlaceholder}
+            aria-label={searchPlaceholder}
             className={scanInputClass(variant, busqueda.length > 0)}
           />
         ) : (
@@ -302,8 +308,8 @@ export function SaleCatalogToolbar({
             value={busqueda}
             onChange={(e) => onBusquedaChange(e.target.value)}
             onKeyDown={onBusquedaKeyDown}
-            placeholder="Escanear producto o buscar…"
-            aria-label="Escanear producto o buscar"
+            placeholder={searchPlaceholder}
+            aria-label={searchPlaceholder}
             className={scanInputClass(variant, busqueda.length > 0)}
           />
         )}
@@ -377,48 +383,52 @@ export function SaleCatalogToolbar({
         </button>
       </div>
 
-      <div className="flex shrink-0 items-center gap-1">
-        <label id={priceListLabelId} className="sr-only">
-          Lista de precio
-        </label>
-        {demo ? (
-          <div
-            className={cn("flex items-center", priceListTriggerClass(variant))}
-            aria-labelledby={priceListLabelId}
-          >
-            <DollarSign className={priceListIconClass(variant)} aria-hidden />
-            {priceLists.find((p) => p.id === priceListId)?.label ?? "Principal"}
-          </div>
-        ) : (
-          <Select
-            value={priceListId}
-            onValueChange={onPriceListChange}
-            onOpenChange={(open) => {
-              if (!open) onPriceListSelectClosed?.()
-            }}
-          >
-            <SelectTrigger
+      {showPriceList ? (
+        <div className="flex shrink-0 items-center gap-1">
+          <label id={priceListLabelId} className="sr-only">
+            Lista de precio
+          </label>
+          {demo ? (
+            <div
+              className={cn("flex items-center", priceListTriggerClass(variant))}
               aria-labelledby={priceListLabelId}
-              className={cn(
-                priceListTriggerClass(variant),
-                variant === "operar" &&
-                  "h-10 w-fit data-[size=default]:h-10 dark:bg-[color-mix(in_srgb,var(--rootsy-sombra-950)_55%,transparent)] dark:hover:bg-[color-mix(in_srgb,var(--rootsy-sombra-950)_55%,transparent)]",
-              )}
             >
               <DollarSign className={priceListIconClass(variant)} aria-hidden />
-              <SelectValue placeholder="Principal" />
-            </SelectTrigger>
-            <SelectContent align="end">
-              {priceLists.map((list) => (
-                <SelectItem key={list.id} value={list.id}>
-                  {list.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        )}
-        <PriceListHelpTooltip variant={variant} />
-      </div>
+              {priceLists.find((p) => p.id === priceListId)?.label ?? "Principal"}
+            </div>
+          ) : (
+            <Select
+              value={priceListId}
+              onValueChange={(value) => onPriceListChange?.(value)}
+              onOpenChange={(open) => {
+                if (!open) onPriceListSelectClosed?.()
+              }}
+            >
+              <SelectTrigger
+                aria-labelledby={priceListLabelId}
+                className={cn(
+                  priceListTriggerClass(variant),
+                  variant === "operar" &&
+                    "h-10 w-fit data-[size=default]:h-10 dark:bg-[color-mix(in_srgb,var(--rootsy-sombra-950)_55%,transparent)] dark:hover:bg-[color-mix(in_srgb,var(--rootsy-sombra-950)_55%,transparent)]",
+                )}
+              >
+                <DollarSign className={priceListIconClass(variant)} aria-hidden />
+                <SelectValue placeholder="Principal" />
+              </SelectTrigger>
+              <SelectContent align="end">
+                {priceLists.map((list) => (
+                  <SelectItem key={list.id} value={list.id}>
+                    {list.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          )}
+          <PriceListHelpTooltip variant={variant} />
+        </div>
+      ) : null}
+
+      {trailing ? <div className="shrink-0">{trailing}</div> : null}
     </div>
   )
 }

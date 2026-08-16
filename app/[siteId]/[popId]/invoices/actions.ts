@@ -141,6 +141,8 @@ export type GetPopInvoicesArcaTableInput = {
   pageSize?: number
   status?: string
   regimen?: string
+  dateFrom?: string | null
+  dateTo?: string | null
   sort?: string | null
   ord?: "asc" | "desc"
 }
@@ -713,6 +715,14 @@ export async function getPopInvoicesArcaTable(
     }
     if (regimenFilter && isInvoiceRegimenValue(regimenFilter)) {
       query = query.eq("arca_regimen", regimenFilter)
+    }
+    const dateFrom = input.dateFrom?.trim() ?? ""
+    const dateTo = input.dateTo?.trim() ?? ""
+    if (dateFrom) {
+      query = query.gte("cbte_fch", dateFrom)
+    }
+    if (dateTo) {
+      query = query.lte("cbte_fch", dateTo)
     }
     if (q) {
       const escaped = escapeIlikePattern(q)

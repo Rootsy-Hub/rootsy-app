@@ -40,8 +40,8 @@ export type RootsButtonInteractionFlags = {
 export function resolveButtonInteractionState(
   flags: RootsButtonInteractionFlags,
 ): ButtonsUiInteractionState {
-  if (flags.disabled) return "disabled"
   if (flags.loading) return "loading"
+  if (flags.disabled) return "disabled"
   if (flags.pressed) return "active"
   if (flags.focusVisible) return "focus"
   if (flags.hovered) return "hover"
@@ -60,6 +60,8 @@ export function resolveSemanticAppearance(
       return "subtle"
     case "destructive":
       return "danger"
+    case "destructiveSubtle":
+      return "danger-subtle"
     case "link":
       return "link"
   }

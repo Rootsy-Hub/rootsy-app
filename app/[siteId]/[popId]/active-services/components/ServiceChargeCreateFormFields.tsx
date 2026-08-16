@@ -12,6 +12,7 @@ import type {
   ServiceChargeCreateWizardForm,
   ServiceChargeCreateWizardStep,
 } from "@/app/[siteId]/[popId]/active-services/serviceChargeCreateFormState"
+import { SERVICE_CHARGE_PAYMENT_PENDING } from "@/app/[siteId]/[popId]/active-services/serviceChargeCreateFormState"
 import {
   RootsFormDateField,
   RootsFormIntegerField,
@@ -307,15 +308,24 @@ export function ServiceChargeCreateFormFields({
           <RootsFormSelectField
             label="Medio de pago"
             id="charge-payment-method"
-            value={form.paymentMethodKey || "__none__"}
-            onValueChange={(value) =>
-              onChange({ paymentMethodKey: value === "__none__" ? "" : value })
+            value={
+              form.paymentMethodKey === SERVICE_CHARGE_PAYMENT_PENDING
+                ? SERVICE_CHARGE_PAYMENT_PENDING
+                : form.paymentMethodKey || ""
             }
-            placeholder="Sin definir"
+            onValueChange={(value) =>
+              onChange({
+                paymentMethodKey:
+                  value === SERVICE_CHARGE_PAYMENT_PENDING ? SERVICE_CHARGE_PAYMENT_PENDING : value,
+              })
+            }
+            placeholder="Elegir medio de pago"
             disabled={disabled}
             hint="Opcional — cómo esperás cobrar este cargo."
           >
-            <RootsFormSelectItem value="__none__">Sin definir</RootsFormSelectItem>
+            <RootsFormSelectItem value={SERVICE_CHARGE_PAYMENT_PENDING}>
+              Pendiente
+            </RootsFormSelectItem>
             {paymentMethods.map((method) => {
               const key = treasuryPaymentOptionKey(method)
               return (

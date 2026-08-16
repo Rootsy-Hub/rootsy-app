@@ -12,12 +12,22 @@ import type { MesaReservation } from "@/app/[siteId]/[popId]/mesas/mesasTypes"
 import type { SaleCatalogClient, SaleCatalogPaymentOption, SaleOpenCashSession } from "@/app/[siteId]/[popId]/sale/actions"
 import { useMenuCatalogLoader } from "@/hooks/useMenuCatalogLoader"
 import { usePopSaleComprobanteFiscalContext } from "@/hooks/usePopSaleComprobanteFiscalContext"
+import { usePopWorkspace } from "@/context/PopWorkspaceContext"
+import { clientsAccessFromKeys } from "@/lib/popWorkspaceAccess"
+import {
+  buildOperationPartyManualSelection,
+  type OperationPartyManualConfirmOptions,
+  type OperationPartyManualConfirmPayload,
+} from "@/lib/operationPartyPicker"
 import {
   generalDiscountToolbarLabel,
   healLegacyLockedGeneralDiscount,
   isGeneralDiscountEditBlocked,
 } from "@/lib/generalDiscountLock"
-import { defaultCheckoutPaymentSelection } from "@/lib/saleCheckoutPayment"
+import {
+  defaultCheckoutPaymentSelection,
+  resolveSaleToolboxPaymentDisplay,
+} from "@/lib/saleCheckoutPayment"
 import { treasuryPaymentOptionKey } from "@/lib/treasuryPaymentOptions"
 import { completeSale } from "@/app/[siteId]/[popId]/sale/completeSale"
 import {
@@ -186,11 +196,18 @@ export function useMesasSaleCheckout(
     bootstrapLoaded,
   } = usePopSaleComprobanteFiscalContext()
 
+  const { bootstrap } = usePopWorkspace()
+  const canCreateClient = useMemo(
+    () => clientsAccessFromKeys(bootstrap?.permissionKeys ?? []).canCreate,
+    [bootstrap?.permissionKeys],
+  )
+
   const [carrito, setCarrito] = useState<MesasCartItem[]>([])
   const [clienteSeleccionado, setClienteSeleccionado] =
     useState<MesasClienteSeleccionado | null>(null)
   const [manualNombreCliente, setManualNombreCliente] = useState("")
   const [fiscalDocVenta, setFiscalDocVenta] = useState("")
+  const [ventaEmail, setVentaEmail] = useState("")
   const [ventaIvaCondition, setVentaIvaCondition] = useState("")
   const [comprobante, setComprobante] = useState<string | null>(null)
   const [metodoPagoSeleccionado, setMetodoPagoSeleccionado] =
@@ -452,6 +469,7 @@ export function useMesasSaleCheckout(
 
   const ventaPadron = usePadronAutofillRazonSocial(popId, fiscalDocVenta, {
     enabled: Boolean(popId) && (clienteSeleccionado == null || clienteSeleccionado.manual),
+    manual: true,
   })
 
   useEffect(() => {
@@ -789,6 +807,16 @@ export function useMesasSaleCheckout(
     return metodoPagoSeleccionado?.label ?? "Elegir forma de pago"
   }, [payOnClientAccount, metodoPagoSeleccionado])
 
+  const toolboxPaymentDisplay = useMemo(
+    () =>
+      resolveSaleToolboxPaymentDisplay({
+        payOnClientAccount,
+        metodoPagoSeleccionado,
+        treasuryPaymentContext,
+      }),
+    [payOnClientAccount, metodoPagoSeleccionado, treasuryPaymentContext],
+  )
+
   const comprobanteDisplayLabel = useMemo(
     () => getSaleComprobanteDisplayLabel(comprobante),
     [comprobante],
@@ -864,45 +892,41 @@ export function useMesasSaleCheckout(
     [popId],
   )
 
-  const seleccionarClienteManual = useCallback(() => {
-    const name = manualNombreCliente.trim() || ventaPadron.razonSocial.trim()
-    if (!name && !fiscalDocVenta.trim()) return
-    const iva =
-      ventaIvaCondition.trim() || ventaPadron.mappedIvaCondition || null
-    setClienteSeleccionado({
-      id: null,
-      manual: true,
-      name: name || "Cliente sin nombre",
-      taxId: fiscalDocVenta.trim() || null,
-      ivaCondition: iva,
-      defaultInvoiceTypeLabel: null,
-    })
-    if (iva && hasValidPopFiscalCuit) {
-      const suggested = suggestSaleComprobanteForClientIva(
-        iva as ClientIvaConditionValue,
-        popEmisorIvaCondition,
-      )
-      if (
-        suggested &&
-        isAllowedSaleComprobanteLabel(
-          invoiceTypeSiteId,
-          suggested,
+  const confirmarClienteManual = useCallback(
+    (
+      payload: OperationPartyManualConfirmPayload,
+      _options: OperationPartyManualConfirmOptions,
+    ) => {
+      setManualNombreCliente(payload.name)
+      setFiscalDocVenta(payload.taxId)
+      setVentaEmail(payload.email)
+      setVentaIvaCondition(payload.ivaCondition)
+      setClienteSeleccionado(buildOperationPartyManualSelection(payload))
+      if (payload.ivaCondition && hasValidPopFiscalCuit) {
+        const suggested = suggestSaleComprobanteForClientIva(
+          payload.ivaCondition as ClientIvaConditionValue,
           popEmisorIvaCondition,
-          hasValidPopFiscalCuit,
         )
-      ) {
-        elegirComprobante(suggested)
+        if (
+          suggested &&
+          isAllowedSaleComprobanteLabel(
+            invoiceTypeSiteId,
+            suggested,
+            popEmisorIvaCondition,
+            hasValidPopFiscalCuit,
+          )
+        ) {
+          elegirComprobante(suggested)
+        }
       }
-    }
-    setClienteModalAbierto(false)
-  }, [
-    elegirComprobante,
-    fiscalDocVenta,
-    manualNombreCliente,
-    ventaIvaCondition,
-    ventaPadron.mappedIvaCondition,
-    ventaPadron.razonSocial,
-  ])
+    },
+    [
+      elegirComprobante,
+      hasValidPopFiscalCuit,
+      invoiceTypeSiteId,
+      popEmisorIvaCondition,
+    ],
+  )
 
   const applyClientFromReservation = useCallback((reservation: MesaReservation) => {
     const name = reservation.clientName.trim()
@@ -1658,7 +1682,15 @@ export function useMesasSaleCheckout(
         ? "Elegir forma de pago"
         : !openCashSession
           ? "Requiere caja abierta"
-          : pagoResumenLabel,
+          : toolboxPaymentDisplay.pagoLabel,
+      pagoSubLabel:
+        mesaToolbarDisabled || !openCashSession
+          ? null
+          : toolboxPaymentDisplay.pagoSubLabel,
+      pagoIcon:
+        mesaToolbarDisabled || !openCashSession
+          ? undefined
+          : toolboxPaymentDisplay.pagoIcon,
       pagoConfigurado: pagoConfigurado && !mesaToolbarDisabled && openCashSession != null,
       descuentoLabel: mesaToolbarDisabled ? "Sin descuento" : descuentoToolbarLabel,
       hayDescuento: hayDescuento && !mesaToolbarDisabled,
@@ -1700,12 +1732,14 @@ export function useMesasSaleCheckout(
     modals: {
       popId: popId ?? "",
       canReadClients,
+      canCreateClient,
       clienteModalAbierto,
       setClienteModalAbierto: (open: boolean) => {
         setClienteModalAbierto(open)
         if (open && clienteSeleccionado?.manual) {
           setManualNombreCliente(clienteSeleccionado.name)
           setFiscalDocVenta(clienteSeleccionado.taxId ?? "")
+          setVentaEmail(clienteSeleccionado.email ?? "")
           setVentaIvaCondition(clienteSeleccionado.ivaCondition ?? "")
         }
       },
@@ -1723,13 +1757,15 @@ export function useMesasSaleCheckout(
       setManualNombreCliente,
       fiscalDocVenta,
       setFiscalDocVenta,
+      ventaEmail,
+      setVentaEmail,
       ventaIvaCondition,
       setVentaIvaCondition,
       clienteSeleccionado,
       setClienteSeleccionado,
       ventaPadron,
       clienteCatalogoBloqueado,
-      seleccionarClienteManual,
+      confirmarClienteManual,
       descuentoGeneralEditBlocked,
       labelCondicionIva,
       comprobante,
@@ -1829,6 +1865,7 @@ export function useMesasSaleCheckout(
         setClienteSeleccionado(null)
         setManualNombreCliente("")
         setFiscalDocVenta("")
+        setVentaEmail("")
         setVentaIvaCondition("")
       },
     },

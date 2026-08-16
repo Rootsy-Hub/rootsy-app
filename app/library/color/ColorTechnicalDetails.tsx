@@ -7,23 +7,12 @@ import {
   SemanticTokenTable,
   ThemeValuesTable,
 } from "@/app/library/color/ColorSystemDocPrimitives"
+import { LibraryDocMetaLabel } from "@/app/library/libraryDocPrimitives"
 import {
-  COLOR_TOKENS,
   ROOTSY_CONTRAST_PAIRS,
   ROOTSY_SEMANTIC_TOKENS,
 } from "@/app/library/color/rootsyColorSystem"
 import type { ReactNode } from "react"
-
-function TechnicalSubheading({ children }: { children: ReactNode }) {
-  return (
-    <p
-      className="font-canopy text-xs font-semibold uppercase tracking-wide"
-      style={{ color: COLOR_TOKENS.bruma500 }}
-    >
-      {children}
-    </p>
-  )
-}
 
 function TechnicalBlock({
   title,
@@ -34,7 +23,7 @@ function TechnicalBlock({
 }) {
   return (
     <div className="space-y-3">
-      <TechnicalSubheading>{title}</TechnicalSubheading>
+      <LibraryDocMetaLabel>{title}</LibraryDocMetaLabel>
       {children}
     </div>
   )

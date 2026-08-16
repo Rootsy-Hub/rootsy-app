@@ -13,6 +13,7 @@ import {
 } from "@/app/library/layouts/layoutsOperarStyles"
 import { saleOpImporteBaseClass } from "@/components/sale-operation/saleOperationStyles"
 import { cn } from "@/lib/utils"
+import type { LucideIcon } from "lucide-react"
 import { Banknote, Percent, Receipt, User } from "lucide-react"
 
 const TOOLBOX_PROPOSAL = LAYOUTS_OPERAR_DEFAULT_TOOLBOX_PROPOSAL
@@ -27,8 +28,11 @@ export type SaleOperationToolboxProps = {
   /** Override solo para pago (p. ej. vender sin caja abierta). */
   pagoDisabled?: boolean
   comprobanteLabel: string
+  comprobanteConfigurado?: boolean
   pagoLabel: string
+  pagoSubLabel?: string | null
   pagoConfigurado: boolean
+  pagoIcon?: LucideIcon
   descuentoLabel: string
   hayDescuento: boolean
   descuentoDisabled?: boolean
@@ -47,8 +51,11 @@ export function SaleOperationToolbox({
   toolbarDisabled = false,
   pagoDisabled,
   comprobanteLabel,
+  comprobanteConfigurado,
   pagoLabel,
+  pagoSubLabel,
   pagoConfigurado,
+  pagoIcon: PagoIconProp,
   descuentoLabel,
   hayDescuento,
   descuentoDisabled = false,
@@ -59,6 +66,8 @@ export function SaleOperationToolbox({
   className,
 }: SaleOperationToolboxProps) {
   const pagoButtonDisabled = pagoDisabled ?? toolbarDisabled
+  const comprobanteListo = comprobanteConfigurado ?? comprobanteLabel !== "Sin comprobante"
+  const PagoIcon = PagoIconProp ?? Banknote
 
   return (
     <div className={cn(layoutsOperarToolboxBandClass, className)}>
@@ -105,13 +114,13 @@ export function SaleOperationToolbox({
           disabled={toolbarDisabled}
           onClick={onComprobanteClick}
           className={cn(
-            layoutsOperarToolboxSlotClass(comprobanteLabel !== "Sin comprobante"),
+            layoutsOperarToolboxSlotClass(comprobanteListo),
             toolbarDisabled && "opacity-45",
           )}
           aria-label={`Comprobante: ${comprobanteLabel}`}
         >
           <span
-            className={layoutsOperarToolboxIconWrapClass(comprobanteLabel !== "Sin comprobante")}
+            className={layoutsOperarToolboxIconWrapClass(comprobanteListo)}
           >
             <Receipt className="size-4.5 sm:size-5" aria-hidden />
           </span>
@@ -122,7 +131,7 @@ export function SaleOperationToolbox({
             <span
               className={layoutsOperarToolboxProposalSlotValueClass(
                 TOOLBOX_PROPOSAL,
-                comprobanteLabel !== "Sin comprobante",
+                comprobanteListo,
               )}
             >
               {comprobanteLabel}
@@ -138,10 +147,14 @@ export function SaleOperationToolbox({
             layoutsOperarToolboxSlotClass(pagoConfigurado),
             pagoButtonDisabled && "opacity-45",
           )}
-          aria-label={`Pago: ${pagoLabel}`}
+          aria-label={
+            pagoSubLabel
+              ? `Pago: ${pagoLabel}, ${pagoSubLabel}`
+              : `Pago: ${pagoLabel}`
+          }
         >
           <span className={layoutsOperarToolboxIconWrapClass(pagoConfigurado)}>
-            <Banknote className="size-4.5 sm:size-5" aria-hidden />
+            <PagoIcon className="size-4.5 sm:size-5" aria-hidden />
           </span>
           <span className="min-w-0 flex-1">
             <span className={layoutsOperarToolboxProposalSlotLabelClass(TOOLBOX_PROPOSAL)}>
@@ -155,6 +168,11 @@ export function SaleOperationToolbox({
             >
               {pagoLabel}
             </span>
+            {pagoSubLabel ? (
+              <span className="mt-0.5 block truncate text-[11px] font-medium text-[color-mix(in_srgb,var(--rootsy-sombra-300)_68%,transparent)]">
+                {pagoSubLabel}
+              </span>
+            ) : null}
           </span>
         </button>
 

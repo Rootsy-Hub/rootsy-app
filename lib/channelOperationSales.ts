@@ -185,6 +185,14 @@ export function displayOperationSaleTotal(sale: OperationSaleRow): number {
   return sale.channelOrderTotal ?? sale.total
 }
 
+/** Importe cobrado en esta fila (cobro parcial o total de la operación). */
+export function displayOperationSaleCollected(sale: OperationSaleRow): number {
+  if (sale.payments.length > 0) {
+    return sumMoney(sale.payments.map((payment) => payment.amount))
+  }
+  return sale.saleAmount
+}
+
 export function displayOperationSalePaid(sale: OperationSaleRow): number | null {
   if (sale.channelPaidTotal == null) return null
   const orderTotal = displayOperationSaleTotal(sale)

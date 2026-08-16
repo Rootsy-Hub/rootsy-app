@@ -98,7 +98,7 @@ export function ServiceChargeBillingFields({
                 }),
           })
         }}
-        placeholder={SALE_COMPROBANTE_SIN_LABEL}
+        placeholder="Elegir comprobante"
         disabled={disabled}
       >
         <RootsFormSelectItem value={SALE_COMPROBANTE_SIN_LABEL}>

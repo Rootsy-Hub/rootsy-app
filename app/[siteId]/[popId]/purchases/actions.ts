@@ -14,14 +14,24 @@ import { loadPopPermissionsSnapshot } from "@/lib/popPermissionsServer"
 import { requireAuthenticatedUser } from "@/lib/authHelpers"
 import { createClient } from "@/utils/supabase/server"
 import { purchaseComprobanteAccruesInputVat } from "@/lib/purchaseComprobantePicker"
-import { isArticleItemKind } from "@/lib/articleItemKind"
+import {
+  ARTICLE_ITEM_KINDS,
+  ARTICLE_ITEM_KIND_STOCK_LABEL,
+  isArticleItemKind,
+  type ArticleItemKind,
+} from "@/lib/articleItemKind"
 import { activeArticleCostsByArticleIdForPop } from "@/lib/articleCostQueries"
 import {
   finalizePurchaseCheckout,
 } from "@/lib/purchaseCheckoutLines"
 import { resolvePurchaseCheckoutLine } from "@/app/[siteId]/[popId]/purchases/purchaseLineResolve"
+import {
+  derivePurchaseKindFromItemKinds,
+  isPurchaseKind,
+  type PurchaseKind,
+} from "@/lib/purchaseKind"
 
-export type PurchaseKind = "merchandise" | "raw_material" | "supply"
+export type { PurchaseKind } from "@/lib/purchaseKind"
 
 export type PurchaseStatus =
   | "draft"
@@ -194,7 +204,13 @@ export type PurchaseCatalogSupplier = {
 export type PurchaseCatalogCategory = {
   id: string
   name: string
-  itemKind: import("@/lib/articleItemKind").ArticleItemKind
+  itemKind: ArticleItemKind
+}
+
+export type PurchaseCatalogCategorySection = {
+  id: ArticleItemKind
+  label: string
+  categories: PurchaseCatalogCategory[]
 }
 
 export type PurchaseCatalogArticle = {
@@ -204,7 +220,7 @@ export type PurchaseCatalogArticle = {
   iva: number
   categoryId: string
   categoryName: string
-  itemKind: import("@/lib/articleItemKind").ArticleItemKind
+  itemKind: ArticleItemKind
   unitOfMeasure: string
   imageUrl: string | null
   costs: PurchaseCatalogArticleCost[]
@@ -215,6 +231,7 @@ export async function getPurchaseCatalog(popId: string): Promise<
       success: true
       popName: string
       categories: PurchaseCatalogCategory[]
+      categorySections: PurchaseCatalogCategorySection[]
       articles: PurchaseCatalogArticle[]
       suppliers: PurchaseCatalogSupplier[]
       treasuryPaymentContext: TreasuryPaymentContext | null
@@ -238,6 +255,7 @@ export async function getPurchaseCatalog(popId: string): Promise<
       .from("categories")
       .select("id, name, item_kind")
       .eq("pop_id", popId)
+      .in("item_kind", [...ARTICLE_ITEM_KINDS])
       .order("name", { ascending: true })
     if (catErr) {
       return { success: false, error: catErr.message }
@@ -268,6 +286,7 @@ export async function getPurchaseCatalog(popId: string): Promise<
       )
       .eq("pop_id", popId)
       .eq("is_active", true)
+      .in("item_kind", [...ARTICLE_ITEM_KINDS])
       .order("name", { ascending: true })
     if (artErr) {
       return { success: false, error: artErr.message }
@@ -331,11 +350,25 @@ export async function getPurchaseCatalog(popId: string): Promise<
       treasuryPaymentContext = treasuryRes.context
     }
 
+    const visibleCategoryIds = new Set(categories.map((c) => c.id))
+    const visibleArticles = articles.filter(
+      (article) =>
+        article.categoryId !== "" && visibleCategoryIds.has(article.categoryId),
+    )
+
+    const categorySections: PurchaseCatalogCategorySection[] =
+      ARTICLE_ITEM_KINDS.map((kind) => ({
+        id: kind,
+        label: ARTICLE_ITEM_KIND_STOCK_LABEL[kind],
+        categories: categories.filter((category) => category.itemKind === kind),
+      })).filter((section) => section.categories.length > 0)
+
     return {
       success: true,
       popName,
       categories,
-      articles,
+      categorySections,
+      articles: visibleArticles,
       suppliers,
       treasuryPaymentContext,
       canCreate: access.canCreate,
@@ -525,7 +558,7 @@ export async function createPurchase(
     }
 
     const kind = input.purchaseKind
-    if (!["merchandise", "raw_material", "supply"].includes(kind)) {
+    if (!isPurchaseKind(kind)) {
       return { success: false, error: "Tipo de compra inválido." }
     }
 
@@ -591,6 +624,10 @@ export async function createPurchase(
     if (built.length === 0) {
       return { success: false, error: "No hay ítems válidos en la compra." }
     }
+
+    const resolvedKind = derivePurchaseKindFromItemKinds(
+      built.map((line) => line.itemKind),
+    )
 
     const checkout = finalizePurchaseCheckout(
       built,
@@ -667,7 +704,7 @@ export async function createPurchase(
         supplier_id: supplierId,
         supplier_name: supplierName,
         supplier_tax_id: supplierTaxId,
-        purchase_kind: kind,
+        purchase_kind: resolvedKind,
         document_number: input.documentNumber?.trim() || null,
         document_date: input.documentDate?.trim() || null,
         due_date: input.dueDate?.trim() || null,

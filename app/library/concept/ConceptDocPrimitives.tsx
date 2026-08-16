@@ -1,5 +1,6 @@
 "use client"
 
+import { libraryDocMetaLabelClass } from "@/app/library/libraryColorTheme"
 import {
   CONCEPT_LIST_ITEMS,
   CONCEPT_PALETTE_DEMO,
@@ -7,6 +8,9 @@ import {
   ROOTSY_BRAND_CLOSING,
   ROOTSY_PRODUCT_ESSENCE,
 } from "@/app/library/concept/rootsyConceptSystem"
+import {
+  libraryDocBodyClass,
+} from "@/app/library/libraryColorTheme"
 import {
   LibraryDocLead,
   LibraryDocSection,
@@ -39,11 +43,7 @@ export function ConceptDocSection({
 }
 
 function ConceptExampleLabel({ children }: { children: ReactNode }) {
-  return (
-    <p className="font-canopy text-[11px] font-medium uppercase tracking-[0.12em] text-muted-foreground">
-      {children}
-    </p>
-  )
+  return <p className={libraryDocMetaLabelClass}>{children}</p>
 }
 
 function ConceptBrumaStage({
@@ -139,7 +139,7 @@ export function ConceptBrandHero() {
 
 export function ConceptBrandClosing() {
   return (
-    <p className="max-w-3xl font-stream text-base leading-relaxed text-muted-foreground italic">
+    <p className={cn(libraryDocBodyClass, "font-stream italic text-[var(--rootsy-bruma-600)]")}>
       {ROOTSY_BRAND_CLOSING}
     </p>
   )
@@ -220,14 +220,14 @@ export function ConceptPaletteDemo() {
               }}
             />
             <div>
-              <p className="font-canopy text-[11px] font-semibold text-foreground">{swatch.label}</p>
-              <p className="font-mono text-[10px] text-muted-foreground">{swatch.hex}</p>
-              <p className="font-canopy text-[10px] text-muted-foreground">{swatch.role}</p>
+              <p className="font-canopy text-[11px] font-semibold text-[var(--rootsy-bruma-900)]">{swatch.label}</p>
+              <p className="font-mono text-[10px] text-[var(--rootsy-bruma-500)]">{swatch.hex}</p>
+              <p className="font-canopy text-[10px] text-[var(--rootsy-bruma-500)]">{swatch.role}</p>
             </div>
           </div>
         ))}
       </div>
-      <p className="mt-4 font-canopy text-sm leading-relaxed text-muted-foreground">
+      <p className="mt-4 font-canopy text-sm leading-relaxed text-[var(--rootsy-bruma-500)]">
         Bruma como niebla de fondo. Savia como el verde de una planta entre la bruma —
         reservado para acción y énfasis.
       </p>

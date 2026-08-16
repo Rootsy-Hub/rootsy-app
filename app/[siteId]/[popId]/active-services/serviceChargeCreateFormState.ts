@@ -18,14 +18,35 @@ import { SALE_COMPROBANTE_SIN_LABEL } from "@/lib/saleComprobantePicker"
 /** Valor interno del select cuando el comprobante sigue la condición IVA del cliente. */
 export const SERVICE_CHARGE_COMPROBANTE_AUTO = "__auto__"
 
+/** Sin comprobante elegido explícitamente (distinto de aún no elegir). */
+export const SERVICE_CHARGE_COMPROBANTE_NONE = "__none__"
+
+/** Cobro pendiente — sin medio de tesorería (distinto de aún no elegir). */
+export const SERVICE_CHARGE_PAYMENT_PENDING = "__pending__"
+
+export const SERVICE_CHARGE_PAYMENT_PENDING_LABEL = "Pendiente"
+
+export const SERVICE_CHARGE_SNAPSHOT_PLACEHOLDER = "—"
+
+export function isServiceChargePaymentMethodChosen(paymentMethodKey: string): boolean {
+  return paymentMethodKey.trim() !== ""
+}
+
+export function isServiceChargeComprobanteChosen(comprobanteLabel: string): boolean {
+  return comprobanteLabel.trim() !== ""
+}
+
 export function serviceChargeComprobanteSelectValue(
   comprobanteLabel: string,
 ): string {
   if (comprobanteLabel === SERVICE_CHARGE_COMPROBANTE_AUTO) {
     return SERVICE_CHARGE_COMPROBANTE_AUTO
   }
-  if (!comprobanteLabel.trim()) {
+  if (comprobanteLabel === SERVICE_CHARGE_COMPROBANTE_NONE) {
     return SALE_COMPROBANTE_SIN_LABEL
+  }
+  if (!comprobanteLabel.trim()) {
+    return ""
   }
   return comprobanteLabel.trim()
 }
@@ -35,7 +56,7 @@ export function serviceChargeComprobanteFromSelectValue(value: string): string {
     return SERVICE_CHARGE_COMPROBANTE_AUTO
   }
   if (value === SALE_COMPROBANTE_SIN_LABEL) {
-    return ""
+    return SERVICE_CHARGE_COMPROBANTE_NONE
   }
   return value
 }
@@ -44,21 +65,56 @@ export function resolveServiceChargeComprobanteDisplayLabel(
   comprobanteLabel: string,
   suggestedComprobante: string | null,
 ): string {
+  if (!isServiceChargeComprobanteChosen(comprobanteLabel)) {
+    return SERVICE_CHARGE_SNAPSHOT_PLACEHOLDER
+  }
+  if (comprobanteLabel === SERVICE_CHARGE_COMPROBANTE_NONE) {
+    return SALE_COMPROBANTE_SIN_LABEL
+  }
   if (comprobanteLabel === SERVICE_CHARGE_COMPROBANTE_AUTO) {
     return suggestedComprobante
       ? `Según condición IVA (${suggestedComprobante})`
       : SALE_COMPROBANTE_SIN_LABEL
   }
-  if (comprobanteLabel.trim()) {
-    return comprobanteLabel.trim()
+  return comprobanteLabel.trim()
+}
+
+/** Etiqueta compacta para toolbox — tipo resuelto, sin «Según condición IVA». */
+export function resolveServiceChargeComprobanteToolboxLabel(
+  comprobanteLabel: string,
+  suggestedComprobante: string | null,
+): string {
+  if (!isServiceChargeComprobanteChosen(comprobanteLabel)) {
+    return "Elegir comprobante"
   }
-  return SALE_COMPROBANTE_SIN_LABEL
+  if (comprobanteLabel === SERVICE_CHARGE_COMPROBANTE_NONE) {
+    return SALE_COMPROBANTE_SIN_LABEL
+  }
+  return (
+    resolveServiceChargeComprobanteEffectiveLabel(
+      comprobanteLabel,
+      suggestedComprobante,
+    ) ?? SALE_COMPROBANTE_SIN_LABEL
+  )
+}
+
+export function resolveServiceChargeComprobanteSnapshotLabel(
+  comprobanteLabel: string,
+  suggestedComprobante: string | null,
+): string {
+  return resolveServiceChargeComprobanteDisplayLabel(
+    comprobanteLabel,
+    suggestedComprobante,
+  )
 }
 
 export function resolveServiceChargeComprobanteEffectiveLabel(
   comprobanteLabel: string,
   suggestedComprobante: string | null,
 ): string | null {
+  if (comprobanteLabel === SERVICE_CHARGE_COMPROBANTE_NONE) {
+    return null
+  }
   if (comprobanteLabel === SERVICE_CHARGE_COMPROBANTE_AUTO) {
     return suggestedComprobante
   }

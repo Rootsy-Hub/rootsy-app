@@ -5,8 +5,9 @@ import {
   CHART_CUENTAS_POR_COBRAR_CODES,
   CHART_IVA_PAGAR_CODES,
   CHART_MERCADERIAS_CODES,
-  CHART_VENTAS_GRAVADAS_CODES,
 } from "@/lib/argV3DefaultChartAccounts"
+import { parseCashRegisterSaleChannel } from "@/lib/cashRegisterSaleContextLabels"
+import { chartVentasCodesForSaleChannel } from "@/lib/saleRevenueChartAccounts"
 import {
   POP_PERMS,
   permissionKeysInclude,
@@ -1383,12 +1384,20 @@ export async function completeSale(
       }
     }
 
-    const ventasId = await resolveAccountId(supabase, popId, CHART_VENTAS_GRAVADAS_CODES)
+    const saleChannel = parseCashRegisterSaleChannel(
+      counterOrderId ? "counter" : tableSessionId ? "table" : "pos",
+    )
+    const ventasId = await resolveAccountId(
+      supabase,
+      popId,
+      chartVentasCodesForSaleChannel(saleChannel),
+    )
     if (!ventasId) {
       await cancelSaleRollback(supabase, saleId, trackedMovements)
       return {
         success: false,
-        error: "No hay cuenta de ventas (p. ej. 4.1.1.01) en el plan de cuentas.",
+        error:
+          "No hay cuenta de ingresos por ventas para este canal en el plan de cuentas.",
       }
     }
 

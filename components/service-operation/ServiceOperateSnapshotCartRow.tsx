@@ -17,6 +17,7 @@ type Props = {
   value?: string
   valueContent?: React.ReactNode
   subtitle?: string | null
+  subtitleClassName?: string
   empty?: boolean
   className?: string
 }
@@ -26,6 +27,7 @@ export function ServiceOperateSnapshotCartRow({
   value = "",
   valueContent,
   subtitle,
+  subtitleClassName,
   empty = false,
   className,
 }: Props) {
@@ -41,7 +43,7 @@ export function ServiceOperateSnapshotCartRow({
         {subtitleTrimmed ? (
           <span
             className={cn(
-              layoutsOperarTicketProposalLineMetaClass(TICKET_PROPOSAL),
+              subtitleClassName ?? layoutsOperarTicketProposalLineMetaClass(TICKET_PROPOSAL),
               "mt-0.5 block",
             )}
           >

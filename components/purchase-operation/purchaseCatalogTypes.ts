@@ -6,6 +6,8 @@ export type PurchaseCatalogProduct = {
   descripcion: string
   iva: number
   categoria: string
+  /** Clave de filtro sidebar: `{itemKind}:{categoryId}` */
+  categoriaFiltro: string
   imagen: string
   unitOfMeasure: string
   costs: PurchaseCatalogArticleCost[]

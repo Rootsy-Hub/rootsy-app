@@ -1,5 +1,6 @@
 "use client"
 
+import { LibraryRelatedLinksSection } from "@/app/library/libraryDocPrimitives"
 import {
   LayoutsTablesContentGridWireframeDemo,
   LayoutsTablesDocSubsection,
@@ -15,10 +16,6 @@ import {
   getLayoutsPageMeta,
 } from "@/app/library/layouts/layoutsLibraryNav"
 import { LayoutsSystemHero } from "@/app/library/layouts/LayoutsDocShared"
-import {
-  LibraryDocSection,
-  LibraryRelatedLinks,
-} from "@/app/library/libraryDocPrimitives"
 import { librarySectionHref } from "@/app/library/layoutLibraryShared"
 import Link from "next/link"
 
@@ -64,23 +61,17 @@ export function LayoutsTablesFoundationView({ sectionId }: Props) {
         <LayoutsTablesTableFooterSectionDemo />
       </LibraryDocSection>
 
-      <p className="text-center text-xs text-muted-foreground">
+      <p className="text-center text-xs text-[var(--rootsy-bruma-500)]">
         Shell padre en{" "}
         <Link
           href={librarySectionHref("layouts-module")}
-          className="text-primary hover:underline"
+          className="text-[var(--rootsy-savia-600)] hover:underline"
         >
           Módulo
         </Link>
       </p>
 
-      <div className="space-y-3 border-t border-border/60 pt-8">
-        <p className="text-sm font-semibold text-foreground">Relacionado</p>
-        <LibraryRelatedLinks
-          excludeId={sectionId}
-          links={LAYOUTS_RELATED_LINKS}
-        />
-      </div>
+      <LibraryRelatedLinksSection excludeId={sectionId} links={LAYOUTS_RELATED_LINKS} />
     </div>
   )
 }

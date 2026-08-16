@@ -279,6 +279,7 @@ export const rootsButtonVariant = {
   secondary: "outline",
   tertiary: "ghost-neutral",
   destructive: "destructive",
+  destructiveSubtle: "destructive-subtle",
   link: "link",
 } as const
 
@@ -301,6 +302,8 @@ export function rootsButtonClassForVariant(
       return cn(rootsButtonTertiaryClass, className)
     case "destructive":
       return cn(rootsButtonDestructiveClass, className)
+    case "destructiveSubtle":
+      return className
     case "link":
       return cn(rootsButtonLinkClass, className)
     default:

@@ -68,6 +68,8 @@ const CATEGORY_ICON_MAP: Record<string, Icon> = {
   Refresh,
 }
 
+import { LibraryDocMetaLabel } from "@/app/library/libraryDocPrimitives"
+
 export {
   LibraryDocLead as IconographyDocLead,
   LibraryDocSection as IconographyDocSection,
@@ -76,14 +78,7 @@ export {
 } from "@/app/library/libraryDocPrimitives"
 
 function TechnicalSubheading({ children }: { children: ReactNode }) {
-  return (
-    <p
-      className="font-canopy text-xs font-semibold uppercase tracking-wide"
-      style={{ color: CONCEPT_TOKENS.bruma500 }}
-    >
-      {children}
-    </p>
-  )
+  return <LibraryDocMetaLabel>{children}</LibraryDocMetaLabel>
 }
 
 export function IconographySystemHero() {
@@ -139,11 +134,11 @@ export function IconographySystemHero() {
             <ShoppingCart size={16} variant={VARIANT_ACTIVE} color={CONCEPT_TOKENS.savia600} />
             Ventas
           </div>
-          <div className="inline-flex items-center gap-2 rounded-lg px-3 py-2 font-canopy text-sm font-medium text-muted-foreground">
+          <div className="inline-flex items-center gap-2 rounded-lg px-3 py-2 font-canopy text-sm font-medium text-[var(--rootsy-bruma-500)]">
             <Receipt size={16} variant={VARIANT_UI} color={CONCEPT_TOKENS.bruma500} />
             Operaciones
           </div>
-          <div className="inline-flex items-center gap-2 rounded-lg px-3 py-2 font-canopy text-sm font-medium text-muted-foreground">
+          <div className="inline-flex items-center gap-2 rounded-lg px-3 py-2 font-canopy text-sm font-medium text-[var(--rootsy-bruma-500)]">
             <Setting2 size={16} variant={VARIANT_UI} color={CONCEPT_TOKENS.bruma500} />
             Ajustes
           </div>
@@ -166,29 +161,29 @@ export function IconographySystemHero() {
 export function IconLibraryCard() {
   const lib = ROOTSY_ICON_LIBRARY
   return (
-    <div className="rounded-2xl border border-border/70 bg-card p-5 shadow-sm">
+    <div className="library-doc-card rounded-2xl p-5">
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div className="space-y-1">
-          <p className="text-sm font-semibold text-foreground">{lib.name}</p>
-          <p className="font-mono text-xs text-muted-foreground">{lib.package}</p>
-          <p className="mt-2 max-w-xl text-sm text-muted-foreground">{lib.rationale}</p>
+          <p className="text-sm font-semibold text-[var(--rootsy-bruma-900)]">{lib.name}</p>
+          <p className="font-mono text-xs text-[var(--rootsy-bruma-500)]">{lib.package}</p>
+          <p className="mt-2 max-w-xl text-sm text-[var(--rootsy-bruma-500)]">{lib.rationale}</p>
         </div>
-        <span className="rounded-md bg-primary/10 px-2 py-1 text-[10px] font-bold uppercase tracking-[0.12em] text-primary">
+        <span className="rounded-md bg-[color-mix(in_srgb,var(--rootsy-savia-600)_10%,transparent)] px-2 py-1 text-[10px] font-bold uppercase tracking-[0.12em] text-[var(--rootsy-savia-600)]">
           {lib.role}
         </span>
       </div>
       <div className="mt-4 flex flex-wrap gap-2">
-        <span className="rounded-md bg-muted px-2 py-0.5 font-mono text-[10px] text-muted-foreground">
+        <span className="rounded-md bg-[var(--rootsy-bruma-50)] px-2 py-0.5 font-mono text-[10px] text-[var(--rootsy-bruma-500)]">
           {lib.tier}
         </span>
-        <span className="rounded-md bg-muted px-2 py-0.5 font-mono text-[10px] text-muted-foreground">
+        <span className="rounded-md bg-[var(--rootsy-bruma-50)] px-2 py-0.5 font-mono text-[10px] text-[var(--rootsy-bruma-500)]">
           variant=&quot;{lib.variantDefault}&quot;
         </span>
-        <span className="rounded-md bg-muted px-2 py-0.5 font-mono text-[10px] text-muted-foreground">
+        <span className="rounded-md bg-[var(--rootsy-bruma-50)] px-2 py-0.5 font-mono text-[10px] text-[var(--rootsy-bruma-500)]">
           grid {lib.grid}
         </span>
       </div>
-      <pre className="mt-4 overflow-x-auto rounded-xl bg-muted/40 p-4 font-mono text-[11px] leading-relaxed text-foreground">
+      <pre className="mt-4 overflow-x-auto rounded-xl bg-[var(--rootsy-bruma-50)] p-4 font-mono text-[11px] leading-relaxed text-[var(--rootsy-bruma-900)]">
         {ICONSAX_IMPORT_EXAMPLE}
       </pre>
     </div>
@@ -203,12 +198,12 @@ export function IconVariantDemo() {
       ).map((item) => (
         <div
           key={item.id}
-          className="flex items-center gap-3 rounded-xl border border-border/70 bg-card p-4 shadow-sm"
+          className="flex items-center gap-3 library-doc-card rounded-xl p-4"
         >
           <Box size={20} variant={item.id} color={CONCEPT_TOKENS.savia600} />
           <div>
-            <p className="font-mono text-xs text-primary">variant=&quot;{item.id}&quot;</p>
-            <p className="text-xs text-muted-foreground">{item.usage}</p>
+            <p className="font-mono text-xs text-[var(--rootsy-savia-600)]">variant=&quot;{item.id}&quot;</p>
+            <p className="text-xs text-[var(--rootsy-bruma-500)]">{item.usage}</p>
           </div>
         </div>
       ))}
@@ -222,11 +217,11 @@ export function IconVisualStyleGrid() {
   return (
     <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
       {entries.map(([key, value]) => (
-        <div key={key} className="rounded-xl border border-border/70 bg-muted/20 p-4">
-          <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-muted-foreground">
+        <div key={key} className="rounded-xl border border-[var(--rootsy-bruma-200)] bg-[var(--rootsy-bruma-50)] p-4">
+          <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-[var(--rootsy-bruma-500)]">
             {key.replace(/([A-Z])/g, " $1").trim()}
           </p>
-          <p className="mt-1 text-sm text-foreground">{value}</p>
+          <p className="mt-1 text-sm text-[var(--rootsy-bruma-900)]">{value}</p>
         </div>
       ))}
     </div>
@@ -236,10 +231,10 @@ export function IconVisualStyleGrid() {
 export function IconSizeTable() {
   return (
     <div className="space-y-4">
-      <div className="overflow-x-auto rounded-2xl border border-border/70">
+      <div className="library-doc-table-shell overflow-x-auto rounded-2xl">
         <table className="w-full min-w-[560px] text-left text-sm">
           <thead>
-            <tr className="border-b border-border/60 bg-muted/30 text-[10px] font-bold uppercase tracking-[0.12em] text-muted-foreground">
+            <tr className="border-b border-[var(--rootsy-bruma-200)] bg-[var(--rootsy-bruma-50)] text-[10px] font-bold uppercase tracking-[0.12em] text-[var(--rootsy-bruma-500)]">
               <th className="px-4 py-2">Token</th>
               <th className="px-4 py-2">Label</th>
               <th className="px-4 py-2 text-right">px</th>
@@ -247,11 +242,11 @@ export function IconSizeTable() {
               <th className="px-4 py-2">Uso</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-border/50">
+          <tbody className="divide-y divide-[var(--rootsy-bruma-200)]">
             {ROOTSY_ICON_SIZES.map((size) => (
-              <tr key={size.id} className="hover:bg-muted/20">
-                <td className="px-4 py-2.5 font-mono text-xs text-primary">{size.token}</td>
-                <td className="px-4 py-2.5 text-xs text-muted-foreground">
+              <tr key={size.id} className="hover:bg-[var(--rootsy-bruma-50)]">
+                <td className="px-4 py-2.5 font-mono text-xs text-[var(--rootsy-savia-600)]">{size.token}</td>
+                <td className="px-4 py-2.5 text-xs text-[var(--rootsy-bruma-500)]">
                   {size.label}
                   {size.sparing ? (
                     <span className="ml-1 rounded bg-amber-500/10 px-1 text-[10px] text-amber-700">
@@ -263,7 +258,7 @@ export function IconSizeTable() {
                 <td className="px-4 py-2.5">
                   <Box size={size.px} variant={VARIANT_UI} color={CONCEPT_TOKENS.savia600} />
                 </td>
-                <td className="px-4 py-2.5 text-xs text-muted-foreground">{size.usage}</td>
+                <td className="px-4 py-2.5 text-xs text-[var(--rootsy-bruma-500)]">{size.usage}</td>
               </tr>
             ))}
           </tbody>
@@ -276,18 +271,18 @@ export function IconSizeTable() {
 
 function IconSizeCompareDemo() {
   return (
-    <div className="rounded-2xl border border-border/70 bg-card p-5 shadow-sm">
-      <p className="text-[11px] font-medium uppercase tracking-[0.12em] text-muted-foreground">
+    <div className="library-doc-card rounded-2xl p-5">
+      <p className="text-[11px] font-medium uppercase tracking-[0.12em] text-[var(--rootsy-bruma-500)]">
         Chevrons · 12px vs 16px
       </p>
       <div className="mt-4 flex flex-wrap items-center gap-6">
-        <div className="inline-flex items-center gap-2 rounded-lg border border-border/70 px-3 py-2 text-sm font-medium">
+        <div className="inline-flex items-center gap-2 rounded-lg border border-[var(--rootsy-bruma-200)] px-3 py-2 text-sm font-medium">
           <span>Trigger correcto</span>
-          <ArrowDown2 size={12} variant={VARIANT_UI} className="text-muted-foreground" />
+          <ArrowDown2 size={12} variant={VARIANT_UI} className="text-[var(--rootsy-bruma-500)]" />
         </div>
         <div className="inline-flex items-center gap-2 rounded-lg border border-dashed border-amber-500/50 px-3 py-2 text-sm font-medium opacity-70">
           <span>Demasiado grande</span>
-          <ArrowDown2 size={16} variant={VARIANT_UI} className="text-muted-foreground" />
+          <ArrowDown2 size={16} variant={VARIANT_UI} className="text-[var(--rootsy-bruma-500)]" />
         </div>
       </div>
     </div>
@@ -300,7 +295,7 @@ export function IconColorRolesGrid() {
       {ROOTSY_ICON_COLOR_ROLES.map((role) => (
         <div
           key={role.id}
-          className="rounded-xl border border-border/70 bg-card p-4 shadow-sm"
+          className="library-doc-card rounded-xl p-4"
         >
           <div className="flex items-center gap-3">
             <div
@@ -310,11 +305,11 @@ export function IconColorRolesGrid() {
               <Receipt size={20} variant={VARIANT_UI} color={role.hex} />
             </div>
             <div className="min-w-0">
-              <p className="truncate text-sm font-semibold text-foreground">{role.label}</p>
-              <p className="font-mono text-[10px] text-muted-foreground">{role.token}</p>
+              <p className="truncate text-sm font-semibold text-[var(--rootsy-bruma-900)]">{role.label}</p>
+              <p className="font-mono text-[10px] text-[var(--rootsy-bruma-500)]">{role.token}</p>
             </div>
           </div>
-          <p className="mt-3 text-xs text-muted-foreground">{role.usage}</p>
+          <p className="mt-3 text-xs text-[var(--rootsy-bruma-500)]">{role.usage}</p>
         </div>
       ))}
     </div>
@@ -327,10 +322,10 @@ export function IconCategoriesGallery() {
       {ROOTSY_ICON_CATEGORIES.map((cat) => (
         <div
           key={cat.id}
-          className="rounded-2xl border border-border/70 bg-card p-4 shadow-sm"
+          className="library-doc-card rounded-2xl p-4"
         >
-          <p className="text-sm font-semibold text-foreground">{cat.label}</p>
-          <p className="mt-1 text-xs text-muted-foreground">{cat.usage}</p>
+          <p className="text-sm font-semibold text-[var(--rootsy-bruma-900)]">{cat.label}</p>
+          <p className="mt-1 text-xs text-[var(--rootsy-bruma-500)]">{cat.usage}</p>
           <div className="mt-4 flex flex-wrap gap-2">
             {cat.examples.map((name) => {
               const IconComponent = CATEGORY_ICON_MAP[name]
@@ -338,10 +333,10 @@ export function IconCategoriesGallery() {
               return (
                 <div
                   key={name}
-                  className="flex flex-col items-center gap-1 rounded-lg border border-border/60 bg-muted/20 px-3 py-2"
+                  className="flex flex-col items-center gap-1 rounded-lg border border-[var(--rootsy-bruma-200)] bg-[var(--rootsy-bruma-50)] px-3 py-2"
                 >
-                  <IconComponent size={24} variant={VARIANT_UI} className="text-foreground" />
-                  <span className="font-mono text-[9px] text-muted-foreground">{name}</span>
+                  <IconComponent size={24} variant={VARIANT_UI} className="text-[var(--rootsy-bruma-900)]" />
+                  <span className="font-mono text-[9px] text-[var(--rootsy-bruma-500)]">{name}</span>
                 </div>
               )
             })}
@@ -358,9 +353,9 @@ export function IconGuidelinesGrid() {
       {ICONOGRAPHY_GUIDELINES.map((g) => (
         <div
           key={g.id}
-          className="rounded-2xl border border-border/70 bg-card p-4 shadow-sm"
+          className="library-doc-card rounded-2xl p-4"
         >
-          <p className="text-sm font-semibold text-foreground">{g.title}</p>
+          <p className="text-sm font-semibold text-[var(--rootsy-bruma-900)]">{g.title}</p>
           <div className="mt-3 grid gap-3 sm:grid-cols-2">
             <div
               className="rounded-lg border p-3"
@@ -375,13 +370,13 @@ export function IconGuidelinesGrid() {
               >
                 Hacer
               </p>
-              <p className="mt-1 text-sm text-foreground">{g.doText}</p>
+              <p className="mt-1 text-sm text-[var(--rootsy-bruma-900)]">{g.doText}</p>
             </div>
             <div className="rounded-lg border border-red-200 bg-red-50/80 p-3">
               <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-red-700">
                 Evitar
               </p>
-              <p className="mt-1 text-sm text-foreground">{g.dontText}</p>
+              <p className="mt-1 text-sm text-[var(--rootsy-bruma-900)]">{g.dontText}</p>
             </div>
           </div>
         </div>
@@ -392,10 +387,10 @@ export function IconGuidelinesGrid() {
 
 export function IconSmallUseCasesList() {
   return (
-    <ul className="space-y-2 rounded-xl border border-border/70 bg-muted/20 p-4">
+    <ul className="space-y-2 rounded-xl border border-[var(--rootsy-bruma-200)] bg-[var(--rootsy-bruma-50)] p-4">
       {ICON_SMALL_USE_CASES.map((item) => (
-        <li key={item} className="flex items-start gap-2 text-sm text-muted-foreground">
-          <TickCircle size={12} variant={VARIANT_ACTIVE} className="mt-0.5 shrink-0 text-primary" />
+        <li key={item} className="flex items-start gap-2 text-sm text-[var(--rootsy-bruma-500)]">
+          <TickCircle size={12} variant={VARIANT_ACTIVE} className="mt-0.5 shrink-0 text-[var(--rootsy-savia-600)]" />
           {item}
         </li>
       ))}
@@ -408,16 +403,16 @@ export function IconLabelDemo() {
     <div className="flex flex-wrap gap-3">
       <button
         type="button"
-        className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground"
+        className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-[var(--rootsy-savia-600)]-foreground"
       >
         <Add size={16} variant={VARIANT_ACTIVE} color="currentColor" />
         Nuevo artículo
       </button>
       <button
         type="button"
-        className="inline-flex items-center gap-2 rounded-lg border border-border/70 bg-card px-4 py-2 text-sm font-medium text-foreground"
+        className="library-doc-card inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium text-[var(--rootsy-bruma-900)]"
       >
-        <Edit size={16} variant={VARIANT_UI} className="text-muted-foreground" />
+        <Edit size={16} variant={VARIANT_UI} className="text-[var(--rootsy-bruma-500)]" />
         Editar
       </button>
       <button
@@ -433,16 +428,16 @@ export function IconLabelDemo() {
 
 export function IconNavActiveDemo() {
   return (
-    <div className="flex flex-wrap gap-2 rounded-2xl border border-border/70 bg-card p-4 shadow-sm">
-      <div className="inline-flex items-center gap-2 rounded-lg bg-primary/10 px-3 py-2 text-sm font-medium text-primary">
+    <div className="flex flex-wrap gap-2 library-doc-card rounded-2xl p-4">
+      <div className="inline-flex items-center gap-2 rounded-lg bg-[color-mix(in_srgb,var(--rootsy-savia-600)_10%,transparent)] px-3 py-2 text-sm font-medium text-[var(--rootsy-savia-600)]">
         <ShoppingCart size={16} variant={VARIANT_ACTIVE} color="currentColor" />
         Ventas
       </div>
-      <div className="inline-flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-muted-foreground">
+      <div className="inline-flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-[var(--rootsy-bruma-500)]">
         <Receipt size={16} variant={VARIANT_UI} />
         Operaciones
       </div>
-      <div className="inline-flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-muted-foreground">
+      <div className="inline-flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-[var(--rootsy-bruma-500)]">
         <DollarCircle size={16} variant={VARIANT_UI} />
         Tesorería
       </div>
@@ -452,8 +447,8 @@ export function IconNavActiveDemo() {
 
 export function IconValidationDemo() {
   return (
-    <div className="space-y-3 rounded-2xl border border-border/70 bg-card p-5 shadow-sm">
-      <div className="flex items-center gap-2 text-sm text-muted-foreground">
+    <div className="space-y-3 library-doc-card rounded-2xl p-5">
+      <div className="flex items-center gap-2 text-sm text-[var(--rootsy-bruma-500)]">
         <InfoCircle size={12} variant={VARIANT_ACTIVE} className="text-sky-600" />
         El precio incluye IVA.
       </div>
@@ -486,7 +481,7 @@ export function IconTileDemo() {
           >
             <Box size={spec.size} variant={VARIANT_UI} color={CONCEPT_TOKENS.savia600} />
           </div>
-          <p className="mt-2 font-mono text-[10px] text-muted-foreground">{spec.label}</p>
+          <p className="mt-2 font-mono text-[10px] text-[var(--rootsy-bruma-500)]">{spec.label}</p>
         </div>
       ))}
     </div>
@@ -498,10 +493,10 @@ export function IconographyTechnicalDetails() {
     <div className="space-y-8">
       <div className="space-y-3">
         <TechnicalSubheading>Tamaños</TechnicalSubheading>
-        <div className="overflow-x-auto rounded-2xl border border-border/70">
+        <div className="library-doc-table-shell overflow-x-auto rounded-2xl">
           <table className="w-full min-w-[560px] text-left font-canopy text-sm">
             <thead>
-              <tr className="border-b border-border/60 bg-muted/30">
+              <tr className="border-b border-[var(--rootsy-bruma-200)] bg-[var(--rootsy-bruma-50)]">
                 <th className="px-4 py-3 font-semibold">Token</th>
                 <th className="px-4 py-3 font-semibold">Label</th>
                 <th className="px-4 py-3 font-semibold">px</th>
@@ -510,11 +505,11 @@ export function IconographyTechnicalDetails() {
             </thead>
             <tbody>
               {ROOTSY_ICON_SIZES.map((row) => (
-                <tr key={row.id} className="border-b border-border/40 last:border-0">
-                  <td className="px-4 py-3 font-mono text-xs text-primary">{row.token}</td>
-                  <td className="px-4 py-3 text-foreground">{row.label}</td>
+                <tr key={row.id} className="border-b border-[var(--rootsy-bruma-200)] last:border-0">
+                  <td className="px-4 py-3 font-mono text-xs text-[var(--rootsy-savia-600)]">{row.token}</td>
+                  <td className="px-4 py-3 text-[var(--rootsy-bruma-900)]">{row.label}</td>
                   <td className="px-4 py-3 font-mono text-xs">{row.px}</td>
-                  <td className="px-4 py-3 text-xs text-muted-foreground">{row.usage}</td>
+                  <td className="px-4 py-3 text-xs text-[var(--rootsy-bruma-500)]">{row.usage}</td>
                 </tr>
               ))}
             </tbody>
@@ -524,15 +519,15 @@ export function IconographyTechnicalDetails() {
 
       <div className="space-y-3">
         <TechnicalSubheading>Color</TechnicalSubheading>
-        <div className="overflow-x-auto rounded-2xl border border-border/70">
+        <div className="library-doc-table-shell overflow-x-auto rounded-2xl">
           <table className="w-full min-w-[520px] text-left font-canopy text-sm">
             <tbody>
               {ROOTSY_ICON_COLOR_ROLES.map((row) => (
-                <tr key={row.id} className="border-b border-border/40 last:border-0">
-                  <td className="px-4 py-3 font-mono text-xs text-primary">{row.token}</td>
-                  <td className="px-4 py-3 text-foreground">{row.label}</td>
-                  <td className="px-4 py-3 font-mono text-[10px] text-muted-foreground">{row.hex}</td>
-                  <td className="px-4 py-3 text-xs text-muted-foreground">{row.usage}</td>
+                <tr key={row.id} className="border-b border-[var(--rootsy-bruma-200)] last:border-0">
+                  <td className="px-4 py-3 font-mono text-xs text-[var(--rootsy-savia-600)]">{row.token}</td>
+                  <td className="px-4 py-3 text-[var(--rootsy-bruma-900)]">{row.label}</td>
+                  <td className="px-4 py-3 font-mono text-[10px] text-[var(--rootsy-bruma-500)]">{row.hex}</td>
+                  <td className="px-4 py-3 text-xs text-[var(--rootsy-bruma-500)]">{row.usage}</td>
                 </tr>
               ))}
             </tbody>
@@ -542,13 +537,13 @@ export function IconographyTechnicalDetails() {
 
       <div className="space-y-3">
         <TechnicalSubheading>Variantes Iconsax</TechnicalSubheading>
-        <div className="overflow-x-auto rounded-2xl border border-border/70">
+        <div className="library-doc-table-shell overflow-x-auto rounded-2xl">
           <table className="w-full min-w-[480px] text-left font-canopy text-sm">
             <tbody>
               {ROOTSY_ICON_VARIANTS.map((row) => (
-                <tr key={row.id} className="border-b border-border/40 last:border-0">
-                  <td className="px-4 py-3 font-mono text-xs text-primary">{row.id}</td>
-                  <td className="px-4 py-3 text-xs text-muted-foreground">{row.usage}</td>
+                <tr key={row.id} className="border-b border-[var(--rootsy-bruma-200)] last:border-0">
+                  <td className="px-4 py-3 font-mono text-xs text-[var(--rootsy-savia-600)]">{row.id}</td>
+                  <td className="px-4 py-3 text-xs text-[var(--rootsy-bruma-500)]">{row.usage}</td>
                 </tr>
               ))}
             </tbody>
@@ -558,7 +553,7 @@ export function IconographyTechnicalDetails() {
 
       <div className="space-y-3">
         <TechnicalSubheading>Import</TechnicalSubheading>
-        <pre className="overflow-x-auto rounded-xl bg-muted/40 p-4 font-mono text-[11px] leading-relaxed text-foreground">
+        <pre className="overflow-x-auto rounded-xl bg-[var(--rootsy-bruma-50)] p-4 font-mono text-[11px] leading-relaxed text-[var(--rootsy-bruma-900)]">
           {ICONSAX_IMPORT_EXAMPLE}
         </pre>
       </div>

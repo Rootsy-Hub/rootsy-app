@@ -252,6 +252,14 @@ export const dataWorkspaceEntityCardSkeletonShellClass = cn(
 export const dataWorkspaceBlocksEmptyStateClass =
   "rounded-xl border border-dashed border-[var(--rootsy-bruma-300)] bg-white px-4 py-10 text-center font-canopy text-sm text-[var(--rootsy-bruma-500)]"
 
+/** Título de sección en layout · bloques — espejo LayoutsBlocksDocSubsection · font.heading.xsmall semibold. */
+export const dataWorkspaceBlocksSectionTitleClass =
+  "font-canopy text-sm font-semibold text-[var(--rootsy-bruma-900)]"
+
+/** Descripción bajo sección — font.body.small · bruma-500. */
+export const dataWorkspaceBlocksSectionDescriptionClass =
+  "max-w-2xl font-canopy text-xs leading-relaxed text-[var(--rootsy-bruma-500)]"
+
 /** Empty state embebido en paneles de detalle — icon tile + título + descripción. */
 export const dataWorkspaceDetailEmptyStateClass =
   "flex min-h-0 flex-1 flex-col items-center justify-center px-6 py-16 text-center"
@@ -329,11 +337,11 @@ export const workspaceTableNatureSurfaceClass = "bg-[var(--wt-surface)]"
 /** Labels meta — tipografía base (medium); footer oscuro añade bold explícito. */
 export const workspaceTableLayoutMetaLabelClass = rootsFormFieldLabelTypographyClass
 
-/** Encabezado — bruma sunken (layout tablas). */
+/** Encabezado — cristal bruma (layout tablas). */
 export const workspaceTableNatureHeaderCellClass = cn(
   "sticky top-0 z-20 h-10 border-b px-2 py-2",
   workspaceTableLayoutMetaLabelClass,
-  "border-[var(--wt-border)] bg-[var(--wt-header-bg)] text-[var(--wt-header-text)]",
+  "border-[var(--wt-border)] backdrop-blur-md backdrop-saturate-150 bg-[var(--wt-header-bg-glass)] text-[var(--wt-header-text)]",
 )
 
 export const workspaceTableNatureBodyRowInactiveClass = "opacity-[0.78]"

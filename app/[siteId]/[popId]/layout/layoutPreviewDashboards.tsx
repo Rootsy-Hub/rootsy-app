@@ -254,103 +254,190 @@ export function LayoutPreviewReportsDashboard() {
   )
 }
 
-const SUMMARY_KPIS = [
-  { label: "Saldo proyectado", value: "$ 1,24 M", sub: "fin de mes" },
-  { label: "Órdenes abiertas", value: "14", sub: "requieren acción" },
-  { label: "Cobranzas hoy", value: "$ 38.200", sub: "3 comprobantes" },
-]
-
-const GOALS = [
-  { name: "Ventas vs. objetivo", pct: 78 },
-  { name: "Stock crítico resuelto", pct: 62 },
-  { name: "Facturas timbradas", pct: 91 },
-]
-
 export function LayoutPreviewSummaryDashboard() {
+  const demoPeriodResults = [
+    { label: "Ventas", value: "$ 1.250.000", delta: "+8,2%", up: true },
+    { label: "Costo de ventas", value: "$ 480.000", delta: "+3,1%", up: false },
+    { label: "Ganancia bruta", value: "$ 770.000", delta: "+11,4%", up: true },
+    { label: "Gastos", value: "$ 230.000", delta: "−2,0%", up: false },
+    { label: "Resultado", value: "$ 540.000", delta: "+15,3%", up: true, emphasize: true },
+  ]
+
+  const demoActivity = [
+    { label: "Ventas realizadas", value: "327" },
+    { label: "Ticket promedio", value: "$ 3.823" },
+    { label: "Compras realizadas", value: "42" },
+    { label: "Compras", value: "$ 380.000" },
+    { label: "Gastos registrados", value: "27" },
+  ]
+
+  const demoFinancial = [
+    { label: "Cajas", value: "$ 425.000" },
+    { label: "Cuentas / Bancos", value: "$ 2.150.000" },
+    { label: "Por cobrar", value: "$ 185.000" },
+    { label: "Por pagar", value: "$ 240.000" },
+    { label: "Cheques pendientes", value: "$ 580.000 · 7" },
+  ]
+
+  const demoStock = [
+    { label: "Valor del stock", value: "$ 8.450.000" },
+    { label: "Stock bajo", value: "18" },
+    { label: "Sin stock", value: "7" },
+    { label: "Próximos a vencer", value: "12" },
+  ]
+
   return (
     <div className="relative flex flex-col gap-6">
-      <div className="grid gap-4 md:grid-cols-3">
-        {SUMMARY_KPIS.map((k) => (
-          <div
-            key={k.label}
-            className={cn(shellCard, "px-5 py-4")}
-          >
-            <p className="text-[11px] font-medium uppercase tracking-[0.14em] text-muted-foreground">
-              {k.label}
-            </p>
-            <p className="mt-2 font-numeric text-3xl font-bold tabular-nums tracking-tight text-foreground">
-              {k.value}
-            </p>
-            <p className="mt-1 text-xs text-muted-foreground">
-              {k.label === "Cobranzas hoy" ? (
-                <>
-                  <span className="tabular-nums">3</span> comprobantes
-                </>
-              ) : (
-                k.sub
-              )}
-            </p>
-          </div>
-        ))}
+      <div className={cn(shellCard, "flex flex-wrap items-center justify-between gap-3 px-4 py-3 sm:px-5")}>
+        <div>
+          <p className="text-[11px] font-medium uppercase tracking-[0.12em] text-muted-foreground">
+            Período
+          </p>
+          <p className="mt-0.5 text-sm font-medium text-foreground">Este mes</p>
+        </div>
+        <span className="rounded-lg border border-border/80 bg-muted/30 px-3 py-1.5 text-xs text-muted-foreground">
+          Hoy · Ayer · Esta semana · Este mes · Este año · Personalizado
+        </span>
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-2">
-        <div className={cn(shellCard, "p-5")}>
-          <h3 className="text-sm font-semibold text-foreground">
-            Flujo semanal
+      <section>
+        <h2 className="mb-3 text-sm font-semibold text-foreground">
+          Resultado del período
+        </h2>
+        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
+          {demoPeriodResults.map((k) => (
+            <div
+              key={k.label}
+              className={cn(
+                shellCard,
+                "px-5 py-4",
+                k.emphasize && "ring-1 ring-primary/25",
+              )}
+            >
+              <p className="text-[11px] font-medium uppercase tracking-[0.14em] text-muted-foreground">
+                {k.label}
+              </p>
+              <p className="mt-1 font-numeric text-2xl font-bold tabular-nums tracking-tight text-foreground">
+                {k.value}
+              </p>
+              <p className="mt-2 text-xs text-muted-foreground">
+                <span
+                  className={cn(
+                    "font-numeric font-medium tabular-nums",
+                    k.up ? "text-emerald-600" : "text-amber-700",
+                  )}
+                >
+                  {k.delta}
+                </span>{" "}
+                vs. período anterior
+              </p>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      <section>
+        <h2 className="mb-3 text-sm font-semibold text-foreground">Actividad</h2>
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
+          {demoActivity.map((k) => (
+            <div key={k.label} className={cn(shellCard, "px-4 py-3")}>
+              <p className="text-[11px] font-medium uppercase tracking-[0.12em] text-muted-foreground">
+                {k.label}
+              </p>
+              <p className="mt-1 font-numeric text-2xl font-semibold tabular-nums text-foreground">
+                {k.value}
+              </p>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      <section>
+        <h2 className="mb-3 text-sm font-semibold text-foreground">
+          Situación financiera actual
+        </h2>
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
+          {demoFinancial.map((k) => (
+            <div key={k.label} className={cn(shellCard, "px-4 py-3")}>
+              <p className="text-[11px] font-medium uppercase tracking-[0.12em] text-muted-foreground">
+                {k.label}
+              </p>
+              <p className="mt-1 font-numeric text-2xl font-semibold tabular-nums text-foreground">
+                {k.value}
+              </p>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      <section>
+        <h2 className="mb-3 text-sm font-semibold text-foreground">
+          Estado del stock
+        </h2>
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          {demoStock.map((k) => (
+            <div key={k.label} className={cn(shellCard, "px-4 py-3")}>
+              <p className="text-[11px] font-medium uppercase tracking-[0.12em] text-muted-foreground">
+                {k.label}
+              </p>
+              <p className="mt-1 font-numeric text-2xl font-semibold tabular-nums text-foreground">
+                {k.value}
+              </p>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      <div className="grid gap-6 lg:grid-cols-5">
+        <div className={cn(shellCard, "p-4 lg:col-span-3")}>
+          <h3 className="mb-3 text-sm font-semibold text-foreground">
+            Evolución de ventas
           </h3>
-          <p className="text-[11px] text-muted-foreground">
-            Ingresos netos · miles ARS
-          </p>
           <ChartContainer
-            config={flowConfig}
-            className={cn("mt-4 aspect-video min-h-[200px] w-full", chartAxisMono)}
+            config={areaConfig}
+            className={cn("aspect-21/9 min-h-[200px] w-full", chartAxisMono)}
           >
             <AreaChart data={SALES_BY_DAY} margin={{ left: 0, right: 8, top: 8 }}>
               <defs>
-                <linearGradient id="fillWeek" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="var(--chart-1)" stopOpacity={0.3} />
+                <linearGradient id="fillSummaryVentas" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="var(--chart-1)" stopOpacity={0.35} />
                   <stop offset="100%" stopColor="var(--chart-1)" stopOpacity={0} />
                 </linearGradient>
               </defs>
               <CartesianGrid vertical={false} strokeDasharray="3 3" />
               <XAxis dataKey="dia" tickLine={false} axisLine={false} />
-              <YAxis tickLine={false} axisLine={false} width={32} />
+              <YAxis tickLine={false} axisLine={false} width={36} />
               <ChartTooltip content={<ChartTooltipContent />} />
               <Area
                 type="monotone"
                 dataKey="monto"
                 stroke="var(--color-monto)"
-                fill="url(#fillWeek)"
+                fill="url(#fillSummaryVentas)"
                 strokeWidth={2}
               />
             </AreaChart>
           </ChartContainer>
         </div>
 
-        <div className={cn(shellCard, "flex flex-col p-5")}>
+        <div className={cn(shellCard, "p-4 lg:col-span-2")}>
           <h3 className="text-sm font-semibold text-foreground">
-            Objetivos
+            Ingresos vs. egresos
           </h3>
-          <p className="text-[11px] text-muted-foreground">Avance · demo</p>
-          <ul className="mt-5 flex flex-1 flex-col justify-center gap-5">
-            {GOALS.map((g) => (
-              <li key={g.name}>
-                <div className="mb-1.5 flex justify-between text-xs">
-                  <span className="text-foreground">{g.name}</span>
-                  <span className="font-numeric font-medium tabular-nums text-primary">
-                    {g.pct}%
-                  </span>
-                </div>
-                <div className="h-2 overflow-hidden rounded-full bg-muted/80">
-                  <div
-                    className="h-full rounded-full bg-primary"
-                    style={{ width: `${g.pct}%` }}
-                  />
-                </div>
-              </li>
-            ))}
-          </ul>
+          <p className="text-[11px] text-muted-foreground">
+            Mostrador 45% · Mesas 35% · Servicios 20%
+          </p>
+          <ChartContainer
+            config={flowConfig}
+            className={cn("mt-4 aspect-square max-h-[220px] w-full", chartAxisMono)}
+          >
+            <BarChart data={SALES_BY_DAY.slice(0, 5)} margin={{ left: 0, right: 8, top: 8 }}>
+              <CartesianGrid vertical={false} strokeDasharray="3 3" />
+              <XAxis dataKey="dia" tickLine={false} axisLine={false} />
+              <YAxis tickLine={false} axisLine={false} width={32} />
+              <ChartTooltip content={<ChartTooltipContent />} />
+              <Bar dataKey="monto" fill="var(--color-monto)" radius={4} />
+            </BarChart>
+          </ChartContainer>
         </div>
       </div>
     </div>

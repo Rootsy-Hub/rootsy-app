@@ -1,6 +1,17 @@
 "use client"
 
 import { librarySectionHref } from "@/app/library/layoutLibraryShared"
+import {
+  libraryDocBodyClass,
+  libraryDocMetaLabelClass,
+  libraryDocPanelClass,
+  libraryDocSectionDescriptionClass,
+  libraryDocSectionTitleClass,
+  libraryRelatedLinksSectionClass,
+  libraryDoPanelClass,
+  libraryDontPanelClass,
+  librarySpecCardClass,
+} from "@/app/library/libraryColorTheme"
 import { cn } from "@/lib/utils"
 import Link from "next/link"
 import type { ReactNode } from "react"
@@ -21,6 +32,7 @@ export const CANOPY_NIGHT = "#052E1F"
 export const CANOPY_SOFT = "#3FC87E"
 export const CANOPY_LIGHT = "#A8EBC4"
 export const CANOPY_MIST = "#F0FBF4"
+/** @deprecated Usar var(--rootsy-bruma-600) en documentación nueva. */
 export const EARTH = "#78716C"
 
 /**
@@ -43,12 +55,7 @@ export function LibraryDocLead({
   className?: string
 }) {
   return (
-    <p
-      className={cn(
-        "max-w-3xl text-base leading-relaxed text-muted-foreground",
-        className,
-      )}
-    >
+    <p className={cn(libraryDocBodyClass, className)}>
       {children}
     </p>
   )
@@ -72,24 +79,16 @@ export function LibraryDocSection({
   return (
     <section
       id={id}
-      className="library-doc-section scroll-mt-24 space-y-5 border-t border-border/60 pt-10 first:border-t-0 first:pt-0"
+      className={cn(
+        "library-doc-section scroll-mt-24 space-y-5 border-t border-[var(--rootsy-bruma-200)] pt-10 first:border-t-0 first:pt-0",
+      )}
     >
       <div className="max-w-3xl space-y-2">
-        <h3
-          className={cn(
-            "text-xl font-semibold tracking-tight text-foreground",
-            titleClassName,
-          )}
-        >
+        <h3 className={cn(libraryDocSectionTitleClass, titleClassName)}>
           {title}
         </h3>
         {description ? (
-          <p
-            className={cn(
-              "text-sm leading-relaxed text-muted-foreground",
-              descriptionClassName,
-            )}
-          >
+          <p className={cn(libraryDocSectionDescriptionClass, descriptionClassName)}>
             {description}
           </p>
         ) : null}
@@ -97,6 +96,17 @@ export function LibraryDocSection({
       {children}
     </section>
   )
+}
+
+/** Subheading técnico — misma tinta bruma-500 que descripciones de sección. */
+export function LibraryDocMetaLabel({
+  children,
+  className,
+}: {
+  children: ReactNode
+  className?: string
+}) {
+  return <p className={cn(libraryDocMetaLabelClass, className)}>{children}</p>
 }
 
 export function LibraryManifestoHero({
@@ -119,7 +129,7 @@ export function LibraryManifestoHero({
   descriptionClassName?: string
 }) {
   return (
-    <div className="overflow-hidden rounded-2xl border border-border/70 shadow-sm">
+    <div className={cn(libraryDocPanelClass, "overflow-hidden rounded-2xl")}>
       <div
         className="relative px-6 py-10 sm:px-8"
         style={{ background: HERO_GRADIENTS[tone] }}
@@ -170,14 +180,11 @@ export function LibraryPrinciplesGrid({
   return (
     <div className="grid gap-3 sm:grid-cols-2">
       {principles.map((item) => (
-        <div
-          key={item.title}
-          className="rounded-xl border border-border/70 bg-card p-4 shadow-sm"
-        >
-          <p className={cn("text-sm font-semibold text-foreground", titleClassName)}>
+        <div key={item.title} className={cn(librarySpecCardClass, "rounded-xl border p-4")}>
+          <p className={cn(libraryDocSectionTitleClass, titleClassName)}>
             {item.title}
           </p>
-          <p className={cn("mt-1 text-sm text-muted-foreground", detailClassName)}>
+          <p className={cn("mt-1", libraryDocBodyClass, detailClassName)}>
             {item.detail}
           </p>
         </div>
@@ -204,23 +211,17 @@ export function LibraryGuidelineCards({
   return (
     <div className="grid gap-4 sm:grid-cols-2">
       {items.map((g) => (
-        <div key={g.id} className="rounded-xl border border-border/70 bg-card p-4">
-          <p className={cn("text-sm font-semibold text-foreground", titleClassName)}>
+        <div key={g.id} className={cn(librarySpecCardClass, "rounded-xl border p-4")}>
+          <p className={cn("text-sm font-semibold text-[var(--rootsy-bruma-900)]", titleClassName)}>
             {g.title}
           </p>
           <div className={cn("mt-3 grid gap-2", split && "sm:grid-cols-2")}>
-            <div
-              className={cn("rounded-lg p-3 text-xs", textClassName)}
-              style={{ backgroundColor: CANOPY_MIST, color: CANOPY_DARK }}
-            >
+            <div className={cn("rounded-lg p-3 text-xs", libraryDoPanelClass, textClassName)}>
               <span className="font-semibold">✓ </span>
               {g.doText}
             </div>
             <div
-              className={cn(
-                "rounded-lg bg-muted/60 p-3 text-xs text-muted-foreground",
-                textClassName,
-              )}
+              className={cn("rounded-lg p-3 text-xs", libraryDontPanelClass, textClassName)}
             >
               <span className="font-semibold">✗ </span>
               {g.dontText}
@@ -242,33 +243,15 @@ export function LibraryDoDontPair({
 }) {
   return (
     <div className="grid gap-3 sm:grid-cols-2">
-      <div
-        className="rounded-xl border p-4"
-        style={{ borderColor: CANOPY_LIGHT, backgroundColor: CANOPY_MIST }}
-      >
-        <p
-          className="text-xs font-bold uppercase tracking-wide"
-          style={{ color: CANOPY_DARK }}
-        >
+      <div className={cn("rounded-xl border p-4", libraryDoPanelClass)}>
+        <p className="text-xs font-bold uppercase tracking-wide text-[var(--rootsy-savia-800)]">
           Hacer
         </p>
-        <p className="mt-2 text-sm leading-relaxed" style={{ color: CANOPY_DEEP }}>
-          {doText}
-        </p>
+        <p className="mt-2 text-sm leading-relaxed text-[var(--rootsy-savia-900)]">{doText}</p>
       </div>
-      <div
-        className="rounded-xl border p-4"
-        style={{ borderColor: "#FECACA", backgroundColor: "#FEF2F2" }}
-      >
-        <p
-          className="text-xs font-bold uppercase tracking-wide"
-          style={{ color: "#DC2626" }}
-        >
-          Evitar
-        </p>
-        <p className="mt-2 text-sm leading-relaxed" style={{ color: "#B91C1C" }}>
-          {dontText}
-        </p>
+      <div className={cn("rounded-xl border p-4", libraryDontPanelClass)}>
+        <p className="text-xs font-bold uppercase tracking-wide">Evitar</p>
+        <p className="mt-2 text-sm leading-relaxed">{dontText}</p>
       </div>
     </div>
   )
@@ -289,12 +272,30 @@ export function LibraryRelatedLinks({
           <Link
             key={link.sectionId}
             href={librarySectionHref(link.sectionId)}
-            className="rounded-xl border border-border/70 bg-card p-4 shadow-sm transition-colors hover:border-[#A8EBC4] hover:bg-[#F0FBF4]"
+            className={cn(
+              librarySpecCardClass,
+              "rounded-xl border p-4 transition-colors hover:border-[color-mix(in_srgb,var(--rootsy-savia-600)_25%,var(--rootsy-bruma-200))] hover:bg-[color-mix(in_srgb,var(--rootsy-savia-600)_6%,white)]",
+            )}
           >
-            <p className="text-sm font-semibold text-foreground">{link.label}</p>
-            <p className="mt-1 text-xs text-muted-foreground">{link.hint}</p>
+            <p className={libraryDocSectionTitleClass}>{link.label}</p>
+            <p className={cn("mt-1", libraryDocSectionDescriptionClass)}>{link.hint}</p>
           </Link>
         ))}
+    </div>
+  )
+}
+
+export function LibraryRelatedLinksSection({
+  excludeId,
+  links,
+}: {
+  excludeId?: string
+  links: ReadonlyArray<{ sectionId: string; label: string; hint: string }>
+}) {
+  return (
+    <div className={libraryRelatedLinksSectionClass}>
+      <p className={libraryDocSectionTitleClass}>Relacionado</p>
+      <LibraryRelatedLinks excludeId={excludeId} links={links} />
     </div>
   )
 }

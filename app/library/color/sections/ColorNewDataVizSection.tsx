@@ -64,12 +64,12 @@ export function ColorNewDataVizSection() {
           <ProductStatusChartDemo />
           <div className="mt-4 grid gap-2 sm:grid-cols-2">
             {ROOTSY_CHART_STATUS.map((s) => (
-              <div key={s.id} className="flex items-center gap-2 text-xs text-muted-foreground">
+              <div key={s.id} className="flex items-center gap-2 text-xs text-[var(--rootsy-bruma-500)]">
                 <div
                   className="size-3 rounded-full"
                   style={{ backgroundColor: s.boldHex }}
                 />
-                <span className="font-medium text-foreground">{s.label}</span>
+                <span className="font-medium text-[var(--rootsy-bruma-900)]">{s.label}</span>
                 <span>{s.hex}</span>
               </div>
             ))}
