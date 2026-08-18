@@ -511,7 +511,7 @@ export function RecipesWorkspaceView() {
         popId,
         popName: bootstrap?.popName ?? "",
         title: "Recetas",
-        loading: bootstrapLoading || loading,
+        loading: bootstrapLoading,
         userName: bootstrap?.userFullName,
         userAvatarSrc: bootstrap?.userImageUrl ?? undefined,
         userRoleLabel: bootstrap?.roleLabel,

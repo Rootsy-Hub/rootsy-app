@@ -70,8 +70,7 @@ export function PopWorkspaceProvider({
     refetch,
   } = usePopAccessData(popId, { enabled: accessEnabled })
 
-  const accessReady =
-    accessEnabled && !accessLoading && Boolean(popAccess && profile)
+  const accessReady = accessEnabled && Boolean(popAccess && profile)
 
   const routeError = useMemo(() => {
     if (!accessEnabled || accessLoading || !popAccess) return null

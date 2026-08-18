@@ -35,7 +35,6 @@ export function usePopAccessData(
   const queryClient = useQueryClient()
   const queriesEnabled =
     (options?.enabled ?? true) &&
-    persistReady &&
     !authLoading &&
     Boolean(userId) &&
     Boolean(popId)
@@ -97,8 +96,14 @@ export function usePopAccessData(
     [popAccess],
   )
 
+  const hasCachedSidecar =
+    profileQuery.data !== undefined && popAccessQuery.data !== undefined
   const isLoading =
-    !queriesEnabled || profileQuery.isPending || popAccessQuery.isPending
+    !hasCachedSidecar &&
+    (!queriesEnabled ||
+      !persistReady ||
+      profileQuery.isPending ||
+      popAccessQuery.isPending)
 
   const loadError = profileQuery.isError || popAccessQuery.isError
 

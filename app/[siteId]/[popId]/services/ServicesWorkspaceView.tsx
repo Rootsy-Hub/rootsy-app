@@ -500,7 +500,7 @@ export function ServicesWorkspaceView() {
         popId,
         popName: bootstrap?.popName ?? "",
         title: "Servicios",
-        loading: bootstrapLoading || loading,
+        loading: bootstrapLoading,
         userName: bootstrap?.userFullName,
         userAvatarSrc: bootstrap?.userImageUrl ?? undefined,
         userRoleLabel: bootstrap?.roleLabel,

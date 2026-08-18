@@ -21,7 +21,7 @@ export const oneDayQueryOptions = {
   refetchOnReconnect: false,
 } as const
 
-/** Revisión de catálogo: barata, se mira al entrar para saber si el payload sigue. */
+/** Revisión de catálogo: se pinta con el valor cacheado y se revalida atrás. */
 export const catalogRevQueryOptions = {
   staleTime: 0,
   gcTime: ONE_DAY_MS,

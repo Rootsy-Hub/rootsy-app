@@ -2,8 +2,8 @@
 
 import Image from "next/image"
 import Link from "next/link"
-import { useRouter } from "next/navigation"
-import { useMemo, useState } from "react"
+import { useRouter, useSearchParams } from "next/navigation"
+import { useEffect, useMemo, useState } from "react"
 import { Eye, EyeOff, Leaf } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -20,12 +20,32 @@ import {
   getAuthCallbackUrl,
   setAuthNextPath,
 } from "@/lib/authCallbackRedirect"
+import {
+  LOGIN_PATH,
+  POP_CREATE_PATH,
+  persistSignupIntent,
+  signupIntentHref,
+  signupIntentSummary,
+  resolveSignupIntent,
+} from "@/lib/signupIntent"
 import { cn } from "@/lib/utils"
 import { createClient } from "@/utils/supabase/client"
 
 function RegisterPage() {
   const router = useRouter()
+  const searchParams = useSearchParams()
   const supabase = useMemo(() => createClient(), [])
+  const signupIntent = useMemo(
+    () => resolveSignupIntent(searchParams),
+    [searchParams],
+  )
+  const signupSummary = signupIntentSummary(signupIntent)
+  const createPopHref = signupIntentHref(POP_CREATE_PATH, signupIntent)
+  const loginHref = signupIntentHref(LOGIN_PATH, signupIntent)
+
+  useEffect(() => {
+    persistSignupIntent(signupIntent)
+  }, [signupIntent])
 
   const [firstName, setFirstName] = useState("")
   const [lastName, setLastName] = useState("")
@@ -172,8 +192,9 @@ function RegisterPage() {
         return
       }
 
+      persistSignupIntent(signupIntent)
       await new Promise((r) => setTimeout(r, 100))
-      router.push("/pops/create")
+      router.push(createPopHref)
       router.refresh()
     } catch (err: unknown) {
       const errorMessage =
@@ -197,8 +218,9 @@ function RegisterPage() {
     setGoogleLoading(true)
     setError("")
     try {
+      persistSignupIntent(signupIntent)
       const origin = typeof window !== "undefined" ? window.location.origin : ""
-      setAuthNextPath("/pops/create")
+      setAuthNextPath(createPopHref)
       const { error: oauthError } = await supabase.auth.signInWithOAuth({
         provider: "google",
         options: {
@@ -252,15 +274,21 @@ function RegisterPage() {
 
             <div className="space-y-1.5">
               <span className="inline-flex rounded-full border border-emerald-500/30 bg-emerald-500/10 px-2.5 py-0.5 text-[11px] font-bold uppercase tracking-wider text-emerald-700 dark:text-emerald-300">
-                7 días gratis · Sin tarjeta
+                7 días de prueba · tarjeta al crear el POP
               </span>
               <h1 className="text-3xl font-extrabold tracking-tight sm:text-[2.1rem]">
                 Creá tu cuenta
               </h1>
+              {signupSummary ? (
+                <p className="text-sm font-medium text-foreground/85">
+                  Elegiste {signupSummary}.
+                </p>
+              ) : null}
               <p className="text-sm text-muted-foreground">
-                En el siguiente paso vas a nombrar tu punto de venta. ¿Ya tenés cuenta?{" "}
+                En el siguiente paso vas a nombrar tu punto de venta y guardar una
+                tarjeta. ¿Ya tenés cuenta?{" "}
                 <Link
-                  href="/login"
+                  href={loginHref}
                   className="font-semibold text-meadow transition-colors hover:text-emerald-500"
                 >
                   iniciar sesion

@@ -362,7 +362,7 @@ export function CurrentAccountsWorkspaceView() {
         title: viewingParty
           ? ledgerPartyName || "Cuenta corriente"
           : "Cuentas corrientes",
-        loading: bootstrapLoading || loading,
+        loading: bootstrapLoading,
         userName: bootstrap?.userFullName,
         userAvatarSrc: bootstrap?.userImageUrl ?? undefined,
         backHref: viewingParty ? listBackHref : undefined,

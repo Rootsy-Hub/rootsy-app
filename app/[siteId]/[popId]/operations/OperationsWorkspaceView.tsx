@@ -347,7 +347,7 @@ export function OperationsWorkspaceView() {
         popId,
         popName: bootstrap?.popName ?? "",
         title: "Operaciones",
-        loading: bootstrapLoading || listFetching,
+        loading: bootstrapLoading,
         userName: bootstrap?.userFullName,
         userAvatarSrc: bootstrap?.userImageUrl ?? undefined,
       }}

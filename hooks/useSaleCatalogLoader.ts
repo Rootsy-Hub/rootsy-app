@@ -79,7 +79,8 @@ export function useSaleCatalogLoader(
     invoiceTypeSiteId: data?.invoiceTypeSiteId ?? DEFAULT_SALE_SITE_ID,
     saleCategories: data?.categories ?? [],
     saleCategorySections: data?.categorySections ?? [],
-    catalogLoading: revQuery.isLoading || catalogQuery.isLoading,
+    catalogLoading:
+      (catalogRev == null && revQuery.isPending) || catalogQuery.isLoading,
     catalogError:
       revQuery.error instanceof Error
         ? revQuery.error.message

@@ -188,13 +188,13 @@ export function SaleCatalogBrowser({
     popId,
     catalogRev,
     itemsFilter,
-    Boolean(popId) && !loading && !error && source === "sale",
+    Boolean(popId) && catalogRev != null && !error && source === "sale",
   )
   const menuItems = useMenuCatalogItems(
     popId,
     catalogRev,
     itemsFilter,
-    Boolean(popId) && !loading && !error && source === "menu",
+    Boolean(popId) && catalogRev != null && !error && source === "menu",
   )
   const paged = source === "sale" ? saleItems : menuItems
   const pagedRecipes = source === "menu" ? menuItems.recipes : []
@@ -315,7 +315,7 @@ export function SaleCatalogBrowser({
   useInfiniteScrollSentinel(
     scrollRoot,
     sentinel,
-    paged.hasNextPage && !paged.isFetchingNextPage && !loading,
+    paged.hasNextPage && !paged.isFetchingNextPage,
     loadMore,
   )
 
@@ -354,7 +354,9 @@ export function SaleCatalogBrowser({
   const itemsError = paged.error
   const showGridSkeleton =
     !error &&
-    (loading || (paged.isLoading && productosFiltrados.length === 0 && itemsFilter.section !== "promotions"))
+    paged.isLoading &&
+    productosFiltrados.length === 0 &&
+    itemsFilter.section !== "promotions"
   const displayError = error ?? itemsError
   const isEmpty =
     !showGridSkeleton &&

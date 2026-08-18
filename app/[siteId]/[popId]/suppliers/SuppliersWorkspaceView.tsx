@@ -555,7 +555,7 @@ export function SuppliersWorkspaceView() {
         popId,
         popName: bootstrap?.popName ?? "",
         title: "Proveedores",
-        loading: bootstrapLoading || listFetching,
+        loading: bootstrapLoading,
         userName: bootstrap?.userFullName,
         userAvatarSrc: bootstrap?.userImageUrl ?? undefined,
         headerActions: canCreate ? (

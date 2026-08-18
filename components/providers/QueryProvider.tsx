@@ -11,12 +11,12 @@ import {
   persistQueryClientSubscribe,
   type PersistedClient,
 } from "@tanstack/query-persist-client-core"
-import { hydrate, QueryClientProvider } from "@tanstack/react-query"
+import { hydrate, QueryClient, QueryClientProvider } from "@tanstack/react-query"
 import { ReactQueryDevtools } from "@tanstack/react-query-devtools"
 import {
   createContext,
   useContext,
-  useEffect,
+  useLayoutEffect,
   useState,
   type ReactNode,
 } from "react"
@@ -36,50 +36,51 @@ const dehydrateOptions = {
     isPersistedHomeQueryKey(query.queryKey),
 }
 
+function restorePersistedQueries(queryClient: QueryClient) {
+  const persister = createRootsQueryPersister()
+  if (!persister) return null
+
+  try {
+    const persisted = persister.restoreClient() as PersistedClient | undefined
+    if (
+      persisted?.timestamp &&
+      Date.now() - persisted.timestamp < rootsQueryPersistMaxAge
+    ) {
+      const existingKeys = new Set(
+        queryClient
+          .getQueryCache()
+          .getAll()
+          .filter((query) => query.state.data !== undefined)
+          .map((query) => JSON.stringify(query.queryKey)),
+      )
+      const queries = persisted.clientState.queries.filter(
+        (query) => !existingKeys.has(JSON.stringify(query.queryKey)),
+      )
+      hydrate(queryClient, { ...persisted.clientState, queries }, {
+        defaultOptions: {
+          queries: oneDayQueryOptions,
+        },
+      })
+    }
+  } catch {
+    persister.removeClient()
+  }
+
+  return persister
+}
+
 export function QueryProvider({ children }: { children: ReactNode }) {
   const [queryClient] = useState(() => createQueryClient())
   const [persistReady, setPersistReady] = useState(false)
 
-  useEffect(() => {
-    const persister = createRootsQueryPersister()
+  useLayoutEffect(() => {
+    const persister = restorePersistedQueries(queryClient)
     if (!persister) {
       setPersistReady(true)
       return
     }
 
-    let unsubscribe: (() => void) | undefined
-    let cancelled = false
-
-    try {
-      const persisted = persister.restoreClient() as
-        | PersistedClient
-        | undefined
-      if (
-        persisted?.timestamp &&
-        Date.now() - persisted.timestamp < rootsQueryPersistMaxAge
-      ) {
-        const existingKeys = new Set(
-          queryClient
-            .getQueryCache()
-            .getAll()
-            .filter((query) => query.state.data !== undefined)
-            .map((query) => JSON.stringify(query.queryKey)),
-        )
-        const queries = persisted.clientState.queries.filter(
-          (query) => !existingKeys.has(JSON.stringify(query.queryKey)),
-        )
-        hydrate(queryClient, { ...persisted.clientState, queries }, {
-          defaultOptions: {
-            queries: oneDayQueryOptions,
-          },
-        })
-      }
-    } catch {
-      persister.removeClient()
-    }
-
-    if (cancelled) return
-    unsubscribe = persistQueryClientSubscribe({
+    const unsubscribe = persistQueryClientSubscribe({
       queryClient,
       persister,
       dehydrateOptions,
@@ -87,8 +88,7 @@ export function QueryProvider({ children }: { children: ReactNode }) {
     setPersistReady(true)
 
     return () => {
-      cancelled = true
-      unsubscribe?.()
+      unsubscribe()
     }
   }, [queryClient])
 

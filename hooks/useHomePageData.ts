@@ -23,7 +23,7 @@ import { useEffect, useMemo } from "react"
 export function useHomePageData(userId: string) {
   const persistReady = useQueryPersistReady()
   const queryClient = useQueryClient()
-  const queriesEnabled = persistReady && Boolean(userId)
+  const queriesEnabled = Boolean(userId)
 
   const profileQuery = useQuery({
     queryKey: userProfileQueryKey(userId),
@@ -56,7 +56,14 @@ export function useHomePageData(userId: string) {
     return buildHomePopListFromAccess(accessRows)
   }, [batchQuery.data])
 
-  const isLoading = profileQuery.isPending || batchQuery.isPending
+  const hasCachedSidecar =
+    profileQuery.data !== undefined && batchQuery.data !== undefined
+  const isLoading =
+    !hasCachedSidecar &&
+    (!queriesEnabled ||
+      !persistReady ||
+      profileQuery.isPending ||
+      batchQuery.isPending)
 
   const loadError = profileQuery.isError || batchQuery.isError
 

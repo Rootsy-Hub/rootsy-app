@@ -3,7 +3,7 @@
 import dynamic from "next/dynamic"
 import Image from "next/image"
 import Link from "next/link"
-import { useRouter } from "next/navigation"
+import { useRouter, useSearchParams } from "next/navigation"
 import { useCallback, useEffect, useRef, useState } from "react"
 import { updateCardToken } from "@mercadopago/sdk-react"
 import { Leaf } from "lucide-react"
@@ -21,6 +21,11 @@ import {
 } from "@/app/pops/create/actions"
 import type { MercadoPagoCardCaptureHandle } from "@/components/platformBilling/MercadoPagoCardCapture"
 import { popMenuHref } from "@/lib/popRoutes"
+import {
+  clearSignupIntent,
+  persistSignupIntent,
+  resolveSignupIntent,
+} from "@/lib/signupIntent"
 import { cn } from "@/lib/utils"
 
 const MercadoPagoCardCapture = dynamic(
@@ -49,7 +54,10 @@ function formatArs(value: number): string {
 
 function CreatePopPage() {
   const router = useRouter()
+  const searchParams = useSearchParams()
   const cardCaptureRef = useRef<MercadoPagoCardCaptureHandle>(null)
+  const signupIntent = resolveSignupIntent(searchParams)
+  const preferredPlanNameRef = useRef<string | null>(signupIntent.plan)
 
   const [popName, setPopName] = useState("")
   const [businessTypeId, setBusinessTypeId] = useState("")
@@ -57,7 +65,7 @@ function CreatePopPage() {
   const [plans, setPlans] = useState<PopCreatePlanOption[]>([])
   const [planId, setPlanId] = useState("")
   const [billingCycle, setBillingCycle] = useState<"monthly" | "yearly">(
-    "monthly",
+    signupIntent.cycle,
   )
   const [trialAvailable, setTrialAvailable] = useState(true)
   const [mercadoPagoPublicKey, setMercadoPagoPublicKey] = useState<string | null>(
@@ -79,6 +87,10 @@ function CreatePopPage() {
     let cancelled = false
     ;(async () => {
       try {
+        const intent = resolveSignupIntent(searchParams)
+        persistSignupIntent(intent)
+        preferredPlanNameRef.current = intent.plan
+        setBillingCycle(intent.cycle)
         const [types, billingSetup] = await Promise.all([
           getActiveBusinessTypes(),
           getPopCreateBillingSetup(),
@@ -88,7 +100,12 @@ function CreatePopPage() {
         setTrialAvailable(billingSetup.trialAvailable)
         setMercadoPagoPublicKey(billingSetup.mercadoPagoPublicKey)
         setMercadoPagoConfigured(billingSetup.mercadoPagoConfigured)
-        if (types.length === 1) {
+        const preferredType = intent.type
+          ? types.find((row) => row.name === intent.type)
+          : undefined
+        if (preferredType) {
+          setBusinessTypeId(preferredType.id)
+        } else if (types.length === 1) {
           setBusinessTypeId(types[0].id)
         }
       } finally {
@@ -98,7 +115,7 @@ function CreatePopPage() {
     return () => {
       cancelled = true
     }
-  }, [])
+  }, [searchParams])
 
   useEffect(() => {
     if (!businessTypeId) {
@@ -115,6 +132,11 @@ function CreatePopPage() {
         if (cancelled) return
         setPlans(nextPlans)
         setPlanId((current) => {
+          const preferredName = preferredPlanNameRef.current
+          const preferred = preferredName
+            ? nextPlans.find((plan) => plan.name === preferredName)
+            : undefined
+          if (preferred) return preferred.id
           if (current && nextPlans.some((plan) => plan.id === current)) {
             return current
           }
@@ -197,6 +219,7 @@ function CreatePopPage() {
         return
       }
 
+      clearSignupIntent()
       router.push(popMenuHref(result.pop.siteId, result.pop.id))
       router.refresh()
     } catch (caught) {
@@ -216,9 +239,9 @@ function CreatePopPage() {
       : "Crear punto de venta"
 
   return (
-    <div className="relative min-h-screen overflow-hidden bg-background text-foreground">
-      <main className="relative z-10 grid min-h-screen w-full grid-cols-1 lg:grid-cols-2">
-        <section className="relative hidden overflow-hidden lg:block">
+    <div className="h-dvh overflow-hidden bg-background text-foreground">
+      <main className="grid h-full min-h-0 w-full grid-cols-1 lg:grid-cols-2">
+        <section className="relative hidden h-full overflow-hidden lg:block">
           <Image
             src="/login-mascota.png"
             alt="Rootsy"
@@ -243,8 +266,9 @@ function CreatePopPage() {
           </div>
         </section>
 
-        <section className="relative flex min-h-screen items-center justify-center overflow-hidden bg-[radial-gradient(ellipse_90%_70%_at_20%_50%,rgba(16,185,129,0.16),transparent_62%)] px-5 py-10 sm:px-8 lg:px-10">
-          <div className="relative w-full max-w-lg rounded-4xl border border-white/12 bg-white/[0.035] p-7 shadow-[0_30px_90px_-42px_rgba(10,18,14,0.7),inset_0_1px_0_0_rgba(255,255,255,0.08)] backdrop-blur-xl sm:p-9">
+        <section className="relative h-full min-h-0 overflow-y-auto bg-[radial-gradient(ellipse_90%_70%_at_20%_50%,rgba(16,185,129,0.16),transparent_62%)]">
+          <div className="mx-auto flex w-full max-w-lg flex-col px-5 py-10 sm:px-8 lg:px-10 lg:py-12">
+          <div className="relative mt-4 w-full rounded-4xl border border-white/12 bg-white/[0.035] p-7 shadow-[0_30px_90px_-42px_rgba(10,18,14,0.7),inset_0_1px_0_0_rgba(255,255,255,0.08)] backdrop-blur-xl sm:p-9">
             <Link
               href="/home"
               className="absolute -top-6 left-1/2 z-20 inline-flex -translate-x-1/2 items-center gap-2 rounded-full border border-white/16 bg-[#0b1110]/90 px-4 py-2 text-sm font-semibold tracking-wide text-white shadow-[0_14px_30px_-18px_rgba(0,0,0,0.8)] ring-1 ring-emerald-400/25 transition-all hover:scale-[1.02] hover:border-emerald-300/45"
@@ -438,6 +462,7 @@ function CreatePopPage() {
                                     checked={selected}
                                     onChange={() => {
                                       setPlanId(plan.id)
+                                      preferredPlanNameRef.current = plan.name
                                       if (fieldErrors.plan) {
                                         setFieldErrors((prev) => ({
                                           ...prev,
@@ -527,6 +552,7 @@ function CreatePopPage() {
                 </Button>
               </form>
             )}
+          </div>
           </div>
         </section>
       </main>

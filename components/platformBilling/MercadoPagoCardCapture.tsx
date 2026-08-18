@@ -17,6 +17,25 @@ import {
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Spinner } from "@/components/ui/spinner"
+import { cn } from "@/lib/utils"
+
+const SECURE_FIELD_STYLE = {
+  height: "100%",
+  padding: "0",
+  "font-size": "14px",
+  color: "#F4F8F6",
+  "placeholder-color": "#94A3B8",
+}
+
+const secureFieldShellClass = cn(
+  "mp-secure-field flex h-9 w-full items-stretch rounded-md border border-input bg-transparent px-3 shadow-xs dark:bg-input/30",
+)
+
+const nativeControlClass = cn(
+  "flex h-9 w-full rounded-md border border-input bg-transparent px-3 text-sm shadow-xs outline-none",
+  "dark:bg-input/30 focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50",
+  "disabled:cursor-not-allowed disabled:opacity-50",
+)
 
 export type MercadoPagoCardTokenResult = {
   token: string
@@ -110,7 +129,7 @@ export const MercadoPagoCardCapture = forwardRef<
             id={`${formId}-identification-type`}
             value={identificationType}
             onChange={(event) => setIdentificationType(event.target.value)}
-            className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+            className={nativeControlClass}
             disabled={disabled || !sdkReady}
           >
             <option value="DNI">DNI</option>
@@ -133,22 +152,29 @@ export const MercadoPagoCardCapture = forwardRef<
 
       <div className="space-y-2">
         <Label>Número de tarjeta</Label>
-        <div className="rounded-md border border-input bg-background px-3 py-2">
-          <CardNumber placeholder="1234 1234 1234 1234" />
+        <div className={secureFieldShellClass}>
+          <CardNumber
+            placeholder="1234 1234 1234 1234"
+            style={SECURE_FIELD_STYLE}
+          />
         </div>
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2">
         <div className="space-y-2">
           <Label>Vencimiento</Label>
-          <div className="rounded-md border border-input bg-background px-3 py-2">
-            <ExpirationDate placeholder="MM/AA" mode="short" />
+          <div className={secureFieldShellClass}>
+            <ExpirationDate
+              placeholder="MM/AA"
+              mode="short"
+              style={SECURE_FIELD_STYLE}
+            />
           </div>
         </div>
         <div className="space-y-2">
           <Label>Código de seguridad</Label>
-          <div className="rounded-md border border-input bg-background px-3 py-2">
-            <SecurityCode placeholder="123" />
+          <div className={secureFieldShellClass}>
+            <SecurityCode placeholder="123" style={SECURE_FIELD_STYLE} />
           </div>
         </div>
       </div>

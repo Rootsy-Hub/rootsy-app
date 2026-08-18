@@ -394,7 +394,7 @@ export function QuotesWorkspaceView({ siteId, popId }: Props) {
           popId,
           popName: bootstrap?.popName ?? "",
           title: "Presupuestos",
-          loading: bootstrapLoading || listFetching,
+          loading: bootstrapLoading,
           userName: bootstrap?.userFullName,
           userAvatarSrc: bootstrap?.userImageUrl ?? undefined,
         }}

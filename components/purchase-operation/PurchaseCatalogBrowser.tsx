@@ -120,7 +120,7 @@ export function PurchaseCatalogBrowser({
     popId,
     catalogRev,
     itemsFilter,
-    Boolean(popId) && !loading && !error,
+    Boolean(popId) && catalogRev != null && !error,
   )
 
   useEffect(() => {
@@ -171,13 +171,13 @@ export function PurchaseCatalogBrowser({
   useInfiniteScrollSentinel(
     scrollRoot,
     sentinel,
-    paged.hasNextPage && !paged.isFetchingNextPage && !loading,
+    paged.hasNextPage && !paged.isFetchingNextPage,
     loadMore,
   )
 
   const displayError = error ?? paged.error
   const showGridSkeleton =
-    !error && (loading || (paged.isLoading && productosFiltrados.length === 0))
+    !error && paged.isLoading && productosFiltrados.length === 0
   const isEmpty = !showGridSkeleton && !displayError && productosFiltrados.length === 0
 
   return (

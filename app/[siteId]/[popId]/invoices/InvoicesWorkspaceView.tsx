@@ -443,8 +443,6 @@ export function InvoicesWorkspaceView() {
     )
   }
 
-  const listLoading = bootstrapLoading || loading
-
   const openCompose = () => {
     setComposeBanner(null)
     setComposeDebugFecae(null)
@@ -458,7 +456,7 @@ export function InvoicesWorkspaceView() {
           popId,
           popName: bootstrap?.popName ?? "",
           title: "Facturas",
-          loading: listLoading,
+          loading: bootstrapLoading,
           userName: bootstrap?.userFullName,
           userAvatarSrc: bootstrap?.userImageUrl ?? undefined,
           userRoleLabel: bootstrap?.roleLabel ?? undefined,

@@ -399,7 +399,7 @@ export function PurchaseOrdersWorkspaceView({ siteId, popId }: Props) {
           popId,
           popName: bootstrap?.popName ?? "",
           title: "Órdenes de compra",
-          loading: bootstrapLoading || listFetching,
+          loading: bootstrapLoading,
           userName: bootstrap?.userFullName,
           userAvatarSrc: bootstrap?.userImageUrl ?? undefined,
         }}

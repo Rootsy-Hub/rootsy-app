@@ -464,7 +464,7 @@ export function PromotionsWorkspaceView() {
         popId,
         popName: bootstrap?.popName ?? "",
         title: "Promociones",
-        loading: bootstrapLoading || loading,
+        loading: bootstrapLoading,
         userName: bootstrap?.userFullName,
         userAvatarSrc: bootstrap?.userImageUrl ?? undefined,
         userRoleLabel: bootstrap?.roleLabel ?? undefined,

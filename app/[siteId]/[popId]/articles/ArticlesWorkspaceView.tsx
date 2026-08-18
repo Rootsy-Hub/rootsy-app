@@ -1083,7 +1083,7 @@ export function ArticlesWorkspaceView() {
         popId,
         popName: bootstrap?.popName ?? "",
         title: "Stock",
-        loading: bootstrapLoading || listFetching,
+        loading: bootstrapLoading,
         userName: bootstrap?.userFullName,
         userAvatarSrc: bootstrap?.userImageUrl ?? undefined,
         userRoleLabel: bootstrap?.roleLabel,

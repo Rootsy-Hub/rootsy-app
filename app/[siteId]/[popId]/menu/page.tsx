@@ -47,7 +47,7 @@ import { popScopedHref } from "@/lib/popRoutes"
 import { cn } from "@/lib/utils"
 import { useState, useEffect, useRef, useCallback, useMemo, type RefObject } from "react"
 import Link from "next/link"
-import { useParams, useRouter } from "next/navigation"
+import { useParams } from "next/navigation"
 import useEmblaCarousel from "embla-carousel-react"
 import {
   Search,
@@ -105,7 +105,6 @@ function EmblaDockEditSync({
 }
 
 function MenuPage() {
-  const router = useRouter()
   const params = useParams()
   const siteId = typeof params?.siteId === "string" ? params.siteId : ""
   const popId = typeof params?.popId === "string" ? params.popId : ""
@@ -623,9 +622,7 @@ function MenuPage() {
                             item={item}
                             sectionKey={styleSectionKey}
                             disabled={!target}
-                            onActivate={() => {
-                              if (target) router.push(target)
-                            }}
+                            href={target}
                           />
                         )
                       })}

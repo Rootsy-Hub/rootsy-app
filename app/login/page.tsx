@@ -14,6 +14,13 @@ import {
   getAuthCallbackUrl,
   setAuthNextPath,
 } from "@/lib/authCallbackRedirect"
+import {
+  REGISTER_PATH,
+  persistSignupIntent,
+  resolveSignupIntent,
+  signupContinueHref,
+  signupIntentHref,
+} from "@/lib/signupIntent"
 import { createClient } from "@/utils/supabase/client"
 import { cn } from "@/lib/utils"
 
@@ -29,6 +36,13 @@ function LoginPage() {
   const [error, setError] = useState("")
   const [isLoading, setIsLoading] = useState(false)
   const [googleLoading, setGoogleLoading] = useState(false)
+
+  const signupIntent = useMemo(
+    () => resolveSignupIntent(searchParams),
+    [searchParams],
+  )
+  const registerHref = signupIntentHref(REGISTER_PATH, signupIntent)
+  const afterAuthHref = signupContinueHref(searchParams)
 
   const callbackError = searchParams.get("error")
   const mergedBanner =
@@ -69,7 +83,8 @@ function LoginPage() {
       if (signError) throw signError
       if (data.session) {
         await new Promise((r) => setTimeout(r, 100))
-        router.push("/home")
+        persistSignupIntent(signupIntent)
+        router.push(afterAuthHref)
         router.refresh()
       }
     } catch (err: unknown) {
@@ -96,7 +111,8 @@ function LoginPage() {
     setError("")
     try {
       const origin = typeof window !== "undefined" ? window.location.origin : ""
-      setAuthNextPath("/home")
+      persistSignupIntent(signupIntent)
+      setAuthNextPath(afterAuthHref)
       const { error: oauthError } = await supabase.auth.signInWithOAuth({
         provider: "google",
         options: {
@@ -155,7 +171,7 @@ function LoginPage() {
               <p className="text-sm text-muted-foreground">
                 No tenes cuenta?{" "}
                 <Link
-                  href="/register"
+                  href={registerHref}
                   className="font-semibold text-meadow transition-colors hover:text-emerald-500"
                 >
                   Registrarte

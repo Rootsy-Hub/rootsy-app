@@ -121,7 +121,8 @@ export function useMenuCatalogLoader(
     canReadCashRegisters: payload.canReadCashRegisters,
     openCashSession: payload.openCashSession,
     invoiceTypeSiteId: payload.invoiceTypeSiteId,
-    catalogLoading: revQuery.isLoading || catalogQuery.isLoading,
+    catalogLoading:
+      (catalogRev == null && revQuery.isPending) || catalogQuery.isLoading,
     catalogError:
       revQuery.error instanceof Error
         ? revQuery.error.message

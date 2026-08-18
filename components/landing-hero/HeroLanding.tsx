@@ -2,7 +2,7 @@ import Image from "next/image"
 import { Navbar } from "@/components/landing-hero/Navbar"
 import { PillButton } from "@/components/landing-hero/PillButton"
 import { REGISTER_URL } from "@/components/landing-hero/navConfig"
-import { LandingPreciosSection } from "@/components/landing/sections/LandingPreciosSection"
+import { HeroPlanesSection } from "@/components/landing-hero/HeroPlanesSection"
 
 const HERO_SUBTITLE =
   "Gestioná ventas, stock y caja desde la nube. Todo tu negocio en un solo lugar, en vivo y desde cualquier dispositivo."
@@ -78,7 +78,7 @@ export function HeroLanding() {
           className="scroll-mt-24 px-6 pb-24 pt-4 sm:px-10 lg:px-12"
           aria-label="Planes"
         >
-          <LandingPreciosSection />
+          <HeroPlanesSection />
         </section>
       </div>
     </main>
