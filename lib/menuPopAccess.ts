@@ -23,7 +23,6 @@ export const MENU_LINK_TO_MODULE_KEY: Partial<Record<MenuItemLink, string>> = {
   "cobrar-servicios": "active_services",
   operations: "operations",
   reports: "reports",
-  summary: "summary",
   statistics: "statistics",
   inventory: "inventory",
   invoices: "invoices",
@@ -33,6 +32,7 @@ export const MENU_LINK_TO_MODULE_KEY: Partial<Record<MenuItemLink, string>> = {
   hr: "hr",
   printers: "printers",
   settings: "settings",
+  checks: "checks",
 }
 
 /** Módulo de suscripción → link principal del menú (sin alias como cobrar-servicios). */
@@ -72,6 +72,7 @@ export function buildMenuSectionsFromEnabledModules(
 
   for (const mod of enabledModules) {
     if (!mod.permissions?.read) continue
+    if (mod.key === "summary") continue
 
     const link = menuLinkForModuleKey(mod.key)
     const items = grouped.get(mod.section) ?? []

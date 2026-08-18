@@ -58,7 +58,7 @@ import {
   type ArticleTableSortKey,
   type ArticlesModalFilters,
 } from "@/app/[siteId]/[popId]/articles/workspaceUrl"
-import { buildPaginationItems } from "@/app/[siteId]/[popId]/layout/layoutPreviewPagination"
+import { buildPaginationItems } from "@/components/data-workspace/buildPaginationItems"
 import { DataWorkspaceListActiveFiltersBar } from "@/components/data-workspace/DataWorkspaceListActiveFiltersBar"
 import { DataWorkspaceListBulkToolbar } from "@/components/data-workspace/DataWorkspaceListBulkToolbar"
 import { DataWorkspaceListFilterChip } from "@/components/data-workspace/DataWorkspaceListFilterChip"

@@ -95,6 +95,7 @@ function defaultFormState(): ServiceChargeCreateWizardForm {
     discountMode: "",
     discountValue: "",
     paymentMethodKey: "",
+    checkDetails: null,
     comprobanteLabel: "",
     issueInvoiceOnCreate: true,
     printInvoiceOnCreate: false,

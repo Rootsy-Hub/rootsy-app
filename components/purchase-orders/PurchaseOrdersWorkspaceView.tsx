@@ -9,7 +9,7 @@ import {
   DEFAULT_PURCHASE_ORDER_TABLE_PAGE_SIZE,
   PURCHASE_ORDER_TABLE_PAGE_SIZES,
 } from "@/app/[siteId]/[popId]/purchase-orders/orderConstants"
-import { buildPaginationItems } from "@/app/[siteId]/[popId]/layout/layoutPreviewPagination"
+import { buildPaginationItems } from "@/components/data-workspace/buildPaginationItems"
 import { PurchaseOrderViewDialog } from "@/components/purchase-orders/PurchaseOrderViewDialog"
 import { PurchaseOrderDeleteDialog } from "@/components/purchase-orders/PurchaseOrderDeleteDialog"
 import { DataWorkspaceListActiveFiltersBar } from "@/components/data-workspace/DataWorkspaceListActiveFiltersBar"

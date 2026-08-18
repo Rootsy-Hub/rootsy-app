@@ -514,6 +514,13 @@ function PurchasesPage() {
   const confirmarCompra = useCallback(async () => {
     if (!popId) return
     if (!payOnSupplierAccount && !metodoPagoSeleccionado) return
+    if (
+      !payOnSupplierAccount &&
+      metodoPagoSeleccionado?.kind === "check" &&
+      !metodoPagoSeleccionado.checkDetails
+    ) {
+      return
+    }
     setCompraError(null)
     setCompraSubmitting(true)
     try {
@@ -546,6 +553,10 @@ function PurchasesPage() {
         treasuryAccountId: payOnSupplierAccount
           ? null
           : metodoPagoSeleccionado?.treasuryAccountId ?? null,
+        checkDetails:
+          !payOnSupplierAccount && metodoPagoSeleccionado?.kind === "check"
+            ? metodoPagoSeleccionado.checkDetails ?? null
+            : null,
         lines: carrito.map((i) => {
           const detalle = itemsDetallados.find((d) => d.lineId === i.lineId)
           const fallback = detalle?.cost?.unitPrice ?? 0
@@ -1310,6 +1321,13 @@ function PurchasesPage() {
         payOnSupplierAccount={payOnSupplierAccount}
         cardInstallments={cardInstallments}
         onCardInstallmentsChange={setCardInstallments}
+        popId={popId}
+        defaultPartyName={proveedorSeleccionado?.name ?? ""}
+        defaultPartyId={
+          proveedorSeleccionado && !proveedorSeleccionado.manual
+            ? proveedorSeleccionado.id ?? ""
+            : ""
+        }
         onSelectImmediate={(option) => {
           setPayOnSupplierAccount(false)
           setMetodoPagoSeleccionado(option)

@@ -26,6 +26,13 @@ import {
 } from "@/lib/articleReferenceUnitCost"
 import { resolveLedgerAccountForTreasuryPayment } from "@/lib/treasuryPaymentLedger"
 import { isValidOperationPaymentKind } from "@/lib/operationPaymentKinds"
+import {
+  deleteCheckoutCheck,
+  insertCheckoutCheck,
+  parseCheckoutCheckDetails,
+  resolveCheckTreasuryAccountId,
+  type CheckoutCheckDetails,
+} from "@/lib/checkoutCheck"
 import { SALE_COMPROBANTE_RECIBO_X_LABEL, saleComprobanteAccruesOutputVat } from "@/lib/saleComprobantePicker"
 import { siteIdFromPopRow } from "@/lib/popRoutes"
 import { CLIENT_IVA_CONDITION_VALUES } from "@/app/[siteId]/[popId]/clients/clientIvaConstants"
@@ -482,6 +489,7 @@ export type CompleteSaleInput = {
   clientId: string | null
   paymentKind?: string | null
   treasuryAccountId?: string | null
+  checkDetails?: CheckoutCheckDetails | null
   payOnClientAccount?: boolean
   generalDiscountMode: "porcentaje" | "fijo"
   valorDescuentoPorcentaje: number
@@ -604,9 +612,30 @@ export async function completeSale(
     }
     const paymentKind = input.paymentKind?.trim() || null
     let treasuryAccountId = input.treasuryAccountId?.trim() || null
+    let checkoutCheckDetails: CheckoutCheckDetails | null = null
 
     if (!payOnClientAccount && paymentKind === "cash") {
       treasuryAccountId = cashTreasuryAccountId
+    }
+
+    if (!payOnClientAccount && paymentKind === "check") {
+      const parsed = parseCheckoutCheckDetails(input.checkDetails)
+      if (!parsed.ok) {
+        return { success: false, error: parsed.error }
+      }
+      checkoutCheckDetails = parsed.details
+      const checkTreasuryId = await resolveCheckTreasuryAccountId(
+        supabase,
+        popId,
+        "received",
+      )
+      if (!checkTreasuryId) {
+        return {
+          success: false,
+          error: "Faltan las cuentas de cheques. Recargá la página o contactá a soporte.",
+        }
+      }
+      treasuryAccountId = checkTreasuryId
     }
 
     if (!payOnClientAccount && (!paymentKind || !treasuryAccountId)) {
@@ -1330,6 +1359,23 @@ export async function completeSale(
     saleIdForRollback = saleId
 
     if (!payOnClientAccount && paymentKind && treasuryAccountId) {
+      let checkId: string | null = null
+      if (paymentKind === "check" && checkoutCheckDetails) {
+        const checkRes = await insertCheckoutCheck(supabase, {
+          popId,
+          userId: user.id,
+          direction: "received",
+          amount: total,
+          details: checkoutCheckDetails,
+          sourceKind: "sale",
+          sourceId: saleId,
+        })
+        if (!checkRes.success) {
+          await cancelSaleRollback(supabase, saleId, [])
+          return { success: false, error: checkRes.error }
+        }
+        checkId = checkRes.checkId
+      }
       const { error: payErr } = await supabase.from("sale_payments").insert({
         pop_id: popId,
         sale_id: saleId,
@@ -1337,8 +1383,10 @@ export async function completeSale(
         treasury_account_id: treasuryAccountId,
         amount: total,
         sort_order: 0,
+        check_id: checkId,
       })
       if (payErr) {
+        if (checkId) await deleteCheckoutCheck(supabase, checkId)
         await cancelSaleRollback(supabase, saleId, [])
         return { success: false, error: payErr.message || "No se pudo registrar el cobro." }
       }

@@ -15,6 +15,8 @@ export type TreasuryPaymentContext = {
   bankTreasuryAccounts: TreasuryPaymentPickOption[]
   posTreasuryAccounts: TreasuryPaymentPickOption[]
   payTreasuryAccounts: TreasuryPaymentPickOption[]
+  checkReceivableTreasuryAccountId: string | null
+  checkPayableTreasuryAccountId: string | null
 }
 
 export type TreasuryPaymentOption = {
@@ -74,6 +76,13 @@ export function buildSalePaymentOptions(
       label: `${pos.name} (crédito)`,
     })
   }
+  if (context.checkReceivableTreasuryAccountId) {
+    options.push({
+      kind: "check",
+      treasuryAccountId: context.checkReceivableTreasuryAccountId,
+      label: operationPaymentKindLabel("check"),
+    })
+  }
   return options
 }
 
@@ -105,6 +114,13 @@ export function buildPayPaymentOptions(
       kind: "card_credit",
       treasuryAccountId: card.id,
       label: `${card.name} (crédito)`,
+    })
+  }
+  if (context.checkPayableTreasuryAccountId) {
+    options.push({
+      kind: "check",
+      treasuryAccountId: context.checkPayableTreasuryAccountId,
+      label: operationPaymentKindLabel("check"),
     })
   }
   return options

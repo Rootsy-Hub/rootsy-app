@@ -3,6 +3,8 @@ export type TreasuryAccountKind =
   | "bank"
   | "wallet"
   | "card_payable"
+  | "check_receivable"
+  | "check_payable"
   | "other"
 
 export const TREASURY_ACCOUNT_KINDS: {
@@ -31,6 +33,16 @@ export const TREASURY_ACCOUNT_KINDS: {
     description: "Pasivo: resumen a pagar al banco",
   },
   {
+    value: "check_receivable",
+    label: "Cheques en cartera",
+    description: "Documentos por cobrar pendientes de depósito",
+  },
+  {
+    value: "check_payable",
+    label: "Cheques a pagar",
+    description: "Documentos emitidos pendientes de débito",
+  },
+  {
     value: "other",
     label: "Otro",
     description: "Otra cuenta de tesorería",
@@ -46,12 +58,37 @@ export const TREASURY_KIND_PARENT_CHART_CODE: Record<
   bank: "1.1.1.02",
   wallet: "1.1.1.04",
   card_payable: "2.1.1.03",
+  check_receivable: "1.1.2.02",
+  check_payable: "2.1.1.02",
   other: "1.1.1.04",
 }
 
 export function treasuryKindLabel(kind: TreasuryAccountKind | string): string {
   return (
     TREASURY_ACCOUNT_KINDS.find((k) => k.value === kind)?.label ?? "Cuenta"
+  )
+}
+
+export function isTreasuryAccountKind(
+  value: string,
+): value is TreasuryAccountKind {
+  return TREASURY_ACCOUNT_KINDS.some((k) => k.value === value)
+}
+
+export function isCheckTreasuryKind(
+  kind: TreasuryAccountKind | string,
+): boolean {
+  return kind === "check_receivable" || kind === "check_payable"
+}
+
+/** Kinds que no se crean ni editan desde el alta de Cuentas. */
+export function isSystemManagedTreasuryKind(
+  kind: TreasuryAccountKind | string,
+): boolean {
+  return (
+    kind === "card_payable" ||
+    kind === "check_receivable" ||
+    kind === "check_payable"
   )
 }
 

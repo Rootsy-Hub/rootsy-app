@@ -32,7 +32,7 @@ import {
   SERVICE_TABLE_PAGE_SIZES,
   type ServiceTableSortKey,
 } from "@/app/[siteId]/[popId]/services/workspaceUrl"
-import { buildPaginationItems } from "@/app/[siteId]/[popId]/layout/layoutPreviewPagination"
+import { buildPaginationItems } from "@/components/data-workspace/buildPaginationItems"
 import { DataWorkspaceListActiveFiltersBar } from "@/components/data-workspace/DataWorkspaceListActiveFiltersBar"
 import { DataWorkspaceListBulkToolbar } from "@/components/data-workspace/DataWorkspaceListBulkToolbar"
 import { DataWorkspaceListFilterChip } from "@/components/data-workspace/DataWorkspaceListFilterChip"

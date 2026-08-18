@@ -1,3 +1,4 @@
+import type { CheckoutCheckDetails } from "@/lib/checkoutCheck"
 import {
   operationPaymentKindLabel,
   type OperationPaymentKind,
@@ -13,6 +14,7 @@ export type PurchaseCheckoutPaymentSelection = {
   kind: OperationPaymentKind
   treasuryAccountId: string
   label: string
+  checkDetails?: CheckoutCheckDetails
 }
 
 /** Tipos visibles en el paso 1 del checkout de compra. */
@@ -20,6 +22,7 @@ export const PURCHASE_CHECKOUT_KINDS: OperationPaymentKind[] = [
   "cash",
   "transfer",
   "card_credit",
+  "check",
 ]
 
 export function purchaseCheckoutKindLabel(kind: OperationPaymentKind): string {
@@ -143,6 +146,12 @@ export function purchaseCheckoutKindAvailabilityError(
     }
     return null
   }
+  if (kind === "check") {
+    if (!context.checkPayableTreasuryAccountId) {
+      return "Faltan las cuentas de cheques. Recargá la página o contactá a soporte."
+    }
+    return null
+  }
   return null
 }
 
@@ -150,6 +159,13 @@ export function isPurchasePaymentSelectionValid(
   selection: PurchaseCheckoutPaymentSelection,
   context: TreasuryPaymentContext,
 ): boolean {
+  if (selection.kind === "check") {
+    return (
+      Boolean(context.checkPayableTreasuryAccountId) &&
+      selection.treasuryAccountId === context.checkPayableTreasuryAccountId &&
+      Boolean(selection.checkDetails)
+    )
+  }
   const destinations = getPurchaseCheckoutDestinations(selection.kind, context)
   return destinations.some((d) => d.id === selection.treasuryAccountId)
 }
@@ -179,6 +195,14 @@ export function resolvePurchaseToolboxPaymentDisplay(input: {
   const kindLabel = operationPaymentKindLabel(selection.kind)
   const pagoIcon: LucideIcon = paymentCheckoutKindIcon(selection.kind)
   const context = input.treasuryPaymentContext
+
+  if (selection.kind === "check") {
+    return {
+      pagoLabel: selection.label,
+      pagoSubLabel: kindLabel,
+      pagoIcon,
+    }
+  }
 
   if (!context) {
     return {

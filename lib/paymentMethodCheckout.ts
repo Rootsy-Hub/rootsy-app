@@ -1,3 +1,4 @@
+import type { CheckoutCheckDetails } from "@/lib/checkoutCheck"
 import {
   operationPaymentKindLabel,
   type OperationPaymentKind,
@@ -26,7 +27,7 @@ import {
 } from "@/lib/serviceChargeCheckoutPayment"
 import type { TreasuryPaymentContext } from "@/lib/treasuryPaymentOptions"
 import type { LucideIcon } from "lucide-react"
-import { ArrowLeftRight, Banknote, CreditCard } from "lucide-react"
+import { ArrowLeftRight, Banknote, CreditCard, Wallet } from "lucide-react"
 
 export type PaymentFlow = "sale" | "purchase" | "service_charge"
 
@@ -34,9 +35,14 @@ export type PaymentMethodSelection = {
   kind: OperationPaymentKind
   treasuryAccountId: string
   label: string
+  checkDetails?: CheckoutCheckDetails
 }
 
-export type PaymentCheckoutStep = "menu" | "destination" | "installments"
+export type PaymentCheckoutStep =
+  | "menu"
+  | "destination"
+  | "check"
+  | "installments"
 
 export function getPaymentCheckoutKinds(flow: PaymentFlow): OperationPaymentKind[] {
   if (flow === "purchase") return PURCHASE_CHECKOUT_KINDS
@@ -179,6 +185,12 @@ export function paymentCheckoutKindSubtitle(
     return `${pluralCuenta(count)} · elegí origen`
   }
 
+  if (kind === "check") {
+    return flow === "purchase"
+      ? "Queda como documento a pagar"
+      : "Queda en cartera hasta depositarlo"
+  }
+
   if (kind === "card_debit" || kind === "card_credit") {
     if (flow === "purchase") {
       const count = context.payTreasuryAccounts.length
@@ -227,6 +239,12 @@ export function paymentCheckoutDestinationHint(
   return "Elegí la cuenta destino."
 }
 
+export function paymentCheckoutKindNeedsDetailsStep(
+  kind: OperationPaymentKind,
+): boolean {
+  return kind === "check"
+}
+
 export function resolvePaymentKindSelection(
   flow: PaymentFlow,
   kind: OperationPaymentKind,
@@ -235,7 +253,39 @@ export function resolvePaymentKindSelection(
 ):
   | { action: "select"; selection: PaymentMethodSelection }
   | { action: "destination"; kind: OperationPaymentKind }
+  | { action: "check"; selection: PaymentMethodSelection }
   | { action: "error"; message: string } {
+  if (kind === "check") {
+    const availabilityError = paymentCheckoutKindAvailabilityError(
+      flow,
+      kind,
+      context,
+      cashTreasuryAccountId,
+    )
+    if (availabilityError) {
+      return { action: "error", message: availabilityError }
+    }
+    const treasuryAccountId =
+      flow === "purchase"
+        ? context.checkPayableTreasuryAccountId
+        : context.checkReceivableTreasuryAccountId
+    if (!treasuryAccountId) {
+      return {
+        action: "error",
+        message: "Faltan las cuentas de cheques. Recargá la página o contactá a soporte.",
+      }
+    }
+    return {
+      action: "check",
+      selection: buildPaymentCheckoutSelection(
+        flow,
+        "check",
+        treasuryAccountId,
+        context,
+      ),
+    }
+  }
+
   if (flow === "service_charge") {
     return resolveServiceChargePaymentKindSelection(kind, context)
   }
@@ -314,6 +364,8 @@ export function paymentCheckoutKindIcon(kind: OperationPaymentKind): LucideIcon 
       return CreditCard
     case "transfer":
       return ArrowLeftRight
+    case "check":
+      return Wallet
     default:
       return Banknote
   }

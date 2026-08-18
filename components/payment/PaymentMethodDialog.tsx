@@ -1,10 +1,17 @@
 "use client"
 
+import { CheckUpsertFormFields } from "@/app/[siteId]/[popId]/checks/CheckUpsertFormFields"
+import {
+  defaultCheckCreateFormState,
+  type CheckCreateFormState,
+} from "@/app/[siteId]/[popId]/checks/checkFormState"
 import { CheckoutOptionCard } from "@/components/checkout/CheckoutOptionCard"
 import {
   RootsDialogBody,
   RootsDialogContent,
+  RootsDialogDualActionFooter,
   RootsDialogErrorBanner,
+  RootsDialogForm,
   RootsDialogHeader,
   rootsDialogHeaderClass,
   rootsDialogHeaderCompactClass,
@@ -15,16 +22,24 @@ import { Dialog, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Separator } from "@/components/ui/separator"
+import {
+  checkoutCheckDirection,
+  checkoutCheckSelectionLabel,
+  parseCheckoutCheckDetails,
+  type CheckoutCheckDetails,
+} from "@/lib/checkoutCheck"
 import type { OperationPaymentKind } from "@/lib/operationPaymentKinds"
 import {
   buildPaymentCheckoutSelection,
   getPaymentCheckoutDestinations,
   getPaymentCheckoutKinds,
+  paymentCheckoutKindHasDestinationStep,
+  paymentCheckoutKindIcon,
   paymentCheckoutKindLabel,
+  paymentCheckoutKindNeedsDetailsStep,
   paymentCheckoutKindSubtitle,
   resolvePaymentKindSelection,
   shouldStayOpenAfterSelection,
-  paymentCheckoutKindHasDestinationStep,
   type PaymentCheckoutStep,
   type PaymentFlow,
   type PaymentMethodSelection,
@@ -32,14 +47,19 @@ import {
 import type { TreasuryPaymentContext } from "@/lib/treasuryPaymentOptions"
 import { cn } from "@/lib/utils"
 import {
-  ArrowLeftRight,
   Banknote,
   BookOpen,
   ChevronLeft,
   CreditCard,
   Landmark,
 } from "lucide-react"
-import { useCallback, useEffect, useMemo, useState } from "react"
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+  type FormEvent,
+} from "react"
 
 type Props = {
   flow: PaymentFlow
@@ -61,20 +81,13 @@ type Props = {
   hideAccountOption?: boolean
   /** Abre directamente el paso de destino (p. ej. elegir terminal POS). */
   initialDestinationKind?: OperationPaymentKind | null
+  popId?: string
+  defaultPartyName?: string
+  defaultPartyId?: string
 }
 
 function kindIcon(kind: OperationPaymentKind) {
-  switch (kind) {
-    case "cash":
-      return Banknote
-    case "card_debit":
-    case "card_credit":
-      return CreditCard
-    case "transfer":
-      return ArrowLeftRight
-    default:
-      return Landmark
-  }
+  return paymentCheckoutKindIcon(kind)
 }
 
 function destinationIcon(kind: OperationPaymentKind) {
@@ -125,7 +138,35 @@ function paymentStepTitle(
 ): string {
   if (step === "menu") return "Formas de pago"
   if (step === "installments") return "Cuotas de la tarjeta"
+  if (step === "check") return "Datos del cheque"
   return paymentCheckoutKindLabel(flow, pendingKind!)
+}
+
+function checkFormFromDetails(
+  flow: PaymentFlow,
+  details: CheckoutCheckDetails | undefined,
+  defaultPartyName: string,
+  defaultPartyId: string,
+): CheckCreateFormState {
+  const direction = checkoutCheckDirection(flow)
+  const base = defaultCheckCreateFormState(direction)
+  if (!details) {
+    return {
+      ...base,
+      partyName: defaultPartyName,
+      partyId: defaultPartyId,
+    }
+  }
+  return {
+    ...base,
+    checkNumber: details.checkNumber,
+    bankName: details.bankName,
+    issueDate: details.issueDate || base.issueDate,
+    dueDate: details.dueDate || base.dueDate,
+    partyName: details.partyName || defaultPartyName,
+    partyId: details.partyId || defaultPartyId,
+    notes: details.notes,
+  }
 }
 
 export function PaymentMethodDialog({
@@ -146,6 +187,9 @@ export function PaymentMethodDialog({
   onCardInstallmentsChange,
   hideAccountOption = false,
   initialDestinationKind = null,
+  popId = "",
+  defaultPartyName = "",
+  defaultPartyId = "",
 }: Props) {
   const [step, setStep] = useState<PaymentCheckoutStep>(() =>
     initialDestinationKind ? "destination" : "menu",
@@ -153,12 +197,18 @@ export function PaymentMethodDialog({
   const [pendingKind, setPendingKind] = useState<OperationPaymentKind | null>(
     () => initialDestinationKind ?? null,
   )
+  const [pendingCheckSelection, setPendingCheckSelection] =
+    useState<PaymentMethodSelection | null>(null)
+  const [checkForm, setCheckForm] = useState<CheckCreateFormState>(() =>
+    checkFormFromDetails(flow, undefined, defaultPartyName, defaultPartyId),
+  )
   const [stepError, setStepError] = useState<string | null>(null)
 
   useEffect(() => {
     if (!open) {
       setStep(initialDestinationKind ? "destination" : "menu")
       setPendingKind(initialDestinationKind ?? null)
+      setPendingCheckSelection(null)
       setStepError(null)
       return
     }
@@ -166,6 +216,7 @@ export function PaymentMethodDialog({
     if (initialDestinationKind) {
       setStep("destination")
       setPendingKind(initialDestinationKind)
+      setPendingCheckSelection(null)
       setStepError(null)
       return
     }
@@ -213,9 +264,31 @@ export function PaymentMethodDialog({
         setStep("destination")
         return
       }
+      if (result.action === "check") {
+        setPendingKind("check")
+        setPendingCheckSelection(result.selection)
+        setCheckForm(
+          checkFormFromDetails(
+            flow,
+            selected?.kind === "check" ? selected.checkDetails : undefined,
+            defaultPartyName,
+            defaultPartyId,
+          ),
+        )
+        setStep("check")
+        return
+      }
       finishSelection(result.selection)
     },
-    [cashTreasuryAccountId, finishSelection, flow, treasuryContext],
+    [
+      cashTreasuryAccountId,
+      defaultPartyId,
+      defaultPartyName,
+      finishSelection,
+      flow,
+      selected,
+      treasuryContext,
+    ],
   )
 
   const handleDestinationPick = useCallback(
@@ -237,6 +310,14 @@ export function PaymentMethodDialog({
   const handleBack = useCallback(() => {
     if (initialDestinationKind) {
       onOpenChange(false)
+      setStepError(null)
+      return
+    }
+
+    if (step === "check") {
+      setStep("menu")
+      setPendingKind(null)
+      setPendingCheckSelection(null)
       setStepError(null)
       return
     }
@@ -265,9 +346,40 @@ export function PaymentMethodDialog({
     return getPaymentCheckoutDestinations(flow, pendingKind, treasuryContext)
   }, [flow, pendingKind, step, treasuryContext])
 
+  const handleCheckSubmit = useCallback(
+    (event: FormEvent<HTMLFormElement>) => {
+      event.preventDefault()
+      if (!pendingCheckSelection) return
+      const parsed = parseCheckoutCheckDetails({
+        checkNumber: checkForm.checkNumber,
+        bankName: checkForm.bankName,
+        issueDate: checkForm.issueDate,
+        dueDate: checkForm.dueDate,
+        partyName: checkForm.partyName,
+        partyId: checkForm.partyId,
+        notes: checkForm.notes,
+      })
+      if (!parsed.ok) {
+        setStepError(parsed.error)
+        return
+      }
+      setStepError(null)
+      finishSelection({
+        ...pendingCheckSelection,
+        label: checkoutCheckSelectionLabel(parsed.details),
+        checkDetails: parsed.details,
+      })
+    },
+    [checkForm, finishSelection, pendingCheckSelection],
+  )
+
   const paymentKinds = getPaymentCheckoutKinds(flow)
   const sectionTitle =
     immediateSectionTitle ?? (flow === "sale" ? "Cobro inmediato" : "Pago inmediato")
+  const checkDescription =
+    flow === "purchase"
+      ? "El cheque queda como documento a pagar. El importe es el de esta compra."
+      : "El cheque queda en cartera. El importe es el de esta operación."
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -310,6 +422,40 @@ export function PaymentMethodDialog({
           </DialogHeader>
         )}
 
+        {step === "check" ? (
+          <RootsDialogForm onSubmit={handleCheckSubmit}>
+            <RootsDialogBody className="space-y-4">
+              {stepError ? (
+                <RootsDialogErrorBanner>{stepError}</RootsDialogErrorBanner>
+              ) : null}
+              {popId ? (
+                <>
+                  <p className="text-sm leading-relaxed text-[var(--rootsy-bruma-500)]">
+                    {checkDescription}
+                  </p>
+                  <CheckUpsertFormFields
+                    popId={popId}
+                    idPrefix="checkout-check"
+                    form={checkForm}
+                    setForm={setCheckForm}
+                    hideAmount
+                  />
+                </>
+              ) : (
+                <RootsDialogErrorBanner>
+                  No se pudo cargar el formulario del cheque.
+                </RootsDialogErrorBanner>
+              )}
+            </RootsDialogBody>
+            <RootsDialogDualActionFooter
+              cancelLabel="Volver"
+              onCancel={handleBack}
+              confirmLabel="Usar este cheque"
+              confirmType="submit"
+              confirmDisabled={!popId}
+            />
+          </RootsDialogForm>
+        ) : (
         <RootsDialogBody className="space-y-4">
           {stepError ? (
             <RootsDialogErrorBanner>{stepError}</RootsDialogErrorBanner>
@@ -329,6 +475,7 @@ export function PaymentMethodDialog({
                   <ul className="flex flex-col gap-2" role="listbox" aria-label={sectionTitle}>
                     {paymentKinds.map((kind) => {
                       const hasSubstep =
+                        paymentCheckoutKindNeedsDetailsStep(kind) ||
                         paymentCheckoutKindHasDestinationStep(
                           flow,
                           kind,
@@ -436,6 +583,7 @@ export function PaymentMethodDialog({
             </div>
           ) : null}
         </RootsDialogBody>
+        )}
       </RootsDialogContent>
     </Dialog>
   )

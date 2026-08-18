@@ -17,6 +17,7 @@ import {
   isCardPayableChartCode,
   isMotherTreasuryAccount,
   isSettlementReceivableChartCode,
+  isTreasuryAccountKind,
   type TreasuryAccountKind,
 } from "@/lib/treasuryAccountKinds"
 import { requireAuthenticatedUser } from "@/lib/authHelpers"
@@ -73,10 +74,7 @@ function parseAmount(v: unknown): number {
 
 function parseTreasuryKind(v: unknown): TreasuryAccountKind {
   const k = String(v ?? "other")
-  if (k === "cash" || k === "bank" || k === "wallet" || k === "card_payable") {
-    return k
-  }
-  return "other"
+  return isTreasuryAccountKind(k) ? k : "other"
 }
 
 function compareChartAccountCodes(a: string, b: string): number {

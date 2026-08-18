@@ -20,7 +20,7 @@ import {
   defaultClientsModalFilters,
   type ClientsModalFilters,
 } from "@/app/[siteId]/[popId]/clients/ClientsFiltersDialog"
-import { buildPaginationItems } from "@/app/[siteId]/[popId]/layout/layoutPreviewPagination"
+import { buildPaginationItems } from "@/components/data-workspace/buildPaginationItems"
 import { Badge } from "@/components/ui/badge"
 import { Checkbox } from "@/components/ui/checkbox"
 import { DataWorkspaceListActiveFiltersBar } from "@/components/data-workspace/DataWorkspaceListActiveFiltersBar"

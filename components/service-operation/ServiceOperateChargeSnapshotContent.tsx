@@ -72,6 +72,7 @@ function yesNo(value: boolean): string {
 function resolvePaymentSnapshot(
   paymentMethodKey: string,
   treasuryPaymentContext: TreasuryPaymentContext | null,
+  checkDetails?: { checkNumber?: string } | null,
 ): { kind: string; destination: string | null } | null {
   if (!isServiceChargePaymentMethodChosen(paymentMethodKey)) return null
 
@@ -85,6 +86,10 @@ function resolvePaymentSnapshot(
   }
 
   const kind = operationPaymentKindLabel(parsed.kind)
+  if (parsed.kind === "check") {
+    const number = checkDetails?.checkNumber?.trim()
+    return { kind, destination: number ? `Nº ${number}` : null }
+  }
   if (!treasuryPaymentContext) {
     return { kind, destination: null }
   }
@@ -153,6 +158,7 @@ export function ServiceOperateChargeSnapshotContent({
   const paymentSnapshot = resolvePaymentSnapshot(
     form.paymentMethodKey,
     treasuryPaymentContext,
+    form.checkDetails,
   )
 
   const comprobanteSnapshotLabel = resolveServiceChargeComprobanteSnapshotLabel(

@@ -23,12 +23,14 @@ import { filterComboPromotionsForSale } from "@/lib/saleMenuCatalog"
 import { resolveOpenCashSession } from "@/lib/cashRegisterSession"
 import { fetchTreasuryPaymentContext } from "@/lib/treasuryPaymentContextLoad"
 import type { TreasuryPaymentContext } from "@/lib/treasuryPaymentOptions"
+import type { CheckoutCheckDetails } from "@/lib/checkoutCheck"
 import type { OperationPaymentKind } from "@/lib/operationPaymentKinds"
 
 export type SaleCatalogPaymentOption = {
   kind: OperationPaymentKind
   treasuryAccountId: string
   label: string
+  checkDetails?: CheckoutCheckDetails
 }
 
 export type SaleCatalogCategory = {

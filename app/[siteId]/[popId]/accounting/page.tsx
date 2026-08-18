@@ -105,6 +105,10 @@ const SOURCE_TYPE_LABELS: Record<string, string> = {
   expense_payment: "Pago de gasto",
   expense_void: "Anulación de gasto",
   service_charge_payment: "Cobro de servicio",
+  check_receive: "Cheque recibido / emitido",
+  check_deposit: "Depósito de cheque",
+  check_reject: "Rechazo de cheque",
+  check_void: "Anulación de cheque",
 }
 
 function formatSourceType(s: string): string {

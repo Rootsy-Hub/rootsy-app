@@ -3,6 +3,7 @@ export type OperationPaymentKind =
   | "card_debit"
   | "card_credit"
   | "transfer"
+  | "check"
   | "other"
 
 export const OPERATION_PAYMENT_KINDS: {
@@ -13,6 +14,7 @@ export const OPERATION_PAYMENT_KINDS: {
   { value: "card_debit", label: "Tarjeta débito" },
   { value: "card_credit", label: "Tarjeta crédito" },
   { value: "transfer", label: "Transferencia" },
+  { value: "check", label: "Cheque" },
   { value: "other", label: "Otro" },
 ]
 

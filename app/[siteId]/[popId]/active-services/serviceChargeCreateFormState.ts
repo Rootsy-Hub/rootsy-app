@@ -1,4 +1,5 @@
 import type { ServiceTypeChargeOption } from "@/app/[siteId]/[popId]/active-services/actions"
+import type { CheckoutCheckDetails } from "@/lib/checkoutCheck"
 import type { ServiceChargeClientDraft } from "@/app/[siteId]/[popId]/active-services/components/ServiceChargeClientField"
 import type { ArticleDiscountMode } from "@/lib/articleDiscount"
 import { parseNonNegativeIntegerInput } from "@/lib/integerInput"
@@ -175,6 +176,7 @@ export type ServiceChargeCreateWizardForm = {
   discountMode: "" | ArticleDiscountMode
   discountValue: string
   paymentMethodKey: string
+  checkDetails: CheckoutCheckDetails | null
   comprobanteLabel: string
   /** Emitir comprobante fiscal al crear el cargo. */
   issueInvoiceOnCreate: boolean

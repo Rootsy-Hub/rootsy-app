@@ -87,15 +87,6 @@ export const POP_PAGES = {
       delete: "menu:delete",
     },
   },
-  "menu/docs": {
-    path: "menu/docs",
-    permissions: {
-      read: "menu:read",
-      create: "menu:create",
-      update: "menu:update",
-      delete: "menu:delete",
-    },
-  },
   operations: {
     path: "operations",
     permissions: {
@@ -238,6 +229,15 @@ export const POP_PAGES = {
       create: "suppliers:create",
       update: "suppliers:update",
       delete: "suppliers:delete",
+    },
+  },
+  checks: {
+    path: "checks",
+    permissions: {
+      read: "checks:read",
+      create: "checks:create",
+      update: "checks:update",
+      delete: "checks:delete",
     },
   },
 } as const satisfies Record<string, PopPageDefinition>

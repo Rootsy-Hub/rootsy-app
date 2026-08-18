@@ -146,6 +146,13 @@ export function MesasCheckoutModals({
         cashRegisterName={m.openCashSession?.registerName ?? null}
         selected={m.metodoPagoSeleccionado}
         payOnClientAccount={m.payOnClientAccount}
+        popId={m.popId}
+        defaultPartyName={m.clienteSeleccionado?.name ?? ""}
+        defaultPartyId={
+          m.clienteSeleccionado && !m.clienteSeleccionado.manual
+            ? m.clienteSeleccionado.id ?? ""
+            : ""
+        }
         onSelectImmediate={(option) => {
           m.setPayOnClientAccount(false)
           m.setMetodoPagoSeleccionado(option)

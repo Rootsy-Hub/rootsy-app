@@ -1,6 +1,7 @@
 import {
   Building2,
   CreditCard,
+  Home,
   LayoutDashboard,
   Store,
   UserCircle,
@@ -16,6 +17,12 @@ export type BackofficeNavItem = {
 }
 
 export const BACKOFFICE_NAV: BackofficeNavItem[] = [
+  {
+    id: "inicio",
+    href: "/backoffice/inicio",
+    label: "Inicio",
+    icon: Home,
+  },
   {
     id: "dashboard",
     href: "/backoffice/dashboard",

@@ -1,5 +1,6 @@
 "use client"
 
+import { RootsPrimaryButton } from "@/components/rootsy-button"
 import { CheckoutOptionCard } from "@/components/checkout/CheckoutOptionCard"
 import type { CheckoutOptionCardTone } from "@/components/checkout/CheckoutOptionCard"
 import { RootsDialogErrorBanner } from "@/components/rootsy-dialog"
@@ -10,6 +11,16 @@ import {
   layoutsOperarFormDarkMutedTextClass,
 } from "@/app/library/layouts/layoutsOperarStyles"
 import type { OperationPaymentKind } from "@/lib/operationPaymentKinds"
+import { CheckUpsertFormFields } from "@/app/[siteId]/[popId]/checks/CheckUpsertFormFields"
+import {
+  defaultCheckCreateFormState,
+  type CheckCreateFormState,
+} from "@/app/[siteId]/[popId]/checks/checkFormState"
+import {
+  checkoutCheckSelectionLabel,
+  parseCheckoutCheckDetails,
+  type CheckoutCheckDetails,
+} from "@/lib/checkoutCheck"
 import {
   buildPaymentCheckoutSelection,
   getPaymentCheckoutDestinations,
@@ -17,6 +28,7 @@ import {
   paymentCheckoutKindHasDestinationStep,
   paymentCheckoutKindIcon,
   paymentCheckoutKindLabel,
+  paymentCheckoutKindNeedsDetailsStep,
   paymentCheckoutKindSubtitle,
   resolvePaymentKindSelection,
   type PaymentMethodSelection,
@@ -42,7 +54,7 @@ import { useCallback, useEffect, useMemo, useState } from "react"
 
 const SERVICE_PAYMENT_FLOW = "service_charge" as const
 
-type PaymentPickerStep = "menu" | "destination"
+type PaymentPickerStep = "menu" | "destination" | "check"
 
 export type ServiceOperatePaymentInlineNavigation = {
   title: string
@@ -51,8 +63,15 @@ export type ServiceOperatePaymentInlineNavigation = {
 
 type Props = {
   paymentMethodKey: string
-  onChange: (paymentMethodKey: string) => void
+  onChange: (
+    paymentMethodKey: string,
+    checkDetails?: CheckoutCheckDetails | null,
+  ) => void
   treasuryContext: TreasuryPaymentContext | null
+  popId?: string
+  defaultPartyName?: string
+  defaultPartyId?: string
+  checkDetails?: CheckoutCheckDetails | null
   disabled?: boolean
   tone?: CheckoutOptionCardTone
   showTitle?: boolean
@@ -102,6 +121,10 @@ export function ServiceOperatePaymentFields({
   paymentMethodKey,
   onChange,
   treasuryContext,
+  popId = "",
+  defaultPartyName = "",
+  defaultPartyId = "",
+  checkDetails = null,
   disabled = false,
   tone = "dark",
   showTitle = true,
@@ -116,6 +139,13 @@ export function ServiceOperatePaymentFields({
   const [pendingKind, setPendingKind] = useState<OperationPaymentKind | null>(
     null,
   )
+  const [pendingCheckSelection, setPendingCheckSelection] =
+    useState<PaymentMethodSelection | null>(null)
+  const [checkForm, setCheckForm] = useState<CheckCreateFormState>(() => ({
+    ...defaultCheckCreateFormState("received"),
+    partyName: defaultPartyName,
+    partyId: defaultPartyId,
+  }))
 
   const selected = useMemo(
     () =>
@@ -130,6 +160,7 @@ export function ServiceOperatePaymentFields({
   const resetNavigation = useCallback(() => {
     setStep("menu")
     setPendingKind(null)
+    setPendingCheckSelection(null)
     setDestinationDialogOpen(false)
     setPickError(null)
   }, [])
@@ -141,12 +172,16 @@ export function ServiceOperatePaymentFields({
   }, [navigationSessionActive, resetNavigation])
 
   const applySelection = useCallback(
-    (selection: PaymentMethodSelection) => {
+    (
+      selection: PaymentMethodSelection,
+      nextCheckDetails: CheckoutCheckDetails | null = null,
+    ) => {
       onChange(
         treasuryPaymentOptionKey({
           kind: selection.kind,
           treasuryAccountId: selection.treasuryAccountId,
         }),
+        nextCheckDetails,
       )
       setPickError(null)
       onSelectionComplete?.()
@@ -170,15 +205,19 @@ export function ServiceOperatePaymentFields({
   const handleInlineBack = useCallback(() => {
     setStep("menu")
     setPendingKind(null)
+    setPendingCheckSelection(null)
     setPickError(null)
   }, [])
 
   useEffect(() => {
     if (!inlineNavigation || !onInlineNavigationChange) return
 
-    if (step === "destination" && pendingKind) {
+    if ((step === "destination" || step === "check") && pendingKind) {
       onInlineNavigationChange({
-        title: paymentCheckoutKindLabel(SERVICE_PAYMENT_FLOW, pendingKind),
+        title:
+          step === "check"
+            ? "Datos del cheque"
+            : paymentCheckoutKindLabel(SERVICE_PAYMENT_FLOW, pendingKind),
         onBack: handleInlineBack,
       })
       return
@@ -209,6 +248,28 @@ export function ServiceOperatePaymentFields({
         return
       }
 
+      if (selectedKind === kind && kind === "check") {
+        const result = resolvePaymentKindSelection(
+          SERVICE_PAYMENT_FLOW,
+          kind,
+          treasuryContext,
+        )
+        if (result.action === "check") {
+          setPendingKind("check")
+          setPendingCheckSelection(result.selection)
+          setCheckForm({
+            ...defaultCheckCreateFormState("received"),
+            ...(checkDetails ?? {}),
+            amount: "",
+            direction: "received",
+            partyName: checkDetails?.partyName || defaultPartyName,
+            partyId: checkDetails?.partyId || defaultPartyId,
+          })
+          setStep("check")
+        }
+        return
+      }
+
       const result = resolvePaymentKindSelection(
         SERVICE_PAYMENT_FLOW,
         kind,
@@ -227,9 +288,33 @@ export function ServiceOperatePaymentFields({
         return
       }
 
-      applySelection(result.selection)
+      if (result.action === "check") {
+        setPendingKind("check")
+        setPendingCheckSelection(result.selection)
+        setCheckForm({
+          ...defaultCheckCreateFormState("received"),
+          ...(checkDetails ?? {}),
+          amount: "",
+          direction: "received",
+          partyName: checkDetails?.partyName || defaultPartyName,
+          partyId: checkDetails?.partyId || defaultPartyId,
+        })
+        setStep("check")
+        return
+      }
+
+      applySelection(result.selection, null)
     },
-    [applySelection, disabled, openDestinationForKind, selectedKind, treasuryContext],
+    [
+      applySelection,
+      checkDetails,
+      defaultPartyId,
+      defaultPartyName,
+      disabled,
+      openDestinationForKind,
+      selectedKind,
+      treasuryContext,
+    ],
   )
 
   const handleDestinationPick = useCallback(
@@ -308,11 +393,13 @@ export function ServiceOperatePaymentFields({
             </li>
           ) : (
             paymentKinds.map((kind) => {
-              const hasSubstep = paymentCheckoutKindHasDestinationStep(
-                SERVICE_PAYMENT_FLOW,
-                kind,
-                treasuryContext,
-              )
+              const hasSubstep =
+                paymentCheckoutKindNeedsDetailsStep(kind) ||
+                paymentCheckoutKindHasDestinationStep(
+                  SERVICE_PAYMENT_FLOW,
+                  kind,
+                  treasuryContext,
+                )
               const isSelected = selectedKind === kind
               const subtitle =
                 isSelected && selected
@@ -342,6 +429,56 @@ export function ServiceOperatePaymentFields({
             })
           )}
         </ul>
+      ) : null}
+
+      {step === "check" && pendingCheckSelection ? (
+        <form
+          className="flex flex-col gap-4"
+          onSubmit={(event) => {
+            event.preventDefault()
+            const parsed = parseCheckoutCheckDetails({
+              checkNumber: checkForm.checkNumber,
+              bankName: checkForm.bankName,
+              issueDate: checkForm.issueDate,
+              dueDate: checkForm.dueDate,
+              partyName: checkForm.partyName,
+              partyId: checkForm.partyId,
+              notes: checkForm.notes,
+            })
+            if (!parsed.ok) {
+              setPickError(parsed.error)
+              return
+            }
+            applySelection(
+              {
+                ...pendingCheckSelection,
+                label: checkoutCheckSelectionLabel(parsed.details),
+                checkDetails: parsed.details,
+              },
+              parsed.details,
+            )
+            setStep("menu")
+            setPendingKind(null)
+            setPendingCheckSelection(null)
+          }}
+        >
+          {popId ? (
+            <CheckUpsertFormFields
+              popId={popId}
+              idPrefix="service-operate-check"
+              form={checkForm}
+              setForm={setCheckForm}
+              hideAmount
+            />
+          ) : (
+            <RootsDialogErrorBanner>
+              No se pudo cargar el formulario del cheque.
+            </RootsDialogErrorBanner>
+          )}
+          <RootsPrimaryButton type="submit" disabled={disabled || !popId}>
+            Usar este cheque
+          </RootsPrimaryButton>
+        </form>
       ) : null}
 
       {step === "destination" && pendingKind ? (

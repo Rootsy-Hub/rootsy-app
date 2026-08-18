@@ -27,6 +27,7 @@ import {
 import { DataWorkspaceHeaderIconButton } from "@/components/layouts/DataWorkspaceHeaderIconButton"
 import { usePopWorkspace } from "@/context/PopWorkspaceContext"
 import withAuth from "@/hoc/withAuth"
+import type { CheckoutCheckDetails } from "@/lib/checkoutCheck"
 import type { ActiveServicesViewFilter } from "@/lib/serviceChargeTypes"
 import { treasuryPaymentOptionKey } from "@/lib/treasuryPaymentOptions"
 import { Plus } from "lucide-react"
@@ -176,6 +177,7 @@ function ActiveServicesPage() {
     paidAt: string
     paymentMethodKey: string
     notes: string
+    checkDetails: CheckoutCheckDetails | null
   }) => {
     if (!popId || !payTarget || paySaving) return
     setPaySaving(true)
@@ -191,6 +193,7 @@ function ActiveServicesPage() {
       selected?.kind ?? null,
       selected?.treasuryAccountId ?? null,
       input.notes,
+      input.checkDetails,
     )
     setPaySaving(false)
     if (!res.success) {
@@ -310,6 +313,7 @@ function ActiveServicesPage() {
           <ServiceChargePaymentDialog
             open={payOpen}
             onOpenChange={setPayOpen}
+            popId={popId}
             charge={payTarget}
             paymentMethods={paymentMethods}
             saving={paySaving}

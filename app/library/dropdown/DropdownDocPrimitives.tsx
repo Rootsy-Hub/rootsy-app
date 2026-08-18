@@ -319,7 +319,7 @@ export function DropdownRowActionsDemo() {
   return (
     <SpecCard
       title="Acciones de fila (tabla layout)"
-      source="LayoutPreviewListTable · RowMoreMenu"
+      source="DataWorkspace · menú ⋮ de fila"
       tokens={["lightToolbarDropdownContentClass", "RootsIconButton"]}
     >
       <div className="flex items-center gap-3 rounded-lg border border-[var(--rootsy-bruma-200)] bg-[var(--rootsy-bruma-50)] px-3 py-2">

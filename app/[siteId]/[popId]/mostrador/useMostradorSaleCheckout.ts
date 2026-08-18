@@ -1346,6 +1346,10 @@ export function useMostradorSaleCheckout(
           treasuryAccountId: payOnClientAccount
             ? null
             : metodoPagoSeleccionado?.treasuryAccountId,
+          checkDetails:
+            !payOnClientAccount && metodoPagoSeleccionado?.kind === "check"
+              ? metodoPagoSeleccionado.checkDetails ?? null
+              : null,
           generalDiscountMode:
             modoDescuento === "porcentaje" ? "porcentaje" : "fijo",
           valorDescuentoPorcentaje:

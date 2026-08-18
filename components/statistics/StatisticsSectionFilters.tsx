@@ -1,6 +1,6 @@
 "use client"
 
-import { SummaryPeriodToolbar } from "@/components/summary/SummaryPeriodToolbar"
+import { StatisticsPeriodToolbar } from "@/components/statistics/StatisticsPeriodToolbar"
 import type { StatisticsFilters } from "@/app/[siteId]/[popId]/statistics/actions"
 import {
   RootsFormSelectField,
@@ -64,7 +64,7 @@ export function StatisticsSectionFilters({
         </div>
       ) : null}
 
-      <SummaryPeriodToolbar
+      <StatisticsPeriodToolbar
         embedded
         showLabel
         preset={preset}

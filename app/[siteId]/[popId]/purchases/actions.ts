@@ -96,13 +96,21 @@ export type CreatePurchaseLineInput = {
 
 import { getTreasuryPaymentContext } from "@/lib/treasuryPaymentContext"
 import type { TreasuryPaymentContext } from "@/lib/treasuryPaymentOptions"
+import type { CheckoutCheckDetails } from "@/lib/checkoutCheck"
 import type { OperationPaymentKind } from "@/lib/operationPaymentKinds"
 import { isValidOperationPaymentKind } from "@/lib/operationPaymentKinds"
+import {
+  deleteCheckoutCheck,
+  insertCheckoutCheck,
+  parseCheckoutCheckDetails,
+  resolveCheckTreasuryAccountId,
+} from "@/lib/checkoutCheck"
 
 export type PurchaseCatalogPaymentOption = {
   kind: OperationPaymentKind
   treasuryAccountId: string
   label: string
+  checkDetails?: CheckoutCheckDetails
 }
 
 /** @deprecated Usar PurchaseCatalogPaymentOption */
@@ -131,6 +139,7 @@ export type CreatePurchaseInput = {
   generalDiscountValue?: number
   paymentKind?: string | null
   treasuryAccountId?: string | null
+  checkDetails?: CheckoutCheckDetails | null
 }
 
 function roundMoney(n: number): number {
@@ -680,7 +689,25 @@ export async function createPurchase(
     const initialStatus = confirmPurchase ? "pending" : "draft"
 
     const paymentKind = input.paymentKind?.trim() || null
-    const treasuryAccountId = input.treasuryAccountId?.trim() || null
+    let treasuryAccountId = input.treasuryAccountId?.trim() || null
+    let checkoutCheckDetails = null
+    if (confirmPurchase && paymentKind === "check") {
+      const parsed = parseCheckoutCheckDetails(input.checkDetails)
+      if (!parsed.ok) return { success: false, error: parsed.error }
+      checkoutCheckDetails = parsed.details
+      const checkTreasuryId = await resolveCheckTreasuryAccountId(
+        supabase,
+        popId,
+        "issued",
+      )
+      if (!checkTreasuryId) {
+        return {
+          success: false,
+          error: "Faltan las cuentas de cheques. Recargá la página o contactá a soporte.",
+        }
+      }
+      treasuryAccountId = checkTreasuryId
+    }
     if (confirmPurchase && paymentKind && treasuryAccountId) {
       if (!isValidOperationPaymentKind(paymentKind)) {
         return { success: false, error: "Tipo de pago inválido." }
@@ -754,6 +781,20 @@ export async function createPurchase(
     }
 
     if (confirmPurchase && paymentKind && treasuryAccountId) {
+      let checkId: string | null = null
+      if (paymentKind === "check" && checkoutCheckDetails) {
+        const checkRes = await insertCheckoutCheck(supabase, {
+          popId,
+          userId: user.uid,
+          direction: "issued",
+          amount: total,
+          details: checkoutCheckDetails,
+          sourceKind: "purchase",
+          sourceId: purchaseId,
+        })
+        if (!checkRes.success) return checkRes
+        checkId = checkRes.checkId
+      }
       const { error: payErr } = await supabase.from("purchase_payments").insert({
         pop_id: popId,
         purchase_id: purchaseId,
@@ -762,8 +803,10 @@ export async function createPurchase(
         amount: total,
         paid_at: new Date().toISOString().slice(0, 10),
         created_by: user.uid,
+        check_id: checkId,
       })
       if (payErr) {
+        if (checkId) await deleteCheckoutCheck(supabase, checkId)
         return {
           success: false,
           error: payErr.message || "No se pudo registrar el pago.",

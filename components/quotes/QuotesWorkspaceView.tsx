@@ -9,7 +9,7 @@ import {
   DEFAULT_QUOTE_TABLE_PAGE_SIZE,
   QUOTE_TABLE_PAGE_SIZES,
 } from "@/app/[siteId]/[popId]/quotes/quoteConstants"
-import { buildPaginationItems } from "@/app/[siteId]/[popId]/layout/layoutPreviewPagination"
+import { buildPaginationItems } from "@/components/data-workspace/buildPaginationItems"
 import { SaleQuoteViewDialog } from "@/components/quotes/SaleQuoteViewDialog"
 import { SaleQuoteDeleteDialog } from "@/components/quotes/SaleQuoteDeleteDialog"
 import { DataWorkspaceListActiveFiltersBar } from "@/components/data-workspace/DataWorkspaceListActiveFiltersBar"

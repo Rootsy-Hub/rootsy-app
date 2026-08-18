@@ -32,6 +32,13 @@ import {
   type PurchaseLineBuilt,
 } from "@/lib/purchaseCheckoutLines"
 import { resolvePurchaseCheckoutLine } from "@/app/[siteId]/[popId]/purchases/purchaseLineResolve"
+import {
+  deleteCheckoutCheck,
+  insertCheckoutCheck,
+  parseCheckoutCheckDetails,
+  resolveCheckTreasuryAccountId,
+  type CheckoutCheckDetails,
+} from "@/lib/checkoutCheck"
 
 export type CompletePurchaseInput = CreatePurchaseInput & {
   /** Sin pago inmediato: queda deuda en Proveedores. */
@@ -99,7 +106,16 @@ export async function completePurchase(
 
     const payOnAccount = Boolean(input.payOnSupplierAccount)
     const paymentKind = input.paymentKind?.trim() || null
-    const treasuryAccountId = input.treasuryAccountId?.trim() || null
+    let treasuryAccountId = input.treasuryAccountId?.trim() || null
+    let checkoutCheckDetails: CheckoutCheckDetails | null = null
+
+    if (!payOnAccount && paymentKind === "check") {
+      const parsed = parseCheckoutCheckDetails(input.checkDetails)
+      if (!parsed.ok) {
+        return { success: false, error: parsed.error }
+      }
+      checkoutCheckDetails = parsed.details
+    }
 
     if (!payOnAccount && (!paymentKind || !treasuryAccountId)) {
       return {
@@ -174,6 +190,20 @@ export async function completePurchase(
     }
 
     let pmKind: string | null = paymentKind
+    if (!payOnAccount && paymentKind === "check") {
+      const checkTreasuryId = await resolveCheckTreasuryAccountId(
+        supabase,
+        popId,
+        "issued",
+      )
+      if (!checkTreasuryId) {
+        return {
+          success: false,
+          error: "Faltan las cuentas de cheques. Recargá la página o contactá a soporte.",
+        }
+      }
+      treasuryAccountId = checkTreasuryId
+    }
     if (!payOnAccount && paymentKind && treasuryAccountId) {
       const { data: taRow, error: taErr } = await supabase
         .from("treasury_accounts")
@@ -400,6 +430,23 @@ export async function completePurchase(
 
     if (!payOnAccount && paymentKind && treasuryAccountId) {
       const paidAt = entryDate
+      let checkId: string | null = null
+      if (paymentKind === "check" && checkoutCheckDetails) {
+        const checkRes = await insertCheckoutCheck(supabase, {
+          popId,
+          userId: user.uid,
+          direction: "issued",
+          amount: total,
+          details: checkoutCheckDetails,
+          sourceKind: "purchase",
+          sourceId: purchaseId,
+        })
+        if (!checkRes.success) {
+          await rollbackCompletePurchase(supabase, purchaseId, movementIds)
+          return { success: false, error: checkRes.error }
+        }
+        checkId = checkRes.checkId
+      }
       const { data: payIns, error: payErr } = await supabase
         .from("purchase_payments")
         .insert({
@@ -411,10 +458,12 @@ export async function completePurchase(
           paid_at: paidAt,
           notes: paymentNotes,
           created_by: user.uid,
+          check_id: checkId,
         })
         .select("id")
         .single()
       if (payErr || !payIns?.id) {
+        if (checkId) await deleteCheckoutCheck(supabase, checkId)
         await rollbackCompletePurchase(supabase, purchaseId, movementIds)
         return {
           success: false,
@@ -428,6 +477,7 @@ export async function completePurchase(
       })
       if (!payLedger.success) {
         await rollbackCompletePurchase(supabase, purchaseId, movementIds)
+        if (checkId) await deleteCheckoutCheck(supabase, checkId)
         return { success: false, error: payLedger.error }
       }
     }

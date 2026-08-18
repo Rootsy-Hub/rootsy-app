@@ -59,7 +59,6 @@ export const ROOTS_SHARED_MODULES: Record<
     { key: "expenses", label: "Gastos" },
   ],
   administrar: [
-    { key: "summary", label: "Resumen" },
     { key: "statistics", label: "Estadísticas" },
     { key: "reports", label: "Reportes" },
     { key: "operations", label: "Operaciones" },

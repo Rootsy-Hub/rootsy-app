@@ -543,6 +543,13 @@ function SalePage() {
     if (!popId || !siteId || !pagoConfigurado) return
     if (payOnClientAccount && !clienteSeleccionado?.id) return
     if (!payOnClientAccount && !metodoPagoSeleccionado) return
+    if (
+      !payOnClientAccount &&
+      metodoPagoSeleccionado?.kind === "check" &&
+      !metodoPagoSeleccionado.checkDetails
+    ) {
+      return
+    }
     setVentaError(null)
     setVentaSubmitting(true)
     try {
@@ -585,6 +592,10 @@ function SalePage() {
         treasuryAccountId: payOnClientAccount
           ? null
           : metodoPagoSeleccionado?.treasuryAccountId,
+        checkDetails:
+          !payOnClientAccount && metodoPagoSeleccionado?.kind === "check"
+            ? metodoPagoSeleccionado.checkDetails ?? null
+            : null,
         generalDiscountMode: modoDescuento === "porcentaje" ? "porcentaje" : "fijo",
         valorDescuentoPorcentaje,
         valorDescuentoFijo,
@@ -1365,6 +1376,13 @@ function SalePage() {
         cashRegisterName={openCashSession?.registerName ?? null}
         selected={metodoPagoSeleccionado}
         payOnClientAccount={payOnClientAccount}
+        popId={popId}
+        defaultPartyName={clienteSeleccionado?.name ?? ""}
+        defaultPartyId={
+          clienteSeleccionado && !clienteSeleccionado.manual
+            ? clienteSeleccionado.id ?? ""
+            : ""
+        }
         onSelectImmediate={(option) => {
           setPayOnClientAccount(false)
           setMetodoPagoSeleccionado(option)

@@ -1,3 +1,4 @@
+import type { CheckoutCheckDetails } from "@/lib/checkoutCheck"
 import {
   operationPaymentKindLabel,
   type OperationPaymentKind,
@@ -12,6 +13,7 @@ export type SaleCheckoutPaymentSelection = {
   kind: OperationPaymentKind
   treasuryAccountId: string
   label: string
+  checkDetails?: CheckoutCheckDetails
 }
 
 /** Tipos visibles en el paso 1 del checkout de venta. */
@@ -20,6 +22,7 @@ export const SALE_CHECKOUT_KINDS: OperationPaymentKind[] = [
   "card_debit",
   "card_credit",
   "transfer",
+  "check",
 ]
 
 export function checkoutKindLabel(kind: OperationPaymentKind): string {
@@ -143,6 +146,12 @@ export function checkoutKindAvailabilityError(
     }
     return null
   }
+  if (kind === "check") {
+    if (!context.checkReceivableTreasuryAccountId) {
+      return "Faltan las cuentas de cheques. Recargá la página o contactá a soporte."
+    }
+    return null
+  }
   return null
 }
 
@@ -156,6 +165,7 @@ type SaleToolboxPaymentSelection = {
   kind: OperationPaymentKind
   treasuryAccountId: string
   label: string
+  checkDetails?: CheckoutCheckDetails
 }
 
 /** Etiquetas del slot Pago en toolbox operar — mismo criterio que Cobrar servicios. */
@@ -183,6 +193,14 @@ export function resolveSaleToolboxPaymentDisplay(input: {
   const kindLabel = operationPaymentKindLabel(selection.kind)
   const pagoIcon = paymentCheckoutKindIcon(selection.kind)
   const context = input.treasuryPaymentContext
+
+  if (selection.kind === "check") {
+    return {
+      pagoLabel: selection.label,
+      pagoSubLabel: kindLabel,
+      pagoIcon,
+    }
+  }
 
   if (!context) {
     return {

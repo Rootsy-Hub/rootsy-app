@@ -56,7 +56,7 @@ import {
   parseRecipesWorkspaceUrl,
   type RecipeTableSortKey,
 } from "@/app/[siteId]/[popId]/recipes/workspaceUrl"
-import { buildPaginationItems } from "@/app/[siteId]/[popId]/layout/layoutPreviewPagination"
+import { buildPaginationItems } from "@/components/data-workspace/buildPaginationItems"
 import { DataWorkspaceListActiveFiltersBar } from "@/components/data-workspace/DataWorkspaceListActiveFiltersBar"
 import { DataWorkspaceListFilterChip } from "@/components/data-workspace/DataWorkspaceListFilterChip"
 import {

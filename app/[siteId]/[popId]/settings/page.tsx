@@ -100,6 +100,8 @@ function SettingsPage() {
 
   const pageLoading = bootstrapLoading || loading
   const resolvedIsOwner = isOwner || popAccess?.isOwner === true
+  const showOwnerSectionsInNav =
+    resolvedIsOwner || (pageLoading && popAccess?.isOwner !== false)
 
   const requestedSectionId = searchParams.get(POP_SETTINGS_SECTION_QUERY_PARAM)
 
@@ -118,10 +120,10 @@ function SettingsPage() {
 
   const visibleSections = useMemo(
     () =>
-      visiblePopSettingsSections(resolvedIsOwner, {
+      visiblePopSettingsSections(showOwnerSectionsInNav, {
         includeSectionIds: pendingNavSectionIds,
       }),
-    [resolvedIsOwner, pendingNavSectionIds],
+    [showOwnerSectionsInNav, pendingNavSectionIds],
   )
 
   const visibleSectionIds = useMemo(

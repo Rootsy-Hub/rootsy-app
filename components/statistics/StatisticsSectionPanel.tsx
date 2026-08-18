@@ -135,7 +135,7 @@ function StatisticsComingSoonPanel({
       <DataWorkspaceDetailEmptyState
         icon={Clock}
         title={`${section.label} · próximamente`}
-        description="Rootsy aún no expone métricas analíticas para este módulo. Podés ver el resumen operativo en Resumen o los reportes detallados en Reportes."
+        description="Rootsy aún no expone métricas analíticas para este módulo. Podés ver los reportes detallados en Reportes."
         className="py-12"
       />
       {unavailable.length > 0 ? (
