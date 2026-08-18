@@ -34,10 +34,8 @@ export type MenuRootsyCatalogSuggestion = {
 export type MenuRootsySuggestionDetail = {
   id: string
   title: string
-  explanation: string
-  /** Ejemplos con datos reales del negocio. */
-  examples: string
-  /** Siempre armado con plantillas + datos del negocio. */
-  examplesSource: "rules"
+  /** Mensaje único de Rootsy — amistoso, con valor útil. */
+  message: string
+  hasDataSupport: boolean
   cta: { label: string; href: string; moduleKey: string } | null
 }

@@ -5,6 +5,11 @@ import type {
   MenuRootsySuggestion,
 } from "@/lib/menu/menuRootsyTypes"
 import { pickMenuRootsyCatalogSuggestionForPop } from "@/lib/menu/menuRootsySuggestionProfile"
+import {
+  formatRootsyBubbleLead,
+  formatRootsyEmptyPopLead,
+  scoreSuggestionDataSupport,
+} from "@/lib/menu/menuRootsySuggestionVoice"
 import type { PopAccessModule } from "@/app/home/homeUserDataTypes"
 
 function pickModule(
@@ -58,12 +63,13 @@ export function buildMenuRootsyRuleAdvice(
     context.popId,
     enabledModules,
     rotationToken,
+    context.insights,
   )
 
   if (!catalogEntry) {
     return {
       title: "",
-      lead: `Sigo aprendiendo cómo ayudarte en ${context.popName}. Cuando tengas más módulos activos, voy a poder sugerirte mejoras concretas.`,
+      lead: formatRootsyEmptyPopLead(context.popName, rotationToken),
       pulses: [],
       primaryCta: null,
       suggestions: [],
@@ -71,11 +77,19 @@ export function buildMenuRootsyRuleAdvice(
     }
   }
 
+  const dataBacked =
+    scoreSuggestionDataSupport(catalogEntry, context.insights) > 0
   const primaryCta = pickPrimaryCta(context, catalogEntry.ctaModuleKeys)
 
   return {
     title: catalogEntry.title,
-    lead: catalogEntry.teaser,
+    lead: formatRootsyBubbleLead(
+      catalogEntry.teaser,
+      context.popName,
+      dataBacked,
+      catalogEntry.id,
+      rotationToken,
+    ),
     pulses: [],
     primaryCta,
     suggestions: primaryCta ? [primaryCta] : [],
