@@ -308,7 +308,7 @@ function MenuDockDragPreview({
         "dark",
         menuNatureShellClass,
         "pointer-events-none scale-[1.14] cursor-grabbing",
-        "drop-shadow-[0_8px_20px_rgba(0,0,0,0.2)]",
+        "drop-shadow-[0_8px_18px_rgba(0,0,0,0.18)]",
       )}
     >
       <DockIconVisual icon={item.icon} variant="overlay" size="lg" />

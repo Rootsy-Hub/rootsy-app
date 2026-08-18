@@ -6,6 +6,7 @@ import {
   useMenuDockEdit,
 } from "@/app/[siteId]/[popId]/menu/MenuDockDndContext"
 import {
+  menuHoloContactShadowClass,
   menuHoloFloatLiftClass,
   menuHoloFocusRingClass,
   menuHoloGlyphClass,
@@ -13,6 +14,7 @@ import {
   menuHoloIconShellForVariant,
   menuHoloLabelClass,
   menuHoloLabelMutedClass,
+  menuHoloTileMotionClass,
 } from "@/lib/menu/menuHoloStyles"
 import { MenuIconChrome } from "@/app/[siteId]/[popId]/menu/MenuIconChrome"
 import { usePopOptimisticNav } from "@/context/PopOptimisticNavContext"
@@ -63,12 +65,15 @@ export function MenuGridItemButton({
     editing && (alreadyInDock || isThisMenuDrag)
 
   const Icon = item.icon
-  const tileClassName =
-    "group flex h-[7.125rem] w-24 flex-col items-center gap-2.5 transition-all duration-200"
+  const tileClassName = cn(
+    "group flex h-[7.125rem] w-24 flex-col items-center gap-2.5",
+    menuHoloTileMotionClass,
+  )
 
   const tileInner = (
     <>
       <div className="relative flex flex-col items-center">
+        <div aria-hidden className={menuHoloContactShadowClass} />
         <div
           className={cn(
             "flex size-[72px] items-center justify-center rounded-[20px]",
@@ -130,11 +135,7 @@ export function MenuGridItemButton({
             }
             startOptimisticNav({ href, title: item.name })
           }}
-          className={cn(
-            tileClassName,
-            menuHoloFocusRingClass,
-            "hover:scale-[1.02] active:scale-[0.99]",
-          )}
+          className={cn(tileClassName, menuHoloFocusRingClass)}
         >
           {tileInner}
         </Link>
@@ -148,7 +149,6 @@ export function MenuGridItemButton({
           className={cn(
             tileClassName,
             menuHoloFocusRingClass,
-            !editing && !disabled && "hover:scale-[1.02] active:scale-[0.99]",
             disabled && "cursor-default opacity-70",
           )}
         >

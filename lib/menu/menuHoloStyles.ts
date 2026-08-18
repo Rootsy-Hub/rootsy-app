@@ -2,35 +2,41 @@ import { cn } from "@/lib/utils"
 
 type MenuHoloIconVariant = "default" | "dock" | "muted" | "overlay"
 
+/** Easing orgánico — aceleración y reposo como en la naturaleza. */
+const menuHoloEase = "duration-500 ease-[cubic-bezier(0.33,1,0.68,1)]"
+
 /**
- * Panel HUD cyan — vidrio denso, sin emisión ni bloom.
+ * Vidrio vivo — translúcido, presente, sin artificio.
+ * Deja respirar el paisaje; se nota por material, no por brillo.
  */
 const menuHoloCrystalShellClass = cn(
   "relative isolate overflow-hidden border-2",
-  "border-[rgba(103,232,249,0.44)]",
-  "bg-[linear-gradient(180deg,rgba(34,211,238,0.18)_0%,rgba(6,182,212,0.12)_48%,rgba(8,51,68,0.18)_100%)]",
-  "shadow-[0_4px_14px_rgba(0,0,0,0.16),inset_0_1px_0_rgba(255,255,255,0.08),inset_0_-1px_0_rgba(0,0,0,0.07)]",
+  "border-[rgba(228,242,248,0.26)]",
+  "bg-[linear-gradient(165deg,rgba(255,255,255,0.09)_0%,rgba(14,42,54,0.06)_44%,rgba(8,28,38,0.14)_100%)]",
+  "backdrop-blur-[4px] backdrop-saturate-[1.1]",
+  "shadow-[0_2px_5px_rgba(0,0,0,0.08),0_10px_24px_rgba(0,0,0,0.1)]",
 )
 
 const menuHoloIconVariantClass: Record<MenuHoloIconVariant, string> = {
   default: menuHoloCrystalShellClass,
   dock: cn(
     menuHoloCrystalShellClass,
-    "border-[rgba(103,232,249,0.36)]",
-    "bg-[linear-gradient(180deg,rgba(34,211,238,0.15)_0%,rgba(6,182,212,0.1)_48%,rgba(8,51,68,0.14)_100%)]",
-    "shadow-[0_3px_10px_rgba(0,0,0,0.14),inset_0_1px_0_rgba(255,255,255,0.06),inset_0_-1px_0_rgba(0,0,0,0.06)]",
+    "border-[rgba(228,242,248,0.22)]",
+    "bg-[linear-gradient(165deg,rgba(255,255,255,0.07)_0%,rgba(14,42,54,0.05)_44%,rgba(8,28,38,0.11)_100%)]",
+    "shadow-[0_2px_4px_rgba(0,0,0,0.07),0_8px_18px_rgba(0,0,0,0.08)]",
   ),
   muted: cn(
     "relative isolate overflow-hidden border-2",
-    "border-[rgba(103,232,249,0.12)]",
-    "bg-[rgba(6,182,212,0.04)]",
-    "shadow-[inset_0_1px_0_rgba(255,255,255,0.04),inset_0_-1px_0_rgba(0,0,0,0.04)]",
+    "border-[rgba(228,242,248,0.1)]",
+    "bg-[rgba(8,28,38,0.08)]",
+    "backdrop-blur-[2px]",
+    "shadow-none",
   ),
   overlay: cn(
     menuHoloCrystalShellClass,
-    "border-[rgba(165,243,252,0.52)]",
-    "bg-[linear-gradient(180deg,rgba(34,211,238,0.22)_0%,rgba(6,182,212,0.15)_48%,rgba(8,51,68,0.2)_100%)]",
-    "shadow-[0_6px_18px_rgba(0,0,0,0.18),inset_0_1px_0_rgba(255,255,255,0.1),inset_0_-1px_0_rgba(0,0,0,0.08)]",
+    "border-[rgba(238,248,252,0.32)]",
+    "bg-[linear-gradient(165deg,rgba(255,255,255,0.11)_0%,rgba(14,42,54,0.07)_44%,rgba(8,28,38,0.16)_100%)]",
+    "shadow-[0_4px_8px_rgba(0,0,0,0.1),0_12px_28px_rgba(0,0,0,0.12)]",
   ),
 }
 
@@ -40,42 +46,62 @@ export function menuHoloIconShellForVariant(
   return menuHoloIconVariantClass[variant]
 }
 
+/** Sombra de apoyo — peso sobre la tierra. */
+export const menuHoloContactShadowClass = cn(
+  "pointer-events-none absolute left-1/2 top-[calc(100%-1px)] z-0 -translate-x-1/2",
+  "h-2 w-[62%] rounded-full bg-black/14 blur-[2px]",
+  "opacity-50 transition-opacity duration-500 ease-[cubic-bezier(0.33,1,0.68,1)]",
+  "group-hover:opacity-65",
+)
+
 export const menuHoloFloatLiftClass = cn(
-  "relative z-[1] transition-[transform,box-shadow,border-color,background-color] duration-300 ease-out",
-  "group-hover:-translate-y-0.5",
+  "relative z-[1] transition-[transform,box-shadow,border-color,background-color]",
+  menuHoloEase,
+  "group-hover:-translate-y-px",
 )
 
 export const menuHoloIconHoverClass = cn(
-  "group-hover:border-[rgba(165,243,252,0.54)]",
-  "group-hover:bg-[linear-gradient(180deg,rgba(34,211,238,0.22)_0%,rgba(6,182,212,0.14)_48%,rgba(8,51,68,0.2)_100%)]",
-  "group-hover:shadow-[0_5px_16px_rgba(0,0,0,0.17),inset_0_1px_0_rgba(255,255,255,0.1),inset_0_-1px_0_rgba(0,0,0,0.06)]",
+  "group-hover:border-[rgba(240,249,252,0.34)]",
+  "group-hover:bg-[linear-gradient(165deg,rgba(255,255,255,0.11)_0%,rgba(14,42,54,0.05)_44%,rgba(8,28,38,0.12)_100%)]",
+  "group-hover:shadow-[0_3px_7px_rgba(0,0,0,0.09),0_12px_28px_rgba(0,0,0,0.11)]",
 )
 
 export const menuHoloGlyphClass = cn(
-  "relative z-[1] text-white/96",
-  "drop-shadow-[0_1px_1px_rgba(0,0,0,0.22)]",
-  "transition-[color] duration-300 ease-out",
-  "group-hover:text-white",
+  "relative z-[1] text-white/93",
+  "drop-shadow-[0_1px_2px_rgba(0,0,0,0.14)]",
+  "transition-[color,opacity]",
+  menuHoloEase,
+  "group-hover:text-white/98",
 )
 
 export const menuHoloLabelClass = cn(
-  "font-light tracking-[0.025em] text-white/74 transition-colors duration-300 ease-out",
-  "group-hover:text-white/92",
+  "font-light tracking-[0.03em] text-white/78",
+  "drop-shadow-[0_1px_2px_rgba(0,0,0,0.2)]",
+  "transition-[color,opacity]",
+  menuHoloEase,
+  "group-hover:text-white/95",
 )
 
-export const menuHoloLabelMutedClass = "font-light text-white/22"
+export const menuHoloLabelMutedClass = "font-light text-white/26"
 
 export const menuHoloTileSkeletonIconClass = cn(
-  "size-[72px] rounded-[20px] border-2 border-[rgba(103,232,249,0.22)]",
-  "bg-[linear-gradient(180deg,rgba(34,211,238,0.1)_0%,rgba(8,51,68,0.12)_100%)]",
-  "animate-pulse shadow-[0_3px_10px_rgba(0,0,0,0.1),inset_0_1px_0_rgba(255,255,255,0.05)]",
+  "size-[72px] rounded-[20px] border-2 border-[rgba(228,242,248,0.16)]",
+  "bg-[linear-gradient(165deg,rgba(255,255,255,0.05)_0%,rgba(8,28,38,0.1)_100%)]",
+  "backdrop-blur-[3px]",
+  "animate-pulse shadow-[0_2px_4px_rgba(0,0,0,0.07),0_8px_18px_rgba(0,0,0,0.08)]",
 )
 
 export const menuHoloTileSkeletonLabelClass = cn(
-  "h-8 rounded-sm border border-[rgba(103,232,249,0.08)]",
-  "bg-[rgba(34,211,238,0.03)] animate-pulse",
+  "h-8 rounded-sm border border-[rgba(228,242,248,0.08)]",
+  "bg-[rgba(8,28,38,0.05)] animate-pulse",
 )
 
 export const menuHoloFocusRingClass = cn(
-  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgba(103,232,249,0.45)] focus-visible:ring-offset-2 focus-visible:ring-offset-transparent",
+  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgba(228,242,248,0.32)] focus-visible:ring-offset-2 focus-visible:ring-offset-transparent",
+)
+
+export const menuHoloTileMotionClass = cn(
+  "transition-transform",
+  menuHoloEase,
+  "hover:scale-[1.012] active:scale-[0.995]",
 )
