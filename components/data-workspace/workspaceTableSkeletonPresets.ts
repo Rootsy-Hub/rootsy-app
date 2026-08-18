@@ -216,6 +216,35 @@ export function checksSkeletonColumns(): WorkspaceTableSkeletonColumn[] {
   ]
 }
 
+export function currentAccountsSkeletonColumns(): WorkspaceTableSkeletonColumn[] {
+  return [
+    { kind: "text", className: "min-w-[12rem]" },
+    { kind: "text", className: "w-28" },
+    { kind: "pill", className: "w-32" },
+    { kind: "money" },
+  ]
+}
+
+export function currentAccountLedgerSkeletonColumns(): WorkspaceTableSkeletonColumn[] {
+  return [
+    { kind: "text", className: "w-28" },
+    { kind: "text", className: "min-w-[12rem]", lines: 2 },
+    { kind: "money" },
+    { kind: "money" },
+    { kind: "money" },
+  ]
+}
+
+export function currentAccountOpenSkeletonColumns(): WorkspaceTableSkeletonColumn[] {
+  return [
+    { kind: "text", className: "w-28" },
+    { kind: "text", className: "min-w-[12rem]", lines: 2 },
+    { kind: "text", className: "w-28" },
+    { kind: "money" },
+    { kind: "pill", className: "w-24" },
+  ]
+}
+
 export function invoicesSkeletonColumns(): WorkspaceTableSkeletonColumn[] {
   return [
     { kind: "actions", className: "w-12", actionCount: 1 },

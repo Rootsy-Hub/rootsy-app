@@ -35,7 +35,6 @@ import {
 } from "@/components/ui/table"
 import { Textarea } from "@/components/ui/textarea"
 import { formatLocaleDateTime } from "@/lib/popTimezone"
-import withAuth from "@/hoc/withAuth"
 import { usePopWorkspace } from "@/context/PopWorkspaceContext"
 import { cn } from "@/lib/utils"
 import {
@@ -903,4 +902,4 @@ function InventoryPage() {
   )
 }
 
-export default withAuth(InventoryPage)
+export default InventoryPage

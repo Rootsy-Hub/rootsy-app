@@ -24,7 +24,7 @@ export const POP_ACCESS_MODULE_TO_PAGE_KEY: Record<string, PopPageKey | null> = 
   settings: "settings",
   printers: "printers",
   cash_registers: "cash-registers",
-  current_accounts: null,
+  current_accounts: "current-accounts",
   checks: "checks",
   statistics: null,
   alerts: null,

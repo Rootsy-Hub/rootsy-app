@@ -23,6 +23,9 @@ export function MostradorCatalogPanel({
     menuCategorySections,
     productosCatalogo,
     agregarAlCarrito,
+    catalogRev,
+    mergeCatalogArticles,
+    mergeCatalogRecipes,
     promoWizardOpen,
     setPromoWizardOpen,
     promoWizardTarget,
@@ -41,6 +44,11 @@ export function MostradorCatalogPanel({
         error={catalogError}
         onAddProduct={agregarAlCarrito}
         catalogSidebarOpen={catalogSidebarOpen}
+        catalogScope="menu"
+        itemsSource="menu"
+        catalogRev={catalogRev}
+        mergeCatalogArticles={mergeCatalogArticles}
+        mergeCatalogRecipes={mergeCatalogRecipes}
       />
       <PromotionComboWizard
         open={promoWizardOpen}

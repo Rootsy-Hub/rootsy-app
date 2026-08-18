@@ -21,6 +21,11 @@ import {
   type TreasuryAccountKind,
 } from "@/lib/treasuryAccountKinds"
 import { requireAuthenticatedUser } from "@/lib/authHelpers"
+import {
+  isPopMercadoPagoConnectionStatus,
+  treasuryAccountOffersMercadoPagoConnection,
+  type PopMercadoPagoConnectionPublic,
+} from "@/lib/popMercadoPago"
 import { createClient } from "@/utils/supabase/server"
 
 export type TreasuryAccountTableRow = {
@@ -75,6 +80,47 @@ function parseAmount(v: unknown): number {
 function parseTreasuryKind(v: unknown): TreasuryAccountKind {
   const k = String(v ?? "other")
   return isTreasuryAccountKind(k) ? k : "other"
+}
+
+function mapPopMercadoPagoConnectionRow(
+  row: Record<string, unknown>,
+): PopMercadoPagoConnectionPublic {
+  const statusRaw = String(row.status ?? "disconnected")
+  return {
+    id: String(row.id ?? ""),
+    treasuryAccountId: String(row.treasury_account_id ?? ""),
+    status: isPopMercadoPagoConnectionStatus(statusRaw)
+      ? statusRaw
+      : "disconnected",
+    mpUserId: row.mp_user_id != null ? String(row.mp_user_id) : null,
+    mpEmail: row.mp_email != null ? String(row.mp_email) : null,
+    connectedAt: row.connected_at != null ? String(row.connected_at) : null,
+    disconnectedAt:
+      row.disconnected_at != null ? String(row.disconnected_at) : null,
+  }
+}
+
+async function loadPopMercadoPagoConnection(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  popId: string,
+  account: {
+    id: string
+    kind: TreasuryAccountKind
+    brandKey: string | null
+    name: string
+  },
+): Promise<PopMercadoPagoConnectionPublic | null> {
+  if (!treasuryAccountOffersMercadoPagoConnection(account)) return null
+  const { data, error } = await supabase
+    .from("pop_mercadopago_connections")
+    .select(
+      "id, treasury_account_id, status, mp_user_id, mp_email, connected_at, disconnected_at",
+    )
+    .eq("pop_id", popId)
+    .eq("treasury_account_id", account.id)
+    .maybeSingle()
+  if (error || !data?.id) return null
+  return mapPopMercadoPagoConnectionRow(data as Record<string, unknown>)
 }
 
 function compareChartAccountCodes(a: string, b: string): number {
@@ -789,6 +835,7 @@ export async function getTreasuryAccountPageData(
       canUpdate: boolean
       canDelete: boolean
       canSettle: boolean
+      mercadopagoConnection: PopMercadoPagoConnectionPublic | null
     }
   | {
       success: false
@@ -809,6 +856,12 @@ export async function getTreasuryAccountPageData(
   const motherRow = hub.rows.find((r) => r.id === taId)
   if (motherRow) {
     const children = await loadTreasuryChildAccounts(popId, taId)
+    const supabase = await createClient()
+    const mercadopagoConnection = await loadPopMercadoPagoConnection(
+      supabase,
+      popId,
+      motherRow,
+    )
     return {
       success: true,
       account: motherRow,
@@ -821,6 +874,7 @@ export async function getTreasuryAccountPageData(
       canUpdate: hub.canUpdate,
       canDelete: hub.canDelete,
       canSettle: hub.canSettle,
+      mercadopagoConnection,
     }
   }
 
@@ -929,6 +983,11 @@ export async function getTreasuryAccountPageData(
     canUpdate: hub.canUpdate,
     canDelete: hub.canDelete,
     canSettle: hub.canSettle,
+    mercadopagoConnection: await loadPopMercadoPagoConnection(
+      supabase,
+      popId,
+      account,
+    ),
   }
 }
 

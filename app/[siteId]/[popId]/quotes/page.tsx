@@ -1,14 +1,14 @@
-"use client"
-
 import { QuotesWorkspaceView } from "@/components/quotes/QuotesWorkspaceView"
-import withAuth from "@/hoc/withAuth"
-import { useParams } from "next/navigation"
+import { PopListHydrationPage } from "@/lib/PopListHydrationPage"
+import { prefetchPopQuotesTable } from "@/lib/prefetchPopListados"
+import type { PopPageParams } from "@/lib/workspaceSearchParams"
 
-function QuotesPage() {
-  const params = useParams()
-  const siteId = typeof params?.siteId === "string" ? params.siteId : ""
-  const popId = typeof params?.popId === "string" ? params.popId : ""
-
+export default async function QuotesPage({
+  params,
+}: {
+  params: PopPageParams
+}) {
+  const { siteId, popId } = await params
   if (!siteId || !popId) {
     return (
       <div className="min-h-screen bg-background p-10 text-sm text-muted-foreground">
@@ -17,7 +17,9 @@ function QuotesPage() {
     )
   }
 
-  return <QuotesWorkspaceView siteId={siteId} popId={popId} />
+  return (
+    <PopListHydrationPage state={await prefetchPopQuotesTable(popId)}>
+      <QuotesWorkspaceView siteId={siteId} popId={popId} />
+    </PopListHydrationPage>
+  )
 }
-
-export default withAuth(QuotesPage)

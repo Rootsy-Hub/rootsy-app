@@ -27,6 +27,7 @@ import {
   removeCashRegisterArcaPemFiles,
   uploadCashRegisterArcaPemFiles,
 } from "@/lib/rootsyAfipStorage"
+import { loadSessionCurrentAccountCash } from "@/lib/cashRegisterCurrentAccountCash"
 import { createClient } from "@/utils/supabase/server"
 import {
   OPERATION_PAYMENT_KINDS,
@@ -452,6 +453,7 @@ async function computeEfectivoTeoricoSession(
       .from("sale_payments")
       .select("payment_kind, amount")
       .eq("pop_id", popId)
+      .is("reversed_at", null)
       .in("sale_id", saleIds)
     for (const row of osp || []) {
       if (String(row.payment_kind) === "cash") {
@@ -459,7 +461,8 @@ async function computeEfectivoTeoricoSession(
       }
     }
   }
-  ventasEfectivo = Math.round(ventasEfectivo * 100) / 100
+  const ccCash = await loadSessionCurrentAccountCash(supabase, popId, sessionId)
+  ventasEfectivo = Math.round((ventasEfectivo + ccCash.inbound) * 100) / 100
   const { data: movs } = await supabase
     .from("cash_register_movements")
     .select("kind, amount")
@@ -473,7 +476,7 @@ async function computeEfectivoTeoricoSession(
     else if (String(m.kind) === "withdrawal") eg += amt
   }
   ing = Math.round(ing * 100) / 100
-  eg = Math.round(eg * 100) / 100
+  eg = Math.round((eg + ccCash.outbound) * 100) / 100
   const teorico =
     Math.round((openingCash + ventasEfectivo + ing - eg) * 100) / 100
   return {
@@ -689,19 +692,33 @@ async function loadCobrosTurnoPorMedio(
   }
   totalCobrado = Math.round(totalCobrado * 100) / 100
   const saleIds = (saleRows || []).map((r) => String(r.id))
-  if (saleIds.length === 0) {
-    return { totalCobrado: 0, porMedio: [] }
+  const sums = new Map<string, number>()
+  if (saleIds.length > 0) {
+    const { data: spRows } = await supabase
+      .from("sale_payments")
+      .select("payment_kind, amount")
+      .eq("pop_id", popId)
+      .is("reversed_at", null)
+      .in("sale_id", saleIds)
+    for (const row of spRows || []) {
+      const kind = String(row.payment_kind ?? "other")
+      sums.set(kind, (sums.get(kind) ?? 0) + parseAmount(row.amount))
+    }
   }
-  const { data: spRows } = await supabase
-    .from("sale_payments")
+  const { data: receiptRows } = await supabase
+    .from("current_account_receipts")
     .select("payment_kind, amount")
     .eq("pop_id", popId)
-    .in("sale_id", saleIds)
-  const sums = new Map<string, number>()
-  for (const row of spRows || []) {
+    .eq("cash_register_session_id", sessionId)
+    .eq("direction", "receivable")
+  for (const row of receiptRows || []) {
     const kind = String(row.payment_kind ?? "other")
-    sums.set(kind, (sums.get(kind) ?? 0) + parseAmount(row.amount))
+    const amount = parseAmount(row.amount)
+    if (!(amount > 0)) continue
+    sums.set(kind, (sums.get(kind) ?? 0) + amount)
+    totalCobrado += amount
   }
+  totalCobrado = Math.round(totalCobrado * 100) / 100
   const porMedio = [...sums.entries()]
     .map(([kind, total]) => ({
       name: operationPaymentKindLabel(kind),
@@ -1897,6 +1914,7 @@ export async function getCashRegisterSummary(
             .from("sale_payments")
             .select("payment_kind, amount")
             .eq("pop_id", popId)
+            .is("reversed_at", null)
             .in("sale_id", osIdList)
           for (const row of osp || []) {
             if (String(row.payment_kind) === "cash") {
@@ -1904,10 +1922,11 @@ export async function getCashRegisterSummary(
             }
           }
         }
-        ventasEfectivo = Math.round(ventasEfectivo * 100) / 100
+        const ccCash = await loadSessionCurrentAccountCash(supabase, popId, osid)
+        ventasEfectivo = Math.round((ventasEfectivo + ccCash.inbound) * 100) / 100
         const dw = depWit.get(osid) ?? { dep: 0, wit: 0 }
         const ingresosCajon = Math.round(dw.dep * 100) / 100
-        const egresosCajon = Math.round(dw.wit * 100) / 100
+        const egresosCajon = Math.round((dw.wit + ccCash.outbound) * 100) / 100
         const efectivoTeoricoEnCajon =
           Math.round(
             (openingCash + ventasEfectivo + ingresosCajon - egresosCajon) *

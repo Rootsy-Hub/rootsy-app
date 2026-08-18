@@ -16,6 +16,7 @@ const ACCOUNTING_SOURCE_TYPE_LABELS: Record<string, string> = {
   check_deposit: "Depósito de cheque",
   check_reject: "Rechazo de cheque",
   check_void: "Anulación de cheque",
+  current_account_receipt: "Cobro / pago de cuenta corriente",
 }
 
 export function formatAccountingSourceType(sourceType: string): string {

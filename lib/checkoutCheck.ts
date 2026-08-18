@@ -112,13 +112,16 @@ export async function insertCheckoutCheck(
     direction: CheckDirection
     amount: number
     details: CheckoutCheckDetails
-    sourceKind: Exclude<CheckSourceKind, "manual">
-    sourceId: string
+    sourceKind: CheckSourceKind
+    sourceId?: string
   },
 ): Promise<{ success: true; checkId: string } | { success: false; error: string }> {
   const amount = Math.round(input.amount * 100) / 100
   if (!(amount > 0)) {
     return { success: false, error: "El importe del cheque tiene que ser mayor a cero." }
+  }
+  if (input.sourceKind !== "manual" && !input.sourceId) {
+    return { success: false, error: "Falta el comprobante de origen del cheque." }
   }
   const partyId = input.details.partyId || null
   const partyName = input.details.partyName || null
@@ -134,7 +137,7 @@ export async function insertCheckoutCheck(
       due_date: input.details.dueDate,
       status: "in_portfolio",
       source_kind: input.sourceKind,
-      source_id: input.sourceId,
+      source_id: input.sourceId || null,
       client_id: input.direction === "received" ? partyId : null,
       supplier_id: input.direction === "issued" ? partyId : null,
       drawer_name: input.direction === "received" ? partyName : null,

@@ -31,6 +31,7 @@ import {
   ChildIntegrationChip,
   TreasuryChildReconciliationPanel,
 } from "@/app/[siteId]/[popId]/accounts/TreasuryChildReconciliationPanel"
+import { TreasuryMercadoPagoConnectionPanel } from "@/app/[siteId]/[popId]/accounts/TreasuryMercadoPagoConnectionPanel"
 import { TreasuryReconcileModal } from "@/app/[siteId]/[popId]/accounts/TreasuryReconcileModal"
 import {
   defaultTreasuryPeriodEnd,
@@ -71,6 +72,10 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import {
+  treasuryAccountOffersMercadoPagoConnection,
+  type PopMercadoPagoConnectionPublic,
+} from "@/lib/popMercadoPago"
 import { resolveTreasuryAccountBrand } from "@/lib/treasuryAccountBrands"
 import { treasuryKindLabel } from "@/lib/treasuryAccountKinds"
 import type { TreasuryAccountKind } from "@/lib/treasuryAccountKinds"
@@ -257,6 +262,8 @@ export function TreasuryAccountDetailView({
   )
   const [canUpdate, setCanUpdate] = useState(false)
   const [canSettle, setCanSettle] = useState(false)
+  const [mercadopagoConnection, setMercadopagoConnection] =
+    useState<PopMercadoPagoConnectionPublic | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
@@ -331,6 +338,7 @@ export function TreasuryAccountDetailView({
     setFundingAccounts(res.fundingAccounts)
     setCanUpdate(res.canUpdate)
     setCanSettle(res.canSettle)
+    setMercadopagoConnection(res.mercadopagoConnection)
     setError(null)
     return res
   }, [popId, accountId])
@@ -972,6 +980,18 @@ export function TreasuryAccountDetailView({
                       Registrar acreditación
                     </Button>
                   </div>
+                ) : null}
+
+                {isMother &&
+                treasuryAccountOffersMercadoPagoConnection(account) ? (
+                  <TreasuryMercadoPagoConnectionPanel
+                    siteId={siteId}
+                    popId={popId}
+                    treasuryAccountId={account.id}
+                    connection={mercadopagoConnection}
+                    canUpdate={canUpdate}
+                    onChanged={() => void loadPage()}
+                  />
                 ) : null}
               </article>
 

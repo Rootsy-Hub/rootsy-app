@@ -1,14 +1,8 @@
-"use client"
-
 import Link from "next/link"
 import Image from "next/image"
-import { useRouter } from "next/navigation"
-import { useEffect, useState } from "react"
 import { Download } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { Spinner } from "@/components/ui/spinner"
-import { DataWorkspaceHeaderUserMenu } from "@/components/layouts/DataWorkspaceHeaderUserMenu"
 import {
   HomeWorkspaceBackdrop,
   homeWorkspaceSurfaceClass,
@@ -18,10 +12,16 @@ import {
   menuHeaderFlexRowClass,
   menuHeaderHeightClass,
 } from "@/app/[siteId]/[popId]/menu/menuFloatingPillStyles"
-import { useAuth } from "@/context/AuthContextSupabase"
-import withAuth from "@/hoc/withAuth"
-import { useHomePageData } from "@/hooks/useHomePageData"
+import { HomeHeaderUserCluster } from "@/app/home/HomeHeaderUserCluster"
+import { HomeLoadError } from "@/app/home/HomeLoadError"
+import {
+  buildHomePopListFromAccess,
+  resolveHomeAvatarUrl,
+  resolveHomeDisplayName,
+} from "@/app/home/homeUserDataResolve"
 import type { HomePopListItem } from "@/app/home/homeUserDataTypes"
+import { getInitialAuthUser } from "@/lib/getInitialAuthUser"
+import { loadHomeSidecar } from "@/lib/loadHomeSidecar"
 import { cn } from "@/lib/utils"
 
 const ACCENTS = [
@@ -58,45 +58,24 @@ function initialsFromName(name: string): string {
   ).toUpperCase()
 }
 
-function HomePage() {
-  const router = useRouter()
-  const { user, loading: authLoading } = useAuth()
-  const [isOnline, setIsOnline] = useState(true)
+export default async function HomePage() {
+  const user = await getInitialAuthUser()
+  if (!user) return null
 
-  const {
-    pops,
-    profileFullName,
-    profile,
-    isLoading: homeLoading,
-    loadError,
-    refetchAll,
-  } = useHomePageData(user!.id)
+  let displayName = resolveHomeDisplayName(null, user)
+  let avatarUrl = resolveHomeAvatarUrl(null, user)
+  let pops: HomePopListItem[] = []
+  let loadError = false
 
-  useEffect(() => {
-    const sync = () => setIsOnline(navigator.onLine)
-    sync()
-    window.addEventListener("online", sync)
-    window.addEventListener("offline", sync)
-    return () => {
-      window.removeEventListener("online", sync)
-      window.removeEventListener("offline", sync)
-    }
-  }, [])
-
-  const displayName =
-    profileFullName.trim() ||
-    (user?.user_metadata?.full_name as string | undefined) ||
-    (user?.user_metadata?.name as string | undefined) ||
-    user?.user_metadata?.first_name ||
-    user?.email?.split("@")[0] ||
-    "Usuario"
-
-  const avatarUrl =
-    profile?.imageUrl?.trim() ||
-    (user?.user_metadata?.avatar_url as string | undefined) ||
-    null
-
-  const isLoading = authLoading || homeLoading
+  try {
+    const sidecar = await loadHomeSidecar()
+    if (!sidecar) return null
+    displayName = resolveHomeDisplayName(sidecar.profile, sidecar.user)
+    avatarUrl = resolveHomeAvatarUrl(sidecar.profile, sidecar.user)
+    pops = buildHomePopListFromAccess(Object.values(sidecar.batch.accessByPopId))
+  } catch {
+    loadError = true
+  }
 
   return (
     <div
@@ -133,11 +112,9 @@ function HomePage() {
                 {displayName}
               </span>
             </div>
-            <DataWorkspaceHeaderUserMenu
+            <HomeHeaderUserCluster
               userName={displayName}
               userAvatarSrc={avatarUrl}
-              isOnline={isOnline}
-              headerVariant="dark"
             />
           </div>
         </div>
@@ -155,30 +132,9 @@ function HomePage() {
             A que punto de venta queres ingresar?
           </p>
 
-          {loadError ? (
-            <p className="mt-8 text-sm text-amber-200/90">
-              No pudimos cargar tus puntos de venta.{" "}
-              <button
-                type="button"
-                className="font-semibold underline underline-offset-2 hover:text-white"
-                onClick={() => void refetchAll()}
-              >
-                Reintentar
-              </button>
-            </p>
-          ) : null}
+          {loadError ? <HomeLoadError /> : null}
 
-          {isLoading ? (
-            <div
-              className="mt-16 flex flex-col items-center justify-center gap-3 text-white/60"
-              role="status"
-              aria-live="polite"
-              aria-busy="true"
-            >
-              <Spinner className="size-10 text-emerald-400/80" />
-              <span className="text-sm">Cargando tus puntos de venta…</span>
-            </div>
-          ) : (
+          {!loadError ? (
             <ul className="mt-12 mx-auto flex max-w-3xl list-none flex-wrap justify-center gap-x-2 gap-y-7 sm:gap-x-3">
               {pops.length === 0 ? (
                 <li className="w-full max-w-md rounded-2xl border border-white/12 bg-white/5 px-6 py-10 text-center text-white/75">
@@ -195,6 +151,59 @@ function HomePage() {
                   const sub = pop.subscription
                   const popLogoSrc = pop.imageUrl?.trim() || null
                   const canEnter = pop.canEnter
+                  const menuHref = `/${pop.siteId}/${pop.id}/menu`
+                  const subscribeHref = `/${pop.siteId}/${pop.id}/subscribe`
+                  const cardClassName = cn(
+                    "flex w-full flex-col items-center",
+                    !canEnter && "cursor-not-allowed opacity-55",
+                  )
+                  const cardInner = (
+                    <>
+                      <div className="relative">
+                        <div
+                          className={cn(
+                            "absolute inset-0 rounded-full opacity-0 blur-xl transition-opacity duration-300 group-hover:opacity-90",
+                            palette.glow,
+                          )}
+                        />
+                        <div
+                          className={cn(
+                            "relative flex size-28 items-center justify-center overflow-hidden rounded-full shadow-xl ring-2 ring-white/14 transition-all duration-300 group-hover:-translate-y-1 group-hover:scale-[1.04]",
+                            !popLogoSrc &&
+                              cn("bg-linear-to-br", palette.accent),
+                          )}
+                        >
+                          {popLogoSrc ? (
+                            // eslint-disable-next-line @next/next/no-img-element
+                            <img
+                              src={popLogoSrc}
+                              alt=""
+                              className="size-full object-cover"
+                            />
+                          ) : (
+                            <span className="text-[1.72rem] font-black tracking-tight text-white drop-shadow">
+                              {sigla}
+                            </span>
+                          )}
+                        </div>
+                        <PopStatusBadge pop={pop} />
+                      </div>
+                      <span className="mt-4 text-center text-[0.92rem] font-semibold text-white/78 transition-colors group-hover:text-white">
+                        {pop.name}
+                      </span>
+                      <span
+                        className="mt-1 text-center text-[10px] font-semibold uppercase tracking-wider text-white/42"
+                        title="Site ID"
+                      >
+                        {pop.siteId}
+                      </span>
+                      {!pop.isOwner ? (
+                        <span className="mt-1 line-clamp-2 text-center text-[10px] font-medium uppercase tracking-wider text-white/40">
+                          {pop.roleName}
+                        </span>
+                      ) : null}
+                    </>
+                  )
 
                   return (
                     <li
@@ -202,76 +211,22 @@ function HomePage() {
                       className="group basis-[9.1rem] sm:basis-[9.4rem]"
                     >
                       <div className="mx-auto flex w-full max-w-40 flex-col items-center">
-                        <button
-                          type="button"
-                          disabled={!canEnter}
-                          onClick={() => {
-                            if (!canEnter) return
-                            router.push(`/${pop.siteId}/${pop.id}/menu`)
-                          }}
-                          className={cn(
-                            "flex w-full flex-col items-center",
-                            !canEnter && "cursor-not-allowed opacity-55",
-                          )}
-                        >
-                          <div className="relative">
-                            <div
-                              className={cn(
-                                "absolute inset-0 rounded-full opacity-0 blur-xl transition-opacity duration-300 group-hover:opacity-90",
-                                palette.glow,
-                              )}
-                            />
-                            <div
-                              className={cn(
-                                "relative flex size-28 items-center justify-center overflow-hidden rounded-full shadow-xl ring-2 ring-white/14 transition-all duration-300 group-hover:-translate-y-1 group-hover:scale-[1.04]",
-                                !popLogoSrc &&
-                                  cn("bg-linear-to-br", palette.accent),
-                              )}
-                            >
-                              {popLogoSrc ? (
-                                // eslint-disable-next-line @next/next/no-img-element
-                                <img
-                                  src={popLogoSrc}
-                                  alt=""
-                                  className="size-full object-cover"
-                                />
-                              ) : (
-                                <span className="text-[1.72rem] font-black tracking-tight text-white drop-shadow">
-                                  {sigla}
-                                </span>
-                              )}
-                            </div>
-                            <PopStatusBadge pop={pop} />
-                          </div>
-                          <span className="mt-4 text-center text-[0.92rem] font-semibold text-white/78 transition-colors group-hover:text-white">
-                            {pop.name}
-                          </span>
-                          <span
-                            className="mt-1 text-center text-[10px] font-semibold uppercase tracking-wider text-white/42"
-                            title="Site ID"
-                          >
-                            {pop.siteId}
-                          </span>
-                          {!pop.isOwner ? (
-                            <span className="mt-1 line-clamp-2 text-center text-[10px] font-medium uppercase tracking-wider text-white/40">
-                              {pop.roleName}
-                            </span>
-                          ) : null}
-                        </button>
+                        {canEnter ? (
+                          <Link href={menuHref} className={cardClassName}>
+                            {cardInner}
+                          </Link>
+                        ) : (
+                          <div className={cardClassName}>{cardInner}</div>
+                        )}
 
                         {pop.isOwner && !sub.isActive ? (
                           <Button
-                            type="button"
+                            asChild
                             size="sm"
                             variant="secondary"
                             className="mt-3 h-8 border-white/20 bg-white/10 text-xs text-white hover:bg-white/15"
-                            onClick={() =>
-                              router.push(
-                                `/${pop.siteId}/${pop.id}/subscribe`,
-                              )
-                            }
                           >
-                            Activar suscripción
+                            <Link href={subscribeHref}>Activar suscripción</Link>
                           </Button>
                         ) : null}
 
@@ -297,9 +252,8 @@ function HomePage() {
                   )
                 })
               )}
-
             </ul>
-          )}
+          ) : null}
         </section>
 
         <div className="absolute bottom-10 left-1/2 flex -translate-x-1/2 items-center gap-4">
@@ -345,5 +299,3 @@ function PopStatusBadge({ pop }: { pop: HomePopListItem }) {
     </Badge>
   )
 }
-
-export default withAuth(HomePage)

@@ -8,10 +8,10 @@ import {
 } from "@/lib/queryPersist"
 import { oneDayQueryOptions } from "@/lib/queryStaleTimes"
 import {
-  persistQueryClientRestore,
   persistQueryClientSubscribe,
+  type PersistedClient,
 } from "@tanstack/query-persist-client-core"
-import { QueryClientProvider } from "@tanstack/react-query"
+import { hydrate, QueryClientProvider } from "@tanstack/react-query"
 import { ReactQueryDevtools } from "@tanstack/react-query-devtools"
 import {
   createContext,
@@ -50,29 +50,41 @@ export function QueryProvider({ children }: { children: ReactNode }) {
     let unsubscribe: (() => void) | undefined
     let cancelled = false
 
-    void persistQueryClientRestore({
+    try {
+      const persisted = persister.restoreClient() as
+        | PersistedClient
+        | undefined
+      if (
+        persisted?.timestamp &&
+        Date.now() - persisted.timestamp < rootsQueryPersistMaxAge
+      ) {
+        const existingKeys = new Set(
+          queryClient
+            .getQueryCache()
+            .getAll()
+            .filter((query) => query.state.data !== undefined)
+            .map((query) => JSON.stringify(query.queryKey)),
+        )
+        const queries = persisted.clientState.queries.filter(
+          (query) => !existingKeys.has(JSON.stringify(query.queryKey)),
+        )
+        hydrate(queryClient, { ...persisted.clientState, queries }, {
+          defaultOptions: {
+            queries: oneDayQueryOptions,
+          },
+        })
+      }
+    } catch {
+      persister.removeClient()
+    }
+
+    if (cancelled) return
+    unsubscribe = persistQueryClientSubscribe({
       queryClient,
       persister,
-      maxAge: rootsQueryPersistMaxAge,
-      hydrateOptions: {
-        defaultOptions: {
-          queries: oneDayQueryOptions,
-        },
-      },
+      dehydrateOptions,
     })
-      .catch(() => {
-        persister.removeClient()
-      })
-      .finally(() => {
-        if (cancelled) return
-        unsubscribe = persistQueryClientSubscribe({
-          queryClient,
-          persister,
-          maxAge: rootsQueryPersistMaxAge,
-          dehydrateOptions,
-        })
-        setPersistReady(true)
-      })
+    setPersistReady(true)
 
     return () => {
       cancelled = true

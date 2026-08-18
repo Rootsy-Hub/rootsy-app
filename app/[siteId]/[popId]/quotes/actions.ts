@@ -3,14 +3,12 @@
 import { parseTableSessionCheckout } from "@/app/[siteId]/[popId]/mesas/mesasCheckoutState"
 import { getMenuCatalog } from "@/app/[siteId]/[popId]/menu-catalog/actions"
 import { POP_PERMS, permissionKeysInclude } from "@/lib/popPermissionConstants"
-import { validatePopAccess } from "@/lib/popHelpers"
-import { loadPopPermissionsSnapshot } from "@/lib/popPermissionsServer"
+import { requirePopAction } from "@/lib/requirePopAction"
 import type {
   SaleQuoteDetail,
   SaleQuoteMetadata,
   SaleQuoteTableRow,
 } from "@/lib/saleQuoteTypes"
-import { requireAuthenticatedUser } from "@/lib/authHelpers"
 import {
   localDateExclusiveEndTimestamp,
   localDateStartTimestamp,
@@ -38,9 +36,9 @@ type QuotePermissionFlags = {
   canDelete: boolean
 }
 
-async function quotePermissionFlags(popId: string): Promise<QuotePermissionFlags> {
-  const snap = await loadPopPermissionsSnapshot(popId)
-  const keys = snap.keys
+function quotePermissionFlagsFromKeys(
+  keys: readonly string[],
+): QuotePermissionFlags {
   return {
     canRead: permissionKeysInclude(
       keys,
@@ -237,12 +235,11 @@ export async function createSaleQuote(
   { success: true; quoteId: string; quoteNumber: number } | { success: false; error: string }
 > {
   try {
-    const access = await validatePopAccess(popId)
-    if (!access.hasAccess || !access.isActive) {
-      return { success: false, error: access.error || "Sin acceso" }
+    const gate = await requirePopAction(popId, POP_PERMS.SALE_CREATE)
+    if (!gate.ok) {
+      return { success: false, error: gate.error }
     }
-
-    const perms = await quotePermissionFlags(popId)
+    const perms = quotePermissionFlagsFromKeys(gate.keys)
     if (!perms.canCreate) {
       return { success: false, error: "Sin permiso para crear presupuestos." }
     }
@@ -252,7 +249,7 @@ export async function createSaleQuote(
       return { success: false, error: "El presupuesto debe tener al menos un ítem." }
     }
 
-    const user = await requireAuthenticatedUser()
+    const user = gate.user
     const supabase = await createClient()
     const quoteNumber = await nextQuoteNumber(supabase, popId)
 
@@ -327,12 +324,11 @@ export async function getSaleQuotesTable(
   | { success: false; error: string }
 > {
   try {
-    const access = await validatePopAccess(popId)
-    if (!access.hasAccess || !access.isActive) {
-      return { success: false, error: access.error || "Sin acceso" }
+    const gate = await requirePopAction(popId, POP_PERMS.SALE_READ)
+    if (!gate.ok) {
+      return { success: false, error: gate.error }
     }
-
-    const perms = await quotePermissionFlags(popId)
+    const perms = quotePermissionFlagsFromKeys(gate.keys)
     if (!perms.canRead) {
       return { success: false, error: "Sin permiso para ver presupuestos." }
     }
@@ -404,12 +400,11 @@ export async function getSaleQuoteDetail(
   { success: true; quote: SaleQuoteDetail } | { success: false; error: string }
 > {
   try {
-    const access = await validatePopAccess(popId)
-    if (!access.hasAccess || !access.isActive) {
-      return { success: false, error: access.error || "Sin acceso" }
+    const gate = await requirePopAction(popId, POP_PERMS.SALE_READ)
+    if (!gate.ok) {
+      return { success: false, error: gate.error }
     }
-
-    const perms = await quotePermissionFlags(popId)
+    const perms = quotePermissionFlagsFromKeys(gate.keys)
     if (!perms.canRead) {
       return { success: false, error: "Sin permiso para ver presupuestos." }
     }
@@ -417,7 +412,9 @@ export async function getSaleQuoteDetail(
     const supabase = await createClient()
     const { data, error } = await supabase
       .from("sale_quotes")
-      .select("*")
+      .select(
+        "id, quote_number, customer_name, customer_tax_id, subtotal, discount_total, total, status, created_at, metadata, client_id, checkout_snapshot",
+      )
       .eq("pop_id", popId)
       .eq("id", quoteId)
       .maybeSingle()
@@ -434,25 +431,30 @@ export async function getSaleQuoteDetail(
       return { success: false, error: "Presupuesto inválido." }
     }
 
-    const catalog = await getMenuCatalog(popId)
-    if (catalog.success) {
-      const catalogInput = {
-        articles: catalog.articles,
-        promotions: catalog.promotions,
-        quantityDeals: catalog.quantityDeals,
-      }
-      const rebuiltGroups = buildQuoteLineGroupsFromCheckoutSnapshot(
-        quote.checkoutSnapshot,
-        catalogInput,
-      )
-      if (rebuiltGroups.length > 0) {
-        quote.metadata = {
-          ...quote.metadata,
-          lineGroups: rebuiltGroups,
-          lineSummaries: buildQuoteLineSummariesFromCheckoutSnapshot(
-            quote.checkoutSnapshot,
-            catalogInput,
-          ),
+    const hasSavedLines =
+      (quote.metadata.lineGroups?.length ?? 0) > 0 ||
+      (quote.metadata.lineSummaries?.length ?? 0) > 0
+    if (!hasSavedLines) {
+      const catalog = await getMenuCatalog(popId)
+      if (catalog.success) {
+        const catalogInput = {
+          articles: catalog.articles,
+          promotions: catalog.promotions,
+          quantityDeals: catalog.quantityDeals,
+        }
+        const rebuiltGroups = buildQuoteLineGroupsFromCheckoutSnapshot(
+          quote.checkoutSnapshot,
+          catalogInput,
+        )
+        if (rebuiltGroups.length > 0) {
+          quote.metadata = {
+            ...quote.metadata,
+            lineGroups: rebuiltGroups,
+            lineSummaries: buildQuoteLineSummariesFromCheckoutSnapshot(
+              quote.checkoutSnapshot,
+              catalogInput,
+            ),
+          }
         }
       }
     }
@@ -471,12 +473,11 @@ export async function deleteSaleQuote(
   quoteId: string,
 ): Promise<{ success: true } | { success: false; error: string }> {
   try {
-    const access = await validatePopAccess(popId)
-    if (!access.hasAccess || !access.isActive) {
-      return { success: false, error: access.error || "Sin acceso" }
+    const gate = await requirePopAction(popId, POP_PERMS.SALE_CREATE)
+    if (!gate.ok) {
+      return { success: false, error: gate.error }
     }
-
-    const perms = await quotePermissionFlags(popId)
+    const perms = quotePermissionFlagsFromKeys(gate.keys)
     if (!perms.canDelete) {
       return { success: false, error: "Sin permiso para eliminar presupuestos." }
     }

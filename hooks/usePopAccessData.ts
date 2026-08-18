@@ -10,14 +10,19 @@ import {
   normalizePopAccessCache,
   popAccessCacheNeedsRefresh,
 } from "@/lib/popAccessNormalize"
+import { fetchPopCacheRevisions } from "@/lib/popCacheRevisions"
 import { useQueryPersistReady } from "@/components/providers/QueryProvider"
 import { useAuth } from "@/context/AuthContextSupabase"
 import {
   popAccessQueryKey,
+  popPermissionsRevQueryKey,
   userProfileQueryKey,
 } from "@/lib/queryKeys"
-import { oneDayQueryOptions } from "@/lib/queryStaleTimes"
-import { useQuery } from "@tanstack/react-query"
+import {
+  catalogRevQueryOptions,
+  oneDayQueryOptions,
+} from "@/lib/queryStaleTimes"
+import { useQuery, useQueryClient } from "@tanstack/react-query"
 import { useEffect, useMemo } from "react"
 
 export function usePopAccessData(
@@ -27,6 +32,7 @@ export function usePopAccessData(
   const { user, loading: authLoading } = useAuth()
   const userId = user?.id
   const persistReady = useQueryPersistReady()
+  const queryClient = useQueryClient()
   const queriesEnabled =
     (options?.enabled ?? true) &&
     persistReady &&
@@ -48,6 +54,16 @@ export function usePopAccessData(
     ...oneDayQueryOptions,
   })
 
+  const permissionsRevQuery = useQuery({
+    queryKey: popPermissionsRevQueryKey(popId),
+    queryFn: async () => {
+      const revisions = await fetchPopCacheRevisions(popId)
+      return revisions.permissionsRev
+    },
+    enabled: queriesEnabled,
+    ...catalogRevQueryOptions,
+  })
+
   const popAccess = useMemo(
     () => normalizePopAccessCache(popAccessQuery.data),
     [popAccessQuery.data],
@@ -59,6 +75,22 @@ export function usePopAccessData(
     if (!popAccessCacheNeedsRefresh(popAccessQuery.data)) return
     void popAccessQuery.refetch()
   }, [queriesEnabled, popAccessQuery.data, popAccessQuery.refetch])
+
+  useEffect(() => {
+    if (!queriesEnabled || !popAccessQuery.data) return
+    if (permissionsRevQuery.data == null || popAccessQuery.isFetching) return
+    if (popAccessQuery.data.permissionsRev === permissionsRevQuery.data) return
+    void queryClient.invalidateQueries({
+      queryKey: popAccessQueryKey(popId),
+    })
+  }, [
+    queriesEnabled,
+    permissionsRevQuery.data,
+    popAccessQuery.data,
+    popAccessQuery.isFetching,
+    popId,
+    queryClient,
+  ])
 
   const roleLabel = useMemo(
     () => (popAccess ? buildPopRoleLabel(popAccess) : ""),

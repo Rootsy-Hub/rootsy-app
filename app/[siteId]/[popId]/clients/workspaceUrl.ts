@@ -50,6 +50,8 @@ function clampPageSize(n: number): number {
     : DEFAULT_CLIENT_TABLE_PAGE_SIZE
 }
 
+export { workspaceUrlSearchParamsFromRecord as clientsUrlSearchParamsFromRecord } from "@/lib/workspaceSearchParams"
+
 export function parseClientsWorkspaceUrl(
   searchParams: URLSearchParams,
 ): ClientsWorkspaceUrlState {

@@ -37,7 +37,10 @@ export function buildWorkspaceBootstrapFromAccess(
     userImageUrl: profile.imageUrl,
     roleLabel: buildPopRoleLabel(normalized),
     permissionKeys: permissionKeysFromPopAccess(normalized),
-    cacheRevisions: EMPTY_REVISIONS,
+    cacheRevisions: {
+      ...EMPTY_REVISIONS,
+      permissionsRev: normalized.permissionsRev ?? EMPTY_REVISIONS.permissionsRev,
+    },
     hasValidPopFiscalCuit: normalized.fiscal.hasValidCuit,
     popEmisorIvaCondition: normalized.fiscal.emisorIvaCondition,
   }

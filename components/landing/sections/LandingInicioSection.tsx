@@ -88,6 +88,14 @@ export function LandingInicioSection({ viewId }: LandingSectionProps) {
           />
         </div>
       </div>
+
+      <button
+        type="button"
+        onClick={() => goToChapter("precios")}
+        className="mt-8 text-sm font-semibold text-foreground/50 transition-colors hover:text-meadow focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-meadow/60 focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+      >
+        Ver planes
+      </button>
     </div>
   )
 }

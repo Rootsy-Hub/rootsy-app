@@ -27,7 +27,6 @@ import {
   dataWorkspaceModuleHeaderVariant,
 } from "@/components/layouts-module/DataWorkspaceModuleLayout"
 import { RootsBanner } from "@/components/rootsy-banner"
-import withAuth from "@/hoc/withAuth"
 import { usePopWorkspace } from "@/context/PopWorkspaceContext"
 import { usePadronAutofillRazonSocial } from "@/hooks/usePadronAutofillRazonSocial"
 import { DEFAULT_OPERATIONAL_DAY_CLOSE_TIME } from "@/lib/popOperationalDay"
@@ -490,4 +489,4 @@ function SettingsPage() {
   )
 }
 
-export default withAuth(SettingsPage)
+export default SettingsPage

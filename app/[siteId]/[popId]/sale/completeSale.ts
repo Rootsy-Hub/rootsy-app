@@ -24,6 +24,11 @@ import {
   articleReferenceCostError,
   resolveArticleReferenceUnitCost,
 } from "@/lib/articleReferenceUnitCost"
+import {
+  addIsoCalendarDays,
+  CURRENT_ACCOUNT_SALE_DEFAULT_DUE_DAYS,
+} from "@/lib/currentAccounts"
+import { toPopCalendarDate } from "@/lib/popTimezone"
 import { resolveLedgerAccountForTreasuryPayment } from "@/lib/treasuryPaymentLedger"
 import { isValidOperationPaymentKind } from "@/lib/operationPaymentKinds"
 import {
@@ -491,6 +496,8 @@ export type CompleteSaleInput = {
   treasuryAccountId?: string | null
   checkDetails?: CheckoutCheckDetails | null
   payOnClientAccount?: boolean
+  /** Vencimiento de la venta a cuenta. Si falta, se usan 30 días. */
+  dueDate?: string | null
   generalDiscountMode: "porcentaje" | "fijo"
   valorDescuentoPorcentaje: number
   valorDescuentoFijo: number
@@ -1318,6 +1325,15 @@ export async function completeSale(
     }
 
     const soldAtIso = new Date().toISOString()
+    const tz = timezoneForPopLedger(popRes.pop.country, popRes.pop.siteId)
+    const soldDate = toPopCalendarDate(soldAtIso, tz)
+    const dueDateInput = String(input.dueDate ?? "").trim()
+    const dueDate =
+      payOnClientAccount
+        ? /^\d{4}-\d{2}-\d{2}$/.test(dueDateInput)
+          ? dueDateInput
+          : addIsoCalendarDays(soldDate, CURRENT_ACCOUNT_SALE_DEFAULT_DUE_DAYS)
+        : soldDate
 
     const { data: saleIns, error: saleErr } = await supabase
       .from("sales")
@@ -1334,6 +1350,7 @@ export async function completeSale(
         currency: "ARS",
         status: "draft",
         sold_at: soldAtIso,
+        due_date: dueDate,
         cash_register_id: cashRegisterId,
         cash_register_session_id: cashRegisterSessionId,
         created_by: user.id,
@@ -1345,6 +1362,7 @@ export async function completeSale(
             : "pos",
         table_session_id: tableSessionId,
         counter_order_id: counterOrderId,
+        on_account: payOnClientAccount,
       })
       .select("id")
       .single()
@@ -1409,7 +1427,6 @@ export async function completeSale(
       cogsTotal = roundMoney(cogsTotal + deductRes.amount)
     }
 
-    const tz = timezoneForPopLedger(popRes.pop.country, popRes.pop.siteId)
     const entryDate = entryDateIsoInTimezone(tz)
 
     const ledgerTaxTotal = accrueOutputVat ? taxTotal : 0

@@ -26,7 +26,6 @@ import {
 } from "@/components/layouts-module/DataWorkspaceModuleLayout"
 import { DataWorkspaceHeaderIconButton } from "@/components/layouts/DataWorkspaceHeaderIconButton"
 import { usePopWorkspace } from "@/context/PopWorkspaceContext"
-import withAuth from "@/hoc/withAuth"
 import type { CheckoutCheckDetails } from "@/lib/checkoutCheck"
 import type { ActiveServicesViewFilter } from "@/lib/serviceChargeTypes"
 import { treasuryPaymentOptionKey } from "@/lib/treasuryPaymentOptions"
@@ -328,4 +327,4 @@ function ActiveServicesPage() {
   )
 }
 
-export default withAuth(ActiveServicesPage)
+export default ActiveServicesPage

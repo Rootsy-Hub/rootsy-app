@@ -43,7 +43,6 @@ import {
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
-import withAuth from "@/hoc/withAuth"
 import {
   Plus,
   Tags,
@@ -787,4 +786,4 @@ function ExpensesPage() {
   )
 }
 
-export default withAuth(ExpensesPage)
+export default ExpensesPage

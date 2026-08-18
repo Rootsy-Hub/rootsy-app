@@ -4,6 +4,7 @@ import type {
   PopAccessCache,
   PopAccessRole,
   UserPopIdsCache,
+  UserPopsAccessBatchCache,
   UserProfileCache,
 } from "@/app/home/homeUserDataTypes"
 import {
@@ -69,6 +70,65 @@ function mapMemberRole(role: MemberRoleRow["roles"]): PopAccessRole | null {
   }
 }
 
+function parsePermissionsRev(payload: unknown): number {
+  const raw = payload as { ok?: boolean; permissions_rev?: number | string } | null
+  if (!raw?.ok) return 1
+  const n = Number(raw.permissions_rev)
+  return Number.isFinite(n) && n >= 1 ? Math.trunc(n) : 1
+}
+
+function assemblePopAccess(input: {
+  pop: PopAccessRow
+  isOwner: boolean
+  role: PopAccessRole | null
+  subscriptionRaw: Record<string, unknown>
+  extraModules: ReturnType<typeof parseExtraModuleEntries>
+  permissionsRev: number
+}): PopAccessCache {
+  const subscription = mapPopSubscriptionRow(input.subscriptionRaw)
+  const limits = mapPopAccessLimits(input.subscriptionRaw)
+  const permissionGrants = input.isOwner
+    ? []
+    : input.role?.permissionGrants ?? []
+  const enabledModules = buildPopAccessEnabledModules({
+    businessTypeName: subscription.businessTypeName,
+    extraModules: input.extraModules,
+    allModules: limits.allModules,
+    permissionGrants,
+    isOwner: input.isOwner,
+  })
+  const fiscal = mapPopAccessFiscal({
+    fiscalCuit: input.pop.fiscal_cuit ?? null,
+    settings: input.pop.settings,
+  })
+
+  return {
+    pop: {
+      id: String(input.pop.id),
+      name: String(input.pop.name ?? "").trim(),
+      imageUrl: input.pop.image_url ?? null,
+      backgroundImageUrl:
+        input.pop.background_image_url != null
+          ? String(input.pop.background_image_url).trim() || null
+          : null,
+      siteId: siteIdFromPopRow({
+        site_id: input.pop.site_id,
+        settings: input.pop.settings,
+      }),
+      streetAddress: input.pop.street_address ?? null,
+      isActive: Boolean(input.pop.is_active),
+    },
+    subscription,
+    enabledModules,
+    limits,
+    fiscal,
+    isOwner: input.isOwner,
+    role: input.role,
+    canEnter: Boolean(input.pop.is_active) && subscription.isActive,
+    permissionsRev: input.permissionsRev,
+  }
+}
+
 /** Cache `_user-profile`. */
 export async function getUserProfileCache(): Promise<UserProfileCache> {
   const user = await requireAuthenticatedUser()
@@ -96,17 +156,16 @@ export async function getUserProfileCache(): Promise<UserProfileCache> {
   }
 }
 
-/** Cache `_user-pop-ids` — POPs propios + POPs con rol activo. */
-export async function getUserPopIdsCache(): Promise<UserPopIdsCache> {
-  const user = await requireAuthenticatedUser()
-  const supabase = await createClient()
-
+async function loadUserPopIds(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  userId: string,
+): Promise<string[]> {
   const [{ data: ownedRows }, { data: memberRows }] = await Promise.all([
-    supabase.from("pops").select("id").eq("owner_user_id", user.uid),
+    supabase.from("pops").select("id").eq("owner_user_id", userId),
     supabase
       .from("user_pop_roles")
       .select("pop_id")
-      .eq("user_id", user.uid)
+      .eq("user_id", userId)
       .eq("is_active", true),
   ])
 
@@ -118,6 +177,13 @@ export async function getUserPopIdsCache(): Promise<UserPopIdsCache> {
     ids.add(String(row.pop_id))
   }
   return Array.from(ids)
+}
+
+/** Cache `_user-pop-ids` — POPs propios + POPs con rol activo. */
+export async function getUserPopIdsCache(): Promise<UserPopIdsCache> {
+  const user = await requireAuthenticatedUser()
+  const supabase = await createClient()
+  return loadUserPopIds(supabase, user.uid)
 }
 
 /** Cache `_pop-access` por popId. */
@@ -139,14 +205,13 @@ export async function getPopAccessCache(
   const isOwner = String(pop.owner_user_id) === user.uid
 
   let role: PopAccessRole | null = null
-  let permissionGrants: string[] = []
 
   if (!isOwner) {
     const { data: membership } = await supabase
       .from("user_pop_roles")
       .select(
         `
-        is_active,
+        pop_id,
         roles:role_id ( name, display_name, permission_grants, pop_id )
       `,
       )
@@ -164,70 +229,129 @@ export async function getPopAccessCache(
 
     role = mapMemberRole(roleRaw)
     if (!role) return null
-    permissionGrants = role.permissionGrants
   }
 
-  const { data: subscriptionInfo, error: subscriptionError } =
-    await supabase.rpc("get_pop_subscription_info", { pop_id: popId })
+  const [subscriptionRes, revisionsRes, extraRes] = await Promise.all([
+    supabase.rpc("get_pop_subscription_info", { pop_id: popId }),
+    supabase.rpc("get_pop_cache_revisions", { p_pop_id: popId }),
+    pop.subscription_id
+      ? supabase
+          .from("_pop_subscriptions")
+          .select("extra_modules")
+          .eq("id", pop.subscription_id)
+          .maybeSingle()
+      : Promise.resolve({ data: null }),
+  ])
 
   if (
-    subscriptionError ||
-    !subscriptionInfo ||
-    subscriptionInfo.length === 0
+    subscriptionRes.error ||
+    !subscriptionRes.data ||
+    subscriptionRes.data.length === 0
   ) {
     return null
   }
 
-  const subscriptionRaw = subscriptionInfo[0] as Record<string, unknown>
-  const subscription = mapPopSubscriptionRow(subscriptionRaw)
-  const limits = mapPopAccessLimits(subscriptionRaw)
-
-  let extraModules: ReturnType<typeof parseExtraModuleEntries> = []
-  if (pop.subscription_id) {
-    const { data: subRow } = await supabase
-      .from("_pop_subscriptions")
-      .select("extra_modules")
-      .eq("id", pop.subscription_id)
-      .maybeSingle()
-    extraModules = parseExtraModuleEntries(subRow?.extra_modules)
-  }
-
-  const enabledModules = buildPopAccessEnabledModules({
-    businessTypeName: subscription.businessTypeName,
-    extraModules,
-    allModules: limits.allModules,
-    permissionGrants,
-    isOwner,
-  })
-
-  const canEnter = Boolean(pop.is_active) && subscription.isActive
-  const fiscal = mapPopAccessFiscal({
-    fiscalCuit: pop.fiscal_cuit ?? null,
-    settings: pop.settings,
-  })
-
-  return {
-    pop: {
-      id: String(pop.id),
-      name: String(pop.name ?? "").trim(),
-      imageUrl: pop.image_url ?? null,
-      backgroundImageUrl:
-        pop.background_image_url != null
-          ? String(pop.background_image_url).trim() || null
-          : null,
-      siteId: siteIdFromPopRow({
-        site_id: pop.site_id,
-        settings: pop.settings,
-      }),
-      streetAddress: pop.street_address ?? null,
-      isActive: Boolean(pop.is_active),
-    },
-    subscription,
-    enabledModules,
-    limits,
-    fiscal,
+  return assemblePopAccess({
+    pop,
     isOwner,
     role,
-    canEnter,
+    subscriptionRaw: subscriptionRes.data[0] as Record<string, unknown>,
+    extraModules: parseExtraModuleEntries(extraRes.data?.extra_modules),
+    permissionsRev: parsePermissionsRev(revisionsRes.data),
+  })
+}
+
+/** Un solo access para todos los POPs del usuario. */
+export async function getUserPopsAccessBatch(): Promise<UserPopsAccessBatchCache> {
+  const user = await requireAuthenticatedUser()
+  const supabase = await createClient()
+  const popIds = await loadUserPopIds(supabase, user.uid)
+  if (popIds.length === 0) {
+    return { popIds, accessByPopId: {} }
   }
+
+  const [{ data: popRows }, { data: memberRows }] = await Promise.all([
+    supabase.from("pops").select(POP_ACCESS_SELECT).in("id", popIds),
+    supabase
+      .from("user_pop_roles")
+      .select(
+        `
+        pop_id,
+        roles:role_id ( name, display_name, permission_grants, pop_id )
+      `,
+      )
+      .eq("user_id", user.uid)
+      .in("pop_id", popIds)
+      .eq("is_active", true),
+  ])
+
+  const roleByPopId = new Map<string, PopAccessRole>()
+  for (const row of (memberRows ?? []) as MemberRoleRow[]) {
+    const popId = String(row.pop_id)
+    const roleRaw = Array.isArray(row.roles) ? row.roles[0] : row.roles
+    if (!roleRaw || !roleMatchesPop(roleRaw.pop_id, popId)) continue
+    const role = mapMemberRole(roleRaw)
+    if (role) roleByPopId.set(popId, role)
+  }
+
+  const pops = (popRows ?? []) as PopAccessRow[]
+  const subscriptionIds = [
+    ...new Set(
+      pops
+        .map((pop) => pop.subscription_id)
+        .filter((id): id is string => Boolean(id)),
+    ),
+  ]
+  const extraBySubscriptionId = new Map<
+    string,
+    ReturnType<typeof parseExtraModuleEntries>
+  >()
+  if (subscriptionIds.length > 0) {
+    const { data: extraRows } = await supabase
+      .from("_pop_subscriptions")
+      .select("id, extra_modules")
+      .in("id", subscriptionIds)
+    for (const row of extraRows ?? []) {
+      extraBySubscriptionId.set(
+        String(row.id),
+        parseExtraModuleEntries(row.extra_modules),
+      )
+    }
+  }
+
+  const perPopExtras = await Promise.all(
+    pops.map(async (pop) => {
+      const [subscriptionRes, revisionsRes] = await Promise.all([
+        supabase.rpc("get_pop_subscription_info", { pop_id: pop.id }),
+        supabase.rpc("get_pop_cache_revisions", { p_pop_id: pop.id }),
+      ])
+      return { pop, subscriptionRes, revisionsRes }
+    }),
+  )
+
+  const accessByPopId: Record<string, PopAccessCache> = {}
+  for (const { pop, subscriptionRes, revisionsRes } of perPopExtras) {
+    const isOwner = String(pop.owner_user_id) === user.uid
+    const role = isOwner ? null : roleByPopId.get(String(pop.id)) ?? null
+    if (!isOwner && !role) continue
+    if (
+      subscriptionRes.error ||
+      !subscriptionRes.data ||
+      subscriptionRes.data.length === 0
+    ) {
+      continue
+    }
+    accessByPopId[String(pop.id)] = assemblePopAccess({
+      pop,
+      isOwner,
+      role,
+      subscriptionRaw: subscriptionRes.data[0] as Record<string, unknown>,
+      extraModules: pop.subscription_id
+        ? extraBySubscriptionId.get(pop.subscription_id) ?? []
+        : [],
+      permissionsRev: parsePermissionsRev(revisionsRes.data),
+    })
+  }
+
+  return { popIds, accessByPopId }
 }

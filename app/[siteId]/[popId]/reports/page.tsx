@@ -13,7 +13,6 @@ import {
   DataWorkspaceModuleLayout,
   dataWorkspaceModuleHeaderVariant,
 } from "@/components/layouts-module/DataWorkspaceModuleLayout"
-import withAuth from "@/hoc/withAuth"
 import { usePopWorkspace } from "@/context/PopWorkspaceContext"
 import {
   buildReportHref,
@@ -494,4 +493,4 @@ function ReportsPage() {
   )
 }
 
-export default withAuth(ReportsPage)
+export default ReportsPage

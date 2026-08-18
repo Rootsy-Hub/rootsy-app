@@ -1,8 +1,7 @@
 "use client"
 
 import {
-  getPopAccessCache,
-  getUserPopIdsCache,
+  getUserPopsAccessBatch,
   getUserProfileCache,
 } from "@/app/home/homeUserDataActions"
 import {
@@ -13,16 +12,18 @@ import type { HomePopListItem } from "@/app/home/homeUserDataTypes"
 import {
   popAccessQueryKey,
   userPopIdsQueryKey,
+  userPopsAccessBatchQueryKey,
   userProfileQueryKey,
 } from "@/lib/queryKeys"
 import { oneDayQueryOptions } from "@/lib/queryStaleTimes"
 import { useQueryPersistReady } from "@/components/providers/QueryProvider"
-import { useQueries, useQuery } from "@tanstack/react-query"
-import { useMemo } from "react"
+import { useQuery, useQueryClient } from "@tanstack/react-query"
+import { useEffect, useMemo } from "react"
 
 export function useHomePageData(userId: string) {
   const persistReady = useQueryPersistReady()
-  const queriesEnabled = persistReady
+  const queryClient = useQueryClient()
+  const queriesEnabled = persistReady && Boolean(userId)
 
   const profileQuery = useQuery({
     queryKey: userProfileQueryKey(userId),
@@ -31,51 +32,36 @@ export function useHomePageData(userId: string) {
     ...oneDayQueryOptions,
   })
 
-  const popIdsQuery = useQuery({
-    queryKey: userPopIdsQueryKey(userId),
-    queryFn: getUserPopIdsCache,
+  const batchQuery = useQuery({
+    queryKey: userPopsAccessBatchQueryKey(userId),
+    queryFn: getUserPopsAccessBatch,
     enabled: queriesEnabled,
     ...oneDayQueryOptions,
   })
 
-  const popIds = popIdsQuery.data ?? []
-
-  const popAccessQueries = useQueries({
-    queries: popIds.map((popId) => ({
-      queryKey: popAccessQueryKey(popId),
-      queryFn: () => getPopAccessCache(popId),
-      enabled: queriesEnabled && popIdsQuery.isSuccess,
-      ...oneDayQueryOptions,
-    })),
-  })
+  useEffect(() => {
+    const batch = batchQuery.data
+    if (!batch) return
+    queryClient.setQueryData(userPopIdsQueryKey(userId), batch.popIds)
+    for (const popId of batch.popIds) {
+      const access = batch.accessByPopId[popId]
+      if (access) {
+        queryClient.setQueryData(popAccessQueryKey(popId), access)
+      }
+    }
+  }, [batchQuery.data, queryClient, userId])
 
   const pops = useMemo((): HomePopListItem[] => {
-    const accessRows = popAccessQueries
-      .map((query) => query.data)
-      .filter((row): row is NonNullable<typeof row> => Boolean(row))
+    const accessRows = Object.values(batchQuery.data?.accessByPopId ?? {})
     return buildHomePopListFromAccess(accessRows)
-  }, [popAccessQueries])
+  }, [batchQuery.data])
 
-  const popAccessPending =
-    popIds.length > 0 && popAccessQueries.some((query) => query.isPending)
+  const isLoading = profileQuery.isPending || batchQuery.isPending
 
-  const isLoading =
-    !persistReady ||
-    profileQuery.isPending ||
-    popIdsQuery.isPending ||
-    popAccessPending
-
-  const loadError =
-    profileQuery.isError || popIdsQuery.isError || popAccessQueries.some(
-      (query) => query.isError,
-    )
+  const loadError = profileQuery.isError || batchQuery.isError
 
   const refetchAll = async () => {
-    await Promise.all([
-      profileQuery.refetch(),
-      popIdsQuery.refetch(),
-      ...popAccessQueries.map((query) => query.refetch()),
-    ])
+    await Promise.all([profileQuery.refetch(), batchQuery.refetch()])
   }
 
   const profile = profileQuery.data ?? null

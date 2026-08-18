@@ -3,7 +3,6 @@
 import { StatisticsWorkspaceView } from "@/components/statistics/StatisticsWorkspaceView"
 import { usePopWorkspace } from "@/context/PopWorkspaceContext"
 import { usePopMenuCache } from "@/hooks/usePopMenuCache"
-import withAuth from "@/hoc/withAuth"
 import { useParams } from "next/navigation"
 import { useMemo } from "react"
 
@@ -43,4 +42,4 @@ function StatisticsPage() {
   )
 }
 
-export default withAuth(StatisticsPage)
+export default StatisticsPage

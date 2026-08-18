@@ -13,7 +13,6 @@ import {
 import { useDataWorkspaceSidebar } from "@/components/layouts/useDataWorkspaceSidebar"
 import { usePopWorkspace } from "@/context/PopWorkspaceContext"
 import { useAuth } from "@/context/AuthContextSupabase"
-import withAuth from "@/hoc/withAuth"
 import { mesasAccessFromKeys } from "@/lib/popWorkspaceAccess"
 import { useParams, useRouter } from "next/navigation"
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
@@ -143,4 +142,4 @@ function MesasPage() {
   )
 }
 
-export default withAuth(MesasPage)
+export default MesasPage

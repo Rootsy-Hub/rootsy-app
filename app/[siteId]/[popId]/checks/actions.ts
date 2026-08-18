@@ -13,6 +13,7 @@ import {
   postCheckRejectLedger,
   postCheckVoidLedger,
 } from "@/lib/checkAccountingPosting"
+import { reversePaymentsLinkedToCheck } from "@/lib/currentAccountPayments"
 import {
   canApplyCheckLifecycleAction,
   isCheckDirection,
@@ -677,6 +678,12 @@ export async function rejectPopCheck(
       await cancelCheckAccountingEntry(loaded.supabase, posted.entryId)
       return { success: false, error: "El cheque ya no se puede rechazar." }
     }
+    const reversed = await reversePaymentsLinkedToCheck(
+      loaded.supabase,
+      popId,
+      loaded.checkId,
+    )
+    if (!reversed.success) return reversed
     return { success: true }
   } catch (e: unknown) {
     const message = e instanceof Error ? e.message : "Error desconocido"
@@ -722,6 +729,12 @@ export async function voidPopCheck(
       await cancelCheckAccountingEntry(loaded.supabase, posted.entryId)
       return { success: false, error: "Solo se puede anular un cheque en cartera." }
     }
+    const reversed = await reversePaymentsLinkedToCheck(
+      loaded.supabase,
+      popId,
+      loaded.checkId,
+    )
+    if (!reversed.success) return reversed
     return { success: true }
   } catch (e: unknown) {
     const message = e instanceof Error ? e.message : "Error desconocido"

@@ -191,6 +191,10 @@ export function useMostradorSaleCheckout(
     catalogLoading,
     catalogError,
     catalogLoadAttempted,
+    catalogRev,
+    mergeCatalogArticles,
+    mergeCatalogRecipes,
+    ensureCatalogItems,
   } = useMenuCatalogLoader(popId, { enabled: catalogEnabled })
 
   const {
@@ -552,6 +556,17 @@ export function useMostradorSaleCheckout(
     () => buildMenuProductMap(productosCatalogo),
     [productosCatalogo],
   )
+
+  useEffect(() => {
+    const articleIds: string[] = []
+    const recipeIds: string[] = []
+    for (const item of carrito) {
+      const kind = normalizeCartItemKind(item.kind)
+      if (kind === "recipe") recipeIds.push(item.productoId)
+      else if (kind === "article") articleIds.push(item.productoId)
+    }
+    void ensureCatalogItems(articleIds, recipeIds)
+  }, [carrito, ensureCatalogItems])
 
   const overrideSnapshot = useMemo(
     () => ({
@@ -1608,6 +1623,9 @@ export function useMostradorSaleCheckout(
     catalogLoading,
     catalogError,
     catalogLoadAttempted,
+    catalogRev,
+    mergeCatalogArticles,
+    mergeCatalogRecipes,
     openCashSession,
     treasuryPaymentContext,
     menuCategorySections,

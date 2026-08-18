@@ -63,6 +63,7 @@ export type MenuItemLink =
   | "reports"
   | "statistics"
   | "checks"
+  | "current-accounts"
   | "section"
 
 /** Identificador de un acceso directo del dock (solo rutas navegables). */
@@ -116,7 +117,7 @@ export const menuSectionsRaw: Record<string, MenuSectionDef> = {
       { name: "Stock", icon: Package, badge: "3", link: "articles" },
       { name: "Clientes", icon: Users, link: "clients" },
       { name: "Proveedores", icon: Truck, link: "suppliers" },
-      { name: "Cuentas Ctes", icon: CreditCard, link: "section" },
+      { name: "Cuentas corrientes", icon: CreditCard, link: "current-accounts" },
       { name: "Promociones", icon: Sparkles, link: "promotions" },
       { name: "Recetas", icon: BookOpen, link: "recipes" },
       { name: "Servicios", icon: Briefcase, link: "services" },

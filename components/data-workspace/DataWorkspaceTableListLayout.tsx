@@ -56,6 +56,7 @@ export type DataWorkspaceTableListPageProps = {
     | "titleAdornment"
     | "sectionMenu"
     | "toolbar"
+    | "backHref"
   >
   error?: string | null
   errorPrefix?: string

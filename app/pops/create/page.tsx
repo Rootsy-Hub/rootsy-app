@@ -20,7 +20,6 @@ import {
   type PopCreatePlanOption,
 } from "@/app/pops/create/actions"
 import type { MercadoPagoCardCaptureHandle } from "@/components/platformBilling/MercadoPagoCardCapture"
-import withAuth from "@/hoc/withAuth"
 import { popMenuHref } from "@/lib/popRoutes"
 import { cn } from "@/lib/utils"
 
@@ -535,4 +534,4 @@ function CreatePopPage() {
   )
 }
 
-export default withAuth(CreatePopPage)
+export default CreatePopPage

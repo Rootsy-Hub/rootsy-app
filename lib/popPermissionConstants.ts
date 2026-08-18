@@ -100,6 +100,11 @@ export const POP_PERMS = {
   CHECK_CREATE: { resource: "checks", action: "create" },
   CHECK_UPDATE: { resource: "checks", action: "update" },
   CHECK_DELETE: { resource: "checks", action: "delete" },
+
+  CURRENT_ACCOUNT_READ: { resource: "current_accounts", action: "read" },
+  CURRENT_ACCOUNT_CREATE: { resource: "current_accounts", action: "create" },
+  CURRENT_ACCOUNT_UPDATE: { resource: "current_accounts", action: "update" },
+  CURRENT_ACCOUNT_DELETE: { resource: "current_accounts", action: "delete" },
 } as const
 
 export function permissionKeysInclude(

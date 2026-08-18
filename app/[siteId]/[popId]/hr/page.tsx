@@ -35,7 +35,6 @@ import {
 } from "@/components/ui/select"
 import { Textarea } from "@/components/ui/textarea"
 import { usePopWorkspace } from "@/context/PopWorkspaceContext"
-import withAuth from "@/hoc/withAuth"
 import { cn } from "@/lib/utils"
 import {
   Clock3,
@@ -776,4 +775,4 @@ function HrPage() {
   )
 }
 
-export default withAuth(HrPage)
+export default HrPage

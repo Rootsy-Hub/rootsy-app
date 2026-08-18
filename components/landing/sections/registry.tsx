@@ -1,6 +1,7 @@
 import type { ComponentType } from "react"
 import { LandingEmpezarSection } from "@/components/landing/sections/LandingEmpezarSection"
 import { LandingInicioSection } from "@/components/landing/sections/LandingInicioSection"
+import { LandingPreciosSection } from "@/components/landing/sections/LandingPreciosSection"
 import { LandingSectionPlaceholder } from "@/components/landing/sections/LandingSectionPlaceholder"
 import {
   LANDING_VIEW_IDS,
@@ -13,6 +14,7 @@ const LANDING_SECTION_COMPONENTS: Partial<
 > = {
   inicio: LandingInicioSection,
   empezar: LandingEmpezarSection,
+  precios: LandingPreciosSection,
 }
 
 export const LANDING_SECTION_REGISTRY: Record<

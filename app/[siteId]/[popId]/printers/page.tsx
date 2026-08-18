@@ -34,7 +34,6 @@ import {
   TableRow,
 } from "@/components/ui/table"
 import { useAuth } from "@/context/AuthContextSupabase"
-import withAuth from "@/hoc/withAuth"
 import { popMenuHref } from "@/lib/popRoutes"
 import { cn } from "@/lib/utils"
 import {
@@ -720,4 +719,4 @@ function PrintersPage() {
   )
 }
 
-export default withAuth(PrintersPage)
+export default PrintersPage

@@ -3,6 +3,7 @@ import { Inter, Nunito_Sans, Source_Sans_3 } from 'next/font/google'
 import { Analytics } from '@vercel/analytics/next'
 import { AuthProvider } from '@/context/AuthContextSupabase'
 import { QueryProvider } from '@/components/providers/QueryProvider'
+import { getInitialAuthUser } from '@/lib/getInitialAuthUser'
 import { Toaster } from '@/components/ui/toaster'
 import './globals.css'
 
@@ -49,15 +50,17 @@ export const metadata: Metadata = {
   },
 }
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode
 }>) {
+  const initialUser = await getInitialAuthUser()
+
   return (
     <html lang="es" className="dark scroll-smooth" data-scroll-behavior="smooth">
       <body className={`${nunitoSans.variable} ${sourceSans.variable} ${inter.variable} font-sans antialiased`}>
-        <AuthProvider>
+        <AuthProvider initialUser={initialUser}>
           <QueryProvider>
             {children}
           </QueryProvider>

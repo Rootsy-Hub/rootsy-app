@@ -1,11 +1,11 @@
 export const LANDING_VIEW_IDS = [
   "inicio",
   "empezar",
+  "precios",
   "rubros",
   "control",
   "clientes",
   "faq",
-  "precios",
 ] as const
 
 export type LandingViewId = (typeof LANDING_VIEW_IDS)[number]
@@ -71,7 +71,7 @@ export const LANDING_VIEW_META: Record<LandingViewId, LandingViewMeta> = {
     id: "precios",
     label: "Precios",
     title: "Elegí tu plan",
-    tagline: "7 días gratis · sin tarjeta.",
+    tagline: "7 días de prueba con tarjeta — sin cargo hasta que termina.",
   },
 }
 

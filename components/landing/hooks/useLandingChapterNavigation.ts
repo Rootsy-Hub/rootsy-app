@@ -1,7 +1,9 @@
 "use client"
 
-import { useCallback, useEffect, useState } from "react"
+import { useCallback, useEffect, useRef, useState } from "react"
 import {
+  LANDING_VIEW_IDS,
+  isLandingViewId,
   landingAdjacentView,
   viewFromHash,
   type LandingViewId,
@@ -20,26 +22,44 @@ function scrollToChapter(id: LandingViewId) {
 export function useLandingChapterNavigation(layout: LandingLayoutMode | null) {
   const [activeChapter, setActiveChapter] = useState<LandingViewId>("inicio")
   const [sceneKey, setSceneKey] = useState(0)
+  const programmaticScrollRef = useRef(false)
+  const programmaticTimerRef = useRef<number | null>(null)
+  const activeChapterRef = useRef<LandingViewId>(activeChapter)
+
+  useEffect(() => {
+    activeChapterRef.current = activeChapter
+  }, [activeChapter])
+
+  const markProgrammaticScroll = useCallback(() => {
+    programmaticScrollRef.current = true
+    if (programmaticTimerRef.current != null) {
+      window.clearTimeout(programmaticTimerRef.current)
+    }
+    programmaticTimerRef.current = window.setTimeout(() => {
+      programmaticScrollRef.current = false
+      programmaticTimerRef.current = null
+    }, 900)
+  }, [])
 
   useEffect(() => {
     if (layout === null) return
     const initial = readHashChapter()
     setActiveChapter(initial)
-    if (layout === "mobile") {
+    if (initial !== "inicio") {
+      markProgrammaticScroll()
       requestAnimationFrame(() => scrollToChapter(initial))
     }
-  }, [layout])
+  }, [layout, markProgrammaticScroll])
 
   const goToChapter = useCallback(
     (id: LandingViewId) => {
       setActiveChapter(id)
       setSceneKey((k) => k + 1)
       window.history.replaceState(null, "", `#${id}`)
-      if (layout === "mobile") {
-        scrollToChapter(id)
-      }
+      markProgrammaticScroll()
+      scrollToChapter(id)
     },
-    [layout],
+    [markProgrammaticScroll],
   )
 
   useEffect(() => {
@@ -48,10 +68,48 @@ export function useLandingChapterNavigation(layout: LandingLayoutMode | null) {
       const next = readHashChapter()
       setActiveChapter(next)
       setSceneKey((k) => k + 1)
-      if (layout === "mobile") scrollToChapter(next)
+      markProgrammaticScroll()
+      scrollToChapter(next)
     }
     window.addEventListener("hashchange", onHashChange)
     return () => window.removeEventListener("hashchange", onHashChange)
+  }, [layout, markProgrammaticScroll])
+
+  useEffect(() => {
+    if (layout === null) return
+
+    const sections = LANDING_VIEW_IDS.map((id) =>
+      document.getElementById(id),
+    ).filter((el): el is HTMLElement => el != null)
+
+    if (sections.length === 0) return
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (programmaticScrollRef.current) return
+        const visible = entries
+          .filter((entry) => entry.isIntersecting)
+          .sort((a, b) => b.intersectionRatio - a.intersectionRatio)
+        const nextId = visible[0]?.target.id
+        if (
+          !nextId ||
+          !isLandingViewId(nextId) ||
+          nextId === activeChapterRef.current
+        ) {
+          return
+        }
+        setActiveChapter(nextId)
+        window.history.replaceState(null, "", `#${nextId}`)
+      },
+      {
+        root: null,
+        rootMargin: "-20% 0px -55% 0px",
+        threshold: [0.16, 0.35, 0.6],
+      },
+    )
+
+    for (const section of sections) observer.observe(section)
+    return () => observer.disconnect()
   }, [layout])
 
   useEffect(() => {
@@ -74,6 +132,14 @@ export function useLandingChapterNavigation(layout: LandingLayoutMode | null) {
     window.addEventListener("keydown", onKeyDown)
     return () => window.removeEventListener("keydown", onKeyDown)
   }, [layout, activeChapter, goToChapter])
+
+  useEffect(() => {
+    return () => {
+      if (programmaticTimerRef.current != null) {
+        window.clearTimeout(programmaticTimerRef.current)
+      }
+    }
+  }, [])
 
   return { activeChapter, sceneKey, goToChapter }
 }

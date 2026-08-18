@@ -1,3 +1,5 @@
+import type { OperateCatalogItemsFilter } from "@/lib/operateCatalogPage"
+
 export type SaleCatalogViewPersisted =
   | { modo: "categoria"; categoria: string }
   | { modo: "promociones" }
@@ -7,7 +9,7 @@ const STORAGE_PREFIX = "rootsy:sale-catalog-view:"
 
 export const SALE_CATALOG_TODOS = "Todos"
 
-type CategoryRef = { name: string }
+type CategoryRef = { name: string; id?: string }
 type CategorySectionRef = { id: string; label: string; categories: { id: string; name: string }[] }
 
 export function defaultSaleCatalogView(
@@ -43,6 +45,44 @@ function isValidSaleCatalogCategoryView(
 }
 
 /** Restaura vista guardada o cae a la primera categoría del catálogo. */
+export function saleCatalogViewToItemsFilter(
+  vista: SaleCatalogViewPersisted,
+  search: string,
+  categories: CategoryRef[],
+  categorySections?: CategorySectionRef[],
+): OperateCatalogItemsFilter {
+  const q = search.trim()
+  if (q) {
+    return { search: q, section: "all", categoryId: null }
+  }
+  if (vista.modo === "promociones") {
+    return { search: "", section: "promotions", categoryId: null }
+  }
+  if (vista.modo === "con_descuento") {
+    return { search: "", section: "discounts", categoryId: null }
+  }
+  const key = vista.categoria
+  if (categorySections?.length) {
+    const sep = key.indexOf(":")
+    if (sep <= 0) {
+      return { search: "", section: "products", categoryId: null }
+    }
+    const section = key.slice(0, sep)
+    const id = key.slice(sep + 1)
+    return {
+      search: "",
+      section,
+      categoryId: !id || id === "all" ? null : id,
+    }
+  }
+  const cat = categories.find((item) => item.name === key)
+  return {
+    search: "",
+    section: "products",
+    categoryId: cat?.id ? String(cat.id) : null,
+  }
+}
+
 export function resolveSaleCatalogView(
   saved: SaleCatalogViewPersisted | undefined,
   categories: CategoryRef[],

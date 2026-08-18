@@ -11,9 +11,7 @@ import {
   libraryThemeClass,
 } from "@/app/library/libraryColorTheme"
 import { DataWorkspaceModuleLayout } from "@/components/layouts-module/DataWorkspaceModuleLayout"
-import { Spinner } from "@/components/ui/spinner"
 import { useAuth } from "@/context/AuthContextSupabase"
-import withAuth from "@/hoc/withAuth"
 import { isBackofficeAllowedEmail } from "@/lib/backofficeAccess"
 import { cn } from "@/lib/utils"
 import Link from "next/link"
@@ -79,21 +77,7 @@ function BackofficeShell({ children }: BackofficeShellProps) {
 }
 
 function BackofficeShellWithAuth({ children }: BackofficeShellProps) {
-  const { loading, user } = useAuth()
-
-  if (loading) {
-    return (
-      <div
-        className="flex min-h-screen flex-col items-center justify-center gap-3 bg-background text-foreground"
-        role="status"
-        aria-live="polite"
-        aria-busy="true"
-      >
-        <Spinner className="size-8 text-muted-foreground" />
-        <span className="text-sm text-muted-foreground">Cargando sesión…</span>
-      </div>
-    )
-  }
+  const { user } = useAuth()
 
   if (!user) return null
 
@@ -118,4 +102,4 @@ function BackofficeShellWithAuth({ children }: BackofficeShellProps) {
   return <BackofficeShell>{children}</BackofficeShell>
 }
 
-export default withAuth(BackofficeShellWithAuth)
+export default BackofficeShellWithAuth

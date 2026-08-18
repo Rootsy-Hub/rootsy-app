@@ -325,6 +325,7 @@ export async function completePurchase(
         notes: input.notes?.trim() || "",
         metadata: purchaseMetadata,
         created_by: user.uid,
+        on_account: payOnAccount,
       })
       .select("id")
       .maybeSingle()

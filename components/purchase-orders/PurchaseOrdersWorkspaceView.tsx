@@ -3,7 +3,6 @@
 import {
   deletePurchaseOrder,
   getPurchaseOrderDetail,
-  getPurchaseOrdersTable,
 } from "@/app/[siteId]/[popId]/purchase-orders/actions"
 import {
   DEFAULT_PURCHASE_ORDER_TABLE_PAGE_SIZE,
@@ -52,7 +51,10 @@ import {
   WorkspaceTableHeaderRow,
 } from "@/components/data-workspace/WorkspaceTableHeader"
 import { usePopWorkspace } from "@/context/PopWorkspaceContext"
+import { usePopPurchaseOrdersTable } from "@/hooks/usePopPurchaseOrdersTable"
 import { usePopTimeZone } from "@/hooks/usePopTimeZone"
+import { popPurchaseOrdersQueryRoot } from "@/lib/queryKeys"
+import { useQueryClient } from "@tanstack/react-query"
 import {
   computeDataWorkspaceDateBounds,
   dataWorkspaceDateFilterSummary,
@@ -95,6 +97,7 @@ type Props = {
 
 export function PurchaseOrdersWorkspaceView({ siteId, popId }: Props) {
   const router = useRouter()
+  const queryClient = useQueryClient()
   const timeZone = usePopTimeZone()
   const { bootstrap, popAccess, loading: bootstrapLoading } = usePopWorkspace()
 
@@ -122,10 +125,7 @@ export function PurchaseOrdersWorkspaceView({ siteId, popId }: Props) {
     ],
   )
 
-  const [rows, setRows] = useState<PurchaseOrderTableRow[]>([])
-  const [listFetching, setListFetching] = useState(true)
-  const [error, setError] = useState<string | null>(null)
-  const [totalCount, setTotalCount] = useState(0)
+  const [actionError, setError] = useState<string | null>(null)
 
   const [searchInput, setSearchInput] = useState("")
   const [debouncedSearch, setDebouncedSearch] = useState("")
@@ -162,45 +162,47 @@ export function PurchaseOrdersWorkspaceView({ siteId, popId }: Props) {
     [datePreset, dateBounds],
   )
 
-  const fetchList = useCallback(async () => {
-    setListFetching(true)
-    try {
-      const res = await getPurchaseOrdersTable(popId, {
-        page,
-        pageSize,
-        q: debouncedSearch,
-        dateFrom: dateBounds.from,
-        dateTo: dateBounds.to,
-      })
-      if (!res.success) {
-        setRows([])
-        setTotalCount(0)
-        setError(res.error)
-        return
-      }
-      setRows(res.rows)
-      setTotalCount(res.totalCount)
-      if (res.page !== page) setPage(res.page)
-      setError(null)
-    } catch {
-      setError("Error inesperado al cargar órdenes de compra.")
-      setRows([])
-      setTotalCount(0)
-    } finally {
-      setListFetching(false)
-    }
-  }, [
+  const ordersQuery = usePopPurchaseOrdersTable(
     popId,
-    page,
-    pageSize,
-    debouncedSearch,
-    dateBounds.from,
-    dateBounds.to,
-  ])
+    {
+      page,
+      pageSize,
+      q: debouncedSearch,
+      dateFrom: dateBounds.from,
+      dateTo: dateBounds.to,
+    },
+    { enabled: Boolean(popId) },
+  )
+
+  const rows = ordersQuery.data?.success ? ordersQuery.data.rows : []
+  const totalCount = ordersQuery.data?.success
+    ? ordersQuery.data.totalCount
+    : 0
+  const listFetching =
+    ordersQuery.isPending ||
+    (ordersQuery.isFetching && !ordersQuery.isFetched)
+  const tableError =
+    ordersQuery.data?.success === false
+      ? ordersQuery.data.error
+      : ordersQuery.error instanceof Error
+        ? ordersQuery.error.message
+        : ordersQuery.error
+          ? String(ordersQuery.error)
+          : null
+  const error = actionError ?? tableError
+
+  const refreshPurchaseOrdersList = useCallback(async () => {
+    if (!popId) return
+    await queryClient.invalidateQueries({
+      queryKey: popPurchaseOrdersQueryRoot(popId),
+    })
+  }, [popId, queryClient])
 
   useEffect(() => {
-    void fetchList()
-  }, [fetchList])
+    const res = ordersQuery.data
+    if (!res?.success) return
+    if (res.page !== page) setPage(res.page)
+  }, [ordersQuery.data, page])
 
   useEffect(() => {
     const t = window.setTimeout(() => {
@@ -276,20 +278,27 @@ export function PurchaseOrdersWorkspaceView({ siteId, popId }: Props) {
         })
       }
       try {
-        const res = await getPurchaseOrderDetail(popId, orderId)
-        if (!res.success) {
-          setError(res.error)
-          return
-        }
+        const loaded = viewOrder?.id === orderId ? viewOrder : null
+        const order = loaded
+          ? loaded
+          : await (async () => {
+              const res = await getPurchaseOrderDetail(popId, orderId)
+              if (!res.success) {
+                setError(res.error)
+                return null
+              }
+              return res.order
+            })()
+        if (!order) return
         if (action === "download") {
-          await exportPurchaseOrderPdf(res.order, {
+          await exportPurchaseOrderPdf(order, {
             popName: bootstrap?.popName,
             popLogoUrl,
             popStreetAddress: popAccess?.pop.streetAddress ?? null,
             timeZone,
           })
         } else {
-          await printPurchaseOrderPdf(res.order, {
+          await printPurchaseOrderPdf(order, {
             popName: bootstrap?.popName,
             popLogoUrl,
             popStreetAddress: popAccess?.pop.streetAddress ?? null,
@@ -307,7 +316,14 @@ export function PurchaseOrdersWorkspaceView({ siteId, popId }: Props) {
         dismissToast?.()
       }
     },
-    [bootstrap?.popName, popAccess?.pop.streetAddress, popId, popLogoUrl, timeZone],
+    [
+      bootstrap?.popName,
+      popAccess?.pop.streetAddress,
+      popId,
+      popLogoUrl,
+      timeZone,
+      viewOrder,
+    ],
   )
 
   const confirmDelete = useCallback(async () => {
@@ -320,8 +336,9 @@ export function PurchaseOrdersWorkspaceView({ siteId, popId }: Props) {
       return
     }
     setDeleteTarget(null)
-    await fetchList()
-  }, [deleteTarget, fetchList, popId])
+    setError(null)
+    await refreshPurchaseOrdersList()
+  }, [deleteTarget, popId, refreshPurchaseOrdersList])
 
   const clearSearch = useCallback(() => {
     setSearchInput("")

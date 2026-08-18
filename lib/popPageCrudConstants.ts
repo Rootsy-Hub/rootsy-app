@@ -240,6 +240,15 @@ export const POP_PAGES = {
       delete: "checks:delete",
     },
   },
+  "current-accounts": {
+    path: "current-accounts",
+    permissions: {
+      read: "current_accounts:read",
+      create: "current_accounts:create",
+      update: "current_accounts:update",
+      delete: "current_accounts:delete",
+    },
+  },
 } as const satisfies Record<string, PopPageDefinition>
 
 export type PopPageKey = keyof typeof POP_PAGES

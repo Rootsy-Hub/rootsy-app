@@ -33,6 +33,7 @@ export const MENU_LINK_TO_MODULE_KEY: Partial<Record<MenuItemLink, string>> = {
   printers: "printers",
   settings: "settings",
   checks: "checks",
+  "current-accounts": "current_accounts",
 }
 
 /** Módulo de suscripción → link principal del menú (sin alias como cobrar-servicios). */

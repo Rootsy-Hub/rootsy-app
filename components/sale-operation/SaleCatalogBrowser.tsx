@@ -2,11 +2,19 @@
 
 import type { SaleCatalogCategory } from "@/app/[siteId]/[popId]/sale/actions"
 import type { MenuCatalogCategorySection } from "@/app/[siteId]/[popId]/menu-catalog/actions"
+import { findMenuCatalogItemByScan } from "@/app/[siteId]/[popId]/menu-catalog/actions"
+import { findSaleCatalogArticleByScan } from "@/app/[siteId]/[popId]/sale/actions"
 import type { SaleCatalogProduct } from "@/components/sale-operation/saleCatalogProduct"
 import type { MenuCartItemKind } from "@/lib/menuCart"
-import type { MenuCatalogProduct } from "@/lib/menuCatalogProduct"
+import {
+  menuArticleToProduct,
+  menuRecipeToProduct,
+  type MenuCatalogProduct,
+} from "@/lib/menuCatalogProduct"
 import { SaleCatalogEmptyMascot } from "@/components/sale-operation/SaleCatalogEmptyMascot"
 import { SaleCatalogBrowserSkeleton } from "@/components/sale-operation/SaleCatalogBrowserSkeleton"
+import { SaleCatalogInfiniteFooter } from "@/components/sale-operation/SaleCatalogInfiniteFooter"
+import { SaleCatalogVirtualGrid } from "@/components/sale-operation/SaleCatalogVirtualGrid"
 import { SaleCatalogProductCard } from "@/components/sale-operation/SaleCatalogProductCard"
 import { SaleCatalogSidebarNav } from "@/components/sale-operation/SaleCatalogSidebarNav"
 import { SaleCatalogSidebarNavSkeleton } from "@/components/sale-operation/SaleCatalogSidebarNavSkeleton"
@@ -14,10 +22,20 @@ import { useDataWorkspaceSidebar } from "@/components/layouts/useDataWorkspaceSi
 import { SaleCatalogToolbar } from "@/components/sale-operation/SaleCatalogToolbar"
 import { useSaleScanInputFocus } from "@/components/sale-operation/SaleScanInputFocusContext"
 import { SALE_CATALOG_DEFAULT_PRICE_LIST_ID } from "@/components/sale-operation/saleCatalogPriceLists"
+import { useDebouncedValue } from "@/hooks/useDebouncedValue"
+import { useInfiniteScrollSentinel } from "@/hooks/useInfiniteScrollSentinel"
+import {
+  useMenuCatalogItems,
+  useSaleCatalogItems,
+} from "@/hooks/useOperateCatalogItems"
 import { findCatalogProductByScanQuery } from "@/lib/saleCatalogScan"
+import {
+  OPERATE_CATALOG_SEARCH_DEBOUNCE_MS,
+} from "@/lib/operateCatalogPage"
 import {
   readSavedSaleCatalogView,
   resolveSaleCatalogView,
+  saleCatalogViewToItemsFilter,
   writeSavedSaleCatalogView,
   type SaleCatalogViewPersisted,
 } from "@/lib/saleCatalogPreference"
@@ -25,14 +43,20 @@ import {
   layoutsOperarCatalogCanvasClass,
   layoutsOperarCatalogCanvasScrollClass,
   layoutsOperarCatalogColumnClass,
-  layoutsOperarCatalogGridClass,
   layoutsOperarCatalogSidebarClass,
   layoutsOperarCatalogSidebarClosedClass,
   layoutsOperarCatalogSidebarInnerClass,
   layoutsOperarCatalogSidebarOpenClass,
 } from "@/app/library/layouts/layoutsOperarStyles"
 import { cn } from "@/lib/utils"
-import { useCallback, useEffect, useMemo, useRef, useState } from "react"
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react"
+import { flushSync } from "react-dom"
 
 type CatalogScope = "sale" | "menu"
 
@@ -51,50 +75,17 @@ type Props = {
   catalogSidebarOpen?: boolean
   /** Filtros del rail: venta directa vs catálogo menú (mesas/mostrador). */
   catalogScope?: CatalogScope
+  itemsSource?: CatalogScope
+  catalogRev?: number
+  mergeCatalogArticles?: (articles: Parameters<typeof menuArticleToProduct>[0][]) => void
+  mergeCatalogRecipes?: (recipes: Parameters<typeof menuRecipeToProduct>[0][]) => void
   /** Devuelve foco al input escaneo tras acciones (p. ej. Vender). */
   keepScanFocused?: boolean
   className?: string
 }
 
-function productMatchesCatalogView(
-  product: SaleCatalogProduct,
-  vistaCatalogo: SaleCatalogViewPersisted,
-  hayBusqueda: boolean,
-  catalogScope: CatalogScope,
-) {
-  if (hayBusqueda) return true
-
-  const menuProduct = product as MenuCatalogProduct
-  const kind = "kind" in menuProduct ? menuProduct.kind : undefined
-
-  if (vistaCatalogo.modo === "categoria") {
-    if (catalogScope === "sale") {
-      return kind === "article" && product.categoria === vistaCatalogo.categoria
-    }
-
-    const categoriaFiltro =
-      "categoriaFiltro" in menuProduct && typeof menuProduct.categoriaFiltro === "string"
-        ? menuProduct.categoriaFiltro
-        : null
-
-    return categoriaFiltro
-      ? categoriaFiltro === vistaCatalogo.categoria
-      : product.categoria === vistaCatalogo.categoria
-  }
-
-  if (vistaCatalogo.modo === "promociones") {
-    if (catalogScope === "sale") {
-      return kind === "promotion" || Boolean(product.promo?.trim())
-    }
-
-    return (
-      ("section" in menuProduct && menuProduct.section === "promotions") ||
-      Boolean(product.promo?.trim()) ||
-      (product.precioOriginal != null && product.precioOriginal > product.precio)
-    )
-  }
-
-  return product.precioOriginal != null && product.precioOriginal > product.precio
+function isMenuProduct(product: SaleCatalogProduct): product is MenuCatalogProduct {
+  return "kind" in product && typeof (product as MenuCatalogProduct).kind === "string"
 }
 
 export function SaleCatalogBrowser({
@@ -109,9 +100,14 @@ export function SaleCatalogBrowser({
   addDisabled = false,
   catalogSidebarOpen: catalogSidebarOpenProp,
   catalogScope = "menu",
+  itemsSource,
+  catalogRev,
+  mergeCatalogArticles,
+  mergeCatalogRecipes,
   keepScanFocused = false,
   className,
 }: Props) {
+  const source = itemsSource ?? catalogScope
   const scanFocus = useSaleScanInputFocus()
   const internalSidebar = useDataWorkspaceSidebar(
     siteId,
@@ -134,6 +130,19 @@ export function SaleCatalogBrowser({
   const busquedaInputRef = useRef<HTMLInputElement>(null)
   const vistaAntesBusquedaRef = useRef<SaleCatalogViewPersisted | null>(null)
   const busquedaTrimPrevRef = useRef("")
+  const canvasScrollRef = useRef<HTMLDivElement>(null)
+  const sentinelRef = useRef<HTMLDivElement>(null)
+  const [scrollRoot, setScrollRoot] = useState<HTMLElement | null>(null)
+  const [sentinel, setSentinel] = useState<HTMLElement | null>(null)
+
+  const setCanvasScrollRef = useCallback((node: HTMLDivElement | null) => {
+    canvasScrollRef.current = node
+    setScrollRoot(node)
+  }, [])
+  const setSentinelRef = useCallback((node: HTMLDivElement | null) => {
+    sentinelRef.current = node
+    setSentinel(node)
+  }, [])
 
   const registerScanInputRef = useCallback(
     (element: HTMLInputElement | null) => {
@@ -160,21 +169,43 @@ export function SaleCatalogBrowser({
     [addDisabled, cantidadIngreso, onAddProduct, refocusScan],
   )
 
-  const handleScanKeyDown = useCallback(
-    (event: React.KeyboardEvent<HTMLInputElement>) => {
-      if (event.key !== "Enter") return
-      event.preventDefault()
-      const match = findCatalogProductByScanQuery(products, busqueda)
-      if (!match) return
-      const kind =
-        "kind" in match && typeof match.kind === "string"
-          ? (match.kind as MenuCartItemKind)
-          : undefined
-      handleAddProduct(match.id, kind)
-      setBusqueda("")
-    },
-    [busqueda, handleAddProduct, products],
+  const debouncedSearch = useDebouncedValue(
+    busqueda,
+    OPERATE_CATALOG_SEARCH_DEBOUNCE_MS,
   )
+  const itemsFilter = useMemo(
+    () =>
+      saleCatalogViewToItemsFilter(
+        vistaCatalogo,
+        debouncedSearch,
+        categories,
+        categorySections,
+      ),
+    [categories, categorySections, debouncedSearch, vistaCatalogo],
+  )
+
+  const saleItems = useSaleCatalogItems(
+    popId,
+    catalogRev,
+    itemsFilter,
+    Boolean(popId) && !loading && !error && source === "sale",
+  )
+  const menuItems = useMenuCatalogItems(
+    popId,
+    catalogRev,
+    itemsFilter,
+    Boolean(popId) && !loading && !error && source === "menu",
+  )
+  const paged = source === "sale" ? saleItems : menuItems
+  const pagedRecipes = source === "menu" ? menuItems.recipes : []
+
+  useEffect(() => {
+    mergeCatalogArticles?.(paged.articles)
+  }, [mergeCatalogArticles, paged.articles])
+
+  useEffect(() => {
+    mergeCatalogRecipes?.(pagedRecipes)
+  }, [mergeCatalogRecipes, pagedRecipes])
 
   const persistVistaCatalogo = useCallback(
     (view: SaleCatalogViewPersisted) => {
@@ -185,25 +216,108 @@ export function SaleCatalogBrowser({
     [popId, refocusScan],
   )
 
+  const promotionProducts = useMemo(
+    () => products.filter((product) => isMenuProduct(product) && product.kind === "promotion"),
+    [products],
+  )
+
+  const pagedProducts = useMemo((): SaleCatalogProduct[] => {
+    const articles = paged.articles.map(menuArticleToProduct)
+    const recipes = pagedRecipes.map(menuRecipeToProduct)
+    return [...recipes, ...articles]
+  }, [paged.articles, pagedRecipes])
+
   const productosFiltrados = useMemo(() => {
     const q = busqueda.trim().toLowerCase()
-    const hayBusqueda = q.length > 0
+    const showPromos =
+      itemsFilter.section === "promotions" || itemsFilter.search.length > 0
+    const promos = showPromos
+      ? promotionProducts.filter((product) => {
+          if (!q) return true
+          return (
+            product.nombre.toLowerCase().includes(q) ||
+            product.descripcion.toLowerCase().includes(q)
+          )
+        })
+      : []
+    return [...promos, ...pagedProducts]
+  }, [busqueda, itemsFilter.search, itemsFilter.section, pagedProducts, promotionProducts])
 
-    return products.filter((product) => {
-      const matchVista = productMatchesCatalogView(
-        product,
-        vistaCatalogo,
-        hayBusqueda,
-        catalogScope,
-      )
-      const matchQ =
-        !q ||
-        product.nombre.toLowerCase().includes(q) ||
-        product.descripcion.toLowerCase().includes(q) ||
-        (product.barcode != null && String(product.barcode).toLowerCase().includes(q))
-      return matchVista && matchQ
-    })
-  }, [busqueda, catalogScope, products, vistaCatalogo])
+  const handleScanKeyDown = useCallback(
+    (event: React.KeyboardEvent<HTMLInputElement>) => {
+      if (event.key !== "Enter") return
+      event.preventDefault()
+      const query = busqueda
+      const match =
+        findCatalogProductByScanQuery(productosFiltrados, query) ??
+        findCatalogProductByScanQuery(products, query)
+      if (match) {
+        const kind =
+          "kind" in match && typeof match.kind === "string"
+            ? (match.kind as MenuCartItemKind)
+            : undefined
+        handleAddProduct(match.id, kind)
+        setBusqueda("")
+        return
+      }
+
+      void (async () => {
+        if (source === "sale") {
+          const res = await findSaleCatalogArticleByScan(popId, query)
+          if (!res.success || !res.article) return
+          const article = res.article
+          flushSync(() => {
+            mergeCatalogArticles?.([article])
+          })
+          handleAddProduct(article.id, "article")
+          setBusqueda("")
+          return
+        }
+        const res = await findMenuCatalogItemByScan(popId, query)
+        if (!res.success) return
+        if (res.article) {
+          const article = res.article
+          flushSync(() => {
+            mergeCatalogArticles?.([article])
+          })
+          handleAddProduct(article.id, "article")
+          setBusqueda("")
+          return
+        }
+        if (res.recipe) {
+          const recipe = res.recipe
+          flushSync(() => {
+            mergeCatalogRecipes?.([recipe])
+          })
+          handleAddProduct(recipe.id, "recipe")
+          setBusqueda("")
+        }
+      })()
+    },
+    [
+      busqueda,
+      handleAddProduct,
+      mergeCatalogArticles,
+      mergeCatalogRecipes,
+      popId,
+      products,
+      productosFiltrados,
+      source,
+    ],
+  )
+
+  const fetchNextPage = paged.fetchNextPage
+  const loadMore = useCallback(() => {
+    if (!paged.hasNextPage || paged.isFetchingNextPage) return
+    void fetchNextPage()
+  }, [fetchNextPage, paged.hasNextPage, paged.isFetchingNextPage])
+
+  useInfiniteScrollSentinel(
+    scrollRoot,
+    sentinel,
+    paged.hasNextPage && !paged.isFetchingNextPage && !loading,
+    loadMore,
+  )
 
   useEffect(() => {
     setVistaCatalogo((prev) =>
@@ -236,6 +350,16 @@ export function SaleCatalogBrowser({
     if (!keepScanFocused || loading) return
     refocusScan()
   }, [keepScanFocused, loading, refocusScan])
+
+  const itemsError = paged.error
+  const showGridSkeleton =
+    !error &&
+    (loading || (paged.isLoading && productosFiltrados.length === 0 && itemsFilter.section !== "promotions"))
+  const displayError = error ?? itemsError
+  const isEmpty =
+    !showGridSkeleton &&
+    !displayError &&
+    productosFiltrados.length === 0
 
   return (
     <div className={cn(layoutsOperarCatalogColumnClass, className)}>
@@ -288,50 +412,63 @@ export function SaleCatalogBrowser({
         />
 
         <div
+          ref={setCanvasScrollRef}
           className={cn(
             "min-h-0",
-            loading && !error
+            showGridSkeleton
               ? cn(layoutsOperarCatalogCanvasScrollClass)
-              : error
+              : displayError
                 ? "flex flex-1 flex-col p-6"
-                : productosFiltrados.length === 0
+                : isEmpty
                   ? "relative overflow-hidden p-0"
                   : cn(layoutsOperarCatalogCanvasScrollClass),
           )}
         >
-          {loading && !error ? (
+          {showGridSkeleton ? (
             <SaleCatalogBrowserSkeleton variant={modoVista} />
-          ) : error ? (
+          ) : displayError ? (
             <div className="flex min-h-[200px] flex-1 flex-col items-center justify-center gap-2 text-center">
-              <p className="max-w-md text-sm text-rose-300">{error}</p>
+              <p className="max-w-md text-sm text-rose-300">{displayError}</p>
             </div>
-          ) : productosFiltrados.length === 0 ? (
+          ) : isEmpty ? (
             <SaleCatalogEmptyMascot hasSearch={busqueda.trim().length > 0} />
           ) : (
-            <div
-              className={
-                modoVista === "grid"
-                  ? layoutsOperarCatalogGridClass
-                  : "flex flex-col gap-2"
-              }
-            >
-              {productosFiltrados.map((product) => {
+            <SaleCatalogVirtualGrid
+              items={productosFiltrados}
+              modoVista={modoVista}
+              scrollRoot={scrollRoot}
+              resetKey={`${itemsFilter.section}:${itemsFilter.categoryId ?? ""}:${itemsFilter.search}:${modoVista}`}
+              getItemKey={(product) => {
+                const productKind =
+                  "kind" in product && typeof product.kind === "string"
+                    ? (product.kind as MenuCartItemKind)
+                    : "article"
+                return `${productKind}:${product.id}`
+              }}
+              renderItem={(product) => {
                 const productKind =
                   "kind" in product && typeof product.kind === "string"
                     ? (product.kind as MenuCartItemKind)
                     : undefined
-
                 return (
                   <SaleCatalogProductCard
-                    key={`${productKind ?? "article"}:${product.id}`}
                     product={product}
                     variant={modoVista}
                     disabled={addDisabled}
                     onClick={() => handleAddProduct(product.id, productKind)}
                   />
                 )
-              })}
-            </div>
+              }}
+              footer={
+                paged.hasNextPage || paged.isFetchingNextPage ? (
+                  <SaleCatalogInfiniteFooter
+                    hasMore={paged.hasNextPage}
+                    loadingMore={paged.isFetchingNextPage}
+                    sentinelRef={setSentinelRef}
+                  />
+                ) : null
+              }
+            />
           )}
         </div>
       </section>

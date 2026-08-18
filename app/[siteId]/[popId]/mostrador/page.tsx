@@ -9,7 +9,6 @@ import { dataWorkspaceModuleHeaderVariant } from "@/components/layouts-module/Da
 import { useDataWorkspaceSidebar } from "@/components/layouts/useDataWorkspaceSidebar"
 import { usePopWorkspace } from "@/context/PopWorkspaceContext"
 import { useAuth } from "@/context/AuthContextSupabase"
-import withAuth from "@/hoc/withAuth"
 import { mostradorAccessFromKeys } from "@/lib/popWorkspaceAccess"
 import { Plus } from "lucide-react"
 import { useParams, useRouter } from "next/navigation"
@@ -104,4 +103,4 @@ function MostradorPage() {
   )
 }
 
-export default withAuth(MostradorPage)
+export default MostradorPage
