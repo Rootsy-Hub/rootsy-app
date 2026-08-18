@@ -105,8 +105,20 @@ export const LAYOUTS_TABLES_SCREEN_COMPONENTS: LayoutsTablesScreenComponentRow[]
   },
   {
     layer: "Tabla",
+    component: "Lienzo · planeta",
+    token: "rootsyplanet · 16% · blur 24 · respira",
+    source: "ROOTSY_LAYOUTS_TABLES_ATMOSPHERE",
+  },
+  {
+    layer: "Tabla",
+    component: "Hoja elevada",
+    token: "elevation.shadow.raised · radius.xlarge",
+    source: "dataWorkspaceTablesSheetClass",
+  },
+  {
+    layer: "Tabla",
     component: "Canvas cuerpo",
-    token: "elevation.surface · bruma-100",
+    token: "elevation.surface · bruma-50",
     source: "ROOTSY_LAYOUTS_TABLES_BODY.canvasBackground",
   },
   {
@@ -154,25 +166,25 @@ export const LAYOUTS_TABLES_SCREEN_COMPONENTS: LayoutsTablesScreenComponentRow[]
   {
     layer: "Footer",
     component: "Chrome paginación",
-    token: "layout.footer · sombra-950→800",
+    token: "layout.footer · white · bruma-200",
     source: "ROOTSY_LAYOUTS_TABLES_CHROME.footerBackground",
   },
   {
     layer: "Footer",
     component: "Conteo resultados",
-    token: "body.small · sombra-400 / textOnDark",
+    token: "body.small · bruma-500 / bruma-900",
     source: "getLayoutsTablesFooterTextStyle",
   },
   {
     layer: "Footer",
     component: "Select por página",
-    token: "form.control · dark sunken",
+    token: "form.control · light",
     source: "getLayoutsTablesFooterSelectStyle",
   },
   {
     layer: "Footer",
     component: "Nav páginas",
-    token: "icon-button · pos ghost · space.400",
+    token: "RootsIconButton · workspace ghost",
     source: "getLayoutsTablesFooterNavButtonStyle",
   },
 ]

@@ -45,6 +45,8 @@ import {
   ArticleTableDetailCell,
   ArticleTableImageCell,
   ArticleTableStockCell,
+  articleStockRowSignal,
+  resolveArticleStockSignal,
   articleTableArticleColumnClass,
   articleTableDetailColumnClass,
 } from "@/app/[siteId]/[popId]/articles/articlesTableCells"
@@ -1486,12 +1488,18 @@ export function ArticlesWorkspaceView() {
                         a.discountValue,
                       )
 
+                      const stockSignal = resolveArticleStockSignal(
+                        a.stockOnHand,
+                        a.minStockLevel,
+                      )
+
                       return (
                       <WorkspaceTableBodyRow
                         key={a.id}
                         index={i}
                         selected={selected.has(a.id)}
                         inactive={!a.isActive}
+                        signal={articleStockRowSignal(stockSignal)}
                       >
                         <WorkspaceTableSelectCell
                           tone="nature"
@@ -1588,6 +1596,7 @@ export function ArticlesWorkspaceView() {
                         <ArticleTableStockCell
                           stockOnHand={a.stockOnHand}
                           unitOfMeasure={a.unitOfMeasure}
+                          minStockLevel={a.minStockLevel}
                         />
                         {canUpdate || canDelete ? (
                           <TableCell className={workspaceTableLayoutActionsBodyCellClass}>

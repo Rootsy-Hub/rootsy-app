@@ -77,6 +77,17 @@ export const dataWorkspaceEntityCardsGridColumnMaxClass = "max-w-[22rem]"
 export const workspaceTableSurfaceClass =
   "bg-white dark:bg-white"
 
+/** Marco del listado — deja ver el lienzo (planeta) sin tocar toolbar ni filas. */
+export const dataWorkspaceTablesSheetFrameClass =
+  "relative z-1 flex min-h-0 flex-1 flex-col px-4 pb-4 pt-2.5"
+
+/** Hoja elevada — tabla + pie, opaca. */
+export const dataWorkspaceTablesSheetClass = cn(
+  "flex min-h-0 flex-1 flex-col overflow-hidden rounded-2xl",
+  "border border-[var(--rootsy-bruma-200)] bg-white",
+  rootsyElevationRaisedRestClass,
+)
+
 /** Scope raíz — tokens --wt-* (ver rootsyNaturePalette.css). */
 export const workspaceTableNatureScopeClass = "workspace-table-nature"
 
@@ -362,6 +373,7 @@ export function workspaceTableNatureBodyRowClassNames(
     selected?: boolean
     noHover?: boolean
     inactive?: boolean
+    signal?: "warning" | "danger"
   },
 ): string {
   const isEven = index % 2 === 0
@@ -382,6 +394,12 @@ export function workspaceTableNatureBodyRowClassNames(
         ? rowSurfaceHover
         : "hover:!bg-[var(--wt-surface-hover)]",
     options?.inactive && workspaceTableNatureBodyRowInactiveClass,
+    !options?.selected &&
+      options?.signal === "warning" &&
+      workspaceTableNatureBodyRowSignalWarningClass,
+    !options?.selected &&
+      options?.signal === "danger" &&
+      workspaceTableNatureBodyRowSignalDangerClass,
   )
 }
 
@@ -464,6 +482,20 @@ export const workspaceTableNatureStatusBadgeClass: Record<
   vencido:
     "border-[color-mix(in_srgb,#ef4444_25%,var(--rootsy-bruma-200))] bg-[color-mix(in_srgb,#ef4444_10%,white)] text-[#dc2626]",
 }
+
+/** Fila con señal de importancia — aviso / peligro (stock, vencido). */
+export const workspaceTableNatureBodyRowSignalWarningClass =
+  "!bg-[color-mix(in_srgb,#f59e0b_7%,var(--wt-surface))] shadow-[inset_3px_0_0_#f59e0b]"
+
+export const workspaceTableNatureBodyRowSignalDangerClass =
+  "!bg-[color-mix(in_srgb,#ef4444_8%,var(--wt-surface))] shadow-[inset_3px_0_0_#ef4444]"
+
+export const workspaceTableNatureStockOkClass =
+  "text-[var(--rootsy-savia-700)]"
+
+export const workspaceTableNatureStockWarningClass = "text-[#78350f]"
+
+export const workspaceTableNatureStockDangerClass = "text-[#dc2626]"
 
 export const workspaceTableNatureSkeletonTone = {
   bar: "animate-pulse rounded-sm bg-[var(--wt-skeleton)]",

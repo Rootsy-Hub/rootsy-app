@@ -191,14 +191,17 @@ export const workspaceTableLayoutInsetTableClass = cn(
   "border-separate border-spacing-0",
 )
 
-/** Barra de filtros — h-23 · toolbar elevation.overlay. */
+/** Barra de filtros — mismo aire que la hoja, el mundo se ve atrás. */
 export const dataWorkspaceListFiltersBarClass = cn(
-  "shrink-0 bg-white",
+  "relative z-1 shrink-0 px-4 pt-3",
 )
 
-/** Fila principal de filtros (PERÍODO / FILTROS / BUSCAR). */
-export const dataWorkspaceListFiltersBarRowClass =
-  "border-b border-[var(--rootsy-bruma-200)]"
+/** Fila principal de filtros (PERÍODO / FILTROS / BUSCAR) — cristal, no tapa. */
+export const dataWorkspaceListFiltersBarRowClass = cn(
+  "overflow-hidden rounded-2xl border border-[var(--rootsy-bruma-200)]",
+  "bg-[color-mix(in_srgb,white_78%,transparent)]",
+  "backdrop-blur-md backdrop-saturate-125",
+)
 
 export const dataWorkspaceListFiltersBarInnerClass = "h-23"
 

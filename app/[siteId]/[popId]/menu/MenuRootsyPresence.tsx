@@ -156,6 +156,8 @@ export function MenuRootsyPresence({
   return (
     <div ref={hostRef} className={cn(menuRootsyPresenceHostClass, className)}>
       <div className={menuRootsyPresenceStageClass}>
+        <span aria-hidden className={menuRootsyPresenceGroundClass} />
+
         {open && displayAdvice ? (
           <div
             id={panelId}
@@ -216,9 +218,9 @@ export function MenuRootsyPresence({
             open ? "Cerrar sugerencias de Rootsy" : "Abrir sugerencias de Rootsy"
           }
           onClick={() => setOpen((value) => !value)}
+          onMouseDown={(event) => event.preventDefault()}
           className={menuRootsyPresenceTriggerClass}
         >
-          <span aria-hidden className={menuRootsyPresenceGroundClass} />
           <Image
             src={
               open

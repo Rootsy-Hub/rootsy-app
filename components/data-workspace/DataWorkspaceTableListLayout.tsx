@@ -15,6 +15,10 @@ import {
   type DataWorkspaceListTableShellProps,
 } from "@/components/data-workspace/DataWorkspaceListTableShell"
 import {
+  dataWorkspaceTablesSheetClass,
+  dataWorkspaceTablesSheetFrameClass,
+} from "@/components/data-workspace/dataWorkspaceListStyles"
+import {
   dataWorkspaceListFiltersBarClass,
   dataWorkspaceListFiltersBarInnerClass,
   dataWorkspaceListFiltersBarRowClass,
@@ -163,11 +167,15 @@ export function DataWorkspaceTableListShell({
   ...props
 }: DataWorkspaceTableListShellProps) {
   return (
-    <DataWorkspaceListTableShell
-      variant="flush"
-      className={cn(workspaceTableLayoutListBodyScopeClass, className)}
-      {...props}
-    />
+    <div className={dataWorkspaceTablesSheetFrameClass}>
+      <div className={dataWorkspaceTablesSheetClass}>
+        <DataWorkspaceListTableShell
+          variant="flush"
+          className={cn(workspaceTableLayoutListBodyScopeClass, className)}
+          {...props}
+        />
+      </div>
+    </div>
   )
 }
 

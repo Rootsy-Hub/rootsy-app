@@ -37,20 +37,24 @@ function semanticHex(id: string): string {
 export type LayoutsTablesStatusId = "activo" | "pendiente" | "vencido"
 
 export const ROOTSY_LAYOUTS_TABLES_MANIFESTO =
-  "Listado workspace — header sombra fijo, toolbar bruma, tabla densa con filas alternadas, footer sombra con paginación. Sin paleta Nature: bruma · savia · sombra · funcional."
+  "Listado workspace — header universo, toolbar cristal, tabla densa, footer claro en la hoja. Sin paleta Nature en las celdas: bruma · savia · sombra · funcional."
 
 export const ROOTSY_LAYOUTS_TABLES_PRINCIPLES = [
   {
     title: "Chrome sombra",
-    detail: "Header y footer comparten gradiente sombra-950→800 · h layout.header (68px).",
+    detail: "Header universo · h-17. Footer claro en la hoja — voz, RootsIconButton, sin tapa oscura.",
   },
   {
     title: "Toolbar claro",
-    detail: "Filtros con form.control.shell.inline-icon · layout.toolbar 92px · composición FormUiToolbarListFilters.",
+    detail: "Cristal sobre el lienzo · form.control.shell.inline-icon · layout.toolbar 92px · misma hoja que la tabla.",
   },
   {
     title: "Tabla bruma",
     detail: "Head space.500 · filas space.600+100 · alternancia bruma-50/white · selección savia-100.",
+  },
+  {
+    title: "Mundo en el lienzo",
+    detail: "Planeta en susurro detrás de la hoja — no atraviesa celdas, toolbar ni pie.",
   },
   {
     title: "Acciones por capa",
@@ -80,7 +84,7 @@ export const ROOTSY_LAYOUTS_TABLES_ANATOMY = {
 
 export const ROOTSY_LAYOUTS_TABLES_CHROME = {
   headerBackground: `linear-gradient(180deg, ${hx("sombra", "950")} 0%, ${hx("sombra", "800")} 100%)`,
-  footerBackground: `linear-gradient(0deg, ${hx("sombra", "950")} 0%, ${hx("sombra", "800")} 100%)`,
+  footerBackground: elevationHex("elevation.surface.overlay"),
   titleColor: ROOTSY_COLOR_SEMANTIC.textOnDark,
   subtitleColor: hx("sombra", "300"),
   roleColor: hx("sombra", "400"),
@@ -91,8 +95,18 @@ export const ROOTSY_LAYOUTS_TABLES_CHROME = {
 } as const
 
 export const ROOTSY_LAYOUTS_TABLES_TOOLBAR = {
-  backgroundColor: elevationHex("elevation.surface.overlay"),
+  backgroundColor: `color-mix(in srgb, ${elevationHex("elevation.surface.overlay")} 78%, transparent)`,
   borderBottom: `1px solid ${borderHex("color.border")}`,
+  chromeToken: "white 78% · blur md · radius.xlarge",
+} as const
+
+/** Lienzo detrás de la hoja — planeta más callado que en bloques. */
+export const ROOTSY_LAYOUTS_TABLES_ATMOSPHERE = {
+  mistToken: "bruma-100 radial · cielo",
+  planetToken: "rootsyplanet · 16% · blur 24 · respira 14s",
+  veilToken: "máscara a bruma · el valle no se lee",
+  horizonToken: "savia/bruma · 1px · glow 11s",
+  productClass: "data-workspace-tables-atmosphere",
 } as const
 
 export const ROOTSY_LAYOUTS_TABLES_BODY = {
@@ -141,7 +155,7 @@ export const ROOTSY_LAYOUTS_TABLES_STATUS: Record<
 }
 
 export const ROOTSY_LAYOUTS_TABLES_FOOTER = {
-  textColor: ROOTSY_COLOR_SEMANTIC.textOnDark,
-  mutedColor: hx("sombra", "400"),
-  dotColor: hx("sombra", "500"),
+  textColor: hx("bruma", "900"),
+  mutedColor: hx("bruma", "500"),
+  dotColor: hx("bruma", "300"),
 } as const

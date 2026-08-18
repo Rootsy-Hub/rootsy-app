@@ -417,7 +417,7 @@ export function getLayoutsTablesFooterTextStyle(muted = false) {
 }
 
 export function getLayoutsTablesFooterNavButtonStyle() {
-  const surface = getIconButtonUiSurface("pos", "ghost")
+  const surface = getIconButtonUiSurface("workspace", "ghost")
   const sizePx = rootsySpacePx("400")
 
   return {
@@ -446,9 +446,9 @@ export function getLayoutsTablesFooterSelectStyle() {
     height: ROOTSY_FORM_CONTROL_HEIGHT_PX,
     paddingLeft: rootsySpacePx("150"),
     paddingRight: rootsySpacePx("150"),
-    backgroundColor: `color-mix(in srgb, ${hx("sombra", "700")} 65%, transparent)`,
-    border: `1px solid color-mix(in srgb, ${ROOTSY_COLOR_SEMANTIC.textOnDark} 10%, ${hx("sombra", "600")})`,
-    borderRadius: rootsySpacePx("050"),
+    backgroundColor: surface.backgroundColor,
+    border: surface.border,
+    borderRadius: ICON_BUTTON_UI_RADIUS_PX,
     color: ROOTSY_LAYOUTS_TABLES_FOOTER.textColor,
     fontFamily: "var(--rootsy-font-ui)",
     fontSize: ROOTSY_TEXT_STYLES["body.small"].fontSize,
@@ -487,7 +487,7 @@ export function getLayoutsTablesWireframeZoneStyle(kind: "chrome" | "toolbar" | 
     case "footer":
       return {
         background: ROOTSY_LAYOUTS_TABLES_CHROME.footerBackground,
-        borderTop: `1px solid ${chromeBorder}`,
+        borderTop: `1px solid ${contentBorder}`,
       }
   }
 }
