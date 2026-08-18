@@ -9,10 +9,7 @@ import {
 } from "@/components/auth/authPlanetPanelStyles"
 import "@/components/auth/authPlanetPanel.css"
 import "@/app/[siteId]/[popId]/menu/menuPlanetLife.css"
-import {
-  menuPlanetCoreLifeStyle,
-  menuPlanetLifeStyle,
-} from "@/lib/menu/menuHoloStyles"
+import { menuPlanetCoreLifeStyle } from "@/lib/menu/menuHoloStyles"
 import { cn } from "@/lib/utils"
 import type { ReactNode } from "react"
 
@@ -21,7 +18,6 @@ type Props = {
   className?: string
 }
 
-const entityLifeStyle = menuPlanetLifeStyle("auth-planet-entity")
 const entityCoreStyle = menuPlanetCoreLifeStyle("operar")
 
 /** Portal holográfico — entidad con presencia propia en el planeta Rootsy. */
@@ -31,7 +27,7 @@ export function AuthPlanetEntity({ children, className }: Props) {
       <div aria-hidden className="auth-planet-entity-aura" />
       <div aria-hidden className="auth-planet-entity-presence" />
 
-      <div className={authPlanetEntityBodyClass} style={entityLifeStyle}>
+      <div className={authPlanetEntityBodyClass}>
         <div aria-hidden className="auth-planet-entity-orbit" />
         <div aria-hidden className="auth-planet-entity-orbit auth-planet-entity-orbit--inner" />
         <div

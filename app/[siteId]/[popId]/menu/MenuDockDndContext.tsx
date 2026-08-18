@@ -300,24 +300,28 @@ function getSectionKeyFromDragItem(
 function MenuDockDragPreview({
   item,
   sectionKey,
+  kind,
 }: {
   item: MenuDockDragItem
   sectionKey: MenuSectionKey
+  kind: DragKind
 }) {
+  const fromMenu = kind === "menu"
   return (
     <div
       className={cn(
         "dark",
         menuNatureShellClass,
-        "pointer-events-none scale-[1.14] cursor-grabbing",
-        "drop-shadow-[0_8px_18px_rgba(0,0,0,0.18)]",
+        "pointer-events-none cursor-grabbing",
+        fromMenu ? "scale-[1.1]" : "scale-100",
+        "drop-shadow-[0_6px_14px_rgba(0,0,0,0.16)]",
       )}
     >
       <DockIconVisual
         icon={item.icon}
         sectionKey={sectionKey}
         variant="overlay"
-        size="lg"
+        size={fromMenu ? "md" : "lg"}
       />
     </div>
   )
@@ -680,11 +684,13 @@ export function MenuDockDndProvider({
             <MenuDockDragPreview
               item={draggingItem}
               sectionKey={draggingSectionKey}
+              kind="menu"
             />
           ) : showDockDragOverlay && draggingItem ? (
             <MenuDockDragPreview
               item={draggingItem}
               sectionKey={draggingSectionKey}
+              kind="dock"
             />
           ) : null}
         </DragOverlay>

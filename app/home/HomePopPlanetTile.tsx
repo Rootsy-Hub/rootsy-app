@@ -1,7 +1,6 @@
 "use client"
 
 import { MenuIconChrome } from "@/app/[siteId]/[popId]/menu/MenuIconChrome"
-import { homePlanetHaloClass } from "@/app/[siteId]/[popId]/menu/menuNatureStyles"
 import "@/app/[siteId]/[popId]/menu/menuPlanetLife.css"
 import {
   menuHoloFloatLiftClass,
@@ -37,15 +36,6 @@ export function HomePopPlanetTile({
 
   return (
     <div className="relative flex flex-col items-center">
-      <div
-        aria-hidden
-        className={cn(
-          "pointer-events-none absolute left-1/2 top-1/2 -z-10 -translate-x-1/2 -translate-y-1/2 rounded-full blur-3xl transition-opacity duration-700",
-          solo ? "size-44 sm:size-52" : "size-36",
-          homePlanetHaloClass(sectionKey),
-          alive ? "opacity-95" : "opacity-45",
-        )}
-      />
       <div
         className={cn(alive && menuHoloPlanetLifeClass)}
         style={alive ? lifeStyle : undefined}
