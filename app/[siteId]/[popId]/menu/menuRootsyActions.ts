@@ -131,7 +131,6 @@ export async function fetchMenuRootsySuggestionDetail(
   })
 
   const { message, hasDataSupport } = buildMenuRootsyDetailMessage(
-    context.popName,
     suggestion,
     insights,
   )

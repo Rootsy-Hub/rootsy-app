@@ -38,13 +38,13 @@ const menuSectionIconGradientByVariant: Record<
   },
   administrar: {
     default: cn(
-      "bg-gradient-to-br from-[#FBBF24] to-[#D97706]",
+      "bg-gradient-to-br from-[color:var(--nature-sea-400)] to-[color:var(--nature-sea-700)]",
       menuIconMacShadowClass,
     ),
-    dock: "bg-gradient-to-br from-[#FBBF24] to-[#D97706]",
+    dock: "bg-gradient-to-br from-[color:var(--nature-sea-400)] to-[color:var(--nature-sea-700)]",
     muted:
-      "bg-gradient-to-br from-[#FBBF24]/50 to-[#D97706]/50 shadow-none",
-    overlay: "bg-gradient-to-br from-[#FCD34D] to-[#E08E0B]",
+      "bg-gradient-to-br from-[color:var(--nature-sea-400)]/50 to-[color:var(--nature-sea-700)]/50 shadow-none",
+    overlay: "bg-gradient-to-br from-[color:var(--nature-sea-300)] to-[color:var(--nature-sea-600)]",
   },
   configurar: {
     default: cn(
@@ -89,7 +89,7 @@ const menuPlanetAmbientBySection: Record<MenuSectionKey, string> = {
   operar:
     "bg-[radial-gradient(ellipse_at_center,rgba(36,173,106,0.2)_0%,rgba(14,87,57,0.08)_38%,transparent_72%)]",
   administrar:
-    "bg-[radial-gradient(ellipse_at_center,rgba(217,119,6,0.2)_0%,rgba(146,88,12,0.08)_38%,transparent_72%)]",
+    "bg-[radial-gradient(ellipse_at_center,rgba(8,145,178,0.2)_0%,rgba(21,94,117,0.08)_38%,transparent_72%)]",
   configurar:
     "bg-[radial-gradient(ellipse_at_center,rgba(124,58,237,0.2)_0%,rgba(76,29,149,0.08)_38%,transparent_72%)]",
 }
@@ -97,7 +97,7 @@ const menuPlanetAmbientBySection: Record<MenuSectionKey, string> = {
 /** Orbes fijos — los tres mundos siempre presentes en el firmamento. */
 const menuPlanetOrbBySection: Record<MenuSectionKey, string> = {
   operar: "bg-[rgba(36,173,106,0.14)]",
-  administrar: "bg-[rgba(217,119,6,0.12)]",
+  administrar: "bg-[rgba(8,145,178,0.12)]",
   configurar: "bg-[rgba(124,58,237,0.12)]",
 }
 
@@ -117,14 +117,14 @@ export const menuVignetteSoftClass =
 
 /** Home — armonía de los tres mundos en un mismo cielo. */
 export const homeHarmonyWashClass =
-  "bg-[radial-gradient(ellipse_90%_75%_at_50%_52%,rgba(36,173,106,0.16)_0%,rgba(217,119,6,0.08)_40%,rgba(124,58,237,0.11)_62%,transparent_78%)]"
+  "bg-[radial-gradient(ellipse_90%_75%_at_50%_52%,rgba(36,173,106,0.16)_0%,rgba(8,145,178,0.1)_40%,rgba(124,58,237,0.11)_62%,transparent_78%)]"
 
 /** Halo local — el planeta ilumina su claro en el firmamento. */
 const homePlanetHaloBySection: Record<MenuSectionKey, string> = {
   operar:
     "bg-[radial-gradient(circle,rgba(36,173,106,0.42)_0%,rgba(14,87,57,0.14)_48%,transparent_74%)]",
   administrar:
-    "bg-[radial-gradient(circle,rgba(217,119,6,0.38)_0%,rgba(146,88,12,0.12)_48%,transparent_74%)]",
+    "bg-[radial-gradient(circle,rgba(8,145,178,0.38)_0%,rgba(21,94,117,0.12)_48%,transparent_74%)]",
   configurar:
     "bg-[radial-gradient(circle,rgba(124,58,237,0.38)_0%,rgba(76,29,149,0.12)_48%,transparent_74%)]",
 }
@@ -135,7 +135,7 @@ export function homePlanetHaloClass(section: MenuSectionKey): string {
 
 /** Horizonte — tierra y cielo se encuentran abajo. */
 export const homeHorizonGlowClass =
-  "bg-[radial-gradient(ellipse_130%_90%_at_50%_100%,rgba(36,173,106,0.1)_0%,rgba(217,119,6,0.05)_38%,transparent_68%)]"
+  "bg-[radial-gradient(ellipse_130%_90%_at_50%_100%,rgba(36,173,106,0.1)_0%,rgba(8,145,178,0.07)_38%,transparent_68%)]"
 
 /** Viñeta más abierta — deja respirar la luz. */
 export const homeVignetteClass =

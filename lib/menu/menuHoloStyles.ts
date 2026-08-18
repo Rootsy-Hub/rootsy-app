@@ -10,9 +10,9 @@ const menuHoloEase = "duration-500 ease-[cubic-bezier(0.33,1,0.68,1)]"
  * Tres planetas del mismo reinado — cada uno con su color y atmósfera,
  * compartiendo el mismo vidrio perfecto (translúcido, sin neón).
  *
- * Operar      → savia / canopy   (verde vivo)
- * Administrar → ámbar / tierra   (dorado cálido)
- * Configurar  → dusk / bruma     (violeta crepuscular)
+ * Operar      → savia / césped   (verde vivo)
+ * Administrar → mar / agua       (celeste profundo)
+ * Configurar  → dusk / ocaso     (violeta crepuscular)
  */
 const menuHoloGlassBase = cn(
   "relative isolate overflow-hidden border backdrop-blur-[4px]",
@@ -107,41 +107,41 @@ const menuHoloShellBySection: Record<
     default: cn(
       menuHoloGlassBase,
       "backdrop-saturate-[1.34]",
-      "border-[rgba(251,191,36,0.32)]",
-      "bg-[linear-gradient(168deg,rgba(252,211,77,0.19)_0%,rgba(217,119,6,0.15)_46%,rgba(120,72,16,0.24)_100%)]",
-      "shadow-[0_1px_0_rgba(255,255,255,0.12)_inset,0_1px_3px_rgba(0,0,0,0.22),0_6px_16px_rgba(0,0,0,0.16),0_10px_28px_rgba(146,88,12,0.2)]",
+      "border-[rgba(125,211,252,0.32)]",
+      "bg-[linear-gradient(168deg,rgba(186,230,253,0.19)_0%,rgba(8,145,178,0.15)_46%,rgba(21,94,117,0.24)_100%)]",
+      "shadow-[0_1px_0_rgba(255,255,255,0.12)_inset,0_1px_3px_rgba(0,0,0,0.22),0_6px_16px_rgba(0,0,0,0.16),0_10px_28px_rgba(14,78,99,0.2)]",
       menuHoloPlanetShellDepthClass,
     ),
     dock: cn(
       menuHoloGlassBase,
       "backdrop-saturate-[1.24]",
-      "border-[rgba(251,191,36,0.24)]",
-      "bg-[linear-gradient(168deg,rgba(252,211,77,0.13)_0%,rgba(217,119,6,0.1)_46%,rgba(120,72,16,0.18)_100%)]",
-      "shadow-[0_2px_4px_rgba(0,0,0,0.07),0_8px_18px_rgba(146,88,12,0.18)]",
+      "border-[rgba(125,211,252,0.24)]",
+      "bg-[linear-gradient(168deg,rgba(186,230,253,0.13)_0%,rgba(8,145,178,0.1)_46%,rgba(21,94,117,0.18)_100%)]",
+      "shadow-[0_2px_4px_rgba(0,0,0,0.07),0_8px_18px_rgba(14,78,99,0.18)]",
       menuHoloPlanetShellDepthClass,
     ),
     muted: cn(
       menuHoloGlassBase,
       "backdrop-saturate-[1.1]",
-      "border-[rgba(251,191,36,0.14)]",
-      "bg-[rgba(120,72,16,0.1)]",
+      "border-[rgba(125,211,252,0.14)]",
+      "bg-[rgba(21,94,117,0.1)]",
       "backdrop-blur-[2px]",
       "shadow-none",
     ),
     placed: cn(
       menuHoloGlassBase,
       "backdrop-saturate-[1.26]",
-      "border-[rgba(251,191,36,0.26)]",
-      "bg-[linear-gradient(168deg,rgba(252,211,77,0.14)_0%,rgba(217,119,6,0.11)_46%,rgba(120,72,16,0.16)_100%)]",
-      "shadow-[0_2px_4px_rgba(0,0,0,0.07),0_8px_20px_rgba(146,88,12,0.16)]",
+      "border-[rgba(125,211,252,0.26)]",
+      "bg-[linear-gradient(168deg,rgba(186,230,253,0.14)_0%,rgba(8,145,178,0.11)_46%,rgba(21,94,117,0.16)_100%)]",
+      "shadow-[0_2px_4px_rgba(0,0,0,0.07),0_8px_20px_rgba(14,78,99,0.16)]",
       menuHoloPlanetShellDepthClass,
     ),
     overlay: cn(
       menuHoloGlassBase,
       "backdrop-saturate-[1.34]",
-      "border-[rgba(253,224,71,0.34)]",
-      "bg-[linear-gradient(168deg,rgba(253,224,71,0.19)_0%,rgba(217,119,6,0.15)_46%,rgba(120,72,16,0.26)_100%)]",
-      "shadow-[0_4px_8px_rgba(0,0,0,0.1),0_12px_28px_rgba(146,88,12,0.26)]",
+      "border-[rgba(103,232,249,0.34)]",
+      "bg-[linear-gradient(168deg,rgba(103,232,249,0.19)_0%,rgba(8,145,178,0.15)_46%,rgba(21,94,117,0.26)_100%)]",
+      "shadow-[0_4px_8px_rgba(0,0,0,0.1),0_12px_28px_rgba(14,78,99,0.26)]",
       menuHoloPlanetShellDepthClass,
     ),
   },
@@ -209,8 +209,8 @@ const menuHoloHoverBySection: Record<MenuSectionKey, string> = {
     "group-hover:shadow-[0_1px_0_rgba(255,255,255,0.14)_inset,0_2px_5px_rgba(0,0,0,0.26),0_8px_20px_rgba(0,0,0,0.18),0_12px_32px_rgba(14,87,57,0.24),inset_0_1px_0_rgba(255,255,255,0.36),inset_0_-14px_22px_rgba(0,0,0,0.08)]",
   ),
   administrar: cn(
-    "group-hover:border-[rgba(251,191,36,0.34)]",
-    "group-hover:shadow-[0_1px_0_rgba(255,255,255,0.14)_inset,0_2px_5px_rgba(0,0,0,0.26),0_8px_20px_rgba(0,0,0,0.18),0_12px_32px_rgba(146,88,12,0.24),inset_0_1px_0_rgba(255,255,255,0.36),inset_0_-14px_22px_rgba(0,0,0,0.08)]",
+    "group-hover:border-[rgba(125,211,252,0.34)]",
+    "group-hover:shadow-[0_1px_0_rgba(255,255,255,0.14)_inset,0_2px_5px_rgba(0,0,0,0.26),0_8px_20px_rgba(0,0,0,0.18),0_12px_32px_rgba(14,78,99,0.24),inset_0_1px_0_rgba(255,255,255,0.36),inset_0_-14px_22px_rgba(0,0,0,0.08)]",
   ),
   configurar: cn(
     "group-hover:border-[rgba(167,139,250,0.34)]",
@@ -234,7 +234,7 @@ const menuHoloChromeCoreBySection: Record<MenuSectionKey, string> = {
   operar:
     "bg-[radial-gradient(circle_at_50%_62%,rgba(63,200,126,0.22)_0%,rgba(36,173,106,0.1)_40%,transparent_66%)]",
   administrar:
-    "bg-[radial-gradient(circle_at_50%_62%,rgba(251,191,36,0.22)_0%,rgba(217,119,6,0.1)_40%,transparent_66%)]",
+    "bg-[radial-gradient(circle_at_50%_62%,rgba(103,232,249,0.22)_0%,rgba(8,145,178,0.1)_40%,transparent_66%)]",
   configurar:
     "bg-[radial-gradient(circle_at_50%_62%,rgba(167,139,250,0.22)_0%,rgba(124,58,237,0.1)_40%,transparent_66%)]",
 }
@@ -244,7 +244,7 @@ const menuHoloChromeSkyBySection: Record<MenuSectionKey, string> = {
   operar:
     "bg-[radial-gradient(ellipse_110%_50%_at_50%_-6%,rgba(255,255,255,0.19)_0%,rgba(168,235,196,0.14)_30%,transparent_58%)]",
   administrar:
-    "bg-[radial-gradient(ellipse_110%_50%_at_50%_-6%,rgba(255,255,255,0.19)_0%,rgba(253,230,138,0.14)_30%,transparent_58%)]",
+    "bg-[radial-gradient(ellipse_110%_50%_at_50%_-6%,rgba(255,255,255,0.19)_0%,rgba(186,230,253,0.14)_30%,transparent_58%)]",
   configurar:
     "bg-[radial-gradient(ellipse_110%_50%_at_50%_-6%,rgba(255,255,255,0.19)_0%,rgba(221,214,254,0.14)_30%,transparent_58%)]",
 }
@@ -340,8 +340,8 @@ export function menuSectionPlanetDotClass(
       off: "size-1.5 bg-[rgba(111,216,156,0.38)]",
     },
     administrar: {
-      on: "size-2 bg-[rgba(251,191,36,0.95)] shadow-[0_0_10px_rgba(217,119,6,0.42)]",
-      off: "size-1.5 bg-[rgba(251,191,36,0.38)]",
+      on: "size-2 bg-[rgba(103,232,249,0.95)] shadow-[0_0_10px_rgba(8,145,178,0.42)]",
+      off: "size-1.5 bg-[rgba(103,232,249,0.38)]",
     },
     configurar: {
       on: "size-2 bg-[rgba(167,139,250,0.95)] shadow-[0_0_10px_rgba(124,58,237,0.42)]",
@@ -396,9 +396,9 @@ const menuHoloSkeletonIconBySection: Record<MenuSectionKey, string> = {
     "backdrop-blur-[3px] animate-pulse shadow-[0_2px_4px_rgba(0,0,0,0.07),0_8px_18px_rgba(14,87,57,0.14)]",
   ),
   administrar: cn(
-    "size-[72px] rounded-[20px] border border-[rgba(251,191,36,0.18)]",
-    "bg-[linear-gradient(165deg,rgba(252,211,77,0.1)_0%,rgba(120,72,16,0.16)_100%)]",
-    "backdrop-blur-[3px] animate-pulse shadow-[0_2px_4px_rgba(0,0,0,0.07),0_8px_18px_rgba(146,88,12,0.14)]",
+    "size-[72px] rounded-[20px] border border-[rgba(125,211,252,0.18)]",
+    "bg-[linear-gradient(165deg,rgba(186,230,253,0.1)_0%,rgba(21,94,117,0.16)_100%)]",
+    "backdrop-blur-[3px] animate-pulse shadow-[0_2px_4px_rgba(0,0,0,0.07),0_8px_18px_rgba(14,78,99,0.14)]",
   ),
   configurar: cn(
     "size-[72px] rounded-[20px] border border-[rgba(167,139,250,0.18)]",
@@ -426,7 +426,7 @@ const menuHoloFocusRingBySection: Record<MenuSectionKey, string> = {
   operar:
     "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgba(111,216,156,0.42)] focus-visible:ring-offset-2 focus-visible:ring-offset-transparent",
   administrar:
-    "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgba(251,191,36,0.42)] focus-visible:ring-offset-2 focus-visible:ring-offset-transparent",
+    "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgba(103,232,249,0.42)] focus-visible:ring-offset-2 focus-visible:ring-offset-transparent",
   configurar:
     "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgba(167,139,250,0.42)] focus-visible:ring-offset-2 focus-visible:ring-offset-transparent",
 }

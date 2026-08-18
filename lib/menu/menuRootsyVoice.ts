@@ -60,7 +60,6 @@ function slowVsPeakPercent(
 /** Una sola recomendación accionable con datos — sin meta ni preámbulos. */
 export function buildGuaranteedMetricOpportunity(
   insights: MenuRootsyBusinessInsights,
-  popName: string,
 ): MenuRootsyGrowthOpportunity | null {
   if (!insightsHasDisplayableData(insights)) return null
 
@@ -180,7 +179,7 @@ export function buildGuaranteedMetricOpportunity(
   if (insights.totalSales != null && insights.totalSales > 0) {
     return {
       id: "explore_statistics",
-      voice: `${formatMenuRootsyMoney(insights.totalSales)} vendidos ${insights.periodLabel} en ${popName}. Abrí Estadísticas y compará ticket vs margen por producto — ahí suele estar la palanca más clara.`,
+      voice: `${formatMenuRootsyMoney(insights.totalSales)} vendidos ${insights.periodLabel}. Abrí Estadísticas y compará ticket vs margen por producto — ahí suele estar la palanca más clara.`,
       ctaModuleKeys: ["statistics"],
     }
   }

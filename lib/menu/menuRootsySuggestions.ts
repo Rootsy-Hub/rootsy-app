@@ -69,7 +69,7 @@ export function buildMenuRootsyRuleAdvice(
   if (!catalogEntry) {
     return {
       title: "",
-      lead: formatRootsyEmptyPopLead(context.popName, rotationToken),
+      lead: formatRootsyEmptyPopLead(rotationToken),
       pulses: [],
       primaryCta: null,
       suggestions: [],
@@ -85,7 +85,6 @@ export function buildMenuRootsyRuleAdvice(
     title: catalogEntry.title,
     lead: formatRootsyBubbleLead(
       catalogEntry.teaser,
-      context.popName,
       dataBacked,
       catalogEntry.id,
       rotationToken,
