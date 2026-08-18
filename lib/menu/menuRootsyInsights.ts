@@ -3,11 +3,11 @@ import "server-only"
 import { getStatisticsSectionData } from "@/app/[siteId]/[popId]/statistics/actions"
 import type { PopAccessModule } from "@/app/home/homeUserDataTypes"
 import {
-  emptyMenuRootsyBusinessInsights,
   type MenuRootsyBusinessInsights,
   type MenuRootsyGrowthOpportunity,
   type MenuRootsyProductInsight,
 } from "@/lib/menu/menuRootsyInsightsShared"
+import { buildGuaranteedMetricOpportunity, formatMenuRootsyMoney, isMetaGenericVoice } from "@/lib/menu/menuRootsyVoice"
 import { MENU_ROOTSY_DAY_NAMES } from "@/lib/menu/menuRootsySignalsShared"
 import { computeSummaryDateBounds } from "@/lib/summaryDateFilter"
 import { unstable_cache } from "next/cache"
@@ -24,13 +24,31 @@ const EMPTY_FILTERS = {
 
 const INSIGHTS_CACHE_SECONDS = 3600
 
-function hasReadModule(
-  enabledModules: readonly PopAccessModule[],
-  keys: string[],
-): boolean {
-  return keys.some((key) =>
-    enabledModules.some((mod) => mod.key === key && mod.permissions?.read),
+function finalizeGrowthOpportunities(
+  partial: Omit<MenuRootsyBusinessInsights, "opportunities">,
+  opportunities: MenuRootsyGrowthOpportunity[],
+  popName: string,
+): MenuRootsyGrowthOpportunity[] {
+  const actionable = opportunities.filter(
+    (entry) => !isMetaGenericVoice(entry.voice),
   )
+  const guaranteed = buildGuaranteedMetricOpportunity(
+    { ...partial, opportunities: [] },
+    popName,
+  )
+
+  if (actionable.length === 0) {
+    return guaranteed ? [guaranteed] : actionable
+  }
+
+  const hasBusinessNumbers = actionable.some((entry) =>
+    /\$|%|\d/.test(entry.voice),
+  )
+  if (!hasBusinessNumbers && guaranteed) {
+    return [guaranteed, ...actionable]
+  }
+
+  return actionable
 }
 
 function jsToIsoWeekdayKey(day: number): string {
@@ -104,62 +122,94 @@ function deriveHourlyPatterns(
 }
 
 function formatMoney(value: number): string {
-  return `$${Math.round(value).toLocaleString("es-AR")}`
+  return formatMenuRootsyMoney(value)
+}
+
+function slowVsPeakPercent(slow: number, peak: number): number | null {
+  if (peak <= 0) return null
+  return Math.round((1 - slow / peak) * 100)
 }
 
 function buildGrowthOpportunities(
   insights: Omit<MenuRootsyBusinessInsights, "opportunities">,
 ): MenuRootsyGrowthOpportunity[] {
   const opportunities: MenuRootsyGrowthOpportunity[] = []
-
-  if (insights.peakHourLabel) {
-    opportunities.push({
-      id: "peak_hour_focus",
-      voice: `Conozco el ritmo de acá abajo. Los ${insights.todayWeekdayLabel}s, cerca de ${insights.peakHourLabel}, es cuando más respira el negocio — ahí conviene tener listo lo que más margen deja, sin necesidad de más tráfico.`,
-      ctaModuleKeys: ["statistics", "promotions"],
-    })
-  }
+  const marginProduct =
+    insights.hiddenGemProduct ?? insights.topProfitProduct
+  const volumeProduct = insights.topVolumeProduct
 
   if (
     insights.slowHourLabel &&
     insights.peakHourLabel &&
     insights.peakHourAvgSales != null &&
     insights.slowHourAvgSales != null &&
-    insights.peakHourAvgSales >= insights.slowHourAvgSales * 1.5
+    insights.peakHourAvgSales >= insights.slowHourAvgSales * 1.35
   ) {
+    const drop = slowVsPeakPercent(
+      insights.slowHourAvgSales,
+      insights.peakHourAvgSales,
+    )
+    const dropHint = drop != null && drop > 0 ? ` (~${drop}% menos que en el pico)` : ""
     opportunities.push({
       id: "promo_slow_hours",
-      voice: `Entre ${insights.slowHourLabel} y ${insights.peakHourLabel} los ${insights.todayWeekdayLabel}s el movimiento se afloja — lo siento en el piso. Una promo en ese valle puede levantar el día sin pelear con el horario fuerte.`,
+      voice: `Los ${insights.todayWeekdayLabel}s entre ${insights.slowHourLabel} y ${insights.peakHourLabel} cae el movimiento${dropHint}. Probá una promo acotada en ese valle — 2x1 o combo — sin tocar el pico de ${insights.peakHourLabel}.`,
       ctaModuleKeys: ["promotions", "statistics"],
     })
   }
 
-  const marginProduct =
-    insights.hiddenGemProduct ?? insights.topProfitProduct
-  const volumeProduct = insights.topVolumeProduct
+  if (insights.peakHourLabel && marginProduct) {
+    const peakHint =
+      insights.peakHourAvgSales != null && insights.peakHourAvgSales > 0
+        ? ` (~${formatMoney(insights.peakHourAvgSales)}/h)`
+        : ""
+    opportunities.push({
+      id: "peak_hour_focus",
+      voice: `Los ${insights.todayWeekdayLabel}s el pico cae cerca de ${insights.peakHourLabel}${peakHint}. Priorizá ${marginProduct.label} en mostrador en esa franja — es lo que más margen deja.`,
+      ctaModuleKeys: ["statistics", "promotions"],
+    })
+  } else if (insights.peakHourLabel) {
+    const peakHint =
+      insights.peakHourAvgSales != null && insights.peakHourAvgSales > 0
+        ? ` (~${formatMoney(insights.peakHourAvgSales)}/h)`
+        : ""
+    opportunities.push({
+      id: "peak_hour_focus",
+      voice: `Los ${insights.todayWeekdayLabel}s el pico cae cerca de ${insights.peakHourLabel}${peakHint}. Refuerzá personal y stock en esa hora antes de buscar más tráfico.`,
+      ctaModuleKeys: ["statistics", "promotions"],
+    })
+  }
+
   if (
     marginProduct &&
     volumeProduct &&
     marginProduct.label.trim().toLowerCase() !==
       volumeProduct.label.trim().toLowerCase()
   ) {
+    const profitHint =
+      marginProduct.profit > 0
+        ? ` (deja ~${formatMoney(marginProduct.profit)} de ganancia)`
+        : ""
     opportunities.push({
       id: "push_high_margin",
-      voice: `Veo algo lindo en tus números: ${marginProduct.label} te deja más ganancia que ${volumeProduct.label}, aunque no sea lo más vendido. Un empujón en mostrador — o una promo bien pensada — puede mover la aguja.`,
+      voice: `${marginProduct.label} rinde más que ${volumeProduct.label}${profitHint}, aunque no sea lo más vendido. Ponelo más visible en mostrador o armá un combo que lo empuje.`,
       ctaModuleKeys: ["promotions", "statistics"],
     })
   } else if (marginProduct) {
     opportunities.push({
       id: "push_high_margin",
-      voice: `${marginProduct.label} es lo que más margen te deja ${insights.periodLabel}. Lo tengo presente desde acá abajo: merece un poco más de protagonismo.`,
+      voice: `${marginProduct.label} es lo más rentable ${insights.periodLabel}. Ponelo al frente del mostrador o en la primera fila del menú.`,
       ctaModuleKeys: ["statistics", "promotions"],
     })
   }
 
   if (insights.avgTicket != null && insights.avgTicket > 0) {
+    const bump = Math.max(
+      300,
+      Math.round(insights.avgTicket * 0.12 / 100) * 100,
+    )
     opportunities.push({
       id: "raise_ticket",
-      voice: `Tu ticket promedio ${insights.periodLabel} ronda ${formatMoney(insights.avgTicket)}. No siempre hace falta más clientes — a veces alcanza con un combo o una sugerencia en mostrador que suba un poquito cada venta.`,
+      voice: `Tu ticket promedio ${insights.periodLabel} es ${formatMoney(insights.avgTicket)}. Sugerí un add-on o combo de ~${formatMoney(bump)} en mostrador para subir cada venta.`,
       ctaModuleKeys: ["promotions", "statistics"],
     })
   }
@@ -171,43 +221,35 @@ function buildGrowthOpportunities(
     ) {
       opportunities.push({
         id: "review_margin",
-        voice: `El margen bruto se afinó un poco este mes — bajó ${Math.abs(insights.grossMarginDeltaPoints).toFixed(1)} puntos vs el anterior. No es drama, pero conviene mirar el mix y los costos antes de que se haga costumbre.`,
+        voice: `El margen bruto bajó ${Math.abs(insights.grossMarginDeltaPoints).toFixed(1)} pts este mes (quedó en ${insights.grossMarginPercent.toFixed(0)}%). Revisá precio o costo de tus 3 productos más vendidos.`,
         ctaModuleKeys: ["statistics", "reports"],
       })
-    } else {
+    } else if (marginProduct) {
       opportunities.push({
         id: "mix_margin",
-        voice: `Con ${insights.grossMarginPercent.toFixed(0)}% de margen bruto ${insights.periodLabel}, el salto más honesto que veo es vender más de lo rentable y un poco menos de lo que come margen. El negocio ya tiene buena base.`,
-        ctaModuleKeys: ["statistics"],
+        voice: `Con margen bruto de ${insights.grossMarginPercent.toFixed(0)}% ${insights.periodLabel}, empujá ${marginProduct.label} y bajá protagonismo a lo que menos deja.`,
+        ctaModuleKeys: ["statistics", "promotions"],
       })
     }
   }
 
   if (insights.hasSalesData && insights.salesDeltaPercent != null) {
-    if (insights.salesDeltaPercent <= -8) {
+    if (insights.salesDeltaPercent <= -8 && insights.totalSales != null) {
       opportunities.push({
         id: "explore_statistics",
-        voice: `Las ventas van ${Math.abs(insights.salesDeltaPercent).toFixed(0)}% abajo vs el mes pasado — lo noto en el aire. Antes de apurarse, vale la pena ver en qué horarios o productos se enfría, y actuar con calma.`,
-        ctaModuleKeys: ["statistics"],
+        voice: `Las ventas cayeron ${Math.abs(insights.salesDeltaPercent).toFixed(0)}% vs el mes pasado (${formatMoney(insights.totalSales)} ${insights.periodLabel}). Revisá qué días u horarios se enfriaron y ajustá promo o mix ahí.`,
+        ctaModuleKeys: ["statistics", "promotions"],
       })
-    } else if (insights.salesDeltaPercent >= 12) {
+    } else if (insights.salesDeltaPercent >= 12 && insights.totalSales != null) {
+      const repeatHint = insights.peakHourLabel
+        ? ` Refuerzá ${insights.peakHourLabel} los ${insights.todayWeekdayLabel}s.`
+        : ""
       opportunities.push({
         id: "explore_statistics",
-        voice: `Vas ${insights.salesDeltaPercent.toFixed(0)}% arriba vs el mes pasado. Eso me hace feliz desde acá abajo. Mirá qué horarios y productos empujaron eso — repetir la fórmula es crecer con inteligencia.`,
+        voice: `Vas ${insights.salesDeltaPercent.toFixed(0)}% arriba (${formatMoney(insights.totalSales)} ${insights.periodLabel}). Repetí el mix y horario que empujaron eso.${repeatHint}`,
         ctaModuleKeys: ["statistics"],
       })
     }
-  }
-
-  if (
-    insights.hasSalesData &&
-    !opportunities.some((entry) => entry.id === "explore_statistics")
-  ) {
-    opportunities.push({
-      id: "explore_statistics",
-      voice: `Llevo un tiempo respirando este negocio ${insights.periodLabel}. En los números hay pistas sobre horarios pico, productos rentables y dónde ajustar el mix — cuando quieras las miramos juntos.`,
-      ctaModuleKeys: ["statistics"],
-    })
   }
 
   return opportunities
@@ -215,16 +257,11 @@ function buildGrowthOpportunities(
 
 async function loadMenuRootsyBusinessInsightsUncached(
   popId: string,
-  enabledModules: readonly PopAccessModule[],
+  _enabledModules: readonly PopAccessModule[],
+  popName: string,
   now: Date = new Date(),
 ): Promise<MenuRootsyBusinessInsights> {
   const weekdayLabel = MENU_ROOTSY_DAY_NAMES[now.getDay()] ?? "hoy"
-  const base = emptyMenuRootsyBusinessInsights(weekdayLabel)
-
-  const canSales = hasReadModule(enabledModules, ["sale"])
-  if (!canSales) {
-    return base
-  }
 
   const { from, to } = computeSummaryDateBounds("this_month", undefined)
   const weekdayKey = jsToIsoWeekdayKey(now.getDay())
@@ -304,13 +341,14 @@ async function loadMenuRootsyBusinessInsightsUncached(
   const marginMetric = profitData?.efficiencyRatios?.find(
     (entry) => entry.id === "margin-on-sales",
   )
+  const totalSales = metricValue(salesMetrics, "total")
 
   const partial: Omit<MenuRootsyBusinessInsights, "opportunities"> = {
     periodLabel: "este mes",
-    hasSalesData: Boolean(salesData && salesData.unavailable.length === 0),
+    hasSalesData: Boolean(salesData && totalSales != null),
     hasProductData: Boolean(productsData && productsData.unavailable.length === 0),
     hasProfitData: Boolean(profitData && profitData.unavailable.length === 0),
-    totalSales: metricValue(salesMetrics, "total"),
+    totalSales,
     salesDeltaPercent: metricDeltaPercent(salesMetrics, "total"),
     avgTicket: metricValue(salesMetrics, "ticket"),
     grossMarginPercent: marginMetric?.value ?? null,
@@ -327,7 +365,11 @@ async function loadMenuRootsyBusinessInsightsUncached(
 
   return {
     ...partial,
-    opportunities: buildGrowthOpportunities(partial),
+    opportunities: finalizeGrowthOpportunities(
+      partial,
+      buildGrowthOpportunities(partial),
+      popName,
+    ),
   }
 }
 
@@ -335,6 +377,7 @@ async function loadMenuRootsyBusinessInsightsUncached(
 export async function loadMenuRootsyBusinessInsights(
   popId: string,
   enabledModules: readonly PopAccessModule[],
+  popName: string,
 ): Promise<MenuRootsyBusinessInsights> {
   const dateBucket = new Date().toISOString().slice(0, 10)
   const cached = unstable_cache(
@@ -342,6 +385,7 @@ export async function loadMenuRootsyBusinessInsights(
       loadMenuRootsyBusinessInsightsUncached(
         popId,
         enabledModules,
+        popName,
         new Date(),
       ),
     ["menu-rootsy-insights", popId, dateBucket],

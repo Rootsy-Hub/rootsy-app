@@ -50,7 +50,11 @@ export async function fetchMenuRootsyAdvice(
 
   const [signals, insights] = await Promise.all([
     loadMenuRootsyOperationalSignals(popId, popAccess.enabledModules),
-    loadMenuRootsyBusinessInsights(popId, popAccess.enabledModules),
+    loadMenuRootsyBusinessInsights(
+      popId,
+      popAccess.enabledModules,
+      popAccess.pop.name,
+    ),
   ])
 
   const context = buildMenuRootsyContext({

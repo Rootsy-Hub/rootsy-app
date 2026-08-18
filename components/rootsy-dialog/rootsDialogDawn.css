@@ -1,0 +1,59 @@
+/**
+ * Chrome de diálogo — alba opaca, como el tono de los filtros, no vidrio.
+ * El bloque es sólido: la vida está en el clima, no en ver la tabla atrás.
+ */
+
+.roots-dialog-living-block {
+  background-color: var(--rootsy-bruma-50);
+  background-image:
+    radial-gradient(
+      ellipse 90% 42% at 50% -12%,
+      color-mix(in srgb, var(--rootsy-savia-100) 42%, var(--rootsy-bruma-50)) 0%,
+      transparent 72%
+    ),
+    radial-gradient(
+      ellipse 80% 36% at 50% 112%,
+      color-mix(in srgb, var(--rootsy-savia-200) 22%, transparent) 0%,
+      transparent 74%
+    );
+}
+
+.roots-dialog-dawn-chrome {
+  position: relative;
+  overflow: hidden;
+  background: linear-gradient(
+    180deg,
+    var(--rootsy-bruma-100) 0%,
+    color-mix(in srgb, var(--rootsy-savia-50) 28%, var(--rootsy-bruma-50)) 100%
+  );
+}
+
+.roots-dialog-dawn-chrome::after {
+  content: "";
+  pointer-events: none;
+  position: absolute;
+  z-index: 1;
+  inset-inline: 10%;
+  bottom: 0;
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    color-mix(in srgb, var(--rootsy-savia-400) 22%, var(--rootsy-bruma-200)) 50%,
+    transparent 100%
+  );
+  opacity: 0.55;
+}
+
+.roots-dialog-dawn-chrome--floor {
+  background: linear-gradient(
+    0deg,
+    var(--rootsy-bruma-100) 0%,
+    color-mix(in srgb, var(--rootsy-savia-50) 28%, var(--rootsy-bruma-50)) 100%
+  );
+}
+
+.roots-dialog-dawn-chrome--floor::after {
+  top: 0;
+  bottom: auto;
+}

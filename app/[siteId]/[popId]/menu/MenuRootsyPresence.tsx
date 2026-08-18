@@ -18,6 +18,7 @@ import { usePopOptimisticNav } from "@/context/PopOptimisticNavContext"
 import { buildMenuRootsyContext } from "@/lib/menu/menuRootsyContext"
 import { buildMenuRootsyAdviceCacheKey } from "@/lib/menu/menuRootsyCacheKey"
 import { buildMenuRootsyRuleAdvice } from "@/lib/menu/menuRootsySuggestions"
+import { isMetaGenericVoice } from "@/lib/menu/menuRootsyVoice"
 import type { MenuRootsyAdvice, MenuRootsySuggestion } from "@/lib/menu/menuRootsyTypes"
 import type { MenuSectionKey } from "@/lib/menuCatalog"
 import { cn } from "@/lib/utils"
@@ -65,6 +66,7 @@ export function MenuRootsyPresence({
   const { start: startOptimisticNav } = usePopOptimisticNav()
   const [open, setOpen] = useState(false)
   const [advice, setAdvice] = useState<MenuRootsyAdvice | null>(null)
+  const [dataPending, setDataPending] = useState(false)
   const [aiPending, setAiPending] = useState(false)
   const hostRef = useRef<HTMLDivElement>(null)
   const panelId = useId()
@@ -86,6 +88,7 @@ export function MenuRootsyPresence({
   }, [rootsyContext])
 
   const displayAdvice = advice ?? instantAdvice
+  const loadingAdvice = dataPending && !advice
   const primaryCta = displayAdvice ? resolvePrimaryCta(displayAdvice) : null
   const voiceAlreadyMentionsCta =
     primaryCta != null &&
@@ -140,31 +143,52 @@ export function MenuRootsyPresence({
 
     const cacheKey = adviceCacheKey(popAccess, siteId)
     const cached = cacheRef.current.get(cacheKey)
-    if (cached) {
+    if (cached && !isMetaGenericVoice(cached.lead)) {
       setAdvice(cached)
       return
     }
 
-    setAdvice(instantAdvice)
+    setAdvice(null)
     let cancelled = false
-    setAiPending(true)
+    setDataPending(true)
+    setAiPending(false)
 
     void fetchMenuRootsyAdvice({
       popId,
       siteId,
       sectionKey: "operar",
       sectionTitle: "Operar",
-      useAi: true,
+      useAi: false,
     }).then((result) => {
       if (cancelled) return
-      setAiPending(false)
-      if (!result.success) return
+      setDataPending(false)
+      if (!result.success) {
+        setAdvice(instantAdvice)
+        return
+      }
+
       cacheRef.current.set(cacheKey, result.advice)
       setAdvice(result.advice)
+
+      setAiPending(true)
+      void fetchMenuRootsyAdvice({
+        popId,
+        siteId,
+        sectionKey: "operar",
+        sectionTitle: "Operar",
+        useAi: true,
+      }).then((aiResult) => {
+        if (cancelled) return
+        setAiPending(false)
+        if (!aiResult.success) return
+        cacheRef.current.set(cacheKey, aiResult.advice)
+        setAdvice(aiResult.advice)
+      })
     })
 
     return () => {
       cancelled = true
+      setDataPending(false)
       setAiPending(false)
     }
   }, [
@@ -181,7 +205,7 @@ export function MenuRootsyPresence({
       <div className={menuRootsyPresenceStageClass}>
         <span aria-hidden className={menuRootsyPresenceGroundClass} />
 
-        {open && displayAdvice ? (
+        {open ? (
           <div
             id={panelId}
             role="dialog"
@@ -189,24 +213,32 @@ export function MenuRootsyPresence({
             className={menuRootsyPresencePanelClass}
           >
             <div className="px-4 py-4 sm:px-5 sm:py-4">
-              <p className={menuRootsyPresencePanelVoiceClass}>
-                {displayAdvice.lead}
-                {aiPending ? (
-                  <span className={menuRootsyPresenceThinkingClass}>
-                    {" "}
-                    …
-                  </span>
-                ) : null}
-              </p>
+              {loadingAdvice ? (
+                <p className={menuRootsyPresencePanelVoiceClass}>
+                  Estoy revisando tus números…
+                </p>
+              ) : displayAdvice ? (
+                <>
+                  <p className={menuRootsyPresencePanelVoiceClass}>
+                    {displayAdvice.lead}
+                    {aiPending ? (
+                      <span className={menuRootsyPresenceThinkingClass}>
+                        {" "}
+                        …
+                      </span>
+                    ) : null}
+                  </p>
 
-              {primaryCta && !voiceAlreadyMentionsCta ? (
-                <Link
-                  href={primaryCta.href}
-                  onClick={(event) => handleSuggestionClick(event, primaryCta)}
-                  className={menuRootsyPresenceVoiceLinkClass}
-                >
-                  {primaryCta.label}
-                </Link>
+                  {primaryCta && !voiceAlreadyMentionsCta ? (
+                    <Link
+                      href={primaryCta.href}
+                      onClick={(event) => handleSuggestionClick(event, primaryCta)}
+                      className={menuRootsyPresenceVoiceLinkClass}
+                    >
+                      {primaryCta.label}
+                    </Link>
+                  ) : null}
+                </>
               ) : null}
             </div>
           </div>

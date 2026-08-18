@@ -48,16 +48,16 @@ export const MODAL_UI_SCRIM_SPEC = {
   inset: "0",
   zIndex: ROOTSY_MODAL_ANATOMY.zIndex,
   note:
-    "Velo sombra-950 al 40% — atenúa la página, no la congela en cristal. Sin backdrop-blur en el scrim: el blur del chrome workspace no debe leerse como parte del modal.",
+    "Velo sombra-950 al 40% — atenúa la página, no la congela en cristal. Sin backdrop-blur en el scrim.",
 } as const
 
 /** Panel flotante — siempre emparejado surface.overlay + shadow.overlay. */
 export const MODAL_UI_PANEL_SURFACE_SPEC = {
   surfaceToken: ROOTSY_MODAL_SPECS.modal.surfaceToken,
   surfaceValue: elevationHex(ROOTSY_MODAL_SPECS.modal.surfaceToken),
-  borderToken: "color.border",
-  borderWidthToken: "border.width",
-  borderCss: `1px solid ${borderHex("color.border")}`,
+  borderToken: "none",
+  borderWidthToken: "0",
+  borderCss: "none",
   shadowToken: ROOTSY_MODAL_SPECS.modal.shadowToken,
   shadowValue: elevationShadow(ROOTSY_MODAL_SPECS.modal.shadowToken),
   pairRule: "elevation.surface.overlay + elevation.shadow.overlay — nunca mezclar con shadow.raised.",
@@ -99,7 +99,7 @@ export function getModalUiOverlaySpecRows(kind: "modal" | "alert" = "modal"): Ov
       role: "Panel · borde",
       token: MODAL_UI_PANEL_SURFACE_SPEC.borderToken,
       value: MODAL_UI_PANEL_SURFACE_SPEC.borderCss,
-      product: `${MODAL_UI_PANEL_SURFACE_SPEC.borderWidthToken} · bruma-200`,
+      product: "sin borde · el bloque lo dibuja la sombra",
     },
     {
       role: "Panel · sombra",
@@ -125,7 +125,7 @@ export function getModalUiOverlaySpecRows(kind: "modal" | "alert" = "modal"): Ov
             role: "Divisor header/footer",
             token: MODAL_UI_PANEL_SURFACE_SPEC.dividerToken,
             value: MODAL_UI_PANEL_SURFACE_SPEC.dividerCss,
-            product: "border-b header · border-t footer",
+            product: "header/footer alba · horizonte 1px",
           } satisfies OverlaySurfaceSpecRow,
         ]
       : [

@@ -1,9 +1,14 @@
 import {
-  MENU_ROOTSY_FALLBACK_GROWTH_TIPS,
   menuRootsyGrowthRotationSeed,
   pickMenuRootsyGrowthOpportunity,
   type MenuRootsyGrowthOpportunity,
 } from "@/lib/menu/menuRootsyInsightsShared"
+import {
+  buildGuaranteedMetricOpportunity,
+  insightsHasDisplayableData,
+  isMetaGenericVoice,
+  textContainsNumericData,
+} from "@/lib/menu/menuRootsyVoice"
 import type {
   MenuRootsyAdvice,
   MenuRootsyAllowedModule,
@@ -36,9 +41,18 @@ function toSuggestion(mod: MenuRootsyAllowedModule): MenuRootsySuggestion {
 }
 
 function growthOpportunityPool(context: MenuRootsyContext): MenuRootsyGrowthOpportunity[] {
-  const fromInsights = context.insights?.opportunities ?? []
+  const insights = context.insights
+  const fromInsights = (insights?.opportunities ?? []).filter(
+    (entry) => !isMetaGenericVoice(entry.voice),
+  )
   if (fromInsights.length > 0) return fromInsights
-  return MENU_ROOTSY_FALLBACK_GROWTH_TIPS
+
+  if (insights && insightsHasDisplayableData(insights)) {
+    const guaranteed = buildGuaranteedMetricOpportunity(insights, context.popName)
+    if (guaranteed) return [guaranteed]
+  }
+
+  return []
 }
 
 function pickPrimaryOpportunity(
@@ -68,20 +82,45 @@ function pickPrimaryCta(
   return fallback ? toSuggestion(fallback) : null
 }
 
+function voiceMentionsModule(voice: string, label: string): boolean {
+  return voice.toLowerCase().includes(label.trim().toLowerCase())
+}
+
+function appendSoftCta(voice: string, cta: MenuRootsySuggestion): string {
+  if (voiceMentionsModule(voice, cta.label)) return voice
+  return `${voice} Cuando quieras, en ${cta.label} lo exploramos juntos.`
+}
+
+function buildNoDataVoice(context: MenuRootsyContext): string {
+  return `Todavía no tengo ventas cargadas ${context.insights?.periodLabel ?? "este mes"} para armar una mejora concreta en ${context.popName}. Apenas haya movimiento, te digo qué empujar.`
+}
+
 function buildVoice(
   context: MenuRootsyContext,
   opportunity: MenuRootsyGrowthOpportunity | null,
   primaryCta: MenuRootsySuggestion | null,
 ): string {
   if (!opportunity) {
-    return `Vivo acá abajo, al lado de ${context.popName}, y aprendo su ritmo todos los días. Cuando quieras, miramos juntos dónde está la próxima oportunidad de crecer.`
+    if (context.insights && insightsHasDisplayableData(context.insights)) {
+      const guaranteed = buildGuaranteedMetricOpportunity(
+        context.insights,
+        context.popName,
+      )
+      if (guaranteed) {
+        return primaryCta
+          ? appendSoftCta(guaranteed.voice, primaryCta)
+          : guaranteed.voice
+      }
+    }
+
+    return buildNoDataVoice(context)
   }
 
-  if (primaryCta) {
-    return `${opportunity.voice} Si te pinta, podemos ver ${primaryCta.label}.`
-  }
+  const voice = primaryCta
+    ? appendSoftCta(opportunity.voice, primaryCta)
+    : opportunity.voice
 
-  return opportunity.voice
+  return voice
 }
 
 /** Consejo de Rootsy — voz propia, sin títulos ni chips. */
@@ -122,6 +161,17 @@ export function sanitizeMenuRootsyAdvice(
 
   const lead = raw.lead?.trim().slice(0, 420) || fallback.lead
   const primaryCta = suggestions[0] ?? fallback.primaryCta
+
+  const insightsHaveData =
+    context.insights != null && insightsHasDisplayableData(context.insights)
+
+  if (
+    insightsHaveData &&
+    (isMetaGenericVoice(lead) ||
+      (!textContainsNumericData(lead) && textContainsNumericData(fallback.lead)))
+  ) {
+    return fallback
+  }
 
   if (!primaryCta && !lead) {
     return fallback
