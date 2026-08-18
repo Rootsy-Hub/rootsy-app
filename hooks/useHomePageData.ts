@@ -4,6 +4,7 @@ import {
   getUserPopsAccessBatch,
   getUserProfileCache,
 } from "@/app/home/homeUserDataActions"
+import { canUserCreatePop } from "@/app/profile/actions"
 import {
   buildHomePopListFromAccess,
   buildUserProfileFullName,
@@ -14,6 +15,7 @@ import type {
   UserProfileCache,
 } from "@/app/home/homeUserDataTypes"
 import {
+  canUserCreatePopQueryKey,
   popAccessQueryKey,
   userPopIdsQueryKey,
   userPopsAccessBatchQueryKey,
@@ -52,6 +54,13 @@ export function useHomePageData(userId: string) {
     ...oneDayQueryOptions,
   })
 
+  const createPopQuery = useQuery({
+    queryKey: canUserCreatePopQueryKey(userId),
+    queryFn: canUserCreatePop,
+    enabled: queriesEnabled,
+    ...oneDayQueryOptions,
+  })
+
   const profile = profileQuery.data ?? cachedProfile ?? null
   const batch = batchQuery.data ?? cachedBatch
 
@@ -78,13 +87,23 @@ export function useHomePageData(userId: string) {
   const loadError = batchQuery.isError && !hasCachedBatch
 
   const refetchAll = async () => {
-    await Promise.all([profileQuery.refetch(), batchQuery.refetch()])
+    await Promise.all([
+      profileQuery.refetch(),
+      batchQuery.refetch(),
+      createPopQuery.refetch(),
+    ])
   }
+
+  const canCreatePop = createPopQuery.data?.canCreate === true
+  const createPopPending =
+    createPopQuery.isPending && createPopQuery.data === undefined
 
   return {
     profile,
     profileFullName: profile ? buildUserProfileFullName(profile) : "",
     pops,
+    canCreatePop,
+    createPopPending,
     isLoading,
     loadError,
     refetchAll,

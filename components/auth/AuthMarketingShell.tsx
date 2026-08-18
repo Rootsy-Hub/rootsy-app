@@ -40,7 +40,7 @@ export function AuthMarketingShell({
 }: Props) {
   return (
     <div
-      className="rootsy-theme-landing relative min-h-dvh overflow-hidden font-sans text-white"
+      className="rootsy-theme-landing relative h-dvh overflow-hidden font-sans text-white"
       style={{
         ["--font-canopy" as string]:
           "var(--font-nunito-sans), 'Nunito Sans', sans-serif",
@@ -48,8 +48,8 @@ export function AuthMarketingShell({
     >
       <AuthMarketingBackdrop />
 
-      <div className="relative z-10 flex min-h-dvh min-w-0 flex-col overflow-x-hidden lg:flex-row">
-        <div className="relative hidden min-h-dvh min-w-0 flex-1 lg:block">
+      <div className="relative z-10 flex h-dvh min-h-0 min-w-0 flex-col overflow-hidden lg:flex-row">
+        <div className="relative hidden h-dvh min-w-0 flex-1 lg:block">
           <AuthMarketingWorldAside
             kicker={asideKicker ?? asideWorldLine ?? asideEyebrow}
             title={asideTitle}
@@ -59,11 +59,11 @@ export function AuthMarketingShell({
 
         <main
           className={cn(
-            "relative flex min-h-dvh min-w-0 flex-1 justify-center overflow-x-hidden overflow-y-auto px-5 py-12 sm:px-8",
+            "relative flex h-dvh min-h-0 min-w-0 flex-1 justify-center overflow-x-hidden overflow-y-auto px-5 py-10 sm:px-8 sm:py-12",
             contentAlign === "start" ? "items-start" : "items-center",
           )}
         >
-          <div className={cn("relative w-full min-w-0 max-w-[26rem]", cardWidthClassName)}>
+          <div className={cn("relative w-full min-w-0 max-w-[26rem] pb-8", cardWidthClassName)}>
             <Link
               href="/"
               aria-label="Rootsy — inicio"

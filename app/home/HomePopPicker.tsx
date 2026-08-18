@@ -3,17 +3,11 @@
 import Link from "next/link"
 import type { ReactNode } from "react"
 import { Button } from "@/components/ui/button"
+import { HomeCreatePopTile, homePopTileTitleClass, homePopTileTitleMutedClass } from "@/app/home/HomeCreatePopTile"
 import { HomeLoadError } from "@/app/home/HomeLoadError"
 import { HomePopPlanetTile } from "@/app/home/HomePopPlanetTile"
 import type { HomePopListItem } from "@/app/home/homeUserDataTypes"
 import {
-  homeHarmonyWashClass,
-  homePlanetHaloClass,
-  menuPlanetAmbientWashClass,
-} from "@/app/[siteId]/[popId]/menu/menuNatureStyles"
-import {
-  menuHoloLabelClass,
-  menuHoloLabelDockPlacedClass,
   menuHoloSectionForSkeletonIndex,
   menuHoloTileMotionClass,
   menuHoloTileSkeletonIconForSection,
@@ -21,7 +15,6 @@ import {
   menuRealmChromeShellClass,
   menuRealmLightMutedClass,
 } from "@/lib/menu/menuHoloStyles"
-import type { MenuSectionKey } from "@/lib/menuCatalog"
 import { useHomePageData } from "@/hooks/useHomePageData"
 import { cn } from "@/lib/utils"
 
@@ -38,75 +31,17 @@ function initialsFromName(name: string): string {
   ).toUpperCase()
 }
 
-function popMetaLine(pop: HomePopListItem): string | null {
-  const parts: string[] = []
-  const sub = pop.subscription
-
-  if (sub.status === "trial" && sub.daysRemaining != null) {
-    parts.push(`Prueba · ${sub.daysRemaining} días`)
-  } else if (sub.isActive) {
-    parts.push("Activo")
-  } else {
-    parts.push("Inactivo")
-  }
-
-  parts.push(pop.siteId)
-
-  if (!pop.isOwner && pop.roleName) {
-    parts.push(pop.roleName)
-  }
-
-  if (sub.isActive && sub.planDisplayName) {
-    parts.push(sub.planDisplayName)
-    if (sub.businessTypeDisplayName) {
-      parts.push(sub.businessTypeDisplayName)
-    }
-  }
-
-  return parts.join(" · ")
-}
-
-function HomeConstellationStage({
-  sectionKey,
-  solo,
-  children,
-}: {
-  sectionKey: MenuSectionKey
-  solo: boolean
-  children: ReactNode
-}) {
+function HomeConstellationStage({ children }: { children: ReactNode }) {
   return (
-    <div
-      className={cn(
-        "relative flex w-full flex-col items-center",
-        solo ? "px-6 py-5 sm:px-8 sm:py-6" : "px-4 py-4 sm:px-6",
-      )}
-    >
-      <div
-        aria-hidden
-        className={cn(
-          "pointer-events-none absolute inset-0 rounded-[2rem] opacity-90",
-          solo ? menuPlanetAmbientWashClass(sectionKey) : homeHarmonyWashClass,
-          "home-constellation-wash",
-        )}
-      />
-      {solo ? (
-        <div
-          aria-hidden
-          className={cn(
-            "pointer-events-none absolute left-1/2 top-[38%] size-56 -translate-x-1/2 -translate-y-1/2 rounded-full blur-3xl opacity-80 sm:size-64",
-            homePlanetHaloClass(sectionKey),
-          )}
-        />
-      ) : null}
-      <div className="relative z-[1] w-full">{children}</div>
+    <div className="relative flex w-full flex-col items-center px-4 py-4 sm:px-6">
+      {children}
     </div>
   )
 }
 
 export function HomePopPickerSkeleton() {
   return (
-    <HomeConstellationStage sectionKey="operar" solo={false}>
+    <HomeConstellationStage>
       <ul
         className="mx-auto flex w-full max-w-3xl list-none flex-wrap justify-center gap-x-3 gap-y-6 sm:gap-x-4"
         aria-busy="true"
@@ -138,38 +73,58 @@ export function HomePopPickerSkeleton() {
 }
 
 export function HomePopPicker({ userId }: { userId: string }) {
-  const { pops, isLoading, loadError, refetchAll } = useHomePageData(userId)
+  const { pops, canCreatePop, createPopPending, isLoading, loadError, refetchAll } =
+    useHomePageData(userId)
 
   if (isLoading) return <HomePopPickerSkeleton />
   if (loadError) return <HomeLoadError onRetry={refetchAll} />
 
-  return <HomePopPickerCards pops={pops} />
+  return (
+    <HomePopPickerCards
+      pops={pops}
+      canCreatePop={canCreatePop}
+      createPopPending={createPopPending}
+    />
+  )
 }
 
-function HomePopPickerCards({ pops }: { pops: HomePopListItem[] }) {
+function HomePopPickerCards({
+  pops,
+  canCreatePop,
+  createPopPending,
+}: {
+  pops: HomePopListItem[]
+  canCreatePop: boolean
+  createPopPending: boolean
+}) {
   const isSoloPop = pops.length === 1
-  const primarySection = menuHoloSectionForSkeletonIndex(0)
+  const showCreateTile =
+    pops.length === 0 && (canCreatePop || createPopPending)
 
   return (
-    <HomeConstellationStage sectionKey={primarySection} solo={isSoloPop}>
+    <HomeConstellationStage>
       <ul
         className={cn(
           "mx-auto flex w-full list-none flex-wrap justify-center gap-x-3 gap-y-6 sm:gap-x-4",
           isSoloPop ? "max-w-[13rem]" : "max-w-3xl",
         )}
       >
-        {pops.length === 0 ? (
-          <li
-            className={cn(
-              "w-full max-w-md rounded-2xl px-6 py-10 text-center",
-              menuRealmChromeShellClass,
-            )}
-          >
-            <p className={cn("text-base leading-relaxed", menuRealmLightMutedClass)}>
-              No tenés puntos de venta asociados con acceso activo. Si esperabas
-              ver uno, pedí que te inviten o que activen tu rol en el POP.
-            </p>
+        {showCreateTile ? (
+          <li className="w-full max-w-[13rem]">
+            <HomeCreatePopTile />
           </li>
+        ) : pops.length === 0 ? (
+            <li
+              className={cn(
+                "w-full max-w-md rounded-2xl px-6 py-10 text-center",
+                menuRealmChromeShellClass,
+              )}
+            >
+              <p className={cn("text-base leading-relaxed", menuRealmLightMutedClass)}>
+                No tenés puntos de venta asociados con acceso activo. Si esperabas
+                ver uno, pedí que te inviten o que activen tu rol en el POP.
+              </p>
+            </li>
         ) : (
           pops.map((pop, index) => {
             const sectionKey = menuHoloSectionForSkeletonIndex(index)
@@ -179,7 +134,6 @@ function HomePopPickerCards({ pops }: { pops: HomePopListItem[] }) {
             const canEnter = pop.canEnter
             const menuHref = `/${pop.siteId}/${pop.id}/menu`
             const subscribeHref = `/${pop.siteId}/${pop.id}/subscribe`
-            const metaLine = popMetaLine(pop)
 
             const cardInner = (
               <>
@@ -193,22 +147,12 @@ function HomePopPickerCards({ pops }: { pops: HomePopListItem[] }) {
                 />
                 <span
                   className={cn(
-                    "mt-3 text-center line-clamp-2",
-                    canEnter ? menuHoloLabelClass : menuHoloLabelDockPlacedClass,
+                    "line-clamp-2",
+                    canEnter ? homePopTileTitleClass : homePopTileTitleMutedClass,
                   )}
                 >
                   {pop.name}
                 </span>
-                {metaLine ? (
-                  <span
-                    className={cn(
-                      "mt-1.5 max-w-[13rem] text-center text-xs leading-relaxed",
-                      menuRealmLightMutedClass,
-                    )}
-                  >
-                    {metaLine}
-                  </span>
-                ) : null}
               </>
             )
 

@@ -11,7 +11,7 @@ export const authPlanetEntityClass = cn(
 )
 
 export const authPlanetEntityBodyClass = cn(
-  "auth-planet-entity-body menu-planet-life relative overflow-hidden rounded-[1.35rem]",
+  "auth-planet-entity-body relative overflow-hidden rounded-[1.35rem]",
   "border border-[rgba(147,210,255,0.34)]",
   "bg-[linear-gradient(168deg,rgba(186,230,253,0.1)_0%,rgba(14,42,54,0.38)_52%,rgba(5,12,16,0.55)_100%)]",
   "backdrop-blur-[8px] backdrop-saturate-[1.22]",
