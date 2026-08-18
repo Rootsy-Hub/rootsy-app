@@ -115,6 +115,32 @@ export const menuVignetteClass =
 export const menuVignetteSoftClass =
   "bg-[radial-gradient(ellipse_at_center,transparent_0%,rgba(5,12,16,0.58)_100%)]"
 
+/** Home — armonía de los tres mundos en un mismo cielo. */
+export const homeHarmonyWashClass =
+  "bg-[radial-gradient(ellipse_90%_75%_at_50%_52%,rgba(36,173,106,0.16)_0%,rgba(217,119,6,0.08)_40%,rgba(124,58,237,0.11)_62%,transparent_78%)]"
+
+/** Halo local — el planeta ilumina su claro en el firmamento. */
+const homePlanetHaloBySection: Record<MenuSectionKey, string> = {
+  operar:
+    "bg-[radial-gradient(circle,rgba(36,173,106,0.42)_0%,rgba(14,87,57,0.14)_48%,transparent_74%)]",
+  administrar:
+    "bg-[radial-gradient(circle,rgba(217,119,6,0.38)_0%,rgba(146,88,12,0.12)_48%,transparent_74%)]",
+  configurar:
+    "bg-[radial-gradient(circle,rgba(124,58,237,0.38)_0%,rgba(76,29,149,0.12)_48%,transparent_74%)]",
+}
+
+export function homePlanetHaloClass(section: MenuSectionKey): string {
+  return homePlanetHaloBySection[section]
+}
+
+/** Horizonte — tierra y cielo se encuentran abajo. */
+export const homeHorizonGlowClass =
+  "bg-[radial-gradient(ellipse_130%_90%_at_50%_100%,rgba(36,173,106,0.1)_0%,rgba(217,119,6,0.05)_38%,transparent_68%)]"
+
+/** Viñeta más abierta — deja respirar la luz. */
+export const homeVignetteClass =
+  "bg-[radial-gradient(ellipse_at_center,transparent_0%,rgba(5,12,16,0.46)_100%)]"
+
 export const menuRoleLabelClass =
   "text-[color:var(--nature-canopy-300)]"
 

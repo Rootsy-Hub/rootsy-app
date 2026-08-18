@@ -1,17 +1,25 @@
 import Link from "next/link"
 import Image from "next/image"
 import { Download } from "lucide-react"
-import { Button } from "@/components/ui/button"
 import {
   HomeWorkspaceBackdrop,
-  homeWorkspaceSurfaceClass,
 } from "@/components/layouts/HomeWorkspaceBackdrop"
 import { PopGlassChrome } from "@/components/layouts/PopGlassChrome"
 import {
   menuHeaderFlexRowClass,
   menuHeaderHeightClass,
 } from "@/app/[siteId]/[popId]/menu/menuFloatingPillStyles"
+import { menuNatureShellClass } from "@/app/[siteId]/[popId]/menu/menuNatureStyles"
+import "@/app/library/color/rootsyNaturePalette.css"
+import "@/app/[siteId]/[popId]/menu/menuNaturePalette.css"
+import "@/app/home/homeHarmony.css"
 import { HomeHeaderUserCluster } from "@/app/home/HomeHeaderUserCluster"
+import {
+  menuRealmBodyClass,
+  menuRealmLightMutedClass,
+  menuRealmLightStaticClass,
+  menuRealmTitleClass,
+} from "@/lib/menu/menuHoloStyles"
 import { cn } from "@/lib/utils"
 import type { ReactNode } from "react"
 
@@ -34,7 +42,8 @@ export function HomePageChrome({
     <div
       className={cn(
         "relative flex h-screen flex-col overflow-hidden text-white",
-        homeWorkspaceSurfaceClass,
+        menuNatureShellClass,
+        "bg-background",
       )}
     >
       <HomeWorkspaceBackdrop />
@@ -47,7 +56,7 @@ export function HomePageChrome({
           <Link
             href="/home"
             aria-label="Rootsy — inicio"
-            className="inline-flex shrink-0 items-center rounded-md transition-opacity hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/45 focus-visible:ring-offset-2 focus-visible:ring-offset-[#070a09]"
+            className="inline-flex shrink-0 items-center rounded-md transition-opacity hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgba(255,255,255,0.22)] focus-visible:ring-offset-2 focus-visible:ring-offset-transparent"
           >
             <Image
               src="/rootsy-logo.svg"
@@ -67,7 +76,7 @@ export function HomePageChrome({
                   aria-hidden
                 />
               ) : (
-                <span className="truncate text-sm font-semibold text-zinc-100">
+                <span className={cn("truncate text-sm", menuRealmBodyClass)}>
                   {displayName}
                 </span>
               )}
@@ -81,44 +90,55 @@ export function HomePageChrome({
         </div>
       </PopGlassChrome>
 
-      <main className="relative z-10 mx-auto flex min-h-0 flex-1 w-full max-w-7xl flex-col items-center justify-center overflow-y-auto overflow-x-hidden px-5 pb-24 pt-14 sm:px-8 lg:px-10">
-        <section className="w-full max-w-4xl text-center">
-          <h1 className="text-balance text-4xl font-extrabold tracking-tight text-white sm:text-5xl">
-            {namePending ? (
-              <>
-                Bienvenid@{" "}
-                <span
-                  className="inline-block h-9 w-40 align-middle animate-pulse rounded-md bg-white/12 sm:h-11 sm:w-48"
-                  aria-hidden
-                />
-              </>
-            ) : (
-              <>Bienvenid@ {displayName}!</>
-            )}{" "}
-            <span className="inline-block origin-bottom-right animate-[wave_2.4s_ease-in-out_infinite]">
-              👋
-            </span>
-          </h1>
-          <p className="mt-6 text-lg text-white/70 sm:text-xl">
-            A que punto de venta queres ingresar?
-          </p>
+      <main className="relative z-10 mx-auto flex min-h-0 w-full max-w-7xl flex-1 flex-col overflow-x-hidden overflow-y-auto px-5 sm:px-8 lg:px-10">
+        <section className="flex min-h-0 flex-1 flex-col items-center justify-center py-6 sm:py-8">
+          <div className="w-full max-w-xl text-center">
+            <h1 className={cn("text-balance text-3xl sm:text-4xl", menuRealmTitleClass)}>
+              {namePending ? (
+                <>
+                  Bienvenid@{" "}
+                  <span
+                    className="inline-block h-8 w-36 align-middle animate-pulse rounded-md bg-white/12 sm:h-9 sm:w-44"
+                    aria-hidden
+                  />
+                </>
+              ) : (
+                <>Bienvenid@ {displayName}!</>
+              )}{" "}
+              <span className="inline-block origin-bottom-right animate-[wave_2.4s_ease-in-out_infinite]">
+                👋
+              </span>
+            </h1>
+            <p className={cn("mt-2 text-base sm:text-lg", menuRealmLightMutedClass)}>
+              A que punto de venta queres ingresar?
+            </p>
+          </div>
 
-          {children}
+          <div className="mt-7 w-full sm:mt-8">{children}</div>
         </section>
 
-        <div className="absolute bottom-10 left-1/2 flex -translate-x-1/2 items-center gap-4">
-          <p className="hidden text-sm text-white/52 sm:block">
-            Instala el sistema en tu compu y accede mas facil y rapido.
-          </p>
-          <Button
-            type="button"
-            variant="outline"
-            className="h-9 gap-2 rounded-lg border-white/20 bg-black/25 text-white/85 hover:bg-white/10 hover:text-white"
+        <footer className="mt-auto flex shrink-0 justify-center border-t border-white/[0.06] bg-black/10 px-4 py-4 backdrop-blur-sm sm:px-6 sm:py-5">
+          <div
+            className={cn(
+              "flex max-w-lg items-center gap-3 px-1 sm:px-2",
+            )}
           >
-            <Download className="size-4" />
-            Descargar
-          </Button>
-        </div>
+            <p className={cn("hidden text-sm sm:block", menuRealmLightMutedClass)}>
+              Instala el sistema en tu compu y accede mas facil y rapido.
+            </p>
+            <button
+              type="button"
+              className={cn(
+                "inline-flex h-9 shrink-0 items-center gap-2 rounded-lg px-3 text-sm transition-colors",
+                menuRealmLightStaticClass,
+                "hover:text-white",
+              )}
+            >
+              <Download className="size-4" aria-hidden />
+              Descargar
+            </button>
+          </div>
+        </footer>
       </main>
     </div>
   )

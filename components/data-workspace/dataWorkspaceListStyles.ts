@@ -1,5 +1,6 @@
 /** Tokens compartidos entre listados tipo “workspace” (layout preview, clientes, etc.). */
 
+import "@/components/data-workspace/dataWorkspaceBlocksAtmosphere.css"
 import {
   rootsyElevationInteractiveMotionClass,
   rootsyElevationRaisedHoverClass,
@@ -86,9 +87,9 @@ export const dataWorkspaceBlocksContentScopeClass = "min-h-full flex-1"
 export const dataWorkspaceBlocksContentInnerClass =
   "relative flex w-full flex-col gap-6 px-4 py-6 sm:px-6 lg:px-8"
 
-/** `<main>` bloques — tokens light sobre fondo bruma del módulo. */
+/** `<main>` bloques — bruma-50 + paisaje (neblina · savia · horizonte). */
 export const dataWorkspaceBlocksPageMainClass = cn(
-  "rootsy-app-light min-h-0 overflow-y-auto text-foreground",
+  "data-workspace-blocks-atmosphere rootsy-app-light min-h-0 overflow-y-auto text-foreground",
 )
 
 /** Contenedor de grid en listados cuentas / cajas. */
@@ -103,6 +104,15 @@ export const dataWorkspaceBlocksSkeletonTone = {
   barSm: "animate-pulse rounded-sm bg-[color-mix(in_srgb,var(--rootsy-bruma-200)_65%,white)]",
   box: "animate-pulse rounded-md bg-[var(--rootsy-bruma-200)]",
   pill: "animate-pulse rounded-md bg-[var(--rootsy-bruma-200)]",
+} as const
+
+/** Skeleton bloques — respiración lenta (espera que no cuenta el tiempo). */
+export const dataWorkspaceBlocksSkeletonBreathTone = {
+  bar: "data-workspace-blocks-breath rounded-sm bg-[var(--rootsy-bruma-200)]",
+  barSm:
+    "data-workspace-blocks-breath rounded-sm bg-[color-mix(in_srgb,var(--rootsy-bruma-200)_65%,white)]",
+  box: "data-workspace-blocks-breath rounded-md bg-[var(--rootsy-bruma-200)]",
+  pill: "data-workspace-blocks-breath rounded-md bg-[var(--rootsy-bruma-200)]",
 } as const
 
 /** Eyebrow / meta de tarjeta entidad. */

@@ -1,0 +1,21 @@
+/**
+ * El contenido emerge del firmamento — sin salto, sin espera visible.
+ */
+@keyframes menu-content-emerge {
+  from {
+    opacity: 0.88;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.menu-content-emerge {
+  animation: menu-content-emerge 900ms cubic-bezier(0.33, 1, 0.68, 1) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .menu-content-emerge {
+    animation: none;
+  }
+}

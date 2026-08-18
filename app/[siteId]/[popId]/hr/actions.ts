@@ -16,6 +16,11 @@ import {
   buildHrPermissionCatalogRows,
   type HrPermissionCatalogRow,
 } from "@/lib/hrPermissionCatalog"
+import {
+  ensureEmployeesFromMembers,
+  listPopEmployees,
+} from "@/app/[siteId]/[popId]/hr/employeeActions"
+import type { EmployeeRow } from "@/app/[siteId]/[popId]/hr/hrTypes"
 import { createClient } from "@/utils/supabase/server"
 import { createServiceRoleClient } from "@/utils/supabase/service-role"
 
@@ -92,9 +97,11 @@ export async function getPopHrDashboard(popId: string): Promise<
       popName: string
       isOwner: boolean
       canManageInvites: boolean
+      canManagePeople: boolean
       permissionKeys: string[]
       roles: PopRoleRow[]
       members: MemberRow[]
+      employees: EmployeeRow[]
       pendingInvites: PendingInviteRow[]
     }
   | { success: false; error: string; redirect?: string }
@@ -299,14 +306,24 @@ export async function getPopHrDashboard(popId: string): Promise<
       }
     }
 
+    await ensureEmployeesFromMembers(popId, members)
+    const peopleRes = await listPopEmployees(popId)
+    const employees = peopleRes.success ? peopleRes.employees : []
+    const canManagePeople =
+      owner ||
+      permissionKeysInclude(permSnapshot.keys, "hr", "create") ||
+      permissionKeysInclude(permSnapshot.keys, "hr", "update")
+
     return {
       success: true,
       popName: popRes.pop.name,
       isOwner: owner,
       canManageInvites: owner,
+      canManagePeople,
       permissionKeys: permSnapshot.keys,
       roles,
       members,
+      employees,
       pendingInvites,
     }
   } catch (e: unknown) {

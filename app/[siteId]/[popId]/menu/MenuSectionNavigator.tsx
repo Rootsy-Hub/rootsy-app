@@ -31,7 +31,7 @@ export function MenuSectionNavigator({
       role="tablist"
       aria-label="Secciones del menú"
       className={cn(
-        "mb-8 inline-flex max-w-full items-center justify-between gap-2.5 px-3.5 py-1 sm:min-w-48",
+        "inline-flex max-w-full items-center justify-between gap-2.5 px-3.5 py-1 sm:min-w-48",
         menuFloatingPillShellClass,
       )}
     >

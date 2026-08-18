@@ -1,0 +1,60 @@
+/**
+ * Paisaje bajo el trabajo — bloques.
+ * Bruma-50 sigue siendo el aire; savia y bruma-100 dibujan el parque atrás.
+ * @see layoutsBlocksHardcodedSpec · rootsyLayoutsModuleSystem fallback
+ */
+.data-workspace-blocks-atmosphere {
+  background-color: var(--rootsy-bruma-50);
+  background-image:
+    radial-gradient(
+      ellipse 90% 48% at 50% -6%,
+      color-mix(in srgb, var(--rootsy-bruma-100) 78%, transparent) 0%,
+      transparent 70%
+    ),
+    radial-gradient(
+      ellipse 58% 36% at 6% 108%,
+      color-mix(in srgb, var(--rootsy-savia-600) 12%, transparent) 0%,
+      transparent 74%
+    ),
+    radial-gradient(
+      ellipse 52% 32% at 96% 112%,
+      color-mix(in srgb, var(--rootsy-savia-500) 10%, transparent) 0%,
+      transparent 72%
+    ),
+    radial-gradient(
+      ellipse 88% 30% at 50% 122%,
+      color-mix(in srgb, var(--rootsy-savia-100) 70%, transparent) 0%,
+      transparent 64%
+    ),
+    radial-gradient(
+      ellipse 100% 22% at 50% 100%,
+      color-mix(in srgb, var(--rootsy-sombra-700) 5%, transparent) 0%,
+      transparent 72%
+    );
+  background-repeat: no-repeat;
+}
+
+/**
+ * Espera de bloques — neblina que respira.
+ * Estación (lenta) + brisa suave: el tiempo no se cuenta.
+ */
+@keyframes data-workspace-blocks-breath {
+  0%,
+  100% {
+    opacity: 0.4;
+  }
+  50% {
+    opacity: 0.86;
+  }
+}
+
+.data-workspace-blocks-breath {
+  animation: data-workspace-blocks-breath 2.8s cubic-bezier(0.4, 1, 0.6, 1) infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .data-workspace-blocks-breath {
+    animation: none;
+    opacity: 0.55;
+  }
+}

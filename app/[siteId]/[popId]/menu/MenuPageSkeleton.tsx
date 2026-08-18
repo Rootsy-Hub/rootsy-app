@@ -1,207 +1,31 @@
 "use client"
 
 import {
-  DOCK_EDIT_DIVIDER_HEIGHT_PX,
-  DOCK_ICON_SIZE_PX,
-  DOCK_SHELL_PADDING_X_PX,
-  DOCK_SHELL_PADDING_Y_PX,
-  DOCK_SLOT_SHIFT_PX,
-  DOCK_TRACK_HEIGHT_PX,
-  DOCK_TRACK_INSET_Y_PX,
-} from "@/app/[siteId]/[popId]/menu/MenuDockDndContext"
+  MENU_DORMANT_SECTIONS,
+  MenuDormantGrid,
+} from "@/app/[siteId]/[popId]/menu/MenuDormantField"
+import { MenuDormantDock } from "@/app/[siteId]/[popId]/menu/MenuDormantDock"
 import {
-  menuFloatingPillShellClass,
-  menuHeaderBorderClass,
-  menuHeaderChromeClass,
-  menuHeaderHeightClass,
-  menuHeaderRowClass,
-} from "@/app/[siteId]/[popId]/menu/menuFloatingPillStyles"
+  MenuSectionNavigator,
+} from "@/app/[siteId]/[popId]/menu/MenuSectionNavigator"
+import { MenuHeaderEntity } from "@/app/[siteId]/[popId]/menu/MenuHeaderEntity"
+import { menuHeaderRowClass } from "@/app/[siteId]/[popId]/menu/menuFloatingPillStyles"
 import {
-  menuHoloContactShadowForSection,
-  menuHoloSectionForSkeletonIndex,
-  menuHoloTileSkeletonIconForSection,
-  menuHoloTileSkeletonLabelClass,
-} from "@/lib/menu/menuHoloStyles"
-import {
+  menuAmbientTopGlowClass,
   menuNatureShellClass,
   menuPlanetAmbientWashClass,
   menuPlanetOrbClass,
-  menuAmbientTopGlowClass,
-  menuVignetteSoftClass,
+  menuVignetteClass,
 } from "@/app/[siteId]/[popId]/menu/menuNatureStyles"
 import "@/app/library/color/rootsyNaturePalette.css"
 import "@/app/[siteId]/[popId]/menu/menuNaturePalette.css"
-import { DEFAULT_MENU_DOCK_IDS } from "@/lib/menuCatalog"
-import { Skeleton } from "@/components/ui/skeleton"
+import "@/app/[siteId]/[popId]/menu/menuContentReveal.css"
+import { RootsIconButton } from "@/components/rootsy-button"
+import { menuSearchFieldIdleClass, menuSearchInputClass, menuSearchShellClass } from "@/app/[siteId]/[popId]/menu/menuSearchFieldStyles"
 import { cn } from "@/lib/utils"
+import { HelpCircle, Home, Search } from "lucide-react"
 
-const LABEL_WIDTHS = ["w-14", "w-16", "w-12", "w-[3.25rem]", "w-14", "w-11"] as const
-const SECTION_DOT_COUNT = 3
-
-function MenuIconTileSkeleton({ index }: { index: number }) {
-  const labelWidth = LABEL_WIDTHS[index % LABEL_WIDTHS.length]
-  const delay = `${(index % 12) * 45}ms`
-  const sectionKey = menuHoloSectionForSkeletonIndex(index)
-
-  return (
-    <div
-      aria-hidden
-      className="group flex h-[7.125rem] w-24 flex-col items-center gap-2.5 justify-self-center"
-      style={{ animationDelay: delay }}
-    >
-      <div className="relative flex flex-col items-center">
-        <div aria-hidden className={menuHoloContactShadowForSection(sectionKey)} />
-        <div
-          aria-hidden
-          className={cn(
-            menuHoloTileSkeletonIconForSection(sectionKey),
-            "relative z-[1]",
-          )}
-          style={{ animationDelay: delay }}
-        />
-      </div>
-      <div
-        aria-hidden
-        className={cn(menuHoloTileSkeletonLabelClass, labelWidth)}
-        style={{ animationDelay: delay }}
-      />
-    </div>
-  )
-}
-
-function MenuSectionNavigatorSkeleton() {
-  return (
-    <div
-      aria-hidden
-      className={cn(
-        "mb-8 inline-flex max-w-full items-center justify-between gap-2.5 px-3.5 py-1 sm:min-w-48",
-        menuFloatingPillShellClass,
-      )}
-    >
-      <Skeleton className="h-3.5 w-14 rounded-sm bg-muted-foreground/12" />
-
-      <div className="flex shrink-0 items-center -space-x-1">
-        {Array.from({ length: SECTION_DOT_COUNT }, (_, index) => (
-          <div
-            key={index}
-            className="flex size-7 items-center justify-center"
-          >
-            <Skeleton
-              className={cn(
-                "rounded-full bg-muted-foreground/12",
-                index === 0 ? "size-2" : "size-1.5",
-              )}
-            />
-          </div>
-        ))}
-      </div>
-    </div>
-  )
-}
-
-function MenuPageSkeletonHeader() {
-  return (
-    <header
-      className={cn(
-        "relative z-20 border-b",
-        menuHeaderBorderClass,
-        menuHeaderChromeClass,
-        menuHeaderHeightClass,
-      )}
-    >
-      <div className={menuHeaderRowClass}>
-        <div className="flex min-w-0 items-center gap-6">
-          <Skeleton className="size-12 shrink-0 rounded-xl bg-muted-foreground/10" />
-          <div className="flex min-w-0 items-center gap-4">
-            <Skeleton className="size-12 shrink-0 rounded-2xl bg-muted-foreground/12" />
-            <div className="flex min-w-0 flex-col gap-1.5">
-              <Skeleton className="h-4 w-32 max-w-full rounded-md bg-muted-foreground/14" />
-              <Skeleton className="h-3.5 w-44 max-w-full rounded-md bg-muted-foreground/10" />
-              <Skeleton className="h-3.5 w-36 max-w-full rounded-md bg-muted-foreground/8" />
-            </div>
-          </div>
-        </div>
-
-        <Skeleton className="h-10 w-full rounded-xl bg-muted-foreground/10" />
-
-        <div className="flex min-w-0 items-center justify-end gap-6">
-          <div className="flex items-center gap-1">
-            <Skeleton className="size-10 rounded-xl bg-muted-foreground/8" />
-          </div>
-          <div className="hidden h-6 w-px bg-border sm:block" />
-          <div className="hidden shrink-0 flex-col items-end gap-1.5 sm:flex">
-            <Skeleton className="h-5 w-14 rounded-md bg-muted-foreground/12" />
-            <Skeleton className="h-3 w-16 rounded-full bg-muted-foreground/8" />
-          </div>
-          <div className="hidden h-6 w-px bg-border sm:block" />
-          <div className="flex items-center gap-3">
-            <div className="hidden min-w-0 flex-col items-end gap-1.5 sm:flex">
-              <Skeleton className="h-3.5 w-24 rounded-md bg-muted-foreground/10" />
-              <Skeleton className="h-2.5 w-12 rounded-full bg-muted-foreground/8" />
-            </div>
-            <Skeleton className="size-10 shrink-0 rounded-full bg-muted-foreground/12" />
-          </div>
-        </div>
-      </div>
-    </header>
-  )
-}
-
-function MenuPageSkeletonDock() {
-  const iconCount = DEFAULT_MENU_DOCK_IDS.length
-  const trackWidth = iconCount * DOCK_SLOT_SHIFT_PX
-  const iconInset = (DOCK_SLOT_SHIFT_PX - DOCK_ICON_SIZE_PX) / 2
-
-  return (
-    <div className="absolute bottom-2 left-1/2 z-20 -translate-x-1/2">
-      <div
-        className={cn("flex items-end overflow-visible", menuFloatingPillShellClass)}
-        style={{
-          paddingTop: DOCK_SHELL_PADDING_Y_PX,
-          paddingBottom: DOCK_SHELL_PADDING_Y_PX,
-          paddingLeft: DOCK_SHELL_PADDING_X_PX,
-          paddingRight: DOCK_SHELL_PADDING_X_PX,
-          gap: DOCK_SHELL_PADDING_X_PX,
-        }}
-      >
-        <div
-          aria-hidden
-          className="relative shrink-0"
-          style={{ width: trackWidth, height: DOCK_TRACK_HEIGHT_PX }}
-        >
-          {Array.from({ length: iconCount }, (_, index) => (
-            <Skeleton
-              key={index}
-              className="absolute size-12 rounded-[22%] bg-muted-foreground/12"
-              style={{
-                bottom: DOCK_TRACK_INSET_Y_PX,
-                left: index * DOCK_SLOT_SHIFT_PX + iconInset,
-                animationDelay: `${index * 60}ms`,
-              }}
-            />
-          ))}
-        </div>
-
-        <div
-          className="flex shrink-0 items-center self-end"
-          style={{
-            height: DOCK_ICON_SIZE_PX,
-            marginBottom: DOCK_TRACK_INSET_Y_PX,
-            gap: DOCK_SHELL_PADDING_X_PX,
-          }}
-        >
-          <div
-            className="w-px shrink-0 bg-border"
-            style={{ height: DOCK_EDIT_DIVIDER_HEIGHT_PX }}
-            aria-hidden
-          />
-          <Skeleton className="size-8 rounded-xl bg-muted-foreground/10" />
-        </div>
-      </div>
-    </div>
-  )
-}
-
+/** Mismo firmamento que el menú — planetas en reposo, sin salto visual al hidratar. */
 export function MenuPageSkeleton() {
   return (
     <div
@@ -216,7 +40,7 @@ export function MenuPageSkeleton() {
             key={sectionKey}
             aria-hidden
             className={cn(
-              "absolute rounded-full blur-[150px] opacity-60",
+              "absolute rounded-full blur-[150px] opacity-45",
               menuPlanetOrbClass(sectionKey),
             )}
             style={{
@@ -232,29 +56,77 @@ export function MenuPageSkeleton() {
           aria-hidden
           className={cn("absolute inset-0", menuPlanetAmbientWashClass("operar"))}
         />
-        <div className={cn("absolute top-0 left-1/2 h-[400px] w-[1000px] -translate-x-1/2 rounded-full blur-[120px]", menuAmbientTopGlowClass)} />
-        <div className={cn("absolute inset-0", menuVignetteSoftClass)} />
+        <div
+          className={cn(
+            "absolute top-0 left-1/2 h-[400px] w-[1000px] -translate-x-1/2 rounded-full blur-[120px]",
+            menuAmbientTopGlowClass,
+          )}
+        />
+        <div className={cn("absolute inset-0", menuVignetteClass)} />
       </div>
 
-      <MenuPageSkeletonHeader />
+      <MenuHeaderEntity>
+          <div className={menuHeaderRowClass}>
+          <div className="flex min-w-0 items-center gap-6">
+            <RootsIconButton
+              href="/home"
+              tone="ghost"
+              surface="dark"
+              size="large"
+              label="Ir al inicio"
+            >
+              <Home aria-hidden />
+            </RootsIconButton>
+          </div>
 
-      <div className="relative z-10 flex flex-1 flex-col items-center justify-center pb-28 pt-4">
-        <div className="flex w-full flex-col items-center">
-          <MenuSectionNavigatorSkeleton />
-
-          <div className="w-full px-8">
-            <div className="mx-auto grid min-h-[280px] max-w-4xl grid-cols-6 gap-x-0 gap-y-8 px-6 py-6">
-              {Array.from({ length: 12 }, (_, index) => (
-                <MenuIconTileSkeleton key={index} index={index} />
-              ))}
+          <div className="w-full justify-self-center">
+            <div className={menuSearchShellClass}>
+              <Search
+                className="pointer-events-none absolute left-4 top-1/2 size-4 -translate-y-1/2 text-white/40"
+                aria-hidden
+              />
+              <input
+                readOnly
+                tabIndex={-1}
+                aria-hidden
+                placeholder="Buscar..."
+                className={cn(menuSearchInputClass, menuSearchFieldIdleClass, "pointer-events-none")}
+              />
             </div>
           </div>
+
+          <div className="flex min-w-0 items-center justify-end gap-6 opacity-60">
+            <span className="text-lg tabular-nums text-white/70">--:--</span>
+          </div>
+        </div>
+      </MenuHeaderEntity>
+
+      <div className="relative z-10 flex min-h-0 flex-1 flex-col pb-[5.75rem]">
+        <div className="flex min-h-0 flex-1 flex-col items-center justify-center pt-2">
+          <MenuDormantGrid />
+        </div>
+
+        <div className="pointer-events-none flex shrink-0 justify-center px-4 pt-5 pb-2 opacity-95">
+          <MenuSectionNavigator
+            sections={[...MENU_DORMANT_SECTIONS]}
+            selectedIndex={0}
+            onSelect={() => {}}
+          />
         </div>
       </div>
 
-      <MenuPageSkeletonDock />
+      <MenuDormantDock />
 
-      <Skeleton className="absolute bottom-4 right-4 z-20 size-12 rounded-full bg-muted-foreground/10" />
+      <RootsIconButton
+        type="button"
+        tone="ghost"
+        surface="dark"
+        size="large"
+        label="Ayuda"
+        className="absolute bottom-4 right-4 z-20 rounded-full opacity-70"
+      >
+        <HelpCircle aria-hidden />
+      </RootsIconButton>
 
       <span className="sr-only">Cargando menú…</span>
     </div>

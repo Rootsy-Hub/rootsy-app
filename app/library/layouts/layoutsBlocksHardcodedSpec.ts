@@ -42,7 +42,25 @@ export const LAYOUTS_BLOCKS_LAYOUT_SPEC_ROWS = [
     role: "Fondo contenido",
     token: LAYOUTS_BLOCKS_GRID_SPEC.contentBackgroundToken,
     value: LAYOUTS_BLOCKS_GRID_SPEC.contentBackground,
-    product: "layout.module.content · bruma-50",
+    product: "layout.module.content · bruma-50 · paisaje",
+  },
+  {
+    role: "Fondo · neblina",
+    token: "layout.blocks.atmosphere.mist",
+    value: "bruma-100 radial · cielo",
+    product: "data-workspace-blocks-atmosphere",
+  },
+  {
+    role: "Fondo · vida",
+    token: "layout.blocks.atmosphere.grove",
+    value: "savia-600/500 · 10–12% · horizonte",
+    product: "data-workspace-blocks-atmosphere",
+  },
+  {
+    role: "Fondo · prado",
+    token: "layout.blocks.atmosphere.meadow",
+    value: "savia-100 · 70% · piso",
+    product: "data-workspace-blocks-atmosphere",
   },
   {
     role: "Grid · columnas",

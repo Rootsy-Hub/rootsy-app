@@ -29,6 +29,7 @@ export type HrInviteResult = {
 type Props = {
   open: boolean
   roles: PopRoleRow[]
+  initialEmail?: string
   saving: boolean
   error: string | null
   result: HrInviteResult | null
@@ -45,6 +46,7 @@ type Props = {
 export function HrInviteDialog({
   open,
   roles,
+  initialEmail = "",
   saving,
   error,
   result,
@@ -66,8 +68,9 @@ export function HrInviteDialog({
       setCopied(false)
       return
     }
+    setEmail(initialEmail)
     setRoleId((prev) => prev || roles[0]?.id || "")
-  }, [open, roles])
+  }, [open, roles, initialEmail])
 
   const canSubmit = email.trim().length > 0 && Boolean(roleId) && roles.length > 0
 
@@ -123,8 +126,8 @@ export function HrInviteDialog({
           <RootsDialogForm onSubmit={handleSubmit}>
             <RootsDialogHeader
               open={open}
-              title="Invitar al equipo"
-              description="Escribí el correo de alguien que ya tenga cuenta en Rootsy. Le llega un enlace para entrar a este local."
+              title="Dar acceso a Rootsy"
+              description="Esto no la carga al negocio: es para que pueda abrir Rootsy en este local. Tiene que tener cuenta."
             />
             <RootsDialogBody className="space-y-4">
               {roles.length === 0 ? (
@@ -155,7 +158,7 @@ export function HrInviteDialog({
                     value={roleId}
                     onValueChange={setRoleId}
                     placeholder="Elegir rol"
-                    hint="Define qué puede ver y hacer en este local."
+                    hint="Qué puede hacer cuando abre Rootsy en este local."
                   >
                     {roles.map((role) => (
                       <RootsFormSelectItem key={role.id} value={role.id}>

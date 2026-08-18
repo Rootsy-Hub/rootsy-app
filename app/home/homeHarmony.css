@@ -1,0 +1,49 @@
+/**
+ * Home — respiración del firmamento; los tres mundos pulsan en armonía.
+ */
+@keyframes home-orb-breathe {
+  0%,
+  100% {
+    opacity: 0.58;
+    transform: translate(-50%, -50%) scale(1);
+  }
+  50% {
+    opacity: 0.72;
+    transform: translate(-50%, -50%) scale(1.04);
+  }
+}
+
+@keyframes home-harmony-pulse {
+  0%,
+  100% {
+    opacity: 0.82;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+.home-firmament-orb {
+  animation: home-orb-breathe 14s cubic-bezier(0.45, 0.05, 0.55, 0.95) infinite;
+}
+
+.home-firmament-orb:nth-child(2) {
+  animation-delay: -4.5s;
+  animation-duration: 16s;
+}
+
+.home-firmament-orb:nth-child(3) {
+  animation-delay: -9s;
+  animation-duration: 18s;
+}
+
+.home-constellation-wash {
+  animation: home-harmony-pulse 12s cubic-bezier(0.45, 0.05, 0.55, 0.95) infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .home-firmament-orb,
+  .home-constellation-wash {
+    animation: none !important;
+  }
+}

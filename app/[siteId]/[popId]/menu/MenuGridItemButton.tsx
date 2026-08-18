@@ -7,14 +7,13 @@ import {
 } from "@/app/[siteId]/[popId]/menu/MenuDockDndContext"
 import "@/app/[siteId]/[popId]/menu/menuPlanetLife.css"
 import {
-  menuHoloContactShadowForSection,
   menuHoloFloatLiftClass,
   menuHoloFocusRingForSection,
   menuHoloGlyphClass,
   menuHoloIconHoverForSection,
   menuHoloIconShellForSection,
   menuHoloLabelClass,
-  menuHoloLabelMutedClass,
+  menuHoloLabelDockPlacedClass,
   menuHoloPlanetLifeClass,
   menuHoloTileMotionClass,
   menuPlanetLifeStyle,
@@ -64,16 +63,18 @@ export function MenuGridItemButton({
 
   const isThisMenuDrag =
     isDragging && activeDragKind === "menu" && dockId === draggingItemId
-  const showDockInsertedStyle =
-    editing && (alreadyInDock || isThisMenuDrag)
-  const isAlive = !showDockInsertedStyle && !editing
+  const showDockPlacedStyle = editing && alreadyInDock && !isThisMenuDrag
+  const isDragGhost = isThisMenuDrag
+  const isAlive = !showDockPlacedStyle && !isDragGhost
   const lifeSeed = `${sectionKey}-${item.link}-${item.name}`
   const lifeStyle = menuPlanetLifeStyle(lifeSeed)
+
+  const shellVariant = showDockPlacedStyle || isDragGhost ? "placed" : "default"
 
   const Icon = item.icon
   const tileClassName = cn(
     "group flex h-[7.125rem] w-24 flex-col items-center gap-2.5",
-    menuHoloTileMotionClass,
+    !editing && menuHoloTileMotionClass,
   )
 
   const tileInner = (
@@ -83,26 +84,15 @@ export function MenuGridItemButton({
         style={isAlive ? lifeStyle : undefined}
       >
         <div
-          aria-hidden
-          className={cn(
-            menuHoloContactShadowForSection(sectionKey),
-            isAlive && "menu-planet-shadow-life",
-          )}
-          style={isAlive ? lifeStyle : undefined}
-        />
-        <div
           className={cn(
             "flex size-[72px] items-center justify-center rounded-[20px]",
-            showDockInsertedStyle
-              ? menuHoloIconShellForSection(sectionKey, "muted")
-              : cn(
-                  menuHoloIconShellForSection(sectionKey, "default"),
-                  menuHoloFloatLiftClass,
-                  menuHoloIconHoverForSection(sectionKey),
-                ),
+            menuHoloIconShellForSection(sectionKey, shellVariant),
+            !showDockPlacedStyle &&
+              !isDragGhost &&
+              cn(menuHoloFloatLiftClass, menuHoloIconHoverForSection(sectionKey)),
           )}
         >
-          {!showDockInsertedStyle ? (
+          {!isDragGhost ? (
             <MenuIconChrome sectionKey={sectionKey} alive={isAlive} />
           ) : null}
           <Icon className={cn("size-8", menuHoloGlyphClass)} />
@@ -112,7 +102,9 @@ export function MenuGridItemButton({
       <span
         className={cn(
           "flex h-8 w-full items-center justify-center text-center line-clamp-2",
-          showDockInsertedStyle ? menuHoloLabelMutedClass : menuHoloLabelClass,
+          showDockPlacedStyle || isDragGhost
+            ? menuHoloLabelDockPlacedClass
+            : menuHoloLabelClass,
         )}
       >
         {item.name}
@@ -127,15 +119,16 @@ export function MenuGridItemButton({
       {...(draggable ? attributes : {})}
       style={{
         animationDelay:
-          editing && draggable && !showDockInsertedStyle
+          editing && draggable
             ? `${(item.name.length % 5) * 45}ms`
             : undefined,
       }}
       className={cn(
         "justify-self-center transition-[opacity,transform] duration-200",
         editing && draggable && "touch-none",
-        editing && draggable && !showDockInsertedStyle && "animate-dock-wiggle",
-        showDockInsertedStyle && "scale-[0.97] opacity-45",
+        editing && draggable && "animate-dock-wiggle",
+        showDockPlacedStyle && "scale-[0.985]",
+        isDragGhost && "scale-[0.96] opacity-55",
         editing && draggable && "cursor-grab active:cursor-grabbing",
       )}
     >
@@ -166,6 +159,7 @@ export function MenuGridItemButton({
           disabled={disabled}
           className={cn(
             tileClassName,
+            "border-0 bg-transparent p-0",
             menuHoloFocusRingForSection(sectionKey),
             disabled && "cursor-default opacity-70",
           )}

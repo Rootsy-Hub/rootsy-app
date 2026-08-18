@@ -15,7 +15,21 @@ import {
   type PermissionCatalogRow,
   type PopRoleRow,
 } from "@/app/[siteId]/[popId]/hr/actions"
+import {
+  clockEmployeeIn,
+  clockEmployeeOut,
+  markEmployeeLeft,
+  upsertPopEmployee,
+} from "@/app/[siteId]/[popId]/hr/employeeActions"
+import type {
+  EmployeeRow,
+  UpsertEmployeeInput,
+} from "@/app/[siteId]/[popId]/hr/hrTypes"
+import { HrInviteCard } from "@/app/[siteId]/[popId]/hr/HrInviteCard"
 import { HrInviteDialog, type HrInviteResult } from "@/app/[siteId]/[popId]/hr/HrInviteDialog"
+import { HrPageSkeleton } from "@/app/[siteId]/[popId]/hr/HrPageSkeleton"
+import { HrPersonCard } from "@/app/[siteId]/[popId]/hr/HrPersonCard"
+import { HrPersonDialog } from "@/app/[siteId]/[popId]/hr/HrPersonDialog"
 import {
   HrRolePermissionsDialog,
   hrCreateRolePermissionCatalog,
@@ -26,17 +40,10 @@ import {
   dataWorkspaceBlocksPageMainClass,
   dataWorkspaceBlocksSectionDescriptionClass,
   dataWorkspaceBlocksSectionTitleClass,
-  dataWorkspaceEntityCardBadgeClass,
   dataWorkspaceEntityCardEyebrowClass,
-  dataWorkspaceEntityCardIsotypeClass,
   dataWorkspaceEntityCardLosetaSurfaceClass,
-  dataWorkspaceEntityCardStatLabelClass,
-  dataWorkspaceEntityCardStatValueLargeClass,
-  dataWorkspaceEntityCardStatusClosedClass,
-  dataWorkspaceEntityCardStatusInactiveClass,
-  dataWorkspaceEntityCardStatusOpenClass,
+  dataWorkspaceEntityCardsGridClass,
 } from "@/components/data-workspace/dataWorkspaceListStyles"
-import { DataWorkspaceHeaderIconButton } from "@/components/layouts/DataWorkspaceHeaderIconButton"
 import {
   DataWorkspaceModuleLayout,
   dataWorkspaceModuleHeaderVariant,
@@ -45,12 +52,12 @@ import { RootsBanner } from "@/components/rootsy-banner"
 import {
   RootsDangerSubtleButton,
   RootsDefaultButton,
+  RootsPrimaryButton,
 } from "@/components/rootsy-button"
 import { RootsConfirmDialog } from "@/components/rootsy-dialog"
 import { RootsFormSegmentField } from "@/components/rootsy-form"
 import { usePopWorkspace } from "@/context/PopWorkspaceContext"
 import { cn } from "@/lib/utils"
-import { Plus, UserPlus } from "lucide-react"
 import { useParams, useRouter } from "next/navigation"
 import {
   useCallback,
@@ -61,54 +68,21 @@ import {
   type ReactNode,
 } from "react"
 
-type TeamFilter = "active" | "pending" | "inactive"
+type PeopleFilter = "negocio" | "local" | "acceso" | "baja" | "espera"
 
 type ConfirmAction =
   | { kind: "delete-role"; role: PopRoleRow }
   | { kind: "deactivate"; member: MemberRow }
   | { kind: "delete-member"; member: MemberRow }
   | { kind: "revoke"; invite: PendingInviteRow }
-
-function groupMembersByRole(members: MemberRow[]): [string, MemberRow[]][] {
-  const grouped = new Map<string, MemberRow[]>()
-  for (const member of members) {
-    const key = member.roleDisplayName || "—"
-    if (!grouped.has(key)) grouped.set(key, [])
-    grouped.get(key)!.push(member)
-  }
-  const entries = [...grouped.entries()]
-  entries.sort((a, b) => {
-    if (a[0] === "Propietario") return -1
-    if (b[0] === "Propietario") return 1
-    return a[0].localeCompare(b[0], "es")
-  })
-  return entries
-}
+  | { kind: "leave"; person: EmployeeRow }
 
 function memberDisplayName(member: MemberRow): string {
   return `${member.firstName} ${member.lastName}`.trim() || "Sin nombre"
 }
 
-function memberInitials(member: MemberRow): string {
-  const first = (member.firstName || member.lastName || "?").slice(0, 1).toUpperCase()
-  const last = member.lastName ? member.lastName.slice(0, 1).toUpperCase() : ""
-  return `${first}${last}`.slice(0, 2)
-}
-
-function emailInitials(email: string): string {
-  return email.slice(0, 2).toUpperCase()
-}
-
-function formatDate(iso: string): string {
-  return new Date(iso).toLocaleDateString("es-AR", {
-    day: "numeric",
-    month: "short",
-    year: "numeric",
-  })
-}
-
-function isExpired(iso: string): boolean {
-  return new Date(iso).getTime() < Date.now()
+function personDisplayName(person: EmployeeRow): string {
+  return `${person.firstName} ${person.lastName}`.trim() || "Sin nombre"
 }
 
 function HrSection({
@@ -123,9 +97,9 @@ function HrSection({
   children: ReactNode
 }) {
   return (
-    <section className="space-y-3">
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div className="space-y-1">
+    <section className="space-y-4">
+      <div className="flex flex-wrap items-end justify-between gap-3">
+        <div className="min-w-0 space-y-1">
           <h2 className={dataWorkspaceBlocksSectionTitleClass}>{title}</h2>
           {description ? (
             <p className={dataWorkspaceBlocksSectionDescriptionClass}>{description}</p>
@@ -198,51 +172,6 @@ function HrPersonName({
   )
 }
 
-function HrAvatar({
-  imageUrl,
-  initials,
-  muted,
-}: {
-  imageUrl?: string | null
-  initials: string
-  muted?: boolean
-}) {
-  if (imageUrl) {
-    return (
-      <img
-        src={imageUrl}
-        alt=""
-        className={cn(dataWorkspaceEntityCardIsotypeClass, "size-10 object-cover")}
-      />
-    )
-  }
-
-  return (
-    <div
-      className={cn(
-        dataWorkspaceEntityCardIsotypeClass,
-        "size-10",
-        "font-canopy text-xs font-semibold",
-        muted && "bg-rootsy-bruma-50 text-rootsy-bruma-500",
-      )}
-      aria-hidden
-    >
-      {initials}
-    </div>
-  )
-}
-
-function HrPulseCard({ label, value }: { label: string; value: number }) {
-  return (
-    <HrLoseta className="px-4 py-3">
-      <p className={dataWorkspaceEntityCardStatLabelClass}>{label}</p>
-      <p className={cn(dataWorkspaceEntityCardStatValueLargeClass, "mt-0.5 text-xl")}>
-        {value}
-      </p>
-    </HrLoseta>
-  )
-}
-
 function HrPage() {
   const router = useRouter()
   const routerRef = useRef(router)
@@ -257,16 +186,23 @@ function HrPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [canManageInvites, setCanManageInvites] = useState(false)
+  const [canManagePeople, setCanManagePeople] = useState(false)
   const [roles, setRoles] = useState<PopRoleRow[]>([])
   const [members, setMembers] = useState<MemberRow[]>([])
+  const [employees, setEmployees] = useState<EmployeeRow[]>([])
   const [pending, setPending] = useState<PendingInviteRow[]>([])
-  const [teamFilter, setTeamFilter] = useState<TeamFilter>("active")
+  const [peopleFilter, setPeopleFilter] = useState<PeopleFilter>("negocio")
   const [banner, setBanner] = useState<{
     type: "ok" | "err" | "info"
     text: string
   } | null>(null)
 
+  const [personOpen, setPersonOpen] = useState(false)
+  const [personEditing, setPersonEditing] = useState<EmployeeRow | null>(null)
+  const [personSaving, setPersonSaving] = useState(false)
+  const [personError, setPersonError] = useState<string | null>(null)
   const [inviteOpen, setInviteOpen] = useState(false)
+  const [inviteEmail, setInviteEmail] = useState("")
   const [inviting, setInviting] = useState(false)
   const [inviteError, setInviteError] = useState<string | null>(null)
   const [inviteResult, setInviteResult] = useState<HrInviteResult | null>(null)
@@ -299,8 +235,10 @@ function HrPage() {
     }
     setError(null)
     setCanManageInvites(res.canManageInvites)
+    setCanManagePeople(res.canManagePeople)
     setRoles(res.roles)
     setMembers(res.members)
+    setEmployees(res.employees)
     setPending(res.pendingInvites)
   }, [popId, siteId])
 
@@ -328,17 +266,32 @@ function HrPage() {
   const pageLoading = bootstrapLoading || loading
   const popName = bootstrap?.popName ?? ""
 
+  const activePeople = useMemo(
+    () => employees.filter((person) => !person.leftAt),
+    [employees],
+  )
+  const peopleInLocal = useMemo(
+    () => activePeople.filter((person) => person.isClockedIn),
+    [activePeople],
+  )
+  const peopleWithAccess = useMemo(
+    () => activePeople.filter((person) => Boolean(person.userId)),
+    [activePeople],
+  )
+  const peopleLeft = useMemo(
+    () => employees.filter((person) => Boolean(person.leftAt)),
+    [employees],
+  )
+  const visiblePeople = useMemo(() => {
+    if (peopleFilter === "local") return peopleInLocal
+    if (peopleFilter === "acceso") return peopleWithAccess
+    if (peopleFilter === "baja") return peopleLeft
+    return activePeople
+  }, [peopleFilter, activePeople, peopleInLocal, peopleWithAccess, peopleLeft])
+
   const activeMembers = useMemo(
     () => members.filter((member) => member.isActive),
     [members],
-  )
-  const inactiveMembers = useMemo(
-    () => members.filter((member) => !member.isActive && !member.isOwner),
-    [members],
-  )
-  const groupedMembers = useMemo(
-    () => groupMembersByRole(activeMembers),
-    [activeMembers],
   )
   const assignableRoles = useMemo(
     () => roles.filter((role) => role.name !== "owner"),
@@ -378,12 +331,28 @@ function HrPage() {
         confirmLabel: "Revocar",
       }
     }
+    if (confirmAction.kind === "leave") {
+      const linked = members.find(
+        (item) => item.userId === confirmAction.person.userId,
+      )
+      const alsoRevokesAccess =
+        canManageInvites &&
+        Boolean(confirmAction.person.userId) &&
+        !linked?.isOwner
+      return {
+        title: "Deja el negocio",
+        description: alsoRevokesAccess
+          ? `¿${personDisplayName(confirmAction.person)} deja de trabajar acá? Queda en el historial y ya no entra a Rootsy.`
+          : `¿${personDisplayName(confirmAction.person)} deja de trabajar acá? Queda en el historial.`,
+        confirmLabel: "Registrar salida",
+      }
+    }
     return {
       title: "Eliminar usuario",
       description: `¿Eliminar a ${memberDisplayName(confirmAction.member)} de este negocio? No va a figurar más en RRHH.`,
       confirmLabel: "Eliminar",
     }
-  }, [confirmAction])
+  }, [canManageInvites, confirmAction, members])
 
   const closePermModal = () => {
     setPermModalOpen(false)
@@ -492,7 +461,8 @@ function HrPage() {
     await Promise.all([loadDashboard(), refresh()])
   }
 
-  const openInvite = () => {
+  const openInvite = (email?: string) => {
+    setInviteEmail(email?.trim() ?? "")
     setInviteError(null)
     setInviteResult(null)
     setInviteOpen(true)
@@ -523,7 +493,52 @@ function HrPage() {
       emailError: res.emailError,
       resendConfigured: res.resendConfigured,
     })
-    setTeamFilter("pending")
+    setPeopleFilter("espera")
+    await loadDashboard()
+  }
+
+  const openNewPerson = () => {
+    setPersonEditing(null)
+    setPersonError(null)
+    setPersonOpen(true)
+  }
+
+  const handleSavePerson = async (input: UpsertEmployeeInput) => {
+    if (!popId) return
+    setPersonSaving(true)
+    setPersonError(null)
+    const res = await upsertPopEmployee(popId, input)
+    setPersonSaving(false)
+    if (!res.success) {
+      setPersonError(res.error)
+      return
+    }
+    setPersonOpen(false)
+    setPersonEditing(null)
+    setBanner({
+      type: "ok",
+      text: input.id ? "Persona actualizada." : "Persona cargada en el negocio.",
+    })
+    await loadDashboard()
+  }
+
+  const handleClock = async (person: EmployeeRow) => {
+    if (!popId) return
+    setActionKey(`clock-${person.id}`)
+    const res = person.isClockedIn
+      ? await clockEmployeeOut(popId, person.id)
+      : await clockEmployeeIn(popId, person.id)
+    setActionKey(null)
+    if (!res.success) {
+      setBanner({ type: "err", text: res.error || "No se pudo marcar." })
+      return
+    }
+    setBanner({
+      type: "ok",
+      text: person.isClockedIn
+        ? `${personDisplayName(person)} salió del local.`
+        : `${personDisplayName(person)} entró al local.`,
+    })
     await loadDashboard()
   }
 
@@ -555,6 +570,41 @@ function HrPage() {
       return
     }
 
+    if (confirmAction.kind === "leave") {
+      setActionKey(`leave-${confirmAction.person.id}`)
+      const res = await markEmployeeLeft(popId, confirmAction.person.id)
+      if (!res.success) {
+        setActionKey(null)
+        setBanner({ type: "err", text: res.error || "No se pudo registrar." })
+        return
+      }
+      const linked = members.find(
+        (item) => item.userId === confirmAction.person.userId,
+      )
+      let revokedAccess = false
+      if (
+        canManageInvites &&
+        confirmAction.person.userId &&
+        !linked?.isOwner
+      ) {
+        const accessRes = await deactivatePopMember(
+          popId,
+          confirmAction.person.userId,
+        )
+        revokedAccess = accessRes.success
+      }
+      setActionKey(null)
+      setConfirmAction(null)
+      setBanner({
+        type: "ok",
+        text: revokedAccess
+          ? "Quedó registrada la salida. Ya no entra a Rootsy."
+          : "Quedó registrada la salida del negocio.",
+      })
+      await loadDashboard()
+      return
+    }
+
     if (confirmAction.kind === "delete-role") {
       setActionKey(`del-role-${confirmAction.role.id}`)
       const res = await deletePopRole(popId, confirmAction.role.id)
@@ -578,7 +628,7 @@ function HrPage() {
         return
       }
       setConfirmAction(null)
-      setBanner({ type: "ok", text: "Usuario desvinculado del POP." })
+      setBanner({ type: "ok", text: "Usuario desvinculado del equipo." })
       await loadDashboard()
       return
     }
@@ -603,12 +653,12 @@ function HrPage() {
     )
   }
 
-  const teamFilterOptions = [
-    { value: "active", label: `Activos ${activeMembers.length}` },
-    ...(canManageInvites
-      ? [{ value: "pending", label: `Esperando ${pending.length}` }]
-      : []),
-    { value: "inactive", label: `Inactivos ${inactiveMembers.length}` },
+  const peopleFilterOptions = [
+    { value: "negocio", label: "Todas" },
+    { value: "local", label: "En el local" },
+    { value: "acceso", label: "Con Rootsy" },
+    { value: "baja", label: "Ya no" },
+    ...(canManageInvites ? [{ value: "espera", label: "Invitadas" }] : []),
   ]
 
   return (
@@ -626,28 +676,6 @@ function HrPage() {
         userRoleLabel={bootstrap?.roleLabel || undefined}
         mainMaxWidthClass="max-w-none"
         mainClassName={dataWorkspaceBlocksPageMainClass}
-        headerActions={
-          canManageInvites ? (
-            <div className="flex items-center gap-2">
-              <DataWorkspaceHeaderIconButton
-                label="Nuevo rol"
-                headerVariant={dataWorkspaceModuleHeaderVariant}
-                disabled={permModalLoading || permModalSaving}
-                onClick={handleOpenCreateRole}
-              >
-                <Plus className="size-5" aria-hidden />
-              </DataWorkspaceHeaderIconButton>
-              <DataWorkspaceHeaderIconButton
-                label="Invitar"
-                headerVariant={dataWorkspaceModuleHeaderVariant}
-                primary
-                onClick={openInvite}
-              >
-                <UserPlus className="size-5" aria-hidden />
-              </DataWorkspaceHeaderIconButton>
-            </div>
-          ) : null
-        }
       >
         <div className={dataWorkspaceBlocksPageContentClass}>
           {bootstrapError ? (
@@ -658,7 +686,9 @@ function HrPage() {
             />
           ) : null}
 
-          {error ? (
+          {pageLoading ? (
+            <HrPageSkeleton />
+          ) : error ? (
             <RootsBanner intent="danger" layout="message" message={error} />
           ) : (
             <>
@@ -677,338 +707,213 @@ function HrPage() {
                 />
               ) : null}
 
-              <div
-                className={cn(
-                  "grid gap-4",
-                  canManageInvites
-                    ? "grid-cols-2 lg:grid-cols-4"
-                    : "grid-cols-2 lg:grid-cols-3",
-                )}
+              <HrSection
+                title="Personas"
+                description={
+                  peopleFilter === "espera"
+                    ? "Quienes van a poder abrir Rootsy en este local."
+                    : "Quien trabaja en este negocio. Cargala aunque no use el sistema."
+                }
+                action={
+                  peopleFilter === "espera" && canManageInvites ? (
+                    <RootsPrimaryButton
+                      type="button"
+                      size="compact"
+                      onClick={() => openInvite()}
+                    >
+                      Dar acceso a Rootsy
+                    </RootsPrimaryButton>
+                  ) : canManagePeople ? (
+                    <RootsPrimaryButton
+                      type="button"
+                      size="compact"
+                      onClick={openNewPerson}
+                    >
+                      Cargar persona
+                    </RootsPrimaryButton>
+                  ) : null
+                }
               >
-                <HrPulseCard label="Activos" value={activeMembers.length} />
-                {canManageInvites ? (
-                  <HrPulseCard label="Esperando" value={pending.length} />
-                ) : null}
-                <HrPulseCard label="Inactivos" value={inactiveMembers.length} />
-                <HrPulseCard label="Roles" value={roles.length} />
-              </div>
+                <RootsFormSegmentField
+                  label="Ver personas"
+                  aria-label="Filtrar personas"
+                  layout="inline"
+                  className="[&>span:first-child]:sr-only"
+                  value={peopleFilter}
+                  onValueChange={(value) => setPeopleFilter(value as PeopleFilter)}
+                  options={peopleFilterOptions}
+                />
 
-              <div className="grid gap-6 lg:grid-cols-12 lg:items-start">
-                <div className="space-y-4 lg:col-span-8">
-                  <HrSection
-                    title="Equipo"
-                    description="Quién está en el local, con qué rol y en qué estado."
-                  >
-                    <RootsFormSegmentField
-                      label="Estado del equipo"
-                      aria-label="Filtrar equipo por estado"
-                      layout="inline"
-                      value={teamFilter}
-                      onValueChange={(value) => setTeamFilter(value as TeamFilter)}
-                      options={teamFilterOptions}
-                    />
-
-                  {teamFilter === "active" ? (
-                    groupedMembers.length === 0 ? (
-                      <p className={dataWorkspaceBlocksEmptyStateClass}>
-                        Todavía no hay personas activas en este local.
-                      </p>
-                    ) : (
-                      <div className="space-y-3">
-                        {groupedMembers.map(([roleLabel, list]) => (
-                          <HrLoseta key={roleLabel}>
-                            <HrRow className="border-b border-rootsy-bruma-200">
-                              <h3 className={dataWorkspaceBlocksSectionTitleClass}>
-                                {roleLabel}
-                              </h3>
-                              <span className="font-canopy text-[11px] tabular-nums text-rootsy-bruma-500">
-                                {list.length}
-                              </span>
-                            </HrRow>
-                            <ul className="divide-y divide-rootsy-bruma-200">
-                              {list.map((member) => (
-                                <li key={`${member.userId}-${roleLabel}`}>
-                                  <HrRow>
-                                    <div className="flex min-w-0 items-center gap-3">
-                                      <HrAvatar
-                                        imageUrl={member.imageUrl}
-                                        initials={memberInitials(member)}
-                                      />
-                                      <HrPersonName
-                                        title={memberDisplayName(member)}
-                                        meta={
-                                          member.invitedAt
-                                            ? `Desde ${formatDate(member.invitedAt)}`
-                                            : member.roleDisplayName
-                                        }
-                                      />
-                                    </div>
-                                    <div className="flex shrink-0 items-center gap-2">
-                                      <span
-                                        className={
-                                          member.isOwner
-                                            ? dataWorkspaceEntityCardStatusOpenClass
-                                            : dataWorkspaceEntityCardStatusClosedClass
-                                        }
-                                      >
-                                        {member.isOwner ? "Dueño" : "Activo"}
-                                      </span>
-                                      {canManageInvites && !member.isOwner ? (
-                                        <RootsDefaultButton
-                                          type="button"
-                                          size="compact"
-                                          disabled={
-                                            actionKey === `deact-${member.userId}`
-                                          }
-                                          onClick={() =>
-                                            setConfirmAction({
-                                              kind: "deactivate",
-                                              member,
-                                            })
-                                          }
-                                        >
-                                          Quitar
-                                        </RootsDefaultButton>
-                                      ) : null}
-                                    </div>
-                                  </HrRow>
-                                </li>
-                              ))}
-                            </ul>
-                          </HrLoseta>
-                        ))}
-                      </div>
-                    )
-                  ) : null}
-
-                  {teamFilter === "pending" ? (
-                    pending.length === 0 ? (
-                      <p className={dataWorkspaceBlocksEmptyStateClass}>
-                        Nadie está esperando entrar.
-                      </p>
-                    ) : (
-                      <HrLoseta>
-                        <ul className="divide-y divide-rootsy-bruma-200">
-                          {pending.map((invite) => {
-                            const expired = isExpired(invite.expiresAt)
-                            return (
-                              <li key={invite.id}>
-                                <HrRow>
-                                  <div className="flex min-w-0 items-center gap-3">
-                                    <HrAvatar
-                                      initials={emailInitials(invite.email)}
-                                      muted
-                                    />
-                                    <HrPersonName
-                                      title={invite.email}
-                                      meta={`${invite.roleDisplayName} · ${
-                                        expired
-                                          ? `Venció ${formatDate(invite.expiresAt)}`
-                                          : `Vence ${formatDate(invite.expiresAt)}`
-                                      }`}
-                                    />
-                                  </div>
-                                  <div className="flex shrink-0 items-center gap-2">
-                                    <span
-                                      className={
-                                        expired
-                                          ? dataWorkspaceEntityCardStatusInactiveClass
-                                          : dataWorkspaceEntityCardStatusClosedClass
-                                      }
-                                    >
-                                      {expired ? "Vencida" : "Esperando"}
-                                    </span>
-                                    {invite.inviteUrl ? (
-                                      <RootsDefaultButton
-                                        type="button"
-                                        size="compact"
-                                        onClick={() =>
-                                          void copyInviteUrl(invite.inviteUrl)
-                                        }
-                                      >
-                                        Copiar enlace
-                                      </RootsDefaultButton>
-                                    ) : null}
-                                    <RootsDangerSubtleButton
-                                      type="button"
-                                      size="compact"
-                                      disabled={actionKey === `revoke-${invite.id}`}
-                                      onClick={() =>
-                                        setConfirmAction({ kind: "revoke", invite })
-                                      }
-                                    >
-                                      Revocar
-                                    </RootsDangerSubtleButton>
-                                  </div>
-                                </HrRow>
-                              </li>
-                            )
-                          })}
-                        </ul>
-                      </HrLoseta>
-                    )
-                  ) : null}
-
-                  {teamFilter === "inactive" ? (
-                    inactiveMembers.length === 0 ? (
-                      <p className={dataWorkspaceBlocksEmptyStateClass}>
-                        Nadie está fuera del equipo.
-                      </p>
-                    ) : (
-                      <HrLoseta>
-                        <ul className="divide-y divide-rootsy-bruma-200">
-                          {inactiveMembers.map((member) => (
-                            <li key={`inactive-${member.userId}-${member.roleId}`}>
-                              <HrRow>
-                                <div className="flex min-w-0 items-center gap-3">
-                                  <HrAvatar
-                                    imageUrl={member.imageUrl}
-                                    initials={memberInitials(member)}
-                                    muted
-                                  />
-                                  <HrPersonName
-                                    title={memberDisplayName(member)}
-                                    meta={member.roleDisplayName || "—"}
-                                  />
-                                </div>
-                                <div className="flex shrink-0 items-center gap-2">
-                                  <span
-                                    className={dataWorkspaceEntityCardStatusInactiveClass}
-                                  >
-                                    Inactivo
-                                  </span>
-                                  {canManageInvites ? (
-                                    <RootsDangerSubtleButton
-                                      type="button"
-                                      size="compact"
-                                      disabled={
-                                        actionKey === `del-mem-${member.userId}`
-                                      }
-                                      onClick={() =>
-                                        setConfirmAction({
-                                          kind: "delete-member",
-                                          member,
-                                        })
-                                      }
-                                    >
-                                      Eliminar
-                                    </RootsDangerSubtleButton>
-                                  ) : null}
-                                </div>
-                              </HrRow>
-                            </li>
-                          ))}
-                        </ul>
-                      </HrLoseta>
-                    )
-                  ) : null}
-                  </HrSection>
-
-                  {!canManageInvites ? (
-                    <p className="font-canopy text-xs leading-relaxed text-rootsy-bruma-500">
-                      Solo el dueño puede invitar y editar permisos.
+                {peopleFilter === "espera" ? (
+                  pending.length === 0 ? (
+                    <p className={dataWorkspaceBlocksEmptyStateClass}>
+                      Nadie está esperando entrar a Rootsy.
                     </p>
-                  ) : null}
-                </div>
+                  ) : (
+                    <div className={dataWorkspaceEntityCardsGridClass}>
+                      {pending.map((invite) => (
+                        <HrInviteCard
+                          key={invite.id}
+                          invite={invite}
+                          revokeBusy={actionKey === `revoke-${invite.id}`}
+                          onCopy={() => void copyInviteUrl(invite.inviteUrl)}
+                          onRevoke={() =>
+                            setConfirmAction({ kind: "revoke", invite })
+                          }
+                        />
+                      ))}
+                    </div>
+                  )
+                ) : visiblePeople.length === 0 ? (
+                  <p className={dataWorkspaceBlocksEmptyStateClass}>
+                    {peopleFilter === "local"
+                      ? "Nadie está en el local ahora."
+                      : peopleFilter === "acceso"
+                        ? "Nadie de estas personas usa Rootsy todavía."
+                        : peopleFilter === "baja"
+                          ? "Nadie dejó el negocio todavía."
+                          : "Todavía no hay personas cargadas."}
+                  </p>
+                ) : (
+                  <div className={dataWorkspaceEntityCardsGridClass}>
+                    {visiblePeople.map((person) => {
+                      const member = members.find(
+                        (item) => item.userId === person.userId,
+                      )
+                      return (
+                        <HrPersonCard
+                          key={person.id}
+                          person={person}
+                          imageUrl={member?.imageUrl}
+                          isOwner={Boolean(member?.isOwner)}
+                          canManagePeople={canManagePeople}
+                          canManageInvites={canManageInvites}
+                          clockBusy={actionKey === `clock-${person.id}`}
+                          onOpen={() => {
+                            setPersonEditing(person)
+                            setPersonError(null)
+                            setPersonOpen(true)
+                          }}
+                          onClock={() => void handleClock(person)}
+                          onInvite={() => openInvite(person.email ?? undefined)}
+                          onLeave={() =>
+                            setConfirmAction({ kind: "leave", person })
+                          }
+                        />
+                      )
+                    })}
+                  </div>
+                )}
+              </HrSection>
 
-                <div className="lg:col-span-4">
-                  <HrSection
-                    title="Roles y permisos"
-                    description="Qué puede hacer cada persona cuando entra."
-                    action={
-                      canManageInvites ? (
-                        <RootsDefaultButton
-                          type="button"
-                          size="compact"
-                          disabled={permModalLoading || permModalSaving}
-                          onClick={handleOpenCreateRole}
-                        >
-                          Nuevo
-                        </RootsDefaultButton>
-                      ) : null
-                    }
-                  >
-                    {roles.length === 0 ? (
-                      <p className={dataWorkspaceBlocksEmptyStateClass}>
-                        No hay roles cargados.
-                      </p>
-                    ) : (
-                      <HrLoseta>
-                        <ul className="divide-y divide-rootsy-bruma-200">
-                          {roles.map((role) => (
-                            <li key={role.id}>
-                              <HrRow>
-                                <HrPersonName
-                                  title={role.displayName}
-                                  meta={
-                                    role.popId
-                                      ? `${membersByRoleId.get(role.id) ?? 0} en el equipo`
-                                      : "Plantilla del sistema"
+              <HrSection
+                title="Si entra a Rootsy"
+                description="Qué puede hacer cuando abre el sistema. No aplica a quien solo trabaja acá."
+                action={
+                  canManageInvites ? (
+                    <RootsDefaultButton
+                      type="button"
+                      size="compact"
+                      disabled={permModalLoading || permModalSaving}
+                      onClick={handleOpenCreateRole}
+                    >
+                      Nuevo rol
+                    </RootsDefaultButton>
+                  ) : null
+                }
+              >
+                {roles.length === 0 ? (
+                  <p className={dataWorkspaceBlocksEmptyStateClass}>
+                    No hay roles cargados.
+                  </p>
+                ) : (
+                  <HrLoseta>
+                    <ul className="divide-y divide-rootsy-bruma-200">
+                      {roles.map((role) => (
+                        <li key={role.id}>
+                          <HrRow>
+                            <HrPersonName
+                              title={role.displayName}
+                              meta={
+                                role.popId
+                                  ? `${membersByRoleId.get(role.id) ?? 0} con acceso`
+                                  : "Plantilla de Rootsy"
+                              }
+                            />
+                            {canManageInvites && role.popId ? (
+                              <div className="flex shrink-0 items-center gap-2">
+                                <RootsDefaultButton
+                                  type="button"
+                                  size="compact"
+                                  disabled={permModalLoading || permModalSaving}
+                                  onClick={() => void handleOpenEditRole(role)}
+                                >
+                                  Permisos
+                                </RootsDefaultButton>
+                                <RootsDangerSubtleButton
+                                  type="button"
+                                  size="compact"
+                                  disabled={
+                                    Boolean(actionKey?.startsWith("del-role-")) ||
+                                    permModalLoading ||
+                                    permModalSaving
                                   }
-                                />
-                                <div className="flex shrink-0 items-center gap-2">
-                                  <span className={dataWorkspaceEntityCardBadgeClass}>
-                                    {role.popId ? "POP" : "Sistema"}
-                                  </span>
-                                  {canManageInvites && role.popId ? (
-                                    <>
-                                      <RootsDefaultButton
-                                        type="button"
-                                        size="compact"
-                                        disabled={permModalLoading || permModalSaving}
-                                        onClick={() => void handleOpenEditRole(role)}
-                                      >
-                                        Permisos
-                                      </RootsDefaultButton>
-                                      <RootsDangerSubtleButton
-                                        type="button"
-                                        size="compact"
-                                        disabled={
-                                          Boolean(actionKey?.startsWith("del-role-")) ||
-                                          permModalLoading ||
-                                          permModalSaving
-                                        }
-                                        onClick={() =>
-                                          setConfirmAction({
-                                            kind: "delete-role",
-                                            role,
-                                          })
-                                        }
-                                      >
-                                        Eliminar
-                                      </RootsDangerSubtleButton>
-                                    </>
-                                  ) : null}
-                                </div>
-                              </HrRow>
-                            </li>
-                          ))}
-                        </ul>
-                      </HrLoseta>
-                    )}
-                  </HrSection>
-                </div>
-              </div>
+                                  onClick={() =>
+                                    setConfirmAction({
+                                      kind: "delete-role",
+                                      role,
+                                    })
+                                  }
+                                >
+                                  Eliminar
+                                </RootsDangerSubtleButton>
+                              </div>
+                            ) : null}
+                          </HrRow>
+                        </li>
+                      ))}
+                    </ul>
+                  </HrLoseta>
+                )}
+              </HrSection>
             </>
           )}
         </div>
       </DataWorkspaceModuleLayout>
 
+      <HrPersonDialog
+        open={personOpen}
+        person={personEditing}
+        saving={personSaving}
+        error={personError}
+        onOpenChange={(open) => {
+          if (!open && !personSaving) {
+            setPersonOpen(false)
+            setPersonEditing(null)
+            setPersonError(null)
+          }
+        }}
+        onSubmit={handleSavePerson}
+      />
+
       <HrInviteDialog
         open={inviteOpen}
         roles={assignableRoles}
+        initialEmail={inviteEmail}
         saving={inviting}
         error={inviteError}
         result={inviteResult}
         onOpenChange={(open) => {
           if (!open && !inviting) {
             setInviteOpen(false)
+            setInviteEmail("")
             setInviteError(null)
             setInviteResult(null)
           }
         }}
         onSubmit={handleInvite}
         onInviteAnother={() => {
+          setInviteEmail("")
           setInviteResult(null)
           setInviteError(null)
         }}

@@ -1,25 +1,119 @@
+"use client"
+
+import { useEffect, useState } from "react"
+import {
+  homeHarmonyWashClass,
+  homeHorizonGlowClass,
+  homeVignetteClass,
+  menuAmbientTopGlowClass,
+  menuPlanetOrbClass,
+} from "@/app/[siteId]/[popId]/menu/menuNatureStyles"
+import "@/app/home/homeHarmony.css"
 import { cn } from "@/lib/utils"
 
-export const homeWorkspaceSurfaceClass = "bg-[#070a09]"
+type Particle = {
+  width: number
+  height: number
+  left: number
+  top: number
+  opacity: number
+  duration: number
+  delay: number
+}
 
 type HomeWorkspaceBackdropProps = {
   className?: string
 }
 
-/** Ambiente de /home — glows + grilla. Para shells sin foto de POP. */
+/** Firmamento del reinado — tres mundos en armonía, sin seguir al cursor. */
 export function HomeWorkspaceBackdrop({ className }: HomeWorkspaceBackdropProps) {
+  const [particles, setParticles] = useState<Particle[]>([])
+
+  useEffect(() => {
+    setParticles(
+      Array.from({ length: 16 }, () => ({
+        width: Math.random() * 2 + 1,
+        height: Math.random() * 2 + 1,
+        left: Math.random() * 100,
+        top: Math.random() * 100,
+        opacity: Math.random() * 0.22 + 0.06,
+        duration: Math.random() * 20 + 15,
+        delay: Math.random() * 5,
+      })),
+    )
+  }, [])
+
+  const orbPositions = [
+    { left: "28%", top: "50%" },
+    { left: "50%", top: "44%" },
+    { left: "72%", top: "50%" },
+  ] as const
+
   return (
     <div
       className={cn("pointer-events-none absolute inset-0 overflow-hidden", className)}
       aria-hidden
     >
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_20%,rgba(52,211,153,0.14),transparent_35%),radial-gradient(circle_at_82%_46%,rgba(99,102,241,0.12),transparent_34%),radial-gradient(circle_at_45%_88%,rgba(34,211,238,0.1),transparent_30%)]" />
-      <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.03)_1px,transparent_1px)] bg-size-[42px_42px] opacity-25" />
-      <div className="absolute -top-28 left-1/3 h-96 w-96 rounded-full bg-emerald-500/10 blur-3xl motion-safe:animate-pulse" />
-      <div className="absolute right-2 top-1/2 h-96 w-96 -translate-y-1/2 rounded-full bg-indigo-500/10 blur-3xl motion-safe:animate-pulse [animation-delay:900ms]" />
-      <div className="absolute bottom-0 left-16 h-72 w-72 rounded-full bg-cyan-400/10 blur-3xl motion-safe:animate-pulse [animation-delay:1700ms]" />
-      <div className="absolute -top-40 -right-24 h-136 w-136 rounded-full bg-[conic-gradient(from_0deg,rgba(16,185,129,0.14),rgba(99,102,241,0.1),rgba(16,185,129,0.14))] blur-3xl motion-safe:animate-[spin_42s_linear_infinite]" />
-      <div className="absolute -bottom-44 -left-28 h-136 w-136 rounded-full bg-[conic-gradient(from_0deg,rgba(34,211,238,0.12),rgba(52,211,153,0.08),rgba(34,211,238,0.12))] blur-3xl motion-safe:animate-[spin_50s_linear_infinite_reverse]" />
+      <div
+        className={cn(
+          "absolute inset-0 opacity-90",
+          homeHarmonyWashClass,
+          "home-constellation-wash",
+        )}
+      />
+
+      {(["operar", "administrar", "configurar"] as const).map((sectionKey, index) => (
+        <div
+          key={sectionKey}
+          className={cn(
+            "home-firmament-orb absolute rounded-full blur-[140px]",
+            menuPlanetOrbClass(sectionKey),
+          )}
+          style={{
+            width: 480,
+            height: 480,
+            left: orbPositions[index].left,
+            top: orbPositions[index].top,
+            transform: "translate(-50%, -50%)",
+          }}
+        />
+      ))}
+
+      <div
+        className={cn(
+          "absolute top-0 left-1/2 h-[420px] w-[1100px] -translate-x-1/2 rounded-full blur-[120px]",
+          menuAmbientTopGlowClass,
+        )}
+      />
+
+      <div
+        className={cn(
+          "absolute inset-x-0 bottom-0 h-[45%] opacity-80",
+          homeHorizonGlowClass,
+        )}
+      />
+
+      {particles.map((particle, i) => (
+        <div
+          key={i}
+          className="absolute rounded-full motion-reduce:animate-none animate-float"
+          style={{
+            width: particle.width + "px",
+            height: particle.height + "px",
+            left: particle.left + "%",
+            top: particle.top + "%",
+            background: "rgba(255,255,255,0.55)",
+            opacity: particle.opacity,
+            animationDuration: particle.duration + "s",
+            animationDelay: particle.delay + "s",
+          }}
+        />
+      ))}
+
+      <div className={cn("absolute inset-0", homeVignetteClass)} />
     </div>
   )
 }
+
+/** @deprecated Usar menuNatureShellClass en el shell raíz */
+export const homeWorkspaceSurfaceClass = "bg-[#070a09]"

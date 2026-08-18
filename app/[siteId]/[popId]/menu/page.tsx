@@ -11,7 +11,12 @@ import {
   MenuSectionNavigator,
   type MenuSectionNavItem,
 } from "@/app/[siteId]/[popId]/menu/MenuSectionNavigator"
-import { MenuPageSkeleton } from "@/app/[siteId]/[popId]/menu/MenuPageSkeleton"
+import {
+  MENU_DORMANT_SECTIONS,
+  MenuDormantGrid,
+} from "@/app/[siteId]/[popId]/menu/MenuDormantField"
+import { MenuDormantDock } from "@/app/[siteId]/[popId]/menu/MenuDormantDock"
+import "@/app/[siteId]/[popId]/menu/menuContentReveal.css"
 import {
   menuAmbientTopGlowClass,
   menuNatureShellClass,
@@ -19,10 +24,8 @@ import {
   menuPlanetOrbClass,
   menuVignetteClass,
 } from "@/app/[siteId]/[popId]/menu/menuNatureStyles"
+import { MenuHeaderEntity } from "@/app/[siteId]/[popId]/menu/MenuHeaderEntity"
 import {
-  menuHeaderBorderClass,
-  menuHeaderChromeClass,
-  menuHeaderHeightClass,
   menuHeaderRowClass,
 } from "@/app/[siteId]/[popId]/menu/menuFloatingPillStyles"
 import {
@@ -332,7 +335,8 @@ function MenuPage() {
     popAccess != null &&
     popAccess.pop.siteId.trim().toLowerCase() !== siteId.trim().toLowerCase()
 
-  const loading = isLoading || !isMounted
+  const contentPending = isLoading || !popAccess
+  const menuReady = !contentPending && sections.length > 0
   const error =
     !popId || !siteId
       ? "No se encontró el punto de venta."
@@ -347,11 +351,7 @@ function MenuPage() {
     popImageUrl?.trim() ||
     `https://api.dicebear.com/7.x/shapes/svg?seed=${encodeURIComponent(popId || "pop")}&backgroundColor=1a1f1d`
 
-  if (loading) {
-    return <MenuPageSkeleton />
-  }
-
-  if (error) {
+  if (!contentPending && error) {
     return (
       <div className="fixed inset-0 flex flex-col items-center justify-center gap-3 bg-background px-6 text-center">
         <p className="text-sm text-destructive">{error}</p>
@@ -362,7 +362,7 @@ function MenuPage() {
     )
   }
 
-  if (sections.length === 0) {
+  if (!contentPending && sections.length === 0) {
     return (
       <div className="fixed inset-0 flex flex-col items-center justify-center gap-4 bg-background px-6 text-center">
         <p className="max-w-md text-sm text-muted-foreground">
@@ -384,6 +384,7 @@ function MenuPage() {
     <div
       ref={containerRef}
       className={cn(menuNatureShellClass, "fixed inset-0 flex flex-col overflow-hidden bg-background")}
+      aria-busy={contentPending}
     >
       <div className="absolute inset-0 pointer-events-none overflow-hidden">
         {popBackgroundImageUrl?.trim() ? (
@@ -460,15 +461,8 @@ function MenuPage() {
         <div className={cn("absolute inset-0", menuVignetteClass)} />
       </div>
 
-      <header
-        className={cn(
-          "relative z-20 border-b",
-          menuHeaderBorderClass,
-          menuHeaderChromeClass,
-          menuHeaderHeightClass,
-        )}
-      >
-        <div className={menuHeaderRowClass}>
+      <MenuHeaderEntity>
+          <div className={menuHeaderRowClass}>
           <div className="flex min-w-0 items-center gap-6">
             <RootsIconButton
               href="/home"
@@ -490,10 +484,10 @@ function MenuPage() {
               </div>
               <div className="flex min-w-0 flex-col gap-0.5">
                 <span className={cn("truncate text-base tracking-tight", menuRealmTitleClass)}>
-                  {popName}
+                  {popName || "\u00a0"}
                 </span>
                 <span className={cn("truncate text-sm", menuRealmLightMutedClass)}>
-                  {popStreetAddress?.trim() || "Sin dirección"}
+                  {popStreetAddress?.trim() || (contentPending ? "\u00a0" : "Sin dirección")}
                 </span>
               </div>
             </div>
@@ -626,60 +620,77 @@ function MenuPage() {
             </div>
           </div>
         </div>
-      </header>
+      </MenuHeaderEntity>
 
-      <div className="relative z-10 flex-1 flex flex-col items-center justify-center pb-28 pt-4">
-        <div className="flex flex-col items-center w-full">
-          <MenuSectionNavigator
-            sections={sectionNavItems}
-            selectedIndex={selectedIndex}
-            onSelect={scrollTo}
-          />
+      <div className="relative z-10 flex min-h-0 flex-1 flex-col pb-[5.75rem]">
+        <div className="flex min-h-0 flex-1 flex-col items-center justify-center pt-2">
+          {menuReady ? (
+            <div className="menu-content-emerge w-full overflow-hidden" ref={emblaRef}>
+              <EmblaDockEditSync emblaApi={emblaApi} />
+              <div className="flex">
+                {sections.map((sectionKey) => {
+                  const items = getFilteredItems(sectionKey)
 
-          <div className="w-full overflow-hidden" ref={emblaRef}>
-            <EmblaDockEditSync emblaApi={emblaApi} />
-            <div className="flex">
-              {sections.map((sectionKey) => {
-                const items = getFilteredItems(sectionKey)
+                  return (
+                    <div key={sectionKey} className="flex-[0_0_100%] min-w-0 px-8">
+                      <div className="grid grid-cols-6 gap-x-0 gap-y-8 max-w-4xl mx-auto min-h-[280px] py-6 px-6 select-none">
+                        {items.map((item) => {
+                          const target = routeForMenuLink(siteId, popId, item.link)
+                          const styleSectionKey =
+                            menuStyleSectionForModuleSection(
+                              sectionKey as
+                                | "operar"
+                                | "administrar"
+                                | "configurar"
+                                | "extras",
+                            )
 
-                return (
-                  <div key={sectionKey} className="flex-[0_0_100%] min-w-0 px-8">
-                    <div className="grid grid-cols-6 gap-x-0 gap-y-8 max-w-4xl mx-auto min-h-[280px] py-6 px-6 select-none">
-                      {items.map((item) => {
-                        const target = routeForMenuLink(siteId, popId, item.link)
-                        const styleSectionKey =
-                          menuStyleSectionForModuleSection(
-                            sectionKey as
-                              | "operar"
-                              | "administrar"
-                              | "configurar"
-                              | "extras",
+                          return (
+                            <MenuGridItemButton
+                              key={
+                                item.link !== "section"
+                                  ? item.link
+                                  : (item.moduleKey ?? item.name)
+                              }
+                              item={item}
+                              sectionKey={styleSectionKey}
+                              disabled={!target}
+                              href={target}
+                            />
                           )
-
-                        return (
-                          <MenuGridItemButton
-                            key={
-                              item.link !== "section"
-                                ? item.link
-                                : (item.moduleKey ?? item.name)
-                            }
-                            item={item}
-                            sectionKey={styleSectionKey}
-                            disabled={!target}
-                            href={target}
-                          />
-                        )
-                      })}
+                        })}
+                      </div>
                     </div>
-                  </div>
-                )
-              })}
+                  )
+                })}
+              </div>
             </div>
-          </div>
+          ) : (
+            <MenuDormantGrid />
+          )}
+        </div>
+
+        <div
+          className={cn(
+            "flex shrink-0 justify-center px-4 pt-5 pb-2",
+            menuReady ? "menu-content-emerge" : "pointer-events-none opacity-95",
+          )}
+        >
+          <MenuSectionNavigator
+            sections={
+              menuReady ? sectionNavItems : [...MENU_DORMANT_SECTIONS]
+            }
+            selectedIndex={menuReady ? selectedIndex : 0}
+            onSelect={menuReady ? scrollTo : () => {}}
+          />
         </div>
       </div>
 
-      <MenuDock siteId={siteId} popId={popId} />
+      {menuReady ? (
+        <MenuDock siteId={siteId} popId={popId} />
+      ) : (
+        <MenuDormantDock />
+      )}
 
       <RootsIconButton
         type="button"

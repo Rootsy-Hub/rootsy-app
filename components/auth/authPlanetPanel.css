@@ -1,0 +1,446 @@
+/**
+ * Entidad de acceso — se instala en el universo con presencia y respiración propia.
+ */
+
+.auth-planet-entity {
+  --auth-entity-cyan: rgba(147, 210, 255, 1);
+  --auth-entity-savia: rgba(36, 173, 106, 1);
+  --auth-entity-life: 14s;
+  overflow: hidden;
+  padding: 0.85rem 0.35rem 1rem;
+  animation: auth-planet-install 1.35s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.auth-planet-entity:focus-within .menu-planet-life {
+  animation-play-state: paused;
+}
+
+/* Materialización — la entidad aterriza en el firmamento */
+@keyframes auth-planet-install {
+  0% {
+    opacity: 0;
+    transform: translateY(18px) scale(0.94);
+    filter: blur(10px);
+  }
+  55% {
+    opacity: 1;
+    transform: translateY(-3px) scale(1.012);
+    filter: blur(0);
+  }
+  100% {
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* Aura exterior — campo de presencia (contenida, sin scroll) */
+.auth-planet-entity-aura {
+  position: absolute;
+  inset: -1rem -0.5rem;
+  z-index: 0;
+  border-radius: 999px;
+  background:
+    radial-gradient(
+      ellipse 72% 68% at 50% 46%,
+      rgba(36, 173, 106, 0.22) 0%,
+      rgba(56, 189, 248, 0.12) 34%,
+      rgba(147, 210, 255, 0.06) 52%,
+      transparent 72%
+    );
+  filter: blur(18px);
+  animation: auth-planet-aura-pulse var(--auth-entity-life)
+    cubic-bezier(0.45, 0.05, 0.55, 0.95) infinite;
+}
+
+@keyframes auth-planet-aura-pulse {
+  0%,
+  100% {
+    opacity: 0.72;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.04);
+  }
+}
+
+/* Anillos orbitales — contenidos dentro de la entidad */
+.auth-planet-entity-orbit {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  z-index: 0;
+  width: calc(100% + 1rem);
+  height: calc(100% + 0.75rem);
+  border: 1px solid rgba(147, 210, 255, 0.14);
+  border-radius: 999px;
+  transform: translate(-50%, -50%);
+  animation: auth-planet-orbit-spin 36s linear infinite;
+}
+
+.auth-planet-entity-orbit--inner {
+  width: calc(100% + 0.35rem);
+  height: calc(100% + 0.25rem);
+  border-color: rgba(36, 173, 106, 0.12);
+  animation-direction: reverse;
+  animation-duration: 24s;
+}
+
+.auth-planet-entity-orbit::before {
+  content: "";
+  position: absolute;
+  top: -0.2rem;
+  left: 50%;
+  width: 0.42rem;
+  height: 0.42rem;
+  border-radius: 999px;
+  background: rgba(186, 230, 253, 0.85);
+  box-shadow: 0 0 14px rgba(147, 210, 255, 0.55);
+  transform: translateX(-50%);
+}
+
+.auth-planet-entity-orbit--inner::before {
+  top: auto;
+  bottom: -0.15rem;
+  background: rgba(111, 216, 156, 0.9);
+  box-shadow: 0 0 12px rgba(36, 173, 106, 0.5);
+}
+
+@keyframes auth-planet-orbit-spin {
+  to {
+    transform: translate(-50%, -50%) rotate(360deg);
+  }
+}
+
+/* Cuerpo holográfico */
+.auth-planet-entity-body {
+  position: relative;
+  z-index: 1;
+}
+
+.auth-planet-entity-core {
+  position: absolute;
+  inset: 0;
+  opacity: 0.72;
+  background:
+    radial-gradient(
+      circle at 50% 62%,
+      rgba(63, 200, 126, 0.18) 0%,
+      rgba(56, 189, 248, 0.08) 36%,
+      transparent 68%
+    );
+  transform-origin: 50% 58%;
+}
+
+.auth-planet-entity-sky {
+  position: absolute;
+  inset: 0;
+  opacity: 0.65;
+  background:
+    radial-gradient(
+      ellipse 110% 54% at 50% -8%,
+      rgba(255, 255, 255, 0.14) 0%,
+      rgba(186, 230, 253, 0.08) 28%,
+      transparent 58%
+    );
+}
+
+.auth-planet-entity-weight {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to bottom, transparent 58%, rgba(0, 0, 0, 0.16) 100%);
+}
+
+.auth-planet-entity-edge {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.08),
+    inset 0 0 28px rgba(147, 210, 255, 0.06);
+  animation: auth-planet-edge-glow 8s cubic-bezier(0.45, 0.05, 0.55, 0.95) infinite;
+}
+
+@keyframes auth-planet-edge-glow {
+  0%,
+  100% {
+    box-shadow:
+      inset 0 0 0 1px rgba(255, 255, 255, 0.08),
+      inset 0 0 24px rgba(147, 210, 255, 0.05),
+      0 0 32px rgba(36, 173, 106, 0.08);
+  }
+  50% {
+    box-shadow:
+      inset 0 0 0 1px rgba(255, 255, 255, 0.14),
+      inset 0 0 36px rgba(147, 210, 255, 0.12),
+      0 0 48px rgba(36, 173, 106, 0.16);
+  }
+}
+
+/* Núcleo — punto de anclaje de la entidad */
+.auth-planet-entity-nucleus {
+  position: absolute;
+  top: 0.85rem;
+  left: 50%;
+  z-index: 1;
+  width: 0.42rem;
+  height: 0.42rem;
+  border-radius: 999px;
+  transform: translateX(-50%);
+  background: rgba(255, 255, 255, 0.95);
+  box-shadow:
+    0 0 0 4px rgba(147, 210, 255, 0.12),
+    0 0 18px rgba(186, 230, 253, 0.55),
+    0 0 32px rgba(36, 173, 106, 0.28);
+}
+
+/* Barrido holográfico — solo en el borde exterior */
+.auth-planet-entity-scan {
+  pointer-events: none;
+}
+
+.auth-planet-entity-scan--rim {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  border-radius: inherit;
+  opacity: 0.22;
+  background: linear-gradient(
+    180deg,
+    transparent 0%,
+    rgba(186, 230, 253, 0.08) 48%,
+    transparent 52%
+  );
+  animation: auth-planet-scan 7s cubic-bezier(0.45, 0.05, 0.55, 0.95) infinite;
+}
+
+.auth-planet-entity-scan--inner {
+  position: absolute;
+  inset: 0;
+  opacity: 0.16;
+  background: linear-gradient(
+    180deg,
+    transparent 0%,
+    rgba(186, 230, 253, 0.06) 48%,
+    transparent 52%
+  );
+  animation: auth-planet-scan 9s cubic-bezier(0.45, 0.05, 0.55, 0.95) infinite;
+  animation-delay: -2.5s;
+}
+
+@keyframes auth-planet-scan {
+  0%,
+  18% {
+    transform: translateY(-120%);
+  }
+  45%,
+  100% {
+    transform: translateY(120%);
+  }
+}
+
+/* Esquinas sentinela */
+.auth-planet-entity-corners span {
+  position: absolute;
+  width: 1.1rem;
+  height: 1.1rem;
+  opacity: 0.55;
+  border-color: rgba(147, 210, 255, 0.42);
+}
+
+.auth-planet-entity-corners span:nth-child(1) {
+  top: 0.65rem;
+  left: 0.65rem;
+  border-top: 1px solid;
+  border-left: 1px solid;
+}
+
+.auth-planet-entity-corners span:nth-child(2) {
+  top: 0.65rem;
+  right: 0.65rem;
+  border-top: 1px solid;
+  border-right: 1px solid;
+}
+
+.auth-planet-entity-corners span:nth-child(3) {
+  bottom: 0.65rem;
+  left: 0.65rem;
+  border-bottom: 1px solid;
+  border-left: 1px solid;
+}
+
+.auth-planet-entity-corners span:nth-child(4) {
+  right: 0.65rem;
+  bottom: 0.65rem;
+  border-bottom: 1px solid;
+  border-right: 1px solid;
+}
+
+/* Partículas locales — polvo de luz en el borde holográfico, no sobre el contenido */
+.auth-planet-entity-particles {
+  position: absolute;
+  inset: -0.75rem;
+  z-index: 2;
+  pointer-events: none;
+  mask-image: linear-gradient(to bottom, black 0%, transparent 18%, transparent 82%, black 100%),
+    linear-gradient(to right, black 0%, transparent 14%, transparent 86%, black 100%);
+  mask-composite: intersect;
+}
+
+.auth-planet-entity-particle {
+  position: absolute;
+  width: 2px;
+  height: 2px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.72);
+  animation: auth-planet-particle-float 16s cubic-bezier(0.45, 0.05, 0.55, 0.95) infinite;
+}
+
+.auth-planet-entity-particle:nth-child(1) {
+  left: 8%;
+  top: 18%;
+  animation-delay: -1s;
+  animation-duration: 14s;
+}
+
+.auth-planet-entity-particle:nth-child(2) {
+  left: 92%;
+  top: 24%;
+  animation-delay: -4s;
+  animation-duration: 18s;
+}
+
+.auth-planet-entity-particle:nth-child(3) {
+  left: 14%;
+  top: 78%;
+  animation-delay: -7s;
+  animation-duration: 15s;
+}
+
+.auth-planet-entity-particle:nth-child(4) {
+  left: 86%;
+  top: 72%;
+  animation-delay: -2s;
+  animation-duration: 17s;
+}
+
+.auth-planet-entity-particle:nth-child(5) {
+  left: 4%;
+  top: 46%;
+  animation-delay: -9s;
+  animation-duration: 19s;
+}
+
+.auth-planet-entity-particle:nth-child(6) {
+  left: 96%;
+  top: 52%;
+  animation-delay: -5s;
+  animation-duration: 13s;
+}
+
+.auth-planet-entity-particle:nth-child(7) {
+  left: 28%;
+  top: 6%;
+  animation-delay: -11s;
+  animation-duration: 16s;
+}
+
+.auth-planet-entity-particle:nth-child(8) {
+  left: 72%;
+  top: 90%;
+  animation-delay: -3s;
+  animation-duration: 20s;
+}
+
+@keyframes auth-planet-particle-float {
+  0%,
+  100% {
+    opacity: 0.15;
+    transform: translate(0, 0);
+  }
+  50% {
+    opacity: 0.65;
+    transform: translate(0, -6px);
+  }
+}
+
+.auth-planet-entity-content {
+  position: relative;
+  padding: 0.85rem;
+}
+
+@media (min-width: 640px) {
+  .auth-planet-entity-content {
+    padding: 1rem;
+  }
+}
+
+/* Firmamento interior — noche clara donde brillan las estrellas (el contenido) */
+.auth-planet-entity-chamber {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  border-radius: 1rem;
+  background:
+    radial-gradient(
+      ellipse 120% 80% at 50% -6%,
+      rgba(20, 58, 74, 0.55) 0%,
+      transparent 52%
+    ),
+    linear-gradient(
+      180deg,
+      rgba(5, 12, 16, 0.97) 0%,
+      rgba(7, 10, 9, 0.96) 46%,
+      rgba(4, 8, 12, 0.98) 100%
+    );
+  box-shadow:
+    inset 0 0 0 1px rgba(147, 210, 255, 0.14),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08),
+    inset 0 0 40px rgba(0, 0, 0, 0.28);
+}
+
+.auth-planet-entity-stars {
+  position: absolute;
+  inset: 0;
+  opacity: 0.55;
+  background-image:
+    radial-gradient(circle at 12% 18%, rgba(255, 255, 255, 0.9) 0, rgba(255, 255, 255, 0.9) 1px, transparent 1.6px),
+    radial-gradient(circle at 28% 72%, rgba(255, 255, 255, 0.75) 0, rgba(255, 255, 255, 0.75) 1px, transparent 1.6px),
+    radial-gradient(circle at 44% 34%, rgba(255, 255, 255, 0.65) 0, rgba(255, 255, 255, 0.65) 1px, transparent 1.6px),
+    radial-gradient(circle at 58% 82%, rgba(255, 255, 255, 0.8) 0, rgba(255, 255, 255, 0.8) 1px, transparent 1.6px),
+    radial-gradient(circle at 71% 24%, rgba(255, 255, 255, 0.7) 0, rgba(255, 255, 255, 0.7) 1px, transparent 1.6px),
+    radial-gradient(circle at 84% 58%, rgba(255, 255, 255, 0.85) 0, rgba(255, 255, 255, 0.85) 1px, transparent 1.6px),
+    radial-gradient(circle at 92% 16%, rgba(255, 255, 255, 0.6) 0, rgba(255, 255, 255, 0.6) 1px, transparent 1.6px),
+    radial-gradient(circle at 18% 48%, rgba(186, 230, 253, 0.55) 0, rgba(186, 230, 253, 0.55) 1px, transparent 1.6px),
+    radial-gradient(circle at 66% 44%, rgba(186, 230, 253, 0.45) 0, rgba(186, 230, 253, 0.45) 1px, transparent 1.6px),
+    radial-gradient(circle at 38% 88%, rgba(255, 255, 255, 0.5) 0, rgba(255, 255, 255, 0.5) 1px, transparent 1.6px);
+  mask-image: radial-gradient(ellipse at 50% 42%, black 0%, transparent 78%);
+}
+
+.auth-planet-entity-inner {
+  position: relative;
+  z-index: 1;
+  padding: 1.35rem 1.15rem 1.25rem;
+}
+
+@media (min-width: 640px) {
+  .auth-planet-entity-inner {
+    padding: 1.65rem 1.45rem 1.5rem;
+  }
+}
+
+/* Esquinas legacy del panel — reforzadas por sentinels */
+.auth-planet-panel::before,
+.auth-planet-panel::after {
+  display: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .auth-planet-entity,
+  .auth-planet-entity-aura,
+  .auth-planet-entity-orbit,
+  .auth-planet-entity-edge,
+  .auth-planet-entity-scan,
+  .auth-planet-entity-particle {
+    animation: none !important;
+  }
+}
