@@ -113,21 +113,21 @@ export const ROOTSY_LAYOUTS_TABLES_BODY = {
   canvasBackground: elevationHex("elevation.surface"),
   tableBackground: elevationHex("elevation.surface.overlay"),
   headBackground: elevationHex("elevation.surface.sunken"),
-  headTextColor: hx("bruma", "500"),
+  headTextColor: hx("bruma", "700"),
   rowEvenBackground: elevationHex("elevation.surface.overlay"),
-  rowOddBackground: elevationHex("elevation.surface.sunken"),
+  rowOddBackground: hx("bruma", "100"),
   rowHoverBackground: hx("savia", "50"),
   rowSelectedBackground: hx("savia", "100"),
   primaryTextColor: hx("bruma", "900"),
-  secondaryTextColor: hx("bruma", "500"),
-  metaTextColor: hx("bruma", "500"),
-  linkColor: hx("savia", "600"),
+  secondaryTextColor: hx("bruma", "600"),
+  metaTextColor: hx("bruma", "600"),
+  linkColor: hx("savia", "700"),
   moneyColor: hx("bruma", "900"),
-  /** Columna ordenable — label activo · ícono savia · reposo bruma-500. */
-  sortActiveLabelColor: hx("bruma", "700"),
-  sortInactiveLabelColor: hx("bruma", "500"),
-  sortActiveIconColor: hx("savia", "600"),
-  sortInactiveIconColor: hx("bruma", "500"),
+  /** Columna ordenable — label activo · ícono savia · reposo bruma-600. */
+  sortActiveLabelColor: hx("bruma", "800"),
+  sortInactiveLabelColor: hx("bruma", "600"),
+  sortActiveIconColor: hx("savia", "700"),
+  sortInactiveIconColor: hx("bruma", "600"),
 } as const
 
 export const ROOTSY_LAYOUTS_TABLES_STATUS: Record<

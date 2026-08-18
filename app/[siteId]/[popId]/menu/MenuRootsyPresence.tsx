@@ -17,7 +17,7 @@ import {
 import type { PopAccessCache } from "@/app/home/homeUserDataTypes"
 import { usePopOptimisticNav } from "@/context/PopOptimisticNavContext"
 import { buildMenuRootsyContext } from "@/lib/menu/menuRootsyContext"
-import { buildMenuRootsyAdviceCacheKey } from "@/lib/menu/menuRootsyCache"
+import { buildMenuRootsyAdviceCacheKey } from "@/lib/menu/menuRootsyCacheKey"
 import { buildMenuRootsyRuleAdvice } from "@/lib/menu/menuRootsySuggestions"
 import type { MenuRootsyAdvice } from "@/lib/menu/menuRootsyTypes"
 import type { MenuSectionKey } from "@/lib/menuCatalog"

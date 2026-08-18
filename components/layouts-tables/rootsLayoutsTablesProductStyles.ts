@@ -13,8 +13,8 @@ export const layoutsTablesChromeSurfaceClass = cn(
 )
 
 export const layoutsTablesFooterSurfaceClass = cn(
-  "border-t border-[var(--rootsy-bruma-200)]",
-  "bg-white",
+  "border-t border-[var(--rootsy-bruma-300)]",
+  "bg-[var(--rootsy-bruma-100)]",
 )
 
 export const layoutsTablesChromeDividerClass =
@@ -44,17 +44,17 @@ export const layoutsTablesFooterGridClass =
   "grid h-full w-full grid-cols-[1fr_auto_1fr] items-center gap-4 px-4 sm:px-5"
 
 export const layoutsTablesFooterCountTextClass = cn(
-  "font-canopy text-sm text-[var(--rootsy-bruma-500)]",
+  "font-canopy text-sm text-[var(--rootsy-bruma-700)]",
 )
 
 export const layoutsTablesFooterCountStrongClass =
-  "font-medium text-[var(--rootsy-bruma-900)]"
+  "font-semibold text-[var(--rootsy-bruma-900)]"
 
 export const layoutsTablesFooterNavClusterClass =
   "flex items-center gap-2"
 
 export const layoutsTablesFooterPageLabelClass =
-  "px-1 font-canopy text-sm text-[var(--rootsy-bruma-900)]"
+  "px-1.5 font-canopy text-sm font-semibold tabular-nums text-[var(--rootsy-bruma-900)]"
 
 export const layoutsTablesFooterPageSizeClusterClass =
   "flex items-center justify-end gap-2"

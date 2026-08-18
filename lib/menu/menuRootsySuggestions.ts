@@ -78,12 +78,28 @@ function toSuggestion(mod: MenuRootsyAllowedModule): MenuRootsySuggestion {
 }
 
 function buildPriorityKeys(context: MenuRootsyContext): string[] {
-  const { sectionKey, hourLocal, isOwner, roleName } = context
+  const { sectionKey, hourLocal, isOwner, roleName, signals } = context
   const role = roleKind(roleName, isOwner)
   const phase = dayPhase(hourLocal)
   const flavor = businessFlavor(context.businessType)
 
+  const cashClosed =
+    signals.cashRegisterOpen === false &&
+    context.allowedModules.some((mod) => mod.moduleKey === "cash_registers")
+  const noSalesYet = signals.salesTodayCount === 0
+  const stockAlert =
+    (signals.lowStockCount ?? 0) > 0 || (signals.outOfStockCount ?? 0) > 0
+
   if (sectionKey === "operar") {
+    if (cashClosed && phase === "morning") {
+      return ["cash_registers", "sale", "mostrador", "mesas", "inventory"]
+    }
+    if (noSalesYet && phase !== "evening") {
+      return ["sale", "mostrador", "mesas", "cash_registers", "inventory"]
+    }
+    if (stockAlert) {
+      return ["inventory", "stock", "sale", "mostrador", "purchases"]
+    }
     if (role === "cashier") {
       return ["sale", "mostrador", "mesas", "cash_registers", "inventory"]
     }
@@ -99,6 +115,9 @@ function buildPriorityKeys(context: MenuRootsyContext): string[] {
   }
 
   if (sectionKey === "administrar") {
+    if (stockAlert) {
+      return ["stock", "inventory", "reports", "operations", "suppliers"]
+    }
     if (role === "owner" || role === "admin") {
       return phase === "evening"
         ? ["reports", "statistics", "operations", "invoices", "clients"]
@@ -114,7 +133,8 @@ function buildPriorityKeys(context: MenuRootsyContext): string[] {
 }
 
 function buildLead(context: MenuRootsyContext, suggestions: MenuRootsySuggestion[]): string {
-  const { sectionKey, trialDaysLeft, subscriptionActive, allowedModules } = context
+  const { sectionKey, trialDaysLeft, subscriptionActive, allowedModules, signals } =
+    context
 
   if (allowedModules.length === 0) {
     return "Todavía no tenés módulos acá. Pedile a quien administra el negocio que te habilite acceso."
@@ -122,6 +142,36 @@ function buildLead(context: MenuRootsyContext, suggestions: MenuRootsySuggestion
 
   if (!subscriptionActive) {
     return "Tu suscripción no está activa. Revisá Cuentas o Ajustes para regularizar el acceso."
+  }
+
+  if (
+    signals.cashRegisterOpen === false &&
+    sectionKey === "operar" &&
+    allowedModules.some((mod) => mod.moduleKey === "cash_registers")
+  ) {
+    return "Todavía no hay caja abierta — conviene arrancar por ahí antes de vender."
+  }
+
+  if (signals.salesTodayCount === 0 && sectionKey === "operar") {
+    return "Hoy todavía no registraste ventas. ¿Arrancamos por el mostrador o la caja?"
+  }
+
+  if (
+    ((signals.lowStockCount ?? 0) > 0 || (signals.outOfStockCount ?? 0) > 0) &&
+    (sectionKey === "operar" || sectionKey === "administrar")
+  ) {
+    const parts: string[] = []
+    if ((signals.lowStockCount ?? 0) > 0) {
+      parts.push(
+        `${signals.lowStockCount} artículo${signals.lowStockCount === 1 ? "" : "s"} con stock bajo`,
+      )
+    }
+    if ((signals.outOfStockCount ?? 0) > 0) {
+      parts.push(
+        `${signals.outOfStockCount} sin stock`,
+      )
+    }
+    return `${parts.join(" y ")} — conviene revisar inventario pronto.`
   }
 
   if (trialDaysLeft != null && trialDaysLeft <= 7) {

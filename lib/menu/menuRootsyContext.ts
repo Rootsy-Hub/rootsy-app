@@ -8,6 +8,10 @@ import type {
   MenuRootsyAllowedModule,
   MenuRootsyContext,
 } from "@/lib/menu/menuRootsyTypes"
+import {
+  emptyMenuRootsyOperationalSignals,
+  type MenuRootsyOperationalSignals,
+} from "@/lib/menu/menuRootsySignalsShared"
 
 export function buildMenuRootsyContext(input: {
   popAccess: PopAccessCache
@@ -15,6 +19,7 @@ export function buildMenuRootsyContext(input: {
   sectionKey: MenuSectionKey
   sectionTitle: string
   now?: Date
+  signals?: MenuRootsyOperationalSignals
 }): MenuRootsyContext {
   const { popAccess, siteId, sectionKey, sectionTitle } = input
   const now = input.now ?? new Date()
@@ -64,6 +69,7 @@ export function buildMenuRootsyContext(input: {
     trialDaysLeft,
     subscriptionActive: popAccess.subscription.isActive,
     allowedModules,
+    signals: input.signals ?? emptyMenuRootsyOperationalSignals(now),
   }
 }
 

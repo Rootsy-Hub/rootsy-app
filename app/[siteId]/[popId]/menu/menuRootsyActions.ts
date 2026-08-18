@@ -8,6 +8,7 @@ import {
   isMenuRootsyAiConfigured,
 } from "@/lib/menu/menuRootsyAi"
 import { buildMenuRootsyContext } from "@/lib/menu/menuRootsyContext"
+import { loadMenuRootsyOperationalSignals } from "@/lib/menu/menuRootsySignals"
 import type { MenuRootsyAdvice } from "@/lib/menu/menuRootsyTypes"
 import { validatePopAccess } from "@/lib/popHelpers"
 import { siteIdsMatchClientRoute } from "@/lib/popRoutes"
@@ -46,11 +47,17 @@ export async function fetchMenuRootsyAdvice(
     return { success: false, error: "Sitio inválido para este negocio" }
   }
 
+  const signals = await loadMenuRootsyOperationalSignals(
+    popId,
+    popAccess.enabledModules,
+  )
+
   const context = buildMenuRootsyContext({
     popAccess,
     siteId,
     sectionKey,
     sectionTitle,
+    signals,
   })
 
   const ruleAdvice = buildMenuRootsyAdvice(context)

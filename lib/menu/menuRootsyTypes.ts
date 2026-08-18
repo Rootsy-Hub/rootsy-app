@@ -1,4 +1,5 @@
 import type { MenuSectionKey } from "@/lib/menuCatalog"
+import type { MenuRootsyOperationalSignals } from "@/lib/menu/menuRootsySignalsShared"
 
 export type MenuRootsySuggestion = {
   label: string
@@ -33,4 +34,5 @@ export type MenuRootsyContext = {
   trialDaysLeft: number | null
   subscriptionActive: boolean
   allowedModules: MenuRootsyAllowedModule[]
+  signals: MenuRootsyOperationalSignals
 }

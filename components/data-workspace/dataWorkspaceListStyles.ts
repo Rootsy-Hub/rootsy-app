@@ -413,7 +413,7 @@ export const workspaceTableNatureTextTertiaryClass =
   "text-[var(--wt-text-tertiary)]"
 
 export const workspaceTableNatureLinkClass =
-  "font-medium text-[var(--wt-link)] underline-offset-2 hover:text-[var(--wt-link-hover)] hover:underline"
+  "font-semibold text-[var(--wt-link)] underline underline-offset-2 hover:text-[var(--wt-link-hover)]"
 
 export const workspaceTableNatureMoneyClass = cn(
   "font-numeric text-sm font-normal tabular-nums tracking-tight text-[var(--wt-money)]",
@@ -491,7 +491,7 @@ export const workspaceTableNatureBodyRowSignalDangerClass =
   "!bg-[color-mix(in_srgb,#ef4444_8%,var(--wt-surface))] shadow-[inset_3px_0_0_#ef4444]"
 
 export const workspaceTableNatureStockOkClass =
-  "text-[var(--rootsy-savia-700)]"
+  "text-[var(--rootsy-savia-800)]"
 
 export const workspaceTableNatureStockWarningClass = "text-[#78350f]"
 

@@ -13,6 +13,7 @@ export const MENU_ROOTSY_AI_SYSTEM_PROMPT = [
   "lead: 1 oración, máximo 220 caracteres.",
   "suggestionModuleKeys: 1 a 3 keys de allowedModuleKeys, ordenadas por utilidad.",
   "No inventes módulos. No menciones POP: decí negocio.",
+  "Usá signals si vienen: caja cerrada → priorizá Cajas; ventas en 0 por la mañana → Ventas; lowStockCount > 0 → Stock o Inventario.",
 ].join(" ")
 
 export function buildMenuRootsyAiUserPayload(context: MenuRootsyContext) {
@@ -30,6 +31,14 @@ export function buildMenuRootsyAiUserPayload(context: MenuRootsyContext) {
       key: mod.moduleKey,
       label: mod.label,
     })),
+    signals: {
+      dayOfWeek: context.signals.dayOfWeek,
+      cashRegisterOpen: context.signals.cashRegisterOpen,
+      openCashRegisterCount: context.signals.openCashRegisterCount,
+      salesTodayCount: context.signals.salesTodayCount,
+      lowStockCount: context.signals.lowStockCount,
+      outOfStockCount: context.signals.outOfStockCount,
+    },
   }
 }
 

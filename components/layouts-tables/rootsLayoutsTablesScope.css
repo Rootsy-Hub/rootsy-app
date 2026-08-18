@@ -5,7 +5,7 @@
 
 .workspace-layouts-tables {
   --wt-surface: var(--rootsy-white);
-  --wt-surface-stripe: var(--rootsy-bruma-50);
+  --wt-surface-stripe: var(--rootsy-bruma-100);
   --wt-surface-hover: var(--rootsy-savia-50);
   --wt-surface-selected: var(--rootsy-savia-100);
   --wt-surface-selected-ring: color-mix(
@@ -13,16 +13,16 @@
     var(--rootsy-savia-600) 28%,
     transparent
   );
-  --wt-header-bg: var(--rootsy-bruma-50);
-  --wt-header-bg-glass: color-mix(in srgb, var(--wt-header-bg) 68%, transparent);
-  --wt-header-text: var(--rootsy-bruma-500);
-  --wt-border: var(--rootsy-bruma-200);
-  --wt-border-strong: var(--rootsy-bruma-200);
+  --wt-header-bg: var(--rootsy-bruma-100);
+  --wt-header-bg-glass: color-mix(in srgb, var(--wt-header-bg) 82%, white);
+  --wt-header-text: var(--rootsy-bruma-700);
+  --wt-border: var(--rootsy-bruma-300);
+  --wt-border-strong: var(--rootsy-bruma-300);
   --wt-text-primary: var(--rootsy-bruma-900);
-  --wt-text-secondary: var(--rootsy-bruma-500);
+  --wt-text-secondary: var(--rootsy-bruma-600);
   --wt-text-tertiary: var(--rootsy-bruma-500);
-  --wt-link: var(--rootsy-savia-600);
-  --wt-link-hover: var(--rootsy-savia-700);
+  --wt-link: var(--rootsy-savia-700);
+  --wt-link-hover: var(--rootsy-savia-800);
   --wt-money: var(--rootsy-bruma-900);
   --wt-money-negative: #78350f;
   --wt-bulk-bg: var(--rootsy-bruma-50);

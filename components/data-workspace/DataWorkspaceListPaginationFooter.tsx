@@ -159,7 +159,7 @@ export function DataWorkspaceListPaginationFooter({
             <RootsIconButton
               label="Ir al inicio"
               theme="workspace"
-              emphasis="ghost"
+              emphasis="outlined"
               size="default"
               disabled={paginationDisabled || safeCurrentPage <= 1}
               onClick={() => onPageChange(1)}
@@ -169,7 +169,7 @@ export function DataWorkspaceListPaginationFooter({
             <RootsIconButton
               label="Página anterior"
               theme="workspace"
-              emphasis="ghost"
+              emphasis="outlined"
               size="default"
               disabled={paginationDisabled || safeCurrentPage <= 1}
               onClick={() => onPageChange(Math.max(1, safeCurrentPage - 1))}
@@ -183,7 +183,7 @@ export function DataWorkspaceListPaginationFooter({
             <RootsIconButton
               label="Página siguiente"
               theme="workspace"
-              emphasis="ghost"
+              emphasis="outlined"
               size="default"
               disabled={paginationDisabled || safeCurrentPage >= effectiveTotalPages}
               onClick={() =>
@@ -195,7 +195,7 @@ export function DataWorkspaceListPaginationFooter({
             <RootsIconButton
               label="Ir al final"
               theme="workspace"
-              emphasis="ghost"
+              emphasis="outlined"
               size="default"
               disabled={paginationDisabled || safeCurrentPage >= effectiveTotalPages}
               onClick={() => onPageChange(effectiveTotalPages)}
