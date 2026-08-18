@@ -15,6 +15,10 @@ import {
   type DataWorkspaceListTableShellProps,
 } from "@/components/data-workspace/DataWorkspaceListTableShell"
 import {
+  dataWorkspaceTablesSheetClass,
+  dataWorkspaceTablesSheetFrameClass,
+} from "@/components/data-workspace/dataWorkspaceListStyles"
+import {
   dataWorkspaceListFiltersBarClass,
   dataWorkspaceListFiltersBarInnerClass,
   dataWorkspaceListFiltersBarRowClass,
@@ -26,7 +30,7 @@ import { cn } from "@/lib/utils"
 import type { ReactNode } from "react"
 import type { DataWorkspaceHeaderVariant } from "@/components/layouts/dataWorkspaceHeaderStyles"
 
-/** Variante de header para listados tabla — chrome módulo sombra · savia. */
+/** Variante de header para listados tabla — mismo universo que el menú. */
 export const dataWorkspaceTableListHeaderVariant =
   dataWorkspaceModuleHeaderVariant satisfies DataWorkspaceHeaderVariant
 
@@ -152,7 +156,7 @@ export type DataWorkspaceTableListShellProps = Omit<
   DataWorkspaceListTableShellProps,
   "variant"
 > & {
-  /** Por defecto `tables` (pie sombra · layout librería). */
+  /** Por defecto `tables` (pie universo · layout librería). */
   footerVariant?: DataWorkspaceListPaginationFooterProps["variant"]
 }
 
@@ -163,11 +167,15 @@ export function DataWorkspaceTableListShell({
   ...props
 }: DataWorkspaceTableListShellProps) {
   return (
-    <DataWorkspaceListTableShell
-      variant="flush"
-      className={cn(workspaceTableLayoutListBodyScopeClass, className)}
-      {...props}
-    />
+    <div className={dataWorkspaceTablesSheetFrameClass}>
+      <div className={dataWorkspaceTablesSheetClass}>
+        <DataWorkspaceListTableShell
+          variant="flush"
+          className={cn(workspaceTableLayoutListBodyScopeClass, className)}
+          {...props}
+        />
+      </div>
+    </div>
   )
 }
 

@@ -5,11 +5,20 @@ import {
   menuLinkToDockId,
   useMenuDockEdit,
 } from "@/app/[siteId]/[popId]/menu/MenuDockDndContext"
+import "@/app/[siteId]/[popId]/menu/menuPlanetLife.css"
 import {
-  menuIconGlyphClass,
-  menuIconGradientForSection,
-  menuIconHoverShadowForSection,
-} from "@/app/[siteId]/[popId]/menu/menuNatureStyles"
+  menuHoloFloatLiftClass,
+  menuHoloFocusRingForSection,
+  menuHoloGlyphClass,
+  menuHoloIconHoverForSection,
+  menuHoloIconShellForSection,
+  menuHoloLabelClass,
+  menuHoloLabelDockPlacedClass,
+  menuHoloPlanetLifeClass,
+  menuHoloRealmWorldRimClass,
+  menuHoloTileMotionClass,
+  menuPlanetLifeStyle,
+} from "@/lib/menu/menuHoloStyles"
 import { MenuIconChrome } from "@/app/[siteId]/[popId]/menu/MenuIconChrome"
 import { usePopOptimisticNav } from "@/context/PopOptimisticNavContext"
 import type { MenuItemDef, MenuSectionKey } from "@/lib/menuCatalog"
@@ -55,47 +64,50 @@ export function MenuGridItemButton({
 
   const isThisMenuDrag =
     isDragging && activeDragKind === "menu" && dockId === draggingItemId
-  const showDockInsertedStyle =
-    editing && (alreadyInDock || isThisMenuDrag)
+  const showDockPlacedStyle = editing && alreadyInDock && !isThisMenuDrag
+  const isDragGhost = isThisMenuDrag
+  const isAlive = !showDockPlacedStyle && !isDragGhost
+  const lifeSeed = `${sectionKey}-${item.link}-${item.name}`
+  const lifeStyle = menuPlanetLifeStyle(lifeSeed)
+
+  const shellVariant = showDockPlacedStyle || isDragGhost ? "placed" : "default"
 
   const Icon = item.icon
-  const tileClassName =
-    "group flex h-[7.125rem] w-24 flex-col items-center gap-2.5 transition-all duration-200"
+  const tileClassName = cn(
+    "group flex h-[7.125rem] w-24 flex-col items-center gap-2.5",
+    !editing && menuHoloTileMotionClass,
+  )
 
   const tileInner = (
     <>
-      <div className="relative">
+      <div
+        className={cn(isAlive && menuHoloPlanetLifeClass)}
+        style={isAlive ? lifeStyle : undefined}
+      >
         <div
           className={cn(
-            "relative flex size-[72px] items-center justify-center overflow-hidden rounded-[20px] transition-all duration-200",
-            showDockInsertedStyle
-              ? cn(
-                  menuIconGradientForSection(sectionKey, "muted"),
-                  "ring-1 ring-foreground/10",
-                )
-              : cn(
-                  menuIconGradientForSection(sectionKey),
-                  menuIconHoverShadowForSection(sectionKey),
-                ),
+            "flex size-[72px] items-center justify-center rounded-[20px]",
+            menuHoloIconShellForSection(sectionKey, shellVariant),
+            !isDragGhost &&
+              menuHoloRealmWorldRimClass(sectionKey, showDockPlacedStyle),
+            !showDockPlacedStyle &&
+              !isDragGhost &&
+              cn(menuHoloFloatLiftClass, menuHoloIconHoverForSection(sectionKey)),
           )}
         >
-          {!showDockInsertedStyle ? <MenuIconChrome /> : null}
-          <Icon
-            className={cn(
-              "relative size-8 transition-transform duration-200",
-              menuIconGlyphClass,
-              !editing && "group-hover:scale-[1.02]",
-            )}
-          />
+          {!isDragGhost ? (
+            <MenuIconChrome sectionKey={sectionKey} alive={isAlive} />
+          ) : null}
+          <Icon className={cn("size-8", menuHoloGlyphClass)} />
         </div>
       </div>
 
       <span
         className={cn(
-          "flex h-8 w-full items-center justify-center text-center text-xs font-normal leading-tight line-clamp-2 transition-colors duration-200",
-          showDockInsertedStyle
-            ? "text-foreground/35"
-            : "text-foreground/80 group-hover:text-foreground/95",
+          "flex h-8 w-full items-center justify-center text-center line-clamp-2",
+          showDockPlacedStyle || isDragGhost
+            ? menuHoloLabelDockPlacedClass
+            : menuHoloLabelClass,
         )}
       >
         {item.name}
@@ -110,15 +122,16 @@ export function MenuGridItemButton({
       {...(draggable ? attributes : {})}
       style={{
         animationDelay:
-          editing && draggable && !showDockInsertedStyle
+          editing && draggable
             ? `${(item.name.length % 5) * 45}ms`
             : undefined,
       }}
       className={cn(
         "justify-self-center transition-[opacity,transform] duration-200",
         editing && draggable && "touch-none",
-        editing && draggable && !showDockInsertedStyle && "animate-dock-wiggle",
-        showDockInsertedStyle && "scale-[0.97] opacity-45",
+        editing && draggable && "animate-dock-wiggle",
+        showDockPlacedStyle && "scale-[0.985]",
+        isDragGhost && "scale-[0.96] opacity-55",
         editing && draggable && "cursor-grab active:cursor-grabbing",
       )}
     >
@@ -136,10 +149,7 @@ export function MenuGridItemButton({
             }
             startOptimisticNav({ href, title: item.name })
           }}
-          className={cn(
-            tileClassName,
-            "hover:scale-[1.02] active:scale-[0.98]",
-          )}
+          className={cn(tileClassName, menuHoloFocusRingForSection(sectionKey))}
         >
           {tileInner}
         </Link>
@@ -152,7 +162,8 @@ export function MenuGridItemButton({
           disabled={disabled}
           className={cn(
             tileClassName,
-            !editing && !disabled && "hover:scale-[1.02] active:scale-[0.98]",
+            "border-0 bg-transparent p-0",
+            menuHoloFocusRingForSection(sectionKey),
             disabled && "cursor-default opacity-70",
           )}
         >

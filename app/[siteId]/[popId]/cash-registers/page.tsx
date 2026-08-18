@@ -31,11 +31,14 @@ import {
   hasCashRegisterArcaInput,
   saveCashRegisterArcaConfig,
 } from "@/app/[siteId]/[popId]/cash-registers/cashRegisterArcaClient"
+import { DataWorkspaceBlocksSection } from "@/components/data-workspace/DataWorkspaceBlocksSection"
 import {
   DataWorkspaceModuleLayout,
   dataWorkspaceModuleHeaderVariant,
 } from "@/components/layouts-module/DataWorkspaceModuleLayout"
-import { DataWorkspaceHeaderIconButton } from "@/components/layouts/DataWorkspaceHeaderIconButton"
+import { RootsBanner } from "@/components/rootsy-banner"
+import { RootsPrimaryButton } from "@/components/rootsy-button"
+import { RootsFormSegmentField } from "@/components/rootsy-form"
 import {
   dataWorkspaceBlocksEmptyStateClass,
   dataWorkspaceBlocksPageContentClass,
@@ -48,22 +51,48 @@ import {
 } from "@/lib/moneyInput"
 import { formatLocaleDateTime } from "@/lib/popTimezone"
 import { usePopWorkspace } from "@/context/PopWorkspaceContext"
-import {
-  DoorClosed,
-  DoorOpen,
-  MinusCircle,
-  Pencil,
-  Plus,
-  Trash2,
-} from "lucide-react"
 import { useParams, useRouter } from "next/navigation"
 import {
   useCallback,
   useEffect,
+  useMemo,
   useRef,
   useState,
   type FormEvent,
 } from "react"
+
+type RegisterFilter = "todas" | "abiertas" | "cerradas" | "inactivas"
+
+const REGISTER_FILTER_OPTIONS = [
+  { value: "todas", label: "Todas" },
+  { value: "abiertas", label: "Abiertas" },
+  { value: "cerradas", label: "Cerradas" },
+  { value: "inactivas", label: "Inactivas" },
+] as const
+
+function registerMatchesFilter(row: CashRegisterRow, filter: RegisterFilter) {
+  const isOpen = Boolean(row.openSessionId)
+  if (filter === "abiertas") return row.isActive && isOpen
+  if (filter === "cerradas") return row.isActive && !isOpen
+  if (filter === "inactivas") return !row.isActive
+  return true
+}
+
+function registerFilterDescription(filter: RegisterFilter) {
+  if (filter === "abiertas") return "Las que están cobrando ahora."
+  if (filter === "cerradas") return "Listas para abrir cuando haga falta."
+  if (filter === "inactivas") return "Ya no se usan en el día a día."
+  return "Dónde se abre el turno en este local."
+}
+
+function registerFilterEmptyCopy(filter: RegisterFilter, canCreate: boolean) {
+  if (filter === "abiertas") return "Ninguna caja está abierta ahora."
+  if (filter === "cerradas") return "No hay cajas cerradas."
+  if (filter === "inactivas") return "Ninguna caja está desactivada."
+  return canCreate
+    ? "Todavía no hay cajas. Creá la primera."
+    : "Todavía no hay cajas configuradas."
+}
 
 function formatDateTime(iso: string) {
   return formatLocaleDateTime(iso)
@@ -92,6 +121,7 @@ function CashRegistersPage() {
   const [canDelete, setCanDelete] = useState(false)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [registerFilter, setRegisterFilter] = useState<RegisterFilter>("todas")
   const [popFiscalCuit, setPopFiscalCuit] = useState<string | null>(null)
   const [popFiscalRazonSocial, setPopFiscalRazonSocial] = useState<string | null>(
     null,
@@ -194,6 +224,10 @@ function CashRegistersPage() {
   const pageLoading = bootstrapLoading || loading
   const popName = bootstrap?.popName ?? ""
   const headerError = bootstrapError
+  const visibleRegisters = useMemo(
+    () => registers.filter((row) => registerMatchesFilter(row, registerFilter)),
+    [registerFilter, registers],
+  )
 
   const openCreate = () => {
     setCreateBanner(null)
@@ -433,59 +467,73 @@ function CashRegistersPage() {
         contentFlush
         mainMaxWidthClass="max-w-none"
         mainClassName={dataWorkspaceBlocksPageMainClass}
-        headerActions={
-          canCreate ? (
-            <DataWorkspaceHeaderIconButton
-              label="Nueva caja"
-              headerVariant={dataWorkspaceModuleHeaderVariant}
-              primary
-              onClick={() => openCreate()}
-            >
-              <Plus className="size-5" aria-hidden />
-            </DataWorkspaceHeaderIconButton>
-          ) : null
-        }
       >
         <div className={dataWorkspaceBlocksPageContentClass}>
             {headerError ? (
-              <div
-                role="alert"
-                className="rounded-lg border border-destructive/25 bg-destructive/10 px-4 py-3 text-sm text-destructive"
-              >
-                Cabecera: {headerError}
-              </div>
+              <RootsBanner
+                intent="danger"
+                layout="message"
+                message={`Cabecera: ${headerError}`}
+              />
             ) : null}
 
             {pageLoading ? (
               <CashRegistersGridSkeleton />
             ) : error ? (
-              <div className="rounded-2xl border border-destructive/25 bg-destructive/5 px-4 py-3 text-sm text-destructive">
-                {error}
-              </div>
-            ) : registers.length === 0 ? (
-              <p className={dataWorkspaceBlocksEmptyStateClass}>
-                No hay cajas configuradas.
-                {canCreate ? " Creá una desde el botón superior." : ""}
-              </p>
+              <RootsBanner intent="danger" layout="message" message={error} />
             ) : (
-              <div className={dataWorkspaceEntityCardsGridClass}>
-                {registers.map((r) => (
-                  <CashRegisterCard
-                    key={r.id}
-                    row={r}
-                    canCreate={canCreate}
-                    canUpdate={canUpdate}
-                    canDelete={canDelete}
-                    detailHref={`${cashRegistersBasePath}/${r.id}${r.openSessionId ? "?v=arqueo" : ""}`}
-                    onEdit={() => startEdit(r)}
-                    onDelete={() => startDelete(r)}
-                    onOpen={() => startOpen(r)}
-                    onClose={() => startClose(r)}
-                    onDeposit={() => startMove(r, "deposit")}
-                    onWithdraw={() => startMove(r, "withdrawal")}
-                  />
-                ))}
-              </div>
+              <DataWorkspaceBlocksSection
+                title="Cajas del local"
+                description={registerFilterDescription(registerFilter)}
+                action={
+                  canCreate ? (
+                    <RootsPrimaryButton
+                      type="button"
+                      size="compact"
+                      onClick={() => openCreate()}
+                    >
+                      Nueva caja
+                    </RootsPrimaryButton>
+                  ) : null
+                }
+              >
+                <RootsFormSegmentField
+                  label="Ver cajas"
+                  aria-label="Filtrar cajas"
+                  layout="inline"
+                  className="[&>span:first-child]:sr-only"
+                  value={registerFilter}
+                  onValueChange={(value) =>
+                    setRegisterFilter(value as RegisterFilter)
+                  }
+                  options={REGISTER_FILTER_OPTIONS}
+                />
+
+                {visibleRegisters.length === 0 ? (
+                  <p className={dataWorkspaceBlocksEmptyStateClass}>
+                    {registerFilterEmptyCopy(registerFilter, canCreate)}
+                  </p>
+                ) : (
+                  <div className={dataWorkspaceEntityCardsGridClass}>
+                    {visibleRegisters.map((r) => (
+                      <CashRegisterCard
+                        key={r.id}
+                        row={r}
+                        canCreate={canCreate}
+                        canUpdate={canUpdate}
+                        canDelete={canDelete}
+                        detailHref={`${cashRegistersBasePath}/${r.id}${r.openSessionId ? "?v=arqueo" : ""}`}
+                        onEdit={() => startEdit(r)}
+                        onDelete={() => startDelete(r)}
+                        onOpen={() => startOpen(r)}
+                        onClose={() => startClose(r)}
+                        onDeposit={() => startMove(r, "deposit")}
+                        onWithdraw={() => startMove(r, "withdrawal")}
+                      />
+                    ))}
+                  </div>
+                )}
+              </DataWorkspaceBlocksSection>
             )}
         </div>
       </DataWorkspaceModuleLayout>

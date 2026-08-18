@@ -1,0 +1,31 @@
+/**
+ * Marketing sutil — mensaje de producto en tipografía, sin tapar el planeta.
+ */
+
+.auth-marketing-pitch {
+  padding-left: 0.9rem;
+  border-left: 2px solid rgba(36, 173, 106, 0.72);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .auth-marketing-pitch {
+    animation: auth-marketing-pitch-in 0.9s cubic-bezier(0.22, 1, 0.36, 1) 0.08s both;
+  }
+}
+
+@keyframes auth-marketing-pitch-in {
+  0% {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .auth-marketing-pitch {
+    animation: none !important;
+  }
+}

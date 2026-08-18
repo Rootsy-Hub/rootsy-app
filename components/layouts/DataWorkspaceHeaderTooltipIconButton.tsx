@@ -2,28 +2,34 @@
 
 import { DataWorkspaceHeaderIconButton } from "@/components/layouts/DataWorkspaceHeaderIconButton"
 import type { DataWorkspaceHeaderIconButtonProps } from "@/components/layouts/DataWorkspaceHeaderIconButton"
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip"
 import { cn } from "@/lib/utils"
 
-/** Botón de ícono del header con tooltip oscuro al hover (Salones, Nuevo pedido, etc.). */
+/** Botón de ícono del header con tooltip al hover — portal, no lo recorta el universo. */
 export function DataWorkspaceHeaderTooltipIconButton({
   label,
   className,
   ...props
 }: DataWorkspaceHeaderIconButtonProps) {
   return (
-    <div className={cn("group/header-tip relative flex", className)}>
-      <DataWorkspaceHeaderIconButton label={label} {...props} />
-      <span
-        role="tooltip"
-        className={cn(
-          "pointer-events-none absolute top-full left-1/2 z-[520] mt-1.5 -translate-x-1/2",
-          "whitespace-nowrap rounded-md border border-white/[0.06] bg-[#0c1014] px-3 py-1.5",
-          "text-xs text-balance text-zinc-100 shadow-lg shadow-black/45",
-          "opacity-0 transition-opacity duration-150 group-hover/header-tip:opacity-100",
-        )}
+    <Tooltip delayDuration={200}>
+      <TooltipTrigger asChild>
+        <div className={cn("flex", className)}>
+          <DataWorkspaceHeaderIconButton label={label} {...props} />
+        </div>
+      </TooltipTrigger>
+      <TooltipContent
+        variant="dark"
+        side="bottom"
+        sideOffset={8}
+        className="text-zinc-100"
       >
         {label}
-      </span>
-    </div>
+      </TooltipContent>
+    </Tooltip>
   )
 }

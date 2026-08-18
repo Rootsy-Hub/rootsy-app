@@ -1,0 +1,48 @@
+/**
+ * Mundo aspiracional — visión por hacer real al ingresar.
+ */
+
+.auth-world-scene--aspirational {
+  filter: saturate(0.82) brightness(0.91) contrast(0.97);
+}
+
+.auth-world-aspirational-veil {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(
+      ellipse 95% 75% at 50% 38%,
+      rgba(224, 242, 254, 0.09) 0%,
+      transparent 58%
+    ),
+    linear-gradient(
+      180deg,
+      rgba(7, 10, 9, 0.06) 0%,
+      rgba(7, 10, 9, 0.1) 48%,
+      rgba(7, 10, 9, 0.16) 100%
+    );
+  mix-blend-mode: soft-light;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .auth-world-aspirational-veil {
+    animation: auth-world-aspirational-breathe 14s cubic-bezier(0.45, 0.05, 0.55, 0.95) infinite;
+  }
+}
+
+@keyframes auth-world-aspirational-breathe {
+  0%,
+  100% {
+    opacity: 0.82;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .auth-world-aspirational-veil {
+    animation: none !important;
+    opacity: 0.9;
+  }
+}

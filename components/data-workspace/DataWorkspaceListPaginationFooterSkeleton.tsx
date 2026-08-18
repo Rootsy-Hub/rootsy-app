@@ -20,7 +20,7 @@ export function FooterTotalCountSkeleton({
       className={cn(
         "inline-block shrink-0 rounded align-middle",
         isTables
-          ? "h-2.5 w-12 animate-pulse bg-[color-mix(in_srgb,var(--rootsy-sombra-500)_70%,transparent)] md:w-16"
+          ? "h-2.5 w-12 animate-pulse bg-[color-mix(in_srgb,var(--rootsy-white)_18%,transparent)] md:w-16"
           : isDark
           ? "h-2.5 w-12 animate-pulse bg-[#263530]/70 md:w-16"
           : isEarth

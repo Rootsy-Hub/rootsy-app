@@ -14,6 +14,10 @@ import {
 } from "@/components/data-workspace/dataWorkspaceTablesLayout"
 import {
   workspaceTableNatureLinkClass,
+  workspaceTableNatureStatusBadgeClass,
+  workspaceTableNatureStockDangerClass,
+  workspaceTableNatureStockOkClass,
+  workspaceTableNatureStockWarningClass,
   workspaceTableNatureTextPrimaryClass,
   workspaceTableNatureTextSecondaryClass,
   workspaceTableNatureTextTertiaryClass,
@@ -29,6 +33,26 @@ export function formatArticleStockOnHand(value: number): string {
     return Math.round(value).toLocaleString("es-AR")
   }
   return value.toLocaleString("es-AR", { maximumFractionDigits: 2 })
+}
+
+export type ArticleStockSignal = "ok" | "bajo" | "sin" | "negativo"
+
+export function resolveArticleStockSignal(
+  stockOnHand: number,
+  minStockLevel: number | null,
+): ArticleStockSignal {
+  if (stockOnHand < -1e-6) return "negativo"
+  if (Math.abs(stockOnHand) < 1e-6) return "sin"
+  if (minStockLevel != null && stockOnHand <= minStockLevel + 1e-6) return "bajo"
+  return "ok"
+}
+
+export function articleStockRowSignal(
+  signal: ArticleStockSignal,
+): "warning" | "danger" | undefined {
+  if (signal === "bajo") return "warning"
+  if (signal === "sin" || signal === "negativo") return "danger"
+  return undefined
 }
 
 export function ArticleTableImageCell({
@@ -257,39 +281,81 @@ export function ArticleTableSuppliersCell({
 export function ArticleTableStockCell({
   stockOnHand,
   unitOfMeasure,
+  minStockLevel = null,
 }: {
   stockOnHand: number
   unitOfMeasure: string
+  minStockLevel?: number | null
 }) {
   const unitSuffix = shortUnitOfMeasure(unitOfMeasure)
+  const signal = resolveArticleStockSignal(stockOnHand, minStockLevel)
+  const amountClass =
+    signal === "negativo" || signal === "sin"
+      ? workspaceTableNatureStockDangerClass
+      : signal === "bajo"
+        ? workspaceTableNatureStockWarningClass
+        : workspaceTableNatureStockOkClass
+  const whisper =
+    signal === "negativo"
+      ? "En negativo"
+      : signal === "sin"
+        ? "Sin stock"
+        : signal === "bajo"
+          ? "Bajo el mínimo"
+          : null
+  const badgeTone =
+    signal === "negativo" || signal === "sin"
+      ? "vencido"
+      : signal === "bajo"
+        ? "pendiente"
+        : null
 
   return (
     <TableCell
       className={cn(
         workspaceTableLayoutBodyCellClass,
-        "w-28 min-w-28 text-right",
+        "w-32 min-w-32 text-right",
       )}
     >
-      <span className="inline-flex items-baseline justify-end gap-1 leading-4">
-        <span
-          className={cn(
-            "font-numeric text-sm font-semibold tabular-nums tracking-tight",
-            workspaceTableNatureTextPrimaryClass,
-          )}
-        >
-          {formatArticleStockOnHand(stockOnHand)}
-        </span>
-        {unitSuffix ? (
+      <div className={cn(workspaceTableLayoutCellStackClass, "items-end")}>
+        <span className="inline-flex items-baseline justify-end gap-1 leading-4">
           <span
             className={cn(
-              "text-xs font-normal",
-              workspaceTableNatureTextSecondaryClass,
+              "font-numeric text-sm font-semibold tabular-nums tracking-tight",
+              amountClass,
             )}
           >
-            {unitSuffix}
+            {formatArticleStockOnHand(stockOnHand)}
           </span>
-        ) : null}
-      </span>
+          {unitSuffix ? (
+            <span
+              className={cn(
+                "text-xs font-normal",
+                workspaceTableNatureTextSecondaryClass,
+              )}
+            >
+              {unitSuffix}
+            </span>
+          ) : null}
+        </span>
+        {whisper && badgeTone ? (
+          <span
+            className={cn(
+              "inline-flex rounded px-1.5 py-px text-[10px] font-semibold leading-4",
+              workspaceTableNatureStatusBadgeClass[badgeTone],
+            )}
+          >
+            {whisper}
+          </span>
+        ) : (
+          <span
+            className="invisible text-[10px] leading-4"
+            aria-hidden
+          >
+            &nbsp;
+          </span>
+        )}
+      </div>
     </TableCell>
   )
 }

@@ -11,18 +11,32 @@ import {
   MenuSectionNavigator,
   type MenuSectionNavItem,
 } from "@/app/[siteId]/[popId]/menu/MenuSectionNavigator"
-import { MenuPageSkeleton } from "@/app/[siteId]/[popId]/menu/MenuPageSkeleton"
+import {
+  MENU_DORMANT_SECTIONS,
+  MenuDormantGrid,
+} from "@/app/[siteId]/[popId]/menu/MenuDormantField"
+import { MenuDormantDock } from "@/app/[siteId]/[popId]/menu/MenuDormantDock"
+import { MenuDormantFirmament } from "@/app/[siteId]/[popId]/menu/MenuDormantFirmament"
+import { MenuOuterEntity } from "@/app/[siteId]/[popId]/menu/MenuOuterEntity"
+import { MenuRootsyPresence } from "@/app/[siteId]/[popId]/menu/MenuRootsyPresence"
+import "@/app/[siteId]/[popId]/menu/menuContentReveal.css"
 import {
   menuAmbientTopGlowClass,
   menuNatureShellClass,
+  menuPlanetAmbientWashClass,
+  menuPlanetOrbClass,
   menuVignetteClass,
 } from "@/app/[siteId]/[popId]/menu/menuNatureStyles"
+import { MenuHeaderEntity } from "@/app/[siteId]/[popId]/menu/MenuHeaderEntity"
 import {
-  menuHeaderBorderClass,
-  menuHeaderChromeClass,
-  menuHeaderHeightClass,
   menuHeaderRowClass,
 } from "@/app/[siteId]/[popId]/menu/menuFloatingPillStyles"
+import {
+  menuRealmBodyClass,
+  menuRealmDividerClass,
+  menuRealmLightMutedClass,
+  menuRealmTitleClass,
+} from "@/lib/menu/menuHoloStyles"
 import {
   menuSearchClearButtonClass,
   menuSearchFieldActiveClass,
@@ -41,11 +55,19 @@ import {
 import {
   type MenuItemDef,
   type MenuItemLink,
+  type MenuSectionKey,
 } from "@/lib/menuCatalog"
 import { formatLocaleTime } from "@/lib/popTimezone"
 import { popScopedHref } from "@/lib/popRoutes"
 import { cn } from "@/lib/utils"
-import { useState, useEffect, useRef, useCallback, useMemo, type RefObject } from "react"
+import {
+  useState,
+  useEffect,
+  useRef,
+  useCallback,
+  useMemo,
+  type RefObject,
+} from "react"
 import Link from "next/link"
 import { useParams } from "next/navigation"
 import useEmblaCarousel from "embla-carousel-react"
@@ -118,7 +140,6 @@ function MenuPage() {
   searchQueryRef.current = searchQuery
   const [time, setTime] = useState<Date | null>(null)
   const [isMounted, setIsMounted] = useState(false)
-  const [mousePos, setMousePos] = useState({ x: 50, y: 50 })
   const [particles, setParticles] = useState<
     Array<{
       width: number
@@ -130,7 +151,6 @@ function MenuPage() {
       delay: number
     }>
   >([])
-  const containerRef = useRef<HTMLDivElement>(null)
   const [isOnline, setIsOnline] = useState(true)
 
   const {
@@ -200,6 +220,8 @@ function MenuPage() {
     }))
   }, [sections, filteredMenuSections])
 
+  const activeSectionKey = (sections[selectedIndex] ?? "operar") as MenuSectionKey
+
   useEffect(() => {
     setIsMounted(true)
     setSearchShortcutLabel(detectSearchShortcutLabel())
@@ -219,30 +241,6 @@ function MenuPage() {
     )
 
     return () => clearInterval(timer)
-  }, [])
-
-  useEffect(() => {
-    let frame = 0
-    const handleMouseMove = (e: MouseEvent) => {
-      if (document.hidden) return
-      if (frame) return
-      const { clientX, clientY } = e
-      frame = window.requestAnimationFrame(() => {
-        frame = 0
-        const container = containerRef.current
-        if (!container) return
-        const rect = container.getBoundingClientRect()
-        setMousePos({
-          x: ((clientX - rect.left) / rect.width) * 100,
-          y: ((clientY - rect.top) / rect.height) * 100,
-        })
-      })
-    }
-    window.addEventListener("mousemove", handleMouseMove, { passive: true })
-    return () => {
-      window.removeEventListener("mousemove", handleMouseMove)
-      if (frame) window.cancelAnimationFrame(frame)
-    }
   }, [])
 
   const handleSearchBlur = useCallback(
@@ -321,7 +319,8 @@ function MenuPage() {
     popAccess != null &&
     popAccess.pop.siteId.trim().toLowerCase() !== siteId.trim().toLowerCase()
 
-  const loading = isLoading || !isMounted
+  const contentPending = !isMounted || isLoading || !popAccess
+  const menuReady = !contentPending && sections.length > 0
   const error =
     !popId || !siteId
       ? "No se encontró el punto de venta."
@@ -332,15 +331,19 @@ function MenuPage() {
           : popAccess && !popAccess.canEnter
             ? "No tenés acceso activo a este punto de venta."
             : null
-  const popLogoSrc =
-    popImageUrl?.trim() ||
-    `https://api.dicebear.com/7.x/shapes/svg?seed=${encodeURIComponent(popId || "pop")}&backgroundColor=1a1f1d`
+  const popLogoFallback = `https://api.dicebear.com/7.x/shapes/svg?seed=${encodeURIComponent(popId || "pop")}&backgroundColor=1a1f1d`
+  const headerPopLogoSrc = contentPending
+    ? popLogoFallback
+    : popImageUrl?.trim() || popLogoFallback
+  const headerPopName = contentPending ? "\u00a0" : popName || "\u00a0"
+  const headerPopAddress = contentPending
+    ? "\u00a0"
+    : popStreetAddress?.trim() || "Sin dirección"
+  const headerUserName = contentPending ? "Usuario" : userFullName || "Usuario"
+  const headerUserRoleLabel = contentPending ? "" : userRoleLabel
+  const headerUserAvatarSrc = contentPending ? null : userImageUrl
 
-  if (loading) {
-    return <MenuPageSkeleton />
-  }
-
-  if (error) {
+  if (!contentPending && error) {
     return (
       <div className="fixed inset-0 flex flex-col items-center justify-center gap-3 bg-background px-6 text-center">
         <p className="text-sm text-destructive">{error}</p>
@@ -351,7 +354,7 @@ function MenuPage() {
     )
   }
 
-  if (sections.length === 0) {
+  if (!contentPending && sections.length === 0) {
     return (
       <div className="fixed inset-0 flex flex-col items-center justify-center gap-4 bg-background px-6 text-center">
         <p className="max-w-md text-sm text-muted-foreground">
@@ -369,62 +372,87 @@ function MenuPage() {
   }
 
   return (
-    <MenuDockDndProvider popId={popId} enabledModules={enabledModules}>
+    <MenuDockDndProvider
+      popId={popId}
+      enabledModules={enabledModules}
+    >
     <div
-      ref={containerRef}
-      className={cn(menuNatureShellClass, "fixed inset-0 flex flex-col overflow-hidden bg-background")}
+      className={cn(menuNatureShellClass, "menu-firmament-settle fixed inset-0 flex flex-col overflow-hidden bg-background")}
+      aria-busy={contentPending}
     >
       <div className="absolute inset-0 pointer-events-none overflow-hidden">
-        {popBackgroundImageUrl?.trim() ? (
+        {menuReady && popBackgroundImageUrl?.trim() ? (
           <>
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src={popBackgroundImageUrl.trim()}
               alt=""
-              className="absolute inset-0 size-full object-cover opacity-[0.40]"
+              className="absolute inset-0 size-full object-cover opacity-[0.32]"
             />
-            <div className="absolute inset-0 bg-background/32" />
+            <div className="absolute inset-0 bg-[rgba(5,12,16,0.42)]" />
           </>
         ) : null}
-        <div
-          className="absolute w-[800px] h-[800px] rounded-full opacity-10 blur-[150px] transition-all duration-[2000ms] ease-out"
-          style={{
-            background:
-              "radial-gradient(circle, color-mix(in srgb, var(--rootsy-particle) 50%, transparent) 0%, transparent 70%)",
-            left: `${mousePos.x}%`,
-            top: `${mousePos.y}%`,
-            transform: "translate(-50%, -50%)",
-          }}
-        />
-        <div className={cn("absolute top-0 left-1/2 -translate-x-1/2 w-[1000px] h-[400px] rounded-full blur-[120px]", menuAmbientTopGlowClass)} />
-        {particles.map((particle, i) => (
-          <div
-            key={i}
-            className="absolute rounded-full animate-float"
-            style={{
-              width: particle.width + "px",
-              height: particle.height + "px",
-              left: particle.left + "%",
-              top: particle.top + "%",
-              background: "var(--rootsy-particle)",
-              opacity: particle.opacity,
-              animationDuration: particle.duration + "s",
-              animationDelay: particle.delay + "s",
-            }}
-          />
-        ))}
-        <div className={cn("absolute inset-0", menuVignetteClass)} />
+
+        {!menuReady ? (
+          <MenuDormantFirmament />
+        ) : (
+          <>
+            {(["operar", "administrar", "configurar"] as const).map((sectionKey, index) => (
+              <div
+                key={sectionKey}
+                aria-hidden
+                className={cn(
+                  "absolute rounded-full blur-[150px] transition-opacity duration-[2000ms] ease-out menu-content-emerge",
+                  menuPlanetOrbClass(sectionKey),
+                  activeSectionKey === sectionKey ? "opacity-100" : "opacity-45",
+                )}
+                style={{
+                  width: 520,
+                  height: 520,
+                  left: index === 0 ? "18%" : index === 1 ? "50%" : "82%",
+                  top: index === 0 ? "38%" : index === 1 ? "48%" : "36%",
+                  transform: "translate(-50%, -50%)",
+                }}
+              />
+            ))}
+
+            <div
+              aria-hidden
+              className={cn(
+                "absolute inset-0 transition-opacity duration-[2000ms] ease-out menu-content-emerge",
+                menuPlanetAmbientWashClass(activeSectionKey),
+              )}
+            />
+
+            <div
+              className={cn(
+                "absolute top-0 left-1/2 h-[400px] w-[1000px] -translate-x-1/2 rounded-full blur-[120px] menu-content-emerge",
+                menuAmbientTopGlowClass,
+              )}
+            />
+            {particles.map((particle, i) => (
+              <div
+                key={i}
+                className="absolute rounded-full animate-float menu-content-emerge"
+                style={{
+                  width: particle.width + "px",
+                  height: particle.height + "px",
+                  left: particle.left + "%",
+                  top: particle.top + "%",
+                  background: "rgba(255,255,255,0.55)",
+                  opacity: particle.opacity,
+                  animationDuration: particle.duration + "s",
+                  animationDelay: particle.delay + "s",
+                }}
+              />
+            ))}
+            <div className={cn("absolute inset-0 menu-content-emerge", menuVignetteClass)} />
+          </>
+        )}
       </div>
 
-      <header
-        className={cn(
-          "relative z-20 border-b",
-          menuHeaderBorderClass,
-          menuHeaderChromeClass,
-          menuHeaderHeightClass,
-        )}
-      >
-        <div className={menuHeaderRowClass}>
+      <MenuHeaderEntity>
+          <div className={menuHeaderRowClass}>
           <div className="flex min-w-0 items-center gap-6">
             <RootsIconButton
               href="/home"
@@ -437,19 +465,19 @@ function MenuPage() {
             </RootsIconButton>
 
             <div className="flex min-w-0 items-center gap-4">
-              <div className="size-12 shrink-0 overflow-hidden rounded-2xl ring-1 ring-border">
+              <div className="size-12 shrink-0 overflow-hidden rounded-2xl ring-2 ring-[rgba(228,242,248,0.18)] shadow-[0_4px_16px_rgba(0,0,0,0.18)]">
                 <img
-                  src={popLogoSrc}
+                  src={headerPopLogoSrc}
                   alt=""
                   className="h-full w-full object-cover"
                 />
               </div>
               <div className="flex min-w-0 flex-col gap-0.5">
-                <span className="truncate text-base font-bold tracking-tight text-foreground">
-                  {popName}
+                <span className={cn("truncate text-base tracking-tight", menuRealmTitleClass)}>
+                  {headerPopName}
                 </span>
-                <span className="truncate text-sm text-muted-foreground">
-                  {popStreetAddress?.trim() || "Sin dirección"}
+                <span className={cn("truncate text-sm", menuRealmLightMutedClass)}>
+                  {headerPopAddress}
                 </span>
               </div>
             </div>
@@ -533,15 +561,15 @@ function MenuPage() {
               </RootsIconButton>
             </div>
 
-            <div className="h-6 w-px bg-border" />
+            <div className={cn("h-6 w-px", menuRealmDividerClass)} />
 
             <div className="flex shrink-0 flex-col items-end">
-              <span className="text-lg font-bold tabular-nums text-foreground">
+              <span className={cn("text-lg tabular-nums", menuRealmTitleClass)}>
                 {isMounted && time
                   ? formatLocaleTime(time)
                   : "--:--"}
               </span>
-              <span className="text-xs uppercase tracking-wide text-foreground/30">
+              <span className={cn("text-xs uppercase tracking-wide", menuRealmLightMutedClass)}>
                 {isMounted && time
                   ? time.toLocaleDateString("es-AR", {
                       weekday: "short",
@@ -552,90 +580,124 @@ function MenuPage() {
               </span>
             </div>
 
-            <div className="h-6 w-px bg-border" />
+            <div className={cn("h-6 w-px", menuRealmDividerClass)} />
 
             <div className="flex min-w-0 items-center gap-3">
               <div className="hidden min-w-0 flex-col items-end text-right leading-tight sm:flex">
-                <span className="truncate text-sm font-semibold text-foreground/90">
-                  {userFullName || "Usuario"}
+                <span className={cn("truncate text-sm font-normal", menuRealmBodyClass)}>
+                  {headerUserName}
                 </span>
-                {userRoleLabel ? (
+                {headerUserRoleLabel ? (
                   <span
                     className={cn(
                       "truncate text-[10px] font-semibold uppercase tracking-wider",
                       dataWorkspaceHeaderRoleLabelClass(
                         "dark",
-                        Boolean(userRoleLabel),
+                        Boolean(headerUserRoleLabel),
                       ),
                     )}
                   >
-                    {userRoleLabel}
+                    {headerUserRoleLabel}
                   </span>
                 ) : null}
               </div>
               <DataWorkspaceHeaderUserMenu
-                userName={userFullName || "Usuario"}
-                userAvatarSrc={userImageUrl}
+                userName={headerUserName}
+                userAvatarSrc={headerUserAvatarSrc}
                 isOnline={isOnline}
                 headerVariant="dark"
               />
             </div>
           </div>
         </div>
-      </header>
+      </MenuHeaderEntity>
 
-      <div className="relative z-10 flex-1 flex flex-col items-center justify-center pb-28 pt-4">
-        <div className="flex flex-col items-center w-full">
+      <div className="relative z-10 flex min-h-0 flex-1 flex-col">
+        <div className="flex min-h-0 flex-1 flex-col items-center justify-center gap-14 sm:gap-16">
           <MenuSectionNavigator
-            sections={sectionNavItems}
-            selectedIndex={selectedIndex}
-            onSelect={scrollTo}
+            className={cn(
+              !menuReady && "pointer-events-none",
+              menuReady && "menu-content-emerge",
+            )}
+            sections={
+              menuReady ? sectionNavItems : [...MENU_DORMANT_SECTIONS]
+            }
+            selectedIndex={menuReady ? selectedIndex : 0}
+            onSelect={menuReady ? scrollTo : () => {}}
+            dormant={!menuReady}
           />
 
-          <div className="w-full overflow-hidden" ref={emblaRef}>
-            <EmblaDockEditSync emblaApi={emblaApi} />
-            <div className="flex">
-              {sections.map((sectionKey) => {
-                const items = getFilteredItems(sectionKey)
+          {menuReady ? (
+            <div className="menu-content-emerge w-full overflow-hidden" ref={emblaRef}>
+              <EmblaDockEditSync emblaApi={emblaApi} />
+              <div className="flex">
+                {sections.map((sectionKey) => {
+                  const items = getFilteredItems(sectionKey)
 
-                return (
-                  <div key={sectionKey} className="flex-[0_0_100%] min-w-0 px-8">
-                    <div className="grid grid-cols-6 gap-x-0 gap-y-8 max-w-4xl mx-auto min-h-[280px] py-6 px-6 select-none">
-                      {items.map((item) => {
-                        const target = routeForMenuLink(siteId, popId, item.link)
-                        const styleSectionKey =
-                          menuStyleSectionForModuleSection(
-                            sectionKey as
-                              | "operar"
-                              | "administrar"
-                              | "configurar"
-                              | "extras",
+                  return (
+                    <div key={sectionKey} className="flex-[0_0_100%] min-w-0 px-8">
+                      <div className="grid grid-cols-6 gap-x-0 gap-y-8 max-w-4xl mx-auto min-h-[280px] px-6 pb-6 pt-2 select-none">
+                        {items.map((item) => {
+                          const target = routeForMenuLink(siteId, popId, item.link)
+                          const styleSectionKey =
+                            menuStyleSectionForModuleSection(
+                              sectionKey as
+                                | "operar"
+                                | "administrar"
+                                | "configurar"
+                                | "extras",
+                            )
+
+                          return (
+                            <MenuGridItemButton
+                              key={
+                                item.link !== "section"
+                                  ? item.link
+                                  : (item.moduleKey ?? item.name)
+                              }
+                              item={item}
+                              sectionKey={styleSectionKey}
+                              disabled={!target}
+                              href={target}
+                            />
                           )
-
-                        return (
-                          <MenuGridItemButton
-                            key={
-                              item.link !== "section"
-                                ? item.link
-                                : (item.moduleKey ?? item.name)
-                            }
-                            item={item}
-                            sectionKey={styleSectionKey}
-                            disabled={!target}
-                            href={target}
-                          />
-                        )
-                      })}
+                        })}
+                      </div>
                     </div>
-                  </div>
-                )
-              })}
+                  )
+                })}
+              </div>
             </div>
-          </div>
+          ) : (
+            <MenuDormantGrid />
+          )}
         </div>
       </div>
 
-      <MenuDock siteId={siteId} popId={popId} />
+      <MenuOuterEntity
+        variant="foot"
+        floating
+        className={cn(
+          !menuReady && "pointer-events-none",
+          menuReady && "menu-content-emerge",
+        )}
+      >
+        {isMounted ? (
+          <MenuDock siteId={siteId} popId={popId} />
+        ) : (
+          <MenuDormantDock />
+        )}
+      </MenuOuterEntity>
+
+      <MenuRootsyPresence
+        sectionKey={activeSectionKey}
+        sectionTitle={sectionNavItems[selectedIndex]?.title ?? "Operar"}
+        siteId={siteId}
+        popId={popId}
+        popAccess={popAccess}
+        disabled={!menuReady || !popAccess}
+        className={menuReady ? "menu-content-emerge" : undefined}
+      />
 
       <RootsIconButton
         type="button"
@@ -643,7 +705,7 @@ function MenuPage() {
         surface="dark"
         size="large"
         label="Ayuda"
-        className="absolute bottom-4 right-4 z-20 rounded-full"
+        className="absolute bottom-4 right-4 z-30 rounded-full"
       >
         <HelpCircle aria-hidden />
       </RootsIconButton>

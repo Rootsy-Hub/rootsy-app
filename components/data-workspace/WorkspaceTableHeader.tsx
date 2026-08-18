@@ -164,6 +164,7 @@ export function WorkspaceTableBodyRow({
   index,
   selected,
   inactive,
+  signal,
   noHover = true,
   className,
   children,
@@ -172,6 +173,8 @@ export function WorkspaceTableBodyRow({
   index: number
   selected?: boolean
   inactive?: boolean
+  /** Aviso o peligro — stock bajo, sin stock, vencido. */
+  signal?: "warning" | "danger"
   noHover?: boolean
   className?: string
 }) {
@@ -184,6 +187,7 @@ export function WorkspaceTableBodyRow({
           selected,
           noHover,
           inactive,
+          signal,
         }),
         selected &&
           "data-[state=selected]:!bg-[var(--wt-surface-selected)] hover:data-[state=selected]:!bg-[var(--wt-surface-selected)]",

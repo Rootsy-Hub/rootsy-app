@@ -1,0 +1,91 @@
+/**
+ * Aire de bloques — bruma adelante, planeta atrás.
+ * El valle se siente; no se estudia. El trabajo queda en las losetas.
+ * La capa del planeta vive adentro del recuadro: no agranda el scroll.
+ * @see layoutsBlocksHardcodedSpec · /images/rootsyplanet.jpeg
+ */
+.data-workspace-blocks-atmosphere {
+  position: relative;
+  isolation: isolate;
+  overflow-x: hidden;
+  background-color: var(--rootsy-bruma-50);
+  background-image:
+    radial-gradient(
+      ellipse 90% 42% at 50% -8%,
+      color-mix(in srgb, var(--rootsy-bruma-100) 68%, transparent) 0%,
+      transparent 72%
+    ),
+    radial-gradient(
+      ellipse 70% 36% at 50% 108%,
+      color-mix(in srgb, var(--rootsy-savia-500) 14%, transparent) 0%,
+      transparent 72%
+    );
+  background-repeat: no-repeat;
+}
+
+.data-workspace-blocks-atmosphere::before {
+  content: "";
+  pointer-events: none;
+  position: absolute;
+  z-index: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: min(56vh, 100%);
+  background-image: url("/images/rootsyplanet.jpeg");
+  background-repeat: no-repeat;
+  background-size: cover;
+  background-position: 68% 42%;
+  opacity: 0.22;
+  filter: blur(22px) saturate(0.72) brightness(1.06);
+  transform: scale(1.12);
+  transform-origin: 50% 100%;
+  -webkit-mask-image: linear-gradient(
+    to top,
+    rgb(0 0 0 / 0.95) 0%,
+    rgb(0 0 0 / 0.45) 58%,
+    transparent 100%
+  );
+  mask-image: linear-gradient(
+    to top,
+    rgb(0 0 0 / 0.95) 0%,
+    rgb(0 0 0 / 0.45) 58%,
+    transparent 100%
+  );
+}
+
+.data-workspace-blocks-atmosphere > * {
+  position: relative;
+  z-index: 1;
+}
+
+/**
+ * Espera de bloques — neblina que respira.
+ * Estación (lenta) + brisa suave: el tiempo no se cuenta.
+ */
+@keyframes data-workspace-blocks-breath {
+  0%,
+  100% {
+    opacity: 0.4;
+  }
+  50% {
+    opacity: 0.86;
+  }
+}
+
+.data-workspace-blocks-breath {
+  animation: data-workspace-blocks-breath 2.8s cubic-bezier(0.4, 1, 0.6, 1) infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .data-workspace-blocks-breath {
+    animation: none;
+    opacity: 0.55;
+  }
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  .data-workspace-blocks-atmosphere::before {
+    content: none;
+  }
+}

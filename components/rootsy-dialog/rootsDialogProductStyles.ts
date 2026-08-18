@@ -1,15 +1,16 @@
 /**
- * Dialog / alert — tokens Modales UI (elevation · bruma · sombra).
+ * Dialog / alert — tokens Modales UI (alba · claro · bruma).
  * @see app/.../library/ui-components/modalsUiHardcodedSpec.ts
  */
 
+import "@/components/rootsy-dialog/rootsDialogDawn.css"
 import { cn } from "@/lib/utils"
 
 /** z-index elevación — blanket 500 · panel 510. */
 export const rootsDialogOverlayZClass = "z-[500]"
 export const rootsDialogContentZClass = "z-[510]"
 
-/** Scrim sombra-950 40% — velo oscuro, sin blur tipo cristal. */
+/** Scrim sombra-950 40% — velo suave, sin universo. */
 export const rootsDialogOverlayClass = cn(
   rootsDialogOverlayZClass,
   "bg-[color-mix(in_srgb,var(--rootsy-sombra-950)_40%,transparent)]",
@@ -20,7 +21,7 @@ export const rootsDialogPanelPaddingXClass = "px-[var(--rootsy-space-400)]"
 
 /** Reset primitivo shadcn — flex shell sin grid/p-6/bg-background. */
 export const rootsDialogPrimitiveResetClass = cn(
-  "flex flex-col gap-0 p-0 bg-white border-0 shadow-none",
+  "flex flex-col gap-0 border-0 bg-[var(--rootsy-bruma-50)] p-0 shadow-none",
 )
 
 const rootsDialogElevationScopeClass = cn(
@@ -44,12 +45,12 @@ const rootsDialogCloseButtonClass = cn(
   "hover:[&_[data-slot=dialog-close]]:text-[var(--rootsy-bruma-700)]",
 )
 
-/** Shell modal — overlay + border + shadow.overlay · overflow recorta regiones al radio. */
+/** Shell modal — bloque vivo opaco · sin borde · shadow.overlay. */
 export const rootsDialogPanelShellClass = cn(
   rootsDialogPrimitiveResetClass,
   rootsDialogElevationScopeClass,
-  "overflow-hidden text-[var(--rootsy-bruma-900)]",
-  "border border-[var(--rootsy-bruma-200)] shadow-[var(--elevation-shadow-overlay)]",
+  "roots-dialog-living-block overflow-hidden text-[var(--rootsy-bruma-900)]",
+  "border-0 shadow-[var(--elevation-shadow-overlay)]",
   rootsDialogCloseButtonClass,
 )
 
@@ -69,7 +70,8 @@ export const rootsDialogSurfaceTwoColClass = cn(
 )
 
 export const rootsDialogHeaderClass = cn(
-  "flex shrink-0 flex-col gap-[var(--rootsy-space-100)] border-b border-[var(--rootsy-bruma-200)] bg-white",
+  "roots-dialog-dawn-chrome",
+  "flex shrink-0 flex-col gap-[var(--rootsy-space-100)] border-b-0",
   rootsDialogPanelPaddingXClass,
   "pt-[var(--rootsy-space-400)] text-left sm:text-left",
 )
@@ -94,28 +96,29 @@ export const rootsDialogDescriptionClass = cn(
   "font-normal text-[var(--rootsy-bruma-500)]",
 )
 
-/** elevation.surface.sunken · panel-padding space.400. */
+/** Valle — bruma viva entre dos claros. */
 export const rootsDialogBodyClass = cn(
-  "min-h-0 flex-1 overflow-y-auto overscroll-contain bg-[var(--elevation-surface-sunken)]",
+  "roots-dialog-clearing-body min-h-0 flex-1 overflow-y-auto overscroll-contain",
   rootsDialogPanelPaddingXClass,
   "py-[var(--rootsy-space-200)]",
 )
 
-/** Body compacto — overlay, sin sunken. */
+/** Body compacto — mismo claro. */
 export const rootsDialogBodyCompactClass = cn(
-  "flex-none overflow-y-auto overscroll-contain bg-white",
+  "roots-dialog-clearing-body flex-none overflow-y-auto overscroll-contain",
   rootsDialogPanelPaddingXClass,
   "py-[var(--rootsy-space-200)]",
 )
 
 export const rootsDialogLoadingBodyClass = cn(
-  "flex min-h-48 flex-col items-center justify-center bg-[var(--elevation-surface-sunken)]",
+  "roots-dialog-clearing-body flex min-h-48 flex-col items-center justify-center",
   rootsDialogPanelPaddingXClass,
   "py-[var(--rootsy-space-200)]",
 )
 
 export const rootsDialogFooterClass = cn(
-  "shrink-0 gap-[var(--rootsy-space-150)] border-t border-[var(--rootsy-bruma-200)] bg-white",
+  "roots-dialog-dawn-chrome roots-dialog-dawn-chrome--floor",
+  "shrink-0 gap-[var(--rootsy-space-150)] border-t-0",
   rootsDialogPanelPaddingXClass,
   "py-[var(--rootsy-space-150)]",
   "sm:flex-row sm:items-center sm:justify-between",
@@ -125,7 +128,7 @@ export const rootsDialogFooterClass = cn(
 export const rootsAlertDialogSurfaceClass = cn(
   rootsDialogPrimitiveResetClass,
   rootsDialogElevationScopeClass,
-  "overflow-hidden rounded-xl border border-[var(--rootsy-bruma-200)] text-[var(--rootsy-bruma-900)]",
+  "roots-dialog-living-block overflow-hidden rounded-xl border-0 text-[var(--rootsy-bruma-900)]",
   "shadow-[var(--elevation-shadow-overlay)] sm:max-w-md",
 )
 
@@ -149,7 +152,8 @@ export const rootsAlertDialogBodyTextClass = cn(
 )
 
 export const rootsAlertDialogFooterClass = cn(
-  "flex shrink-0 flex-col-reverse gap-[var(--rootsy-space-150)] border-t border-[var(--rootsy-bruma-200)] bg-white",
+  "roots-dialog-dawn-chrome roots-dialog-dawn-chrome--floor",
+  "flex shrink-0 flex-col-reverse gap-[var(--rootsy-space-150)] border-t-0",
   rootsDialogPanelPaddingXClass,
   "py-[var(--rootsy-space-150)]",
   "sm:flex-row sm:items-center sm:justify-between",

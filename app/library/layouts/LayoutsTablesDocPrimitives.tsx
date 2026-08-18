@@ -47,7 +47,10 @@ import {
   type LayoutsTablesSortDirection,
   type LayoutsTablesStatusId,
 } from "@/app/library/layouts/layoutsTablesHardcodedSpec"
-import { ROOTSY_LAYOUTS_TABLES_CHROME } from "@/app/library/layouts/rootsyLayoutsTablesSystem"
+import {
+  ROOTSY_LAYOUTS_TABLES_CHROME,
+  ROOTSY_LAYOUTS_TABLES_STATUS,
+} from "@/app/library/layouts/rootsyLayoutsTablesSystem"
 import { COLOR_TOKENS } from "@/app/library/color/rootsyColorSystem"
 import { RootsFormToolbarListFilters } from "@/components/rootsy-form"
 import {
@@ -848,7 +851,7 @@ function LayoutsTablesTableContent({ rows, composed = false }: { rows: DemoRow[]
               <p style={getLayoutsTablesMoneyCellStyle()}>{row.amount}</p>
             </td>
             <td style={cellStyle}>
-              <span style={getLayoutsTablesStatusBadgeStyle(row.status)}>{row.status === "activo" ? "Activo" : row.status === "pendiente" ? "Pendiente" : "Vencido"}</span>
+              <span style={getLayoutsTablesStatusBadgeStyle(row.status)}>{ROOTSY_LAYOUTS_TABLES_STATUS[row.status].label}</span>
             </td>
           </tr>
         ))}

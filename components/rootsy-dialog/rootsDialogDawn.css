@@ -1,0 +1,61 @@
+/**
+ * Diálogo invertido — header/footer claros, valle con la bruma viva.
+ * Opaco: sin vidrio ni borde. La diferencia es el clima.
+ */
+
+.roots-dialog-living-block {
+  background-color: var(--rootsy-bruma-50);
+}
+
+.roots-dialog-dawn-chrome {
+  position: relative;
+  overflow: hidden;
+  background: white;
+}
+
+.roots-dialog-dawn-chrome::after {
+  content: "";
+  pointer-events: none;
+  position: absolute;
+  z-index: 1;
+  inset-inline: 10%;
+  bottom: 0;
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    color-mix(in srgb, var(--rootsy-savia-400) 22%, var(--rootsy-bruma-200)) 50%,
+    transparent 100%
+  );
+  opacity: 0.55;
+}
+
+.roots-dialog-dawn-chrome--floor {
+  background: white;
+}
+
+.roots-dialog-dawn-chrome--floor::after {
+  top: 0;
+  bottom: auto;
+}
+
+/** Valle — la bruma con savia que antes vivía en las albas. */
+.roots-dialog-clearing-body {
+  background-color: var(--rootsy-bruma-50);
+  background-image:
+    linear-gradient(
+      180deg,
+      var(--rootsy-bruma-100) 0%,
+      color-mix(in srgb, var(--rootsy-savia-50) 28%, var(--rootsy-bruma-50)) 100%
+    ),
+    radial-gradient(
+      ellipse 90% 42% at 50% -8%,
+      color-mix(in srgb, var(--rootsy-savia-100) 42%, var(--rootsy-bruma-50)) 0%,
+      transparent 72%
+    ),
+    radial-gradient(
+      ellipse 80% 36% at 50% 108%,
+      color-mix(in srgb, var(--rootsy-savia-200) 22%, transparent) 0%,
+      transparent 74%
+    );
+}

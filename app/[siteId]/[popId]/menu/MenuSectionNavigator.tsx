@@ -1,10 +1,16 @@
 "use client"
 
 import {
-  menuFloatingPillDotIdleClass,
-  menuFloatingPillDotSelectedClass,
-  menuFloatingPillShellClass,
-} from "@/app/[siteId]/[popId]/menu/menuFloatingPillStyles"
+  menuSectionRealmDividerClass,
+  menuSectionRealmIndicatorClass,
+  menuSectionRealmRailClass,
+  menuSectionRealmSelectedWellClass,
+  menuSectionRealmTabClass,
+  menuSectionRealmTabDormantClass,
+  menuSectionRealmTabIdleClass,
+  menuSectionRealmTabSelectedClass,
+} from "@/app/[siteId]/[popId]/menu/menuSectionRealmStyles"
+import type { MenuSectionKey } from "@/lib/menuCatalog"
 import { cn } from "@/lib/utils"
 
 export type MenuSectionNavItem = {
@@ -16,55 +22,67 @@ type Props = {
   sections: MenuSectionNavItem[]
   selectedIndex: number
   onSelect: (index: number) => void
+  className?: string
+  /** Sin colores de reinado — universo en reposo hasta la carga final. */
+  dormant?: boolean
 }
 
+/** Selector de reinado — rail segmentado, sobrio y preciso. */
 export function MenuSectionNavigator({
   sections,
   selectedIndex,
   onSelect,
+  className,
+  dormant = false,
 }: Props) {
-  const currentTitle = sections[selectedIndex]?.title ?? ""
-
   return (
     <div
-      role="tablist"
-      aria-label="Secciones del menú"
       className={cn(
-        "mb-8 inline-flex max-w-full items-center justify-between gap-2.5 px-3.5 py-1 sm:min-w-48",
-        menuFloatingPillShellClass,
+        "mx-auto flex w-full max-w-4xl shrink-0 justify-center px-6 pb-1 pt-0",
+        className,
       )}
     >
-      <span className="truncate text-sm font-semibold leading-none tracking-wide text-foreground/95">
-        {currentTitle}
-      </span>
-
-      <div className="flex shrink-0 items-center -space-x-1">
+      <div
+        role="tablist"
+        aria-label="Secciones del menú"
+        className={menuSectionRealmRailClass}
+      >
         {sections.map((section, index) => {
-          const selected = selectedIndex === index
+          const selected = !dormant && selectedIndex === index
+          const sectionKey = section.key as MenuSectionKey
+          const isLast = index === sections.length - 1
+
           return (
-            <button
-              key={section.key}
-              type="button"
-              role="tab"
-              aria-selected={selected}
-              aria-label={section.title}
-              onClick={() => onSelect(index)}
-              className={cn(
-                "flex size-7 items-center justify-center rounded-full transition-colors",
-                "hover:bg-foreground/6 active:scale-95",
-                "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/35",
-              )}
-            >
-              <span
-                aria-hidden
+            <div key={section.key} className="flex items-stretch">
+              <button
+                type="button"
+                role="tab"
+                aria-selected={selected}
+                aria-label={section.title}
+                onClick={() => onSelect(index)}
                 className={cn(
-                  "rounded-full transition-all duration-300",
-                  selected
-                    ? menuFloatingPillDotSelectedClass
-                    : menuFloatingPillDotIdleClass,
+                  menuSectionRealmTabClass,
+                  "border-0 bg-transparent",
+                  dormant
+                    ? menuSectionRealmTabDormantClass
+                    : selected
+                      ? cn(
+                          menuSectionRealmTabSelectedClass,
+                          menuSectionRealmSelectedWellClass,
+                        )
+                      : menuSectionRealmTabIdleClass,
                 )}
-              />
-            </button>
+              >
+                {section.title}
+                {selected ? (
+                  <span
+                    aria-hidden
+                    className={menuSectionRealmIndicatorClass(sectionKey)}
+                  />
+                ) : null}
+              </button>
+              {!isLast ? <span aria-hidden className={menuSectionRealmDividerClass} /> : null}
+            </div>
           )
         })}
       </div>

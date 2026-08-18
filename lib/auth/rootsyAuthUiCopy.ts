@@ -5,10 +5,14 @@ import { ROOTSY_BRAND_SLOGAN } from "@/lib/rootsyBrand"
  * Misma línea que `lib/email/rootsyEmailVoice.ts`: primera persona, vos, cercana.
  */
 export const AUTH_SHELL_COPY = {
-  asideEyebrow: "Sistema de gestión online",
+  asideKicker: "Sistema de gestión online",
   asideTitle: ROOTSY_BRAND_SLOGAN,
   asideLead:
-    "Te ayudo con ventas, stock y el día a día. Todo en un solo lugar, claro y al paso.",
+    "Vender, stock y operaciones en un solo lugar. Para cualquier negocio — panadería, ferretería, restaurante o lo que sea.",
+  /** @deprecated Usar asideKicker */
+  asideWorldLine: "Sistema de gestión online",
+  /** @deprecated Usar asideKicker */
+  asideEyebrow: "Sistema de gestión online",
 } as const
 
 export const LOGIN_COPY = {
@@ -86,11 +90,11 @@ export const RECOVERY_COPY = {
 export const POP_CREATE_COPY = {
   asideEyebrowTrial: (days: number) => `${days} días gratis`,
   asideEyebrowPaid: "Suscripción",
-  asideTitle: "Arranquemos tu negocio",
+  asideTitle: "Arrancá tu negocio con Rootsy",
   asideLeadTrial:
-    "Elegí cómo cobrás, guardá una tarjeta y empezamos. Hoy no se cobra nada.",
+    "Guardá una tarjeta y empezamos. Hoy no se cobra nada — probás el producto completo.",
   asideLeadPaid:
-    "Activamos el plan que elegiste con el primer cobro al crear el negocio.",
+    "Activamos el plan que elegiste. Primer cobro al crear el negocio.",
   eyebrowTrial: "Prueba gratis",
   eyebrowPaid: "Plan pago",
   title: "Creá tu negocio",

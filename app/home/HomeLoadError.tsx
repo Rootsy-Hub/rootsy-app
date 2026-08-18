@@ -1,26 +1,44 @@
 "use client"
 
+import {
+  menuRealmChromeShellClass,
+  menuRealmLightMutedClass,
+  menuRealmLightStaticClass,
+} from "@/lib/menu/menuHoloStyles"
+import { cn } from "@/lib/utils"
+
 type HomeLoadErrorProps = {
   onRetry?: () => void | Promise<unknown>
 }
 
 export function HomeLoadError({ onRetry }: HomeLoadErrorProps) {
   return (
-    <p className="mt-8 text-sm text-amber-200/90">
-      No pudimos cargar tus puntos de venta.{" "}
-      <button
-        type="button"
-        className="font-semibold underline underline-offset-2 hover:text-white"
-        onClick={() => {
-          if (onRetry) {
-            void onRetry()
-            return
-          }
-          window.location.reload()
-        }}
-      >
-        Reintentar
-      </button>
-    </p>
+    <div
+      className={cn(
+        "mx-auto mt-2 max-w-md rounded-2xl px-6 py-5 text-center",
+        menuRealmChromeShellClass,
+      )}
+    >
+      <p className={cn("text-sm leading-relaxed", menuRealmLightMutedClass)}>
+        No pudimos cargar tus puntos de venta.{" "}
+        <button
+          type="button"
+          className={cn(
+            "font-semibold underline underline-offset-2 transition-colors",
+            menuRealmLightStaticClass,
+            "hover:text-white",
+          )}
+          onClick={() => {
+            if (onRetry) {
+              void onRetry()
+              return
+            }
+            window.location.reload()
+          }}
+        >
+          Reintentar
+        </button>
+      </p>
+    </div>
   )
 }

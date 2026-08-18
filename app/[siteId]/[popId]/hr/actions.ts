@@ -16,7 +16,13 @@ import {
   buildHrPermissionCatalogRows,
   type HrPermissionCatalogRow,
 } from "@/lib/hrPermissionCatalog"
+import {
+  ensureEmployeesFromMembers,
+  listPopEmployees,
+} from "@/app/[siteId]/[popId]/hr/employeeActions"
+import type { EmployeeRow } from "@/app/[siteId]/[popId]/hr/hrTypes"
 import { createClient } from "@/utils/supabase/server"
+import { createServiceRoleClient } from "@/utils/supabase/service-role"
 
 export type PopRoleRow = {
   id: string
@@ -37,6 +43,7 @@ export type MemberRow = {
   imageUrl: string | null
   invitedAt: string | null
   isOwner: boolean
+  isActive: boolean
 }
 
 export type PendingInviteRow = {
@@ -47,6 +54,7 @@ export type PendingInviteRow = {
   message: string | null
   createdAt: string
   expiresAt: string
+  inviteUrl: string
 }
 
 export type PermissionCatalogRow = HrPermissionCatalogRow
@@ -89,9 +97,11 @@ export async function getPopHrDashboard(popId: string): Promise<
       popName: string
       isOwner: boolean
       canManageInvites: boolean
+      canManagePeople: boolean
       permissionKeys: string[]
       roles: PopRoleRow[]
       members: MemberRow[]
+      employees: EmployeeRow[]
       pendingInvites: PendingInviteRow[]
     }
   | { success: false; error: string; redirect?: string }
@@ -170,11 +180,11 @@ export async function getPopHrDashboard(popId: string): Promise<
         user_id,
         role_id,
         invited_at,
+        is_active,
         roles:role_id ( name, display_name )
       `,
       )
       .eq("pop_id", popId)
-      .eq("is_active", true)
 
     if (uprErr) {
       return { success: false, error: uprErr.message }
@@ -239,6 +249,7 @@ export async function getPopHrDashboard(popId: string): Promise<
         imageUrl: prof.image_url,
         invitedAt: row.invited_at ?? null,
         isOwner: ownerUserId ? sameUserId(row.user_id, ownerUserId) : false,
+        isActive: row.is_active !== false,
       }
     })
 
@@ -253,6 +264,7 @@ export async function getPopHrDashboard(popId: string): Promise<
         imageUrl: ownerProfile.image_url,
         invitedAt: null,
         isOwner: true,
+        isActive: true,
       })
     }
 
@@ -268,6 +280,7 @@ export async function getPopHrDashboard(popId: string): Promise<
           message,
           created_at,
           expires_at,
+          token,
           roles:role_id ( display_name )
         `,
         )
@@ -276,6 +289,7 @@ export async function getPopHrDashboard(popId: string): Promise<
         .order("created_at", { ascending: false })
 
       if (!invErr && inv) {
+        const appBase = getAppBaseUrl()
         pendingInvites = inv.map((i) => {
           const rr = i.roles as unknown as { display_name: string } | null
           return {
@@ -286,19 +300,30 @@ export async function getPopHrDashboard(popId: string): Promise<
             message: i.message ?? null,
             createdAt: i.created_at,
             expiresAt: i.expires_at,
+            inviteUrl: i.token ? `${appBase}/invite/pop/${i.token}` : "",
           }
         })
       }
     }
+
+    await ensureEmployeesFromMembers(popId, members)
+    const peopleRes = await listPopEmployees(popId)
+    const employees = peopleRes.success ? peopleRes.employees : []
+    const canManagePeople =
+      owner ||
+      permissionKeysInclude(permSnapshot.keys, "hr", "create") ||
+      permissionKeysInclude(permSnapshot.keys, "hr", "update")
 
     return {
       success: true,
       popName: popRes.pop.name,
       isOwner: owner,
       canManageInvites: owner,
+      canManagePeople,
       permissionKeys: permSnapshot.keys,
       roles,
       members,
+      employees,
       pendingInvites,
     }
   } catch (e: unknown) {
@@ -504,6 +529,39 @@ export async function deactivatePopMember(
     .update({ is_active: false })
     .eq("pop_id", popId)
     .eq("user_id", memberUserId)
+
+  if (error) return { success: false, error: error.message }
+  return { success: true }
+}
+
+export async function deleteInactivePopMember(
+  popId: string,
+  memberUserId: string,
+): Promise<{ success: boolean; error?: string }> {
+  const user = await requireAuthenticatedUser()
+  const popRes = await getPopById(popId, { includeOwnerUserId: true })
+  if (!popRes.success || !popRes.pop) {
+    return { success: false, error: "POP no encontrado" }
+  }
+  const ownerUserId =
+    "ownerUserId" in popRes.pop ? popRes.pop.ownerUserId : null
+  if (!(await isPopOwner(popId, user.uid, ownerUserId ?? null))) {
+    return { success: false, error: "Sin permiso" }
+  }
+  if (ownerUserId && sameUserId(memberUserId, ownerUserId)) {
+    return {
+      success: false,
+      error: "No se puede eliminar al propietario del POP.",
+    }
+  }
+
+  const admin = createServiceRoleClient()
+  const { error } = await admin
+    .from("user_pop_roles")
+    .delete()
+    .eq("pop_id", popId)
+    .eq("user_id", memberUserId)
+    .eq("is_active", false)
 
   if (error) return { success: false, error: error.message }
   return { success: true }

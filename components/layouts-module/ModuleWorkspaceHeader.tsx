@@ -1,22 +1,20 @@
 "use client"
 
-import { DataWorkspaceHeaderTitle } from "@/components/layouts/DataWorkspaceHeaderTitle"
+import { MenuHeaderEntity } from "@/app/[siteId]/[popId]/menu/MenuHeaderEntity"
+import { menuHeaderRowClass } from "@/app/[siteId]/[popId]/menu/menuFloatingPillStyles"
 import { DataWorkspaceHeaderUserMenu } from "@/components/layouts/DataWorkspaceHeaderUserMenu"
 import {
-  dataWorkspaceHeaderDividerClass,
-  dataWorkspaceHeaderPopRingClass,
   dataWorkspaceHeaderRoleLabelClass,
   dataWorkspaceHeaderToolbarClass,
-  isLayoutsTablesHeader,
   type DataWorkspaceHeaderVariant,
 } from "@/components/layouts/dataWorkspaceHeaderStyles"
-import {
-  layoutsModuleHeaderGlassClass,
-  layoutsModuleHeaderPopAddressClass,
-  layoutsModuleHeaderPopNameClass,
-  layoutsModuleHeaderUserNameClass,
-} from "@/components/layouts-module/rootsLayoutsModuleProductStyles"
 import { RootsIconButton } from "@/components/rootsy-button/RootsIconButton"
+import {
+  menuRealmBodyClass,
+  menuRealmDividerClass,
+  menuRealmLightMutedClass,
+  menuRealmTitleClass,
+} from "@/lib/menu/menuHoloStyles"
 import { cn } from "@/lib/utils"
 import {
   ArrowLeft,
@@ -53,6 +51,11 @@ export type ModuleWorkspaceHeaderProps = {
   onToggleSidebar?: () => void
 }
 
+const universeChrome = {
+  tone: "ghost" as const,
+  surface: "dark" as const,
+}
+
 export function ModuleWorkspaceHeader({
   backHref,
   showFullscreen = true,
@@ -61,7 +64,7 @@ export function ModuleWorkspaceHeader({
   popStreetAddress,
   title,
   loading = false,
-  headerVariant = "tables",
+  headerVariant = "dark",
   titleAdornment,
   headerActions,
   sectionMenu,
@@ -78,151 +81,153 @@ export function ModuleWorkspaceHeader({
   sidebarOpen = true,
   onToggleSidebar,
 }: ModuleWorkspaceHeaderProps) {
-  const useModuleTypography = isLayoutsTablesHeader(headerVariant)
-  const posChrome = { theme: "pos" as const, emphasis: "ghost" as const }
   const resolvedPopStreetAddress = popStreetAddress?.trim() || null
   const resolvedTitle = title?.trim() || null
   const showBack = Boolean(backHref)
   const showFullscreenButton = showFullscreen && Boolean(onToggleFullscreen)
   const showSidebarToggle = canCollapseSidebar && Boolean(onToggleSidebar)
   const showBrand = Boolean(popLogoSrc || popName || loading)
-  const showLeftChrome = showBack || showFullscreenButton || showSidebarToggle
   const showActions = Boolean(headerActions || sectionMenu)
 
   return (
-    <header className={cn("relative z-20 shrink-0", layoutsModuleHeaderGlassClass)}>
-      <div className="relative z-10 grid h-17 grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-4 px-4">
-        <div className="flex min-w-0 items-center gap-2">
-          {showBack ? (
-            <RootsIconButton
-              {...posChrome}
-              href={backHref}
-              label="Volver al menú"
-              className="transition-transform hover:[&_svg]:-translate-x-0.5"
-            >
-              <ArrowLeft aria-hidden />
-            </RootsIconButton>
-          ) : null}
-          {showFullscreenButton ? (
-            <RootsIconButton
-              {...posChrome}
-              label={
-                isFullscreen ? "Salir de pantalla completa" : "Pantalla completa"
-              }
-              title={
-                isFullscreen ? "Salir de pantalla completa" : "Pantalla completa"
-              }
-              onClick={onToggleFullscreen}
-            >
-              {isFullscreen ? (
-                <Minimize2 aria-hidden />
-              ) : (
-                <Maximize2 aria-hidden />
-              )}
-            </RootsIconButton>
-          ) : null}
-          {showSidebarToggle ? (
-            <RootsIconButton
-              {...posChrome}
-              onClick={onToggleSidebar}
-              className={cn(
-                !sidebarOpen &&
-                  "!border-red-500/45 !bg-red-500/15 !text-red-300 hover:!border-red-400/55 hover:!bg-red-500/25 hover:!text-red-200",
-              )}
-              aria-expanded={sidebarOpen}
-              aria-controls="data-workspace-sidebar"
-              label={
-                sidebarOpen
-                  ? "Ocultar panel de navegación"
-                  : "Mostrar panel de navegación"
-              }
-              title={sidebarOpen ? "Ocultar panel ([)" : "Mostrar panel ([)"}
-            >
-              {sidebarOpen ? (
-                <PanelLeftClose aria-hidden />
-              ) : (
-                <PanelLeftOpen aria-hidden />
-              )}
-            </RootsIconButton>
-          ) : null}
-          {showLeftChrome && showBrand ? (
-            <div
-              className={cn("h-6 w-px", dataWorkspaceHeaderDividerClass(headerVariant))}
-              aria-hidden
-            />
-          ) : null}
-          {showBrand ? (
-            <div className="flex min-w-0 items-center gap-2.5">
-              {popLogoSrc ? (
-                <div
-                  className={cn(
-                    "size-10 overflow-hidden rounded-lg ring-1",
-                    dataWorkspaceHeaderPopRingClass(headerVariant),
-                  )}
-                >
-                  <img src={popLogoSrc} alt="" className="size-full object-cover" />
-                </div>
-              ) : null}
-              {popName || loading ? (
-                <div className="flex min-w-0 flex-col leading-tight">
-                  <span
-                    className={
-                      useModuleTypography
-                        ? layoutsModuleHeaderPopNameClass
-                        : "truncate text-sm font-semibold text-zinc-100"
+    <>
+      <MenuHeaderEntity size="module">
+        <div className={menuHeaderRowClass}>
+          <div className="flex min-w-0 items-center gap-3">
+            {showBack || showFullscreenButton || showSidebarToggle ? (
+              <div className="flex items-center gap-0.5">
+                {showBack ? (
+                  <RootsIconButton
+                    {...universeChrome}
+                    size="default"
+                    href={backHref}
+                    label="Volver al menú"
+                  >
+                    <ArrowLeft aria-hidden />
+                  </RootsIconButton>
+                ) : null}
+                {showFullscreenButton ? (
+                  <RootsIconButton
+                    {...universeChrome}
+                    size="default"
+                    label={
+                      isFullscreen
+                        ? "Salir de pantalla completa"
+                        : "Pantalla completa"
+                    }
+                    title={
+                      isFullscreen
+                        ? "Salir de pantalla completa"
+                        : "Pantalla completa"
+                    }
+                    onClick={onToggleFullscreen}
+                  >
+                    {isFullscreen ? (
+                      <Minimize2 aria-hidden />
+                    ) : (
+                      <Maximize2 aria-hidden />
+                    )}
+                  </RootsIconButton>
+                ) : null}
+                {showSidebarToggle ? (
+                  <RootsIconButton
+                    {...universeChrome}
+                    size="default"
+                    onClick={onToggleSidebar}
+                    className={cn(
+                      !sidebarOpen &&
+                        "!border-red-500/45 !bg-red-500/15 !text-red-300 hover:!border-red-400/55 hover:!bg-red-500/25 hover:!text-red-200",
+                    )}
+                    aria-expanded={sidebarOpen}
+                    aria-controls="data-workspace-sidebar"
+                    label={
+                      sidebarOpen
+                        ? "Ocultar panel de navegación"
+                        : "Mostrar panel de navegación"
+                    }
+                    title={
+                      sidebarOpen ? "Ocultar panel ([)" : "Mostrar panel ([)"
                     }
                   >
-                    {popName || (loading ? "…" : "—")}
-                  </span>
-                  {resolvedPopStreetAddress ? (
+                    {sidebarOpen ? (
+                      <PanelLeftClose aria-hidden />
+                    ) : (
+                      <PanelLeftOpen aria-hidden />
+                    )}
+                  </RootsIconButton>
+                ) : null}
+              </div>
+            ) : null}
+
+            {showBrand ? (
+              <div className="flex min-w-0 items-center gap-2.5">
+                {popLogoSrc ? (
+                  <div className="size-9 shrink-0 overflow-hidden rounded-xl ring-1 ring-[rgba(228,242,248,0.16)] shadow-[0_2px_10px_rgba(0,0,0,0.16)]">
+                    <img
+                      src={popLogoSrc}
+                      alt=""
+                      className="h-full w-full object-cover"
+                    />
+                  </div>
+                ) : null}
+                {popName || loading ? (
+                  <div className="flex min-w-0 flex-col gap-px">
                     <span
-                      className={
-                        useModuleTypography
-                          ? layoutsModuleHeaderPopAddressClass
-                          : "truncate text-[11px] leading-tight text-zinc-400"
-                      }
+                      className={cn(
+                        "truncate text-sm tracking-tight",
+                        menuRealmTitleClass,
+                      )}
                     >
-                      {resolvedPopStreetAddress}
+                      {popName || (loading ? "…" : "—")}
                     </span>
-                  ) : null}
-                </div>
-              ) : null}
-            </div>
-          ) : null}
-        </div>
+                    {resolvedPopStreetAddress ? (
+                      <span
+                        className={cn(
+                          "truncate text-xs leading-tight",
+                          menuRealmLightMutedClass,
+                        )}
+                      >
+                        {resolvedPopStreetAddress}
+                      </span>
+                    ) : null}
+                  </div>
+                ) : null}
+              </div>
+            ) : null}
+          </div>
 
-        <div className="flex flex-wrap items-center justify-center gap-2">
-          {resolvedTitle ? (
-            <DataWorkspaceHeaderTitle title={resolvedTitle} headerVariant={headerVariant} />
-          ) : null}
-          {titleAdornment}
-        </div>
+          <div className="flex min-w-0 items-center justify-center gap-2">
+            {resolvedTitle ? (
+              <h1
+                className={cn(
+                  "truncate text-xl tracking-tight",
+                  menuRealmTitleClass,
+                )}
+              >
+                {resolvedTitle}
+              </h1>
+            ) : null}
+            {titleAdornment}
+          </div>
 
-        <div className="flex shrink-0 items-center justify-end gap-2">
-          {showActions ? (
-            <div className="flex items-center gap-1.5">
-              {headerActions}
-              {sectionMenu}
-            </div>
-          ) : null}
-          {userName ? (
-            <>
-              {showActions ? (
-                <div
-                  className={cn(
-                    "h-6 w-px",
-                    dataWorkspaceHeaderDividerClass(headerVariant),
-                  )}
-                />
-              ) : null}
+          <div className="flex min-w-0 items-center justify-end gap-3">
+            {showActions ? (
+              <div className="flex items-center gap-1">
+                {headerActions}
+                {sectionMenu}
+              </div>
+            ) : null}
+            {showActions && userName ? (
+              <div className={cn("h-6 w-px", menuRealmDividerClass)} aria-hidden />
+            ) : null}
+            {userName ? (
               <div className="flex min-w-0 items-center gap-3">
                 <div className="hidden min-w-0 flex-col items-end text-right leading-tight sm:flex">
                   <span
-                    className={
-                      useModuleTypography
-                        ? layoutsModuleHeaderUserNameClass
-                        : "truncate text-sm font-semibold text-zinc-100"
-                    }
+                    className={cn(
+                      "truncate text-sm font-normal",
+                      menuRealmBodyClass,
+                    )}
                   >
                     {userName}
                   </span>
@@ -231,7 +236,7 @@ export function ModuleWorkspaceHeader({
                       className={cn(
                         "truncate text-[10px] font-semibold uppercase tracking-wider",
                         dataWorkspaceHeaderRoleLabelClass(
-                          headerVariant,
+                          "dark",
                           hasResolvedRole,
                         ),
                       )}
@@ -244,13 +249,14 @@ export function ModuleWorkspaceHeader({
                   userName={userName}
                   userAvatarSrc={userAvatarSrc}
                   isOnline={isOnline}
-                  headerVariant={headerVariant}
+                  headerVariant="dark"
                 />
               </div>
-            </>
-          ) : null}
+            ) : null}
+          </div>
         </div>
-      </div>
+      </MenuHeaderEntity>
+
       {toolbar ? (
         <div
           className={cn(
@@ -261,6 +267,6 @@ export function ModuleWorkspaceHeader({
           <div className={cn("mx-auto w-full", mainMaxWidthClass)}>{toolbar}</div>
         </div>
       ) : null}
-    </header>
+    </>
   )
 }

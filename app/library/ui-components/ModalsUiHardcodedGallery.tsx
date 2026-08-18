@@ -20,6 +20,7 @@ import {
   MODAL_UI_SCRIM_SPEC,
   MODAL_UI_SURFACE_SIZES,
   MODAL_UI_DESCRIPTION_STYLE,
+  getModalDescriptionUiStyle,
   MODAL_UI_BODY_TEXT_STYLE,
   getModalTitleUiStyle,
   getAlertActionUiStyle,
@@ -236,7 +237,7 @@ function HardcodedModalPanel({
             </span>
           ) : null}
           <p style={{ ...getModalTitleUiStyle("modal"), margin: 0 }}>{copy.title}</p>
-          <p style={{ ...MODAL_UI_DESCRIPTION_STYLE, margin: 0 }}>{copy.description}</p>
+          <p style={{ ...getModalDescriptionUiStyle("modal"), margin: 0 }}>{copy.description}</p>
         </div>
         <div style={body}>
           {bodyTone === "loading" ? (

@@ -1,0 +1,168 @@
+/**
+ * Aire de tablas — el mundo vive en el lienzo, no en las celdas.
+ * Más presente que el susurro inicial; sigue lejos de bloques (22%).
+ * @see rootsyLayoutsTablesSystem · /images/rootsyplanet.jpeg
+ */
+.data-workspace-tables-atmosphere {
+  position: relative;
+  isolation: isolate;
+  overflow-x: hidden;
+  background-color: var(--rootsy-bruma-50);
+  background-image:
+    radial-gradient(
+      ellipse 90% 36% at 50% -10%,
+      color-mix(in srgb, var(--rootsy-bruma-100) 52%, transparent) 0%,
+      transparent 70%
+    ),
+    radial-gradient(
+      ellipse 72% 34% at 50% 112%,
+      color-mix(in srgb, var(--rootsy-savia-500) 18%, transparent) 0%,
+      transparent 72%
+    );
+  background-repeat: no-repeat;
+}
+
+.data-workspace-tables-atmosphere::before {
+  content: "";
+  pointer-events: none;
+  position: absolute;
+  z-index: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: min(52vh, 100%);
+  background-image: url("/images/rootsyplanet.jpeg");
+  background-repeat: no-repeat;
+  background-size: cover;
+  background-position: 68% 42%;
+  opacity: 0.16;
+  filter: blur(24px) saturate(0.74) brightness(1.07);
+  transform: scale(1.1);
+  transform-origin: 50% 100%;
+  -webkit-mask-image: linear-gradient(
+    to top,
+    rgb(0 0 0 / 0.92) 0%,
+    rgb(0 0 0 / 0.4) 56%,
+    transparent 100%
+  );
+  mask-image: linear-gradient(
+    to top,
+    rgb(0 0 0 / 0.92) 0%,
+    rgb(0 0 0 / 0.4) 56%,
+    transparent 100%
+  );
+  animation: data-workspace-tables-world-breathe 14s
+    cubic-bezier(0.45, 0.05, 0.55, 0.95) infinite;
+}
+
+.data-workspace-tables-atmosphere::after {
+  content: "";
+  pointer-events: none;
+  position: absolute;
+  z-index: 0;
+  inset-inline: 12%;
+  bottom: 10px;
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    color-mix(in srgb, var(--rootsy-savia-400) 28%, transparent) 28%,
+    color-mix(in srgb, var(--rootsy-bruma-100) 55%, transparent) 50%,
+    color-mix(in srgb, var(--rootsy-savia-400) 28%, transparent) 72%,
+    transparent 100%
+  );
+  opacity: 0.55;
+  animation: data-workspace-tables-horizon-glow 11s
+    cubic-bezier(0.45, 0.05, 0.55, 0.95) infinite;
+}
+
+.data-workspace-tables-atmosphere > * {
+  position: relative;
+  z-index: 1;
+}
+
+@keyframes data-workspace-tables-world-breathe {
+  0%,
+  100% {
+    opacity: 0.13;
+    filter: blur(24px) saturate(0.7) brightness(1.05);
+  }
+  50% {
+    opacity: 0.2;
+    filter: blur(22px) saturate(0.8) brightness(1.1);
+  }
+}
+
+@keyframes data-workspace-tables-horizon-glow {
+  0%,
+  100% {
+    opacity: 0.38;
+  }
+  50% {
+    opacity: 0.7;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .data-workspace-tables-atmosphere::before,
+  .data-workspace-tables-atmosphere::after {
+    animation: none;
+  }
+
+  .data-workspace-tables-atmosphere::before {
+    opacity: 0.16;
+  }
+
+  .data-workspace-tables-atmosphere::after {
+    opacity: 0.5;
+  }
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  .data-workspace-tables-atmosphere::before,
+  .data-workspace-tables-atmosphere::after {
+    content: none;
+  }
+}
+
+/**
+ * Umbral de filtros — alba entre el universo y el claro.
+ * El planeta se lee a través; no es una isla.
+ */
+.data-workspace-tables-filters-dawn {
+  position: relative;
+  overflow: hidden;
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--rootsy-sombra-800) 10%, transparent) 0%,
+    color-mix(in srgb, var(--rootsy-bruma-100) 46%, transparent) 42%,
+    color-mix(in srgb, white 56%, transparent) 100%
+  );
+  backdrop-filter: blur(14px) saturate(1.06);
+  -webkit-backdrop-filter: blur(14px) saturate(1.06);
+}
+
+.data-workspace-tables-filters-dawn::after {
+  content: "";
+  pointer-events: none;
+  position: absolute;
+  z-index: 1;
+  inset-inline: 10%;
+  bottom: 0;
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    color-mix(in srgb, var(--rootsy-savia-400) 22%, var(--rootsy-bruma-200)) 50%,
+    transparent 100%
+  );
+  opacity: 0.55;
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  .data-workspace-tables-filters-dawn {
+    background: color-mix(in srgb, var(--rootsy-bruma-100) 88%, white);
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+  }
+}

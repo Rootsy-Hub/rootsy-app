@@ -1,0 +1,35 @@
+/**
+ * El contenido emerge del firmamento — casi imperceptible.
+ */
+@keyframes menu-content-emerge {
+  from {
+    opacity: 0.96;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.menu-content-emerge {
+  animation: menu-content-emerge 1.4s cubic-bezier(0.33, 1, 0.68, 1) both;
+}
+
+@keyframes menu-firmament-settle {
+  from {
+    opacity: 0.92;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.menu-firmament-settle {
+  animation: menu-firmament-settle 1.8s cubic-bezier(0.33, 1, 0.68, 1) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .menu-content-emerge,
+  .menu-firmament-settle {
+    animation: none;
+  }
+}

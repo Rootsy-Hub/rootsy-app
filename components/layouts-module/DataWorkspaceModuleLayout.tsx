@@ -4,21 +4,18 @@ import {
   DataWorkspaceLayout,
   type DataWorkspaceLayoutProps,
 } from "@/components/layouts/DataWorkspaceLayout"
-import {
-  layoutsModuleContentShellClass,
-  layoutsModuleHeaderVariant,
-} from "@/components/layouts-module/rootsLayoutsModuleProductStyles"
+import { layoutsModuleContentShellClass } from "@/components/layouts-module/rootsLayoutsModuleProductStyles"
 import type { DataWorkspaceHeaderVariant } from "@/components/layouts/dataWorkspaceHeaderStyles"
 import { cn } from "@/lib/utils"
 
 /** Variante de header para páginas módulo POP. */
 export const dataWorkspaceModuleHeaderVariant =
-  layoutsModuleHeaderVariant satisfies DataWorkspaceHeaderVariant
+  "dark" satisfies DataWorkspaceHeaderVariant
 
 export type DataWorkspaceModuleLayoutProps = DataWorkspaceLayoutProps
 
 /**
- * Shell módulo POP — fondo POP + header cristal sombra · savia + contenido bruma.
+ * Shell módulo POP — universo del menú + contenido bruma.
  * Envuelve DataWorkspaceLayout con defaults del design system layout · módulo.
  */
 export function DataWorkspaceModuleLayout({

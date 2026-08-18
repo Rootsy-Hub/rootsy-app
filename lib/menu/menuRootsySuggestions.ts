@@ -1,0 +1,126 @@
+import type {
+  MenuRootsyAdvice,
+  MenuRootsyAllowedModule,
+  MenuRootsyContext,
+  MenuRootsySuggestion,
+} from "@/lib/menu/menuRootsyTypes"
+import { pickMenuRootsyCatalogSuggestionForPop } from "@/lib/menu/menuRootsySuggestionProfile"
+import type { PopAccessModule } from "@/app/home/homeUserDataTypes"
+
+function pickModule(
+  allowed: MenuRootsyAllowedModule[],
+  keys: string[],
+): MenuRootsyAllowedModule | undefined {
+  for (const key of keys) {
+    const match = allowed.find(
+      (entry) =>
+        entry.moduleKey === key ||
+        entry.link === key ||
+        entry.moduleKey.replace(/_/g, "-") === key,
+    )
+    if (match) return match
+  }
+  return undefined
+}
+
+function toSuggestion(mod: MenuRootsyAllowedModule): MenuRootsySuggestion {
+  return {
+    label: mod.label,
+    href: mod.href,
+    moduleKey: mod.moduleKey,
+  }
+}
+
+function pickPrimaryCta(
+  context: MenuRootsyContext,
+  ctaModuleKeys: string[],
+): MenuRootsySuggestion | null {
+  const mod = pickModule(context.allModules, ctaModuleKeys)
+  if (mod) return toSuggestion(mod)
+  const fallback = pickModule(context.allModules, [
+    "statistics",
+    "sale",
+    "mostrador",
+    "mesas",
+    "services",
+    "active_services",
+  ])
+  return fallback ? toSuggestion(fallback) : null
+}
+
+/** Consejo de Rootsy desde catálogo rotativo — voz para iniciados. */
+export function buildMenuRootsyRuleAdvice(
+  context: MenuRootsyContext,
+  enabledModules: readonly PopAccessModule[],
+  rotationToken: string,
+): MenuRootsyAdvice {
+  const catalogEntry = pickMenuRootsyCatalogSuggestionForPop(
+    context.popId,
+    enabledModules,
+    rotationToken,
+  )
+
+  if (!catalogEntry) {
+    return {
+      title: "",
+      lead: `Sigo aprendiendo cómo ayudarte en ${context.popName}. Cuando tengas más módulos activos, voy a poder sugerirte mejoras concretas.`,
+      pulses: [],
+      primaryCta: null,
+      suggestions: [],
+      source: "rules",
+    }
+  }
+
+  const primaryCta = pickPrimaryCta(context, catalogEntry.ctaModuleKeys)
+
+  return {
+    title: catalogEntry.title,
+    lead: catalogEntry.teaser,
+    pulses: [],
+    primaryCta,
+    suggestions: primaryCta ? [primaryCta] : [],
+    source: "rules",
+    catalogSuggestionId: catalogEntry.id,
+  }
+}
+
+export function sanitizeMenuRootsyAdvice(
+  raw: Pick<MenuRootsyAdvice, "lead" | "suggestions">,
+  context: MenuRootsyContext,
+  fallback: MenuRootsyAdvice,
+): MenuRootsyAdvice {
+  const allowedByKey = new Map(
+    context.allModules.map((mod) => [mod.moduleKey, mod]),
+  )
+
+  const suggestions: MenuRootsySuggestion[] = []
+  for (const entry of raw.suggestions) {
+    if (suggestions.length >= 1) break
+    const mod =
+      allowedByKey.get(entry.moduleKey) ??
+      context.allModules.find((item) => item.link === entry.moduleKey)
+    if (!mod) continue
+    suggestions.push({
+      label: mod.label,
+      href: mod.href,
+      moduleKey: mod.moduleKey,
+    })
+  }
+
+  const lead = raw.lead?.trim().slice(0, 420) || fallback.lead
+  const primaryCta = suggestions[0] ?? fallback.primaryCta
+
+  if (!primaryCta && !lead) {
+    return fallback
+  }
+
+  return {
+    title: fallback.title,
+    lead,
+    pulses: [],
+    primaryCta,
+    suggestions: primaryCta ? [primaryCta] : [],
+    source: "ai",
+    catalogSuggestionId: fallback.catalogSuggestionId,
+  }
+}

@@ -82,7 +82,7 @@ export const LAYOUTS_TABLES_SCREEN_COMPONENTS: LayoutsTablesScreenComponentRow[]
   {
     layer: "Toolbar",
     component: "Barra filtros",
-    token: "layout.toolbar · 92px",
+    token: "alba · blur 14 · mundo a través",
     source: "rootsyLayoutsTablesSystem · FormUiToolbarListFilters",
   },
   {
@@ -105,8 +105,20 @@ export const LAYOUTS_TABLES_SCREEN_COMPONENTS: LayoutsTablesScreenComponentRow[]
   },
   {
     layer: "Tabla",
+    component: "Lienzo · planeta",
+    token: "rootsyplanet · 16% · blur 24 · respira",
+    source: "ROOTSY_LAYOUTS_TABLES_ATMOSPHERE",
+  },
+  {
+    layer: "Tabla",
+    component: "Hoja elevada",
+    token: "flush · full-bleed · suelo",
+    source: "dataWorkspaceTablesSheetClass",
+  },
+  {
+    layer: "Tabla",
     component: "Canvas cuerpo",
-    token: "elevation.surface · bruma-100",
+    token: "elevation.surface · bruma-50",
     source: "ROOTSY_LAYOUTS_TABLES_BODY.canvasBackground",
   },
   {
@@ -136,7 +148,7 @@ export const LAYOUTS_TABLES_SCREEN_COMPONENTS: LayoutsTablesScreenComponentRow[]
   {
     layer: "Tabla",
     component: "Badge estado",
-    token: "status-success · status-warning · status-danger",
+    token: "status-success · bruma · status-warning · status-danger",
     source: "ROOTSY_LAYOUTS_TABLES_STATUS",
   },
   {
@@ -154,25 +166,25 @@ export const LAYOUTS_TABLES_SCREEN_COMPONENTS: LayoutsTablesScreenComponentRow[]
   {
     layer: "Footer",
     component: "Chrome paginación",
-    token: "layout.footer · sombra-950→800",
-    source: "ROOTSY_LAYOUTS_TABLES_CHROME.footerBackground",
+    token: "universo · sombra-950 · estrellas",
+    source: "ROOTSY_LAYOUTS_TABLES_FOOTER.background",
   },
   {
     layer: "Footer",
     component: "Conteo resultados",
-    token: "body.small · sombra-400 / textOnDark",
+    token: "body.small · bruma-500 / bruma-900",
     source: "getLayoutsTablesFooterTextStyle",
   },
   {
     layer: "Footer",
     component: "Select por página",
-    token: "form.control · dark sunken",
+    token: "form.control · light",
     source: "getLayoutsTablesFooterSelectStyle",
   },
   {
     layer: "Footer",
     component: "Nav páginas",
-    token: "icon-button · pos ghost · space.400",
+    token: "RootsIconButton · workspace ghost",
     source: "getLayoutsTablesFooterNavButtonStyle",
   },
 ]

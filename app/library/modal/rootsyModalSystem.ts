@@ -53,24 +53,24 @@ export type ModalBodyToneId = "default" | "compact" | "loading"
 export type AlertDialogVariantId = "confirm" | "destructive" | "typed-confirmation"
 
 export const ROOTSY_MODAL_MANIFESTO =
-  "Un diálogo flota sobre scrim sombra-950 — elevation.surface.overlay + shadow.overlay. Header/footer overlay; body sunken. Tipografía heading.medium en modal; danger funcional solo en botones."
+  "Un diálogo es un bloque vivo opaco — header y footer claros, body bruma. Sin vidrio ni borde: lo define elevation.shadow.overlay · radius.xxlarge. Tipografía heading.medium; danger funcional solo en botones."
 
 export const ROOTSY_MODAL_PRINCIPLES = [
   {
-    title: "Overlay + sombra",
-    detail: "Siempre emparejados — elevation.surface.overlay · elevation.shadow.overlay · radius.xxlarge.",
+    title: "Chrome claro",
+    detail: "Header y footer blancos — el título y las acciones se leen en el claro.",
   },
   {
-    title: "Panel padding",
-    detail: "panel-padding · space.400 horizontal — header, body y footer alineados.",
+    title: "Body bruma",
+    detail: "Valle con bruma y savia — el formulario vive en el clima, entre dos claros.",
   },
   {
-    title: "Footer dual",
-    detail: "Subtle izquierda · primary derecha — space.500 botones · justify-between.",
+    title: "Scrim suave",
+    detail: "sombra-950 40% — atenúa la página, no la apaga.",
   },
   {
     title: "Alert compacto",
-    detail: "radius.xlarge · heading.small · sin región header separada — footer con border-top bruma.",
+    detail: "Mensaje en el claro · footer alba · radius.xlarge · heading.small.",
   },
 ] as const
 
@@ -82,13 +82,18 @@ export const ROOTSY_MODAL_COLOR_TOKENS = [
   },
   {
     role: "Body · fondo",
-    token: "elevation.surface.sunken",
-    hex: elevationHex("elevation.surface.sunken"),
+    token: "elevation.surface.overlay",
+    hex: elevationHex("elevation.surface.overlay"),
   },
   {
     role: "Scrim",
     token: "scrim.sombra.950",
     hex: `color-mix(in srgb, ${hx("sombra", "950")} 40%, transparent)`,
+  },
+  {
+    role: "Chrome · alba",
+    token: "dialog.chrome.alba",
+    hex: hx("bruma", "100"),
   },
   {
     role: "Divisor",
@@ -296,7 +301,7 @@ export const ROOTSY_MODAL_SPECS = {
     radiusPx: radiusPx("xxlarge"),
     shadowToken: "elevation.shadow.overlay",
     surfaceToken: "elevation.surface.overlay",
-    bodySurfaceToken: "elevation.surface.sunken",
+    bodySurfaceToken: "elevation.surface.overlay",
     titleToken: "font.heading.medium",
   },
   alert: {

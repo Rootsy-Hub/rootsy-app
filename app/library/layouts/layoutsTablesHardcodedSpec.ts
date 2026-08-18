@@ -387,7 +387,7 @@ export function getLayoutsTablesCheckboxStyle() {
 export function getLayoutsTablesFooterShellStyle(composed = false) {
   return {
     height: ROOTSY_LAYOUTS_TABLES_ANATOMY.footerHeightPx,
-    background: ROOTSY_LAYOUTS_TABLES_CHROME.footerBackground,
+    background: ROOTSY_LAYOUTS_TABLES_FOOTER.background,
     flexShrink: 0,
     borderRadius: composed ? undefined : ROOTSY_LAYOUTS_TABLES_ANATOMY.shellRadiusPx,
     overflow: "hidden" as const,
@@ -436,7 +436,7 @@ export function getLayoutsTablesFooterNavButtonStyle() {
 }
 
 export function getLayoutsTablesFooterSelectStyle() {
-  const surface = getFormControlUiSurface("default")
+  const surface = getFormControlUiSurface("default", { tone: "dark" })
   return {
     display: "inline-flex" as const,
     alignItems: "center" as const,
@@ -446,9 +446,9 @@ export function getLayoutsTablesFooterSelectStyle() {
     height: ROOTSY_FORM_CONTROL_HEIGHT_PX,
     paddingLeft: rootsySpacePx("150"),
     paddingRight: rootsySpacePx("150"),
-    backgroundColor: `color-mix(in srgb, ${hx("sombra", "700")} 65%, transparent)`,
-    border: `1px solid color-mix(in srgb, ${ROOTSY_COLOR_SEMANTIC.textOnDark} 10%, ${hx("sombra", "600")})`,
-    borderRadius: rootsySpacePx("050"),
+    backgroundColor: surface.backgroundColor,
+    border: surface.border,
+    borderRadius: ICON_BUTTON_UI_RADIUS_PX,
     color: ROOTSY_LAYOUTS_TABLES_FOOTER.textColor,
     fontFamily: "var(--rootsy-font-ui)",
     fontSize: ROOTSY_TEXT_STYLES["body.small"].fontSize,
@@ -486,8 +486,8 @@ export function getLayoutsTablesWireframeZoneStyle(kind: "chrome" | "toolbar" | 
       return { backgroundColor: ROOTSY_LAYOUTS_TABLES_BODY.rowEvenBackground }
     case "footer":
       return {
-        background: ROOTSY_LAYOUTS_TABLES_CHROME.footerBackground,
-        borderTop: `1px solid ${chromeBorder}`,
+        background: ROOTSY_LAYOUTS_TABLES_FOOTER.background,
+        borderTop: `1px solid ${contentBorder}`,
       }
   }
 }

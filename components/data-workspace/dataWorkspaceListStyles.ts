@@ -1,5 +1,6 @@
 /** Tokens compartidos entre listados tipo “workspace” (layout preview, clientes, etc.). */
 
+import "@/components/data-workspace/dataWorkspaceBlocksAtmosphere.css"
 import {
   rootsyElevationInteractiveMotionClass,
   rootsyElevationRaisedHoverClass,
@@ -76,6 +77,15 @@ export const dataWorkspaceEntityCardsGridColumnMaxClass = "max-w-[22rem]"
 export const workspaceTableSurfaceClass =
   "bg-white dark:bg-white"
 
+/** Marco del listado — la tabla ocupa el claro, de lado a lado hasta el suelo. */
+export const dataWorkspaceTablesSheetFrameClass =
+  "relative z-1 flex min-h-0 flex-1 flex-col"
+
+/** Hoja flush — tabla + pie universo, sin radio ni gutter. */
+export const dataWorkspaceTablesSheetClass = cn(
+  "flex min-h-0 flex-1 flex-col overflow-hidden bg-white",
+)
+
 /** Scope raíz — tokens --wt-* (ver rootsyNaturePalette.css). */
 export const workspaceTableNatureScopeClass = "workspace-table-nature"
 
@@ -86,9 +96,9 @@ export const dataWorkspaceBlocksContentScopeClass = "min-h-full flex-1"
 export const dataWorkspaceBlocksContentInnerClass =
   "relative flex w-full flex-col gap-6 px-4 py-6 sm:px-6 lg:px-8"
 
-/** `<main>` bloques — tokens light sobre fondo bruma del módulo. */
+/** `<main>` bloques — bruma-50 + susurro del planeta (horizonte, sin detalle). */
 export const dataWorkspaceBlocksPageMainClass = cn(
-  "rootsy-app-light min-h-0 overflow-y-auto text-foreground",
+  "data-workspace-blocks-atmosphere rootsy-app-light min-h-0 overflow-x-hidden overflow-y-auto text-foreground",
 )
 
 /** Contenedor de grid en listados cuentas / cajas. */
@@ -103,6 +113,15 @@ export const dataWorkspaceBlocksSkeletonTone = {
   barSm: "animate-pulse rounded-sm bg-[color-mix(in_srgb,var(--rootsy-bruma-200)_65%,white)]",
   box: "animate-pulse rounded-md bg-[var(--rootsy-bruma-200)]",
   pill: "animate-pulse rounded-md bg-[var(--rootsy-bruma-200)]",
+} as const
+
+/** Skeleton bloques — respiración lenta (espera que no cuenta el tiempo). */
+export const dataWorkspaceBlocksSkeletonBreathTone = {
+  bar: "data-workspace-blocks-breath rounded-sm bg-[var(--rootsy-bruma-200)]",
+  barSm:
+    "data-workspace-blocks-breath rounded-sm bg-[color-mix(in_srgb,var(--rootsy-bruma-200)_65%,white)]",
+  box: "data-workspace-blocks-breath rounded-md bg-[var(--rootsy-bruma-200)]",
+  pill: "data-workspace-blocks-breath rounded-md bg-[var(--rootsy-bruma-200)]",
 } as const
 
 /** Eyebrow / meta de tarjeta entidad. */
@@ -352,6 +371,7 @@ export function workspaceTableNatureBodyRowClassNames(
     selected?: boolean
     noHover?: boolean
     inactive?: boolean
+    signal?: "warning" | "danger"
   },
 ): string {
   const isEven = index % 2 === 0
@@ -372,6 +392,12 @@ export function workspaceTableNatureBodyRowClassNames(
         ? rowSurfaceHover
         : "hover:!bg-[var(--wt-surface-hover)]",
     options?.inactive && workspaceTableNatureBodyRowInactiveClass,
+    !options?.selected &&
+      options?.signal === "warning" &&
+      workspaceTableNatureBodyRowSignalWarningClass,
+    !options?.selected &&
+      options?.signal === "danger" &&
+      workspaceTableNatureBodyRowSignalDangerClass,
   )
 }
 
@@ -385,7 +411,7 @@ export const workspaceTableNatureTextTertiaryClass =
   "text-[var(--wt-text-tertiary)]"
 
 export const workspaceTableNatureLinkClass =
-  "font-medium text-[var(--wt-link)] underline-offset-2 hover:text-[var(--wt-link-hover)] hover:underline"
+  "font-semibold text-[var(--wt-link)] underline underline-offset-2 hover:text-[var(--wt-link-hover)]"
 
 export const workspaceTableNatureMoneyClass = cn(
   "font-numeric text-sm font-normal tabular-nums tracking-tight text-[var(--wt-money)]",
@@ -444,16 +470,32 @@ export const workspaceTableNatureIconButtonClass = cn(
 )
 
 export const workspaceTableNatureStatusBadgeClass: Record<
-  "activo" | "pendiente" | "vencido",
+  "activo" | "inactivo" | "pendiente" | "vencido",
   string
 > = {
   activo:
     "border-[color-mix(in_srgb,var(--rootsy-savia-600)_25%,var(--rootsy-bruma-200))] bg-[color-mix(in_srgb,var(--rootsy-savia-600)_10%,white)] text-[var(--rootsy-savia-800)]",
+  inactivo:
+    "border-[var(--rootsy-bruma-300)] bg-[var(--rootsy-bruma-100)] text-[var(--rootsy-bruma-700)]",
   pendiente:
     "border-[color-mix(in_srgb,#f59e0b_25%,var(--rootsy-bruma-200))] bg-[color-mix(in_srgb,#f59e0b_10%,white)] text-[#78350f]",
   vencido:
     "border-[color-mix(in_srgb,#ef4444_25%,var(--rootsy-bruma-200))] bg-[color-mix(in_srgb,#ef4444_10%,white)] text-[#dc2626]",
 }
+
+/** Fila con señal de importancia — aviso / peligro (stock, vencido). */
+export const workspaceTableNatureBodyRowSignalWarningClass =
+  "!bg-[color-mix(in_srgb,#f59e0b_7%,var(--wt-surface))] shadow-[inset_3px_0_0_#f59e0b]"
+
+export const workspaceTableNatureBodyRowSignalDangerClass =
+  "!bg-[color-mix(in_srgb,#ef4444_8%,var(--wt-surface))] shadow-[inset_3px_0_0_#ef4444]"
+
+export const workspaceTableNatureStockOkClass =
+  "text-[var(--rootsy-savia-800)]"
+
+export const workspaceTableNatureStockWarningClass = "text-[#78350f]"
+
+export const workspaceTableNatureStockDangerClass = "text-[#dc2626]"
 
 export const workspaceTableNatureSkeletonTone = {
   bar: "animate-pulse rounded-sm bg-[var(--wt-skeleton)]",

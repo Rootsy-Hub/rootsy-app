@@ -36,6 +36,7 @@ import {
   DataWorkspaceListTableFrame,
   DataWorkspaceTableEmptyMascot,
   DataWorkspaceTableIconAction,
+  WorkspaceTableStatusBadge,
 } from "@/components/data-workspace/DataWorkspaceListTablePrimitives"
 import { WorkspaceTableSkeletonRows } from "@/components/data-workspace/WorkspaceTableSkeleton"
 import { suppliersSkeletonColumns } from "@/components/data-workspace/workspaceTableSkeletonPresets"
@@ -43,6 +44,7 @@ import {
   selectColumnInnerClass,
   workspaceTableLayoutClassName,
   workspaceTableNatureCheckboxClass,
+  workspaceTableNatureLinkClass,
   workspaceTableNatureTextPrimaryClass,
   workspaceTableNatureTextSecondaryClass,
 } from "@/components/data-workspace/dataWorkspaceListStyles"
@@ -861,14 +863,12 @@ export function SuppliersWorkspaceView() {
                             {r.addressLine}
                           </p>
                         ) : null}
-                        {!r.isActive ? (
-                          <Badge
-                            variant="outline"
-                            className="mt-1 border-muted-foreground/30 text-[10px] font-normal text-muted-foreground"
-                          >
-                            Inactivo
-                          </Badge>
-                        ) : null}
+                        <WorkspaceTableStatusBadge
+                          status={r.isActive ? "activo" : "inactivo"}
+                          className="mt-1"
+                        >
+                          {r.isActive ? "Activo" : "Inactivo"}
+                        </WorkspaceTableStatusBadge>
                       </TableCell>
                       <TableCell
                         className={cn(
@@ -878,7 +878,16 @@ export function SuppliersWorkspaceView() {
                         )}
                         title={r.email.trim() ? r.email : undefined}
                       >
-                        <p className="truncate">{r.email || "—"}</p>
+                        {r.email.trim() ? (
+                          <a
+                            href={`mailto:${r.email.trim()}`}
+                            className={cn("block truncate", workspaceTableNatureLinkClass)}
+                          >
+                            {r.email}
+                          </a>
+                        ) : (
+                          <p className="truncate">—</p>
+                        )}
                       </TableCell>
                       <TableCell
                         className={cn(

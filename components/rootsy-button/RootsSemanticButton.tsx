@@ -62,6 +62,7 @@ export const RootsSemanticButton = forwardRef<HTMLButtonElement, Props>(function
       ref={ref}
       type="button"
       disabled={disabled || loading}
+      data-rootsy-appearance={appearance}
       className={cn(
         "font-canopy shrink-0 appearance-none disabled:pointer-events-none [&_svg]:pointer-events-none [&_svg]:shrink-0",
         className,

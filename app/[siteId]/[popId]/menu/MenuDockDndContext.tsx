@@ -15,6 +15,7 @@ import {
   MIN_MENU_DOCK_ITEMS,
   persistMenuDockIds,
   readCachedMenuDockIds,
+  readInitialMenuDockIds,
   resolveMenuDockIds,
   sanitizeMenuDockIds,
   writeCachedMenuDockIds,
@@ -24,9 +25,11 @@ import {
   savePopMenuDockPreference,
 } from "@/app/[siteId]/[popId]/menu/menuDockActions"
 import {
-  menuIconGlyphClass,
-  menuIconGradientForSection,
-  menuIconMacShadowClass,
+  menuHoloGlyphClass,
+  menuHoloIconShellForSection,
+  menuHoloRealmWorldRimClass,
+} from "@/lib/menu/menuHoloStyles"
+import {
   menuNatureShellClass,
 } from "@/app/[siteId]/[popId]/menu/menuNatureStyles"
 import { MenuIconChrome } from "@/app/[siteId]/[popId]/menu/MenuIconChrome"
@@ -306,11 +309,16 @@ function MenuDockDragPreview({
       className={cn(
         "dark",
         menuNatureShellClass,
-        "cursor-grabbing pointer-events-none scale-[1.14]",
-        "drop-shadow-[0_10px_28px_rgba(0,0,0,0.32)]",
+        "pointer-events-none scale-[1.14] cursor-grabbing",
+        "drop-shadow-[0_8px_18px_rgba(0,0,0,0.18)]",
       )}
     >
-      <DockIconVisual icon={item.icon} sectionKey={sectionKey} variant="default" />
+      <DockIconVisual
+        icon={item.icon}
+        sectionKey={sectionKey}
+        variant="overlay"
+        size="lg"
+      />
     </div>
   )
 }
@@ -334,18 +342,23 @@ export function DockIconVisual({
     size === "sm" ? "size-5" : size === "lg" ? "size-8" : "size-6"
   const radius = size === "lg" ? "rounded-[20px]" : "rounded-[22%]"
   return (
-    <div
-      className={cn(
-        "relative flex items-center justify-center overflow-hidden",
-        variant !== "muted" ? menuIconMacShadowClass : undefined,
-        menuIconGradientForSection(sectionKey, variant),
-        dim,
-        radius,
-        className,
-      )}
-    >
-      <MenuIconChrome />
-      <Icon className={cn("relative", menuIconGlyphClass, iconDim)} />
+    <div className="relative flex items-center justify-center">
+      <div
+        className={cn(
+          "relative flex items-center justify-center",
+          menuHoloIconShellForSection(sectionKey, variant),
+          variant !== "muted" &&
+            menuHoloRealmWorldRimClass(sectionKey, variant === "dock"),
+          dim,
+          radius,
+          className,
+        )}
+      >
+        {variant !== "muted" ? (
+          <MenuIconChrome sectionKey={sectionKey} />
+        ) : null}
+        <Icon className={cn(menuHoloGlyphClass, iconDim)} />
+      </div>
     </div>
   )
 }
@@ -365,13 +378,9 @@ export function MenuDockDndProvider({
   const [draggingItem, setDraggingItem] = useState<MenuDockDragItem | null>(null)
   const [activeDragKind, setActiveDragKind] = useState<DragKind | null>(null)
   const [dropPreviewIndex, setDropPreviewIndex] = useState<number | null>(null)
-  const [dockIds, setDockIds] = useState<MenuDockItemId[]>(() => {
-    const cached = readCachedMenuDockIds(popId)
-    if (cached?.length) {
-      return sanitizeMenuDockIds(cached, enabledModules)
-    }
-    return sanitizeMenuDockIds(DEFAULT_MENU_DOCK_IDS, enabledModules)
-  })
+  const [dockIds, setDockIds] = useState<MenuDockItemId[]>(() =>
+    readInitialMenuDockIds(popId),
+  )
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -383,6 +392,13 @@ export function MenuDockDndProvider({
   )
 
   useEffect(() => {
+    if (enabledModules.length === 0) return
+    setDockIds((current) => resolveMenuDockIds(popId, enabledModules, current))
+  }, [popId, enabledModules])
+
+  useEffect(() => {
+    if (enabledModules.length === 0) return
+
     let cancelled = false
 
     async function loadDockPreference() {

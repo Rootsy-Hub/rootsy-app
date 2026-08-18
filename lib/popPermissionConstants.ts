@@ -3,6 +3,9 @@ export const POP_PERMS = {
   SETTINGS_UPDATE: { resource: "settings", action: "update" },
 
   HR_READ: { resource: "hr", action: "read" },
+  HR_CREATE: { resource: "hr", action: "create" },
+  HR_UPDATE: { resource: "hr", action: "update" },
+  HR_DELETE: { resource: "hr", action: "delete" },
   SALE_READ: { resource: "sale", action: "read" },
   SALE_CREATE: { resource: "sale", action: "create" },
   SALE_UPDATE: { resource: "sale", action: "update" },

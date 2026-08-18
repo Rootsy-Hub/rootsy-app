@@ -191,14 +191,15 @@ export const workspaceTableLayoutInsetTableClass = cn(
   "border-separate border-spacing-0",
 )
 
-/** Barra de filtros — h-23 · toolbar elevation.overlay. */
+/** Barra de filtros — umbral a todo el ancho, entre el cielo y el claro. */
 export const dataWorkspaceListFiltersBarClass = cn(
-  "shrink-0 bg-white",
+  "relative z-1 shrink-0",
 )
 
-/** Fila principal de filtros (PERÍODO / FILTROS / BUSCAR). */
-export const dataWorkspaceListFiltersBarRowClass =
-  "border-b border-[var(--rootsy-bruma-200)]"
+/** Fila principal de filtros — alba; el mundo se ve a través. */
+export const dataWorkspaceListFiltersBarRowClass = cn(
+  "data-workspace-tables-filters-dawn",
+)
 
 export const dataWorkspaceListFiltersBarInnerClass = "h-23"
 
@@ -206,7 +207,7 @@ export const dataWorkspaceListFiltersGridClass =
   "grid h-full grid-cols-1 md:grid-cols-3"
 
 export const dataWorkspaceListFiltersPanelClass =
-  "flex h-full min-w-0 items-center border-r border-[var(--rootsy-bruma-200)] px-3"
+  "flex h-full min-w-0 items-center border-r border-[color-mix(in_srgb,var(--rootsy-bruma-300)_42%,transparent)] px-4"
 
 export const dataWorkspaceListFiltersPanelLastClass = cn(
   dataWorkspaceListFiltersPanelClass,

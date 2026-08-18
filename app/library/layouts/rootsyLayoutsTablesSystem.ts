@@ -34,27 +34,31 @@ function semanticHex(id: string): string {
   return ROOTSY_SEMANTIC_TOKENS.find((item) => item.id === id)!.hex
 }
 
-export type LayoutsTablesStatusId = "activo" | "pendiente" | "vencido"
+export type LayoutsTablesStatusId = "activo" | "inactivo" | "pendiente" | "vencido"
 
 export const ROOTSY_LAYOUTS_TABLES_MANIFESTO =
-  "Listado workspace — header sombra fijo, toolbar bruma, tabla densa con filas alternadas, footer sombra con paginación. Sin paleta Nature: bruma · savia · sombra · funcional."
+  "Listado workspace — header universo, toolbar alba, tabla flush al suelo, footer universo. Sin paleta Nature en las celdas: bruma · savia · sombra · funcional."
 
 export const ROOTSY_LAYOUTS_TABLES_PRINCIPLES = [
   {
     title: "Chrome sombra",
-    detail: "Header y footer comparten gradiente sombra-950→800 · h layout.header (68px).",
+    detail: "Header universo · h-17. Footer universo al suelo — misma noche, invita al cambio.",
   },
   {
-    title: "Toolbar claro",
-    detail: "Filtros con form.control.shell.inline-icon · layout.toolbar 92px · composición FormUiToolbarListFilters.",
+    title: "Toolbar alba",
+    detail: "Bruma a todo el ancho · el mundo se ve a través · form.control.shell.inline-icon · umbral entre noche y claro.",
   },
   {
     title: "Tabla bruma",
     detail: "Head space.500 · filas space.600+100 · alternancia bruma-50/white · selección savia-100.",
   },
   {
+    title: "Mundo en el lienzo",
+    detail: "Planeta en el gutter de filtros — la tabla ocupa el claro, de lado a lado hasta el pie.",
+  },
+  {
     title: "Acciones por capa",
-    detail: "Chrome ghost POS · primaria savia-600 · fila ⋮ icon-button compact · sort row neutral/edit · destructive aislado.",
+    detail: "Chrome ghost POS · acciones outlined · primaria savia-600 · fila ⋮ icon-button compact · sort row neutral/edit · destructive aislado.",
   },
 ] as const
 
@@ -80,7 +84,7 @@ export const ROOTSY_LAYOUTS_TABLES_ANATOMY = {
 
 export const ROOTSY_LAYOUTS_TABLES_CHROME = {
   headerBackground: `linear-gradient(180deg, ${hx("sombra", "950")} 0%, ${hx("sombra", "800")} 100%)`,
-  footerBackground: `linear-gradient(0deg, ${hx("sombra", "950")} 0%, ${hx("sombra", "800")} 100%)`,
+  footerBackground: `linear-gradient(168deg, color-mix(in srgb, ${hx("sombra", "950")} 94%, transparent) 0%, ${hx("sombra", "950")} 100%)`,
   titleColor: ROOTSY_COLOR_SEMANTIC.textOnDark,
   subtitleColor: hx("sombra", "300"),
   roleColor: hx("sombra", "400"),
@@ -91,29 +95,39 @@ export const ROOTSY_LAYOUTS_TABLES_CHROME = {
 } as const
 
 export const ROOTSY_LAYOUTS_TABLES_TOOLBAR = {
-  backgroundColor: elevationHex("elevation.surface.overlay"),
-  borderBottom: `1px solid ${borderHex("color.border")}`,
+  backgroundColor: `linear-gradient(180deg, color-mix(in srgb, ${hx("sombra", "800")} 10%, transparent) 0%, color-mix(in srgb, ${hx("bruma", "100")} 46%, transparent) 42%, color-mix(in srgb, ${elevationHex("elevation.surface.overlay")} 56%, transparent) 100%)`,
+  borderBottom: `1px solid color-mix(in srgb, ${hx("savia", "400")} 22%, ${hx("bruma", "200")})`,
+  chromeToken: "alba · blur 14 · mundo a través",
+} as const
+
+/** Lienzo detrás de la hoja — planeta más callado que en bloques. */
+export const ROOTSY_LAYOUTS_TABLES_ATMOSPHERE = {
+  mistToken: "bruma-100 radial · cielo",
+  planetToken: "rootsyplanet · 16% · blur 24 · respira 14s",
+  veilToken: "máscara a bruma · el valle no se lee",
+  horizonToken: "savia/bruma · 1px · glow 11s",
+  productClass: "data-workspace-tables-atmosphere",
 } as const
 
 export const ROOTSY_LAYOUTS_TABLES_BODY = {
   canvasBackground: elevationHex("elevation.surface"),
   tableBackground: elevationHex("elevation.surface.overlay"),
   headBackground: elevationHex("elevation.surface.sunken"),
-  headTextColor: hx("bruma", "500"),
+  headTextColor: hx("bruma", "700"),
   rowEvenBackground: elevationHex("elevation.surface.overlay"),
-  rowOddBackground: elevationHex("elevation.surface.sunken"),
+  rowOddBackground: hx("bruma", "100"),
   rowHoverBackground: hx("savia", "50"),
   rowSelectedBackground: hx("savia", "100"),
   primaryTextColor: hx("bruma", "900"),
-  secondaryTextColor: hx("bruma", "500"),
-  metaTextColor: hx("bruma", "500"),
-  linkColor: hx("savia", "600"),
+  secondaryTextColor: hx("bruma", "600"),
+  metaTextColor: hx("bruma", "600"),
+  linkColor: hx("savia", "700"),
   moneyColor: hx("bruma", "900"),
-  /** Columna ordenable — label activo · ícono savia · reposo bruma-500. */
-  sortActiveLabelColor: hx("bruma", "700"),
-  sortInactiveLabelColor: hx("bruma", "500"),
-  sortActiveIconColor: hx("savia", "600"),
-  sortInactiveIconColor: hx("bruma", "500"),
+  /** Columna ordenable — label activo · ícono savia · reposo bruma-600. */
+  sortActiveLabelColor: hx("bruma", "800"),
+  sortInactiveLabelColor: hx("bruma", "600"),
+  sortActiveIconColor: hx("savia", "700"),
+  sortInactiveIconColor: hx("bruma", "600"),
 } as const
 
 export const ROOTSY_LAYOUTS_TABLES_STATUS: Record<
@@ -125,6 +139,12 @@ export const ROOTSY_LAYOUTS_TABLES_STATUS: Record<
     backgroundColor: `color-mix(in srgb, ${semanticHex("status-success")} 10%, ${elevationHex("elevation.surface.overlay")})`,
     border: `1px solid color-mix(in srgb, ${semanticHex("status-success")} 25%, ${borderHex("color.border")})`,
     color: hx("savia", "800"),
+  },
+  inactivo: {
+    label: "Inactivo",
+    backgroundColor: hx("bruma", "100"),
+    border: `1px solid ${hx("bruma", "300")}`,
+    color: hx("bruma", "700"),
   },
   pendiente: {
     label: "Pendiente",
@@ -141,7 +161,9 @@ export const ROOTSY_LAYOUTS_TABLES_STATUS: Record<
 }
 
 export const ROOTSY_LAYOUTS_TABLES_FOOTER = {
+  background: `linear-gradient(168deg, color-mix(in srgb, ${hx("sombra", "950")} 94%, transparent) 0%, ${hx("sombra", "950")} 100%)`,
+  borderTop: `1px solid color-mix(in srgb, ${ROOTSY_COLOR_SEMANTIC.textOnDark} 10%, transparent)`,
   textColor: ROOTSY_COLOR_SEMANTIC.textOnDark,
-  mutedColor: hx("sombra", "400"),
-  dotColor: hx("sombra", "500"),
+  mutedColor: hx("sombra", "300"),
+  dotColor: hx("sombra", "400"),
 } as const

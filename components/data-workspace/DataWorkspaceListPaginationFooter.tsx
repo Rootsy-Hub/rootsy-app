@@ -30,7 +30,6 @@ import {
   tableChromeFooterClass,
 } from "@/components/data-workspace/dataWorkspaceListStyles"
 import {
-  layoutsTablesChromeIconButtonClass,
   layoutsTablesFooterCountStrongClass,
   layoutsTablesFooterCountTextClass,
   layoutsTablesFooterGridClass,
@@ -42,11 +41,13 @@ import {
   layoutsTablesFooterSurfaceClass,
 } from "@/components/layouts-tables/rootsLayoutsTablesProductStyles"
 import { FooterTotalCountSkeleton } from "@/components/data-workspace/DataWorkspaceListPaginationFooterSkeleton"
+import { RootsIconButton } from "@/components/rootsy-button/RootsIconButton"
 import { PopGlassChrome } from "@/components/layouts/PopGlassChrome"
 import {
   popGlassFooterDotClass,
   popGlassFooterMutedTextClass,
 } from "@/components/layouts/popHeaderBackdropStyles"
+import { MenuHeaderEntity } from "@/app/[siteId]/[popId]/menu/MenuHeaderEntity"
 import { usePopWorkspaceOptional } from "@/context/PopWorkspaceContext"
 import { cn } from "@/lib/utils"
 import type { PaginationItem } from "@/components/data-workspace/buildPaginationItems"
@@ -132,64 +133,76 @@ export function DataWorkspaceListPaginationFooter({
               {footerPaginationAriaLabel}
             </span>
             <span aria-hidden>
-              Mostrando{" "}
-              <strong className={layoutsTablesFooterCountStrongClass}>
-                {listFetching ? "…" : `${rangeStart.toLocaleString("es-AR")}–${rangeEnd.toLocaleString("es-AR")}`}
-              </strong>{" "}
-              de{" "}
-              {listFetching ? (
-                <FooterTotalCountSkeleton variant="tables" />
+              {isEmpty ? (
+                "Nada para mostrar"
               ) : (
-                <strong className={layoutsTablesFooterCountStrongClass}>
-                  {totalCountLabel}
-                </strong>
+                <>
+                  Viendo{" "}
+                  <strong className={layoutsTablesFooterCountStrongClass}>
+                    {listFetching
+                      ? "…"
+                      : `${rangeStart.toLocaleString("es-AR")} a ${rangeEnd.toLocaleString("es-AR")}`}
+                  </strong>{" "}
+                  de{" "}
+                  {listFetching ? (
+                    <FooterTotalCountSkeleton variant="tables" />
+                  ) : (
+                    <strong className={layoutsTablesFooterCountStrongClass}>
+                      {totalCountLabel}
+                    </strong>
+                  )}
+                </>
               )}
             </span>
           </p>
 
           <div className={layoutsTablesFooterNavClusterClass}>
-            <button
-              type="button"
-              className={layoutsTablesChromeIconButtonClass}
+            <RootsIconButton
+              label="Ir al inicio"
+              theme="pos"
+              emphasis="ghost"
+              size="default"
               disabled={paginationDisabled || safeCurrentPage <= 1}
-              aria-label="Ir al inicio"
               onClick={() => onPageChange(1)}
             >
-              <ChevronsLeft className="size-4" aria-hidden />
-            </button>
-            <button
-              type="button"
-              className={layoutsTablesChromeIconButtonClass}
+              <ChevronsLeft aria-hidden />
+            </RootsIconButton>
+            <RootsIconButton
+              label="Página anterior"
+              theme="pos"
+              emphasis="ghost"
+              size="default"
               disabled={paginationDisabled || safeCurrentPage <= 1}
-              aria-label="Retroceder una página"
               onClick={() => onPageChange(Math.max(1, safeCurrentPage - 1))}
             >
-              <ChevronLeft className="size-4" aria-hidden />
-            </button>
+              <ChevronLeft aria-hidden />
+            </RootsIconButton>
             <span className={layoutsTablesFooterPageLabelClass} aria-hidden>
               {safeCurrentPage.toLocaleString("es-AR")} /{" "}
               {effectiveTotalPages.toLocaleString("es-AR")}
             </span>
-            <button
-              type="button"
-              className={layoutsTablesChromeIconButtonClass}
+            <RootsIconButton
+              label="Página siguiente"
+              theme="pos"
+              emphasis="ghost"
+              size="default"
               disabled={paginationDisabled || safeCurrentPage >= effectiveTotalPages}
-              aria-label="Avanzar una página"
               onClick={() =>
                 onPageChange(Math.min(effectiveTotalPages, safeCurrentPage + 1))
               }
             >
-              <ChevronRight className="size-4" aria-hidden />
-            </button>
-            <button
-              type="button"
-              className={layoutsTablesChromeIconButtonClass}
+              <ChevronRight aria-hidden />
+            </RootsIconButton>
+            <RootsIconButton
+              label="Ir al final"
+              theme="pos"
+              emphasis="ghost"
+              size="default"
               disabled={paginationDisabled || safeCurrentPage >= effectiveTotalPages}
-              aria-label="Ir al final"
               onClick={() => onPageChange(effectiveTotalPages)}
             >
-              <ChevronsRight className="size-4" aria-hidden />
-            </button>
+              <ChevronsRight aria-hidden />
+            </RootsIconButton>
           </div>
 
           <div className={layoutsTablesFooterPageSizeClusterClass}>
@@ -212,11 +225,11 @@ export function DataWorkspaceListPaginationFooter({
               >
                 <RootsFormSelectValue />
               </RootsFormSelectTrigger>
-              <RootsFormSelectContent tone="light" align="end">
+              <RootsFormSelectContent tone="dark" align="end">
                 {pageSizeOptions.map((n) => (
                   <RootsFormSelectItem
                     key={n}
-                    tone="light"
+                    tone="dark"
                     className={layoutsTablesFooterSelectItemClass}
                     value={String(n)}
                   >
@@ -230,14 +243,16 @@ export function DataWorkspaceListPaginationFooter({
       )
 
       return (
-        <div
-          className={cn(layoutsTablesFooterSurfaceClass, "h-17 shrink-0")}
-          role="navigation"
-          aria-label="Paginación del listado"
-          aria-busy={listFetching}
-        >
-          {footerBody}
-        </div>
+        <MenuHeaderEntity as="footer" size="module">
+          <div
+            className={layoutsTablesFooterSurfaceClass}
+            role="navigation"
+            aria-label="Paginación del listado"
+            aria-busy={listFetching}
+          >
+            {footerBody}
+          </div>
+        </MenuHeaderEntity>
       )
     }
 

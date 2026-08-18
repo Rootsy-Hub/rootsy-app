@@ -1,5 +1,9 @@
 import { getAppBaseUrl } from "@/lib/appUrl"
-import { getAuthCallbackUrl } from "@/lib/authCallbackRedirect"
+import {
+  getAuthCallbackUrl,
+  RECOVERY_NEW_PASSWORD_PATH,
+  RECOVERY_PASSWORD_PATH,
+} from "@/lib/authCallbackRedirect"
 import { POP_CREATE_PATH } from "@/lib/signupIntent"
 import {
   buildAuthConfirmSignupEmail,
@@ -50,6 +54,22 @@ function confirmationUrlFromLink(properties: {
   const verificationType = properties?.verification_type?.trim()
   if (hashedToken && verificationType) {
     const url = new URL(confirmationCallbackUrl())
+    url.searchParams.set("token_hash", hashedToken)
+    url.searchParams.set("type", verificationType)
+    return url.toString()
+  }
+  return properties?.action_link?.trim() || null
+}
+
+function recoveryUrlFromLink(properties: {
+  action_link?: string | null
+  hashed_token?: string | null
+  verification_type?: string | null
+} | null | undefined): string | null {
+  const hashedToken = properties?.hashed_token?.trim()
+  const verificationType = properties?.verification_type?.trim() || "recovery"
+  if (hashedToken) {
+    const url = new URL(RECOVERY_PASSWORD_PATH, `${getAppBaseUrl()}/`)
     url.searchParams.set("token_hash", hashedToken)
     url.searchParams.set("type", verificationType)
     return url.toString()
@@ -323,7 +343,7 @@ export async function sendPasswordRecoveryViaResend(input: {
 
   if (input.isPreview) {
     const email = buildAuthResetPasswordEmail({
-      recoveryUrl: `${getAppBaseUrl()}/auth/callback?preview=recovery`,
+      recoveryUrl: `${getAppBaseUrl()}${RECOVERY_PASSWORD_PATH}?preview=recovery`,
       isPreview: true,
     })
     const emailResult = await sendResendEmail({
@@ -343,16 +363,17 @@ export async function sendPasswordRecoveryViaResend(input: {
     type: "recovery",
     email: input.email,
     options: {
-      redirectTo: authCallbackUrl(),
+      redirectTo: authCallbackUrl(RECOVERY_NEW_PASSWORD_PATH),
     },
   })
 
-  if (error || !data.properties?.action_link) {
+  const recoveryUrl = recoveryUrlFromLink(data?.properties)
+  if (error || !recoveryUrl) {
     return { sent: true }
   }
 
   const email = buildAuthResetPasswordEmail({
-    recoveryUrl: data.properties.action_link,
+    recoveryUrl,
   })
 
   const emailResult = await sendResendEmail({

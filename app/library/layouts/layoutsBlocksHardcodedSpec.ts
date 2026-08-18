@@ -42,7 +42,25 @@ export const LAYOUTS_BLOCKS_LAYOUT_SPEC_ROWS = [
     role: "Fondo contenido",
     token: LAYOUTS_BLOCKS_GRID_SPEC.contentBackgroundToken,
     value: LAYOUTS_BLOCKS_GRID_SPEC.contentBackground,
-    product: "layout.module.content · bruma-50",
+    product: "layout.module.content · bruma-50 · planeta en susurro",
+  },
+  {
+    role: "Fondo · neblina",
+    token: "layout.blocks.atmosphere.mist",
+    value: "bruma-100 radial · cielo",
+    product: "data-workspace-blocks-atmosphere",
+  },
+  {
+    role: "Fondo · planeta",
+    token: "layout.blocks.atmosphere.planet",
+    value: "rootsyplanet · 22% · blur 22 · horizonte",
+    product: "data-workspace-blocks-atmosphere::before",
+  },
+  {
+    role: "Fondo · velo",
+    token: "layout.blocks.atmosphere.veil",
+    value: "máscara a bruma · el valle no se lee",
+    product: "data-workspace-blocks-atmosphere::before",
   },
   {
     role: "Grid · columnas",

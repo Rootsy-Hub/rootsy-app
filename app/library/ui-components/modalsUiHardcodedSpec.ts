@@ -67,6 +67,7 @@ export type DialogScrimUiStyle = {
 
 export type DialogRegionUiStyle = {
   backgroundColor: string
+  background?: string
   borderBottom?: string
   borderTop?: string
   paddingLeft: number
@@ -107,6 +108,13 @@ export const MODAL_UI_DESCRIPTION_STYLE = {
   color: hx("bruma", "500"),
 }
 
+export function getModalDescriptionUiStyle(kind: DialogKindId = "modal") {
+  return {
+    ...MODAL_UI_DESCRIPTION_STYLE,
+    color: hx("bruma", "500"),
+  }
+}
+
 export const MODAL_UI_BODY_TEXT_STYLE = {
   fontFamily: "var(--rootsy-font-ui)",
   fontSize: ROOTSY_TEXT_STYLES.body.fontSize,
@@ -142,7 +150,7 @@ export function getDialogPanelUiSurface(
 
   return {
     backgroundColor: elevationHex(spec.surfaceToken),
-    border: `1px solid ${borderHex("color.border")}`,
+    border: "none",
     boxShadow: elevationShadow(spec.shadowToken),
     borderRadiusPx: spec.radiusPx,
     maxWidthPx: sizeSpec.maxWidthPx,
@@ -173,10 +181,15 @@ export function getDialogPanelShellRadiusClass(kind: DialogKindId = "modal") {
   return kind === "modal" ? "rounded-[1.375rem]" : "rounded-xl"
 }
 
+const DAWN_CHROME_BACKGROUND = elevationHex("elevation.surface.overlay")
+const VALLEY_BODY_BACKGROUND =
+  `linear-gradient(180deg, ${hx("bruma", "100")} 0%, color-mix(in srgb, ${hx("savia", "50")} 28%, ${hx("bruma", "50")}) 100%)`
+
 export function getDialogHeaderUiStyle(kind: DialogKindId = "modal"): DialogRegionUiStyle {
   return {
     backgroundColor: elevationHex("elevation.surface.overlay"),
-    borderBottom: regionDivider(kind, "bottom"),
+    background: DAWN_CHROME_BACKGROUND,
+    borderBottom: kind === "modal" ? undefined : regionDivider(kind, "bottom"),
     paddingLeft: ROOTSY_MODAL_PANEL_PADDING_X_PX,
     paddingRight: ROOTSY_MODAL_PANEL_PADDING_X_PX,
     paddingTop: rootsySpacePx("400"),
@@ -189,9 +202,7 @@ export function getDialogBodyUiStyle(
   kind: DialogKindId = "modal",
 ): DialogRegionUiStyle {
   const backgroundColor =
-    tone === "default" || tone === "loading"
-      ? elevationHex("elevation.surface.sunken")
-      : elevationHex("elevation.surface.overlay")
+    VALLEY_BODY_BACKGROUND
 
   return {
     backgroundColor,
@@ -206,7 +217,8 @@ export function getDialogBodyUiStyle(
 export function getDialogFooterUiStyle(kind: DialogKindId = "modal"): DialogRegionUiStyle {
   return {
     backgroundColor: elevationHex("elevation.surface.overlay"),
-    borderTop: regionDivider(kind, "top"),
+    background: DAWN_CHROME_BACKGROUND,
+    borderTop: undefined,
     paddingLeft: ROOTSY_MODAL_PANEL_PADDING_X_PX,
     paddingRight: ROOTSY_MODAL_PANEL_PADDING_X_PX,
     paddingTop: rootsySpacePx("150"),
