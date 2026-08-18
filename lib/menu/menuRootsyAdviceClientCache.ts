@@ -25,7 +25,8 @@ function storageKey(popId: string, popAccess: PopAccessCache): string {
 }
 
 function isValidAdvice(advice: MenuRootsyAdvice | null | undefined): advice is MenuRootsyAdvice {
-  return Boolean(advice?.lead?.trim()) && !isMetaGenericVoice(advice.lead)
+  if (!advice?.lead?.trim()) return false
+  return !isMetaGenericVoice(advice.lead)
 }
 
 /** Consejo cacheado del día — localStorage, TTL 24 h. */

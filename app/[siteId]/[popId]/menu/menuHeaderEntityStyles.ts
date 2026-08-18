@@ -10,7 +10,7 @@ export const menuHeaderEntityClass = cn(
 )
 
 const menuUniverseEntityBodySurfaceClass = cn(
-  "menu-header-entity-body menu-planet-life relative w-full overflow-hidden",
+  "menu-header-entity-body relative w-full overflow-hidden",
   "bg-[linear-gradient(168deg,rgba(4,10,14,0.94)_0%,rgba(2,6,10,0.97)_52%,rgba(1,3,6,0.99)_100%)]",
   "backdrop-blur-[10px] backdrop-saturate-[1.01]",
   "shadow-[inset_0_1px_0_rgba(255,255,255,0.1),inset_0_-16px_28px_rgba(0,0,0,0.28)]",

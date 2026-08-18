@@ -7,16 +7,12 @@ import {
   menuHeaderEntityVeilClass,
 } from "@/app/[siteId]/[popId]/menu/menuHeaderEntityStyles"
 import "@/app/[siteId]/[popId]/menu/menuHeaderEntity.css"
-import "@/app/[siteId]/[popId]/menu/menuPlanetLife.css"
 import {
   menuHeaderHeightClass,
   menuModuleHeaderHeightClass,
 } from "@/app/[siteId]/[popId]/menu/menuFloatingPillStyles"
-import { menuPlanetLifeStyle } from "@/lib/menu/menuHoloStyles"
 import { cn } from "@/lib/utils"
 import type { ReactNode } from "react"
-
-const headerLifeStyle = menuPlanetLifeStyle("menu-header-outer-space")
 
 type Props = {
   children: ReactNode
@@ -41,7 +37,6 @@ export function MenuHeaderEntity({
     <Tag className={menuHeaderEntityClass}>
       <div
         className={isFooter ? menuFooterEntityBodyClass : menuHeaderEntityBodyClass}
-        style={headerLifeStyle}
       >
         <div aria-hidden className="menu-header-entity-core" />
         <div aria-hidden className="menu-header-entity-sky" />

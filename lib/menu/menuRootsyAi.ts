@@ -1,3 +1,4 @@
+import type { PopAccessModule } from "@/app/home/homeUserDataTypes"
 import {
   buildMenuRootsyAiUserPayload,
   MENU_ROOTSY_AI_SYSTEM_PROMPT,
@@ -18,8 +19,11 @@ export function isMenuRootsyAiConfigured(): boolean {
   return isGeminiConfigured() || Boolean(process.env.OPENAI_API_KEY?.trim())
 }
 
-export function buildMenuRootsyAdvice(context: MenuRootsyContext): MenuRootsyAdvice {
-  return buildMenuRootsyRuleAdvice(context)
+export function buildMenuRootsyAdvice(
+  context: MenuRootsyContext,
+  enabledModules: readonly PopAccessModule[],
+): MenuRootsyAdvice {
+  return buildMenuRootsyRuleAdvice(context, enabledModules)
 }
 
 async function requestMenuRootsyOpenAiAdvice(

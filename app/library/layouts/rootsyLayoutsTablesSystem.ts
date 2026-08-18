@@ -58,7 +58,7 @@ export const ROOTSY_LAYOUTS_TABLES_PRINCIPLES = [
   },
   {
     title: "Acciones por capa",
-    detail: "Chrome ghost POS · primaria savia-600 · fila ⋮ icon-button compact · sort row neutral/edit · destructive aislado.",
+    detail: "Chrome ghost POS · acciones outlined · primaria savia-600 · fila ⋮ icon-button compact · sort row neutral/edit · destructive aislado.",
   },
 ] as const
 

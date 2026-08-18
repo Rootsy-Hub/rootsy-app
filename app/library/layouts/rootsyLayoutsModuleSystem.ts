@@ -50,6 +50,7 @@ export const ROOTSY_LAYOUTS_MODULE_HEADER = {
   chromeFundamentalsSupportsToken: "menu-header-entity-body · blur 10 · saturate 1.01",
   borderFundamentalsToken: "bruma 10% · puente al planeta",
   controlsFundamentalsVariant: "RootsIconButton · ghost · dark",
+  actionsFundamentalsVariant: "RootsIconButton · pos outlined | primary",
   typographyFundamentalsToken: "menuRealmTitle · menuRealmMuted · rol dark",
   brandLogoClass: "size-9 rounded-xl",
   brandNameClass: "text-sm",

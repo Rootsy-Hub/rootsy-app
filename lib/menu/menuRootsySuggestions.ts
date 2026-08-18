@@ -1,20 +1,11 @@
-import {
-  menuRootsyGrowthRotationSeed,
-  pickMenuRootsyGrowthOpportunity,
-  type MenuRootsyGrowthOpportunity,
-} from "@/lib/menu/menuRootsyInsightsShared"
-import {
-  buildGuaranteedMetricOpportunity,
-  insightsHasDisplayableData,
-  isMetaGenericVoice,
-  textContainsNumericData,
-} from "@/lib/menu/menuRootsyVoice"
 import type {
   MenuRootsyAdvice,
   MenuRootsyAllowedModule,
   MenuRootsyContext,
   MenuRootsySuggestion,
 } from "@/lib/menu/menuRootsyTypes"
+import { pickMenuRootsyCatalogSuggestionForPop } from "@/lib/menu/menuRootsySuggestionProfile"
+import type { PopAccessModule } from "@/app/home/homeUserDataTypes"
 
 function pickModule(
   allowed: MenuRootsyAllowedModule[],
@@ -40,103 +31,54 @@ function toSuggestion(mod: MenuRootsyAllowedModule): MenuRootsySuggestion {
   }
 }
 
-function growthOpportunityPool(context: MenuRootsyContext): MenuRootsyGrowthOpportunity[] {
-  const insights = context.insights
-  const fromInsights = (insights?.opportunities ?? []).filter(
-    (entry) => !isMetaGenericVoice(entry.voice),
-  )
-  if (fromInsights.length > 0) return fromInsights
-
-  if (insights && insightsHasDisplayableData(insights)) {
-    const guaranteed = buildGuaranteedMetricOpportunity(insights, context.popName)
-    if (guaranteed) return [guaranteed]
-  }
-
-  return []
-}
-
-function pickPrimaryOpportunity(
-  context: MenuRootsyContext,
-): MenuRootsyGrowthOpportunity | null {
-  const pool = growthOpportunityPool(context)
-  return pickMenuRootsyGrowthOpportunity(
-    pool,
-    menuRootsyGrowthRotationSeed(context.popId),
-  )
-}
-
 function pickPrimaryCta(
   context: MenuRootsyContext,
-  opportunity: MenuRootsyGrowthOpportunity | null,
+  ctaModuleKeys: string[],
 ): MenuRootsySuggestion | null {
-  if (!opportunity) return null
-
-  const mod = pickModule(context.allModules, opportunity.ctaModuleKeys)
+  const mod = pickModule(context.allModules, ctaModuleKeys)
   if (mod) return toSuggestion(mod)
-
   const fallback = pickModule(context.allModules, [
     "statistics",
-    "promotions",
-    "reports",
+    "sale",
+    "mostrador",
+    "mesas",
+    "services",
+    "active_services",
   ])
   return fallback ? toSuggestion(fallback) : null
 }
 
-function voiceMentionsModule(voice: string, label: string): boolean {
-  return voice.toLowerCase().includes(label.trim().toLowerCase())
-}
-
-function appendSoftCta(voice: string, cta: MenuRootsySuggestion): string {
-  if (voiceMentionsModule(voice, cta.label)) return voice
-  return `${voice} Cuando quieras, en ${cta.label} lo exploramos juntos.`
-}
-
-function buildNoDataVoice(context: MenuRootsyContext): string {
-  return `Todavía no tengo ventas cargadas ${context.insights?.periodLabel ?? "este mes"} para armar una mejora concreta en ${context.popName}. Apenas haya movimiento, te digo qué empujar.`
-}
-
-function buildVoice(
-  context: MenuRootsyContext,
-  opportunity: MenuRootsyGrowthOpportunity | null,
-  primaryCta: MenuRootsySuggestion | null,
-): string {
-  if (!opportunity) {
-    if (context.insights && insightsHasDisplayableData(context.insights)) {
-      const guaranteed = buildGuaranteedMetricOpportunity(
-        context.insights,
-        context.popName,
-      )
-      if (guaranteed) {
-        return primaryCta
-          ? appendSoftCta(guaranteed.voice, primaryCta)
-          : guaranteed.voice
-      }
-    }
-
-    return buildNoDataVoice(context)
-  }
-
-  const voice = primaryCta
-    ? appendSoftCta(opportunity.voice, primaryCta)
-    : opportunity.voice
-
-  return voice
-}
-
-/** Consejo de Rootsy — voz propia, sin títulos ni chips. */
+/** Consejo de Rootsy desde catálogo rotativo — voz para iniciados. */
 export function buildMenuRootsyRuleAdvice(
   context: MenuRootsyContext,
+  enabledModules: readonly PopAccessModule[],
 ): MenuRootsyAdvice {
-  const opportunity = pickPrimaryOpportunity(context)
-  const primaryCta = pickPrimaryCta(context, opportunity)
+  const catalogEntry = pickMenuRootsyCatalogSuggestionForPop(
+    context.popId,
+    enabledModules,
+  )
+
+  if (!catalogEntry) {
+    return {
+      title: "",
+      lead: `Sigo aprendiendo cómo ayudarte en ${context.popName}. Cuando tengas más módulos activos, voy a poder sugerirte mejoras concretas.`,
+      pulses: [],
+      primaryCta: null,
+      suggestions: [],
+      source: "rules",
+    }
+  }
+
+  const primaryCta = pickPrimaryCta(context, catalogEntry.ctaModuleKeys)
 
   return {
-    title: "",
-    lead: buildVoice(context, opportunity, primaryCta),
+    title: catalogEntry.title,
+    lead: catalogEntry.teaser,
     pulses: [],
     primaryCta,
     suggestions: primaryCta ? [primaryCta] : [],
     source: "rules",
+    catalogSuggestionId: catalogEntry.id,
   }
 }
 
@@ -156,33 +98,27 @@ export function sanitizeMenuRootsyAdvice(
       allowedByKey.get(entry.moduleKey) ??
       context.allModules.find((item) => item.link === entry.moduleKey)
     if (!mod) continue
-    suggestions.push(toSuggestion(mod))
+    suggestions.push({
+      label: mod.label,
+      href: mod.href,
+      moduleKey: mod.moduleKey,
+    })
   }
 
   const lead = raw.lead?.trim().slice(0, 420) || fallback.lead
   const primaryCta = suggestions[0] ?? fallback.primaryCta
-
-  const insightsHaveData =
-    context.insights != null && insightsHasDisplayableData(context.insights)
-
-  if (
-    insightsHaveData &&
-    (isMetaGenericVoice(lead) ||
-      (!textContainsNumericData(lead) && textContainsNumericData(fallback.lead)))
-  ) {
-    return fallback
-  }
 
   if (!primaryCta && !lead) {
     return fallback
   }
 
   return {
-    title: "",
+    title: fallback.title,
     lead,
     pulses: [],
     primaryCta,
     suggestions: primaryCta ? [primaryCta] : [],
     source: "ai",
+    catalogSuggestionId: fallback.catalogSuggestionId,
   }
 }

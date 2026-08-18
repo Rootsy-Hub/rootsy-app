@@ -128,7 +128,15 @@ export const LAYOUTS_MODULE_HEADER_SPEC_ROWS = [
   },
   {
     token: "header.controls.component",
-    value: "RootsIconButton · theme pos · ghost | primary",
+    value: "RootsIconButton · theme pos · ghost",
+  },
+  {
+    token: "header.actions",
+    value: ROOTSY_LAYOUTS_MODULE_HEADER.actionsFundamentalsVariant,
+  },
+  {
+    token: "header.actions.component",
+    value: "RootsIconButton · theme pos · outlined | primary",
   },
   {
     token: "header.typography",

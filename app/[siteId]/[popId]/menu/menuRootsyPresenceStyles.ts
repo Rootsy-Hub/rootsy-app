@@ -54,3 +54,24 @@ export const menuRootsyPresenceVoiceLinkClass = cn(
 export const menuRootsyPresenceThinkingClass = cn(
   "text-[rgba(255,255,255,0.32)]",
 )
+
+export const menuRootsyPresenceVerMasClass = cn(
+  "mt-3 inline-flex text-[13px] font-medium text-[rgba(196,230,248,0.88)]",
+  "underline decoration-[rgba(196,230,248,0.35)] underline-offset-[3px]",
+  "transition-colors duration-200",
+  "hover:text-[rgba(228,242,248,0.98)] hover:decoration-[rgba(228,242,248,0.55)]",
+  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgba(255,255,255,0.18)] focus-visible:ring-offset-2 focus-visible:ring-offset-transparent",
+)
+
+export const menuRootsyPresenceSheetBodyClass = cn(
+  "rootsy-scroll-minimal min-h-0 flex-1 overflow-y-auto overscroll-contain px-5 py-5",
+)
+
+export const menuRootsyPresenceSheetExplanationClass = cn(
+  "text-[15px] leading-[1.55] text-[rgba(255,255,255,0.88)]",
+)
+
+export const menuRootsyPresenceSheetExamplesClass = cn(
+  "rounded-xl border border-[rgba(228,242,248,0.1)] bg-[rgba(255,255,255,0.04)]",
+  "px-4 py-3 text-[15px] leading-[1.55] text-[rgba(228,242,248,0.92)]",
+)

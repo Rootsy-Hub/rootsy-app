@@ -1,6 +1,7 @@
 "use client"
 
 import { fetchMenuRootsyAdvice } from "@/app/[siteId]/[popId]/menu/menuRootsyActions"
+import { MenuRootsySuggestionSheet } from "@/app/[siteId]/[popId]/menu/MenuRootsySuggestionSheet"
 import "@/app/[siteId]/[popId]/menu/menuRootsyPresence.css"
 import {
   menuRootsyPresenceGroundClass,
@@ -9,24 +10,21 @@ import {
   menuRootsyPresencePanelClass,
   menuRootsyPresencePanelVoiceClass,
   menuRootsyPresenceStageClass,
-  menuRootsyPresenceThinkingClass,
   menuRootsyPresenceTriggerClass,
-  menuRootsyPresenceVoiceLinkClass,
+  menuRootsyPresenceVerMasClass,
 } from "@/app/[siteId]/[popId]/menu/menuRootsyPresenceStyles"
 import type { PopAccessCache } from "@/app/home/homeUserDataTypes"
-import { usePopOptimisticNav } from "@/context/PopOptimisticNavContext"
 import {
   readCachedMenuRootsyAdvice,
   writeCachedMenuRootsyAdvice,
 } from "@/lib/menu/menuRootsyAdviceClientCache"
-import { buildMenuRootsyRuleAdvice } from "@/lib/menu/menuRootsySuggestions"
 import { buildMenuRootsyContext } from "@/lib/menu/menuRootsyContext"
-import type { MenuRootsyAdvice, MenuRootsySuggestion } from "@/lib/menu/menuRootsyTypes"
+import { buildMenuRootsyRuleAdvice } from "@/lib/menu/menuRootsySuggestions"
+import type { MenuRootsyAdvice } from "@/lib/menu/menuRootsyTypes"
 import type { MenuSectionKey } from "@/lib/menuCatalog"
 import { cn } from "@/lib/utils"
 import Image from "next/image"
-import Link from "next/link"
-import { useEffect, useId, useMemo, useRef, useState, type MouseEvent as ReactMouseEvent } from "react"
+import { useEffect, useId, useMemo, useRef, useState } from "react"
 
 type Props = {
   sectionKey: MenuSectionKey
@@ -38,24 +36,20 @@ type Props = {
   className?: string
 }
 
-function resolvePrimaryCta(advice: MenuRootsyAdvice): MenuRootsySuggestion | null {
-  return advice.primaryCta ?? advice.suggestions[0] ?? null
-}
-
-/** Rootsy habita el suelo del planeta — habla con voz propia. */
+/** Rootsy habita el suelo del planeta — sugerencias rotativas para iniciados. */
 export function MenuRootsyPresence({
   sectionKey,
+  sectionTitle,
   siteId,
   popId,
   popAccess,
   disabled = false,
   className,
 }: Props) {
-  const { start: startOptimisticNav } = usePopOptimisticNav()
   const [open, setOpen] = useState(false)
+  const [sheetOpen, setSheetOpen] = useState(false)
   const [advice, setAdvice] = useState<MenuRootsyAdvice | null>(null)
   const [dataPending, setDataPending] = useState(false)
-  const [aiPending, setAiPending] = useState(false)
   const hostRef = useRef<HTMLDivElement>(null)
   const panelId = useId()
   const prefetchStartedRef = useRef(false)
@@ -71,35 +65,13 @@ export function MenuRootsyPresence({
   }, [popAccess, siteId, popId])
 
   const instantAdvice = useMemo(() => {
-    if (!rootsyContext) return null
-    return buildMenuRootsyRuleAdvice(rootsyContext)
-  }, [rootsyContext])
+    if (!rootsyContext || !popAccess) return null
+    return buildMenuRootsyRuleAdvice(rootsyContext, popAccess.enabledModules)
+  }, [rootsyContext, popAccess])
 
   const displayAdvice = advice ?? instantAdvice
   const loadingAdvice = open && dataPending && !advice
-  const primaryCta = displayAdvice ? resolvePrimaryCta(displayAdvice) : null
-  const voiceAlreadyMentionsCta =
-    primaryCta != null &&
-    displayAdvice?.lead.toLowerCase().includes(primaryCta.label.toLowerCase())
-
-  const handleSuggestionClick = (
-    event: ReactMouseEvent<HTMLAnchorElement>,
-    suggestion: MenuRootsySuggestion,
-  ) => {
-    if (
-      event.metaKey ||
-      event.ctrlKey ||
-      event.shiftKey ||
-      event.altKey
-    ) {
-      return
-    }
-    startOptimisticNav({
-      href: suggestion.href,
-      title: suggestion.label,
-    })
-    setOpen(false)
-  }
+  const catalogSuggestionId = displayAdvice?.catalogSuggestionId ?? null
 
   useEffect(() => {
     if (!open) return
@@ -146,7 +118,6 @@ export function MenuRootsyPresence({
     if (!hadCachedAdvice) {
       setDataPending(true)
     }
-    setAiPending(false)
 
     void fetchMenuRootsyAdvice({
       popId,
@@ -167,104 +138,86 @@ export function MenuRootsyPresence({
 
       writeCachedMenuRootsyAdvice(popId, popAccess, result.advice)
       setAdvice(result.advice)
-
-      setAiPending(true)
-      void fetchMenuRootsyAdvice({
-        popId,
-        siteId,
-        sectionKey: "operar",
-        sectionTitle: "Operar",
-        useAi: true,
-      }).then((aiResult) => {
-        if (cancelled) return
-        setAiPending(false)
-        if (!aiResult.success) return
-        writeCachedMenuRootsyAdvice(popId, popAccess, aiResult.advice)
-        setAdvice(aiResult.advice)
-      })
     })
 
     return () => {
       cancelled = true
       setDataPending(false)
-      setAiPending(false)
     }
-  }, [
-    disabled,
-    popAccess,
-    siteId,
-    popId,
-    instantAdvice,
-  ])
+  }, [disabled, popAccess, siteId, popId, instantAdvice])
 
   return (
-    <div ref={hostRef} className={cn(menuRootsyPresenceHostClass, className)}>
-      <div className={menuRootsyPresenceStageClass}>
-        <span aria-hidden className={menuRootsyPresenceGroundClass} />
+    <>
+      <div ref={hostRef} className={cn(menuRootsyPresenceHostClass, className)}>
+        <div className={menuRootsyPresenceStageClass}>
+          <span aria-hidden className={menuRootsyPresenceGroundClass} />
 
-        {open ? (
-          <div
-            id={panelId}
-            role="dialog"
-            aria-label="Rootsy"
-            className={menuRootsyPresencePanelClass}
-          >
-            <div className="px-4 py-4 sm:px-5 sm:py-4">
-              {loadingAdvice ? (
-                <p className={menuRootsyPresencePanelVoiceClass}>
-                  Estoy revisando tus números…
-                </p>
-              ) : displayAdvice ? (
-                <>
+          {open ? (
+            <div
+              id={panelId}
+              role="dialog"
+              aria-label="Rootsy"
+              className={menuRootsyPresencePanelClass}
+            >
+              <div className="px-4 py-4 sm:px-5 sm:py-4">
+                {loadingAdvice ? (
                   <p className={menuRootsyPresencePanelVoiceClass}>
-                    {displayAdvice.lead}
-                    {aiPending ? (
-                      <span className={menuRootsyPresenceThinkingClass}>
-                        {" "}
-                        …
-                      </span>
-                    ) : null}
+                    Preparando una idea para vos…
                   </p>
+                ) : displayAdvice ? (
+                  <>
+                    <p className={menuRootsyPresencePanelVoiceClass}>
+                      {displayAdvice.lead}
+                    </p>
 
-                  {primaryCta && !voiceAlreadyMentionsCta ? (
-                    <Link
-                      href={primaryCta.href}
-                      onClick={(event) => handleSuggestionClick(event, primaryCta)}
-                      className={menuRootsyPresenceVoiceLinkClass}
-                    >
-                      {primaryCta.label}
-                    </Link>
-                  ) : null}
-                </>
-              ) : null}
+                    {catalogSuggestionId ? (
+                      <button
+                        type="button"
+                        className={menuRootsyPresenceVerMasClass}
+                        onClick={() => {
+                          setSheetOpen(true)
+                        }}
+                      >
+                        Ver más
+                      </button>
+                    ) : null}
+                  </>
+                ) : null}
+              </div>
             </div>
-          </div>
-        ) : null}
+          ) : null}
 
-        <button
-          type="button"
-          disabled={disabled}
-          aria-expanded={open}
-          aria-controls={open ? panelId : undefined}
-          aria-label={open ? "Cerrar Rootsy" : "Escuchar a Rootsy"}
-          onClick={() => setOpen((value) => !value)}
-          onMouseDown={(event) => event.preventDefault()}
-          className={menuRootsyPresenceTriggerClass}
-        >
-          <Image
-            src={
-              open
-                ? "/images/atento.png"
-                : "/images/contento.png"
-            }
-            alt=""
-            width={176}
-            height={176}
-            className={menuRootsyPresenceImageClass}
-            priority
-          />
-        </button>
+          <button
+            type="button"
+            disabled={disabled}
+            aria-expanded={open}
+            aria-controls={open ? panelId : undefined}
+            aria-label={open ? "Cerrar Rootsy" : "Escuchar a Rootsy"}
+            onClick={() => setOpen((value) => !value)}
+            onMouseDown={(event) => event.preventDefault()}
+            className={menuRootsyPresenceTriggerClass}
+          >
+            <Image
+              src={open ? "/images/atento.png" : "/images/contento.png"}
+              alt=""
+              width={176}
+              height={176}
+              className={menuRootsyPresenceImageClass}
+              priority
+            />
+          </button>
+        </div>
       </div>
-    </div>
+
+      <MenuRootsySuggestionSheet
+        open={sheetOpen}
+        onOpenChange={setSheetOpen}
+        suggestionId={catalogSuggestionId}
+        popId={popId}
+        siteId={siteId}
+        sectionKey={sectionKey}
+        sectionTitle={sectionTitle}
+      />
+    </>
   )
 }

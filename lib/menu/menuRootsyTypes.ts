@@ -25,6 +25,8 @@ export type MenuRootsyAdvice = {
   primaryCta: MenuRootsySuggestion | null
   suggestions: MenuRootsySuggestion[]
   source: "rules" | "ai"
+  /** ID en el catálogo de sugerencias rotativas. */
+  catalogSuggestionId?: string
 }
 
 export type MenuRootsyAllowedModule = {

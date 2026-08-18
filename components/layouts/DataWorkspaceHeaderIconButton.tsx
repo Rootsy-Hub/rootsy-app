@@ -2,8 +2,6 @@
 
 import {
   isDarkChromeHeader,
-  isLayoutsTablesHeader,
-  isNightForestHeader,
   type DataWorkspaceHeaderVariant,
 } from "@/components/layouts/dataWorkspaceHeaderStyles"
 import { RootsIconButton } from "@/components/rootsy-button/RootsIconButton"
@@ -24,37 +22,13 @@ export function DataWorkspaceHeaderIconButton({
   primary = false,
   ...rest
 }: DataWorkspaceHeaderIconButtonProps) {
-  if (isLayoutsTablesHeader(headerVariant)) {
-    return (
-      <RootsIconButton
-        label={label}
-        theme="pos"
-        emphasis={primary ? "primary" : "ghost"}
-        size="default"
-        {...rest}
-      />
-    )
-  }
-
-  if (isNightForestHeader(headerVariant)) {
-    return (
-      <RootsIconButton
-        label={label}
-        tone="ghost"
-        surface="dark"
-        emphasis={primary ? "filled" : "ghost"}
-        size="default"
-        {...rest}
-      />
-    )
-  }
-
+  /** Universo noche: placa visible siempre — outlined / primaria savia. Ghost queda para chrome (volver, fullscreen). */
   if (isDarkChromeHeader(headerVariant)) {
     return (
       <RootsIconButton
         label={label}
         theme="pos"
-        emphasis="ghost"
+        emphasis={primary ? "primary" : "outlined"}
         size="default"
         {...rest}
       />
