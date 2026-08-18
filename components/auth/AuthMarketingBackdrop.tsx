@@ -11,6 +11,7 @@ import {
   menuPlanetOrbClass,
 } from "@/app/[siteId]/[popId]/menu/menuNatureStyles"
 import "@/app/home/homeHarmony.css"
+import "@/components/auth/authWorldAspirational.css"
 import { cn } from "@/lib/utils"
 
 type Particle = {
@@ -25,13 +26,13 @@ type Particle = {
 
 const AUTH_WORLD_IMAGE = "/images/rootsyplanet.jpeg"
 
-/** Panorámica continua — un solo cielo y valle de borde a borde. */
-const authWorldImageClass = "object-cover object-[28%_42%] opacity-100"
+/** Panorámica continua — visión aspiracional, aún no la realidad del producto. */
+const authWorldImageClass = "object-cover object-[28%_42%] opacity-[0.94]"
 
 const authWorldAmbientClass =
-  "object-cover object-[28%_42%] opacity-[0.14] mix-blend-soft-light blur-3xl"
+  "object-cover object-[28%_42%] opacity-[0.11] mix-blend-soft-light blur-3xl"
 
-/** Un ecosistema — sin corte vertical entre columnas. */
+/** Valle en suspenso — se hace real al ingresar. */
 export function AuthMarketingBackdrop() {
   const [particles, setParticles] = useState<Particle[]>([])
 
@@ -50,9 +51,9 @@ export function AuthMarketingBackdrop() {
   }, [])
 
   const orbLayout = [
-    { section: "operar" as const, left: "22%", top: "44%", size: 540, opacity: 0.55 },
-    { section: "administrar" as const, left: "50%", top: "38%", size: 520, opacity: 0.38 },
-    { section: "configurar" as const, left: "76%", top: "46%", size: 460, opacity: 0.32 },
+    { section: "operar" as const, left: "22%", top: "44%", size: 540, opacity: 0.42 },
+    { section: "administrar" as const, left: "50%", top: "38%", size: 520, opacity: 0.28 },
+    { section: "configurar" as const, left: "76%", top: "46%", size: 460, opacity: 0.24 },
   ]
 
   return (
@@ -66,10 +67,10 @@ export function AuthMarketingBackdrop() {
           "absolute left-1/2 top-[42%] size-[min(90vw,820px)] -translate-x-1/2 -translate-y-1/2 rounded-full blur-[120px]",
           homePlanetHaloClass("operar"),
         )}
-        style={{ opacity: 0.36 }}
+        style={{ opacity: 0.28 }}
       />
 
-      <div className="absolute inset-0">
+      <div className="absolute inset-0 auth-world-scene--aspirational">
         <Image
           src={AUTH_WORLD_IMAGE}
           alt=""
@@ -88,6 +89,9 @@ export function AuthMarketingBackdrop() {
         />
       </div>
 
+      {/* Velo aspiracional — el planeta existe, todavía no es tu realidad */}
+      <div aria-hidden className="auth-world-aspirational-veil" />
+
       {/* Horizonte único — suelo compartido en todo el ancho */}
       <div
         className="absolute inset-x-0 bottom-0 h-[min(44vh,460px)]"
@@ -100,10 +104,10 @@ export function AuthMarketingBackdrop() {
         }}
       />
 
-      {/* Armonía de los tres mundos — pantalla completa, tenue */}
+      {/* Armonía en suspenso — los tres mundos aún no despiertan del todo */}
       <div
         className={cn(
-          "absolute inset-0 opacity-[0.28]",
+          "absolute inset-0 opacity-[0.22]",
           homeHarmonyWashClass,
           "home-constellation-wash",
         )}
@@ -151,7 +155,7 @@ export function AuthMarketingBackdrop() {
             left: `${particle.left}%`,
             top: `${particle.top}%`,
             background: "rgba(255,255,255,0.55)",
-            opacity: particle.opacity,
+            opacity: particle.opacity * 0.75,
             animationDuration: `${particle.duration}s`,
             animationDelay: `${particle.delay}s`,
           }}

@@ -33,6 +33,30 @@ export function menuHoloRealmWorldRimClass(
   )
 }
 
+/** Planeta dormido — cristal bruma, sin reinado asignado. */
+export const menuHoloDormantPlanetShellClass = cn(
+  menuHoloGlassBase,
+  "backdrop-saturate-[1.02]",
+  "border-[rgba(228,242,248,0.11)]",
+  "bg-[linear-gradient(168deg,rgba(255,255,255,0.035)_0%,rgba(8,28,38,0.07)_46%,rgba(5,12,16,0.12)_100%)]",
+  "shadow-[0_2px_4px_rgba(0,0,0,0.07),0_8px_20px_rgba(0,0,0,0.1)]",
+  menuHoloPlanetShellDepthClass,
+)
+
+export const menuHoloDormantDockShellClass = cn(
+  menuHoloGlassBase,
+  "backdrop-saturate-[1.02]",
+  "border-[rgba(228,242,248,0.1)]",
+  "bg-[linear-gradient(168deg,rgba(255,255,255,0.03)_0%,rgba(8,28,38,0.06)_46%,rgba(5,12,16,0.1)_100%)]",
+  "shadow-[0_2px_4px_rgba(0,0,0,0.06),0_6px_16px_rgba(0,0,0,0.08)]",
+  menuHoloPlanetShellDepthClass,
+)
+
+export const menuHoloDormantRimClass = cn(
+  "menu-planet-dormant-rim",
+  "menu-planet-dormant-rim--soft",
+)
+
 const menuHoloShellBySection: Record<
   MenuSectionKey,
   Record<MenuHoloIconVariant, string>

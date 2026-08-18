@@ -1,5 +1,6 @@
 "use client"
 
+import { MenuPageSkeleton } from "@/app/[siteId]/[popId]/menu/MenuPageSkeleton"
 import {
   DataWorkspaceTableListPage,
   DataWorkspaceTableListNatureShell,
@@ -11,7 +12,7 @@ import { usePopAccessData } from "@/hooks/usePopAccessData"
 import { buildUserProfileFullName } from "@/app/home/homeUserDataResolve"
 import { buildPopRoleLabel } from "@/lib/popWorkspaceFromAccess"
 import { hasPopTableListSessionCache } from "@/lib/popTableListSessionCache"
-import { popModuleKeyFromPath } from "@/lib/popRoutes"
+import { popModuleKeyFromPath, isPopMenuPathname } from "@/lib/popRoutes"
 import { useQueryClient } from "@tanstack/react-query"
 import { useParams, usePathname } from "next/navigation"
 
@@ -81,6 +82,10 @@ export function PopModuleLoading({
   const title =
     titleProp ?? MODULE_TITLES[moduleKeyProp ?? moduleKeyFromPathname(pathname)] ?? "…"
   const moduleKey = moduleKeyProp ?? moduleKeyFromPathname(pathname)
+
+  if (moduleKey === "menu" || isPopMenuPathname(pathname)) {
+    return <MenuPageSkeleton />
+  }
 
   if (hasPopTableListSessionCache(queryClient, popId, moduleKey)) {
     return null

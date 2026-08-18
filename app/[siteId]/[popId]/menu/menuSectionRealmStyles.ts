@@ -28,6 +28,11 @@ export const menuSectionRealmTabIdleClass = cn(
   "text-[rgba(255,255,255,0.34)] hover:bg-white/[0.03] hover:text-[rgba(255,255,255,0.52)]",
 )
 
+export const menuSectionRealmTabDormantClass = cn(
+  menuRealmLightMutedClass,
+  "text-[rgba(255,255,255,0.26)]",
+)
+
 export const menuSectionRealmDividerClass =
   "w-px shrink-0 self-stretch bg-[rgba(228,242,248,0.08)]"
 

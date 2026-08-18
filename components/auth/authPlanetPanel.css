@@ -6,7 +6,9 @@
   --auth-entity-cyan: rgba(147, 210, 255, 1);
   --auth-entity-savia: rgba(36, 173, 106, 1);
   --auth-entity-life: 14s;
-  overflow: hidden;
+  --auth-entity-radius: 1.35rem;
+  --auth-entity-presence-radius: 1.5rem;
+  overflow: visible;
   padding: 0.85rem 0.35rem 1rem;
   animation: auth-planet-install 1.35s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
@@ -32,12 +34,12 @@
   }
 }
 
-/* Aura exterior — campo de presencia (contenida, sin scroll) */
+/* Aura exterior — misma curva que la entidad */
 .auth-planet-entity-aura {
   position: absolute;
-  inset: -1rem -0.5rem;
+  inset: 0.15rem 0.05rem 0.25rem;
   z-index: 0;
-  border-radius: 999px;
+  border-radius: var(--auth-entity-presence-radius);
   background:
     radial-gradient(
       ellipse 72% 68% at 50% 46%,
@@ -46,9 +48,40 @@
       rgba(147, 210, 255, 0.06) 52%,
       transparent 72%
     );
-  filter: blur(18px);
+  filter: blur(16px);
   animation: auth-planet-aura-pulse var(--auth-entity-life)
     cubic-bezier(0.45, 0.05, 0.55, 0.95) infinite;
+}
+
+/* Capa teal — respuesta orgánica detrás del portal */
+.auth-planet-entity-presence {
+  position: absolute;
+  inset: 0.45rem 0.25rem 0.55rem;
+  z-index: 0;
+  border-radius: var(--auth-entity-presence-radius);
+  background:
+    linear-gradient(
+      168deg,
+      rgba(186, 230, 253, 0.2) 0%,
+      rgba(56, 189, 248, 0.12) 42%,
+      rgba(36, 173, 106, 0.1) 100%
+    );
+  filter: blur(10px);
+  opacity: 0.88;
+  animation: auth-planet-presence-breathe var(--auth-entity-life)
+    cubic-bezier(0.45, 0.05, 0.55, 0.95) infinite;
+}
+
+@keyframes auth-planet-presence-breathe {
+  0%,
+  100% {
+    opacity: 0.8;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.94;
+    transform: scale(1.008);
+  }
 }
 
 @keyframes auth-planet-aura-pulse {
@@ -115,6 +148,8 @@
 .auth-planet-entity-body {
   position: relative;
   z-index: 1;
+  overflow: hidden;
+  border-radius: var(--auth-entity-radius);
 }
 
 .auth-planet-entity-core {
@@ -379,7 +414,7 @@
   position: absolute;
   inset: 0;
   overflow: hidden;
-  border-radius: 1rem;
+  border-radius: calc(var(--auth-entity-radius) - 0.2rem);
   background:
     radial-gradient(
       ellipse 120% 80% at 50% -6%,
@@ -437,6 +472,7 @@
 @media (prefers-reduced-motion: reduce) {
   .auth-planet-entity,
   .auth-planet-entity-aura,
+  .auth-planet-entity-presence,
   .auth-planet-entity-orbit,
   .auth-planet-entity-edge,
   .auth-planet-entity-scan,

@@ -17,11 +17,14 @@ import { TreasuryAccountDeleteDialog } from "@/app/[siteId]/[popId]/accounts/Tre
 import { TreasuryAccountEditDialog } from "@/app/[siteId]/[popId]/accounts/TreasuryAccountEditDialog"
 import type { TreasuryAccountEditFormState } from "@/app/[siteId]/[popId]/accounts/TreasuryAccountFormFields"
 import { TreasuryChildAccountCreateDialog } from "@/app/[siteId]/[popId]/accounts/TreasuryChildAccountCreateDialog"
+import { DataWorkspaceBlocksSection } from "@/components/data-workspace/DataWorkspaceBlocksSection"
 import {
   DataWorkspaceModuleLayout,
   dataWorkspaceModuleHeaderVariant,
 } from "@/components/layouts-module/DataWorkspaceModuleLayout"
-import { DataWorkspaceHeaderIconButton } from "@/components/layouts/DataWorkspaceHeaderIconButton"
+import { RootsBanner } from "@/components/rootsy-banner"
+import { RootsPrimaryButton } from "@/components/rootsy-button"
+import { RootsFormSegmentField } from "@/components/rootsy-form"
 import {
   dataWorkspaceBlocksEmptyStateClass,
   dataWorkspaceBlocksPageContentClass,
@@ -30,17 +33,51 @@ import {
 } from "@/components/data-workspace/dataWorkspaceListStyles"
 import { usePopWorkspace } from "@/context/PopWorkspaceContext"
 import { type TreasuryAccountMenuActionId } from "@/lib/treasuryAccountMenuActions"
-import {
-  Plus,
-} from "lucide-react"
 import { useParams, useRouter } from "next/navigation"
 import {
   useCallback,
   useEffect,
+  useMemo,
   useRef,
   useState,
   type FormEvent,
 } from "react"
+
+type AccountFilter = "todas" | "banco" | "billetera" | "efectivo" | "inactivas"
+
+const ACCOUNT_FILTER_OPTIONS = [
+  { value: "todas", label: "Todas" },
+  { value: "banco", label: "Banco" },
+  { value: "billetera", label: "Billetera" },
+  { value: "efectivo", label: "Efectivo" },
+  { value: "inactivas", label: "Inactivas" },
+] as const
+
+function accountMatchesFilter(row: TreasuryAccountTableRow, filter: AccountFilter) {
+  if (filter === "banco") return row.kind === "bank"
+  if (filter === "billetera") return row.kind === "wallet"
+  if (filter === "efectivo") return row.kind === "cash"
+  if (filter === "inactivas") return !row.isActive
+  return true
+}
+
+function accountFilterDescription(filter: AccountFilter) {
+  if (filter === "banco") return "Cuentas bancarias del negocio."
+  if (filter === "billetera") return "Mercado Pago y otras billeteras."
+  if (filter === "efectivo") return "Efectivo directo, sin liquidaciones."
+  if (filter === "inactivas") return "Cuentas que ya no se usan."
+  return "Bancos, billeteras y efectivo del negocio."
+}
+
+function accountFilterEmptyCopy(filter: AccountFilter, canCreate: boolean) {
+  if (filter === "banco") return "No hay cuentas banco."
+  if (filter === "billetera") return "No hay billeteras cargadas."
+  if (filter === "efectivo") return "No hay cuentas de efectivo."
+  if (filter === "inactivas") return "Ninguna cuenta está desactivada."
+  return canCreate
+    ? "Todavía no hay cuentas. Cargá la primera."
+    : "Todavía no hay cuentas configuradas."
+}
 
 function defaultEditForm(): TreasuryAccountEditFormState {
   return {
@@ -66,6 +103,7 @@ function AccountsPage() {
   const [canDelete, setCanDelete] = useState(false)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [accountFilter, setAccountFilter] = useState<AccountFilter>("todas")
 
   const [createOpen, setCreateOpen] = useState(false)
   const [createSaving, setCreateSaving] = useState(false)
@@ -140,6 +178,10 @@ function AccountsPage() {
   const pageLoading = bootstrapLoading || loading
   const popName = bootstrap?.popName ?? ""
   const headerError = bootstrapError
+  const visibleAccounts = useMemo(
+    () => rows.filter((row) => accountMatchesFilter(row, accountFilter)),
+    [accountFilter, rows],
+  )
 
   const openCreate = () => {
     setCreateBanner(null)
@@ -275,53 +317,68 @@ function AccountsPage() {
       contentFlush
       mainMaxWidthClass="max-w-none"
       mainClassName={dataWorkspaceBlocksPageMainClass}
-      headerActions={
-        canCreate ? (
-          <DataWorkspaceHeaderIconButton
-            label="Nueva cuenta"
-            headerVariant={dataWorkspaceModuleHeaderVariant}
-            primary
-            onClick={() => openCreate()}
-          >
-            <Plus className="size-5" aria-hidden />
-          </DataWorkspaceHeaderIconButton>
-        ) : null
-      }
     >
       <div className={dataWorkspaceBlocksPageContentClass}>
           {headerError ? (
-            <div
-              role="alert"
-              className="rounded-lg border border-destructive/25 bg-destructive/10 px-4 py-3 text-sm text-destructive"
-            >
-              Cabecera: {headerError}
-            </div>
+            <RootsBanner
+              intent="danger"
+              layout="message"
+              message={`Cabecera: ${headerError}`}
+            />
           ) : null}
 
           {pageLoading ? (
             <TreasuryAccountsGridSkeleton />
           ) : error ? (
-            <div className="rounded-2xl border border-destructive/25 bg-destructive/5 px-4 py-3 text-sm text-destructive">
-              {error}
-            </div>
-          ) : rows.length === 0 ? (
-            <p className={dataWorkspaceBlocksEmptyStateClass}>
-              No hay cuentas configuradas.
-            </p>
+            <RootsBanner intent="danger" layout="message" message={error} />
           ) : (
-            <div className={dataWorkspaceEntityCardsGridClass}>
-              {rows.map((r) => (
-                <TreasuryAccountCard
-                  key={r.id}
-                  row={r}
-                  canCreate={canCreate}
-                  canUpdate={canUpdate}
-                  canDelete={canDelete}
-                  detailHref={`${accountsBasePath}/${r.id}?kind=${r.kind}`}
-                  onMenuAction={(actionId) => handleAccountMenuAction(r, actionId)}
-                />
-              ))}
-            </div>
+            <DataWorkspaceBlocksSection
+              title="Cuentas del negocio"
+              description={accountFilterDescription(accountFilter)}
+              action={
+                canCreate ? (
+                  <RootsPrimaryButton
+                    type="button"
+                    size="compact"
+                    onClick={() => openCreate()}
+                  >
+                    Nueva cuenta
+                  </RootsPrimaryButton>
+                ) : null
+              }
+            >
+              <RootsFormSegmentField
+                label="Ver cuentas"
+                aria-label="Filtrar cuentas"
+                layout="inline"
+                className="[&>span:first-child]:sr-only"
+                value={accountFilter}
+                onValueChange={(value) =>
+                  setAccountFilter(value as AccountFilter)
+                }
+                options={ACCOUNT_FILTER_OPTIONS}
+              />
+
+              {visibleAccounts.length === 0 ? (
+                <p className={dataWorkspaceBlocksEmptyStateClass}>
+                  {accountFilterEmptyCopy(accountFilter, canCreate)}
+                </p>
+              ) : (
+                <div className={dataWorkspaceEntityCardsGridClass}>
+                  {visibleAccounts.map((r) => (
+                    <TreasuryAccountCard
+                      key={r.id}
+                      row={r}
+                      canCreate={canCreate}
+                      canUpdate={canUpdate}
+                      canDelete={canDelete}
+                      detailHref={`${accountsBasePath}/${r.id}?kind=${r.kind}`}
+                      onMenuAction={(actionId) => handleAccountMenuAction(r, actionId)}
+                    />
+                  ))}
+                </div>
+              )}
+            </DataWorkspaceBlocksSection>
           )}
       </div>
     </DataWorkspaceModuleLayout>

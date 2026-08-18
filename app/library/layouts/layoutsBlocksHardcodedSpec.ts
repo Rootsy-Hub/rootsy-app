@@ -42,7 +42,7 @@ export const LAYOUTS_BLOCKS_LAYOUT_SPEC_ROWS = [
     role: "Fondo contenido",
     token: LAYOUTS_BLOCKS_GRID_SPEC.contentBackgroundToken,
     value: LAYOUTS_BLOCKS_GRID_SPEC.contentBackground,
-    product: "layout.module.content · bruma-50 · paisaje",
+    product: "layout.module.content · bruma-50 · planeta en susurro",
   },
   {
     role: "Fondo · neblina",
@@ -51,16 +51,16 @@ export const LAYOUTS_BLOCKS_LAYOUT_SPEC_ROWS = [
     product: "data-workspace-blocks-atmosphere",
   },
   {
-    role: "Fondo · vida",
-    token: "layout.blocks.atmosphere.grove",
-    value: "savia-600/500 · 10–12% · horizonte",
-    product: "data-workspace-blocks-atmosphere",
+    role: "Fondo · planeta",
+    token: "layout.blocks.atmosphere.planet",
+    value: "rootsyplanet · 22% · blur 22 · horizonte",
+    product: "data-workspace-blocks-atmosphere::before",
   },
   {
-    role: "Fondo · prado",
-    token: "layout.blocks.atmosphere.meadow",
-    value: "savia-100 · 70% · piso",
-    product: "data-workspace-blocks-atmosphere",
+    role: "Fondo · velo",
+    token: "layout.blocks.atmosphere.veil",
+    value: "máscara a bruma · el valle no se lee",
+    product: "data-workspace-blocks-atmosphere::before",
   },
   {
     role: "Grid · columnas",

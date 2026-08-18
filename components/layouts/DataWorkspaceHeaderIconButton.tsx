@@ -40,8 +40,9 @@ export function DataWorkspaceHeaderIconButton({
     return (
       <RootsIconButton
         label={label}
-        theme="pos"
-        emphasis="outlined"
+        tone="ghost"
+        surface="dark"
+        emphasis={primary ? "filled" : "ghost"}
         size="default"
         {...rest}
       />

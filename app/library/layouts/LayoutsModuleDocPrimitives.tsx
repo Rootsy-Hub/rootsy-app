@@ -15,22 +15,10 @@ import {
   LAYOUTS_MODULE_HEADER_SPEC_ROWS,
   type LayoutsModuleBackdropMode,
 } from "@/app/library/layouts/layoutsModuleHardcodedSpec"
-import {
-  layoutsModuleHeaderGlassClass,
-  layoutsModuleHeaderPopNameClass,
-  layoutsModuleHeaderUserNameClass,
-} from "@/components/layouts-module/rootsLayoutsModuleProductStyles"
+import { layoutsModuleHeaderGlassClass } from "@/components/layouts-module/rootsLayoutsModuleProductStyles"
 import { PopWorkspaceBackdrop } from "@/components/layouts/PopWorkspaceBackdrop"
 import { DataWorkspaceHeaderIconButton } from "@/components/layouts/DataWorkspaceHeaderIconButton"
-import { RootsIconButton } from "@/components/rootsy-button/RootsIconButton"
-import { DataWorkspaceHeaderTitle } from "@/components/layouts/DataWorkspaceHeaderTitle"
-import { DataWorkspaceHeaderUserMenu } from "@/components/layouts/DataWorkspaceHeaderUserMenu"
-import {
-  dataWorkspaceHeaderDividerClass,
-  dataWorkspaceHeaderPopRingClass,
-  dataWorkspaceHeaderRoleLabelClass,
-  type DataWorkspaceHeaderVariant,
-} from "@/components/layouts/dataWorkspaceHeaderStyles"
+import { ModuleWorkspaceHeader } from "@/components/layouts-module/ModuleWorkspaceHeader"
 import {
   ROOTSY_LAYOUTS_MODULE_CONTENT_TYPES,
   ROOTSY_LAYOUTS_MODULE_HEADER,
@@ -40,12 +28,10 @@ import { COLOR_TOKENS } from "@/app/library/color/rootsyColorSystem"
 import { librarySectionHref } from "@/app/library/layoutLibraryShared"
 import { cn } from "@/lib/utils"
 import {
-  ArrowLeft,
   ArrowRight,
   FolderTree,
   ImageIcon,
   LayoutTemplate,
-  Maximize2,
   Plus,
 } from "lucide-react"
 import Link from "next/link"
@@ -62,101 +48,34 @@ const MODULE_HEADER_DEMO = {
   pillLabel: "Listados",
 } as const
 
-const MODULE_POP_HEADER_VARIANT = "tables" satisfies DataWorkspaceHeaderVariant
-
 function ModulePopWorkspaceHeaderDemo() {
-  const headerVariant = MODULE_POP_HEADER_VARIANT
-
   return (
-    <header className={cn("relative z-20 shrink-0", layoutsModuleHeaderGlassClass)}>
-      <div
-        className={cn("relative z-10 grid h-17 items-center gap-4 px-4", "grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)]")}
-        style={getLayoutsModuleHeaderInnerStyle()}
-      >
-        <div className="flex min-w-0 items-center gap-2">
-          <RootsIconButton theme="pos" emphasis="ghost" label="Volver al menú" tabIndex={-1}>
-            <ArrowLeft aria-hidden />
-          </RootsIconButton>
-          <RootsIconButton theme="pos" emphasis="ghost" label="Pantalla completa" tabIndex={-1}>
-            <Maximize2 aria-hidden />
-          </RootsIconButton>
-          <div
-            className={cn("h-6 w-px", dataWorkspaceHeaderDividerClass(headerVariant))}
-            aria-hidden
-          />
-          <div className="flex min-w-0 items-center gap-2.5">
-            <div
-              className={cn(
-                "size-8 overflow-hidden rounded-lg ring-1",
-                dataWorkspaceHeaderPopRingClass(headerVariant),
-              )}
-            >
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={MODULE_HEADER_DEMO.popLogo}
-                alt=""
-                className="size-full object-cover"
-              />
-            </div>
-            <span className={layoutsModuleHeaderPopNameClass}>
-              {MODULE_HEADER_DEMO.popName}
-            </span>
-          </div>
-        </div>
-
-        <div className="flex flex-wrap items-center justify-center gap-2">
-          <DataWorkspaceHeaderTitle
-            title={MODULE_HEADER_DEMO.title}
-            headerVariant={headerVariant}
-          />
-        </div>
-
-        <div className="flex shrink-0 items-center justify-end gap-2">
-          <div className="pointer-events-none flex items-center gap-1.5" aria-hidden>
-            <DataWorkspaceHeaderIconButton
-              label="Nuevo"
-              headerVariant={headerVariant}
-              primary
-              tabIndex={-1}
-            >
+    <div className="pointer-events-none" aria-hidden>
+      <ModuleWorkspaceHeader
+        backHref="/home"
+        showFullscreen
+        popLogoSrc={MODULE_HEADER_DEMO.popLogo}
+        popName={MODULE_HEADER_DEMO.popName}
+        popStreetAddress="Av. Corrientes 1234"
+        title={MODULE_HEADER_DEMO.title}
+        headerVariant="dark"
+        userName={MODULE_HEADER_DEMO.userName}
+        userAvatarSrc={MODULE_HEADER_DEMO.userAvatar}
+        isOnline
+        subline={MODULE_HEADER_DEMO.roleLabel}
+        hasResolvedRole
+        headerActions={
+          <div className="flex items-center gap-1.5">
+            <DataWorkspaceHeaderIconButton label="Nuevo" headerVariant="dark" primary tabIndex={-1}>
               <Plus aria-hidden />
             </DataWorkspaceHeaderIconButton>
-            <DataWorkspaceHeaderIconButton
-              label="Categorías"
-              headerVariant={headerVariant}
-              tabIndex={-1}
-            >
+            <DataWorkspaceHeaderIconButton label="Categorías" headerVariant="dark" tabIndex={-1}>
               <FolderTree aria-hidden />
             </DataWorkspaceHeaderIconButton>
           </div>
-          <div
-            className={cn("h-6 w-px", dataWorkspaceHeaderDividerClass(headerVariant))}
-            aria-hidden
-          />
-          <div className="flex min-w-0 items-center gap-3">
-            <div className="hidden min-w-0 flex-col leading-tight sm:flex">
-              <span className={layoutsModuleHeaderUserNameClass}>
-                {MODULE_HEADER_DEMO.userName}
-              </span>
-              <span
-                className={cn(
-                  "truncate text-[10px] font-semibold uppercase tracking-wider",
-                  dataWorkspaceHeaderRoleLabelClass(headerVariant, true),
-                )}
-              >
-                {MODULE_HEADER_DEMO.roleLabel}
-              </span>
-            </div>
-            <DataWorkspaceHeaderUserMenu
-              userName={MODULE_HEADER_DEMO.userName}
-              userAvatarSrc={MODULE_HEADER_DEMO.userAvatar}
-              isOnline
-              headerVariant={headerVariant}
-            />
-          </div>
-        </div>
-      </div>
-    </header>
+        }
+      />
+    </div>
   )
 }
 
@@ -354,7 +273,7 @@ function ModuleHeaderWireframe({
       ) : null}
       {annotate === "full" ? (
         <WireframeBadge
-          label="border-b · sombra-border/80"
+          label="universo · horizonte · puente al planeta"
           className="bottom-1.5 left-2"
           dark
         />

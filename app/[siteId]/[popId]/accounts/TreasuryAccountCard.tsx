@@ -27,6 +27,8 @@ import {
   dataWorkspaceEntityCardStatLabelClass,
   dataWorkspaceEntityCardStatValueClass,
   dataWorkspaceEntityCardStatValueLargeClass,
+  dataWorkspaceEntityCardStatusClosedClass,
+  dataWorkspaceEntityCardStatusInactiveClass,
   dataWorkspaceEntityCardTitleClass,
 } from "@/components/data-workspace/dataWorkspaceListStyles"
 import {
@@ -168,7 +170,7 @@ export function TreasuryAccountCard({
         )}
       >
         <div className={cn(dataWorkspaceEntityCardHeaderClass, "pr-4")}>
-          <div className="flex min-w-0 items-start gap-2">
+          <div className="flex min-w-0 items-start gap-3">
             <TreasuryBrandIsotype
               brandKey={brand?.key}
               monogram={
@@ -177,16 +179,33 @@ export function TreasuryAccountCard({
               }
               size="md"
             />
-            <div className="min-w-0 flex-1">
-              <p className={dataWorkspaceEntityCardEyebrowClass}>
+            <div className="relative min-w-0 flex-1">
+              <span
+                className={cn(
+                  "absolute right-0 top-0",
+                  row.isActive
+                    ? dataWorkspaceEntityCardStatusClosedClass
+                    : dataWorkspaceEntityCardStatusInactiveClass,
+                )}
+              >
+                {row.isActive ? "Activa" : "Inactiva"}
+              </span>
+              <p
+                className={cn(
+                  dataWorkspaceEntityCardEyebrowClass,
+                  "truncate pr-24",
+                )}
+              >
                 {treasuryKindLabel(row.kind)}
-                {!row.isActive ? " · Inactiva" : ""}
               </p>
               <TreasuryBrandName
                 preset={brand}
                 name={row.name}
                 textClass="text-[var(--rootsy-bruma-900)]"
-                className={cn("mt-0.5", dataWorkspaceEntityCardTitleClass)}
+                className={cn(
+                  "mt-0.5 truncate pr-24",
+                  dataWorkspaceEntityCardTitleClass,
+                )}
               />
             </div>
             {menuActions.length > 0 ? (

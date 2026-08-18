@@ -38,12 +38,11 @@ import {
   dataWorkspaceBlocksEmptyStateClass,
   dataWorkspaceBlocksPageContentClass,
   dataWorkspaceBlocksPageMainClass,
-  dataWorkspaceBlocksSectionDescriptionClass,
-  dataWorkspaceBlocksSectionTitleClass,
   dataWorkspaceEntityCardEyebrowClass,
   dataWorkspaceEntityCardLosetaSurfaceClass,
   dataWorkspaceEntityCardsGridClass,
 } from "@/components/data-workspace/dataWorkspaceListStyles"
+import { DataWorkspaceBlocksSection } from "@/components/data-workspace/DataWorkspaceBlocksSection"
 import {
   DataWorkspaceModuleLayout,
   dataWorkspaceModuleHeaderVariant,
@@ -83,33 +82,6 @@ function memberDisplayName(member: MemberRow): string {
 
 function personDisplayName(person: EmployeeRow): string {
   return `${person.firstName} ${person.lastName}`.trim() || "Sin nombre"
-}
-
-function HrSection({
-  title,
-  description,
-  action,
-  children,
-}: {
-  title: string
-  description?: string
-  action?: ReactNode
-  children: ReactNode
-}) {
-  return (
-    <section className="space-y-4">
-      <div className="flex flex-wrap items-end justify-between gap-3">
-        <div className="min-w-0 space-y-1">
-          <h2 className={dataWorkspaceBlocksSectionTitleClass}>{title}</h2>
-          {description ? (
-            <p className={dataWorkspaceBlocksSectionDescriptionClass}>{description}</p>
-          ) : null}
-        </div>
-        {action}
-      </div>
-      {children}
-    </section>
-  )
 }
 
 function HrLoseta({
@@ -707,7 +679,7 @@ function HrPage() {
                 />
               ) : null}
 
-              <HrSection
+              <DataWorkspaceBlocksSection
                 title="Personas"
                 description={
                   peopleFilter === "espera"
@@ -804,9 +776,9 @@ function HrPage() {
                     })}
                   </div>
                 )}
-              </HrSection>
+              </DataWorkspaceBlocksSection>
 
-              <HrSection
+              <DataWorkspaceBlocksSection
                 title="Si entra a Rootsy"
                 description="Qué puede hacer cuando abre el sistema. No aplica a quien solo trabaja acá."
                 action={
@@ -875,7 +847,7 @@ function HrPage() {
                     </ul>
                   </HrLoseta>
                 )}
-              </HrSection>
+              </DataWorkspaceBlocksSection>
             </>
           )}
         </div>

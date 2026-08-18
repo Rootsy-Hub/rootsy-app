@@ -37,27 +37,29 @@ export const ROOTSY_LAYOUTS_MODULE_BACKDROP_FALLBACK = {
   vignette: `radial-gradient(ellipse at center, transparent 0%, color-mix(in srgb, ${hx("sombra", "950")} 55%, transparent) 100%)`,
 } as const
 
-/** Header módulo — cristal sobre capa POP. */
+/** Header módulo — mismo universo que el menú, más bajo para dejar aire al contenido. */
 export const ROOTSY_LAYOUTS_MODULE_HEADER = {
-  /** space.800 + space.050 = 64 + 4 = 68px · Tailwind h-17 */
+  /** 68px · más bajo que home/menú (h-20) · Tailwind h-17 */
   heightPx: rootsySpacePx("800") + rootsySpacePx("050"),
   heightClass: "h-17",
   heightToken: "space.800 + space.050",
   innerGridClass:
-    "grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-4 px-4",
-  /** Cristal sombra · savia (sin Nature --card). */
-  chromeFundamentalsClass: "layoutsModuleHeaderGlassClass",
-  chromeFundamentalsToken: "sombra-900 / 55% · backdrop-blur-2xl · saturate 150%",
-  chromeFundamentalsSupportsToken: "sombra-900 / 45% (supports backdrop-filter)",
-  borderFundamentalsToken: "sombra-border / 80%",
-  controlsFundamentalsVariant: "pos · RootsIconButton ghost | primary",
-  typographyFundamentalsToken: "text-on-dark · sombra-400 meta · savia-400 rol",
+    "grid h-full min-h-0 grid-cols-[minmax(0,1fr)_minmax(0,280px)_minmax(0,1fr)] items-center gap-4 px-6",
+  chromeFundamentalsClass: "MenuHeaderEntity",
+  chromeFundamentalsToken: "universo exterior · noche · estrellas · horizonte",
+  chromeFundamentalsSupportsToken: "menu-header-entity-body · blur 10 · saturate 1.01",
+  borderFundamentalsToken: "bruma 10% · puente al planeta",
+  controlsFundamentalsVariant: "RootsIconButton · ghost · dark",
+  typographyFundamentalsToken: "menuRealmTitle · menuRealmMuted · rol dark",
+  brandLogoClass: "size-9 rounded-xl",
+  brandNameClass: "text-sm",
+  brandAddressClass: "text-xs",
 } as const
 
 /** Grid de 2 filas — header fijo + contenido scrollable. */
 export const ROOTSY_LAYOUTS_MODULE_SHELL = {
   headerHeightPx: ROOTSY_LAYOUTS_MODULE_HEADER.heightPx,
-  headerToken: "layout.module.header · h-17 · glass",
+  headerToken: "layout.module.header · h-17 · universo menú",
   contentToken: "layout.module.content · flex-1 min-h-0",
   /** Default del row de contenido — excepciones documentadas por tipo. */
   contentBackground: hx("bruma", "50"),

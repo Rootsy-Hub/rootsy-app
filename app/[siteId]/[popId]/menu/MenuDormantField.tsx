@@ -1,20 +1,17 @@
 "use client"
 
-import { MenuIconChrome } from "@/app/[siteId]/[popId]/menu/MenuIconChrome"
 import "@/app/[siteId]/[popId]/menu/menuPlanetLife.css"
 import {
-  menuHoloIconShellForSection,
+  menuHoloDormantPlanetShellClass,
+  menuHoloDormantRimClass,
   menuHoloLabelDockPlacedClass,
   menuHoloPlanetLifeClass,
-  menuHoloRealmWorldRimClass,
-  menuHoloSectionForSkeletonIndex,
   menuPlanetLifeStyle,
 } from "@/lib/menu/menuHoloStyles"
 import { cn } from "@/lib/utils"
 
-/** Planeta en reposo — mismo ser que el menú cargado, aún sin destino. */
+/** Planeta en reposo — mismo ser que el menú cargado, aún sin destino ni color. */
 export function MenuGridItemDormant({ index }: { index: number }) {
-  const sectionKey = menuHoloSectionForSkeletonIndex(index)
   const lifeStyle = menuPlanetLifeStyle(`menu-dormant-${index}`)
 
   return (
@@ -25,12 +22,15 @@ export function MenuGridItemDormant({ index }: { index: number }) {
       <div className={menuHoloPlanetLifeClass} style={lifeStyle}>
         <div
           className={cn(
-            "flex size-[72px] items-center justify-center rounded-[20px]",
-            menuHoloIconShellForSection(sectionKey, "placed"),
-            menuHoloRealmWorldRimClass(sectionKey, true),
+            "relative flex size-[72px] items-center justify-center rounded-[20px]",
+            menuHoloDormantPlanetShellClass,
+            menuHoloDormantRimClass,
           )}
         >
-          <MenuIconChrome sectionKey={sectionKey} alive />
+          <span
+            aria-hidden
+            className="size-6 rounded-full bg-[rgba(228,242,248,0.08)] ring-1 ring-[rgba(228,242,248,0.06)]"
+          />
         </div>
       </div>
       <span

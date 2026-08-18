@@ -29,10 +29,11 @@ export function AuthPlanetEntity({ children, className }: Props) {
   return (
     <div className={cn(authPlanetEntityClass, className)}>
       <div aria-hidden className="auth-planet-entity-aura" />
-      <div aria-hidden className="auth-planet-entity-orbit" />
-      <div aria-hidden className="auth-planet-entity-orbit auth-planet-entity-orbit--inner" />
+      <div aria-hidden className="auth-planet-entity-presence" />
 
       <div className={authPlanetEntityBodyClass} style={entityLifeStyle}>
+        <div aria-hidden className="auth-planet-entity-orbit" />
+        <div aria-hidden className="auth-planet-entity-orbit auth-planet-entity-orbit--inner" />
         <div
           aria-hidden
           className="auth-planet-entity-core menu-planet-core-life"

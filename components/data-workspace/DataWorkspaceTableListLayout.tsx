@@ -26,7 +26,7 @@ import { cn } from "@/lib/utils"
 import type { ReactNode } from "react"
 import type { DataWorkspaceHeaderVariant } from "@/components/layouts/dataWorkspaceHeaderStyles"
 
-/** Variante de header para listados tabla — chrome módulo sombra · savia. */
+/** Variante de header para listados tabla — mismo universo que el menú. */
 export const dataWorkspaceTableListHeaderVariant =
   dataWorkspaceModuleHeaderVariant satisfies DataWorkspaceHeaderVariant
 

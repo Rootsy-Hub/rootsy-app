@@ -16,7 +16,9 @@ import {
   MenuDormantGrid,
 } from "@/app/[siteId]/[popId]/menu/MenuDormantField"
 import { MenuDormantDock } from "@/app/[siteId]/[popId]/menu/MenuDormantDock"
+import { MenuDormantFirmament } from "@/app/[siteId]/[popId]/menu/MenuDormantFirmament"
 import { MenuOuterEntity } from "@/app/[siteId]/[popId]/menu/MenuOuterEntity"
+import { MenuRootsyPresence } from "@/app/[siteId]/[popId]/menu/MenuRootsyPresence"
 import "@/app/[siteId]/[popId]/menu/menuContentReveal.css"
 import {
   menuAmbientTopGlowClass,
@@ -58,7 +60,15 @@ import {
 import { formatLocaleTime } from "@/lib/popTimezone"
 import { popScopedHref } from "@/lib/popRoutes"
 import { cn } from "@/lib/utils"
-import { useState, useEffect, useRef, useCallback, useMemo, type RefObject } from "react"
+import {
+  useState,
+  useEffect,
+  useRef,
+  useCallback,
+  useMemo,
+  useSyncExternalStore,
+  type RefObject,
+} from "react"
 import Link from "next/link"
 import { useParams } from "next/navigation"
 import useEmblaCarousel from "embla-carousel-react"
@@ -73,6 +83,18 @@ import {
 type MenuSectionDef = {
   title: string
   items: MenuItemDef[]
+}
+
+const hydrateSubscribe = () => () => {}
+const hydrateClientSnapshot = () => true
+const hydrateServerSnapshot = () => false
+
+function useIsHydrated() {
+  return useSyncExternalStore(
+    hydrateSubscribe,
+    hydrateClientSnapshot,
+    hydrateServerSnapshot,
+  )
 }
 
 function detectSearchShortcutLabel(): string {
@@ -131,7 +153,6 @@ function MenuPage() {
   searchQueryRef.current = searchQuery
   const [time, setTime] = useState<Date | null>(null)
   const [isMounted, setIsMounted] = useState(false)
-  const [mousePos, setMousePos] = useState({ x: 50, y: 50 })
   const [particles, setParticles] = useState<
     Array<{
       width: number
@@ -143,8 +164,8 @@ function MenuPage() {
       delay: number
     }>
   >([])
-  const containerRef = useRef<HTMLDivElement>(null)
   const [isOnline, setIsOnline] = useState(true)
+  const isHydrated = useIsHydrated()
 
   const {
     isLoading,
@@ -236,30 +257,6 @@ function MenuPage() {
     return () => clearInterval(timer)
   }, [])
 
-  useEffect(() => {
-    let frame = 0
-    const handleMouseMove = (e: MouseEvent) => {
-      if (document.hidden) return
-      if (frame) return
-      const { clientX, clientY } = e
-      frame = window.requestAnimationFrame(() => {
-        frame = 0
-        const container = containerRef.current
-        if (!container) return
-        const rect = container.getBoundingClientRect()
-        setMousePos({
-          x: ((clientX - rect.left) / rect.width) * 100,
-          y: ((clientY - rect.top) / rect.height) * 100,
-        })
-      })
-    }
-    window.addEventListener("mousemove", handleMouseMove, { passive: true })
-    return () => {
-      window.removeEventListener("mousemove", handleMouseMove)
-      if (frame) window.cancelAnimationFrame(frame)
-    }
-  }, [])
-
   const handleSearchBlur = useCallback(
     (event: React.FocusEvent<HTMLInputElement>) => {
       const related = event.relatedTarget
@@ -336,7 +333,7 @@ function MenuPage() {
     popAccess != null &&
     popAccess.pop.siteId.trim().toLowerCase() !== siteId.trim().toLowerCase()
 
-  const contentPending = isLoading || !popAccess
+  const contentPending = !isHydrated || isLoading || !popAccess
   const menuReady = !contentPending && sections.length > 0
   const error =
     !popId || !siteId
@@ -383,8 +380,7 @@ function MenuPage() {
   return (
     <MenuDockDndProvider popId={popId} enabledModules={enabledModules}>
     <div
-      ref={containerRef}
-      className={cn(menuNatureShellClass, "fixed inset-0 flex flex-col overflow-hidden bg-background")}
+      className={cn(menuNatureShellClass, "menu-firmament-settle fixed inset-0 flex flex-col overflow-hidden bg-background")}
       aria-busy={contentPending}
     >
       <div className="absolute inset-0 pointer-events-none overflow-hidden">
@@ -400,66 +396,62 @@ function MenuPage() {
           </>
         ) : null}
 
-        {(["operar", "administrar", "configurar"] as const).map((sectionKey, index) => (
-          <div
-            key={sectionKey}
-            aria-hidden
-            className={cn(
-              "absolute rounded-full blur-[150px] transition-opacity duration-[2000ms] ease-out",
-              menuPlanetOrbClass(sectionKey),
-              activeSectionKey === sectionKey ? "opacity-100" : "opacity-45",
-            )}
-            style={{
-              width: 520,
-              height: 520,
-              left: index === 0 ? "18%" : index === 1 ? "50%" : "82%",
-              top: index === 0 ? "38%" : index === 1 ? "48%" : "36%",
-              transform: "translate(-50%, -50%)",
-            }}
-          />
-        ))}
+        {!menuReady ? (
+          <MenuDormantFirmament />
+        ) : (
+          <>
+            {(["operar", "administrar", "configurar"] as const).map((sectionKey, index) => (
+              <div
+                key={sectionKey}
+                aria-hidden
+                className={cn(
+                  "absolute rounded-full blur-[150px] transition-opacity duration-[2000ms] ease-out menu-content-emerge",
+                  menuPlanetOrbClass(sectionKey),
+                  activeSectionKey === sectionKey ? "opacity-100" : "opacity-45",
+                )}
+                style={{
+                  width: 520,
+                  height: 520,
+                  left: index === 0 ? "18%" : index === 1 ? "50%" : "82%",
+                  top: index === 0 ? "38%" : index === 1 ? "48%" : "36%",
+                  transform: "translate(-50%, -50%)",
+                }}
+              />
+            ))}
 
-        <div
-          aria-hidden
-          className={cn(
-            "absolute inset-0 transition-opacity duration-[2000ms] ease-out",
-            menuPlanetAmbientWashClass(activeSectionKey),
-          )}
-        />
+            <div
+              aria-hidden
+              className={cn(
+                "absolute inset-0 transition-opacity duration-[2000ms] ease-out menu-content-emerge",
+                menuPlanetAmbientWashClass(activeSectionKey),
+              )}
+            />
 
-        <div
-          className="absolute w-[800px] h-[800px] rounded-full opacity-[0.07] blur-[150px] transition-all duration-[2000ms] ease-out"
-          style={{
-            background:
-              "radial-gradient(circle, rgba(255,255,255,0.35) 0%, transparent 70%)",
-            left: `${mousePos.x}%`,
-            top: `${mousePos.y}%`,
-            transform: "translate(-50%, -50%)",
-          }}
-        />
-        <div
-          className={cn(
-            "absolute top-0 left-1/2 -translate-x-1/2 w-[1000px] h-[400px] rounded-full blur-[120px]",
-            menuAmbientTopGlowClass,
-          )}
-        />
-        {particles.map((particle, i) => (
-          <div
-            key={i}
-            className="absolute rounded-full animate-float"
-            style={{
-              width: particle.width + "px",
-              height: particle.height + "px",
-              left: particle.left + "%",
-              top: particle.top + "%",
-              background: "rgba(255,255,255,0.55)",
-              opacity: particle.opacity,
-              animationDuration: particle.duration + "s",
-              animationDelay: particle.delay + "s",
-            }}
-          />
-        ))}
-        <div className={cn("absolute inset-0", menuVignetteClass)} />
+            <div
+              className={cn(
+                "absolute top-0 left-1/2 h-[400px] w-[1000px] -translate-x-1/2 rounded-full blur-[120px] menu-content-emerge",
+                menuAmbientTopGlowClass,
+              )}
+            />
+            {particles.map((particle, i) => (
+              <div
+                key={i}
+                className="absolute rounded-full animate-float menu-content-emerge"
+                style={{
+                  width: particle.width + "px",
+                  height: particle.height + "px",
+                  left: particle.left + "%",
+                  top: particle.top + "%",
+                  background: "rgba(255,255,255,0.55)",
+                  opacity: particle.opacity,
+                  animationDuration: particle.duration + "s",
+                  animationDelay: particle.delay + "s",
+                }}
+              />
+            ))}
+            <div className={cn("absolute inset-0 menu-content-emerge", menuVignetteClass)} />
+          </>
+        )}
       </div>
 
       <MenuHeaderEntity>
@@ -627,13 +619,15 @@ function MenuPage() {
         <div className="flex min-h-0 flex-1 flex-col items-center justify-center gap-14 sm:gap-16">
           <MenuSectionNavigator
             className={cn(
-              menuReady ? "menu-content-emerge" : "pointer-events-none opacity-95",
+              !menuReady && "pointer-events-none",
+              menuReady && "menu-content-emerge",
             )}
             sections={
               menuReady ? sectionNavItems : [...MENU_DORMANT_SECTIONS]
             }
             selectedIndex={menuReady ? selectedIndex : 0}
             onSelect={menuReady ? scrollTo : () => {}}
+            dormant={!menuReady}
           />
 
           {menuReady ? (
@@ -686,7 +680,10 @@ function MenuPage() {
       <MenuOuterEntity
         variant="foot"
         floating
-        className={menuReady ? "menu-content-emerge" : "pointer-events-none opacity-95"}
+        className={cn(
+          !menuReady && "pointer-events-none",
+          menuReady && "menu-content-emerge",
+        )}
       >
         {menuReady ? (
           <MenuDock siteId={siteId} popId={popId} />
@@ -694,6 +691,16 @@ function MenuPage() {
           <MenuDormantDock />
         )}
       </MenuOuterEntity>
+
+      <MenuRootsyPresence
+        sectionKey={activeSectionKey}
+        sectionTitle={sectionNavItems[selectedIndex]?.title ?? "Operar"}
+        siteId={siteId}
+        popId={popId}
+        popAccess={popAccess}
+        disabled={!menuReady}
+        className={menuReady ? "menu-content-emerge" : undefined}
+      />
 
       <RootsIconButton
         type="button"

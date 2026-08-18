@@ -116,9 +116,9 @@ export const LAYOUTS_MODULE_HEADER_SPEC_ROWS = [
     value: `${ROOTSY_LAYOUTS_MODULE_HEADER.heightPx}px · ${ROOTSY_LAYOUTS_MODULE_HEADER.heightClass} · ${ROOTSY_LAYOUTS_MODULE_HEADER.heightToken}`,
   },
   { token: "header.inner", value: ROOTSY_LAYOUTS_MODULE_HEADER.innerGridClass },
-  { token: "header.glass", value: ROOTSY_LAYOUTS_MODULE_HEADER.chromeFundamentalsToken },
+  { token: "header.universe", value: ROOTSY_LAYOUTS_MODULE_HEADER.chromeFundamentalsToken },
   {
-    token: "header.glass.supports",
+    token: "header.universe.body",
     value: ROOTSY_LAYOUTS_MODULE_HEADER.chromeFundamentalsSupportsToken,
   },
   { token: "header.border", value: ROOTSY_LAYOUTS_MODULE_HEADER.borderFundamentalsToken },
@@ -133,6 +133,10 @@ export const LAYOUTS_MODULE_HEADER_SPEC_ROWS = [
   {
     token: "header.typography",
     value: ROOTSY_LAYOUTS_MODULE_HEADER.typographyFundamentalsToken,
+  },
+  {
+    token: "header.brand",
+    value: `${ROOTSY_LAYOUTS_MODULE_HEADER.brandLogoClass} · ${ROOTSY_LAYOUTS_MODULE_HEADER.brandNameClass} · ${ROOTSY_LAYOUTS_MODULE_HEADER.brandAddressClass}`,
   },
 ] as const
 

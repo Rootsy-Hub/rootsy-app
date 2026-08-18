@@ -8,22 +8,21 @@ import {
   DOCK_SLOT_SHIFT_PX,
   DOCK_TRACK_HEIGHT_PX,
   DOCK_TRACK_INSET_Y_PX,
-  DockIconVisual,
 } from "@/app/[siteId]/[popId]/menu/MenuDockDndContext"
-import { menuRealmDividerClass } from "@/lib/menu/menuHoloStyles"
+import "@/app/[siteId]/[popId]/menu/menuPlanetLife.css"
 import {
-  DEFAULT_MENU_DOCK_IDS,
-  getMenuCatalogItem,
-} from "@/lib/menuCatalog"
+  menuHoloDormantDockShellClass,
+  menuHoloDormantRimClass,
+  menuRealmDividerClass,
+} from "@/lib/menu/menuHoloStyles"
+import { DEFAULT_MENU_DOCK_IDS } from "@/lib/menuCatalog"
 import { cn } from "@/lib/utils"
 import { Pencil } from "lucide-react"
 
-/** Dock en reposo — misma forma que el dock activo. */
+/** Dock en reposo — misma forma que el dock activo, sin reinados despiertos. */
 export function MenuDormantDock() {
-  const dockItems = DEFAULT_MENU_DOCK_IDS.map((id) => getMenuCatalogItem(id)).filter(
-    (item): item is NonNullable<typeof item> => item != null,
-  )
-  const trackWidth = dockItems.length * DOCK_SLOT_SHIFT_PX
+  const dockCount = DEFAULT_MENU_DOCK_IDS.length
+  const trackWidth = dockCount * DOCK_SLOT_SHIFT_PX
   const iconInset = (DOCK_SLOT_SHIFT_PX - DOCK_ICON_SIZE_PX) / 2
 
   return (
@@ -42,9 +41,9 @@ export function MenuDormantDock() {
           className="relative shrink-0"
           style={{ width: trackWidth, height: DOCK_TRACK_HEIGHT_PX }}
         >
-          {dockItems.map((item, index) => (
+          {Array.from({ length: dockCount }, (_, index) => (
             <div
-              key={item.id}
+              key={index}
               className="absolute flex justify-center"
               style={{
                 bottom: DOCK_TRACK_INSET_Y_PX,
@@ -52,11 +51,18 @@ export function MenuDormantDock() {
                 width: DOCK_ICON_SIZE_PX,
               }}
             >
-              <DockIconVisual
-                icon={item.icon}
-                sectionKey={item.sectionKey}
-                variant="dock"
-              />
+              <div
+                className={cn(
+                  "relative flex size-12 items-center justify-center rounded-[22%]",
+                  menuHoloDormantDockShellClass,
+                  menuHoloDormantRimClass,
+                )}
+              >
+                <span
+                  aria-hidden
+                  className="size-3 rounded-full bg-[rgba(228,242,248,0.07)] ring-1 ring-[rgba(228,242,248,0.05)]"
+                />
+              </div>
             </div>
           ))}
         </div>
