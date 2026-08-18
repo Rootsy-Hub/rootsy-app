@@ -14,10 +14,6 @@ import {
   menuRootsyPresenceVerMasClass,
 } from "@/app/[siteId]/[popId]/menu/menuRootsyPresenceStyles"
 import type { PopAccessCache } from "@/app/home/homeUserDataTypes"
-import {
-  readCachedMenuRootsyAdvice,
-  writeCachedMenuRootsyAdvice,
-} from "@/lib/menu/menuRootsyAdviceClientCache"
 import { buildMenuRootsyContext } from "@/lib/menu/menuRootsyContext"
 import { buildMenuRootsyRuleAdvice } from "@/lib/menu/menuRootsySuggestions"
 import type { MenuRootsyAdvice } from "@/lib/menu/menuRootsyTypes"
@@ -36,6 +32,13 @@ type Props = {
   className?: string
 }
 
+function createRotationToken(): string {
+  if (typeof crypto !== "undefined" && "randomUUID" in crypto) {
+    return crypto.randomUUID()
+  }
+  return `${Date.now()}-${Math.random().toString(36).slice(2)}`
+}
+
 /** Rootsy habita el suelo del planeta — sugerencias rotativas para iniciados. */
 export function MenuRootsyPresence({
   sectionKey,
@@ -50,9 +53,9 @@ export function MenuRootsyPresence({
   const [sheetOpen, setSheetOpen] = useState(false)
   const [advice, setAdvice] = useState<MenuRootsyAdvice | null>(null)
   const [dataPending, setDataPending] = useState(false)
+  const [rotationToken] = useState(createRotationToken)
   const hostRef = useRef<HTMLDivElement>(null)
   const panelId = useId()
-  const prefetchStartedRef = useRef(false)
 
   const rootsyContext = useMemo(() => {
     if (!popAccess || !siteId || !popId) return null
@@ -66,8 +69,12 @@ export function MenuRootsyPresence({
 
   const instantAdvice = useMemo(() => {
     if (!rootsyContext || !popAccess) return null
-    return buildMenuRootsyRuleAdvice(rootsyContext, popAccess.enabledModules)
-  }, [rootsyContext, popAccess])
+    return buildMenuRootsyRuleAdvice(
+      rootsyContext,
+      popAccess.enabledModules,
+      rotationToken,
+    )
+  }, [rootsyContext, popAccess, rotationToken])
 
   const displayAdvice = advice ?? instantAdvice
   const loadingAdvice = open && dataPending && !advice
@@ -100,43 +107,29 @@ export function MenuRootsyPresence({
 
   useEffect(() => {
     if (disabled || !popAccess || !siteId || !popId) {
-      prefetchStartedRef.current = false
+      setAdvice(null)
       return
     }
 
-    const cached = readCachedMenuRootsyAdvice(popId, popAccess)
-    if (cached) {
-      setAdvice(cached)
-    }
-
-    if (prefetchStartedRef.current) return
-    prefetchStartedRef.current = true
-
     let cancelled = false
-    const hadCachedAdvice = cached != null
-
-    if (!hadCachedAdvice) {
-      setDataPending(true)
-    }
+    setDataPending(true)
+    setAdvice(null)
 
     void fetchMenuRootsyAdvice({
       popId,
       siteId,
       sectionKey: "operar",
       sectionTitle: "Operar",
-      useAi: false,
+      rotationToken,
     }).then((result) => {
       if (cancelled) return
       setDataPending(false)
 
       if (!result.success) {
-        if (!hadCachedAdvice) {
-          setAdvice(instantAdvice)
-        }
+        setAdvice(instantAdvice)
         return
       }
 
-      writeCachedMenuRootsyAdvice(popId, popAccess, result.advice)
       setAdvice(result.advice)
     })
 
@@ -144,7 +137,7 @@ export function MenuRootsyPresence({
       cancelled = true
       setDataPending(false)
     }
-  }, [disabled, popAccess, siteId, popId, instantAdvice])
+  }, [disabled, popAccess, siteId, popId, rotationToken, instantAdvice])
 
   return (
     <>

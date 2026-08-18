@@ -37,6 +37,7 @@ export type MenuRootsySuggestionDetail = {
   explanation: string
   /** Ejemplos con datos reales del negocio. */
   examples: string
-  examplesSource: "rules" | "ai"
+  /** Siempre armado con plantillas + datos del negocio. */
+  examplesSource: "rules"
   cta: { label: string; href: string; moduleKey: string } | null
 }

@@ -22,8 +22,9 @@ export function isMenuRootsyAiConfigured(): boolean {
 export function buildMenuRootsyAdvice(
   context: MenuRootsyContext,
   enabledModules: readonly PopAccessModule[],
+  rotationToken: string,
 ): MenuRootsyAdvice {
-  return buildMenuRootsyRuleAdvice(context, enabledModules)
+  return buildMenuRootsyRuleAdvice(context, enabledModules, rotationToken)
 }
 
 async function requestMenuRootsyOpenAiAdvice(

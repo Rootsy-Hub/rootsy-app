@@ -52,10 +52,12 @@ function pickPrimaryCta(
 export function buildMenuRootsyRuleAdvice(
   context: MenuRootsyContext,
   enabledModules: readonly PopAccessModule[],
+  rotationToken: string,
 ): MenuRootsyAdvice {
   const catalogEntry = pickMenuRootsyCatalogSuggestionForPop(
     context.popId,
     enabledModules,
+    rotationToken,
   )
 
   if (!catalogEntry) {

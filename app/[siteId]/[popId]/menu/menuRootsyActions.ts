@@ -2,19 +2,11 @@
 
 import { getPopAccessCache } from "@/app/home/homeUserDataActions"
 import type { MenuSectionKey } from "@/lib/menuCatalog"
-import { getMenuRootsyAiAdviceCached } from "@/lib/menu/menuRootsyCache"
-import {
-  buildMenuRootsyAdvice,
-  isMenuRootsyAiConfigured,
-} from "@/lib/menu/menuRootsyAi"
+import { buildMenuRootsyAdvice } from "@/lib/menu/menuRootsyAi"
 import { buildMenuRootsyContext } from "@/lib/menu/menuRootsyContext"
 import { loadMenuRootsyOperationalSignals } from "@/lib/menu/menuRootsySignals"
 import { loadMenuRootsyBusinessInsights } from "@/lib/menu/menuRootsyInsights"
 import { buildMenuRootsySuggestionDetailExamples } from "@/lib/menu/menuRootsySuggestionDetail"
-import {
-  enhanceMenuRootsyDetailExamplesWithAi,
-  isMenuRootsyDetailAiConfigured,
-} from "@/lib/menu/menuRootsySuggestionDetailAi"
 import { resolveMenuRootsyCatalogSuggestion } from "@/lib/menu/menuRootsySuggestionProfile"
 import type { MenuRootsyAdvice } from "@/lib/menu/menuRootsyTypes"
 import type { MenuRootsySuggestionDetail } from "@/lib/menu/menuRootsySuggestionCatalogTypes"
@@ -26,7 +18,7 @@ type FetchMenuRootsyAdviceInput = {
   siteId: string
   sectionKey: MenuSectionKey
   sectionTitle: string
-  useAi?: boolean
+  rotationToken: string
 }
 
 export async function fetchMenuRootsyAdvice(
@@ -35,9 +27,9 @@ export async function fetchMenuRootsyAdvice(
   | { success: true; advice: MenuRootsyAdvice }
   | { success: false; error: string }
 > {
-  const { popId, siteId, sectionKey, sectionTitle, useAi = true } = input
+  const { popId, siteId, sectionKey, sectionTitle, rotationToken } = input
 
-  if (!popId?.trim() || !siteId?.trim()) {
+  if (!popId?.trim() || !siteId?.trim() || !rotationToken?.trim()) {
     return { success: false, error: "Parámetros inválidos" }
   }
 
@@ -73,11 +65,11 @@ export async function fetchMenuRootsyAdvice(
     insights,
   })
 
-  const ruleAdvice = buildMenuRootsyAdvice(context, popAccess.enabledModules)
-  const advice =
-    useAi && isMenuRootsyAiConfigured()
-      ? await getMenuRootsyAiAdviceCached(context, ruleAdvice)
-      : ruleAdvice
+  const advice = buildMenuRootsyAdvice(
+    context,
+    popAccess.enabledModules,
+    rotationToken,
+  )
 
   return { success: true, advice }
 }
@@ -88,7 +80,6 @@ type FetchMenuRootsySuggestionDetailInput = {
   suggestionId: string
   sectionKey: MenuSectionKey
   sectionTitle: string
-  useAi?: boolean
 }
 
 export async function fetchMenuRootsySuggestionDetail(
@@ -97,14 +88,7 @@ export async function fetchMenuRootsySuggestionDetail(
   | { success: true; detail: MenuRootsySuggestionDetail }
   | { success: false; error: string }
 > {
-  const {
-    popId,
-    siteId,
-    suggestionId,
-    sectionKey,
-    sectionTitle,
-    useAi = true,
-  } = input
+  const { popId, siteId, suggestionId, sectionKey, sectionTitle } = input
 
   if (!popId?.trim() || !siteId?.trim() || !suggestionId?.trim()) {
     return { success: false, error: "Parámetros inválidos" }
@@ -146,26 +130,11 @@ export async function fetchMenuRootsySuggestionDetail(
     insights,
   })
 
-  const ruleExamples = buildMenuRootsySuggestionDetailExamples(
+  const examples = buildMenuRootsySuggestionDetailExamples(
     context.popName,
     suggestion,
     insights,
   )
-
-  let examples = ruleExamples
-  let examplesSource: MenuRootsySuggestionDetail["examplesSource"] = "rules"
-
-  if (useAi && isMenuRootsyDetailAiConfigured()) {
-    const aiExamples = await enhanceMenuRootsyDetailExamplesWithAi({
-      context,
-      suggestion,
-      ruleExamples,
-    })
-    if (aiExamples) {
-      examples = aiExamples
-      examplesSource = "ai"
-    }
-  }
 
   const moduleIndex = context.allModules
   let cta: MenuRootsySuggestionDetail["cta"] = null
@@ -190,7 +159,7 @@ export async function fetchMenuRootsySuggestionDetail(
       title: suggestion.title,
       explanation: suggestion.explanation,
       examples,
-      examplesSource,
+      examplesSource: "rules",
       cta,
     },
   }

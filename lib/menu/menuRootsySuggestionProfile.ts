@@ -7,7 +7,14 @@ import type {
   MenuRootsyCatalogSuggestion,
   MenuRootsySuggestionProfile,
 } from "@/lib/menu/menuRootsySuggestionCatalogTypes"
-import { menuRootsyGrowthRotationSeed } from "@/lib/menu/menuRootsyInsightsShared"
+
+/** Semilla de rotación — por carga de página (token único). */
+export function menuRootsySuggestionRotationSeed(
+  popId: string,
+  rotationToken: string,
+): string {
+  return `${popId}:${rotationToken}`
+}
 
 function hasModuleRead(
   modules: readonly PopAccessModule[],
@@ -94,15 +101,16 @@ function hashPickIndex(seed: string, length: number): number {
   return hash % length
 }
 
-/** Sugerencia rotativa del día. */
+/** Sugerencia rotativa según token de sesión/carga. */
 export function pickMenuRootsyCatalogSuggestionForPop(
   popId: string,
   enabledModules: readonly PopAccessModule[],
+  rotationToken: string,
 ): MenuRootsyCatalogSuggestion | null {
   const pool = listMenuRootsyEligibleSuggestions(enabledModules)
   if (pool.length === 0) return null
 
-  const seed = menuRootsyGrowthRotationSeed(popId)
+  const seed = menuRootsySuggestionRotationSeed(popId, rotationToken)
   return pool[hashPickIndex(seed, pool.length)] ?? null
 }
 

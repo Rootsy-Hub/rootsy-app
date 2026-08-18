@@ -64,7 +64,6 @@ export function MenuRootsySuggestionSheet({
       suggestionId,
       sectionKey,
       sectionTitle,
-      useAi: true,
     }).then((result) => {
       if (cancelled) return
       setPending(false)
@@ -104,7 +103,7 @@ export function MenuRootsySuggestionSheet({
         <div className={menuRootsyPresenceSheetBodyClass}>
           {pending ? (
             <p className={menuRootsyPresenceSheetExplanationClass}>
-              Estoy armando ejemplos con tus números…
+              Armo un ejemplo con tus números…
             </p>
           ) : error ? (
             <p className="text-sm text-[rgba(255,180,180,0.9)]">{error}</p>
