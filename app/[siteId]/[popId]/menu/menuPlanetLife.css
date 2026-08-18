@@ -48,45 +48,142 @@
   }
 }
 
-/** Cierre dorado — borde de importancia del reinado. */
-.menu-planet-gold-rim::after {
+/** Cierre del mundo — brillo metálico teñido por la atmósfera de cada sección. */
+.menu-planet-world-rim::after {
   content: "";
   position: absolute;
   inset: 0;
   z-index: 3;
   border-radius: inherit;
   pointer-events: none;
-  opacity: 0.82;
-  box-shadow:
-    inset 0 0 0 1px rgba(253, 224, 71, 0.48),
-    inset 0 1px 0 rgba(255, 250, 235, 0.36),
-    inset 0 -1px 0 rgba(146, 88, 12, 0.26);
+  opacity: 1;
   transition:
     opacity 320ms cubic-bezier(0.33, 1, 0.68, 1),
     box-shadow 320ms cubic-bezier(0.33, 1, 0.68, 1);
 }
 
-.group:hover .menu-planet-gold-rim::after,
-.group:focus-within .menu-planet-gold-rim::after {
-  opacity: 1;
+.menu-planet-world-rim--operar::after {
   box-shadow:
-    inset 0 0 0 1px rgba(255, 236, 179, 0.68),
-    inset 0 1px 0 rgba(255, 252, 245, 0.46),
-    inset 0 -1px 0 rgba(180, 83, 9, 0.3),
-    0 0 14px rgba(251, 191, 36, 0.07);
+    inset 0 0 0 1.5px rgba(111, 216, 156, 0.98),
+    inset 0 1px 0 rgba(127, 224, 168, 0.92),
+    inset 0 2px 5px rgba(36, 173, 106, 0.42),
+    inset 0 -1px 0 rgba(10, 64, 48, 0.82),
+    0 0 1px rgba(111, 216, 156, 0.65),
+    0 0 10px rgba(36, 173, 106, 0.32);
 }
 
-.menu-planet-gold-rim--soft::after {
-  opacity: 0.42;
+.menu-planet-world-rim--administrar::after {
   box-shadow:
-    inset 0 0 0 1px rgba(252, 211, 77, 0.3),
-    inset 0 1px 0 rgba(255, 248, 220, 0.16);
+    inset 0 0 0 1.5px rgba(251, 191, 36, 0.98),
+    inset 0 1px 0 rgba(252, 211, 77, 0.92),
+    inset 0 2px 5px rgba(217, 119, 6, 0.42),
+    inset 0 -1px 0 rgba(120, 72, 16, 0.82),
+    0 0 1px rgba(251, 191, 36, 0.65),
+    0 0 10px rgba(217, 119, 6, 0.32);
 }
 
-.group:hover .menu-planet-gold-rim--soft::after,
-.group:focus-within .menu-planet-gold-rim--soft::after {
+.menu-planet-world-rim--configurar::after {
+  box-shadow:
+    inset 0 0 0 1.5px rgba(167, 139, 250, 0.98),
+    inset 0 1px 0 rgba(183, 148, 255, 0.92),
+    inset 0 2px 5px rgba(124, 58, 237, 0.42),
+    inset 0 -1px 0 rgba(52, 28, 100, 0.82),
+    0 0 1px rgba(167, 139, 250, 0.65),
+    0 0 10px rgba(124, 58, 237, 0.32);
+}
+
+.group:hover .menu-planet-world-rim--operar::after,
+.group:focus-within .menu-planet-world-rim--operar::after {
+  box-shadow:
+    inset 0 0 0 2px rgba(127, 224, 168, 1),
+    inset 0 1px 0 rgba(159, 232, 187, 0.98),
+    inset 0 2px 6px rgba(36, 173, 106, 0.52),
+    inset 0 -1px 0 rgba(10, 64, 48, 0.88),
+    0 0 2px rgba(111, 216, 156, 0.78),
+    0 0 18px rgba(36, 173, 106, 0.42),
+    0 0 32px rgba(36, 173, 106, 0.16);
+}
+
+.group:hover .menu-planet-world-rim--administrar::after,
+.group:focus-within .menu-planet-world-rim--administrar::after {
+  box-shadow:
+    inset 0 0 0 2px rgba(253, 224, 71, 1),
+    inset 0 1px 0 rgba(254, 240, 138, 0.98),
+    inset 0 2px 6px rgba(217, 119, 6, 0.52),
+    inset 0 -1px 0 rgba(120, 72, 16, 0.88),
+    0 0 2px rgba(251, 191, 36, 0.78),
+    0 0 18px rgba(217, 119, 6, 0.42),
+    0 0 32px rgba(251, 191, 36, 0.16);
+}
+
+.group:hover .menu-planet-world-rim--configurar::after,
+.group:focus-within .menu-planet-world-rim--configurar::after {
+  box-shadow:
+    inset 0 0 0 2px rgba(196, 181, 253, 1),
+    inset 0 1px 0 rgba(216, 180, 254, 0.98),
+    inset 0 2px 6px rgba(124, 58, 237, 0.52),
+    inset 0 -1px 0 rgba(52, 28, 100, 0.88),
+    0 0 2px rgba(167, 139, 250, 0.78),
+    0 0 18px rgba(124, 58, 237, 0.42),
+    0 0 32px rgba(167, 139, 250, 0.16);
+}
+
+.menu-planet-world-rim--soft::after {
   opacity: 0.58;
+}
+
+.menu-planet-world-rim--operar.menu-planet-world-rim--soft::after {
   box-shadow:
-    inset 0 0 0 1px rgba(253, 224, 71, 0.42),
-    inset 0 1px 0 rgba(255, 250, 235, 0.24);
+    inset 0 0 0 1px rgba(111, 216, 156, 0.78),
+    inset 0 1px 0 rgba(127, 224, 168, 0.62),
+    inset 0 -1px 0 rgba(10, 64, 48, 0.55),
+    0 0 6px rgba(36, 173, 106, 0.18);
+}
+
+.menu-planet-world-rim--administrar.menu-planet-world-rim--soft::after {
+  box-shadow:
+    inset 0 0 0 1px rgba(251, 191, 36, 0.78),
+    inset 0 1px 0 rgba(252, 211, 77, 0.62),
+    inset 0 -1px 0 rgba(120, 72, 16, 0.55),
+    0 0 6px rgba(217, 119, 6, 0.18);
+}
+
+.menu-planet-world-rim--configurar.menu-planet-world-rim--soft::after {
+  box-shadow:
+    inset 0 0 0 1px rgba(167, 139, 250, 0.78),
+    inset 0 1px 0 rgba(183, 148, 255, 0.62),
+    inset 0 -1px 0 rgba(52, 28, 100, 0.55),
+    0 0 6px rgba(124, 58, 237, 0.18);
+}
+
+.group:hover .menu-planet-world-rim--soft::after,
+.group:focus-within .menu-planet-world-rim--soft::after {
+  opacity: 0.78;
+}
+
+.group:hover .menu-planet-world-rim--operar.menu-planet-world-rim--soft::after,
+.group:focus-within .menu-planet-world-rim--operar.menu-planet-world-rim--soft::after {
+  box-shadow:
+    inset 0 0 0 1.5px rgba(127, 224, 168, 0.92),
+    inset 0 1px 0 rgba(159, 232, 187, 0.78),
+    inset 0 -1px 0 rgba(10, 64, 48, 0.62),
+    0 0 12px rgba(36, 173, 106, 0.28);
+}
+
+.group:hover .menu-planet-world-rim--administrar.menu-planet-world-rim--soft::after,
+.group:focus-within .menu-planet-world-rim--administrar.menu-planet-world-rim--soft::after {
+  box-shadow:
+    inset 0 0 0 1.5px rgba(253, 224, 71, 0.92),
+    inset 0 1px 0 rgba(254, 240, 138, 0.78),
+    inset 0 -1px 0 rgba(120, 72, 16, 0.62),
+    0 0 12px rgba(217, 119, 6, 0.28);
+}
+
+.group:hover .menu-planet-world-rim--configurar.menu-planet-world-rim--soft::after,
+.group:focus-within .menu-planet-world-rim--configurar.menu-planet-world-rim--soft::after {
+  box-shadow:
+    inset 0 0 0 1.5px rgba(196, 181, 253, 0.92),
+    inset 0 1px 0 rgba(216, 180, 254, 0.78),
+    inset 0 -1px 0 rgba(52, 28, 100, 0.62),
+    0 0 12px rgba(124, 58, 237, 0.28);
 }

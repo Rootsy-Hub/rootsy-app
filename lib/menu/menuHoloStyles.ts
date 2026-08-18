@@ -21,10 +21,17 @@ const menuHoloGlassBase = cn(
 const menuHoloPlanetShellDepthClass =
   "shadow-[inset_0_1px_0_rgba(255,255,255,0.34),inset_0_-14px_22px_rgba(0,0,0,0.1)]"
 
-/** Cierre dorado del reinado — marco de importancia sobre el canto planetario. */
-export const menuHoloRealmGoldRimClass = "menu-planet-gold-rim"
-
-export const menuHoloRealmGoldRimSoftClass = "menu-planet-gold-rim--soft"
+/** Cierre del mundo — borde que resalta el color del reinado. */
+export function menuHoloRealmWorldRimClass(
+  section: MenuSectionKey,
+  soft = false,
+): string {
+  return cn(
+    "menu-planet-world-rim",
+    `menu-planet-world-rim--${section}`,
+    soft && "menu-planet-world-rim--soft",
+  )
+}
 
 const menuHoloShellBySection: Record<
   MenuSectionKey,
