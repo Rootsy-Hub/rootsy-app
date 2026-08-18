@@ -14,6 +14,7 @@ import {
 } from "@/components/service-operation/ServiceOperatePaymentFields"
 import { RootsIconButton } from "@/components/rootsy-button/RootsIconButton"
 import { Dialog, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import type { CheckoutCheckDetails } from "@/lib/checkoutCheck"
 import type { TreasuryPaymentContext } from "@/lib/treasuryPaymentOptions"
 import { cn } from "@/lib/utils"
 import { ChevronLeft } from "lucide-react"
@@ -24,7 +25,14 @@ type Props = {
   onOpenChange: (open: boolean) => void
   treasuryContext: TreasuryPaymentContext | null
   value: string
-  onChange: (paymentMethodKey: string) => void
+  onChange: (
+    paymentMethodKey: string,
+    checkDetails?: CheckoutCheckDetails | null,
+  ) => void
+  popId?: string
+  defaultPartyName?: string
+  defaultPartyId?: string
+  checkDetails?: CheckoutCheckDetails | null
 }
 
 export function ServiceOperatePaymentDialog({
@@ -33,6 +41,10 @@ export function ServiceOperatePaymentDialog({
   treasuryContext,
   value,
   onChange,
+  popId,
+  defaultPartyName,
+  defaultPartyId,
+  checkDetails,
 }: Props) {
   const [inlineNavigation, setInlineNavigation] =
     useState<ServiceOperatePaymentInlineNavigation | null>(null)
@@ -87,6 +99,10 @@ export function ServiceOperatePaymentDialog({
             paymentMethodKey={value}
             onChange={onChange}
             treasuryContext={treasuryContext}
+            popId={popId}
+            defaultPartyName={defaultPartyName}
+            defaultPartyId={defaultPartyId}
+            checkDetails={checkDetails}
             tone="light"
             showTitle={false}
             inlineNavigation

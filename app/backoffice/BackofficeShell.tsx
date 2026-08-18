@@ -1,6 +1,7 @@
 "use client"
 
 import { BackofficeSidebar } from "@/app/backoffice/BackofficeSidebar"
+import { backofficeNavItem } from "@/app/backoffice/backofficeNav"
 import "@/app/library/color/rootsyNaturePalette.css"
 import "@/app/library/libraryColorTheme.css"
 import {
@@ -9,19 +10,13 @@ import {
   libraryShellMainClass,
   libraryThemeClass,
 } from "@/app/library/libraryColorTheme"
-import { DataWorkspaceHeaderUserMenu } from "@/components/layouts/DataWorkspaceHeaderUserMenu"
-import {
-  dataWorkspaceHeaderChromeButtonClass,
-  dataWorkspaceHeaderSurfaceClass,
-} from "@/components/layouts/dataWorkspaceHeaderStyles"
-import { Spinner } from "@/components/ui/spinner"
+import { DataWorkspaceModuleLayout } from "@/components/layouts-module/DataWorkspaceModuleLayout"
 import { useAuth } from "@/context/AuthContextSupabase"
-import withAuth from "@/hoc/withAuth"
 import { isBackofficeAllowedEmail } from "@/lib/backofficeAccess"
 import { cn } from "@/lib/utils"
-import { ArrowLeft, Shield } from "lucide-react"
 import Link from "next/link"
-import { useEffect, useState, type ReactNode } from "react"
+import { usePathname } from "next/navigation"
+import type { ReactNode } from "react"
 
 type BackofficeShellProps = {
   children: ReactNode
@@ -29,18 +24,8 @@ type BackofficeShellProps = {
 
 function BackofficeShell({ children }: BackofficeShellProps) {
   const { user } = useAuth()
-  const [isOnline, setIsOnline] = useState(true)
-
-  useEffect(() => {
-    const sync = () => setIsOnline(navigator.onLine)
-    sync()
-    window.addEventListener("online", sync)
-    window.addEventListener("offline", sync)
-    return () => {
-      window.removeEventListener("online", sync)
-      window.removeEventListener("offline", sync)
-    }
-  }, [])
+  const pathname = usePathname()
+  const navItem = backofficeNavItem(pathname)
 
   const displayName =
     (user?.user_metadata?.full_name as string | undefined) ||
@@ -52,54 +37,32 @@ function BackofficeShell({ children }: BackofficeShellProps) {
   const avatarUrl =
     (user?.user_metadata?.avatar_url as string | undefined) || null
 
-  const chromeButtonClass = dataWorkspaceHeaderChromeButtonClass("dark")
-
   return (
-    <div className="rootsy-app-light rootsy-nature-palette relative flex h-svh min-h-0 flex-col overflow-hidden bg-background text-foreground">
-      <header
-        className={cn(
-          "relative z-20 flex h-16 shrink-0 items-center justify-between gap-4 border-b px-4 sm:px-6",
-          "text-zinc-100",
-          dataWorkspaceHeaderSurfaceClass("dark"),
-        )}
-      >
-        <div className="flex min-w-0 items-center gap-3">
-          <Link
-            href="/home"
-            aria-label="Volver al inicio"
-            className={chromeButtonClass}
-          >
-            <ArrowLeft className="size-5" aria-hidden />
-          </Link>
-          <div className="hidden min-w-0 sm:block">
-            <p className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-[0.14em] text-emerald-200/90">
-              <Shield className="size-3.5" aria-hidden />
-              Backoffice
-            </p>
-            <p className="truncate text-sm font-medium text-zinc-100">
-              Administración Rootsy
-            </p>
-          </div>
-        </div>
-
-        <DataWorkspaceHeaderUserMenu
-          userName={displayName}
-          userAvatarSrc={avatarUrl}
-          isOnline={isOnline}
-          headerVariant="dark"
-        />
-      </header>
-
-      <div
-        className={cn(
-          "flex min-h-0 flex-1 overflow-hidden",
-          libraryShellMainClass,
-          libraryThemeClass,
-        )}
-      >
+    <DataWorkspaceModuleLayout
+      popName="UROBOROS"
+      popLogoSrc="/logos/uroboros.png"
+      title={navItem?.label ?? "Uroboros"}
+      contentFlush
+      usePopBackdrop={false}
+      useHomeBackdrop
+      rootClassName={cn(
+        libraryThemeClass,
+        "rootsy-app-light rootsy-nature-palette",
+      )}
+      backHref="/home"
+      userName={displayName}
+      userAvatarSrc={avatarUrl}
+      pillLabel="Backoffice"
+      mainClassName={cn(
+        libraryShellMainClass,
+        libraryThemeClass,
+        "rootsy-app-light min-h-0 flex-1 flex-col overflow-hidden",
+      )}
+    >
+      <div className="relative flex min-h-0 w-full flex-1 overflow-hidden">
         <BackofficeSidebar />
 
-        <main
+        <div
           className={cn(
             "min-h-0 min-w-0 flex-1 overflow-y-auto overflow-x-hidden px-4 py-6 sm:px-6 lg:px-10",
             libraryContentAreaClass,
@@ -107,28 +70,14 @@ function BackofficeShell({ children }: BackofficeShellProps) {
           )}
         >
           <div className="mx-auto max-w-6xl">{children}</div>
-        </main>
+        </div>
       </div>
-    </div>
+    </DataWorkspaceModuleLayout>
   )
 }
 
 function BackofficeShellWithAuth({ children }: BackofficeShellProps) {
-  const { loading, user } = useAuth()
-
-  if (loading) {
-    return (
-      <div
-        className="flex min-h-screen flex-col items-center justify-center gap-3 bg-background text-foreground"
-        role="status"
-        aria-live="polite"
-        aria-busy="true"
-      >
-        <Spinner className="size-8 text-muted-foreground" />
-        <span className="text-sm text-muted-foreground">Cargando sesión…</span>
-      </div>
-    )
-  }
+  const { user } = useAuth()
 
   if (!user) return null
 
@@ -153,4 +102,4 @@ function BackofficeShellWithAuth({ children }: BackofficeShellProps) {
   return <BackofficeShell>{children}</BackofficeShell>
 }
 
-export default withAuth(BackofficeShellWithAuth)
+export default BackofficeShellWithAuth

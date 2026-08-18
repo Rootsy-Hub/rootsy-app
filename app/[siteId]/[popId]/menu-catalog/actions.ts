@@ -10,7 +10,6 @@ import { loadPopPermissionsSnapshot } from "@/lib/popPermissionsServer"
 import { createClient } from "@/utils/supabase/server"
 import type { ArticleDiscountMode } from "@/lib/articleDiscount"
 import {
-  articleHasCatalogDiscount,
   effectiveArticleSalePrice,
   isArticleDiscountMode,
 } from "@/lib/articleDiscount"
@@ -26,6 +25,15 @@ import type {
   SaleCatalogClient,
   SaleOpenCashSession,
 } from "@/app/[siteId]/[popId]/sale/actions"
+import {
+  mapSaleCatalogArticleRow,
+  SALE_CATALOG_ARTICLE_SELECT,
+} from "@/lib/saleCatalogArticleMap"
+import {
+  OPERATE_CATALOG_PAGE_SIZE,
+  sanitizeCatalogIlike,
+  type OperateCatalogItemsFilter,
+} from "@/lib/operateCatalogPage"
 import { resolveOpenCashSession } from "@/lib/cashRegisterSession"
 import { getTreasuryPaymentContext } from "@/lib/treasuryPaymentContext"
 import type { TreasuryPaymentContext } from "@/lib/treasuryPaymentOptions"
@@ -358,7 +366,10 @@ export async function loadMenuPromotions(
   return result
 }
 
-export async function getMenuCatalog(popId: string): Promise<
+export async function getMenuCatalog(
+  popId: string,
+  options?: { items?: "all" | "none" },
+): Promise<
   | {
       success: true
       popName: string
@@ -428,27 +439,88 @@ export async function getMenuCatalog(popId: string): Promise<
       POP_PERMS.SALE_CREATE.action,
     )
 
-    const popRes = await getPopById(popId)
+    const loadItems = options?.items !== "none"
+    const supabase = await createClient()
+    const emptyRows = { data: [] as never[], error: null }
+    const [
+      popRes,
+      userResult,
+      recipeCatResult,
+      recipeResult,
+      productCatResult,
+      artResult,
+      allPromotions,
+    ] = await Promise.all([
+      getPopById(popId),
+      supabase.auth.getUser(),
+      supabase
+        .from("recipe_categories")
+        .select("id, name, sort_order")
+        .eq("pop_id", popId)
+        .eq("is_active", true)
+        .eq("show_in_menu", true)
+        .order("sort_order", { ascending: true })
+        .order("name", { ascending: true }),
+      loadItems
+        ? supabase
+            .from("recipes")
+            .select(
+              `
+        id,
+        name,
+        description,
+        sale_price,
+        iva,
+        image_url,
+        category_id,
+        recipe_categories ( id, name )
+      `,
+            )
+            .eq("pop_id", popId)
+            .eq("is_active", true)
+            .order("name", { ascending: true })
+        : Promise.resolve(emptyRows),
+      supabase
+        .from("categories")
+        .select("id, name, sort_order")
+        .eq("pop_id", popId)
+        .eq("show_in_menu", true)
+        .order("sort_order", { ascending: true })
+        .order("name", { ascending: true }),
+      loadItems
+        ? supabase
+            .from("articles")
+            .select(SALE_CATALOG_ARTICLE_SELECT)
+            .eq("pop_id", popId)
+            .eq("is_active", true)
+            .eq("is_sellable", true)
+            .eq("item_kind", "merchandise")
+            .order("name", { ascending: true })
+        : Promise.resolve(emptyRows),
+      loadMenuPromotions(supabase, popId),
+    ])
+
     const popName =
       popRes.success && popRes.pop ? String(popRes.pop.name ?? "") : ""
+    const user = userResult.data.user
 
-    const supabase = await createClient()
-    const {
-      data: { user },
-    } = await supabase.auth.getUser()
-
-    const { data: recipeCatRows, error: recipeCatErr } = await supabase
-      .from("recipe_categories")
-      .select("id, name, sort_order")
-      .eq("pop_id", popId)
-      .eq("is_active", true)
-      .eq("show_in_menu", true)
-      .order("sort_order", { ascending: true })
-      .order("name", { ascending: true })
-
-    if (recipeCatErr) {
-      return { success: false, error: recipeCatErr.message }
+    if (recipeCatResult.error) {
+      return { success: false, error: recipeCatResult.error.message }
     }
+    if (recipeResult.error) {
+      return { success: false, error: recipeResult.error.message }
+    }
+    if (productCatResult.error) {
+      return { success: false, error: productCatResult.error.message }
+    }
+    if (artResult.error) {
+      return { success: false, error: artResult.error.message }
+    }
+
+    const recipeCatRows = recipeCatResult.data
+    const recipeRows = recipeResult.data
+    const productCatRows = productCatResult.data
+    const artRows = artResult.data
 
     const recipeCategories: SaleCatalogCategory[] = (recipeCatRows ?? []).map(
       (c) => ({
@@ -459,27 +531,6 @@ export async function getMenuCatalog(popId: string): Promise<
     )
     const visibleRecipeCategoryIds = new Set(recipeCategories.map((c) => c.id))
 
-    const { data: recipeRows, error: recipeErr } = await supabase
-      .from("recipes")
-      .select(
-        `
-        id,
-        name,
-        description,
-        sale_price,
-        iva,
-        image_url,
-        category_id,
-        recipe_categories ( id, name )
-      `,
-      )
-      .eq("pop_id", popId)
-      .eq("is_active", true)
-      .order("name", { ascending: true })
-
-    if (recipeErr) {
-      return { success: false, error: recipeErr.message }
-    }
 
     const recipes: MenuCatalogRecipe[] = (recipeRows ?? [])
       .filter((row) => {
@@ -504,18 +555,6 @@ export async function getMenuCatalog(popId: string): Promise<
         }
       })
 
-    const { data: productCatRows, error: productCatErr } = await supabase
-      .from("categories")
-      .select("id, name, sort_order")
-      .eq("pop_id", popId)
-      .eq("show_in_menu", true)
-      .order("sort_order", { ascending: true })
-      .order("name", { ascending: true })
-
-    if (productCatErr) {
-      return { success: false, error: productCatErr.message }
-    }
-
     const productCategories: SaleCatalogCategory[] = (productCatRows ?? []).map(
       (c) => ({
         id: String(c.id),
@@ -525,88 +564,18 @@ export async function getMenuCatalog(popId: string): Promise<
     )
     const visibleProductCategoryIds = new Set(productCategories.map((c) => c.id))
 
-    const { data: artRows, error: artErr } = await supabase
-      .from("articles")
-      .select(
-        `
-        id,
-        name,
-        description,
-        sale_price,
-        iva,
-        discount_mode,
-        discount_value,
-        category_id,
-        unit_of_measure,
-        image_url,
-        barcode,
-        categories ( id, name )
-      `,
-      )
-      .eq("pop_id", popId)
-      .eq("is_active", true)
-      .eq("is_sellable", true)
-      .eq("item_kind", "merchandise")
-      .order("name", { ascending: true })
-
-    if (artErr) {
-      return { success: false, error: artErr.message }
-    }
-
     const articles: MenuCatalogArticle[] = (artRows ?? [])
       .filter((row) => {
         const categoryId = String(row.category_id ?? "")
         return categoryId !== "" && visibleProductCategoryIds.has(categoryId)
       })
-      .map((row) => {
-        const cat = row.categories as { name?: string } | null
-        const listPrice = Number(row.sale_price ?? 0) || 0
-        const rawDiscountMode = row.discount_mode
-        const discountMode: ArticleDiscountMode | null =
-          typeof rawDiscountMode === "string" &&
-          isArticleDiscountMode(rawDiscountMode)
-            ? rawDiscountMode
-            : null
-        const discountRaw = row.discount_value
-        const discountValue =
-          discountRaw != null && Number.isFinite(Number(discountRaw))
-            ? Number(discountRaw)
-            : null
-        const hasDiscount = articleHasCatalogDiscount(discountMode, discountValue)
-        const effectivePrice = effectiveArticleSalePrice(
-          listPrice,
-          discountMode,
-          discountValue,
-        )
-        return {
-          id: String(row.id),
-          name: String(row.name ?? ""),
-          description: String(row.description ?? ""),
-          salePrice: effectivePrice,
-          originalSalePrice: hasDiscount ? listPrice : undefined,
-          discountMode: hasDiscount ? discountMode : null,
-          discountValue: hasDiscount ? discountValue : null,
-          iva: Number(row.iva ?? 0) || 0,
-          categoryId: String(row.category_id ?? ""),
-          categoryName: cat?.name ? String(cat.name) : "—",
-          unitOfMeasure: String(row.unit_of_measure ?? "unidad"),
-          imageUrl:
-            typeof row.image_url === "string" && row.image_url.trim()
-              ? row.image_url.trim()
-              : null,
-          barcode:
-            row.barcode != null && String(row.barcode).trim()
-              ? String(row.barcode).trim()
-              : null,
-        }
-      })
+      .map((row) => mapSaleCatalogArticleRow(row as Record<string, unknown>))
 
     const categorySections: MenuCatalogCategorySection[] = [
       { id: "recipes", label: "Recetas", categories: recipeCategories },
       { id: "products", label: "Productos", categories: productCategories },
     ]
 
-    const allPromotions = await loadMenuPromotions(supabase, popId)
     const promotions = allPromotions.filter(
       (p) => p.promotionType === "combo" && p.showInMenu,
     )
@@ -623,27 +592,30 @@ export async function getMenuCatalog(popId: string): Promise<
 
     const clients: SaleCatalogClient[] = []
 
-    let openCashSession: SaleOpenCashSession | null = null
-    if (canReadCashRegisters) {
-      const cashRes = await resolveOpenCashSession(supabase, popId, user?.id)
-      if (cashRes.success) {
-        openCashSession = {
-          sessionId: cashRes.ctx.sessionId,
-          cashRegisterId: cashRes.ctx.cashRegisterId,
-          registerName: cashRes.ctx.registerName,
-          cashTreasuryAccountId: cashRes.ctx.cashTreasuryAccountId!,
-        }
-      }
-    }
+    const [cashRes, treasuryRes] = await Promise.all([
+      canReadCashRegisters
+        ? resolveOpenCashSession(supabase, popId, user?.id)
+        : Promise.resolve(null),
+      canReadPaymentMethods
+        ? getTreasuryPaymentContext(popId)
+        : Promise.resolve(null),
+    ])
 
-    let treasuryPaymentContext: TreasuryPaymentContext | null = null
-    if (canReadPaymentMethods) {
-      const treasuryRes = await getTreasuryPaymentContext(popId)
-      if (!treasuryRes.success) {
-        return { success: false, error: treasuryRes.error }
-      }
-      treasuryPaymentContext = treasuryRes.context
+    const openCashSession: SaleOpenCashSession | null =
+      cashRes && cashRes.success
+        ? {
+            sessionId: cashRes.ctx.sessionId,
+            cashRegisterId: cashRes.ctx.cashRegisterId,
+            registerName: cashRes.ctx.registerName,
+            cashTreasuryAccountId: cashRes.ctx.cashTreasuryAccountId!,
+          }
+        : null
+
+    if (treasuryRes && !treasuryRes.success) {
+      return { success: false, error: treasuryRes.error }
     }
+    const treasuryPaymentContext: TreasuryPaymentContext | null =
+      treasuryRes && treasuryRes.success ? treasuryRes.context : null
 
     return {
       success: true,
@@ -662,6 +634,355 @@ export async function getMenuCatalog(popId: string): Promise<
       openCashSession,
       invoiceTypeSiteId: DEFAULT_SALE_SITE_ID,
     }
+  } catch (e: unknown) {
+    const message = e instanceof Error ? e.message : "Error desconocido"
+    return { success: false, error: message }
+  }
+}
+
+const MENU_RECIPE_SELECT = `
+  id,
+  name,
+  description,
+  sale_price,
+  iva,
+  image_url,
+  category_id,
+  recipe_categories ( id, name )
+` as const
+
+function mapMenuRecipeRow(row: Record<string, unknown>): MenuCatalogRecipe {
+  const cat = row.recipe_categories as { name?: string } | null
+  const rawImg = row.image_url
+  return {
+    id: String(row.id),
+    name: String(row.name ?? ""),
+    description: String(row.description ?? ""),
+    salePrice: Number(row.sale_price ?? 0) || 0,
+    iva: Number(row.iva ?? 0) || 0,
+    categoryId: String(row.category_id ?? ""),
+    categoryName: cat?.name ? String(cat.name) : "—",
+    imageUrl:
+      typeof rawImg === "string" && rawImg.trim() !== "" ? rawImg.trim() : null,
+  }
+}
+
+async function requireMenuCatalogRead(popId: string) {
+  const access = await validatePopAccess(popId)
+  if (!access.hasAccess || !access.isActive) {
+    return { ok: false as const, error: access.error || "Sin acceso" }
+  }
+  const snap = await loadPopPermissionsSnapshot(popId)
+  const canReadMenu =
+    permissionKeysInclude(
+      snap.keys,
+      POP_PERMS.MESAS_READ.resource,
+      POP_PERMS.MESAS_READ.action,
+    ) ||
+    permissionKeysInclude(
+      snap.keys,
+      POP_PERMS.MOSTRADOR_READ.resource,
+      POP_PERMS.MOSTRADOR_READ.action,
+    ) ||
+    permissionKeysInclude(
+      snap.keys,
+      POP_PERMS.SALE_READ.resource,
+      POP_PERMS.SALE_READ.action,
+    ) ||
+    permissionKeysInclude(
+      snap.keys,
+      POP_PERMS.RECIPE_READ.resource,
+      POP_PERMS.RECIPE_READ.action,
+    )
+  if (!canReadMenu) {
+    return {
+      ok: false as const,
+      error: "Sin permiso para ver el menú de Mesas o Mostrador.",
+    }
+  }
+  return { ok: true as const }
+}
+
+export type MenuCatalogItemsPage = {
+  articles: MenuCatalogArticle[]
+  recipes: MenuCatalogRecipe[]
+  nextOffset: number | null
+}
+
+export async function getMenuCatalogItemsPage(
+  popId: string,
+  filter: OperateCatalogItemsFilter,
+  offset = 0,
+): Promise<
+  | { success: true; page: MenuCatalogItemsPage }
+  | { success: false; error: string }
+> {
+  try {
+    const gate = await requireMenuCatalogRead(popId)
+    if (!gate.ok) return { success: false, error: gate.error }
+
+    if (filter.section === "promotions" && !filter.search) {
+      return {
+        success: true,
+        page: { articles: [], recipes: [], nextOffset: null },
+      }
+    }
+
+    const supabase = await createClient()
+    const search = sanitizeCatalogIlike(filter.search)
+    const from = Math.max(0, offset)
+    const to = from + OPERATE_CATALOG_PAGE_SIZE
+    const wantArticles =
+      filter.section === "products" ||
+      filter.section === "all" ||
+      filter.section === "discounts" ||
+      Boolean(search)
+    const wantRecipes =
+      filter.section === "recipes" ||
+      filter.section === "all" ||
+      Boolean(search)
+
+    const [productCatResult, recipeCatResult] = await Promise.all([
+      wantArticles
+        ? supabase
+            .from("categories")
+            .select("id")
+            .eq("pop_id", popId)
+            .eq("show_in_menu", true)
+        : Promise.resolve({ data: [] as { id: string }[], error: null }),
+      wantRecipes
+        ? supabase
+            .from("recipe_categories")
+            .select("id")
+            .eq("pop_id", popId)
+            .eq("is_active", true)
+            .eq("show_in_menu", true)
+        : Promise.resolve({ data: [] as { id: string }[], error: null }),
+    ])
+    if (productCatResult.error) {
+      return { success: false, error: productCatResult.error.message }
+    }
+    if (recipeCatResult.error) {
+      return { success: false, error: recipeCatResult.error.message }
+    }
+
+    const visibleProductIds = (productCatResult.data ?? []).map((row) =>
+      String(row.id),
+    )
+    const visibleRecipeIds = (recipeCatResult.data ?? []).map((row) =>
+      String(row.id),
+    )
+
+    let articleHasMore = false
+    let recipeHasMore = false
+    let articles: MenuCatalogArticle[] = []
+    let recipes: MenuCatalogRecipe[] = []
+
+    if (wantArticles && visibleProductIds.length > 0) {
+      let query = supabase
+        .from("articles")
+        .select(SALE_CATALOG_ARTICLE_SELECT)
+        .eq("pop_id", popId)
+        .eq("is_active", true)
+        .eq("is_sellable", true)
+        .eq("item_kind", "merchandise")
+        .in("category_id", visibleProductIds)
+        .order("name", { ascending: true })
+        .order("id", { ascending: true })
+      if (search) {
+        query = query.or(
+          `name.ilike.%${search}%,description.ilike.%${search}%,barcode.ilike.%${search}%`,
+        )
+      } else if (filter.section === "discounts") {
+        query = query.not("discount_value", "is", null).gt("discount_value", 0)
+      } else if (filter.categoryId) {
+        query = query.eq("category_id", filter.categoryId)
+      }
+      const { data, error } = await query.range(from, to)
+      if (error) return { success: false, error: error.message }
+      const rows = (data ?? []) as Record<string, unknown>[]
+      articleHasMore = rows.length > OPERATE_CATALOG_PAGE_SIZE
+      articles = rows
+        .slice(0, OPERATE_CATALOG_PAGE_SIZE)
+        .map(mapSaleCatalogArticleRow)
+    }
+
+    if (wantRecipes && visibleRecipeIds.length > 0) {
+      let query = supabase
+        .from("recipes")
+        .select(MENU_RECIPE_SELECT)
+        .eq("pop_id", popId)
+        .eq("is_active", true)
+        .in("category_id", visibleRecipeIds)
+        .order("name", { ascending: true })
+        .order("id", { ascending: true })
+      if (search) {
+        query = query.or(
+          `name.ilike.%${search}%,description.ilike.%${search}%`,
+        )
+      } else if (filter.categoryId && filter.section === "recipes") {
+        query = query.eq("category_id", filter.categoryId)
+      }
+      const { data, error } = await query.range(from, to)
+      if (error) return { success: false, error: error.message }
+      const rows = (data ?? []) as Record<string, unknown>[]
+      recipeHasMore = rows.length > OPERATE_CATALOG_PAGE_SIZE
+      recipes = rows.slice(0, OPERATE_CATALOG_PAGE_SIZE).map(mapMenuRecipeRow)
+    }
+
+    return {
+      success: true,
+      page: {
+        articles,
+        recipes,
+        nextOffset:
+          articleHasMore || recipeHasMore
+            ? from + OPERATE_CATALOG_PAGE_SIZE
+            : null,
+      },
+    }
+  } catch (e: unknown) {
+    const message = e instanceof Error ? e.message : "Error desconocido"
+    return { success: false, error: message }
+  }
+}
+
+export async function getMenuCatalogItemsByIds(
+  popId: string,
+  articleIds: string[],
+  recipeIds: string[],
+): Promise<
+  | {
+      success: true
+      articles: MenuCatalogArticle[]
+      recipes: MenuCatalogRecipe[]
+    }
+  | { success: false; error: string }
+> {
+  try {
+    const gate = await requireMenuCatalogRead(popId)
+    if (!gate.ok) return { success: false, error: gate.error }
+    const supabase = await createClient()
+    const uniqueArticles = [...new Set(articleIds.filter(Boolean))]
+    const uniqueRecipes = [...new Set(recipeIds.filter(Boolean))]
+    const [artRes, recipeRes] = await Promise.all([
+      uniqueArticles.length > 0
+        ? supabase
+            .from("articles")
+            .select(SALE_CATALOG_ARTICLE_SELECT)
+            .eq("pop_id", popId)
+            .in("id", uniqueArticles)
+        : Promise.resolve({ data: [], error: null }),
+      uniqueRecipes.length > 0
+        ? supabase
+            .from("recipes")
+            .select(MENU_RECIPE_SELECT)
+            .eq("pop_id", popId)
+            .in("id", uniqueRecipes)
+        : Promise.resolve({ data: [], error: null }),
+    ])
+    if (artRes.error) return { success: false, error: artRes.error.message }
+    if (recipeRes.error) return { success: false, error: recipeRes.error.message }
+    return {
+      success: true,
+      articles: ((artRes.data ?? []) as Record<string, unknown>[]).map(
+        mapSaleCatalogArticleRow,
+      ),
+      recipes: ((recipeRes.data ?? []) as Record<string, unknown>[]).map(
+        mapMenuRecipeRow,
+      ),
+    }
+  } catch (e: unknown) {
+    const message = e instanceof Error ? e.message : "Error desconocido"
+    return { success: false, error: message }
+  }
+}
+
+export async function findMenuCatalogItemByScan(
+  popId: string,
+  rawQuery: string,
+): Promise<
+  | {
+      success: true
+      article: MenuCatalogArticle | null
+      recipe: MenuCatalogRecipe | null
+    }
+  | { success: false; error: string }
+> {
+  try {
+    const query = rawQuery.trim()
+    if (!query) {
+      return { success: true, article: null, recipe: null }
+    }
+    const gate = await requireMenuCatalogRead(popId)
+    if (!gate.ok) return { success: false, error: gate.error }
+
+    const supabase = await createClient()
+    const { data: barcodeRows, error: barcodeError } = await supabase
+      .from("articles")
+      .select(SALE_CATALOG_ARTICLE_SELECT)
+      .eq("pop_id", popId)
+      .eq("is_active", true)
+      .eq("is_sellable", true)
+      .eq("item_kind", "merchandise")
+      .eq("barcode", query)
+      .limit(2)
+    if (barcodeError) {
+      return { success: false, error: barcodeError.message }
+    }
+    if ((barcodeRows ?? []).length === 1) {
+      return {
+        success: true,
+        article: mapSaleCatalogArticleRow(
+          barcodeRows![0] as Record<string, unknown>,
+        ),
+        recipe: null,
+      }
+    }
+    if ((barcodeRows ?? []).length > 1) {
+      return { success: true, article: null, recipe: null }
+    }
+
+    const { data: articleNameRows, error: articleNameError } = await supabase
+      .from("articles")
+      .select(SALE_CATALOG_ARTICLE_SELECT)
+      .eq("pop_id", popId)
+      .eq("is_active", true)
+      .eq("is_sellable", true)
+      .eq("item_kind", "merchandise")
+      .ilike("name", query)
+      .limit(2)
+    if (articleNameError) {
+      return { success: false, error: articleNameError.message }
+    }
+    if ((articleNameRows ?? []).length === 1) {
+      return {
+        success: true,
+        article: mapSaleCatalogArticleRow(
+          articleNameRows![0] as Record<string, unknown>,
+        ),
+        recipe: null,
+      }
+    }
+
+    const { data: recipeNameRows, error: recipeNameError } = await supabase
+      .from("recipes")
+      .select(MENU_RECIPE_SELECT)
+      .eq("pop_id", popId)
+      .eq("is_active", true)
+      .ilike("name", query)
+      .limit(2)
+    if (recipeNameError) {
+      return { success: false, error: recipeNameError.message }
+    }
+    if ((recipeNameRows ?? []).length === 1) {
+      return {
+        success: true,
+        article: null,
+        recipe: mapMenuRecipeRow(recipeNameRows![0] as Record<string, unknown>),
+      }
+    }
+    return { success: true, article: null, recipe: null }
   } catch (e: unknown) {
     const message = e instanceof Error ? e.message : "Error desconocido"
     return { success: false, error: message }

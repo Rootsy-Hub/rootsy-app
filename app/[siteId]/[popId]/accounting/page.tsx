@@ -44,7 +44,6 @@ import {
   TableRow,
 } from "@/components/ui/table"
 import { useAuth } from "@/context/AuthContextSupabase"
-import withAuth from "@/hoc/withAuth"
 import {
   breadcrumbForAccountRow,
   breadcrumbForCodePrefix,
@@ -105,6 +104,11 @@ const SOURCE_TYPE_LABELS: Record<string, string> = {
   expense_payment: "Pago de gasto",
   expense_void: "Anulación de gasto",
   service_charge_payment: "Cobro de servicio",
+  check_receive: "Cheque recibido / emitido",
+  check_deposit: "Depósito de cheque",
+  check_reject: "Rechazo de cheque",
+  check_void: "Anulación de cheque",
+  current_account_receipt: "Cobro / pago de cuenta corriente",
 }
 
 function formatSourceType(s: string): string {
@@ -542,7 +546,6 @@ function AccountingPage() {
     }
     booksInit.current = true
     void loadJournal()
-    void loadReports()
   }, [
     popId,
     journalFrom,
@@ -550,7 +553,6 @@ function AccountingPage() {
     loading,
     error,
     loadJournal,
-    loadReports,
   ])
 
   useEffect(() => {
@@ -1839,4 +1841,4 @@ function AccountingPage() {
   )
 }
 
-export default withAuth(AccountingPage)
+export default AccountingPage

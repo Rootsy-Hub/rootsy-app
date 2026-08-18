@@ -3,34 +3,19 @@
 import { menuNatureShellClass } from "@/app/[siteId]/[popId]/menu/menuNatureStyles"
 import "@/app/library/color/rootsyNaturePalette.css"
 import "@/app/[siteId]/[popId]/menu/menuNaturePalette.css"
-import { PopWorkspaceBackdrop } from "@/components/layouts/PopWorkspaceBackdrop"
-import { DataWorkspaceHeaderTitle } from "@/components/layouts/DataWorkspaceHeaderTitle"
-import { DataWorkspaceHeaderUserMenu } from "@/components/layouts/DataWorkspaceHeaderUserMenu"
 import {
-  dataWorkspaceHeaderChromeButtonClass,
-  dataWorkspaceHeaderDividerClass,
-  dataWorkspaceHeaderEdgeToggleClass,
-  dataWorkspaceHeaderPopRingClass,
-  dataWorkspaceHeaderRoleLabelClass,
-  dataWorkspaceHeaderSurfaceClass,
-  dataWorkspaceHeaderToolbarClass,
-  isDataWorkspaceTintedHeader,
-  type DataWorkspaceHeaderVariant,
-} from "@/components/layouts/dataWorkspaceHeaderStyles"
+  HomeWorkspaceBackdrop,
+  homeWorkspaceSurfaceClass,
+} from "@/components/layouts/HomeWorkspaceBackdrop"
+import { PopWorkspaceBackdrop } from "@/components/layouts/PopWorkspaceBackdrop"
+import { dataWorkspaceHeaderEdgeToggleClass } from "@/components/layouts/dataWorkspaceHeaderStyles"
 import { ModuleWorkspaceHeader } from "@/components/layouts-module/ModuleWorkspaceHeader"
 import { layoutsModuleContentShellClass } from "@/components/layouts-module/rootsLayoutsModuleProductStyles"
 import { usePopWorkspaceOptional } from "@/context/PopWorkspaceContext"
 import { LAYOUTS_OPERAR_CATALOG_SIDEBAR_WIDTH_PX } from "@/app/library/layouts/layoutsOperarStyles"
 import { cn } from "@/lib/utils"
 import { popMenuHref } from "@/lib/popRoutes"
-import {
-  ArrowLeft,
-  Maximize2,
-  Minimize2,
-  PanelLeftClose,
-  PanelLeftOpen,
-} from "lucide-react"
-import Link from "next/link"
+import { PanelLeftOpen } from "lucide-react"
 import {
   useCallback,
   useEffect,
@@ -39,12 +24,15 @@ import {
   type ReactNode,
 } from "react"
 import { useDataWorkspaceSidebar } from "@/components/layouts/useDataWorkspaceSidebar"
+import type { DataWorkspaceHeaderVariant } from "@/components/layouts/dataWorkspaceHeaderStyles"
 
 export type DataWorkspaceLayoutProps = {
-  siteId: string
-  popId: string
-  popName: string
-  title: string
+  siteId?: string
+  popId?: string
+  popName?: string
+  /** Isotipo a la izquierda del nombre. Si no se pasa, usa la foto del POP. */
+  popLogoSrc?: string
+  title?: string
   /** Segunda línea bajo el nombre del usuario. Por defecto usa el rol del POP (`usePopWorkspace`); si no hay rol, `pillLabel`. */
   pillLabel?: string
   /** Respaldo opcional si el bootstrap del POP aún no tiene rol. */
@@ -52,6 +40,8 @@ export type DataWorkspaceLayoutProps = {
   loading?: boolean
   /** Cabecera clara o bosque nocturno (`dark` / `night`, equivalentes). */
   headerVariant?: DataWorkspaceHeaderVariant
+  /** Cabecera cristal — siempre `ModuleWorkspaceHeader`. */
+  showFullscreen?: boolean
   /** Contenido a la derecha del título central (ej. badge online). */
   titleAdornment?: ReactNode
   /** Acciones con ícono (Nuevo, categorías, etc.) — a la derecha, antes del selector de vista. */
@@ -78,24 +68,28 @@ export type DataWorkspaceLayoutProps = {
   contentFlush?: boolean
   /** Clases extra en el `<main>`. */
   mainClassName?: string
-  /** Fondo fotográfico del POP detrás del header oscuro (p. ej. librería lo desactiva). */
+  /** Fondo fotográfico del POP. No elige el header. */
   usePopBackdrop?: boolean
+  /** Fondo de /home cuando no hay foto de POP (Librería, Backoffice). */
+  useHomeBackdrop?: boolean
   /** Sesión actual (opcional: si no se pasa, se oculta el bloque usuario a la derecha). */
   userName?: string
   userAvatarSrc?: string | null
-  /** Destino del botón volver. Por defecto menú del POP. */
+  /** Destino del botón volver. Por defecto menú del POP si hay site/pop. */
   backHref?: string
 }
 
 export function DataWorkspaceLayout({
-  siteId,
-  popId,
+  siteId = "",
+  popId = "",
   popName,
+  popLogoSrc: popLogoSrcProp,
   title,
   pillLabel = "Listados",
   userRoleLabel,
   loading = false,
   headerVariant = "default",
+  showFullscreen = true,
   titleAdornment,
   headerActions,
   toolbar,
@@ -111,6 +105,7 @@ export function DataWorkspaceLayout({
   mainClassName,
   rootClassName,
   usePopBackdrop = true,
+  useHomeBackdrop = false,
   userName,
   userAvatarSrc,
   backHref: backHrefProp,
@@ -122,7 +117,6 @@ export function DataWorkspaceLayout({
     null
   const [isOnline, setIsOnline] = useState(true)
   const [isFullscreen, setIsFullscreen] = useState(false)
-  const isTintedHeader = isDataWorkspaceTintedHeader(headerVariant)
   const isSidebarControlled = onSidebarOpenChange !== undefined
   const internalSidebar = useDataWorkspaceSidebar(
     siteId,
@@ -199,41 +193,45 @@ export function DataWorkspaceLayout({
   const popImageUrl = popWorkspace?.popAccess?.pop.imageUrl?.trim() || null
   const popStreetAddress =
     popWorkspace?.popAccess?.pop.streetAddress?.trim() || null
+  const resolvedPopName = popName?.trim() || popWorkspace?.bootstrap?.popName?.trim() || ""
 
-  const popLogoSrc = useMemo(
-    () =>
-      popImageUrl ||
-      `https://api.dicebear.com/7.x/shapes/svg?seed=${encodeURIComponent(popId || "pop")}&backgroundColor=e8f5ef`,
-    [popId, popImageUrl],
-  )
+  const popLogoSrc = useMemo(() => {
+    if (popLogoSrcProp) return popLogoSrcProp
+    if (popImageUrl) return popImageUrl
+    if (!popId) return undefined
+    return `https://api.dicebear.com/7.x/shapes/svg?seed=${encodeURIComponent(popId)}&backgroundColor=e8f5ef`
+  }, [popId, popImageUrl, popLogoSrcProp])
 
-  const backHref = backHrefProp ?? popMenuHref(siteId, popId)
+  const backHref =
+    backHrefProp ?? (siteId && popId ? popMenuHref(siteId, popId) : undefined)
 
   const resolvedUserRoleLabel =
     popWorkspace?.bootstrap?.roleLabel?.trim() || userRoleLabel?.trim() || ""
   const subline = resolvedUserRoleLabel || pillLabel
-
-  const chromeButtonClass = dataWorkspaceHeaderChromeButtonClass(headerVariant)
   const popBackdropUrl = backgroundImageUrl?.trim() || null
-  const hasModuleShell = usePopBackdrop && isTintedHeader
 
   return (
     <div
       className={cn(
         "text-foreground",
         rootClassName,
-        hasModuleShell
+        usePopBackdrop
           ? cn(
               menuNatureShellClass,
               "fixed inset-0 flex flex-col overflow-hidden bg-background",
             )
           : cn(
-              "rootsy-app-light relative min-h-screen overflow-hidden bg-background",
+              "relative min-h-screen overflow-hidden",
+              useHomeBackdrop
+                ? homeWorkspaceSurfaceClass
+                : "rootsy-app-light bg-background",
             ),
       )}
     >
-      {hasModuleShell ? (
+      {usePopBackdrop ? (
         <PopWorkspaceBackdrop backgroundImageUrl={popBackdropUrl} />
+      ) : useHomeBackdrop ? (
+        <HomeWorkspaceBackdrop />
       ) : (
         <div
           className="pointer-events-none absolute inset-0 motion-reduce:opacity-50"
@@ -247,228 +245,34 @@ export function DataWorkspaceLayout({
       <div
         className={cn(
           "relative z-10 flex min-h-0 flex-col overflow-hidden",
-          hasModuleShell ? "min-h-0 flex-1" : "h-svh",
+          usePopBackdrop ? "min-h-0 flex-1" : "h-svh",
         )}
       >
-        {hasModuleShell ? (
-          <ModuleWorkspaceHeader
-            backHref={backHref}
-            popLogoSrc={popLogoSrc}
-            popName={popName}
-            popStreetAddress={popStreetAddress}
-            title={title}
-            loading={loading}
-            headerVariant={headerVariant}
-            titleAdornment={titleAdornment}
-            headerActions={headerActions}
-            sectionMenu={sectionMenu}
-            toolbar={toolbar}
-            mainMaxWidthClass={mainMaxWidthClass}
-            userName={userName}
-            userAvatarSrc={userAvatarSrc}
-            isOnline={isOnline}
-            subline={subline}
-            hasResolvedRole={Boolean(resolvedUserRoleLabel)}
-            isFullscreen={isFullscreen}
-            onToggleFullscreen={() => void toggleFullscreen()}
-            canCollapseSidebar={canCollapseSidebar}
-            sidebarOpen={sidebarOpen}
-            onToggleSidebar={toggleSidebar}
-          />
-        ) : (
-        <header
-          className={cn(
-            "relative z-20 shrink-0 border-b",
-              isTintedHeader
-                ? cn("text-zinc-100", dataWorkspaceHeaderSurfaceClass(headerVariant))
-                : cn(
-                    "shadow-sm backdrop-blur-xl",
-                    dataWorkspaceHeaderSurfaceClass(headerVariant),
-                  ),
-          )}
-        >
-          <div className="relative z-10 grid h-17 grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-4 px-4">
-            <div className="flex min-w-0 items-center gap-2">
-              <Link
-                href={backHref}
-                className={cn(
-                  chromeButtonClass,
-                  isTintedHeader
-                    ? "text-zinc-300"
-                    : "text-foreground/70 hover:text-foreground",
-                )}
-                aria-label="Volver al menú"
-              >
-                <ArrowLeft className="size-5 transition-transform group-hover:-translate-x-0.5" />
-              </Link>
-              <button
-                type="button"
-                onClick={() => void toggleFullscreen()}
-                className={chromeButtonClass}
-                aria-label={
-                  isFullscreen
-                    ? "Salir de pantalla completa"
-                    : "Pantalla completa"
-                }
-                title={
-                  isFullscreen
-                    ? "Salir de pantalla completa"
-                    : "Pantalla completa"
-                }
-              >
-                {isFullscreen ? (
-                  <Minimize2 className="size-5" aria-hidden />
-                ) : (
-                  <Maximize2 className="size-5" aria-hidden />
-                )}
-              </button>
-              {canCollapseSidebar ? (
-                <button
-                  type="button"
-                  onClick={toggleSidebar}
-                  className={cn(
-                    chromeButtonClass,
-                    !sidebarOpen &&
-                      "border-red-500/45 bg-red-500/15 text-red-300 hover:border-red-400/55 hover:bg-red-500/25 hover:text-red-200",
-                  )}
-                  aria-expanded={sidebarOpen}
-                  aria-controls="data-workspace-sidebar"
-                  aria-label={
-                    sidebarOpen
-                      ? "Ocultar panel de navegación"
-                      : "Mostrar panel de navegación"
-                  }
-                  title={
-                    sidebarOpen
-                      ? "Ocultar panel ([)"
-                      : "Mostrar panel ([)"
-                  }
-                >
-                  {sidebarOpen ? (
-                    <PanelLeftClose className="size-5" aria-hidden />
-                  ) : (
-                    <PanelLeftOpen className="size-5" aria-hidden />
-                  )}
-                </button>
-              ) : null}
-              <div
-                className={cn(
-                  "h-6 w-px",
-                  dataWorkspaceHeaderDividerClass(headerVariant),
-                )}
-              />
-              <div className="flex min-w-0 items-center gap-2.5">
-                <div
-                  className={cn(
-                    "size-10 overflow-hidden rounded-lg ring-1",
-                    dataWorkspaceHeaderPopRingClass(headerVariant),
-                  )}
-                >
-                  <img
-                    src={popLogoSrc}
-                    alt=""
-                    className="size-full object-cover"
-                  />
-                </div>
-                <div className="flex min-w-0 flex-col leading-tight">
-                  <span
-                    className={cn(
-                      "truncate text-sm font-semibold",
-                      isTintedHeader ? "text-zinc-100" : "text-foreground/90",
-                    )}
-                  >
-                    {popName || (loading ? "…" : "—")}
-                  </span>
-                  {popStreetAddress ? (
-                    <span
-                      className={cn(
-                        "truncate text-[11px] leading-tight",
-                        isTintedHeader
-                          ? "text-zinc-400"
-                          : "text-muted-foreground",
-                      )}
-                    >
-                      {popStreetAddress}
-                    </span>
-                  ) : null}
-                </div>
-              </div>
-            </div>
-
-            <div className="flex flex-wrap items-center justify-center gap-2">
-              <DataWorkspaceHeaderTitle
-                title={title}
-                headerVariant={headerVariant}
-              />
-              {titleAdornment}
-            </div>
-
-            <div className="flex shrink-0 items-center justify-end gap-2">
-              {headerActions || sectionMenu ? (
-                <div className="flex items-center gap-1.5">
-                  {headerActions}
-                  {sectionMenu}
-                </div>
-              ) : null}
-              {userName ? (
-                <>
-                  {headerActions || sectionMenu ? (
-                    <div
-                      className={cn(
-                        "h-6 w-px",
-                        dataWorkspaceHeaderDividerClass(headerVariant),
-                      )}
-                    />
-                  ) : null}
-                  <div className="flex min-w-0 items-center gap-3">
-                    <div className="hidden min-w-0 flex-col items-end text-right leading-tight sm:flex">
-                      <span
-                        className={cn(
-                          "truncate text-sm font-semibold",
-                          isTintedHeader ? "text-zinc-100" : "text-foreground/90",
-                        )}
-                      >
-                        {userName}
-                      </span>
-                      {subline ? (
-                        <span
-                          className={cn(
-                            "truncate text-[10px] font-semibold uppercase tracking-wider",
-                            dataWorkspaceHeaderRoleLabelClass(
-                              headerVariant,
-                              Boolean(resolvedUserRoleLabel),
-                            ),
-                          )}
-                        >
-                          {subline}
-                        </span>
-                      ) : null}
-                    </div>
-                    <DataWorkspaceHeaderUserMenu
-                      userName={userName}
-                      userAvatarSrc={userAvatarSrc}
-                      isOnline={isOnline}
-                      headerVariant={headerVariant}
-                    />
-                  </div>
-                </>
-              ) : null}
-            </div>
-          </div>
-          {toolbar ? (
-            <div
-              className={cn(
-                "relative z-10 border-t px-4 py-2 sm:px-6",
-                dataWorkspaceHeaderToolbarClass(headerVariant),
-              )}
-            >
-              <div className={cn("mx-auto w-full", mainMaxWidthClass)}>
-                {toolbar}
-              </div>
-            </div>
-          ) : null}
-        </header>
-        )}
+        <ModuleWorkspaceHeader
+          backHref={backHref}
+          showFullscreen={showFullscreen}
+          popLogoSrc={popLogoSrc}
+          popName={resolvedPopName}
+          popStreetAddress={popStreetAddress}
+          title={title}
+          loading={loading}
+          headerVariant={headerVariant}
+          titleAdornment={titleAdornment}
+          headerActions={headerActions}
+          sectionMenu={sectionMenu}
+          toolbar={toolbar}
+          mainMaxWidthClass={mainMaxWidthClass}
+          userName={userName}
+          userAvatarSrc={userAvatarSrc}
+          isOnline={isOnline}
+          subline={subline}
+          hasResolvedRole={Boolean(resolvedUserRoleLabel)}
+          isFullscreen={isFullscreen}
+          onToggleFullscreen={() => void toggleFullscreen()}
+          canCollapseSidebar={canCollapseSidebar}
+          sidebarOpen={sidebarOpen}
+          onToggleSidebar={toggleSidebar}
+        />
 
         {renderLayoutSidebar ? (
           <div className="relative z-10 flex min-h-0 flex-1 flex-row items-stretch">
@@ -502,12 +306,12 @@ export function DataWorkspaceLayout({
             <main
               className={cn(
                 "relative z-10 flex min-h-0 min-w-0 flex-1 flex-col",
-                hasModuleShell && contentFlush && layoutsModuleContentShellClass,
+                usePopBackdrop && contentFlush && layoutsModuleContentShellClass,
                 mainClassName,
                 contentFlush
                   ? cn(
                       "min-h-0 p-0",
-                      hasModuleShell ? "overflow-y-auto" : "overflow-hidden",
+                      usePopBackdrop ? "overflow-y-auto" : "overflow-hidden",
                     )
                   : cn(
                       "overflow-y-auto px-4 py-8 sm:pl-5 sm:pr-8",
@@ -523,12 +327,12 @@ export function DataWorkspaceLayout({
           <main
             className={cn(
               "relative z-10 flex min-h-0 w-full flex-1 flex-col",
-              hasModuleShell && contentFlush && layoutsModuleContentShellClass,
+              usePopBackdrop && contentFlush && layoutsModuleContentShellClass,
               mainClassName,
               contentFlush
                 ? cn(
                     "min-h-0 p-0",
-                    hasModuleShell ? "overflow-y-auto" : "overflow-hidden",
+                    usePopBackdrop ? "overflow-y-auto" : "overflow-hidden",
                   )
                 : cn(
                     "mx-auto overflow-y-auto px-4 py-8 sm:px-6",

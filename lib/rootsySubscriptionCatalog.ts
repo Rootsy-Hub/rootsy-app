@@ -35,6 +35,31 @@ export const ROOTS_BUSINESS_TYPE_ORDER: RootsPublicBusinessTypeKey[] = [
   "fabrica",
 ]
 
+/** Alta: el rubro es cómo cobra el 80% del día, no una industria. */
+export const ROOTS_BUSINESS_TYPE_SIGNUP_COPY: Record<
+  RootsPublicBusinessTypeKey,
+  { title: string; hint: string }
+> = {
+  comercio: {
+    title: "Vendo productos",
+    hint: "Mostrador, stock y compras. Kiosco, tienda, ferretería.",
+  },
+  restaurant: {
+    title: "Tengo mesas o barra",
+    hint: "Salón, mostrador y recetas. Bar, café, restaurante.",
+  },
+  fabrica: {
+    title: "Fabrico y vendo",
+    hint: "Producción, recetas y venta. Obrador, panadería, taller.",
+  },
+}
+
+export function isRootsPublicBusinessTypeKey(
+  value: string,
+): value is RootsPublicBusinessTypeKey {
+  return ROOTS_BUSINESS_TYPE_ORDER.includes(value as RootsPublicBusinessTypeKey)
+}
+
 export type RootsPublicPaidPlanKey = Exclude<
   RootsPlanKey,
   "free_trial" | "rootsy_internal"
@@ -51,18 +76,17 @@ export const ROOTS_SHARED_MODULES: Record<
   RootsModuleDefinition[]
 > = {
   operar: [
-    { key: "clients", label: "Clientes" },
-    { key: "services", label: "Servicios" },
     { key: "active_services", label: "Servicios activos" },
     { key: "current_accounts", label: "Cuentas corrientes" },
-    { key: "checks", label: "Cheques" },
     { key: "expenses", label: "Gastos" },
   ],
   administrar: [
-    { key: "summary", label: "Resumen" },
+    { key: "clients", label: "Clientes" },
+    { key: "checks", label: "Cheques" },
     { key: "statistics", label: "Estadísticas" },
     { key: "reports", label: "Reportes" },
     { key: "operations", label: "Operaciones" },
+    { key: "services", label: "Servicios" },
   ],
   configurar: [
     { key: "alerts", label: "Alertas" },
@@ -103,14 +127,14 @@ const ROOTS_PUBLIC_BUSINESS_TYPE_MODULES: Record<
       operar: [
         { key: "sale", label: "Vender" },
         { key: "purchases", label: "Comprar" },
-        { key: "promotions", label: "Promociones" },
-        { key: "stock", label: "Stock" },
-        { key: "suppliers", label: "Proveedores" },
+        { key: "inventory", label: "Inventario" },
       ],
       administrar: [
+        { key: "stock", label: "Stock" },
+        { key: "suppliers", label: "Proveedores" },
+        { key: "promotions", label: "Promociones" },
         { key: "quotes", label: "Presupuestos" },
         { key: "purchase_orders", label: "Órdenes de compra" },
-        { key: "inventory", label: "Inventario" },
       ],
       configurar: [{ key: "cash_registers", label: "Cajas" }],
     },
@@ -126,17 +150,17 @@ const ROOTS_PUBLIC_BUSINESS_TYPE_MODULES: Record<
     description: "Bares, restaurantes y gastronomía.",
     specific: {
       operar: [
-        { key: "mesas", label: "Mesas" },
         { key: "mostrador", label: "Mostrador" },
-        { key: "recipes", label: "Recetas" },
-        { key: "promotions", label: "Promociones" },
-        { key: "stock", label: "Stock" },
-        { key: "suppliers", label: "Proveedores" },
+        { key: "mesas", label: "Mesas" },
+        { key: "inventory", label: "Inventario" },
       ],
       administrar: [
+        { key: "stock", label: "Stock" },
+        { key: "suppliers", label: "Proveedores" },
+        { key: "recipes", label: "Recetas" },
+        { key: "promotions", label: "Promociones" },
         { key: "quotes", label: "Presupuestos" },
         { key: "purchase_orders", label: "Órdenes de compra" },
-        { key: "inventory", label: "Inventario" },
       ],
       configurar: [{ key: "cash_registers", label: "Cajas" }],
     },
@@ -154,15 +178,15 @@ const ROOTS_PUBLIC_BUSINESS_TYPE_MODULES: Record<
       operar: [
         { key: "sale", label: "Vender" },
         { key: "manufacturing", label: "Fabricar" },
-        { key: "recipes", label: "Recetas" },
-        { key: "promotions", label: "Promociones" },
-        { key: "stock", label: "Stock" },
-        { key: "suppliers", label: "Proveedores" },
+        { key: "inventory", label: "Inventario" },
       ],
       administrar: [
+        { key: "stock", label: "Stock" },
+        { key: "suppliers", label: "Proveedores" },
+        { key: "recipes", label: "Recetas" },
+        { key: "promotions", label: "Promociones" },
         { key: "quotes", label: "Presupuestos" },
         { key: "purchase_orders", label: "Órdenes de compra" },
-        { key: "inventory", label: "Inventario" },
       ],
       configurar: [{ key: "cash_registers", label: "Cajas" }],
     },

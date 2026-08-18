@@ -27,6 +27,9 @@ type Props = {
   /** @deprecated El diálogo usa estilos compartidos internamente. */
   styles?: DialogStyles
   supplierAccountDescription?: string
+  popId?: string
+  defaultPartyName?: string
+  defaultPartyId?: string
 }
 
 export function PurchasePaymentMethodDialog({
@@ -41,6 +44,9 @@ export function PurchasePaymentMethodDialog({
   onSelectSupplierAccount,
   supplierAccountDescription =
     "Recibís la mercadería ahora y registrás la deuda en Proveedores. Podés pagar después.",
+  popId,
+  defaultPartyName,
+  defaultPartyId,
 }: Props) {
   return (
     <PaymentMethodDialog
@@ -57,6 +63,9 @@ export function PurchasePaymentMethodDialog({
       immediateSectionTitle="Pago inmediato"
       cardInstallments={cardInstallments}
       onCardInstallmentsChange={onCardInstallmentsChange}
+      popId={popId}
+      defaultPartyName={defaultPartyName}
+      defaultPartyId={defaultPartyId}
     />
   )
 }

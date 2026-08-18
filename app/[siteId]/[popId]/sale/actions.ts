@@ -10,10 +10,15 @@ import { loadPopPermissionsSnapshot } from "@/lib/popPermissionsServer"
 import { createClient } from "@/utils/supabase/server"
 import type { ArticleDiscountMode } from "@/lib/articleDiscount"
 import {
-  articleHasCatalogDiscount,
-  effectiveArticleSalePrice,
-  isArticleDiscountMode,
-} from "@/lib/articleDiscount"
+  mapSaleCatalogArticleRow,
+  SALE_CATALOG_ARTICLE_SELECT,
+} from "@/lib/saleCatalogArticleMap"
+import {
+  OPERATE_CATALOG_PAGE_SIZE,
+  sanitizeCatalogIlike,
+  type OperateCatalogItemsFilter,
+  type OperateCatalogItemsPage,
+} from "@/lib/operateCatalogPage"
 import {
   loadMenuPromotions,
   type MenuCatalogCategorySection,
@@ -23,12 +28,14 @@ import { filterComboPromotionsForSale } from "@/lib/saleMenuCatalog"
 import { resolveOpenCashSession } from "@/lib/cashRegisterSession"
 import { fetchTreasuryPaymentContext } from "@/lib/treasuryPaymentContextLoad"
 import type { TreasuryPaymentContext } from "@/lib/treasuryPaymentOptions"
+import type { CheckoutCheckDetails } from "@/lib/checkoutCheck"
 import type { OperationPaymentKind } from "@/lib/operationPaymentKinds"
 
 export type SaleCatalogPaymentOption = {
   kind: OperationPaymentKind
   treasuryAccountId: string
   label: string
+  checkDetails?: CheckoutCheckDetails
 }
 
 export type SaleCatalogCategory = {
@@ -127,7 +134,6 @@ export async function getSaleCatalog(popId: string): Promise<
     const [
       popNameResult,
       catResult,
-      artResult,
       cashResult,
       treasuryResult,
       allPromotions,
@@ -139,29 +145,6 @@ export async function getSaleCatalog(popId: string): Promise<
         .eq("pop_id", popId)
         .eq("show_in_sale", true)
         .order("sort_order", { ascending: true })
-        .order("name", { ascending: true }),
-      supabase
-        .from("articles")
-        .select(
-          `
-        id,
-        name,
-        description,
-        sale_price,
-        iva,
-        discount_mode,
-        discount_value,
-        category_id,
-        unit_of_measure,
-        image_url,
-        barcode,
-        categories ( id, name )
-      `,
-        )
-        .eq("pop_id", popId)
-        .eq("is_active", true)
-        .eq("is_sellable", true)
-        .eq("item_kind", "merchandise")
         .order("name", { ascending: true }),
       canReadCashRegisters
         ? resolveOpenCashSession(supabase, popId, user?.id)
@@ -178,9 +161,6 @@ export async function getSaleCatalog(popId: string): Promise<
     if (catResult.error) {
       return { success: false, error: catResult.error.message }
     }
-    if (artResult.error) {
-      return { success: false, error: artResult.error.message }
-    }
     if (treasuryResult && !treasuryResult.success) {
       return { success: false, error: treasuryResult.error }
     }
@@ -196,59 +176,7 @@ export async function getSaleCatalog(popId: string): Promise<
         sortOrder: Number(c.sort_order ?? 0) || 0,
       }),
     )
-    const visibleCategoryIds = new Set(categories.map((c) => c.id))
-
-    const rows = (artResult.data || []) as Record<string, unknown>[]
-    const articles: SaleCatalogArticle[] = rows
-      .filter((row) => {
-        const categoryId = String(row.category_id ?? "")
-        return categoryId !== "" && visibleCategoryIds.has(categoryId)
-      })
-      .map((row) => {
-        const cat = row.categories as unknown as { name?: string } | null
-        const listPrice = Number(row.sale_price ?? 0) || 0
-        const rawDiscountMode = row.discount_mode
-        const discountMode: ArticleDiscountMode | null =
-          typeof rawDiscountMode === "string" &&
-          isArticleDiscountMode(rawDiscountMode)
-            ? rawDiscountMode
-            : null
-        const discountRaw = row.discount_value
-        const discountValue =
-          discountRaw != null && Number.isFinite(Number(discountRaw))
-            ? Number(discountRaw)
-            : null
-        const hasDiscount = articleHasCatalogDiscount(
-          discountMode,
-          discountValue,
-        )
-        const effectivePrice = effectiveArticleSalePrice(
-          listPrice,
-          discountMode,
-          discountValue,
-        )
-        return {
-          id: String(row.id),
-          name: String(row.name ?? ""),
-          description: String(row.description ?? ""),
-          salePrice: effectivePrice,
-          originalSalePrice: hasDiscount ? listPrice : undefined,
-          discountMode: hasDiscount ? discountMode : null,
-          discountValue: hasDiscount ? discountValue : null,
-          iva: Number(row.iva ?? 0) || 0,
-          categoryId: String(row.category_id ?? ""),
-          categoryName: cat?.name ? String(cat.name) : "—",
-          unitOfMeasure: String(row.unit_of_measure ?? "unidad"),
-          imageUrl:
-            typeof row.image_url === "string" && row.image_url.trim()
-              ? row.image_url.trim()
-              : null,
-          barcode:
-            row.barcode != null && String(row.barcode).trim()
-              ? String(row.barcode).trim()
-              : null,
-        }
-      })
+    const articles: SaleCatalogArticle[] = []
 
     const clients: SaleCatalogClient[] = []
 
@@ -302,6 +230,218 @@ export async function getSaleCatalog(popId: string): Promise<
       openCashSession,
       invoiceTypeSiteId: DEFAULT_SALE_SITE_ID,
     }
+  } catch (e: unknown) {
+    const message = e instanceof Error ? e.message : "Error desconocido"
+    return { success: false, error: message }
+  }
+}
+
+async function requireSaleCatalogRead(popId: string) {
+  const access = await validatePopAccess(popId)
+  if (!access.hasAccess || !access.isActive) {
+    return { ok: false as const, error: access.error || "Sin acceso" }
+  }
+  const snap = await loadPopPermissionsSnapshot(popId)
+  const hasSaleRead = permissionKeysInclude(
+    snap.keys,
+    POP_PERMS.SALE_READ.resource,
+    POP_PERMS.SALE_READ.action,
+  )
+  if (!hasSaleRead) {
+    return {
+      ok: false as const,
+      error:
+        "Necesitás permiso de lectura de ventas (sale:read) para usar esta pantalla.",
+    }
+  }
+  return { ok: true as const }
+}
+
+function saleArticlesBaseQuery(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  popId: string,
+  visibleCategoryIds: string[],
+) {
+  let query = supabase
+    .from("articles")
+    .select(SALE_CATALOG_ARTICLE_SELECT)
+    .eq("pop_id", popId)
+    .eq("is_active", true)
+    .eq("is_sellable", true)
+    .eq("item_kind", "merchandise")
+    .in("category_id", visibleCategoryIds)
+    .order("name", { ascending: true })
+    .order("id", { ascending: true })
+  return query
+}
+
+export async function getSaleCatalogItemsPage(
+  popId: string,
+  filter: OperateCatalogItemsFilter,
+  offset = 0,
+): Promise<
+  | { success: true; page: OperateCatalogItemsPage<SaleCatalogArticle> }
+  | { success: false; error: string }
+> {
+  try {
+    const gate = await requireSaleCatalogRead(popId)
+    if (!gate.ok) return { success: false, error: gate.error }
+
+    if (filter.section === "promotions" && !filter.search) {
+      return { success: true, page: { items: [], nextOffset: null } }
+    }
+
+    const supabase = await createClient()
+    const { data: catRows, error: catError } = await supabase
+      .from("categories")
+      .select("id")
+      .eq("pop_id", popId)
+      .eq("show_in_sale", true)
+    if (catError) {
+      return { success: false, error: catError.message }
+    }
+    const visibleCategoryIds = (catRows ?? []).map((row) => String(row.id))
+    if (visibleCategoryIds.length === 0) {
+      return { success: true, page: { items: [], nextOffset: null } }
+    }
+
+    const search = sanitizeCatalogIlike(filter.search)
+    let query = saleArticlesBaseQuery(supabase, popId, visibleCategoryIds)
+    if (search) {
+      query = query.or(
+        `name.ilike.%${search}%,description.ilike.%${search}%,barcode.ilike.%${search}%`,
+      )
+    } else if (filter.section === "discounts") {
+      query = query.not("discount_value", "is", null).gt("discount_value", 0)
+    } else if (filter.categoryId) {
+      query = query.eq("category_id", filter.categoryId)
+    } else {
+      return { success: true, page: { items: [], nextOffset: null } }
+    }
+
+    const from = Math.max(0, offset)
+    const to = from + OPERATE_CATALOG_PAGE_SIZE
+    const { data, error } = await query.range(from, to)
+    if (error) {
+      return { success: false, error: error.message }
+    }
+
+    const rows = (data ?? []) as Record<string, unknown>[]
+    const hasMore = rows.length > OPERATE_CATALOG_PAGE_SIZE
+    const items = rows
+      .slice(0, OPERATE_CATALOG_PAGE_SIZE)
+      .map(mapSaleCatalogArticleRow)
+    return {
+      success: true,
+      page: {
+        items,
+        nextOffset: hasMore ? from + OPERATE_CATALOG_PAGE_SIZE : null,
+      },
+    }
+  } catch (e: unknown) {
+    const message = e instanceof Error ? e.message : "Error desconocido"
+    return { success: false, error: message }
+  }
+}
+
+export async function getSaleCatalogArticlesByIds(
+  popId: string,
+  ids: string[],
+): Promise<
+  | { success: true; articles: SaleCatalogArticle[] }
+  | { success: false; error: string }
+> {
+  try {
+    const unique = [...new Set(ids.filter(Boolean))]
+    if (unique.length === 0) return { success: true, articles: [] }
+    const gate = await requireSaleCatalogRead(popId)
+    if (!gate.ok) return { success: false, error: gate.error }
+    const supabase = await createClient()
+    const { data, error } = await supabase
+      .from("articles")
+      .select(SALE_CATALOG_ARTICLE_SELECT)
+      .eq("pop_id", popId)
+      .eq("is_active", true)
+      .in("id", unique)
+    if (error) return { success: false, error: error.message }
+    return {
+      success: true,
+      articles: ((data ?? []) as Record<string, unknown>[]).map(
+        mapSaleCatalogArticleRow,
+      ),
+    }
+  } catch (e: unknown) {
+    const message = e instanceof Error ? e.message : "Error desconocido"
+    return { success: false, error: message }
+  }
+}
+
+export async function findSaleCatalogArticleByScan(
+  popId: string,
+  rawQuery: string,
+): Promise<
+  | { success: true; article: SaleCatalogArticle | null }
+  | { success: false; error: string }
+> {
+  try {
+    const query = rawQuery.trim()
+    if (!query) return { success: true, article: null }
+
+    const gate = await requireSaleCatalogRead(popId)
+    if (!gate.ok) return { success: false, error: gate.error }
+
+    const supabase = await createClient()
+    const { data: catRows, error: catError } = await supabase
+      .from("categories")
+      .select("id")
+      .eq("pop_id", popId)
+      .eq("show_in_sale", true)
+    if (catError) {
+      return { success: false, error: catError.message }
+    }
+    const visibleCategoryIds = (catRows ?? []).map((row) => String(row.id))
+    if (visibleCategoryIds.length === 0) {
+      return { success: true, article: null }
+    }
+
+    const base = saleArticlesBaseQuery(supabase, popId, visibleCategoryIds)
+    const { data: barcodeRows, error: barcodeError } = await base
+      .eq("barcode", query)
+      .limit(2)
+    if (barcodeError) {
+      return { success: false, error: barcodeError.message }
+    }
+    if ((barcodeRows ?? []).length === 1) {
+      return {
+        success: true,
+        article: mapSaleCatalogArticleRow(
+          barcodeRows![0] as Record<string, unknown>,
+        ),
+      }
+    }
+    if ((barcodeRows ?? []).length > 1) {
+      return { success: true, article: null }
+    }
+
+    const { data: nameRows, error: nameError } = await saleArticlesBaseQuery(
+      supabase,
+      popId,
+      visibleCategoryIds,
+    )
+      .ilike("name", query)
+      .limit(2)
+    if (nameError) {
+      return { success: false, error: nameError.message }
+    }
+    if ((nameRows ?? []).length === 1) {
+      return {
+        success: true,
+        article: mapSaleCatalogArticleRow(
+          nameRows![0] as Record<string, unknown>,
+        ),
+      }
+    }
+    return { success: true, article: null }
   } catch (e: unknown) {
     const message = e instanceof Error ? e.message : "Error desconocido"
     return { success: false, error: message }

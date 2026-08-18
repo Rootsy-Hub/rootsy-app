@@ -3,13 +3,12 @@
 import {
   deleteSaleQuote,
   getSaleQuoteDetail,
-  getSaleQuotesTable,
 } from "@/app/[siteId]/[popId]/quotes/actions"
 import {
   DEFAULT_QUOTE_TABLE_PAGE_SIZE,
   QUOTE_TABLE_PAGE_SIZES,
 } from "@/app/[siteId]/[popId]/quotes/quoteConstants"
-import { buildPaginationItems } from "@/app/[siteId]/[popId]/layout/layoutPreviewPagination"
+import { buildPaginationItems } from "@/components/data-workspace/buildPaginationItems"
 import { SaleQuoteViewDialog } from "@/components/quotes/SaleQuoteViewDialog"
 import { SaleQuoteDeleteDialog } from "@/components/quotes/SaleQuoteDeleteDialog"
 import { DataWorkspaceListActiveFiltersBar } from "@/components/data-workspace/DataWorkspaceListActiveFiltersBar"
@@ -52,7 +51,10 @@ import {
   WorkspaceTableHeaderRow,
 } from "@/components/data-workspace/WorkspaceTableHeader"
 import { usePopWorkspace } from "@/context/PopWorkspaceContext"
+import { usePopQuotesTable } from "@/hooks/usePopQuotesTable"
 import { usePopTimeZone } from "@/hooks/usePopTimeZone"
+import { popQuotesQueryRoot } from "@/lib/queryKeys"
+import { useQueryClient } from "@tanstack/react-query"
 import {
   computeDataWorkspaceDateBounds,
   dataWorkspaceDateFilterSummary,
@@ -95,6 +97,7 @@ type Props = {
 
 export function QuotesWorkspaceView({ siteId, popId }: Props) {
   const router = useRouter()
+  const queryClient = useQueryClient()
   const timeZone = usePopTimeZone()
   const { bootstrap, popAccess, loading: bootstrapLoading } = usePopWorkspace()
 
@@ -122,10 +125,7 @@ export function QuotesWorkspaceView({ siteId, popId }: Props) {
     ],
   )
 
-  const [rows, setRows] = useState<SaleQuoteTableRow[]>([])
-  const [listFetching, setListFetching] = useState(true)
-  const [error, setError] = useState<string | null>(null)
-  const [totalCount, setTotalCount] = useState(0)
+  const [actionError, setError] = useState<string | null>(null)
 
   const [searchInput, setSearchInput] = useState("")
   const [debouncedSearch, setDebouncedSearch] = useState("")
@@ -160,45 +160,45 @@ export function QuotesWorkspaceView({ siteId, popId }: Props) {
     [datePreset, dateBounds],
   )
 
-  const fetchList = useCallback(async () => {
-    setListFetching(true)
-    try {
-      const res = await getSaleQuotesTable(popId, {
-        page,
-        pageSize,
-        q: debouncedSearch,
-        dateFrom: dateBounds.from,
-        dateTo: dateBounds.to,
-      })
-      if (!res.success) {
-        setRows([])
-        setTotalCount(0)
-        setError(res.error)
-        return
-      }
-      setRows(res.rows)
-      setTotalCount(res.totalCount)
-      if (res.page !== page) setPage(res.page)
-      setError(null)
-    } catch {
-      setError("Error inesperado al cargar presupuestos.")
-      setRows([])
-      setTotalCount(0)
-    } finally {
-      setListFetching(false)
-    }
-  }, [
+  const quotesQuery = usePopQuotesTable(
     popId,
-    page,
-    pageSize,
-    debouncedSearch,
-    dateBounds.from,
-    dateBounds.to,
-  ])
+    {
+      page,
+      pageSize,
+      q: debouncedSearch,
+      dateFrom: dateBounds.from,
+      dateTo: dateBounds.to,
+    },
+    { enabled: Boolean(popId) },
+  )
+
+  const rows = quotesQuery.data?.success ? quotesQuery.data.rows : []
+  const totalCount = quotesQuery.data?.success ? quotesQuery.data.totalCount : 0
+  const listFetching =
+    quotesQuery.isPending ||
+    (quotesQuery.isFetching && !quotesQuery.isFetched)
+  const tableError =
+    quotesQuery.data?.success === false
+      ? quotesQuery.data.error
+      : quotesQuery.error instanceof Error
+        ? quotesQuery.error.message
+        : quotesQuery.error
+          ? String(quotesQuery.error)
+          : null
+  const error = actionError ?? tableError
+
+  const refreshQuotesList = useCallback(async () => {
+    if (!popId) return
+    await queryClient.invalidateQueries({
+      queryKey: popQuotesQueryRoot(popId),
+    })
+  }, [popId, queryClient])
 
   useEffect(() => {
-    void fetchList()
-  }, [fetchList])
+    const res = quotesQuery.data
+    if (!res?.success) return
+    if (res.page !== page) setPage(res.page)
+  }, [quotesQuery.data, page])
 
   useEffect(() => {
     const t = window.setTimeout(() => {
@@ -272,20 +272,30 @@ export function QuotesWorkspaceView({ siteId, popId }: Props) {
         })
       }
       try {
-        const res = await getSaleQuoteDetail(popId, quoteId)
-        if (!res.success) {
-          setError(res.error)
-          return
-        }
+        const loaded =
+          viewQuote?.id === quoteId
+            ? viewQuote
+            : null
+        const quote = loaded
+          ? loaded
+          : await (async () => {
+              const res = await getSaleQuoteDetail(popId, quoteId)
+              if (!res.success) {
+                setError(res.error)
+                return null
+              }
+              return res.quote
+            })()
+        if (!quote) return
         if (action === "download") {
-          await exportSaleQuotePdf(res.quote, {
+          await exportSaleQuotePdf(quote, {
             popName: bootstrap?.popName,
             popLogoUrl,
             popStreetAddress: popAccess?.pop.streetAddress ?? null,
             timeZone,
           })
         } else {
-          await printSaleQuotePdf(res.quote, {
+          await printSaleQuotePdf(quote, {
             popName: bootstrap?.popName,
             popLogoUrl,
             popStreetAddress: popAccess?.pop.streetAddress ?? null,
@@ -301,7 +311,14 @@ export function QuotesWorkspaceView({ siteId, popId }: Props) {
         dismissToast?.()
       }
     },
-    [bootstrap?.popName, popAccess?.pop.streetAddress, popId, popLogoUrl, timeZone],
+    [
+      bootstrap?.popName,
+      popAccess?.pop.streetAddress,
+      popId,
+      popLogoUrl,
+      timeZone,
+      viewQuote,
+    ],
   )
 
   const confirmDelete = useCallback(async () => {
@@ -314,8 +331,9 @@ export function QuotesWorkspaceView({ siteId, popId }: Props) {
       return
     }
     setDeleteTarget(null)
-    await fetchList()
-  }, [deleteTarget, fetchList, popId])
+    setError(null)
+    await refreshQuotesList()
+  }, [deleteTarget, popId, refreshQuotesList])
 
   const clearSearch = useCallback(() => {
     setSearchInput("")
@@ -376,7 +394,7 @@ export function QuotesWorkspaceView({ siteId, popId }: Props) {
           popId,
           popName: bootstrap?.popName ?? "",
           title: "Presupuestos",
-          loading: bootstrapLoading || listFetching,
+          loading: bootstrapLoading,
           userName: bootstrap?.userFullName,
           userAvatarSrc: bootstrap?.userImageUrl ?? undefined,
         }}

@@ -11,7 +11,6 @@ import {
   dataWorkspaceBlocksPageScopeClass,
 } from "@/components/data-workspace/dataWorkspaceListStyles"
 import { usePopWorkspace } from "@/context/PopWorkspaceContext"
-import withAuth from "@/hoc/withAuth"
 import { useParams } from "next/navigation"
 
 function TreasuryAccountDetailPage() {
@@ -66,4 +65,4 @@ function TreasuryAccountDetailPage() {
   )
 }
 
-export default withAuth(TreasuryAccountDetailPage)
+export default TreasuryAccountDetailPage

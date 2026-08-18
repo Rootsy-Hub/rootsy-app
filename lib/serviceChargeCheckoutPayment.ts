@@ -1,3 +1,4 @@
+import type { CheckoutCheckDetails } from "@/lib/checkoutCheck"
 import {
   operationPaymentKindLabel,
   type OperationPaymentKind,
@@ -8,6 +9,7 @@ export type ServiceChargeCheckoutPaymentSelection = {
   kind: OperationPaymentKind
   treasuryAccountId: string
   label: string
+  checkDetails?: CheckoutCheckDetails
 }
 
 /** Tipos visibles al cobrar un servicio (sin caja abierta obligatoria). */
@@ -16,6 +18,7 @@ export const SERVICE_CHARGE_CHECKOUT_KINDS: OperationPaymentKind[] = [
   "card_debit",
   "card_credit",
   "transfer",
+  "check",
 ]
 
 function findTreasuryName(
@@ -134,6 +137,12 @@ export function serviceChargeCheckoutKindAvailabilityError(
     }
     return null
   }
+  if (kind === "check") {
+    if (!context.checkReceivableTreasuryAccountId) {
+      return "Faltan las cuentas de cheques. Recargá la página o contactá a soporte."
+    }
+    return null
+  }
   return null
 }
 
@@ -150,6 +159,17 @@ export function resolveServiceChargePaymentKindSelection(
   )
   if (availabilityError) {
     return { action: "error", message: availabilityError }
+  }
+
+  if (kind === "check" && context.checkReceivableTreasuryAccountId) {
+    return {
+      action: "select",
+      selection: buildServiceChargeCheckoutPaymentSelection(
+        "check",
+        context.checkReceivableTreasuryAccountId,
+        context,
+      ),
+    }
   }
 
   const destinations = getServiceChargeCheckoutDestinations(kind, context)

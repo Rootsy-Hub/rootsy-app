@@ -378,6 +378,20 @@
     background: color-mix(in oklch, var(--foreground) 20%, transparent);
   }
 
+  /** Secure Fields de Mercado Pago — misma altura que Input (h-9). */
+  .mp-secure-field > div {
+    height: 100%;
+    width: 100%;
+  }
+
+  .mp-secure-field iframe {
+    display: block;
+    height: 100%;
+    width: 100%;
+    background: transparent !important;
+    border: 0 !important;
+  }
+
   /* Partículas / landing (alineado con /menu; la duración viene del style inline) */
   .animate-float {
     animation-name: rootsy-float;

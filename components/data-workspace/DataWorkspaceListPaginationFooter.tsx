@@ -49,7 +49,7 @@ import {
 } from "@/components/layouts/popHeaderBackdropStyles"
 import { usePopWorkspaceOptional } from "@/context/PopWorkspaceContext"
 import { cn } from "@/lib/utils"
-import type { PaginationItem } from "@/app/[siteId]/[popId]/layout/layoutPreviewPagination"
+import type { PaginationItem } from "@/components/data-workspace/buildPaginationItems"
 import {
   ChevronLeft,
   ChevronRight,

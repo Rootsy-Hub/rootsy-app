@@ -10,7 +10,6 @@ import {
   CardTitle,
 } from "@/components/ui/card"
 import { useAuth } from "@/context/AuthContextSupabase"
-import withAuth from "@/hoc/withAuth"
 import { useParams, useRouter } from "next/navigation"
 import { useState } from "react"
 
@@ -85,4 +84,4 @@ function InvitePopPage() {
   )
 }
 
-export default withAuth(InvitePopPage)
+export default InvitePopPage

@@ -6,7 +6,7 @@ import {
   formatBackofficeDate,
   formatBackofficeMoney,
 } from "@/app/backoffice/components/BackofficeSection"
-import { buildPaginationItems } from "@/app/[siteId]/[popId]/layout/layoutPreviewPagination"
+import { buildPaginationItems } from "@/components/data-workspace/buildPaginationItems"
 import { DataWorkspaceListPaginationFooter } from "@/components/data-workspace/DataWorkspaceListPaginationFooter"
 import { RootsIconButton, RootsLinkButton } from "@/components/rootsy-button"
 import {

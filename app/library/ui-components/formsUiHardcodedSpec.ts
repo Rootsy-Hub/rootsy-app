@@ -199,7 +199,13 @@ export function getFormAssistUiStyle(
           tone === "dark" ? LAYOUTS_OPERAR_FORM_DARK.textMuted : hx("bruma", "500"),
       }
     case "error":
-      return { ...base, color: semanticHex("status-danger") }
+      return {
+        ...base,
+        color:
+          tone === "dark"
+            ? `color-mix(in srgb, ${semanticHex("status-danger")} 72%, white)`
+            : semanticHex("status-danger"),
+      }
     case "warning":
       return { ...base, color: semanticTextHex("status-warning") }
     case "success":

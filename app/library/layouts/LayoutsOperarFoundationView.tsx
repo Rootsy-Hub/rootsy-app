@@ -1,24 +1,23 @@
 "use client"
 
-import { LibraryRelatedLinksSection } from "@/app/library/libraryDocPrimitives"
+import {
+  LibraryDocSection,
+  LibraryRelatedLinksSection,
+} from "@/app/library/libraryDocPrimitives"
 import {
   LAYOUTS_RELATED_LINKS,
   getLayoutsPageMeta,
-  layoutsOperarPreviewHref,
 } from "@/app/library/layouts/layoutsLibraryNav"
 import { LayoutsSystemHero } from "@/app/library/layouts/LayoutsDocShared"
 import {
   LayoutsOperarCatalogSectionDemo,
   LayoutsOperarContentGridWireframeDemo,
   LayoutsOperarDocSubsection,
-  LayoutsOperarFullPageDraft,
   LayoutsOperarOverviewIntro,
   LayoutsOperarTicketSectionDemo,
   LayoutsOperarToolboxSectionDemo,
 } from "@/app/library/layouts/LayoutsOperarDocPrimitives"
 import { librarySectionHref } from "@/app/library/layoutLibraryShared"
-import { Button } from "@/components/ui/button"
-import { ExternalLink } from "lucide-react"
 import Link from "next/link"
 
 type Props = {
@@ -33,24 +32,6 @@ export function LayoutsOperarFoundationView({ sectionId }: Props) {
       <LayoutsSystemHero variant="operar" />
 
       <LayoutsOperarOverviewIntro />
-
-      <LibraryDocSection id="layouts-operar-preview" title="Vista previa">
-        <div className="space-y-3">
-          <div className="flex justify-end">
-            <Button variant="outline" size="sm" asChild>
-              <Link
-                href={layoutsOperarPreviewHref()}
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                <ExternalLink className="size-4" aria-hidden />
-                Pantalla completa
-              </Link>
-            </Button>
-          </div>
-          <LayoutsOperarFullPageDraft />
-        </div>
-      </LibraryDocSection>
 
       <LibraryDocSection id="layouts-operar-grid" title="1 · Grid">
         <LayoutsOperarDocSubsection title="Catálogo · toolbox · ticket">

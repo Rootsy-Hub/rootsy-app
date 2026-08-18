@@ -56,7 +56,8 @@ function LibraryShellChromeInner({ children }: LibraryShellChromeProps) {
         title="Librería"
         contentFlush
         usePopBackdrop={false}
-        rootClassName={cn(libraryThemeClass, "rootsy-app-light bg-background")}
+        useHomeBackdrop
+        rootClassName={cn(libraryThemeClass, "rootsy-app-light")}
         loading={popContext.loading || Boolean(popWorkspace?.loading)}
         backHref={backHref}
         userName={displayName}

@@ -7,6 +7,7 @@ const PAYMENT_KIND_ACCOUNT_FALLBACK: Record<string, readonly string[]> = {
   transfer: ["1.1.1.02"],
   card_debit: ["1.1.1.03"],
   card_credit: ["1.1.1.03"],
+  check: ["1.1.2.02", "2.1.1.02"],
   other: ["1.1.1.04", "1.1.1.01"],
 }
 

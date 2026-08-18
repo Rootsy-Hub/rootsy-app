@@ -2,7 +2,6 @@ import type { LucideIcon } from "lucide-react"
 import {
   Activity,
   Banknote,
-  BarChart3,
   Bell,
   Briefcase,
   BookOpen,
@@ -35,7 +34,6 @@ const ROOTS_MODULE_ICON_MAP: Record<string, LucideIcon> = {
   clients: Users,
   current_accounts: CreditCard,
   checks: Wallet,
-  summary: BarChart3,
   statistics: PieChart,
   reports: FileCheck,
   operations: Activity,

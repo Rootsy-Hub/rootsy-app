@@ -1,7 +1,6 @@
 "use client"
 
 import { CobrarServiciosWorkspace } from "@/app/[siteId]/[popId]/cobrar-servicios/components/CobrarServiciosWorkspace"
-import withAuth from "@/hoc/withAuth"
 import { useParams } from "next/navigation"
 
 function CobrarServiciosPage() {
@@ -14,4 +13,4 @@ function CobrarServiciosPage() {
   return <CobrarServiciosWorkspace siteId={siteId} popId={popId} />
 }
 
-export default withAuth(CobrarServiciosPage)
+export default CobrarServiciosPage

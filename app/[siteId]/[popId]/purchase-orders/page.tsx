@@ -1,14 +1,14 @@
-"use client"
-
 import { PurchaseOrdersWorkspaceView } from "@/components/purchase-orders/PurchaseOrdersWorkspaceView"
-import withAuth from "@/hoc/withAuth"
-import { useParams } from "next/navigation"
+import { PopListHydrationPage } from "@/lib/PopListHydrationPage"
+import { prefetchPopPurchaseOrdersTable } from "@/lib/prefetchPopListados"
+import type { PopPageParams } from "@/lib/workspaceSearchParams"
 
-function PurchaseOrdersPage() {
-  const params = useParams()
-  const siteId = typeof params?.siteId === "string" ? params.siteId : ""
-  const popId = typeof params?.popId === "string" ? params.popId : ""
-
+export default async function PurchaseOrdersPage({
+  params,
+}: {
+  params: PopPageParams
+}) {
+  const { siteId, popId } = await params
   if (!siteId || !popId) {
     return (
       <div className="min-h-screen bg-background p-10 text-sm text-muted-foreground">
@@ -17,7 +17,9 @@ function PurchaseOrdersPage() {
     )
   }
 
-  return <PurchaseOrdersWorkspaceView siteId={siteId} popId={popId} />
+  return (
+    <PopListHydrationPage state={prefetchPopPurchaseOrdersTable(popId)}>
+      <PurchaseOrdersWorkspaceView siteId={siteId} popId={popId} />
+    </PopListHydrationPage>
+  )
 }
-
-export default withAuth(PurchaseOrdersPage)

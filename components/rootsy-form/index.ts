@@ -1,6 +1,7 @@
 export { RootsFormField } from "@/components/rootsy-form/RootsFormField"
 export { RootsFormToneProvider } from "@/components/rootsy-form/rootsFormToneContext"
 export { RootsFormLabelInfo } from "@/components/rootsy-form/RootsFormLabelInfo"
+export { RootsFormControlInput } from "@/components/rootsy-form/RootsFormControlInput"
 export { RootsFormTextField } from "@/components/rootsy-form/RootsFormTextField"
 export { RootsFormSearchField } from "@/components/rootsy-form/RootsFormSearchField"
 export { RootsFormTextareaField } from "@/components/rootsy-form/RootsFormTextareaField"

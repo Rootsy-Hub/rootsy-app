@@ -136,8 +136,13 @@ export async function createTreasuryChartSubaccount(
   const level = Math.max(1, (parentRow.level ?? 4) + 1)
 
   const accountType =
-    kind === "card_payable" ? "pasivo_corriente" : "activo_corriente"
-  const nature = kind === "card_payable" ? "acreedora" : "deudora"
+    kind === "card_payable" || kind === "check_payable"
+      ? "pasivo_corriente"
+      : "activo_corriente"
+  const nature =
+    kind === "card_payable" || kind === "check_payable"
+      ? "acreedora"
+      : "deudora"
 
   const { data: inserted, error: insErr } = await supabase
     .from("accounting_chart_of_accounts")

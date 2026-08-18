@@ -1,6 +1,9 @@
 "use client"
 
-import type { PurchaseCatalogCategorySection } from "@/app/[siteId]/[popId]/purchases/actions"
+import type {
+  PurchaseCatalogArticle,
+  PurchaseCatalogCategorySection,
+} from "@/app/[siteId]/[popId]/purchases/actions"
 import {
   type PurchaseCatalogProduct,
   type PurchaseCatalogView,
@@ -10,21 +13,32 @@ import { PurchaseCatalogSidebarNav } from "@/components/purchase-operation/Purch
 import { PurchaseCatalogToolbar } from "@/components/purchase-operation/PurchaseCatalogToolbar"
 import { SaleCatalogBrowserSkeleton } from "@/components/sale-operation/SaleCatalogBrowserSkeleton"
 import { SaleCatalogEmptyMascot } from "@/components/sale-operation/SaleCatalogEmptyMascot"
+import { SaleCatalogInfiniteFooter } from "@/components/sale-operation/SaleCatalogInfiniteFooter"
+import { SaleCatalogVirtualGrid } from "@/components/sale-operation/SaleCatalogVirtualGrid"
 import { SaleCatalogSidebarNavSkeleton } from "@/components/sale-operation/SaleCatalogSidebarNavSkeleton"
+import { useDebouncedValue } from "@/hooks/useDebouncedValue"
+import { useInfiniteScrollSentinel } from "@/hooks/useInfiniteScrollSentinel"
+import { usePurchaseCatalogItems } from "@/hooks/useOperateCatalogItems"
+import {
+  OPERATE_CATALOG_SEARCH_DEBOUNCE_MS,
+  purchaseCatalogViewToItemsFilter,
+} from "@/lib/operateCatalogPage"
+import { resolveCatalogProductImage } from "@/lib/menuCatalogProduct"
 import {
   layoutsOperarCatalogCanvasClass,
   layoutsOperarCatalogCanvasScrollClass,
   layoutsOperarCatalogColumnClass,
-  layoutsOperarCatalogGridClass,
   layoutsOperarCatalogSidebarClass,
   layoutsOperarCatalogSidebarClosedClass,
   layoutsOperarCatalogSidebarInnerClass,
   layoutsOperarCatalogSidebarOpenClass,
 } from "@/app/library/layouts/layoutsOperarStyles"
 import { cn } from "@/lib/utils"
-import { useEffect, useMemo, useRef, useState } from "react"
+import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 
 type Props = {
+  popId?: string
+  mergeCatalogArticles?: (articles: PurchaseCatalogArticle[]) => void
   categorySections: readonly PurchaseCatalogCategorySection[]
   products: PurchaseCatalogProduct[]
   loading: boolean
@@ -32,6 +46,20 @@ type Props = {
   onAddProduct: (productId: string, quantity?: number) => void
   catalogSidebarOpen?: boolean
   className?: string
+}
+
+function articleToProducto(a: PurchaseCatalogArticle): PurchaseCatalogProduct {
+  return {
+    id: a.id,
+    nombre: a.name,
+    descripcion: a.description.trim() ? a.description : "—",
+    iva: a.iva,
+    categoria: a.categoryName.trim() ? a.categoryName : "—",
+    categoriaFiltro: `${a.itemKind}:${a.categoryId}`,
+    imagen: resolveCatalogProductImage(a.id, a.imageUrl),
+    unitOfMeasure: a.unitOfMeasure,
+    costs: a.costs,
+  }
 }
 
 function defaultPurchaseCatalogView(
@@ -57,8 +85,10 @@ function isValidPurchaseCatalogView(
 }
 
 export function PurchaseCatalogBrowser({
+  popId,
+  mergeCatalogArticles,
   categorySections,
-  products,
+  products: _products,
   loading,
   error,
   onAddProduct,
@@ -73,20 +103,31 @@ export function PurchaseCatalogBrowser({
   const [cantidadIngreso, setCantidadIngreso] = useState(1)
   const vistaAntesBusquedaRef = useRef<PurchaseCatalogView | null>(null)
   const busquedaTrimPrevRef = useRef("")
+  const [scrollRoot, setScrollRoot] = useState<HTMLElement | null>(null)
+  const [sentinel, setSentinel] = useState<HTMLElement | null>(null)
 
-  const productosFiltrados = useMemo(() => {
-    const q = busqueda.trim().toLowerCase()
-    const hayBusqueda = q.length > 0
-    return products.filter((p) => {
-      const matchVista =
-        hayBusqueda || p.categoriaFiltro === vistaCatalogo.categoria
-      const matchQ =
-        !q ||
-        p.nombre.toLowerCase().includes(q) ||
-        p.descripcion.toLowerCase().includes(q)
-      return matchVista && matchQ
-    })
-  }, [busqueda, products, vistaCatalogo])
+  const debouncedSearch = useDebouncedValue(
+    busqueda,
+    OPERATE_CATALOG_SEARCH_DEBOUNCE_MS,
+  )
+  const itemsFilter = useMemo(
+    () => purchaseCatalogViewToItemsFilter(vistaCatalogo.categoria, debouncedSearch),
+    [debouncedSearch, vistaCatalogo.categoria],
+  )
+  const paged = usePurchaseCatalogItems(
+    popId,
+    itemsFilter,
+    Boolean(popId) && !error,
+  )
+
+  useEffect(() => {
+    mergeCatalogArticles?.(paged.articles)
+  }, [mergeCatalogArticles, paged.articles])
+
+  const productosFiltrados = useMemo(
+    () => paged.articles.map(articleToProducto),
+    [paged.articles],
+  )
 
   useEffect(() => {
     setVistaCatalogo((prev) => {
@@ -117,6 +158,24 @@ export function PurchaseCatalogBrowser({
 
     busquedaTrimPrevRef.current = trimmed
   }, [busqueda, vistaCatalogo])
+
+  const fetchNextPage = paged.fetchNextPage
+  const loadMore = useCallback(() => {
+    if (!paged.hasNextPage || paged.isFetchingNextPage) return
+    void fetchNextPage()
+  }, [fetchNextPage, paged.hasNextPage, paged.isFetchingNextPage])
+
+  useInfiniteScrollSentinel(
+    scrollRoot,
+    sentinel,
+    paged.hasNextPage && !paged.isFetchingNextPage,
+    loadMore,
+  )
+
+  const displayError = error ?? paged.error
+  const showGridSkeleton =
+    !error && paged.isLoading && productosFiltrados.length === 0
+  const isEmpty = !showGridSkeleton && !displayError && productosFiltrados.length === 0
 
   return (
     <div className={cn(layoutsOperarCatalogColumnClass, className)}>
@@ -157,36 +216,35 @@ export function PurchaseCatalogBrowser({
         />
 
         <div
+          ref={setScrollRoot}
           className={cn(
             "min-h-0",
-            loading && !error
+            showGridSkeleton
               ? layoutsOperarCatalogCanvasScrollClass
-              : error
+              : displayError
                 ? "flex flex-1 flex-col p-6"
-                : productosFiltrados.length === 0
+                : isEmpty
                   ? "relative overflow-hidden p-0"
                   : layoutsOperarCatalogCanvasScrollClass,
           )}
         >
-          {loading && !error ? (
+          {showGridSkeleton ? (
             <SaleCatalogBrowserSkeleton variant={modoVista} />
-          ) : error ? (
+          ) : displayError ? (
             <div className="flex min-h-[200px] flex-1 flex-col items-center justify-center gap-2 text-center">
-              <p className="max-w-md text-sm text-rose-300">{error}</p>
+              <p className="max-w-md text-sm text-rose-300">{displayError}</p>
             </div>
-          ) : productosFiltrados.length === 0 ? (
+          ) : isEmpty ? (
             <SaleCatalogEmptyMascot hasSearch={busqueda.trim().length > 0} />
           ) : (
-            <div
-              className={
-                modoVista === "grid"
-                  ? layoutsOperarCatalogGridClass
-                  : "flex flex-col gap-2"
-              }
-            >
-              {productosFiltrados.map((product) => (
+            <SaleCatalogVirtualGrid
+              items={productosFiltrados}
+              modoVista={modoVista}
+              scrollRoot={scrollRoot}
+              resetKey={`${itemsFilter.section}:${itemsFilter.categoryId ?? ""}:${itemsFilter.search}:${modoVista}`}
+              getItemKey={(product) => product.id}
+              renderItem={(product) => (
                 <PurchaseCatalogProductCard
-                  key={product.id}
                   product={product}
                   variant={modoVista}
                   onClick={() => {
@@ -194,8 +252,17 @@ export function PurchaseCatalogBrowser({
                     setCantidadIngreso(1)
                   }}
                 />
-              ))}
-            </div>
+              )}
+              footer={
+                paged.hasNextPage || paged.isFetchingNextPage ? (
+                  <SaleCatalogInfiniteFooter
+                    hasMore={paged.hasNextPage}
+                    loadingMore={paged.isFetchingNextPage}
+                    sentinelRef={setSentinel}
+                  />
+                ) : null
+              }
+            />
           )}
         </div>
       </section>

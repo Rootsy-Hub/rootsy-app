@@ -280,13 +280,14 @@ const validatePopAccessCached = cache(
       const user = await requireAuthenticatedUser()
       const supabase = await createClient()
 
-      const { data: hasAccess, error: accessError } = await supabase.rpc(
-        "user_has_pop_access",
-        {
-          pop_id: popId,
-          user_id: user.uid,
-        },
-      )
+      const [{ data: hasAccess, error: accessError }, active] =
+        await Promise.all([
+          supabase.rpc("user_has_pop_access", {
+            pop_id: popId,
+            user_id: user.uid,
+          }),
+          isPopActive(popId),
+        ])
 
       if (accessError || !hasAccess) {
         return {
@@ -295,8 +296,6 @@ const validatePopAccessCached = cache(
           error: "No tienes acceso a este POP",
         }
       }
-
-      const active = await isPopActive(popId)
 
       if (!active) {
         return {

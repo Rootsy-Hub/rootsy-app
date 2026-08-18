@@ -50,10 +50,6 @@ export function getLayoutsPageMeta(sectionId: string): LayoutsPageMeta | undefin
   return LAYOUTS_PAGE_META[sectionId]
 }
 
-export function layoutsOperarPreviewHref(): string {
-  return "/library/layouts-operar-preview"
-}
-
 export const LAYOUTS_RELATED_LINKS = [
   { sectionId: "colors-new", label: "Color", hint: "Sombra · bruma · savia." },
   { sectionId: "elevation", label: "Elevación", hint: "Superficies del contenido." },

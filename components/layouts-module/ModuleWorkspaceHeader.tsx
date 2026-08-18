@@ -28,11 +28,12 @@ import {
 import type { ReactNode } from "react"
 
 export type ModuleWorkspaceHeaderProps = {
-  backHref: string
-  popLogoSrc: string
-  popName: string
+  backHref?: string
+  showFullscreen?: boolean
+  popLogoSrc?: string
+  popName?: string
   popStreetAddress?: string | null
-  title: string
+  title?: string
   loading?: boolean
   headerVariant?: DataWorkspaceHeaderVariant
   titleAdornment?: ReactNode
@@ -45,15 +46,16 @@ export type ModuleWorkspaceHeaderProps = {
   isOnline?: boolean
   subline?: string
   hasResolvedRole?: boolean
-  isFullscreen: boolean
-  onToggleFullscreen: () => void
-  canCollapseSidebar: boolean
-  sidebarOpen: boolean
-  onToggleSidebar: () => void
+  isFullscreen?: boolean
+  onToggleFullscreen?: () => void
+  canCollapseSidebar?: boolean
+  sidebarOpen?: boolean
+  onToggleSidebar?: () => void
 }
 
 export function ModuleWorkspaceHeader({
   backHref,
+  showFullscreen = true,
   popLogoSrc,
   popName,
   popStreetAddress,
@@ -70,45 +72,56 @@ export function ModuleWorkspaceHeader({
   isOnline = true,
   subline,
   hasResolvedRole = false,
-  isFullscreen,
+  isFullscreen = false,
   onToggleFullscreen,
-  canCollapseSidebar,
-  sidebarOpen,
+  canCollapseSidebar = false,
+  sidebarOpen = true,
   onToggleSidebar,
 }: ModuleWorkspaceHeaderProps) {
   const useModuleTypography = isLayoutsTablesHeader(headerVariant)
   const posChrome = { theme: "pos" as const, emphasis: "ghost" as const }
   const resolvedPopStreetAddress = popStreetAddress?.trim() || null
+  const resolvedTitle = title?.trim() || null
+  const showBack = Boolean(backHref)
+  const showFullscreenButton = showFullscreen && Boolean(onToggleFullscreen)
+  const showSidebarToggle = canCollapseSidebar && Boolean(onToggleSidebar)
+  const showBrand = Boolean(popLogoSrc || popName || loading)
+  const showLeftChrome = showBack || showFullscreenButton || showSidebarToggle
+  const showActions = Boolean(headerActions || sectionMenu)
 
   return (
     <header className={cn("relative z-20 shrink-0", layoutsModuleHeaderGlassClass)}>
       <div className="relative z-10 grid h-17 grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-4 px-4">
         <div className="flex min-w-0 items-center gap-2">
-          <RootsIconButton
-            {...posChrome}
-            href={backHref}
-            label="Volver al menú"
-            className="transition-transform hover:[&_svg]:-translate-x-0.5"
-          >
-            <ArrowLeft aria-hidden />
-          </RootsIconButton>
-          <RootsIconButton
-            {...posChrome}
-            label={
-              isFullscreen ? "Salir de pantalla completa" : "Pantalla completa"
-            }
-            title={
-              isFullscreen ? "Salir de pantalla completa" : "Pantalla completa"
-            }
-            onClick={onToggleFullscreen}
-          >
-            {isFullscreen ? (
-              <Minimize2 aria-hidden />
-            ) : (
-              <Maximize2 aria-hidden />
-            )}
-          </RootsIconButton>
-          {canCollapseSidebar ? (
+          {showBack ? (
+            <RootsIconButton
+              {...posChrome}
+              href={backHref}
+              label="Volver al menú"
+              className="transition-transform hover:[&_svg]:-translate-x-0.5"
+            >
+              <ArrowLeft aria-hidden />
+            </RootsIconButton>
+          ) : null}
+          {showFullscreenButton ? (
+            <RootsIconButton
+              {...posChrome}
+              label={
+                isFullscreen ? "Salir de pantalla completa" : "Pantalla completa"
+              }
+              title={
+                isFullscreen ? "Salir de pantalla completa" : "Pantalla completa"
+              }
+              onClick={onToggleFullscreen}
+            >
+              {isFullscreen ? (
+                <Minimize2 aria-hidden />
+              ) : (
+                <Maximize2 aria-hidden />
+              )}
+            </RootsIconButton>
+          ) : null}
+          {showSidebarToggle ? (
             <RootsIconButton
               {...posChrome}
               onClick={onToggleSidebar}
@@ -132,51 +145,61 @@ export function ModuleWorkspaceHeader({
               )}
             </RootsIconButton>
           ) : null}
-          <div
-            className={cn("h-6 w-px", dataWorkspaceHeaderDividerClass(headerVariant))}
-            aria-hidden
-          />
-          <div className="flex min-w-0 items-center gap-2.5">
+          {showLeftChrome && showBrand ? (
             <div
-              className={cn(
-                "size-10 overflow-hidden rounded-lg ring-1",
-                dataWorkspaceHeaderPopRingClass(headerVariant),
-              )}
-            >
-              <img src={popLogoSrc} alt="" className="size-full object-cover" />
-            </div>
-            <div className="flex min-w-0 flex-col leading-tight">
-              <span
-                className={
-                  useModuleTypography
-                    ? layoutsModuleHeaderPopNameClass
-                    : "truncate text-sm font-semibold text-zinc-100"
-                }
-              >
-                {popName || (loading ? "…" : "—")}
-              </span>
-              {resolvedPopStreetAddress ? (
-                <span
-                  className={
-                    useModuleTypography
-                      ? layoutsModuleHeaderPopAddressClass
-                      : "truncate text-[11px] leading-tight text-zinc-400"
-                  }
+              className={cn("h-6 w-px", dataWorkspaceHeaderDividerClass(headerVariant))}
+              aria-hidden
+            />
+          ) : null}
+          {showBrand ? (
+            <div className="flex min-w-0 items-center gap-2.5">
+              {popLogoSrc ? (
+                <div
+                  className={cn(
+                    "size-10 overflow-hidden rounded-lg ring-1",
+                    dataWorkspaceHeaderPopRingClass(headerVariant),
+                  )}
                 >
-                  {resolvedPopStreetAddress}
-                </span>
+                  <img src={popLogoSrc} alt="" className="size-full object-cover" />
+                </div>
+              ) : null}
+              {popName || loading ? (
+                <div className="flex min-w-0 flex-col leading-tight">
+                  <span
+                    className={
+                      useModuleTypography
+                        ? layoutsModuleHeaderPopNameClass
+                        : "truncate text-sm font-semibold text-zinc-100"
+                    }
+                  >
+                    {popName || (loading ? "…" : "—")}
+                  </span>
+                  {resolvedPopStreetAddress ? (
+                    <span
+                      className={
+                        useModuleTypography
+                          ? layoutsModuleHeaderPopAddressClass
+                          : "truncate text-[11px] leading-tight text-zinc-400"
+                      }
+                    >
+                      {resolvedPopStreetAddress}
+                    </span>
+                  ) : null}
+                </div>
               ) : null}
             </div>
-          </div>
+          ) : null}
         </div>
 
         <div className="flex flex-wrap items-center justify-center gap-2">
-          <DataWorkspaceHeaderTitle title={title} headerVariant={headerVariant} />
+          {resolvedTitle ? (
+            <DataWorkspaceHeaderTitle title={resolvedTitle} headerVariant={headerVariant} />
+          ) : null}
           {titleAdornment}
         </div>
 
         <div className="flex shrink-0 items-center justify-end gap-2">
-          {headerActions || sectionMenu ? (
+          {showActions ? (
             <div className="flex items-center gap-1.5">
               {headerActions}
               {sectionMenu}
@@ -184,7 +207,7 @@ export function ModuleWorkspaceHeader({
           ) : null}
           {userName ? (
             <>
-              {headerActions || sectionMenu ? (
+              {showActions ? (
                 <div
                   className={cn(
                     "h-6 w-px",

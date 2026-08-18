@@ -1,7 +1,9 @@
 import {
   Building2,
   CreditCard,
+  Home,
   LayoutDashboard,
+  Mail,
   Store,
   UserCircle,
   Users,
@@ -13,9 +15,16 @@ export type BackofficeNavItem = {
   href: string
   label: string
   icon: LucideIcon
+  children?: BackofficeNavItem[]
 }
 
 export const BACKOFFICE_NAV: BackofficeNavItem[] = [
+  {
+    id: "inicio",
+    href: "/backoffice/inicio",
+    label: "Inicio",
+    icon: Home,
+  },
   {
     id: "dashboard",
     href: "/backoffice/dashboard",
@@ -52,12 +61,27 @@ export const BACKOFFICE_NAV: BackofficeNavItem[] = [
     label: "Planes",
     icon: CreditCard,
   },
+  {
+    id: "emails",
+    href: "/backoffice/emails",
+    label: "Correos",
+    icon: Mail,
+  },
 ]
 
-export function backofficeNavItem(pathname: string): BackofficeNavItem | null {
-  return (
-    BACKOFFICE_NAV.find(
-      (item) => pathname === item.href || pathname.startsWith(`${item.href}/`),
-    ) ?? null
+function navMatches(item: BackofficeNavItem, pathname: string): boolean {
+  return pathname === item.href || pathname.startsWith(`${item.href}/`)
+}
+
+function flattenNav(items: readonly BackofficeNavItem[]): BackofficeNavItem[] {
+  return items.flatMap((item) =>
+    item.children?.length ? [item, ...item.children] : [item],
   )
+}
+
+export function backofficeNavItem(pathname: string): BackofficeNavItem | null {
+  const matches = flattenNav(BACKOFFICE_NAV)
+    .filter((item) => navMatches(item, pathname))
+    .sort((a, b) => b.href.length - a.href.length)
+  return matches[0] ?? null
 }

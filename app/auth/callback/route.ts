@@ -47,6 +47,8 @@ function redirectAfterAuth(request: Request, origin: string, next: string) {
 export async function GET(request: Request) {
   const { searchParams, origin } = new URL(request.url)
   const code = searchParams.get("code")
+  const tokenHash = searchParams.get("token_hash")
+  const otpType = searchParams.get("type")
   const next = resolveNextPath(
     searchParams,
     request.headers.get("cookie"),
@@ -55,6 +57,23 @@ export async function GET(request: Request) {
   if (code) {
     const supabase = await createClient()
     const { error } = await supabase.auth.exchangeCodeForSession(code)
+    if (!error) {
+      return redirectAfterAuth(request, origin, next)
+    }
+  }
+
+  if (tokenHash && otpType) {
+    const supabase = await createClient()
+    const { error } = await supabase.auth.verifyOtp({
+      type: otpType as
+        | "signup"
+        | "invite"
+        | "magiclink"
+        | "recovery"
+        | "email_change"
+        | "email",
+      token_hash: tokenHash,
+    })
     if (!error) {
       return redirectAfterAuth(request, origin, next)
     }

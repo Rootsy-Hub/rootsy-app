@@ -14,11 +14,17 @@ import {
   type BannerDensityId,
   type BannerIntentId,
   type BannerLayoutId,
+  type BannerTone,
 } from "@/app/library/banner/rootsyBannerSystem"
 import { rootsyColorHex } from "@/lib/design-system"
 import { ROOTSY_FONT_WEIGHTS, ROOTSY_TEXT_STYLES } from "@/lib/design-system/tokens/typography"
 
-export type { BannerDensityId, BannerIntentId, BannerLayoutId } from "@/app/library/banner/rootsyBannerSystem"
+export type {
+  BannerDensityId,
+  BannerIntentId,
+  BannerLayoutId,
+  BannerTone,
+} from "@/app/library/banner/rootsyBannerSystem"
 
 const hx = rootsyColorHex
 
@@ -59,41 +65,52 @@ export const BANNERS_UI_DEMO_COPY = {
   },
 } as const
 
-export function getBannerTitleUiStyle() {
+export function getBannerTitleUiStyle(tone: BannerTone = "light") {
   return {
     fontFamily: "var(--rootsy-font-ui)",
     fontSize: ROOTSY_TEXT_STYLES.body.fontSize,
     lineHeight: ROOTSY_TEXT_STYLES.body.lineHeight,
     fontWeight: ROOTSY_FONT_WEIGHTS.medium.value,
-    color: hx("bruma", "900"),
+    color: tone === "dark" ? "var(--rootsy-white)" : hx("bruma", "900"),
   }
 }
 
-export function getBannerMessageUiStyle(intent: BannerIntentId) {
+export function getBannerMessageUiStyle(
+  intent: BannerIntentId,
+  tone: BannerTone = "light",
+) {
   return {
     fontFamily: "var(--rootsy-font-ui)",
     fontSize: ROOTSY_TEXT_STYLES["body.small"].fontSize,
     lineHeight: ROOTSY_TEXT_STYLES["body.small"].lineHeight,
     fontWeight: ROOTSY_FONT_WEIGHTS.regular.value,
-    color: getBannerIntentMessageHex(intent),
+    color: getBannerIntentMessageHex(intent, tone),
   }
 }
 
-export function getBannerActionUiStyle(intent: BannerIntentId) {
+export function getBannerActionUiStyle(
+  intent: BannerIntentId,
+  tone: BannerTone = "light",
+) {
   return {
     fontFamily: "var(--rootsy-font-ui)",
     fontSize: ROOTSY_TEXT_STYLES["body.small"].fontSize,
     lineHeight: ROOTSY_TEXT_STYLES["body.small"].lineHeight,
     fontWeight: ROOTSY_FONT_WEIGHTS.medium.value,
-    color: intent === "neutral" ? hx("savia", "600") : getBannerIntentAccentHex(intent),
+    color:
+      intent === "neutral"
+        ? tone === "dark"
+          ? "var(--rootsy-savia-400)"
+          : hx("savia", "600")
+        : getBannerIntentAccentHex(intent, tone),
     whiteSpace: "nowrap" as const,
   }
 }
 
-export function getBannerDismissUiStyle() {
+export function getBannerDismissUiStyle(tone: BannerTone = "light") {
   return {
     sizePx: ROOTSY_BANNER_ANATOMY.dismissHitPx,
-    color: hx("bruma", "500"),
+    color: tone === "dark" ? "var(--rootsy-sombra-300)" : hx("bruma", "500"),
     borderRadiusPx: ROOTSY_BANNER_ANATOMY.dismissRadiusPx,
   }
 }
@@ -112,8 +129,9 @@ export type BannerUiSurface = {
 export function getBannerUiSurface(
   intent: BannerIntentId,
   density: BannerDensityId = "default",
+  tone: BannerTone = "light",
 ): BannerUiSurface {
-  const surface = getBannerSurfaceColors(intent)
+  const surface = getBannerSurfaceColors(intent, tone)
   const padding = getBannerDensityPadding(density)
 
   return {
@@ -128,9 +146,9 @@ export function getBannerUiSurface(
 export function getBannerShellUiStyle(
   intent: BannerIntentId,
   density: BannerDensityId = "default",
-  options?: { fullWidth?: boolean },
+  options?: { fullWidth?: boolean; tone?: BannerTone },
 ) {
-  const surface = getBannerUiSurface(intent, density)
+  const surface = getBannerUiSurface(intent, density, options?.tone)
 
   return {
     backgroundColor: surface.backgroundColor,
@@ -146,11 +164,14 @@ export function getBannerShellUiStyle(
   }
 }
 
-export function getBannerIconUiStyle(intent: BannerIntentId) {
+export function getBannerIconUiStyle(
+  intent: BannerIntentId,
+  tone: BannerTone = "light",
+) {
   return {
     width: ROOTSY_BANNER_ANATOMY.iconSlotPx,
     height: ROOTSY_BANNER_ANATOMY.iconSlotPx,
-    color: getBannerIntentAccentHex(intent),
+    color: getBannerIntentAccentHex(intent, tone),
     flexShrink: 0,
   }
 }

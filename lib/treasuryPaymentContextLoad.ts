@@ -41,6 +41,8 @@ export async function fetchTreasuryPaymentContext(
   }
 
   let defaultCashTreasuryAccountId: string | null = null
+  let checkReceivableTreasuryAccountId: string | null = null
+  let checkPayableTreasuryAccountId: string | null = null
   const cashTreasuryAccounts: TreasuryPaymentContext["cashTreasuryAccounts"] =
     []
   const bankTreasuryAccounts: TreasuryPaymentContext["bankTreasuryAccounts"] =
@@ -56,6 +58,20 @@ export async function fetchTreasuryPaymentContext(
       code?: string
     } | null
     const code = String(chart?.code ?? "")
+
+    if (kind === "check_receivable") {
+      if (!checkReceivableTreasuryAccountId) {
+        checkReceivableTreasuryAccountId = id
+      }
+      continue
+    }
+
+    if (kind === "check_payable") {
+      if (!checkPayableTreasuryAccountId) {
+        checkPayableTreasuryAccountId = id
+      }
+      continue
+    }
 
     if (kind === "card_payable") {
       payTreasuryAccounts.push({ id, name })
@@ -87,6 +103,8 @@ export async function fetchTreasuryPaymentContext(
       bankTreasuryAccounts,
       posTreasuryAccounts,
       payTreasuryAccounts,
+      checkReceivableTreasuryAccountId,
+      checkPayableTreasuryAccountId,
     },
   }
 }

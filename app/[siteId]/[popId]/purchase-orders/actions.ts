@@ -6,8 +6,7 @@ import {
   PURCHASE_ORDER_TABLE_PAGE_SIZES,
 } from "@/app/[siteId]/[popId]/purchase-orders/orderConstants"
 import { POP_PERMS, permissionKeysInclude } from "@/lib/popPermissionConstants"
-import { validatePopAccess } from "@/lib/popHelpers"
-import { loadPopPermissionsSnapshot } from "@/lib/popPermissionsServer"
+import { requirePopAction } from "@/lib/requirePopAction"
 import { buildPurchaseOrderLineSummariesFromSnapshot } from "@/lib/purchaseOrderCheckout"
 import { purchaseOrderLineSummariesItemCount } from "@/lib/purchaseOrderDocumentLines"
 import { parsePurchaseCheckoutSnapshot } from "@/lib/purchaseOrderCheckoutState"
@@ -16,7 +15,6 @@ import type {
   PurchaseOrderMetadata,
   PurchaseOrderTableRow,
 } from "@/lib/purchaseOrderTypes"
-import { requireAuthenticatedUser } from "@/lib/authHelpers"
 import {
   localDateExclusiveEndTimestamp,
   localDateStartTimestamp,
@@ -30,9 +28,9 @@ type OrderPermissionFlags = {
   canDelete: boolean
 }
 
-async function orderPermissionFlags(popId: string): Promise<OrderPermissionFlags> {
-  const snap = await loadPopPermissionsSnapshot(popId)
-  const keys = snap.keys
+function orderPermissionFlagsFromKeys(
+  keys: readonly string[],
+): OrderPermissionFlags {
   return {
     canRead: permissionKeysInclude(
       keys,
@@ -161,12 +159,11 @@ export async function createPurchaseOrder(
   | { success: false; error: string }
 > {
   try {
-    const access = await validatePopAccess(popId)
-    if (!access.hasAccess || !access.isActive) {
-      return { success: false, error: access.error || "Sin acceso" }
+    const gate = await requirePopAction(popId, POP_PERMS.OPERATIONS_CREATE)
+    if (!gate.ok) {
+      return { success: false, error: gate.error }
     }
-
-    const perms = await orderPermissionFlags(popId)
+    const perms = orderPermissionFlagsFromKeys(gate.keys)
     if (!perms.canCreate) {
       return { success: false, error: "Sin permiso para crear órdenes de compra." }
     }
@@ -179,7 +176,7 @@ export async function createPurchaseOrder(
       }
     }
 
-    const user = await requireAuthenticatedUser()
+    const user = gate.user
     const supabase = await createClient()
     const orderNumber = await nextOrderNumber(supabase, popId)
 
@@ -255,12 +252,11 @@ export async function getPurchaseOrdersTable(
   | { success: false; error: string }
 > {
   try {
-    const access = await validatePopAccess(popId)
-    if (!access.hasAccess || !access.isActive) {
-      return { success: false, error: access.error || "Sin acceso" }
+    const gate = await requirePopAction(popId, POP_PERMS.OPERATIONS_READ)
+    if (!gate.ok) {
+      return { success: false, error: gate.error }
     }
-
-    const perms = await orderPermissionFlags(popId)
+    const perms = orderPermissionFlagsFromKeys(gate.keys)
     if (!perms.canRead) {
       return { success: false, error: "Sin permiso para ver órdenes de compra." }
     }
@@ -333,12 +329,11 @@ export async function getPurchaseOrderDetail(
   { success: true; order: PurchaseOrderDetail } | { success: false; error: string }
 > {
   try {
-    const access = await validatePopAccess(popId)
-    if (!access.hasAccess || !access.isActive) {
-      return { success: false, error: access.error || "Sin acceso" }
+    const gate = await requirePopAction(popId, POP_PERMS.OPERATIONS_READ)
+    if (!gate.ok) {
+      return { success: false, error: gate.error }
     }
-
-    const perms = await orderPermissionFlags(popId)
+    const perms = orderPermissionFlagsFromKeys(gate.keys)
     if (!perms.canRead) {
       return { success: false, error: "Sin permiso para ver órdenes de compra." }
     }
@@ -346,7 +341,9 @@ export async function getPurchaseOrderDetail(
     const supabase = await createClient()
     const { data, error } = await supabase
       .from("purchase_orders")
-      .select("*")
+      .select(
+        "id, order_number, supplier_name, supplier_tax_id, subtotal, discount_total, total, status, created_at, metadata, supplier_id, checkout_snapshot",
+      )
       .eq("pop_id", popId)
       .eq("id", orderId)
       .maybeSingle()
@@ -363,18 +360,21 @@ export async function getPurchaseOrderDetail(
       return { success: false, error: "Orden de compra inválida." }
     }
 
-    const catalog = await getPurchaseCatalog(popId)
-    if (catalog.success) {
-      const rebuiltSummaries = buildPurchaseOrderLineSummariesFromSnapshot(
-        order.checkoutSnapshot,
-        catalog.articles,
-      )
-      if (rebuiltSummaries.length > 0) {
-        order.metadata = {
-          ...order.metadata,
-          lineSummaries: rebuiltSummaries,
+    const hasSavedLines = (order.metadata.lineSummaries?.length ?? 0) > 0
+    if (!hasSavedLines) {
+      const catalog = await getPurchaseCatalog(popId)
+      if (catalog.success) {
+        const rebuiltSummaries = buildPurchaseOrderLineSummariesFromSnapshot(
+          order.checkoutSnapshot,
+          catalog.articles,
+        )
+        if (rebuiltSummaries.length > 0) {
+          order.metadata = {
+            ...order.metadata,
+            lineSummaries: rebuiltSummaries,
+          }
+          order.itemCount = purchaseOrderLineSummariesItemCount(rebuiltSummaries)
         }
-        order.itemCount = purchaseOrderLineSummariesItemCount(rebuiltSummaries)
       }
     }
 
@@ -393,12 +393,11 @@ export async function deletePurchaseOrder(
   orderId: string,
 ): Promise<{ success: true } | { success: false; error: string }> {
   try {
-    const access = await validatePopAccess(popId)
-    if (!access.hasAccess || !access.isActive) {
-      return { success: false, error: access.error || "Sin acceso" }
+    const gate = await requirePopAction(popId, POP_PERMS.OPERATIONS_CREATE)
+    if (!gate.ok) {
+      return { success: false, error: gate.error }
     }
-
-    const perms = await orderPermissionFlags(popId)
+    const perms = orderPermissionFlagsFromKeys(gate.keys)
     if (!perms.canDelete) {
       return { success: false, error: "Sin permiso para eliminar órdenes de compra." }
     }

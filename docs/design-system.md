@@ -127,7 +127,7 @@ La imagen se dibuja **debajo** de las capas de tinte y viñeta para mantener leg
 ## 7. Referencias en el repo
 
 - Menú shell (fuente de verdad visual): `app/[pop]/menu/page.tsx`
-- Landing pública (misma familia de tokens): `components/landing/LandingPage.tsx` (backup: `components/landing-backup/LandingPageBackup.tsx`)
+- Landing pública (misma familia de tokens): `components/landing-hero/HeroLanding.tsx`
 - Tokens y utilidades globales: `app/globals.css`
 
 ---

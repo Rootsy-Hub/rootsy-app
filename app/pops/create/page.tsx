@@ -1,16 +1,9 @@
 "use client"
 
 import dynamic from "next/dynamic"
-import Image from "next/image"
-import Link from "next/link"
-import { useRouter } from "next/navigation"
-import { useCallback, useEffect, useRef, useState } from "react"
+import { useRouter, useSearchParams } from "next/navigation"
+import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { updateCardToken } from "@mercadopago/sdk-react"
-import { Leaf } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Spinner } from "@/components/ui/spinner"
 import {
   finalizePopCreation,
   getActiveBusinessTypes,
@@ -19,9 +12,43 @@ import {
   type BusinessTypeOption,
   type PopCreatePlanOption,
 } from "@/app/pops/create/actions"
+import {
+  AuthEyebrow,
+  AuthLead,
+  AuthMarketingShell,
+  AuthMutedLink,
+  AuthTitle,
+} from "@/components/auth/AuthMarketingShell"
 import type { MercadoPagoCardCaptureHandle } from "@/components/platformBilling/MercadoPagoCardCapture"
-import withAuth from "@/hoc/withAuth"
+import { RootsBanner } from "@/components/rootsy-banner"
+import { RootsPrimaryButton } from "@/components/rootsy-button"
+import {
+  RootsFormFieldMessage,
+  RootsFormTextField,
+  RootsFormToneProvider,
+} from "@/components/rootsy-form"
+import { FORM_UI_LABEL_STYLE_DARK } from "@/app/library/ui-components/formsUiHardcodedSpec"
+import { Spinner } from "@/components/ui/spinner"
+import {
+  LANDING_TRIAL_DAYS,
+  formatLandingFirstChargeDate,
+  formatLandingPlanMoney,
+} from "@/lib/landingSubscriptionPlans"
 import { popMenuHref } from "@/lib/popRoutes"
+import {
+  ROOTS_BUSINESS_TYPE_ORDER,
+  ROOTS_BUSINESS_TYPE_SIGNUP_COPY,
+  isRootsPublicBusinessTypeKey,
+  type RootsPublicBusinessTypeKey,
+} from "@/lib/rootsySubscriptionCatalog"
+import {
+  clearSignupIntent,
+  isSelfServePlan,
+  persistSignupIntent,
+  resolveSignupIntent,
+  type SignupIntent,
+} from "@/lib/signupIntent"
+import { POP_CREATE_COPY } from "@/lib/auth/rootsyAuthUiCopy"
 import { cn } from "@/lib/utils"
 
 const MercadoPagoCardCapture = dynamic(
@@ -32,7 +59,7 @@ const MercadoPagoCardCapture = dynamic(
   {
     ssr: false,
     loading: () => (
-      <div className="flex items-center gap-2 py-6 text-sm text-muted-foreground">
+      <div className="flex items-center gap-2 py-6 text-sm text-[var(--rootsy-sombra-300)]">
         <Spinner className="size-4" />
         Cargando Mercado Pago…
       </div>
@@ -40,17 +67,40 @@ const MercadoPagoCardCapture = dynamic(
   },
 )
 
-function formatArs(value: number): string {
-  return new Intl.NumberFormat("es-AR", {
-    style: "currency",
-    currency: "ARS",
-    maximumFractionDigits: 0,
-  }).format(value)
+const choiceCardClass = (selected: boolean) =>
+  cn(
+    "flex cursor-pointer gap-3 rounded-xl border px-4 py-3 transition-colors",
+    "focus-within:outline-none focus-within:ring-2 focus-within:ring-[var(--rootsy-savia-400)] focus-within:ring-offset-2 focus-within:ring-offset-[var(--color-elevated)]",
+    selected
+      ? "border-[color-mix(in_srgb,var(--rootsy-savia-400)_50%,transparent)] bg-[color-mix(in_srgb,var(--rootsy-savia-400)_10%,transparent)]"
+      : "border-[var(--color-border)] bg-transparent hover:border-[color-mix(in_srgb,var(--rootsy-savia-400)_28%,transparent)]",
+  )
+
+function rubroCopy(name: string, fallbackTitle: string, fallbackHint: string | null) {
+  if (!isRootsPublicBusinessTypeKey(name)) {
+    return { title: fallbackTitle, hint: fallbackHint }
+  }
+  return ROOTS_BUSINESS_TYPE_SIGNUP_COPY[name]
+}
+
+function sortBusinessTypes(types: BusinessTypeOption[]) {
+  return [...types].sort((a, b) => {
+    const indexA = ROOTS_BUSINESS_TYPE_ORDER.indexOf(
+      a.name as RootsPublicBusinessTypeKey,
+    )
+    const indexB = ROOTS_BUSINESS_TYPE_ORDER.indexOf(
+      b.name as RootsPublicBusinessTypeKey,
+    )
+    return (indexA === -1 ? 99 : indexA) - (indexB === -1 ? 99 : indexB)
+  })
 }
 
 function CreatePopPage() {
   const router = useRouter()
+  const searchParams = useSearchParams()
   const cardCaptureRef = useRef<MercadoPagoCardCaptureHandle>(null)
+  const signupIntent = resolveSignupIntent(searchParams)
+  const preferredPlanNameRef = useRef<string | null>(signupIntent.plan)
 
   const [popName, setPopName] = useState("")
   const [businessTypeId, setBusinessTypeId] = useState("")
@@ -58,7 +108,7 @@ function CreatePopPage() {
   const [plans, setPlans] = useState<PopCreatePlanOption[]>([])
   const [planId, setPlanId] = useState("")
   const [billingCycle, setBillingCycle] = useState<"monthly" | "yearly">(
-    "monthly",
+    signupIntent.cycle,
   )
   const [trialAvailable, setTrialAvailable] = useState(true)
   const [mercadoPagoPublicKey, setMercadoPagoPublicKey] = useState<string | null>(
@@ -76,20 +126,54 @@ function CreatePopPage() {
     plan: "",
   })
 
+  const firstChargeLabel = useMemo(() => formatLandingFirstChargeDate(), [])
+
+  const persistCurrentIntent = useCallback(
+    (patch?: Partial<SignupIntent>) => {
+      const typeName = businessTypes.find((row) => row.id === businessTypeId)?.name
+      const planName = plans.find((row) => row.id === planId)?.name
+      persistSignupIntent({
+        plan:
+          planName && isSelfServePlan(planName)
+            ? planName
+            : preferredPlanNameRef.current &&
+                isSelfServePlan(preferredPlanNameRef.current)
+              ? preferredPlanNameRef.current
+              : signupIntent.plan,
+        cycle: billingCycle,
+        type:
+          typeName && isRootsPublicBusinessTypeKey(typeName)
+            ? typeName
+            : signupIntent.type,
+        ...patch,
+      })
+    },
+    [billingCycle, businessTypeId, businessTypes, planId, plans, signupIntent.type],
+  )
+
   useEffect(() => {
     let cancelled = false
     ;(async () => {
       try {
+        const intent = resolveSignupIntent(searchParams)
+        persistSignupIntent(intent)
+        preferredPlanNameRef.current = intent.plan
+        setBillingCycle(intent.cycle)
         const [types, billingSetup] = await Promise.all([
           getActiveBusinessTypes(),
           getPopCreateBillingSetup(),
         ])
         if (cancelled) return
-        setBusinessTypes(types)
+        setBusinessTypes(sortBusinessTypes(types))
         setTrialAvailable(billingSetup.trialAvailable)
         setMercadoPagoPublicKey(billingSetup.mercadoPagoPublicKey)
         setMercadoPagoConfigured(billingSetup.mercadoPagoConfigured)
-        if (types.length === 1) {
+        const preferredType = intent.type
+          ? types.find((row) => row.name === intent.type)
+          : undefined
+        if (preferredType) {
+          setBusinessTypeId(preferredType.id)
+        } else if (types.length === 1) {
           setBusinessTypeId(types[0].id)
         }
       } finally {
@@ -99,7 +183,7 @@ function CreatePopPage() {
     return () => {
       cancelled = true
     }
-  }, [])
+  }, [searchParams])
 
   useEffect(() => {
     if (!businessTypeId) {
@@ -116,6 +200,11 @@ function CreatePopPage() {
         if (cancelled) return
         setPlans(nextPlans)
         setPlanId((current) => {
+          const preferredName = preferredPlanNameRef.current
+          const preferred = preferredName
+            ? nextPlans.find((plan) => plan.name === preferredName)
+            : undefined
+          if (preferred) return preferred.id
           if (current && nextPlans.some((plan) => plan.id === current)) {
             return current
           }
@@ -136,22 +225,23 @@ function CreatePopPage() {
     billingCycle === "yearly"
       ? selectedPlan?.priceYearly ?? 0
       : selectedPlan?.priceMonthly ?? 0
+  const periodLabel = billingCycle === "yearly" ? "año" : "mes"
 
   const validate = useCallback(() => {
     const errors = { popName: "", businessType: "", plan: "" }
     const name = popName.trim()
     if (!name) {
-      errors.popName = "El nombre del punto de venta es requerido"
+      errors.popName = POP_CREATE_COPY.errors.popNameRequired
     } else if (name.length < 3) {
-      errors.popName = "Usá al menos 3 caracteres"
+      errors.popName = POP_CREATE_COPY.errors.popNameMin
     } else if (name.length > 100) {
-      errors.popName = "Máximo 100 caracteres"
+      errors.popName = POP_CREATE_COPY.errors.popNameMax
     }
     if (businessTypes.length > 0 && !businessTypeId) {
-      errors.businessType = "Elegí el tipo de negocio"
+      errors.businessType = POP_CREATE_COPY.errors.businessTypeRequired
     }
     if (plans.length > 0 && !planId) {
-      errors.plan = "Elegí un plan"
+      errors.plan = POP_CREATE_COPY.errors.planRequired
     }
     setFieldErrors(errors)
     return !errors.popName && !errors.businessType && !errors.plan
@@ -162,7 +252,7 @@ function CreatePopPage() {
     setError("")
     if (!validate()) return
     if (!mercadoPagoConfigured || !mercadoPagoPublicKey) {
-      setError("Mercado Pago no está configurado en este entorno.")
+      setError(POP_CREATE_COPY.errors.mercadoPagoNotConfigured)
       return
     }
 
@@ -170,7 +260,7 @@ function CreatePopPage() {
     try {
       const cardToken = await cardCaptureRef.current?.tokenize()
       if (!cardToken?.token) {
-        setError("Completá los datos de la tarjeta")
+        setError(POP_CREATE_COPY.errors.cardIncomplete)
         setLoading(false)
         return
       }
@@ -198,341 +288,331 @@ function CreatePopPage() {
         return
       }
 
+      clearSignupIntent()
       router.push(popMenuHref(result.pop.siteId, result.pop.id))
       router.refresh()
     } catch (caught) {
       const message =
         caught instanceof Error
           ? caught.message
-          : "Error inesperado al crear el punto de venta"
+          : POP_CREATE_COPY.errors.unexpected
       setError(message)
       setLoading(false)
     }
   }
 
   const submitLabel = trialAvailable
-    ? "Crear y empezar prueba de 7 días"
+    ? POP_CREATE_COPY.submitTrial(LANDING_TRIAL_DAYS)
     : selectedPrice > 0
-      ? `Crear y pagar ${formatArs(selectedPrice)}`
-      : "Crear punto de venta"
+      ? POP_CREATE_COPY.submitActivate(formatLandingPlanMoney(selectedPrice))
+      : POP_CREATE_COPY.submitCreate
 
   return (
-    <div className="relative min-h-screen overflow-hidden bg-background text-foreground">
-      <main className="relative z-10 grid min-h-screen w-full grid-cols-1 lg:grid-cols-2">
-        <section className="relative hidden overflow-hidden lg:block">
-          <Image
-            src="/login-mascota.png"
-            alt="Rootsy"
-            fill
-            priority
-            className="object-cover"
-            sizes="50vw"
+    <AuthMarketingShell
+      cardWidthClassName="max-w-lg"
+      contentAlign="start"
+      asideEyebrow={
+        trialAvailable
+          ? POP_CREATE_COPY.asideEyebrowTrial(LANDING_TRIAL_DAYS)
+          : POP_CREATE_COPY.asideEyebrowPaid
+      }
+      asideTitle={POP_CREATE_COPY.asideTitle}
+      asideLead={
+        trialAvailable
+          ? POP_CREATE_COPY.asideLeadTrial
+          : POP_CREATE_COPY.asideLeadPaid
+      }
+    >
+      <header className="space-y-2">
+        <AuthEyebrow>
+          {trialAvailable ? POP_CREATE_COPY.eyebrowTrial : POP_CREATE_COPY.eyebrowPaid}
+        </AuthEyebrow>
+        <AuthTitle>{POP_CREATE_COPY.title}</AuthTitle>
+        <AuthLead>{POP_CREATE_COPY.lead}</AuthLead>
+        <p className="pt-1">
+          <AuthMutedLink href="/home">{POP_CREATE_COPY.backHome}</AuthMutedLink>
+        </p>
+      </header>
+
+      {error ? (
+        <div className="mt-5">
+          <RootsBanner
+            intent="danger"
+            tone="dark"
+            density="compact"
+            message={error}
           />
-          <div className="pointer-events-none absolute inset-0 bg-linear-to-r from-black/40 via-black/20 to-transparent" />
-          <div className="relative z-10 flex h-full flex-col justify-end p-10 xl:p-14">
-            <p className="inline-flex w-fit items-center rounded-full border border-emerald-400/35 bg-emerald-500/15 px-3 py-1 text-xs font-bold uppercase tracking-[0.2em] text-emerald-100">
-              {trialAvailable ? "7 días gratis" : "Suscripción inmediata"}
-            </p>
-            <h2 className="mt-4 max-w-md text-3xl font-extrabold tracking-tight text-white">
-              Creá tu punto de venta en minutos
-            </h2>
-            <p className="mt-3 max-w-md text-base leading-relaxed text-white/75">
-              {trialAvailable
-                ? "Elegí tu plan, guardá una tarjeta y empezá a probar ventas, stock y administración sin cargo durante 7 días."
-                : "Este POP se activa con el plan elegido y el primer cobro al crearlo."}
-            </p>
-          </div>
-        </section>
+        </div>
+      ) : null}
 
-        <section className="relative flex min-h-screen items-center justify-center overflow-hidden bg-[radial-gradient(ellipse_90%_70%_at_20%_50%,rgba(16,185,129,0.16),transparent_62%)] px-5 py-10 sm:px-8 lg:px-10">
-          <div className="relative w-full max-w-lg rounded-4xl border border-white/12 bg-white/[0.035] p-7 shadow-[0_30px_90px_-42px_rgba(10,18,14,0.7),inset_0_1px_0_0_rgba(255,255,255,0.08)] backdrop-blur-xl sm:p-9">
-            <Link
-              href="/home"
-              className="absolute -top-6 left-1/2 z-20 inline-flex -translate-x-1/2 items-center gap-2 rounded-full border border-white/16 bg-[#0b1110]/90 px-4 py-2 text-sm font-semibold tracking-wide text-white shadow-[0_14px_30px_-18px_rgba(0,0,0,0.8)] ring-1 ring-emerald-400/25 transition-all hover:scale-[1.02] hover:border-emerald-300/45"
-            >
-              <span className="flex size-6 items-center justify-center rounded-full bg-emerald-400/16 text-emerald-200">
-                <Leaf className="size-4" aria-hidden />
-              </span>
-              Rootsy
-            </Link>
+      {loadingTypes ? (
+        <div
+          className="mt-10 flex flex-col items-center gap-3 py-12"
+          role="status"
+          aria-live="polite"
+        >
+          <Spinner className="size-8 text-[var(--rootsy-savia-400)]" />
+          <span className="text-sm text-[var(--rootsy-sombra-300)]">
+            {POP_CREATE_COPY.loadingConfig}
+          </span>
+        </div>
+      ) : (
+        <RootsFormToneProvider tone="dark">
+          <form className="mt-7 space-y-6" onSubmit={handleSubmit} noValidate>
+            <RootsFormTextField
+              label="Nombre del negocio"
+              id="popName"
+              name="popName"
+              value={popName}
+              autoComplete="organization"
+              placeholder="Ej: Mi tienda, Bar Central"
+              hint={POP_CREATE_COPY.popNameHint}
+              error={fieldErrors.popName || undefined}
+              invalid={Boolean(fieldErrors.popName)}
+              disabled={loading}
+              onChange={(event) => {
+                setPopName(event.target.value)
+                if (fieldErrors.popName) {
+                  setFieldErrors((prev) => ({ ...prev, popName: "" }))
+                }
+              }}
+            />
 
-            <div className="space-y-1.5">
-              <span className="inline-flex rounded-full border border-emerald-500/30 bg-emerald-500/10 px-2.5 py-0.5 text-[11px] font-bold uppercase tracking-wider text-emerald-700 dark:text-emerald-300">
-                {trialAvailable ? "Prueba gratis" : "Plan pago"}
-              </span>
-              <h1 className="text-3xl font-extrabold tracking-tight sm:text-[2.1rem]">
-                Nuevo punto de venta
-              </h1>
-              <p className="text-sm text-muted-foreground">
-                <Link href="/home" className="font-medium text-meadow hover:underline">
-                  Volver al inicio
-                </Link>
-                {" · "}
-                {trialAvailable
-                  ? "Tarjeta requerida · cobro al día 7"
-                  : "Pago upfront al crear"}
-              </p>
-            </div>
-
-            {loadingTypes ? (
-              <div
-                className="mt-10 flex flex-col items-center gap-3 py-12"
-                role="status"
-                aria-live="polite"
-              >
-                <Spinner className="size-8 text-muted-foreground" />
-                <span className="text-sm text-muted-foreground">
-                  Cargando configuración…
-                </span>
-              </div>
-            ) : (
-              <form className="mt-8 space-y-6" onSubmit={handleSubmit} noValidate>
-                <div className="space-y-2">
-                  <Label htmlFor="popName">Nombre del punto de venta</Label>
-                  <Input
-                    id="popName"
-                    name="popName"
-                    value={popName}
-                    onChange={(e) => {
-                      setPopName(e.target.value)
-                      if (fieldErrors.popName) {
-                        setFieldErrors((prev) => ({ ...prev, popName: "" }))
-                      }
-                    }}
-                    placeholder="Ej: Mi tienda, Bar Central"
-                    autoComplete="organization"
-                    aria-invalid={!!fieldErrors.popName}
-                    disabled={loading}
-                  />
-                  {fieldErrors.popName ? (
-                    <p className="text-sm text-destructive" role="alert">
-                      {fieldErrors.popName}
-                    </p>
-                  ) : null}
+            {businessTypes.length > 0 ? (
+              <fieldset className="space-y-3">
+                <legend style={FORM_UI_LABEL_STYLE_DARK}>
+                  Cómo cobrás la mayor parte del día
+                </legend>
+                <div className="grid gap-2">
+                  {businessTypes.map((bt) => {
+                    const selected = businessTypeId === bt.id
+                    const copy = rubroCopy(bt.name, bt.displayName, bt.description)
+                    return (
+                      <label key={bt.id} className={choiceCardClass(selected)}>
+                        <input
+                          type="radio"
+                          name="businessType"
+                          value={bt.id}
+                          checked={selected}
+                          onChange={() => {
+                            setBusinessTypeId(bt.id)
+                            persistCurrentIntent({
+                              type: isRootsPublicBusinessTypeKey(bt.name)
+                                ? bt.name
+                                : signupIntent.type,
+                            })
+                            if (fieldErrors.businessType) {
+                              setFieldErrors((prev) => ({
+                                ...prev,
+                                businessType: "",
+                              }))
+                            }
+                          }}
+                          className="mt-1 shrink-0 accent-[var(--rootsy-savia-400)]"
+                          disabled={loading}
+                        />
+                        <span className="min-w-0">
+                          <span className="block text-sm font-semibold text-white">
+                            {copy.title}
+                          </span>
+                          {copy.hint ? (
+                            <span className="mt-0.5 block text-xs text-[var(--rootsy-sombra-300)]">
+                              {copy.hint}
+                            </span>
+                          ) : null}
+                        </span>
+                      </label>
+                    )
+                  })}
                 </div>
+                {fieldErrors.businessType ? (
+                  <RootsFormFieldMessage variant="error">
+                    {fieldErrors.businessType}
+                  </RootsFormFieldMessage>
+                ) : null}
+              </fieldset>
+            ) : null}
 
-                {businessTypes.length > 0 ? (
-                  <fieldset className="space-y-3">
-                    <legend className="text-sm font-medium">Tipo de negocio</legend>
+            {businessTypeId ? (
+              <fieldset className="space-y-3">
+                <legend style={FORM_UI_LABEL_STYLE_DARK}>
+                  {trialAvailable ? "Plan después de la prueba" : "Plan de suscripción"}
+                </legend>
+
+                {selectedPlan ? (
+                  <div className="rounded-xl border border-[var(--color-border)] bg-[color-mix(in_srgb,var(--rootsy-sombra-950)_40%,transparent)] px-4 py-3">
+                    <p className="text-sm font-semibold text-white">
+                      {selectedPlan.displayName} ·{" "}
+                      {billingCycle === "yearly" ? "anual" : "mensual"}
+                    </p>
+                    {trialAvailable ? (
+                      <p className="mt-1 text-sm leading-relaxed text-[var(--rootsy-sombra-300)]">
+                        {POP_CREATE_COPY.trialChargeNote(
+                          firstChargeLabel,
+                          formatLandingPlanMoney(selectedPrice),
+                          periodLabel,
+                        )}
+                      </p>
+                    ) : (
+                      <p className="mt-1 text-sm leading-relaxed text-[var(--rootsy-sombra-300)]">
+                        {POP_CREATE_COPY.paidChargeNote(
+                          formatLandingPlanMoney(selectedPrice),
+                          periodLabel,
+                        )}
+                      </p>
+                    )}
+                  </div>
+                ) : null}
+
+                {loadingPlans ? (
+                  <div className="flex items-center gap-2 text-sm text-[var(--rootsy-sombra-300)]">
+                    <Spinner className="size-4" />
+                    {POP_CREATE_COPY.loadingPlans}
+                  </div>
+                ) : plans.length === 0 ? (
+                  <p className="text-sm text-[var(--rootsy-sombra-300)]">
+                    {POP_CREATE_COPY.noPlans}
+                  </p>
+                ) : (
+                  <>
+                    <div className="space-y-2">
+                      <p style={FORM_UI_LABEL_STYLE_DARK}>Ciclo de facturación</p>
+                      <div
+                        className="grid grid-cols-2 gap-1 rounded-xl border border-[var(--color-border)] p-1"
+                        role="group"
+                        aria-label="Ciclo de facturación"
+                      >
+                        {(
+                          [
+                            ["monthly", "Mensual"],
+                            ["yearly", "Anual"],
+                          ] as const
+                        ).map(([value, label]) => {
+                          const selected = billingCycle === value
+                          return (
+                            <button
+                              key={value}
+                              type="button"
+                              disabled={loading}
+                              aria-pressed={selected}
+                              className={cn(
+                                "rounded-lg px-3 py-2 text-sm font-medium transition-colors",
+                                "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--rootsy-savia-400)]",
+                                selected
+                                  ? "bg-[color-mix(in_srgb,var(--rootsy-savia-400)_16%,transparent)] text-white"
+                                  : "text-[var(--rootsy-sombra-300)] hover:text-white",
+                              )}
+                              onClick={() => {
+                                setBillingCycle(value)
+                                persistCurrentIntent({ cycle: value })
+                              }}
+                            >
+                              {label}
+                            </button>
+                          )
+                        })}
+                      </div>
+                    </div>
+
                     <div className="grid gap-2">
-                      {businessTypes.map((bt) => {
-                        const selected = businessTypeId === bt.id
+                      {plans.map((plan) => {
+                        const selected = planId === plan.id
+                        const price =
+                          billingCycle === "yearly"
+                            ? plan.priceYearly
+                            : plan.priceMonthly
                         return (
                           <label
-                            key={bt.id}
-                            className={cn(
-                              "flex cursor-pointer gap-3 rounded-xl border px-4 py-3 transition-colors",
-                              selected
-                                ? "border-emerald-500/50 bg-emerald-500/8 ring-1 ring-emerald-500/25"
-                                : "border-border/80 bg-background/40 hover:border-emerald-500/30",
-                            )}
+                            key={plan.id}
+                            className={choiceCardClass(selected)}
                           >
-                            <input
-                              type="radio"
-                              name="businessType"
-                              value={bt.id}
-                              checked={selected}
-                              onChange={() => {
-                                setBusinessTypeId(bt.id)
-                                if (fieldErrors.businessType) {
-                                  setFieldErrors((prev) => ({
-                                    ...prev,
-                                    businessType: "",
-                                  }))
-                                }
-                              }}
-                              className="mt-1 shrink-0 accent-emerald-600"
-                              disabled={loading}
-                            />
-                            <span className="min-w-0">
-                              <span className="block text-sm font-semibold">
-                                {bt.displayName}
-                              </span>
-                              {bt.description ? (
-                                <span className="mt-0.5 block text-xs text-muted-foreground">
-                                  {bt.description}
+                            <span className="flex min-w-0 flex-1 gap-3">
+                              <input
+                                type="radio"
+                                name="plan"
+                                value={plan.id}
+                                checked={selected}
+                                onChange={() => {
+                                  setPlanId(plan.id)
+                                  preferredPlanNameRef.current = plan.name
+                                  persistCurrentIntent({
+                                    plan: isSelfServePlan(plan.name)
+                                      ? plan.name
+                                      : signupIntent.plan,
+                                  })
+                                  if (fieldErrors.plan) {
+                                    setFieldErrors((prev) => ({
+                                      ...prev,
+                                      plan: "",
+                                    }))
+                                  }
+                                }}
+                                className="mt-1 shrink-0 accent-[var(--rootsy-savia-400)]"
+                                disabled={loading}
+                              />
+                              <span className="min-w-0">
+                                <span className="block text-sm font-semibold text-white">
+                                  {plan.displayName}
                                 </span>
-                              ) : null}
+                                {plan.description ? (
+                                  <span className="mt-0.5 block text-xs text-[var(--rootsy-sombra-300)]">
+                                    {plan.description}
+                                  </span>
+                                ) : null}
+                              </span>
+                            </span>
+                            <span className="shrink-0 text-right text-sm font-semibold text-white">
+                              {formatLandingPlanMoney(price)}
+                              <span className="block text-xs font-normal text-[var(--rootsy-sombra-300)]">
+                                /{periodLabel}
+                              </span>
                             </span>
                           </label>
                         )
                       })}
                     </div>
-                    {fieldErrors.businessType ? (
-                      <p className="text-sm text-destructive" role="alert">
-                        {fieldErrors.businessType}
-                      </p>
-                    ) : null}
-                  </fieldset>
+                  </>
+                )}
+
+                {fieldErrors.plan ? (
+                  <RootsFormFieldMessage variant="error">
+                    {fieldErrors.plan}
+                  </RootsFormFieldMessage>
                 ) : null}
+              </fieldset>
+            ) : null}
 
-                {businessTypeId ? (
-                  <fieldset className="space-y-3">
-                    <legend className="text-sm font-medium">
-                      {trialAvailable
-                        ? "Plan post-prueba"
-                        : "Plan de suscripción"}
-                    </legend>
+            {planId && mercadoPagoPublicKey ? (
+              <fieldset className="space-y-3">
+                <legend style={FORM_UI_LABEL_STYLE_DARK}>Tarjeta</legend>
+                <p className="text-xs leading-relaxed text-[var(--rootsy-sombra-300)]">
+                  {trialAvailable
+                    ? POP_CREATE_COPY.cardHintTrial
+                    : POP_CREATE_COPY.cardHintPaid}
+                </p>
+                <MercadoPagoCardCapture
+                  ref={cardCaptureRef}
+                  publicKey={mercadoPagoPublicKey}
+                  disabled={loading}
+                />
+              </fieldset>
+            ) : null}
 
-                    {loadingPlans ? (
-                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                        <Spinner className="size-4" />
-                        Cargando planes…
-                      </div>
-                    ) : plans.length === 0 ? (
-                      <p className="text-sm text-muted-foreground">
-                        No hay planes disponibles para este tipo de negocio.
-                      </p>
-                    ) : (
-                      <>
-                        <div className="inline-flex rounded-xl border border-border/80 bg-background/40 p-1">
-                          <button
-                            type="button"
-                            className={cn(
-                              "rounded-lg px-3 py-1.5 text-sm font-medium transition-colors",
-                              billingCycle === "monthly"
-                                ? "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300"
-                                : "text-muted-foreground",
-                            )}
-                            onClick={() => setBillingCycle("monthly")}
-                            disabled={loading}
-                          >
-                            Mensual
-                          </button>
-                          <button
-                            type="button"
-                            className={cn(
-                              "rounded-lg px-3 py-1.5 text-sm font-medium transition-colors",
-                              billingCycle === "yearly"
-                                ? "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300"
-                                : "text-muted-foreground",
-                            )}
-                            onClick={() => setBillingCycle("yearly")}
-                            disabled={loading}
-                          >
-                            Anual
-                          </button>
-                        </div>
-
-                        <div className="grid gap-2">
-                          {plans.map((plan) => {
-                            const selected = planId === plan.id
-                            const price =
-                              billingCycle === "yearly"
-                                ? plan.priceYearly
-                                : plan.priceMonthly
-                            return (
-                              <label
-                                key={plan.id}
-                                className={cn(
-                                  "flex cursor-pointer items-start justify-between gap-3 rounded-xl border px-4 py-3 transition-colors",
-                                  selected
-                                    ? "border-emerald-500/50 bg-emerald-500/8 ring-1 ring-emerald-500/25"
-                                    : "border-border/80 bg-background/40 hover:border-emerald-500/30",
-                                )}
-                              >
-                                <span className="flex min-w-0 gap-3">
-                                  <input
-                                    type="radio"
-                                    name="plan"
-                                    value={plan.id}
-                                    checked={selected}
-                                    onChange={() => {
-                                      setPlanId(plan.id)
-                                      if (fieldErrors.plan) {
-                                        setFieldErrors((prev) => ({
-                                          ...prev,
-                                          plan: "",
-                                        }))
-                                      }
-                                    }}
-                                    className="mt-1 shrink-0 accent-emerald-600"
-                                    disabled={loading}
-                                  />
-                                  <span className="min-w-0">
-                                    <span className="block text-sm font-semibold">
-                                      {plan.displayName}
-                                    </span>
-                                    {plan.description ? (
-                                      <span className="mt-0.5 block text-xs text-muted-foreground">
-                                        {plan.description}
-                                      </span>
-                                    ) : null}
-                                  </span>
-                                </span>
-                                <span className="shrink-0 text-sm font-semibold">
-                                  {formatArs(price)}
-                                  <span className="block text-xs font-normal text-muted-foreground">
-                                    /{billingCycle === "yearly" ? "año" : "mes"}
-                                  </span>
-                                </span>
-                              </label>
-                            )
-                          })}
-                        </div>
-                      </>
-                    )}
-
-                    {fieldErrors.plan ? (
-                      <p className="text-sm text-destructive" role="alert">
-                        {fieldErrors.plan}
-                      </p>
-                    ) : null}
-                  </fieldset>
-                ) : null}
-
-                {planId && mercadoPagoPublicKey ? (
-                  <fieldset className="space-y-3">
-                    <legend className="text-sm font-medium">Tarjeta</legend>
-                    <p className="text-xs text-muted-foreground">
-                      {trialAvailable
-                        ? "La tarjeta queda guardada para el cobro automático al finalizar la prueba."
-                        : "Se cobrará el primer período al confirmar la creación."}
-                    </p>
-                    <MercadoPagoCardCapture
-                      ref={cardCaptureRef}
-                      publicKey={mercadoPagoPublicKey}
-                      disabled={loading}
-                    />
-                  </fieldset>
-                ) : null}
-
-                {error ? (
-                  <p
-                    className="rounded-lg border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive"
-                    role="alert"
-                  >
-                    {error}
-                  </p>
-                ) : null}
-
-                <Button
-                  type="submit"
-                  size="lg"
-                  className="h-12 w-full rounded-xl bg-linear-to-br from-emerald-500 to-teal-600 text-base font-bold text-white hover:from-emerald-400 hover:to-teal-500"
-                  disabled={
-                    loading ||
-                    !mercadoPagoConfigured ||
-                    !planId ||
-                    loadingPlans
-                  }
-                >
-                  {loading ? (
-                    <>
-                      <Spinner className="mr-2 size-4 text-white" />
-                      Procesando…
-                    </>
-                  ) : (
-                    submitLabel
-                  )}
-                </Button>
-              </form>
-            )}
-          </div>
-        </section>
-      </main>
-    </div>
+            <RootsPrimaryButton
+              type="submit"
+              size="large"
+              loading={loading}
+              loadingLabel={POP_CREATE_COPY.submitLoading}
+              disabled={!mercadoPagoConfigured || !planId || loadingPlans}
+              className="w-full"
+            >
+              {submitLabel}
+            </RootsPrimaryButton>
+          </form>
+        </RootsFormToneProvider>
+      )}
+    </AuthMarketingShell>
   )
 }
 
-export default withAuth(CreatePopPage)
+export default CreatePopPage

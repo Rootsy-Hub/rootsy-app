@@ -2,6 +2,8 @@
 
 import { requireAuthenticatedUser } from "@/lib/authHelpers"
 import { getAppBaseUrl } from "@/lib/appUrl"
+import { sendResendEmail } from "@/lib/email/sendResendEmail"
+import { buildPopInvitationEmail } from "@/lib/email/templates/popInvitationEmail"
 import { POP_PERMS, permissionKeysInclude } from "@/lib/popPermissionConstants"
 import {
   getPopById,
@@ -72,14 +74,6 @@ function sameUserId(a: string, b: string): boolean {
   return norm(a) === norm(b)
 }
 
-function escapeHtml(s: string): string {
-  return s
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-}
-
 async function isPopOwner(
   popId: string,
   userId: string,
@@ -87,65 +81,6 @@ async function isPopOwner(
 ): Promise<boolean> {
   if (ownerUserId && sameUserId(ownerUserId, userId)) return true
   return false
-}
-
-function formatResendApiError(body: string): string {
-  const raw = body.trim()
-  try {
-    const j = JSON.parse(raw) as { message?: string }
-    const m = j.message
-    if (typeof m === "string") {
-      if (
-        m.includes("only send testing emails to your own email") ||
-        m.includes("verify a domain")
-      ) {
-        return (
-          "Resend en modo prueba: solo permite enviar a tu propio correo de cuenta. " +
-          "Para invitar a otras personas, verificá un dominio en resend.com/domains y configurá RESEND_FROM con un correo de ese dominio (por ejemplo notificaciones@tudominio.com)."
-        )
-      }
-      return m
-    }
-  } catch {
-    /* no es JSON */
-  }
-  return raw.length > 400 ? `${raw.slice(0, 397)}…` : raw
-}
-
-async function sendInviteEmail(params: {
-  to: string
-  subject: string
-  html: string
-}): Promise<{ sent: boolean; error?: string }> {
-  const key = process.env.RESEND_API_KEY
-  const from = process.env.RESEND_FROM || "Rootsy <onboarding@resend.dev>"
-  if (!key) return { sent: false }
-  try {
-    const res = await fetch("https://api.resend.com/emails", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${key}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        from,
-        to: [params.to],
-        subject: params.subject,
-        html: params.html,
-      }),
-    })
-    if (!res.ok) {
-      const t = await res.text()
-      return {
-        sent: false,
-        error: formatResendApiError(t || res.statusText),
-      }
-    }
-    return { sent: true }
-  } catch (e: unknown) {
-    const msg = e instanceof Error ? e.message : "Error al enviar correo"
-    return { sent: false, error: msg }
-  }
 }
 
 export async function getPopHrDashboard(popId: string): Promise<
@@ -492,17 +427,18 @@ export async function inviteUserToPop(
   const base = getAppBaseUrl()
   const inviteUrl = `${base}/invite/pop/${inserted.token}`
 
+  const invitationEmail = buildPopInvitationEmail({
+    popName: popRes.pop.name,
+    inviteUrl,
+    message,
+  })
+
   const resendConfigured = Boolean(process.env.RESEND_API_KEY?.trim())
-  const { sent, error: emailError } = await sendInviteEmail({
+  const { sent, error: emailError } = await sendResendEmail({
     to: email,
-    subject: `Invitación a ${popRes.pop.name} en Rootsy`,
-    html: `
-      <p>Hola,</p>
-      <p><strong>${popRes.pop.name}</strong> te invitó a unirte a su punto de venta en Rootsy.</p>
-      ${message?.trim() ? `<p>Mensaje: ${escapeHtml(message.trim())}</p>` : ""}
-      <p><a href="${inviteUrl}">Aceptar invitación</a></p>
-      <p>Si el enlace no funciona, copiá y pegá esta dirección en el navegador:<br/>${inviteUrl}</p>
-    `,
+    subject: invitationEmail.subject,
+    html: invitationEmail.html,
+    text: invitationEmail.text,
   })
 
   return {

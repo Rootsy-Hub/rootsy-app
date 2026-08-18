@@ -3,7 +3,6 @@
 import { DataWorkspaceHeaderUserMenu } from "@/components/layouts/DataWorkspaceHeaderUserMenu"
 import { dataWorkspaceHeaderRoleLabelClass } from "@/components/layouts/dataWorkspaceHeaderStyles"
 import { RootsIconButton } from "@/components/rootsy-button"
-import withAuth from "@/hoc/withAuth"
 import { usePopMenuCache } from "@/hooks/usePopMenuCache"
 import { MenuDock } from "@/app/[siteId]/[popId]/menu/MenuDock"
 import { MenuDockDndProvider, useMenuDockEdit } from "@/app/[siteId]/[popId]/menu/MenuDockDndContext"
@@ -48,7 +47,7 @@ import { popScopedHref } from "@/lib/popRoutes"
 import { cn } from "@/lib/utils"
 import { useState, useEffect, useRef, useCallback, useMemo, type RefObject } from "react"
 import Link from "next/link"
-import { useParams, useRouter } from "next/navigation"
+import { useParams } from "next/navigation"
 import useEmblaCarousel from "embla-carousel-react"
 import {
   Search,
@@ -106,7 +105,6 @@ function EmblaDockEditSync({
 }
 
 function MenuPage() {
-  const router = useRouter()
   const params = useParams()
   const siteId = typeof params?.siteId === "string" ? params.siteId : ""
   const popId = typeof params?.popId === "string" ? params.popId : ""
@@ -206,7 +204,7 @@ function MenuPage() {
     setIsMounted(true)
     setSearchShortcutLabel(detectSearchShortcutLabel())
     setTime(new Date())
-    const timer = setInterval(() => setTime(new Date()), 1000)
+    const timer = setInterval(() => setTime(new Date()), 60_000)
 
     setParticles(
       Array.from({ length: 12 }, () => ({
@@ -224,17 +222,27 @@ function MenuPage() {
   }, [])
 
   useEffect(() => {
+    let frame = 0
     const handleMouseMove = (e: MouseEvent) => {
-      if (containerRef.current) {
-        const rect = containerRef.current.getBoundingClientRect()
+      if (document.hidden) return
+      if (frame) return
+      const { clientX, clientY } = e
+      frame = window.requestAnimationFrame(() => {
+        frame = 0
+        const container = containerRef.current
+        if (!container) return
+        const rect = container.getBoundingClientRect()
         setMousePos({
-          x: ((e.clientX - rect.left) / rect.width) * 100,
-          y: ((e.clientY - rect.top) / rect.height) * 100,
+          x: ((clientX - rect.left) / rect.width) * 100,
+          y: ((clientY - rect.top) / rect.height) * 100,
         })
-      }
+      })
     }
-    window.addEventListener("mousemove", handleMouseMove)
-    return () => window.removeEventListener("mousemove", handleMouseMove)
+    window.addEventListener("mousemove", handleMouseMove, { passive: true })
+    return () => {
+      window.removeEventListener("mousemove", handleMouseMove)
+      if (frame) window.cancelAnimationFrame(frame)
+    }
   }, [])
 
   const handleSearchBlur = useCallback(
@@ -313,7 +321,7 @@ function MenuPage() {
     popAccess != null &&
     popAccess.pop.siteId.trim().toLowerCase() !== siteId.trim().toLowerCase()
 
-  const loading = isLoading
+  const loading = isLoading || !isMounted
   const error =
     !popId || !siteId
       ? "No se encontró el punto de venta."
@@ -614,9 +622,7 @@ function MenuPage() {
                             item={item}
                             sectionKey={styleSectionKey}
                             disabled={!target}
-                            onActivate={() => {
-                              if (target) router.push(target)
-                            }}
+                            href={target}
                           />
                         )
                       })}
@@ -646,4 +652,4 @@ function MenuPage() {
   )
 }
 
-export default withAuth(MenuPage)
+export default MenuPage

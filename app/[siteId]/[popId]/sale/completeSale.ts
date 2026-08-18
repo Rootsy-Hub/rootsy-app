@@ -24,8 +24,20 @@ import {
   articleReferenceCostError,
   resolveArticleReferenceUnitCost,
 } from "@/lib/articleReferenceUnitCost"
+import {
+  addIsoCalendarDays,
+  CURRENT_ACCOUNT_SALE_DEFAULT_DUE_DAYS,
+} from "@/lib/currentAccounts"
+import { toPopCalendarDate } from "@/lib/popTimezone"
 import { resolveLedgerAccountForTreasuryPayment } from "@/lib/treasuryPaymentLedger"
 import { isValidOperationPaymentKind } from "@/lib/operationPaymentKinds"
+import {
+  deleteCheckoutCheck,
+  insertCheckoutCheck,
+  parseCheckoutCheckDetails,
+  resolveCheckTreasuryAccountId,
+  type CheckoutCheckDetails,
+} from "@/lib/checkoutCheck"
 import { SALE_COMPROBANTE_RECIBO_X_LABEL, saleComprobanteAccruesOutputVat } from "@/lib/saleComprobantePicker"
 import { siteIdFromPopRow } from "@/lib/popRoutes"
 import { CLIENT_IVA_CONDITION_VALUES } from "@/app/[siteId]/[popId]/clients/clientIvaConstants"
@@ -482,7 +494,10 @@ export type CompleteSaleInput = {
   clientId: string | null
   paymentKind?: string | null
   treasuryAccountId?: string | null
+  checkDetails?: CheckoutCheckDetails | null
   payOnClientAccount?: boolean
+  /** Vencimiento de la venta a cuenta. Si falta, se usan 30 días. */
+  dueDate?: string | null
   generalDiscountMode: "porcentaje" | "fijo"
   valorDescuentoPorcentaje: number
   valorDescuentoFijo: number
@@ -604,9 +619,30 @@ export async function completeSale(
     }
     const paymentKind = input.paymentKind?.trim() || null
     let treasuryAccountId = input.treasuryAccountId?.trim() || null
+    let checkoutCheckDetails: CheckoutCheckDetails | null = null
 
     if (!payOnClientAccount && paymentKind === "cash") {
       treasuryAccountId = cashTreasuryAccountId
+    }
+
+    if (!payOnClientAccount && paymentKind === "check") {
+      const parsed = parseCheckoutCheckDetails(input.checkDetails)
+      if (!parsed.ok) {
+        return { success: false, error: parsed.error }
+      }
+      checkoutCheckDetails = parsed.details
+      const checkTreasuryId = await resolveCheckTreasuryAccountId(
+        supabase,
+        popId,
+        "received",
+      )
+      if (!checkTreasuryId) {
+        return {
+          success: false,
+          error: "Faltan las cuentas de cheques. Recargá la página o contactá a soporte.",
+        }
+      }
+      treasuryAccountId = checkTreasuryId
     }
 
     if (!payOnClientAccount && (!paymentKind || !treasuryAccountId)) {
@@ -1289,6 +1325,15 @@ export async function completeSale(
     }
 
     const soldAtIso = new Date().toISOString()
+    const tz = timezoneForPopLedger(popRes.pop.country, popRes.pop.siteId)
+    const soldDate = toPopCalendarDate(soldAtIso, tz)
+    const dueDateInput = String(input.dueDate ?? "").trim()
+    const dueDate =
+      payOnClientAccount
+        ? /^\d{4}-\d{2}-\d{2}$/.test(dueDateInput)
+          ? dueDateInput
+          : addIsoCalendarDays(soldDate, CURRENT_ACCOUNT_SALE_DEFAULT_DUE_DAYS)
+        : soldDate
 
     const { data: saleIns, error: saleErr } = await supabase
       .from("sales")
@@ -1305,6 +1350,7 @@ export async function completeSale(
         currency: "ARS",
         status: "draft",
         sold_at: soldAtIso,
+        due_date: dueDate,
         cash_register_id: cashRegisterId,
         cash_register_session_id: cashRegisterSessionId,
         created_by: user.id,
@@ -1316,6 +1362,7 @@ export async function completeSale(
             : "pos",
         table_session_id: tableSessionId,
         counter_order_id: counterOrderId,
+        on_account: payOnClientAccount,
       })
       .select("id")
       .single()
@@ -1330,6 +1377,23 @@ export async function completeSale(
     saleIdForRollback = saleId
 
     if (!payOnClientAccount && paymentKind && treasuryAccountId) {
+      let checkId: string | null = null
+      if (paymentKind === "check" && checkoutCheckDetails) {
+        const checkRes = await insertCheckoutCheck(supabase, {
+          popId,
+          userId: user.id,
+          direction: "received",
+          amount: total,
+          details: checkoutCheckDetails,
+          sourceKind: "sale",
+          sourceId: saleId,
+        })
+        if (!checkRes.success) {
+          await cancelSaleRollback(supabase, saleId, [])
+          return { success: false, error: checkRes.error }
+        }
+        checkId = checkRes.checkId
+      }
       const { error: payErr } = await supabase.from("sale_payments").insert({
         pop_id: popId,
         sale_id: saleId,
@@ -1337,8 +1401,10 @@ export async function completeSale(
         treasury_account_id: treasuryAccountId,
         amount: total,
         sort_order: 0,
+        check_id: checkId,
       })
       if (payErr) {
+        if (checkId) await deleteCheckoutCheck(supabase, checkId)
         await cancelSaleRollback(supabase, saleId, [])
         return { success: false, error: payErr.message || "No se pudo registrar el cobro." }
       }
@@ -1361,7 +1427,6 @@ export async function completeSale(
       cogsTotal = roundMoney(cogsTotal + deductRes.amount)
     }
 
-    const tz = timezoneForPopLedger(popRes.pop.country, popRes.pop.siteId)
     const entryDate = entryDateIsoInTimezone(tz)
 
     const ledgerTaxTotal = accrueOutputVat ? taxTotal : 0

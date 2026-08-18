@@ -27,6 +27,9 @@ type Props = {
   /** @deprecated El diálogo usa estilos compartidos internamente. */
   styles?: DialogStyles
   clientAccountDescription?: string
+  popId?: string
+  defaultPartyName?: string
+  defaultPartyId?: string
 }
 
 export function SalePaymentMethodDialog({
@@ -41,6 +44,9 @@ export function SalePaymentMethodDialog({
   onSelectClientAccount,
   clientAccountDescription =
     "Entregás la mercadería ahora y registrás la deuda en Cuentas por cobrar.",
+  popId,
+  defaultPartyName,
+  defaultPartyId,
 }: Props) {
   return (
     <PaymentMethodDialog
@@ -57,6 +63,9 @@ export function SalePaymentMethodDialog({
       immediateSectionTitle="Cobro inmediato"
       cashTreasuryAccountId={cashTreasuryAccountId}
       cashRegisterName={cashRegisterName}
+      popId={popId}
+      defaultPartyName={defaultPartyName}
+      defaultPartyId={defaultPartyId}
     />
   )
 }

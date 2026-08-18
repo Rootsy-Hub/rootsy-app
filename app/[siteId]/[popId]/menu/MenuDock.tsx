@@ -17,6 +17,7 @@ import {
   useMenuDockEdit,
 } from "@/app/[siteId]/[popId]/menu/MenuDockDndContext"
 import type { MenuCatalogItem, MenuDockItemId } from "@/lib/menuCatalog"
+import { usePopOptimisticNav } from "@/context/PopOptimisticNavContext"
 import { popScopedHref } from "@/lib/popRoutes"
 import { cn } from "@/lib/utils"
 import { menuFloatingPillShellClass } from "@/app/[siteId]/[popId]/menu/menuFloatingPillStyles"
@@ -24,7 +25,7 @@ import { menuDockEditBadgeClass } from "@/app/[siteId]/[popId]/menu/menuNatureSt
 import { RootsIconButton } from "@/components/rootsy-button"
 import { useDraggable, useDroppable } from "@dnd-kit/core"
 import { Check, Minus, Pencil } from "lucide-react"
-import { useRouter } from "next/navigation"
+import Link from "next/link"
 
 type Props = {
   siteId: string
@@ -84,7 +85,7 @@ function DockSlotItem({
   shiftX,
   dragAnimating,
   canRemove,
-  onNavigate,
+  href,
   onRemove,
 }: {
   item: MenuCatalogItem
@@ -93,9 +94,10 @@ function DockSlotItem({
   shiftX: number
   dragAnimating: boolean
   canRemove: boolean
-  onNavigate: () => void
+  href: string | null
   onRemove: () => void
 }) {
+  const { start: startOptimisticNav } = usePopOptimisticNav()
   const {
     attributes,
     listeners,
@@ -152,14 +154,36 @@ function DockSlotItem({
           </button>
         ) : (
           <div className="group/dock-tip relative">
-            <button
-              type="button"
-              onClick={onNavigate}
-              className="relative transition-transform duration-200 hover:scale-110 active:scale-95"
-              aria-label={item.name}
-            >
-              <DockIconVisual icon={item.icon} sectionKey={item.sectionKey} />
-            </button>
+            {href ? (
+              <Link
+                href={href}
+                onClick={(event) => {
+                  if (
+                    href === "/home" ||
+                    event.metaKey ||
+                    event.ctrlKey ||
+                    event.shiftKey ||
+                    event.altKey
+                  ) {
+                    return
+                  }
+                  startOptimisticNav({ href, title: item.name })
+                }}
+                className="relative block transition-transform duration-200 hover:scale-110 active:scale-95"
+                aria-label={item.name}
+              >
+                <DockIconVisual icon={item.icon} sectionKey={item.sectionKey} />
+              </Link>
+            ) : (
+              <button
+                type="button"
+                disabled
+                className="relative cursor-default opacity-70"
+                aria-label={item.name}
+              >
+                <DockIconVisual icon={item.icon} sectionKey={item.sectionKey} />
+              </button>
+            )}
             <span
               role="tooltip"
               className={cn(
@@ -229,7 +253,6 @@ function DockIconsTrack({
   canRemove: boolean
   onRemove: (id: MenuDockItemId) => void
 }) {
-  const router = useRouter()
   const { setNodeRef } = useDroppable({
     id: DOCK_BAR_DROP_ID,
     disabled: !dragAnimating,
@@ -285,9 +308,7 @@ function DockIconsTrack({
             shiftX={shiftX}
             dragAnimating={dragAnimating}
             canRemove={canRemove}
-            onNavigate={() => {
-              if (target) router.push(target)
-            }}
+            href={target}
             onRemove={() => onRemove(item.id)}
           />
         )

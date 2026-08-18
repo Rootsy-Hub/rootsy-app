@@ -1,9 +1,15 @@
 "use client"
 
+import { CheckUpsertFormFields } from "@/app/[siteId]/[popId]/checks/CheckUpsertFormFields"
+import {
+  defaultCheckCreateFormState,
+  type CheckCreateFormState,
+} from "@/app/[siteId]/[popId]/checks/checkFormState"
 import type {
   ServiceChargeListRow,
   ServiceChargePaymentMethodOption,
 } from "@/app/[siteId]/[popId]/active-services/actions"
+import type { CheckoutCheckDetails } from "@/lib/checkoutCheck"
 import {
   RootsDialogBody,
   RootsDialogContent,
@@ -27,6 +33,7 @@ import { useEffect, useState, type FormEvent } from "react"
 type Props = {
   open: boolean
   onOpenChange: (open: boolean) => void
+  popId: string
   charge: ServiceChargeListRow | null
   paymentMethods: ServiceChargePaymentMethodOption[]
   saving?: boolean
@@ -36,6 +43,7 @@ type Props = {
     paidAt: string
     paymentMethodKey: string
     notes: string
+    checkDetails: CheckoutCheckDetails | null
   }) => void
 }
 
@@ -47,6 +55,7 @@ function todayIso(): string {
 export function ServiceChargePaymentDialog({
   open,
   onOpenChange,
+  popId,
   charge,
   paymentMethods,
   saving = false,
@@ -57,6 +66,9 @@ export function ServiceChargePaymentDialog({
   const [paidAt, setPaidAt] = useState(todayIso())
   const [paymentMethodKey, setPaymentMethodKey] = useState("")
   const [notes, setNotes] = useState("")
+  const [checkForm, setCheckForm] = useState<CheckCreateFormState>(() =>
+    defaultCheckCreateFormState("received"),
+  )
 
   useEffect(() => {
     if (!open || !charge) return
@@ -66,7 +78,16 @@ export function ServiceChargePaymentDialog({
       paymentMethods[0] ? treasuryPaymentOptionKey(paymentMethods[0]) : "",
     )
     setNotes("")
+    setCheckForm({
+      ...defaultCheckCreateFormState("received"),
+      partyName: charge.clientName,
+      partyId: charge.clientId,
+    })
   }, [open, charge, paymentMethods])
+
+  const selectedMethod = paymentMethods.find(
+    (pm) => treasuryPaymentOptionKey(pm) === paymentMethodKey.trim(),
+  )
 
   const handleSubmit = (event: FormEvent) => {
     event.preventDefault()
@@ -75,6 +96,18 @@ export function ServiceChargePaymentDialog({
       paidAt,
       paymentMethodKey,
       notes,
+      checkDetails:
+        selectedMethod?.kind === "check"
+          ? {
+              checkNumber: checkForm.checkNumber,
+              bankName: checkForm.bankName,
+              issueDate: checkForm.issueDate,
+              dueDate: checkForm.dueDate,
+              partyName: checkForm.partyName,
+              partyId: checkForm.partyId,
+              notes: checkForm.notes,
+            }
+          : null,
     })
   }
 
@@ -141,6 +174,15 @@ export function ServiceChargePaymentDialog({
                   ))}
                 </select>
               </div>
+              {selectedMethod?.kind === "check" ? (
+                <CheckUpsertFormFields
+                  popId={popId}
+                  idPrefix="service-charge-check"
+                  form={checkForm}
+                  setForm={setCheckForm}
+                  hideAmount
+                />
+              ) : null}
               <RootsFormTextareaField
                 label="Notas"
                 id="payment-notes"

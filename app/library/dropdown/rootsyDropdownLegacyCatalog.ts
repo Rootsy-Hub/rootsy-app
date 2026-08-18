@@ -69,7 +69,7 @@ export const ROOTSY_DROPDOWN_SURFACES: DropdownSurfaceToken[] = [
     contentClass: "lightToolbarDropdownContentClass (+ w-44)",
     itemClass: "lightToolbarDropdownItemClass",
     usage: "Menú ⋮ en tablas layout — Duplicar, Editar, Eliminar.",
-    source: "app/.../layout/LayoutPreviewListTable.tsx",
+    source: "components/data-workspace · menú ⋮ de fila",
   },
 ]
 

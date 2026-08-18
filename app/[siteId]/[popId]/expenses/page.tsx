@@ -15,6 +15,12 @@ import {
   type ExpenseListRow,
   type PaymentMethodOption,
 } from "@/app/[siteId]/[popId]/expenses/actions"
+import { CheckUpsertFormFields } from "@/app/[siteId]/[popId]/checks/CheckUpsertFormFields"
+import {
+  defaultCheckCreateFormState,
+  type CheckCreateFormState,
+} from "@/app/[siteId]/[popId]/checks/checkFormState"
+import { parseCheckoutCheckDetails } from "@/lib/checkoutCheck"
 import { treasuryPaymentOptionKey } from "@/lib/treasuryPaymentOptions"
 import { ExpenseKindCardsPanel } from "@/app/[siteId]/[popId]/expenses/ExpenseKindCards"
 import { ExpensePeriodToolbar } from "@/app/[siteId]/[popId]/expenses/ExpensePeriodToolbar"
@@ -37,7 +43,6 @@ import {
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
-import withAuth from "@/hoc/withAuth"
 import {
   Plus,
   Tags,
@@ -142,6 +147,9 @@ function ExpensesPage() {
   const [payAmount, setPayAmount] = useState("")
   const [payDate, setPayDate] = useState("")
   const [payMethodKey, setPayMethodKey] = useState("")
+  const [payCheckForm, setPayCheckForm] = useState<CheckCreateFormState>(() =>
+    defaultCheckCreateFormState("issued"),
+  )
   const [paySaving, setPaySaving] = useState(false)
   const [payBanner, setPayBanner] = useState<string | null>(null)
 
@@ -299,6 +307,7 @@ function ExpensesPage() {
     setPayMethodKey(
       paymentMethods[0] ? treasuryPaymentOptionKey(paymentMethods[0]) : "",
     )
+    setPayCheckForm(defaultCheckCreateFormState("issued"))
     setPayOpen(true)
   }
 
@@ -311,6 +320,24 @@ function ExpensesPage() {
     const selected = paymentMethods.find(
       (pm) => treasuryPaymentOptionKey(pm) === payMethodKey.trim(),
     )
+    let checkDetails = null
+    if (selected?.kind === "check") {
+      const parsed = parseCheckoutCheckDetails({
+        checkNumber: payCheckForm.checkNumber,
+        bankName: payCheckForm.bankName,
+        issueDate: payCheckForm.issueDate,
+        dueDate: payCheckForm.dueDate,
+        partyName: payCheckForm.partyName,
+        partyId: payCheckForm.partyId,
+        notes: payCheckForm.notes,
+      })
+      if (!parsed.ok) {
+        setPaySaving(false)
+        setPayBanner(parsed.error)
+        return
+      }
+      checkDetails = parsed.details
+    }
     const res = await recordExpensePayment(
       popId,
       payExpense.id,
@@ -318,6 +345,7 @@ function ExpensesPage() {
       payDate,
       selected?.kind ?? null,
       selected?.treasuryAccountId ?? null,
+      checkDetails,
     )
     setPaySaving(false)
     if (!res.success) {
@@ -633,6 +661,17 @@ function ExpensesPage() {
                   ))}
                 </select>
               </div>
+              {paymentMethods.find(
+                (pm) => treasuryPaymentOptionKey(pm) === payMethodKey.trim(),
+              )?.kind === "check" && popId ? (
+                <CheckUpsertFormFields
+                  popId={popId}
+                  idPrefix="expense-check"
+                  form={payCheckForm}
+                  setForm={setPayCheckForm}
+                  hideAmount
+                />
+              ) : null}
             </div>
             <DialogFooter>
               <Button type="button" variant="secondary" onClick={() => setPayOpen(false)}>
@@ -747,4 +786,4 @@ function ExpensesPage() {
   )
 }
 
-export default withAuth(ExpensesPage)
+export default ExpensesPage

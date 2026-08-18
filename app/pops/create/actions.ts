@@ -117,7 +117,7 @@ export async function getPopCreatePlanOptions(
   for (const row of data) {
     const planRaw = Array.isArray(row.plan) ? row.plan[0] : row.plan
     if (!planRaw || planRaw.is_active !== true || planRaw.is_public !== true) continue
-    if (planRaw.name === "free_trial") continue
+    if (planRaw.name === "free_trial" || planRaw.name === "enterprise") continue
 
     const planId = String(planRaw.id)
     plans.set(planId, {
@@ -182,7 +182,7 @@ export async function finalizePopCreation(
     if (popError || !popRow?.organization_id) {
       return {
         success: false,
-        error: "No se pudo resolver la organización del POP",
+        error: "No se pudo resolver la organización del negocio",
         details: popError?.message,
       }
     }
@@ -325,7 +325,7 @@ export async function finalizePopCreation(
     const message = error instanceof Error ? error.message : "Error desconocido"
     return {
       success: false,
-      error: "Error inesperado al crear el punto de venta",
+      error: "Error inesperado al crear el negocio",
       details: message,
     }
   }

@@ -78,6 +78,12 @@ export type PopAccessCache = {
   canEnter: boolean
 }
 
+/** Cache `_user-pops-access-batch` — IDs + access de todos los POPs. */
+export type UserPopsAccessBatchCache = {
+  popIds: string[]
+  accessByPopId: Record<string, PopAccessCache>
+}
+
 export type HomePopListItem = {
   id: string
   siteId: string

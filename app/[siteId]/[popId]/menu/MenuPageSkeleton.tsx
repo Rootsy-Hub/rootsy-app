@@ -37,7 +37,7 @@ function MenuIconTileSkeleton({ index }: { index: number }) {
   return (
     <div
       aria-hidden
-      className="flex w-24 flex-col items-center gap-2.5 justify-self-center"
+      className="flex h-[7.125rem] w-24 flex-col items-center gap-2.5 justify-self-center"
       style={{ animationDelay: delay }}
     >
       <Skeleton
@@ -45,7 +45,7 @@ function MenuIconTileSkeleton({ index }: { index: number }) {
         style={{ animationDelay: delay }}
       />
       <Skeleton
-        className={cn("h-3 rounded-full bg-muted-foreground/10", labelWidth)}
+        className={cn("h-8 rounded-sm bg-muted-foreground/10", labelWidth)}
         style={{ animationDelay: delay }}
       />
     </div>

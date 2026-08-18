@@ -188,6 +188,9 @@ export function useMesasSaleCheckout(
     catalogLoading,
     catalogError,
     catalogLoadAttempted,
+    mergeCatalogArticles,
+    mergeCatalogRecipes,
+    ensureCatalogItems,
   } = useMenuCatalogLoader(popId, { enabled: catalogEnabled })
 
   const {
@@ -547,6 +550,17 @@ export function useMesasSaleCheckout(
     () => buildMenuProductMap(productosCatalogo),
     [productosCatalogo],
   )
+
+  useEffect(() => {
+    const articleIds: string[] = []
+    const recipeIds: string[] = []
+    for (const item of carrito) {
+      const kind = normalizeCartItemKind(item.kind)
+      if (kind === "recipe") recipeIds.push(item.productoId)
+      else if (kind === "article") articleIds.push(item.productoId)
+    }
+    void ensureCatalogItems(articleIds, recipeIds)
+  }, [carrito, ensureCatalogItems])
 
   const overrideSnapshot = useMemo(
     () => ({
@@ -1366,6 +1380,10 @@ export function useMesasSaleCheckout(
           treasuryAccountId: payOnClientAccount
             ? null
             : metodoPagoSeleccionado?.treasuryAccountId,
+          checkDetails:
+            !payOnClientAccount && metodoPagoSeleccionado?.kind === "check"
+              ? metodoPagoSeleccionado.checkDetails ?? null
+              : null,
           generalDiscountMode:
             modoDescuento === "porcentaje" ? "porcentaje" : "fijo",
           valorDescuentoPorcentaje:
@@ -1621,6 +1639,8 @@ export function useMesasSaleCheckout(
     catalogLoading,
     catalogError,
     catalogLoadAttempted,
+    mergeCatalogArticles,
+    mergeCatalogRecipes,
     orderPanelLoading,
     openCashSession,
     treasuryPaymentContext,

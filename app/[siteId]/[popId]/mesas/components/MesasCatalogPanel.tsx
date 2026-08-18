@@ -23,6 +23,8 @@ export function MesasCatalogPanel({
     menuCategorySections,
     productosCatalogo,
     agregarAlCarrito,
+    mergeCatalogArticles,
+    mergeCatalogRecipes,
     promoWizardOpen,
     setPromoWizardOpen,
     promoWizardTarget,
@@ -41,6 +43,10 @@ export function MesasCatalogPanel({
         error={catalogError}
         onAddProduct={agregarAlCarrito}
         catalogSidebarOpen={catalogSidebarOpen}
+        catalogScope="menu"
+        itemsSource="menu"
+        mergeCatalogArticles={mergeCatalogArticles}
+        mergeCatalogRecipes={mergeCatalogRecipes}
       />
       <PromotionComboWizard
         open={promoWizardOpen}

@@ -1,21 +1,21 @@
 "use client"
 
 import { useEffect, type ComponentType } from "react"
-import { useRouter } from "next/navigation"
+import { useRouter, useSearchParams } from "next/navigation"
 import { useAuth } from "@/context/AuthContextSupabase"
+import { signupContinueHref } from "@/lib/signupIntent"
 import { Spinner } from "@/components/ui/spinner"
-
-const HOME_PATH = "/home"
 
 export function withGuestAuth<P extends object>(Component: ComponentType<P>) {
   function WithGuestGuard(props: P) {
     const { user, loading } = useAuth()
     const router = useRouter()
+    const searchParams = useSearchParams()
 
     useEffect(() => {
       if (loading || !user) return
-      router.replace(HOME_PATH)
-    }, [user, loading, router])
+      router.replace(signupContinueHref(searchParams))
+    }, [user, loading, router, searchParams])
 
     if (loading) {
       return (

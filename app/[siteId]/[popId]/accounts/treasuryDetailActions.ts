@@ -22,6 +22,7 @@ import {
   isCardPayableChartCode,
   isMotherTreasuryAccount,
   isSettlementReceivableChartCode,
+  isTreasuryAccountKind,
   treasuryKindLabel,
 } from "@/lib/treasuryAccountKinds"
 import { loadPopLedgerTimeZone } from "@/lib/popTimezoneServer"
@@ -170,10 +171,7 @@ function parseAmount(v: unknown): number {
 
 function parseTreasuryKind(v: unknown): TreasuryAccountKind {
   const k = String(v ?? "other")
-  if (k === "cash" || k === "bank" || k === "wallet" || k === "card_payable") {
-    return k
-  }
-  return "other"
+  return isTreasuryAccountKind(k) ? k : "other"
 }
 
 type TreasuryAccountMeta = {

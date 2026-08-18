@@ -42,7 +42,10 @@ const SECTION_LABELS: Record<PopPageKey, string> = {
   settings: "Ajustes",
   hr: "Recursos humanos",
   menu: "Menú",
-  "menu/docs": "Documentación",
+  quotes: "Presupuestos",
+  purchase_orders: "Órdenes de compra",
+  checks: "Cheques",
+  "current-accounts": "Cuentas corrientes",
 }
 
 /** Orden de secciones en el editor de permisos (alineado al menú del POP). */
@@ -60,6 +63,8 @@ const SECTION_ORDER: PopPageKey[] = [
   "inventory",
   "clients",
   "suppliers",
+  "checks",
+  "current-accounts",
   "invoices",
   "accounting",
   "accounts",

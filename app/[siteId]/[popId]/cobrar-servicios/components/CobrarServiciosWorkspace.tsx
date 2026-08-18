@@ -4,6 +4,7 @@ import {
   createServiceCharges,
   getActiveServicesPageData,
   getServiceTypeChargeOptions,
+  recordServiceChargePayment,
   type CreateServiceChargeInput,
   type ServiceTypeChargeOption,
 } from "@/app/[siteId]/[popId]/active-services/actions"
@@ -124,6 +125,7 @@ function defaultFormState(): ServiceChargeCreateWizardForm {
     discountMode: "",
     discountValue: "",
     paymentMethodKey: "",
+    checkDetails: null,
     comprobanteLabel: "",
     issueInvoiceOnCreate: true,
     printInvoiceOnCreate: false,
@@ -475,6 +477,15 @@ export function CobrarServiciosWorkspace({ siteId, popId }: Props) {
         ...treasuryPaymentContext.posTreasuryAccounts,
       ].find((account) => account.id === parsed.treasuryAccountId)?.name ?? null
 
+    if (parsed.kind === "check") {
+      return {
+        paymentLabel: form.checkDetails
+          ? `Cheque ${form.checkDetails.checkNumber}`.trim()
+          : kindLabel,
+        pagoSubLabel: kindLabel,
+      }
+    }
+
     if (parsed.kind === "cash" && treasuryPaymentContext.cashTreasuryAccounts.length <= 1) {
       return { paymentLabel: kindLabel, pagoSubLabel: null }
     }
@@ -484,7 +495,7 @@ export function CobrarServiciosWorkspace({ siteId, popId }: Props) {
     }
 
     return { paymentLabel: selection.label, pagoSubLabel: kindLabel }
-  }, [form.paymentMethodKey, treasuryPaymentContext])
+  }, [form.checkDetails, form.paymentMethodKey, treasuryPaymentContext])
 
   const pagoIcon = useMemo(() => {
     if (!isServiceChargePaymentMethodChosen(form.paymentMethodKey)) {
@@ -639,6 +650,8 @@ export function CobrarServiciosWorkspace({ siteId, popId }: Props) {
     if (!canCreate || !selectedService) return false
     if (!isServiceChargeClientReady(form.clientDraft)) return false
     if (!isServiceChargePaymentMethodChosen(form.paymentMethodKey)) return false
+    const parsedPayment = parseTreasuryPaymentOptionKey(form.paymentMethodKey)
+    if (parsedPayment?.kind === "check" && !form.checkDetails) return false
     if (!isServiceChargeComprobanteChosen(form.comprobanteLabel)) return false
     const errors = validateServiceChargeOperateForm(form, validationOptions)
     return !hasServiceChargeCreateFieldErrors(errors)
@@ -649,6 +662,10 @@ export function CobrarServiciosWorkspace({ siteId, popId }: Props) {
     if (!isServiceChargeClientReady(form.clientDraft)) return "Completá el cliente."
     if (!isServiceChargePaymentMethodChosen(form.paymentMethodKey)) {
       return "Elegí el medio de pago."
+    }
+    const parsedPayment = parseTreasuryPaymentOptionKey(form.paymentMethodKey)
+    if (parsedPayment?.kind === "check" && !form.checkDetails) {
+      return "Completá los datos del cheque."
     }
     if (!isServiceChargeComprobanteChosen(form.comprobanteLabel)) {
       return "Elegí el comprobante."
@@ -720,13 +737,38 @@ export function CobrarServiciosWorkspace({ siteId, popId }: Props) {
     const payload = buildCreatePayload(form, selectedService, canCreateClient)
     const res = await createServiceCharges(popId, payload)
     if (!isMountedRef.current) return
-    setSaving(false)
 
     if (!res.success) {
+      setSaving(false)
       setSubmitError(res.error)
       return
     }
 
+    const parsedPayment = parseTreasuryPaymentOptionKey(form.paymentMethodKey)
+    if (
+      parsedPayment?.kind === "check" &&
+      form.checkDetails &&
+      res.chargeIds.length === 1
+    ) {
+      const payRes = await recordServiceChargePayment(
+        popId,
+        res.chargeIds[0]!,
+        chargeTotal,
+        todayIso(),
+        "check",
+        parsedPayment.treasuryAccountId,
+        form.notes,
+        form.checkDetails,
+      )
+      if (!isMountedRef.current) return
+      if (!payRes.success) {
+        setSaving(false)
+        setSubmitError(payRes.error)
+        return
+      }
+    }
+
+    setSaving(false)
     setCreateChargeConfirmOpen(false)
     setSuccessOpen(true)
     resetCharge()
@@ -896,7 +938,20 @@ export function CobrarServiciosWorkspace({ siteId, popId }: Props) {
         onOpenChange={setPagoModalAbierto}
         treasuryContext={treasuryPaymentContext}
         value={form.paymentMethodKey}
-        onChange={(paymentMethodKey) => patchForm({ paymentMethodKey })}
+        popId={popId}
+        defaultPartyName={
+          form.clientDraft.catalogClient?.name.trim() ||
+          form.clientDraft.manualName.trim() ||
+          ""
+        }
+        defaultPartyId={form.clientDraft.catalogClient?.id ?? ""}
+        checkDetails={form.checkDetails}
+        onChange={(paymentMethodKey, checkDetails) =>
+          patchForm({
+            paymentMethodKey,
+            checkDetails: checkDetails ?? null,
+          })
+        }
       />
 
       <GeneralDiscountDialog

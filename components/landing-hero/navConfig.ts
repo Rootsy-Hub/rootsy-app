@@ -14,3 +14,6 @@ export const LANDING_NAV_ITEMS: ReadonlyArray<NavItem> = [
 
 export const LOGIN_URL = process.env.NEXT_PUBLIC_LOGIN_URL ?? "/login"
 export const REGISTER_URL = process.env.NEXT_PUBLIC_REGISTER_URL ?? "/register"
+export const SALES_URL =
+  process.env.NEXT_PUBLIC_SALES_URL ??
+  "mailto:?subject=Consulta%20plan%20Enterprise%20Rootsy"

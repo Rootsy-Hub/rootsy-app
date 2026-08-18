@@ -1,9 +1,7 @@
 import type { LucideIcon } from "lucide-react"
 import {
   Activity,
-  ArrowLeftRight,
   Banknote,
-  BarChart3,
   Bell,
   BookOpen,
   Briefcase,
@@ -62,8 +60,9 @@ export type MenuItemLink =
   | "cobrar-servicios"
   | "promotions"
   | "reports"
-  | "summary"
   | "statistics"
+  | "checks"
+  | "current-accounts"
   | "section"
 
 /** Identificador de un acceso directo del dock (solo rutas navegables). */
@@ -108,48 +107,46 @@ export const menuSectionsRaw: Record<string, MenuSectionDef> = {
   operar: {
     title: "Operar",
     items: [
-      { name: "Vender", icon: ShoppingCart, badge: "HOT", link: "sale" },
+      { name: "Vender", icon: ShoppingCart, link: "sale" },
       { name: "Mostrador", icon: Monitor, link: "mostrador" },
-      { name: "Mesas", icon: UtensilsCrossed, badge: "12", link: "mesas" },
+      { name: "Mesas", icon: UtensilsCrossed, link: "mesas" },
+      { name: "Vender servicio", icon: Banknote, link: "cobrar-servicios" },
+      { name: "Servicios activos", icon: Activity, link: "active-services" },
       { name: "Comprar", icon: ShoppingBag, link: "purchases" },
       { name: "Gastos", icon: Receipt, link: "expenses" },
-      { name: "Fabricación", icon: Factory, link: "section" },
-      { name: "Stock", icon: Package, badge: "3", link: "articles" },
-      { name: "Clientes", icon: Users, link: "clients" },
-      { name: "Proveedores", icon: Truck, link: "suppliers" },
-      { name: "Cuentas Ctes", icon: CreditCard, link: "section" },
-      { name: "Promociones", icon: Sparkles, link: "promotions" },
-      { name: "Recetas", icon: BookOpen, link: "recipes" },
-      { name: "Servicios", icon: Briefcase, link: "services" },
-      { name: "Vender servicio", icon: Banknote, badge: "NUEVO", link: "cobrar-servicios" },
-      { name: "Servicios activos", icon: Activity, link: "active-services" },
+      { name: "Inventario", icon: ClipboardList, link: "inventory" },
+      { name: "Fabricar", icon: Factory, link: "section", moduleKey: "manufacturing" },
+      { name: "Cuentas corrientes", icon: CreditCard, link: "current-accounts" },
     ],
   },
   administrar: {
     title: "Administrar",
     items: [
-      { name: "Presupuestos", icon: FileText, link: "section" },
-      { name: "Resumen", icon: BarChart3, badge: "NEW", link: "summary", moduleKey: "summary" },
-      { name: "Estadísticas", icon: PieChart, link: "statistics", moduleKey: "statistics" },
-      { name: "Operaciones", icon: Activity, link: "operations" },
-      { name: "Movimientos", icon: ArrowLeftRight, link: "section" },
-      { name: "Inventario", icon: ClipboardList, link: "inventory" },
+      { name: "Clientes", icon: Users, link: "clients" },
+      { name: "Proveedores", icon: Truck, link: "suppliers" },
       { name: "Facturas", icon: FileBarChart, link: "invoices" },
+      { name: "Stock", icon: Package, link: "articles" },
+      { name: "Recetas", icon: BookOpen, link: "recipes" },
+      { name: "Promociones", icon: Sparkles, link: "promotions" },
+      { name: "Servicios", icon: Briefcase, link: "services" },
+      { name: "Cheques", icon: Wallet, link: "checks" },
+      { name: "Operaciones", icon: Activity, link: "operations" },
+      { name: "Estadísticas", icon: PieChart, link: "statistics", moduleKey: "statistics" },
       { name: "Reportes", icon: FileCheck, link: "reports" },
-      { name: "Cheques", icon: Wallet, link: "section" },
-      { name: "Órdenes", icon: FileText, link: "section" },
+      { name: "Presupuestos", icon: FileText, link: "quotes" },
+      { name: "Órdenes de compra", icon: FileText, link: "purchase-orders" },
     ],
   },
   configurar: {
     title: "Configurar",
     items: [
-      { name: "Mensajes", icon: MessageSquare, link: "section" },
-      { name: "Alertas", icon: Bell, badge: "8", link: "section" },
       { name: "Cuentas", icon: Landmark, link: "accounts" },
-      { name: "Cajas", icon: Calculator, link: "cash-registers" },
+      { name: "Recursos Humanos", icon: UserCog, link: "hr" },
       { name: "Contabilidad", icon: Landmark, link: "accounting" },
-      { name: "RRHH", icon: UserCog, link: "hr" },
+      { name: "Cajas", icon: Calculator, link: "cash-registers" },
       { name: "Impresoras", icon: Printer, link: "printers" },
+      { name: "Alertas", icon: Bell, link: "section", moduleKey: "alerts" },
+      { name: "Chat", icon: MessageSquare, link: "section", moduleKey: "chat" },
       { name: "Ajustes", icon: Cog, link: "settings" },
     ],
   },

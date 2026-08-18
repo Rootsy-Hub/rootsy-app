@@ -1,31 +1,68 @@
 "use client"
 
-import withAuth from "@/hoc/withAuth"
+import dynamic from "next/dynamic"
 import {
-  getPurchaseCatalog,
   type PurchaseCatalogArticle,
-  type PurchaseCatalogCategorySection,
   type PurchaseCatalogArticleCost,
   type PurchaseCatalogPaymentOption,
   type PurchaseCatalogSupplier,
 } from "@/app/[siteId]/[popId]/purchases/actions"
+import { usePurchaseCatalogLoader } from "@/hooks/usePurchaseCatalogLoader"
+import { invalidatePopOperateCatalogs } from "@/lib/invalidatePopOperateCatalogs"
+import { useQueryClient } from "@tanstack/react-query"
 import { PurchaseCatalogBrowser } from "@/components/purchase-operation/PurchaseCatalogBrowser"
 import { PurchaseOperationToolbox } from "@/components/purchase-operation/PurchaseOperationToolbox"
-import { PurchasePaymentMethodDialog } from "@/components/purchase-operation/PurchasePaymentMethodDialog"
-import { SimpleOperationCheckoutConfirmDialog } from "@/components/checkout/SimpleOperationCheckoutConfirmDialog"
 import { PurchaseOperationTicketOrderPanel } from "@/components/purchase-operation/PurchaseOperationTicketOrderPanel"
 import type { PurchaseCatalogProduct } from "@/components/purchase-operation/purchaseCatalogTypes"
-import { PurchaseArticleCostPickerDialog } from "@/components/purchase-operation/PurchaseArticleCostPickerDialog"
 import type { PurchaseLineEditInput } from "@/components/purchase-operation/PurchaseCartLineCard"
-import { OperationPartyPickerDialog } from "@/components/checkout/OperationPartyPickerDialog"
-import { PurchaseComprobantePickerDialog } from "@/components/checkout/PurchaseComprobantePickerDialog"
-import { GeneralDiscountDialog } from "@/components/checkout/GeneralDiscountDialog"
+
+const PurchasePaymentMethodDialog = dynamic(
+  () =>
+    import("@/components/purchase-operation/PurchasePaymentMethodDialog").then(
+      (mod) => mod.PurchasePaymentMethodDialog,
+    ),
+  { ssr: false },
+)
+const SimpleOperationCheckoutConfirmDialog = dynamic(
+  () =>
+    import("@/components/checkout/SimpleOperationCheckoutConfirmDialog").then(
+      (mod) => mod.SimpleOperationCheckoutConfirmDialog,
+    ),
+  { ssr: false },
+)
+const PurchaseArticleCostPickerDialog = dynamic(
+  () =>
+    import("@/components/purchase-operation/PurchaseArticleCostPickerDialog").then(
+      (mod) => mod.PurchaseArticleCostPickerDialog,
+    ),
+  { ssr: false },
+)
+const OperationPartyPickerDialog = dynamic(
+  () =>
+    import("@/components/checkout/OperationPartyPickerDialog").then(
+      (mod) => mod.OperationPartyPickerDialog,
+    ),
+  { ssr: false },
+)
+const PurchaseComprobantePickerDialog = dynamic(
+  () =>
+    import("@/components/checkout/PurchaseComprobantePickerDialog").then(
+      (mod) => mod.PurchaseComprobantePickerDialog,
+    ),
+  { ssr: false },
+)
+const GeneralDiscountDialog = dynamic(
+  () =>
+    import("@/components/checkout/GeneralDiscountDialog").then(
+      (mod) => mod.GeneralDiscountDialog,
+    ),
+  { ssr: false },
+)
 import {
   defaultPurchaseCheckoutPaymentSelection,
   isPurchasePaymentSelectionValid,
   resolvePurchaseToolboxPaymentDisplay,
 } from "@/lib/purchaseCheckoutPayment"
-import type { TreasuryPaymentContext } from "@/lib/treasuryPaymentOptions"
 import {
   CLIENT_IVA_CONDITION_OPTIONS,
 } from "@/app/[siteId]/[popId]/clients/clientIvaConstants"
@@ -141,67 +178,34 @@ function PurchasesPage() {
   const orderIdFromUrl = searchParams.get("orderId")
   const siteId = typeof params?.siteId === "string" ? params.siteId : ""
   const popId = typeof params?.popId === "string" ? params.popId : undefined
+  const queryClient = useQueryClient()
   const {
     open: catalogSidebarOpen,
     setOpen: setCatalogSidebarOpen,
   } = useDataWorkspaceSidebar(siteId, popId ?? "", Boolean(popId))
   const { user } = useAuth()
 
-  const [catalogArticles, setCatalogArticles] = useState<PurchaseCatalogArticle[]>(
-    [],
-  )
-  const [catalogCategorySections, setCatalogCategorySections] = useState<
-    PurchaseCatalogCategorySection[]
-  >([])
-  const [popName, setPopName] = useState("")
-  const [catalogLoading, setCatalogLoading] = useState(true)
-  const [catalogError, setCatalogError] = useState<string | null>(null)
-  const [canCreate, setCanCreate] = useState(false)
-  const [canUpdateArticles, setCanUpdateArticles] = useState(false)
-  const [treasuryPaymentContext, setTreasuryPaymentContext] =
-    useState<TreasuryPaymentContext | null>(null)
-  const [canReadPaymentMethods, setCanReadPaymentMethods] = useState(false)
+  const {
+    catalogArticles,
+    catalogCategorySections,
+    popName,
+    canCreate,
+    canUpdateArticles,
+    treasuryPaymentContext,
+    canReadPaymentMethods,
+    mergeCatalogArticles,
+    ensureCatalogArticles,
+    catalogLoading: catalogQueryLoading,
+    catalogError: catalogQueryError,
+  } = usePurchaseCatalogLoader(popId, { enabled: Boolean(popId && siteId) })
+  const catalogLoading = !popId || !siteId ? false : catalogQueryLoading
+  const catalogError =
+    !popId || !siteId ? "Punto de venta no encontrado" : catalogQueryError
 
   const productosCatalogo = useMemo(
     () => catalogArticles.map(articleToProducto),
     [catalogArticles],
   )
-
-  const loadCatalog = useCallback(async () => {
-    if (!popId || !siteId) {
-      setCatalogLoading(false)
-      setCatalogError("Punto de venta no encontrado")
-      return
-    }
-    setCatalogLoading(true)
-    setCatalogError(null)
-    const res = await getPurchaseCatalog(popId)
-    if (!res.success) {
-      setCatalogArticles([])
-      setCatalogCategorySections([])
-      setPopName("")
-      setCanCreate(false)
-      setCanUpdateArticles(false)
-      setTreasuryPaymentContext(null)
-      setCanReadPaymentMethods(false)
-      setCatalogError(res.error)
-      setCatalogLoading(false)
-      return
-    }
-    setCatalogArticles(res.articles)
-    setCatalogCategorySections(res.categorySections)
-    setPopName(res.popName)
-    setCanCreate(res.canCreate)
-    setCanUpdateArticles(res.canUpdateArticles)
-    setTreasuryPaymentContext(res.treasuryPaymentContext)
-    setCanReadPaymentMethods(res.canReadPaymentMethods)
-    setCatalogError(null)
-    setCatalogLoading(false)
-  }, [popId, siteId])
-
-  useEffect(() => {
-    void loadCatalog()
-  }, [loadCatalog])
 
   useEffect(() => {
     if (!canReadPaymentMethods || !treasuryPaymentContext || orderIdFromUrl) return
@@ -214,6 +218,10 @@ function PurchasesPage() {
   }, [canReadPaymentMethods, treasuryPaymentContext, orderIdFromUrl])
 
   const [carrito, setCarrito] = useState<ItemCarrito[]>([])
+
+  useEffect(() => {
+    void ensureCatalogArticles(carrito.map((item) => item.productoId))
+  }, [carrito, ensureCatalogArticles])
   const [costPickerArticleId, setCostPickerArticleId] = useState<string | null>(
     null,
   )
@@ -514,6 +522,13 @@ function PurchasesPage() {
   const confirmarCompra = useCallback(async () => {
     if (!popId) return
     if (!payOnSupplierAccount && !metodoPagoSeleccionado) return
+    if (
+      !payOnSupplierAccount &&
+      metodoPagoSeleccionado?.kind === "check" &&
+      !metodoPagoSeleccionado.checkDetails
+    ) {
+      return
+    }
     setCompraError(null)
     setCompraSubmitting(true)
     try {
@@ -546,6 +561,10 @@ function PurchasesPage() {
         treasuryAccountId: payOnSupplierAccount
           ? null
           : metodoPagoSeleccionado?.treasuryAccountId ?? null,
+        checkDetails:
+          !payOnSupplierAccount && metodoPagoSeleccionado?.kind === "check"
+            ? metodoPagoSeleccionado.checkDetails ?? null
+            : null,
         lines: carrito.map((i) => {
           const detalle = itemsDetallados.find((d) => d.lineId === i.lineId)
           const fallback = detalle?.cost?.unitPrice ?? 0
@@ -567,7 +586,7 @@ function PurchasesPage() {
       }
       setComprarConfirmOpen(false)
       limpiarCompra()
-      void loadCatalog()
+      if (popId) invalidatePopOperateCatalogs(queryClient, popId)
     } finally {
       setCompraSubmitting(false)
     }
@@ -594,7 +613,7 @@ function PurchasesPage() {
     itemDescuentoDraft,
     itemComentarios,
     limpiarCompra,
-    loadCatalog,
+    queryClient,
   ])
 
   const ordenComprobanteLabel = confirmComprobanteLabel || "Sin comprobante"
@@ -1171,6 +1190,8 @@ function PurchasesPage() {
           <LayoutsOperarMainGrid
             catalog={
               <PurchaseCatalogBrowser
+                popId={popId}
+                mergeCatalogArticles={mergeCatalogArticles}
                 categorySections={catalogCategorySections}
                 products={productosCatalogo}
                 loading={catalogLoading}
@@ -1310,6 +1331,13 @@ function PurchasesPage() {
         payOnSupplierAccount={payOnSupplierAccount}
         cardInstallments={cardInstallments}
         onCardInstallmentsChange={setCardInstallments}
+        popId={popId}
+        defaultPartyName={proveedorSeleccionado?.name ?? ""}
+        defaultPartyId={
+          proveedorSeleccionado && !proveedorSeleccionado.manual
+            ? proveedorSeleccionado.id ?? ""
+            : ""
+        }
         onSelectImmediate={(option) => {
           setPayOnSupplierAccount(false)
           setMetodoPagoSeleccionado(option)
@@ -1439,4 +1467,4 @@ function PurchasesPage() {
   )
 }
 
-export default withAuth(PurchasesPage)
+export default PurchasesPage

@@ -47,7 +47,6 @@ import {
   parseMoneyInput,
 } from "@/lib/moneyInput"
 import { formatLocaleDateTime } from "@/lib/popTimezone"
-import withAuth from "@/hoc/withAuth"
 import { usePopWorkspace } from "@/context/PopWorkspaceContext"
 import {
   DoorClosed,
@@ -602,4 +601,4 @@ function CashRegistersPage() {
   )
 }
 
-export default withAuth(CashRegistersPage)
+export default CashRegistersPage

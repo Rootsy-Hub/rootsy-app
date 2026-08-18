@@ -1,0 +1,8 @@
+export const checkTableNumberColumnClass = "w-[7.5rem] min-w-[7.5rem] px-3"
+export const checkTableDirectionColumnClass = "w-[8rem] min-w-[8rem] px-3"
+export const checkTableBankColumnClass = "min-w-[9rem] px-3"
+export const checkTablePartyColumnClass = "min-w-[10rem] px-3"
+export const checkTableAmountColumnClass = "w-[8.5rem] min-w-[8.5rem] px-3 text-right"
+export const checkTableDateColumnClass = "w-[7.5rem] min-w-[7.5rem] px-3"
+export const checkTableStatusColumnClass = "w-[8.5rem] min-w-[8.5rem] px-3"
+export const checkTableActionsColumnClass = "w-10 min-w-10 px-1"

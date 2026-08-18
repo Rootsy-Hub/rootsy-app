@@ -22,6 +22,12 @@ import {
 } from "@/lib/articleItemKind"
 import { activeArticleCostsByArticleIdForPop } from "@/lib/articleCostQueries"
 import {
+  OPERATE_CATALOG_PAGE_SIZE,
+  sanitizeCatalogIlike,
+  type OperateCatalogItemsFilter,
+  type OperateCatalogItemsPage,
+} from "@/lib/operateCatalogPage"
+import {
   finalizePurchaseCheckout,
 } from "@/lib/purchaseCheckoutLines"
 import { resolvePurchaseCheckoutLine } from "@/app/[siteId]/[popId]/purchases/purchaseLineResolve"
@@ -96,13 +102,21 @@ export type CreatePurchaseLineInput = {
 
 import { getTreasuryPaymentContext } from "@/lib/treasuryPaymentContext"
 import type { TreasuryPaymentContext } from "@/lib/treasuryPaymentOptions"
+import type { CheckoutCheckDetails } from "@/lib/checkoutCheck"
 import type { OperationPaymentKind } from "@/lib/operationPaymentKinds"
 import { isValidOperationPaymentKind } from "@/lib/operationPaymentKinds"
+import {
+  deleteCheckoutCheck,
+  insertCheckoutCheck,
+  parseCheckoutCheckDetails,
+  resolveCheckTreasuryAccountId,
+} from "@/lib/checkoutCheck"
 
 export type PurchaseCatalogPaymentOption = {
   kind: OperationPaymentKind
   treasuryAccountId: string
   label: string
+  checkDetails?: CheckoutCheckDetails
 }
 
 /** @deprecated Usar PurchaseCatalogPaymentOption */
@@ -131,6 +145,7 @@ export type CreatePurchaseInput = {
   generalDiscountValue?: number
   paymentKind?: string | null
   treasuryAccountId?: string | null
+  checkDetails?: CheckoutCheckDetails | null
 }
 
 function roundMoney(n: number): number {
@@ -226,7 +241,10 @@ export type PurchaseCatalogArticle = {
   costs: PurchaseCatalogArticleCost[]
 }
 
-export async function getPurchaseCatalog(popId: string): Promise<
+export async function getPurchaseCatalog(
+  popId: string,
+  options?: { items?: "all" | "none" },
+): Promise<
   | {
       success: true
       popName: string
@@ -269,10 +287,12 @@ export async function getPurchaseCatalog(popId: string): Promise<
       }
     })
 
-    const { data: artRows, error: artErr } = await supabase
-      .from("articles")
-      .select(
-        `
+    const loadItems = options?.items !== "none"
+    const { data: artRows, error: artErr } = loadItems
+      ? await supabase
+          .from("articles")
+          .select(
+            `
         id,
         name,
         description,
@@ -283,18 +303,18 @@ export async function getPurchaseCatalog(popId: string): Promise<
         image_url,
         categories ( id, name )
       `,
-      )
-      .eq("pop_id", popId)
-      .eq("is_active", true)
-      .in("item_kind", [...ARTICLE_ITEM_KINDS])
-      .order("name", { ascending: true })
+          )
+          .eq("pop_id", popId)
+          .eq("is_active", true)
+          .in("item_kind", [...ARTICLE_ITEM_KINDS])
+          .order("name", { ascending: true })
+      : { data: [], error: null }
     if (artErr) {
       return { success: false, error: artErr.message }
     }
-    const costsByArticleId = await activeArticleCostsByArticleIdForPop(
-      supabase,
-      popId,
-    )
+    const costsByArticleId = loadItems
+      ? await activeArticleCostsByArticleIdForPop(supabase, popId)
+      : new Map<string, never[]>()
     const articles: PurchaseCatalogArticle[] = (artRows || []).map((row) => {
       const cat = row.categories as unknown as { name?: string } | null
       const rawKind = String(row.item_kind ?? "merchandise")
@@ -374,6 +394,213 @@ export async function getPurchaseCatalog(popId: string): Promise<
       canCreate: access.canCreate,
       canUpdateArticles: access.canUpdateArticles,
       canReadPaymentMethods,
+    }
+  } catch (e: unknown) {
+    const message = e instanceof Error ? e.message : "Error desconocido"
+    return { success: false, error: message }
+  }
+}
+
+const PURCHASE_CATALOG_ARTICLE_SELECT = `
+  id,
+  name,
+  description,
+  iva,
+  category_id,
+  item_kind,
+  unit_of_measure,
+  image_url,
+  categories ( id, name )
+` as const
+
+function mapPurchaseCatalogArticle(
+  row: Record<string, unknown>,
+  costsByArticleId: Map<
+    string,
+    Array<{
+      id: string
+      name: string
+      costUnitLabel: string
+      saleUnitsPerCostUnit: number
+      unitPrice: number
+      supplierId: string | null
+    }>
+  >,
+): PurchaseCatalogArticle {
+  const cat = row.categories as unknown as { name?: string } | null
+  const rawKind = String(row.item_kind ?? "merchandise")
+  const articleId = String(row.id)
+  const costs: PurchaseCatalogArticleCost[] = (
+    costsByArticleId.get(articleId) ?? []
+  ).map((entry) => ({
+    id: entry.id,
+    name: entry.name,
+    costUnitLabel: entry.costUnitLabel,
+    saleUnitsPerCostUnit: entry.saleUnitsPerCostUnit,
+    unitPrice: entry.unitPrice,
+    supplierId: entry.supplierId,
+  }))
+  return {
+    id: articleId,
+    name: String(row.name ?? ""),
+    description: String(row.description ?? ""),
+    iva: parseMoney(row.iva),
+    categoryId: String(row.category_id ?? ""),
+    categoryName: cat?.name ? String(cat.name) : "—",
+    itemKind: isArticleItemKind(rawKind) ? rawKind : "merchandise",
+    unitOfMeasure: String(row.unit_of_measure ?? "unidad"),
+    imageUrl:
+      typeof row.image_url === "string" && row.image_url.trim()
+        ? row.image_url.trim()
+        : null,
+    costs,
+  }
+}
+
+export async function getPurchaseCatalogItemsPage(
+  popId: string,
+  filter: OperateCatalogItemsFilter,
+  offset = 0,
+): Promise<
+  | { success: true; page: OperateCatalogItemsPage<PurchaseCatalogArticle> }
+  | { success: false; error: string }
+> {
+  try {
+    const access = await purchasesAccess(popId)
+    if (!access.ok) {
+      return { success: false, error: access.error }
+    }
+
+    const supabase = await createClient()
+    const search = sanitizeCatalogIlike(filter.search)
+    const itemKind = isArticleItemKind(filter.section) ? filter.section : null
+
+    let query = supabase
+      .from("articles")
+      .select(PURCHASE_CATALOG_ARTICLE_SELECT)
+      .eq("pop_id", popId)
+      .eq("is_active", true)
+      .in("item_kind", [...ARTICLE_ITEM_KINDS])
+      .order("name", { ascending: true })
+      .order("id", { ascending: true })
+
+    if (search) {
+      query = query.or(`name.ilike.%${search}%,description.ilike.%${search}%`)
+    } else if (filter.categoryId && itemKind) {
+      query = query.eq("category_id", filter.categoryId).eq("item_kind", itemKind)
+    } else if (itemKind) {
+      query = query.eq("item_kind", itemKind)
+    } else {
+      return { success: true, page: { items: [], nextOffset: null } }
+    }
+
+    const from = Math.max(0, offset)
+    const to = from + OPERATE_CATALOG_PAGE_SIZE
+    const { data, error } = await query.range(from, to)
+    if (error) {
+      return { success: false, error: error.message }
+    }
+    const rows = (data ?? []) as Record<string, unknown>[]
+    const pageRows = rows.slice(0, OPERATE_CATALOG_PAGE_SIZE)
+    const costsByArticleId = await activeArticleCostsByArticleIdForPop(
+      supabase,
+      popId,
+      pageRows.map((row) => String(row.id)),
+    )
+    const items = pageRows.map((row) =>
+      mapPurchaseCatalogArticle(row, costsByArticleId),
+    )
+    return {
+      success: true,
+      page: {
+        items,
+        nextOffset:
+          rows.length > OPERATE_CATALOG_PAGE_SIZE
+            ? from + OPERATE_CATALOG_PAGE_SIZE
+            : null,
+      },
+    }
+  } catch (e: unknown) {
+    const message = e instanceof Error ? e.message : "Error desconocido"
+    return { success: false, error: message }
+  }
+}
+
+export async function getPurchaseCatalogArticlesByIds(
+  popId: string,
+  ids: string[],
+): Promise<
+  | { success: true; articles: PurchaseCatalogArticle[] }
+  | { success: false; error: string }
+> {
+  try {
+    const unique = [...new Set(ids.filter(Boolean))]
+    if (unique.length === 0) return { success: true, articles: [] }
+    const access = await purchasesAccess(popId)
+    if (!access.ok) return { success: false, error: access.error }
+    const supabase = await createClient()
+    const { data, error } = await supabase
+      .from("articles")
+      .select(PURCHASE_CATALOG_ARTICLE_SELECT)
+      .eq("pop_id", popId)
+      .in("id", unique)
+    if (error) return { success: false, error: error.message }
+    const rows = (data ?? []) as Record<string, unknown>[]
+    const costsByArticleId = await activeArticleCostsByArticleIdForPop(
+      supabase,
+      popId,
+      rows.map((row) => String(row.id)),
+    )
+    return {
+      success: true,
+      articles: rows.map((row) =>
+        mapPurchaseCatalogArticle(row, costsByArticleId),
+      ),
+    }
+  } catch (e: unknown) {
+    const message = e instanceof Error ? e.message : "Error desconocido"
+    return { success: false, error: message }
+  }
+}
+
+export async function findPurchaseCatalogArticleByScan(
+  popId: string,
+  rawQuery: string,
+): Promise<
+  | { success: true; article: PurchaseCatalogArticle | null }
+  | { success: false; error: string }
+> {
+  try {
+    const query = rawQuery.trim()
+    if (!query) return { success: true, article: null }
+    const access = await purchasesAccess(popId)
+    if (!access.ok) {
+      return { success: false, error: access.error }
+    }
+    const supabase = await createClient()
+    const { data, error } = await supabase
+      .from("articles")
+      .select(PURCHASE_CATALOG_ARTICLE_SELECT)
+      .eq("pop_id", popId)
+      .eq("is_active", true)
+      .in("item_kind", [...ARTICLE_ITEM_KINDS])
+      .ilike("name", query)
+      .limit(2)
+    if (error) {
+      return { success: false, error: error.message }
+    }
+    if ((data ?? []).length !== 1) {
+      return { success: true, article: null }
+    }
+    const row = data![0] as Record<string, unknown>
+    const costsByArticleId = await activeArticleCostsByArticleIdForPop(
+      supabase,
+      popId,
+      [String(row.id)],
+    )
+    return {
+      success: true,
+      article: mapPurchaseCatalogArticle(row, costsByArticleId),
     }
   } catch (e: unknown) {
     const message = e instanceof Error ? e.message : "Error desconocido"
@@ -680,7 +907,25 @@ export async function createPurchase(
     const initialStatus = confirmPurchase ? "pending" : "draft"
 
     const paymentKind = input.paymentKind?.trim() || null
-    const treasuryAccountId = input.treasuryAccountId?.trim() || null
+    let treasuryAccountId = input.treasuryAccountId?.trim() || null
+    let checkoutCheckDetails = null
+    if (confirmPurchase && paymentKind === "check") {
+      const parsed = parseCheckoutCheckDetails(input.checkDetails)
+      if (!parsed.ok) return { success: false, error: parsed.error }
+      checkoutCheckDetails = parsed.details
+      const checkTreasuryId = await resolveCheckTreasuryAccountId(
+        supabase,
+        popId,
+        "issued",
+      )
+      if (!checkTreasuryId) {
+        return {
+          success: false,
+          error: "Faltan las cuentas de cheques. Recargá la página o contactá a soporte.",
+        }
+      }
+      treasuryAccountId = checkTreasuryId
+    }
     if (confirmPurchase && paymentKind && treasuryAccountId) {
       if (!isValidOperationPaymentKind(paymentKind)) {
         return { success: false, error: "Tipo de pago inválido." }
@@ -754,6 +999,20 @@ export async function createPurchase(
     }
 
     if (confirmPurchase && paymentKind && treasuryAccountId) {
+      let checkId: string | null = null
+      if (paymentKind === "check" && checkoutCheckDetails) {
+        const checkRes = await insertCheckoutCheck(supabase, {
+          popId,
+          userId: user.uid,
+          direction: "issued",
+          amount: total,
+          details: checkoutCheckDetails,
+          sourceKind: "purchase",
+          sourceId: purchaseId,
+        })
+        if (!checkRes.success) return checkRes
+        checkId = checkRes.checkId
+      }
       const { error: payErr } = await supabase.from("purchase_payments").insert({
         pop_id: popId,
         purchase_id: purchaseId,
@@ -762,8 +1021,10 @@ export async function createPurchase(
         amount: total,
         paid_at: new Date().toISOString().slice(0, 10),
         created_by: user.uid,
+        check_id: checkId,
       })
       if (payErr) {
+        if (checkId) await deleteCheckoutCheck(supabase, checkId)
         return {
           success: false,
           error: payErr.message || "No se pudo registrar el pago.",

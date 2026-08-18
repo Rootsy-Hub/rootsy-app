@@ -46,6 +46,13 @@ import {
   type TreasuryPaymentOption,
 } from "@/lib/treasuryPaymentOptions"
 import { isValidOperationPaymentKind } from "@/lib/operationPaymentKinds"
+import {
+  deleteCheckoutCheck,
+  insertCheckoutCheck,
+  parseCheckoutCheckDetails,
+  resolveCheckTreasuryAccountId,
+  type CheckoutCheckDetails,
+} from "@/lib/checkoutCheck"
 import type { OperationPartyCatalogItem } from "@/lib/operationPartyPicker"
 import { CLIENT_IVA_CONDITION_VALUES } from "@/app/[siteId]/[popId]/clients/clientIvaConstants"
 import { SERVICE_CHARGE_CLIENT_SEARCH_LIMIT } from "@/app/[siteId]/[popId]/active-services/serviceChargeClientConstants"
@@ -1041,6 +1048,7 @@ export async function recordServiceChargePayment(
   paymentKind: string | null,
   treasuryAccountId: string | null,
   notes?: string,
+  checkDetails?: CheckoutCheckDetails | null,
 ): Promise<{ success: true } | { success: false; error: string }> {
   try {
     const access = await validatePopAccess(popId)
@@ -1064,9 +1072,27 @@ export async function recordServiceChargePayment(
     const supabase = await createClient()
 
     const kind = paymentKind?.trim() || null
-    const taId = treasuryAccountId?.trim() || null
+    let taId = treasuryAccountId?.trim() || null
+    let parsedCheck: CheckoutCheckDetails | null = null
     if (kind && !isValidOperationPaymentKind(kind)) {
       return { success: false, error: "Tipo de pago inválido." }
+    }
+    if (kind === "check") {
+      const parsed = parseCheckoutCheckDetails(checkDetails)
+      if (!parsed.ok) return { success: false, error: parsed.error }
+      parsedCheck = parsed.details
+      const checkTreasuryId = await resolveCheckTreasuryAccountId(
+        supabase,
+        popId,
+        "received",
+      )
+      if (!checkTreasuryId) {
+        return {
+          success: false,
+          error: "Faltan las cuentas de cheques. Recargá la página o contactá a soporte.",
+        }
+      }
+      taId = checkTreasuryId
     }
     if (kind && taId) {
       const { data: taRow, error: taErr } = await supabase
@@ -1084,7 +1110,7 @@ export async function recordServiceChargePayment(
 
     const { data: charge, error: chargeError } = await supabase
       .from("service_charges")
-      .select("id, amount, status, cancelled_at")
+      .select("id, amount, status, cancelled_at, client_id")
       .eq("id", chargeId)
       .eq("pop_id", popId)
       .maybeSingle()
@@ -1113,6 +1139,24 @@ export async function recordServiceChargePayment(
       }
     }
 
+    let checkId: string | null = null
+    if (kind === "check" && parsedCheck) {
+      const checkRes = await insertCheckoutCheck(supabase, {
+        popId,
+        userId: user.uid,
+        direction: "received",
+        amount: amt,
+        details: {
+          ...parsedCheck,
+          partyId: parsedCheck.partyId || String(charge.client_id ?? ""),
+        },
+        sourceKind: "service_charge",
+        sourceId: chargeId,
+      })
+      if (!checkRes.success) return checkRes
+      checkId = checkRes.checkId
+    }
+
     const { data: payIns, error: insertError } = await supabase
       .from("service_charge_payments")
       .insert({
@@ -1124,10 +1168,12 @@ export async function recordServiceChargePayment(
         treasury_account_id: taId,
         notes: notes?.trim() ?? "",
         created_by: user.uid,
+        check_id: checkId,
       })
       .select("id")
       .maybeSingle()
     if (insertError || !payIns?.id) {
+      if (checkId) await deleteCheckoutCheck(supabase, checkId)
       return {
         success: false,
         error: insertError?.message || "No se pudo registrar el cobro.",
@@ -1147,6 +1193,7 @@ export async function recordServiceChargePayment(
           .delete()
           .eq("id", paymentId)
           .eq("pop_id", popId)
+        if (checkId) await deleteCheckoutCheck(supabase, checkId)
         return { success: false, error: ledger.error }
       }
     }

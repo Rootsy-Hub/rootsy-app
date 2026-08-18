@@ -28,7 +28,6 @@ import {
   dataWorkspaceBlocksPageMainClass,
   dataWorkspaceEntityCardsGridClass,
 } from "@/components/data-workspace/dataWorkspaceListStyles"
-import withAuth from "@/hoc/withAuth"
 import { usePopWorkspace } from "@/context/PopWorkspaceContext"
 import { type TreasuryAccountMenuActionId } from "@/lib/treasuryAccountMenuActions"
 import {
@@ -382,4 +381,4 @@ function AccountsPage() {
   )
 }
 
-export default withAuth(AccountsPage)
+export default AccountsPage

@@ -7,12 +7,13 @@ import {
   RootsFormTextField,
 } from "@/components/rootsy-form"
 import {
+  isSystemManagedTreasuryKind,
   TREASURY_ACCOUNT_KINDS,
 } from "@/lib/treasuryAccountKinds"
 import type { Dispatch, SetStateAction } from "react"
 
 const KIND_OPTIONS = TREASURY_ACCOUNT_KINDS.filter(
-  (k) => k.value !== "card_payable",
+  (k) => !isSystemManagedTreasuryKind(k.value),
 ).map((k) => ({
   value: k.value,
   label: k.label,

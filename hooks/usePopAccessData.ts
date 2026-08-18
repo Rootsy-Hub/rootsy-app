@@ -4,6 +4,10 @@ import {
   getPopAccessCache,
   getUserProfileCache,
 } from "@/app/home/homeUserDataActions"
+import type {
+  PopAccessCache,
+  UserProfileCache,
+} from "@/app/home/homeUserDataTypes"
 import { buildUserProfileFullName } from "@/app/home/homeUserDataResolve"
 import { buildPopRoleLabel } from "@/lib/popWorkspaceFromAccess"
 import {
@@ -12,12 +16,9 @@ import {
 } from "@/lib/popAccessNormalize"
 import { useQueryPersistReady } from "@/components/providers/QueryProvider"
 import { useAuth } from "@/context/AuthContextSupabase"
-import {
-  popAccessQueryKey,
-  userProfileQueryKey,
-} from "@/lib/queryKeys"
+import { popAccessQueryKey, userProfileQueryKey } from "@/lib/queryKeys"
 import { oneDayQueryOptions } from "@/lib/queryStaleTimes"
-import { useQuery } from "@tanstack/react-query"
+import { useQuery, useQueryClient } from "@tanstack/react-query"
 import { useEffect, useMemo } from "react"
 
 export function usePopAccessData(
@@ -27,9 +28,15 @@ export function usePopAccessData(
   const { user, loading: authLoading } = useAuth()
   const userId = user?.id
   const persistReady = useQueryPersistReady()
+  const queryClient = useQueryClient()
+  const cachedProfile = userId
+    ? queryClient.getQueryData<UserProfileCache>(userProfileQueryKey(userId))
+    : undefined
+  const cachedPopAccess = popId
+    ? queryClient.getQueryData<PopAccessCache | null>(popAccessQueryKey(popId))
+    : undefined
   const queriesEnabled =
     (options?.enabled ?? true) &&
-    persistReady &&
     !authLoading &&
     Boolean(userId) &&
     Boolean(popId)
@@ -48,11 +55,14 @@ export function usePopAccessData(
     ...oneDayQueryOptions,
   })
 
+  const profileData = profileQuery.data ?? cachedProfile
+  const popAccessData = popAccessQuery.data ?? cachedPopAccess
+
   const popAccess = useMemo(
-    () => normalizePopAccessCache(popAccessQuery.data),
-    [popAccessQuery.data],
+    () => normalizePopAccessCache(popAccessData),
+    [popAccessData],
   )
-  const profile = profileQuery.data ?? null
+  const profile = profileData ?? null
 
   useEffect(() => {
     if (!queriesEnabled || !popAccessQuery.data) return
@@ -65,8 +75,14 @@ export function usePopAccessData(
     [popAccess],
   )
 
+  const hasCachedSidecar =
+    profileData !== undefined && popAccessData !== undefined
   const isLoading =
-    !queriesEnabled || profileQuery.isPending || popAccessQuery.isPending
+    !hasCachedSidecar &&
+    (!queriesEnabled ||
+      !persistReady ||
+      profileQuery.isPending ||
+      popAccessQuery.isPending)
 
   const loadError = profileQuery.isError || popAccessQuery.isError
 

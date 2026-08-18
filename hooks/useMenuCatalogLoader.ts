@@ -1,11 +1,22 @@
 "use client"
 
-import { getMenuCatalog } from "@/app/[siteId]/[popId]/menu-catalog/actions"
+import {
+  getMenuCatalog,
+  getMenuCatalogItemsByIds,
+  type MenuCatalogArticle,
+  type MenuCatalogRecipe,
+} from "@/app/[siteId]/[popId]/menu-catalog/actions"
+import { useCatalogItemCache } from "@/hooks/useCatalogItemCache"
 import {
   menuCatalogPayloadFromResponse,
   type MenuCatalogPayload,
 } from "@/lib/menuCatalogPayload"
-import { menuCatalogQueryKey } from "@/lib/queryKeys"
+import {
+  menuCatalogKnownArticlesQueryKey,
+  menuCatalogKnownRecipesQueryKey,
+  menuCatalogQueryKey,
+} from "@/lib/queryKeys"
+import { sessionListQueryOptions } from "@/lib/queryStaleTimes"
 import { DEFAULT_SALE_SITE_ID } from "@/lib/saleInvoiceTypes"
 import { useQuery } from "@tanstack/react-query"
 import { useCallback } from "react"
@@ -41,25 +52,63 @@ export function useMenuCatalogLoader(
   const catalogQuery = useQuery({
     queryKey: menuCatalogQueryKey(popId ?? ""),
     queryFn: async () => {
-      const res = await getMenuCatalog(popId!)
+      const res = await getMenuCatalog(popId!, { items: "none" })
       if (!res.success) {
         throw new Error(res.error)
       }
       return menuCatalogPayloadFromResponse(res)
     },
     enabled,
+    ...sessionListQueryOptions,
   })
 
   const payload = catalogQuery.data ?? emptyPayload
+  const articleCache = useCatalogItemCache<MenuCatalogArticle>(
+    menuCatalogKnownArticlesQueryKey(popId ?? ""),
+  )
+  const recipeCache = useCatalogItemCache<MenuCatalogRecipe>(
+    menuCatalogKnownRecipesQueryKey(popId ?? ""),
+  )
 
   const reloadCatalog = useCallback(async () => {
     await catalogQuery.refetch()
   }, [catalogQuery])
 
+  const knownArticles = articleCache.items
+  const knownRecipes = recipeCache.items
+  const mergeArticles = articleCache.merge
+  const mergeRecipes = recipeCache.merge
+  const ensureCatalogItems = useCallback(
+    async (articleIds: string[], recipeIds: string[]) => {
+      if (!popId) return
+      const knownArticleIds = new Set(knownArticles.map((row) => row.id))
+      const knownRecipeIds = new Set(knownRecipes.map((row) => row.id))
+      const missingArticles = [...new Set(articleIds)].filter(
+        (id) => id && !knownArticleIds.has(id),
+      )
+      const missingRecipes = [...new Set(recipeIds)].filter(
+        (id) => id && !knownRecipeIds.has(id),
+      )
+      if (missingArticles.length === 0 && missingRecipes.length === 0) return
+      const res = await getMenuCatalogItemsByIds(
+        popId,
+        missingArticles,
+        missingRecipes,
+      )
+      if (!res.success) return
+      mergeArticles(res.articles)
+      mergeRecipes(res.recipes)
+    },
+    [knownArticles, knownRecipes, mergeArticles, mergeRecipes, popId],
+  )
+
   return {
+    mergeCatalogArticles: mergeArticles,
+    mergeCatalogRecipes: mergeRecipes,
+    ensureCatalogItems,
     menuCategorySections: payload.categorySections,
-    menuRecipes: payload.recipes,
-    menuArticles: payload.articles,
+    menuRecipes: recipeCache.items,
+    menuArticles: articleCache.items,
     menuPromotions: payload.promotions,
     menuQuantityDeals: payload.quantityDeals,
     treasuryPaymentContext: payload.treasuryPaymentContext,

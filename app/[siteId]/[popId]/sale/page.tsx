@@ -1,30 +1,21 @@
 "use client"
 
-import withAuth from "@/hoc/withAuth"
+import dynamic from "next/dynamic"
 import { completeSale } from "@/app/[siteId]/[popId]/sale/completeSale"
 import { createSaleQuote } from "@/app/[siteId]/[popId]/quotes/actions"
 import { getSaleQuoteDetail } from "@/app/[siteId]/[popId]/quotes/actions"
 import {
-  getSaleCatalog,
-  type SaleCatalogArticle,
-  type SaleCatalogCategory,
   type SaleCatalogClient,
   type SaleCatalogPaymentOption,
-  type SaleOpenCashSession,
 } from "@/app/[siteId]/[popId]/sale/actions"
+import { useSaleCatalogLoader } from "@/hooks/useSaleCatalogLoader"
+import { invalidatePopOperateCatalogs } from "@/lib/invalidatePopOperateCatalogs"
+import { useQueryClient } from "@tanstack/react-query"
 import {
   defaultCheckoutPaymentSelection,
   resolveSaleToolboxPaymentDisplay,
 } from "@/lib/saleCheckoutPayment"
-import type { TreasuryPaymentContext } from "@/lib/treasuryPaymentOptions"
 import { treasuryPaymentOptionKey } from "@/lib/treasuryPaymentOptions"
-import type {
-  MenuCatalogCategorySection,
-  MenuCatalogPromotion,
-} from "@/app/[siteId]/[popId]/menu-catalog/actions"
-import {
-  DEFAULT_SALE_SITE_ID,
-} from "@/lib/saleInvoiceTypes"
 import {
   getSaleComprobanteDisplayLabel,
   getSaleComprobantePickerOptions,
@@ -42,13 +33,38 @@ import {
 } from "@/app/[siteId]/[popId]/clients/clientIvaConstants"
 import { CLIENT_ACCOUNT_PAYMENT_LABEL } from "@/lib/operationPaymentLabels"
 import { OpenCashSessionBanner } from "@/components/sale-operation/OpenCashSessionBanner"
-import { SalePaymentMethodDialog } from "@/components/sale-operation/SalePaymentMethodDialog"
 import { SaleCatalogBrowser } from "@/components/sale-operation/SaleCatalogBrowser"
 import { SaleOperationToolbox } from "@/components/sale-operation/SaleOperationToolbox"
-import { OperationPartyPickerDialog } from "@/components/checkout/OperationPartyPickerDialog"
-import { SaleComprobantePickerDialog } from "@/components/checkout/SaleComprobantePickerDialog"
 import type { SaleComprobantePreviewInput } from "@/components/checkout/SaleComprobanteTicketPreview"
-import { GeneralDiscountDialog } from "@/components/checkout/GeneralDiscountDialog"
+
+const OperationPartyPickerDialog = dynamic(
+  () =>
+    import("@/components/checkout/OperationPartyPickerDialog").then(
+      (mod) => mod.OperationPartyPickerDialog,
+    ),
+  { ssr: false },
+)
+const SaleComprobantePickerDialog = dynamic(
+  () =>
+    import("@/components/checkout/SaleComprobantePickerDialog").then(
+      (mod) => mod.SaleComprobantePickerDialog,
+    ),
+  { ssr: false },
+)
+const SalePaymentMethodDialog = dynamic(
+  () =>
+    import("@/components/sale-operation/SalePaymentMethodDialog").then(
+      (mod) => mod.SalePaymentMethodDialog,
+    ),
+  { ssr: false },
+)
+const GeneralDiscountDialog = dynamic(
+  () =>
+    import("@/components/checkout/GeneralDiscountDialog").then(
+      (mod) => mod.GeneralDiscountDialog,
+    ),
+  { ssr: false },
+)
 import {
   DataWorkspaceOperationsLayout,
   OperationsModuleBackdrop,
@@ -193,6 +209,7 @@ function SalePage() {
   const searchParams = useSearchParams()
   const siteId = typeof params?.siteId === "string" ? params.siteId : ""
   const popId = typeof params?.popId === "string" ? params.popId : undefined
+  const queryClient = useQueryClient()
   const quoteIdFromUrl = searchParams.get("quoteId")
   const {
     hasValidPopFiscalCuit,
@@ -210,75 +227,27 @@ function SalePage() {
     [bootstrap?.permissionKeys],
   )
 
-  const [catalogArticles, setCatalogArticles] = useState<SaleCatalogArticle[]>(
-    [],
-  )
-  const [catalogPromotions, setCatalogPromotions] = useState<
-    MenuCatalogPromotion[]
-  >([])
-  const [catalogQuantityDeals, setCatalogQuantityDeals] = useState<
-    MenuCatalogPromotion[]
-  >([])
-  const [treasuryPaymentContext, setTreasuryPaymentContext] =
-    useState<TreasuryPaymentContext | null>(null)
-  const [canReadClients, setCanReadClients] = useState(false)
-  const [canReadPaymentMethods, setCanReadPaymentMethods] = useState(false)
-  const [invoiceTypeSiteId, setInvoiceTypeSiteId] = useState<string>(
-    DEFAULT_SALE_SITE_ID,
-  )
-  const [saleCategories, setSaleCategories] = useState<SaleCatalogCategory[]>(
-    [],
-  )
-  const [saleCategorySections, setSaleCategorySections] = useState<
-    MenuCatalogCategorySection[]
-  >([])
-  const [catalogLoading, setCatalogLoading] = useState(true)
-  const [catalogError, setCatalogError] = useState<string | null>(null)
-
-  const loadCatalog = useCallback(async () => {
-    if (!popId || !siteId) {
-      setCatalogLoading(false)
-      setCatalogError("Punto de venta no encontrado")
-      return
-    }
-    setCatalogLoading(true)
-    setCatalogError(null)
-    const res = await getSaleCatalog(popId)
-    if (!res.success) {
-      setCatalogArticles([])
-      setCatalogPromotions([])
-      setCatalogQuantityDeals([])
-      setTreasuryPaymentContext(null)
-      setCanReadClients(false)
-      setCanReadPaymentMethods(false)
-      setCanCreateSale(false)
-      setCanReadCashRegisters(false)
-      setOpenCashSession(null)
-      setSaleCategories([])
-      setSaleCategorySections([])
-      setCatalogError(res.error)
-      setCatalogLoading(false)
-      return
-    }
-    setCatalogArticles(res.articles)
-    setCatalogPromotions(res.promotions)
-    setCatalogQuantityDeals(res.quantityDeals)
-    setTreasuryPaymentContext(res.treasuryPaymentContext)
-    setCanReadClients(res.canReadClients)
-    setCanReadPaymentMethods(res.canReadPaymentMethods)
-    setCanCreateSale(res.canCreateSale)
-    setCanReadCashRegisters(res.canReadCashRegisters)
-    setOpenCashSession(res.openCashSession)
-    setInvoiceTypeSiteId(res.invoiceTypeSiteId)
-    setSaleCategories(res.categories)
-    setSaleCategorySections(res.categorySections)
-    setCatalogError(null)
-    setCatalogLoading(false)
-  }, [popId, siteId])
-
-  useEffect(() => {
-    void loadCatalog()
-  }, [loadCatalog])
+  const {
+    catalogArticles,
+    catalogPromotions,
+    catalogQuantityDeals,
+    treasuryPaymentContext,
+    canReadClients,
+    canReadPaymentMethods,
+    canCreateSale,
+    canReadCashRegisters,
+    openCashSession,
+    invoiceTypeSiteId,
+    saleCategories,
+    saleCategorySections,
+    mergeCatalogArticles,
+    ensureCatalogArticles,
+    catalogLoading: catalogQueryLoading,
+    catalogError: catalogQueryError,
+  } = useSaleCatalogLoader(popId, { enabled: Boolean(popId && siteId) })
+  const catalogLoading = !popId || !siteId ? false : catalogQueryLoading
+  const catalogError =
+    !popId || !siteId ? "Punto de venta no encontrado" : catalogQueryError
 
   const cartScrollHighlight = useCartListScrollHighlight()
 
@@ -310,6 +279,14 @@ function SalePage() {
     menuQuantityDeals: catalogQuantityDeals,
     onCartLineAdded: cartScrollHighlight.notifyLineAdded,
   })
+
+  useEffect(() => {
+    void ensureCatalogArticles(
+      carrito
+        .filter((item) => (item.kind ?? "article") !== "promotion")
+        .map((item) => item.productoId),
+    )
+  }, [carrito, ensureCatalogArticles])
 
   const [clienteSeleccionado, setClienteSeleccionado] =
     useState<ClienteVentaSeleccionado | null>(null)
@@ -344,10 +321,6 @@ function SalePage() {
   const [presupuestoError, setPresupuestoError] = useState<string | null>(null)
   const [ventaSubmitting, setVentaSubmitting] = useState(false)
   const [ventaError, setVentaError] = useState<string | null>(null)
-  const [canCreateSale, setCanCreateSale] = useState(false)
-  const [canReadCashRegisters, setCanReadCashRegisters] = useState(false)
-  const [openCashSession, setOpenCashSession] =
-    useState<SaleOpenCashSession | null>(null)
   const [descuentoDraftModo, setDescuentoDraftModo] = useState<
     "porcentaje" | "fijo"
   >("porcentaje")
@@ -543,6 +516,13 @@ function SalePage() {
     if (!popId || !siteId || !pagoConfigurado) return
     if (payOnClientAccount && !clienteSeleccionado?.id) return
     if (!payOnClientAccount && !metodoPagoSeleccionado) return
+    if (
+      !payOnClientAccount &&
+      metodoPagoSeleccionado?.kind === "check" &&
+      !metodoPagoSeleccionado.checkDetails
+    ) {
+      return
+    }
     setVentaError(null)
     setVentaSubmitting(true)
     try {
@@ -585,6 +565,10 @@ function SalePage() {
         treasuryAccountId: payOnClientAccount
           ? null
           : metodoPagoSeleccionado?.treasuryAccountId,
+        checkDetails:
+          !payOnClientAccount && metodoPagoSeleccionado?.kind === "check"
+            ? metodoPagoSeleccionado.checkDetails ?? null
+            : null,
         generalDiscountMode: modoDescuento === "porcentaje" ? "porcentaje" : "fijo",
         valorDescuentoPorcentaje,
         valorDescuentoFijo,
@@ -601,6 +585,7 @@ function SalePage() {
       }
       setVenderConfirmOpen(false)
       limpiarVenta()
+      if (popId) invalidatePopOperateCatalogs(queryClient, popId)
     } finally {
       setVentaSubmitting(false)
     }
@@ -624,6 +609,7 @@ function SalePage() {
     manualNombreCliente,
     ventaPadron.razonSocial,
     limpiarVenta,
+    queryClient,
   ])
 
   useEffect(() => {
@@ -1196,6 +1182,9 @@ function SalePage() {
                 error={catalogError}
                 onAddProduct={handleAddProduct}
                 catalogSidebarOpen={catalogSidebarOpen}
+                catalogScope="sale"
+                itemsSource="sale"
+                mergeCatalogArticles={mergeCatalogArticles}
                 keepScanFocused
               />
             }
@@ -1365,6 +1354,13 @@ function SalePage() {
         cashRegisterName={openCashSession?.registerName ?? null}
         selected={metodoPagoSeleccionado}
         payOnClientAccount={payOnClientAccount}
+        popId={popId}
+        defaultPartyName={clienteSeleccionado?.name ?? ""}
+        defaultPartyId={
+          clienteSeleccionado && !clienteSeleccionado.manual
+            ? clienteSeleccionado.id ?? ""
+            : ""
+        }
         onSelectImmediate={(option) => {
           setPayOnClientAccount(false)
           setMetodoPagoSeleccionado(option)
@@ -1448,4 +1444,4 @@ function SalePage() {
   )
 }
 
-export default withAuth(SalePage)
+export default SalePage
