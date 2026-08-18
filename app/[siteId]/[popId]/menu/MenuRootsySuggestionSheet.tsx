@@ -3,7 +3,6 @@
 import { fetchMenuRootsySuggestionDetail } from "@/app/[siteId]/[popId]/menu/menuRootsyActions"
 import {
   menuRootsyPresenceSheetBodyClass,
-  menuRootsyPresenceSheetExamplesClass,
   menuRootsyPresenceSheetExplanationClass,
   menuRootsyPresenceVoiceLinkClass,
 } from "@/app/[siteId]/[popId]/menu/menuRootsyPresenceStyles"
@@ -96,36 +95,27 @@ export function MenuRootsySuggestionSheet({
             {pending ? "Rootsy" : detail?.title ?? "Rootsy"}
           </SheetTitle>
           <SheetDescription className="text-sm text-[rgba(196,230,248,0.65)]">
-            Una idea para mejorar tu negocio, explicada simple.
+            Rootsy te lo cuenta con calma — y con tus números cuando los tiene.
           </SheetDescription>
         </SheetHeader>
 
         <div className={menuRootsyPresenceSheetBodyClass}>
           {pending ? (
             <p className={menuRootsyPresenceSheetExplanationClass}>
-              Armo un ejemplo con tus números…
+              Dame un segundo, armo el mensaje con lo que tengo de tu negocio…
             </p>
           ) : error ? (
             <p className="text-sm text-[rgba(255,180,180,0.9)]">{error}</p>
           ) : detail ? (
             <div className="space-y-5">
-              <section className="space-y-2">
-                <h3 className="text-xs font-semibold uppercase tracking-[0.08em] text-[rgba(196,230,248,0.55)]">
-                  Qué es
-                </h3>
-                <p className={menuRootsyPresenceSheetExplanationClass}>
-                  {detail.explanation}
-                </p>
-              </section>
-
-              <section className="space-y-2">
-                <h3 className="text-xs font-semibold uppercase tracking-[0.08em] text-[rgba(196,230,248,0.55)]">
-                  En tu negocio
-                </h3>
-                <p className={menuRootsyPresenceSheetExamplesClass}>
-                  {detail.examples}
-                </p>
-              </section>
+              <p
+                className={cn(
+                  menuRootsyPresenceSheetExplanationClass,
+                  "whitespace-pre-line",
+                )}
+              >
+                {detail.message}
+              </p>
 
               {detail.cta ? (
                 <Link

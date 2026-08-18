@@ -27,15 +27,14 @@ const INSIGHTS_CACHE_SECONDS = 3600
 function finalizeGrowthOpportunities(
   partial: Omit<MenuRootsyBusinessInsights, "opportunities">,
   opportunities: MenuRootsyGrowthOpportunity[],
-  popName: string,
 ): MenuRootsyGrowthOpportunity[] {
   const actionable = opportunities.filter(
     (entry) => !isMetaGenericVoice(entry.voice),
   )
-  const guaranteed = buildGuaranteedMetricOpportunity(
-    { ...partial, opportunities: [] },
-    popName,
-  )
+  const guaranteed = buildGuaranteedMetricOpportunity({
+    ...partial,
+    opportunities: [],
+  })
 
   if (actionable.length === 0) {
     return guaranteed ? [guaranteed] : actionable
@@ -368,7 +367,6 @@ async function loadMenuRootsyBusinessInsightsUncached(
     opportunities: finalizeGrowthOpportunities(
       partial,
       buildGrowthOpportunities(partial),
-      popName,
     ),
   }
 }

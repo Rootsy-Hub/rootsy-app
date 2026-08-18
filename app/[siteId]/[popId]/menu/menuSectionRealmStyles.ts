@@ -40,7 +40,7 @@ export function menuSectionRealmIndicatorClass(section: MenuSectionKey): string 
   const tone: Record<MenuSectionKey, string> = {
     operar: "bg-[rgba(111,216,156,0.88)] shadow-[0_0_10px_rgba(36,173,106,0.22)]",
     administrar:
-      "bg-[rgba(251,191,36,0.88)] shadow-[0_0_10px_rgba(217,119,6,0.22)]",
+      "bg-[rgba(103,232,249,0.88)] shadow-[0_0_10px_rgba(8,145,178,0.22)]",
     configurar:
       "bg-[rgba(167,139,250,0.88)] shadow-[0_0_10px_rgba(124,58,237,0.22)]",
   }

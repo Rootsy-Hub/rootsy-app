@@ -3,10 +3,12 @@ import {
   getMenuRootsyCatalogSuggestion,
   MENU_ROOTSY_SUGGESTION_CATALOG,
 } from "@/lib/menu/menuRootsySuggestionCatalog"
+import type { MenuRootsyBusinessInsights } from "@/lib/menu/menuRootsyInsightsShared"
 import type {
   MenuRootsyCatalogSuggestion,
   MenuRootsySuggestionProfile,
 } from "@/lib/menu/menuRootsySuggestionCatalogTypes"
+import { scoreSuggestionDataSupport } from "@/lib/menu/menuRootsySuggestionVoice"
 
 /** Semilla de rotación — por carga de página (token único). */
 export function menuRootsySuggestionRotationSeed(
@@ -101,17 +103,31 @@ function hashPickIndex(seed: string, length: number): number {
   return hash % length
 }
 
-/** Sugerencia rotativa según token de sesión/carga. */
+/** Sugerencia rotativa — prioriza las que tienen datos del negocio. */
 export function pickMenuRootsyCatalogSuggestionForPop(
   popId: string,
   enabledModules: readonly PopAccessModule[],
   rotationToken: string,
+  insights?: MenuRootsyBusinessInsights | null,
 ): MenuRootsyCatalogSuggestion | null {
   const pool = listMenuRootsyEligibleSuggestions(enabledModules)
   if (pool.length === 0) return null
 
+  const ranked = pool.map((suggestion) => ({
+    suggestion,
+    score: scoreSuggestionDataSupport(suggestion, insights),
+  }))
+
+  const bestScore = Math.max(...ranked.map((entry) => entry.score))
+  const candidates =
+    bestScore > 0
+      ? ranked
+          .filter((entry) => entry.score === bestScore)
+          .map((entry) => entry.suggestion)
+      : pool
+
   const seed = menuRootsySuggestionRotationSeed(popId, rotationToken)
-  return pool[hashPickIndex(seed, pool.length)] ?? null
+  return candidates[hashPickIndex(seed, candidates.length)] ?? null
 }
 
 export function resolveMenuRootsyCatalogSuggestion(

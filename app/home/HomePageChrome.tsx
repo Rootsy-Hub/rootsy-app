@@ -118,12 +118,13 @@ export function HomePageChrome({
         </section>
 
         <footer className="mt-auto flex shrink-0 justify-center border-t border-white/[0.06] bg-black/10 px-4 py-4 backdrop-blur-sm sm:px-6 sm:py-5">
-          <div
-            className={cn(
-              "flex max-w-lg items-center gap-3 px-1 sm:px-2",
-            )}
-          >
-            <p className={cn("hidden text-sm sm:block", menuRealmLightMutedClass)}>
+          <div className="flex flex-nowrap items-center justify-center gap-3 px-1 sm:px-2">
+            <p
+              className={cn(
+                "hidden shrink-0 whitespace-nowrap text-sm sm:block",
+                menuRealmLightMutedClass,
+              )}
+            >
               Instala el sistema en tu compu y accede mas facil y rapido.
             </p>
             <button

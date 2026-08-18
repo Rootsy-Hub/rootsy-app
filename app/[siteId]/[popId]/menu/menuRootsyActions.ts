@@ -6,7 +6,7 @@ import { buildMenuRootsyAdvice } from "@/lib/menu/menuRootsyAi"
 import { buildMenuRootsyContext } from "@/lib/menu/menuRootsyContext"
 import { loadMenuRootsyOperationalSignals } from "@/lib/menu/menuRootsySignals"
 import { loadMenuRootsyBusinessInsights } from "@/lib/menu/menuRootsyInsights"
-import { buildMenuRootsySuggestionDetailExamples } from "@/lib/menu/menuRootsySuggestionDetail"
+import { buildMenuRootsyDetailMessage } from "@/lib/menu/menuRootsySuggestionVoice"
 import { resolveMenuRootsyCatalogSuggestion } from "@/lib/menu/menuRootsySuggestionProfile"
 import type { MenuRootsyAdvice } from "@/lib/menu/menuRootsyTypes"
 import type { MenuRootsySuggestionDetail } from "@/lib/menu/menuRootsySuggestionCatalogTypes"
@@ -130,8 +130,7 @@ export async function fetchMenuRootsySuggestionDetail(
     insights,
   })
 
-  const examples = buildMenuRootsySuggestionDetailExamples(
-    context.popName,
+  const { message, hasDataSupport } = buildMenuRootsyDetailMessage(
     suggestion,
     insights,
   )
@@ -157,9 +156,8 @@ export async function fetchMenuRootsySuggestionDetail(
     detail: {
       id: suggestion.id,
       title: suggestion.title,
-      explanation: suggestion.explanation,
-      examples,
-      examplesSource: "rules",
+      message,
+      hasDataSupport,
       cta,
     },
   }
