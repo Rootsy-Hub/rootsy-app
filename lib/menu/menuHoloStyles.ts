@@ -248,24 +248,80 @@ export const menuHoloFloatLiftClass = cn(
   "group-hover:-translate-y-px",
 )
 
-/** Luz del reinado — compartida por ícono y título del botón. */
+/** Luz del reinado — blanca, legible, compartida por ícono y título. */
 const menuHoloRealmLightClass = cn(
-  "text-[rgba(255,250,235,0.94)]",
-  "drop-shadow-[0_1px_2px_rgba(0,0,0,0.34)]",
-  "[text-shadow:0_0_18px_rgba(255,236,190,0.14)]",
+  "text-[rgba(255,255,255,0.96)]",
+  "drop-shadow-[0_1px_2px_rgba(0,0,0,0.38)]",
+  "[text-shadow:0_0_14px_rgba(255,255,255,0.1)]",
   "transition-[color,opacity,filter]",
   menuHoloEase,
-  "group-hover:text-[rgba(255,253,248,0.99)]",
-  "group-hover:drop-shadow-[0_1px_3px_rgba(0,0,0,0.4)]",
-  "group-hover:[text-shadow:0_0_22px_rgba(255,240,200,0.22)]",
+  "group-hover:text-white",
+  "group-hover:drop-shadow-[0_1px_3px_rgba(0,0,0,0.44)]",
+  "group-hover:[text-shadow:0_0_18px_rgba(255,255,255,0.14)]",
 )
 
+/** Luz estática — header, navigator y campos sin hover de grupo. */
+export const menuRealmLightStaticClass = cn(
+  "text-[rgba(255,255,255,0.96)]",
+  "drop-shadow-[0_1px_2px_rgba(0,0,0,0.38)]",
+  "[text-shadow:0_0_14px_rgba(255,255,255,0.1)]",
+)
+
+export const menuRealmLightMutedClass = cn(
+  "text-[rgba(255,255,255,0.52)]",
+  "drop-shadow-[0_1px_1px_rgba(0,0,0,0.3)]",
+)
+
+export const menuRealmTitleClass = cn(
+  "font-semibold tracking-[0.02em] antialiased",
+  menuRealmLightStaticClass,
+)
+
+export const menuRealmBodyClass = cn(
+  "font-normal antialiased",
+  menuRealmLightStaticClass,
+)
+
+/** Cristal del reinado — header, dock y navigator. */
+export const menuRealmChromeShellClass = cn(
+  "relative isolate overflow-hidden",
+  "border-[rgba(228,242,248,0.22)]",
+  "bg-[linear-gradient(165deg,rgba(255,255,255,0.08)_0%,rgba(14,42,54,0.06)_44%,rgba(8,28,38,0.14)_100%)]",
+  "backdrop-blur-xl backdrop-saturate-[1.15]",
+  "shadow-[0_2px_5px_rgba(0,0,0,0.08),0_12px_32px_rgba(0,0,0,0.14)]",
+)
+
+export const menuRealmDividerClass = "bg-[rgba(228,242,248,0.12)]"
+
+export function menuSectionPlanetDotClass(
+  section: MenuSectionKey,
+  selected: boolean,
+): string {
+  const planetDot: Record<MenuSectionKey, { on: string; off: string }> = {
+    operar: {
+      on: "size-2 bg-[rgba(111,216,156,0.95)] shadow-[0_0_10px_rgba(36,173,106,0.42)]",
+      off: "size-1.5 bg-[rgba(111,216,156,0.38)]",
+    },
+    administrar: {
+      on: "size-2 bg-[rgba(251,191,36,0.95)] shadow-[0_0_10px_rgba(217,119,6,0.42)]",
+      off: "size-1.5 bg-[rgba(251,191,36,0.38)]",
+    },
+    configurar: {
+      on: "size-2 bg-[rgba(167,139,250,0.95)] shadow-[0_0_10px_rgba(124,58,237,0.42)]",
+      off: "size-1.5 bg-[rgba(167,139,250,0.38)]",
+    },
+  }
+  return cn(
+    "rounded-full transition-all duration-500 ease-[cubic-bezier(0.33,1,0.68,1)]",
+    selected ? planetDot[section].on : planetDot[section].off,
+  )
+}
+
 /**
- * Íconos — luz del reinado, mismo alma que el título.
- * Trazo fino y claro sobre cualquier planeta.
+ * Íconos — mismo trazo y luz que el título; se leen como una sola pieza.
  */
 export const menuHoloGlyphClass = cn(
-  "relative z-[1] shrink-0 stroke-[1.65]",
+  "relative z-[1] shrink-0 stroke-[1.75] [stroke-linecap:round] [stroke-linejoin:round]",
   menuHoloRealmLightClass,
 )
 
@@ -274,12 +330,9 @@ export function menuHoloGlyphForSection(_section: MenuSectionKey): string {
   return menuHoloGlyphClass
 }
 
-/**
- * Títulos de botones — luz del reinado, no del planeta.
- * Clara de día y de noche; cálida como el sol que marca el camino.
- */
+/** Títulos — peso y luz alineados al trazo del ícono. */
 export const menuHoloLabelClass = cn(
-  "font-light tracking-[0.04em]",
+  "text-xs font-normal leading-tight tracking-[0.01em] antialiased",
   menuHoloRealmLightClass,
 )
 

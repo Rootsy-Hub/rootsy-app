@@ -22,6 +22,7 @@ import { popScopedHref } from "@/lib/popRoutes"
 import { cn } from "@/lib/utils"
 import { menuFloatingPillShellClass } from "@/app/[siteId]/[popId]/menu/menuFloatingPillStyles"
 import { menuDockEditBadgeClass } from "@/app/[siteId]/[popId]/menu/menuNatureStyles"
+import { menuRealmDividerClass } from "@/lib/menu/menuHoloStyles"
 import { RootsIconButton } from "@/components/rootsy-button"
 import { useDraggable, useDroppable } from "@dnd-kit/core"
 import { Check, Minus, Pencil } from "lucide-react"
@@ -385,7 +386,7 @@ export function MenuDock({ siteId, popId }: Props) {
           }}
         >
           <div
-            className="w-px shrink-0 bg-border"
+            className={cn("w-px shrink-0", menuRealmDividerClass)}
             style={{ height: DOCK_EDIT_DIVIDER_HEIGHT_PX }}
             aria-hidden
           />

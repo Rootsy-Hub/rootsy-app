@@ -1,10 +1,11 @@
 "use client"
 
+import { menuFloatingPillShellClass } from "@/app/[siteId]/[popId]/menu/menuFloatingPillStyles"
 import {
-  menuFloatingPillDotIdleClass,
-  menuFloatingPillDotSelectedClass,
-  menuFloatingPillShellClass,
-} from "@/app/[siteId]/[popId]/menu/menuFloatingPillStyles"
+  menuRealmLightStaticClass,
+  menuSectionPlanetDotClass,
+} from "@/lib/menu/menuHoloStyles"
+import type { MenuSectionKey } from "@/lib/menuCatalog"
 import { cn } from "@/lib/utils"
 
 export type MenuSectionNavItem = {
@@ -34,13 +35,19 @@ export function MenuSectionNavigator({
         menuFloatingPillShellClass,
       )}
     >
-      <span className="truncate text-sm font-semibold leading-none tracking-wide text-foreground/95">
+      <span
+        className={cn(
+          "truncate text-sm font-normal leading-none tracking-[0.02em] antialiased",
+          menuRealmLightStaticClass,
+        )}
+      >
         {currentTitle}
       </span>
 
       <div className="flex shrink-0 items-center -space-x-1">
         {sections.map((section, index) => {
           const selected = selectedIndex === index
+          const sectionKey = section.key as MenuSectionKey
           return (
             <button
               key={section.key}
@@ -51,18 +58,13 @@ export function MenuSectionNavigator({
               onClick={() => onSelect(index)}
               className={cn(
                 "flex size-7 items-center justify-center rounded-full transition-colors",
-                "hover:bg-foreground/6 active:scale-95",
-                "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/35",
+                "hover:bg-white/[0.06] active:scale-95",
+                "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgba(255,255,255,0.22)]",
               )}
             >
               <span
                 aria-hidden
-                className={cn(
-                  "rounded-full transition-all duration-300",
-                  selected
-                    ? menuFloatingPillDotSelectedClass
-                    : menuFloatingPillDotIdleClass,
-                )}
+                className={menuSectionPlanetDotClass(sectionKey, selected)}
               />
             </button>
           )

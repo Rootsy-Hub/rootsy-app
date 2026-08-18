@@ -23,8 +23,10 @@ import {
   menuHoloTileSkeletonLabelClass,
 } from "@/lib/menu/menuHoloStyles"
 import {
-  menuAmbientTopGlowClass,
   menuNatureShellClass,
+  menuPlanetAmbientWashClass,
+  menuPlanetOrbClass,
+  menuAmbientTopGlowClass,
   menuVignetteSoftClass,
 } from "@/app/[siteId]/[popId]/menu/menuNatureStyles"
 import "@/app/library/color/rootsyNaturePalette.css"
@@ -209,6 +211,27 @@ export function MenuPageSkeleton() {
       className={cn(menuNatureShellClass, "fixed inset-0 flex flex-col overflow-hidden bg-background")}
     >
       <div className="pointer-events-none absolute inset-0 overflow-hidden">
+        {(["operar", "administrar", "configurar"] as const).map((sectionKey, index) => (
+          <div
+            key={sectionKey}
+            aria-hidden
+            className={cn(
+              "absolute rounded-full blur-[150px] opacity-60",
+              menuPlanetOrbClass(sectionKey),
+            )}
+            style={{
+              width: 520,
+              height: 520,
+              left: index === 0 ? "18%" : index === 1 ? "50%" : "82%",
+              top: index === 0 ? "38%" : index === 1 ? "48%" : "36%",
+              transform: "translate(-50%, -50%)",
+            }}
+          />
+        ))}
+        <div
+          aria-hidden
+          className={cn("absolute inset-0", menuPlanetAmbientWashClass("operar"))}
+        />
         <div className={cn("absolute top-0 left-1/2 h-[400px] w-[1000px] -translate-x-1/2 rounded-full blur-[120px]", menuAmbientTopGlowClass)} />
         <div className={cn("absolute inset-0", menuVignetteSoftClass)} />
       </div>

@@ -95,7 +95,7 @@ export function MenuGridItemButton({
 
       <span
         className={cn(
-          "flex h-8 w-full items-center justify-center text-center text-xs font-normal leading-tight line-clamp-2 transition-colors duration-200",
+          "flex h-8 w-full items-center justify-center text-center line-clamp-2",
           showDockInsertedStyle ? menuHoloLabelMutedClass : menuHoloLabelClass,
         )}
       >

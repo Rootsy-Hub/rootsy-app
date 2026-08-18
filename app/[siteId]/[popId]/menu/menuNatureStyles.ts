@@ -82,13 +82,38 @@ export function menuIconHoverShadowForSection(_section: MenuSectionKey): string 
 }
 
 export const menuAmbientTopGlowClass =
-  "bg-[color:var(--nature-canopy-600)]/5 blur-[120px]"
+  "bg-[radial-gradient(ellipse_at_center,rgba(255,255,255,0.06)_0%,transparent_72%)]"
+
+/** Resplandor planetario — el mundo activo ilumina el cielo del menú. */
+const menuPlanetAmbientBySection: Record<MenuSectionKey, string> = {
+  operar:
+    "bg-[radial-gradient(ellipse_at_center,rgba(36,173,106,0.2)_0%,rgba(14,87,57,0.08)_38%,transparent_72%)]",
+  administrar:
+    "bg-[radial-gradient(ellipse_at_center,rgba(217,119,6,0.2)_0%,rgba(146,88,12,0.08)_38%,transparent_72%)]",
+  configurar:
+    "bg-[radial-gradient(ellipse_at_center,rgba(124,58,237,0.2)_0%,rgba(76,29,149,0.08)_38%,transparent_72%)]",
+}
+
+/** Orbes fijos — los tres mundos siempre presentes en el firmamento. */
+const menuPlanetOrbBySection: Record<MenuSectionKey, string> = {
+  operar: "bg-[rgba(36,173,106,0.14)]",
+  administrar: "bg-[rgba(217,119,6,0.12)]",
+  configurar: "bg-[rgba(124,58,237,0.12)]",
+}
+
+export function menuPlanetAmbientWashClass(section: MenuSectionKey): string {
+  return menuPlanetAmbientBySection[section]
+}
+
+export function menuPlanetOrbClass(section: MenuSectionKey): string {
+  return menuPlanetOrbBySection[section]
+}
 
 export const menuVignetteClass =
-  "bg-[radial-gradient(ellipse_at_center,transparent_0%,color-mix(in_srgb,var(--nature-night-950)_50%,transparent)_100%)]"
+  "bg-[radial-gradient(ellipse_at_center,transparent_0%,rgba(5,12,16,0.62)_100%)]"
 
 export const menuVignetteSoftClass =
-  "bg-[radial-gradient(ellipse_at_center,transparent_0%,color-mix(in_srgb,var(--nature-night-950)_48%,transparent)_100%)]"
+  "bg-[radial-gradient(ellipse_at_center,transparent_0%,rgba(5,12,16,0.58)_100%)]"
 
 export const menuRoleLabelClass =
   "text-[color:var(--nature-canopy-300)]"

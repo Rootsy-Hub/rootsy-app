@@ -15,6 +15,8 @@ import { MenuPageSkeleton } from "@/app/[siteId]/[popId]/menu/MenuPageSkeleton"
 import {
   menuAmbientTopGlowClass,
   menuNatureShellClass,
+  menuPlanetAmbientWashClass,
+  menuPlanetOrbClass,
   menuVignetteClass,
 } from "@/app/[siteId]/[popId]/menu/menuNatureStyles"
 import {
@@ -23,6 +25,12 @@ import {
   menuHeaderHeightClass,
   menuHeaderRowClass,
 } from "@/app/[siteId]/[popId]/menu/menuFloatingPillStyles"
+import {
+  menuRealmBodyClass,
+  menuRealmDividerClass,
+  menuRealmLightMutedClass,
+  menuRealmTitleClass,
+} from "@/lib/menu/menuHoloStyles"
 import {
   menuSearchClearButtonClass,
   menuSearchFieldActiveClass,
@@ -41,6 +49,7 @@ import {
 import {
   type MenuItemDef,
   type MenuItemLink,
+  type MenuSectionKey,
 } from "@/lib/menuCatalog"
 import { formatLocaleTime } from "@/lib/popTimezone"
 import { popScopedHref } from "@/lib/popRoutes"
@@ -199,6 +208,8 @@ function MenuPage() {
       title: filteredMenuSections[sectionKey]?.title ?? sectionKey,
     }))
   }, [sections, filteredMenuSections])
+
+  const activeSectionKey = (sections[selectedIndex] ?? "operar") as MenuSectionKey
 
   useEffect(() => {
     setIsMounted(true)
@@ -381,22 +392,55 @@ function MenuPage() {
             <img
               src={popBackgroundImageUrl.trim()}
               alt=""
-              className="absolute inset-0 size-full object-cover opacity-[0.40]"
+              className="absolute inset-0 size-full object-cover opacity-[0.32]"
             />
-            <div className="absolute inset-0 bg-background/32" />
+            <div className="absolute inset-0 bg-[rgba(5,12,16,0.42)]" />
           </>
         ) : null}
+
+        {(["operar", "administrar", "configurar"] as const).map((sectionKey, index) => (
+          <div
+            key={sectionKey}
+            aria-hidden
+            className={cn(
+              "absolute rounded-full blur-[150px] transition-opacity duration-[2000ms] ease-out",
+              menuPlanetOrbClass(sectionKey),
+              activeSectionKey === sectionKey ? "opacity-100" : "opacity-45",
+            )}
+            style={{
+              width: 520,
+              height: 520,
+              left: index === 0 ? "18%" : index === 1 ? "50%" : "82%",
+              top: index === 0 ? "38%" : index === 1 ? "48%" : "36%",
+              transform: "translate(-50%, -50%)",
+            }}
+          />
+        ))}
+
         <div
-          className="absolute w-[800px] h-[800px] rounded-full opacity-10 blur-[150px] transition-all duration-[2000ms] ease-out"
+          aria-hidden
+          className={cn(
+            "absolute inset-0 transition-opacity duration-[2000ms] ease-out",
+            menuPlanetAmbientWashClass(activeSectionKey),
+          )}
+        />
+
+        <div
+          className="absolute w-[800px] h-[800px] rounded-full opacity-[0.07] blur-[150px] transition-all duration-[2000ms] ease-out"
           style={{
             background:
-              "radial-gradient(circle, color-mix(in srgb, var(--rootsy-particle) 50%, transparent) 0%, transparent 70%)",
+              "radial-gradient(circle, rgba(255,255,255,0.35) 0%, transparent 70%)",
             left: `${mousePos.x}%`,
             top: `${mousePos.y}%`,
             transform: "translate(-50%, -50%)",
           }}
         />
-        <div className={cn("absolute top-0 left-1/2 -translate-x-1/2 w-[1000px] h-[400px] rounded-full blur-[120px]", menuAmbientTopGlowClass)} />
+        <div
+          className={cn(
+            "absolute top-0 left-1/2 -translate-x-1/2 w-[1000px] h-[400px] rounded-full blur-[120px]",
+            menuAmbientTopGlowClass,
+          )}
+        />
         {particles.map((particle, i) => (
           <div
             key={i}
@@ -406,7 +450,7 @@ function MenuPage() {
               height: particle.height + "px",
               left: particle.left + "%",
               top: particle.top + "%",
-              background: "var(--rootsy-particle)",
+              background: "rgba(255,255,255,0.55)",
               opacity: particle.opacity,
               animationDuration: particle.duration + "s",
               animationDelay: particle.delay + "s",
@@ -437,7 +481,7 @@ function MenuPage() {
             </RootsIconButton>
 
             <div className="flex min-w-0 items-center gap-4">
-              <div className="size-12 shrink-0 overflow-hidden rounded-2xl ring-1 ring-border">
+              <div className="size-12 shrink-0 overflow-hidden rounded-2xl ring-2 ring-[rgba(228,242,248,0.18)] shadow-[0_4px_16px_rgba(0,0,0,0.18)]">
                 <img
                   src={popLogoSrc}
                   alt=""
@@ -445,10 +489,10 @@ function MenuPage() {
                 />
               </div>
               <div className="flex min-w-0 flex-col gap-0.5">
-                <span className="truncate text-base font-bold tracking-tight text-foreground">
+                <span className={cn("truncate text-base tracking-tight", menuRealmTitleClass)}>
                   {popName}
                 </span>
-                <span className="truncate text-sm text-muted-foreground">
+                <span className={cn("truncate text-sm", menuRealmLightMutedClass)}>
                   {popStreetAddress?.trim() || "Sin dirección"}
                 </span>
               </div>
@@ -533,15 +577,15 @@ function MenuPage() {
               </RootsIconButton>
             </div>
 
-            <div className="h-6 w-px bg-border" />
+            <div className={cn("h-6 w-px", menuRealmDividerClass)} />
 
             <div className="flex shrink-0 flex-col items-end">
-              <span className="text-lg font-bold tabular-nums text-foreground">
+              <span className={cn("text-lg tabular-nums", menuRealmTitleClass)}>
                 {isMounted && time
                   ? formatLocaleTime(time)
                   : "--:--"}
               </span>
-              <span className="text-xs uppercase tracking-wide text-foreground/30">
+              <span className={cn("text-xs uppercase tracking-wide", menuRealmLightMutedClass)}>
                 {isMounted && time
                   ? time.toLocaleDateString("es-AR", {
                       weekday: "short",
@@ -552,11 +596,11 @@ function MenuPage() {
               </span>
             </div>
 
-            <div className="h-6 w-px bg-border" />
+            <div className={cn("h-6 w-px", menuRealmDividerClass)} />
 
             <div className="flex min-w-0 items-center gap-3">
               <div className="hidden min-w-0 flex-col items-end text-right leading-tight sm:flex">
-                <span className="truncate text-sm font-semibold text-foreground/90">
+                <span className={cn("truncate text-sm font-normal", menuRealmBodyClass)}>
                   {userFullName || "Usuario"}
                 </span>
                 {userRoleLabel ? (
