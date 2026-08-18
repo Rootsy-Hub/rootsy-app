@@ -116,7 +116,11 @@ export function MenuPageSkeleton() {
         </div>
       </div>
 
-      <MenuOuterEntity variant="foot" className="pointer-events-none opacity-95">
+      <MenuOuterEntity
+        variant="foot"
+        floating
+        className="pointer-events-none opacity-95"
+      >
         <MenuDormantDock />
       </MenuOuterEntity>
 
@@ -126,7 +130,7 @@ export function MenuPageSkeleton() {
         surface="dark"
         size="large"
         label="Ayuda"
-        className="absolute bottom-[5.25rem] right-4 z-30 rounded-full opacity-70"
+        className="absolute bottom-4 right-4 z-30 rounded-full opacity-70"
       >
         <HelpCircle aria-hidden />
       </RootsIconButton>

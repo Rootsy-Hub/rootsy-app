@@ -685,6 +685,7 @@ function MenuPage() {
 
       <MenuOuterEntity
         variant="foot"
+        floating
         className={menuReady ? "menu-content-emerge" : "pointer-events-none opacity-95"}
       >
         {menuReady ? (
@@ -700,7 +701,7 @@ function MenuPage() {
         surface="dark"
         size="large"
         label="Ayuda"
-        className="absolute bottom-[5.25rem] right-4 z-30 rounded-full"
+        className="absolute bottom-4 right-4 z-30 rounded-full"
       >
         <HelpCircle aria-hidden />
       </RootsIconButton>

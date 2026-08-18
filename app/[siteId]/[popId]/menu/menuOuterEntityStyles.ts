@@ -16,6 +16,12 @@ export const menuOuterEntityFootClass = cn(
   "menu-outer-entity--foot",
 )
 
+/** Dock flotante — universo exterior sin consumir altura del planeta. */
+export const menuOuterEntityFootFloatingClass = cn(
+  "menu-outer-entity menu-outer-entity--foot menu-outer-entity--foot-floating",
+  "pointer-events-none absolute bottom-3 left-1/2 z-30 w-auto max-w-[calc(100%-1.5rem)] -translate-x-1/2",
+)
+
 export const menuOuterEntityVeilClass =
   "pointer-events-none absolute inset-0 bg-[linear-gradient(168deg,rgba(255,255,255,0.025)_0%,transparent_42%)]"
 
@@ -32,4 +38,14 @@ export const menuOuterEntityBeltContentClass = cn(
 
 export const menuOuterEntityFootContentClass = cn(
   "relative z-[1] flex w-full items-center justify-center px-4 py-2.5",
+)
+
+export const menuOuterEntityBodyFloatingClass = cn(
+  menuOuterEntityBodyClass,
+  "rounded-2xl border border-[rgba(228,242,248,0.1)]",
+  "shadow-[0_10px_40px_rgba(0,0,0,0.32),0_2px_8px_rgba(0,0,0,0.2)]",
+)
+
+export const menuOuterEntityFootFloatingContentClass = cn(
+  "relative z-[1] flex items-center justify-center pointer-events-auto py-1",
 )

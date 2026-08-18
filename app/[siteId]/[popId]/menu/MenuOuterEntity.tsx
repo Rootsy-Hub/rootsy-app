@@ -4,8 +4,11 @@ import {
   menuOuterEntityBeltClass,
   menuOuterEntityBeltContentClass,
   menuOuterEntityBodyClass,
+  menuOuterEntityBodyFloatingClass,
   menuOuterEntityFootClass,
   menuOuterEntityFootContentClass,
+  menuOuterEntityFootFloatingClass,
+  menuOuterEntityFootFloatingContentClass,
   menuOuterEntityVeilClass,
 } from "@/app/[siteId]/[popId]/menu/menuOuterEntityStyles"
 import "@/app/[siteId]/[popId]/menu/menuOuterEntity.css"
@@ -18,6 +21,8 @@ type Variant = "belt" | "foot"
 
 type Props = {
   variant: Variant
+  /** Solo para `foot` — flota sobre el planeta sin reservar altura. */
+  floating?: boolean
   children: ReactNode
   className?: string
   contentClassName?: string
@@ -26,25 +31,41 @@ type Props = {
 /** Banda del universo exterior — cinturón de mundos o base del dock. */
 export function MenuOuterEntity({
   variant,
+  floating = false,
   children,
   className,
   contentClassName,
 }: Props) {
-  const lifeStyle = menuPlanetLifeStyle(`menu-outer-${variant}`)
+  const lifeStyle = menuPlanetLifeStyle(
+    floating ? "menu-outer-foot-float" : `menu-outer-${variant}`,
+  )
+  const isFloatingFoot = variant === "foot" && floating
+
   const shellClass =
-    variant === "belt" ? menuOuterEntityBeltClass : menuOuterEntityFootClass
+    variant === "belt"
+      ? menuOuterEntityBeltClass
+      : isFloatingFoot
+        ? menuOuterEntityFootFloatingClass
+        : menuOuterEntityFootClass
+
+  const bodyClass = isFloatingFoot
+    ? menuOuterEntityBodyFloatingClass
+    : menuOuterEntityBodyClass
+
   const contentClass =
     variant === "belt"
       ? menuOuterEntityBeltContentClass
-      : menuOuterEntityFootContentClass
+      : isFloatingFoot
+        ? menuOuterEntityFootFloatingContentClass
+        : menuOuterEntityFootContentClass
 
   return (
     <div className={cn(shellClass, className)}>
-      {variant === "foot" ? (
+      {variant === "foot" && !floating ? (
         <div aria-hidden className="menu-outer-entity-bridge--up" />
       ) : null}
 
-      <div className={menuOuterEntityBodyClass} style={lifeStyle}>
+      <div className={bodyClass} style={lifeStyle}>
         <div aria-hidden className="menu-outer-entity-core" />
         <div aria-hidden className="menu-outer-entity-sky" />
         <div aria-hidden className={menuOuterEntityVeilClass} />
