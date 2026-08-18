@@ -1,4 +1,3 @@
-import type { PopCacheRevisions } from "@/lib/popCacheRevisions"
 import type { PopEmisorIvaCondition } from "@/lib/saleComprobanteRules"
 
 export type PopWorkspaceBootstrapData = {
@@ -12,7 +11,6 @@ export type PopWorkspaceBootstrapData = {
   userImageUrl: string | null
   roleLabel: string
   permissionKeys: string[]
-  cacheRevisions: PopCacheRevisions
   hasValidPopFiscalCuit: boolean
   popEmisorIvaCondition: PopEmisorIvaCondition
 }

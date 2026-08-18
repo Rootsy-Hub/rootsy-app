@@ -1,25 +1,45 @@
 import {
   formatPlanLimitValue,
+  ROOTS_PLAN_DEFINITIONS,
   type RootsPublicPaidPlanKey,
 } from "@/lib/rootsySubscriptionCatalog"
 
 export const LANDING_FEATURED_PLAN: RootsPublicPaidPlanKey = "professional"
 
+/** Misma prueba para todos los planes self-serve y todos los rubros. */
+export const LANDING_TRIAL_DAYS = ROOTS_PLAN_DEFINITIONS.free_trial.trialDays
+
+export function landingFirstChargeDate(from = new Date()): Date {
+  const next = new Date(from)
+  next.setDate(next.getDate() + LANDING_TRIAL_DAYS)
+  return next
+}
+
+export function formatLandingFirstChargeDate(from = new Date()): string {
+  return new Intl.DateTimeFormat("es-AR", {
+    day: "numeric",
+    month: "long",
+  }).format(landingFirstChargeDate(from))
+}
+
 export const LANDING_PLAN_COPY: Record<
   RootsPublicPaidPlanKey,
-  { tagline: string; cta: string }
+  { tagline: string; cta: string; selfServe: boolean }
 > = {
   starter: {
     tagline: "Para arrancar con orden: ventas, stock y administración en un solo lugar.",
-    cta: "Empezar con Starter",
+    cta: `Probar ${LANDING_TRIAL_DAYS} días gratis`,
+    selfServe: true,
   },
   professional: {
     tagline: "El equilibrio entre potencia y simplicidad para el día a día del negocio.",
-    cta: "Elegir Professional",
+    cta: `Probar ${LANDING_TRIAL_DAYS} días gratis`,
+    selfServe: true,
   },
   enterprise: {
     tagline: "Escala sin límites: todos los módulos, equipos grandes y operación intensiva.",
     cta: "Hablar con ventas",
+    selfServe: false,
   },
 }
 

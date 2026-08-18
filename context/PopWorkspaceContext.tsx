@@ -1,10 +1,6 @@
 "use client"
 
 import type { PopAccessCache } from "@/app/home/homeUserDataTypes"
-import {
-  getPopCacheRevisions,
-  type PopCacheRevisions,
-} from "@/lib/popCacheRevisions"
 import { permissionKeysFromPopAccess } from "@/lib/popAccessPermissions"
 import { permissionKeysInclude } from "@/lib/popPermissionConstants"
 import { siteIdsMatchClientRoute } from "@/lib/popRoutes"
@@ -30,12 +26,10 @@ export type PopWorkspaceContextValue = {
   popId: string
   popAccess: PopAccessCache | null
   bootstrap: PopWorkspaceBootstrapData | null
-  cacheRevisions: PopCacheRevisions | null
   loading: boolean
   revalidating: boolean
   error: string | null
   refresh: () => Promise<void>
-  refreshRevisions: () => Promise<PopCacheRevisions | null>
   hasPermission: (resource: string, action: string) => boolean
 }
 
@@ -131,13 +125,6 @@ export function PopWorkspaceProvider({
     [popAccess, permissionKeys],
   )
 
-  const refreshRevisions = useCallback(async (): Promise<PopCacheRevisions | null> => {
-    if (!popId) return null
-    const res = await getPopCacheRevisions(popId)
-    if (!res.success) return null
-    return res.revisions
-  }, [popId])
-
   const error = useMemo(() => {
     if (!accessEnabled) return null
     if (loadError) return "Error al cargar datos del punto de venta."
@@ -161,12 +148,10 @@ export function PopWorkspaceProvider({
       popId,
       popAccess: accessEnabled ? popAccess : null,
       bootstrap,
-      cacheRevisions: bootstrap?.cacheRevisions ?? null,
       loading: authLoading || (accessEnabled && accessLoading),
       revalidating: false,
       error,
       refresh: accessEnabled ? refetch : async () => {},
-      refreshRevisions,
       hasPermission,
     }),
     [
@@ -179,7 +164,6 @@ export function PopWorkspaceProvider({
       accessLoading,
       error,
       refetch,
-      refreshRevisions,
       hasPermission,
     ],
   )

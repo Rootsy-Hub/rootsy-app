@@ -8,21 +8,27 @@ import {
   type PopPageSearchParams,
 } from "@/lib/workspaceSearchParams"
 
-export default async function ChecksPage({
+export default function ChecksPage({
   params,
   searchParams,
 }: {
   params: PopPageParams
   searchParams: PopPageSearchParams
 }) {
+  return (
+    <PopListHydrationPage state={loadChecksTable(params, searchParams)}>
+      <ChecksWorkspaceView />
+    </PopListHydrationPage>
+  )
+}
+
+async function loadChecksTable(
+  params: PopPageParams,
+  searchParams: PopPageSearchParams,
+) {
   const { popId } = await params
   const url = parseChecksWorkspaceUrl(
     workspaceUrlSearchParamsFromRecord(await searchParams),
   )
-
-  return (
-    <PopListHydrationPage state={await prefetchPopChecksTable(popId, url)}>
-      <ChecksWorkspaceView />
-    </PopListHydrationPage>
-  )
+  return prefetchPopChecksTable(popId, url)
 }

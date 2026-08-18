@@ -8,21 +8,27 @@ import {
   type PopPageSearchParams,
 } from "@/lib/workspaceSearchParams"
 
-export default async function ArticlesPage({
+export default function ArticlesPage({
   params,
   searchParams,
 }: {
   params: PopPageParams
   searchParams: PopPageSearchParams
 }) {
+  return (
+    <PopListHydrationPage state={loadArticlesTable(params, searchParams)}>
+      <ArticlesWorkspaceView />
+    </PopListHydrationPage>
+  )
+}
+
+async function loadArticlesTable(
+  params: PopPageParams,
+  searchParams: PopPageSearchParams,
+) {
   const { popId } = await params
   const url = parseArticlesWorkspaceUrl(
     workspaceUrlSearchParamsFromRecord(await searchParams),
   )
-
-  return (
-    <PopListHydrationPage state={await prefetchPopArticlesTable(popId, url)}>
-      <ArticlesWorkspaceView />
-    </PopListHydrationPage>
-  )
+  return prefetchPopArticlesTable(popId, url)
 }

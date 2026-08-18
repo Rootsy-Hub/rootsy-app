@@ -193,7 +193,6 @@ function PurchasesPage() {
     canUpdateArticles,
     treasuryPaymentContext,
     canReadPaymentMethods,
-    catalogRev,
     mergeCatalogArticles,
     ensureCatalogArticles,
     catalogLoading: catalogQueryLoading,
@@ -1192,7 +1191,6 @@ function PurchasesPage() {
             catalog={
               <PurchaseCatalogBrowser
                 popId={popId}
-                catalogRev={catalogRev}
                 mergeCatalogArticles={mergeCatalogArticles}
                 categorySections={catalogCategorySections}
                 products={productosCatalogo}

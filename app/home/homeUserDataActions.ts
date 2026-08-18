@@ -70,20 +70,12 @@ function mapMemberRole(role: MemberRoleRow["roles"]): PopAccessRole | null {
   }
 }
 
-function parsePermissionsRev(payload: unknown): number {
-  const raw = payload as { ok?: boolean; permissions_rev?: number | string } | null
-  if (!raw?.ok) return 1
-  const n = Number(raw.permissions_rev)
-  return Number.isFinite(n) && n >= 1 ? Math.trunc(n) : 1
-}
-
 function assemblePopAccess(input: {
   pop: PopAccessRow
   isOwner: boolean
   role: PopAccessRole | null
   subscriptionRaw: Record<string, unknown>
   extraModules: ReturnType<typeof parseExtraModuleEntries>
-  permissionsRev: number
 }): PopAccessCache {
   const subscription = mapPopSubscriptionRow(input.subscriptionRaw)
   const limits = mapPopAccessLimits(input.subscriptionRaw)
@@ -125,7 +117,6 @@ function assemblePopAccess(input: {
     isOwner: input.isOwner,
     role: input.role,
     canEnter: Boolean(input.pop.is_active) && subscription.isActive,
-    permissionsRev: input.permissionsRev,
   }
 }
 
@@ -231,9 +222,8 @@ export async function getPopAccessCache(
     if (!role) return null
   }
 
-  const [subscriptionRes, revisionsRes, extraRes] = await Promise.all([
+  const [subscriptionRes, extraRes] = await Promise.all([
     supabase.rpc("get_pop_subscription_info", { pop_id: popId }),
-    supabase.rpc("get_pop_cache_revisions", { p_pop_id: popId }),
     pop.subscription_id
       ? supabase
           .from("_pop_subscriptions")
@@ -257,7 +247,6 @@ export async function getPopAccessCache(
     role,
     subscriptionRaw: subscriptionRes.data[0] as Record<string, unknown>,
     extraModules: parseExtraModuleEntries(extraRes.data?.extra_modules),
-    permissionsRev: parsePermissionsRev(revisionsRes.data),
   })
 }
 
@@ -321,16 +310,15 @@ export async function getUserPopsAccessBatch(): Promise<UserPopsAccessBatchCache
 
   const perPopExtras = await Promise.all(
     pops.map(async (pop) => {
-      const [subscriptionRes, revisionsRes] = await Promise.all([
-        supabase.rpc("get_pop_subscription_info", { pop_id: pop.id }),
-        supabase.rpc("get_pop_cache_revisions", { p_pop_id: pop.id }),
-      ])
-      return { pop, subscriptionRes, revisionsRes }
+      const subscriptionRes = await supabase.rpc("get_pop_subscription_info", {
+        pop_id: pop.id,
+      })
+      return { pop, subscriptionRes }
     }),
   )
 
   const accessByPopId: Record<string, PopAccessCache> = {}
-  for (const { pop, subscriptionRes, revisionsRes } of perPopExtras) {
+  for (const { pop, subscriptionRes } of perPopExtras) {
     const isOwner = String(pop.owner_user_id) === user.uid
     const role = isOwner ? null : roleByPopId.get(String(pop.id)) ?? null
     if (!isOwner && !role) continue
@@ -349,7 +337,6 @@ export async function getUserPopsAccessBatch(): Promise<UserPopsAccessBatchCache
       extraModules: pop.subscription_id
         ? extraBySubscriptionId.get(pop.subscription_id) ?? []
         : [],
-      permissionsRev: parsePermissionsRev(revisionsRes.data),
     })
   }
 

@@ -10,78 +10,47 @@ export function popBackgroundImageQueryKey(popId: string) {
   return ["pop-background-image", popId] as const
 }
 
-export function menuCatalogQueryKey(popId: string, catalogRev?: number) {
-  return catalogRev == null
-    ? (["menu-catalog", popId] as const)
-    : (["menu-catalog", popId, catalogRev] as const)
+export function menuCatalogQueryKey(popId: string) {
+  return ["menu-catalog", popId] as const
 }
 
-export function saleCatalogQueryKey(popId: string, catalogRev?: number) {
-  return catalogRev == null
-    ? (["sale-catalog", popId] as const)
-    : (["sale-catalog", popId, catalogRev] as const)
+export function saleCatalogQueryKey(popId: string) {
+  return ["sale-catalog", popId] as const
 }
 
-export function purchaseCatalogQueryKey(popId: string, catalogRev?: number) {
-  return catalogRev == null
-    ? (["purchase-catalog", popId] as const)
-    : (["purchase-catalog", popId, catalogRev] as const)
+export function purchaseCatalogQueryKey(popId: string) {
+  return ["purchase-catalog", popId] as const
 }
 
-export function saleCatalogItemsQueryKey(
-  popId: string,
-  catalogRev: number | undefined,
-  filterKey: string,
-) {
-  return ["sale-catalog", popId, catalogRev ?? 0, "items", filterKey] as const
+export function saleCatalogItemsQueryKey(popId: string, filterKey: string) {
+  return ["sale-catalog", popId, "items", filterKey] as const
 }
 
-export function menuCatalogItemsQueryKey(
-  popId: string,
-  catalogRev: number | undefined,
-  filterKey: string,
-) {
-  return ["menu-catalog", popId, catalogRev ?? 0, "items", filterKey] as const
+export function menuCatalogItemsQueryKey(popId: string, filterKey: string) {
+  return ["menu-catalog", popId, "items", filterKey] as const
 }
 
 export function purchaseCatalogItemsQueryKey(
   popId: string,
-  catalogRev: number | undefined,
   filterKey: string,
 ) {
-  return ["purchase-catalog", popId, catalogRev ?? 0, "items", filterKey] as const
+  return ["purchase-catalog", popId, "items", filterKey] as const
 }
 
-export function saleCatalogKnownArticlesQueryKey(
-  popId: string,
-  catalogRev: number | undefined,
-) {
-  return ["sale-catalog", popId, catalogRev ?? 0, "known-articles"] as const
+export function saleCatalogKnownArticlesQueryKey(popId: string) {
+  return ["sale-catalog", popId, "known-articles"] as const
 }
 
-export function menuCatalogKnownArticlesQueryKey(
-  popId: string,
-  catalogRev: number | undefined,
-) {
-  return ["menu-catalog", popId, catalogRev ?? 0, "known-articles"] as const
+export function menuCatalogKnownArticlesQueryKey(popId: string) {
+  return ["menu-catalog", popId, "known-articles"] as const
 }
 
-export function menuCatalogKnownRecipesQueryKey(
-  popId: string,
-  catalogRev: number | undefined,
-) {
-  return ["menu-catalog", popId, catalogRev ?? 0, "known-recipes"] as const
+export function menuCatalogKnownRecipesQueryKey(popId: string) {
+  return ["menu-catalog", popId, "known-recipes"] as const
 }
 
-export function purchaseCatalogKnownArticlesQueryKey(
-  popId: string,
-  catalogRev: number | undefined,
-) {
-  return ["purchase-catalog", popId, catalogRev ?? 0, "known-articles"] as const
-}
-
-export function popCatalogRevQueryKey(popId: string) {
-  return ["_pop-catalog-rev", popId] as const
+export function purchaseCatalogKnownArticlesQueryKey(popId: string) {
+  return ["purchase-catalog", popId, "known-articles"] as const
 }
 
 export function saleComprobanteEmitterQueryKey(
@@ -105,10 +74,6 @@ export function userPopsAccessBatchQueryKey(userId: string) {
 
 export function popAccessQueryKey(popId: string) {
   return ["_pop-access", popId] as const
-}
-
-export function popPermissionsRevQueryKey(popId: string) {
-  return ["_pop-permissions-rev", popId] as const
 }
 
 /** @deprecated Usar popAccessQueryKey — la suscripción vive en `_pop-access`. */

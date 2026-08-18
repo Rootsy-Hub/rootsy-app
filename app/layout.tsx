@@ -4,6 +4,7 @@ import { Analytics } from '@vercel/analytics/next'
 import { AuthProvider } from '@/context/AuthContextSupabase'
 import { QueryProvider } from '@/components/providers/QueryProvider'
 import { getInitialAuthUser } from '@/lib/getInitialAuthUser'
+import { ROOTSY_BRAND_TITLE } from '@/lib/rootsyBrand'
 import { Toaster } from '@/components/ui/toaster'
 import './globals.css'
 
@@ -27,23 +28,26 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: 'Rootsy — El mundo dentro de tu negocio',
+  title: ROOTSY_BRAND_TITLE,
   description:
     'Sistema de gestión que se adapta a cualquier negocio. Simple en la superficie, profundo cuando lo necesitás.',
-  generator: 'v0.app',
   icons: {
     icon: [
       {
+        url: '/icon.svg',
+        type: 'image/svg+xml',
+      },
+      {
         url: '/icon-light-32x32.png',
+        sizes: '32x32',
+        type: 'image/png',
         media: '(prefers-color-scheme: light)',
       },
       {
         url: '/icon-dark-32x32.png',
+        sizes: '32x32',
+        type: 'image/png',
         media: '(prefers-color-scheme: dark)',
-      },
-      {
-        url: '/icon.svg',
-        type: 'image/svg+xml',
       },
     ],
     apple: '/apple-icon.png',

@@ -74,18 +74,17 @@ export function QueryProvider({ children }: { children: ReactNode }) {
   const [persistReady, setPersistReady] = useState(false)
 
   useLayoutEffect(() => {
-    const persister = restorePersistedQueries(queryClient)
-    if (!persister) {
-      setPersistReady(true)
-      return
-    }
+    restorePersistedQueries(queryClient)
+    setPersistReady(true)
+
+    const persister = createRootsQueryPersister()
+    if (!persister) return
 
     const unsubscribe = persistQueryClientSubscribe({
       queryClient,
       persister,
       dehydrateOptions,
     })
-    setPersistReady(true)
 
     return () => {
       unsubscribe()

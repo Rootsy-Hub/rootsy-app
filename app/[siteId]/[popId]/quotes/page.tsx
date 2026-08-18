@@ -18,7 +18,7 @@ export default async function QuotesPage({
   }
 
   return (
-    <PopListHydrationPage state={await prefetchPopQuotesTable(popId)}>
+    <PopListHydrationPage state={prefetchPopQuotesTable(popId)}>
       <QuotesWorkspaceView siteId={siteId} popId={popId} />
     </PopListHydrationPage>
   )

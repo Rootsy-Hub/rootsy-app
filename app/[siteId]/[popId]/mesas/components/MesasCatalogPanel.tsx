@@ -23,7 +23,6 @@ export function MesasCatalogPanel({
     menuCategorySections,
     productosCatalogo,
     agregarAlCarrito,
-    catalogRev,
     mergeCatalogArticles,
     mergeCatalogRecipes,
     promoWizardOpen,
@@ -46,7 +45,6 @@ export function MesasCatalogPanel({
         catalogSidebarOpen={catalogSidebarOpen}
         catalogScope="menu"
         itemsSource="menu"
-        catalogRev={catalogRev}
         mergeCatalogArticles={mergeCatalogArticles}
         mergeCatalogRecipes={mergeCatalogRecipes}
       />

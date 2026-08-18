@@ -1,6 +1,5 @@
 import {
   menuCatalogQueryKey,
-  popCatalogRevQueryKey,
   purchaseCatalogQueryKey,
   saleCatalogQueryKey,
 } from "@/lib/queryKeys"
@@ -15,5 +14,4 @@ export function invalidatePopOperateCatalogs(
     queryKey: purchaseCatalogQueryKey(popId),
   })
   void queryClient.invalidateQueries({ queryKey: menuCatalogQueryKey(popId) })
-  void queryClient.invalidateQueries({ queryKey: popCatalogRevQueryKey(popId) })
 }

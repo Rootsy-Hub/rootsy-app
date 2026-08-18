@@ -1,4 +1,5 @@
 import { ROOTSY_COLOR_SEMANTIC, rootsyColorHex } from "@/lib/design-system"
+export { ROOTSY_BRAND_SLOGAN } from "@/lib/rootsyBrand"
 
 export const ROOTSY_PRODUCT_ESSENCE =
   "Rootsy es un sistema de gestión online para cualquier tipo de negocio — panadería, ferretería, restaurante, servicios o lo que sea. Vender, stock, operaciones y el día a día del negocio en un solo lugar, sin importar el rubro."

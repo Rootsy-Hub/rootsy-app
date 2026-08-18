@@ -18,7 +18,7 @@ export default async function PurchaseOrdersPage({
   }
 
   return (
-    <PopListHydrationPage state={await prefetchPopPurchaseOrdersTable(popId)}>
+    <PopListHydrationPage state={prefetchPopPurchaseOrdersTable(popId)}>
       <PurchaseOrdersWorkspaceView siteId={siteId} popId={popId} />
     </PopListHydrationPage>
   )

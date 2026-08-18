@@ -14,6 +14,7 @@ import {
   type BannerDensityId,
   type BannerIntentId,
   type BannerLayoutId,
+  type BannerTone,
 } from "@/components/rootsy-banner/rootsBannerSpecRuntime"
 import {
   rootsBannerDismissRadiusClass,
@@ -26,6 +27,7 @@ import type { CSSProperties, ReactNode } from "react"
 
 export type RootsBannerProps = {
   intent?: BannerIntentId
+  tone?: BannerTone
   density?: BannerDensityId
   layout?: BannerLayoutId
   title?: string
@@ -47,6 +49,7 @@ export type RootsBannerProps = {
 
 export function RootsBanner({
   intent = "neutral",
+  tone = "light",
   density = "default",
   layout,
   title,
@@ -79,12 +82,16 @@ export function RootsBanner({
       role={resolveBannerRole(intent)}
       className={cn("font-canopy", rootsBannerShellClassForVariant(variant), className)}
       style={{
-        ...getBannerShellStyle(intent, density, { fullWidth, strip: variant === "strip" }),
+        ...getBannerShellStyle(intent, density, {
+          fullWidth,
+          strip: variant === "strip",
+          tone,
+        }),
         ...style,
       }}
     >
       <div style={rowStyle}>
-        {showIcon ? icon ?? <RootsBannerIcon intent={intent} /> : null}
+        {showIcon ? icon ?? <RootsBannerIcon intent={intent} tone={tone} /> : null}
         <div
           style={{
             ...rowStyle,
@@ -94,17 +101,19 @@ export function RootsBanner({
           }}
         >
           <div style={isMessageOnly ? { flex: 1, minWidth: 0 } : stackStyle}>
-            {!isMessageOnly && title ? <p style={getBannerTitleStyle()}>{title}</p> : null}
-            {body ? <div style={getBannerMessageStyle(intent)}>{body}</div> : null}
+            {!isMessageOnly && title ? (
+              <p style={getBannerTitleStyle(tone)}>{title}</p>
+            ) : null}
+            {body ? <div style={getBannerMessageStyle(intent, tone)}>{body}</div> : null}
           </div>
 
           {resolvedLayout === "with-action" && actionLabel ? (
             actionHref ? (
-              <Link href={actionHref} style={getBannerActionStyle(intent)}>
+              <Link href={actionHref} style={getBannerActionStyle(intent, tone)}>
                 {actionLabel}
               </Link>
             ) : (
-              <button type="button" style={getBannerActionStyle(intent)} onClick={onAction}>
+              <button type="button" style={getBannerActionStyle(intent, tone)} onClick={onAction}>
                 {actionLabel}
               </button>
             )
@@ -115,7 +124,7 @@ export function RootsBanner({
               type="button"
               aria-label={dismissLabel}
               className={rootsBannerDismissRadiusClass()}
-              style={getBannerDismissButtonStyle()}
+              style={getBannerDismissButtonStyle(tone)}
               onClick={onDismiss}
             >
               <svg

@@ -6,13 +6,12 @@ import {
   useMenuDockEdit,
 } from "@/app/[siteId]/[popId]/menu/MenuDockDndContext"
 import {
-  menuBadgeDefaultClass,
-  menuBadgeHotClass,
   menuIconGlyphClass,
   menuIconGradientForSection,
   menuIconHoverShadowForSection,
 } from "@/app/[siteId]/[popId]/menu/menuNatureStyles"
 import { MenuIconChrome } from "@/app/[siteId]/[popId]/menu/MenuIconChrome"
+import { usePopOptimisticNav } from "@/context/PopOptimisticNavContext"
 import type { MenuItemDef, MenuSectionKey } from "@/lib/menuCatalog"
 import { cn } from "@/lib/utils"
 import { useDraggable } from "@dnd-kit/core"
@@ -33,6 +32,7 @@ export function MenuGridItemButton({
   href,
   onActivate,
 }: Props) {
+  const { start: startOptimisticNav } = usePopOptimisticNav()
   const {
     editing,
     canDragMenuItem,
@@ -59,6 +59,9 @@ export function MenuGridItemButton({
     editing && (alreadyInDock || isThisMenuDrag)
 
   const Icon = item.icon
+  const tileClassName =
+    "group flex h-[7.125rem] w-24 flex-col items-center gap-2.5 transition-all duration-200"
+
   const tileInner = (
     <>
       <div className="relative">
@@ -85,24 +88,11 @@ export function MenuGridItemButton({
             )}
           />
         </div>
-
-        {item.badge && !showDockInsertedStyle ? (
-          <div
-            className={cn(
-              "absolute -right-1 -top-1 flex h-[18px] min-w-[18px] items-center justify-center rounded-full px-1 text-[9px] font-semibold shadow-sm",
-              item.badge === "HOT" || item.badge === "NEW"
-                ? menuBadgeHotClass
-                : menuBadgeDefaultClass,
-            )}
-          >
-            {item.badge}
-          </div>
-        ) : null}
       </div>
 
       <span
         className={cn(
-          "text-center text-xs font-normal leading-tight transition-colors duration-200",
+          "flex h-8 w-full items-center justify-center text-center text-xs font-normal leading-tight line-clamp-2 transition-colors duration-200",
           showDockInsertedStyle
             ? "text-foreground/35"
             : "text-foreground/80 group-hover:text-foreground/95",
@@ -135,7 +125,21 @@ export function MenuGridItemButton({
       {href && !editing && !disabled ? (
         <Link
           href={href}
-          className="group flex w-24 flex-col items-center gap-2.5 transition-all duration-200 hover:scale-[1.02] active:scale-[0.98]"
+          onClick={(event) => {
+            if (
+              event.metaKey ||
+              event.ctrlKey ||
+              event.shiftKey ||
+              event.altKey
+            ) {
+              return
+            }
+            startOptimisticNav({ href, title: item.name })
+          }}
+          className={cn(
+            tileClassName,
+            "hover:scale-[1.02] active:scale-[0.98]",
+          )}
         >
           {tileInner}
         </Link>
@@ -147,7 +151,7 @@ export function MenuGridItemButton({
           }}
           disabled={disabled}
           className={cn(
-            "group flex w-24 flex-col items-center gap-2.5 transition-all duration-200",
+            tileClassName,
             !editing && !disabled && "hover:scale-[1.02] active:scale-[0.98]",
             disabled && "cursor-default opacity-70",
           )}

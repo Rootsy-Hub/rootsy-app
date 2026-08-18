@@ -8,21 +8,29 @@ import {
   type PopPageSearchParams,
 } from "@/lib/workspaceSearchParams"
 
-export default async function CurrentAccountsPage({
+export default function CurrentAccountsPage({
   params,
   searchParams,
 }: {
   params: PopPageParams
   searchParams: PopPageSearchParams
 }) {
+  return (
+    <PopListHydrationPage
+      state={loadCurrentAccounts(params, searchParams)}
+    >
+      <CurrentAccountsWorkspaceView />
+    </PopListHydrationPage>
+  )
+}
+
+async function loadCurrentAccounts(
+  params: PopPageParams,
+  searchParams: PopPageSearchParams,
+) {
   const { popId } = await params
   const url = parseCurrentAccountsWorkspaceUrl(
     workspaceUrlSearchParamsFromRecord(await searchParams),
   )
-
-  return (
-    <PopListHydrationPage state={await prefetchPopCurrentAccounts(popId, url)}>
-      <CurrentAccountsWorkspaceView />
-    </PopListHydrationPage>
-  )
+  return prefetchPopCurrentAccounts(popId, url)
 }

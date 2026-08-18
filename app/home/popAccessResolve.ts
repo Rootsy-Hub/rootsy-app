@@ -20,6 +20,20 @@ import {
   POP_ACCESS_MODULE_TO_PAGE_KEY,
 } from "@/lib/popAccessModuleMap"
 
+const EXTRA_MODULE_TARGET_SECTION: Record<
+  string,
+  Exclude<RootsModuleSectionKey, "extras">
+> = {
+  manufacturing: "operar",
+  invoices: "administrar",
+  printers: "configurar",
+  chat: "configurar",
+}
+
+const EXTRA_MODULE_LABEL_OVERRIDE: Record<string, string> = {
+  manufacturing: "Fabricar",
+}
+
 type ExtraModuleEntry = {
   key: string
   label: string
@@ -140,10 +154,12 @@ export function buildPopAccessEnabledModules(input: {
 
   for (const mod of config.extras) {
     if (!enabledExtraKeys.has(mod.key)) continue
+    if (out.some((entry) => entry.key === mod.key)) continue
+    const section = EXTRA_MODULE_TARGET_SECTION[mod.key] ?? "configurar"
     out.push({
       key: mod.key,
-      label: mod.label,
-      section: "extras",
+      label: EXTRA_MODULE_LABEL_OVERRIDE[mod.key] ?? mod.label,
+      section,
       isExtra: true,
       permissions: resolveModulePermissions(
         mod.key,

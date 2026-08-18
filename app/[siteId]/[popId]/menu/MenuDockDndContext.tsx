@@ -14,8 +14,15 @@ import {
   MAX_MENU_DOCK_ITEMS,
   MIN_MENU_DOCK_ITEMS,
   persistMenuDockIds,
+  readCachedMenuDockIds,
   resolveMenuDockIds,
+  sanitizeMenuDockIds,
+  writeCachedMenuDockIds,
 } from "@/lib/menuDockPreference"
+import {
+  getPopMenuDockPreference,
+  savePopMenuDockPreference,
+} from "@/app/[siteId]/[popId]/menu/menuDockActions"
 import {
   menuIconGlyphClass,
   menuIconGradientForSection,
@@ -358,9 +365,13 @@ export function MenuDockDndProvider({
   const [draggingItem, setDraggingItem] = useState<MenuDockDragItem | null>(null)
   const [activeDragKind, setActiveDragKind] = useState<DragKind | null>(null)
   const [dropPreviewIndex, setDropPreviewIndex] = useState<number | null>(null)
-  const [dockIds, setDockIds] = useState<MenuDockItemId[]>(() =>
-    resolveMenuDockIds(popId, enabledModules),
-  )
+  const [dockIds, setDockIds] = useState<MenuDockItemId[]>(() => {
+    const cached = readCachedMenuDockIds(popId)
+    if (cached?.length) {
+      return sanitizeMenuDockIds(cached, enabledModules)
+    }
+    return sanitizeMenuDockIds(DEFAULT_MENU_DOCK_IDS, enabledModules)
+  })
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -372,7 +383,41 @@ export function MenuDockDndProvider({
   )
 
   useEffect(() => {
-    setDockIds(resolveMenuDockIds(popId, enabledModules))
+    let cancelled = false
+
+    async function loadDockPreference() {
+      try {
+        const fromDb = await getPopMenuDockPreference(popId)
+        if (cancelled) return
+
+        if (fromDb?.length) {
+          const resolved = resolveMenuDockIds(popId, enabledModules, fromDb)
+          setDockIds(resolved)
+          writeCachedMenuDockIds(popId, resolved)
+          return
+        }
+
+        const cached = readCachedMenuDockIds(popId)
+        if (cached?.length) {
+          const migrated = resolveMenuDockIds(popId, enabledModules, cached)
+          setDockIds(migrated)
+          void savePopMenuDockPreference(popId, migrated)
+          return
+        }
+
+        setDockIds(resolveMenuDockIds(popId, enabledModules))
+      } catch {
+        if (!cancelled) {
+          setDockIds(resolveMenuDockIds(popId, enabledModules))
+        }
+      }
+    }
+
+    void loadDockPreference()
+
+    return () => {
+      cancelled = true
+    }
   }, [popId, enabledModules])
 
   useEffect(() => {
@@ -425,6 +470,7 @@ export function MenuDockDndProvider({
     (next: MenuDockItemId[]) => {
       const persisted = persistMenuDockIds(popId, next, enabledModules)
       setDockIds(persisted)
+      void savePopMenuDockPreference(popId, persisted)
     },
     [popId, enabledModules],
   )

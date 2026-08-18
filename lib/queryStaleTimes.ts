@@ -21,15 +21,6 @@ export const oneDayQueryOptions = {
   refetchOnReconnect: false,
 } as const
 
-/** Revisión de catálogo: se pinta con el valor cacheado y se revalida atrás. */
-export const catalogRevQueryOptions = {
-  staleTime: 0,
-  gcTime: ONE_DAY_MS,
-  refetchOnMount: true,
-  refetchOnWindowFocus: true,
-  refetchOnReconnect: true,
-} as const
-
 /** Listados de workspace: cache en sesión; refetch solo en F5 o invalidación explícita. */
 export const sessionListQueryOptions = {
   staleTime: Number.POSITIVE_INFINITY,

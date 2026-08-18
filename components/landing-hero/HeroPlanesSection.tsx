@@ -20,6 +20,7 @@ import {
 import {
   LANDING_FEATURED_PLAN,
   LANDING_PLAN_COPY,
+  LANDING_TRIAL_DAYS,
   formatLandingPlanMoney,
   landingPlanFeatures,
   landingYearlySavingsPercent,
@@ -168,7 +169,8 @@ export function HeroPlanesSection() {
           Elegí tu plan
         </h2>
         <p className="mx-auto mt-4 max-w-xl text-pretty text-lg leading-relaxed text-white/80 sm:text-xl">
-          7 días de prueba con tarjeta — sin cargo hasta que termina.
+          {LANDING_TRIAL_DAYS} días gratis en cualquier rubro y plan self-serve.
+          Hoy no se cobra: la tarjeta es para cuando termina la prueba.
         </p>
       </header>
 
@@ -275,8 +277,9 @@ export function HeroPlanesSection() {
           </ul>
 
           <p className="text-center text-xs text-white/40">
-            Precios de referencia en ARS. Los valores finales pueden variar según
-            promociones, impuestos y acuerdos comerciales.
+            La prueba es la misma en Comercio, Restaurant y Fábrica:{" "}
+            {LANDING_TRIAL_DAYS} días del plan que elijas, con los módulos de ese
+            rubro. Precios de referencia en ARS.
           </p>
 
           <HeroModulesIncluded
@@ -330,13 +333,25 @@ function HeroPricingCard({
         <div className="flex flex-1 flex-col p-6 sm:p-7">
           <header className="space-y-3">
             <div>
-              <h3 className="text-xl font-bold text-white">{plan.displayName}</h3>
+              <div className="flex flex-wrap items-center gap-2">
+                <h3 className="text-xl font-bold text-white">{plan.displayName}</h3>
+                {copy.selfServe ? (
+                  <span className="rounded-full border border-meadow/30 bg-meadow/12 px-2 py-0.5 text-[11px] font-bold uppercase tracking-[0.12em] text-meadow">
+                    {LANDING_TRIAL_DAYS} días gratis
+                  </span>
+                ) : null}
+              </div>
               <p className="mt-1.5 text-sm leading-relaxed text-white/70">
                 {copy.tagline}
               </p>
             </div>
             <div className="pt-1">
-              <p className="flex flex-wrap items-baseline gap-x-1.5">
+              {copy.selfServe ? (
+                <p className="text-xs font-semibold uppercase tracking-[0.12em] text-white/45">
+                  Hoy $0 · después
+                </p>
+              ) : null}
+              <p className="mt-1 flex flex-wrap items-baseline gap-x-1.5">
                 <span className="text-4xl font-extrabold tabular-nums tracking-tight text-white">
                   {formatLandingPlanMoney(displayAmount)}
                 </span>
@@ -349,10 +364,18 @@ function HeroPricingCard({
                   Equivalente a{" "}
                   {formatLandingPlanMoney(Math.round(limit.priceYearly / 12))}
                   /mes
+                  {copy.selfServe
+                    ? ` · el cobro arranca al día ${LANDING_TRIAL_DAYS + 1}`
+                    : ""}
+                </p>
+              ) : copy.selfServe ? (
+                <p className="mt-1 text-xs text-white/45">
+                  El cobro arranca al día {LANDING_TRIAL_DAYS + 1}. Cancelás
+                  cuando quieras.
                 </p>
               ) : (
                 <p className="mt-1 text-xs text-white/45">
-                  Facturación mensual · 7 días de prueba
+                  Precio y condiciones a medida.
                 </p>
               )}
             </div>

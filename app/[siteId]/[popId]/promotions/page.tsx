@@ -8,21 +8,27 @@ import {
   type PopPageSearchParams,
 } from "@/lib/workspaceSearchParams"
 
-export default async function PromotionsPage({
+export default function PromotionsPage({
   params,
   searchParams,
 }: {
   params: PopPageParams
   searchParams: PopPageSearchParams
 }) {
+  return (
+    <PopListHydrationPage state={loadPromotionsTable(params, searchParams)}>
+      <PromotionsWorkspaceView />
+    </PopListHydrationPage>
+  )
+}
+
+async function loadPromotionsTable(
+  params: PopPageParams,
+  searchParams: PopPageSearchParams,
+) {
   const { popId } = await params
   const url = parsePromotionsWorkspaceUrl(
     workspaceUrlSearchParamsFromRecord(await searchParams),
   )
-
-  return (
-    <PopListHydrationPage state={await prefetchPopPromotionsTable(popId, url)}>
-      <PromotionsWorkspaceView />
-    </PopListHydrationPage>
-  )
+  return prefetchPopPromotionsTable(popId, url)
 }

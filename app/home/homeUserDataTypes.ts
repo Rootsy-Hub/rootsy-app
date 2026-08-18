@@ -76,7 +76,6 @@ export type PopAccessCache = {
   isOwner: boolean
   role: PopAccessRole | null
   canEnter: boolean
-  permissionsRev?: number
 }
 
 /** Cache `_user-pops-access-batch` — IDs + access de todos los POPs. */

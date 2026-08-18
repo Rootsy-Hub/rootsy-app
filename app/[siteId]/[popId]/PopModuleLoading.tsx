@@ -4,10 +4,15 @@ import {
   DataWorkspaceTableListPage,
   DataWorkspaceTableListNatureShell,
 } from "@/components/data-workspace/DataWorkspaceTableListLayout"
+import { DataWorkspaceTableListLoadingBody } from "@/components/data-workspace/DataWorkspaceTableListLoadingBody"
+import { isPopTableListModule } from "@/components/data-workspace/popTableListSkeletonConfig"
 import { usePopWorkspaceOptional } from "@/context/PopWorkspaceContext"
 import { usePopAccessData } from "@/hooks/usePopAccessData"
 import { buildUserProfileFullName } from "@/app/home/homeUserDataResolve"
 import { buildPopRoleLabel } from "@/lib/popWorkspaceFromAccess"
+import { hasPopTableListSessionCache } from "@/lib/popTableListSessionCache"
+import { popModuleKeyFromPath } from "@/lib/popRoutes"
+import { useQueryClient } from "@tanstack/react-query"
 import { useParams, usePathname } from "next/navigation"
 
 const MODULE_TITLES: Record<string, string> = {
@@ -42,13 +47,20 @@ const MODULE_TITLES: Record<string, string> = {
 }
 
 function moduleKeyFromPathname(pathname: string): string {
-  const parts = pathname.split("/").filter(Boolean)
-  return parts[2] ?? ""
+  return popModuleKeyFromPath(pathname)
 }
 
-export function PopModuleLoading() {
+export function PopModuleLoading({
+  title: titleProp,
+  moduleKey: moduleKeyProp,
+}: {
+  title?: string
+  /** Destino real al navegar optimista (pathname puede seguir en /menu). */
+  moduleKey?: string
+}) {
   const params = useParams()
   const pathname = usePathname()
+  const queryClient = useQueryClient()
   const siteId = typeof params?.siteId === "string" ? params.siteId : ""
   const popId = typeof params?.popId === "string" ? params.popId : ""
   const workspace = usePopWorkspaceOptional()
@@ -66,7 +78,13 @@ export function PopModuleLoading() {
   const userRoleLabel =
     workspace?.bootstrap?.roleLabel ||
     (popAccess ? buildPopRoleLabel(popAccess) : "")
-  const title = MODULE_TITLES[moduleKeyFromPathname(pathname)] ?? "…"
+  const title =
+    titleProp ?? MODULE_TITLES[moduleKeyProp ?? moduleKeyFromPathname(pathname)] ?? "…"
+  const moduleKey = moduleKeyProp ?? moduleKeyFromPathname(pathname)
+
+  if (hasPopTableListSessionCache(queryClient, popId, moduleKey)) {
+    return null
+  }
 
   return (
     <DataWorkspaceTableListPage
@@ -82,16 +100,20 @@ export function PopModuleLoading() {
       }}
     >
       <DataWorkspaceTableListNatureShell>
-        <div
-          className="flex min-h-0 flex-1 flex-col gap-3 p-4"
-          role="status"
-          aria-live="polite"
-          aria-busy="true"
-        >
-          <span className="sr-only">Cargando {title}</span>
-          <div className="h-11 animate-pulse rounded-lg bg-white/35" />
-          <div className="min-h-0 flex-1 animate-pulse rounded-2xl bg-white/25" />
-        </div>
+        {isPopTableListModule(moduleKey) ? (
+          <DataWorkspaceTableListLoadingBody moduleKey={moduleKey} title={title} />
+        ) : (
+          <div
+            className="flex min-h-0 flex-1 flex-col gap-3 p-4"
+            role="status"
+            aria-live="polite"
+            aria-busy="true"
+          >
+            <span className="sr-only">Cargando {title}</span>
+            <div className="h-11 animate-pulse rounded-lg bg-rootsy-bruma-200" />
+            <div className="min-h-0 flex-1 animate-pulse rounded-2xl bg-rootsy-bruma-200" />
+          </div>
+        )}
       </DataWorkspaceTableListNatureShell>
     </DataWorkspaceTableListPage>
   )

@@ -3,16 +3,15 @@ import { PopListHydrationPage } from "@/lib/PopListHydrationPage"
 import { prefetchPopSuppliersTable } from "@/lib/prefetchPopListados"
 import type { PopPageParams } from "@/lib/workspaceSearchParams"
 
-export default async function SuppliersPage({
-  params,
-}: {
-  params: PopPageParams
-}) {
-  const { popId } = await params
-
+export default function SuppliersPage({ params }: { params: PopPageParams }) {
   return (
-    <PopListHydrationPage state={await prefetchPopSuppliersTable(popId)}>
+    <PopListHydrationPage state={loadSuppliersTable(params)}>
       <SuppliersWorkspaceView />
     </PopListHydrationPage>
   )
+}
+
+async function loadSuppliersTable(params: PopPageParams) {
+  const { popId } = await params
+  return prefetchPopSuppliersTable(popId)
 }

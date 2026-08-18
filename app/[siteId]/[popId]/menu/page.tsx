@@ -321,7 +321,7 @@ function MenuPage() {
     popAccess != null &&
     popAccess.pop.siteId.trim().toLowerCase() !== siteId.trim().toLowerCase()
 
-  const loading = isLoading
+  const loading = isLoading || !isMounted
   const error =
     !popId || !siteId
       ? "No se encontró el punto de venta."

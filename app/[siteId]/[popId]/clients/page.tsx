@@ -8,21 +8,27 @@ import {
   type PopPageSearchParams,
 } from "@/lib/workspaceSearchParams"
 
-export default async function ClientsPage({
+export default function ClientsPage({
   params,
   searchParams,
 }: {
   params: PopPageParams
   searchParams: PopPageSearchParams
 }) {
+  return (
+    <PopListHydrationPage state={loadClientsTable(params, searchParams)}>
+      <ClientsWorkspaceView />
+    </PopListHydrationPage>
+  )
+}
+
+async function loadClientsTable(
+  params: PopPageParams,
+  searchParams: PopPageSearchParams,
+) {
   const { popId } = await params
   const url = parseClientsWorkspaceUrl(
     workspaceUrlSearchParamsFromRecord(await searchParams),
   )
-
-  return (
-    <PopListHydrationPage state={await prefetchPopClientsTable(popId, url)}>
-      <ClientsWorkspaceView />
-    </PopListHydrationPage>
-  )
+  return prefetchPopClientsTable(popId, url)
 }

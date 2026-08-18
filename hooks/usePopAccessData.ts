@@ -4,24 +4,20 @@ import {
   getPopAccessCache,
   getUserProfileCache,
 } from "@/app/home/homeUserDataActions"
+import type {
+  PopAccessCache,
+  UserProfileCache,
+} from "@/app/home/homeUserDataTypes"
 import { buildUserProfileFullName } from "@/app/home/homeUserDataResolve"
 import { buildPopRoleLabel } from "@/lib/popWorkspaceFromAccess"
 import {
   normalizePopAccessCache,
   popAccessCacheNeedsRefresh,
 } from "@/lib/popAccessNormalize"
-import { fetchPopCacheRevisions } from "@/lib/popCacheRevisions"
 import { useQueryPersistReady } from "@/components/providers/QueryProvider"
 import { useAuth } from "@/context/AuthContextSupabase"
-import {
-  popAccessQueryKey,
-  popPermissionsRevQueryKey,
-  userProfileQueryKey,
-} from "@/lib/queryKeys"
-import {
-  catalogRevQueryOptions,
-  oneDayQueryOptions,
-} from "@/lib/queryStaleTimes"
+import { popAccessQueryKey, userProfileQueryKey } from "@/lib/queryKeys"
+import { oneDayQueryOptions } from "@/lib/queryStaleTimes"
 import { useQuery, useQueryClient } from "@tanstack/react-query"
 import { useEffect, useMemo } from "react"
 
@@ -33,6 +29,12 @@ export function usePopAccessData(
   const userId = user?.id
   const persistReady = useQueryPersistReady()
   const queryClient = useQueryClient()
+  const cachedProfile = userId
+    ? queryClient.getQueryData<UserProfileCache>(userProfileQueryKey(userId))
+    : undefined
+  const cachedPopAccess = popId
+    ? queryClient.getQueryData<PopAccessCache | null>(popAccessQueryKey(popId))
+    : undefined
   const queriesEnabled =
     (options?.enabled ?? true) &&
     !authLoading &&
@@ -53,21 +55,14 @@ export function usePopAccessData(
     ...oneDayQueryOptions,
   })
 
-  const permissionsRevQuery = useQuery({
-    queryKey: popPermissionsRevQueryKey(popId),
-    queryFn: async () => {
-      const revisions = await fetchPopCacheRevisions(popId)
-      return revisions.permissionsRev
-    },
-    enabled: queriesEnabled,
-    ...catalogRevQueryOptions,
-  })
+  const profileData = profileQuery.data ?? cachedProfile
+  const popAccessData = popAccessQuery.data ?? cachedPopAccess
 
   const popAccess = useMemo(
-    () => normalizePopAccessCache(popAccessQuery.data),
-    [popAccessQuery.data],
+    () => normalizePopAccessCache(popAccessData),
+    [popAccessData],
   )
-  const profile = profileQuery.data ?? null
+  const profile = profileData ?? null
 
   useEffect(() => {
     if (!queriesEnabled || !popAccessQuery.data) return
@@ -75,29 +70,13 @@ export function usePopAccessData(
     void popAccessQuery.refetch()
   }, [queriesEnabled, popAccessQuery.data, popAccessQuery.refetch])
 
-  useEffect(() => {
-    if (!queriesEnabled || !popAccessQuery.data) return
-    if (permissionsRevQuery.data == null || popAccessQuery.isFetching) return
-    if (popAccessQuery.data.permissionsRev === permissionsRevQuery.data) return
-    void queryClient.invalidateQueries({
-      queryKey: popAccessQueryKey(popId),
-    })
-  }, [
-    queriesEnabled,
-    permissionsRevQuery.data,
-    popAccessQuery.data,
-    popAccessQuery.isFetching,
-    popId,
-    queryClient,
-  ])
-
   const roleLabel = useMemo(
     () => (popAccess ? buildPopRoleLabel(popAccess) : ""),
     [popAccess],
   )
 
   const hasCachedSidecar =
-    profileQuery.data !== undefined && popAccessQuery.data !== undefined
+    profileData !== undefined && popAccessData !== undefined
   const isLoading =
     !hasCachedSidecar &&
     (!queriesEnabled ||

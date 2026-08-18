@@ -8,21 +8,27 @@ import {
   type PopPageSearchParams,
 } from "@/lib/workspaceSearchParams"
 
-export default async function InvoicesPage({
+export default function InvoicesPage({
   params,
   searchParams,
 }: {
   params: PopPageParams
   searchParams: PopPageSearchParams
 }) {
+  return (
+    <PopListHydrationPage state={loadInvoicesTable(params, searchParams)}>
+      <InvoicesWorkspaceView />
+    </PopListHydrationPage>
+  )
+}
+
+async function loadInvoicesTable(
+  params: PopPageParams,
+  searchParams: PopPageSearchParams,
+) {
   const { popId } = await params
   const url = parseInvoicesWorkspaceUrl(
     workspaceUrlSearchParamsFromRecord(await searchParams),
   )
-
-  return (
-    <PopListHydrationPage state={await prefetchPopInvoicesTable(popId, url)}>
-      <InvoicesWorkspaceView />
-    </PopListHydrationPage>
-  )
+  return prefetchPopInvoicesTable(popId, url)
 }

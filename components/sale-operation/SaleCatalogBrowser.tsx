@@ -76,7 +76,6 @@ type Props = {
   /** Filtros del rail: venta directa vs catálogo menú (mesas/mostrador). */
   catalogScope?: CatalogScope
   itemsSource?: CatalogScope
-  catalogRev?: number
   mergeCatalogArticles?: (articles: Parameters<typeof menuArticleToProduct>[0][]) => void
   mergeCatalogRecipes?: (recipes: Parameters<typeof menuRecipeToProduct>[0][]) => void
   /** Devuelve foco al input escaneo tras acciones (p. ej. Vender). */
@@ -101,7 +100,6 @@ export function SaleCatalogBrowser({
   catalogSidebarOpen: catalogSidebarOpenProp,
   catalogScope = "menu",
   itemsSource,
-  catalogRev,
   mergeCatalogArticles,
   mergeCatalogRecipes,
   keepScanFocused = false,
@@ -186,15 +184,13 @@ export function SaleCatalogBrowser({
 
   const saleItems = useSaleCatalogItems(
     popId,
-    catalogRev,
     itemsFilter,
-    Boolean(popId) && catalogRev != null && !error && source === "sale",
+    Boolean(popId) && !error && source === "sale",
   )
   const menuItems = useMenuCatalogItems(
     popId,
-    catalogRev,
     itemsFilter,
-    Boolean(popId) && catalogRev != null && !error && source === "menu",
+    Boolean(popId) && !error && source === "menu",
   )
   const paged = source === "sale" ? saleItems : menuItems
   const pagedRecipes = source === "menu" ? menuItems.recipes : []

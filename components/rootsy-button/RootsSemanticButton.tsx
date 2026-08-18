@@ -52,7 +52,9 @@ export const RootsSemanticButton = forwardRef<HTMLButtonElement, Props>(function
     disabled,
     loading,
   })
-  const buttonStyle = getButtonAppearanceStyle(appearance, state, size, { withIcon })
+  const buttonStyle = getButtonAppearanceStyle(appearance, state, size, {
+    withIcon: withIcon || loading,
+  })
   const surface = getButtonsUiAppearanceSurface(appearance, state)
 
   return (

@@ -6,7 +6,6 @@ import {
   type SaleCatalogArticle,
 } from "@/app/[siteId]/[popId]/sale/actions"
 import { useCatalogItemCache } from "@/hooks/useCatalogItemCache"
-import { usePopCatalogRev } from "@/hooks/usePopCatalogRev"
 import {
   saleCatalogKnownArticlesQueryKey,
   saleCatalogQueryKey,
@@ -25,11 +24,9 @@ export function useSaleCatalogLoader(
   options?: UseSaleCatalogLoaderOptions,
 ) {
   const enabled = (options?.enabled ?? true) && Boolean(popId)
-  const revQuery = usePopCatalogRev(popId, enabled)
-  const catalogRev = revQuery.data
 
   const catalogQuery = useQuery({
-    queryKey: saleCatalogQueryKey(popId ?? "", catalogRev),
+    queryKey: saleCatalogQueryKey(popId ?? ""),
     queryFn: async () => {
       const res = await getSaleCatalog(popId!)
       if (!res.success) {
@@ -37,13 +34,13 @@ export function useSaleCatalogLoader(
       }
       return res
     },
-    enabled: enabled && catalogRev != null,
+    enabled,
     ...sessionListQueryOptions,
   })
 
   const data = catalogQuery.data
   const articleCache = useCatalogItemCache<SaleCatalogArticle>(
-    saleCatalogKnownArticlesQueryKey(popId ?? "", catalogRev),
+    saleCatalogKnownArticlesQueryKey(popId ?? ""),
   )
   const reloadCatalog = useCallback(async () => {
     await catalogQuery.refetch()
@@ -64,7 +61,6 @@ export function useSaleCatalogLoader(
   )
 
   return {
-    catalogRev,
     mergeCatalogArticles: mergeArticles,
     ensureCatalogArticles,
     catalogArticles: articleCache.items,
@@ -79,18 +75,13 @@ export function useSaleCatalogLoader(
     invoiceTypeSiteId: data?.invoiceTypeSiteId ?? DEFAULT_SALE_SITE_ID,
     saleCategories: data?.categories ?? [],
     saleCategorySections: data?.categorySections ?? [],
-    catalogLoading:
-      (catalogRev == null && revQuery.isPending) || catalogQuery.isLoading,
+    catalogLoading: catalogQuery.isLoading,
     catalogError:
-      revQuery.error instanceof Error
-        ? revQuery.error.message
-        : revQuery.error
-          ? String(revQuery.error)
-          : catalogQuery.error instanceof Error
-            ? catalogQuery.error.message
-            : catalogQuery.error
-              ? String(catalogQuery.error)
-              : null,
+      catalogQuery.error instanceof Error
+        ? catalogQuery.error.message
+        : catalogQuery.error
+          ? String(catalogQuery.error)
+          : null,
     reloadCatalog,
   }
 }

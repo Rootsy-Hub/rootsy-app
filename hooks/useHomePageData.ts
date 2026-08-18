@@ -8,7 +8,11 @@ import {
   buildHomePopListFromAccess,
   buildUserProfileFullName,
 } from "@/app/home/homeUserDataResolve"
-import type { HomePopListItem } from "@/app/home/homeUserDataTypes"
+import type {
+  HomePopListItem,
+  UserPopsAccessBatchCache,
+  UserProfileCache,
+} from "@/app/home/homeUserDataTypes"
 import {
   popAccessQueryKey,
   userPopIdsQueryKey,
@@ -23,7 +27,16 @@ import { useEffect, useMemo } from "react"
 export function useHomePageData(userId: string) {
   const persistReady = useQueryPersistReady()
   const queryClient = useQueryClient()
-  const queriesEnabled = Boolean(userId)
+  const queriesEnabled = Boolean(userId) && persistReady
+
+  const cachedProfile = userId
+    ? queryClient.getQueryData<UserProfileCache>(userProfileQueryKey(userId))
+    : undefined
+  const cachedBatch = userId
+    ? queryClient.getQueryData<UserPopsAccessBatchCache>(
+        userPopsAccessBatchQueryKey(userId),
+      )
+    : undefined
 
   const profileQuery = useQuery({
     queryKey: userProfileQueryKey(userId),
@@ -39,8 +52,10 @@ export function useHomePageData(userId: string) {
     ...oneDayQueryOptions,
   })
 
+  const profile = profileQuery.data ?? cachedProfile ?? null
+  const batch = batchQuery.data ?? cachedBatch
+
   useEffect(() => {
-    const batch = batchQuery.data
     if (!batch) return
     queryClient.setQueryData(userPopIdsQueryKey(userId), batch.popIds)
     for (const popId of batch.popIds) {
@@ -49,29 +64,22 @@ export function useHomePageData(userId: string) {
         queryClient.setQueryData(popAccessQueryKey(popId), access)
       }
     }
-  }, [batchQuery.data, queryClient, userId])
+  }, [batch, queryClient, userId])
 
   const pops = useMemo((): HomePopListItem[] => {
-    const accessRows = Object.values(batchQuery.data?.accessByPopId ?? {})
+    const accessRows = Object.values(batch?.accessByPopId ?? {})
     return buildHomePopListFromAccess(accessRows)
-  }, [batchQuery.data])
+  }, [batch])
 
-  const hasCachedSidecar =
-    profileQuery.data !== undefined && batchQuery.data !== undefined
+  const hasCachedBatch = batch !== undefined
   const isLoading =
-    !hasCachedSidecar &&
-    (!queriesEnabled ||
-      !persistReady ||
-      profileQuery.isPending ||
-      batchQuery.isPending)
+    !hasCachedBatch && (!queriesEnabled || batchQuery.isPending)
 
-  const loadError = profileQuery.isError || batchQuery.isError
+  const loadError = batchQuery.isError && !hasCachedBatch
 
   const refetchAll = async () => {
     await Promise.all([profileQuery.refetch(), batchQuery.refetch()])
   }
-
-  const profile = profileQuery.data ?? null
 
   return {
     profile,

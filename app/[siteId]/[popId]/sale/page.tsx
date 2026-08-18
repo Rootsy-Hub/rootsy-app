@@ -240,7 +240,6 @@ function SalePage() {
     invoiceTypeSiteId,
     saleCategories,
     saleCategorySections,
-    catalogRev,
     mergeCatalogArticles,
     ensureCatalogArticles,
     catalogLoading: catalogQueryLoading,
@@ -1185,7 +1184,6 @@ function SalePage() {
                 catalogSidebarOpen={catalogSidebarOpen}
                 catalogScope="sale"
                 itemsSource="sale"
-                catalogRev={catalogRev}
                 mergeCatalogArticles={mergeCatalogArticles}
                 keepScanFocused
               />

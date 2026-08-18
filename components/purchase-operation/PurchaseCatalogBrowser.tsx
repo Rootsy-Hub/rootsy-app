@@ -38,7 +38,6 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 
 type Props = {
   popId?: string
-  catalogRev?: number
   mergeCatalogArticles?: (articles: PurchaseCatalogArticle[]) => void
   categorySections: readonly PurchaseCatalogCategorySection[]
   products: PurchaseCatalogProduct[]
@@ -87,7 +86,6 @@ function isValidPurchaseCatalogView(
 
 export function PurchaseCatalogBrowser({
   popId,
-  catalogRev,
   mergeCatalogArticles,
   categorySections,
   products: _products,
@@ -118,9 +116,8 @@ export function PurchaseCatalogBrowser({
   )
   const paged = usePurchaseCatalogItems(
     popId,
-    catalogRev,
     itemsFilter,
-    Boolean(popId) && catalogRev != null && !error,
+    Boolean(popId) && !error,
   )
 
   useEffect(() => {

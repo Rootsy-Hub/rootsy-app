@@ -18,13 +18,12 @@ import { useMemo } from "react"
 
 export function useSaleCatalogItems(
   popId: string | undefined,
-  catalogRev: number | undefined,
   filter: OperateCatalogItemsFilter,
   enabled: boolean,
 ) {
   const filterKey = operateCatalogFilterKey(filter)
   const query = useInfiniteQuery({
-    queryKey: saleCatalogItemsQueryKey(popId ?? "", catalogRev, filterKey),
+    queryKey: saleCatalogItemsQueryKey(popId ?? "", filterKey),
     queryFn: async ({ pageParam }) => {
       const res = await getSaleCatalogItemsPage(popId!, filter, pageParam)
       if (!res.success) throw new Error(res.error)
@@ -32,7 +31,7 @@ export function useSaleCatalogItems(
     },
     initialPageParam: 0,
     getNextPageParam: (lastPage) => lastPage.nextOffset ?? undefined,
-    enabled: enabled && Boolean(popId) && catalogRev != null,
+    enabled: enabled && Boolean(popId),
     ...sessionListQueryOptions,
   })
 
@@ -58,13 +57,12 @@ export function useSaleCatalogItems(
 
 export function useMenuCatalogItems(
   popId: string | undefined,
-  catalogRev: number | undefined,
   filter: OperateCatalogItemsFilter,
   enabled: boolean,
 ) {
   const filterKey = operateCatalogFilterKey(filter)
   const query = useInfiniteQuery({
-    queryKey: menuCatalogItemsQueryKey(popId ?? "", catalogRev, filterKey),
+    queryKey: menuCatalogItemsQueryKey(popId ?? "", filterKey),
     queryFn: async ({ pageParam }) => {
       const res = await getMenuCatalogItemsPage(popId!, filter, pageParam)
       if (!res.success) throw new Error(res.error)
@@ -72,7 +70,7 @@ export function useMenuCatalogItems(
     },
     initialPageParam: 0,
     getNextPageParam: (lastPage) => lastPage.nextOffset ?? undefined,
-    enabled: enabled && Boolean(popId) && catalogRev != null,
+    enabled: enabled && Boolean(popId),
     ...sessionListQueryOptions,
   })
 
@@ -103,13 +101,12 @@ export function useMenuCatalogItems(
 
 export function usePurchaseCatalogItems(
   popId: string | undefined,
-  catalogRev: number | undefined,
   filter: OperateCatalogItemsFilter,
   enabled: boolean,
 ) {
   const filterKey = operateCatalogFilterKey(filter)
   const query = useInfiniteQuery({
-    queryKey: purchaseCatalogItemsQueryKey(popId ?? "", catalogRev, filterKey),
+    queryKey: purchaseCatalogItemsQueryKey(popId ?? "", filterKey),
     queryFn: async ({ pageParam }) => {
       const res = await getPurchaseCatalogItemsPage(popId!, filter, pageParam)
       if (!res.success) throw new Error(res.error)
@@ -117,7 +114,7 @@ export function usePurchaseCatalogItems(
     },
     initialPageParam: 0,
     getNextPageParam: (lastPage) => lastPage.nextOffset ?? undefined,
-    enabled: enabled && Boolean(popId) && catalogRev != null,
+    enabled: enabled && Boolean(popId),
     ...sessionListQueryOptions,
   })
 

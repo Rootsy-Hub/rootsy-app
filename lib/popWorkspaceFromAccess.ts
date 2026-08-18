@@ -5,15 +5,7 @@ import type {
 import { buildUserProfileFullName } from "@/app/home/homeUserDataResolve"
 import { normalizePopAccessCache } from "@/lib/popAccessNormalize"
 import { permissionKeysFromPopAccess } from "@/lib/popAccessPermissions"
-import type { PopCacheRevisions } from "@/lib/popCacheRevisions"
 import type { PopWorkspaceBootstrapData } from "@/lib/popWorkspaceBootstrap"
-
-const EMPTY_REVISIONS: PopCacheRevisions = {
-  permissionsRev: 1,
-  catalogRev: 1,
-  popSettingsRev: 1,
-  updatedAt: "",
-}
 
 export function buildPopRoleLabel(access: PopAccessCache): string {
   if (access.isOwner) return "Dueño"
@@ -37,10 +29,6 @@ export function buildWorkspaceBootstrapFromAccess(
     userImageUrl: profile.imageUrl,
     roleLabel: buildPopRoleLabel(normalized),
     permissionKeys: permissionKeysFromPopAccess(normalized),
-    cacheRevisions: {
-      ...EMPTY_REVISIONS,
-      permissionsRev: normalized.permissionsRev ?? EMPTY_REVISIONS.permissionsRev,
-    },
     hasValidPopFiscalCuit: normalized.fiscal.hasValidCuit,
     popEmisorIvaCondition: normalized.fiscal.emisorIvaCondition,
   }

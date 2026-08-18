@@ -14,6 +14,7 @@ import {
   type BannerDensityId,
   type BannerIntentId,
   type BannerLayoutId,
+  type BannerTone,
 } from "@/app/library/ui-components/bannersUiHardcodedSpec"
 import { ROOTSY_BANNER_ANATOMY } from "@/app/library/banner/rootsyBannerSystem"
 import type { CSSProperties } from "react"
@@ -22,6 +23,7 @@ export type {
   BannerDensityId,
   BannerIntentId,
   BannerLayoutId,
+  BannerTone,
 } from "@/app/library/ui-components/bannersUiHardcodedSpec"
 
 export {
@@ -34,9 +36,12 @@ export {
 export function getBannerShellStyle(
   intent: BannerIntentId = "neutral",
   density: BannerDensityId = "default",
-  options?: { fullWidth?: boolean; strip?: boolean },
+  options?: { fullWidth?: boolean; strip?: boolean; tone?: BannerTone },
 ): CSSProperties {
-  const shell = getBannerShellUiStyle(intent, density, { fullWidth: options?.fullWidth })
+  const shell = getBannerShellUiStyle(intent, density, {
+    fullWidth: options?.fullWidth,
+    tone: options?.tone,
+  })
 
   if (options?.strip) {
     return {
@@ -54,17 +59,23 @@ export function getBannerShellStyle(
   }
 }
 
-export function getBannerTitleStyle(): CSSProperties {
-  return { ...getBannerTitleUiStyle(), margin: 0 }
+export function getBannerTitleStyle(tone: BannerTone = "light"): CSSProperties {
+  return { ...getBannerTitleUiStyle(tone), margin: 0 }
 }
 
-export function getBannerMessageStyle(intent: BannerIntentId): CSSProperties {
-  return { ...getBannerMessageUiStyle(intent), margin: 0 }
+export function getBannerMessageStyle(
+  intent: BannerIntentId,
+  tone: BannerTone = "light",
+): CSSProperties {
+  return { ...getBannerMessageUiStyle(intent, tone), margin: 0 }
 }
 
-export function getBannerActionStyle(intent: BannerIntentId): CSSProperties {
+export function getBannerActionStyle(
+  intent: BannerIntentId,
+  tone: BannerTone = "light",
+): CSSProperties {
   return {
-    ...getBannerActionUiStyle(intent),
+    ...getBannerActionUiStyle(intent, tone),
     border: "none",
     background: "transparent",
     padding: 0,
@@ -73,8 +84,8 @@ export function getBannerActionStyle(intent: BannerIntentId): CSSProperties {
   }
 }
 
-export function getBannerDismissButtonStyle(): CSSProperties {
-  const dismiss = getBannerDismissUiStyle()
+export function getBannerDismissButtonStyle(tone: BannerTone = "light"): CSSProperties {
+  const dismiss = getBannerDismissUiStyle(tone)
 
   return {
     display: "inline-flex",
@@ -92,8 +103,11 @@ export function getBannerDismissButtonStyle(): CSSProperties {
   }
 }
 
-export function getBannerIconStyle(intent: BannerIntentId): CSSProperties {
-  return getBannerIconUiStyle(intent)
+export function getBannerIconStyle(
+  intent: BannerIntentId,
+  tone: BannerTone = "light",
+): CSSProperties {
+  return getBannerIconUiStyle(intent, tone)
 }
 
 export function getBannerRowStyle(): CSSProperties {

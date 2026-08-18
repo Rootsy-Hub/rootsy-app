@@ -6,6 +6,7 @@ import {
   CONCEPT_PALETTE_DEMO,
   CONCEPT_TOKENS,
   ROOTSY_BRAND_CLOSING,
+  ROOTSY_BRAND_SLOGAN,
   ROOTSY_PRODUCT_ESSENCE,
 } from "@/app/library/concept/rootsyConceptSystem"
 import {
@@ -113,7 +114,7 @@ export function ConceptBrandHero() {
             className="font-canopy text-2xl font-bold tracking-tight sm:text-3xl"
             style={{ color: CONCEPT_TOKENS.bruma900 }}
           >
-            Para cualquier tipo de negocio
+            {ROOTSY_BRAND_SLOGAN}
           </p>
           <p
             className="font-canopy text-sm leading-relaxed"

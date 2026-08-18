@@ -17,6 +17,7 @@ import {
   useMenuDockEdit,
 } from "@/app/[siteId]/[popId]/menu/MenuDockDndContext"
 import type { MenuCatalogItem, MenuDockItemId } from "@/lib/menuCatalog"
+import { usePopOptimisticNav } from "@/context/PopOptimisticNavContext"
 import { popScopedHref } from "@/lib/popRoutes"
 import { cn } from "@/lib/utils"
 import { menuFloatingPillShellClass } from "@/app/[siteId]/[popId]/menu/menuFloatingPillStyles"
@@ -96,6 +97,7 @@ function DockSlotItem({
   href: string | null
   onRemove: () => void
 }) {
+  const { start: startOptimisticNav } = usePopOptimisticNav()
   const {
     attributes,
     listeners,
@@ -155,6 +157,18 @@ function DockSlotItem({
             {href ? (
               <Link
                 href={href}
+                onClick={(event) => {
+                  if (
+                    href === "/home" ||
+                    event.metaKey ||
+                    event.ctrlKey ||
+                    event.shiftKey ||
+                    event.altKey
+                  ) {
+                    return
+                  }
+                  startOptimisticNav({ href, title: item.name })
+                }}
                 className="relative block transition-transform duration-200 hover:scale-110 active:scale-95"
                 aria-label={item.name}
               >

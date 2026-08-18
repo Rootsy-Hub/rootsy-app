@@ -8,21 +8,27 @@ import {
   type PopPageSearchParams,
 } from "@/lib/workspaceSearchParams"
 
-export default async function RecipesPage({
+export default function RecipesPage({
   params,
   searchParams,
 }: {
   params: PopPageParams
   searchParams: PopPageSearchParams
 }) {
+  return (
+    <PopListHydrationPage state={loadRecipesTable(params, searchParams)}>
+      <RecipesWorkspaceView />
+    </PopListHydrationPage>
+  )
+}
+
+async function loadRecipesTable(
+  params: PopPageParams,
+  searchParams: PopPageSearchParams,
+) {
   const { popId } = await params
   const url = parseRecipesWorkspaceUrl(
     workspaceUrlSearchParamsFromRecord(await searchParams),
   )
-
-  return (
-    <PopListHydrationPage state={await prefetchPopRecipesTable(popId, url)}>
-      <RecipesWorkspaceView />
-    </PopListHydrationPage>
-  )
+  return prefetchPopRecipesTable(popId, url)
 }

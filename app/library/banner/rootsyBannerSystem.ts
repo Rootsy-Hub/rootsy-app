@@ -39,6 +39,8 @@ function spacingRolePx(roleId: string): number {
 
 export type BannerIntentId = "neutral" | "info" | "success" | "warning" | "danger"
 
+export type BannerTone = "light" | "dark"
+
 export type BannerDensityId = "default" | "compact"
 
 export type BannerLayoutId = "message" | "title-message" | "with-action" | "dismissible"
@@ -239,12 +241,30 @@ export function getBannerIntentSemanticId(
   return ROOTSY_BANNER_INTENTS.find((item) => item.id === intent)?.semanticId
 }
 
-export function getBannerIntentAccentHex(intent: BannerIntentId): string {
+export function getBannerIntentAccentHex(
+  intent: BannerIntentId,
+  tone: BannerTone = "light",
+): string {
   const semanticId = getBannerIntentSemanticId(intent)
-  return semanticId ? semanticHex(semanticId) : hx("bruma", "500")
+  const accent = semanticId ? semanticHex(semanticId) : hx("bruma", "500")
+  if (tone === "dark") {
+    if (!semanticId) return "var(--rootsy-sombra-300)"
+    if (semanticId === "status-success" || semanticId === "status-info") {
+      return "var(--rootsy-savia-300)"
+    }
+    return `color-mix(in srgb, ${accent} 72%, white)`
+  }
+  return semanticId ? accent : hx("bruma", "500")
 }
 
-export function getBannerIntentMessageHex(intent: BannerIntentId): string {
+export function getBannerIntentMessageHex(
+  intent: BannerIntentId,
+  tone: BannerTone = "light",
+): string {
+  if (tone === "dark") {
+    return getBannerIntentAccentHex(intent, "dark")
+  }
+
   const semanticId = getBannerIntentSemanticId(intent)
   if (!semanticId) return hx("bruma", "500")
 
@@ -256,10 +276,29 @@ export function getBannerIntentMessageHex(intent: BannerIntentId): string {
   return semanticTextHex(semanticId)
 }
 
-export function getBannerSurfaceColors(intent: BannerIntentId): {
+export function getBannerSurfaceColors(
+  intent: BannerIntentId,
+  tone: BannerTone = "light",
+): {
   backgroundColor: string
   border: string
 } {
+  if (tone === "dark") {
+    if (intent === "neutral") {
+      return {
+        backgroundColor: "var(--rootsy-sombra-800)",
+        border: "1px solid var(--rootsy-sombra-border)",
+      }
+    }
+
+    const semanticId = getBannerIntentSemanticId(intent)!
+    const accent = semanticHex(semanticId)
+    return {
+      backgroundColor: `color-mix(in srgb, ${accent} 18%, var(--rootsy-sombra-800))`,
+      border: `1px solid color-mix(in srgb, ${accent} 32%, var(--rootsy-sombra-border))`,
+    }
+  }
+
   if (intent === "neutral") {
     return {
       backgroundColor: elevationHex(ROOTSY_BANNER_SPECS.neutral.backgroundToken),

@@ -1,11 +1,18 @@
 import {
   getBannerIconStyle,
   type BannerIntentId,
+  type BannerTone,
 } from "@/components/rootsy-banner/rootsBannerSpecRuntime"
 import { rootsySpacePx } from "@/lib/design-system"
 
-export function RootsBannerIcon({ intent }: { intent: BannerIntentId }) {
-  const style = getBannerIconStyle(intent)
+export function RootsBannerIcon({
+  intent,
+  tone = "light",
+}: {
+  intent: BannerIntentId
+  tone?: BannerTone
+}) {
+  const style = getBannerIconStyle(intent, tone)
   const size = rootsySpacePx("200")
 
   if (intent === "success") {

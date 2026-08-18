@@ -6,7 +6,6 @@ import {
   type PurchaseCatalogArticle,
 } from "@/app/[siteId]/[popId]/purchases/actions"
 import { useCatalogItemCache } from "@/hooks/useCatalogItemCache"
-import { usePopCatalogRev } from "@/hooks/usePopCatalogRev"
 import {
   purchaseCatalogKnownArticlesQueryKey,
   purchaseCatalogQueryKey,
@@ -24,11 +23,9 @@ export function usePurchaseCatalogLoader(
   options?: UsePurchaseCatalogLoaderOptions,
 ) {
   const enabled = (options?.enabled ?? true) && Boolean(popId)
-  const revQuery = usePopCatalogRev(popId, enabled)
-  const catalogRev = revQuery.data
 
   const catalogQuery = useQuery({
-    queryKey: purchaseCatalogQueryKey(popId ?? "", catalogRev),
+    queryKey: purchaseCatalogQueryKey(popId ?? ""),
     queryFn: async () => {
       const res = await getPurchaseCatalog(popId!, { items: "none" })
       if (!res.success) {
@@ -36,13 +33,13 @@ export function usePurchaseCatalogLoader(
       }
       return res
     },
-    enabled: enabled && catalogRev != null,
+    enabled,
     ...sessionListQueryOptions,
   })
 
   const data = catalogQuery.data
   const articleCache = useCatalogItemCache<PurchaseCatalogArticle>(
-    purchaseCatalogKnownArticlesQueryKey(popId ?? "", catalogRev),
+    purchaseCatalogKnownArticlesQueryKey(popId ?? ""),
   )
   const reloadCatalog = useCallback(async () => {
     await catalogQuery.refetch()
@@ -63,7 +60,6 @@ export function usePurchaseCatalogLoader(
   )
 
   return {
-    catalogRev,
     mergeCatalogArticles: mergeArticles,
     ensureCatalogArticles,
     catalogArticles: articleCache.items,
@@ -73,18 +69,13 @@ export function usePurchaseCatalogLoader(
     canUpdateArticles: data?.canUpdateArticles ?? false,
     treasuryPaymentContext: data?.treasuryPaymentContext ?? null,
     canReadPaymentMethods: data?.canReadPaymentMethods ?? false,
-    catalogLoading:
-      (catalogRev == null && revQuery.isPending) || catalogQuery.isLoading,
+    catalogLoading: catalogQuery.isLoading,
     catalogError:
-      revQuery.error instanceof Error
-        ? revQuery.error.message
-        : revQuery.error
-          ? String(revQuery.error)
-          : catalogQuery.error instanceof Error
-            ? catalogQuery.error.message
-            : catalogQuery.error
-              ? String(catalogQuery.error)
-              : null,
+      catalogQuery.error instanceof Error
+        ? catalogQuery.error.message
+        : catalogQuery.error
+          ? String(catalogQuery.error)
+          : null,
     reloadCatalog,
   }
 }
