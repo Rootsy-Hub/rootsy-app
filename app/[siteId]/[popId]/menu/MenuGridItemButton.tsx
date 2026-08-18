@@ -6,12 +6,12 @@ import {
   useMenuDockEdit,
 } from "@/app/[siteId]/[popId]/menu/MenuDockDndContext"
 import {
-  menuHoloContactShadowClass,
+  menuHoloContactShadowForSection,
   menuHoloFloatLiftClass,
-  menuHoloFocusRingClass,
+  menuHoloFocusRingForSection,
   menuHoloGlyphClass,
-  menuHoloIconHoverClass,
-  menuHoloIconShellForVariant,
+  menuHoloIconHoverForSection,
+  menuHoloIconShellForSection,
   menuHoloLabelClass,
   menuHoloLabelMutedClass,
   menuHoloTileMotionClass,
@@ -33,7 +33,7 @@ type Props = {
 
 export function MenuGridItemButton({
   item,
-  sectionKey: _sectionKey,
+  sectionKey,
   disabled,
   href,
   onActivate,
@@ -73,21 +73,23 @@ export function MenuGridItemButton({
   const tileInner = (
     <>
       <div className="relative flex flex-col items-center">
-        <div aria-hidden className={menuHoloContactShadowClass} />
+        <div aria-hidden className={menuHoloContactShadowForSection(sectionKey)} />
         <div
           className={cn(
             "flex size-[72px] items-center justify-center rounded-[20px]",
             showDockInsertedStyle
-              ? menuHoloIconShellForVariant("muted")
+              ? menuHoloIconShellForSection(sectionKey, "muted")
               : cn(
-                  menuHoloIconShellForVariant("default"),
+                  menuHoloIconShellForSection(sectionKey, "default"),
                   menuHoloFloatLiftClass,
-                  menuHoloIconHoverClass,
+                  menuHoloIconHoverForSection(sectionKey),
                 ),
           )}
         >
-          {!showDockInsertedStyle ? <MenuIconChrome /> : null}
-          <Icon className={cn("relative size-8", menuHoloGlyphClass)} />
+          {!showDockInsertedStyle ? (
+            <MenuIconChrome sectionKey={sectionKey} />
+          ) : null}
+          <Icon className={cn("size-8", menuHoloGlyphClass)} />
         </div>
       </div>
 
@@ -135,7 +137,7 @@ export function MenuGridItemButton({
             }
             startOptimisticNav({ href, title: item.name })
           }}
-          className={cn(tileClassName, menuHoloFocusRingClass)}
+          className={cn(tileClassName, menuHoloFocusRingForSection(sectionKey))}
         >
           {tileInner}
         </Link>
@@ -148,7 +150,7 @@ export function MenuGridItemButton({
           disabled={disabled}
           className={cn(
             tileClassName,
-            menuHoloFocusRingClass,
+            menuHoloFocusRingForSection(sectionKey),
             disabled && "cursor-default opacity-70",
           )}
         >

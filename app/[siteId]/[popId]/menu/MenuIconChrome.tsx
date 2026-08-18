@@ -1,17 +1,46 @@
-/** Vidrio natural — luz del cielo, canto y peso en equilibrio. */
-export function MenuIconChrome() {
+import type { MenuSectionKey } from "@/lib/menuCatalog"
+import {
+  menuHoloChromeCoreClass,
+  menuHoloChromeRimClass,
+  menuHoloChromeSkyClass,
+  menuHoloChromeWeightClass,
+} from "@/lib/menu/menuHoloStyles"
+import { cn } from "@/lib/utils"
+
+type Props = {
+  sectionKey?: MenuSectionKey
+}
+
+/** Vidrio planetario — núcleo, atmósfera, canto y peso del mundo. */
+export function MenuIconChrome({ sectionKey = "operar" }: Props) {
   return (
     <>
       <div
-        className="pointer-events-none absolute inset-0 rounded-[inherit] bg-[radial-gradient(ellipse_92%_58%_at_50%_0%,rgba(255,255,255,0.08)_0%,transparent_58%)]"
+        className={cn(
+          "pointer-events-none absolute inset-0 rounded-[inherit]",
+          menuHoloChromeCoreClass(sectionKey),
+        )}
         aria-hidden
       />
       <div
-        className="pointer-events-none absolute inset-0 rounded-[inherit] bg-[linear-gradient(to_bottom,transparent_68%,rgba(0,0,0,0.035)_100%)]"
+        className={cn(
+          "pointer-events-none absolute inset-0 rounded-[inherit]",
+          menuHoloChromeSkyClass(sectionKey),
+        )}
         aria-hidden
       />
       <div
-        className="pointer-events-none absolute inset-px rounded-[inherit] border border-white/[0.07]"
+        className={cn(
+          "pointer-events-none absolute inset-0 rounded-[inherit]",
+          menuHoloChromeWeightClass(sectionKey),
+        )}
+        aria-hidden
+      />
+      <div
+        className={cn(
+          "pointer-events-none absolute inset-px rounded-[inherit] border",
+          menuHoloChromeRimClass(sectionKey),
+        )}
         aria-hidden
       />
     </>

@@ -17,8 +17,9 @@ import {
   menuHeaderRowClass,
 } from "@/app/[siteId]/[popId]/menu/menuFloatingPillStyles"
 import {
-  menuHoloContactShadowClass,
-  menuHoloTileSkeletonIconClass,
+  menuHoloContactShadowForSection,
+  menuHoloSectionForSkeletonIndex,
+  menuHoloTileSkeletonIconForSection,
   menuHoloTileSkeletonLabelClass,
 } from "@/lib/menu/menuHoloStyles"
 import {
@@ -38,6 +39,7 @@ const SECTION_DOT_COUNT = 3
 function MenuIconTileSkeleton({ index }: { index: number }) {
   const labelWidth = LABEL_WIDTHS[index % LABEL_WIDTHS.length]
   const delay = `${(index % 12) * 45}ms`
+  const sectionKey = menuHoloSectionForSkeletonIndex(index)
 
   return (
     <div
@@ -46,10 +48,13 @@ function MenuIconTileSkeleton({ index }: { index: number }) {
       style={{ animationDelay: delay }}
     >
       <div className="relative flex flex-col items-center">
-        <div aria-hidden className={menuHoloContactShadowClass} />
+        <div aria-hidden className={menuHoloContactShadowForSection(sectionKey)} />
         <div
           aria-hidden
-          className={cn(menuHoloTileSkeletonIconClass, "relative z-[1]")}
+          className={cn(
+            menuHoloTileSkeletonIconForSection(sectionKey),
+            "relative z-[1]",
+          )}
           style={{ animationDelay: delay }}
         />
       </div>

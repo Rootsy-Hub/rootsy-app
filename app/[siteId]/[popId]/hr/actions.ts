@@ -49,6 +49,7 @@ export type PendingInviteRow = {
   message: string | null
   createdAt: string
   expiresAt: string
+  inviteUrl: string
 }
 
 export type PermissionCatalogRow = HrPermissionCatalogRow
@@ -272,6 +273,7 @@ export async function getPopHrDashboard(popId: string): Promise<
           message,
           created_at,
           expires_at,
+          token,
           roles:role_id ( display_name )
         `,
         )
@@ -280,6 +282,7 @@ export async function getPopHrDashboard(popId: string): Promise<
         .order("created_at", { ascending: false })
 
       if (!invErr && inv) {
+        const appBase = getAppBaseUrl()
         pendingInvites = inv.map((i) => {
           const rr = i.roles as unknown as { display_name: string } | null
           return {
@@ -290,6 +293,7 @@ export async function getPopHrDashboard(popId: string): Promise<
             message: i.message ?? null,
             createdAt: i.created_at,
             expiresAt: i.expires_at,
+            inviteUrl: i.token ? `${appBase}/invite/pop/${i.token}` : "",
           }
         })
       }

@@ -25,7 +25,7 @@ import {
 } from "@/app/[siteId]/[popId]/menu/menuDockActions"
 import {
   menuHoloGlyphClass,
-  menuHoloIconShellForVariant,
+  menuHoloIconShellForSection,
 } from "@/lib/menu/menuHoloStyles"
 import {
   menuNatureShellClass,
@@ -297,7 +297,7 @@ function getSectionKeyFromDragItem(
 
 function MenuDockDragPreview({
   item,
-  sectionKey: _sectionKey,
+  sectionKey,
 }: {
   item: MenuDockDragItem
   sectionKey: MenuSectionKey
@@ -311,14 +311,19 @@ function MenuDockDragPreview({
         "drop-shadow-[0_8px_18px_rgba(0,0,0,0.18)]",
       )}
     >
-      <DockIconVisual icon={item.icon} variant="overlay" size="lg" />
+      <DockIconVisual
+        icon={item.icon}
+        sectionKey={sectionKey}
+        variant="overlay"
+        size="lg"
+      />
     </div>
   )
 }
 
 export function DockIconVisual({
   icon: Icon,
-  sectionKey: _sectionKey = "operar",
+  sectionKey = "operar",
   variant = "dock",
   className,
   size = "md",
@@ -339,14 +344,16 @@ export function DockIconVisual({
       <div
         className={cn(
           "relative flex items-center justify-center",
-          menuHoloIconShellForVariant(variant),
+          menuHoloIconShellForSection(sectionKey, variant),
           dim,
           radius,
           className,
         )}
       >
-        {variant !== "muted" ? <MenuIconChrome /> : null}
-        <Icon className={cn("relative", menuHoloGlyphClass, iconDim)} />
+        {variant !== "muted" ? (
+          <MenuIconChrome sectionKey={sectionKey} />
+        ) : null}
+        <Icon className={cn(menuHoloGlyphClass, iconDim)} />
       </div>
     </div>
   )
