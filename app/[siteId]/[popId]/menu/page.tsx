@@ -66,7 +66,6 @@ import {
   useRef,
   useCallback,
   useMemo,
-  useSyncExternalStore,
   type RefObject,
 } from "react"
 import Link from "next/link"
@@ -83,18 +82,6 @@ import {
 type MenuSectionDef = {
   title: string
   items: MenuItemDef[]
-}
-
-const hydrateSubscribe = () => () => {}
-const hydrateClientSnapshot = () => true
-const hydrateServerSnapshot = () => false
-
-function useIsHydrated() {
-  return useSyncExternalStore(
-    hydrateSubscribe,
-    hydrateClientSnapshot,
-    hydrateServerSnapshot,
-  )
 }
 
 function detectSearchShortcutLabel(): string {
@@ -165,7 +152,6 @@ function MenuPage() {
     }>
   >([])
   const [isOnline, setIsOnline] = useState(true)
-  const isHydrated = useIsHydrated()
 
   const {
     isLoading,
@@ -333,7 +319,7 @@ function MenuPage() {
     popAccess != null &&
     popAccess.pop.siteId.trim().toLowerCase() !== siteId.trim().toLowerCase()
 
-  const contentPending = !isHydrated || isLoading || !popAccess
+  const contentPending = !isMounted || isLoading || !popAccess
   const menuReady = !contentPending && sections.length > 0
   const error =
     !popId || !siteId
@@ -345,9 +331,17 @@ function MenuPage() {
           : popAccess && !popAccess.canEnter
             ? "No tenés acceso activo a este punto de venta."
             : null
-  const popLogoSrc =
-    popImageUrl?.trim() ||
-    `https://api.dicebear.com/7.x/shapes/svg?seed=${encodeURIComponent(popId || "pop")}&backgroundColor=1a1f1d`
+  const popLogoFallback = `https://api.dicebear.com/7.x/shapes/svg?seed=${encodeURIComponent(popId || "pop")}&backgroundColor=1a1f1d`
+  const headerPopLogoSrc = contentPending
+    ? popLogoFallback
+    : popImageUrl?.trim() || popLogoFallback
+  const headerPopName = contentPending ? "\u00a0" : popName || "\u00a0"
+  const headerPopAddress = contentPending
+    ? "\u00a0"
+    : popStreetAddress?.trim() || "Sin dirección"
+  const headerUserName = contentPending ? "Usuario" : userFullName || "Usuario"
+  const headerUserRoleLabel = contentPending ? "" : userRoleLabel
+  const headerUserAvatarSrc = contentPending ? null : userImageUrl
 
   if (!contentPending && error) {
     return (
@@ -378,13 +372,16 @@ function MenuPage() {
   }
 
   return (
-    <MenuDockDndProvider popId={popId} enabledModules={enabledModules}>
+    <MenuDockDndProvider
+      popId={popId}
+      enabledModules={contentPending ? [] : enabledModules}
+    >
     <div
       className={cn(menuNatureShellClass, "menu-firmament-settle fixed inset-0 flex flex-col overflow-hidden bg-background")}
       aria-busy={contentPending}
     >
       <div className="absolute inset-0 pointer-events-none overflow-hidden">
-        {popBackgroundImageUrl?.trim() ? (
+        {menuReady && popBackgroundImageUrl?.trim() ? (
           <>
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
@@ -470,17 +467,17 @@ function MenuPage() {
             <div className="flex min-w-0 items-center gap-4">
               <div className="size-12 shrink-0 overflow-hidden rounded-2xl ring-2 ring-[rgba(228,242,248,0.18)] shadow-[0_4px_16px_rgba(0,0,0,0.18)]">
                 <img
-                  src={popLogoSrc}
+                  src={headerPopLogoSrc}
                   alt=""
                   className="h-full w-full object-cover"
                 />
               </div>
               <div className="flex min-w-0 flex-col gap-0.5">
                 <span className={cn("truncate text-base tracking-tight", menuRealmTitleClass)}>
-                  {popName || "\u00a0"}
+                  {headerPopName}
                 </span>
                 <span className={cn("truncate text-sm", menuRealmLightMutedClass)}>
-                  {popStreetAddress?.trim() || (contentPending ? "\u00a0" : "Sin dirección")}
+                  {headerPopAddress}
                 </span>
               </div>
             </div>
@@ -588,25 +585,25 @@ function MenuPage() {
             <div className="flex min-w-0 items-center gap-3">
               <div className="hidden min-w-0 flex-col items-end text-right leading-tight sm:flex">
                 <span className={cn("truncate text-sm font-normal", menuRealmBodyClass)}>
-                  {userFullName || "Usuario"}
+                  {headerUserName}
                 </span>
-                {userRoleLabel ? (
+                {headerUserRoleLabel ? (
                   <span
                     className={cn(
                       "truncate text-[10px] font-semibold uppercase tracking-wider",
                       dataWorkspaceHeaderRoleLabelClass(
                         "dark",
-                        Boolean(userRoleLabel),
+                        Boolean(headerUserRoleLabel),
                       ),
                     )}
                   >
-                    {userRoleLabel}
+                    {headerUserRoleLabel}
                   </span>
                 ) : null}
               </div>
               <DataWorkspaceHeaderUserMenu
-                userName={userFullName || "Usuario"}
-                userAvatarSrc={userImageUrl}
+                userName={headerUserName}
+                userAvatarSrc={headerUserAvatarSrc}
                 isOnline={isOnline}
                 headerVariant="dark"
               />
@@ -697,7 +694,7 @@ function MenuPage() {
         sectionTitle={sectionNavItems[selectedIndex]?.title ?? "Operar"}
         siteId={siteId}
         popId={popId}
-        popAccess={popAccess}
+        popAccess={contentPending ? null : popAccess}
         disabled={!menuReady}
         className={menuReady ? "menu-content-emerge" : undefined}
       />

@@ -124,3 +124,45 @@
     content: none;
   }
 }
+
+/**
+ * Umbral de filtros — alba entre el universo y el claro.
+ * El planeta se lee a través; no es una isla.
+ */
+.data-workspace-tables-filters-dawn {
+  position: relative;
+  overflow: hidden;
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--rootsy-sombra-800) 10%, transparent) 0%,
+    color-mix(in srgb, var(--rootsy-bruma-100) 46%, transparent) 42%,
+    color-mix(in srgb, white 56%, transparent) 100%
+  );
+  backdrop-filter: blur(14px) saturate(1.06);
+  -webkit-backdrop-filter: blur(14px) saturate(1.06);
+}
+
+.data-workspace-tables-filters-dawn::after {
+  content: "";
+  pointer-events: none;
+  position: absolute;
+  z-index: 1;
+  inset-inline: 10%;
+  bottom: 0;
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    color-mix(in srgb, var(--rootsy-savia-400) 22%, var(--rootsy-bruma-200)) 50%,
+    transparent 100%
+  );
+  opacity: 0.55;
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  .data-workspace-tables-filters-dawn {
+    background: color-mix(in srgb, var(--rootsy-bruma-100) 88%, white);
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+  }
+}

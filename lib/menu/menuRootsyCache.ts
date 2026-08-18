@@ -11,7 +11,7 @@ export async function getMenuRootsyAiAdviceCached(
   context: MenuRootsyContext,
   fallback: MenuRootsyAdvice,
 ): Promise<MenuRootsyAdvice> {
-  if (!isMenuRootsyAiConfigured() || context.allowedModules.length === 0) {
+  if (!isMenuRootsyAiConfigured() || context.allModules.length === 0) {
     return fallback
   }
 

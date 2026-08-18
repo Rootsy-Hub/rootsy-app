@@ -26,7 +26,7 @@ async function requestMenuRootsyOpenAiAdvice(
   context: MenuRootsyContext,
 ): Promise<{ lead: string; suggestionModuleKeys: string[] } | null> {
   const apiKey = process.env.OPENAI_API_KEY?.trim()
-  if (!apiKey || context.allowedModules.length === 0) {
+  if (!apiKey || context.allModules.length === 0) {
     return null
   }
 
@@ -74,7 +74,7 @@ export async function callMenuRootsyAiProvider(
   context: MenuRootsyContext,
   fallback: MenuRootsyAdvice,
 ): Promise<MenuRootsyAdvice> {
-  if (context.allowedModules.length === 0) {
+  if (context.allModules.length === 0) {
     return fallback
   }
 
@@ -94,7 +94,7 @@ export async function callMenuRootsyAiProvider(
     }
 
     const suggestions = resolved.suggestionModuleKeys
-      .slice(0, 3)
+      .slice(0, 1)
       .map((moduleKey) => ({ moduleKey, label: "", href: "" }))
 
     return sanitizeMenuRootsyAdvice(

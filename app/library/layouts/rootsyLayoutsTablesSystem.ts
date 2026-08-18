@@ -34,19 +34,19 @@ function semanticHex(id: string): string {
   return ROOTSY_SEMANTIC_TOKENS.find((item) => item.id === id)!.hex
 }
 
-export type LayoutsTablesStatusId = "activo" | "pendiente" | "vencido"
+export type LayoutsTablesStatusId = "activo" | "inactivo" | "pendiente" | "vencido"
 
 export const ROOTSY_LAYOUTS_TABLES_MANIFESTO =
-  "Listado workspace — header universo, toolbar cristal, tabla densa, footer claro en la hoja. Sin paleta Nature en las celdas: bruma · savia · sombra · funcional."
+  "Listado workspace — header universo, toolbar alba, tabla flush al suelo, footer universo. Sin paleta Nature en las celdas: bruma · savia · sombra · funcional."
 
 export const ROOTSY_LAYOUTS_TABLES_PRINCIPLES = [
   {
     title: "Chrome sombra",
-    detail: "Header universo · h-17. Footer claro en la hoja — voz, RootsIconButton, sin tapa oscura.",
+    detail: "Header universo · h-17. Footer universo al suelo — misma noche, invita al cambio.",
   },
   {
-    title: "Toolbar claro",
-    detail: "Cristal sobre el lienzo · form.control.shell.inline-icon · layout.toolbar 92px · misma hoja que la tabla.",
+    title: "Toolbar alba",
+    detail: "Bruma a todo el ancho · el mundo se ve a través · form.control.shell.inline-icon · umbral entre noche y claro.",
   },
   {
     title: "Tabla bruma",
@@ -54,7 +54,7 @@ export const ROOTSY_LAYOUTS_TABLES_PRINCIPLES = [
   },
   {
     title: "Mundo en el lienzo",
-    detail: "Planeta en susurro detrás de la hoja — no atraviesa celdas, toolbar ni pie.",
+    detail: "Planeta en el gutter de filtros — la tabla ocupa el claro, de lado a lado hasta el pie.",
   },
   {
     title: "Acciones por capa",
@@ -84,7 +84,7 @@ export const ROOTSY_LAYOUTS_TABLES_ANATOMY = {
 
 export const ROOTSY_LAYOUTS_TABLES_CHROME = {
   headerBackground: `linear-gradient(180deg, ${hx("sombra", "950")} 0%, ${hx("sombra", "800")} 100%)`,
-  footerBackground: elevationHex("elevation.surface.overlay"),
+  footerBackground: `linear-gradient(168deg, color-mix(in srgb, ${hx("sombra", "950")} 94%, transparent) 0%, ${hx("sombra", "950")} 100%)`,
   titleColor: ROOTSY_COLOR_SEMANTIC.textOnDark,
   subtitleColor: hx("sombra", "300"),
   roleColor: hx("sombra", "400"),
@@ -95,9 +95,9 @@ export const ROOTSY_LAYOUTS_TABLES_CHROME = {
 } as const
 
 export const ROOTSY_LAYOUTS_TABLES_TOOLBAR = {
-  backgroundColor: `color-mix(in srgb, ${elevationHex("elevation.surface.overlay")} 78%, transparent)`,
-  borderBottom: `1px solid ${borderHex("color.border")}`,
-  chromeToken: "white 78% · blur md · radius.xlarge",
+  backgroundColor: `linear-gradient(180deg, color-mix(in srgb, ${hx("sombra", "800")} 10%, transparent) 0%, color-mix(in srgb, ${hx("bruma", "100")} 46%, transparent) 42%, color-mix(in srgb, ${elevationHex("elevation.surface.overlay")} 56%, transparent) 100%)`,
+  borderBottom: `1px solid color-mix(in srgb, ${hx("savia", "400")} 22%, ${hx("bruma", "200")})`,
+  chromeToken: "alba · blur 14 · mundo a través",
 } as const
 
 /** Lienzo detrás de la hoja — planeta más callado que en bloques. */
@@ -140,6 +140,12 @@ export const ROOTSY_LAYOUTS_TABLES_STATUS: Record<
     border: `1px solid color-mix(in srgb, ${semanticHex("status-success")} 25%, ${borderHex("color.border")})`,
     color: hx("savia", "800"),
   },
+  inactivo: {
+    label: "Inactivo",
+    backgroundColor: hx("bruma", "100"),
+    border: `1px solid ${hx("bruma", "300")}`,
+    color: hx("bruma", "700"),
+  },
   pendiente: {
     label: "Pendiente",
     backgroundColor: `color-mix(in srgb, ${semanticHex("status-warning")} 10%, ${elevationHex("elevation.surface.overlay")})`,
@@ -155,7 +161,9 @@ export const ROOTSY_LAYOUTS_TABLES_STATUS: Record<
 }
 
 export const ROOTSY_LAYOUTS_TABLES_FOOTER = {
-  textColor: hx("bruma", "900"),
-  mutedColor: hx("bruma", "500"),
-  dotColor: hx("bruma", "300"),
+  background: `linear-gradient(168deg, color-mix(in srgb, ${hx("sombra", "950")} 94%, transparent) 0%, ${hx("sombra", "950")} 100%)`,
+  borderTop: `1px solid color-mix(in srgb, ${ROOTSY_COLOR_SEMANTIC.textOnDark} 10%, transparent)`,
+  textColor: ROOTSY_COLOR_SEMANTIC.textOnDark,
+  mutedColor: hx("sombra", "300"),
+  dotColor: hx("sombra", "400"),
 } as const

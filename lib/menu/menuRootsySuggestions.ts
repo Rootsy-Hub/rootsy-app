@@ -1,57 +1,15 @@
+import {
+  MENU_ROOTSY_FALLBACK_GROWTH_TIPS,
+  menuRootsyGrowthRotationSeed,
+  pickMenuRootsyGrowthOpportunity,
+  type MenuRootsyGrowthOpportunity,
+} from "@/lib/menu/menuRootsyInsightsShared"
 import type {
   MenuRootsyAdvice,
   MenuRootsyAllowedModule,
   MenuRootsyContext,
   MenuRootsySuggestion,
 } from "@/lib/menu/menuRootsyTypes"
-
-const MAX_SUGGESTIONS = 3
-
-const SECTION_LEAD: Record<
-  MenuRootsyContext["sectionKey"],
-  string
-> = {
-  operar:
-    "Acá movés el día a día: ventas, mostrador, stock en piso y lo que pasa en el negocio.",
-  administrar:
-    "Administrás lo que sostiene el negocio: personas, stock, números y reportes.",
-  configurar:
-    "Configurás las bases del negocio: cuentas, ajustes e integraciones.",
-}
-
-function roleKind(roleName: string, isOwner: boolean): "owner" | "cashier" | "admin" | "member" {
-  const role = roleName.toLowerCase()
-  if (isOwner || role.includes("dueñ") || role.includes("owner")) return "owner"
-  if (role.includes("caj") || role.includes("venta")) return "cashier"
-  if (role.includes("admin") || role.includes("geren") || role.includes("super")) {
-    return "admin"
-  }
-  return "member"
-}
-
-function dayPhase(hour: number): "morning" | "midday" | "afternoon" | "evening" {
-  if (hour < 12) return "morning"
-  if (hour < 15) return "midday"
-  if (hour < 19) return "afternoon"
-  return "evening"
-}
-
-function businessFlavor(businessType: string): "food" | "retail" | "services" | "generic" {
-  const type = businessType.toLowerCase()
-  if (
-    type.includes("gastron") ||
-    type.includes("restaur") ||
-    type.includes("bar") ||
-    type.includes("caf")
-  ) {
-    return "food"
-  }
-  if (type.includes("servicio")) return "services"
-  if (type.includes("comercio") || type.includes("retail") || type.includes("ferre")) {
-    return "retail"
-  }
-  return "generic"
-}
 
 function pickModule(
   allowed: MenuRootsyAllowedModule[],
@@ -77,160 +35,68 @@ function toSuggestion(mod: MenuRootsyAllowedModule): MenuRootsySuggestion {
   }
 }
 
-function buildPriorityKeys(context: MenuRootsyContext): string[] {
-  const { sectionKey, hourLocal, isOwner, roleName, signals } = context
-  const role = roleKind(roleName, isOwner)
-  const phase = dayPhase(hourLocal)
-  const flavor = businessFlavor(context.businessType)
-
-  const cashClosed =
-    signals.cashRegisterOpen === false &&
-    context.allowedModules.some((mod) => mod.moduleKey === "cash_registers")
-  const noSalesYet = signals.salesTodayCount === 0
-  const stockAlert =
-    (signals.lowStockCount ?? 0) > 0 || (signals.outOfStockCount ?? 0) > 0
-
-  if (sectionKey === "operar") {
-    if (cashClosed && phase === "morning") {
-      return ["cash_registers", "sale", "mostrador", "mesas", "inventory"]
-    }
-    if (noSalesYet && phase !== "evening") {
-      return ["sale", "mostrador", "mesas", "cash_registers", "inventory"]
-    }
-    if (stockAlert) {
-      return ["inventory", "stock", "sale", "mostrador", "purchases"]
-    }
-    if (role === "cashier") {
-      return ["sale", "mostrador", "mesas", "cash_registers", "inventory"]
-    }
-    if (phase === "morning") {
-      return flavor === "food"
-        ? ["mostrador", "mesas", "sale", "cash_registers", "inventory"]
-        : ["sale", "cash_registers", "mostrador", "inventory", "purchases"]
-    }
-    if (phase === "evening") {
-      return ["sale", "operations", "inventory", "cash_registers", "expenses"]
-    }
-    return ["sale", "mostrador", "inventory", "purchases", "active_services"]
-  }
-
-  if (sectionKey === "administrar") {
-    if (stockAlert) {
-      return ["stock", "inventory", "reports", "operations", "suppliers"]
-    }
-    if (role === "owner" || role === "admin") {
-      return phase === "evening"
-        ? ["reports", "statistics", "operations", "invoices", "clients"]
-        : ["reports", "statistics", "clients", "stock", "operations"]
-    }
-    return ["clients", "stock", "operations", "reports", "suppliers"]
-  }
-
-  if (role === "owner" || role === "admin") {
-    return ["settings", "accounts", "cash_registers", "hr", "printers"]
-  }
-  return ["settings", "cash_registers", "printers", "accounts"]
+function growthOpportunityPool(context: MenuRootsyContext): MenuRootsyGrowthOpportunity[] {
+  const fromInsights = context.insights?.opportunities ?? []
+  if (fromInsights.length > 0) return fromInsights
+  return MENU_ROOTSY_FALLBACK_GROWTH_TIPS
 }
 
-function buildLead(context: MenuRootsyContext, suggestions: MenuRootsySuggestion[]): string {
-  const { sectionKey, trialDaysLeft, subscriptionActive, allowedModules, signals } =
-    context
-
-  if (allowedModules.length === 0) {
-    return "Todavía no tenés módulos acá. Pedile a quien administra el negocio que te habilite acceso."
-  }
-
-  if (!subscriptionActive) {
-    return "Tu suscripción no está activa. Revisá Cuentas o Ajustes para regularizar el acceso."
-  }
-
-  if (
-    signals.cashRegisterOpen === false &&
-    sectionKey === "operar" &&
-    allowedModules.some((mod) => mod.moduleKey === "cash_registers")
-  ) {
-    return "Todavía no hay caja abierta — conviene arrancar por ahí antes de vender."
-  }
-
-  if (signals.salesTodayCount === 0 && sectionKey === "operar") {
-    return "Hoy todavía no registraste ventas. ¿Arrancamos por el mostrador o la caja?"
-  }
-
-  if (
-    ((signals.lowStockCount ?? 0) > 0 || (signals.outOfStockCount ?? 0) > 0) &&
-    (sectionKey === "operar" || sectionKey === "administrar")
-  ) {
-    const parts: string[] = []
-    if ((signals.lowStockCount ?? 0) > 0) {
-      parts.push(
-        `${signals.lowStockCount} artículo${signals.lowStockCount === 1 ? "" : "s"} con stock bajo`,
-      )
-    }
-    if ((signals.outOfStockCount ?? 0) > 0) {
-      parts.push(
-        `${signals.outOfStockCount} sin stock`,
-      )
-    }
-    return `${parts.join(" y ")} — conviene revisar inventario pronto.`
-  }
-
-  if (trialDaysLeft != null && trialDaysLeft <= 7) {
-    const trialNote =
-      trialDaysLeft === 0
-        ? "Tu prueba termina hoy."
-        : `Te quedan ${trialDaysLeft} día${trialDaysLeft === 1 ? "" : "s"} de prueba.`
-    return `${trialNote} Mientras tanto, esto te puede servir en ${context.sectionTitle.toLowerCase()}.`
-  }
-
-  const role = roleKind(context.roleName, context.isOwner)
-  const phase = dayPhase(context.hourLocal)
-  const first = suggestions[0]?.label
-
-  if (sectionKey === "operar" && role === "cashier" && first) {
-    return `Con tu rol, lo más habitual es arrancar por ${first}.`
-  }
-
-  if (sectionKey === "operar" && phase === "morning" && first) {
-    return `Buen arranque de jornada — ${first} suele ser lo primero del día.`
-  }
-
-  if (sectionKey === "administrar" && phase === "evening" && first) {
-    return `Para cerrar el día, ${first} suele ser un buen punto de partida.`
-  }
-
-  if (first && suggestions.length > 1) {
-    const second = suggestions[1]?.label
-    return `En ${context.sectionTitle.toLowerCase()}, ${first}${second ? ` y ${second}` : ""} son buenos puntos de partida.`
-  }
-
-  return SECTION_LEAD[sectionKey]
+function pickPrimaryOpportunity(
+  context: MenuRootsyContext,
+): MenuRootsyGrowthOpportunity | null {
+  const pool = growthOpportunityPool(context)
+  return pickMenuRootsyGrowthOpportunity(
+    pool,
+    menuRootsyGrowthRotationSeed(context.popId),
+  )
 }
 
-/** Sugerencias determinísticas — siempre válidas y con links reales. */
+function pickPrimaryCta(
+  context: MenuRootsyContext,
+  opportunity: MenuRootsyGrowthOpportunity | null,
+): MenuRootsySuggestion | null {
+  if (!opportunity) return null
+
+  const mod = pickModule(context.allModules, opportunity.ctaModuleKeys)
+  if (mod) return toSuggestion(mod)
+
+  const fallback = pickModule(context.allModules, [
+    "statistics",
+    "promotions",
+    "reports",
+  ])
+  return fallback ? toSuggestion(fallback) : null
+}
+
+function buildVoice(
+  context: MenuRootsyContext,
+  opportunity: MenuRootsyGrowthOpportunity | null,
+  primaryCta: MenuRootsySuggestion | null,
+): string {
+  if (!opportunity) {
+    return `Vivo acá abajo, al lado de ${context.popName}, y aprendo su ritmo todos los días. Cuando quieras, miramos juntos dónde está la próxima oportunidad de crecer.`
+  }
+
+  if (primaryCta) {
+    return `${opportunity.voice} Si te pinta, podemos ver ${primaryCta.label}.`
+  }
+
+  return opportunity.voice
+}
+
+/** Consejo de Rootsy — voz propia, sin títulos ni chips. */
 export function buildMenuRootsyRuleAdvice(
   context: MenuRootsyContext,
 ): MenuRootsyAdvice {
-  const priorityKeys = buildPriorityKeys(context)
-  const suggestions: MenuRootsySuggestion[] = []
-
-  for (const key of priorityKeys) {
-    if (suggestions.length >= MAX_SUGGESTIONS) break
-    const mod = pickModule(context.allowedModules, [key])
-    if (!mod) continue
-    if (suggestions.some((entry) => entry.href === mod.href)) continue
-    suggestions.push(toSuggestion(mod))
-  }
-
-  for (const mod of context.allowedModules) {
-    if (suggestions.length >= MAX_SUGGESTIONS) break
-    if (suggestions.some((entry) => entry.href === mod.href)) continue
-    suggestions.push(toSuggestion(mod))
-  }
+  const opportunity = pickPrimaryOpportunity(context)
+  const primaryCta = pickPrimaryCta(context, opportunity)
 
   return {
-    title: context.sectionTitle,
-    lead: buildLead(context, suggestions),
-    suggestions: suggestions.slice(0, MAX_SUGGESTIONS),
+    title: "",
+    lead: buildVoice(context, opportunity, primaryCta),
+    pulses: [],
+    primaryCta,
+    suggestions: primaryCta ? [primaryCta] : [],
     source: "rules",
   }
 }
@@ -241,30 +107,32 @@ export function sanitizeMenuRootsyAdvice(
   fallback: MenuRootsyAdvice,
 ): MenuRootsyAdvice {
   const allowedByKey = new Map(
-    context.allowedModules.map((mod) => [mod.moduleKey, mod]),
+    context.allModules.map((mod) => [mod.moduleKey, mod]),
   )
 
   const suggestions: MenuRootsySuggestion[] = []
   for (const entry of raw.suggestions) {
-    if (suggestions.length >= MAX_SUGGESTIONS) break
+    if (suggestions.length >= 1) break
     const mod =
       allowedByKey.get(entry.moduleKey) ??
-      context.allowedModules.find((item) => item.link === entry.moduleKey)
+      context.allModules.find((item) => item.link === entry.moduleKey)
     if (!mod) continue
-    if (suggestions.some((s) => s.href === mod.href)) continue
     suggestions.push(toSuggestion(mod))
   }
 
-  const lead = raw.lead?.trim().slice(0, 280) || fallback.lead
+  const lead = raw.lead?.trim().slice(0, 420) || fallback.lead
+  const primaryCta = suggestions[0] ?? fallback.primaryCta
 
-  if (suggestions.length === 0) {
+  if (!primaryCta && !lead) {
     return fallback
   }
 
   return {
-    title: context.sectionTitle,
+    title: "",
     lead,
-    suggestions,
+    pulses: [],
+    primaryCta,
+    suggestions: primaryCta ? [primaryCta] : [],
     source: "ai",
   }
 }

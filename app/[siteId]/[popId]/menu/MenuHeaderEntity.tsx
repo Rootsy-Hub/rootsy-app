@@ -1,6 +1,7 @@
 "use client"
 
 import {
+  menuFooterEntityBodyClass,
   menuHeaderEntityBodyClass,
   menuHeaderEntityClass,
   menuHeaderEntityVeilClass,
@@ -21,16 +22,27 @@ type Props = {
   children: ReactNode
   /** home = 80px · module = 68px, más aire para datos. */
   size?: "home" | "module"
+  /** header = cielo · footer = mismo universo en el suelo. */
+  as?: "header" | "footer"
 }
 
 /** Universo exterior — entidad neutra que se une al planeta en el umbral. */
-export function MenuHeaderEntity({ children, size = "home" }: Props) {
+export function MenuHeaderEntity({
+  children,
+  size = "home",
+  as = "header",
+}: Props) {
+  const Tag = as
+  const isFooter = as === "footer"
   const heightClass =
     size === "module" ? menuModuleHeaderHeightClass : menuHeaderHeightClass
 
   return (
-    <header className={menuHeaderEntityClass}>
-      <div className={menuHeaderEntityBodyClass} style={headerLifeStyle}>
+    <Tag className={menuHeaderEntityClass}>
+      <div
+        className={isFooter ? menuFooterEntityBodyClass : menuHeaderEntityBodyClass}
+        style={headerLifeStyle}
+      >
         <div aria-hidden className="menu-header-entity-core" />
         <div aria-hidden className="menu-header-entity-sky" />
         <div aria-hidden className={menuHeaderEntityVeilClass} />
@@ -47,9 +59,9 @@ export function MenuHeaderEntity({ children, size = "home" }: Props) {
           <span className="menu-header-entity-star menu-header-entity-star--md" />
         </div>
         <div aria-hidden className="menu-header-entity-horizon" />
-        <div aria-hidden className="menu-header-entity-bridge" />
+        {isFooter ? null : <div aria-hidden className="menu-header-entity-bridge" />}
         <div className={cn(heightClass, "relative z-[1]")}>{children}</div>
       </div>
-    </header>
+    </Tag>
   )
 }

@@ -21,8 +21,6 @@ import {
   type ClientsModalFilters,
 } from "@/app/[siteId]/[popId]/clients/ClientsFiltersDialog"
 import { buildPaginationItems } from "@/components/data-workspace/buildPaginationItems"
-import { Badge } from "@/components/ui/badge"
-import { Checkbox } from "@/components/ui/checkbox"
 import { DataWorkspaceListActiveFiltersBar } from "@/components/data-workspace/DataWorkspaceListActiveFiltersBar"
 import { DataWorkspaceListBulkToolbar } from "@/components/data-workspace/DataWorkspaceListBulkToolbar"
 import { DataWorkspaceListFilterChip } from "@/components/data-workspace/DataWorkspaceListFilterChip"
@@ -42,14 +40,16 @@ import {
   DataWorkspaceListTableFrame,
   DataWorkspaceTableEmptyMascot,
   DataWorkspaceTableIconAction,
+  WorkspaceTableStatusBadge,
 } from "@/components/data-workspace/DataWorkspaceListTablePrimitives"
 import { WorkspaceTableSkeletonRows } from "@/components/data-workspace/WorkspaceTableSkeleton"
 import { clientsSkeletonColumns } from "@/components/data-workspace/workspaceTableSkeletonPresets"
 import {
   selectColumnInnerClass,
   workspaceTableLayoutClassName,
-  workspaceTableNatureCheckboxClass,
+  workspaceTableNatureLinkClass,
   workspaceTableNatureMoneyClass,
+  workspaceTableNatureStockOkClass,
   workspaceTableNatureTextPrimaryClass,
   workspaceTableNatureTextSecondaryClass,
 } from "@/components/data-workspace/dataWorkspaceListStyles"
@@ -977,14 +977,12 @@ export function ClientsWorkspaceView() {
                               {r.addressLine}
                             </p>
                           ) : null}
-                          {!r.isActive ? (
-                            <Badge
-                              variant="outline"
-                              className="mt-1 border-muted-foreground/30 text-[10px] font-normal text-muted-foreground"
-                            >
-                              Inactivo
-                            </Badge>
-                          ) : null}
+                          <WorkspaceTableStatusBadge
+                            status={r.isActive ? "activo" : "inactivo"}
+                            className="mt-1"
+                          >
+                            {r.isActive ? "Activo" : "Inactivo"}
+                          </WorkspaceTableStatusBadge>
                         </TableCell>
                         <TableCell
                           className={cn(
@@ -994,7 +992,16 @@ export function ClientsWorkspaceView() {
                           )}
                           title={r.email.trim() ? r.email : undefined}
                         >
-                          <p className="truncate">{r.email || "—"}</p>
+                          {r.email.trim() ? (
+                            <a
+                              href={`mailto:${r.email.trim()}`}
+                              className={cn("block truncate", workspaceTableNatureLinkClass)}
+                            >
+                              {r.email}
+                            </a>
+                          ) : (
+                            <p className="truncate">—</p>
+                          )}
                         </TableCell>
                         <TableCell
                           className={cn(
@@ -1036,7 +1043,9 @@ export function ClientsWorkspaceView() {
                           className={cn(
                             workspaceTableLayoutBodyCellClass,
                             "whitespace-nowrap",
-                            workspaceTableNatureTextSecondaryClass,
+                            r.lastSaleAt
+                              ? workspaceTableNatureTextPrimaryClass
+                              : workspaceTableNatureTextSecondaryClass,
                           )}
                         >
                           {formatShortSaleDate(r.lastSaleAt)}
@@ -1049,8 +1058,15 @@ export function ClientsWorkspaceView() {
                         >
                           {r.completedSalesCount > 0 ? (
                             <div className={cn(workspaceTableLayoutCellStackClass, "items-end")}>
-                              <span className={workspaceTableNatureTextPrimaryClass}>
-                                {r.completedSalesCount.toLocaleString("es-AR")}{" "}
+                              <span>
+                                <span
+                                  className={cn(
+                                    "font-semibold tabular-nums",
+                                    workspaceTableNatureStockOkClass,
+                                  )}
+                                >
+                                  {r.completedSalesCount.toLocaleString("es-AR")}
+                                </span>{" "}
                                 <span className={cn("font-normal", workspaceTableNatureTextSecondaryClass)}>
                                   ventas
                                 </span>

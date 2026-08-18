@@ -8,6 +8,7 @@ import type {
   MenuRootsyAllowedModule,
   MenuRootsyContext,
 } from "@/lib/menu/menuRootsyTypes"
+import type { MenuRootsyBusinessInsights } from "@/lib/menu/menuRootsyInsightsShared"
 import {
   emptyMenuRootsyOperationalSignals,
   type MenuRootsyOperationalSignals,
@@ -20,9 +21,16 @@ export function buildMenuRootsyContext(input: {
   sectionTitle: string
   now?: Date
   signals?: MenuRootsyOperationalSignals
+  insights?: MenuRootsyBusinessInsights | null
 }): MenuRootsyContext {
   const { popAccess, siteId, sectionKey, sectionTitle } = input
   const now = input.now ?? new Date()
+  const moduleIndex = buildMenuRootsyAllowedModuleIndex(popAccess, siteId)
+  const allModules = [...moduleIndex.values()].filter(
+    (mod, index, list) =>
+      list.findIndex((entry) => entry.href === mod.href) === index,
+  )
+
   const menuSections = buildMenuSectionsFromEnabledModules(
     popAccess.enabledModules,
   )
@@ -69,7 +77,9 @@ export function buildMenuRootsyContext(input: {
     trialDaysLeft,
     subscriptionActive: popAccess.subscription.isActive,
     allowedModules,
+    allModules,
     signals: input.signals ?? emptyMenuRootsyOperationalSignals(now),
+    insights: input.insights ?? null,
   }
 }
 

@@ -66,6 +66,19 @@
   }
 }
 
+.menu-header-entity-body--floor .menu-header-entity-weight {
+  background: linear-gradient(to top, transparent 40%, rgba(0, 0, 0, 0.28) 100%);
+}
+
+.menu-header-entity-body--floor .menu-header-entity-horizon {
+  top: 0;
+  bottom: auto;
+}
+
+.menu-header-entity-body--floor .menu-header-entity-stars {
+  mask-image: linear-gradient(to top, black 0%, transparent 92%);
+}
+
 .menu-header-entity-horizon {
   position: absolute;
   inset-inline: 0;

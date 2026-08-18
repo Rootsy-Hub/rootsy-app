@@ -6,39 +6,49 @@ export type MenuRootsyAiPayload = {
 }
 
 export const MENU_ROOTSY_AI_SYSTEM_PROMPT = [
-  "Sos Rootsy, mascota guía de Rootsy (software de gestión para negocios en Argentina).",
-  "Respondé en español rioplatense, cercano y claro. Sin emojis.",
+  "Sos Rootsy, la mascota que vive en el piso del negocio y respira sus números todos los días.",
+  "Hablás en primera persona, desde el corazón, con la sabiduría de quien conoce el negocio por dentro.",
+  "Respondé en español rioplatense, cálido y claro. Sin emojis. Sin títulos. Sin listas. Sin pills.",
+  "No menciones trial, caja, stock ni tareas operativas del día.",
   "Solo podés recomendar módulos de allowedModuleKeys.",
-  'Respondé JSON: {"lead":"...", "suggestionModuleKeys":["key1","key2"]}.',
-  "lead: 1 oración, máximo 220 caracteres.",
-  "suggestionModuleKeys: 1 a 3 keys de allowedModuleKeys, ordenadas por utilidad.",
-  "No inventes módulos. No menciones POP: decí negocio.",
-  "Usá signals si vienen: caja cerrada → priorizá Cajas; ventas en 0 por la mañana → Ventas; lowStockCount > 0 → Stock o Inventario.",
+  'Respondé JSON: {"lead":"...", "suggestionModuleKeys":["key"]}.',
+  "lead: 2 or 3 oraciones, máximo 380 caracteres. Una sola voz continua, como un consejo íntimo.",
+  "Podés cerrar invitando suavemente a un módulo (Estadísticas, Promociones, etc.) sin sonar a botón.",
+  "suggestionModuleKeys: exactamente 1 key, alineada con lo que decís.",
+  "Usá insights si vienen. No inventes números. Decí el nombre del negocio (popName), no POP.",
 ].join(" ")
 
 export function buildMenuRootsyAiUserPayload(context: MenuRootsyContext) {
+  const insights = context.insights
+
   return {
     popName: context.popName,
     businessType: context.businessType,
     roleName: context.roleName,
     isOwner: context.isOwner,
-    sectionKey: context.sectionKey,
-    sectionTitle: context.sectionTitle,
     hourLocal: context.hourLocal,
-    trialDaysLeft: context.trialDaysLeft,
-    allowedModuleKeys: context.allowedModules.map((mod) => mod.moduleKey),
-    allowedModules: context.allowedModules.map((mod) => ({
+    allowedModuleKeys: context.allModules.map((mod) => mod.moduleKey),
+    allowedModules: context.allModules.map((mod) => ({
       key: mod.moduleKey,
       label: mod.label,
     })),
-    signals: {
-      dayOfWeek: context.signals.dayOfWeek,
-      cashRegisterOpen: context.signals.cashRegisterOpen,
-      openCashRegisterCount: context.signals.openCashRegisterCount,
-      salesTodayCount: context.signals.salesTodayCount,
-      lowStockCount: context.signals.lowStockCount,
-      outOfStockCount: context.signals.outOfStockCount,
-    },
+    insights: insights
+      ? {
+          periodLabel: insights.periodLabel,
+          totalSales: insights.totalSales,
+          salesDeltaPercent: insights.salesDeltaPercent,
+          avgTicket: insights.avgTicket,
+          grossMarginPercent: insights.grossMarginPercent,
+          grossMarginDeltaPoints: insights.grossMarginDeltaPoints,
+          todayWeekdayLabel: insights.todayWeekdayLabel,
+          peakHourLabel: insights.peakHourLabel,
+          slowHourLabel: insights.slowHourLabel,
+          topProfitProduct: insights.topProfitProduct,
+          topVolumeProduct: insights.topVolumeProduct,
+          hiddenGemProduct: insights.hiddenGemProduct,
+          sampleVoices: insights.opportunities.slice(0, 4).map((entry) => entry.voice),
+        }
+      : null,
   }
 }
 
@@ -56,6 +66,6 @@ export function parseMenuRootsyAiPayload(raw: unknown): MenuRootsyAiPayload | nu
   }
   return {
     lead: record.lead.trim(),
-    suggestionModuleKeys,
+    suggestionModuleKeys: suggestionModuleKeys.slice(0, 1),
   }
 }

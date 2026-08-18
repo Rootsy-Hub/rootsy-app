@@ -1,4 +1,5 @@
 import type { MenuSectionKey } from "@/lib/menuCatalog"
+import type { MenuRootsyBusinessInsights } from "@/lib/menu/menuRootsyInsightsShared"
 import type { MenuRootsyOperationalSignals } from "@/lib/menu/menuRootsySignalsShared"
 
 export type MenuRootsySuggestion = {
@@ -7,9 +8,21 @@ export type MenuRootsySuggestion = {
   moduleKey: string
 }
 
+export type MenuRootsyPulseTone = "neutral" | "ok" | "warn" | "alert"
+
+export type MenuRootsyPulse = {
+  id: "sales" | "margin" | "peak" | "ticket"
+  label: string
+  tone: MenuRootsyPulseTone
+  /** Pulso visual cuando requiere atención. */
+  attention: boolean
+}
+
 export type MenuRootsyAdvice = {
   title: string
   lead: string
+  pulses: MenuRootsyPulse[]
+  primaryCta: MenuRootsySuggestion | null
   suggestions: MenuRootsySuggestion[]
   source: "rules" | "ai"
 }
@@ -34,5 +47,8 @@ export type MenuRootsyContext = {
   trialDaysLeft: number | null
   subscriptionActive: boolean
   allowedModules: MenuRootsyAllowedModule[]
+  /** Todos los módulos habilitados del POP — para CTAs de crecimiento. */
+  allModules: MenuRootsyAllowedModule[]
   signals: MenuRootsyOperationalSignals
+  insights: MenuRootsyBusinessInsights | null
 }

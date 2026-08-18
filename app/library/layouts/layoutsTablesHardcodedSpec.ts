@@ -387,7 +387,7 @@ export function getLayoutsTablesCheckboxStyle() {
 export function getLayoutsTablesFooterShellStyle(composed = false) {
   return {
     height: ROOTSY_LAYOUTS_TABLES_ANATOMY.footerHeightPx,
-    background: ROOTSY_LAYOUTS_TABLES_CHROME.footerBackground,
+    background: ROOTSY_LAYOUTS_TABLES_FOOTER.background,
     flexShrink: 0,
     borderRadius: composed ? undefined : ROOTSY_LAYOUTS_TABLES_ANATOMY.shellRadiusPx,
     overflow: "hidden" as const,
@@ -417,7 +417,7 @@ export function getLayoutsTablesFooterTextStyle(muted = false) {
 }
 
 export function getLayoutsTablesFooterNavButtonStyle() {
-  const surface = getIconButtonUiSurface("workspace", "ghost")
+  const surface = getIconButtonUiSurface("pos", "ghost")
   const sizePx = rootsySpacePx("400")
 
   return {
@@ -436,7 +436,7 @@ export function getLayoutsTablesFooterNavButtonStyle() {
 }
 
 export function getLayoutsTablesFooterSelectStyle() {
-  const surface = getFormControlUiSurface("default")
+  const surface = getFormControlUiSurface("default", { tone: "dark" })
   return {
     display: "inline-flex" as const,
     alignItems: "center" as const,
@@ -486,7 +486,7 @@ export function getLayoutsTablesWireframeZoneStyle(kind: "chrome" | "toolbar" | 
       return { backgroundColor: ROOTSY_LAYOUTS_TABLES_BODY.rowEvenBackground }
     case "footer":
       return {
-        background: ROOTSY_LAYOUTS_TABLES_CHROME.footerBackground,
+        background: ROOTSY_LAYOUTS_TABLES_FOOTER.background,
         borderTop: `1px solid ${contentBorder}`,
       }
   }

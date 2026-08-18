@@ -25,7 +25,7 @@ export async function requestMenuRootsyGeminiAdvice(
   context: MenuRootsyContext,
 ): Promise<{ lead: string; suggestionModuleKeys: string[] } | null> {
   const apiKey = process.env.GEMINI_API_KEY?.trim()
-  if (!apiKey || context.allowedModules.length === 0) {
+  if (!apiKey || context.allModules.length === 0) {
     return null
   }
 

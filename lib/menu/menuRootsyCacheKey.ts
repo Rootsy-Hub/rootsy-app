@@ -1,22 +1,27 @@
-import { menuRootsySignalsCacheFingerprint } from "@/lib/menu/menuRootsySignalsShared"
+import {
+  menuRootsyGrowthRotationSeed,
+  menuRootsyInsightsCacheFingerprint,
+} from "@/lib/menu/menuRootsyInsightsShared"
 import type { MenuRootsyContext } from "@/lib/menu/menuRootsyTypes"
 
-/** Clave de cache — segura para cliente y servidor. */
+/** Clave de cache — independiente del reinado; rota consejo por día. */
 export function buildMenuRootsyAdviceCacheKey(context: MenuRootsyContext): string {
-  const moduleKeys = [...new Set(context.allowedModules.map((mod) => mod.moduleKey))]
+  const moduleKeys = [...new Set(context.allModules.map((mod) => mod.moduleKey))]
     .sort()
     .join(",")
-  const dateBucket = new Date().toISOString().slice(0, 10)
   const roleKey = context.isOwner
     ? "owner"
     : context.roleName.trim().toLowerCase().replace(/\s+/g, "-") || "member"
+  const rotationSeed = menuRootsyGrowthRotationSeed(context.popId)
+  const insightsFingerprint = context.insights
+    ? menuRootsyInsightsCacheFingerprint(context.insights)
+    : "no-insights"
 
   return [
     context.popId,
-    context.sectionKey,
     roleKey,
     moduleKeys,
-    dateBucket,
-    menuRootsySignalsCacheFingerprint(context.signals),
+    rotationSeed,
+    insightsFingerprint,
   ].join(":")
 }

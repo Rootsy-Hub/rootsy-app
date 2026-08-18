@@ -82,7 +82,7 @@ export const LAYOUTS_TABLES_SCREEN_COMPONENTS: LayoutsTablesScreenComponentRow[]
   {
     layer: "Toolbar",
     component: "Barra filtros",
-    token: "layout.toolbar · 92px",
+    token: "alba · blur 14 · mundo a través",
     source: "rootsyLayoutsTablesSystem · FormUiToolbarListFilters",
   },
   {
@@ -112,7 +112,7 @@ export const LAYOUTS_TABLES_SCREEN_COMPONENTS: LayoutsTablesScreenComponentRow[]
   {
     layer: "Tabla",
     component: "Hoja elevada",
-    token: "elevation.shadow.raised · radius.xlarge",
+    token: "flush · full-bleed · suelo",
     source: "dataWorkspaceTablesSheetClass",
   },
   {
@@ -148,7 +148,7 @@ export const LAYOUTS_TABLES_SCREEN_COMPONENTS: LayoutsTablesScreenComponentRow[]
   {
     layer: "Tabla",
     component: "Badge estado",
-    token: "status-success · status-warning · status-danger",
+    token: "status-success · bruma · status-warning · status-danger",
     source: "ROOTSY_LAYOUTS_TABLES_STATUS",
   },
   {
@@ -166,8 +166,8 @@ export const LAYOUTS_TABLES_SCREEN_COMPONENTS: LayoutsTablesScreenComponentRow[]
   {
     layer: "Footer",
     component: "Chrome paginación",
-    token: "layout.footer · white · bruma-200",
-    source: "ROOTSY_LAYOUTS_TABLES_CHROME.footerBackground",
+    token: "universo · sombra-950 · estrellas",
+    source: "ROOTSY_LAYOUTS_TABLES_FOOTER.background",
   },
   {
     layer: "Footer",

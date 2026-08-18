@@ -31,32 +31,26 @@ export const menuRootsyPresenceImageClass = cn(
 )
 
 export const menuRootsyPresencePanelClass = cn(
-  "menu-rootsy-presence-panel pointer-events-auto absolute bottom-[calc(100%+0.35rem)] left-0 z-50 w-[19rem] max-w-[calc(100vw-2rem)]",
-  "overflow-hidden rounded-xl border border-[rgba(228,242,248,0.12)]",
-  "bg-[linear-gradient(168deg,rgba(4,10,14,0.96)_0%,rgba(2,6,10,0.98)_100%)]",
-  "backdrop-blur-[10px] backdrop-saturate-[1.02]",
-  "shadow-[0_16px_40px_rgba(0,0,0,0.38),inset_0_1px_0_rgba(255,255,255,0.08)]",
+  "menu-rootsy-presence-panel pointer-events-auto absolute bottom-[calc(100%+0.35rem)] left-0 z-50 w-[21rem] max-w-[calc(100vw-2rem)]",
+  "overflow-hidden rounded-2xl border border-[rgba(228,242,248,0.1)]",
+  "bg-[linear-gradient(168deg,rgba(4,10,14,0.94)_0%,rgba(2,6,10,0.97)_100%)]",
+  "backdrop-blur-[12px] backdrop-saturate-[1.02]",
+  "shadow-[0_16px_40px_rgba(0,0,0,0.38),inset_0_1px_0_rgba(255,255,255,0.06)]",
 )
 
-export const menuRootsyPresencePanelTitleClass = cn(
-  "text-[11px] font-semibold uppercase tracking-[0.1em]",
-  "text-[rgba(255,255,255,0.52)]",
+export const menuRootsyPresencePanelVoiceClass = cn(
+  "text-[15px] leading-[1.55] tracking-[0.01em] text-[rgba(255,255,255,0.9)]",
+  "font-normal antialiased",
 )
 
-export const menuRootsyPresencePanelLeadClass = cn(
-  "mt-2 text-sm leading-snug text-[rgba(255,255,255,0.88)]",
+export const menuRootsyPresenceVoiceLinkClass = cn(
+  "mt-3 inline-block text-[13px] font-medium text-[rgba(196,230,248,0.88)]",
+  "underline decoration-[rgba(196,230,248,0.35)] underline-offset-[3px]",
+  "transition-colors duration-200",
+  "hover:text-[rgba(228,242,248,0.98)] hover:decoration-[rgba(228,242,248,0.55)]",
+  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgba(255,255,255,0.18)] focus-visible:ring-offset-2 focus-visible:ring-offset-transparent",
 )
 
-export const menuRootsyPresenceSuggestionsClass = cn(
-  "mt-3.5 flex flex-wrap gap-2",
-)
-
-export const menuRootsyPresenceSuggestionClass = cn(
-  "inline-flex items-center rounded-lg border border-[rgba(228,242,248,0.14)]",
-  "bg-[linear-gradient(168deg,rgba(255,255,255,0.06)_0%,rgba(8,28,38,0.12)_100%)]",
-  "px-2.5 py-1.5 text-[12px] font-medium leading-none text-[rgba(255,255,255,0.9)]",
-  "transition-[background-color,border-color,transform] duration-200",
-  "hover:border-[rgba(228,242,248,0.22)] hover:bg-[rgba(255,255,255,0.08)]",
-  "active:scale-[0.98]",
-  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgba(255,255,255,0.18)]",
+export const menuRootsyPresenceThinkingClass = cn(
+  "text-[rgba(255,255,255,0.32)]",
 )

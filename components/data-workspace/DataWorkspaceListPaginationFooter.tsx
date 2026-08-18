@@ -47,6 +47,7 @@ import {
   popGlassFooterDotClass,
   popGlassFooterMutedTextClass,
 } from "@/components/layouts/popHeaderBackdropStyles"
+import { MenuHeaderEntity } from "@/app/[siteId]/[popId]/menu/MenuHeaderEntity"
 import { usePopWorkspaceOptional } from "@/context/PopWorkspaceContext"
 import { cn } from "@/lib/utils"
 import type { PaginationItem } from "@/components/data-workspace/buildPaginationItems"
@@ -158,8 +159,8 @@ export function DataWorkspaceListPaginationFooter({
           <div className={layoutsTablesFooterNavClusterClass}>
             <RootsIconButton
               label="Ir al inicio"
-              theme="workspace"
-              emphasis="outlined"
+              theme="pos"
+              emphasis="ghost"
               size="default"
               disabled={paginationDisabled || safeCurrentPage <= 1}
               onClick={() => onPageChange(1)}
@@ -168,8 +169,8 @@ export function DataWorkspaceListPaginationFooter({
             </RootsIconButton>
             <RootsIconButton
               label="Página anterior"
-              theme="workspace"
-              emphasis="outlined"
+              theme="pos"
+              emphasis="ghost"
               size="default"
               disabled={paginationDisabled || safeCurrentPage <= 1}
               onClick={() => onPageChange(Math.max(1, safeCurrentPage - 1))}
@@ -182,8 +183,8 @@ export function DataWorkspaceListPaginationFooter({
             </span>
             <RootsIconButton
               label="Página siguiente"
-              theme="workspace"
-              emphasis="outlined"
+              theme="pos"
+              emphasis="ghost"
               size="default"
               disabled={paginationDisabled || safeCurrentPage >= effectiveTotalPages}
               onClick={() =>
@@ -194,8 +195,8 @@ export function DataWorkspaceListPaginationFooter({
             </RootsIconButton>
             <RootsIconButton
               label="Ir al final"
-              theme="workspace"
-              emphasis="outlined"
+              theme="pos"
+              emphasis="ghost"
               size="default"
               disabled={paginationDisabled || safeCurrentPage >= effectiveTotalPages}
               onClick={() => onPageChange(effectiveTotalPages)}
@@ -217,18 +218,18 @@ export function DataWorkspaceListPaginationFooter({
               onValueChange={(v) => onPageSizeChange(Number(v))}
             >
               <RootsFormSelectTrigger
-                tone="light"
+                tone="dark"
                 aria-labelledby={pageSizeLabelId}
                 aria-label="Resultados por página"
                 className={layoutsTablesFooterSelectTriggerClass}
               >
                 <RootsFormSelectValue />
               </RootsFormSelectTrigger>
-              <RootsFormSelectContent tone="light" align="end">
+              <RootsFormSelectContent tone="dark" align="end">
                 {pageSizeOptions.map((n) => (
                   <RootsFormSelectItem
                     key={n}
-                    tone="light"
+                    tone="dark"
                     className={layoutsTablesFooterSelectItemClass}
                     value={String(n)}
                   >
@@ -242,14 +243,16 @@ export function DataWorkspaceListPaginationFooter({
       )
 
       return (
-        <div
-          className={cn(layoutsTablesFooterSurfaceClass, "h-17 shrink-0")}
-          role="navigation"
-          aria-label="Paginación del listado"
-          aria-busy={listFetching}
-        >
-          {footerBody}
-        </div>
+        <MenuHeaderEntity as="footer" size="module">
+          <div
+            className={layoutsTablesFooterSurfaceClass}
+            role="navigation"
+            aria-label="Paginación del listado"
+            aria-busy={listFetching}
+          >
+            {footerBody}
+          </div>
+        </MenuHeaderEntity>
       )
     }
 

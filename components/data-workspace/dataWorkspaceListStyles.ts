@@ -77,15 +77,13 @@ export const dataWorkspaceEntityCardsGridColumnMaxClass = "max-w-[22rem]"
 export const workspaceTableSurfaceClass =
   "bg-white dark:bg-white"
 
-/** Marco del listado — deja ver el lienzo (planeta) sin tocar toolbar ni filas. */
+/** Marco del listado — la tabla ocupa el claro, de lado a lado hasta el suelo. */
 export const dataWorkspaceTablesSheetFrameClass =
-  "relative z-1 flex min-h-0 flex-1 flex-col px-4 pb-4 pt-2.5"
+  "relative z-1 flex min-h-0 flex-1 flex-col"
 
-/** Hoja elevada — tabla + pie, opaca. */
+/** Hoja flush — tabla + pie universo, sin radio ni gutter. */
 export const dataWorkspaceTablesSheetClass = cn(
-  "flex min-h-0 flex-1 flex-col overflow-hidden rounded-2xl",
-  "border border-[var(--rootsy-bruma-200)] bg-white",
-  rootsyElevationRaisedRestClass,
+  "flex min-h-0 flex-1 flex-col overflow-hidden bg-white",
 )
 
 /** Scope raíz — tokens --wt-* (ver rootsyNaturePalette.css). */
@@ -472,11 +470,13 @@ export const workspaceTableNatureIconButtonClass = cn(
 )
 
 export const workspaceTableNatureStatusBadgeClass: Record<
-  "activo" | "pendiente" | "vencido",
+  "activo" | "inactivo" | "pendiente" | "vencido",
   string
 > = {
   activo:
     "border-[color-mix(in_srgb,var(--rootsy-savia-600)_25%,var(--rootsy-bruma-200))] bg-[color-mix(in_srgb,var(--rootsy-savia-600)_10%,white)] text-[var(--rootsy-savia-800)]",
+  inactivo:
+    "border-[var(--rootsy-bruma-300)] bg-[var(--rootsy-bruma-100)] text-[var(--rootsy-bruma-700)]",
   pendiente:
     "border-[color-mix(in_srgb,#f59e0b_25%,var(--rootsy-bruma-200))] bg-[color-mix(in_srgb,#f59e0b_10%,white)] text-[#78350f]",
   vencido:

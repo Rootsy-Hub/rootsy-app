@@ -9,6 +9,7 @@ import {
 } from "@/lib/menu/menuRootsyAi"
 import { buildMenuRootsyContext } from "@/lib/menu/menuRootsyContext"
 import { loadMenuRootsyOperationalSignals } from "@/lib/menu/menuRootsySignals"
+import { loadMenuRootsyBusinessInsights } from "@/lib/menu/menuRootsyInsights"
 import type { MenuRootsyAdvice } from "@/lib/menu/menuRootsyTypes"
 import { validatePopAccess } from "@/lib/popHelpers"
 import { siteIdsMatchClientRoute } from "@/lib/popRoutes"
@@ -47,10 +48,10 @@ export async function fetchMenuRootsyAdvice(
     return { success: false, error: "Sitio inválido para este negocio" }
   }
 
-  const signals = await loadMenuRootsyOperationalSignals(
-    popId,
-    popAccess.enabledModules,
-  )
+  const [signals, insights] = await Promise.all([
+    loadMenuRootsyOperationalSignals(popId, popAccess.enabledModules),
+    loadMenuRootsyBusinessInsights(popId, popAccess.enabledModules),
+  ])
 
   const context = buildMenuRootsyContext({
     popAccess,
@@ -58,6 +59,7 @@ export async function fetchMenuRootsyAdvice(
     sectionKey,
     sectionTitle,
     signals,
+    insights,
   })
 
   const ruleAdvice = buildMenuRootsyAdvice(context)
@@ -67,4 +69,32 @@ export async function fetchMenuRootsyAdvice(
       : ruleAdvice
 
   return { success: true, advice }
+}
+
+export async function fetchMenuRootsySignals(
+  popId: string,
+): Promise<
+  | { success: true; signals: Awaited<ReturnType<typeof loadMenuRootsyOperationalSignals>> }
+  | { success: false; error: string }
+> {
+  if (!popId?.trim()) {
+    return { success: false, error: "Parámetros inválidos" }
+  }
+
+  const access = await validatePopAccess(popId)
+  if (!access.hasAccess || !access.isActive) {
+    return { success: false, error: access.error || "Sin acceso" }
+  }
+
+  const popAccess = await getPopAccessCache(popId)
+  if (!popAccess?.canEnter) {
+    return { success: false, error: "No se pudo cargar el acceso al negocio" }
+  }
+
+  const signals = await loadMenuRootsyOperationalSignals(
+    popId,
+    popAccess.enabledModules,
+  )
+
+  return { success: true, signals }
 }

@@ -6,7 +6,12 @@ import {
   workspaceTableLayoutThumbnailPlaceholderClass,
   workspaceTableLayoutThumbnailSmClass,
 } from "@/components/data-workspace/dataWorkspaceTablesLayout"
-import { tdMoneyClass, tdMoneyMutedClass, workspaceTableFrameSelectableScopeClass } from "@/components/data-workspace/dataWorkspaceListStyles"
+import {
+  tdMoneyClass,
+  tdMoneyMutedClass,
+  workspaceTableFrameSelectableScopeClass,
+  workspaceTableNatureStatusBadgeClass,
+} from "@/components/data-workspace/dataWorkspaceListStyles"
 import { RootsIconButton } from "@/components/rootsy-button"
 import type { RootsIconButtonActionIntent } from "@/components/rootsy-button/rootsButtonStyles"
 import { cn } from "@/lib/utils"
@@ -68,6 +73,28 @@ export function DataWorkspaceTableMoney({
     <span
       className={cn(
         muted ? tdMoneyMutedClass : tdMoneyClass,
+        className,
+      )}
+    >
+      {children}
+    </span>
+  )
+}
+
+export function WorkspaceTableStatusBadge({
+  status,
+  children,
+  className,
+}: {
+  status: keyof typeof workspaceTableNatureStatusBadgeClass
+  children: ReactNode
+  className?: string
+}) {
+  return (
+    <span
+      className={cn(
+        "inline-flex rounded px-1.5 py-px text-[10px] font-semibold leading-4",
+        workspaceTableNatureStatusBadgeClass[status],
         className,
       )}
     >
