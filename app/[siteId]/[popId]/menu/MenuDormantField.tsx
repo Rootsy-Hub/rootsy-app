@@ -6,6 +6,8 @@ import {
   menuHoloIconShellForSection,
   menuHoloLabelDockPlacedClass,
   menuHoloPlanetLifeClass,
+  menuHoloRealmGoldRimClass,
+  menuHoloRealmGoldRimSoftClass,
   menuHoloSectionForSkeletonIndex,
   menuPlanetLifeStyle,
 } from "@/lib/menu/menuHoloStyles"
@@ -26,6 +28,8 @@ export function MenuGridItemDormant({ index }: { index: number }) {
           className={cn(
             "flex size-[72px] items-center justify-center rounded-[20px]",
             menuHoloIconShellForSection(sectionKey, "placed"),
+            menuHoloRealmGoldRimClass,
+            menuHoloRealmGoldRimSoftClass,
           )}
         >
           <MenuIconChrome sectionKey={sectionKey} alive />

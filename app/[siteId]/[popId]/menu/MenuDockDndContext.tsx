@@ -26,6 +26,8 @@ import {
 import {
   menuHoloGlyphClass,
   menuHoloIconShellForSection,
+  menuHoloRealmGoldRimClass,
+  menuHoloRealmGoldRimSoftClass,
 } from "@/lib/menu/menuHoloStyles"
 import {
   menuNatureShellClass,
@@ -345,6 +347,8 @@ export function DockIconVisual({
         className={cn(
           "relative flex items-center justify-center",
           menuHoloIconShellForSection(sectionKey, variant),
+          variant !== "muted" && menuHoloRealmGoldRimClass,
+          variant === "dock" && menuHoloRealmGoldRimSoftClass,
           dim,
           radius,
           className,

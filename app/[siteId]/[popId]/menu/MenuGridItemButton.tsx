@@ -15,6 +15,8 @@ import {
   menuHoloLabelClass,
   menuHoloLabelDockPlacedClass,
   menuHoloPlanetLifeClass,
+  menuHoloRealmGoldRimClass,
+  menuHoloRealmGoldRimSoftClass,
   menuHoloTileMotionClass,
   menuPlanetLifeStyle,
 } from "@/lib/menu/menuHoloStyles"
@@ -87,6 +89,8 @@ export function MenuGridItemButton({
           className={cn(
             "flex size-[72px] items-center justify-center rounded-[20px]",
             menuHoloIconShellForSection(sectionKey, shellVariant),
+            !isDragGhost && menuHoloRealmGoldRimClass,
+            showDockPlacedStyle && menuHoloRealmGoldRimSoftClass,
             !showDockPlacedStyle &&
               !isDragGhost &&
               cn(menuHoloFloatLiftClass, menuHoloIconHoverForSection(sectionKey)),
