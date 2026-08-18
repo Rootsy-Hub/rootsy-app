@@ -18,11 +18,13 @@ type Props = {
   /** Ancho del bloque del formulario. Por defecto el del login. */
   cardWidthClassName?: string
   contentAlign?: "center" | "start"
-  /** Marketing del valle (columna izquierda). */
-  asideWorldLine?: string
+  /** Marketing del producto (columna izquierda). */
+  asideKicker?: string
   asideTitle?: string
   asideLead?: string
-  /** @deprecated Usar asideWorldLine */
+  /** @deprecated Usar asideKicker */
+  asideWorldLine?: string
+  /** @deprecated Usar asideKicker */
   asideEyebrow?: string
 }
 
@@ -30,9 +32,10 @@ export function AuthMarketingShell({
   children,
   cardWidthClassName,
   contentAlign = "center",
-  asideWorldLine,
+  asideKicker,
   asideTitle,
   asideLead,
+  asideWorldLine,
   asideEyebrow,
 }: Props) {
   return (
@@ -48,7 +51,7 @@ export function AuthMarketingShell({
       <div className="relative z-10 flex min-h-dvh min-w-0 flex-col overflow-x-hidden lg:flex-row">
         <div className="relative hidden min-h-dvh min-w-0 flex-1 lg:block">
           <AuthMarketingWorldAside
-            worldLine={asideWorldLine ?? asideEyebrow}
+            kicker={asideKicker ?? asideWorldLine ?? asideEyebrow}
             title={asideTitle}
             lead={asideLead}
           />

@@ -16,6 +16,7 @@ import {
   MenuDormantGrid,
 } from "@/app/[siteId]/[popId]/menu/MenuDormantField"
 import { MenuDormantDock } from "@/app/[siteId]/[popId]/menu/MenuDormantDock"
+import { MenuOuterEntity } from "@/app/[siteId]/[popId]/menu/MenuOuterEntity"
 import "@/app/[siteId]/[popId]/menu/menuContentReveal.css"
 import {
   menuAmbientTopGlowClass,
@@ -622,8 +623,19 @@ function MenuPage() {
         </div>
       </MenuHeaderEntity>
 
-      <div className="relative z-10 flex min-h-0 flex-1 flex-col pb-[5.75rem]">
-        <div className="flex min-h-0 flex-1 flex-col items-center justify-center pt-2">
+      <div className="relative z-10 flex min-h-0 flex-1 flex-col">
+        <div className="flex min-h-0 flex-1 flex-col items-center justify-center gap-14 sm:gap-16">
+          <MenuSectionNavigator
+            className={cn(
+              menuReady ? "menu-content-emerge" : "pointer-events-none opacity-95",
+            )}
+            sections={
+              menuReady ? sectionNavItems : [...MENU_DORMANT_SECTIONS]
+            }
+            selectedIndex={menuReady ? selectedIndex : 0}
+            onSelect={menuReady ? scrollTo : () => {}}
+          />
+
           {menuReady ? (
             <div className="menu-content-emerge w-full overflow-hidden" ref={emblaRef}>
               <EmblaDockEditSync emblaApi={emblaApi} />
@@ -633,7 +645,7 @@ function MenuPage() {
 
                   return (
                     <div key={sectionKey} className="flex-[0_0_100%] min-w-0 px-8">
-                      <div className="grid grid-cols-6 gap-x-0 gap-y-8 max-w-4xl mx-auto min-h-[280px] py-6 px-6 select-none">
+                      <div className="grid grid-cols-6 gap-x-0 gap-y-8 max-w-4xl mx-auto min-h-[280px] px-6 pb-6 pt-2 select-none">
                         {items.map((item) => {
                           const target = routeForMenuLink(siteId, popId, item.link)
                           const styleSectionKey =
@@ -669,28 +681,18 @@ function MenuPage() {
             <MenuDormantGrid />
           )}
         </div>
-
-        <div
-          className={cn(
-            "flex shrink-0 justify-center px-4 pt-5 pb-2",
-            menuReady ? "menu-content-emerge" : "pointer-events-none opacity-95",
-          )}
-        >
-          <MenuSectionNavigator
-            sections={
-              menuReady ? sectionNavItems : [...MENU_DORMANT_SECTIONS]
-            }
-            selectedIndex={menuReady ? selectedIndex : 0}
-            onSelect={menuReady ? scrollTo : () => {}}
-          />
-        </div>
       </div>
 
-      {menuReady ? (
-        <MenuDock siteId={siteId} popId={popId} />
-      ) : (
-        <MenuDormantDock />
-      )}
+      <MenuOuterEntity
+        variant="foot"
+        className={menuReady ? "menu-content-emerge" : "pointer-events-none opacity-95"}
+      >
+        {menuReady ? (
+          <MenuDock siteId={siteId} popId={popId} />
+        ) : (
+          <MenuDormantDock />
+        )}
+      </MenuOuterEntity>
 
       <RootsIconButton
         type="button"
@@ -698,7 +700,7 @@ function MenuPage() {
         surface="dark"
         size="large"
         label="Ayuda"
-        className="absolute bottom-4 right-4 z-20 rounded-full"
+        className="absolute bottom-[5.25rem] right-4 z-30 rounded-full"
       >
         <HelpCircle aria-hidden />
       </RootsIconButton>

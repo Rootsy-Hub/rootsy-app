@@ -5,10 +5,11 @@ import {
   MenuDormantGrid,
 } from "@/app/[siteId]/[popId]/menu/MenuDormantField"
 import { MenuDormantDock } from "@/app/[siteId]/[popId]/menu/MenuDormantDock"
+import { MenuHeaderEntity } from "@/app/[siteId]/[popId]/menu/MenuHeaderEntity"
+import { MenuOuterEntity } from "@/app/[siteId]/[popId]/menu/MenuOuterEntity"
 import {
   MenuSectionNavigator,
 } from "@/app/[siteId]/[popId]/menu/MenuSectionNavigator"
-import { MenuHeaderEntity } from "@/app/[siteId]/[popId]/menu/MenuHeaderEntity"
 import { menuHeaderRowClass } from "@/app/[siteId]/[popId]/menu/menuFloatingPillStyles"
 import {
   menuAmbientTopGlowClass,
@@ -101,21 +102,23 @@ export function MenuPageSkeleton() {
         </div>
       </MenuHeaderEntity>
 
-      <div className="relative z-10 flex min-h-0 flex-1 flex-col pb-[5.75rem]">
-        <div className="flex min-h-0 flex-1 flex-col items-center justify-center pt-2">
-          <MenuDormantGrid />
-        </div>
-
-        <div className="pointer-events-none flex shrink-0 justify-center px-4 pt-5 pb-2 opacity-95">
+      <div className="relative z-10 flex min-h-0 flex-1 flex-col">
+        <div className="flex min-h-0 flex-1 flex-col items-center justify-center gap-14 sm:gap-16">
           <MenuSectionNavigator
+            className="pointer-events-none opacity-95"
             sections={[...MENU_DORMANT_SECTIONS]}
             selectedIndex={0}
             onSelect={() => {}}
           />
+          <div className="w-full">
+            <MenuDormantGrid />
+          </div>
         </div>
       </div>
 
-      <MenuDormantDock />
+      <MenuOuterEntity variant="foot" className="pointer-events-none opacity-95">
+        <MenuDormantDock />
+      </MenuOuterEntity>
 
       <RootsIconButton
         type="button"
@@ -123,7 +126,7 @@ export function MenuPageSkeleton() {
         surface="dark"
         size="large"
         label="Ayuda"
-        className="absolute bottom-4 right-4 z-20 rounded-full opacity-70"
+        className="absolute bottom-[5.25rem] right-4 z-30 rounded-full opacity-70"
       >
         <HelpCircle aria-hidden />
       </RootsIconButton>

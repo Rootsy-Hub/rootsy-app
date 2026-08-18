@@ -37,3 +37,8 @@
   -webkit-backdrop-filter: blur(8px) saturate(102%);
   backdrop-filter: blur(8px) saturate(102%);
 }
+
+.dark .menu-nature-shell.rootsy-nature-palette .menu-outer-entity-body {
+  -webkit-backdrop-filter: blur(8px) saturate(102%);
+  backdrop-filter: blur(8px) saturate(102%);
+}

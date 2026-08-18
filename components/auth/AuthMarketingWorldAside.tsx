@@ -1,29 +1,34 @@
 import Image from "next/image"
 import Link from "next/link"
 import {
+  authMarketingKickerClass,
+  authMarketingLeadClass,
+  authMarketingPitchClass,
+  authMarketingTitleClass,
   authWorldAsideClass,
-  authWorldAsideLeadClass,
-  authWorldAsideNoteClass,
-  authWorldAsideNoteContentClass,
-  authWorldAsideTitleClass,
-  authWorldAsideWorldLineClass,
 } from "@/components/auth/authWorldAsideStyles"
 import "@/components/auth/authWorldAside.css"
 import { AUTH_SHELL_COPY } from "@/lib/auth/rootsyAuthUiCopy"
 import { cn } from "@/lib/utils"
 
 type Props = {
-  worldLine?: string
+  /** Kicker de producto — qué es Rootsy, sin disfraz. */
+  kicker?: string
   title?: string
   lead?: string
+  /** @deprecated Usar kicker */
+  worldLine?: string
 }
 
-/** Nota de información del planeta — panel holográfico, no overlay de marketing. */
+/** Marketing sutil — copy de producto, distinto del portal de login. */
 export function AuthMarketingWorldAside({
-  worldLine = AUTH_SHELL_COPY.asideWorldLine,
+  kicker,
   title = AUTH_SHELL_COPY.asideTitle,
   lead = AUTH_SHELL_COPY.asideLead,
+  worldLine,
 }: Props) {
+  const panelKicker = kicker ?? worldLine ?? AUTH_SHELL_COPY.asideKicker
+
   return (
     <aside className={authWorldAsideClass}>
       <Link
@@ -41,12 +46,10 @@ export function AuthMarketingWorldAside({
         />
       </Link>
 
-      <div className={authWorldAsideNoteClass}>
-        <div className={authWorldAsideNoteContentClass}>
-          <p className={authWorldAsideWorldLineClass}>{worldLine}</p>
-          <h2 className={cn("mt-2", authWorldAsideTitleClass)}>{title}</h2>
-          <p className={cn("mt-3", authWorldAsideLeadClass)}>{lead}</p>
-        </div>
+      <div className={authMarketingPitchClass}>
+        <p className={authMarketingKickerClass}>{panelKicker}</p>
+        <h2 className={cn("mt-2", authMarketingTitleClass)}>{title}</h2>
+        <p className={cn("mt-3", authMarketingLeadClass)}>{lead}</p>
       </div>
     </aside>
   )

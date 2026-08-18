@@ -1,0 +1,225 @@
+/** Universo exterior — variantes cinturón (arriba) y base (abajo). */
+.menu-outer-entity-body {
+  transform-origin: 50% 50%;
+}
+
+.menu-outer-entity--belt .menu-outer-entity-body {
+  border-bottom: 1px solid rgba(228, 242, 248, 0.08);
+}
+
+.menu-outer-entity--foot .menu-outer-entity-body {
+  border-top: 1px solid rgba(228, 242, 248, 0.08);
+}
+
+.menu-outer-entity-core {
+  position: absolute;
+  inset: 0;
+  opacity: 0.45;
+  background: radial-gradient(
+    ellipse 120% 80% at 50% 50%,
+    rgba(255, 255, 255, 0.035) 0%,
+    transparent 70%
+  );
+  animation: menu-outer-core-breathe 12s cubic-bezier(0.45, 0.05, 0.55, 0.95) infinite;
+}
+
+.menu-outer-entity--foot .menu-outer-entity-core {
+  background: radial-gradient(
+    ellipse 120% 80% at 50% 100%,
+    rgba(255, 255, 255, 0.04) 0%,
+    transparent 68%
+  );
+  transform-origin: 50% 100%;
+}
+
+@keyframes menu-outer-core-breathe {
+  0%,
+  100% {
+    opacity: 0.4;
+  }
+  50% {
+    opacity: 0.52;
+  }
+}
+
+.menu-outer-entity-sky {
+  position: absolute;
+  inset: 0;
+  opacity: 0.28;
+  background: radial-gradient(
+    ellipse 80% 50% at 50% -20%,
+    rgba(255, 255, 255, 0.04) 0%,
+    transparent 58%
+  );
+}
+
+.menu-outer-entity--foot .menu-outer-entity-sky {
+  background: radial-gradient(
+    ellipse 80% 50% at 50% 120%,
+    rgba(255, 255, 255, 0.035) 0%,
+    transparent 58%
+  );
+}
+
+.menu-outer-entity-weight {
+  position: absolute;
+  inset: 0;
+}
+
+.menu-outer-entity--belt .menu-outer-entity-weight {
+  background: linear-gradient(to bottom, transparent 35%, rgba(0, 0, 0, 0.22) 100%);
+}
+
+.menu-outer-entity--foot .menu-outer-entity-weight {
+  background: linear-gradient(to top, transparent 35%, rgba(0, 0, 0, 0.24) 100%);
+}
+
+.menu-outer-entity-edge {
+  position: absolute;
+  inset: 0;
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.035),
+    inset 0 0 36px rgba(0, 0, 0, 0.18);
+}
+
+.menu-outer-entity-horizon {
+  position: absolute;
+  inset-inline: 0;
+  z-index: 2;
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(228, 242, 248, 0.18) 24%,
+    rgba(255, 255, 255, 0.36) 50%,
+    rgba(228, 242, 248, 0.18) 76%,
+    transparent 100%
+  );
+  opacity: 0.7;
+}
+
+.menu-outer-entity--belt .menu-outer-entity-horizon {
+  bottom: 0;
+}
+
+.menu-outer-entity--foot .menu-outer-entity-horizon {
+  top: 0;
+}
+
+.menu-outer-entity-stars {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.42;
+  background-image:
+    radial-gradient(circle at 8% 42%, rgba(255, 255, 255, 0.65) 0, rgba(255, 255, 255, 0.65) 0.5px, transparent 1.2px),
+    radial-gradient(circle at 22% 58%, rgba(255, 255, 255, 0.4) 0, rgba(255, 255, 255, 0.4) 0.5px, transparent 1.2px),
+    radial-gradient(circle at 38% 34%, rgba(255, 255, 255, 0.5) 0, rgba(255, 255, 255, 0.5) 0.5px, transparent 1.2px),
+    radial-gradient(circle at 54% 62%, rgba(255, 255, 255, 0.44) 0, rgba(255, 255, 255, 0.44) 0.5px, transparent 1.2px),
+    radial-gradient(circle at 68% 38%, rgba(255, 255, 255, 0.48) 0, rgba(255, 255, 255, 0.48) 0.5px, transparent 1.2px),
+    radial-gradient(circle at 84% 52%, rgba(255, 255, 255, 0.42) 0, rgba(255, 255, 255, 0.42) 0.5px, transparent 1.2px),
+    radial-gradient(circle at 94% 44%, rgba(255, 255, 255, 0.52) 0, rgba(255, 255, 255, 0.52) 0.5px, transparent 1.2px);
+}
+
+.menu-outer-entity-stars--bright {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.menu-outer-entity-star {
+  position: absolute;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.9);
+  box-shadow:
+    0 0 4px rgba(255, 255, 255, 0.75),
+    0 0 10px rgba(255, 255, 255, 0.35);
+  animation: menu-outer-star-pulse 6s cubic-bezier(0.45, 0.05, 0.55, 0.95) infinite;
+}
+
+.menu-outer-entity-star--sm {
+  width: 1px;
+  height: 1px;
+}
+
+.menu-outer-entity-star--md {
+  width: 1.5px;
+  height: 1.5px;
+}
+
+.menu-outer-entity-star:nth-child(1) {
+  left: 14%;
+  top: 38%;
+  animation-delay: -1.2s;
+}
+
+.menu-outer-entity-star:nth-child(2) {
+  left: 48%;
+  top: 28%;
+  animation-delay: -2.8s;
+}
+
+.menu-outer-entity-star:nth-child(3) {
+  left: 78%;
+  top: 54%;
+  animation-delay: -0.6s;
+  animation-duration: 5.4s;
+}
+
+.menu-outer-entity-star:nth-child(4) {
+  left: 91%;
+  top: 36%;
+  animation-delay: -3.4s;
+  animation-duration: 7s;
+}
+
+@keyframes menu-outer-star-pulse {
+  0%,
+  100% {
+    opacity: 0.5;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.3);
+  }
+}
+
+/** Puente hacia el planeta — cinturón cede al mundo de abajo. */
+.menu-outer-entity-bridge--down {
+  position: absolute;
+  inset-inline: 0;
+  top: 100%;
+  z-index: 1;
+  height: 1.5rem;
+  pointer-events: none;
+  background: linear-gradient(
+    to bottom,
+    rgba(1, 3, 6, 0.65) 0%,
+    rgba(2, 5, 8, 0.28) 45%,
+    transparent 100%
+  );
+}
+
+/** Puente desde el planeta — la base recibe el mundo de arriba. */
+.menu-outer-entity-bridge--up {
+  position: absolute;
+  inset-inline: 0;
+  bottom: 100%;
+  z-index: 1;
+  height: 1.5rem;
+  pointer-events: none;
+  background: linear-gradient(
+    to top,
+    rgba(1, 3, 6, 0.65) 0%,
+    rgba(2, 5, 8, 0.28) 45%,
+    transparent 100%
+  );
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .menu-outer-entity-core,
+  .menu-outer-entity-star {
+    animation: none !important;
+  }
+}

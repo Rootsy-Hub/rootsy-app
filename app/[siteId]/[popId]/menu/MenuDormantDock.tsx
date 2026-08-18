@@ -10,7 +10,6 @@ import {
   DOCK_TRACK_INSET_Y_PX,
   DockIconVisual,
 } from "@/app/[siteId]/[popId]/menu/MenuDockDndContext"
-import { menuFloatingPillShellClass } from "@/app/[siteId]/[popId]/menu/menuFloatingPillStyles"
 import { menuRealmDividerClass } from "@/lib/menu/menuHoloStyles"
 import {
   DEFAULT_MENU_DOCK_IDS,
@@ -28,9 +27,9 @@ export function MenuDormantDock() {
   const iconInset = (DOCK_SLOT_SHIFT_PX - DOCK_ICON_SIZE_PX) / 2
 
   return (
-    <div className="absolute bottom-2 left-1/2 z-20 -translate-x-1/2" aria-hidden>
+    <div className="flex w-full justify-center" aria-hidden>
       <div
-        className={cn("flex items-end overflow-visible", menuFloatingPillShellClass)}
+        className="flex items-end overflow-visible"
         style={{
           paddingTop: DOCK_SHELL_PADDING_Y_PX,
           paddingBottom: DOCK_SHELL_PADDING_Y_PX,

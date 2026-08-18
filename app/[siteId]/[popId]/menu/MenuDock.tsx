@@ -20,7 +20,6 @@ import type { MenuCatalogItem, MenuDockItemId } from "@/lib/menuCatalog"
 import { usePopOptimisticNav } from "@/context/PopOptimisticNavContext"
 import { popScopedHref } from "@/lib/popRoutes"
 import { cn } from "@/lib/utils"
-import { menuFloatingPillShellClass } from "@/app/[siteId]/[popId]/menu/menuFloatingPillStyles"
 import { menuDockEditBadgeClass } from "@/app/[siteId]/[popId]/menu/menuNatureStyles"
 import { menuRealmDividerClass } from "@/lib/menu/menuHoloStyles"
 import { RootsIconButton } from "@/components/rootsy-button"
@@ -343,11 +342,10 @@ export function MenuDock({ siteId, popId }: Props) {
   )
 
   return (
-    <div className="pointer-events-none absolute bottom-2 left-1/2 z-30 -translate-x-1/2">
+    <div className="flex w-full justify-center">
       <div
         className={cn(
-          "pointer-events-auto flex items-end overflow-visible",
-          menuFloatingPillShellClass,
+          "flex items-end overflow-visible",
           editing && dragging &&
             "transition-[width,padding,gap] duration-300 ease-[cubic-bezier(0.32,0.72,0,1)]",
         )}

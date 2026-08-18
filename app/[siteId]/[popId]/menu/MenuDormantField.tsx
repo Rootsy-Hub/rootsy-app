@@ -48,7 +48,7 @@ const DORMANT_TILE_COUNT = 12
 export function MenuDormantGrid() {
   return (
     <div className="w-full px-8" aria-hidden>
-      <div className="mx-auto grid min-h-[280px] max-w-4xl grid-cols-6 gap-x-0 gap-y-8 px-6 py-6">
+      <div className="mx-auto grid min-h-[280px] max-w-4xl grid-cols-6 gap-x-0 gap-y-8 px-6 pb-6 pt-2">
         {Array.from({ length: DORMANT_TILE_COUNT }, (_, index) => (
           <MenuGridItemDormant key={index} index={index} />
         ))}

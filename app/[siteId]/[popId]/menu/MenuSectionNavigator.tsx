@@ -1,10 +1,14 @@
 "use client"
 
-import { menuFloatingPillShellClass } from "@/app/[siteId]/[popId]/menu/menuFloatingPillStyles"
 import {
-  menuRealmLightStaticClass,
-  menuSectionPlanetDotClass,
-} from "@/lib/menu/menuHoloStyles"
+  menuSectionRealmDividerClass,
+  menuSectionRealmIndicatorClass,
+  menuSectionRealmRailClass,
+  menuSectionRealmSelectedWellClass,
+  menuSectionRealmTabClass,
+  menuSectionRealmTabIdleClass,
+  menuSectionRealmTabSelectedClass,
+} from "@/app/[siteId]/[popId]/menu/menuSectionRealmStyles"
 import type { MenuSectionKey } from "@/lib/menuCatalog"
 import { cn } from "@/lib/utils"
 
@@ -17,56 +21,62 @@ type Props = {
   sections: MenuSectionNavItem[]
   selectedIndex: number
   onSelect: (index: number) => void
+  className?: string
 }
 
+/** Selector de reinado — rail segmentado, sobrio y preciso. */
 export function MenuSectionNavigator({
   sections,
   selectedIndex,
   onSelect,
+  className,
 }: Props) {
-  const currentTitle = sections[selectedIndex]?.title ?? ""
-
   return (
     <div
-      role="tablist"
-      aria-label="Secciones del menú"
       className={cn(
-        "inline-flex max-w-full items-center justify-between gap-2.5 px-3.5 py-1 sm:min-w-48",
-        menuFloatingPillShellClass,
+        "mx-auto flex w-full max-w-4xl shrink-0 justify-center px-6 pb-1 pt-0",
+        className,
       )}
     >
-      <span
-        className={cn(
-          "truncate text-sm font-normal leading-none tracking-[0.02em] antialiased",
-          menuRealmLightStaticClass,
-        )}
+      <div
+        role="tablist"
+        aria-label="Secciones del menú"
+        className={menuSectionRealmRailClass}
       >
-        {currentTitle}
-      </span>
-
-      <div className="flex shrink-0 items-center -space-x-1">
         {sections.map((section, index) => {
           const selected = selectedIndex === index
           const sectionKey = section.key as MenuSectionKey
+          const isLast = index === sections.length - 1
+
           return (
-            <button
-              key={section.key}
-              type="button"
-              role="tab"
-              aria-selected={selected}
-              aria-label={section.title}
-              onClick={() => onSelect(index)}
-              className={cn(
-                "flex size-7 items-center justify-center rounded-full transition-colors",
-                "hover:bg-white/[0.06] active:scale-95",
-                "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgba(255,255,255,0.22)]",
-              )}
-            >
-              <span
-                aria-hidden
-                className={menuSectionPlanetDotClass(sectionKey, selected)}
-              />
-            </button>
+            <div key={section.key} className="flex items-stretch">
+              <button
+                type="button"
+                role="tab"
+                aria-selected={selected}
+                aria-label={section.title}
+                onClick={() => onSelect(index)}
+                className={cn(
+                  menuSectionRealmTabClass,
+                  "border-0 bg-transparent",
+                  selected
+                    ? cn(
+                        menuSectionRealmTabSelectedClass,
+                        menuSectionRealmSelectedWellClass,
+                      )
+                    : menuSectionRealmTabIdleClass,
+                )}
+              >
+                {section.title}
+                {selected ? (
+                  <span
+                    aria-hidden
+                    className={menuSectionRealmIndicatorClass(sectionKey)}
+                  />
+                ) : null}
+              </button>
+              {!isLast ? <span aria-hidden className={menuSectionRealmDividerClass} /> : null}
+            </div>
           )
         })}
       </div>
