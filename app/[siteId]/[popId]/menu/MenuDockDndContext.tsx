@@ -15,6 +15,7 @@ import {
   MIN_MENU_DOCK_ITEMS,
   persistMenuDockIds,
   readCachedMenuDockIds,
+  readInitialMenuDockIds,
   resolveMenuDockIds,
   sanitizeMenuDockIds,
   writeCachedMenuDockIds,
@@ -377,13 +378,9 @@ export function MenuDockDndProvider({
   const [draggingItem, setDraggingItem] = useState<MenuDockDragItem | null>(null)
   const [activeDragKind, setActiveDragKind] = useState<DragKind | null>(null)
   const [dropPreviewIndex, setDropPreviewIndex] = useState<number | null>(null)
-  const [dockIds, setDockIds] = useState<MenuDockItemId[]>(() => {
-    const cached = readCachedMenuDockIds(popId)
-    if (cached?.length) {
-      return sanitizeMenuDockIds(cached, enabledModules)
-    }
-    return sanitizeMenuDockIds(DEFAULT_MENU_DOCK_IDS, enabledModules)
-  })
+  const [dockIds, setDockIds] = useState<MenuDockItemId[]>(() =>
+    readInitialMenuDockIds(popId),
+  )
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -395,6 +392,13 @@ export function MenuDockDndProvider({
   )
 
   useEffect(() => {
+    if (enabledModules.length === 0) return
+    setDockIds((current) => resolveMenuDockIds(popId, enabledModules, current))
+  }, [popId, enabledModules])
+
+  useEffect(() => {
+    if (enabledModules.length === 0) return
+
     let cancelled = false
 
     async function loadDockPreference() {

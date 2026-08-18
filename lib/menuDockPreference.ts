@@ -3,6 +3,7 @@ import {
   DEFAULT_MENU_DOCK_IDS,
   isMenuDockItemId,
   resolveMenuDockCatalogItems,
+  resolveMenuDockCatalogItemsDisplay,
   canUseMenuDockItemFromPopAccess,
   type MenuDockItemId,
 } from "@/lib/menuCatalog"
@@ -155,5 +156,20 @@ export function listResolvedMenuDockItems(
   dockIds?: readonly MenuDockItemId[],
 ) {
   const ids = dockIds ?? resolveMenuDockIds(popId, enabledModules)
+  if (enabledModules.length === 0) {
+    return resolveMenuDockCatalogItemsDisplay(ids)
+  }
   return resolveMenuDockCatalogItems(ids, enabledModules)
+}
+
+export function hasCachedMenuDockIds(popId: string): boolean {
+  return (readCachedMenuDockIds(popId)?.length ?? 0) > 0
+}
+
+export function readInitialMenuDockIds(popId: string): MenuDockItemId[] {
+  const cached = readCachedMenuDockIds(popId)
+  if (cached?.length) {
+    return cached.filter(isMenuDockItemId)
+  }
+  return [...DEFAULT_MENU_DOCK_IDS]
 }

@@ -256,6 +256,22 @@ export function resolveMenuDockCatalogItems(
   return out
 }
 
+/** Íconos del dock desde cache — sin filtrar permisos (solo hidratación visual). */
+export function resolveMenuDockCatalogItemsDisplay(
+  ids: readonly MenuDockItemId[],
+): MenuCatalogItem[] {
+  const out: MenuCatalogItem[] = []
+  const seen = new Set<MenuDockItemId>()
+  for (const id of ids) {
+    if (seen.has(id) || !isMenuDockItemId(id)) continue
+    const item = getMenuCatalogItem(id)
+    if (!item) continue
+    seen.add(id)
+    out.push(item)
+  }
+  return out
+}
+
 export function isMenuDockItemId(value: unknown): value is MenuDockItemId {
   return typeof value === "string" && catalogById.has(value as MenuDockItemId)
 }

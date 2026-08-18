@@ -374,7 +374,7 @@ function MenuPage() {
   return (
     <MenuDockDndProvider
       popId={popId}
-      enabledModules={contentPending ? [] : enabledModules}
+      enabledModules={enabledModules}
     >
     <div
       className={cn(menuNatureShellClass, "menu-firmament-settle fixed inset-0 flex flex-col overflow-hidden bg-background")}
@@ -682,7 +682,7 @@ function MenuPage() {
           menuReady && "menu-content-emerge",
         )}
       >
-        {menuReady ? (
+        {isMounted ? (
           <MenuDock siteId={siteId} popId={popId} />
         ) : (
           <MenuDormantDock />
@@ -694,8 +694,8 @@ function MenuPage() {
         sectionTitle={sectionNavItems[selectedIndex]?.title ?? "Operar"}
         siteId={siteId}
         popId={popId}
-        popAccess={contentPending ? null : popAccess}
-        disabled={!menuReady}
+        popAccess={popAccess}
+        disabled={!menuReady || !popAccess}
         className={menuReady ? "menu-content-emerge" : undefined}
       />
 

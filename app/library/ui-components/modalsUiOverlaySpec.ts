@@ -116,10 +116,10 @@ export function getModalUiOverlaySpecRows(kind: "modal" | "alert" = "modal"): Ov
     ...(kind === "modal"
       ? [
           {
-            role: "Body · hundido",
+            role: "Body · valle",
             token: MODAL_UI_PANEL_SURFACE_SPEC.bodySunkenToken,
             value: MODAL_UI_PANEL_SURFACE_SPEC.bodySunkenValue,
-            product: "bg bruma-50 · solo región body",
+            product: "bruma + savia · valle entre claros",
           } satisfies OverlaySurfaceSpecRow,
           {
             role: "Divisor header/footer",

@@ -15,10 +15,12 @@ import {
 } from "@/app/[siteId]/[popId]/menu/menuRootsyPresenceStyles"
 import type { PopAccessCache } from "@/app/home/homeUserDataTypes"
 import { usePopOptimisticNav } from "@/context/PopOptimisticNavContext"
-import { buildMenuRootsyContext } from "@/lib/menu/menuRootsyContext"
-import { buildMenuRootsyAdviceCacheKey } from "@/lib/menu/menuRootsyCacheKey"
+import {
+  readCachedMenuRootsyAdvice,
+  writeCachedMenuRootsyAdvice,
+} from "@/lib/menu/menuRootsyAdviceClientCache"
 import { buildMenuRootsyRuleAdvice } from "@/lib/menu/menuRootsySuggestions"
-import { isMetaGenericVoice } from "@/lib/menu/menuRootsyVoice"
+import { buildMenuRootsyContext } from "@/lib/menu/menuRootsyContext"
 import type { MenuRootsyAdvice, MenuRootsySuggestion } from "@/lib/menu/menuRootsyTypes"
 import type { MenuSectionKey } from "@/lib/menuCatalog"
 import { cn } from "@/lib/utils"
@@ -34,20 +36,6 @@ type Props = {
   popAccess: PopAccessCache | null | undefined
   disabled?: boolean
   className?: string
-}
-
-function adviceCacheKey(
-  popAccess: PopAccessCache,
-  siteId: string,
-): string {
-  return buildMenuRootsyAdviceCacheKey(
-    buildMenuRootsyContext({
-      popAccess,
-      siteId,
-      sectionKey: "operar",
-      sectionTitle: "Operar",
-    }),
-  )
 }
 
 function resolvePrimaryCta(advice: MenuRootsyAdvice): MenuRootsySuggestion | null {
@@ -70,7 +58,7 @@ export function MenuRootsyPresence({
   const [aiPending, setAiPending] = useState(false)
   const hostRef = useRef<HTMLDivElement>(null)
   const panelId = useId()
-  const cacheRef = useRef<Map<string, MenuRootsyAdvice>>(new Map())
+  const prefetchStartedRef = useRef(false)
 
   const rootsyContext = useMemo(() => {
     if (!popAccess || !siteId || !popId) return null
@@ -88,7 +76,7 @@ export function MenuRootsyPresence({
   }, [rootsyContext])
 
   const displayAdvice = advice ?? instantAdvice
-  const loadingAdvice = dataPending && !advice
+  const loadingAdvice = open && dataPending && !advice
   const primaryCta = displayAdvice ? resolvePrimaryCta(displayAdvice) : null
   const voiceAlreadyMentionsCta =
     primaryCta != null &&
@@ -139,18 +127,25 @@ export function MenuRootsyPresence({
   }, [sectionKey])
 
   useEffect(() => {
-    if (!open || disabled || !popAccess || !siteId || !popId) return
-
-    const cacheKey = adviceCacheKey(popAccess, siteId)
-    const cached = cacheRef.current.get(cacheKey)
-    if (cached && !isMetaGenericVoice(cached.lead)) {
-      setAdvice(cached)
+    if (disabled || !popAccess || !siteId || !popId) {
+      prefetchStartedRef.current = false
       return
     }
 
-    setAdvice(null)
+    const cached = readCachedMenuRootsyAdvice(popId, popAccess)
+    if (cached) {
+      setAdvice(cached)
+    }
+
+    if (prefetchStartedRef.current) return
+    prefetchStartedRef.current = true
+
     let cancelled = false
-    setDataPending(true)
+    const hadCachedAdvice = cached != null
+
+    if (!hadCachedAdvice) {
+      setDataPending(true)
+    }
     setAiPending(false)
 
     void fetchMenuRootsyAdvice({
@@ -162,12 +157,15 @@ export function MenuRootsyPresence({
     }).then((result) => {
       if (cancelled) return
       setDataPending(false)
+
       if (!result.success) {
-        setAdvice(instantAdvice)
+        if (!hadCachedAdvice) {
+          setAdvice(instantAdvice)
+        }
         return
       }
 
-      cacheRef.current.set(cacheKey, result.advice)
+      writeCachedMenuRootsyAdvice(popId, popAccess, result.advice)
       setAdvice(result.advice)
 
       setAiPending(true)
@@ -181,7 +179,7 @@ export function MenuRootsyPresence({
         if (cancelled) return
         setAiPending(false)
         if (!aiResult.success) return
-        cacheRef.current.set(cacheKey, aiResult.advice)
+        writeCachedMenuRootsyAdvice(popId, popAccess, aiResult.advice)
         setAdvice(aiResult.advice)
       })
     })
@@ -192,7 +190,6 @@ export function MenuRootsyPresence({
       setAiPending(false)
     }
   }, [
-    open,
     disabled,
     popAccess,
     siteId,

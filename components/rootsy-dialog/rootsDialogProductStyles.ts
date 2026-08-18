@@ -96,22 +96,22 @@ export const rootsDialogDescriptionClass = cn(
   "font-normal text-[var(--rootsy-bruma-500)]",
 )
 
-/** elevation.surface.sunken · panel-padding space.400. */
+/** Valle — bruma viva entre dos claros. */
 export const rootsDialogBodyClass = cn(
-  "min-h-0 flex-1 overflow-y-auto overscroll-contain bg-[var(--elevation-surface-sunken)]",
+  "roots-dialog-clearing-body min-h-0 flex-1 overflow-y-auto overscroll-contain",
   rootsDialogPanelPaddingXClass,
   "py-[var(--rootsy-space-200)]",
 )
 
-/** Body compacto — overlay, sin sunken. */
+/** Body compacto — mismo claro. */
 export const rootsDialogBodyCompactClass = cn(
-  "flex-none overflow-y-auto overscroll-contain bg-white",
+  "roots-dialog-clearing-body flex-none overflow-y-auto overscroll-contain",
   rootsDialogPanelPaddingXClass,
   "py-[var(--rootsy-space-200)]",
 )
 
 export const rootsDialogLoadingBodyClass = cn(
-  "flex min-h-48 flex-col items-center justify-center bg-[var(--elevation-surface-sunken)]",
+  "roots-dialog-clearing-body flex min-h-48 flex-col items-center justify-center",
   rootsDialogPanelPaddingXClass,
   "py-[var(--rootsy-space-200)]",
 )

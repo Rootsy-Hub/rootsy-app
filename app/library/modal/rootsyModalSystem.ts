@@ -53,16 +53,16 @@ export type ModalBodyToneId = "default" | "compact" | "loading"
 export type AlertDialogVariantId = "confirm" | "destructive" | "typed-confirmation"
 
 export const ROOTSY_MODAL_MANIFESTO =
-  "Un diálogo es un bloque vivo opaco — header y footer alba, body valle. Sin vidrio ni borde: lo define elevation.shadow.overlay · radius.xxlarge. Tipografía heading.medium; danger funcional solo en botones."
+  "Un diálogo es un bloque vivo opaco — header y footer claros, body bruma. Sin vidrio ni borde: lo define elevation.shadow.overlay · radius.xxlarge. Tipografía heading.medium; danger funcional solo en botones."
 
 export const ROOTSY_MODAL_PRINCIPLES = [
   {
-    title: "Chrome alba",
-    detail: "Header y footer — bruma opaca, mismo tono que la toolbar. Sin transparencia.",
+    title: "Chrome claro",
+    detail: "Header y footer blancos — el título y las acciones se leen en el claro.",
   },
   {
-    title: "Body claro",
-    detail: "elevation.surface.sunken — el formulario vive en el valle.",
+    title: "Body bruma",
+    detail: "Valle con bruma y savia — el formulario vive en el clima, entre dos claros.",
   },
   {
     title: "Scrim suave",
@@ -82,8 +82,8 @@ export const ROOTSY_MODAL_COLOR_TOKENS = [
   },
   {
     role: "Body · fondo",
-    token: "elevation.surface.sunken",
-    hex: elevationHex("elevation.surface.sunken"),
+    token: "elevation.surface.overlay",
+    hex: elevationHex("elevation.surface.overlay"),
   },
   {
     role: "Scrim",
@@ -301,7 +301,7 @@ export const ROOTSY_MODAL_SPECS = {
     radiusPx: radiusPx("xxlarge"),
     shadowToken: "elevation.shadow.overlay",
     surfaceToken: "elevation.surface.overlay",
-    bodySurfaceToken: "elevation.surface.sunken",
+    bodySurfaceToken: "elevation.surface.overlay",
     titleToken: "font.heading.medium",
   },
   alert: {
