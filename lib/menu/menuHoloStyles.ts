@@ -15,7 +15,7 @@ const menuHoloEase = "duration-500 ease-[cubic-bezier(0.33,1,0.68,1)]"
  * Configurar  → dusk / ocaso     (violeta crepuscular)
  */
 const menuHoloGlassBase = cn(
-  "relative isolate overflow-hidden border backdrop-blur-[6px] backdrop-saturate-[1.15]",
+  "relative isolate overflow-hidden border-[0.5px] backdrop-blur-[6px] backdrop-saturate-[1.15]",
 )
 
 const menuHoloPlanetShellDepthClass =
@@ -65,7 +65,7 @@ const menuHoloShellBySection: Record<
     default: cn(
       menuHoloGlassBase,
       "backdrop-saturate-[1.36]",
-      "border-[rgba(111,216,156,0.36)]",
+      "border-[rgba(111,216,156,0.28)]",
       "bg-[linear-gradient(168deg,rgba(111,216,156,0.22)_0%,rgba(36,173,106,0.16)_46%,rgba(10,64,48,0.24)_100%)]",
       "shadow-[0_1px_0_rgba(255,255,255,0.14)_inset,0_1px_3px_rgba(0,0,0,0.22),0_6px_16px_rgba(0,0,0,0.16),0_10px_28px_rgba(14,87,57,0.22),0_0_20px_rgba(36,173,106,0.14),0_0_36px_rgba(36,173,106,0.07)]",
       menuHoloPlanetShellDepthClass,
@@ -107,7 +107,7 @@ const menuHoloShellBySection: Record<
     default: cn(
       menuHoloGlassBase,
       "backdrop-saturate-[1.34]",
-      "border-[rgba(125,211,252,0.36)]",
+      "border-[rgba(125,211,252,0.28)]",
       "bg-[linear-gradient(168deg,rgba(186,230,253,0.22)_0%,rgba(8,145,178,0.16)_46%,rgba(21,94,117,0.24)_100%)]",
       "shadow-[0_1px_0_rgba(255,255,255,0.14)_inset,0_1px_3px_rgba(0,0,0,0.22),0_6px_16px_rgba(0,0,0,0.16),0_10px_28px_rgba(14,78,99,0.22),0_0_20px_rgba(8,145,178,0.14),0_0_36px_rgba(8,145,178,0.07)]",
       menuHoloPlanetShellDepthClass,
@@ -149,7 +149,7 @@ const menuHoloShellBySection: Record<
     default: cn(
       menuHoloGlassBase,
       "backdrop-saturate-[1.34]",
-      "border-[rgba(167,139,250,0.36)]",
+      "border-[rgba(167,139,250,0.28)]",
       "bg-[linear-gradient(168deg,rgba(196,181,253,0.22)_0%,rgba(124,58,237,0.16)_46%,rgba(52,28,100,0.24)_100%)]",
       "shadow-[0_1px_0_rgba(255,255,255,0.14)_inset,0_1px_3px_rgba(0,0,0,0.22),0_6px_16px_rgba(0,0,0,0.16),0_10px_28px_rgba(76,29,149,0.22),0_0_20px_rgba(124,58,237,0.14),0_0_36px_rgba(124,58,237,0.07)]",
       menuHoloPlanetShellDepthClass,
@@ -205,15 +205,15 @@ export function menuHoloIconShellForVariant(
 
 const menuHoloHoverBySection: Record<MenuSectionKey, string> = {
   operar: cn(
-    "group-hover:border-[rgba(111,216,156,0.42)]",
+    "group-hover:border-[rgba(111,216,156,0.36)]",
     "group-hover:shadow-[0_1px_0_rgba(255,255,255,0.16)_inset,0_2px_5px_rgba(0,0,0,0.26),0_8px_20px_rgba(0,0,0,0.18),0_12px_32px_rgba(14,87,57,0.26),0_0_24px_rgba(36,173,106,0.18),0_0_40px_rgba(36,173,106,0.09),inset_0_1px_0_rgba(255,255,255,0.4),inset_0_-14px_22px_rgba(0,0,0,0.08)]",
   ),
   administrar: cn(
-    "group-hover:border-[rgba(125,211,252,0.42)]",
+    "group-hover:border-[rgba(125,211,252,0.36)]",
     "group-hover:shadow-[0_1px_0_rgba(255,255,255,0.16)_inset,0_2px_5px_rgba(0,0,0,0.26),0_8px_20px_rgba(0,0,0,0.18),0_12px_32px_rgba(14,78,99,0.26),0_0_24px_rgba(8,145,178,0.18),0_0_40px_rgba(8,145,178,0.09),inset_0_1px_0_rgba(255,255,255,0.4),inset_0_-14px_22px_rgba(0,0,0,0.08)]",
   ),
   configurar: cn(
-    "group-hover:border-[rgba(167,139,250,0.42)]",
+    "group-hover:border-[rgba(167,139,250,0.36)]",
     "group-hover:shadow-[0_1px_0_rgba(255,255,255,0.16)_inset,0_2px_5px_rgba(0,0,0,0.26),0_8px_20px_rgba(0,0,0,0.18),0_12px_32px_rgba(76,29,149,0.26),0_0_24px_rgba(124,58,237,0.18),0_0_40px_rgba(124,58,237,0.09),inset_0_1px_0_rgba(255,255,255,0.4),inset_0_-14px_22px_rgba(0,0,0,0.08)]",
   ),
 }
