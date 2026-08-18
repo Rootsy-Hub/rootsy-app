@@ -128,7 +128,6 @@ function MemberPopsTable({ pops }: { pops: BackofficeUserMembershipPop[] }) {
         <TableRow>
           <TableHead>POP</TableHead>
           <TableHead>Rol</TableHead>
-          <TableHead>Membresía</TableHead>
           <TableHead>Estado POP</TableHead>
         </TableRow>
       </TableHeader>
@@ -139,13 +138,6 @@ function MemberPopsTable({ pops }: { pops: BackofficeUserMembershipPop[] }) {
               <PopNameCell pop={pop} />
             </TableCell>
             <TableCell>{pop.roleDisplayName || pop.roleName || "—"}</TableCell>
-            <TableCell>
-              <BackofficeStatusBadge
-                active={pop.membershipActive}
-                activeLabel="Activa"
-                inactiveLabel="Inactiva"
-              />
-            </TableCell>
             <TableCell>
               <BackofficeStatusBadge active={pop.isActive} />
             </TableCell>

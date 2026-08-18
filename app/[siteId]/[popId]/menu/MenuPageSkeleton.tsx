@@ -17,7 +17,6 @@ import {
   menuHeaderRowClass,
 } from "@/app/[siteId]/[popId]/menu/menuFloatingPillStyles"
 import {
-  menuHoloFloatShadowClass,
   menuHoloTileSkeletonIconClass,
   menuHoloTileSkeletonLabelClass,
 } from "@/lib/menu/menuHoloStyles"
@@ -46,7 +45,6 @@ function MenuIconTileSkeleton({ index }: { index: number }) {
       style={{ animationDelay: delay }}
     >
       <div className="relative flex flex-col items-center">
-        <div aria-hidden className={menuHoloFloatShadowClass} />
         <div
           aria-hidden
           className={cn(menuHoloTileSkeletonIconClass, "relative z-[1]")}

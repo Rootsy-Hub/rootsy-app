@@ -17,6 +17,7 @@ import {
   type HrPermissionCatalogRow,
 } from "@/lib/hrPermissionCatalog"
 import { createClient } from "@/utils/supabase/server"
+import { createServiceRoleClient } from "@/utils/supabase/service-role"
 
 export type PopRoleRow = {
   id: string
@@ -37,6 +38,7 @@ export type MemberRow = {
   imageUrl: string | null
   invitedAt: string | null
   isOwner: boolean
+  isActive: boolean
 }
 
 export type PendingInviteRow = {
@@ -170,11 +172,11 @@ export async function getPopHrDashboard(popId: string): Promise<
         user_id,
         role_id,
         invited_at,
+        is_active,
         roles:role_id ( name, display_name )
       `,
       )
       .eq("pop_id", popId)
-      .eq("is_active", true)
 
     if (uprErr) {
       return { success: false, error: uprErr.message }
@@ -239,6 +241,7 @@ export async function getPopHrDashboard(popId: string): Promise<
         imageUrl: prof.image_url,
         invitedAt: row.invited_at ?? null,
         isOwner: ownerUserId ? sameUserId(row.user_id, ownerUserId) : false,
+        isActive: row.is_active !== false,
       }
     })
 
@@ -253,6 +256,7 @@ export async function getPopHrDashboard(popId: string): Promise<
         imageUrl: ownerProfile.image_url,
         invitedAt: null,
         isOwner: true,
+        isActive: true,
       })
     }
 
@@ -504,6 +508,39 @@ export async function deactivatePopMember(
     .update({ is_active: false })
     .eq("pop_id", popId)
     .eq("user_id", memberUserId)
+
+  if (error) return { success: false, error: error.message }
+  return { success: true }
+}
+
+export async function deleteInactivePopMember(
+  popId: string,
+  memberUserId: string,
+): Promise<{ success: boolean; error?: string }> {
+  const user = await requireAuthenticatedUser()
+  const popRes = await getPopById(popId, { includeOwnerUserId: true })
+  if (!popRes.success || !popRes.pop) {
+    return { success: false, error: "POP no encontrado" }
+  }
+  const ownerUserId =
+    "ownerUserId" in popRes.pop ? popRes.pop.ownerUserId : null
+  if (!(await isPopOwner(popId, user.uid, ownerUserId ?? null))) {
+    return { success: false, error: "Sin permiso" }
+  }
+  if (ownerUserId && sameUserId(memberUserId, ownerUserId)) {
+    return {
+      success: false,
+      error: "No se puede eliminar al propietario del POP.",
+    }
+  }
+
+  const admin = createServiceRoleClient()
+  const { error } = await admin
+    .from("user_pop_roles")
+    .delete()
+    .eq("pop_id", popId)
+    .eq("user_id", memberUserId)
+    .eq("is_active", false)
 
   if (error) return { success: false, error: error.message }
   return { success: true }

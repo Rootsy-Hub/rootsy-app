@@ -7,7 +7,7 @@ import {
 } from "@/app/[siteId]/[popId]/menu/MenuDockDndContext"
 import {
   menuHoloFloatLiftClass,
-  menuHoloFloatShadowClass,
+  menuHoloFocusRingClass,
   menuHoloGlyphClass,
   menuHoloIconHoverClass,
   menuHoloIconShellForVariant,
@@ -69,7 +69,6 @@ export function MenuGridItemButton({
   const tileInner = (
     <>
       <div className="relative flex flex-col items-center">
-        <div aria-hidden className={menuHoloFloatShadowClass} />
         <div
           className={cn(
             "flex size-[72px] items-center justify-center rounded-[20px]",
@@ -83,13 +82,7 @@ export function MenuGridItemButton({
           )}
         >
           {!showDockInsertedStyle ? <MenuIconChrome /> : null}
-          <Icon
-            className={cn(
-              "relative size-8",
-              menuHoloGlyphClass,
-              !editing && "group-hover:scale-[1.03]",
-            )}
-          />
+          <Icon className={cn("relative size-8", menuHoloGlyphClass)} />
         </div>
       </div>
 
@@ -139,7 +132,8 @@ export function MenuGridItemButton({
           }}
           className={cn(
             tileClassName,
-            "hover:scale-[1.02] active:scale-[0.98]",
+            menuHoloFocusRingClass,
+            "hover:scale-[1.02] active:scale-[0.99]",
           )}
         >
           {tileInner}
@@ -153,7 +147,8 @@ export function MenuGridItemButton({
           disabled={disabled}
           className={cn(
             tileClassName,
-            !editing && !disabled && "hover:scale-[1.02] active:scale-[0.98]",
+            menuHoloFocusRingClass,
+            !editing && !disabled && "hover:scale-[1.02] active:scale-[0.99]",
             disabled && "cursor-default opacity-70",
           )}
         >

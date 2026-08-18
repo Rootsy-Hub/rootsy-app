@@ -1,4 +1,8 @@
-import { AUTH_NEXT_COOKIE } from "@/lib/authCallbackRedirect"
+import {
+  AUTH_NEXT_COOKIE,
+  RECOVERY_NEW_PASSWORD_PATH,
+  RECOVERY_PASSWORD_PATH,
+} from "@/lib/authCallbackRedirect"
 import { createClient } from "@/utils/supabase/server"
 import { NextResponse } from "next/server"
 
@@ -49,10 +53,13 @@ export async function GET(request: Request) {
   const code = searchParams.get("code")
   const tokenHash = searchParams.get("token_hash")
   const otpType = searchParams.get("type")
-  const next = resolveNextPath(
-    searchParams,
-    request.headers.get("cookie"),
-  )
+  const next =
+    otpType === "recovery"
+      ? RECOVERY_NEW_PASSWORD_PATH
+      : resolveNextPath(
+          searchParams,
+          request.headers.get("cookie"),
+        )
 
   if (code) {
     const supabase = await createClient()
@@ -79,7 +86,15 @@ export async function GET(request: Request) {
     }
   }
 
-  const response = NextResponse.redirect(`${origin}/login?error=callback`)
+  const failedRecovery =
+    otpType === "recovery" ||
+    (searchParams.get("next") ?? "").includes(RECOVERY_NEW_PASSWORD_PATH.split("?")[0])
+
+  const response = NextResponse.redirect(
+    failedRecovery
+      ? `${origin}${RECOVERY_PASSWORD_PATH}?error=enlace`
+      : `${origin}/login?error=callback`,
+  )
   response.cookies.set(AUTH_NEXT_COOKIE, "", { path: "/", maxAge: 0 })
   return response
 }

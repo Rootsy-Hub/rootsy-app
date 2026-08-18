@@ -22,7 +22,10 @@ import {
   validateEmailField,
   validateSignupPassword,
 } from "@/lib/authValidation"
-import { setAuthNextPath } from "@/lib/authCallbackRedirect"
+import {
+  RECOVERY_NEW_PASSWORD_PATH,
+  setAuthNextPath,
+} from "@/lib/authCallbackRedirect"
 import { requestPasswordRecoveryEmail } from "@/app/auth/actions"
 import { RECOVERY_COPY } from "@/lib/auth/rootsyAuthUiCopy"
 import { createClient } from "@/utils/supabase/client"
@@ -33,8 +36,6 @@ type Phase =
   | "new-password"
   | "email-sent"
   | "fatal"
-
-const RECOVERY_NEXT = "/recovery-password?paso=nueva"
 
 function RecoverPasswordPage() {
   const router = useRouter()
@@ -105,6 +106,9 @@ function RecoverPasswordPage() {
       }
 
       if (cancelled) return
+      if (searchParams.get("error") === "enlace") {
+        setRequestError(RECOVERY_COPY.fatalInvalidLink)
+      }
       setPhase("request")
     }
 
@@ -112,7 +116,7 @@ function RecoverPasswordPage() {
     return () => {
       cancelled = true
     }
-  }, [paso, tokenHash, typeParam, supabase])
+  }, [paso, tokenHash, typeParam, searchParams, supabase])
 
   useEffect(() => {
     if (phase !== "request" || authLoading) return
@@ -136,7 +140,7 @@ function RecoverPasswordPage() {
     setFieldErrors({ email: "" })
     try {
       const cleanEmail = formatEmailInput(email)
-      setAuthNextPath(RECOVERY_NEXT)
+      setAuthNextPath(RECOVERY_NEW_PASSWORD_PATH)
       const result = await requestPasswordRecoveryEmail({ email: cleanEmail })
       if (!result.success) {
         throw new Error(result.error)

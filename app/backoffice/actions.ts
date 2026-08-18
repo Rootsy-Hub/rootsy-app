@@ -861,6 +861,7 @@ export async function getBackofficeUserDetail(
       `,
       )
       .eq("user_id", userId)
+      .eq("is_active", true)
       .order("created_at", { ascending: false }),
   ])
 

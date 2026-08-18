@@ -24,7 +24,6 @@ import {
   savePopMenuDockPreference,
 } from "@/app/[siteId]/[popId]/menu/menuDockActions"
 import {
-  menuHoloFloatShadowClass,
   menuHoloGlyphClass,
   menuHoloIconShellForVariant,
 } from "@/lib/menu/menuHoloStyles"
@@ -309,7 +308,7 @@ function MenuDockDragPreview({
         "dark",
         menuNatureShellClass,
         "pointer-events-none scale-[1.14] cursor-grabbing",
-        "drop-shadow-[0_14px_40px_rgba(0,0,0,0.28),0_0_40px_rgba(130,225,255,0.42)]",
+        "drop-shadow-[0_8px_20px_rgba(0,0,0,0.2)]",
       )}
     >
       <DockIconVisual icon={item.icon} variant="overlay" size="lg" />
@@ -335,10 +334,8 @@ export function DockIconVisual({
   const iconDim =
     size === "sm" ? "size-5" : size === "lg" ? "size-8" : "size-6"
   const radius = size === "lg" ? "rounded-[20px]" : "rounded-[22%]"
-  const showFloat = size === "lg" && variant !== "muted"
   return (
-    <div className={cn("relative flex items-center justify-center", showFloat && "flex-col")}>
-      {showFloat ? <div aria-hidden className={cn(menuHoloFloatShadowClass, "top-[calc(100%-2px)]")} /> : null}
+    <div className="relative flex items-center justify-center">
       <div
         className={cn(
           "relative flex items-center justify-center",

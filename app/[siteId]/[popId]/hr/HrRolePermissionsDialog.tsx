@@ -2,23 +2,21 @@
 
 import type { PermissionCatalogRow } from "@/app/[siteId]/[popId]/hr/actions"
 import {
-  clientDialogBodyClass,
-  clientDialogFooterClass,
-  clientDialogHeaderClass,
-  clientDialogSurface,
-} from "@/app/[siteId]/[popId]/clients/ClientUpsertFormFields"
-import { Button } from "@/components/ui/button"
-import { Checkbox } from "@/components/ui/checkbox"
+  RootsDialogBody,
+  RootsDialogContent,
+  RootsDialogDualActionFooter,
+  RootsDialogErrorBanner,
+  RootsDialogForm,
+  RootsDialogHeader,
+  RootsDialogLoadingState,
+} from "@/components/rootsy-dialog"
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
+  RootsFormCheckbox,
+  RootsFormCheckboxChoiceRow,
+  RootsFormTextField,
+  rootsFormCheckboxChoiceListClass,
+} from "@/components/rootsy-form"
+import { Dialog } from "@/components/ui/dialog"
 import {
   buildHrPermissionCatalogRows,
   buildHrPermissionSections,
@@ -26,8 +24,7 @@ import {
   type HrPermissionSection,
 } from "@/lib/hrPermissionCatalog"
 import { cn } from "@/lib/utils"
-import { Loader2, ShieldCheck } from "lucide-react"
-import { useMemo } from "react"
+import { useMemo, type FormEvent } from "react"
 
 type Props = {
   open: boolean
@@ -37,6 +34,7 @@ type Props = {
   selectedKeys: string[]
   loading: boolean
   saving: boolean
+  error?: string | null
   onOpenChange: (open: boolean) => void
   onDisplayNameChange: (value: string) => void
   onToggleKey: (key: string) => void
@@ -73,6 +71,7 @@ export function HrRolePermissionsDialog({
   selectedKeys,
   loading,
   saving,
+  error,
   onOpenChange,
   onDisplayNameChange,
   onToggleKey,
@@ -95,177 +94,125 @@ export function HrRolePermissionsDialog({
     !saving &&
     (mode === "edit" || displayName.trim().length > 0)
 
+  const description = loading
+    ? "Cargando permisos disponibles…"
+    : mode === "create"
+      ? `Definí el nombre y qué secciones puede usar este rol. ${selectedCount} de ${totalCount} permisos seleccionados.`
+      : `${displayName || "—"}. ${selectedCount} de ${totalCount} permisos activos.`
+
+  const handleSubmit = (event: FormEvent) => {
+    event.preventDefault()
+    if (!canSave) return
+    onSave()
+  }
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent
-        data-rootsy-light-shell="true"
-        showCloseButton={!saving}
-        className={cn(clientDialogSurface, "sm:max-w-2xl")}
-      >
-        <DialogHeader className={clientDialogHeaderClass}>
-          <div className="flex items-start gap-3">
-            <div className="flex size-10 shrink-0 items-center justify-center rounded-xl border border-primary/20 bg-primary/10 text-primary">
-              <ShieldCheck className="size-5" aria-hidden />
-            </div>
-            <div className="min-w-0 space-y-1">
-              <DialogTitle className="text-base font-semibold tracking-tight">
-                {mode === "create" ? "Nuevo rol" : "Permisos del rol"}
-              </DialogTitle>
-              <DialogDescription className="text-sm leading-relaxed">
-                {loading ? (
-                  "Cargando permisos disponibles…"
-                ) : mode === "create" ? (
-                  <>
-                    Definí el nombre y qué secciones puede usar este rol.{" "}
-                    {selectedCount} de {totalCount} permisos seleccionados.
-                  </>
-                ) : (
-                  <>
-                    <span className="font-medium text-foreground">
-                      {displayName || "—"}
-                    </span>
-                    {" · "}
-                    {selectedCount} de {totalCount} permisos activos
-                  </>
-                )}
-              </DialogDescription>
-            </div>
-          </div>
-        </DialogHeader>
-
-        <div className={clientDialogBodyClass}>
-          {mode === "create" ? (
-            <div className="mb-4 space-y-2">
-              <Label htmlFor="hr-role-display-name">Nombre del rol</Label>
-              <Input
+      <RootsDialogContent size="wide" showCloseButton={!saving}>
+        <RootsDialogHeader
+          open={open}
+          title={mode === "create" ? "Nuevo rol" : "Permisos del rol"}
+          description={description}
+        />
+        <RootsDialogForm onSubmit={handleSubmit}>
+          <RootsDialogBody className="space-y-4">
+            {mode === "create" ? (
+              <RootsFormTextField
+                label="Nombre del rol"
                 id="hr-role-display-name"
                 value={displayName}
-                onChange={(e) => onDisplayNameChange(e.target.value)}
+                onChange={(event) => onDisplayNameChange(event.target.value)}
                 placeholder="Ej. Mozos, Encargado, Cocina…"
-                className="bg-background"
                 autoFocus
+                required
               />
-            </div>
-          ) : null}
+            ) : null}
 
-          {loading ? (
-            <div className="flex items-center gap-2 py-8 text-sm text-muted-foreground">
-              <Loader2 className="size-4 animate-spin" aria-hidden />
-              Obteniendo catálogo de permisos…
-            </div>
-          ) : sections.length === 0 ? (
-            <p className="py-6 text-sm leading-relaxed text-muted-foreground">
-              No hay permisos configurados en la app.
-            </p>
-          ) : (
-            <div className="space-y-4">
-              <p className="text-xs leading-relaxed text-muted-foreground">
-                Marcá qué pantallas y acciones puede usar una persona con este
-                rol. Podés activar una sección completa con el checkbox del
-                encabezado.
+            {loading ? (
+              <RootsDialogLoadingState message="Obteniendo catálogo de permisos…" />
+            ) : sections.length === 0 ? (
+              <p className="py-6 font-canopy text-sm leading-relaxed text-rootsy-bruma-500">
+                No hay permisos configurados en la app.
               </p>
-              {sections.map((section) => {
-                const keys = sectionGrantKeys(section)
-                const allOn = keys.every((k) => selectedKeys.includes(k))
-                const someOn =
-                  !allOn && keys.some((k) => selectedKeys.includes(k))
-
-                return (
-                  <section
-                    key={section.pageKey}
-                    className="overflow-hidden rounded-xl border border-border/70 bg-muted/15"
-                  >
-                    <div className="flex items-center justify-between gap-3 border-b border-border/50 bg-muted/25 px-4 py-2.5">
-                      <div className="flex min-w-0 items-center gap-2.5">
-                        <Checkbox
-                          id={`hr-sec-${section.pageKey}`}
-                          checked={
-                            allOn ? true : someOn ? "indeterminate" : false
-                          }
-                          onCheckedChange={(checked) =>
-                            onToggleSection(keys, checked === true)
-                          }
-                          aria-label={`Todos los permisos de ${section.label}`}
-                        />
-                        <label
-                          htmlFor={`hr-sec-${section.pageKey}`}
-                          className="cursor-pointer text-sm font-semibold text-foreground"
-                        >
-                          {section.label}
-                        </label>
-                      </div>
-                      <span className="shrink-0 text-[11px] tabular-nums text-muted-foreground">
-                        {keys.filter((k) => selectedKeys.includes(k)).length}/
-                        {keys.length}
-                      </span>
-                    </div>
-                    <ul className="divide-y divide-border/40">
-                      {section.permissions.map((p) => {
-                        const id = `perm-${p.key.replace(/:/g, "-")}`
-                        const row =
-                          permissions.find((c) => c.key === p.key) ?? p
-                        return (
-                          <li key={p.key}>
-                            <label
-                              htmlFor={id}
-                              className="flex cursor-pointer items-start gap-3 px-4 py-3 transition-colors hover:bg-muted/30"
-                            >
-                              <Checkbox
-                                id={id}
-                                checked={selectedKeys.includes(p.key)}
-                                onCheckedChange={() => onToggleKey(p.key)}
-                                className="mt-0.5"
-                              />
-                              <span className="min-w-0 flex-1">
-                                <span className="text-sm font-medium text-foreground">
-                                  {row.actionLabel ?? p.actionLabel}
-                                </span>
-                                {(row.description ?? p.description) ? (
-                                  <span className="mt-0.5 block text-xs leading-relaxed text-muted-foreground">
-                                    {row.description ?? p.description}
-                                  </span>
-                                ) : null}
-                              </span>
-                            </label>
-                          </li>
-                        )
-                      })}
-                    </ul>
-                  </section>
-                )
-              })}
-            </div>
-          )}
-        </div>
-
-        <DialogFooter className={clientDialogFooterClass}>
-          <Button
-            type="button"
-            variant="outline"
-            disabled={saving || loading}
-            onClick={() => onOpenChange(false)}
-          >
-            Cancelar
-          </Button>
-          <Button
-            type="button"
-            disabled={!canSave}
-            className="gap-2"
-            onClick={onSave}
-          >
-            {saving ? (
-              <>
-                <Loader2 className="size-4 animate-spin" aria-hidden />
-                Guardando…
-              </>
-            ) : mode === "create" ? (
-              "Crear rol"
             ) : (
-              "Guardar permisos"
+              <div className="space-y-3">
+                <p className="font-canopy text-xs leading-relaxed text-rootsy-bruma-500">
+                  Marcá qué pantallas y acciones puede usar una persona con este
+                  rol. El checkbox del encabezado activa la sección completa.
+                </p>
+                {sections.map((section) => {
+                  const keys = sectionGrantKeys(section)
+                  const allOn = keys.every((k) => selectedKeys.includes(k))
+                  const someOn =
+                    !allOn && keys.some((k) => selectedKeys.includes(k))
+                  const sectionId = `hr-sec-${section.pageKey}`
+
+                  return (
+                    <section
+                      key={section.pageKey}
+                      className="overflow-hidden rounded-xl border border-rootsy-bruma-200 bg-white"
+                    >
+                      <div className="flex items-center justify-between gap-3 border-b border-rootsy-bruma-200 bg-rootsy-bruma-50 px-4 py-2.5">
+                        <label
+                          htmlFor={sectionId}
+                          className="flex min-w-0 cursor-pointer items-center gap-2.5"
+                        >
+                          <RootsFormCheckbox
+                            id={sectionId}
+                            checked={
+                              allOn ? true : someOn ? "indeterminate" : false
+                            }
+                            onCheckedChange={(checked) =>
+                              onToggleSection(keys, checked === true)
+                            }
+                            aria-label={`Todos los permisos de ${section.label}`}
+                          />
+                          <span className="font-canopy text-sm font-semibold text-rootsy-bruma-900">
+                            {section.label}
+                          </span>
+                        </label>
+                        <span className="shrink-0 font-canopy text-[11px] tabular-nums text-rootsy-bruma-500">
+                          {keys.filter((k) => selectedKeys.includes(k)).length}/
+                          {keys.length}
+                        </span>
+                      </div>
+                      <div className={cn(rootsFormCheckboxChoiceListClass, "gap-0 px-2 py-1")}>
+                        {section.permissions.map((permission) => {
+                          const row =
+                            permissions.find((item) => item.key === permission.key) ??
+                            permission
+                          return (
+                            <RootsFormCheckboxChoiceRow
+                              key={permission.key}
+                              id={`perm-${permission.key.replace(/:/g, "-")}`}
+                              label={row.actionLabel ?? permission.actionLabel}
+                              description={
+                                row.description ?? permission.description ?? undefined
+                              }
+                              checked={selectedKeys.includes(permission.key)}
+                              onCheckedChange={() => onToggleKey(permission.key)}
+                            />
+                          )
+                        })}
+                      </div>
+                    </section>
+                  )
+                })}
+              </div>
             )}
-          </Button>
-        </DialogFooter>
-      </DialogContent>
+
+            {error ? <RootsDialogErrorBanner>{error}</RootsDialogErrorBanner> : null}
+          </RootsDialogBody>
+          <RootsDialogDualActionFooter
+            onCancel={() => onOpenChange(false)}
+            confirmLabel={mode === "create" ? "Crear rol" : "Guardar permisos"}
+            confirmLoadingLabel="Guardando…"
+            confirmType="submit"
+            confirmDisabled={!canSave}
+            confirmLoading={saving}
+          />
+        </RootsDialogForm>
+      </RootsDialogContent>
     </Dialog>
   )
 }
