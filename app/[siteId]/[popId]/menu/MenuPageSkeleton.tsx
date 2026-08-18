@@ -17,14 +17,19 @@ import {
   menuHeaderRowClass,
 } from "@/app/[siteId]/[popId]/menu/menuFloatingPillStyles"
 import {
+  menuHoloFloatShadowClass,
+  menuHoloTileSkeletonIconClass,
+  menuHoloTileSkeletonLabelClass,
+} from "@/lib/menu/menuHoloStyles"
+import {
   menuAmbientTopGlowClass,
   menuNatureShellClass,
   menuVignetteSoftClass,
 } from "@/app/[siteId]/[popId]/menu/menuNatureStyles"
 import "@/app/library/color/rootsyNaturePalette.css"
 import "@/app/[siteId]/[popId]/menu/menuNaturePalette.css"
-import { Skeleton } from "@/components/ui/skeleton"
 import { DEFAULT_MENU_DOCK_IDS } from "@/lib/menuCatalog"
+import { Skeleton } from "@/components/ui/skeleton"
 import { cn } from "@/lib/utils"
 
 const LABEL_WIDTHS = ["w-14", "w-16", "w-12", "w-[3.25rem]", "w-14", "w-11"] as const
@@ -40,12 +45,17 @@ function MenuIconTileSkeleton({ index }: { index: number }) {
       className="flex h-[7.125rem] w-24 flex-col items-center gap-2.5 justify-self-center"
       style={{ animationDelay: delay }}
     >
-      <Skeleton
-        className="size-[72px] rounded-[20px] bg-muted-foreground/12"
-        style={{ animationDelay: delay }}
-      />
-      <Skeleton
-        className={cn("h-8 rounded-sm bg-muted-foreground/10", labelWidth)}
+      <div className="relative flex flex-col items-center">
+        <div aria-hidden className={menuHoloFloatShadowClass} />
+        <div
+          aria-hidden
+          className={cn(menuHoloTileSkeletonIconClass, "relative z-[1]")}
+          style={{ animationDelay: delay }}
+        />
+      </div>
+      <div
+        aria-hidden
+        className={cn(menuHoloTileSkeletonLabelClass, labelWidth)}
         style={{ animationDelay: delay }}
       />
     </div>

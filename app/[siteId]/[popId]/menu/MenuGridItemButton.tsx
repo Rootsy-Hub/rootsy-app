@@ -6,10 +6,14 @@ import {
   useMenuDockEdit,
 } from "@/app/[siteId]/[popId]/menu/MenuDockDndContext"
 import {
-  menuIconGlyphClass,
-  menuIconGradientForSection,
-  menuIconHoverShadowForSection,
-} from "@/app/[siteId]/[popId]/menu/menuNatureStyles"
+  menuHoloFloatLiftClass,
+  menuHoloFloatShadowClass,
+  menuHoloGlyphClass,
+  menuHoloIconHoverClass,
+  menuHoloIconShellForVariant,
+  menuHoloLabelClass,
+  menuHoloLabelMutedClass,
+} from "@/lib/menu/menuHoloStyles"
 import { MenuIconChrome } from "@/app/[siteId]/[popId]/menu/MenuIconChrome"
 import { usePopOptimisticNav } from "@/context/PopOptimisticNavContext"
 import type { MenuItemDef, MenuSectionKey } from "@/lib/menuCatalog"
@@ -27,7 +31,7 @@ type Props = {
 
 export function MenuGridItemButton({
   item,
-  sectionKey,
+  sectionKey: _sectionKey,
   disabled,
   href,
   onActivate,
@@ -64,27 +68,26 @@ export function MenuGridItemButton({
 
   const tileInner = (
     <>
-      <div className="relative">
+      <div className="relative flex flex-col items-center">
+        <div aria-hidden className={menuHoloFloatShadowClass} />
         <div
           className={cn(
-            "relative flex size-[72px] items-center justify-center overflow-hidden rounded-[20px] transition-all duration-200",
+            "flex size-[72px] items-center justify-center rounded-[20px]",
             showDockInsertedStyle
-              ? cn(
-                  menuIconGradientForSection(sectionKey, "muted"),
-                  "ring-1 ring-foreground/10",
-                )
+              ? menuHoloIconShellForVariant("muted")
               : cn(
-                  menuIconGradientForSection(sectionKey),
-                  menuIconHoverShadowForSection(sectionKey),
+                  menuHoloIconShellForVariant("default"),
+                  menuHoloFloatLiftClass,
+                  menuHoloIconHoverClass,
                 ),
           )}
         >
           {!showDockInsertedStyle ? <MenuIconChrome /> : null}
           <Icon
             className={cn(
-              "relative size-8 transition-transform duration-200",
-              menuIconGlyphClass,
-              !editing && "group-hover:scale-[1.02]",
+              "relative size-8",
+              menuHoloGlyphClass,
+              !editing && "group-hover:scale-[1.03]",
             )}
           />
         </div>
@@ -93,9 +96,7 @@ export function MenuGridItemButton({
       <span
         className={cn(
           "flex h-8 w-full items-center justify-center text-center text-xs font-normal leading-tight line-clamp-2 transition-colors duration-200",
-          showDockInsertedStyle
-            ? "text-foreground/35"
-            : "text-foreground/80 group-hover:text-foreground/95",
+          showDockInsertedStyle ? menuHoloLabelMutedClass : menuHoloLabelClass,
         )}
       >
         {item.name}

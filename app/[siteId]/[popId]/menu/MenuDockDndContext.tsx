@@ -24,9 +24,11 @@ import {
   savePopMenuDockPreference,
 } from "@/app/[siteId]/[popId]/menu/menuDockActions"
 import {
-  menuIconGlyphClass,
-  menuIconGradientForSection,
-  menuIconMacShadowClass,
+  menuHoloFloatShadowClass,
+  menuHoloGlyphClass,
+  menuHoloIconShellForVariant,
+} from "@/lib/menu/menuHoloStyles"
+import {
   menuNatureShellClass,
 } from "@/app/[siteId]/[popId]/menu/menuNatureStyles"
 import { MenuIconChrome } from "@/app/[siteId]/[popId]/menu/MenuIconChrome"
@@ -296,7 +298,7 @@ function getSectionKeyFromDragItem(
 
 function MenuDockDragPreview({
   item,
-  sectionKey,
+  sectionKey: _sectionKey,
 }: {
   item: MenuDockDragItem
   sectionKey: MenuSectionKey
@@ -306,18 +308,18 @@ function MenuDockDragPreview({
       className={cn(
         "dark",
         menuNatureShellClass,
-        "cursor-grabbing pointer-events-none scale-[1.14]",
-        "drop-shadow-[0_10px_28px_rgba(0,0,0,0.32)]",
+        "pointer-events-none scale-[1.14] cursor-grabbing",
+        "drop-shadow-[0_14px_40px_rgba(0,0,0,0.28),0_0_40px_rgba(130,225,255,0.42)]",
       )}
     >
-      <DockIconVisual icon={item.icon} sectionKey={sectionKey} variant="default" />
+      <DockIconVisual icon={item.icon} variant="overlay" size="lg" />
     </div>
   )
 }
 
 export function DockIconVisual({
   icon: Icon,
-  sectionKey = "operar",
+  sectionKey: _sectionKey = "operar",
   variant = "dock",
   className,
   size = "md",
@@ -333,19 +335,22 @@ export function DockIconVisual({
   const iconDim =
     size === "sm" ? "size-5" : size === "lg" ? "size-8" : "size-6"
   const radius = size === "lg" ? "rounded-[20px]" : "rounded-[22%]"
+  const showFloat = size === "lg" && variant !== "muted"
   return (
-    <div
-      className={cn(
-        "relative flex items-center justify-center overflow-hidden",
-        variant !== "muted" ? menuIconMacShadowClass : undefined,
-        menuIconGradientForSection(sectionKey, variant),
-        dim,
-        radius,
-        className,
-      )}
-    >
-      <MenuIconChrome />
-      <Icon className={cn("relative", menuIconGlyphClass, iconDim)} />
+    <div className={cn("relative flex items-center justify-center", showFloat && "flex-col")}>
+      {showFloat ? <div aria-hidden className={cn(menuHoloFloatShadowClass, "top-[calc(100%-2px)]")} /> : null}
+      <div
+        className={cn(
+          "relative flex items-center justify-center",
+          menuHoloIconShellForVariant(variant),
+          dim,
+          radius,
+          className,
+        )}
+      >
+        {variant !== "muted" ? <MenuIconChrome /> : null}
+        <Icon className={cn("relative", menuHoloGlyphClass, iconDim)} />
+      </div>
     </div>
   )
 }
