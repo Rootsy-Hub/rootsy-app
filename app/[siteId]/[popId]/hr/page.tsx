@@ -35,7 +35,6 @@ import {
   dataWorkspaceEntityCardStatusClosedClass,
   dataWorkspaceEntityCardStatusInactiveClass,
   dataWorkspaceEntityCardStatusOpenClass,
-  dataWorkspaceEntityCardTitleClass,
 } from "@/components/data-workspace/dataWorkspaceListStyles"
 import { DataWorkspaceHeaderIconButton } from "@/components/layouts/DataWorkspaceHeaderIconButton"
 import {
@@ -147,9 +146,55 @@ function HrLoseta({
   className?: string
 }) {
   return (
-    <article className={cn(dataWorkspaceEntityCardLosetaSurfaceClass, className)}>
+    <article
+      className={cn(
+        dataWorkspaceEntityCardLosetaSurfaceClass,
+        "h-auto",
+        className,
+      )}
+    >
       {children}
     </article>
+  )
+}
+
+function HrRow({
+  children,
+  className,
+}: {
+  children: ReactNode
+  className?: string
+}) {
+  return (
+    <div
+      className={cn(
+        "flex items-center justify-between gap-3 px-4 py-3",
+        className,
+      )}
+    >
+      {children}
+    </div>
+  )
+}
+
+function HrPersonName({
+  title,
+  meta,
+}: {
+  title: string
+  meta?: string
+}) {
+  return (
+    <div className="min-w-0">
+      <p className="truncate font-canopy text-sm font-semibold text-rootsy-bruma-900">
+        {title}
+      </p>
+      {meta ? (
+        <p className={cn(dataWorkspaceEntityCardEyebrowClass, "mt-0.5 truncate")}>
+          {meta}
+        </p>
+      ) : null}
+    </div>
   )
 }
 
@@ -167,7 +212,7 @@ function HrAvatar({
       <img
         src={imageUrl}
         alt=""
-        className={cn(dataWorkspaceEntityCardIsotypeClass, "size-11 object-cover")}
+        className={cn(dataWorkspaceEntityCardIsotypeClass, "size-10 object-cover")}
       />
     )
   }
@@ -176,6 +221,7 @@ function HrAvatar({
     <div
       className={cn(
         dataWorkspaceEntityCardIsotypeClass,
+        "size-10",
         "font-canopy text-xs font-semibold",
         muted && "bg-rootsy-bruma-50 text-rootsy-bruma-500",
       )}
@@ -188,9 +234,11 @@ function HrAvatar({
 
 function HrPulseCard({ label, value }: { label: string; value: number }) {
   return (
-    <HrLoseta className="p-4">
+    <HrLoseta className="px-4 py-3">
       <p className={dataWorkspaceEntityCardStatLabelClass}>{label}</p>
-      <p className={cn(dataWorkspaceEntityCardStatValueLargeClass, "mt-1")}>{value}</p>
+      <p className={cn(dataWorkspaceEntityCardStatValueLargeClass, "mt-0.5 text-xl")}>
+        {value}
+      </p>
     </HrLoseta>
   )
 }
@@ -645,7 +693,7 @@ function HrPage() {
                 <HrPulseCard label="Roles" value={roles.length} />
               </div>
 
-              <div className="grid gap-8 lg:grid-cols-12 lg:items-start">
+              <div className="grid gap-6 lg:grid-cols-12 lg:items-start">
                 <div className="space-y-4 lg:col-span-8">
                   <HrSection
                     title="Equipo"
@@ -666,39 +714,36 @@ function HrPage() {
                         Todavía no hay personas activas en este local.
                       </p>
                     ) : (
-                      <div className="space-y-6">
+                      <div className="space-y-3">
                         {groupedMembers.map(([roleLabel, list]) => (
-                          <div key={roleLabel} className="space-y-3">
-                            <div className="flex items-baseline justify-between gap-2">
+                          <HrLoseta key={roleLabel}>
+                            <HrRow className="border-b border-rootsy-bruma-200">
                               <h3 className={dataWorkspaceBlocksSectionTitleClass}>
                                 {roleLabel}
                               </h3>
                               <span className="font-canopy text-[11px] tabular-nums text-rootsy-bruma-500">
                                 {list.length}
                               </span>
-                            </div>
-                            <ul className="space-y-3">
+                            </HrRow>
+                            <ul className="divide-y divide-rootsy-bruma-200">
                               {list.map((member) => (
                                 <li key={`${member.userId}-${roleLabel}`}>
-                                  <HrLoseta className="flex flex-wrap items-center justify-between gap-3 p-4">
+                                  <HrRow>
                                     <div className="flex min-w-0 items-center gap-3">
                                       <HrAvatar
                                         imageUrl={member.imageUrl}
                                         initials={memberInitials(member)}
                                       />
-                                      <div className="min-w-0 space-y-1">
-                                        <p className={dataWorkspaceEntityCardTitleClass}>
-                                          {memberDisplayName(member)}
-                                        </p>
-                                        <p className={dataWorkspaceEntityCardEyebrowClass}>
-                                          {member.roleDisplayName}
-                                          {member.invitedAt
-                                            ? ` · Desde ${formatDate(member.invitedAt)}`
-                                            : ""}
-                                        </p>
-                                      </div>
+                                      <HrPersonName
+                                        title={memberDisplayName(member)}
+                                        meta={
+                                          member.invitedAt
+                                            ? `Desde ${formatDate(member.invitedAt)}`
+                                            : member.roleDisplayName
+                                        }
+                                      />
                                     </div>
-                                    <div className="flex shrink-0 flex-wrap items-center gap-2">
+                                    <div className="flex shrink-0 items-center gap-2">
                                       <span
                                         className={
                                           member.isOwner
@@ -726,11 +771,11 @@ function HrPage() {
                                         </RootsDefaultButton>
                                       ) : null}
                                     </div>
-                                  </HrLoseta>
+                                  </HrRow>
                                 </li>
                               ))}
                             </ul>
-                          </div>
+                          </HrLoseta>
                         ))}
                       </div>
                     )
@@ -742,65 +787,65 @@ function HrPage() {
                         Nadie está esperando entrar.
                       </p>
                     ) : (
-                      <ul className="space-y-3">
-                        {pending.map((invite) => {
-                          const expired = isExpired(invite.expiresAt)
-                          return (
-                            <li key={invite.id}>
-                              <HrLoseta className="flex flex-wrap items-center justify-between gap-3 p-4">
-                                <div className="flex min-w-0 items-center gap-3">
-                                  <HrAvatar
-                                    initials={emailInitials(invite.email)}
-                                    muted
-                                  />
-                                  <div className="min-w-0 space-y-1">
-                                    <p className={dataWorkspaceEntityCardTitleClass}>
-                                      {invite.email}
-                                    </p>
-                                    <p className={dataWorkspaceEntityCardEyebrowClass}>
-                                      {invite.roleDisplayName}
-                                      {" · "}
-                                      {expired
-                                        ? `Venció ${formatDate(invite.expiresAt)}`
-                                        : `Vence ${formatDate(invite.expiresAt)}`}
-                                    </p>
+                      <HrLoseta>
+                        <ul className="divide-y divide-rootsy-bruma-200">
+                          {pending.map((invite) => {
+                            const expired = isExpired(invite.expiresAt)
+                            return (
+                              <li key={invite.id}>
+                                <HrRow>
+                                  <div className="flex min-w-0 items-center gap-3">
+                                    <HrAvatar
+                                      initials={emailInitials(invite.email)}
+                                      muted
+                                    />
+                                    <HrPersonName
+                                      title={invite.email}
+                                      meta={`${invite.roleDisplayName} · ${
+                                        expired
+                                          ? `Venció ${formatDate(invite.expiresAt)}`
+                                          : `Vence ${formatDate(invite.expiresAt)}`
+                                      }`}
+                                    />
                                   </div>
-                                </div>
-                                <div className="flex shrink-0 flex-wrap items-center gap-2">
-                                  <span
-                                    className={
-                                      expired
-                                        ? dataWorkspaceEntityCardStatusInactiveClass
-                                        : dataWorkspaceEntityCardStatusClosedClass
-                                    }
-                                  >
-                                    {expired ? "Vencida" : "Esperando"}
-                                  </span>
-                                  {invite.inviteUrl ? (
-                                    <RootsDefaultButton
+                                  <div className="flex shrink-0 items-center gap-2">
+                                    <span
+                                      className={
+                                        expired
+                                          ? dataWorkspaceEntityCardStatusInactiveClass
+                                          : dataWorkspaceEntityCardStatusClosedClass
+                                      }
+                                    >
+                                      {expired ? "Vencida" : "Esperando"}
+                                    </span>
+                                    {invite.inviteUrl ? (
+                                      <RootsDefaultButton
+                                        type="button"
+                                        size="compact"
+                                        onClick={() =>
+                                          void copyInviteUrl(invite.inviteUrl)
+                                        }
+                                      >
+                                        Copiar enlace
+                                      </RootsDefaultButton>
+                                    ) : null}
+                                    <RootsDangerSubtleButton
                                       type="button"
                                       size="compact"
-                                      onClick={() => void copyInviteUrl(invite.inviteUrl)}
+                                      disabled={actionKey === `revoke-${invite.id}`}
+                                      onClick={() =>
+                                        setConfirmAction({ kind: "revoke", invite })
+                                      }
                                     >
-                                      Copiar enlace
-                                    </RootsDefaultButton>
-                                  ) : null}
-                                  <RootsDangerSubtleButton
-                                    type="button"
-                                    size="compact"
-                                    disabled={actionKey === `revoke-${invite.id}`}
-                                    onClick={() =>
-                                      setConfirmAction({ kind: "revoke", invite })
-                                    }
-                                  >
-                                    Revocar
-                                  </RootsDangerSubtleButton>
-                                </div>
-                              </HrLoseta>
-                            </li>
-                          )
-                        })}
-                      </ul>
+                                      Revocar
+                                    </RootsDangerSubtleButton>
+                                  </div>
+                                </HrRow>
+                              </li>
+                            )
+                          })}
+                        </ul>
+                      </HrLoseta>
                     )
                   ) : null}
 
@@ -810,53 +855,51 @@ function HrPage() {
                         Nadie está fuera del equipo.
                       </p>
                     ) : (
-                      <ul className="space-y-3">
-                        {inactiveMembers.map((member) => (
-                          <li key={`inactive-${member.userId}-${member.roleId}`}>
-                            <HrLoseta className="flex flex-wrap items-center justify-between gap-3 p-4">
-                              <div className="flex min-w-0 items-center gap-3">
-                                <HrAvatar
-                                  imageUrl={member.imageUrl}
-                                  initials={memberInitials(member)}
-                                  muted
-                                />
-                                <div className="min-w-0 space-y-1">
-                                  <p className={dataWorkspaceEntityCardTitleClass}>
-                                    {memberDisplayName(member)}
-                                  </p>
-                                  <p className={dataWorkspaceEntityCardEyebrowClass}>
-                                    {member.roleDisplayName || "—"}
-                                  </p>
+                      <HrLoseta>
+                        <ul className="divide-y divide-rootsy-bruma-200">
+                          {inactiveMembers.map((member) => (
+                            <li key={`inactive-${member.userId}-${member.roleId}`}>
+                              <HrRow>
+                                <div className="flex min-w-0 items-center gap-3">
+                                  <HrAvatar
+                                    imageUrl={member.imageUrl}
+                                    initials={memberInitials(member)}
+                                    muted
+                                  />
+                                  <HrPersonName
+                                    title={memberDisplayName(member)}
+                                    meta={member.roleDisplayName || "—"}
+                                  />
                                 </div>
-                              </div>
-                              <div className="flex shrink-0 items-center gap-2">
-                                <span
-                                  className={dataWorkspaceEntityCardStatusInactiveClass}
-                                >
-                                  Inactivo
-                                </span>
-                                {canManageInvites ? (
-                                  <RootsDangerSubtleButton
-                                    type="button"
-                                    size="compact"
-                                    disabled={
-                                      actionKey === `del-mem-${member.userId}`
-                                    }
-                                    onClick={() =>
-                                      setConfirmAction({
-                                        kind: "delete-member",
-                                        member,
-                                      })
-                                    }
+                                <div className="flex shrink-0 items-center gap-2">
+                                  <span
+                                    className={dataWorkspaceEntityCardStatusInactiveClass}
                                   >
-                                    Eliminar
-                                  </RootsDangerSubtleButton>
-                                ) : null}
-                              </div>
-                            </HrLoseta>
-                          </li>
-                        ))}
-                      </ul>
+                                    Inactivo
+                                  </span>
+                                  {canManageInvites ? (
+                                    <RootsDangerSubtleButton
+                                      type="button"
+                                      size="compact"
+                                      disabled={
+                                        actionKey === `del-mem-${member.userId}`
+                                      }
+                                      onClick={() =>
+                                        setConfirmAction({
+                                          kind: "delete-member",
+                                          member,
+                                        })
+                                      }
+                                    >
+                                      Eliminar
+                                    </RootsDangerSubtleButton>
+                                  ) : null}
+                                </div>
+                              </HrRow>
+                            </li>
+                          ))}
+                        </ul>
+                      </HrLoseta>
                     )
                   ) : null}
                   </HrSection>
@@ -890,62 +933,58 @@ function HrPage() {
                         No hay roles cargados.
                       </p>
                     ) : (
-                      <ul className="space-y-3">
-                        {roles.map((role) => (
-                          <li key={role.id}>
-                            <HrLoseta className="p-4">
-                              <div className="space-y-3">
-                                <div className="flex items-start justify-between gap-3">
-                                  <div className="min-w-0 space-y-1">
-                                    <h3 className={dataWorkspaceEntityCardTitleClass}>
-                                      {role.displayName}
-                                    </h3>
-                                    <p className={dataWorkspaceEntityCardEyebrowClass}>
-                                      {role.popId
-                                        ? `${membersByRoleId.get(role.id) ?? 0} en el equipo`
-                                        : "Plantilla del sistema"}
-                                    </p>
-                                  </div>
+                      <HrLoseta>
+                        <ul className="divide-y divide-rootsy-bruma-200">
+                          {roles.map((role) => (
+                            <li key={role.id}>
+                              <HrRow>
+                                <HrPersonName
+                                  title={role.displayName}
+                                  meta={
+                                    role.popId
+                                      ? `${membersByRoleId.get(role.id) ?? 0} en el equipo`
+                                      : "Plantilla del sistema"
+                                  }
+                                />
+                                <div className="flex shrink-0 items-center gap-2">
                                   <span className={dataWorkspaceEntityCardBadgeClass}>
                                     {role.popId ? "POP" : "Sistema"}
                                   </span>
+                                  {canManageInvites && role.popId ? (
+                                    <>
+                                      <RootsDefaultButton
+                                        type="button"
+                                        size="compact"
+                                        disabled={permModalLoading || permModalSaving}
+                                        onClick={() => void handleOpenEditRole(role)}
+                                      >
+                                        Permisos
+                                      </RootsDefaultButton>
+                                      <RootsDangerSubtleButton
+                                        type="button"
+                                        size="compact"
+                                        disabled={
+                                          Boolean(actionKey?.startsWith("del-role-")) ||
+                                          permModalLoading ||
+                                          permModalSaving
+                                        }
+                                        onClick={() =>
+                                          setConfirmAction({
+                                            kind: "delete-role",
+                                            role,
+                                          })
+                                        }
+                                      >
+                                        Eliminar
+                                      </RootsDangerSubtleButton>
+                                    </>
+                                  ) : null}
                                 </div>
-                                {canManageInvites && role.popId ? (
-                                  <div className="flex flex-wrap gap-2">
-                                    <RootsDefaultButton
-                                      type="button"
-                                      size="compact"
-                                      disabled={
-                                        permModalLoading || permModalSaving
-                                      }
-                                      onClick={() => void handleOpenEditRole(role)}
-                                    >
-                                      Permisos
-                                    </RootsDefaultButton>
-                                    <RootsDangerSubtleButton
-                                      type="button"
-                                      size="compact"
-                                      disabled={
-                                        Boolean(actionKey?.startsWith("del-role-")) ||
-                                        permModalLoading ||
-                                        permModalSaving
-                                      }
-                                      onClick={() =>
-                                        setConfirmAction({
-                                          kind: "delete-role",
-                                          role,
-                                        })
-                                      }
-                                    >
-                                      Eliminar
-                                    </RootsDangerSubtleButton>
-                                  </div>
-                                ) : null}
-                              </div>
-                            </HrLoseta>
-                          </li>
-                        ))}
-                      </ul>
+                              </HrRow>
+                            </li>
+                          ))}
+                        </ul>
+                      </HrLoseta>
                     )}
                   </HrSection>
                 </div>

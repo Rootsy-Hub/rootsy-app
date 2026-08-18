@@ -5,6 +5,7 @@ import {
   menuLinkToDockId,
   useMenuDockEdit,
 } from "@/app/[siteId]/[popId]/menu/MenuDockDndContext"
+import "@/app/[siteId]/[popId]/menu/menuPlanetLife.css"
 import {
   menuHoloContactShadowForSection,
   menuHoloFloatLiftClass,
@@ -14,7 +15,9 @@ import {
   menuHoloIconShellForSection,
   menuHoloLabelClass,
   menuHoloLabelMutedClass,
+  menuHoloPlanetLifeClass,
   menuHoloTileMotionClass,
+  menuPlanetLifeStyle,
 } from "@/lib/menu/menuHoloStyles"
 import { MenuIconChrome } from "@/app/[siteId]/[popId]/menu/MenuIconChrome"
 import { usePopOptimisticNav } from "@/context/PopOptimisticNavContext"
@@ -63,6 +66,9 @@ export function MenuGridItemButton({
     isDragging && activeDragKind === "menu" && dockId === draggingItemId
   const showDockInsertedStyle =
     editing && (alreadyInDock || isThisMenuDrag)
+  const isAlive = !showDockInsertedStyle && !editing
+  const lifeSeed = `${sectionKey}-${item.link}-${item.name}`
+  const lifeStyle = menuPlanetLifeStyle(lifeSeed)
 
   const Icon = item.icon
   const tileClassName = cn(
@@ -72,8 +78,18 @@ export function MenuGridItemButton({
 
   const tileInner = (
     <>
-      <div className="relative flex flex-col items-center">
-        <div aria-hidden className={menuHoloContactShadowForSection(sectionKey)} />
+      <div
+        className={cn(isAlive && menuHoloPlanetLifeClass)}
+        style={isAlive ? lifeStyle : undefined}
+      >
+        <div
+          aria-hidden
+          className={cn(
+            menuHoloContactShadowForSection(sectionKey),
+            isAlive && "menu-planet-shadow-life",
+          )}
+          style={isAlive ? lifeStyle : undefined}
+        />
         <div
           className={cn(
             "flex size-[72px] items-center justify-center rounded-[20px]",
@@ -87,7 +103,7 @@ export function MenuGridItemButton({
           )}
         >
           {!showDockInsertedStyle ? (
-            <MenuIconChrome sectionKey={sectionKey} />
+            <MenuIconChrome sectionKey={sectionKey} alive={isAlive} />
           ) : null}
           <Icon className={cn("size-8", menuHoloGlyphClass)} />
         </div>

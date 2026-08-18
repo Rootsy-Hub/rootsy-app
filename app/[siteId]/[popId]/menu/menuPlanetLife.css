@@ -1,0 +1,73 @@
+/**
+ * Vida planetaria — respiración delicada; casi imperceptible, siempre presente.
+ */
+@keyframes menu-planet-breathe {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+  50% {
+    transform: translate3d(0, -0.75px, 0) scale(1.005);
+  }
+}
+
+@keyframes menu-planet-shadow-breathe {
+  0%,
+  100% {
+    opacity: 0.55;
+    transform: translateX(-50%) scaleX(1);
+  }
+  50% {
+    opacity: 0.63;
+    transform: translateX(-50%) scaleX(1.04);
+  }
+}
+
+@keyframes menu-planet-core-glow {
+  0%,
+  100% {
+    opacity: 0.88;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.96;
+    transform: scale(1.025);
+  }
+}
+
+.menu-planet-life {
+  animation-name: menu-planet-breathe;
+  animation-timing-function: cubic-bezier(0.45, 0.05, 0.55, 0.95);
+  animation-iteration-count: infinite;
+}
+
+.menu-planet-shadow-life {
+  animation-name: menu-planet-shadow-breathe;
+  animation-timing-function: cubic-bezier(0.45, 0.05, 0.55, 0.95);
+  animation-iteration-count: infinite;
+}
+
+.menu-planet-core-life {
+  animation-name: menu-planet-core-glow;
+  animation-timing-function: cubic-bezier(0.45, 0.05, 0.55, 0.95);
+  animation-iteration-count: infinite;
+  transform-origin: 50% 58%;
+}
+
+.group:hover .menu-planet-life,
+.group:focus-within .menu-planet-life {
+  animation-play-state: paused;
+}
+
+.group:hover .menu-planet-shadow-life,
+.group:focus-within .menu-planet-shadow-life {
+  animation-play-state: paused;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .menu-planet-life,
+  .menu-planet-shadow-life,
+  .menu-planet-core-life {
+    animation: none !important;
+  }
+}
