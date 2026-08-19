@@ -12,7 +12,7 @@
 }
 
 .menu-outer-entity--foot-floating .menu-outer-entity-body {
-  border-top: none;
+  border-top-style: solid;
 }
 
 .menu-outer-entity--foot-floating .menu-outer-entity-horizon {
@@ -20,7 +20,7 @@
 }
 
 .menu-outer-entity--foot-floating .menu-outer-entity-weight {
-  background: linear-gradient(to top, transparent 55%, rgba(0, 0, 0, 0.16) 100%);
+  display: none;
 }
 
 .menu-outer-entity-core {

@@ -1,3 +1,4 @@
+import { menuSectionRealmSurfaceClass } from "@/app/[siteId]/[popId]/menu/menuSectionRealmStyles"
 import { cn } from "@/lib/utils"
 
 const menuOuterEntityShellClass = cn(
@@ -41,9 +42,8 @@ export const menuOuterEntityFootContentClass = cn(
 )
 
 export const menuOuterEntityBodyFloatingClass = cn(
-  menuOuterEntityBodyClass,
-  "overflow-visible rounded-2xl border border-[rgba(228,242,248,0.1)]",
-  "shadow-[0_10px_40px_rgba(0,0,0,0.32),0_2px_8px_rgba(0,0,0,0.2)]",
+  "menu-outer-entity-body menu-planet-life relative w-full overflow-visible",
+  menuSectionRealmSurfaceClass,
 )
 
 export const menuOuterEntityFootFloatingContentClass = cn(
