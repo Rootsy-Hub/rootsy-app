@@ -37,38 +37,37 @@
     inset 0 3px 8px color-mix(in srgb, var(--rootsy-sombra-950) 42%, transparent),
     0 1px 0 color-mix(in srgb, var(--earth-900) 40%, var(--rootsy-sombra-950));
   --earth-slot-sprout-bg: linear-gradient(
-    165deg,
-    color-mix(in srgb, var(--rootsy-savia-400) 52%, var(--earth-800)) 0%,
-    color-mix(in srgb, var(--rootsy-savia-500) 44%, var(--rootsy-sombra-900)) 46%,
-    color-mix(in srgb, var(--rootsy-savia-800) 36%, var(--earth-900)) 100%
+    168deg,
+    color-mix(in srgb, var(--rootsy-savia-500) 58%, var(--earth-800)) 0%,
+    color-mix(in srgb, var(--rootsy-savia-600) 50%, var(--rootsy-sombra-900)) 52%,
+    color-mix(in srgb, var(--rootsy-savia-800) 40%, var(--earth-900)) 100%
   );
   --earth-slot-sprout-hover-bg: linear-gradient(
-    165deg,
-    color-mix(in srgb, var(--rootsy-savia-400) 64%, var(--earth-700)) 0%,
-    color-mix(in srgb, var(--rootsy-savia-500) 52%, var(--rootsy-sombra-900)) 46%,
-    color-mix(in srgb, var(--rootsy-savia-700) 38%, var(--earth-900)) 100%
+    168deg,
+    color-mix(in srgb, var(--rootsy-savia-500) 68%, var(--earth-700)) 0%,
+    color-mix(in srgb, var(--rootsy-savia-600) 56%, var(--rootsy-sombra-900)) 52%,
+    color-mix(in srgb, var(--rootsy-savia-700) 42%, var(--earth-900)) 100%
   );
   --earth-slot-sprout-pressed-bg: linear-gradient(
-    165deg,
-    color-mix(in srgb, var(--rootsy-savia-500) 42%, var(--earth-800)) 0%,
-    color-mix(in srgb, var(--rootsy-savia-700) 36%, var(--rootsy-sombra-950)) 100%
+    168deg,
+    color-mix(in srgb, var(--rootsy-savia-600) 44%, var(--earth-800)) 0%,
+    color-mix(in srgb, var(--rootsy-savia-800) 38%, var(--rootsy-sombra-950)) 100%
   );
   --earth-slot-sprout-shadow:
-    inset 0 1px 0 color-mix(in srgb, var(--rootsy-savia-200) 36%, transparent),
-    inset 0 -12px 20px color-mix(in srgb, var(--rootsy-savia-900) 22%, transparent),
+    inset 0 1px 0 color-mix(in srgb, var(--rootsy-savia-300) 14%, transparent),
+    inset 0 16px 28px color-mix(in srgb, var(--rootsy-savia-400) 10%, transparent),
+    inset 0 -14px 22px color-mix(in srgb, var(--rootsy-savia-900) 26%, transparent),
     0 2px 0 color-mix(in srgb, var(--rootsy-savia-800) 42%, var(--rootsy-sombra-950)),
-    0 8px 18px color-mix(in srgb, var(--rootsy-sombra-950) 40%, transparent),
-    0 0 22px color-mix(in srgb, var(--rootsy-savia-400) 26%, transparent);
+    0 8px 18px color-mix(in srgb, var(--rootsy-sombra-950) 40%, transparent);
   --earth-slot-sprout-hover-shadow:
-    inset 0 1px 0 color-mix(in srgb, var(--rootsy-savia-100) 40%, transparent),
-    inset 0 -12px 20px color-mix(in srgb, var(--rootsy-savia-900) 16%, transparent),
+    inset 0 1px 0 color-mix(in srgb, var(--rootsy-savia-300) 18%, transparent),
+    inset 0 16px 28px color-mix(in srgb, var(--rootsy-savia-400) 14%, transparent),
+    inset 0 -14px 22px color-mix(in srgb, var(--rootsy-savia-900) 20%, transparent),
     0 3px 0 color-mix(in srgb, var(--rootsy-savia-800) 38%, var(--rootsy-sombra-950)),
-    0 12px 24px color-mix(in srgb, var(--rootsy-sombra-950) 42%, transparent),
-    0 0 28px color-mix(in srgb, var(--rootsy-savia-400) 34%, transparent);
+    0 12px 24px color-mix(in srgb, var(--rootsy-sombra-950) 42%, transparent);
   --earth-slot-sprout-pressed-shadow:
     inset 0 3px 10px color-mix(in srgb, var(--rootsy-savia-950) 36%, transparent),
-    0 1px 0 color-mix(in srgb, var(--rootsy-savia-800) 30%, var(--rootsy-sombra-950)),
-    0 0 12px color-mix(in srgb, var(--rootsy-savia-400) 16%, transparent);
+    0 1px 0 color-mix(in srgb, var(--rootsy-savia-800) 30%, var(--rootsy-sombra-950));
 
   position: relative;
   z-index: 1;
@@ -128,15 +127,15 @@
 
 .layouts-operar-earth-slot.is-configured .layouts-operar-earth-slot-icon {
   background: linear-gradient(
-    165deg,
-    color-mix(in srgb, var(--rootsy-savia-400) 72%, white) 0%,
+    168deg,
+    var(--rootsy-savia-400) 0%,
     var(--rootsy-savia-500) 48%,
     var(--rootsy-savia-700) 100%
   );
   color: var(--rootsy-savia-50);
   box-shadow:
-    inset 0 1px 0 color-mix(in srgb, var(--rootsy-savia-100) 55%, transparent),
-    0 0 12px color-mix(in srgb, var(--rootsy-savia-400) 38%, transparent);
+    inset 0 1px 0 color-mix(in srgb, var(--rootsy-savia-300) 22%, transparent),
+    inset 0 -6px 10px color-mix(in srgb, var(--rootsy-savia-800) 28%, transparent);
 }
 
 .layouts-operar-earth-slot-label {
@@ -145,7 +144,7 @@
 }
 
 .layouts-operar-earth-slot.is-configured .layouts-operar-earth-slot-label {
-  color: color-mix(in srgb, var(--rootsy-savia-200) 78%, white);
+  color: color-mix(in srgb, var(--rootsy-savia-200) 86%, var(--rootsy-savia-50));
 }
 
 .layouts-operar-earth-slot-value {
@@ -154,7 +153,7 @@
 }
 
 .layouts-operar-earth-slot.is-configured .layouts-operar-earth-slot-value {
-  color: color-mix(in srgb, var(--rootsy-savia-50) 88%, white);
+  color: color-mix(in srgb, var(--rootsy-savia-50) 92%, var(--rootsy-savia-100));
 }
 
 @media (prefers-reduced-motion: reduce) {
