@@ -1,4 +1,5 @@
 import type { PurchaseCatalogArticleCost } from "@/app/[siteId]/[popId]/purchases/actions"
+import { saleOpFmt } from "@/components/sale-operation/saleOperationStyles"
 
 export type PurchaseCatalogProduct = {
   id: string
@@ -15,12 +16,6 @@ export type PurchaseCatalogProduct = {
 
 export type PurchaseCatalogView = { modo: "categoria"; categoria: string }
 
-const fmt = new Intl.NumberFormat("es-AR", {
-  style: "currency",
-  currency: "ARS",
-  minimumFractionDigits: 2,
-})
-
 export function purchaseCatalogCostHint(producto: PurchaseCatalogProduct): string {
   const active = producto.costs.filter((c) => c.unitPrice > 0)
   if (producto.costs.length === 0) return "Sin costos"
@@ -30,7 +25,7 @@ export function purchaseCatalogCostHint(producto: PurchaseCatalogProduct): strin
   const min = Math.min(...active.map((c) => c.unitPrice))
   if (producto.costs.length === 1) {
     const cost = producto.costs[0]
-    return `${fmt.format(min)} / ${cost.costUnitLabel}`
+    return `${saleOpFmt.format(min)} / ${cost.costUnitLabel}`
   }
-  return `Desde ${fmt.format(min)}`
+  return `Desde ${saleOpFmt.format(min)}`
 }

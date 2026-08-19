@@ -1023,16 +1023,16 @@ export function layoutsOperarTicketProposalTotalsBreakdownAmountClass(
   kind: "normal" | "discount" = "normal",
 ) {
   if (id === "bruma-savia") {
-    const base = "m-0 min-w-[6.5rem] text-right text-sm font-bold tabular-nums"
+    const base = "m-0 min-w-[6.5rem] text-right text-sm font-normal tabular-nums"
 
     if (kind === "discount") {
-      return cn(base, "text-[var(--rootsy-savia-800)]")
+      return cn(base, "text-[var(--rootsy-bruma-600)]")
     }
 
     return cn(base, "text-[var(--rootsy-bruma-900)]")
   }
 
-  const base = "m-0 min-w-[6.5rem] text-right text-sm font-semibold tabular-nums"
+  const base = "m-0 min-w-[6.5rem] text-right text-sm font-normal tabular-nums"
 
   if (kind === "discount") {
     if (id === "bruma-plana") {

@@ -4,6 +4,7 @@ import {
   layoutsOperarSummaryCartListSurfaceClass,
   layoutsOperarSummaryCartTitleClass,
   layoutsOperarSummaryTotalsPlacementClass,
+  layoutsOperarTicketScrollColumnClass,
 } from "@/app/library/layouts/layoutsOperarStyles"
 import {
   layoutsOperarTicketProposalActionsClass,
@@ -63,7 +64,7 @@ export function PurchaseOperationTicketOrderPanel({
     <>
       <div
         ref={cartScrollContainerRef}
-        className="layouts-operar-scroll-minimal row-start-1 min-h-0 overflow-y-auto"
+        className={layoutsOperarTicketScrollColumnClass}
         role="region"
         aria-label="Pedido"
       >
@@ -82,6 +83,7 @@ export function PurchaseOperationTicketOrderPanel({
             className={cn(
               layoutsOperarSummaryCartListSurfaceClass,
               layoutsOperarTicketProposalCartListClass(TICKET_PROPOSAL),
+              "shrink-0",
             )}
           >
             {lines.map((line) => (

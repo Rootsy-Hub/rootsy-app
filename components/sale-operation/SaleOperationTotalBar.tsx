@@ -213,7 +213,7 @@ export function SaleOperationTotalBar({
                 isModal ? modalSummaryLabelClass : "self-center",
               )}
             >
-              Subtotal
+              Productos
             </span>
             <p className={subtotalAmountClass}>
               {saleOpFmt.format(subtotalDisplay)}

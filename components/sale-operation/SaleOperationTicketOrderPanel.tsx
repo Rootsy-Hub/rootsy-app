@@ -9,6 +9,7 @@ import {
   layoutsOperarSummaryCartListSurfaceClass,
   layoutsOperarSummaryCartTitleClass,
   layoutsOperarSummaryTotalsPlacementClass,
+  layoutsOperarTicketScrollColumnClass,
 } from "@/app/library/layouts/layoutsOperarStyles"
 import { DataWorkspaceDetailEmptyState } from "@/components/data-workspace/DataWorkspaceDetailEmptyState"
 import { dataWorkspaceBlocksSkeletonTone } from "@/components/data-workspace/dataWorkspaceListStyles"
@@ -111,7 +112,7 @@ export function SaleOperationTicketOrderPanel({
     <>
       <div
         ref={cartScrollContainerRef}
-        className="layouts-operar-scroll-minimal row-start-1 min-h-0 overflow-y-auto"
+        className={layoutsOperarTicketScrollColumnClass}
         role="region"
         aria-label="Pedido"
         aria-busy={loading || undefined}
@@ -138,6 +139,7 @@ export function SaleOperationTicketOrderPanel({
             className={cn(
               layoutsOperarSummaryCartListSurfaceClass,
               layoutsOperarTicketProposalCartListClass(TICKET_PROPOSAL),
+              "shrink-0",
             )}
           >
             {cartDisplayGroups.map((group) => (

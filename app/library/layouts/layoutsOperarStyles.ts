@@ -308,15 +308,9 @@ export const layoutsOperarCatalogCanvasScrollClass = cn(
   "min-h-0 flex-1 overflow-y-auto p-3",
 )
 
-/** Fila del canvas que envuelve el scroll + el fade de continuación. */
+/** Fila del canvas que envuelve el scroll. */
 export const layoutsOperarCatalogCanvasBodyClass =
   "relative min-h-0 h-full overflow-hidden"
-
-/** Velos de continuación — CSS en layoutsOperarTheme.css. */
-export const layoutsOperarCatalogScrollFadeClass =
-  "layouts-operar-catalog-scroll-fade"
-export const layoutsOperarCatalogScrollFadeTopClass =
-  "layouts-operar-catalog-scroll-fade is-top"
 
 /** Canvas formularios operar (pasos wizard) — scroll horizontal + top; el aire final va en el wrapper interno. */
 export const layoutsOperarFormCanvasScrollClass = cn(
@@ -618,8 +612,12 @@ export const layoutsOperarCatalogSectionShellClass = cn(
   "flex h-full min-h-0 flex-col overflow-hidden",
 )
 
+export const layoutsOperarTicketScrollColumnClass = cn(
+  "layouts-operar-scroll-minimal row-start-1 flex h-full min-h-0 flex-col overflow-y-auto",
+)
+
 export const layoutsOperarSummaryHeaderRowClass =
-  "flex items-center justify-between gap-2 px-3 py-2"
+  "flex shrink-0 items-center justify-between gap-2 px-3 py-2"
 
 export const layoutsOperarSummaryCartRowClass =
   "relative flex min-h-0 flex-col bg-[var(--rootsy-bruma-50)]"
@@ -674,8 +672,8 @@ export const layoutsOperarSummaryCartCellClass = cn(
   "row-start-2 min-h-0 overflow-hidden",
 )
 
-/** Totales al pie del listado — no scrollean con los ítems. */
-export const layoutsOperarSummaryTotalsPlacementClass = "shrink-0"
+/** Totales al piso del pedido cuando sobra aire; si hay overflow, van al final del scroll. */
+export const layoutsOperarSummaryTotalsPlacementClass = "mt-auto shrink-0"
 
 /** @deprecated Usar layoutsOperarSummaryTotalsPlacementClass + TotalBar tone operar. */
 export const layoutsOperarSummaryTotalsCellClass = cn(

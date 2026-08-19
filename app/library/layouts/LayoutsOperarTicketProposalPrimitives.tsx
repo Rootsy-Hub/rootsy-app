@@ -31,6 +31,8 @@ import {
 import {
   layoutsOperarBodyScopeClass,
   layoutsOperarSummaryCartTitleClass,
+  layoutsOperarSummaryTotalsPlacementClass,
+  layoutsOperarTicketScrollColumnClass,
 } from "@/app/library/layouts/layoutsOperarStyles"
 import {
   LAYOUTS_OPERAR_DEFAULT_TICKET_PROPOSAL,
@@ -326,7 +328,7 @@ function LayoutsOperarTicketProposalTotalsBar({
       </h3>
       <div className={layoutsOperarTicketProposalTotalsGridClass(proposalId)}>
         <span className={layoutsOperarTicketProposalTotalsBreakdownLabelClass(proposalId)}>
-          Subtotal
+          Productos
         </span>
         <p className={layoutsOperarTicketProposalTotalsBreakdownAmountClass(proposalId)}>
           {saleOpFmt.format(totals.subtotalOriginal)}
@@ -411,7 +413,7 @@ export function LayoutsOperarTicketProposalPanel({
       aria-label="Carrito de la venta"
     >
       {measureBadge}
-      <div className="layouts-operar-scroll-minimal row-start-1 min-h-0 overflow-y-auto">
+      <div className={layoutsOperarTicketScrollColumnClass}>
         <div className={layoutsOperarTicketProposalHeaderClass(proposalId)}>
           <h2 className={layoutsOperarSummaryCartTitleClass}>Pedido</h2>
         </div>
@@ -451,7 +453,9 @@ export function LayoutsOperarTicketProposalPanel({
             )
           })}
         </div>
-        <LayoutsOperarTicketProposalTotalsBar proposalId={proposalId} />
+        <div className={layoutsOperarSummaryTotalsPlacementClass}>
+          <LayoutsOperarTicketProposalTotalsBar proposalId={proposalId} />
+        </div>
       </div>
 
       <div className={layoutsOperarTicketProposalActionsClass(proposalId)}>

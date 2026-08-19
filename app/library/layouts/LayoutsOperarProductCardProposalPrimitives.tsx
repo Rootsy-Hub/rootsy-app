@@ -24,6 +24,7 @@ import {
 } from "@/app/library/layouts/layoutsOperarStyles"
 import { LAYOUTS_OPERAR_DEFAULT_PRODUCT_CARD_PROPOSAL } from "@/app/library/layouts/rootsyLayoutsOperarSystem"
 import { SaleCatalogProductOfferOverlay } from "@/components/sale-operation/SaleCatalogProductOfferOverlay"
+import { saleOpFmt } from "@/components/sale-operation/saleOperationStyles"
 import { cn } from "@/lib/utils"
 import { Plus } from "lucide-react"
 import { useState } from "react"
@@ -65,7 +66,7 @@ export const LAYOUTS_OPERAR_DEMO_ARTICLE_NO_IMAGE: LayoutsOperarDemoProduct = {
 }
 
 function formatDemoPrice(amount: number) {
-  return `$ ${amount.toLocaleString("es-AR")},00`
+  return saleOpFmt.format(amount)
 }
 
 /** Superficie foto ausente — sin icono ni copy; luz de estudio + grano como imagen real. */

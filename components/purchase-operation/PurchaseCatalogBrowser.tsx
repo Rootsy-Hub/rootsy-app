@@ -16,8 +16,6 @@ import { SaleCatalogEmptyMascot } from "@/components/sale-operation/SaleCatalogE
 import { SaleCatalogInfiniteFooter } from "@/components/sale-operation/SaleCatalogInfiniteFooter"
 import { SaleCatalogVirtualGrid } from "@/components/sale-operation/SaleCatalogVirtualGrid"
 import { SaleCatalogSidebarNavSkeleton } from "@/components/sale-operation/SaleCatalogSidebarNavSkeleton"
-import { CatalogScrollFades } from "@/components/sale-operation/CatalogScrollFades"
-import { useCatalogScrollFade } from "@/hooks/useCatalogScrollFade"
 import { useDebouncedValue } from "@/hooks/useDebouncedValue"
 import { useInfiniteScrollSentinel } from "@/hooks/useInfiniteScrollSentinel"
 import { usePurchaseCatalogItems } from "@/hooks/useOperateCatalogItems"
@@ -108,7 +106,6 @@ export function PurchaseCatalogBrowser({
   const busquedaTrimPrevRef = useRef("")
   const [scrollRoot, setScrollRoot] = useState<HTMLElement | null>(null)
   const [sentinel, setSentinel] = useState<HTMLElement | null>(null)
-  const catalogFade = useCatalogScrollFade(scrollRoot)
 
   const debouncedSearch = useDebouncedValue(
     busqueda,
@@ -270,12 +267,6 @@ export function PurchaseCatalogBrowser({
             />
           )}
         </div>
-        {!showGridSkeleton && !displayError && !isEmpty ? (
-          <CatalogScrollFades
-            atCeiling={catalogFade.atCeiling}
-            atFloor={catalogFade.atFloor}
-          />
-        ) : null}
         </div>
       </section>
     </div>

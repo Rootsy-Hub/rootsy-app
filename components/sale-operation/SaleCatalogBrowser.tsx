@@ -22,8 +22,6 @@ import { useDataWorkspaceSidebar } from "@/components/layouts/useDataWorkspaceSi
 import { SaleCatalogToolbar } from "@/components/sale-operation/SaleCatalogToolbar"
 import { useSaleScanInputFocus } from "@/components/sale-operation/SaleScanInputFocusContext"
 import { SALE_CATALOG_DEFAULT_PRICE_LIST_ID } from "@/components/sale-operation/saleCatalogPriceLists"
-import { CatalogScrollFades } from "@/components/sale-operation/CatalogScrollFades"
-import { useCatalogScrollFade } from "@/hooks/useCatalogScrollFade"
 import { useDebouncedValue } from "@/hooks/useDebouncedValue"
 import { useInfiniteScrollSentinel } from "@/hooks/useInfiniteScrollSentinel"
 import {
@@ -144,7 +142,6 @@ export function SaleCatalogBrowser({
     sentinelRef.current = node
     setSentinel(node)
   }, [])
-  const catalogFade = useCatalogScrollFade(scrollRoot)
 
   const registerScanInputRef = useCallback(
     (element: HTMLInputElement | null) => {
@@ -474,12 +471,6 @@ export function SaleCatalogBrowser({
             />
           )}
         </div>
-        {!showGridSkeleton && !displayError && !isEmpty ? (
-          <CatalogScrollFades
-            atCeiling={catalogFade.atCeiling}
-            atFloor={catalogFade.atFloor}
-          />
-        ) : null}
         </div>
       </section>
     </div>
