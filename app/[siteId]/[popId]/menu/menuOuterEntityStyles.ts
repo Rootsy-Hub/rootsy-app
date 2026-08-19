@@ -1,4 +1,7 @@
-import { menuSectionRealmSurfaceClass } from "@/app/[siteId]/[popId]/menu/menuSectionRealmStyles"
+import {
+  menuSectionRealmRadiusClass,
+  menuSectionRealmSurfaceClass,
+} from "@/app/[siteId]/[popId]/menu/menuSectionRealmStyles"
 import { cn } from "@/lib/utils"
 
 const menuOuterEntityShellClass = cn(
@@ -41,8 +44,15 @@ export const menuOuterEntityFootContentClass = cn(
   "relative z-[1] flex w-full items-center justify-center px-4 py-2.5",
 )
 
+/** Cuerpo flotante — overflow visible para tooltips y drag; el radio vive en el cromo. */
 export const menuOuterEntityBodyFloatingClass = cn(
   "menu-outer-entity-body menu-planet-life relative w-full overflow-visible",
+  menuSectionRealmRadiusClass,
+)
+
+/** Cristal del dock — mismo radio y material que Operar / Administrar / Configurar. */
+export const menuOuterEntityFootFloatingChromeClass = cn(
+  "pointer-events-none absolute inset-0 overflow-hidden",
   menuSectionRealmSurfaceClass,
 )
 

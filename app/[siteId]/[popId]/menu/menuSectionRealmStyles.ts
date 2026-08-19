@@ -5,9 +5,13 @@ import {
 import type { MenuSectionKey } from "@/lib/menuCatalog"
 import { cn } from "@/lib/utils"
 
+/** Radio compartido — selector de reinado y dock. */
+export const menuSectionRealmRadiusClass = "rounded-lg"
+
 /** Cristal del selector de reinado — mismo material para el dock. */
 export const menuSectionRealmSurfaceClass = cn(
-  "rounded-lg border",
+  menuSectionRealmRadiusClass,
+  "border",
   "border-[rgba(228,242,248,0.11)]",
   "bg-[linear-gradient(165deg,rgba(255,255,255,0.035)_0%,rgba(8,28,38,0.05)_100%)]",
   "backdrop-blur-[6px] backdrop-saturate-[1.06]",
