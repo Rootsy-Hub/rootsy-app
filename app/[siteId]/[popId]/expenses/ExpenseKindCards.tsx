@@ -5,16 +5,25 @@ import type {
   ExpenseListRow,
   ExpenseStatus,
 } from "@/app/[siteId]/[popId]/expenses/actions"
-import { dataWorkspaceShellCard } from "@/components/data-workspace/dataWorkspaceListStyles"
-import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
+import {
+  dataWorkspaceBlocksEmptyStateClass,
+  dataWorkspaceEntityCardLosetaSurfaceClass,
+  workspaceTableNatureStockWarningClass,
+} from "@/components/data-workspace/dataWorkspaceListStyles"
+import { DataWorkspaceBlocksSection } from "@/components/data-workspace/DataWorkspaceBlocksSection"
+import { WorkspaceTableStatusBadge } from "@/components/data-workspace/DataWorkspaceListTablePrimitives"
+import {
+  RootsDangerSubtleButton,
+  RootsDefaultButton,
+  RootsPrimaryButton,
+} from "@/components/rootsy-button"
+import { cn } from "@/lib/utils"
 import {
   Collapsible,
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible"
-import { cn } from "@/lib/utils"
-import { Ban, ChevronDown, Plus, Trash2 } from "lucide-react"
+import { Ban, ChevronDown, Trash2 } from "lucide-react"
 import { useEffect, useMemo, useState } from "react"
 
 const fmt = new Intl.NumberFormat("es-AR", {
@@ -23,19 +32,17 @@ const fmt = new Intl.NumberFormat("es-AR", {
   minimumFractionDigits: 2,
 })
 
-const shellCard = dataWorkspaceShellCard
-
 const KIND_META: Record<
   ExpenseCategoryKind,
   { title: string; hint: string }
 > = {
   variable: {
     title: "Gastos variables",
-    hint: "Rubros que cambian mes a mes",
+    hint: "Rubros que cambian mes a mes.",
   },
   fijo: {
     title: "Gastos fijos",
-    hint: "Compromisos recurrentes del período",
+    hint: "Compromisos recurrentes del período.",
   },
 }
 
@@ -95,16 +102,16 @@ function groupActiveByCategory(rows: ExpenseListRow[]): CategoryGroup[] {
     })
 }
 
-function statusBadgeClass(status: ExpenseStatus): string {
+function statusTone(
+  status: ExpenseStatus,
+): "activo" | "inactivo" | "pendiente" {
   switch (status) {
     case "paid":
-      return "border-emerald-200/90 bg-emerald-50/90 text-emerald-700"
-    case "partial":
-      return "border-amber-200/90 bg-amber-50/90 text-amber-800"
+      return "activo"
     case "voided":
-      return "border-border/60 bg-muted/50 text-muted-foreground"
+      return "inactivo"
     default:
-      return "border-border/70 bg-muted/30 text-muted-foreground"
+      return "pendiente"
   }
 }
 
@@ -125,14 +132,11 @@ function ExpenseStatusBadge({ row }: { row: ExpenseListRow }) {
   const remaining = roundMoney(row.amount - row.paidTotal)
   return (
     <div className="flex flex-wrap items-center gap-1.5">
-      <Badge
-        variant="outline"
-        className={cn("font-normal", statusBadgeClass(row.status))}
-      >
+      <WorkspaceTableStatusBadge status={statusTone(row.status)}>
         {statusLabel(row.status)}
-      </Badge>
+      </WorkspaceTableStatusBadge>
       {row.status === "partial" && remaining > 0 ? (
-        <span className="font-numeric text-[11px] tabular-nums text-amber-800">
+        <span className={cn("font-numeric text-[11px] tabular-nums", workspaceTableNatureStockWarningClass)}>
           falta {fmt.format(remaining)}
         </span>
       ) : null}
@@ -211,112 +215,100 @@ function ExpenseKindCard({
   }
 
   return (
-    <div className={cn(shellCard, "flex min-h-0 flex-col")}>
-      <div className="border-b border-border/80 px-5 py-4">
-        <div className="flex flex-wrap items-start justify-between gap-3">
-          <div className="min-w-0">
-            <h2 className="text-sm font-semibold text-foreground">{meta.title}</h2>
-            <p className="mt-0.5 text-[11px] text-muted-foreground">{meta.hint}</p>
-          </div>
-          <Badge variant="secondary" className="shrink-0 font-normal">
-            {listBusy
-              ? "…"
-              : `${activeRows.length} ${activeRows.length === 1 ? "gasto" : "gastos"}`}
-          </Badge>
-        </div>
-
-        <div className="mt-4 flex flex-wrap items-baseline justify-between gap-2">
-          <p className="font-numeric text-xs tabular-nums text-muted-foreground">
-            {fmt.format(totalPaid)} de {fmt.format(totalDue)}
+    <DataWorkspaceBlocksSection
+      title={meta.title}
+      description={meta.hint}
+      action={
+        <span className="font-canopy text-xs tabular-nums text-rootsy-bruma-500">
+          {listBusy
+            ? "…"
+            : `${activeRows.length} ${activeRows.length === 1 ? "gasto" : "gastos"} · ${progressPct}%`}
+        </span>
+      }
+    >
+      {listBusy ? (
+        <p className={dataWorkspaceBlocksEmptyStateClass}>Cargando…</p>
+      ) : activeRows.length === 0 && voidedRows.length === 0 ? (
+        <div className={dataWorkspaceBlocksEmptyStateClass}>
+          <p>
+            No hay {kind === "variable" ? "gastos variables" : "gastos fijos"} en
+            este mes.
           </p>
-          <span className="font-numeric text-sm font-semibold tabular-nums text-primary">
-            {progressPct}%
-          </span>
-        </div>
-        <div className="mt-2 h-2 w-full overflow-hidden rounded-full bg-muted/80">
-          <div
-            className="h-full rounded-full bg-primary transition-[width] duration-300 ease-out"
-            style={{ width: `${progressPct}%` }}
-          />
-        </div>
-      </div>
-
-      <div className="max-h-[min(70vh,640px)] min-h-48 flex-1 overflow-y-auto px-3 py-3">
-        {listBusy ? (
-          <p className="px-2 py-8 text-center text-sm text-muted-foreground">
-            Cargando…
-          </p>
-        ) : activeRows.length === 0 && voidedRows.length === 0 ? (
-          <div className="flex flex-col items-center justify-center gap-3 px-4 py-10 text-center">
-            <p className="text-sm text-muted-foreground">
-              No hay {kind === "variable" ? "gastos variables" : "gastos fijos"} en
-              este mes.
-            </p>
-            {canCreate && onCreate ? (
-              <Button type="button" size="sm" variant="outline" onClick={onCreate}>
-                <Plus className="size-4" aria-hidden />
+          {canCreate && onCreate ? (
+            <div className="mt-3">
+              <RootsPrimaryButton type="button" size="compact" onClick={onCreate}>
                 Nuevo gasto
-              </Button>
-            ) : null}
-          </div>
-        ) : (
-          <div className="space-y-2">
-            {categories.map((category) => {
-              const isOpen = openCategories.has(category.key)
-              return (
-                <Collapsible
-                  key={category.key}
-                  open={isOpen}
-                  onOpenChange={(open) => toggleCategory(category.key, open)}
-                  className="rounded-xl border border-border/70 bg-muted/10"
+              </RootsPrimaryButton>
+            </div>
+          ) : null}
+        </div>
+      ) : (
+        <div className="space-y-3">
+          {categories.map((category) => {
+            const isOpen = openCategories.has(category.key)
+            return (
+              <Collapsible
+                key={category.key}
+                open={isOpen}
+                onOpenChange={(open) => toggleCategory(category.key, open)}
+              >
+                <article
+                  className={cn(dataWorkspaceEntityCardLosetaSurfaceClass, "h-auto")}
                 >
-                  <CollapsibleTrigger className="flex w-full items-center gap-3 px-3 py-3 text-left transition-colors hover:bg-muted/30">
+                  <CollapsibleTrigger className="flex w-full items-center gap-3 px-4 py-3.5 text-left">
                     <ChevronDown
                       className={cn(
-                        "size-4 shrink-0 text-muted-foreground transition-transform duration-200",
+                        "size-4 shrink-0 text-rootsy-bruma-500 transition-transform duration-200",
                         isOpen && "rotate-180",
                       )}
                       aria-hidden
                     />
                     <div className="min-w-0 flex-1">
                       <div className="flex flex-wrap items-center gap-2">
-                        <span className="truncate text-sm font-medium text-foreground">
+                        <span className="truncate font-canopy text-sm font-semibold text-rootsy-bruma-900">
                           {category.categoryName}
                         </span>
                         {category.categoryDeletedAt ? (
-                          <span className="rounded bg-muted px-1.5 py-0.5 text-[10px] font-medium uppercase text-muted-foreground">
-                            eliminada
-                          </span>
+                          <WorkspaceTableStatusBadge status="inactivo">
+                            Eliminada
+                          </WorkspaceTableStatusBadge>
                         ) : null}
                         {category.pendingCount > 0 ? (
-                          <span className="text-[11px] font-medium text-amber-800">
+                          <WorkspaceTableStatusBadge status="pendiente">
                             {category.pendingCount} por pagar
-                          </span>
+                          </WorkspaceTableStatusBadge>
                         ) : null}
                       </div>
-                      <p className="mt-0.5 font-numeric text-[11px] tabular-nums text-muted-foreground">
+                      <p className="mt-0.5 font-numeric text-[11px] tabular-nums text-rootsy-bruma-500">
                         {category.items.length}{" "}
                         {category.items.length === 1 ? "ítem" : "ítems"}
                       </p>
                     </div>
-                    <span className="shrink-0 font-numeric text-sm font-semibold tabular-nums text-foreground">
+                    <span
+                      className={cn(
+                        "shrink-0 font-numeric text-sm font-semibold tabular-nums",
+                        category.pendingCount > 0
+                          ? workspaceTableNatureStockWarningClass
+                          : "text-[var(--rootsy-savia-700)]",
+                      )}
+                    >
                       {fmt.format(category.totalDue)}
                     </span>
                   </CollapsibleTrigger>
 
-                  <CollapsibleContent className="border-t border-border/60 px-2 pb-2 pt-1">
-                    <ul className="divide-y divide-border/50">
+                  <CollapsibleContent className="border-t border-rootsy-bruma-200">
+                    <ul className="divide-y divide-rootsy-bruma-200">
                       {category.items.map((row) => (
                         <li
                           key={row.id}
-                          className="flex flex-col gap-2 px-2 py-3 sm:flex-row sm:items-center sm:justify-between"
+                          className="flex flex-col gap-2 px-4 py-3 sm:flex-row sm:items-center sm:justify-between"
                         >
                           <div className="min-w-0 flex-1">
-                            <p className="truncate text-sm text-foreground">
+                            <p className="truncate font-canopy text-sm text-rootsy-bruma-900">
                               {row.description.trim() || "Sin descripción"}
                             </p>
                             <div className="mt-1 flex flex-wrap items-center gap-2">
-                              <span className="text-[11px] text-muted-foreground">
+                              <span className="font-canopy text-[11px] text-rootsy-bruma-500">
                                 {formatDate(row.expenseDate)}
                               </span>
                               <ExpenseStatusBadge row={row} />
@@ -325,50 +317,51 @@ function ExpenseKindCard({
 
                           <div className="flex shrink-0 items-center gap-3 sm:flex-col sm:items-end sm:gap-1.5">
                             <div className="text-right">
-                              <p className="font-numeric text-sm font-semibold tabular-nums text-foreground">
+                              <p
+                                className={cn(
+                                  "font-numeric text-sm font-semibold tabular-nums",
+                                  row.status === "paid"
+                                    ? "text-[var(--rootsy-savia-700)]"
+                                    : "text-rootsy-bruma-900",
+                                )}
+                              >
                                 {fmt.format(row.amount)}
                               </p>
                               {row.paidTotal > 0 ? (
-                                <p className="font-numeric text-[11px] tabular-nums text-muted-foreground">
+                                <p className="font-numeric text-[11px] tabular-nums text-[var(--rootsy-savia-700)]">
                                   pagado {fmt.format(row.paidTotal)}
                                 </p>
                               ) : null}
                             </div>
                             <div className="flex items-center gap-1">
                               {row.status !== "paid" && canUpdate ? (
-                                <Button
+                                <RootsDefaultButton
                                   type="button"
-                                  variant="outline"
-                                  size="sm"
-                                  className="h-8 text-xs"
+                                  size="compact"
                                   onClick={() => onPay(row)}
                                 >
                                   Pagar
-                                </Button>
+                                </RootsDefaultButton>
                               ) : null}
                               {canUpdate ? (
-                                <Button
+                                <RootsDangerSubtleButton
                                   type="button"
-                                  variant="ghost"
-                                  size="sm"
-                                  className="size-8 p-0 text-destructive"
+                                  size="compact"
                                   aria-label="Anular gasto"
                                   onClick={() => onVoid(row)}
                                 >
                                   <Ban className="size-3.5" aria-hidden />
-                                </Button>
+                                </RootsDangerSubtleButton>
                               ) : null}
                               {row.paidTotal <= 0 && canDelete ? (
-                                <Button
+                                <RootsDangerSubtleButton
                                   type="button"
-                                  variant="ghost"
-                                  size="sm"
-                                  className="size-8 p-0 text-muted-foreground"
+                                  size="compact"
                                   aria-label="Eliminar gasto"
                                   onClick={() => onDelete(row)}
                                 >
                                   <Trash2 className="size-3.5" aria-hidden />
-                                </Button>
+                                </RootsDangerSubtleButton>
                               ) : null}
                             </div>
                           </div>
@@ -376,58 +369,58 @@ function ExpenseKindCard({
                       ))}
                     </ul>
                   </CollapsibleContent>
-                </Collapsible>
-              )
-            })}
+                </article>
+              </Collapsible>
+            )
+          })}
 
-            {voidedRows.length > 0 ? (
-              <Collapsible
-                open={voidedOpen}
-                onOpenChange={setVoidedOpen}
-                className="rounded-xl border border-dashed border-border/70 bg-muted/5"
+          {voidedRows.length > 0 ? (
+            <Collapsible open={voidedOpen} onOpenChange={setVoidedOpen}>
+              <article
+                className={cn(dataWorkspaceEntityCardLosetaSurfaceClass, "h-auto")}
               >
-                <CollapsibleTrigger className="flex w-full items-center justify-between gap-3 px-3 py-3 text-left transition-colors hover:bg-muted/20">
+                <CollapsibleTrigger className="flex w-full items-center justify-between gap-3 px-4 py-3 text-left">
                   <div className="flex items-center gap-2">
                     <ChevronDown
                       className={cn(
-                        "size-4 shrink-0 text-muted-foreground transition-transform duration-200",
+                        "size-4 shrink-0 text-rootsy-bruma-500 transition-transform duration-200",
                         voidedOpen && "rotate-180",
                       )}
                       aria-hidden
                     />
-                    <span className="text-sm font-medium text-muted-foreground">
+                    <span className="font-canopy text-sm font-medium text-rootsy-bruma-500">
                       Anulados ({voidedRows.length})
                     </span>
                   </div>
                 </CollapsibleTrigger>
-                <CollapsibleContent className="border-t border-border/50 px-2 pb-2 pt-1">
-                  <ul className="divide-y divide-border/40">
+                <CollapsibleContent className="border-t border-rootsy-bruma-200">
+                  <ul className="divide-y divide-rootsy-bruma-200">
                     {voidedRows.map((row) => (
                       <li
                         key={row.id}
-                        className="flex items-center justify-between gap-3 px-2 py-2.5 opacity-70"
+                        className="flex items-center justify-between gap-3 px-4 py-2.5 opacity-70"
                       >
                         <div className="min-w-0">
-                          <p className="truncate text-sm text-foreground">
+                          <p className="truncate font-canopy text-sm text-rootsy-bruma-800">
                             {row.description.trim() || "Sin descripción"}
                           </p>
-                          <p className="text-[11px] text-muted-foreground">
+                          <p className="font-canopy text-[11px] text-rootsy-bruma-500">
                             {row.categoryName} · {formatDate(row.expenseDate)}
                           </p>
                         </div>
-                        <span className="shrink-0 font-numeric text-sm tabular-nums text-muted-foreground">
+                        <span className="shrink-0 font-numeric text-sm tabular-nums text-rootsy-bruma-500">
                           {fmt.format(row.amount)}
                         </span>
                       </li>
                     ))}
                   </ul>
                 </CollapsibleContent>
-              </Collapsible>
-            ) : null}
-          </div>
-        )}
-      </div>
-    </div>
+              </article>
+            </Collapsible>
+          ) : null}
+        </div>
+      )}
+    </DataWorkspaceBlocksSection>
   )
 }
 
@@ -466,7 +459,7 @@ export function ExpenseKindCardsPanel({
   )
 
   return (
-    <div className="grid gap-6 lg:grid-cols-2 lg:items-start">
+    <div className="grid gap-8 lg:grid-cols-2 lg:items-start">
       <ExpenseKindCard
         kind="variable"
         rows={variableRows}

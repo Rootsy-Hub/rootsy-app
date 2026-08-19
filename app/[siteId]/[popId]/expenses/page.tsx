@@ -23,31 +23,45 @@ import {
 import { parseCheckoutCheckDetails } from "@/lib/checkoutCheck"
 import { treasuryPaymentOptionKey } from "@/lib/treasuryPaymentOptions"
 import { ExpenseKindCardsPanel } from "@/app/[siteId]/[popId]/expenses/ExpenseKindCards"
+import { ExpensePageSkeleton } from "@/app/[siteId]/[popId]/expenses/ExpensePageSkeleton"
 import { ExpensePeriodToolbar } from "@/app/[siteId]/[popId]/expenses/ExpensePeriodToolbar"
 import { ExpenseSummaryDashboard } from "@/app/[siteId]/[popId]/expenses/ExpenseSummaryDashboard"
+import {
+  dataWorkspaceBlocksEmptyStateClass,
+  dataWorkspaceBlocksPageContentClass,
+  dataWorkspaceBlocksPageMainClass,
+  dataWorkspaceEntityCardLosetaSurfaceClass,
+} from "@/components/data-workspace/dataWorkspaceListStyles"
+import { DataWorkspaceBlocksSection } from "@/components/data-workspace/DataWorkspaceBlocksSection"
 import {
   DataWorkspaceModuleLayout,
   dataWorkspaceModuleHeaderVariant,
 } from "@/components/layouts-module/DataWorkspaceModuleLayout"
 import { DataWorkspaceHeaderIconButton } from "@/components/layouts/DataWorkspaceHeaderIconButton"
+import { RootsBanner } from "@/components/rootsy-banner"
+import { RootsDangerSubtleButton } from "@/components/rootsy-button"
+import {
+  RootsConfirmDialog,
+  RootsDialogBody,
+  RootsDialogContent,
+  RootsDialogDualActionFooter,
+  RootsDialogErrorBanner,
+  RootsDialogForm,
+  RootsDialogHeader,
+} from "@/components/rootsy-dialog"
+import {
+  RootsFormDateField,
+  RootsFormMoneyField,
+  RootsFormSelectField,
+  RootsFormSelectItem,
+  RootsFormTextField,
+  RootsFormTextareaField,
+} from "@/components/rootsy-form"
 import { monthBoundsISO } from "@/lib/expenseMonth"
 import { usePopWorkspace } from "@/context/PopWorkspaceContext"
-import { Button } from "@/components/ui/button"
-import {
-  Dialog,
-  DialogContent,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Textarea } from "@/components/ui/textarea"
-import {
-  Plus,
-  Tags,
-  Trash2,
-} from "lucide-react"
+import { Dialog } from "@/components/ui/dialog"
+import { cn } from "@/lib/utils"
+import { Plus, Tags, Trash2 } from "lucide-react"
 import { useParams, useRouter } from "next/navigation"
 import {
   useCallback,
@@ -162,6 +176,12 @@ function ExpensesPage() {
   const [newCatName, setNewCatName] = useState("")
   const [newCatKind, setNewCatKind] = useState<ExpenseCategoryKind>("variable")
   const [catSaving, setCatSaving] = useState(false)
+  const [confirmAction, setConfirmAction] = useState<
+    | { kind: "delete-expense"; row: ExpenseListRow }
+    | { kind: "delete-category"; category: ExpenseCategoryRow }
+    | null
+  >(null)
+  const [confirmBusy, setConfirmBusy] = useState(false)
 
   const { start: monthStart, end: monthEnd } = useMemo(
     () => monthBoundsISO(year, month1),
@@ -372,17 +392,32 @@ function ExpensesPage() {
     await reloadList()
   }
 
-  const onDeleteExpense = async (row: ExpenseListRow) => {
-    if (!popId) return
-    if (!window.confirm("¿Eliminar este gasto? Solo aplica si no tiene pagos.")) {
+  const onDeleteExpense = (row: ExpenseListRow) => {
+    setConfirmAction({ kind: "delete-expense", row })
+  }
+
+  const runConfirmAction = async () => {
+    if (!popId || !confirmAction) return
+    setConfirmBusy(true)
+    if (confirmAction.kind === "delete-expense") {
+      const res = await deleteExpense(popId, confirmAction.row.id)
+      setConfirmBusy(false)
+      if (!res.success) {
+        setError(res.error)
+        return
+      }
+      setConfirmAction(null)
+      await reloadList()
       return
     }
-    const res = await deleteExpense(popId, row.id)
+    const res = await deleteExpenseCategory(popId, confirmAction.category.id)
+    setConfirmBusy(false)
     if (!res.success) {
-      window.alert(res.error)
+      setError(res.error)
       return
     }
-    await reloadList()
+    setConfirmAction(null)
+    await loadPage()
   }
 
   const submitNewCategory = async (e: FormEvent) => {
@@ -392,7 +427,7 @@ function ExpensesPage() {
     const res = await createExpenseCategory(popId, newCatName, newCatKind)
     setCatSaving(false)
     if (!res.success) {
-      window.alert(res.error)
+      setError(res.error)
       return
     }
     setNewCatName("")
@@ -400,16 +435,25 @@ function ExpensesPage() {
     await loadPage()
   }
 
-  const onDeleteCategory = async (c: ExpenseCategoryRow) => {
-    if (!popId) return
-    if (!window.confirm(`¿Eliminar la categoría «${c.name}»?`)) return
-    const res = await deleteExpenseCategory(popId, c.id)
-    if (!res.success) {
-      window.alert(res.error)
-      return
-    }
-    await loadPage()
+  const onDeleteCategory = (c: ExpenseCategoryRow) => {
+    setConfirmAction({ kind: "delete-category", category: c })
   }
+
+  const confirmCopy =
+    confirmAction?.kind === "delete-expense"
+      ? {
+          title: "Eliminar gasto",
+          description:
+            "Solo se puede si no tiene pagos. Esta acción no se puede deshacer.",
+          confirmLabel: "Eliminar",
+        }
+      : confirmAction?.kind === "delete-category"
+        ? {
+            title: "Eliminar categoría",
+            description: `¿Eliminar «${confirmAction.category.name}»? Si tiene gastos, se archiva.`,
+            confirmLabel: "Eliminar",
+          }
+        : { title: "", description: "", confirmLabel: "Confirmar" }
 
   if (!popId || !siteId) {
     return (
@@ -433,7 +477,7 @@ function ExpensesPage() {
         userRoleLabel={bootstrap?.roleLabel}
         contentFlush
         mainMaxWidthClass="max-w-none"
-        mainClassName="min-h-0 overflow-y-auto"
+        mainClassName={dataWorkspaceBlocksPageMainClass}
         headerActions={
           <>
             {canCreate ? (
@@ -458,209 +502,166 @@ function ExpensesPage() {
           </>
         }
       >
-        <div className="relative flex w-full min-h-0 flex-1 flex-col">
-          <ExpensePeriodToolbar
-            monthLabel={monthLabel}
-            loading={pageLoading || listBusy}
-            isCurrentMonth={isCurrentMonth}
-            onPrev={goPrevMonth}
-            onNext={goNextMonth}
-            onToday={goToday}
-          />
+        <div className={dataWorkspaceBlocksPageContentClass}>
+          {headerError ? (
+            <RootsBanner
+              intent="danger"
+              layout="message"
+              message={`Cabecera: ${headerError}`}
+            />
+          ) : null}
 
-          <div className="relative flex w-full flex-col gap-6 px-4 py-6 sm:px-6 lg:px-8">
-            {headerError ? (
-              <div
-                role="alert"
-                className="rounded-lg border border-destructive/25 bg-destructive/10 px-4 py-3 text-sm text-destructive"
+          {pageLoading ? (
+            <ExpensePageSkeleton />
+          ) : error ? (
+            <RootsBanner intent="danger" layout="message" message={error} />
+          ) : (
+            <>
+              <DataWorkspaceBlocksSection
+                title={monthLabel}
+                description="Los gastos se filtran por fecha de imputación. Los pagos cuentan para el avance aunque se registren en otro mes."
+                action={
+                  <ExpensePeriodToolbar
+                    monthLabel={monthLabel}
+                    loading={listBusy}
+                    isCurrentMonth={isCurrentMonth}
+                    onPrev={goPrevMonth}
+                    onNext={goNextMonth}
+                    onToday={goToday}
+                  />
+                }
               >
-                Cabecera: {headerError}
-              </div>
-            ) : null}
-
-            {loading ? (
-              <p className="text-sm text-muted-foreground">Cargando gastos…</p>
-            ) : error ? (
-              <div className="rounded-2xl border border-destructive/25 bg-destructive/5 px-4 py-3 text-sm text-destructive">
-                {error}
-              </div>
-            ) : (
-              <>
                 <ExpenseSummaryDashboard
                   rows={rows}
                   totalDue={totalDue}
                   totalPaid={totalPaid}
                   monthLabel={monthLabel}
                 />
+              </DataWorkspaceBlocksSection>
 
-                <ExpenseKindCardsPanel
-                  rows={rows}
-                  listBusy={listBusy}
-                  canCreate={canCreate}
-                  canUpdate={canUpdate}
-                  canDelete={canDelete}
-                  formatDate={formatIsoDate}
-                  onPay={openPay}
-                  onVoid={(row) => {
-                    setVoidTarget(row)
-                    setVoidReason("")
-                    setVoidOpen(true)
-                  }}
-                  onDelete={onDeleteExpense}
-                  onCreate={canCreate ? openCreate : undefined}
-                />
-              </>
-            )}
-          </div>
+              <ExpenseKindCardsPanel
+                rows={rows}
+                listBusy={listBusy}
+                canCreate={canCreate}
+                canUpdate={canUpdate}
+                canDelete={canDelete}
+                formatDate={formatIsoDate}
+                onPay={openPay}
+                onVoid={(row) => {
+                  setVoidTarget(row)
+                  setVoidReason("")
+                  setVoidOpen(true)
+                }}
+                onDelete={onDeleteExpense}
+                onCreate={canCreate ? openCreate : undefined}
+              />
+            </>
+          )}
         </div>
       </DataWorkspaceModuleLayout>
 
       <Dialog open={createOpen} onOpenChange={setCreateOpen}>
-        <DialogContent
-          data-rootsy-light-shell="true"
-          className="border-border bg-card text-foreground sm:max-w-md"
-        >
-          <form onSubmit={submitCreate}>
-            <DialogHeader>
-              <DialogTitle>Nuevo gasto</DialogTitle>
-            </DialogHeader>
-            <div className="grid gap-3 py-2">
+        <RootsDialogContent size="default" showCloseButton={!createSaving}>
+          <RootsDialogForm onSubmit={submitCreate}>
+            <RootsDialogHeader
+              open={createOpen}
+              title="Nuevo gasto"
+              description={`Imputado en ${monthLabel}.`}
+            />
+            <RootsDialogBody className="space-y-4">
               {createBanner ? (
-                <p className="rounded-lg border border-destructive/25 bg-destructive/5 px-3 py-2 text-sm text-destructive">
-                  {createBanner}
-                </p>
+                <RootsDialogErrorBanner>{createBanner}</RootsDialogErrorBanner>
               ) : null}
-              <div className="space-y-1">
-                <Label>Categoría</Label>
-                <select
-                  required
-                  className="flex h-9 w-full rounded-md border border-border bg-background px-2 text-sm"
-                  value={createCategoryId}
-                  onChange={(e) => setCreateCategoryId(e.target.value)}
-                >
-                  {activeCategories.map((c) => (
-                    <option key={c.id} value={c.id}>
-                      {c.name} ({c.kind === "fijo" ? "Fijo" : "Variable"})
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div className="space-y-1">
-                <Label>Importe</Label>
-                <Input
-                  required
-                  inputMode="decimal"
-                  className="bg-background"
-                  value={createAmount}
-                  onChange={(e) => setCreateAmount(e.target.value)}
-                  placeholder="0,00"
-                />
-              </div>
-              <div className="space-y-1">
-                <Label>Fecha del gasto</Label>
-                <Input
-                  required
-                  type="date"
-                  min={monthStart}
-                  max={monthEnd}
-                  className="bg-background"
-                  value={createExpenseDate}
-                  onChange={(e) => setCreateExpenseDate(e.target.value)}
-                />
-                <p className="text-[11px] text-muted-foreground">
-                  Solo fechas entre {formatIsoDate(monthStart)} y{" "}
-                  {formatIsoDate(monthEnd)}.
-                </p>
-              </div>
-              <div className="space-y-1">
-                <Label>Vencimiento (opcional)</Label>
-                <Input
-                  type="date"
-                  className="bg-background"
-                  value={createDueDate}
-                  onChange={(e) => setCreateDueDate(e.target.value)}
-                />
-              </div>
-              <div className="space-y-1">
-                <Label>Descripción</Label>
-                <Textarea
-                  className="bg-background"
-                  rows={2}
-                  value={createDescription}
-                  onChange={(e) => setCreateDescription(e.target.value)}
-                />
-              </div>
-            </div>
-            <DialogFooter>
-              <Button type="button" variant="secondary" onClick={() => setCreateOpen(false)}>
-                Cancelar
-              </Button>
-              <Button type="submit" disabled={createSaving}>
-                {createSaving ? "Guardando…" : "Guardar"}
-              </Button>
-            </DialogFooter>
-          </form>
-        </DialogContent>
+              <RootsFormSelectField
+                label="Categoría"
+                value={createCategoryId}
+                onValueChange={setCreateCategoryId}
+              >
+                {activeCategories.map((c) => (
+                  <RootsFormSelectItem key={c.id} value={c.id}>
+                    {c.name} ({c.kind === "fijo" ? "Fijo" : "Variable"})
+                  </RootsFormSelectItem>
+                ))}
+              </RootsFormSelectField>
+              <RootsFormMoneyField
+                label="Importe"
+                value={createAmount}
+                onChange={setCreateAmount}
+              />
+              <RootsFormDateField
+                label="Fecha del gasto"
+                value={createExpenseDate}
+                onChange={setCreateExpenseDate}
+                hint={`Entre ${formatIsoDate(monthStart)} y ${formatIsoDate(monthEnd)}.`}
+              />
+              <RootsFormDateField
+                label="Vencimiento"
+                value={createDueDate}
+                onChange={setCreateDueDate}
+                hint="Opcional"
+              />
+              <RootsFormTextareaField
+                label="Descripción"
+                value={createDescription}
+                onChange={(event) => setCreateDescription(event.target.value)}
+              />
+            </RootsDialogBody>
+            <RootsDialogDualActionFooter
+              cancelLabel="Cancelar"
+              confirmLabel="Guardar"
+              confirmType="submit"
+              confirmLoading={createSaving}
+              confirmLoadingLabel="Guardando…"
+              onCancel={() => setCreateOpen(false)}
+            />
+          </RootsDialogForm>
+        </RootsDialogContent>
       </Dialog>
 
       <Dialog open={payOpen} onOpenChange={setPayOpen}>
-        <DialogContent
-          data-rootsy-light-shell="true"
-          className="border-border bg-card text-foreground sm:max-w-md"
-        >
-          <form onSubmit={submitPay}>
-            <DialogHeader>
-              <DialogTitle>Registrar pago</DialogTitle>
-            </DialogHeader>
-            {payExpense ? (
-              <p className="text-sm text-muted-foreground">
-                {fmt.format(payExpense.amount)} · pendiente{" "}
-                {fmt.format(
-                  roundMoneyLocal(payExpense.amount - payExpense.paidTotal),
-                )}
-              </p>
-            ) : null}
-            <div className="grid gap-3 py-2">
+        <RootsDialogContent size="default" showCloseButton={!paySaving}>
+          <RootsDialogForm onSubmit={submitPay}>
+            <RootsDialogHeader
+              open={payOpen}
+              title="Registrar pago"
+              description={
+                payExpense
+                  ? `${fmt.format(payExpense.amount)} · pendiente ${fmt.format(roundMoneyLocal(payExpense.amount - payExpense.paidTotal))}`
+                  : undefined
+              }
+            />
+            <RootsDialogBody className="space-y-4">
               {payBanner ? (
-                <p className="rounded-lg border border-destructive/25 bg-destructive/5 px-3 py-2 text-sm text-destructive">
-                  {payBanner}
-                </p>
+                <RootsDialogErrorBanner>{payBanner}</RootsDialogErrorBanner>
               ) : null}
-              <div className="space-y-1">
-                <Label>Importe</Label>
-                <Input
-                  required
-                  inputMode="decimal"
-                  className="bg-background"
-                  value={payAmount}
-                  onChange={(e) => setPayAmount(e.target.value)}
-                />
-              </div>
-              <div className="space-y-1">
-                <Label>Fecha de pago</Label>
-                <Input
-                  required
-                  type="date"
-                  className="bg-background"
-                  value={payDate}
-                  onChange={(e) => setPayDate(e.target.value)}
-                />
-              </div>
-              <div className="space-y-1">
-                <Label>Medio de pago (opcional)</Label>
-                <select
-                  className="flex h-9 w-full rounded-md border border-border bg-background px-2 text-sm"
-                  value={payMethodKey}
-                  onChange={(e) => setPayMethodKey(e.target.value)}
-                >
-                  <option value="">—</option>
-                  {paymentMethods.map((pm) => (
-                    <option key={treasuryPaymentOptionKey(pm)} value={treasuryPaymentOptionKey(pm)}>
-                      {pm.label}
-                    </option>
-                  ))}
-                </select>
-              </div>
+              <RootsFormMoneyField
+                label="Importe"
+                value={payAmount}
+                onChange={setPayAmount}
+              />
+              <RootsFormDateField
+                label="Fecha de pago"
+                value={payDate}
+                onChange={setPayDate}
+              />
+              <RootsFormSelectField
+                label="Medio de pago"
+                value={payMethodKey || "none"}
+                onValueChange={(value) =>
+                  setPayMethodKey(value === "none" ? "" : value)
+                }
+                hint="Opcional"
+              >
+                <RootsFormSelectItem value="none">Sin medio</RootsFormSelectItem>
+                {paymentMethods.map((pm) => (
+                  <RootsFormSelectItem
+                    key={treasuryPaymentOptionKey(pm)}
+                    value={treasuryPaymentOptionKey(pm)}
+                  >
+                    {pm.label}
+                  </RootsFormSelectItem>
+                ))}
+              </RootsFormSelectField>
               {paymentMethods.find(
                 (pm) => treasuryPaymentOptionKey(pm) === payMethodKey.trim(),
               )?.kind === "check" && popId ? (
@@ -672,116 +673,140 @@ function ExpensesPage() {
                   hideAmount
                 />
               ) : null}
-            </div>
-            <DialogFooter>
-              <Button type="button" variant="secondary" onClick={() => setPayOpen(false)}>
-                Cancelar
-              </Button>
-              <Button type="submit" disabled={paySaving}>
-                {paySaving ? "Guardando…" : "Registrar pago"}
-              </Button>
-            </DialogFooter>
-          </form>
-        </DialogContent>
+            </RootsDialogBody>
+            <RootsDialogDualActionFooter
+              cancelLabel="Cancelar"
+              confirmLabel="Registrar pago"
+              confirmType="submit"
+              confirmLoading={paySaving}
+              confirmLoadingLabel="Guardando…"
+              onCancel={() => setPayOpen(false)}
+            />
+          </RootsDialogForm>
+        </RootsDialogContent>
       </Dialog>
 
       <Dialog open={voidOpen} onOpenChange={setVoidOpen}>
-        <DialogContent
-          data-rootsy-light-shell="true"
-          className="border-border bg-card text-foreground sm:max-w-md"
-        >
-          <form onSubmit={submitVoid}>
-            <DialogHeader>
-              <DialogTitle>Anular gasto</DialogTitle>
-            </DialogHeader>
-            <p className="text-sm text-muted-foreground">
-              El gasto dejará de contar en totales. Si ya hay pagos registrados,
-              permanecen en el historial.
-            </p>
-            <div className="py-2">
-              <Label>Motivo (opcional)</Label>
-              <Textarea
-                className="mt-1 bg-background"
+        <RootsDialogContent size="default" showCloseButton={!voidSaving}>
+          <RootsDialogForm onSubmit={submitVoid}>
+            <RootsDialogHeader
+              open={voidOpen}
+              title="Anular gasto"
+              description="Deja de contar en los totales. Si ya hay pagos, quedan en el historial."
+            />
+            <RootsDialogBody>
+              <RootsFormTextareaField
+                label="Motivo"
                 value={voidReason}
-                onChange={(e) => setVoidReason(e.target.value)}
-                rows={2}
+                onChange={(event) => setVoidReason(event.target.value)}
+                hint="Opcional"
               />
-            </div>
-            <DialogFooter>
-              <Button type="button" variant="secondary" onClick={() => setVoidOpen(false)}>
-                Cancelar
-              </Button>
-              <Button type="submit" variant="destructive" disabled={voidSaving}>
-                {voidSaving ? "Anulando…" : "Anular"}
-              </Button>
-            </DialogFooter>
-          </form>
-        </DialogContent>
+            </RootsDialogBody>
+            <RootsDialogDualActionFooter
+              cancelLabel="Cancelar"
+              confirmLabel="Anular"
+              confirmType="submit"
+              destructive
+              confirmLoading={voidSaving}
+              confirmLoadingLabel="Anulando…"
+              onCancel={() => setVoidOpen(false)}
+            />
+          </RootsDialogForm>
+        </RootsDialogContent>
       </Dialog>
 
       <Dialog open={catOpen} onOpenChange={setCatOpen}>
-        <DialogContent
-          data-rootsy-light-shell="true"
-          className="border-border bg-card text-foreground sm:max-w-lg"
-        >
-          <DialogHeader>
-            <DialogTitle>Categorías</DialogTitle>
-          </DialogHeader>
-          <form onSubmit={submitNewCategory} className="space-y-3 border-b border-border pb-4">
-            <p className="text-sm text-muted-foreground">
-              Las categorías con gastos asociados se archivan (etiqueta eliminada)
-              en lugar de borrarse.
-            </p>
-            <div className="flex flex-wrap gap-2">
-              <Input
-                placeholder="Nombre"
-                className="max-w-[200px] bg-background"
-                value={newCatName}
-                onChange={(e) => setNewCatName(e.target.value)}
-              />
-              <select
-                className="h-9 rounded-md border border-border bg-background px-2 text-sm"
-                value={newCatKind}
-                onChange={(e) =>
-                  setNewCatKind(e.target.value as ExpenseCategoryKind)
-                }
-              >
-                <option value="variable">Variable</option>
-                <option value="fijo">Fijo</option>
-              </select>
-              <Button type="submit" size="sm" disabled={catSaving}>
-                Agregar
-              </Button>
-            </div>
-          </form>
-          <ul className="max-h-64 space-y-2 overflow-y-auto py-2">
-            {categories
-              .filter((c) => c.deletedAt == null)
-              .map((c) => (
-                <li
-                  key={c.id}
-                  className="flex items-center justify-between gap-2 rounded-lg border border-border px-3 py-2 text-sm"
+        <RootsDialogContent size="wide" showCloseButton={!catSaving}>
+          <RootsDialogHeader
+            open={catOpen}
+            title="Categorías"
+            description="Si ya tiene gastos, se archiva en lugar de borrarse."
+          />
+          <RootsDialogBody className="space-y-5">
+            <RootsDialogForm onSubmit={submitNewCategory}>
+              <div className="space-y-4">
+                <RootsFormTextField
+                  label="Nombre"
+                  value={newCatName}
+                  onChange={(event) => setNewCatName(event.target.value)}
+                  placeholder="Alquiler, luz, insumos…"
+                />
+                <RootsFormSelectField
+                  label="Tipo"
+                  value={newCatKind}
+                  onValueChange={(value) =>
+                    setNewCatKind(value as ExpenseCategoryKind)
+                  }
                 >
-                  <span>
-                    {c.name}{" "}
-                    <span className="text-muted-foreground">
-                      ({c.kind === "fijo" ? "Fijo" : "Variable"})
-                    </span>
-                  </span>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    className="text-destructive"
-                    onClick={() => void onDeleteCategory(c)}
-                  >
-                    <Trash2 className="size-4" aria-hidden />
-                  </Button>
-                </li>
-              ))}
-          </ul>
-        </DialogContent>
+                  <RootsFormSelectItem value="variable">Variable</RootsFormSelectItem>
+                  <RootsFormSelectItem value="fijo">Fijo</RootsFormSelectItem>
+                </RootsFormSelectField>
+                <RootsDialogDualActionFooter
+                  cancelLabel="Cerrar"
+                  confirmLabel="Agregar"
+                  confirmType="submit"
+                  confirmLoading={catSaving}
+                  confirmLoadingLabel="Agregando…"
+                  onCancel={() => setCatOpen(false)}
+                />
+              </div>
+            </RootsDialogForm>
+
+            {categories.filter((c) => c.deletedAt == null).length === 0 ? (
+              <p className={dataWorkspaceBlocksEmptyStateClass}>
+                Todavía no hay categorías.
+              </p>
+            ) : (
+              <ul
+                className={cn(
+                  dataWorkspaceEntityCardLosetaSurfaceClass,
+                  "h-auto max-h-64 divide-y divide-rootsy-bruma-200 overflow-y-auto",
+                )}
+              >
+                {categories
+                  .filter((c) => c.deletedAt == null)
+                  .map((c) => (
+                    <li
+                      key={c.id}
+                      className="flex items-center justify-between gap-3 px-4 py-3"
+                    >
+                      <div className="min-w-0">
+                        <p className="truncate font-canopy text-sm font-semibold text-rootsy-bruma-900">
+                          {c.name}
+                        </p>
+                        <p className="font-canopy text-[11px] text-rootsy-bruma-500">
+                          {c.kind === "fijo" ? "Fijo" : "Variable"}
+                        </p>
+                      </div>
+                      <RootsDangerSubtleButton
+                        type="button"
+                        size="compact"
+                        aria-label={`Eliminar ${c.name}`}
+                        onClick={() => onDeleteCategory(c)}
+                      >
+                        <Trash2 className="size-3.5" aria-hidden />
+                      </RootsDangerSubtleButton>
+                    </li>
+                  ))}
+              </ul>
+            )}
+          </RootsDialogBody>
+        </RootsDialogContent>
       </Dialog>
+
+      <RootsConfirmDialog
+        open={confirmAction !== null}
+        onOpenChange={(open) => {
+          if (!open && !confirmBusy) setConfirmAction(null)
+        }}
+        title={confirmCopy.title}
+        description={confirmCopy.description}
+        confirmLabel={confirmCopy.confirmLabel}
+        busy={confirmBusy}
+        busyConfirmLabel="Procesando…"
+        destructive
+        onConfirm={() => void runConfirmAction()}
+      />
     </>
   )
 }
