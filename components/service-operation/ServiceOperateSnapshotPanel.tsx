@@ -165,7 +165,7 @@ export function ServiceOperateSnapshotPanel({
       </div>
 
       {showCargoFooter ? (
-        <div className={layoutsOperarTicketProposalActionsClass(TICKET_PROPOSAL)}>
+        <div className={cn(layoutsOperarTicketProposalActionsClass(TICKET_PROPOSAL), "!row-start-3")}>
           <SaleOperationActionsBar
             variant="operar"
             discardDisabled={disabled || saving}

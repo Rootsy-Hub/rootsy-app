@@ -80,7 +80,7 @@ export function getLayoutsOperarGridCssVariables(): CSSProperties {
     ["--layouts-operar-toolbox-band-py-sm" as string]: `${a.toolboxBandPaddingYSmPx}px`,
     ["--layouts-operar-ticket-w" as string]: `${a.summaryPanelWidthPx}px`,
     ["--layouts-operar-ticket-header-h" as string]: `${a.ticketHeaderHeightPx}px`,
-    ["--layouts-operar-ticket-rows" as string]: `${a.ticketHeaderHeightPx}px minmax(0, 1fr) ${a.ticketActionsHeightPx}px`,
+    ["--layouts-operar-ticket-rows" as string]: `minmax(0, 1fr) ${a.ticketActionsHeightPx}px`,
     ["--layouts-operar-ticket-actions-h" as string]: `${a.ticketActionsHeightPx}px`,
     ["--layouts-operar-ticket-total-min-h" as string]: `${a.ticketTotalMinHeightPx}px`,
     ["--layouts-operar-ticket-total-min-h-sm" as string]: `${a.ticketTotalMinHeightSmPx}px`,

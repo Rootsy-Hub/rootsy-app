@@ -564,7 +564,7 @@ export function layoutsOperarToolboxIconWrapClass(_configured: boolean) {
   )
 }
 
-/** Superficie ticket — header · listado+totales · acciones. */
+/** Superficie ticket — bloque scrolleable (pedido + ítems + totales) · acciones. */
 export const layoutsOperarSummaryPanelSurfaceClass = cn(
   "layouts-operar-ticket-shell rootsy-app-light grid min-h-0 overflow-hidden",
   "[grid-template-rows:var(--layouts-operar-ticket-rows)]",
@@ -619,7 +619,7 @@ export const layoutsOperarSummaryCartRowClass =
   "relative flex min-h-0 flex-col bg-[var(--rootsy-bruma-50)]"
 
 export const layoutsOperarSummaryActionsRowClass = cn(
-  "row-start-3 grid shrink-0 grid-cols-2 overflow-hidden",
+  "row-start-2 grid shrink-0 grid-cols-2 overflow-hidden",
   "border-t border-[var(--layouts-operar-border-light)] bg-[var(--rootsy-bruma-50)]",
   "[height:var(--layouts-operar-ticket-actions-h)]",
 )

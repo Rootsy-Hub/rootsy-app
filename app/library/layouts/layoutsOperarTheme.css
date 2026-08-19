@@ -241,9 +241,9 @@
   color: var(--rootsy-bruma-900);
 }
 
-/** Pedido vacío — solo header + carrito; el total aparece con ítems. */
+/** Pedido vacío — un solo bloque scrolleable; el total aparece con ítems. */
 .layouts-operar-ticket-shell:has([data-ticket-empty="true"]) {
-  --layouts-operar-ticket-rows: var(--layouts-operar-ticket-header-h) minmax(0, 1fr);
+  --layouts-operar-ticket-rows: minmax(0, 1fr);
 }
 
 /** Vender servicio — panel derecho con totales como Vender. */

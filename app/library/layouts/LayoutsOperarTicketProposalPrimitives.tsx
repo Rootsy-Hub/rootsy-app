@@ -416,14 +416,14 @@ export function LayoutsOperarTicketProposalPanel({
       aria-label="Carrito de la venta"
     >
       {measureBadge}
-      <div className={layoutsOperarTicketProposalHeaderClass(proposalId)}>
-        <h2 className={layoutsOperarSummaryCartTitleClass}>Pedido</h2>
-      </div>
+      <div className="layouts-operar-scroll-minimal row-start-1 min-h-0 overflow-y-auto">
+        <div className={layoutsOperarTicketProposalHeaderClass(proposalId)}>
+          <h2 className={layoutsOperarSummaryCartTitleClass}>Pedido</h2>
+        </div>
 
-      <div className={cn(layoutsOperarTicketProposalCartRowClass(proposalId), "row-start-2 min-h-0")}>
         <div
           className={cn(
-            "layouts-operar-scroll-minimal min-h-0 flex-1 overflow-y-auto",
+            layoutsOperarTicketProposalCartRowClass(proposalId),
             layoutsOperarTicketProposalCartListClass(proposalId),
           )}
         >

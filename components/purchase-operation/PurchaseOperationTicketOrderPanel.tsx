@@ -1,7 +1,6 @@
 "use client"
 
 import {
-  layoutsOperarSummaryCartCellClass,
   layoutsOperarSummaryCartListSurfaceClass,
   layoutsOperarSummaryCartTitleClass,
   layoutsOperarSummaryTotalsPlacementClass,
@@ -63,47 +62,40 @@ export function PurchaseOperationTicketOrderPanel({
   const panel = (
     <>
       <div
-        className={cn(
-          layoutsOperarTicketProposalHeaderClass(TICKET_PROPOSAL),
-          "row-start-1 min-h-0 shrink-0",
-        )}
+        ref={cartScrollContainerRef}
+        className="layouts-operar-scroll-minimal row-start-1 min-h-0 overflow-y-auto"
+        role="region"
+        aria-label="Pedido"
       >
-        <div className="min-w-0">
-          <h2 className={layoutsOperarSummaryCartTitleClass}>{listTitle}</h2>
+        <div className={layoutsOperarTicketProposalHeaderClass(TICKET_PROPOSAL)}>
+          <div className="min-w-0">
+            <h2 className={layoutsOperarSummaryCartTitleClass}>{listTitle}</h2>
+          </div>
         </div>
-      </div>
 
-      <div className={cn(layoutsOperarSummaryCartCellClass, "flex min-h-0 flex-col")}>
-        <div
-          ref={cartScrollContainerRef}
-          className="layouts-operar-scroll-minimal min-h-0 flex-1 overflow-y-auto"
-          role="region"
-          aria-label="Ítems agregados"
-        >
-          {ticketLineCount === 0 ? (
-            <div className="flex min-h-0 flex-1 flex-col" data-ticket-empty="true">
-              <DataWorkspaceDetailEmptyState icon={Receipt} title={emptyTitle} />
-            </div>
-          ) : (
-            <div
-              className={cn(
-                layoutsOperarSummaryCartListSurfaceClass,
-                layoutsOperarTicketProposalCartListClass(TICKET_PROPOSAL),
-              )}
-            >
-              {lines.map((line) => (
-                <PurchaseCartLineCard
-                  key={line.lineId}
-                  line={line}
-                  overrides={overrides}
-                  canUpdateArticles={canUpdateArticles}
-                  onApplyEdits={onApplyLineEdits}
-                  onRemove={() => onRemoveLine(line.lineId)}
-                />
-              ))}
-            </div>
-          )}
-        </div>
+        {ticketLineCount === 0 ? (
+          <div className="flex min-h-0 flex-1 flex-col" data-ticket-empty="true">
+            <DataWorkspaceDetailEmptyState icon={Receipt} title={emptyTitle} />
+          </div>
+        ) : (
+          <div
+            className={cn(
+              layoutsOperarSummaryCartListSurfaceClass,
+              layoutsOperarTicketProposalCartListClass(TICKET_PROPOSAL),
+            )}
+          >
+            {lines.map((line) => (
+              <PurchaseCartLineCard
+                key={line.lineId}
+                line={line}
+                overrides={overrides}
+                canUpdateArticles={canUpdateArticles}
+                onApplyEdits={onApplyLineEdits}
+                onRemove={() => onRemoveLine(line.lineId)}
+              />
+            ))}
+          </div>
+        )}
 
         {hasTicketItems ? (
           <div className={layoutsOperarSummaryTotalsPlacementClass} data-ticket-totals>

@@ -6,7 +6,6 @@ import type { OperationCartLineOverrideState } from "@/components/sale-operation
 import { SaleOperationActionsBar } from "@/components/sale-operation/SaleOperationActionsBar"
 import { SaleOperationTotalBar } from "@/components/sale-operation/SaleOperationTotalBar"
 import {
-  layoutsOperarSummaryCartCellClass,
   layoutsOperarSummaryCartListSurfaceClass,
   layoutsOperarSummaryCartTitleClass,
   layoutsOperarSummaryTotalsPlacementClass,
@@ -110,84 +109,75 @@ export function SaleOperationTicketOrderPanel({
 
   const panel = (
     <>
-      {/* 1.2.1 — cantidad de líneas */}
       <div
-        className={cn(
-          layoutsOperarTicketProposalHeaderClass(TICKET_PROPOSAL),
-          "row-start-1 min-h-0 shrink-0",
-        )}
+        ref={cartScrollContainerRef}
+        className="layouts-operar-scroll-minimal row-start-1 min-h-0 overflow-y-auto"
+        role="region"
+        aria-label="Pedido"
+        aria-busy={loading || undefined}
       >
-        <div className="min-w-0">
-          <h2 className={layoutsOperarSummaryCartTitleClass}>{listTitle}</h2>
-          {listSubtitle ? (
-            <p className="mt-0.5 truncate text-xs font-medium text-[var(--layouts-operar-light-cart-line-meta)]">
-              {listSubtitle}
-            </p>
-          ) : null}
+        <div className={layoutsOperarTicketProposalHeaderClass(TICKET_PROPOSAL)}>
+          <div className="min-w-0">
+            <h2 className={layoutsOperarSummaryCartTitleClass}>{listTitle}</h2>
+            {listSubtitle ? (
+              <p className="mt-0.5 truncate text-xs font-medium text-[var(--layouts-operar-light-cart-line-meta)]">
+                {listSubtitle}
+              </p>
+            ) : null}
+          </div>
         </div>
-      </div>
 
-      {/* Listado + Por cobrar — el desglose queda fijo al pie del bloque */}
-      <div className={cn(layoutsOperarSummaryCartCellClass, "flex min-h-0 flex-col")}>
-        <div
-          ref={cartScrollContainerRef}
-          className="layouts-operar-scroll-minimal min-h-0 flex-1 overflow-y-auto"
-          role="region"
-          aria-label="Ítems agregados"
-          aria-busy={loading || undefined}
-        >
-          {loading ? (
-            <SaleOperationTicketOrderPanelSkeleton />
-          ) : ticketLineCount === 0 ? (
-            <div className="flex min-h-0 flex-1 flex-col" data-ticket-empty="true">
-              <DataWorkspaceDetailEmptyState icon={Receipt} title={emptyTitle} />
-            </div>
-          ) : (
-            <div
-              className={cn(
-                layoutsOperarSummaryCartListSurfaceClass,
-                layoutsOperarTicketProposalCartListClass(TICKET_PROPOSAL),
-              )}
-            >
-              {cartDisplayGroups.map((group) => (
-                <MostradorCartTicketGroup
-                  key={group.key}
-                  group={group}
-                  variant="operar"
-                  renderRow={(row) => (
-                    <MostradorCartLineCard
-                      key={row.rowKey}
-                      row={row}
-                      variant="operar"
-                      overrides={cartLineOverrides}
-                      paidPartialUnits={paidPartialUnits}
-                      onApplyEdits={aplicarEdicionLineaTicket}
-                      onRemove={() => {
-                        const paymentStatus = getRowPaymentStatus(row, paidPartialUnits)
-                        if (
-                          row.paidLocked ||
-                          paymentStatus.isFullyPaid ||
-                          paymentStatus.isPartiallyPaid
-                        ) {
-                          return
-                        }
-                        if (row.variant === "combo_component") {
-                          cambiarCantidadPorLinea(row.cartLineId, -1)
-                          return
-                        }
-                        if (row.quantityDealApplicationId) {
-                          quitarQuantityDealApplication(row.quantityDealApplicationId)
-                          return
-                        }
-                        cambiarCantidadPorLinea(row.cartLineId, -row.cantidad)
-                      }}
-                    />
-                  )}
-                />
-              ))}
-            </div>
-          )}
-        </div>
+        {loading ? (
+          <SaleOperationTicketOrderPanelSkeleton />
+        ) : ticketLineCount === 0 ? (
+          <div className="flex min-h-0 flex-1 flex-col" data-ticket-empty="true">
+            <DataWorkspaceDetailEmptyState icon={Receipt} title={emptyTitle} />
+          </div>
+        ) : (
+          <div
+            className={cn(
+              layoutsOperarSummaryCartListSurfaceClass,
+              layoutsOperarTicketProposalCartListClass(TICKET_PROPOSAL),
+            )}
+          >
+            {cartDisplayGroups.map((group) => (
+              <MostradorCartTicketGroup
+                key={group.key}
+                group={group}
+                variant="operar"
+                renderRow={(row) => (
+                  <MostradorCartLineCard
+                    key={row.rowKey}
+                    row={row}
+                    variant="operar"
+                    overrides={cartLineOverrides}
+                    paidPartialUnits={paidPartialUnits}
+                    onApplyEdits={aplicarEdicionLineaTicket}
+                    onRemove={() => {
+                      const paymentStatus = getRowPaymentStatus(row, paidPartialUnits)
+                      if (
+                        row.paidLocked ||
+                        paymentStatus.isFullyPaid ||
+                        paymentStatus.isPartiallyPaid
+                      ) {
+                        return
+                      }
+                      if (row.variant === "combo_component") {
+                        cambiarCantidadPorLinea(row.cartLineId, -1)
+                        return
+                      }
+                      if (row.quantityDealApplicationId) {
+                        quitarQuantityDealApplication(row.quantityDealApplicationId)
+                        return
+                      }
+                      cambiarCantidadPorLinea(row.cartLineId, -row.cantidad)
+                    }}
+                  />
+                )}
+              />
+            ))}
+          </div>
+        )}
 
         {!loading && hasTicketItems ? (
           <div className={layoutsOperarSummaryTotalsPlacementClass} data-ticket-totals>
