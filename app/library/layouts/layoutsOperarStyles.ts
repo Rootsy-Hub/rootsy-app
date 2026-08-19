@@ -23,6 +23,12 @@ import { cn } from "@/lib/utils"
 export const layoutsOperarTicketActionCircleRadius =
   ROOTSY_RADIUS_TOKENS.find((item) => item.id === "full")!.value
 
+/** Descartar · space.600. Cobrar · space.800 — el umbral de la venta. */
+export const layoutsOperarTicketActionDiscardSizePx = rootsySpacePx("600")
+export const layoutsOperarTicketActionConfirmSizePx = rootsySpacePx("800")
+export const layoutsOperarTicketActionDiscardIconPx = rootsySpacePx("300")
+export const layoutsOperarTicketActionConfirmIconPx = rootsySpacePx("400")
+
 /** Rail categorías — w-64 · 4× space.800 (256px) · paridad Library / Estadísticas / Ajustes. */
 export const LAYOUTS_OPERAR_CATALOG_SIDEBAR_WIDTH_PX = rootsySpacePx("800") * 4
 

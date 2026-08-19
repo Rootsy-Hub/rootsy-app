@@ -1,6 +1,12 @@
 "use client"
 
-import { layoutsOperarTicketActionCircleRadius } from "@/app/library/layouts/layoutsOperarStyles"
+import {
+  layoutsOperarTicketActionCircleRadius,
+  layoutsOperarTicketActionConfirmIconPx,
+  layoutsOperarTicketActionConfirmSizePx,
+  layoutsOperarTicketActionDiscardIconPx,
+  layoutsOperarTicketActionDiscardSizePx,
+} from "@/app/library/layouts/layoutsOperarStyles"
 import { RootsIconButton } from "@/components/rootsy-button"
 import {
   saleOpActionConfirmClass,
@@ -13,8 +19,16 @@ import {
 import { cn } from "@/lib/utils"
 import { CircleDollarSign, HandCoins, Loader2, X } from "lucide-react"
 
-const ticketActionCircleStyle = {
+const ticketActionDiscardStyle = {
   borderRadius: layoutsOperarTicketActionCircleRadius,
+  width: layoutsOperarTicketActionDiscardSizePx,
+  height: layoutsOperarTicketActionDiscardSizePx,
+} as const
+
+const ticketActionConfirmStyle = {
+  borderRadius: layoutsOperarTicketActionCircleRadius,
+  width: layoutsOperarTicketActionConfirmSizePx,
+  height: layoutsOperarTicketActionConfirmSizePx,
 } as const
 
 export type SaleOperationActionsBarProps = {
@@ -52,25 +66,31 @@ export function SaleOperationActionsBar({
           label="Descartar"
           theme="workspace"
           emphasis="outlined"
-          size="default"
+          size="large"
+          sizeChildren={false}
           disabled={discardDisabled}
           onClick={onDiscard}
-          style={ticketActionCircleStyle}
+          style={ticketActionDiscardStyle}
         >
-          <X strokeWidth={2.5} />
+          <X
+            size={layoutsOperarTicketActionDiscardIconPx}
+            strokeWidth={2.5}
+            aria-hidden
+          />
         </RootsIconButton>
         <RootsIconButton
           label={confirmLoading ? "Procesando" : confirmLabel}
           theme="pos"
           emphasis="primary"
           size="large"
+          sizeChildren={false}
           loading={confirmLoading}
           disabled={confirmDisabled}
           title={confirmTitle}
           onClick={onConfirm}
-          style={ticketActionCircleStyle}
+          style={ticketActionConfirmStyle}
         >
-          <HandCoins />
+          <HandCoins size={layoutsOperarTicketActionConfirmIconPx} aria-hidden />
         </RootsIconButton>
       </>
     )
