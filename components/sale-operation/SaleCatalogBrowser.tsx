@@ -40,8 +40,10 @@ import {
   type SaleCatalogViewPersisted,
 } from "@/lib/saleCatalogPreference"
 import {
+  layoutsOperarCatalogCanvasBodyClass,
   layoutsOperarCatalogCanvasClass,
   layoutsOperarCatalogCanvasScrollClass,
+  layoutsOperarCatalogScrollFadeClass,
   layoutsOperarCatalogColumnClass,
   layoutsOperarCatalogSidebarClass,
   layoutsOperarCatalogSidebarClosedClass,
@@ -409,10 +411,11 @@ export function SaleCatalogBrowser({
           onPriceListSelectClosed={refocusScan}
         />
 
+        <div className={layoutsOperarCatalogCanvasBodyClass}>
         <div
           ref={setCanvasScrollRef}
           className={cn(
-            "min-h-0",
+            "min-h-0 h-full",
             showGridSkeleton
               ? cn(layoutsOperarCatalogCanvasScrollClass)
               : displayError
@@ -468,6 +471,10 @@ export function SaleCatalogBrowser({
               }
             />
           )}
+        </div>
+        {!showGridSkeleton && !displayError && !isEmpty ? (
+          <div className={layoutsOperarCatalogScrollFadeClass} aria-hidden />
+        ) : null}
         </div>
       </section>
     </div>

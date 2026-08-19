@@ -818,14 +818,19 @@ export function layoutsOperarTicketProposalCartListClass(id: LayoutsOperarTicket
 
 export function layoutsOperarTicketProposalLineGridClass(id: LayoutsOperarTicketProposalId) {
   return cn(
-    "grid w-full grid-cols-[minmax(0,1fr)_auto] items-start gap-x-3 px-3 py-2.5 text-left",
+    "grid w-full grid-cols-[auto_minmax(0,1fr)_auto] items-start gap-x-2.5 px-3 py-2.5 text-left",
     id === "bruma-plana" && "py-2",
   )
 }
 
+export function layoutsOperarTicketProposalLineThumbClass(id: LayoutsOperarTicketProposalId) {
+  void id
+  return "relative size-14 shrink-0 overflow-hidden rounded-lg border border-[var(--layouts-operar-border-light)] bg-[var(--rootsy-bruma-200)]"
+}
+
 export function layoutsOperarTicketProposalQtyClass(id: LayoutsOperarTicketProposalId) {
   void id
-  return "shrink-0 pt-0.5 text-right text-sm font-medium tabular-nums text-[var(--rootsy-bruma-700)]"
+  return "shrink-0 text-right text-sm font-bold tabular-nums text-[var(--rootsy-bruma-700)]"
 }
 
 export function layoutsOperarTicketProposalLineNameClass(id: LayoutsOperarTicketProposalId) {

@@ -303,6 +303,15 @@ export const layoutsOperarCatalogCanvasScrollClass = cn(
   "min-h-0 flex-1 overflow-y-auto p-3",
 )
 
+/** Fila del canvas que envuelve el scroll + el fade de continuación. */
+export const layoutsOperarCatalogCanvasBodyClass = "relative min-h-0 overflow-hidden"
+
+/** Velo inferior — sugiere que el catálogo sigue hacia abajo. */
+export const layoutsOperarCatalogScrollFadeClass = cn(
+  "pointer-events-none absolute inset-x-0 bottom-0 z-10 h-16",
+  "bg-[linear-gradient(180deg,transparent_0%,color-mix(in_srgb,var(--rootsy-sombra-800)_55%,transparent)_42%,var(--rootsy-sombra-800)_100%)]",
+)
+
 /** Canvas formularios operar (pasos wizard) — scroll horizontal + top; el aire final va en el wrapper interno. */
 export const layoutsOperarFormCanvasScrollClass = cn(
   layoutsOperarScrollMinimalClass,

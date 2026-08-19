@@ -4,9 +4,9 @@ import { CartLineScrollTarget } from "@/components/sale-operation/CartLineScroll
 import { useSaleScanInputFocus } from "@/components/sale-operation/SaleScanInputFocusContext"
 import {
   layoutsOperarTicketProposalLineAmountClass,
-  layoutsOperarTicketProposalLineCommentClass,
   layoutsOperarTicketProposalLineGridClass,
   layoutsOperarTicketProposalLineNameClass,
+  layoutsOperarTicketProposalLineThumbClass,
   layoutsOperarTicketProposalQtyClass,
 } from "@/app/library/layouts/layoutsOperarHardcodedSpec"
 import { LAYOUTS_OPERAR_DEFAULT_TICKET_PROPOSAL } from "@/app/library/layouts/rootsyLayoutsOperarSystem"
@@ -27,7 +27,6 @@ import {
   cartLineRowGridNoPriceClass,
   formatOperarTicketQuantity,
 } from "@/components/sale-operation/CartLineQuantityLabel"
-import { formatArticleDiscountBadge } from "@/lib/articleDiscount"
 import { resolveCatalogCartLinePricing } from "@/components/sale-operation/saleCatalogProduct"
 import {
   saleOpCartLineDividerTopClass,
@@ -64,6 +63,7 @@ import {
 } from "@/lib/articleItemKind"
 import { cn } from "@/lib/utils"
 import { Banknote, CheckCircle2, Hash, MessageSquare, Percent, Trash2 } from "lucide-react"
+import Image from "next/image"
 import { useId, useRef, useState } from "react"
 
 type Props = {
@@ -150,6 +150,7 @@ export function MostradorCartLineCard({
     CheckoutDiscountMode
   >("porcentaje")
   const [discountDraft, setDiscountDraft] = useState("")
+  const [imageFailed, setImageFailed] = useState(false)
   const quantityFieldId = useId()
   const commentFieldId = useId()
   const discountFieldId = useId()
@@ -178,7 +179,8 @@ export function MostradorCartLineCard({
   const descuentoSuprimido = itemDescuentoSuprimido[row.cartLineId] === true
   const descuentoRaw = itemDescuentoDraft[row.cartLineId] ?? ""
   const tieneComentario = comentario.trim().length > 0
-  const showPrice = !row.hidePrice
+  const isQuantityDeal = Boolean(row.quantityDealApplicationId)
+  const showPrice = !row.hidePrice || (variant === "operar" && isQuantityDeal)
 
   const canChangeQuantity =
     row.variant !== "combo_component" && !row.quantityDealApplicationId
@@ -311,7 +313,8 @@ export function MostradorCartLineCard({
       : "Cantidad en unidad"
 
   const isOperar = variant === "operar"
-  const showLinePrice = showPrice && row.promoGroupVariant !== "discount"
+  const showLinePrice =
+    showPrice && (isOperar || row.promoGroupVariant !== "discount")
   const rowGridLayoutClass = isOperar
     ? layoutsOperarTicketProposalLineGridClass(TICKET_PROPOSAL)
     : showLinePrice || !showPrice
@@ -337,16 +340,26 @@ export function MostradorCartLineCard({
         },
       )
     : null
-  const discountPillLabel = hasLineDiscount
-    ? catalogLinePricing?.descuentoCatalogoLabel ??
-      (catalogLinePricing?.itemDiscountMode &&
-      catalogLinePricing.itemDiscountValue != null
-        ? formatArticleDiscountBadge(
-            catalogLinePricing.itemDiscountMode,
-            catalogLinePricing.itemDiscountValue,
-          )
-        : formatArticleDiscountBadge("fijo", pricing.precioBase - pricing.precioFinal))
+  const catalogOffPercent =
+    catalogLinePricing?.itemDiscountMode === "porcentaje" &&
+    catalogLinePricing.itemDiscountValue != null
+      ? catalogLinePricing.itemDiscountValue
+      : null
+  const computedOffPercent =
+    pricing.precioBase > 0.004
+      ? Math.round(
+          ((pricing.precioBase - pricing.precioFinal) / pricing.precioBase) * 100,
+        )
+      : null
+  const discountOffPercent = catalogOffPercent ?? computedOffPercent
+  const quantityDealPill = isQuantityDeal
+    ? row.promoGroupLabel?.trim() || undefined
     : undefined
+  const discountPillLabel =
+    quantityDealPill ??
+    (hasLineDiscount && discountOffPercent != null && discountOffPercent > 0
+      ? `${Number.isInteger(discountOffPercent) ? String(discountOffPercent) : discountOffPercent.toLocaleString("es-AR", { maximumFractionDigits: 2 })}% OFF`
+      : undefined)
 
   const paidBadge =
     paymentStatus.isFullyPaid ? (
@@ -360,8 +373,27 @@ export function MostradorCartLineCard({
       </span>
     ) : null
 
+  const lineImage = row.producto?.imagen?.trim() ?? ""
+  const showLineImage = lineImage.length > 0 && !imageFailed
+
   const rowContent = isOperar ? (
     <>
+      <span
+        className={layoutsOperarTicketProposalLineThumbClass(TICKET_PROPOSAL)}
+        aria-hidden
+      >
+        {showLineImage ? (
+          <Image
+            src={lineImage}
+            alt=""
+            fill
+            sizes="56px"
+            unoptimized
+            onError={() => setImageFailed(true)}
+            className="object-cover"
+          />
+        ) : null}
+      </span>
       <span className="min-w-0">
         <span className="flex min-w-0 items-center gap-1.5">
           <span
@@ -375,22 +407,34 @@ export function MostradorCartLineCard({
           {paidBadge}
         </span>
         {showLinePrice ? (
-          <span className="mt-0.5 flex flex-wrap items-baseline gap-x-2">
+          <span className="mt-0.5 flex flex-wrap items-baseline gap-x-1.5">
+            <span
+              className={cn(
+                layoutsOperarTicketProposalLineAmountClass(TICKET_PROPOSAL),
+                "text-xs font-bold",
+              )}
+            >
+              {saleOpFmt.format(pricing.precioFinal)}
+            </span>
             {hasLineDiscount ? (
-              <span className="text-xs tabular-nums text-[var(--rootsy-bruma-400)] line-through">
+              <span className="text-xs font-normal tabular-nums text-[var(--rootsy-bruma-600)] line-through">
                 {saleOpFmt.format(pricing.precioBase)}
               </span>
             ) : null}
-            <span className={layoutsOperarTicketProposalLineAmountClass(TICKET_PROPOSAL)}>
-              {saleOpFmt.format(pricing.precioFinal)}
-            </span>
           </span>
         ) : null}
         {discountPillLabel ? (
-          <span
-            className="mt-1.5 inline-flex w-fit max-w-full rounded-full px-2 py-0.5 text-[11px] font-medium tabular-nums text-[var(--rootsy-savia-800)] bg-[color-mix(in_srgb,var(--rootsy-savia-500)_14%,transparent)]"
-          >
+          <span className="mt-px inline-flex w-fit max-w-full rounded-full bg-[var(--rootsy-savia-200)] px-1.5 py-px text-[10px] font-bold leading-tight text-[var(--rootsy-savia-900)]">
             {discountPillLabel}
+          </span>
+        ) : null}
+        {tieneComentario ? (
+          <span className="mt-1 block text-[11px] font-medium leading-snug text-[var(--rootsy-bruma-700)]">
+            <MessageSquare
+              className="mr-1 inline size-3 -translate-y-px text-[var(--rootsy-bruma-600)]"
+              aria-hidden
+            />
+            {comentario.trim()}
           </span>
         ) : null}
       </span>
@@ -481,26 +525,13 @@ export function MostradorCartLineCard({
           </button>
         )}
 
-        {tieneComentario ? (
+        {tieneComentario && !isOperar ? (
           <div
-            className={
-              isOperar
-                ? layoutsOperarTicketProposalLineCommentClass(TICKET_PROPOSAL)
-                : cn(saleOpCartLineDividerTopClass, "bg-slate-50/80 px-3 py-2")
-            }
+            className={cn(saleOpCartLineDividerTopClass, "bg-slate-50/80 px-3 py-2")}
           >
-            <p
-              className={
-                isOperar
-                  ? undefined
-                  : "text-[11px] leading-snug text-slate-600"
-              }
-            >
+            <p className="text-[11px] leading-snug text-slate-600">
               <MessageSquare
-                className={cn(
-                  "mr-1 inline size-3 -translate-y-px",
-                  isOperar ? "text-[var(--layouts-operar-light-cart-line-meta)]" : "text-slate-400",
-                )}
+                className="mr-1 inline size-3 -translate-y-px text-slate-400"
                 aria-hidden
               />
               {comentario.trim()}

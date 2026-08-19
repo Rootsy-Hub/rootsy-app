@@ -19,6 +19,7 @@ import {
   layoutsOperarTicketProposalLineCommentClass,
   layoutsOperarTicketProposalLineGridClass,
   layoutsOperarTicketProposalLineNameClass,
+  layoutsOperarTicketProposalLineThumbClass,
   layoutsOperarTicketProposalPanelClass,
   layoutsOperarTicketProposalPromoBadgeClass,
   layoutsOperarTicketProposalPromoBannerClass,
@@ -234,6 +235,10 @@ function LayoutsOperarTicketProposalLine({
   return (
     <div className="w-full">
       <div className={layoutsOperarTicketProposalLineGridClass(proposalId)}>
+        <span
+          className={layoutsOperarTicketProposalLineThumbClass(proposalId)}
+          aria-hidden
+        />
         <span className="min-w-0">
           <span className={layoutsOperarTicketProposalLineNameClass(proposalId)}>{line.nombre}</span>
           {!line.hidePrice ? (
