@@ -69,11 +69,18 @@ export const DOCK_ICON_SIZE_PX = 48
 export const DOCK_ICON_GAP_PX = 16
 export const DOCK_SLOT_SHIFT_PX = DOCK_ICON_SIZE_PX + DOCK_ICON_GAP_PX
 export const DOCK_SLOT_INSET_X_PX = DOCK_ICON_GAP_PX / 2
-/** Padding del bloque de cristal — compacto, con un poco de aire. */
-export const DOCK_SHELL_PADDING_X_PX = 6
+/** Padding vertical del bloque de cristal. */
 export const DOCK_SHELL_PADDING_Y_PX = 3
 /** Inset vertical dentro del track (badges arriba + alinear fila de íconos). */
 export const DOCK_TRACK_INSET_Y_PX = 5
+/** Distancia cromo → ícono (arriba/abajo). El lado usa slot inset + este valor. */
+export const DOCK_CHROME_INSET_PX =
+  DOCK_SHELL_PADDING_Y_PX + DOCK_TRACK_INSET_Y_PX
+/** Lados: el slot ya trae 8px; esto iguala el aire vertical. */
+export const DOCK_SHELL_PADDING_X_PX = Math.max(
+  0,
+  DOCK_CHROME_INSET_PX - DOCK_SLOT_INSET_X_PX,
+)
 export const DOCK_TRACK_HEIGHT_PX =
   DOCK_ICON_SIZE_PX + DOCK_TRACK_INSET_Y_PX * 2
 export const DOCK_EDIT_DIVIDER_HEIGHT_PX = 32

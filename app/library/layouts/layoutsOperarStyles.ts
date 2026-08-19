@@ -305,16 +305,18 @@ export const layoutsOperarCatalogRailScrollClass = libraryScrollDarkClass
 
 export const layoutsOperarCatalogCanvasScrollClass = cn(
   layoutsOperarScrollMinimalClass,
-  "min-h-0 flex-1 overflow-y-auto px-3 pt-3 pb-0",
+  "min-h-0 flex-1 overflow-y-auto p-3",
 )
 
 /** Fila del canvas que envuelve el scroll + el fade de continuación. */
 export const layoutsOperarCatalogCanvasBodyClass =
   "relative min-h-0 h-full overflow-hidden"
 
-/** Velo inferior — CSS en layoutsOperarTheme.css, pegado al corte del toolbox. */
+/** Velos de continuación — CSS en layoutsOperarTheme.css. */
 export const layoutsOperarCatalogScrollFadeClass =
   "layouts-operar-catalog-scroll-fade"
+export const layoutsOperarCatalogScrollFadeTopClass =
+  "layouts-operar-catalog-scroll-fade is-top"
 
 /** Canvas formularios operar (pasos wizard) — scroll horizontal + top; el aire final va en el wrapper interno. */
 export const layoutsOperarFormCanvasScrollClass = cn(

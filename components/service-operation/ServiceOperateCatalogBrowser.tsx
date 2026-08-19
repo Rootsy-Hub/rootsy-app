@@ -6,7 +6,6 @@ import {
   layoutsOperarCatalogCanvasBodyClass,
   layoutsOperarCatalogCanvasClass,
   layoutsOperarCatalogCanvasScrollClass,
-  layoutsOperarCatalogScrollFadeClass,
   layoutsOperarCatalogColumnClass,
   layoutsOperarCatalogGridClass,
   layoutsOperarCatalogSidebarClass,
@@ -34,6 +33,8 @@ import type {
   ServiceOperateCatalogCategory,
   ServiceOperateCatalogItem,
 } from "@/lib/serviceOperateCatalog"
+import { CatalogScrollFades } from "@/components/sale-operation/CatalogScrollFades"
+import { useCatalogScrollFade } from "@/hooks/useCatalogScrollFade"
 import { cn } from "@/lib/utils"
 import { ChevronLeft } from "lucide-react"
 import { useMemo, useState } from "react"
@@ -81,6 +82,8 @@ export function ServiceOperateCatalogBrowser({
     categoria: ALL_CATEGORY_NAME,
   })
   const [clearServiceConfirmOpen, setClearServiceConfirmOpen] = useState(false)
+  const [scrollRoot, setScrollRoot] = useState<HTMLElement | null>(null)
+  const catalogFade = useCatalogScrollFade(scrollRoot)
 
   const showSelectedDetail = Boolean(selectedService && popId?.trim())
 
@@ -179,6 +182,7 @@ export function ServiceOperateCatalogBrowser({
 
             <div className={layoutsOperarCatalogCanvasBodyClass}>
             <div
+              ref={setScrollRoot}
               className={cn(
                 "min-h-0 h-full",
                 loading && !error
@@ -225,7 +229,10 @@ export function ServiceOperateCatalogBrowser({
               )}
             </div>
             {!loading && !error && visibleItems.length > 0 ? (
-              <div className={layoutsOperarCatalogScrollFadeClass} aria-hidden />
+              <CatalogScrollFades
+                atCeiling={catalogFade.atCeiling}
+                atFloor={catalogFade.atFloor}
+              />
             ) : null}
             </div>
           </section>
