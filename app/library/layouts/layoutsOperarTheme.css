@@ -271,6 +271,27 @@
 }
 
 
+/** Velo del catálogo — ola: nace suave y muere en el corte, sin bloque opaco. */
+.layouts-operar-catalog-scroll-fade {
+  pointer-events: none;
+  position: absolute;
+  inset-inline: 0;
+  bottom: -1px;
+  z-index: 10;
+  height: 8rem;
+  background: linear-gradient(
+    180deg,
+    transparent 0%,
+    color-mix(in srgb, var(--rootsy-sombra-800) 4%, transparent) 22%,
+    color-mix(in srgb, var(--rootsy-sombra-800) 12%, transparent) 40%,
+    color-mix(in srgb, var(--rootsy-sombra-800) 26%, transparent) 58%,
+    color-mix(in srgb, var(--rootsy-sombra-800) 46%, transparent) 74%,
+    color-mix(in srgb, var(--rootsy-sombra-800) 68%, transparent) 88%,
+    color-mix(in srgb, var(--rootsy-sombra-800) 86%, transparent) 96%,
+    var(--rootsy-sombra-800) 100%
+  );
+}
+
 .rootsy-theme-pos.layouts-operar-body .layouts-operar-catalog-rail-scroll,
 .rootsy-theme-pos.layouts-operar-body .layouts-operar-scroll-minimal,
 .rootsy-theme-pos .layouts-operar-body .layouts-operar-catalog-rail-scroll,

@@ -3,14 +3,8 @@
 import "@/app/library/layouts/layoutsOperarTheme.css"
 import "@/app/library/radius/rootsyRadiusSystem.css"
 import {
-  layoutsOperarSummaryActionConfirmColClass,
-  layoutsOperarSummaryActionDiscardColClass,
-} from "@/app/library/layouts/layoutsOperarStyles"
-import {
   getLayoutsOperarGridCssVariables,
   getLayoutsOperarTicketProposal,
-  layoutsOperarTicketProposalActionDiscardClass,
-  layoutsOperarTicketProposalActionSellClass,
   layoutsOperarTicketProposalActionsClass,
   layoutsOperarTicketProposalCartListClass,
   layoutsOperarTicketProposalCartRowClass,
@@ -44,6 +38,7 @@ import {
   type LayoutsOperarTicketProposal,
 } from "@/app/library/layouts/rootsyLayoutsOperarSystem"
 import { formatOperarTicketQuantity } from "@/components/sale-operation/CartLineQuantityLabel"
+import { SaleOperationActionsBar } from "@/components/sale-operation/SaleOperationActionsBar"
 import { saleOpFmt } from "@/components/sale-operation/saleOperationStyles"
 import { cn } from "@/lib/utils"
 import { Banknote, MessageSquare, Percent, Tag } from "lucide-react"
@@ -460,26 +455,11 @@ export function LayoutsOperarTicketProposalPanel({
       </div>
 
       <div className={layoutsOperarTicketProposalActionsClass(proposalId)}>
-        <div className={layoutsOperarSummaryActionDiscardColClass}>
-          <div
-            className={cn(
-              layoutsOperarTicketProposalActionDiscardClass(proposalId),
-              "h-full w-full",
-            )}
-          >
-            Descartar
-          </div>
-        </div>
-        <div className={layoutsOperarSummaryActionConfirmColClass}>
-          <div
-            className={cn(
-              layoutsOperarTicketProposalActionSellClass(proposalId),
-              "h-full w-full",
-            )}
-          >
-            Vender
-          </div>
-        </div>
+        <SaleOperationActionsBar
+          variant="operar"
+          onDiscard={() => {}}
+          onConfirm={() => {}}
+        />
       </div>
 
       <p className="sr-only">

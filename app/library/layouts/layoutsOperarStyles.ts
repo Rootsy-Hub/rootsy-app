@@ -16,7 +16,12 @@ import {
   rootsyLayoutsEarthFloorSlotIconClass,
   rootsyLayoutsEarthFloorSurfaceClass,
 } from "@/app/library/layouts/rootsyLayoutsEarthFloor"
+import { ROOTSY_RADIUS_TOKENS } from "@/app/library/radius/rootsyRadiusSystem"
 import { cn } from "@/lib/utils"
+
+/** radius.full — círculos del umbral Descartar / Cobrar. */
+export const layoutsOperarTicketActionCircleRadius =
+  ROOTSY_RADIUS_TOKENS.find((item) => item.id === "full")!.value
 
 /** Rail categorías — w-64 · 4× space.800 (256px) · paridad Library / Estadísticas / Ajustes. */
 export const LAYOUTS_OPERAR_CATALOG_SIDEBAR_WIDTH_PX = rootsySpacePx("800") * 4
@@ -300,17 +305,16 @@ export const layoutsOperarCatalogRailScrollClass = libraryScrollDarkClass
 
 export const layoutsOperarCatalogCanvasScrollClass = cn(
   layoutsOperarScrollMinimalClass,
-  "min-h-0 flex-1 overflow-y-auto p-3",
+  "min-h-0 flex-1 overflow-y-auto px-3 pt-3 pb-0",
 )
 
 /** Fila del canvas que envuelve el scroll + el fade de continuación. */
-export const layoutsOperarCatalogCanvasBodyClass = "relative min-h-0 overflow-hidden"
+export const layoutsOperarCatalogCanvasBodyClass =
+  "relative min-h-0 h-full overflow-hidden"
 
-/** Velo inferior — sugiere que el catálogo sigue hacia abajo. */
-export const layoutsOperarCatalogScrollFadeClass = cn(
-  "pointer-events-none absolute inset-x-0 bottom-0 z-10 h-16",
-  "bg-[linear-gradient(180deg,transparent_0%,color-mix(in_srgb,var(--rootsy-sombra-800)_55%,transparent)_42%,var(--rootsy-sombra-800)_100%)]",
-)
+/** Velo inferior — CSS en layoutsOperarTheme.css, pegado al corte del toolbox. */
+export const layoutsOperarCatalogScrollFadeClass =
+  "layouts-operar-catalog-scroll-fade"
 
 /** Canvas formularios operar (pasos wizard) — scroll horizontal + top; el aire final va en el wrapper interno. */
 export const layoutsOperarFormCanvasScrollClass = cn(
@@ -620,6 +624,14 @@ export const layoutsOperarSummaryCartRowClass =
 
 export const layoutsOperarSummaryActionsRowClass = cn(
   "row-start-2 grid shrink-0 grid-cols-2 overflow-hidden",
+  "border-t border-[var(--layouts-operar-border-light)] bg-[var(--rootsy-bruma-50)]",
+  "[height:var(--layouts-operar-ticket-actions-h)]",
+)
+
+/** 1.2.3 — umbral circular Descartar + Cobrar (ticket operar). */
+export const layoutsOperarTicketCircleActionsRowClass = cn(
+  "row-start-2 flex shrink-0 items-center justify-center",
+  "gap-[var(--rootsy-space-300)]",
   "border-t border-[var(--layouts-operar-border-light)] bg-[var(--rootsy-bruma-50)]",
   "[height:var(--layouts-operar-ticket-actions-h)]",
 )

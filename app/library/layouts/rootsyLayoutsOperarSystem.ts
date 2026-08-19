@@ -84,7 +84,8 @@ export const ROOTSY_LAYOUTS_OPERAR_ANATOMY = {
   toolboxMinHeightClass: `min-h-[${OPERAR_FOOTER_BAND_MIN_PX}px] sm:min-h-[${OPERAR_FOOTER_BAND_MIN_SM_PX}px]`,
   toolboxMinHeightSmClass: `sm:min-h-[${OPERAR_FOOTER_BAND_MIN_SM_PX}px]`,
   ticketHeaderHeightPx: 40,
-  ticketActionsHeightPx: 52,
+  /** space.800 — aire para círculo large (48) + Descartar default (40). */
+  ticketActionsHeightPx: 64,
   /** Totales — misma altura mínima que toolbox para cerrar el grid en una sola línea base. */
   ticketTotalMinHeightPx: OPERAR_FOOTER_BAND_MIN_PX,
   ticketTotalMinHeightSmPx: OPERAR_FOOTER_BAND_MIN_SM_PX,

@@ -22,9 +22,6 @@ import {
   layoutsOperarHeaderScopeClass,
   layoutsOperarSummaryCartTitleClass,
   layoutsOperarSummaryCartRowClass,
-  layoutsOperarSummaryActionsRowClass,
-  layoutsOperarSummaryActionDiscardColClass,
-  layoutsOperarSummaryActionConfirmColClass,
   layoutsOperarSummaryHeaderRowClass,
   layoutsOperarSummaryTotalRowClass,
   layoutsOperarSummaryTotalsAmountClass,
@@ -47,6 +44,7 @@ import {
   getLayoutsOperarWireframeZoneLabel,
   getLayoutsOperarWireframeSurfaceToken,
   getLayoutsOperarWireframeZoneStyle,
+  layoutsOperarTicketProposalActionsClass,
   LAYOUTS_OPERAR_ANATOMY,
   type LayoutsOperarWireframeZone,
 } from "@/app/library/layouts/layoutsOperarHardcodedSpec"
@@ -74,6 +72,7 @@ import { LAYOUTS_OPERAR_DEFAULT_TOOLBOX_PROPOSAL } from "@/app/library/layouts/r
 import { LayoutsModuleShellWithContent } from "@/app/library/layouts/LayoutsModuleDocPrimitives"
 import { ROOTSY_LAYOUTS_MODULE_HEADER } from "@/app/library/layouts/rootsyLayoutsModuleSystem"
 import { DataWorkspaceDetailEmptyState } from "@/components/data-workspace/DataWorkspaceDetailEmptyState"
+import { SaleOperationActionsBar } from "@/components/sale-operation/SaleOperationActionsBar"
 import { DataWorkspaceHeaderTitle } from "@/components/layouts/DataWorkspaceHeaderTitle"
 import {
   dataWorkspaceHeaderChromeButtonClass,
@@ -443,17 +442,12 @@ function LayoutsOperarSummaryPanel({
           <div className={layoutsOperarSummaryCartRowClass}>
             <LayoutsOperarSummaryEmptyOrder />
           </div>
-          <div className={layoutsOperarSummaryActionsRowClass}>
-            <div className={layoutsOperarSummaryActionDiscardColClass}>
-              <div className="flex h-full w-full items-center justify-center text-sm font-semibold text-rose-700">
-                Descartar
-              </div>
-            </div>
-            <div className={layoutsOperarSummaryActionConfirmColClass}>
-              <div className="flex h-full w-full items-center justify-center bg-[var(--rootsy-savia-600)] text-sm font-semibold text-white">
-                Vender
-              </div>
-            </div>
+          <div className={layoutsOperarTicketProposalActionsClass(LAYOUTS_OPERAR_DEFAULT_TICKET_PROPOSAL)}>
+            <SaleOperationActionsBar
+              variant="operar"
+              onDiscard={() => {}}
+              onConfirm={() => {}}
+            />
           </div>
           <div className={layoutsOperarSummaryTotalRowClass}>
             <span className={layoutsOperarSummaryTotalsLabelClass}>Total a cobrar</span>

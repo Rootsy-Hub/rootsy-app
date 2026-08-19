@@ -12,7 +12,7 @@ import {
   layoutsOperarProductCardOfferClass,
   layoutsOperarProductCardPriceClass,
   layoutsOperarProductCardTitleClass,
-  layoutsOperarSummaryActionsRowClass,
+  layoutsOperarTicketCircleActionsRowClass,
   layoutsOperarSummaryCartHeadingClass,
   layoutsOperarSummaryCartMetaClass,
   layoutsOperarSummarySectionTitleClass,
@@ -932,12 +932,12 @@ export function layoutsOperarTicketProposalPromoBadgeClass(
 export function layoutsOperarTicketProposalActionsClass(id: LayoutsOperarTicketProposalId) {
   if (id === "bruma-plana") {
     return cn(
-      layoutsOperarSummaryActionsRowClass,
+      layoutsOperarTicketCircleActionsRowClass,
       "border-t border-[color-mix(in_srgb,var(--rootsy-bruma-200)_92%,transparent)] bg-[var(--rootsy-bruma-50)]",
     )
   }
 
-  return layoutsOperarSummaryActionsRowClass
+  return layoutsOperarTicketCircleActionsRowClass
 }
 
 export function layoutsOperarTicketProposalActionDiscardClass(id: LayoutsOperarTicketProposalId) {
