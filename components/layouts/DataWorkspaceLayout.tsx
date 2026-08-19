@@ -307,7 +307,6 @@ export function DataWorkspaceLayout({
               className={cn(
                 "relative z-10 flex min-h-0 min-w-0 flex-1 flex-col",
                 usePopBackdrop && contentFlush && layoutsModuleContentShellClass,
-                mainClassName,
                 contentFlush
                   ? cn(
                       "min-h-0 p-0",
@@ -318,6 +317,7 @@ export function DataWorkspaceLayout({
                       mainMaxWidthClass,
                       "mx-auto w-full max-w-none",
                     ),
+                mainClassName,
               )}
             >
               {children}
@@ -328,7 +328,6 @@ export function DataWorkspaceLayout({
             className={cn(
               "relative z-10 flex min-h-0 w-full flex-1 flex-col",
               usePopBackdrop && contentFlush && layoutsModuleContentShellClass,
-              mainClassName,
               contentFlush
                 ? cn(
                     "min-h-0 p-0",
@@ -338,6 +337,7 @@ export function DataWorkspaceLayout({
                     "mx-auto overflow-y-auto px-4 py-8 sm:px-6",
                     mainMaxWidthClass,
                   ),
+              mainClassName,
             )}
           >
             {children}

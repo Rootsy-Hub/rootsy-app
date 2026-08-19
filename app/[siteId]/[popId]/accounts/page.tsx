@@ -5,6 +5,7 @@ import {
   createTreasuryChildAccount,
   deleteTreasuryAccount,
   getTreasuryAccountsHub,
+  setTreasuryAccountActive,
   updateTreasuryAccount,
   type TreasuryAccountTableRow,
   type TreasuryChildAccountKind,
@@ -22,8 +23,9 @@ import {
   DataWorkspaceModuleLayout,
   dataWorkspaceModuleHeaderVariant,
 } from "@/components/layouts-module/DataWorkspaceModuleLayout"
+import { DataWorkspaceHeaderTooltipIconButton } from "@/components/layouts/DataWorkspaceHeaderTooltipIconButton"
 import { RootsBanner } from "@/components/rootsy-banner"
-import { RootsPrimaryButton } from "@/components/rootsy-button"
+import { RootsConfirmDialog } from "@/components/rootsy-dialog"
 import { RootsFormSegmentField } from "@/components/rootsy-form"
 import {
   dataWorkspaceBlocksEmptyStateClass,
@@ -33,6 +35,7 @@ import {
 } from "@/components/data-workspace/dataWorkspaceListStyles"
 import { usePopWorkspace } from "@/context/PopWorkspaceContext"
 import { type TreasuryAccountMenuActionId } from "@/lib/treasuryAccountMenuActions"
+import { Plus } from "lucide-react"
 import { useParams, useRouter } from "next/navigation"
 import {
   useCallback,
@@ -59,14 +62,6 @@ function accountMatchesFilter(row: TreasuryAccountTableRow, filter: AccountFilte
   if (filter === "efectivo") return row.kind === "cash"
   if (filter === "inactivas") return !row.isActive
   return true
-}
-
-function accountFilterDescription(filter: AccountFilter) {
-  if (filter === "banco") return "Cuentas bancarias del negocio."
-  if (filter === "billetera") return "Mercado Pago y otras billeteras."
-  if (filter === "efectivo") return "Efectivo directo, sin liquidaciones."
-  if (filter === "inactivas") return "Cuentas que ya no se usan."
-  return "Bancos, billeteras y efectivo del negocio."
 }
 
 function accountFilterEmptyCopy(filter: AccountFilter, canCreate: boolean) {
@@ -120,6 +115,11 @@ function AccountsPage() {
   const [deleteConfirmValue, setDeleteConfirmValue] = useState("")
   const [deleteBusy, setDeleteBusy] = useState(false)
   const [deleteBanner, setDeleteBanner] = useState<string | null>(null)
+
+  const [deactivateRow, setDeactivateRow] =
+    useState<TreasuryAccountTableRow | null>(null)
+  const [deactivateBusy, setDeactivateBusy] = useState(false)
+  const [deactivateBanner, setDeactivateBanner] = useState<string | null>(null)
 
   const [childCreate, setChildCreate] = useState<{
     parent: TreasuryAccountTableRow
@@ -272,6 +272,30 @@ function AccountsPage() {
     await load()
   }
 
+  const submitDeactivate = async () => {
+    if (!popId || !deactivateRow) return
+    setDeactivateBusy(true)
+    setDeactivateBanner(null)
+    const res = await setTreasuryAccountActive(popId, deactivateRow.id, false)
+    setDeactivateBusy(false)
+    if (!res.success) {
+      setDeactivateBanner(res.error)
+      return
+    }
+    setDeactivateRow(null)
+    await load()
+  }
+
+  const submitActivate = async (row: TreasuryAccountTableRow) => {
+    if (!popId) return
+    const res = await setTreasuryAccountActive(popId, row.id, true)
+    if (!res.success) {
+      setError(res.error)
+      return
+    }
+    await load()
+  }
+
   const handleAccountMenuAction = (
     row: TreasuryAccountTableRow,
     actionId: TreasuryAccountMenuActionId,
@@ -279,6 +303,13 @@ function AccountsPage() {
     switch (actionId) {
       case "edit":
         openEdit(row)
+        break
+      case "deactivate":
+        setDeactivateBanner(null)
+        setDeactivateRow(row)
+        break
+      case "activate":
+        void submitActivate(row)
         break
       case "delete":
         setDeleteConfirmValue("")
@@ -314,6 +345,18 @@ function AccountsPage() {
       userName={bootstrap?.userFullName}
       userAvatarSrc={bootstrap?.userImageUrl ?? undefined}
       userRoleLabel={bootstrap?.roleLabel}
+      headerActions={
+        canCreate ? (
+          <DataWorkspaceHeaderTooltipIconButton
+            label="Nueva cuenta"
+            headerVariant={dataWorkspaceModuleHeaderVariant}
+            primary
+            onClick={() => openCreate()}
+          >
+            <Plus className="size-5" aria-hidden />
+          </DataWorkspaceHeaderTooltipIconButton>
+        ) : null
+      }
       contentFlush
       mainMaxWidthClass="max-w-none"
       mainClassName={dataWorkspaceBlocksPageMainClass}
@@ -332,26 +375,13 @@ function AccountsPage() {
           ) : error ? (
             <RootsBanner intent="danger" layout="message" message={error} />
           ) : (
-            <DataWorkspaceBlocksSection
-              title="Cuentas del negocio"
-              description={accountFilterDescription(accountFilter)}
-              action={
-                canCreate ? (
-                  <RootsPrimaryButton
-                    type="button"
-                    size="compact"
-                    onClick={() => openCreate()}
-                  >
-                    Nueva cuenta
-                  </RootsPrimaryButton>
-                ) : null
-              }
-            >
+            <DataWorkspaceBlocksSection>
               <RootsFormSegmentField
                 label="Ver cuentas"
                 aria-label="Filtrar cuentas"
                 layout="inline"
                 className="[&>span:first-child]:sr-only"
+                groupClassName="border-0"
                 value={accountFilter}
                 onValueChange={(value) =>
                   setAccountFilter(value as AccountFilter)
@@ -399,6 +429,23 @@ function AccountsPage() {
       saving={editSaving}
       banner={editBanner}
       onSubmit={submitEdit}
+    />
+
+    <RootsConfirmDialog
+      open={deactivateRow !== null}
+      onOpenChange={(open) => {
+        if (!open && !deactivateBusy) {
+          setDeactivateRow(null)
+          setDeactivateBanner(null)
+        }
+      }}
+      title={`Inactivar ${deactivateRow?.name.trim() || "esta cuenta"}`}
+      description="Deja de aparecer como medio de cobro o pago. Los movimientos ya registrados se conservan. Podés volver a activarla cuando quieras."
+      confirmLabel="Inactivar"
+      busyConfirmLabel="Inactivando…"
+      busy={deactivateBusy}
+      error={deactivateBanner}
+      onConfirm={() => void submitDeactivate()}
     />
 
     <TreasuryAccountDeleteDialog

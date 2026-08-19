@@ -49,26 +49,6 @@ export type ServiceChargeEffectiveStatus =
   | ServiceChargeStoredStatus
   | "overdue"
 
-export const ACTIVE_SERVICES_VIEW_FILTERS = [
-  "clients",
-  "active",
-  "overdue",
-  "cancelled",
-] as const
-
-export type ActiveServicesViewFilter =
-  (typeof ACTIVE_SERVICES_VIEW_FILTERS)[number]
-
-export const ACTIVE_SERVICES_VIEW_FILTER_LABELS: Record<
-  ActiveServicesViewFilter,
-  string
-> = {
-  clients: "Clientes activos",
-  active: "Servicios activos",
-  overdue: "Vencidos",
-  cancelled: "Cancelados",
-}
-
 export const SERVICE_CHARGE_STATUS_LABELS: Record<
   ServiceChargeEffectiveStatus,
   string
@@ -95,15 +75,6 @@ export function isServiceChargePaymentMode(
   return (
     typeof v === "string" &&
     (SERVICE_CHARGE_PAYMENT_MODES as readonly string[]).includes(v)
-  )
-}
-
-export function isActiveServicesViewFilter(
-  v: unknown,
-): v is ActiveServicesViewFilter {
-  return (
-    typeof v === "string" &&
-    (ACTIVE_SERVICES_VIEW_FILTERS as readonly string[]).includes(v)
   )
 }
 
@@ -348,28 +319,6 @@ export function deriveStoredStatusFromPayments(
   if (balance <= 0) return "paid"
   if (paidTotal > 0) return "partial"
   return "pending"
-}
-
-export function chargeMatchesViewFilter(
-  effectiveStatus: ServiceChargeEffectiveStatus,
-  filter: ActiveServicesViewFilter,
-): boolean {
-  switch (filter) {
-    case "clients":
-      return effectiveStatus !== "cancelled"
-    case "active":
-      return (
-        effectiveStatus === "pending" ||
-        effectiveStatus === "partial" ||
-        effectiveStatus === "overdue"
-      )
-    case "overdue":
-      return effectiveStatus === "overdue"
-    case "cancelled":
-      return effectiveStatus === "cancelled"
-    default:
-      return true
-  }
 }
 
 export function billingPeriodDisplayForCharge(

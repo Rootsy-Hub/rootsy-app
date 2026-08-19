@@ -39,6 +39,7 @@ export type PurchaseCheckoutSnapshot = {
   itemDescuentoModo: Record<string, "porcentaje" | "fijo">
   itemDescuentoDraft: Record<string, string>
   itemComentarios: Record<string, string>
+  itemExpiresAt: Record<string, string>
 }
 
 function isRecord(v: unknown): v is Record<string, unknown> {
@@ -173,5 +174,6 @@ export function parsePurchaseCheckoutSnapshot(
     itemDescuentoModo: parseDescuentoModoRecord(raw.itemDescuentoModo),
     itemDescuentoDraft: parseStringRecord(raw.itemDescuentoDraft),
     itemComentarios: parseStringRecord(raw.itemComentarios),
+    itemExpiresAt: parseStringRecord(raw.itemExpiresAt),
   }
 }

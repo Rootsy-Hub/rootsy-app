@@ -19,7 +19,6 @@ export const MENU_LINK_TO_MODULE_KEY: Partial<Record<MenuItemLink, string>> = {
   promotions: "promotions",
   recipes: "recipes",
   services: "services",
-  "active-services": "active_services",
   "cobrar-servicios": "active_services",
   operations: "operations",
   reports: "reports",
@@ -38,9 +37,10 @@ export const MENU_LINK_TO_MODULE_KEY: Partial<Record<MenuItemLink, string>> = {
 
 /** Módulo de suscripción → link principal del menú (sin alias como cobrar-servicios). */
 const MODULE_KEY_TO_MENU_LINK = Object.fromEntries(
-  Object.entries(MENU_LINK_TO_MODULE_KEY)
-    .filter(([link]) => link !== "cobrar-servicios")
-    .map(([link, key]) => [key, link as MenuItemLink]),
+  Object.entries(MENU_LINK_TO_MODULE_KEY).map(([link, key]) => [
+    key,
+    link as MenuItemLink,
+  ]),
 ) as Partial<Record<string, MenuItemLink>>
 
 type MenuModuleSection = Exclude<PopAccessModule["section"], "extras">
@@ -163,6 +163,7 @@ export function buildMenuSectionsFromEnabledModules(
   for (const mod of enabledModules) {
     if (!mod.permissions?.read) continue
     if (mod.key === "summary") continue
+    if (mod.key === "active_services") continue
 
     const section = resolveMenuModuleSection(mod)
     const dedupeKey = `${section}:${mod.key}`
@@ -180,20 +181,20 @@ export function buildMenuSectionsFromEnabledModules(
     grouped.set(section, items)
   }
 
-  const operarItems = grouped.get("operar")
-  if (
-    operarItems?.some(
-      (item) =>
-        item.moduleKey === "active_services" || item.link === "active-services",
-    ) &&
-    !operarItems.some((item) => item.link === "cobrar-servicios")
-  ) {
-    operarItems.push({
-      moduleKey: "active_services",
-      name: "Vender servicio",
-      icon: Banknote,
-      link: "cobrar-servicios",
-    })
+  const hasActiveServices = enabledModules.some(
+    (mod) => mod.key === "active_services" && mod.permissions?.read,
+  )
+  if (hasActiveServices) {
+    const operarItems = grouped.get("operar") ?? []
+    if (!operarItems.some((item) => item.link === "cobrar-servicios")) {
+      operarItems.push({
+        moduleKey: "active_services",
+        name: "Vender servicio",
+        icon: Banknote,
+        link: "cobrar-servicios",
+      })
+      grouped.set("operar", operarItems)
+    }
   }
 
   const out: Record<string, MenuSectionFromModules> = {}

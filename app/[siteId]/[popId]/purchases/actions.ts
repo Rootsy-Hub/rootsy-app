@@ -98,6 +98,8 @@ export type CreatePurchaseLineInput = {
   itemDiscountMode?: "porcentaje" | "fijo"
   itemDiscountDraft?: string
   comment?: string
+  /** Vencimiento del lote (YYYY-MM-DD). Opcional. */
+  expiresOn?: string | null
 }
 
 import { getTreasuryPaymentContext } from "@/lib/treasuryPaymentContext"
@@ -841,6 +843,7 @@ export async function createPurchase(
         itemDiscountMode: l.itemDiscountMode,
         itemDiscountDraft: l.itemDiscountDraft,
         comment: l.comment,
+        expiresOn: l.expiresOn,
         updateArticleCost: l.updateArticleCost,
       })
       if ("error" in resolved) {

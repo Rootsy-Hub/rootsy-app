@@ -49,6 +49,7 @@ const SOURCE_TYPE_LABELS: Record<string, string> = {
   inventory_initial: "Stock inicial",
   expense_payment: "Pago de gasto",
   expense_void: "Anulación de gasto",
+  service_charge_payment: "Cobro de servicio",
   treasury_settlement: "Liquidación tarjeta",
   check_receive: "Cheque recibido / emitido",
   check_deposit: "Depósito de cheque",

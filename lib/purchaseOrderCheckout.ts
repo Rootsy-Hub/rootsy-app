@@ -43,6 +43,7 @@ export type BuildPurchaseOrderCheckoutInput = {
   itemDescuentoModo: Record<string, "porcentaje" | "fijo">
   itemDescuentoDraft: Record<string, string>
   itemComentarios: Record<string, string>
+  itemExpiresAt: Record<string, string>
 }
 
 export function buildPurchaseOrderCheckoutSnapshot(
@@ -74,6 +75,7 @@ export function buildPurchaseOrderCheckoutSnapshot(
     itemDescuentoModo: { ...input.itemDescuentoModo },
     itemDescuentoDraft: { ...input.itemDescuentoDraft },
     itemComentarios: { ...input.itemComentarios },
+    itemExpiresAt: { ...input.itemExpiresAt },
   }
 }
 

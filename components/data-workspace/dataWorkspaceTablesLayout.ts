@@ -206,6 +206,10 @@ export const dataWorkspaceListFiltersBarInnerClass = "h-23"
 export const dataWorkspaceListFiltersGridClass =
   "grid h-full grid-cols-1 md:grid-cols-3"
 
+/** Tipo + período + filtros + búsqueda. */
+export const dataWorkspaceListFiltersGridFourClass =
+  "grid h-full grid-cols-1 md:grid-cols-4"
+
 export const dataWorkspaceListFiltersPanelClass =
   "flex h-full min-w-0 items-center border-r border-[color-mix(in_srgb,var(--rootsy-bruma-300)_42%,transparent)] px-4"
 

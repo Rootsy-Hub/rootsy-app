@@ -36,8 +36,8 @@ import {
   DataWorkspaceModuleLayout,
   dataWorkspaceModuleHeaderVariant,
 } from "@/components/layouts-module/DataWorkspaceModuleLayout"
+import { DataWorkspaceHeaderTooltipIconButton } from "@/components/layouts/DataWorkspaceHeaderTooltipIconButton"
 import { RootsBanner } from "@/components/rootsy-banner"
-import { RootsPrimaryButton } from "@/components/rootsy-button"
 import { RootsFormSegmentField } from "@/components/rootsy-form"
 import {
   dataWorkspaceBlocksEmptyStateClass,
@@ -51,6 +51,7 @@ import {
 } from "@/lib/moneyInput"
 import { formatLocaleDateTime } from "@/lib/popTimezone"
 import { usePopWorkspace } from "@/context/PopWorkspaceContext"
+import { Plus } from "lucide-react"
 import { useParams, useRouter } from "next/navigation"
 import {
   useCallback,
@@ -76,13 +77,6 @@ function registerMatchesFilter(row: CashRegisterRow, filter: RegisterFilter) {
   if (filter === "cerradas") return row.isActive && !isOpen
   if (filter === "inactivas") return !row.isActive
   return true
-}
-
-function registerFilterDescription(filter: RegisterFilter) {
-  if (filter === "abiertas") return "Las que están cobrando ahora."
-  if (filter === "cerradas") return "Listas para abrir cuando haga falta."
-  if (filter === "inactivas") return "Ya no se usan en el día a día."
-  return "Dónde se abre el turno en este local."
 }
 
 function registerFilterEmptyCopy(filter: RegisterFilter, canCreate: boolean) {
@@ -464,6 +458,18 @@ function CashRegistersPage() {
         userName={bootstrap?.userFullName}
         userAvatarSrc={bootstrap?.userImageUrl ?? undefined}
         userRoleLabel={bootstrap?.roleLabel}
+        headerActions={
+          canCreate ? (
+            <DataWorkspaceHeaderTooltipIconButton
+              label="Nueva caja"
+              headerVariant={dataWorkspaceModuleHeaderVariant}
+              primary
+              onClick={() => openCreate()}
+            >
+              <Plus className="size-5" aria-hidden />
+            </DataWorkspaceHeaderTooltipIconButton>
+          ) : null
+        }
         contentFlush
         mainMaxWidthClass="max-w-none"
         mainClassName={dataWorkspaceBlocksPageMainClass}
@@ -482,26 +488,13 @@ function CashRegistersPage() {
             ) : error ? (
               <RootsBanner intent="danger" layout="message" message={error} />
             ) : (
-              <DataWorkspaceBlocksSection
-                title="Cajas del local"
-                description={registerFilterDescription(registerFilter)}
-                action={
-                  canCreate ? (
-                    <RootsPrimaryButton
-                      type="button"
-                      size="compact"
-                      onClick={() => openCreate()}
-                    >
-                      Nueva caja
-                    </RootsPrimaryButton>
-                  ) : null
-                }
-              >
+              <DataWorkspaceBlocksSection>
                 <RootsFormSegmentField
                   label="Ver cajas"
                   aria-label="Filtrar cajas"
                   layout="inline"
                   className="[&>span:first-child]:sr-only"
+                  groupClassName="border-0"
                   value={registerFilter}
                   onValueChange={(value) =>
                     setRegisterFilter(value as RegisterFilter)

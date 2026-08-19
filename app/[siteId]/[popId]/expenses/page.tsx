@@ -10,6 +10,7 @@ import {
   listExpensesForMonth,
   recordExpensePayment,
   voidExpense as voidExpenseAction,
+  type ExpenseCategoryFamily,
   type ExpenseCategoryKind,
   type ExpenseCategoryRow,
   type ExpenseListRow,
@@ -22,24 +23,26 @@ import {
 } from "@/app/[siteId]/[popId]/checks/checkFormState"
 import { parseCheckoutCheckDetails } from "@/lib/checkoutCheck"
 import { treasuryPaymentOptionKey } from "@/lib/treasuryPaymentOptions"
+import { ExpenseCategoriesDialog } from "@/app/[siteId]/[popId]/expenses/ExpenseCategoriesDialog"
 import { ExpenseKindCardsPanel } from "@/app/[siteId]/[popId]/expenses/ExpenseKindCards"
 import { ExpensePageSkeleton } from "@/app/[siteId]/[popId]/expenses/ExpensePageSkeleton"
 import { ExpensePeriodToolbar } from "@/app/[siteId]/[popId]/expenses/ExpensePeriodToolbar"
 import { ExpenseSummaryDashboard } from "@/app/[siteId]/[popId]/expenses/ExpenseSummaryDashboard"
 import {
-  dataWorkspaceBlocksEmptyStateClass,
+  EXPENSE_WORLDS,
+  isExpenseOperableKind,
+  type ExpenseOperableKind,
+} from "@/app/[siteId]/[popId]/expenses/expenseWorlds"
+import {
   dataWorkspaceBlocksPageContentClass,
   dataWorkspaceBlocksPageMainClass,
-  dataWorkspaceEntityCardLosetaSurfaceClass,
 } from "@/components/data-workspace/dataWorkspaceListStyles"
-import { DataWorkspaceBlocksSection } from "@/components/data-workspace/DataWorkspaceBlocksSection"
 import {
   DataWorkspaceModuleLayout,
   dataWorkspaceModuleHeaderVariant,
 } from "@/components/layouts-module/DataWorkspaceModuleLayout"
 import { DataWorkspaceHeaderIconButton } from "@/components/layouts/DataWorkspaceHeaderIconButton"
 import { RootsBanner } from "@/components/rootsy-banner"
-import { RootsDangerSubtleButton } from "@/components/rootsy-button"
 import {
   RootsConfirmDialog,
   RootsDialogBody,
@@ -52,16 +55,16 @@ import {
 import {
   RootsFormDateField,
   RootsFormMoneyField,
+  RootsFormSegmentField,
   RootsFormSelectField,
   RootsFormSelectItem,
-  RootsFormTextField,
   RootsFormTextareaField,
 } from "@/components/rootsy-form"
 import { monthBoundsISO } from "@/lib/expenseMonth"
+import { parseMoneyInput } from "@/lib/moneyInput"
 import { usePopWorkspace } from "@/context/PopWorkspaceContext"
 import { Dialog } from "@/components/ui/dialog"
-import { cn } from "@/lib/utils"
-import { Plus, Tags, Trash2 } from "lucide-react"
+import { Plus, Tags } from "lucide-react"
 import { useParams, useRouter } from "next/navigation"
 import {
   useCallback,
@@ -112,10 +115,6 @@ function roundMoneyLocal(n: number): number {
   return Math.round(n * 100) / 100
 }
 
-function shiftMonth(year: number, month1: number, delta: number) {
-  const d = new Date(year, month1 - 1 + delta, 1)
-  return { year: d.getFullYear(), month: d.getMonth() + 1 }
-}
 
 function ExpensesPage() {
   const router = useRouter()
@@ -143,6 +142,9 @@ function ExpensesPage() {
   const [error, setError] = useState<string | null>(null)
 
   const [rows, setRows] = useState<ExpenseListRow[]>([])
+  const [ledgerByCategoryId, setLedgerByCategoryId] = useState<
+    Record<string, number>
+  >({})
   const [listBusy, setListBusy] = useState(false)
   const [totalDue, setTotalDue] = useState(0)
   const [totalPaid, setTotalPaid] = useState(0)
@@ -150,6 +152,7 @@ function ExpensesPage() {
   const [createOpen, setCreateOpen] = useState(false)
   const [createSaving, setCreateSaving] = useState(false)
   const [createBanner, setCreateBanner] = useState<string | null>(null)
+  const [createKind, setCreateKind] = useState<ExpenseOperableKind>("variable")
   const [createCategoryId, setCreateCategoryId] = useState("")
   const [createAmount, setCreateAmount] = useState("")
   const [createExpenseDate, setCreateExpenseDate] = useState("")
@@ -174,8 +177,11 @@ function ExpensesPage() {
 
   const [catOpen, setCatOpen] = useState(false)
   const [newCatName, setNewCatName] = useState("")
-  const [newCatKind, setNewCatKind] = useState<ExpenseCategoryKind>("variable")
+  const [newCatKind, setNewCatKind] = useState<ExpenseOperableKind>("variable")
+  const [newCatFamily, setNewCatFamily] =
+    useState<ExpenseCategoryFamily>("comercializacion")
   const [catSaving, setCatSaving] = useState(false)
+  const [catBanner, setCatBanner] = useState<string | null>(null)
   const [confirmAction, setConfirmAction] = useState<
     | { kind: "delete-expense"; row: ExpenseListRow }
     | { kind: "delete-category"; category: ExpenseCategoryRow }
@@ -195,11 +201,6 @@ function ExpensesPage() {
 
   const monthLabel = `${MONTH_NAMES[month1 - 1]} ${year}`
 
-  const isCurrentMonth = useMemo(() => {
-    const today = new Date()
-    return year === today.getFullYear() && month1 === today.getMonth() + 1
-  }, [year, month1])
-
   const reloadList = useCallback(async () => {
     if (!popId) return
     setListBusy(true)
@@ -208,7 +209,10 @@ function ExpensesPage() {
       getExpenseMonthProgress(popId, year, month1),
     ])
     setListBusy(false)
-    if (lr.success) setRows(lr.rows)
+    if (lr.success) {
+      setRows(lr.rows)
+      setLedgerByCategoryId(lr.ledgerByCategoryId)
+    }
     if (pr.success) {
       setTotalDue(pr.progress.totalDue)
       setTotalPaid(pr.progress.totalPaid)
@@ -267,40 +271,56 @@ function ExpensesPage() {
     void reloadList()
   }, [popId, year, month1, loading, error, reloadList])
 
-  const goPrevMonth = () => {
-    const next = shiftMonth(year, month1, -1)
-    setYear(next.year)
-    setMonth1(next.month)
-  }
+  const operableCategories = useMemo(
+    () =>
+      activeCategories.filter((c) => isExpenseOperableKind(c.kind) && !c.readOnly),
+    [activeCategories],
+  )
 
-  const goNextMonth = () => {
-    const next = shiftMonth(year, month1, 1)
-    setYear(next.year)
-    setMonth1(next.month)
-  }
+  const categoriesForCreate = useMemo(
+    () => operableCategories.filter((c) => c.kind === createKind),
+    [operableCategories, createKind],
+  )
 
-  const goToday = () => {
-    const today = new Date()
-    setYear(today.getFullYear())
-    setMonth1(today.getMonth() + 1)
-  }
+  const openCreate = useCallback(
+    (kind?: ExpenseCategoryKind, categoryId?: string) => {
+      const chosen = categoryId
+        ? operableCategories.find((c) => c.id === categoryId)
+        : undefined
+      const nextKind: ExpenseOperableKind = isExpenseOperableKind(chosen?.kind)
+        ? chosen.kind
+        : isExpenseOperableKind(kind)
+          ? kind
+          : operableCategories[0] &&
+              isExpenseOperableKind(operableCategories[0].kind)
+            ? operableCategories[0].kind
+            : "variable"
+      const ofKind = operableCategories.filter((c) => c.kind === nextKind)
+      setCreateKind(nextKind)
+      setCreateBanner(null)
+      setCreateCategoryId(chosen?.id ?? ofKind[0]?.id ?? "")
+      setCreateAmount("")
+      setCreateExpenseDate(defaultDateInMonth(year, month1))
+      setCreateDueDate("")
+      setCreateDescription("")
+      setCreateOpen(true)
+    },
+    [operableCategories, year, month1],
+  )
 
-  const openCreate = useCallback(() => {
-    setCreateBanner(null)
-    setCreateCategoryId(activeCategories[0]?.id ?? "")
-    setCreateAmount("")
-    setCreateExpenseDate(defaultDateInMonth(year, month1))
-    setCreateDueDate("")
-    setCreateDescription("")
-    setCreateOpen(true)
-  }, [activeCategories, year, month1])
+  const onCreateKindChange = (value: string) => {
+    const nextKind = isExpenseOperableKind(value) ? value : "variable"
+    setCreateKind(nextKind)
+    const ofKind = operableCategories.filter((c) => c.kind === nextKind)
+    setCreateCategoryId(ofKind[0]?.id ?? "")
+  }
 
   const submitCreate = async (e: FormEvent) => {
     e.preventDefault()
     if (!popId) return
     setCreateSaving(true)
     setCreateBanner(null)
-    const amount = Number(String(createAmount).replace(",", "."))
+    const amount = parseMoneyInput(createAmount)
     const res = await createExpense(popId, year, month1, {
       categoryId: createCategoryId,
       amount,
@@ -336,7 +356,7 @@ function ExpensesPage() {
     if (!popId || !payExpense) return
     setPaySaving(true)
     setPayBanner(null)
-    const amount = Number(String(payAmount).replace(",", "."))
+    const amount = parseMoneyInput(payAmount)
     const selected = paymentMethods.find(
       (pm) => treasuryPaymentOptionKey(pm) === payMethodKey.trim(),
     )
@@ -413,25 +433,30 @@ function ExpensesPage() {
     const res = await deleteExpenseCategory(popId, confirmAction.category.id)
     setConfirmBusy(false)
     if (!res.success) {
-      setError(res.error)
+      if (catOpen) setCatBanner(res.error)
+      else setError(res.error)
       return
     }
     setConfirmAction(null)
     await loadPage()
   }
 
-  const submitNewCategory = async (e: FormEvent) => {
-    e.preventDefault()
+  const submitNewCategory = async () => {
     if (!popId) return
     setCatSaving(true)
-    const res = await createExpenseCategory(popId, newCatName, newCatKind)
+    setCatBanner(null)
+    const res = await createExpenseCategory(
+      popId,
+      newCatName,
+      newCatKind,
+      newCatFamily,
+    )
     setCatSaving(false)
     if (!res.success) {
-      setError(res.error)
+      setCatBanner(res.error)
       return
     }
     setNewCatName("")
-    setCatOpen(false)
     await loadPage()
   }
 
@@ -482,7 +507,7 @@ function ExpensesPage() {
           <>
             {canCreate ? (
               <DataWorkspaceHeaderIconButton
-                label="Nuevo gasto"
+                label="Nueva promesa"
                 headerVariant={dataWorkspaceModuleHeaderVariant}
                 primary
                 onClick={() => openCreate()}
@@ -494,7 +519,10 @@ function ExpensesPage() {
               <DataWorkspaceHeaderIconButton
                 label="Categorías"
                 headerVariant={dataWorkspaceModuleHeaderVariant}
-                onClick={() => setCatOpen(true)}
+                onClick={() => {
+                  setCatBanner(null)
+                  setCatOpen(true)
+                }}
               >
                 <Tags className="size-5" aria-hidden />
               </DataWorkspaceHeaderIconButton>
@@ -517,30 +545,28 @@ function ExpensesPage() {
             <RootsBanner intent="danger" layout="message" message={error} />
           ) : (
             <>
-              <DataWorkspaceBlocksSection
-                title={monthLabel}
-                description="Los gastos se filtran por fecha de imputación. Los pagos cuentan para el avance aunque se registren en otro mes."
-                action={
-                  <ExpensePeriodToolbar
-                    monthLabel={monthLabel}
-                    loading={listBusy}
-                    isCurrentMonth={isCurrentMonth}
-                    onPrev={goPrevMonth}
-                    onNext={goNextMonth}
-                    onToday={goToday}
+              <div className="flex flex-col gap-4 lg:flex-row lg:items-start">
+                <div className="min-w-0 flex-1">
+                  <ExpenseSummaryDashboard
+                    totalDue={totalDue}
+                    totalPaid={totalPaid}
                   />
-                }
-              >
-                <ExpenseSummaryDashboard
-                  rows={rows}
-                  totalDue={totalDue}
-                  totalPaid={totalPaid}
-                  monthLabel={monthLabel}
+                </div>
+                <ExpensePeriodToolbar
+                  year={year}
+                  month1={month1}
+                  loading={listBusy}
+                  onChange={({ year: nextYear, month }) => {
+                    setYear(nextYear)
+                    setMonth1(month)
+                  }}
                 />
-              </DataWorkspaceBlocksSection>
+              </div>
 
               <ExpenseKindCardsPanel
+                categories={categories}
                 rows={rows}
+                ledgerByCategoryId={ledgerByCategoryId}
                 listBusy={listBusy}
                 canCreate={canCreate}
                 canUpdate={canUpdate}
@@ -565,31 +591,49 @@ function ExpensesPage() {
           <RootsDialogForm onSubmit={submitCreate}>
             <RootsDialogHeader
               open={createOpen}
-              title="Nuevo gasto"
-              description={`Imputado en ${monthLabel}.`}
+              title={EXPENSE_WORLDS[createKind].createTitle}
+              description={EXPENSE_WORLDS[createKind].createHint(monthLabel)}
             />
             <RootsDialogBody className="space-y-4">
               {createBanner ? (
                 <RootsDialogErrorBanner>{createBanner}</RootsDialogErrorBanner>
               ) : null}
-              <RootsFormSelectField
-                label="Categoría"
-                value={createCategoryId}
-                onValueChange={setCreateCategoryId}
-              >
-                {activeCategories.map((c) => (
-                  <RootsFormSelectItem key={c.id} value={c.id}>
-                    {c.name} ({c.kind === "fijo" ? "Fijo" : "Variable"})
-                  </RootsFormSelectItem>
-                ))}
-              </RootsFormSelectField>
+              <RootsFormSegmentField
+                label="Tipo"
+                value={createKind}
+                onValueChange={onCreateKindChange}
+                hint={EXPENSE_WORLDS[createKind].categoryHint}
+                options={[
+                  { value: "fijo", label: "Fijo" },
+                  { value: "variable", label: "Variable" },
+                ]}
+              />
+              {categoriesForCreate.length === 0 ? (
+                <p className="font-canopy text-xs leading-relaxed text-rootsy-bruma-500">
+                  Todavía no hay categorías{" "}
+                  {createKind === "fijo" ? "fijas" : "variables"}. Creá una
+                  desde Categorías.
+                </p>
+              ) : (
+                <RootsFormSelectField
+                  label="Categoría"
+                  value={createCategoryId}
+                  onValueChange={setCreateCategoryId}
+                >
+                  {categoriesForCreate.map((c) => (
+                    <RootsFormSelectItem key={c.id} value={c.id}>
+                      {c.name}
+                    </RootsFormSelectItem>
+                  ))}
+                </RootsFormSelectField>
+              )}
               <RootsFormMoneyField
                 label="Importe"
                 value={createAmount}
                 onChange={setCreateAmount}
               />
               <RootsFormDateField
-                label="Fecha del gasto"
+                label="Fecha"
                 value={createExpenseDate}
                 onChange={setCreateExpenseDate}
                 hint={`Entre ${formatIsoDate(monthStart)} y ${formatIsoDate(monthEnd)}.`}
@@ -610,6 +654,7 @@ function ExpensesPage() {
               cancelLabel="Cancelar"
               confirmLabel="Guardar"
               confirmType="submit"
+              confirmDisabled={categoriesForCreate.length === 0}
               confirmLoading={createSaving}
               confirmLoadingLabel="Guardando…"
               onCancel={() => setCreateOpen(false)}
@@ -715,84 +760,25 @@ function ExpensesPage() {
         </RootsDialogContent>
       </Dialog>
 
-      <Dialog open={catOpen} onOpenChange={setCatOpen}>
-        <RootsDialogContent size="wide" showCloseButton={!catSaving}>
-          <RootsDialogHeader
-            open={catOpen}
-            title="Categorías"
-            description="Si ya tiene gastos, se archiva en lugar de borrarse."
-          />
-          <RootsDialogBody className="space-y-5">
-            <RootsDialogForm onSubmit={submitNewCategory}>
-              <div className="space-y-4">
-                <RootsFormTextField
-                  label="Nombre"
-                  value={newCatName}
-                  onChange={(event) => setNewCatName(event.target.value)}
-                  placeholder="Alquiler, luz, insumos…"
-                />
-                <RootsFormSelectField
-                  label="Tipo"
-                  value={newCatKind}
-                  onValueChange={(value) =>
-                    setNewCatKind(value as ExpenseCategoryKind)
-                  }
-                >
-                  <RootsFormSelectItem value="variable">Variable</RootsFormSelectItem>
-                  <RootsFormSelectItem value="fijo">Fijo</RootsFormSelectItem>
-                </RootsFormSelectField>
-                <RootsDialogDualActionFooter
-                  cancelLabel="Cerrar"
-                  confirmLabel="Agregar"
-                  confirmType="submit"
-                  confirmLoading={catSaving}
-                  confirmLoadingLabel="Agregando…"
-                  onCancel={() => setCatOpen(false)}
-                />
-              </div>
-            </RootsDialogForm>
-
-            {categories.filter((c) => c.deletedAt == null).length === 0 ? (
-              <p className={dataWorkspaceBlocksEmptyStateClass}>
-                Todavía no hay categorías.
-              </p>
-            ) : (
-              <ul
-                className={cn(
-                  dataWorkspaceEntityCardLosetaSurfaceClass,
-                  "h-auto max-h-64 divide-y divide-rootsy-bruma-200 overflow-y-auto",
-                )}
-              >
-                {categories
-                  .filter((c) => c.deletedAt == null)
-                  .map((c) => (
-                    <li
-                      key={c.id}
-                      className="flex items-center justify-between gap-3 px-4 py-3"
-                    >
-                      <div className="min-w-0">
-                        <p className="truncate font-canopy text-sm font-semibold text-rootsy-bruma-900">
-                          {c.name}
-                        </p>
-                        <p className="font-canopy text-[11px] text-rootsy-bruma-500">
-                          {c.kind === "fijo" ? "Fijo" : "Variable"}
-                        </p>
-                      </div>
-                      <RootsDangerSubtleButton
-                        type="button"
-                        size="compact"
-                        aria-label={`Eliminar ${c.name}`}
-                        onClick={() => onDeleteCategory(c)}
-                      >
-                        <Trash2 className="size-3.5" aria-hidden />
-                      </RootsDangerSubtleButton>
-                    </li>
-                  ))}
-              </ul>
-            )}
-          </RootsDialogBody>
-        </RootsDialogContent>
-      </Dialog>
+      <ExpenseCategoriesDialog
+        open={catOpen}
+        onOpenChange={(open) => {
+          setCatOpen(open)
+          if (!open) setCatBanner(null)
+        }}
+        categories={categories}
+        name={newCatName}
+        kind={newCatKind}
+        family={newCatFamily}
+        saving={catSaving}
+        banner={catBanner}
+        canDelete={canDelete}
+        onNameChange={setNewCatName}
+        onKindChange={setNewCatKind}
+        onFamilyChange={setNewCatFamily}
+        onSubmit={() => void submitNewCategory()}
+        onDelete={onDeleteCategory}
+      />
 
       <RootsConfirmDialog
         open={confirmAction !== null}

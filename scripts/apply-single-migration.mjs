@@ -3,7 +3,7 @@
  * Aplica una migración SQL concreta vía Postgres directo.
  *
  * Uso:
- *   SUPABASE_DB_PASSWORD='...' node scripts/apply-single-migration.mjs 20260727180000_pop_cache_revisions.sql
+ *   SUPABASE_DB_PASSWORD='...' node scripts/apply-single-migration.mjs 20260818120000_drop_pop_cache_revisions.sql
  */
 import fs from "node:fs"
 import path from "node:path"
@@ -83,19 +83,7 @@ try {
   console.log("Aplicando:", file)
   await client.query(sql)
 
-  const { rows } = await client.query(`
-    SELECT table_name FROM information_schema.tables
-    WHERE table_schema = 'public' AND table_name = 'pop_cache_revisions'
-  `)
-  const { rows: fnRows } = await client.query(`
-    SELECT routine_name FROM information_schema.routines
-    WHERE routine_schema = 'public' AND routine_name = 'get_pop_cache_revisions'
-  `)
-  console.log(
-    "Verificación:",
-    rows.length ? "pop_cache_revisions OK" : "FALTA tabla",
-    fnRows.length ? "get_pop_cache_revisions OK" : "FALTA RPC",
-  )
+  console.log("SQL ejecutado.")
 } finally {
   await client.end()
 }

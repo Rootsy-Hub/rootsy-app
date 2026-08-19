@@ -21,7 +21,7 @@ export const MENU_ROOTSY_CATALOG_SERVICES: MenuRootsyCatalogSuggestion[] = [
       "Avisar con tiempo que un servicio vence permite renovar sin apuro. El cliente siente cuidado, no presión comercial.",
     dataKeys: [],
     requiredModules: ["active_services"],
-    ctaModuleKeys: ["active_services", "services"],
+    ctaModuleKeys: ["operations", "services"],
   }),
   s("services", 2, {
     teaser:
@@ -51,7 +51,7 @@ export const MENU_ROOTSY_CATALOG_SERVICES: MenuRootsyCatalogSuggestion[] = [
       "Quien dejó vencer a veces solo necesita un recordatorio. Un contacto amable puede reactivarlo.",
     dataKeys: ["total_sales"],
     requiredModules: ["active_services"],
-    ctaModuleKeys: ["active_services"],
+    ctaModuleKeys: ["operations"],
   }),
   s("services", 5, {
     teaser:
@@ -81,7 +81,7 @@ export const MENU_ROOTSY_CATALOG_SERVICES: MenuRootsyCatalogSuggestion[] = [
       "Dejar claro cuándo y cómo se renueva evita sorpresas y bajas involuntarias. Transparencia retiene.",
     dataKeys: [],
     requiredModules: ["active_services"],
-    ctaModuleKeys: ["active_services"],
+    ctaModuleKeys: ["operations"],
   }),
   s("services", 8, {
     teaser:
@@ -201,7 +201,7 @@ export const MENU_ROOTSY_CATALOG_SERVICES: MenuRootsyCatalogSuggestion[] = [
       "Quien no viene hace dos meses a veces solo necesita un empujón. Un mensaje personalizado funciona.",
     dataKeys: ["total_sales"],
     requiredModules: ["active_services", "clients"],
-    ctaModuleKeys: ["clients", "active_services"],
+    ctaModuleKeys: ["clients", "operations"],
   }),
   s("services", 20, {
     teaser:

@@ -5,12 +5,26 @@ import {
 } from "@/app/[siteId]/[popId]/operations/OperationsSalesTable"
 import { OperationsExpensesTable } from "@/app/[siteId]/[popId]/operations/OperationsExpensesTable"
 import { OperationsPurchasesTable } from "@/app/[siteId]/[popId]/operations/OperationsPurchasesTable"
+import { OperationsServicesTable } from "@/app/[siteId]/[popId]/operations/OperationsServicesTable"
+import { OperationsFiltersDialog } from "@/app/[siteId]/[popId]/operations/OperationsFiltersDialog"
 import { exportOperationsCsv } from "@/app/[siteId]/[popId]/operations/operationsCsvExport"
+import {
+  defaultOperationsModalFilters,
+  operationsFilterChips,
+  operationsFiltersPlaceholder,
+  operationsFiltersQueryKey,
+  operationsListFiltersFromModal,
+  operationsModalFiltersActiveCount,
+  type OperationsModalFilters,
+} from "@/app/[siteId]/[popId]/operations/operationsFilters"
 import { buildPaginationItems } from "@/components/data-workspace/buildPaginationItems"
 import { DataWorkspaceListActiveFiltersBar } from "@/components/data-workspace/DataWorkspaceListActiveFiltersBar"
 import { DataWorkspaceListBulkToolbar } from "@/components/data-workspace/DataWorkspaceListBulkToolbar"
 import { DataWorkspaceListFilterChip } from "@/components/data-workspace/DataWorkspaceListFilterChip"
-import { DataWorkspaceListSearchField } from "@/components/data-workspace/DataWorkspaceListFilterFields"
+import {
+  DataWorkspaceListFiltersDialogTrigger,
+  DataWorkspaceListSearchField,
+} from "@/components/data-workspace/DataWorkspaceListFilterFields"
 import {
   DataWorkspaceTableListFiltersBar,
   DataWorkspaceTableListNatureShell,
@@ -22,7 +36,7 @@ import { DataWorkspaceTableEmptyMascot } from "@/components/data-workspace/DataW
 import { DataWorkspacePeriodFilter } from "@/components/data-workspace/DataWorkspacePeriodFilter"
 import { DataWorkspaceViewFilter } from "@/components/data-workspace/DataWorkspaceViewFilter"
 import {
-  dataWorkspaceListFiltersGridClass,
+  dataWorkspaceListFiltersGridFourClass,
   dataWorkspaceListFiltersPanelClass,
   dataWorkspaceListFiltersPanelLastClass,
 } from "@/components/data-workspace/dataWorkspaceTablesLayout"
@@ -44,6 +58,7 @@ import {
   type WorkspaceTableSortDirection,
 } from "@/lib/workspaceTableSort"
 import {
+  Briefcase,
   Receipt,
   ShoppingCart,
   Monitor,
@@ -70,6 +85,7 @@ const VIEW_ITEMS = [
   { id: "counter", label: "Mostrador", icon: Monitor },
   { id: "purchases", label: "Compras", icon: ShoppingCart },
   { id: "expenses", label: "Gastos", icon: Wallet },
+  { id: "services", label: "Servicios", icon: Briefcase },
 ] as const
 
 export function OperationsWorkspaceView() {
@@ -93,6 +109,7 @@ export function OperationsWorkspaceView() {
   const viewFilterTriggerId = useId()
   const dateFilterLabelId = useId()
   const dateFilterTriggerId = useId()
+  const filtersButtonId = useId()
   const pageSizeLabelId = useId()
   const searchInputRef = useRef<HTMLInputElement>(null)
   const hydratedViewPopRef = useRef<string | null>(null)
@@ -101,11 +118,29 @@ export function OperationsWorkspaceView() {
   const [sort, setSort] = useState<string | null>(null)
   const [ord, setOrd] = useState<WorkspaceTableSortDirection>("asc")
   const [selected, setSelected] = useState<Set<string>>(() => new Set())
+  const [appliedFilters, setAppliedFilters] = useState<OperationsModalFilters>(
+    defaultOperationsModalFilters,
+  )
+  const [draftFilters, setDraftFilters] = useState<OperationsModalFilters>(
+    defaultOperationsModalFilters,
+  )
+  const [filtersModalOpen, setFiltersModalOpen] = useState(false)
 
   const dateBounds = useMemo(
     () => computeDataWorkspaceDateBounds(datePreset, customDateRange),
     [datePreset, customDateRange],
   )
+
+  const listFilters = useMemo(
+    () => operationsListFiltersFromModal(activeView, appliedFilters),
+    [activeView, appliedFilters],
+  )
+  const filtersKey = useMemo(
+    () => operationsFiltersQueryKey(activeView, appliedFilters),
+    [activeView, appliedFilters],
+  )
+  const fiscalOnly =
+    activeView === "purchases" && appliedFilters.purchaseFiscalOnly
 
   const operationsListParams = useMemo(
     () => ({
@@ -117,6 +152,9 @@ export function OperationsWorkspaceView() {
       pageSize,
       sort,
       ord,
+      filtersKey,
+      fiscalOnly,
+      filters: listFilters,
     }),
     [
       activeView,
@@ -127,6 +165,9 @@ export function OperationsWorkspaceView() {
       pageSize,
       sort,
       ord,
+      filtersKey,
+      fiscalOnly,
+      listFilters,
     ],
   )
 
@@ -137,6 +178,7 @@ export function OperationsWorkspaceView() {
   const sales = operationsQuery.data?.sales ?? []
   const purchases = operationsQuery.data?.purchases ?? []
   const expenseLedger = operationsQuery.data?.expenseLedger ?? []
+  const serviceCharges = operationsQuery.data?.serviceCharges ?? []
   const totalCount = operationsQuery.data?.totalCount ?? 0
   const listFetching =
     !popId || !siteId
@@ -176,11 +218,26 @@ export function OperationsWorkspaceView() {
 
   useEffect(() => {
     setPage(1)
-  }, [debouncedSearch, activeView, datePreset, customDateRange, sort, ord])
+  }, [
+    debouncedSearch,
+    activeView,
+    datePreset,
+    customDateRange,
+    sort,
+    ord,
+    filtersKey,
+  ])
 
   useEffect(() => {
     setSelected(new Set())
-  }, [activeView, page, debouncedSearch, dateBounds.from, dateBounds.to])
+  }, [
+    activeView,
+    page,
+    debouncedSearch,
+    dateBounds.from,
+    dateBounds.to,
+    filtersKey,
+  ])
 
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
@@ -209,7 +266,8 @@ export function OperationsWorkspaceView() {
         id !== "tables" &&
         id !== "counter" &&
         id !== "purchases" &&
-        id !== "expenses"
+        id !== "expenses" &&
+        id !== "services"
       ) {
         return
       }
@@ -217,6 +275,9 @@ export function OperationsWorkspaceView() {
       if (popId) writeSavedOperationsView(popId, id)
       setSearchInput("")
       setDebouncedSearch("")
+      setAppliedFilters(defaultOperationsModalFilters())
+      setDraftFilters(defaultOperationsModalFilters())
+      setFiltersModalOpen(false)
       setSort(null)
       setOrd("asc")
       setPage(1)
@@ -240,6 +301,7 @@ export function OperationsWorkspaceView() {
   const pageSales = sales
   const pagePurchases = purchases
   const pageExpenses = expenseLedger
+  const pageServices = serviceCharges
 
   const totalPages = useMemo(
     () => Math.max(1, Math.ceil(totalCount / Math.max(1, pageSize))),
@@ -284,9 +346,13 @@ export function OperationsWorkspaceView() {
             ? totalCount === 1
               ? "compra"
               : "compras"
-            : totalCount === 1
-              ? "gasto"
-              : "gastos"
+            : activeView === "services"
+              ? totalCount === 1
+                ? "servicio"
+                : "servicios"
+              : totalCount === 1
+                ? "gasto"
+                : "gastos"
     return `${totalCount.toLocaleString("es-AR")} ${noun}`
   }, [listFetching, totalCount, activeView])
 
@@ -299,7 +365,9 @@ export function OperationsWorkspaceView() {
           ? "Cliente, estado, total… ( / )"
           : activeView === "purchases"
           ? "Proveedor, tipo, comprobante, total… ( / )"
-          : "Categoría, detalle, importe… ( / )"
+          : activeView === "services"
+            ? "Cliente, servicio, vencido, estado… ( / )"
+            : "Categoría, detalle, importe… ( / )"
 
   const clearSearch = useCallback(() => {
     setSearchInput("")
@@ -323,14 +391,64 @@ export function OperationsWorkspaceView() {
       )
       return
     }
+    if (activeView === "services") {
+      exportOperationsCsv(
+        "services",
+        pageServices.filter((row) => selected.has(row.id)),
+      )
+      return
+    }
     exportOperationsCsv(
       "expenses",
       pageExpenses.filter((row) => selected.has(row.entryId)),
       timeZone,
     )
-  }, [activeView, pageSales, pagePurchases, pageExpenses, selected, timeZone])
+  }, [
+    activeView,
+    pageSales,
+    pagePurchases,
+    pageExpenses,
+    pageServices,
+    selected,
+    timeZone,
+  ])
 
+  const modalFiltersActiveCount = operationsModalFiltersActiveCount(
+    activeView,
+    appliedFilters,
+  )
+  const filterChips = operationsFilterChips(activeView, appliedFilters)
   const hasSearchChip = searchInput.trim().length > 0
+  const activeFilterCount = (hasSearchChip ? 1 : 0) + filterChips.length
+  const hasFilterChips = activeFilterCount > 0
+
+  const clearAppliedFilters = useCallback(() => {
+    const empty = defaultOperationsModalFilters()
+    setAppliedFilters(empty)
+    setDraftFilters(empty)
+  }, [])
+
+  const clearAllFilters = useCallback(() => {
+    clearSearch()
+    clearAppliedFilters()
+  }, [clearSearch, clearAppliedFilters])
+
+  const removeFilterChip = useCallback((id: string) => {
+    setAppliedFilters((current) => {
+      const next = { ...current }
+      if (id === "saleStatus") next.saleStatus = ""
+      if (id === "saleWithDiscount") next.saleWithDiscount = false
+      if (id === "tableSession") next.tableSession = ""
+      if (id === "counterStatus") next.counterStatus = ""
+      if (id === "counterFulfillment") next.counterFulfillment = ""
+      if (id === "purchaseKind") next.purchaseKind = ""
+      if (id === "purchaseFiscalOnly") next.purchaseFiscalOnly = false
+      if (id === "expenseSource") next.expenseSource = ""
+      if (id === "serviceStatus") next.serviceStatus = ""
+      if (id === "serviceScope") next.serviceScope = ""
+      return next
+    })
+  }, [])
 
   if (!popId || !siteId) {
     return (
@@ -355,7 +473,7 @@ export function OperationsWorkspaceView() {
     >
       <DataWorkspaceTableListNatureShell>
         <DataWorkspaceTableListFiltersBar>
-              <div className={dataWorkspaceListFiltersGridClass}>
+              <div className={dataWorkspaceListFiltersGridFourClass}>
                 <div className={dataWorkspaceListFiltersPanelClass}>
                   <DataWorkspaceViewFilter
                     variant="layout"
@@ -381,6 +499,19 @@ export function OperationsWorkspaceView() {
                   />
                 </div>
 
+                <div className={dataWorkspaceListFiltersPanelClass}>
+                  <DataWorkspaceListFiltersDialogTrigger
+                    id={filtersButtonId}
+                    placeholder={operationsFiltersPlaceholder(activeView)}
+                    activeCount={modalFiltersActiveCount}
+                    expanded={filtersModalOpen}
+                    onClick={() => {
+                      setDraftFilters(appliedFilters)
+                      setFiltersModalOpen(true)
+                    }}
+                  />
+                </div>
+
                 <div className={dataWorkspaceListFiltersPanelLastClass}>
                   <DataWorkspaceListSearchField
                     id={searchInputId}
@@ -400,7 +531,9 @@ export function OperationsWorkspaceView() {
                               ? "Buscar operaciones de mostrador"
                               : activeView === "purchases"
                                 ? "Buscar compras"
-                                : "Buscar gastos",
+                                : activeView === "services"
+                                  ? "Buscar servicios"
+                                  : "Buscar gastos",
                     }}
                   />
                 </div>
@@ -409,16 +542,26 @@ export function OperationsWorkspaceView() {
 
           <DataWorkspaceTableListShell
             activeFiltersBar={
-              hasSearchChip ? (
+              hasFilterChips ? (
                 <DataWorkspaceListActiveFiltersBar
-                  activeCount={1}
-                  onClearAll={clearSearch}
+                  activeCount={activeFilterCount}
+                  onClearAll={clearAllFilters}
                 >
-                  <DataWorkspaceListFilterChip
-                    label={`Buscar: «${searchInput.trim()}»`}
-                    onRemove={clearSearch}
-                    removeAriaLabel="Quitar búsqueda"
-                  />
+                  {hasSearchChip ? (
+                    <DataWorkspaceListFilterChip
+                      label={`Buscar: «${searchInput.trim()}»`}
+                      onRemove={clearSearch}
+                      removeAriaLabel="Quitar búsqueda"
+                    />
+                  ) : null}
+                  {filterChips.map((chip) => (
+                    <DataWorkspaceListFilterChip
+                      key={chip.id}
+                      label={chip.label}
+                      onRemove={() => removeFilterChip(chip.id)}
+                      removeAriaLabel={chip.removeAriaLabel}
+                    />
+                  ))}
                 </DataWorkspaceListActiveFiltersBar>
               ) : null
             }
@@ -427,7 +570,7 @@ export function OperationsWorkspaceView() {
                 <DataWorkspaceListBulkToolbar
                   selectedCount={selected.size}
                   onClear={() => setSelected(new Set())}
-                  placement={hasSearchChip ? "stacked" : "standalone"}
+                  placement={hasFilterChips ? "stacked" : "standalone"}
                   disabled={listFetching}
                   actions={[
                     { label: "Exportar CSV", onClick: handleExportCsv },
@@ -489,6 +632,19 @@ export function OperationsWorkspaceView() {
                 sortDirection={sortDirection}
                 onSortColumn={handleSortColumn}
               />
+            ) : activeView === "services" ? (
+              <OperationsServicesTable
+                siteId={siteId}
+                popId={popId}
+                rows={pageServices}
+                listFetching={listFetching}
+                totalCount={totalCount}
+                skeletonRowCount={skeletonRowCount}
+                selected={selected}
+                onSelectedChange={setSelected}
+                sortDirection={sortDirection}
+                onSortColumn={handleSortColumn}
+              />
             ) : (
               <OperationsExpensesTable
                 rows={pageExpenses}
@@ -503,6 +659,18 @@ export function OperationsWorkspaceView() {
             )}
           </DataWorkspaceTableListShell>
       </DataWorkspaceTableListNatureShell>
+      <OperationsFiltersDialog
+        open={filtersModalOpen}
+        onOpenChange={setFiltersModalOpen}
+        view={activeView}
+        draft={draftFilters}
+        onDraftChange={setDraftFilters}
+        onApply={() => {
+          setAppliedFilters(draftFilters)
+          setFiltersModalOpen(false)
+          setPage(1)
+        }}
+      />
     </DataWorkspaceTableListPage>
   )
 }

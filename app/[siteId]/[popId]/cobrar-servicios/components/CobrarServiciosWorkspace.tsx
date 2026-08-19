@@ -1010,7 +1010,7 @@ export function CobrarServiciosWorkspace({ siteId, popId }: Props) {
         <RootsAlertDialogContent>
           <RootsAlertDialogPanel
             title="Cargo creado"
-            description="El servicio quedó registrado. Podés seguir cobrando o revisar los cargos activos."
+            description="El servicio quedó registrado. Podés seguir cobrando o revisar los cargos en Operaciones."
           />
           <RootsAlertDialogFooter
             confirmLabel="Seguir cobrando"

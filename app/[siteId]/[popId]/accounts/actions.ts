@@ -745,6 +745,54 @@ export async function updateTreasuryAccount(
   }
 }
 
+export async function setTreasuryAccountActive(
+  popId: string,
+  rowId: string,
+  isActive: boolean,
+): Promise<{ success: true } | { success: false; error: string }> {
+  try {
+    const access = await validatePopAccess(popId)
+    if (!access.hasAccess || !access.isActive) {
+      return { success: false, error: access.error || "Sin acceso" }
+    }
+    const snap = await loadPopPermissionsSnapshot(popId)
+    if (
+      !permissionKeysInclude(
+        snap.keys,
+        POP_PERMS.PAYMENT_METHOD_UPDATE.resource,
+        POP_PERMS.PAYMENT_METHOD_UPDATE.action,
+      )
+    ) {
+      return { success: false, error: "Sin permiso para editar cuentas." }
+    }
+
+    const supabase = await createClient()
+    const { data: existing } = await supabase
+      .from("treasury_accounts")
+      .select("id")
+      .eq("id", rowId)
+      .eq("pop_id", popId)
+      .maybeSingle()
+    if (!existing?.id) {
+      return { success: false, error: "Cuenta no encontrada." }
+    }
+
+    const { error } = await supabase
+      .from("treasury_accounts")
+      .update({ is_active: isActive })
+      .eq("id", rowId)
+      .eq("pop_id", popId)
+    if (error) {
+      return { success: false, error: error.message || "No se pudo guardar." }
+    }
+
+    return { success: true }
+  } catch (e: unknown) {
+    const message = e instanceof Error ? e.message : "Error desconocido"
+    return { success: false, error: message }
+  }
+}
+
 export async function deleteTreasuryAccount(
   popId: string,
   rowId: string,

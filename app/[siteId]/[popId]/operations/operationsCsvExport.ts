@@ -2,7 +2,9 @@ import type {
   OperationExpenseLedgerRow,
   OperationPurchaseRow,
   OperationSaleRow,
+  OperationServiceChargeRow,
 } from "@/app/[siteId]/[popId]/operations/actions"
+import { SERVICE_CHARGE_STATUS_LABELS } from "@/lib/serviceChargeTypes"
 import {
   formatOperationSaleDateTime,
 } from "@/app/[siteId]/[popId]/operations/OperationsSalesTable"
@@ -46,7 +48,9 @@ function csvFilename(view: OperationsViewId): string {
           ? "mostrador"
           : view === "purchases"
             ? "compras"
-            : "gastos"
+            : view === "services"
+              ? "servicios"
+              : "gastos"
   return `${base}-${stamp}.csv`
 }
 
@@ -201,9 +205,45 @@ export function exportOperationsExpensesCsv(
   downloadCsv(csvFilename("expenses"), buildCsv(headers, body))
 }
 
+export function exportOperationsServicesCsv(
+  rows: OperationServiceChargeRow[],
+): void {
+  const headers = [
+    "Fecha",
+    "Vencimiento",
+    "Cliente",
+    "Servicio",
+    "Estado",
+    "Período",
+    "Importe",
+    "Cobrado",
+    "Saldo",
+    "ID",
+  ] as const
+
+  const body = rows.map((row) => [
+    row.createdAt,
+    row.dueDate,
+    row.clientName,
+    row.serviceName,
+    SERVICE_CHARGE_STATUS_LABELS[row.effectiveStatus],
+    row.periodDisplay,
+    formatMoney(row.amount),
+    formatMoney(row.paidTotal),
+    formatMoney(row.balance),
+    row.id,
+  ])
+
+  downloadCsv(csvFilename("services"), buildCsv(headers, body))
+}
+
 export function exportOperationsCsv(
   view: OperationsViewId,
-  rows: OperationSaleRow[] | OperationPurchaseRow[] | OperationExpenseLedgerRow[],
+  rows:
+    | OperationSaleRow[]
+    | OperationPurchaseRow[]
+    | OperationExpenseLedgerRow[]
+    | OperationServiceChargeRow[],
   timeZone?: string,
 ): void {
   if (view === "sales") {
@@ -220,6 +260,8 @@ export function exportOperationsCsv(
     })
   } else if (view === "purchases") {
     exportOperationsPurchasesCsv(rows as OperationPurchaseRow[])
+  } else if (view === "services") {
+    exportOperationsServicesCsv(rows as OperationServiceChargeRow[])
   } else {
     exportOperationsExpensesCsv(rows as OperationExpenseLedgerRow[], { timeZone })
   }

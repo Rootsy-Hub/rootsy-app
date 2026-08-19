@@ -13,7 +13,7 @@ export const POP_ACCESS_MODULE_TO_PAGE_KEY: Record<string, PopPageKey | null> = 
   promotions: "promotions",
   recipes: "recipes",
   services: "services",
-  active_services: "active-services",
+  active_services: "cobrar-servicios",
   inventory: "inventory",
   operations: "operations",
   invoices: "invoices",

@@ -43,6 +43,7 @@ import {
   dataWorkspaceEntityCardsGridClass,
 } from "@/components/data-workspace/dataWorkspaceListStyles"
 import { DataWorkspaceBlocksSection } from "@/components/data-workspace/DataWorkspaceBlocksSection"
+import { DataWorkspaceHeaderTooltipIconButton } from "@/components/layouts/DataWorkspaceHeaderTooltipIconButton"
 import {
   DataWorkspaceModuleLayout,
   dataWorkspaceModuleHeaderVariant,
@@ -51,12 +52,12 @@ import { RootsBanner } from "@/components/rootsy-banner"
 import {
   RootsDangerSubtleButton,
   RootsDefaultButton,
-  RootsPrimaryButton,
 } from "@/components/rootsy-button"
 import { RootsConfirmDialog } from "@/components/rootsy-dialog"
 import { RootsFormSegmentField } from "@/components/rootsy-form"
 import { usePopWorkspace } from "@/context/PopWorkspaceContext"
 import { cn } from "@/lib/utils"
+import { Plus, UserPlus } from "lucide-react"
 import { useParams, useRouter } from "next/navigation"
 import {
   useCallback,
@@ -646,6 +647,29 @@ function HrPage() {
         userName={bootstrap?.userFullName}
         userAvatarSrc={bootstrap?.userImageUrl ?? undefined}
         userRoleLabel={bootstrap?.roleLabel || undefined}
+        headerActions={
+          <>
+            {canManagePeople ? (
+              <DataWorkspaceHeaderTooltipIconButton
+                label="Cargar persona"
+                headerVariant={dataWorkspaceModuleHeaderVariant}
+                primary
+                onClick={openNewPerson}
+              >
+                <Plus className="size-5" aria-hidden />
+              </DataWorkspaceHeaderTooltipIconButton>
+            ) : null}
+            {canManageInvites ? (
+              <DataWorkspaceHeaderTooltipIconButton
+                label="Dar acceso a Rootsy"
+                headerVariant={dataWorkspaceModuleHeaderVariant}
+                onClick={() => openInvite()}
+              >
+                <UserPlus className="size-5" aria-hidden />
+              </DataWorkspaceHeaderTooltipIconButton>
+            ) : null}
+          </>
+        }
         mainMaxWidthClass="max-w-none"
         mainClassName={dataWorkspaceBlocksPageMainClass}
       >
@@ -679,38 +703,13 @@ function HrPage() {
                 />
               ) : null}
 
-              <DataWorkspaceBlocksSection
-                title="Personas"
-                description={
-                  peopleFilter === "espera"
-                    ? "Quienes van a poder abrir Rootsy en este local."
-                    : "Quien trabaja en este negocio. Cargala aunque no use el sistema."
-                }
-                action={
-                  peopleFilter === "espera" && canManageInvites ? (
-                    <RootsPrimaryButton
-                      type="button"
-                      size="compact"
-                      onClick={() => openInvite()}
-                    >
-                      Dar acceso a Rootsy
-                    </RootsPrimaryButton>
-                  ) : canManagePeople ? (
-                    <RootsPrimaryButton
-                      type="button"
-                      size="compact"
-                      onClick={openNewPerson}
-                    >
-                      Cargar persona
-                    </RootsPrimaryButton>
-                  ) : null
-                }
-              >
+              <DataWorkspaceBlocksSection>
                 <RootsFormSegmentField
                   label="Ver personas"
                   aria-label="Filtrar personas"
                   layout="inline"
                   className="[&>span:first-child]:sr-only"
+                  groupClassName="border-0"
                   value={peopleFilter}
                   onValueChange={(value) => setPeopleFilter(value as PeopleFilter)}
                   options={peopleFilterOptions}

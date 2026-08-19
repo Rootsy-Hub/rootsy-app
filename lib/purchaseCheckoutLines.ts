@@ -1,4 +1,5 @@
 import type { ArticleItemKind } from "@/lib/articleItemKind"
+import { parseInventoryExpiresAt } from "@/lib/inventory/inventoryExpiry"
 import {
   resolveSaleLineDiscount,
   roundSaleMoney,
@@ -15,6 +16,8 @@ export type PurchaseCheckoutLineInput = {
   itemDiscountMode?: "porcentaje" | "fijo"
   itemDiscountDraft?: string
   comment?: string
+  /** Vencimiento del lote (YYYY-MM-DD). Opcional. */
+  expiresOn?: string | null
   /** Si true, actualiza article_costs.unit_price al confirmar. */
   updateArticleCost?: boolean
 }
@@ -36,6 +39,7 @@ export type PurchaseLineBuilt = {
   itemDiscountValue: number | null
   lineGross: number
   comment: string | null
+  expiresOn: string | null
   updateArticleCost: boolean
 }
 
@@ -127,6 +131,7 @@ export function buildPurchaseLineFromInput(
     itemDiscountValue: lineDiscount.itemDiscountValue,
     lineGross: lineDiscount.lineSubtotal,
     comment: comment ? comment : null,
+    expiresOn: parseInventoryExpiresAt(input.expiresOn),
     updateArticleCost: input.updateArticleCost === true,
   }
 }
@@ -210,6 +215,7 @@ export function finalizePurchaseCheckout(
     line_total: line.lineFinal,
     name_snapshot: line.name,
     comment: line.comment,
+    expires_on: line.expiresOn,
   }))
 
   return {
