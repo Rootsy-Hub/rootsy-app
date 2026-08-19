@@ -27,6 +27,7 @@ import {
   dataWorkspaceModuleHeaderVariant,
 } from "@/components/layouts-module/DataWorkspaceModuleLayout"
 import { RootsBanner } from "@/components/rootsy-banner"
+import { showRootsyToast } from "@/components/rootsy-toast"
 import { usePopWorkspace } from "@/context/PopWorkspaceContext"
 import { usePadronAutofillRazonSocial } from "@/hooks/usePadronAutofillRazonSocial"
 import { DEFAULT_OPERATIONAL_DAY_CLOSE_TIME } from "@/lib/popOperationalDay"
@@ -395,10 +396,7 @@ function SettingsPage() {
       return
     }
 
-    setSectionBanners((current) => ({
-      ...current,
-      [sectionId]: { message: "Cambios guardados.", intent: "success" },
-    }))
+    showRootsyToast({ title: "Guardado", intent: "success" })
 
     await load()
     if (sectionId === "business" || sectionId === "images") {

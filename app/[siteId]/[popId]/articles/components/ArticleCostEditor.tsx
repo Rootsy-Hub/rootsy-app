@@ -1,5 +1,6 @@
 "use client"
 
+import { ArticleSupplierPickerField } from "@/app/[siteId]/[popId]/articles/ArticleSupplierPickerField"
 import type { ArticleCostRow } from "@/lib/articleCosts"
 import type { ArticleCostLineInput } from "@/lib/articleCosts"
 import { unitCostInSaleUom } from "@/lib/articleCosts"
@@ -26,6 +27,7 @@ export type ArticleCostFormLine = {
   /** Persistido; no se edita en la UI simplificada. */
   name: string
   supplierId: string
+  supplierName: string
   isActive: boolean
 }
 
@@ -35,6 +37,8 @@ type Props = {
   onChange: (lines: ArticleCostFormLine[]) => void
   saleUnitOfMeasure: string
   disabled?: boolean
+  popId: string
+  supplierOptions?: { id: string; name: string }[]
   /** Sin título ni borde superior — p. ej. dentro del paso Compra del wizard. */
   embedded?: boolean
 }
@@ -65,6 +69,7 @@ export function createEmptyArticleCostLine(
     saleUnitsPerCostUnit: "1",
     name: "",
     supplierId: "",
+    supplierName: "",
     isActive: true,
   }
 }
@@ -91,6 +96,7 @@ export function articleCostLinesFromRows(
       saleUnitsPerCostUnit: String(cost.saleUnitsPerCostUnit),
       unitPrice: String(cost.unitPrice).replace(".", ","),
       supplierId: cost.supplierId ?? "",
+      supplierName: cost.supplierName ?? "",
       isActive: cost.isActive,
       usesAlternateUnit,
     }
@@ -114,7 +120,7 @@ export function articleCostLinesToInput(
         ? Number(line.saleUnitsPerCostUnit.replace(",", "."))
         : 1,
       unitPrice: parseMoneyInput(line.unitPrice, 0),
-      supplierId: null,
+      supplierId: line.supplierId.trim() || null,
       isActive: true,
     }))
 }
@@ -132,6 +138,8 @@ type CostLineFieldsProps = {
   line: ArticleCostFormLine
   saleUnitOfMeasure: string
   disabled: boolean
+  popId: string
+  supplierOptions: { id: string; name: string }[]
   onUpdate: (patch: Partial<ArticleCostFormLine>) => void
 }
 
@@ -140,6 +148,8 @@ function CostLineFields({
   line,
   saleUnitOfMeasure,
   disabled,
+  popId,
+  supplierOptions,
   onUpdate,
 }: CostLineFieldsProps) {
   const saleUomLabel = labelUnitOfMeasure(saleUnitOfMeasure)
@@ -162,6 +172,29 @@ function CostLineFields({
         value={line.unitPrice}
         onChange={(value) => onUpdate({ unitPrice: value })}
         disabled={disabled}
+      />
+
+      <ArticleSupplierPickerField
+        id={`${idPrefix}-cost-supplier-${line.key}`}
+        popId={popId}
+        value={line.supplierId}
+        knownSuppliers={
+          line.supplierId
+            ? [
+                ...supplierOptions,
+                ...(line.supplierName
+                  ? [{ id: line.supplierId, name: line.supplierName }]
+                  : []),
+              ]
+            : supplierOptions
+        }
+        disabled={disabled}
+        onChange={(supplier) =>
+          onUpdate({
+            supplierId: supplier?.id ?? "",
+            supplierName: supplier?.name ?? "",
+          })
+        }
       />
 
       <RootsFormSwitchField
@@ -227,6 +260,8 @@ function CostLineCard({
   line,
   saleUnitOfMeasure,
   disabled,
+  popId,
+  supplierOptions,
   onUpdate,
   onRemove,
   title,
@@ -242,6 +277,8 @@ function CostLineCard({
       line={line}
       saleUnitOfMeasure={saleUnitOfMeasure}
       disabled={disabled}
+      popId={popId}
+      supplierOptions={supplierOptions}
       onUpdate={onUpdate}
     />
   )
@@ -299,6 +336,8 @@ export function ArticleCostEditor({
   onChange,
   saleUnitOfMeasure,
   disabled = false,
+  popId,
+  supplierOptions = [],
   embedded = false,
 }: Props) {
   const saleUomLabel = labelUnitOfMeasure(saleUnitOfMeasure)
@@ -348,6 +387,8 @@ export function ArticleCostEditor({
             line={primaryLine}
             saleUnitOfMeasure={saleUnitOfMeasure}
             disabled={disabled}
+            popId={popId}
+            supplierOptions={supplierOptions}
             onUpdate={(patch) => updateLine(primaryLine.key, patch)}
           />
         ) : (
@@ -356,6 +397,8 @@ export function ArticleCostEditor({
             line={primaryLine}
             saleUnitOfMeasure={saleUnitOfMeasure}
             disabled={disabled}
+            popId={popId}
+            supplierOptions={supplierOptions}
             onUpdate={(patch) => updateLine(primaryLine.key, patch)}
           />
         )
@@ -368,6 +411,8 @@ export function ArticleCostEditor({
           line={line}
           saleUnitOfMeasure={saleUnitOfMeasure}
           disabled={disabled}
+          popId={popId}
+          supplierOptions={supplierOptions}
           onUpdate={(patch) => updateLine(line.key, patch)}
           onRemove={() => removeLine(line.key)}
           variant={embedded ? "divider" : "card"}

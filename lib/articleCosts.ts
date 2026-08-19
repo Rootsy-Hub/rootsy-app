@@ -6,6 +6,7 @@ export type ArticleCostRow = {
   popId: string
   articleId: string
   supplierId: string | null
+  supplierName: string | null
   /** Etiqueta opcional, ej. "Maple 32 huevos". */
   name: string
   /** Unidad de compra libre, ej. "maple de 32". */
@@ -39,12 +40,20 @@ export const ARTICLE_SALE_UNIT_OF_MEASURE_VALUES = UNIT_OF_MEASURE_VALUES
 
 export type ArticleSaleUnitOfMeasure = UnitOfMeasureValue
 
+function nestedSupplierName(row: Record<string, unknown>): string | null {
+  const raw = row.suppliers
+  if (!raw || typeof raw !== "object" || Array.isArray(raw)) return null
+  const name = (raw as { name?: unknown }).name
+  return typeof name === "string" && name.trim() ? name.trim() : null
+}
+
 export function mapArticleCostRow(row: Record<string, unknown>): ArticleCostRow {
   return {
     id: String(row.id),
     popId: String(row.pop_id),
     articleId: String(row.article_id),
     supplierId: row.supplier_id != null ? String(row.supplier_id) : null,
+    supplierName: nestedSupplierName(row),
     name: String(row.name ?? ""),
     costUnitLabel: String(row.cost_unit_label ?? ""),
     saleUnitsPerCostUnit: Number(row.sale_units_per_cost_unit ?? 0) || 0,

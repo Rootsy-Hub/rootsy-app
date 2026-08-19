@@ -199,9 +199,21 @@ export function ArticleUpsertSummaryPanel({
     ? findArcaIvaAlicuotaById(siteId, Number.parseInt(form.iva, 10))
     : null
 
-  const supplierNames = form.supplierIds
-    .map((id) => supplierOptions.find((supplier) => supplier.id === id)?.name)
-    .filter((name): name is string => Boolean(name?.trim()))
+  const supplierNames = [
+    ...new Set(
+      costLines
+        .map((line) => {
+          if (!line.supplierId.trim()) return null
+          return (
+            line.supplierName.trim() ||
+            supplierOptions.find((supplier) => supplier.id === line.supplierId)
+              ?.name ||
+            null
+          )
+        })
+        .filter((name): name is string => Boolean(name)),
+    ),
+  ]
 
   const parsedSalePrice = parseMoneyInput(form.salePrice, 0)
   const parsedDiscount = parseFormCatalogDiscount(

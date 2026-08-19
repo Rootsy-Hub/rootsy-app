@@ -156,10 +156,6 @@ export function ArticlesTableDetailDialog({
     row.discountMode,
     row.discountValue,
   )
-  const supplierLabel =
-    row.suppliers.length > 0
-      ? row.suppliers.map((s) => s.name).join(", ")
-      : "—"
   const saleUomShort = shortUnitOfMeasure(row.unitOfMeasure)
   const activeCosts = costs.filter((cost) => cost.isActive)
 
@@ -223,10 +219,6 @@ export function ArticlesTableDetailDialog({
                   {emptyValue(row.barcode)}
                 </DetailField>
               ) : null}
-
-              <DetailField label="Proveedores" multiline>
-                {supplierLabel}
-              </DetailField>
             </div>
 
             <div className={rootsFormColumnClass}>
@@ -292,6 +284,7 @@ export function ArticlesTableDetailDialog({
                             {unitCost > 0
                               ? ` · ≈ ${fmt.format(unitCost)}/${saleUomShort || "u."}`
                               : null}
+                            {cost.supplierName ? ` · ${cost.supplierName}` : null}
                           </span>
                         </li>
                       )

@@ -253,31 +253,6 @@ export function ArticleTableCategoryCell({ name }: { name: string }) {
   )
 }
 
-export function ArticleTableSuppliersCell({
-  suppliers,
-}: {
-  suppliers: ArticleTableRow["suppliers"]
-}) {
-  const label =
-    suppliers.length > 0 ? suppliers.map((s) => s.name).join(", ") : "—"
-
-  return (
-    <TableCell className={workspaceTableLayoutBodyCellClass}>
-      <div className={workspaceTableLayoutCellStackClass}>
-        <p
-          className={cn(
-            workspaceTableLayoutCellPrimaryTextClass,
-            workspaceTableNatureTextSecondaryClass,
-          )}
-          title={label === "—" ? undefined : label}
-        >
-          {label}
-        </p>
-      </div>
-    </TableCell>
-  )
-}
-
 export function ArticleTableStockCell({
   stockOnHand,
   unitOfMeasure,

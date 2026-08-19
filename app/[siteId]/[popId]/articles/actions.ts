@@ -45,11 +45,6 @@ import {
 import { isArticleDiscountMode } from "@/lib/articleDiscount"
 import { createClient } from "@/utils/supabase/server"
 
-export type ArticleSupplierRef = {
-  id: string
-  name: string
-}
-
 export type ArticleTableRow = {
   id: string
   name: string
@@ -69,7 +64,6 @@ export type ArticleTableRow = {
   discountValue: number | null
   categoryId: string
   categoryName: string
-  suppliers: ArticleSupplierRef[]
   isActive: boolean
   allowNegativeStock: boolean
   stockOnHand: number
@@ -116,7 +110,6 @@ export type UpdatePopArticleInput = {
   isActive: boolean
   discountMode: ArticleDiscountMode | null
   discountValue: number | null
-  supplierIds: string[]
   allowNegativeStock: boolean
   costs?: ArticleCostLineInput[]
 } & ArticleItemFieldsInput
@@ -151,24 +144,6 @@ function validateArticleKindFields(
     return { ok: false, error: "Unidad de medida inválida." }
   }
   return { ok: true }
-}
-
-function parseArticleSuppliers(row: Record<string, unknown>): ArticleSupplierRef[] {
-  const raw = row.article_suppliers
-  if (!Array.isArray(raw)) return []
-  const out: ArticleSupplierRef[] = []
-  for (const link of raw) {
-    if (!link || typeof link !== "object") continue
-    const sup = (link as { suppliers?: { id?: unknown; name?: unknown } | null })
-      .suppliers
-    if (sup?.id) {
-      out.push({
-        id: String(sup.id),
-        name: String(sup.name ?? ""),
-      })
-    }
-  }
-  return out.sort((a, b) => a.name.localeCompare(b.name, "es"))
 }
 
 function parseStockQty(v: unknown): number {
@@ -252,7 +227,6 @@ function articleRowFromDb(row: Record<string, unknown>): ArticleTableRow {
     discountValue,
     categoryId: String(row.category_id ?? ""),
     categoryName: cat?.name ? String(cat.name) : "—",
-    suppliers: parseArticleSuppliers(row),
     isActive: Boolean(row.is_active),
     allowNegativeStock: Boolean(row.allow_negative_stock),
     stockOnHand: 0,
@@ -294,51 +268,6 @@ function normalizeIdentifierFields(
   return { ok: true, sku, barcode: barcodeRes.value }
 }
 
-async function syncArticleSuppliers(
-  supabase: Awaited<ReturnType<typeof createClient>>,
-  popId: string,
-  articleId: string,
-  supplierIds: string[],
-): Promise<{ ok: true } | { ok: false; error: string }> {
-  const unique = [...new Set(supplierIds.map((id) => id.trim()).filter(Boolean))]
-  let filtered: string[] = []
-  if (unique.length > 0) {
-    const { data: validRows, error: validErr } = await supabase
-      .from("suppliers")
-      .select("id")
-      .eq("pop_id", popId)
-      .in("id", unique)
-    if (validErr) {
-      return { ok: false, error: validErr.message || "No se pudieron validar proveedores." }
-    }
-    const validIds = new Set((validRows ?? []).map((r) => String(r.id)))
-    filtered = unique.filter((id) => validIds.has(id))
-  }
-
-  const { error: delErr } = await supabase
-    .from("article_suppliers")
-    .delete()
-    .eq("article_id", articleId)
-    .eq("pop_id", popId)
-  if (delErr) {
-    return { ok: false, error: delErr.message || "No se pudieron actualizar proveedores." }
-  }
-
-  if (filtered.length === 0) return { ok: true }
-
-  const { error: insErr } = await supabase.from("article_suppliers").insert(
-    filtered.map((supplierId) => ({
-      article_id: articleId,
-      supplier_id: supplierId,
-      pop_id: popId,
-    })),
-  )
-  if (insErr) {
-    return { ok: false, error: insErr.message || "No se pudieron vincular proveedores." }
-  }
-  return { ok: true }
-}
-
 function normalizeCatalogFields(
   input: UpdatePopArticleInput,
 ):
@@ -346,14 +275,11 @@ function normalizeCatalogFields(
       ok: true
       fields: Pick<
         UpdatePopArticleInput,
-        "brand" | "discountMode" | "discountValue" | "supplierIds"
+        "brand" | "discountMode" | "discountValue"
       >
     }
   | { ok: false; error: string } {
   const brand = input.brand.trim()
-  const supplierIds = [
-    ...new Set(input.supplierIds.map((id) => id.trim()).filter(Boolean)),
-  ]
 
   if (input.itemKind !== "merchandise") {
     return {
@@ -362,7 +288,6 @@ function normalizeCatalogFields(
         brand,
         discountMode: null,
         discountValue: null,
-        supplierIds,
       },
     }
   }
@@ -381,7 +306,7 @@ function normalizeCatalogFields(
 
   return {
     ok: true,
-    fields: { brand, discountMode, discountValue, supplierIds },
+    fields: { brand, discountMode, discountValue },
   }
 }
 
@@ -557,7 +482,7 @@ export async function updatePopArticle(
     if (!idFields.ok) {
       return { success: false, error: idFields.error }
     }
-    const { brand, discountMode, discountValue, supplierIds } = catalogNorm.fields
+    const { brand, discountMode, discountValue } = catalogNorm.fields
 
     const { error } = await supabase
       .from("articles")
@@ -576,7 +501,6 @@ export async function updatePopArticle(
           barcode: idFields.barcode ?? "",
           discountMode,
           discountValue,
-          supplierIds,
         }),
       })
       .eq("id", articleId)
@@ -584,11 +508,6 @@ export async function updatePopArticle(
 
     if (error) {
       return { success: false, error: error.message || "No se pudo guardar." }
-    }
-
-    const syncSup = await syncArticleSuppliers(supabase, popId, articleId, supplierIds)
-    if (!syncSup.ok) {
-      return { success: false, error: syncSup.error }
     }
 
     if (input.costs != null) {
@@ -712,7 +631,7 @@ export async function createPopArticle(
     if (!idFields.ok) {
       return { success: false, error: idFields.error }
     }
-    const { brand, discountMode, discountValue, supplierIds } = catalogNorm.fields
+    const { brand, discountMode, discountValue } = catalogNorm.fields
 
     const { data: created, error } = await supabase
       .from("articles")
@@ -732,7 +651,6 @@ export async function createPopArticle(
           barcode: idFields.barcode ?? "",
           discountMode,
           discountValue,
-          supplierIds,
         }),
       })
       .select("id")
@@ -742,12 +660,6 @@ export async function createPopArticle(
       return { success: false, error: error?.message || "No se pudo crear." }
     }
     const articleId = String(created.id)
-
-    const syncSup = await syncArticleSuppliers(supabase, popId, articleId, supplierIds)
-    if (!syncSup.ok) {
-      await supabase.from("articles").delete().eq("id", articleId).eq("pop_id", popId)
-      return { success: false, error: syncSup.error }
-    }
 
     const syncCosts = await syncArticleCosts(supabase, popId, articleId, costLines)
     if (!syncCosts.ok) {
@@ -1238,11 +1150,7 @@ const ARTICLE_LIST_SELECT = `
   category_id,
   is_active,
   allow_negative_stock,
-  categories ( id, name ),
-  article_suppliers (
-    supplier_id,
-    suppliers ( id, name )
-  )
+  categories ( id, name )
 `
 
 export async function getPopArticlesTable(

@@ -1,4 +1,4 @@
-import { toast } from "@/hooks/use-toast"
+import { showRootsyToast } from "@/components/rootsy-toast"
 
 type ExportInProgressToastOptions = {
   title?: string
@@ -8,11 +8,12 @@ type ExportInProgressToastOptions = {
 export function showReportExportInProgressToast(
   options: ExportInProgressToastOptions = {},
 ): () => void {
-  const { dismiss } = toast({
+  const { dismiss } = showRootsyToast({
     title: options.title ?? "Generando reporte…",
     description:
       options.description ??
       "Puede tardar unos momentos. No cierres esta página hasta que termine.",
+    intent: "info",
     duration: Number.POSITIVE_INFINITY,
   })
 

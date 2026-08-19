@@ -18,17 +18,18 @@ import { cn } from "@/lib/utils"
 import { Building2, Loader2, Search, X } from "lucide-react"
 import { useEffect, useId, useMemo, useRef, useState } from "react"
 
-type SupplierOption = {
+export type ArticleSupplierOption = {
   id: string
   name: string
 }
 
 type Props = {
   popId: string
-  value: string[]
-  onChange: (supplierIds: string[]) => void
-  knownSuppliers?: SupplierOption[]
+  value: string
+  onChange: (supplier: ArticleSupplierOption | null) => void
+  knownSuppliers?: ArticleSupplierOption[]
   disabled?: boolean
+  id?: string
 }
 
 const supplierOptionButtonClass = cn(
@@ -49,48 +50,20 @@ const supplierEmptyStateClass = cn(
   "border border-dashed border-[var(--rootsy-bruma-200)] bg-[var(--rootsy-bruma-50)] text-sm text-[var(--rootsy-bruma-500)]",
 )
 
-function ArticleSupplierSearchOption({
-  supplier,
-  onSelect,
-}: {
-  supplier: SupplierOption
-  onSelect: () => void
-}) {
-  return (
-    <button
-      type="button"
-      role="option"
-      aria-selected={false}
-      onClick={onSelect}
-      className={supplierOptionButtonClass}
-    >
-      <span className={supplierOptionIconClass}>
-        <Building2 className="size-4" aria-hidden />
-      </span>
-      <span
-        className={cn(
-          "min-w-0 flex-1 truncate text-sm font-medium leading-5 text-[var(--rootsy-bruma-900)]",
-        )}
-        title={supplier.name}
-      >
-        {supplier.name}
-      </span>
-    </button>
-  )
-}
-
 export function ArticleSupplierPickerField({
   popId,
   value,
   onChange,
   knownSuppliers = [],
   disabled = false,
+  id,
 }: Props) {
   const [searchQuery, setSearchQuery] = useState("")
-  const [results, setResults] = useState<SupplierOption[]>([])
+  const [results, setResults] = useState<ArticleSupplierOption[]>([])
   const [searchLoading, setSearchLoading] = useState(false)
   const searchGenRef = useRef(0)
-  const searchInputId = useId()
+  const autoId = useId()
+  const searchInputId = id ?? autoId
   const { state, interactionHandlers } = useRootsFormControlInteraction({ disabled })
   const searchShellStyle = getFormInlineIconSearchShellStyle(state)
   const searchInputStyle = getFormInlineIconSearchInputStyle(state)
@@ -106,12 +79,9 @@ export function ArticleSupplierPickerField({
     return map
   }, [knownSuppliers, results])
 
-  const selectedSuppliers = useMemo(() => {
-    return value.map((id) => ({
-      id,
-      name: nameById.get(id) ?? "Proveedor",
-    }))
-  }, [value, nameById])
+  const selected = value
+    ? { id: value, name: nameById.get(value) ?? "Proveedor" }
+    : null
 
   const searchTrim = searchQuery.trim()
 
@@ -137,7 +107,7 @@ export function ArticleSupplierPickerField({
           id: party.id,
           name: party.name,
         }))
-        setResults(mapped.filter((row) => !value.includes(row.id)))
+        setResults(mapped.filter((row) => row.id !== value))
       })()
     }, 300)
 
@@ -146,55 +116,44 @@ export function ArticleSupplierPickerField({
     }
   }, [popId, searchTrim, value])
 
-  const addSupplier = (supplier: SupplierOption) => {
-    if (value.includes(supplier.id)) return
-    onChange([...value, supplier.id])
+  const selectSupplier = (supplier: ArticleSupplierOption) => {
+    onChange(supplier)
     setSearchQuery("")
     setResults([])
   }
 
-  const removeSupplier = (supplierId: string) => {
-    onChange(value.filter((id) => id !== supplierId))
-  }
-
   return (
     <RootsFormField
-      label="Proveedores"
+      label="Proveedor"
       htmlFor={searchInputId}
       hint={
         searchTrim
           ? undefined
-          : "Buscá y seleccioná uno o más proveedores habituales para este ítem."
+          : "Opcional. De quién es esta forma de compra."
       }
     >
       <div className="flex w-full min-w-0 flex-col gap-2">
-        {selectedSuppliers.length > 0 ? (
-          <ul className="flex flex-wrap gap-2">
-            {selectedSuppliers.map((supplier) => (
-              <li key={supplier.id}>
-                <span
-                  className={cn(
-                    "inline-flex max-w-full items-center gap-1.5 rounded-full border border-[var(--rootsy-bruma-200)] bg-[var(--rootsy-bruma-50)] py-1 pl-3 pr-1.5 text-sm text-[var(--rootsy-bruma-900)]",
-                  )}
-                >
-                  <span className="max-w-56 truncate">{supplier.name}</span>
-                  <button
-                    type="button"
-                    disabled={disabled}
-                    onClick={() => removeSupplier(supplier.id)}
-                    className={cn(
-                      "flex size-6 shrink-0 items-center justify-center rounded-full text-[var(--rootsy-bruma-500)] transition-colors duration-150",
-                      "hover:bg-[var(--rootsy-bruma-100)] hover:text-[var(--rootsy-bruma-900)]",
-                      "focus-visible:outline-none focus-visible:shadow-[0_0_0_2px_color-mix(in_srgb,var(--rootsy-savia-400)_45%,transparent)]",
-                    )}
-                    aria-label={`Quitar ${supplier.name}`}
-                  >
-                    <X className="size-3.5" aria-hidden />
-                  </button>
-                </span>
-              </li>
-            ))}
-          </ul>
+        {selected ? (
+          <span
+            className={cn(
+              "inline-flex max-w-full items-center gap-1.5 self-start rounded-full border border-[var(--rootsy-bruma-200)] bg-[var(--rootsy-bruma-50)] py-1 pl-3 pr-1.5 text-sm text-[var(--rootsy-bruma-900)]",
+            )}
+          >
+            <span className="max-w-56 truncate">{selected.name}</span>
+            <button
+              type="button"
+              disabled={disabled}
+              onClick={() => onChange(null)}
+              className={cn(
+                "flex size-6 shrink-0 items-center justify-center rounded-full text-[var(--rootsy-bruma-500)] transition-colors duration-150",
+                "hover:bg-[var(--rootsy-bruma-100)] hover:text-[var(--rootsy-bruma-900)]",
+                "focus-visible:outline-none focus-visible:shadow-[0_0_0_2px_color-mix(in_srgb,var(--rootsy-savia-400)_45%,transparent)]",
+              )}
+              aria-label={`Quitar ${selected.name}`}
+            >
+              <X className="size-3.5" aria-hidden />
+            </button>
+          </span>
         ) : null}
 
         <div className="relative w-full min-w-0">
@@ -263,10 +222,25 @@ export function ArticleSupplierPickerField({
             ) : (
               results.map((supplier) => (
                 <li key={supplier.id}>
-                  <ArticleSupplierSearchOption
-                    supplier={supplier}
-                    onSelect={() => addSupplier(supplier)}
-                  />
+                  <button
+                    type="button"
+                    role="option"
+                    aria-selected={false}
+                    onClick={() => selectSupplier(supplier)}
+                    className={supplierOptionButtonClass}
+                  >
+                    <span className={supplierOptionIconClass}>
+                      <Building2 className="size-4" aria-hidden />
+                    </span>
+                    <span
+                      className={cn(
+                        "min-w-0 flex-1 truncate text-sm font-medium leading-5 text-[var(--rootsy-bruma-900)]",
+                      )}
+                      title={supplier.name}
+                    >
+                      {supplier.name}
+                    </span>
+                  </button>
                 </li>
               ))
             )}
