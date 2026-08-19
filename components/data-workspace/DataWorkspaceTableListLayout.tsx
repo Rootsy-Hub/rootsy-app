@@ -156,7 +156,7 @@ export type DataWorkspaceTableListShellProps = Omit<
   DataWorkspaceListTableShellProps,
   "variant"
 > & {
-  /** Por defecto `tables` (pie universo · layout librería). */
+  /** Por defecto `tables` (pie tierra húmeda · layout librería). */
   footerVariant?: DataWorkspaceListPaginationFooterProps["variant"]
 }
 

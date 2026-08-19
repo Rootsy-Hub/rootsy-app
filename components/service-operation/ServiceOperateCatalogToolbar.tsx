@@ -4,7 +4,9 @@ import {
   layoutsOperarCatalogToolbarClass,
   layoutsOperarCatalogToolbarIconMutedClass,
   layoutsOperarCatalogToolbarScanInputClass,
-  layoutsOperarCatalogToolbarViewToggleActiveSurfaceClass,
+  layoutsOperarCatalogToolbarViewToggleButtonActiveClass,
+  layoutsOperarCatalogToolbarViewToggleButtonClass,
+  layoutsOperarCatalogToolbarViewToggleButtonIdleClass,
   layoutsOperarCatalogToolbarViewToggleShellClass,
 } from "@/app/library/layouts/layoutsOperarStyles"
 import { cn } from "@/lib/utils"
@@ -28,24 +30,14 @@ export function ServiceOperateCatalogToolbar({
   return (
     <div className={cn(layoutsOperarCatalogToolbarClass, className)}>
       <div className={layoutsOperarCatalogToolbarViewToggleShellClass}>
-        <span
-          aria-hidden
-          className={cn(
-            "pointer-events-none absolute inset-y-1 left-1 w-10 rounded-md border transition-transform duration-300 ease-out",
-            layoutsOperarCatalogToolbarViewToggleActiveSurfaceClass,
-          )}
-          style={{
-            transform: modoVista === "lista" ? "translateX(2.5rem)" : "translateX(0)",
-          }}
-        />
         <button
           type="button"
           onClick={() => onModoVistaChange("grid")}
           className={cn(
-            "relative z-10 flex h-8 w-10 items-center justify-center rounded-md transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2",
+            layoutsOperarCatalogToolbarViewToggleButtonClass,
             modoVista === "grid"
-              ? "text-[#f4f8f6]"
-              : "text-[color-mix(in_srgb,var(--rootsy-sombra-300)_72%,transparent)]",
+              ? layoutsOperarCatalogToolbarViewToggleButtonActiveClass
+              : layoutsOperarCatalogToolbarViewToggleButtonIdleClass,
           )}
           aria-label="Vista en grilla"
           aria-pressed={modoVista === "grid"}
@@ -56,10 +48,10 @@ export function ServiceOperateCatalogToolbar({
           type="button"
           onClick={() => onModoVistaChange("lista")}
           className={cn(
-            "relative z-10 flex h-8 w-10 items-center justify-center rounded-md transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2",
+            layoutsOperarCatalogToolbarViewToggleButtonClass,
             modoVista === "lista"
-              ? "text-[#f4f8f6]"
-              : "text-[color-mix(in_srgb,var(--rootsy-sombra-300)_72%,transparent)]",
+              ? layoutsOperarCatalogToolbarViewToggleButtonActiveClass
+              : layoutsOperarCatalogToolbarViewToggleButtonIdleClass,
           )}
           aria-label="Vista en columna"
           aria-pressed={modoVista === "lista"}
@@ -94,7 +86,7 @@ export function ServiceOperateCatalogToolbar({
             className={cn(
               "absolute top-1/2 right-1.5 flex size-7 -translate-y-1/2 items-center justify-center rounded-full transition-colors",
               layoutsOperarCatalogToolbarIconMutedClass,
-              "hover:bg-[color-mix(in_srgb,var(--rootsy-sombra-900)_48%,transparent)] hover:text-[#f4f8f6]",
+              "hover:bg-[color-mix(in_srgb,var(--rootsy-white)_6%,transparent)] hover:text-[var(--rootsy-bruma-50)]",
             )}
             onClick={() => onBusquedaChange("")}
           >

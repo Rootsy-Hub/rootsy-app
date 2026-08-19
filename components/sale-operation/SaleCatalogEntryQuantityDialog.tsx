@@ -70,7 +70,7 @@ export function SaleCatalogEntryQuantityDialog({
     <>
       <button
         type="button"
-        className={cn(valueClassName, "rounded px-0.5 transition-colors", valueHoverClassName)}
+        className={cn(valueClassName, valueHoverClassName)}
         aria-label={`Cantidad a ingresar: ${cantidadIngreso}. Tocá para editar`}
         onClick={() => setOpen(true)}
       >

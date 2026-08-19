@@ -34,6 +34,7 @@ import {
   computeSummaryDateBounds,
   type SummaryDatePreset,
 } from "@/lib/summaryDateFilter"
+import { useIsHydrated } from "@/hooks/useIsHydrated"
 import { cn } from "@/lib/utils"
 import { usePathname, useRouter, useSearchParams } from "next/navigation"
 import { useCallback, useEffect, useMemo, useState } from "react"
@@ -75,10 +76,12 @@ export function StatisticsWorkspaceView({
   const router = useRouter()
   const pathname = usePathname()
   const searchParams = useSearchParams()
+  const hydrated = useIsHydrated()
 
   const sections = useMemo(
-    () => visibleStatisticsSections(enabledModuleKeys),
-    [enabledModuleKeys],
+    () =>
+      visibleStatisticsSections(hydrated ? enabledModuleKeys : []),
+    [enabledModuleKeys, hydrated],
   )
 
   const visibleSectionIds = useMemo(

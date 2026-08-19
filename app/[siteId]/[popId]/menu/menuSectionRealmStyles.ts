@@ -1,3 +1,4 @@
+import { LAYOUTS_BLOCKS_CARD_SPEC } from "@/app/library/layouts/layoutsBlocksHardcodedSpec"
 import {
   menuRealmLightMutedClass,
   menuRealmLightStaticClass,
@@ -5,8 +6,8 @@ import {
 import type { MenuSectionKey } from "@/lib/menuCatalog"
 import { cn } from "@/lib/utils"
 
-/** Radio compartido — selector de reinado y dock. */
-export const menuSectionRealmRadiusClass = "rounded-lg"
+/** Radio compartido — misma loseta que Estadísticas (radius.xxlarge · 22px). */
+export const menuSectionRealmRadiusClass = LAYOUTS_BLOCKS_CARD_SPEC.radiusClass
 
 /** Cristal del selector de reinado — mismo material para el dock. */
 export const menuSectionRealmSurfaceClass = cn(

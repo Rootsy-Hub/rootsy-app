@@ -4,6 +4,7 @@
  */
 
 import { ROOTSY_BORDER_COLOR_TOKENS } from "@/app/library/border/rootsyBorderSystem"
+import { ROOTSY_LAYOUTS_EARTH_FLOOR } from "@/app/library/layouts/rootsyLayoutsEarthFloor"
 import { ROOTSY_SEMANTIC_TOKENS } from "@/app/library/color/rootsyColorSystem"
 import {
   ROOTSY_ELEVATION_SHADOW_TOKENS,
@@ -37,12 +38,12 @@ function semanticHex(id: string): string {
 export type LayoutsTablesStatusId = "activo" | "inactivo" | "pendiente" | "vencido"
 
 export const ROOTSY_LAYOUTS_TABLES_MANIFESTO =
-  "Listado workspace — header universo, toolbar alba, tabla flush al suelo, footer universo. Sin paleta Nature en las celdas: bruma · savia · sombra · funcional."
+  "Listado workspace — header universo, toolbar alba, tabla flush al suelo, footer tierra húmeda. Sin paleta Nature en las celdas: bruma · savia · sombra · funcional. El pie ancla el mundo: earth-800 · savia en el umbral."
 
 export const ROOTSY_LAYOUTS_TABLES_PRINCIPLES = [
   {
-    title: "Chrome sombra",
-    detail: "Header universo · h-17. Footer universo al suelo — misma noche, invita al cambio.",
+    title: "Cielo y tierra",
+    detail: "Header universo · h-17. Footer tierra empapada — casi negra, earth-900 bajo sombra. El listado vive entre dosel y suelo.",
   },
   {
     title: "Toolbar alba",
@@ -84,7 +85,7 @@ export const ROOTSY_LAYOUTS_TABLES_ANATOMY = {
 
 export const ROOTSY_LAYOUTS_TABLES_CHROME = {
   headerBackground: `linear-gradient(180deg, ${hx("sombra", "950")} 0%, ${hx("sombra", "800")} 100%)`,
-  footerBackground: `linear-gradient(168deg, color-mix(in srgb, ${hx("sombra", "950")} 94%, transparent) 0%, ${hx("sombra", "950")} 100%)`,
+  footerBackground: ROOTSY_LAYOUTS_EARTH_FLOOR.background,
   titleColor: ROOTSY_COLOR_SEMANTIC.textOnDark,
   subtitleColor: hx("sombra", "300"),
   roleColor: hx("sombra", "400"),
@@ -124,7 +125,7 @@ export const ROOTSY_LAYOUTS_TABLES_BODY = {
   linkColor: hx("savia", "700"),
   moneyColor: hx("bruma", "900"),
   /** Columna ordenable — label activo · ícono savia · reposo bruma-600. */
-  sortActiveLabelColor: hx("bruma", "800"),
+  sortActiveLabelColor: hx("bruma", "700"),
   sortInactiveLabelColor: hx("bruma", "600"),
   sortActiveIconColor: hx("savia", "700"),
   sortInactiveIconColor: hx("bruma", "600"),
@@ -160,10 +161,13 @@ export const ROOTSY_LAYOUTS_TABLES_STATUS: Record<
   },
 }
 
+/** Pie · tierra empapada — mismo suelo que el toolbox de operar. */
 export const ROOTSY_LAYOUTS_TABLES_FOOTER = {
-  background: `linear-gradient(168deg, color-mix(in srgb, ${hx("sombra", "950")} 94%, transparent) 0%, ${hx("sombra", "950")} 100%)`,
-  borderTop: `1px solid color-mix(in srgb, ${ROOTSY_COLOR_SEMANTIC.textOnDark} 10%, transparent)`,
-  textColor: ROOTSY_COLOR_SEMANTIC.textOnDark,
-  mutedColor: hx("sombra", "300"),
-  dotColor: hx("sombra", "400"),
+  background: ROOTSY_LAYOUTS_EARTH_FLOOR.background,
+  borderTop: ROOTSY_LAYOUTS_EARTH_FLOOR.borderTop,
+  dividerColor: ROOTSY_LAYOUTS_EARTH_FLOOR.dividerColor,
+  textColor: ROOTSY_LAYOUTS_EARTH_FLOOR.textColor,
+  mutedColor: ROOTSY_LAYOUTS_EARTH_FLOOR.mutedColor,
+  moistureColor: ROOTSY_LAYOUTS_EARTH_FLOOR.moistureColor,
+  chromeToken: ROOTSY_LAYOUTS_EARTH_FLOOR.chromeToken,
 } as const

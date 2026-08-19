@@ -166,13 +166,13 @@ export const LAYOUTS_TABLES_SCREEN_COMPONENTS: LayoutsTablesScreenComponentRow[]
   {
     layer: "Footer",
     component: "Chrome paginación",
-    token: "universo · sombra-950 · estrellas",
+    token: "tierra empapada · earth-900 / sombra-950 · savia-990",
     source: "ROOTSY_LAYOUTS_TABLES_FOOTER.background",
   },
   {
     layer: "Footer",
     component: "Conteo resultados",
-    token: "body.small · bruma-500 / bruma-900",
+    token: "body.small · earth-50 / earth-400",
     source: "getLayoutsTablesFooterTextStyle",
   },
   {

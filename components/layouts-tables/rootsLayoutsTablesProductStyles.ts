@@ -12,7 +12,7 @@ export const layoutsTablesChromeSurfaceClass = cn(
   "bg-[linear-gradient(180deg,var(--rootsy-sombra-950)_0%,var(--rootsy-sombra-800)_100%)]",
 )
 
-/** Superficie del pie — la noche la aporta MenuHeaderEntity (as=footer). */
+/** Superficie del pie — la tierra la aporta MenuHeaderEntity (as=footer). */
 export const layoutsTablesFooterSurfaceClass = "h-full"
 
 export const layoutsTablesChromeDividerClass =
@@ -42,17 +42,17 @@ export const layoutsTablesFooterGridClass =
   "grid h-full w-full grid-cols-[1fr_auto_1fr] items-center gap-4 px-4 sm:px-5"
 
 export const layoutsTablesFooterCountTextClass = cn(
-  "font-canopy text-sm text-[color-mix(in_srgb,var(--rootsy-white)_72%,var(--rootsy-sombra-300)_28%)]",
+  "font-canopy text-sm text-[color-mix(in_srgb,var(--nature-earth-100,#F5F5F0)_78%,var(--nature-earth-400,#D6D3D1))]",
 )
 
 export const layoutsTablesFooterCountStrongClass =
-  "font-semibold text-white"
+  "font-semibold text-[var(--nature-earth-50,#FAFAF7)]"
 
 export const layoutsTablesFooterNavClusterClass =
   "flex items-center gap-2"
 
 export const layoutsTablesFooterPageLabelClass =
-  "px-1.5 font-canopy text-sm font-semibold tabular-nums text-white"
+  "px-1.5 font-canopy text-sm font-semibold tabular-nums text-[var(--nature-earth-50,#FAFAF7)]"
 
 export const layoutsTablesFooterPageSizeClusterClass =
   "flex items-center justify-end gap-2"

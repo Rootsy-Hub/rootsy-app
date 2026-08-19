@@ -2,6 +2,7 @@
 
 import type { SaleCatalogCategory } from "@/app/[siteId]/[popId]/sale/actions"
 import type { MenuCatalogCategorySection } from "@/app/[siteId]/[popId]/menu-catalog/actions"
+import { libraryNavItemLabelClass } from "@/app/library/libraryColorTheme"
 import type { SaleCatalogViewPersisted } from "@/lib/saleCatalogPreference"
 import {
   layoutsOperarCatalogRailItemClass,
@@ -46,7 +47,7 @@ export function SaleCatalogSidebarNav({
                     seleccionado && layoutsOperarCatalogRailItemSelectedClass,
                   )}
                 >
-                  {cat.name}
+                  <span className={libraryNavItemLabelClass}>{cat.name}</span>
                 </button>
               </li>
             )
@@ -78,7 +79,7 @@ export function SaleCatalogSidebarNav({
                         seleccionado && layoutsOperarCatalogRailItemSelectedClass,
                       )}
                     >
-                      {cat.name}
+                      <span className={libraryNavItemLabelClass}>{cat.name}</span>
                     </button>
                   </li>
                 )

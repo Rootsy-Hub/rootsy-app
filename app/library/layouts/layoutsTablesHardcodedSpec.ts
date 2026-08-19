@@ -388,6 +388,8 @@ export function getLayoutsTablesFooterShellStyle(composed = false) {
   return {
     height: ROOTSY_LAYOUTS_TABLES_ANATOMY.footerHeightPx,
     background: ROOTSY_LAYOUTS_TABLES_FOOTER.background,
+    borderTop: ROOTSY_LAYOUTS_TABLES_FOOTER.borderTop,
+    boxShadow: `inset 0 1px 0 color-mix(in srgb, ${ROOTSY_LAYOUTS_TABLES_FOOTER.mutedColor} 16%, transparent), inset 0 14px 32px color-mix(in srgb, ${ROOTSY_LAYOUTS_TABLES_FOOTER.moistureColor} 12%, transparent)`,
     flexShrink: 0,
     borderRadius: composed ? undefined : ROOTSY_LAYOUTS_TABLES_ANATOMY.shellRadiusPx,
     overflow: "hidden" as const,
@@ -460,9 +462,13 @@ export function getLayoutsTablesFooterSelectStyle() {
 export function getLayoutsTablesWireframeColumnDividerColor(
   kind: "chrome" | "toolbar" | "head" | "footer",
 ) {
-  return kind === "toolbar" || kind === "head"
-    ? ROOTSY_LAYOUTS_TABLES_ANATOMY.contentBorderColor
-    : ROOTSY_LAYOUTS_TABLES_ANATOMY.columnDividerColor
+  if (kind === "toolbar" || kind === "head") {
+    return ROOTSY_LAYOUTS_TABLES_ANATOMY.contentBorderColor
+  }
+  if (kind === "footer") {
+    return ROOTSY_LAYOUTS_TABLES_FOOTER.dividerColor
+  }
+  return ROOTSY_LAYOUTS_TABLES_ANATOMY.columnDividerColor
 }
 
 export function getLayoutsTablesWireframeZoneStyle(kind: "chrome" | "toolbar" | "head" | "row" | "footer") {
@@ -487,7 +493,7 @@ export function getLayoutsTablesWireframeZoneStyle(kind: "chrome" | "toolbar" | 
     case "footer":
       return {
         background: ROOTSY_LAYOUTS_TABLES_FOOTER.background,
-        borderTop: `1px solid ${contentBorder}`,
+        borderTop: ROOTSY_LAYOUTS_TABLES_FOOTER.borderTop,
       }
   }
 }

@@ -374,7 +374,7 @@ function LayoutsOperarCatalogColumn({
         aria-label="Filtros del catálogo"
       >
         {wireframe ? (
-          <LayoutHeightBadge label={`${LAYOUTS_OPERAR_CATALOG_SIDEBAR_WIDTH_PX}px · sombra-950`} onDark />
+          <LayoutHeightBadge label={`${LAYOUTS_OPERAR_CATALOG_SIDEBAR_WIDTH_PX}px · library-sidebar`} onDark />
         ) : composed ? (
           <LayoutsOperarCatalogRailProposal />
         ) : null}

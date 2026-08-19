@@ -2,6 +2,7 @@
 
 import "@/app/library/color/rootsyNaturePalette.css"
 import "@/app/library/layouts/layoutsOperarTheme.css"
+import "@/app/library/libraryColorTheme.css"
 import { getLayoutsOperarGridCssVariables } from "@/app/library/layouts/layoutsOperarHardcodedSpec"
 import {
   layoutsOperationsBodyScopeClass,

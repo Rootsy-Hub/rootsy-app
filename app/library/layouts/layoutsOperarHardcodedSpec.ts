@@ -44,6 +44,14 @@ import {
   type LayoutsOperarToolboxProposal,
   type LayoutsOperarToolboxProposalId,
 } from "@/app/library/layouts/rootsyLayoutsOperarSystem"
+import {
+  ROOTSY_LAYOUTS_EARTH_FLOOR,
+  rootsyLayoutsEarthFloorSlotClass,
+  rootsyLayoutsEarthFloorSlotConfiguredClass,
+  rootsyLayoutsEarthFloorSlotIconClass,
+  rootsyLayoutsEarthFloorSlotLabelClass,
+  rootsyLayoutsEarthFloorSlotValueClass,
+} from "@/app/library/layouts/rootsyLayoutsEarthFloor"
 import { ROOTSY_COLOR_SEMANTIC, rootsyColorHex } from "@/lib/design-system"
 import { cn } from "@/lib/utils"
 import type { CSSProperties } from "react"
@@ -166,7 +174,7 @@ export function getLayoutsOperarWireframeZoneStyle(zone: LayoutsOperarWireframeZ
       return { backgroundColor: surfaces.canvas.css }
     case "toolbar":
       return {
-        backgroundColor: surfaces.canvas.css,
+        backgroundColor: surfaces.rail.css,
         borderBottom: `1px solid ${border("darkHairline")}`,
       }
     case "card":
@@ -177,12 +185,12 @@ export function getLayoutsOperarWireframeZoneStyle(zone: LayoutsOperarWireframeZ
       }
     case "toolbox":
       return {
-        backgroundColor: surfaces.footer.css,
-        borderTop: `1px solid ${border("darkDefault")}`,
+        background: surfaces.footer.css,
+        borderTop: ROOTSY_LAYOUTS_EARTH_FLOOR.borderTop,
       }
     case "toolbox-slot":
       return {
-        backgroundColor: `color-mix(in srgb, ${surfaces.footer.css} 32%, transparent)`,
+        backgroundColor: `color-mix(in srgb, ${ROOTSY_LAYOUTS_EARTH_FLOOR.baseCss} 32%, transparent)`,
         borderRight: `1px solid ${border("darkHairline")}`,
       }
     case "ticket-header":
@@ -280,8 +288,9 @@ export function getLayoutsOperarToolboxProposalBandStyle(
   switch (id) {
     case "dosel-continuo":
       return {
-        backgroundColor: getLayoutsOperarDoselContinuoToolboxBandBackground(),
-        borderTop: `1px solid ${getLayoutsOperarBorderCss("darkDefault")}`,
+        background: getLayoutsOperarDoselContinuoToolboxBandBackground(),
+        borderTop: ROOTSY_LAYOUTS_EARTH_FLOOR.borderTop,
+        boxShadow: `inset 0 1px 0 color-mix(in srgb, ${ROOTSY_LAYOUTS_EARTH_FLOOR.mutedColor} 14%, transparent), inset 0 18px 36px color-mix(in srgb, ${ROOTSY_LAYOUTS_EARTH_FLOOR.moistureColor} 18%, transparent)`,
       }
     case "cubiertas-sombra":
       return {
@@ -420,13 +429,12 @@ export function layoutsOperarToolboxProposalSlotClass(
 
   return cn(
     slotAnatomy,
-    "group rounded-xl border-0 transition-[background-color,box-shadow] duration-150",
+    rootsyLayoutsEarthFloorSlotClass,
+    "group rounded-xl border-0",
     slotSpacing,
     "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--rootsy-savia-400)]/45",
     "focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--rootsy-sombra-950)]",
-    configured
-      ? "bg-[color-mix(in_srgb,var(--rootsy-savia-600)_14%,var(--rootsy-sombra-950))] shadow-[inset_0_1px_0_color-mix(in_srgb,var(--rootsy-savia-400)_14%,transparent)] hover:bg-[color-mix(in_srgb,var(--rootsy-savia-600)_18%,var(--rootsy-sombra-950))]"
-      : "bg-white/[0.02] hover:bg-[color-mix(in_srgb,var(--rootsy-sombra-900)_32%,transparent)]",
+    configured && rootsyLayoutsEarthFloorSlotConfiguredClass,
   )
 }
 
@@ -453,10 +461,8 @@ export function layoutsOperarToolboxProposalIconWrapClass(
   }
 
   return cn(
-    "flex size-10 shrink-0 items-center justify-center rounded-lg transition-colors duration-150",
-    configured
-      ? "bg-[color-mix(in_srgb,var(--rootsy-savia-600)_32%,transparent)] text-[color-mix(in_srgb,var(--rootsy-savia-200)_92%,white)]"
-      : "bg-[color-mix(in_srgb,var(--rootsy-sombra-900)_38%,transparent)] text-[color-mix(in_srgb,var(--rootsy-sombra-300)_88%,white)] group-hover:bg-[color-mix(in_srgb,var(--rootsy-sombra-900)_52%,transparent)] group-hover:text-[color-mix(in_srgb,var(--rootsy-bruma-100)_92%,white)]",
+    rootsyLayoutsEarthFloorSlotIconClass,
+    "flex size-10 shrink-0 items-center justify-center rounded-lg",
   )
 }
 
@@ -467,7 +473,10 @@ export function layoutsOperarToolboxProposalSlotLabelClass(id: LayoutsOperarTool
   if (id === "cubiertas-sombra") {
     return "mb-0.5 block text-[10px] font-semibold uppercase tracking-[0.12em] text-[color-mix(in_srgb,var(--rootsy-sombra-400)_82%,transparent)]"
   }
-  return "mb-0.5 block text-[10px] font-semibold uppercase tracking-[0.12em] text-[color-mix(in_srgb,var(--rootsy-sombra-300)_55%,transparent)]"
+  return cn(
+    rootsyLayoutsEarthFloorSlotLabelClass,
+    "mb-0.5 block text-[10px] font-semibold uppercase tracking-[0.12em]",
+  )
 }
 
 export function layoutsOperarToolboxProposalSlotValueClass(
@@ -489,8 +498,8 @@ export function layoutsOperarToolboxProposalSlotValueClass(
     )
   }
   return cn(
+    rootsyLayoutsEarthFloorSlotValueClass,
     "block truncate text-sm font-semibold leading-snug",
-    configured ? "text-[#f4f8f6]" : "text-[color-mix(in_srgb,var(--rootsy-sombra-300)_68%,transparent)]",
   )
 }
 
